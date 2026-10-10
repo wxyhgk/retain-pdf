@@ -164,10 +164,18 @@ export function useBookDetailStageActions({
             },
           }
           : {}),
-        // 精修在原任务上原地跑（不新建任务、不重翻），后端默认整本 review_and_fix。
-        ...(stage === "refine" ? { create_new_job: false } : {}),
-        ...(stage === "refine" && refineStartPage
-          ? { refine: { ...((body.refine as Record<string, unknown>) || {}), start_page: refineStartPage } }
+        // 精修在原任务上原地跑（不新建任务、不重翻），走编辑部模式：模型挑错后分派局部修改或整段
+        // 重写，最多两轮，改不好的保留原译并列进「留给你确认」。后端 stage-actions 给的默认 body
+        // 仍是 review_and_fix，所以这里显式带 mode；从第 N 页接着精修时 start_page 一并保留。
+        ...(stage === "refine"
+          ? {
+            create_new_job: false,
+            refine: {
+              ...((body.refine as Record<string, unknown>) || {}),
+              mode: "editorial",
+              ...(refineStartPage ? { start_page: refineStartPage } : {}),
+            },
+          }
           : {}),
         ...(acceptDuplicateRisk
           ? { ambiguous_request_policy: "accept_duplicate_risk" }

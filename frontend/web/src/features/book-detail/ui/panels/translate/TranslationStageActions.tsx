@@ -19,7 +19,7 @@ function labelOf(action: JobStageRetryActionView) {
 // 清单形态（sheet）里每一项下面的一句话：做什么、花不花钱。顺序按代价从小到大。
 const SHEET_HINTS: Record<string, string> = {
   render: "用现有译文重新排版，不调用模型、不产生费用。",
-  refine: "让模型挑一遍错，只改有问题的片段，改完自动重新排版。会产生少量费用。",
+  refine: "模型挑错后分派局部修改或整段重写，最多两轮，改不好的保留原译并列出来给你确认；改完自动重新排版。会产生费用。",
   translation: "复用已有 OCR 重新翻译整本，再排版。会产生翻译费用。",
 };
 const SHEET_ORDER: Record<string, number> = { render: 0, refine: 1, translation: 2 };
@@ -42,7 +42,7 @@ const CONFIRM_COPY: Record<string, { title: string; description: string; confirm
   },
   refine: {
     title: "精修译文",
-    description: "在现有译文上让模型挑一遍错（漏译、错译、数字和术语），只改有问题的片段，改完自动重新渲染一次。不会重新翻译整本；每处修改都会留下记录，改不好的会保留原译，之后也能退回。会调用模型、产生少量费用，耗时视页数而定。",
+    description: "在现有译文上走编辑部流程：模型先挑错（漏译、错译、数字和术语），再按问题分派局部修改或整段重写，最多两轮；改不好的保留原译，列进「留给你确认」。改完自动重新渲染一次，不会重新翻译整本；每处修改都会留下记录，之后也能退回。会调用模型、产生费用，耗时视页数而定。",
     confirmLabel: "开始精修",
   },
 };

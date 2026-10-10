@@ -164,14 +164,15 @@ test("精修：失败任务也不走断点恢复，直接 retry-stage(refine) �
     "retry",
     "job-refine-1",
     "refine",
-    { stage: "refine", create_new_job: false, document_id: "doc-1" },
+    // 精修走编辑部模式：后端 stage-actions 的默认 body 仍是 review_and_fix，前端显式带 mode。
+    { stage: "refine", create_new_job: false, refine: { mode: "editorial" }, document_id: "doc-1" },
   ]]);
   assert.equal(submitted[0].workflow, "render");
 
   // 接着精修：从上次没审到的那一页开始。
   await api.retry("refine", { refineStartPage: 24 });
   assert.deepEqual(calls[1][3], {
-    stage: "refine", create_new_job: false, refine: { start_page: 24 }, document_id: "doc-1",
+    stage: "refine", create_new_job: false, refine: { mode: "editorial", start_page: 24 }, document_id: "doc-1",
   });
 
   root.unmount();
@@ -330,6 +331,41 @@ test("编辑部留给你确认的块列在精修那一行下面（页码 + 原�
     "第 19 页术语有争议，需要人定：Cartesian coordinates（现译「笛卡尔坐标」）",
   ]);
   assert.match(list.textContent, /只列出前 2 处/);
+  root.unmount();
+  dom.window.close();
+});
+
+test("精修：后端默认 body 的 refine.mode=review_and_fix 被换成 editorial，其它字段保留", async () => {
+  const dom = makeDom();
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { useBookDetailStageActions } = await import(
+    "../../src/features/book-detail/ui/use-book-detail-stage-actions.js"
+  );
+  const calls = [];
+  let api = null;
+  function Probe() {
+    api = useBookDetailStageActions({
+      open: true,
+      job: { job_id: "job-1", status: "succeeded", document_id: "doc-1" },
+      actions: {
+        getJobStageActions: async () => ({
+          job_id: "job-1",
+          stages: [{
+            stage: "refine", label: "精修译文", can_retry: true,
+            action: { body: { stage: "refine", refine: { mode: "review_and_fix", scope: "all" } } },
+          }],
+        }),
+        retryJobStage: async (...args) => { calls.push(args); return { job_id: "job-1", workflow: "render" }; },
+      },
+    });
+    return null;
+  }
+  const root = createRoot(dom.window.document.getElementById("root"));
+  root.render(React.createElement(Probe));
+  await waitFor(() => api?.stageActions?.some((action) => action.stage === "refine"), "读到精修能力");
+  await api.retry("refine", { refineStartPage: 7 });
+  assert.deepEqual(calls[0][2].refine, { mode: "editorial", scope: "all", start_page: 7 });
   root.unmount();
   dom.window.close();
 });
