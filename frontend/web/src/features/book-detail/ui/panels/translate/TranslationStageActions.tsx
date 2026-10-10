@@ -6,6 +6,7 @@ import type {
   JobStageRetryActionView,
 } from "@/platform/api/index.js";
 import { btn } from "../ui.jsx";
+import { stageDisabledReasonText } from "../../../domain/stage-disabled-reason.js";
 import { describeLastRefine, refineContinuePage } from "../../../domain/last-refine.js";
 
 function labelOf(action: JobStageRetryActionView) {
@@ -146,7 +147,8 @@ export function TranslationStageActions({
   function actionButton(action: JobStageRetryActionView, sheet = false) {
     const pending = pendingStage === action.stage;
     const disabled = checking || Boolean(pendingStage) || !action.can_retry;
-    const reason = `${action.disabled_reason || action.reason || ""}`.trim();
+    const rawReason = `${action.disabled_reason || action.reason || ""}`.trim();
+    const reason = stageDisabledReasonText(rawReason);
     return (
       <button
         key={action.stage}
@@ -154,7 +156,7 @@ export function TranslationStageActions({
         type="button"
         className={btn("outline")}
         disabled={disabled}
-        title={!action.can_retry && reason ? reason : undefined}
+        title={!action.can_retry && rawReason ? (reason === rawReason ? reason : `${reason}（${rawReason}）`) : undefined}
         onClick={() => {
           setContinuePage(null);
           if (needsConfirm(action)) setConfirmAction(action);
@@ -200,7 +202,7 @@ export function TranslationStageActions({
       {sheet ? (
         <ul className="book-detail-reprocess-list">
           {sheetActions.map((action) => {
-            const reason = `${action.disabled_reason || action.reason || ""}`.trim();
+            const reason = stageDisabledReasonText(action.disabled_reason || action.reason);
             const lastRefine = action.stage === "refine" ? describeLastRefine(action.last_refine) : "";
             const resumeAt = action.stage === "refine" ? refineContinuePage(action.last_refine) : null;
             return (

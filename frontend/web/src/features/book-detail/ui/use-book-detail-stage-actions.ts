@@ -4,7 +4,10 @@ import type {
   JobStageActionsView,
   JobStageRetryActionView,
 } from "@/platform/api/index.js";
+import { fetchJobPayload } from "@/platform/api/index.js";
+import { API_PREFIX } from "@/platform/config/api-constants.js";
 import type { DocumentJobSummary } from "@/features/library/domain.js";
+import { resolveTranslationOwnerId, type TranslationSourceView } from "../domain/translation-owner.js";
 import type { LibraryController } from "@/features/library/index.js";
 import { isDocumentJobActive } from "./use-document-jobs.js";
 
@@ -37,6 +40,7 @@ export function useBookDetailStageActions({
   actions,
   onJobSubmitted,
   refreshKey = "",
+  readJob = (id: string) => fetchJobPayload(id, { apiPrefix: API_PREFIX }) as Promise<TranslationSourceView>,
 }: {
   open: boolean;
   job?: DocumentJobSummary | null;
@@ -44,8 +48,29 @@ export function useBookDetailStageActions({
   onJobSubmitted?: (job: Partial<DocumentJobSummary>) => unknown;
   /** OCR/document authority changed while the translation job stayed the same. */
   refreshKey?: string;
+  /** 读任务详情（找译文持有者用）；测试替身用，默认走平台接口。 */
+  readJob?: (jobId: string) => Promise<TranslationSourceView | null | undefined>;
 }) {
-  const jobId = jobIdOf(job);
+  const baseJobId = jobIdOf(job);
+  // 底是渲染任务时，先顺着 source_artifact_job_id 找到真正持有译文的任务，重新处理都发给它
+  // （见 domain/translation-owner.ts）。找到之前不读阶段动作，免得先闪出一句「不能精修」。
+  const needsOwner = Boolean(
+    open && baseJobId && !isDocumentJobActive(job) && `${job?.workflow || ""}`.trim().toLowerCase() === "render",
+  );
+  const [owner, setOwner] = useState<{ base: string; owner: string } | null>(null);
+  useEffect(() => {
+    if (!needsOwner) return undefined;
+    let cancelled = false;
+    resolveTranslationOwnerId(baseJobId, readJob)
+      .then((ownerId) => { if (!cancelled) setOwner({ base: baseJobId, owner: ownerId }); })
+      // 找不到就退回原任务：后端会给出不可用原因，不至于整块消失。
+      .catch(() => { if (!cancelled) setOwner({ base: baseJobId, owner: baseJobId }); });
+    return () => { cancelled = true; };
+    // readJob 是可替换的依赖，每次渲染新建引用不应重跑。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsOwner, baseJobId]);
+  const resolvingOwner = needsOwner && owner?.base !== baseJobId;
+  const jobId = needsOwner ? (owner?.base === baseJobId ? owner.owner : "") : baseJobId;
   const [view, setView] = useState<JobStageActionsView | null>(null);
   const [loading, setLoading] = useState(false);
   const [pendingStage, setPendingStage] = useState<JobRetryStage | "">("");
@@ -102,7 +127,7 @@ export function useBookDetailStageActions({
       (action): action is JobStageRetryActionView => supported.has(`${action?.stage || ""}`),
     );
   }, [currentView]);
-  const effectiveLoading = eligible && !currentView && resolvedJobId !== jobId
+  const effectiveLoading = resolvingOwner || (eligible && !currentView && resolvedJobId !== jobId)
     ? true
     : loading;
 
