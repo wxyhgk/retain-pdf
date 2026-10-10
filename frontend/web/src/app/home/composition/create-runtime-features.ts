@@ -12,7 +12,6 @@ import {
   fetchJobEvents,
   fetchJobArtifactsManifest,
   fetchJobStageActions,
-  retryJobStage,
   fetchJobList,
   fetchLibraryBookList,
   deleteLibraryBook,
@@ -21,6 +20,7 @@ import {
   fetchDocumentMetadataSuggestions,
   createDocumentMetadataSuggestion,
 } from "@/platform/api/index.js";
+import { createRetryJobStageWithCurrentKey } from "./retry-with-current-key.js";
 // adaptJobStageSnapshot 来自 job-status，其余五个来自 job —— 两个入口。
 import { adaptJobStageSnapshot } from "@retainpdf/domain/job-status";
 import {
@@ -145,7 +145,7 @@ export function createRuntimeFeatures({
     fetchJobEvents,
     fetchJobArtifactsManifest,
     fetchJobStageActions,
-    retryJobStage,
+    retryJobStage: createRetryJobStageWithCurrentKey(features),
     renderJob: statusCardPresenter.renderMain,
     renderJobSecondaryPatch: statusCardPresenter.renderPatch,
     setText: bridge.setText,
