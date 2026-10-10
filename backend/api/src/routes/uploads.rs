@@ -1,6 +1,7 @@
 use axum::extract::State;
 use axum::Json;
 
+use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::ApiResponse;
 use crate::models::domain::UploadRecord;
@@ -13,6 +14,7 @@ use crate::AppState;
 
 pub async fn upload_pdf(
     State(state): State<AppState>,
+    principal: Principal,
     ApiMultipart(mut multipart): ApiMultipart,
 ) -> Result<Json<ApiResponse<crate::models::UploadView>>, AppError> {
     const TEXT_FIELD_MAX_BYTES: std::num::NonZeroU64 =
@@ -46,7 +48,7 @@ pub async fn upload_pdf(
         file_name.ok_or_else(|| AppError::bad_request("missing multipart field: file"))?;
     let bytes = file_bytes.ok_or_else(|| AppError::bad_request("empty upload"))?;
     Ok(ok_json(
-        store_upload_view(&deps.uploads, filename, bytes, developer_mode).await?,
+        store_upload_view(&deps.uploads, filename, bytes, developer_mode, principal).await?,
     ))
 }
 
@@ -56,5 +58,5 @@ pub async fn store_upload(
     bytes: Vec<u8>,
     developer_mode: bool,
 ) -> Result<UploadRecord, AppError> {
-    store_upload_service(&deps.uploads, filename, bytes, developer_mode).await
+    store_upload_service(&deps.uploads, filename, bytes, developer_mode, Principal::local()).await
 }

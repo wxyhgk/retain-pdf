@@ -39,6 +39,7 @@ fn build_document_filter_query(
     reading_status: Option<&str>,
     collection_id: Option<&str>,
     query: Option<&str>,
+    owner: Option<&str>,
 ) -> DocumentFilterQuery {
     // A document without a backing upload is not a readable library item and
     // must be excluded from both the page and its authoritative total.
@@ -47,6 +48,10 @@ fn build_document_filter_query(
             .to_string(),
     ];
     let mut args = Vec::new();
+    if let Some(owner) = owner {
+        clauses.push(format!("d.owner_user_id = ?{}", args.len() + 1));
+        args.push(owner.to_string());
+    }
     if let Some(status) = reading_status {
         clauses.push(format!("d.reading_status = ?{}", args.len() + 1));
         args.push(status.to_string());
@@ -233,7 +238,7 @@ impl Db {
         query: Option<&str>,
     ) -> Result<Vec<DocumentRecord>> {
         let conn = self.connect()?;
-        let filter = build_document_filter_query(reading_status, collection_id, query);
+        let filter = build_document_filter_query(reading_status, collection_id, query, None);
         query_documents(&conn, &filter, limit, offset)
     }
 
@@ -244,7 +249,7 @@ impl Db {
         query: Option<&str>,
     ) -> Result<u64> {
         let conn = self.connect()?;
-        let filter = build_document_filter_query(reading_status, collection_id, query);
+        let filter = build_document_filter_query(reading_status, collection_id, query, None);
         count_documents_with_filter(&conn, &filter)
     }
 
@@ -255,12 +260,13 @@ impl Db {
         limit: u32,
         offset: u32,
         reading_status: Option<&str>,
-            collection_id: Option<&str>,
+        collection_id: Option<&str>,
         query: Option<&str>,
+        owner: Option<&str>,
     ) -> Result<(Vec<DocumentRecord>, u64)> {
         let mut conn = self.connect()?;
         let transaction = conn.transaction()?;
-        let filter = build_document_filter_query(reading_status, collection_id, query);
+        let filter = build_document_filter_query(reading_status, collection_id, query, owner);
         let total = count_documents_with_filter(&transaction, &filter)?;
         let documents = query_documents(&transaction, &filter, limit, offset)?;
         transaction.commit()?;

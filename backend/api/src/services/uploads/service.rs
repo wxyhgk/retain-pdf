@@ -57,6 +57,15 @@ impl UploadService {
         &self,
         upload: UploadedPdfInput,
     ) -> Result<UploadRecord, UploadError> {
+        self.store_for(upload, crate::services::accounts::Principal::local()).await
+    }
+
+    /// 记在 `owner` 名下。多用户模式下书的编号（上传指纹）按账号区分，见 `Principal::scoped_content_hash`。
+    pub(crate) async fn store_for(
+        &self,
+        upload: UploadedPdfInput,
+        owner: crate::services::accounts::Principal,
+    ) -> Result<UploadRecord, UploadError> {
         let uploads_dir = &self.inner.config.uploads_dir;
         let python_bin = &self.inner.config.python_bin;
         let upload_max_bytes = self.inner.config.upload_max_bytes;
@@ -115,7 +124,7 @@ impl UploadService {
             } else {
                 prepared
             };
-            tokio::task::spawn_blocking(move || publish_upload(&db, prepared, upload_max_pages))
+            tokio::task::spawn_blocking(move || publish_upload(&db, prepared, upload_max_pages, &owner))
                 .await
                 .map_err(|_| UploadError::internal("PDF publication worker failed"))?
         })

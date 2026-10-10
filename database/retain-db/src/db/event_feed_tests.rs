@@ -104,6 +104,16 @@ fn event_uid_is_backfilled_for_legacy_schema_and_migrations_are_idempotent() {
          -- ADD COLUMN IF NOT EXISTS，凡是被重跑的加列迁移，都要在这里先撤掉，
          -- 否则第二次执行会以「列已存在」失败。新增迁移时记得跟上这一段。
          ALTER TABLE ai_messages DROP COLUMN finish_reason;
+         DROP TRIGGER jobs_inherit_owner;
+         DROP TRIGGER documents_inherit_owner;
+         DROP INDEX idx_uploads_owner;
+         DROP INDEX idx_jobs_owner;
+         DROP INDEX idx_documents_owner;
+         ALTER TABLE uploads DROP COLUMN owner_user_id;
+         ALTER TABLE jobs DROP COLUMN owner_user_id;
+         ALTER TABLE documents DROP COLUMN owner_user_id;
+         ALTER TABLE glossaries DROP COLUMN owner_user_id;
+         ALTER TABLE collections DROP COLUMN owner_user_id;
          PRAGMA user_version = 13;",
     )
     .unwrap();

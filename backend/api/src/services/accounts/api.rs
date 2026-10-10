@@ -4,3 +4,4 @@ pub use super::{
     account_view, admin_view, AccountUserView, AccountsService, AdminUserView, AuthVia,
     Principal, Role, SessionView, SESSION_COOKIE,
 };
+pub use super::access::{json_references, query_references};

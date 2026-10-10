@@ -42,6 +42,44 @@ pub struct AccountsConfig {
     pub session_ttl_days: u32,
     /// 启动时没有任何管理员就用它建第一个（部署时从环境变量给，不写进代码和日志）。
     pub bootstrap_admin: Option<(String, String)>,
+    /// multi 模式下所有任务统一用的模型和 OCR（平台出钱）；客户端传来的一律不认。
+    pub platform: PlatformModels,
+}
+
+/// 平台的模型与 OCR 设置。密钥不放这里：管理员先经凭据接口存好，这里只写凭据编号。
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PlatformModels {
+    pub translation_model: String,
+    pub translation_base_url: String,
+    /// 空 = 默认协议。
+    pub translation_api_protocol: String,
+    pub translation_credential_ref: String,
+    pub ocr_provider: String,
+    pub ocr_credential_ref: String,
+}
+
+impl PlatformModels {
+    pub fn from_env() -> Self {
+        let read = |name: &str| env_optional_string(name).map(|value| value.trim().to_string()).unwrap_or_default();
+        Self {
+            translation_model: read("RETAIN_PLATFORM_TRANSLATION_MODEL"),
+            translation_base_url: read("RETAIN_PLATFORM_TRANSLATION_BASE_URL"),
+            translation_api_protocol: read("RETAIN_PLATFORM_TRANSLATION_API_PROTOCOL"),
+            translation_credential_ref: read("RETAIN_PLATFORM_TRANSLATION_CREDENTIAL_REF"),
+            ocr_provider: read("RETAIN_PLATFORM_OCR_PROVIDER"),
+            ocr_credential_ref: read("RETAIN_PLATFORM_OCR_CREDENTIAL_REF"),
+        }
+    }
+
+    pub fn translation_ready(&self) -> bool {
+        ![&self.translation_model, &self.translation_base_url, &self.translation_credential_ref]
+            .iter()
+            .any(|value| value.is_empty())
+    }
+
+    pub fn ocr_ready(&self) -> bool {
+        !self.ocr_provider.is_empty() && !self.ocr_credential_ref.is_empty()
+    }
 }
 
 impl Default for AccountsConfig {
@@ -52,6 +90,7 @@ impl Default for AccountsConfig {
             session_cookie_secure: true,
             session_ttl_days: 30,
             bootstrap_admin: None,
+            platform: PlatformModels::default(),
         }
     }
 }
@@ -92,6 +131,13 @@ impl AccountsConfig {
             (None, None) => None,
             _ => bail!("RETAIN_BOOTSTRAP_ADMIN_USERNAME and RETAIN_BOOTSTRAP_ADMIN_PASSWORD must be set together"),
         };
-        Ok(Self { mode, allowed_origins, session_cookie_secure, session_ttl_days, bootstrap_admin })
+        Ok(Self {
+            mode,
+            allowed_origins,
+            session_cookie_secure,
+            session_ttl_days,
+            bootstrap_admin,
+            platform: PlatformModels::from_env(),
+        })
     }
 }

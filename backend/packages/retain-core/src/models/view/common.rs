@@ -120,6 +120,9 @@ pub struct ListJobsQuery {
     /// 转成图书馆卡片数据——不传时行为与现状完全一致。
     #[serde(default)]
     pub job_ids: Option<String>,
+    /// 只列这个账号的（多用户模式）。不从查询串读，由路由按当前用户填。
+    #[serde(skip)]
+    pub owner: Option<String>,
 }
 
 /// Pagination for one document's complete OCR/translation task history.

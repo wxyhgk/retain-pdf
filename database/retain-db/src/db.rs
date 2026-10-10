@@ -7,6 +7,8 @@ use rusqlite::Connection;
 
 #[path = "db/accounts.rs"]
 mod accounts;
+#[path = "db/ownership.rs"]
+mod ownership;
 #[path = "db/agent_calculations.rs"]
 mod agent_calculations;
 #[path = "db/artifacts.rs"]
@@ -55,6 +57,10 @@ pub mod sync;
 mod uploads;
 
 pub use accounts::{username_key, UserRecord, UsernameTaken};
+pub use ownership::OwnedKind;
+
+/// 单机模式的本机用户，也是归属列的默认值。
+pub const LOCAL_OWNER: &str = "local";
 
 use schema::{
     ensure_events_column, ensure_glossaries_column, ensure_jobs_column,

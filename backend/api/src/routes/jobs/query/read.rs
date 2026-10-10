@@ -2,6 +2,7 @@ use axum::extract::State;
 use axum::http::HeaderMap;
 use axum::Json;
 
+use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::{
     ApiResponse, ArtifactLinksView, JobArtifactManifestView, JobDetailView, JobEventListView,
@@ -17,9 +18,11 @@ use crate::routes::common::{
 
 pub async fn list_jobs(
     State(state): State<AppState>,
+    principal: Principal,
     headers: HeaderMap,
-    ApiQuery(query): ApiQuery<ListJobsQuery>,
+    ApiQuery(mut query): ApiQuery<ListJobsQuery>,
 ) -> Result<Json<ApiResponse<JobListView>>, AppError> {
+    query.owner = principal.owner_filter().map(str::to_string);
     let deps = build_jobs_query_route_deps(&state);
     let base_url = request_base_url(&headers, deps.default_port, &deps.bind_host);
     let view = run_job_query_once(&state, "jobs:list".into(), move |jobs| {
@@ -31,11 +34,12 @@ pub async fn list_jobs(
 
 pub async fn list_ocr_jobs(
     State(state): State<AppState>,
+    principal: Principal,
     headers: HeaderMap,
     ApiQuery(mut query): ApiQuery<ListJobsQuery>,
 ) -> Result<Json<ApiResponse<JobListView>>, AppError> {
     query.workflow = Some(WorkflowKind::Ocr);
-    list_jobs(State(state), headers, ApiQuery(query)).await
+    list_jobs(State(state), principal, headers, ApiQuery(query)).await
 }
 
 pub async fn get_ocr_job(

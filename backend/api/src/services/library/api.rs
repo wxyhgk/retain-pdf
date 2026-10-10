@@ -157,8 +157,9 @@ pub async fn ocr_document_view(
 pub fn search_blocks_view(
     deps: &LibraryDeps<'_>,
     query: &SearchQuery,
+    owner: Option<&str>,
 ) -> Result<SearchResultView, AppError> {
-    search_blocks(deps, query)
+    search_blocks(deps, query, owner)
 }
 
 // --- assets ---
@@ -233,12 +234,18 @@ pub fn fork_conversation_view(
 pub fn create_collection_view(
     deps: &LibraryDeps<'_>,
     payload: &CreateCollectionInput,
+    owner: &str,
 ) -> Result<CollectionRecord, AppError> {
-    create_collection(deps, payload)
+    let record = create_collection(deps, payload)?;
+    deps.db.set_resource_owner(crate::db::OwnedKind::Collection, &record.collection_id, owner)?;
+    Ok(record)
 }
 
-pub fn list_collections_view(deps: &LibraryDeps<'_>) -> Result<CollectionListView, AppError> {
-    list_collections(deps)
+pub fn list_collections_view(
+    deps: &LibraryDeps<'_>,
+    owner: Option<&str>,
+) -> Result<CollectionListView, AppError> {
+    list_collections(deps, owner)
 }
 
 pub fn patch_collection_view(

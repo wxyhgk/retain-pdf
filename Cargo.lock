@@ -1747,6 +1747,7 @@ dependencies = [
  "rusqlite",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "sha2",
  "thiserror 1.0.69",
  "tokio",

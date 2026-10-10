@@ -203,6 +203,7 @@ fn list_books_filtered(db: &Db, query: &ListJobsQuery) -> Result<Vec<JobSnapshot
                 .is_none()
                 .then_some(query.limit.clamp(1, MAX_JOB_LIMIT)),
             offset: if job_ids.is_some() { 0 } else { query.offset },
+            owner: query.owner.as_deref(),
             ..Default::default()
         },
         |job, upload_filename| {

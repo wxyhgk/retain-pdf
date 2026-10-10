@@ -70,6 +70,14 @@ pub fn build_jobs_facade_from_state(state: &AppState) -> JobsFacade<'_> {
         &state.config.data_root,
         &state.config.output_root,
         runtime_launcher,
+    )
+    .with_platform(
+        state
+            .config
+            .accounts
+            .mode
+            .is_multi()
+            .then_some(&state.config.accounts.platform),
     );
     let snapshot = SnapshotBuildDeps::new(state.db.as_ref(), state.config.job_snapshot_runtime());
     let submit = JobSubmitDeps::new(snapshot, state.uploads.as_ref(), launcher);

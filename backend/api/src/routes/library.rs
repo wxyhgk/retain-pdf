@@ -3,6 +3,7 @@ use axum::http::HeaderMap;
 use axum::response::Response;
 use axum::Json;
 
+use crate::auth::Principal;
 use crate::error::AppError;
 use crate::models::api::{
     ApiResponse, LibraryBookDetailView,
@@ -22,9 +23,11 @@ use crate::AppState;
 
 pub async fn list_books(
     State(state): State<AppState>,
+    principal: Principal,
     headers: HeaderMap,
-    ApiQuery(query): ApiQuery<ListJobsQuery>,
+    ApiQuery(mut query): ApiQuery<ListJobsQuery>,
 ) -> Result<Json<ApiResponse<LibraryBookListView>>, AppError> {
+    query.owner = principal.owner_filter().map(str::to_string);
     let deps = build_library_route_deps(&state);
     let base_url = request_base_url(&headers, deps.default_port, &deps.bind_host);
     let view = run_read_query_once(&state, "library:books:list".into(), move |db, root| {

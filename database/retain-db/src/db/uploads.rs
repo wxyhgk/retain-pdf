@@ -43,9 +43,18 @@ impl Db {
 
     /// Publish the upload and its document identity as one database commit.
     pub fn save_upload_with_document(&self, upload: &UploadRecord) -> Result<()> {
+        self.save_upload_with_document_for(upload, crate::db::LOCAL_OWNER)
+    }
+
+    /// 同上，并记下归属；书的归属由触发器从这条上传继承，所以要在同一事务里先写归属。
+    pub fn save_upload_with_document_for(&self, upload: &UploadRecord, owner: &str) -> Result<()> {
         let mut conn = self.connect()?;
         let tx = conn.transaction()?;
         self.save_upload_on(&tx, upload)?;
+        tx.execute(
+            "UPDATE uploads SET owner_user_id = ?2 WHERE upload_id = ?1",
+            params![upload.upload_id, owner],
+        )?;
         Self::upsert_document_from_upload_on(&tx, upload)?;
         tx.commit()?;
         Ok(())

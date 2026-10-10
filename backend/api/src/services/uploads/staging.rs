@@ -84,6 +84,7 @@ pub(super) fn publish_upload(
     db: &Db,
     mut prepared: PreparedUpload,
     upload_max_pages: u32,
+    owner: &crate::services::accounts::Principal,
 ) -> Result<UploadRecord, UploadError> {
     let page_count = prepared
         .page_count
@@ -95,7 +96,8 @@ pub(super) fn publish_upload(
         )));
     }
     prepared.record.page_count = page_count;
-    db.save_upload_with_document(&prepared.record)
+    prepared.record.content_hash = owner.scoped_content_hash(&prepared.record.content_hash);
+    db.save_upload_with_document_for(&prepared.record, owner.owner_id())
         .map_err(|_| UploadError::internal("Failed to publish uploaded PDF"))?;
     prepared.pending.0 = PathBuf::new();
     Ok(prepared.record)

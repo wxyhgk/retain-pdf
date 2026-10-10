@@ -24,16 +24,19 @@ impl<'a> GlossaryApiDeps<'a> {
 pub fn create_glossary_view(
     deps: &GlossaryApiDeps<'_>,
     payload: &GlossaryUpsertInput,
+    owner: &str,
 ) -> Result<GlossaryDetailView, AppError> {
     let record = create_glossary(deps.db, payload)?;
+    deps.db.set_resource_owner(crate::db::OwnedKind::Glossary, &record.glossary_id, owner)?;
     Ok(glossary_to_detail(&record))
 }
 
 pub fn list_glossaries_view(
     deps: &GlossaryApiDeps<'_>,
     query: &ListGlossariesQuery,
+    owner: Option<&str>,
 ) -> Result<GlossaryListView, AppError> {
-    let items = filter_glossaries(list_glossaries(deps.db)?, query)
+    let items = filter_glossaries(list_glossaries(deps.db, owner)?, query)
         .iter()
         .map(glossary_to_summary)
         .collect();
@@ -77,9 +80,10 @@ pub fn export_glossary_csv_view(
 pub fn import_glossary_view(
     deps: &GlossaryApiDeps<'_>,
     payload: &GlossaryUpsertInput,
+    owner: &str,
 ) -> Result<GlossaryDetailView, AppError> {
     if payload.glossary_id.trim().is_empty() {
-        return create_glossary_view(deps, payload);
+        return create_glossary_view(deps, payload, owner);
     }
     update_glossary_view(deps, &payload.glossary_id, payload)
 }

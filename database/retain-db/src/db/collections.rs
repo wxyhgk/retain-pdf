@@ -6,7 +6,7 @@ use crate::models::domain::now_iso;
 
 use super::Db;
 
-const COLLECTION_COLUMNS: &str = "c.collection_id, c.name, c.parent_id, c.sort_order, c.created_at,
+pub(super) const COLLECTION_COLUMNS: &str = "c.collection_id, c.name, c.parent_id, c.sort_order, c.created_at,
      (SELECT COUNT(*) FROM collection_documents cd WHERE cd.collection_id = c.collection_id)";
 
 impl Db {
@@ -134,7 +134,7 @@ impl Db {
     }
 }
 
-fn row_to_collection(row: &rusqlite::Row<'_>) -> rusqlite::Result<CollectionRecord> {
+pub(super) fn row_to_collection(row: &rusqlite::Row<'_>) -> rusqlite::Result<CollectionRecord> {
     Ok(CollectionRecord {
         collection_id: row.get(0)?,
         name: row.get(1)?,

@@ -69,6 +69,7 @@ pub fn list_documents(
     deps: &LibraryDeps<'_>,
     query: &ListDocumentsQuery,
     base_url: &str,
+    owner: Option<&str>,
 ) -> Result<DocumentListView, AppError> {
     if let Some(job_id) = query
         .job_id
@@ -95,6 +96,7 @@ pub fn list_documents(
         query.reading_status.as_deref(),
         query.collection_id.as_deref(),
         query.q.as_deref(),
+        owner,
     )?;
     let documents = documents
         .into_iter()

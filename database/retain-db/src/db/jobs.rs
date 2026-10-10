@@ -21,6 +21,8 @@ pub struct JobListSelection<'a> {
     pub include_upload_filename: bool,
     pub limit: Option<u32>,
     pub offset: u32,
+    /// 只要这个账号的任务（多用户模式）；None = 不按归属过滤。
+    pub owner: Option<&'a str>,
 }
 
 // The Unicode White_Space set used by Rust str::trim, for legacy upload IDs.
@@ -65,6 +67,10 @@ impl Db {
         if let Some(workflow) = selection.workflow {
             conditions.push("jobs.workflow = ?");
             values.push(serde_json::to_string(workflow)?.into());
+        }
+        if let Some(owner) = selection.owner {
+            conditions.push("jobs.owner_user_id = ?");
+            values.push(owner.to_string().into());
         }
         if selection.exclude_ocr {
             conditions.push("jobs.workflow != ?");

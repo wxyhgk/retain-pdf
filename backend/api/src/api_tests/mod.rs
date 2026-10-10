@@ -14,6 +14,7 @@ mod token_usage;
 mod golden_replay;
 mod health;
 mod http_contract;
+mod isolation;
 mod job_view_contract;
 mod job_data;
 pub(crate) mod jobs_common;
