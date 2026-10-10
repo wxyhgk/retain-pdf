@@ -1,8 +1,8 @@
-// 详情右栏 Tab 切换壳：概览 / 进度 / 文件 / 质量 / 历史 / 用量。
+// 详情右栏 Tab 切换壳：概览 / 进度 / 文件 / 质量 / 术语 / 历史 / 用量。
 // 页签样式见同目录 BookDetailRightTabs.css（.book-detail-right-tab.is-active）。
 
 import { useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from "react";
-import { Clock3, Coins, ShieldCheck } from "lucide-react";
+import { Clock3, Coins, Languages, ShieldCheck } from "lucide-react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import { cn } from "@/ui/lib/utils";
 
@@ -49,6 +49,7 @@ export const BOOK_DETAIL_TABS: readonly TabMeta[] = Object.freeze([
   { id: "processing", label: "进度", title: "文档进度", Icon: IconProcessing },
   { id: "artifacts", label: "文件", title: "文件与产物", Icon: IconFile },
   { id: "quality", label: "质量", title: "译文质量", Icon: ShieldCheck, lazy: true },
+  { id: "terms", label: "术语", title: "术语与风格", Icon: Languages, lazy: true },
   { id: "history", label: "历史", title: "任务记录", Icon: Clock3, lazy: true },
   { id: "usage", label: "用量", title: "模型 token 用量", Icon: Coins, lazy: true },
 ]);
@@ -67,6 +68,7 @@ export type BookDetailRightTabsProps = {
   artifactsTab: TabSlot;
   /** 以下几个不给（null / undefined）就不出现这个页签。 */
   qualityTab?: TabSlot;
+  termsTab?: TabSlot;
   historyTab?: TabSlot;
   usageTab?: TabSlot;
   onTabChange?: (tab: string) => void;
@@ -80,6 +82,7 @@ export function BookDetailRightTabs({
   processingTab,
   artifactsTab,
   qualityTab = null,
+  termsTab = null,
   historyTab = null,
   usageTab = null,
   onTabChange,
@@ -108,6 +111,7 @@ export function BookDetailRightTabs({
     processing: processingTab,
     artifacts: artifactsTab,
     quality: qualityTab,
+    terms: termsTab,
     history: historyTab,
     usage: usageTab,
   };

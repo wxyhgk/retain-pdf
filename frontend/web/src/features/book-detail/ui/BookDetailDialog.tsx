@@ -26,6 +26,7 @@ import {
   BookDetailArtifactsTab,
 } from "./tabs/index.js";
 import { BookDetailHistoryTab } from "./tabs/BookDetailHistoryTab.jsx";
+import { BookDetailTermsTab } from "./tabs/BookDetailTermsTab.jsx";
 import { ReadingStatusPanel } from "./panels/more/ReadingStatusPanel.jsx";
 import { CollectionsPanel } from "./panels/more/CollectionsPanel.jsx";
 import { DeleteFooterPanel } from "./panels/more/DeleteFooterPanel.jsx";
@@ -329,6 +330,7 @@ export function BookDetailDialog() {
             />
           )}
           qualityTab={jobId ? <QualityPanel jobId={jobId} documentId={documentId} /> : null}
+          termsTab={jobId ? <BookDetailTermsTab jobId={jobId} /> : null}
           historyTab={<BookDetailHistoryTab coverage={coverage} addedAt={docState.doc?.added_at} />}
           usageTab={documentId ? <BookUsageCard documentId={documentId} /> : null}
         />

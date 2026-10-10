@@ -1,0 +1,138 @@
+/* 书籍详情 ·「术语」页签（BookDetailTermsTab）：领域、术语表、译法冲突、风格规则。卡片底在 overview/layout.css。
+ *
+ * @owns book-detail */
+
+.book-detail-tab-terms {
+  display: grid;
+  gap: 12px;
+}
+
+.book-detail-terms-note,
+.book-detail-terms-sub,
+.book-detail-terms-meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.book-detail-terms-warning {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  font-size: 12px;
+}
+
+.book-detail-terms-domain p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.book-detail-terms-domain summary {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.book-detail-terms-guidance {
+  white-space: pre-line;
+}
+
+.book-detail-terms-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.book-detail-terms-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.book-detail-terms-chip.is-active {
+  border-color: var(--ink);
+  color: var(--paper);
+  background: var(--ink);
+}
+
+.book-detail-terms-search {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+}
+
+.book-detail-terms-rows,
+.book-detail-terms-rule-list {
+  display: grid;
+  gap: 0;
+  max-height: 420px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.book-detail-terms-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 2px 12px;
+  padding: 6px 2px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  font-size: 12px;
+}
+
+.book-detail-terms-row:first-child {
+  border-top: 0;
+}
+
+.book-detail-terms-source {
+  min-width: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.book-detail-terms-target {
+  min-width: 0;
+  color: var(--ink);
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.book-detail-terms-row .book-detail-terms-meta {
+  grid-column: 1 / -1;
+}
+
+.book-detail-terms-rule-list li {
+  display: grid;
+  gap: 2px;
+  padding: 6px 2px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+}
+
+.book-detail-terms-rule-list li:first-child {
+  border-top: 0;
+}
+
+.book-detail-terms-rule-list p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  line-height: 1.6;
+}

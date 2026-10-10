@@ -108,9 +108,12 @@ export function hoverToolsOutside(rect: ReaderRegionRect): boolean {
 export function ReaderTextHoverLayer({
   target,
   pane = "source",
+  revisedCount = 0,
 }: {
   target: ReaderTextHoverTarget | null;
   pane?: "source" | "translated";
+  /** 这一块改过几次（精修、手改、助手改）；只在译文栏提示。 */
+  revisedCount?: number;
 }) {
   const [state, setState] = useState<CopyState>("idle");
   const [idState, setIdState] = useState<CopyState>("idle");
@@ -165,6 +168,11 @@ export function ReaderTextHoverLayer({
           >
             {idState === "copied" ? "已复制编号" : target.itemId}
           </button>
+          {pane === "translated" && revisedCount > 0 ? (
+            <span className="reader-text-hover-revised" data-reader-revised-count={revisedCount}>
+              改过 {revisedCount} 次
+            </span>
+          ) : null}
           {text ? (
             <button
               type="button"

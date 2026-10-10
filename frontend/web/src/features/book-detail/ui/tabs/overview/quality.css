@@ -86,6 +86,12 @@
   line-height: 1.5;
 }
 
+.book-detail-quality-row-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
 .book-detail-quality-row-toggle {
   display: inline-flex;
   justify-self: start;
@@ -148,11 +154,25 @@
   font-variant-numeric: tabular-nums;
 }
 
+.book-detail-quality-list-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
 .book-detail-quality-list-reason {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.book-detail-quality-list-detail {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
 }
 
 .book-detail-quality-list-note {

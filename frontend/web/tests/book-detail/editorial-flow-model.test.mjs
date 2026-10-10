@@ -100,3 +100,17 @@ test("任务停了（失败 / 取消）时当前这一步标成「已停下」�
   ], { jobActive: false });
   assert.equal(flow.before[1].state, "stopped");
 });
+
+test("通用取数接口的 pipeline_events 行（字段已摊平）能直接画流程图；旧任务只有 round", async () => {
+  const { refineEventFromDataRow } = await import("../../src/features/book-detail/ui/use-editorial-flow.js");
+  const rows = [
+    { seq: 1, substage: "refining", stage_detail: "编辑部开始处理译文", refine_phase: "start", refine_mode: "editorial" },
+    { seq: 2, substage: "refining", stage_detail: "精修：挑错已完成 12/55 批", refine_phase: "review", refine_mode: "editorial", refine_max_rounds: 2, batch_done: 12, batch_total: 55 },
+    { seq: 3, substage: "refining", stage_detail: "编辑部：第 1 轮，主编分流 190 块", refine_phase: "chief", refine_mode: "editorial", refine_round: null, round: 1, payload: {} },
+  ];
+  const flow = editorialFlowModel(rows.map(refineEventFromDataRow));
+  assert.equal(flow.before[1].state, "done");
+  assert.equal(flow.before[1].detail, "共 55 批");
+  assert.equal(flow.loop[0].state, "active");
+  assert.equal(flow.round, 1, "旧任务退回 round");
+});
