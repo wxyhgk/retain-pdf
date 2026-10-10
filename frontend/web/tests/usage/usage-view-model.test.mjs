@@ -42,7 +42,7 @@ test("没报用量的请求、按旧报告折算的任务各注明一句", () =>
   const model = usageViewModel(view({ totals: bucket({ requests_without_usage: 3 }), jobs_estimated_from_reports: 29 }));
   assert.deepEqual(model.notes, [
     "有 3 次请求服务商没报用量，没算进来。",
-    "其中 29 个早期任务按报告估算，没有缓存与思考明细。",
+    "其中 29 个早期任务按当时的报告折算，缓存与思考明细可能不全。",
   ]);
 });
 

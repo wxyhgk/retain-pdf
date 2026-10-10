@@ -45,7 +45,7 @@ test("书籍「用量」卡：读失败给中文和重试，重试后显示合�
   assert.equal(total.textContent, "547.0 万");
   assert.equal(total.getAttribute("title"), "5,470,000 token");
   assert.equal(doc.querySelector('[data-usage-metric="cache"] dd').textContent, "未报");
-  assert.match(doc.querySelector(".usage-notes").textContent, /按报告估算/);
+  assert.match(doc.querySelector(".usage-notes").textContent, /按当时的报告折算/);
   assert.ok(doc.querySelector('[data-usage-section="stages"]'), "书籍卡显示按环节");
   assert.equal(doc.querySelector('[data-usage-section="months"]'), null, "书籍卡不显示按月");
   root.unmount();

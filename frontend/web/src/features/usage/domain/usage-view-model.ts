@@ -108,7 +108,7 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
   const notes: string[] = [];
   if (n(totals.requests_without_usage)) notes.push(`有 ${formatTokenCountExact(totals.requests_without_usage)} 次请求服务商没报用量，没算进来。`);
   if (n(view.jobs_estimated_from_reports)) {
-    notes.push(`其中 ${view.jobs_estimated_from_reports} 个早期任务按报告估算，没有缓存与思考明细。`);
+    notes.push(`其中 ${view.jobs_estimated_from_reports} 个早期任务按当时的报告折算，缓存与思考明细可能不全。`);
   }
 
   const stages = view.by_stage || [];
