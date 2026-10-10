@@ -7,6 +7,8 @@ use rusqlite::Connection;
 
 #[path = "db/accounts.rs"]
 mod accounts;
+#[path = "db/admin_users.rs"]
+mod admin_users;
 #[path = "db/ownership.rs"]
 mod ownership;
 #[path = "db/page_quota.rs"]
@@ -59,6 +61,7 @@ pub mod sync;
 mod uploads;
 
 pub use accounts::{username_key, UserRecord, UsernameTaken};
+pub use admin_users::{OwnerJobRow, UserListPage, UserListQuery, UserListRow, UserSortKey, UserStats, UserStatusFilter};
 pub use ownership::OwnedKind;
 pub use page_quota::{
     BillingSource, PageBalanceWouldGoNegative, PageChargeRecord, PageLedgerEntry, PageReservation,

@@ -13,9 +13,9 @@ use crate::app::{build_app, build_state};
 use crate::config::{AccountsConfig, AppConfig, DeploymentMode};
 use crate::test_support::config::TestDirs;
 
-const ADMIN_PASSWORD: &str = "bootstrap-pass";
+pub(super) const ADMIN_PASSWORD: &str = "bootstrap-pass";
 
-fn multi_state(name: &str) -> crate::AppState {
+pub(super) fn multi_state(name: &str) -> crate::AppState {
     let dirs = TestDirs::create(&format!("rust-api-accounts-{name}-{}", fastrand::u64(..)));
     let config = AppConfig {
         accounts: AccountsConfig {
@@ -30,7 +30,7 @@ fn multi_state(name: &str) -> crate::AppState {
     build_state(Arc::new(config)).expect("build state")
 }
 
-async fn send(
+pub(super) async fn send(
     state: &crate::AppState,
     method: Method,
     uri: &str,
@@ -57,7 +57,7 @@ fn session_cookie(response: &Response) -> String {
     raw.split(';').next().unwrap().trim_start_matches("retain_session=").to_string()
 }
 
-async fn login(state: &crate::AppState, username: &str, password: &str) -> String {
+pub(super) async fn login(state: &crate::AppState, username: &str, password: &str) -> String {
     let response = send(
         state,
         Method::POST,
@@ -233,7 +233,7 @@ async fn wrong_current_password_is_400_not_401_so_the_session_survives() {
 
 // ---------------------------------------------------------------- 页数额度
 
-async fn create_and_login(
+pub(super) async fn create_and_login(
     state: &crate::AppState,
     admin: &str,
     username: &str,

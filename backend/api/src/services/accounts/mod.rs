@@ -21,6 +21,7 @@ use crate::db::{Db, OwnedKind, UserRecord, UsernameTaken};
 use crate::error::AppError;
 
 pub(crate) mod access;
+pub(crate) mod admin;
 pub(crate) mod api;
 
 pub const SESSION_COOKIE: &str = "retain_session";
@@ -137,10 +138,13 @@ pub struct AdminUserView {
     pub user_id: String,
     pub username: String,
     pub role: Role,
+    /// active / disabled / deleted（软删除）。
     pub status: String,
     pub must_change_password: bool,
     pub created_at: String,
     pub last_login_at: String,
+    /// 软删除的时间；没删为空。
+    pub deleted_at: String,
 }
 
 #[derive(Clone, Debug, Serialize, PartialEq)]
@@ -168,16 +172,17 @@ pub fn admin_view(user: &UserRecord) -> AdminUserView {
         user_id: user.user_id.clone(),
         username: user.username.clone(),
         role: role_of(user),
-        status: user.status.clone(),
+        status: if user.is_deleted() { "deleted".into() } else { user.status.clone() },
         must_change_password: user.must_change_password,
         created_at: user.created_at.clone(),
         last_login_at: user.last_login_at.clone(),
+        deleted_at: user.deleted_at.clone(),
     }
 }
 
 // ---------------------------------------------------------------- 密码、令牌
 
-fn now() -> String {
+pub(super) fn now() -> String {
     Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true)
 }
 
@@ -256,7 +261,7 @@ fn invalid_credentials() -> AppError {
     AppError::account(StatusCode::UNAUTHORIZED, "INVALID_CREDENTIALS", "用户名或密码不对", json!({}))
 }
 
-fn db_error(error: anyhow::Error) -> AppError {
+pub(super) fn db_error(error: anyhow::Error) -> AppError {
     AppError::internal(format!("account storage failed: {error:#}"))
 }
 
@@ -388,6 +393,9 @@ impl AccountsService {
                 .map_err(db_error)?;
             return Err(invalid_credentials());
         }
+        if user.is_deleted() {
+            return Err(AppError::account(StatusCode::FORBIDDEN, "ACCOUNT_DELETED", "账号已删除，请联系管理员", json!({})));
+        }
         if user.status != "active" {
             return Err(AppError::account(StatusCode::FORBIDDEN, "ACCOUNT_DISABLED", "账号已停用，请联系管理员", json!({})));
         }
@@ -430,7 +438,7 @@ impl AccountsService {
         self.require_user(user_id)
     }
 
-    fn require_user(&self, user_id: &str) -> Result<UserRecord, AppError> {
+    pub(super) fn require_user(&self, user_id: &str) -> Result<UserRecord, AppError> {
         self.db
             .get_user(user_id)
             .map_err(db_error)?
@@ -463,7 +471,7 @@ impl AccountsService {
 
     /// 重置密码：生成新的初始密码，作废全部会话，要求登录后改密码。
     pub fn reset_password(&self, user_id: &str) -> Result<String, AppError> {
-        self.require_user(user_id)?;
+        self.require_live_user(user_id)?;
         let initial = generate_initial_password();
         self.db.set_user_password(user_id, &hash_password(&initial)?, true, &now()).map_err(db_error)?;
         self.db.delete_user_sessions(user_id, None).map_err(db_error)?;
@@ -471,7 +479,7 @@ impl AccountsService {
     }
 
     pub fn set_status(&self, acting_user_id: &str, user_id: &str, active: bool) -> Result<UserRecord, AppError> {
-        let user = self.require_user(user_id)?;
+        let user = self.require_live_user(user_id)?;
         if !active {
             if user_id == acting_user_id {
                 return Err(AppError::bad_request("不能停用自己的账号"));
