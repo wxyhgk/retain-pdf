@@ -1,4 +1,5 @@
 // Cursor feed v2. Translation live-events SSE keeps its separate protocol.
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildJobDetailEndpoint } from "./http.js";
 import type { JobEventListView, ListJobEventsQuery } from "@retainpdf/contracts/job-events";
@@ -54,7 +55,7 @@ export async function fetchJobEvents(
   else params.set("start", query.start ?? "tail");
   const endpoint = `${buildJobDetailEndpoint(jobId, apiPrefix)}/events?${params}`;
   // OCR 任务也走 /jobs/:id/events（后端已统一），不再 404 后退到 /ocr/jobs/ 别名。
-  const response = await fetch(endpoint, { headers: buildApiHeaders(), signal: query.signal });
+  const response = await apiFetch(endpoint, { headers: buildApiHeaders(), signal: query.signal });
   if (!response.ok) {
     const error = await response.json().catch(() => null);
     throw new JobEventsError(

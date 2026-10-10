@@ -1,3 +1,4 @@
+import { getApiAuthMode } from "@retainpdf/api/http";
 import {
   resolveSubmitReadiness,
   SUBMIT_BLOCK_REASONS,
@@ -27,7 +28,8 @@ export function currentSubmitReadiness({
     desktopConfigured,
     uploadId,
     renderSourceJobId: currentRenderSourceJobId?.(),
-    hasBrowserCredentials: Boolean(hasBrowserCredentials?.()),
+    // 多用户模式下 OCR / 翻译的凭证由服务器统一管，用户不填，也不拦。
+    hasBrowserCredentials: getApiAuthMode() === "multi" || Boolean(hasBrowserCredentials?.()),
     needsUpload: workflowNeedsUpload?.(workflow),
     needsCredentials: workflowNeedsCredentials?.(workflow),
     budgetBlocking: Boolean(asBudgetState(currentBudgetState?.())?.blocking),

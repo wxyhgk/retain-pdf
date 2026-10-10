@@ -1,10 +1,11 @@
 // conversations — pure (mock branches removed, runtime via internal)
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
 async function apiJson(path, options = {}, apiPrefix = API_PREFIX) {
     const url = path.startsWith("http") ? path : buildApiEndpoint(apiPrefix, path.replace(/^\//, ""));
     const headers = buildApiHeaders({ "Content-Type": "application/json", ...options.headers });
-    const resp = await fetch(url, { ...options, headers });
+    const resp = await apiFetch(url, { ...options, headers });
     const body = await resp.json().catch(() => ({}));
     if (!resp.ok) {
         const err = new Error(`${body?.message || resp.statusText || "request failed"}`);

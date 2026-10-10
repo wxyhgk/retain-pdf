@@ -12,10 +12,23 @@ import {
   loadPersistedConfig,
 } from "@/platform/config/desktop-persistence.js";
 import { bootstrapDesktop } from "@/app/desktop/bootstrap.js";
+import { AuthErrorScreen, ForcedPasswordScreen, LoginScreen, resolveAuthGate } from "@/features/auth/index.js";
 
 // appUpdateAutoCheckEnabled: true——create-home-composition 默认关闭后台
 // GitHub 自检（测试隔离），生产入口这里显式打开。
 async function bootHome() {
+  // 先过登录检查：单机模式直接往下走（和以前一样）；多用户模式没登录 / 要先改密码时，
+  // 这一页只显示登录（或改密码）界面，成功后刷新再进来。
+  const gate = await resolveAuthGate();
+  if (gate.kind !== "ready") {
+    const screen = gate.kind === "login"
+      ? <LoginScreen />
+      : gate.kind === "change_password"
+        ? <ForcedPasswordScreen username={gate.session.user?.username || ""} />
+        : <AuthErrorScreen message={gate.message} />;
+    mountShellPage("home-root", screen, { createIfMissing: true });
+    return;
+  }
   const desktopMode = isDesktopMode();
   let desktopConfig: Awaited<ReturnType<typeof loadPersistedConfig>> | null = null;
   if (desktopMode) {
@@ -36,7 +49,7 @@ async function bootHome() {
   });
   services.initialize();
 
-  const unmount = mountShellPage("home-root", <><DecorStage /><HomeApp services={services} /></>, { createIfMissing: true });
+  const unmount = mountShellPage("home-root", <><DecorStage /><HomeApp services={services} authSession={gate.session} /></>, { createIfMissing: true });
 
   // 生产 MPA 不卸载；保留句柄供测试/HMR 在同一 document 二次挂载前释放，
   // 避免旧 composition 的 document 监听与轮询常驻导致事件双发。

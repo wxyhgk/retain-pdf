@@ -1,4 +1,5 @@
 // Cursor feed v2. Translation live-events SSE keeps its separate protocol.
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildJobDetailEndpoint } from "./http.js";
 export class JobEventsError extends Error {
@@ -51,7 +52,7 @@ export async function fetchJobEvents(jobId, apiPrefix, query = {}) {
         params.set("start", query.start ?? "tail");
     const endpoint = `${buildJobDetailEndpoint(jobId, apiPrefix)}/events?${params}`;
     // OCR 任务也走 /jobs/:id/events（后端已统一），不再 404 后退到 /ocr/jobs/ 别名。
-    const response = await fetch(endpoint, { headers: buildApiHeaders(), signal: query.signal });
+    const response = await apiFetch(endpoint, { headers: buildApiHeaders(), signal: query.signal });
     if (!response.ok) {
         const error = await response.json().catch(() => null);
         throw new JobEventsError(error?.message || `读取事件流失败，请稍后重试。(${response.status})`, response.status, error?.error?.code || "EVENT_REQUEST_FAILED");

@@ -1,6 +1,8 @@
+// usage — pure：模型 token 用量（契约 token-usage.v1）。
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiEndpoint, buildApiHeaders, unwrapEnvelope } from "./http.js";
 async function fetchUsage(url, label) {
-    const resp = await fetch(url, { headers: buildApiHeaders() });
+    const resp = await apiFetch(url, { headers: buildApiHeaders() });
     if (!resp.ok) {
         const error = await resp.json().catch(() => null);
         throw new Error(error?.message || `读取${label}用量失败，请稍后重试。(${resp.status})`);

@@ -44,5 +44,10 @@ const adapters: ReaderAdapters = {
   renderReaderBoard: ext.renderReaderBoard,
 };
 setReaderAdapters(adapters);
+
+/** 多用户模式下关掉助手终端和它的画板（后端也不开 /ai/terminal）。没有渲染器时阅读器连入口都不显示。 */
+export function setReaderMultiUser(multi: boolean): void {
+  setReaderAdapters(multi ? { ...adapters, renderReaderTerminal: undefined, renderReaderBoard: undefined } : adapters);
+}
 export { adapters as retainPdfReaderAdapters };
 export { ext as retainPdfExternal };

@@ -22,6 +22,7 @@ export * from "./providers.js";
 export * from "./reader.js";
 export * from "./quality.js";
 export * from "./job-data.js";
+export * from "./auth.js";
 export * from "./usage.js";
 export * from "./search.js";
 export * from "./job-images.js";

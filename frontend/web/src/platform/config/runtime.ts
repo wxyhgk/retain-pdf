@@ -1,3 +1,4 @@
+import { getApiAuthMode } from "@retainpdf/api/http";
 import { DEFAULT_BASE_URL, DEFAULT_MODEL } from "./model-constants.js";
 import { normalizeOcrProvider } from "./providers.js";
 import type { RuntimeConfig } from "./storage.js";
@@ -180,7 +181,8 @@ export function frontendApiKey() {
 
 export function buildApiHeaders(extraHeaders: Record<string, string> = {}) {
   const headers: Record<string, string> = { ...extraHeaders };
-  const apiKey = frontendApiKey();
+  // 多用户模式靠登录 Cookie 认证，不带部署密钥（和 @retainpdf/api 的同名函数一致）。
+  const apiKey = getApiAuthMode() === "multi" ? "" : frontendApiKey();
   if (apiKey) {
     headers["X-API-Key"] = apiKey;
   }

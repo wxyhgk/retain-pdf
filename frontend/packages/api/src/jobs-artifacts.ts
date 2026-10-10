@@ -1,4 +1,5 @@
 // jobs-artifacts — pure (no mock)
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildJobDetailEndpoint } from "./http.js";
 
@@ -46,14 +47,14 @@ export type JobArtifactLinks = {
  * for older completed jobs even when published downloads are available.
  */
 export async function fetchJobArtifacts(jobId: string, apiPrefix = API_PREFIX): Promise<JobArtifactLinks | null> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/artifacts`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/artifacts`, { headers: buildApiHeaders() });
   if (resp.ok) return unwrapEnvelope(await resp.json());
   if (resp.status === 404) return null;
   throw new Error(`读取任务产物失败，请稍后重试。(${resp.status})`);
 }
 
 export async function fetchJobArtifactsManifest(jobId: string, apiPrefix = API_PREFIX): Promise<any> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/artifacts-manifest`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/artifacts-manifest`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) return { items: [] };
     throw new Error(`读取产物清单失败，请稍后重试。(${resp.status})`);
@@ -62,7 +63,7 @@ export async function fetchJobArtifactsManifest(jobId: string, apiPrefix = API_P
 }
 
 export async function fetchJobMarkdown(jobId: string, apiPrefix = API_PREFIX): Promise<any> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/markdown`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/markdown`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) return null;
     throw new Error(`读取 Markdown 失败，请稍后重试。(${resp.status})`);
@@ -71,7 +72,7 @@ export async function fetchJobMarkdown(jobId: string, apiPrefix = API_PREFIX): P
 }
 
 export async function fetchJobMarkdownDocument(jobId: string, apiPrefix = API_PREFIX): Promise<any> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/markdown/document`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/markdown/document`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) return null;
     throw new Error(`读取结构化 Markdown 失败，请稍后重试。(${resp.status})`);

@@ -114,6 +114,10 @@
       "types": "./dist/job-data.d.ts",
       "import": "./dist/job-data.js"
     },
+    "./auth": {
+      "types": "./dist/auth.d.ts",
+      "import": "./dist/auth.js"
+    },
     "./usage": {
       "types": "./dist/usage.d.ts",
       "import": "./dist/usage.js"

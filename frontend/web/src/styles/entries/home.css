@@ -53,6 +53,7 @@
 @import "../../features/ingest/ui/InlineErrorBox.css";
 @import "../../features/sync/ui/SyncSettingsPanel.css";
 @import "../../features/usage/ui/usage.css";
+@import "../../features/auth/ui/auth.css";
 @import "../../features/backup/ui/BackupPanel.css";
 @import "../../features/settings/ui/CommandLinePanel.css";
 @import "../pages/home/translation-workflow.utilities.css";

@@ -1,8 +1,9 @@
 // quality — pure：一个任务的译文质量摘要与问题明细（GET /jobs/:id/quality-summary、/quality-items）。
 // 字段按后端约定写在这里；契约（contracts）发布后改成从 @retainpdf/contracts 引类型。
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, buildJobDetailEndpoint, unwrapEnvelope } from "./http.js";
 async function getJson(url, label) {
-    const resp = await fetch(url, { headers: buildApiHeaders() });
+    const resp = await apiFetch(url, { headers: buildApiHeaders() });
     if (!resp.ok) {
         const error = await resp.json().catch(() => null);
         throw new Error(error?.message || `读取${label}失败，请稍后重试。(${resp.status})`);

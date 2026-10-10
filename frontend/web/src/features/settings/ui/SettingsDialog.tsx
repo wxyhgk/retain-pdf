@@ -20,7 +20,8 @@
 // 周期说明见旧版头注释结论：后台自检由 composition 的纯逻辑控制器驱动，
 // 与本组件是否挂载无关。
 
-import { useEffect, useState, type SVGProps } from "react";
+import { useEffect, useState } from "react";
+import { IconKey, IconBook, IconSync, IconChart, IconArchive, IconPalette, IconUpdate, IconUser, IconUsers } from "./settings-icons.jsx";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import {
   Dialog,
@@ -45,69 +46,9 @@ import { Button } from "@/ui/Button.jsx";
 // settings 域强耦合 credentials 域；现仅依赖 shared/settings-dialog-ids (无状态常量)。
 
 
-function IconKey(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M14.5 9.5a4 4 0 1 1-1.2 2.86L5 20.65 3.35 19 11.6 10.7A4 4 0 0 1 14.5 9.5Z" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M18 6.5h.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-    </svg>
-  );
-}
-function IconBook(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M5.5 5.2A2.2 2.2 0 0 1 7.7 3H19v15.5H7.7a2.2 2.2 0 0 0-2.2 2.2V5.2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <path d="M5.5 5.2A2.2 2.2 0 0 0 3.3 3H3v15.5h.3a2.2 2.2 0 0 1 2.2 2.2" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function IconSync(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M19.5 9A7.5 7.5 0 0 0 6 6.6L4.5 8" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4.5 4v4h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4.5 15A7.5 7.5 0 0 0 18 17.4l1.5-1.4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M19.5 20v-4h-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-function IconChart(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M4.5 19.5h15M7.5 16v-4M12 16V8M16.5 16v-6.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function IconArchive(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <rect x="3.5" y="4" width="17" height="4.5" rx="1.2" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <path d="M5 8.5V18a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8.5" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <path d="M10 12.5h4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-    </svg>
-  );
-}
-function IconPalette(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M12 3a9 9 0 1 0 9 9c0-.5-.04-1-.12-1.48a5 5 0 0 1-6.4-6.4A9 9 0 0 0 12 3Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
-      <circle cx="8.5" cy="10" r="1.1" fill="currentColor" />
-      <circle cx="11.5" cy="7.2" r="1.1" fill="currentColor" />
-      <circle cx="15.2" cy="9" r="1.1" fill="currentColor" />
-    </svg>
-  );
-}
-function IconUpdate(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M12 5v2.1M12 16.9V19M5 12h2.1M16.9 12H19M7.05 7.05l1.5 1.5M15.45 15.45l1.5 1.5M16.95 7.05l-1.5 1.5M8.55 15.45l-1.5 1.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-      <circle cx="12" cy="12" r="3.2" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
-  );
-}
-
 const TABS = [
+  { id: "account", label: "账户", Icon: IconUser },
+  { id: "admin", label: "账号管理", Icon: IconUsers },
   { id: "api", label: "接口设置", Icon: IconKey },
   { id: "glossary", label: "术语表", Icon: IconBook },
   { id: "usage", label: "总用量", Icon: IconChart },
@@ -118,6 +59,8 @@ const TABS = [
 ];
 
 const PANE_HEADS = {
+  account: { title: "账户", desc: "当前登录的账号。" },
+  admin: { title: "账号管理", desc: "账号由管理员创建，初始密码交给用户，用户首次登录时改成自己的密码。" },
   api: { title: "接口设置", desc: "" },
   glossary: { title: "术语表", desc: "维护术语偏好，翻译时优先使用你的术语。" },
   usage: { title: "总用量", desc: "全部书花掉的模型 token，按月、按模型、按环节。" },
@@ -162,6 +105,11 @@ export type SettingsDialogProps = {
   backupPanelSlot?: React.ReactNode | null;
   /** 「总用量」分栏的内容（由 HomeApp 注入 UsageSettingsPanel）。 */
   usagePanelSlot?: React.ReactNode | null;
+  /** 多用户模式的「账户」「账号管理」分栏（不给就不出现，单机模式不给）。 */
+  accountPanelSlot?: React.ReactNode | null;
+  adminPanelSlot?: React.ReactNode | null;
+  /** 不显示的分栏：多用户模式下普通用户看不到接口设置、同步、备份等单机才有的东西。 */
+  hiddenTabs?: readonly string[];
 };
 
 export function SettingsDialog({
@@ -174,17 +122,29 @@ export function SettingsDialog({
   syncPanelSlot = null,
   backupPanelSlot = null,
   usagePanelSlot = null,
+  accountPanelSlot = null,
+  adminPanelSlot = null,
+  hiddenTabs = [],
 }: SettingsDialogProps) {
+  const visibleTabs = TABS.filter(({ id }) => (
+    !hiddenTabs.includes(id)
+    && (id !== "account" || accountPanelSlot)
+    && (id !== "admin" || adminPanelSlot)
+  ));
+  // 要打开的分栏被藏了（比如普通用户点到「接口设置」），就落到第一个能看的分栏。
+  const pickTab = (requested?: string) => (
+    visibleTabs.some(({ id }) => id === requested) ? `${requested}` : visibleTabs[0]?.id || "appearance"
+  );
 
   const dialogState = useDialogState(dialogStore);
   const open = Boolean(dialogState.open);
   const { onCloseAutoFocus } = useDialogReturnFocus(open);
-  const [activeTab, setActiveTab] = useState(dialogState.payload?.tab || "api");
+  const [activeTab, setActiveTab] = useState(() => pickTab(dialogState.payload?.tab || "api"));
   const setupMode = Boolean(dialogState.payload?.setupMode);
 
   useEffect(() => {
     if (open) {
-      setActiveTab(dialogState.payload?.tab || "api");
+      setActiveTab(pickTab(dialogState.payload?.tab || "api"));
     }
   }, [open]);
 
@@ -238,7 +198,7 @@ export function SettingsDialog({
                   <h2>设置</h2>
                 </DialogTitle>
                 <TabsPrimitive.List className="app-settings-nav" aria-label="设置分类">
-                  {TABS.map(({ id, label, Icon }) => (
+                  {visibleTabs.map(({ id, label, Icon }) => (
                     <TabsPrimitive.Trigger
                       key={id}
                       value={id}
@@ -257,6 +217,19 @@ export function SettingsDialog({
                   id={APP_SETTINGS_DIALOG_IDS.closeButton}
                   className="app-settings-close"
                 />
+
+                {accountPanelSlot ? (
+                  <TabsPrimitive.Content value="account" forceMount hidden={activeTab !== "account"} className={panelClass("account")} data-settings-panel="account">
+                    <PaneHead tab="account" />
+                    {activeTab === "account" ? accountPanelSlot : null}
+                  </TabsPrimitive.Content>
+                ) : null}
+                {adminPanelSlot ? (
+                  <TabsPrimitive.Content value="admin" forceMount hidden={activeTab !== "admin"} className={panelClass("admin")} data-settings-panel="admin">
+                    <PaneHead tab="admin" />
+                    {activeTab === "admin" ? adminPanelSlot : null}
+                  </TabsPrimitive.Content>
+                ) : null}
 
                 <TabsPrimitive.Content
                   value="api"

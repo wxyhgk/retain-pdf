@@ -1,9 +1,16 @@
 // frontend/packages/api/src/http.ts — canonical HTTP primitives (no mock, no window mock branching)
 // Mirrors frontend/web/src/js/api/http.ts but pure: uses internal/runtime for apiBase/header/envelope.
 
-import { apiBase, buildApiHeaders, buildApiUrl, frontendApiKey, unwrapEnvelope } from "./internal/runtime.js";
+import { apiBase, apiFetch, buildApiHeaders, buildApiUrl, frontendApiKey, getApiAuthMode, unwrapEnvelope } from "./internal/runtime.js";
 
 export { apiBase, buildApiHeaders, buildApiUrl, frontendApiKey, unwrapEnvelope };
+export {
+  apiFetch,
+  getApiAuthMode,
+  setApiAuthMode,
+  setApiUnauthorizedHandler,
+  type ApiAuthMode,
+} from "./internal/runtime.js";
 export { API_PREFIX } from "./internal/runtime.js";
 
 export function buildApiEndpoint(apiPrefix: string | undefined, relativePath = ""): string {
@@ -69,7 +76,7 @@ export async function submitJson(
     : null;
   let resp: Response;
   try {
-    resp = await fetch(url, {
+    resp = await apiFetch(url, {
       method: "POST",
       headers: buildApiHeaders({ "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
@@ -117,7 +124,10 @@ export function submitUploadRequest(url: string, form: FormData, onProgress?: (l
     const xhr = new XMLHttpRequest();
     xhr.open("POST", url);
     xhr.responseType = "json";
-    const apiKey = frontendApiKey();
+    // 多用户模式靠登录 Cookie：带上凭据、不带部署密钥（和 apiFetch 一致）。
+    const multi = getApiAuthMode() === "multi";
+    xhr.withCredentials = multi;
+    const apiKey = multi ? "" : frontendApiKey();
     if (apiKey) xhr.setRequestHeader("X-API-Key", apiKey);
 
     xhr.upload.addEventListener("progress", (event: ProgressEvent) => {
@@ -150,5 +160,5 @@ export function submitUploadRequest(url: string, form: FormData, onProgress?: (l
 
 export async function fetchProtected(url: string, options: RequestInit = {}): Promise<Response> {
   const headers = buildApiHeaders((options.headers as Record<string, string>) || {});
-  return fetch(url, { ...options, headers });
+  return apiFetch(url, { ...options, headers });
 }

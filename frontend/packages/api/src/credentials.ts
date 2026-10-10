@@ -1,3 +1,4 @@
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
 
@@ -57,7 +58,7 @@ async function credentialRequest<T>(
   url: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     ...options,
     headers: {
       ...buildApiHeaders(),

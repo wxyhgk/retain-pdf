@@ -1,9 +1,10 @@
 // translation-debug — pure
+import { apiFetch } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildJobDetailEndpoint } from "./http.js";
 
 export async function fetchTranslationDiagnostics(jobId: string, apiPrefix?: string): Promise<any> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/translation/diagnostics`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/translation/diagnostics`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) throw new Error("未找到翻译调试信息，请确认该任务已完成翻译。");
     throw new Error(`读取翻译调试摘要失败，请稍后重试。(${resp.status})`);
@@ -24,7 +25,7 @@ export async function fetchTranslationItems(
   if (`${errorType ?? ""}`.trim()) params.set("error_type", `${errorType}`.trim());
   if (`${route ?? ""}`.trim()) params.set("route", `${route}`.trim());
   if (`${q ?? ""}`.trim()) params.set("q", `${q}`.trim());
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/translation/items?${params.toString()}`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/translation/items?${params.toString()}`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) return { items: [], total: 0, limit, offset };
     throw new Error(`读取翻译调试列表失败，请稍后重试。(${resp.status})`);
@@ -33,7 +34,7 @@ export async function fetchTranslationItems(
 }
 
 export async function fetchTranslationItem(jobId: string, itemId: string, apiPrefix?: string): Promise<any> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/translation/items/${itemId}`, { headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/translation/items/${itemId}`, { headers: buildApiHeaders() });
   if (!resp.ok) {
     if (resp.status === 404) throw new Error("未找到该翻译 item，请确认 item_id 是否正确。");
     throw new Error(`读取翻译 item 详情失败，请稍后重试。(${resp.status})`);
@@ -42,7 +43,7 @@ export async function fetchTranslationItem(jobId: string, itemId: string, apiPre
 }
 
 export async function replayTranslationItem(jobId: string, itemId: string, apiPrefix?: string): Promise<any> {
-  const resp = await fetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/translation/items/${itemId}/replay`, { method: "POST", headers: buildApiHeaders() });
+  const resp = await apiFetch(`${buildJobDetailEndpoint(jobId, apiPrefix)}/translation/items/${itemId}/replay`, { method: "POST", headers: buildApiHeaders() });
   if (!resp.ok) {
     const contentType = resp.headers.get("content-type") || "";
     if (resp.status === 404) throw new Error("未找到该翻译 item，无法重放。");

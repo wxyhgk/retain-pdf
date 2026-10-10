@@ -1,4 +1,5 @@
 // conversations — pure (mock branches removed, runtime via internal)
+import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX, buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
 
@@ -35,7 +36,7 @@ export type ConversationDetail = ConversationRecord & { messages: MessageRecord[
 async function apiJson<T>(path: string, options: RequestInit = {}, apiPrefix = API_PREFIX): Promise<T> {
   const url = path.startsWith("http") ? path : buildApiEndpoint(apiPrefix, path.replace(/^\//, ""));
   const headers = buildApiHeaders({ "Content-Type": "application/json", ...(options.headers as Record<string, string> | undefined) });
-  const resp = await fetch(url, { ...options, headers });
+  const resp = await apiFetch(url, { ...options, headers });
   const body: any = await resp.json().catch(() => ({}));
   if (!resp.ok) {
     const err = new Error(`${body?.message || (resp as any).statusText || "request failed"}`) as Error & { status?: number };

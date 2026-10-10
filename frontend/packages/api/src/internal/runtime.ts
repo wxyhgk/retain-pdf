@@ -94,9 +94,48 @@ export function frontendApiKey(): string {
 // 对齐 web 侧 legacy 实现 `platform/config/runtime.ts` 的同名函数。
 export function buildApiHeaders(headers: Record<string, string> = {}): Record<string, string> {
   const out: Record<string, string> = { ...headers };
-  const apiKey = frontendApiKey();
+  // 多用户模式靠登录 Cookie 认证，不再带部署密钥。
+  const apiKey = authMode === "multi" ? "" : frontendApiKey();
   if (apiKey) out["X-API-Key"] = apiKey;
   return out;
+}
+
+// —— 单机 / 多用户 ——
+// 启动时由页面先问一次 GET /auth/session 再定下来（见 auth.ts 的 resolveAuthSession）。
+// single：和以前完全一样（X-API-Key，不带 Cookie）；multi：每个请求带 Cookie（credentials:
+// "include"，开发环境前后端不同源也能带上），遇到 401 交给页面回到登录界面。
+// 不在确认是 multi 之前就带 Cookie：单机模式后端的跨域配置不允许带凭据，一带全挂。
+export type ApiAuthMode = "single" | "multi";
+
+let authMode: ApiAuthMode = "single";
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setApiAuthMode(mode: ApiAuthMode): void {
+  authMode = mode === "multi" ? "multi" : "single";
+}
+
+export function getApiAuthMode(): ApiAuthMode {
+  return authMode;
+}
+
+/** 多用户模式下任何请求回 401（登录过期、被管理员踢下线）时调用；登录接口自己的 401 不算。 */
+export function setApiUnauthorizedHandler(handler: (() => void) | null): void {
+  unauthorizedHandler = handler;
+}
+
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return input.href;
+  return (input as Request).url || "";
+}
+
+/** 本包所有请求都走这里：按当前模式补上 credentials，统一接住 401。 */
+export async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  const response = await fetch(input, authMode === "multi" ? { ...init, credentials: "include" } : init);
+  if (response.status === 401 && authMode === "multi" && !/\/auth\/(login|session)(\?|$)/.test(requestUrl(input))) {
+    unauthorizedHandler?.();
+  }
+  return response;
 }
 
 // 与 `@retainpdf/domain` 的同名实现对齐（packages/domain/src/job/core.ts）。

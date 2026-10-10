@@ -7,6 +7,8 @@ import "../shell-boot.js";
 import "./adapters/retainpdf.js";
 import { bootReader } from "@retainpdf/reader/boot";
 import { canonicalizeReaderSearch } from "@/platform/navigation/pages.js";
+import { isMultiUser, resolveAuthGate } from "@/features/auth/index.js";
+import { setReaderMultiUser } from "./adapters/retainpdf.js";
 
 // 入参走三页统一契约：历史别名 ?page=&blockId= 由 pages 的解析真源归一成
 // 运行时读取的 page_idx/block_id（replaceState，无刷新；无变化则跳过）。
@@ -24,4 +26,13 @@ try {
   /* 保持直启，解析失败不拦 boot */
 }
 
-bootReader();
+// 多用户模式下没登录（或要先改密码）就回首页去登录；单机模式照旧直接启动。
+// 多用户模式下助手终端整个关掉（后端也不开 /ai/terminal），见 adapters/retainpdf.ts 的 setReaderMultiUser。
+void resolveAuthGate().then((gate) => {
+  if (gate.kind === "login" || gate.kind === "change_password") {
+    globalThis.location?.replace("./index.html");
+    return;
+  }
+  if (gate.kind === "ready" && isMultiUser(gate.session)) setReaderMultiUser(true);
+  bootReader();
+});
