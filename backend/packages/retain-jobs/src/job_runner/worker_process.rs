@@ -169,7 +169,8 @@ pub(super) fn spawn_worker_process(
         // 模型用量台账：每次模型返回追加一行（Python usage_ledger）。
         .env(
             "RETAIN_USAGE_LEDGER",
-            crate::storage_paths::JobPaths::for_job(config.output_root, &job.job_id).token_usage_ledger(),
+            crate::storage_paths::JobPaths::for_job(config.output_root, &job.job_id)
+                .token_usage_ledger(),
         )
         .env("RETAIN_USAGE_JOB_ID", &job.job_id)
         .current_dir(config.project_root)
@@ -247,17 +248,21 @@ fn apply_job_credentials(
         // 引用解析不了（凭据已被删）时渲染本身不能失败：精修拿不到 key 会在报告里
         // 记 llm_unavailable，渲染照常进行。翻译任务仍然严格失败。
         let lenient = matches!(job.request_payload.workflow, WorkflowKind::Render);
-        if let Some(api_key) =
-            tolerate_for_render(lenient, "translation", resolve_translation_api_key(data_root, job))?
-        {
+        if let Some(api_key) = tolerate_for_render(
+            lenient,
+            "translation",
+            resolve_translation_api_key(data_root, job),
+        )? {
             command.env("RETAIN_TRANSLATION_API_KEY", &api_key);
             runtime_secrets.push(api_key);
         }
         // 审校 key 与翻译 key 走同一套：内联优先，否则解析 vault 引用；只经 env 传给
         // worker，stage spec 里只写 env 引用。没配时不设，Python 侧回退到翻译 key。
-        if let Some(api_key) =
-            tolerate_for_render(lenient, "reviewer", resolve_reviewer_api_key(data_root, job))?
-        {
+        if let Some(api_key) = tolerate_for_render(
+            lenient,
+            "reviewer",
+            resolve_reviewer_api_key(data_root, job),
+        )? {
             command.env(REVIEWER_API_KEY_ENV_NAME, &api_key);
             runtime_secrets.push(api_key);
         }
@@ -311,7 +316,11 @@ fn resolve_reviewer_api_key(
     if !inline.is_empty() {
         return Ok(Some(inline.to_string()));
     }
-    let credential_ref = job.request_payload.translation.reviewer_credential_ref.trim();
+    let credential_ref = job
+        .request_payload
+        .translation
+        .reviewer_credential_ref
+        .trim();
     if credential_ref.is_empty() {
         return Ok(None);
     }
@@ -377,8 +386,8 @@ fn configured_provider_token(job: &JobRuntimeState) -> String {
 // 进程工具已迁往 retain-proc（ADR-002 Phase 2：零任务语义的 OS 操作
 // 不应住在任务执行栈里）。此处 re-export 保持 job_runner:: 路径不变。
 pub use retain_proc::{
-    configure_child_process, terminate_job_process_tree, terminate_job_process_tree_blocking,
-    worker_process_exists,
+    configure_child_process, terminate_child_process_tree, terminate_job_process_tree,
+    terminate_job_process_tree_blocking, worker_process_exists,
 };
 
 #[cfg(test)]

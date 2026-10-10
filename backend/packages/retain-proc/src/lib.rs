@@ -11,6 +11,7 @@
 use std::io;
 #[cfg(windows)]
 use std::process::Command as StdCommand;
+use std::process::ExitStatus;
 #[cfg(windows)]
 use std::process::Stdio;
 use std::time::Instant;
@@ -20,8 +21,8 @@ use anyhow::anyhow;
 #[cfg(windows)]
 use anyhow::Context;
 use anyhow::Result;
-use tokio::process::Command;
-use tokio::time::{sleep, Duration};
+use tokio::process::{Child, Command};
+use tokio::time::{sleep, timeout, Duration};
 
 mod supervisor_watch;
 pub use supervisor_watch::{
@@ -96,6 +97,51 @@ pub async fn terminate_job_process_tree(
     }
 }
 
+/// SIGKILL 之后最多再等这么久回收；内核态卡住（D 状态）的进程连 SIGKILL 都
+/// 不会立刻生效，不能让调用方无限挂住。
+const REAP_AFTER_KILL: Duration = Duration::from_secs(5);
+
+/// 结束一个自己 spawn、手里握着 `Child` 的进程组：先 SIGTERM，宽限期内一退出
+/// 就返回，否则 SIGKILL。返回回收到的退出状态；未能回收时为 None。
+///
+/// 握着 `Child` 时别用 [`terminate_job_process_tree`]：没人在 `wait()`，子进程
+/// 退出后成了僵尸，而 `kill(pid, 0)` 对僵尸照样成功，于是它总要等满宽限期——
+/// 监督器关停时 jobsd 明明立刻退出了，却每次都要白等 3 秒。这里改为等
+/// `child.wait()`，顺带回收僵尸。要求子进程用 [`configure_child_process`] 自成
+/// 进程组。
+pub async fn terminate_child_process_tree(
+    child: &mut Child,
+    grace_secs: u64,
+) -> Option<ExitStatus> {
+    // 已经被回收过：wait() 直接返回缓存的状态。
+    let Some(pid) = child.id() else {
+        return child.wait().await.ok();
+    };
+
+    #[cfg(unix)]
+    {
+        let group_pid = -(pid as i32);
+        let _ = unsafe { libc::kill(group_pid, libc::SIGTERM) };
+        if let Ok(status) = timeout(Duration::from_secs(grace_secs), child.wait()).await {
+            return status.ok();
+        }
+        let _ = unsafe { libc::kill(group_pid, libc::SIGKILL) };
+    }
+
+    #[cfg(windows)]
+    {
+        let _ = grace_secs;
+        if terminate_job_process_tree_windows(pid).is_err() {
+            let _ = child.start_kill();
+        }
+    }
+
+    timeout(REAP_AFTER_KILL, child.wait())
+        .await
+        .ok()
+        .and_then(|status| status.ok())
+}
+
 /// Synchronous counterpart to [`terminate_job_process_tree`] for callers
 /// that run before/outside the async runtime (e.g. startup state
 /// reconciliation). Sends SIGTERM to the process group, polls for exit with
@@ -143,7 +189,55 @@ fn terminate_job_process_tree_windows(pid: u32) -> Result<()> {
 
 #[cfg(all(test, unix))]
 mod tests {
-    use super::worker_process_exists;
+    use super::{configure_child_process, terminate_child_process_tree, worker_process_exists};
+    use std::time::Instant;
+    use tokio::process::{Child, Command};
+
+    fn spawn_group_leader(program: &str, args: &[&str]) -> Child {
+        let mut command = Command::new(program);
+        command.args(args);
+        configure_child_process(&mut command);
+        command.spawn().expect("spawn test child")
+    }
+
+    #[tokio::test]
+    async fn terminate_child_returns_as_soon_as_child_exits() {
+        // 回归：按 pid 探活的版本把未回收的僵尸当成活着，总要等满宽限期。
+        let mut child = spawn_group_leader("sleep", &["30"]);
+        let pid = child.id().unwrap();
+        let started = Instant::now();
+        let status = terminate_child_process_tree(&mut child, 3).await;
+        assert!(
+            started.elapsed().as_secs_f64() < 1.0,
+            "{:?}",
+            started.elapsed()
+        );
+        assert!(status.is_some(), "child should be reaped");
+        assert!(!worker_process_exists(pid), "no zombie left behind");
+    }
+
+    #[tokio::test]
+    async fn terminate_child_escalates_to_sigkill_after_grace() {
+        // SIG_IGN 会被 exec 继承，所以 sleep 也忽略 SIGTERM。
+        let mut child = spawn_group_leader("sh", &["-c", "trap '' TERM; exec sleep 30"]);
+        // 给 sh 一点时间装好 trap，否则 SIGTERM 可能在 trap 之前送达。
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+        let started = Instant::now();
+        let status = terminate_child_process_tree(&mut child, 1).await;
+        let elapsed = started.elapsed().as_secs_f64();
+        assert!((1.0..3.0).contains(&elapsed), "{elapsed}");
+        assert!(status.is_some(), "child should be reaped after SIGKILL");
+    }
+
+    #[tokio::test]
+    async fn terminate_child_is_a_no_op_for_already_reaped_child() {
+        let mut child = spawn_group_leader("true", &[]);
+        child.wait().await.unwrap();
+        let started = Instant::now();
+        let status = terminate_child_process_tree(&mut child, 3).await;
+        assert!(started.elapsed().as_secs_f64() < 0.5);
+        assert!(status.is_some_and(|status| status.success()));
+    }
 
     #[test]
     fn worker_process_exists_true_for_current_process() {

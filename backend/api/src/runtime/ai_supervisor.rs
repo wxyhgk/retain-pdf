@@ -19,7 +19,9 @@ use tokio::sync::watch;
 use tokio::task::JoinHandle;
 
 use crate::config::{AiServiceConfig, AppConfig};
-use crate::process::{configure_child_process, mark_supervised_child, terminate_job_process_tree};
+use crate::process::{
+    configure_child_process, mark_supervised_child, terminate_child_process_tree,
+};
 use crate::runtime::probe_client::build_probe_client;
 
 pub const AI_STATUS_DISABLED: u8 = 0;
@@ -76,7 +78,7 @@ fn child_env(app: &AppConfig, ai: &AiServiceConfig) -> Vec<(String, String)> {
 fn spawn_child(app: &AppConfig, ai: &AiServiceConfig) -> std::io::Result<Child> {
     let mut command = Command::new(&ai.command);
     command.args(&ai.args);
-    // 自成进程组：terminate_job_process_tree 是组杀（kill(-pid)）——不建组
+    // 自成进程组：terminate_child_process_tree 是组杀（kill(-pid)）——不建组
     // 则组杀落空、child.wait 永等（监督器 shutdown 悬挂，集成测试实证）
     configure_child_process(&mut command);
     // 自成进程组后 rust_api 被 SIGKILL 时信号到不了子进程；靠它自己发现监督者没了而退出
@@ -91,18 +93,13 @@ fn spawn_child(app: &AppConfig, ai: &AiServiceConfig) -> std::io::Result<Child> 
     command.spawn()
 }
 
-async fn terminate_child(child: &mut Child, grace_secs: u64, poll_ms: u64) {
-    if let Some(pid) = child.id() {
-        if terminate_job_process_tree(pid, grace_secs, poll_ms)
-            .await
-            .is_ok()
-        {
-            let _ = child.wait().await;
-            return;
-        }
+async fn terminate_child(child: &mut Child, grace_secs: u64) {
+    if terminate_child_process_tree(child, grace_secs)
+        .await
+        .is_none()
+    {
+        let _ = child.kill().await;
     }
-    let _ = child.kill().await;
-    let _ = child.wait().await;
 }
 
 async fn probe(client: &reqwest::Client, url: &str) -> bool {
@@ -134,7 +131,6 @@ async fn run_once(
 ) -> RunOutcome {
     set_status(AI_STATUS_STARTING);
     let grace = app.job_runner.worker_terminate_grace_secs;
-    let poll = app.job_runner.worker_terminate_poll_ms;
 
     let mut child = match spawn_child(app, ai) {
         Ok(child) => child,
@@ -155,7 +151,7 @@ async fn run_once(
     let deadline = tokio::time::Instant::now() + ai.startup_timeout;
     loop {
         if *shutdown.borrow() {
-            terminate_child(&mut child, grace, poll).await;
+            terminate_child(&mut child, grace).await;
             return RunOutcome::Shutdown;
         }
         if let Ok(Some(status)) = child.try_wait() {
@@ -169,11 +165,11 @@ async fn run_once(
         if tokio::time::Instant::now() >= deadline {
             tracing::warn!("ai_supervisor: readyz not ready within startup timeout");
             set_status(AI_STATUS_UNHEALTHY);
-            terminate_child(&mut child, grace, poll).await;
+            terminate_child(&mut child, grace).await;
             return RunOutcome::Restart;
         }
         if sleep_or_shutdown(Duration::from_millis(250), shutdown).await {
-            terminate_child(&mut child, grace, poll).await;
+            terminate_child(&mut child, grace).await;
             return RunOutcome::Shutdown;
         }
     }
@@ -184,7 +180,7 @@ async fn run_once(
     let mut consecutive_failures: u32 = 0;
     loop {
         if sleep_or_shutdown(ai.health_interval, shutdown).await {
-            terminate_child(&mut child, grace, poll).await;
+            terminate_child(&mut child, grace).await;
             return RunOutcome::Shutdown;
         }
         if let Ok(Some(status)) = child.try_wait() {
@@ -207,7 +203,7 @@ async fn run_once(
         );
         if consecutive_failures >= ai.health_fail_threshold {
             set_status(AI_STATUS_UNHEALTHY);
-            terminate_child(&mut child, grace, poll).await;
+            terminate_child(&mut child, grace).await;
             return RunOutcome::Restart;
         }
     }

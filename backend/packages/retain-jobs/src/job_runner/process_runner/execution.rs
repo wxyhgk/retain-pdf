@@ -10,7 +10,7 @@ use tokio::time::{timeout, Duration};
 use crate::config::WorkerProcessRuntimeConfig;
 use crate::models::domain::JobRuntimeState;
 
-use super::super::{terminate_job_process_tree, JobPersistDeps};
+use super::super::{terminate_child_process_tree, JobPersistDeps};
 use super::io_support::{read_stdout, read_stream};
 use super::timeout_support::persist_timeout_failure;
 
@@ -99,7 +99,6 @@ pub(super) async fn collect_process_execution(
     let drain_secs = worker_runtime.worker_output_drain_secs;
     let stdout = child.stdout.take().context("missing stdout pipe")?;
     let stderr = child.stderr.take().context("missing stderr pipe")?;
-    let child_pid = job.pid;
     let timeout_secs = job.request_payload.runtime.timeout_seconds;
     let no_output_secs = job.request_payload.runtime.no_output_timeout_seconds;
     let started = Instant::now();
@@ -127,29 +126,19 @@ pub(super) async fn collect_process_execution(
         {
             WaitOutcome::Exited(status) => status,
             WaitOutcome::TimedOut(kind) => {
-                if let Some(pid) = child_pid {
-                    let _ = terminate_job_process_tree(
-                        pid,
-                        worker_runtime.worker_terminate_grace_secs,
-                        worker_runtime.worker_terminate_poll_ms,
-                    )
-                    .await;
-                }
-                // `terminate_job_process_tree` signals the process group
-                // directly via libc, bypassing tokio's own reaping. Without
-                // an explicit `wait()` here, dropping `child` below (it is
-                // not spawned with `kill_on_drop`) would leave a zombie
-                // entry around until the whole server process exits. Guard
-                // the wait so a pathological unreapable child can't hang the
-                // runner indefinitely.
-                match timeout(Duration::from_secs(5), child.wait()).await {
-                    Ok(Ok(_)) => {}
-                    Ok(Err(error)) => {
-                        tracing::warn!("failed to reap timed-out worker process: {error:#}")
-                    }
-                    Err(_) => tracing::warn!(
+                // 边发信号边 wait()：退出即返回并回收，不会留下僵尸（child
+                // 没有 kill_on_drop，下面丢弃它之前必须回收）；SIGKILL 后的
+                // 回收等待有上限，卡死的子进程不会把 runner 挂住。
+                if terminate_child_process_tree(
+                    &mut child,
+                    worker_runtime.worker_terminate_grace_secs,
+                )
+                .await
+                .is_none()
+                {
+                    tracing::warn!(
                         "timed out waiting to reap worker process after termination; it may remain a zombie until the server exits"
-                    ),
+                    );
                 }
                 let (stdout_text, stdout_job) =
                     drain_stdout(stdout_handle, persist, &job_id, drain_secs).await?;
