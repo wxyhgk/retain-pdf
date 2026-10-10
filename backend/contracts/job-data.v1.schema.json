@@ -241,6 +241,30 @@
         "payload": { "type": "object", "description": "附加数据（progress、refine_phase、refine_round …）" }
       }
     },
+    "pipeline_events": {
+      "description": "流水线细粒度进度事件（翻译批次、续段检查、精修的阶段 / 轮次 / 批数……）；任务级事件见 events。",
+      "source": { "kind": "jsonl", "root": "logs", "file": "pipeline_events.jsonl" },
+      "identity": {},
+      "fields": {
+        "seq": { "type": "integer", "description": "序号" },
+        "ts": { "type": "string", "description": "时间（UTC）" },
+        "stage": { "type": "string", "filter": true, "description": "阶段" },
+        "substage": { "type": "string", "filter": true, "description": "子阶段，例如 translation_batches、refining" },
+        "event_type": { "type": "string", "filter": true, "description": "事件类型" },
+        "message": { "type": "string", "description": "说明" },
+        "stage_detail": { "type": "string", "description": "阶段详情" },
+        "progress_current": { "type": "integer", "description": "进度（当前）" },
+        "progress_total": { "type": "integer", "description": "进度（总数）" },
+        "refine_phase": { "path": "payload.refine_phase", "type": "string", "filter": true, "description": "精修阶段，例如 review、chief、fix、rewrite、terms" },
+        "refine_mode": { "path": "payload.refine_mode", "type": "string", "filter": true, "description": "review_only / review_and_fix / editorial" },
+        "refine_round": { "path": "payload.refine_round", "type": "integer", "filter": true, "description": "编辑部第几轮" },
+        "refine_max_rounds": { "path": "payload.refine_max_rounds", "type": "integer", "description": "最多几轮" },
+        "round": { "path": "payload.round", "type": "integer", "filter": true, "description": "旧任务的轮次字段（新任务用 refine_round）" },
+        "batch_done": { "path": "payload.batch_done", "type": "integer", "description": "这一步已完成的批数" },
+        "batch_total": { "path": "payload.batch_total", "type": "integer", "description": "这一步的总批数" },
+        "payload": { "type": "object", "description": "完整附加数据" }
+      }
+    },
     "token_usage": {
       "description": "模型用量台账：每次模型返回一行。",
       "source": { "kind": "jsonl", "root": "artifacts", "file": "token-usage.v1.jsonl" },
