@@ -12,7 +12,8 @@
  * translationQualityFields）：
  * - standard：直接翻译，和以前完全一样；
  * - terms：先通读全书生成术语表和风格指南，再带着它们翻译（preparation=terms+style）；
- * - refined：在 terms 基础上，翻译完再让模型挑错、只改有问题的片段（refine=review_and_fix）。
+ * - refined：编辑部——术语表经术语专员审定；翻译完由审校挑错、主编分派局部改或整块重写，
+ *   最多两轮，改不好的保留原译并列出来（preparation=editorial、refine=editorial）。
  */
 export type TranslationQuality = "standard" | "terms" | "refined";
 

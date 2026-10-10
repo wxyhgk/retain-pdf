@@ -12,7 +12,7 @@ import { useIngestServices, useIngestWorkflowView } from "../workflow-view-conte
 const QUALITY_HINTS: Record<string, string> = {
   standard: "直接翻译，速度最快、费用最低。",
   terms: "先通读全书定好术语和文风再翻译，译法更一致；模型费用多约 0.4 倍。",
-  refined: "统一术语之外，翻完再让模型挑错，只改有问题的地方，改不好就保留原译；模型费用约为普通的 2.5 倍，耗时更长。",
+  refined: "统一术语之外，术语表先经审定；翻完由模型挑错，再分派局部修改或整段重写，最多两轮，改不好就保留原译并列出来给你看；模型费用约为普通的 2.5 倍，耗时更长。",
 };
 
 const ENGINE_HINTS: Record<string, string> = {

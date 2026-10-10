@@ -19,8 +19,8 @@ test("弹窗里改的偏好出现在提交载荷里", async () => {
     services.workflowView.setPreference("translationQuality", "refined");
     services.workflowView.setPreference("renderEngine", "typst");
     const payload = workflowFeature.collectRunPayload();
-    assert.equal(payload.translation?.preparation, "terms+style");
-    assert.equal(payload.translation?.refine, "review_and_fix");
+    assert.equal(payload.translation?.preparation, "editorial");
+    assert.equal(payload.translation?.refine, "editorial");
     assert.equal(payload.render?.engine, "typst");
 
     services.workflowView.setPreference("renderEngine", "auto");
