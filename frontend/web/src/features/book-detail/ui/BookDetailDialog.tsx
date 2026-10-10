@@ -1,7 +1,7 @@
 // BookDetailDialog —— 容器：组合 hooks + shell/tabs。
 // 业务状态见 use-book-detail-*.js；UI 见 shell / tabs / panels。
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createBookDetailCaches } from "../domain/book-detail-caches.js";
 import {
   useHomeBookDetail,
@@ -122,6 +122,10 @@ export function BookDetailDialog() {
   // 「重新处理」清单（stage-actions，后端要算 0.6 秒）只在「进度」页用：第一次打开那一页才请求。
   const [processingSeenFor, setProcessingSeenFor] = useState("");
   const processingSeen = defaultTab === "processing" || processingSeenFor === documentId;
+  // 关掉就清零：下次打开停在概览时不去拉，点进「进度」再拉（拉的是那时最新的）。
+  useEffect(() => {
+    if (!open) setProcessingSeenFor("");
+  }, [open]);
   const translateState = useBookDetailTranslate({
     open,
     documentId,
