@@ -4,7 +4,7 @@ use super::LibraryDeps;
 use crate::db::Db;
 use crate::error::AppError;
 use crate::models::api::{
-    LibraryBatchDeleteInput, LibraryBatchDeleteResultView, LibraryBookDetailView,
+    LibraryBookDetailView,
     LibraryBookListView, LibraryDeleteResultView, ListJobsQuery,
 };
 use crate::models::domain::{JobSnapshot, JobStatusKind, WorkflowKind};
@@ -89,17 +89,6 @@ pub fn delete_library_book(
         removed_paths,
         removed_child_jobs,
     })
-}
-
-pub fn delete_library_books(
-    deps: &LibraryDeps<'_>,
-    input: &LibraryBatchDeleteInput,
-) -> Result<LibraryBatchDeleteResultView, AppError> {
-    let mut items = Vec::new();
-    for job_id in &input.ids {
-        items.push(delete_library_book(deps, job_id, input.force)?);
-    }
-    Ok(LibraryBatchDeleteResultView { items })
 }
 
 fn load_library_job(db: &Db, job_id: &str) -> Result<JobSnapshot, AppError> {

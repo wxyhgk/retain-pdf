@@ -765,24 +765,12 @@ pub struct LayoutDocxQuery {
     pub dpi: Option<u32>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct LibraryBatchDeleteInput {
-    pub ids: Vec<String>,
-    #[serde(default)]
-    pub force: bool,
-}
-
 #[derive(Debug, Serialize)]
 pub struct LibraryDeleteResultView {
     pub deleted: bool,
     pub job_id: String,
     pub removed_paths: Vec<String>,
     pub removed_child_jobs: Vec<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct LibraryBatchDeleteResultView {
-    pub items: Vec<LibraryDeleteResultView>,
 }
 
 #[derive(Debug, Serialize)]

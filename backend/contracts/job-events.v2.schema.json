@@ -15,7 +15,8 @@
       "method": "GET",
       "path": "/api/v1/ocr/jobs/:job_id/events",
       "query": "ListJobEventsQuery",
-      "output": "JobEventListView"
+      "output": "JobEventListView",
+      "note": "已弃用的别名：OCR 任务也用 /api/v1/jobs/:job_id/events。前端改完、路由计数归零后删除。"
     }
   ],
   "definitions": {

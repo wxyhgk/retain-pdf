@@ -220,7 +220,8 @@ fn workflow_contract_uses_expected_route_prefixes() {
         (WorkflowKind::Book, "/api/v1/jobs"),
         (WorkflowKind::Translate, "/api/v1/jobs"),
         (WorkflowKind::Render, "/api/v1/jobs"),
-        (WorkflowKind::Ocr, "/api/v1/ocr/jobs"),
+        // OCR 任务的链接也走 /api/v1/jobs（/api/v1/ocr/jobs/* 只是给旧前端留的别名）。
+        (WorkflowKind::Ocr, "/api/v1/jobs"),
     ];
 
     for (workflow, prefix) in cases {
@@ -397,7 +398,7 @@ fn artifact_manifest_maps_canonical_resource_paths() {
 }
 
 #[test]
-fn ocr_artifact_manifest_uses_ocr_route_family() {
+fn ocr_artifact_manifest_uses_the_generic_job_routes() {
     let job = build_job("ocr-artifacts", WorkflowKind::Ocr);
     let manifest = build_artifact_manifest(
         &job,
@@ -411,7 +412,7 @@ fn ocr_artifact_manifest_uses_ocr_route_family() {
     let document = manifest.items.first().expect("normalized document item");
     assert_eq!(
         document.resource_path.as_deref(),
-        Some("/api/v1/ocr/jobs/ocr-artifacts/normalized-document")
+        Some("/api/v1/jobs/ocr-artifacts/normalized-document")
     );
 }
 

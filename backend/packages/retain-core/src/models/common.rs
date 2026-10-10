@@ -46,11 +46,11 @@ impl Default for WorkflowKind {
 }
 
 impl WorkflowKind {
+    /// 任务链接（详情、事件、产物、取消……）的前缀。所有类型都走 `/api/v1/jobs`：
+    /// 那些接口对 OCR 任务一样能用（取消按任务类型分支，不按路由）。`/api/v1/ocr/jobs/*`
+    /// 镜像接口暂时保留给旧前端，前端改完、路由计数归零后删掉。
     pub fn job_api_prefix(&self) -> &'static str {
-        match self {
-            Self::Ocr => "/api/v1/ocr/jobs",
-            Self::Book | Self::Translate | Self::Render => "/api/v1/jobs",
-        }
+        "/api/v1/jobs"
     }
 }
 

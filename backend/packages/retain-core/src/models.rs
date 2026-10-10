@@ -90,7 +90,7 @@ pub use view::{
     JobListInvocationSummaryView, JobListItemView, JobListView, JobProgressView, JobResumePlanView,
     JobStageContractArtifactView, JobStageContractView, JobStageRuntimeView, JobStageSnapshotView,
     JobStageStateView, JobStagesView, JobSubmissionView, JobTimestampsView,
-    LibraryBatchDeleteInput, LibraryBatchDeleteResultView, LibraryBookDetailView,
+    LibraryBookDetailView,
     LibraryBookListItemView, LibraryBookListView, LibraryDeleteQuery, LibraryDeleteResultView,
     ListDocumentJobsQuery, ListGlossariesQuery, ListJobEventsQuery, ListJobsQuery,
     ListTranslationItemsQuery, LiveTranslationCommitEventView, LiveTranslationEventsQuery,
