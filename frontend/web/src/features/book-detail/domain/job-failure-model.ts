@@ -71,7 +71,7 @@ const BY_CATEGORY: Record<string, FailureAdvice> = {
   // 下面五类是补的。它们的共同点是：**重试不解决问题**，所以不能把用户往重试上引。
   auth: {
     title: "凭据被拒",
-    action: "上游不认这个 API Key —— 重试解决不了。去设置里换一个有效的 Key，确认额度没用完、Key 没过期。",
+    action: "上游不认这个 API Key —— 原样重试解决不了。去设置里换一个有效的 Key（确认额度没用完、没过期），再点重试：重试会用设置里的新 Key。",
     retryLikelyHelps: false,
   },
   input: {

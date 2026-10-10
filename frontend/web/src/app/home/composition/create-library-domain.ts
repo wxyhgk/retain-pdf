@@ -45,6 +45,7 @@ import type {
 } from "@/features/library/index.js";
 import { createDialogStore, type DialogStore } from "@/platform/store/dialog-store.js";
 import type { LibraryCardItem } from "@/features/library/index.js";
+import { createRetryJobStageWithCurrentKey } from "./retry-with-current-key.js";
 
 type ReaderAnchor = {
   pageIdx?: number | null;
@@ -156,6 +157,7 @@ export function createLibraryDomain({ features, documentRef }: CreateLibraryDoma
       await recentJobActions.deleteJob(jobId);
     },
     buildTranslateConfig: (pageRanges?: string) => mountedFeature(features, "workflowFeature").buildTranslateJobConfig(pageRanges),
+    retryJobStageApi: createRetryJobStageWithCurrentKey(features),
     buildOcrConfig: (pageRanges?: string) => mountedFeature(features, "workflowFeature").buildOcrJobConfig(pageRanges),
     startPolling: (jobId: string, options?: {
       silent?: boolean;
