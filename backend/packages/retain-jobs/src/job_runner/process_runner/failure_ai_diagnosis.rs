@@ -104,6 +104,11 @@ pub(super) async fn maybe_attach_ai_failure_diagnosis(
         .env("RUST_API_OUTPUT_ROOT", config.output_root)
         .env("OUTPUT_ROOT", config.output_root)
         .env("PYTHONUNBUFFERED", "1")
+        .env(
+            "RETAIN_USAGE_LEDGER",
+            crate::storage_paths::JobPaths::for_job(config.output_root, &job.job_id).token_usage_ledger(),
+        )
+        .env("RETAIN_USAGE_JOB_ID", &job.job_id)
         .current_dir(config.project_root)
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());

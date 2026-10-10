@@ -10,6 +10,9 @@ use super::constants::{
     OUTPUT_TRANSLATED_DIR_NAME,
 };
 
+/// 模型用量台账（每次模型返回追加一行，见 Python `translate/llm/shared/usage_ledger.py`）。
+pub const TOKEN_USAGE_LEDGER_FILE_NAME: &str = "token-usage.v1.jsonl";
+
 #[derive(Clone, Debug)]
 pub struct JobPaths {
     pub root: PathBuf,
@@ -37,6 +40,10 @@ impl JobPaths {
             specs_dir: root.join(OUTPUT_SPECS_DIR_NAME),
             root,
         }
+    }
+
+    pub fn token_usage_ledger(&self) -> PathBuf {
+        self.artifacts_dir.join(TOKEN_USAGE_LEDGER_FILE_NAME)
     }
 
     pub fn create_all(&self) -> Result<()> {

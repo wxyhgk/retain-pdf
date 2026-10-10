@@ -14,6 +14,7 @@ from retainpdf_pipeline.translate.artifacts import get_active_translation_run_di
 from retainpdf_pipeline.translate.artifacts import infer_stage_from_request_label
 from retainpdf_pipeline.translate.llm.shared import model_wire
 from retainpdf_pipeline.translate.llm.shared import upstream_resilience as _resilience
+from retainpdf_pipeline.translate.llm.shared import usage_ledger
 from retainpdf_pipeline.translate.llm.providers.deepseek import transport
 from retainpdf_pipeline.translate.llm.shared.prompt_building import build_messages
 from retainpdf_pipeline.translate.llm.shared.prompt_building import build_single_item_fallback_messages
@@ -324,6 +325,15 @@ def request_chat_content(
         )
         use_stream = should_use_stream_responses()
     thinking_index = 0
+
+    def _record_usage(usage: Any) -> None:
+        usage = usage if isinstance(usage, dict) else None
+        if diagnostics is not None and usage is not None:
+            diagnostics.record_token_usage(usage)
+        usage_ledger.record_model_usage(
+            usage, model=model, base_url=base_url, protocol=profile.protocol, request_label=request_label
+        )
+
     # Responses 下推理模型可能整个不认 temperature：被 400 拒一次后就不再带。
     send_temperature = True
 
@@ -349,6 +359,8 @@ def request_chat_content(
         built.update(thinking_fields)
         if use_stream:
             built["stream"] = True
+            # 流式默认不带用量；要求服务商在最后一块里给 usage，台账才有数。
+            built["stream_options"] = {"include_usage": True}
         if active_response_format is not None:
             built["response_format"] = active_response_format
         return built
@@ -429,24 +441,24 @@ def request_chat_content(
                 body=body,
                 use_stream=use_stream,
             )
+            # 先取用量、记账，再解析正文：返回了但正文为空 / 被拒答的那次，token 也已经花掉了。
             if use_stream:
                 content, usage = _read_streaming_chat_content(response)
+                _record_usage(usage)
                 if not content.strip():
                     raise ValueError("Stream response did not contain any content.")
             elif anthropic:
                 data = response.json()
+                _record_usage(model_wire.anthropic_usage(data))
                 content = model_wire.anthropic_content(data)
-                usage = model_wire.anthropic_usage(data)
             elif responses:
                 data = response.json()
+                _record_usage(model_wire.responses_usage(data))
                 content = model_wire.responses_content(data)
-                usage = model_wire.responses_usage(data)
             else:
                 data: dict[str, Any] = response.json()
+                _record_usage(data.get("usage"))
                 content = data["choices"][0]["message"]["content"]
-                usage = data.get("usage")
-            if diagnostics is not None and isinstance(usage, dict):
-                diagnostics.record_token_usage(usage)
             if request_label:
                 elapsed = time.perf_counter() - started
                 print(f"{request_label}: http ok in {elapsed:.2f}s", flush=True)

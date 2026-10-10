@@ -262,6 +262,7 @@
       "retainpdf_pipeline/translate/llm/shared/orchestration/single_item_routes.py",
       "retainpdf_pipeline/translate/llm/shared/prompt_building.py",
       "retainpdf_pipeline/translate/llm/shared/prompt_protocols.py",
+      "retainpdf_pipeline/translate/llm/shared/usage_ledger.py",
       "retainpdf_pipeline/translate/llm/validation/english_residue.py",
       "retainpdf_pipeline/translate/llm/validation/math_safety.py",
       "retainpdf_pipeline/translate/services/agents/repair_pipeline.py",
@@ -661,7 +662,8 @@
         "devtools/tests/translation/test_translation_refine.py",
         "devtools/tests/translation/test_translation_revision.py",
         "devtools/tests/translation/test_translation_validation_protocols.py",
-        "devtools/tests/translation/test_upstream_resilience.py"
+        "devtools/tests/translation/test_upstream_resilience.py",
+        "devtools/tests/translation/test_usage_ledger.py"
       ],
       "runtime_required": false,
       "devtool_required": false

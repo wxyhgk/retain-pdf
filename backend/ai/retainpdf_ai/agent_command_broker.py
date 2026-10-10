@@ -132,6 +132,7 @@ class AgentCommandBroker:
         return (
             "The only host tool is retainpdf-agent. Supported commands are exactly:\n"
             "retainpdf-agent document inspect\n"
+            "retainpdf-agent document usage\n"
             "retainpdf-agent tool call --name <allowed-name> "
             "--arguments-base64url <base64url-encoded-compact-json-object>\n"
             "retainpdf-agent operation create --program-json '<compact-json>'\n"

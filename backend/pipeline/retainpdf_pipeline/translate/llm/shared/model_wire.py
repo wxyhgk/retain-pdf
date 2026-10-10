@@ -467,7 +467,8 @@ def anthropic_usage(data: dict[str, Any]) -> dict[str, Any] | None:
         return int(value) if isinstance(value, (int, float)) else 0
 
     cache_read = count("cache_read_input_tokens")
-    prompt = count("input_tokens") + count("cache_creation_input_tokens") + cache_read
+    cache_write = count("cache_creation_input_tokens")
+    prompt = count("input_tokens") + cache_write + cache_read
     completion = count("output_tokens")
     return {
         "prompt_tokens": prompt,
@@ -475,6 +476,8 @@ def anthropic_usage(data: dict[str, Any]) -> dict[str, Any] | None:
         "total_tokens": prompt + completion,
         "prompt_cache_hit_tokens": cache_read,
         "prompt_cache_miss_tokens": prompt - cache_read,
+        # 写缓存按更高的单价计费，台账单独记（见 usage_ledger）。
+        "prompt_cache_write_tokens": cache_write,
     }
 
 

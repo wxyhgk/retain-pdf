@@ -19,6 +19,7 @@ const EXPECTED_SCHEMAS = [
   "reader-data.v1.schema.json",
   "refine-report.v1.schema.json",
   "runtime-config.v1.schema.json",
+  "token-usage.v1.schema.json",
   "translation-revisions.v1.schema.json",
 ];
 

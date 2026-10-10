@@ -89,6 +89,9 @@ def test_parser_is_an_exact_shell_free_grammar():
     inspect = parse_broker_command("retainpdf-agent document inspect", scope)
     assert inspect.action == "document.inspect"
     assert inspect.cli_argv[-1] == "doc-a"
+    usage = parse_broker_command("retainpdf-agent document usage", scope)
+    assert usage.action == "document.inspect"
+    assert usage.cli_argv == ("document", "usage", "--document-id", "doc-a")
 
     created = parse_broker_command(
         f"retainpdf-agent operation create --program-sha256 {'a' * 64}",

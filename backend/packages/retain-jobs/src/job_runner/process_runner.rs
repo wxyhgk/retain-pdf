@@ -593,6 +593,8 @@ assert payload["request_payload"]["translation"]["api_key_configured"] is True
 assert payload["request_payload"]["ocr"]["mineru_token"] == ""
 assert payload["request_payload"]["ocr"]["mineru_token_configured"] is False
 assert os.environ.get("RETAIN_TRANSLATION_API_KEY") == "sk-test"
+assert os.environ.get("RETAIN_USAGE_JOB_ID") == "job-ai-diagnosis"
+assert os.environ.get("RETAIN_USAGE_LEDGER", "").endswith("job-ai-diagnosis/artifacts/token-usage.v1.jsonl")
 print(json.dumps({
     "status": "ok",
     "summary": "AI diagnosis summary",
@@ -775,7 +777,9 @@ print(json.dumps({{
   "translation": os.environ.get("RETAIN_TRANSLATION_API_KEY", ""),
   "paddle": os.environ.get({paddle_env:?}, ""),
   "mineru": os.environ.get({mineru_env:?}, ""),
-  "provider_config": os.environ.get("RETAIN_OCR_PROVIDER_CONFIG", "")
+  "provider_config": os.environ.get("RETAIN_OCR_PROVIDER_CONFIG", ""),
+  "usage_ledger": os.environ.get("RETAIN_USAGE_LEDGER", ""),
+  "usage_job_id": os.environ.get("RETAIN_USAGE_JOB_ID", "")
 }}, ensure_ascii=False))"#
                 ),
             ],
@@ -825,5 +829,10 @@ print(json.dumps({{
             .ocr_provider_config_path
             .to_string_lossy();
         assert!(result.stdout.contains(provider_config_path.as_ref()));
+        // 用量台账指向这个任务自己的目录。
+        assert!(result
+            .stdout
+            .contains("job-provider-envs/artifacts/token-usage.v1.jsonl"));
+        assert!(result.stdout.contains("\"usage_job_id\": \"job-provider-envs\""));
     }
 }

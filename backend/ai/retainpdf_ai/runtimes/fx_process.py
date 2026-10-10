@@ -120,6 +120,7 @@ def start_fx_client(
             timeout_s=settings.fx_turn_timeout_s,
             extra_body=settings.fx_upstream_extra,
             reasoning_efforts=settings.fx_reasoning_efforts,
+            usage_data_root=settings.usage_ledger_root,
         ).start()
         gateway_api_key = bridge.gateway_api_key
     env = {

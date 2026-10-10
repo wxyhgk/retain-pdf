@@ -247,6 +247,9 @@ class Settings:
     fx_resume_session: bool = True
     # 任务产物根目录(data/jobs/<job_id>/...)
     data_root: Path = field(default_factory=lambda: _repo_root() / "data")
+    # 助手用量台账写到这个目录下的 usage/assistant.v1.jsonl。只有 load_settings()（真正启动服务）
+    # 才设：直接构造 Settings(...) 的测试不会往仓库的 data/ 里写假记录。
+    usage_ledger_root: Path | None = None
 
 
 def apply_runtime_credentials(
@@ -429,6 +432,7 @@ def load_settings() -> Settings:
         fx_denied_commands=_env_denied_commands("RETAIN_AI_FX_DENIED_COMMANDS"),
         fx_resume_session=_env_flag_default_on("RETAIN_AI_FX_RESUME_SESSION"),
         data_root=Path(data_root) if data_root else _repo_root() / "data",
+        usage_ledger_root=Path(data_root) if data_root else _repo_root() / "data",
     )
     stored = load_runtime_credentials(settings.data_root)
     return apply_runtime_credentials(settings, stored)

@@ -11,14 +11,20 @@ import httpx
 from .config import Settings
 from .request_control import AIProviderError, AIRequestTimeout, AIStreamIncomplete, RequestControl
 from .runtimes.contracts import ChatFn
+from .usage_ledger import record_assistant_usage
 
 
 def assemble_streaming_message(
     lines: Iterable[str | bytes],
     on_delta: Callable[[str], None] | None = None,
     request_control: RequestControl | None = None,
+    usage_out: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Assemble an SSE response into the non-streaming assistant shape."""
+    """Assemble an SSE response into the non-streaming assistant shape.
+
+    ``usage_out``：服务商在流里报了用量（通常是最后一块、choices 为空）就填进去，供记账；
+    不放进返回的消息里——那条消息会原样回传给上游。
+    """
     content_parts: list[str] = []
     tool_calls: dict[int, dict[str, Any]] = {}
     saw_tool_calls = False
@@ -57,6 +63,9 @@ def assemble_streaming_message(
             raise AIStreamIncomplete() from exc
         if not isinstance(chunk, dict) or "error" in chunk:
             raise AIStreamIncomplete()
+        if usage_out is not None and isinstance(chunk.get("usage"), dict):
+            usage_out.clear()
+            usage_out.update(chunk["usage"])
         choices = chunk.get("choices")
         if not isinstance(choices, list):
             raise AIStreamIncomplete()
@@ -153,14 +162,23 @@ def friendly_llm_error(status_code: int, detail: str = "") -> RuntimeError:
     return AIProviderError(hint)
 
 
+class _StreamOptionsRejected(Exception):
+    """上游不认 stream_options（400）。"""
+
+
 def build_deepseek_chat_fn(
     settings: Settings,
     client: httpx.Client | None = None,
     *,
     on_delta: Callable[[str], None] | None = None,
     request_control: RequestControl | None = None,
+    usage_document_id: str = "",
 ) -> ChatFn:
-    """Build the request-scoped OpenAI-compatible chat function."""
+    """Build the request-scoped OpenAI-compatible chat function.
+
+    每次模型返回都记一行助手用量（``usage_ledger``）；``usage_document_id`` 是这次问答针对的书，
+    记上之后这本书的用量里也算得到。
+    """
     http = client or httpx.Client(timeout=settings.llm_timeout_s)
     if client is None and request_control is not None:
         # Closing the request-owned client interrupts a connection that is
@@ -181,6 +199,18 @@ def build_deepseek_chat_fn(
 
         return missing_key
     headers = {"Authorization": f"Bearer {api_key}"}
+    # 流式要显式要用量（stream_options）。个别中转不认这个字段、回 400：记下来，这次和之后都不再带。
+    stream_usage = {"supported": True}
+
+    def record_usage(usage: Any) -> None:
+        record_assistant_usage(
+            settings.usage_ledger_root,
+            usage if isinstance(usage, dict) else None,
+            stage="assistant_ask",
+            model=settings.llm_model,
+            base_url=settings.llm_base_url,
+            document_id=usage_document_id,
+        )
 
     def chat(
         messages: list[dict[str, Any]],
@@ -227,8 +257,13 @@ def build_deepseek_chat_fn(
                 request_control.raise_if_stopped()
             if response.status_code >= 400:
                 raise friendly_llm_error(response.status_code)
-            return response.json()["choices"][0]["message"]
+            data = response.json()
+            record_usage(data.get("usage"))
+            return data["choices"][0]["message"]
         body["stream"] = True
+        if stream_usage["supported"]:
+            body["stream_options"] = {"include_usage": True}
+        usage: dict[str, Any] = {}
         try:
             with http.stream(
                 "POST", url, headers=headers, json=body, timeout=request_timeout
@@ -237,6 +272,8 @@ def build_deepseek_chat_fn(
                 if request_control is not None:
                     request_control.add_cancel_callback(close_response)
                 try:
+                    if response.status_code == 400 and "stream_options" in body:
+                        raise _StreamOptionsRejected()
                     if response.status_code >= 400:
                         raise friendly_llm_error(response.status_code)
                     raw_on_delta = on_delta if stream_answer else None
@@ -254,7 +291,9 @@ def build_deepseek_chat_fn(
                         response.iter_lines(),
                         streamed_on_delta,
                         request_control,
+                        usage_out=usage,
                     )
+                    record_usage(usage or None)
                     if (
                         raw_on_delta is not None
                         and delta_sanitizer is not None
@@ -269,6 +308,10 @@ def build_deepseek_chat_fn(
                 finally:
                     if request_control is not None:
                         request_control.remove_cancel_callback(close_response)
+        except _StreamOptionsRejected:
+            # 还没流出任何内容（400 在响应头就回了），去掉 stream_options 原样重发一次。
+            stream_usage["supported"] = False
+            return chat(messages, tools, stream_answer=stream_answer, delta_sanitizer=delta_sanitizer)
         except httpx.TimeoutException as exc:
             if request_control is not None:
                 request_control.raise_if_stopped()

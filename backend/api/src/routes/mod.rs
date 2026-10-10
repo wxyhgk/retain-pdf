@@ -22,4 +22,5 @@ pub mod library_extras;
 pub mod model_requests;
 pub mod providers;
 pub mod public_document_operations;
+pub mod token_usage;
 pub mod uploads;
