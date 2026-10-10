@@ -142,6 +142,7 @@
 @import "../../features/book-detail/ui/tabs/overview/layout.css" layer(pages);
 @import "../../features/book-detail/ui/tabs/overview/info.css" layer(pages);
 @import "../../features/book-detail/ui/tabs/overview/activity.css" layer(pages);
+@import "../../features/book-detail/ui/tabs/overview/quality.css" layer(pages);
 @import "../../features/book-detail/ui/tabs/overview/danger.css" layer(pages);
 @import "../../features/book-detail/ui/tabs/overview/responsive.css" layer(pages);
 /* 「进度」分区按组件拆分；layout 定义共享变量，必须在最前。 */

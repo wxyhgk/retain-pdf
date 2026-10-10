@@ -106,6 +106,10 @@
       "types": "./dist/reader.d.ts",
       "import": "./dist/reader.js"
     },
+    "./quality": {
+      "types": "./dist/quality.d.ts",
+      "import": "./dist/quality.js"
+    },
     "./usage": {
       "types": "./dist/usage.d.ts",
       "import": "./dist/usage.js"

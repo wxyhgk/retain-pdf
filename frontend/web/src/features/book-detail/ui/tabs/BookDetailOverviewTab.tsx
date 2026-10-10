@@ -46,6 +46,8 @@ export type BookDetailOverviewTabProps = {
   dangerSlot?: ReactNode;
   /** 用量卡（BookUsageCard）：这本书花了多少 token。 */
   usageSlot?: ReactNode;
+  /** 译文质量卡（QualityPanel）：自动检查、精修、排版、漏翻。 */
+  qualitySlot?: ReactNode;
   error?: string;
   ocrStatus?: OverviewStatus;
   translationStatus?: OverviewStatus;
@@ -116,6 +118,7 @@ export function BookDetailOverviewTab({
   collectionsSlot,
   dangerSlot,
   usageSlot = null,
+  qualitySlot = null,
   error = "",
   ocrStatus = { label: "尚未执行", tone: "muted" },
   translationStatus = { label: "尚未开始", tone: "muted" },
@@ -226,6 +229,8 @@ export function BookDetailOverviewTab({
           <div className="book-detail-overview-row-value">{readingSlot}</div>
         </div>
       </section>
+
+      {qualitySlot}
 
       <section className="book-detail-overview-card book-detail-overview-activity" aria-label="最近活动">
         <div className="book-detail-overview-card-heading">

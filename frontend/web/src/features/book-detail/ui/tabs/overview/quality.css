@@ -1,0 +1,162 @@
+/* 书籍详情 · 概览页签：「译文质量」卡（QualityPanel）。卡片底在 layout.css。
+ *
+ * @owns book-detail */
+
+.book-detail-quality-attention {
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.book-detail-quality-warnings {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 10px;
+  padding: 0;
+  list-style: none;
+}
+
+.book-detail-quality-warnings li {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--warn) 10%, transparent);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.book-detail-quality-warnings svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 2px;
+  color: var(--warn);
+}
+
+.book-detail-quality-rows {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.book-detail-quality-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.book-detail-quality-row:first-child {
+  border-top: 0;
+}
+
+.book-detail-quality-row dt {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.book-detail-quality-row dd {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  margin: 0;
+}
+
+.book-detail-quality-row strong {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.book-detail-quality-row.is-warn strong {
+  color: var(--warn);
+}
+
+.book-detail-quality-row-detail,
+.book-detail-quality-row-breakdown {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.book-detail-quality-row-toggle {
+  display: inline-flex;
+  justify-self: start;
+  align-items: center;
+  gap: 2px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.book-detail-quality-row-toggle svg {
+  width: 13px;
+  height: 13px;
+  transition: transform 120ms ease;
+}
+
+.book-detail-quality-row-toggle[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.book-detail-quality-list {
+  display: grid;
+  gap: 2px;
+  max-height: 260px;
+  margin: 4px 0 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.book-detail-quality-list-item {
+  display: flex;
+  width: 100%;
+  gap: 8px;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.book-detail-quality-list-item:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.book-detail-quality-list-page {
+  flex: none;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.book-detail-quality-list-reason {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-quality-list-note {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}

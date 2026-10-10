@@ -20,6 +20,7 @@ export * from "./sync.js";
 export * from "./conversations.js";
 export * from "./providers.js";
 export * from "./reader.js";
+export * from "./quality.js";
 export * from "./usage.js";
 export * from "./search.js";
 export * from "./job-images.js";

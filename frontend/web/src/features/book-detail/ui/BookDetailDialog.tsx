@@ -12,6 +12,7 @@ import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { useRecentJobCover, useLibraryServices } from "@/features/library/index.js";
 import type { LibraryCardItem } from "@/features/library/index.js";
 import { BookUsageCard } from "@/features/usage/index.js";
+import { QualityPanel } from "./panels/overview/QualityPanel.jsx";
 import { BookDetailShell } from "./shell/BookDetailShell.jsx";
 import { CoverActionsPanel } from "./panels/CoverActionsPanel.jsx";
 import { ArtifactQuickDownloads } from "./panels/ArtifactQuickDownloads.js";
@@ -259,6 +260,7 @@ export function BookDetailDialog() {
                 />
               )}
               usageSlot={documentId ? <BookUsageCard documentId={documentId} /> : null}
+              qualitySlot={jobId ? <QualityPanel jobId={jobId} documentId={documentId} /> : null}
               dangerSlot={(
                 <DeleteFooterPanel
                   busy={docState.busy}
