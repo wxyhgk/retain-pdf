@@ -1,10 +1,14 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
+import { editorViewCtx } from '@milkdown/kit/core';
+import { TextSelection } from '@milkdown/prose/state';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
 import { createArticle, getArticle, listArticles, saveArticle, saveMoleculeView, StudioApiError } from './api/client';
-import { scienceBlockPlugins } from './editor/crepe-science-block';
+import { bindTitleFocus, blockFeelPlugins } from './editor/block-menu';
+import { buildScienceSlashMenu, scienceBlockPlugins } from './editor/crepe-science-block';
+import { inlineMathPlugins } from './editor/inline-math';
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from './document';
 import '../science/browser/molecule-renderer.css';
 import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
@@ -162,18 +166,72 @@ async function mountEditor(source: string): Promise<string> {
 				copyText: '复制',
 				previewLabel: '预览',
 				previewLoading: '正在渲染…',
+				previewOnlyByDefault: true,
+				previewToggleText: (previewOnly: boolean) => (previewOnly ? '编辑' : '收起'),
+				searchPlaceholder: '搜索语言',
+				noResultText: '没有匹配的语言',
 				renderPreview: (language, content) => createSciencePreview(language, content),
 			},
 			[CrepeFeature.Placeholder]: {
-				text: "输入 '/' 添加内容，或直接开始记录…",
+				text: "输入 '/' 插入块",
 				mode: 'block',
 			},
 			[CrepeFeature.Latex]: {
 				katexOptions: { throwOnError: false },
+				inlineEditConfirm: '完成',
+			},
+			[CrepeFeature.Toolbar]: {
+				boldLabel: '粗体',
+				italicLabel: '斜体',
+				strikethroughLabel: '删除线',
+				codeLabel: '行内代码',
+				linkLabel: '链接',
+				latexLabel: '公式',
+			},
+			[CrepeFeature.LinkTooltip]: {
+				inputPlaceholder: '粘贴链接…',
+			},
+			[CrepeFeature.ImageBlock]: {
+				inlineUploadButton: '上传',
+				inlineUploadPlaceholderText: '或粘贴链接',
+				blockUploadButton: '上传图片',
+				blockCaptionPlaceholderText: '添加说明',
+				blockUploadPlaceholderText: '或粘贴图片链接',
+				blockConfirmButton: '确定',
+			},
+			[CrepeFeature.BlockEdit]: {
+				buildMenu: (builder) => buildScienceSlashMenu(builder),
+				textGroup: {
+					label: '文本',
+					text: { label: '正文' },
+					h1: { label: '标题 1' },
+					h2: { label: '标题 2' },
+					h3: { label: '标题 3' },
+					h4: null,
+					h5: null,
+					h6: null,
+					quote: { label: '引用' },
+					divider: { label: '分割线' },
+				},
+				listGroup: {
+					label: '列表',
+					bulletList: { label: '无序列表' },
+					orderedList: { label: '有序列表' },
+					taskList: { label: '待办' },
+				},
+				advancedGroup: {
+					label: '插入',
+					image: { label: '图片' },
+					codeBlock: { label: '代码' },
+					table: { label: '表格' },
+					math: { label: '公式' },
+				},
 			},
 		},
 	});
 	crepe.editor.use(scienceBlockPlugins);
+	crepe.editor.use(blockFeelPlugins);
+	crepe.editor.use(inlineMathPlugins);
 	crepe.on((listener) => {
 		listener.markdownUpdated((_ctx, markdown) => updateMarkdown(markdown));
 	});
@@ -254,7 +312,7 @@ async function loadArticle(slug: string, discardDirty = false): Promise<void> {
 	openArticle.href = `/blog/${article.slug}/`;
 	saveButton.disabled = false;
 	compareRoundtrip(article.source, normalizedSource);
-	setSaveState(article.source === normalizedSource ? '已载入' : '已载入 · 规范化未应用', 'saved');
+	setSaveState('已载入', 'saved');
 	renderArticleTree();
 	const url = new URL(window.location.href);
 	url.searchParams.set('article', article.slug);
@@ -355,11 +413,38 @@ publishArticleButton.addEventListener('click', async () => {
 	}
 	await saveCurrentArticle();
 });
+function focusBodyStart(): void {
+	if (!crepe) return;
+	crepe.editor.action((ctx) => {
+		const view = ctx.get(editorViewCtx);
+		const selection = TextSelection.atStart(view.state.doc);
+		view.dispatch(view.state.tr.setSelection(selection).scrollIntoView());
+		view.focus();
+	});
+}
+
+bindTitleFocus(() => {
+	const end = articleTitleInput.value.length;
+	articleTitleInput.focus();
+	articleTitleInput.setSelectionRange(end, end);
+});
+articleTitleInput.addEventListener('keydown', (event) => {
+	if (event.isComposing || articleTitleInput.disabled) return;
+	if (event.key !== 'Enter' && event.key !== 'ArrowDown') return;
+	if (event.shiftKey || event.metaKey || event.altKey || event.ctrlKey) return;
+	event.preventDefault();
+	focusBodyStart();
+});
 toggleSidebarButton.addEventListener('click', () => {
 	const collapsed = studioShell.classList.toggle('sidebar-collapsed');
 	toggleSidebarButton.setAttribute('aria-pressed', String(collapsed));
 	toggleSidebarButton.setAttribute('aria-label', collapsed ? '展开侧边栏' : '收起侧边栏');
 });
+if (window.matchMedia('(max-width: 720px)').matches) {
+	studioShell.classList.add('sidebar-collapsed');
+	toggleSidebarButton.setAttribute('aria-pressed', 'true');
+	toggleSidebarButton.setAttribute('aria-label', '展开侧边栏');
+}
 toggleAiPanelButton.addEventListener('click', () => setAiPanel(aiPanel.hasAttribute('hidden')));
 closeAiPanelButton.addEventListener('click', () => setAiPanel(false));
 newArticleTitle.addEventListener('input', () => {

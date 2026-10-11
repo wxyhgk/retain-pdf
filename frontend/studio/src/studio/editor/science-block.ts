@@ -1,4 +1,4 @@
-import type { Node as ProseMirrorNode } from 'prosemirror-model';
+import { Fragment, Slice, type Node as ProseMirrorNode } from 'prosemirror-model';
 import type { Plugin as UnifiedPlugin, Transformer } from 'unified';
 import { visitParents } from 'unist-util-visit-parents';
 
@@ -121,4 +121,130 @@ export function runScienceBlockSerialize(
 	node: { attrs: { info?: unknown }; textContent: string },
 ): void {
 	state.addNode('code', undefined, node.textContent, { lang: (node.attrs.info as string) ?? '' });
+}
+
+/** Languages offered by the slash menu and the block menu. */
+export const SCIENCE_BLOCK_KINDS = [
+	{ key: 'smiles', label: 'SMILES', info: 'smiles' },
+	{ key: 'sdf', label: 'SDF', info: 'sdf' },
+	{ key: 'xyz', label: 'XYZ', info: 'xyz' },
+	{ key: 'gjf', label: 'GJF', info: 'gjf' },
+	{ key: 'cube', label: 'Cube', info: 'cube' },
+] as const;
+
+export type ScienceBlockAction =
+	| { type: 'insert'; info: string }
+	| { type: 'convert'; info: string }
+	| { type: 'delete' }
+	| { type: 'edit' };
+
+export type ScienceBlockEdit = {
+	doc: ProseMirrorNode;
+	/** Text position to place the cursor in the edited document. Null leaves the selection alone. */
+	cursor: number | null;
+};
+
+export type ScienceBlockMenuItem = {
+	section: '插入' | '转换' | '操作';
+	id: string;
+	label: string;
+	current: boolean;
+	action: ScienceBlockAction;
+};
+
+/** Short label for the fence info string. Unknown infos stay verbatim. */
+export function scienceBlockKindLabel(info: string): string {
+	const normalized = info.trim().toLowerCase();
+	const kind = SCIENCE_BLOCK_KINDS.find((item) => item.info === normalized);
+	return kind?.label ?? (info.trim() || '化学');
+}
+
+/**
+ * Empty blocks and blocks whose caret is inside the source show the editor.
+ * Everything else rests on the rendered molecule.
+ */
+export function scienceBlockSurface(source: string, editing: boolean): 'preview' | 'compose' {
+	if (editing || source.length === 0) return 'compose';
+	return 'preview';
+}
+
+/**
+ * Actions for the block under the handle. Insert stays on the slash menu
+ * and the add button, so this list only changes the selected block.
+ */
+export function scienceBlockMenuItems(nodeName: string, info: string): ScienceBlockMenuItem[] {
+	const items: ScienceBlockMenuItem[] = [];
+	if (nodeName === SCIENCE_FENCE_TYPE) {
+		items.push({
+			section: '操作',
+			id: 'edit',
+			label: '编辑源码',
+			current: false,
+			action: { type: 'edit' },
+		});
+	}
+	const currentInfo = info.trim().toLowerCase();
+	for (const kind of SCIENCE_BLOCK_KINDS) {
+		items.push({
+			section: '转换',
+			id: `convert-${kind.key}`,
+			label: kind.label,
+			current: nodeName === SCIENCE_FENCE_TYPE && currentInfo === kind.info,
+			action: { type: 'convert', info: kind.info },
+		});
+	}
+	items.push({
+		section: '操作',
+		id: 'delete',
+		label: '删除',
+		current: false,
+		action: { type: 'delete' },
+	});
+	return items;
+}
+
+/**
+ * Top-level block that owns `pos`. A position directly before a block
+ * selects that block; a position inside text walks out to depth 1.
+ */
+export function blockAt(doc: ProseMirrorNode, pos: number): { pos: number; node: ProseMirrorNode } | null {
+	const clamped = Math.max(0, Math.min(pos, doc.content.size));
+	const direct = doc.nodeAt(clamped);
+	if (direct?.isBlock && doc.resolve(clamped).nodeAfter === direct) return { pos: clamped, node: direct };
+	const inside = clamped === doc.content.size && clamped > 0 ? clamped - 1 : clamped;
+	const $pos = doc.resolve(inside);
+	if ($pos.depth < 1) return null;
+	return { pos: $pos.before(1), node: $pos.node(1) };
+}
+
+/** Apply a block-menu action. The returned document keeps every other block's bytes. */
+export function transformScienceBlock(doc: ProseMirrorNode, pos: number, action: ScienceBlockAction): ScienceBlockEdit {
+	const node = doc.nodeAt(pos);
+	if (!node?.isBlock || doc.resolve(pos).nodeAfter !== node) return { doc, cursor: null };
+	if (action.type === 'edit') {
+		if (node.type.name !== SCIENCE_FENCE_TYPE) return { doc, cursor: null };
+		return { doc, cursor: pos + node.nodeSize - 1 };
+	}
+	if (action.type === 'delete') {
+		if (doc.childCount === 1 && doc.firstChild === node) {
+			const paragraph = doc.type.schema.nodes.paragraph?.createAndFill();
+			if (!paragraph) return { doc, cursor: null };
+			return { doc: doc.type.create(null, paragraph), cursor: 1 };
+		}
+		const next = doc.replace(pos, pos + node.nodeSize, Slice.empty);
+		return { doc: next, cursor: Math.min(pos, next.content.size) };
+	}
+	const type = doc.type.schema.nodes[SCIENCE_FENCE_TYPE];
+	if (!type) return { doc, cursor: null };
+	if (action.type === 'insert') {
+		const created = type.create({ info: action.info });
+		const at = pos + node.nodeSize;
+		const next = doc.replace(at, at, new Slice(Fragment.from(created), 0, 0));
+		return { doc: next, cursor: at + 1 };
+	}
+	if (node.type === type && node.attrs.info === action.info) return { doc, cursor: null };
+	const text = node.textContent;
+	const created = type.create({ info: action.info }, text ? doc.type.schema.text(text) : null);
+	const next = doc.replace(pos, pos + node.nodeSize, new Slice(Fragment.from(created), 0, 0));
+	return { doc: next, cursor: pos + 1 };
 }

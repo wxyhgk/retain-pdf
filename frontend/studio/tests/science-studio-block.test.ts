@@ -2,17 +2,23 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import MarkdownIt from 'markdown-it';
-import { Schema } from 'prosemirror-model';
+import { Schema, Slice } from 'prosemirror-model';
+import { EditorState, TextSelection } from 'prosemirror-state';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
 import {
+	blockAt,
 	parseScienceFence,
 	planScienceBlockConversion,
 	runScienceBlockParse,
 	runScienceBlockSerialize,
+	scienceBlockKindLabel,
+	scienceBlockMenuItems,
+	scienceBlockSurface,
 	scienceFenceMarkdown,
 	scienceRetag,
+	transformScienceBlock,
 	SCIENCE_FENCE_TYPE,
 } from '../src/studio/editor/science-block.ts';
 
@@ -97,4 +103,100 @@ test('conversion planner finds session-created science fences', () => {
 	assert.equal(conversions.length, 1);
 	assert.equal(conversions[0].info, 'sdf');
 	assert.equal(conversions[0].text, 'MOCK');
+});
+
+function scienceSchema() {
+	return new Schema({
+		nodes: {
+			doc: { content: 'block+' },
+			text: { group: 'inline' },
+			paragraph: { content: 'inline*', group: 'block' },
+			'science-block': { content: 'text*', group: 'block', code: true, attrs: { info: { default: '' } } },
+		} as never,
+		marks: {},
+	});
+}
+
+test('resting surface hides source until the block is empty or being edited', () => {
+	assert.equal(scienceBlockSurface('CCO', false), 'preview');
+	assert.equal(scienceBlockSurface('', false), 'compose');
+	assert.equal(scienceBlockSurface('CCO', true), 'compose');
+	assert.equal(scienceBlockKindLabel('sdf-3d'), 'sdf-3d');
+	assert.equal(scienceBlockKindLabel('SMILES'), 'SMILES');
+	assert.equal(scienceBlockKindLabel(''), '化学');
+});
+
+test('block menu edits, converts and deletes the selected block', () => {
+	const science = scienceBlockMenuItems(SCIENCE_FENCE_TYPE, 'xyz');
+	assert.equal(science[0]?.action.type, 'edit');
+	assert.deepEqual(
+		science.filter((item) => item.section === '转换').map((item) => item.id),
+		['convert-smiles', 'convert-sdf', 'convert-xyz', 'convert-gjf', 'convert-cube'],
+	);
+	assert.equal(science.find((item) => item.id === 'convert-xyz')?.current, true);
+	assert.equal(science.find((item) => item.id === 'convert-sdf')?.current, false);
+	assert.equal(science.some((item) => item.action.type === 'insert'), false);
+	assert.equal(science.at(-1)?.action.type, 'delete');
+	const paragraph = scienceBlockMenuItems('paragraph', '');
+	assert.equal(paragraph.some((item) => item.action.type === 'edit'), false);
+	assert.equal(paragraph[0]?.section, '转换');
+	assert.equal(paragraph.at(-1)?.label, '删除');
+});
+
+test('transform inserts, converts and deletes without touching sibling text', () => {
+	const schema = scienceSchema();
+	const science = schema.nodes[SCIENCE_FENCE_TYPE];
+	const document = schema.nodes.doc.create(null, [
+		schema.nodes.paragraph.create(null, schema.text('keep')),
+		science.create({ info: 'smiles' }, schema.text('CCO')),
+	]);
+	const block = blockAt(document, 6);
+	assert.ok(block);
+	assert.equal(block.node.type.name, SCIENCE_FENCE_TYPE);
+
+	const converted = transformScienceBlock(document, block.pos, { type: 'convert', info: 'xyz' });
+	assert.equal(converted.doc.child(0).textContent, 'keep');
+	assert.equal(converted.doc.child(1).attrs.info, 'xyz');
+	assert.equal(converted.doc.child(1).textContent, 'CCO');
+	assert.equal(converted.cursor, block.pos + 1);
+
+	const same = transformScienceBlock(converted.doc, block.pos, { type: 'convert', info: 'xyz' });
+	assert.equal(same.doc, converted.doc);
+
+	const inserted = transformScienceBlock(document, 0, { type: 'insert', info: 'cube' });
+	assert.equal(inserted.doc.childCount, 3);
+	assert.equal(inserted.doc.child(0).textContent, 'keep');
+	assert.equal(inserted.doc.child(1).attrs.info, 'cube');
+	assert.equal(inserted.doc.child(1).textContent, '');
+	assert.equal(inserted.doc.child(2).textContent, 'CCO');
+
+	const removed = transformScienceBlock(document, block.pos, { type: 'delete' });
+	assert.equal(removed.doc.childCount, 1);
+	assert.equal(removed.doc.child(0).textContent, 'keep');
+
+	const only = schema.nodes.doc.create(null, [science.create({ info: 'gjf' }, schema.text('#p'))]);
+	const cleared = transformScienceBlock(only, 0, { type: 'delete' });
+	assert.equal(cleared.doc.childCount, 1);
+	assert.equal(cleared.doc.child(0).type.name, 'paragraph');
+	assert.equal(cleared.doc.child(0).textContent, '');
+
+	const state = EditorState.create({ schema, doc: document });
+	const tr = state.tr.replace(0, state.doc.content.size, new Slice(converted.doc.content, 0, 0));
+	assert.equal(tr.doc.child(0).textContent, 'keep');
+	assert.equal(tr.doc.child(1).attrs.info, 'xyz');
+	assert.equal(tr.doc.child(1).textContent, 'CCO');
+	const cursor = Math.min(converted.cursor ?? 0, tr.doc.content.size);
+	tr.setSelection(TextSelection.near(tr.doc.resolve(cursor)));
+	assert.equal(tr.selection.$from.parent.type.name, SCIENCE_FENCE_TYPE);
+});
+
+test('convert turns a plain paragraph into a science block and keeps its text', () => {
+	const schema = scienceSchema();
+	const document = schema.nodes.doc.create(null, [schema.nodes.paragraph.create(null, schema.text('CCO'))]);
+	const edit = transformScienceBlock(document, 0, { type: 'convert', info: 'smiles' });
+	assert.equal(edit.doc.child(0).type.name, SCIENCE_FENCE_TYPE);
+	assert.equal(edit.doc.child(0).attrs.info, 'smiles');
+	assert.equal(edit.doc.child(0).textContent, 'CCO');
+	const fence = edit.doc.child(0);
+	assert.equal(transformScienceBlock(edit.doc, 0, { type: 'edit' }).cursor, fence.nodeSize - 1);
 });
