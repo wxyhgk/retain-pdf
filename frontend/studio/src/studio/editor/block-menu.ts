@@ -5,6 +5,7 @@ import { $prose } from '@milkdown/utils';
 
 import { blockActionItems, headingEnter, planBlockEdit, type BlockAction, type BlockEdit } from './block-actions.ts';
 import { blockRangePlugin } from './block-range-drag.ts';
+import { paragraphBreakPlugin } from './paragraph-breaks.ts';
 import { blockAt } from './science-block.ts';
 
 let focusTitle: (() => void) | null = null;
@@ -218,4 +219,4 @@ export const writingKeymap = $prose(() =>
 	}),
 );
 
-export const blockFeelPlugins = [blockRangePlugin, blockMenuPlugin, writingKeymap];
+export const blockFeelPlugins = [blockRangePlugin, blockMenuPlugin, writingKeymap, paragraphBreakPlugin];

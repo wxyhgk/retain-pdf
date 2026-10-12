@@ -1,16 +1,24 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { Schema, type Node } from 'prosemirror-model';
+import { Fragment, Schema, Slice, type Node } from 'prosemirror-model';
 import { EditorState } from 'prosemirror-state';
 
 import {
+	expandInlineMathSlice,
 	inlineMathKeyAction,
+	literalDollarMarkName,
 	planDollarBlock,
 	planDollarEscape,
 	planDollarMath,
+	mathCommandSpans,
+	openMathAround,
+	planExpandInlineMath,
 	planLiteralDollarChar,
+	planMathSource,
 	planPromoteInlineMath,
+	readMathSource,
+	splitInlineMath,
 } from '../src/studio/editor/inline-math.ts';
 
 function applyPlan(doc: Node, plan: { from: number; to: number; nodes: Node[] }) {
@@ -47,6 +55,11 @@ function editorSchema() {
 					return ['code', 0];
 				},
 			},
+			[literalDollarMarkName]: {
+				toDOM() {
+					return ['span', { 'data-literal-dollar': 'true' }, 0];
+				},
+			},
 		},
 	});
 }
@@ -63,6 +76,8 @@ test('a dollar stays as text until it closes a formula pair', () => {
 
 	const formula = paragraphDoc(schema, '$x');
 	assert.deepEqual(planDollarMath(formula, 3, 3), { kind: 'math', from: 1, to: 3, value: 'x' });
+	const sum = paragraphDoc(schema, '$\\sum f(x)');
+	assert.deepEqual(planDollarMath(sum, 11, 11), { kind: 'math', from: 1, to: 11, value: '\\sum f(x)' });
 	const around = schema.nodes.doc.create(
 		null,
 		schema.nodes.paragraph.create(null, [
@@ -99,15 +114,20 @@ test('a dollar stays as text until it closes a formula pair', () => {
 	assert.deepEqual(planDollarMath(heading, 3, 3), { kind: 'literal', from: 3, to: 3 });
 });
 
-test('escape after one dollar opens a formula and a paragraph of $$ becomes a block on enter', () => {
+test('escape after one dollar inserts the closing dollar and a paragraph of $$ becomes a block on enter', () => {
 	const schema = editorSchema();
 	const one = paragraphDoc(schema, 'a$');
-	assert.deepEqual(planDollarEscape(one, 3), { from: 2, to: 3 });
+	assert.deepEqual(planDollarEscape(one, 3), { at: 3 });
 	const two = paragraphDoc(schema, '$$');
 	assert.equal(planDollarEscape(two, 3), null);
 	assert.equal(planDollarEscape(two, 2), null);
 	const escaped = paragraphDoc(schema, '\\$');
 	assert.equal(planDollarEscape(escaped, 3), null);
+	const literal = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, schema.text('$', [schema.marks[literalDollarMarkName].create()])),
+	);
+	assert.equal(planDollarEscape(literal, 2), null);
 
 	const block = planDollarBlock(two, 3);
 	assert.ok(block);
@@ -173,6 +193,121 @@ test('inline formula keys commit, leave, or delete the source', () => {
 	assert.equal(inlineMathKeyAction('abc', 2, 2, 'ArrowRight'), null);
 	assert.equal(inlineMathKeyAction('abc', 1, 1, 'Enter'), 'commit');
 	assert.equal(inlineMathKeyAction('', 0, 0, 'Escape'), 'commit');
+});
+
+test('pasted text closes $...$ even when the formula starts with a backslash', () => {
+	assert.deepEqual(splitInlineMath('$\\sum f(x)$'), [{ kind: 'math', value: '\\sum f(x)' }]);
+	assert.deepEqual(splitInlineMath('见 $\\sum f(x)$ 完'), [
+		{ kind: 'text', text: '见 ' },
+		{ kind: 'math', value: '\\sum f(x)' },
+		{ kind: 'text', text: ' 完' },
+	]);
+	assert.equal(splitInlineMath('\\$\\sum f(x)\\$'), null);
+	assert.equal(splitInlineMath('$$'), null);
+	assert.equal(splitInlineMath('$20'), null);
+	assert.deepEqual(splitInlineMath('$20 and $x$'), [
+		{ kind: 'text', text: '$20 and ' },
+		{ kind: 'math', value: 'x' },
+	]);
+
+	const schema = editorSchema();
+	const paragraph = schema.nodes.paragraph.create(null, schema.text('见 $\\sum f(x)$'));
+	const slice = new Slice(Fragment.from(paragraph), 0, 0);
+	const expanded = expandInlineMathSlice(slice, schema.nodes.math_inline);
+	assert.ok(expanded);
+	const block = expanded.content.firstChild;
+	assert.equal(block?.childCount, 2);
+	assert.equal(block?.child(0).text, '见 ');
+	assert.equal(block?.child(1).type.name, 'math_inline');
+	assert.equal(block?.child(1).attrs.value, '\\sum f(x)');
+
+	const code = schema.nodes.code_block.create({ language: '' }, schema.text('$\\sum f(x)$'));
+	assert.equal(expandInlineMathSlice(new Slice(Fragment.from(code), 0, 0), schema.nodes.math_inline), null);
+});
+
+test('an escaped dollar does not open a formula', () => {
+	const schema = editorSchema();
+	const doc = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, [
+			schema.text('$', [schema.marks[literalDollarMarkName].create()]),
+			schema.text('x'),
+		]),
+	);
+	assert.deepEqual(planDollarMath(doc, 3, 3), { kind: 'literal', from: 3, to: 3 });
+});
+
+test('a live pair stays as source until the caret leaves', () => {
+	const schema = editorSchema();
+	const doc = paragraphDoc(schema, '$x$');
+	const live = { from: 1, to: 4 };
+	assert.equal(readMathSource(doc, live.from, live.to)?.value, 'x');
+	assert.equal(planMathSource(doc, null, { from: 4, to: 4 }).action, 'noop');
+	assert.equal(planMathSource(doc, live, { from: 2, to: 2 }).action, 'keep');
+	assert.equal(planMathSource(doc, live, { from: 3, to: 3 }).action, 'keep');
+	const after = planMathSource(doc, live, { from: 4, to: 4 });
+	assert.deepEqual(after, { action: 'collapse', from: 1, to: 4, value: 'x', cursor: 2 });
+	const before = planMathSource(doc, live, { from: 1, to: 1 });
+	assert.equal(before.action, 'collapse');
+	if (before.action === 'collapse') assert.equal(before.cursor, 1);
+	const empty = paragraphDoc(schema, '$$');
+	assert.equal(planMathSource(empty, { from: 1, to: 3 }, { from: 2, to: 2 }).action, 'keep');
+	assert.equal(planMathSource(empty, { from: 1, to: 3 }, { from: 3, to: 3 }).action, 'clear');
+	const sum = paragraphDoc(schema, '$\\sum f(x)$');
+	assert.equal(readMathSource(sum, 1, sum.content.size - 1)?.value, '\\sum f(x)');
+});
+
+test('formula source highlights latex commands', () => {
+	assert.deepEqual(mathCommandSpans('$\\sin x$'), [{ from: 1, to: 5 }]);
+	assert.deepEqual(mathCommandSpans('$a + \\frac{1}{2}$'), [{ from: 5, to: 10 }]);
+	assert.deepEqual(mathCommandSpans('$$'), []);
+});
+
+test('a caret inside dollar text is a formula, and a literal dollar is not', () => {
+	const schema = editorSchema();
+	const text = '$\\sin x$';
+	const doc = paragraphDoc(schema, text);
+	const inside = openMathAround(doc, 1 + text.indexOf('sin'));
+	assert.ok(inside);
+	assert.equal(inside.value, '\\sin x');
+	assert.equal(doc.textBetween(inside.from, inside.to), text);
+	assert.equal(openMathAround(doc, 1 + text.length - 1)?.value, '\\sin x');
+	assert.equal(openMathAround(doc, 1), null);
+	assert.equal(openMathAround(doc, 1 + text.length), null);
+	assert.equal(openMathAround(paragraphDoc(schema, '$$'), 2), null);
+	assert.equal(openMathAround(paragraphDoc(schema, '$ x$'), 3), null);
+	const code = schema.nodes.doc.create(null, schema.nodes.code_block.create({ language: '' }, schema.text(text)));
+	assert.equal(openMathAround(code, 3), null);
+	const literal = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, [
+			schema.text('$', [schema.marks[literalDollarMarkName].create()]),
+			schema.text('\\sin x$'),
+		]),
+	);
+	assert.equal(openMathAround(literal, 4), null);
+	const escaped = paragraphDoc(schema, '\\$\\sin x$');
+	assert.equal(openMathAround(escaped, 1 + escaped.textContent.indexOf('sin')), null);
+});
+
+test('entering a rendered formula expands the source around the caret', () => {
+	const schema = editorSchema();
+	const math = schema.nodes.math_inline.create({ value: 'x' });
+	const doc = schema.nodes.doc.create(null, schema.nodes.paragraph.create(null, [schema.text('a'), math, schema.text('b')]));
+	const start = planExpandInlineMath(doc, 2, 'start');
+	assert.ok(start);
+	assert.equal(start.text, '$x$');
+	assert.equal(start.cursor, 3);
+	const end = planExpandInlineMath(doc, 2, 'end');
+	assert.ok(end);
+	assert.equal(end.cursor, 4);
+	const sum = planExpandInlineMath(
+		schema.nodes.doc.create(null, schema.nodes.paragraph.create(null, schema.nodes.math_inline.create({ value: '\\sum f(x)' }))),
+		1,
+		'end',
+	);
+	assert.equal(sum?.text, '$\\sum f(x)$');
+	assert.equal(sum?.cursor, 1 + 1 + '\\sum f(x)'.length);
 });
 
 test('a paragraph that is only $$ keeps the next space as text', () => {

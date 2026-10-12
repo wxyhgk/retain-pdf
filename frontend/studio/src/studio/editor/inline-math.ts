@@ -1,18 +1,59 @@
 import type { Ctx, MilkdownPlugin } from '@milkdown/ctx';
 import { SchemaReady, nodeViewCtx, prosePluginsCtx } from '@milkdown/kit/core';
-import { Fragment, type Node as ProseMirrorNode } from '@milkdown/prose/model';
-import { NodeSelection, Plugin, PluginKey, TextSelection } from '@milkdown/prose/state';
+import { Fragment, Slice, type Node as ProseMirrorNode, type NodeType } from '@milkdown/prose/model';
+import { NodeSelection, Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView, type NodeView } from '@milkdown/prose/view';
+import { $markSchema } from '@milkdown/utils';
 
 import { renderMathHtml } from '../../science/rendering/math.ts';
 
 export type InlineMathKeyAction = 'commit' | 'exit-before' | 'exit-after' | 'delete' | 'promote';
 
-type CaretPlace = 'all' | 'start' | 'end';
+/** A `$` typed with `\$`. It is not a formula delimiter. */
+export const literalDollarMarkName = 'literal_dollar';
 
-type EditState = { pos: number | null; caret: CaretPlace };
+/** Source of a formula the caret is still inside. Serializes as inline math. */
+export const mathPendingMarkName = 'math_pending';
 
-const inlineMathEditKey = new PluginKey<EditState>('inline-math-edit');
+type LiveRange = { from: number; to: number };
+
+const liveMathKey = new PluginKey<LiveRange | null>('live-math');
+
+const ignoredMarkdownMark = {
+	parseMarkdown: {
+		match: () => false,
+		runner: () => undefined,
+	},
+};
+
+const literalDollarSchema = $markSchema(literalDollarMarkName, () => ({
+	inclusive: false,
+	parseDOM: [{ tag: 'span[data-literal-dollar]' }],
+	toDOM: () => ['span', { 'data-literal-dollar': 'true' }],
+	parseMarkdown: ignoredMarkdownMark.parseMarkdown,
+	toMarkdown: {
+		match: (mark) => mark.type.name === literalDollarMarkName,
+		runner: () => false,
+	},
+}));
+
+const mathPendingSchema = $markSchema(mathPendingMarkName, () => ({
+	priority: 1,
+	parseDOM: [{ tag: 'span[data-math-pending]' }],
+	toDOM: () => ['span', { 'data-math-pending': 'true' }],
+	parseMarkdown: ignoredMarkdownMark.parseMarkdown,
+	toMarkdown: {
+		match: (mark) => mark.type.name === mathPendingMarkName,
+		runner: (state, _mark, node) => {
+			const text = node.text ?? '';
+			if (text.length < 3 || !text.startsWith('$') || !text.endsWith('$')) return false;
+			const value = text.slice(1, -1);
+			if (!value || value[0] === ' ' || value[0] === '\t' || value.includes('\n') || value.endsWith(' ') || value.endsWith('\t')) return false;
+			state.addNode('inlineMath', undefined, value);
+			return true;
+		},
+	},
+}));
 
 export type DollarPlan = { kind: 'math'; from: number; to: number; value: string } | { kind: 'literal'; from: number; to: number };
 
@@ -21,6 +62,19 @@ function escapingBackslash(parent: ProseMirrorNode, offset: number): number | nu
 	while (offset - count > 0 && parent.textBetween(offset - count - 1, offset - count) === '\\') count += 1;
 	if (count % 2 === 0) return null;
 	return offset - 1;
+}
+
+function markAtOffset(parent: ProseMirrorNode, offset: number, markName: string): boolean {
+	let seen = 0;
+	for (let index = 0; index < parent.childCount; index += 1) {
+		const child = parent.child(index);
+		const next = seen + child.nodeSize;
+		if (offset < next) {
+			return Boolean(child.isText && offset >= seen && child.marks.some((mark) => mark.type.name === markName));
+		}
+		seen = next;
+	}
+	return false;
 }
 
 /** Text in the run that ends at the caret. An inline atom starts a new run, so a pair cannot cross a formula. */
@@ -47,8 +101,9 @@ function textBeforeCaret(parent: ProseMirrorNode, offset: number): { text: strin
 }
 
 /**
- * A `$` stays as text. It becomes inline math only when it closes a pair
- * such as `$x$`: no spaces against either delimiter, and no digit after the closer.
+ * A typed `$` stays literal, or it closes a pair such as `$x$`.
+ * A closing pair stays `$value$` in the paragraph until the caret leaves.
+ * No spaces against either delimiter, and no digit after the closer.
  * `\$` inserts a plain dollar and does not close a pair.
  */
 export function planDollarMath(doc: ProseMirrorNode, from: number, to: number): DollarPlan | null {
@@ -71,6 +126,8 @@ export function planDollarMath(doc: ProseMirrorNode, from: number, to: number): 
 	if (next >= '0' && next <= '9') return { kind: 'literal', from, to };
 	for (let index = before.text.length - 1; index >= 0; index -= 1) {
 		if (before.text[index] !== '$') continue;
+		const parentOffset = before.fromOffset + index;
+		if (markAtOffset($from.parent, parentOffset, literalDollarMarkName)) continue;
 		let slashes = 0;
 		for (let slashIndex = index - 1; slashIndex >= 0 && before.text[slashIndex] === '\\'; slashIndex -= 1) slashes += 1;
 		if (slashes % 2 === 1) continue;
@@ -81,8 +138,94 @@ export function planDollarMath(doc: ProseMirrorNode, from: number, to: number): 
 	return { kind: 'literal', from, to };
 }
 
-/** Esc right after one `$` opens an inline formula. `$$` stays as text. */
-export function planDollarEscape(doc: ProseMirrorNode, pos: number): { from: number; to: number } | null {
+export type InlineMathPiece = { kind: 'text'; text: string } | { kind: 'math'; value: string };
+
+/**
+ * Pair `$...$` inside one pasted run.
+ * A dollar before a digit stays text. An odd run of backslashes keeps the next dollar literal.
+ * Returns null when nothing closes.
+ */
+export function splitInlineMath(text: string): InlineMathPiece[] | null {
+	const openers: number[] = [];
+	const pairs: { from: number; to: number }[] = [];
+	for (let index = 0; index < text.length; index += 1) {
+		if (text[index] !== '$') continue;
+		let slashes = 0;
+		for (let slash = index - 1; slash >= 0 && text[slash] === '\\'; slash -= 1) slashes += 1;
+		if (slashes % 2 === 1) continue;
+		const next = text[index + 1] ?? '';
+		if (next >= '0' && next <= '9') continue;
+		const opener = openers.at(-1);
+		if (opener != null) {
+			const value = text.slice(opener + 1, index);
+			if (value && value[0] !== ' ' && value[0] !== '\t' && !value.includes('\n')) {
+				pairs.push({ from: opener, to: index });
+				openers.pop();
+				continue;
+			}
+		}
+		if (next === ' ' || next === '\t' || next === '') continue;
+		openers.push(index);
+	}
+	if (!pairs.length) return null;
+	const pieces: InlineMathPiece[] = [];
+	let cursor = 0;
+	for (const pair of pairs) {
+		if (pair.from > cursor) pieces.push({ kind: 'text', text: text.slice(cursor, pair.from) });
+		pieces.push({ kind: 'math', value: text.slice(pair.from + 1, pair.to) });
+		cursor = pair.to + 1;
+	}
+	if (cursor < text.length) pieces.push({ kind: 'text', text: text.slice(cursor) });
+	return pieces;
+}
+
+function expandInlineMathFragment(fragment: Fragment, math: NodeType): { fragment: Fragment; changed: boolean } {
+	let changed = false;
+	const children: ProseMirrorNode[] = [];
+	fragment.forEach((node) => {
+		if (node.isText) {
+			const marked = node.marks.some(
+				(mark) => mark.type.spec.code || mark.type.name === 'code' || mark.type.name === literalDollarMarkName,
+			);
+			const pieces = node.text && !marked ? splitInlineMath(node.text) : null;
+			if (!pieces) {
+				children.push(node);
+				return;
+			}
+			changed = true;
+			for (const piece of pieces) {
+				if (piece.kind === 'text') children.push(node.type.schema.text(piece.text, node.marks));
+				else children.push(math.create({ value: piece.value }));
+			}
+			return;
+		}
+		if (node.type.spec.code || node.isAtom || !node.content.size) {
+			children.push(node);
+			return;
+		}
+		const inner = expandInlineMathFragment(node.content, math);
+		if (!inner.changed) {
+			children.push(node);
+			return;
+		}
+		changed = true;
+		children.push(node.copy(inner.fragment));
+	});
+	return { fragment: Fragment.from(children), changed };
+}
+
+/** HTML paste keeps `$...$` as text. Close those pairs the same way a typed `$` does. */
+export function expandInlineMathSlice(slice: Slice, math: NodeType): Slice | null {
+	const expanded = expandInlineMathFragment(slice.content, math);
+	if (!expanded.changed) return null;
+	return new Slice(expanded.fragment, slice.openStart, slice.openEnd);
+}
+
+/**
+ * Esc right after one `$` inserts the closing `$` and leaves the caret between them.
+ * `$$` and a dollar typed with `\$` stay as they are.
+ */
+export function planDollarEscape(doc: ProseMirrorNode, pos: number): { at: number } | null {
 	if (pos < 0 || pos > doc.content.size) return null;
 	const $pos = doc.resolve(pos);
 	if (!$pos.parent.isTextblock || $pos.parent.type.spec.code) return null;
@@ -92,7 +235,147 @@ export function planDollarEscape(doc: ProseMirrorNode, pos: number): { from: num
 	if (offset >= 2 && $pos.parent.textBetween(offset - 2, offset - 1) === '$') return null;
 	if (offset < $pos.parent.content.size && $pos.parent.textBetween(offset, offset + 1) === '$') return null;
 	if (escapingBackslash($pos.parent, offset - 1) != null) return null;
-	return { from: pos - 1, to: pos };
+	if (markAtOffset($pos.parent, offset - 1, literalDollarMarkName)) return null;
+	return { at: pos };
+}
+
+/** The `$value$` covered by [from, to), when it is a real inline formula. */
+export function readMathSource(doc: ProseMirrorNode, from: number, to: number): { value: string } | null {
+	if (from < 0 || to - from < 3 || to > doc.content.size) return null;
+	const $from = doc.resolve(from);
+	const $to = doc.resolve(to);
+	if (!$from.sameParent($to) || !$from.parent.isTextblock || $from.parent.type.spec.code) return null;
+	if ($from.marks().some((mark) => mark.type.spec.code || mark.type.name === 'code')) return null;
+	const opener = $from.parentOffset;
+	const closer = $to.parentOffset - 1;
+	if (closer < opener || $from.parent.textBetween(opener, opener + 1) !== '$' || $from.parent.textBetween(closer, closer + 1) !== '$') return null;
+	if (markAtOffset($from.parent, opener, literalDollarMarkName) || markAtOffset($from.parent, closer, literalDollarMarkName)) return null;
+	if (escapingBackslash($from.parent, opener) != null || escapingBackslash($from.parent, closer) != null) return null;
+	const value = $from.parent.textBetween(opener + 1, closer);
+	if (!value || value[0] === ' ' || value[0] === '\t' || value.endsWith(' ') || value.endsWith('\t') || value.includes('\n')) return null;
+	const next = closer + 1 < $from.parent.content.size ? $from.parent.textBetween(closer + 1, closer + 2) : '';
+	if (next >= '0' && next <= '9') return null;
+	return { value };
+}
+
+/** Text of the inline run that contains `offset`. An atom ends the run. */
+function textRunAround(parent: ProseMirrorNode, offset: number): { text: string; fromOffset: number } {
+	let text = '';
+	let seen = 0;
+	let fromOffset = 0;
+	let passed = false;
+	for (let index = 0; index < parent.childCount; index += 1) {
+		const child = parent.child(index);
+		if (!child.isText) {
+			if (passed || seen >= offset) break;
+			text = '';
+			seen += child.nodeSize;
+			fromOffset = seen;
+			continue;
+		}
+		text += child.text ?? '';
+		seen += child.nodeSize;
+		if (seen >= offset) passed = true;
+	}
+	return { text, fromOffset };
+}
+
+function dollarIndex(parent: ProseMirrorNode, runFrom: number, text: string, index: number): boolean {
+	if (text[index] !== '$') return false;
+	let slashes = 0;
+	for (let slash = index - 1; slash >= 0 && text[slash] === '\\'; slash -= 1) slashes += 1;
+	if (slashes % 2 === 1) return false;
+	return !markAtOffset(parent, runFrom + index, literalDollarMarkName);
+}
+
+/**
+ * The `$value$` already surrounding a caret, including a pair loaded as text.
+ * This does not mark the pair live, so leaving it does not render or save it.
+ */
+export function openMathAround(doc: ProseMirrorNode, pos: number): { from: number; to: number; value: string } | null {
+	if (pos < 0 || pos > doc.content.size) return null;
+	const $pos = doc.resolve(pos);
+	if (!$pos.parent.isTextblock || $pos.parent.type.spec.code) return null;
+	if ($pos.marks().some((mark) => mark.type.spec.code || mark.type.name === 'code')) return null;
+	const run = textRunAround($pos.parent, $pos.parentOffset);
+	const local = $pos.parentOffset - run.fromOffset;
+	if (local <= 0 || local > run.text.length) return null;
+	let opener = -1;
+	for (let index = local - 1; index >= 0; index -= 1) {
+		if (!dollarIndex($pos.parent, run.fromOffset, run.text, index)) continue;
+		opener = index;
+		break;
+	}
+	if (opener < 0) return null;
+	let closer = -1;
+	for (let index = local; index < run.text.length; index += 1) {
+		if (!dollarIndex($pos.parent, run.fromOffset, run.text, index)) continue;
+		closer = index;
+		break;
+	}
+	if (closer < 0) return null;
+	const from = $pos.start() + run.fromOffset + opener;
+	const to = $pos.start() + run.fromOffset + closer + 1;
+	const source = readMathSource(doc, from, to);
+	if (!source) return null;
+	return { from, to, value: source.value };
+}
+
+export type MathSourcePlan =
+	| { action: 'noop' }
+	| { action: 'keep' }
+	| { action: 'clear' }
+	| { action: 'collapse'; from: number; to: number; value: string; cursor: number };
+
+/**
+ * A pair stays as `$source$` while the caret is strictly inside it.
+ * Leaving a valid pair renders it. An empty or broken pair is left as text.
+ */
+export function planMathSource(
+	doc: ProseMirrorNode,
+	live: LiveRange | null,
+	selection: { from: number; to: number },
+): MathSourcePlan {
+	if (!live) return { action: 'noop' };
+	if (live.from < 0 || live.to > doc.content.size || live.from >= live.to) return { action: 'clear' };
+	const $from = doc.resolve(live.from);
+	const $to = doc.resolve(live.to);
+	if (!$from.sameParent($to)) return { action: 'clear' };
+	const inside = selection.from > live.from && selection.to < live.to;
+	if (inside) return { action: 'keep' };
+	if (selection.from !== selection.to) return { action: 'keep' };
+	const source = readMathSource(doc, live.from, live.to);
+	if (!source) return { action: 'clear' };
+	const span = live.to - live.from;
+	let cursor = live.from + 1;
+	if (selection.from >= live.to) cursor = selection.from - span + 1;
+	else if (selection.from <= live.from) cursor = selection.from;
+	return { action: 'collapse', from: live.from, to: live.to, value: source.value, cursor };
+}
+
+/** `\sin` inside a visible formula source. Offsets are into `text`, which includes the dollars. */
+export function mathCommandSpans(text: string): { from: number; to: number }[] {
+	const spans: { from: number; to: number }[] = [];
+	for (const match of text.matchAll(/\\[a-zA-Z]+/g)) {
+		const index = match.index ?? 0;
+		spans.push({ from: index, to: index + match[0].length });
+	}
+	return spans;
+}
+
+/** Arrow or click into a rendered formula expands `$value$` and puts the caret inside. */
+export function planExpandInlineMath(
+	doc: ProseMirrorNode,
+	pos: number,
+	caret: 'start' | 'end',
+): { from: number; to: number; text: string; cursor: number } | null {
+	if (pos < 0 || pos > doc.content.size) return null;
+	const node = doc.nodeAt(pos);
+	if (!node || node.type.name !== 'math_inline') return null;
+	const value = String(node.attrs.value ?? '');
+	const text = `$${value}$`;
+	const cursor = caret === 'start' ? pos + 1 : pos + 1 + value.length;
+	return { from: pos, to: pos + node.nodeSize, text, cursor };
 }
 
 /** Enter at the end of a paragraph whose text is `$$` turns it into a LaTeX block. */
@@ -204,13 +487,6 @@ class InlineMathView implements NodeView {
 	private node: ProseMirrorNode;
 	private readonly view: EditorView;
 	private readonly getPos: () => number | undefined;
-	private input: HTMLInputElement | null = null;
-	private preview: HTMLElement | null = null;
-	private editing = false;
-	private placed = false;
-	private closing = false;
-	private dead = false;
-	private suppressBlur = false;
 
 	constructor(node: ProseMirrorNode, view: EditorView, getPos: () => number | undefined) {
 		this.node = node;
@@ -218,21 +494,15 @@ class InlineMathView implements NodeView {
 		this.getPos = getPos;
 		this.dom = document.createElement('span');
 		this.dom.className = 'pm-inline-math';
+		this.dom.contentEditable = 'false';
 		this.dom.addEventListener('mousedown', this.onMouseDown);
 		this.dom.addEventListener('dragstart', this.onDragStart);
-		if (this.editState()) this.openEditor();
-		else this.renderFormula();
+		this.renderFormula();
 	}
 
 	update(node: ProseMirrorNode): boolean {
 		if (node.type !== this.node.type) return false;
 		this.node = node;
-		if (this.editState()) {
-			if (!this.editing) this.openEditor();
-			else this.renderPreview();
-			return true;
-		}
-		if (this.editing) this.closeEditor();
 		this.renderFormula();
 		return true;
 	}
@@ -242,22 +512,12 @@ class InlineMathView implements NodeView {
 	}
 
 	stopEvent(event: Event): boolean {
-		const target = event.target;
-		return this.editing && target instanceof Node && this.dom.contains(target);
+		return event.type === 'dragstart';
 	}
 
 	destroy(): void {
-		this.dead = true;
 		this.dom.removeEventListener('mousedown', this.onMouseDown);
 		this.dom.removeEventListener('dragstart', this.onDragStart);
-		this.detachInput();
-	}
-
-	private editState(): EditState | null {
-		const state = inlineMathEditKey.getState(this.view.state);
-		const pos = this.getPos();
-		if (!state || state.pos == null || pos === undefined || state.pos !== pos) return null;
-		return state;
 	}
 
 	private onDragStart = (event: DragEvent): void => {
@@ -266,155 +526,15 @@ class InlineMathView implements NodeView {
 
 	private onMouseDown = (event: MouseEvent): void => {
 		if (event.button !== 0 || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
-		if (this.editing && event.target === this.input) {
-			event.stopPropagation();
-			return;
-		}
 		event.preventDefault();
 		event.stopPropagation();
 		const pos = this.getPos();
 		if (pos === undefined) return;
-		if (this.editState()) {
-			this.input?.focus();
-			return;
-		}
-		// mouseup can move focus back to the editor before the field is ready.
-		this.holdBlurUntilClickEnds();
-		this.view.dispatch(this.view.state.tr.setMeta(inlineMathEditKey, { pos, caret: 'all' }));
-		if (!this.editing) this.openEditor();
+		applyExpand(this.view, pos, 'end');
 	};
-
-	private holdBlurUntilClickEnds(): void {
-		this.suppressBlur = true;
-		const release = (): void => {
-			document.removeEventListener('mouseup', release, true);
-			window.setTimeout(() => {
-				this.suppressBlur = false;
-				if (this.dead || this.closing || this.view.isDestroyed || !this.editing || !this.input) return;
-				if (document.activeElement !== this.input) this.input.focus();
-			}, 0);
-		};
-		document.addEventListener('mouseup', release, true);
-	}
-
-	private onInput = (): void => {
-		if (!this.input || this.closing) return;
-		this.resize();
-		this.renderPreview();
-		const pos = this.getPos();
-		if (pos === undefined) return;
-		const value = this.input.value;
-		const current = this.view.state.doc.nodeAt(pos);
-		if (!current || current.attrs.value === value) return;
-		const caret = this.editState()?.caret ?? 'all';
-		this.view.dispatch(
-			this.view.state.tr.setNodeMarkup(pos, undefined, { ...current.attrs, value }).setMeta(inlineMathEditKey, { pos, caret }),
-		);
-	};
-
-	private onKeyDown = (event: KeyboardEvent): void => {
-		if (!this.input || event.isComposing || event.metaKey || event.ctrlKey || event.altKey) return;
-		const action = inlineMathKeyAction(this.input.value, this.input.selectionStart ?? 0, this.input.selectionEnd ?? 0, event.key);
-		if (!action) return;
-		event.preventDefault();
-		event.stopPropagation();
-		if (action === 'promote') this.promote();
-		else if (action === 'delete') this.removeNode();
-		else if (action === 'exit-before') this.finish(-1);
-		else this.finish(1);
-	};
-
-	private onBlur = (): void => {
-		window.setTimeout(() => {
-			if (this.suppressBlur || this.closing || this.dead || this.view.isDestroyed || !this.editing) return;
-			if (this.input && this.dom.contains(document.activeElement)) return;
-			if (!this.editState()) return;
-			this.finish(1);
-		}, 0);
-	};
-
-	private openEditor(): void {
-		if (this.editing) return;
-		this.editing = true;
-		this.closing = false;
-		this.placed = false;
-		this.dom.classList.add('is-editing');
-		this.dom.classList.remove('is-error');
-		const input = document.createElement('input');
-		input.type = 'text';
-		input.className = 'pm-inline-math-source';
-		input.setAttribute('aria-label', '行内公式');
-		input.spellcheck = false;
-		input.autocomplete = 'off';
-		input.value = String(this.node.attrs.value ?? '');
-		input.addEventListener('input', this.onInput);
-		input.addEventListener('keydown', this.onKeyDown);
-		input.addEventListener('blur', this.onBlur);
-		const preview = document.createElement('span');
-		preview.className = 'pm-inline-math-preview';
-		this.input = input;
-		this.preview = preview;
-		this.dom.replaceChildren(input, preview);
-		this.resize();
-		this.renderPreview();
-		this.focusInput();
-	}
-
-	private focusInput(): void {
-		queueMicrotask(() => {
-			if (this.dead || this.closing || this.view.isDestroyed || !this.input || !this.editing) return;
-			this.input.focus();
-			if (this.placed) return;
-			this.placed = true;
-			const caret = this.editState()?.caret ?? 'all';
-			const length = this.input.value.length;
-			if (caret === 'start') this.input.setSelectionRange(0, 0);
-			else if (caret === 'end') this.input.setSelectionRange(length, length);
-			else this.input.select();
-		});
-	}
-
-	private closeEditor(): void {
-		this.editing = false;
-		this.placed = false;
-		this.dom.classList.remove('is-editing');
-		this.detachInput();
-		this.preview = null;
-	}
-
-	private detachInput(): void {
-		this.input?.removeEventListener('input', this.onInput);
-		this.input?.removeEventListener('keydown', this.onKeyDown);
-		this.input?.removeEventListener('blur', this.onBlur);
-		this.input = null;
-	}
-
-	private resize(): void {
-		if (!this.input) return;
-		this.input.style.width = `${Math.max(this.input.value.length, 1)}ch`;
-	}
-
-	private renderPreview(): void {
-		if (!this.preview || !this.input) return;
-		const value = this.input.value;
-		if (!value) {
-			this.preview.classList.add('is-empty');
-			this.preview.textContent = '输入 LaTeX';
-			return;
-		}
-		this.preview.classList.remove('is-empty');
-		const result = renderMathHtml(value, false);
-		this.preview.innerHTML = result.html;
-		if (!result.error) return;
-		const note = document.createElement('span');
-		note.className = 'pm-inline-math-error';
-		note.textContent = result.error;
-		this.preview.append(note);
-	}
 
 	private renderFormula(): void {
 		const value = String(this.node.attrs.value ?? '');
-		this.dom.classList.remove('is-editing');
 		if (!value) {
 			const placeholder = document.createElement('span');
 			placeholder.className = 'pm-inline-math-placeholder';
@@ -426,98 +546,181 @@ class InlineMathView implements NodeView {
 		}
 		const result = renderMathHtml(value, false);
 		this.dom.innerHTML = result.html;
+		// MathML sits under the visible glyph. In a contenteditable line the caret enters it and draws through the formula.
+		this.dom.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
 		this.dom.classList.toggle('is-error', Boolean(result.error));
 		if (result.error) this.dom.title = result.error;
 		else this.dom.removeAttribute('title');
 	}
+}
 
-	private finish(bias: -1 | 1): void {
-		if (this.closing) return;
-		const pos = this.getPos();
-		if (pos === undefined) return;
-		const value = this.input?.value ?? String(this.node.attrs.value ?? '');
-		if (!value) {
-			this.removeNode();
-			return;
-		}
-		this.closing = true;
-		let tr = this.view.state.tr;
-		const current = tr.doc.nodeAt(pos);
-		if (current && current.attrs.value !== value) tr = tr.setNodeMarkup(pos, undefined, { ...current.attrs, value });
-		const near = bias < 0 ? pos : pos + 1;
-		tr = tr.setMeta(inlineMathEditKey, null).setSelection(TextSelection.near(tr.doc.resolve(near), bias)).scrollIntoView();
-		this.view.dispatch(tr);
-		this.view.focus();
+function isLiveRange(meta: unknown): meta is LiveRange {
+	if (!meta || typeof meta !== 'object' || !('from' in meta) || !('to' in meta)) return false;
+	return typeof meta.from === 'number' && typeof meta.to === 'number';
+}
+
+function rangeFullyMarked(doc: ProseMirrorNode, from: number, to: number, markName: string): boolean {
+	let marked = true;
+	let seen = false;
+	doc.nodesBetween(from, to, (node) => {
+		if (!marked) return false;
+		if (!node.isText) return undefined;
+		seen = true;
+		if (!node.marks.some((mark) => mark.type.name === markName)) marked = false;
+		return false;
+	});
+	return seen && marked;
+}
+
+function collapseMath(
+	state: EditorState,
+	plan: { from: number; to: number; value: string; cursor: number },
+): Transaction | null {
+	const math = state.schema.nodes.math_inline;
+	if (!math) return null;
+	const node = math.create({ value: plan.value });
+	let tr = state.tr.replaceWith(plan.from, plan.to, node);
+	const cursor = Math.max(0, Math.min(plan.cursor, tr.doc.content.size));
+	const bias = plan.cursor <= plan.from ? -1 : 1;
+	return tr
+		.setSelection(TextSelection.near(tr.doc.resolve(cursor), bias))
+		.setMeta(liveMathKey, null)
+		.scrollIntoView();
+}
+
+function applyExpand(view: EditorView, pos: number, caret: 'start' | 'end'): boolean {
+	const plan = planExpandInlineMath(view.state.doc, pos, caret);
+	if (!plan) return false;
+	let tr = view.state.tr.replaceWith(plan.from, plan.to, view.state.schema.text(plan.text));
+	const pending = view.state.schema.marks[mathPendingMarkName];
+	if (pending && plan.text.length > 2) tr = tr.addMark(plan.from, plan.from + plan.text.length, pending.create());
+	const cursor = Math.max(0, Math.min(plan.cursor, tr.doc.content.size));
+	tr = tr
+		.setSelection(TextSelection.create(tr.doc, cursor))
+		.setMeta(liveMathKey, { from: plan.from, to: plan.from + plan.text.length })
+		.scrollIntoView();
+	view.dispatch(tr);
+	view.focus();
+	return true;
+}
+
+function mathPreviewWidget(from: number, to: number, value: string): Decoration {
+	return Decoration.widget(
+		to,
+		(view) => {
+			const root = document.createElement('span');
+			root.className = 'pm-math-preview';
+			root.setAttribute('contenteditable', 'false');
+			root.setAttribute('aria-hidden', 'true');
+			const body = document.createElement('span');
+			body.className = 'pm-math-preview-body';
+			const rendered = renderMathHtml(value, false);
+			body.innerHTML = rendered.html;
+			body.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
+			if (rendered.error) body.classList.add('is-error');
+			root.append(body);
+			const place = () => {
+				if (!root.isConnected || view.isDestroyed) return;
+				try {
+					const start = view.coordsAtPos(from);
+					const end = view.coordsAtPos(to);
+					const host = root.getBoundingClientRect();
+					body.style.left = `${start.left - host.left}px`;
+					const width = body.getBoundingClientRect().width;
+					const arrow = (start.left + end.left) / 2 - start.left;
+					body.style.setProperty('--arrow', `${Math.min(Math.max(arrow, 14), Math.max(14, width - 14))}px`);
+				} catch {
+					// The source moved before this frame.
+				}
+			};
+			requestAnimationFrame(place);
+			return root;
+		},
+		{ ignoreSelection: true, side: 1, key: `math-preview:${from}:${value}` },
+	);
+}
+
+function sourceDecorations(state: EditorState, from: number, to: number): DecorationSet {
+	if (from < 0 || to > state.doc.content.size || from >= to) return DecorationSet.empty;
+	let text = '';
+	try {
+		text = state.doc.textBetween(from, to);
+	} catch {
+		return DecorationSet.empty;
 	}
-
-	private removeNode(): void {
-		if (this.closing) return;
-		const pos = this.getPos();
-		if (pos === undefined) return;
-		this.closing = true;
-		let tr = this.view.state.tr.delete(pos, pos + 1).setMeta(inlineMathEditKey, null);
-		const near = Math.max(0, Math.min(pos, tr.doc.content.size));
-		tr = tr.setSelection(TextSelection.near(tr.doc.resolve(near), -1)).scrollIntoView();
-		this.view.dispatch(tr);
-		this.view.focus();
+	const marks: Decoration[] = [Decoration.inline(from, to, { class: 'pm-math-source' })];
+	for (const span of mathCommandSpans(text)) {
+		const start = from + span.from;
+		const end = from + span.to;
+		if (start < end && end <= to) marks.push(Decoration.inline(start, end, { class: 'pm-math-cmd' }));
 	}
-
-	private promote(): void {
-		if (this.closing) return;
-		const pos = this.getPos();
-		if (pos === undefined) return;
-		const plan = planPromoteInlineMath(this.view.state.doc, pos);
-		if (!plan) {
-			this.removeNode();
-			return;
-		}
-		this.closing = true;
-		let tr = this.view.state.tr.replaceWith(plan.from, plan.to, plan.nodes).setMeta(inlineMathEditKey, null);
-		const cursor = Math.max(0, Math.min(plan.cursor, tr.doc.content.size));
-		tr = tr.setSelection(TextSelection.near(tr.doc.resolve(cursor), 1)).scrollIntoView();
-		this.view.dispatch(tr);
-		this.view.focus();
+	const source = readMathSource(state.doc, from, to);
+	if (source) marks.push(mathPreviewWidget(from, to, source.value));
+	try {
+		return DecorationSet.create(state.doc, marks);
+	} catch {
+		return DecorationSet.empty;
 	}
 }
 
-function editRequest(tr: { getMeta: (key: PluginKey<EditState>) => unknown }): { pos: number; caret: CaretPlace } | null | undefined {
-	const meta = tr.getMeta(inlineMathEditKey);
-	if (meta === undefined) return undefined;
-	if (meta === null) return null;
-	if (typeof meta === 'object' && meta && 'pos' in meta && typeof meta.pos === 'number') {
-		const caret = 'caret' in meta && (meta.caret === 'start' || meta.caret === 'end' || meta.caret === 'all') ? meta.caret : 'all';
-		return { pos: meta.pos, caret };
-	}
-	return undefined;
+function finishLiveMath(view: EditorView, live: LiveRange): boolean {
+	const source = readMathSource(view.state.doc, live.from, live.to);
+	if (!source) return false;
+	const tr = collapseMath(view.state, { from: live.from, to: live.to, value: source.value, cursor: live.from + 1 });
+	if (!tr) return false;
+	view.dispatch(tr);
+	return true;
 }
 
 const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	await ctx.wait(SchemaReady);
-	const plugin = new Plugin<EditState>({
-		key: inlineMathEditKey,
+	const plugin = new Plugin<LiveRange | null>({
+		key: liveMathKey,
 		state: {
-			init: () => ({ pos: null, caret: 'all' }),
+			init: () => null,
 			apply(tr, value) {
-				const request = editRequest(tr);
-				if (request === null) return { pos: null, caret: 'all' };
-				if (request) return request;
-				if (value.pos == null || !tr.docChanged) return value;
-				const mapped = tr.mapping.mapResult(value.pos);
-				if (mapped.deleted) return { pos: null, caret: 'all' };
-				const node = tr.doc.nodeAt(mapped.pos);
-				if (!node || node.type.name !== 'math_inline') return { pos: null, caret: 'all' };
-				return { pos: mapped.pos, caret: value.caret };
+				const meta = tr.getMeta(liveMathKey);
+				if (meta === null) return null;
+				if (isLiveRange(meta)) return { from: meta.from, to: meta.to };
+				if (!value || !tr.docChanged) return value;
+				const from = tr.mapping.map(value.from, -1);
+				const to = tr.mapping.map(value.to, 1);
+				if (from >= to) return null;
+				return { from, to };
 			},
+		},
+		appendTransaction(transactions, _oldState, newState) {
+			if (transactions.some((transaction) => transaction.getMeta('composition'))) return null;
+			const live = liveMathKey.getState(newState);
+			if (!live) return null;
+			const selection = newState.selection;
+			const plan = planMathSource(newState.doc, live, { from: selection.from, to: selection.to });
+			if (plan.action === 'noop') return null;
+			if (plan.action === 'clear') {
+				let tr = newState.tr.setMeta(liveMathKey, null);
+				const pending = newState.schema.marks[mathPendingMarkName];
+				if (pending && live.from >= 0 && live.to <= newState.doc.content.size && live.from < live.to) {
+					tr = tr.removeMark(live.from, live.to, pending);
+				}
+				return tr;
+			}
+			if (plan.action === 'collapse') return collapseMath(newState, plan);
+			const pending = newState.schema.marks[mathPendingMarkName];
+			const source = readMathSource(newState.doc, live.from, live.to);
+			if (!pending || !source || rangeFullyMarked(newState.doc, live.from, live.to, mathPendingMarkName)) return null;
+			const marked = newState.tr.addMark(live.from, live.to, pending.create());
+			return marked.docChanged ? marked : null;
 		},
 		props: {
 			decorations(state) {
-				const editing = inlineMathEditKey.getState(state);
-				if (!editing || editing.pos == null) return DecorationSet.empty;
-				const node = state.doc.nodeAt(editing.pos);
-				if (!node || node.type.name !== 'math_inline') return DecorationSet.empty;
-				return DecorationSet.create(state.doc, [
-					Decoration.node(editing.pos, editing.pos + node.nodeSize, { class: 'pm-inline-math-active' }),
-				]);
+				const live = liveMathKey.getState(state);
+				if (live && live.from >= 0 && live.to <= state.doc.content.size && live.from < live.to) {
+					return sourceDecorations(state, live.from, live.to);
+				}
+				if (!state.selection.empty) return DecorationSet.empty;
+				const around = openMathAround(state.doc, state.selection.from);
+				if (!around) return DecorationSet.empty;
+				return sourceDecorations(state, around.from, around.to);
 			},
 			handleTextInput(view, from, to, text) {
 				if (view.composing) return false;
@@ -527,72 +730,122 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 					return true;
 				}
 				if (text !== '$') return false;
+				const live = liveMathKey.getState(view.state);
+				if (live && from === to && from > live.from && from === live.to - 1) {
+					if (finishLiveMath(view, live)) return true;
+				}
 				const plan = planDollarMath(view.state.doc, from, to);
 				if (!plan) return false;
 				if (plan.kind === 'literal') {
+					const literal = view.state.schema.marks[literalDollarMarkName];
+					if (literal && plan.from < from) {
+						const base = (view.state.storedMarks ?? view.state.selection.$from.marks()).filter(
+							(mark) => mark.type.name !== literalDollarMarkName && mark.type.name !== mathPendingMarkName,
+						);
+						const dollar = view.state.schema.text('$', [...base, literal.create()]);
+						view.dispatch(view.state.tr.replaceWith(plan.from, plan.to, dollar).setStoredMarks(base).scrollIntoView());
+						return true;
+					}
 					view.dispatch(view.state.tr.insertText('$', plan.from, plan.to).scrollIntoView());
 					return true;
 				}
+				const pending = view.state.schema.marks[mathPendingMarkName];
+				let tr = view.state.tr.insertText('$', plan.to);
+				const pairFrom = plan.from;
+				const pairTo = plan.to + 1;
+				if (live && pending) {
+					const oldFrom = tr.mapping.map(live.from, -1);
+					const oldTo = tr.mapping.map(live.to, 1);
+					if (oldFrom < pairFrom) tr = tr.removeMark(oldFrom, pairFrom, pending);
+					if (oldTo > pairTo) tr = tr.removeMark(pairTo, oldTo, pending);
+				}
+				if (pending && plan.value) tr = tr.addMark(pairFrom, pairTo, pending.create());
+				tr = tr
+					.setSelection(TextSelection.create(tr.doc, plan.to))
+					.setMeta(liveMathKey, { from: pairFrom, to: pairTo })
+					.scrollIntoView();
+				view.dispatch(tr);
+				return true;
+			},
+			handlePaste(view, event, slice) {
+				if (!slice || slice.content.size === 0) return false;
+				const clipboard = event.clipboardData;
+				if (!clipboard || clipboard.getData('vscode-editor-data') || !clipboard.getData('text/html')) return false;
+				const html = clipboard.getData('text/html');
+				if (html.includes('data-type="math_inline"') || html.includes("data-type='math_inline'")) return false;
+				const { $from } = view.state.selection;
+				if ($from.parent.type.spec.code) return false;
+				if ($from.marks().some((mark) => mark.type.spec.code || mark.type.name === 'code')) return false;
 				const math = view.state.schema.nodes.math_inline;
 				if (!math) return false;
-				const node = math.create({ value: plan.value });
-				let tr = view.state.tr.replaceWith(plan.from, plan.to, node);
-				const cursor = Math.min(plan.from + node.nodeSize, tr.doc.content.size);
-				tr = tr.setSelection(TextSelection.near(tr.doc.resolve(cursor), 1)).scrollIntoView();
-				view.dispatch(tr);
+				const expanded = expandInlineMathSlice(slice, math);
+				if (!expanded) return false;
+				view.dispatch(view.state.tr.replaceSelection(expanded).scrollIntoView());
 				return true;
 			},
 			handleKeyDown(view, event) {
 				if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey || event.isComposing) return false;
 				const selection = view.state.selection;
 				if (!(selection instanceof TextSelection) || !selection.empty) return false;
+				const live = liveMathKey.getState(view.state);
+				const inside = Boolean(live && selection.from > live.from && selection.from < live.to);
 				if (event.key === 'Escape') {
+					if (inside && live && finishLiveMath(view, live)) return true;
 					const escapePlan = planDollarEscape(view.state.doc, selection.from);
-					const math = view.state.schema.nodes.math_inline;
-					if (!escapePlan || !math) return false;
-					const node = math.create({ value: '' });
-					let tr = view.state.tr.replaceWith(escapePlan.from, escapePlan.to, node);
-					tr = tr.setMeta(inlineMathEditKey, { pos: escapePlan.from, caret: 'start' }).scrollIntoView();
+					if (!escapePlan) return false;
+					const at = escapePlan.at;
+					let tr = view.state.tr.insertText('$', at);
+					tr = tr
+						.setSelection(TextSelection.create(tr.doc, at))
+						.setMeta(liveMathKey, { from: at - 1, to: at + 1 })
+						.scrollIntoView();
 					view.dispatch(tr);
 					return true;
 				}
 				if (event.key === 'Enter') {
+					if (inside && live) {
+						if (finishLiveMath(view, live)) return true;
+						const blockFromInside = planDollarBlock(view.state.doc, live.to);
+						if (blockFromInside) {
+							let tr = view.state.tr.replaceWith(blockFromInside.from, blockFromInside.to, blockFromInside.nodes);
+							const cursor = Math.max(0, Math.min(blockFromInside.cursor, tr.doc.content.size));
+							tr = tr
+								.setSelection(TextSelection.near(tr.doc.resolve(cursor), 1))
+								.setMeta(liveMathKey, null)
+								.scrollIntoView();
+							view.dispatch(tr);
+							return true;
+						}
+					}
 					const blockPlan = planDollarBlock(view.state.doc, selection.from);
 					if (!blockPlan) return false;
 					let tr = view.state.tr.replaceWith(blockPlan.from, blockPlan.to, blockPlan.nodes);
 					const cursor = Math.max(0, Math.min(blockPlan.cursor, tr.doc.content.size));
-					tr = tr.setSelection(TextSelection.near(tr.doc.resolve(cursor), 1)).scrollIntoView();
+					tr = tr.setSelection(TextSelection.near(tr.doc.resolve(cursor), 1)).setMeta(liveMathKey, null).scrollIntoView();
 					view.dispatch(tr);
 					return true;
 				}
 				if (event.key === 'ArrowRight' && selection.$from.nodeAfter?.type.name === 'math_inline') {
-					view.dispatch(view.state.tr.setMeta(inlineMathEditKey, { pos: selection.$from.pos, caret: 'start' }));
-					return true;
+					return applyExpand(view, selection.from, 'start');
 				}
 				const before = selection.$from.nodeBefore;
 				if (event.key === 'ArrowLeft' && before?.type.name === 'math_inline') {
-					view.dispatch(view.state.tr.setMeta(inlineMathEditKey, { pos: selection.$from.pos - before.nodeSize, caret: 'end' }));
-					return true;
+					return applyExpand(view, selection.from - before.nodeSize, 'end');
 				}
 				return false;
 			},
 		},
-		view(editorView) {
+		view() {
 			return {
 				update(view) {
 					const selection = view.state.selection;
 					if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'math_inline') return;
-					if (inlineMathEditKey.getState(view.state)?.pos === selection.from) return;
 					const pos = selection.from;
 					queueMicrotask(() => {
-						if (editorView.isDestroyed) return;
-						const current = editorView.state.selection;
+						if (view.isDestroyed) return;
+						const current = view.state.selection;
 						if (!(current instanceof NodeSelection) || current.from !== pos || current.node.type.name !== 'math_inline') return;
-						editorView.dispatch(
-							editorView.state.tr
-								.setMeta(inlineMathEditKey, { pos, caret: 'all' })
-								.setSelection(TextSelection.near(editorView.state.doc.resolve(pos), -1)),
-						);
+						applyExpand(view, pos, 'end');
 					});
 				},
 			};
@@ -615,4 +868,4 @@ const inlineMathViewPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	};
 };
 
-export const inlineMathPlugins = [inlineMathEditPlugin, inlineMathViewPlugin];
+export const inlineMathPlugins = [...literalDollarSchema, ...mathPendingSchema, inlineMathEditPlugin, inlineMathViewPlugin];

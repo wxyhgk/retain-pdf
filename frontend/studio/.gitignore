@@ -1,5 +1,7 @@
 # build output
 dist/
+# vendored editor experiments, not part of the published blog
+vendor/
 # generated types
 .astro/
 

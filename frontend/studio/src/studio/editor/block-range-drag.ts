@@ -17,6 +17,7 @@ const IGNORED_TARGET = [
 	'.milkdown-toolbar',
 	'.cm-editor',
 	'.pm-inline-math',
+	'.pm-math-preview',
 	'.chem-stage',
 	'.science-block-caption',
 	'button',
