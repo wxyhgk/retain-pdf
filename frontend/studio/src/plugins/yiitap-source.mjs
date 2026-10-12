@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 const packagesRoot = fileURLToPath(new URL('../../vendor/yiitap/packages/', import.meta.url));
 
 function collectPackages(directory, found = []) {
+	if (!existsSync(directory)) return found;
 	for (const name of readdirSync(directory)) {
 		if (name === 'node_modules' || name === 'react' || name === 'vue-preset') continue;
 		const full = join(directory, name);
