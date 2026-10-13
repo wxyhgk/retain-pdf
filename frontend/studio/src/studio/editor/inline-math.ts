@@ -17,7 +17,17 @@ export const mathPendingMarkName = 'math_pending';
 
 type LiveRange = { from: number; to: number };
 
-const liveMathKey = new PluginKey<LiveRange | null>('live-math');
+type InlineMathState = {
+	live: LiveRange | null;
+	/** Text after this position is the body of a formula whose opening `$` closed the previous one. */
+	arm: number | null;
+};
+
+type ArmedMeta = { arm: number | null; live: null };
+
+const idleMath: InlineMathState = { live: null, arm: null };
+
+const liveMathKey = new PluginKey<InlineMathState>('live-math');
 
 const ignoredMarkdownMark = {
 	parseMarkdown: {
@@ -47,8 +57,8 @@ const mathPendingSchema = $markSchema(mathPendingMarkName, () => ({
 		runner: (state, _mark, node) => {
 			const text = node.text ?? '';
 			if (text.length < 3 || !text.startsWith('$') || !text.endsWith('$')) return false;
-			const value = text.slice(1, -1);
-			if (!value || value[0] === ' ' || value[0] === '\t' || value.includes('\n') || value.endsWith(' ') || value.endsWith('\t')) return false;
+			const value = formulaValue(text.slice(1, -1));
+			if (!value) return false;
 			state.addNode('inlineMath', undefined, value);
 			return true;
 		},
@@ -100,11 +110,19 @@ function textBeforeCaret(parent: ProseMirrorNode, offset: number): { text: strin
 	return { text, fromOffset };
 }
 
+/** Body of a formula. A space after the opening `$` stays text. Spaces before the closing `$` are removed. */
+function formulaValue(raw: string): string | null {
+	if (!raw || raw[0] === ' ' || raw[0] === '\t' || raw.includes('\n')) return null;
+	const value = raw.replace(/[ \t]+$/, '');
+	if (!value || /[^\x00-\x7F]/.test(value)) return null;
+	return value;
+}
+
 /**
- * A typed `$` stays literal, or it closes a pair such as `$x$`.
- * A closing pair stays `$value$` in the paragraph until the caret leaves.
- * No spaces against either delimiter, and no digit after the closer.
- * `\$` inserts a plain dollar and does not close a pair.
+ * A typed `$` stays literal, or it closes a pair such as `$\sum$`.
+ * Closing a pair renders the formula and leaves the caret after it.
+ * A space right after the opening `$` stays text. Spaces before the closing `$` are removed.
+ * A digit after the closer keeps the dollar. `\$` inserts a plain dollar and does not close a pair.
  */
 export function planDollarMath(doc: ProseMirrorNode, from: number, to: number): DollarPlan | null {
 	if (from < 0 || to < from || to > doc.content.size) return null;
@@ -118,7 +136,7 @@ export function planDollarMath(doc: ProseMirrorNode, from: number, to: number): 
 	const before = textBeforeCaret($from.parent, $from.parentOffset);
 	if (!before.text) return { kind: 'literal', from, to };
 	const prev = before.text[before.text.length - 1];
-	if (prev === ' ' || prev === '\t' || prev === '\\' || prev === '$') return { kind: 'literal', from, to };
+	if (prev === '\\' || prev === '$') return { kind: 'literal', from, to };
 	const next =
 		$from.parentOffset < $from.parent.content.size
 			? $from.parent.textBetween($from.parentOffset, $from.parentOffset + 1)
@@ -131,8 +149,8 @@ export function planDollarMath(doc: ProseMirrorNode, from: number, to: number): 
 		let slashes = 0;
 		for (let slashIndex = index - 1; slashIndex >= 0 && before.text[slashIndex] === '\\'; slashIndex -= 1) slashes += 1;
 		if (slashes % 2 === 1) continue;
-		const value = before.text.slice(index + 1);
-		if (!value || value[0] === ' ' || value[0] === '\t') continue;
+		const value = formulaValue(before.text.slice(index + 1));
+		if (!value) continue;
 		return { kind: 'math', from: $from.pos - $from.parentOffset + before.fromOffset + index, to, value };
 	}
 	return { kind: 'literal', from, to };
@@ -222,6 +240,24 @@ export function expandInlineMathSlice(slice: Slice, math: NodeType): Slice | nul
 }
 
 /**
+ * A caret placed between an empty `$$` pair. Typing there writes an inline formula.
+ * A dollar typed with `\$`, or a `$` inside code, does not open one.
+ */
+export function openEmptyMathPair(doc: ProseMirrorNode, pos: number): { from: number; to: number } | null {
+	if (pos < 1 || pos >= doc.content.size) return null;
+	const $pos = doc.resolve(pos);
+	if (!$pos.parent.isTextblock || $pos.parent.type.spec.code) return null;
+	if ($pos.marks().some((mark) => mark.type.spec.code || mark.type.name === 'code')) return null;
+	const offset = $pos.parentOffset;
+	if (offset < 1 || offset >= $pos.parent.content.size) return null;
+	if ($pos.parent.textBetween(offset - 1, offset) !== '$' || $pos.parent.textBetween(offset, offset + 1) !== '$') return null;
+	if (escapingBackslash($pos.parent, offset - 1) != null || escapingBackslash($pos.parent, offset) != null) return null;
+	if (markAtOffset($pos.parent, offset - 1, literalDollarMarkName) || markAtOffset($pos.parent, offset, literalDollarMarkName)) return null;
+	const from = pos - 1;
+	return { from, to: from + 2 };
+}
+
+/**
  * Esc right after one `$` inserts the closing `$` and leaves the caret between them.
  * `$$` and a dollar typed with `\$` stay as they are.
  */
@@ -239,6 +275,46 @@ export function planDollarEscape(doc: ProseMirrorNode, pos: number): { at: numbe
 	return { at: pos };
 }
 
+/**
+ * A `$` typed to leave a formula can also be the opener of the next one.
+ * `pos` is the caret, and `arm` is where that next body starts.
+ * An empty body, a body that starts with a space, or a digit after the caret stays text.
+ * Spaces before the closing `$` are removed.
+ */
+export function planArmedFormula(
+	doc: ProseMirrorNode,
+	arm: number,
+	pos: number,
+): { from: number; to: number; value: string } | null {
+	if (arm < 0 || pos <= arm || pos > doc.content.size) return null;
+	const $arm = doc.resolve(arm);
+	const $pos = doc.resolve(pos);
+	if (!$arm.sameParent($pos) || !$arm.parent.isTextblock || $arm.parent.type.spec.code) return null;
+	if ($pos.marks().some((mark) => mark.type.spec.code || mark.type.name === 'code')) return null;
+	const parent = $arm.parent;
+	const start = $arm.parentOffset;
+	const end = $pos.parentOffset;
+	let seen = 0;
+	for (let index = 0; index < parent.childCount; index += 1) {
+		const child = parent.child(index);
+		const next = seen + child.nodeSize;
+		if (next <= start) {
+			seen = next;
+			continue;
+		}
+		if (seen >= end) break;
+		if (!child.isText) return null;
+		seen = next;
+	}
+	const raw = parent.textBetween(start, end);
+	if (raw.includes('$') || /[^\x00-\x7F]/.test(raw)) return null;
+	const value = formulaValue(raw);
+	if (!value) return null;
+	const next = end < parent.content.size ? parent.textBetween(end, end + 1) : '';
+	if (next >= '0' && next <= '9') return null;
+	return { from: arm, to: pos, value };
+}
+
 /** The `$value$` covered by [from, to), when it is a real inline formula. */
 export function readMathSource(doc: ProseMirrorNode, from: number, to: number): { value: string } | null {
 	if (from < 0 || to - from < 3 || to > doc.content.size) return null;
@@ -251,8 +327,8 @@ export function readMathSource(doc: ProseMirrorNode, from: number, to: number): 
 	if (closer < opener || $from.parent.textBetween(opener, opener + 1) !== '$' || $from.parent.textBetween(closer, closer + 1) !== '$') return null;
 	if (markAtOffset($from.parent, opener, literalDollarMarkName) || markAtOffset($from.parent, closer, literalDollarMarkName)) return null;
 	if (escapingBackslash($from.parent, opener) != null || escapingBackslash($from.parent, closer) != null) return null;
-	const value = $from.parent.textBetween(opener + 1, closer);
-	if (!value || value[0] === ' ' || value[0] === '\t' || value.endsWith(' ') || value.endsWith('\t') || value.includes('\n')) return null;
+	const value = formulaValue($from.parent.textBetween(opener + 1, closer));
+	if (!value) return null;
 	const next = closer + 1 < $from.parent.content.size ? $from.parent.textBetween(closer + 1, closer + 2) : '';
 	if (next >= '0' && next <= '9') return null;
 	return { value };
@@ -559,6 +635,19 @@ function isLiveRange(meta: unknown): meta is LiveRange {
 	return typeof meta.from === 'number' && typeof meta.to === 'number';
 }
 
+function isArmedMeta(meta: unknown): meta is ArmedMeta {
+	if (!meta || typeof meta !== 'object' || !('arm' in meta)) return false;
+	const arm = (meta as { arm: unknown }).arm;
+	return arm === null || typeof arm === 'number';
+}
+
+function mapLive(tr: Transaction, live: LiveRange): LiveRange | null {
+	const from = tr.mapping.map(live.from, -1);
+	const to = tr.mapping.map(live.to, -1);
+	if (from >= to) return null;
+	return { from, to };
+}
+
 function rangeFullyMarked(doc: ProseMirrorNode, from: number, to: number, markName: string): boolean {
 	let marked = true;
 	let seen = false;
@@ -674,26 +763,42 @@ function finishLiveMath(view: EditorView, live: LiveRange): boolean {
 
 const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	await ctx.wait(SchemaReady);
-	const plugin = new Plugin<LiveRange | null>({
+	const plugin = new Plugin<InlineMathState>({
 		key: liveMathKey,
 		state: {
-			init: () => null,
+			init: () => idleMath,
 			apply(tr, value) {
 				const meta = tr.getMeta(liveMathKey);
-				if (meta === null) return null;
-				if (isLiveRange(meta)) return { from: meta.from, to: meta.to };
-				if (!value || !tr.docChanged) return value;
-				const from = tr.mapping.map(value.from, -1);
-				const to = tr.mapping.map(value.to, 1);
-				if (from >= to) return null;
-				return { from, to };
+				if (meta === null) return idleMath;
+				if (isLiveRange(meta)) return { live: { from: meta.from, to: meta.to }, arm: null };
+				if (isArmedMeta(meta)) return { live: null, arm: meta.arm };
+				let live = value.live;
+				let arm = value.arm;
+				if (tr.docChanged) {
+					if (live) live = mapLive(tr, live);
+					if (arm != null) arm = tr.mapping.map(arm, -1);
+				}
+				return { live, arm };
 			},
 		},
 		appendTransaction(transactions, _oldState, newState) {
 			if (transactions.some((transaction) => transaction.getMeta('composition'))) return null;
-			const live = liveMathKey.getState(newState);
-			if (!live) return null;
+			const edit = liveMathKey.getState(newState) ?? idleMath;
+			const live = edit.live;
 			const selection = newState.selection;
+			if (!live) {
+				if (edit.arm != null) {
+					const arm = edit.arm;
+					const left =
+						!selection.empty ||
+						selection.from < arm ||
+						!newState.doc.resolve(arm).sameParent(newState.doc.resolve(selection.from));
+					if (left) return newState.tr.setMeta(liveMathKey, { arm: null, live: null });
+				}
+				if (!selection.empty) return null;
+				const empty = openEmptyMathPair(newState.doc, selection.from);
+				return empty ? newState.tr.setMeta(liveMathKey, empty) : null;
+			}
 			const plan = planMathSource(newState.doc, live, { from: selection.from, to: selection.to });
 			if (plan.action === 'noop') return null;
 			if (plan.action === 'clear') {
@@ -713,7 +818,8 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 		},
 		props: {
 			decorations(state) {
-				const live = liveMathKey.getState(state);
+				const edit = liveMathKey.getState(state) ?? idleMath;
+				const live = edit.live;
 				if (live && live.from >= 0 && live.to <= state.doc.content.size && live.from < live.to) {
 					return sourceDecorations(state, live.from, live.to);
 				}
@@ -724,16 +830,47 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 			},
 			handleTextInput(view, from, to, text) {
 				if (view.composing) return false;
+				const edit = liveMathKey.getState(view.state) ?? idleMath;
+				const live = edit.live;
+				if (live && text !== '$' && text !== '\n' && from === to && from > live.from && from < live.to) {
+					view.dispatch(view.state.tr.insertText(text, from).scrollIntoView());
+					return true;
+				}
 				const literalChar = planLiteralDollarChar(view.state.doc, from, to, text);
 				if (literalChar) {
 					view.dispatch(view.state.tr.insertText(literalChar.text, literalChar.from, literalChar.to).scrollIntoView());
 					return true;
 				}
 				if (text !== '$') return false;
-				const live = liveMathKey.getState(view.state);
 				if (live && from === to && from > live.from && from === live.to - 1) {
-					if (finishLiveMath(view, live)) return true;
+					const source = readMathSource(view.state.doc, live.from, live.to);
+					if (source) {
+						const committed = collapseMath(view.state, {
+							from: live.from,
+							to: live.to,
+							value: source.value,
+							cursor: live.from + 1,
+						});
+						if (committed) {
+							view.dispatch(committed.setMeta(liveMathKey, { arm: committed.selection.from, live: null }));
+							return true;
+						}
+					}
 				}
+				const armed = !live && edit.arm != null && from === to ? planArmedFormula(view.state.doc, edit.arm, from) : null;
+				if (armed) {
+					const committed = collapseMath(view.state, {
+						from: armed.from,
+						to: armed.to,
+						value: armed.value,
+						cursor: armed.from + 1,
+					});
+					if (committed) {
+						view.dispatch(committed.setMeta(liveMathKey, { arm: committed.selection.from, live: null }));
+						return true;
+					}
+				}
+				const dropArm = !live && edit.arm != null && from === to;
 				const plan = planDollarMath(view.state.doc, from, to);
 				if (!plan) return false;
 				if (plan.kind === 'literal') {
@@ -743,28 +880,24 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 							(mark) => mark.type.name !== literalDollarMarkName && mark.type.name !== mathPendingMarkName,
 						);
 						const dollar = view.state.schema.text('$', [...base, literal.create()]);
-						view.dispatch(view.state.tr.replaceWith(plan.from, plan.to, dollar).setStoredMarks(base).scrollIntoView());
+						let tr = view.state.tr.replaceWith(plan.from, plan.to, dollar).setStoredMarks(base);
+						if (dropArm) tr = tr.setMeta(liveMathKey, { arm: null, live: null });
+						view.dispatch(tr.scrollIntoView());
 						return true;
 					}
-					view.dispatch(view.state.tr.insertText('$', plan.from, plan.to).scrollIntoView());
+					let tr = view.state.tr.insertText('$', plan.from, plan.to);
+					if (dropArm) tr = tr.setMeta(liveMathKey, { arm: null, live: null });
+					view.dispatch(tr.scrollIntoView());
 					return true;
 				}
-				const pending = view.state.schema.marks[mathPendingMarkName];
-				let tr = view.state.tr.insertText('$', plan.to);
-				const pairFrom = plan.from;
-				const pairTo = plan.to + 1;
-				if (live && pending) {
-					const oldFrom = tr.mapping.map(live.from, -1);
-					const oldTo = tr.mapping.map(live.to, 1);
-					if (oldFrom < pairFrom) tr = tr.removeMark(oldFrom, pairFrom, pending);
-					if (oldTo > pairTo) tr = tr.removeMark(pairTo, oldTo, pending);
-				}
-				if (pending && plan.value) tr = tr.addMark(pairFrom, pairTo, pending.create());
-				tr = tr
-					.setSelection(TextSelection.create(tr.doc, plan.to))
-					.setMeta(liveMathKey, { from: pairFrom, to: pairTo })
-					.scrollIntoView();
-				view.dispatch(tr);
+				const committed = collapseMath(view.state, {
+					from: plan.from,
+					to: plan.to,
+					value: plan.value,
+					cursor: plan.from + 1,
+				});
+				if (!committed) return false;
+				view.dispatch(dropArm ? committed.setMeta(liveMathKey, { arm: null, live: null }) : committed);
 				return true;
 			},
 			handlePaste(view, event, slice) {
@@ -787,7 +920,7 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 				if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey || event.isComposing) return false;
 				const selection = view.state.selection;
 				if (!(selection instanceof TextSelection) || !selection.empty) return false;
-				const live = liveMathKey.getState(view.state);
+				const live = (liveMathKey.getState(view.state) ?? idleMath).live;
 				const inside = Boolean(live && selection.from > live.from && selection.from < live.to);
 				if (event.key === 'Escape') {
 					if (inside && live && finishLiveMath(view, live)) return true;

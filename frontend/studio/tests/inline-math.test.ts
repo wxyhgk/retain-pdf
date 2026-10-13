@@ -12,6 +12,8 @@ import {
 	planDollarEscape,
 	planDollarMath,
 	mathCommandSpans,
+	openEmptyMathPair,
+	planArmedFormula,
 	openMathAround,
 	planExpandInlineMath,
 	planLiteralDollarChar,
@@ -78,6 +80,16 @@ test('a dollar stays as text until it closes a formula pair', () => {
 	assert.deepEqual(planDollarMath(formula, 3, 3), { kind: 'math', from: 1, to: 3, value: 'x' });
 	const sum = paragraphDoc(schema, '$\\sum f(x)');
 	assert.deepEqual(planDollarMath(sum, 11, 11), { kind: 'math', from: 1, to: 11, value: '\\sum f(x)' });
+	const orbital = paragraphDoc(schema, '$2p');
+	assert.deepEqual(planDollarMath(orbital, 4, 4), { kind: 'math', from: 1, to: 4, value: '2p' });
+	const trailed = paragraphDoc(schema, '$\\sum f(x) ');
+	const trailedAt = trailed.content.size - 1;
+	assert.deepEqual(planDollarMath(trailed, trailedAt, trailedAt), {
+		kind: 'math',
+		from: 1,
+		to: trailedAt,
+		value: '\\sum f(x)',
+	});
 	const around = schema.nodes.doc.create(
 		null,
 		schema.nodes.paragraph.create(null, [
@@ -112,6 +124,58 @@ test('a dollar stays as text until it closes a formula pair', () => {
 	assert.equal(planDollarMath(marked, 2, 2), null);
 	const heading = schema.nodes.doc.create(null, schema.nodes.heading.create({ level: 2 }, schema.text('标题')));
 	assert.deepEqual(planDollarMath(heading, 3, 3), { kind: 'literal', from: 3, to: 3 });
+});
+
+test('a caret between $$ opens an empty inline formula', () => {
+	const schema = editorSchema();
+	const dollars = paragraphDoc(schema, '$$');
+	assert.deepEqual(openEmptyMathPair(dollars, 2), { from: 1, to: 3 });
+	assert.equal(openEmptyMathPair(dollars, 1), null);
+	assert.equal(openEmptyMathPair(dollars, 3), null);
+	const around = paragraphDoc(schema, 'a$$b');
+	assert.deepEqual(openEmptyMathPair(around, 3), { from: 2, to: 4 });
+	const formula = paragraphDoc(schema, '$x$');
+	assert.equal(openEmptyMathPair(formula, 2), null);
+	assert.equal(openEmptyMathPair(formula, 3), null);
+	assert.equal(openEmptyMathPair(paragraphDoc(schema, '\\$$'), 3), null);
+	const code = schema.nodes.doc.create(null, schema.nodes.code_block.create({ language: '' }, schema.text('$$')));
+	assert.equal(openEmptyMathPair(code, 2), null);
+	const literal = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, schema.text('$$', [schema.marks[literalDollarMarkName].create()])),
+	);
+	assert.equal(openEmptyMathPair(literal, 2), null);
+	assert.equal(planMathSource(dollars, { from: 1, to: 3 }, { from: 2, to: 2 }).action, 'keep');
+	assert.equal(planMathSource(dollars, { from: 1, to: 3 }, { from: 3, to: 3 }).action, 'clear');
+});
+
+test('a dollar that closed the previous formula can open the next one', () => {
+	const schema = editorSchema();
+	const doc = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, [
+			schema.nodes.math_inline.create({ value: 'a' }),
+			schema.text('bbb反'),
+		]),
+	);
+	assert.deepEqual(planArmedFormula(doc, 2, 5), { from: 2, to: 5, value: 'bbb' });
+	assert.equal(planArmedFormula(doc, 2, 2), null);
+	assert.equal(planArmedFormula(doc, 2, 6), null);
+	const spaced = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, [schema.nodes.math_inline.create({ value: 'a' }), schema.text(' b')]),
+	);
+	assert.equal(planArmedFormula(spaced, 2, 4), null);
+	const trailed = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, [schema.nodes.math_inline.create({ value: 'a' }), schema.text('bbb ')]),
+	);
+	assert.deepEqual(planArmedFormula(trailed, 2, 6), { from: 2, to: 6, value: 'bbb' });
+	const digit = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, [schema.nodes.math_inline.create({ value: 'a' }), schema.text('b2')]),
+	);
+	assert.equal(planArmedFormula(digit, 2, 3), null);
 });
 
 test('escape after one dollar inserts the closing dollar and a paragraph of $$ becomes a block on enter', () => {
@@ -255,6 +319,8 @@ test('a live pair stays as source until the caret leaves', () => {
 	assert.equal(planMathSource(empty, { from: 1, to: 3 }, { from: 3, to: 3 }).action, 'clear');
 	const sum = paragraphDoc(schema, '$\\sum f(x)$');
 	assert.equal(readMathSource(sum, 1, sum.content.size - 1)?.value, '\\sum f(x)');
+	const trailed = paragraphDoc(schema, '$\\sum f(x) $');
+	assert.equal(readMathSource(trailed, 1, trailed.content.size - 1)?.value, '\\sum f(x)');
 });
 
 test('formula source highlights latex commands', () => {
