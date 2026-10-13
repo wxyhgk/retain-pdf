@@ -156,14 +156,82 @@ export function planDollarMath(doc: ProseMirrorNode, from: number, to: number): 
 	return { kind: 'literal', from, to };
 }
 
-export type InlineMathPiece = { kind: 'text'; text: string } | { kind: 'math'; value: string };
+/** `display` marks a formula written with display delimiters (`\[…\]`, `$$…$$`). */
+export type InlineMathPiece = { kind: 'text'; text: string } | { kind: 'math'; value: string; display?: boolean };
+
+const DELIMITERS = [
+	{ open: '\\(', close: '\\)', display: false },
+	{ open: '\\[', close: '\\]', display: true },
+	{ open: '$$', close: '$$', display: true },
+] as const;
+
+function backslashesBefore(text: string, index: number): number {
+	let count = 0;
+	for (let at = index - 1; at >= 0 && text[at] === '\\'; at -= 1) count += 1;
+	return count;
+}
+
+/** Where `close` ends a formula body that starts at `from`; a backslash and the character after it are formula text (`\\`, `\alpha`). */
+function closingIndex(text: string, from: number, close: string): number {
+	for (let at = from; at < text.length; at += 1) {
+		if (text.startsWith(close, at)) return at;
+		if (text[at] === '\\') at += 1;
+	}
+	return -1;
+}
+
+/**
+ * Pair LaTeX's own `\(…\)` and `\[…\]`, and display `$$…$$`, inside one
+ * pasted run, as AI answers write them. An odd run of backslashes before the
+ * opener keeps it text. Returns null when nothing closes.
+ */
+function splitDelimitedMath(text: string): InlineMathPiece[] | null {
+	const pieces: InlineMathPiece[] = [];
+	let cursor = 0;
+	let index = 0;
+	while (index < text.length) {
+		const delimiter = DELIMITERS.find((item) => text.startsWith(item.open, index));
+		if (!delimiter || backslashesBefore(text, index) % 2 === 1) {
+			index += 1;
+			continue;
+		}
+		const end = closingIndex(text, index + delimiter.open.length, delimiter.close);
+		const value = end < 0 ? '' : text.slice(index + delimiter.open.length, end).trim();
+		if (!value) {
+			index += delimiter.open.length;
+			continue;
+		}
+		if (index > cursor) pieces.push({ kind: 'text', text: text.slice(cursor, index) });
+		pieces.push({ kind: 'math', value, display: delimiter.display });
+		index = cursor = end + delimiter.close.length;
+	}
+	if (!pieces.length) return null;
+	if (cursor < text.length) pieces.push({ kind: 'text', text: text.slice(cursor) });
+	return pieces;
+}
+
+/**
+ * Pair formulas inside one pasted run: `\(…\)`, `\[…\]` and `$$…$$` first,
+ * then `$…$` in the text between them. Returns null when nothing closes.
+ */
+export function splitInlineMath(text: string): InlineMathPiece[] | null {
+	const delimited = splitDelimitedMath(text);
+	const pieces: InlineMathPiece[] = [];
+	let changed = Boolean(delimited);
+	for (const piece of delimited ?? [{ kind: 'text', text }]) {
+		const dollars = piece.kind === 'text' ? splitDollarMath(piece.text) : null;
+		if (dollars) changed = true;
+		pieces.push(...(dollars ?? [piece]));
+	}
+	return changed ? pieces : null;
+}
 
 /**
  * Pair `$...$` inside one pasted run.
  * A dollar before a digit stays text. An odd run of backslashes keeps the next dollar literal.
  * Returns null when nothing closes.
  */
-export function splitInlineMath(text: string): InlineMathPiece[] | null {
+function splitDollarMath(text: string): InlineMathPiece[] | null {
 	const openers: number[] = [];
 	const pairs: { from: number; to: number }[] = [];
 	for (let index = 0; index < text.length; index += 1) {
@@ -232,11 +300,48 @@ function expandInlineMathFragment(fragment: Fragment, math: NodeType): { fragmen
 	return { fragment: Fragment.from(children), changed };
 }
 
-/** HTML paste keeps `$...$` as text. Close those pairs the same way a typed `$` does. */
+/** A pasted paragraph that holds only a display formula, as the LaTeX block it stands for. */
+function displayMathBlock(node: ProseMirrorNode, code: NodeType): ProseMirrorNode | null {
+	if (node.type.name !== 'paragraph') return null;
+	let text = '';
+	let plain = true;
+	node.forEach((child) => {
+		if (child.isText && !child.marks.some((mark) => mark.type.spec.code || mark.type.name === 'code')) text += child.text;
+		else if (child.type.name === 'hardbreak' || child.type.name === 'hard_break') text += '\n';
+		else plain = false;
+	});
+	const pieces = plain ? splitDelimitedMath(text.trim()) : null;
+	const piece = pieces?.length === 1 ? pieces[0] : null;
+	if (piece?.kind !== 'math' || !piece.display) return null;
+	return code.create(code.spec.attrs && 'language' in code.spec.attrs ? { language: 'LaTeX' } : null, code.schema.text(piece.value));
+}
+
+/**
+ * HTML paste keeps formulas as text. Close `$...$` pairs the same way a typed
+ * `$` does, and `\(…\)`, `\[…\]`, `$$…$$` as well. A top-level paragraph that
+ * holds only a display formula becomes a LaTeX block.
+ */
 export function expandInlineMathSlice(slice: Slice, math: NodeType): Slice | null {
-	const expanded = expandInlineMathFragment(slice.content, math);
-	if (!expanded.changed) return null;
-	return new Slice(expanded.fragment, slice.openStart, slice.openEnd);
+	const code = math.schema.nodes.code_block;
+	let openStart = slice.openStart;
+	let openEnd = slice.openEnd;
+	let lifted = false;
+	const blocks: ProseMirrorNode[] = [];
+	slice.content.forEach((node, _offset, index) => {
+		const block = code ? displayMathBlock(node, code) : null;
+		if (!block) {
+			blocks.push(node);
+			return;
+		}
+		lifted = true;
+		blocks.push(block);
+		// A block cannot merge into the paragraph around the caret, so that edge of the slice closes.
+		if (index === 0 && openStart === 1) openStart = 0;
+		if (index === slice.content.childCount - 1 && openEnd === 1) openEnd = 0;
+	});
+	const expanded = expandInlineMathFragment(Fragment.from(blocks), math);
+	if (!lifted && !expanded.changed) return null;
+	return new Slice(expanded.fragment, openStart, openEnd);
 }
 
 /**

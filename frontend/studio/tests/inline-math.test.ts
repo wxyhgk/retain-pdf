@@ -384,3 +384,55 @@ test('a paragraph that is only $$ keeps the next space as text', () => {
 	const hello = schema.nodes.doc.create(null, schema.nodes.paragraph.create(null, schema.text('hello')));
 	assert.equal(planLiteralDollarChar(hello, 6, 6, ' '), null);
 });
+
+test('pasted text also closes \\(…\\), \\[…\\] and $$…$$, as AI answers write them', () => {
+	assert.deepEqual(splitInlineMath('也就是 \\(x_1\\) 和 $y$'), [
+		{ kind: 'text', text: '也就是 ' },
+		{ kind: 'math', value: 'x_1', display: false },
+		{ kind: 'text', text: ' 和 ' },
+		{ kind: 'math', value: 'y' },
+	]);
+	assert.deepEqual(splitInlineMath('\\[ \\ce{F + CH3OH -> HF + CH2OH} \\]'), [
+		{ kind: 'math', value: '\\ce{F + CH3OH -> HF + CH2OH}', display: true },
+	]);
+	assert.deepEqual(splitInlineMath('$$E = mc^2$$'), [{ kind: 'math', value: 'E = mc^2', display: true }]);
+	assert.deepEqual(splitInlineMath('\\(\\alpha \\\\ \\beta\\)'), [{ kind: 'math', value: '\\alpha \\\\ \\beta', display: false }]);
+	assert.equal(splitInlineMath('转义 \\\\(不是公式\\\\)'), null);
+	assert.equal(splitInlineMath('未闭合 \\( a'), null);
+	assert.equal(splitInlineMath('空的 \\(\\)'), null);
+});
+
+test('a pasted paragraph holding only a display formula becomes a LaTeX block', () => {
+	const schema = editorSchema();
+	const paragraph = (text: string) => schema.nodes.paragraph.create(null, schema.text(text));
+	const answer = new Slice(
+		Fragment.from([
+			paragraph('这张文献能量图非常关键：'),
+			paragraph('\\[ \\ce{F + CH3OH -> HF + CH2OH} \\]'),
+			paragraph('也就是 \\(RC2 \\to TS2\\)。'),
+		]),
+		1,
+		1,
+	);
+	const expanded = expandInlineMathSlice(answer, schema.nodes.math_inline);
+	assert.ok(expanded);
+	assert.equal(expanded.openStart, 1);
+	assert.equal(expanded.openEnd, 1);
+	const [first, block, last] = [expanded.content.child(0), expanded.content.child(1), expanded.content.child(2)];
+	assert.equal(first.textContent, '这张文献能量图非常关键：');
+	assert.equal(block.type.name, 'code_block');
+	assert.equal(block.attrs.language, 'LaTeX');
+	assert.equal(block.textContent, '\\ce{F + CH3OH -> HF + CH2OH}');
+	assert.equal(last.child(1).type.name, 'math_inline');
+	assert.equal(last.child(1).attrs.value, 'RC2 \\to TS2');
+
+	const alone = expandInlineMathSlice(new Slice(Fragment.from(paragraph('$$\\sum_i x_i$$')), 1, 1), schema.nodes.math_inline);
+	assert.ok(alone);
+	assert.equal(alone.content.firstChild?.type.name, 'code_block');
+	assert.equal(alone.openStart, 0);
+	assert.equal(alone.openEnd, 0);
+
+	const inSentence = expandInlineMathSlice(new Slice(Fragment.from(paragraph('句中 \\[x\\] 不拆')), 1, 1), schema.nodes.math_inline);
+	assert.equal(inSentence?.content.firstChild?.type.name, 'paragraph');
+	assert.equal(inSentence?.content.firstChild?.child(1).type.name, 'math_inline');
+});

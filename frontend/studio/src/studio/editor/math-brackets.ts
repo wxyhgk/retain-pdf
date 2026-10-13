@@ -16,11 +16,15 @@ function asLatexCode(node: MdastNode): void {
 	});
 }
 
-/** `\(…\)` and `\[…\]` open as the same formula nodes as `$…$` and `$$…$$`. */
-export const mathBracketsRemark = $remark('math-brackets', () => function (this: unknown) {
+type RemarkPlugin = ReturnType<Parameters<typeof $remark>[1]>;
+
+function remarkMathBracketsForCrepe(this: unknown) {
 	const split = remarkMathBrackets.call(this);
 	return (tree: MdastNode) => {
 		split(tree);
 		asLatexCode(tree);
 	};
-});
+}
+
+/** `\(…\)` and `\[…\]` open as the same formula nodes as `$…$` and `$$…$$`. */
+export const mathBracketsRemark = $remark('math-brackets', () => remarkMathBracketsForCrepe as unknown as RemarkPlugin);
