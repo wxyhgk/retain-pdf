@@ -12,6 +12,7 @@ export function createArticleFrontmatterSchema(image = null) {
 		heroImage: heroImage.optional(),
 		tags: z.array(z.string()).default([]),
 		draft: z.boolean().default(false),
+		kind: z.enum(['wiki', 'post']).default('post'),
 	});
 }
 
