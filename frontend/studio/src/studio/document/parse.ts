@@ -1,5 +1,6 @@
 import remarkParse from 'remark-parse';
 import remarkMath from 'remark-math';
+import remarkMathBrackets from '../../plugins/remark-math-brackets.mjs';
 import { unified } from 'unified';
 
 import type { FrontmatterSlice, MarkdownBlockSlice, StudioDocument } from './types.ts';
@@ -18,7 +19,7 @@ type PositionedNode = {
 	};
 };
 
-const markdownParser = unified().use(remarkParse).use(remarkMath);
+const markdownParser = unified().use(remarkParse).use(remarkMath).use(remarkMathBrackets);
 
 function readLines(source: string, start: number): SourceLine[] {
 	const lines: SourceLine[] = [];
@@ -78,7 +79,8 @@ function sliceBody(bodyRaw: string, bodyStart: number): MarkdownBlockSlice[] {
 
 	let root: { children?: PositionedNode[] };
 	try {
-		root = markdownParser.parse(bodyRaw) as { children?: PositionedNode[] };
+		// Run the parser's transforms too: a display formula on its own lines is a block of its own.
+		root = markdownParser.runSync(markdownParser.parse(bodyRaw)) as { children?: PositionedNode[] };
 	} catch {
 		return fallbackBlock(bodyRaw, bodyStart);
 	}

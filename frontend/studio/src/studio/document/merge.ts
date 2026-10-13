@@ -1,4 +1,5 @@
 import remarkMath from 'remark-math';
+import remarkMathBrackets from '../../plugins/remark-math-brackets.mjs';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
@@ -14,21 +15,26 @@ export type MarkdownBodyMerge = {
 	readonly changedBlocks: number;
 };
 
-const semanticParser = unified().use(remarkParse).use(remarkMath);
+const semanticParser = unified().use(remarkParse).use(remarkMath).use(remarkMathBrackets);
 
+/**
+ * The tree without what does not change the Markdown's meaning: source
+ * positions, and `data`, the rendering hints plugins attach (a `\[…\]` in a
+ * sentence is drawn display-style, which the editor writes back as `$…$`).
+ */
 function withoutPositions(value: unknown): unknown {
 	if (Array.isArray(value)) return value.map(withoutPositions);
 	if (!value || typeof value !== 'object') return value;
 	const clean: Record<string, unknown> = {};
 	for (const [key, child] of Object.entries(value)) {
-		if (key !== 'position') clean[key] = withoutPositions(child);
+		if (key !== 'position' && key !== 'data') clean[key] = withoutPositions(child);
 	}
 	return clean;
 }
 
 function semanticFingerprint(block: MarkdownBlockSlice): string {
 	try {
-		const root = semanticParser.parse(block.raw) as { children?: unknown[] };
+		const root = semanticParser.runSync(semanticParser.parse(block.raw)) as { children?: unknown[] };
 		return JSON.stringify(withoutPositions(root.children ?? []));
 	} catch {
 		return `raw:${block.raw}`;

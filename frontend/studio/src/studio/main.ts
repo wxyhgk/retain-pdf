@@ -10,6 +10,7 @@ import { bindTitleFocus, blockFeelPlugins } from './editor/block-menu';
 import { buildScienceSlashMenu, scienceBlockPlugins } from './editor/crepe-science-block';
 import { displayMathPlugins } from './editor/display-math';
 import { inlineMathPlugins } from './editor/inline-math';
+import { mathBracketsRemark } from './editor/math-brackets';
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from './document';
 import '../science/browser/molecule-renderer.css';
 import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
@@ -234,6 +235,7 @@ async function mountEditor(source: string): Promise<string> {
 	crepe.editor.use(blockFeelPlugins);
 	crepe.editor.use(inlineMathPlugins);
 	crepe.editor.use(displayMathPlugins);
+	crepe.editor.use(mathBracketsRemark);
 	crepe.on((listener) => {
 		listener.markdownUpdated((_ctx, markdown) => updateMarkdown(markdown));
 	});
