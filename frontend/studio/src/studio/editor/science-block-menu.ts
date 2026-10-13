@@ -121,6 +121,10 @@ class ScienceBlockMenu {
 		if (top + height > window.innerHeight - 8) top = Math.max(8, window.innerHeight - height - 8);
 		this.root.style.left = `${left}px`;
 		this.root.style.top = `${top}px`;
+		// Focus moves into the menu, as in any menu. While the editor kept it, the
+		// browser's late report of the old caret could move the selection off the
+		// block and close the menu again.
+		this.root.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
 	}
 
 	close(): void {

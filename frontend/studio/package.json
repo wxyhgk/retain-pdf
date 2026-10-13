@@ -13,7 +13,8 @@
     "test": "npm run test:document && npm run test:data && npm run test:science",
     "test:document": "node --experimental-strip-types --test tests/studio-document*.test.ts",
     "test:data": "node --test src/studio/server/*.test.mjs",
-    "test:science": "node --experimental-strip-types --test tests/science*.test.ts"
+    "test:science": "node --experimental-strip-types --test tests/science*.test.ts",
+    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.2.2",
@@ -99,6 +100,7 @@
     "yjs": "^13.6.33"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/markdown-it": "^14.1.2",
     "@vitejs/plugin-vue": "^6.0.10",
     "sass": "^1.83.0",

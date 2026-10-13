@@ -44,6 +44,10 @@ export const scienceBlockSchema = $node(SCIENCE_FENCE_TYPE, () => ({
 	content: 'text*',
 	group: 'block',
 	code: true,
+	// The source is edited in a popup, never in place: the block is one unit. Without
+	// this a selection read back from the DOM lands in a paragraph nearby instead of
+	// on the block, which drops the block menu and the popup the moment it happens.
+	atom: true,
 	defining: true,
 	isolating: true,
 	marks: '',
@@ -284,9 +288,6 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 			const info = String(node.attrs.info ?? '');
 			const editor = scienceSourceEditor(info);
 			const drawable = structureDrawing(info, node.textContent) !== null;
-			dom.classList.add('is-open');
-			dom.classList.toggle('is-inline-source', editor.inline);
-			editButton.textContent = '完成';
 			popup = new SourcePopup({
 				label: `${editor.label} 结构`,
 				placeholder: editor.placeholder,
@@ -316,6 +317,13 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 				onRemove: remove,
 				onDismiss: () => close(),
 			});
+			// Focus leaves the editor before anything in it changes. While the editor held
+			// focus, ProseMirror would re-read the browser's selection on the next DOM
+			// change and could move it off this block, which closes the popup at once.
+			popup.focus();
+			dom.classList.add('is-open');
+			dom.classList.toggle('is-inline-source', editor.inline);
+			editButton.textContent = '完成';
 			// Opening can happen inside a view update; select the block once it settles.
 			queueMicrotask(() => {
 				const pos = getPos();

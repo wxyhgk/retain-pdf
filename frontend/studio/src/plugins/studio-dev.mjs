@@ -52,7 +52,8 @@ export default function studioDev({ chemistryLanguages }) {
 		name: 'local-article-studio',
 		apply: 'serve',
 		configureServer(server) {
-			const blogRoot = resolve(server.config.root, 'blog');
+			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
+			const blogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : resolve(server.config.root, 'blog');
 			const articles = new ArticleRepository(blogRoot);
 			const files = new FileRepository(blogRoot);
 			const processorPromise = createMarkdownProcessor({
