@@ -5,7 +5,7 @@ import { NodeSelection, Plugin, TextSelection } from '@milkdown/prose/state';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type { EditorView, NodeView } from 'prosemirror-view';
 
-import { createSciencePreview } from '../../science/browser/science-renderer.ts';
+import { createSciencePreview, hydrateSciencePreviews } from '../../science/browser/science-renderer.ts';
 import {
 	dispatchScienceAction,
 	openScienceBlockMenu,
@@ -21,9 +21,12 @@ import {
 	runScienceBlockParse,
 	runScienceBlockSerialize,
 	scienceBlockKindLabel,
-	scienceBlockSurface,
 	scienceRetag,
+	scienceSourceEditor,
+	structureDrawing,
 } from './science-block.ts';
+import { SourcePopup } from './source-popup.ts';
+import { drawStructure, type DrawnStructure } from './structure-editor.ts';
 
 /**
  * Science fenced-code blocks as a first-class Crepe node.
@@ -68,34 +71,59 @@ export const scienceBlockSchema = $node(SCIENCE_FENCE_TYPE, () => ({
 }));
 
 const PREVIEW_DEBOUNCE_MS = 350;
-const scienceSurfaces = new Set<() => void>();
+const POPUP_PREVIEW_DEBOUNCE_MS = 200;
+/** Multi-line sources can be megabytes; batch keystrokes before rewriting the node. */
+const SOURCE_WRITE_DEBOUNCE_MS = 250;
+const scienceViews = new Set<() => void>();
 
-function trackScienceSurface(sync: () => void): () => void {
-	scienceSurfaces.add(sync);
+function trackScienceView(sync: () => void): () => void {
+	scienceViews.add(sync);
 	return () => {
-		scienceSurfaces.delete(sync);
+		scienceViews.delete(sync);
 	};
 }
 
-/** Selection changes do not call NodeView.update, so surfaces refresh from here. */
-export const scienceBlockSurfacePlugin = $prose(
+/** Selection changes do not call NodeView.update, so popups open and close from here. */
+export const scienceBlockSelectionPlugin = $prose(
 	() =>
 		new Plugin({
 			view() {
 				return {
 					update() {
-						for (const sync of scienceSurfaces) sync();
+						for (const sync of scienceViews) sync();
 					},
 				};
 			},
 		}),
 );
 
+function paintMolecule(host: HTMLElement, info: string, source: string): void {
+	host.replaceChildren();
+	if (!source) return;
+	const descriptor = parseScienceFence(info, source);
+	const element = descriptor?.block ? createSciencePreview(descriptor.block.language, descriptor.source) : null;
+	if (element) {
+		host.append(element);
+		return;
+	}
+	const fallback = document.createElement('p');
+	fallback.className = 'science-block-fallback';
+	fallback.textContent = '无法预览这段结构';
+	host.append(fallback);
+}
+
+/**
+ * The block always rests on its rendered molecule. Click selects it. Double
+ * click opens a 2D structure (SMILES, flat SDF) in the structure editor, and
+ * anything else in the source popup. Enter, 编辑 and any command that puts
+ * the caret inside the node (slash insert, the menu's 编辑源码) open the
+ * source popup, which offers 画结构 when the editor can draw the block.
+ */
 export const scienceBlockView = $view(scienceBlockSchema, () => {
 	return (initial: ProseMirrorNode, view: EditorView, getPos: () => number | undefined): NodeView => {
+		let node = initial;
 		const dom = document.createElement('div');
 		dom.className = 'science-block';
-		dom.dataset.surface = scienceBlockSurface(initial.textContent, false);
 		const caption = document.createElement('div');
 		caption.className = 'science-block-caption';
 		const kind = document.createElement('span');
@@ -113,16 +141,10 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 		caption.append(kind, editButton, menuButton);
 		const preview = document.createElement('div');
 		preview.className = 'science-block-preview';
-		const compose = document.createElement('div');
-		compose.className = 'science-block-compose';
 		const placeholder = document.createElement('div');
 		placeholder.className = 'science-block-placeholder';
-		placeholder.textContent = `输入 ${kind.textContent}，或 @file ./assets/…`;
-		const source = document.createElement('div');
-		source.className = 'science-block-source';
-		source.spellcheck = false;
-		compose.append(placeholder, source);
-		dom.append(caption, preview, compose);
+		placeholder.textContent = scienceSourceEditor(String(initial.attrs.info ?? '')).placeholder;
+		dom.append(caption, preview, placeholder);
 		dom.classList.toggle('is-empty', initial.textContent.length === 0);
 
 		let timer: ReturnType<typeof setTimeout> | undefined;
@@ -130,37 +152,182 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 		const render = (current: ProseMirrorNode) => {
 			const info = String(current.attrs.info ?? '');
 			const key = `${info}\n${current.textContent}`;
-			// Steady-state renders must not touch the DOM: any write here is
-			// observed by ProseMirror and schedules another update, which would
-			// destroy in-flight previews and spin forever.
+			// Steady-state renders must not touch the DOM: a renderer writing
+			// SVG or a canvas is expensive, and an unchanged key means nothing to do.
 			if (key === renderedKey) return;
 			renderedKey = key;
 			const label = scienceBlockKindLabel(info);
 			if (kind.textContent !== label) kind.textContent = label;
-			const hint = `输入 ${label}，或 @file ./assets/…`;
+			const hint = scienceSourceEditor(info).placeholder;
 			if (placeholder.textContent !== hint) placeholder.textContent = hint;
-			preview.replaceChildren();
-			if (!current.textContent) return;
-			const descriptor = parseScienceFence(info, current.textContent);
-			if (!descriptor?.block) return;
-			const element = createSciencePreview(descriptor.block.language, descriptor.source);
-			if (element) preview.append(element);
-			else {
-				const fallback = document.createElement('p');
-				fallback.className = 'science-block-fallback';
-				fallback.textContent = '无法预览这段结构';
-				preview.append(fallback);
-			}
+			paintMolecule(preview, info, current.textContent);
 		};
 		render(initial);
 
-		const editingAt = (pos: number, node: ProseMirrorNode): boolean => {
+		let popup: SourcePopup | null = null;
+		let writing = false;
+		let pendingWrite: ReturnType<typeof setTimeout> | undefined;
+		let popupPreviewTimer: ReturnType<typeof setTimeout> | undefined;
+
+		const caretInside = (pos: number, current: ProseMirrorNode): boolean => {
 			const selection = view.state.selection;
-			return (
-				selection instanceof TextSelection &&
-				selection.from >= pos + 1 &&
-				selection.to <= pos + node.nodeSize - 1
-			);
+			return selection instanceof TextSelection && selection.from > pos && selection.to < pos + current.nodeSize;
+		};
+
+		const writeSource = (value: string, select: boolean, info?: string) => {
+			const pos = getPos();
+			if (pos == null) return;
+			const current = view.state.doc.nodeAt(pos);
+			if (!current || current.type.name !== SCIENCE_FENCE_TYPE) return;
+			const attrs = info === undefined ? current.attrs : { ...current.attrs, info };
+			if (current.textContent === value && attrs.info === current.attrs.info) return;
+			const next = current.type.create(attrs, value ? view.state.schema.text(value) : null);
+			let tr = view.state.tr.replaceWith(pos, pos + current.nodeSize, next);
+			if (select) tr = tr.setSelection(NodeSelection.create(tr.doc, pos));
+			writing = true;
+			try {
+				view.dispatch(tr);
+			} finally {
+				writing = false;
+			}
+		};
+
+		/** `deferWrite` when closing from inside a view update, where dispatching is not allowed. */
+		const close = (deferWrite = false) => {
+			if (!popup) return;
+			const value = popup.value;
+			const pending = pendingWrite !== undefined;
+			clearTimeout(pendingWrite);
+			pendingWrite = undefined;
+			clearTimeout(popupPreviewTimer);
+			popup.destroy();
+			popup = null;
+			dom.classList.remove('is-open', 'is-inline-source');
+			editButton.textContent = '编辑';
+			if (!pending) return;
+			if (deferWrite) queueMicrotask(() => writeSource(value, false));
+			else writeSource(value, false);
+		};
+
+		const finish = () => {
+			close();
+			const pos = getPos();
+			if (pos == null) return;
+			const current = view.state.doc.nodeAt(pos);
+			if (!current) return;
+			const after = pos + current.nodeSize;
+			const next = view.state.doc.resolve(after).nodeAfter;
+			// Never land in the next science block or formula: that would open its popup.
+			const selection =
+				next?.isTextblock && !next.type.spec.code
+					? TextSelection.create(view.state.doc, after + 1)
+					: NodeSelection.create(view.state.doc, pos);
+			view.dispatch(view.state.tr.setSelection(selection).setMeta('addToHistory', false).scrollIntoView());
+			view.focus();
+		};
+
+		const remove = () => {
+			clearTimeout(pendingWrite);
+			pendingWrite = undefined;
+			close();
+			const pos = getPos();
+			if (pos == null) return;
+			const current = view.state.doc.nodeAt(pos);
+			const paragraph = view.state.schema.nodes.paragraph;
+			if (!current || !paragraph) return;
+			const tr = view.state.tr.replaceWith(pos, pos + current.nodeSize, paragraph.create());
+			tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1), 1));
+			view.dispatch(tr.scrollIntoView());
+			view.focus();
+		};
+
+		const previewInPopup = (host: HTMLElement, value: string) => {
+			clearTimeout(popupPreviewTimer);
+			const paint = () => {
+				const source = value.trim();
+				host.classList.toggle('is-empty', !source);
+				if (!source) {
+					host.textContent = '预览';
+					return;
+				}
+				paintMolecule(host, String(node.attrs.info ?? ''), source);
+				hydrateSciencePreviews(host);
+			};
+			if (!host.hasChildNodes()) paint();
+			else popupPreviewTimer = setTimeout(paint, POPUP_PREVIEW_DEBOUNCE_MS);
+		};
+
+		/** Draw in the structure editor, from the popup's text when it is open, and write what was saved back into the block. */
+		const draw = async () => {
+			const info = String(node.attrs.info ?? '');
+			const source = popup ? popup.value : node.textContent;
+			const form = structureDrawing(info, source);
+			if (!form) {
+				window.alert('这段内容带三维坐标或引用了文件，二维结构编辑器画不了。');
+				return;
+			}
+			close();
+			let drawn: DrawnStructure | null;
+			try {
+				drawn = await drawStructure(form, info, source, `画结构：${scienceBlockKindLabel(info)}`);
+			} catch (error) {
+				window.alert(error instanceof Error ? error.message : String(error));
+				return;
+			}
+			if (drawn) writeSource(drawn.source, true, drawn.info);
+			else selectBlock();
+			view.focus();
+		};
+
+		const open = () => {
+			if (popup) return;
+			const info = String(node.attrs.info ?? '');
+			const editor = scienceSourceEditor(info);
+			const drawable = structureDrawing(info, node.textContent) !== null;
+			dom.classList.add('is-open');
+			dom.classList.toggle('is-inline-source', editor.inline);
+			editButton.textContent = '完成';
+			popup = new SourcePopup({
+				label: `${editor.label} 结构`,
+				placeholder: editor.placeholder,
+				value: node.textContent,
+				rows: editor.inline ? 2 : 8,
+				variant: editor.inline ? 'is-molecule-inline' : 'is-molecule',
+				caption: `${editor.label} · Esc 完成`,
+				actions: drawable ? [{ label: '画结构', title: '在结构编辑器里画', run: () => void draw() }] : undefined,
+				placement: editor.inline ? 'over' : 'below',
+				owner: dom,
+				anchor: () => dom.getBoundingClientRect(),
+				width: (anchor) => (editor.inline ? 440 : Math.min(720, Math.max(anchor.width, 520))),
+				maxInputHeight: () => (editor.inline ? 160 : Math.max(160, Math.min(420, window.innerHeight * 0.45))),
+				preview: editor.inline ? previewInPopup : undefined,
+				onInput: (value) => {
+					if (editor.inline) {
+						writeSource(value, true);
+						return;
+					}
+					clearTimeout(pendingWrite);
+					pendingWrite = setTimeout(() => {
+						pendingWrite = undefined;
+						writeSource(value, true);
+					}, SOURCE_WRITE_DEBOUNCE_MS);
+				},
+				onFinish: finish,
+				onRemove: remove,
+				onDismiss: () => close(),
+			});
+			// Opening can happen inside a view update; select the block once it settles.
+			queueMicrotask(() => {
+				const pos = getPos();
+				if (!popup || pos == null) return;
+				const selection = view.state.selection;
+				if (!(selection instanceof NodeSelection) || selection.from !== pos) {
+					view.dispatch(
+						view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)).setMeta('addToHistory', false),
+					);
+				}
+				popup?.focus();
+			});
 		};
 
 		const sync = () => {
@@ -168,53 +335,14 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 			if (pos == null) return;
 			const current = view.state.doc.nodeAt(pos);
 			if (!current || current.type.name !== SCIENCE_FENCE_TYPE) return;
-			const editing = editingAt(pos, current);
-			const surface = scienceBlockSurface(current.textContent, editing);
-			if (dom.dataset.surface !== surface) dom.dataset.surface = surface;
-			dom.classList.toggle('is-empty', current.textContent.length === 0);
-			dom.classList.toggle('is-editing', editing);
-			editButton.hidden = surface === 'compose' && !editing;
-			editButton.textContent = editing ? '完成' : '编辑';
-		};
-		const unregister = trackScienceSurface(sync);
-
-		const enterEdit = () => {
-			const pos = getPos();
-			if (pos == null) return;
-			dom.dataset.surface = 'compose';
-			placeCursorInScienceBlock(view, pos);
-		};
-
-		const exitEdit = () => {
-			const pos = getPos();
-			if (pos == null) return;
-			const node = view.state.doc.nodeAt(pos);
-			if (!node) return;
-			const after = pos + node.nodeSize;
-			const tr = view.state.doc.resolve(after).nodeAfter
-				? view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(after), 1))
-				: view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos));
-			view.dispatch(tr.setMeta('addToHistory', false).scrollIntoView());
-			view.focus();
-		};
-
-		caption.addEventListener('mousedown', (event) => {
-			const button = event.target instanceof Element ? event.target.closest('button') : null;
-			if (!button || !caption.contains(button)) return;
-			event.preventDefault();
-			event.stopPropagation();
-			const pos = getPos();
-			if (pos == null) return;
-			if (button === menuButton) {
-				openScienceBlockMenu(view, pos, menuButton);
+			if (caretInside(pos, current)) {
+				open();
 				return;
 			}
-			if (dom.classList.contains('is-editing')) exitEdit();
-			else enterEdit();
-		});
-
-		const onViewerControl = (target: EventTarget | null): boolean =>
-			target instanceof Element && Boolean(target.closest('button, a, input, .chem-view-controls, .cube-controls'));
+			const selection = view.state.selection;
+			if (popup && !(selection instanceof NodeSelection && selection.from === pos)) close(true);
+		};
+		const unregister = trackScienceView(sync);
 
 		const selectBlock = () => {
 			const pos = getPos();
@@ -227,11 +355,36 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 			view.focus();
 		};
 
+		caption.addEventListener('mousedown', (event) => {
+			const button = event.target instanceof Element ? event.target.closest('button') : null;
+			if (!button || !caption.contains(button)) return;
+			event.preventDefault();
+			event.stopPropagation();
+			const pos = getPos();
+			if (pos == null) return;
+			if (button === menuButton) {
+				close();
+				openScienceBlockMenu(view, pos, menuButton);
+				return;
+			}
+			if (popup) finish();
+			else open();
+		});
+
+		placeholder.addEventListener('mousedown', (event) => {
+			if (event.button !== 0) return;
+			event.preventDefault();
+			open();
+		});
+
+		const onViewerControl = (target: EventTarget | null): boolean =>
+			target instanceof Element && Boolean(target.closest('button, a, input, .chem-view-controls, .cube-controls'));
+
 		let press: { x: number; y: number; spatial: boolean } | null = null;
 		const spatialTarget = (target: EventTarget | null): boolean =>
 			target instanceof Element && Boolean(target.closest('canvas, .chem-3d'));
 		preview.addEventListener('mousedown', (event) => {
-			if (dom.dataset.surface !== 'preview' || onViewerControl(event.target)) return;
+			if (event.button !== 0 || onViewerControl(event.target)) return;
 			const spatial = spatialTarget(event.target);
 			press = { x: event.clientX, y: event.clientY, spatial };
 			if (spatial) return;
@@ -241,35 +394,43 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 		preview.addEventListener('mouseup', (event) => {
 			const start = press;
 			press = null;
-			if (!start?.spatial || dom.dataset.surface !== 'preview' || onViewerControl(event.target)) return;
+			if (!start?.spatial || onViewerControl(event.target)) return;
+			// A drag rotates the 3D view; only a still click selects the block.
 			if (Math.hypot(event.clientX - start.x, event.clientY - start.y) > 4) return;
 			selectBlock();
 		});
 		preview.addEventListener('dblclick', (event) => {
 			if (onViewerControl(event.target)) return;
 			event.preventDefault();
-			enterEdit();
+			// A 2D structure opens straight in the structure editor; anything else edits as text.
+			if (structureDrawing(String(node.attrs.info ?? ''), node.textContent)) void draw();
+			else open();
 		});
 
 		return {
 			dom,
-			contentDOM: source,
 			update: (updated: ProseMirrorNode) => {
 				if (updated.type.name !== SCIENCE_FENCE_TYPE) return false;
+				node = updated;
+				dom.classList.toggle('is-empty', updated.textContent.length === 0);
 				clearTimeout(timer);
 				timer = setTimeout(() => render(updated), PREVIEW_DEBOUNCE_MS);
-				sync();
+				// Follow undo or other outside edits, never our own pending keystrokes.
+				if (!writing && pendingWrite === undefined) popup?.setValue(updated.textContent);
 				return true;
 			},
+			// Without this ProseMirror would try to draw a caret inside a node with no editable DOM.
+			setSelection: () => open(),
 			destroy: () => {
 				clearTimeout(timer);
+				clearTimeout(pendingWrite);
+				clearTimeout(popupPreviewTimer);
+				popup?.destroy();
+				popup = null;
 				unregister();
 			},
-			// The molecule view, caption and placeholder sit outside contentDOM.
-			// Ignoring them keeps ProseMirror from recreating the view while a
-			// renderer writes SVG or a canvas. Source edits still count.
-			ignoreMutation: (mutation) =>
-				mutation.type !== 'selection' && !source.contains(mutation.target as Node),
+			// Renderers write SVG and canvases here; none of it is document content.
+			ignoreMutation: () => true,
 			stopEvent: (event) => {
 				const target = event.target;
 				if (!(target instanceof Node)) return false;
@@ -305,7 +466,7 @@ export const scienceBlockPlugins = [
 	scienceBlockSchema,
 	scienceBlockView,
 	scienceBlockSync,
-	scienceBlockSurfacePlugin,
+	scienceBlockSelectionPlugin,
 	scienceBlockMenuPlugin,
 	scienceBlockKeys,
 ];

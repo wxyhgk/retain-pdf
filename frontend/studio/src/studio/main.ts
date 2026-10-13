@@ -8,6 +8,7 @@ import 'katex/contrib/mhchem';
 import { createArticle, getArticle, listArticles, saveArticle, saveMoleculeView, StudioApiError } from './api/client';
 import { bindTitleFocus, blockFeelPlugins } from './editor/block-menu';
 import { buildScienceSlashMenu, scienceBlockPlugins } from './editor/crepe-science-block';
+import { displayMathPlugins } from './editor/display-math';
 import { inlineMathPlugins } from './editor/inline-math';
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from './document';
 import '../science/browser/molecule-renderer.css';
@@ -232,6 +233,7 @@ async function mountEditor(source: string): Promise<string> {
 	crepe.editor.use(scienceBlockPlugins);
 	crepe.editor.use(blockFeelPlugins);
 	crepe.editor.use(inlineMathPlugins);
+	crepe.editor.use(displayMathPlugins);
 	crepe.on((listener) => {
 		listener.markdownUpdated((_ctx, markdown) => updateMarkdown(markdown));
 	});

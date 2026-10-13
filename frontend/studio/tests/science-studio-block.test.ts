@@ -15,9 +15,11 @@ import {
 	runScienceBlockSerialize,
 	scienceBlockKindLabel,
 	scienceBlockMenuItems,
-	scienceBlockSurface,
 	scienceFenceMarkdown,
 	scienceRetag,
+	scienceSourceEditor,
+	structureDrawing,
+	isEmptyMolfile,
 	transformScienceBlock,
 	SCIENCE_FENCE_TYPE,
 } from '../src/studio/editor/science-block.ts';
@@ -117,13 +119,42 @@ function scienceSchema() {
 	});
 }
 
-test('resting surface hides source until the block is empty or being edited', () => {
-	assert.equal(scienceBlockSurface('CCO', false), 'preview');
-	assert.equal(scienceBlockSurface('', false), 'compose');
-	assert.equal(scienceBlockSurface('CCO', true), 'compose');
+test('source popup edits SMILES inline and coordinate files below the block', () => {
+	const smiles = scienceSourceEditor('SMILES');
+	assert.equal(smiles.inline, true);
+	assert.equal(smiles.label, 'SMILES');
+	assert.match(smiles.placeholder, /SMILES/);
+	for (const info of ['sdf', 'xyz', 'gjf', 'cube', 'sdf-3d']) {
+		const editor = scienceSourceEditor(info);
+		assert.equal(editor.inline, false, info);
+		assert.match(editor.placeholder, /@file/, info);
+	}
 	assert.equal(scienceBlockKindLabel('sdf-3d'), 'sdf-3d');
 	assert.equal(scienceBlockKindLabel('SMILES'), 'SMILES');
 	assert.equal(scienceBlockKindLabel(''), '化学');
+});
+
+test('structure editor draws SMILES and flat SDF held in the block only', () => {
+	const flat = 'water\n  ChemBlog\n\n  3  2  0  0  0  0  0  0  0  0999 V2000\n    0.0000    0.0000    0.0000 O   0  0\n    0.7586    0.5043    0.0000 H   0  0\n   -0.7586    0.5043    0.0000 H   0  0\n  1  2  1  0\n  1  3  1  0\nM  END';
+	const raised = flat.replace('0.5043    0.0000 H', '0.5043    0.8000 H');
+	assert.equal(structureDrawing('smiles', 'CCO'), 'smiles');
+	assert.equal(structureDrawing('SMILES', ''), 'smiles');
+	assert.equal(structureDrawing('sdf', flat), 'molfile');
+	assert.equal(structureDrawing('mol', ''), 'molfile');
+	assert.equal(structureDrawing('sdf-2d', flat), 'molfile');
+	assert.equal(structureDrawing('sdf', raised), null);
+	assert.equal(structureDrawing('sdf-3d', flat), null);
+	assert.equal(structureDrawing('xyz', '3\nwater\nO 0 0 0'), null);
+	assert.equal(structureDrawing('sdf', '@file ./assets/water.sdf'), null);
+	assert.equal(structureDrawing('sdf', '@file ../outside.sdf'), null);
+	assert.equal(structureDrawing('python', 'print(1)'), null);
+});
+
+test('an empty page saves as a molfile with no atoms', () => {
+	assert.equal(isEmptyMolfile('\n  Structura\n\n  0  0  0  0  0  0  0  0  0  0999 V2000\nM  END'), true);
+	assert.equal(isEmptyMolfile(''), true);
+	assert.equal(isEmptyMolfile('\n  Structura\n\n  1  0  0  0  0  0  0  0  0  0999 V2000\n    0.0000    0.0000    0.0000 C   0  0\nM  END'), false);
+	assert.equal(isEmptyMolfile('\n  Structura\n\n  0  0  0     0  0            999 V3000\nM  V30 BEGIN CTAB\nM  V30 COUNTS 0 0 0 0 0\nM  END'), true);
 });
 
 test('block menu edits, converts and deletes the selected block', () => {

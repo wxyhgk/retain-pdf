@@ -63,7 +63,10 @@ export function dispatchScienceAction(view: EditorView, action: ScienceBlockActi
 	view.focus();
 }
 
-/** Put the caret at the end of a science block without recording a history step. */
+/**
+ * Put the caret at the end of a science block without recording a history step.
+ * The block's node view answers a caret inside it by opening the source popup.
+ */
 export function placeCursorInScienceBlock(view: EditorView, pos: number): void {
 	const node = view.state.doc.nodeAt(pos);
 	if (!node || node.type.name !== SCIENCE_FENCE_TYPE) return;
@@ -243,33 +246,13 @@ export const scienceBlockMenuPlugin = $prose(
 		}),
 );
 
-/** Backspace removes an empty science block. Enter edits a selected one. Escape leaves the source. */
+/** Enter on a selected science block opens its source popup. */
 export const scienceBlockKeys = $prose(() =>
 	keymap({
 		Enter: (state, dispatch, view) => {
 			const selection = state.selection;
 			if (!(selection instanceof NodeSelection) || selection.node.type.name !== SCIENCE_FENCE_TYPE) return false;
 			if (dispatch && view) placeCursorInScienceBlock(view, selection.from);
-			return true;
-		},
-		Backspace: (_state, _dispatch, view) => {
-			if (!view) return false;
-			const selection = view.state.selection;
-			if (!(selection instanceof TextSelection) || !selection.empty) return false;
-			if (selection.$from.parent.type.name !== SCIENCE_FENCE_TYPE) return false;
-			if (selection.$from.parent.textContent.length > 0) return false;
-			dispatchScienceAction(view, { type: 'delete' });
-			return true;
-		},
-		Escape: (state, dispatch) => {
-			const selection = state.selection;
-			if (!(selection instanceof TextSelection)) return false;
-			if (selection.$from.parent.type.name !== SCIENCE_FENCE_TYPE) return false;
-			const after = selection.$from.after();
-			const tr = state.doc.resolve(after).nodeAfter
-				? state.tr.setSelection(TextSelection.near(state.doc.resolve(after), 1))
-				: state.tr.setSelection(NodeSelection.create(state.doc, selection.$from.before()));
-			dispatch?.(tr.setMeta('addToHistory', false).scrollIntoView());
 			return true;
 		},
 	}),

@@ -160,12 +160,51 @@ export function scienceBlockKindLabel(info: string): string {
 }
 
 /**
- * Empty blocks and blocks whose caret is inside the source show the editor.
- * Everything else rests on the rendered molecule.
+ * Whether the structure editor can draw this block, and in which form it
+ * reads and writes the source. Only 2D structures held in the block itself:
+ * the editor is flat, so 3D coordinates would be lost, and an `@file`
+ * reference has no text here to edit.
  */
-export function scienceBlockSurface(source: string, editing: boolean): 'preview' | 'compose' {
-	if (editing || source.length === 0) return 'compose';
-	return 'preview';
+export function structureDrawing(info: string, source: string): 'smiles' | 'molfile' | null {
+	const language = info.trim().toLowerCase();
+	let block: MoleculeBlock | null;
+	try {
+		block = parseMoleculeBlock(language, source);
+	} catch {
+		return null;
+	}
+	if (!block || block.resource.kind !== 'inline' || block.view !== '2d') return null;
+	return language === 'smiles' ? 'smiles' : 'molfile';
+}
+
+/** A molfile with no atoms: what the structure editor saves for an empty page. */
+export function isEmptyMolfile(molfile: string): boolean {
+	const lines = molfile.split(/\r?\n/);
+	const counts = lines[3] ?? '';
+	if (/V3000/.test(counts)) return /M {2}V30 COUNTS 0 /.test(molfile);
+	return !/\S/.test(molfile) || Number.parseInt(counts.slice(0, 3), 10) === 0;
+}
+
+export type ScienceSourceEditor = {
+	label: string;
+	placeholder: string;
+	/** One-line sources edit like a formula: the popup covers the block and previews itself. */
+	inline: boolean;
+};
+
+/**
+ * How the source popup edits a block. SMILES is one line, so it mirrors
+ * the formula popup. Coordinate and volume files are many lines and render
+ * in 3D, so the popup sits below the block and the block itself previews.
+ */
+export function scienceSourceEditor(info: string): ScienceSourceEditor {
+	const label = scienceBlockKindLabel(info);
+	const inline = info.trim().toLowerCase() === 'smiles';
+	return {
+		label,
+		placeholder: inline ? '输入 SMILES，例如 CCO' : `粘贴 ${label} 内容，或 @file ./assets/…`,
+		inline,
+	};
 }
 
 /**

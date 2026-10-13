@@ -19,7 +19,9 @@ const IGNORED_TARGET = [
 	'.pm-inline-math',
 	'.pm-math-preview',
 	'.chem-stage',
-	'.science-block-caption',
+	// Formula and chemistry blocks select themselves and open their source popup.
+	'.pm-display-math',
+	'.science-block',
 	'button',
 	'a',
 	'input',
