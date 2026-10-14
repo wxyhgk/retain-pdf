@@ -175,7 +175,6 @@ test('ArticleStore holds the source and its revision state', () => {
 		source: 'Original',
 		revision: 'rev-1',
 		properties: { title: 'Example', description: '', pubDate: '2026-08-09', tags: [], draft: true },
-		files: { img: [], assets: [], ai: [] },
 		chemistryViews: {},
 	});
 	store.updateSource('Changed');

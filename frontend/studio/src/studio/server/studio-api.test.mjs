@@ -125,6 +125,9 @@ test('file API reports refusals with their status', async (t) => {
 	assert.equal(missing.status, 404);
 	const outside = await call(middleware, { url: `${base}/folders`, ...asJson({ path: '../escape' }) });
 	assert.equal(outside.status, 400);
+	assert.deepEqual(await call(middleware, { url: `${base}/reveal`, ...asJson({ path: 'index.md' }) }), { status: 200, data: { path: 'index.md' } });
+	assert.equal((await call(middleware, { url: `${base}/reveal`, ...asJson({ path: '../api-note' }) })).status, 400);
+	assert.equal((await call(middleware, { url: `${base}/reveal`, ...asJson({ path: 'img/none.png' }) })).status, 404);
 });
 
 test('file API changes need the types a cross-site form cannot send', async (t) => {

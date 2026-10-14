@@ -10,6 +10,7 @@ import { bindTitleFocus, blockFeelPlugins } from './editor/block-menu';
 import { buildScienceSlashMenu, scienceBlockPlugins } from './editor/crepe-science-block';
 import { displayMathPlugins } from './editor/display-math';
 import { inlineMathPlugins } from './editor/inline-math';
+import { imageMarkdownRemark } from './editor/image-markdown';
 import { mathBracketsRemark } from './editor/math-brackets';
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from './document';
 import '../science/browser/molecule-renderer.css';
@@ -17,13 +18,16 @@ import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
 import { createSciencePreview, observeSciencePreviews } from '../science/browser/science-renderer';
 import { setScienceResourceBaseUrl } from '../science/browser/resource-context';
 import { ArticleStore } from './state/article-store';
-import type { ArticleProperties, ArticleSummary } from './types';
+import { articlePath, rewriteMovedReferences } from './shared/article-references.mjs';
+import type { ArticlePayload, ArticleProperties, ArticleSummary } from './types';
+import { createFilePanel } from './workspace/file-panel';
 import { createSidePanel } from './workspace/side-panel';
 
 const studioShell = document.querySelector<HTMLElement>('.studio-shell')!;
 const articleList = document.querySelector<HTMLElement>('#article-list')!;
 const articleSearch = document.querySelector<HTMLInputElement>('#article-search')!;
 const editorHost = document.querySelector<HTMLElement>('#crepe-editor')!;
+const editorScroll = document.querySelector<HTMLElement>('.editor-scroll')!;
 const editorPath = document.querySelector<HTMLElement>('#editor-path')!;
 const breadcrumbTitle = document.querySelector<HTMLElement>('#breadcrumb-title')!;
 const roundtripStatus = document.querySelector<HTMLElement>('#roundtrip-status')!;
@@ -58,6 +62,12 @@ const cancelNewArticleButtons = [
 
 const store = new ArticleStore();
 const sidePanel = createSidePanel(studioShell);
+const filePanel = createFilePanel(document.querySelector<HTMLElement>('#side-files')!, {
+	source: () => store.current.source,
+	revision: () => store.current.revision,
+	moved: reloadAfterMove,
+});
+store.subscribe(() => filePanel.sourceChanged());
 let crepe: Crepe | null = null;
 let loading = false;
 let loadSequence = 0;
@@ -148,6 +158,15 @@ function updateMarkdown(markdown: string): void {
 	setSaveState(store.current.dirty ? '未保存' : '已载入', store.current.dirty ? 'dirty' : 'saved');
 }
 
+/** Where the editor loads an image the article writes as `./img/a.png` from. */
+function articleFileUrl(src: string): string {
+	const slug = store.current.article?.slug;
+	const path = articlePath(src);
+	const [root, ...rest] = path?.split('/') ?? [];
+	if (!slug || !path || (root !== 'img' && root !== 'assets') || !rest.length) return src;
+	return `/api/studio/articles/${encodeURIComponent(slug)}/files/${root}/${rest.map(encodeURIComponent).join('/')}`;
+}
+
 async function mountEditor(source: string): Promise<string> {
 	loading = true;
 	if (crepe) await crepe.destroy();
@@ -193,6 +212,7 @@ async function mountEditor(source: string): Promise<string> {
 				inputPlaceholder: '粘贴链接…',
 			},
 			[CrepeFeature.ImageBlock]: {
+				proxyDomURL: articleFileUrl,
 				inlineUploadButton: '上传',
 				inlineUploadPlaceholderText: '或粘贴链接',
 				blockUploadButton: '上传图片',
@@ -235,6 +255,7 @@ async function mountEditor(source: string): Promise<string> {
 	crepe.editor.use(inlineMathPlugins);
 	crepe.editor.use(displayMathPlugins);
 	crepe.editor.use(mathBracketsRemark);
+	crepe.editor.use(imageMarkdownRemark);
 	crepe.on((listener) => {
 		listener.markdownUpdated((_ctx, markdown) => updateMarkdown(markdown));
 	});
@@ -295,8 +316,22 @@ async function loadArticle(slug: string, discardDirty = false): Promise<void> {
 	setSaveState('正在载入…');
 	const article = await getArticle(slug);
 	if (sequence !== loadSequence) return;
+	await presentArticle(article, sequence);
+}
+
+/**
+ * Puts a loaded article in the editor. `edited` is unsaved text to keep
+ * instead of what is on disk, with the properties typed for it.
+ */
+async function presentArticle(
+	article: ArticlePayload,
+	sequence: number,
+	edited?: { source: string; properties: ArticleProperties },
+): Promise<void> {
+	const source = edited?.source ?? article.source;
 	store.load(article);
-	renderProperties(article.properties);
+	store.updateSource(source);
+	renderProperties(edited?.properties ?? article.properties);
 	setScienceResourceBaseUrl(`/api/studio/articles/${encodeURIComponent(article.slug)}/files`);
 	setMoleculeViewContext({
 		views: article.chemistryViews,
@@ -307,20 +342,41 @@ async function loadArticle(slug: string, discardDirty = false): Promise<void> {
 			store.updateRevision(result.revision, result.chemistryViews);
 		},
 	});
-	const normalizedSource = await mountEditor(article.source);
+	const normalizedSource = await mountEditor(source);
 	if (sequence !== loadSequence) return;
 	const summary = articleSummaries.find((entry) => entry.slug === article.slug);
 	editorPath.textContent = `blog/${article.slug}/index.md`;
-	sidePanel.showArticle(article.slug, article.files);
-	breadcrumbTitle.textContent = summary?.title ?? article.slug;
+	sidePanel.showArticle(article.slug);
+	filePanel.show(article.slug);
+	breadcrumbTitle.textContent = edited?.properties.title || summary?.title || article.slug;
 	openArticle.href = `/blog/${article.slug}/`;
 	saveButton.disabled = false;
-	compareRoundtrip(article.source, normalizedSource);
-	setSaveState('已载入', 'saved');
+	compareRoundtrip(source, normalizedSource);
+	setSaveState(store.current.dirty ? '未保存' : '已载入', store.current.dirty ? 'dirty' : 'saved');
 	renderArticleTree();
 	const url = new URL(window.location.href);
 	url.searchParams.set('article', article.slug);
 	history.replaceState(null, '', url);
+}
+
+/**
+ * A file the article uses was renamed or moved. When the server rewrote
+ * `index.md` to follow it, or unsaved text names it, the editor shows the
+ * article again: what was saved as it now is on disk, and unsaved edits kept
+ * as edits, their references pointed at the new name the same way.
+ */
+async function reloadAfterMove(from: string, to: string, rewritten: boolean): Promise<void> {
+	const current = store.current;
+	if (!current.article) return;
+	const edited = rewriteMovedReferences(current.source, from, to);
+	if (!rewritten && edited.changed === 0) return;
+	const properties = propertiesFromInputs();
+	const scrollTop = editorScroll.scrollTop;
+	const sequence = ++loadSequence;
+	const article = await getArticle(current.article.slug);
+	if (sequence !== loadSequence) return;
+	await presentArticle(article, sequence, current.dirty ? { source: edited.source, properties } : undefined);
+	editorScroll.scrollTop = scrollTop;
 }
 
 async function loadArticleList(selectSlug?: string, discardDirty = false): Promise<void> {

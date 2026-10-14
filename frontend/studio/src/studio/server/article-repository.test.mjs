@@ -113,19 +113,6 @@ test('repository persists Cube display parameters with the same revision lock', 
 	);
 });
 
-test('resource listing includes nested files but ignores symbolic links', async (t) => {
-	const root = await temporaryBlog(t);
-	const repository = new ArticleRepository(root);
-	await repository.create({ slug: 'resources', title: 'Resources' });
-	const paths = articleBundlePaths(root, 'resources');
-	await mkdir(join(paths.assets, 'trajectory', 'frames'), { recursive: true });
-	await writeFile(join(paths.assets, 'trajectory', 'frames', 'water.xyz'), '3\nwater\n');
-	await symlink('/etc/passwd', join(paths.assets, 'outside'));
-
-	const article = await repository.read('resources');
-	assert.deepEqual(article.files.assets, ['trajectory/frames/water.xyz']);
-});
-
 test('repository refuses an article bundle that is itself a symbolic link', async (t) => {
 	const root = await temporaryBlog(t);
 	const outside = await mkdtemp(join(tmpdir(), 'studio-outside-'));

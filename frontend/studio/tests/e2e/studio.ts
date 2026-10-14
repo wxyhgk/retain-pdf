@@ -1,5 +1,5 @@
-import { appendFileSync, cpSync, readFileSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, type Locator, type Page } from '@playwright/test';
 
@@ -21,6 +21,18 @@ export function resetFixture(): void {
 /** Add Markdown to the end of the fixture copy before the Studio opens it. */
 export function appendToFixture(markdown: string): void {
 	appendFileSync(join(articles(), slug, 'index.md'), markdown);
+}
+
+/** Put a file into the fixture copy (`img/plot.png`), making its folders. */
+export function writeFixtureFile(path: string, content: string | Buffer): void {
+	const target = join(articles(), slug, path);
+	mkdirSync(dirname(target), { recursive: true });
+	writeFileSync(target, content);
+}
+
+/** Whether the fixture copy has this file or folder. */
+export function fixtureHas(path: string): boolean {
+	return existsSync(join(articles(), slug, path));
 }
 
 /** The article's Markdown as the Studio saved it. */

@@ -10,7 +10,6 @@ import {
 	assertArticleSlug,
 	StudioPathError,
 } from './bundle-paths.mjs';
-import { FileRepository } from './file-repository.mjs';
 import { ArticleValidationError, articleProperties, articleSummary, createArticleSource } from './schemas.mjs';
 
 function bundleRevision(source, configSource, viewsSource) {
@@ -29,7 +28,6 @@ async function readViewsSource(path) {
 export class ArticleRepository {
 	constructor(blogRoot) {
 		this.blogRoot = resolve(blogRoot);
-		this.files = new FileRepository(this.blogRoot);
 	}
 
 	async list() {
@@ -85,7 +83,6 @@ export class ArticleRepository {
 			readFile(paths.config, 'utf8'),
 			readViewsSource(paths.views),
 		]);
-		const files = await this.files.list(slug);
 		const revision = bundleRevision(source, configSource, viewsSource);
 		return {
 			slug,
@@ -93,7 +90,6 @@ export class ArticleRepository {
 			hash: revision,
 			source,
 			revision,
-			files,
 			properties: articleProperties(source, slug),
 			chemistryViews: readMoleculeViews(viewsSource),
 		};

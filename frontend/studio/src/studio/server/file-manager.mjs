@@ -25,18 +25,27 @@ export class ArticleFileManager {
 		this.uploadSizeLimit = uploadSizeLimit;
 	}
 
-	/** Every file and folder in the article, folders before their contents, sorted by path. */
+	/**
+	 * Every file and folder in the article, folders before their contents,
+	 * sorted by path. `img/`, `assets/` and `ai/` are always listed: git keeps
+	 * no empty folders, so a fresh checkout may lack one until something goes in.
+	 */
 	async list(slug) {
 		const { directory } = await this.#article(slug);
 		const entries = [];
+		const present = new Set();
 		for (const entry of await readdir(directory, { withFileTypes: true })) {
 			if (isHidden(entry.name) || entry.isSymbolicLink()) continue;
 			if (entry.isDirectory() && ARTICLE_RESOURCE_DIRECTORIES.includes(entry.name)) {
+				present.add(entry.name);
 				entries.push({ ...(await describe(join(directory, entry.name), entry.name)), locked: true });
 				entries.push(...(await walk(join(directory, entry.name), entry.name)));
 			} else if (entry.isFile()) {
 				entries.push({ ...(await describe(join(directory, entry.name), entry.name)), locked: true });
 			}
+		}
+		for (const folder of ARTICLE_RESOURCE_DIRECTORIES) {
+			if (!present.has(folder) && !(await exists(join(directory, folder)))) entries.push({ path: folder, kind: 'directory', locked: true });
 		}
 		return entries.sort((left, right) => comparePaths(left.path, right.path));
 	}
@@ -49,6 +58,7 @@ export class ArticleFileManager {
 	async upload(slug, folder, name, body, { replace = false } = {}) {
 		const { directory } = await this.#article(slug);
 		const segments = managedSegments(folder, { allowFolderRoot: true });
+		await ensureResourceFolder(directory, segments[0]);
 		const folderPath = await existingDirectory(directory, segments);
 		const fileName = safeUploadName(name);
 		const temporary = join(folderPath, `.upload-${randomUUID()}`);
@@ -78,6 +88,7 @@ export class ArticleFileManager {
 	async createFolder(slug, path) {
 		const { directory } = await this.#article(slug);
 		const segments = managedSegments(path);
+		await ensureResourceFolder(directory, segments[0]);
 		let current = await existingDirectory(directory, segments.slice(0, 1));
 		for (const segment of segments.slice(1)) {
 			current = resolveInside(current, segment);
@@ -121,6 +132,20 @@ export class ArticleFileManager {
 		const trashed = join(trashFolder, segments[segments.length - 1]);
 		await rename(sourcePath, trashed);
 		return { path: segments.join('/'), trashedTo: trashed };
+	}
+
+	/**
+	 * Where a file or folder of the article is on disk, for showing it in the
+	 * system's file manager. Any path inside the article will do, its own files
+	 * too; `''` is the article folder.
+	 */
+	async locate(slug, path) {
+		const { directory } = await this.#article(slug);
+		if (path === '') return directory;
+		if (typeof path !== 'string' || path.includes('\\') || path.includes('\0')) throw new StudioPathError('无效的文件路径');
+		const segments = path.replace(/\/+$/u, '').split('/');
+		if (segments.some((segment) => !segment || segment === '.' || segment === '..' || isHidden(segment))) throw new StudioPathError('无效的文件路径');
+		return existingEntry(directory, segments);
 	}
 
 	async #article(slug) {
@@ -213,6 +238,15 @@ export function safeUploadName(name) {
 	let kept = [...(stem || 'file')];
 	while (kept.length > 1 && Buffer.byteLength(`${kept.join('')}${extension}`) > MAX_NAME_BYTES) kept = kept.slice(0, -1);
 	return assertName(`${kept.join('')}${extension}`);
+}
+
+/** Makes `img/`, `assets/` or `ai/` when the article has none yet. */
+async function ensureResourceFolder(directory, name) {
+	try {
+		await mkdir(resolveInside(directory, name));
+	} catch (error) {
+		if (error?.code !== 'EEXIST') throw error;
+	}
 }
 
 /** Resolves an existing folder, refusing symbolic links on the way. */

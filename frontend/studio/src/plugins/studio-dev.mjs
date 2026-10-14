@@ -1,9 +1,11 @@
+import { lstat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { StudioPathError } from '../studio/server/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
+import { revealInFileManager } from '../studio/server/reveal.mjs';
 
 function json(response, status, data) {
 	response.statusCode = status;
@@ -119,7 +121,7 @@ export default function studioDev() {
 						return file(response, await files.read(slug, root, resourcePath));
 					}
 
-					const managerMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(tree|files|folders|move|trash)$/u);
+					const managerMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(tree|files|folders|move|trash|reveal)$/u);
 					if (managerMatch) {
 						const slug = decodePathComponent(managerMatch[1]);
 						const action = `${request.method} ${managerMatch[2]}`;
@@ -144,6 +146,13 @@ export default function studioDev() {
 						if (action === 'POST trash') {
 							const { path } = await readJsonChange(request);
 							return json(response, 200, await manager.trash(slug, path));
+						}
+						if (action === 'POST reveal') {
+							const { path } = await readJsonChange(request);
+							const absolute = await manager.locate(slug, path ?? '');
+							// Browser tests must not open windows on the machine running them.
+							if (!testBlogRoot) await revealInFileManager(absolute, { isDirectory: (await lstat(absolute)).isDirectory() });
+							return json(response, 200, { path: path ?? '' });
 						}
 					}
 

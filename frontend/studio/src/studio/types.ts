@@ -6,10 +6,16 @@ export type ArticleSummary = {
 	draft?: boolean;
 };
 
-export type ArticleFiles = {
-	img: string[];
-	assets: string[];
-	ai: string[];
+/** One file or folder of an article, as the file panel lists it. */
+export type ArticleFileEntry = {
+	/** Relative to the article folder: `img/plot.png`, `assets/runs`. */
+	path: string;
+	kind: 'file' | 'directory';
+	size?: number;
+	/** Missing for `img/`, `assets/` or `ai/` while the folder does not exist yet. */
+	modified?: number;
+	/** The article's own files and its three resource folders: they cannot be renamed, moved or removed. */
+	locked?: boolean;
 };
 
 export type ArticleProperties = {
@@ -28,6 +34,5 @@ export type ArticlePayload = {
 	/** Temporary compatibility fields returned by the first Studio API. */
 	content?: string;
 	hash?: string;
-	files: ArticleFiles;
 	chemistryViews: Record<string, { format: string; view: number[]; display?: CubeDisplaySettings }>;
 };

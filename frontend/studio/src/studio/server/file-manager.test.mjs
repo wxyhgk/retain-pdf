@@ -155,3 +155,26 @@ test('symbolic links are never followed', async (t) => {
 	await assert.rejects(files.createFolder('note', 'assets/linked/new'), /符号链接/u);
 	assert.deepEqual(await readdir(outside), ['secret']);
 });
+
+test('a resource folder git did not keep is listed, and made on first use', async (t) => {
+	const { paths: bundle, files } = await fixture(t);
+	await rm(bundle.img, { recursive: true });
+	await rm(bundle.ai, { recursive: true });
+	assert.deepEqual(paths(await files.list('note')).filter((path) => path.endsWith('🔒') && path.includes('/')), ['ai/ 🔒', 'assets/ 🔒', 'img/ 🔒']);
+	assert.deepEqual(await files.upload('note', 'img', 'a.png', bytes('a')), { path: 'img/a.png', size: 1 });
+	assert.deepEqual(await files.createFolder('note', 'ai/runs'), { path: 'ai/runs' });
+	assert.deepEqual(await readdir(bundle.ai), ['runs']);
+});
+
+test('locating finds any of the article’s files, never outside it', async (t) => {
+	const { paths: bundle, files } = await fixture(t);
+	assert.equal(await files.locate('note', ''), bundle.directory);
+	assert.equal(await files.locate('note', 'index.md'), bundle.markdown);
+	assert.equal(await files.locate('note', 'img/'), bundle.img);
+	await assert.rejects(files.locate('note', 'img/missing.png'), FileNotFoundError);
+	for (const path of ['../other', 'img/../../x', '/etc/passwd', '.git', 'img\\a']) {
+		await assert.rejects(files.locate('note', path), path);
+	}
+	await symlink('/etc', join(bundle.assets, 'etc'));
+	await assert.rejects(files.locate('note', 'assets/etc/hosts'), /符号链接/u);
+});

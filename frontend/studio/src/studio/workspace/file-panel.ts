@@ -1,0 +1,574 @@
+import {
+	createArticleFolder,
+	listArticleFiles,
+	moveArticleFile,
+	revealArticleFile,
+	trashArticleFile,
+	uploadArticleFile,
+} from '../api/client';
+import { movedPath, referencedPaths } from '../shared/article-references.mjs';
+import type { ArticleFileEntry } from '../types';
+import { showContextMenu, type MenuItem } from './context-menu';
+import {
+	buildFileTree,
+	extension,
+	fileName,
+	formatSize,
+	isImage,
+	isUnused,
+	markdownReference,
+	parentPath,
+	referenceCount,
+	uploadFolderFor,
+	visibleNodes,
+	type FileNode,
+} from './file-tree';
+
+/** What the file panel needs from the editor around it. */
+export type FilePanelHost = {
+	/** The open article's Markdown as edited, saved or not. */
+	source(): string;
+	/** The revision the editor last loaded or saved. */
+	revision(): string;
+	/**
+	 * `from` is now `to`. `rewritten` says the server changed `index.md` to
+	 * follow it; the editor reloads, keeping unsaved edits pointed at the new name.
+	 */
+	moved(from: string, to: string, rewritten: boolean): Promise<void>;
+};
+
+/** Dragged rows carry their path under this type, so files dropped from outside are told apart. */
+const DRAG_TYPE = 'application/x-studio-file';
+const STATUS_CLEAR_MS = 6000;
+const FINDER = /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示';
+const STRUCTURE_EXTENSIONS = new Set(['mol', 'sdf', 'xyz', 'pdb', 'mol2', 'cif', 'cube', 'gjf', 'com', 'smi', 'smiles']);
+
+type Editing = { kind: 'rename'; path: string } | { kind: 'folder'; parent: string };
+
+function fileIcon(node: FileNode, open: boolean): string {
+	if (node.entry.kind === 'directory') return open ? '▾' : '▸';
+	if (isImage(node.entry.path)) return '▣';
+	if (STRUCTURE_EXTENSIONS.has(extension(node.entry.path))) return '⬡';
+	return '▤';
+}
+
+function element<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, text?: string): HTMLElementTagNameMap[K] {
+	const node = document.createElement(tag);
+	node.className = className;
+	if (text !== undefined) node.textContent = text;
+	return node;
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+	return error instanceof Error && error.message ? error.message : fallback;
+}
+
+/**
+ * The 文件 tab: the open article's folder as a tree. Files can be uploaded
+ * (button, or dropped from the desktop), renamed, moved by dragging onto a
+ * folder, and moved to the trash; folders can be made. Files in `img/` and
+ * `assets/` that the article does not use are dimmed, and removing one it
+ * does use asks first. The article's own files and its three folders are
+ * listed but stay put.
+ */
+export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
+	const rootLabel = pane.querySelector<HTMLElement>('#files-root')!;
+	const tree = pane.querySelector<HTMLElement>('#file-tree')!;
+	const status = pane.querySelector<HTMLElement>('#files-status')!;
+	const uploadButton = pane.querySelector<HTMLButtonElement>('#upload-files')!;
+	const folderButton = pane.querySelector<HTMLButtonElement>('#new-folder')!;
+	const refreshButton = pane.querySelector<HTMLButtonElement>('#refresh-files')!;
+	const uploadInput = pane.querySelector<HTMLInputElement>('#file-upload-input')!;
+
+	let slug: string | null = null;
+	let entries: ArticleFileEntry[] = [];
+	let referenced = new Set<string>();
+	let selected: string | null = null;
+	let editing: Editing | null = null;
+	let uploadTarget: ArticleFileEntry | null = null;
+	let loadSequence = 0;
+	let statusTimer = 0;
+	let sourceTimer = 0;
+	/** Open folders, per article, for as long as the page is open. */
+	const expandedByArticle = new Map<string, Set<string>>();
+	/** One change at a time, so a listing never lands between two of them. */
+	let queue: Promise<unknown> = Promise.resolve();
+
+	const expanded = (): Set<string> => {
+		if (!slug) return new Set();
+		let set = expandedByArticle.get(slug);
+		if (!set) expandedByArticle.set(slug, (set = new Set(['img', 'assets'])));
+		return set;
+	};
+	const entryAt = (path: string | null): ArticleFileEntry | null => entries.find((entry) => entry.path === path) ?? null;
+
+	function setStatus(text: string, state: '' | 'busy' | 'error' = ''): void {
+		window.clearTimeout(statusTimer);
+		status.textContent = text;
+		status.dataset.state = state;
+		if (text && state === '') statusTimer = window.setTimeout(() => setStatus(''), STATUS_CLEAR_MS);
+	}
+
+	/** Runs a change, reporting it in the status line, then lists the folder again. */
+	function run(busyText: string, task: () => Promise<string | void>): Promise<void> {
+		const article = slug;
+		const next = queue.then(async () => {
+			if (!article || article !== slug) return;
+			setStatus(busyText, 'busy');
+			try {
+				const done = await task();
+				setStatus(done ?? '');
+			} catch (error) {
+				setStatus(errorMessage(error, '操作失败'), 'error');
+			}
+			if (article === slug) await refresh();
+		});
+		queue = next.catch(() => {});
+		return next;
+	}
+
+	async function refresh(): Promise<void> {
+		const article = slug;
+		const sequence = ++loadSequence;
+		if (!article) return;
+		try {
+			const listed = await listArticleFiles(article);
+			if (sequence !== loadSequence || article !== slug) return;
+			entries = listed;
+			if (selected && !entryAt(selected)) selected = null;
+			render();
+		} catch (error) {
+			if (sequence === loadSequence) setStatus(errorMessage(error, '无法列出文件'), 'error');
+		}
+	}
+
+	function render(): void {
+		const hadFocus = tree.contains(document.activeElement);
+		tree.replaceChildren();
+		uploadButton.disabled = folderButton.disabled = refreshButton.disabled = !slug;
+		if (!slug) {
+			rootLabel.textContent = '未打开文章';
+			tree.append(element('p', 'file-tree-empty', '打开一篇文章后，这里显示它的文件夹。'));
+			return;
+		}
+		rootLabel.textContent = `blog/${slug}/`;
+		const list = element('ul', 'file-tree-list');
+		list.setAttribute('role', 'tree');
+		list.setAttribute('aria-label', `blog/${slug}/ 的文件`);
+		const open = expanded();
+		const rows = visibleNodes(buildFileTree(entries), open);
+		for (const node of rows) {
+			list.append(row(node, open.has(node.entry.path)));
+			if (editing?.kind === 'folder' && editing.parent === node.entry.path) list.append(newFolderRow(editing.parent, node.depth + 1));
+		}
+		tree.append(list);
+		const focusable = list.querySelector<HTMLElement>('.file-row.is-selected') ?? list.querySelector<HTMLElement>('.file-row');
+		if (focusable) focusable.tabIndex = 0;
+		const input = list.querySelector<HTMLInputElement>('.file-name-input');
+		if (input) {
+			input.focus();
+			const name = input.value;
+			const dot = editing?.kind === 'rename' && entryAt(editing.path)?.kind === 'file' ? name.lastIndexOf('.') : -1;
+			input.setSelectionRange(0, dot > 0 ? dot : name.length);
+		} else if (hadFocus) focusable?.focus();
+	}
+
+	function row(node: FileNode, open: boolean): HTMLLIElement {
+		const { entry } = node;
+		const item = element('li', 'file-row');
+		item.setAttribute('role', 'treeitem');
+		item.setAttribute('aria-level', String(node.depth + 1));
+		item.setAttribute('aria-selected', String(entry.path === selected));
+		item.dataset.path = entry.path;
+		item.tabIndex = -1;
+		item.style.setProperty('--depth', String(node.depth));
+		item.classList.toggle('is-selected', entry.path === selected);
+		item.classList.toggle('is-folder', entry.kind === 'directory');
+		item.classList.toggle('is-locked', Boolean(entry.locked));
+		if (entry.kind === 'directory') item.setAttribute('aria-expanded', String(open));
+		const unused = isUnused(entry, referenced);
+		item.classList.toggle('is-unused', unused);
+
+		item.append(element('span', 'file-icon', fileIcon(node, open)));
+		if (editing?.kind === 'rename' && editing.path === entry.path) {
+			item.append(nameInput(node.name, (name) => renameTo(entry, name)));
+		} else {
+			item.append(element('span', 'file-name', node.name));
+			const meta = entry.kind === 'directory'
+				? (node.children.length ? String(node.children.length) : '空')
+				: entry.size !== undefined ? formatSize(entry.size) : '';
+			item.append(element('span', 'file-meta', meta));
+			const menu = element('button', 'file-row-menu', '⋯');
+			menu.type = 'button';
+			menu.tabIndex = -1;
+			menu.setAttribute('aria-label', `${node.name} 的操作`);
+			item.append(menu);
+		}
+		item.title = unused ? `${entry.path}\n正文没有引用它` : entry.path;
+		if (!entry.locked) item.draggable = true;
+		return item;
+	}
+
+	function newFolderRow(parent: string, depth: number): HTMLLIElement {
+		const item = element('li', 'file-row is-folder is-editing');
+		item.style.setProperty('--depth', String(depth));
+		item.append(element('span', 'file-icon', '▸'), nameInput('', (name) => createFolder(parent, name)));
+		return item;
+	}
+
+	function nameInput(value: string, commit: (name: string) => void): HTMLInputElement {
+		const input = element('input', 'file-name-input');
+		input.value = value;
+		input.spellcheck = false;
+		input.setAttribute('aria-label', value ? `重命名 ${value}` : '新文件夹名称');
+		let done = false;
+		const finish = (save: boolean) => {
+			if (done) return;
+			done = true;
+			const name = input.value.trim();
+			editing = null;
+			if (save && name && name !== value) commit(name);
+			else render();
+		};
+		input.addEventListener('keydown', (event) => {
+			event.stopPropagation();
+			if (event.isComposing) return;
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				finish(true);
+			} else if (event.key === 'Escape') {
+				event.preventDefault();
+				finish(false);
+			}
+		});
+		input.addEventListener('blur', () => finish(true));
+		input.addEventListener('click', (event) => event.stopPropagation());
+		input.addEventListener('dblclick', (event) => event.stopPropagation());
+		return input;
+	}
+
+	function select(path: string | null, focus = false): void {
+		selected = path;
+		for (const item of tree.querySelectorAll<HTMLElement>('.file-row[data-path]')) {
+			const isSelected = item.dataset.path === path;
+			item.classList.toggle('is-selected', isSelected);
+			item.setAttribute('aria-selected', String(isSelected));
+			item.tabIndex = isSelected ? 0 : -1;
+			if (isSelected && focus) item.focus();
+		}
+	}
+
+	function toggle(entry: ArticleFileEntry, open?: boolean): void {
+		const set = expanded();
+		if (open ?? !set.has(entry.path)) set.add(entry.path);
+		else set.delete(entry.path);
+		render();
+	}
+
+	// —— Changes ——
+
+	function upload(files: readonly File[], target: ArticleFileEntry | null): void {
+		if (!files.length) return;
+		void run(`正在上传 ${files.length} 个文件…`, async () => {
+			const stored: string[] = [];
+			for (const file of files) {
+				const folder = uploadFolderFor(target, file);
+				const result = await uploadArticleFile(slug!, folder, file);
+				stored.push(result.path);
+				expanded().add(folder.split('/', 1)[0]).add(folder);
+			}
+			selected = stored[stored.length - 1];
+			const renamed = files.length === 1 && fileName(stored[0]) !== files[0].name;
+			return stored.length === 1 ? `已上传 ${stored[0]}${renamed ? '（已改名）' : ''}` : `已上传 ${stored.length} 个文件`;
+		});
+	}
+
+	function move(entry: ArticleFileEntry, to: string): void {
+		if (to === entry.path) return;
+		const from = entry.path;
+		void run(`正在移动 ${fileName(from)}…`, async () => {
+			const result = await moveArticleFile(slug!, from, to, host.revision());
+			// Open folders and the selection follow the move.
+			const set = expanded();
+			for (const path of [...set]) {
+				const next = movedPath(path, from, result.path);
+				if (next === null) continue;
+				set.delete(path);
+				set.add(next);
+			}
+			set.add(parentPath(result.path));
+			selected = result.path;
+			await host.moved(from, result.path, result.references > 0 || result.views > 0);
+			return result.references ? `已移动到 ${result.path}，正文里 ${result.references} 处引用已同步修改` : `已移动到 ${result.path}`;
+		});
+	}
+
+	function renameTo(entry: ArticleFileEntry, name: string): void {
+		const parent = parentPath(entry.path);
+		move(entry, parent ? `${parent}/${name}` : name);
+	}
+
+	function moveInto(entry: ArticleFileEntry, folder: ArticleFileEntry): void {
+		if (folder.kind !== 'directory' || parentPath(entry.path) === folder.path) return;
+		if (folder.path === entry.path || folder.path.startsWith(`${entry.path}/`)) return;
+		move(entry, `${folder.path}/${fileName(entry.path)}`);
+	}
+
+	function createFolder(parent: string, name: string): void {
+		void run('正在新建文件夹…', async () => {
+			const result = await createArticleFolder(slug!, `${parent}/${name}`);
+			expanded().add(parent);
+			selected = result.path;
+			return `已新建 ${result.path}`;
+		});
+	}
+
+	function startNewFolder(target: ArticleFileEntry | null): void {
+		const parent = target?.kind === 'directory' ? target.path : target && parentPath(target.path) ? parentPath(target.path) : 'assets';
+		expanded().add(parent);
+		editing = { kind: 'folder', parent };
+		render();
+	}
+
+	function startRename(entry: ArticleFileEntry): void {
+		if (entry.locked) return;
+		editing = { kind: 'rename', path: entry.path };
+		render();
+	}
+
+	function trash(entry: ArticleFileEntry): void {
+		if (entry.locked) return;
+		const name = fileName(entry.path);
+		const uses = referenceCount(host.source(), entry.path);
+		const what = entry.kind === 'directory' ? `文件夹「${name}」及其中所有文件` : `「${name}」`;
+		const warning = uses
+			? `正文里有 ${uses} 处引用${entry.kind === 'directory' ? '这个文件夹里的文件' : '它'}，删除后它们会失效。\n\n确定把${what}移到回收站吗？`
+			: `把${what}移到回收站？\n文件会移到项目的 .studio-trash/ 文件夹，需要时可以从那里找回。`;
+		if (!confirm(warning)) return;
+		void run(`正在删除 ${name}…`, async () => {
+			await trashArticleFile(slug!, entry.path);
+			if (selected === entry.path) selected = parentPath(entry.path) || null;
+			return `已把 ${entry.path} 移到 .studio-trash/`;
+		});
+	}
+
+	function reveal(path: string): void {
+		const article = slug!;
+		revealArticleFile(article, path).catch((error) => setStatus(errorMessage(error, '无法打开文件管理器'), 'error'));
+	}
+
+	async function copy(text: string, what: string): Promise<void> {
+		try {
+			await navigator.clipboard.writeText(text);
+			setStatus(`已复制${what}`);
+		} catch {
+			setStatus('浏览器不允许写入剪贴板', 'error');
+		}
+	}
+
+	function openFile(entry: ArticleFileEntry): void {
+		const [root, ...rest] = entry.path.split('/');
+		if (entry.kind !== 'file' || (root !== 'img' && root !== 'assets')) return;
+		const url = `/api/studio/articles/${encodeURIComponent(slug!)}/files/${root}/${rest.map(encodeURIComponent).join('/')}`;
+		window.open(url, '_blank', 'noopener');
+	}
+
+	function chooseUpload(target: ArticleFileEntry | null): void {
+		uploadTarget = target;
+		uploadInput.click();
+	}
+
+	function menuFor(entry: ArticleFileEntry | null): MenuItem[] {
+		if (!entry) {
+			return [
+				{ label: '上传文件…', action: () => chooseUpload(null) },
+				{ label: '新建文件夹', action: () => startNewFolder(null) },
+				'separator',
+				{ label: FINDER, action: () => reveal('') },
+			];
+		}
+		const items: MenuItem[] = [];
+		const published = entry.path.startsWith('img/') || entry.path.startsWith('assets/');
+		if (entry.kind === 'directory') {
+			items.push({ label: '上传到这里…', action: () => chooseUpload(entry) }, { label: '新建子文件夹', action: () => startNewFolder(entry) });
+		} else {
+			const reference = markdownReference(entry.path);
+			if (published) items.push({ label: '在新标签页打开', action: () => openFile(entry) });
+			if (reference) items.push({ label: '复制 Markdown 引用', action: () => void copy(reference, ' Markdown 引用') });
+		}
+		items.push({ label: '复制路径', action: () => void copy(entry.kind === 'directory' ? `./${entry.path}/` : `./${entry.path}`, '路径') });
+		if (!entry.locked) items.push({ label: '重命名', hint: 'F2', action: () => startRename(entry) });
+		items.push('separator', { label: FINDER, action: () => reveal(entry.path) });
+		if (!entry.locked) items.push('separator', { label: '移到回收站', hint: '⌫', danger: true, action: () => trash(entry) });
+		return items;
+	}
+
+	// —— Events ——
+
+	const rowOf = (target: EventTarget | null): HTMLElement | null => (target instanceof Element ? target.closest<HTMLElement>('.file-row[data-path]') : null);
+	const entryOf = (target: EventTarget | null): ArticleFileEntry | null => entryAt(rowOf(target)?.dataset.path ?? null);
+
+	tree.addEventListener('click', (event) => {
+		const entry = entryOf(event.target);
+		if (!entry) return select(null);
+		if ((event.target as Element).closest('.file-row-menu')) {
+			select(entry.path);
+			showContextMenu(menuFor(entry), event.target as HTMLElement);
+			return;
+		}
+		select(entry.path, true);
+		if (entry.kind === 'directory') toggle(entry);
+	});
+	tree.addEventListener('dblclick', (event) => {
+		const entry = entryOf(event.target);
+		if (entry?.kind === 'file') openFile(entry);
+	});
+	tree.addEventListener('contextmenu', (event) => {
+		if (!slug || (event.target as Element).closest('.file-name-input')) return;
+		event.preventDefault();
+		const entry = entryOf(event.target);
+		if (entry) select(entry.path, true);
+		showContextMenu(menuFor(entry), { x: event.clientX, y: event.clientY });
+	});
+	tree.addEventListener('keydown', (event) => {
+		const current = rowOf(event.target);
+		const entry = entryAt(current?.dataset.path ?? null);
+		if (!current || !entry || event.isComposing) return;
+		const rows = [...tree.querySelectorAll<HTMLElement>('.file-row[data-path]')];
+		const index = rows.indexOf(current);
+		const focusRow = (target: HTMLElement | undefined) => {
+			if (!target) return;
+			event.preventDefault();
+			select(target.dataset.path!, true);
+		};
+		const open = expanded().has(entry.path);
+		switch (event.key) {
+			case 'ArrowDown': return focusRow(rows[index + 1]);
+			case 'ArrowUp': return focusRow(rows[index - 1]);
+			case 'Home': return focusRow(rows[0]);
+			case 'End': return focusRow(rows[rows.length - 1]);
+			case 'ArrowRight':
+				event.preventDefault();
+				if (entry.kind === 'directory' && !open) toggle(entry, true);
+				else if (entry.kind === 'directory') focusRow(rows[index + 1]);
+				return;
+			case 'ArrowLeft':
+				event.preventDefault();
+				if (entry.kind === 'directory' && open) toggle(entry, false);
+				else focusRow(rows.find((item) => item.dataset.path === parentPath(entry.path)));
+				return;
+			case 'Enter':
+				event.preventDefault();
+				if (entry.kind === 'directory') toggle(entry);
+				else openFile(entry);
+				return;
+			case 'F2':
+				event.preventDefault();
+				return startRename(entry);
+			case 'Delete':
+			case 'Backspace':
+				event.preventDefault();
+				return trash(entry);
+			case 'ContextMenu':
+				event.preventDefault();
+				return showContextMenu(menuFor(entry), current);
+			default:
+				if (event.key === 'F10' && event.shiftKey) {
+					event.preventDefault();
+					showContextMenu(menuFor(entry), current);
+				}
+		}
+	});
+
+	// Dragging: rows onto folders move them; files from the desktop upload where they land.
+	let dropRow: HTMLElement | null = null;
+	const markDrop = (target: HTMLElement | null) => {
+		if (dropRow === target) return;
+		dropRow?.classList.remove('is-drop-target');
+		tree.classList.toggle('is-drop-target', target === tree);
+		dropRow = target;
+		if (target && target !== tree) target.classList.add('is-drop-target');
+	};
+	/** The folder a drop at this row means: the folder itself, or the folder the file is in. */
+	const dropFolder = (rowElement: HTMLElement | null): HTMLElement | null => {
+		const entry = entryAt(rowElement?.dataset.path ?? null);
+		if (!entry) return null;
+		const path = entry.kind === 'directory' ? entry.path : parentPath(entry.path);
+		return path ? tree.querySelector<HTMLElement>(`.file-row[data-path="${CSS.escape(path)}"]`) : null;
+	};
+
+	tree.addEventListener('dragstart', (event) => {
+		const entry = entryOf(event.target);
+		if (!entry || entry.locked || !event.dataTransfer) return;
+		event.dataTransfer.setData(DRAG_TYPE, entry.path);
+		event.dataTransfer.effectAllowed = 'move';
+		select(entry.path);
+	});
+	tree.addEventListener('dragover', (event) => {
+		const types = event.dataTransfer?.types ?? [];
+		const internal = types.includes(DRAG_TYPE);
+		if (!slug || (!internal && !types.includes('Files'))) return;
+		event.preventDefault();
+		const folder = dropFolder(rowOf(event.target));
+		markDrop(folder ?? (internal ? null : tree));
+		event.dataTransfer!.dropEffect = internal ? (folder ? 'move' : 'none') : 'copy';
+	});
+	tree.addEventListener('dragleave', (event) => {
+		if (!tree.contains(event.relatedTarget as Node)) markDrop(null);
+	});
+	tree.addEventListener('dragend', () => markDrop(null));
+	tree.addEventListener('drop', (event) => {
+		const transfer = event.dataTransfer;
+		markDrop(null);
+		if (!slug || !transfer) return;
+		event.preventDefault();
+		const folder = entryAt(dropFolder(rowOf(event.target))?.dataset.path ?? null);
+		const dragged = entryAt(transfer.getData(DRAG_TYPE) || null);
+		if (dragged) {
+			if (folder) moveInto(dragged, folder);
+			return;
+		}
+		upload([...transfer.files], folder);
+	});
+
+	uploadButton.addEventListener('click', () => chooseUpload(entryAt(selected)));
+	folderButton.addEventListener('click', () => startNewFolder(entryAt(selected)));
+	refreshButton.addEventListener('click', () => void refresh());
+	uploadInput.addEventListener('change', () => {
+		const files = [...(uploadInput.files ?? [])];
+		uploadInput.value = '';
+		upload(files, uploadTarget);
+	});
+	// Until the panel watches the disk, coming back to the window lists the folder again.
+	window.addEventListener('focus', () => {
+		if (!editing) void refresh();
+	});
+
+	render();
+
+	return {
+		/** List this article's folder; `null` when no article is open. */
+		show(article: string | null): void {
+			if (article !== slug) {
+				slug = article;
+				entries = [];
+				selected = null;
+				editing = null;
+				setStatus('');
+			}
+			referenced = referencedPaths(host.source());
+			render();
+			void refresh();
+		},
+		/** The article's text changed: which files it uses may have too. */
+		sourceChanged(): void {
+			window.clearTimeout(sourceTimer);
+			sourceTimer = window.setTimeout(() => {
+				const next = referencedPaths(host.source());
+				if (next.size === referenced.size && [...next].every((path) => referenced.has(path))) return;
+				referenced = next;
+				if (!editing) render();
+			}, 250);
+		},
+	};
+}
