@@ -75,7 +75,8 @@ export function mergeMarkdownBody(originalBody: string, editedBody: string): Mar
 	const originalFingerprints = originalBlocks.map(semanticFingerprint);
 	const editedFingerprints = editedBlocks.map(semanticFingerprint);
 	const lengths = lcsLengths(originalFingerprints, editedFingerprints);
-	const merged: string[] = [];
+	/** Each piece with the index of the original block it keeps, if it keeps one. */
+	const merged: Array<{ raw: string; original?: number }> = [];
 	let originalIndex = 0;
 	let editedIndex = 0;
 	let retainedBlocks = 0;
@@ -83,7 +84,7 @@ export function mergeMarkdownBody(originalBody: string, editedBody: string): Mar
 
 	while (originalIndex < originalBlocks.length && editedIndex < editedBlocks.length) {
 		if (originalFingerprints[originalIndex] === editedFingerprints[editedIndex]) {
-			merged.push(originalBlocks[originalIndex]!.raw);
+			merged.push({ raw: originalBlocks[originalIndex]!.raw, original: originalIndex });
 			originalIndex += 1;
 			editedIndex += 1;
 			retainedBlocks += 1;
@@ -92,16 +93,37 @@ export function mergeMarkdownBody(originalBody: string, editedBody: string): Mar
 		if (lengths[originalIndex + 1]![editedIndex]! >= lengths[originalIndex]![editedIndex + 1]!) {
 			originalIndex += 1;
 		} else {
-			merged.push(editedBlocks[editedIndex]!.raw);
+			merged.push({ raw: editedBlocks[editedIndex]!.raw });
 			editedIndex += 1;
 			changedBlocks += 1;
 		}
 	}
 	while (editedIndex < editedBlocks.length) {
-		merged.push(editedBlocks[editedIndex]!.raw);
+		merged.push({ raw: editedBlocks[editedIndex]!.raw });
 		editedIndex += 1;
 		changedBlocks += 1;
 	}
 
-	return { body: merged.join(''), retainedBlocks, changedBlocks };
+	return { body: joinBlocks(merged), retainedBlocks, changedBlocks };
+}
+
+/**
+ * The pieces as one body. A block carries the blank line after it, except
+ * the last one in its document: so where two pieces were not neighbours in
+ * the original, a blank line is made sure of, or a paragraph added after the
+ * old last block would run into it. Neighbours keep exactly what was between them.
+ */
+function joinBlocks(pieces: ReadonlyArray<{ raw: string; original?: number }>): string {
+	let body = '';
+	let previous: number | undefined;
+	for (const [index, piece] of pieces.entries()) {
+		const neighbours = previous !== undefined && piece.original === previous + 1;
+		if (index > 0 && !neighbours && !/\n[ \t\r]*\n$/u.test(body)) {
+			const newline = /\r\n/u.test(body) ? '\r\n' : '\n';
+			body += body.endsWith('\n') ? newline : newline + newline;
+		}
+		body += piece.raw;
+		previous = piece.original;
+	}
+	return body;
 }

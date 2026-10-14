@@ -126,6 +126,14 @@ test('accepts edited blocks while retaining untouched scientific blocks', () => 
 	assert.equal(result.retainedBlocks, 2);
 });
 
+test('a block added after the last one is a block of its own', () => {
+	assert.equal(mergeMarkdownBody('开头。\n\n结尾。\n', '开头。\n\n结尾。\n\n新段落\n').body, '开头。\n\n结尾。\n\n新段落\n');
+	assert.equal(mergeMarkdownBody('开头。\n\n结尾。', '开头。\n\n结尾。\n\n![图](./img/a.png)\n').body, '开头。\n\n结尾。\n\n![图](./img/a.png)\n');
+	assert.equal(mergeMarkdownBody('开头。\r\n\r\n结尾。\r\n', '开头。\n\n结尾。\n\n新段落\n').body, '开头。\r\n\r\n结尾。\r\n\r\n新段落\n');
+	// Neighbours keep what was between them, even when it is a single newline.
+	assert.equal(mergeMarkdownBody('# 标题\n正文\n\n旧\n', '# 标题\n\n正文\n\n新\n').body, '# 标题\n正文\n\n新\n');
+});
+
 test('updates article properties without rewriting unknown YAML or comments', () => {
 	const source = [
 		'---\r\n',

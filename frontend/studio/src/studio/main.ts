@@ -5,11 +5,12 @@ import { languages as codeMirrorLanguages } from '@codemirror/language-data';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
-import { createArticle, getArticle, listArticles, saveArticle, saveMoleculeView, StudioApiError } from './api/client';
+import { createArticle, getArticle, listArticles, saveArticle, saveMoleculeView, StudioApiError, uploadArticleFile } from './api/client';
 import { bindTitleFocus, blockFeelPlugins } from './editor/block-menu';
 import { buildScienceSlashMenu, scienceBlockPlugins } from './editor/crepe-science-block';
 import { displayMathPlugins } from './editor/display-math';
 import { inlineMathPlugins } from './editor/inline-math';
+import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './editor/file-drop';
 import { imageMarkdownRemark } from './editor/image-markdown';
 import { mathBracketsRemark } from './editor/math-brackets';
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from './document';
@@ -21,6 +22,8 @@ import { ArticleStore } from './state/article-store';
 import { articlePath, rewriteMovedReferences } from './shared/article-references.mjs';
 import type { ArticlePayload, ArticleProperties, ArticleSummary } from './types';
 import { createFilePanel } from './workspace/file-panel';
+import { linkPath, uploadFolderFor } from './workspace/file-tree';
+import { showToast } from './workspace/toast';
 import { createSidePanel } from './workspace/side-panel';
 
 const studioShell = document.querySelector<HTMLElement>('.studio-shell')!;
@@ -68,6 +71,22 @@ const filePanel = createFilePanel(document.querySelector<HTMLElement>('#side-fil
 	moved: reloadAfterMove,
 });
 store.subscribe(() => filePanel.sourceChanged());
+
+/** Files dropped or pasted into the editor, and its image uploads, go into the open article's folder. */
+const fileDropHost: ArticleFileDropHost = {
+	async upload(files) {
+		const slug = store.current.article?.slug;
+		if (!slug) throw new Error('文章尚未载入');
+		const paths: string[] = [];
+		try {
+			for (const file of files) paths.push((await uploadArticleFile(slug, uploadFolderFor(null, file), file)).path);
+		} finally {
+			void filePanel.refresh();
+		}
+		return paths;
+	},
+	report: showToast,
+};
 let crepe: Crepe | null = null;
 let loading = false;
 let loadSequence = 0;
@@ -173,6 +192,7 @@ async function mountEditor(source: string): Promise<string> {
 	editorHost.replaceChildren();
 
 	const body = parseStudioDocument(source).body.raw;
+	const fileDrop = articleFileDrop(fileDropHost);
 	crepe = new Crepe({
 		root: editorHost,
 		defaultValue: body,
@@ -213,6 +233,7 @@ async function mountEditor(source: string): Promise<string> {
 			},
 			[CrepeFeature.ImageBlock]: {
 				proxyDomURL: articleFileUrl,
+				onUpload: async (file: File) => linkPath((await fileDropHost.upload([file]))[0]),
 				inlineUploadButton: '上传',
 				inlineUploadPlaceholderText: '或粘贴链接',
 				blockUploadButton: '上传图片',
@@ -221,7 +242,10 @@ async function mountEditor(source: string): Promise<string> {
 				blockConfirmButton: '确定',
 			},
 			[CrepeFeature.BlockEdit]: {
-				buildMenu: (builder) => buildScienceSlashMenu(builder),
+				buildMenu: (builder) => {
+					buildScienceSlashMenu(builder);
+					replaceSlashImageItem(builder, fileDrop.chooseImages);
+				},
 				textGroup: {
 					label: '文本',
 					text: { label: '正文' },
@@ -256,6 +280,7 @@ async function mountEditor(source: string): Promise<string> {
 	crepe.editor.use(displayMathPlugins);
 	crepe.editor.use(mathBracketsRemark);
 	crepe.editor.use(imageMarkdownRemark);
+	crepe.editor.use(fileDrop.plugin);
 	crepe.on((listener) => {
 		listener.markdownUpdated((_ctx, markdown) => updateMarkdown(markdown));
 	});

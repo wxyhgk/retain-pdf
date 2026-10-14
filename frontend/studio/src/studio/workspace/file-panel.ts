@@ -19,6 +19,7 @@ import {
 	markdownReference,
 	parentPath,
 	referenceCount,
+	STUDIO_FILE_DRAG_TYPE,
 	uploadFolderFor,
 	visibleNodes,
 	type FileNode,
@@ -37,8 +38,6 @@ export type FilePanelHost = {
 	moved(from: string, to: string, rewritten: boolean): Promise<void>;
 };
 
-/** Dragged rows carry their path under this type, so files dropped from outside are told apart. */
-const DRAG_TYPE = 'application/x-studio-file';
 const STATUS_CLEAR_MS = 6000;
 const FINDER = /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示';
 const STRUCTURE_EXTENSIONS = new Set(['mol', 'sdf', 'xyz', 'pdb', 'mol2', 'cif', 'cube', 'gjf', 'com', 'smi', 'smiles']);
@@ -500,13 +499,14 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	tree.addEventListener('dragstart', (event) => {
 		const entry = entryOf(event.target);
 		if (!entry || entry.locked || !event.dataTransfer) return;
-		event.dataTransfer.setData(DRAG_TYPE, entry.path);
-		event.dataTransfer.effectAllowed = 'move';
+		event.dataTransfer.setData(STUDIO_FILE_DRAG_TYPE, entry.path);
+		// Copy: dropped into the editor, the row inserts a reference and the file stays.
+		event.dataTransfer.effectAllowed = 'copyMove';
 		select(entry.path);
 	});
 	tree.addEventListener('dragover', (event) => {
 		const types = event.dataTransfer?.types ?? [];
-		const internal = types.includes(DRAG_TYPE);
+		const internal = types.includes(STUDIO_FILE_DRAG_TYPE);
 		if (!slug || (!internal && !types.includes('Files'))) return;
 		event.preventDefault();
 		const folder = dropFolder(rowOf(event.target));
@@ -523,7 +523,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		if (!slug || !transfer) return;
 		event.preventDefault();
 		const folder = entryAt(dropFolder(rowOf(event.target))?.dataset.path ?? null);
-		const dragged = entryAt(transfer.getData(DRAG_TYPE) || null);
+		const dragged = entryAt(transfer.getData(STUDIO_FILE_DRAG_TYPE) || null);
 		if (dragged) {
 			if (folder) moveInto(dragged, folder);
 			return;
@@ -560,6 +560,8 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			render();
 			void refresh();
 		},
+		/** List the folder again, after something outside the panel changed it. */
+		refresh,
 		/** The article's text changed: which files it uses may have too. */
 		sourceChanged(): void {
 			window.clearTimeout(sourceTimer);

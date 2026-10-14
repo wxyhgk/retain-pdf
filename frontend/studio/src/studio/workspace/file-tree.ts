@@ -2,6 +2,9 @@ import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
 import { findArticleReferences, movedPath } from '../shared/article-references.mjs';
 import type { ArticleFileEntry } from '../types.ts';
 
+/** A file dragged from the panel carries its article path under this type, so the editor can tell it from files off the desktop. */
+export const STUDIO_FILE_DRAG_TYPE = 'application/x-studio-file';
+
 /** One row of the file panel's tree. */
 export type FileNode = {
 	entry: ArticleFileEntry;
