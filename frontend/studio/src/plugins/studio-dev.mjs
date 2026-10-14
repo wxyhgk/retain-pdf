@@ -2,6 +2,7 @@ import { lstat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
+import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
 import { StudioPathError } from '../studio/server/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
@@ -76,6 +77,8 @@ export default function studioDev() {
 				trashRoot: testBlogRoot ? resolve(testBlogRoot, '.studio-trash') : resolve(server.config.root, '.studio-trash'),
 			});
 			const articleFiles = new ArticleFiles(articles, manager);
+			const watcher = new BlogWatcher(blogRoot);
+			server.httpServer?.on('close', () => watcher.close());
 
 			server.middlewares.use(async (request, response, next) => {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];
@@ -103,6 +106,24 @@ export default function studioDev() {
 				}
 
 				try {
+					// What changes in blog/, as server-sent events: `data: [{"slug":"note","paths":["index.md"]}]`.
+					if (url.pathname === '/api/studio/events' && request.method === 'GET') {
+						response.writeHead(200, {
+							'Content-Type': 'text/event-stream; charset=utf-8',
+							'Cache-Control': 'no-store',
+							Connection: 'keep-alive',
+						});
+						response.write('retry: 2000\n\n');
+						const stop = watcher.subscribe((changes) => response.write(`data: ${JSON.stringify(changes)}\n\n`));
+						// A comment now and then keeps the connection from looking idle.
+						const keepAlive = setInterval(() => response.write(': keep-alive\n\n'), 25_000);
+						request.on('close', () => {
+							clearInterval(keepAlive);
+							stop();
+						});
+						return;
+					}
+
 					if (url.pathname === '/api/studio/articles' && request.method === 'GET') {
 						return json(response, 200, { articles: await articles.list() });
 					}
@@ -132,6 +153,7 @@ export default function studioDev() {
 							if (declared > manager.uploadSizeLimit) return json(response, 413, { error: `文件超过 ${manager.uploadSizeLimit / 1024 / 1024} MB 上传上限` });
 							const uploaded = await manager.upload(slug, url.searchParams.get('folder') ?? '', url.searchParams.get('name') ?? '', request, {
 								replace: url.searchParams.get('replace') === '1',
+								subfolders: (url.searchParams.get('subfolder') ?? '').split('/').filter(Boolean),
 							});
 							return json(response, 201, uploaded);
 						}

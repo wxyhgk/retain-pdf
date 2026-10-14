@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { referencedPaths } from '../src/studio/shared/article-references.mjs';
+import { subfolderOf } from '../src/studio/workspace/dropped-files.ts';
 import type { ArticleFileEntry } from '../src/studio/types.ts';
 import {
 	buildFileTree,
@@ -92,4 +93,10 @@ test('sizes read like a file manager’s', () => {
 	assert.equal(formatSize(1536), '1.5 KB');
 	assert.equal(formatSize(200 * 1024), '200 KB');
 	assert.equal(formatSize(3.25 * 1024 * 1024), '3.3 MB');
+});
+
+test('a dropped folder’s files keep the folders they were in', () => {
+	assert.equal(subfolderOf('/My Data/run 1/out.log'), 'My Data/run 1');
+	assert.equal(subfolderOf('My Data/out.log'), 'My Data');
+	assert.equal(subfolderOf('out.log'), '');
 });

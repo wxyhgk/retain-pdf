@@ -19,8 +19,10 @@ import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
 import { createSciencePreview, observeSciencePreviews } from '../science/browser/science-renderer';
 import { setScienceResourceBaseUrl } from '../science/browser/resource-context';
 import { ArticleStore } from './state/article-store';
+import { trackWrite, writesSettled } from './state/writes';
 import { articlePath, rewriteMovedReferences } from './shared/article-references.mjs';
 import type { ArticlePayload, ArticleProperties, ArticleSummary } from './types';
+import { watchDisk, type DiskChange } from './workspace/disk-events';
 import { createFilePanel } from './workspace/file-panel';
 import { linkPath, uploadFolderFor } from './workspace/file-tree';
 import { showToast } from './workspace/toast';
@@ -363,7 +365,7 @@ async function presentArticle(
 		save: async (key, format, view, display) => {
 			const snapshot = store.current;
 			if (!snapshot.article) throw new Error('文章尚未载入');
-			const result = await saveMoleculeView(snapshot.article.slug, key, format, view, snapshot.revision, display);
+			const result = await trackWrite(() => saveMoleculeView(snapshot.article!.slug, key, format, view, snapshot.revision, display));
 			store.updateRevision(result.revision, result.chemistryViews);
 		},
 	});
@@ -396,12 +398,79 @@ async function reloadAfterMove(from: string, to: string, rewritten: boolean): Pr
 	const edited = rewriteMovedReferences(current.source, from, to);
 	if (!rewritten && edited.changed === 0) return;
 	const properties = propertiesFromInputs();
-	const scrollTop = editorScroll.scrollTop;
 	const sequence = ++loadSequence;
 	const article = await getArticle(current.article.slug);
 	if (sequence !== loadSequence) return;
-	await presentArticle(article, sequence, current.dirty ? { source: edited.source, properties } : undefined);
+	await showAgain(article, sequence, current.dirty ? { source: edited.source, properties } : undefined);
+}
+
+/** The open article shown again, as it now is, where the author was reading. */
+async function showAgain(article: ArticlePayload, sequence: number, edited?: { source: string; properties: ArticleProperties }): Promise<void> {
+	const scrollTop = editorScroll.scrollTop;
+	await presentArticle(article, sequence, edited);
 	editorScroll.scrollTop = scrollTop;
+}
+
+const ARTICLE_TEXT_FILES = ['index.md', 'article.config.yaml', 'article.views.json'];
+let diskCheck: Promise<void> = Promise.resolve();
+let listRefresh = 0;
+
+/**
+ * Something changed in blog/: the terminal, Finder or another editor. The
+ * article list and file panel follow; the open article is checked against
+ * what the editor last loaded or saved, so the Studio's own writes are not
+ * taken for someone else's.
+ */
+function onDiskChange(changes: DiskChange[]): void {
+	const listChanged = changes.some((change) => change.paths.includes('') || change.paths.includes('index.md'));
+	if (listChanged) {
+		window.clearTimeout(listRefresh);
+		listRefresh = window.setTimeout(() => {
+			listArticles().then((articles) => {
+				articleSummaries = articles;
+				renderArticleTree();
+			}).catch(() => {});
+		}, 300);
+	}
+	const slug = store.current.article?.slug;
+	const change = changes.find((entry) => entry.slug === slug);
+	if (!slug || !change) return;
+	void filePanel.refresh();
+	if (change.paths.some((path) => ARTICLE_TEXT_FILES.includes(path))) {
+		diskCheck = diskCheck.then(() => checkArticleOnDisk(slug)).catch(() => {});
+	}
+}
+
+/**
+ * The article changed on disk. Without unsaved edits, the editor simply
+ * shows the new version. With them, the author chooses: take the version on
+ * disk, or keep their edits, which saving then writes over it.
+ */
+async function checkArticleOnDisk(slug: string): Promise<void> {
+	await writesSettled();
+	if (store.current.article?.slug !== slug) return;
+	const sequence = loadSequence;
+	const article = await getArticle(slug);
+	const current = store.current;
+	if (sequence !== loadSequence || current.article?.slug !== slug || article.revision === current.revision) return;
+	if (!current.dirty) {
+		await showAgain(article, ++loadSequence);
+		showToast('文章在磁盘上被修改，已重新载入');
+		return;
+	}
+	const title = articleTitleInput.value || slug;
+	const takeDisk = confirm(
+		`「${title}」在磁盘上被修改了（可能是终端或其他编辑器）。\n\n`
+		+ '确定：载入磁盘上的版本，放弃你没保存的改动\n'
+		+ '取消：保留你的改动，保存时覆盖磁盘上的版本',
+	);
+	if (sequence !== loadSequence || store.current.article?.slug !== slug) return;
+	if (takeDisk) {
+		await showAgain(article, ++loadSequence);
+		showToast('已载入磁盘上的版本');
+	} else {
+		store.updateRevision(article.revision, article.chemistryViews);
+	}
 }
 
 async function loadArticleList(selectSlug?: string, discardDirty = false): Promise<void> {
@@ -427,7 +496,7 @@ async function saveCurrentArticle(): Promise<void> {
 	setSaveState('正在保存…', 'saving');
 	try {
 		const current = store.current;
-		const result = await saveArticle(current.article!.slug, current.source, current.revision);
+		const result = await trackWrite(() => saveArticle(current.article!.slug, current.source, current.revision));
 		store.markSaved(result.revision, properties);
 		updateArticleSummary(properties);
 		compareRoundtrip(store.current.article!.source, store.current.source);
@@ -562,6 +631,8 @@ window.addEventListener('beforeunload', (event) => {
 	if (!store.current.dirty) return;
 	event.preventDefault();
 });
+
+watchDisk(onDiskChange);
 
 loadArticleList().catch((error) => {
 	setSaveState(error instanceof Error ? error.message : '无法连接本地 Studio', 'error');

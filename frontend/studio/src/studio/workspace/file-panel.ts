@@ -7,8 +7,10 @@ import {
 	uploadArticleFile,
 } from '../api/client';
 import { movedPath, referencedPaths } from '../shared/article-references.mjs';
+import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
 import { showContextMenu, type MenuItem } from './context-menu';
+import { droppedItems, pickedItems, type UploadItem } from './dropped-files';
 import {
 	buildFileTree,
 	extension,
@@ -78,6 +80,12 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	const folderButton = pane.querySelector<HTMLButtonElement>('#new-folder')!;
 	const refreshButton = pane.querySelector<HTMLButtonElement>('#refresh-files')!;
 	const uploadInput = pane.querySelector<HTMLInputElement>('#file-upload-input')!;
+	const folderInput = document.createElement('input');
+	folderInput.type = 'file';
+	folderInput.multiple = true;
+	folderInput.webkitdirectory = true;
+	folderInput.hidden = true;
+	pane.append(folderInput);
 
 	let slug: string | null = null;
 	let entries: ArticleFileEntry[] = [];
@@ -157,8 +165,10 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		const open = expanded();
 		const rows = visibleNodes(buildFileTree(entries), open);
 		for (const node of rows) {
-			list.append(row(node, open.has(node.entry.path)));
+			const isOpen = open.has(node.entry.path);
+			list.append(row(node, isOpen));
 			if (editing?.kind === 'folder' && editing.parent === node.entry.path) list.append(newFolderRow(editing.parent, node.depth + 1));
+			else if (node.entry.kind === 'directory' && isOpen && !node.children.length) list.append(emptyFolderRow(node));
 		}
 		tree.append(list);
 		const focusable = list.querySelector<HTMLElement>('.file-row.is-selected') ?? list.querySelector<HTMLElement>('.file-row');
@@ -197,14 +207,39 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 				? (node.children.length ? String(node.children.length) : '空')
 				: entry.size !== undefined ? formatSize(entry.size) : '';
 			item.append(element('span', 'file-meta', meta));
-			const menu = element('button', 'file-row-menu', '⋯');
-			menu.type = 'button';
-			menu.tabIndex = -1;
-			menu.setAttribute('aria-label', `${node.name} 的操作`);
-			item.append(menu);
+			const actions = element('span', 'file-row-actions');
+			if (entry.kind === 'directory') actions.append(rowButton('file-row-upload', '⤒', `上传文件到 ${node.name}/`));
+			actions.append(rowButton('file-row-menu', '⋯', `${node.name} 的操作`));
+			item.append(actions);
 		}
 		item.title = unused ? `${entry.path}\n正文没有引用它` : entry.path;
 		if (!entry.locked) item.draggable = true;
+		return item;
+	}
+
+	function rowButton(className: string, text: string, label: string): HTMLButtonElement {
+		const button = element('button', className, text);
+		button.type = 'button';
+		button.tabIndex = -1;
+		button.title = label;
+		button.setAttribute('aria-label', label);
+		return button;
+	}
+
+	/** Under an open, empty folder: somewhere obvious to drop files, or to click to choose them. */
+	function emptyFolderRow(node: FileNode): HTMLLIElement {
+		const item = element('li', 'file-row-empty');
+		item.setAttribute('role', 'none');
+		item.dataset.dropFolder = node.entry.path;
+		item.style.setProperty('--depth', String(node.depth + 1));
+		const button = element('button', 'file-empty-upload', '拖文件到这里，或点击上传');
+		button.type = 'button';
+		button.tabIndex = -1;
+		button.addEventListener('click', (event) => {
+			event.stopPropagation();
+			chooseUpload(node.entry);
+		});
+		item.append(button);
 		return item;
 	}
 
@@ -266,18 +301,36 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 
 	// —— Changes ——
 
-	function upload(files: readonly File[], target: ArticleFileEntry | null): void {
-		if (!files.length) return;
-		void run(`正在上传 ${files.length} 个文件…`, async () => {
+	/**
+	 * Uploads one after another, showing how far along they are. A folder
+	 * dropped or chosen whole stays together: in the folder it was dropped on,
+	 * or in `assets/`; single files go where `uploadFolderFor` says.
+	 */
+	function upload(items: readonly UploadItem[], target: ArticleFileEntry | null): void {
+		if (!items.length) return;
+		const total = items.reduce((sum, item) => sum + item.file.size, 0) || 1;
+		void run(`正在上传 ${items.length} 个文件…`, async () => {
 			const stored: string[] = [];
-			for (const file of files) {
-				const folder = uploadFolderFor(target, file);
-				const result = await uploadArticleFile(slug!, folder, file);
-				stored.push(result.path);
-				expanded().add(folder.split('/', 1)[0]).add(folder);
+			let sent = 0;
+			for (const [index, { file, subfolder }] of items.entries()) {
+				const folder = target || !subfolder ? uploadFolderFor(target, file) : 'assets';
+				const progress = (loaded: number) => {
+					const percent = Math.min(100, Math.floor(((sent + loaded) / total) * 100));
+					const what = items.length === 1 ? file.name : `${index + 1}/${items.length}`;
+					setStatus(`正在上传 ${what} · ${percent}%`, 'busy');
+				};
+				try {
+					const result = await uploadArticleFile(slug!, folder, file, { subfolder, onProgress: progress });
+					stored.push(result.path);
+					for (let path = parentPath(result.path); path; path = parentPath(path)) expanded().add(path);
+				} catch (error) {
+					const done = stored.length ? `已上传 ${stored.length} 个，` : '';
+					throw new Error(`${done}${file.name} 没有传上去：${errorMessage(error, '上传失败')}`);
+				}
+				sent += file.size;
 			}
 			selected = stored[stored.length - 1];
-			const renamed = files.length === 1 && fileName(stored[0]) !== files[0].name;
+			const renamed = items.length === 1 && fileName(stored[0]) !== items[0].file.name;
 			return stored.length === 1 ? `已上传 ${stored[0]}${renamed ? '（已改名）' : ''}` : `已上传 ${stored.length} 个文件`;
 		});
 	}
@@ -286,7 +339,12 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		if (to === entry.path) return;
 		const from = entry.path;
 		void run(`正在移动 ${fileName(from)}…`, async () => {
-			const result = await moveArticleFile(slug!, from, to, host.revision());
+			// The move and the reload after it are one write of the Studio's own.
+			const result = await trackWrite(async () => {
+				const moved = await moveArticleFile(slug!, from, to, host.revision());
+				await host.moved(from, moved.path, moved.references > 0 || moved.views > 0);
+				return moved;
+			});
 			// Open folders and the selection follow the move.
 			const set = expanded();
 			for (const path of [...set]) {
@@ -297,7 +355,6 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			}
 			set.add(parentPath(result.path));
 			selected = result.path;
-			await host.moved(from, result.path, result.references > 0 || result.views > 0);
 			return result.references ? `已移动到 ${result.path}，正文里 ${result.references} 处引用已同步修改` : `已移动到 ${result.path}`;
 		});
 	}
@@ -372,15 +429,16 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		window.open(url, '_blank', 'noopener');
 	}
 
-	function chooseUpload(target: ArticleFileEntry | null): void {
+	function chooseUpload(target: ArticleFileEntry | null, folders = false): void {
 		uploadTarget = target;
-		uploadInput.click();
+		(folders ? folderInput : uploadInput).click();
 	}
 
 	function menuFor(entry: ArticleFileEntry | null): MenuItem[] {
 		if (!entry) {
 			return [
 				{ label: '上传文件…', action: () => chooseUpload(null) },
+				{ label: '上传文件夹…', action: () => chooseUpload(null, true) },
 				{ label: '新建文件夹', action: () => startNewFolder(null) },
 				'separator',
 				{ label: FINDER, action: () => reveal('') },
@@ -389,7 +447,11 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		const items: MenuItem[] = [];
 		const published = entry.path.startsWith('img/') || entry.path.startsWith('assets/');
 		if (entry.kind === 'directory') {
-			items.push({ label: '上传到这里…', action: () => chooseUpload(entry) }, { label: '新建子文件夹', action: () => startNewFolder(entry) });
+			items.push(
+				{ label: '上传文件到这里…', action: () => chooseUpload(entry) },
+				{ label: '上传文件夹到这里…', action: () => chooseUpload(entry, true) },
+				{ label: '新建子文件夹', action: () => startNewFolder(entry) },
+			);
 		} else {
 			const reference = markdownReference(entry.path);
 			if (published) items.push({ label: '在新标签页打开', action: () => openFile(entry) });
@@ -413,6 +475,11 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		if ((event.target as Element).closest('.file-row-menu')) {
 			select(entry.path);
 			showContextMenu(menuFor(entry), event.target as HTMLElement);
+			return;
+		}
+		if ((event.target as Element).closest('.file-row-upload')) {
+			select(entry.path);
+			chooseUpload(entry);
 			return;
 		}
 		select(entry.path, true);
@@ -488,9 +555,11 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		dropRow = target;
 		if (target && target !== tree) target.classList.add('is-drop-target');
 	};
-	/** The folder a drop at this row means: the folder itself, or the folder the file is in. */
-	const dropFolder = (rowElement: HTMLElement | null): HTMLElement | null => {
-		const entry = entryAt(rowElement?.dataset.path ?? null);
+	/** The folder a drop here means: a folder row itself, the folder a file is in, or the empty folder a hint is under. */
+	const dropFolder = (target: EventTarget | null): HTMLElement | null => {
+		const hint = target instanceof Element ? target.closest<HTMLElement>('[data-drop-folder]') : null;
+		if (hint) return tree.querySelector<HTMLElement>(`.file-row[data-path="${CSS.escape(hint.dataset.dropFolder!)}"]`);
+		const entry = entryAt(rowOf(target)?.dataset.path ?? null);
 		if (!entry) return null;
 		const path = entry.kind === 'directory' ? entry.path : parentPath(entry.path);
 		return path ? tree.querySelector<HTMLElement>(`.file-row[data-path="${CSS.escape(path)}"]`) : null;
@@ -509,7 +578,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		const internal = types.includes(STUDIO_FILE_DRAG_TYPE);
 		if (!slug || (!internal && !types.includes('Files'))) return;
 		event.preventDefault();
-		const folder = dropFolder(rowOf(event.target));
+		const folder = dropFolder(event.target);
 		markDrop(folder ?? (internal ? null : tree));
 		event.dataTransfer!.dropEffect = internal ? (folder ? 'move' : 'none') : 'copy';
 	});
@@ -522,13 +591,13 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		markDrop(null);
 		if (!slug || !transfer) return;
 		event.preventDefault();
-		const folder = entryAt(dropFolder(rowOf(event.target))?.dataset.path ?? null);
+		const folder = entryAt(dropFolder(event.target)?.dataset.path ?? null);
 		const dragged = entryAt(transfer.getData(STUDIO_FILE_DRAG_TYPE) || null);
 		if (dragged) {
 			if (folder) moveInto(dragged, folder);
 			return;
 		}
-		upload([...transfer.files], folder);
+		void droppedItems(transfer).then((items) => upload(items, folder));
 	});
 
 	uploadButton.addEventListener('click', () => chooseUpload(entryAt(selected)));
@@ -537,11 +606,12 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	uploadInput.addEventListener('change', () => {
 		const files = [...(uploadInput.files ?? [])];
 		uploadInput.value = '';
-		upload(files, uploadTarget);
+		upload(files.map((file) => ({ file, subfolder: '' })), uploadTarget);
 	});
-	// Until the panel watches the disk, coming back to the window lists the folder again.
-	window.addEventListener('focus', () => {
-		if (!editing) void refresh();
+	folderInput.addEventListener('change', () => {
+		const files = [...(folderInput.files ?? [])];
+		folderInput.value = '';
+		upload(pickedItems(files), uploadTarget);
 	});
 
 	render();

@@ -78,7 +78,7 @@ import { SITE_TITLE } from '../consts';
 					<header class="pane-toolbar">
 						<span id="files-root" class="pane-path">未打开文章</span>
 						<div class="pane-actions">
-							<button id="upload-files" type="button" title="上传文件，也可以直接拖进来" aria-label="上传文件" disabled>⤒</button>
+							<button id="upload-files" type="button" title="上传文件；文件和整个文件夹也可以直接拖进来" aria-label="上传文件" disabled>⤒</button>
 							<button id="new-folder" type="button" title="新建文件夹" aria-label="新建文件夹" disabled>＋</button>
 							<button id="refresh-files" type="button" title="重新读取文件夹" aria-label="刷新" disabled>↻</button>
 						</div>
@@ -371,7 +371,7 @@ import { SITE_TITLE } from '../consts';
 	.file-tree { flex: 1; min-height: 0; padding: 6px; overflow-y: auto; }
 	.file-tree :global(.file-tree-list) { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
 	.file-tree.is-drop-target { outline: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: -4px; border-radius: 8px; }
-	.file-tree :global(.file-row) { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto 18px; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 calc(8px + var(--depth, 0) * 16px); border-radius: 6px; color: rgb(var(--gray-dark)); font-size: 12px; cursor: default; user-select: none; }
+	.file-tree :global(.file-row) { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 calc(8px + var(--depth, 0) * 16px); border-radius: 6px; color: rgb(var(--gray-dark)); font-size: 12px; cursor: default; user-select: none; }
 	.file-tree :global(.file-row:hover) { background: rgb(var(--gray-light)); }
 	.file-tree :global(.file-row:focus) { outline: none; }
 	.file-tree :global(.file-row:focus-visible) { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
@@ -384,9 +384,13 @@ import { SITE_TITLE } from '../consts';
 	.file-tree :global(.file-icon) { color: rgb(var(--gray)); font-size: 11px; text-align: center; }
 	.file-tree :global(.file-name) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.file-tree :global(.file-meta) { color: rgb(var(--gray)); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; }
-	.file-tree :global(.file-row-menu) { width: 18px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font-size: 13px; line-height: 1; cursor: pointer; opacity: 0; }
-	.file-tree :global(.file-row:hover .file-row-menu), .file-tree :global(.file-row.is-selected .file-row-menu) { opacity: 1; }
-	.file-tree :global(.file-row-menu:hover) { background: color-mix(in srgb, rgb(var(--gray-dark)) 10%, transparent); color: rgb(var(--gray-dark)); }
+	.file-tree :global(.file-row-actions) { display: flex; gap: 1px; }
+	.file-tree :global(.file-row-actions button) { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font-size: 13px; line-height: 1; cursor: pointer; opacity: 0; }
+	.file-tree :global(.file-row:hover .file-row-actions button), .file-tree :global(.file-row.is-selected .file-row-actions button) { opacity: 1; }
+	.file-tree :global(.file-row-actions button:hover) { background: color-mix(in srgb, rgb(var(--gray-dark)) 10%, transparent); color: rgb(var(--gray-dark)); }
+	.file-tree :global(.file-row-empty) { padding: 2px 8px 4px calc(8px + var(--depth, 0) * 16px); list-style: none; }
+	.file-tree :global(.file-empty-upload) { width: 100%; padding: 7px 8px; border: 1px dashed rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
+	.file-tree :global(.file-empty-upload:hover) { border-color: color-mix(in srgb, var(--accent) 55%, transparent); color: rgb(var(--gray-dark)); }
 	.file-tree :global(.file-name-input) { grid-column: 2 / -1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 4px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-weight: 400; outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
 	.file-tree :global(.file-tree-empty) { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
 	.files-status { flex: none; min-height: 16px; margin: 0; padding: 8px 12px; overflow: hidden; border-top: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }

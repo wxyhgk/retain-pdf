@@ -14,6 +14,7 @@ import {
 	UploadTooLargeError,
 	assertName,
 	managedSegments,
+	safeFolderName,
 	safeUploadName,
 } from './file-manager.mjs';
 
@@ -177,4 +178,27 @@ test('locating finds any of the article’s files, never outside it', async (t) 
 	}
 	await symlink('/etc', join(bundle.assets, 'etc'));
 	await assert.rejects(files.locate('note', 'assets/etc/hosts'), /符号链接/u);
+});
+
+test('a dropped folder arrives with its folders, made safe', async (t) => {
+	const { paths: bundle, files } = await fixture(t);
+	assert.equal(safeFolderName('My Data (1)'), 'My-Data-1');
+	assert.equal(safeFolderName('..'), 'folder');
+	assert.equal(safeFolderName('.git'), 'git');
+	assert.deepEqual(
+		await files.upload('note', 'assets', 'out 1.log', bytes('a'), { subfolders: ['My Data', 'run 1'] }),
+		{ path: 'assets/My-Data/run-1/out-1.log', size: 1 },
+	);
+	assert.deepEqual(
+		await files.upload('note', 'assets', 'out 2.log', bytes('b'), { subfolders: ['My Data', 'run 1'] }),
+		{ path: 'assets/My-Data/run-1/out-2.log', size: 1 },
+	);
+	assert.deepEqual(await readdir(join(bundle.assets, 'My-Data', 'run-1')), ['out-1.log', 'out-2.log']);
+	await writeFile(join(bundle.assets, 'taken'), '');
+	await assert.rejects(files.upload('note', 'assets', 'a.log', bytes('c'), { subfolders: ['taken'] }), FileConflictError);
+	// Folder names cannot climb out: `..` is made into a name like any other.
+	assert.deepEqual(
+		await files.upload('note', 'assets', 'a.log', bytes('c'), { subfolders: ['..', '..', 'escape'] }),
+		{ path: 'assets/folder/folder/escape/a.log', size: 1 },
+	);
 });

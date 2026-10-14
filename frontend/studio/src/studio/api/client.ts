@@ -67,14 +67,37 @@ export async function listArticleFiles(slug: string): Promise<ArticleFileEntry[]
 	return (await request<{ entries: ArticleFileEntry[] }>(articleApi(slug, 'tree'))).entries;
 }
 
-/** Puts a file into `folder`; a taken name gets a number (`a-1.png`) unless `replace` is set. */
-export function uploadArticleFile(slug: string, folder: string, file: File, replace = false): Promise<{ path: string; size: number }> {
+export type UploadOptions = {
+	/** Folders a dropped folder brought along, made inside `folder` (`My Data/run 1`). */
+	subfolder?: string;
+	/** Overwrite a file of the same name instead of numbering the new one. */
+	replace?: boolean;
+	/** Bytes sent so far, for a progress display. */
+	onProgress?: (loaded: number, total: number) => void;
+};
+
+/**
+ * Puts a file into `folder`; a taken name gets a number (`a-1.png`) unless
+ * `replace` is set. Sent with XMLHttpRequest, because fetch cannot tell how
+ * much of an upload has gone.
+ */
+export function uploadArticleFile(slug: string, folder: string, file: File, options: UploadOptions = {}): Promise<{ path: string; size: number }> {
 	const query = new URLSearchParams({ folder, name: file.name });
-	if (replace) query.set('replace', '1');
-	return request(`${articleApi(slug, 'files')}?${query}`, {
-		method: 'POST',
-		headers: { 'Content-Type': 'application/octet-stream' },
-		body: file,
+	if (options.subfolder) query.set('subfolder', options.subfolder);
+	if (options.replace) query.set('replace', '1');
+	return new Promise((resolve, reject) => {
+		const xhr = new XMLHttpRequest();
+		xhr.open('POST', `${articleApi(slug, 'files')}?${query}`);
+		xhr.setRequestHeader('Content-Type', 'application/octet-stream');
+		xhr.responseType = 'json';
+		if (options.onProgress) xhr.upload.addEventListener('progress', (event) => options.onProgress!(event.loaded, event.total || file.size));
+		xhr.addEventListener('load', () => {
+			const data = (xhr.response ?? {}) as { path?: string; size?: number; error?: string };
+			if (xhr.status >= 200 && xhr.status < 300) resolve(data as { path: string; size: number });
+			else reject(new StudioApiError(data.error || `上传 ${file.name} 失败`, xhr.status));
+		});
+		xhr.addEventListener('error', () => reject(new StudioApiError(`上传 ${file.name} 失败：连不上本地 Studio`, 0)));
+		xhr.send(file);
 	});
 }
 

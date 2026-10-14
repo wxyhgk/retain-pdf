@@ -6,6 +6,7 @@ import { Plugin, PluginKey, type EditorState } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
+import { dropHasFolder } from '../workspace/dropped-files.ts';
 import { markdownReference, STUDIO_FILE_DRAG_TYPE } from '../workspace/file-tree.ts';
 
 /** What dropping files into the editor needs from the Studio around it. */
@@ -126,6 +127,10 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 						const files = [...transfer.files];
 						if (!path && !files.length) return false;
 						event.preventDefault();
+						if (dropHasFolder(transfer)) {
+							host.report('文件夹请拖到右侧的文件面板，那里会保留它的子文件夹', true);
+							return true;
+						}
 						const pos = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? view.state.selection.from;
 						if (files.length) {
 							upload(view, pos, files);

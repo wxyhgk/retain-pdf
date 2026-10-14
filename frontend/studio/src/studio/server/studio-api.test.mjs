@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { EventEmitter } from 'node:events';
 import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import test from 'node:test';
@@ -102,6 +103,12 @@ test('file API lists, uploads, makes folders, moves and trashes', async (t) => {
 	});
 	assert.deepEqual(upload, { status: 201, data: { path: 'img/My-Plot.png', size: 3 } });
 	assert.equal(await readFile(join(middleware.paths.img, 'My-Plot.png'), 'utf8'), 'png');
+	const nested = await call(middleware, {
+		url: `${base}/files?folder=assets&subfolder=${encodeURIComponent('My Run/frames')}&name=1.xyz`,
+		headers: { 'content-type': 'application/octet-stream' },
+		body: 'xyz',
+	});
+	assert.deepEqual(nested, { status: 201, data: { path: 'assets/My-Run/frames/1.xyz', size: 3 } });
 
 	assert.deepEqual(await call(middleware, { url: `${base}/folders`, ...asJson({ path: 'img/plots' }) }), { status: 201, data: { path: 'img/plots' } });
 	const move = await call(middleware, { url: `${base}/move`, ...asJson({ from: 'img/My-Plot.png', to: 'img/plots/plot.png' }) });
@@ -168,4 +175,40 @@ test('file API moves a referenced file only for the article as saved', async (t)
 	assert.equal(moved.status, 200);
 	assert.equal(moved.data.references, 1);
 	assert.match(await readFile(markdown, 'utf8'), /@file \.\/assets\/water\.xyz\n/u);
+});
+
+test('the events stream reports changes on disk until the page goes away', { timeout: 5000 }, async (t) => {
+	const middleware = await apiFixture(t);
+	const request = Object.assign(new EventEmitter(), {
+		url: '/api/studio/events',
+		method: 'GET',
+		headers: {},
+		socket: { remoteAddress: '127.0.0.1' },
+	});
+	const written = [];
+	let notify = () => {};
+	const response = {
+		writeHead(status, headers) { this.status = status; this.headers = headers; },
+		write(chunk) { written.push(chunk); notify(); },
+	};
+	await middleware(request, response, () => assert.fail('Studio route unexpectedly called next()'));
+	assert.equal(response.status, 200);
+	assert.match(response.headers['Content-Type'], /^text\/event-stream/u);
+
+	const reported = new Promise((resolve) => {
+		notify = () => {
+			if (written.some((chunk) => chunk.includes('"assets/new.xyz"'))) resolve();
+		};
+	});
+	await new Promise((resolve) => setTimeout(resolve, 100));
+	await writeFile(join(middleware.paths.assets, 'new.xyz'), '1\n');
+	await reported;
+	const event = written.find((chunk) => chunk.includes('"assets/new.xyz"'));
+	assert.ok(JSON.parse(event.replace(/^data: /u, '')).some((change) => change.slug === 'api-note'));
+
+	request.emit('close');
+	const count = written.length;
+	await writeFile(join(middleware.paths.assets, 'later.xyz'), '1\n');
+	await new Promise((resolve) => setTimeout(resolve, 300));
+	assert.equal(written.length, count, 'nothing is sent after the page has gone');
 });

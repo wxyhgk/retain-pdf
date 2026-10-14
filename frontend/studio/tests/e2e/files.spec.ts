@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { appendToFixture, editor, fixtureHas, openStudio, resetFixture, saveStatus, savedMarkdown, writeFixtureFile } from './studio.ts';
@@ -155,4 +158,42 @@ test('images open as written, load from the article folder, and are saved unchan
 	await page.keyboard.press('ControlOrMeta+Enter');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('结尾段落。字\n\n![图](./img/plot.png)\n\n段落二 ![行内](./img/plot.png "标题") 结束\n');
+});
+
+test('each folder has its own upload button, and an empty one says where to drop', async ({ page }) => {
+	await openStudio(page);
+	const hint = page.locator('#file-tree .file-row-empty[data-drop-folder="img"]');
+	await expect(hint).toHaveText('拖文件到这里，或点击上传');
+	let chooser = page.waitForEvent('filechooser');
+	await hint.getByRole('button').click();
+	await (await chooser).setFiles({ name: 'cover.png', mimeType: 'image/png', buffer: PNG });
+	await expect(fileRow(page, 'img/cover.png')).toBeVisible();
+	await expect(hint).toHaveCount(0);
+
+	await fileRow(page, 'assets').hover();
+	chooser = page.waitForEvent('filechooser');
+	await fileRow(page, 'assets').getByRole('button', { name: '上传文件到 assets/' }).click();
+	await (await chooser).setFiles({ name: 'cover.png', mimeType: 'image/png', buffer: PNG });
+	await expect(fileRow(page, 'assets/cover.png')).toBeVisible();
+});
+
+test('a whole folder uploads with its folders, made safe, and without system files', async ({ page }) => {
+	const desktop = mkdtempSync(join(tmpdir(), 'studio-folder-'));
+	try {
+		mkdirSync(join(desktop, 'My Run', 'frames'), { recursive: true });
+		writeFileSync(join(desktop, 'My Run', 'out.log'), 'done');
+		writeFileSync(join(desktop, 'My Run', 'frames', '1.xyz'), '3\nwater\n');
+		writeFileSync(join(desktop, 'My Run', '.DS_Store'), '');
+		await openStudio(page);
+		await fileRow(page, 'assets').click({ button: 'right' });
+		const chooser = page.waitForEvent('filechooser');
+		await page.getByRole('menuitem', { name: '上传文件夹到这里…' }).click();
+		await (await chooser).setFiles(join(desktop, 'My Run'));
+		await expect(status(page)).toHaveText('已上传 2 个文件');
+		await expect(fileRow(page, 'assets/My-Run/frames/1.xyz')).toBeVisible();
+		await expect(fileRow(page, 'assets/My-Run/out.log')).toBeVisible();
+		expect(fixtureHas('assets/My-Run/.DS_Store')).toBe(false);
+	} finally {
+		rmSync(desktop, { recursive: true, force: true });
+	}
 });
