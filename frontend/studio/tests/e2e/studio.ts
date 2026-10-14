@@ -40,8 +40,15 @@ export function savedMarkdown(): string {
 	return readFileSync(join(articles(), slug, 'index.md'), 'utf8');
 }
 
-/** Open the fixture in the Studio and wait until the editor and its molecules are drawn. */
-export async function openStudio(page: Page): Promise<void> {
+/**
+ * Open the fixture in the Studio and wait until the editor and its molecules
+ * are drawn. Edits stay unsaved until ⌘S, unless `autosaveDelay` says when
+ * the Studio saves them by itself.
+ */
+export async function openStudio(page: Page, { autosaveDelay = 600_000 }: { autosaveDelay?: number } = {}): Promise<void> {
+	await page.addInitScript((delay) => {
+		(window as { STUDIO_AUTOSAVE_DELAY?: number }).STUDIO_AUTOSAVE_DELAY = delay;
+	}, autosaveDelay);
 	await page.goto(`/studio?article=${slug}`);
 	await expect(page.locator('.milkdown .ProseMirror')).toBeVisible();
 	await expect(page.locator('#save-status')).toHaveText('已载入');

@@ -31,7 +31,7 @@ test('saving keeps \\( \\) and \\[ \\] in paragraphs that were not edited', asyn
 	await caretAfter(page, '结尾段落。');
 	await page.keyboard.type('补一句。');
 	await expect(saveStatus(page)).toHaveText('未保存');
-	await page.locator('#save-button').click();
+	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	const markdown = savedMarkdown();
 	expect(markdown).toContain('\\(a_1 * b_2\\)');

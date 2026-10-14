@@ -13,6 +13,8 @@
     "test": "npm run test:unit && npm run test:server",
     "test:unit": "node --experimental-strip-types --test tests/*.test.ts",
     "test:server": "node --test src/studio/server/*.test.mjs",
+    "test:terminal": "cargo test --release --manifest-path tools/studio-terminal/Cargo.toml",
+    "terminal:build": "cargo build --release --manifest-path tools/studio-terminal/Cargo.toml",
     "test:e2e": "playwright test -c tests/e2e/playwright.config.ts"
   },
   "dependencies": {
@@ -27,6 +29,8 @@
     "@milkdown/prose": "^7.22.0",
     "@milkdown/utils": "^7.22.0",
     "@rdkit/rdkit": "^2025.3.4-1.0.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "3dmol": "^2.5.5",
     "astro": "^7.2.0",
     "chem-structura": "^0.3.0",

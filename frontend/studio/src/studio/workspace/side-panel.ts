@@ -36,8 +36,8 @@ function writeLayout(layout: PanelLayout): void {
 
 /**
  * The right column: the open article's files and a terminal, as tabs that
- * can be resized and collapsed. The 文件 tab is `file-panel.ts`; the terminal
- * is a placeholder until it is wired to the dev server.
+ * can be resized and collapsed. The tabs' contents are `file-panel.ts` and
+ * `terminal.ts`.
  */
 export function createSidePanel(shell: HTMLElement) {
 	const panel = shell.querySelector<HTMLElement>('#side-panel')!;
@@ -48,12 +48,8 @@ export function createSidePanel(shell: HTMLElement) {
 		['files', { tab: panel.querySelector('#side-tab-files')!, pane: panel.querySelector('#side-files')! }],
 		['terminal', { tab: panel.querySelector('#side-tab-terminal')!, pane: panel.querySelector('#side-terminal')! }],
 	]);
-	const terminalCwd = panel.querySelector<HTMLElement>('#terminal-cwd')!;
-	const cwdOptions = [...panel.querySelectorAll<HTMLButtonElement>('[data-cwd]')];
 
 	const layout = readLayout();
-	let articleSlug: string | null = null;
-	let cwd: 'root' | 'article' = 'root';
 
 	function applyLayout(): void {
 		shell.style.setProperty('--panel-width', `${layout.width}px`);
@@ -75,15 +71,6 @@ export function createSidePanel(shell: HTMLElement) {
 		if (persist) writeLayout(layout);
 	}
 
-	function renderTerminalCwd(): void {
-		const article = articleSlug ? `blog/${articleSlug}/` : null;
-		terminalCwd.textContent = cwd === 'article' && article ? article : '仓库根目录';
-		for (const option of cwdOptions) {
-			option.setAttribute('aria-checked', String(option.dataset.cwd === cwd));
-			option.disabled = option.dataset.cwd === 'article' && !article;
-		}
-	}
-
 	for (const [name, { tab }] of tabs) {
 		tab.addEventListener('click', () => update({ tab: name }));
 		tab.addEventListener('keydown', (event) => {
@@ -96,13 +83,6 @@ export function createSidePanel(shell: HTMLElement) {
 	}
 	toggleButton.addEventListener('click', () => update({ open: !layout.open }));
 	closeButton.addEventListener('click', () => update({ open: false }));
-	for (const option of cwdOptions) {
-		option.addEventListener('click', () => {
-			cwd = option.dataset.cwd === 'article' ? 'article' : 'root';
-			renderTerminalCwd();
-		});
-	}
-
 	resizer.addEventListener('pointerdown', (event) => {
 		if (event.button !== 0 || NARROW.matches) return;
 		event.preventDefault();
@@ -129,13 +109,4 @@ export function createSidePanel(shell: HTMLElement) {
 	// A floating panel starts closed on a narrow window, whatever was saved.
 	if (NARROW.matches) layout.open = false;
 	applyLayout();
-	renderTerminalCwd();
-
-	return {
-		/** The open article, for the terminal's 当前文章 folder; `null` when none is open. */
-		showArticle(slug: string | null): void {
-			articleSlug = slug;
-			renderTerminalCwd();
-		},
-	};
 }

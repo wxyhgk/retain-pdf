@@ -71,27 +71,21 @@ test('renaming a file the article uses rewrites its references', async ({ page }
 	await expect(fileRow(page, 'img/figure.png')).toHaveClass(/is-selected/);
 });
 
-test('unsaved edits survive a rename and follow it', async ({ page }) => {
+test('edits waiting to be saved are saved before a rename, which they then follow', async ({ page }) => {
 	writeFixtureFile('img/plot.png', PNG);
 	appendToFixture('\n![图](./img/plot.png)\n');
 	await openStudio(page);
 	await editor(page).getByText('开头段落').click();
 	await page.keyboard.press('End');
-	await page.keyboard.type('未保存的字');
+	await page.keyboard.type('还没保存的字');
 	await expect(saveStatus(page)).toHaveText('未保存');
 
 	await rename(page, 'img/plot.png', 'figure.png');
 	await expect(status(page)).toContainText('1 处引用已同步修改');
-	// On disk: the reference follows, the edit is not saved behind the author's back.
+	expect(savedMarkdown()).toContain('还没保存的字');
 	expect(savedMarkdown()).toContain('![图](./img/figure.png)');
-	expect(savedMarkdown()).not.toContain('未保存的字');
-	await expect(saveStatus(page)).toHaveText('未保存');
-	await expect(editor(page)).toContainText('未保存的字');
-
-	await page.keyboard.press('ControlOrMeta+Enter');
-	await expect(saveStatus(page)).toHaveText('已保存');
-	expect(savedMarkdown()).toContain('未保存的字');
-	expect(savedMarkdown()).toContain('![图](./img/figure.png)');
+	await expect(saveStatus(page)).not.toHaveText('未保存');
+	await expect(editor(page)).toContainText('还没保存的字');
 });
 
 test('a file dragged onto a folder moves there', async ({ page }) => {
@@ -155,7 +149,7 @@ test('images open as written, load from the article folder, and are saved unchan
 	await page.keyboard.press('End');
 	await page.keyboard.type('字');
 	await expect(saveStatus(page)).toHaveText('未保存');
-	await page.keyboard.press('ControlOrMeta+Enter');
+	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('结尾段落。字\n\n![图](./img/plot.png)\n\n段落二 ![行内](./img/plot.png "标题") 结束\n');
 });

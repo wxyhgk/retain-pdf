@@ -212,3 +212,13 @@ test('the events stream reports changes on disk until the page goes away', { tim
 	await new Promise((resolve) => setTimeout(resolve, 300));
 	assert.equal(written.length, count, 'nothing is sent after the page has gone');
 });
+
+test('a terminal is only for this repository or an existing article', async (t) => {
+	const middleware = await apiFixture(t);
+	const form = await call(middleware, { url: '/api/studio/terminal', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'cwd=root' });
+	assert.equal(form.status, 415);
+	const foreign = await call(middleware, { url: '/api/studio/terminal', headers: { origin: 'https://evil.example', 'content-type': 'application/json' }, body: '{"cwd":"root"}' });
+	assert.equal(foreign.status, 403);
+	assert.equal((await call(middleware, { url: '/api/studio/terminal', ...asJson({ cwd: 'article', slug: '../etc' }) })).status, 400);
+	assert.equal((await call(middleware, { url: '/api/studio/terminal', ...asJson({ cwd: 'article', slug: 'missing' }) })).status, 404);
+});

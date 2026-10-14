@@ -3,10 +3,12 @@ import { resolve } from 'node:path';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
-import { StudioPathError } from '../studio/server/bundle-paths.mjs';
+import { articleBundlePaths, StudioPathError } from '../studio/server/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 import { revealInFileManager } from '../studio/server/reveal.mjs';
+import { TerminalHost } from '../studio/server/terminal-host.mjs';
+import { markContentReloads } from '../studio/server/content-reloads.mjs';
 
 function json(response, status, data) {
 	response.statusCode = status;
@@ -78,7 +80,12 @@ export default function studioDev() {
 			});
 			const articleFiles = new ArticleFiles(articles, manager);
 			const watcher = new BlogWatcher(blogRoot);
-			server.httpServer?.on('close', () => watcher.close());
+			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
+			server.httpServer?.on('close', () => {
+				watcher.close();
+				terminals.close();
+			});
+			markContentReloads(server);
 
 			server.middlewares.use(async (request, response, next) => {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];
@@ -122,6 +129,15 @@ export default function studioDev() {
 							stop();
 						});
 						return;
+					}
+
+					// A shell for the 终端 tab: in the repository, or in the open article's folder.
+					if (url.pathname === '/api/studio/terminal' && request.method === 'POST') {
+						const { cwd, slug } = await readJsonChange(request);
+						const folder = cwd === 'article' ? articleBundlePaths(blogRoot, slug).directory : server.config.root;
+						if (cwd === 'article') await manager.locate(slug, '');
+						const env = cwd === 'article' ? { STUDIO_ARTICLE: slug } : {};
+						return json(response, 200, { ...(await terminals.open(folder, env)), cwd: folder });
 					}
 
 					if (url.pathname === '/api/studio/articles' && request.method === 'GET') {

@@ -33,6 +33,8 @@ export type FilePanelHost = {
 	source(): string;
 	/** The revision the editor last loaded or saved. */
 	revision(): string;
+	/** Saves what is waiting to be saved, so a move rewrites the article as the author sees it. */
+	settle(): Promise<unknown>;
 	/**
 	 * `from` is now `to`. `rewritten` says the server changed `index.md` to
 	 * follow it; the editor reloads, keeping unsaved edits pointed at the new name.
@@ -339,6 +341,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		if (to === entry.path) return;
 		const from = entry.path;
 		void run(`正在移动 ${fileName(from)}…`, async () => {
+			await host.settle();
 			// The move and the reload after it are one write of the Studio's own.
 			const result = await trackWrite(async () => {
 				const moved = await moveArticleFile(slug!, from, to, host.revision());

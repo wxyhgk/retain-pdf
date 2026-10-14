@@ -43,7 +43,7 @@ test('with unsaved edits the author chooses, and keeping them saves over the dis
 	await expect(editor(page)).toContainText('我的改动');
 
 	await page.waitForTimeout(500);
-	await page.keyboard.press('ControlOrMeta+Enter');
+	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('结尾段落。我的改动');
 	expect(savedMarkdown()).not.toContain('终端改过的开头');
@@ -72,7 +72,7 @@ test('the Studio’s own saves are not taken for changes from outside', async ({
 		await page.keyboard.press('End');
 		await page.keyboard.type(word);
 		await page.waitForTimeout(400);
-		await page.keyboard.press('ControlOrMeta+Enter');
+		await page.keyboard.press('ControlOrMeta+s');
 		await expect(saveStatus(page)).toHaveText('已保存');
 	}
 	await page.waitForTimeout(1000);

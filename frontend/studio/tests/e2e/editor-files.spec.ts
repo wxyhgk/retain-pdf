@@ -26,7 +26,7 @@ async function save(page: Page): Promise<string> {
 	await expect(saveStatus(page)).toHaveText('未保存');
 	// The editor reports a change after a short pause; an insertion right after typing must be in before saving.
 	await page.waitForTimeout(500);
-	await page.keyboard.press('ControlOrMeta+Enter');
+	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	return savedMarkdown();
 }

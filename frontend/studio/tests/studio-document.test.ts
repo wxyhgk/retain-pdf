@@ -191,8 +191,28 @@ test('ArticleStore holds the source and its revision state', () => {
 	assert.equal(store.current.revision, 'rev-1');
 	assert.equal(store.current.dirty, true);
 
-	store.markSaved('rev-2');
+	store.markSaved('rev-2', 'Changed');
 	assert.equal(store.current.article?.source, 'Changed');
 	assert.equal(store.current.revision, 'rev-2');
 	assert.equal(store.current.dirty, false);
+});
+
+test('what is typed while a save is under way stays unsaved', () => {
+	const store = new ArticleStore();
+	store.load({
+		slug: 'example',
+		source: 'Original',
+		revision: 'rev-1',
+		properties: { title: 'Example', description: '', pubDate: '2026-08-09', tags: [], draft: true },
+		chemistryViews: {},
+	});
+	store.updateSource('Changed');
+	const saving = store.current.source;
+	store.updateSource('Changed further');
+	store.markSaved('rev-2', saving);
+
+	assert.equal(store.current.article?.source, 'Changed');
+	assert.equal(store.current.source, 'Changed further');
+	assert.equal(store.current.revision, 'rev-2');
+	assert.equal(store.current.dirty, true);
 });

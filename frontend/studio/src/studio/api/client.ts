@@ -1,4 +1,5 @@
-import type { ArticleFileEntry, ArticlePayload, ArticleSummary } from '../types';
+import { articlePath } from '../shared/article-references.mjs';
+import type { ArticleFileEntry, ArticlePayload, ArticleSummary } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
 	const response = await fetch(url, options);
@@ -8,9 +9,12 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 export class StudioApiError extends Error {
-	constructor(message: string, readonly status: number) {
+	readonly status: number;
+
+	constructor(message: string, status: number) {
 		super(message);
 		this.name = 'StudioApiError';
+		this.status = status;
 	}
 }
 
@@ -62,6 +66,22 @@ export function saveMoleculeView(
 }
 
 const articleApi = (slug: string, action: string): string => `/api/studio/articles/${encodeURIComponent(slug)}/${action}`;
+
+/** Where the Studio serves an article's files from: `<base>/img/a.png`. */
+export function articleFilesUrl(slug: string): string {
+	return `/api/studio/articles/${encodeURIComponent(slug)}/files`;
+}
+
+/**
+ * Where to load a file the article links to (`./img/a.png`), when it is one
+ * of its own published files; anything else is left as written.
+ */
+export function articleFileUrl(slug: string, src: string): string {
+	const path = articlePath(src);
+	const [root, ...rest] = path?.split('/') ?? [];
+	if (!path || (root !== 'img' && root !== 'assets') || !rest.length) return src;
+	return `${articleFilesUrl(slug)}/${root}/${rest.map(encodeURIComponent).join('/')}`;
+}
 
 export async function listArticleFiles(slug: string): Promise<ArticleFileEntry[]> {
 	return (await request<{ entries: ArticleFileEntry[] }>(articleApi(slug, 'tree'))).entries;
@@ -126,4 +146,9 @@ export function trashArticleFile(slug: string, path: string): Promise<{ path: st
 /** Shows the file in Finder (or the system's file manager); `''` is the article folder. */
 export function revealArticleFile(slug: string, path: string): Promise<{ path: string }> {
 	return request(articleApi(slug, 'reveal'), jsonOptions('POST', { path }));
+}
+
+/** A one-time WebSocket URL for a shell in the repository or in an article's folder. */
+export function openTerminal(target: { cwd: 'root' } | { cwd: 'article'; slug: string }): Promise<{ url: string; cwd: string }> {
+	return request('/api/studio/terminal', jsonOptions('POST', target));
 }

@@ -33,15 +33,19 @@ export class ArticleStore {
 		this.emit();
 	}
 
-	markSaved(revision: string, properties?: ArticleProperties): void {
+	/**
+	 * `source` is now on disk as `revision`. Edits made while it was being
+	 * written stay unsaved.
+	 */
+	markSaved(revision: string, source: string, properties?: ArticleProperties): void {
 		if (!this.snapshot.article) return;
 		const article = {
 			...this.snapshot.article,
-			source: this.snapshot.source,
+			source,
 			revision,
 			properties: properties ?? this.snapshot.article.properties,
 		};
-		this.snapshot = { article, source: this.snapshot.source, revision, dirty: false };
+		this.snapshot = { article, source: this.snapshot.source, revision, dirty: this.snapshot.source !== source };
 		this.emit();
 	}
 
