@@ -1,11 +1,7 @@
 import { resolve } from 'node:path';
-import { pathToFileURL } from 'node:url';
-import { createMarkdownProcessor } from '@astrojs/markdown-remark';
-import remarkMath from 'remark-math';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
-import { articleBundlePaths, StudioPathError } from '../studio/server/bundle-paths.mjs';
+import { StudioPathError } from '../studio/server/bundle-paths.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
-import rehypeKatexMhchem from './rehype-katex-mhchem.mjs';
 
 function json(response, status, data) {
 	response.statusCode = status;
@@ -23,10 +19,6 @@ async function readJson(request) {
 		chunks.push(chunk);
 	}
 	return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
-}
-
-function markdownBody(content) {
-	return content.replace(/^---\s*\n[\s\S]*?\n---\s*\n?/u, '');
 }
 
 function decodePathComponent(component) {
@@ -47,7 +39,7 @@ function file(response, resource) {
 	response.end(resource.body);
 }
 
-export default function studioDev({ chemistryLanguages }) {
+export default function studioDev() {
 	return {
 		name: 'local-article-studio',
 		apply: 'serve',
@@ -56,11 +48,6 @@ export default function studioDev({ chemistryLanguages }) {
 			const blogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : resolve(server.config.root, 'blog');
 			const articles = new ArticleRepository(blogRoot);
 			const files = new FileRepository(blogRoot);
-			const processorPromise = createMarkdownProcessor({
-				remarkPlugins: [remarkMath],
-				rehypePlugins: [rehypeKatexMhchem],
-				syntaxHighlight: { type: 'shiki', excludeLangs: chemistryLanguages },
-			});
 
 			server.middlewares.use(async (request, response, next) => {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];
@@ -95,15 +82,6 @@ export default function studioDev({ chemistryLanguages }) {
 					if (url.pathname === '/api/studio/articles' && request.method === 'POST') {
 						const created = await articles.create(await readJson(request));
 						return json(response, 201, created);
-					}
-
-					if (url.pathname === '/api/studio/preview' && request.method === 'POST') {
-						const { content = '', slug = 'preview' } = await readJson(request);
-						const processor = await processorPromise;
-						const result = await processor.render(markdownBody(String(content)), {
-							fileURL: pathToFileURL(articleBundlePaths(blogRoot, slug).markdown),
-						});
-						return json(response, 200, { html: result.code });
 					}
 
 					// Match the raw path so URL normalization cannot erase an attempted `..` traversal.

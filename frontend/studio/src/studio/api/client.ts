@@ -60,7 +60,3 @@ export function saveMoleculeView(
 		jsonOptions('PUT', { format, view, display, expectedRevision }),
 	);
 }
-
-export function renderArticlePreview(slug: string, content: string): Promise<{ html: string }> {
-	return request('/api/studio/preview', jsonOptions('POST', { slug, content }));
-}

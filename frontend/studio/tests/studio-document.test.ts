@@ -1,7 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { mergeMarkdownBody, parseStudioDocument, serializeStudioDocument, updateStudioFrontmatter } from '../src/studio/document/index.ts';
+import {
+	mergeMarkdownBody,
+	parseStudioDocument,
+	replaceStudioDocumentBody,
+	serializeStudioDocument,
+	updateStudioFrontmatter,
+} from '../src/studio/document/index.ts';
+import { ArticleStore } from '../src/studio/state/article-store.ts';
 
 const losslessCases = [
 	{
@@ -151,4 +158,34 @@ test('updates article properties without rewriting unknown YAML or comments', ()
 	assert.match(updated, /custom: &settings\r\n  basis: def2-SVP\r\ncopy: \*settings\r\n/u);
 	assert.match(updated, /tags: \["HF", "量子化学"\]\r\n# publication state\r\n/u);
 	assert.match(updated, /draft: false\r\n---\r\nBody remains byte exact\.\r\n$/u);
+});
+
+test('replacing the body keeps the frontmatter bytes exactly', () => {
+	const source = '\uFEFF---\r\ntitle: original\r\nunknown: !!tag raw\r\n---\r\nOld body\r\n';
+	const document = parseStudioDocument(source);
+	const result = replaceStudioDocumentBody(document, 'New body\n');
+
+	assert.equal(result, '\uFEFF---\r\ntitle: original\r\nunknown: !!tag raw\r\n---\r\nNew body\n');
+});
+
+test('ArticleStore holds the source and its revision state', () => {
+	const store = new ArticleStore();
+	store.load({
+		slug: 'example',
+		source: 'Original',
+		revision: 'rev-1',
+		properties: { title: 'Example', description: '', pubDate: '2026-08-09', tags: [], draft: true },
+		files: { img: [], assets: [], ai: [] },
+		chemistryViews: {},
+	});
+	store.updateSource('Changed');
+
+	assert.equal(store.current.source, 'Changed');
+	assert.equal(store.current.revision, 'rev-1');
+	assert.equal(store.current.dirty, true);
+
+	store.markSaved('rev-2');
+	assert.equal(store.current.article?.source, 'Changed');
+	assert.equal(store.current.revision, 'rev-2');
+	assert.equal(store.current.dirty, false);
 });

@@ -187,11 +187,6 @@ import { SITE_TITLE } from '../consts';
 	.article-properties .draft-property input { width: 16px; min-height: 16px; accent-color: var(--accent); }
 	#property-error { grid-column: 1 / -1; margin: 0; color: #b42318; font-size: 10px; }
 	.crepe-host { min-height: calc(100vh - 210px); background: transparent; }
-	:global(.crepe-host .yiitap) { display: block; min-height: inherit; color: rgb(var(--gray-dark)); font-family: var(--font-atkinson), system-ui, sans-serif; }
-	:global(.crepe-host .yiitap .editor-content) { box-sizing: border-box; width: min(100%, 850px); margin: 0 auto; padding: 10px 58px 180px; }
-	:global(.crepe-host .yiitap .ProseMirror) { min-height: calc(100vh - 280px); outline: none; }
-	:global(.crepe-host .yiitap .ProseMirror pre) { margin: 0.7em 0 1em; padding: 12px 14px; overflow-x: auto; border-radius: 8px; background: var(--surface-soft); color: rgb(var(--gray-dark)); }
-	:global(.crepe-host .yiitap .ProseMirror pre code) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.55; white-space: pre-wrap; }
 	:global(.crepe-host .milkdown) {
 		--crepe-color-background: var(--surface);
 		--crepe-color-on-background: rgb(var(--gray-dark));
@@ -242,10 +237,6 @@ import { SITE_TITLE } from '../consts';
 	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math.is-error) { text-decoration: underline wavy #b42318; }
 	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math-placeholder) { padding: 0 4px; color: rgb(var(--gray)); font-size: 0.85em; }
 	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math.is-editing) { position: relative; padding: 0 3px; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math-source) { display: inline-block; box-sizing: content-box; width: 1ch; min-width: 1.5em; max-width: 36em; margin: 0; padding: 0; border: 0; background: transparent; color: rgb(var(--gray-dark)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; line-height: 1.4; outline: none; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math-preview) { position: absolute; z-index: 30; top: calc(100% + 4px); left: 0; max-width: min(420px, 70vw); padding: 6px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / 8%); pointer-events: none; user-select: none; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math-preview.is-empty) { color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: nowrap; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math-error) { display: block; margin-top: 4px; color: #b42318; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; white-space: normal; }
 	:global(.crepe-host .milkdown .milkdown-latex-inline-edit) { display: none; }
 	:global(.crepe-host .pm-display-math) { margin: 0.65em 0 0.85em; }
 	:global(.crepe-host .pm-display-math-formula) { padding: 8px 12px; border-radius: 8px; overflow-x: auto; text-align: center; cursor: pointer; }
@@ -369,7 +360,6 @@ import { SITE_TITLE } from '../consts';
 		.studio-shell, .studio-shell.ai-open { grid-template-columns: 220px minmax(0, 1fr); }
 		.ai-panel { position: fixed; z-index: 30; top: 0; right: 0; width: min(350px, 88vw); height: 100vh; box-shadow: -12px 0 38px rgba(0, 0, 0, 0.15); }
 		:global(.crepe-host .milkdown .ProseMirror) { padding-inline: 36px; }
-		:global(.crepe-host .yiitap .editor-content) { padding-inline: 36px; }
 		.document-header { padding-inline: 36px; }
 		.article-properties { grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr); }
 	}
@@ -385,6 +375,5 @@ import { SITE_TITLE } from '../consts';
 		.article-properties { grid-template-columns: 1fr; }
 		#property-error { grid-column: auto; }
 		:global(.crepe-host .milkdown .ProseMirror) { padding: 8px 24px 140px; }
-		:global(.crepe-host .yiitap .editor-content) { padding: 8px 24px 140px; }
 	}
 </style>

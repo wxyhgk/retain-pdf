@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import MarkdownIt from 'markdown-it';
 import { Schema, Slice } from 'prosemirror-model';
 import { EditorState, TextSelection } from 'prosemirror-state';
 import remarkParse from 'remark-parse';

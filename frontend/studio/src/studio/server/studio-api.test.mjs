@@ -19,7 +19,7 @@ async function apiFixture(t) {
 	await writeFile(join(paths.ai, 'private.md'), 'private');
 
 	let middleware;
-	studioDev({ chemistryLanguages: [] }).configureServer({
+	studioDev().configureServer({
 		config: { root: projectRoot },
 		middlewares: { use(handler) { middleware = handler; } },
 	});
