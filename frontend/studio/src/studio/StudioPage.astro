@@ -36,7 +36,7 @@ import { SITE_TITLE } from '../consts';
 					<div class="studio-actions">
 						<span id="save-status" class="save-status">正在连接…</span>
 						<a id="open-article" href="/blog" target="_blank">打开博客</a>
-						<button id="toggle-ai-panel" class="secondary-action" type="button" aria-pressed="false">AI</button>
+						<button id="toggle-side-panel" class="icon-action" type="button" aria-pressed="true" aria-label="收起右侧面板" title="文件与终端">◨</button>
 						<button id="save-button" type="button" disabled>保存</button>
 					</div>
 				</header>
@@ -67,14 +67,36 @@ import { SITE_TITLE } from '../consts';
 				</section>
 			</section>
 
-			<aside id="ai-panel" class="ai-panel" aria-label="AI 助手" hidden>
-				<div class="ai-panel-heading"><strong>AI 助手</strong><button id="close-ai-panel" type="button" aria-label="关闭 AI 面板">×</button></div>
-				<div class="ai-panel-body">
-					<div class="ai-mark">✦</div>
-					<h2>围绕当前文章工作</h2>
-					<p>这里将接入文章的 <code>ai/</code> 工作区，用于总结、续写、检查公式和整理计算结果。</p>
-					<div class="ai-coming-soon">AI 功能将在后续版本接入</div>
+			<aside id="side-panel" class="side-panel" aria-label="文件与终端">
+				<div class="side-panel-resizer" role="separator" aria-orientation="vertical" aria-label="调整面板宽度" tabindex="0" title="拖动调整宽度，双击恢复"></div>
+				<div class="side-tabs" role="tablist" aria-label="右侧面板">
+					<button id="side-tab-files" role="tab" type="button" aria-controls="side-files" aria-selected="true">文件</button>
+					<button id="side-tab-terminal" role="tab" type="button" aria-controls="side-terminal" aria-selected="false">终端</button>
+					<button id="close-side-panel" class="side-close" type="button" aria-label="收起右侧面板">×</button>
 				</div>
+				<section id="side-files" class="side-pane" role="tabpanel" aria-labelledby="side-tab-files">
+					<header class="pane-toolbar">
+						<span id="files-root" class="pane-path">未打开文章</span>
+						<div class="pane-actions">
+							<button type="button" title="上传文件（即将接入）" aria-label="上传文件" disabled>⤒</button>
+							<button type="button" title="新建文件夹（即将接入）" aria-label="新建文件夹" disabled>＋</button>
+						</div>
+					</header>
+					<div id="file-tree" class="file-tree"></div>
+					<p class="pane-note">上传、重命名、删除和拖放即将接入</p>
+				</section>
+				<section id="side-terminal" class="side-pane" role="tabpanel" aria-labelledby="side-tab-terminal" hidden>
+					<header class="pane-toolbar">
+						<div class="cwd-switch" role="radiogroup" aria-label="终端启动目录">
+							<button type="button" role="radio" data-cwd="root" aria-checked="true">仓库根目录</button>
+							<button type="button" role="radio" data-cwd="article" aria-checked="false">当前文章</button>
+						</div>
+					</header>
+					<div class="terminal-screen" aria-label="终端">
+						<p><span class="terminal-prompt">~</span> <span id="terminal-cwd">仓库根目录</span></p>
+						<p class="terminal-hint">终端即将接入。接入后可在这里运行 <code>claude</code> 等命令，改动会同步到编辑器。</p>
+					</div>
+				</section>
 			</aside>
 		</main>
 
@@ -107,11 +129,11 @@ import { SITE_TITLE } from '../consts';
 
 <style>
 	:global(body.studio-body) { height: 100vh; overflow: hidden; font-size: 16px; }
-	.studio-shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); width: 100%; max-width: none; height: 100vh; margin: 0; padding: 0; transition: grid-template-columns 180ms ease; }
-	.studio-shell.ai-open { grid-template-columns: 250px minmax(0, 1fr) minmax(290px, 350px); }
-	.studio-shell.sidebar-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
-	.studio-shell.sidebar-collapsed.ai-open { grid-template-columns: 0 minmax(0, 1fr) minmax(290px, 350px); }
-	.article-sidebar, .workspace-main, .editor-panel, .ai-panel { min-width: 0; overflow: hidden; background: var(--surface); }
+	.studio-shell { --sidebar: 250px; --panel: var(--panel-width, 340px); display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--panel); width: 100%; max-width: none; height: 100vh; margin: 0; padding: 0; transition: grid-template-columns 180ms ease; }
+	.studio-shell.sidebar-collapsed { --sidebar: 0px; }
+	.studio-shell.panel-collapsed { --panel: 0px; }
+	.studio-shell.is-resizing { transition: none; cursor: col-resize; user-select: none; }
+	.article-sidebar, .workspace-main, .editor-panel, .side-panel { min-width: 0; overflow: hidden; background: var(--surface); }
 	.article-sidebar { display: flex; flex-direction: column; border-right: 1px solid rgb(var(--gray-light)); background: var(--surface-soft); transition: opacity 120ms ease; }
 	.studio-shell.sidebar-collapsed .article-sidebar { opacity: 0; pointer-events: none; }
 	.workspace-heading { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 11px; }
@@ -142,8 +164,9 @@ import { SITE_TITLE } from '../consts';
 	.document-breadcrumb strong { max-width: 340px; overflow: hidden; color: rgb(var(--gray-dark)); font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 	.studio-actions a, .studio-actions button { padding: 5px 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 11px; text-decoration: none; cursor: pointer; }
 	.studio-actions button { border-color: var(--accent); background: var(--accent); color: white; }
-	.studio-actions button.secondary-action { border-color: rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray-dark)); }
-	.studio-actions button.secondary-action[aria-pressed='true'] { border-color: color-mix(in srgb, var(--accent) 35%, rgb(var(--gray-light))); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); color: var(--accent); }
+	.studio-actions button.icon-action { width: 28px; height: 28px; padding: 0; border: 0; background: transparent; color: rgb(var(--gray)); font-size: 15px; }
+	.studio-actions button.icon-action:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	.studio-actions button.icon-action[aria-pressed='true'] { color: var(--accent); }
 	.studio-actions button:disabled { opacity: 0.5; cursor: default; }
 	.save-status { max-width: 230px; color: rgb(var(--gray)); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.save-status[data-state='dirty'] { color: #a15c00; }
@@ -323,18 +346,45 @@ import { SITE_TITLE } from '../consts';
 	:global(.block-menu-item.is-current::after) { content: '当前'; margin-left: auto; color: rgb(var(--gray)); font-size: 11px; }
 	:global(.block-menu-item.is-danger) { color: #b42318; }
 	:global(.crepe-host .milkdown-slash-menu), :global(.crepe-host .milkdown-toolbar) { border: 1px solid rgb(var(--gray-light)); }
-	.ai-panel { display: flex; min-height: 0; flex-direction: column; border-left: 1px solid rgb(var(--gray-light)); }
-	.ai-panel[hidden] { display: none; }
-	.ai-panel-heading { display: flex; flex: none; align-items: center; justify-content: space-between; height: 46px; padding: 0 12px 0 15px; border-bottom: 1px solid rgb(var(--gray-light)); }
-	.ai-panel-heading strong { font-size: 12px; }
-	.ai-panel-heading button { width: 27px; height: 27px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 20px; cursor: pointer; }
-	.ai-panel-heading button:hover { background: var(--surface-soft); }
-	.ai-panel-body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; justify-content: center; padding: 30px; }
-	.ai-mark { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 14px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: var(--accent); font-size: 22px; }
-	.ai-panel-body h2 { margin: 18px 0 7px; font-size: 17px; }
-	.ai-panel-body p { margin: 0; color: rgb(var(--gray)); font-size: 12px; line-height: 1.65; }
-	.ai-panel-body code { font-size: 11px; }
-	.ai-coming-soon { width: 100%; box-sizing: border-box; margin-top: 20px; padding: 10px 12px; border: 1px dashed rgb(var(--gray-light)); border-radius: 8px; color: rgb(var(--gray)); font-size: 10px; text-align: center; }
+	.side-panel { position: relative; display: flex; min-height: 0; flex-direction: column; border-left: 1px solid rgb(var(--gray-light)); background: var(--surface-soft); transition: opacity 120ms ease; }
+	.studio-shell.panel-collapsed .side-panel { opacity: 0; pointer-events: none; }
+	.side-panel-resizer { position: absolute; z-index: 5; top: 0; bottom: 0; left: -3px; width: 6px; cursor: col-resize; }
+	.side-panel-resizer:hover, .side-panel-resizer:focus-visible, .studio-shell.is-resizing .side-panel-resizer { background: color-mix(in srgb, var(--accent) 45%, transparent); outline: none; }
+	.side-tabs { display: flex; flex: none; align-items: flex-end; gap: 2px; height: 46px; padding: 0 8px 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
+	.side-tabs [role='tab'] { position: relative; height: 34px; padding: 0 12px; border: 0; border-radius: 6px 6px 0 0; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
+	.side-tabs [role='tab']:hover { color: rgb(var(--gray-dark)); }
+	.side-tabs [role='tab'][aria-selected='true'] { color: rgb(var(--black)); font-weight: 650; }
+	.side-tabs [role='tab'][aria-selected='true']::after { content: ''; position: absolute; right: 10px; bottom: -1px; left: 10px; height: 2px; border-radius: 2px; background: var(--accent); }
+	.side-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+	.side-close { align-self: center; width: 27px; height: 27px; margin-left: auto; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 18px; cursor: pointer; }
+	.side-close:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	.side-pane { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+	.side-pane[hidden] { display: none; }
+	.pane-toolbar { display: flex; flex: none; align-items: center; gap: 8px; min-height: 38px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
+	.pane-path { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+	.pane-actions { display: flex; gap: 2px; }
+	.pane-actions button { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 14px; cursor: pointer; }
+	.pane-actions button:hover:not(:disabled) { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+	.pane-actions button:disabled { opacity: 0.45; cursor: default; }
+	.file-tree { flex: 1; min-height: 0; padding: 6px; overflow-y: auto; }
+	.file-tree :global(.file-tree-list) { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
+	.file-tree :global(.file-row) { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto; align-items: center; gap: 6px; min-height: 28px; padding: 0 8px 0 calc(8px + var(--depth, 0) * 16px); border-radius: 6px; color: rgb(var(--gray-dark)); font-size: 12px; }
+	.file-tree :global(.file-row:hover) { background: rgb(var(--gray-light)); }
+	.file-tree :global(.file-row.is-folder) { font-weight: 600; }
+	.file-tree :global(.file-icon) { color: rgb(var(--gray)); font-size: 11px; text-align: center; }
+	.file-tree :global(.file-name) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.file-tree :global(.file-meta) { color: rgb(var(--gray)); font-size: 10px; font-weight: 400; }
+	.file-tree :global(.file-tree-empty) { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
+	.pane-note { flex: none; margin: 0; padding: 10px 12px; border-top: 1px dashed rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 10px; text-align: center; }
+	.cwd-switch { display: flex; padding: 2px; border-radius: 7px; background: rgb(var(--gray-light)); }
+	.cwd-switch button { height: 24px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; cursor: pointer; }
+	.cwd-switch button[aria-checked='true'] { background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+	.cwd-switch button:disabled { opacity: 0.45; cursor: default; }
+	.terminal-screen { flex: 1; min-height: 0; padding: 12px 14px; overflow: auto; background: #16181d; color: #d7dae0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.6; }
+	.terminal-screen p { margin: 0 0 8px; }
+	.terminal-prompt { color: #7ee2a8; }
+	.terminal-hint { color: #8b919c; }
+	.terminal-hint code { padding: 0; background: transparent; color: #d7dae0; font-size: inherit; }
 	.article-dialog { box-sizing: border-box; width: min(92vw, 480px); padding: 0; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 18px 65px rgba(0, 0, 0, 0.2); }
 	.article-dialog::backdrop { background: rgba(28, 31, 35, 0.32); backdrop-filter: blur(2px); }
 	.article-dialog form { display: grid; gap: 17px; padding: 22px; }
@@ -357,16 +407,16 @@ import { SITE_TITLE } from '../consts';
 	.dialog-actions button[type='submit'] { border-color: var(--accent); background: var(--accent); color: white; }
 	.dialog-actions button:disabled { opacity: 0.55; cursor: wait; }
 	@media (max-width: 1100px) {
-		.studio-shell, .studio-shell.ai-open { grid-template-columns: 220px minmax(0, 1fr); }
-		.ai-panel { position: fixed; z-index: 30; top: 0; right: 0; width: min(350px, 88vw); height: 100vh; box-shadow: -12px 0 38px rgba(0, 0, 0, 0.15); }
+		.studio-shell { --sidebar: 220px; grid-template-columns: var(--sidebar) minmax(0, 1fr); }
+		.side-panel { position: fixed; z-index: 30; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; box-shadow: -12px 0 38px rgba(0, 0, 0, 0.15); }
+		.side-panel-resizer { display: none; }
 		:global(.crepe-host .milkdown .ProseMirror) { padding-inline: 36px; }
 		.document-header { padding-inline: 36px; }
 		.article-properties { grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr); }
 	}
 	@media (max-width: 720px) {
-		.studio-shell { grid-template-columns: 1fr; }
+		.studio-shell { grid-template-columns: minmax(0, 1fr); }
 		.article-sidebar { position: fixed; z-index: 40; top: 0; bottom: 0; left: 0; width: min(280px, 86vw); box-shadow: 12px 0 38px rgba(0, 0, 0, 0.18); }
-		.studio-shell.sidebar-collapsed { grid-template-columns: 1fr; }
 		.studio-shell.sidebar-collapsed .article-sidebar { transform: translateX(-100%); }
 		.breadcrumb-workspace, .breadcrumb-separator, .save-status, #roundtrip-status { display: none; }
 		.document-breadcrumb strong { max-width: 150px; }

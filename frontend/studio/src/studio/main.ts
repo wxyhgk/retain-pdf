@@ -18,6 +18,7 @@ import { createSciencePreview, observeSciencePreviews } from '../science/browser
 import { setScienceResourceBaseUrl } from '../science/browser/resource-context';
 import { ArticleStore } from './state/article-store';
 import type { ArticleProperties, ArticleSummary } from './types';
+import { createSidePanel } from './workspace/side-panel';
 
 const studioShell = document.querySelector<HTMLElement>('.studio-shell')!;
 const articleList = document.querySelector<HTMLElement>('#article-list')!;
@@ -44,9 +45,6 @@ const newArticleButtons = [
 	document.querySelector<HTMLButtonElement>('#new-article-secondary')!,
 ];
 const toggleSidebarButton = document.querySelector<HTMLButtonElement>('#toggle-sidebar')!;
-const toggleAiPanelButton = document.querySelector<HTMLButtonElement>('#toggle-ai-panel')!;
-const closeAiPanelButton = document.querySelector<HTMLButtonElement>('#close-ai-panel')!;
-const aiPanel = document.querySelector<HTMLElement>('#ai-panel')!;
 const newArticleDialog = document.querySelector<HTMLDialogElement>('#new-article-dialog')!;
 const newArticleForm = document.querySelector<HTMLFormElement>('#new-article-form')!;
 const newArticleTitle = document.querySelector<HTMLInputElement>('#new-article-title')!;
@@ -59,6 +57,7 @@ const cancelNewArticleButtons = [
 ];
 
 const store = new ArticleStore();
+const sidePanel = createSidePanel(studioShell);
 let crepe: Crepe | null = null;
 let loading = false;
 let loadSequence = 0;
@@ -312,6 +311,7 @@ async function loadArticle(slug: string, discardDirty = false): Promise<void> {
 	if (sequence !== loadSequence) return;
 	const summary = articleSummaries.find((entry) => entry.slug === article.slug);
 	editorPath.textContent = `blog/${article.slug}/index.md`;
+	sidePanel.showArticle(article.slug, article.files);
 	breadcrumbTitle.textContent = summary?.title ?? article.slug;
 	openArticle.href = `/blog/${article.slug}/`;
 	saveButton.disabled = false;
@@ -387,12 +387,6 @@ function closeNewArticleDialog(): void {
 	if (!createArticleButton.disabled) newArticleDialog.close();
 }
 
-function setAiPanel(open: boolean): void {
-	aiPanel.hidden = !open;
-	studioShell.classList.toggle('ai-open', open);
-	toggleAiPanelButton.setAttribute('aria-pressed', String(open));
-}
-
 for (const button of newArticleButtons) button.addEventListener('click', openNewArticleDialog);
 articleSearch.addEventListener('input', renderArticleTree);
 saveButton.addEventListener('click', () => { void saveCurrentArticle(); });
@@ -449,8 +443,6 @@ if (window.matchMedia('(max-width: 720px)').matches) {
 	toggleSidebarButton.setAttribute('aria-pressed', 'true');
 	toggleSidebarButton.setAttribute('aria-label', '展开侧边栏');
 }
-toggleAiPanelButton.addEventListener('click', () => setAiPanel(aiPanel.hasAttribute('hidden')));
-closeAiPanelButton.addEventListener('click', () => setAiPanel(false));
 newArticleTitle.addEventListener('input', () => {
 	if (!slugWasEdited) newArticleSlug.value = suggestedSlug(newArticleTitle.value);
 });
