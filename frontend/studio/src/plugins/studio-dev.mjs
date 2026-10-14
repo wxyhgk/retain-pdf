@@ -1,6 +1,7 @@
 import { resolve } from 'node:path';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { StudioPathError } from '../studio/server/bundle-paths.mjs';
+import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 
 function json(response, status, data) {
@@ -19,6 +20,24 @@ async function readJson(request) {
 		chunks.push(chunk);
 	}
 	return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+}
+
+/**
+ * A page elsewhere can post a form to localhost, but cannot set these types
+ * without the browser asking first, so changes must declare them.
+ */
+function assertContentType(request, expected) {
+	const type = String(request.headers['content-type'] ?? '').split(';', 1)[0].trim().toLowerCase();
+	if (type !== expected) {
+		const error = new Error(`请求类型必须是 ${expected}`);
+		error.statusCode = 415;
+		throw error;
+	}
+}
+
+async function readJsonChange(request) {
+	assertContentType(request, 'application/json');
+	return readJson(request);
 }
 
 function decodePathComponent(component) {
@@ -45,9 +64,14 @@ export default function studioDev() {
 		apply: 'serve',
 		configureServer(server) {
 			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
-			const blogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : resolve(server.config.root, 'blog');
+			const testBlogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
+			const blogRoot = testBlogRoot ?? resolve(server.config.root, 'blog');
 			const articles = new ArticleRepository(blogRoot);
 			const files = new FileRepository(blogRoot);
+			// Removed files wait here, outside blog/ and ignored by git, until someone empties it.
+			const manager = new ArticleFileManager(blogRoot, {
+				trashRoot: testBlogRoot ? resolve(testBlogRoot, '.studio-trash') : resolve(server.config.root, '.studio-trash'),
+			});
 
 			server.middlewares.use(async (request, response, next) => {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];
@@ -91,6 +115,34 @@ export default function studioDev() {
 						const root = decodePathComponent(fileMatch[2]);
 						const resourcePath = decodePathComponent(fileMatch[3]);
 						return file(response, await files.read(slug, root, resourcePath));
+					}
+
+					const managerMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(tree|files|folders|move|trash)$/u);
+					if (managerMatch) {
+						const slug = decodePathComponent(managerMatch[1]);
+						const action = `${request.method} ${managerMatch[2]}`;
+						if (action === 'GET tree') return json(response, 200, { entries: await manager.list(slug) });
+						if (action === 'POST files') {
+							assertContentType(request, 'application/octet-stream');
+							const declared = Number(request.headers['content-length']);
+							if (declared > manager.uploadSizeLimit) return json(response, 413, { error: `文件超过 ${manager.uploadSizeLimit / 1024 / 1024} MB 上传上限` });
+							const uploaded = await manager.upload(slug, url.searchParams.get('folder') ?? '', url.searchParams.get('name') ?? '', request, {
+								replace: url.searchParams.get('replace') === '1',
+							});
+							return json(response, 201, uploaded);
+						}
+						if (action === 'POST folders') {
+							const { path } = await readJsonChange(request);
+							return json(response, 201, await manager.createFolder(slug, path));
+						}
+						if (action === 'POST move') {
+							const { from, to } = await readJsonChange(request);
+							return json(response, 200, await manager.move(slug, from, to));
+						}
+						if (action === 'POST trash') {
+							const { path } = await readJsonChange(request);
+							return json(response, 200, await manager.trash(slug, path));
+						}
 					}
 
 					const match = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)$/u);

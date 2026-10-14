@@ -28,3 +28,6 @@ pnpm-debug.log*
 # browser test output
 test-results/
 playwright-report/
+
+# files removed in the Studio, kept until emptied by hand
+.studio-trash/
