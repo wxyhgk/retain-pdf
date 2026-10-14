@@ -1,4 +1,4 @@
-import { cpSync, readFileSync, rmSync } from 'node:fs';
+import { appendFileSync, cpSync, readFileSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, type Locator, type Page } from '@playwright/test';
@@ -16,6 +16,11 @@ export function resetFixture(): void {
 	const target = join(articles(), slug);
 	rmSync(target, { recursive: true, force: true });
 	cpSync(fixture, target, { recursive: true });
+}
+
+/** Add Markdown to the end of the fixture copy before the Studio opens it. */
+export function appendToFixture(markdown: string): void {
+	appendFileSync(join(articles(), slug, 'index.md'), markdown);
 }
 
 /** The article's Markdown as the Studio saved it. */

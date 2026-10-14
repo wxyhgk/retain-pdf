@@ -231,3 +231,27 @@ test('convert turns a plain paragraph into a science block and keeps its text', 
 	const fence = edit.doc.child(0);
 	assert.equal(transformScienceBlock(edit.doc, 0, { type: 'edit' }).cursor, fence.nodeSize - 1);
 });
+
+test('a bad @file path keeps the block a science block and never throws', () => {
+	const descriptor = parseScienceFence('cube', '@file ../outside.cube');
+	assert.ok(descriptor);
+	assert.equal(descriptor.block, null);
+	assert.match(descriptor.problem ?? '', /assets/);
+	assert.equal(parseScienceFence('python', '@file ../x'), null);
+
+	const tree = unified().use(remarkParse).use(scienceRetag()).runSync(unified().use(remarkParse).parse('```cube\n@file ../x\n```\n')) as unknown as { children: { type: string }[] };
+	assert.equal(tree.children[0]?.type, SCIENCE_FENCE_TYPE);
+
+	const schema = new Schema({
+		nodes: {
+			doc: { content: 'block+' },
+			text: { group: 'inline' },
+			code_block: { content: 'text*', group: 'block', attrs: { params: { default: '' } } },
+		} as never,
+		marks: {},
+	});
+	const code = schema.nodes.code_block.create({ params: 'cube' }, schema.text('@file ../x'));
+	const conversions = planScienceBlockConversion(schema.nodes.doc.create(null, code));
+	assert.equal(conversions.length, 1);
+});
+

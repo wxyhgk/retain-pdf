@@ -3,7 +3,7 @@ import type { Plugin as UnifiedPlugin, Transformer } from 'unified';
 import { visitParents } from 'unist-util-visit-parents';
 
 import type { MoleculeBlock } from '../../science/model.ts';
-import { parseMoleculeBlock } from '../../science/parsers/molecule-block.ts';
+import { isMoleculeLanguage, parseMoleculeBlock } from '../../science/parsers/molecule-block.ts';
 
 /**
  * Science fenced-code blocks as first-class editor citizens.
@@ -20,18 +20,25 @@ export type ScienceBlockDescriptor = {
 	info: string;
 	/** Verbatim fence body. */
 	source: string;
-	/** Molecule classification; null only when recognition fails. */
+	/** Molecule classification; null when the source cannot be read (see `problem`). */
 	block: MoleculeBlock | null;
+	/** Why the source cannot be read, e.g. an `@file` outside the article's assets. */
+	problem?: string;
 };
 
 /**
  * Describe a fence. Returns null when the language is not scientific,
- * so callers keep a single source of truth for recognition.
+ * so callers keep a single source of truth for recognition. Never throws:
+ * a source that cannot be read (a bad `@file` path) is still a science
+ * block, with `block: null` and the reason in `problem`.
  */
 export function parseScienceFence(infoInput: string, source: string): ScienceBlockDescriptor | null {
-	const block = parseMoleculeBlock(infoInput, source);
-	if (!block) return null;
-	return { info: infoInput, source, block };
+	if (!isMoleculeLanguage(infoInput)) return null;
+	try {
+		return { info: infoInput, source, block: parseMoleculeBlock(infoInput, source) };
+	} catch (error) {
+		return { info: infoInput, source, block: null, problem: error instanceof Error ? error.message : String(error) };
+	}
 }
 
 /** Emit the canonical fence for a descriptor. */
@@ -55,7 +62,7 @@ export function scienceRetag(): UnifiedPlugin {
 	const transform: Transformer = (tree) => {
 		visitParents(tree as Parameters<typeof visitParents>[0], 'code', (node) => {
 			const code = node as unknown as MdastCodeNode;
-			if (typeof code.lang === 'string' && parseMoleculeBlock(code.lang, code.value ?? '')) {
+			if (typeof code.lang === 'string' && isMoleculeLanguage(code.lang)) {
 				code.type = SCIENCE_FENCE_TYPE;
 			}
 		});

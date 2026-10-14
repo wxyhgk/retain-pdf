@@ -1,10 +1,15 @@
 import { expect, test } from '@playwright/test';
 
-import { openStudio, popup, popupInput, resetFixture, saveStatus, scienceBlock, structureSheet } from './studio.ts';
+import { appendToFixture, openStudio, popup, popupInput, resetFixture, saveStatus, scienceBlock, structureSheet } from './studio.ts';
 
 test.beforeEach(async ({ page }) => {
 	resetFixture();
+	if (test.info().title.includes('@file')) appendToFixture('\n```cube\n@file ../outside.cube\n```\n');
 	await openStudio(page);
+});
+
+test('an article with a bad @file path still opens; that block says why', async ({ page }) => {
+	await expect(scienceBlock(page, 'Cube').locator('.science-block-fallback')).toContainText('无法预览：@file 只能引用');
 });
 
 test('a click selects a chemistry block without opening anything', async ({ page }) => {

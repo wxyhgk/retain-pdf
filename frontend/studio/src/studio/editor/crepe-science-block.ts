@@ -112,7 +112,7 @@ function paintMolecule(host: HTMLElement, info: string, source: string): void {
 	}
 	const fallback = document.createElement('p');
 	fallback.className = 'science-block-fallback';
-	fallback.textContent = '无法预览这段结构';
+	fallback.textContent = descriptor?.problem ? `无法预览：${descriptor.problem}` : '无法预览这段结构';
 	host.append(fallback);
 }
 
