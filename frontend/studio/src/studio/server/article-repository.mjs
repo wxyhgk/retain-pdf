@@ -99,6 +99,28 @@ export class ArticleRepository {
 		};
 	}
 
+	/** The article's text files as they are now, with the revision they make together. */
+	async snapshot(slug) {
+		const paths = articleBundlePaths(this.blogRoot, slug);
+		await assertReadableBundle(paths);
+		const [source, configSource, viewsSource] = await Promise.all([
+			readFile(paths.markdown, 'utf8'),
+			readFile(paths.config, 'utf8'),
+			readViewsSource(paths.views),
+		]);
+		return { paths, source, configSource, viewsSource, revision: bundleRevision(source, configSource, viewsSource) };
+	}
+
+	/**
+	 * Writes a new `index.md` and `article.views.json` computed from `snapshot`.
+	 * Only files that differ are written.
+	 */
+	async writeSnapshot(snapshot, { source, viewsSource }) {
+		if (source !== snapshot.source) await atomicWriteText(snapshot.paths.markdown, source);
+		if (viewsSource !== snapshot.viewsSource) await atomicWriteText(snapshot.paths.views, viewsSource);
+		return bundleRevision(source, snapshot.configSource, viewsSource);
+	}
+
 	async save(slug, { content, source, expectedHash, expectedRevision }) {
 		const nextSource = source ?? content;
 		if (typeof nextSource !== 'string') throw new ArticleValidationError('文章内容必须是文本');

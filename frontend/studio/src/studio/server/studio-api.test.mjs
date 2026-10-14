@@ -104,10 +104,10 @@ test('file API lists, uploads, makes folders, moves and trashes', async (t) => {
 	assert.equal(await readFile(join(middleware.paths.img, 'My-Plot.png'), 'utf8'), 'png');
 
 	assert.deepEqual(await call(middleware, { url: `${base}/folders`, ...asJson({ path: 'img/plots' }) }), { status: 201, data: { path: 'img/plots' } });
-	assert.deepEqual(
-		await call(middleware, { url: `${base}/move`, ...asJson({ from: 'img/My-Plot.png', to: 'img/plots/plot.png' }) }),
-		{ status: 200, data: { path: 'img/plots/plot.png' } },
-	);
+	const move = await call(middleware, { url: `${base}/move`, ...asJson({ from: 'img/My-Plot.png', to: 'img/plots/plot.png' }) });
+	assert.equal(move.status, 200);
+	assert.equal(move.data.path, 'img/plots/plot.png');
+	assert.equal(move.data.references, 0);
 	const trashed = await call(middleware, { url: `${base}/trash`, ...asJson({ path: 'img/plots/plot.png' }) });
 	assert.equal(trashed.status, 200);
 	assert.deepEqual(await readdir(join(middleware.paths.img, 'plots')), []);
@@ -146,4 +146,23 @@ test('file API changes need the types a cross-site form cannot send', async (t) 
 		headers: { 'content-type': 'application/octet-stream', 'content-length': String(65 * 1024 * 1024) },
 	});
 	assert.equal(tooLarge.status, 413);
+});
+
+test('file API moves a referenced file only for the article as saved', async (t) => {
+	const middleware = await apiFixture(t);
+	const base = '/api/studio/articles/api-note';
+	const markdown = join(middleware.paths.directory, 'index.md');
+	await writeFile(markdown, `${await readFile(markdown, 'utf8')}\n\`\`\`xyz\n@file ./assets/nested/water.xyz\n\`\`\`\n`);
+
+	const stale = await call(middleware, { url: `${base}/move`, ...asJson({ from: 'assets/nested/water.xyz', to: 'assets/water.xyz', expectedRevision: 'old' }) });
+	assert.equal(stale.status, 409);
+
+	const article = await call(middleware, { url: '/api/studio/articles/api-note', method: 'GET' });
+	const moved = await call(middleware, {
+		url: `${base}/move`,
+		...asJson({ from: 'assets/nested/water.xyz', to: 'assets/water.xyz', expectedRevision: article.data.revision }),
+	});
+	assert.equal(moved.status, 200);
+	assert.equal(moved.data.references, 1);
+	assert.match(await readFile(markdown, 'utf8'), /@file \.\/assets\/water\.xyz\n/u);
 });

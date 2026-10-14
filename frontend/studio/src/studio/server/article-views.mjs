@@ -1,4 +1,5 @@
 import { isCubeDisplaySettings, normalizeCubeDisplaySettings } from '../../science/cube-display.mjs';
+import { moleculeViewKey } from '../../science/view-key.mjs';
 
 export const DEFAULT_ARTICLE_VIEWS = '{\n  "version": 1,\n  "molecules": {}\n}\n';
 
@@ -59,6 +60,28 @@ export function writeMoleculeView(source, key, format, view, display) {
 		}
 	}
 	return `${JSON.stringify(document, null, 2)}\n`;
+}
+
+/**
+ * Saved views of `@file` blocks are keyed by the path as written, so when a
+ * file moves, each `[from, to]` pair (`./assets/a.cube` → `./assets/b.cube`)
+ * carries its views over to the new key. The source comes back unchanged
+ * when nothing was saved for those paths.
+ * @param {string} source
+ * @param {Array<[string, string]>} moves
+ */
+export function moveMoleculeViews(source, moves) {
+	const document = parseViewsFile(source);
+	let moved = 0;
+	for (const [key, entry] of Object.entries(document.molecules)) {
+		if (typeof entry?.format !== 'string') continue;
+		const move = moves.find(([from]) => moleculeViewKey(entry.format, from) === key);
+		if (!move) continue;
+		delete document.molecules[key];
+		document.molecules[moleculeViewKey(entry.format, move[1])] = entry;
+		moved += 1;
+	}
+	return { source: moved ? `${JSON.stringify(document, null, 2)}\n` : source, moved };
 }
 
 export class ArticleViewsError extends Error {

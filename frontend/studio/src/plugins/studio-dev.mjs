@@ -1,4 +1,5 @@
 import { resolve } from 'node:path';
+import { ArticleFiles } from '../studio/server/article-files.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { StudioPathError } from '../studio/server/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
@@ -72,6 +73,7 @@ export default function studioDev() {
 			const manager = new ArticleFileManager(blogRoot, {
 				trashRoot: testBlogRoot ? resolve(testBlogRoot, '.studio-trash') : resolve(server.config.root, '.studio-trash'),
 			});
+			const articleFiles = new ArticleFiles(articles, manager);
 
 			server.middlewares.use(async (request, response, next) => {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];
@@ -136,8 +138,8 @@ export default function studioDev() {
 							return json(response, 201, await manager.createFolder(slug, path));
 						}
 						if (action === 'POST move') {
-							const { from, to } = await readJsonChange(request);
-							return json(response, 200, await manager.move(slug, from, to));
+							const { from, to, expectedRevision } = await readJsonChange(request);
+							return json(response, 200, await articleFiles.move(slug, from, to, { expectedRevision }));
 						}
 						if (action === 'POST trash') {
 							const { path } = await readJsonChange(request);
