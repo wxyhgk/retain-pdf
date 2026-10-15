@@ -15,7 +15,8 @@
     "test:server": "node --test src/studio/server/*.test.mjs",
     "test:terminal": "cargo test --release --manifest-path tools/studio-terminal/Cargo.toml",
     "terminal:build": "cargo build --release --manifest-path tools/studio-terminal/Cargo.toml",
-    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts"
+    "test:e2e": "playwright test -c tests/e2e/playwright.config.ts",
+    "milkdown:setup": "git submodule update --init third_party/milkdown && pnpm --dir third_party/milkdown install --frozen-lockfile"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.2.2",

@@ -53,6 +53,9 @@ All commands are run from the root of the project, from a terminal:
 | `npm run preview`         | Preview your build locally, before deploying     |
 | `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
+| `npm run milkdown:setup`  | 拉取 Milkdown 源码（Studio 的编辑器）并安装依赖  |
+
+Studio 的编辑器在 dev 时直接用 `third_party/milkdown`（git submodule，来自 fork `wxyhgk/milkdown` 的 `studio` 分支，基于 v7.22.0；`upstream` 指向官方仓库）的源码，改了保存即生效，不用构建。没拉取时用 npm 上的 Milkdown；发布的博客不含编辑器，CI 不需要它。
 
 ## 👀 Want to learn more?
 

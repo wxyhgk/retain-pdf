@@ -1,0 +1,4 @@
+[submodule "third_party/milkdown"]
+	path = third_party/milkdown
+	url = https://github.com/wxyhgk/milkdown.git
+	branch = studio
