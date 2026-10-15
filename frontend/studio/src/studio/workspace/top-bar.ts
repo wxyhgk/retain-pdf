@@ -8,6 +8,7 @@ export function saveStateText(state: SaveState): { text: string; tone: 'saved' |
 		case 'dirty': return { text: '未保存', tone: 'dirty' };
 		case 'saving': return { text: '正在保存…', tone: 'saving' };
 		case 'saved': return { text: '已保存', tone: 'saved' };
+		case 'reviewing': return { text: '磁盘上的改动待审阅', tone: 'dirty' };
 		case 'conflict': return { text: '文章在磁盘上被修改，暂停自动保存', tone: 'error' };
 		case 'failed': return { text: `${state.message}，稍后自动重试`, tone: 'error' };
 	}

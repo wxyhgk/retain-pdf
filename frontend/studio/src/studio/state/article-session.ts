@@ -12,6 +12,7 @@ export type SaveState =
 	| { kind: 'dirty' }
 	| { kind: 'saving' }
 	| { kind: 'saved' }
+	| { kind: 'reviewing' }
 	| { kind: 'conflict' }
 	| { kind: 'failed'; message: string };
 
@@ -43,6 +44,12 @@ export type SessionHost = {
 	 * the author was reading.
 	 */
 	mount(article: ArticlePayload, body: string, again: boolean): Promise<string>;
+	/**
+	 * The body changed on disk to `body`: shows the differences from the body
+	 * in the editor, each to accept or reject, and resolves with the Markdown
+	 * the editor holds once every one is decided.
+	 */
+	review(article: ArticlePayload, body: string): Promise<string>;
 	/** A yes/no question the author answers before anything is lost. */
 	confirm(message: string): boolean;
 	toast(message: string): void;
@@ -260,9 +267,11 @@ export class ArticleSession {
 	}
 
 	/**
-	 * The article may have changed on disk. Without unsaved edits, the editor
-	 * simply shows the new version. With them, the author chooses: take the
-	 * version on disk, or keep their edits, which saving then writes over it.
+	 * The article may have changed on disk. Without unsaved edits, the new
+	 * version is the saved one, and the author reviews what changed in the
+	 * body: whatever they reject is saved back over it. With unsaved edits,
+	 * the author chooses: take the version on disk, or keep their edits,
+	 * which saving then writes over it.
 	 */
 	async #compareWithDisk(slug: string): Promise<void> {
 		// The Studio's own writes are not someone else's changes.
@@ -273,8 +282,7 @@ export class ArticleSession {
 		const current = this.#store.current;
 		if (sequence !== this.#sequence || this.slug !== slug || article.revision === current.revision) return;
 		if (!current.dirty) {
-			await this.#present(article, ++this.#sequence, true);
-			this.#host.toast('文章在磁盘上被修改，已重新载入');
+			await this.#review(article, current.source, ++this.#sequence);
 			return;
 		}
 		const title = this.#properties?.title || slug;
@@ -290,6 +298,27 @@ export class ArticleSession {
 		} else {
 			this.#store.updateRevision(article.revision, article.chemistryViews);
 		}
+	}
+
+	/** The version on disk becomes the saved one; the editor shows how its body differs. */
+	async #review(article: ArticlePayload, shown: string, sequence: number): Promise<void> {
+		this.#store.load(article);
+		this.#properties = article.properties;
+		this.#propertiesValid = true;
+		this.#autosave.cancel();
+		this.#host.opened({ article, properties: article.properties });
+		const body = parseStudioDocument(article.source).body.raw;
+		if (body === parseStudioDocument(shown).body.raw) {
+			this.#host.toast('文章属性在磁盘上被修改，已更新');
+			this.#setState({ kind: 'loaded' });
+			return;
+		}
+		this.#setState({ kind: 'reviewing' });
+		const markdown = await this.#host.review(article, body);
+		if (sequence !== this.#sequence) return;
+		this.#setState({ kind: 'saved' });
+		// What was rejected is an edit, saved over the version on disk.
+		this.editBody(markdown);
 	}
 
 	#setState(state: SaveState): void {

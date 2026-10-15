@@ -1,6 +1,17 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { editorViewCtx } from '@milkdown/kit/core';
-import { TextSelection } from '@milkdown/prose/state';
+import { diffComponent, diffComponentConfig } from '@milkdown/kit/component/diff';
+import {
+	acceptAllDiffsCmd,
+	clearDiffReviewCmd,
+	diff,
+	diffConfig,
+	diffPluginKey,
+	getPendingChanges,
+	startDiffReviewCmd,
+} from '@milkdown/kit/plugin/diff';
+import { Plugin, TextSelection } from '@milkdown/prose/state';
+import { $prose, callCommand } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
@@ -15,6 +26,7 @@ import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from
 import { imageMarkdownRemark } from './image-markdown';
 import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
+import { SCIENCE_FENCE_TYPE } from './science-block';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {
@@ -24,6 +36,8 @@ export type StudioEditorHost = {
 	fileUrl(src: string): string;
 	/** The author edited: the whole body as Markdown. */
 	changed(markdown: string): void;
+	/** How many changes are left to review, or null when none is under review. */
+	reviewing(pending: number | null): void;
 };
 
 export type StudioEditor = {
@@ -31,17 +45,58 @@ export type StudioEditor = {
 	mount(body: string): Promise<string>;
 	/** The caret at the start of the body. */
 	focusStart(): void;
+	/**
+	 * Shows how `body` differs from the body shown, each change to accept or
+	 * reject; resolves with the Markdown shown once every one is decided.
+	 */
+	review(body: string): Promise<string>;
+	acceptAll(): void;
+	rejectAll(): void;
 };
 
 /** The Studio's editor: Crepe with the science blocks, formulas, file drops and block feel. */
 export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): StudioEditor {
 	let crepe: Crepe | null = null;
 	let mounting = false;
+	/** The review under way: what to call once every change is decided. */
+	let review: ((markdown: string) => void) | null = null;
 	observeSciencePreviews(root);
+
+	/** Ends the review, with the Markdown the editor now holds. */
+	function endReview(): void {
+		const finish = review;
+		if (!finish) return;
+		review = null;
+		host.reviewing(null);
+		finish(crepe?.getMarkdown() ?? '');
+	}
+
+	/** Follows the review: what is left of it, and its end. */
+	const reviewWatch = $prose(
+		() =>
+			new Plugin({
+				view: () => ({
+					update: (view) => {
+						if (!review) return;
+						const state = diffPluginKey.getState(view.state);
+						const pending = state?.active ? getPendingChanges(state).length : 0;
+						// Changes inside a block drawn by its own view show as one: count what is shown.
+						if (pending) host.reviewing(view.dom.querySelectorAll('.milkdown-diff-controls').length || pending);
+						// Ended by accepting or rejecting the last change, or nothing to review.
+						else queueMicrotask(() => {
+							if (diffPluginKey.getState(view.state)?.active) view.dispatch(view.state.tr.setMeta(diffPluginKey, { type: 'clear' }));
+							endReview();
+						});
+					},
+				}),
+			}),
+	);
 
 	async function mount(body: string): Promise<string> {
 		mounting = true;
 		try {
+			// Another article, or this one anew: a review still open is over.
+			endReview();
 			if (crepe) await crepe.destroy();
 			root.replaceChildren();
 			const fileDrop = articleFileDrop(host.files);
@@ -133,9 +188,23 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(mathBracketsRemark);
 			crepe.editor.use(imageMarkdownRemark);
 			crepe.editor.use(fileDrop.plugin);
+			crepe.editor
+				.config((ctx) => {
+					ctx.update(diffConfig.key, (prev) => ({ ...prev, ignoreAttrs: { heading: ['id'] } }));
+					ctx.update(diffComponentConfig.key, (prev) => ({
+						...prev,
+						acceptLabel: '接受',
+						rejectLabel: '拒绝',
+						// Blocks drawn by their own views: a change inside one replaces it whole.
+						customBlockTypes: ['table', 'image-block', 'code_block', SCIENCE_FENCE_TYPE],
+					}));
+				})
+				.use(diff)
+				.use(diffComponent)
+				.use(reviewWatch);
 			crepe.on((listener) => {
-				// Opening the body is not an edit.
-				listener.markdownUpdated((_ctx, markdown) => { if (!mounting) host.changed(markdown); });
+				// Opening the body is not an edit, nor is deciding a change under review.
+				listener.markdownUpdated((_ctx, markdown) => { if (!mounting && !review) host.changed(markdown); });
 			});
 			await crepe.create();
 			return crepe.getMarkdown();
@@ -152,5 +221,23 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		});
 	}
 
-	return { mount, focusStart };
+	function startReview(body: string): Promise<string> {
+		if (!crepe) return Promise.resolve(body);
+		const editor = crepe;
+		return new Promise((resolve) => {
+			// A newer version on disk takes over a review still open.
+			const overtaken = review;
+			review = resolve;
+			overtaken?.(editor.getMarkdown());
+			editor.editor.action(callCommand(startDiffReviewCmd.key, body));
+		});
+	}
+
+	return {
+		mount,
+		focusStart,
+		review: startReview,
+		acceptAll: () => crepe?.editor.action(callCommand(acceptAllDiffsCmd.key)),
+		rejectAll: () => crepe?.editor.action(callCommand(clearDiffReviewCmd.key)),
+	};
 }

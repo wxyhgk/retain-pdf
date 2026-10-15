@@ -15,12 +15,14 @@ import { createStudioEditor } from './editor/studio-editor';
 import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
 import { setScienceResourceBaseUrl } from '../science/browser/resource-context';
 import { ArticleSession } from './state/article-session';
+import type { ArticlePayload } from './types';
 import { createArticleList } from './workspace/article-list';
 import { watchDisk } from './workspace/disk-events';
 import { createFilePanel } from './workspace/file-panel';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createPropertiesPanel } from './workspace/properties-panel';
+import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
 import { createTerminalPane } from './workspace/terminal';
 import { showToast } from './workspace/toast';
@@ -65,7 +67,9 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	},
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
 	changed: (markdown) => session.editBody(markdown),
+	reviewing: (pending) => reviewBar.show(pending),
 });
+const reviewBar = createReviewBar(shell, { acceptAll: () => editor.acceptAll(), rejectAll: () => editor.rejectAll() });
 bindTitleFocus(() => properties.focusTitle());
 
 // Browser tests wait longer before saving, to have unsaved edits to work with.
@@ -79,15 +83,15 @@ const session = new ArticleSession(
 	},
 	{
 		async mount(article, body, again) {
-			setScienceResourceBaseUrl(articleFilesUrl(article.slug));
-			setMoleculeViewContext({
-				views: article.chemistryViews,
-				save: (key, format, view, display) => session.saveView(key, format, view, display),
-			});
+			useArticleContext(article);
 			const scrollTop = editorScroll.scrollTop;
 			const markdown = await editor.mount(body);
 			if (again) editorScroll.scrollTop = scrollTop;
 			return markdown;
+		},
+		review(article, body) {
+			useArticleContext(article);
+			return editor.review(body);
 		},
 		confirm: (message) => window.confirm(message),
 		toast: (message) => showToast(message),
@@ -109,6 +113,15 @@ const session = new ArticleSession(
 	testDelay ? { delay: testDelay, maxWait: testDelay } : {},
 );
 session.subscribe(() => filePanel.sourceChanged());
+
+/** Where the article's chemistry finds its files and its saved molecule views. */
+function useArticleContext(article: ArticlePayload): void {
+	setScienceResourceBaseUrl(articleFilesUrl(article.slug));
+	setMoleculeViewContext({
+		views: article.chemistryViews,
+		save: (key, format, view, display) => session.saveView(key, format, view, display),
+	});
+}
 
 /** Reads the article list and opens one: `slug`, the one in the address, or the first. */
 async function openFromList(slug?: string, discard = false): Promise<void> {

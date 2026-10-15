@@ -59,11 +59,12 @@ function fakeApi(source = SOURCE) {
 }
 
 /** The page: an editor that echoes the body, and a record of what was shown. */
-function fakeHost(answers: boolean[] = []) {
+function fakeHost(answers: boolean[] = [], decide: (body: string, shown: string) => string = (body) => body) {
 	const states: string[] = [];
 	const asked: string[] = [];
 	const toasts: string[] = [];
 	const mounted: string[] = [];
+	const reviews: string[] = [];
 	const saved: ArticleProperties[] = [];
 	let roundtrip: boolean | null = null;
 	let title = '';
@@ -71,6 +72,12 @@ function fakeHost(answers: boolean[] = []) {
 		mount: async (_article, body) => {
 			mounted.push(body);
 			return body;
+		},
+		review: async (_article, body) => {
+			reviews.push(body);
+			const shown = decide(body, mounted.at(-1)!);
+			mounted.push(shown);
+			return shown;
 		},
 		confirm: (message) => {
 			asked.push(message);
@@ -83,7 +90,7 @@ function fakeHost(answers: boolean[] = []) {
 		retitled: (next) => { title = next; },
 		saved: (_slug, properties) => { saved.push(properties); },
 	};
-	return { host, states, asked, toasts, mounted, saved, roundtrip: () => roundtrip, title: () => title };
+	return { host, states, asked, toasts, mounted, reviews, saved, roundtrip: () => roundtrip, title: () => title };
 }
 
 const QUICK = { delay: 5, maxWait: 5, retryDelay: 5 };
@@ -173,17 +180,44 @@ test('a save that meets a change on disk asks once; keeping the edits saves them
 	assert.equal(page.states.at(-1), '已保存');
 });
 
-test('a change on disk is shown at once when nothing is unsaved; other files do not count', async () => {
+test('a change on disk is reviewed when nothing is unsaved; accepted, it stays as it is', async () => {
 	const { session, api, page } = await opened();
 	api.write(SOURCE.replace('第二段。', '终端改的。'));
 	session.changedOnDisk(['img/plot.png']);
 	await settle();
-	assert.equal(page.mounted.length, 1);
+	assert.equal(page.reviews.length, 0, 'other files do not count');
 	session.changedOnDisk(['index.md']);
 	await settle();
-	assert.equal(page.mounted.length, 2);
-	assert.match(page.mounted[1], /终端改的/u);
-	assert.deepEqual(page.toasts, ['文章在磁盘上被修改，已重新载入']);
+	assert.equal(page.reviews.length, 1);
+	assert.match(page.reviews[0], /终端改的/u);
+	assert.equal(page.mounted.length, 2, 'reviewed where it is, not opened anew');
+	assert.ok(page.states.includes('磁盘上的改动待审阅'));
+	assert.equal(page.states.at(-1), '已保存');
+	assert.equal(api.saves.length, 0);
+	assert.equal(session.current.source, api.disk.source);
+	assert.equal(session.current.dirty, false);
+});
+
+test('what is rejected in review is saved back over the change on disk', async () => {
+	// The author rejects every change: the editor keeps what it showed.
+	const { session, api } = await opened(fakeApi(), fakeHost([], (_body, shown) => shown));
+	api.write(SOURCE.replace('第二段。', '终端改的。'));
+	session.changedOnDisk(['index.md']);
+	await settle();
+	assert.equal(api.saves.length, 1);
+	assert.equal(api.disk.source, SOURCE);
+	assert.equal(session.current.dirty, false);
+});
+
+test('a change to the properties alone is taken without review', async () => {
+	const { session, api, page } = await opened();
+	api.write(SOURCE.replace("title: '笔记'", "title: '新题目'"));
+	session.changedOnDisk(['index.md']);
+	await settle();
+	assert.equal(page.reviews.length, 0);
+	assert.equal(page.mounted.length, 1);
+	assert.equal(session.current.source, api.disk.source);
+	assert.deepEqual(page.toasts, ['文章属性在磁盘上被修改，已更新']);
 });
 
 test('taking the disk version drops the unsaved edits', async () => {
