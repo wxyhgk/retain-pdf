@@ -1,10 +1,36 @@
 import { expect, test } from '@playwright/test';
 
-import { appendToFixture, openStudio, popup, popupInput, resetFixture, saveStatus, scienceBlock, structureSheet } from './studio.ts';
+import {
+	appendToFixture,
+	caretAfter,
+	openSource,
+	openStudio,
+	popup,
+	popupInput,
+	resetFixture,
+	savedMarkdown,
+	saveStatus,
+	scienceBlock,
+	structureSheet,
+} from './studio.ts';
+
+const WATER = [
+	'Water',
+	'  ChemBlog',
+	'',
+	'  3  2  0  0  0  0  0  0  0  0999 V2000',
+	'    0.0000    0.0000    0.0000 O   0  0  0  0  0  0  0  0  0  0  0  0',
+	'    0.7586    0.5043    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0',
+	'   -0.7586    0.5043    0.0000 H   0  0  0  0  0  0  0  0  0  0  0  0',
+	'  1  2  1  0  0  0  0',
+	'  1  3  1  0  0  0  0',
+	'M  END',
+].join('\n');
 
 test.beforeEach(async ({ page }) => {
 	resetFixture();
 	if (test.info().title.includes('@file')) appendToFixture('\n```cube\n@file ../outside.cube\n```\n');
+	if (test.info().title.includes('fence')) appendToFixture(`\n~~~mol title="水"\n${WATER}\n~~~\n`);
 	await openStudio(page);
 });
 
@@ -79,4 +105,22 @@ test('clicking outside closes the popup; Backspace in an empty source removes th
 	await page.keyboard.press('Backspace');
 	await expect(page.locator('.science-block')).toHaveCount(2);
 	await expect(popup(page)).toHaveCount(0);
+});
+
+test('a fence typed with a chemistry language becomes a chemistry block', async ({ page }) => {
+	await caretAfter(page, '结尾段落。');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('```xyz ');
+	await expect(scienceBlock(page, 'XYZ')).toHaveCount(2);
+	await expect(page.locator('.milkdown pre[data-language="xyz"], .milkdown .milkdown-code-block')).toHaveCount(0);
+});
+
+test('an edited block keeps its fence: tildes and what follows the language', async ({ page }) => {
+	const input = await openSource(page, 'mol');
+	await input.fill(WATER.replace('Water', 'Water, edited'));
+	await page.keyboard.press('Escape');
+	await expect(saveStatus(page)).toHaveText('未保存');
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain(`~~~mol title="水"\n${WATER.replace('Water', 'Water, edited')}\n~~~\n`);
 });

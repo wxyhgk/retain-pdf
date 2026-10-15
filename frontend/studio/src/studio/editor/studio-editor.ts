@@ -22,13 +22,14 @@ import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '../../science/browser/science-renderer';
 import { linkPath } from '../workspace/file-tree';
 import { blockFeelPlugins } from './block-menu';
-import { buildScienceSlashMenu, scienceBlockPlugins } from './crepe-science-block';
+import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { imageMarkdownRemark } from './image-markdown';
 import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
 import { SCIENCE_FENCE_TYPE } from './science-block';
+import { buildScienceSlashMenu } from './science-slash-menu';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {

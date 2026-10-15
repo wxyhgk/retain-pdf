@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { buildScienceSlashMenu, SCIENCE_SLASH_LANGUAGES } from '../src/studio/editor/crepe-science-block.ts';
+import { buildScienceSlashMenu, SCIENCE_SLASH_LANGUAGES } from '../src/studio/editor/science-slash-menu.ts';
 import { parseScienceFence } from '../src/studio/editor/science-block.ts';
 
 type CapturedItem = { key: string; label: string; icon: string; onRun: (ctx: never) => void };

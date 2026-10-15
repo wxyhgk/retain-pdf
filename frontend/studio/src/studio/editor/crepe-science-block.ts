@@ -1,27 +1,16 @@
-import { $node, $prose, $remark, $view } from '@milkdown/utils';
-import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
-import { addBlockTypeCommand, clearTextInCurrentBlockCommand } from '@milkdown/kit/preset/commonmark';
+import { $prose, $view } from '@milkdown/utils';
+import { $fencedBlock } from '@milkdown/kit/preset/commonmark';
 import { NodeSelection, Plugin, TextSelection } from '@milkdown/prose/state';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type { EditorView, NodeView } from 'prosemirror-view';
 
 import { createSciencePreview, hydrateSciencePreviews } from '../../science/browser/science-renderer.ts';
+import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
+import { openScienceBlockMenu, scienceBlockKeys, scienceBlockMenuPlugin } from './science-block-menu.ts';
 import {
-	dispatchScienceAction,
-	openScienceBlockMenu,
-	placeCursorInScienceBlock,
-	scienceBlockKeys,
-	scienceBlockMenuPlugin,
-} from './science-block-menu.ts';
-import {
-	SCIENCE_BLOCK_KINDS,
 	SCIENCE_FENCE_TYPE,
 	parseScienceFence,
-	planScienceBlockConversion,
-	runScienceBlockParse,
-	runScienceBlockSerialize,
 	scienceBlockKindLabel,
-	scienceRetag,
 	scienceSourceEditor,
 	structureDrawing,
 } from './science-block.ts';
@@ -30,48 +19,20 @@ import { drawStructure, type DrawnStructure } from './structure-editor.ts';
 
 /**
  * Science fenced-code blocks as a first-class Crepe node.
- * Thin Milkdown glue over `./science-block.ts`, which owns recognition,
- * byte fidelity and conversion planning (all Node-tested there).
+ * Thin Milkdown glue over `./science-block.ts`, which owns recognition and
+ * the block menu's edits (all Node-tested there).
  *
- * Two creation paths, both deterministic:
- * - loaded/pasted Markdown: `scienceBlockRemark` retags scientific fences
- *   before Milkdown's generic `code` rule can claim them;
- * - typed mid-session: `scienceBlockSync` converts preset `code_block`
- *   nodes carrying scientific languages right after the transaction.
- * Either way `getMarkdown()` emits a plain fence via `toMarkdown`.
+ * `$fencedBlock` (the Milkdown fork) gives every fence in a scientific
+ * language this node, whether loaded, pasted, typed as ```smiles or given
+ * the language later, and writes it back as the same fence, meta and fence
+ * characters included.
  */
-export const scienceBlockSchema = $node(SCIENCE_FENCE_TYPE, () => ({
-	content: 'text*',
-	group: 'block',
-	code: true,
+export const scienceBlockSchema = $fencedBlock(SCIENCE_FENCE_TYPE, isMoleculeLanguage, () => ({
 	// The source is edited in a popup, never in place: the block is one unit. Without
 	// this a selection read back from the DOM lands in a paragraph nearby instead of
 	// on the block, which drops the block menu and the popup the moment it happens.
 	atom: true,
-	defining: true,
 	isolating: true,
-	marks: '',
-	attrs: { info: { default: '' } },
-	parseDOM: [
-		{
-			tag: 'pre[data-science-block]',
-			preserveWhitespace: 'full',
-			getAttrs: (dom: HTMLElement) => ({ info: dom.getAttribute('data-language') ?? '' }),
-		},
-	],
-	toDOM: (node: ProseMirrorNode) => [
-		'pre',
-		{ 'data-science-block': '', 'data-language': node.attrs.info as string },
-		['code', 0],
-	],
-	parseMarkdown: {
-		match: (node) => node.type === SCIENCE_FENCE_TYPE,
-		runner: (state, node, type) => runScienceBlockParse(state, node, type),
-	},
-	toMarkdown: {
-		match: (node) => node.type.name === SCIENCE_FENCE_TYPE,
-		runner: (state, node) => runScienceBlockSerialize(state, node),
-	},
 }));
 
 const PREVIEW_DEBOUNCE_MS = 350;
@@ -123,7 +84,7 @@ function paintMolecule(host: HTMLElement, info: string, source: string): void {
  * the caret inside the node (slash insert, the menu's 编辑源码) open the
  * source popup, which offers 画结构 when the editor can draw the block.
  */
-export const scienceBlockView = $view(scienceBlockSchema, () => {
+export const scienceBlockView = $view(scienceBlockSchema.schema.node, () => {
 	return (initial: ProseMirrorNode, view: EditorView, getPos: () => number | undefined): NodeView => {
 		let node = initial;
 		const dom = document.createElement('div');
@@ -132,7 +93,7 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 		caption.className = 'science-block-caption';
 		const kind = document.createElement('span');
 		kind.className = 'science-block-kind';
-		kind.textContent = scienceBlockKindLabel(String(initial.attrs.info ?? ''));
+		kind.textContent = scienceBlockKindLabel(String(initial.attrs.language ?? ''));
 		const editButton = document.createElement('button');
 		editButton.type = 'button';
 		editButton.className = 'science-block-edit';
@@ -147,14 +108,14 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 		preview.className = 'science-block-preview';
 		const placeholder = document.createElement('div');
 		placeholder.className = 'science-block-placeholder';
-		placeholder.textContent = scienceSourceEditor(String(initial.attrs.info ?? '')).placeholder;
+		placeholder.textContent = scienceSourceEditor(String(initial.attrs.language ?? '')).placeholder;
 		dom.append(caption, preview, placeholder);
 		dom.classList.toggle('is-empty', initial.textContent.length === 0);
 
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		let renderedKey: string | null = null;
 		const render = (current: ProseMirrorNode) => {
-			const info = String(current.attrs.info ?? '');
+			const info = String(current.attrs.language ?? '');
 			const key = `${info}\n${current.textContent}`;
 			// Steady-state renders must not touch the DOM: a renderer writing
 			// SVG or a canvas is expensive, and an unchanged key means nothing to do.
@@ -183,8 +144,8 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 			if (pos == null) return;
 			const current = view.state.doc.nodeAt(pos);
 			if (!current || current.type.name !== SCIENCE_FENCE_TYPE) return;
-			const attrs = info === undefined ? current.attrs : { ...current.attrs, info };
-			if (current.textContent === value && attrs.info === current.attrs.info) return;
+			const attrs = info === undefined ? current.attrs : { ...current.attrs, language: info };
+			if (current.textContent === value && attrs.language === current.attrs.language) return;
 			const next = current.type.create(attrs, value ? view.state.schema.text(value) : null);
 			let tr = view.state.tr.replaceWith(pos, pos + current.nodeSize, next);
 			if (select) tr = tr.setSelection(NodeSelection.create(tr.doc, pos));
@@ -254,7 +215,7 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 					host.textContent = '预览';
 					return;
 				}
-				paintMolecule(host, String(node.attrs.info ?? ''), source);
+				paintMolecule(host, String(node.attrs.language ?? ''), source);
 				hydrateSciencePreviews(host);
 			};
 			if (!host.hasChildNodes()) paint();
@@ -263,7 +224,7 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 
 		/** Draw in the structure editor, from the popup's text when it is open, and write what was saved back into the block. */
 		const draw = async () => {
-			const info = String(node.attrs.info ?? '');
+			const info = String(node.attrs.language ?? '');
 			const source = popup ? popup.value : node.textContent;
 			const form = structureDrawing(info, source);
 			if (!form) {
@@ -285,7 +246,7 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 
 		const open = () => {
 			if (popup) return;
-			const info = String(node.attrs.info ?? '');
+			const info = String(node.attrs.language ?? '');
 			const editor = scienceSourceEditor(info);
 			const drawable = structureDrawing(info, node.textContent) !== null;
 			popup = new SourcePopup({
@@ -411,7 +372,7 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 			if (onViewerControl(event.target)) return;
 			event.preventDefault();
 			// A 2D structure opens straight in the structure editor; anything else edits as text.
-			if (structureDrawing(String(node.attrs.info ?? ''), node.textContent)) void draw();
+			if (structureDrawing(String(node.attrs.language ?? ''), node.textContent)) void draw();
 			else open();
 		});
 
@@ -448,95 +409,11 @@ export const scienceBlockView = $view(scienceBlockSchema, () => {
 	};
 });
 
-export const scienceBlockRemark = $remark('science-block-retag', () => scienceRetag());
-
-export const scienceBlockSync = $prose(
-	() =>
-		new Plugin({
-			appendTransaction(_transactions, _oldState, state) {
-				const scienceType = state.schema.nodes[SCIENCE_FENCE_TYPE];
-				if (!scienceType) return null;
-				const conversions = planScienceBlockConversion(state.doc);
-				if (!conversions.length) return null;
-				const first = conversions[0];
-				return state.tr.replaceWith(
-					first.pos,
-					first.end,
-					scienceType.create({ info: first.info }, state.schema.text(first.text)),
-				);
-			},
-		}),
-);
-
 /** Register in `mountEditor` via `crepe.editor.use(...)`. */
 export const scienceBlockPlugins = [
-	scienceBlockRemark,
-	scienceBlockSchema,
+	...scienceBlockSchema,
 	scienceBlockView,
-	scienceBlockSync,
 	scienceBlockSelectionPlugin,
 	scienceBlockMenuPlugin,
 	scienceBlockKeys,
 ];
-
-/** Slash menu entries: one insert per scientific fence language, plus delete. */
-export const SCIENCE_SLASH_LANGUAGES = SCIENCE_BLOCK_KINDS.map((kind) => ({
-	key: kind.key,
-	label: `化学 ${kind.label}`,
-	info: kind.info,
-}));
-
-const scienceSlashIcon =
-	'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"' +
-	' fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M10 3v5L4.5 18a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 8V3"/></svg>';
-
-type SlashMenuBuilder = {
-	addGroup: (
-		key: string,
-		label: string,
-	) => {
-		addItem: (
-			key: string,
-			item: { label: string; icon: string; onRun: (ctx: never) => void },
-		) => unknown;
-	};
-};
-
-/** Append the chemistry group to Crepe's slash menu (used via `BlockEdit.buildMenu`). */
-export function buildScienceSlashMenu(builder: SlashMenuBuilder): void {
-	const group = builder.addGroup('science', '化学');
-	for (const entry of SCIENCE_SLASH_LANGUAGES) {
-		group.addItem(entry.key, {
-			label: entry.label,
-			icon: scienceSlashIcon,
-			onRun: (ctx) => {
-				const context = ctx as { get: (slice: unknown) => never };
-				const commands = context.get(commandsCtx) as {
-					call: (key: unknown, payload?: unknown) => void;
-				};
-				const nodeType = scienceBlockSchema.type(
-					ctx as Parameters<typeof scienceBlockSchema.type>[0],
-				);
-				commands.call(clearTextInCurrentBlockCommand.key);
-				commands.call(addBlockTypeCommand.key, { nodeType, attrs: { info: entry.info } });
-				const editorView = context.get(editorViewCtx) as EditorView;
-				if (editorView.state.selection.$from.parent.type.name === SCIENCE_FENCE_TYPE) return;
-				const origin = editorView.state.selection.from;
-				let found: number | null = null;
-				editorView.state.doc.descendants((node, pos) => {
-					if (node.type.name !== SCIENCE_FENCE_TYPE || node.content.size !== 0) return;
-					if (found == null || Math.abs(pos - origin) < Math.abs(found - origin)) found = pos;
-				});
-				if (found != null) placeCursorInScienceBlock(editorView, found);
-			},
-		});
-	}
-	group.addItem('delete', {
-		label: '删除当前块',
-		icon: scienceSlashIcon,
-		onRun: (ctx) => {
-			const editorView = (ctx as { get: (slice: unknown) => EditorView }).get(editorViewCtx);
-			dispatchScienceAction(editorView, { type: 'delete' });
-		},
-	});
-}

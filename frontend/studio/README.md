@@ -55,7 +55,7 @@ All commands are run from the root of the project, from a terminal:
 | `npm run astro -- --help` | Get help using the Astro CLI                     |
 | `npm run milkdown:setup`  | 拉取 Milkdown 源码（Studio 的编辑器）并安装依赖  |
 
-Studio 的编辑器在 dev 时直接用 `third_party/milkdown`（git submodule，来自 fork `wxyhgk/milkdown` 的 `studio` 分支，基于 v7.22.0；`upstream` 指向官方仓库）的源码，改了保存即生效，不用构建。没拉取时用 npm 上的 Milkdown；发布的博客不含编辑器，CI 不需要它。
+Studio 的编辑器在 dev 时直接用 `third_party/milkdown`（git submodule，来自 fork `wxyhgk/milkdown` 的 `studio` 分支，基于 v7.22.0；`upstream` 指向官方仓库）的源码，改了保存即生效，不用构建。Studio 用到了 fork 里才有的扩展（`src/studio/editor/milkdown-fork.d.ts` 列出了它们），所以写作前要先拉取；发布的博客不含编辑器，CI 不需要它。
 
 ## 👀 Want to learn more?
 

@@ -6,6 +6,7 @@ import { $prose } from '@milkdown/utils';
 import {
 	SCIENCE_FENCE_TYPE,
 	blockAt,
+	scienceAttrs,
 	scienceBlockMenuItems,
 	type ScienceBlockAction,
 } from './science-block.ts';
@@ -50,14 +51,14 @@ export function dispatchScienceAction(view: EditorView, action: ScienceBlockActi
 	if (!science) return;
 	if (action.type === 'insert') {
 		const at = pos + node.nodeSize;
-		const tr = view.state.tr.insert(at, science.create({ info: action.info }));
+		const tr = view.state.tr.insert(at, science.create({ language: action.info }));
 		view.dispatch(tr.setSelection(TextSelection.near(tr.doc.resolve(at + 1))).scrollIntoView());
 		view.focus();
 		return;
 	}
-	if (node.type === science && node.attrs.info === action.info) return;
+	if (node.type === science && node.attrs.language === action.info) return;
 	const text = node.textContent;
-	const created = science.create({ info: action.info }, text ? view.state.schema.text(text) : null);
+	const created = science.create(scienceAttrs(node, action.info), text ? view.state.schema.text(text) : null);
 	const tr = view.state.tr.replaceWith(pos, pos + node.nodeSize, created);
 	view.dispatch(tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1))).scrollIntoView());
 	view.focus();
@@ -109,7 +110,7 @@ class ScienceBlockMenu {
 	show(anchor: HTMLElement): void {
 		const selection = this.view.state.selection;
 		if (!(selection instanceof NodeSelection)) return;
-		this.render(selection.node.type.name, String(selection.node.attrs.info ?? ''));
+		this.render(selection.node.type.name, String(selection.node.attrs.language ?? ''));
 		this.anchorPos = selection.from;
 		this.root.hidden = false;
 		const rect = anchor.getBoundingClientRect();

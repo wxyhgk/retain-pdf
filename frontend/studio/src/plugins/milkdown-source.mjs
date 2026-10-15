@@ -34,7 +34,7 @@ export default function milkdownSource({ root = process.cwd() } = {}) {
 			return { resolve: { alias }, server: { watch: { ignored } } };
 		},
 		configResolved(config) {
-			if (!packages.size) config.logger.warn('[milkdown-source] third_party/milkdown 没有拉取，编辑器用 npm 上的 Milkdown');
+			if (!packages.size) config.logger.warn('[milkdown-source] third_party/milkdown 没有拉取，Studio 的编辑器需要它：npm run milkdown:setup');
 		},
 		async resolveId(id, importer, options) {
 			if (!packages.size) return null;
