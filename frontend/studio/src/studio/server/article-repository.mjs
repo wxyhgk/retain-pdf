@@ -10,7 +10,7 @@ import {
 	assertArticleSlug,
 	StudioPathError,
 } from './bundle-paths.mjs';
-import { ArticleValidationError, articleProperties, articleSummary, createArticleSource } from './schemas.mjs';
+import { ArticleValidationError, articleMacros, articleProperties, articleSummary, createArticleSource } from './schemas.mjs';
 
 function bundleRevision(source, configSource, viewsSource) {
 	return contentRevision(`${source}\0${configSource}\0${viewsSource}`);
@@ -91,6 +91,7 @@ export class ArticleRepository {
 			source,
 			revision,
 			properties: articleProperties(source, slug),
+			macros: articleMacros(source),
 			chemistryViews: readMoleculeViews(viewsSource),
 		};
 	}

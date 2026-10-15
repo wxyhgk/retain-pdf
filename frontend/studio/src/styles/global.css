@@ -154,6 +154,18 @@ blockquote {
 	overflow-y: hidden;
 	padding: 0.75em 0;
 }
+/* Where \eqref links land: just above the numbered formula. */
+.equation-anchor {
+	display: block;
+	scroll-margin-top: 72px;
+}
+.katex a[href^='#eq-'] {
+	color: inherit;
+	text-decoration: none;
+}
+.katex a[href^='#eq-']:hover {
+	text-decoration: underline;
+}
 hr {
 	border: none;
 	border-top: 1px solid rgb(var(--gray-light));

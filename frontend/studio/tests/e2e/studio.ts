@@ -23,6 +23,12 @@ export function appendToFixture(markdown: string): void {
 	appendFileSync(join(articles(), slug, 'index.md'), markdown);
 }
 
+/** Change the fixture copy's Markdown before the Studio opens it. */
+export function editFixture(change: (markdown: string) => string): void {
+	const index = join(articles(), slug, 'index.md');
+	writeFileSync(index, change(readFileSync(index, 'utf8')));
+}
+
 /** Put a file into the fixture copy (`img/plot.png`), making its folders. */
 export function writeFixtureFile(path: string, content: string | Buffer): void {
 	const target = join(articles(), slug, path);

@@ -57,6 +57,20 @@ All commands are run from the root of the project, from a terminal:
 
 Studio 的编辑器在 dev 时直接用 `third_party/milkdown`（git submodule，来自 fork `wxyhgk/milkdown` 的 `studio` 分支，基于 v7.22.0；`upstream` 指向官方仓库）的源码，改了保存即生效，不用构建。Studio 用到了 fork 里才有的扩展（`src/studio/editor/milkdown-fork.d.ts` 列出了它们），所以写作前要先拉取；发布的博客不含编辑器，CI 不需要它。
 
+## 公式
+
+博客和 Studio 用同一套规则画公式（`src/science/rendering/`），两边显示一致。
+
+- **宏**：全站的宏写在 `src/katex-macros.json`（已有 `\dd`、`\expval`、`\Tr` 等），单篇文章可以在属性里补充或覆盖：
+
+  ```yaml
+  macros:
+    Ha: \hat{H}
+  ```
+
+- **编号**：单独成块的公式（`$$…$$`、```` ```math ````、单独成行的 `\[…\]`）按顺序编号 (1)(2)…；写 `\notag` 或 `\nonumber` 的不编号，写 `\tag{…}` 的用自己的编号。`align`、`gather`、`equation` 等带编号的环境每行一个号。
+- **引用**：`\label{eq:energy}` 给编号起名，正文里 `$\eqref{eq:energy}$` 显示为 (1)、`$\ref{eq:energy}$` 显示为 1，点击跳到公式；找不到名字时显示 (??)。
+
 ## 👀 Want to learn more?
 
 Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).

@@ -2,22 +2,23 @@ import type { Ctx, MilkdownPlugin } from '@milkdown/ctx';
 import { SchemaReady, nodeViewCtx, prosePluginsCtx } from '@milkdown/kit/core';
 import type { Node as ProseMirrorNode } from '@milkdown/prose/model';
 import { NodeSelection, Plugin, TextSelection, type Selection } from '@milkdown/prose/state';
-import type { EditorView, NodeView } from '@milkdown/prose/view';
+import type { Decoration, EditorView, NodeView } from '@milkdown/prose/view';
 
 import { renderMathHtml } from '../../science/rendering/math.ts';
+import { equationLabels, equationNumbers, numberedSource, referencesKey } from './equation-numbers.ts';
 import { isFormulaBlock } from './formula-block.ts';
 import { SourcePopup } from './source-popup.ts';
 
 const openBlocks = new Set<DisplayMathView>();
 
-function paintFormula(host: HTMLElement, source: string, emptyLabel: string, showError: boolean): void {
+function paintFormula(host: HTMLElement, source: string, emptyLabel: string, showError: boolean, view: EditorView): void {
 	host.classList.remove('is-empty', 'is-error');
 	if (!source.trim()) {
 		host.classList.add('is-empty');
 		host.textContent = emptyLabel;
 		return;
 	}
-	const result = renderMathHtml(source, true);
+	const result = renderMathHtml(source, true, equationLabels(view.state));
 	host.innerHTML = result.html;
 	host.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
 	host.classList.toggle('is-error', Boolean(result.error));
@@ -36,9 +37,16 @@ class DisplayMathView implements NodeView {
 	private readonly formula: HTMLElement;
 	private popup: SourcePopup | null = null;
 	private writing = false;
+	/** The source with its number, as drawn. */
+	private numbered: string;
+	/** What the references it shows stand for. */
+	private references: string;
+	private drawn: string | null = null;
 
-	constructor(node: ProseMirrorNode, view: EditorView, getPos: () => number | undefined) {
+	constructor(node: ProseMirrorNode, view: EditorView, getPos: () => number | undefined, decorations: readonly Decoration[]) {
 		this.node = node;
+		this.numbered = numberedSource(node, decorations);
+		this.references = referencesKey(decorations);
 		this.view = view;
 		this.getPos = getPos;
 		this.dom = document.createElement('div');
@@ -50,9 +58,11 @@ class DisplayMathView implements NodeView {
 		this.renderFormula();
 	}
 
-	update(node: ProseMirrorNode): boolean {
+	update(node: ProseMirrorNode, decorations: readonly Decoration[]): boolean {
 		if (node.type !== this.node.type || !isFormulaBlock(node)) return false;
 		this.node = node;
+		this.numbered = numberedSource(node, decorations);
+		this.references = referencesKey(decorations);
 		this.renderFormula();
 		if (!this.writing) this.popup?.setValue(node.textContent);
 		return true;
@@ -90,7 +100,10 @@ class DisplayMathView implements NodeView {
 	}
 
 	private renderFormula(): void {
-		paintFormula(this.formula, this.node.textContent, '公式', false);
+		const key = `${this.numbered}\n${this.references}`;
+		if (key === this.drawn) return;
+		this.drawn = key;
+		paintFormula(this.formula, this.numbered, '公式', false, this.view);
 	}
 
 	private onMouseDown = (event: MouseEvent): void => {
@@ -126,7 +139,7 @@ class DisplayMathView implements NodeView {
 			},
 			width: () => 440,
 			maxInputHeight: () => 160,
-			preview: (host, value) => paintFormula(host, value, '预览', true),
+			preview: (host, value) => paintFormula(host, value, '预览', true, this.view),
 			onInput: (value) => this.writeSource(value),
 			onFinish: () => this.finish(),
 			onRemove: () => this.removeBlock(),
@@ -212,9 +225,9 @@ const displayMathPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 			...views.filter(([id]) => id !== 'code_block'),
 			[
 				'code_block',
-				(node, view, getPos) => {
+				(node, view, getPos, decorations) => {
 					if (!isFormulaBlock(node)) return fallback?.(node, view, getPos as () => number | undefined);
-					return new DisplayMathView(node, view, getPos as () => number | undefined);
+					return new DisplayMathView(node, view, getPos as () => number | undefined, decorations);
 				},
 			],
 		];
@@ -241,4 +254,4 @@ const displayMathPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	};
 };
 
-export const displayMathPlugins = [displayMathPlugin];
+export const displayMathPlugins = [equationNumbers, displayMathPlugin];

@@ -4,6 +4,7 @@ import {
 	appendToFixture,
 	caretAfter,
 	displayFormulas,
+	editFixture,
 	editor,
 	inlineFormulas,
 	openStudio,
@@ -17,6 +18,10 @@ import {
 test.beforeEach(async ({ page }) => {
 	resetFixture();
 	if (test.info().title.includes('fence')) appendToFixture('\n```latex\n\\LaTeX\n```\n\n```math\na^2 + b^2\n```\n');
+	if (test.info().title.includes('number')) {
+		appendToFixture('\n见式 $\\eqref{eq:energy}$ 和 $\\eqref{eq:missing}$。\n\n$$\nE = \\Ha \\psi \\label{eq:energy}\n$$\n');
+		editFixture((markdown) => markdown.replace('draft: true\n', 'draft: true\nmacros:\n  Ha: \\hat{H}\n'));
+	}
 	await openStudio(page);
 });
 
@@ -79,4 +84,36 @@ test('a $$ block edited is written back as $$', async ({ page }) => {
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('$$\n\\sum_i x_i + 1\n$$');
+});
+
+test('formula blocks are numbered in order; \\eqref shows the number; the article’s macros apply', async ({ page }) => {
+	// The fixture's two blocks are (1) and (2); the added one is (3).
+	const numbers = displayFormulas(page).locator('.katex-tag');
+	await expect(numbers).toHaveText(['(1)', '(2)', '(3)']);
+	const reference = inlineFormulas(page).filter({ has: page.locator('a[href="#eq-eq:energy"]') });
+	await expect(reference).toHaveText('(3)');
+	await expect(inlineFormulas(page).filter({ hasText: '(??)' })).toHaveCount(1);
+	// \\Ha is the article's macro: no error.
+	await expect(displayFormulas(page).last().locator('.katex-error, .is-error')).toHaveCount(0);
+	await expect(displayFormulas(page).last()).not.toHaveClass(/is-error/);
+
+	// A block added before it moves its number and the reference with it.
+	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
+	await expect(popupInput(page)).toBeFocused();
+	await page.keyboard.press('Escape');
+	await caretAfter(page, '结尾段落。');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('$$');
+	await page.keyboard.press('Enter');
+	await expect(popupInput(page)).toBeFocused();
+	await page.keyboard.type('x');
+	await page.keyboard.press('Escape');
+	await expect(reference).toHaveText('(4)');
+
+	await expect(saveStatus(page)).toHaveText('未保存');
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	const markdown = savedMarkdown();
+	expect(markdown).toContain('$\\eqref{eq:energy}$');
+	expect(markdown).toContain('E = \\Ha \\psi \\label{eq:energy}');
 });

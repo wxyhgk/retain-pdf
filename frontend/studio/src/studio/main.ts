@@ -14,6 +14,7 @@ import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
 import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
 import { setScienceResourceBaseUrl } from '../science/browser/resource-context';
+import { useArticleMacros } from '../science/rendering/math';
 import { ArticleSession } from './state/article-session';
 import type { ArticlePayload } from './types';
 import { createArticleList } from './workspace/article-list';
@@ -117,6 +118,7 @@ session.subscribe(() => filePanel.sourceChanged());
 /** Where the article's chemistry finds its files and its saved molecule views. */
 function useArticleContext(article: ArticlePayload): void {
 	setScienceResourceBaseUrl(articleFilesUrl(article.slug));
+	useArticleMacros(article.macros);
 	setMoleculeViewContext({
 		views: article.chemistryViews,
 		save: (key, format, view, display) => session.saveView(key, format, view, display),

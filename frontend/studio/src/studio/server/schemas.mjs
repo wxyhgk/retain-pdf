@@ -13,6 +13,8 @@ export function createArticleFrontmatterSchema(image = null) {
 		tags: z.array(z.string()).default([]),
 		draft: z.boolean().default(false),
 		kind: z.enum(['wiki', 'post']).default('post'),
+		// Formula macros of this article, over the site's (src/katex-macros.json): `\\Ha: \\hat{H}`.
+		macros: z.record(z.string(), z.string()).optional(),
 	});
 }
 
@@ -44,6 +46,14 @@ export function articleProperties(source, fallbackSlug = '') {
 		tags: Array.isArray(frontmatter.tags) ? frontmatter.tags.filter((tag) => typeof tag === 'string') : [],
 		draft: frontmatter.draft === true,
 	};
+}
+
+/** The article's own formula macros (`macros:`), the ones with text for an expansion. */
+export function articleMacros(source) {
+	const { frontmatter } = parseArticleSource(source);
+	const macros = frontmatter.macros;
+	if (!macros || typeof macros !== 'object' || Array.isArray(macros)) return {};
+	return Object.fromEntries(Object.entries(macros).filter(([, expansion]) => typeof expansion === 'string'));
 }
 
 export function validateArticleSource(source) {

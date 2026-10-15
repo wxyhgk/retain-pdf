@@ -35,4 +35,6 @@ export type ArticlePayload = {
 	content?: string;
 	hash?: string;
 	chemistryViews: Record<string, { format: string; view: number[]; display?: CubeDisplaySettings }>;
+	/** The article's own formula macros, from its `macros:` property. */
+	macros?: Record<string, string>;
 };

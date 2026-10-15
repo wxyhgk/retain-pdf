@@ -1,0 +1,11 @@
+{
+	"\\dd": "\\mathrm{d}",
+	"\\ee": "\\mathrm{e}",
+	"\\ii": "\\mathrm{i}",
+	"\\vb": "\\mathbf{#1}",
+	"\\abs": "\\left\\lvert #1 \\right\\rvert",
+	"\\norm": "\\left\\lVert #1 \\right\\rVert",
+	"\\expval": "\\left\\langle #1 \\right\\rangle",
+	"\\order": "\\mathcal{O}\\left(#1\\right)",
+	"\\Tr": "\\operatorname{Tr}"
+}

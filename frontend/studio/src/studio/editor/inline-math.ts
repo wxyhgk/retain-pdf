@@ -6,6 +6,7 @@ import { Decoration, DecorationSet, type EditorView, type NodeView } from '@milk
 import { $markSchema } from '@milkdown/utils';
 
 import { renderMathHtml } from '../../science/rendering/math.ts';
+import { equationLabels, referencesKey } from './equation-numbers.ts';
 import { createFormulaBlock } from './formula-block.ts';
 
 export type InlineMathKeyAction = 'commit' | 'exit-before' | 'exit-after' | 'delete' | 'promote';
@@ -669,11 +670,15 @@ class InlineMathView implements NodeView {
 	private node: ProseMirrorNode;
 	private readonly view: EditorView;
 	private readonly getPos: () => number | undefined;
+	/** What the references it shows stand for. */
+	private references: string;
+	private drawn: string | null = null;
 
-	constructor(node: ProseMirrorNode, view: EditorView, getPos: () => number | undefined) {
+	constructor(node: ProseMirrorNode, view: EditorView, getPos: () => number | undefined, decorations: readonly Decoration[]) {
 		this.node = node;
 		this.view = view;
 		this.getPos = getPos;
+		this.references = referencesKey(decorations);
 		this.dom = document.createElement('span');
 		this.dom.className = 'pm-inline-math';
 		this.dom.contentEditable = 'false';
@@ -682,9 +687,10 @@ class InlineMathView implements NodeView {
 		this.renderFormula();
 	}
 
-	update(node: ProseMirrorNode): boolean {
+	update(node: ProseMirrorNode, decorations: readonly Decoration[]): boolean {
 		if (node.type !== this.node.type) return false;
 		this.node = node;
+		this.references = referencesKey(decorations);
 		this.renderFormula();
 		return true;
 	}
@@ -717,6 +723,9 @@ class InlineMathView implements NodeView {
 
 	private renderFormula(): void {
 		const value = String(this.node.attrs.value ?? '');
+		const key = `${value}\n${this.references}`;
+		if (key === this.drawn) return;
+		this.drawn = key;
 		if (!value) {
 			const placeholder = document.createElement('span');
 			placeholder.className = 'pm-inline-math-placeholder';
@@ -726,7 +735,7 @@ class InlineMathView implements NodeView {
 			this.dom.removeAttribute('title');
 			return;
 		}
-		const result = renderMathHtml(value, false);
+		const result = renderMathHtml(value, false, equationLabels(this.view.state));
 		this.dom.innerHTML = result.html;
 		// MathML sits under the visible glyph. In a contenteditable line the caret enters it and draws through the formula.
 		this.dom.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
@@ -809,7 +818,7 @@ function mathPreviewWidget(from: number, to: number, value: string): Decoration 
 			root.setAttribute('aria-hidden', 'true');
 			const body = document.createElement('span');
 			body.className = 'pm-math-preview-body';
-			const rendered = renderMathHtml(value, false);
+			const rendered = renderMathHtml(value, false, equationLabels(view.state));
 			body.innerHTML = rendered.html;
 			body.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
 			if (rendered.error) body.classList.add('is-error');
@@ -1100,7 +1109,7 @@ const inlineMathViewPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	await ctx.wait(SchemaReady);
 	ctx.update(nodeViewCtx, (views) => [
 		...views.filter(([id]) => id !== 'math_inline'),
-		['math_inline', (node, view, getPos) => new InlineMathView(node, view, getPos)],
+		['math_inline', (node, view, getPos, decorations) => new InlineMathView(node, view, getPos, decorations)],
 	]);
 	return () => {
 		ctx.update(nodeViewCtx, (views) => views.filter(([id]) => id !== 'math_inline'));
