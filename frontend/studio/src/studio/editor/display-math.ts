@@ -5,13 +5,10 @@ import { NodeSelection, Plugin, TextSelection, type Selection } from '@milkdown/
 import type { EditorView, NodeView } from '@milkdown/prose/view';
 
 import { renderMathHtml } from '../../science/rendering/math.ts';
+import { isFormulaBlock } from './formula-block.ts';
 import { SourcePopup } from './source-popup.ts';
 
 const openBlocks = new Set<DisplayMathView>();
-
-function isLatex(node: ProseMirrorNode): boolean {
-	return String(node.attrs.language ?? '').toLowerCase() === 'latex';
-}
 
 function paintFormula(host: HTMLElement, source: string, emptyLabel: string, showError: boolean): void {
 	host.classList.remove('is-empty', 'is-error');
@@ -54,7 +51,7 @@ class DisplayMathView implements NodeView {
 	}
 
 	update(node: ProseMirrorNode): boolean {
-		if (node.type !== this.node.type || !isLatex(node)) return false;
+		if (node.type !== this.node.type || !isFormulaBlock(node)) return false;
 		this.node = node;
 		this.renderFormula();
 		if (!this.writing) this.popup?.setValue(node.textContent);
@@ -216,7 +213,7 @@ const displayMathPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 			[
 				'code_block',
 				(node, view, getPos) => {
-					if (!isLatex(node)) return fallback?.(node, view, getPos as () => number | undefined);
+					if (!isFormulaBlock(node)) return fallback?.(node, view, getPos as () => number | undefined);
 					return new DisplayMathView(node, view, getPos as () => number | undefined);
 				},
 			],

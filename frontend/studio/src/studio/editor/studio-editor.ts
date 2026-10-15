@@ -160,10 +160,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						text: "输入 '/' 插入块",
 						mode: 'block',
 					},
-					[CrepeFeature.Latex]: {
-						katexOptions: { throwOnError: false },
-						inlineEditConfirm: '完成',
-					},
+					// Formulas are drawn by inline-math.ts and display-math.ts; a ```latex fence is code.
+					[CrepeFeature.Latex]: { blockPreview: false },
 					[CrepeFeature.Toolbar]: {
 						boldLabel: '粗体',
 						italicLabel: '斜体',

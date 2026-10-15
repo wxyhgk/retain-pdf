@@ -6,6 +6,7 @@ import { Decoration, DecorationSet, type EditorView, type NodeView } from '@milk
 import { $markSchema } from '@milkdown/utils';
 
 import { renderMathHtml } from '../../science/rendering/math.ts';
+import { createFormulaBlock } from './formula-block.ts';
 
 export type InlineMathKeyAction = 'commit' | 'exit-before' | 'exit-after' | 'delete' | 'promote';
 
@@ -313,7 +314,7 @@ function displayMathBlock(node: ProseMirrorNode, code: NodeType): ProseMirrorNod
 	const pieces = plain ? splitDelimitedMath(text.trim()) : null;
 	const piece = pieces?.length === 1 ? pieces[0] : null;
 	if (piece?.kind !== 'math' || !piece.display) return null;
-	return code.create(code.spec.attrs && 'language' in code.spec.attrs ? { language: 'LaTeX' } : null, code.schema.text(piece.value));
+	return createFormulaBlock(code, piece.value);
 }
 
 /**
@@ -570,7 +571,7 @@ export function planDollarBlock(
 	if ($pos.parent.textContent !== '$$' || $pos.parentOffset !== $pos.parent.content.size) return null;
 	const code = doc.type.schema.nodes.code_block;
 	if (!code) return null;
-	const block = code.create(code.spec.attrs && 'language' in code.spec.attrs ? { language: 'LaTeX' } : null);
+	const block = createFormulaBlock(code);
 	const container = $pos.node($pos.depth - 1);
 	const index = $pos.index($pos.depth - 1);
 	let nodes: ProseMirrorNode[] = [block];
@@ -619,7 +620,7 @@ export function planPromoteInlineMath(
 	if ($pos.depth < 1 || !$pos.parent.isTextblock) return null;
 	const code = doc.type.schema.nodes.code_block;
 	if (!code) return null;
-	const block = code.create(code.spec.attrs && 'language' in code.spec.attrs ? { language: 'LaTeX' } : null);
+	const block = createFormulaBlock(code);
 	const start = $pos.parentOffset;
 	const before = $pos.parent.content.cut(0, start);
 	const after = $pos.parent.content.cut(start + math.nodeSize);

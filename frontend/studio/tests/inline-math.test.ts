@@ -22,6 +22,7 @@ import {
 	readMathSource,
 	splitInlineMath,
 } from '../src/studio/editor/inline-math.ts';
+import { createFormulaBlock, isFormulaBlock } from '../src/studio/editor/formula-block.ts';
 
 function applyPlan(doc: Node, plan: { from: number; to: number; nodes: Node[] }) {
 	return EditorState.create({ doc }).tr.replaceWith(plan.from, plan.to, plan.nodes).doc;
@@ -39,7 +40,7 @@ function editorSchema() {
 				group: 'block',
 				marks: '',
 				code: true,
-				attrs: { language: { default: '' } },
+				attrs: { language: { default: '' }, fence: { default: '' } },
 			},
 			math_inline: {
 				group: 'inline',
@@ -197,6 +198,7 @@ test('escape after one dollar inserts the closing dollar and a paragraph of $$ b
 	assert.ok(block);
 	assert.equal(block.nodes[0]?.type.name, 'code_block');
 	assert.equal(block.nodes[0]?.attrs.language, 'LaTeX');
+	assert.equal(block.nodes[0]?.attrs.fence, '$$');
 	assert.equal(planDollarBlock(two, 2), null);
 	const replaced = applyPlan(two, block);
 	assert.equal(replaced.nodeAt(block.cursor - 1)?.type.name, 'code_block');
@@ -219,6 +221,7 @@ test('an empty inline formula followed by another dollar becomes a LaTeX block',
 	assert.equal(promoted.nodes.length, 1);
 	assert.equal(promoted.nodes[0]?.type.name, 'code_block');
 	assert.equal(promoted.nodes[0]?.attrs.language, 'LaTeX');
+	assert.equal(promoted.nodes[0]?.attrs.fence, '$$');
 	assert.equal(promoted.cursor, 1);
 	const replaced = applyPlan(alone, promoted);
 	assert.equal(replaced.nodeAt(promoted.cursor - 1)?.type.name, 'code_block');
@@ -422,6 +425,7 @@ test('a pasted paragraph holding only a display formula becomes a LaTeX block', 
 	assert.equal(first.textContent, '这张文献能量图非常关键：');
 	assert.equal(block.type.name, 'code_block');
 	assert.equal(block.attrs.language, 'LaTeX');
+	assert.equal(block.attrs.fence, '$$');
 	assert.equal(block.textContent, '\\ce{F + CH3OH -> HF + CH2OH}');
 	assert.equal(last.child(1).type.name, 'math_inline');
 	assert.equal(last.child(1).attrs.value, 'RC2 \\to TS2');
@@ -435,4 +439,13 @@ test('a pasted paragraph holding only a display formula becomes a LaTeX block', 
 	const inSentence = expandInlineMathSlice(new Slice(Fragment.from(paragraph('句中 \\[x\\] 不拆')), 1, 1), schema.nodes.math_inline);
 	assert.equal(inSentence?.content.firstChild?.type.name, 'paragraph');
 	assert.equal(inSentence?.content.firstChild?.child(1).type.name, 'math_inline');
+});
+
+test('a formula block is a $$ block or a ```math fence; a ```latex fence is code', () => {
+	const code = editorSchema().nodes.code_block;
+	assert.equal(isFormulaBlock(createFormulaBlock(code, 'x')), true);
+	assert.equal(isFormulaBlock(code.create({ language: 'math', fence: '`' })), true);
+	assert.equal(isFormulaBlock(code.create({ language: 'latex', fence: '`' })), false);
+	assert.equal(isFormulaBlock(code.create({ language: 'LaTeX', fence: '' })), false);
+	assert.equal(isFormulaBlock(code.create({ language: 'python', fence: '$$' })), false);
 });

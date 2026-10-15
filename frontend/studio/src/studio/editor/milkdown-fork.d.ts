@@ -51,3 +51,10 @@ declare module '@milkdown/crepe/feature/block-edit' {
 	/** The block edit feature's config, with `buildBlockMenu`. */
 	export type ForkBlockEditFeatureConfig = BlockEditFeatureConfig & { buildBlockMenu?: BuildBlockMenu };
 }
+
+declare module '@milkdown/crepe/feature/latex' {
+	/** packages/crepe/src/feature/latex/index.ts */
+	interface LatexConfig {
+		blockPreview: boolean;
+	}
+}
