@@ -1,8 +1,4 @@
-import remarkMath from 'remark-math';
-import remarkMathBrackets from '../../plugins/remark-math-brackets.mjs';
-import remarkParse from 'remark-parse';
-import { unified } from 'unified';
-
+import { markdownParser } from './markdown-parser.ts';
 import { parseMarkdownBodyBlocks } from './parse.ts';
 import type { MarkdownBlockSlice } from './types.ts';
 
@@ -14,8 +10,6 @@ export type MarkdownBodyMerge = {
 	/** New or changed blocks accepted from the editor. */
 	readonly changedBlocks: number;
 };
-
-const semanticParser = unified().use(remarkParse).use(remarkMath).use(remarkMathBrackets);
 
 /**
  * The tree without what does not change the Markdown's meaning: source
@@ -32,13 +26,18 @@ function withoutPositions(value: unknown): unknown {
 	return clean;
 }
 
-function semanticFingerprint(block: MarkdownBlockSlice): string {
+/** What Markdown means, however it is written. */
+function meaning(markdown: string): string {
 	try {
-		const root = semanticParser.runSync(semanticParser.parse(block.raw)) as { children?: unknown[] };
+		const root = markdownParser.runSync(markdownParser.parse(markdown)) as { children?: unknown[] };
 		return JSON.stringify(withoutPositions(root.children ?? []));
 	} catch {
-		return `raw:${block.raw}`;
+		return `raw:${markdown}`;
 	}
+}
+
+function semanticFingerprint(block: MarkdownBlockSlice): string {
+	return meaning(block.raw);
 }
 
 function lcsLengths(original: readonly string[], edited: readonly string[]): number[][] {
@@ -54,8 +53,34 @@ function lcsLengths(original: readonly string[], edited: readonly string[]): num
 }
 
 /**
+ * One block of the merged body: the original's bytes when it means the
+ * same (`original` is its index there), or else the editor's. `edited` is
+ * the editor's version either way.
+ */
+type Piece = { raw: string; edited: string; original?: number };
+
+const BULLET = /^( {0,3})([*+-])(?=[ \t]|$)/mu;
+
+/**
+ * An edited list written with the bullet its original used, for the
+ * editor writes its own. A list's bullet also tells it apart from a list
+ * right after it, so keeping it keeps the two lists two.
+ */
+function withOriginalBullet(edited: MarkdownBlockSlice, original: MarkdownBlockSlice | undefined): string {
+	if (edited.kind !== 'list' || original?.kind !== 'list') return edited.raw;
+	const wanted = BULLET.exec(original.raw)?.[2];
+	const found = BULLET.exec(edited.raw);
+	if (!wanted || !found || found[2] === wanted) return edited.raw;
+	const marker = new RegExp(`^${found[1]}[${found[2]}](?=[ \\t]|$)`, 'gmu');
+	return edited.raw.replace(marker, `${found[1]}${wanted}`);
+}
+
+/**
  * Keeps byte-exact source for semantically unchanged top-level Markdown blocks.
- * Crepe output is used only for blocks that were inserted or genuinely edited.
+ * Crepe output is used only for blocks that were inserted or genuinely edited,
+ * and the whole always means what the editor shows: where a kept block would
+ * read differently next to an edited one (two lists running together, say),
+ * it is written the editor's way too.
  */
 export function mergeMarkdownBody(originalBody: string, editedBody: string): MarkdownBodyMerge {
 	if (originalBody === editedBody) {
@@ -75,36 +100,103 @@ export function mergeMarkdownBody(originalBody: string, editedBody: string): Mar
 	const originalFingerprints = originalBlocks.map(semanticFingerprint);
 	const editedFingerprints = editedBlocks.map(semanticFingerprint);
 	const lengths = lcsLengths(originalFingerprints, editedFingerprints);
-	/** Each piece with the index of the original block it keeps, if it keeps one. */
-	const merged: Array<{ raw: string; original?: number }> = [];
+	const pieces: Piece[] = [];
+	/** Original blocks passed over since the last kept one: what the next edited blocks replace. */
+	let replaced: number[] = [];
 	let originalIndex = 0;
 	let editedIndex = 0;
-	let retainedBlocks = 0;
-	let changedBlocks = 0;
 
+	const pushEdited = () => {
+		const block = editedBlocks[editedIndex]!;
+		const counterpart = replaced.shift();
+		const original = counterpart === undefined ? undefined : originalBlocks[counterpart];
+		pieces.push({ raw: withOriginalSpacing(withOriginalBullet(block, original), original), edited: block.raw });
+		editedIndex += 1;
+	};
 	while (originalIndex < originalBlocks.length && editedIndex < editedBlocks.length) {
 		if (originalFingerprints[originalIndex] === editedFingerprints[editedIndex]) {
-			merged.push({ raw: originalBlocks[originalIndex]!.raw, original: originalIndex });
+			pieces.push({ raw: originalBlocks[originalIndex]!.raw, edited: editedBlocks[editedIndex]!.raw, original: originalIndex });
 			originalIndex += 1;
 			editedIndex += 1;
-			retainedBlocks += 1;
+			replaced = [];
 			continue;
 		}
 		if (lengths[originalIndex + 1]![editedIndex]! >= lengths[originalIndex]![editedIndex + 1]!) {
+			replaced.push(originalIndex);
 			originalIndex += 1;
 		} else {
-			merged.push({ raw: editedBlocks[editedIndex]!.raw });
-			editedIndex += 1;
-			changedBlocks += 1;
+			pushEdited();
 		}
 	}
-	while (editedIndex < editedBlocks.length) {
-		merged.push({ raw: editedBlocks[editedIndex]!.raw });
-		editedIndex += 1;
-		changedBlocks += 1;
-	}
+	while (originalIndex < originalBlocks.length) replaced.push(originalIndex++);
+	while (editedIndex < editedBlocks.length) pushEdited();
 
-	return { body: joinBlocks(merged), retainedBlocks, changedBlocks };
+	const merged = settle(pieces, meaning(editedBody), editedBody);
+	return { ...merged, body: withOriginalEnds(merged.body, originalBody) };
+}
+
+const LEADING = /^(?:[ \t]*\r?\n)*/u;
+const TRAILING = /(?:\r?\n[ \t]*)*$/u;
+
+/** An edited block followed by the blank lines its original had before the next block. */
+function withOriginalSpacing(raw: string, original: MarkdownBlockSlice | undefined): string {
+	if (!original) return raw;
+	return raw.replace(TRAILING, '') + TRAILING.exec(original.raw)![0];
+}
+
+/**
+ * The blank lines before the first block and after the last, as the
+ * original had them: they belong to no block, so an edited first or last
+ * block would otherwise take the editor's (none between the frontmatter and
+ * the body, say).
+ */
+function withOriginalEnds(body: string, originalBody: string): string {
+	const leading = LEADING.exec(originalBody)![0];
+	const trailing = TRAILING.exec(originalBody)![0];
+	if (!body.trim()) return body;
+	let kept = body;
+	if (leading) kept = leading + kept.replace(LEADING, '');
+	// A single final newline is the editor's to write; blank lines after it are the author's.
+	if (/\n[^\n]*\n/u.test(trailing)) kept = kept.replace(TRAILING, '') + trailing;
+	return kept;
+}
+
+const counts = (pieces: readonly Piece[]) => {
+	const retainedBlocks = pieces.filter((piece) => piece.original !== undefined).length;
+	return { retainedBlocks, changedBlocks: pieces.length - retainedBlocks };
+};
+
+/**
+ * The merged body, once it means what the editor wrote. If it does not,
+ * edited blocks first lose the bullets given back to them, then kept blocks
+ * next to a change are written the editor's way, one ring at a time; at
+ * worst the body is the editor's.
+ */
+function settle(pieces: Piece[], target: string, editedBody: string): MarkdownBodyMerge {
+	let current = pieces;
+	let body = joinBlocks(current);
+	if (meaning(body) === target) return { body, ...counts(current) };
+
+	current = current.map((piece) => (piece.original === undefined ? { ...piece, raw: piece.edited } : piece));
+	for (;;) {
+		body = joinBlocks(current);
+		if (meaning(body) === target) return { body, ...counts(current) };
+		const settled = (index: number) => {
+			const piece = current[index];
+			const next = current[index + 1];
+			return piece?.original !== undefined && next?.original !== undefined && next.original === piece.original + 1;
+		};
+		let widened = false;
+		current = current.map((piece, index) => {
+			if (piece.original === undefined) return piece;
+			// A kept block beside a change, or beside where a block was removed.
+			const touched = (index > 0 && !settled(index - 1)) || (index < current.length - 1 && !settled(index));
+			if (!touched) return piece;
+			widened = true;
+			return { raw: piece.edited, edited: piece.edited };
+		});
+		if (!widened) return { body: editedBody, retainedBlocks: 0, changedBlocks: current.length };
+	}
 }
 
 /**

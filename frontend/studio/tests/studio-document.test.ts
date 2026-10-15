@@ -119,7 +119,8 @@ test('accepts edited blocks while retaining untouched scientific blocks', () => 
 	].join('');
 
 	const result = mergeMarkdownBody(original, edited);
-	assert.match(result.body, /^Updated introduction\.\n\n/u);
+	// The edited paragraph, followed by the original's blank line, in its line endings.
+	assert.match(result.body, /^Updated introduction\.\r\n\r\n/u);
 	assert.match(result.body, /```smiles keep=exact\r\nCCO\r\n```\r\n\r\n/u);
 	assert.match(result.body, /\$\$\r\n\\ce\{2 H2 \+ O2 -> 2 H2O\}\r\n\$\$\r\n$/u);
 	assert.equal(result.changedBlocks, 1);
@@ -132,6 +133,38 @@ test('a block added after the last one is a block of its own', () => {
 	assert.equal(mergeMarkdownBody('开头。\r\n\r\n结尾。\r\n', '开头。\n\n结尾。\n\n新段落\n').body, '开头。\r\n\r\n结尾。\r\n\r\n新段落\n');
 	// Neighbours keep what was between them, even when it is a single newline.
 	assert.equal(mergeMarkdownBody('# 标题\n正文\n\n旧\n', '# 标题\n\n正文\n\n新\n').body, '# 标题\n正文\n\n新\n');
+});
+
+test('tables and bare links the editor writes its own way are kept as written', () => {
+	const original = '| 方法 | 能量 |\n| :--- | ---: |\n| HF | −10.40 |\n\n见 https://example.com 。\n\n旧\n';
+	const edited = '| 方法 |     能量 |\n| :- | -----: |\n| HF | −10.40 |\n\n见 <https://example.com> 。\n\n新\n';
+	const result = mergeMarkdownBody(original, edited);
+	assert.equal(result.body, original.replace('旧', '新'));
+	assert.equal(result.changedBlocks, 1);
+});
+
+test('an edited list keeps its bullet, so it does not run into the list after it', () => {
+	const original = '- [ ] 待办\n- [x] 完成\n\n* 另一个列表\n';
+	// The editor writes its own bullet, and another one for the list right after.
+	const edited = '* [ ] 待办\n* [x] 完成了\n\n- 另一个列表\n';
+	assert.equal(mergeMarkdownBody(original, edited).body, '- [ ] 待办\n- [x] 完成了\n\n* 另一个列表\n');
+});
+
+test('editing the first or last block keeps the blank lines around the body', () => {
+	// Between the frontmatter and the body, and after the last block.
+	assert.equal(mergeMarkdownBody('\n第一段\n\n第二段\n\n', '第一段改了\n\n第二段\n').body, '\n第一段改了\n\n第二段\n\n');
+	assert.equal(mergeMarkdownBody('\n第一段\n\n第二段\n\n', '第一段\n\n第二段改了\n').body, '\n第一段\n\n第二段改了\n\n');
+});
+
+test('an edited block keeps the blank lines after it', () => {
+	assert.equal(mergeMarkdownBody('一\n\n\n## 二\n', '一改了\n\n## 二\n').body, '一改了\n\n\n## 二\n');
+});
+
+test('kept blocks that would read differently next to a change are written the editor’s way', () => {
+	// The paragraph between two lists goes: kept as they were, they would be one list.
+	const result = mergeMarkdownBody('* 一\n\n中间\n\n* 二\n\n结尾\n', '* 一\n\n- 二\n\n结尾\n');
+	assert.equal(result.body, '* 一\n\n- 二\n\n结尾\n');
+	assert.equal(result.retainedBlocks, 1);
 });
 
 test('updates article properties without rewriting unknown YAML or comments', () => {

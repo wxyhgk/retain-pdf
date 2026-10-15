@@ -1,8 +1,4 @@
-import remarkParse from 'remark-parse';
-import remarkMath from 'remark-math';
-import remarkMathBrackets from '../../plugins/remark-math-brackets.mjs';
-import { unified } from 'unified';
-
+import { markdownParser } from './markdown-parser.ts';
 import type { FrontmatterSlice, MarkdownBlockSlice, StudioDocument } from './types.ts';
 
 type SourceLine = {
@@ -18,8 +14,6 @@ type PositionedNode = {
 		end?: { offset?: number };
 	};
 };
-
-const markdownParser = unified().use(remarkParse).use(remarkMath).use(remarkMathBrackets);
 
 function readLines(source: string, start: number): SourceLine[] {
 	const lines: SourceLine[] = [];
