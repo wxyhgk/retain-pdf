@@ -7,6 +7,7 @@ import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
+import { gfmOptions } from '../../src/plugins/markdown-gfm.mjs';
 import { parseMarkdownBodyBlocks, parseStudioDocument } from '../../src/studio/document/index.ts';
 import { saveStatus } from './studio.ts';
 
@@ -20,7 +21,7 @@ const fixture = fileURLToPath(new URL('./fixtures/syntax', import.meta.url));
 const articleDir = (): string => join(process.env.STUDIO_BLOG_DIR!, SLUG);
 const original = readFileSync(join(fixture, 'index.md'), 'utf8');
 
-const parser = unified().use(remarkParse).use(remarkGfm).use(remarkMath);
+const parser = unified().use(remarkParse).use(remarkGfm, gfmOptions).use(remarkMath);
 
 /** What a block means, without where it sits or how it is spaced. */
 function meaning(markdown: string): string {
@@ -115,4 +116,15 @@ test('a character typed into a block changes that block only', async ({ page }) 
 	}
 	expect(tried).toBeGreaterThan(10);
 	expect(problems, problems.join('\n\n')).toEqual([]);
+});
+
+test('one tilde stays text as it is typed; two strike through', async ({ page }) => {
+	await page.addInitScript(() => { (window as { STUDIO_AUTOSAVE_DELAY?: number }).STUDIO_AUTOSAVE_DELAY = 300; });
+	await page.goto(`/studio?article=${SLUG}`);
+	await expect(saveStatus(page)).toHaveText('已载入');
+	await caretAtEndOf(page, 0);
+	await page.keyboard.type('H~2~O 约 ~300 K，~~删~~');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	await expect(page.locator('.milkdown .ProseMirror > p').first().locator('del')).toHaveText(['删除线', '删']);
+	expect(readFileSync(join(articleDir(), 'index.md'), 'utf8')).toContain('H~2~O 约 ~300 K，~~删~~');
 });

@@ -10,6 +10,7 @@ import {
 	getPendingChanges,
 	startDiffReviewCmd,
 } from '@milkdown/kit/plugin/diff';
+import { remarkGFMPlugin } from '@milkdown/kit/preset/gfm';
 import { Plugin, TextSelection } from '@milkdown/prose/state';
 import { $prose, callCommand } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
@@ -17,6 +18,7 @@ import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
 import '../../science/browser/molecule-renderer.css';
+import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '../../science/browser/science-renderer';
 import { linkPath } from '../workspace/file-tree';
 import { blockFeelPlugins } from './block-menu';
@@ -190,6 +192,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(fileDrop.plugin);
 			crepe.editor
 				.config((ctx) => {
+					ctx.set(remarkGFMPlugin.options.key, gfmOptions);
 					ctx.update(diffConfig.key, (prev) => ({ ...prev, ignoreAttrs: { heading: ['id'] } }));
 					ctx.update(diffComponentConfig.key, (prev) => ({
 						...prev,

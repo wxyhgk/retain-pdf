@@ -143,6 +143,12 @@ test('tables and bare links the editor writes its own way are kept as written', 
 	assert.equal(result.changedBlocks, 1);
 });
 
+test('one tilde is text, as the blog reads it, so a formula written with them is kept', () => {
+	// Escaped or not, `H~2~O` means the same; `~~` is still strikethrough.
+	assert.equal(mergeMarkdownBody('H~2~O 约 ~300 K\n\n旧\n', 'H\\~2\\~O 约 \\~300 K\n\n新\n').body, 'H~2~O 约 ~300 K\n\n新\n');
+	assert.equal(mergeMarkdownBody('~~删掉~~\n', '删掉\n').changedBlocks, 1);
+});
+
 test('an edited list keeps its bullet, so it does not run into the list after it', () => {
 	const original = '- [ ] 待办\n- [x] 完成\n\n* 另一个列表\n';
 	// The editor writes its own bullet, and another one for the list right after.
