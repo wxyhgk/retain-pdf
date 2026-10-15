@@ -22,3 +22,32 @@ declare module '@milkdown/kit/preset/commonmark' {
 		spec?: (ctx: Ctx) => FencedBlockSpec,
 	): $FencedBlock<T>;
 }
+
+declare module '@milkdown/crepe/feature/block-edit' {
+	/** packages/crepe/src/feature/block-edit/block-menu/index.ts */
+	export type BlockMenuItem = {
+		label: string;
+		icon?: string;
+		current?: boolean;
+		danger?: boolean;
+	};
+	export interface BlockMenuTarget {
+		node: import('@milkdown/kit/prose/model').Node;
+		pos: number;
+	}
+	export type BlockMenuBuilder = {
+		addGroup: (
+			key: string,
+			label: string,
+		) => {
+			addItem: (key: string, item: BlockMenuItem & { onRun?: (ctx: Ctx) => void }) => unknown;
+		};
+	};
+	export type BuildBlockMenu = (builder: BlockMenuBuilder, target: BlockMenuTarget) => void;
+	export const blockMenuAPI: import('@milkdown/kit/utils').$Ctx<
+		{ toggle: (pos: number, anchor: HTMLElement) => void; hide: () => void },
+		'blockMenuAPICtx'
+	>;
+	/** The block edit feature's config, with `buildBlockMenu`. */
+	export type ForkBlockEditFeatureConfig = BlockEditFeatureConfig & { buildBlockMenu?: BuildBlockMenu };
+}

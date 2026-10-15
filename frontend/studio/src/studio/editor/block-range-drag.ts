@@ -11,8 +11,7 @@ const BLANK_SNAP_PX = 24;
 const IGNORED_TARGET = [
 	'.document-header',
 	'.milkdown-block-handle',
-	'.block-menu',
-	'.science-block-menu',
+	'.milkdown-block-menu',
 	'.milkdown-slash-menu',
 	'.milkdown-toolbar',
 	'.cm-editor',

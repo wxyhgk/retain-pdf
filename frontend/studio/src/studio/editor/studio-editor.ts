@@ -1,4 +1,5 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
+import type { ForkBlockEditFeatureConfig } from '@milkdown/crepe/feature/block-edit';
 import { editorViewCtx } from '@milkdown/kit/core';
 import { diffComponent, diffComponentConfig } from '@milkdown/kit/component/diff';
 import {
@@ -21,7 +22,7 @@ import '../../science/browser/molecule-renderer.css';
 import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '../../science/browser/science-renderer';
 import { linkPath } from '../workspace/file-tree';
-import { blockFeelPlugins } from './block-menu';
+import { blockFeelPlugins, buildBlockMenu } from './block-menu';
 import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
@@ -103,6 +104,39 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			if (crepe) await crepe.destroy();
 			root.replaceChildren();
 			const fileDrop = articleFileDrop(host.files);
+			// Crepe's own config, plus the block menu only the Milkdown fork has.
+			const blockEdit: ForkBlockEditFeatureConfig = {
+				buildBlockMenu,
+				buildMenu: (builder) => {
+					buildScienceSlashMenu(builder);
+					replaceSlashImageItem(builder, fileDrop.chooseImages);
+				},
+				textGroup: {
+					label: '文本',
+					text: { label: '正文' },
+					h1: { label: '标题 1' },
+					h2: { label: '标题 2' },
+					h3: { label: '标题 3' },
+					h4: null,
+					h5: null,
+					h6: null,
+					quote: { label: '引用' },
+					divider: { label: '分割线' },
+				},
+				listGroup: {
+					label: '列表',
+					bulletList: { label: '无序列表' },
+					orderedList: { label: '有序列表' },
+					taskList: { label: '待办' },
+				},
+				advancedGroup: {
+					label: '插入',
+					image: { label: '图片' },
+					codeBlock: { label: '代码' },
+					table: { label: '表格' },
+					math: { label: '公式' },
+				},
+			};
 			crepe = new Crepe({
 				root,
 				defaultValue: body,
@@ -151,37 +185,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						blockUploadPlaceholderText: '或粘贴图片链接',
 						blockConfirmButton: '确定',
 					},
-					[CrepeFeature.BlockEdit]: {
-						buildMenu: (builder) => {
-							buildScienceSlashMenu(builder);
-							replaceSlashImageItem(builder, fileDrop.chooseImages);
-						},
-						textGroup: {
-							label: '文本',
-							text: { label: '正文' },
-							h1: { label: '标题 1' },
-							h2: { label: '标题 2' },
-							h3: { label: '标题 3' },
-							h4: null,
-							h5: null,
-							h6: null,
-							quote: { label: '引用' },
-							divider: { label: '分割线' },
-						},
-						listGroup: {
-							label: '列表',
-							bulletList: { label: '无序列表' },
-							orderedList: { label: '有序列表' },
-							taskList: { label: '待办' },
-						},
-						advancedGroup: {
-							label: '插入',
-							image: { label: '图片' },
-							codeBlock: { label: '代码' },
-							table: { label: '表格' },
-							math: { label: '公式' },
-						},
-					},
+					[CrepeFeature.BlockEdit]: blockEdit,
 				},
 			});
 			crepe.editor.use(scienceBlockPlugins);

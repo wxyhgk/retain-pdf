@@ -1,4 +1,5 @@
 import { $prose, $view } from '@milkdown/utils';
+import { blockMenuAPI } from '@milkdown/crepe/feature/block-edit';
 import { $fencedBlock } from '@milkdown/kit/preset/commonmark';
 import { NodeSelection, Plugin, TextSelection } from '@milkdown/prose/state';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
@@ -6,7 +7,7 @@ import type { EditorView, NodeView } from 'prosemirror-view';
 
 import { createSciencePreview, hydrateSciencePreviews } from '../../science/browser/science-renderer.ts';
 import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
-import { openScienceBlockMenu, scienceBlockKeys, scienceBlockMenuPlugin } from './science-block-menu.ts';
+import { scienceBlockKeys } from './science-block-menu.ts';
 import {
 	SCIENCE_FENCE_TYPE,
 	parseScienceFence,
@@ -84,7 +85,7 @@ function paintMolecule(host: HTMLElement, info: string, source: string): void {
  * the caret inside the node (slash insert, the menu's 编辑源码) open the
  * source popup, which offers 画结构 when the editor can draw the block.
  */
-export const scienceBlockView = $view(scienceBlockSchema.schema.node, () => {
+export const scienceBlockView = $view(scienceBlockSchema.schema.node, (ctx) => {
 	return (initial: ProseMirrorNode, view: EditorView, getPos: () => number | undefined): NodeView => {
 		let node = initial;
 		const dom = document.createElement('div');
@@ -333,7 +334,7 @@ export const scienceBlockView = $view(scienceBlockSchema.schema.node, () => {
 			if (pos == null) return;
 			if (button === menuButton) {
 				close();
-				openScienceBlockMenu(view, pos, menuButton);
+				ctx.get(blockMenuAPI.key).toggle(pos, menuButton);
 				return;
 			}
 			if (popup) finish();
@@ -414,6 +415,5 @@ export const scienceBlockPlugins = [
 	...scienceBlockSchema,
 	scienceBlockView,
 	scienceBlockSelectionPlugin,
-	scienceBlockMenuPlugin,
 	scienceBlockKeys,
 ];

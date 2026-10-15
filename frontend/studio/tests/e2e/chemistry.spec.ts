@@ -85,7 +85,7 @@ test('Enter on a selected block and the menu’s 编辑源码 open the popup', a
 	const sdf = scienceBlock(page, 'SDF');
 	await sdf.hover();
 	await sdf.locator('.science-block-menu-button').click();
-	await page.locator('.science-block-menu [data-id="edit"]').click();
+	await page.locator('.milkdown-block-menu [data-key="edit"]').click();
 	await expect(popupInput(page)).toBeFocused();
 	await expect(popupInput(page)).toHaveValue(/M {2}END/);
 });
