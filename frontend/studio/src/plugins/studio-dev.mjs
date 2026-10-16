@@ -1,6 +1,7 @@
 import { lstat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
+import { checkArticle } from '../studio/server/article-check.mjs';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
@@ -165,6 +166,16 @@ export default function studioDev() {
 						const root = decodePathComponent(fileMatch[2]);
 						const resourcePath = decodePathComponent(fileMatch[3]);
 						return await file(response, await files.stream(slug, root, resourcePath));
+					}
+
+					// What would be wrong with the article, as the editor holds it, once published.
+					const checkMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/check$/u);
+					if (checkMatch && request.method === 'POST') {
+						const slug = decodePathComponent(checkMatch[1]);
+						const { source } = await readJsonChange(request);
+						if (typeof source !== 'string') return json(response, 400, { error: '文章内容必须是文本' });
+						await manager.locate(slug, '');
+						return json(response, 200, { issues: await checkArticle(blogRoot, slug, source) });
 					}
 
 					// A code block's `@file`, drawn as the blog draws it.

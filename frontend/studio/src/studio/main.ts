@@ -3,6 +3,7 @@
 import {
 	articleFilesUrl,
 	articleFileUrl,
+	checkArticle,
 	codeFileFigure,
 	createArticle,
 	getArticle,
@@ -24,6 +25,7 @@ import { createFilePanel } from './workspace/file-panel';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createPropertiesPanel } from './workspace/properties-panel';
+import { createPublishCheck } from './workspace/publish-check';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
 import { createTerminalPane } from './workspace/terminal';
@@ -37,8 +39,21 @@ const topBar = createTopBar(shell);
 const articleList = createArticleList(shell.querySelector<HTMLElement>('.article-sidebar')!, {
 	open: (slug) => { void session.open(slug); },
 });
+const publishCheck = createPublishCheck(document.querySelector<HTMLDialogElement>('#publish-check-dialog')!);
 const properties = createPropertiesPanel(shell.querySelector<HTMLElement>('.document-header')!, {
 	changed: (typed) => session.editProperties(typed),
+	// The article as the editor holds it, saved or not, is what gets published.
+	async mayPublish() {
+		const slug = session.slug;
+		if (!slug) return false;
+		editor.settle();
+		try {
+			return await publishCheck.confirm(await checkArticle(slug, session.current.source));
+		} catch (error) {
+			showToast(`发布前检查没能完成：${error instanceof Error ? error.message : '未知错误'}`);
+			return false;
+		}
+	},
 	publish: () => { void session.flush(); },
 	leaveTitle: () => editor.focusStart(),
 });

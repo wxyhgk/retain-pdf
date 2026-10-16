@@ -1,6 +1,6 @@
 import type { HastElement } from '../../code-files/render.mjs';
 import { articlePath, studioFileUrl } from '../shared/article-references.mjs';
-import type { ArticleFileEntry, ArticlePayload, ArticleSummary } from '../types.ts';
+import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
 	const response = await fetch(url, options);
@@ -84,6 +84,11 @@ export function articleFileUrl(slug: string, src: string): string {
 	const [root, ...rest] = path?.split('/') ?? [];
 	if (!path || (root !== 'img' && root !== 'assets') || !rest.length) return src;
 	return studioFileUrl(slug, path);
+}
+
+/** What would be wrong with the article, as `source`, once published. */
+export async function checkArticle(slug: string, source: string): Promise<ArticleIssue[]> {
+	return (await request<{ issues: ArticleIssue[] }>(articleApi(slug, 'check'), jsonOptions('POST', { source }))).issues;
 }
 
 /**

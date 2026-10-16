@@ -108,6 +108,20 @@ import { SITE_TITLE } from '../consts';
 			</aside>
 		</main>
 
+		<dialog id="publish-check-dialog" class="article-dialog publish-check">
+			<form method="dialog">
+				<div class="dialog-heading">
+					<div><strong>发布前检查</strong><span id="publish-check-summary"></span></div>
+					<button type="submit" value="cancel" aria-label="关闭">×</button>
+				</div>
+				<ul id="publish-check-list" class="publish-check-list"></ul>
+				<div class="dialog-actions">
+					<button id="publish-check-cancel" type="submit" value="cancel">先不发布</button>
+					<button id="publish-anyway" class="is-primary" type="submit" value="publish">仍然发布</button>
+				</div>
+			</form>
+		</dialog>
+
 		<dialog id="new-article-dialog" class="article-dialog">
 			<form id="new-article-form">
 				<div class="dialog-heading">
@@ -485,6 +499,15 @@ import { SITE_TITLE } from '../consts';
 	.dialog-actions button { padding: 7px 13px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 	.dialog-actions button[type='submit'] { border-color: var(--accent); background: var(--accent); color: white; }
 	.dialog-actions button:disabled { opacity: 0.55; cursor: wait; }
+	.dialog-actions button.is-primary { border-color: var(--accent); background: var(--accent); color: white; }
+	.dialog-actions button[hidden] { display: none; }
+	.publish-check { width: min(92vw, 560px); }
+	.publish-check-list { display: grid; gap: 6px; max-height: min(50vh, 360px); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+	/* The items are made in the page's script, out of reach of scoped styles. */
+	.publish-check-list :global(.publish-check-item) { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 8px; padding: 7px 10px; border-left: 3px solid #d18b00; border-radius: 5px; background: var(--surface-soft); font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; }
+	.publish-check-list :global(.publish-check-item.is-error) { border-left-color: #b42318; }
+	.publish-check-list :global(.publish-check-line) { padding-top: 1px; color: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; }
+	.publish-check .dialog-actions #publish-check-cancel { border-color: rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray-dark)); }
 	@media (max-width: 1100px) {
 		.studio-shell { --sidebar: 220px; grid-template-columns: var(--sidebar) minmax(0, 1fr); }
 		.side-panel { position: fixed; z-index: 30; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; box-shadow: -12px 0 38px rgba(0, 0, 0, 0.15); }

@@ -26,6 +26,14 @@ export type ArticleProperties = {
 	draft: boolean;
 };
 
+/** Something the check before publishing found: `error` stops the blog's build, `warning` shows broken on the page. */
+export type ArticleIssue = {
+	severity: 'error' | 'warning';
+	message: string;
+	/** Where in `index.md`; none for the properties as a whole. */
+	line?: number;
+};
+
 export type ArticlePayload = {
 	slug: string;
 	source: string;

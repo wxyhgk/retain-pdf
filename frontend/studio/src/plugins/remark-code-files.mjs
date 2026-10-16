@@ -39,7 +39,7 @@ export default function remarkCodeFiles({ skip = [] } = {}) {
 				// Some other block that happens to start with `@file`.
 				if (!codeFile) return;
 				parent.children[index] = hast(codeFileProblem(language, error.message));
-				file.message(error.message, node);
+				file.message(error.message, { place: node.position, ruleId: 'code-file', source: 'remark-code-files' });
 				return;
 			}
 			let fileText;
@@ -50,7 +50,7 @@ export default function remarkCodeFiles({ skip = [] } = {}) {
 				} catch {
 					const message = `找不到文件 ${reference}`;
 					parent.children[index] = hast(codeFileProblem(language, message));
-					file.message(message, node);
+					file.message(message, { place: node.position, ruleId: 'missing-file', source: 'remark-code-files' });
 					return;
 				}
 			}

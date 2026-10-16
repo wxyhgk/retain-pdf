@@ -4,6 +4,8 @@ import type { ArticleProperties } from '../types.ts';
 export type PropertiesPanelHost = {
 	/** The properties as typed. Why they cannot be saved, or null. */
 	changed(properties: ArticleProperties): string | null;
+	/** 发布 was pressed: whether the article may be published (the check before it). */
+	mayPublish(): Promise<boolean>;
 	/** 发布 or 撤回 was pressed, and the new draft state taken: save it now. */
 	publish(): void;
 	/** Enter or ↓ in the title: on to the body. */
@@ -75,7 +77,15 @@ export function createPropertiesPanel(root: HTMLElement, host: PropertiesPanelHo
 		panel.hidden = !open;
 		toggle.setAttribute('aria-expanded', String(open));
 	});
-	publish.addEventListener('click', () => {
+	publish.addEventListener('click', async () => {
+		if (draft.checked) {
+			publish.disabled = true;
+			try {
+				if (!(await host.mayPublish())) return;
+			} finally {
+				publish.disabled = false;
+			}
+		}
 		draft.checked = !draft.checked;
 		if (!report()) {
 			draft.checked = !draft.checked;
