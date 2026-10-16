@@ -191,3 +191,17 @@ test('a copy is a draft of today, titled 副本, with the files and views', asyn
 	assert.equal((await repository.read('original')).properties.draft, false, 'the original as it was');
 	await assert.rejects(repository.duplicate('original', 'original-copy'), ArticleConflictError);
 });
+
+test('an article is its index.md: one without article.views.json opens and saves', async (t) => {
+	const root = await temporaryBlog(t);
+	await mkdir(join(root, 'bare-note'));
+	await writeFile(join(root, 'bare-note', 'index.md'), "---\ntitle: Bare\ndescription: ''\npubDate: 2026-10-16\n---\n\nBody\n");
+	const repository = new ArticleRepository(root);
+	const opened = await repository.read('bare-note');
+	assert.equal(opened.properties.title, 'Bare');
+	const saved = await repository.save('bare-note', { source: `${opened.source}More.\n`, expectedRevision: opened.revision });
+	assert.notEqual(saved.revision, opened.revision);
+
+	await repository.create({ slug: 'fresh-note', title: 'Fresh' });
+	await assert.rejects(readFile(join(root, 'fresh-note', 'article.config.yaml')), /ENOENT/u);
+});

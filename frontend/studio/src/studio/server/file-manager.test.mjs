@@ -42,7 +42,6 @@ test('lists the article folder, locking its own files and resource folders', asy
 	const entries = await files.list('note');
 	assert.deepEqual(paths(entries), [
 		'ai/ 🔒',
-		'article.config.yaml 🔒',
 		'article.views.json 🔒',
 		'assets/ 🔒',
 		'assets/a.cube',

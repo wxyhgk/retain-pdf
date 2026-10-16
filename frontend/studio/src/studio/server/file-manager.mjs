@@ -8,7 +8,7 @@ import { ARTICLE_RESOURCE_DIRECTORIES, articleBundlePaths, resolveInside, Studio
 
 export const DEFAULT_UPLOAD_SIZE_LIMIT = 64 * 1024 * 1024;
 /** The article's own files: listed so the author sees them, changed only by the editor. */
-const LOCKED_FILES = Object.freeze(['index.md', 'article.config.yaml', 'article.views.json']);
+const LOCKED_FILES = Object.freeze(['index.md', 'article.views.json']);
 const MAX_NAME_BYTES = 255;
 
 /**

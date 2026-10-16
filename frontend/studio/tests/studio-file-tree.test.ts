@@ -20,7 +20,6 @@ const folder = (path: string, locked = false): ArticleFileEntry => ({ path, kind
 // As the server sorts them: path by path.
 const entries: ArticleFileEntry[] = [
 	folder('ai', true),
-	{ ...file('article.config.yaml'), locked: true },
 	{ ...file('article.views.json'), locked: true },
 	folder('assets', true),
 	file('assets/a.cube'),
@@ -35,7 +34,7 @@ const entries: ArticleFileEntry[] = [
 
 test('the tree puts the article first and folders before files', () => {
 	const tree = buildFileTree(entries);
-	assert.deepEqual(tree.map((node) => node.name), ['index.md', 'img', 'assets', 'ai', 'article.config.yaml', 'article.views.json']);
+	assert.deepEqual(tree.map((node) => node.name), ['index.md', 'img', 'assets', 'ai', 'article.views.json']);
 	const rows = visibleNodes(tree, new Set(['assets', 'assets/frames']));
 	assert.deepEqual(rows.map((node) => `${'  '.repeat(node.depth)}${node.name}`), [
 		'index.md',
@@ -47,7 +46,6 @@ test('the tree puts the article first and folders before files', () => {
 		'  a.cube',
 		'  frames-2.xyz',
 		'ai',
-		'article.config.yaml',
 		'article.views.json',
 	]);
 });

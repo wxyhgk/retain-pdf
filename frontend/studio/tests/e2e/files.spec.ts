@@ -27,7 +27,7 @@ test.beforeEach(() => resetFixture());
 test('the panel lists the article, with folders git has not kept', async ({ page }) => {
 	await openStudio(page);
 	await expect(page.locator('#files-root')).toHaveText('blog/studio-fixture/');
-	await expect(page.locator('#file-tree .file-row .file-name')).toHaveText(['index.md', 'img', 'assets', 'ai', 'article.config.yaml', 'article.views.json']);
+	await expect(page.locator('#file-tree .file-row .file-name')).toHaveText(['index.md', 'img', 'assets', 'ai', 'article.views.json']);
 });
 
 test('an upload lands by kind, and a file the article does not use is dimmed', async ({ page }) => {

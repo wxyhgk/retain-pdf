@@ -70,7 +70,7 @@ export type SessionHost = {
 	saved(slug: string, properties: ArticleProperties, problems: string[]): void;
 };
 
-const ARTICLE_TEXT_FILES = ['index.md', 'article.config.yaml', 'article.views.json'];
+const ARTICLE_TEXT_FILES = ['index.md', 'article.views.json'];
 
 /**
  * The article open in the Studio: loading it, taking in the editor's and

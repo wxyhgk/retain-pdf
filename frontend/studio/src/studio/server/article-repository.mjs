@@ -2,7 +2,6 @@ import { cp, lstat, mkdir, readdir, readFile, rename, stat, writeFile } from 'no
 import { basename, resolve } from 'node:path';
 import { updateStudioFrontmatter } from '../document/frontmatter.ts';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
-import { DEFAULT_ARTICLE_CONFIG } from './article-config.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from './article-views.mjs';
 import {
 	ARTICLE_RESOURCE_DIRECTORIES,
@@ -13,8 +12,9 @@ import {
 } from './bundle-paths.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from './schemas.mjs';
 
-function bundleRevision(source, configSource, viewsSource) {
-	return contentRevision(`${source}\0${configSource}\0${viewsSource}`);
+/** What the editor must have read for a change to apply: the article's text and its saved views. */
+function bundleRevision(source, viewsSource) {
+	return contentRevision(`${source}\0${viewsSource}`);
 }
 
 async function readViewsSource(path) {
@@ -88,7 +88,6 @@ export class ArticleRepository {
 		await Promise.all(ARTICLE_RESOURCE_DIRECTORIES.map((name) => mkdir(paths[name], { recursive: true })));
 		await Promise.all([
 			writeFile(paths.markdown, source, { encoding: 'utf8', flag: 'wx' }),
-			writeFile(paths.config, DEFAULT_ARTICLE_CONFIG, { encoding: 'utf8', flag: 'wx' }),
 			writeFile(paths.views, DEFAULT_ARTICLE_VIEWS, { encoding: 'utf8', flag: 'wx' }),
 		]);
 		return { slug };
@@ -147,12 +146,8 @@ export class ArticleRepository {
 	async read(slug) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
-		const [source, configSource, viewsSource] = await Promise.all([
-			readFile(paths.markdown, 'utf8'),
-			readFile(paths.config, 'utf8'),
-			readViewsSource(paths.views),
-		]);
-		const revision = bundleRevision(source, configSource, viewsSource);
+		const [source, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
+		const revision = bundleRevision(source, viewsSource);
 		return {
 			slug,
 			content: source,
@@ -170,12 +165,8 @@ export class ArticleRepository {
 	async snapshot(slug) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
-		const [source, configSource, viewsSource] = await Promise.all([
-			readFile(paths.markdown, 'utf8'),
-			readFile(paths.config, 'utf8'),
-			readViewsSource(paths.views),
-		]);
-		return { paths, source, configSource, viewsSource, revision: bundleRevision(source, configSource, viewsSource) };
+		const [source, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
+		return { paths, source, viewsSource, revision: bundleRevision(source, viewsSource) };
 	}
 
 	/**
@@ -186,7 +177,7 @@ export class ArticleRepository {
 	async writeSnapshot(snapshot, { source, viewsSource }) {
 		if (source !== snapshot.source) await atomicWriteText(snapshot.paths.markdown, source);
 		if (viewsSource !== snapshot.viewsSource) await atomicWriteText(snapshot.paths.views, viewsSource);
-		return bundleRevision(source, snapshot.configSource, viewsSource);
+		return bundleRevision(source, viewsSource);
 	}
 
 	save(slug, change) {
@@ -198,19 +189,15 @@ export class ArticleRepository {
 		if (typeof nextSource !== 'string') throw new ArticleValidationError('文章内容必须是文本');
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
-		const [current, configSource, viewsSource] = await Promise.all([
-			readFile(paths.markdown, 'utf8'),
-			readFile(paths.config, 'utf8'),
-			readViewsSource(paths.views),
-		]);
-		const currentRevision = bundleRevision(current, configSource, viewsSource);
+		const [current, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
+		const currentRevision = bundleRevision(current, viewsSource);
 		const expected = expectedRevision ?? expectedHash;
 		if (expected && currentRevision !== expected) {
 			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');
 		}
 		// Saved even when the properties are wrong, so nothing typed is lost; `problems` says what to fix.
 		await atomicWriteText(paths.markdown, nextSource);
-		const revision = bundleRevision(nextSource, configSource, viewsSource);
+		const revision = bundleRevision(nextSource, viewsSource);
 		return { hash: revision, revision, problems: articleProblems(nextSource) };
 	}
 
@@ -221,18 +208,14 @@ export class ArticleRepository {
 	async #saveMoleculeView(slug, key, { format, view, display, expectedRevision }) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
-		const [source, configSource, viewsSource] = await Promise.all([
-			readFile(paths.markdown, 'utf8'),
-			readFile(paths.config, 'utf8'),
-			readViewsSource(paths.views),
-		]);
-		const currentRevision = bundleRevision(source, configSource, viewsSource);
+		const [source, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
+		const currentRevision = bundleRevision(source, viewsSource);
 		if (expectedRevision && currentRevision !== expectedRevision) {
 			throw new ArticleConflictError('文章或视角配置已被其他程序修改，请重新载入后再保存');
 		}
 		const nextViewsSource = writeMoleculeView(viewsSource, key, format, view, display);
 		await atomicWriteText(paths.views, nextViewsSource);
-		const revision = bundleRevision(source, configSource, nextViewsSource);
+		const revision = bundleRevision(source, nextViewsSource);
 		return { revision, chemistryViews: readMoleculeViews(nextViewsSource) };
 	}
 }

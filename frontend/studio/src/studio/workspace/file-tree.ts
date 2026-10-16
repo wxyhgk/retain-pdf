@@ -15,7 +15,7 @@ export type FileNode = {
 };
 
 /** The article's own text first, then its folders, then the files only the Studio writes. */
-const TOP_LEVEL_ORDER = ['index.md', 'img', 'assets', 'ai', 'article.config.yaml', 'article.views.json'];
+const TOP_LEVEL_ORDER = ['index.md', 'img', 'assets', 'ai', 'article.views.json'];
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif']);
 /** Folders whose files are published with the article, so a file nothing refers to is worth pointing out. */
 const PUBLISHED_FOLDERS = ['img', 'assets'];

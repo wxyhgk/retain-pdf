@@ -26,7 +26,6 @@ export function articleBundlePaths(blogRoot, slug) {
 	return Object.freeze({
 		directory,
 		markdown: resolveInside(directory, 'index.md'),
-		config: resolveInside(directory, 'article.config.yaml'),
 		views: resolveInside(directory, 'article.views.json'),
 		img: resolveInside(directory, 'img'),
 		assets: resolveInside(directory, 'assets'),
