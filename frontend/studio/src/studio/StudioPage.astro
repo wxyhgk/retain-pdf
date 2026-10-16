@@ -468,6 +468,8 @@ import { SITE_TITLE } from '../consts';
 	:global(.upload-placeholder) { display: inline-block; margin: 2px 0; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: rgb(var(--gray-dark)); font-size: 12px; }
 	:global(.studio-toast) { position: fixed; z-index: 60; bottom: 24px; left: 50%; max-width: min(560px, calc(100vw - 32px)); padding: 9px 14px; border-radius: 8px; background: #1f2328; color: white; font-size: 12px; line-height: 1.5; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2); transform: translateX(-50%); }
 	:global(.studio-toast.is-error) { background: #a12d24; }
+	:global(.studio-toast-action) { margin-left: 14px; padding: 2px 8px; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 5px; background: transparent; color: white; font: inherit; font-weight: 600; cursor: pointer; }
+	:global(.studio-toast-action:hover) { background: rgba(255, 255, 255, 0.12); }
 	:global(.context-menu) { width: auto; min-width: 190px; max-width: 280px; }
 	:global(.context-menu .block-menu-item kbd) { margin-left: auto; padding-left: 16px; color: rgb(var(--gray)); font-family: inherit; font-size: 11px; }
 	:global(.context-menu-separator) { height: 1px; margin: 4px 6px; background: rgb(var(--gray-light)); }

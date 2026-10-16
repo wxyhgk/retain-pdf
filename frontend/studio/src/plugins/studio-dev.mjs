@@ -187,7 +187,7 @@ export default function studioDev() {
 						return json(response, 200, { figure });
 					}
 
-					const managerMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(tree|files|folders|move|trash|reveal)$/u);
+					const managerMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(tree|files|folders|move|trash|restore|reveal)$/u);
 					if (managerMatch) {
 						const slug = decodePathComponent(managerMatch[1]);
 						const action = `${request.method} ${managerMatch[2]}`;
@@ -213,6 +213,10 @@ export default function studioDev() {
 						if (action === 'POST trash') {
 							const { path } = await readJsonChange(request);
 							return json(response, 200, await manager.trash(slug, path));
+						}
+						if (action === 'POST restore') {
+							const { trashed } = await readJsonChange(request);
+							return json(response, 200, await manager.restore(slug, trashed));
 						}
 						if (action === 'POST reveal') {
 							const { path } = await readJsonChange(request);

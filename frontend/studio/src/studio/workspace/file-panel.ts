@@ -2,6 +2,7 @@ import {
 	createArticleFolder,
 	listArticleFiles,
 	moveArticleFile,
+	restoreArticleFile,
 	revealArticleFile,
 	trashArticleFile,
 	uploadArticleFile,
@@ -27,6 +28,7 @@ import {
 	visibleNodes,
 	type FileNode,
 } from './file-tree';
+import { showToast } from './toast';
 
 /** What the file panel needs from the editor around it. */
 export type FilePanelHost = {
@@ -404,12 +406,30 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		const what = entry.kind === 'directory' ? `文件夹「${name}」及其中所有文件` : `「${name}」`;
 		const warning = uses
 			? `正文里有 ${uses} 处引用${entry.kind === 'directory' ? '这个文件夹里的文件' : '它'}，删除后它们会失效。\n\n确定把${what}移到回收站吗？`
-			: `把${what}移到回收站？\n文件会移到项目的 .studio-trash/ 文件夹，需要时可以从那里找回。`;
+			: `把${what}移到回收站？\n删除后可以撤销；回收站（项目的 .studio-trash/）里的文件保留 30 天。`;
 		if (!confirm(warning)) return;
+		const article = slug!;
 		void run(`正在删除 ${name}…`, async () => {
-			await trashArticleFile(slug!, entry.path);
+			const { trashed } = await trashArticleFile(article, entry.path);
 			if (selected === entry.path) selected = parentPath(entry.path) || null;
+			showToast(`已删除 ${entry.path}`, { action: { label: '撤销', run: () => restore(article, trashed, entry.path) } });
 			return `已把 ${entry.path} 移到 .studio-trash/`;
+		});
+	}
+
+	function restore(article: string, trashed: string, path: string): void {
+		// Another article open by now: put the file back all the same.
+		if (article !== slug) {
+			restoreArticleFile(article, trashed).then(
+				() => showToast(`已恢复 ${path}`),
+				(error) => showToast(errorMessage(error, '恢复失败'), true),
+			);
+			return;
+		}
+		void run(`正在恢复 ${fileName(path)}…`, async () => {
+			await restoreArticleFile(article, trashed);
+			selected = path;
+			return `已恢复 ${path}`;
 		});
 	}
 

@@ -107,7 +107,7 @@ test('new folders are named in place', async ({ page }) => {
 	expect(fixtureHas('assets/orbitals')).toBe(true);
 });
 
-test('removing a file the article uses warns first, and the file goes to the trash', async ({ page }) => {
+test('removing a file the article uses warns first, the file goes to the trash, and 撤销 brings it back', async ({ page }) => {
 	writeFixtureFile('img/plot.png', PNG);
 	appendToFixture('\n![图](./img/plot.png)\n');
 	await openStudio(page);
@@ -124,6 +124,10 @@ test('removing a file the article uses warns first, and the file goes to the tra
 	await menu(page, 'img/plot.png', '移到回收站');
 	await expect(fileRow(page, 'img/plot.png')).toHaveCount(0);
 	expect(fixtureHas('img/plot.png')).toBe(false);
+
+	await page.locator('.studio-toast-action', { hasText: '撤销' }).click();
+	await expect(fileRow(page, 'img/plot.png')).toBeVisible();
+	expect(fixtureHas('img/plot.png')).toBe(true);
 });
 
 test('the article’s own files and folders cannot be renamed or removed', async ({ page }) => {

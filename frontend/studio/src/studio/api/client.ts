@@ -156,7 +156,12 @@ export function moveArticleFile(
 	return request(articleApi(slug, 'move'), jsonOptions('POST', { from, to, expectedRevision }));
 }
 
-export function trashArticleFile(slug: string, path: string): Promise<{ path: string; trashedTo: string }> {
+/** Puts back a file `trashArticleFile` removed (`trashed`, as it returned), where it was. */
+export function restoreArticleFile(slug: string, trashed: string): Promise<{ path: string }> {
+	return request(articleApi(slug, 'restore'), jsonOptions('POST', { trashed }));
+}
+
+export function trashArticleFile(slug: string, path: string): Promise<{ path: string; trashedTo: string; trashed: string }> {
 	return request(articleApi(slug, 'trash'), jsonOptions('POST', { path }));
 }
 

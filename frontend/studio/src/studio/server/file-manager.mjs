@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
 import { link, lstat, mkdir, readdir, rename, rm } from 'node:fs/promises';
-import { basename, extname, join, resolve } from 'node:path';
+import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import { ARTICLE_RESOURCE_DIRECTORIES, articleBundlePaths, resolveInside, StudioPathError } from './bundle-paths.mjs';
@@ -111,17 +111,83 @@ export class ArticleFileManager {
 		return { path: target.join('/') };
 	}
 
-	/** Moves a file or folder into the trash, under the time and article it came from. */
+	/**
+	 * Moves a file or folder into the trash, under the time and article it
+	 * came from: `<time>-<slug>/img/a.png`. `trashed` names it there, for `restore`.
+	 */
 	async trash(slug, path) {
 		const { directory } = await this.#article(slug);
 		const segments = managedSegments(path);
 		const sourcePath = await existingEntry(directory, segments);
-		const stamp = new Date().toISOString().replace(/[:.]/gu, '-');
-		const trashFolder = join(this.trashRoot, `${stamp}-${slug}`, ...segments.slice(0, -1));
-		await mkdir(trashFolder, { recursive: true });
-		const trashed = join(trashFolder, segments[segments.length - 1]);
-		await rename(sourcePath, trashed);
-		return { path: segments.join('/'), trashedTo: trashed };
+		const trashed = [`${trashStamp()}-${slug}`, ...segments].join('/');
+		const trashedTo = join(this.trashRoot, ...trashed.split('/'));
+		await mkdir(dirname(trashedTo), { recursive: true });
+		await rename(sourcePath, trashedTo);
+		await this.#sweep();
+		return { path: segments.join('/'), trashedTo, trashed };
+	}
+
+	/** Puts back what `trash` moved away (`trashed` as it returned), where it was; never over something since put there. */
+	async restore(slug, trashed) {
+		const { directory } = await this.#article(slug);
+		const [folder, ...segments] = trashedSegments(trashed);
+		const stamp = TRASH_STAMP.exec(folder)?.[0];
+		if (!stamp || folder !== `${stamp}-${slug}`) throw new StudioPathError('不是这篇文章删除的文件');
+		managedSegments(segments.join('/'));
+		const source = await existingEntry(this.trashRoot, [folder, ...segments]).catch((error) => {
+			if (error instanceof FileNotFoundError) throw new FileNotFoundError('回收站里已经没有这个文件了');
+			throw error;
+		});
+		await ensureResourceFolder(directory, segments[0]);
+		const parent = await makeFolders(directory, segments.slice(0, -1));
+		const target = resolveInside(parent, segments[segments.length - 1]);
+		if (await exists(target)) throw new FileConflictError(`${segments.join('/')} 已经有同名的文件，先改名或删除它`);
+		await rename(source, target);
+		return { path: segments.join('/') };
+	}
+
+	/**
+	 * Moves a whole article into the trash: `articles/<time>-<slug>`.
+	 * `trashed` names it there, for `restoreArticle`.
+	 */
+	async trashArticle(slug) {
+		const { directory } = await this.#article(slug);
+		const trashed = `${ARTICLE_TRASH}/${trashStamp()}-${slug}`;
+		const trashedTo = join(this.trashRoot, ...trashed.split('/'));
+		await mkdir(dirname(trashedTo), { recursive: true });
+		await rename(directory, trashedTo);
+		await this.#sweep();
+		return { slug, trashedTo, trashed };
+	}
+
+	/** Puts back an article `trashArticle` moved away, under its own name, unless another article has taken it. */
+	async restoreArticle(trashed) {
+		const [folder, name, ...rest] = trashedSegments(trashed);
+		const match = TRASH_STAMP.exec(name ?? '');
+		if (folder !== ARTICLE_TRASH || !match || rest.length) throw new StudioPathError('不是删除的文章');
+		const slug = name.slice(match[0].length + 1);
+		const target = articleBundlePaths(this.blogRoot, slug).directory;
+		const source = await existingEntry(this.trashRoot, [folder, name]).catch((error) => {
+			if (error instanceof FileNotFoundError) throw new FileNotFoundError('回收站里已经没有这篇文章了');
+			throw error;
+		});
+		if (await exists(target)) throw new FileConflictError(`已经有一篇叫 ${slug} 的文章了`);
+		await rename(source, target);
+		return { slug };
+	}
+
+	/** What has been in the trash for longer than `TRASH_DAYS` goes for good. */
+	async #sweep() {
+		const before = Date.now() - TRASH_DAYS * 24 * 60 * 60 * 1000;
+		const old = async (folder) => {
+			const names = await readdir(folder).catch(() => []);
+			return names.filter((name) => {
+				const time = trashTime(name);
+				return time !== null && time < before;
+			}).map((name) => join(folder, name));
+		};
+		const expired = [...(await old(this.trashRoot)), ...(await old(join(this.trashRoot, ARTICLE_TRASH)))];
+		await Promise.all(expired.map((path) => rm(path, { recursive: true, force: true }).catch(() => {})));
 	}
 
 	/**
@@ -147,6 +213,33 @@ export class ArticleFileManager {
 		if (!info.isDirectory() || info.isSymbolicLink()) throw new FileNotFoundError('文章不存在');
 		return paths;
 	}
+}
+
+/** How long the trash keeps what is put in it. */
+export const TRASH_DAYS = 30;
+/** Where whole articles go in the trash, apart from the files of one. */
+const ARTICLE_TRASH = 'articles';
+/** The time a trashed entry's name starts with: `2026-10-16T12-34-56-789Z`. */
+const TRASH_STAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/u;
+
+function trashStamp() {
+	return new Date().toISOString().replace(/[:.]/gu, '-');
+}
+
+/** When an entry of the trash was put there, from its name; null for anything else. */
+function trashTime(name) {
+	const match = TRASH_STAMP.exec(name);
+	if (!match) return null;
+	const [, year, month, day, hour, minute, second, millisecond] = match.map(Number);
+	return Date.UTC(year, month - 1, day, hour, minute, second, millisecond);
+}
+
+/** A name `trash` gave, split: no empty, `.` or `..` part, nothing hidden. */
+function trashedSegments(trashed) {
+	if (typeof trashed !== 'string' || !trashed || trashed.includes('\\') || trashed.includes('\0')) throw new StudioPathError('无效的回收站路径');
+	const segments = trashed.split('/');
+	if (segments.some((segment) => !segment || segment === '.' || segment === '..' || isHidden(segment))) throw new StudioPathError('无效的回收站路径');
+	return segments;
 }
 
 function isHidden(name) {

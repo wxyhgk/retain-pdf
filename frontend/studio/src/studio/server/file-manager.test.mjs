@@ -202,3 +202,47 @@ test('a dropped folder arrives with its folders, made safe', async (t) => {
 		{ path: 'assets/folder/folder/escape/a.log', size: 1 },
 	);
 });
+
+test('what was removed can be put back, but never over what has taken its place', async (t) => {
+	const { paths: bundle, files } = await fixture(t);
+	await mkdir(join(bundle.assets, 'runs'));
+	await writeFile(join(bundle.assets, 'runs', 'out.log'), 'log');
+
+	const first = await files.trash('note', 'assets/runs');
+	assert.match(first.trashed, /^\d{4}-\d{2}-\d{2}T[\d-]+Z-note\/assets\/runs$/u);
+	assert.deepEqual(await files.restore('note', first.trashed), { path: 'assets/runs' });
+	assert.equal(await readFile(join(bundle.assets, 'runs', 'out.log'), 'utf8'), 'log');
+	await assert.rejects(files.restore('note', first.trashed), FileNotFoundError);
+
+	const second = await files.trash('note', 'assets/runs/out.log');
+	await writeFile(join(bundle.assets, 'runs', 'out.log'), 'newer');
+	await assert.rejects(files.restore('note', second.trashed), FileConflictError);
+	assert.equal(await readFile(join(bundle.assets, 'runs', 'out.log'), 'utf8'), 'newer');
+
+	await assert.rejects(files.restore('note', '../../etc/passwd'), /回收站路径/u);
+	await assert.rejects(files.restore('note', second.trashed.replace('-note/', '-other-note/')), /不是这篇文章/u);
+});
+
+test('a whole article goes to the trash and comes back under its name', async (t) => {
+	const { project, paths: bundle, files } = await fixture(t);
+	const trashed = await files.trashArticle('note');
+	assert.match(trashed.trashed, /^articles\/[\d-]+T[\d-]+Z-note$/u);
+	assert.ok(trashed.trashedTo.startsWith(join(project, '.studio-trash', 'articles')));
+	await assert.rejects(readFile(bundle.markdown, 'utf8'));
+	assert.deepEqual(await files.restoreArticle(trashed.trashed), { slug: 'note' });
+	assert.match(await readFile(bundle.markdown, 'utf8'), /title/u);
+	await assert.rejects(files.restoreArticle('2026-01-01T00-00-00-000Z-note'), /不是删除的文章/u);
+});
+
+test('the trash forgets what it has kept for a month', async (t) => {
+	const { project, paths: bundle, files } = await fixture(t);
+	const trashRoot = join(project, '.studio-trash');
+	await mkdir(join(trashRoot, '2020-01-01T00-00-00-000Z-note', 'img'), { recursive: true });
+	await mkdir(join(trashRoot, 'articles', '2020-01-01T00-00-00-000Z-old'), { recursive: true });
+	await writeFile(join(bundle.img, 'a.png'), 'png');
+	await files.trash('note', 'img/a.png');
+	const left = await readdir(trashRoot);
+	assert.equal(left.filter((name) => name.startsWith('2020')).length, 0);
+	assert.deepEqual(await readdir(join(trashRoot, 'articles')), []);
+	assert.equal(left.filter((name) => name.endsWith('-note')).length, 1);
+});
