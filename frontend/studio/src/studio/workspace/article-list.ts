@@ -11,6 +11,8 @@ export type ArticleListHost = {
 	remove(article: ArticleSummary): void;
 	/** Commits it to git; offered when git has changes of it to commit. */
 	commit(article: ArticleSummary): void;
+	/** The articles, each time they are read. */
+	listed?(articles: ArticleSummary[]): void;
 };
 
 const REFRESH_DELAY_MS = 300;
@@ -38,8 +40,8 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		open.className = `page-row${active ? ' active' : ''}`;
 		open.setAttribute('aria-current', active ? 'page' : 'false');
 		const icon = document.createElement('span');
-		icon.className = 'page-icon';
-		icon.textContent = '▤';
+		icon.className = `page-icon${article.icon ? ' is-emoji' : ''}`;
+		icon.textContent = article.icon || '▤';
 		const title = document.createElement('span');
 		title.className = 'page-title';
 		title.textContent = article.title;
@@ -101,6 +103,7 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	async function load(): Promise<ArticleSummary[]> {
 		articles = await listArticles();
 		render();
+		host.listed?.(articles);
 		return articles;
 	}
 
@@ -124,6 +127,8 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			if (!article) return;
 			article.title = properties.title;
 			article.draft = properties.draft;
+			if (properties.icon !== undefined) article.icon = properties.icon;
+			article.tags = properties.tags;
 			render();
 		},
 		/** Something changed in blog/: an article may have come, gone or been retitled. */

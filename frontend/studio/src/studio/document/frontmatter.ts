@@ -11,6 +11,9 @@ type SourceLine = {
 
 const EDITABLE_KEYS = ['title', 'description', 'pubDate', 'tags', 'draft'] as const;
 type EditableKey = typeof EDITABLE_KEYS[number];
+/** Properties a page may go without: written when set, taken out when emptied, left alone when not given. */
+const OPTIONAL_KEYS = { icon: 'icon', cover: 'heroImage', kind: 'kind' } as const;
+type OptionalKey = keyof typeof OPTIONAL_KEYS;
 
 function readLines(source: string): SourceLine[] {
 	const lines: SourceLine[] = [];
@@ -52,13 +55,34 @@ function inlineComment(line: string): string {
 	return '';
 }
 
-function encodedValue(key: EditableKey, value: ArticleProperties[EditableKey]): string {
+function encodedValue(key: string, value: string | string[] | boolean): string {
 	if (key === 'draft') return value ? 'true' : 'false';
 	if (key === 'tags') return `[${(value as string[]).map((tag) => JSON.stringify(tag)).join(', ')}]`;
 	return JSON.stringify(value);
 }
 
-function replaceYamlField(yaml: string, key: EditableKey, value: ArticleProperties[EditableKey], defaultEol: string): string {
+/** Where a top-level field and the lines that continue it end: before the next field, leaving trailing blanks and comments. */
+function fieldEnd(lines: SourceLine[], fieldIndex: number, length: number): number {
+	const field = lines[fieldIndex]!;
+	let end = lines.slice(fieldIndex + 1).find((line) => topLevelKey(line) !== null)?.start ?? length;
+	const between = lines.filter((line) => line.start > field.start && line.start < end);
+	for (let index = between.length - 1; index >= 0; index -= 1) {
+		const line = between[index]!;
+		if (line.content.trim() === '' || line.content.trimStart().startsWith('#')) end = line.start;
+		else break;
+	}
+	return end;
+}
+
+/** Takes a top-level field out, with what continues it. */
+function removeYamlField(yaml: string, key: string): string {
+	const lines = readLines(yaml);
+	const fieldIndex = lines.findIndex((line) => topLevelKey(line) === key);
+	if (fieldIndex < 0) return yaml;
+	return `${yaml.slice(0, lines[fieldIndex]!.start)}${yaml.slice(fieldEnd(lines, fieldIndex, yaml.length))}`;
+}
+
+function replaceYamlField(yaml: string, key: string, value: string | string[] | boolean, defaultEol: string): string {
 	const lines = readLines(yaml);
 	const fieldIndex = lines.findIndex((line) => topLevelKey(line) === key);
 	const replacementValue = encodedValue(key, value);
@@ -68,13 +92,7 @@ function replaceYamlField(yaml: string, key: EditableKey, value: ArticleProperti
 	}
 
 	const field = lines[fieldIndex]!;
-	let end = lines.slice(fieldIndex + 1).find((line) => topLevelKey(line) !== null)?.start ?? yaml.length;
-	const between = lines.filter((line) => line.start > field.start && line.start < end);
-	for (let index = between.length - 1; index >= 0; index -= 1) {
-		const line = between[index]!;
-		if (line.content.trim() === '' || line.content.trimStart().startsWith('#')) end = line.start;
-		else break;
-	}
+	const end = fieldEnd(lines, fieldIndex, yaml.length);
 	const comment = inlineComment(field.content);
 	const eol = field.eol || defaultEol;
 	const replacement = `${key}: ${replacementValue}${comment ? ` ${comment}` : ''}${eol}`;
@@ -95,5 +113,13 @@ export function updateStudioFrontmatter(source: string, properties: ArticlePrope
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
 	let yaml = document.frontmatter.yamlRaw;
 	for (const key of EDITABLE_KEYS) yaml = replaceYamlField(yaml, key, properties[key], defaultEol);
+	for (const [property, key] of Object.entries(OPTIONAL_KEYS) as Array<[OptionalKey, string]>) {
+		const value = properties[property];
+		if (value === undefined) continue;
+		const present = readLines(yaml).some((line) => topLevelKey(line) === key);
+		// A post is what an article is unless it says otherwise: no `kind: post` is written for it.
+		const empty = !value || (property === 'kind' && value === 'post' && !present);
+		yaml = empty ? removeYamlField(yaml, key) : replaceYamlField(yaml, key, value, defaultEol);
+	}
 	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
 }

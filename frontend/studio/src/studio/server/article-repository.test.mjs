@@ -23,7 +23,7 @@ test('bundle paths reject traversal and invalid slugs', () => {
 
 test('frontmatter is parsed as YAML and shares the publication rule', () => {
 	const source = `---\ntitle: "A: quoted title"\ndescription: test\npubDate: 2026-08-09\ntags: []\ndraft: true\n---\n\nBody\n`;
-	assert.deepEqual(articleSummary(source, 'fallback'), { title: 'A: quoted title', draft: true });
+	assert.deepEqual(articleSummary(source, 'fallback'), { title: 'A: quoted title', draft: true, icon: '', tags: [] });
 	assert.equal(validateArticleSource(source).success, true);
 	assert.equal(isPublishedArticle({ data: { draft: true } }), false);
 	assert.equal(isPublishedArticle({ data: { draft: false } }), true);
@@ -35,7 +35,7 @@ test('repository preserves the legacy API while supporting revision aliases', as
 	await repository.create({ slug: 'first-note', title: "研究者的 '草稿'" });
 
 	const listed = await repository.list();
-	assert.deepEqual(listed, [{ slug: 'first-note', title: "研究者的 '草稿'", draft: true }]);
+	assert.deepEqual(listed, [{ slug: 'first-note', title: "研究者的 '草稿'", draft: true, icon: '', tags: [] }]);
 
 	const initial = await repository.read('first-note');
 	assert.equal(initial.content, initial.source);
@@ -47,6 +47,9 @@ test('repository preserves the legacy API while supporting revision aliases', as
 		pubDate: new Date().toISOString().slice(0, 10),
 		tags: [],
 		draft: true,
+		icon: '',
+		cover: '',
+		kind: 'post',
 	});
 
 	const saved = await repository.save('first-note', {
@@ -183,7 +186,7 @@ test('a copy is a draft of today, titled 副本, with the files and views', asyn
 
 	await repository.duplicate('original', 'original-copy', { now: new Date('2026-10-16T08:00:00Z') });
 	const copy = await repository.read('original-copy');
-	assert.deepEqual(copy.properties, { title: 'Original（副本）', description: '', pubDate: '2026-10-16', tags: ['DFT'], draft: true });
+	assert.deepEqual(copy.properties, { title: 'Original（副本）', description: '', pubDate: '2026-10-16', tags: ['DFT'], draft: true, icon: '', cover: '', kind: 'post' });
 	assert.match(copy.source, /# 标题\n/u);
 	assert.match(copy.source, /macros:\n  Ha: \\hat\{H\}\n---\n\n正文\n$/u);
 	assert.equal(await readFile(join(root, 'original-copy', 'img', 'a.png'), 'utf8'), 'png');

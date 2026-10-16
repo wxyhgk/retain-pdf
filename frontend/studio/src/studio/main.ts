@@ -5,9 +5,10 @@ import {
 	articleFileUrl,
 	checkArticle,
 	codeFileFigure,
-	gitStatus,
 	createArticle,
 	getArticle,
+	gitStatus,
+	listArticleFiles,
 	saveArticle,
 	saveMoleculeView,
 	StudioApiError,
@@ -24,9 +25,9 @@ import { createArticleActions } from './workspace/article-actions';
 import { createArticleList } from './workspace/article-list';
 import { watchDisk } from './workspace/disk-events';
 import { createFilePanel } from './workspace/file-panel';
-import { uploadFolderFor } from './workspace/file-tree';
+import { isImage, uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
-import { createPropertiesPanel } from './workspace/properties-panel';
+import { createPageHeader } from './workspace/page-header';
 import { createPublishCheck } from './workspace/publish-check';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
@@ -51,6 +52,7 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
+	listed: (articles) => properties.knowTags(articles.flatMap((article) => article.tags ?? [])),
 });
 
 /** Asks git, a moment after the last change, which articles have changes not committed. */
@@ -62,7 +64,7 @@ function refreshGit(): void {
 	}, 400);
 }
 const publishCheck = createPublishCheck(document.querySelector<HTMLDialogElement>('#publish-check-dialog')!);
-const properties = createPropertiesPanel(shell.querySelector<HTMLElement>('.document-header')!, {
+const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-header')!, {
 	changed: (typed) => session.editProperties(typed),
 	// The article as the editor holds it, saved or not, is what gets published.
 	async mayPublish() {
@@ -78,6 +80,20 @@ const properties = createPropertiesPanel(shell.querySelector<HTMLElement>('.docu
 	},
 	publish: () => { void session.flush(); },
 	leaveTitle: () => editor.focusStart(),
+	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
+	async pictures() {
+		const slug = session.slug;
+		if (!slug) return [];
+		const entries = await listArticleFiles(slug);
+		return entries.filter((entry) => entry.kind === 'file' && entry.path.startsWith('img/') && isImage(entry.path)).map((entry) => `./${entry.path}`);
+	},
+	async upload(file) {
+		const slug = session.slug;
+		if (!slug) throw new Error('文章尚未载入');
+		const { path } = await uploadArticleFile(slug, 'img', file);
+		void filePanel.refresh();
+		return `./${path}`;
+	},
 });
 createSidePanel(shell);
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!);

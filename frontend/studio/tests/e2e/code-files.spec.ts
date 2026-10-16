@@ -26,6 +26,8 @@ test('an INCAR block is coloured by the parser the blog uses', async ({ page }) 
 });
 
 test('a block showing a file of the article previews the file, numbered and folded', async ({ page }) => {
+	// Code blocks are made when they come into view.
+	await codeBlock(page, '@file').scrollIntoViewIfNeeded();
 	const figure = editor(page).locator('figure.code-file');
 	await expect(figure.locator('.code-file-name')).toHaveText('run.log');
 	await expect(figure.locator('.code-file-size')).toHaveText('51 行');

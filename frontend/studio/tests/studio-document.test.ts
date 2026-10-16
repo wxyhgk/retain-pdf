@@ -255,3 +255,22 @@ test('what is typed while a save is under way stays unsaved', () => {
 	assert.equal(store.current.revision, 'rev-2');
 	assert.equal(store.current.dirty, true);
 });
+
+test('a page goes without the properties it may lack: set, they are written; emptied, taken out', () => {
+	const base = { title: 'T', description: '', pubDate: '2026-10-17', tags: [], draft: true };
+	const source = "---\ntitle: T\ndescription: ''\npubDate: 2026-10-17\ntags: []\ndraft: true\nheroImage: ./img/old.png # 封面\nkind: wiki\nmacros:\n  Ha: \\hat{H}\n---\nBody\n";
+
+	const set = updateStudioFrontmatter(source, { ...base, icon: '🧪', cover: './img/cover.jpg', kind: 'post' });
+	assert.match(set, /^icon: "🧪"$/mu);
+	assert.match(set, /^heroImage: "\.\/img\/cover\.jpg" # 封面$/mu);
+	assert.match(set, /^kind: "post"$/mu, 'a kind written stays written');
+	assert.match(set, /macros:\n  Ha: \\hat\{H\}\n/u);
+	assert.match(set, /\n---\nBody\n$/u);
+
+	const emptied = updateStudioFrontmatter(set, { ...base, icon: '', cover: '' });
+	assert.doesNotMatch(emptied, /icon:|heroImage:/u);
+	assert.match(emptied, /^kind: "post"$/mu, 'not given: left as it is');
+
+	const plain = updateStudioFrontmatter('---\ntitle: T\n---\n', { ...base, kind: 'post' });
+	assert.doesNotMatch(plain, /kind:/u, 'no kind: post where none was');
+});

@@ -53,17 +53,41 @@ import { SITE_TITLE } from '../consts';
 					</div>
 					<div class="editor-scroll">
 					<header class="document-header">
-						<input id="article-title-input" class="article-title-input" type="text" aria-label="文章标题" placeholder="无标题" disabled />
-						<div class="document-property-bar">
-							<button id="toggle-properties" type="button" aria-expanded="false">☷ 属性</button>
-							<span id="property-summary">尚未载入属性</span>
-							<button id="publish-article" class="publish-action" type="button" disabled>发布</button>
+						<div id="page-cover" class="page-cover" hidden>
+							<img alt="" />
+							<div class="page-cover-actions">
+								<button id="change-cover" type="button">更换封面</button>
+								<button id="remove-cover" type="button">移除</button>
+							</div>
 						</div>
-						<div id="article-properties" class="article-properties" hidden>
-							<label class="description-property"><span>描述</span><textarea id="article-description" rows="2" placeholder="这篇文章讲了什么？" disabled></textarea></label>
-							<label><span>标签</span><input id="article-tags" type="text" placeholder="Hartree–Fock, 量子化学" disabled /><small>使用逗号分隔</small></label>
-							<label><span>发布日期</span><input id="article-pub-date" type="date" disabled /></label>
-							<label class="draft-property"><span>草稿</span><input id="article-draft" type="checkbox" disabled /></label>
+						<div class="page-head">
+							<button id="page-icon" class="page-emoji" type="button" aria-label="更换图标" hidden></button>
+							<div class="page-head-actions">
+								<button id="add-icon" type="button" disabled>☺ 添加图标</button>
+								<button id="add-cover" type="button" disabled>▨ 添加封面</button>
+							</div>
+							<input id="article-title-input" class="article-title-input" type="text" aria-label="文章标题" placeholder="无标题" disabled />
+							<div class="page-properties" role="group" aria-label="属性">
+								<span class="property-name">◷ 发布日期</span>
+								<input id="article-pub-date" class="property-value" type="date" aria-label="发布日期" disabled />
+								<span class="property-name">⌗ 标签</span>
+								<div id="article-tags" class="property-value tag-field">
+									<input id="article-tag-input" type="text" list="known-tags" aria-label="添加标签" placeholder="空" disabled />
+									<datalist id="known-tags"></datalist>
+								</div>
+								<span class="property-name">≡ 简介</span>
+								<textarea id="article-description" class="property-value" rows="1" aria-label="简介" placeholder="空" disabled></textarea>
+								<span class="property-name">◫ 类型</span>
+								<select id="article-kind" class="property-value" aria-label="类型" disabled>
+									<option value="post">博客</option>
+									<option value="wiki">维基</option>
+								</select>
+								<span class="property-name">◌ 状态</span>
+								<div class="property-value status-field">
+									<span id="article-status" class="status-pill">草稿</span>
+									<button id="publish-article" class="status-action" type="button" disabled>发布</button>
+								</div>
+							</div>
 							<p id="property-error" role="alert" hidden></p>
 						</div>
 					</header>
@@ -201,6 +225,7 @@ import { SITE_TITLE } from '../consts';
 	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
 	#article-list :global(.page-row:hover), #article-list :global(.page-row.active) { background: rgb(var(--gray-light)); }
 	#article-list :global(.page-icon) { color: rgb(var(--gray)); font-size: 12px; text-align: center; }
+	#article-list :global(.page-icon.is-emoji) { font-size: 14px; line-height: 1; text-align: center; }
 	#article-list :global(.page-title) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
 	#article-list :global(.page-row.active .page-title) { color: rgb(var(--black)); font-weight: 650; }
 	#article-list :global(.page-draft) { padding: 1px 4px; border-radius: 4px; color: #9a6100; font-size: 8px; opacity: 0.82; }
@@ -217,30 +242,74 @@ import { SITE_TITLE } from '../consts';
 	.review-bar .review-hint { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 	.review-bar button { padding: 4px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
 	.review-bar button.review-accept { border-color: var(--accent); background: var(--accent); color: white; font-weight: 700; }
-	.document-header { box-sizing: border-box; width: min(100%, 850px); margin: 0 auto; padding: 52px 58px 0; background: transparent; }
-	.article-title-input { box-sizing: border-box; width: 100%; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-atkinson), system-ui, sans-serif; font-size: clamp(30px, 3vw, 42px); font-weight: 700; letter-spacing: -0.025em; line-height: 1.18; outline: none; }
+	.document-header { box-sizing: border-box; width: 100%; background: transparent; }
+	.page-head { box-sizing: border-box; position: relative; width: min(100%, 850px); margin: 0 auto; padding: 52px 58px 0; }
+	.document-header.has-cover .page-head { padding-top: 22px; }
+	.document-header.has-cover.has-icon .page-head { padding-top: 0; }
+	/* The cover spans the page, as on the blog. */
+	.page-cover { position: relative; height: 30vh; max-height: 280px; min-height: 160px; overflow: hidden; background: var(--surface-soft); }
+	.page-cover[hidden] { display: none; }
+	.page-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+	.page-cover-actions { position: absolute; right: max(24px, calc(50% - 400px)); bottom: 12px; display: flex; gap: 0; border-radius: 6px; background: rgba(255, 255, 255, 0.92); box-shadow: 0 1px 4px rgba(15, 15, 15, 0.12); opacity: 0; transition: opacity 120ms ease; }
+	.page-cover:hover .page-cover-actions, .page-cover:focus-within .page-cover-actions { opacity: 1; }
+	.page-cover-actions button { padding: 5px 10px; border: 0; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+	.page-cover-actions button + button { border-left: 1px solid rgb(var(--gray-light)); }
+	.page-cover-actions button:hover { background: rgba(55, 53, 47, 0.08); }
+	.page-emoji { display: block; width: 78px; height: 78px; margin: 0 0 4px -4px; padding: 0; border: 0; border-radius: 6px; background: transparent; font-size: 64px; line-height: 78px; text-align: center; cursor: pointer; }
+	.page-emoji[hidden] { display: none; }
+	.page-emoji:hover { background: var(--surface-soft); }
+	.document-header.has-cover .page-emoji { margin-top: -40px; position: relative; }
+	.page-head-actions { display: flex; gap: 4px; min-height: 28px; margin-bottom: 4px; opacity: 0; transition: opacity 120ms ease; }
+	.page-head:hover .page-head-actions, .page-head-actions:focus-within { opacity: 1; }
+	.page-head-actions button { padding: 4px 7px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 13px; cursor: pointer; }
+	.page-head-actions button:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	.page-head-actions button[hidden] { display: none; }
+	/* Icon and cover both there: nothing to add, no row for it. */
+	:global(.page-head-actions:not(:has(button:not([hidden])))) { display: none; }
+	.article-title-input { box-sizing: border-box; width: 100%; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-atkinson), system-ui, sans-serif; font-size: clamp(30px, 3vw, 40px); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; outline: none; }
 	.article-title-input::placeholder { color: rgb(var(--gray)); opacity: 0.48; }
 	.article-title-input:disabled { opacity: 0.55; }
-	.document-property-bar { display: flex; align-items: center; gap: 9px; min-height: 34px; margin-top: 9px; color: rgb(var(--gray)); font-size: 10px; }
-	.document-property-bar button { padding: 4px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; cursor: pointer; }
-	.document-property-bar button:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
-	.document-property-bar #property-summary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.document-property-bar #property-summary.has-problems { color: #b42318; }
-	#article-list :global(.page-git) { font-size: 8px; line-height: 1; }
-	#article-list :global(.page-git.is-modified) { color: #d18b00; }
-	#article-list :global(.page-git.is-new) { color: #2f8a4c; }
-	.document-property-bar button.publish-action { border: 1px solid color-mix(in srgb, var(--accent) 30%, rgb(var(--gray-light))); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); color: var(--accent); font-weight: 700; }
-	.document-property-bar button.publish-action[data-published='true'] { border-color: rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray)); }
-	.document-property-bar button:disabled { opacity: 0.45; cursor: default; }
-	.article-properties { display: grid; grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr) 150px 80px; gap: 12px; margin-top: 10px; padding: 14px; border: 1px solid rgb(var(--gray-light)); border-radius: 9px; background: var(--surface-soft); }
-	.article-properties[hidden] { display: none; }
-	.article-properties label { display: flex; min-width: 0; flex-direction: column; gap: 5px; color: rgb(var(--gray)); font-size: 9px; }
-	.article-properties input, .article-properties textarea { box-sizing: border-box; width: 100%; min-height: 32px; padding: 6px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 11px; outline: none; resize: vertical; }
-	.article-properties input:focus, .article-properties textarea:focus { border-color: var(--accent); }
-	.article-properties small { font-size: 8px; opacity: 0.8; }
-	.article-properties .draft-property { align-items: center; justify-content: center; }
-	.article-properties .draft-property input { width: 16px; min-height: 16px; accent-color: var(--accent); }
-	#property-error { grid-column: 1 / -1; margin: 0; color: #b42318; font-size: 10px; }
+	/* Properties as rows: a name, and its value changed where it is. */
+	.page-properties { display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: start; gap: 1px 6px; margin-top: 14px; padding-bottom: 12px; border-bottom: 1px solid rgb(var(--gray-light)); font-size: 14px; }
+	.property-name { padding: 6px 6px; color: rgb(var(--gray)); line-height: 20px; white-space: nowrap; }
+	.property-value { box-sizing: border-box; min-height: 32px; width: 100%; margin: 0; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 14px; line-height: 20px; outline: none; }
+	.property-value:hover, .property-value:focus, .property-value:focus-within { background: var(--surface-soft); }
+	textarea.property-value { display: block; resize: none; overflow: hidden; }
+	.property-value::placeholder, .tag-field input::placeholder { color: rgb(var(--gray)); opacity: 0.6; }
+	select.property-value { appearance: none; cursor: pointer; }
+	input[type='date'].property-value { cursor: text; }
+	input[type='date'].property-value::-webkit-calendar-picker-indicator { opacity: 0; cursor: pointer; }
+	input[type='date'].property-value:hover::-webkit-calendar-picker-indicator, input[type='date'].property-value:focus::-webkit-calendar-picker-indicator { opacity: 0.6; }
+	.tag-field { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-block: 4px; cursor: text; }
+	.tag-field input { flex: 1; min-width: 80px; padding: 2px 0; border: 0; background: transparent; color: inherit; font: inherit; outline: none; }
+	.tag-field :global(.tag-chip) { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 7px; border-radius: 4px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); color: rgb(var(--gray-dark)); font-size: 13px; line-height: 22px; }
+	.tag-field :global(.tag-chip-remove) { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: transparent; color: rgb(var(--gray)); font: inherit; line-height: 18px; cursor: pointer; opacity: 0; }
+	.tag-field:hover :global(.tag-chip-remove), .tag-field:focus-within :global(.tag-chip-remove) { opacity: 1; }
+	.tag-field :global(.tag-chip-remove:hover) { background: rgba(55, 53, 47, 0.12); color: rgb(var(--gray-dark)); }
+	.status-field { display: flex; align-items: center; gap: 8px; padding-block: 5px; }
+	.status-pill { padding: 0 8px; border-radius: 4px; background: rgba(209, 139, 0, 0.14); color: #8a5a00; font-size: 13px; line-height: 22px; }
+	.status-pill.is-published { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); color: var(--accent); }
+	.status-action { padding: 2px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+	.status-action:hover { background: var(--surface-soft); }
+	.status-action:not([data-published='true']) { border-color: var(--accent); background: var(--accent); color: white; }
+	.status-action:disabled { opacity: 0.5; cursor: default; }
+	#property-error { margin: 8px 0 0; color: #b42318; font-size: 12px; line-height: 1.5; }
+	#property-error[hidden] { display: none; }
+	/* The pickers float over the page. */
+	:global(.page-popover) { position: fixed; z-index: 70; box-sizing: border-box; padding: 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: 0 10px 34px rgba(15, 15, 15, 0.16); }
+	:global(.icon-picker) { width: 336px; }
+	:global(.icon-picker-top) { display: flex; gap: 6px; margin-bottom: 8px; }
+	:global(.icon-picker-top input) { flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; outline: none; }
+	:global(.icon-picker-top button), :global(.cover-picker-upload) { padding: 4px 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+	:global(.icon-picker-grid) { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
+	:global(.icon-picker-grid button) { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 5px; background: transparent; font-size: 20px; cursor: pointer; }
+	:global(.icon-picker-grid button:hover), :global(.icon-picker-top button:hover), :global(.cover-picker-upload:hover) { background: var(--surface-soft); }
+	:global(.cover-picker) { width: 360px; }
+	:global(.cover-picker-note) { margin: 10px 0 6px; color: rgb(var(--gray)); font-size: 12px; }
+	:global(.cover-picker-grid) { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 240px; overflow-y: auto; }
+	:global(.cover-picker-grid button) { height: 64px; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface-soft); cursor: pointer; }
+	:global(.cover-picker-grid button:hover) { outline: 2px solid var(--accent); }
+	:global(.cover-picker-grid img) { width: 100%; height: 100%; object-fit: cover; display: block; }
 	.crepe-host { min-height: calc(100vh - 210px); background: transparent; }
 	:global(.crepe-host .milkdown) {
 		--crepe-color-background: var(--surface);
@@ -518,8 +587,7 @@ import { SITE_TITLE } from '../consts';
 		.side-panel { position: fixed; z-index: 30; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; box-shadow: -12px 0 38px rgba(0, 0, 0, 0.15); }
 		.side-panel-resizer { display: none; }
 		:global(.crepe-host .milkdown .ProseMirror) { padding-inline: 36px; }
-		.document-header { padding-inline: 36px; }
-		.article-properties { grid-template-columns: minmax(0, 2fr) minmax(150px, 1fr); }
+		.page-head { padding-inline: 36px; }
 	}
 	@media (max-width: 720px) {
 		.studio-shell { grid-template-columns: minmax(0, 1fr); }
@@ -528,9 +596,8 @@ import { SITE_TITLE } from '../consts';
 		.breadcrumb-workspace, .breadcrumb-separator, .save-status, #roundtrip-status { display: none; }
 		.document-breadcrumb strong { max-width: 150px; }
 		.studio-actions a { display: none; }
-		.document-header { width: 100%; padding: 28px 24px 0; }
-		.article-properties { grid-template-columns: 1fr; }
-		#property-error { grid-column: auto; }
+		.page-head { padding: 28px 24px 0; }
+		.page-properties { grid-template-columns: 96px minmax(0, 1fr); }
 		:global(.crepe-host .milkdown .ProseMirror) { padding: 8px 24px 140px; }
 	}
 </style>

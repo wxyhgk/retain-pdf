@@ -10,6 +10,8 @@ export function createArticleFrontmatterSchema(image = null) {
 		pubDate: z.coerce.date(),
 		updatedDate: z.coerce.date().optional(),
 		heroImage: heroImage.optional(),
+		// The page's icon: an emoji, shown above the title and in the lists.
+		icon: z.string().trim().min(1).max(16).optional(),
 		tags: z.array(z.string()).default([]),
 		draft: z.boolean().default(false),
 		kind: z.enum(['wiki', 'post']).default('post'),
@@ -46,6 +48,8 @@ export function articleSummary(source, fallbackSlug) {
 	return {
 		title,
 		draft: frontmatter.draft === true,
+		icon: typeof frontmatter.icon === 'string' ? frontmatter.icon.trim() : '',
+		tags: Array.isArray(frontmatter.tags) ? frontmatter.tags.filter((tag) => typeof tag === 'string') : [],
 	};
 }
 
@@ -58,6 +62,10 @@ export function articleProperties(source, fallbackSlug = '') {
 		pubDate: Number.isNaN(date.getTime()) ? '' : date.toISOString().slice(0, 10),
 		tags: Array.isArray(frontmatter.tags) ? frontmatter.tags.filter((tag) => typeof tag === 'string') : [],
 		draft: frontmatter.draft === true,
+		icon: typeof frontmatter.icon === 'string' ? frontmatter.icon.trim() : '',
+		// The cover, as written: `./img/cover.jpg`.
+		cover: typeof frontmatter.heroImage === 'string' ? frontmatter.heroImage.trim() : '',
+		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 	};
 }
 
@@ -81,6 +89,7 @@ const PROPERTY_PROBLEMS = Object.freeze({
 	pubDate: '发布日期（pubDate）无效，应写成 2026-10-16',
 	updatedDate: '更新日期（updatedDate）无效，应写成 2026-10-16',
 	heroImage: '封面图（heroImage）应是图片路径',
+	icon: '图标（icon）应是一个 emoji',
 	tags: '标签（tags）应是列表，如 [DFT, 激发态]',
 	draft: 'draft 只能是 true 或 false',
 	kind: 'kind 只能是 post 或 wiki',

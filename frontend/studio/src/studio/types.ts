@@ -4,6 +4,9 @@ export type ArticleSummary = {
 	slug: string;
 	title: string;
 	draft?: boolean;
+	/** Its icon, an emoji; empty for none. */
+	icon?: string;
+	tags?: string[];
 };
 
 /** The articles as git sees them; `available` is false when blog/ is in no repository. */
@@ -33,6 +36,12 @@ export type ArticleProperties = {
 	pubDate: string;
 	tags: string[];
 	draft: boolean;
+	/** The page's icon, an emoji (`icon:`); empty for none. Left out: not changed. */
+	icon?: string;
+	/** The cover picture as written (`heroImage: ./img/cover.jpg`); empty for none. Left out: not changed. */
+	cover?: string;
+	/** Where the blog lists it. Left out: not changed. */
+	kind?: 'post' | 'wiki';
 };
 
 /** Something the check before publishing found: `error` stops the blog's build, `warning` shows broken on the page. */

@@ -64,7 +64,7 @@ export class ArticleRepository {
 			try {
 				const source = await readFile(articleBundlePaths(this.blogRoot, entry.name).markdown, 'utf8');
 				const summary = articleSummary(source, entry.name);
-				articles.push({ slug: entry.name, title: summary.title, draft: summary.draft });
+				articles.push({ slug: entry.name, title: summary.title, draft: summary.draft, icon: summary.icon, tags: summary.tags });
 			} catch (error) {
 				if (error?.code !== 'ENOENT') throw error;
 			}
