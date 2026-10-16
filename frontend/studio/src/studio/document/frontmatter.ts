@@ -12,7 +12,7 @@ type SourceLine = {
 const EDITABLE_KEYS = ['title', 'description', 'pubDate', 'tags', 'draft'] as const;
 type EditableKey = typeof EDITABLE_KEYS[number];
 /** Properties a page may go without: written when set, taken out when emptied, left alone when not given. */
-const OPTIONAL_KEYS = { icon: 'icon', cover: 'heroImage', kind: 'kind' } as const;
+const OPTIONAL_KEYS = { icon: 'icon', cover: 'heroImage', kind: 'kind', wide: 'wide' } as const;
 type OptionalKey = keyof typeof OPTIONAL_KEYS;
 
 function readLines(source: string): SourceLine[] {

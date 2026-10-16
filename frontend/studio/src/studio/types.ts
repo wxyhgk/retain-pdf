@@ -69,6 +69,8 @@ export type ArticleProperties = {
 	cover?: string;
 	/** Where the blog lists it. Left out: not changed. */
 	kind?: 'post' | 'wiki';
+	/** The page uses the full width. Left out: not changed. */
+	wide?: boolean;
 };
 
 /** Something the check before publishing found: `error` stops the blog's build, `warning` shows broken on the page. */
@@ -84,6 +86,8 @@ export type ArticlePayload = {
 	source: string;
 	revision: string;
 	properties: ArticleProperties;
+	/** When its text last changed on disk, in milliseconds. */
+	modified?: number;
 	/** Why the blog could not build its properties (a missing description, broken YAML…); empty when none. */
 	problems?: string[];
 	/** Temporary compatibility fields returned by the first Studio API. */

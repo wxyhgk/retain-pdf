@@ -50,7 +50,9 @@ test('repository preserves the legacy API while supporting revision aliases', as
 		icon: '',
 		cover: '',
 		kind: 'post',
+		wide: false,
 	});
+	assert.ok(Math.abs(initial.modified - Date.now()) < 60_000);
 
 	const saved = await repository.save('first-note', {
 		source: `${initial.source}\nNew paragraph.\n`,
@@ -186,7 +188,7 @@ test('a copy is a draft of today, titled 副本, with the files and views', asyn
 
 	await repository.duplicate('original', 'original-copy', { now: new Date('2026-10-16T08:00:00Z') });
 	const copy = await repository.read('original-copy');
-	assert.deepEqual(copy.properties, { title: 'Original（副本）', description: '', pubDate: '2026-10-16', tags: ['DFT'], draft: true, icon: '', cover: '', kind: 'post' });
+	assert.deepEqual(copy.properties, { title: 'Original（副本）', description: '', pubDate: '2026-10-16', tags: ['DFT'], draft: true, icon: '', cover: '', kind: 'post', wide: false });
 	assert.match(copy.source, /# 标题\n/u);
 	assert.match(copy.source, /macros:\n  Ha: \\hat\{H\}\n---\n\n正文\n$/u);
 	assert.equal(await readFile(join(root, 'original-copy', 'img', 'a.png'), 'utf8'), 'png');

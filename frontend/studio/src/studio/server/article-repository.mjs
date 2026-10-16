@@ -181,9 +181,11 @@ export class ArticleRepository {
 	async read(slug) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
-		const [source, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
+		const [source, viewsSource, info] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views), stat(paths.markdown)]);
 		const revision = bundleRevision(source, viewsSource);
 		return {
+			// When its text last changed, in milliseconds.
+			modified: info.mtimeMs,
 			slug,
 			content: source,
 			hash: revision,

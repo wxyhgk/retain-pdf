@@ -33,8 +33,10 @@ import { SITE_TITLE } from '../consts';
 						<span class="breadcrumb-workspace">{SITE_TITLE}</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb-title">选择一篇文章</strong>
 					</div>
 					<div class="studio-actions">
+						<span id="edited-at" class="edited-at"></span>
 						<span id="save-status" class="save-status" title="改动会自动保存，⌘S 立即保存" aria-live="polite">正在连接…</span>
 						<a id="open-article" href="/blog" target="_blank">打开博客</a>
+						<button id="page-menu" class="icon-action" type="button" aria-label="页面菜单" title="页面菜单">⋯</button>
 						<button id="toggle-side-panel" class="icon-action" type="button" aria-pressed="true" aria-label="收起右侧面板" title="文件与终端">◨</button>
 					</div>
 				</header>
@@ -92,6 +94,10 @@ import { SITE_TITLE } from '../consts';
 					</header>
 					<div id="crepe-editor" class="crepe-host" aria-label="文章编辑器"></div>
 					</div>
+					<nav id="editor-outline" class="outline-rail" aria-label="文章目录" hidden>
+						<div class="outline-pop"><ol></ol></div>
+						<div class="outline-marks" aria-hidden="true"></div>
+					</nav>
 				</section>
 			</section>
 
@@ -228,6 +234,9 @@ import { SITE_TITLE } from '../consts';
 	.studio-actions button.icon-action:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 	.studio-actions button.icon-action[aria-pressed='true'] { color: var(--accent); }
 	.studio-actions button:disabled { opacity: 0.5; cursor: default; }
+	.edited-at { color: rgb(var(--gray)); font-size: 10px; white-space: nowrap; opacity: 0.85; }
+	/* 全宽: the page as wide as the editor allows, as on the blog. */
+	.editor-panel.is-wide .page-head, .editor-panel.is-wide :global(.crepe-host .milkdown .ProseMirror) { width: min(100%, 1180px); }
 	.save-status { max-width: 230px; color: rgb(var(--gray)); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.save-status[data-state='dirty'] { color: #a15c00; }
 	.save-status[data-state='error'] { color: #b42318; }
@@ -252,7 +261,21 @@ import { SITE_TITLE } from '../consts';
 	#article-list :global(.page-row.active .page-title) { color: rgb(var(--black)); font-weight: 650; }
 	#article-list :global(.page-draft) { padding: 1px 4px; border-radius: 4px; color: #9a6100; font-size: 8px; opacity: 0.82; }
 	#article-list :global(.article-list-empty) { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
-	.editor-panel { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+	.editor-panel { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; }
+	/* The outline at the editor's right edge, as on the blog. */
+	.outline-rail { position: absolute; z-index: 12; top: 96px; right: 6px; display: flex; align-items: flex-start; pointer-events: none; }
+	.outline-rail[hidden] { display: none; }
+	.outline-pop { width: 220px; max-height: min(68vh, 520px); margin-right: 2px; overflow: auto; border-radius: 8px; background: var(--surface); box-shadow: 0 6px 24px rgba(15, 15, 15, 0.1); opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
+	.outline-rail:hover .outline-pop, .outline-rail:focus-within .outline-pop { opacity: 1; pointer-events: auto; }
+	.outline-pop ol { display: grid; gap: 1px; margin: 0; padding: 4px; list-style: none; }
+	.outline-pop :global(a) { display: block; padding: 3px 8px; border-radius: 4px; color: rgb(var(--gray)); font-size: 13px; line-height: 1.35; text-align: right; text-decoration: none; }
+	.outline-pop :global(li.child a) { font-size: 12px; }
+	.outline-pop :global(a:hover) { background: var(--surface-hover); color: rgb(var(--black)); }
+	.outline-pop :global(a[aria-current]) { color: rgb(var(--black)); font-weight: 600; }
+	.outline-marks { display: grid; justify-items: end; gap: 10px; width: 22px; padding: 8px 2px; pointer-events: auto; }
+	.outline-marks :global(i) { display: block; width: 14px; height: 1px; border-radius: 1px; background: rgb(var(--gray)); opacity: 0.55; }
+	.outline-marks :global(i.child) { width: 8px; }
+	.outline-marks :global(i[data-current]) { height: 2px; background: rgb(var(--gray-dark)); opacity: 1; }
 	.panel-label > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	#roundtrip-status { margin-left: 14px; color: rgb(var(--gray)); font-size: 9px; }
 	#roundtrip-status[data-state='changed'] { color: #b42318; }

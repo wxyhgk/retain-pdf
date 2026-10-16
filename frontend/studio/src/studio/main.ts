@@ -9,6 +9,7 @@ import {
 	getArticle,
 	gitStatus,
 	listArticleFiles,
+	revealArticleFile,
 	saveArticle,
 	saveMoleculeView,
 	StudioApiError,
@@ -20,13 +21,15 @@ import { setMoleculeViewContext } from '../science/browser/molecule-renderer';
 import { setScienceResourceBaseUrl } from '../science/browser/resource-context';
 import { useArticleMacros } from '../science/rendering/math';
 import { ArticleSession } from './state/article-session';
-import type { ArticlePayload } from './types';
+import type { ArticlePayload, ArticleSummary } from './types';
 import { createArticleActions } from './workspace/article-actions';
 import { createArticleList } from './workspace/article-list';
+import { showContextMenu } from './workspace/context-menu';
 import { watchDisk } from './workspace/disk-events';
 import { createFilePanel } from './workspace/file-panel';
 import { isImage, uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
+import { createOutline } from './workspace/outline';
 import { createPageHeader } from './workspace/page-header';
 import { createPublishCheck } from './workspace/publish-check';
 import { createQuickFind } from './workspace/quick-find';
@@ -39,6 +42,8 @@ import { createTrashView } from './workspace/trash-view';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
+const editorPanel = shell.querySelector<HTMLElement>('.editor-panel')!;
+createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
 
 const topBar = createTopBar(shell);
 const articleActions = createArticleActions({
@@ -162,7 +167,9 @@ const session = new ArticleSession(
 		toast: (message) => showToast(message),
 		opened({ article, properties: shown }) {
 			properties.show(shown, article.problems ?? []);
-			topBar.showArticle(article.slug, shown.title || article.slug);
+			topBar.showArticle(article.slug, shown.title || article.slug, shown.kind);
+			topBar.edited(article.modified ?? null);
+			editorPanel.classList.toggle('is-wide', Boolean(shown.wide));
 			articleList.select(article.slug);
 			filePanel.show(article.slug);
 			terminal.showArticle(article.slug);
@@ -175,6 +182,7 @@ const session = new ArticleSession(
 		retitled: (title) => topBar.showTitle(title),
 		saved(slug, saved, problems) {
 			articleList.saved(slug, saved);
+			topBar.edited(Date.now());
 			properties.showProblems(problems);
 		},
 	},
@@ -259,6 +267,39 @@ const trashView = createTrashView(document.querySelector<HTMLDialogElement>('#tr
 	},
 });
 shell.querySelector('#open-trash')!.addEventListener('click', () => void trashView.open());
+
+/** The open article, as the list knows it, for the actions on a whole article. */
+function openSummary(): ArticleSummary | null {
+	return articleList.articles().find((article) => article.slug === session.slug) ?? null;
+}
+
+// ⋯: what can be done to the page, as in Notion's page menu.
+const pageMenu = shell.querySelector<HTMLButtonElement>('#page-menu')!;
+pageMenu.addEventListener('click', () => {
+	const article = openSummary();
+	if (!article) return;
+	const address = `/${article.kind === 'wiki' ? 'wiki' : 'blog'}/${article.slug}/`;
+	showContextMenu([
+		{
+			label: properties.isWide() ? '全宽 ✓' : '全宽',
+			action: () => {
+				if (properties.setWide(!properties.isWide())) editorPanel.classList.toggle('is-wide', properties.isWide());
+			},
+		},
+		{
+			label: '复制博客链接',
+			action: () => {
+				const link = new URL(address, import.meta.env.SITE ?? window.location.origin).href;
+				navigator.clipboard.writeText(link).then(() => showToast(`已复制 ${link}`), () => showToast('浏览器不允许写入剪贴板', true));
+			},
+		},
+		{ label: /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示', action: () => void revealArticleFile(article.slug, '') },
+		'separator',
+		{ label: '改文件夹名…', action: () => void articleActions.rename(article) },
+		{ label: '复制一份', action: () => void articleActions.duplicate(article) },
+		{ label: '移到回收站', danger: true, action: () => void articleActions.remove(article) },
+	], pageMenu);
+});
 
 // ⌘K (or Ctrl+K) finds an article, from anywhere.
 document.addEventListener('keydown', (event) => {

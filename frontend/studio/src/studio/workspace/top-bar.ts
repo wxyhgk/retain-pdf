@@ -1,4 +1,5 @@
 import type { SaveState } from '../state/article-session.ts';
+import { timeAgo } from './trash-view.ts';
 
 /** What the status line says, and the colour it says it in. */
 export function saveStateText(state: SaveState): { text: string; tone: 'saved' | 'dirty' | 'saving' | 'error' | '' } {
@@ -25,6 +26,15 @@ export function createTopBar(shell: HTMLElement) {
 	const openArticle = shell.querySelector<HTMLAnchorElement>('#open-article')!;
 	const path = shell.querySelector<HTMLElement>('#editor-path')!;
 	const roundtrip = shell.querySelector<HTMLElement>('#roundtrip-status')!;
+	const edited = shell.querySelector<HTMLElement>('#edited-at')!;
+	let editedAt: number | null = null;
+
+	/** 编辑于 3 分钟前, kept current as the minutes pass. */
+	function drawEdited(): void {
+		edited.textContent = editedAt === null ? '' : `编辑于${timeAgo(editedAt)}`;
+		edited.title = editedAt === null ? '' : new Date(editedAt).toLocaleString('zh-CN');
+	}
+	window.setInterval(drawEdited, 30_000);
 
 	function setStatus(text: string, tone = ''): void {
 		status.textContent = text;
@@ -42,10 +52,15 @@ export function createTopBar(shell: HTMLElement) {
 
 	return {
 		/** The open article. */
-		showArticle(slug: string, articleTitle: string): void {
+		showArticle(slug: string, articleTitle: string, kind: 'post' | 'wiki' = 'post'): void {
 			path.textContent = `blog/${slug}/index.md`;
 			title.textContent = articleTitle;
-			openArticle.href = `/blog/${slug}/`;
+			openArticle.href = `/${kind === 'wiki' ? 'wiki' : 'blog'}/${slug}/`;
+		},
+		/** When the open article's text last changed (now, after a save); null for none. */
+		edited(time: number | null): void {
+			editedAt = time;
+			drawEdited();
 		},
 		showTitle(articleTitle: string): void {
 			title.textContent = articleTitle;

@@ -89,6 +89,7 @@ export function createPageHeader(root: HTMLElement, host: PageHeaderHost) {
 	let draft = true;
 	let iconValue = '';
 	let coverValue = '';
+	let wide = false;
 	/** Why the blog could not build the properties as saved, from the server. */
 	let problems: string[] = [];
 	/** Why the properties as typed cannot be saved. */
@@ -103,6 +104,7 @@ export function createPageHeader(root: HTMLElement, host: PageHeaderHost) {
 		icon: iconValue,
 		cover: coverValue,
 		kind: kind.value === 'wiki' ? 'wiki' : 'post',
+		wide,
 	});
 
 	/** What is typed wrong comes first; then what the saved properties lack. */
@@ -346,6 +348,7 @@ export function createPageHeader(root: HTMLElement, host: PageHeaderHost) {
 			draft = properties.draft;
 			iconValue = properties.icon ?? '';
 			coverValue = properties.cover ?? '';
+			wide = properties.wide ?? false;
 			for (const input of [title, description, tagInput, pubDate, kind, publish, addIcon, addCover]) input.disabled = false;
 			drawTags();
 			drawLooks();
@@ -366,6 +369,15 @@ export function createPageHeader(root: HTMLElement, host: PageHeaderHost) {
 				option.value = tag;
 				return option;
 			}));
+		},
+		/** Whether the page uses the full width. */
+		isWide: (): boolean => wide,
+		/** The page to use the full width, or not; false when the properties cannot be saved now. */
+		setWide(value: boolean): boolean {
+			wide = value;
+			if (report()) return true;
+			wide = !value;
+			return false;
 		},
 		/** The caret at the end of the title, from the start of the body. */
 		focusTitle(): void {

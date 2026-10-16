@@ -12,6 +12,8 @@ export function createArticleFrontmatterSchema(image = null) {
 		heroImage: heroImage.optional(),
 		// The page's icon: an emoji, shown above the title and in the lists.
 		icon: z.string().trim().min(1).max(16).optional(),
+		// The page uses the full width (tables, long formulas), on the blog and in the Studio.
+		wide: z.boolean().optional(),
 		tags: z.array(z.string()).default([]),
 		draft: z.boolean().default(false),
 		kind: z.enum(['wiki', 'post']).default('post'),
@@ -67,6 +69,7 @@ export function articleProperties(source, fallbackSlug = '') {
 		// The cover, as written: `./img/cover.jpg`.
 		cover: typeof frontmatter.heroImage === 'string' ? frontmatter.heroImage.trim() : '',
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
+		wide: frontmatter.wide === true,
 	};
 }
 
@@ -95,6 +98,7 @@ const PROPERTY_PROBLEMS = Object.freeze({
 	draft: 'draft 只能是 true 或 false',
 	kind: 'kind 只能是 post 或 wiki',
 	macros: '公式宏（macros）应是「名字: 展开」，如 Ha: \\hat{H}',
+	wide: 'wide 只能是 true 或 false',
 });
 
 /**

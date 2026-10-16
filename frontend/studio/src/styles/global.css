@@ -154,6 +154,13 @@ blockquote {
 	overflow-y: hidden;
 	padding: 0.75em 0;
 }
+/*
+ * A numbered formula wider than the column scrolls whole, its number at
+ * its end: KaTeX pins the number to the right edge, where a long formula
+ * would run under it.
+ */
+.katex-display > .katex { width: max-content; min-width: 100%; }
+.katex-display > .katex > .katex-html:has(> .tag, > .katex-tag) { box-sizing: border-box; padding-inline: 3.2em; }
 /* Where \eqref links land: just above the numbered formula. */
 .equation-anchor {
 	display: block;
