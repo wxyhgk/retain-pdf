@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { Fragment, Schema, Slice, type Node } from 'prosemirror-model';
-import { EditorState } from 'prosemirror-state';
+import { EditorState, TextSelection } from 'prosemirror-state';
 
 import {
 	expandInlineMathSlice,
+	formulaSourceAt,
 	inlineMathKeyAction,
 	literalDollarMarkName,
 	planDollarBlock,
@@ -476,4 +477,19 @@ test('a formula block is a $$ block or a ```math fence; a ```latex fence is code
 	assert.equal(isFormulaBlock(code.create({ language: 'latex', fence: '`' })), false);
 	assert.equal(isFormulaBlock(code.create({ language: 'LaTeX', fence: '' })), false);
 	assert.equal(isFormulaBlock(code.create({ language: 'python', fence: '$$' })), false);
+});
+
+test('the formula being typed: an open source, or what follows a $ not yet closed', () => {
+	const schema = editorSchema();
+	const at = (text: string, caret: number, live: { from: number; to: number } | null = null) => {
+		const doc = paragraphDoc(schema, text);
+		const state = EditorState.create({ doc, selection: TextSelection.create(doc, caret) });
+		return formulaSourceAt(state, live);
+	};
+	assert.deepEqual(at('见 $\\fr', 6), { start: 4, text: '\\fr', caret: 2 });
+	assert.deepEqual(at('$\\frac{a}{} 后', 9), { start: 2, text: '\\frac{a}{} 后', caret: 7 });
+	assert.equal(at('价格 $ 5', 6), null, 'a space after the $');
+	assert.equal(at('$a$ 和 \\al', 10), null, 'after a closed pair');
+	assert.equal(at('没有公式 \\al', 8), null);
+	assert.deepEqual(at('前 $x+1$ 后', 6, { from: 3, to: 8 }), { start: 4, text: 'x+1', caret: 2 });
 });

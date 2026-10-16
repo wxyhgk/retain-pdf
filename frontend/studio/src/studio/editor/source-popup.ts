@@ -4,6 +4,9 @@
  * an optional live preview, placement and the finish/remove keys.
  */
 
+import { applyCompletion, completionQuery, deleteBracePair, nextSlot, typeBrace, type LatexCommand, type LatexEdit } from './latex-assist.ts';
+import { LatexCompletionMenu } from './latex-completion-menu.ts';
+
 export type SourcePopupPlacement = 'over' | 'below';
 
 type Box = { top: number; bottom: number; left: number; width: number };
@@ -51,6 +54,8 @@ export type SourcePopupOptions = {
 	width: (anchor: DOMRect) => number;
 	maxInputHeight: () => number;
 	preview?: (host: HTMLElement, value: string) => void;
+	/** The source is LaTeX: complete commands, pair braces, Tab to the next `{}`. */
+	latex?: boolean;
 	onInput: (value: string) => void;
 	/** Escape or Mod-Enter. */
 	onFinish: () => void;
@@ -66,6 +71,9 @@ export class SourcePopup {
 	private readonly preview: HTMLElement | null;
 	private readonly options: SourcePopupOptions;
 	private readonly scrollParent: HTMLElement | null;
+	private readonly completion: LatexCompletionMenu | null;
+	/** An edit of its own is being typed in: not something to complete. */
+	private applying = false;
 
 	constructor(options: SourcePopupOptions) {
 		this.options = options;
@@ -116,6 +124,12 @@ export class SourcePopup {
 		document.addEventListener('pointerdown', this.onPointerDown, true);
 		input.addEventListener('input', this.onInput);
 		input.addEventListener('keydown', this.onKeyDown);
+		this.completion = options.latex ? new LatexCompletionMenu((command) => this.complete(command)) : null;
+		if (this.completion) {
+			input.addEventListener('blur', this.onBlur);
+			input.addEventListener('click', this.onCaretMoved);
+			input.addEventListener('keyup', this.onCaretMoved);
+		}
 		this.place();
 	}
 
@@ -146,6 +160,7 @@ export class SourcePopup {
 		document.removeEventListener('pointerdown', this.onPointerDown, true);
 		this.scrollParent?.removeEventListener('scroll', this.onPlace);
 		window.removeEventListener('resize', this.onPlace);
+		this.completion?.destroy();
 		this.root.remove();
 	}
 
@@ -181,9 +196,100 @@ export class SourcePopup {
 		this.renderPreview();
 		this.options.onInput(this.input.value);
 		this.place();
+		if (!this.applying) this.offerCompletion();
 	};
 
+	/** Offers the commands that complete the one at the caret, under the field. */
+	private offerCompletion(): void {
+		const { input, completion } = this;
+		if (!completion) return;
+		const query = input.selectionStart === input.selectionEnd ? completionQuery(input.value, input.selectionStart) : null;
+		if (!query) {
+			completion.hide();
+			return;
+		}
+		completion.show(query.prefix, () => {
+			const box = input.getBoundingClientRect();
+			return { left: box.left + 8, top: box.top, bottom: box.bottom };
+		});
+	}
+
+	private onCaretMoved = (event: Event): void => {
+		if (event instanceof KeyboardEvent && !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+		this.offerCompletion();
+	};
+
+	private onBlur = (): void => {
+		this.completion?.hide();
+	};
+
+	/** Types an edit in, as typing would: it can be undone. */
+	private apply(edit: LatexEdit): void {
+		const input = this.input;
+		this.applying = true;
+		try {
+			input.setSelectionRange(edit.from, edit.to);
+			if (edit.from !== edit.to || edit.insert) {
+				const typed = edit.insert
+					? document.execCommand('insertText', false, edit.insert)
+					: document.execCommand('delete');
+				if (!typed) {
+					input.setRangeText(edit.insert, edit.from, edit.to, 'end');
+					this.onInput();
+				}
+			}
+			input.setSelectionRange(edit.caret, edit.caret);
+		} finally {
+			this.applying = false;
+		}
+	}
+
+	private complete(command: LatexCommand): void {
+		const input = this.input;
+		const query = completionQuery(input.value, input.selectionStart);
+		this.completion?.hide();
+		if (query) this.apply(applyCompletion(input.value, query, command));
+	}
+
+	/** The keys of LaTeX typing help. Whether this one was taken. */
+	private latexKey(event: KeyboardEvent): boolean {
+		const { input, completion } = this;
+		if (!completion || event.isComposing || event.altKey || event.metaKey || event.ctrlKey) return false;
+		if (completion.open) {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+				completion.move(event.key === 'ArrowDown' ? 1 : -1);
+				return true;
+			}
+			if (event.key === 'Escape') {
+				completion.hide();
+				return true;
+			}
+			const chosen = (event.key === 'Enter' && !event.shiftKey) || (event.key === 'Tab' && !event.shiftKey) ? completion.chosen() : null;
+			if (chosen) {
+				this.complete(chosen);
+				return true;
+			}
+		}
+		const { value, selectionStart: start, selectionEnd: end } = input;
+		let edit: LatexEdit | null = null;
+		if (event.key === '{' || event.key === '}') edit = typeBrace(value, start, end, event.key);
+		else if (event.key === 'Backspace') edit = deleteBracePair(value, start, end);
+		else if (event.key === 'Tab' && !event.shiftKey) {
+			const slot = nextSlot(value, end) ?? value.length;
+			input.setSelectionRange(slot, slot);
+			return true;
+		}
+		if (!edit) return false;
+		this.apply(edit);
+		return true;
+	}
+
 	private onKeyDown = (event: KeyboardEvent): void => {
+		if (this.latexKey(event)) {
+			event.preventDefault();
+			event.stopPropagation();
+			return;
+		}
 		if (event.key === 'Escape' || (event.key === 'Enter' && (event.metaKey || event.ctrlKey))) {
 			event.preventDefault();
 			event.stopPropagation();
@@ -200,7 +306,7 @@ export class SourcePopup {
 	private onPointerDown = (event: PointerEvent): void => {
 		const target = event.target;
 		if (!(target instanceof Node)) return;
-		if (this.root.contains(target) || this.options.owner.contains(target)) return;
+		if (this.root.contains(target) || this.options.owner.contains(target) || this.completion?.root.contains(target)) return;
 		this.options.onDismiss();
 	};
 }

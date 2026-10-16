@@ -45,6 +45,26 @@ test('a display formula opens its popup with the caret in it; Esc closes it', as
 	await expect(popup(page)).toBeHidden();
 });
 
+test('the display formula’s source completes commands and pairs braces', async ({ page }) => {
+	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
+	await expect(popupInput(page)).toBeFocused();
+	await page.keyboard.type(' + \\sq');
+	const menu = page.locator('.latex-completion:not([hidden])');
+	await expect(menu.locator('.latex-completion-item.is-selected .latex-completion-name')).toHaveText('\\sqrt');
+	await page.keyboard.press('Tab');
+	await page.keyboard.type('x^{2');
+	await expect(popupInput(page)).toHaveValue('\\sum_i x_i + \\sqrt{x^{2}}');
+	// Esc closes the list first, then the popup.
+	await page.keyboard.press('End');
+	await page.keyboard.type(' \\al');
+	await expect(menu).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(menu).toBeHidden();
+	await expect(popup(page)).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(popup(page)).toBeHidden();
+});
+
 test('saving keeps \\( \\) and \\[ \\] in paragraphs that were not edited', async ({ page }) => {
 	await caretAfter(page, '结尾段落。');
 	await page.keyboard.type('补一句。');
@@ -155,6 +175,35 @@ test.describe('typing an inline formula', () => {
 		await page.keyboard.press('Escape');
 		await expect(inlineFormulas(page)).toHaveCount(3);
 		expect(await saved(page)).toContain('前 $a$');
+	});
+
+	test('commands complete as they are typed; braces pair; Tab goes to the next slot', async ({ page }) => {
+		await newParagraph(page);
+		await page.keyboard.type('比值 $\\fr');
+		const menu = page.locator('.latex-completion:not([hidden])');
+		await expect(menu).toBeVisible();
+		await expect(menu.locator('.latex-completion-item.is-selected .latex-completion-name')).toHaveText('\\frac');
+		await expect(menu.locator('.latex-completion-item.is-selected .katex')).toBeVisible();
+		await page.screenshot({ path: test.info().outputPath('completion.png') });
+		await page.keyboard.press('Enter');
+		await expect(menu).toBeHidden();
+		await page.keyboard.type('a');
+		await page.keyboard.press('Tab');
+		await page.keyboard.type('b^{2}');
+		await page.keyboard.press('Tab');
+		await page.keyboard.type('$ 完');
+		await expect(inlineFormulas(page)).toHaveCount(3);
+		expect(await saved(page)).toContain('比值 $\\frac{a}{b^{2}}$ 完');
+	});
+
+	test('Esc closes the list and leaves the formula open', async ({ page }) => {
+		await newParagraph(page);
+		await page.keyboard.type('$\\alp');
+		await expect(page.locator('.latex-completion:not([hidden])')).toBeVisible();
+		await page.keyboard.press('Escape');
+		await expect(page.locator('.latex-completion:not([hidden])')).toBeHidden();
+		await page.keyboard.type('ha$');
+		await expect(inlineFormulas(page)).toHaveCount(3);
 	});
 
 	test('undo after a formula is drawn gives back the dollars as typed', async ({ page }) => {

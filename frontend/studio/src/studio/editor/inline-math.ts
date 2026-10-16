@@ -9,6 +9,8 @@ import { $markSchema } from '@milkdown/utils';
 import { renderMathHtml } from '../../science/rendering/math.ts';
 import { equationLabels, referencesKey } from './equation-numbers.ts';
 import { createFormulaBlock } from './formula-block.ts';
+import { applyCompletion, completionQuery, deleteBracePair, nextSlot, typeBrace, type LatexCommand, type LatexEdit } from './latex-assist.ts';
+import { LatexCompletionMenu } from './latex-completion-menu.ts';
 
 export type InlineMathKeyAction = 'commit' | 'exit-before' | 'exit-after' | 'delete' | 'promote';
 
@@ -941,8 +943,107 @@ function closeTypedFormula(view: EditorView, plan: { from: number; to: number; v
 	return true;
 }
 
+/** The text of the formula the caret is in, between its dollars; `start` is where that text begins in the document. */
+type FormulaSource = { start: number; text: string; caret: number };
+
+/**
+ * The formula the caret is typing in: an open formula's source, or the
+ * text after a `$` that does not close yet (`$\fr|`). Null in prose.
+ */
+export function formulaSourceAt(state: EditorState, live: LiveRange | null): FormulaSource | null {
+	const selection = state.selection;
+	if (!(selection instanceof TextSelection) || !selection.empty) return null;
+	const pos = selection.from;
+	if (live && pos > live.from && pos < live.to) {
+		const start = live.from + 1;
+		return { start, text: state.doc.textBetween(start, live.to - 1), caret: pos - start };
+	}
+	const $pos = selection.$from;
+	if (!$pos.parent.isTextblock || $pos.parent.type.spec.code) return null;
+	if ($pos.marks().some((mark) => mark.type.spec.code || mark.type.name === 'code')) return null;
+	const run = textRunAround($pos.parent, $pos.parentOffset);
+	const local = $pos.parentOffset - run.fromOffset;
+	if (local < 0 || local > run.text.length) return null;
+	const dollars: number[] = [];
+	for (let index = 0; index < run.text.length; index += 1) {
+		if (dollarIndex($pos.parent, run.fromOffset, run.text, index)) dollars.push(index);
+	}
+	const before = dollars.filter((index) => index < local);
+	// An even count of dollars before it: that last one opens.
+	const opener = before.at(-1);
+	if (opener === undefined || before.length % 2 === 0) return null;
+	const typed = run.text.slice(opener + 1, local);
+	if (/^[ \t]/.test(typed) || !formulaText(typed)) return null;
+	const close = dollars.find((index) => index >= local) ?? run.text.length;
+	const start = $pos.start() + run.fromOffset + opener + 1;
+	return { start, text: run.text.slice(opener + 1, close), caret: local - opener - 1 };
+}
+
+/** Types an edit of a formula's text into the document. */
+function applyFormulaEdit(view: EditorView, source: FormulaSource, edit: LatexEdit): void {
+	const tr = view.state.tr.insertText(edit.insert, source.start + edit.from, source.start + edit.to);
+	view.dispatch(tr.setSelection(TextSelection.create(tr.doc, source.start + edit.caret)).scrollIntoView());
+}
+
 const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	await ctx.wait(SchemaReady);
+	/** The commands offered for the one being typed. */
+	let completion: LatexCompletionMenu | null = null;
+	/** The document when a completion was taken or dismissed: not offered again until it changes. */
+	let settled: ProseMirrorNode | null = null;
+
+	const liveRange = (state: EditorState) => (liveMathKey.getState(state) ?? idleMath).live;
+
+	function offerCompletion(view: EditorView): void {
+		if (!completion) return;
+		const source = view.hasFocus() && !view.composing && view.state.doc !== settled ? formulaSourceAt(view.state, liveRange(view.state)) : null;
+		const query = source ? completionQuery(source.text, source.caret) : null;
+		if (query) completion.show(query.prefix, () => view.coordsAtPos(view.state.selection.from));
+		else completion.hide();
+		view.dom.classList.toggle('is-completing-latex', completion.open);
+	}
+
+	function complete(view: EditorView, command: LatexCommand): void {
+		const source = formulaSourceAt(view.state, liveRange(view.state));
+		const query = source ? completionQuery(source.text, source.caret) : null;
+		if (!source || !query) return;
+		applyFormulaEdit(view, source, applyCompletion(source.text, query, command));
+		settled = view.state.doc;
+		offerCompletion(view);
+	}
+
+	/** Keys that help type LaTeX in a formula. Whether this one was taken. */
+	function latexKey(view: EditorView, event: KeyboardEvent): boolean {
+		if (completion?.open) {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+				completion.move(event.key === 'ArrowDown' ? 1 : -1);
+				return true;
+			}
+			if (event.key === 'Escape') {
+				settled = view.state.doc;
+				offerCompletion(view);
+				return true;
+			}
+			const chosen = event.key === 'Enter' || event.key === 'Tab' ? completion.chosen() : null;
+			if (chosen) {
+				complete(view, chosen);
+				return true;
+			}
+		}
+		if (event.key !== 'Tab' && event.key !== 'Backspace') return false;
+		const source = formulaSourceAt(view.state, liveRange(view.state));
+		if (!source) return false;
+		if (event.key === 'Backspace') {
+			const edit = deleteBracePair(source.text, source.caret, source.caret);
+			if (!edit) return false;
+			applyFormulaEdit(view, source, edit);
+			return true;
+		}
+		const slot = nextSlot(source.text, source.caret) ?? source.text.length;
+		view.dispatch(view.state.tr.setSelection(TextSelection.create(view.state.doc, source.start + slot)));
+		return true;
+	}
+
 	const plugin = new Plugin<InlineMathState>({
 		key: liveMathKey,
 		state: {
@@ -1012,6 +1113,14 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 				if (view.composing) return false;
 				const edit = liveMathKey.getState(view.state) ?? idleMath;
 				const live = edit.live;
+				if ((text === '{' || text === '}') && from === to) {
+					const source = formulaSourceAt(view.state, live);
+					const brace = source ? typeBrace(source.text, source.caret, source.caret, text) : null;
+					if (source && brace) {
+						applyFormulaEdit(view, source, brace);
+						return true;
+					}
+				}
 				if (live && text !== '$' && text !== '\n' && from === to && from > live.from && from < live.to) {
 					view.dispatch(view.state.tr.insertText(text, from).scrollIntoView());
 					return true;
@@ -1081,6 +1190,7 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 				if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey || event.isComposing) return false;
 				const selection = view.state.selection;
 				if (!(selection instanceof TextSelection) || !selection.empty) return false;
+				if (latexKey(view, event)) return true;
 				const live = (liveMathKey.getState(view.state) ?? idleMath).live;
 				const inside = Boolean(live && selection.from > live.from && selection.from < live.to);
 				if (event.key === 'Escape') {
@@ -1129,10 +1239,23 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 				}
 				return false;
 			},
+			handleDOMEvents: {
+				blur: (view) => {
+					completion?.hide();
+					view.dom.classList.remove('is-completing-latex');
+					return false;
+				},
+			},
 		},
-		view() {
+		view(editorView) {
+			completion = new LatexCompletionMenu((command) => complete(editorView, command));
 			return {
+				destroy() {
+					completion?.destroy();
+					completion = null;
+				},
 				update(view) {
+					offerCompletion(view);
 					const selection = view.state.selection;
 					if (!(selection instanceof NodeSelection) || selection.node.type.name !== 'math_inline') return;
 					const pos = selection.from;

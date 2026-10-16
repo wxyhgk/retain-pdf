@@ -140,6 +140,7 @@ class DisplayMathView implements NodeView {
 			width: () => 440,
 			maxInputHeight: () => 160,
 			preview: (host, value) => paintFormula(host, value, '预览', true, this.view),
+			latex: true,
 			onInput: (value) => this.writeSource(value),
 			onFinish: () => this.finish(),
 			onRemove: () => this.removeBlock(),
