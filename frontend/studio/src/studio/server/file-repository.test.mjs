@@ -43,7 +43,16 @@ test('file repository lists and reads small public article resources', async (t)
 	assert.equal(resource.body.toString('utf8'), '3\nwater\n');
 	assert.equal(resource.contentType, 'text/plain; charset=utf-8');
 	assert.equal(resource.size, 8);
-	assert.equal(resourceContentType('unsafe.svg'), 'application/octet-stream');
+});
+
+test('pictures show and calculation files open as text', () => {
+	assert.equal(resourceContentType('img/scheme.svg'), 'image/svg+xml');
+	assert.equal(resourceContentType('img/photo.AVIF'), 'image/avif');
+	for (const path of ['assets/opt.log', 'assets/freq.out', 'assets/opt.inp', 'assets/water.fchk', 'assets/vasp/INCAR', 'assets/vasp/OUTCAR']) {
+		assert.equal(resourceContentType(path), 'text/plain; charset=utf-8', path);
+	}
+	assert.equal(resourceContentType('assets/water.chk'), 'application/octet-stream');
+	assert.equal(resourceContentType('assets/README'), 'application/octet-stream');
 });
 
 test('AI resources cannot be read through the public resource endpoint', async (t) => {

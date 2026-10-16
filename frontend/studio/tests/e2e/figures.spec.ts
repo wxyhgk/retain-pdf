@@ -72,3 +72,13 @@ test('figures the author did not touch are saved as they were written', async ({
 	const markdown = await save(page);
 	expect(markdown).toContain('![势能面](./img/plot.png){width=50%}\n\n![plot](./img/plot.png)\n\n文字里 ![小图](./img/plot.png) 接着写。\n');
 });
+
+test('an SVG figure shows, as on the blog', async ({ page }) => {
+	resetFixture();
+	writeFixtureFile('img/scheme.svg', '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="100"><rect width="200" height="100" fill="teal"/></svg>');
+	appendToFixture('\n![反应示意图](./img/scheme.svg)\n');
+	await openStudio(page);
+	const image = figures(page).locator('img');
+	await expect(image).toHaveJSProperty('complete', true);
+	expect(await image.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBe(200);
+});

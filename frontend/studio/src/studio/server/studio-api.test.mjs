@@ -67,6 +67,15 @@ test('GET resource API returns a small file with defensive headers', async (t) =
 	assert.equal(headers.get('content-security-policy'), 'sandbox');
 });
 
+test('an SVG is a picture, and a script in it never runs', async (t) => {
+	const middleware = await apiFixture(t);
+	await writeFile(join(middleware.paths.img, 'scheme.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+	const { response, headers } = await get(middleware, '/api/studio/articles/api-note/files/img/scheme.svg');
+	assert.equal(response.statusCode, 200);
+	assert.equal(headers.get('content-type'), 'image/svg+xml');
+	assert.equal(headers.get('content-security-policy'), 'sandbox');
+});
+
 test('GET resource API streams a file of any size', async (t) => {
 	const middleware = await apiFixture(t);
 	const log = Buffer.alloc(9 * 1024 * 1024, 'x');

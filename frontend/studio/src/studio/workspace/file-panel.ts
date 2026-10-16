@@ -6,7 +6,7 @@ import {
 	trashArticleFile,
 	uploadArticleFile,
 } from '../api/client';
-import { movedPath, referencedPaths } from '../shared/article-references.mjs';
+import { movedPath, referencedPaths, studioFileUrl } from '../shared/article-references.mjs';
 import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
 import { showContextMenu, type MenuItem } from './context-menu';
@@ -426,10 +426,9 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	}
 
 	function openFile(entry: ArticleFileEntry): void {
-		const [root, ...rest] = entry.path.split('/');
+		const [root] = entry.path.split('/');
 		if (entry.kind !== 'file' || (root !== 'img' && root !== 'assets')) return;
-		const url = `/api/studio/articles/${encodeURIComponent(slug!)}/files/${root}/${rest.map(encodeURIComponent).join('/')}`;
-		window.open(url, '_blank', 'noopener');
+		window.open(studioFileUrl(slug!, entry.path), '_blank', 'noopener');
 	}
 
 	function chooseUpload(target: ArticleFileEntry | null, folders = false): void {

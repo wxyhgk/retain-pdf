@@ -1,6 +1,7 @@
 import { constants } from 'node:fs';
 import { lstat, open, readdir } from 'node:fs/promises';
-import { extname, isAbsolute, resolve } from 'node:path';
+import { basename, extname, isAbsolute, resolve } from 'node:path';
+import { codeFileLanguages } from '../../code-files/languages.mjs';
 import {
 	ARTICLE_RESOURCE_DIRECTORIES,
 	articleBundlePaths,
@@ -11,29 +12,63 @@ import {
 export const PUBLIC_RESOURCE_ROOTS = Object.freeze(['img', 'assets']);
 export const DEFAULT_RESOURCE_SIZE_LIMIT = 8 * 1024 * 1024;
 
+const TEXT = 'text/plain; charset=utf-8';
+
+/**
+ * What a file is served as. Calculation files are text, so that opened in a
+ * tab they show instead of downloading; unknown files download.
+ */
 const CONTENT_TYPES = Object.freeze({
-	'.cif': 'text/plain; charset=utf-8',
-	'.com': 'text/plain; charset=utf-8',
+	'.avif': 'image/avif',
+	'.bmp': 'image/bmp',
+	'.cif': TEXT,
+	'.com': TEXT,
 	'.csv': 'text/csv; charset=utf-8',
-	'.cube': 'text/plain; charset=utf-8',
+	'.cube': TEXT,
+	'.dat': TEXT,
+	'.fch': TEXT,
+	'.fchk': TEXT,
 	'.gif': 'image/gif',
-	'.gjf': 'text/plain; charset=utf-8',
+	'.gjf': TEXT,
+	'.gro': TEXT,
+	'.in': TEXT,
+	'.inp': TEXT,
+	'.itp': TEXT,
 	'.jpeg': 'image/jpeg',
 	'.jpg': 'image/jpeg',
 	'.json': 'application/json; charset=utf-8',
+	'.log': TEXT,
 	'.md': 'text/markdown; charset=utf-8',
-	'.mol': 'text/plain; charset=utf-8',
-	'.mol2': 'text/plain; charset=utf-8',
-	'.pdb': 'text/plain; charset=utf-8',
+	'.mdp': TEXT,
+	'.mol': TEXT,
+	'.mol2': TEXT,
+	'.molden': TEXT,
+	'.out': TEXT,
+	'.pdb': TEXT,
 	'.pdf': 'application/pdf',
 	'.png': 'image/png',
-	'.sdf': 'text/plain; charset=utf-8',
-	'.smi': 'text/plain; charset=utf-8',
-	'.smiles': 'text/plain; charset=utf-8',
-	'.txt': 'text/plain; charset=utf-8',
+	'.py': TEXT,
+	'.sdf': TEXT,
+	'.sh': TEXT,
+	'.smi': TEXT,
+	'.smiles': TEXT,
+	// Served with `Content-Security-Policy: sandbox`, so a script in it never runs.
+	'.svg': 'image/svg+xml',
+	'.top': TEXT,
+	'.toml': TEXT,
+	'.tsv': 'text/tab-separated-values; charset=utf-8',
+	'.txt': TEXT,
+	'.vasp': TEXT,
 	'.webp': 'image/webp',
-	'.xyz': 'text/plain; charset=utf-8',
+	'.wfn': TEXT,
+	'.wfx': TEXT,
+	'.xyz': TEXT,
+	'.yaml': TEXT,
+	'.yml': TEXT,
 });
+
+/** Files known by name alone: `INCAR`, `POSCAR`, `OUTCAR`… */
+const TEXT_NAMES = new Set(codeFileLanguages.flatMap((language) => language.names));
 
 export class FileRepository {
 	constructor(blogRoot, { sizeLimit = DEFAULT_RESOURCE_SIZE_LIMIT } = {}) {
@@ -130,7 +165,9 @@ export function validateResourcePath(resourcePath) {
 }
 
 export function resourceContentType(resourcePath) {
-	return CONTENT_TYPES[extname(resourcePath).toLowerCase()] ?? 'application/octet-stream';
+	const extension = extname(resourcePath).toLowerCase();
+	if (!extension && TEXT_NAMES.has(basename(resourcePath))) return TEXT;
+	return CONTENT_TYPES[extension] ?? 'application/octet-stream';
 }
 
 async function listRegularFiles(directory, prefix = '', root = directory) {
