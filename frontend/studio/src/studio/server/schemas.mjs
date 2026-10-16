@@ -50,6 +50,7 @@ export function articleSummary(source, fallbackSlug) {
 		draft: frontmatter.draft === true,
 		icon: typeof frontmatter.icon === 'string' ? frontmatter.icon.trim() : '',
 		tags: Array.isArray(frontmatter.tags) ? frontmatter.tags.filter((tag) => typeof tag === 'string') : [],
+		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 	};
 }
 

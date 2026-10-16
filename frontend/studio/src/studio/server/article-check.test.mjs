@@ -76,3 +76,23 @@ $$
 		{ severity: 'warning', message: '找不到文件 ./assets/gone.log，页面上的链接会失效', line: 21 },
 	]);
 });
+
+test('links to the blog’s own articles must lead somewhere published', async (t) => {
+	const blogRoot = await mkdtemp(join(tmpdir(), 'studio-check-links-'));
+	t.after(() => rm(blogRoot, { recursive: true, force: true }));
+	const repository = new ArticleRepository(blogRoot);
+	for (const [slug, extra] of [['note', ''], ['published', ''], ['draft-one', ''], ['wiki-page', 'kind: wiki\n']]) {
+		await repository.create({ slug, title: slug });
+		await writeFile(articleBundlePaths(blogRoot, slug).markdown, `---\ntitle: ${slug}\ndescription: ''\npubDate: 2026-10-16\n${extra}draft: ${slug === 'draft-one'}\n---\n`);
+	}
+	const source = `${PROPERTIES}
+[好](/blog/published/) [缺](/blog/gone/) [草稿](/blog/draft-one/) [错处](/blog/wiki-page/) [对](/wiki/wiki-page/#eq-1) [外](https://example.com/blog/x/)
+`;
+	const issues = await checkArticle(blogRoot, 'note', source);
+	assert.deepEqual(issues.map((issue) => issue.message), [
+		'链接的文章 /blog/gone/ 不存在',
+		'链接的文章「draft-one」还是草稿，发布前这个链接打不开',
+		'「wiki-page」的网址是 /wiki/wiki-page/，不是 /blog/wiki-page/',
+	]);
+	assert.ok(issues.every((issue) => issue.severity === 'warning' && issue.line === 7));
+});

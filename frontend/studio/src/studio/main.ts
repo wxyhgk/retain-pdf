@@ -125,6 +125,12 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
 	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error('文章尚未载入'))),
 	changed: (markdown) => session.editBody(markdown),
+	async pickArticle() {
+		const slug = await quickFind.pick();
+		const article = articleList.articles().find((entry) => entry.slug === slug);
+		return article ? { title: article.title, href: `/${article.kind === 'wiki' ? 'wiki' : 'blog'}/${article.slug}/` } : null;
+	},
+	openArticle: (slug) => void session.open(slug),
 	reviewing: (pending) => reviewBar.show(pending),
 });
 const reviewBar = createReviewBar(shell, { acceptAll: () => editor.acceptAll(), rejectAll: () => editor.rejectAll() });

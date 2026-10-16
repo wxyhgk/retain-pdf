@@ -29,11 +29,15 @@ import type { HastElement } from '../../code-files/render.mjs';
 import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
+import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
+import { buildBlockSlashMenu } from './block-slash-menu';
+import { calloutPlugins } from './callout-block';
 import { FIGURE_TYPE, figurePlugins } from './figure-block';
 import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
 import { SCIENCE_FENCE_TYPE } from './science-block';
-import { buildScienceSlashMenu } from './science-slash-menu';
+import { buildScienceSlashMenu, type SlashMenuBuilder } from './science-slash-menu';
+import { togglePlugins } from './toggle-block';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {
@@ -47,7 +51,7 @@ export type StudioEditorHost = {
 	changed(markdown: string): void;
 	/** How many changes are left to review, or null when none is under review. */
 	reviewing(pending: number | null): void;
-};
+} & ArticleLinkHost;
 
 export type StudioEditor = {
 	/** Shows a Markdown body, replacing what was shown; the Markdown the editor writes for it. */
@@ -135,6 +139,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					buildBlockMenu(builder, target, { saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) } }),
 				buildMenu: (builder) => {
 					buildScienceSlashMenu(builder);
+					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host);
 					replaceSlashImageItem(builder, fileDrop.chooseImages);
 				},
 				textGroup: {
@@ -224,6 +229,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(displayMathPlugins);
 			crepe.editor.use(mathBracketsRemark);
 			crepe.editor.use(figurePlugins(host.fileUrl));
+			crepe.editor.use(calloutPlugins());
+			crepe.editor.use(togglePlugins());
+			crepe.editor.use(articleLinkPlugins(host));
 			crepe.editor.use(fileDrop.plugin);
 			crepe.editor
 				.config((ctx) => {

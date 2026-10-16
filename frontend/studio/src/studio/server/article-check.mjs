@@ -3,10 +3,12 @@ import { parseFrontmatter } from '@astrojs/markdown-remark';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
+import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
 
 import { rehypePlugins, remarkPlugins } from '../../plugins/markdown-pipeline.mjs';
 import { findArticleReferences } from '../shared/article-references.mjs';
+import { ArticleRepository } from './article-repository.mjs';
 import { articleBundlePaths, resolveInside } from './bundle-paths.mjs';
 import { PUBLIC_RESOURCE_ROOTS } from './file-repository.mjs';
 import { articleProblems } from './schemas.mjs';
@@ -17,7 +19,8 @@ import { articleProblems } from './schemas.mjs';
  *   that is not there);
  * - `warning`: the page shows it broken (a link or `@file` to a missing
  *   file, a file that is not published, a formula KaTeX rejects, a
- *   reference to an equation no label names).
+ *   reference to an equation no label names, a link to an article that
+ *   is not there, not published, or under the other address).
  * What the page would show is found by running the blog's own Markdown
  * plugins (`markdown-pipeline.mjs`) and taking what they report.
  *
@@ -35,6 +38,7 @@ export async function checkArticle(blogRoot, slug, source) {
 	const issues = [
 		...articleProblems(source).map((message) => ({ severity: 'error', message })),
 		...(await referenceIssues(paths.directory, source)),
+		...(await articleLinkIssues(blogRoot, slug, source)),
 		...(await pipelineIssues(paths.markdown, source)),
 	];
 	const rank = (issue) => (issue.severity === 'error' ? 0 : 1);
@@ -72,6 +76,31 @@ async function referenceIssues(directory, source) {
 			else issues.push({ severity: 'warning', message: `找不到文件 ${shown}，页面上的链接会失效`, line });
 		} else if (!PUBLIC_RESOURCE_ROOTS.includes(reference.path.split('/', 1)[0])) {
 			issues.push({ severity: 'warning', message: `${shown} 不在 img/ 或 assets/ 里，不会随文章发布`, line });
+		}
+	}
+	return issues;
+}
+
+/** Links to the blog's own articles (`/blog/<slug>/`, `/wiki/<slug>/`): there, published, and at their address. */
+async function articleLinkIssues(blogRoot, slug, source) {
+	const links = [];
+	visit(unified().use(remarkParse).parse(source), (node) => {
+		if ((node.type === 'link' || node.type === 'definition') && typeof node.url === 'string') links.push({ url: node.url, line: node.position?.start.line });
+	});
+	const wanted = links
+		.map((link) => ({ ...link, match: /^\/(blog|wiki)\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?(?:[#?].*)?$/u.exec(link.url) }))
+		.filter((link) => link.match && link.match[2] !== slug);
+	if (!wanted.length) return [];
+	const articles = new Map((await new ArticleRepository(blogRoot).list()).map((article) => [article.slug, article]));
+	const issues = [];
+	for (const { url, line, match } of wanted) {
+		const [, section, target] = match;
+		const article = articles.get(target);
+		const at = line ? { line } : {};
+		if (!article) issues.push({ severity: 'warning', message: `链接的文章 ${url} 不存在`, ...at });
+		else if (article.draft) issues.push({ severity: 'warning', message: `链接的文章「${article.title}」还是草稿，发布前这个链接打不开`, ...at });
+		else if ((article.kind === 'wiki') !== (section === 'wiki')) {
+			issues.push({ severity: 'warning', message: `「${article.title}」的网址是 /${article.kind === 'wiki' ? 'wiki' : 'blog'}/${target}/，不是 ${url}`, ...at });
 		}
 	}
 	return issues;

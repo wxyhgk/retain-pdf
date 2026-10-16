@@ -7,6 +7,8 @@ export type ArticleSummary = {
 	/** Its icon, an emoji; empty for none. */
 	icon?: string;
 	tags?: string[];
+	/** Where the blog lists it: under /blog/ or /wiki/. */
+	kind?: 'post' | 'wiki';
 };
 
 /** An article that holds what was searched for, with some lines it is on. */

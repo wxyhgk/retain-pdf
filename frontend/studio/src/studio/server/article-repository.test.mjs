@@ -23,7 +23,7 @@ test('bundle paths reject traversal and invalid slugs', () => {
 
 test('frontmatter is parsed as YAML and shares the publication rule', () => {
 	const source = `---\ntitle: "A: quoted title"\ndescription: test\npubDate: 2026-08-09\ntags: []\ndraft: true\n---\n\nBody\n`;
-	assert.deepEqual(articleSummary(source, 'fallback'), { title: 'A: quoted title', draft: true, icon: '', tags: [] });
+	assert.deepEqual(articleSummary(source, 'fallback'), { title: 'A: quoted title', draft: true, icon: '', tags: [], kind: 'post' });
 	assert.equal(validateArticleSource(source).success, true);
 	assert.equal(isPublishedArticle({ data: { draft: true } }), false);
 	assert.equal(isPublishedArticle({ data: { draft: false } }), true);
@@ -35,7 +35,7 @@ test('repository preserves the legacy API while supporting revision aliases', as
 	await repository.create({ slug: 'first-note', title: "研究者的 '草稿'" });
 
 	const listed = await repository.list();
-	assert.deepEqual(listed, [{ slug: 'first-note', title: "研究者的 '草稿'", draft: true, icon: '', tags: [] }]);
+	assert.deepEqual(listed, [{ slug: 'first-note', title: "研究者的 '草稿'", draft: true, icon: '', tags: [], kind: 'post' }]);
 
 	const initial = await repository.read('first-note');
 	assert.equal(initial.content, initial.source);

@@ -23,6 +23,12 @@ export function blogHasArticle(folder: string): boolean {
 	return existsSync(join(articles(), folder, 'index.md'));
 }
 
+/** Puts another article into the copy of blog/: `blog/<folder>/index.md`. */
+export function writeArticle(folder: string, markdown: string): void {
+	mkdirSync(join(articles(), folder), { recursive: true });
+	writeFileSync(join(articles(), folder, 'index.md'), markdown);
+}
+
 /** Removes an article a test made (a copy, a renamed fixture) from the copy of blog/. */
 export function removeArticle(folder: string): void {
 	rmSync(join(articles(), folder), { recursive: true, force: true });

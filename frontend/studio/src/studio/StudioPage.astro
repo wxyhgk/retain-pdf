@@ -351,6 +351,16 @@ import { SITE_TITLE } from '../consts';
 	.trash-list :global(.trash-empty) { padding: 22px 8px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
 	.trash-status { min-height: 16px; margin: 0; color: rgb(var(--gray)); font-size: 12px; }
 	:global(.trash-status.is-error) { color: #b42318; }
+	/* Toggles: a triangle and a title, the blocks under them folded away or not. */
+	:global(.crepe-host .toggle-block) { margin: 4px 0; }
+	:global(.crepe-host .toggle-head) { display: flex; align-items: center; gap: 2px; }
+	:global(.crepe-host .toggle-arrow) { width: 24px; height: 24px; flex: none; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 24px; cursor: pointer; transition: transform 120ms ease; transform: rotate(90deg); }
+	:global(.crepe-host .toggle-block.is-folded > .toggle-head .toggle-arrow) { transform: none; }
+	:global(.crepe-host .toggle-arrow:hover) { background: var(--surface-soft); }
+	:global(.crepe-host .toggle-summary) { flex: 1; min-width: 0; padding: 2px 2px; border: 0; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-weight: 500; outline: none; }
+	:global(.crepe-host .toggle-summary::placeholder) { color: rgb(var(--gray)); opacity: 0.6; }
+	:global(.crepe-host .toggle-body) { padding-left: 26px; }
+	:global(.crepe-host .toggle-block.is-folded > .toggle-body) { display: none; }
 	/* The pickers float over the page. */
 	:global(.page-popover) { position: fixed; z-index: 70; box-sizing: border-box; padding: 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: 0 10px 34px rgba(15, 15, 15, 0.16); }
 	:global(.icon-picker) { width: 336px; }

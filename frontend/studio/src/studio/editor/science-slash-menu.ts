@@ -16,7 +16,7 @@ const scienceSlashIcon =
 	'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"' +
 	' fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3h6M10 3v5L4.5 18a2 2 0 0 0 1.8 3h11.4a2 2 0 0 0 1.8-3L14 8V3"/></svg>';
 
-type SlashMenuBuilder = {
+export type SlashMenuBuilder = {
 	addGroup: (
 		key: string,
 		label: string,

@@ -47,6 +47,8 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 	let index = 0;
 	let timer = 0;
 	let asking: AbortController | null = null;
+	/** While an article is asked for (`pick`): who gets it. */
+	let picking: ((slug: string | null) => void) | null = null;
 
 	function draw(): void {
 		const query = input.value.trim();
@@ -129,8 +131,11 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 	function choose(at: number): void {
 		const row = rows[at];
 		if (!row) return;
+		const answer = picking;
+		picking = null;
 		dialog.close();
-		host.open(row.slug, row.text);
+		if (answer) answer(row.slug);
+		else host.open(row.slug, row.text);
 	}
 
 	input.addEventListener('input', update);
@@ -146,10 +151,24 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 			choose(index);
 		}
 	});
+	// Closed without a choice: nothing was picked.
+	dialog.addEventListener('close', () => {
+		const answer = picking;
+		picking = null;
+		answer?.(null);
+	});
 	dialog.addEventListener('click', (event) => {
 		// A click on the backdrop closes it.
 		if (event.target === dialog) dialog.close();
 	});
+
+	function show(placeholder: string): void {
+		input.placeholder = placeholder;
+		input.value = '';
+		update();
+		dialog.showModal();
+		input.focus();
+	}
 
 	return {
 		open(): void {
@@ -157,10 +176,15 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 				input.select();
 				return;
 			}
-			input.value = '';
-			update();
-			dialog.showModal();
-			input.focus();
+			show('搜索标题和正文…');
+		},
+		/** Asks which article: its slug, or null when given up. */
+		pick(): Promise<string | null> {
+			if (dialog.open) dialog.close();
+			return new Promise((resolve) => {
+				picking = resolve;
+				show('链接到哪篇文章…');
+			});
 		},
 	};
 }
