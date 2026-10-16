@@ -236,3 +236,8 @@ function splitSource(source) {
 	if (!closing) return { bodyStart: contentStart, frontmatter: null };
 	return { bodyStart: closing.end, frontmatter: { yamlStart: opening.end, yamlEnd: closing.start } };
 }
+
+/** Where the Studio serves a file of the article: `img/a.png` → `/api/studio/articles/<slug>/files/img/a.png`. */
+export function studioFileUrl(slug, path) {
+	return `/api/studio/articles/${encodeURIComponent(slug)}/files/${path.split('/').map(encodeURIComponent).join('/')}`;
+}

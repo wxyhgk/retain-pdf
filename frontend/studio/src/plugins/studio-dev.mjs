@@ -1,8 +1,10 @@
 import { lstat } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { pipeline } from 'node:stream/promises';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
+import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
 import { articleBundlePaths, StudioPathError } from '../studio/server/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
@@ -11,6 +13,11 @@ import { TerminalHost } from '../studio/server/terminal-host.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
 
 function json(response, status, data) {
+	// A file was being sent when it failed (the page went away): nothing more can be said.
+	if (response.headersSent) {
+		response.destroy?.();
+		return;
+	}
 	response.statusCode = status;
 	response.setHeader('Content-Type', 'application/json; charset=utf-8');
 	response.setHeader('Cache-Control', 'no-store');
@@ -54,14 +61,15 @@ function decodePathComponent(component) {
 	}
 }
 
-function file(response, resource) {
+/** Streams a file of the article: a log of hundreds of megabytes is served like a picture. */
+async function file(response, resource) {
 	response.statusCode = 200;
 	response.setHeader('Content-Type', resource.contentType);
 	response.setHeader('Content-Length', resource.size);
 	response.setHeader('Cache-Control', 'no-store');
 	response.setHeader('X-Content-Type-Options', 'nosniff');
 	response.setHeader('Content-Security-Policy', 'sandbox');
-	response.end(resource.body);
+	await pipeline(resource.body, response);
 }
 
 export default function studioDev() {
@@ -74,6 +82,7 @@ export default function studioDev() {
 			const blogRoot = testBlogRoot ?? resolve(server.config.root, 'blog');
 			const articles = new ArticleRepository(blogRoot);
 			const files = new FileRepository(blogRoot);
+			const codeFiles = new CodeFilePreviews(files);
 			// Removed files wait here, outside blog/ and ignored by git, until someone empties it.
 			const manager = new ArticleFileManager(blogRoot, {
 				trashRoot: testBlogRoot ? resolve(testBlogRoot, '.studio-trash') : resolve(server.config.root, '.studio-trash'),
@@ -96,7 +105,7 @@ export default function studioDev() {
 						const slug = decodePathComponent(publicFileMatch[1]);
 						const root = decodePathComponent(publicFileMatch[2]);
 						const resourcePath = decodePathComponent(publicFileMatch[3]);
-						return file(response, await files.read(slug, root, resourcePath));
+						return await file(response, await files.stream(slug, root, resourcePath));
 					} catch (error) {
 						const message = error instanceof Error ? error.message : '文章资源读取失败';
 						const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
@@ -155,7 +164,16 @@ export default function studioDev() {
 						const slug = decodePathComponent(fileMatch[1]);
 						const root = decodePathComponent(fileMatch[2]);
 						const resourcePath = decodePathComponent(fileMatch[3]);
-						return file(response, await files.read(slug, root, resourcePath));
+						return await file(response, await files.stream(slug, root, resourcePath));
+					}
+
+					// A code block's `@file`, drawn as the blog draws it.
+					const codeFileMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/code-file$/u);
+					if (codeFileMatch && request.method === 'GET') {
+						const slug = decodePathComponent(codeFileMatch[1]);
+						const { searchParams: query } = url;
+						const figure = await codeFiles.figure(slug, query.get('path') ?? '', query.get('language') ?? '', query.get('meta') ?? '');
+						return json(response, 200, { figure });
 					}
 
 					const managerMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(tree|files|folders|move|trash|reveal)$/u);

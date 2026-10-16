@@ -50,7 +50,11 @@ export class FileRepository {
 		return { img, assets, ai };
 	}
 
-	async read(slug, root, resourcePath) {
+	/**
+	 * Opens a file of `img/` or `assets/` for reading, without following a
+	 * link at any level. The caller closes `handle`.
+	 */
+	async open(slug, root, resourcePath) {
 		assertPublicResourceRoot(root);
 		const segments = validateResourcePath(resourcePath);
 		const paths = articleBundlePaths(this.blogRoot, slug);
@@ -77,19 +81,30 @@ export class FileRepository {
 		try {
 			handle = await open(current, constants.O_RDONLY | constants.O_NOFOLLOW);
 			const info = await handle.stat();
-			if (info.size > this.sizeLimit) throw new ResourceTooLargeError(this.sizeLimit);
-			return {
-				body: await handle.readFile(),
-				contentType: resourceContentType(resourcePath),
-				size: info.size,
-			};
+			return { handle, size: info.size, modified: info.mtimeMs, contentType: resourceContentType(resourcePath) };
 		} catch (error) {
+			await handle?.close();
 			if (error?.code === 'ENOENT') throw new ResourceNotFoundError();
 			if (error?.code === 'ELOOP') throw new StudioPathError('资源路径不能包含符号链接');
 			throw error;
-		} finally {
-			await handle?.close();
 		}
+	}
+
+	/** A file of `img/` or `assets/`, read whole: no larger than `sizeLimit`. */
+	async read(slug, root, resourcePath, { sizeLimit = this.sizeLimit } = {}) {
+		const { handle, size, modified, contentType } = await this.open(slug, root, resourcePath);
+		try {
+			if (size > sizeLimit) throw new ResourceTooLargeError(sizeLimit);
+			return { body: await handle.readFile(), contentType, size, modified };
+		} finally {
+			await handle.close();
+		}
+	}
+
+	/** A file of `img/` or `assets/` as a stream, for serving it whatever its size. */
+	async stream(slug, root, resourcePath) {
+		const { handle, size, contentType } = await this.open(slug, root, resourcePath);
+		return { body: handle.createReadStream(), contentType, size };
 	}
 }
 

@@ -5,7 +5,7 @@ import type { EditorView } from '@milkdown/prose/view';
 import { enhanceCodeFiles } from '../../code-files/browser.ts';
 import { downloadName, parseFenceMeta } from '../../code-files/highlight.mjs';
 import { codeFileLanguages } from '../../code-files/languages.mjs';
-import { codeFileFigure, codeFileProblem, type HastChild, type HastElement } from '../../code-files/render.mjs';
+import { codeFileProblem, type HastChild, type HastElement } from '../../code-files/render.mjs';
 import '../../code-files/code-files.css';
 import { parseScienceResourceRef } from '../../science/parsers/resource-reference.ts';
 import type { ArticleFileDropHost } from './file-drop.ts';
@@ -67,26 +67,19 @@ export function observeCodeFiles(root: HTMLElement): () => void {
 
 /**
  * The preview of a code block that shows a file of the article: the file as
- * the blog draws it. Other blocks have none (null), so they stay editable code.
- * `meta` is not passed to Crepe's previews, so the whole file shows, its head
- * and tail when long.
+ * the blog draws it, drawn by the server (`figure`), which sends only the
+ * lines shown. Other blocks have none (null), so they stay editable code.
  */
 export function codeFilePreview(
-	fileUrl: (src: string) => string,
-): (language: string, content: string, apply: (value: HTMLElement) => void) => HTMLElement | null | undefined {
-	return (language, content, apply) => {
+	figure: (reference: string, language: string, meta: string) => Promise<HastElement>,
+): (language: string, content: string, apply: (value: HTMLElement) => void, meta: string) => HTMLElement | null | undefined {
+	return (language, content, apply, meta) => {
 		const path = codeFileReference(content);
 		if (!path) return null;
-		const meta = parseFenceMeta('');
-		fetch(fileUrl(path))
-			.then(async (response) => {
-				if (!response.ok) throw new Error(`找不到文件 ${path}`);
-				return response.text();
-			})
-			.then(
-				(text) => apply(draw(codeFileFigure({ language, meta, source: content, file: { path, text, href: fileUrl(path) } }))),
-				(error: unknown) => apply(draw(codeFileProblem(language, error instanceof Error ? error.message : `找不到文件 ${path}`))),
-			);
+		figure(path, language, meta).then(
+			(drawn) => apply(draw(drawn)),
+			(error: unknown) => apply(draw(codeFileProblem(language, error instanceof Error ? error.message : `找不到文件 ${path}`))),
+		);
 		return undefined;
 	};
 }

@@ -25,6 +25,7 @@ import { createSciencePreview, observeSciencePreviews } from '../../science/brow
 import { linkPath } from '../workspace/file-tree';
 import { blockFeelPlugins, buildBlockMenu } from './block-menu';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
+import type { HastElement } from '../../code-files/render.mjs';
 import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
@@ -40,6 +41,8 @@ export type StudioEditorHost = {
 	files: ArticleFileDropHost;
 	/** Where to load a file the article links to (`./img/a.png`) from. */
 	fileUrl(src: string): string;
+	/** A code block's `@file ./assets/opt.log`, drawn as the blog draws it. */
+	codeFile(reference: string, language: string, meta: string): Promise<HastElement>;
 	/** The author edited: the whole body as Markdown. */
 	changed(markdown: string): void;
 	/** How many changes are left to review, or null when none is under review. */
@@ -126,7 +129,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			const fileDrop = articleFileDrop(host.files);
 			// Crepe's own config, plus the block menu only the Milkdown fork has.
 			const saveAsFile = saveCodeBlockAsFile(host.files);
-			const filePreview = codeFilePreview(host.fileUrl);
+			const filePreview = codeFilePreview(host.codeFile);
 			const blockEdit: ForkBlockEditFeatureConfig = {
 				buildBlockMenu: (builder, target) =>
 					buildBlockMenu(builder, target, { saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) } }),
@@ -178,9 +181,10 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						searchPlaceholder: '搜索语言',
 						noResultText: '没有匹配的语言',
 						// A block that shows a file of the article (`@file ./assets/opt.log`) previews it as the blog does.
-						// It comes later (undefined), once the file is read.
-						renderPreview: (language, content, apply) => {
-							const file = filePreview(language, content, apply);
+						// It comes later (undefined), once the file is read. The fork passes the fence's
+						// `lines=` and `title=` (meta) too, which the npm release's type does not know.
+						renderPreview: (language: string, content: string, apply: (value: HTMLElement) => void, meta = '') => {
+							const file = filePreview(language, content, apply, meta);
 							return file === null ? createSciencePreview(language, content) : file;
 						},
 					},

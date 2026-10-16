@@ -36,6 +36,18 @@ test('a block showing a file of the article previews the file, numbered and fold
 	await expect(figure).not.toHaveClass(/is-folded/);
 });
 
+test('the preview follows the fence: lines= and title=', async ({ page }) => {
+	resetFixture();
+	writeFixtureFile('assets/run.log', Array.from({ length: 50 }, (_, index) => ` cycle ${index + 1}`).join('\n'));
+	appendToFixture('\n```output title="scf.log" lines=20-22\n@file ./assets/run.log\n```\n');
+	await openStudio(page);
+	const figure = editor(page).locator('figure.code-file');
+	await expect(figure.locator('.code-file-name')).toHaveText('scf.log');
+	await expect(figure.locator('pre code > .line')).toHaveCount(3);
+	await expect(figure.locator('[data-line="20"]')).toContainText('cycle 20');
+	await expect(figure.locator('.code-file-download')).toHaveAttribute('href', '/api/studio/articles/studio-fixture/files/assets/run.log');
+});
+
 test('the block menu saves a code block as a file, and the block then shows it', async ({ page }) => {
 	await codeBlock(page, 'ENCUT').locator('.cm-content').hover();
 	const handle = page.locator('.milkdown-block-handle .operation-item').last();

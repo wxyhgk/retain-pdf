@@ -3,6 +3,7 @@
 import {
 	articleFilesUrl,
 	articleFileUrl,
+	codeFileFigure,
 	createArticle,
 	getArticle,
 	saveArticle,
@@ -67,6 +68,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		report: showToast,
 	},
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
+	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error('文章尚未载入'))),
 	changed: (markdown) => session.editBody(markdown),
 	reviewing: (pending) => reviewBar.show(pending),
 });

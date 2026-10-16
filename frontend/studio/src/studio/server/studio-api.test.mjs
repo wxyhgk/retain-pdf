@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { EventEmitter } from 'node:events';
 import { join } from 'node:path';
-import { Readable } from 'node:stream';
+import { Readable, Writable } from 'node:stream';
 import test from 'node:test';
 import studioDev from '../../plugins/studio-dev.mjs';
 import { ArticleRepository } from './article-repository.mjs';
@@ -30,13 +30,24 @@ async function apiFixture(t) {
 	return Object.assign(middleware, { paths });
 }
 
-async function get(middleware, url) {
-	const headers = new Map();
-	const response = {
+/** A response the server can write or stream to; `body` is all it sent. */
+function fakeResponse(headers = new Map()) {
+	const chunks = [];
+	const response = Object.assign(new Writable({
+		write(chunk, _encoding, done) {
+			chunks.push(Buffer.from(chunk));
+			done();
+		},
+	}), {
 		statusCode: 0,
 		setHeader(name, value) { headers.set(name.toLowerCase(), value); },
-		end(body) { this.body = body; },
-	};
+	});
+	return Object.defineProperty(response, 'body', { get: () => Buffer.concat(chunks) });
+}
+
+async function get(middleware, url) {
+	const headers = new Map();
+	const response = fakeResponse(headers);
 	await middleware({
 		url,
 		method: 'GET',
@@ -54,6 +65,43 @@ test('GET resource API returns a small file with defensive headers', async (t) =
 	assert.equal(headers.get('content-type'), 'text/plain; charset=utf-8');
 	assert.equal(headers.get('x-content-type-options'), 'nosniff');
 	assert.equal(headers.get('content-security-policy'), 'sandbox');
+});
+
+test('GET resource API streams a file of any size', async (t) => {
+	const middleware = await apiFixture(t);
+	const log = Buffer.alloc(9 * 1024 * 1024, 'x');
+	await writeFile(join(middleware.paths.assets, 'big.log'), log);
+	const { response, headers } = await get(middleware, '/api/studio/articles/api-note/files/assets/big.log');
+	assert.equal(response.statusCode, 200);
+	assert.equal(headers.get('content-length'), log.length);
+	assert.equal(response.body.length, log.length);
+});
+
+test('a code block\'s @file comes drawn as the blog draws it, only the lines shown', async (t) => {
+	const middleware = await apiFixture(t);
+	const lines = Array.from({ length: 1000 }, (_, index) => `line ${index + 1}`);
+	await writeFile(join(middleware.paths.assets, 'opt.log'), `${lines.join('\n')}\n`);
+	const base = '/api/studio/articles/api-note/code-file';
+	const ask = (meta) => call(middleware, { url: `${base}?${new URLSearchParams({ path: './assets/opt.log', language: 'output', meta })}`, method: 'GET' });
+	const shown = (figure) => [...JSON.stringify(figure).matchAll(/"dataLine":"(\d+)"/gu)].map((match) => Number(match[1]));
+
+	const long = await ask('');
+	assert.equal(long.status, 200);
+	assert.equal(shown(long.data.figure).length, 300, 'the head and the tail');
+	assert.match(JSON.stringify(long.data.figure), /省略第 201–900 行/u);
+	assert.match(JSON.stringify(long.data.figure), /\/api\/studio\/articles\/api-note\/files\/assets\/opt\.log/u);
+
+	const named = await ask('title="water.log" lines=500-502');
+	assert.deepEqual(shown(named.data.figure), [500, 501, 502]);
+	assert.match(JSON.stringify(named.data.figure), /water\.log/u);
+
+	await writeFile(join(middleware.paths.assets, 'opt.log'), 'changed\n');
+	const changed = await ask('');
+	assert.deepEqual(shown(changed.data.figure), [1], 'a changed file is drawn anew');
+
+	assert.equal((await call(middleware, { url: `${base}?path=./assets/none.log&language=output`, method: 'GET' })).status, 404);
+	assert.equal((await call(middleware, { url: `${base}?path=./ai/private.md&language=output`, method: 'GET' })).status, 403);
+	assert.equal((await call(middleware, { url: `${base}?path=../other/index.md&language=output`, method: 'GET' })).status, 400);
 });
 
 test('GET resource API rejects AI files and traversal before URL normalization', async (t) => {
@@ -77,11 +125,7 @@ async function call(middleware, { url, method = 'POST', headers = {}, body }) {
 		headers: { origin: 'http://localhost:4321', ...headers },
 		socket: { remoteAddress: '127.0.0.1' },
 	});
-	const response = {
-		statusCode: 0,
-		setHeader() {},
-		end(text) { this.body = text; },
-	};
+	const response = fakeResponse();
 	await middleware(request, response, () => assert.fail('Studio route unexpectedly called next()'));
 	return { status: response.statusCode, data: JSON.parse(response.body) };
 }

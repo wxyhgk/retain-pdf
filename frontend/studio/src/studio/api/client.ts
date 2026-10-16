@@ -1,4 +1,5 @@
-import { articlePath } from '../shared/article-references.mjs';
+import type { HastElement } from '../../code-files/render.mjs';
+import { articlePath, studioFileUrl } from '../shared/article-references.mjs';
 import type { ArticleFileEntry, ArticlePayload, ArticleSummary } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -81,7 +82,16 @@ export function articleFileUrl(slug: string, src: string): string {
 	const path = articlePath(src);
 	const [root, ...rest] = path?.split('/') ?? [];
 	if (!path || (root !== 'img' && root !== 'assets') || !rest.length) return src;
-	return `${articleFilesUrl(slug)}/${root}/${rest.map(encodeURIComponent).join('/')}`;
+	return studioFileUrl(slug, path);
+}
+
+/**
+ * A code block that shows a file of the article (`@file ./assets/opt.log`),
+ * drawn by the server as the blog draws it: only the lines shown come over.
+ */
+export async function codeFileFigure(slug: string, reference: string, language: string, meta: string): Promise<HastElement> {
+	const query = new URLSearchParams({ path: reference, language, meta });
+	return (await request<{ figure: HastElement }>(`${articleApi(slug, 'code-file')}?${query}`)).figure;
 }
 
 export async function listArticleFiles(slug: string): Promise<ArticleFileEntry[]> {

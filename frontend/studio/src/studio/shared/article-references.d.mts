@@ -21,3 +21,4 @@ export function rewriteMovedReferences(
 	to: string,
 ): { source: string; changed: number; moves: Array<{ kind: ReferenceKind; from: string; to: string }> };
 export function articlePath(written: string): string | null;
+export function studioFileUrl(slug: string, path: string): string;
