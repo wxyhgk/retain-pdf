@@ -11,7 +11,7 @@ import { SourcePopup } from './source-popup.ts';
 
 const openBlocks = new Set<DisplayMathView>();
 
-function paintFormula(host: HTMLElement, source: string, emptyLabel: string, showError: boolean, view: EditorView): void {
+function paintFormula(host: HTMLElement, source: string, emptyLabel: string, view: EditorView): void {
 	host.classList.remove('is-empty', 'is-error');
 	if (!source.trim()) {
 		host.classList.add('is-empty');
@@ -22,11 +22,18 @@ function paintFormula(host: HTMLElement, source: string, emptyLabel: string, sho
 	host.innerHTML = result.html;
 	host.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
 	host.classList.toggle('is-error', Boolean(result.error));
-	if (!showError || !result.error) return;
-	const error = document.createElement('p');
-	error.className = 'pm-source-popup-error';
-	error.textContent = result.error;
-	host.append(error);
+}
+
+/** The popup says what is wrong with the source; the formula itself shows in place. */
+function paintError(host: HTMLElement, source: string, view: EditorView): void {
+	const { error } = source.trim() ? renderMathHtml(source, true, equationLabels(view.state)) : { error: undefined };
+	host.hidden = !error;
+	host.replaceChildren();
+	if (!error) return;
+	const message = document.createElement('p');
+	message.className = 'pm-source-popup-error';
+	message.textContent = error;
+	host.append(message);
 }
 
 class DisplayMathView implements NodeView {
@@ -103,7 +110,7 @@ class DisplayMathView implements NodeView {
 		const key = `${this.numbered}\n${this.references}`;
 		if (key === this.drawn) return;
 		this.drawn = key;
-		paintFormula(this.formula, this.numbered, '公式', false, this.view);
+		paintFormula(this.formula, this.numbered, '公式', this.view);
 	}
 
 	private onMouseDown = (event: MouseEvent): void => {
@@ -121,25 +128,21 @@ class DisplayMathView implements NodeView {
 
 	private open(): void {
 		if (this.popup) return;
+		// The formula stays where it is and follows the typing, so the text around it does not move.
 		this.dom.classList.add('is-open');
-		this.formula.setAttribute('aria-hidden', 'true');
 		openBlocks.add(this);
 		this.popup = new SourcePopup({
 			label: '行间公式',
 			placeholder: '输入 LaTeX',
 			value: this.node.textContent,
 			rows: 2,
-			placement: 'over',
+			variant: 'is-formula',
+			placement: 'below',
 			owner: this.dom,
-			// The in-document formula is hidden while the popup is open, so anchor on the block.
-			anchor: () => {
-				const block = this.dom.getBoundingClientRect();
-				const host = this.dom.closest('.crepe-host')?.getBoundingClientRect();
-				return block.width > 8 ? block : host ?? block;
-			},
+			anchor: () => this.formula.getBoundingClientRect(),
 			width: () => 440,
 			maxInputHeight: () => 160,
-			preview: (host, value) => paintFormula(host, value, '预览', true, this.view),
+			preview: (host, value) => paintError(host, value, this.view),
 			latex: true,
 			onInput: (value) => this.writeSource(value),
 			onFinish: () => this.finish(),
@@ -152,7 +155,6 @@ class DisplayMathView implements NodeView {
 
 	private teardown(): void {
 		this.dom.classList.remove('is-open');
-		this.formula.removeAttribute('aria-hidden');
 		this.popup?.destroy();
 		this.popup = null;
 		openBlocks.delete(this);

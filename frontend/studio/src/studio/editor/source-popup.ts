@@ -138,7 +138,8 @@ export class SourcePopup {
 	}
 
 	focus(): void {
-		this.input.focus();
+		// The popup is placed where it shows; focusing it must not scroll the article.
+		this.input.focus({ preventScroll: true });
 		const end = this.input.value.length;
 		this.input.setSelectionRange(end, end);
 	}

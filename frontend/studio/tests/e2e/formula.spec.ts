@@ -33,14 +33,28 @@ test('the article opens clean, with every formula drawn', async ({ page }) => {
 	await expect(saveStatus(page)).toHaveText('已载入');
 });
 
-test('a display formula opens its popup with the caret in it; Esc closes it', async ({ page }) => {
-	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
+test('a display formula opens its popup with the caret in it, the text around it stays put; Esc closes it', async ({ page }) => {
+	const formula = displayFormulas(page).first();
+	// Where the text around the formula is, before and while it is edited.
+	const around = () => formula.evaluate((block) => [block.previousElementSibling, block.nextElementSibling].map((node) => Math.round(node!.getBoundingClientRect().top)));
+	const before = await around();
+	await formula.locator('.pm-display-math-formula').click();
 	await expect(popup(page)).toBeVisible();
 	await expect(popupInput(page)).toBeFocused();
 	await expect(popupInput(page)).toHaveValue('\\sum_i x_i');
+	expect(await around()).toEqual(before);
+	await expect(formula.locator('.pm-display-math-formula .katex')).toBeVisible();
+	// The popup is under the formula, not over it.
+	const [shown, source] = await Promise.all([formula.boundingBox(), popup(page).boundingBox()]);
+	expect(source!.y).toBeGreaterThanOrEqual(shown!.y + shown!.height);
+
 	await page.keyboard.type(' + 1');
-	await expect(popup(page).locator('.pm-source-popup-preview .katex')).toBeVisible();
+	await expect(formula.locator('.pm-display-math-formula')).toContainText('+1');
 	await expect(saveStatus(page)).toHaveText('未保存');
+	await expect(popup(page).locator('.pm-source-popup-error')).toHaveCount(0);
+	await page.keyboard.type(' \\fra');
+	await page.keyboard.press('Escape');
+	await expect(popup(page).locator('.pm-source-popup-error')).toContainText('\\fra');
 	await page.keyboard.press('Escape');
 	await expect(popup(page)).toBeHidden();
 });
