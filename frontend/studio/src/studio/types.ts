@@ -31,6 +31,8 @@ export type ArticlePayload = {
 	source: string;
 	revision: string;
 	properties: ArticleProperties;
+	/** Why the blog could not build its properties (a missing description, broken YAML…); empty when none. */
+	problems?: string[];
 	/** Temporary compatibility fields returned by the first Studio API. */
 	content?: string;
 	hash?: string;

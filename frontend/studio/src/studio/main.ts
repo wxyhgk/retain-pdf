@@ -100,7 +100,7 @@ const session = new ArticleSession(
 		confirm: (message) => window.confirm(message),
 		toast: (message) => showToast(message),
 		opened({ article, properties: shown }) {
-			properties.show(shown);
+			properties.show(shown, article.problems ?? []);
 			topBar.showArticle(article.slug, shown.title || article.slug);
 			articleList.select(article.slug);
 			filePanel.show(article.slug);
@@ -112,7 +112,10 @@ const session = new ArticleSession(
 		saveState: (state) => topBar.saveState(state),
 		roundtrip: (exact) => topBar.roundtrip(exact),
 		retitled: (title) => topBar.showTitle(title),
-		saved: (slug, saved) => articleList.saved(slug, saved),
+		saved(slug, saved, problems) {
+			articleList.saved(slug, saved);
+			properties.showProblems(problems);
+		},
 	},
 	testDelay ? { delay: testDelay, maxWait: testDelay } : {},
 );

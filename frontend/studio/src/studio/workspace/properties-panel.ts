@@ -36,14 +36,25 @@ export function createPropertiesPanel(root: HTMLElement, host: PropertiesPanelHo
 		draft: draft.checked,
 	});
 
+	/** Why the blog could not build the properties as saved, from the server. */
+	let problems: string[] = [];
+	/** Why the properties as typed cannot be saved. */
+	let typedError: string | null = null;
+
+	/** What is typed wrong comes first; then what the saved properties lack. */
 	function showError(message: string | null): void {
-		error.textContent = message ?? '';
-		error.hidden = !message;
+		typedError = message;
+		const shown = message ?? problems.join('；');
+		error.textContent = shown;
+		error.hidden = !shown;
 	}
 
 	function summarize(properties: ArticleProperties): void {
 		const tagText = properties.tags.length ? properties.tags.join(' · ') : '无标签';
-		summary.textContent = `${properties.pubDate || '未设置日期'} · ${tagText}`;
+		summary.textContent = problems.length
+			? `属性有 ${problems.length} 处问题，博客构建会失败`
+			: `${properties.pubDate || '未设置日期'} · ${tagText}`;
+		summary.classList.toggle('has-problems', problems.length > 0);
 		publish.textContent = properties.draft ? '发布' : '撤回';
 		publish.dataset.published = String(!properties.draft);
 	}
@@ -82,8 +93,9 @@ export function createPropertiesPanel(root: HTMLElement, host: PropertiesPanelHo
 	});
 
 	return {
-		/** An article's properties, ready to edit. */
-		show(properties: ArticleProperties): void {
+		/** An article's properties, ready to edit, and what is wrong with them as saved. */
+		show(properties: ArticleProperties, saved: string[] = []): void {
+			problems = saved;
 			title.value = properties.title;
 			description.value = properties.description;
 			tags.value = properties.tags.join(', ');
@@ -92,6 +104,13 @@ export function createPropertiesPanel(root: HTMLElement, host: PropertiesPanelHo
 			for (const input of [title, description, tags, pubDate, draft, publish]) input.disabled = false;
 			showError(null);
 			summarize(properties);
+		},
+		/** What is wrong with the properties now saved; an empty list when nothing is. */
+		showProblems(saved: string[]): void {
+			if (saved.join('\n') === problems.join('\n')) return;
+			problems = saved;
+			showError(typedError);
+			summarize(typed());
 		},
 		/** The caret at the end of the title, from the start of the body. */
 		focusTitle(): void {

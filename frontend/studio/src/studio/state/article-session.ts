@@ -23,7 +23,7 @@ type MoleculeViews = ArticlePayload['chemistryViews'];
 /** The server, as far as an open article needs it. */
 export type SessionApi = {
 	getArticle(slug: string): Promise<ArticlePayload>;
-	saveArticle(slug: string, source: string, expectedRevision: string): Promise<{ revision: string }>;
+	saveArticle(slug: string, source: string, expectedRevision: string): Promise<{ revision: string; problems?: string[] }>;
 	saveMoleculeView(
 		slug: string,
 		key: string,
@@ -66,8 +66,8 @@ export type SessionHost = {
 	roundtrip(exact: boolean): void;
 	/** The title as typed, before it is saved. */
 	retitled(title: string): void;
-	/** These properties are now on disk. */
-	saved(slug: string, properties: ArticleProperties): void;
+	/** These properties are now on disk; `problems` says why the blog could not build them. */
+	saved(slug: string, properties: ArticleProperties, problems: string[]): void;
 };
 
 const ARTICLE_TEXT_FILES = ['index.md', 'article.config.yaml', 'article.views.json'];
@@ -252,7 +252,7 @@ export class ArticleSession {
 			const result = await trackWrite(() => this.#api.saveArticle(article.slug, source, revision));
 			if (this.slug !== article.slug) return 'saved';
 			this.#store.markSaved(result.revision, source, properties);
-			this.#host.saved(article.slug, properties);
+			this.#host.saved(article.slug, properties, result.problems ?? []);
 			if (this.#store.current.dirty) {
 				this.#setState({ kind: 'dirty' });
 				return 'more';

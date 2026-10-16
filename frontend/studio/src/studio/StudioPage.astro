@@ -211,6 +211,7 @@ import { SITE_TITLE } from '../consts';
 	.document-property-bar button { padding: 4px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; cursor: pointer; }
 	.document-property-bar button:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 	.document-property-bar #property-summary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.document-property-bar #property-summary.has-problems { color: #b42318; }
 	.document-property-bar button.publish-action { border: 1px solid color-mix(in srgb, var(--accent) 30%, rgb(var(--gray-light))); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); color: var(--accent); font-weight: 700; }
 	.document-property-bar button.publish-action[data-published='true'] { border-color: rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray)); }
 	.document-property-bar button:disabled { opacity: 0.45; cursor: default; }

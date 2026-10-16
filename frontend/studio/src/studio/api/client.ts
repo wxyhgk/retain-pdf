@@ -37,6 +37,7 @@ export function getArticle(slug: string): Promise<ArticlePayload> {
 		source: article.source ?? article.content ?? '',
 		revision: article.revision ?? article.hash ?? '',
 		properties: article.properties,
+		problems: article.problems ?? [],
 		chemistryViews: article.chemistryViews ?? {},
 		macros: article.macros ?? {},
 	}));
@@ -46,11 +47,11 @@ export function createArticle(slug: string, title: string): Promise<{ slug: stri
 	return request('/api/studio/articles', jsonOptions('POST', { slug, title }));
 }
 
-export function saveArticle(slug: string, source: string, expectedRevision: string): Promise<{ revision: string }> {
-	return request<{ revision?: string; hash?: string }>(
+export function saveArticle(slug: string, source: string, expectedRevision: string): Promise<{ revision: string; problems: string[] }> {
+	return request<{ revision?: string; hash?: string; problems?: string[] }>(
 		`/api/studio/articles/${encodeURIComponent(slug)}`,
 		jsonOptions('PUT', { source, expectedRevision }),
-	).then((result) => ({ revision: result.revision ?? result.hash ?? '' }));
+	).then((result) => ({ revision: result.revision ?? result.hash ?? '', problems: result.problems ?? [] }));
 }
 
 export function saveMoleculeView(

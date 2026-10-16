@@ -10,7 +10,7 @@ import {
 	assertArticleSlug,
 	StudioPathError,
 } from './bundle-paths.mjs';
-import { ArticleValidationError, articleMacros, articleProperties, articleSummary, createArticleSource } from './schemas.mjs';
+import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from './schemas.mjs';
 
 function bundleRevision(source, configSource, viewsSource) {
 	return contentRevision(`${source}\0${configSource}\0${viewsSource}`);
@@ -109,6 +109,7 @@ export class ArticleRepository {
 			source,
 			revision,
 			properties: articleProperties(source, slug),
+			problems: articleProblems(source),
 			macros: articleMacros(source),
 			chemistryViews: readMoleculeViews(viewsSource),
 		};
@@ -156,9 +157,10 @@ export class ArticleRepository {
 		if (expected && currentRevision !== expected) {
 			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');
 		}
+		// Saved even when the properties are wrong, so nothing typed is lost; `problems` says what to fix.
 		await atomicWriteText(paths.markdown, nextSource);
 		const revision = bundleRevision(nextSource, configSource, viewsSource);
-		return { hash: revision, revision };
+		return { hash: revision, revision, problems: articleProblems(nextSource) };
 	}
 
 	saveMoleculeView(slug, key, change) {

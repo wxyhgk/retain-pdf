@@ -138,3 +138,22 @@ test('two saves from the same revision cannot both win', async (t) => {
 	assert.ok(results[1].reason instanceof ArticleConflictError);
 	assert.match(await readFile(join(root, 'race-note', 'index.md'), 'utf8'), /First\./u);
 });
+
+test('an article whose properties are broken still lists, opens and saves, and says what is wrong', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'good-note', title: 'Good' });
+	await repository.create({ slug: 'broken-note', title: 'Broken' });
+	const markdown = articleBundlePaths(root, 'broken-note').markdown;
+	await writeFile(markdown, '---\ntitle: [unclosed\n---\n\nBody\n');
+
+	assert.deepEqual((await repository.list()).map((article) => article.slug), ['broken-note', 'good-note']);
+	const opened = await repository.read('broken-note');
+	assert.equal(opened.properties.title, 'broken-note');
+	assert.match(opened.problems[0], /YAML/u);
+	assert.deepEqual((await repository.read('good-note')).problems, []);
+
+	const saved = await repository.save('broken-note', { source: '---\ntitle: Fixed\npubDate: 2026-10-16\n---\n\nBody\n', expectedRevision: opened.revision });
+	assert.deepEqual(saved.problems, ["缺少简介（description）；没有简介也要写 description: ''"]);
+	assert.match(await readFile(markdown, 'utf8'), /title: Fixed/u, 'saved all the same');
+});
