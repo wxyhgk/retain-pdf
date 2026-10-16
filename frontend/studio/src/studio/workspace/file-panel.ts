@@ -6,6 +6,7 @@ import {
 	trashArticleFile,
 	uploadArticleFile,
 } from '../api/client';
+import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
 import { movedPath, referencedPaths, studioFileUrl } from '../shared/article-references.mjs';
 import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
@@ -44,14 +45,15 @@ export type FilePanelHost = {
 
 const STATUS_CLEAR_MS = 6000;
 const FINDER = /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示';
-const STRUCTURE_EXTENSIONS = new Set(['mol', 'sdf', 'xyz', 'pdb', 'mol2', 'cif', 'cube', 'gjf', 'com', 'smi', 'smiles']);
+/** A structure file: one a chemistry block draws (its extension is a molecule language), or SMILES in `.smi`. */
+const isStructure = (path: string): boolean => isMoleculeLanguage(extension(path)) || extension(path) === 'smi';
 
 type Editing = { kind: 'rename'; path: string } | { kind: 'folder'; parent: string };
 
 function fileIcon(node: FileNode, open: boolean): string {
 	if (node.entry.kind === 'directory') return open ? '▾' : '▸';
 	if (isImage(node.entry.path)) return '▣';
-	if (STRUCTURE_EXTENSIONS.has(extension(node.entry.path))) return '⬡';
+	if (isStructure(node.entry.path)) return '⬡';
 	return '▤';
 }
 
