@@ -305,6 +305,22 @@ import { SITE_TITLE } from '../consts';
 	:global(.pm-source-popup-preview.is-empty) { color: rgb(var(--gray)); font-size: 13px; line-height: 28px; }
 	:global(.pm-source-popup-preview .katex-display) { margin: 0; }
 	:global(.pm-source-popup-preview .katex-mathml) { display: none; }
+	/* Figures: the picture's frame takes the width, the edge drags it, the caption is typed under it. */
+	:global(.crepe-host .pm-figure) { position: relative; }
+	:global(.crepe-host .pm-figure .pm-figure-frame) { position: relative; width: var(--figure-width, fit-content); max-width: 100%; margin: 0 auto; }
+	:global(.crepe-host .pm-figure .pm-figure-frame img) { width: 100%; margin: 0; border-radius: 8px; }
+	:global(.crepe-host .pm-figure.is-selected .pm-figure-frame img) { outline: 2px solid var(--accent); outline-offset: 2px; }
+	:global(.crepe-host .pm-figure-handle) { position: absolute; top: 50%; right: -9px; width: 6px; height: 44px; max-height: 60%; border-radius: 3px; background: rgb(var(--gray)); opacity: 0; transform: translateY(-50%); cursor: ew-resize; transition: opacity 120ms; }
+	:global(.crepe-host .pm-figure:hover .pm-figure-handle), :global(.crepe-host .pm-figure.is-selected .pm-figure-handle), :global(.crepe-host .pm-figure.is-resizing .pm-figure-handle) { opacity: 0.7; }
+	:global(.crepe-host .pm-figure-badge) { position: absolute; top: 8px; right: 8px; padding: 1px 7px; border-radius: 5px; background: rgb(0 0 0 / 60%); color: #fff; font-size: 12px; line-height: 20px; visibility: hidden; }
+	:global(.crepe-host .pm-figure.is-resizing .pm-figure-badge) { visibility: visible; }
+	:global(.crepe-host .pm-figure.is-resizing) { cursor: ew-resize; user-select: none; }
+	:global(.crepe-host .pm-figure figcaption) { display: flex; justify-content: center; align-items: baseline; }
+	:global(.crepe-host .pm-figure-caption) { field-sizing: content; min-width: 1ch; max-width: 100%; padding: 0 2px; border: 0; border-radius: 4px; outline: none; background: transparent; color: inherit; font: inherit; text-align: center; }
+	:global(.crepe-host .pm-figure-caption:focus) { background: var(--surface-soft); }
+	:global(.crepe-host .pm-figure-caption:placeholder-shown) { min-width: 6em; }
+	:global(.crepe-host .pm-figure-caption::placeholder) { color: rgb(var(--gray)); opacity: 0.6; }
+	:global(.crepe-host .pm-figure:not(:hover):not(.is-selected) .pm-figure-caption:placeholder-shown:not(:focus)) { visibility: hidden; }
 	:global(.latex-completion) { position: fixed; z-index: 60; box-sizing: border-box; min-width: 240px; max-width: 380px; max-height: 288px; overflow-y: auto; padding: 4px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 30px rgb(0 0 0 / 16%); }
 	:global(.latex-completion[hidden]) { display: none; }
 	:global(.latex-completion-item) { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 34px; padding: 2px 8px; border-radius: 6px; color: rgb(var(--gray-dark)); cursor: pointer; }

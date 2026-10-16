@@ -28,7 +28,7 @@ import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCo
 import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
-import { imageMarkdownRemark } from './image-markdown';
+import { FIGURE_TYPE, figurePlugins } from './figure-block';
 import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
 import { SCIENCE_FENCE_TYPE } from './science-block';
@@ -219,7 +219,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(inlineMathPlugins);
 			crepe.editor.use(displayMathPlugins);
 			crepe.editor.use(mathBracketsRemark);
-			crepe.editor.use(imageMarkdownRemark);
+			crepe.editor.use(figurePlugins(host.fileUrl));
 			crepe.editor.use(fileDrop.plugin);
 			crepe.editor
 				.config((ctx) => {
@@ -230,7 +230,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						acceptLabel: '接受',
 						rejectLabel: '拒绝',
 						// Blocks drawn by their own views: a change inside one replaces it whole.
-						customBlockTypes: ['table', 'image-block', 'code_block', SCIENCE_FENCE_TYPE],
+						customBlockTypes: ['table', 'image-block', FIGURE_TYPE, 'code_block', SCIENCE_FENCE_TYPE],
 					}));
 				})
 				.use(diff)
