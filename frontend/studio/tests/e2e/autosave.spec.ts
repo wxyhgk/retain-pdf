@@ -15,6 +15,17 @@ test('edits save themselves once typing stops', async ({ page }) => {
 	expect(savedMarkdown()).toContain('结尾段落。自己保存');
 });
 
+test('⌘S right after typing saves what was just typed', async ({ page }) => {
+	await openStudio(page);
+	await editor(page).getByText(/^结尾段落。/).click();
+	await page.keyboard.press('End');
+	// No wait: the editor reports typing a moment late, and ⌘S does not wait for it.
+	await page.keyboard.type('马上保存');
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('结尾段落。马上保存');
+});
+
 test('what is typed while a save is under way is saved next', async ({ page }) => {
 	await openStudio(page, { autosaveDelay: 300 });
 	let release!: () => void;

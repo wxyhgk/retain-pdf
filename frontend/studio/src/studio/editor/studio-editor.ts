@@ -12,6 +12,7 @@ import {
 	startDiffReviewCmd,
 } from '@milkdown/kit/plugin/diff';
 import { remarkGFMPlugin } from '@milkdown/kit/preset/gfm';
+import type { Node as ProseNode } from '@milkdown/prose/model';
 import { Plugin, TextSelection } from '@milkdown/prose/state';
 import { $prose, callCommand } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
@@ -50,6 +51,8 @@ export type StudioEditor = {
 	mount(body: string): Promise<string>;
 	/** The caret at the start of the body. */
 	focusStart(): void;
+	/** Reports the edits not reported yet (`changed` follows the typing by a moment). */
+	settle(): void;
 	/**
 	 * Shows how `body` differs from the body shown, each change to accept or
 	 * reject; resolves with the Markdown shown once every one is decided.
@@ -65,6 +68,19 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	let mounting = false;
 	/** The review under way: what to call once every change is decided. */
 	let review: ((markdown: string) => void) | null = null;
+	/** The body as last reported, or as mounted. */
+	let reported: ProseNode | null = null;
+
+	/** Reports the body, when it is an edit and not what was reported already. */
+	function report(): void {
+		if (!crepe || mounting || review) return;
+		crepe.editor.action((ctx) => {
+			const { doc } = ctx.get(editorViewCtx).state;
+			if (reported?.eq(doc)) return;
+			reported = doc;
+			host.changed(crepe!.getMarkdown());
+		});
+	}
 	observeSciencePreviews(root);
 	observeCodeFiles(root);
 
@@ -74,6 +90,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		if (!finish) return;
 		review = null;
 		host.reviewing(null);
+		// The review's outcome goes to `finish`; it is not an edit to report again.
+		crepe?.editor.action((ctx) => { reported = ctx.get(editorViewCtx).state.doc; });
 		finish(crepe?.getMarkdown() ?? '');
 	}
 
@@ -220,9 +238,10 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				.use(reviewWatch);
 			crepe.on((listener) => {
 				// Opening the body is not an edit, nor is deciding a change under review.
-				listener.markdownUpdated((_ctx, markdown) => { if (!mounting && !review) host.changed(markdown); });
+				listener.markdownUpdated(() => report());
 			});
 			await crepe.create();
+			crepe.editor.action((ctx) => { reported = ctx.get(editorViewCtx).state.doc; });
 			return crepe.getMarkdown();
 		} finally {
 			mounting = false;
@@ -252,6 +271,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	return {
 		mount,
 		focusStart,
+		settle: report,
 		review: startReview,
 		acceptAll: () => crepe?.editor.action(callCommand(acceptAllDiffsCmd.key)),
 		rejectAll: () => crepe?.editor.action(callCommand(clearDiffReviewCmd.key)),

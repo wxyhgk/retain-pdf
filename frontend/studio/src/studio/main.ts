@@ -94,6 +94,7 @@ const session = new ArticleSession(
 			useArticleContext(article);
 			return editor.review(body);
 		},
+		settle: () => editor.settle(),
 		confirm: (message) => window.confirm(message),
 		toast: (message) => showToast(message),
 		opened({ article, properties: shown }) {
@@ -156,10 +157,10 @@ document.addEventListener('keydown', (event) => {
 	void session.flush();
 });
 document.addEventListener('visibilitychange', () => {
-	if (document.visibilityState === 'hidden' && session.current.dirty) void session.flush();
+	if (document.visibilityState === 'hidden' && session.hasUnsavedEdits()) void session.flush();
 });
 window.addEventListener('beforeunload', (event) => {
-	if (!session.current.dirty) return;
+	if (!session.hasUnsavedEdits()) return;
 	void session.flush();
 	event.preventDefault();
 });

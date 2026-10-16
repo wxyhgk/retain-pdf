@@ -50,6 +50,12 @@ export type SessionHost = {
 	 * the editor holds once every one is decided.
 	 */
 	review(article: ArticlePayload, body: string): Promise<string>;
+	/**
+	 * Reports, through `editBody`, the edits the editor holds but has not
+	 * reported yet: it reports them a moment after the typing, and a save
+	 * or the page closing can come sooner.
+	 */
+	settle(): void;
 	/** A yes/no question the author answers before anything is lost. */
 	confirm(message: string): boolean;
 	toast(message: string): void;
@@ -148,18 +154,25 @@ export class ArticleSession {
 
 	/** Saves now. Whether everything is saved. */
 	flush(): Promise<boolean> {
+		this.#host.settle();
 		return this.#autosave.flush();
+	}
+
+	/** Whether there are edits not yet saved, including the ones just typed. */
+	hasUnsavedEdits(): boolean {
+		this.#host.settle();
+		return this.#store.current.dirty;
 	}
 
 	/** Before the author leaves this article: saves it, or asks to let the edits go if it cannot. */
 	async saveBeforeLeaving(): Promise<boolean> {
-		if (!this.#store.current.dirty || (await this.#autosave.flush())) return true;
+		if (!this.hasUnsavedEdits() || (await this.#autosave.flush())) return true;
 		return this.#host.confirm('当前文章没能保存，切换后未保存的改动会丢失。确定吗？');
 	}
 
 	/** Saves a molecule's view, after the text, on the revision that leaves. */
 	async saveView(key: string, format: string, view: number[], display?: unknown): Promise<void> {
-		await this.#autosave.flush();
+		await this.flush();
 		const { article, revision } = this.#store.current;
 		if (!article) throw new Error('文章尚未载入');
 		const result = await trackWrite(() => this.#api.saveMoleculeView(article.slug, key, format, view, revision, display));

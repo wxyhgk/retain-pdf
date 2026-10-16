@@ -68,6 +68,8 @@ function fakeHost(answers: boolean[] = [], decide: (body: string, shown: string)
 	const saved: ArticleProperties[] = [];
 	let roundtrip: boolean | null = null;
 	let title = '';
+	/** What the editor holds and has not reported yet. */
+	let unreported: (() => void) | null = null;
 	const host: SessionHost = {
 		mount: async (_article, body) => {
 			mounted.push(body);
@@ -78,6 +80,11 @@ function fakeHost(answers: boolean[] = [], decide: (body: string, shown: string)
 			const shown = decide(body, mounted.at(-1)!);
 			mounted.push(shown);
 			return shown;
+		},
+		settle: () => {
+			const report = unreported;
+			unreported = null;
+			report?.();
 		},
 		confirm: (message) => {
 			asked.push(message);
@@ -90,7 +97,13 @@ function fakeHost(answers: boolean[] = [], decide: (body: string, shown: string)
 		retitled: (next) => { title = next; },
 		saved: (_slug, properties) => { saved.push(properties); },
 	};
-	return { host, states, asked, toasts, mounted, reviews, saved, roundtrip: () => roundtrip, title: () => title };
+	return {
+		host, states, asked, toasts, mounted, reviews, saved,
+		roundtrip: () => roundtrip,
+		title: () => title,
+		/** The editor holds an edit it reports later, or when asked to settle. */
+		holdEdit: (report: () => void) => { unreported = report; },
+	};
 }
 
 const QUICK = { delay: 5, maxWait: 5, retryDelay: 5 };
@@ -233,6 +246,23 @@ test('taking the disk version drops the unsaved edits', async () => {
 	assert.match(session.current.source, /终端改的/u);
 	assert.doesNotMatch(session.current.source, /我的改动/u);
 	assert.equal(session.current.dirty, false);
+});
+
+test('saving at once, or leaving, takes in what was just typed and not yet reported', async () => {
+	const api = fakeApi();
+	const page = fakeHost();
+	const later = (run: () => void, ms: number) => setTimeout(run, ms).unref();
+	const session = new ArticleSession(api.api, page.host, { delay: 60_000, maxWait: 60_000, retryDelay: 60_000, setTimer: later });
+	await session.open('note');
+	page.holdEdit(() => session.editBody(`${body(SOURCE)}\n刚打的字\n`));
+	assert.equal(session.hasUnsavedEdits(), true);
+	assert.equal(await session.flush(), true);
+	assert.match(api.disk.source, /刚打的字/u);
+
+	page.holdEdit(() => session.editBody(`${body(api.disk.source)}\n又打的字\n`));
+	await session.open('other');
+	assert.equal(api.saves.length, 2);
+	assert.match(api.disk.source, /又打的字/u);
 });
 
 test('leaving an article saves it first; when that fails, the author decides', async () => {
