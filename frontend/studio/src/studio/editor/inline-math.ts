@@ -1,6 +1,7 @@
 import type { Ctx, MilkdownPlugin } from '@milkdown/ctx';
 import { SchemaReady, nodeViewCtx, prosePluginsCtx } from '@milkdown/kit/core';
 import { Fragment, Slice, type Node as ProseMirrorNode, type NodeType } from '@milkdown/prose/model';
+import { closeHistory } from '@milkdown/prose/history';
 import { NodeSelection, Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView, type NodeView } from '@milkdown/prose/view';
 import { $markSchema } from '@milkdown/utils';
@@ -112,11 +113,50 @@ function textBeforeCaret(parent: ProseMirrorNode, offset: number): { text: strin
 	return { text, fromOffset };
 }
 
+/** Commands whose argument is text, where a formula may hold Chinese: `\text{总}`. */
+const TEXT_ARGUMENT = /\\(?:text(?:rm|bf|it|sf|tt|up|md|normal)?|mbox|hbox|tag\*?)\s*\{/y;
+
+/** The formula with the arguments of text commands left empty. */
+function outsideTextArguments(value: string): string {
+	let rest = '';
+	let index = 0;
+	while (index < value.length) {
+		TEXT_ARGUMENT.lastIndex = index;
+		const command = TEXT_ARGUMENT.exec(value);
+		if (!command) {
+			rest += value[index];
+			// A backslash and what follows it are one: `\\` does not escape the next command.
+			if (value[index] === '\\' && index + 1 < value.length) rest += value[++index];
+			index += 1;
+			continue;
+		}
+		rest += command[0];
+		let depth = 1;
+		index = TEXT_ARGUMENT.lastIndex;
+		while (index < value.length && depth > 0) {
+			if (value[index] === '\\') index += 1;
+			else if (value[index] === '{') depth += 1;
+			else if (value[index] === '}') depth -= 1;
+			index += 1;
+		}
+		if (depth === 0) rest += '}';
+	}
+	return rest;
+}
+
+/**
+ * Whether typed text can be a formula's body: ASCII, but for the arguments
+ * of text commands. Chinese elsewhere is prose between two dollars.
+ */
+function formulaText(value: string): boolean {
+	return !/[^\x00-\x7F]/.test(outsideTextArguments(value));
+}
+
 /** Body of a formula. A space after the opening `$` stays text. Spaces before the closing `$` are removed. */
 function formulaValue(raw: string): string | null {
 	if (!raw || raw[0] === ' ' || raw[0] === '\t' || raw.includes('\n')) return null;
 	const value = raw.replace(/[ \t]+$/, '');
-	if (!value || /[^\x00-\x7F]/.test(value)) return null;
+	if (!value || !formulaText(value)) return null;
 	return value;
 }
 
@@ -138,22 +178,32 @@ export function planDollarMath(doc: ProseMirrorNode, from: number, to: number): 
 	const before = textBeforeCaret($from.parent, $from.parentOffset);
 	if (!before.text) return { kind: 'literal', from, to };
 	const prev = before.text[before.text.length - 1];
-	if (prev === '\\' || prev === '$') return { kind: 'literal', from, to };
+	if (prev === '\\') return { kind: 'literal', from, to };
 	const next =
 		$from.parentOffset < $from.parent.content.size
 			? $from.parent.textBetween($from.parentOffset, $from.parentOffset + 1)
 			: '';
 	if (next >= '0' && next <= '9') return { kind: 'literal', from, to };
+	const start = $from.pos - $from.parentOffset + before.fromOffset;
+	const dollar = (index: number) => index >= 0 && dollarIndex($from.parent, before.fromOffset, before.text, index);
+	if (prev === '$') {
+		// `$$x$` and this `$` close `$$x$$`.
+		const close = before.text.length - 1;
+		if (!dollar(close)) return { kind: 'literal', from, to };
+		for (let index = close - 1; index >= 1; index -= 1) {
+			if (!dollar(index)) continue;
+			const value = dollar(index - 1) ? formulaValue(before.text.slice(index + 1, close)) : null;
+			return value ? { kind: 'math', from: start + index - 1, to, value } : { kind: 'literal', from, to };
+		}
+		return { kind: 'literal', from, to };
+	}
 	for (let index = before.text.length - 1; index >= 0; index -= 1) {
-		if (before.text[index] !== '$') continue;
-		const parentOffset = before.fromOffset + index;
-		if (markAtOffset($from.parent, parentOffset, literalDollarMarkName)) continue;
-		let slashes = 0;
-		for (let slashIndex = index - 1; slashIndex >= 0 && before.text[slashIndex] === '\\'; slashIndex -= 1) slashes += 1;
-		if (slashes % 2 === 1) continue;
+		if (!dollar(index)) continue;
 		const value = formulaValue(before.text.slice(index + 1));
 		if (!value) continue;
-		return { kind: 'math', from: $from.pos - $from.parentOffset + before.fromOffset + index, to, value };
+		// After `$$x`, one `$` is half the closing `$$`.
+		if (dollar(index - 1)) return { kind: 'literal', from, to };
+		return { kind: 'math', from: start + index, to, value };
 	}
 	return { kind: 'literal', from, to };
 }
@@ -414,7 +464,7 @@ export function planArmedFormula(
 		seen = next;
 	}
 	const raw = parent.textBetween(start, end);
-	if (raw.includes('$') || /[^\x00-\x7F]/.test(raw)) return null;
+	if (raw.includes('$') || !formulaText(raw)) return null;
 	const value = formulaValue(raw);
 	if (!value) return null;
 	const next = end < parent.content.size ? parent.textBetween(end, end + 1) : '';
@@ -876,6 +926,21 @@ function finishLiveMath(view: EditorView, live: LiveRange): boolean {
 	return true;
 }
 
+/**
+ * Types the closing `$`, then turns `$…$` into the formula as a step of its
+ * own, so that undo first gives back the text as typed. `armNext`: the `$`
+ * may also open the next formula.
+ */
+function closeTypedFormula(view: EditorView, plan: { from: number; to: number; value: string }, armNext: boolean): boolean {
+	view.dispatch(view.state.tr.insertText('$', plan.to));
+	const committed = collapseMath(view.state, { from: plan.from, to: plan.to + 1, value: plan.value, cursor: plan.from + 1 });
+	// Without a formula, the `$` stays as typed.
+	if (!committed) return true;
+	closeHistory(committed);
+	view.dispatch(armNext ? committed.setMeta(liveMathKey, { arm: committed.selection.from, live: null }) : committed);
+	return true;
+}
+
 const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	await ctx.wait(SchemaReady);
 	const plugin = new Plugin<InlineMathState>({
@@ -973,18 +1038,7 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 					}
 				}
 				const armed = !live && edit.arm != null && from === to ? planArmedFormula(view.state.doc, edit.arm, from) : null;
-				if (armed) {
-					const committed = collapseMath(view.state, {
-						from: armed.from,
-						to: armed.to,
-						value: armed.value,
-						cursor: armed.from + 1,
-					});
-					if (committed) {
-						view.dispatch(committed.setMeta(liveMathKey, { arm: committed.selection.from, live: null }));
-						return true;
-					}
-				}
+				if (armed) return closeTypedFormula(view, armed, true);
 				const dropArm = !live && edit.arm != null && from === to;
 				const plan = planDollarMath(view.state.doc, from, to);
 				if (!plan) return false;
@@ -1005,15 +1059,7 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 					view.dispatch(tr.scrollIntoView());
 					return true;
 				}
-				const committed = collapseMath(view.state, {
-					from: plan.from,
-					to: plan.to,
-					value: plan.value,
-					cursor: plan.from + 1,
-				});
-				if (!committed) return false;
-				view.dispatch(dropArm ? committed.setMeta(liveMathKey, { arm: null, live: null }) : committed);
-				return true;
+				return closeTypedFormula(view, plan, false);
 			},
 			handlePaste(view, event, slice) {
 				if (!slice || slice.content.size === 0) return false;
@@ -1073,11 +1119,12 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 					view.dispatch(tr);
 					return true;
 				}
-				if (event.key === 'ArrowRight' && selection.$from.nodeAfter?.type.name === 'math_inline') {
+				// Moving or deleting into a formula opens its source, rather than passing or deleting it whole.
+				if ((event.key === 'ArrowRight' || event.key === 'Delete') && selection.$from.nodeAfter?.type.name === 'math_inline') {
 					return applyExpand(view, selection.from, 'start');
 				}
 				const before = selection.$from.nodeBefore;
-				if (event.key === 'ArrowLeft' && before?.type.name === 'math_inline') {
+				if ((event.key === 'ArrowLeft' || event.key === 'Backspace') && before?.type.name === 'math_inline') {
 					return applyExpand(view, selection.from - before.nodeSize, 'end');
 				}
 				return false;

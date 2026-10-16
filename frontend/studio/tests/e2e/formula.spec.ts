@@ -117,3 +117,52 @@ test('formula blocks are numbered in order; \\eqref shows the number; the articl
 	expect(markdown).toContain('$\\eqref{eq:energy}$');
 	expect(markdown).toContain('E = \\Ha \\psi \\label{eq:energy}');
 });
+
+test.describe('typing an inline formula', () => {
+	const newParagraph = async (page: import('@playwright/test').Page) => {
+		await caretAfter(page, '结尾段落。');
+		await page.keyboard.press('Enter');
+	};
+	const saved = async (page: import('@playwright/test').Page) => {
+		await page.keyboard.press('ControlOrMeta+s');
+		await expect(saveStatus(page)).toHaveText('已保存');
+		return savedMarkdown();
+	};
+
+	test('Chinese in \\text{} is part of the formula', async ({ page }) => {
+		await newParagraph(page);
+		await page.keyboard.type('总能量 $E_{\\text{总}}$ 守恒');
+		await expect(inlineFormulas(page)).toHaveCount(3);
+		expect(await saved(page)).toContain('总能量 $E_{\\text{总}}$ 守恒');
+	});
+
+	test('$$x$$ in a line is one formula', async ({ page }) => {
+		await newParagraph(page);
+		await page.keyboard.type('a $$x^2$$ b');
+		await expect(inlineFormulas(page)).toHaveCount(3);
+		const markdown = await saved(page);
+		expect(markdown).toMatch(/a \$\$?x\^2\$\$? b/u);
+		expect(markdown).not.toContain('\\$');
+	});
+
+	test('backspace after a formula opens its source instead of deleting it', async ({ page }) => {
+		await newParagraph(page);
+		await page.keyboard.type('前 $ab$');
+		await expect(inlineFormulas(page)).toHaveCount(3);
+		await page.keyboard.press('Backspace');
+		await expect(editor(page).locator('.pm-math-source')).toHaveText('$ab$');
+		await page.keyboard.press('Backspace');
+		await page.keyboard.press('Escape');
+		await expect(inlineFormulas(page)).toHaveCount(3);
+		expect(await saved(page)).toContain('前 $a$');
+	});
+
+	test('undo after a formula is drawn gives back the dollars as typed', async ({ page }) => {
+		await newParagraph(page);
+		await page.keyboard.type('前 $x$');
+		await expect(inlineFormulas(page)).toHaveCount(3);
+		await page.keyboard.press('ControlOrMeta+z');
+		await expect(inlineFormulas(page)).toHaveCount(2);
+		await expect(editor(page).getByText('前 $x$', { exact: true })).toBeVisible();
+	});
+});

@@ -127,6 +127,34 @@ test('a dollar stays as text until it closes a formula pair', () => {
 	assert.deepEqual(planDollarMath(heading, 3, 3), { kind: 'literal', from: 3, to: 3 });
 });
 
+test('Chinese closes a formula only inside a text command; $$x$$ closes as one formula', () => {
+	const schema = editorSchema();
+	const plan = (text: string) => {
+		const doc = paragraphDoc(schema, text);
+		return planDollarMath(doc, doc.content.size - 1, doc.content.size - 1);
+	};
+	assert.deepEqual(plan('$E_{\\text{总}}'), { kind: 'math', from: 1, to: 14, value: 'E_{\\text{总}}' });
+	assert.deepEqual(plan('$\\Delta G_{\\mathrm{r}} \\tag{反应}'), {
+		kind: 'math',
+		from: 1,
+		to: 32,
+		value: '\\Delta G_{\\mathrm{r}} \\tag{反应}',
+	});
+	assert.equal(plan('$符号和').kind, 'literal');
+	assert.equal(plan('$\\text{总} 和').kind, 'literal', 'Chinese outside the argument');
+	assert.equal(plan('$\\\\text{总}').kind, 'literal', '\\\\ is a line break, not a command');
+
+	assert.deepEqual(plan('a $$x'), { kind: 'literal', from: 6, to: 6 }, 'half the closing $$');
+	assert.deepEqual(plan('a $$x$'), { kind: 'math', from: 3, to: 7, value: 'x' });
+	assert.equal(plan('$$$').kind, 'literal');
+
+	const armed = schema.nodes.doc.create(
+		null,
+		schema.nodes.paragraph.create(null, [schema.nodes.math_inline.create({ value: 'a' }), schema.text('\\text{总}')]),
+	);
+	assert.deepEqual(planArmedFormula(armed, 2, 10), { from: 2, to: 10, value: '\\text{总}' });
+});
+
 test('a caret between $$ opens an empty inline formula', () => {
 	const schema = editorSchema();
 	const dollars = paragraphDoc(schema, '$$');
