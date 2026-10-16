@@ -9,6 +9,7 @@ import { $markSchema } from '@milkdown/utils';
 import { renderMathHtml } from '../../science/rendering/math.ts';
 import { equationLabels, referencesKey } from './equation-numbers.ts';
 import { createFormulaBlock } from './formula-block.ts';
+import { renderWhileTyping } from './formula-typing.ts';
 import { applyCompletion, completionQuery, deleteBracePair, nextSlot, typeBrace, type LatexCommand, type LatexEdit } from './latex-assist.ts';
 import { LatexCompletionMenu } from './latex-completion-menu.ts';
 
@@ -860,7 +861,11 @@ function applyExpand(view: EditorView, pos: number, caret: 'start' | 'end'): boo
 	return true;
 }
 
-function mathPreviewWidget(from: number, to: number, value: string): Decoration {
+/** The last good drawing of the formula whose source starts at `from`, per editor. */
+const lastGoodPreview = new WeakMap<EditorView, { from: number; html: string }>();
+
+/** The preview of a formula's source, drawn as far as it is written (`formula-typing.ts`); `caret` is in `value`. */
+function mathPreviewWidget(from: number, to: number, value: string, caret: number): Decoration {
 	return Decoration.widget(
 		to,
 		(view) => {
@@ -870,10 +875,27 @@ function mathPreviewWidget(from: number, to: number, value: string): Decoration 
 			root.setAttribute('aria-hidden', 'true');
 			const body = document.createElement('span');
 			body.className = 'pm-math-preview-body';
-			const rendered = renderMathHtml(value, false, equationLabels(view.state));
-			body.innerHTML = rendered.html;
+			const kept = lastGoodPreview.get(view);
+			const drawn = renderWhileTyping({
+				source: value,
+				typed: value,
+				caret,
+				display: false,
+				labels: equationLabels(view.state),
+				lastGood: kept?.from === from ? kept.html : null,
+			});
+			body.innerHTML = drawn.html;
 			body.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
-			if (rendered.error) body.classList.add('is-error');
+			if (drawn.state === 'ok' || drawn.state === 'typing') lastGoodPreview.set(view, { from, html: body.innerHTML });
+			body.classList.toggle('is-stale', drawn.state === 'stale');
+			body.classList.toggle('is-empty', !drawn.html);
+			if (drawn.error) {
+				// Shown once the typing stops (the CSS waits).
+				const error = document.createElement('span');
+				error.className = 'pm-math-preview-error';
+				error.textContent = drawn.error;
+				body.append(error);
+			}
 			root.append(body);
 			const place = () => {
 				if (!root.isConnected || view.isDestroyed) return;
@@ -892,7 +914,7 @@ function mathPreviewWidget(from: number, to: number, value: string): Decoration 
 			requestAnimationFrame(place);
 			return root;
 		},
-		{ ignoreSelection: true, side: 1, key: `math-preview:${from}:${value}` },
+		{ ignoreSelection: true, side: 1, key: `math-preview:${from}:${value}:${caret}` },
 	);
 }
 
@@ -911,7 +933,7 @@ function sourceDecorations(state: EditorState, from: number, to: number): Decora
 		if (start < end && end <= to) marks.push(Decoration.inline(start, end, { class: 'pm-math-cmd' }));
 	}
 	const source = readMathSource(state.doc, from, to);
-	if (source) marks.push(mathPreviewWidget(from, to, source.value));
+	if (source) marks.push(mathPreviewWidget(from, to, source.value, state.selection.from - from - 1));
 	try {
 		return DecorationSet.create(state.doc, marks);
 	} catch {

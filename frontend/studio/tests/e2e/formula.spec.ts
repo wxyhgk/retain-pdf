@@ -52,11 +52,40 @@ test('a display formula opens its popup with the caret in it, the text around it
 	await expect(formula.locator('.pm-display-math-formula')).toContainText('+1');
 	await expect(saveStatus(page)).toHaveText('未保存');
 	await expect(popup(page).locator('.pm-source-popup-error')).toHaveCount(0);
-	await page.keyboard.type(' \\fra');
-	await page.keyboard.press('Escape');
-	await expect(popup(page).locator('.pm-source-popup-error')).toContainText('\\fra');
 	await page.keyboard.press('Escape');
 	await expect(popup(page)).toBeHidden();
+});
+
+test('a display formula being typed is drawn as far as it is written; a mistake shows once the typing stops', async ({ page }) => {
+	const formula = displayFormulas(page).first();
+	const drawn = formula.locator('.pm-display-math-formula');
+	const error = popup(page).locator('.pm-source-popup-error');
+	await drawn.click();
+	// The command at the caret is not finished: no error, the rest drawn.
+	await page.keyboard.type(' + \\si');
+	await expect(drawn.locator('.katex')).toBeVisible();
+	await expect(drawn.locator('.katex-error')).toHaveCount(0);
+	await page.waitForTimeout(1300);
+	await expect(error).toHaveCount(0);
+	await page.keyboard.press('Escape');
+	await page.keyboard.type('n x');
+	await expect(drawn).toContainText('sin');
+
+	// A mistake left behind the caret: the last good drawing, faded; what is wrong, once the typing stops.
+	await page.keyboard.type(' + \\fra');
+	await page.keyboard.press('Escape');
+	await page.keyboard.type(' y');
+	await expect(drawn).toHaveClass(/is-stale/);
+	await expect(drawn.locator('.katex-error')).toHaveCount(0);
+	await expect(error).toContainText('\\fra');
+	await expect(error).toBeHidden();
+	await expect(error).toBeVisible({ timeout: 3000 });
+
+	// Left: drawn as it is, mistake and all.
+	await page.keyboard.press('Escape');
+	await expect(popup(page)).toBeHidden();
+	await expect(drawn).toHaveClass(/is-error/);
+	await expect(drawn).not.toHaveClass(/is-stale/);
 });
 
 test('the display formula’s source completes commands and pairs braces', async ({ page }) => {
@@ -218,6 +247,19 @@ test.describe('typing an inline formula', () => {
 		await expect(page.locator('.latex-completion:not([hidden])')).toBeHidden();
 		await page.keyboard.type('ha$');
 		await expect(inlineFormulas(page)).toHaveCount(3);
+	});
+
+	test('an open formula’s preview is drawn as far as it is written', async ({ page }) => {
+		await newParagraph(page);
+		await page.keyboard.type('前 $$');
+		await page.keyboard.press('ArrowLeft');
+		await page.keyboard.type('x + \\si');
+		// The list of commands covers the preview; closed, the preview shows.
+		await page.keyboard.press('Escape');
+		const preview = editor(page).locator('.pm-math-preview-body');
+		await expect(preview.locator('.katex')).toBeVisible();
+		await expect(preview.locator('.katex-error')).toHaveCount(0);
+		await expect(preview.locator('.pm-math-preview-error')).toHaveCount(0);
 	});
 
 	test('undo after a formula is drawn gives back the dollars as typed', async ({ page }) => {

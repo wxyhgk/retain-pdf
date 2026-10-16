@@ -279,6 +279,15 @@ import { SITE_TITLE } from '../consts';
 	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body::before) { content: ''; position: absolute; top: -6px; left: var(--arrow, 16px); transform: translateX(-50%); border-width: 0 6px 6px; border-style: solid; border-color: transparent transparent #1c1c1c; }
 	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body .katex) { color: inherit; font-size: 1.12em; }
 	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-source) { color: #b5b5b5; }
+	/* While a formula is typed (formula-typing.ts): the last good drawing faded, and what is wrong only once the typing stops. */
+	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body.is-empty) { display: none; }
+	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body.is-stale > :not(.pm-math-preview-error)) { opacity: 0.45; }
+	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-error) { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
+	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-error) { color: #b42318; }
+	:global(.crepe-host .pm-display-math-formula.is-stale) { opacity: 0.45; }
+	:global(.pm-source-popup-error.is-late) { animation: pm-error-after-typing 0s 1s both; }
+	@keyframes pm-error-after-typing { from { margin: 0; font-size: 0; line-height: 0; } to { font-size: 11px; } }
+
 	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-cmd) { color: #e48cf0; }
 	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-body) { background: #f3f3f3; color: #191919; }
 	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-body::before) { border-color: transparent transparent #f3f3f3; }

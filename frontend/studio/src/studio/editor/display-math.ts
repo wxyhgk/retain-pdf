@@ -7,6 +7,7 @@ import type { Decoration, EditorView, NodeView } from '@milkdown/prose/view';
 import { renderMathHtml } from '../../science/rendering/math.ts';
 import { equationLabels, equationNumbers, numberedSource, referencesKey } from './equation-numbers.ts';
 import { isFormulaBlock } from './formula-block.ts';
+import { renderWhileTyping } from './formula-typing.ts';
 import { SourcePopup } from './source-popup.ts';
 
 const openBlocks = new Set<DisplayMathView>();
@@ -24,16 +25,28 @@ function paintFormula(host: HTMLElement, source: string, emptyLabel: string, vie
 	host.classList.toggle('is-error', Boolean(result.error));
 }
 
-/** The popup says what is wrong with the source; the formula itself shows in place. */
-function paintError(host: HTMLElement, source: string, view: EditorView): void {
-	const { error } = source.trim() ? renderMathHtml(source, true, equationLabels(view.state)) : { error: undefined };
+/**
+ * The popup says what is wrong with the source, the formula itself showing
+ * in place. What is still being typed at the caret is not wrong yet; a
+ * mistake shows once the typing stops (the CSS waits).
+ */
+function paintError(host: HTMLElement, source: string, caret: number, view: EditorView): void {
+	const drawn = renderWhileTyping({ source, typed: source, caret, display: true, labels: equationLabels(view.state), lastGood: null });
+	const error = drawn.state === 'ok' || drawn.state === 'typing' ? undefined : drawn.error;
 	host.hidden = !error;
 	host.replaceChildren();
 	if (!error) return;
 	const message = document.createElement('p');
-	message.className = 'pm-source-popup-error';
+	message.className = 'pm-source-popup-error is-late';
 	message.textContent = error;
 	host.append(message);
+}
+
+/** The number written into a formula (`\tag{3}` at its end), put back on what is written so far. */
+function keepNumber(numbered: string, typed: string): ((written: string) => string) | undefined {
+	const tag = /\\tag\*?\{[^{}]*\}\s*$/.exec(numbered)?.[0];
+	if (!tag || /\\tag/.test(typed)) return undefined;
+	return (written) => `${written} ${tag.trim()}`;
 }
 
 class DisplayMathView implements NodeView {
@@ -49,6 +62,8 @@ class DisplayMathView implements NodeView {
 	/** What the references it shows stand for. */
 	private references: string;
 	private drawn: string | null = null;
+	/** The last good drawing while the source is being typed. */
+	private lastGood: string | null = null;
 
 	constructor(node: ProseMirrorNode, view: EditorView, getPos: () => number | undefined, decorations: readonly Decoration[]) {
 		this.node = node;
@@ -107,10 +122,32 @@ class DisplayMathView implements NodeView {
 	}
 
 	private renderFormula(): void {
-		const key = `${this.numbered}\n${this.references}`;
+		const input = this.popup?.input;
+		const caret = input ? input.selectionStart : -1;
+		const key = `${this.numbered}\n${this.references}\n${caret}`;
 		if (key === this.drawn) return;
 		this.drawn = key;
-		paintFormula(this.formula, this.numbered, '公式', this.view);
+		if (!input || !this.numbered.trim()) {
+			this.lastGood = null;
+			paintFormula(this.formula, this.numbered, '公式', this.view);
+			return;
+		}
+		// Being typed: drawn as far as it is written, never red while the typing goes on.
+		const typed = this.node.textContent;
+		const drawn = renderWhileTyping({
+			source: this.numbered,
+			typed,
+			caret,
+			display: true,
+			labels: equationLabels(this.view.state),
+			lastGood: this.lastGood,
+			decorate: keepNumber(this.numbered, typed),
+		});
+		this.formula.classList.remove('is-empty', 'is-error');
+		this.formula.innerHTML = drawn.html;
+		this.formula.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
+		this.formula.classList.toggle('is-stale', drawn.state === 'stale');
+		if (drawn.state === 'ok' || drawn.state === 'typing') this.lastGood = this.formula.innerHTML;
 	}
 
 	private onMouseDown = (event: MouseEvent): void => {
@@ -142,7 +179,7 @@ class DisplayMathView implements NodeView {
 			anchor: () => this.formula.getBoundingClientRect(),
 			width: () => 440,
 			maxInputHeight: () => 160,
-			preview: (host, value) => paintError(host, value, this.view),
+			preview: (host, value) => paintError(host, value, this.popup?.input.selectionStart ?? value.length, this.view),
 			latex: true,
 			onInput: (value) => this.writeSource(value),
 			onFinish: () => this.finish(),
@@ -158,6 +195,9 @@ class DisplayMathView implements NodeView {
 		this.popup?.destroy();
 		this.popup = null;
 		openBlocks.delete(this);
+		// Left: drawn as it is, mistakes and all.
+		this.formula.classList.remove('is-stale');
+		this.renderFormula();
 	}
 
 	private writeSource(value: string): void {
