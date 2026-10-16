@@ -9,6 +9,31 @@ export type ArticleSummary = {
 	tags?: string[];
 };
 
+/** An article that holds what was searched for, with some lines it is on. */
+export type SearchResult = {
+	slug: string;
+	title: string;
+	icon: string;
+	/** The title (or folder name) holds it. */
+	inTitle: boolean;
+	matches: Array<{ line: number; text: string }>;
+};
+
+/** Something in the trash: a whole article, or a file or folder of one. */
+export type TrashEntry = {
+	kind: 'article' | 'file' | 'directory';
+	/** What names it for restoring or deleting for good. */
+	trashed: string;
+	slug: string;
+	/** For a file or folder: where it was in the article. */
+	path?: string;
+	/** For an article: its title and icon. */
+	title?: string;
+	icon?: string;
+	/** When it was deleted, in milliseconds. */
+	deletedAt: number;
+};
+
 /** The articles as git sees them; `available` is false when blog/ is in no repository. */
 export type GitStatus = {
 	available: boolean;

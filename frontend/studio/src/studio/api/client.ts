@@ -1,6 +1,6 @@
 import type { HastElement } from '../../code-files/render.mjs';
 import { articlePath, studioFileUrl } from '../shared/article-references.mjs';
-import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, GitStatus } from '../types.ts';
+import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, GitStatus, SearchResult, TrashEntry } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
 	const response = await fetch(url, options);
@@ -45,6 +45,21 @@ export function getArticle(slug: string): Promise<ArticlePayload> {
 
 export function createArticle(slug: string, title: string): Promise<{ slug: string }> {
 	return request('/api/studio/articles', jsonOptions('POST', { slug, title }));
+}
+
+/** The articles whose title or text holds `query`. */
+export async function searchArticles(query: string, signal?: AbortSignal): Promise<SearchResult[]> {
+	return (await request<{ results: SearchResult[] }>(`/api/studio/search?${new URLSearchParams({ q: query })}`, { signal })).results;
+}
+
+/** What is in the trash, the latest first. */
+export async function listTrash(): Promise<TrashEntry[]> {
+	return (await request<{ entries: TrashEntry[] }>('/api/studio/trash')).entries;
+}
+
+/** Deletes something in the trash for good. */
+export function purgeTrash(trashed: string): Promise<{ trashed: string }> {
+	return request('/api/studio/trash/purge', jsonOptions('POST', { trashed }));
 }
 
 /** Which articles have changes not committed to git. */

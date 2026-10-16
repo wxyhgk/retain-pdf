@@ -24,16 +24,15 @@ export function filterArticles(articles: ArticleSummary[], query: string): Artic
 	return articles.filter((article) => `${article.title}\n${article.slug}`.toLocaleLowerCase('zh-CN').includes(needle));
 }
 
-/** The pages in the sidebar, with their search. */
+/** The pages in the sidebar. */
 export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	const list = root.querySelector<HTMLElement>('#article-list')!;
-	const search = root.querySelector<HTMLInputElement>('#article-search')!;
 	let articles: ArticleSummary[] = [];
 	let selected: string | null = null;
 	let refreshTimer = 0;
 	let git: GitStatus | null = null;
 
-	function row(article: ArticleSummary): HTMLButtonElement {
+	function row(article: ArticleSummary): HTMLElement {
 		const active = article.slug === selected;
 		const open = document.createElement('button');
 		open.type = 'button';
@@ -80,22 +79,32 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			event.preventDefault();
 			menu(open);
 		});
-		return open;
+		// The same menu, from a ⋯ that shows on hover, as in Notion.
+		const more = document.createElement('button');
+		more.type = 'button';
+		more.className = 'page-more';
+		more.textContent = '⋯';
+		more.title = '更多操作';
+		more.setAttribute('aria-label', `${article.title} 的更多操作`);
+		more.addEventListener('click', () => menu(more));
+		const item = document.createElement('div');
+		item.className = `page-item${active ? ' active' : ''}`;
+		item.append(open, more);
+		return item;
 	}
 
 	function render(): void {
-		const visible = filterArticles(articles, search.value);
 		list.replaceChildren();
-		if (!visible.length) {
+		if (!articles.length) {
 			const empty = document.createElement('p');
 			empty.className = 'article-list-empty';
-			empty.textContent = articles.length ? '没有匹配的文章。' : '还没有文章。点击 ＋ 创建第一篇笔记。';
+			empty.textContent = '还没有文章。点击 ＋ 创建第一篇笔记。';
 			list.append(empty);
 			return;
 		}
 		const pages = document.createElement('div');
 		pages.className = 'page-list';
-		pages.append(...visible.map(row));
+		pages.append(...articles.map(row));
 		list.append(pages);
 	}
 
@@ -107,10 +116,11 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		return articles;
 	}
 
-	search.addEventListener('input', render);
 
 	return {
 		load,
+		/** The articles as last read. */
+		articles: (): ArticleSummary[] => articles,
 		/** What git says has not been committed. */
 		showGit(status: GitStatus): void {
 			git = status;

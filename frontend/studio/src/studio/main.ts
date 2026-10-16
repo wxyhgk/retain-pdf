@@ -29,11 +29,13 @@ import { isImage, uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createPageHeader } from './workspace/page-header';
 import { createPublishCheck } from './workspace/publish-check';
+import { createQuickFind } from './workspace/quick-find';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
 import { createTerminalPane } from './workspace/terminal';
 import { showToast } from './workspace/toast';
 import { createTopBar } from './workspace/top-bar';
+import { createTrashView } from './workspace/trash-view';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
@@ -207,6 +209,56 @@ watchDisk((changes) => {
 	if (!change) return;
 	void filePanel.refresh();
 	session.changedOnDisk(change.paths);
+});
+
+/**
+ * After a search: the first block of the open article that holds `text`, in
+ * view and marked for a moment. The mark is laid over the block, since the
+ * editor redraws its own elements and would drop a class added to them.
+ */
+function showFound(text: string): void {
+	const needle = text.toLocaleLowerCase('zh-CN');
+	const blocks = editorScroll.querySelectorAll<HTMLElement>('.ProseMirror > *, .ProseMirror li, .ProseMirror td');
+	const block = [...blocks].find((element) => element.textContent?.toLocaleLowerCase('zh-CN').includes(needle));
+	if (!block) return;
+	block.scrollIntoView({ block: 'center' });
+	editorScroll.querySelector('.search-flash')?.remove();
+	const box = block.getBoundingClientRect();
+	const frame = editorScroll.getBoundingClientRect();
+	const mark = document.createElement('div');
+	mark.className = 'search-flash';
+	mark.style.top = `${box.top - frame.top + editorScroll.scrollTop - 2}px`;
+	mark.style.left = `${box.left - frame.left + editorScroll.scrollLeft - 6}px`;
+	mark.style.width = `${box.width + 12}px`;
+	mark.style.height = `${box.height + 4}px`;
+	editorScroll.append(mark);
+	window.setTimeout(() => mark.remove(), 1700);
+}
+
+const quickFind = createQuickFind(document.querySelector<HTMLDialogElement>('#quick-find-dialog')!, {
+	articles: () => articleList.articles(),
+	async open(slug, text) {
+		await session.open(slug);
+		if (text && session.slug === slug) requestAnimationFrame(() => showFound(text));
+	},
+});
+shell.querySelector('#open-search')!.addEventListener('click', () => quickFind.open());
+
+const trashView = createTrashView(document.querySelector<HTMLDialogElement>('#trash-dialog')!, {
+	articleRestored(slug) {
+		void articleList.load().then(() => session.open(slug));
+	},
+	fileRestored(slug) {
+		if (slug === session.slug) void filePanel.refresh();
+	},
+});
+shell.querySelector('#open-trash')!.addEventListener('click', () => void trashView.open());
+
+// ⌘K (or Ctrl+K) finds an article, from anywhere.
+document.addEventListener('keydown', (event) => {
+	if (event.defaultPrevented || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'k') return;
+	event.preventDefault();
+	quickFind.open();
 });
 
 // Saving is automatic; ⌘S (or ⌘↩) saves at once.

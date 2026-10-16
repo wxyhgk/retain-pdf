@@ -161,6 +161,20 @@ export default function studioDev() {
 						return json(response, 201, created);
 					}
 
+					// Articles whose title or text holds `q`.
+					if (url.pathname === '/api/studio/search' && request.method === 'GET') {
+						return json(response, 200, { results: await articles.search(url.searchParams.get('q') ?? '') });
+					}
+
+					// What is in the trash, and deleting something in it for good.
+					if (url.pathname === '/api/studio/trash' && request.method === 'GET') {
+						return json(response, 200, { entries: await manager.listTrash() });
+					}
+					if (url.pathname === '/api/studio/trash/purge' && request.method === 'POST') {
+						const { trashed } = await readJsonChange(request);
+						return json(response, 200, await manager.purge(trashed));
+					}
+
 					// Which articles have changes not committed.
 					if (url.pathname === '/api/studio/git' && request.method === 'GET') {
 						return json(response, 200, await articleGit.status());

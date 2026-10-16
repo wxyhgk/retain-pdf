@@ -245,3 +245,35 @@ test('the trash forgets what it has kept for a month', async (t) => {
 	assert.deepEqual(await readdir(join(trashRoot, 'articles')), []);
 	assert.equal(left.filter((name) => name.endsWith('-note')).length, 1);
 });
+
+test('the trash lists what is in it, the latest first, and deletes for good on request', async (t) => {
+	const { paths: bundle, files } = await fixture(t);
+	await mkdir(join(bundle.assets, 'runs'));
+	await writeFile(join(bundle.assets, 'runs', 'out.log'), 'log');
+	await writeFile(join(bundle.img, 'a.png'), 'png');
+
+	const folder = await files.trash('note', 'assets/runs');
+	await new Promise((resolve) => setTimeout(resolve, 5));
+	const file = await files.trash('note', 'img/a.png');
+	const listed = await files.listTrash();
+	assert.deepEqual(listed.map((entry) => [entry.kind, entry.path, entry.trashed]), [
+		['file', 'img/a.png', file.trashed],
+		['directory', 'assets/runs', folder.trashed],
+	]);
+	assert.ok(listed.every((entry) => entry.slug === 'note' && Number.isFinite(entry.deletedAt)));
+
+	await files.purge(folder.trashed);
+	assert.deepEqual((await files.listTrash()).map((entry) => entry.path), ['img/a.png']);
+	await files.restore('note', file.trashed);
+	assert.deepEqual(await files.listTrash(), [], 'a restored file leaves nothing behind');
+	await assert.rejects(files.purge('../../etc'), /回收站路径/u);
+});
+
+test('a deleted article is listed with its title', async (t) => {
+	const { files } = await fixture(t);
+	const { trashed } = await files.trashArticle('note');
+	const [entry] = await files.listTrash();
+	assert.deepEqual({ ...entry, deletedAt: 0 }, { kind: 'article', trashed, slug: 'note', title: 'Note', icon: '', deletedAt: 0 });
+	await files.purge(trashed);
+	assert.deepEqual(await files.listTrash(), []);
+});

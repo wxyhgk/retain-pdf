@@ -208,3 +208,16 @@ test('an article is its index.md: one without article.views.json opens and saves
 	await repository.create({ slug: 'fresh-note', title: 'Fresh' });
 	await assert.rejects(readFile(join(root, 'fresh-note', 'article.config.yaml')), /ENOENT/u);
 });
+
+test('search finds titles first, then the text, with the lines it is on', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'dft-basics', title: 'DFT 入门' });
+	await repository.create({ slug: 'hf-notes', title: 'Hartree–Fock' });
+	await writeFile(articleBundlePaths(root, 'hf-notes').markdown, "---\ntitle: 'Hartree–Fock'\ndescription: 'not DFT here'\n---\n\n和 dft 比较。\n\n## 再说一次 DFT\n");
+
+	const found = await repository.search('dft');
+	assert.deepEqual(found.map((result) => [result.slug, result.inTitle]), [['dft-basics', true], ['hf-notes', false]]);
+	assert.deepEqual(found[1].matches, [{ line: 6, text: '和 dft 比较。' }, { line: 8, text: '再说一次 DFT' }]);
+	assert.deepEqual(await repository.search('  '), []);
+});

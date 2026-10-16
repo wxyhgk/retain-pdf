@@ -292,3 +292,18 @@ test('an article is renamed, copied, deleted and put back', async (t) => {
 	assert.deepEqual(restored, { status: 200, data: { slug: 'renamed-note' } });
 	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note', method: 'GET' })).status, 200);
 });
+
+test('search and the trash are served', async (t) => {
+	const middleware = await apiFixture(t);
+	const found = await call(middleware, { url: `/api/studio/search?q=${encodeURIComponent('API')}`, method: 'GET' });
+	assert.equal(found.status, 200);
+	assert.equal(found.data.results[0].slug, 'api-note');
+
+	const deleted = await call(middleware, { url: '/api/studio/articles/api-note', method: 'DELETE' });
+	const trash = await call(middleware, { url: '/api/studio/trash', method: 'GET' });
+	assert.deepEqual(trash.data.entries.map((entry) => entry.trashed), [deleted.data.trashed]);
+	assert.equal((await call(middleware, { url: '/api/studio/trash/purge', headers: { 'content-type': 'text/plain' }, body: '{}' })).status, 415);
+	const purged = await call(middleware, { url: '/api/studio/trash/purge', ...asJson({ trashed: deleted.data.trashed }) });
+	assert.equal(purged.status, 200);
+	assert.deepEqual((await call(middleware, { url: '/api/studio/trash', method: 'GET' })).data.entries, []);
+});

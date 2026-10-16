@@ -15,15 +15,14 @@ import { SITE_TITLE } from '../consts';
 				</div>
 				<div class="workspace-navigation">
 					<a href="/"><span>⌂</span>首页</a>
-					<label class="article-search"><span>⌕</span><input id="article-search" type="search" placeholder="搜索文章" aria-label="搜索文章" /></label>
+					<button id="open-search" class="article-search" type="button"><span>⌕</span>搜索<kbd>⌘K</kbd></button>
 				</div>
 				<div class="panel-heading"><h1>Private</h1><button id="new-article" type="button" title="新建文章" aria-label="新建文章">＋</button></div>
 				<nav id="article-list" aria-label="页面列表"></nav>
 				<div class="sidebar-footer">
 					<button id="new-article-secondary" type="button"><span>＋</span>新建文章</button>
 					<a href="/blog/"><span>◫</span>博客首页</a>
-					<div class="sidebar-placeholder"><span>⚙</span>设置<small>稍后</small></div>
-					<div class="sidebar-placeholder"><span>♲</span>回收站<small>稍后</small></div>
+					<button id="open-trash" type="button"><span>♲</span>回收站</button>
 				</div>
 			</aside>
 
@@ -132,6 +131,23 @@ import { SITE_TITLE } from '../consts';
 			</aside>
 		</main>
 
+		<dialog id="quick-find-dialog" class="quick-find" aria-label="搜索">
+			<label class="quick-find-field"><span aria-hidden="true">⌕</span><input id="quick-find-input" type="text" placeholder="搜索标题和正文…" autocomplete="off" aria-controls="quick-find-results" /></label>
+			<ul id="quick-find-results" class="quick-find-results" role="listbox" aria-label="搜索结果"></ul>
+			<p class="quick-find-hint"><kbd>↑</kbd><kbd>↓</kbd> 选择 · <kbd>↵</kbd> 打开 · <kbd>esc</kbd> 关闭</p>
+		</dialog>
+
+		<dialog id="trash-dialog" class="article-dialog trash-view">
+			<form method="dialog">
+				<div class="dialog-heading">
+					<div><strong>回收站</strong><span>删除的文章和文件保留 30 天</span></div>
+					<button type="submit" aria-label="关闭">×</button>
+				</div>
+				<ul id="trash-list" class="trash-list"></ul>
+				<p id="trash-status" class="trash-status" role="status" aria-live="polite"></p>
+			</form>
+		</dialog>
+
 		<dialog id="publish-check-dialog" class="article-dialog publish-check">
 			<form method="dialog">
 				<div class="dialog-heading">
@@ -188,19 +204,17 @@ import { SITE_TITLE } from '../consts';
 	.workspace-identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 	.studio-badge { padding: 2px 5px; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 8px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 	.workspace-navigation { display: grid; gap: 2px; padding: 4px 7px 9px; }
-	.workspace-navigation a, .article-search, .sidebar-footer a, .sidebar-footer button, .sidebar-placeholder { display: flex; align-items: center; gap: 9px; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; text-decoration: none; }
-	.workspace-navigation a:hover, .article-search:focus-within, .sidebar-footer a:hover, .sidebar-footer button:hover { background: rgb(var(--gray-light)); }
+	.workspace-navigation a, .article-search, .sidebar-footer a, .sidebar-footer button { display: flex; align-items: center; gap: 9px; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; text-decoration: none; }
+	.workspace-navigation a:hover, .article-search:hover, .sidebar-footer a:hover, .sidebar-footer button:hover { background: rgb(var(--gray-light)); }
+	.article-search { width: 100%; cursor: pointer; }
+	.article-search kbd { margin-left: auto; color: rgb(var(--gray)); font: inherit; font-size: 10px; opacity: 0.8; }
 	.workspace-navigation a > span, .article-search > span, .sidebar-footer > * > span { width: 15px; color: rgb(var(--gray)); text-align: center; }
-	.article-search input { min-width: 0; flex: 1; border: 0; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; outline: none; }
-	.article-search input::placeholder { color: rgb(var(--gray)); opacity: 1; }
 	.panel-heading { display: flex; align-items: center; justify-content: space-between; min-height: 31px; padding: 0 11px 0 15px; }
 	.panel-heading h1 { margin: 0; color: rgb(var(--gray)); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
 	.panel-heading button { width: 23px; height: 23px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font-size: 17px; cursor: pointer; }
 	.panel-heading button:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
 	.sidebar-footer { display: grid; gap: 2px; padding: 7px; border-top: 1px solid rgb(var(--gray-light)); }
 	.sidebar-footer button { width: 100%; cursor: pointer; }
-	.sidebar-placeholder { color: rgb(var(--gray)); cursor: default; }
-	.sidebar-placeholder small { margin-left: auto; font-size: 8px; opacity: 0.65; }
 	.workspace-main { display: flex; min-height: 0; flex-direction: column; }
 	.studio-bar { position: relative; z-index: 10; display: flex; flex: none; align-items: center; justify-content: space-between; height: 46px; padding: 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
 	.document-breadcrumb, .studio-actions { display: flex; align-items: center; gap: 7px; min-width: 0; }
@@ -224,7 +238,15 @@ import { SITE_TITLE } from '../consts';
 	#article-list :global(.page-list) { display: grid; gap: 1px; }
 	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
 	#article-list :global(.page-row:hover), #article-list :global(.page-row.active) { background: rgb(var(--gray-light)); }
+	/* ⋯ on hover, over the badges at the end of the row. */
+	#article-list :global(.page-item) { position: relative; }
+	#article-list :global(.page-more) { position: absolute; top: 50%; right: 4px; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 22px; cursor: pointer; opacity: 0; transform: translateY(-50%); }
+	#article-list :global(.page-item:hover .page-more), #article-list :global(.page-more:focus-visible) { opacity: 1; }
+	#article-list :global(.page-more:hover) { background: rgba(55, 53, 47, 0.16); color: rgb(var(--gray-dark)); }
 	#article-list :global(.page-icon) { color: rgb(var(--gray)); font-size: 12px; text-align: center; }
+	#article-list :global(.page-git) { font-size: 8px; line-height: 1; }
+	#article-list :global(.page-git.is-modified) { color: #d18b00; }
+	#article-list :global(.page-git.is-new) { color: #2f8a4c; }
 	#article-list :global(.page-icon.is-emoji) { font-size: 14px; line-height: 1; text-align: center; }
 	#article-list :global(.page-title) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
 	#article-list :global(.page-row.active .page-title) { color: rgb(var(--black)); font-weight: 650; }
@@ -235,7 +257,7 @@ import { SITE_TITLE } from '../consts';
 	#roundtrip-status { margin-left: 14px; color: rgb(var(--gray)); font-size: 9px; }
 	#roundtrip-status[data-state='changed'] { color: #b42318; }
 	#roundtrip-status[data-state='exact'] { color: #18794e; }
-	.editor-scroll { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface); }
+	.editor-scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; background: var(--surface); }
 	.review-bar { display: flex; flex: none; align-items: center; gap: 10px; padding: 8px 20px; border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, rgb(var(--gray-light))); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); font-size: 13px; }
 	.review-bar[hidden] { display: none; }
 	.review-bar #review-count { font-weight: 700; }
@@ -295,6 +317,40 @@ import { SITE_TITLE } from '../consts';
 	.status-action:disabled { opacity: 0.5; cursor: default; }
 	#property-error { margin: 8px 0 0; color: #b42318; font-size: 12px; line-height: 1.5; }
 	#property-error[hidden] { display: none; }
+	/* ⌘K: a box near the top, as in Notion. */
+	.quick-find { box-sizing: border-box; width: min(92vw, 620px); max-height: min(70vh, 560px); margin-top: 12vh; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 18px 65px rgba(0, 0, 0, 0.22); }
+	.quick-find[open] { display: flex; flex-direction: column; }
+	.quick-find::backdrop { background: rgba(15, 15, 15, 0.28); }
+	.quick-find-field { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 18px; }
+	.quick-find-field input { flex: 1; min-width: 0; border: 0; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 16px; outline: none; }
+	.quick-find-results { flex: 1; margin: 0; padding: 6px; overflow-y: auto; list-style: none; }
+	.quick-find-results :global(.quick-find-item) { display: flex; align-items: flex-start; gap: 10px; padding: 7px 10px; border-radius: 6px; cursor: pointer; }
+	.quick-find-results :global(.quick-find-item.is-selected) { background: var(--surface-soft); }
+	.quick-find-results :global(.quick-find-icon) { width: 20px; flex: none; color: rgb(var(--gray)); font-size: 15px; line-height: 20px; text-align: center; }
+	.quick-find-results :global(.quick-find-words) { display: grid; min-width: 0; gap: 2px; }
+	.quick-find-results :global(.quick-find-title) { overflow: hidden; font-size: 14px; font-weight: 550; line-height: 20px; text-overflow: ellipsis; white-space: nowrap; }
+	.quick-find-results :global(.quick-find-snippet) { overflow: hidden; color: rgb(var(--gray)); font-size: 12px; line-height: 18px; text-overflow: ellipsis; white-space: nowrap; }
+	.quick-find-results :global(mark) { border-radius: 2px; background: rgba(255, 212, 0, 0.36); color: inherit; }
+	.quick-find-results :global(.quick-find-empty) { padding: 18px 10px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
+	.quick-find-hint { margin: 0; padding: 8px 16px; border-top: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; }
+	.quick-find-hint kbd { margin-right: 2px; padding: 0 4px; border: 1px solid rgb(var(--gray-light)); border-radius: 3px; font: inherit; font-size: 10px; }
+	/* Where a search took the author to, for a moment. */
+	:global(.search-flash) { position: absolute; z-index: 1; border-radius: 4px; pointer-events: none; animation: search-flash 1.6s ease-out forwards; }
+	@keyframes search-flash { from { background: rgba(255, 212, 0, 0.42); } to { background: transparent; } }
+	.trash-view { width: min(92vw, 600px); }
+	.trash-list { display: grid; gap: 2px; max-height: min(56vh, 460px); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
+	.trash-list :global(.trash-item) { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; }
+	.trash-list :global(.trash-item:hover) { background: var(--surface-soft); }
+	.trash-list :global(.trash-icon) { color: rgb(var(--gray)); font-size: 15px; text-align: center; }
+	.trash-list :global(.trash-words) { display: grid; min-width: 0; gap: 1px; }
+	.trash-list :global(.trash-name) { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+	.trash-list :global(.trash-where) { overflow: hidden; color: rgb(var(--gray)); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+	.trash-list :global(button) { padding: 3px 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+	.trash-list :global(button:hover) { background: var(--surface-soft); }
+	.trash-list :global(button.is-danger) { color: #b42318; }
+	.trash-list :global(.trash-empty) { padding: 22px 8px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
+	.trash-status { min-height: 16px; margin: 0; color: rgb(var(--gray)); font-size: 12px; }
+	:global(.trash-status.is-error) { color: #b42318; }
 	/* The pickers float over the page. */
 	:global(.page-popover) { position: fixed; z-index: 70; box-sizing: border-box; padding: 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: 0 10px 34px rgba(15, 15, 15, 0.16); }
 	:global(.icon-picker) { width: 336px; }

@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { link, lstat, mkdir, readdir, rename, rm } from 'node:fs/promises';
+import { link, lstat, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import { ARTICLE_RESOURCE_DIRECTORIES, articleBundlePaths, resolveInside, StudioPathError } from './bundle-paths.mjs';
+import { articleSummary } from './schemas.mjs';
 
 export const DEFAULT_UPLOAD_SIZE_LIMIT = 64 * 1024 * 1024;
 /** The article's own files: listed so the author sees them, changed only by the editor. */
@@ -119,10 +120,13 @@ export class ArticleFileManager {
 		const { directory } = await this.#article(slug);
 		const segments = managedSegments(path);
 		const sourcePath = await existingEntry(directory, segments);
-		const trashed = [`${trashStamp()}-${slug}`, ...segments].join('/');
+		const folder = `${trashStamp()}-${slug}`;
+		const trashed = [folder, ...segments].join('/');
 		const trashedTo = join(this.trashRoot, ...trashed.split('/'));
 		await mkdir(dirname(trashedTo), { recursive: true });
 		await rename(sourcePath, trashedTo);
+		// What was trashed, for the list: a folder and a file in it look alike.
+		await writeFile(join(this.trashRoot, folder, TRASH_NOTE), `${JSON.stringify({ path: segments.join('/') })}\n`).catch(() => {});
 		await this.#sweep();
 		return { path: segments.join('/'), trashedTo, trashed };
 	}
@@ -143,6 +147,8 @@ export class ArticleFileManager {
 		const target = resolveInside(parent, segments[segments.length - 1]);
 		if (await exists(target)) throw new FileConflictError(`${segments.join('/')} 已经有同名的文件，先改名或删除它`);
 		await rename(source, target);
+		// Nothing else was trashed with it: its folder in the trash goes too.
+		await rm(join(this.trashRoot, folder), { recursive: true, force: true }).catch(() => {});
 		return { path: segments.join('/') };
 	}
 
@@ -174,6 +180,57 @@ export class ArticleFileManager {
 		if (await exists(target)) throw new FileConflictError(`已经有一篇叫 ${slug} 的文章了`);
 		await rename(source, target);
 		return { slug };
+	}
+
+	/**
+	 * What is in the trash, the latest first: whole articles (`kind:
+	 * 'article'`, with their title and icon) and files or folders of one.
+	 * `trashed` names each for `restore`, `restoreArticle` and `purge`.
+	 */
+	async listTrash() {
+		const entries = [];
+		for (const name of await readdir(join(this.trashRoot, ARTICLE_TRASH)).catch(() => [])) {
+			const stamp = TRASH_STAMP.exec(name)?.[0];
+			if (!stamp) continue;
+			const slug = name.slice(stamp.length + 1);
+			let title = slug;
+			let icon = '';
+			try {
+				({ title, icon } = articleSummary(await readFile(join(this.trashRoot, ARTICLE_TRASH, name, 'index.md'), 'utf8'), slug));
+			} catch {
+				// No index.md left to read: the folder name will do.
+			}
+			entries.push({ kind: 'article', trashed: `${ARTICLE_TRASH}/${name}`, slug, title, icon, deletedAt: trashTime(name) });
+		}
+		for (const name of await readdir(this.trashRoot).catch(() => [])) {
+			const stamp = TRASH_STAMP.exec(name)?.[0];
+			if (!stamp) continue;
+			const folder = join(this.trashRoot, name);
+			const path = await trashedPath(folder);
+			if (!path || !(await exists(join(folder, ...path.split('/'))))) continue;
+			const info = await lstat(join(folder, ...path.split('/')));
+			entries.push({
+				kind: info.isDirectory() ? 'directory' : 'file',
+				trashed: `${name}/${path}`,
+				slug: name.slice(stamp.length + 1),
+				path,
+				deletedAt: trashTime(name),
+			});
+		}
+		return entries.sort((left, right) => right.deletedAt - left.deletedAt);
+	}
+
+	/** Deletes for good something in the trash (`trashed`, as `listTrash` names it). */
+	async purge(trashed) {
+		const [folder, name] = trashedSegments(trashed);
+		const target = folder === ARTICLE_TRASH ? [folder, name] : [folder];
+		if (!TRASH_STAMP.test(target[target.length - 1] ?? '')) throw new StudioPathError('不是回收站里的东西');
+		const path = await existingEntry(this.trashRoot, target).catch((error) => {
+			if (error instanceof FileNotFoundError) throw new FileNotFoundError('回收站里已经没有它了');
+			throw error;
+		});
+		await rm(path, { recursive: true, force: true });
+		return { trashed };
 	}
 
 	/** What has been in the trash for longer than `TRASH_DAYS` goes for good. */
@@ -217,6 +274,32 @@ export class ArticleFileManager {
 
 /** How long the trash keeps what is put in it. */
 export const TRASH_DAYS = 30;
+/** Beside what was trashed, what it was (`{ "path": "assets/runs" }`). */
+const TRASH_NOTE = '.trashed.json';
+
+/**
+ * What a trash folder holds, as the article named it: from its note, or,
+ * for one trashed before notes, the path down while each folder holds one thing.
+ */
+async function trashedPath(folder) {
+	try {
+		const { path } = JSON.parse(await readFile(join(folder, TRASH_NOTE), 'utf8'));
+		if (typeof path === 'string' && path) return path;
+	} catch {
+		// No note: found by looking.
+	}
+	const segments = [];
+	let current = folder;
+	for (;;) {
+		const names = (await readdir(current).catch(() => [])).filter((name) => !isHidden(name));
+		if (names.length !== 1) break;
+		segments.push(names[0]);
+		current = join(current, names[0]);
+		if (!(await lstat(current)).isDirectory()) break;
+	}
+	return segments.length > 1 ? segments.join('/') : null;
+}
+
 /** Where whole articles go in the trash, apart from the files of one. */
 const ARTICLE_TRASH = 'articles';
 /** The time a trashed entry's name starts with: `2026-10-16T12-34-56-789Z`. */

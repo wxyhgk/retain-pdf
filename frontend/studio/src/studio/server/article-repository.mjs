@@ -73,6 +73,41 @@ export class ArticleRepository {
 		return articles;
 	}
 
+	/**
+	 * The articles whose title or text holds `query`, ignoring case: titles
+	 * first, then by how often the text holds it, each with a few of the
+	 * lines it is in (`line` counts in the whole file).
+	 */
+	async search(query, { limit = 30, perArticle = 3 } = {}) {
+		const needle = typeof query === 'string' ? query.trim().toLocaleLowerCase('zh-CN') : '';
+		if (!needle) return [];
+		const results = [];
+		for (const { slug, title, icon } of await this.list()) {
+			let source;
+			try {
+				source = await readFile(articleBundlePaths(this.blogRoot, slug).markdown, 'utf8');
+			} catch {
+				continue;
+			}
+			// The properties are not the text: blank lines in their place keep the count.
+			const body = source.replace(/^(?:\uFEFF)?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/u, (block) => block.replace(/[^\n]/gu, ''));
+			const lines = body.split('\n');
+			const matches = [];
+			let count = 0;
+			lines.forEach((text, index) => {
+				if (!text.toLocaleLowerCase('zh-CN').includes(needle)) return;
+				count += 1;
+				// The line as read: without the marks that make it a heading, quote or list item.
+				const shown = text.trim().replace(/^(?:#{1,6}|>|[-*+]|\d+[.)])\s+/u, '');
+				if (matches.length < perArticle) matches.push({ line: index + 1, text: shown.slice(0, 240) });
+			});
+			const inTitle = title.toLocaleLowerCase('zh-CN').includes(needle) || slug.includes(needle);
+			if (inTitle || count) results.push({ slug, title, icon, inTitle, count, matches });
+		}
+		results.sort((left, right) => Number(right.inTitle) - Number(left.inTitle) || right.count - left.count);
+		return results.slice(0, limit).map(({ count, ...result }) => result);
+	}
+
 	async create({ slug, title }) {
 		assertArticleSlug(slug);
 		const paths = articleBundlePaths(this.blogRoot, slug);
