@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { checkArticle } from '../studio/server/article-check.mjs';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
+import { ArticleGit } from '../studio/server/article-git.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
 import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
@@ -89,6 +90,7 @@ export default function studioDev() {
 				trashRoot: testBlogRoot ? resolve(testBlogRoot, '.studio-trash') : resolve(server.config.root, '.studio-trash'),
 			});
 			const articleFiles = new ArticleFiles(articles, manager);
+			const articleGit = new ArticleGit(blogRoot);
 			const watcher = new BlogWatcher(blogRoot);
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
 			server.httpServer?.on('close', () => {
@@ -159,10 +161,23 @@ export default function studioDev() {
 						return json(response, 201, created);
 					}
 
+					// Which articles have changes not committed.
+					if (url.pathname === '/api/studio/git' && request.method === 'GET') {
+						return json(response, 200, await articleGit.status());
+					}
+
 					// An article deleted (DELETE below), put back.
 					if (url.pathname === '/api/studio/restored-articles' && request.method === 'POST') {
 						const { trashed } = await readJsonChange(request);
 						return json(response, 200, await manager.restoreArticle(trashed));
+					}
+
+					// An article committed, with the folders of articles gone from disk.
+					const commitMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/commit$/u);
+					if (commitMatch && request.method === 'POST') {
+						const slug = decodePathComponent(commitMatch[1]);
+						const { message } = await readJsonChange(request);
+						return json(response, 200, await articles.exclusive(slug, () => articleGit.commit(slug, message)));
 					}
 
 					// Another folder name for an article, or a copy of it under one.

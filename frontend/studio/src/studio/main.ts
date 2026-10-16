@@ -5,6 +5,7 @@ import {
 	articleFileUrl,
 	checkArticle,
 	codeFileFigure,
+	gitStatus,
 	createArticle,
 	getArticle,
 	saveArticle,
@@ -42,13 +43,24 @@ const articleActions = createArticleActions({
 	leave: () => session.saveBeforeLeaving(),
 	open: (slug) => session.open(slug, { discard: true }),
 	reload: () => articleList.load(),
+	refreshGit: () => refreshGit(),
 });
 const articleList = createArticleList(shell.querySelector<HTMLElement>('.article-sidebar')!, {
 	open: (slug) => { void session.open(slug); },
 	rename: (article) => void articleActions.rename(article),
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
+	commit: (article) => void articleActions.commit(article),
 });
+
+/** Asks git, a moment after the last change, which articles have changes not committed. */
+let gitTimer = 0;
+function refreshGit(): void {
+	window.clearTimeout(gitTimer);
+	gitTimer = window.setTimeout(() => {
+		gitStatus().then((status) => articleList.showGit(status), () => {});
+	}, 400);
+}
 const publishCheck = createPublishCheck(document.querySelector<HTMLDialogElement>('#publish-check-dialog')!);
 const properties = createPropertiesPanel(shell.querySelector<HTMLElement>('.document-header')!, {
 	changed: (typed) => session.editProperties(typed),
@@ -174,6 +186,7 @@ createNewArticleDialog([...shell.querySelectorAll<HTMLElement>('#new-article, #n
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
 	articleList.changedOnDisk(changes);
+	refreshGit();
 	const change = changes.find((entry) => entry.slug === session.slug);
 	if (!change) return;
 	void filePanel.refresh();
@@ -204,6 +217,9 @@ import.meta.hot?.on('vite:beforeFullReload', (payload: { path?: string; studioCo
 });
 
 openFromList().then(
-	() => articleActions.offerPendingUndo(),
+	() => {
+		articleActions.offerPendingUndo();
+		refreshGit();
+	},
 	(error) => topBar.error(error instanceof Error ? error.message : '无法连接本地 Studio'),
 );

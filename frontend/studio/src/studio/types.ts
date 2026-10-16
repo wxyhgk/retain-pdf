@@ -6,6 +6,15 @@ export type ArticleSummary = {
 	draft?: boolean;
 };
 
+/** The articles as git sees them; `available` is false when blog/ is in no repository. */
+export type GitStatus = {
+	available: boolean;
+	/** Per article folder with changes not committed: never committed (`new`) or changed since. */
+	changed: Record<string, 'new' | 'modified'>;
+	/** Folders committed once and gone from disk (renamed or deleted), committed with the next article. */
+	vanished: string[];
+};
+
 /** One file or folder of an article, as the file panel lists it. */
 export type ArticleFileEntry = {
 	/** Relative to the article folder: `img/plot.png`, `assets/runs`. */

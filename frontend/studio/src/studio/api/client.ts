@@ -1,6 +1,6 @@
 import type { HastElement } from '../../code-files/render.mjs';
 import { articlePath, studioFileUrl } from '../shared/article-references.mjs';
-import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary } from '../types.ts';
+import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, GitStatus } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
 	const response = await fetch(url, options);
@@ -45,6 +45,16 @@ export function getArticle(slug: string): Promise<ArticlePayload> {
 
 export function createArticle(slug: string, title: string): Promise<{ slug: string }> {
 	return request('/api/studio/articles', jsonOptions('POST', { slug, title }));
+}
+
+/** Which articles have changes not committed to git. */
+export function gitStatus(): Promise<GitStatus> {
+	return request('/api/studio/git');
+}
+
+/** Commits the article's folder (and those of articles gone from disk) with `message`. */
+export function commitArticle(slug: string, message: string): Promise<{ commit: string; vanished: string[] }> {
+	return request(articleApi(slug, 'commit'), jsonOptions('POST', { message }));
 }
 
 /** Gives an article another folder name, which is its address on the blog. */

@@ -1,4 +1,4 @@
-import { deleteArticle, duplicateArticle, renameArticle, restoreArticle } from '../api/client.ts';
+import { commitArticle, deleteArticle, duplicateArticle, gitStatus, renameArticle, restoreArticle } from '../api/client.ts';
 import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';
 import { cleanSlug } from './new-article-dialog.ts';
@@ -18,6 +18,8 @@ export type ArticleActionsHost = {
 	open(slug: string): Promise<void>;
 	/** Reads the article list again. */
 	reload(): Promise<ArticleSummary[]>;
+	/** Asks git again what has not been committed. */
+	refreshGit(): void;
 };
 
 function errorText(error: unknown, fallback: string): string {
@@ -122,6 +124,30 @@ export function createArticleActions(host: ArticleActionsHost) {
 			}
 			if (open) await host.open(articles[0].slug);
 			showToast(`已删除「${article.title}」`, { action: { label: '撤销', run: () => void restore(trashed, article.title) } });
+		},
+
+		/** Commits the article to git, saved first; pushing stays the author's. */
+		async commit(article: ArticleSummary): Promise<void> {
+			if (host.openSlug() === article.slug && !(await host.leave())) return;
+			let vanished: string[];
+			try {
+				({ vanished } = await gitStatus());
+			} catch (error) {
+				showToast(errorText(error, '读不到 git 状态'), true);
+				return;
+			}
+			const also = vanished.length
+				? `\n会一起提交改名或删除后不在了的文章文件夹：${vanished.map((name) => `blog/${name}/`).join('、')}`
+				: '';
+			const message = window.prompt(`把「${article.title}」提交到 git，提交说明：${also}`, `content: ${article.title}`);
+			if (message === null || !message.trim()) return;
+			try {
+				const { commit } = await commitArticle(article.slug, message);
+				showToast(`已提交 ${commit}；推送到网站请在终端里运行 git push`);
+			} catch (error) {
+				showToast(errorText(error, '提交失败'), true);
+			}
+			host.refreshGit();
 		},
 
 		/** After the Studio started again for want of articles: offers back the one deleted. */

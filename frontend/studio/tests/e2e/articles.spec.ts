@@ -1,8 +1,12 @@
+import { execFileSync } from 'node:child_process';
+import { rmSync } from 'node:fs';
+import { join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 
 import { blogHasArticle, openStudio, removeArticle, resetFixture, slug } from './studio.ts';
 
-// Whole articles, from the list: another folder name, a copy, the trash and back.
+// Whole articles, from the list: another folder name, a copy, the trash and back, a commit.
 
 const TITLE = 'Studio 测试夹具';
 const RENAMED = 'renamed-fixture';
@@ -76,4 +80,33 @@ test('deleting the last article leaves the workspace empty, still able to undo',
 	await expect(row(page, TITLE)).toBeVisible();
 	await expect(page.locator('#save-status')).toHaveText('已载入');
 	expect(blogHasArticle(slug)).toBe(true);
+});
+
+test.describe('with blog/ in a git repository', () => {
+	const blog = () => process.env.STUDIO_BLOG_DIR!;
+	const git = (...args: string[]) => execFileSync('git', args, { cwd: blog(), encoding: 'utf8' });
+
+	test.beforeAll(() => {
+		// Only ever the tests' own copy of blog/, never the project's repository.
+		expect(relative(fileURLToPath(new URL('../..', import.meta.url)), blog()).startsWith('..')).toBe(true);
+		git('init', '--quiet', '--initial-branch=main');
+		git('config', 'user.email', 'studio@example.com');
+		git('config', 'user.name', 'Studio Test');
+		git('config', 'commit.gpgsign', 'false');
+	});
+	test.afterAll(() => rmSync(join(blog(), '.git'), { recursive: true, force: true }));
+
+	test('an article never committed is marked, and committed from its menu', async ({ page }) => {
+		await openStudio(page);
+		await expect(row(page, TITLE).locator('.page-git.is-new')).toBeVisible();
+		page.once('dialog', (dialog) => {
+			expect(dialog.defaultValue()).toBe(`content: ${TITLE}`);
+			void dialog.accept(dialog.defaultValue());
+		});
+		await fromMenu(page, TITLE, '提交到 git…');
+		await expect(page.locator('.studio-toast')).toContainText('已提交');
+		await expect(row(page, TITLE).locator('.page-git')).toHaveCount(0);
+		expect(git('log', '--format=%s').trim()).toBe(`content: ${TITLE}`);
+		expect(git('status', '--porcelain').trim()).toBe('');
+	});
 });

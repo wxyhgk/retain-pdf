@@ -1,5 +1,5 @@
 import { listArticles } from '../api/client.ts';
-import type { ArticleProperties, ArticleSummary } from '../types.ts';
+import type { ArticleProperties, ArticleSummary, GitStatus } from '../types.ts';
 import { showContextMenu } from './context-menu.ts';
 import type { DiskChange } from './disk-events.ts';
 
@@ -9,6 +9,8 @@ export type ArticleListHost = {
 	rename(article: ArticleSummary): void;
 	duplicate(article: ArticleSummary): void;
 	remove(article: ArticleSummary): void;
+	/** Commits it to git; offered when git has changes of it to commit. */
+	commit(article: ArticleSummary): void;
 };
 
 const REFRESH_DELAY_MS = 300;
@@ -27,6 +29,7 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	let articles: ArticleSummary[] = [];
 	let selected: string | null = null;
 	let refreshTimer = 0;
+	let git: GitStatus | null = null;
 
 	function row(article: ArticleSummary): HTMLButtonElement {
 		const active = article.slug === selected;
@@ -48,9 +51,19 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			draft.title = '尚未发布';
 			open.append(draft);
 		}
+		const uncommitted = git?.changed[article.slug];
+		if (uncommitted) {
+			const mark = document.createElement('span');
+			mark.className = `page-git is-${uncommitted}`;
+			mark.textContent = '●';
+			mark.title = uncommitted === 'new' ? '新文章，还没提交到 git' : '有改动还没提交到 git';
+			open.append(mark);
+		}
 		open.addEventListener('click', () => host.open(article.slug));
 		// Right-click, or the menu key: what else can be done to it.
+		const committable = Boolean(git?.available && (uncommitted || git.vanished.length));
 		const menu = (at: { x: number; y: number } | HTMLElement) => showContextMenu([
+			...(committable ? [{ label: '提交到 git…', action: () => host.commit(article) }, 'separator' as const] : []),
 			{ label: '改文件夹名…', action: () => host.rename(article) },
 			{ label: '复制一份', action: () => host.duplicate(article) },
 			'separator',
@@ -95,6 +108,11 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 
 	return {
 		load,
+		/** What git says has not been committed. */
+		showGit(status: GitStatus): void {
+			git = status;
+			render();
+		},
 		/** Marks the open article. */
 		select(slug: string): void {
 			selected = slug;

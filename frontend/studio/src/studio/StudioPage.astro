@@ -198,7 +198,7 @@ import { SITE_TITLE } from '../consts';
 	.panel-label { color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; letter-spacing: 0.04em; }
 	#article-list { flex: 1; padding: 1px 7px 32px; overflow-y: auto; }
 	#article-list :global(.page-list) { display: grid; gap: 1px; }
-	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
+	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
 	#article-list :global(.page-row:hover), #article-list :global(.page-row.active) { background: rgb(var(--gray-light)); }
 	#article-list :global(.page-icon) { color: rgb(var(--gray)); font-size: 12px; text-align: center; }
 	#article-list :global(.page-title) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
@@ -226,6 +226,9 @@ import { SITE_TITLE } from '../consts';
 	.document-property-bar button:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 	.document-property-bar #property-summary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.document-property-bar #property-summary.has-problems { color: #b42318; }
+	#article-list :global(.page-git) { font-size: 8px; line-height: 1; }
+	#article-list :global(.page-git.is-modified) { color: #d18b00; }
+	#article-list :global(.page-git.is-new) { color: #2f8a4c; }
 	.document-property-bar button.publish-action { border: 1px solid color-mix(in srgb, var(--accent) 30%, rgb(var(--gray-light))); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); color: var(--accent); font-weight: 700; }
 	.document-property-bar button.publish-action[data-published='true'] { border-color: rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray)); }
 	.document-property-bar button:disabled { opacity: 0.45; cursor: default; }
