@@ -1,3 +1,4 @@
+import { codeFileLanguageForPath } from '../../code-files/languages.mjs';
 import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
 import { findArticleReferences, movedPath } from '../shared/article-references.mjs';
 import type { ArticleFileEntry } from '../types.ts';
@@ -115,6 +116,9 @@ export function markdownReference(path: string): string | null {
 	if (isImage(path)) return `![${label.replace(/\.[^.]+$/u, '')}](${linkPath(path)})`;
 	const language = extension(path);
 	if (language && isMoleculeLanguage(language)) return `\`\`\`${language}\n@file ./${path}\n\`\`\``;
+	// A program's input or output shows as the file, highlighted, to read or download.
+	const codeFile = codeFileLanguageForPath(path);
+	if (codeFile) return `\`\`\`${codeFile}\n@file ./${path}\n\`\`\``;
 	return `[${label}](${linkPath(path)})`;
 }
 

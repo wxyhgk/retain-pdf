@@ -23,6 +23,7 @@ import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '../../science/browser/science-renderer';
 import { linkPath } from '../workspace/file-tree';
 import { blockFeelPlugins, buildBlockMenu } from './block-menu';
+import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
@@ -65,6 +66,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	/** The review under way: what to call once every change is decided. */
 	let review: ((markdown: string) => void) | null = null;
 	observeSciencePreviews(root);
+	observeCodeFiles(root);
 
 	/** Ends the review, with the Markdown the editor now holds. */
 	function endReview(): void {
@@ -105,8 +107,11 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			root.replaceChildren();
 			const fileDrop = articleFileDrop(host.files);
 			// Crepe's own config, plus the block menu only the Milkdown fork has.
+			const saveAsFile = saveCodeBlockAsFile(host.files);
+			const filePreview = codeFilePreview(host.fileUrl);
 			const blockEdit: ForkBlockEditFeatureConfig = {
-				buildBlockMenu,
+				buildBlockMenu: (builder, target) =>
+					buildBlockMenu(builder, target, { saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) } }),
 				buildMenu: (builder) => {
 					buildScienceSlashMenu(builder);
 					replaceSlashImageItem(builder, fileDrop.chooseImages);
@@ -146,7 +151,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				},
 				featureConfigs: {
 					[CrepeFeature.CodeMirror]: {
-						languages: [...codeMirrorLanguages],
+						languages: [...codeFileLanguageDescriptions, ...codeMirrorLanguages],
 						copyText: '复制',
 						previewLabel: '预览',
 						previewLoading: '正在渲染…',
@@ -154,7 +159,12 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						previewToggleText: (previewOnly: boolean) => (previewOnly ? '编辑' : '收起'),
 						searchPlaceholder: '搜索语言',
 						noResultText: '没有匹配的语言',
-						renderPreview: (language, content) => createSciencePreview(language, content),
+						// A block that shows a file of the article (`@file ./assets/opt.log`) previews it as the blog does.
+						// It comes later (undefined), once the file is read.
+						renderPreview: (language, content, apply) => {
+							const file = filePreview(language, content, apply);
+							return file === null ? createSciencePreview(language, content) : file;
+						},
 					},
 					[CrepeFeature.Placeholder]: {
 						text: "输入 '/' 插入块",

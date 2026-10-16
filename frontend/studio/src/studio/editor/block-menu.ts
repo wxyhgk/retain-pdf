@@ -58,16 +58,26 @@ export type BlockMenuBuilder = {
 	};
 };
 
-function entriesFor(node: ProseNode): MenuEntry[] {
+/** What the menu offers beyond the editor itself: saving a code block as a file of the article. */
+export type BlockMenuHost = {
+	saveAsFile?: { can: (node: ProseNode) => boolean; run: (view: EditorView, pos: number) => void };
+};
+
+function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntry[] {
 	if (node.type.name !== SCIENCE_FENCE_TYPE) {
-		return blockActionItems(node).map((item) => ({
+		const entries = blockActionItems(node).map((item) => ({
 			key: item.id,
 			label: item.label,
 			current: item.current,
 			danger: item.danger,
 			turn: item.section === '转换成',
-			run: (view) => dispatchBlockAction(view, item.action),
+			run: (view: EditorView) => dispatchBlockAction(view, item.action),
 		}));
+		const save = host.saveAsFile;
+		if (save?.can(node)) {
+			entries.push({ key: 'save-file', label: '另存为文件', current: false, danger: false, turn: false, run: (view) => save.run(view, pos) });
+		}
+		return entries;
 	}
 	const science = scienceBlockMenuItems(node.type.name, String(node.attrs.language ?? '')).map((item) => ({
 		key: item.id,
@@ -94,10 +104,10 @@ function entriesFor(node: ProseNode): MenuEntry[] {
 /**
  * What a block's menu holds, opened from the drag handle or a chemistry
  * block's ⋯ button: duplicate it (or edit a chemistry block's source), turn
- * it into another kind, delete it.
+ * it into another kind, delete it; save a code block as a file.
  */
-export function buildBlockMenu(builder: BlockMenuBuilder, { node }: { node: ProseNode }): void {
-	const entries = entriesFor(node);
+export function buildBlockMenu(builder: BlockMenuBuilder, { node, pos }: { node: ProseNode; pos: number }, host: BlockMenuHost = {}): void {
+	const entries = entriesFor(node, pos, host);
 	const groups = [
 		{ key: 'actions', label: '', entries: entries.filter((entry) => !entry.turn && !entry.danger) },
 		{ key: 'turn', label: '转换成', entries: entries.filter((entry) => entry.turn) },

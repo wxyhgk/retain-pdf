@@ -57,13 +57,13 @@ test('a structure file dropped on the editor becomes an @file chemistry block', 
 });
 
 test('a file dragged from the panel is inserted without uploading again', async ({ page }) => {
-	writeFixtureFile('assets/run.log', 'done');
+	writeFixtureFile('assets/data.csv', 'x,y\n1,2\n');
 	await openStudio(page);
-	await drop(page, '结尾段落。', [], 'assets/run.log');
-	await expect(editor(page).getByRole('link', { name: 'run.log' })).toBeVisible();
+	await drop(page, '结尾段落。', [], 'assets/data.csv');
+	await expect(editor(page).getByRole('link', { name: 'data.csv' })).toBeVisible();
 	const saved = await save(page);
-	expect(saved).toContain('结尾段落。\n\n[run.log](./assets/run.log)\n');
-	await expect(page.locator('#file-tree .file-row[data-path="assets/run.log"]')).not.toHaveClass(/is-unused/);
+	expect(saved).toContain('结尾段落。\n\n[data.csv](./assets/data.csv)\n');
+	await expect(page.locator('#file-tree .file-row[data-path="assets/data.csv"]')).not.toHaveClass(/is-unused/);
 });
 
 test('the slash menu’s 图片 uploads the chosen picture into the article', async ({ page }) => {
