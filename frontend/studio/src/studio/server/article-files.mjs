@@ -24,7 +24,11 @@ export class ArticleFiles {
 	 * must have the article as it is on disk (`expectedRevision`), so unsaved
 	 * edits are never overwritten; a move nothing refers to needs no check.
 	 */
-	async move(slug, from, to, { expectedRevision } = {}) {
+	move(slug, from, to, options) {
+		return this.articles.exclusive(slug, () => this.#move(slug, from, to, options));
+	}
+
+	async #move(slug, from, to, { expectedRevision } = {}) {
 		const source = managedSegments(from).join('/');
 		const target = managedSegments(to).join('/');
 		const snapshot = await this.articles.snapshot(slug);

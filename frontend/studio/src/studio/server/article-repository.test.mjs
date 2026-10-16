@@ -123,3 +123,18 @@ test('repository refuses an article bundle that is itself a symbolic link', asyn
 	const repository = new ArticleRepository(root);
 	await assert.rejects(repository.read('linked-article'), /符号链接/u);
 });
+
+test('two saves from the same revision cannot both win', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'race-note', title: 'Race note' });
+	const initial = await repository.read('race-note');
+
+	const results = await Promise.allSettled([
+		repository.save('race-note', { source: `${initial.source}\nFirst.\n`, expectedRevision: initial.revision }),
+		repository.save('race-note', { source: `${initial.source}\nSecond.\n`, expectedRevision: initial.revision }),
+	]);
+	assert.deepEqual(results.map((result) => result.status), ['fulfilled', 'rejected']);
+	assert.ok(results[1].reason instanceof ArticleConflictError);
+	assert.match(await readFile(join(root, 'race-note', 'index.md'), 'utf8'), /First\./u);
+});

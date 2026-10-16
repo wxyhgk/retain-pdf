@@ -26,8 +26,26 @@ async function readViewsSource(path) {
 }
 
 export class ArticleRepository {
+	/** Per article, the end of its queue of writes. */
+	#writes = new Map();
+
 	constructor(blogRoot) {
 		this.blogRoot = resolve(blogRoot);
+	}
+
+	/**
+	 * Runs `task` once the article's earlier writes are done. A write reads
+	 * the article, checks its revision and writes it back; two of them at once
+	 * could both pass the check and the later one silently undo the earlier.
+	 */
+	exclusive(slug, task) {
+		const run = (this.#writes.get(slug) ?? Promise.resolve()).then(task);
+		const done = run.catch(() => {});
+		this.#writes.set(slug, done);
+		done.then(() => {
+			if (this.#writes.get(slug) === done) this.#writes.delete(slug);
+		});
+		return run;
 	}
 
 	async list() {
@@ -110,7 +128,8 @@ export class ArticleRepository {
 
 	/**
 	 * Writes a new `index.md` and `article.views.json` computed from `snapshot`.
-	 * Only files that differ are written.
+	 * Only files that differ are written. Take the snapshot and write it
+	 * within one `exclusive`, or another write may come in between.
 	 */
 	async writeSnapshot(snapshot, { source, viewsSource }) {
 		if (source !== snapshot.source) await atomicWriteText(snapshot.paths.markdown, source);
@@ -118,7 +137,11 @@ export class ArticleRepository {
 		return bundleRevision(source, snapshot.configSource, viewsSource);
 	}
 
-	async save(slug, { content, source, expectedHash, expectedRevision }) {
+	save(slug, change) {
+		return this.exclusive(slug, () => this.#save(slug, change));
+	}
+
+	async #save(slug, { content, source, expectedHash, expectedRevision }) {
 		const nextSource = source ?? content;
 		if (typeof nextSource !== 'string') throw new ArticleValidationError('文章内容必须是文本');
 		const paths = articleBundlePaths(this.blogRoot, slug);
@@ -138,7 +161,11 @@ export class ArticleRepository {
 		return { hash: revision, revision };
 	}
 
-	async saveMoleculeView(slug, key, { format, view, display, expectedRevision }) {
+	saveMoleculeView(slug, key, change) {
+		return this.exclusive(slug, () => this.#saveMoleculeView(slug, key, change));
+	}
+
+	async #saveMoleculeView(slug, key, { format, view, display, expectedRevision }) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
 		const [source, configSource, viewsSource] = await Promise.all([

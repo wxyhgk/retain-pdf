@@ -88,3 +88,16 @@ test('when the article cannot be written, the file goes back', async (t) => {
 	assert.deepEqual((await readdir(paths.img)).sort(), ['plot.png', 'unused.png']);
 	assert.equal(await readFile(paths.markdown, 'utf8'), '---\ntitle: Note\n---\n![图](./img/plot.png)\n');
 });
+
+test('a save sent while a move rewrites the article waits for it, and then conflicts', async (t) => {
+	const { paths, articles, files } = await fixture(t, '![plot](./img/plot.png)\n');
+	const { revision } = await articles.snapshot('note');
+	const [moved, saved] = await Promise.allSettled([
+		files.move('note', 'img/plot.png', 'img/energy.png', { expectedRevision: revision }),
+		articles.save('note', { source: '---\ntitle: Note\n---\n![plot](./img/plot.png)\nEdited.\n', expectedRevision: revision }),
+	]);
+	assert.equal(moved.status, 'fulfilled');
+	assert.equal(saved.status, 'rejected');
+	assert.ok(saved.reason instanceof ArticleConflictError);
+	assert.match(await readFile(paths.markdown, 'utf8'), /\.\/img\/energy\.png/u);
+});
