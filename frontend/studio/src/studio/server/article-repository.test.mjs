@@ -157,3 +157,37 @@ test('an article whose properties are broken still lists, opens and saves, and s
 	assert.deepEqual(saved.problems, ["缺少简介（description）；没有简介也要写 description: ''"]);
 	assert.match(await readFile(markdown, 'utf8'), /title: Fixed/u, 'saved all the same');
 });
+
+test('an article takes another folder name, never one taken', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'old-name', title: 'Old' });
+	await repository.create({ slug: 'taken', title: 'Taken' });
+	await writeFile(join(root, 'old-name', 'img', 'a.png'), 'png');
+
+	await assert.rejects(repository.rename('old-name', 'taken'), ArticleConflictError);
+	await assert.rejects(repository.rename('old-name', 'Bad Name'), /slug/u);
+	assert.deepEqual(await repository.rename('old-name', 'new-name'), { slug: 'new-name' });
+	assert.deepEqual((await repository.list()).map((article) => article.slug), ['new-name', 'taken']);
+	assert.equal(await readFile(join(root, 'new-name', 'img', 'a.png'), 'utf8'), 'png');
+});
+
+test('a copy is a draft of today, titled 副本, with the files and views', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'original', title: 'Original' });
+	const paths = articleBundlePaths(root, 'original');
+	await writeFile(paths.markdown, "---\ntitle: 'Original' # 标题\ndescription: ''\npubDate: 2026-01-01\ntags: [DFT]\ndraft: false\nmacros:\n  Ha: \\hat{H}\n---\n\n正文\n");
+	await writeFile(join(paths.img, 'a.png'), 'png');
+	await writeFile(join(paths.img, '.DS_Store'), 'x');
+
+	await repository.duplicate('original', 'original-copy', { now: new Date('2026-10-16T08:00:00Z') });
+	const copy = await repository.read('original-copy');
+	assert.deepEqual(copy.properties, { title: 'Original（副本）', description: '', pubDate: '2026-10-16', tags: ['DFT'], draft: true });
+	assert.match(copy.source, /# 标题\n/u);
+	assert.match(copy.source, /macros:\n  Ha: \\hat\{H\}\n---\n\n正文\n$/u);
+	assert.equal(await readFile(join(root, 'original-copy', 'img', 'a.png'), 'utf8'), 'png');
+	await assert.rejects(readFile(join(root, 'original-copy', 'img', '.DS_Store')));
+	assert.equal((await repository.read('original')).properties.draft, false, 'the original as it was');
+	await assert.rejects(repository.duplicate('original', 'original-copy'), ArticleConflictError);
+});

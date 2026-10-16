@@ -1,6 +1,15 @@
 import { listArticles } from '../api/client.ts';
 import type { ArticleProperties, ArticleSummary } from '../types.ts';
+import { showContextMenu } from './context-menu.ts';
 import type { DiskChange } from './disk-events.ts';
+
+/** What can be done to a whole article from the list. */
+export type ArticleListHost = {
+	open(slug: string): void;
+	rename(article: ArticleSummary): void;
+	duplicate(article: ArticleSummary): void;
+	remove(article: ArticleSummary): void;
+};
 
 const REFRESH_DELAY_MS = 300;
 
@@ -12,7 +21,7 @@ export function filterArticles(articles: ArticleSummary[], query: string): Artic
 }
 
 /** The pages in the sidebar, with their search. */
-export function createArticleList(root: HTMLElement, host: { open(slug: string): void }) {
+export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	const list = root.querySelector<HTMLElement>('#article-list')!;
 	const search = root.querySelector<HTMLInputElement>('#article-search')!;
 	let articles: ArticleSummary[] = [];
@@ -40,6 +49,22 @@ export function createArticleList(root: HTMLElement, host: { open(slug: string):
 			open.append(draft);
 		}
 		open.addEventListener('click', () => host.open(article.slug));
+		// Right-click, or the menu key: what else can be done to it.
+		const menu = (at: { x: number; y: number } | HTMLElement) => showContextMenu([
+			{ label: '改文件夹名…', action: () => host.rename(article) },
+			{ label: '复制一份', action: () => host.duplicate(article) },
+			'separator',
+			{ label: '移到回收站', danger: true, action: () => host.remove(article) },
+		], at);
+		open.addEventListener('contextmenu', (event) => {
+			event.preventDefault();
+			menu({ x: event.clientX, y: event.clientY });
+		});
+		open.addEventListener('keydown', (event) => {
+			if (event.key !== 'ContextMenu' && !(event.key === 'F10' && event.shiftKey)) return;
+			event.preventDefault();
+			menu(open);
+		});
 		return open;
 	}
 

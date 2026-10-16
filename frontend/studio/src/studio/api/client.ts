@@ -47,6 +47,26 @@ export function createArticle(slug: string, title: string): Promise<{ slug: stri
 	return request('/api/studio/articles', jsonOptions('POST', { slug, title }));
 }
 
+/** Gives an article another folder name, which is its address on the blog. */
+export function renameArticle(slug: string, to: string): Promise<{ slug: string }> {
+	return request(articleApi(slug, 'rename'), jsonOptions('POST', { to }));
+}
+
+/** Copies an article into a new folder: a draft titled 副本. */
+export function duplicateArticle(slug: string, to: string): Promise<{ slug: string }> {
+	return request(articleApi(slug, 'duplicate'), jsonOptions('POST', { to }));
+}
+
+/** Moves a whole article to the trash; `trashed` puts it back (`restoreArticle`). */
+export function deleteArticle(slug: string): Promise<{ trashed: string }> {
+	return request(`/api/studio/articles/${encodeURIComponent(slug)}`, { method: 'DELETE' });
+}
+
+/** Puts back an article `deleteArticle` removed. */
+export function restoreArticle(trashed: string): Promise<{ slug: string }> {
+	return request('/api/studio/restored-articles', jsonOptions('POST', { trashed }));
+}
+
 export function saveArticle(slug: string, source: string, expectedRevision: string): Promise<{ revision: string; problems: string[] }> {
 	return request<{ revision?: string; hash?: string; problems?: string[] }>(
 		`/api/studio/articles/${encodeURIComponent(slug)}`,

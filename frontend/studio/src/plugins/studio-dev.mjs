@@ -159,6 +159,21 @@ export default function studioDev() {
 						return json(response, 201, created);
 					}
 
+					// An article deleted (DELETE below), put back.
+					if (url.pathname === '/api/studio/restored-articles' && request.method === 'POST') {
+						const { trashed } = await readJsonChange(request);
+						return json(response, 200, await manager.restoreArticle(trashed));
+					}
+
+					// Another folder name for an article, or a copy of it under one.
+					const articleActionMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(rename|duplicate)$/u);
+					if (articleActionMatch && request.method === 'POST') {
+						const slug = decodePathComponent(articleActionMatch[1]);
+						const { to } = await readJsonChange(request);
+						const result = articleActionMatch[2] === 'rename' ? await articles.rename(slug, to) : await articles.duplicate(slug, to);
+						return json(response, articleActionMatch[2] === 'rename' ? 200 : 201, result);
+					}
+
 					// Match the raw path so URL normalization cannot erase an attempted `..` traversal.
 					const fileMatch = rawPathname.match(/^\/api\/studio\/articles\/([^/]+)\/files\/([^/]+)\/(.+)$/u);
 					if (fileMatch && request.method === 'GET') {
@@ -237,6 +252,11 @@ export default function studioDev() {
 
 						if (request.method === 'PUT') {
 							return json(response, 200, await articles.save(slug, await readJson(request)));
+						}
+
+						// To the trash, from where it can be put back.
+						if (request.method === 'DELETE') {
+							return json(response, 200, await articles.exclusive(slug, () => manager.trashArticle(slug)));
 						}
 					}
 

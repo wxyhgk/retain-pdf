@@ -19,6 +19,7 @@ import { setScienceResourceBaseUrl } from '../science/browser/resource-context';
 import { useArticleMacros } from '../science/rendering/math';
 import { ArticleSession } from './state/article-session';
 import type { ArticlePayload } from './types';
+import { createArticleActions } from './workspace/article-actions';
 import { createArticleList } from './workspace/article-list';
 import { watchDisk } from './workspace/disk-events';
 import { createFilePanel } from './workspace/file-panel';
@@ -36,8 +37,17 @@ const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
 
 const topBar = createTopBar(shell);
+const articleActions = createArticleActions({
+	openSlug: () => session.slug,
+	leave: () => session.saveBeforeLeaving(),
+	open: (slug) => session.open(slug, { discard: true }),
+	reload: () => articleList.load(),
+});
 const articleList = createArticleList(shell.querySelector<HTMLElement>('.article-sidebar')!, {
 	open: (slug) => { void session.open(slug); },
+	rename: (article) => void articleActions.rename(article),
+	duplicate: (article) => void articleActions.duplicate(article),
+	remove: (article) => void articleActions.remove(article),
 });
 const publishCheck = createPublishCheck(document.querySelector<HTMLDialogElement>('#publish-check-dialog')!);
 const properties = createPropertiesPanel(shell.querySelector<HTMLElement>('.document-header')!, {
@@ -193,6 +203,7 @@ import.meta.hot?.on('vite:beforeFullReload', (payload: { path?: string; studioCo
 	if (payload.studioContentChange) payload.path = '/studio-keeps-open.html';
 });
 
-openFromList().catch((error) => {
-	topBar.error(error instanceof Error ? error.message : '无法连接本地 Studio');
-});
+openFromList().then(
+	() => articleActions.offerPendingUndo(),
+	(error) => topBar.error(error instanceof Error ? error.message : '无法连接本地 Studio'),
+);

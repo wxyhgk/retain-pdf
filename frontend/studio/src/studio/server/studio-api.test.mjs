@@ -275,3 +275,20 @@ test('a terminal is only for this repository or an existing article', async (t) 
 	assert.equal((await call(middleware, { url: '/api/studio/terminal', ...asJson({ cwd: 'article', slug: '../etc' }) })).status, 400);
 	assert.equal((await call(middleware, { url: '/api/studio/terminal', ...asJson({ cwd: 'article', slug: 'missing' }) })).status, 404);
 });
+
+test('an article is renamed, copied, deleted and put back', async (t) => {
+	const middleware = await apiFixture(t);
+	const renamed = await call(middleware, { url: '/api/studio/articles/api-note/rename', ...asJson({ to: 'renamed-note' }) });
+	assert.deepEqual(renamed, { status: 200, data: { slug: 'renamed-note' } });
+	const copied = await call(middleware, { url: '/api/studio/articles/renamed-note/duplicate', ...asJson({ to: 'renamed-note-copy' }) });
+	assert.deepEqual(copied, { status: 201, data: { slug: 'renamed-note-copy' } });
+	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note/rename', ...asJson({ to: 'renamed-note-copy' }) })).status, 409);
+	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note/rename', ...asJson({ to: '../escape' }) })).status, 400);
+
+	const deleted = await call(middleware, { url: '/api/studio/articles/renamed-note', method: 'DELETE' });
+	assert.equal(deleted.status, 200);
+	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note', method: 'GET' })).status, 404);
+	const restored = await call(middleware, { url: '/api/studio/restored-articles', ...asJson({ trashed: deleted.data.trashed }) });
+	assert.deepEqual(restored, { status: 200, data: { slug: 'renamed-note' } });
+	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note', method: 'GET' })).status, 200);
+});

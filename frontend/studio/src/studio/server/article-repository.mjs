@@ -1,5 +1,6 @@
-import { lstat, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { cp, lstat, mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { basename, resolve } from 'node:path';
+import { updateStudioFrontmatter } from '../document/frontmatter.ts';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_CONFIG } from './article-config.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from './article-views.mjs';
@@ -91,6 +92,56 @@ export class ArticleRepository {
 			writeFile(paths.views, DEFAULT_ARTICLE_VIEWS, { encoding: 'utf8', flag: 'wx' }),
 		]);
 		return { slug };
+	}
+
+	/**
+	 * Gives the article another folder name, which is its address on the blog
+	 * (`/blog/<slug>/`). Its text says nothing of its folder, so nothing in it changes.
+	 */
+	rename(slug, to) {
+		return this.exclusive(slug, async () => {
+			const from = articleBundlePaths(this.blogRoot, slug);
+			await assertReadableBundle(from);
+			if (to === slug) return { slug };
+			const target = articleBundlePaths(this.blogRoot, to);
+			await assertFree(target.directory);
+			await rename(from.directory, target.directory);
+			return { slug: to };
+		});
+	}
+
+	/**
+	 * Copies the article, its files and saved views, into a new folder: a
+	 * draft dated today, its title marked 副本, the rest of its text as it is.
+	 */
+	duplicate(slug, to, { now = new Date() } = {}) {
+		return this.exclusive(slug, async () => {
+			const from = articleBundlePaths(this.blogRoot, slug);
+			await assertReadableBundle(from);
+			const target = articleBundlePaths(this.blogRoot, to);
+			await assertFree(target.directory);
+			await cp(from.directory, target.directory, {
+				recursive: true,
+				errorOnExist: true,
+				force: false,
+				// Links and hidden files (.DS_Store, an upload under way) stay behind.
+				filter: async (path) => !basename(path).startsWith('.') && !(await lstat(path)).isSymbolicLink(),
+			});
+			const source = await readFile(target.markdown, 'utf8');
+			const properties = articleProperties(source, slug);
+			try {
+				const copy = updateStudioFrontmatter(source, {
+					...properties,
+					title: `${properties.title}（副本）`,
+					pubDate: now.toISOString().slice(0, 10),
+					draft: true,
+				});
+				await atomicWriteText(target.markdown, copy);
+			} catch {
+				// Properties it cannot change (broken YAML): the copy keeps them as they are.
+			}
+			return { slug: to };
+		});
 	}
 
 	async read(slug) {
@@ -187,9 +238,31 @@ export class ArticleRepository {
 }
 
 async function assertReadableBundle(paths) {
-	const [directory, markdown] = await Promise.all([lstat(paths.directory), lstat(paths.markdown)]);
+	const [directory, markdown] = await Promise.all([lstat(paths.directory), lstat(paths.markdown)]).catch((error) => {
+		if (error?.code === 'ENOENT') throw new ArticleNotFoundError();
+		throw error;
+	});
 	if (directory.isSymbolicLink() || !directory.isDirectory() || markdown.isSymbolicLink() || !markdown.isFile()) {
 		throw new StudioPathError('文章目录包含不允许的符号链接或文件类型');
+	}
+}
+
+/** No article, or anything else, has this folder yet. */
+async function assertFree(directory) {
+	try {
+		await lstat(directory);
+	} catch (error) {
+		if (error?.code === 'ENOENT') return;
+		throw error;
+	}
+	throw new ArticleConflictError(`已经有一篇叫 ${basename(directory)} 的文章了`);
+}
+
+export class ArticleNotFoundError extends Error {
+	constructor(message = '文章不存在') {
+		super(message);
+		this.name = 'ArticleNotFoundError';
+		this.statusCode = 404;
 	}
 }
 

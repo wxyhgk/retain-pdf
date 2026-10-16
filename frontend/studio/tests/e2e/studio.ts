@@ -18,6 +18,16 @@ export function resetFixture(): void {
 	cpSync(fixture, target, { recursive: true });
 }
 
+/** Whether the copy of blog/ has an article in this folder. */
+export function blogHasArticle(folder: string): boolean {
+	return existsSync(join(articles(), folder, 'index.md'));
+}
+
+/** Removes an article a test made (a copy, a renamed fixture) from the copy of blog/. */
+export function removeArticle(folder: string): void {
+	rmSync(join(articles(), folder), { recursive: true, force: true });
+}
+
 /** Add Markdown to the end of the fixture copy before the Studio opens it. */
 export function appendToFixture(markdown: string): void {
 	appendFileSync(join(articles(), slug, 'index.md'), markdown);
