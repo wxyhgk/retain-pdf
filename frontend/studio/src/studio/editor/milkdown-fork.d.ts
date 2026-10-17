@@ -30,6 +30,8 @@ declare module '@milkdown/crepe/feature/block-edit' {
 		icon?: string;
 		current?: boolean;
 		danger?: boolean;
+		/** The key that does the same, shown at the entry's end. */
+		hint?: string;
 	};
 	export interface BlockMenuTarget {
 		node: import('@milkdown/kit/prose/model').Node;
@@ -45,7 +47,7 @@ declare module '@milkdown/crepe/feature/block-edit' {
 	};
 	export type BuildBlockMenu = (builder: BlockMenuBuilder, target: BlockMenuTarget) => void;
 	export const blockMenuAPI: import('@milkdown/kit/utils').$Ctx<
-		{ toggle: (pos: number, anchor: HTMLElement) => void; hide: () => void },
+		{ toggle: (pos: number, anchor: HTMLElement, placement?: 'beside' | 'below') => void; hide: () => void },
 		'blockMenuAPICtx'
 	>;
 	/**

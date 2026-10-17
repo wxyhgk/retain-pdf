@@ -1,6 +1,5 @@
 import { commandsCtx } from '@milkdown/kit/core';
 import { toggleLinkCommand } from '@milkdown/kit/component/link-tooltip';
-import { toggleStrikethroughCommand } from '@milkdown/kit/preset/gfm';
 import { InputRule, inputRules } from '@milkdown/prose/inputrules';
 import { Plugin, TextSelection, type EditorState } from '@milkdown/prose/state';
 import { $prose } from '@milkdown/utils';
@@ -12,7 +11,7 @@ const modifier = (event: KeyboardEvent) => (navigator.platform.includes('Mac') ?
 
 /**
  * Notion's keys (see block-keys.ts), plus ⌘K on selected text for a link
- * (⌘K elsewhere finds an article) and ⌘⇧S for strikethrough. Put after the
+ * (⌘K elsewhere finds an article). Put after the
  * editor's other plugins, so Esc goes to what is open first (a formula
  * being typed, a menu).
  */
@@ -27,7 +26,6 @@ export const blockKeysPlugin = $prose(
 					if (!modifier(event) || event.altKey) return false;
 					const key = event.key.toLowerCase();
 					if (event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) return run((state, dispatch) => moveBlocks(state, event.key === 'ArrowUp' ? -1 : 1, dispatch));
-					if (event.shiftKey && key === 's') return ctx.get(commandsCtx).call(toggleStrikethroughCommand.key);
 					if (event.shiftKey) return false;
 					if (key === 'd') return run(duplicateBlocks);
 					if (key === 'k') {

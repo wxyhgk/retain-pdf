@@ -58,3 +58,33 @@ test('a chemistry block’s ⋯ opens the menu for chemistry blocks', async ({ p
 	await expect(scienceBlock(page, 'SDF')).toHaveCount(2);
 	await expect(scienceBlock(page, 'XYZ')).toHaveCount(0);
 });
+
+test('the menu moves a block, tells each action’s key, and turns a block into a callout', async ({ page }) => {
+	await clickHandleOf(page, '结尾段落。');
+	await expect(item(page, 'duplicate').locator('.hint')).toHaveText(/D$/u);
+	await expect(item(page, 'move-up').locator('.hint')).toHaveText(/↑$/u);
+	await item(page, 'move-up').click();
+	await expect(menu(page)).toBeHidden();
+
+	await clickHandleOf(page, '结尾段落。');
+	await item(page, 'turn-callout').click();
+	await expect(editor(page).locator('aside.callout-tip .callout-body')).toHaveText('结尾段落。');
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	// Moved above the XYZ block, which was the block before it.
+	expect(savedMarkdown()).toContain('> [!TIP]\n> 结尾段落。\n\n```xyz');
+});
+
+test('「转换成」 in the toolbar over selected text opens the block’s menu below it', async ({ page }) => {
+	const paragraph = editor(page).getByText('结尾段落。', { exact: true });
+	// In view, as when a person selects it: the menu closes when the page scrolls.
+	await paragraph.scrollIntoViewIfNeeded();
+	await paragraph.selectText();
+	const turn = page.locator('.milkdown-toolbar [aria-label="转换成"]');
+	await expect(turn).toBeVisible();
+	await expect(page.locator('.milkdown-toolbar [aria-label="删除线"]')).toHaveAttribute('title', /⇧⌘S|Ctrl\+Shift\+S/u);
+	await turn.click();
+	await expect(menu(page)).toBeVisible();
+	await item(page, 'turn-h3').click();
+	await expect(editor(page).locator('h3', { hasText: '结尾段落。' })).toBeVisible();
+});

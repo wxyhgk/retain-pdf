@@ -9,6 +9,7 @@ import {
 	blockActionItems,
 	blockKind,
 	headingEnter,
+	keyHint,
 	planBlockEdit,
 } from '../src/studio/editor/block-actions.ts';
 
@@ -33,6 +34,8 @@ function editorSchema() {
 			},
 			bullet_list: { content: 'listItem+', group: 'block', attrs: { spread: { default: false } } },
 			ordered_list: { content: 'listItem+', group: 'block', attrs: { order: { default: 1 }, spread: { default: false } } },
+			callout: { content: 'block+', group: 'block', attrs: { kind: { default: 'note' } } },
+			toggle: { content: 'block+', group: 'block', attrs: { summary: { default: '' }, open: { default: false } } },
 		},
 		marks: {},
 	});
@@ -173,4 +176,47 @@ test('enter in a heading continues in a paragraph', () => {
 	assert.equal(headingEnter(paragraph, () => {
 		throw new Error('paragraph should not handle enter');
 	}), false);
+});
+
+test('the menu moves a block and tells each action’s key', () => {
+	const type = editorSchema();
+	const items = blockActionItems(type.nodes.paragraph.create(null, type.text('a')));
+	assert.deepEqual(
+		items.filter((item) => item.section === '操作').map((item) => [item.label, item.shortcut]),
+		[['创建副本', 'Mod-d'], ['上移', 'Mod-Shift-ArrowUp'], ['下移', 'Mod-Shift-ArrowDown'], ['删除', 'Backspace']],
+	);
+	assert.equal(keyHint('Mod-Shift-ArrowUp', true), '⇧⌘↑');
+	assert.equal(keyHint('Mod-d', true), '⌘D');
+	assert.equal(keyHint('Backspace', true), '⌫');
+	assert.equal(keyHint('Mod-Shift-ArrowDown', false), 'Ctrl+Shift+↓');
+	assert.equal(keyHint('Mod-d', false), 'Ctrl+D');
+});
+
+test('a block turns into a callout or a toggle as it is, and back', () => {
+	const type = editorSchema();
+	const nodes = type.nodes;
+	const list = nodes.bullet_list.create(null, [nodes.list_item.create(null, nodes.paragraph.create(null, type.text('项')))]);
+	const document = nodes.doc.create(null, [list]);
+	const callout = planBlockEdit(document, 0, { type: 'turn', kind: 'callout' });
+	assert.ok(callout);
+	const called = applyBlockEdit(document, callout);
+	assert.equal(called.child(0).type.name, 'callout');
+	assert.equal(called.child(0).attrs.kind, 'tip');
+	// The list stays a list inside it.
+	assert.equal(called.child(0).child(0), list);
+	assert.equal(blockKind(called.child(0)), 'callout');
+	assert.equal(blockActionItems(called.child(0)).find((item) => item.id === 'turn-callout')?.current, true);
+
+	const toggle = planBlockEdit(called, 0, { type: 'turn', kind: 'toggle' });
+	assert.ok(toggle);
+	const toggled = applyBlockEdit(called, toggle);
+	assert.equal(toggled.child(0).type.name, 'toggle');
+	// From a callout, what the callout held.
+	assert.equal(toggled.child(0).child(0), list);
+
+	const back = planBlockEdit(toggled, 0, { type: 'turn', kind: 'paragraph' });
+	assert.ok(back);
+	const unwrapped = applyBlockEdit(toggled, back);
+	assert.equal(unwrapped.child(0).type.name, 'paragraph');
+	assert.equal(unwrapped.textContent, '项');
 });

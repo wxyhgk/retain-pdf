@@ -11,7 +11,7 @@ import {
 	getPendingChanges,
 	startDiffReviewCmd,
 } from '@milkdown/kit/plugin/diff';
-import { remarkGFMPlugin } from '@milkdown/kit/preset/gfm';
+import { remarkGFMPlugin, strikethroughKeymap } from '@milkdown/kit/preset/gfm';
 import type { Node as ProseNode } from '@milkdown/prose/model';
 import { Plugin, TextSelection } from '@milkdown/prose/state';
 import { $prose, callCommand } from '@milkdown/utils';
@@ -23,7 +23,7 @@ import '../../science/browser/molecule-renderer.css';
 import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '../../science/browser/science-renderer';
 import { linkPath } from '../workspace/file-tree';
-import { blockFeelPlugins, buildBlockMenu } from './block-menu';
+import { blockFeelPlugins, buildBlockMenu, buildToolbarTurn } from './block-menu';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '../../code-files/render.mjs';
 import { scienceBlockPlugins } from './crepe-science-block';
@@ -210,6 +210,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						codeLabel: '行内代码',
 						linkLabel: '链接',
 						latexLabel: '公式',
+						buildToolbar: buildToolbarTurn,
 					},
 					[CrepeFeature.LinkTooltip]: {
 						inputPlaceholder: '粘贴链接…',
@@ -242,6 +243,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor
 				.config((ctx) => {
 					ctx.set(remarkGFMPlugin.options.key, gfmOptions);
+					// Notion's key for strikethrough; the toolbar's tooltip follows it.
+					ctx.set(strikethroughKeymap.key, { ToggleStrikethrough: { shortcuts: 'Mod-Shift-s' } });
 					ctx.update(diffConfig.key, (prev) => ({ ...prev, ignoreAttrs: { heading: ['id'] } }));
 					ctx.update(diffComponentConfig.key, (prev) => ({
 						...prev,

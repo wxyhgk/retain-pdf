@@ -10,9 +10,15 @@ export type BlockTurn =
 	| 'ordered'
 	| 'task'
 	| 'quote'
-	| 'code';
+	| 'code'
+	| 'callout'
+	| 'toggle';
 
-export type BlockAction = { type: 'duplicate' } | { type: 'delete' } | { type: 'turn'; kind: BlockTurn };
+export type BlockAction =
+	| { type: 'duplicate' }
+	| { type: 'delete' }
+	| { type: 'move'; direction: -1 | 1 }
+	| { type: 'turn'; kind: BlockTurn };
 
 export type BlockMenuItem = {
 	section: '操作' | '转换成';
@@ -21,6 +27,8 @@ export type BlockMenuItem = {
 	current: boolean;
 	danger: boolean;
 	action: BlockAction;
+	/** The key that does the same, as a keymap names it: `Mod-d`. */
+	shortcut?: string;
 };
 
 export type BlockEdit = {
@@ -40,7 +48,28 @@ const TURNS: { kind: BlockTurn; label: string }[] = [
 	{ kind: 'task', label: '待办' },
 	{ kind: 'quote', label: '引用' },
 	{ kind: 'code', label: '代码' },
+	{ kind: 'callout', label: '提示块' },
+	{ kind: 'toggle', label: '折叠块' },
 ];
+
+/** What a block becomes wrapped in, for the kinds that hold blocks as they are. */
+const WRAPPERS: Partial<Record<BlockTurn, Record<string, unknown>>> = {
+	callout: { kind: 'tip' },
+	toggle: { summary: '', open: false },
+};
+
+const KEY_GLYPHS: Record<string, string> = { ArrowUp: '↑', ArrowDown: '↓', Backspace: '⌫' };
+
+/** A keymap's name for keys (`Mod-Shift-ArrowUp`) as a menu shows it: `⇧⌘↑` on a Mac (its order, as the toolbar has it), `Ctrl+Shift+↑` elsewhere. */
+export function keyHint(shortcut: string, mac = /Mac/u.test(globalThis.navigator?.platform ?? '')): string {
+	const parts = shortcut.split('-');
+	const key = parts.pop() ?? '';
+	const shown = KEY_GLYPHS[key] ?? key.toUpperCase();
+	const names: Record<string, [string, string]> = { Mod: ['⌘', 'Ctrl'], Shift: ['⇧', 'Shift'], Alt: ['⌥', 'Alt'] };
+	const macOrder = ['Alt', 'Shift', 'Mod'];
+	if (mac) return [...parts].sort((left, right) => macOrder.indexOf(left) - macOrder.indexOf(right)).map((part) => names[part]?.[0] ?? part).join('') + shown;
+	return [...parts.map((part) => names[part]?.[1] ?? part), shown].join('+');
+}
 
 type KindSource = {
 	type: { name: string };
@@ -59,7 +88,7 @@ export function blockKind(node: KindSource): string {
 	return node.type.name;
 }
 
-/** Click the drag handle: duplicate, turn into another block, or delete. */
+/** Click the drag handle: duplicate or move it, turn it into another block, or delete it. */
 export function blockActionItems(node: KindSource): BlockMenuItem[] {
 	const current = blockKind(node);
 	const items: BlockMenuItem[] = [
@@ -70,7 +99,10 @@ export function blockActionItems(node: KindSource): BlockMenuItem[] {
 			current: false,
 			danger: false,
 			action: { type: 'duplicate' },
+			shortcut: 'Mod-d',
 		},
+		{ section: '操作', id: 'move-up', label: '上移', current: false, danger: false, action: { type: 'move', direction: -1 }, shortcut: 'Mod-Shift-ArrowUp' },
+		{ section: '操作', id: 'move-down', label: '下移', current: false, danger: false, action: { type: 'move', direction: 1 }, shortcut: 'Mod-Shift-ArrowDown' },
 	];
 	for (const turn of TURNS) {
 		items.push({
@@ -89,6 +121,7 @@ export function blockActionItems(node: KindSource): BlockMenuItem[] {
 		current: false,
 		danger: true,
 		action: { type: 'delete' },
+		shortcut: 'Backspace',
 	});
 	return items;
 }
@@ -103,10 +136,10 @@ function asParagraphs(node: ProseNode): ProseNode[] {
 		const text = node.textContent;
 		return [paragraph(text ? Fragment.from(schema.text(text)) : Fragment.empty)];
 	}
-	if (name === 'blockquote' || name === 'bullet_list' || name === 'ordered_list') {
+	if (name === 'blockquote' || name === 'bullet_list' || name === 'ordered_list' || name === 'callout' || name === 'toggle') {
 		const blocks: ProseNode[] = [];
 		const visit = (child: ProseNode) => {
-			if (child.type.name === 'list_item' || child.type.name === 'blockquote' || child.type.name === 'bullet_list' || child.type.name === 'ordered_list') {
+			if (['list_item', 'blockquote', 'bullet_list', 'ordered_list', 'callout', 'toggle'].includes(child.type.name)) {
 				child.forEach(visit);
 				return;
 			}
@@ -167,7 +200,15 @@ export function planBlockEdit(doc: ProseNode, pos: number, action: BlockAction):
 		}
 		return { from, to, nodes: [], cursor: from };
 	}
-	if (blockKind(node) === action.kind) return null;
+	if (action.type !== 'turn' || blockKind(node) === action.kind) return null;
+	const wrapper = WRAPPERS[action.kind];
+	if (wrapper) {
+		// A callout or a toggle holds the block as it is; from the other one, what that held.
+		const type = node.type.schema.nodes[action.kind];
+		if (!type) return null;
+		const content = WRAPPERS[blockKind(node) as BlockTurn] ? node.content : Fragment.from(node);
+		return { from, to, nodes: [type.create(wrapper, content)], cursor: from + 2 };
+	}
 	const paragraphs = asParagraphs(node);
 	if (!paragraphs.length) return null;
 	const nodes = nodesFor(paragraphs, action.kind);
