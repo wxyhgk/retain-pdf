@@ -150,7 +150,8 @@ export default function studioDev() {
 						const { cwd, slug } = await readJsonChange(request);
 						const folder = cwd === 'article' ? articleBundlePaths(blogRoot, slug).directory : server.config.root;
 						if (cwd === 'article') await manager.locate(slug, '');
-						const env = cwd === 'article' ? { STUDIO_ARTICLE: slug } : {};
+						// For a program run there (an AI): which article, and where it is (blog/CLAUDE.md names these).
+						const env = cwd === 'article' ? { STUDIO_ARTICLE: slug, STUDIO_ARTICLE_DIR: folder, STUDIO_ARTICLE_FILE: articleBundlePaths(blogRoot, slug).markdown } : {};
 						return json(response, 200, { ...(await terminals.open(folder, env)), cwd: folder });
 					}
 

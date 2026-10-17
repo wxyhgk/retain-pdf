@@ -32,8 +32,8 @@ test('in the article’s folder, what the shell writes shows up in the file pane
 	await page.getByRole('radio', { name: '当前文章' }).click();
 	await expect(page.locator('#terminal-cwd')).toHaveText('blog/studio-fixture/');
 	await running(page);
-	await run(page, 'echo "article=$STUDIO_ARTICLE"; mkdir -p assets && echo 3 > assets/from-shell.xyz');
-	await expect(screen(page)).toContainText('article=studio-fixture');
+	await run(page, 'echo "article=$STUDIO_ARTICLE file=$(basename "$(dirname "$STUDIO_ARTICLE_FILE")")/$(basename "$STUDIO_ARTICLE_FILE")"; mkdir -p assets && echo 3 > assets/from-shell.xyz');
+	await expect(screen(page)).toContainText('article=studio-fixture file=studio-fixture/index.md');
 	await page.locator('#side-tab-files').click();
 	await expect(page.locator('#file-tree .file-row[data-path="assets/from-shell.xyz"]')).toBeVisible();
 	expect(fixtureHas('assets/from-shell.xyz')).toBe(true);
