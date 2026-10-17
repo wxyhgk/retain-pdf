@@ -5,6 +5,7 @@ import { checkArticle } from '../studio/server/article-check.mjs';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
 import { ArticleGit } from '../studio/server/article-git.mjs';
 import { ArticleHistory } from '../studio/server/article-history.mjs';
+import { ArticleLibrary } from '../studio/server/article-library.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
 import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
@@ -93,6 +94,7 @@ export default function studioDev() {
 			const articleFiles = new ArticleFiles(articles, manager);
 			const articleGit = new ArticleGit(blogRoot);
 			const history = new ArticleHistory(blogRoot);
+			const library = new ArticleLibrary(blogRoot, articles);
 			const watcher = new BlogWatcher(blogRoot);
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
 			server.httpServer?.on('close', () => {
@@ -226,6 +228,14 @@ export default function studioDev() {
 							const { source, reason } = await readJsonChange(request);
 							return json(response, 201, await history.keep(slug, source, reason));
 						}
+					}
+
+					// A work added to the article's library (assets/refs.bib) by its DOI.
+					const referencesMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/references$/u);
+					if (referencesMatch && request.method === 'POST') {
+						const slug = decodePathComponent(referencesMatch[1]);
+						const { doi } = await readJsonChange(request);
+						return json(response, 200, await library.addDoi(slug, doi));
 					}
 
 					// What would be wrong with the article, as the editor holds it, once published.

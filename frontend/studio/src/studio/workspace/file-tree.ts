@@ -1,5 +1,6 @@
 import { findArticleReferences, movedPath } from '../../articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
+import { BIBLIOGRAPHY_PATH } from '../../references/bibtex.mjs';
 import { fileName, isImage, parentPath } from '../article-files.ts';
 import type { ArticleFileEntry } from '../types.ts';
 
@@ -65,7 +66,8 @@ export function uploadFolderFor(target: ArticleFileEntry | null, file: { name: s
 /** A file in `img/` or `assets/` that the article does not point at, directly or through its folder. */
 export function isUnused(entry: ArticleFileEntry, referenced: ReadonlySet<string>): boolean {
 	if (entry.kind !== 'file' || !PUBLISHED_FOLDERS.includes(entry.path.split('/', 1)[0])) return false;
-	return !referenced.has(entry.path);
+	// The library is read by name, by the citations, not linked to.
+	return entry.path !== BIBLIOGRAPHY_PATH && !referenced.has(entry.path);
 }
 
 /** How many places in the article point at `path` or, for a folder, at anything inside it. */

@@ -34,6 +34,8 @@ import { smartPastePlugins } from './smart-paste';
 import { blockKeyPlugins } from './block-key-plugins';
 import { buildBlockSlashMenu } from './block-slash-menu';
 import { calloutPlugins } from './callout-block';
+import { citationPlugins, setCitationLibrary, type CitationHost } from './citations';
+import type { BibEntry } from '../../references/bibtex.mjs';
 import { FIGURE_TYPE, figurePlugins } from './figure-block';
 import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
@@ -60,7 +62,8 @@ export type StudioEditorHost = {
 	reviewing(pending: number | null): void;
 	/** The author asks an AI about the selected blocks (⌘J, 「问 AI」): `markSelection` tells which. */
 	askAI(): void;
-} & ArticleLinkHost;
+} & ArticleLinkHost &
+	CitationHost;
 
 export type StudioEditor = {
 	/** Shows a Markdown body, replacing what was shown; the Markdown the editor writes for it. */
@@ -81,6 +84,8 @@ export type StudioEditor = {
 	 * (source-lines.ts): which lines of the file they are. Null with nothing shown.
 	 */
 	markSelection(): string | null;
+	/** The article's library (assets/refs.bib), to number its citations by; null when it has none. */
+	setLibrary(library: Map<string, BibEntry> | null): void;
 };
 
 /** What the editor holds, as Markdown, without empty lines left at the end. */
@@ -261,6 +266,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(mathBracketsRemark);
 			crepe.editor.use(figurePlugins(host.fileUrl));
 			crepe.editor.use(calloutPlugins());
+			crepe.editor.use(citationPlugins(host));
 			crepe.editor.use(togglePlugins());
 			crepe.editor.use(articleLinkPlugins(host));
 			crepe.editor.use(smartPastePlugins(host));
@@ -289,11 +295,18 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				listener.markdownUpdated(() => report());
 			});
 			await crepe.create();
+			applyLibrary();
 			crepe.editor.action((ctx) => { reported = ctx.get(editorViewCtx).state.doc; });
 			return markdownOf(crepe);
 		} finally {
 			mounting = false;
 		}
+	}
+
+	/** The library the citations are numbered by; kept for the next article shown too, until it is set again. */
+	let library: Map<string, BibEntry> | null = null;
+	function applyLibrary(): void {
+		crepe?.editor.action((ctx) => setCitationLibrary(ctx.get(editorViewCtx), library));
 	}
 
 	function markSelection(): string | null {
@@ -336,6 +349,10 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 
 	return {
 		markSelection,
+		setLibrary(next) {
+			library = next;
+			applyLibrary();
+		},
 		mount,
 		focusStart,
 		settle: report,

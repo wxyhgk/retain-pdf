@@ -125,3 +125,10 @@ test('a file block that looks for lines its file does not have is a warning', as
 `;
 	assert.deepEqual(await check(source), [{ severity: 'warning', message: './assets/opt.log 里没有找到「虚频」', line: 11 }]);
 });
+
+test('a citation of a work the library has not, or without a library, is a warning', async (t) => {
+	const check = await article(t);
+	assert.deepEqual(await check(`${PROPERTIES}\n见 [@becke1993]。\n`), [
+		{ severity: 'warning', message: '文章引用了文献，但没有 assets/refs.bib' },
+	]);
+});

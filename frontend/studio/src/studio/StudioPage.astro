@@ -143,6 +143,12 @@ import { SITE_TITLE } from '../consts';
 			<p class="quick-find-hint"><kbd>↑</kbd><kbd>↓</kbd> 选择 · <kbd>↵</kbd> 打开 · <kbd>esc</kbd> 关闭</p>
 		</dialog>
 
+		<dialog id="cite-dialog" class="quick-find" aria-label="引用文献">
+			<label class="quick-find-field"><span aria-hidden="true">❝</span><input id="cite-input" type="text" placeholder="按作者、题目、年份找，或粘贴 DOI…" autocomplete="off" aria-controls="cite-results" /></label>
+			<ul id="cite-results" class="quick-find-results" role="listbox" aria-label="文献"></ul>
+			<p class="quick-find-hint"><span id="cite-status" role="status" aria-live="polite"></span> <kbd>↵</kbd> 引用 · <kbd>esc</kbd> 关闭</p>
+		</dialog>
+
 		<dialog id="trash-dialog" class="article-dialog trash-view">
 			<form method="dialog">
 				<div class="dialog-heading">

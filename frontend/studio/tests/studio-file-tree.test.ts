@@ -100,3 +100,8 @@ test('a dropped folder’s files keep the folders they were in', () => {
 	assert.equal(subfolderOf('My Data/out.log'), 'My Data');
 	assert.equal(subfolderOf('out.log'), '');
 });
+
+test('the library is not taken for a file nothing uses', () => {
+	assert.equal(isUnused(file('assets/refs.bib'), new Set()), false);
+	assert.equal(isUnused(file('assets/other.bib'), new Set()), true);
+});

@@ -235,3 +235,8 @@ export async function listVersions(slug: string): Promise<HistoryEntry[]> {
 export async function readVersion(slug: string, name: string): Promise<string> {
 	return (await request<{ source: string }>(`/api/studio/articles/${encodeURIComponent(slug)}/history/${encodeURIComponent(name)}`)).source;
 }
+
+/** Adds the work with this DOI to the article's assets/refs.bib (asking doi.org); its key. */
+export async function addReference(slug: string, doi: string): Promise<{ key: string; added: boolean }> {
+	return request(`/api/studio/articles/${encodeURIComponent(slug)}/references`, jsonOptions('POST', { doi }));
+}

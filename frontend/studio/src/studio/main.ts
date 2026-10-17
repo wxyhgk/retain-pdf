@@ -15,6 +15,7 @@ import {
 	StudioApiError,
 	uploadArticleFile,
 	keepVersion,
+	addReference,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -28,6 +29,8 @@ import { createArticleList } from './workspace/article-list';
 import { showContextMenu } from './workspace/context-menu';
 import { watchDisk } from './workspace/disk-events';
 import { articleAddress } from '../articles/rules.mjs';
+import { BIBLIOGRAPHY_PATH, parseBibtex, type BibEntry } from '../references/bibtex.mjs';
+import { createCitePicker } from './workspace/cite-picker';
 import { sourceLinesOf } from './document/source-lines';
 import { setWidgetFiles, widgetFilesChanged } from '../widgets/widget-host';
 import { studioFileUrl } from '../articles/article-references.mjs';
@@ -144,6 +147,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	},
 	openArticle: (slug) => void session.open(slug),
 	askAI: () => void askAI(),
+	pickCitation: () => citePicker.pick(),
 	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
 	reviewing: (pending) => reviewBar.show(pending),
 });
@@ -184,6 +188,7 @@ const session = new ArticleSession(
 			articleList.select(article.slug);
 			filePanel.show(article.slug);
 			terminal.showArticle(article.slug);
+			void loadLibrary(article.slug);
 			const url = new URL(window.location.href);
 			url.searchParams.set('article', article.slug);
 			history.replaceState(null, '', url);
@@ -248,6 +253,41 @@ async function askAI(): Promise<void> {
 	terminal.ask(slug, lines);
 }
 
+/** The open article's library (assets/refs.bib), read again when it changes; null when it has none. */
+let library: Map<string, BibEntry> | null = null;
+let librarySlug: string | null = null;
+let libraryRead = 0;
+async function loadLibrary(slug: string): Promise<void> {
+	const reading = ++libraryRead;
+	// Another article's library numbers nothing here.
+	if (librarySlug !== slug) {
+		librarySlug = slug;
+		library = null;
+		editor.setLibrary(null);
+	}
+	let next: Map<string, BibEntry> | null = null;
+	try {
+		const response = await fetch(articleFileUrl(slug, `./${BIBLIOGRAPHY_PATH}`), { cache: 'no-store' });
+		if (response.ok) next = parseBibtex(await response.text());
+	} catch {
+		// Unreadable: as if there were none.
+	}
+	if (reading !== libraryRead || session.slug !== slug) return;
+	library = next;
+	editor.setLibrary(library);
+}
+
+const citePicker = createCitePicker(document.querySelector<HTMLDialogElement>('#cite-dialog')!, {
+	library: () => library,
+	async addDoi(doi) {
+		const slug = session.slug;
+		if (!slug) throw new Error('还没有打开文章');
+		const { key } = await addReference(slug, doi);
+		await loadLibrary(slug);
+		return key;
+	},
+});
+
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
 	articleList.changedOnDisk(changes);
@@ -257,6 +297,7 @@ watchDisk((changes) => {
 	void filePanel.refresh();
 	session.changedOnDisk(change.paths);
 	widgetFilesChanged(change.paths);
+	if (change.paths.includes(BIBLIOGRAPHY_PATH)) void loadLibrary(change.slug);
 });
 
 // Widgets read the open article's files (note.file, or a widget that is a file).
