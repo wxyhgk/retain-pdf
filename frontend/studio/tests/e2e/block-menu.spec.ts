@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { editor, openStudio, resetFixture, savedMarkdown, saveStatus, scienceBlock } from './studio.ts';
+import { appendToFixture, editor, openStudio, resetFixture, savedMarkdown, saveStatus, scienceBlock } from './studio.ts';
 
 // A click on a block's drag handle opens its menu; a chemistry block's ⋯
 // button opens the same one.
@@ -90,4 +90,35 @@ test('「转换成」 in the toolbar over selected text opens the block’s menu
 	await expect(menu(page)).toBeVisible();
 	await item(page, 'turn-h3').click();
 	await expect(editor(page).locator('h3', { hasText: '结尾段落。' })).toBeVisible();
+});
+
+test('several blocks selected turn together into one list', async ({ page }) => {
+	appendToFixture('\n第一点\n\n第二点\n\n第三点\n');
+	await page.reload();
+	await expect(saveStatus(page)).toHaveText('已载入');
+	// From inside the first to inside the third.
+	await editor(page).getByText('第一点', { exact: true }).click();
+	await page.keyboard.press('Home');
+	await page.keyboard.down('Shift');
+	await editor(page).getByText('第三点', { exact: true }).click();
+	await page.keyboard.up('Shift');
+	await expect(page.locator('.milkdown-toolbar[data-show="true"]')).toBeVisible();
+	await page.locator('.milkdown-toolbar [aria-label="转换成"]').click();
+	await item(page, 'turn-bullet').click();
+	await expect(editor(page).locator('ul').last().locator('li')).toHaveCount(3);
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toMatch(/\n([-*]) 第一点\n\1 第二点\n\1 第三点\s*$/u);
+});
+
+test('in a list, the block menu turns only the item it is for', async ({ page }) => {
+	appendToFixture('\n- 甲\n- 乙\n- 丙\n');
+	await page.reload();
+	await expect(saveStatus(page)).toHaveText('已载入');
+	await clickHandleOf(page, '乙');
+	await item(page, 'turn-h3').click();
+	await expect(editor(page).locator('h3', { hasText: '乙' })).toBeVisible();
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toMatch(/\n- 甲\n\n### 乙\n\n- 丙\n$/u);
 });

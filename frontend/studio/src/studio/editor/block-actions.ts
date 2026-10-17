@@ -216,6 +216,100 @@ export function planBlockEdit(doc: ProseNode, pos: number, action: BlockAction):
 	return { from, to, nodes, cursor: from + 1 };
 }
 
+/** Blocks whose writing turns into another kind; formulas, figures, chemistry, tables and the like stay as they are. */
+const TURNABLE = new Set(['paragraph', 'heading', 'blockquote', 'bullet_list', 'ordered_list', 'code_block', 'callout', 'toggle']);
+const LISTS = new Set(['bullet_list', 'ordered_list']);
+
+/** `nodes` as `kind`: wrapped as they are in a callout or toggle; else their writing, one list or quote or code block for them all. */
+function turned(nodes: ProseNode[], kind: BlockTurn): ProseNode[] | null {
+	const schema = nodes[0]?.type.schema;
+	if (!schema) return null;
+	const wrapper = WRAPPERS[kind];
+	if (wrapper) {
+		const type = schema.nodes[kind];
+		if (!type) return null;
+		// From the other wrapper, what it held.
+		const content = nodes.flatMap((node) => (WRAPPERS[blockKind(node) as BlockTurn] ? [...asChildren(node)] : [node]));
+		return [type.create(wrapper, content)];
+	}
+	const paragraphs = nodes.flatMap(asParagraphs);
+	return paragraphs.length ? nodesFor(paragraphs, kind) : null;
+}
+
+function asChildren(node: ProseNode): ProseNode[] {
+	const children: ProseNode[] = [];
+	node.forEach((child) => children.push(child));
+	return children;
+}
+
+/** Lists of one type side by side as one list, as the selection's items were before they turned. */
+function joinLists(nodes: ProseNode[]): ProseNode[] {
+	const joined: ProseNode[] = [];
+	for (const node of nodes) {
+		const last = joined[joined.length - 1];
+		if (last && LISTS.has(node.type.name) && last.type === node.type) joined[joined.length - 1] = last.copy(last.content.append(node.content));
+		else joined.push(node);
+	}
+	return joined;
+}
+
+/**
+ * 转换成 for what is selected, `from`–`to`, as Notion turns it:
+ * - inside one list, the items the selection is in, the list split around
+ *   them (the rest of it stays a list);
+ * - else every block the selection is in: each heading on its own, one
+ *   list, quote or code block for blocks side by side, a callout or toggle
+ *   around them all; blocks with nothing to turn (a formula, a figure, a
+ *   chemistry block) stay as they are between those that turn.
+ * Null when nothing would change.
+ */
+export function planTurn(doc: ProseNode, from: number, to: number, kind: BlockTurn): BlockEdit | null {
+	const $from = doc.resolve(from);
+	const $to = doc.resolve(Math.max(from, to));
+	// Items of one list, not all of it.
+	for (let depth = Math.min($from.depth, $to.depth); depth >= 1; depth -= 1) {
+		const list = $from.node(depth);
+		if (!LISTS.has(list.type.name) || $to.node(depth) !== list) continue;
+		const first = $from.index(depth);
+		// Inside an item, that item; on the boundary after items (blocks picked whole), the one before.
+		const last = Math.max(first, $to.depth > depth ? $to.index(depth) : $to.index(depth) - 1);
+		if (first === 0 && last === list.childCount - 1 && depth === 1) break;
+		const items = asChildren(list).slice(first, last + 1);
+		const made = turned(items.map((item) => list.type.create(list.attrs, item)), kind);
+		if (!made) return null;
+		const before = first > 0 ? [list.copy(Fragment.from(asChildren(list).slice(0, first)))] : [];
+		const after = last < list.childCount - 1 ? [list.copy(Fragment.from(asChildren(list).slice(last + 1)))] : [];
+		const start = $from.before(depth);
+		return { from: start, to: start + list.nodeSize, nodes: joinLists([...before, ...made, ...after]), cursor: start + 1 };
+	}
+	// Whole blocks at the top.
+	const start = $from.depth ? $from.before(1) : from;
+	const end = $to.depth ? $to.after(1) : Math.max(to, start + (doc.nodeAt(start)?.nodeSize ?? 0));
+	const blocks: ProseNode[] = [];
+	doc.nodesBetween(start, end, (node, pos) => {
+		if (pos >= start && pos + node.nodeSize <= end) blocks.push(node);
+		return false;
+	});
+	if (!blocks.length || blocks.every((node) => blockKind(node) === kind)) return null;
+	const wrapping = Boolean(WRAPPERS[kind]);
+	const nodes: ProseNode[] = [];
+	let run: ProseNode[] = [];
+	const flush = () => {
+		if (!run.length) return;
+		nodes.push(...(turned(run, kind) ?? run));
+		run = [];
+	};
+	for (const node of blocks) {
+		if (wrapping || TURNABLE.has(node.type.name)) run.push(node);
+		else {
+			flush();
+			nodes.push(node);
+		}
+	}
+	flush();
+	return { from: start, to: end, nodes, cursor: start + (wrapping ? 2 : 1) };
+}
+
 /** Apply a planned edit. Used by tests; the editor dispatches the same range. */
 export function applyBlockEdit(doc: ProseNode, edit: BlockEdit): ProseNode {
 	const slice = edit.nodes.length ? new Slice(Fragment.from(edit.nodes), 0, 0) : Slice.empty;

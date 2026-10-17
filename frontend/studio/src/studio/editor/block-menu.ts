@@ -7,7 +7,7 @@ import type { EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 import type { Node as ProseNode } from 'prosemirror-model';
 
-import { blockActionItems, headingEnter, keyHint, planBlockEdit, type BlockAction, type BlockEdit } from './block-actions.ts';
+import { blockActionItems, headingEnter, keyHint, planBlockEdit, planTurn, type BlockAction, type BlockEdit } from './block-actions.ts';
 import { moveBlocks } from './block-keys.ts';
 import { blockRangePlugin } from './block-range-drag.ts';
 import { paragraphBreakPlugin } from './paragraph-breaks.ts';
@@ -31,6 +31,13 @@ function dispatchBlockEdit(view: EditorView, edit: BlockEdit): void {
 }
 
 export function dispatchBlockAction(view: EditorView, action: BlockAction): void {
+	if (action.type === 'turn') {
+		// What is selected turns: several blocks, or the items of a list.
+		const { from, to } = view.state.selection;
+		const edit = planTurn(view.state.doc, from, to, action.kind);
+		if (edit) dispatchBlockEdit(view, edit);
+		return;
+	}
 	if (action.type === 'move') {
 		// The block the menu is open for is selected; it moves as ⌘⇧↑↓ would move it.
 		moveBlocks(view.state, action.direction, (tr) => view.dispatch(tr));

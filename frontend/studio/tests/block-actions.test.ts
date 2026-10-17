@@ -35,6 +35,8 @@ function editorSchema() {
 			bullet_list: { content: 'listItem+', group: 'block', attrs: { spread: { default: false } } },
 			ordered_list: { content: 'listItem+', group: 'block', attrs: { order: { default: 1 }, spread: { default: false } } },
 			callout: { content: 'block+', group: 'block', attrs: { kind: { default: 'note' } } },
+			// Stands for the blocks with nothing to turn: a formula, a figure, a chemistry block.
+			hr: { group: 'block' },
 			toggle: { content: 'block+', group: 'block', attrs: { summary: { default: '' }, open: { default: false } } },
 		},
 		marks: {},
@@ -220,3 +222,62 @@ test('a block turns into a callout or a toggle as it is, and back', () => {
 	assert.equal(unwrapped.child(0).type.name, 'paragraph');
 	assert.equal(unwrapped.textContent, '项');
 });
+
+test('several blocks turn together: headings each, one list for them all, formulas left as they are', async () => {
+	const { planTurn } = await import('../src/studio/editor/block-actions.ts');
+	const type = editorSchema();
+	const n = type.nodes;
+	const p = (text: string) => n.paragraph.create(null, type.text(text));
+	const code = n.code_block.create({ language: 'smiles' }, type.text('CCO'));
+	const document = n.doc.create(null, [p('一'), p('二'), p('三'), p('后')]);
+	const inside = (index: number) => {
+		let pos = 0;
+		for (let at = 0; at < index; at += 1) pos += document.child(at).nodeSize;
+		return pos + 1;
+	};
+	const headings = applyBlockEdit(document, planTurn(document, inside(0), inside(2), 'h2')!);
+	assert.deepEqual(asList(headings), ['heading:一', 'heading:二', 'heading:三', 'paragraph:后']);
+
+	const listed = applyBlockEdit(document, planTurn(document, inside(0), inside(2), 'bullet')!);
+	assert.equal(listed.childCount, 2);
+	assert.equal(listed.child(0).type.name, 'bullet_list');
+	assert.equal(listed.child(0).childCount, 3);
+
+	const mixed = n.doc.create(null, [p('一'), n.hr.create(), p('三'), n.blockquote.create(null, [code])]);
+	const around = applyBlockEdit(mixed, planTurn(mixed, 1, mixed.content.size - 1, 'bullet')!);
+	assert.deepEqual(asList(around), ['bullet_list:一', 'hr:', 'bullet_list:三CCO']);
+	// A callout holds them all, as they are.
+	const held = applyBlockEdit(mixed, planTurn(mixed, 1, mixed.content.size - 1, 'callout')!);
+	assert.equal(held.childCount, 1);
+	assert.deepEqual(asList(held.child(0)), ['paragraph:一', 'hr:', 'paragraph:三', 'blockquote:CCO']);
+	assert.equal(planTurn(headings, inside(0), inside(2), 'h2'), null);
+});
+
+test('in a list, only the items selected turn, the list split around them', async () => {
+	const { planTurn } = await import('../src/studio/editor/block-actions.ts');
+	const type = editorSchema();
+	const n = type.nodes;
+	const item = (text: string) => n.list_item.create(null, n.paragraph.create(null, type.text(text)));
+	const list = n.bullet_list.create(null, [item('甲'), item('乙'), item('丙')]);
+	const document = n.doc.create(null, [list]);
+	// The caret in 乙.
+	const second = 1 + list.child(0).nodeSize + 2;
+	const turnedDoc = applyBlockEdit(document, planTurn(document, second, second, 'h3')!);
+	assert.deepEqual(asList(turnedDoc), ['bullet_list:甲', 'heading:乙', 'bullet_list:丙']);
+
+	// To a to-do: the items stay in one list.
+	const task = applyBlockEdit(document, planTurn(document, second, second, 'task')!);
+	assert.equal(task.childCount, 1);
+	assert.deepEqual([...Array(task.child(0).childCount).keys()].map((at) => task.child(0).child(at).attrs.checked), [null, false, null]);
+
+	// The whole list, from its first item to its last: the list turns as a block.
+	const whole = applyBlockEdit(document, planTurn(document, 3, document.content.size - 3, 'paragraph')!);
+	assert.deepEqual(asList(whole), ['paragraph:甲', 'paragraph:乙', 'paragraph:丙']);
+});
+
+/** The top blocks as `kind:text`. */
+function asList(document: import('prosemirror-model').Node): string[] {
+	const out: string[] = [];
+	document.forEach((node) => out.push(`${node.type.name}:${node.textContent}`));
+	return out;
+}
