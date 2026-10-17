@@ -301,9 +301,9 @@ pageMenu.addEventListener('click', () => {
 	], pageMenu);
 });
 
-// ⌘K (or Ctrl+K) finds an article, from anywhere.
+// ⌘K or ⌘P (Ctrl elsewhere) finds an article, from anywhere; ⌘K on text selected in the editor links it instead.
 document.addEventListener('keydown', (event) => {
-	if (event.defaultPrevented || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'k') return;
+	if (event.defaultPrevented || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || !['k', 'p'].includes(event.key.toLowerCase())) return;
 	event.preventDefault();
 	quickFind.open();
 });

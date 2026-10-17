@@ -77,7 +77,8 @@ export function blockSpan(doc: ProseNode, anchorPos: number, headPos: number): B
 	return { from, to: endPos + end.nodeSize, anchor: anchor.pos, head: head.pos };
 }
 
-function coveredRange(doc: ProseNode, from: number, to: number): { from: number; to: number } {
+/** `from`–`to`, or the whole list when it is all of a list's items. */
+export function coveredRange(doc: ProseNode, from: number, to: number): { from: number; to: number } {
 	const $from = doc.resolve(from);
 	const $to = doc.resolve(to);
 	if ($from.depth < 1 || !$from.sameParent($to)) return { from, to };
@@ -225,10 +226,9 @@ export function blockRangeKey(
 		dispatch(tr);
 		return true;
 	}
-	if (key.key === 'Enter' || key.key === 'Escape') {
-		if (key.key === 'Escape') return placeCaret(state, selection.from, 1, dispatch);
-		return replaceBlocks(state, '', dispatch);
-	}
+	// Back to writing, as in Notion: Esc at the first block's start, ↩ at the last one's end.
+	if (key.key === 'Escape') return placeCaret(state, selection.from, 1, dispatch);
+	if (key.key === 'Enter') return placeCaret(state, selection.to, -1, dispatch);
 	if (key.key === 'ArrowUp' || key.key === 'ArrowDown') {
 		const direction = key.key === 'ArrowUp' ? -1 : 1;
 		const nextHead = stepBlock(state.doc, selection.head, direction);
