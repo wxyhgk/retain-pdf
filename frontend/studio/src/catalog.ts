@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import { isPublishedArticle } from './studio/server/schemas.mjs';
+import { isPublishedArticle } from './articles/schemas.mjs';
 
 export type ArticleEntry = CollectionEntry<'blog'>;
 

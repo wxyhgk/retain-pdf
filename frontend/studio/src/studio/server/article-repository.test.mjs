@@ -4,8 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { ArticleConflictError, ArticleRepository } from './article-repository.mjs';
-import { articleBundlePaths, assertArticleSlug, resolveInside } from './bundle-paths.mjs';
-import { articleSummary, isPublishedArticle, validateArticleSource } from './schemas.mjs';
+import { articleBundlePaths, assertArticleSlug, resolveInside } from '../../articles/bundle-paths.mjs';
+import { articleSummary, isPublishedArticle, validateArticleSource } from '../../articles/schemas.mjs';
 import { CUBE_DISPLAY_DEFAULTS } from '../../science/cube-display.mjs';
 
 async function temporaryBlog(t) {

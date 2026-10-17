@@ -7,7 +7,7 @@ import { Readable, Writable } from 'node:stream';
 import test from 'node:test';
 import studioDev from '../../plugins/studio-dev.mjs';
 import { ArticleRepository } from './article-repository.mjs';
-import { articleBundlePaths } from './bundle-paths.mjs';
+import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
 
 async function apiFixture(t) {
 	const projectRoot = await mkdtemp(join(tmpdir(), 'studio-api-'));

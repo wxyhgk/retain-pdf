@@ -1,4 +1,5 @@
 import type { SaveState } from '../state/article-session.ts';
+import { articleAddress } from '../../articles/rules.mjs';
 import { timeAgo } from './trash-view.ts';
 
 /** What the status line says, and the colour it says it in. */
@@ -56,7 +57,7 @@ export function createTopBar(shell: HTMLElement) {
 		showArticle(slug: string, articleTitle: string, kind: 'post' | 'wiki' = 'post'): void {
 			path.textContent = `blog/${slug}/index.md`;
 			title.textContent = articleTitle;
-			openArticle.href = `/${kind === 'wiki' ? 'wiki' : 'blog'}/${slug}/`;
+			openArticle.href = articleAddress(kind, slug);
 		},
 		/** When the open article's text last changed (now, after a save); null for none. */
 		edited(time: number | null): void {

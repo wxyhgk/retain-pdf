@@ -3,15 +3,14 @@ import { Plugin, TextSelection } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
+import { ARTICLE_ADDRESS } from '../../articles/rules.mjs';
+
 /**
  * Links to the blog's other articles, as Notion links its pages: `[[` opens
  * the article finder and the chosen one comes in as an ordinary Markdown
  * link to its address (`[标题](/blog/slug/)`); ⌘-click on such a link opens
  * that article here.
  */
-
-/** An address of one of the blog's articles: `/blog/<slug>/`, `/wiki/<slug>/#eq-1`. */
-export const ARTICLE_ADDRESS = /^\/(?:blog|wiki)\/([a-z0-9]+(?:-[a-z0-9]+)*)\/?(?:[#?].*)?$/u;
 
 /** What the links need from the Studio around the editor. */
 export type ArticleLinkHost = {
@@ -63,7 +62,7 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 					handleClick(_view, _pos, event) {
 						if (!(event.metaKey || event.ctrlKey)) return false;
 						const link = (event.target as Element | null)?.closest?.('a[href]');
-						const slug = link ? ARTICLE_ADDRESS.exec(link.getAttribute('href') ?? '')?.[1] : undefined;
+						const slug = link ? ARTICLE_ADDRESS.exec(link.getAttribute('href') ?? '')?.[2] : undefined;
 						if (!slug) return false;
 						event.preventDefault();
 						host.openArticle(slug);

@@ -1,10 +1,9 @@
 import { relative, resolve, sep } from 'node:path';
 
-export const ARTICLE_SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-export const ARTICLE_RESOURCE_DIRECTORIES = Object.freeze(['img', 'assets', 'ai']);
+import { SLUG_PATTERN } from './rules.mjs';
 
 export function assertArticleSlug(slug) {
-	if (typeof slug !== 'string' || !ARTICLE_SLUG_PATTERN.test(slug)) {
+	if (typeof slug !== 'string' || !SLUG_PATTERN.test(slug)) {
 		throw new StudioPathError('slug 只能包含小写字母、数字和连字符');
 	}
 	return slug;

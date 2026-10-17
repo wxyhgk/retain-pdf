@@ -1,10 +1,10 @@
+import { SLUG_PATTERN } from '../../articles/rules.mjs';
 import { commitArticle, deleteArticle, duplicateArticle, gitStatus, renameArticle, restoreArticle } from '../api/client.ts';
 import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';
 import { cleanSlug } from './new-article-dialog.ts';
 import { showToast } from './toast.ts';
 
-const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 /** An article deleted just before the page went empty, to offer back once it is shown again. */
 const PENDING_UNDO = 'studio-deleted-article';
 
@@ -40,7 +40,7 @@ function askSlug(message: string, suggested: string): string | null {
 	const typed = window.prompt(message, suggested);
 	if (typed === null) return null;
 	const slug = cleanSlug(typed.trim()).replace(/^-+|-+$/gu, '').replace(/-{2,}/gu, '-');
-	if (!SLUG.test(slug)) {
+	if (!SLUG_PATTERN.test(slug)) {
 		showToast('文件夹名只能用小写字母、数字和连字符', true);
 		return null;
 	}

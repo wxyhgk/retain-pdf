@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { lstat, realpath } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
-import { assertArticleSlug } from './bundle-paths.mjs';
+import { assertArticleSlug } from '../../articles/bundle-paths.mjs';
 
 const run = promisify(execFile);
 

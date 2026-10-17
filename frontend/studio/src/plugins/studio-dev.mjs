@@ -8,7 +8,7 @@ import { ArticleHistory } from '../studio/server/article-history.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
 import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
-import { articleBundlePaths, StudioPathError } from '../studio/server/bundle-paths.mjs';
+import { articleBundlePaths, StudioPathError } from '../articles/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 import { revealInFileManager } from '../studio/server/reveal.mjs';

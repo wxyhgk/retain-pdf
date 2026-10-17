@@ -4,8 +4,9 @@ import { link, lstat, mkdir, readdir, readFile, rename, rm, writeFile } from 'no
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
-import { ARTICLE_RESOURCE_DIRECTORIES, articleBundlePaths, resolveInside, StudioPathError } from './bundle-paths.mjs';
-import { articleSummary } from './schemas.mjs';
+import { articleBundlePaths, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
+import { ARTICLE_FOLDERS } from '../../articles/rules.mjs';
+import { articleSummary } from '../../articles/schemas.mjs';
 
 export const DEFAULT_UPLOAD_SIZE_LIMIT = 64 * 1024 * 1024;
 /** The article's own files: listed so the author sees them, changed only by the editor. */
@@ -37,7 +38,7 @@ export class ArticleFileManager {
 		const present = new Set();
 		for (const entry of await readdir(directory, { withFileTypes: true })) {
 			if (isHidden(entry.name) || entry.isSymbolicLink()) continue;
-			if (entry.isDirectory() && ARTICLE_RESOURCE_DIRECTORIES.includes(entry.name)) {
+			if (entry.isDirectory() && ARTICLE_FOLDERS.includes(entry.name)) {
 				present.add(entry.name);
 				entries.push({ ...(await describe(join(directory, entry.name), entry.name)), locked: true });
 				entries.push(...(await walk(join(directory, entry.name), entry.name)));
@@ -45,7 +46,7 @@ export class ArticleFileManager {
 				entries.push({ ...(await describe(join(directory, entry.name), entry.name)), locked: true });
 			}
 		}
-		for (const folder of ARTICLE_RESOURCE_DIRECTORIES) {
+		for (const folder of ARTICLE_FOLDERS) {
 			if (!present.has(folder) && !(await exists(join(directory, folder)))) entries.push({ path: folder, kind: 'directory', locked: true });
 		}
 		return entries.sort((left, right) => comparePaths(left.path, right.path));
@@ -369,7 +370,7 @@ export function managedSegments(path, { allowFolderRoot = false } = {}) {
 	if (segments.some((segment) => !segment || segment === '.' || segment === '..')) {
 		throw new StudioPathError('文件路径不能包含空段、. 或 ..');
 	}
-	if (!ARTICLE_RESOURCE_DIRECTORIES.includes(segments[0])) {
+	if (!ARTICLE_FOLDERS.includes(segments[0])) {
 		if (LOCKED_FILES.includes(segments[0])) throw new FileLockedError(`${segments[0]} 只能在编辑器里修改`);
 		throw new StudioPathError('只能管理 img/、assets/ 和 ai/ 里的文件');
 	}

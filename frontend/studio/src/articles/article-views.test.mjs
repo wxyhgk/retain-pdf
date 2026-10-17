@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CUBE_DISPLAY_DEFAULTS } from '../../science/cube-display.mjs';
+import { CUBE_DISPLAY_DEFAULTS } from '../science/cube-display.mjs';
 import {
 	ArticleViewsError,
 	readMoleculeViews,

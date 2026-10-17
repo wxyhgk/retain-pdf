@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { checkArticle } from './article-check.mjs';
 import { ArticleRepository } from './article-repository.mjs';
-import { articleBundlePaths } from './bundle-paths.mjs';
+import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
 
 const PROPERTIES = "---\ntitle: Note\ndescription: ''\npubDate: 2026-10-16\n---\n";
 

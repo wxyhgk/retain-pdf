@@ -10,7 +10,7 @@ import {
 	movedPath,
 	referencedPaths,
 	rewriteMovedReferences,
-} from '../src/studio/shared/article-references.mjs';
+} from '../src/articles/article-references.mjs';
 
 const article = [
 	'---',

@@ -2,8 +2,9 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
-import { resolveInside } from '../studio/server/bundle-paths.mjs';
-import { FileRepository, PUBLIC_RESOURCE_ROOTS } from '../studio/server/file-repository.mjs';
+import { resolveInside } from '../articles/bundle-paths.mjs';
+import { PUBLISHED_FOLDERS } from '../articles/rules.mjs';
+import { FileRepository } from '../studio/server/file-repository.mjs';
 
 /**
  * Copies the img/ and assets/ files of the published articles to
@@ -15,7 +16,7 @@ export async function publishArticleAssets(blogRoot, outDir) {
 	const published = (await new ArticleRepository(blogRoot).list()).filter((article) => !article.draft);
 	for (const { slug } of published) {
 		const listed = await repository.list(slug);
-		for (const resourceRoot of PUBLIC_RESOURCE_ROOTS) {
+		for (const resourceRoot of PUBLISHED_FOLDERS) {
 			for (const relativePath of listed[resourceRoot]) {
 				const resource = await repository.read(slug, resourceRoot, relativePath);
 				const target = resolveInside(outDir, 'article-assets', slug, resourceRoot, ...relativePath.split('/'));

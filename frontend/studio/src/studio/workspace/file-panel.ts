@@ -8,26 +8,14 @@ import {
 	uploadArticleFile,
 } from '../api/client';
 import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
-import { movedPath, referencedPaths, studioFileUrl } from '../shared/article-references.mjs';
+import { movedPath, referencedPaths, studioFileUrl } from '../../articles/article-references.mjs';
+import { PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
 import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
 import { showContextMenu, type MenuItem } from './context-menu';
-import { droppedItems, pickedItems, type UploadItem } from './dropped-files';
-import {
-	buildFileTree,
-	extension,
-	fileName,
-	formatSize,
-	isImage,
-	isUnused,
-	markdownReference,
-	parentPath,
-	referenceCount,
-	STUDIO_FILE_DRAG_TYPE,
-	uploadFolderFor,
-	visibleNodes,
-	type FileNode,
-} from './file-tree';
+import { extension, fileName, isImage, markdownReference, parentPath, STUDIO_FILE_DRAG_TYPE } from '../article-files';
+import { droppedItems, pickedItems, type UploadItem } from '../dropped-files';
+import { buildFileTree, formatSize, isUnused, referenceCount, uploadFolderFor, visibleNodes, type FileNode } from './file-tree';
 import { showToast } from './toast';
 
 /** What the file panel needs from the editor around it. */
@@ -110,7 +98,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	const expanded = (): Set<string> => {
 		if (!slug) return new Set();
 		let set = expandedByArticle.get(slug);
-		if (!set) expandedByArticle.set(slug, (set = new Set(['img', 'assets'])));
+		if (!set) expandedByArticle.set(slug, (set = new Set(PUBLISHED_FOLDERS)));
 		return set;
 	};
 	const entryAt = (path: string | null): ArticleFileEntry | null => entries.find((entry) => entry.path === path) ?? null;
@@ -449,7 +437,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 
 	function openFile(entry: ArticleFileEntry): void {
 		const [root] = entry.path.split('/');
-		if (entry.kind !== 'file' || (root !== 'img' && root !== 'assets')) return;
+		if (entry.kind !== 'file' || !PUBLISHED_FOLDERS.includes(root)) return;
 		window.open(studioFileUrl(slug!, entry.path), '_blank', 'noopener');
 	}
 

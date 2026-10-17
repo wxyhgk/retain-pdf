@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { ArticleRepository } from './article-repository.mjs';
-import { articleBundlePaths } from './bundle-paths.mjs';
+import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
 import {
 	FileRepository,
 	ResourceAccessError,

@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import test from 'node:test';
 import { ArticleRepository } from './article-repository.mjs';
-import { articleBundlePaths } from './bundle-paths.mjs';
+import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
 import {
 	ArticleFileManager,
 	FileConflictError,

@@ -2,15 +2,10 @@ import { cp, lstat, mkdir, readdir, readFile, rename, stat, writeFile } from 'no
 import { basename, resolve } from 'node:path';
 import { updateStudioFrontmatter } from '../document/frontmatter.ts';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
-import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from './article-views.mjs';
-import {
-	ARTICLE_RESOURCE_DIRECTORIES,
-	ARTICLE_SLUG_PATTERN,
-	articleBundlePaths,
-	assertArticleSlug,
-	StudioPathError,
-} from './bundle-paths.mjs';
-import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from './schemas.mjs';
+import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
+import { articleBundlePaths, assertArticleSlug, StudioPathError } from '../../articles/bundle-paths.mjs';
+import { ARTICLE_FOLDERS, SLUG_PATTERN } from '../../articles/rules.mjs';
+import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../articles/schemas.mjs';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */
 function bundleRevision(source, viewsSource) {
@@ -60,7 +55,7 @@ export class ArticleRepository {
 
 		const articles = [];
 		for (const entry of entries) {
-			if (!entry.isDirectory() || entry.isSymbolicLink() || !ARTICLE_SLUG_PATTERN.test(entry.name)) continue;
+			if (!entry.isDirectory() || entry.isSymbolicLink() || !SLUG_PATTERN.test(entry.name)) continue;
 			try {
 				const source = await readFile(articleBundlePaths(this.blogRoot, entry.name).markdown, 'utf8');
 				const summary = articleSummary(source, entry.name);
@@ -120,7 +115,7 @@ export class ArticleRepository {
 		}
 
 		const source = createArticleSource({ title });
-		await Promise.all(ARTICLE_RESOURCE_DIRECTORIES.map((name) => mkdir(paths[name], { recursive: true })));
+		await Promise.all(ARTICLE_FOLDERS.map((name) => mkdir(paths[name], { recursive: true })));
 		await Promise.all([
 			writeFile(paths.markdown, source, { encoding: 'utf8', flag: 'wx' }),
 			writeFile(paths.views, DEFAULT_ARTICLE_VIEWS, { encoding: 'utf8', flag: 'wx' }),

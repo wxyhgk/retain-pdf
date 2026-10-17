@@ -22,7 +22,7 @@ import 'katex/contrib/mhchem';
 import '../../science/browser/molecule-renderer.css';
 import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '../../science/browser/science-renderer';
-import { linkPath } from '../workspace/file-tree';
+import { linkPath } from '../article-files';
 import { blockFeelPlugins, buildBlockMenu, buildToolbarTurn } from './block-menu';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '../../code-files/render.mjs';

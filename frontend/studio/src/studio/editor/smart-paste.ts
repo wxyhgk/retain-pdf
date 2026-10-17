@@ -4,7 +4,8 @@ import { Plugin, TextSelection } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
-import { ARTICLE_ADDRESS, type ArticleLinkHost } from './article-links.ts';
+import { ARTICLE_ADDRESS } from '../../articles/rules.mjs';
+import type { ArticleLinkHost } from './article-links.ts';
 
 /**
  * Pasting an address, as Notion takes it:
@@ -79,7 +80,7 @@ function paste(view: EditorView, event: ClipboardEvent, host: SmartPasteHost): b
 	if (!selection.empty && selection instanceof TextSelection && $from.sameParent(selection.$to)) {
 		tr = tr.addMark(selection.from, selection.to, make());
 	} else if (selection.empty) {
-		const slug = own ? ARTICLE_ADDRESS.exec(own)?.[1] : undefined;
+		const slug = own ? ARTICLE_ADDRESS.exec(own)?.[2] : undefined;
 		const text = (slug && host.articleTitle(slug)) || address;
 		tr = tr.insert(selection.from, view.state.schema.text(text, [make()]));
 		// Typing on after the link is not more of it.

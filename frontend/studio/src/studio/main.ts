@@ -27,10 +27,12 @@ import { createArticleActions } from './workspace/article-actions';
 import { createArticleList } from './workspace/article-list';
 import { showContextMenu } from './workspace/context-menu';
 import { watchDisk } from './workspace/disk-events';
+import { articleAddress } from '../articles/rules.mjs';
 import { setWidgetFiles, widgetFilesChanged } from '../widgets/widget-host';
-import { studioFileUrl } from './shared/article-references.mjs';
+import { studioFileUrl } from '../articles/article-references.mjs';
 import { createFilePanel } from './workspace/file-panel';
-import { isImage, uploadFolderFor } from './workspace/file-tree';
+import { isImage } from './article-files';
+import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createOutline } from './workspace/outline';
 import { createPageHeader } from './workspace/page-header';
@@ -137,7 +139,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	async pickArticle() {
 		const slug = await quickFind.pick();
 		const article = articleList.articles().find((entry) => entry.slug === slug);
-		return article ? { title: article.title, href: `/${article.kind === 'wiki' ? 'wiki' : 'blog'}/${article.slug}/` } : null;
+		return article ? { title: article.title, href: articleAddress(article.kind, article.slug) } : null;
 	},
 	openArticle: (slug) => void session.open(slug),
 	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
@@ -293,7 +295,7 @@ const pageMenu = shell.querySelector<HTMLButtonElement>('#page-menu')!;
 pageMenu.addEventListener('click', () => {
 	const article = openSummary();
 	if (!article) return;
-	const address = `/${article.kind === 'wiki' ? 'wiki' : 'blog'}/${article.slug}/`;
+	const address = articleAddress(article.kind, article.slug);
 	showContextMenu([
 		{
 			label: properties.isWide() ? '全宽 ✓' : '全宽',

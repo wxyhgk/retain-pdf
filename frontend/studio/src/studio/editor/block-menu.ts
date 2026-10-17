@@ -147,8 +147,10 @@ type ToolbarBuilder = {
 	build: () => unknown[];
 };
 
+/** Marks the icon, so its button is found by it, whatever the button is labelled. */
+const TURN_MARK = 'data-studio-turn';
 const TURN_ICON =
-	'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M4 6h10v2h-4v11H8V8H4z"/><path d="M15 12h6l-3 3.5z"/></svg>';
+	`<svg ${TURN_MARK} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M4 6h10v2h-4v11H8V8H4z"/><path d="M15 12h6l-3 3.5z"/></svg>`;
 
 /**
  * Notion's「转换成 ▾」at the front of the toolbar over selected text: the
@@ -162,7 +164,7 @@ export function buildToolbarTurn(builder: ToolbarBuilder): void {
 		onRun: (ctx) => {
 			const view = ctx.get(editorViewCtx);
 			const target = blockAt(view.state.doc, view.state.selection.from);
-			const button = document.querySelector<HTMLElement>('.milkdown-toolbar [aria-label="转换成"]');
+			const button = document.querySelector(`.milkdown-toolbar [${TURN_MARK}]`)?.closest<HTMLElement>('button');
 			if (target && button) ctx.get(blockMenuAPI.key).toggle(target.pos, button, 'below');
 		},
 	});

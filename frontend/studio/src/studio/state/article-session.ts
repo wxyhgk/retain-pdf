@@ -1,5 +1,5 @@
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from '../document/index.ts';
-import { rewriteMovedReferences } from '../shared/article-references.mjs';
+import { rewriteMovedReferences } from '../../articles/article-references.mjs';
 import type { ArticlePayload, ArticleProperties, HistoryReason } from '../types.ts';
 import { ArticleStore, type ArticleSnapshot } from './article-store.ts';
 import { Autosave, type AutosaveOptions, type SaveOutcome } from './autosave.ts';

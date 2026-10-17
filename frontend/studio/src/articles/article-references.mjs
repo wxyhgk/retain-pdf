@@ -3,7 +3,7 @@ import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 
-import remarkMathBrackets from '../../plugins/remark-math-brackets.mjs';
+import remarkMathBrackets from '../plugins/remark-math-brackets.mjs';
 
 /**
  * Where an article's `index.md` points at its own files: images and links,

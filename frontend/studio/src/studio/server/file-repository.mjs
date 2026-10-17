@@ -2,14 +2,8 @@ import { constants } from 'node:fs';
 import { lstat, open, readdir } from 'node:fs/promises';
 import { basename, extname, isAbsolute, resolve } from 'node:path';
 import { codeFileLanguages } from '../../code-files/languages.mjs';
-import {
-	ARTICLE_RESOURCE_DIRECTORIES,
-	articleBundlePaths,
-	resolveInside,
-	StudioPathError,
-} from './bundle-paths.mjs';
-
-export const PUBLIC_RESOURCE_ROOTS = Object.freeze(['img', 'assets']);
+import { articleBundlePaths, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
+import { ARTICLE_FOLDERS, PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
 export const DEFAULT_RESOURCE_SIZE_LIMIT = 8 * 1024 * 1024;
 
 const TEXT = 'text/plain; charset=utf-8';
@@ -80,7 +74,7 @@ export class FileRepository {
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertDirectoryWithoutSymlink(paths.directory, '文章目录不可用');
 		const [img, assets, ai] = await Promise.all(
-			ARTICLE_RESOURCE_DIRECTORIES.map((root) => listRegularFiles(paths[root])),
+			ARTICLE_FOLDERS.map((root) => listRegularFiles(paths[root])),
 		);
 		return { img, assets, ai };
 	}
@@ -144,7 +138,7 @@ export class FileRepository {
 }
 
 export function assertPublicResourceRoot(root) {
-	if (!PUBLIC_RESOURCE_ROOTS.includes(root)) {
+	if (!PUBLISHED_FOLDERS.includes(root)) {
 		throw new ResourceAccessError(root === 'ai' ? 'AI 工作目录不可通过资源接口读取' : '无效的资源目录');
 	}
 	return root;

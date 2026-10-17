@@ -58,8 +58,9 @@ test('an address pasted over selected text links it; on its own it comes in as a
 test('the address of one of the blog’s articles comes in as a link titled as it', async ({ page }) => {
 	writeArticle('second-note', "---\ntitle: '第二篇笔记'\ndescription: ''\npubDate: '2026-10-17'\ntags: []\nkind: wiki\n---\n\n正文。\n");
 	try {
+		// Read again, so the new article is in the list; a full run can be slow to load it.
 		await page.reload();
-		await expect(editor(page)).toBeVisible();
+		await expect(saveStatus(page)).toHaveText('已载入', { timeout: 30_000 });
 		await caretAfter(page, '结尾段落。');
 		await page.keyboard.press('Enter');
 		await paste(page, { text: `${new URL(page.url()).origin}/wiki/second-note/#一节` });

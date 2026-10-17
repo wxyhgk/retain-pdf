@@ -6,8 +6,8 @@ import test from 'node:test';
 import { moleculeViewKey } from '../../science/view-key.mjs';
 import { ArticleFiles } from './article-files.mjs';
 import { ArticleConflictError, ArticleRepository } from './article-repository.mjs';
-import { readMoleculeViews, writeMoleculeView } from './article-views.mjs';
-import { articleBundlePaths } from './bundle-paths.mjs';
+import { readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
+import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
 import { ArticleFileManager } from './file-manager.mjs';
 
 const VIEW = [0, 0, 0, 100, 0, 0, 0, 1];

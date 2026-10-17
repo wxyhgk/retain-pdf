@@ -1,7 +1,7 @@
 import { lstat, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 
 import { ArticleNotFoundError } from './article-repository.mjs';
-import { articleBundlePaths, resolveInside } from './bundle-paths.mjs';
+import { articleBundlePaths, resolveInside } from '../../articles/bundle-paths.mjs';
 
 /**
  * Earlier versions of an article's `index.md`, kept in its private `ai/`

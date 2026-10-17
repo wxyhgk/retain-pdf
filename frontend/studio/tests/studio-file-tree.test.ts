@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { referencedPaths } from '../src/studio/shared/article-references.mjs';
-import { subfolderOf } from '../src/studio/workspace/dropped-files.ts';
+import { referencedPaths } from '../src/articles/article-references.mjs';
+import { markdownReference } from '../src/studio/article-files.ts';
+import { subfolderOf } from '../src/studio/dropped-files.ts';
 import type { ArticleFileEntry } from '../src/studio/types.ts';
 import {
 	buildFileTree,
 	formatSize,
 	isUnused,
-	markdownReference,
 	referenceCount,
 	uploadFolderFor,
 	visibleNodes,

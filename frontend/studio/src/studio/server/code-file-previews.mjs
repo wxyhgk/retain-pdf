@@ -1,8 +1,8 @@
 import { parseFenceMeta } from '../../code-files/highlight.mjs';
 import { codeFileFigure } from '../../code-files/render.mjs';
-import { articlePath, studioFileUrl } from '../shared/article-references.mjs';
+import { articlePath, studioFileUrl } from '../../articles/article-references.mjs';
 import { ResourceTooLargeError } from './file-repository.mjs';
-import { StudioPathError } from './bundle-paths.mjs';
+import { StudioPathError } from '../../articles/bundle-paths.mjs';
 
 /** What the Studio previews; the blog build reads any size. */
 export const CODE_FILE_SIZE_LIMIT = 256 * 1024 * 1024;
