@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { visit } from 'unist-util-visit';
 
-import { parseFenceMeta } from '../code-files/highlight.mjs';
+import { excerptLines, parseFenceMeta } from '../code-files/highlight.mjs';
 import { codeFileLanguage } from '../code-files/languages.mjs';
 import { codeFileBar, codeFileFigure, codeFileProblem, figureProperties, foldFor } from '../code-files/render.mjs';
 import { parseScienceResourceRef } from '../science/parsers/resource-reference.ts';
@@ -54,6 +54,11 @@ export default function remarkCodeFiles({ skip = [] } = {}) {
 					return;
 				}
 			}
+			// Lines looked for and not there: shown in the block, and told before publishing.
+			if (reference && (meta.match || meta.from)) {
+				const { missing } = excerptLines(fileText, meta);
+				if (missing) file.message(`${reference} 里没有找到「${missing}」`, { place: node.position, ruleId: 'code-file-match', source: 'remark-code-files' });
+			}
 			const href = reference ? `/article-assets/${encodeURIComponent(slug)}/${reference.slice(2).split('/').map(encodeURIComponent).join('/')}` : '';
 
 			if (codeFile) {
@@ -70,7 +75,10 @@ export default function remarkCodeFiles({ skip = [] } = {}) {
 			// Shiki highlights the rest; a file's text, or the lines named, go in its place.
 			if (reference) {
 				const lines = fileText.replace(/\r?\n$/, '').split(/\r?\n/);
-				node.value = meta.lines ? lines.slice(meta.lines.start - 1, meta.lines.end).join('\n') : lines.join('\n');
+				if (meta.match || meta.from) {
+					// The lines looked for, a line of ⋯ between the stretches of them.
+					node.value = excerptLines(fileText, meta).parts.map((part) => part.lines.join('\n')).join('\n⋯\n');
+				} else node.value = meta.lines ? lines.slice(meta.lines.start - 1, meta.lines.end).join('\n') : lines.join('\n');
 			}
 			const lineCount = node.value.split('\n').length;
 			const fold = foldFor(lineCount, meta);

@@ -111,3 +111,17 @@ test('a widget that loads a script from elsewhere without a version is a warning
 		{ severity: 'warning', message: '交互模块加载的 https://unpkg.com/three 没写版本号，以后它一变，模块可能就打不开了', line: 9 },
 	]);
 });
+
+test('a file block that looks for lines its file does not have is a warning', async (t) => {
+	const check = await article(t);
+	const source = `${PROPERTIES}
+\`\`\`output match="SCF Done|Normal termination"
+@file ./assets/opt.log
+\`\`\`
+
+\`\`\`output match="虚频"
+@file ./assets/opt.log
+\`\`\`
+`;
+	assert.deepEqual(await check(source), [{ severity: 'warning', message: './assets/opt.log 里没有找到「虚频」', line: 11 }]);
+});

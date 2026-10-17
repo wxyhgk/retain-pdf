@@ -12,6 +12,7 @@ import { VFile } from 'vfile';
 
 import { excerptLines, highlightLines, parseFenceMeta } from '../src/code-files/highlight.mjs';
 import { codeFileLanguage, codeFileLanguageForPath } from '../src/code-files/languages.mjs';
+import { codeFileFigure } from '../src/code-files/render.mjs';
 import remarkCodeFiles from '../src/plugins/remark-code-files.mjs';
 
 /** A line's tokens as `[name:text]`, plain text bare. */
@@ -79,7 +80,19 @@ test('languages are found by fence name, alias, or file name', () => {
 });
 
 test('fence meta: title, a range of lines, open and fold', () => {
-	assert.deepEqual(parseFenceMeta('title="opt 1.log" lines=10-20 open'), { title: 'opt 1.log', lines: { start: 10, end: 20 }, open: true, fold: false });
+	assert.deepEqual(parseFenceMeta('title="opt 1.log" lines=10-20 open'), {
+		title: 'opt 1.log',
+		lines: { start: 10, end: 20 },
+		open: true,
+		fold: false,
+		match: null,
+		context: 0,
+		from: null,
+		to: null,
+		last: false,
+		highlight: [],
+		mark: null,
+	});
 	assert.deepEqual(parseFenceMeta("title='a' lines=5- fold").lines, { start: 5, end: Infinity });
 	assert.equal(parseFenceMeta('lines=20-10').lines, null);
 	const long = Array.from({ length: 1000 }, (_, index) => `line ${index + 1}`).join('\n');
@@ -135,4 +148,81 @@ test('on the blog: highlighted figures, @file read from the article, long blocks
 	assert.match(html, /<pre><code class="language-python">print\(1\)\n<\/code><\/pre>/);
 	assert.match(figures[4], /class="code-file is-bare" data-language="python" data-fold="15"/);
 	assert.match(html, /<pre><code class="language-xyz">@file \.\/assets\/a\.xyz\n<\/code><\/pre>/);
+});
+
+/** A short Gaussian optimization: two steps, then the end. */
+const OPT_LOG = [
+	' Berny optimization.  Step number 1',
+	'                         Standard orientation:',
+	'      1          8           0        0.000000    0.000000    0.127800',
+	' Rotational constants (GHZ):    800.0    430.0    280.0',
+	' SCF Done:  E(RB3LYP) =  -76.409600000     A.U. after   11 cycles',
+	' Maximum Force            0.012300     0.000450     NO ',
+	' Berny optimization.  Step number 2',
+	'                         Standard orientation:',
+	'      1          8           0        0.000000    0.000000    0.119229',
+	' Rotational constants (GHZ):    810.0    432.0    281.0',
+	' SCF Done:  E(RB3LYP) =  -76.412400000     A.U. after   11 cycles',
+	' Maximum Force            0.000192     0.000450     YES',
+	' Normal termination of Gaussian 16.',
+].join('\n');
+
+/** A figure as HTML. */
+const toHtml = (figure: never) => unified().use(rehypeStringify).stringify({ type: 'root', children: [figure] } as never);
+
+test('lines picked by what they say, as written, with context and the last only', () => {
+	const meta = parseFenceMeta('match="SCF Done|Normal termination"');
+	assert.deepEqual(meta.match, ['SCF Done', 'Normal termination']);
+	const { parts, picked } = excerptLines(OPT_LOG, meta);
+	assert.equal(picked, true);
+	assert.deepEqual(parts.map((part) => [part.start, part.lines.length]), [[5, 1], [11, 1], [13, 1]]);
+
+	const around = excerptLines(OPT_LOG, parseFenceMeta('match="SCF Done" context=1'));
+	assert.deepEqual(around.parts.map((part) => [part.start, part.lines.length]), [[4, 3], [10, 3]]);
+
+	const last = excerptLines(OPT_LOG, parseFenceMeta('match="SCF Done" last'));
+	assert.deepEqual(last.parts, [{ start: 11, lines: [' SCF Done:  E(RB3LYP) =  -76.412400000     A.U. after   11 cycles'] }]);
+	// Brackets and dots are text, not a pattern.
+	assert.equal(excerptLines(OPT_LOG, parseFenceMeta('match="E(RB3LYP)"')).parts.length, 2);
+});
+
+test('stretches from one line to another, and the last of them', () => {
+	const all = excerptLines(OPT_LOG, parseFenceMeta('from="Standard orientation" to="Rotational constants"'));
+	assert.deepEqual(all.parts.map((part) => [part.start, part.lines.length]), [[2, 3], [8, 3]]);
+	const last = excerptLines(OPT_LOG, parseFenceMeta('from="Standard orientation" to="Rotational constants" last'));
+	assert.deepEqual(last.parts.map((part) => [part.start, part.lines.length]), [[8, 3]]);
+	// Without `to=`, a stretch runs to the next `from=`, the last one to the end.
+	const steps = excerptLines(OPT_LOG, parseFenceMeta('from="Step number"'));
+	assert.deepEqual(steps.parts.map((part) => [part.start, part.lines.length]), [[1, 13]]);
+	// Within a stretch, the lines that match.
+	const force = excerptLines(OPT_LOG, parseFenceMeta('from="Step number 2" match="Maximum Force"'));
+	assert.deepEqual(force.parts.map((part) => part.start), [12]);
+});
+
+test('what is looked for and not there is named', () => {
+	assert.deepEqual(excerptLines(OPT_LOG, parseFenceMeta('match="imaginary|虚频"')), { parts: [], total: 13, picked: true, missing: 'imaginary」或「虚频' });
+	assert.equal(excerptLines(OPT_LOG, parseFenceMeta('from="Input orientation"')).missing, 'Input orientation');
+});
+
+test('picked lines are drawn with their numbers, what is left out, and the lines that stand out', () => {
+	const figure = codeFileFigure({
+		language: 'output',
+		meta: parseFenceMeta('match="SCF Done" mark="-76.4124" hl=13'),
+		source: '@file ./assets/opt.log',
+		file: { path: './assets/opt.log', text: OPT_LOG, href: '/article-assets/x/assets/opt.log' },
+	});
+	const html = toHtml(figure as never);
+	assert.match(html, /⋯ 省略第 1–4 行 ⋯/u);
+	assert.match(html, /⋯ 省略第 6–10 行 ⋯/u);
+	assert.match(html, /⋯ 省略第 12–13 行 ⋯/u);
+	assert.match(html, /<span class="line" data-line="5">/u);
+	assert.match(html, /<span class="line is-marked" data-line="11">/u);
+
+	const missing = toHtml(codeFileFigure({
+		language: 'output',
+		meta: parseFenceMeta('match="虚频"'),
+		source: '',
+		file: { path: './assets/opt.log', text: OPT_LOG, href: '' },
+	}) as never);
+	assert.match(missing, /⋯ 没有找到「虚频」 ⋯/u);
 });
