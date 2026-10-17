@@ -26,6 +26,8 @@ import { createArticleActions } from './workspace/article-actions';
 import { createArticleList } from './workspace/article-list';
 import { showContextMenu } from './workspace/context-menu';
 import { watchDisk } from './workspace/disk-events';
+import { setWidgetFiles, widgetFilesChanged } from '../widgets/widget-host';
+import { studioFileUrl } from './shared/article-references.mjs';
 import { createFilePanel } from './workspace/file-panel';
 import { isImage, uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
@@ -223,7 +225,11 @@ watchDisk((changes) => {
 	if (!change) return;
 	void filePanel.refresh();
 	session.changedOnDisk(change.paths);
+	widgetFilesChanged(change.paths);
 });
+
+// Widgets read the open article's files (note.file, or a widget that is a file).
+setWidgetFiles((path) => (session.slug ? studioFileUrl(session.slug, path) : path));
 
 /**
  * After a search: the first block of the open article that holds `text`, in

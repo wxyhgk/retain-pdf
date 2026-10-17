@@ -3,7 +3,7 @@ import { languages } from '@codemirror/language-data';
 import type { EditorView } from '@milkdown/prose/view';
 
 import { createWidget } from '../../widgets/widget-host.ts';
-import { WIDGET_LANGUAGE, widgetOptions } from '../../widgets/widgets.mjs';
+import { WIDGET_LANGUAGE, publicArticlePath, widgetFile, widgetOptions } from '../../widgets/widgets.mjs';
 
 /**
  * ```widget blocks in the editor (widgets.mjs): their HTML is edited as
@@ -24,7 +24,7 @@ export const widgetLanguageDescription = LanguageDescription.of({
  * its widget, and observeWidgets draws the frame in its place. The latest
  * few are kept: the same preview is put in again when the block is redrawn.
  */
-const waiting = new Map<string, { source: string; meta: string }>();
+const waiting = new Map<string, { widget: { source: string } | { file: string }; meta: string }>();
 const KEPT = 64;
 
 /** A short name for a widget's source and options (FNV-1a). */
@@ -38,8 +38,15 @@ function keyOf(text: string): string {
 export function widgetPreview(language: string, content: string, meta: string): HTMLElement | null {
 	if (language.toLowerCase() !== WIDGET_LANGUAGE) return null;
 	const key = keyOf(`${meta}\n${content}`);
+	const named = widgetFile(content);
+	const file = named ? publicArticlePath(named) : null;
+	const widget = file
+		? { file }
+		: named
+			? { source: `<p style="color: var(--muted)">./${named.replace(/[<&]/gu, '')} 不在文章的 img/ 或 assets/ 里，发布后读不到</p>` }
+			: { source: content };
 	waiting.delete(key);
-	waiting.set(key, { source: content, meta });
+	waiting.set(key, { widget, meta });
 	if (waiting.size > KEPT) waiting.delete(waiting.keys().next().value as string);
 	const placeholder = document.createElement('figure');
 	placeholder.className = 'note-widget';
@@ -53,7 +60,7 @@ export function observeWidgets(root: HTMLElement): () => void {
 	const draw = () => {
 		for (const placeholder of root.querySelectorAll<HTMLElement>('figure.note-widget[data-widget]')) {
 			const widget = waiting.get(placeholder.dataset.widget ?? '');
-			if (widget) placeholder.replaceWith(createWidget(widget.source, widget.meta));
+			if (widget) placeholder.replaceWith(createWidget(widget.widget, widget.meta));
 		}
 	};
 	const observer = new MutationObserver(draw);

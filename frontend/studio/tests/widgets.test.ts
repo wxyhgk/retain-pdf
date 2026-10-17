@@ -1,17 +1,27 @@
 import assert from 'node:assert/strict';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import rehypeStringify from 'rehype-stringify';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
+import { VFile } from 'vfile';
 
 import { rehypePlugins, remarkPlugins } from '../src/plugins/markdown-pipeline.mjs';
-import { unpinnedScripts, widgetDocument, widgetOptions } from '../src/widgets/widgets.mjs';
+import { publicArticlePath, unpinnedScripts, widgetDocument, widgetFile, widgetOptions, widgetReads } from '../src/widgets/widgets.mjs';
 
-const render = async (markdown: string) => {
+const render = async (markdown: string, path?: string) => {
 	// The pipeline's plugin lists are typed for Astro's options, which unified does not know.
-	const file = await unified().use(remarkParse).use(remarkPlugins as never).use(remarkRehype, { allowDangerousHtml: true }).use(rehypePlugins as never).use(rehypeStringify).process(markdown);
+	const file = await unified()
+		.use(remarkParse)
+		.use(remarkPlugins as never)
+		.use(remarkRehype, { allowDangerousHtml: true })
+		.use(rehypePlugins as never)
+		.use(rehypeStringify)
+		.process(new VFile({ value: markdown, path }));
 	return { html: String(file), messages: file.messages };
 };
 
@@ -69,4 +79,52 @@ test('scripts from elsewhere without a version are reported before publishing', 
 	const { messages } = await render('```widget\n<script src="https://unpkg.com/three"></script>\n```\n');
 	assert.deepEqual(messages.map((message) => message.ruleId), ['widget-script']);
 	assert.equal(messages[0].line, 1);
+});
+
+/** An article folder with these files, removed after the test. */
+function articleWith(t: { after: (fn: () => void) => void }, files: Record<string, string>): string {
+	const folder = mkdtempSync(join(tmpdir(), 'widget-article-'));
+	t.after(() => rmSync(folder, { recursive: true, force: true }));
+	for (const [path, text] of Object.entries(files)) {
+		mkdirSync(join(folder, path, '..'), { recursive: true });
+		writeFileSync(join(folder, path), text);
+	}
+	return join(folder, 'index.md');
+}
+
+test('a widget that is a file of the article is read in at build time', async (t) => {
+	const index = articleWith(t, { 'assets/plot.html': '<p>来自文件</p><script>note.file("assets/opt.log")</script>', 'assets/opt.log': 'SCF Done' });
+	const { html, messages } = await render('```widget title="图"\n@file ./assets/plot.html\n```\n', index);
+	const srcdoc = /srcdoc="([^"]*)"/u.exec(html)?.[1] ?? '';
+	assert.match(srcdoc, /<body><p>来自文件<\/p><script>note\.file/u);
+	assert.deepEqual(messages, []);
+});
+
+test('a widget file that is not there, or a read of what is not published, is reported', async (t) => {
+	const index = articleWith(t, { 'assets/reads.html': '<script>note.file("assets/gone.log"); note.file("ai/notes.md")</script>' });
+	const missing = await render('```widget\n@file ./assets/nowhere.html\n```\n', index);
+	assert.match(/srcdoc="([^"]*)"/u.exec(missing.html)?.[1] ?? '', /找不到交互模块文件 \.\/assets\/nowhere\.html/u);
+	assert.deepEqual(missing.messages.map((message) => message.ruleId), ['missing-file']);
+
+	const reads = await render('```widget\n@file ./assets/reads.html\n```\n', index);
+	assert.deepEqual(
+		reads.messages.map((message) => [message.ruleId, message.reason]),
+		[
+			['widget-file', '交互模块读的 ./assets/gone.log 不存在'],
+			['widget-file', '交互模块读的 ai/notes.md 不在文章的 img/ 或 assets/ 里，发布后读不到'],
+		],
+	);
+});
+
+test('which paths a widget may be and read', () => {
+	assert.equal(widgetFile('@file ./assets/plot.html'), 'assets/plot.html');
+	assert.equal(widgetFile('  @file assets/plot.html  \n'), 'assets/plot.html');
+	assert.equal(widgetFile('<p>@file ./assets/plot.html</p>'), null);
+	assert.equal(publicArticlePath('./assets/a/b.log'), 'assets/a/b.log');
+	assert.equal(publicArticlePath('img/plot.png'), 'img/plot.png');
+	assert.equal(publicArticlePath('ai/notes.md'), null);
+	assert.equal(publicArticlePath('assets/../index.md'), null);
+	assert.equal(publicArticlePath('../other/assets/x.log'), null);
+	assert.equal(publicArticlePath('https://example.com/assets/x.log'), null);
+	assert.deepEqual(widgetReads(`note.file('assets/a.log'); note.file("img/b.png"); note.file(\`assets/c.txt\`); note.file(name)`), ['assets/a.log', 'img/b.png', 'assets/c.txt']);
 });
