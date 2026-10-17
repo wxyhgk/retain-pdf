@@ -1,4 +1,5 @@
 export { parseMarkdownBodyBlocks, parseStudioDocument } from './parse.ts';
+export { withoutTrailingEmptyLines } from './empty-lines.ts';
 export { mergeMarkdownBody } from './merge.ts';
 export { updateStudioFrontmatter } from './frontmatter.ts';
 export { replaceStudioDocumentBody, serializeStudioDocument } from './serialize.ts';

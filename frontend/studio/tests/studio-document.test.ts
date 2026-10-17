@@ -7,6 +7,7 @@ import {
 	replaceStudioDocumentBody,
 	serializeStudioDocument,
 	updateStudioFrontmatter,
+	withoutTrailingEmptyLines,
 } from '../src/studio/document/index.ts';
 import { ArticleStore } from '../src/studio/state/article-store.ts';
 
@@ -273,4 +274,12 @@ test('a page goes without the properties it may lack: set, they are written; emp
 
 	const plain = updateStudioFrontmatter('---\ntitle: T\n---\n', { ...base, kind: 'post' });
 	assert.doesNotMatch(plain, /kind:/u, 'no kind: post where none was');
+});
+
+test('empty lines the editor leaves at the end are not written; those between blocks are', () => {
+	assert.equal(withoutTrailingEmptyLines('正文。\n\n<br />\n'), '正文。\n');
+	assert.equal(withoutTrailingEmptyLines('正文。\n\n<br />\n\n<br>\n\n'), '正文。\n');
+	assert.equal(withoutTrailingEmptyLines('一\n\n<br />\n\n二\n'), '一\n\n<br />\n\n二\n');
+	assert.equal(withoutTrailingEmptyLines('正文。\n'), '正文。\n');
+	assert.equal(withoutTrailingEmptyLines('<br />\n'), '');
 });

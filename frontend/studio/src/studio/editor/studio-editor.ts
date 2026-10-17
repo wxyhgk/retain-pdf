@@ -40,6 +40,7 @@ import { mathBracketsRemark } from './math-brackets';
 import { SCIENCE_FENCE_TYPE } from './science-block';
 import { buildScienceSlashMenu, type SlashMenuBuilder } from './science-slash-menu';
 import { addSearchWords, SLASH_TRIGGERS } from './slash-search';
+import { withoutTrailingEmptyLines } from '../document/index.ts';
 import { togglePlugins } from './toggle-block';
 import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
 import '../../widgets/widgets.css';
@@ -75,6 +76,11 @@ export type StudioEditor = {
 };
 
 /** The Studio's editor: Crepe with the science blocks, formulas, file drops and block feel. */
+/** What the editor holds, as Markdown, without empty lines left at the end. */
+function markdownOf(editor: { getMarkdown(): string }): string {
+	return withoutTrailingEmptyLines(editor.getMarkdown());
+}
+
 export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): StudioEditor {
 	let crepe: Crepe | null = null;
 	let mounting = false;
@@ -90,7 +96,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			const { doc } = ctx.get(editorViewCtx).state;
 			if (reported?.eq(doc)) return;
 			reported = doc;
-			host.changed(crepe!.getMarkdown());
+			host.changed(markdownOf(crepe!));
 		});
 	}
 	observeSciencePreviews(root);
@@ -105,7 +111,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		host.reviewing(null);
 		// The review's outcome goes to `finish`; it is not an edit to report again.
 		crepe?.editor.action((ctx) => { reported = ctx.get(editorViewCtx).state.doc; });
-		finish(crepe?.getMarkdown() ?? '');
+		finish(crepe ? markdownOf(crepe) : '');
 	}
 
 	/** Follows the review: what is left of it, and its end. */
@@ -270,7 +276,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			});
 			await crepe.create();
 			crepe.editor.action((ctx) => { reported = ctx.get(editorViewCtx).state.doc; });
-			return crepe.getMarkdown();
+			return markdownOf(crepe);
 		} finally {
 			mounting = false;
 		}
@@ -291,7 +297,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			// A newer version on disk takes over a review still open.
 			const overtaken = review;
 			review = resolve;
-			overtaken?.(editor.getMarkdown());
+			overtaken?.(markdownOf(editor));
 			editor.editor.action(callCommand(startDiffReviewCmd.key, body));
 		});
 	}

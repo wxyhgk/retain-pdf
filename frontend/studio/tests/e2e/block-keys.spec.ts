@@ -124,6 +124,9 @@ test('a click below the last block, with nothing typed, leaves the file as it wa
 	await openStudio(page);
 	const before = savedMarkdown();
 	await clickBelowEnd(page);
+	// An Enter or two more: still nothing written, no `<br />` at the end.
+	await page.keyboard.press('Enter');
+	await page.keyboard.press('Enter');
 	await editor(page).locator('p', { hasText: '结尾段落' }).click();
 	await page.keyboard.press('ControlOrMeta+s');
 	await page.waitForTimeout(300);
