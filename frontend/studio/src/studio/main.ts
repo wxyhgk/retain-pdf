@@ -14,6 +14,7 @@ import {
 	saveMoleculeView,
 	StudioApiError,
 	uploadArticleFile,
+	keepVersion,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -40,6 +41,7 @@ import { createSidePanel } from './workspace/side-panel';
 import { createTerminalPane } from './workspace/terminal';
 import { showToast } from './workspace/toast';
 import { createTopBar } from './workspace/top-bar';
+import { createHistoryView } from './workspace/history-view';
 import { createTrashView } from './workspace/trash-view';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
@@ -151,6 +153,7 @@ const session = new ArticleSession(
 		saveArticle,
 		saveMoleculeView,
 		isConflict: (error) => error instanceof StudioApiError && error.status === 409,
+		keepVersion,
 	},
 	{
 		async mount(article, body, again) {
@@ -160,8 +163,9 @@ const session = new ArticleSession(
 			if (again) editorScroll.scrollTop = scrollTop;
 			return markdown;
 		},
-		review(article, body) {
+		review(article, body, from) {
 			useArticleContext(article);
+			reviewBar.reviewing(from);
 			return editor.review(body);
 		},
 		settle: () => editor.settle(),
@@ -274,6 +278,10 @@ const trashView = createTrashView(document.querySelector<HTMLDialogElement>('#tr
 });
 shell.querySelector('#open-trash')!.addEventListener('click', () => void trashView.open());
 
+const historyView = createHistoryView(document.querySelector<HTMLDialogElement>('#history-dialog')!, {
+	restore: (source) => void session.restoreVersion(source),
+});
+
 /** The open article, as the list knows it, for the actions on a whole article. */
 function openSummary(): ArticleSummary | null {
 	return articleList.articles().find((article) => article.slug === session.slug) ?? null;
@@ -300,6 +308,7 @@ pageMenu.addEventListener('click', () => {
 			},
 		},
 		{ label: /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示', action: () => void revealArticleFile(article.slug, '') },
+		{ label: '历史版本…', action: () => void historyView.open(article.slug) },
 		'separator',
 		{ label: '改文件夹名…', action: () => void articleActions.rename(article) },
 		{ label: '复制一份', action: () => void articleActions.duplicate(article) },

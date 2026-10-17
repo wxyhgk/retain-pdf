@@ -154,6 +154,18 @@ import { SITE_TITLE } from '../consts';
 			</form>
 		</dialog>
 
+		<dialog id="history-dialog" class="article-dialog trash-view">
+			<form method="dialog">
+				<div class="dialog-heading">
+					<div><strong>历史版本</strong><span>存在文章的 ai/history 里，不会发布</span></div>
+					<button type="submit" aria-label="关闭">×</button>
+				</div>
+				<!-- The trash's list look: things to bring back. -->
+				<ul id="history-list" class="trash-list"></ul>
+				<p id="history-status" class="trash-status" role="status" aria-live="polite"></p>
+			</form>
+		</dialog>
+
 		<dialog id="publish-check-dialog" class="article-dialog publish-check">
 			<form method="dialog">
 				<div class="dialog-heading">

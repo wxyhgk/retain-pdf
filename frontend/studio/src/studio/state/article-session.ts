@@ -1,6 +1,6 @@
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from '../document/index.ts';
 import { rewriteMovedReferences } from '../shared/article-references.mjs';
-import type { ArticlePayload, ArticleProperties } from '../types.ts';
+import type { ArticlePayload, ArticleProperties, HistoryReason } from '../types.ts';
 import { ArticleStore, type ArticleSnapshot } from './article-store.ts';
 import { Autosave, type AutosaveOptions, type SaveOutcome } from './autosave.ts';
 import { trackWrite, writesSettled } from './writes.ts';
@@ -34,6 +34,8 @@ export type SessionApi = {
 	): Promise<{ revision: string; chemistryViews: MoleculeViews }>;
 	/** Whether this failure means the article changed on disk since it was loaded. */
 	isConflict(error: unknown): boolean;
+	/** Keeps a version of the article in its ai/history, to go back to. */
+	keepVersion(slug: string, source: string, reason: HistoryReason): Promise<void>;
 };
 
 /** What the session asks of the page around it. */
@@ -45,11 +47,12 @@ export type SessionHost = {
 	 */
 	mount(article: ArticlePayload, body: string, again: boolean): Promise<string>;
 	/**
-	 * The body changed on disk to `body`: shows the differences from the body
-	 * in the editor, each to accept or reject, and resolves with the Markdown
-	 * the editor holds once every one is decided.
+	 * Shows the differences from the body in the editor to `body` (the body
+	 * as it is now on disk, or an earlier version's, `from`), each to accept
+	 * or reject, and resolves with the Markdown the editor holds once every
+	 * one is decided.
 	 */
-	review(article: ArticlePayload, body: string): Promise<string>;
+	review(article: ArticlePayload, body: string, from: 'disk' | 'history'): Promise<string>;
 	/**
 	 * Reports, through `editBody`, the edits the editor holds but has not
 	 * reported yet: it reports them a moment after the typing, and a save
@@ -71,6 +74,31 @@ export type SessionHost = {
 };
 
 const ARTICLE_TEXT_FILES = ['index.md', 'article.views.json'];
+
+const PROPERTY_NAMES: Record<keyof ArticleProperties, string> = {
+	title: '标题',
+	description: '简介',
+	pubDate: '发布日期',
+	tags: '标签',
+	draft: '状态',
+	icon: '图标',
+	cover: '封面',
+	kind: '类型',
+	wide: '全宽',
+};
+
+/** A property as it counts: left out, empty and (for `wide`) off are all none. */
+function propertyValue(properties: ArticleProperties, key: keyof ArticleProperties): string {
+	const value = properties[key];
+	return JSON.stringify(value === undefined || value === '' || (key === 'wide' && value === false) ? null : value);
+}
+
+/** Which properties differ, by their names on the page: 「标题」「标签」. */
+export function changedProperties(before: ArticleProperties, after: ArticleProperties): string[] {
+	return (Object.keys(PROPERTY_NAMES) as (keyof ArticleProperties)[])
+		.filter((key) => propertyValue(before, key) !== propertyValue(after, key))
+		.map((key) => PROPERTY_NAMES[key]);
+}
 
 /**
  * The article open in the Studio: loading it, taking in the editor's and
@@ -197,6 +225,31 @@ export class ArticleSession {
 		await this.#present(article, sequence, true, current.dirty ? { source: edited.source, properties } : undefined);
 	}
 
+	/**
+	 * Brings back an earlier version's body: the editor shows how it differs
+	 * from what is there now, each difference to take or leave, as a change
+	 * on disk is reviewed. What is there now is kept in the history first.
+	 */
+	async restoreVersion(source: string): Promise<void> {
+		this.#host.settle();
+		const { article, source: now } = this.#store.current;
+		if (!article) return;
+		const body = parseStudioDocument(source).body.raw;
+		if (body === parseStudioDocument(now).body.raw) {
+			this.#host.toast('正文和这个版本一样，没有要恢复的');
+			return;
+		}
+		if (!(await this.#keep(article.slug, [[now, 'before-restore']]))) return;
+		const sequence = ++this.#sequence;
+		this.#autosave.cancel();
+		this.#setState({ kind: 'reviewing' });
+		const markdown = await this.#host.review(article, body, 'history');
+		if (sequence !== this.#sequence) return;
+		this.#setState({ kind: this.#store.current.dirty ? 'dirty' : 'loaded' });
+		// What was taken is an edit, saved as any other.
+		this.editBody(markdown);
+	}
+
 	/** These files of the open article changed on disk (paths in its folder). */
 	changedOnDisk(paths: string[]): void {
 		const slug = this.slug;
@@ -280,54 +333,73 @@ export class ArticleSession {
 	}
 
 	/**
-	 * The article may have changed on disk. Without unsaved edits, the new
-	 * version is the saved one, and the author reviews what changed in the
-	 * body: whatever they reject is saved back over it. With unsaved edits,
-	 * the author chooses: take the version on disk, or keep their edits,
-	 * which saving then writes over it.
+	 * Keeps these versions in the history, each unless it is what is on disk
+	 * now (`except`). Whether they all were; the author is told when not.
+	 */
+	async #keep(slug: string, versions: [string, HistoryReason][], except?: string): Promise<boolean> {
+		try {
+			for (const [source, reason] of versions) {
+				if (source !== except) await this.#api.keepVersion(slug, source, reason);
+			}
+			return true;
+		} catch (error) {
+			this.#host.toast(`没能存下历史版本：${error instanceof Error ? error.message : String(error)}`);
+			return false;
+		}
+	}
+
+	/**
+	 * The article may have changed on disk (the terminal, an AI, another
+	 * editor). The version on disk becomes the saved one, and the author
+	 * reviews how the body differs from what the editor shows, unsaved edits
+	 * and all: whatever they reject is saved back over it. Nothing is lost
+	 * whatever they decide: what was saved before, and edits not yet saved,
+	 * are kept in the history first.
 	 */
 	async #compareWithDisk(slug: string): Promise<void> {
 		// The Studio's own writes are not someone else's changes.
 		await writesSettled();
 		if (this.slug !== slug) return;
+		// What was just typed counts as unsaved.
+		this.#host.settle();
 		const sequence = this.#sequence;
 		const article = await this.#api.getArticle(slug);
 		const current = this.#store.current;
-		if (sequence !== this.#sequence || this.slug !== slug || article.revision === current.revision) return;
-		if (!current.dirty) {
-			await this.#review(article, current.source, ++this.#sequence);
-			return;
-		}
-		const title = this.#properties?.title || slug;
-		const takeDisk = this.#host.confirm(
-			`「${title}」在磁盘上被修改了（可能是终端或其他编辑器）。\n\n`
-			+ '确定：载入磁盘上的版本，放弃你没保存的改动\n'
-			+ '取消：保留你的改动，保存时覆盖磁盘上的版本',
-		);
+		if (sequence !== this.#sequence || this.slug !== slug || article.revision === current.revision || !current.article) return;
+		const kept: [string, HistoryReason][] = [[current.article.source, 'before-change']];
+		if (current.dirty) kept.push([current.source, 'unsaved']);
+		await this.#keep(slug, kept, article.source);
 		if (sequence !== this.#sequence || this.slug !== slug) return;
-		if (takeDisk) {
-			await this.#present(article, ++this.#sequence, true);
-			this.#host.toast('已载入磁盘上的版本');
-		} else {
-			this.#store.updateRevision(article.revision, article.chemistryViews);
-		}
+		await this.#review(article, current.source, ++this.#sequence, {
+			unsaved: current.dirty && current.source !== article.source,
+			// Against what was saved: properties typed and not yet saved are the author's, not the disk's.
+			properties: changedProperties(current.article.properties, article.properties),
+		});
 	}
 
-	/** The version on disk becomes the saved one; the editor shows how its body differs. */
-	async #review(article: ArticlePayload, shown: string, sequence: number): Promise<void> {
+	/**
+	 * The version on disk becomes the saved one; the editor shows how its
+	 * body differs from `shown`. The author is told which properties changed
+	 * on disk, and that unsaved edits were kept in the history.
+	 */
+	async #review(article: ArticlePayload, shown: string, sequence: number, told: { unsaved: boolean; properties: string[] }): Promise<void> {
 		this.#store.load(article);
 		this.#properties = article.properties;
 		this.#propertiesValid = true;
 		this.#autosave.cancel();
 		this.#host.opened({ article, properties: article.properties });
+		const notes = [
+			...(told.properties.length ? [`磁盘上改了${told.properties.join('、')}`] : []),
+			...(told.unsaved ? ['你没保存的版本已存进「历史版本」'] : []),
+		];
+		if (notes.length) this.#host.toast(notes.join('；'));
 		const body = parseStudioDocument(article.source).body.raw;
 		if (body === parseStudioDocument(shown).body.raw) {
-			this.#host.toast('文章属性在磁盘上被修改，已更新');
 			this.#setState({ kind: 'loaded' });
 			return;
 		}
 		this.#setState({ kind: 'reviewing' });
-		const markdown = await this.#host.review(article, body);
+		const markdown = await this.#host.review(article, body, 'disk');
 		if (sequence !== this.#sequence) return;
 		this.#setState({ kind: 'saved' });
 		// What was rejected is an edit, saved over the version on disk.

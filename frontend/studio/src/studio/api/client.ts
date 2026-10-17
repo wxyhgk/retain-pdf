@@ -1,6 +1,6 @@
 import type { HastElement } from '../../code-files/render.mjs';
 import { articlePath, studioFileUrl } from '../shared/article-references.mjs';
-import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, GitStatus, SearchResult, TrashEntry } from '../types.ts';
+import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, GitStatus, HistoryEntry, HistoryReason, SearchResult, TrashEntry } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
 	const response = await fetch(url, options);
@@ -218,4 +218,19 @@ export function revealArticleFile(slug: string, path: string): Promise<{ path: s
 /** A one-time WebSocket URL for a shell in the repository or in an article's folder. */
 export function openTerminal(target: { cwd: 'root' } | { cwd: 'article'; slug: string }): Promise<{ url: string; cwd: string }> {
 	return request('/api/studio/terminal', jsonOptions('POST', target));
+}
+
+/** Keeps a version of the article in its ai/history (nothing when the newest kept one is the same). */
+export async function keepVersion(slug: string, source: string, reason: HistoryReason): Promise<void> {
+	await request(`/api/studio/articles/${encodeURIComponent(slug)}/history`, jsonOptions('POST', { source, reason }));
+}
+
+/** The article's kept versions, newest first. */
+export async function listVersions(slug: string): Promise<HistoryEntry[]> {
+	return (await request<{ versions: HistoryEntry[] }>(`/api/studio/articles/${encodeURIComponent(slug)}/history`)).versions;
+}
+
+/** One kept version's text. */
+export async function readVersion(slug: string, name: string): Promise<string> {
+	return (await request<{ source: string }>(`/api/studio/articles/${encodeURIComponent(slug)}/history/${encodeURIComponent(name)}`)).source;
 }

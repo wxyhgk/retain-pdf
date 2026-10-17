@@ -4,6 +4,7 @@ import { pipeline } from 'node:stream/promises';
 import { checkArticle } from '../studio/server/article-check.mjs';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
 import { ArticleGit } from '../studio/server/article-git.mjs';
+import { ArticleHistory } from '../studio/server/article-history.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
 import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
@@ -91,6 +92,7 @@ export default function studioDev() {
 			});
 			const articleFiles = new ArticleFiles(articles, manager);
 			const articleGit = new ArticleGit(blogRoot);
+			const history = new ArticleHistory(blogRoot);
 			const watcher = new BlogWatcher(blogRoot);
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
 			server.httpServer?.on('close', () => {
@@ -210,6 +212,19 @@ export default function studioDev() {
 						const root = decodePathComponent(fileMatch[2]);
 						const resourcePath = decodePathComponent(fileMatch[3]);
 						return await file(response, await files.stream(slug, root, resourcePath));
+					}
+
+					// Earlier versions of an article, kept in its ai/history: the list, one of them, one more.
+					const historyMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/history(?:\/([^/]+))?$/u);
+					if (historyMatch) {
+						const slug = decodePathComponent(historyMatch[1]);
+						const name = historyMatch[2] ? decodePathComponent(historyMatch[2]) : null;
+						if (!name && request.method === 'GET') return json(response, 200, { versions: await history.list(slug) });
+						if (name && request.method === 'GET') return json(response, 200, { source: await history.read(slug, name) });
+						if (!name && request.method === 'POST') {
+							const { source, reason } = await readJsonChange(request);
+							return json(response, 201, await history.keep(slug, source, reason));
+						}
 					}
 
 					// What would be wrong with the article, as the editor holds it, once published.

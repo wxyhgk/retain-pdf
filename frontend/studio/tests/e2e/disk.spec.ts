@@ -1,4 +1,4 @@
-import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -28,7 +28,7 @@ test('an article changed on disk is reviewed where it is; accepting keeps the ch
 	editOnDisk('结尾段落。', 'The end.');
 	await expect(reviewBar(page)).toBeVisible();
 	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 1 处改动');
-	await expect(saveStatus(page)).toHaveText('磁盘上的改动待审阅');
+	await expect(saveStatus(page)).toHaveText('改动待审阅');
 	await expect(editor(page).locator('.milkdown-diff-added')).toContainText('The end.');
 	await expect(editor(page).locator('.milkdown-diff-removed')).toContainText('结尾段落。');
 
@@ -91,39 +91,59 @@ test('each change is accepted or rejected on its own, and nothing is typed meanw
 	expect(saved).toContain('结尾段落。终端补的结尾。');
 });
 
-test('with unsaved edits the author chooses, and keeping them saves over the disk', async ({ page }) => {
+test('with unsaved edits nothing is asked: both versions are kept, and rejecting the change keeps the edits', async ({ page }) => {
+	let dialogs = 0;
+	page.on('dialog', (dialog) => { dialogs += 1; void dialog.dismiss(); });
 	await openStudio(page);
 	await editor(page).getByText('结尾段落。').click();
 	await page.keyboard.press('End');
 	await page.keyboard.type('我的改动');
 	await expect(saveStatus(page)).toHaveText('未保存');
 
-	const asked = page.waitForEvent('dialog');
 	editOnDisk('开头段落', '终端改过的开头');
-	const dialog = await asked;
-	expect(dialog.message()).toContain('在磁盘上被修改了');
-	await dialog.dismiss();
-	await expect(editor(page)).toContainText('我的改动');
+	await expect(reviewBar(page)).toBeVisible();
+	await expect(toast(page)).toContainText('你没保存的版本已存进「历史版本」');
+	// What was saved before, and the edits not yet saved, are in the article's history.
+	const kept = readdirSync(join(process.env.STUDIO_BLOG_DIR!, slug, 'ai', 'history')).sort();
+	expect(kept.map((name) => name.replace(/^.*\d-/u, ''))).toEqual(['before-change.md', 'unsaved.md']);
 
-	await page.waitForTimeout(500);
+	await reviewBar(page).getByRole('button', { name: '全部拒绝' }).click();
+	await expect(reviewBar(page)).toBeHidden();
+	await expect(editor(page)).toContainText('我的改动');
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('结尾段落。我的改动');
 	expect(savedMarkdown()).not.toContain('终端改过的开头');
+	expect(dialogs).toBe(0);
 });
 
-test('taking the disk version drops the unsaved edits', async ({ page }) => {
+test('accepting the change drops the unsaved edits from the page; 历史版本 brings them back', async ({ page }) => {
 	await openStudio(page);
 	await editor(page).getByText('结尾段落。').click();
 	await page.keyboard.press('End');
 	await page.keyboard.type('我的改动');
 	await expect(saveStatus(page)).toHaveText('未保存');
 
-	page.once('dialog', (dialog) => void dialog.accept());
 	editOnDisk('开头段落', '终端改过的开头');
+	await reviewBar(page).getByRole('button', { name: '全部接受' }).click();
+	await expect(reviewBar(page)).toBeHidden();
 	await expect(editor(page)).toContainText('终端改过的开头');
 	await expect(editor(page)).not.toContainText('我的改动');
-	await expect(saveStatus(page)).toHaveText('已载入');
+
+	await page.locator('#page-menu').click();
+	await page.getByText('历史版本…').click();
+	const history = page.locator('#history-dialog');
+	await expect(history.locator('.trash-name')).toHaveText(['你没保存的改动', '磁盘上改动之前']);
+	await history.locator('.trash-item').first().getByRole('button', { name: '对比并恢复' }).click();
+	await expect(history).toBeHidden();
+	await expect(page.locator('#review-count')).toHaveText(/^这个历史版本和现在有 \d+ 处不同$/u);
+	await reviewBar(page).getByRole('button', { name: '全部接受' }).click();
+	await expect(reviewBar(page)).toBeHidden();
+	await expect(editor(page)).toContainText('我的改动');
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('结尾段落。我的改动');
+	expect(savedMarkdown()).not.toContain('终端改过的开头');
 });
 
 test('the Studio’s own saves are not taken for changes from outside', async ({ page }) => {

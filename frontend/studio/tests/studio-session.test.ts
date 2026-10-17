@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { articleFileUrl } from '../src/studio/api/client.ts';
-import { ArticleSession, type SaveState, type SessionApi, type SessionHost } from '../src/studio/state/article-session.ts';
+import { ArticleSession, changedProperties, type SaveState, type SessionApi, type SessionHost } from '../src/studio/state/article-session.ts';
 import type { ArticlePayload, ArticleProperties } from '../src/studio/types.ts';
 import { filterArticles } from '../src/studio/workspace/article-list.ts';
 import { cleanSlug, suggestedSlug } from '../src/studio/workspace/new-article-dialog.ts';
@@ -19,6 +19,8 @@ function fakeApi(source = SOURCE) {
 	const disk = { source, revision: 'r1' };
 	let revisions = 1;
 	const saves: string[] = [];
+	/** What was kept in the article's history, with why. */
+	const kept: [string, string][] = [];
 	let hold: Promise<void> | null = null;
 	let failNext: Error | null = null;
 	const article = (slug: string): ArticlePayload => ({ slug, source: disk.source, revision: disk.revision, properties: PROPERTIES, chemistryViews: {} });
@@ -39,11 +41,15 @@ function fakeApi(source = SOURCE) {
 		},
 		saveMoleculeView: async () => ({ revision: disk.revision, chemistryViews: {} }),
 		isConflict: (error) => error instanceof Conflict,
+		keepVersion: async (_slug, kept_source, reason) => {
+			kept.push([kept_source, reason]);
+		},
 	};
 	return {
 		api,
 		disk,
 		saves,
+		kept,
 		/** Someone else writes the article. */
 		write(next: string) {
 			disk.source = next;
@@ -178,16 +184,23 @@ test('a failed save is tried again', async () => {
 	assert.equal(page.states.at(-1), '已保存');
 });
 
-test('a save that meets a change on disk asks once; keeping the edits saves them over it', async () => {
-	const { session, api, page } = await opened(fakeApi(), fakeHost([false]));
+test('a save that meets a change on disk asks nothing: both versions are kept, and rejecting the change keeps the edits', async () => {
+	// The author rejects every change: the editor keeps what it held, their edits.
+	const mine = `${body(SOURCE)}\n我的改动\n`;
+	const { session, api, page } = await opened(fakeApi(), fakeHost([], () => mine));
 	const release = api.holdSaves();
-	session.editBody(`${body(SOURCE)}\n我的改动\n`);
+	session.editBody(mine);
 	await settle(10);
 	api.write(SOURCE.replace('第二段。', '终端改的。'));
 	release();
 	await settle(80);
-	assert.equal(page.asked.length, 1);
-	assert.match(page.asked[0], /在磁盘上被修改了/u);
+	assert.equal(page.asked.length, 0);
+	// What was saved before the change on disk, and the edits not yet saved.
+	assert.deepEqual(api.kept.map(([, reason]) => reason), ['before-change', 'unsaved']);
+	assert.equal(api.kept[0][0], SOURCE);
+	assert.match(api.kept[1][0], /我的改动/u);
+	assert.equal(page.reviews.length, 1);
+	assert.ok(page.toasts.includes('你没保存的版本已存进「历史版本」'));
 	assert.match(api.disk.source, /我的改动/u);
 	assert.doesNotMatch(api.disk.source, /终端改的/u);
 	assert.equal(page.states.at(-1), '已保存');
@@ -204,11 +217,13 @@ test('a change on disk is reviewed when nothing is unsaved; accepted, it stays a
 	assert.equal(page.reviews.length, 1);
 	assert.match(page.reviews[0], /终端改的/u);
 	assert.equal(page.mounted.length, 2, 'reviewed where it is, not opened anew');
-	assert.ok(page.states.includes('磁盘上的改动待审阅'));
+	assert.ok(page.states.includes('改动待审阅'));
 	assert.equal(page.states.at(-1), '已保存');
 	assert.equal(api.saves.length, 0);
 	assert.equal(session.current.source, api.disk.source);
 	assert.equal(session.current.dirty, false);
+	// What was there before the change is kept, to go back to.
+	assert.deepEqual(api.kept, [[SOURCE, 'before-change']]);
 });
 
 test('what is rejected in review is saved back over the change on disk', async () => {
@@ -222,19 +237,25 @@ test('what is rejected in review is saved back over the change on disk', async (
 	assert.equal(session.current.dirty, false);
 });
 
-test('a change to the properties alone is taken without review', async () => {
-	const { session, api, page } = await opened();
-	api.write(SOURCE.replace("title: '笔记'", "title: '新题目'"));
+test('a change to the properties alone is taken without review, naming what changed', async () => {
+	const api = fakeApi();
+	const { session, page } = await opened(api);
+	const changed = SOURCE.replace("title: '笔记'", "title: '新题目'");
+	api.write(changed);
+	// The page reads properties from the article it is given: as the server would, from the new source.
+	const getArticle = api.api.getArticle;
+	api.api.getArticle = async (slug) => ({ ...(await getArticle(slug)), properties: { ...PROPERTIES, title: '新题目' } });
 	session.changedOnDisk(['index.md']);
 	await settle();
 	assert.equal(page.reviews.length, 0);
 	assert.equal(page.mounted.length, 1);
 	assert.equal(session.current.source, api.disk.source);
-	assert.deepEqual(page.toasts, ['文章属性在磁盘上被修改，已更新']);
+	assert.deepEqual(page.toasts, ['磁盘上改了标题']);
+	assert.deepEqual(api.kept, [[SOURCE, 'before-change']]);
 });
 
-test('taking the disk version drops the unsaved edits', async () => {
-	const { session, api, page } = await opened(fakeApi(), fakeHost([true]));
+test('accepting every change on disk takes it, unsaved edits and all; they are in the history', async () => {
+	const { session, api, page } = await opened();
 	const release = api.holdSaves();
 	session.editBody(`${body(SOURCE)}\n我的改动\n`);
 	api.write(SOURCE.replace('第二段。', '终端改的。'));
@@ -242,10 +263,33 @@ test('taking the disk version drops the unsaved edits', async () => {
 	await settle(10);
 	release();
 	await settle(80);
-	assert.equal(page.asked.length, 1);
+	assert.equal(page.asked.length, 0);
 	assert.match(session.current.source, /终端改的/u);
 	assert.doesNotMatch(session.current.source, /我的改动/u);
 	assert.equal(session.current.dirty, false);
+	assert.ok(api.kept.some(([source, reason]) => reason === 'unsaved' && source.includes('我的改动')));
+});
+
+test('an earlier version is brought back through review; what was there is kept first', async () => {
+	const { session, api, page } = await opened();
+	const earlier = SOURCE.replace('第二段。', '早先的第二段。');
+	await session.restoreVersion(earlier);
+	assert.deepEqual(api.kept, [[SOURCE, 'before-restore']]);
+	assert.equal(page.reviews.length, 1);
+	assert.match(page.reviews[0], /早先的第二段/u);
+	await settle();
+	// Accepted: saved as an edit.
+	assert.match(api.disk.source, /早先的第二段/u);
+
+	await session.restoreVersion(api.disk.source);
+	assert.equal(page.reviews.length, 1);
+	assert.equal(page.toasts.at(-1), '正文和这个版本一样，没有要恢复的');
+});
+
+test('which properties changed, by their names on the page', () => {
+	assert.deepEqual(changedProperties(PROPERTIES, { ...PROPERTIES, title: '新', tags: ['DFT'], draft: false }), ['标题', '标签', '状态']);
+	assert.deepEqual(changedProperties(PROPERTIES, { ...PROPERTIES }), []);
+	assert.deepEqual(changedProperties({ ...PROPERTIES, icon: '' }, PROPERTIES), []);
 });
 
 test('saving at once, or leaving, takes in what was just typed and not yet reported', async () => {
