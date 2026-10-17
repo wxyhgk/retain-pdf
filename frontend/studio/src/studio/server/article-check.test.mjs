@@ -96,3 +96,18 @@ test('links to the blog’s own articles must lead somewhere published', async (
 	]);
 	assert.ok(issues.every((issue) => issue.severity === 'warning' && issue.line === 7));
 });
+
+test('a widget that loads a script from elsewhere without a version is a warning, at its line', async (t) => {
+	const check = await article(t);
+	const source = `${PROPERTIES}
+正文。
+
+\`\`\`widget title="图"
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script src="https://unpkg.com/three"></script>
+\`\`\`
+`;
+	assert.deepEqual(await check(source), [
+		{ severity: 'warning', message: '交互模块加载的 https://unpkg.com/three 没写版本号，以后它一变，模块可能就打不开了', line: 9 },
+	]);
+});

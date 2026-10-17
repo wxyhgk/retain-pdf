@@ -40,6 +40,8 @@ import { SCIENCE_FENCE_TYPE } from './science-block';
 import { buildScienceSlashMenu, type SlashMenuBuilder } from './science-slash-menu';
 import { addSearchWords, SLASH_TRIGGERS } from './slash-search';
 import { togglePlugins } from './toggle-block';
+import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
+import '../../widgets/widgets.css';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {
@@ -92,6 +94,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	}
 	observeSciencePreviews(root);
 	observeCodeFiles(root);
+	observeWidgets(root);
 
 	/** Ends the review, with the Markdown the editor now holds. */
 	function endReview(): void {
@@ -181,7 +184,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				},
 				featureConfigs: {
 					[CrepeFeature.CodeMirror]: {
-						languages: [...codeFileLanguageDescriptions, ...codeMirrorLanguages],
+						languages: [widgetLanguageDescription, ...codeFileLanguageDescriptions, ...codeMirrorLanguages],
 						copyText: '复制',
 						previewLabel: '预览',
 						previewLoading: '正在渲染…',
@@ -193,6 +196,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						// It comes later (undefined), once the file is read. The fork passes the fence's
 						// `lines=` and `title=` (meta) too, which the npm release's type does not know.
 						renderPreview: (language: string, content: string, apply: (value: HTMLElement) => void, meta = '') => {
+							const widget = widgetPreview(language, content, meta);
+							if (widget) return widget;
 							const file = filePreview(language, content, apply, meta);
 							return file === null ? createSciencePreview(language, content) : file;
 						},
