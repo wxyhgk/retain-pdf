@@ -35,6 +35,7 @@ import { blockKeyPlugins } from './block-key-plugins';
 import { buildBlockSlashMenu } from './block-slash-menu';
 import { calloutPlugins } from './callout-block';
 import { citationPlugins, setCitationLibrary, type CitationHost } from './citations';
+import { officeCardPlugins } from './office-card-block';
 import type { BibEntry } from '../../references/bibtex.mjs';
 import { FIGURE_TYPE, figurePlugins } from './figure-block';
 import { inlineMathPlugins } from './inline-math';
@@ -269,6 +270,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(figurePlugins(host.fileUrl));
 			crepe.editor.use(calloutPlugins());
 			crepe.editor.use(citationPlugins(host));
+			crepe.editor.use(officeCardPlugins(host.fileUrl));
 			crepe.editor.use(togglePlugins());
 			crepe.editor.use(articleLinkPlugins(host));
 			crepe.editor.use(smartPastePlugins(host));

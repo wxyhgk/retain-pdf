@@ -9,6 +9,7 @@ import remarkCitations from './remark-citations.mjs';
 import remarkCodeFiles from './remark-code-files.mjs';
 import remarkFigures from './remark-figures.mjs';
 import remarkMathBrackets from './remark-math-brackets.mjs';
+import remarkOfficeCards from './remark-office-cards.mjs';
 import remarkWidgets from './remark-widgets.mjs';
 import rehypeWidgets from './rehype-widgets.mjs';
 import { WIDGET_LANGUAGE } from '../widgets/widgets.mjs';
@@ -23,10 +24,10 @@ import { WIDGET_LANGUAGE } from '../widgets/widgets.mjs';
 export const chemistryLanguages = MOLECULE_LANGUAGES;
 
 /**
- * GitHub's Markdown with our options, formulas, widgets, code files, figures, callouts and citations.
+ * GitHub's Markdown with our options, formulas, widgets, code files, figures, office cards and file links, callouts and citations.
  * @type {import('@astrojs/markdown-remark').RemarkPlugins}
  */
-export const remarkPlugins = [[remarkGfm, gfmOptions], remarkMath, remarkMathBrackets, remarkWidgets, [remarkCodeFiles, { skip: [...chemistryLanguages, WIDGET_LANGUAGE] }], remarkFigures, remarkCallouts, remarkCitations];
+export const remarkPlugins = [[remarkGfm, gfmOptions], remarkMath, remarkMathBrackets, remarkWidgets, [remarkCodeFiles, { skip: [...chemistryLanguages, WIDGET_LANGUAGE] }], remarkFigures, remarkOfficeCards, remarkCallouts, remarkCitations];
 
 /**
  * Raw HTML in an article becomes elements, without scripts, event handlers or javascript: links; then the

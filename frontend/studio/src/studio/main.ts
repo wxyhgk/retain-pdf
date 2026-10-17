@@ -34,7 +34,9 @@ import { createCitePicker } from './workspace/cite-picker';
 import { sourceLinesOf } from './document/source-lines';
 import { setWidgetFiles, widgetFilesChanged } from '../widgets/widget-host';
 import { studioFileUrl } from '../articles/article-references.mjs';
-import { createOfficeViewer, firstSheetRows } from './workspace/office-viewer';
+import { officeFilesChanged } from '../office/office-card';
+import { firstSheetRows } from '../office/office-render';
+import { openOfficeFile } from '../office/office-viewer';
 import { createFilePanel } from './workspace/file-panel';
 import { isImage } from './article-files';
 import { uploadFolderFor } from './workspace/file-tree';
@@ -121,10 +123,9 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	settle: () => session.flush(),
 	moved: (from, to, rewritten) => session.fileMoved(from, to, rewritten),
 	insertMarkdown: (markdown) => editor.insertMarkdown(markdown),
-	viewOffice: (url, name) => void officeViewer.open(url, name),
+	viewOffice: (url, name) => void openOfficeFile(url, name),
 	sheetRows: firstSheetRows,
 });
-const officeViewer = createOfficeViewer(document.querySelector<HTMLDialogElement>('#office-viewer')!);
 
 const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-editor')!, {
 	// Files dropped or pasted into the editor, and its image uploads, go into the open article's folder.
@@ -302,6 +303,7 @@ watchDisk((changes) => {
 	void filePanel.refresh();
 	session.changedOnDisk(change.paths);
 	widgetFilesChanged(change.paths);
+	officeFilesChanged(change.paths.map((path) => studioFileUrl(change.slug, path)));
 	if (change.paths.includes(BIBLIOGRAPHY_PATH)) void loadLibrary(change.slug);
 });
 

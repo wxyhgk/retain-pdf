@@ -10,7 +10,7 @@ import {
 import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
 import { movedPath, referencedPaths, studioFileUrl } from '../../articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
-import { officeKind, tableSource } from '../office-kinds.mjs';
+import { officeKind, tableSource } from '../../office/office-kinds.mjs';
 import { markdownTable, parseDelimited } from '../table-text';
 import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
