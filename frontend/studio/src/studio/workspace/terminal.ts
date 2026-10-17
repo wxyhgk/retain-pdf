@@ -3,6 +3,7 @@ import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 
 import { openTerminal } from '../api/client';
+import type { SourceLines } from '../document/source-lines';
 
 type Cwd = 'root' | 'article';
 type State = 'idle' | 'starting' | 'running' | 'ended';
@@ -10,6 +11,31 @@ type State = 'idle' | 'starting' | 'running' | 'ended';
 const CWD_KEY = 'studio.terminal-cwd';
 const FIRST_BUILD_HINT_MS = 2500;
 const encoder = new TextEncoder();
+/** How long after it starts a shell that has printed nothing is taken to read what is typed. */
+const READY_AFTER_MS = 800;
+/** How much of the lines a question quotes, to tell them by; the AI reads them from the file. */
+const QUOTED_CHARACTERS = 24;
+
+/**
+ * Text that can be typed into whatever runs in the terminal without doing
+ * anything until Enter: one line, no control characters, so no newline in
+ * it can run a command, whether the shell takes pasted text or not.
+ */
+function typeable(text: string): string {
+	return text.replace(/[\u0000-\u001f\u007f]+/gu, ' ').replace(/ {2,}/gu, ' ').trim();
+}
+
+/**
+ * A question about lines of an article, to finish and send: where they
+ * are, how they begin, and room for what is wanted. `path` is the file
+ * as the shell finds it.
+ */
+export function questionAbout(path: string, lines: SourceLines): string {
+	const where = lines.start === lines.end ? `第 ${lines.start} 行` : `第 ${lines.start}–${lines.end} 行`;
+	const opening = typeable(lines.text.split('\n').find((line) => line.trim()) ?? '');
+	const quoted = opening.length > QUOTED_CHARACTERS ? `${opening.slice(0, QUOTED_CHARACTERS)}…` : opening;
+	return typeable(`${path} ${where}${quoted ? `（从「${quoted}」开始）` : ''}。要求：`);
+}
 
 function readCwd(): Cwd {
 	try {
@@ -46,6 +72,11 @@ export function createTerminalPane(pane: HTMLElement) {
 		screen.dataset.state = next;
 	};
 	let socket: WebSocket | null = null;
+	/** Where the running shell is: an article's folder (its slug), or the repository (null). */
+	let shellArticle: string | null = null;
+	/** A question to put in once the shell is ready, and whether it is. */
+	let pending: { slug: string; lines: SourceLines } | null = null;
+	let ready = false;
 
 	const terminal = new Terminal({
 		cursorBlink: true,
@@ -85,6 +116,8 @@ export function createTerminalPane(pane: HTMLElement) {
 		setState('starting');
 		const target = effectiveCwd();
 		const slug = article;
+		ready = false;
+		shellArticle = target === 'article' ? slug : null;
 		terminal.reset();
 		dim('正在打开终端…');
 		const hint = window.setTimeout(() => dim('第一次使用要先编译终端程序（Rust），大约需要一分钟…'), FIRST_BUILD_HINT_MS);
@@ -113,11 +146,15 @@ export function createTerminalPane(pane: HTMLElement) {
 			where.textContent = target === 'article' ? `blog/${slug}/` : `${folder.split('/').filter(Boolean).pop()}/`;
 			where.title = folder;
 			terminal.focus();
+			// A shell whose prompt says nothing is taken to be ready a moment after it starts.
+			window.setTimeout(becomeReady, READY_AFTER_MS);
 		});
 		connection.addEventListener('message', (event) => {
 			if (socket !== connection) return;
 			if (typeof event.data !== 'string') {
 				terminal.write(new Uint8Array(event.data as ArrayBuffer));
+				// The shell has said something (its prompt): it reads what is typed now.
+				if (!ready) window.setTimeout(becomeReady, 150);
 				return;
 			}
 			const message = JSON.parse(event.data) as { type: string; code?: number };
@@ -134,6 +171,28 @@ export function createTerminalPane(pane: HTMLElement) {
 				dim('\r\n[与终端的连接断开了，按任意键重新打开]');
 			}
 		});
+	}
+
+	function becomeReady(): void {
+		if (ready || state !== 'running') return;
+		ready = true;
+		putPending();
+	}
+
+	/** The article's file as the running shell finds it from where it is. */
+	function pathFor(slug: string): string {
+		if (shellArticle === slug) return 'index.md';
+		return shellArticle ? `../${slug}/index.md` : `blog/${slug}/index.md`;
+	}
+
+	/** Types the question waiting into the shell: nothing in it runs until Enter. */
+	function putPending(): void {
+		if (!pending || !ready || socket?.readyState !== WebSocket.OPEN) return;
+		const question = questionAbout(pathFor(pending.slug), pending.lines);
+		pending = null;
+		// Typed as keys, one line without Enter: it waits for the author.
+		socket.send(encoder.encode(question));
+		terminal.focus();
 	}
 
 	/** Starts over in the chosen folder, asking first if a shell is running there now. */
@@ -190,6 +249,17 @@ export function createTerminalPane(pane: HTMLElement) {
 		showArticle(slug: string | null): void {
 			article = slug;
 			renderCwd();
+		},
+		/**
+		 * Types a question about these lines of an article into the shell,
+		 * for the author to finish and send (nothing is sent). A shell that
+		 * has ended is opened again first; one not yet opened opens when its
+		 * tab is shown.
+		 */
+		ask(slug: string, lines: SourceLines): void {
+			pending = { slug, lines };
+			if (state === 'ended') void start();
+			else putPending();
 		},
 	};
 }

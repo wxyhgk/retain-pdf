@@ -71,7 +71,15 @@ export type BlockMenuBuilder = {
 /** What the menu offers beyond the editor itself: saving a code block as a file of the article. */
 export type BlockMenuHost = {
 	saveAsFile?: { can: (node: ProseNode) => boolean; run: (view: EditorView, pos: number) => void };
+	/** 「问 AI」 about the block (it is selected when its menu runs an entry). */
+	ask?: () => void;
 };
+
+/** The menu's 「问 AI…」, when the Studio offers it. */
+function askEntry(host: BlockMenuHost): MenuEntry[] {
+	const ask = host.ask;
+	return ask ? [{ key: 'ask-ai', label: '问 AI…', current: false, danger: false, turn: false, hint: keyHint('Mod-j'), run: () => ask() }] : [];
+}
 
 function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntry[] {
 	if (node.type.name !== SCIENCE_FENCE_TYPE) {
@@ -88,7 +96,7 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 		if (save?.can(node)) {
 			entries.push({ key: 'save-file', label: '另存为文件', current: false, danger: false, turn: false, run: (view) => save.run(view, pos) });
 		}
-		return entries;
+		return [...entries, ...askEntry(host)];
 	}
 	const science = scienceBlockMenuItems(node.type.name, String(node.attrs.language ?? '')).map((item): MenuEntry => ({
 		key: item.id,
@@ -110,7 +118,7 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 			run: (view) => dispatchBlockAction(view, duplicate.action),
 		});
 	}
-	return science;
+	return [...science, ...askEntry(host)];
 }
 
 /**
@@ -170,6 +178,14 @@ export function buildToolbarTurn(builder: ToolbarBuilder): void {
 	});
 	const groups = builder.build();
 	groups.unshift(...groups.splice(-1));
+}
+
+const ASK_ICON =
+	'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M18.5 14l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>';
+
+/** 「问 AI」 at the end of the toolbar over selected text. */
+export function buildToolbarAsk(builder: ToolbarBuilder, ask: () => void): void {
+	builder.addGroup('ask', '问 AI').addItem('ask-ai', { icon: ASK_ICON, label: '问 AI', active: () => false, onRun: () => ask() });
 }
 
 export const writingKeymap = $prose(() =>

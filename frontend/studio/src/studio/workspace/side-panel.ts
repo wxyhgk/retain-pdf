@@ -109,4 +109,11 @@ export function createSidePanel(shell: HTMLElement) {
 	// A floating panel starts closed on a narrow window, whatever was saved.
 	if (NARROW.matches) layout.open = false;
 	applyLayout();
+
+	return {
+		/** Opens the panel on this tab. */
+		show(tab: SidePanelTab): void {
+			update({ open: true, tab });
+		},
+	};
 }

@@ -1,6 +1,6 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import type { ForkBlockEditFeatureConfig } from '@milkdown/crepe/feature/block-edit';
-import { editorViewCtx } from '@milkdown/kit/core';
+import { editorViewCtx, serializerCtx } from '@milkdown/kit/core';
 import { diffComponent, diffComponentConfig } from '@milkdown/kit/component/diff';
 import {
 	acceptAllDiffsCmd,
@@ -23,7 +23,7 @@ import '../../science/browser/molecule-renderer.css';
 import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '../../science/browser/science-renderer';
 import { linkPath } from '../article-files';
-import { blockFeelPlugins, buildBlockMenu, buildToolbarTurn } from './block-menu';
+import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '../../code-files/render.mjs';
 import { scienceBlockPlugins } from './crepe-science-block';
@@ -41,6 +41,7 @@ import { SCIENCE_FENCE_TYPE } from './science-block';
 import { buildScienceSlashMenu, type SlashMenuBuilder } from './science-slash-menu';
 import { addSearchWords, SLASH_TRIGGERS } from './slash-search';
 import { withoutTrailingEmptyLines } from '../document/index.ts';
+import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
 import '../../widgets/widgets.css';
@@ -57,6 +58,8 @@ export type StudioEditorHost = {
 	changed(markdown: string): void;
 	/** How many changes are left to review, or null when none is under review. */
 	reviewing(pending: number | null): void;
+	/** The author asks an AI about the selected blocks (⌘J, 「问 AI」): `markSelection` tells which. */
+	askAI(): void;
 } & ArticleLinkHost;
 
 export type StudioEditor = {
@@ -73,14 +76,19 @@ export type StudioEditor = {
 	review(body: string): Promise<string>;
 	acceptAll(): void;
 	rejectAll(): void;
+	/**
+	 * The body as Markdown with the blocks the selection is in marked
+	 * (source-lines.ts): which lines of the file they are. Null with nothing shown.
+	 */
+	markSelection(): string | null;
 };
 
-/** The Studio's editor: Crepe with the science blocks, formulas, file drops and block feel. */
 /** What the editor holds, as Markdown, without empty lines left at the end. */
 function markdownOf(editor: { getMarkdown(): string }): string {
 	return withoutTrailingEmptyLines(editor.getMarkdown());
 }
 
+/** The Studio's editor: Crepe with the science blocks, formulas, file drops and block feel. */
 export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): StudioEditor {
 	let crepe: Crepe | null = null;
 	let mounting = false;
@@ -148,7 +156,10 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			const filePreview = codeFilePreview(host.codeFile);
 			const blockEdit: ForkBlockEditFeatureConfig = {
 				buildBlockMenu: (builder, target) =>
-					buildBlockMenu(builder, target, { saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) } }),
+					buildBlockMenu(builder, target, {
+						saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) },
+						ask: () => host.askAI(),
+					}),
 				buildMenu: (builder) => {
 					buildScienceSlashMenu(builder);
 					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host);
@@ -222,7 +233,10 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						codeLabel: '行内代码',
 						linkLabel: '链接',
 						latexLabel: '公式',
-						buildToolbar: buildToolbarTurn,
+						buildToolbar: (builder) => {
+							buildToolbarTurn(builder);
+							buildToolbarAsk(builder, () => host.askAI());
+						},
 					},
 					[CrepeFeature.LinkTooltip]: {
 						inputPlaceholder: '粘贴链接…',
@@ -252,7 +266,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(smartPastePlugins(host));
 			crepe.editor.use(fileDrop.plugin);
 			// Last, so Esc and the other keys go to what is open first.
-			crepe.editor.use(blockKeyPlugins);
+			crepe.editor.use(blockKeyPlugins(host));
 			crepe.editor
 				.config((ctx) => {
 					ctx.set(remarkGFMPlugin.options.key, gfmOptions);
@@ -282,6 +296,24 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		}
 	}
 
+	function markSelection(): string | null {
+		if (!crepe) return null;
+		return crepe.editor.action((ctx) => {
+			const { state } = ctx.get(editorViewCtx);
+			const paragraph = state.schema.nodes.paragraph;
+			if (!paragraph || !state.doc.childCount) return null;
+			const { from, to } = state.selection;
+			const $from = state.doc.resolve(from);
+			const $to = state.doc.resolve(to);
+			// Whole blocks: from the start of the one the selection starts in to the end of the one it ends in.
+			const start = $from.depth ? $from.before(1) : from;
+			const end = $to.depth ? $to.after(1) : to;
+			const mark = (text: string) => paragraph.create(null, state.schema.text(text));
+			const marked = state.tr.insert(end, mark(SELECTION_END)).insert(start, mark(SELECTION_START)).doc;
+			return withoutTrailingEmptyLines(ctx.get(serializerCtx)(marked));
+		});
+	}
+
 	function focusStart(): void {
 		crepe?.editor.action((ctx) => {
 			const view = ctx.get(editorViewCtx);
@@ -303,6 +335,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	}
 
 	return {
+		markSelection,
 		mount,
 		focusStart,
 		settle: report,

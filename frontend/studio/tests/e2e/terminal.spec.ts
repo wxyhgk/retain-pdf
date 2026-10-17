@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { fixtureHas, openStudio, resetFixture } from './studio.ts';
+import { editor, fixtureHas, openStudio, resetFixture, savedMarkdown } from './studio.ts';
 
 const screen = (page: Page): Locator => page.locator('#terminal-screen .xterm-rows');
 const running = (page: Page) => expect(page.locator('#terminal-screen')).toHaveAttribute('data-state', 'running');
@@ -46,4 +46,23 @@ test('after the shell exits, a key opens a new one', async ({ page }) => {
 	await running(page);
 	await run(page, 'echo again-$((1 + 1))');
 	await expect(screen(page)).toContainText('again-2');
+});
+
+test('⌘J on a block types a question about its lines into the terminal, to finish and send', async ({ page }) => {
+	await page.locator('#side-tab-files').click();
+	await editor(page).locator('p', { hasText: '结尾段落' }).click();
+	await page.keyboard.press('End');
+	await page.keyboard.type('，刚改的');
+	await page.keyboard.press('ControlOrMeta+j');
+	// The article is saved first, so the lines named are the file's.
+	await expect.poll(savedMarkdown).toContain('结尾段落。，刚改的');
+	const line = savedMarkdown().split('\n').findIndex((text) => text.includes('结尾段落。，刚改的')) + 1;
+	await expect(page.locator('#side-terminal')).toBeVisible();
+	// One line, however the terminal wraps it on the screen.
+	const typed = async () => (await screen(page).innerText()).replace(/\n/gu, '');
+	await expect.poll(typed).toContain(`blog/studio-fixture/index.md 第 ${line} 行（从「结尾段落。，刚改的」开始）。要求：`);
+	// Typed, not run: nothing came back from the shell, and nothing was made.
+	await page.waitForTimeout(500);
+	expect(await typed()).not.toContain('command not found');
+	await expect(page.locator('#terminal-screen')).toHaveAttribute('data-state', 'running');
 });

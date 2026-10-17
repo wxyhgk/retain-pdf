@@ -28,6 +28,7 @@ import { createArticleList } from './workspace/article-list';
 import { showContextMenu } from './workspace/context-menu';
 import { watchDisk } from './workspace/disk-events';
 import { articleAddress } from '../articles/rules.mjs';
+import { sourceLinesOf } from './document/source-lines';
 import { setWidgetFiles, widgetFilesChanged } from '../widgets/widget-host';
 import { studioFileUrl } from '../articles/article-references.mjs';
 import { createFilePanel } from './workspace/file-panel';
@@ -108,7 +109,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 		return `./${path}`;
 	},
 });
-createSidePanel(shell);
+const sidePanel = createSidePanel(shell);
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!);
 const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files')!, {
 	source: () => session.current.source,
@@ -142,6 +143,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		return article ? { title: article.title, href: articleAddress(article.kind, article.slug) } : null;
 	},
 	openArticle: (slug) => void session.open(slug),
+	askAI: () => void askAI(),
 	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
 	reviewing: (pending) => reviewBar.show(pending),
 });
@@ -223,6 +225,28 @@ createNewArticleDialog([...shell.querySelectorAll<HTMLElement>('#new-article, #n
 	create: async (slug, title) => { await createArticle(slug, title); },
 	open: (slug) => openFromList(slug, true),
 });
+
+/**
+ * 「问 AI」 (⌘J, the toolbar, a block's menu): the article saved, the lines
+ * the selected blocks are in, and a question about them typed into the
+ * terminal for the author to finish and send.
+ */
+async function askAI(): Promise<void> {
+	const slug = session.slug;
+	const marked = slug ? editor.markSelection() : null;
+	if (!slug || !marked) return;
+	if (!(await session.flush())) {
+		showToast('文章还没保存好，保存后再问 AI', true);
+		return;
+	}
+	const lines = sourceLinesOf(session.current.source, marked);
+	if (!lines) {
+		showToast('没找到选中的内容在文件里的位置', true);
+		return;
+	}
+	sidePanel.show('terminal');
+	terminal.ask(slug, lines);
+}
 
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {

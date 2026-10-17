@@ -1,3 +1,4 @@
+import type { MilkdownPlugin } from '@milkdown/ctx';
 import { commandsCtx } from '@milkdown/kit/core';
 import { toggleLinkCommand } from '@milkdown/kit/component/link-tooltip';
 import { InputRule, inputRules } from '@milkdown/prose/inputrules';
@@ -15,7 +16,13 @@ const modifier = (event: KeyboardEvent) => (navigator.platform.includes('Mac') ?
  * editor's other plugins, so Esc goes to what is open first (a formula
  * being typed, a menu).
  */
-export const blockKeysPlugin = $prose(
+/** What the keys need from the Studio around the editor. */
+export type BlockKeysHost = {
+	/** ⌘J: 「问 AI」 about the selected blocks. */
+	askAI(): void;
+};
+
+const blockKeysPlugin = (host: BlockKeysHost) => $prose(
 	(ctx) =>
 		new Plugin({
 			props: {
@@ -28,6 +35,10 @@ export const blockKeysPlugin = $prose(
 					if (event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) return run((state, dispatch) => moveBlocks(state, event.key === 'ArrowUp' ? -1 : 1, dispatch));
 					if (event.shiftKey) return false;
 					if (key === 'd') return run(duplicateBlocks);
+					if (key === 'j') {
+						host.askAI();
+						return true;
+					}
 					if (key === 'k') {
 						const { selection } = view.state;
 						if (!(selection instanceof TextSelection) || selection.empty) return false;
@@ -41,4 +52,6 @@ export const blockKeysPlugin = $prose(
 
 export const todoPlugin = $prose(() => inputRules({ rules: [new InputRule(/^\[( |x|X)?\]\s$/u, todoInputRule)] }));
 
-export const blockKeyPlugins = [blockKeysPlugin, todoPlugin].flat();
+export function blockKeyPlugins(host: BlockKeysHost): MilkdownPlugin[] {
+	return [blockKeysPlugin(host), todoPlugin].flat();
+}

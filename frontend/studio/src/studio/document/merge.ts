@@ -53,6 +53,29 @@ function lcsLengths(original: readonly string[], edited: readonly string[]): num
 }
 
 /**
+ * For each of the edited body's blocks, the original block it means the
+ * same as (its index there), or null for one that is new or changed: the
+ * same lining up the merge below makes.
+ */
+export function alignBodyBlocks(originalBlocks: readonly MarkdownBlockSlice[], editedBlocks: readonly MarkdownBlockSlice[]): (number | null)[] {
+	const original = originalBlocks.map(semanticFingerprint);
+	const edited = editedBlocks.map(semanticFingerprint);
+	const lengths = lcsLengths(original, edited);
+	const aligned: (number | null)[] = edited.map(() => null);
+	let originalIndex = 0;
+	let editedIndex = 0;
+	while (originalIndex < original.length && editedIndex < edited.length) {
+		if (original[originalIndex] === edited[editedIndex]) {
+			aligned[editedIndex] = originalIndex;
+			originalIndex += 1;
+			editedIndex += 1;
+		} else if (lengths[originalIndex + 1]![editedIndex]! >= lengths[originalIndex]![editedIndex + 1]!) originalIndex += 1;
+		else editedIndex += 1;
+	}
+	return aligned;
+}
+
+/**
  * One block of the merged body: the original's bytes when it means the
  * same (`original` is its index there), or else the editor's. `edited` is
  * the editor's version either way.
