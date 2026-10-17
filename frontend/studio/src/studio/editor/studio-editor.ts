@@ -14,7 +14,7 @@ import {
 import { remarkGFMPlugin, strikethroughKeymap } from '@milkdown/kit/preset/gfm';
 import type { Node as ProseNode } from '@milkdown/prose/model';
 import { Plugin, TextSelection } from '@milkdown/prose/state';
-import { $prose, callCommand } from '@milkdown/utils';
+import { $prose, callCommand, insert } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
@@ -86,6 +86,8 @@ export type StudioEditor = {
 	markSelection(): string | null;
 	/** The article's library (assets/refs.bib), to number its citations by; null when it has none. */
 	setLibrary(library: Map<string, BibEntry> | null): void;
+	/** Puts Markdown in where the caret is, as blocks of their own. */
+	insertMarkdown(markdown: string): void;
 };
 
 /** What the editor holds, as Markdown, without empty lines left at the end. */
@@ -349,6 +351,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 
 	return {
 		markSelection,
+		insertMarkdown(markdown) {
+			crepe?.editor.action(insert(markdown));
+		},
 		setLibrary(next) {
 			library = next;
 			applyLibrary();

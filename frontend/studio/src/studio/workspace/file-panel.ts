@@ -10,6 +10,8 @@ import {
 import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
 import { movedPath, referencedPaths, studioFileUrl } from '../../articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
+import { officeKind, tableSource } from '../office-kinds.mjs';
+import { markdownTable, parseDelimited } from '../table-text';
 import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
 import { showContextMenu, type MenuItem } from './context-menu';
@@ -31,6 +33,12 @@ export type FilePanelHost = {
 	 * follow it; the editor reloads, keeping unsaved edits pointed at the new name.
 	 */
 	moved(from: string, to: string, rewritten: boolean): Promise<void>;
+	/** Puts Markdown into the article where the caret is (a table made from a file). */
+	insertMarkdown(markdown: string): void;
+	/** Shows a Word, PowerPoint or Excel file in the page. */
+	viewOffice(url: string, name: string): void;
+	/** A workbook's first sheet as rows (office-viewer.ts). */
+	sheetRows(url: string): Promise<string[][]>;
 };
 
 const STATUS_CLEAR_MS = 6000;
@@ -435,10 +443,32 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		}
 	}
 
+	/** Opens a file: an office file in the page's viewer, the rest in a new tab. */
 	function openFile(entry: ArticleFileEntry): void {
 		const [root] = entry.path.split('/');
 		if (entry.kind !== 'file' || !PUBLISHED_FOLDERS.includes(root)) return;
-		window.open(studioFileUrl(slug!, entry.path), '_blank', 'noopener');
+		if (officeKind(entry.path)) host.viewOffice(studioFileUrl(slug!, entry.path), fileName(entry.path));
+		else window.open(studioFileUrl(slug!, entry.path), '_blank', 'noopener');
+	}
+
+	/** A spreadsheet's first sheet, or a CSV/TSV file, put into the article as a Markdown table. */
+	function insertTable(entry: ArticleFileEntry): void {
+		const source = tableSource(entry.path);
+		if (!source || !slug) return;
+		const article = slug;
+		void run(`正在读取 ${fileName(entry.path)}…`, async () => {
+			const url = studioFileUrl(article, entry.path);
+			let rows: string[][];
+			if (source.sheet) rows = await host.sheetRows(url);
+			else {
+				const response = await fetch(url, { cache: 'no-store' });
+				if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { error?: string } | null)?.error ?? `读不到 ${entry.path}`);
+				rows = parseDelimited(await response.text(), source.delimiter);
+			}
+			if (!rows.length) throw new Error(`${fileName(entry.path)} 里没有数据`);
+			host.insertMarkdown(markdownTable(rows));
+			return `已插入 ${rows.length - 1} 行的表格`;
+		});
 	}
 
 	function chooseUpload(target: ArticleFileEntry | null, folders = false): void {
@@ -466,7 +496,8 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			);
 		} else {
 			const reference = markdownReference(entry.path);
-			if (published) items.push({ label: '在新标签页打开', action: () => openFile(entry) });
+			if (published) items.push({ label: officeKind(entry.path) ? '预览' : '在新标签页打开', action: () => openFile(entry) });
+			if (published && tableSource(entry.path)) items.push({ label: '插入为表格', action: () => insertTable(entry) });
 			if (reference) items.push({ label: '复制 Markdown 引用', action: () => void copy(reference, ' Markdown 引用') });
 		}
 		items.push({ label: '复制路径', action: () => void copy(entry.kind === 'directory' ? `./${entry.path}/` : `./${entry.path}`, '路径') });

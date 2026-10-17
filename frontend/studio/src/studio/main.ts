@@ -34,6 +34,7 @@ import { createCitePicker } from './workspace/cite-picker';
 import { sourceLinesOf } from './document/source-lines';
 import { setWidgetFiles, widgetFilesChanged } from '../widgets/widget-host';
 import { studioFileUrl } from '../articles/article-references.mjs';
+import { createOfficeViewer, firstSheetRows } from './workspace/office-viewer';
 import { createFilePanel } from './workspace/file-panel';
 import { isImage } from './article-files';
 import { uploadFolderFor } from './workspace/file-tree';
@@ -119,7 +120,11 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	revision: () => session.current.revision,
 	settle: () => session.flush(),
 	moved: (from, to, rewritten) => session.fileMoved(from, to, rewritten),
+	insertMarkdown: (markdown) => editor.insertMarkdown(markdown),
+	viewOffice: (url, name) => void officeViewer.open(url, name),
+	sheetRows: firstSheetRows,
 });
+const officeViewer = createOfficeViewer(document.querySelector<HTMLDialogElement>('#office-viewer')!);
 
 const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-editor')!, {
 	// Files dropped or pasted into the editor, and its image uploads, go into the open article's folder.

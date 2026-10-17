@@ -1,0 +1,24 @@
+/* The office viewer: a large window over the Studio, the file drawn in it; black and white around what the file brings. */
+.office-viewer { box-sizing: border-box; width: min(96vw, 1200px); height: min(92vh, 1000px); padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface-soft); color: rgb(var(--gray-dark)); box-shadow: 0 18px 65px rgba(0, 0, 0, 0.22); }
+.office-viewer[open] { display: flex; flex-direction: column; }
+.office-viewer::backdrop { background: rgba(15, 15, 15, 0.32); }
+.office-viewer-bar { display: flex; flex: none; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); font-size: 13px; }
+.office-viewer-bar strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.office-viewer-bar .office-viewer-status { color: rgb(var(--gray)); }
+.office-viewer-bar .office-viewer-space { flex: 1; }
+.office-viewer-bar a, .office-viewer-bar button { padding: 3px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; text-decoration: none; cursor: pointer; }
+.office-viewer-sheets { display: flex; flex: none; gap: 2px; padding: 6px 14px 0; overflow-x: auto; background: var(--surface); }
+.office-viewer-sheets[hidden] { display: none; }
+.office-viewer-sheets button { padding: 4px 12px; border: 0; border-radius: 6px 6px 0 0; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
+.office-viewer-sheets button[aria-selected='true'] { background: var(--surface-soft); color: rgb(var(--gray-dark)); font-weight: 600; }
+.office-viewer-body { flex: 1; min-height: 0; overflow: auto; }
+.office-viewer-body .office-note { max-width: 560px; margin: 48px auto; color: rgb(var(--gray)); font-size: 14px; line-height: 1.7; text-align: center; }
+/* A document's pages as docx-preview draws them, on the window's gray. */
+.office-viewer-body .docx-wrapper { background: transparent; padding: 24px 0; }
+.office-viewer-body .docx-wrapper > section.docx { box-shadow: 0 1px 6px rgba(0, 0, 0, 0.14); margin-bottom: 24px; }
+.office-viewer-body .office-slides { display: flex; justify-content: center; padding: 24px; }
+.office-viewer-body .office-sheet { padding: 16px; }
+.office-viewer-body .office-sheet table { width: auto; margin: 0; border-collapse: collapse; background: var(--surface); font-size: 13px; font-variant-numeric: tabular-nums; }
+/* SheetJS marks a number's cell `data-t="n"`. */
+.office-viewer-body .office-sheet td[data-t='n'] { text-align: right; }
+.office-viewer-body .office-sheet td { padding: 4px 10px; border: 1px solid rgb(var(--gray-light)); white-space: nowrap; }

@@ -149,6 +149,18 @@ import { SITE_TITLE } from '../consts';
 			<p class="quick-find-hint"><span id="cite-status" role="status" aria-live="polite"></span> <kbd>↵</kbd> 引用 · <kbd>esc</kbd> 关闭</p>
 		</dialog>
 
+		<dialog id="office-viewer" class="office-viewer" aria-labelledby="office-viewer-title">
+			<div class="office-viewer-bar">
+				<strong id="office-viewer-title"></strong>
+				<span id="office-viewer-status" class="office-viewer-status" role="status" aria-live="polite"></span>
+				<span class="office-viewer-space"></span>
+				<a id="office-viewer-download" href="#">下载</a>
+				<form method="dialog"><button type="submit" aria-label="关闭">关闭</button></form>
+			</div>
+			<nav id="office-viewer-sheets" class="office-viewer-sheets" role="tablist" aria-label="工作表" hidden></nav>
+			<div id="office-viewer-body" class="office-viewer-body"></div>
+		</dialog>
+
 		<dialog id="trash-dialog" class="article-dialog trash-view">
 			<form method="dialog">
 				<div class="dialog-heading">
