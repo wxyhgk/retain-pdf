@@ -5,8 +5,10 @@
  */
 
 :root {
-	--accent: #0b6b58;
-	--accent-dark: #06483c;
+	/* Notion is black and white: the "accent" is its ink, and what stands on it is the page. */
+	--accent: #37352f;
+	--accent-dark: #000000;
+	--on-accent: #ffffff;
 	--black: 55, 53, 47;
 	--gray: 120, 119, 116;
 	--gray-light: 233, 232, 229;
@@ -15,16 +17,17 @@
 	--surface: #ffffff;
 	--surface-soft: #f7f7f5;
 	--surface-hover: #efefed;
-	--code-bg: #16201e;
-	--code-text: #f4f7f6;
+	--code-bg: #1e1e1e;
+	--code-text: #f4f4f4;
 	--box-shadow:
 		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
 		0 16px 32px rgba(var(--gray), 33%);
 }
 html[data-theme='dark'] {
 	color-scheme: dark;
-	--accent: #67c7b0;
-	--accent-dark: #93ddcb;
+	--accent: #d4d4d4;
+	--accent-dark: #ffffff;
+	--on-accent: #191919;
 	--black: 255, 255, 255;
 	--gray: 155, 155, 155;
 	--gray-light: 47, 47, 47;
@@ -33,8 +36,8 @@ html[data-theme='dark'] {
 	--surface: #191919;
 	--surface-soft: #202020;
 	--surface-hover: #2a2a2a;
-	--code-bg: #0e1211;
-	--code-text: #e9efec;
+	--code-bg: #111111;
+	--code-text: #e9e9e9;
 	--box-shadow: 0 12px 38px rgba(0, 0, 0, 0.34);
 }
 body {
@@ -105,7 +108,7 @@ summary:focus-visible {
 	outline-offset: 3px;
 }
 ::selection {
-	background: rgba(11, 107, 88, 0.16);
+	background: rgba(var(--gray), 0.24);
 }
 p {
 	margin-bottom: 1em;
