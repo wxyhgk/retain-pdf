@@ -111,3 +111,19 @@ test('the slash menu makes a callout and a toggle', async ({ page }) => {
 	expect(saved).toContain('> [!TIP]\n> 记得收敛。');
 	expect(saved).toContain('<details>\n<summary>细节</summary>\n\n藏起来的内容\n\n</details>');
 });
+
+test('a toggle whose title has HTML, or no title, is written back as it was when something else is edited', async ({ page }) => {
+	const tagged = '<details>\n<summary><b>推导</b> 过程</summary>\n\n藏起来的推导。\n\n</details>';
+	const untitled = '<details>\n\n没有标题的折叠内容。\n\n</details>';
+	appendToFixture(`\n${tagged}\n\n${untitled}\n`);
+	await openStudio(page);
+	await editor(page).locator('p', { hasText: '结尾段落' }).click();
+	await page.keyboard.press('End');
+	await page.keyboard.type('改了别处');
+	const saved = await save(page);
+	expect(saved).toContain('结尾段落。改了别处');
+	expect(saved).toContain(tagged);
+	expect(saved).toContain(untitled);
+	expect(saved).not.toContain('&lt;b&gt;');
+	expect(saved).not.toContain('<summary></summary>');
+});

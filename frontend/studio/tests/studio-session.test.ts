@@ -357,3 +357,36 @@ test('small helpers of the page', () => {
 	assert.equal(filterArticles(articles, '').length, 2);
 	assert.deepEqual(saveStateText({ kind: 'failed', message: '断了' }), { text: '断了，稍后自动重试', tone: 'error' });
 });
+
+test('an article that cannot be loaded leaves the one open as it was', async () => {
+	const { session, api, page } = await opened();
+	const getArticle = api.api.getArticle;
+	api.api.getArticle = async (slug) => {
+		if (slug === 'gone') throw new Error('文章不存在');
+		return getArticle(slug);
+	};
+	await session.open('gone');
+	assert.equal(session.slug, 'note');
+	assert.equal(page.toasts.at(-1), '打不开「gone」：文章不存在');
+	assert.equal(page.states.at(-1), '已载入');
+});
+
+test('when the body cannot be shown, the properties shown are still the new article’s', async () => {
+	const api = fakeApi();
+	const page = fakeHost();
+	const session = new ArticleSession(api.api, page.host, QUICK);
+	await session.open('note');
+	const mount = page.host.mount;
+	page.host.mount = async (article, body, again) => {
+		if (article.slug === 'broken') throw new Error('插件出错');
+		return mount(article, body, again);
+	};
+	await session.open('broken');
+	assert.equal(session.slug, 'broken');
+	assert.equal(page.states.at(-1), '编辑器没能显示正文：插件出错');
+	// The page heard of the new article before its body failed.
+	assert.equal(page.title(), '笔记');
+	assert.equal(session.editProperties({ ...PROPERTIES, title: '改过' }), null);
+	await settle();
+	assert.match(api.disk.source, /title: "改过"/u);
+});

@@ -42,6 +42,8 @@ test('Markdown copied from VS Code is read as Markdown; code from it is a code b
 
 test('an address pasted over selected text links it; on its own it comes in as a link', async ({ page }) => {
 	await editor(page).getByText('结尾段落。', { exact: true }).selectText();
+	// The editor knows of the selection once its toolbar is up (it hears of the browser's a moment later).
+	await expect(page.locator('.milkdown-toolbar[data-show="true"]')).toBeVisible();
 	await paste(page, { text: 'https://example.com/paper' });
 	await expect(editor(page).locator('a[href="https://example.com/paper"]')).toHaveText('结尾段落。');
 

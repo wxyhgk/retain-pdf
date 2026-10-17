@@ -18,11 +18,14 @@ import { $nodeSchema, $remark } from '@milkdown/utils';
  * The blog draws the HTML as it is; here the HTML around the blocks becomes
  * one block, its title typed in place, folded and unfolded with its
  * triangle (in the editor only: the file keeps whether it starts open).
+ * A title with HTML in it (`<summary><b>推导</b></summary>`) is more than
+ * the title field can hold: that `<details>` stays HTML, written as it was.
+ * One without a title stays without one until a title is typed.
  */
 
 export const TOGGLE_TYPE = 'toggle';
 
-type MdastNode = { type: string; value?: string; summary?: string; open?: boolean; children?: MdastNode[] };
+type MdastNode = { type: string; value?: string; summary?: string; open?: boolean; titled?: boolean; children?: MdastNode[] };
 type RemarkPlugin = ReturnType<Parameters<typeof $remark>[1]>;
 type MarkdownState = { containerFlow(node: unknown, info: unknown): string };
 
@@ -54,7 +57,8 @@ export function groupToggles(node: MdastNode): void {
 	for (let index = 0; index < children.length; index += 1) {
 		const child = children[index];
 		const opening = OPENING.exec(htmlOf(child) ?? '');
-		if (!opening) continue;
+		// A title with tags in it is kept as the HTML it is.
+		if (!opening || opening[2]?.includes('<')) continue;
 		let depth = 1;
 		let end = index + 1;
 		for (; end < children.length; end += 1) {
@@ -68,6 +72,7 @@ export function groupToggles(node: MdastNode): void {
 			type: 'toggle',
 			summary: decodeHtml((opening[2] ?? '').trim()),
 			open: Boolean(opening[1]),
+			titled: opening[2] !== undefined,
 			children: inner.length ? inner : [{ type: 'paragraph', children: [] }],
 		};
 		children.splice(index, end - index + 1, toggle);
@@ -77,7 +82,9 @@ export function groupToggles(node: MdastNode): void {
 
 function writeToggle(node: MdastNode, _parent: unknown, state: MarkdownState, info: unknown): string {
 	const inner = state.containerFlow(node, info);
-	const head = `<details${node.open ? ' open' : ''}>\n<summary>${encodeHtml(node.summary ?? '')}</summary>`;
+	// No title, and none was there: none is written.
+	const title = node.titled === false && !node.summary ? '' : `\n<summary>${encodeHtml(node.summary ?? '')}</summary>`;
+	const head = `<details${node.open ? ' open' : ''}>${title}`;
 	return inner ? `${head}\n\n${inner}\n\n</details>` : `${head}\n\n</details>`;
 }
 
@@ -92,7 +99,7 @@ export const toggleSchema = $nodeSchema(TOGGLE_TYPE, () => ({
 	group: 'block',
 	content: 'block+',
 	defining: true,
-	attrs: { summary: { default: '' }, open: { default: false } },
+	attrs: { summary: { default: '' }, open: { default: false }, titled: { default: true } },
 	parseDOM: [
 		{
 			tag: 'details',
@@ -113,7 +120,7 @@ export const toggleSchema = $nodeSchema(TOGGLE_TYPE, () => ({
 		match: (node) => node.type === 'toggle',
 		runner: (state, node, type) => {
 			const toggle = node as MdastNode;
-			state.openNode(type, { summary: toggle.summary ?? '', open: Boolean(toggle.open) });
+			state.openNode(type, { summary: toggle.summary ?? '', open: Boolean(toggle.open), titled: toggle.titled !== false });
 			state.next(node.children);
 			state.closeNode();
 		},
@@ -121,7 +128,7 @@ export const toggleSchema = $nodeSchema(TOGGLE_TYPE, () => ({
 	toMarkdown: {
 		match: (node) => node.type.name === TOGGLE_TYPE,
 		runner: (state, node) => {
-			state.openNode('toggle', undefined, { summary: node.attrs.summary, open: node.attrs.open });
+			state.openNode('toggle', undefined, { summary: node.attrs.summary, open: node.attrs.open, titled: node.attrs.titled });
 			state.next(node.content);
 			state.closeNode();
 		},

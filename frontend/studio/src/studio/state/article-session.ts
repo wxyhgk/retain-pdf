@@ -14,7 +14,9 @@ export type SaveState =
 	| { kind: 'saved' }
 	| { kind: 'reviewing' }
 	| { kind: 'conflict' }
-	| { kind: 'failed'; message: string };
+	| { kind: 'failed'; message: string }
+	/** The editor could not show the article; its properties can still be edited. */
+	| { kind: 'unshown'; message: string };
 
 export type OpenedArticle = { article: ArticlePayload; properties: ArticleProperties };
 
@@ -147,7 +149,20 @@ export class ArticleSession {
 		if (!discard && !(await this.saveBeforeLeaving())) return;
 		const sequence = ++this.#sequence;
 		this.#setState({ kind: 'loading' });
-		const article = await this.#api.getArticle(slug);
+		let article: ArticlePayload;
+		try {
+			article = await this.#api.getArticle(slug);
+		} catch (error) {
+			if (sequence !== this.#sequence) return;
+			// The article open before stays open, as it was.
+			this.#host.toast(`打不开「${slug}」：${error instanceof Error ? error.message : String(error)}`);
+			const { article: open, dirty } = this.#store.current;
+			this.#setState(open ? { kind: dirty ? 'dirty' : 'loaded' } : { kind: 'failed', message: '没有打开文章' });
+			return;
+		}
+		if (sequence !== this.#sequence) return;
+		// Typed while the article was on its way: saved before it goes.
+		if (!discard && this.hasUnsavedEdits()) await this.#autosave.flush();
 		if (sequence !== this.#sequence) return;
 		await this.#present(article, sequence, false);
 	}
@@ -274,11 +289,20 @@ export class ArticleSession {
 		this.#properties = properties;
 		this.#propertiesValid = true;
 		this.#autosave.cancel();
+		// The properties shown are this article's before its body is: what is
+		// typed in them belongs to it, even should the body fail to show.
+		this.#host.opened({ article, properties });
 		const original = parseStudioDocument(source);
-		const markdown = await this.#host.mount(article, original.body.raw, again);
+		let markdown: string;
+		try {
+			markdown = await this.#host.mount(article, original.body.raw, again);
+		} catch (error) {
+			if (sequence !== this.#sequence) return;
+			this.#setState({ kind: 'unshown', message: `编辑器没能显示正文：${error instanceof Error ? error.message : String(error)}` });
+			return;
+		}
 		if (sequence !== this.#sequence) return;
 		const normalized = replaceStudioDocumentBody(original, mergeMarkdownBody(original.body.raw, markdown).body);
-		this.#host.opened({ article, properties });
 		this.#host.roundtrip(source === normalized);
 		this.#setState({ kind: 'loaded' });
 		this.#noteEdit();
