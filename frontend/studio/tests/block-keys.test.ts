@@ -4,7 +4,7 @@ import test from 'node:test';
 import { Schema, type Node as ProseNode } from 'prosemirror-model';
 import { EditorState, TextSelection, type Transaction } from 'prosemirror-state';
 
-import { duplicateBlocks, moveBlocks, selectBlockInHand, todoInputRule } from '../src/studio/editor/block-keys.ts';
+import { duplicateBlocks, moveBlocks, selectBlockInHand, todoInputRule, writeAtEnd } from '../src/studio/editor/block-keys.ts';
 import { BlockRangeSelection, blockRangeKey } from '../src/studio/editor/block-range.ts';
 
 const schema = new Schema({
@@ -133,4 +133,15 @@ test('`[] ` makes a paragraph a to-do, and a list item one', () => {
 	const item = typed(doc(ul('[ ] ')), '[ ] ');
 	assert.equal(item.child(0).childCount, 1);
 	assert.equal(item.child(0).child(0).attrs.checked, false);
+});
+
+test('a click below the last block writes in an empty paragraph at the end, the one there if there is one', () => {
+	const added = run(caretIn(doc(p('one'), ul('a')), 'one'), writeAtEnd);
+	assert.deepEqual(texts(added), ['one', 'a', '']);
+	assert.equal(added.doc.lastChild?.type.name, 'paragraph');
+	assert.equal(added.selection.from, added.doc.content.size - 1);
+
+	const again = run(added, writeAtEnd);
+	assert.equal(again.doc.childCount, added.doc.childCount, 'no second empty paragraph');
+	assert.equal(again.selection.from, again.doc.content.size - 1);
 });

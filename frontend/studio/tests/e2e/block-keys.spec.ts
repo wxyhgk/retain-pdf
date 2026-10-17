@@ -94,3 +94,50 @@ test('`[] ` starts a to-do, ⌘⇧S strikes text through', async ({ page }) => {
 	// A list right after another is written with the other bullet, so it stays a list of its own.
 	expect(saved).toContain('丙段\n\n- [ ] 算频率\n- [ ] ~~优化结构~~\n\n* [x] 读文献');
 });
+
+/** A click in the blank space below the article's last block. */
+async function clickBelowEnd(page: Page): Promise<void> {
+	const last = editor(page).locator('> *').last();
+	await last.scrollIntoViewIfNeeded();
+	const box = (await last.boundingBox())!;
+	await page.mouse.click(box.x + box.width / 2, box.y + box.height + 60);
+}
+
+test('a click below the last block opens an empty line at the end to write on', async ({ page }) => {
+	await openStudio(page);
+	await clickBelowEnd(page);
+	await page.keyboard.type('新的一段');
+	await expect(editor(page).locator('> p').last()).toHaveText('新的一段');
+
+	// Below an empty last line: that line, not another.
+	await page.keyboard.press('Enter');
+	const blocks = await editor(page).locator('> *').count();
+	await editor(page).locator('p', { hasText: '结尾段落' }).click();
+	await clickBelowEnd(page);
+	await expect(editor(page).locator('> *')).toHaveCount(blocks);
+	await page.keyboard.type('再一段');
+	const saved = await save(page);
+	expect(saved).toMatch(/\n结尾段落。\n\n新的一段\n\n再一段\n$/u);
+});
+
+test('a click below the last block, with nothing typed, leaves the file as it was', async ({ page }) => {
+	await openStudio(page);
+	const before = savedMarkdown();
+	await clickBelowEnd(page);
+	await editor(page).locator('p', { hasText: '结尾段落' }).click();
+	await page.keyboard.press('ControlOrMeta+s');
+	await page.waitForTimeout(300);
+	expect(savedMarkdown()).toBe(before);
+});
+
+test('dragging from below the last block still selects blocks', async ({ page }) => {
+	await openStudio(page);
+	const last = editor(page).locator('> *').last();
+	await last.scrollIntoViewIfNeeded();
+	const box = (await last.boundingBox())!;
+	await page.mouse.move(box.x + box.width / 2, box.y + box.height + 60);
+	await page.mouse.down();
+	await page.mouse.move(box.x + box.width / 2, box.y + 4, { steps: 6 });
+	await page.mouse.up();
+	await expect(editor(page).locator('.pm-block-range').first()).toBeVisible();
+});

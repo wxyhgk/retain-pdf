@@ -4,6 +4,7 @@ import type { EditorView } from '@milkdown/prose/view';
 import { Plugin } from '@milkdown/prose/state';
 import { $prose } from '@milkdown/utils';
 
+import { writeAtEnd } from './block-keys.ts';
 import { BlockRangeSelection, blockRangeKey, selectableBlock } from './block-range.ts';
 
 const BLANK_SNAP_PX = 24;
@@ -28,7 +29,8 @@ const IGNORED_TARGET = [
 	'select',
 ].join(', ');
 
-type Press = { x: number; y: number; anchor: number; moved: boolean };
+/** A press in the margin or blank space; `end` when it was below the last block. */
+type Press = { x: number; y: number; anchor: number; moved: boolean; end: boolean };
 
 function contentBox(view: EditorView) {
 	const rect = view.dom.getBoundingClientRect();
@@ -89,6 +91,18 @@ export function isBlockPointer(view: EditorView, event: MouseEvent): boolean {
 	return dx > BLANK_SNAP_PX || dy > Math.max(BLANK_SNAP_PX, caret.height);
 }
 
+/** Whether the pointer is in the blank space below the last block (in the editor's scrolling area). */
+export function isBelowLastBlock(view: EditorView, event: MouseEvent): boolean {
+	if (event.button !== 0 || ignoredTarget(event)) return false;
+	const scroll = view.dom.closest('.editor-scroll');
+	if (!(scroll ? event.composedPath().includes(scroll) : event.composedPath().includes(view.dom))) return false;
+	const { doc } = view.state;
+	if (!doc.lastChild) return false;
+	const last = view.nodeDOM(doc.content.size - doc.lastChild.nodeSize);
+	if (!(last instanceof HTMLElement)) return false;
+	return event.clientY > last.getBoundingClientRect().bottom + 2;
+}
+
 function pointerCoords(view: EditorView, clientX: number, clientY: number) {
 	const box = contentBox(view);
 	const x = Math.min(Math.max(clientX, box.contentLeft + 4), Math.max(box.contentLeft + 4, box.contentRight - 4));
@@ -125,12 +139,13 @@ class BlockRangeDrag {
 
 	private onMouseDown = (event: MouseEvent): void => {
 		if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey) return;
-		if (!isBlockPointer(this.view, event)) return;
+		const end = isBelowLastBlock(this.view, event);
+		if (!end && !isBlockPointer(this.view, event)) return;
 		const anchor = blockPosAt(this.view, event.clientX, event.clientY);
 		if (anchor == null) return;
 		event.preventDefault();
 		event.stopPropagation();
-		this.press = { x: event.clientX, y: event.clientY, anchor, moved: false };
+		this.press = { x: event.clientX, y: event.clientY, anchor, moved: false, end };
 		this.root.classList.add('pm-block-dragging');
 		document.addEventListener('mousemove', this.onMouseMove, true);
 		document.addEventListener('mouseup', this.onMouseUp, true);
@@ -156,6 +171,12 @@ class BlockRangeDrag {
 		const press = this.press;
 		this.stop();
 		if (!press || press.moved) {
+			this.view.focus();
+			return;
+		}
+		// A click below the last block: writing goes on in an empty paragraph at the end.
+		if (press.end) {
+			writeAtEnd(this.view.state, (tr) => this.view.dispatch(tr));
 			this.view.focus();
 			return;
 		}

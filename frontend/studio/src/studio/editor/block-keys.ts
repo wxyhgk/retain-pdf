@@ -100,3 +100,23 @@ export function todoInputRule(state: EditorState, match: RegExpMatchArray, start
 	if (!range) return null;
 	return tr.wrap(range, [{ type: list, attrs: { bullet: '-' } }, { type: item, attrs: { listType: 'bullet', checked } }]);
 }
+
+/**
+ * A click below the last block, as in Notion: the caret goes into an empty
+ * paragraph at the end, the one there if the last block is one, a new one
+ * otherwise.
+ */
+export function writeAtEnd(state: EditorState, dispatch?: Dispatch): boolean {
+	const { doc, schema } = state;
+	const paragraph = schema.nodes.paragraph;
+	if (!paragraph) return false;
+	const last = doc.lastChild;
+	if (!dispatch) return true;
+	if (last?.type === paragraph && last.content.size === 0) {
+		dispatch(state.tr.setSelection(TextSelection.create(doc, doc.content.size - 1)).scrollIntoView());
+		return true;
+	}
+	const tr = state.tr.insert(doc.content.size, paragraph.create());
+	dispatch(tr.setSelection(TextSelection.create(tr.doc, tr.doc.content.size - 1)).scrollIntoView());
+	return true;
+}
