@@ -23,7 +23,7 @@ export type SlashMenuBuilder = {
 	) => {
 		addItem: (
 			key: string,
-			item: { label: string; icon: string; onRun: (ctx: never) => void },
+			item: { label: string; icon: string; keywords?: string[]; onRun: (ctx: never) => void },
 		) => unknown;
 	};
 };
@@ -35,6 +35,7 @@ export function buildScienceSlashMenu(builder: SlashMenuBuilder): void {
 		group.addItem(entry.key, {
 			label: entry.label,
 			icon: scienceSlashIcon,
+			keywords: [entry.info, 'chem', 'molecule'],
 			onRun: (ctx) => {
 				const context = ctx as { get: (slice: unknown) => never };
 				const commands = context.get(commandsCtx) as {
@@ -58,6 +59,7 @@ export function buildScienceSlashMenu(builder: SlashMenuBuilder): void {
 	group.addItem('delete', {
 		label: '删除当前块',
 		icon: scienceSlashIcon,
+		keywords: ['delete', 'remove'],
 		onRun: (ctx) => {
 			const editorView = (ctx as { get: (slice: unknown) => EditorView }).get(editorViewCtx);
 			dispatchScienceAction(editorView, { type: 'delete' });

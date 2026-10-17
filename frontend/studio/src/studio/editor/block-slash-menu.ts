@@ -27,11 +27,12 @@ function emptiedBlock(ctx: never): EditorView {
 /** Notion's blocks in the slash menu: a callout, a toggle, a link to another article. */
 export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLinkHost): void {
 	const group = builder.addGroup('notion', '块');
-	group.addItem('callout', { label: '提示块', icon: ICONS.callout, onRun: (ctx) => void wrapInCallout(emptiedBlock(ctx), 'tip') });
-	group.addItem('toggle', { label: '折叠块', icon: ICONS.toggle, onRun: (ctx) => void wrapInToggle(emptiedBlock(ctx)) });
+	group.addItem('callout', { label: '提示块', icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(emptiedBlock(ctx), 'tip') });
+	group.addItem('toggle', { label: '折叠块', icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(emptiedBlock(ctx)) });
 	group.addItem('article-link', {
 		label: '链接到文章',
 		icon: ICONS.link,
+		keywords: ['link', 'page', 'article', 'mention'],
 		onRun: (ctx) => {
 			const view = emptiedBlock(ctx);
 			void linkArticleAt(view, links, view.state.selection.from);

@@ -37,6 +37,7 @@ import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
 import { SCIENCE_FENCE_TYPE } from './science-block';
 import { buildScienceSlashMenu, type SlashMenuBuilder } from './science-slash-menu';
+import { addSearchWords, SLASH_TRIGGERS } from './slash-search';
 import { togglePlugins } from './toggle-block';
 
 /** What the editor needs from the Studio around it. */
@@ -141,7 +142,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					buildScienceSlashMenu(builder);
 					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host);
 					replaceSlashImageItem(builder, fileDrop.chooseImages);
+					addSearchWords(builder);
 				},
+				slashMenu: { triggers: SLASH_TRIGGERS },
 				textGroup: {
 					label: '文本',
 					text: { label: '正文' },

@@ -48,8 +48,14 @@ declare module '@milkdown/crepe/feature/block-edit' {
 		{ toggle: (pos: number, anchor: HTMLElement) => void; hide: () => void },
 		'blockMenuAPICtx'
 	>;
-	/** The block edit feature's config, with `buildBlockMenu`. */
-	export type ForkBlockEditFeatureConfig = BlockEditFeatureConfig & { buildBlockMenu?: BuildBlockMenu };
+	/**
+	 * The block edit feature's config, with `buildBlockMenu`, the slash menu's
+	 * `triggers` and its items' `keywords` (block-edit/index.ts, menu/utils.ts).
+	 */
+	export type ForkBlockEditFeatureConfig = Omit<BlockEditFeatureConfig, 'slashMenu'> & {
+		buildBlockMenu?: BuildBlockMenu;
+		slashMenu?: BlockEditFeatureConfig['slashMenu'] & { triggers?: string[] };
+	};
 }
 
 declare module '@milkdown/crepe/feature/latex' {
