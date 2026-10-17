@@ -30,6 +30,7 @@ import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
+import { smartPastePlugins } from './smart-paste';
 import { blockKeyPlugins } from './block-key-plugins';
 import { buildBlockSlashMenu } from './block-slash-menu';
 import { calloutPlugins } from './callout-block';
@@ -242,6 +243,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(calloutPlugins());
 			crepe.editor.use(togglePlugins());
 			crepe.editor.use(articleLinkPlugins(host));
+			crepe.editor.use(smartPastePlugins(host));
 			crepe.editor.use(fileDrop.plugin);
 			// Last, so Esc and the other keys go to what is open first.
 			crepe.editor.use(blockKeyPlugins);

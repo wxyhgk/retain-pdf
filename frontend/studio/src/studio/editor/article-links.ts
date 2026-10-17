@@ -19,6 +19,8 @@ export type ArticleLinkHost = {
 	pickArticle(): Promise<{ title: string; href: string } | null>;
 	/** Opens an article of the blog in the Studio. */
 	openArticle(slug: string): void;
+	/** The title of one of the blog's articles; null when there is none by that name. */
+	articleTitle(slug: string): string | null;
 };
 
 /**

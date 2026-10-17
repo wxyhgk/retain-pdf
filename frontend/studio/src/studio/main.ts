@@ -140,6 +140,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		return article ? { title: article.title, href: `/${article.kind === 'wiki' ? 'wiki' : 'blog'}/${article.slug}/` } : null;
 	},
 	openArticle: (slug) => void session.open(slug),
+	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
 	reviewing: (pending) => reviewBar.show(pending),
 });
 const reviewBar = createReviewBar(shell, { acceptAll: () => editor.acceptAll(), rejectAll: () => editor.rejectAll() });

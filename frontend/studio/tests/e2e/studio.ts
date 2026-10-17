@@ -108,13 +108,15 @@ export async function openSource(page: Page, kind: string): Promise<Locator> {
 }
 
 /** Paste as a browser would, with the clipboard holding HTML (when given) and plain text. */
-export async function paste(page: Page, data: { html?: string; text: string }): Promise<void> {
-	await page.evaluate(({ html, text }) => {
+export async function paste(page: Page, data: { html?: string; text: string; vscode?: string }): Promise<void> {
+	await page.evaluate(({ html, text, vscode }) => {
 		const target = document.querySelector('.milkdown .ProseMirror');
 		if (!target) throw new Error('no editor');
 		const clipboard = new DataTransfer();
 		if (html) clipboard.setData('text/html', html);
 		clipboard.setData('text/plain', text);
+		// What VS Code puts on the clipboard besides: the language of what was copied.
+		if (vscode) clipboard.setData('vscode-editor-data', JSON.stringify({ version: 1, mode: vscode }));
 		target.dispatchEvent(new ClipboardEvent('paste', { clipboardData: clipboard, bubbles: true, cancelable: true }));
 	}, data);
 }
