@@ -2,9 +2,9 @@ import { existsSync, statSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { visit } from 'unist-util-visit';
 
-import { articlePath } from '../articles/article-references.mjs';
+import { articlePath, officeFileOf } from '../articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '../articles/rules.mjs';
-import { officeFileOf, officeKind } from '../office/office-kinds.mjs';
+import { officeKind } from '@blog/office/kinds.mjs';
 
 /**
  * The article's files, linked as the page has them, and its office files

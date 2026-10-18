@@ -13,8 +13,8 @@ import {
 	type DriveEntry,
 	type DriveInfo,
 } from '../api/client';
-import { officeKind } from '../../office/office-kinds.mjs';
-import { openOfficeFile } from '../../office/office-viewer';
+import { officeKind } from '@blog/office/kinds.mjs';
+import { openOfficeFile } from '@blog/office/viewer.ts';
 import { DRIVE_DRAG_TYPE, extension, fileName, parentPath } from '../article-files';
 import { showContextMenu, type MenuItem } from './context-menu';
 import { formatSize } from './file-tree';

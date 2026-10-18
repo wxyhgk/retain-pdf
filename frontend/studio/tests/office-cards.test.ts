@@ -10,25 +10,15 @@ import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { VFile } from 'vfile';
 
-import { fileSize, officeFileOf, officeKind, tableSource } from '../src/office/office-kinds.mjs';
+import { officeFileOf } from '../src/articles/article-references.mjs';
 import { rehypePlugins, remarkPlugins } from '../src/plugins/markdown-pipeline.mjs';
 
-test('office files by extension, and the article’s office file a link points at', () => {
-	assert.equal(officeKind('assets/组会.PPTX'), 'slides');
-	assert.equal(officeKind('a/b.docx'), 'document');
-	assert.equal(officeKind('data.xls'), 'sheet');
-	assert.equal(officeKind('old.doc'), 'old');
-	assert.equal(officeKind('notes.pdf'), null);
+test('a link to one of the article’s office files, published with it', () => {
 	assert.equal(officeFileOf('./assets/%E7%BB%84%E4%BC%9A.pptx'), 'assets/组会.pptx');
 	assert.equal(officeFileOf('img/table.xlsx?v=2'), 'img/table.xlsx');
 	assert.equal(officeFileOf('./ai/draft.docx'), null);
 	assert.equal(officeFileOf('https://example.com/a.docx'), null);
 	assert.equal(officeFileOf('./assets/notes.pdf'), null);
-	assert.deepEqual(tableSource('a.tsv'), { sheet: false, delimiter: '\t' });
-	assert.deepEqual(tableSource('a.ods'), { sheet: true, delimiter: ',' });
-	assert.equal(fileSize(512), '512 B');
-	assert.equal(fileSize(5734), '5.6 KB');
-	assert.equal(fileSize(1399422), '1.3 MB');
 });
 
 /** An article in a folder with these files, rendered as the blog renders it. */

@@ -3,6 +3,8 @@ import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 
+import { officeKind } from '@blog/office/kinds.mjs';
+import { PUBLISHED_FOLDERS } from './rules.mjs';
 import remarkMathBrackets from '../plugins/remark-math-brackets.mjs';
 
 /**
@@ -240,4 +242,12 @@ function splitSource(source) {
 /** Where the Studio serves a file of the article: `img/a.png` → `/api/studio/articles/<slug>/files/img/a.png`. */
 export function studioFileUrl(slug, path) {
 	return `/api/studio/articles/${encodeURIComponent(slug)}/files/${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+/** The article's office file a link points at (`assets/组会.pptx`, published with the article); null for any other link. */
+export function officeFileOf(url) {
+	const path = articlePath(String(url ?? ''));
+	if (!path || !officeKind(path)) return null;
+	const [root, ...rest] = path.split('/');
+	return PUBLISHED_FOLDERS.includes(root) && rest.length ? path : null;
 }
