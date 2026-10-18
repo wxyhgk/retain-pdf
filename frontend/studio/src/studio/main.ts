@@ -17,6 +17,7 @@ import {
 	keepVersion,
 	addReference,
 	importDriveFile,
+	driveInfo,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -41,6 +42,7 @@ import { openOfficeFile } from '../office/office-viewer';
 import { createFilePanel } from './workspace/file-panel';
 import { isImage, markdownReference } from './article-files';
 import { createDriveBrowser } from './workspace/drive-browser';
+import { officeKind } from '../office/office-kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createOutline } from './workspace/outline';
@@ -347,6 +349,10 @@ const quickFind = createQuickFind(document.querySelector<HTMLDialogElement>('#qu
 		await session.open(slug);
 		if (text && session.slug === slug) requestAnimationFrame(() => showFound(text));
 	},
+	openDriveFile(path) {
+		showView('drive');
+		void drivePage.reveal(path);
+	},
 });
 shell.querySelector('#open-search')!.addEventListener('click', () => quickFind.open());
 
@@ -367,6 +373,12 @@ const driveHost = {
 		const slug = session.slug;
 		return slug ? { slug, title: articleList.articles().find((article) => article.slug === slug)?.title || slug } : null;
 	},
+	askAI(path: string) {
+		sidePanel.show('terminal');
+		// The words of an Office file are in the drive's text (drive-text.mjs); an AI reads the rest itself.
+		const kind = officeKind(path);
+		terminal.askAboutDriveFile(path, kind !== null && kind !== 'old');
+	},
 	async insertIntoArticle(path: string) {
 		const reference = markdownReference(await copyFromDrive(path));
 		if (reference) editor.insertMarkdown(reference);
@@ -376,7 +388,10 @@ const driveView = shell.querySelector<HTMLElement>('#drive-view')!;
 const driveButton = shell.querySelector<HTMLButtonElement>('#open-drive')!;
 const drivePage = createDriveBrowser(driveView, {
 	...driveHost,
-	changed: () => void drivePane.refresh(),
+	changed: () => {
+		void drivePane.refresh();
+		void showDriveRoot();
+	},
 	navigated(folder) {
 		if (shell.dataset.view !== 'drive') return;
 		const url = new URL(window.location.href);
@@ -384,7 +399,18 @@ const drivePage = createDriveBrowser(driveView, {
 		history.replaceState(null, '', url);
 	},
 }, { mode: 'page' });
-const drivePane = createDriveBrowser(shell.querySelector<HTMLElement>('#side-drive')!, { ...driveHost, changed: () => void drivePage.refresh() }, { mode: 'pane' });
+const drivePane = createDriveBrowser(shell.querySelector<HTMLElement>('#side-drive')!, {
+	...driveHost,
+	changed: () => {
+		void drivePage.refresh();
+		void showDriveRoot();
+	},
+}, { mode: 'pane' });
+/** Tells the terminal where the drive is, for its 资料库 folder. */
+async function showDriveRoot(): Promise<void> {
+	terminal.showDrive((await driveInfo().catch(() => null))?.root ?? null);
+}
+void showDriveRoot();
 void drivePane.open('');
 
 /** The article in the middle, or the drive (the article stays open behind it). */

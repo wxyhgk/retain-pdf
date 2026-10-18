@@ -36,6 +36,8 @@ export type DriveBrowserHost = {
 	insertIntoArticle(path: string): Promise<void>;
 	/** The browser changed the drive (it shows that itself): the other one shows it too. */
 	changed(): void;
+	/** Asks the terminal's AI about a file: its path typed in, for the author to finish. */
+	askAI(path: string): void;
 	/** The folder shown changed (the page keeps it in the address). */
 	navigated?(folder: string): void;
 };
@@ -349,6 +351,7 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 			if (entry.kind === 'file' && article) {
 				items.push({ label: `插入到《${article.title}》`, action: () => void insert(entry) });
 			}
+			if (entry.kind === 'file') items.push({ label: '问 AI', hint: '终端', action: () => host.askAI(entry.path) });
 			items.push('separator', { label: '重命名', hint: 'F2', action: () => rename(entry) });
 			if (!info?.fixed) items.push({ label: '在 Finder 中显示', action: () => void revealDriveFile(entry.path).catch((error) => say(message(error, '打不开'), 'error')) });
 			items.push({ label: '复制路径', action: () => void navigator.clipboard.writeText(`${info?.root ?? ''}/${entry.path}`).then(() => say('已复制路径')) });
@@ -471,6 +474,13 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 	return {
 		/** Shows a folder of the drive (the drive itself by default), read afresh. */
 		open: (next = folder) => open(next),
+		/** Shows the folder a file is in, the file selected. */
+		async reveal(path: string): Promise<void> {
+			await open(parentPath(path));
+			select(path);
+			list.querySelector<HTMLElement>(`.drive-row[data-path="${CSS.escape(path)}"]`)?.scrollIntoView({ block: 'nearest' });
+			list.focus();
+		},
 		/** The drive changed elsewhere: shows it as it is now. */
 		refresh: () => {
 			info = null;

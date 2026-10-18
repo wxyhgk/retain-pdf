@@ -114,3 +114,31 @@ test('a file of the drive goes into the article as a copy: from the menu, and dr
 	expect(savedMarkdown()).toContain('[第-3-次组会-定稿.pptx](./assets/第-3-次组会-定稿.pptx)');
 	expect(savedMarkdown()).toContain('@file ./assets/water-opt.log');
 });
+
+test('⌘K finds files of the drive by their words, and shows the one chosen', async ({ page }) => {
+	await page.keyboard.press('ControlOrMeta+k');
+	await page.locator('#quick-find-input').fill('收敛四项');
+	const found = page.locator('.quick-find-item', { has: page.locator('.quick-find-icon.is-drive') });
+	await expect(found.locator('.quick-find-title')).toHaveText(['优化报告.docx', '第 3 次组会 (定稿).pptx'], { timeout: 20_000 });
+	await expect(found.first().locator('.quick-find-snippet')).toHaveText('收敛四项都达标。');
+	await found.first().click();
+	await expect(page_(page)).toBeVisible();
+	await expect(row(page_(page), '组会/2026 秋/优化报告.docx')).toHaveAttribute('aria-selected', 'true');
+	// The words are kept beside the drive, for an AI to read.
+	expect(driveHas('.studio-text/组会/2026 秋/优化报告.docx.txt')).toBe(true);
+	await expect(page_(page).locator('.drive-name', { hasText: '.studio-text' })).toHaveCount(0);
+});
+
+test('问 AI: the file and where its words are, typed into a shell in the drive', async ({ page }) => {
+	await page.addInitScript(() => localStorage.setItem('studio.terminal-cwd', 'drive'));
+	await page.reload();
+	await page.locator('#open-drive').click();
+	await row(page_(page), '组会').dblclick();
+	await row(page_(page), '组会/第 3 次组会 (定稿).pptx').click({ button: 'right' });
+	await page.getByRole('menuitem', { name: '问 AI' }).click();
+	await expect(page.locator('#terminal-screen')).toHaveAttribute('data-state', 'running', { timeout: 120_000 });
+	await expect(page.locator('#terminal-cwd')).toHaveText(/^studio-drive-.+\/$/u);
+	const rows = page.locator('#terminal-screen .xterm-rows');
+	await expect.poll(async () => (await rows.innerText()).replace(/\s*\n\s*/gu, ''), { timeout: 20_000 })
+		.toContain('资料库里的 组会/第 3 次组会 (定稿).pptx（文字版：.studio-text/组会/第 3 次组会 (定稿).pptx.txt）。要求：');
+});

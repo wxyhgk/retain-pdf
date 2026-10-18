@@ -5,7 +5,7 @@ import '@xterm/xterm/css/xterm.css';
 import { openTerminal } from '../api/client';
 import type { SourceLines } from '../document/source-lines';
 
-type Cwd = 'root' | 'article';
+type Cwd = 'root' | 'article' | 'drive';
 type State = 'idle' | 'starting' | 'running' | 'ended';
 
 const CWD_KEY = 'studio.terminal-cwd';
@@ -37,9 +37,19 @@ export function questionAbout(path: string, lines: SourceLines): string {
 	return typeable(`${path} ${where}${quoted ? `（从「${quoted}」开始）` : ''}。要求：`);
 }
 
+/**
+ * A question about a file of the drive, to finish and send: where it is (as
+ * the shell finds it) and, for an Office file an AI cannot read itself, where
+ * its words are (drive-text.mjs).
+ */
+export function questionAboutDriveFile(path: string, text: string | null): string {
+	return typeable(`资料库里的 ${path}${text ? `（文字版：${text}）` : ''}。要求：`);
+}
+
 function readCwd(): Cwd {
 	try {
-		return localStorage.getItem(CWD_KEY) === 'article' ? 'article' : 'root';
+		const saved = localStorage.getItem(CWD_KEY);
+		return saved === 'article' || saved === 'drive' ? saved : 'root';
 	} catch {
 		return 'root';
 	}
@@ -66,6 +76,8 @@ export function createTerminalPane(pane: HTMLElement) {
 
 	let cwd = readCwd();
 	let article: string | null = null;
+	/** The drive's folder, for 资料库; null while none is chosen. */
+	let driveRoot: string | null = null;
 	let state: State = 'idle';
 	const setState = (next: State) => {
 		state = next;
@@ -74,8 +86,10 @@ export function createTerminalPane(pane: HTMLElement) {
 	let socket: WebSocket | null = null;
 	/** Where the running shell is: an article's folder (its slug), or the repository (null). */
 	let shellArticle: string | null = null;
+	/** Whether the running shell is in the drive. */
+	let shellInDrive = false;
 	/** A question to put in once the shell is ready, and whether it is. */
-	let pending: { slug: string; lines: SourceLines } | null = null;
+	let pending: { slug: string; lines: SourceLines } | { drivePath: string; text: boolean } | null = null;
 	let ready = false;
 
 	const terminal = new Terminal({
@@ -99,13 +113,14 @@ export function createTerminalPane(pane: HTMLElement) {
 	}
 
 	function effectiveCwd(): Cwd {
+		if (cwd === 'drive') return driveRoot ? 'drive' : 'root';
 		return cwd === 'article' && article ? 'article' : 'root';
 	}
 
 	function renderCwd(): void {
 		for (const option of cwdOptions) {
 			option.setAttribute('aria-checked', String(option.dataset.cwd === cwd));
-			option.disabled = option.dataset.cwd === 'article' && !article;
+			option.disabled = (option.dataset.cwd === 'article' && !article) || (option.dataset.cwd === 'drive' && !driveRoot);
 		}
 	}
 
@@ -118,13 +133,14 @@ export function createTerminalPane(pane: HTMLElement) {
 		const slug = article;
 		ready = false;
 		shellArticle = target === 'article' ? slug : null;
+		shellInDrive = target === 'drive';
 		terminal.reset();
 		dim('正在打开终端…');
 		const hint = window.setTimeout(() => dim('第一次使用要先编译终端程序（Rust），大约需要一分钟…'), FIRST_BUILD_HINT_MS);
 		let url: string;
 		let folder: string;
 		try {
-			({ url, cwd: folder } = await openTerminal(target === 'article' ? { cwd: 'article', slug: slug! } : { cwd: 'root' }));
+			({ url, cwd: folder } = await openTerminal(target === 'article' ? { cwd: 'article', slug: slug! } : { cwd: target }));
 		} catch (error) {
 			setState('ended');
 			terminal.writeln(`\x1b[31m${error instanceof Error ? error.message : '终端打不开'}\x1b[0m`);
@@ -185,10 +201,16 @@ export function createTerminalPane(pane: HTMLElement) {
 		return shellArticle ? `../${slug}/index.md` : `blog/${slug}/index.md`;
 	}
 
+	/** A question about a file of the drive, its path as the running shell finds it. */
+	function driveQuestion(path: string, text: boolean): string {
+		const shown = shellInDrive ? path : `${driveRoot}/${path}`;
+		return questionAboutDriveFile(shown, text ? (shellInDrive ? `.studio-text/${path}.txt` : `${driveRoot}/.studio-text/${path}.txt`) : null);
+	}
+
 	/** Types the question waiting into the shell: nothing in it runs until Enter. */
 	function putPending(): void {
 		if (!pending || !ready || socket?.readyState !== WebSocket.OPEN) return;
-		const question = questionAbout(pathFor(pending.slug), pending.lines);
+		const question = 'slug' in pending ? questionAbout(pathFor(pending.slug), pending.lines) : driveQuestion(pending.drivePath, pending.text);
 		pending = null;
 		// Typed as keys, one line without Enter: it waits for the author.
 		socket.send(encoder.encode(question));
@@ -223,11 +245,12 @@ export function createTerminalPane(pane: HTMLElement) {
 
 	for (const option of cwdOptions) {
 		option.addEventListener('click', () => {
-			const next: Cwd = option.dataset.cwd === 'article' ? 'article' : 'root';
+			const next = (option.dataset.cwd ?? 'root') as Cwd;
 			if (next === cwd) return;
+			const before = effectiveCwd();
 			const previous = cwd;
 			cwd = next;
-			if (state !== 'idle' && effectiveCwd() !== (previous === 'article' && article ? 'article' : 'root')) {
+			if (state !== 'idle' && effectiveCwd() !== before) {
 				if (state === 'running' && !confirm('在另一个目录重新打开终端？正在运行的程序会被结束。')) {
 					cwd = previous;
 					return;
@@ -258,6 +281,17 @@ export function createTerminalPane(pane: HTMLElement) {
 		 */
 		ask(slug: string, lines: SourceLines): void {
 			pending = { slug, lines };
+			if (state === 'ended') void start();
+			else putPending();
+		},
+		/** The drive's folder (null: none chosen), for 资料库. */
+		showDrive(root: string | null): void {
+			driveRoot = root;
+			renderCwd();
+		},
+		/** Types a question about a file of the drive, as `ask` does; `text`: point at its words too. */
+		askAboutDriveFile(path: string, text: boolean): void {
+			pending = { drivePath: path, text };
 			if (state === 'ended') void start();
 			else putPending();
 		},

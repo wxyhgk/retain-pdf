@@ -221,7 +221,7 @@ export function revealArticleFile(slug: string, path: string): Promise<{ path: s
 }
 
 /** A one-time WebSocket URL for a shell in the repository or in an article's folder. */
-export function openTerminal(target: { cwd: 'root' } | { cwd: 'article'; slug: string }): Promise<{ url: string; cwd: string }> {
+export function openTerminal(target: { cwd: 'root' } | { cwd: 'drive' } | { cwd: 'article'; slug: string }): Promise<{ url: string; cwd: string }> {
 	return request('/api/studio/terminal', jsonOptions('POST', target));
 }
 
@@ -302,4 +302,12 @@ export function revealDriveFile(path: string): Promise<{ path: string }> {
 /** A file of the drive copied into the article's `folder` (`img` or `assets`): its path there. */
 export function importDriveFile(slug: string, from: string, folder: string): Promise<{ path: string; size: number }> {
 	return request(articleApi(slug, 'import'), jsonOptions('POST', { from, folder }));
+}
+
+/** A file of the drive whose name (`inName`) or words hold what was searched for. */
+export type DriveSearchResult = { path: string; inName: boolean; snippet?: string };
+
+/** Files of the drive by name and words; `indexing` while its text is still being read. */
+export function searchDrive(query: string, signal?: AbortSignal): Promise<{ results: DriveSearchResult[]; indexing: boolean }> {
+	return request(`/api/studio/drive/search?${new URLSearchParams({ q: query })}`, { signal });
 }

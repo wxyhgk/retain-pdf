@@ -1,4 +1,4 @@
-import { searchArticles } from '../api/client.ts';
+import { searchArticles, searchDrive } from '../api/client.ts';
 import type { ArticleSummary, SearchResult } from '../types.ts';
 import { filterArticles } from './article-list.ts';
 
@@ -8,9 +8,12 @@ export type QuickFindHost = {
 	articles(): ArticleSummary[];
 	/** Opens an article; `text` is what was searched for, to show where it is. */
 	open(slug: string, text?: string): void;
+	/** Shows a file of the drive (资料库) that was found. */
+	openDriveFile(path: string): void;
 };
 
-type Row = { slug: string; title: string; icon: string; snippet?: string; text?: string };
+/** An article, or (with `drivePath`) a file of the drive. */
+type Row = { slug: string; title: string; icon: string; snippet?: string; text?: string; drivePath?: string };
 
 /** `text` with each `needle` in it marked. */
 function marked(text: string, needle: string): Node[] {
@@ -58,8 +61,9 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 			item.setAttribute('role', 'option');
 			item.setAttribute('aria-selected', String(at === index));
 			const icon = document.createElement('span');
-			icon.className = 'quick-find-icon';
+			icon.className = `quick-find-icon${row.drivePath ? ' is-drive' : ''}`;
 			icon.textContent = row.icon || '▤';
+			if (row.drivePath) icon.title = '资料库';
 			const words = document.createElement('span');
 			words.className = 'quick-find-words';
 			const title = document.createElement('span');
@@ -106,7 +110,9 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 		timer = window.setTimeout(() => {
 			const controller = new AbortController();
 			asking = controller;
-			searchArticles(query, controller.signal).then((results: SearchResult[]) => {
+			// The drive's files follow the articles; not offered when an article is asked for.
+			const drive = picking ? Promise.resolve(null) : searchDrive(query, controller.signal).catch(() => null);
+			const articles = searchArticles(query, controller.signal).then((results: SearchResult[]) => {
 				if (controller.signal.aborted || input.value.trim() !== query) return;
 				const seen = new Set(rows.map((row) => row.slug));
 				const selected = rows[index]?.slug;
@@ -125,16 +131,33 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 				index = Math.max(0, rows.findIndex((row) => row.slug === selected));
 				draw();
 			}, () => {});
+			void Promise.all([drive, articles]).then(([found]) => {
+				if (!found || controller.signal.aborted || input.value.trim() !== query) return;
+				for (const result of found.results) {
+					const slash = result.path.lastIndexOf('/');
+					rows.push({
+						slug: '',
+						drivePath: result.path,
+						title: result.path.slice(slash + 1),
+						icon: '▢',
+						snippet: result.snippet ?? (slash > 0 ? `资料库 / ${result.path.slice(0, slash)}` : '资料库'),
+					});
+				}
+				if (found.indexing) rows.push({ slug: '', title: '资料库还在建立文字索引，结果可能不全', icon: '…' });
+				draw();
+			});
 		}, 120);
 	}
 
 	function choose(at: number): void {
 		const row = rows[at];
 		if (!row) return;
+		if (!row.slug && !row.drivePath) return;
 		const answer = picking;
 		picking = null;
 		dialog.close();
 		if (answer) answer(row.slug);
+		else if (row.drivePath) host.openDriveFile(row.drivePath);
 		else host.open(row.slug, row.text);
 	}
 
@@ -176,7 +199,7 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 				input.select();
 				return;
 			}
-			show('搜索标题和正文…');
+			show('搜索文章和资料库…');
 		},
 		/** Asks which article: its slug, or null when given up. */
 		pick(): Promise<string | null> {

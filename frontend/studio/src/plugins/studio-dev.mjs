@@ -11,6 +11,7 @@ import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
 import { chooseFolder } from '../studio/server/choose-folder.mjs';
 import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
 import { Drive } from '../studio/server/drive.mjs';
+import { DriveText, TEXT_FOLDER } from '../studio/server/drive-text.mjs';
 import { articleBundlePaths, StudioPathError } from '../articles/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
@@ -106,6 +107,8 @@ export default function studioDev() {
 				fixedRoot: testDriveRoot,
 				forbidden: [server.config.root, blogRoot],
 			});
+			// The drive's words, for search and for an AI to read: `.studio-text/` in the drive.
+			const driveText = new DriveText(drive);
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
 			server.httpServer?.on('close', () => {
 				watcher.close();
@@ -157,13 +160,20 @@ export default function studioDev() {
 						return;
 					}
 
-					// A shell for the 终端 tab: in the repository, or in the open article's folder.
+					// A shell for the 终端 tab: in the repository, the open article's folder, or the drive.
 					if (url.pathname === '/api/studio/terminal' && request.method === 'POST') {
 						const { cwd, slug } = await readJsonChange(request);
-						const folder = cwd === 'article' ? articleBundlePaths(blogRoot, slug).directory : server.config.root;
+						const driveRoot = await drive.root();
+						if (cwd === 'drive' && !driveRoot) return json(response, 409, { error: '还没有选择资料库文件夹' });
+						const folder = cwd === 'article' ? articleBundlePaths(blogRoot, slug).directory : cwd === 'drive' ? driveRoot : server.config.root;
 						if (cwd === 'article') await manager.locate(slug, '');
-						// For a program run there (an AI): which article, and where it is (blog/CLAUDE.md names these).
-						const env = cwd === 'article' ? { STUDIO_ARTICLE: slug, STUDIO_ARTICLE_DIR: folder, STUDIO_ARTICLE_FILE: articleBundlePaths(blogRoot, slug).markdown } : {};
+						// For a program run there (an AI): which article, and where it is; the drive and its text (blog/CLAUDE.md names these).
+						const env = {
+							...(cwd === 'article' ? { STUDIO_ARTICLE: slug, STUDIO_ARTICLE_DIR: folder, STUDIO_ARTICLE_FILE: articleBundlePaths(blogRoot, slug).markdown } : {}),
+							...(driveRoot ? { STUDIO_DRIVE_DIR: driveRoot, STUDIO_DRIVE_TEXT: resolve(driveRoot, TEXT_FOLDER) } : {}),
+						};
+						// The drive's text brought up to date for what the AI may read.
+						if (driveRoot) void driveText.refresh().catch(() => {});
 						return json(response, 200, { ...(await terminals.open(folder, env)), cwd: folder });
 					}
 
@@ -222,12 +232,20 @@ export default function studioDev() {
 					if (url.pathname === '/api/studio/drive' && request.method === 'GET') return json(response, 200, await drive.describe());
 					if (url.pathname === '/api/studio/drive/root' && request.method === 'POST') {
 						const { path } = await readJsonChange(request);
-						return json(response, 200, await drive.choose(path));
+						const chosen = await drive.choose(path);
+						void driveText.refresh().catch(() => {});
+						return json(response, 200, chosen);
 					}
 					if (url.pathname === '/api/studio/drive/choose' && request.method === 'POST') {
 						assertContentType(request, 'application/json');
 						const chosen = await chooseFolder('选择资料库文件夹');
-						return json(response, 200, chosen ? await drive.choose(chosen) : { ...(await drive.describe()), cancelled: true });
+						if (!chosen) return json(response, 200, { ...(await drive.describe()), cancelled: true });
+						const described = await drive.choose(chosen);
+						void driveText.refresh().catch(() => {});
+						return json(response, 200, described);
+					}
+					if (url.pathname === '/api/studio/drive/search' && request.method === 'GET') {
+						return json(response, 200, await driveText.search(url.searchParams.get('q') ?? ''));
 					}
 					if (url.pathname === '/api/studio/drive/list' && request.method === 'GET') {
 						return json(response, 200, { entries: await drive.list(url.searchParams.get('path') ?? '') });
@@ -239,6 +257,8 @@ export default function studioDev() {
 					const driveActionMatch = url.pathname.match(/^\/api\/studio\/drive\/(upload|folders|move|trash|restore|reveal)$/u);
 					if (driveActionMatch && request.method === 'POST') {
 						const action = driveActionMatch[1];
+						// What changes in the drive is read for its words once the change is done.
+						if (action !== 'reveal') response.once('finish', () => void driveText.refresh().catch(() => {}));
 						if (action === 'upload') {
 							assertContentType(request, 'application/octet-stream');
 							const declared = Number(request.headers['content-length']);
