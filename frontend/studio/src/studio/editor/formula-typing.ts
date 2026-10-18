@@ -1,5 +1,5 @@
-import type { EquationLabel } from '../../science/rendering/equations.mjs';
-import { renderMathHtml } from '../../science/rendering/math.ts';
+import type { EquationLabel } from '@blog/science/rendering/equations.mjs';
+import { renderMathHtml } from '@blog/science/rendering/math.ts';
 
 /**
  * A formula drawn while it is typed. What is not finished yet is not an

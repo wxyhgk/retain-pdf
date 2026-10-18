@@ -7,7 +7,7 @@ import { downloadName, parseFenceMeta } from '../../code-files/highlight.mjs';
 import { codeFileLanguages } from '../../code-files/languages.mjs';
 import { codeFileProblem, type HastChild, type HastElement } from '../../code-files/render.mjs';
 import '../../code-files/code-files.css';
-import { parseScienceResourceRef } from '../../science/parsers/resource-reference.ts';
+import { parseScienceResourceRef } from '@blog/science/parsers/resource-reference.ts';
 import type { ArticleFileDropHost } from './file-drop.ts';
 import { isFormulaBlock } from './formula-block.ts';
 

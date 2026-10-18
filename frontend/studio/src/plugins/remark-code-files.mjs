@@ -5,7 +5,7 @@ import { visit } from 'unist-util-visit';
 import { excerptLines, parseFenceMeta } from '../code-files/highlight.mjs';
 import { codeFileLanguage } from '../code-files/languages.mjs';
 import { codeFileBar, codeFileFigure, codeFileProblem, figureProperties, foldFor } from '../code-files/render.mjs';
-import { parseScienceResourceRef } from '../science/parsers/resource-reference.ts';
+import { parseScienceResourceRef } from '@blog/science/parsers/resource-reference.ts';
 
 /**
  * Code blocks as files, at build time:

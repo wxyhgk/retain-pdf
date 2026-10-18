@@ -1,6 +1,6 @@
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
-import { MOLECULE_LANGUAGES } from '../science/parsers/molecule-block.ts';
+import { MOLECULE_LANGUAGES } from '@blog/science/parsers/molecule-block.ts';
 import { gfmOptions } from './markdown-gfm.mjs';
 import rehypeArticleHtml from './rehype-article-html.mjs';
 import rehypeKatexMhchem from './rehype-katex-mhchem.mjs';

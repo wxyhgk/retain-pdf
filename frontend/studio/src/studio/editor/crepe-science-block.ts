@@ -5,8 +5,8 @@ import { NodeSelection, Plugin, TextSelection } from '@milkdown/prose/state';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type { EditorView, NodeView } from 'prosemirror-view';
 
-import { createSciencePreview, hydrateSciencePreviews } from '../../science/browser/science-renderer.ts';
-import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
+import { createSciencePreview, hydrateSciencePreviews } from '@blog/science/browser/science-renderer.ts';
+import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
 import { scienceBlockKeys } from './science-block-menu.ts';
 import {
 	SCIENCE_FENCE_TYPE,

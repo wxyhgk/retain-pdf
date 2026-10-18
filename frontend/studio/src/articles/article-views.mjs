@@ -1,5 +1,5 @@
-import { isCubeDisplaySettings, normalizeCubeDisplaySettings } from '../science/cube-display.mjs';
-import { moleculeViewKey } from '../science/view-key.mjs';
+import { isCubeDisplaySettings, normalizeCubeDisplaySettings } from '@blog/science/cube-display.mjs';
+import { moleculeViewKey } from '@blog/science/view-key.mjs';
 
 export const DEFAULT_ARTICLE_VIEWS = '{\n  "version": 1,\n  "molecules": {}\n}\n';
 

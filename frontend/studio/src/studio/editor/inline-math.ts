@@ -6,7 +6,7 @@ import { NodeSelection, Plugin, PluginKey, TextSelection, type EditorState, type
 import { Decoration, DecorationSet, type EditorView, type NodeView } from '@milkdown/prose/view';
 import { $markSchema } from '@milkdown/utils';
 
-import { renderMathHtml } from '../../science/rendering/math.ts';
+import { renderMathHtml } from '@blog/science/rendering/math.ts';
 import { equationLabels, referencesKey } from './equation-numbers.ts';
 import { createFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';

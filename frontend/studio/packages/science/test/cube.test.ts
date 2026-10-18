@@ -1,16 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { MAX_INLINE_CUBE_LENGTH, parseCubeBlock } from '../src/science/parsers/index.ts';
+import { MAX_INLINE_CUBE_LENGTH, parseCubeBlock } from '../parsers/index.ts';
 import {
 	resolveScienceResourceUrl,
 	setScienceResourceBaseUrl,
-} from '../src/science/browser/resource-context.ts';
+} from '../browser/resource-context.ts';
 import {
 	CUBE_DISPLAY_DEFAULTS,
 	isCubeDisplaySettings,
 	normalizeCubeDisplaySettings,
-} from '../src/science/cube-display.mjs';
-import { cubeSurfaceSpecs } from '../src/science/browser/cube-renderer.ts';
+} from '../cube-display.mjs';
+import { cubeSurfaceSpecs } from '../browser/cube-renderer.ts';
 
 const minimalCube = [
 	'water orbital',

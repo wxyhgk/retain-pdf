@@ -1,7 +1,7 @@
 import { Fragment, Slice, type Node as ProseMirrorNode } from 'prosemirror-model';
 
-import type { MoleculeBlock } from '../../science/model.ts';
-import { isMoleculeLanguage, parseMoleculeBlock } from '../../science/parsers/molecule-block.ts';
+import type { MoleculeBlock } from '@blog/science/model.ts';
+import { isMoleculeLanguage, parseMoleculeBlock } from '@blog/science/parsers/molecule-block.ts';
 
 /**
  * Science fenced-code blocks as first-class editor citizens.

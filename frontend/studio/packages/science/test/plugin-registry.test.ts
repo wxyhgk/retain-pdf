@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { SciencePluginRegistry, type ScienceRendererPlugin } from '../src/science/browser/plugin-registry.ts';
+import { SciencePluginRegistry, type ScienceRendererPlugin } from '../browser/plugin-registry.ts';
 
 function preview(): HTMLElement {
 	return { dataset: {} } as HTMLElement;

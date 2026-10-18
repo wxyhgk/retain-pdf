@@ -3,7 +3,7 @@ import { Plugin, PluginKey, type EditorState } from '@milkdown/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
-import { numberEquations, type EquationLabel } from '../../science/rendering/equations.mjs';
+import { numberEquations, type EquationLabel } from '@blog/science/rendering/equations.mjs';
 import { isFormulaBlock } from './formula-block.ts';
 
 /**

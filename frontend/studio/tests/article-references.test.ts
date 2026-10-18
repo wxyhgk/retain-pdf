@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { moleculeViewKey } from '../src/science/view-key.mjs';
+import { moleculeViewKey } from '@blog/science/view-key.mjs';
 import {
 	articlePath,
 	findArticleReferences,

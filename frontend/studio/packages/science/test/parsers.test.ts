@@ -9,9 +9,9 @@ import {
 	parseScienceResourceRef,
 	sdfHas3DCoordinates,
 	UnsupportedGaussianCoordinatesError,
-} from '../src/science/parsers/index.ts';
+} from '../parsers/index.ts';
 
-const fixture = (name: string) => readFile(new URL(`./fixtures/science/${name}`, import.meta.url), 'utf8');
+const fixture = (name: string) => readFile(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
 
 test('classifies the existing chemistry fence languages', async () => {
 	assert.deepEqual(parseMoleculeBlock('smiles', 'CCO'), {

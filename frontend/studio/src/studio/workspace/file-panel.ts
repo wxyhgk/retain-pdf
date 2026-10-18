@@ -7,7 +7,7 @@ import {
 	trashArticleFile,
 	uploadArticleFile,
 } from '../api/client';
-import { isMoleculeLanguage } from '../../science/parsers/molecule-block.ts';
+import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
 import { movedPath, referencedPaths, studioFileUrl } from '../../articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
 import { officeKind, tableSource } from '../../office/office-kinds.mjs';

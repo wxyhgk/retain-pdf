@@ -1,4 +1,4 @@
-import { loadRDKit, readMolecule } from '../../science/browser/molecule-renderer.ts';
+import { loadRDKit, readMolecule } from '@blog/science/browser/molecule-renderer.ts';
 import { isEmptyMolfile } from './science-block.ts';
 
 /** What a drawn structure becomes in the block: its new source, and its fence info when that has to change. */

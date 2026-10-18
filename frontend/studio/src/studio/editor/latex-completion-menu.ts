@@ -1,4 +1,4 @@
-import { currentMacros, renderMathHtml } from '../../science/rendering/math.ts';
+import { currentMacros, renderMathHtml } from '@blog/science/rendering/math.ts';
 import { completeLatex, latexCommands, type LatexCommand } from './latex-assist.ts';
 
 type Caret = { left: number; top: number; bottom: number };

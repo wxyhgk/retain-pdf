@@ -11,7 +11,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "npm run test:unit && npm run test:server",
-    "test:unit": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:unit": "node --experimental-strip-types --test tests/*.test.ts packages/*/test/*.test.ts",
     "test:server": "node --test src/studio/server/*.test.mjs src/articles/*.test.mjs",
     "test:terminal": "cargo test --release --manifest-path tools/studio-terminal/Cargo.toml",
     "terminal:build": "cargo build --release --manifest-path tools/studio-terminal/Cargo.toml",
@@ -23,6 +23,7 @@
     "@astrojs/mdx": "^7.0.5",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
+    "@blog/science": "*",
     "@codemirror/language-data": "^6.5.2",
     "@milkdown/crepe": "^7.22.0",
     "@milkdown/ctx": "^7.22.0",
@@ -61,5 +62,8 @@
     "remark-rehype": "^11.1.2",
     "remark-stringify": "^11.0.0",
     "typescript": "^7.0.2"
-  }
+  },
+  "workspaces": [
+    "packages/*"
+  ]
 }

@@ -1,0 +1,12 @@
+{
+  "name": "@blog/science",
+  "private": true,
+  "description": "Chemistry and formulas in notes: molecule and cube parsers, RDKit/3Dmol drawing in the browser, KaTeX with mhchem and numbered equations.",
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
+  "dependencies": {
+    "katex": "^0.18.2"
+  }
+}

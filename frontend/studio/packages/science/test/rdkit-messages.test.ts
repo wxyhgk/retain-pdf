@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { describeRDKitError } from '../src/science/rendering/rdkit-messages.ts';
+import { describeRDKitError } from '../rendering/rdkit-messages.ts';
 
 test('valence errors name the atom as the molfile counts it', () => {
 	assert.equal(

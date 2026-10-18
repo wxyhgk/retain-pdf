@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { renderMathHtml } from '../src/science/rendering/math.ts';
+import { renderMathHtml } from '../rendering/math.ts';
 
 test('renders inline math without a display container', () => {
 	const result = renderMathHtml(String.raw`E = mc^2`, false);

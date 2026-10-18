@@ -1,4 +1,4 @@
-import type { CubeDisplaySettings } from '../science/cube-display.mjs';
+import type { CubeDisplaySettings } from '@blog/science/cube-display.mjs';
 
 export type ArticleSummary = {
 	slug: string;

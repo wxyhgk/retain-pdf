@@ -3,7 +3,7 @@ import { mkdtemp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { moleculeViewKey } from '../../science/view-key.mjs';
+import { moleculeViewKey } from '@blog/science/view-key.mjs';
 import { ArticleFiles } from './article-files.mjs';
 import { ArticleConflictError, ArticleRepository } from './article-repository.mjs';
 import { readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';

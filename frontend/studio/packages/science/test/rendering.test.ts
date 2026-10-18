@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import type { MoleculeBlock } from '../src/science/model.ts';
-import { parseMoleculeBlock } from '../src/science/parsers/index.ts';
-import { prepareMoleculeRenderInput } from '../src/science/rendering/index.ts';
+import type { MoleculeBlock } from '../model.ts';
+import { parseMoleculeBlock } from '../parsers/index.ts';
+import { prepareMoleculeRenderInput } from '../rendering/index.ts';
 
-const fixture = (name: string) => readFile(new URL(`./fixtures/science/${name}`, import.meta.url), 'utf8');
+const fixture = (name: string) => readFile(new URL(`./fixtures/${name}`, import.meta.url), 'utf8');
 
 function molecule(language: string, source: string): MoleculeBlock {
 	const block = parseMoleculeBlock(language, source);

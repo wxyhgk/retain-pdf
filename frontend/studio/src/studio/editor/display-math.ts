@@ -4,7 +4,7 @@ import type { Node as ProseMirrorNode } from '@milkdown/prose/model';
 import { NodeSelection, Plugin, TextSelection, type Selection } from '@milkdown/prose/state';
 import type { Decoration, EditorView, NodeView } from '@milkdown/prose/view';
 
-import { renderMathHtml } from '../../science/rendering/math.ts';
+import { renderMathHtml } from '@blog/science/rendering/math.ts';
 import { equationLabels, equationNumbers, numberedSource, referencesKey } from './equation-numbers.ts';
 import { isFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';

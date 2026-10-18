@@ -6,7 +6,7 @@ import test from 'node:test';
 import { ArticleConflictError, ArticleRepository } from './article-repository.mjs';
 import { articleBundlePaths, assertArticleSlug, resolveInside } from '../../articles/bundle-paths.mjs';
 import { articleSummary, isPublishedArticle, validateArticleSource } from '../../articles/schemas.mjs';
-import { CUBE_DISPLAY_DEFAULTS } from '../../science/cube-display.mjs';
+import { CUBE_DISPLAY_DEFAULTS } from '@blog/science/cube-display.mjs';
 
 async function temporaryBlog(t) {
 	const root = await mkdtemp(join(tmpdir(), 'studio-repository-'));

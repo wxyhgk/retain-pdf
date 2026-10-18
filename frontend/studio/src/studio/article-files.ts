@@ -1,6 +1,6 @@
 import { codeFileLanguageForPath } from '../code-files/languages.mjs';
 import { PUBLISHED_FOLDERS } from '../articles/rules.mjs';
-import { isMoleculeLanguage } from '../science/parsers/molecule-block.ts';
+import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
 
 /**
  * An article's files as the Studio's page writes and moves them: their

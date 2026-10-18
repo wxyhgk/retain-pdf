@@ -3,7 +3,7 @@ import test from 'node:test';
 import {
 	moleculeViewKey,
 	parseStoredMoleculeView,
-} from '../src/science/browser/molecule-renderer.ts';
+} from '../browser/molecule-renderer.ts';
 
 test('keys saved views by both molecule format and exact source', () => {
 	const source = '2\nH2\nH 0 0 0\nH 0 0 1';

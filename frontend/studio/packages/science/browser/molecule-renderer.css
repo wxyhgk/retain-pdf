@@ -1,0 +1,146 @@
+.chem-viewer {
+	margin: 1.25em 0;
+	border: 1px solid rgb(var(--gray-light));
+	border-radius: 10px;
+	overflow: hidden;
+	background: var(--surface);
+}
+
+.chem-stage {
+	display: grid;
+	place-items: center;
+	min-height: 360px;
+	color: rgb(var(--gray));
+	font-size: 0.85em;
+}
+
+/* 2D structures are transparent SVG drawn straight on the page: no card, no white box. */
+.chem-viewer.chem-2d { border-color: transparent; background: transparent; }
+/* RDKit draws in black; on a dark page flip the lightness and keep the hues (red O, blue N…). */
+html[data-theme='dark'] .chem-2d .chem-stage svg { filter: invert(1) hue-rotate(180deg); }
+.chem-stage svg { display: block; width: 100%; height: auto; max-height: 420px; border-radius: 0; }
+.chem-3d .chem-stage { position: relative; height: 430px; }
+
+.chem-view-controls {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1em;
+	padding: 0.45em 0.7em;
+	border-top: 1px solid rgb(var(--gray-light));
+	color: rgb(var(--gray));
+	font-size: 0.7em;
+}
+
+.chem-view-controls button {
+	padding: 0.28em 0.65em;
+	border: 1px solid rgb(var(--gray-light));
+	border-radius: 6px;
+	background: var(--surface);
+	color: inherit;
+	cursor: pointer;
+}
+
+.chem-view-controls button:hover {
+	color: rgb(var(--black));
+	border-color: rgb(var(--gray));
+}
+
+.chem-view-buttons {
+	display: flex;
+	gap: 0.45em;
+}
+
+.chem-view-controls button.primary {
+	border-color: #0f766e;
+	background: #0f766e;
+	color: #fff;
+}
+
+.chem-view-controls button:disabled {
+	opacity: 0.55;
+	cursor: wait;
+}
+
+.chem-viewer figcaption {
+	padding: 0.65em 0.9em;
+	border-top: 1px solid rgb(var(--gray-light));
+	color: rgb(var(--gray));
+	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 0.7em;
+	overflow-wrap: anywhere;
+}
+
+.chem-error .chem-stage { color: #b42318; }
+.chem-warning { margin: 0; padding: 6px 12px; border-top: 1px solid rgb(var(--gray-light)); color: #b54708; font-size: 12px; line-height: 1.5; }
+html[data-theme='dark'] .chem-warning { color: #fdb022; }
+
+.cube-controls {
+	margin: 0;
+	padding: 0.7em;
+	border-top: 1px solid rgb(var(--gray-light));
+	border-right: 0;
+	border-bottom: 0;
+	border-left: 0;
+	background: var(--surface-soft);
+	color: rgb(var(--gray));
+	font-size: 0.7em;
+}
+
+.cube-controls legend {
+	float: left;
+	margin: 0 0.8em 0 0;
+	padding: 0;
+	color: rgb(var(--gray-dark));
+	font-weight: 700;
+}
+
+.cube-control-grid {
+	display: grid;
+	grid-template-columns: minmax(150px, 1.25fr) minmax(150px, 1fr) minmax(150px, auto) minmax(105px, auto);
+	align-items: end;
+	gap: 0.65em 1em;
+	clear: both;
+}
+
+.cube-control {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	align-items: center;
+	gap: 0.3em 0.7em;
+	min-width: 0;
+}
+
+.cube-control > span { color: rgb(var(--gray-dark)); }
+.cube-range input { grid-column: 1 / -1; width: 100%; accent-color: #2563eb; }
+.cube-control output { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+
+.cube-phase-control > div { display: flex; flex-wrap: wrap; gap: 0.35em 0.7em; }
+.cube-phase-control label { display: inline-flex; align-items: center; gap: 0.3em; white-space: nowrap; }
+.cube-phase-control input { margin: 0; accent-color: #2563eb; }
+.cube-phase-control i { width: 0.75em; height: 0.75em; border-radius: 999px; }
+.cube-phase-control .positive { background: #2563eb; }
+.cube-phase-control .negative { background: #dc2626; }
+
+.cube-control select,
+.cube-reset-display {
+	min-height: 2.1em;
+	border: 1px solid rgb(var(--gray-light));
+	border-radius: 6px;
+	background: var(--surface);
+	color: rgb(var(--gray-dark));
+}
+
+.cube-control select { grid-column: 1 / -1; padding: 0.2em 0.4em; }
+.cube-reset-display { margin-top: 0.7em; padding: 0.25em 0.65em; cursor: pointer; }
+.cube-reset-display:hover { border-color: rgb(var(--gray)); color: rgb(var(--black)); }
+
+@media (max-width: 640px) {
+	.chem-stage { min-height: 280px; }
+	.chem-3d .chem-stage { height: 340px; }
+	.cube-control-grid { grid-template-columns: 1fr; }
+	.cube-control { min-height: 3em; }
+	.cube-phase-control { align-items: start; }
+	.chem-view-controls { align-items: flex-start; flex-direction: column; }
+	.chem-view-buttons { width: 100%; justify-content: flex-end; }
+}

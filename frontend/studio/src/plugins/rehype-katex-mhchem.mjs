@@ -3,8 +3,9 @@ import { toText } from 'hast-util-to-text';
 import { createRequire } from 'node:module';
 import { SKIP, visitParents } from 'unist-util-visit-parents';
 
-import { numberEquations, prepareFormula, resolveReferences, unresolvedReferences } from '../science/rendering/equations.mjs';
-import { katexOptions, lenientOptions, macrosFor } from '../science/rendering/katex-options.mjs';
+import { numberEquations, prepareFormula, resolveReferences, unresolvedReferences } from '@blog/science/rendering/equations.mjs';
+import { katexOptions, lenientOptions } from '@blog/science/rendering/katex-options.mjs';
+import { macrosFor } from '../math-macros.mjs';
 
 const require = createRequire(import.meta.url);
 const katex = require('katex');
