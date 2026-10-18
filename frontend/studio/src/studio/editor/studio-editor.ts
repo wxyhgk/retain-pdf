@@ -20,12 +20,12 @@ import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
 import '@blog/science/browser/molecule-renderer.css';
-import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
+import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '@blog/science/browser/science-renderer.ts';
 import { linkPath } from '../article-files';
 import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
-import type { HastElement } from '../../code-files/render.mjs';
+import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
@@ -36,7 +36,7 @@ import { buildBlockSlashMenu } from './block-slash-menu';
 import { calloutPlugins } from './callout-block';
 import { citationPlugins, setCitationLibrary, type CitationHost } from './citations';
 import { officeCardPlugins } from './office-card-block';
-import type { BibEntry } from '../../references/bibtex.mjs';
+import type { BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import { FIGURE_TYPE, figurePlugins } from './figure-block';
 import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
@@ -47,7 +47,7 @@ import { withoutTrailingEmptyLines } from '../document/index.ts';
 import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
-import '../../widgets/widgets.css';
+import '@blog/markdown/widgets/widgets.css';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {

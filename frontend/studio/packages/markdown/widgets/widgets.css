@@ -1,0 +1,4 @@
+/* Interactive widgets (```widget): a frame as wide as the text, as tall as what it holds. */
+.note-widget { margin: 1.4em 0; }
+.note-widget-frame { display: block; width: 100%; border: 0; background: transparent; }
+.note-widget > figcaption { margin-top: 6px; color: rgb(var(--gray, 120, 119, 116)); font-size: 0.875em; text-align: center; }

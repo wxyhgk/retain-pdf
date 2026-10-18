@@ -6,8 +6,8 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 
-import { calloutMarker } from '../src/callouts/callouts.mjs';
-import remarkCallouts from '../src/plugins/remark-callouts.mjs';
+import { calloutMarker } from '../callouts/callouts.mjs';
+import remarkCallouts from '../plugins/remark-callouts.mjs';
 
 const render = async (markdown: string) =>
 	String(await unified().use(remarkParse).use(remarkCallouts).use(remarkRehype).use(rehypeStringify).process(markdown));

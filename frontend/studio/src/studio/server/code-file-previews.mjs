@@ -1,6 +1,6 @@
-import { parseFenceMeta } from '../../code-files/highlight.mjs';
-import { codeFileFigure } from '../../code-files/render.mjs';
-import { articlePath, studioFileUrl } from '../../articles/article-references.mjs';
+import { parseFenceMeta } from '@blog/markdown/code-files/highlight.mjs';
+import { codeFileFigure } from '@blog/markdown/code-files/render.mjs';
+import { articlePath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { ResourceTooLargeError } from './file-repository.mjs';
 import { StudioPathError } from '../../articles/bundle-paths.mjs';
 

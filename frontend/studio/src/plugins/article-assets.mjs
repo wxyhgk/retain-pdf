@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { resolveInside } from '../articles/bundle-paths.mjs';
-import { PUBLISHED_FOLDERS } from '../articles/rules.mjs';
+import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 
 /**

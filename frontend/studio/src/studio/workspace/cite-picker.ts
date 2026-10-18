@@ -1,4 +1,4 @@
-import { authorList, plainTex, type BibEntry } from '../../references/bibtex.mjs';
+import { authorList, plainTex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
 
 /** What the picker needs from the Studio around it. */
 export type CitePickerHost = {

@@ -10,9 +10,10 @@ import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { VFile } from 'vfile';
 
-import { rehypePlugins, remarkPlugins } from '../src/plugins/markdown-pipeline.mjs';
-import { authorList, numberRanges, parseBibtex, parseCitation, plainTex, referencePieces } from '../src/references/bibtex.mjs';
+import { markdownPlugins } from '../pipeline.mjs';
+import { authorList, numberRanges, parseBibtex, parseCitation, plainTex, referencePieces } from '../references/bibtex.mjs';
 
+const { remarkPlugins, rehypePlugins } = markdownPlugins();
 const BIB = String.raw`
 % Exported by Zotero
 @comment{jabref-meta: databaseType:bibtex;}

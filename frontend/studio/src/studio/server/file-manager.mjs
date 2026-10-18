@@ -5,7 +5,7 @@ import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import { articleBundlePaths, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
-import { ARTICLE_FOLDERS } from '../../articles/rules.mjs';
+import { ARTICLE_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { articleSummary } from '../../articles/schemas.mjs';
 import { existingDirectory, existingEntry, exists, FileConflictError, FileNotFoundError, linkUnderFreeName, replaceInto } from './safe-fs.mjs';
 

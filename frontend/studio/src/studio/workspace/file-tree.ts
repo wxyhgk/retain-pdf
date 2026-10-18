@@ -1,6 +1,6 @@
-import { findArticleReferences, movedPath } from '../../articles/article-references.mjs';
-import { PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
-import { BIBLIOGRAPHY_PATH } from '../../references/bibtex.mjs';
+import { findArticleReferences, movedPath } from '@blog/markdown/articles/article-references.mjs';
+import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
+import { BIBLIOGRAPHY_PATH } from '@blog/markdown/references/bibtex.mjs';
 import { fileName, isImage, parentPath } from '../article-files.ts';
 import type { ArticleFileEntry } from '../types.ts';
 

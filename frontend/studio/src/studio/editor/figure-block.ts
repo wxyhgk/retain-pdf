@@ -5,8 +5,8 @@ import { Plugin, PluginKey, TextSelection } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView, type NodeView, type NodeViewConstructor } from '@milkdown/prose/view';
 import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
-import { figureCaption, figureLabel, figureWidth, standaloneImage, withWidth } from '../../figures/figures.mjs';
-import '../../figures/figures.css';
+import { figureCaption, figureLabel, figureWidth, standaloneImage, withWidth } from '@blog/markdown/figures/figures.mjs';
+import '@blog/markdown/figures/figures.css';
 
 /**
  * Pictures as the blog shows them (`src/figures/`): an image alone in its

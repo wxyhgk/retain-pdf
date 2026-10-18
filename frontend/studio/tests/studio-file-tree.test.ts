@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { referencedPaths } from '../src/articles/article-references.mjs';
+import { referencedPaths } from '@blog/markdown/articles/article-references.mjs';
 import { markdownReference } from '../src/studio/article-files.ts';
 import { subfolderOf } from '../src/studio/dropped-files.ts';
 import type { ArticleFileEntry } from '../src/studio/types.ts';

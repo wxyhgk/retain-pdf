@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { parseBibtex } from '../../references/bibtex.mjs';
+import { parseBibtex } from '@blog/markdown/references/bibtex.mjs';
 import { ArticleLibrary, doiOf, shortKey } from './article-library.mjs';
 import { ArticleRepository } from './article-repository.mjs';
 

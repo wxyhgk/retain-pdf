@@ -3,8 +3,8 @@ import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
-import { gfmOptions } from '../../plugins/markdown-gfm.mjs';
-import remarkMathBrackets from '../../plugins/remark-math-brackets.mjs';
+import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
+import remarkMathBrackets from '@blog/markdown/plugins/remark-math-brackets.mjs';
 
 /**
  * Markdown as the blog reads it: CommonMark with GitHub's tables, task

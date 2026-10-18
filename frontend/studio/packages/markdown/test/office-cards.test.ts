@@ -10,8 +10,10 @@ import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { VFile } from 'vfile';
 
-import { officeFileOf } from '../src/articles/article-references.mjs';
-import { rehypePlugins, remarkPlugins } from '../src/plugins/markdown-pipeline.mjs';
+import { officeFileOf } from '../articles/article-references.mjs';
+import { markdownPlugins } from '../pipeline.mjs';
+
+const { remarkPlugins, rehypePlugins } = markdownPlugins();
 
 test('a link to one of the article’s office files, published with it', () => {
 	assert.equal(officeFileOf('./assets/%E7%BB%84%E4%BC%9A.pptx'), 'assets/组会.pptx');

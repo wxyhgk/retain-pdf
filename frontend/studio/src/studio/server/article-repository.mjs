@@ -4,7 +4,7 @@ import { updateStudioFrontmatter } from '../document/frontmatter.ts';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
 import { articleBundlePaths, assertArticleSlug, StudioPathError } from '../../articles/bundle-paths.mjs';
-import { ARTICLE_FOLDERS, SLUG_PATTERN } from '../../articles/rules.mjs';
+import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../articles/schemas.mjs';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */

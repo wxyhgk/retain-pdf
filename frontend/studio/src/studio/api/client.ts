@@ -1,6 +1,6 @@
-import type { HastElement } from '../../code-files/render.mjs';
-import { articlePath, studioFileUrl } from '../../articles/article-references.mjs';
-import { PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
+import type { HastElement } from '@blog/markdown/code-files/render.mjs';
+import { articlePath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
+import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, GitStatus, HistoryEntry, HistoryReason, SearchResult, TrashEntry } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {

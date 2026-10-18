@@ -1,6 +1,6 @@
 import { $remark } from '@milkdown/utils';
 
-import remarkMathBrackets from '../../plugins/remark-math-brackets.mjs';
+import remarkMathBrackets from '@blog/markdown/plugins/remark-math-brackets.mjs';
 import { FORMULA_BLOCK_ATTRS } from './formula-block.ts';
 
 type MdastNode = { type: string; value?: string; lang?: string; fence?: string; children?: MdastNode[] };

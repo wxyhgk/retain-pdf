@@ -1,9 +1,9 @@
 import { constants } from 'node:fs';
 import { lstat, open, readdir } from 'node:fs/promises';
 import { basename, extname, isAbsolute, resolve } from 'node:path';
-import { codeFileLanguages } from '../../code-files/languages.mjs';
+import { codeFileLanguages } from '@blog/markdown/code-files/languages.mjs';
 import { articleBundlePaths, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
-import { ARTICLE_FOLDERS, PUBLISHED_FOLDERS } from '../../articles/rules.mjs';
+import { ARTICLE_FOLDERS, PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 export const DEFAULT_RESOURCE_SIZE_LIMIT = 8 * 1024 * 1024;
 
 const TEXT = 'text/plain; charset=utf-8';

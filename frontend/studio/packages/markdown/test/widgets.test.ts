@@ -10,9 +10,10 @@ import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { VFile } from 'vfile';
 
-import { rehypePlugins, remarkPlugins } from '../src/plugins/markdown-pipeline.mjs';
-import { publicArticlePath, unpinnedScripts, widgetDocument, widgetFile, widgetOptions, widgetReads } from '../src/widgets/widgets.mjs';
+import { markdownPlugins } from '../pipeline.mjs';
+import { publicArticlePath, unpinnedScripts, widgetDocument, widgetFile, widgetOptions, widgetReads } from '../widgets/widgets.mjs';
 
+const { remarkPlugins, rehypePlugins } = markdownPlugins();
 const render = async (markdown: string, path?: string) => {
 	// The pipeline's plugin lists are typed for Astro's options, which unified does not know.
 	const file = await unified()

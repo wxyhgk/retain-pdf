@@ -6,9 +6,9 @@ import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
 
-import { ARTICLE_ADDRESS, PUBLISHED_FOLDERS, articleAddress } from '../../articles/rules.mjs';
+import { ARTICLE_ADDRESS, PUBLISHED_FOLDERS, articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { rehypePlugins, remarkPlugins } from '../../plugins/markdown-pipeline.mjs';
-import { findArticleReferences } from '../../articles/article-references.mjs';
+import { findArticleReferences } from '@blog/markdown/articles/article-references.mjs';
 import { ArticleRepository } from './article-repository.mjs';
 import { articleBundlePaths, resolveInside } from '../../articles/bundle-paths.mjs';
 import { articleProblems } from '../../articles/schemas.mjs';

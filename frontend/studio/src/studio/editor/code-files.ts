@@ -2,11 +2,11 @@ import { LanguageDescription, LanguageSupport, StreamLanguage } from '@codemirro
 import type { Node as ProseNode } from '@milkdown/prose/model';
 import type { EditorView } from '@milkdown/prose/view';
 
-import { enhanceCodeFiles } from '../../code-files/browser.ts';
-import { downloadName, parseFenceMeta } from '../../code-files/highlight.mjs';
-import { codeFileLanguages } from '../../code-files/languages.mjs';
-import { codeFileProblem, type HastChild, type HastElement } from '../../code-files/render.mjs';
-import '../../code-files/code-files.css';
+import { enhanceCodeFiles } from '@blog/markdown/code-files/browser.ts';
+import { downloadName, parseFenceMeta } from '@blog/markdown/code-files/highlight.mjs';
+import { codeFileLanguages } from '@blog/markdown/code-files/languages.mjs';
+import { codeFileProblem, type HastChild, type HastElement } from '@blog/markdown/code-files/render.mjs';
+import '@blog/markdown/code-files/code-files.css';
 import { parseScienceResourceRef } from '@blog/science/parsers/resource-reference.ts';
 import type { ArticleFileDropHost } from './file-drop.ts';
 import { isFormulaBlock } from './formula-block.ts';

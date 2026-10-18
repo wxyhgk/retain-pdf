@@ -3,7 +3,7 @@ import { Plugin, TextSelection } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
-import { ARTICLE_ADDRESS } from '../../articles/rules.mjs';
+import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 
 /**
  * Links to the blog's other articles, as Notion links its pages: `[[` opens

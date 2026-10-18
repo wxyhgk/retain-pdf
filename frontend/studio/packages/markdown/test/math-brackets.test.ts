@@ -7,7 +7,7 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 
-import remarkMathBrackets from '../src/plugins/remark-math-brackets.mjs';
+import remarkMathBrackets from '../plugins/remark-math-brackets.mjs';
 
 type Node = { type: string; value?: string; children?: Node[]; data?: { hProperties?: { className?: string[] } } };
 
@@ -89,20 +89,4 @@ test('HTML carries the classes KaTeX rendering looks for', () => {
 	assert.match(html, /<code class="language-math math-inline">a<\/code>/);
 	assert.match(html, /<pre><code class="language-math math-display">b<\/code><\/pre>/);
 	assert.match(html, /<code class="language-math math-display">c<\/code>/);
-});
-
-test('Studio keeps the author\'s \\( \\) and \\[ \\] when the editor writes dollars back', async () => {
-	const { mergeMarkdownBody } = await import('../src/studio/document/merge.ts');
-	const original = '能量 \\(E = mc^2\\) 的推导：\n\n\\[\nE_{HF} = \\sum_i h_{ii}\n\\]\n\n结束。\n';
-	const fromEditor = '能量 $E = mc^2$ 的推导：\n\n$$\nE_{HF} = \\sum_i h_{ii}\n$$\n\n结束。\n';
-	const unchanged = mergeMarkdownBody(original, fromEditor);
-	assert.equal(unchanged.body, original);
-	assert.equal(unchanged.changedBlocks, 0);
-	const edited = mergeMarkdownBody(original, fromEditor.replace('结束。', '完。'));
-	assert.match(edited.body, /能量 \\\(E = mc\^2\\\)/);
-	assert.match(edited.body, /\\\[\nE_\{HF\}/);
-	assert.match(edited.body, /完。/);
-	assert.equal(edited.changedBlocks, 1);
-	const inSentence = '句中的展示公式 \\[\\int_0^1 x\\,dx\\] 留在行内。\n';
-	assert.equal(mergeMarkdownBody(inSentence, '句中的展示公式 $\\int_0^1 x\\,dx$ 留在行内。\n').body, inSentence);
 });

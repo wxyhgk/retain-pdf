@@ -4,8 +4,7 @@ import { createRequire } from 'node:module';
 import { SKIP, visitParents } from 'unist-util-visit-parents';
 
 import { numberEquations, prepareFormula, resolveReferences, unresolvedReferences } from '@blog/science/rendering/equations.mjs';
-import { katexOptions, lenientOptions } from '@blog/science/rendering/katex-options.mjs';
-import { macrosFor } from '../math-macros.mjs';
+import { katexOptions, lenientOptions, mergeMacros } from '@blog/science/rendering/katex-options.mjs';
 
 const require = createRequire(import.meta.url);
 const katex = require('katex');
@@ -14,7 +13,8 @@ require('katex/contrib/mhchem');
 /**
  * Render remark-math nodes with the same KaTeX instance that owns mhchem,
  * with the options the Studio draws formulas with (`katex-options.mjs`):
- * the site's macros and the article's own `macros:`, equations numbered in
+ * the macros `macrosFor` gives for the article's own `macros:` (the site's
+ * and its own; only its own when not given), equations numbered in
  * order with `\label` / `\eqref` (`equations.mjs`). Only formulas that are
  * blocks of their own are numbered, as in the Studio.
  *
@@ -22,7 +22,7 @@ require('katex/contrib/mhchem');
  * publishing lists it): a formula KaTeX rejects, drawn in red; a reference
  * no label gives, shown as (??); a label given twice.
  */
-export default function rehypeKatexMhchem(options = {}) {
+export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => mergeMacros({}, articleMacros), ...options } = {}) {
 	return function transform(tree, file) {
 		const formulas = [];
 		visitParents(tree, 'element', (element, parents) => {

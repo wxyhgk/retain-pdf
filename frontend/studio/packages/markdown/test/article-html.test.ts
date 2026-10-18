@@ -6,7 +6,7 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 
-import rehypeArticleHtml from '../src/plugins/rehype-article-html.mjs';
+import rehypeArticleHtml from '../plugins/rehype-article-html.mjs';
 
 function render(markdown: string): string {
 	return String(

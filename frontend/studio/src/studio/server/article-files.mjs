@@ -1,7 +1,7 @@
 import { ArticleConflictError } from './article-repository.mjs';
 import { moveMoleculeViews } from '../../articles/article-views.mjs';
 import { managedSegments } from './file-manager.mjs';
-import { rewriteMovedReferences } from '../../articles/article-references.mjs';
+import { rewriteMovedReferences } from '@blog/markdown/articles/article-references.mjs';
 
 /**
  * File changes that the article's text has to follow. Moving a file the

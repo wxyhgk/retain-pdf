@@ -1,6 +1,6 @@
 import { relative, resolve, sep } from 'node:path';
 
-import { SLUG_PATTERN } from './rules.mjs';
+import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 
 export function assertArticleSlug(slug) {
 	if (typeof slug !== 'string' || !SLUG_PATTERN.test(slug)) {

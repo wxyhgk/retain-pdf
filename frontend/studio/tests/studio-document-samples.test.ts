@@ -6,7 +6,7 @@ import remarkParse from 'remark-parse';
 import remarkStringify from 'remark-stringify';
 import { unified } from 'unified';
 
-import remarkMathBrackets from '../src/plugins/remark-math-brackets.mjs';
+import remarkMathBrackets from '@blog/markdown/plugins/remark-math-brackets.mjs';
 import { mergeMarkdownBody, parseStudioDocument, serializeStudioDocument } from '../src/studio/document/index.ts';
 
 /** Markdown an article can hold, one construct per sample. */

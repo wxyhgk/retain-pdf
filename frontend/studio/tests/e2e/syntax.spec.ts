@@ -7,7 +7,7 @@ import remarkMath from 'remark-math';
 import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
-import { gfmOptions } from '../../src/plugins/markdown-gfm.mjs';
+import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
 import { parseMarkdownBodyBlocks, parseStudioDocument } from '../../src/studio/document/index.ts';
 import { saveStatus } from './studio.ts';
 

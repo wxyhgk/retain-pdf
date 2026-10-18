@@ -3,8 +3,8 @@ import { Plugin } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
 import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
-import { CALLOUT_KINDS, CALLOUT_ORDER, takeCalloutMarker, type CalloutKind } from '../../callouts/callouts.mjs';
-import '../../callouts/callouts.css';
+import { CALLOUT_KINDS, CALLOUT_ORDER, takeCalloutMarker, type CalloutKind } from '@blog/markdown/callouts/callouts.mjs';
+import '@blog/markdown/callouts/callouts.css';
 
 /**
  * Callouts as the blog shows them (`src/callouts/`): `> [!TIP]` opens as a

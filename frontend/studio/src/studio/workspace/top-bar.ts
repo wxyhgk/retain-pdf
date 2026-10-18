@@ -1,5 +1,5 @@
 import type { SaveState } from '../state/article-session.ts';
-import { articleAddress } from '../../articles/rules.mjs';
+import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { timeAgo } from './trash-view.ts';
 
 /** What the status line says, and the colour it says it in. */

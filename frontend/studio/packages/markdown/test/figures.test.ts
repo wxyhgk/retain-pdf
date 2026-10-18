@@ -6,8 +6,8 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 
-import { figureCaption, figureWidth, onlyAttributes, withWidth } from '../src/figures/figures.mjs';
-import remarkFigures from '../src/plugins/remark-figures.mjs';
+import { figureCaption, figureWidth, onlyAttributes, withWidth } from '../figures/figures.mjs';
+import remarkFigures from '../plugins/remark-figures.mjs';
 
 const render = async (markdown: string) =>
 	String(await unified().use(remarkParse).use(remarkFigures).use(remarkRehype).use(rehypeStringify).process(markdown));

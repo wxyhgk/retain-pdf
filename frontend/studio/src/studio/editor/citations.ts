@@ -5,8 +5,8 @@ import { Plugin, PluginKey, TextSelection, type EditorState, type Transaction } 
 import { Decoration, DecorationSet, type EditorView, type NodeView, type NodeViewConstructor } from '@milkdown/prose/view';
 import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
-import { BIBLIOGRAPHY_PATH, CITATION, authorList, numberRanges, parseCitation, plainTex, type BibEntry } from '../../references/bibtex.mjs';
-import '../../references/references.css';
+import { BIBLIOGRAPHY_PATH, CITATION, authorList, numberRanges, parseCitation, plainTex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
+import '@blog/markdown/references/references.css';
 
 /**
  * Citations in the editor (`src/references/`): `[@becke1993]` is one piece

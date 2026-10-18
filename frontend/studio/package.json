@@ -23,6 +23,7 @@
     "@astrojs/mdx": "^7.0.5",
     "@astrojs/rss": "^4.0.19",
     "@astrojs/sitemap": "^3.7.3",
+    "@blog/markdown": "*",
     "@blog/office": "*",
     "@blog/science": "*",
     "@codemirror/language-data": "^6.5.2",

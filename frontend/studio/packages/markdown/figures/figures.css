@@ -1,0 +1,24 @@
+/* Figures (figures.mjs): a picture alone in its paragraph, its width and its numbered caption. */
+
+figure.article-figure {
+	margin: 18px 0;
+	text-align: center;
+}
+figure.article-figure img {
+	display: block;
+	width: var(--figure-width, auto);
+	max-width: 100%;
+	height: auto;
+	margin: 0 auto;
+}
+figure.article-figure figcaption {
+	margin-top: 8px;
+	color: rgb(var(--gray));
+	font-size: 0.9em;
+	line-height: 1.5;
+}
+figure.article-figure .figure-label {
+	margin-right: 0.6em;
+	color: rgb(var(--gray-dark));
+	font-weight: 600;
+}

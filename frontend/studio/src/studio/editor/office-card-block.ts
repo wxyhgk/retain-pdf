@@ -7,7 +7,7 @@ import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
 import { officeCardElement, watchOfficeCard } from '@blog/office/card.ts';
 import { officeKind } from '@blog/office/kinds.mjs';
-import { officeFileOf } from '../../articles/article-references.mjs';
+import { officeFileOf } from '@blog/markdown/articles/article-references.mjs';
 
 /**
  * Office files as cards in the editor, as the blog draws them

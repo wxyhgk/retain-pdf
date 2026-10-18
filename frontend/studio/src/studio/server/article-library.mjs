@@ -2,7 +2,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { articleBundlePaths, resolveInside } from '../../articles/bundle-paths.mjs';
-import { BIBLIOGRAPHY_PATH, parseBibtex, plainTex } from '../../references/bibtex.mjs';
+import { BIBLIOGRAPHY_PATH, parseBibtex, plainTex } from '@blog/markdown/references/bibtex.mjs';
 import { atomicWriteText } from './atomic-write.mjs';
 
 /**

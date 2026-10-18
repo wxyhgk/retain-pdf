@@ -1,4 +1,4 @@
-import { SLUG_PATTERN } from '../../articles/rules.mjs';
+import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { commitArticle, deleteArticle, duplicateArticle, gitStatus, renameArticle, restoreArticle } from '../api/client.ts';
 import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';

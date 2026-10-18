@@ -1,5 +1,5 @@
-import { codeFileLanguageForPath } from '../code-files/languages.mjs';
-import { PUBLISHED_FOLDERS } from '../articles/rules.mjs';
+import { codeFileLanguageForPath } from '@blog/markdown/code-files/languages.mjs';
+import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
 
 /**

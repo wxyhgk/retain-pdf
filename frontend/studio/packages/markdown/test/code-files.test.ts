@@ -10,10 +10,10 @@ import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { VFile } from 'vfile';
 
-import { excerptLines, highlightLines, parseFenceMeta } from '../src/code-files/highlight.mjs';
-import { codeFileLanguage, codeFileLanguageForPath } from '../src/code-files/languages.mjs';
-import { codeFileFigure } from '../src/code-files/render.mjs';
-import remarkCodeFiles from '../src/plugins/remark-code-files.mjs';
+import { excerptLines, highlightLines, parseFenceMeta } from '../code-files/highlight.mjs';
+import { codeFileLanguage, codeFileLanguageForPath } from '../code-files/languages.mjs';
+import { codeFileFigure } from '../code-files/render.mjs';
+import remarkCodeFiles from '../plugins/remark-code-files.mjs';
 
 /** A line's tokens as `[name:text]`, plain text bare. */
 const show = (language: string, source: string) =>

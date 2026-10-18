@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { moleculeViewKey } from '@blog/science/view-key.mjs';
 import {
 	articlePath,
 	findArticleReferences,
@@ -10,7 +8,7 @@ import {
 	movedPath,
 	referencedPaths,
 	rewriteMovedReferences,
-} from '../src/articles/article-references.mjs';
+} from '../articles/article-references.mjs';
 
 const article = [
 	'---',
@@ -134,9 +132,4 @@ test('a name a bare link cannot hold is encoded', () => {
 	const result = rewriteMovedReferences('![a](./img/a.png)\n', 'img/a.png', 'img/my plot (1).png');
 	assert.equal(result.source, '![a](./img/my%20plot%20(1).png)\n');
 	assert.deepEqual([...referencedPaths(result.source)], ['img/my plot (1).png']);
-});
-
-test('saved 3D views are keyed by the @file path as written', async () => {
-	const views = JSON.parse(await readFile(new URL('../blog/chemistry-rendering/article.views.json', import.meta.url), 'utf8'));
-	assert.equal(views.molecules[moleculeViewKey('cube', './assets/s0_homo.cube')]?.format, 'cube');
 });

@@ -24,7 +24,7 @@ test('the blog numbers its formula blocks, links references and uses the article
 	const remarkMath = (await import('remark-math')).default;
 	const remarkRehype = (await import('remark-rehype')).default;
 	const rehypeStringify = (await import('rehype-stringify')).default;
-	const rehypeKatexMhchem = (await import('../src/plugins/rehype-katex-mhchem.mjs')).default;
+	const rehypeKatexMhchem = (await import('@blog/markdown/plugins/rehype-katex-mhchem.mjs')).default;
 	const processor = unified().use(remarkParse).use(remarkMath).use(remarkRehype).use(rehypeKatexMhchem).use(rehypeStringify);
 	const markdown = '见 $\\eqref{eq:e}$。\n\n$$\nE = \\Ha \\label{eq:e}\n$$\n\n$$\na \\notag\n$$\n\n```math\nb\n```\n';
 	const file = await processor.process({ value: markdown, data: { astro: { frontmatter: { macros: { Ha: '\\hat{H}' } } } } });
