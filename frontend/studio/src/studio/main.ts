@@ -16,6 +16,7 @@ import {
 	uploadArticleFile,
 	keepVersion,
 	addReference,
+	importDriveFile,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -38,7 +39,8 @@ import { officeFilesChanged } from '../office/office-card';
 import { firstSheetRows } from '../office/office-render';
 import { openOfficeFile } from '../office/office-viewer';
 import { createFilePanel } from './workspace/file-panel';
-import { isImage } from './article-files';
+import { isImage, markdownReference } from './article-files';
+import { createDriveBrowser } from './workspace/drive-browser';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createOutline } from './workspace/outline';
@@ -67,7 +69,10 @@ const articleActions = createArticleActions({
 	refreshGit: () => refreshGit(),
 });
 const articleList = createArticleList(shell.querySelector<HTMLElement>('.article-sidebar')!, {
-	open: (slug) => { void session.open(slug); },
+	open: (slug) => {
+		showView('editor');
+		void session.open(slug);
+	},
 	rename: (article) => void articleActions.rename(article),
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
@@ -141,6 +146,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 			}
 			return paths;
 		},
+		fromDrive: (path) => copyFromDrive(path),
 		report: showToast,
 	},
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
@@ -337,11 +343,65 @@ function showFound(text: string): void {
 const quickFind = createQuickFind(document.querySelector<HTMLDialogElement>('#quick-find-dialog')!, {
 	articles: () => articleList.articles(),
 	async open(slug, text) {
+		showView('editor');
 		await session.open(slug);
 		if (text && session.slug === slug) requestAnimationFrame(() => showFound(text));
 	},
 });
 shell.querySelector('#open-search')!.addEventListener('click', () => quickFind.open());
+
+/** A file of the drive copied into the open article (`img/` for a picture, else `assets/`): its path there. */
+async function copyFromDrive(path: string): Promise<string> {
+	const slug = session.slug;
+	if (!slug) throw new Error('先打开一篇文章');
+	try {
+		return (await importDriveFile(slug, path, isImage(path) ? 'img' : 'assets')).path;
+	} finally {
+		void filePanel.refresh();
+	}
+}
+
+// The drive (资料库): a page in the middle, and a list in the side panel to drag files into the article from.
+const driveHost = {
+	article: () => {
+		const slug = session.slug;
+		return slug ? { slug, title: articleList.articles().find((article) => article.slug === slug)?.title || slug } : null;
+	},
+	async insertIntoArticle(path: string) {
+		const reference = markdownReference(await copyFromDrive(path));
+		if (reference) editor.insertMarkdown(reference);
+	},
+};
+const driveView = shell.querySelector<HTMLElement>('#drive-view')!;
+const driveButton = shell.querySelector<HTMLButtonElement>('#open-drive')!;
+const drivePage = createDriveBrowser(driveView, {
+	...driveHost,
+	changed: () => void drivePane.refresh(),
+	navigated(folder) {
+		if (shell.dataset.view !== 'drive') return;
+		const url = new URL(window.location.href);
+		url.searchParams.set('drive', folder);
+		history.replaceState(null, '', url);
+	},
+}, { mode: 'page' });
+const drivePane = createDriveBrowser(shell.querySelector<HTMLElement>('#side-drive')!, { ...driveHost, changed: () => void drivePage.refresh() }, { mode: 'pane' });
+void drivePane.open('');
+
+/** The article in the middle, or the drive (the article stays open behind it). */
+function showView(view: 'editor' | 'drive', folder?: string): void {
+	shell.dataset.view = view;
+	driveView.hidden = view !== 'drive';
+	driveButton.setAttribute('aria-pressed', String(view === 'drive'));
+	const url = new URL(window.location.href);
+	if (view === 'drive') void drivePage.open(folder);
+	else url.searchParams.delete('drive');
+	history.replaceState(null, '', url);
+}
+driveButton.addEventListener('click', () => showView(shell.dataset.view === 'drive' ? 'editor' : 'drive'));
+{
+	const folder = new URL(window.location.href).searchParams.get('drive');
+	if (folder !== null) showView('drive', folder);
+}
 
 const trashView = createTrashView(document.querySelector<HTMLDialogElement>('#trash-dialog')!, {
 	articleRestored(slug) {

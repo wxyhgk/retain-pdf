@@ -10,6 +10,8 @@ import { isMoleculeLanguage } from '../science/parsers/molecule-block.ts';
 
 /** A file dragged from the panel carries its article path under this type, so the editor can tell it from files off the desktop. */
 export const STUDIO_FILE_DRAG_TYPE = 'application/x-studio-file';
+/** What a file dragged from the drive (资料库) carries: its path there. */
+export const DRIVE_DRAG_TYPE = 'application/x-studio-drive';
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif']);
 

@@ -11,6 +11,28 @@ const articles = (): string => {
 	return dir;
 };
 
+/** The drive (资料库) the Studio shows in the tests: its own folder, emptied and filled by each test. */
+const driveRoot = (): string => {
+	const dir = process.env.STUDIO_DRIVE_DIR;
+	if (!dir) throw new Error('STUDIO_DRIVE_DIR is not set: run through tests/e2e/playwright.config.ts');
+	return dir;
+};
+
+/** Empties the drive and puts these files in it (`组会/a.pptx`), making their folders. */
+export function resetDrive(files: Record<string, string | Buffer>): void {
+	rmSync(driveRoot(), { recursive: true, force: true });
+	mkdirSync(driveRoot(), { recursive: true });
+	for (const [path, content] of Object.entries(files)) {
+		mkdirSync(dirname(join(driveRoot(), path)), { recursive: true });
+		writeFileSync(join(driveRoot(), path), content);
+	}
+}
+
+/** Whether the drive has this file or folder. */
+export function driveHas(path: string): boolean {
+	return existsSync(join(driveRoot(), path));
+}
+
 /** Put the fixture article back as it was, whatever the last test saved. */
 export function resetFixture(): void {
 	const target = join(articles(), slug);

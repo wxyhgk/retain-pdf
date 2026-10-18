@@ -168,9 +168,13 @@ export function uploadArticleFile(slug: string, folder: string, file: File, opti
 	const query = new URLSearchParams({ folder, name: file.name });
 	if (options.subfolder) query.set('subfolder', options.subfolder);
 	if (options.replace) query.set('replace', '1');
+	return sendFile(`${articleApi(slug, 'files')}?${query}`, file, options);
+}
+
+function sendFile(url: string, file: File, options: UploadOptions): Promise<{ path: string; size: number }> {
 	return new Promise((resolve, reject) => {
 		const xhr = new XMLHttpRequest();
-		xhr.open('POST', `${articleApi(slug, 'files')}?${query}`);
+		xhr.open('POST', url);
 		xhr.setRequestHeader('Content-Type', 'application/octet-stream');
 		xhr.responseType = 'json';
 		if (options.onProgress) xhr.upload.addEventListener('progress', (event) => options.onProgress!(event.loaded, event.total || file.size));
@@ -239,4 +243,63 @@ export async function readVersion(slug: string, name: string): Promise<string> {
 /** Adds the work with this DOI to the article's assets/refs.bib (asking doi.org); its key. */
 export async function addReference(slug: string, doi: string): Promise<{ key: string; added: boolean }> {
 	return request(`/api/studio/articles/${encodeURIComponent(slug)}/references`, jsonOptions('POST', { doi }));
+}
+
+/** The drive (资料库, drive.mjs): which folder it is; `root` null until one is chosen. */
+export type DriveInfo = { root: string | null; name: string | null; fixed: boolean; cancelled?: boolean };
+
+export type DriveEntry = { path: string; kind: 'file' | 'directory'; size?: number; modified: number };
+
+export function driveInfo(): Promise<DriveInfo> {
+	return request('/api/studio/drive');
+}
+
+/** Asks for the drive's folder with the system's dialog; `cancelled` when none was picked. */
+export function chooseDriveFolder(): Promise<DriveInfo> {
+	return request('/api/studio/drive/choose', jsonOptions('POST', {}));
+}
+
+/** Makes the folder at `path` (typed out) the drive. */
+export function setDriveFolder(path: string): Promise<DriveInfo> {
+	return request('/api/studio/drive/root', jsonOptions('POST', { path }));
+}
+
+export async function listDrive(folder: string): Promise<DriveEntry[]> {
+	return (await request<{ entries: DriveEntry[] }>(`/api/studio/drive/list?${new URLSearchParams({ path: folder })}`)).entries;
+}
+
+/** Where a file of the drive is read from. */
+export function driveFileUrl(path: string): string {
+	return `/api/studio/drive/files/${path.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+export function uploadDriveFile(folder: string, file: File, options: UploadOptions = {}): Promise<{ path: string; size: number }> {
+	const query = new URLSearchParams({ folder, name: file.name });
+	if (options.replace) query.set('replace', '1');
+	return sendFile(`/api/studio/drive/upload?${query}`, file, options);
+}
+
+export function createDriveFolder(path: string): Promise<{ path: string }> {
+	return request('/api/studio/drive/folders', jsonOptions('POST', { path }));
+}
+
+export function moveDriveFile(from: string, to: string): Promise<{ path: string }> {
+	return request('/api/studio/drive/move', jsonOptions('POST', { from, to }));
+}
+
+export function trashDriveFile(path: string): Promise<{ path: string; trashed: string }> {
+	return request('/api/studio/drive/trash', jsonOptions('POST', { path }));
+}
+
+export function restoreDriveFile(trashed: string): Promise<{ path: string }> {
+	return request('/api/studio/drive/restore', jsonOptions('POST', { trashed }));
+}
+
+export function revealDriveFile(path: string): Promise<{ path: string }> {
+	return request('/api/studio/drive/reveal', jsonOptions('POST', { path }));
+}
+
+/** A file of the drive copied into the article's `folder` (`img` or `assets`): its path there. */
+export function importDriveFile(slug: string, from: string, folder: string): Promise<{ path: string; size: number }> {
+	return request(articleApi(slug, 'import'), jsonOptions('POST', { from, folder }));
 }

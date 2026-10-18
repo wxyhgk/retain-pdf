@@ -6,13 +6,15 @@ import { Plugin, PluginKey, type EditorState } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
-import { markdownReference, STUDIO_FILE_DRAG_TYPE } from '../article-files.ts';
+import { DRIVE_DRAG_TYPE, fileName, markdownReference, STUDIO_FILE_DRAG_TYPE } from '../article-files.ts';
 import { dropHasFolder } from '../dropped-files.ts';
 
 /** What dropping files into the editor needs from the Studio around it. */
 export type ArticleFileDropHost = {
 	/** Uploads into the open article (pictures to `img/`, the rest to `assets/`); the paths they got. */
 	upload(files: readonly File[]): Promise<string[]>;
+	/** Copies a file of the drive (资料库) into the open article; the path it got there. */
+	fromDrive(path: string): Promise<string>;
 	/** Something went wrong, or something the author should know happened. */
 	report(message: string, error?: boolean): void;
 };
@@ -69,24 +71,29 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 	}
 
 	function upload(view: EditorView, pos: number, files: readonly File[]): void {
-		const id = Symbol('upload');
 		const label = files.length === 1 ? `正在上传 ${files[0].name}…` : `正在上传 ${files.length} 个文件…`;
+		bring(view, pos, label, () => host.upload(files), '上传');
+	}
+
+	/** Files coming into the article (`task`), a placeholder at `pos` until they are there and put in its place. */
+	function bring(view: EditorView, pos: number, label: string, task: () => Promise<string[]>, verb: string): void {
+		const id = Symbol('upload');
 		view.dispatch(view.state.tr.setMeta(placeholderKey, { add: { id, pos, label } } satisfies PlaceholderAction));
-		host.upload(files).then(
+		task().then(
 			(paths) => {
 				if (view.isDestroyed) return;
 				const at = findPlaceholder(view.state, id);
 				const markdown = paths.map(markdownReference).filter((reference): reference is string => reference !== null);
 				if (at < 0) {
-					host.report(`已上传 ${paths.join('、')}，但插入的位置已被删除`);
+					host.report(`已${verb} ${paths.join('、')}，但插入的位置已被删除`);
 					return;
 				}
 				insertAt(view, at, markdown, id);
-				host.report(paths.length === 1 ? `已上传 ${paths[0]}` : `已上传 ${paths.length} 个文件`);
+				host.report(paths.length === 1 ? `已${verb} ${paths[0]}` : `已${verb} ${paths.length} 个文件`);
 			},
 			(error: unknown) => {
 				if (!view.isDestroyed) view.dispatch(view.state.tr.setMeta(placeholderKey, { remove: id } satisfies PlaceholderAction));
-				host.report(error instanceof Error ? error.message : '上传失败', true);
+				host.report(error instanceof Error ? error.message : `${verb}失败`, true);
 			},
 		);
 	}
@@ -123,6 +130,14 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 					drop(view, event) {
 						const transfer = event.dataTransfer;
 						if (!transfer) return false;
+						// From the drive: copied into the article first.
+						const fromDrive = transfer.getData(DRIVE_DRAG_TYPE);
+						if (fromDrive) {
+							event.preventDefault();
+							const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? view.state.selection.from;
+							bring(view, at, `正在从资料库复制 ${fileName(fromDrive)}…`, async () => [await host.fromDrive(fromDrive)], '复制到文章');
+							return true;
+						}
 						const path = transfer.getData(STUDIO_FILE_DRAG_TYPE);
 						const files = [...transfer.files];
 						if (!path && !files.length) return false;

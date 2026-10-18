@@ -1,12 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { createWriteStream } from 'node:fs';
-import { link, lstat, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import { articleBundlePaths, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS } from '../../articles/rules.mjs';
 import { articleSummary } from '../../articles/schemas.mjs';
+import { existingDirectory, existingEntry, exists, FileConflictError, FileNotFoundError, linkUnderFreeName, replaceInto } from './safe-fs.mjs';
+
+export { FileConflictError, FileNotFoundError };
 
 export const DEFAULT_UPLOAD_SIZE_LIMIT = 64 * 1024 * 1024;
 /** The article's own files: listed so the author sees them, changed only by the editor. */
@@ -449,82 +452,6 @@ export function safeFolderName(name) {
 	let kept = [...(cleaned || 'folder')];
 	while (kept.length > 1 && Buffer.byteLength(kept.join('')) > MAX_NAME_BYTES) kept = kept.slice(0, -1);
 	return assertName(kept.join(''));
-}
-
-/** Resolves an existing folder, refusing symbolic links on the way. */
-async function existingDirectory(directory, segments) {
-	const path = await existingEntry(directory, segments);
-	if (!(await lstat(path)).isDirectory()) throw new FileConflictError(`${segments.join('/')} 不是文件夹`);
-	return path;
-}
-
-/** Resolves an existing file or folder, refusing symbolic links at every level. */
-async function existingEntry(directory, segments) {
-	let current = directory;
-	for (const [index, segment] of segments.entries()) {
-		current = resolveInside(current, segment);
-		let info;
-		try {
-			info = await lstat(current);
-		} catch (error) {
-			if (error?.code === 'ENOENT') throw new FileNotFoundError(`${segments.slice(0, index + 1).join('/')} 不存在`);
-			throw error;
-		}
-		if (info.isSymbolicLink()) throw new StudioPathError('路径不能包含符号链接');
-		if (index < segments.length - 1 && !info.isDirectory()) throw new FileNotFoundError(`${segments.join('/')} 不存在`);
-	}
-	return current;
-}
-
-async function exists(path) {
-	try {
-		await lstat(path);
-		return true;
-	} catch (error) {
-		if (error?.code === 'ENOENT') return false;
-		throw error;
-	}
-}
-
-/** Gives the finished upload the first free name: `a.png`, `a-1.png`, `a-2.png`, … */
-async function linkUnderFreeName(temporary, folder, name) {
-	const extension = extname(name);
-	const stem = name.slice(0, name.length - extension.length);
-	for (let attempt = 0; attempt < 1000; attempt += 1) {
-		const candidate = attempt === 0 ? name : `${stem}-${attempt}${extension}`;
-		try {
-			// A hard link fails when the name is taken, where a rename would overwrite.
-			await link(temporary, join(folder, candidate));
-			return candidate;
-		} catch (error) {
-			if (error?.code !== 'EEXIST') throw error;
-		}
-	}
-	throw new FileConflictError('同名文件太多');
-}
-
-async function replaceInto(temporary, folder, name) {
-	const target = join(folder, name);
-	const info = await lstat(target).catch(() => null);
-	if (info && (!info.isFile() || info.isSymbolicLink())) throw new FileConflictError(`${name} 不是普通文件，不能替换`);
-	await rename(temporary, target);
-	return name;
-}
-
-export class FileNotFoundError extends Error {
-	constructor(message = '文件不存在') {
-		super(message);
-		this.name = 'FileNotFoundError';
-		this.statusCode = 404;
-	}
-}
-
-export class FileConflictError extends Error {
-	constructor(message) {
-		super(message);
-		this.name = 'FileConflictError';
-		this.statusCode = 409;
-	}
 }
 
 export class FileLockedError extends Error {

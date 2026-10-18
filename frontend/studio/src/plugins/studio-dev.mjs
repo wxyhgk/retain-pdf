@@ -8,7 +8,9 @@ import { ArticleHistory } from '../studio/server/article-history.mjs';
 import { ArticleLibrary } from '../studio/server/article-library.mjs';
 import { ArticleRepository } from '../studio/server/article-repository.mjs';
 import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
+import { chooseFolder } from '../studio/server/choose-folder.mjs';
 import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
+import { Drive } from '../studio/server/drive.mjs';
 import { articleBundlePaths, StudioPathError } from '../articles/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
@@ -72,7 +74,8 @@ async function file(response, resource) {
 	response.setHeader('Content-Length', resource.size);
 	response.setHeader('Cache-Control', 'no-store');
 	response.setHeader('X-Content-Type-Options', 'nosniff');
-	response.setHeader('Content-Security-Policy', 'sandbox');
+	// Chrome's PDF viewer does not open in a sandboxed page; a PDF is not a page that could run the Studio's API.
+	if (!String(resource.contentType).startsWith('application/pdf')) response.setHeader('Content-Security-Policy', 'sandbox');
 	await pipeline(resource.body, response);
 }
 
@@ -96,6 +99,13 @@ export default function studioDev() {
 			const history = new ArticleHistory(blogRoot);
 			const library = new ArticleLibrary(blogRoot, articles);
 			const watcher = new BlogWatcher(blogRoot);
+			// The author's own folder of files (资料库), chosen once and kept outside git; the browser tests bring their own.
+			const testDriveRoot = process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null;
+			const drive = new Drive({
+				settingsFile: testBlogRoot ? resolve(testBlogRoot, '.studio-settings.json') : resolve(server.config.root, '.studio-settings.json'),
+				fixedRoot: testDriveRoot,
+				forbidden: [server.config.root, blogRoot],
+			});
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
 			server.httpServer?.on('close', () => {
 				watcher.close();
@@ -208,6 +218,44 @@ export default function studioDev() {
 						return json(response, articleActionMatch[2] === 'rename' ? 200 : 201, result);
 					}
 
+					// The drive (资料库): which folder it is, choosing it, what is in it, and changing that.
+					if (url.pathname === '/api/studio/drive' && request.method === 'GET') return json(response, 200, await drive.describe());
+					if (url.pathname === '/api/studio/drive/root' && request.method === 'POST') {
+						const { path } = await readJsonChange(request);
+						return json(response, 200, await drive.choose(path));
+					}
+					if (url.pathname === '/api/studio/drive/choose' && request.method === 'POST') {
+						assertContentType(request, 'application/json');
+						const chosen = await chooseFolder('选择资料库文件夹');
+						return json(response, 200, chosen ? await drive.choose(chosen) : { ...(await drive.describe()), cancelled: true });
+					}
+					if (url.pathname === '/api/studio/drive/list' && request.method === 'GET') {
+						return json(response, 200, { entries: await drive.list(url.searchParams.get('path') ?? '') });
+					}
+					const driveFileMatch = rawPathname.match(/^\/api\/studio\/drive\/files\/(.+)$/u);
+					if (driveFileMatch && request.method === 'GET') {
+						return await file(response, await drive.stream(driveFileMatch[1].split('/').map(decodePathComponent).join('/')));
+					}
+					const driveActionMatch = url.pathname.match(/^\/api\/studio\/drive\/(upload|folders|move|trash|restore|reveal)$/u);
+					if (driveActionMatch && request.method === 'POST') {
+						const action = driveActionMatch[1];
+						if (action === 'upload') {
+							assertContentType(request, 'application/octet-stream');
+							const declared = Number(request.headers['content-length']);
+							if (declared > drive.uploadSizeLimit) return json(response, 413, { error: `文件超过 ${drive.uploadSizeLimit / 1024 / 1024} MB 上传上限` });
+							return json(response, 201, await drive.upload(url.searchParams.get('folder') ?? '', url.searchParams.get('name') ?? '', request, { replace: url.searchParams.get('replace') === '1' }));
+						}
+						const body = await readJsonChange(request);
+						if (action === 'folders') return json(response, 201, await drive.createFolder(body.path));
+						if (action === 'move') return json(response, 200, await drive.move(body.from, body.to));
+						if (action === 'trash') return json(response, 200, await drive.trash(body.path));
+						if (action === 'restore') return json(response, 200, await drive.restore(body.trashed));
+						const absolute = await drive.locate(body.path ?? '');
+						// Browser tests must not open windows on the machine running them.
+						if (!testDriveRoot) await revealInFileManager(absolute, { isDirectory: (await lstat(absolute)).isDirectory() });
+						return json(response, 200, { path: body.path ?? '' });
+					}
+
 					// Match the raw path so URL normalization cannot erase an attempted `..` traversal.
 					const fileMatch = rawPathname.match(/^\/api\/studio\/articles\/([^/]+)\/files\/([^/]+)\/(.+)$/u);
 					if (fileMatch && request.method === 'GET') {
@@ -257,7 +305,7 @@ export default function studioDev() {
 						return json(response, 200, { figure });
 					}
 
-					const managerMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(tree|files|folders|move|trash|restore|reveal)$/u);
+					const managerMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(tree|files|folders|move|trash|restore|reveal|import)$/u);
 					if (managerMatch) {
 						const slug = decodePathComponent(managerMatch[1]);
 						const action = `${request.method} ${managerMatch[2]}`;
@@ -271,6 +319,20 @@ export default function studioDev() {
 								subfolders: (url.searchParams.get('subfolder') ?? '').split('/').filter(Boolean),
 							});
 							return json(response, 201, uploaded);
+						}
+						// A file of the drive, copied into the article (`img/` or `assets/`) under a name a link takes.
+						if (action === 'POST import') {
+							const { from, folder } = await readJsonChange(request);
+							const source = await drive.stream(String(from ?? ''));
+							if (source.size > manager.uploadSizeLimit) {
+								source.body.destroy();
+								return json(response, 413, { error: `${source.name} 有 ${Math.round(source.size / 1024 / 1024)} MB，超过文章文件 ${manager.uploadSizeLimit / 1024 / 1024} MB 的上限` });
+							}
+							try {
+								return json(response, 201, await manager.upload(slug, folder ?? 'assets', source.name, source.body));
+							} finally {
+								source.body.destroy();
+							}
 						}
 						if (action === 'POST folders') {
 							const { path } = await readJsonChange(request);

@@ -31,6 +31,7 @@ playwright-report/
 
 # files removed in the Studio, kept until emptied by hand
 .studio-trash/
+.studio-settings.json
 
 # earlier versions of articles the Studio keeps (ai/history), local only
 blog/*/ai/history/

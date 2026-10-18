@@ -1,4 +1,6 @@
-export type SidePanelTab = 'files' | 'terminal';
+export type SidePanelTab = 'files' | 'terminal' | 'drive';
+
+const TAB_ORDER: readonly SidePanelTab[] = ['files', 'terminal', 'drive'];
 
 type PanelLayout = { open: boolean; tab: SidePanelTab; width: number };
 
@@ -18,7 +20,7 @@ function readLayout(): PanelLayout {
 		const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as Partial<PanelLayout> | null;
 		return {
 			open: typeof saved?.open === 'boolean' ? saved.open : DEFAULT_LAYOUT.open,
-			tab: saved?.tab === 'terminal' ? 'terminal' : 'files',
+			tab: TAB_ORDER.includes(saved?.tab as SidePanelTab) ? (saved!.tab as SidePanelTab) : 'files',
 			width: typeof saved?.width === 'number' ? clampWidth(saved.width) : DEFAULT_LAYOUT.width,
 		};
 	} catch {
@@ -35,9 +37,9 @@ function writeLayout(layout: PanelLayout): void {
 }
 
 /**
- * The right column: the open article's files and a terminal, as tabs that
- * can be resized and collapsed. The tabs' contents are `file-panel.ts` and
- * `terminal.ts`.
+ * The right column: the open article's files, a terminal and the drive, as
+ * tabs that can be resized and collapsed. The tabs' contents are
+ * `file-panel.ts`, `terminal.ts` and `drive-browser.ts`.
  */
 export function createSidePanel(shell: HTMLElement) {
 	const panel = shell.querySelector<HTMLElement>('#side-panel')!;
@@ -47,6 +49,7 @@ export function createSidePanel(shell: HTMLElement) {
 	const tabs = new Map<SidePanelTab, { tab: HTMLButtonElement; pane: HTMLElement }>([
 		['files', { tab: panel.querySelector('#side-tab-files')!, pane: panel.querySelector('#side-files')! }],
 		['terminal', { tab: panel.querySelector('#side-tab-terminal')!, pane: panel.querySelector('#side-terminal')! }],
+		['drive', { tab: panel.querySelector('#side-tab-drive')!, pane: panel.querySelector('#side-drive')! }],
 	]);
 
 	const layout = readLayout();
@@ -76,7 +79,8 @@ export function createSidePanel(shell: HTMLElement) {
 		tab.addEventListener('keydown', (event) => {
 			if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
 			event.preventDefault();
-			const next: SidePanelTab = name === 'files' ? 'terminal' : 'files';
+			const at = TAB_ORDER.indexOf(name) + (event.key === 'ArrowRight' ? 1 : -1);
+			const next = TAB_ORDER[(at + TAB_ORDER.length) % TAB_ORDER.length]!;
 			update({ tab: next });
 			tabs.get(next)!.tab.focus();
 		});

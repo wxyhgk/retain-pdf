@@ -7,6 +7,8 @@ import { defineConfig } from '@playwright/test';
 const port = Number(process.env.E2E_PORT ?? 4400);
 // Made once in the runner; workers inherit it, so the server and the tests share one copy.
 process.env.STUDIO_BLOG_DIR ??= mkdtempSync(join(tmpdir(), 'studio-e2e-'));
+// The drive (资料库) the Studio shows: a folder of its own, filled by the tests.
+process.env.STUDIO_DRIVE_DIR ??= mkdtempSync(join(tmpdir(), 'studio-drive-'));
 
 export default defineConfig({
 	testDir: '.',
@@ -27,7 +29,7 @@ export default defineConfig({
 		command: 'node tests/e2e/server.mjs',
 		cwd: fileURLToPath(new URL('../..', import.meta.url)),
 		url: `http://localhost:${port}/studio`,
-		env: { E2E_PORT: String(port), STUDIO_BLOG_DIR: process.env.STUDIO_BLOG_DIR },
+		env: { E2E_PORT: String(port), STUDIO_BLOG_DIR: process.env.STUDIO_BLOG_DIR, STUDIO_DRIVE_DIR: process.env.STUDIO_DRIVE_DIR },
 		reuseExistingServer: false,
 		timeout: 120_000,
 	},

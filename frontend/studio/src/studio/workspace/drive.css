@@ -1,0 +1,49 @@
+/* The drive (资料库): a page of its own in the middle, and a smaller list in the side panel. Black, white and gray. */
+.drive { display: flex; flex-direction: column; min-height: 0; color: rgb(var(--gray-dark)); font-size: 14px; }
+.drive-bar { display: flex; flex: none; align-items: center; gap: 10px; min-width: 0; }
+.drive--page .drive-bar { padding: 0 0 14px; border-bottom: 1px solid rgb(var(--gray-light)); }
+.drive--pane .drive-bar { padding: 8px 10px; border-bottom: 1px solid rgb(var(--gray-light)); font-size: 12px; }
+.drive-bar[hidden], .drive-list[hidden], .drive-setup[hidden] { display: none; }
+.drive-crumbs { display: flex; flex: 1; align-items: center; gap: 2px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.drive-crumb { flex: none; max-width: 16em; overflow: hidden; padding: 2px 6px; border: 0; border-radius: 4px; background: none; color: rgb(var(--gray)); font: inherit; text-overflow: ellipsis; cursor: pointer; }
+.drive-crumb:hover { background: var(--surface-hover); color: rgb(var(--gray-dark)); }
+.drive-crumb[aria-current='page'] { color: rgb(var(--gray-dark)); font-weight: 600; }
+.drive--pane .drive-crumb { max-width: 9em; }
+.drive-crumb-separator { flex: none; color: rgb(var(--gray)); }
+.drive-actions { display: flex; flex: none; gap: 6px; }
+.drive-button { padding: 3px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; cursor: pointer; }
+.drive-button:hover { background: var(--surface-hover); }
+.drive-button[hidden] { display: none; }
+.drive--pane .drive-button { padding: 1px 6px; border-color: transparent; background: none; font-size: 13px; }
+.drive--pane .drive-button:hover { background: var(--surface-hover); }
+
+.drive-list { flex: 1; min-height: 0; overflow: auto; outline: none; }
+.drive--page .drive-list { padding-top: 6px; }
+.drive-list.is-drop-target { background: var(--surface-soft); box-shadow: inset 0 0 0 2px rgb(var(--gray-light)); }
+.drive-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: center; min-height: 32px; padding: 0 8px; border-radius: 6px; cursor: default; user-select: none; }
+.drive--page .drive-row { grid-template-columns: 22px minmax(0, 1fr) 150px 80px; }
+.drive--pane .drive-row { min-height: 28px; margin: 0 6px; font-size: 13px; }
+.drive-row:not(.drive-head):hover { background: var(--surface-hover); }
+.drive-row[aria-selected='true'] { background: var(--surface-hover); box-shadow: inset 0 0 0 1px rgb(var(--gray-light)); }
+.drive-row.is-drop-target { background: var(--surface-soft); box-shadow: inset 0 0 0 2px rgb(var(--gray-dark)); }
+.drive-head { min-height: 28px; color: rgb(var(--gray)); font-size: 12px; }
+.drive-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drive-date, .drive-size { color: rgb(var(--gray)); font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.drive-size { text-align: right; }
+.drive-name-input { min-width: 0; height: 24px; padding: 0 6px; border: 1px solid rgb(var(--gray-dark)); border-radius: 4px; background: var(--surface); color: inherit; font: inherit; outline: none; }
+/* A page with its corner turned for a file, its kind written small on it; a folder with its tab. */
+.drive-icon { position: relative; display: grid; place-items: end center; width: 16px; height: 20px; margin: 0 auto; padding-bottom: 2px; border: 1.5px solid rgb(var(--gray)); border-radius: 2px 6px 2px 2px; color: rgb(var(--gray)); font-size: 6px; font-weight: 700; line-height: 1; letter-spacing: 0; }
+.drive-icon[data-kind='directory'] { width: 20px; height: 15px; padding: 0; border-radius: 2px; background: rgb(var(--gray-light)); }
+.drive-icon[data-kind='directory']::before { content: ''; position: absolute; top: -5px; left: -1.5px; width: 8px; height: 4px; border: 1.5px solid rgb(var(--gray)); border-bottom: 0; border-radius: 2px 2px 0 0; background: rgb(var(--gray-light)); }
+.drive-empty { margin: 32px 0; color: rgb(var(--gray)); text-align: center; }
+.drive-status { flex: none; min-height: 1.4em; margin: 6px 10px; color: rgb(var(--gray)); font-size: 12px; }
+.drive-status[data-kind='error'] { color: #e03e3e; }
+
+.drive-setup { max-width: 560px; padding: 24px 0; line-height: 1.7; }
+.drive--pane .drive-setup { padding: 14px; font-size: 13px; }
+.drive-setup h2 { margin: 0 0 8px; font-size: 18px; }
+.drive--pane .drive-setup h2 { font-size: 14px; }
+.drive-setup p { margin: 0 0 14px; color: rgb(var(--gray)); }
+.drive-primary { padding: 6px 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--on-accent); font: inherit; cursor: pointer; }
+.drive-typed { display: flex; gap: 6px; margin-top: 14px; }
+.drive-typed input { flex: 1; min-width: 0; padding: 4px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 12px; }

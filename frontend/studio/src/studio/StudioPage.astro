@@ -16,6 +16,7 @@ import { SITE_TITLE } from '../consts';
 				<div class="workspace-navigation">
 					<a href="/"><span>⌂</span>首页</a>
 					<button id="open-search" class="article-search" type="button"><span>⌕</span>搜索<kbd>⌘K</kbd></button>
+					<button id="open-drive" class="article-search" type="button" aria-pressed="false"><span>▤</span>资料库</button>
 				</div>
 				<div class="panel-heading"><h1>Private</h1><button id="new-article" type="button" title="新建文章" aria-label="新建文章">＋</button></div>
 				<nav id="article-list" aria-label="页面列表"></nav>
@@ -30,7 +31,7 @@ import { SITE_TITLE } from '../consts';
 				<header class="studio-bar">
 					<div class="document-breadcrumb">
 						<button id="toggle-sidebar" type="button" aria-label="收起侧边栏" aria-pressed="false">◧</button>
-						<span class="breadcrumb-workspace">{SITE_TITLE}</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb-title">选择一篇文章</strong>
+						<span class="breadcrumb-workspace">{SITE_TITLE}</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb-title">选择一篇文章</strong><strong class="breadcrumb-drive">资料库</strong>
 					</div>
 					<div class="studio-actions">
 						<span id="edited-at" class="edited-at"></span>
@@ -99,6 +100,7 @@ import { SITE_TITLE } from '../consts';
 						<div class="outline-marks" aria-hidden="true"></div>
 					</nav>
 				</section>
+				<section id="drive-view" class="drive-page" aria-label="资料库" hidden></section>
 			</section>
 
 			<aside id="side-panel" class="side-panel" aria-label="文件与终端">
@@ -106,6 +108,7 @@ import { SITE_TITLE } from '../consts';
 				<div class="side-tabs" role="tablist" aria-label="右侧面板">
 					<button id="side-tab-files" role="tab" type="button" aria-controls="side-files" aria-selected="true">文件</button>
 					<button id="side-tab-terminal" role="tab" type="button" aria-controls="side-terminal" aria-selected="false">终端</button>
+					<button id="side-tab-drive" role="tab" type="button" aria-controls="side-drive" aria-selected="false">资料库</button>
 					<button id="close-side-panel" class="side-close" type="button" aria-label="收起右侧面板">×</button>
 				</div>
 				<section id="side-files" class="side-pane" role="tabpanel" aria-labelledby="side-tab-files">
@@ -121,6 +124,7 @@ import { SITE_TITLE } from '../consts';
 					<div id="file-tree" class="file-tree"></div>
 					<p id="files-status" class="files-status" role="status" aria-live="polite"></p>
 				</section>
+				<section id="side-drive" class="side-pane" role="tabpanel" aria-labelledby="side-tab-drive" hidden></section>
 				<section id="side-terminal" class="side-pane" role="tabpanel" aria-labelledby="side-tab-terminal" hidden>
 					<header class="pane-toolbar">
 						<div class="cwd-switch" role="radiogroup" aria-label="终端启动目录">
@@ -280,6 +284,14 @@ import { SITE_TITLE } from '../consts';
 	#article-list :global(.page-draft) { padding: 1px 4px; border-radius: 4px; color: rgb(var(--gray)); font-size: 8px; opacity: 0.82; }
 	#article-list :global(.article-list-empty) { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
 	.editor-panel { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; }
+	/* The drive in the middle, the article kept open behind it; the bar keeps only the side panel's button. */
+	.drive-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; }
+	.drive-page[hidden] { display: none; }
+	.studio-shell[data-view='drive'] .editor-panel { display: none; }
+	.studio-shell[data-view='drive'] .studio-actions > :not(#toggle-side-panel) { display: none; }
+	.breadcrumb-drive, .studio-shell[data-view='drive'] #breadcrumb-title { display: none; }
+	.studio-shell[data-view='drive'] .breadcrumb-drive { display: inline; }
+	#open-drive[aria-pressed='true'] { background: var(--surface-hover); font-weight: 600; }
 	/* The outline at the editor's right edge, as on the blog. */
 	.outline-rail { position: absolute; z-index: 12; top: 96px; right: 6px; display: flex; align-items: flex-start; pointer-events: none; }
 	.outline-rail[hidden] { display: none; }
