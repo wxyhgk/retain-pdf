@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { transformWithOxc } from 'vite';
 
@@ -16,7 +16,9 @@ import { transformWithOxc } from 'vite';
  * @returns {import('vite').Plugin}
  */
 export default function milkdownSource({ root = process.cwd() } = {}) {
-	const milkdown = resolve(root, 'third_party', 'milkdown');
+	// By its real name: Vite names the files it loads so, and third_party/ may be a link (a test server's own root).
+	const folder = resolve(root, 'third_party', 'milkdown');
+	const milkdown = existsSync(folder) ? realpathSync(folder) : folder;
 	const packages = findPackages(join(milkdown, 'packages'));
 	const projectImporter = join(root, 'package.json');
 	const inMilkdown = (file) => file?.startsWith(milkdown + sep);

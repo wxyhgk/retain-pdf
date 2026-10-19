@@ -257,6 +257,8 @@ export type DrawOptions = {
 	url?: (name: string) => string | null;
 	/** Show the output open (the Studio does while a run goes). */
 	followOutput?: boolean;
+	/** The end of the output under the results; off where the output has a tab of its own. */
+	output?: boolean;
 };
 
 /**
@@ -317,8 +319,131 @@ export async function drawRun(root: HTMLElement, record: RunRecord, read: ReadRu
 		if (spectrumModes.length) parts.push(vibrationSection(spectrumModes, normal));
 		else if (finished && (final || input)) parts.push(structureSection(final ? '优化后的结构' : '结构', (final ?? input) as string));
 	}
-	parts.push(outputTail(record, output, options.url?.(record.output) ?? null, Boolean(options.followOutput) && !finished));
+	if (options.output !== false) parts.push(outputTail(record, output, options.url?.(record.output) ?? null, Boolean(options.followOutput) && !finished));
 	root.replaceChildren(...parts.filter((part): part is HTMLElement => part !== null));
+}
+
+/** The run's output, its last lines, the newest in view; a link to the whole file. */
+export async function drawOutput(root: HTMLElement, record: RunRecord, read: ReadRunFile, url: string | null): Promise<void> {
+	const text = record.files.includes(record.output) || !isFinished(record) ? await read(record.output).catch(() => null) : null;
+	if (text === null) {
+		root.replaceChildren(element('p', 'job-empty', isFinished(record) ? '这次运行没有留下输出。' : '还没有输出。'));
+		return;
+	}
+	const lines = text.split(/\r?\n/u);
+	const pre = element('pre', 'job-log-text is-whole', lines.slice(-2000).join('\n'));
+	const parts: HTMLElement[] = [];
+	const head = element('p', 'job-section-note', `${record.output} · ${lines.length} 行${lines.length > 2000 ? '，这里是最后 2000 行' : ''}`);
+	if (url) {
+		const link = element('a', 'job-log-link', '打开完整文件');
+		link.href = url;
+		link.target = '_blank';
+		link.rel = 'noopener';
+		head.append(' · ', link);
+	}
+	parts.push(head, pre);
+	root.replaceChildren(...parts);
+	pre.scrollTop = pre.scrollHeight;
+}
+
+/** What a card shows of a run: a few numbers, how it is going, the structure it ends at. */
+export type RunSummary = {
+	/** `E −11.4009 Eh`, `15 个构象`… */
+	facts: string[];
+	/** A running run: where it is (`第 5 步 · ΔE −0.12 kcal/mol`). */
+	progress: string | null;
+	/** Why it failed, in a line. */
+	problem: string | null;
+	/** The structure to draw small: where it ended, or where it started. */
+	structure: string | null;
+};
+
+const signed = (value: number, digits: number) => value.toFixed(digits).replace(/^-/u, '−');
+
+/** Reads what a card needs of a run: its output, and the structure it ends at. */
+export async function summarizeRun(record: RunRecord, read: ReadRunFile): Promise<RunSummary> {
+	const finished = isFinished(record);
+	const has = (name: string) => record.files.includes(name) || !finished;
+	const optional = (name: string) => (has(name) ? read(name).catch(() => null) : Promise.resolve(null));
+	const [output, final, input] = await Promise.all([
+		optional(record.output),
+		record.program === 'crest' ? optional('crest_best.xyz') : finished ? optional('xtbopt.xyz') : Promise.resolve(null),
+		read(record.input).catch(() => null),
+	]);
+	const failure = record.state === 'failed' || record.state === 'lost' ? record.error : null;
+	const summary: RunSummary = { facts: [], progress: null, problem: record.problem ?? failure ?? null, structure: final ?? (record.input.endsWith('.xyz') ? input : null) };
+	if (record.program === 'crest') {
+		const out = output ? parseCrestOutput(output) : null;
+		if (finished && record.state === 'failed' && !summary.problem) summary.problem = out?.errors[0] ?? `CREST 退出码 ${record.exitCode}`;
+		if (!finished) return summary;
+		const conformers = record.files.includes('crest_conformers.xyz') ? await read('crest_conformers.xyz').catch(() => null) : null;
+		const table = conformers ? ensembleTable(parseXyzFrames(conformers)) : [];
+		if (table.length) summary.facts.push(`${table.length} 个构象`, `最低占比 ${(Math.max(...table.map((row) => row.population)) * 100).toFixed(1)}%`);
+		else if (out?.conformers) summary.facts.push(`${out.conformers} 个构象`);
+		if (out?.lowest !== null && out?.lowest !== undefined) summary.facts.push(`E ${signed(out.lowest, 5)} Eh`);
+		return summary;
+	}
+	const out = output ? parseXtbOutput(output) : null;
+	if (finished && record.state === 'failed' && !summary.problem) summary.problem = out?.errors.find((line) => /^-1-/u.test(line))?.replace(/^-1-\s*/u, '') ?? out?.errors[0] ?? `xtb 退出码 ${record.exitCode}`;
+	if (!finished) {
+		const steps = out?.optimization?.steps ?? [];
+		if (steps.length) {
+			const last = steps.at(-1)!;
+			const change = steps.length > 1 ? (last.energy - steps.at(-2)!.energy) * HARTREE_IN_KCAL : null;
+			summary.progress = `第 ${last.cycle} 步${change === null ? '' : ` · ΔE ${signed(change, 3)} kcal/mol`}`;
+		}
+		return summary;
+	}
+	if (out?.energy !== null && out?.energy !== undefined) summary.facts.push(`E ${signed(out.energy, 5)} Eh`);
+	if (out?.freeEnergy !== null && out?.freeEnergy !== undefined) summary.facts.push(`G ${signed(out.freeEnergy, 5)} Eh`);
+	if (out?.gap !== null && out?.gap !== undefined) summary.facts.push(`能隙 ${out.gap.toFixed(2)} eV`);
+	if (out?.imaginary !== null && out?.imaginary !== undefined) summary.facts.push(out.imaginary ? `${out.imaginary} 个虚频` : '无虚频');
+	for (const warning of out?.warnings ?? []) if (!/虚频/u.test(warning)) summary.facts.push(warning);
+	return summary;
+}
+
+/** Shades of gray by element: carbon and the heavy ones dark, hydrogen light. */
+const SHADES: Record<string, [string, number]> = { H: ['#ffffff', 0.55], C: ['#555555', 0.75], N: ['#8a8a8a', 0.72], O: ['#b5b5b5', 0.7], S: ['#d0d0d0', 0.95], P: ['#c2c2c2', 0.95] };
+
+/**
+ * A structure drawn small, flat, without WebGL: atoms as circles, bonds
+ * where atoms are close, seen along its smallest extent. A page of cards
+ * stays light; the 3D views are in the sheet.
+ */
+export function structureThumbnail(xyz: string, size = { width: 96, height: 72 }): SVGSVGElement | null {
+	const atoms = parseXyzFrames(xyz)[0]?.atoms ?? [];
+	if (!atoms.length || atoms.length > 400) return null;
+	// Looked at along the axis the molecule is thinnest in.
+	const spans = (['x', 'y', 'z'] as const).map((axis) => Math.max(...atoms.map((atom) => atom[axis])) - Math.min(...atoms.map((atom) => atom[axis])));
+	const depth = (['x', 'y', 'z'] as const)[spans.indexOf(Math.min(...spans))];
+	const [u, v] = (['x', 'y', 'z'] as const).filter((axis) => axis !== depth);
+	const across = (atom: (typeof atoms)[number]) => [atom[u], atom[v]] as const;
+	const xs = atoms.map((atom) => across(atom)[0]);
+	const ys = atoms.map((atom) => across(atom)[1]);
+	const pad = 0.9;
+	const width = Math.max(...xs) - Math.min(...xs) + pad * 2;
+	const height = Math.max(...ys) - Math.min(...ys) + pad * 2;
+	const scale = Math.min(size.width / width, size.height / height);
+	const ox = (size.width - width * scale) / 2 - (Math.min(...xs) - pad) * scale;
+	const oy = (size.height - height * scale) / 2 + (Math.max(...ys) + pad) * scale;
+	const at = (atom: (typeof atoms)[number]) => [ox + across(atom)[0] * scale, oy - across(atom)[1] * scale] as const;
+	const picture = svg('svg', { viewBox: `0 0 ${size.width} ${size.height}`, class: 'job-thumbnail', 'aria-hidden': 'true' });
+	const order = atoms.map((atom, index) => ({ atom, index })).sort((left, right) => left.atom[depth] - right.atom[depth]);
+	for (let a = 0; a < atoms.length; a += 1) {
+		for (let b = a + 1; b < atoms.length; b += 1) {
+			const limit = atoms[a].symbol === 'H' || atoms[b].symbol === 'H' ? 1.25 : 1.9;
+			if (Math.hypot(atoms[a].x - atoms[b].x, atoms[a].y - atoms[b].y, atoms[a].z - atoms[b].z) > limit) continue;
+			const [x1, y1] = at(atoms[a]);
+			const [x2, y2] = at(atoms[b]);
+			picture.append(svg('line', { x1, y1, x2, y2, class: 'job-thumbnail-bond', 'stroke-width': Math.max(1, scale * 0.16) }));
+		}
+	}
+	for (const { atom } of order) {
+		const [fill, radius] = SHADES[atom.symbol.charAt(0).toUpperCase() + atom.symbol.slice(1).toLowerCase()] ?? ['#9a9a9a', 0.85];
+		const [cx, cy] = at(atom);
+		picture.append(svg('circle', { cx, cy, r: Math.max(1.4, radius * scale * 0.42), fill, class: 'job-thumbnail-atom' }));
+	}
+	return picture;
 }
 
 function structureSection(title: string, xyz: string): HTMLElement {

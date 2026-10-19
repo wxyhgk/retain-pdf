@@ -5,7 +5,8 @@ import { NodeSelection } from '@milkdown/prose/state';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type { EditorView, NodeView } from 'prosemirror-view';
 
-import { drawRun, isFinished, moleculeStage, runFacts, type RunRecord } from '@blog/compute/browser/job-view.ts';
+import { createJobCard } from '@blog/compute/browser/job-card.ts';
+import { drawOutput, drawRun, formatDuration, isFinished, moleculeStage, runDuration, summarizeRun, type RunRecord, type RunSummary } from '@blog/compute/browser/job-view.ts';
 import { JOB_LANGUAGE, RUN_STATE_NAMES, jobFenceMeta, newJobId, parseJobFence, runFolder } from '@blog/compute/job-fence.mjs';
 import {
 	CREST_METHODS,
@@ -21,14 +22,16 @@ import {
 } from '@blog/compute/job-options.mjs';
 import { formulaOf, parseXyzFrames } from '@blog/compute/parsers/xyz-frames.ts';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
+import { openBlockSheet, type OpenSheet, type SheetAction } from '@blog/ui/block-sheet.ts';
 import './job-block.css';
 
 /**
  * ```job blocks in the editor (@blog/compute): a calculation to run from
- * the page, as in a notebook. Its head names it and runs it; its form writes
- * the command line (or the command line is written, and the form follows);
- * its structure is the fence's text; under them, the run it shows, followed
- * while it goes. Every run is kept (job-runs.mjs), to go back to.
+ * the page, as in a notebook. In the page it is a card of two lines (its
+ * name, how its run went, a few numbers); double-clicking it, or Enter on
+ * it, opens its sheet: 结果, 设置 (the form, which writes the command line,
+ * or the command line, which the form follows; the structure), 输出 and
+ * 历史 (every run is kept, job-runs.mjs, to go back to).
  *
  * What the block does on the server goes through `setJobHost`, which the
  * Studio gives: the article open, its API and its machines.
@@ -56,6 +59,8 @@ export type JobHost = {
 let jobHost: JobHost | null = null;
 /** Each block on the page, by its job's name, told when the files of its runs change. */
 const blocks = new Map<string, Set<() => void>>();
+/** A block just made opens its sheet on 设置 once drawn. */
+const opening = new Set<string>();
 
 export function setJobHost(host: JobHost): void {
 	jobHost = host;
@@ -73,7 +78,7 @@ export function jobFilesChanged(slug: string, paths: string[]): void {
 const PROGRAM_NAMES = { xtb: 'xtb', crest: 'CREST' } as const;
 const STARTER = { program: 'xtb', args: '--opt', host: 'local' };
 
-/** A new ```job block where the caret's (empty) block is, its name not one the article has. */
+/** A new ```job block where the caret's (empty) block is, its name not one the article has; its sheet opens on its form. */
 export function insertJob(view: EditorView): void {
 	const { state } = view;
 	const type = state.schema.nodes[JOB_FENCE_TYPE];
@@ -82,7 +87,9 @@ export function insertJob(view: EditorView): void {
 	state.doc.descendants((node) => {
 		if (node.type === type) taken.push(parseJobFence(node.attrs.meta, '').id);
 	});
-	const meta = jobFenceMeta({ id: newJobId(taken), ...STARTER });
+	const id = newJobId(taken);
+	opening.add(id);
+	const meta = jobFenceMeta({ id, ...STARTER });
 	const { $from } = state.selection;
 	const block = type.create({ language: JOB_LANGUAGE, meta });
 	const tr = state.tr.replaceWith($from.before(), $from.after(), block);
@@ -130,37 +137,30 @@ function numberInput(min: number, max: number): HTMLInputElement {
 
 const TEXT_WRITE_MS = 300;
 const REFRESH_MS = 250;
+/** `20261019-153012` as `10/19 15:30`. */
+const runTime = (run: string) => run.replace(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2}).*$/u, '$2/$3 $4:$5');
 
 export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 	return (initial: ProseMirrorNode, view: EditorView, getPos: () => number | undefined): NodeView => {
 		let node = initial;
 		let fence = parseJobFence(String(node.attrs.meta ?? ''), node.textContent);
 		const dom = element('div', 'job-block');
+		dom.title = '双击打开';
 
-		// The head: what it is, its name, what it does, running it.
-		const head = element('div', 'job-head');
-		const kind = element('span', 'job-kind', '计算');
-		const title = element('input', 'job-title');
-		title.placeholder = '未命名计算';
-		title.setAttribute('aria-label', '计算的名字');
-		const summary = element('span', 'job-summary');
+		// The card: two lines, and on hover running it and the block's menu.
+		const card = createJobCard(element('div'));
 		const runButton = element('button', 'job-run', '运行');
 		runButton.type = 'button';
-		const history = element('select', 'job-history');
-		history.setAttribute('aria-label', '运行记录');
-		const settingsButton = element('button', 'job-settings-button', '设置');
-		settingsButton.type = 'button';
-		settingsButton.setAttribute('aria-expanded', 'false');
 		const menuButton = element('button', 'job-menu-button', '⋯');
 		menuButton.type = 'button';
 		menuButton.setAttribute('aria-label', '块操作');
-		const actions = element('span', 'job-actions');
-		actions.append(history, settingsButton, runButton, menuButton);
-		head.append(kind, title, summary, actions);
+		card.actions.append(runButton, menuButton);
+		dom.append(card.root);
 
-		// The form, the command line, the structure.
+		// The form, the command line, the structure: the sheet's 设置.
 		const settings = element('div', 'job-settings');
-		settings.hidden = true;
+		const title = element('input', 'job-input job-title-input');
+		title.placeholder = '未命名计算';
 		const program = select([['xtb', 'xtb'], ['crest', 'CREST']]);
 		const task = select([]);
 		const method = select([]);
@@ -179,6 +179,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		const solventField = field('溶剂', solvent);
 		const form = element('div', 'job-form');
 		form.append(
+			field('名称', title, 'is-wide'),
 			field('程序', program),
 			field('任务', task),
 			field('方法', method),
@@ -199,34 +200,34 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		command.append(commandPrefix, commandLine);
 		const structureText = element('textarea', 'job-input job-structure-text');
 		structureText.spellcheck = false;
-		structureText.rows = 7;
+		structureText.rows = 9;
 		structureText.placeholder = '3\n水\nO  0.000  0.000  0.117\nH  0.000  0.757 -0.469\nH  0.000 -0.757 -0.469\n\n或 @file ./assets/分子.xyz';
 		structureText.setAttribute('aria-label', '起始结构（XYZ）');
 		const structureInfo = element('p', 'job-structure-info');
 		const structureStage = moleculeStage('起始结构，可拖动旋转');
 		const structure = element('div', 'job-structure');
 		const structureColumn = element('div', 'job-structure-column');
-		structureColumn.append(structureText, structureInfo);
+		structureColumn.append(element('span', 'job-field-name', '起始结构'), structureText, structureInfo);
 		structure.append(structureColumn, structureStage.root);
-		settings.append(form, command, structure);
-
-		const result = element('div', 'job-result');
-		const empty = element('p', 'job-empty', '还没有运行。设好之后点「运行」，结果会显示在这里，每次运行都会保留。');
-		dom.append(head, settings, result);
+		settings.append(form, field('命令行', command, 'job-command-field'), structure);
 
 		let record: RunRecord | null = null;
+		let summary: RunSummary | null = null;
 		let runs: RunRecord[] = [];
-		let drawnKey = '';
 		let busy = false;
+		let sheet: OpenSheet | null = null;
 		let ticking: ReturnType<typeof setInterval> | undefined;
 		let refreshTimer: ReturnType<typeof setTimeout> | undefined;
 		let writeTimer: ReturnType<typeof setTimeout> | undefined;
 		let pendingWrite: { meta?: string; body?: string } | null = null;
 		let registeredId = '';
 		let destroyed = false;
+		let summarized = '';
 
 		const slug = () => jobHost?.slug() ?? null;
 		const options = (): JobOptions => readJobOptions(fence.program, fence.args);
+		const running = () => record !== null && !isFinished(record);
+		const describe = () => `${PROGRAM_NAMES[fence.program as 'xtb' | 'crest'] ?? fence.program} · ${describeJob(fence.program, options())}`;
 
 		/** Writes the fence's meta and text, as one step of undo. */
 		const write = (next: { meta?: string; body?: string }) => {
@@ -258,23 +259,24 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		const writeMeta = (changes: Partial<typeof fence>, delay = 0) => {
 			fence = { ...fence, ...changes };
 			later({ meta: jobFenceMeta(fence) }, delay);
-			paintHead();
+			paintCard();
 		};
 		const writeOptions = (next: JobOptions) => writeMeta({ args: writeJobArgs(fence.program, next) });
 
-		const paintHead = () => {
-			if (document.activeElement !== title) title.value = fence.title;
-			summary.textContent = `${PROGRAM_NAMES[fence.program as 'xtb' | 'crest'] ?? fence.program} · ${describeJob(fence.program, options())}`;
-			const running = record !== null && !isFinished(record);
-			runButton.textContent = running ? '停止' : busy ? '…' : '运行';
-			runButton.classList.toggle('is-stop', running);
+		const paintCard = () => {
+			card.paint({ title: fence.title, describe: describe(), record, summary });
+			runButton.textContent = running() ? '停止' : busy ? '…' : '运行';
+			runButton.classList.toggle('is-stop', running());
 			runButton.disabled = busy;
 			dom.dataset.state = record?.state ?? 'none';
+			sheet?.setTitle(fence.title || '未命名计算');
+			sheet?.setActions(sheetActions());
 		};
 
 		const paintForm = () => {
 			const current = options();
 			const isCrest = fence.program === 'crest';
+			if (document.activeElement !== title) title.value = fence.title;
 			program.value = isCrest ? 'crest' : 'xtb';
 			setOptions(task, isCrest ? [['conformers', '构象搜索']] : Object.entries(XTB_TASKS).map(([key, value]): [string, string] => [key, value.name]));
 			task.value = current.task;
@@ -298,7 +300,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			if (document.activeElement !== commandLine) commandLine.value = fence.args;
 		};
 
-		let paintedStructure = '';
+		let paintedStructure: string | null = null;
 		const paintStructure = () => {
 			const body = node.textContent;
 			if (document.activeElement !== structureText) structureText.value = body;
@@ -330,51 +332,43 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			}
 		};
 
-		const paintHistory = () => {
-			const options: Array<[string, string]> = runs.map((run) => [run.run, `${run.run.replace(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2}).*$/u, '$2/$3 $4:$5')} · ${RUN_STATE_NAMES[run.state] ?? run.state}`]);
-			history.hidden = runs.length < 2;
-			setOptions(history, options);
-			history.value = fence.run;
-			history.title = `共 ${runs.length} 次运行，都保留在 assets/jobs/${fence.id}/`;
-		};
-
 		const readFile = (current: RunRecord) => async (name: string) => {
 			const article = slug();
 			if (!article) return null;
 			const response = await fetch(studioFileUrl(article, `${runFolder(current.id, current.run)}/${name}`), { cache: 'no-store' });
 			return response.ok ? response.text() : null;
 		};
-
-		const paintResult = async () => {
-			if (!record) {
-				result.replaceChildren(empty);
-				drawnKey = '';
-				return;
-			}
-			const current = record;
+		const fileUrl = (current: RunRecord, name: string) => {
 			const article = slug();
-			// Finished runs are drawn once; a run going is drawn again as its files grow.
-			const key = `${current.run}:${current.state}:${current.problem ?? ''}`;
-			if (key === drawnKey && isFinished(current)) return;
-			drawnKey = key;
-			const target = element('div', 'job-result-body');
-			await drawRun(target, current, readFile(current), {
-				url: (name) => (article ? studioFileUrl(article, `${runFolder(current.id, current.run)}/${name}`) : null),
-				followOutput: true,
-			});
-			if (destroyed || record !== current) return;
-			result.replaceChildren(target);
+			return article ? studioFileUrl(article, `${runFolder(current.id, current.run)}/${name}`) : null;
 		};
 
-		/** The shown run's facts, every second while it goes. */
+		/** The card's numbers: read again while a run goes, once when it has ended. */
+		const summarize = async () => {
+			const current = record;
+			if (!current) {
+				summary = null;
+				summarized = '';
+				paintCard();
+				return;
+			}
+			const key = `${current.run}:${current.state}:${current.problem ?? ''}`;
+			if (key === summarized && isFinished(current)) return;
+			summarized = key;
+			const next = await summarizeRun(current, readFile(current)).catch(() => null);
+			if (destroyed || record !== current) return;
+			summary = next;
+			paintCard();
+		};
+
+		/** The shown run's time, every second while it goes. */
 		const tick = () => {
 			clearInterval(ticking);
 			ticking = undefined;
-			if (!record || isFinished(record)) return;
+			if (!running()) return;
 			ticking = setInterval(() => {
-				const facts = result.querySelector('.job-facts');
-				if (record && facts) facts.replaceWith(runFacts(record, null));
-				if (!record || isFinished(record)) clearInterval(ticking);
+				card.tick();
+				if (!running()) clearInterval(ticking);
 			}, 1000);
 		};
 
@@ -391,10 +385,14 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				record = runs.find((run) => run.run === fence.run) ?? null;
 			}
 			if (destroyed) return;
-			paintHead();
-			paintHistory();
-			await paintResult();
+			paintCard();
+			await summarize();
 			tick();
+			if (sheet?.isOpen()) {
+				sheet.redraw('result');
+				sheet.redraw('output');
+				sheet.redraw('history');
+			}
 		};
 		const refresh = () => {
 			clearTimeout(refreshTimer);
@@ -425,19 +423,20 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			}
 		};
 
+		/** Runs the job, or stops the run going. */
 		const run = async () => {
 			if (!jobHost || busy) return;
 			flush();
-			if (record && !isFinished(record)) {
+			if (record && running()) {
 				busy = true;
-				paintHead();
+				paintCard();
 				try {
 					record = await jobHost.cancel(record.id, record.run);
 				} catch (error) {
 					window.alert(error instanceof Error ? error.message : String(error));
 				} finally {
 					busy = false;
-					paintHead();
+					paintCard();
 				}
 				return;
 			}
@@ -452,24 +451,130 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				register();
 			}
 			busy = true;
-			paintHead();
+			paintCard();
 			try {
 				const started = await jobHost.start(fence.id, { program: fence.program, args: fence.args, host: fence.host, threads: fence.threads, body: node.textContent });
 				record = started;
 				runs = [started, ...runs];
+				summary = null;
 				writeMeta({ run: started.run });
-				settings.hidden = true;
-				settingsButton.setAttribute('aria-expanded', 'false');
-				drawnKey = '';
-				await paintResult();
-				paintHistory();
+				await summarize();
 				tick();
+				if (sheet?.isOpen()) {
+					sheet.redraw('result');
+					sheet.redraw('output');
+					sheet.redraw('history');
+					sheet.select('result');
+				}
 			} catch (error) {
 				window.alert(error instanceof Error ? error.message : String(error));
 			} finally {
 				busy = false;
-				paintHead();
+				paintCard();
 			}
+		};
+
+		const sheetActions = (): SheetAction[] => [
+			running()
+				? { label: '停止', danger: true, disabled: busy, run: () => void run() }
+				: { label: busy ? '…' : '运行', title: '⌘↩', primary: true, disabled: busy, run: () => void run() },
+		];
+
+		/** Shows another of the runs kept. */
+		const show = (name: string) => {
+			writeMeta({ run: name });
+			record = runs.find((candidate) => candidate.run === name) ?? null;
+			summary = null;
+			void summarize().then(tick);
+			if (sheet?.isOpen()) {
+				sheet.redraw('result');
+				sheet.redraw('output');
+				sheet.redraw('history');
+			}
+		};
+
+		const drawResult = (panel: HTMLElement) => {
+			const current = record;
+			if (!current) {
+				panel.append(element('p', 'job-empty', '还没有运行。在「设置」里设好，点「运行」（⌘↩），结果会显示在这里；每次运行都会保留。'));
+				return;
+			}
+			const target = element('div', 'job-result-body');
+			panel.append(target);
+			void drawRun(target, current, readFile(current), { url: (name) => fileUrl(current, name), output: false });
+		};
+		const drawOutputTab = (panel: HTMLElement) => {
+			const current = record;
+			if (!current) {
+				panel.append(element('p', 'job-empty', '还没有运行。'));
+				return;
+			}
+			void drawOutput(panel, current, readFile(current), fileUrl(current, current.output));
+		};
+		const drawHistory = (panel: HTMLElement) => {
+			if (!runs.length) {
+				panel.append(element('p', 'job-empty', '还没有运行过。'));
+				return;
+			}
+			const table = element('table', 'job-runs');
+			const head = element('tr');
+			for (const name of ['开始时间', '机器', '状态', '用时', '']) head.append(element('th', '', name));
+			table.append(element('thead'));
+			table.tHead?.append(head);
+			const body = element('tbody');
+			for (const candidate of runs) {
+				const row = element('tr', `job-run-row${candidate.run === fence.run ? ' is-shown' : ''}`);
+				const duration = runDuration(candidate);
+				row.append(
+					element('td', '', runTime(candidate.run)),
+					element('td', '', candidate.hostLabel || candidate.host),
+					element('td', '', RUN_STATE_NAMES[candidate.state] ?? candidate.state),
+					element('td', '', duration === null ? '' : formatDuration(duration)),
+					element('td', 'job-run-shown', candidate.run === fence.run ? '文章显示这次' : '显示这次'),
+				);
+				row.addEventListener('click', () => {
+					show(candidate.run);
+					sheet?.select('result');
+				});
+				body.append(row);
+			}
+			table.append(body);
+			panel.append(table, element('p', 'job-section-note', `每次运行都在 assets/jobs/${fence.id}/ 里；文章显示哪次，博客上就是哪次。`));
+		};
+
+		const openSheet = (tab?: string) => {
+			flush();
+			paintForm();
+			paintedStructure = null;
+			sheet = openBlockSheet({
+				kind: '计算',
+				title: fence.title || '未命名计算',
+				initial: tab ?? (record ? 'result' : 'settings'),
+				tabs: [
+					{ key: 'result', label: '结果', draw: drawResult },
+					{
+						key: 'settings',
+						label: '设置',
+						draw: (panel) => {
+							panel.append(settings);
+							paintStructure();
+							void loadHosts();
+						},
+					},
+					{ key: 'output', label: '输出', draw: drawOutputTab },
+					{ key: 'history', label: `历史${runs.length > 1 ? ` ${runs.length}` : ''}`, draw: drawHistory },
+				],
+				actions: sheetActions(),
+				onClose: () => {
+					flush();
+					sheet = null;
+					const pos = getPos();
+					if (pos != null && !destroyed) {
+						view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)).setMeta('addToHistory', false));
+						view.focus();
+					}
+				},
+			});
 		};
 
 		// The form writes the command line; the command line, written, is read back into the form.
@@ -515,63 +620,37 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		commandLine.addEventListener('input', () => {
 			fence = { ...fence, args: commandLine.value.replace(/[\r\n]/gu, ' ') };
 			later({ meta: jobFenceMeta(fence) });
-			paintHead();
+			paintCard();
 		});
 		commandLine.addEventListener('change', () => paintForm());
 		title.addEventListener('input', () => writeMeta({ title: title.value }, TEXT_WRITE_MS));
-		title.addEventListener('keydown', (event) => {
-			if (event.key === 'Enter') {
-				event.preventDefault();
-				title.blur();
-			}
-		});
 		structureText.addEventListener('input', () => later({ body: structureText.value.replace(/\n+$/u, '') }));
-		settingsButton.addEventListener('click', () => {
-			settings.hidden = !settings.hidden;
-			settingsButton.setAttribute('aria-expanded', String(!settings.hidden));
-			if (!settings.hidden) {
-				paintedStructure = '';
-				paintStructure();
-				void loadHosts();
-			}
-		});
+
 		runButton.addEventListener('click', () => void run());
-		history.addEventListener('change', () => {
-			writeMeta({ run: history.value });
-			record = runs.find((candidate) => candidate.run === history.value) ?? null;
-			drawnKey = '';
-			void paintResult().then(tick);
-			paintHead();
-		});
 		menuButton.addEventListener('mousedown', (event) => {
 			event.preventDefault();
 			const pos = getPos();
 			if (pos != null) ctx.get(blockMenuAPI.key).toggle(pos, menuButton);
 		});
-		// A click on the block outside its controls selects it, as other blocks are.
+		// A click selects the block, as other blocks are; a double click opens it.
 		dom.addEventListener('mousedown', (event) => {
-			const target = event.target as Element;
-			if (target.closest('input, select, textarea, button, a, summary, canvas, .job-stage, .job-log-text, .job-modes, .job-conformers, svg')) return;
+			if ((event.target as Element).closest('button')) return;
 			const pos = getPos();
 			if (pos == null) return;
 			event.preventDefault();
 			view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)).setMeta('addToHistory', false));
 			view.focus();
 		});
+		dom.addEventListener('dblclick', (event) => {
+			if ((event.target as Element).closest('button')) return;
+			event.preventDefault();
+			openSheet();
+		});
 
-		paintHead();
-		paintForm();
+		paintCard();
 		register();
-		// A new block opens on its form.
-		if (!fence.run) {
-			settings.hidden = false;
-			settingsButton.setAttribute('aria-expanded', 'true');
-			queueMicrotask(() => {
-				paintStructure();
-				void loadHosts();
-			});
-		}
 		void load();
+		if (opening.delete(fence.id)) queueMicrotask(() => openSheet('settings'));
 
 		return {
 			dom,
@@ -583,9 +662,11 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				if (!pendingWrite) fence = parseJobFence(String(updated.attrs.meta ?? ''), updated.textContent);
 				else fence = { ...parseJobFence(String(updated.attrs.meta ?? ''), updated.textContent), args: fence.args, title: fence.title };
 				register();
-				paintHead();
-				paintForm();
-				if (!settings.hidden) paintStructure();
+				paintCard();
+				if (sheet?.isOpen()) {
+					paintForm();
+					paintStructure();
+				}
 				if (fence.run !== runBefore) {
 					record = runs.find((candidate) => candidate.run === fence.run) ?? null;
 					refresh();
@@ -594,13 +675,9 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			},
 			selectNode: () => dom.classList.add('ProseMirror-selectednode'),
 			deselectNode: () => dom.classList.remove('ProseMirror-selectednode'),
+			// The caret put inside (Enter on the block): its sheet opens instead.
 			setSelection: () => {
-				// The caret is put inside (Enter on the block): its form opens instead.
-				settings.hidden = false;
-				settingsButton.setAttribute('aria-expanded', 'true');
-				paintStructure();
-				const pos = getPos();
-				if (pos != null) queueMicrotask(() => view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)).setMeta('addToHistory', false)));
+				if (!sheet?.isOpen()) openSheet();
 			},
 			destroy: () => {
 				destroyed = true;
@@ -608,14 +685,14 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				clearTimeout(refreshTimer);
 				clearInterval(ticking);
 				blocks.get(registeredId)?.delete(refresh);
+				sheet?.close();
 			},
 			ignoreMutation: () => true,
 			stopEvent: (event) => {
 				const target = event.target;
 				if (!(target instanceof Element)) return false;
-				// Typing, choosing and clicking in the block are its own; dragging it by its head is the editor's.
 				if (event.type === 'dragstart') return false;
-				return Boolean(target.closest('input, select, textarea, button, details, .job-stage, .job-chart-svg, .job-modes, .job-conformers, .job-log-text'));
+				return Boolean(target.closest('button'));
 			},
 		};
 	};

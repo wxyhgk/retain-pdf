@@ -63,13 +63,50 @@
 .job-log-text { max-height: 280px; margin: 8px 0 0; padding: 10px 12px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-size: 11.5px; line-height: 1.45; white-space: pre; }
 .job-log-link { display: inline-block; margin-top: 6px; color: rgb(var(--gray)); font-size: 12px; }
 
-/* The figure remark-jobs makes on the blog: the job's head, its results, its input folded. */
-.note-job { margin: 1.4em 0; padding: 12px 14px 14px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 14px; line-height: 1.5; }
-.note-job-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin-bottom: 8px; }
-.note-job-kind { padding: 1px 7px; border-radius: 4px; background: var(--surface-soft); color: rgb(var(--gray)); font-size: 12px; }
+/* The figure remark-jobs makes on the blog: without scripts its head and its input; with them a card (job-card.ts) that opens its sheet. */
+.note-job { margin: 1.4em 0; padding: 10px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 14px; line-height: 1.5; }
+.note-job-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .note-job-title { font-size: 15px; }
 .note-job-summary { flex-basis: 100%; color: rgb(var(--gray)); font-size: 12.5px; }
 .note-job-empty { margin: 0; color: rgb(var(--gray)); font-size: 13px; }
-.note-job-input { margin-top: 12px; }
+.note-job-input { margin-top: 8px; }
 .note-job-input summary { color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; cursor: pointer; }
 .note-job-input pre { max-height: 260px; margin: 8px 0 0; padding: 10px 12px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-size: 12px; }
+.note-job.is-openable { cursor: pointer; transition: border-color 0.12s; }
+.note-job.is-openable:hover, .note-job.is-openable:focus-visible { border-color: rgb(var(--gray)); outline: none; }
+
+.job-log-text.is-whole { max-height: none; height: calc(min(86vh, 900px) - 190px); min-height: 240px; }
+.job-thumbnail { display: block; width: 96px; height: 72px; }
+.job-thumbnail-bond { stroke: rgb(var(--gray)); stroke-linecap: round; }
+.job-thumbnail-atom { stroke: rgb(var(--gray-dark)); stroke-width: 0.8; }
+
+/* The card a job is in the page (job-card.ts): two lines, its details in the sheet. */
+.job-card { position: relative; padding: 10px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 14px; line-height: 1.5; }
+.job-card-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.job-kind { flex: none; padding: 1px 7px; border-radius: 4px; background: var(--surface-soft); color: rgb(var(--gray)); font-size: 12px; }
+.job-card-title { min-width: 0; overflow: hidden; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.job-card-title.is-untitled { color: rgb(var(--gray)); font-weight: 500; }
+.job-card-head .job-state[hidden] { display: none; }
+.job-card-when { flex: none; color: rgb(var(--gray)); font-size: 12px; font-variant-numeric: tabular-nums; }
+.job-card-actions { display: flex; flex: none; align-items: center; gap: 4px; margin-left: auto; }
+.job-card-body { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.job-card-picture { flex: none; }
+.job-card-picture[hidden] { display: none; }
+.job-card-text { min-width: 0; }
+.job-card-line { margin: 0; color: rgb(var(--gray-dark)); font-size: 13.5px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.job-card-line.is-problem { color: #e03e3e; }
+.job-card-describe { margin: 2px 0 0; color: rgb(var(--gray)); font-size: 12px; }
+.job-card-progress { position: absolute; right: 12px; bottom: 0; left: 12px; height: 2px; overflow: hidden; border-radius: 1px; }
+.job-card-progress[hidden] { display: none; }
+.job-card-progress::after { content: ''; position: absolute; top: 0; bottom: 0; width: 30%; border-radius: 1px; background: rgb(var(--gray-dark)); animation: job-progress 1.4s ease-in-out infinite; }
+@keyframes job-progress { from { left: -30%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .job-card-progress::after { left: 0; width: 100%; opacity: 0.4; animation: none; } }
+
+/* In a sheet: the history of runs. */
+.job-runs { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.job-runs th { padding: 6px 8px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 12px; font-weight: 500; text-align: left; }
+.job-runs td { padding: 7px 8px; border-bottom: 1px solid rgb(var(--gray-light)); }
+.job-run-row { cursor: pointer; }
+.job-run-row:hover { background: var(--surface-hover); }
+.job-run-row.is-shown td:first-child { font-weight: 600; }
+.job-run-shown { color: rgb(var(--gray)); font-size: 12px; }

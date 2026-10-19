@@ -29,7 +29,7 @@ export default defineConfig({
 		command: 'node tests/e2e/server.mjs',
 		cwd: fileURLToPath(new URL('../..', import.meta.url)),
 		url: `http://localhost:${port}/studio`,
-		env: { E2E_PORT: String(port), STUDIO_BLOG_DIR: process.env.STUDIO_BLOG_DIR, STUDIO_DRIVE_DIR: process.env.STUDIO_DRIVE_DIR },
+		env: { E2E_PORT: String(port), STUDIO_BLOG_DIR: process.env.STUDIO_BLOG_DIR, STUDIO_DRIVE_DIR: process.env.STUDIO_DRIVE_DIR, E2E_ISOLATED: process.env.E2E_ISOLATED ?? '' },
 		reuseExistingServer: false,
 		timeout: 120_000,
 	},

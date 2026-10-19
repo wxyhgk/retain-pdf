@@ -27,77 +27,107 @@ test.afterEach(() => {
 });
 
 const block = (page: Page) => editor(page).locator('.job-block');
+const sheet = (page: Page) => page.locator('dialog.block-sheet[open]');
+const field = (page: Page, name: string) => sheet(page).locator('.job-field', { has: page.locator('.job-field-name', { hasText: new RegExp(`^${name}$`, 'u') }) }).locator('select, input');
+const tab = (page: Page, name: string) => sheet(page).locator('.block-sheet-tab', { hasText: name });
 const runs = (id: string) => (fixtureHas(`assets/jobs/${id}`) ? readdirSync(join(process.env.STUDIO_BLOG_DIR as string, 'studio-fixture', 'assets', 'jobs', id)).sort() : []);
 
-test('a calculation set up from its form, run here, drawn when it ends, and each run kept', async ({ page }) => {
+test('a calculation is a card; its sheet sets it up, runs it, shows what it found, and keeps each run', async ({ page }) => {
 	appendToFixture(`\n\`\`\`job id=water-opt program=xtb args="--opt" host=local\n${WATER}\n\`\`\`\n`);
 	await openStudio(page, { autosaveDelay: 300 });
 	const job = block(page);
-	await expect(job.locator('.job-summary')).toHaveText('xtb · 结构优化 · GFN2-xTB');
-	// Never run: its form is open, with its structure drawn.
-	await expect(job.locator('.job-settings')).toBeVisible();
-	await expect(job.locator('.job-structure-info')).toHaveText('H2O · 3 个原子');
-	await expect(job.locator('.job-structure .job-stage canvas')).toBeVisible();
+	// In the page, two lines: never run.
+	await expect(job.locator('.job-card-title')).toHaveText('未命名计算');
+	await expect(job.locator('.job-card-line')).toHaveText('还没有运行');
+	await expect(job.locator('.job-card-describe')).toHaveText('xtb · 结构优化 · GFN2-xTB');
+	await expect(job.locator('.job-settings')).toHaveCount(0);
+
+	// Double-clicked: its sheet, on its form, the structure drawn.
+	await job.dblclick();
+	await expect(sheet(page)).toBeVisible();
+	await expect(tab(page, '设置')).toHaveAttribute('aria-selected', 'true');
+	await expect(sheet(page).locator('.job-structure-info')).toHaveText('H2O · 3 个原子');
+	await expect(sheet(page).locator('.job-structure .job-stage canvas')).toBeVisible();
 
 	// The form writes the command line, and the command line the fence.
-	await job.locator('.job-field', { hasText: '任务' }).locator('select').selectOption('ohess');
-	await job.locator('.job-field', { hasText: '溶剂模型' }).locator('select').selectOption('alpb');
-	await expect(job.locator('.job-args')).toHaveValue('--ohess --alpb water');
-	await job.locator('.job-title').fill('水的优化和频率');
+	await field(page, '任务').selectOption('ohess');
+	await field(page, '溶剂模型').selectOption('alpb');
+	await expect(sheet(page).locator('.job-args')).toHaveValue('--ohess --alpb water');
+	await field(page, '名称').fill('水的优化和频率');
+	await expect(job.locator('.job-card-title')).toHaveText('水的优化和频率');
+	await expect(sheet(page).locator('.block-sheet-title')).toHaveText('水的优化和频率');
 	await expect.poll(savedMarkdown).toContain('```job id=water-opt program=xtb args="--ohess --alpb water" host=local title=水的优化和频率\n3\nwater');
 
-	await job.locator('.job-run').click();
-	await expect(job.locator('.job-state')).toHaveText('完成');
+	// Run (⌘↩): the sheet goes to its results.
+	await page.keyboard.press(process.platform === 'darwin' ? 'Meta+Enter' : 'Control+Enter');
+	await expect(tab(page, '结果')).toHaveAttribute('aria-selected', 'true');
+	await expect(sheet(page).locator('.job-state')).toHaveText('完成');
 	const [first] = runs('water-opt');
 	expect(first).toMatch(/^\d{8}-\d{6}$/u);
 	await expect.poll(savedMarkdown).toContain(`title=水的优化和频率 run=${first}\n`);
-	// What it found: the numbers, the optimization, the spectrum; a mode to watch vibrate.
-	await expect(job.locator('.job-number', { hasText: '总能量' }).locator('dd')).toHaveText('-11.394339 Eh');
-	await expect(job.locator('.job-number', { hasText: '自由能 G' }).locator('dd')).toHaveText('-11.341580 Eh');
-	await expect(job.locator('.job-number', { hasText: '虚频' }).locator('dd')).toHaveText('0');
-	await expect(job.locator('.job-chart')).toContainText('结构优化');
-	await expect(job.locator('.job-mode')).toHaveCount(21);
-	await job.locator('.job-mode button', { hasText: '1045.7' }).click();
-	await expect(job.locator('.job-mode-label')).toHaveText('第 12 个振动：1045.7 cm⁻¹，强度 47.8 km/mol');
-	await expect(job.locator('.job-vibration-view canvas')).toBeVisible();
-	// The run is in the article, without the program's scratch.
+	await expect(sheet(page).locator('.job-number', { hasText: '总能量' }).locator('dd')).toHaveText('-11.394339 Eh');
+	await expect(sheet(page).locator('.job-number', { hasText: '自由能 G' }).locator('dd')).toHaveText('-11.341580 Eh');
+	await expect(sheet(page).locator('.job-chart')).toContainText('结构优化');
+	await expect(sheet(page).locator('.job-mode')).toHaveCount(21);
+	await sheet(page).locator('.job-mode button', { hasText: '1045.7' }).click();
+	await expect(sheet(page).locator('.job-mode-label')).toHaveText('第 12 个振动：1045.7 cm⁻¹，强度 47.8 km/mol');
+	await expect(sheet(page).locator('.job-vibration-view canvas')).toBeVisible();
+	await tab(page, '输出').click();
+	await expect(sheet(page).locator('.job-log-text')).toContainText('normal termination of xtb');
+
+	// The card: a few numbers and the structure, small.
+	await expect(job.locator('.job-card-line')).toHaveText('E −11.39434 Eh  ·  G −11.34158 Eh  ·  能隙 12.89 eV  ·  无虚频');
+	await expect(job.locator('.job-thumbnail circle')).toHaveCount(3);
 	const record = JSON.parse(readFileSync(join(process.env.STUDIO_BLOG_DIR as string, 'studio-fixture', 'assets/jobs/water-opt', first, 'run.json'), 'utf8'));
 	expect(record).toMatchObject({ state: 'done', exitCode: 0, command: 'xtb input.xyz --ohess --alpb water --parallel 2' });
 	expect(record.files).toEqual(['g98.out', 'input.xyz', 'vibspectrum', 'xtb.out', 'xtbopt.log', 'xtbopt.xyz']);
 
 	// Again, as an optimization only: both runs kept, the older one there to go back to.
-	await job.locator('.job-settings-button').click();
-	await job.locator('.job-field', { hasText: '任务' }).locator('select').selectOption('opt');
+	await tab(page, '设置').click();
+	await field(page, '任务').selectOption('opt');
 	await page.waitForTimeout(1100);
-	await job.locator('.job-run').click();
+	await sheet(page).locator('.block-sheet-action', { hasText: '运行' }).click();
 	await expect.poll(() => runs('water-opt').length).toBe(2);
-	await expect(job.locator('.job-state')).toHaveText('完成');
-	await expect(job.locator('.job-mode')).toHaveCount(0);
-	await expect(job.locator('.job-section-title', { hasText: '优化后的结构' })).toBeVisible();
-	const history = job.locator('.job-history');
-	await expect(history.locator('option')).toHaveCount(2);
-	await history.selectOption(first);
-	await expect(job.locator('.job-mode')).toHaveCount(21);
+	await expect(sheet(page).locator('.job-state')).toHaveText('完成');
+	await expect(sheet(page).locator('.job-mode')).toHaveCount(0);
+	await expect(job.locator('.job-card-line')).not.toContainText('虚频');
+	await tab(page, '历史').click();
+	const rows = sheet(page).locator('.job-run-row');
+	await expect(rows).toHaveCount(2);
+	await expect(rows.first()).toContainText('文章显示这次');
+	await rows.nth(1).click();
+	await expect(tab(page, '结果')).toHaveAttribute('aria-selected', 'true');
+	await expect(sheet(page).locator('.job-mode')).toHaveCount(21);
 	await expect.poll(savedMarkdown).toContain(`run=${first}\n`);
+	await page.keyboard.press('Escape');
+	await expect(sheet(page)).toHaveCount(0);
+	await expect(job.locator('.job-card-line')).toContainText('无虚频');
 });
 
-test('a long run followed as it goes, and stopped from its block', async ({ page }) => {
+test('a long run followed in its card and its sheet, and stopped from the card', async ({ page }) => {
 	appendToFixture(`\n\`\`\`job id=slow program=xtb args="--opt --slow" host=local title=慢\n${WATER}\n\`\`\`\n`);
 	await openStudio(page, { autosaveDelay: 300 });
 	const job = block(page);
+	await job.hover();
 	await job.locator('.job-run').click();
 	await expect(job.locator('.job-state')).toHaveText('运行中');
 	await expect(job.locator('.job-run')).toHaveText('停止');
-	// Its output, as it comes: open, at its newest lines.
-	await expect(job.locator('.job-log')).toHaveAttribute('open', '');
-	await expect(job.locator('.job-log-text')).toContainText('xtb version 6.7.1');
-	await expect(job.locator('.job-facts')).toContainText(/已运行 \d/u);
+	await expect(job.locator('.job-card-progress')).toBeVisible();
+	await expect(job.locator('.job-card-when')).toHaveText(/已运行 \d/u);
+	await expect(job.locator('.job-card-line')).toHaveText(/^第 \d+ 步/u);
+	// Its output, as it comes.
+	await job.dblclick();
+	await tab(page, '输出').click();
+	await expect(sheet(page).locator('.job-log-text')).toContainText('xtb version 6.7.1');
+	await expect(sheet(page).locator('.block-sheet-action')).toHaveText('停止');
+	await page.keyboard.press('Escape');
+	await job.hover();
 	await job.locator('.job-run').click();
 	await expect(job.locator('.job-state')).toHaveText('已停止');
 	await expect(job.locator('.job-run')).toHaveText('运行');
 });
 
-test('a block made from the slash menu, and the machines it can run on', async ({ page }) => {
+test('a block made from the slash menu opens on its form; and the machines it can run on', async ({ page }) => {
 	await openStudio(page, { autosaveDelay: 300 });
 	await editor(page).locator('p', { hasText: '结尾段落' }).click();
 	await page.keyboard.press('End');
@@ -107,23 +137,23 @@ test('a block made from the slash menu, and the machines it can run on', async (
 	// Crepe takes in the typing 20 ms late (a debounce); a person is slower than that.
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');
-	const job = block(page);
-	await expect(job).toHaveCount(1);
-	await expect(job.locator('.job-empty')).toHaveText(/还没有运行/u);
+	await expect(block(page)).toHaveCount(1);
+	await expect(sheet(page)).toBeVisible();
+	await expect(tab(page, '设置')).toHaveAttribute('aria-selected', 'true');
 	await expect.poll(savedMarkdown).toMatch(/```job id=job-[a-z0-9]{6} program=xtb args=--opt host=local\n```/u);
 	// CREST instead: its own tasks and methods.
-	await job.locator('.job-field', { hasText: '程序' }).locator('select').selectOption('crest');
-	await expect(job.locator('.job-args')).toHaveValue('--gfn2');
-	await expect(job.locator('.job-summary')).toHaveText('CREST · 构象搜索 · GFN2-xTB');
+	await field(page, '程序').selectOption('crest');
+	await expect(sheet(page).locator('.job-args')).toHaveValue('--gfn2');
+	await expect(block(page).locator('.job-card-describe')).toHaveText('CREST · 构象搜索 · GFN2-xTB');
 	// No structure yet: a run is refused, saying why.
 	page.once('dialog', (dialog) => {
 		expect(dialog.message()).toContain('还没有结构');
 		void dialog.accept();
 	});
-	await job.locator('.job-run').click();
+	await sheet(page).locator('.block-sheet-action', { hasText: '运行' }).click();
 
 	// 计算机器: one more, reached by ssh, handed to Slurm.
-	await job.locator('.job-field', { hasText: '机器' }).locator('select').selectOption('__manage');
+	await field(page, '机器').selectOption('__manage');
 	const dialog = page.locator('#compute-hosts-dialog');
 	await expect(dialog).toBeVisible();
 	await expect(dialog.locator('.host-card')).toHaveCount(1);
@@ -139,6 +169,6 @@ test('a block made from the slash menu, and the machines it can run on', async (
 	const kept = JSON.parse(readFileSync(settings(), 'utf8')).computeHosts;
 	expect(kept.map((host: { name: string }) => host.name)).toEqual(['local', 'cluster']);
 	expect(kept[1]).toMatchObject({ kind: 'ssh', ssh: 'me@cluster.example', scheduler: 'slurm', partition: 'batch', label: '课题组集群' });
-	await job.locator('.job-field', { hasText: '机器' }).locator('select').selectOption('cluster');
+	await field(page, '机器').selectOption('cluster');
 	await expect.poll(savedMarkdown).toMatch(/args=--gfn2 host=cluster\n```/u);
 });
