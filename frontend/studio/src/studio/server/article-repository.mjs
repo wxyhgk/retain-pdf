@@ -5,6 +5,7 @@ import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
 import { articleBundlePaths, assertArticleSlug, StudioPathError } from '../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
+import { findArticleLinks } from '@blog/markdown/articles/article-links.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../articles/schemas.mjs';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */
@@ -44,7 +45,39 @@ export class ArticleRepository {
 		return run;
 	}
 
+	/**
+	 * Every article, by title: what the sidebar shows, and the properties the
+	 * table of all articles sorts and filters by, with when its text last changed.
+	 */
 	async list() {
+		const articles = [];
+		for (const { slug, source, modified } of await this.#sources()) {
+			const { pubDate, description } = articleProperties(source, slug);
+			articles.push({ slug, ...articleSummary(source, slug), pubDate, description, modified });
+		}
+		articles.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
+		return articles;
+	}
+
+	/**
+	 * The articles that link to `slug` (findArticleLinks), each with where and
+	 * in what words; `site` is the blog's address, for links written in full.
+	 */
+	async backlinks(slug, { site } = {}) {
+		assertArticleSlug(slug);
+		const found = [];
+		for (const { slug: from, source } of await this.#sources()) {
+			if (from === slug) continue;
+			const mentions = findArticleLinks(source, { site }).filter((link) => link.slug === slug);
+			if (!mentions.length) continue;
+			const { title, icon, draft } = articleSummary(source, from);
+			found.push({ slug: from, title, icon, draft, mentions: mentions.map(({ line, text, context }) => ({ line, text, context })) });
+		}
+		return found.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
+	}
+
+	/** Each article's folder name, its `index.md`, and when that last changed. */
+	async #sources() {
 		let entries;
 		try {
 			entries = await readdir(this.blogRoot, { withFileTypes: true });
@@ -52,20 +85,18 @@ export class ArticleRepository {
 			if (error?.code === 'ENOENT') return [];
 			throw error;
 		}
-
-		const articles = [];
+		const sources = [];
 		for (const entry of entries) {
 			if (!entry.isDirectory() || entry.isSymbolicLink() || !SLUG_PATTERN.test(entry.name)) continue;
+			const markdown = articleBundlePaths(this.blogRoot, entry.name).markdown;
 			try {
-				const source = await readFile(articleBundlePaths(this.blogRoot, entry.name).markdown, 'utf8');
-				const summary = articleSummary(source, entry.name);
-				articles.push({ slug: entry.name, ...summary });
+				const [source, info] = await Promise.all([readFile(markdown, 'utf8'), stat(markdown)]);
+				sources.push({ slug: entry.name, source, modified: info.mtimeMs });
 			} catch (error) {
 				if (error?.code !== 'ENOENT') throw error;
 			}
 		}
-		articles.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
-		return articles;
+		return sources;
 	}
 
 	/**

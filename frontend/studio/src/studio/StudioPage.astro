@@ -15,6 +15,7 @@ import '@blog/markdown/widgets/widgets.css';
 import '@blog/office/office.css';
 import '@xterm/xterm/css/xterm.css';
 import './workspace/drive.css';
+import './workspace/article-table.css';
 // KaTeX draws nothing until its fonts are in: the ones most formulas use, asked for with the page.
 import katexMain from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
 import katexMath from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
@@ -45,6 +46,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<div class="workspace-navigation">
 					<a href="/"><span>⌂</span>首页</a>
 					<button id="open-search" class="article-search" type="button"><span>⌕</span>搜索<kbd>⌘K</kbd></button>
+					<button id="open-table" class="article-search" type="button" aria-pressed="false"><span>▦</span>全部文章</button>
 					<button id="open-drive" class="article-search" type="button" aria-pressed="false"><span>▤</span>资料库</button>
 				</div>
 				<div class="panel-heading"><h1>Private</h1><button id="new-article" type="button" title="新建文章" aria-label="新建文章">＋</button></div>
@@ -60,7 +62,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<header class="studio-bar">
 					<div class="document-breadcrumb">
 						<button id="toggle-sidebar" type="button" aria-label="收起侧边栏" aria-pressed="false">◧</button>
-						<span class="breadcrumb-workspace">{SITE_TITLE}</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb-title">选择一篇文章</strong><strong class="breadcrumb-drive">资料库</strong>
+						<span class="breadcrumb-workspace">{SITE_TITLE}</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb-title">选择一篇文章</strong><strong class="breadcrumb-drive">资料库</strong><strong class="breadcrumb-table">全部文章</strong>
 					</div>
 					<div class="studio-actions">
 						<span id="edited-at" class="edited-at"></span>
@@ -118,6 +120,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 									<span id="article-status" class="status-pill">草稿</span>
 									<button id="publish-article" class="status-action" type="button" disabled>发布</button>
 								</div>
+								<div id="page-backlinks" class="page-backlinks" hidden></div>
 							</div>
 							<p id="property-error" role="alert" hidden></p>
 						</div>
@@ -130,6 +133,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 					</nav>
 				</section>
 				<section id="drive-view" class="drive-page" aria-label="资料库" hidden></section>
+				<section id="table-view" class="table-page" aria-label="全部文章" hidden></section>
 			</section>
 
 			<aside id="side-panel" class="side-panel" aria-label="文件与终端">
@@ -182,7 +186,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				const address = new URLSearchParams(window.location.search);
 				const slug = Object.hasOwn(pages.versions, address.get('article')) ? address.get('article') : pages.first;
 				const kept = JSON.parse(localStorage.getItem('studio.snapshot') ?? 'null');
-				if (slug && !address.has('drive') && kept?.slug === slug && kept.version === pages.versions[slug] && !navigator.webdriver) {
+				if (slug && !address.has('drive') && !address.has('pages') && kept?.slug === slug && kept.version === pages.versions[slug] && !navigator.webdriver) {
 					const template = document.createElement('template');
 					template.innerHTML = kept.html;
 					const picture = template.content.firstElementChild;
@@ -347,11 +351,11 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* The drive in the middle, the article kept open behind it; the bar keeps only the side panel's button. */
 	.drive-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; }
 	.drive-page[hidden] { display: none; }
-	.studio-shell[data-view='drive'] .editor-panel { display: none; }
-	.studio-shell[data-view='drive'] .studio-actions > :not(#toggle-side-panel) { display: none; }
-	.breadcrumb-drive, .studio-shell[data-view='drive'] #breadcrumb-title { display: none; }
-	.studio-shell[data-view='drive'] .breadcrumb-drive { display: inline; }
-	#open-drive[aria-pressed='true'] { background: var(--surface-hover); font-weight: 600; }
+	.studio-shell:is([data-view='drive'], [data-view='table']) .editor-panel { display: none; }
+	.studio-shell:is([data-view='drive'], [data-view='table']) .studio-actions > :not(#toggle-side-panel) { display: none; }
+	.breadcrumb-drive, .breadcrumb-table, .studio-shell:is([data-view='drive'], [data-view='table']) #breadcrumb-title { display: none; }
+	.studio-shell[data-view='drive'] .breadcrumb-drive, .studio-shell[data-view='table'] .breadcrumb-table { display: inline; }
+	#open-drive[aria-pressed='true'], #open-table[aria-pressed='true'] { background: var(--surface-hover); font-weight: 600; }
 	/* The outline at the editor's right edge, as on the blog. */
 	.outline-rail { position: absolute; z-index: 12; top: 96px; right: 6px; display: flex; align-items: flex-start; pointer-events: none; }
 	.outline-rail[hidden] { display: none; }
@@ -429,6 +433,20 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.status-action:not([data-published='true']) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
 	.status-action:disabled { opacity: 0.5; cursor: default; }
 	#property-error { margin: 8px 0 0; color: #b42318; font-size: 12px; line-height: 1.5; }
+	/* Under the properties: the articles that link here (backlinks.ts). */
+	.page-backlinks { grid-column: 1 / -1; margin-top: 4px; }
+	.page-backlinks[hidden] { display: none; }
+	.page-backlinks :global(.backlinks-toggle) { padding: 6px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 13px; cursor: pointer; }
+	.page-backlinks :global(.backlinks-toggle:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	.page-backlinks :global(.backlinks-list) { display: grid; gap: 6px; margin: 2px 0 6px; padding: 0 0 0 6px; list-style: none; }
+	.page-backlinks :global(.backlinks-list[hidden]) { display: none; }
+	.page-backlinks :global(.backlinks-list li) { display: grid; justify-items: start; gap: 1px; }
+	.page-backlinks :global(.backlinks-title), .page-backlinks :global(.backlinks-context) { max-width: 100%; padding: 3px 6px; border: 0; border-radius: 5px; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+	.page-backlinks :global(.backlinks-title) { display: flex; align-items: center; gap: 6px; color: rgb(var(--gray-dark)); font-size: 14px; font-weight: 500; }
+	.page-backlinks :global(.backlinks-context) { margin-left: 22px; color: rgb(var(--gray)); font-size: 13px; line-height: 1.5; }
+	.page-backlinks :global(.backlinks-title:hover), .page-backlinks :global(.backlinks-context:hover) { background: var(--surface-soft); }
+	.page-backlinks :global(.backlinks-icon) { width: 16px; text-align: center; }
+	.page-backlinks :global(.backlinks-draft) { padding: 0 5px; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; font-weight: 400; }
 	#property-error[hidden] { display: none; }
 	/* ⌘K: a box near the top, as in Notion. */
 	.quick-find { box-sizing: border-box; width: min(92vw, 620px); max-height: min(70vh, 560px); margin-top: 12vh; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 18px 65px rgba(0, 0, 0, 0.22); }

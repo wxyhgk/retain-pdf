@@ -1,7 +1,7 @@
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { articlePath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
-import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, GitStatus, HistoryEntry, HistoryReason, SearchResult, TrashEntry } from '../types.ts';
+import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, Backlink, GitStatus, HistoryEntry, HistoryReason, SearchResult, TrashEntry } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
 	const response = await fetch(url, options);
@@ -30,6 +30,11 @@ function jsonOptions(method: string, body: unknown): RequestInit {
 
 export async function listArticles(): Promise<ArticleSummary[]> {
 	return (await request<{ articles: ArticleSummary[] }>('/api/studio/articles')).articles;
+}
+
+/** The articles that link to this one. */
+export async function articleBacklinks(slug: string): Promise<Backlink[]> {
+	return (await request<{ backlinks: Backlink[] }>(`/api/studio/articles/${encodeURIComponent(slug)}/backlinks`)).backlinks;
 }
 
 /** The mark of what the page shows with this article open (page-version.mjs). */

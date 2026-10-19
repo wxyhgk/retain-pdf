@@ -3,10 +3,10 @@ import { parseFrontmatter } from '@astrojs/markdown-remark';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
-import { visit } from 'unist-util-visit';
 import { VFile } from 'vfile';
 
-import { ARTICLE_ADDRESS, PUBLISHED_FOLDERS, articleAddress } from '@blog/markdown/articles/rules.mjs';
+import { PUBLISHED_FOLDERS, articleAddress } from '@blog/markdown/articles/rules.mjs';
+import { findArticleLinks } from '@blog/markdown/articles/article-links.mjs';
 import { rehypePlugins, remarkPlugins } from '../../plugins/markdown-pipeline.mjs';
 import { findArticleReferences } from '@blog/markdown/articles/article-references.mjs';
 import { ArticleRepository } from './article-repository.mjs';
@@ -83,18 +83,11 @@ async function referenceIssues(directory, source) {
 
 /** Links to the blog's own articles (`/blog/<slug>/`, `/wiki/<slug>/`): there, published, and at their address. */
 async function articleLinkIssues(blogRoot, slug, source) {
-	const links = [];
-	visit(unified().use(remarkParse).parse(source), (node) => {
-		if ((node.type === 'link' || node.type === 'definition') && typeof node.url === 'string') links.push({ url: node.url, line: node.position?.start.line });
-	});
-	const wanted = links
-		.map((link) => ({ ...link, match: ARTICLE_ADDRESS.exec(link.url) }))
-		.filter((link) => link.match && link.match[2] !== slug);
+	const wanted = findArticleLinks(source).filter((link) => link.slug !== slug);
 	if (!wanted.length) return [];
 	const articles = new Map((await new ArticleRepository(blogRoot).list()).map((article) => [article.slug, article]));
 	const issues = [];
-	for (const { url, line, match } of wanted) {
-		const [, section, target] = match;
+	for (const { url, line, section, slug: target } of wanted) {
 		const article = articles.get(target);
 		const at = line ? { line } : {};
 		if (!article) issues.push({ severity: 'warning', message: `链接的文章 ${url} 不存在`, ...at });

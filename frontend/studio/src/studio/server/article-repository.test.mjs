@@ -35,7 +35,11 @@ test('repository preserves the legacy API while supporting revision aliases', as
 	await repository.create({ slug: 'first-note', title: "研究者的 '草稿'" });
 
 	const listed = await repository.list();
-	assert.deepEqual(listed, [{ slug: 'first-note', title: "研究者的 '草稿'", draft: true, icon: '', tags: [], kind: 'post' }]);
+	assert.equal(typeof listed[0]?.modified, 'number');
+	assert.deepEqual(listed, [{
+		slug: 'first-note', title: "研究者的 '草稿'", draft: true, icon: '', tags: [], kind: 'post',
+		pubDate: new Date().toISOString().slice(0, 10), description: '', modified: listed[0].modified,
+	}]);
 
 	const initial = await repository.read('first-note');
 	assert.equal(initial.content, initial.source);
@@ -241,4 +245,24 @@ test('search finds titles first, then the text, with the lines it is on', async 
 	assert.deepEqual(found.map((result) => [result.slug, result.inTitle]), [['dft-basics', true], ['hf-notes', false]]);
 	assert.deepEqual(found[1].matches, [{ line: 6, text: '和 dft 比较。' }, { line: 8, text: '再说一次 DFT' }]);
 	assert.deepEqual(await repository.search('  '), []);
+});
+
+test('the articles that link to one, with the words around each link', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'target', title: '目标' });
+	await repository.create({ slug: 'reader', title: '读者' });
+	await repository.create({ slug: 'other', title: '无关' });
+	const write = (slug, body) => writeFile(join(root, slug, 'index.md'), `---\ntitle: ${slug === 'reader' ? '读者' : '无关'}\nicon: 📘\n---\n\n${body}\n`);
+	await write('reader', '先读 [目标](/blog/target/)。\n\n再读 [一次](https://wxyhgk.github.io/blog/target/#eq-1)');
+	await write('other', '`[代码](/blog/target/)` 和 [别处](/blog/reader/)');
+	await writeFile(join(root, 'target', 'index.md'), '---\ntitle: 目标\n---\n\n[自己](/blog/target/)\n');
+
+	assert.deepEqual(await repository.backlinks('target', { site: 'https://wxyhgk.github.io' }), [{
+		slug: 'reader', title: '读者', icon: '📘', draft: false,
+		mentions: [{ line: 6, text: '目标', context: '先读 目标。' }, { line: 8, text: '一次', context: '再读 一次' }],
+	}]);
+	assert.deepEqual((await repository.backlinks('target')).map((found) => found.mentions.length), [1]);
+	assert.deepEqual((await repository.backlinks('reader')).map((found) => found.slug), ['other']);
+	await assert.rejects(repository.backlinks('../x'), /slug/u);
 });

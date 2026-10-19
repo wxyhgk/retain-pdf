@@ -1,0 +1,61 @@
+/* All the articles as a table or a board (article-table.ts), a page in the middle as the drive is. Black, white and gray. */
+.table-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; color: rgb(var(--gray-dark)); font-size: 14px; }
+.table-page[hidden] { display: none; }
+.table-heading { display: flex; align-items: baseline; gap: 10px; }
+.table-heading h1 { margin: 0; font-size: 26px; font-weight: 700; letter-spacing: 0; }
+.table-count { color: rgb(var(--gray)); font-size: 13px; }
+
+.table-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 14px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
+.table-layouts { display: flex; gap: 2px; margin-right: 6px; }
+.table-layout { padding: 4px 9px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 13px; cursor: pointer; }
+.table-layout:hover { background: var(--surface-hover); }
+.table-layout[aria-selected='true'] { background: var(--surface-hover); color: rgb(var(--gray-dark)); font-weight: 600; }
+.table-search { flex: 1 1 140px; min-width: 120px; max-width: 260px; padding: 4px 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 13px; outline: none; }
+.table-search:focus { border-color: rgb(var(--gray)); }
+.table-filter { padding: 4px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; cursor: pointer; }
+.table-filter[hidden] { display: none; }
+
+.table-body { flex: 1; min-height: 0; overflow: auto; padding-top: 4px; container-type: inline-size; }
+.table-empty { margin: 32px 0; color: rgb(var(--gray)); text-align: center; }
+
+.table-grid { width: 100%; min-width: 600px; border-collapse: collapse; table-layout: fixed; }
+.table-grid th { position: sticky; top: 0; z-index: 1; height: 34px; padding: 0 8px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray)); font-size: 12px; font-weight: 500; text-align: left; white-space: nowrap; }
+.table-sort { padding: 3px 4px; margin-left: -4px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.table-sort:hover { background: var(--surface-hover); color: rgb(var(--gray-dark)); }
+th[aria-sort='ascending'] .table-sort, th[aria-sort='descending'] .table-sort { color: rgb(var(--gray-dark)); font-weight: 600; }
+.table-grid td { height: 38px; padding: 0 8px; border-bottom: 1px solid rgb(var(--gray-light)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.table-row { cursor: pointer; outline: none; }
+.table-row:hover, .table-row:focus-visible { background: var(--surface-hover); }
+.table-row.is-current .table-name { font-weight: 600; }
+.col-title { width: 30%; }
+.col-description { width: 22%; color: rgb(var(--gray)); }
+.col-tags { width: 18%; }
+.col-kind { width: 64px; }
+.col-status { width: 76px; }
+.col-date { width: 96px; color: rgb(var(--gray)); font-variant-numeric: tabular-nums; }
+.col-modified { width: 84px; color: rgb(var(--gray)); }
+/* Narrow, with the side panel open: the description goes first. */
+@container (max-width: 860px) {
+	.col-description { display: none; }
+	.col-title { width: 40%; }
+	.col-tags { width: 30%; }
+}
+
+.table-title { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; }
+.table-icon { flex: none; width: 18px; text-align: center; }
+.table-name { overflow: hidden; text-overflow: ellipsis; }
+.table-tag { display: inline-block; margin-right: 4px; padding: 1px 6px; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; line-height: 18px; }
+.table-status { display: inline-block; padding: 1px 7px; border-radius: 999px; border: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; line-height: 18px; }
+.table-status[data-status='draft'] { border-style: dashed; color: rgb(var(--gray)); }
+
+.table-board { display: flex; align-items: flex-start; gap: 14px; min-height: 100%; padding-bottom: 12px; }
+.board-column { display: grid; flex: 0 0 280px; gap: 8px; align-content: start; padding: 8px; border-radius: 8px; background: var(--surface-soft); }
+.board-head { display: flex; align-items: center; gap: 8px; padding: 2px 4px 4px; color: rgb(var(--gray)); font-size: 13px; }
+.board-name { color: rgb(var(--gray-dark)); font-weight: 600; }
+.board-card { display: grid; gap: 6px; padding: 10px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.board-card:hover, .board-card:focus-visible { background: var(--surface-hover); outline: none; }
+.board-card.is-current { box-shadow: inset 0 0 0 1px rgb(var(--gray)); }
+.board-card .table-name { font-weight: 500; white-space: normal; }
+.board-description { display: -webkit-box; overflow: hidden; color: rgb(var(--gray)); font-size: 13px; line-height: 1.5; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.board-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.board-date { color: rgb(var(--gray)); font-size: 12px; font-variant-numeric: tabular-nums; }

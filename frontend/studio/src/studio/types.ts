@@ -9,6 +9,20 @@ export type ArticleSummary = {
 	tags?: string[];
 	/** Where the blog lists it: under /blog/ or /wiki/. */
 	kind?: 'post' | 'wiki';
+	/** Its publication date, `2026-10-19`; empty when it has none that reads. */
+	pubDate?: string;
+	description?: string;
+	/** When its text last changed on disk, in milliseconds. */
+	modified?: number;
+};
+
+/** An article that links to the open one, with each link: its line, its words, the words around it. */
+export type Backlink = {
+	slug: string;
+	title: string;
+	icon: string;
+	draft: boolean;
+	mentions: Array<{ line?: number; text: string; context: string }>;
 };
 
 /** An article that holds what was searched for, with some lines it is on. */

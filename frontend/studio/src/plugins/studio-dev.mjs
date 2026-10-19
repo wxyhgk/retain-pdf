@@ -81,7 +81,10 @@ async function file(response, resource) {
 	await pipeline(resource.body, response);
 }
 
-export default function studioDev() {
+/**
+ * @param {{ site?: string }} [options] the blog's address, so links to its articles written in full count as theirs
+ */
+export default function studioDev({ site } = {}) {
 	return {
 		name: 'local-article-studio',
 		apply: 'serve',
@@ -317,6 +320,12 @@ export default function studioDev() {
 						if (typeof source !== 'string') return json(response, 400, { error: '文章内容必须是文本' });
 						await manager.locate(slug, '');
 						return json(response, 200, { issues: await checkArticle(blogRoot, slug, source) });
+					}
+
+					// The articles that link to this one.
+					const backlinksMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/backlinks$/u);
+					if (backlinksMatch && request.method === 'GET') {
+						return json(response, 200, { backlinks: await articles.backlinks(decodePathComponent(backlinksMatch[1]), { site }) });
 					}
 
 					// The mark the page keeps its picture of itself under (page-version.mjs).

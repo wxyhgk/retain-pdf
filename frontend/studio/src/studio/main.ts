@@ -48,6 +48,8 @@ import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
+import { createBacklinks } from './workspace/backlinks';
+import { createArticleTable } from './workspace/article-table';
 import { createPageHeader } from './workspace/page-header';
 import { createPublishCheck } from './workspace/publish-check';
 import { createQuickFind } from './workspace/quick-find';
@@ -68,9 +70,10 @@ const topBar = createTopBar(shell);
 // The page as it is left, drawn at once on the next visit (page-snapshot.ts).
 let saveState: SaveState['kind'] = 'loading';
 let filesListed: Promise<void> = Promise.resolve();
+let backlinksShown: Promise<void> = Promise.resolve();
 const snapshot = createPageSnapshot(shell, {
 	slug: () => session.slug,
-	settled: () => shell.dataset.view !== 'drive' && (saveState === 'loaded' || saveState === 'saved') && !session.hasUnsavedEdits(),
+	settled: () => (shell.dataset.view ?? 'editor') === 'editor' && (saveState === 'loaded' || saveState === 'saved') && !session.hasUnsavedEdits(),
 });
 const articleActions = createArticleActions({
 	openSlug: () => session.slug,
@@ -88,7 +91,10 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
-	listed: (articles) => properties.knowTags(articles.flatMap((article) => article.tags ?? [])),
+	listed: (articles) => {
+		properties.knowTags(articles.flatMap((article) => article.tags ?? []));
+		if (shell.dataset.view === 'table') articleTable.refresh();
+	},
 });
 
 /** Asks git, a moment after the last change, which articles have changes not committed. */
@@ -210,6 +216,7 @@ const session = new ArticleSession(
 			editorPanel.classList.toggle('is-wide', Boolean(shown.wide));
 			articleList.select(article.slug);
 			filesListed = filePanel.show(article.slug);
+			backlinksShown = backlinks.show(article.slug);
 			terminal.showArticle(article.slug);
 			void loadLibrary(article.slug);
 			const url = new URL(window.location.href);
@@ -319,6 +326,7 @@ const citePicker = createCitePicker(document.querySelector<HTMLDialogElement>('#
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
 	snapshot.changed();
+	backlinks.changed();
 	articleList.changedOnDisk(changes);
 	refreshGit();
 	const change = changes.find((entry) => entry.slug === session.slug);
@@ -357,13 +365,18 @@ function showFound(text: string): void {
 	window.setTimeout(() => mark.remove(), 1700);
 }
 
+/** Opens an article from somewhere else on the page, at the first paragraph holding `text`. */
+async function openAt(slug: string, text = ''): Promise<void> {
+	showView('editor');
+	await session.open(slug);
+	if (text && session.slug === slug) requestAnimationFrame(() => showFound(text));
+}
+
+const backlinks = createBacklinks(shell.querySelector<HTMLElement>('#page-backlinks')!, { open: (slug, text) => void openAt(slug, text) });
+
 const quickFind = createQuickFind(document.querySelector<HTMLDialogElement>('#quick-find-dialog')!, {
 	articles: () => articleList.articles(),
-	async open(slug, text) {
-		showView('editor');
-		await session.open(slug);
-		if (text && session.slug === slug) requestAnimationFrame(() => showFound(text));
-	},
+	open: openAt,
 	openDriveFile(path) {
 		showView('drive');
 		void drivePage.reveal(path);
@@ -428,20 +441,43 @@ async function showDriveRoot(): Promise<void> {
 void showDriveRoot();
 void drivePane.open('');
 
-/** The article in the middle, or the drive (the article stays open behind it). */
-function showView(view: 'editor' | 'drive', folder?: string): void {
+// All the articles, as a table or a board (article-table.ts).
+const tableView = shell.querySelector<HTMLElement>('#table-view')!;
+const tableButton = shell.querySelector<HTMLButtonElement>('#open-table')!;
+const articleTable = createArticleTable(tableView, {
+	articles: () => articleList.articles(),
+	current: () => session.slug,
+	open(slug) {
+		showView('editor');
+		void session.open(slug);
+	},
+});
+
+/** The article in the middle, the drive or the table of all articles (the article stays open behind them). */
+function showView(view: 'editor' | 'drive' | 'table', folder?: string): void {
 	shell.dataset.view = view;
 	driveView.hidden = view !== 'drive';
+	tableView.hidden = view !== 'table';
 	driveButton.setAttribute('aria-pressed', String(view === 'drive'));
+	tableButton.setAttribute('aria-pressed', String(view === 'table'));
 	const url = new URL(window.location.href);
 	if (view === 'drive') void drivePage.open(folder);
 	else url.searchParams.delete('drive');
+	if (view === 'table') {
+		url.searchParams.set('pages', '');
+		articleTable.show();
+	} else {
+		url.searchParams.delete('pages');
+	}
 	history.replaceState(null, '', url);
 }
 driveButton.addEventListener('click', () => showView(shell.dataset.view === 'drive' ? 'editor' : 'drive'));
+tableButton.addEventListener('click', () => showView(shell.dataset.view === 'table' ? 'editor' : 'table'));
 {
-	const folder = new URL(window.location.href).searchParams.get('drive');
+	const address = new URL(window.location.href).searchParams;
+	const folder = address.get('drive');
 	if (folder !== null) showView('drive', folder);
+	else if (address.has('pages')) showView('table');
 }
 
 const trashView = createTrashView(document.querySelector<HTMLDialogElement>('#trash-dialog')!, {
@@ -529,8 +565,8 @@ openFromList().then(
 	},
 	(error) => topBar.error(error instanceof Error ? error.message : '无法连接本地 Studio'),
 ).finally(() => {
-	// The page takes over from its picture once it looks the same: the article's files listed, its outline drawn.
-	const listed = filesListed.catch(() => {});
+	// The page takes over from its picture once it looks the same: the article's files and backlinks listed, its outline drawn.
+	const listed = Promise.all([filesListed, backlinksShown]).catch(() => {});
 	void Promise.race([listed, new Promise((resolve) => window.setTimeout(resolve, 1000))]).then(() => {
 		outline.draw();
 		snapshot.ready();
