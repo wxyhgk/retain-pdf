@@ -1,0 +1,20 @@
+#!/bin/bash
+# xtb as the browser tests need it: the outputs of real runs
+# (packages/compute/test/fixtures) written where xtb writes them, the
+# output a line at a time. `--slow` (not xtb's) takes its time over it.
+real="$(cd "$(dirname "$0")/../../../../packages/compute/test/fixtures" && pwd)"
+out=xtb-opt.out; extra=""; pause=""
+for word in "$@"; do
+  case "$word" in
+    --ohess) out=xtb-ohess.out; extra="vibspectrum g98.out";;
+    --slow) pause=0.03;;
+  esac
+done
+while IFS= read -r line; do
+  printf '%s\n' "$line"
+  if [ -n "$pause" ]; then sleep "$pause"; fi
+done < "$real/$out"
+cp "$real/xtbopt.log" xtbopt.log
+tail -n 5 xtbopt.log > xtbopt.xyz
+for name in $extra; do cp "$real/$name" .; done
+echo restart > xtbrestart

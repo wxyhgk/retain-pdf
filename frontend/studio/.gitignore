@@ -32,6 +32,8 @@ playwright-report/
 # files removed in the Studio, kept until emptied by hand
 .studio-trash/
 .studio-settings.json
+# where the jobs running on other machines are (the Studio's 计算块)
+.studio-jobs.json
 
 # earlier versions of articles the Studio keeps (ai/history), local only
 blog/*/ai/history/

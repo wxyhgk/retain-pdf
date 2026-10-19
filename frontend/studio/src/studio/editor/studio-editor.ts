@@ -47,6 +47,7 @@ import { withoutTrailingEmptyLines } from '../document/index.ts';
 import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
+import { jobBlockPlugins } from './job-block';
 import '@blog/markdown/widgets/widgets.css';
 
 /** What the editor needs from the Studio around it. */
@@ -263,6 +264,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				},
 			});
 			crepe.editor.use(scienceBlockPlugins);
+			crepe.editor.use(jobBlockPlugins);
 			crepe.editor.use(blockFeelPlugins);
 			crepe.editor.use(inlineMathPlugins);
 			crepe.editor.use(displayMathPlugins);

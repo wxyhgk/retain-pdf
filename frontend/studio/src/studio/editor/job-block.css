@@ -1,0 +1,44 @@
+/* ```job blocks in the editor (job-block.ts). Black, white and gray; red only for stop, failure and what is wrong. */
+.job-block { position: relative; margin: 0.6em 0 1em; padding: 12px 14px 14px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 14px; line-height: 1.5; white-space: normal; }
+.job-block.ProseMirror-selectednode { box-shadow: 0 0 0 2px color-mix(in srgb, rgb(var(--gray)) 45%, transparent); }
+
+.job-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.job-kind { flex: none; padding: 1px 7px; border-radius: 4px; background: var(--surface-soft); color: rgb(var(--gray)); font-size: 12px; }
+.job-title { flex: 1 1 160px; min-width: 120px; padding: 2px 4px; margin-left: -4px; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 15px; font-weight: 600; outline: none; }
+.job-title:hover, .job-title:focus { background: var(--surface-soft); }
+.job-title::placeholder { color: rgb(var(--gray)); font-weight: 500; }
+.job-summary { flex: 1 1 100%; order: 3; color: rgb(var(--gray)); font-size: 12.5px; }
+.job-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+.job-actions button, .job-history { height: 28px; padding: 0 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; cursor: pointer; }
+.job-actions button:hover { background: var(--surface-hover); }
+.job-history { max-width: 150px; padding: 0 6px; color: rgb(var(--gray)); }
+.job-history[hidden] { display: none; }
+.job-run { min-width: 58px; border-color: var(--accent) !important; background: var(--accent) !important; color: var(--on-accent) !important; font-weight: 600; }
+.job-run:hover { opacity: 0.88; }
+.job-run.is-stop { border-color: #e03e3e !important; background: transparent !important; color: #e03e3e !important; }
+.job-run:disabled { opacity: 0.55; cursor: wait; }
+.job-menu-button { width: 28px; padding: 0 !important; border-color: transparent !important; color: rgb(var(--gray)) !important; }
+.job-settings-button[aria-expanded='true'] { background: var(--surface-hover) !important; }
+
+.job-settings { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgb(var(--gray-light)); }
+.job-settings[hidden] { display: none; }
+.job-form { display: grid; grid-template-columns: repeat(auto-fill, minmax(128px, 1fr)); gap: 10px 12px; }
+.job-field { display: grid; gap: 3px; min-width: 0; }
+.job-field[hidden] { display: none; }
+.job-field-name { color: rgb(var(--gray)); font-size: 11.5px; }
+.job-input { box-sizing: border-box; width: 100%; min-width: 0; height: 30px; padding: 0 7px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; outline: none; }
+.job-input:focus { border-color: rgb(var(--gray)); }
+.job-command { display: flex; align-items: center; gap: 0; margin-top: 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface-soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.job-command:focus-within { border-color: rgb(var(--gray)); }
+.job-command-prefix { flex: none; padding: 0 4px 0 9px; color: rgb(var(--gray)); white-space: nowrap; }
+.job-args { flex: 1; height: 30px; border: 0; background: transparent; font-family: inherit; font-size: inherit; }
+.job-structure { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+.job-structure-column { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.job-structure-text { height: auto; min-height: 150px; padding: 7px 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.45; resize: vertical; white-space: pre; }
+.job-structure-info { margin: 0; color: rgb(var(--gray)); font-size: 12px; }
+.job-structure .job-stage { height: 190px; }
+@media (max-width: 640px) { .job-structure { grid-template-columns: 1fr; } }
+
+.job-result { margin-top: 10px; }
+.job-result-body > .job-facts { margin-bottom: 2px; }
+.job-empty { margin: 4px 0 0; color: rgb(var(--gray)); font-size: 13px; }

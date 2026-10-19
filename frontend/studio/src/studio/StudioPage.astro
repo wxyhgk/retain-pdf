@@ -16,6 +16,9 @@ import '@blog/office/office.css';
 import '@xterm/xterm/css/xterm.css';
 import './workspace/drive.css';
 import './workspace/article-table.css';
+import '@blog/compute/browser/job-view.css';
+import './editor/job-block.css';
+import './workspace/compute-hosts.css';
 // KaTeX draws nothing until its fonts are in: the ones most formulas use, asked for with the page.
 import katexMain from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
 import katexMath from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
@@ -270,6 +273,22 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<div class="dialog-actions">
 					<button id="cancel-new-article-secondary" type="button">取消</button>
 					<button id="create-article" type="submit">创建并打开</button>
+				</div>
+			</form>
+		</dialog>
+
+		<dialog id="compute-hosts-dialog" class="article-dialog compute-hosts-dialog">
+			<form onsubmit="return false">
+				<div class="dialog-heading">
+					<div><strong>计算机器</strong><span>计算块在哪里跑：本机、用 SSH 连得上的服务器，或服务器上的 Slurm 队列</span></div>
+					<button type="button" data-close aria-label="关闭">×</button>
+				</div>
+				<div id="compute-hosts-list"></div>
+				<button id="compute-hosts-add" class="compute-hosts-add" type="button">＋ 添加机器</button>
+				<p id="compute-hosts-error" class="dialog-error" role="alert" hidden></p>
+				<div class="dialog-actions">
+					<button type="button" data-close>取消</button>
+					<button id="compute-hosts-save" class="is-primary" type="button">保存</button>
 				</div>
 			</form>
 		</dialog>

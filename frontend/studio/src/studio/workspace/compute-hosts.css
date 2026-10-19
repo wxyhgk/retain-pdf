@@ -1,0 +1,24 @@
+/* 计算机器 (compute-hosts-dialog.ts): a card for each machine. Black, white and gray. */
+.compute-hosts-dialog { width: min(94vw, 680px) !important; }
+.compute-hosts-dialog form { max-height: min(86vh, 820px); overflow: auto; }
+#compute-hosts-list { display: grid; gap: 12px; }
+.host-card { padding: 14px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); }
+.host-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; }
+.host-field { display: grid; gap: 4px; min-width: 0; }
+.host-field[hidden] { display: none; }
+.host-field.is-wide { grid-column: 1 / -1; }
+.host-field > span { color: rgb(var(--gray)); font-size: 11px; }
+.host-field input, .host-field select, .host-field textarea { box-sizing: border-box; width: 100%; min-width: 0; height: 32px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; outline: none; }
+.host-field textarea { height: auto; padding: 6px 8px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+.host-field input[data-key='xtb'], .host-field input[data-key='crest'], .host-field input[data-key='workdir'], .host-field input[data-key='ssh'] { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+.host-field input:focus, .host-field select:focus, .host-field textarea:focus { border-color: rgb(var(--gray)); }
+.host-field input[readonly] { background: var(--surface-soft); color: rgb(var(--gray)); }
+.host-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 12px; }
+.host-foot button { padding: 5px 11px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+.host-foot button:hover { background: var(--surface-hover); }
+.host-foot button:disabled { opacity: 0.55; cursor: wait; }
+.host-found { flex: 1; min-width: 0; color: rgb(var(--gray)); font-size: 12px; overflow-wrap: anywhere; }
+.host-foot .host-remove { margin-left: auto; border-color: transparent; color: #e03e3e; }
+.compute-hosts-add { justify-self: start; padding: 6px 12px; border: 1px dashed rgb(var(--gray-light)); border-radius: 8px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; cursor: pointer; }
+.compute-hosts-add:hover { background: var(--surface-hover); }
+@media (max-width: 560px) { .host-fields { grid-template-columns: 1fr 1fr; } }

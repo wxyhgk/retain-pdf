@@ -11,6 +11,8 @@ import remarkFigures from './plugins/remark-figures.mjs';
 import remarkMathBrackets from './plugins/remark-math-brackets.mjs';
 import remarkOfficeCards from './plugins/remark-office-cards.mjs';
 import remarkWidgets from './plugins/remark-widgets.mjs';
+import remarkJobs from './plugins/remark-jobs.mjs';
+import { JOB_LANGUAGE } from '@blog/compute/job-fence.mjs';
 import rehypeWidgets from './plugins/rehype-widgets.mjs';
 import { WIDGET_LANGUAGE } from './widgets/widgets.mjs';
 
@@ -25,7 +27,7 @@ export const chemistryLanguages = MOLECULE_LANGUAGES;
 
 /**
  * The plugins, for unified or Astro: GitHub's Markdown with our options,
- * formulas, widgets, code files, figures, office cards and file links,
+ * formulas, widgets, calculations, code files, figures, office cards and file links,
  * callouts and citations; then raw HTML made safe (no scripts, event
  * handlers or javascript: links), the widgets' pages put in their frames,
  * and the formulas drawn, with the macros `macrosFor` gives an article
@@ -35,7 +37,7 @@ export const chemistryLanguages = MOLECULE_LANGUAGES;
  */
 export function markdownPlugins({ macrosFor } = {}) {
 	return {
-		remarkPlugins: [[remarkGfm, gfmOptions], remarkMath, remarkMathBrackets, remarkWidgets, [remarkCodeFiles, { skip: [...chemistryLanguages, WIDGET_LANGUAGE] }], remarkFigures, remarkOfficeCards, remarkCallouts, remarkCitations],
+		remarkPlugins: [[remarkGfm, gfmOptions], remarkMath, remarkMathBrackets, remarkWidgets, remarkJobs, [remarkCodeFiles, { skip: [...chemistryLanguages, WIDGET_LANGUAGE, JOB_LANGUAGE] }], remarkFigures, remarkOfficeCards, remarkCallouts, remarkCitations],
 		rehypePlugins: [rehypeArticleHtml, rehypeWidgets, [rehypeKatexMhchem, { macrosFor }]],
 	};
 }

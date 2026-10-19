@@ -19,6 +19,9 @@ import { revealInFileManager } from '../studio/server/reveal.mjs';
 import { TerminalHost } from '../studio/server/terminal-host.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
 import { pageVersion, studioBlogRoot } from '../studio/server/page-version.mjs';
+import { ComputeHosts, detectHost, readHost } from '../studio/server/compute-hosts.mjs';
+import { JobShell } from '../studio/server/job-shell.mjs';
+import { JobRuns } from '../studio/server/job-runs.mjs';
 
 function json(response, status, data) {
 	// A file was being sent when it failed (the page went away): nothing more can be said.
@@ -108,17 +111,26 @@ export default function studioDev({ site } = {}) {
 			const watcher = new BlogWatcher(blogRoot);
 			// The author's own folder of files (资料库), chosen once and kept outside git; the browser tests bring their own.
 			const testDriveRoot = process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null;
+			const settingsFile = testBlogRoot ? resolve(testBlogRoot, '.studio-settings.json') : resolve(server.config.root, '.studio-settings.json');
 			const drive = new Drive({
-				settingsFile: testBlogRoot ? resolve(testBlogRoot, '.studio-settings.json') : resolve(server.config.root, '.studio-settings.json'),
+				settingsFile,
 				fixedRoot: testDriveRoot,
 				forbidden: [server.config.root, blogRoot],
 			});
 			// The drive's words, for search and for an AI to read: `.studio-text/` in the drive.
 			const driveText = new DriveText(drive);
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
+			// The machines jobs run on, and the runs going on them, taken up again from where the last server left them.
+			const computeHosts = new ComputeHosts(settingsFile);
+			const jobRuns = new JobRuns(blogRoot, {
+				hosts: computeHosts,
+				stateFile: testBlogRoot ? resolve(testBlogRoot, '.studio-jobs.json') : resolve(server.config.root, '.studio-jobs.json'),
+			});
+			void jobRuns.resume();
 			server.httpServer?.on('close', () => {
 				watcher.close();
 				terminals.close();
+				jobRuns.close();
 			});
 			markContentReloads(server);
 
@@ -320,6 +332,33 @@ export default function studioDev({ site } = {}) {
 						if (typeof source !== 'string') return json(response, 400, { error: '文章内容必须是文本' });
 						await manager.locate(slug, '');
 						return json(response, 200, { issues: await checkArticle(blogRoot, slug, source) });
+					}
+
+					// The machines jobs run on (计算机器): the list, kept as given, and what one of them has.
+					if (url.pathname === '/api/studio/compute/hosts' && request.method === 'GET') {
+						return json(response, 200, { hosts: await computeHosts.list() });
+					}
+					if (url.pathname === '/api/studio/compute/hosts' && request.method === 'PUT') {
+						const { hosts } = await readJsonChange(request);
+						return json(response, 200, { hosts: await computeHosts.save(hosts) });
+					}
+					if (url.pathname === '/api/studio/compute/hosts/detect' && request.method === 'POST') {
+						const { host } = await readJsonChange(request);
+						return json(response, 200, await detectHost(new JobShell(readHost(host))));
+					}
+
+					// The runs of an article's job (a ```job block): the list, a new one, one stopped.
+					const runsMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/jobs\/([^/]+)\/runs(?:\/([^/]+)\/cancel)?$/u);
+					if (runsMatch) {
+						const slug = decodePathComponent(runsMatch[1]);
+						const id = decodePathComponent(runsMatch[2]);
+						const run = runsMatch[3] ? decodePathComponent(runsMatch[3]) : null;
+						if (!run && request.method === 'GET') return json(response, 200, { runs: await jobRuns.list(slug, id) });
+						if (!run && request.method === 'POST') return json(response, 201, { run: await jobRuns.start(slug, { ...(await readJsonChange(request)), id }) });
+						if (run && request.method === 'POST') {
+							assertContentType(request, 'application/json');
+							return json(response, 200, { run: await jobRuns.cancel(slug, id, run) });
+						}
 					}
 
 					// The articles that link to this one.

@@ -1,0 +1,12 @@
+{
+  "name": "@blog/compute",
+  "private": true,
+  "description": "Calculations in notes: a ```job block holds an xtb or CREST job, each run of it is kept in the article, and its results are read back and drawn.",
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
+  "dependencies": {
+    "@blog/science": "*"
+  }
+}

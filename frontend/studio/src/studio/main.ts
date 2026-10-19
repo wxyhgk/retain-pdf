@@ -18,6 +18,10 @@ import {
 	addReference,
 	importDriveFile,
 	driveInfo,
+	computeHosts,
+	jobRuns,
+	startJobRun,
+	cancelJobRun,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -46,6 +50,8 @@ import { createDriveBrowser } from './workspace/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
+import { createComputeHostsDialog } from './workspace/compute-hosts-dialog';
+import { jobFilesChanged, setJobHost } from './editor/job-block';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
 import { createBacklinks } from './workspace/backlinks';
@@ -334,8 +340,20 @@ watchDisk((changes) => {
 	void filePanel.refresh();
 	session.changedOnDisk(change.paths);
 	widgetFilesChanged(change.paths);
+	jobFilesChanged(change.slug, change.paths);
 	officeFilesChanged(change.paths.map((path) => studioFileUrl(change.slug, path)));
 	if (change.paths.includes(BIBLIOGRAPHY_PATH)) void loadLibrary(change.slug);
+});
+
+// Calculation blocks run their jobs through the open article, on the machines of 计算机器.
+const computeHostsDialog = createComputeHostsDialog();
+setJobHost({
+	slug: () => session.slug,
+	hosts: computeHosts,
+	runs: (id) => (session.slug ? jobRuns(session.slug, id) : Promise.resolve([])),
+	start: (id, job) => (session.slug ? startJobRun(session.slug, id, job) : Promise.reject(new Error('文章尚未载入'))),
+	cancel: (id, run) => (session.slug ? cancelJobRun(session.slug, id, run) : Promise.reject(new Error('文章尚未载入'))),
+	manageHosts: () => computeHostsDialog.open(),
 });
 
 // Widgets read the open article's files (note.file, or a widget that is a file).
