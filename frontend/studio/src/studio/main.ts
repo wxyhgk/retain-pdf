@@ -25,7 +25,7 @@ import { setMoleculeViewContext } from '@blog/science/browser/molecule-renderer.
 import { setScienceResourceBaseUrl } from '@blog/science/browser/resource-context.ts';
 import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
-import { ArticleSession } from './state/article-session';
+import { ArticleSession, type SaveState } from './state/article-session';
 import type { ArticlePayload, ArticleSummary } from './types';
 import { createArticleActions } from './workspace/article-actions';
 import { createArticleList } from './workspace/article-list';
@@ -47,6 +47,7 @@ import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createOutline } from './workspace/outline';
+import { createPageSnapshot } from './workspace/page-snapshot';
 import { createPageHeader } from './workspace/page-header';
 import { createPublishCheck } from './workspace/publish-check';
 import { createQuickFind } from './workspace/quick-find';
@@ -61,9 +62,16 @@ import { createTrashView } from './workspace/trash-view';
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
 const editorPanel = shell.querySelector<HTMLElement>('.editor-panel')!;
-createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
+const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
 
 const topBar = createTopBar(shell);
+// The page as it is left, drawn at once on the next visit (page-snapshot.ts).
+let saveState: SaveState['kind'] = 'loading';
+let filesListed: Promise<void> = Promise.resolve();
+const snapshot = createPageSnapshot(shell, {
+	slug: () => session.slug,
+	settled: () => shell.dataset.view !== 'drive' && (saveState === 'loaded' || saveState === 'saved') && !session.hasUnsavedEdits(),
+});
 const articleActions = createArticleActions({
 	openSlug: () => session.slug,
 	leave: () => session.saveBeforeLeaving(),
@@ -201,20 +209,25 @@ const session = new ArticleSession(
 			topBar.edited(article.modified ?? null);
 			editorPanel.classList.toggle('is-wide', Boolean(shown.wide));
 			articleList.select(article.slug);
-			filePanel.show(article.slug);
+			filesListed = filePanel.show(article.slug);
 			terminal.showArticle(article.slug);
 			void loadLibrary(article.slug);
 			const url = new URL(window.location.href);
 			url.searchParams.set('article', article.slug);
 			history.replaceState(null, '', url);
+			snapshot.changed();
 		},
-		saveState: (state) => topBar.saveState(state),
+		saveState: (state) => {
+			saveState = state.kind;
+			topBar.saveState(state);
+		},
 		roundtrip: (exact) => topBar.roundtrip(exact),
 		retitled: (title) => topBar.showTitle(title),
 		saved(slug, saved, problems) {
 			articleList.saved(slug, saved);
 			topBar.edited(Date.now());
 			properties.showProblems(problems);
+			snapshot.changed();
 		},
 	},
 	testDelay ? { delay: testDelay, maxWait: testDelay } : {},
@@ -305,6 +318,7 @@ const citePicker = createCitePicker(document.querySelector<HTMLDialogElement>('#
 
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
+	snapshot.changed();
 	articleList.changedOnDisk(changes);
 	refreshGit();
 	const change = changes.find((entry) => entry.slug === session.slug);
@@ -514,4 +528,11 @@ openFromList().then(
 		refreshGit();
 	},
 	(error) => topBar.error(error instanceof Error ? error.message : '无法连接本地 Studio'),
-);
+).finally(() => {
+	// The page takes over from its picture once it looks the same: the article's files listed, its outline drawn.
+	const listed = filesListed.catch(() => {});
+	void Promise.race([listed, new Promise((resolve) => window.setTimeout(resolve, 1000))]).then(() => {
+		outline.draw();
+		snapshot.ready();
+	});
+});

@@ -32,6 +32,11 @@ export async function listArticles(): Promise<ArticleSummary[]> {
 	return (await request<{ articles: ArticleSummary[] }>('/api/studio/articles')).articles;
 }
 
+/** The mark of what the page shows with this article open (page-version.mjs). */
+export async function pageVersion(slug: string): Promise<string> {
+	return (await request<{ version: string }>(`/api/studio/articles/${encodeURIComponent(slug)}/page-version`)).version;
+}
+
 export function getArticle(slug: string): Promise<ArticlePayload> {
 	return request<ArticlePayload>(`/api/studio/articles/${encodeURIComponent(slug)}`).then((article) => ({
 		...article,

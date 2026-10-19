@@ -18,6 +18,7 @@ import { FileRepository } from '../studio/server/file-repository.mjs';
 import { revealInFileManager } from '../studio/server/reveal.mjs';
 import { TerminalHost } from '../studio/server/terminal-host.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
+import { pageVersion, studioBlogRoot } from '../studio/server/page-version.mjs';
 
 function json(response, status, data) {
 	// A file was being sent when it failed (the page went away): nothing more can be said.
@@ -84,10 +85,12 @@ export default function studioDev() {
 	return {
 		name: 'local-article-studio',
 		apply: 'serve',
+		// The editor is hundreds of modules: made ready when the server starts, not when the Studio is first opened.
+		config: () => ({ server: { warmup: { clientFiles: ['./src/studio/main.ts'] } } }),
 		configureServer(server) {
 			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
 			const testBlogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
-			const blogRoot = testBlogRoot ?? resolve(server.config.root, 'blog');
+			const blogRoot = studioBlogRoot(server.config.root);
 			const articles = new ArticleRepository(blogRoot);
 			const files = new FileRepository(blogRoot);
 			const codeFiles = new CodeFilePreviews(files);
@@ -314,6 +317,12 @@ export default function studioDev() {
 						if (typeof source !== 'string') return json(response, 400, { error: '文章内容必须是文本' });
 						await manager.locate(slug, '');
 						return json(response, 200, { issues: await checkArticle(blogRoot, slug, source) });
+					}
+
+					// The mark the page keeps its picture of itself under (page-version.mjs).
+					const versionMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/page-version$/u);
+					if (versionMatch && request.method === 'GET') {
+						return json(response, 200, { version: await pageVersion(blogRoot, decodePathComponent(versionMatch[1])) });
 					}
 
 					// A code block's `@file`, drawn as the blog draws it.

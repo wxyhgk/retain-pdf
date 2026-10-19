@@ -62,4 +62,8 @@ export function createOutline(scroller: HTMLElement, rail: HTMLElement) {
 	}).observe(scroller, { childList: true, subtree: true, characterData: true });
 	scroller.addEventListener('scroll', mark, { passive: true });
 	draw();
+	return {
+		/** Draws the outline now, not a moment after the article last changed. */
+		draw,
+	};
 }

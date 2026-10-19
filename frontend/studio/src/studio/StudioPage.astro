@@ -1,11 +1,40 @@
 ---
 import BaseHead from '../components/BaseHead.astro';
 import { SITE_TITLE } from '../consts';
+import { ArticleRepository } from './server/article-repository.mjs';
+import { pageVersion, studioBlogRoot } from './server/page-version.mjs';
+// The editor's styles in the page itself, not added by its scripts later, so the first picture is drawn as the editor draws it.
+import '@milkdown/crepe/theme/common/style.css';
+import '@milkdown/crepe/theme/classic.css';
+import '@blog/science/browser/molecule-renderer.css';
+import '@blog/markdown/callouts/callouts.css';
+import '@blog/markdown/code-files/code-files.css';
+import '@blog/markdown/figures/figures.css';
+import '@blog/markdown/references/references.css';
+import '@blog/markdown/widgets/widgets.css';
+import '@blog/office/office.css';
+import '@xterm/xterm/css/xterm.css';
+import './workspace/drive.css';
+// KaTeX draws nothing until its fonts are in: the ones most formulas use, asked for with the page.
+import katexMain from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
+import katexMath from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
+import katexSize1 from 'katex/dist/fonts/KaTeX_Size1-Regular.woff2?url';
+import katexSize2 from 'katex/dist/fonts/KaTeX_Size2-Regular.woff2?url';
+import katexAms from 'katex/dist/fonts/KaTeX_AMS-Regular.woff2?url';
+
+// The mark of what the page shows with each article open (page-snapshot.ts); the
+// address, which picks the article, is the browser's to read.
+const blogRoot = studioBlogRoot(process.cwd());
+const articles = await new ArticleRepository(blogRoot).list().catch(() => []);
+const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(await Promise.all(articles.map(async ({ slug }) => [slug, await pageVersion(blogRoot, slug)]))) };
 ---
 
 <!doctype html>
 <html lang="zh-CN">
-	<head><BaseHead title={`Studio · ${SITE_TITLE}`} description="本地文章工作台" /></head>
+	<head>
+		<BaseHead title={`Studio · ${SITE_TITLE}`} description="本地文章工作台" />
+		{[katexMain, katexMath, katexSize1, katexSize2, katexAms].map((font) => <link rel="preload" href={font} as="font" type="font/woff2" crossorigin />)}
+	</head>
 	<body class="studio-body">
 		<main class="studio-shell">
 			<aside class="article-sidebar">
@@ -141,6 +170,33 @@ import { SITE_TITLE } from '../consts';
 				</section>
 			</aside>
 		</main>
+		<script is:inline define:vars={{ pages }}>
+			// Before the editor loads: the right column as it was left, and the page as
+			// it was left (page-snapshot.ts) over it while nothing it shows has changed.
+			try {
+				const shell = document.querySelector('.studio-shell');
+				const layout = JSON.parse(localStorage.getItem('studio.side-panel') ?? 'null');
+				if (layout?.open === false) shell.classList.add('panel-collapsed');
+				if (typeof layout?.width === 'number') shell.style.setProperty('--panel-width', `${Math.min(720, Math.max(260, Math.round(layout.width)))}px`);
+				// The article main.ts opens: the address's, or the first.
+				const address = new URLSearchParams(window.location.search);
+				const slug = Object.hasOwn(pages.versions, address.get('article')) ? address.get('article') : pages.first;
+				const kept = JSON.parse(localStorage.getItem('studio.snapshot') ?? 'null');
+				if (slug && !address.has('drive') && kept?.slug === slug && kept.version === pages.versions[slug] && !navigator.webdriver) {
+					const template = document.createElement('template');
+					template.innerHTML = kept.html;
+					const picture = template.content.firstElementChild;
+					picture.classList.add('studio-snapshot');
+					picture.inert = true;
+					picture.setAttribute('aria-hidden', 'true');
+					shell.after(picture);
+					// Should the editor never come, the page as it is.
+					setTimeout(() => picture.remove(), 10000);
+				}
+			} catch {
+				// Storage refused, or a picture from another version of the page: it loads as it is.
+			}
+		</script>
 
 		<dialog id="quick-find-dialog" class="quick-find" aria-label="搜索">
 			<label class="quick-find-field"><span aria-hidden="true">⌕</span><input id="quick-find-input" type="text" placeholder="搜索标题和正文…" autocomplete="off" aria-controls="quick-find-results" /></label>
@@ -222,6 +278,9 @@ import { SITE_TITLE } from '../consts';
 	:global(body.studio-body) { height: 100vh; overflow: hidden; font-size: 16px; }
 	.studio-shell { --sidebar: 250px; --panel: var(--panel-width, 340px); display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--panel); width: 100%; max-width: none; height: 100vh; margin: 0; padding: 0; transition: grid-template-columns 180ms ease; }
 	.studio-shell.sidebar-collapsed { --sidebar: 0px; }
+	/* The page as it was left, over the page while the editor loads (page-snapshot.ts); until then the page shows no empty fields. */
+	.studio-shell.studio-snapshot { position: fixed; inset: 0; z-index: 30; }
+	.studio-shell:not([data-ready]) .editor-scroll, .studio-shell:not([data-ready]) #article-list { visibility: hidden; }
 	.studio-shell.panel-collapsed { --panel: 0px; }
 	.studio-shell.is-resizing { transition: none; cursor: col-resize; user-select: none; }
 	.article-sidebar, .workspace-main, .editor-panel, .side-panel { min-width: 0; overflow: hidden; background: var(--surface); }

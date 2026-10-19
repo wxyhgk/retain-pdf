@@ -660,8 +660,8 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	render();
 
 	return {
-		/** List this article's folder; `null` when no article is open. */
-		show(article: string | null): void {
+		/** List this article's folder; `null` when no article is open. Done when it is listed. */
+		show(article: string | null): Promise<void> {
 			if (article !== slug) {
 				slug = article;
 				entries = [];
@@ -671,7 +671,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			}
 			referenced = referencedPaths(host.source());
 			render();
-			void refresh();
+			return refresh();
 		},
 		/** List the folder again, after something outside the panel changed it. */
 		refresh,
