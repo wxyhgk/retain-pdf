@@ -58,6 +58,7 @@ test('uploads, folders, moves and the trash', async (t) => {
 	await drive.choose(root);
 	assert.deepEqual(await drive.upload('组会', 'notes (1).md', Readable.from(['a'])), { path: '组会/notes (1).md', size: 1 });
 	assert.deepEqual(await drive.upload('组会', 'notes (1).md', Readable.from(['bb'])), { path: '组会/notes (1)-1.md', size: 2 });
+	assert.deepEqual(await drive.upload('组会', 'notes (1).md', Readable.from(['bb'])), { path: '组会/notes (1)-1.md', size: 2 }, 'the same file again: the one there');
 	assert.deepEqual(await drive.createFolder('组会/2026 秋/草稿'), { path: '组会/2026 秋/草稿' });
 	await assert.rejects(drive.createFolder('组会/2026 秋/草稿'), /已经存在/u);
 	assert.deepEqual(await drive.move('water.log', '组会/2026 秋/water opt.log'), { path: '组会/2026 秋/water opt.log' });

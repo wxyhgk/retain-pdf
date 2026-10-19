@@ -87,6 +87,17 @@ test('uploads never overwrite unasked', async (t) => {
 	assert.deepEqual((await readdir(bundle.img)).sort(), ['Cover-Photo-1.png', 'Cover-Photo.png']);
 });
 
+test('the same file uploaded again is the one already there, under whichever name it got', async (t) => {
+	const { paths: bundle, files } = await fixture(t);
+	assert.deepEqual(await files.upload('note', 'img', 'plot.png', bytes('first')), { path: 'img/plot.png', size: 5 });
+	assert.deepEqual(await files.upload('note', 'img', 'plot.png', bytes('first')), { path: 'img/plot.png', size: 5 });
+	assert.deepEqual(await files.upload('note', 'img', 'plot.png', bytes('other')), { path: 'img/plot-1.png', size: 5 });
+	assert.deepEqual(await files.upload('note', 'img', 'plot.png', bytes('other')), { path: 'img/plot-1.png', size: 5 });
+	assert.deepEqual(await files.upload('note', 'img', 'plot.png', bytes('longer one')), { path: 'img/plot-2.png', size: 10 });
+	assert.deepEqual((await readdir(bundle.img)).sort(), ['plot-1.png', 'plot-2.png', 'plot.png']);
+	assert.equal(await readFile(join(bundle.img, 'plot.png'), 'utf8'), 'first');
+});
+
 test('an upload over the limit leaves nothing behind', async (t) => {
 	const { paths: bundle, files } = await fixture(t, { uploadSizeLimit: 4 });
 	await assert.rejects(files.upload('note', 'assets', 'big.cube', bytes('12345')), UploadTooLargeError);

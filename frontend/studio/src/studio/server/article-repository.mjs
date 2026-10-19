@@ -223,6 +223,8 @@ export class ArticleRepository {
 		await assertReadableBundle(paths);
 		const [current, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
 		const currentRevision = bundleRevision(current, viewsSource);
+		// Already so: a save sent again (its answer lost on the way) is the same save, not someone else's change.
+		if (current === nextSource) return { hash: currentRevision, revision: currentRevision, problems: articleProblems(current) };
 		const expected = expectedRevision ?? expectedHash;
 		if (expected && currentRevision !== expected) {
 			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');

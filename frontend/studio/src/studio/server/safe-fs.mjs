@@ -1,3 +1,5 @@
+import { createHash } from 'node:crypto';
+import { createReadStream } from 'node:fs';
 import { link, lstat, rename } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
@@ -43,7 +45,12 @@ export async function exists(path) {
 	}
 }
 
-/** Gives the finished upload the first free name: `a.png`, `a-1.png`, `a-2.png`, … */
+/**
+ * Gives the finished upload the first free name: `a.png`, `a-1.png`,
+ * `a-2.png`, … unless one of them already holds the same bytes: then that
+ * one is the upload's, so the same file sent twice (an upload tried again,
+ * a picture dropped twice) is there once.
+ */
 export async function linkUnderFreeName(temporary, folder, name) {
 	const extension = extname(name);
 	const stem = name.slice(0, name.length - extension.length);
@@ -56,8 +63,21 @@ export async function linkUnderFreeName(temporary, folder, name) {
 		} catch (error) {
 			if (error?.code !== 'EEXIST') throw error;
 		}
+		if (await sameBytes(temporary, join(folder, candidate))) return candidate;
 	}
 	throw new FileConflictError('同名文件太多');
+}
+
+/** Whether `other` is a plain file holding exactly what `file` holds. */
+async function sameBytes(file, other) {
+	const [one, two] = await Promise.all([lstat(file), lstat(other).catch(() => null)]);
+	if (!two?.isFile() || one.size !== two.size) return false;
+	const digest = (path) => new Promise((resolve, reject) => {
+		const hash = createHash('sha256');
+		createReadStream(path).on('error', reject).on('data', (chunk) => hash.update(chunk)).on('end', () => resolve(hash.digest('hex')));
+	});
+	const [left, right] = await Promise.all([digest(file), digest(other)]);
+	return left === right;
 }
 
 export async function replaceInto(temporary, folder, name) {

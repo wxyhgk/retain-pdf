@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -142,6 +142,25 @@ test('two saves from the same revision cannot both win', async (t) => {
 	assert.deepEqual(results.map((result) => result.status), ['fulfilled', 'rejected']);
 	assert.ok(results[1].reason instanceof ArticleConflictError);
 	assert.match(await readFile(join(root, 'race-note', 'index.md'), 'utf8'), /First\./u);
+});
+
+test('a save sent again after its answer was lost succeeds, and changes nothing', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'retry-note', title: 'Retry note' });
+	const initial = await repository.read('retry-note');
+	const change = { source: `${initial.source}\nOnce.\n`, expectedRevision: initial.revision };
+
+	const first = await repository.save('retry-note', change);
+	const file = join(root, 'retry-note', 'index.md');
+	const written = (await stat(file)).mtimeMs;
+	const again = await repository.save('retry-note', change);
+	assert.equal(again.revision, first.revision);
+	assert.deepEqual(again.problems, first.problems);
+	assert.equal((await stat(file)).mtimeMs, written, 'not written twice');
+
+	// Something else on disk is still someone else's change.
+	await assert.rejects(repository.save('retry-note', { source: `${initial.source}\nOther.\n`, expectedRevision: initial.revision }), ArticleConflictError);
 });
 
 test('an article whose properties are broken still lists, opens and saves, and says what is wrong', async (t) => {
