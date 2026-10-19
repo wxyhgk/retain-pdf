@@ -6,6 +6,7 @@ import { $prose } from '@milkdown/utils';
 import {
 	SCIENCE_FENCE_TYPE,
 	blockAt,
+	openNextOnSource,
 	scienceAttrs,
 	type ScienceBlockAction,
 } from './science-block.ts';
@@ -29,6 +30,7 @@ export function dispatchScienceAction(view: EditorView, action: ScienceBlockActi
 	const science = view.state.schema.nodes[SCIENCE_FENCE_TYPE];
 	if (action.type === 'edit') {
 		if (node.type.name !== SCIENCE_FENCE_TYPE) return;
+		openNextOnSource();
 		focusInside(view, pos + node.nodeSize - 1, false);
 		return;
 	}

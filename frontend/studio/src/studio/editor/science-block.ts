@@ -99,6 +99,21 @@ export function structureDrawing(info: string, source: string): 'smiles' | 'molf
 	return language === 'smiles' ? 'smiles' : 'molfile';
 }
 
+/** The tab a block's next sheet opens on: 编辑源码 in the block menu asks for 源码. */
+let nextTab: 'structure' | 'source' | null = null;
+
+/** The sheet of the block the caret is put in next opens on its 源码. */
+export function openNextOnSource(): void {
+	nextTab = 'source';
+}
+
+/** The tab asked for, once. */
+export function takeNextTab(): 'structure' | 'source' | null {
+	const asked = nextTab;
+	nextTab = null;
+	return asked;
+}
+
 /** A molfile with no atoms: what the structure editor saves for an empty page. */
 export function isEmptyMolfile(molfile: string): boolean {
 	const lines = molfile.split(/\r?\n/);

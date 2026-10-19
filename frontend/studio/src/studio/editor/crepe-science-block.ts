@@ -5,7 +5,8 @@ import { NodeSelection, Plugin, TextSelection } from '@milkdown/prose/state';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type { EditorView, NodeView } from 'prosemirror-view';
 
-import { createSciencePreview, hydrateSciencePreviews } from '@blog/science/browser/science-renderer.ts';
+import { createSciencePreview } from '@blog/science/browser/science-renderer.ts';
+import type { OpenSheet } from '@blog/ui/block-sheet.ts';
 import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
 import { scienceBlockKeys } from './science-block-menu.ts';
 import {
@@ -13,15 +14,15 @@ import {
 	parseScienceFence,
 	scienceBlockKindLabel,
 	scienceSourceEditor,
-	structureDrawing,
+	takeNextTab,
 } from './science-block.ts';
-import { SourcePopup } from './source-popup.ts';
-import { drawStructure, type DrawnStructure } from './structure-editor.ts';
+import { openScienceSheet } from './science-sheet.ts';
 
 /**
  * Science fenced-code blocks as a first-class Crepe node.
  * Thin Milkdown glue over `./science-block.ts`, which owns recognition and
- * the block menu's edits (all Node-tested there).
+ * the block menu's edits (all Node-tested there), and `./science-sheet.ts`,
+ * the sheet a block is edited in.
  *
  * `$fencedBlock` (the Milkdown fork) gives every fence in a scientific
  * language this node, whether loaded, pasted, typed as ```smiles or given
@@ -29,17 +30,14 @@ import { drawStructure, type DrawnStructure } from './structure-editor.ts';
  * characters included.
  */
 export const scienceBlockSchema = $fencedBlock(SCIENCE_FENCE_TYPE, isMoleculeLanguage, () => ({
-	// The source is edited in a popup, never in place: the block is one unit. Without
+	// The source is edited in its sheet, never in place: the block is one unit. Without
 	// this a selection read back from the DOM lands in a paragraph nearby instead of
-	// on the block, which drops the block menu and the popup the moment it happens.
+	// on the block, which drops the block menu the moment it happens.
 	atom: true,
 	isolating: true,
 }));
 
 const PREVIEW_DEBOUNCE_MS = 350;
-const POPUP_PREVIEW_DEBOUNCE_MS = 200;
-/** Multi-line sources can be megabytes; batch keystrokes before rewriting the node. */
-const SOURCE_WRITE_DEBOUNCE_MS = 250;
 const scienceViews = new Set<() => void>();
 
 function trackScienceView(sync: () => void): () => void {
@@ -49,7 +47,7 @@ function trackScienceView(sync: () => void): () => void {
 	};
 }
 
-/** Selection changes do not call NodeView.update, so popups open and close from here. */
+/** Selection changes do not call NodeView.update, so sheets open from here. */
 export const scienceBlockSelectionPlugin = $prose(
 	() =>
 		new Plugin({
@@ -79,11 +77,10 @@ function paintMolecule(host: HTMLElement, info: string, source: string): void {
 }
 
 /**
- * The block always rests on its rendered molecule. Click selects it. Double
- * click opens a 2D structure (SMILES, flat SDF) in the structure editor, and
- * anything else in the source popup. Enter, 编辑 and any command that puts
- * the caret inside the node (slash insert, the menu's 编辑源码) open the
- * source popup, which offers 画结构 when the editor can draw the block.
+ * The block rests on its rendered molecule; a click selects it. Double
+ * click, Enter, 编辑 and any command that puts the caret inside the node
+ * (slash insert, the menu's 编辑源码) open its sheet (science-sheet.ts):
+ * the structure edited where it is drawn, and its source.
  */
 export const scienceBlockView = $view(scienceBlockSchema.schema.node, (ctx) => {
 	return (initial: ProseMirrorNode, view: EditorView, getPos: () => number | undefined): NodeView => {
@@ -130,200 +127,94 @@ export const scienceBlockView = $view(scienceBlockSchema.schema.node, (ctx) => {
 		};
 		render(initial);
 
-		let popup: SourcePopup | null = null;
-		let writing = false;
-		let pendingWrite: ReturnType<typeof setTimeout> | undefined;
-		let popupPreviewTimer: ReturnType<typeof setTimeout> | undefined;
+		let sheet: OpenSheet | null = null;
+		let destroyed = false;
 
-		const caretInside = (pos: number, current: ProseMirrorNode): boolean => {
-			const selection = view.state.selection;
-			return selection instanceof TextSelection && selection.from > pos && selection.to < pos + current.nodeSize;
-		};
-
-		const writeSource = (value: string, select: boolean, info?: string) => {
+		const current = (): ProseMirrorNode | null => {
 			const pos = getPos();
-			if (pos == null) return;
-			const current = view.state.doc.nodeAt(pos);
-			if (!current || current.type.name !== SCIENCE_FENCE_TYPE) return;
-			const attrs = info === undefined ? current.attrs : { ...current.attrs, language: info };
-			if (current.textContent === value && attrs.language === current.attrs.language) return;
-			const next = current.type.create(attrs, value ? view.state.schema.text(value) : null);
-			let tr = view.state.tr.replaceWith(pos, pos + current.nodeSize, next);
-			if (select) tr = tr.setSelection(NodeSelection.create(tr.doc, pos));
-			writing = true;
-			try {
-				view.dispatch(tr);
-			} finally {
-				writing = false;
-			}
+			if (pos == null) return null;
+			const found = view.state.doc.nodeAt(pos);
+			return found && found.type.name === SCIENCE_FENCE_TYPE ? found : null;
 		};
 
-		/** `deferWrite` when closing from inside a view update, where dispatching is not allowed. */
-		const close = (deferWrite = false) => {
-			if (!popup) return;
-			const value = popup.value;
-			const pending = pendingWrite !== undefined;
-			clearTimeout(pendingWrite);
-			pendingWrite = undefined;
-			clearTimeout(popupPreviewTimer);
-			popup.destroy();
-			popup = null;
-			dom.classList.remove('is-open', 'is-inline-source');
-			editButton.textContent = '编辑';
-			if (!pending) return;
-			if (deferWrite) queueMicrotask(() => writeSource(value, false));
-			else writeSource(value, false);
-		};
-
-		const finish = () => {
-			close();
+		/** Writes the block: its source, and its language when the sheet changed it (SMILES drawn into SDF, made 3D). */
+		const write = (next: { info: string; source: string }) => {
 			const pos = getPos();
-			if (pos == null) return;
-			const current = view.state.doc.nodeAt(pos);
-			if (!current) return;
-			const after = pos + current.nodeSize;
-			const next = view.state.doc.resolve(after).nodeAfter;
-			// Never land in the next science block or formula: that would open its popup.
-			const selection =
-				next?.isTextblock && !next.type.spec.code
-					? TextSelection.create(view.state.doc, after + 1)
-					: NodeSelection.create(view.state.doc, pos);
-			view.dispatch(view.state.tr.setSelection(selection).setMeta('addToHistory', false).scrollIntoView());
-			view.focus();
+			const found = current();
+			if (pos == null || !found) return;
+			if (found.textContent === next.source && found.attrs.language === next.info) return;
+			const replacement = found.type.create({ ...found.attrs, language: next.info }, next.source ? view.state.schema.text(next.source) : null);
+			const tr = view.state.tr.replaceWith(pos, pos + found.nodeSize, replacement);
+			view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, pos)));
 		};
-
-		const remove = () => {
-			clearTimeout(pendingWrite);
-			pendingWrite = undefined;
-			close();
-			const pos = getPos();
-			if (pos == null) return;
-			const current = view.state.doc.nodeAt(pos);
-			const paragraph = view.state.schema.nodes.paragraph;
-			if (!current || !paragraph) return;
-			const tr = view.state.tr.replaceWith(pos, pos + current.nodeSize, paragraph.create());
-			tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1), 1));
-			view.dispatch(tr.scrollIntoView());
-			view.focus();
-		};
-
-		const previewInPopup = (host: HTMLElement, value: string) => {
-			clearTimeout(popupPreviewTimer);
-			const paint = () => {
-				const source = value.trim();
-				host.classList.toggle('is-empty', !source);
-				if (!source) {
-					host.textContent = '预览';
-					return;
-				}
-				paintMolecule(host, String(node.attrs.language ?? ''), source);
-				hydrateSciencePreviews(host);
-			};
-			if (!host.hasChildNodes()) paint();
-			else popupPreviewTimer = setTimeout(paint, POPUP_PREVIEW_DEBOUNCE_MS);
-		};
-
-		/** Draw in the structure editor, from the popup's text when it is open, and write what was saved back into the block. */
-		const draw = async () => {
-			const info = String(node.attrs.language ?? '');
-			const source = popup ? popup.value : node.textContent;
-			const form = structureDrawing(info, source);
-			if (!form) {
-				window.alert('这段内容带三维坐标或引用了文件，二维结构编辑器画不了。');
-				return;
-			}
-			close();
-			let drawn: DrawnStructure | null;
-			try {
-				drawn = await drawStructure(form, info, source, `画结构：${scienceBlockKindLabel(info)}`);
-			} catch (error) {
-				window.alert(error instanceof Error ? error.message : String(error));
-				return;
-			}
-			if (drawn) writeSource(drawn.source, true, drawn.info);
-			else selectBlock();
-			view.focus();
-		};
-
-		const open = () => {
-			if (popup) return;
-			const info = String(node.attrs.language ?? '');
-			const editor = scienceSourceEditor(info);
-			const drawable = structureDrawing(info, node.textContent) !== null;
-			popup = new SourcePopup({
-				label: `${editor.label} 结构`,
-				placeholder: editor.placeholder,
-				value: node.textContent,
-				rows: editor.inline ? 2 : 8,
-				variant: editor.inline ? 'is-molecule-inline' : 'is-molecule',
-				caption: `${editor.label} · Esc 完成`,
-				actions: drawable ? [{ label: '画结构', title: '在结构编辑器里画', run: () => void draw() }] : undefined,
-				placement: editor.inline ? 'over' : 'below',
-				owner: dom,
-				anchor: () => dom.getBoundingClientRect(),
-				width: (anchor) => (editor.inline ? 440 : Math.min(720, Math.max(anchor.width, 520))),
-				maxInputHeight: () => (editor.inline ? 160 : Math.max(160, Math.min(420, window.innerHeight * 0.45))),
-				preview: editor.inline ? previewInPopup : undefined,
-				onInput: (value) => {
-					if (editor.inline) {
-						writeSource(value, true);
-						return;
-					}
-					clearTimeout(pendingWrite);
-					pendingWrite = setTimeout(() => {
-						pendingWrite = undefined;
-						writeSource(value, true);
-					}, SOURCE_WRITE_DEBOUNCE_MS);
-				},
-				onFinish: finish,
-				onRemove: remove,
-				onDismiss: () => close(),
-			});
-			// Focus leaves the editor before anything in it changes. While the editor held
-			// focus, ProseMirror would re-read the browser's selection on the next DOM
-			// change and could move it off this block, which closes the popup at once.
-			popup.focus();
-			dom.classList.add('is-open');
-			dom.classList.toggle('is-inline-source', editor.inline);
-			editButton.textContent = '完成';
-			// Opening can happen inside a view update; select the block once it settles.
-			queueMicrotask(() => {
-				const pos = getPos();
-				if (!popup || pos == null) return;
-				const selection = view.state.selection;
-				if (!(selection instanceof NodeSelection) || selection.from !== pos) {
-					view.dispatch(
-						view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)).setMeta('addToHistory', false),
-					);
-				}
-				popup?.focus();
-			});
-		};
-
-		const sync = () => {
-			const pos = getPos();
-			if (pos == null) return;
-			const current = view.state.doc.nodeAt(pos);
-			if (!current || current.type.name !== SCIENCE_FENCE_TYPE) return;
-			if (caretInside(pos, current)) {
-				open();
-				return;
-			}
-			const selection = view.state.selection;
-			if (popup && !(selection instanceof NodeSelection && selection.from === pos)) close(true);
-		};
-		const unregister = trackScienceView(sync);
 
 		const selectBlock = () => {
 			const pos = getPos();
 			if (pos == null) return;
 			const selection = view.state.selection;
 			if (selection instanceof NodeSelection && selection.from === pos) return;
-			view.dispatch(
-				view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)).setMeta('addToHistory', false),
-			);
+			view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)).setMeta('addToHistory', false));
 			view.focus();
 		};
+
+		/** A block left empty when its sheet closes goes, as an empty block does in Notion. */
+		const closed = () => {
+			sheet = null;
+			dom.classList.remove('is-open');
+			if (destroyed) return;
+			const pos = getPos();
+			const found = current();
+			if (pos == null || !found) return;
+			if (!found.textContent.trim()) {
+				const paragraph = view.state.schema.nodes.paragraph;
+				if (!paragraph) return;
+				const tr = view.state.tr.replaceWith(pos, pos + found.nodeSize, paragraph.create());
+				tr.setSelection(TextSelection.near(tr.doc.resolve(pos + 1), 1));
+				view.dispatch(tr.scrollIntoView());
+				view.focus();
+				return;
+			}
+			selectBlock();
+		};
+
+		const open = (tab?: 'structure' | 'source') => {
+			if (sheet?.isOpen()) return;
+			const asked = takeNextTab();
+			const wanted = tab ?? asked ?? (node.textContent.trim() ? 'structure' : 'source');
+			sheet = openScienceSheet(
+				{
+					read: () => {
+						const found = current();
+						return found ? { info: String(found.attrs.language ?? ''), source: found.textContent } : null;
+					},
+					write,
+					onClose: closed,
+				},
+				wanted,
+			);
+			if (sheet) dom.classList.add('is-open');
+			// The block stays selected under its sheet; ProseMirror would draw a caret inside a node with no editable DOM.
+			queueMicrotask(() => {
+				const pos = getPos();
+				if (pos == null || destroyed) return;
+				const selection = view.state.selection;
+				if (!(selection instanceof NodeSelection && selection.from === pos)) {
+					view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, pos)).setMeta('addToHistory', false));
+				}
+			});
+		};
+
+		const caretInside = (pos: number, found: ProseMirrorNode): boolean => {
+			const selection = view.state.selection;
+			return selection instanceof TextSelection && selection.from > pos && selection.to < pos + found.nodeSize;
+		};
+		const sync = () => {
+			const pos = getPos();
+			const found = current();
+			if (pos == null || !found) return;
+			if (caretInside(pos, found)) open();
+		};
+		const unregister = trackScienceView(sync);
 
 		caption.addEventListener('mousedown', (event) => {
 			const button = event.target instanceof Element ? event.target.closest('button') : null;
@@ -333,18 +224,16 @@ export const scienceBlockView = $view(scienceBlockSchema.schema.node, (ctx) => {
 			const pos = getPos();
 			if (pos == null) return;
 			if (button === menuButton) {
-				close();
 				ctx.get(blockMenuAPI.key).toggle(pos, menuButton);
 				return;
 			}
-			if (popup) finish();
-			else open();
+			open();
 		});
 
 		placeholder.addEventListener('mousedown', (event) => {
 			if (event.button !== 0) return;
 			event.preventDefault();
-			open();
+			open('source');
 		});
 
 		const onViewerControl = (target: EventTarget | null): boolean =>
@@ -372,31 +261,31 @@ export const scienceBlockView = $view(scienceBlockSchema.schema.node, (ctx) => {
 		preview.addEventListener('dblclick', (event) => {
 			if (onViewerControl(event.target)) return;
 			event.preventDefault();
-			// A 2D structure opens straight in the structure editor; anything else edits as text.
-			if (structureDrawing(String(node.attrs.language ?? ''), node.textContent)) void draw();
-			else open();
+			open();
 		});
 
 		return {
 			dom,
 			update: (updated: ProseMirrorNode) => {
 				if (updated.type.name !== SCIENCE_FENCE_TYPE) return false;
+				const changed = updated.textContent !== node.textContent || updated.attrs.language !== node.attrs.language;
 				node = updated;
 				dom.classList.toggle('is-empty', updated.textContent.length === 0);
 				clearTimeout(timer);
 				timer = setTimeout(() => render(updated), PREVIEW_DEBOUNCE_MS);
-				// Follow undo or other outside edits, never our own pending keystrokes.
-				if (!writing && pendingWrite === undefined) popup?.setValue(updated.textContent);
+				// Undone, or changed on disk: the sheet shows it as it is now (its own writes it already shows).
+				if (changed && sheet?.isOpen()) {
+					sheet.redraw('structure');
+					sheet.redraw('source');
+				}
 				return true;
 			},
 			// Without this ProseMirror would try to draw a caret inside a node with no editable DOM.
 			setSelection: () => open(),
 			destroy: () => {
+				destroyed = true;
 				clearTimeout(timer);
-				clearTimeout(pendingWrite);
-				clearTimeout(popupPreviewTimer);
-				popup?.destroy();
-				popup = null;
+				sheet?.close();
 				unregister();
 			},
 			// Renderers write SVG and canvases here; none of it is document content.

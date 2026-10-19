@@ -187,3 +187,25 @@ export async function open3DEditor(host: HTMLElement, source: string, { changed 
 		},
 	};
 }
+
+let forceField: Promise<void> | null = null;
+
+/**
+ * A structure given flat (a molfile with 2D coordinates) as one in 3D, its
+ * hydrogens added, by OpenChemLib's conformer generation and force field
+ * (RetainMol's generate3D). Resolves to the molfile in 3D.
+ */
+export async function molfileTo3D(molfile: string): Promise<string> {
+	const { io } = await load();
+	// openchemlib does not export its resources: named by where npm puts them. They must match its version, which this does.
+	forceField ??= import('../../../node_modules/openchemlib/dist/resources.json?url').then(({ default: url }) => io.registerForceFieldFromUrl(url));
+	forceField.catch(() => {
+		forceField = null;
+	});
+	await forceField;
+	const parsed = io.parseMol(molfile);
+	if (!parsed.atoms.length) throw new Error('结构里没有原子');
+	const generated = io.generate3D(parsed);
+	if (!generated.ok) throw new Error(generated.reason ?? '生成三维结构失败');
+	return io.exportMol(generated.molecule);
+}

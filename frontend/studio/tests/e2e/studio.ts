@@ -104,29 +104,35 @@ export async function openStudio(page: Page, { autosaveDelay = 600_000 }: { auto
 export const editor = (page: Page): Locator => page.locator('.milkdown .ProseMirror');
 export const popup = (page: Page): Locator => page.locator('.pm-source-popup');
 export const popupInput = (page: Page): Locator => page.locator('.pm-source-popup-input');
-export const structureSheet = (page: Page): Locator => page.locator('.chem-sheet');
 export const saveStatus = (page: Page): Locator => page.locator('#save-status');
 export const inlineFormulas = (page: Page): Locator => editor(page).locator('[data-type="math_inline"], .pm-inline-math');
 export const displayFormulas = (page: Page): Locator => editor(page).locator('.pm-display-math');
+
+/** The sheet a block's details are in (@blog/ui block-sheet), while it is open. */
+export const blockSheet = (page: Page): Locator => page.locator('dialog.block-sheet[open]');
+export const sheetTab = (page: Page, name: string): Locator => blockSheet(page).locator('.block-sheet-tab', { hasText: name });
 
 /** The science block whose caption names this kind (SMILES, SDF, XYZ…). */
 export function scienceBlock(page: Page, kind: string): Locator {
 	return page.locator('.science-block').filter({ has: page.locator('.science-block-kind', { hasText: new RegExp(`^${kind}$`) }) });
 }
 
-/** The structure editor has closed and the page it made inert takes clicks again. */
-export async function sheetClosed(page: Page): Promise<void> {
-	await expect(structureSheet(page)).toHaveCount(0);
-	await expect(page.locator('[inert]')).toHaveCount(0);
-}
-
-/** Open a chemistry block's source popup through its 编辑 button; the popup's textarea. */
+/** Open a chemistry block's sheet through its 编辑 button, on 源码; its textarea. */
 export async function openSource(page: Page, kind: string): Promise<Locator> {
 	const block = scienceBlock(page, kind);
 	await block.hover();
 	await block.locator('.science-block-edit').click();
-	await expect(popupInput(page)).toBeVisible();
-	return popupInput(page);
+	await expect(blockSheet(page)).toBeVisible();
+	await sheetTab(page, '源码').click();
+	const source = blockSheet(page).locator('.science-sheet-source');
+	await expect(source).toBeVisible();
+	return source;
+}
+
+/** Close the sheet open, as Esc does, and wait until it is gone. */
+export async function closeSheet(page: Page): Promise<void> {
+	await page.keyboard.press('Escape');
+	await expect(blockSheet(page)).toHaveCount(0);
 }
 
 /** Paste as a browser would, with the clipboard holding HTML (when given) and plain text. */

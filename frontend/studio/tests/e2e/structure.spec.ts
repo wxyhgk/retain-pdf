@@ -1,53 +1,61 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-import { openSource, openStudio, resetFixture, scienceBlock, sheetClosed, structureSheet } from './studio.ts';
+import { blockSheet, closeSheet, openSource, openStudio, resetFixture, savedMarkdown, scienceBlock, sheetTab } from './studio.ts';
+
+// A flat structure (SMILES, a 2D SDF) is drawn in its sheet, in the structure
+// editor (chem-structura); what is drawn is written back a moment later.
 
 test.beforeEach(async ({ page }) => {
 	resetFixture();
 	await openStudio(page);
 });
 
-test('double-clicking a 2D structure opens the structure editor; 取消 and Esc leave it alone', async ({ page }) => {
+const editorIn = (page: Page) => blockSheet(page).locator('.science-sheet-editor .chem-app');
+
+test('double-clicking a 2D structure opens its sheet with the structure editor; closing it changes nothing', async ({ page }) => {
 	await scienceBlock(page, 'SMILES').locator('.science-block-preview').dblclick();
-	await expect(structureSheet(page)).toBeVisible();
-	await expect(page.locator('.pm-source-popup')).toHaveCount(0);
-	await structureSheet(page).getByRole('button', { name: '取消' }).click();
-	await sheetClosed(page);
+	await expect(editorIn(page)).toBeVisible();
+	await expect(sheetTab(page, '结构')).toHaveAttribute('aria-selected', 'true');
+	await closeSheet(page);
+	await expect(await openSource(page, 'SMILES')).toHaveValue('CC(=O)Oc1ccccc1C(=O)O');
+	await closeSheet(page);
 
 	await scienceBlock(page, 'SDF').locator('.science-block-preview').dblclick();
-	await expect(structureSheet(page)).toBeVisible();
-	await structureSheet(page).getByRole('button', { name: '取消' }).focus();
-	await page.keyboard.press('Escape');
-	await sheetClosed(page);
+	await expect(editorIn(page)).toBeVisible();
+	await closeSheet(page);
 	await expect(await openSource(page, 'SDF')).toHaveValue(/^Water\n/);
 });
 
-test('saving an unchanged SMILES structure keeps the author’s SMILES', async ({ page }) => {
+test('a drawn change comes back as SMILES; an SDF block gets the editor’s molfile', async ({ page }) => {
 	await scienceBlock(page, 'SMILES').locator('.science-block-preview').dblclick();
-	await expect(structureSheet(page).locator('canvas, svg').first()).toBeVisible();
-	await structureSheet(page).getByRole('button', { name: '保存' }).click();
-	await sheetClosed(page);
-	await expect(await openSource(page, 'SMILES')).toHaveValue('CC(=O)Oc1ccccc1C(=O)O');
-});
-
-test('a drawn change comes back as SMILES, and an SDF block gets the editor’s molfile', async ({ page }) => {
-	await scienceBlock(page, 'SMILES').locator('.science-block-preview').dblclick();
-	const canvas = structureSheet(page).locator('.chem-sheet-editor');
-	await expect(canvas).toBeVisible();
-	const box = (await canvas.boundingBox())!;
+	const editor = editorIn(page);
+	await expect(editor).toBeVisible();
+	const box = (await editor.boundingBox())!;
 	// The bond tool is the default: a click on empty canvas draws an ethane.
-	await page.mouse.click(box.x + box.width * 0.15, box.y + box.height * 0.8);
-	await structureSheet(page).getByRole('button', { name: '保存' }).click();
-	await sheetClosed(page);
-	// The drawing comes back once RDKit has turned it into SMILES; the open popup follows.
-	await expect(await openSource(page, 'SMILES')).toHaveValue(/^[^\n]*\.[^\n]*$/);
-	await page.keyboard.press('Escape');
+	await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.85);
+	// Written back once RDKit has turned the drawing into SMILES.
+	await sheetTab(page, '源码').click();
+	await expect(blockSheet(page).locator('.science-sheet-source')).toHaveValue(/^[^\n]*\.[^\n]*$/);
+	await closeSheet(page);
 
 	await scienceBlock(page, 'SDF').locator('.science-block-preview').dblclick();
-	await expect(structureSheet(page)).toBeVisible();
-	await structureSheet(page).getByRole('button', { name: '保存' }).click();
-	await sheetClosed(page);
-	await expect(await openSource(page, 'SDF')).toHaveValue(/V2000[\s\S]*M {2}END/);
-	await page.keyboard.press('Escape');
+	const sdfEditor = editorIn(page);
+	await expect(sdfEditor).toBeVisible();
+	const sdfBox = (await sdfEditor.boundingBox())!;
+	await page.mouse.click(sdfBox.x + sdfBox.width * 0.3, sdfBox.y + sdfBox.height * 0.85);
+	await sheetTab(page, '源码').click();
+	await expect(blockSheet(page).locator('.science-sheet-source')).toHaveValue(/V2000[\s\S]*M {2}END/);
+	await closeSheet(page);
 	await expect(scienceBlock(page, 'SDF').locator('.chem-2d svg')).toBeVisible();
+});
+
+test('a SMILES made 3D: an SDF block in space, hydrogens added, edited in the 3D editor', async ({ page }) => {
+	await scienceBlock(page, 'SMILES').locator('.science-block-preview').dblclick();
+	await blockSheet(page).locator('.block-sheet-action', { hasText: '生成三维结构' }).click();
+	await expect(blockSheet(page).locator('.m3d-status')).toHaveText('C9H8O4 · 21 个原子', { timeout: 30_000 });
+	await expect(blockSheet(page).locator('.block-sheet-title')).toHaveText('SDF');
+	await expect(blockSheet(page).locator('.block-sheet-action')).toHaveCount(0);
+	await closeSheet(page);
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect.poll(savedMarkdown).toMatch(/```sdf\n[^\n]*\n\s*OCL MolfileCreator\s+3D[\s\S]* 21 21 [\s\S]*M {2}END\n```/u);
 });

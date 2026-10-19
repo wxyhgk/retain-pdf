@@ -2,16 +2,16 @@ import { expect, test } from '@playwright/test';
 
 import {
 	appendToFixture,
+	blockSheet,
 	caretAfter,
+	closeSheet,
 	openSource,
 	openStudio,
-	popup,
-	popupInput,
 	resetFixture,
 	savedMarkdown,
 	saveStatus,
 	scienceBlock,
-	structureSheet,
+	sheetTab,
 } from './studio.ts';
 
 const WATER = [
@@ -42,83 +42,83 @@ test('a click selects a chemistry block without opening anything', async ({ page
 	const smiles = scienceBlock(page, 'SMILES');
 	await smiles.locator('.science-block-preview').click();
 	await expect(smiles).toHaveClass(/ProseMirror-selectednode/);
-	await expect(popup(page)).toHaveCount(0);
-	await expect(structureSheet(page)).toHaveCount(0);
+	await expect(blockSheet(page)).toHaveCount(0);
 });
 
-test('a 3D block double-clicked opens its source popup below the block', async ({ page }) => {
+test('a 3D block double-clicked opens its sheet: the structure in the 3D editor, its source beside', async ({ page }) => {
 	const xyz = scienceBlock(page, 'XYZ');
 	await xyz.locator('.science-block-preview').dblclick();
-	await expect(popup(page)).toHaveClass(/is-molecule/);
-	await expect(popupInput(page)).toBeFocused();
-	await expect(popupInput(page)).toHaveValue(/^3\nwater/);
-	const block = await xyz.boundingBox();
-	const box = await popup(page).boundingBox();
-	expect(box!.y >= block!.y + block!.height - 1 || box!.y + box!.height <= block!.y + 1).toBe(true);
-	await expect(popup(page).locator('.pm-source-popup-action')).toHaveCount(0);
-	await page.keyboard.press('Escape');
-	await expect(popup(page)).toHaveCount(0);
+	await expect(blockSheet(page).locator('.block-sheet-title')).toHaveText('XYZ');
+	await expect(sheetTab(page, '结构')).toHaveAttribute('aria-selected', 'true');
+	await expect(blockSheet(page).locator('.m3d-stage canvas').first()).toBeVisible();
+	await expect(blockSheet(page).locator('.m3d-status')).toHaveText('H2O · 3 个原子');
+	// A 3D structure has nothing to be made 3D.
+	await expect(blockSheet(page).locator('.block-sheet-action')).toHaveCount(0);
+	await sheetTab(page, '源码').click();
+	await expect(blockSheet(page).locator('.science-sheet-source')).toHaveValue(/^3\nwater/);
+	await closeSheet(page);
+	await expect(xyz).toHaveClass(/ProseMirror-selectednode/);
 });
 
-test('编辑 on SMILES opens the inline popup with a preview and 画结构', async ({ page }) => {
+test('编辑 on SMILES opens its sheet: drawn in the structure editor, or written, previewed as typed', async ({ page }) => {
 	const smiles = scienceBlock(page, 'SMILES');
 	await smiles.hover();
 	await smiles.locator('.science-block-edit').click();
-	await expect(popup(page)).toHaveClass(/is-molecule-inline/);
-	await expect(popupInput(page)).toHaveValue('CC(=O)Oc1ccccc1C(=O)O');
-	await expect(popup(page).locator('.pm-source-popup-preview svg')).toBeVisible();
-	await expect(popup(page).getByRole('button', { name: '画结构' })).toBeVisible();
-	await page.keyboard.type('C');
+	await expect(blockSheet(page).locator('.science-sheet-editor .chem-app')).toBeVisible();
+	await expect(blockSheet(page).locator('.block-sheet-action')).toHaveText('生成三维结构');
+	await sheetTab(page, '源码').click();
+	const source = blockSheet(page).locator('.science-sheet-source');
+	await expect(source).toHaveValue('CC(=O)Oc1ccccc1C(=O)O');
+	await expect(blockSheet(page).locator('.science-sheet-preview svg')).toBeVisible();
+	await source.press('End');
+	await source.pressSequentially('C');
 	await expect(saveStatus(page)).toHaveText('未保存');
-	await page.keyboard.press('Escape');
-	await expect(popup(page)).toHaveCount(0);
+	await closeSheet(page);
+	await expect(smiles.locator('.science-block-preview figcaption')).toContainText('CC(=O)Oc1ccccc1C(=O)OC');
 });
 
-test('Enter on a selected block and the menu’s 编辑源码 open the popup', async ({ page }) => {
+test('Enter on a selected block opens its sheet; the menu’s 编辑源码 opens it on 源码', async ({ page }) => {
 	const xyz = scienceBlock(page, 'XYZ');
 	await xyz.locator('.science-block-preview').click();
 	await page.keyboard.press('Enter');
-	await expect(popupInput(page)).toBeFocused();
-	await page.keyboard.press('Escape');
-	await expect(popup(page)).toHaveCount(0);
+	await expect(sheetTab(page, '结构')).toHaveAttribute('aria-selected', 'true');
+	await closeSheet(page);
 
 	const sdf = scienceBlock(page, 'SDF');
 	await sdf.hover();
 	await sdf.locator('.science-block-menu-button').click();
 	await page.locator('.milkdown-block-menu [data-key="edit"]').click();
-	await expect(popupInput(page)).toBeFocused();
-	await expect(popupInput(page)).toHaveValue(/M {2}END/);
+	await expect(sheetTab(page, '源码')).toHaveAttribute('aria-selected', 'true');
+	await expect(blockSheet(page).locator('.science-sheet-source')).toBeFocused();
+	await expect(blockSheet(page).locator('.science-sheet-source')).toHaveValue(/M {2}END/);
 });
 
-test('clicking outside closes the popup; Backspace in an empty source removes the block', async ({ page }) => {
-	const smiles = scienceBlock(page, 'SMILES');
-	await smiles.hover();
-	await smiles.locator('.science-block-edit').click();
-	await page.locator('.document-header, h1').first().click();
-	await expect(popup(page)).toHaveCount(0);
-
-	await smiles.hover();
-	await smiles.locator('.science-block-edit').click();
-	await page.keyboard.press('ControlOrMeta+a');
-	await page.keyboard.press('Backspace');
-	await expect(smiles).toHaveClass(/is-empty/);
-	await page.keyboard.press('Backspace');
+test('a block left empty when its sheet closes goes, as in Notion', async ({ page }) => {
+	const source = await openSource(page, 'SMILES');
+	await source.fill('');
+	await expect(scienceBlock(page, 'SMILES')).toHaveClass(/is-empty/);
+	await closeSheet(page);
 	await expect(page.locator('.science-block')).toHaveCount(2);
-	await expect(popup(page)).toHaveCount(0);
+	await expect(scienceBlock(page, 'SMILES')).toHaveCount(0);
 });
 
-test('a fence typed with a chemistry language becomes a chemistry block', async ({ page }) => {
+test('a fence typed with a chemistry language becomes a chemistry block, its sheet open on 源码', async ({ page }) => {
 	await caretAfter(page, '结尾段落。');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('```xyz ');
 	await expect(scienceBlock(page, 'XYZ')).toHaveCount(2);
 	await expect(page.locator('.milkdown pre[data-language="xyz"], .milkdown .milkdown-code-block')).toHaveCount(0);
+	await expect(sheetTab(page, '源码')).toHaveAttribute('aria-selected', 'true');
+	await expect(blockSheet(page).locator('.science-sheet-source')).toBeFocused();
+	await page.keyboard.type('1\nhelium\nHe 0 0 0');
+	await closeSheet(page);
+	await expect(scienceBlock(page, 'XYZ')).toHaveCount(2);
 });
 
 test('an edited block keeps its fence: tildes and what follows the language', async ({ page }) => {
 	const input = await openSource(page, 'mol');
 	await input.fill(WATER.replace('Water', 'Water, edited'));
-	await page.keyboard.press('Escape');
+	await closeSheet(page);
 	await expect(saveStatus(page)).toHaveText('未保存');
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
