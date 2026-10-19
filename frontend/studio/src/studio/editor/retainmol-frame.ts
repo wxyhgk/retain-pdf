@@ -1,8 +1,8 @@
 import './retainmol-frame.css';
 
 /**
- * RetainMol, the author's molecule editor, in a frame of a sheet: Ketcher's
- * 2D sketch and its 3D builder side by side, with its inspector (elements,
+ * RetainMol, the author's molecule editor, in a frame of a sheet: its 2D
+ * editor (chem-structura) and its 3D builder side by side, with its inspector (elements,
  * hybridization, rings, fragments, PubChem, clean-up). It runs as a project
  * of its own (retainmol-host.mjs starts it); here it is in its embedded
  * mode, which takes a structure and tells every change to it:
