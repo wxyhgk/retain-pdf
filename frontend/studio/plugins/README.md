@@ -91,6 +91,14 @@ export function apply(ctx: Context): void {
 5. `server.mjs`（需要的话）：`ctx.routes` 挂接口，Studio 那边用 `ctx.studio.api` 调。
 6. 测试放在 `test/`：`*.test.ts` 跟单元测试一起跑，`*.test.mjs` 跟服务器测试一起跑。构建的测试可以用 `@blog/kernel/testing.mjs` 的 `buildBlocks(插件)`，见 `job/test/build.test.ts`。
 
+## 开关
+
+Studio 左栏底部的「插件」列出 `plugins/` 里的每个插件：它在哪些环境里、现在怎么样（运行中、没能启动及原因、在等服务）、一个开关。
+
+- 关掉一个插件：它的 `studio.ts` 和 `server.mjs` 马上撤下（注册的一切都撤），不用刷新、不用重启；块插件关掉后，那种代码块在编辑器里显示成普通代码。
+- 开关记在 `.studio-settings.json` 的 `plugins.disabled`（不进 git）。博客构建和发布的页面不看它，照常用全部插件。
+- `studio.ts` 可以导出 `description`，一句话说明插件是做什么的，显示在这个面板里。
+
 ## 改了插件之后
 
 - **Studio 这边（`studio.ts` 和它引用的文件）是热插拔的：** 新建、修改、删除插件文件夹，Studio 不刷新页面，先把旧插件撤掉（它注册的一切都撤），再装上新的，别的插件不动。右下角会提示「已重新载入插件：…」；启动失败就用红色提示原因，改好后会自动再试。

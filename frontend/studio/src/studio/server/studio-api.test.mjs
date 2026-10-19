@@ -325,3 +325,29 @@ test('a plugin answers under /api/studio/plugins/, after the same checks as the 
 	assert.equal((await call(middleware, { url: '/api/studio/plugins/nothing', method: 'GET' })).status, 404);
 	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET', headers: { origin: 'https://example.com' } })).status, 403);
 });
+
+test('plugins are listed, and one turned off in the Studio leaves the server until it is turned on', async (t) => {
+	const middleware = await apiFixture(t, { plugins: true });
+	const runs = '/api/studio/plugins/job/articles/api-note/jobs/opt/runs';
+	const list = await call(middleware, { url: '/api/studio/plugins', method: 'GET' });
+	assert.equal(list.status, 200);
+	assert.deepEqual(list.data.plugins.find((plugin) => plugin.id === 'job'), {
+		id: 'job',
+		entries: ['build.mjs', 'page.ts', 'studio.ts', 'server.mjs'],
+		enabled: true,
+		server: { state: 'active' },
+	});
+
+	const off = await call(middleware, { url: '/api/studio/plugins', method: 'PUT', ...asJson({ id: 'job', enabled: false }) });
+	assert.deepEqual(off.data.plugins.find((plugin) => plugin.id === 'job'), { id: 'job', entries: ['build.mjs', 'page.ts', 'studio.ts', 'server.mjs'], enabled: false, server: { state: 'off' } });
+	assert.equal((await call(middleware, { url: runs, method: 'GET' })).status, 404);
+	const settings = JSON.parse(await readFile(join(middleware.paths.directory, '..', '.studio-settings.json'), 'utf8'));
+	assert.deepEqual(settings.plugins, { disabled: ['job'] });
+
+	await call(middleware, { url: '/api/studio/plugins', method: 'PUT', ...asJson({ id: 'job', enabled: true }) });
+	assert.deepEqual(await call(middleware, { url: runs, method: 'GET' }), { status: 200, data: { runs: [] } });
+
+	assert.equal((await call(middleware, { url: '/api/studio/plugins', method: 'PUT', ...asJson({ id: 'nothing', enabled: false }) })).status, 404);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins', method: 'PUT', ...asJson({ id: 'job', enabled: 'no' }) })).status, 400);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins', method: 'PUT', body: '{}' })).status, 415);
+});

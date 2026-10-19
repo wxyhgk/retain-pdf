@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Blocks } from '../blocks.mjs';
-import { applyPlugins, Context, pluginProblems, syncPlugins } from '../index.mjs';
+import { applyPlugins, Context, pluginProblems, pluginStatus, syncPlugins } from '../index.mjs';
 import { created, readAnswer, Routes } from '../routes.mjs';
 
 async function kernel() {
@@ -96,9 +96,14 @@ test('a plugin that failed is not tried again until it changes, and one that is 
 	let tries = 0;
 	const broken = { apply() { tries += 1; throw new Error('坏了'); } };
 	assert.match((await syncPlugins(ctx, loaded, [{ id: 'look', module: broken }])).problems[0], /look.*坏了/u);
+	assert.deepEqual(pluginStatus(loaded.get('look')), { state: 'failed', error: '坏了' });
+	assert.deepEqual(pluginStatus(undefined), { state: 'off' });
 	assert.deepEqual(await syncPlugins(ctx, loaded, [{ id: 'look', module: broken }]), { changed: [], problems: [] });
 	assert.equal(tries, 1);
 	const fixed = { inject: ['blocks'], apply: (c: any) => c.blocks.register({ name: 'look', fence: 'look' }) };
 	assert.deepEqual(await syncPlugins(ctx, loaded, [{ id: 'look', module: fixed }]), { changed: ['look'], problems: [] });
 	assert.equal(ctx.blocks.get('look').name, 'look');
+	assert.deepEqual(pluginStatus(loaded.get('look')), { state: 'active' });
+	await syncPlugins(ctx, loaded, [{ id: 'waits', module: { inject: ['nothing'], apply() {} } }]);
+	assert.deepEqual(pluginStatus(loaded.get('waits')), { state: 'waiting' });
 });

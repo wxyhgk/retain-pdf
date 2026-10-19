@@ -328,3 +328,20 @@ export const pluginApi = {
 	post: <T>(path: string, body: unknown = {}) => request<T>(`/api/studio/plugins${path}`, jsonOptions('POST', body)),
 	put: <T>(path: string, body: unknown) => request<T>(`/api/studio/plugins${path}`, jsonOptions('PUT', body)),
 };
+
+/** One of the project's plugins (plugins/<id>/): the environments it is in, whether it is on in the Studio, how its server side is doing. */
+export type PluginEntry = {
+	id: string;
+	entries: Array<'build.mjs' | 'page.ts' | 'studio.ts' | 'server.mjs'>;
+	enabled: boolean;
+	server: { state: 'off' | 'active' | 'waiting' | 'failed'; error?: string } | null;
+};
+
+export async function listPlugins(): Promise<PluginEntry[]> {
+	return (await request<{ plugins: PluginEntry[] }>('/api/studio/plugins')).plugins;
+}
+
+/** Turns a plugin on or off in the Studio (and on its server); resolves with them all. */
+export async function setPluginEnabled(id: string, enabled: boolean): Promise<PluginEntry[]> {
+	return (await request<{ plugins: PluginEntry[] }>('/api/studio/plugins', jsonOptions('PUT', { id, enabled }))).plugins;
+}

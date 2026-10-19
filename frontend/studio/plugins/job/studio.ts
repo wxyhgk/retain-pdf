@@ -17,6 +17,7 @@ const ICON =
  * tabs (`ctx.sheetTabs`, as block-job).
  */
 export const name = 'block-job';
+export const description = '计算块（```job）：在笔记里搭分子、跑 xtb / CREST，每次运行都留着；计算机器在块的窗口里设置。';
 export const inject = ['studio', 'blocks', 'molecules', 'sheetTabs'];
 
 export function apply(ctx: Context): void {

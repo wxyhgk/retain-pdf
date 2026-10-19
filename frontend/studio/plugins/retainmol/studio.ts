@@ -10,6 +10,7 @@ import { closeRetainmol, openRetainmol, preloadRetainmol, setRetainmolStudio } f
  * has it at once.
  */
 export const name = 'molecules-retainmol';
+export const description = 'RetainMol 分子编辑器：计算块和化学块的「搭建」「结构」页签里用它画 2D、搭 3D。';
 export const inject = ['studio', 'molecules'];
 
 export function apply(ctx: Context): void {

@@ -69,7 +69,7 @@ export function pluginProblems(results) {
  * fiber }) is what is applied, kept up to date here; a plugin that failed
  * stays in it, without a fiber, until its module changes.
  * @param {import('@deepseek-ai/cordis').Context} ctx
- * @param {Map<string, { module: any, fiber: any }>} loaded
+ * @param {Map<string, { module: any, fiber: any, error?: string | null }>} loaded
  * @param {Array<{ id: string, module?: any, error?: unknown }>} plugins
  * @returns {Promise<{ changed: string[], problems: string[] }>}
  */
@@ -87,8 +87,22 @@ export async function syncPlugins(ctx, loaded, plugins) {
 	const applying = plugins.filter((plugin) => !loaded.has(plugin.id));
 	const results = await applyPlugins(ctx, applying);
 	results.forEach((result, index) => {
-		loaded.set(result.id, { module: applying[index].module, fiber: result.fiber ?? null });
+		loaded.set(result.id, { module: applying[index].module, fiber: result.fiber ?? null, error: result.error ?? null });
 		if (!changed.includes(result.id)) changed.push(result.id);
 	});
 	return { changed, problems: pluginProblems(results) };
+}
+
+/**
+ * How a plugin of `syncPlugins`' `loaded` is doing: off (not applied),
+ * active, waiting for a service no plugin provides, or failed (and why).
+ * @param {{ fiber: any, error?: string | null } | undefined} entry
+ * @returns {{ state: 'off' | 'active' | 'waiting' | 'failed', error?: string }}
+ */
+export function pluginStatus(entry) {
+	if (!entry) return { state: 'off' };
+	if (!entry.fiber) return { state: 'failed', error: entry.error ?? '没能启动' };
+	if (entry.fiber.state === PluginState.ACTIVE) return { state: 'active' };
+	if (entry.fiber.state === PluginState.PENDING) return { state: 'waiting' };
+	return { state: 'failed', error: entry.error ?? '没能启动' };
 }

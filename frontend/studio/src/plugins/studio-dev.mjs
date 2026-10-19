@@ -20,7 +20,8 @@ import { TerminalHost } from '../studio/server/terminal-host.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
 import { pageVersion, studioBlogRoot } from '../studio/server/page-version.mjs';
 import { atomicWriteText } from '../studio/server/atomic-write.mjs';
-import { serverKernel } from '@blog/kernel/node.mjs';
+import { listPlugins, serverKernel } from '@blog/kernel/node.mjs';
+import { PluginSettings } from '../studio/server/plugin-settings.mjs';
 import { readAnswer } from '@blog/kernel/routes.mjs';
 
 function json(response, status, data) {
@@ -130,7 +131,9 @@ export default function studioDev({ site } = {}) {
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
 			// What the project's plugins do on this server (plugins/*/server.mjs): their API, under /api/studio/plugins/.
 			const privateRoot = testBlogRoot ?? server.config.root;
-			const plugins = serverKernel(server.config.root, {
+			// Those turned off in the Studio (插件) are not applied.
+			const pluginSettings = new PluginSettings(settingsFile);
+			const plugins = pluginSettings.disabled().then((disabled) => serverKernel(server.config.root, {
 				projectRoot: server.config.root,
 				blogRoot,
 				settingsFile,
@@ -138,7 +141,7 @@ export default function studioDev({ site } = {}) {
 				testing: Boolean(testBlogRoot),
 				files: { articleFolder: (slug) => articleBundlePaths(blogRoot, slug).directory, inside: resolveInside, writeText: atomicWriteText },
 				logger: server.config.logger,
-			}, { warn: (message) => server.config.logger.warn(`[studio] ${message}`) });
+			}, { warn: (message) => server.config.logger.warn(`[studio] ${message}`), disabled }));
 			server.httpServer?.on('close', () => {
 				watcher.close();
 				terminals.close();
@@ -353,6 +356,25 @@ export default function studioDev({ site } = {}) {
 						if (typeof source !== 'string') return json(response, 400, { error: '文章内容必须是文本' });
 						await manager.locate(slug, '');
 						return json(response, 200, { issues: await checkArticle(blogRoot, slug, source) });
+					}
+
+					// The project's plugins (插件): each, the environments it is in, whether it is on, how its server side is doing; one turned on or off.
+					if (url.pathname === '/api/studio/plugins' && (request.method === 'GET' || request.method === 'PUT')) {
+						const kernel = await plugins;
+						let disabled = await pluginSettings.disabled();
+						if (request.method === 'PUT') {
+							const { id, enabled } = await readJsonChange(request);
+							if (!listPlugins(server.config.root).some((plugin) => plugin.id === id)) return json(response, 404, { error: `没有叫 ${id} 的插件` });
+							disabled = await pluginSettings.setEnabled(id, enabled);
+							await kernel.setDisabled(disabled);
+						}
+						return json(response, 200, {
+							plugins: listPlugins(server.config.root).map((plugin) => ({
+								...plugin,
+								enabled: !disabled.includes(plugin.id),
+								server: plugin.entries.includes('server.mjs') ? kernel.status(plugin.id) : null,
+							})),
+						});
 					}
 
 					// A plugin's API (plugins/*/server.mjs): what it answers, as JSON; a change must say it is JSON.

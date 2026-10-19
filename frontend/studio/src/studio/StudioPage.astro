@@ -57,6 +57,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 					<button id="new-article-secondary" type="button"><span>＋</span>新建文章</button>
 					<a href="/blog/"><span>◫</span>博客首页</a>
 					<button id="open-trash" type="button"><span>♲</span>回收站</button>
+					<button id="open-plugins" type="button"><span>⧉</span>插件</button>
 				</div>
 			</aside>
 
@@ -224,6 +225,17 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				</div>
 				<ul id="trash-list" class="trash-list"></ul>
 				<p id="trash-status" class="trash-status" role="status" aria-live="polite"></p>
+			</form>
+		</dialog>
+
+		<dialog id="plugins-dialog" class="article-dialog trash-view">
+			<form method="dialog">
+				<div class="dialog-heading">
+					<div><strong>插件</strong><span>plugins/ 里的每个文件夹。关掉只影响 Studio 和开发服务器，马上生效；博客构建和发布的页面照常用全部插件</span></div>
+					<button type="submit" aria-label="关闭">×</button>
+				</div>
+				<ul id="plugins-list" class="plugins-list"></ul>
+				<p id="plugins-status" class="trash-status" role="status" aria-live="polite"></p>
 			</form>
 		</dialog>
 

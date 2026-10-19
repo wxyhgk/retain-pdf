@@ -17,6 +17,10 @@ export declare function pluginProblems(results: PluginResult[]): string[];
 
 export declare function syncPlugins(
 	ctx: Context,
-	loaded: Map<string, { module: unknown; fiber: { dispose(): Promise<void>; state: number } | null }>,
+	loaded: Map<string, LoadedPlugin>,
 	plugins: Array<{ id: string; module?: unknown; error?: unknown }>,
 ): Promise<{ changed: string[]; problems: string[] }>;
+
+export type LoadedPlugin = { module: unknown; fiber: { dispose(): Promise<void>; state: number } | null; error?: string | null };
+export type PluginStatus = { state: 'off' | 'active' | 'waiting' | 'failed'; error?: string };
+export declare function pluginStatus(entry: LoadedPlugin | undefined): PluginStatus;

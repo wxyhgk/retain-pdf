@@ -19,6 +19,7 @@ import {
 	importDriveFile,
 	driveInfo,
 	pluginApi,
+	listPlugins,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -47,7 +48,8 @@ import { createDriveBrowser } from './workspace/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
-import { startStudioPlugins, studioPlugins } from './plugins';
+import { setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
+import { createPluginsDialog } from './workspace/plugins-dialog';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
 import { createBacklinks } from './workspace/backlinks';
@@ -342,14 +344,20 @@ watchDisk((changes) => {
 });
 
 // The project's plugins (plugins/*/studio.ts: the calculation block, RetainMol…), given the article open, its files and their API.
-void startStudioPlugins({
-	slug: () => session.slug,
-	fileUrl: studioFileUrl,
-	save: () => void session.flush(),
-	api: pluginApi,
-}).then((problems) => {
-	if (problems.length) showToast(problems.join('；'), true);
-});
+// Those turned off (插件) are left out; if the list cannot be read, all are put in.
+void listPlugins()
+	.then((plugins) => plugins.filter((plugin) => !plugin.enabled).map((plugin) => plugin.id), () => [])
+	.then((off) => startStudioPlugins({
+		slug: () => session.slug,
+		fileUrl: studioFileUrl,
+		save: () => void session.flush(),
+		api: pluginApi,
+	}, off))
+	.then((problems) => {
+		if (problems.length) showToast(problems.join('；'), true);
+	});
+const pluginsDialog = createPluginsDialog(document.querySelector<HTMLDialogElement>('#plugins-dialog')!, { info: studioPluginInfo, setEnabled: setStudioPluginEnabled });
+shell.querySelector('#open-plugins')!.addEventListener('click', () => void pluginsDialog.open());
 // A plugin edited (by hand or by an AI in the terminal) is put in again at once: said here; the article drawn again if its blocks changed.
 studioPlugins.on('studio/plugins-reloaded', (changed, problems) => {
 	showToast(problems.length ? problems.join('；') : `已重新载入插件：${changed.join('、')}`, problems.length > 0);
