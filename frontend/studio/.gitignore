@@ -34,6 +34,8 @@ playwright-report/
 .studio-settings.json
 # where the jobs running on other machines are (the Studio's 计算块)
 .studio-jobs.json
+# what the Studio builds for itself (RetainMol's page)
+.studio-cache/
 
 # earlier versions of articles the Studio keeps (ai/history), local only
 blog/*/ai/history/

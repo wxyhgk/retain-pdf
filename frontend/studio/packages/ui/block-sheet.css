@@ -1,6 +1,8 @@
 /* The window a block's details open in (block-sheet.ts). Black, white and gray; red only for stop and delete. */
 .block-sheet { box-sizing: border-box; width: min(94vw, 960px); height: min(86vh, 900px); max-width: none; max-height: none; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 18px 65px rgba(0, 0, 0, 0.22); font-size: 14px; line-height: 1.5; outline: none; }
-.block-sheet[open] { display: flex; flex-direction: column; }
+.block-sheet[open] { display: flex; flex-direction: column; position: fixed; }
+/* Kept from one opening to the next (sheetOverlay): over the sheet, taking no clicks itself. */
+.block-sheet-overlay { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
 .block-sheet::backdrop { background: rgba(15, 15, 15, 0.32); }
 
 .block-sheet-head { display: flex; flex: none; align-items: center; gap: 10px; padding: 12px 14px 10px 18px; }

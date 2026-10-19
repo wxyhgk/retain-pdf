@@ -1,6 +1,7 @@
 // RetainMol as the browser tests need it: a page that speaks its embedded
 // mode's messages (RetainMol's app/embed.ts) without starting RetainMol. It
-// shows what it was given; 改结构 sends back methanol as built (BUILT_XYZ,
+// shows what it was given (one frame is given molecule after molecule;
+// window.loads counts them); 改结构 sends back methanol as built (BUILT_XYZ,
 // BUILT_MOL in studio.ts); 保存 is ⌘S in its frame. The Studio is pointed at
 // it with STUDIO_RETAINMOL_URL.
 import { createServer } from 'node:http';
@@ -15,7 +16,8 @@ const post = (message) => parent.postMessage({ protocol: 'retainmol-embed', ...m
 const built = { mol: ${JSON.stringify(BUILT_MOL)}, xyz: ${JSON.stringify(BUILT_XYZ)}, atoms: 6, formula: 'CH4O' };
 addEventListener('message', (event) => {
   if (event.origin !== origin || event.data?.protocol !== 'retainmol-embed' || event.data.type !== 'load') return;
-  document.querySelector('#loaded').textContent = event.data.text.split('\\n').slice(0, 2).join(' / ');
+  window.loads = (window.loads ?? 0) + 1;
+  document.querySelector('#loaded').textContent = event.data.text ? event.data.text.split('\\n').slice(0, 2).join(' / ') : '（空）';
   post({ type: 'loaded', atoms: 3 });
   if (event.data.report) post({ type: 'changed', ...built });
 });

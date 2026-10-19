@@ -80,6 +80,23 @@ function sheetDialog(): HTMLDialogElement {
 	return dialog;
 }
 
+/**
+ * A layer of the sheet kept from one opening to the next (what a sheet
+ * shows is replaced each time): for something too slow to make again, a
+ * frame say, which moving in the page would load anew. It covers the sheet
+ * and takes no clicks; what is put in it places itself.
+ */
+export function sheetOverlay(): HTMLElement {
+	const sheet = sheetDialog();
+	let layer = sheet.querySelector<HTMLElement>(':scope > .block-sheet-overlay');
+	if (!layer) {
+		layer = element('div', 'block-sheet-overlay');
+		layer.dataset.sheetKeep = 'true';
+		sheet.append(layer);
+	}
+	return layer;
+}
+
 /** Opens the sheet with these tabs, replacing what it showed. */
 export function openBlockSheet(options: SheetOptions): OpenSheet {
 	const sheet = sheetDialog();
@@ -176,7 +193,9 @@ export function openBlockSheet(options: SheetOptions): OpenSheet {
 	};
 	sheet.addEventListener('keydown', keys);
 
-	sheet.replaceChildren(head, tabs, body);
+	// What it showed goes; its kept layer stays where it is (sheetOverlay): a frame taken out and put back would load anew.
+	for (const child of [...sheet.children]) if (!(child as HTMLElement).dataset.sheetKeep) child.remove();
+	sheet.prepend(head, tabs, body);
 	let open = true;
 	ending = () => {
 		open = false;

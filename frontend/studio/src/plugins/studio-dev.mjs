@@ -128,9 +128,12 @@ export default function studioDev({ site } = {}) {
 				stateFile: testBlogRoot ? resolve(testBlogRoot, '.studio-jobs.json') : resolve(server.config.root, '.studio-jobs.json'),
 			});
 			void jobRuns.resume();
-			// RetainMol, where molecules are built, started from its own checkout when first asked for.
+			// RetainMol, where molecules are built: built from its own checkout (again only when its code
+			// changed) and served from here, got ready now, so that the first sheet need not wait for it.
 			// The browser tests point it at a stand-in (STUDIO_RETAINMOL_URL).
 			const retainmol = new RetainmolHost({ projectRoot: server.config.root, settingsFile, fixedUrl: process.env.STUDIO_RETAINMOL_URL || null });
+			// Not for tests (their own articles, STUDIO_BLOG_DIR): they would build RetainMol for nothing.
+			if (!testBlogRoot) void retainmol.start().catch((error) => server.config.logger.warn(`[studio] RetainMol 没有准备好：${error.message}`));
 			server.httpServer?.on('close', () => {
 				watcher.close();
 				terminals.close();
@@ -352,7 +355,7 @@ export default function studioDev({ site } = {}) {
 						return json(response, 200, await detectHost(new JobShell(readHost(host))));
 					}
 
-					// RetainMol's address, started if it is not running (a minute, the first time).
+					// RetainMol's address, once built and served (built again only when its code changed).
 					if (url.pathname === '/api/studio/retainmol' && request.method === 'POST') {
 						assertContentType(request, 'application/json');
 						return json(response, 200, { url: await retainmol.start() });

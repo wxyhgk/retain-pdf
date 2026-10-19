@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { EventEmitter } from 'node:events';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -14,17 +14,28 @@ async function fixture(t) {
 	await writeFile(join(checkout, 'apps', 'retainmol', 'package.json'), '{}');
 	const project = join(folder, 'blog-repo');
 	await mkdir(project);
-	return { folder, checkout, project, settingsFile: join(project, '.studio-settings.json') };
+	return { folder, checkout, project, settingsFile: join(project, '.studio-settings.json'), cacheDir: join(project, '.studio-cache', 'retainmol') };
 }
 
-/** A process as spawn gives it, which exits when told to. */
-function fakeChild() {
-	const child = new EventEmitter();
-	child.pid = undefined;
-	child.stdout = new EventEmitter();
-	child.stderr = new EventEmitter();
-	child.kill = () => child.emit('exit', 0);
-	return child;
+/**
+ * RetainMol's build as the tests need it: `vite build` writes a page into
+ * its --outDir; the commands are recorded. `code` is what git says of it.
+ */
+function fakeTools(code) {
+	const ran = [];
+	return {
+		ran,
+		run: async (command, args, cwd) => {
+			ran.push(`${command} ${args[0]}${args[0] === 'vite' ? ` ${args[1]}` : ''} @ ${cwd.split('/').at(-1)}`);
+			if (args[0] === 'vite') {
+				const out = args[args.indexOf('--outDir') + 1];
+				await mkdir(join(out, 'assets'), { recursive: true });
+				await writeFile(join(out, 'index.html'), `<title>retainmol</title>${code.commit}`);
+				await writeFile(join(out, 'assets', 'app-1a2b.js'), 'console.log(1)');
+			}
+		},
+		git: async (args) => (args[0] === 'rev-parse' ? code.commit : args[0] === 'status' ? code.status : code.diff),
+	};
 }
 
 test('RetainMol is found where the settings say, or beside the repository; a folder without it is refused, saying where', async (t) => {
@@ -37,51 +48,59 @@ test('RetainMol is found where the settings say, or beside the repository; a fol
 	assert.equal(await host.root(), checkout);
 });
 
-test('started with its own dev server, once, and its address given when it answers; one running already is used', async (t) => {
-	const { project, settingsFile, checkout } = await fixture(t);
-	const spawned = [];
-	let answering = false;
-	const host = new RetainmolHost({
-		projectRoot: project,
-		settingsFile,
-		port: 5399,
-		spawnImpl: (command, args, options) => {
-			spawned.push({ command, args, cwd: options.cwd });
-			setTimeout(() => (answering = true), 50);
-			return fakeChild();
-		},
-		fetchImpl: async () => {
-			if (!answering) throw new Error('refused');
-			return new Response('<title>retainmol</title>');
-		},
-	});
-	const [first, second] = await Promise.all([host.start(), host.start()]);
-	assert.equal(first, 'http://127.0.0.1:5399');
-	assert.equal(second, first);
-	assert.deepEqual(spawned, [{ command: 'npm', args: ['run', 'dev', '--workspace', 'retainmol', '--', '--host', '127.0.0.1', '--port', '5399', '--strictPort'], cwd: checkout }]);
-	assert.equal(await host.start(), first);
-	assert.equal(spawned.length, 1);
+test('built once into the Studio’s cache and served from there; built again only when its code changed', async (t) => {
+	const { project, settingsFile, cacheDir } = await fixture(t);
+	const code = { commit: 'abc\n', status: '', diff: '' };
+	const tools = fakeTools(code);
+	const host = new RetainmolHost({ projectRoot: project, settingsFile, cacheDir, port: 0, ...tools });
+	t.after(() => host.close());
+	const [url, again] = await Promise.all([host.start(), host.start()]);
+	assert.equal(again, url);
+	assert.deepEqual(tools.ran, ['node scripts/copy-ocl-resources.mjs @ retainmol', 'npm run @ RetainMol', 'npx vite build @ retainmol']);
+
+	// Its page, its assets (kept by the browser: named by content), and any other address is its page.
+	const page = await fetch(`${url}/?embed=1`);
+	assert.equal(page.headers.get('cache-control'), 'no-cache');
+	assert.match(await page.text(), /^<title>retainmol<\/title>abc/u);
+	const asset = await fetch(`${url}/assets/app-1a2b.js`);
+	assert.equal(asset.headers.get('content-type'), 'text/javascript; charset=utf-8');
+	assert.match(asset.headers.get('cache-control') ?? '', /immutable/u);
+	assert.match(await (await fetch(`${url}/some/route`)).text(), /retainmol/u);
+	assert.equal((await fetch(`${url}/..%2f..%2fsecret`)).status, 403);
+
+	// Unchanged: not built again.
+	await host.start();
+	assert.equal(tools.ran.length, 3);
+	// Changed (an edit not committed): built again, and served as it is now.
+	code.diff = 'diff --git a/apps/retainmol/src/x.ts';
+	code.commit = 'abc-edited\n';
+	await host.start();
+	assert.equal(tools.ran.length, 6);
+	assert.match(await (await fetch(`${url}/`)).text(), /abc-edited/u);
 });
 
-test('a dev server that exits before answering is said, with what it printed; a fixed address is used without starting anything', async (t) => {
-	const { project, settingsFile } = await fixture(t);
-	const host = new RetainmolHost({
+test('its port taken: another one; a build that fails says why; a fixed address is used without building', async (t) => {
+	const { project, settingsFile, cacheDir } = await fixture(t);
+	const taken = createServer().listen(0, '127.0.0.1');
+	await new Promise((resolvePromise) => taken.on('listening', resolvePromise));
+	t.after(() => taken.close());
+	const busyPort = taken.address().port;
+	const host = new RetainmolHost({ projectRoot: project, settingsFile, cacheDir, port: busyPort, ...fakeTools({ commit: 'a', status: '', diff: '' }) });
+	t.after(() => host.close());
+	const url = await host.start();
+	assert.notEqual(new URL(url).port, String(busyPort));
+
+	const failing = new RetainmolHost({
 		projectRoot: project,
 		settingsFile,
-		spawnImpl: () => {
-			const child = fakeChild();
-			setTimeout(() => {
-				child.stderr.emit('data', 'Error: Port 5310 is already in use\n');
-				child.emit('exit', 1);
-			}, 20);
-			return child;
+		cacheDir: join(project, 'other-cache'),
+		run: async (command) => {
+			if (command === 'npm') throw new Error('npm run build:packages 失败：error TS2307');
 		},
-		fetchImpl: async () => {
-			throw new Error('refused');
-		},
+		git: async () => 'b',
 	});
-	await assert.rejects(host.start(), /RetainMol 没能启动：Error: Port 5310 is already in use/u);
+	await assert.rejects(failing.start(), /TS2307/u);
 
-	const fixed = new RetainmolHost({ projectRoot: project, settingsFile, fixedUrl: 'http://127.0.0.1:4999', spawnImpl: () => assert.fail('nothing started') });
+	const fixed = new RetainmolHost({ projectRoot: project, settingsFile, fixedUrl: 'http://127.0.0.1:4999', run: () => assert.fail('nothing built') });
 	assert.equal(await fixed.start(), 'http://127.0.0.1:4999');
 });

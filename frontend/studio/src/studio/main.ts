@@ -52,7 +52,7 @@ import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createComputeHostsDialog } from './workspace/compute-hosts-dialog';
 import { jobFilesChanged, setJobHost } from './editor/job-block';
-import { setRetainmolSave } from './editor/retainmol-frame';
+import { preloadRetainmol, setRetainmolSave } from './editor/retainmol-frame';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
 import { createBacklinks } from './workspace/backlinks';
@@ -591,4 +591,6 @@ openFromList().then(
 		outline.draw();
 		snapshot.ready();
 	});
+	// RetainMol (where molecules are built) loaded in the background, once the page has settled: a sheet opens on it at once.
+	window.setTimeout(preloadRetainmol, 3000);
 });

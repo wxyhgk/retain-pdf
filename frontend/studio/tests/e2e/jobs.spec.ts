@@ -109,9 +109,14 @@ test('a calculation is a card; its sheet sets it up, runs it, shows what it foun
 	await expect(sheet(page)).toHaveCount(0);
 	await expect(job.locator('.job-card-line')).toContainText('无虚频');
 
-	// Built anew in RetainMol: what is built goes into the block, and the card says its results are from before.
+	// Built anew in RetainMol: the same frame as before, given this block's molecule again (a new session).
+	const frame = await page.locator('iframe.retainmol-frame').elementHandle();
 	await job.dblclick();
 	await tab(page, '搭建').click();
+	await expect(page.locator('iframe.retainmol-frame')).toHaveCount(1);
+	expect(await page.evaluate((before) => before === document.querySelector('iframe.retainmol-frame'), frame)).toBe(true);
+	await expect.poll(() => retainmolFrame(page).locator('body').evaluate(() => (window as unknown as { loads: number }).loads)).toBe(2);
+	await expect(retainmolFrame(page).locator('#loaded')).toHaveText('3 / water');
 	await retainmolFrame(page).locator('#build').click();
 	await expect(sheet(page).locator('.block-sheet-note')).toHaveText('CH4O · 6 个原子，已写进块里。');
 	await expect(job.locator('.job-card-describe')).toContainText('结构改过了，这是改之前的结果');

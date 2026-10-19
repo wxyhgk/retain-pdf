@@ -1,24 +1,37 @@
+import { sheetOverlay } from '@blog/ui/block-sheet.ts';
 import './retainmol-frame.css';
 
 /**
- * RetainMol, the author's molecule editor, in a frame of a sheet: its 2D
- * editor (chem-structura) and its 3D builder side by side, with its inspector (elements,
- * hybridization, rings, fragments, PubChem, clean-up). It runs as a project
- * of its own (retainmol-host.mjs starts it); here it is in its embedded
- * mode, which takes a structure and tells every change to it:
+ * RetainMol, the author's molecule editor, in a sheet: its 2D editor
+ * (chem-structura) and its 3D builder side by side, with its inspector
+ * (elements, hybridization, rings, fragments, PubChem, clean-up). It is
+ * built and served by retainmol-host.mjs; here it is in its embedded mode,
+ * which takes a structure and tells every change to it:
  *
  *     page → frame   { protocol: 'retainmol-embed', type: 'load', text, report? }
  *     frame → page   ready · changed { mol, xyz, atoms, formula } · loaded · error · save
  *
- * Messages are taken only from that frame, at RetainMol's address.
+ * One frame for the page, loaded once (soon after the Studio opens) and
+ * kept in the sheet's kept layer: a sheet that shows RetainMol puts it over
+ * its tab and gives it its molecule, a new session each time. So a sheet
+ * opens on it at once. Messages are taken only from that frame.
  */
 
 export type BuiltMolecule = { mol: string; xyz: string; atoms: number; formula: string };
 
 export type RetainmolFrame = {
-	/** Puts a structure in (MOL/SDF, XYZ, GJF); `report` sends back what it became (a flat one made 3D). */
+	/** Puts a structure in (MOL/SDF, XYZ, GJF; empty for an empty canvas); `report` sends back what it became (a flat one made 3D). */
 	load(text: string, options?: { report?: boolean }): void;
+	/** Lets the frame go (it stays loaded, hidden, for the next sheet). */
 	dispose(): void;
+};
+
+type Attachment = {
+	host: HTMLElement;
+	status: HTMLElement;
+	changed(molecule: BuiltMolecule): void;
+	failed?(message: string): void;
+	pending: { text: string; report: boolean } | null;
 };
 
 const PROTOCOL = 'retainmol-embed';
@@ -30,18 +43,94 @@ export function setRetainmolSave(save: () => void): void {
 	saveArticle = save;
 }
 
-async function retainmolUrl(): Promise<string> {
-	const response = await fetch('/api/studio/retainmol', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-	const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
-	if (!response.ok || !data.url) throw new Error(data.error || 'RetainMol 没能启动');
-	return data.url;
-}
-
 const theme = () => (document.documentElement.dataset.theme === 'dark' ? 'night' : 'day');
 
+let shared: Promise<{ frame: HTMLIFrameElement; origin: string }> | null = null;
+let ready = false;
+let attached: Attachment | null = null;
+let following = 0;
+
+function send(message: Record<string, unknown>): void {
+	void shared?.then(({ frame, origin }) => frame.contentWindow?.postMessage({ protocol: PROTOCOL, ...message }, origin));
+}
+
+function deliver(attachment: Attachment): void {
+	if (!ready || !attachment.pending) return;
+	send({ type: 'load', ...attachment.pending });
+	attachment.pending = null;
+}
+
+/** The page's one frame: RetainMol served, its frame made in the sheet's kept layer, listened to. */
+function sharedFrame(): Promise<{ frame: HTMLIFrameElement; origin: string }> {
+	shared ??= (async () => {
+		const response = await fetch('/api/studio/retainmol', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+		const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
+		if (!response.ok || !data.url) throw new Error(data.error || 'RetainMol 没有准备好');
+		const origin = new URL(data.url).origin;
+		const frame = document.createElement('iframe');
+		frame.className = 'retainmol-frame';
+		frame.title = 'RetainMol 分子编辑器';
+		frame.allow = 'clipboard-read; clipboard-write';
+		frame.hidden = true;
+		frame.src = `${data.url}/?embed=1&parent=${encodeURIComponent(location.origin)}&theme=${theme()}`;
+		window.addEventListener('message', (event) => {
+			if (event.origin !== origin || event.source !== frame.contentWindow) return;
+			const message = event.data as ({ protocol?: string; type?: string; message?: string } & Partial<BuiltMolecule>) | null;
+			if (message?.protocol !== PROTOCOL) return;
+			if (message.type === 'ready') {
+				ready = true;
+				if (attached) {
+					attached.status.remove();
+					deliver(attached);
+				}
+			} else if (message.type === 'changed' && typeof message.mol === 'string' && typeof message.xyz === 'string') {
+				attached?.changed({ mol: message.mol, xyz: message.xyz, atoms: Number(message.atoms) || 0, formula: String(message.formula ?? '') });
+			} else if (message.type === 'error') {
+				attached?.failed?.(message.message ?? 'RetainMol 读不了这个结构');
+			} else if (message.type === 'save') {
+				saveArticle?.();
+			}
+		});
+		window.addEventListener('themechange', () => send({ type: 'theme', theme: theme() }));
+		sheetOverlay().append(frame);
+		return { frame, origin };
+	})();
+	shared.catch(() => {
+		shared = null;
+	});
+	return shared;
+}
+
+/** Keeps the frame over the tab it is given to while that tab is shown, hidden when it is not. */
+function follow(frame: HTMLIFrameElement, attachment: Attachment): void {
+	const turn = ++following;
+	const place = () => {
+		if (turn !== following || attached !== attachment) return;
+		const box = attachment.host.getBoundingClientRect();
+		const layer = frame.parentElement?.getBoundingClientRect();
+		const shown = attachment.host.isConnected && box.width > 0 && box.height > 0 && layer;
+		frame.hidden = !shown || !ready;
+		if (shown) {
+			const style = `left:${box.left - layer.left}px;top:${box.top - layer.top}px;width:${box.width}px;height:${box.height}px`;
+			if (frame.getAttribute('style') !== style) frame.setAttribute('style', style);
+		}
+		requestAnimationFrame(place);
+	};
+	// Placed at once: what it is given next is laid out (fitted in view) at the size it is shown at.
+	place();
+}
+
+/** Loads RetainMol now, hidden, so that the first sheet to want it has it at once. */
+export function preloadRetainmol(): void {
+	void sharedFrame().catch(() => {
+		// Said when a sheet asks for it.
+	});
+}
+
 /**
- * RetainMol in `host`, which it fills, on `text` (nothing: an empty canvas
- * to build on). `changed` is told the molecule after every edit.
+ * RetainMol over `host` (which the frame covers while it is shown) on
+ * `text` (nothing: an empty canvas to build on). `changed` is told the
+ * molecule after every edit.
  */
 export async function openRetainmol(
 	host: HTMLElement,
@@ -50,53 +139,29 @@ export async function openRetainmol(
 	host.classList.add('retainmol');
 	const status = document.createElement('p');
 	status.className = 'retainmol-status';
-	status.textContent = '正在启动 RetainMol…（第一次要构建它的包，约一分钟）';
+	status.textContent = shared ? '正在载入 RetainMol…' : '正在准备 RetainMol…（RetainMol 的代码改过之后，第一次要重新打包，约一分钟）';
 	host.replaceChildren(status);
+	const attachment: Attachment = { host, status, changed, failed, pending: { text, report } };
+	attached = attachment;
 
-	const url = await retainmolUrl();
-	const origin = new URL(url).origin;
-	const frame = document.createElement('iframe');
-	frame.className = 'retainmol-frame';
-	frame.title = 'RetainMol 分子编辑器';
-	frame.src = `${url}/?embed=1&parent=${encodeURIComponent(location.origin)}&theme=${theme()}`;
-	frame.allow = 'clipboard-read; clipboard-write';
-	status.textContent = '正在载入 RetainMol…';
-	host.append(frame);
-
-	const send = (message: Record<string, unknown>) => frame.contentWindow?.postMessage({ protocol: PROTOCOL, ...message }, origin);
-	let pending: { text: string; report: boolean } | null = text.trim() ? { text, report } : null;
-	let ready = false;
-
-	const onMessage = (event: MessageEvent) => {
-		if (event.origin !== origin || event.source !== frame.contentWindow) return;
-		const data = event.data as ({ protocol?: string; type?: string; message?: string } & Partial<BuiltMolecule>) | null;
-		if (data?.protocol !== PROTOCOL) return;
-		if (data.type === 'ready') {
-			ready = true;
-			status.remove();
-			if (pending) send({ type: 'load', ...pending });
-			pending = null;
-		} else if (data.type === 'changed' && typeof data.mol === 'string' && typeof data.xyz === 'string') {
-			changed({ mol: data.mol, xyz: data.xyz, atoms: Number(data.atoms) || 0, formula: String(data.formula ?? '') });
-		} else if (data.type === 'error') {
-			failed?.(data.message ?? 'RetainMol 读不了这个结构');
-		} else if (data.type === 'save') {
-			saveArticle?.();
-		}
-	};
-	window.addEventListener('message', onMessage);
-	const onTheme = () => send({ type: 'theme', theme: theme() });
-	window.addEventListener('themechange', onTheme);
+	const { frame } = await sharedFrame();
+	if (attached !== attachment) return { load: () => {}, dispose: () => {} };
+	if (ready) status.remove();
+	else status.textContent = '正在载入 RetainMol…';
+	follow(frame, attachment);
+	deliver(attachment);
 
 	return {
 		load: (next, options = {}) => {
-			if (ready) send({ type: 'load', text: next, report: Boolean(options.report) });
-			else pending = { text: next, report: Boolean(options.report) };
+			if (attached !== attachment) return;
+			attachment.pending = { text: next, report: Boolean(options.report) };
+			deliver(attachment);
 		},
 		dispose: () => {
-			window.removeEventListener('message', onMessage);
-			window.removeEventListener('themechange', onTheme);
-			frame.remove();
+			if (attached !== attachment) return;
+			attached = null;
+			following += 1;
+			frame.hidden = true;
 			host.classList.remove('retainmol');
 		},
 	};
