@@ -23,14 +23,15 @@ H   0.000000  -0.757200  -0.469200
 | 文件 | 内容 |
 |---|---|
 | `job-fence.mjs` | 块的写法：`parseJobFence`、`jobFenceMeta`、运行放在哪（`runFolder`）、运行的状态 |
-| `job-options.mjs` | 命令行和表单互相转换：任务、方法、电荷、未成对电子、溶剂、优化精度、CREST 能量窗口；表单不认识的参数原样保留 |
+| `job-options.mjs` | 命令行的拆分和拼接；xtb 和建在它上面的程序（CREST）共有的电荷、未成对电子、溶剂，读写命令行和表单字段（`XTB_COMMON_FIELDS`）。各程序自己的任务、方法等在它的插件里 |
 | `parsers/xtb.ts` | `xtb.out`（能量、自由能、能隙、偶极、优化的每一步、虚频、出错原因）、`vibspectrum`、`g98.out`（振动模式） |
 | `parsers/crest.ts` | `crest.out`，以及构象的相对能量和玻尔兹曼占比 |
 | `parsers/xyz-frames.ts` | 多帧 XYZ（`xtbopt.log`、`crest_conformers.xyz`） |
 | `browser/job-card.ts` | 页面上的卡片：名字、状态，加上一行关键数字（或运行进度、出错原因），旁边一张不用 WebGL 的小结构图 |
-| `browser/job-view.ts` | 详情窗口（`@blog/ui` 的 `openBlockSheet`）里的内容：数值、优化曲线、红外光谱（点一下看振动）、构象表；输出；卡片摘要 `summarizeRun` 和小结构图 `structureThumbnail` |
+| `browser/job-view.ts` | 详情窗口（`@blog/ui` 的 `openBlockSheet`）里的内容：`drawRun` / `summarizeRun` 交给程序的 `ProgramView`；给程序用的零件：数值、优化曲线、红外光谱（点一下看振动）、构象表、结构；输出；小结构图 `structureThumbnail` |
+| `programs.mjs` | 计算程序接缝 `ctx.jobs`（`JobPrograms`）和程序的类型（`programs.d.mts`）。程序本身是插件：`plugins/xtb`、`plugins/crest` |
 
-这里只是库。把它接进博客和 Studio 的是插件 `plugins/job/`（见 `plugins/README.md`）：
+这里只是库。把它接进博客和 Studio 的是插件 `plugins/job/`（见 `plugins/README.md`），程序是 `plugins/xtb/`、`plugins/crest/`：
 
 - `build.mjs`：构建时把 ```job 变成页面上的 figure，读 `run.json`。
 - `page.ts`：博客页面上的卡片和详情窗口，读其余文件。

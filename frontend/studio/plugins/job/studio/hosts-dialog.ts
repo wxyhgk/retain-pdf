@@ -5,9 +5,12 @@ import './hosts-dialog.css';
  * 计算机器: the machines ```job blocks run on, kept with the Studio's
  * settings (server/compute-hosts.mjs). Each is a card: how it is reached (here, or
  * ssh), whether jobs start at once or go to Slurm, where they run, and the
- * programs, which 检测 finds. Saved together.
+ * programs (each program plugin's, `ctx.jobs`), which 检测 finds. Saved together.
  */
-export function createComputeHostsDialog(api: JobApi) {
+/** A program as the dialog needs it: its name (its key in a machine's programs) and label. */
+export type ProgramName = { name: string; label: string };
+
+export function createComputeHostsDialog(api: JobApi, programs: () => ProgramName[]) {
 	const dialog = document.createElement('dialog');
 	dialog.className = 'article-dialog compute-hosts-dialog';
 	dialog.innerHTML = `
@@ -49,7 +52,7 @@ export function createComputeHostsDialog(api: JobApi) {
 		const taken = new Set(cards.map((card) => card.read().name));
 		let index = 1;
 		while (taken.has(`server-${index}`)) index += 1;
-		const card = hostCard(api, { name: `server-${index}`, label: '', kind: 'ssh', ssh: '', scheduler: 'direct', workdir: '~/studio-jobs', threads: 8, programs: {}, setup: '' }, remove);
+		const card = hostCard(api, programs(), { name: `server-${index}`, label: '', kind: 'ssh', ssh: '', scheduler: 'direct', workdir: '~/studio-jobs', threads: 8, programs: {}, setup: '' }, remove);
 		cards.push(card);
 		list.append(card.root);
 		card.root.querySelector<HTMLInputElement>('[data-key="ssh"]')?.focus();
@@ -82,7 +85,7 @@ export function createComputeHostsDialog(api: JobApi) {
 			cards = [];
 			try {
 				for (const host of await api.hosts()) {
-					const card = hostCard(api, host, remove);
+					const card = hostCard(api, programs(), host, remove);
 					cards.push(card);
 					list.append(card.root);
 				}
@@ -101,7 +104,7 @@ export function createComputeHostsDialog(api: JobApi) {
 	};
 }
 
-function hostCard(api: JobApi, host: ComputeHost, remove: (root: HTMLElement) => void): { root: HTMLElement; read(): ComputeHost } {
+function hostCard(api: JobApi, programs: ProgramName[], host: ComputeHost, remove: (root: HTMLElement) => void): { root: HTMLElement; read(): ComputeHost } {
 	const root = document.createElement('section');
 	root.className = 'host-card';
 	const isLocal = host.name === 'local';
@@ -148,8 +151,8 @@ function hostCard(api: JobApi, host: ComputeHost, remove: (root: HTMLElement) =>
 	const workdir = input('workdir', host.workdir, '~/studio-jobs');
 	const threads = input('threads', String(host.threads), '4', 'number');
 	threads.min = '1';
-	const xtb = input('xtb', host.programs.xtb ?? '', 'xtb（在 PATH 里）');
-	const crest = input('crest', host.programs.crest ?? '', 'crest（在 PATH 里）');
+	// A path for each program there is; those of programs not there now (their plugin off) are kept as they were.
+	const paths = programs.map((program) => ({ program, control: input(program.name, host.programs[program.name] ?? '', `${program.name}（在 PATH 里）`) }));
 	const setup = document.createElement('textarea');
 	setup.rows = 2;
 	setup.value = host.setup;
@@ -171,8 +174,7 @@ function hostCard(api: JobApi, host: ComputeHost, remove: (root: HTMLElement) =>
 		timeField,
 		label('工作目录', workdir),
 		label('默认线程', threads),
-		label('xtb', xtb, true),
-		label('CREST', crest, true),
+		...paths.map(({ program, control }) => label(program.label, control, true)),
 		label('环境设置', setup, true),
 	);
 
@@ -215,7 +217,10 @@ function hostCard(api: JobApi, host: ComputeHost, remove: (root: HTMLElement) =>
 		time: time.value.trim(),
 		workdir: workdir.value.trim(),
 		threads: Number(threads.value) || 4,
-		programs: { ...(xtb.value.trim() ? { xtb: xtb.value.trim() } : {}), ...(crest.value.trim() ? { crest: crest.value.trim() } : {}) },
+		programs: {
+			...Object.fromEntries(Object.entries(host.programs).filter(([name]) => !programs.some((program) => program.name === name))),
+			...Object.fromEntries(paths.filter(({ control }) => control.value.trim()).map(({ program, control }) => [program.name, control.value.trim()])),
+		},
 		setup: setup.value,
 	});
 
@@ -224,8 +229,7 @@ function hostCard(api: JobApi, host: ComputeHost, remove: (root: HTMLElement) =>
 		found.textContent = kind.value === 'ssh' ? `正在连 ${ssh.value.trim() || '…'}` : '正在找';
 		try {
 			const result = await api.detect(read());
-			if (result.programs.xtb && !xtb.value.trim()) xtb.value = result.programs.xtb;
-			if (result.programs.crest && !crest.value.trim()) crest.value = result.programs.crest;
+			for (const { program, control } of paths) if (result.programs[program.name] && !control.value.trim()) control.value = result.programs[program.name]!;
 			if (result.slurm && scheduler.value !== 'slurm') {
 				scheduler.value = 'slurm';
 				sync();
@@ -233,8 +237,7 @@ function hostCard(api: JobApi, host: ComputeHost, remove: (root: HTMLElement) =>
 			const defaultPartition = result.partitions.find((value) => value.endsWith('*'));
 			if (result.slurm && defaultPartition && !partition.value.trim()) partition.value = defaultPartition.replace(/\*$/u, '');
 			const parts = [
-				result.programs.xtb ? 'xtb ✓' : '没有 xtb',
-				result.programs.crest ? 'CREST ✓' : '没有 CREST',
+				...programs.map((program) => (result.programs[program.name] ? `${program.label} ✓` : `没有 ${program.label}`)),
 				result.cpus ? `${result.cpus} 个处理器` : '',
 				result.slurm ? `Slurm（${result.partitions.join(' ') || '无分区'}）` : '',
 			];

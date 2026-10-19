@@ -6,20 +6,9 @@ import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type { EditorView, NodeView } from 'prosemirror-view';
 
 import { createJobCard } from '@blog/compute/browser/job-card.ts';
-import { drawOutput, drawRun, formatDuration, isFinished, moleculeStage, runDuration, summarizeRun, type RunRecord, type RunSummary } from '@blog/compute/browser/job-view.ts';
+import { drawOutput, drawRun, formatDuration, isFinished, moleculeStage, runDuration, summarizeRun, type ProgramView, type RunRecord, type RunSummary } from '@blog/compute/browser/job-view.ts';
 import { JOB_LANGUAGE, RUN_STATE_NAMES, jobFenceMeta, newJobId, parseJobFence, runFolder } from '@blog/compute/job-fence.mjs';
-import {
-	CREST_METHODS,
-	DEFAULT_OPTIONS,
-	OPT_LEVELS,
-	SOLVENTS,
-	XTB_METHODS,
-	XTB_TASKS,
-	describeJob,
-	readJobOptions,
-	writeJobArgs,
-	type JobOptions,
-} from '@blog/compute/job-options.mjs';
+import type { JobProgram, ProgramField } from '@blog/compute/programs.mjs';
 import { formulaOf, parseXyzFrames } from '@blog/compute/parsers/xyz-frames.ts';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { openBlockSheet, type OpenSheet, type SheetAction, type SheetTab } from '@blog/ui/block-sheet.ts';
@@ -28,7 +17,8 @@ import './job-block.css';
 
 /**
  * ```job blocks in the editor (@blog/compute): a calculation to run from
- * the page, as in a notebook. In the page it is a card of two lines (its
+ * the page, as in a notebook, with one of the programs plugins register
+ * (`ctx.jobs`: plugins/xtb, plugins/crest…), whose fields make its form. In the page it is a card of two lines (its
  * name, how its run went, a few numbers); double-clicking it, or Enter on
  * it, opens its sheet: 结果, 设置 (the form, which writes the command line,
  * or the command line, which the form follows; the structure as text), 搭建
@@ -57,11 +47,17 @@ export type JobHost = {
 	cancel(id: string, run: string): Promise<RunRecord>;
 	/** Opens the list of machines to change it; resolves once it is closed. */
 	manageHosts(): Promise<void>;
+	/** The programs there are (`ctx.jobs`), each with how its runs are drawn. */
+	programs(): JobPrograms[];
+	program(name: string): JobPrograms | null;
 	/** The editor molecules are built in; null when no plugin offers one. */
 	moleculeEditor(): MoleculeEditor | null;
 	/** The tabs other plugins add to the sheet. */
 	extraTabs(detail: JobSheetDetail): SheetTab[];
 };
+
+/** A program as the Studio has it: its definition and its view. */
+export type JobPrograms = JobProgram & ProgramView;
 
 /** What the tabs other plugins add to a job's sheet are given. */
 export type JobSheetDetail = { id: string; title: string; program: string; args: string; body: string; record: RunRecord | null; runs: RunRecord[] };
@@ -85,8 +81,28 @@ export function jobFilesChanged(slug: string, paths: string[]): void {
 	}
 }
 
-const PROGRAM_NAMES = { xtb: 'xtb', crest: 'CREST' } as const;
-const STARTER = { program: 'xtb', args: '--opt', host: 'local' };
+/** The programs changed (a program's plugin loaded again, turned off or on): every block looks again. */
+export function jobProgramsChanged(): void {
+	for (const refreshers of blocks.values()) for (const refresh of refreshers) refresh();
+}
+
+/** What a new block runs: xtb if there is xtb, else the first program there is. */
+function starter(): { program: string; args: string; host: string } {
+	const programs = jobHost?.programs() ?? [];
+	const program = programs.find((entry) => entry.name === 'xtb') ?? programs[0];
+	return { program: program?.name ?? 'xtb', args: program?.starter ?? '', host: 'local' };
+}
+
+/** The options of `from`'s fields, as far as `to` has the same fields (charge, solvent…), into `to`'s starting ones. */
+function carriedOver(from: JobPrograms | null, fromOptions: unknown, to: JobPrograms): unknown {
+	let options = to.read(to.starter);
+	if (!from) return options;
+	for (const field of to.fields) {
+		const same = from.fields.find((entry) => entry.key === field.key);
+		if (same) options = field.set(options, same.get(fromOptions));
+	}
+	return options;
+}
 
 /** A new ```job block where the caret's (empty) block is, its name not one the article has; its sheet opens on its form. */
 export function insertJob(view: EditorView): void {
@@ -99,7 +115,7 @@ export function insertJob(view: EditorView): void {
 	});
 	const id = newJobId(taken);
 	opening.add(id);
-	const meta = jobFenceMeta({ id, ...STARTER });
+	const meta = jobFenceMeta({ id, ...starter() });
 	const { $from } = state.selection;
 	const block = type.create({ language: JOB_LANGUAGE, meta });
 	const tr = state.tr.replaceWith($from.before(), $from.after(), block);
@@ -171,37 +187,17 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		const settings = element('div', 'job-settings');
 		const title = element('input', 'job-input job-title-input');
 		title.placeholder = '未命名计算';
-		const program = select([['xtb', 'xtb'], ['crest', 'CREST']]);
-		const task = select([]);
-		const method = select([]);
-		const level = select([['', '默认'], ...OPT_LEVELS.map((name): [string, string] => [name, name])]);
-		const charge = numberInput(-20, 20);
-		const uhf = numberInput(0, 20);
-		const solventModel = select([['', '无（气相）'], ['alpb', 'ALPB'], ['gbsa', 'GBSA']]);
-		const solvent = select(Object.entries(SOLVENTS).map(([key, name]): [string, string] => [key, `${name} ${key}`]));
-		const ewin = numberInput(0, 100);
-		ewin.step = '0.5';
-		ewin.placeholder = '默认 6';
+		const program = select([]);
 		const machine = select([['local', '本机']]);
 		const threads = numberInput(1, 1024);
-		const levelField = field('优化精度', level);
-		const ewinField = field('能量窗口 kcal/mol', ewin);
-		const solventField = field('溶剂', solvent);
 		const form = element('div', 'job-form');
-		form.append(
-			field('名称', title, 'is-wide'),
-			field('程序', program),
-			field('任务', task),
-			field('方法', method),
-			levelField,
-			ewinField,
-			field('电荷', charge),
-			field('未成对电子', uhf),
-			field('溶剂模型', solventModel),
-			solventField,
-			field('机器', machine),
-			field('线程', threads),
-		);
+		const titleField = field('名称', title, 'is-wide');
+		const programField = field('程序', program);
+		const machineField = field('机器', machine);
+		const threadsField = field('线程', threads);
+		/** The program's own fields, as drawn for the program they are of. */
+		let drawnFields: { program: JobPrograms | null; controls: Array<{ field: ProgramField; control: HTMLSelectElement | HTMLInputElement; label: HTMLLabelElement }> } = { program: null, controls: [] };
+		form.append(titleField, programField, machineField, threadsField);
 		const commandLine = element('input', 'job-input job-args');
 		commandLine.spellcheck = false;
 		commandLine.setAttribute('aria-label', '命令行参数');
@@ -235,7 +231,9 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		let summarized = '';
 
 		const slug = () => jobHost?.slug() ?? null;
-		const options = (): JobOptions => readJobOptions(fence.program, fence.args);
+		const programOf = () => jobHost?.program(fence.program) ?? null;
+		/** The form's options for the command line (null: no plugin knows the program). */
+		const options = (): unknown => programOf()?.read(fence.args) ?? null;
 		const running = () => record !== null && !isFinished(record);
 		/** Lines without the spaces around them, and no empty lines at the end: two structures written alike. */
 		const sameStructure = (left: string, right: string) => {
@@ -244,7 +242,11 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		};
 		/** Shown with a run whose structure is not the block's any more. */
 		const stale = () => Boolean(record && isFinished(record) && summary?.input && fence.structure.kind === 'inline' && !sameStructure(summary.input, node.textContent));
-		const describe = () => `${PROGRAM_NAMES[fence.program as 'xtb' | 'crest'] ?? fence.program} · ${describeJob(fence.program, options())}${stale() ? ' · 结构改过了，这是改之前的结果' : ''}`;
+		const describe = () => {
+			const known = programOf();
+			const what = known ? `${known.label} · ${known.describe(known.read(fence.args))}` : `${fence.program} · ${fence.args || '没有插件认识这个程序'}`;
+			return `${what}${stale() ? ' · 结构改过了，这是改之前的结果' : ''}`;
+		};
 
 		/** Writes the fence's meta and text, as one step of undo. */
 		const write = (next: { meta?: string; body?: string }) => {
@@ -278,7 +280,10 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			later({ meta: jobFenceMeta(fence) }, delay);
 			paintCard();
 		};
-		const writeOptions = (next: JobOptions) => writeMeta({ args: writeJobArgs(fence.program, next) });
+		const writeOptions = (next: unknown) => {
+			const known = programOf();
+			if (known) writeMeta({ args: known.write(next) });
+		};
 
 		const paintCard = () => {
 			card.paint({ title: fence.title, describe: describe(), record, summary });
@@ -290,26 +295,42 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			sheet?.setActions(sheetActions());
 		};
 
+		/** The program's fields in the form, made again when the program is another. */
+		const drawFields = (known: JobPrograms | null) => {
+			if (drawnFields.program === known && (known || !drawnFields.controls.length)) return;
+			const controls = (known?.fields ?? []).map((entry) => {
+				const control = entry.kind === 'select' ? select([]) : numberInput(entry.min ?? -1e9, entry.max ?? 1e9);
+				if (control instanceof HTMLInputElement) {
+					if (entry.step !== undefined) control.step = String(entry.step);
+					if (entry.placeholder) control.placeholder = entry.placeholder;
+				}
+				// A number is written once it is one (or empty, where empty means the program's default); a choice at once.
+				const changed = () => {
+					const value = control.value;
+					if (control instanceof HTMLInputElement && !(value.trim() === '' ? Boolean(entry.placeholder) : Number.isFinite(Number(value)))) return;
+					const current = options();
+					if (current !== null) changeOptions(() => entry.set(current, value));
+				};
+				control.addEventListener(control instanceof HTMLInputElement ? 'input' : 'change', changed);
+				return { field: entry, control, label: field(entry.label, control) };
+			});
+			drawnFields = { program: known, controls };
+			form.replaceChildren(titleField, programField, ...controls.map((entry) => entry.label), machineField, threadsField);
+		};
+
 		const paintForm = () => {
+			const known = programOf();
 			const current = options();
-			const isCrest = fence.program === 'crest';
 			if (document.activeElement !== title) title.value = fence.title;
-			program.value = isCrest ? 'crest' : 'xtb';
-			setOptions(task, isCrest ? [['conformers', '构象搜索']] : Object.entries(XTB_TASKS).map(([key, value]): [string, string] => [key, value.name]));
-			task.value = current.task;
-			setOptions(method, Object.entries(isCrest ? CREST_METHODS : XTB_METHODS));
-			method.value = current.method;
-			level.value = current.level;
-			levelField.hidden = isCrest || !['opt', 'ohess'].includes(current.task);
-			ewinField.hidden = !isCrest;
-			if (document.activeElement !== ewin) ewin.value = current.ewin === null ? '' : String(current.ewin);
-			if (document.activeElement !== charge) charge.value = String(current.charge);
-			if (document.activeElement !== uhf) uhf.value = String(current.uhf);
-			solventModel.value = current.solvent?.model ?? '';
-			solventField.hidden = !current.solvent;
-			if (current.solvent) {
-				if (!SOLVENTS[current.solvent.name]) setOptions(solvent, [[current.solvent.name, current.solvent.name], ...Object.entries(SOLVENTS).map(([key, name]): [string, string] => [key, `${name} ${key}`])]);
-				solvent.value = current.solvent.name;
+			const programs = jobHost?.programs() ?? [];
+			setOptions(program, [...programs.map((entry): [string, string] => [entry.name, entry.label]), ...(known ? [] : [[fence.program, `${fence.program}（没有插件）`] as [string, string]])]);
+			program.value = fence.program;
+			drawFields(known);
+			for (const { field: entry, control, label } of drawnFields.controls) {
+				if (current === null) continue;
+				label.hidden = entry.shown ? !entry.shown(current) : false;
+				if (control instanceof HTMLSelectElement) setOptions(control, entry.choices?.(current) ?? []);
+				if (document.activeElement !== control) control.value = entry.get(current);
 			}
 			machine.value = fence.host;
 			if (document.activeElement !== threads) threads.value = fence.threads ? String(fence.threads) : '';
@@ -372,7 +393,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			const key = `${current.run}:${current.state}:${current.problem ?? ''}`;
 			if (key === summarized && isFinished(current)) return;
 			summarized = key;
-			const next = await summarizeRun(current, readFile(current)).catch(() => null);
+			const next = await summarizeRun(current, readFile(current), jobHost?.program(current.program) ?? null).catch(() => null);
 			if (destroyed || record !== current) return;
 			summary = next;
 			paintCard();
@@ -518,7 +539,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			}
 			const target = element('div', 'job-result-body');
 			panel.append(target);
-			void drawRun(target, current, readFile(current), { url: (name) => fileUrl(current, name), output: false });
+			void drawRun(target, current, readFile(current), { url: (name) => fileUrl(current, name), output: false }, jobHost?.program(current.program) ?? null);
 		};
 		const drawOutputTab = (panel: HTMLElement) => {
 			const current = record;
@@ -655,32 +676,20 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		};
 
 		// The form writes the command line; the command line, written, is read back into the form.
-		const changeOptions = (change: (current: JobOptions) => JobOptions) => {
-			writeOptions(change(options()));
+		const changeOptions = (change: (current: unknown) => unknown) => {
+			const current = options();
+			if (current === null) return;
+			writeOptions(change(current));
 			paintForm();
 		};
 		program.addEventListener('change', () => {
-			const next = program.value as 'xtb' | 'crest';
-			const kept = options();
-			const fresh = { ...DEFAULT_OPTIONS[next], charge: kept.charge, uhf: kept.uhf, solvent: kept.solvent, extra: [] };
-			fence = { ...fence, program: next };
-			writeMeta({ program: next, args: writeJobArgs(next, fresh) });
+			const next = jobHost?.program(program.value);
+			if (!next) return;
+			const fresh = carriedOver(programOf(), options(), next);
+			fence = { ...fence, program: next.name };
+			writeMeta({ program: next.name, args: next.write(fresh) });
 			paintForm();
 		});
-		task.addEventListener('change', () => changeOptions((current) => ({ ...current, task: task.value, level: ['opt', 'ohess'].includes(task.value) ? current.level : '' })));
-		method.addEventListener('change', () => changeOptions((current) => ({ ...current, method: method.value })));
-		level.addEventListener('change', () => changeOptions((current) => ({ ...current, level: level.value })));
-		charge.addEventListener('input', () => {
-			if (/^-?\d+$/u.test(charge.value)) changeOptions((current) => ({ ...current, charge: Number(charge.value) }));
-		});
-		uhf.addEventListener('input', () => {
-			if (/^\d+$/u.test(uhf.value)) changeOptions((current) => ({ ...current, uhf: Number(uhf.value) }));
-		});
-		ewin.addEventListener('input', () => {
-			if (ewin.value === '' || Number.isFinite(Number(ewin.value))) changeOptions((current) => ({ ...current, ewin: ewin.value === '' ? null : Number(ewin.value) }));
-		});
-		solventModel.addEventListener('change', () => changeOptions((current) => ({ ...current, solvent: solventModel.value ? { model: solventModel.value as 'alpb' | 'gbsa', name: current.solvent?.name ?? 'water' } : null })));
-		solvent.addEventListener('change', () => changeOptions((current) => ({ ...current, solvent: current.solvent ? { ...current.solvent, name: solvent.value } : null })));
 		machine.addEventListener('change', async () => {
 			if (machine.value === '__manage') {
 				machine.value = fence.host;

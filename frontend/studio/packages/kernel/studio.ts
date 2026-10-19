@@ -112,6 +112,8 @@ export interface StudioEvents {
 	'studio/ready'(): void;
 	/** Plugins were loaded again after an edit (their names), with what went wrong. */
 	'studio/plugins-reloaded'(changed: string[], problems: string[]): void;
+	/** Plugins were taken out or put in, for whatever reason (an edit, a switch): what others registered may be other now. */
+	'studio/plugins-changed'(changed: string[]): void;
 	/** The blocks in the editor are others now (a block's plugin was loaded again): it must be drawn again. */
 	'studio/blocks-changed'(): void;
 }

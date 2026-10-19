@@ -1,23 +1,24 @@
 import { load3Dmol, type ThreeDMolViewer } from '@blog/science/browser/molecule-renderer.ts';
 import { RUN_STATE_NAMES } from '../job-fence.mjs';
-import { ensembleTable, HARTREE_IN_KCAL, parseCrestOutput } from '../parsers/crest.ts';
-import { modeToXyz, parseG98Modes, parseVibSpectrum, parseXtbOutput, type VibrationalMode } from '../parsers/xtb.ts';
+import { HARTREE_IN_KCAL, type ensembleTable } from '../parsers/crest.ts';
+import { modeToXyz, type parseG98Modes, type VibrationalMode } from '../parsers/xtb.ts';
 import { formulaOf, frameToXyz, parseXyzFrames, type XyzFrame } from '../parsers/xyz-frames.ts';
 import './job-view.css';
 
 /**
  * A run of a job drawn as its results, on the blog and in the Studio alike:
- * what it is doing or how it ended, its numbers, the structure it ends at,
- * the optimization's energy step by step, the IR spectrum with each mode to
- * watch vibrate, CREST's conformers, and the end of its output. Everything
- * is read from the run's files, through `read` (a name in the run's folder).
+ * what it is doing or how it ended, and what its program's view draws of
+ * it (`ProgramView`, from the pieces here: numbers, the structure it ends
+ * at, an optimization's energy step by step, an IR spectrum with each mode
+ * to watch vibrate, conformers), then the end of its output. Everything is
+ * read from the run's files, through `read` (a name in the run's folder).
  */
 
 export type RunRecord = {
 	format: number;
 	id: string;
 	run: string;
-	program: 'xtb' | 'crest';
+	program: string;
 	args: string;
 	command: string;
 	host: string;
@@ -91,7 +92,7 @@ export function runFacts(record: RunRecord, version: string | null): HTMLElement
 	return facts;
 }
 
-function numbers(rows: Array<[string, string | null]>): HTMLElement | null {
+export function numbers(rows: Array<[string, string | null]>): HTMLElement | null {
 	const shown = rows.filter((row): row is [string, string] => row[1] !== null);
 	if (!shown.length) return null;
 	const list = element('dl', 'job-numbers');
@@ -103,9 +104,9 @@ function numbers(rows: Array<[string, string | null]>): HTMLElement | null {
 	return list;
 }
 
-const fixed = (value: number | null, digits: number, unit: string) => (value === null ? null : `${value.toFixed(digits)} ${unit}`);
+export const fixed = (value: number | null, digits: number, unit: string) => (value === null ? null : `${value.toFixed(digits)} ${unit}`);
 
-function notes(kind: 'error' | 'warning', lines: string[]): HTMLElement | null {
+export function notes(kind: 'error' | 'warning', lines: string[]): HTMLElement | null {
 	if (!lines.length) return null;
 	const box = element('div', `job-note is-${kind}`);
 	box.setAttribute('role', kind === 'error' ? 'alert' : 'note');
@@ -224,7 +225,7 @@ export function irSpectrum(modes: VibrationalMode[], { selected = -1, pick }: { 
 	return chart;
 }
 
-function section(title: string, ...children: Array<Node | null>): HTMLElement {
+export function section(title: string, ...children: Array<Node | null>): HTMLElement {
 	const part = element('section', 'job-section');
 	part.append(element('p', 'job-section-title', title), ...children.filter((child): child is Node => child !== null));
 	return part;
@@ -261,65 +262,50 @@ export type DrawOptions = {
 	output?: boolean;
 };
 
-/**
- * Draws a run into `root`, replacing what was there. Resolves when the
- * files it needs are read; 3D views fill in after.
- */
-export async function drawRun(root: HTMLElement, record: RunRecord, read: ReadRunFile, options: DrawOptions = {}): Promise<void> {
-	const has = (name: string) => record.files.includes(name) || !isFinished(record);
-	const optional = (name: string) => (has(name) ? read(name).catch(() => null) : Promise.resolve(null));
-	const [output, steps, final, spectrum, modes, conformers] = await Promise.all([
-		optional(record.output),
-		record.program === 'xtb' ? optional('xtbopt.log') : Promise.resolve(null),
-		record.program === 'xtb' ? optional('xtbopt.xyz') : optional('crest_best.xyz'),
-		record.program === 'xtb' && isFinished(record) ? optional('vibspectrum') : Promise.resolve(null),
-		record.program === 'xtb' && isFinished(record) ? optional('g98.out') : Promise.resolve(null),
-		record.program === 'crest' && isFinished(record) ? optional('crest_conformers.xyz') : Promise.resolve(null),
-	]);
-	const input = await read(record.input).catch(() => null);
-	const parts: Array<HTMLElement | null> = [];
-	const finished = isFinished(record);
+/** A run as a program's view reads it: its files, whether it ended, its output and its input. */
+export type RunContext = {
+	record: RunRecord;
+	read: ReadRunFile;
+	/** A file of the run, null if it has none (one still running may not have it yet). */
+	optional(name: string): Promise<string | null>;
+	finished: boolean;
+	output: string | null;
+	input: string | null;
+};
 
-	if (record.program === 'crest') {
-		const out = output ? parseCrestOutput(output) : null;
-		parts.push(runFacts(record, out?.version ?? null));
-		parts.push(notes('error', [record.error, record.problem, ...(finished && record.state !== 'done' ? out?.errors ?? [] : [])].filter((line): line is string => Boolean(line))));
-		const ensemble = conformers ? parseXyzFrames(conformers) : [];
-		const table = ensembleTable(ensemble);
-		parts.push(numbers([
-			['构象数', table.length ? String(table.length) : out?.conformers !== null && out?.conformers !== undefined ? String(out.conformers) : null],
-			['最低能量', fixed(table[0] ? Math.min(...table.map((row) => row.energy)) : out?.lowest ?? null, 6, 'Eh')],
-			['最低构象占比', table.length ? `${(Math.max(...table.map((row) => row.population)) * 100).toFixed(1)} %` : null],
-		]));
-		if (table.length) parts.push(conformerSection(ensemble, table));
-		else if (final) parts.push(structureSection('最低能量构象', final));
-	} else {
-		const out = output ? parseXtbOutput(output) : null;
-		parts.push(runFacts(record, out?.version ?? null));
-		const errors = [record.error, record.problem, ...(finished && record.state !== 'done' ? out?.errors ?? [] : [])].filter((line): line is string => Boolean(line));
-		parts.push(notes('error', errors));
-		parts.push(notes('warning', finished ? out?.warnings ?? [] : []));
-		if (out) {
-			parts.push(numbers([
-				['总能量', fixed(out.energy, 6, 'Eh')],
-				['自由能 G', fixed(out.freeEnergy, 6, 'Eh')],
-				['焓 H', fixed(out.enthalpy, 6, 'Eh')],
-				['HOMO–LUMO 能隙', fixed(out.gap, 3, 'eV')],
-				['梯度范数', out.gradientNorm === null ? null : `${out.gradientNorm.toExponential(2)} Eh/α`],
-				['偶极矩', fixed(out.dipole, 3, 'D')],
-				['虚频', out.imaginary === null ? null : String(out.imaginary)],
-				['溶剂', out.solvation ? `${out.solvation.solvent}（${out.solvation.model}）` : null],
-			]));
-		}
-		const frames = steps ? parseXyzFrames(steps) : [];
-		const points = frames.length >= 2 ? frames : out?.optimization?.steps ?? [];
-		if (points.length >= 2) parts.push(section('优化过程', energyChart(points as Array<{ energy: number; gradientNorm: number | null }>, { live: !finished })));
-		const spectrumModes = spectrum ? parseVibSpectrum(spectrum) : [];
-		const normal = modes ? parseG98Modes(modes) : null;
-		if (spectrumModes.length) parts.push(vibrationSection(spectrumModes, normal));
-		else if (finished && (final || input)) parts.push(structureSection(final ? '优化后的结构' : '结构', (final ?? input) as string));
-	}
-	if (options.output !== false) parts.push(outputTail(record, output, options.url?.(record.output) ?? null, Boolean(options.followOutput) && !finished));
+/**
+ * What a program draws of its runs (in the browser, beside its definition,
+ * @blog/compute/programs.mjs): its results, and a card's line.
+ */
+export type ProgramView = {
+	/** The results, from the line of facts (`runFacts`) on; the output's end is added after them. */
+	draw(context: RunContext): Promise<Array<HTMLElement | null>>;
+	/** Fills in a card's numbers, progress, problem and structure (`summary` has what any run has). */
+	summarize(context: RunContext, summary: RunSummary): Promise<void>;
+};
+
+async function runContext(record: RunRecord, read: ReadRunFile): Promise<RunContext> {
+	const finished = isFinished(record);
+	const optional = (name: string) => (record.files.includes(name) || !finished ? read(name).catch(() => null) : Promise.resolve(null));
+	const [output, input] = await Promise.all([optional(record.output), read(record.input).catch(() => null)]);
+	return { record, read, optional, finished, output, input };
+}
+
+/** The errors a run ended with: its own, and those its program's output says when it did not end well. */
+export function runErrors(context: RunContext, fromOutput: string[] = []): HTMLElement | null {
+	const { record, finished } = context;
+	return notes('error', [record.error, record.problem, ...(finished && record.state !== 'done' ? fromOutput : [])].filter((line): line is string => Boolean(line)));
+}
+
+/**
+ * Draws a run into `root`, replacing what was there, as its program's
+ * `view` does (without one, a program no plugin knows: its facts, errors
+ * and output). Resolves when the files it needs are read; 3D views fill in after.
+ */
+export async function drawRun(root: HTMLElement, record: RunRecord, read: ReadRunFile, options: DrawOptions = {}, view: ProgramView | null = null): Promise<void> {
+	const context = await runContext(record, read);
+	const parts = view ? await view.draw(context) : [runFacts(record, null), runErrors(context), notes('warning', [`没有插件认识程序 ${record.program}：这里只有它的输出`])];
+	if (options.output !== false) parts.push(outputTail(record, context.output, options.url?.(record.output) ?? null, Boolean(options.followOutput) && !context.finished));
 	root.replaceChildren(...parts.filter((part): part is HTMLElement => part !== null));
 }
 
@@ -360,47 +346,15 @@ export type RunSummary = {
 	input: string | null;
 };
 
-const signed = (value: number, digits: number) => value.toFixed(digits).replace(/^-/u, '−');
+export const signed = (value: number, digits: number) => value.toFixed(digits).replace(/^-/u, '−');
 
-/** Reads what a card needs of a run: its output, and the structure it ends at. */
-export async function summarizeRun(record: RunRecord, read: ReadRunFile): Promise<RunSummary> {
-	const finished = isFinished(record);
-	const has = (name: string) => record.files.includes(name) || !finished;
-	const optional = (name: string) => (has(name) ? read(name).catch(() => null) : Promise.resolve(null));
-	const [output, final, input] = await Promise.all([
-		optional(record.output),
-		record.program === 'crest' ? optional('crest_best.xyz') : finished ? optional('xtbopt.xyz') : Promise.resolve(null),
-		read(record.input).catch(() => null),
-	]);
+/** Reads what a card needs of a run, as its program's `view` reads it (without one: how it ended, the structure it started from). */
+export async function summarizeRun(record: RunRecord, read: ReadRunFile, view: ProgramView | null = null): Promise<RunSummary> {
+	const context = await runContext(record, read);
 	const failure = record.state === 'failed' || record.state === 'lost' ? record.error : null;
-	const summary: RunSummary = { facts: [], progress: null, problem: record.problem ?? failure ?? null, structure: final ?? (record.input.endsWith('.xyz') ? input : null), input };
-	if (record.program === 'crest') {
-		const out = output ? parseCrestOutput(output) : null;
-		if (finished && record.state === 'failed' && !summary.problem) summary.problem = out?.errors[0] ?? `CREST 退出码 ${record.exitCode}`;
-		if (!finished) return summary;
-		const conformers = record.files.includes('crest_conformers.xyz') ? await read('crest_conformers.xyz').catch(() => null) : null;
-		const table = conformers ? ensembleTable(parseXyzFrames(conformers)) : [];
-		if (table.length) summary.facts.push(`${table.length} 个构象`, `最低占比 ${(Math.max(...table.map((row) => row.population)) * 100).toFixed(1)}%`);
-		else if (out?.conformers) summary.facts.push(`${out.conformers} 个构象`);
-		if (out?.lowest !== null && out?.lowest !== undefined) summary.facts.push(`E ${signed(out.lowest, 5)} Eh`);
-		return summary;
-	}
-	const out = output ? parseXtbOutput(output) : null;
-	if (finished && record.state === 'failed' && !summary.problem) summary.problem = out?.errors.find((line) => /^-1-/u.test(line))?.replace(/^-1-\s*/u, '') ?? out?.errors[0] ?? `xtb 退出码 ${record.exitCode}`;
-	if (!finished) {
-		const steps = out?.optimization?.steps ?? [];
-		if (steps.length) {
-			const last = steps.at(-1)!;
-			const change = steps.length > 1 ? (last.energy - steps.at(-2)!.energy) * HARTREE_IN_KCAL : null;
-			summary.progress = `第 ${last.cycle} 步${change === null ? '' : ` · ΔE ${signed(change, 3)} kcal/mol`}`;
-		}
-		return summary;
-	}
-	if (out?.energy !== null && out?.energy !== undefined) summary.facts.push(`E ${signed(out.energy, 5)} Eh`);
-	if (out?.freeEnergy !== null && out?.freeEnergy !== undefined) summary.facts.push(`G ${signed(out.freeEnergy, 5)} Eh`);
-	if (out?.gap !== null && out?.gap !== undefined) summary.facts.push(`能隙 ${out.gap.toFixed(2)} eV`);
-	if (out?.imaginary !== null && out?.imaginary !== undefined) summary.facts.push(out.imaginary ? `${out.imaginary} 个虚频` : '无虚频');
-	for (const warning of out?.warnings ?? []) if (!/虚频/u.test(warning)) summary.facts.push(warning);
+	const summary: RunSummary = { facts: [], progress: null, problem: record.problem ?? failure ?? null, structure: record.input.endsWith('.xyz') ? context.input : null, input: context.input };
+	if (view) await view.summarize(context, summary);
+	if (context.finished && record.state === 'failed' && !summary.problem) summary.problem = `${record.program} 退出码 ${record.exitCode}`;
 	return summary;
 }
 
@@ -448,7 +402,7 @@ export function structureThumbnail(xyz: string, size = { width: 96, height: 72 }
 	return picture;
 }
 
-function structureSection(title: string, xyz: string): HTMLElement {
+export function structureSection(title: string, xyz: string): HTMLElement {
 	const frames = parseXyzFrames(xyz);
 	const stage = moleculeStage(`${title}，可拖动旋转`);
 	const part = section(title, stage.root);
@@ -457,7 +411,7 @@ function structureSection(title: string, xyz: string): HTMLElement {
 	return part;
 }
 
-function vibrationSection(modes: VibrationalMode[], normal: ReturnType<typeof parseG98Modes>): HTMLElement {
+export function vibrationSection(modes: VibrationalMode[], normal: ReturnType<typeof parseG98Modes>): HTMLElement {
 	const stage = moleculeStage('振动，可拖动旋转');
 	const spectrum = element('div', 'job-spectrum');
 	const list = element('ol', 'job-modes');
@@ -490,7 +444,7 @@ function vibrationSection(modes: VibrationalMode[], normal: ReturnType<typeof pa
 	return part;
 }
 
-function conformerSection(frames: XyzFrame[], table: ReturnType<typeof ensembleTable>): HTMLElement {
+export function conformerSection(frames: XyzFrame[], table: ReturnType<typeof ensembleTable>): HTMLElement {
 	const stage = moleculeStage('构象，可拖动旋转');
 	const grid = element('table', 'job-conformers');
 	const head = element('thead');

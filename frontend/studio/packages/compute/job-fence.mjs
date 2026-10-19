@@ -21,9 +21,6 @@
 
 export const JOB_LANGUAGE = 'job';
 
-/** The programs a job can run. */
-export const JOB_PROGRAMS = Object.freeze(['xtb', 'crest']);
-
 /** A job's name, and a run's: what its folder is called. */
 export const JOB_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 export const RUN_NAME_PATTERN = /^\d{8}-\d{6}(?:-\d+)?$/u;

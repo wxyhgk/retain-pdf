@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import { JOB_PROGRAMS } from '@blog/compute/job-fence.mjs';
 import { shellWord } from './job-shell.mjs';
 
 /**
@@ -20,6 +19,7 @@ import { shellWord } from './job-shell.mjs';
 export const LOCAL_HOST = Object.freeze({ name: 'local', label: '本机', kind: 'local', scheduler: 'direct', workdir: '~/studio-jobs', threads: 4, programs: {}, setup: '' });
 
 const NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
+const PROGRAM = /^[a-z][\w-]*$/u;
 
 export class ComputeHostError extends Error {
 	constructor(message) {
@@ -44,10 +44,11 @@ export function readHost(value) {
 	if (!(workdir.startsWith('/') || workdir === '~' || workdir.startsWith('~/')) || workdir.split('/').includes('..')) {
 		throw new ComputeHostError('工作目录要写完整路径，或以 ~/ 开头');
 	}
+	// Each program's path, by its name (any program's: one whose plugin is off now keeps its path).
 	const programs = {};
-	for (const program of JOB_PROGRAMS) {
-		const path = String(value.programs?.[program] ?? '').trim();
-		if (path) programs[program] = path;
+	for (const [program, written] of Object.entries(value.programs && typeof value.programs === 'object' ? value.programs : {})) {
+		const path = String(written ?? '').trim();
+		if (PROGRAM.test(program) && path) programs[program] = path;
 	}
 	const threads = Number.isInteger(value.threads) && value.threads > 0 && value.threads <= 1024 ? value.threads : LOCAL_HOST.threads;
 	const host = { name, label: String(value.label ?? '').trim() || (name === LOCAL_HOST.name ? LOCAL_HOST.label : name), kind, scheduler, workdir, threads, programs, setup: String(value.setup ?? '') };
@@ -117,35 +118,44 @@ export class ComputeHosts {
 	}
 }
 
-/** Finds the programs on a machine: on its PATH as a login shell has it, else in the usual conda places (CREST first, then xtb beside it). */
-const DETECT = `for p in ${[...JOB_PROGRAMS].reverse().join(' ')}; do
-  c=$(command -v "$p" 2>/dev/null)
-  # xtb from where CREST is, which CREST calls.
-  if [ -z "$c" ] && [ -n "$crest" ] && [ -x "$(dirname "$crest")/$p" ]; then c="$(dirname "$crest")/$p"; fi
-  if [ -z "$c" ]; then
-    for e in "$HOME"/miniconda3 "$HOME"/anaconda3 "$HOME"/miniforge3 "$HOME"/mambaforge "$HOME"/micromamba /opt/homebrew/Caskroom/miniconda/base /opt/homebrew/Caskroom/miniforge/base /opt/conda /usr/local; do
-      for b in "$e"/bin "$e"/envs/*/bin; do if [ -x "$b/$p" ]; then c="$b/$p"; break 2; fi; done
-    done
-  fi
-  [ "$p" = crest ] && crest=$c
-  echo "program $p $c"
-done
+/** Where conda and the like put programs, looked in when a program is not on PATH. */
+const PLACES = '"$HOME"/miniconda3 "$HOME"/anaconda3 "$HOME"/miniforge3 "$HOME"/mambaforge "$HOME"/micromamba /opt/homebrew/Caskroom/miniconda/base /opt/homebrew/Caskroom/miniforge/base /opt/conda /usr/local';
+
+/**
+ * Finds these programs on a machine: on its PATH as a login shell has it,
+ * beside the programs it says it goes with (xtb where CREST is, which CREST
+ * calls), else in the usual conda places. Those others come first.
+ * @param {Array<{ name: string, beside?: string[] }>} programs
+ */
+export function detectScript(programs) {
+	const known = programs.filter((program) => PROGRAM.test(program.name));
+	const order = [...known.filter((program) => !program.beside?.length), ...known.filter((program) => program.beside?.length)];
+	const variable = (name) => `found_${name.replaceAll('-', '_')}`;
+	const lines = order.map(({ name, beside = [] }) => [
+		`p=${name}; c=$(command -v "$p" 2>/dev/null)`,
+		...beside.filter((other) => PROGRAM.test(other)).map((other) => `if [ -z "$c" ] && [ -n "$${variable(other)}" ] && [ -x "$(dirname "$${variable(other)}")/$p" ]; then c="$(dirname "$${variable(other)}")/$p"; fi`),
+		`if [ -z "$c" ]; then for e in ${PLACES}; do for b in "$e"/bin "$e"/envs/*/bin; do if [ -x "$b/$p" ]; then c="$b/$p"; break 2; fi; done; done; fi`,
+		`${variable(name)}=$c; echo "program $p $c"`,
+	].join('\n'));
+	return `${lines.join('\n')}
 echo "cpus $(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null)"
 if command -v sbatch >/dev/null 2>&1; then echo "slurm $(sinfo -h -o %P 2>/dev/null | tr '\\n' ' ')"; fi
 `;
+}
 
 /**
- * What a machine has: the programs' paths, how many processors, and
+ * What a machine has: these programs' paths, how many processors, and
  * whether it has Slurm (with its partitions, the default marked `*`).
  * @param {import('./job-shell.mjs').JobShell} shell
+ * @param {Array<{ name: string, beside?: string[] }>} programs
  */
-export async function detectHost(shell) {
+export async function detectHost(shell, programs) {
 	// A login shell, interactive, reads what sets PATH (conda's lines in .bashrc among them).
-	const result = await shell.check(`bash -lic ${shellWord(DETECT)} 2>/dev/null < /dev/null`, { timeout: 60_000 });
+	const result = await shell.check(`bash -lic ${shellWord(detectScript(programs))} 2>/dev/null < /dev/null`, { timeout: 60_000 });
 	const found = { programs: {}, cpus: null, slurm: false, partitions: [] };
 	for (const line of result.stdout.toString('utf8').split('\n')) {
 		const [word, ...rest] = line.trim().split(/\s+/u);
-		if (word === 'program' && JOB_PROGRAMS.includes(rest[0]) && rest[1]) found.programs[rest[0]] = rest.slice(1).join(' ');
+		if (word === 'program' && programs.some((program) => program.name === rest[0]) && rest[1]) found.programs[rest[0]] = rest.slice(1).join(' ');
 		else if (word === 'cpus' && /^\d+$/u.test(rest[0] ?? '')) found.cpus = Number(rest[0]);
 		else if (word === 'slurm') {
 			found.slurm = true;

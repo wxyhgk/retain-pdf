@@ -5,7 +5,6 @@ import { dirname, join, posix } from 'node:path';
 import {
 	FINISHED_STATES,
 	JOB_ID_PATTERN,
-	JOB_PROGRAMS,
 	JOBS_FOLDER,
 	RUN_NAME_PATTERN,
 	STRUCTURE_EXTENSIONS,
@@ -13,7 +12,7 @@ import {
 	runFolder,
 	runName,
 } from '@blog/compute/job-fence.mjs';
-import { jobCommand, joinArgs, outputFile } from '@blog/compute/job-options.mjs';
+import { joinArgs } from '@blog/compute/job-options.mjs';
 import { JobShell, shellPath, shellWord } from './job-shell.mjs';
 
 /**
@@ -32,11 +31,11 @@ import { JobShell, shellPath, shellWord } from './job-shell.mjs';
  * folders the article need not publish.
  */
 
-/** What a program writes that is no result: restart and topology files, the run's own script. */
-const SCRATCH = ['xtbrestart', 'gfnff_topo', 'gfnff_charges', 'gfnff_adjacency', '*.mdrestart', 'crest.restart', 'cre_members', 'run.sh', '*.tmp'];
+/** What a run leaves that is no result, whatever its program (its own script); a program adds its own (`scratch`). */
+const SCRATCH = ['run.sh', '*.tmp'];
 
-/** What is brought over while a job runs, to be drawn as it goes. */
-const LIVE_FILES = { xtb: ['xtb.out', 'xtbopt.log'], crest: ['crest.out'] };
+/** A run started before programs said theirs (kept in the state file from then): xtb's and CREST's. */
+const SCRATCH_BEFORE = ['xtbrestart', 'gfnff_topo', 'gfnff_charges', 'gfnff_adjacency', '*.mdrestart', 'crest.restart', 'cre_members', ...SCRATCH];
 
 /** How often a running job is looked at, by where it runs, in ms. */
 const INTERVALS = { local: 1000, ssh: 3000, slurm: 5000 };
@@ -137,10 +136,11 @@ export class JobRuns {
 
 	/**
 	 * @param {import('@blog/kernel/server.mjs').StudioFiles} files the articles' folders (the dev server's `ctx.server.files`)
-	 * @param {{ hosts: import('./compute-hosts.mjs').ComputeHosts, stateFile: string, shellFor?: (host: object) => JobShell, now?: () => Date, intervals?: Partial<typeof INTERVALS>, limits?: Partial<typeof LIMITS> }} options
+	 * @param {{ programs: { get(name: string): import('@blog/compute/programs.mjs').JobProgram | null, list(): import('@blog/compute/programs.mjs').JobProgram[] }, hosts: import('./compute-hosts.mjs').ComputeHosts, stateFile: string, shellFor?: (host: object) => JobShell, now?: () => Date, intervals?: Partial<typeof INTERVALS>, limits?: Partial<typeof LIMITS> }} options
 	 */
-	constructor(files, { hosts, stateFile, shellFor = (host) => new JobShell(host), now = () => new Date(), intervals = {}, limits = {} }) {
+	constructor(files, { programs, hosts, stateFile, shellFor = (host) => new JobShell(host), now = () => new Date(), intervals = {}, limits = {} }) {
 		this.files = files;
+		this.programs = programs;
 		this.hosts = hosts;
 		this.stateFile = stateFile;
 		this.shellFor = shellFor;
@@ -192,8 +192,8 @@ export class JobRuns {
 	async start(slug, request) {
 		const id = String(request?.id ?? '');
 		if (!JOB_ID_PATTERN.test(id) || id.length > 64) throw new JobRunError('计算块的名字只能用小写字母、数字和连字符');
-		const program = String(request.program ?? '');
-		if (!JOB_PROGRAMS.includes(program)) throw new JobRunError(`不认识的程序 ${program}，现在能算 ${JOB_PROGRAMS.join('、')}`);
+		const program = this.programs.get(String(request.program ?? ''));
+		if (!program) throw new JobRunError(`不认识的程序 ${request.program}，现在能算 ${this.programs.list().map((known) => known.name).join('、') || '的一个也没有（plugins/ 里没有程序插件）'}`);
 		const args = String(request.args ?? '');
 		if (args.length > MAX_ARGS || /[\r\n\0]/u.test(args)) throw new JobRunError('命令行参数要写在一行里');
 		const host = await this.hosts.get(String(request.host || 'local'));
@@ -206,12 +206,12 @@ export class JobRuns {
 		const folder = this.#runDirectory(slug, id, run);
 		await mkdir(folder, { recursive: true });
 		await writeFile(join(folder, input), contents);
-		const command = jobCommand(program, args, input, threads);
+		const command = program.command(input, args, threads);
 		const record = {
 			format: 1,
 			id,
 			run,
-			program,
+			program: program.name,
 			args,
 			command: joinArgs(command),
 			host: host.name,
@@ -219,7 +219,7 @@ export class JobRuns {
 			scheduler: host.scheduler,
 			threads,
 			input,
-			output: outputFile(program),
+			output: program.output,
 			state: 'preparing',
 			created: this.now().toISOString(),
 			started: null,
@@ -237,7 +237,8 @@ export class JobRuns {
 			scheduler: host.scheduler,
 			folder: `${host.workdir.replace(/\/+$/u, '')}/${slug}/${id}/${run}`,
 			threads,
-			live: LIVE_FILES[program],
+			live: program.live,
+			scratch: [...program.scratch, ...SCRATCH],
 			slurmId: null,
 			cancel: false,
 			misses: 0,
@@ -436,7 +437,7 @@ export class JobRuns {
 		let error = null;
 		if (probe.state !== 'gone') {
 			try {
-				await shell.pull(entry.folder, folder, { skip: SCRATCH, maxBytes: this.limits.result });
+				await shell.pull(entry.folder, folder, { skip: entry.scratch ?? SCRATCH_BEFORE, maxBytes: this.limits.result });
 				// The output left behind as too big: its end, at least.
 				await this.#follow(entry, shell, probe.sizes);
 			} catch (pullError) {

@@ -27,8 +27,9 @@ export const PluginState = Object.freeze({ PENDING: 0, LOADING: 1, ACTIVE: 2, FA
 
 /**
  * Applies these plugin modules to `ctx`, in order. Resolves with what
- * became of each: active, waiting for a service no plugin provides (its
- * `inject`), or failed (and why). One plugin failing does not stop the others.
+ * became of each once all have started: active, waiting for a service no
+ * plugin provides (its `inject`; one that a later plugin provides is not
+ * waiting by then), or failed (and why). One plugin failing does not stop the others.
  * @param {import('@deepseek-ai/cordis').Context} ctx
  * @param {Array<{ id: string, module?: any, error?: unknown }>} plugins (`error`: it could not be loaded)
  */
@@ -45,11 +46,16 @@ export async function applyPlugins(ctx, plugins) {
 			continue;
 		}
 		try {
-			const fiber = await ctx.plugin(plugin);
-			results.push({ id, fiber, state: fiber.state === PluginState.ACTIVE ? 'active' : fiber.state === PluginState.PENDING ? 'waiting' : fiber.state === PluginState.FAILED ? 'failed' : String(fiber.state) });
+			results.push({ id, fiber: await ctx.plugin(plugin) });
 		} catch (error) {
 			results.push({ id, state: 'failed', error: error instanceof Error ? error.message : String(error) });
 		}
+	}
+	// Read once all have started: one waiting for a service a later one provides has it now.
+	for (const result of results) {
+		if (!result.fiber) continue;
+		const state = result.fiber.state;
+		result.state = state === PluginState.ACTIVE ? 'active' : state === PluginState.PENDING ? 'waiting' : state === PluginState.FAILED ? 'failed' : String(state);
 	}
 	return results;
 }

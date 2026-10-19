@@ -169,10 +169,18 @@ test('a block made from the slash menu opens on 搭建; its form; and the machin
 	await expect(sheet(page).locator('.block-sheet-note')).toContainText('在这里搭出分子');
 	await expect.poll(savedMarkdown).toMatch(/```job id=job-[a-z0-9]{6} program=xtb args=--opt host=local\n```/u);
 	await tab(page, '设置').click();
-	// CREST instead: its own tasks and methods.
+	// xtb's level shows for an optimization only.
+	await expect(field(page, '优化精度')).toBeVisible();
+	await field(page, '任务').selectOption('sp');
+	await expect(field(page, '优化精度')).toBeHidden();
+	await field(page, '电荷').fill('-1');
+	await expect(sheet(page).locator('.job-args')).toHaveValue('--chrg -1');
+	// CREST instead: its own fields; what both have (the charge) is kept.
 	await field(page, '程序').selectOption('crest');
-	await expect(sheet(page).locator('.job-args')).toHaveValue('--gfn2');
-	await expect(block(page).locator('.job-card-describe')).toHaveText('CREST · 构象搜索 · GFN2-xTB');
+	await expect(sheet(page).locator('.job-args')).toHaveValue('--gfn2 --chrg -1');
+	await expect(field(page, '能量窗口 kcal/mol')).toBeVisible();
+	await expect(field(page, '任务')).toHaveCount(0);
+	await expect(block(page).locator('.job-card-describe')).toHaveText('CREST · 构象搜索 · GFN2-xTB · 电荷 -1');
 	// No structure yet: a run is refused, saying why.
 	page.once('dialog', (dialog) => {
 		expect(dialog.message()).toContain('还没有结构');
@@ -198,5 +206,5 @@ test('a block made from the slash menu opens on 搭建; its form; and the machin
 	expect(kept.map((host: { name: string }) => host.name)).toEqual(['local', 'cluster']);
 	expect(kept[1]).toMatchObject({ kind: 'ssh', ssh: 'me@cluster.example', scheduler: 'slurm', partition: 'batch', label: '课题组集群' });
 	await field(page, '机器').selectOption('cluster');
-	await expect.poll(savedMarkdown).toMatch(/args=--gfn2 host=cluster\n```/u);
+	await expect.poll(savedMarkdown).toMatch(/args="--gfn2 --chrg -1" host=cluster\n```/u);
 });

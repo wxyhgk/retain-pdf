@@ -107,3 +107,13 @@ test('a plugin that failed is not tried again until it changes, and one that is 
 	await syncPlugins(ctx, loaded, [{ id: 'waits', module: { inject: ['nothing'], apply() {} } }]);
 	assert.deepEqual(pluginStatus(loaded.get('waits')), { state: 'waiting' });
 });
+
+test('a plugin that needs a service a later one provides is not reported as waiting', async () => {
+	const ctx = await kernel();
+	const results = await applyPlugins(ctx, [
+		{ id: 'crest', module: { inject: ['jobs'], apply() {} } },
+		{ id: 'job', module: { apply: (c: any) => c.provide('jobs', {}) } },
+	]);
+	assert.deepEqual(results.map((result) => result.state), ['active', 'active']);
+	assert.deepEqual(pluginProblems(results), []);
+});

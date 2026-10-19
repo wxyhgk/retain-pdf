@@ -12,11 +12,12 @@ export type ComputeHost = {
 	time?: string;
 	workdir: string;
 	threads: number;
-	programs: Partial<Record<'xtb' | 'crest', string>>;
+	/** Each program's path, by its name. */
+	programs: Partial<Record<string, string>>;
 	setup: string;
 };
 
-export type HostDetected = { programs: Partial<Record<'xtb' | 'crest', string>>; cpus: number | null; slurm: boolean; partitions: string[] };
+export type HostDetected = { programs: Partial<Record<string, string>>; cpus: number | null; slurm: boolean; partitions: string[] };
 
 export type JobInput = { program: string; args: string; host: string; threads: number; body: string };
 

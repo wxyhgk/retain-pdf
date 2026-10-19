@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { jobFenceMeta, jobStructure, newJobId, parseJobFence, runFolder, runName } from '../job-fence.mjs';
-import { describeJob, jobCommand, readJobOptions, splitArgs, writeJobArgs } from '../job-options.mjs';
 
 const WATER = '3\nwater\nO 0 0 0.1173\nH 0 0.7572 -0.4692\nH 0 -0.7572 -0.4692\n';
 
@@ -31,24 +30,3 @@ test('runs are kept by job and by when they started; names that would leave the 
 	assert.equal(newJobId(['job-000000'], () => sequence[call++]), 'job-iiiiii');
 });
 
-test('the form reads the command line it knows, keeps what it does not, and writes it back', () => {
-	const options = readJobOptions('xtb', '--ohess vtight --gfn 1 --chrg -1 --uhf 1 --alpb water --cycles 500 --input "x control"');
-	assert.deepEqual(options, { task: 'ohess', method: 'gfn1', level: 'vtight', charge: -1, uhf: 1, solvent: { model: 'alpb', name: 'water' }, ewin: null, extra: ['--cycles', '500', '--input', 'x control'] });
-	assert.equal(writeJobArgs('xtb', options), "--ohess vtight --gfn 1 --chrg -1 --uhf 1 --alpb water --cycles 500 --input 'x control'");
-	assert.equal(writeJobArgs('xtb', { ...options, task: 'sp', method: 'gfn2', charge: 0, uhf: 0, solvent: null, extra: [] }), '');
-	assert.equal(readJobOptions('xtb', '').task, 'sp');
-	assert.equal(writeJobArgs('xtb', readJobOptions('xtb', '--gfnff --opt')), '--opt --gfnff');
-
-	const crest = readJobOptions('crest', '--gfn2//gfnff --gbsa thf --ewin 4 --noreftopo');
-	assert.deepEqual(crest, { task: 'conformers', method: 'gfn2//gfnff', level: '', charge: 0, uhf: 0, solvent: { model: 'gbsa', name: 'thf' }, ewin: 4, extra: ['--noreftopo'] });
-	assert.equal(writeJobArgs('crest', crest), '--gfn2//gfnff --gbsa thf --ewin 4 --noreftopo');
-	assert.equal(describeJob('xtb', options), '优化 + 频率 · GFN1-xTB · 电荷 -1 · 1 个未成对电子 · 水（ALPB）');
-});
-
-test('what a run executes: the threads added unless the command line says how many', () => {
-	assert.deepEqual(splitArgs(` --opt  'a b' "c"d `), ['--opt', 'a b', 'cd']);
-	assert.deepEqual(jobCommand('xtb', '--opt', 'input.xyz', 8), ['xtb', 'input.xyz', '--opt', '--parallel', '8']);
-	assert.deepEqual(jobCommand('xtb', '--opt -P 2', 'input.xyz', 8), ['xtb', 'input.xyz', '--opt', '-P', '2']);
-	assert.deepEqual(jobCommand('crest', '--gfn2', 'input.xyz', 16), ['crest', 'input.xyz', '--gfn2', '-T', '16']);
-	assert.deepEqual(jobCommand('crest', '--gfn2', 'input.xyz', 0), ['crest', 'input.xyz', '--gfn2']);
-});

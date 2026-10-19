@@ -1,6 +1,4 @@
 export declare const JOB_LANGUAGE: 'job';
-export declare const JOB_PROGRAMS: readonly ['xtb', 'crest'];
-export type JobProgram = 'xtb' | 'crest';
 export declare const JOB_ID_PATTERN: RegExp;
 export declare const RUN_NAME_PATTERN: RegExp;
 export declare const JOBS_FOLDER: 'assets/jobs';

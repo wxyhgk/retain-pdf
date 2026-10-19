@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
 import { FINISHED_STATES, JOB_LANGUAGE, RUN_STATE_NAMES, parseJobFence, runFolder } from '@blog/compute/job-fence.mjs';
-import { describeJob, readJobOptions } from '@blog/compute/job-options.mjs';
+import { JobPrograms } from '@blog/compute/programs.mjs';
 
 /**
  * The blog's build: ```job fences (@blog/compute) become a figure the page
@@ -10,23 +10,33 @@ import { describeJob, readJobOptions } from '@blog/compute/job-options.mjs';
  * (its run.json, read here at build time, in `data-run`), and the structure
  * it started from, folded, under it.
  *
- * Reported for the check before publishing: a run the fence names that is
- * not in the article (`job-run`), one still going (`job-running`), and one
- * that did not end well (`job-failed`).
+ * The programs are plugins of their own (plugins/xtb, plugins/crest), in
+ * `ctx.jobs`, which this one provides.
+ *
+ * Reported for the check before publishing: a program no plugin knows
+ * (`job-program`), a run the fence names that is not in the article
+ * (`job-run`), one still going (`job-running`), and one that did not end
+ * well (`job-failed`).
  */
 export const name = 'block-job';
 export const inject = ['blocks'];
 
-export function apply(ctx) {
-	ctx.blocks.register({ name, fence: JOB_LANGUAGE, remark: jobFigure });
+export async function apply(ctx) {
+	await ctx.plugin(JobPrograms);
+	const programs = ctx.get('jobs');
+	ctx.blocks.register({ name, fence: JOB_LANGUAGE, remark: (node, file) => jobFigure(node, file, programs) });
 }
 
-/** What a ```job fence becomes in the page; `file` is the article's (its folder holds the runs). */
-export function jobFigure(node, file) {
+/**
+ * What a ```job fence becomes in the page; `file` is the article's (its
+ * folder holds the runs), `programs` the programs there are (`ctx.jobs`).
+ */
+export function jobFigure(node, file, programs) {
 	const article = file.path ? dirname(file.path) : null;
 	const fence = parseJobFence(node.meta, node.value);
 	const place = { place: node.position, source: 'block-job' };
-	const program = fence.program === 'crest' ? 'crest' : 'xtb';
+	const program = programs.get(fence.program);
+	if (!program) file.message(`计算块「${fence.title || fence.id}」用的程序 ${fence.program} 没有插件认识（plugins/ 里没有注册它的）`, { ...place, ruleId: 'job-program' });
 	let record = null;
 	if (fence.id && fence.run) {
 		let folder = null;
@@ -59,7 +69,7 @@ export function jobFigure(node, file) {
 		children: [
 			{ type: 'element', tagName: 'span', properties: { className: ['note-job-kind'] }, children: [text('计算')] },
 			{ type: 'element', tagName: 'strong', properties: { className: ['note-job-title'] }, children: [text(fence.title || '未命名计算')] },
-			{ type: 'element', tagName: 'span', properties: { className: ['note-job-summary'] }, children: [text(`${program === 'crest' ? 'CREST' : 'xtb'} · ${describeJob(program, readJobOptions(program, fence.args))}`)] },
+			{ type: 'element', tagName: 'span', properties: { className: ['note-job-summary'] }, children: [text(program ? `${program.label} · ${program.describe(program.read(fence.args))}` : `${fence.program} · ${fence.args}`.trim())] },
 		],
 	};
 	const result = {
@@ -73,7 +83,7 @@ export function jobFigure(node, file) {
 		tagName: 'details',
 		properties: { className: ['note-job-input'] },
 		children: [
-			{ type: 'element', tagName: 'summary', properties: {}, children: [text(`输入：${program} 输入文件 ${fence.args}`.trim())] },
+			{ type: 'element', tagName: 'summary', properties: {}, children: [text(`输入：${fence.program} 输入文件 ${fence.args}`.trim())] },
 			{ type: 'element', tagName: 'pre', properties: {}, children: [{ type: 'element', tagName: 'code', properties: {}, children: [text(node.value)] }] },
 		],
 	};

@@ -1,27 +1,11 @@
 /**
- * A job's command line (the fence's `args=`) as the fields of its form, and
- * back. The form knows the task, the method, charge and unpaired electrons,
- * the solvent and, for an optimization, how tight; whatever else is written
- * is kept as it was, after them. So the command line is the job, and the
- * form a way of writing it.
+ * Command lines, for the programs (programs.mjs): split and joined as a
+ * shell does, and what xtb and the programs built on it (CREST) take alike —
+ * charge, unpaired electrons, a solvent — as a form's fields and back. A
+ * program's own words (its task, its method…) are its own (plugins/xtb,
+ * plugins/crest); whatever no field knows is kept as it was, after them, so
+ * the command line is the job, and the form a way of writing it.
  */
-
-/** What an xtb job does; `--opt`, `--hess`, `--ohess` take a level. */
-export const XTB_TASKS = Object.freeze({
-	sp: { name: '单点能', flag: '' },
-	opt: { name: '结构优化', flag: '--opt' },
-	hess: { name: '频率', flag: '--hess' },
-	ohess: { name: '优化 + 频率', flag: '--ohess' },
-});
-
-export const CREST_TASKS = Object.freeze({
-	conformers: { name: '构象搜索', flag: '' },
-});
-
-export const XTB_METHODS = Object.freeze({ gfn2: 'GFN2-xTB', gfn1: 'GFN1-xTB', gfn0: 'GFN0-xTB', gfnff: 'GFN-FF' });
-export const CREST_METHODS = Object.freeze({ gfn2: 'GFN2-xTB', gfn1: 'GFN1-xTB', gfn0: 'GFN0-xTB', gfnff: 'GFN-FF', 'gfn2//gfnff': 'GFN2//GFN-FF' });
-
-export const OPT_LEVELS = Object.freeze(['crude', 'sloppy', 'loose', 'lax', 'normal', 'tight', 'vtight', 'extreme']);
 
 /** The solvents both ALPB and GBSA have (xtb's names), with what to call them. */
 export const SOLVENTS = Object.freeze({
@@ -43,11 +27,6 @@ export const SOLVENTS = Object.freeze({
 	octanol: '正辛醇',
 	ethylacetate: '乙酸乙酯',
 	nitromethane: '硝基甲烷',
-});
-
-export const DEFAULT_OPTIONS = Object.freeze({
-	xtb: { task: 'opt', method: 'gfn2', level: '', charge: 0, uhf: 0, solvent: null, ewin: null, extra: [] },
-	crest: { task: 'conformers', method: 'gfn2', level: '', charge: 0, uhf: 0, solvent: null, ewin: null, extra: [] },
 });
 
 /** Words of a command line, as a shell splits them (quotes, no expansion). */
@@ -81,94 +60,72 @@ export function joinArgs(words) {
 const integer = (word) => (word !== undefined && /^[+-]?\d+$/u.test(word) ? Number(word) : null);
 
 /**
- * The form's fields for a job's command line.
- * @param {'xtb' | 'crest'} program
- * @param {string} args
+ * xtb's charge, unpaired electrons and solvent, at `words[index]`: how many
+ * words they took (0 when that word is none of them), into `options`.
+ * @param {string[]} words
+ * @param {number} index
+ * @param {{ charge: number, uhf: number, solvent: { model: string, name: string } | null }} options
  */
-export function readJobOptions(program, args) {
-	const options = { ...DEFAULT_OPTIONS[program === 'crest' ? 'crest' : 'xtb'], task: program === 'crest' ? 'conformers' : 'sp', extra: [] };
-	const words = splitArgs(args);
-	for (let index = 0; index < words.length; index += 1) {
-		const word = words[index];
-		const next = words[index + 1];
-		const take = () => {
-			index += 1;
-			return next;
-		};
-		if (program !== 'crest' && ['--opt', '--hess', '--ohess'].includes(word)) {
-			options.task = word.slice(2);
-			if (next !== undefined && OPT_LEVELS.includes(next)) options.level = take();
-		} else if (program !== 'crest' && word === '--gfn' && ['0', '1', '2'].includes(next)) {
-			options.method = `gfn${take()}`;
-		} else if (word === '--gfnff') {
-			options.method = 'gfnff';
-		} else if (program === 'crest' && /^--gfn[012](?:\/\/gfnff)?$/u.test(word)) {
-			options.method = word.slice(2);
-		} else if ((word === '--chrg' || word === '-c') && integer(next) !== null) {
-			options.charge = integer(take());
-		} else if ((word === '--uhf' || word === '-u') && integer(next) !== null && integer(next) >= 0) {
-			options.uhf = integer(take());
-		} else if ((word === '--alpb' || word === '--gbsa') && next !== undefined && !next.startsWith('-')) {
-			options.solvent = { model: word.slice(2), name: take() };
-		} else if (program === 'crest' && word === '--ewin' && next !== undefined && Number.isFinite(Number(next))) {
-			options.ewin = Number(take());
-		} else {
-			options.extra.push(word);
-		}
+export function readXtbCommon(words, index, options) {
+	const word = words[index];
+	const next = words[index + 1];
+	if ((word === '--chrg' || word === '-c') && integer(next) !== null) {
+		options.charge = integer(next);
+		return 2;
 	}
-	return options;
+	if ((word === '--uhf' || word === '-u') && integer(next) !== null && integer(next) >= 0) {
+		options.uhf = integer(next);
+		return 2;
+	}
+	if ((word === '--alpb' || word === '--gbsa') && next !== undefined && !next.startsWith('-')) {
+		options.solvent = { model: word.slice(2), name: next };
+		return 2;
+	}
+	return 0;
 }
 
-/** The command line for the form's fields, the words it did not know after them. */
-export function writeJobArgs(program, options) {
+/** Those as words of the command line. */
+export function writeXtbCommon(options) {
 	const words = [];
-	if (program === 'crest') {
-		if (options.method && options.method !== 'gfn2') words.push(`--${options.method}`);
-		else words.push('--gfn2');
-	} else {
-		const task = XTB_TASKS[options.task];
-		if (task?.flag) {
-			words.push(task.flag);
-			if (options.level && OPT_LEVELS.includes(options.level)) words.push(options.level);
-		}
-		if (options.method === 'gfnff') words.push('--gfnff');
-		else if (options.method && options.method !== 'gfn2') words.push('--gfn', options.method.slice(3));
-	}
 	if (options.charge) words.push('--chrg', String(options.charge));
 	if (options.uhf) words.push('--uhf', String(options.uhf));
 	if (options.solvent?.name) words.push(`--${options.solvent.model === 'gbsa' ? 'gbsa' : 'alpb'}`, options.solvent.name);
-	if (program === 'crest' && options.ewin !== null && options.ewin !== undefined) words.push('--ewin', String(options.ewin));
-	return joinArgs([...words, ...(options.extra ?? [])]);
+	return words;
 }
 
-/** The words a run adds for its threads, unless the command line already says how many. */
-export function threadArgs(program, args, threads) {
-	if (!threads) return [];
-	const words = splitArgs(args);
-	if (program === 'crest') return words.includes('-T') || words.includes('--threads') ? [] : ['-T', String(threads)];
-	return words.includes('-P') || words.includes('--parallel') ? [] : ['--parallel', String(threads)];
-}
-
-/**
- * What a run of the job executes, in its folder: the program, the input,
- * the command line and the threads. `input` is the structure's file name there.
- */
-export function jobCommand(program, args, input, threads) {
-	return [program, input, ...splitArgs(args), ...threadArgs(program, args, threads)];
-}
-
-/** The file a program's output goes to, in the run's folder. */
-export function outputFile(program) {
-	return program === 'crest' ? 'crest.out' : 'xtb.out';
-}
-
-/** A line saying what the job does, for the block's head: 「结构优化 · GFN2-xTB · 水 (ALPB)」. */
-export function describeJob(program, options) {
-	const tasks = program === 'crest' ? CREST_TASKS : XTB_TASKS;
-	const methods = program === 'crest' ? CREST_METHODS : XTB_METHODS;
-	const parts = [tasks[options.task]?.name ?? options.task, methods[options.method] ?? options.method];
+/** Those as parts of the line saying what the job does. */
+export function describeXtbCommon(options) {
+	const parts = [];
 	if (options.charge) parts.push(`电荷 ${options.charge > 0 ? '+' : ''}${options.charge}`);
 	if (options.uhf) parts.push(`${options.uhf} 个未成对电子`);
 	if (options.solvent) parts.push(`${SOLVENTS[options.solvent.name] ?? options.solvent.name}（${options.solvent.model.toUpperCase()}）`);
-	return parts.join(' · ');
+	return parts;
 }
+
+const solventChoices = (options) => [
+	...(options.solvent && !SOLVENTS[options.solvent.name] ? [[options.solvent.name, options.solvent.name]] : []),
+	...Object.entries(SOLVENTS).map(([key, name]) => [key, `${name} ${key}`]),
+];
+
+/** Those as the form's fields (programs.d.mts ProgramField). */
+export const XTB_COMMON_FIELDS = Object.freeze([
+	{ key: 'charge', label: '电荷', kind: 'number', min: -20, max: 20, get: (options) => String(options.charge), set: (options, value) => ({ ...options, charge: Number.parseInt(value, 10) || 0 }) },
+	{ key: 'uhf', label: '未成对电子', kind: 'number', min: 0, max: 20, get: (options) => String(options.uhf), set: (options, value) => ({ ...options, uhf: Math.max(0, Number.parseInt(value, 10) || 0) }) },
+	{
+		key: 'solvent-model',
+		label: '溶剂模型',
+		kind: 'select',
+		choices: () => [['', '无（气相）'], ['alpb', 'ALPB'], ['gbsa', 'GBSA']],
+		get: (options) => options.solvent?.model ?? '',
+		set: (options, value) => ({ ...options, solvent: value ? { model: value, name: options.solvent?.name ?? 'water' } : null }),
+	},
+	{
+		key: 'solvent',
+		label: '溶剂',
+		kind: 'select',
+		choices: solventChoices,
+		shown: (options) => Boolean(options.solvent),
+		get: (options) => options.solvent?.name ?? '',
+		set: (options, value) => ({ ...options, solvent: options.solvent ? { ...options.solvent, name: value } : null }),
+	},
+]);

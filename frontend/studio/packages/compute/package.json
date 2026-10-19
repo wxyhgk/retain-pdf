@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@blog/science": "*",
-    "@blog/ui": "*"
+    "@blog/ui": "*",
+    "@blog/kernel": "*"
   }
 }

@@ -35,6 +35,7 @@ export function apply(ctx) { … }             // 在这里注册
 | Studio | `ctx.blocks.register({ name, fence, milkdown, menu })` | 编辑器节点（Milkdown 插件）和斜杠菜单里的一项（`insert(view)`） |
 | Studio | `ctx.studio` | 打开的文章 `slug()`、`fileUrl(slug, path)`、`save()`、自己的接口 `api.get/post/put('/<插件>/…')` |
 | Studio | `ctx.molecules` | 分子编辑器接缝：`register(editor)` 提供一个，`editor()` 取一个 |
+| 全部 | `ctx.jobs`（由 `job` 插件提供） | 计算程序：`register(program)`、`get(name)`、`list()`；见「写一个计算程序」 |
 | Studio | `ctx.sheetTabs` | 给别的块的弹窗加页签：`register('block-job', { key, label, draw(panel, detail) })` |
 | Studio | `ctx.theme` | 改设计变量：`set({ 'editor-width': '720px' }, { scheme? })`；`tokens()` 列出全部和现在的值。见下面「改外观」 |
 | Studio | `ctx.styles` | 加一段自己的 CSS：`add(css)` |
@@ -79,7 +80,8 @@ export function apply(ctx: Context): void {
 
 ## 现有的插件
 
-- `job/`：计算块（xtb / CREST）。四个环境都有，是写块插件最完整的例子。库在 `packages/compute`。
+- `job/`：计算块。四个环境都有，是写块插件最完整的例子。库在 `packages/compute`。它提供 `ctx.jobs`（计算程序接缝），跑哪个程序由程序插件决定。
+- `xtb/`、`crest/`：计算程序。四个环境都把自己注册进 `ctx.jobs`；加一个程序见下面「写一个计算程序」。
 - `retainmol/`：RetainMol 分子编辑器。Studio 里注册成 `ctx.molecules` 的一个实现，服务器上负责构建和提供它。计算块和化学块的三维结构都通过 `ctx.molecules` 用它，换一个编辑器不用改那些块。
 
 ## 写一个新块
@@ -90,6 +92,21 @@ export function apply(ctx: Context): void {
 4. `studio.ts`：用 `$fencedBlock` 和 `$view` 做编辑器节点，`ctx.blocks.register({ name, fence, milkdown: [...], menu })`。卡片加弹窗用 `@blog/ui` 的 `openBlockSheet`。
 5. `server.mjs`（需要的话）：`ctx.routes` 挂接口，Studio 那边用 `ctx.studio.api` 调。
 6. 测试放在 `test/`：`*.test.ts` 跟单元测试一起跑，`*.test.mjs` 跟服务器测试一起跑。构建的测试可以用 `@blog/kernel/testing.mjs` 的 `buildBlocks(插件)`，见 `job/test/build.test.ts`。
+
+## 写一个计算程序
+
+计算块不认识任何具体程序，程序是各自的插件。以 ORCA 为例，建 `plugins/orca/`：
+
+1. `program.mjs`：程序的定义，四个环境共用（类型见 `packages/compute/programs.d.mts`）：
+   - `name`（围栏里的 `program=`、命令名、计算机器里路径的键）、`label`、`order`（列表里的先后）、`starter`（新块的命令行）；
+   - `read(args)` / `write(options)` / `describe(options)`：命令行和表单互相转换，一行说明；
+   - `fields`：表单的字段（选项、数字，什么时候显示，怎么读写选项）。xtb 系的电荷、未成对电子、溶剂可以直接用 `@blog/compute/job-options.mjs` 的 `XTB_COMMON_FIELDS`；
+   - `command(input, args, threads)`：运行时执行的命令；`output`：输出文件；`live`：运行中跟踪的文件；`scratch`：不算结果的文件；`beside`：在计算机器上到哪些程序旁边找它。
+2. `view.ts`：浏览器里怎么画它的结果：`draw(context)` 和 `summarize(context, summary)`，用 `@blog/compute/browser/job-view.ts` 里的零件（数值表、优化曲线、红外光谱、结构、构象表）。输出的解析器放在插件里或 `packages/compute/parsers/`。
+3. 四个入口都只有一句：`inject: ['jobs']`，`apply(ctx) { ctx.jobs.register(…) }`。`build.mjs`、`server.mjs` 注册 `program`；`page.ts`、`studio.ts` 注册 `{ ...program, ...view }`。
+4. 测试放在 `test/`，见 `xtb/test/program.test.ts`。
+
+装上之后：表单、斜杠菜单、计算机器窗口（路径和检测）、运行、结果页都会认它，计算块的代码不用改。没有插件认识的程序，块照样显示命令行，发布前检查会提示。
 
 ## 开关
 

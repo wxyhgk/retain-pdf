@@ -15,6 +15,10 @@ declare module '@deepseek-ai/cordis' {
 	interface Context {
 		page: ArticlePage;
 	}
+	interface Events {
+		/** Every plugin of the page has started: what one draws may use what the others registered. */
+		'page/ready'(): void;
+	}
 }
 
 /** Starts the page's plugins (modules by path, as import.meta.glob gives them) for this article. */
@@ -28,5 +32,6 @@ export async function startPage(modules: Record<string, unknown>, articleSlug: s
 	} satisfies ArticlePage);
 	const plugins = Object.entries(modules).map(([path, module]) => ({ id: /\/plugins\/([^/]+)\//u.exec(path)?.[1] ?? path, module }));
 	for (const problem of pluginProblems(await applyPlugins(ctx, plugins))) console.warn(`[plugins] ${problem}`);
+	ctx.emit('page/ready');
 	return ctx;
 }

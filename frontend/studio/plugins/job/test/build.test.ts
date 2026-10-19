@@ -12,9 +12,10 @@ import { VFile } from 'vfile';
 
 import { buildBlocks } from '@blog/kernel/testing.mjs';
 import { markdownPlugins } from '@blog/markdown/pipeline.mjs';
+import * as xtb from '../../xtb/build.mjs';
 import * as job from '../build.mjs';
 
-const { remarkPlugins, rehypePlugins } = markdownPlugins({ blocks: await buildBlocks(job) });
+const { remarkPlugins, rehypePlugins } = markdownPlugins({ blocks: await buildBlocks(job, xtb) });
 
 /** An article in a folder with these files, rendered as the blog renders it. */
 async function render(t: { after: (fn: () => void) => void }, markdown: string, files: Record<string, string> = {}) {
@@ -67,4 +68,10 @@ test('what the check before publishing says: a run not in the article, one still
 	assert.deepEqual(bad.messages.map(([rule]) => rule), ['job-run']);
 
 	assert.deepEqual((await render(t, fence('id=opt'))).messages, []);
+});
+
+test('a program no plugin knows is drawn as written, and said', async (t) => {
+	const { html, messages } = await render(t, fence('id=opt program=orca args="! B3LYP def2-SVP"'));
+	assert.match(html, /orca · ! B3LYP def2-SVP/u);
+	assert.deepEqual(messages, [['job-program', '计算块「opt」用的程序 orca 没有插件认识（plugins/ 里没有注册它的）']]);
 });

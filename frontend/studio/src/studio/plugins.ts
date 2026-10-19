@@ -58,6 +58,7 @@ function reload({ announce }: { announce: boolean }): Promise<void> {
 		if (!changed.length) return;
 		warn(problems);
 		const after = studioBlocks(studioPlugins);
+		studioPlugins.emit('studio/plugins-changed', changed);
 		if (announce) studioPlugins.emit('studio/plugins-reloaded', changed, problems);
 		if (before.length !== after.length || before.some((block, index) => block !== after[index])) studioPlugins.emit('studio/blocks-changed');
 	}).catch((error) => console.error('[plugins] 重新载入失败', error));
