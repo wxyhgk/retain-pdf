@@ -1,13 +1,15 @@
 import { createSciencePreview, hydrateSciencePreviews } from '@blog/science/browser/science-renderer.ts';
 import { openBlockSheet, type OpenSheet, type SheetAction } from '@blog/ui/block-sheet.ts';
 
-import { molfileTo3D, open3DEditor, type Editor3D } from './molecule-editor-3d.ts';
+import { openRetainmol } from './retainmol-frame.ts';
+import './science-sheet.css';
 import { parseScienceFence, scienceBlockKindLabel, scienceSourceEditor, structureDrawing } from './science-block.ts';
 import { mountStructureEditor, smilesToMolfile } from './structure-editor.ts';
 
 /**
  * A chemistry block's sheet: 结构, the structure edited where it is drawn
- * (a flat one in the structure editor, one in 3D in RetainMol's), and 源码,
+ * (a flat one in the structure editor, one in 3D in RetainMol, the author's
+ * molecule editor, retainmol-frame.ts), and 源码,
  * its text with what it draws under it. What is changed in either is
  * written into the block a moment later. A flat structure can be made 3D.
  * Formats neither editor writes (GJF, PDB, cube, a file of the article) are
@@ -63,6 +65,8 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 	if (!start) return null;
 	/** Changes made in the sheet itself, which its own tabs need not be drawn again for. */
 	let writingFromTab: string | null = null;
+	/** A flat structure (molfile) to be made 3D the next time 结构 is drawn. */
+	let flatTo3D: string | null = null;
 	let sheet: OpenSheet;
 
 	const write = (tab: string, next: ScienceBlockState) => {
@@ -85,13 +89,14 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 		const state = host.read();
 		if (!state) return;
 		const stage = element('div', 'science-sheet-editor');
-		const note = element('p', 'job-section-note');
+		const note = element('p', 'block-sheet-note');
 		panel.append(stage, note);
 		let closed = false;
 		let dispose: (() => void) | null = null;
 		const form = structureDrawing(state.info, state.source);
 		const in3D = editableIn3D(state.info, state.source);
-		if (form) {
+		// Being made 3D comes first: a flat structure would otherwise go to the structure editor.
+		if (form && flatTo3D === null) {
 			note.textContent = form === 'smiles' ? '画好的结构会写回成 SMILES；SMILES 写不下的（如通用基团）会改成 SDF 块。' : '画好的结构会写回块里（MOL）。';
 			stage.textContent = '正在载入结构编辑器…';
 			void mountStructureEditor(stage, form, state, {
@@ -103,29 +108,31 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 			}).catch((error) => {
 				stage.textContent = error instanceof Error ? error.message : String(error);
 			});
-		} else if (in3D) {
-			note.textContent = in3D === 'xyz' ? '改动会写回块里（XYZ）。' : '改动会写回块里（MOL）；SD 文件里的数据字段不会保留。';
-			let editor: Editor3D | null = null;
-			let timer: ReturnType<typeof setTimeout> | undefined;
-			const flush = () => {
-				clearTimeout(timer);
-				const current = host.read();
-				if (!editor || !current) return;
-				const source = editor.source(in3D);
-				if (source !== current.source) write('structure', { info: current.info, source });
-			};
-			void open3DEditor(stage, state.source, {
-				changed: () => {
-					clearTimeout(timer);
-					timer = setTimeout(flush, 400);
+		} else if (in3D || flatTo3D !== null) {
+			// Made 3D from a flat structure: RetainMol gives it coordinates in space, and the block becomes a 3D SDF.
+			const making = flatTo3D;
+			flatTo3D = null;
+			const format = making !== null ? 'mol' : in3D;
+			note.textContent = making !== null
+				? '正在用 RetainMol 生成三维结构，补上氢；生成后块会变成三维 SDF。'
+				: format === 'xyz' ? '在 RetainMol 里改结构，改动写回块里（XYZ）。' : '在 RetainMol 里改结构，改动写回块里（MOL）；SD 文件里的数据字段不会保留。';
+			void openRetainmol(stage, {
+				text: making ?? state.source,
+				report: making !== null,
+				changed: (built) => {
+					const current = host.read();
+					if (!current) return;
+					const source = (format === 'xyz' ? built.xyz : built.mol).replace(/\s+$/u, '');
+					const info = making !== null ? 'sdf' : current.info;
+					if (source !== current.source || info !== current.info) write('structure', { info, source });
+					note.textContent = `${built.formula} · ${built.atoms} 个原子，已写回块里。`;
+				},
+				failed: (message) => {
+					note.textContent = `RetainMol 读不了这个结构：${message}`;
 				},
 			}).then((opened) => {
-				editor = opened;
 				if (closed) opened.dispose();
-				else dispose = () => {
-					if (opened.changed()) flush();
-					opened.dispose();
-				};
+				else dispose = () => opened.dispose();
 			}).catch((error) => {
 				stage.replaceChildren(element('p', 'science-sheet-empty', error instanceof Error ? error.message : String(error)));
 			});
@@ -177,29 +184,24 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 		};
 	};
 
-	/** A flat structure made 3D (an SDF block with coordinates in space, hydrogens added). */
+	/** A flat structure made 3D (an SDF block with coordinates in space, hydrogens added), by RetainMol. */
 	const make3D = async () => {
 		const state = host.read();
 		const form = state ? structureDrawing(state.info, state.source) : null;
 		if (!state || !form || !state.source.trim()) return;
-		sheet.setActions(actions(true));
 		try {
-			const molfile = form === 'smiles' ? await smilesToMolfile(state.source.trim()) : state.source;
-			const source = (await molfileTo3D(molfile)).replace(/\s+$/u, '');
-			write('make-3d', { info: 'sdf', source });
+			flatTo3D = form === 'smiles' ? await smilesToMolfile(state.source.trim()) : state.source;
 			sheet.redraw('structure');
 			sheet.select('structure');
 		} catch (error) {
 			window.alert(`没能生成三维结构：${error instanceof Error ? error.message : String(error)}`);
-		} finally {
-			sheet.setActions(actions());
 		}
 	};
 
-	const actions = (busy = false): SheetAction[] => {
+	const actions = (): SheetAction[] => {
 		const state = host.read();
 		if (!state || !structureDrawing(state.info, state.source) || !state.source.trim()) return [];
-		return [{ label: busy ? '正在生成…' : '生成三维结构', title: '用 OpenChemLib 生成构象、补上氢，块变成三维 SDF', disabled: busy, run: () => void make3D() }];
+		return [{ label: '生成三维结构', title: '交给 RetainMol 生成三维构象、补上氢，块变成三维 SDF', run: () => void make3D() }];
 	};
 
 	sheet = openBlockSheet({
@@ -207,7 +209,7 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 		title: scienceBlockKindLabel(start.info),
 		initial,
 		tabs: [
-			{ key: 'structure', label: '结构', draw: drawStructure },
+			{ key: 'structure', label: '结构', draw: drawStructure, wide: true },
 			{ key: 'source', label: '源码', draw: drawSource },
 		],
 		actions: actions(),

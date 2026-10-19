@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { blockSheet, closeSheet, openSource, openStudio, resetFixture, savedMarkdown, scienceBlock, sheetTab } from './studio.ts';
+import { blockSheet, BUILT_MOL, closeSheet, openSource, openStudio, resetFixture, retainmolFrame, savedMarkdown, scienceBlock, sheetTab } from './studio.ts';
 
 // A flat structure (SMILES, a 2D SDF) is drawn in its sheet, in the structure
 // editor (chem-structura); what is drawn is written back a moment later.
@@ -49,13 +49,14 @@ test('a drawn change comes back as SMILES; an SDF block gets the editor’s molf
 	await expect(scienceBlock(page, 'SDF').locator('.chem-2d svg')).toBeVisible();
 });
 
-test('a SMILES made 3D: an SDF block in space, hydrogens added, edited in the 3D editor', async ({ page }) => {
+test('a SMILES made 3D: RetainMol is given its flat structure, and the block becomes the 3D SDF it built', async ({ page }) => {
 	await scienceBlock(page, 'SMILES').locator('.science-block-preview').dblclick();
 	await blockSheet(page).locator('.block-sheet-action', { hasText: '生成三维结构' }).click();
-	await expect(blockSheet(page).locator('.m3d-status')).toHaveText('C9H8O4 · 21 个原子', { timeout: 30_000 });
+	// Given as a molfile drawn flat from the SMILES.
+	await expect(retainmolFrame(page).locator('#loaded')).toContainText('RDKit');
 	await expect(blockSheet(page).locator('.block-sheet-title')).toHaveText('SDF');
 	await expect(blockSheet(page).locator('.block-sheet-action')).toHaveCount(0);
 	await closeSheet(page);
 	await page.keyboard.press('ControlOrMeta+s');
-	await expect.poll(savedMarkdown).toMatch(/```sdf\n[^\n]*\n\s*OCL MolfileCreator\s+3D[\s\S]* 21 21 [\s\S]*M {2}END\n```/u);
+	await expect.poll(savedMarkdown).toContain(`\`\`\`sdf\n${BUILT_MOL}\n\`\`\``);
 });

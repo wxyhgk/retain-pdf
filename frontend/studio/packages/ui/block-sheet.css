@@ -26,6 +26,13 @@
 .block-sheet-body { flex: 1; min-height: 0; overflow: auto; }
 .block-sheet-panel { padding: 16px 18px 22px; }
 .block-sheet-panel[hidden] { display: none; }
+/* A workspace tab (an editor): the sheet as large as the window, the tab edge to edge. */
+.block-sheet.is-wide { width: min(98vw, 1680px); height: 94vh; }
+.block-sheet-panel.is-fill { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; padding: 10px 12px 12px; }
+.block-sheet-panel.is-fill[hidden] { display: none; }
+.block-sheet-panel.is-fill > * { flex: 1; min-height: 0; }
+.block-sheet-panel.is-fill > .block-sheet-note { flex: none; margin: 6px 2px 0; }
+.block-sheet-note { color: rgb(var(--gray)); font-size: 12px; }
 
 @media (max-width: 640px) {
 	.block-sheet { width: 100vw; height: 100dvh; border: 0; border-radius: 0; }

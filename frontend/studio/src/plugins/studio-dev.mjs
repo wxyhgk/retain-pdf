@@ -22,6 +22,7 @@ import { pageVersion, studioBlogRoot } from '../studio/server/page-version.mjs';
 import { ComputeHosts, detectHost, readHost } from '../studio/server/compute-hosts.mjs';
 import { JobShell } from '../studio/server/job-shell.mjs';
 import { JobRuns } from '../studio/server/job-runs.mjs';
+import { RetainmolHost } from '../studio/server/retainmol-host.mjs';
 
 function json(response, status, data) {
 	// A file was being sent when it failed (the page went away): nothing more can be said.
@@ -92,11 +93,7 @@ export default function studioDev({ site } = {}) {
 		name: 'local-article-studio',
 		apply: 'serve',
 		// The editor is hundreds of modules: made ready when the server starts, not when the Studio is first opened.
-		config: () => ({
-			server: { warmup: { clientFiles: ['./src/studio/main.ts'] } },
-			// The 3D structure editor loads when first opened; bundled at the start, so that opening it does not make Vite reload the page.
-			optimizeDeps: { include: ['react', 'react-dom/client', 'three', '@retainmol/viewer/viewer', '@retainmol/viewer/runtime', '@retainmol/core/io'] },
-		}),
+		config: () => ({ server: { warmup: { clientFiles: ['./src/studio/main.ts'] } } }),
 		configureServer(server) {
 			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
 			const testBlogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
@@ -131,10 +128,14 @@ export default function studioDev({ site } = {}) {
 				stateFile: testBlogRoot ? resolve(testBlogRoot, '.studio-jobs.json') : resolve(server.config.root, '.studio-jobs.json'),
 			});
 			void jobRuns.resume();
+			// RetainMol, where molecules are built, started from its own checkout when first asked for.
+			// The browser tests point it at a stand-in (STUDIO_RETAINMOL_URL).
+			const retainmol = new RetainmolHost({ projectRoot: server.config.root, settingsFile, fixedUrl: process.env.STUDIO_RETAINMOL_URL || null });
 			server.httpServer?.on('close', () => {
 				watcher.close();
 				terminals.close();
 				jobRuns.close();
+				retainmol.close();
 			});
 			markContentReloads(server);
 
@@ -349,6 +350,12 @@ export default function studioDev({ site } = {}) {
 					if (url.pathname === '/api/studio/compute/hosts/detect' && request.method === 'POST') {
 						const { host } = await readJsonChange(request);
 						return json(response, 200, await detectHost(new JobShell(readHost(host))));
+					}
+
+					// RetainMol's address, started if it is not running (a minute, the first time).
+					if (url.pathname === '/api/studio/retainmol' && request.method === 'POST') {
+						assertContentType(request, 'application/json');
+						return json(response, 200, { url: await retainmol.start() });
 					}
 
 					// The runs of an article's job (a ```job block): the list, a new one, one stopped.

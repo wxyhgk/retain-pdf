@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@playwright/test';
 
 const port = Number(process.env.E2E_PORT ?? 4400);
+const retainmolPort = port + 599;
 // Made once in the runner; workers inherit it, so the server and the tests share one copy.
 process.env.STUDIO_BLOG_DIR ??= mkdtempSync(join(tmpdir(), 'studio-e2e-'));
 // The drive (资料库) the Studio shows: a folder of its own, filled by the tests.
@@ -25,12 +26,28 @@ export default defineConfig({
 		viewport: { width: 1400, height: 1000 },
 		trace: 'retain-on-failure',
 	},
-	webServer: {
-		command: 'node tests/e2e/server.mjs',
-		cwd: fileURLToPath(new URL('../..', import.meta.url)),
-		url: `http://localhost:${port}/studio`,
-		env: { E2E_PORT: String(port), STUDIO_BLOG_DIR: process.env.STUDIO_BLOG_DIR, STUDIO_DRIVE_DIR: process.env.STUDIO_DRIVE_DIR, E2E_ISOLATED: process.env.E2E_ISOLATED ?? '' },
-		reuseExistingServer: false,
-		timeout: 120_000,
-	},
+	webServer: [
+		{
+			command: 'node tests/e2e/server.mjs',
+			cwd: fileURLToPath(new URL('../..', import.meta.url)),
+			url: `http://localhost:${port}/studio`,
+			env: {
+				E2E_PORT: String(port),
+				STUDIO_BLOG_DIR: process.env.STUDIO_BLOG_DIR,
+				STUDIO_DRIVE_DIR: process.env.STUDIO_DRIVE_DIR,
+				E2E_ISOLATED: process.env.E2E_ISOLATED ?? '',
+				// RetainMol is its stand-in, below.
+				STUDIO_RETAINMOL_URL: `http://127.0.0.1:${retainmolPort}`,
+			},
+			reuseExistingServer: false,
+			timeout: 120_000,
+		},
+		{
+			command: 'node tests/e2e/fake-retainmol.mjs',
+			cwd: fileURLToPath(new URL('../..', import.meta.url)),
+			url: `http://127.0.0.1:${retainmolPort}/`,
+			env: { FAKE_RETAINMOL_PORT: String(retainmolPort) },
+			reuseExistingServer: false,
+		},
+	],
 });

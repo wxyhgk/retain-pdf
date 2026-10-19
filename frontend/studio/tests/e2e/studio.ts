@@ -154,3 +154,9 @@ export async function caretAfter(page: Page, text: string): Promise<void> {
 	await editor(page).getByText(text, { exact: true }).click();
 	await page.keyboard.press('End');
 }
+
+/** What the stand-in RetainMol (fake-retainmol.mjs) sends back as built. */
+export { BUILT_MOL, BUILT_XYZ } from './built-molecule.mjs';
+
+/** The stand-in RetainMol's frame in the sheet open (the Studio is pointed at fake-retainmol.mjs). */
+export const retainmolFrame = (page: Page) => page.frameLocator('dialog.block-sheet[open] iframe.retainmol-frame');

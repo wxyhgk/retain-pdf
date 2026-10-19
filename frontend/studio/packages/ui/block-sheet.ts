@@ -15,6 +15,8 @@ export type SheetTab = {
 	label: string;
 	/** Draws the tab into its panel when first shown; what it returns is called when the sheet closes. */
 	draw(panel: HTMLElement): void | (() => void);
+	/** A whole workspace (an editor): while it is shown the sheet is as large as the window, and the tab fills it edge to edge. */
+	wide?: boolean;
 };
 
 export type SheetAction = {
@@ -125,6 +127,7 @@ export function openBlockSheet(options: SheetOptions): OpenSheet {
 			button.tabIndex = selected ? 0 : -1;
 		}
 		for (const [name, panel] of panels) panel.hidden = name !== key;
+		sheet.classList.toggle('is-wide', Boolean(options.tabs.find((tab) => tab.key === key)?.wide));
 		const panel = panels.get(key);
 		if (panel && !panel.dataset.drawn) draw(key);
 	};
@@ -136,7 +139,7 @@ export function openBlockSheet(options: SheetOptions): OpenSheet {
 		button.setAttribute('role', 'tab');
 		button.addEventListener('click', () => select(tab.key));
 		tabs.append(button);
-		const panel = element('section', 'block-sheet-panel');
+		const panel = element('section', `block-sheet-panel${tab.wide ? ' is-fill' : ''}`);
 		panel.setAttribute('role', 'tabpanel');
 		panel.dataset.tab = tab.key;
 		panel.hidden = true;

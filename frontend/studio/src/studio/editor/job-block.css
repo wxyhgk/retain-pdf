@@ -36,4 +36,4 @@
 .job-structure .job-stage { height: 240px; margin-top: 20px; }
 .job-empty { margin: 4px 0 0; color: rgb(var(--gray)); font-size: 13px; }
 @media (max-width: 640px) { .job-structure { grid-template-columns: 1fr; } .job-structure .job-stage { margin-top: 0; } }
-.job-structure-editor { height: calc(min(86vh, 900px) - 200px); min-height: 380px; }
+.job-build { min-height: 0; }

@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test';
 import {
 	appendToFixture,
 	blockSheet,
+	BUILT_XYZ,
+	retainmolFrame,
 	caretAfter,
 	closeSheet,
 	openSource,
@@ -45,17 +47,19 @@ test('a click selects a chemistry block without opening anything', async ({ page
 	await expect(blockSheet(page)).toHaveCount(0);
 });
 
-test('a 3D block double-clicked opens its sheet: the structure in the 3D editor, its source beside', async ({ page }) => {
+test('a 3D block double-clicked opens its sheet: the structure in RetainMol, its source beside', async ({ page }) => {
 	const xyz = scienceBlock(page, 'XYZ');
 	await xyz.locator('.science-block-preview').dblclick();
 	await expect(blockSheet(page).locator('.block-sheet-title')).toHaveText('XYZ');
 	await expect(sheetTab(page, '结构')).toHaveAttribute('aria-selected', 'true');
-	await expect(blockSheet(page).locator('.m3d-stage canvas').first()).toBeVisible();
-	await expect(blockSheet(page).locator('.m3d-status')).toHaveText('H2O · 3 个原子');
+	await expect(retainmolFrame(page).locator('#loaded')).toHaveText('3 / water');
+	// Built in RetainMol: written back in the block's own format.
+	await retainmolFrame(page).locator('#build').click();
+	await expect(blockSheet(page).locator('.block-sheet-note')).toHaveText('CH4O · 6 个原子，已写回块里。');
 	// A 3D structure has nothing to be made 3D.
 	await expect(blockSheet(page).locator('.block-sheet-action')).toHaveCount(0);
 	await sheetTab(page, '源码').click();
-	await expect(blockSheet(page).locator('.science-sheet-source')).toHaveValue(/^3\nwater/);
+	await expect(blockSheet(page).locator('.science-sheet-source')).toHaveValue(BUILT_XYZ);
 	await closeSheet(page);
 	await expect(xyz).toHaveClass(/ProseMirror-selectednode/);
 });

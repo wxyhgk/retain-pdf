@@ -52,6 +52,7 @@ import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
 import { createComputeHostsDialog } from './workspace/compute-hosts-dialog';
 import { jobFilesChanged, setJobHost } from './editor/job-block';
+import { setRetainmolSave } from './editor/retainmol-frame';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
 import { createBacklinks } from './workspace/backlinks';
@@ -553,7 +554,8 @@ document.addEventListener('keydown', (event) => {
 	quickFind.open();
 });
 
-// Saving is automatic; ⌘S (or ⌘↩) saves at once.
+// Saving is automatic; ⌘S (or ⌘↩) saves at once, in RetainMol's frame too.
+setRetainmolSave(() => void session.flush());
 document.addEventListener('keydown', (event) => {
 	if (!(event.metaKey || event.ctrlKey) || event.altKey || (event.key !== 'Enter' && event.key.toLowerCase() !== 's')) return;
 	event.preventDefault();

@@ -4,11 +4,13 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 
-import { appendToFixture, editor, fixtureHas, openStudio, resetFixture, savedMarkdown } from './studio.ts';
+import { appendToFixture, editor, fixtureHas, openStudio, resetFixture, retainmolFrame, savedMarkdown, saveStatus } from './studio.ts';
 
-// A calculation in the page, as in a notebook: a ```job block is set up, run
-// from the page, followed as it goes, and drawn when it ends; each run kept.
-// xtb here is tests/e2e/fixtures/bin/xtb, which writes a real run's outputs.
+// A calculation in the page, as in a notebook: a ```job block's molecule is
+// built (in RetainMol), the job set up, run from the page, followed as it
+// goes, and drawn when it ends; each run kept. xtb here is
+// tests/e2e/fixtures/bin/xtb, which writes a real run's outputs; RetainMol
+// is its stand-in (studio.ts), which speaks its embedded mode's messages.
 
 const FAKE_XTB = fileURLToPath(new URL('./fixtures/bin/xtb', import.meta.url));
 const settings = () => join(process.env.STUDIO_BLOG_DIR as string, '.studio-settings.json');
@@ -42,10 +44,14 @@ test('a calculation is a card; its sheet sets it up, runs it, shows what it foun
 	await expect(job.locator('.job-card-describe')).toHaveText('xtb · 结构优化 · GFN2-xTB');
 	await expect(job.locator('.job-settings')).toHaveCount(0);
 
-	// Double-clicked: its sheet, on its form, the structure drawn.
+	// Double-clicked, never run: its sheet, on 搭建, its structure given to RetainMol; then its form.
 	await job.dblclick();
 	await expect(sheet(page)).toBeVisible();
-	await expect(tab(page, '设置')).toHaveAttribute('aria-selected', 'true');
+	await expect(tab(page, '搭建')).toHaveAttribute('aria-selected', 'true');
+	await expect(sheet(page)).toHaveClass(/is-wide/);
+	await expect(retainmolFrame(page).locator('#loaded')).toHaveText('3 / water');
+	await tab(page, '设置').click();
+	await expect(sheet(page)).not.toHaveClass(/is-wide/);
 	await expect(sheet(page).locator('.job-structure-info')).toHaveText('H2O · 3 个原子');
 	await expect(sheet(page).locator('.job-structure .job-stage canvas')).toBeVisible();
 
@@ -99,23 +105,23 @@ test('a calculation is a card; its sheet sets it up, runs it, shows what it foun
 	await expect(tab(page, '结果')).toHaveAttribute('aria-selected', 'true');
 	await expect(sheet(page).locator('.job-mode')).toHaveCount(21);
 	await expect.poll(savedMarkdown).toContain(`run=${first}\n`);
-	// The structure in 3D (RetainMol's editor).
-	await tab(page, '结构').click();
-	await expect(sheet(page).locator('.m3d-stage canvas').first()).toBeVisible();
-	await expect(sheet(page).locator('.m3d-status')).toHaveText('H2O · 3 个原子');
-	await expect(sheet(page).locator('.m3d-button', { hasText: '撤销' })).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await expect(sheet(page)).toHaveCount(0);
 	await expect(job.locator('.job-card-line')).toContainText('无虚频');
 
-	// The structure changed after the run: the card says its results are from before.
+	// Built anew in RetainMol: what is built goes into the block, and the card says its results are from before.
 	await job.dblclick();
-	await tab(page, '设置').click();
-	await sheet(page).locator('.job-structure-text').fill(WATER.replace('0.1173', '0.1500'));
+	await tab(page, '搭建').click();
+	await retainmolFrame(page).locator('#build').click();
+	await expect(sheet(page).locator('.block-sheet-note')).toHaveText('CH4O · 6 个原子，已写进块里。');
 	await expect(job.locator('.job-card-describe')).toContainText('结构改过了，这是改之前的结果');
-	// And the 3D editor opens the structure as it is now.
-	await tab(page, '结构').click();
-	await expect(sheet(page).locator('.m3d-status')).toHaveText('H2O · 3 个原子');
+	// ⌘S in RetainMol's frame saves the article.
+	await retainmolFrame(page).locator('#save').click();
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('\n6\nmethanol\nC 0.000000 0.000000 0.000000\nO 1.420000');
+	// And the 设置 tab shows it as text.
+	await tab(page, '设置').click();
+	await expect(sheet(page).locator('.job-structure-info')).toHaveText('CH4O · 6 个原子');
 });
 
 test('a long run followed in its card and its sheet, and stopped from the card', async ({ page }) => {
@@ -141,7 +147,7 @@ test('a long run followed in its card and its sheet, and stopped from the card',
 	await expect(job.locator('.job-run')).toHaveText('运行');
 });
 
-test('a block made from the slash menu opens on its form; and the machines it can run on', async ({ page }) => {
+test('a block made from the slash menu opens on 搭建; its form; and the machines it can run on', async ({ page }) => {
 	await openStudio(page, { autosaveDelay: 300 });
 	await editor(page).locator('p', { hasText: '结尾段落' }).click();
 	await page.keyboard.press('End');
@@ -153,8 +159,11 @@ test('a block made from the slash menu opens on its form; and the machines it ca
 	await page.keyboard.press('Enter');
 	await expect(block(page)).toHaveCount(1);
 	await expect(sheet(page)).toBeVisible();
-	await expect(tab(page, '设置')).toHaveAttribute('aria-selected', 'true');
+	await expect(tab(page, '搭建')).toHaveAttribute('aria-selected', 'true');
+	await expect(retainmolFrame(page).locator('#loaded')).toHaveText('（空）');
+	await expect(sheet(page).locator('.block-sheet-note')).toContainText('在这里搭出分子');
 	await expect.poll(savedMarkdown).toMatch(/```job id=job-[a-z0-9]{6} program=xtb args=--opt host=local\n```/u);
+	await tab(page, '设置').click();
 	// CREST instead: its own tasks and methods.
 	await field(page, '程序').selectOption('crest');
 	await expect(sheet(page).locator('.job-args')).toHaveValue('--gfn2');
