@@ -1,0 +1,65 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { Blocks } from '../blocks.mjs';
+import { applyPlugins, Context, pluginProblems } from '../index.mjs';
+import { created, readAnswer, Routes } from '../routes.mjs';
+
+async function kernel() {
+	const ctx = new Context();
+	await ctx.plugin(Blocks);
+	await ctx.plugin(Routes);
+	return ctx as any;
+}
+
+test('a block is registered by its fence and goes with its plugin', async () => {
+	const ctx = await kernel();
+	const [result] = await applyPlugins(ctx, [{ id: 'job', module: { name: 'block-job', inject: ['blocks'], apply: (c: any) => c.blocks.register({ name: 'block-job', fence: ['job', 'Calc'] }) } }]);
+	assert.equal(result.state, 'active');
+	assert.equal(ctx.blocks.get('JOB').name, 'block-job');
+	assert.equal(ctx.blocks.get('calc').name, 'block-job');
+	assert.deepEqual(ctx.blocks.list().map((block: any) => block.name), ['block-job']);
+	await result.fiber!.dispose();
+	assert.equal(ctx.blocks.get('job'), null);
+	assert.deepEqual(ctx.blocks.fences(), []);
+});
+
+test('a fence claimed twice is refused, and the first owner keeps it', async () => {
+	const ctx = await kernel();
+	const results = await applyPlugins(ctx, [
+		{ id: 'a', module: { inject: ['blocks'], apply: (c: any) => c.blocks.register({ name: 'a', fence: 'job' }) } },
+		{ id: 'b', module: { inject: ['blocks'], apply: (c: any) => c.blocks.register({ name: 'b', fence: 'job' }) } },
+	]);
+	assert.equal(results[0].state, 'active');
+	assert.notEqual(results[1].state, 'active');
+	assert.equal(ctx.blocks.get('job').name, 'a');
+});
+
+test('a plugin waiting for a service nobody provides is reported, not silently dropped', async () => {
+	const ctx = await kernel();
+	const results = await applyPlugins(ctx, [
+		{ id: 'needs-jobs', module: { inject: ['jobs'], apply() {} } },
+		{ id: 'broken', module: { apply() { throw new Error('坏了'); } } },
+		{ id: 'empty', module: {} },
+	]);
+	const problems = pluginProblems(results);
+	assert.equal(problems.length, 3);
+	assert.match(problems[0], /needs-jobs.*等/u);
+	assert.match(problems[2], /empty.*apply/u);
+});
+
+test('routes match methods and named segments, and go with their plugin', async () => {
+	const ctx = await kernel();
+	const [result] = await applyPlugins(ctx, [{ id: 'job', module: { inject: ['routes'], apply(c: any) {
+		c.routes.get('/job/articles/:slug/jobs/:id/runs', ({ params }: any) => params);
+		c.routes.post('/job/articles/:slug/jobs/:id/runs', () => created({ ok: true }));
+	} } }]);
+	const found = ctx.routes.match('GET', '/job/articles/a%20b/jobs/x1/runs');
+	assert.deepEqual(found.params, { slug: 'a b', id: 'x1' });
+	assert.equal(ctx.routes.match('DELETE', '/job/articles/a/jobs/x/runs'), null);
+	assert.equal(ctx.routes.match('GET', '/job/articles/a/jobs/x/runs/extra'), null);
+	const post = ctx.routes.match('POST', '/job/articles/a/jobs/x/runs');
+	assert.deepEqual(readAnswer(await post.handler({})), { status: 201, value: { ok: true } });
+	assert.deepEqual(readAnswer([1]), { status: 200, value: [1] });
+	await result.fiber!.dispose();
+	assert.equal(ctx.routes.match('GET', '/job/articles/a/jobs/x/runs'), null);
+});

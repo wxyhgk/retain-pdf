@@ -18,10 +18,7 @@ import {
 	addReference,
 	importDriveFile,
 	driveInfo,
-	computeHosts,
-	jobRuns,
-	startJobRun,
-	cancelJobRun,
+	pluginApi,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -50,9 +47,7 @@ import { createDriveBrowser } from './workspace/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
-import { createComputeHostsDialog } from './workspace/compute-hosts-dialog';
-import { jobFilesChanged, setJobHost } from './editor/job-block';
-import { preloadRetainmol, setRetainmolSave } from './editor/retainmol-frame';
+import { startStudioPlugins, studioPlugins } from './plugins';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
 import { createBacklinks } from './workspace/backlinks';
@@ -341,20 +336,17 @@ watchDisk((changes) => {
 	void filePanel.refresh();
 	session.changedOnDisk(change.paths);
 	widgetFilesChanged(change.paths);
-	jobFilesChanged(change.slug, change.paths);
+	studioPlugins.emit('studio/files-changed', change.slug, change.paths);
 	officeFilesChanged(change.paths.map((path) => studioFileUrl(change.slug, path)));
 	if (change.paths.includes(BIBLIOGRAPHY_PATH)) void loadLibrary(change.slug);
 });
 
-// Calculation blocks run their jobs through the open article, on the machines of 计算机器.
-const computeHostsDialog = createComputeHostsDialog();
-setJobHost({
+// The project's plugins (plugins/*/studio.ts: the calculation block, RetainMol…), given the article open, its files and their API.
+void startStudioPlugins({
 	slug: () => session.slug,
-	hosts: computeHosts,
-	runs: (id) => (session.slug ? jobRuns(session.slug, id) : Promise.resolve([])),
-	start: (id, job) => (session.slug ? startJobRun(session.slug, id, job) : Promise.reject(new Error('文章尚未载入'))),
-	cancel: (id, run) => (session.slug ? cancelJobRun(session.slug, id, run) : Promise.reject(new Error('文章尚未载入'))),
-	manageHosts: () => computeHostsDialog.open(),
+	fileUrl: studioFileUrl,
+	save: () => void session.flush(),
+	api: pluginApi,
 });
 
 // Widgets read the open article's files (note.file, or a widget that is a file).
@@ -554,8 +546,7 @@ document.addEventListener('keydown', (event) => {
 	quickFind.open();
 });
 
-// Saving is automatic; ⌘S (or ⌘↩) saves at once, in RetainMol's frame too.
-setRetainmolSave(() => void session.flush());
+// Saving is automatic; ⌘S (or ⌘↩) saves at once (in a plugin's frame too, through its `ctx.studio.save`).
 document.addEventListener('keydown', (event) => {
 	if (!(event.metaKey || event.ctrlKey) || event.altKey || (event.key !== 'Enter' && event.key.toLowerCase() !== 's')) return;
 	event.preventDefault();
@@ -591,6 +582,6 @@ openFromList().then(
 		outline.draw();
 		snapshot.ready();
 	});
-	// RetainMol (where molecules are built) loaded in the background, once the page has settled: a sheet opens on it at once.
-	window.setTimeout(preloadRetainmol, 3000);
+	// The plugins get ready what will be wanted (RetainMol, loaded in the background), once the page has settled.
+	studioPlugins.emit('studio/ready');
 });

@@ -3,10 +3,15 @@ import { chmod, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { ArticleRepository } from './article-repository.mjs';
-import { ComputeHosts, readHost } from './compute-hosts.mjs';
-import { JobShell, shellPath, shellWord } from './job-shell.mjs';
-import { JobRuns, runScript } from './job-runs.mjs';
+import { articleBundlePaths, resolveInside } from '../../../src/articles/bundle-paths.mjs';
+import { ArticleRepository } from '../../../src/studio/server/article-repository.mjs';
+import { atomicWriteText } from '../../../src/studio/server/atomic-write.mjs';
+import { ComputeHosts, readHost } from '../server/compute-hosts.mjs';
+import { JobShell, shellPath, shellWord } from '../server/job-shell.mjs';
+import { JobRuns, runScript } from '../server/job-runs.mjs';
+
+/** The dev server's `ctx.server.files` for these articles. */
+const filesOf = (blogRoot) => ({ articleFolder: (slug) => articleBundlePaths(blogRoot, slug).directory, inside: resolveInside, writeText: atomicWriteText });
 
 // A program that behaves as xtb does, as far as the runs care: it prints as
 // it goes, writes its results and scratch files, and ends with a code.
@@ -81,7 +86,7 @@ async function fixture(t) {
 	]);
 	const shellFor = (host) => new JobShell(host, { ssh: join(bin, 'ssh') });
 	const stateFile = join(project, '.studio-jobs.json');
-	const runs = new JobRuns(blogRoot, { hosts, stateFile, shellFor, intervals: { local: 30, ssh: 30, slurm: 30 }, limits: { live: 20_000, tail: 4_000, result: 50_000 } });
+	const runs = new JobRuns(filesOf(blogRoot), { hosts, stateFile, shellFor, intervals: { local: 30, ssh: 30, slurm: 30 }, limits: { live: 20_000, tail: 4_000, result: 50_000 } });
 	t.after(() => runs.close());
 	const article = join(blogRoot, 'note');
 	return { project, blogRoot, hosts, shellFor, stateFile, runs, article };
@@ -171,7 +176,7 @@ test('the Studio stopped and started again: a run still going is taken up; one w
 	const started = await runs.start('note', { id: 'resumed', program: 'xtb', args: '--steps 12 --sleep 0.05', host: 'local', body: WATER });
 	await until(() => record(article, 'resumed', started.run), (value) => value.state === 'running');
 	runs.close();
-	const again = new JobRuns(blogRoot, { hosts, stateFile, shellFor, intervals: { local: 30 } });
+	const again = new JobRuns(filesOf(blogRoot), { hosts, stateFile, shellFor, intervals: { local: 30 } });
 	t.after(() => again.close());
 	await again.resume();
 	const done = await until(() => record(article, 'resumed', started.run), (value) => value.state === 'done');

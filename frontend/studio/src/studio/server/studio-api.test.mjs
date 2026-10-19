@@ -1,17 +1,20 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { EventEmitter } from 'node:events';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Readable, Writable } from 'node:stream';
 import test from 'node:test';
 import studioDev from '../../plugins/studio-dev.mjs';
 import { ArticleRepository } from './article-repository.mjs';
 import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
 
-async function apiFixture(t) {
+/** The Studio's API on an article of its own; with `plugins`, this project's plugins too (plugins/). */
+async function apiFixture(t, { plugins = false } = {}) {
 	const projectRoot = await mkdtemp(join(tmpdir(), 'studio-api-'));
 	t.after(() => rm(projectRoot, { recursive: true, force: true }));
+	if (plugins) await symlink(fileURLToPath(new URL('../../../plugins', import.meta.url)), join(projectRoot, 'plugins'));
 	const blogRoot = join(projectRoot, 'blog');
 	await mkdir(blogRoot);
 	await new ArticleRepository(blogRoot).create({ slug: 'api-note', title: 'API note' });
@@ -306,4 +309,19 @@ test('search and the trash are served', async (t) => {
 	const purged = await call(middleware, { url: '/api/studio/trash/purge', ...asJson({ trashed: deleted.data.trashed }) });
 	assert.equal(purged.status, 200);
 	assert.deepEqual((await call(middleware, { url: '/api/studio/trash', method: 'GET' })).data.entries, []);
+});
+
+test('a plugin answers under /api/studio/plugins/, after the same checks as the rest', async (t) => {
+	const middleware = await apiFixture(t, { plugins: true });
+	const base = '/api/studio/plugins/job/articles/api-note/jobs/opt/runs';
+	assert.deepEqual(await call(middleware, { url: base, method: 'GET' }), { status: 200, data: { runs: [] } });
+	const hosts = await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET' });
+	assert.equal(hosts.status, 200);
+	assert.ok(hosts.data.hosts.some((host) => host.name === 'local'));
+	// A change must say it is JSON (a page elsewhere cannot send one without asking first).
+	assert.equal((await call(middleware, { url: base, body: '{}' })).status, 415);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/articles/%E0/jobs/opt/runs', method: 'GET' })).status, 400);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/articles/missing/jobs/opt/runs', method: 'GET' })).status, 404);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/nothing', method: 'GET' })).status, 404);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET', headers: { origin: 'https://example.com' } })).status, 403);
 });

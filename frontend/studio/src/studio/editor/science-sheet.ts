@@ -1,7 +1,7 @@
 import { createSciencePreview, hydrateSciencePreviews } from '@blog/science/browser/science-renderer.ts';
 import { openBlockSheet, type OpenSheet, type SheetAction } from '@blog/ui/block-sheet.ts';
 
-import { openRetainmol } from './retainmol-frame.ts';
+import { moleculeEditor } from '../plugins.ts';
 import './science-sheet.css';
 import { parseScienceFence, scienceBlockKindLabel, scienceSourceEditor, structureDrawing } from './science-block.ts';
 import { mountStructureEditor, smilesToMolfile } from './structure-editor.ts';
@@ -9,7 +9,7 @@ import { mountStructureEditor, smilesToMolfile } from './structure-editor.ts';
 /**
  * A chemistry block's sheet: 结构, the structure edited where it is drawn
  * (a flat one in the structure editor, one in 3D in RetainMol, the author's
- * molecule editor, retainmol-frame.ts), and 源码,
+ * molecule editor, or whichever editor a plugin offers, ctx.molecules), and 源码,
  * its text with what it draws under it. What is changed in either is
  * written into the block a moment later. A flat structure can be made 3D.
  * Formats neither editor writes (GJF, PDB, cube, a file of the article) are
@@ -116,7 +116,12 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 			note.textContent = making !== null
 				? '正在用 RetainMol 生成三维结构，补上氢；生成后块会变成三维 SDF。'
 				: format === 'xyz' ? '在 RetainMol 里改结构，改动写回块里（XYZ）。' : '在 RetainMol 里改结构，改动写回块里（MOL）；SD 文件里的数据字段不会保留。';
-			void openRetainmol(stage, {
+			const editor = moleculeEditor();
+			if (!editor) {
+				stage.replaceChildren(element('p', 'science-sheet-empty', '没有可用的分子编辑器（plugins/ 里没有提供 molecules 的插件）'));
+				return;
+			}
+			void editor.open(stage, {
 				text: making ?? state.source,
 				report: making !== null,
 				changed: (built) => {
@@ -128,7 +133,7 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 					note.textContent = `${built.formula} · ${built.atoms} 个原子，已写回块里。`;
 				},
 				failed: (message) => {
-					note.textContent = `RetainMol 读不了这个结构：${message}`;
+					note.textContent = `${editor.label} 读不了这个结构：${message}`;
 				},
 			}).then((opened) => {
 				if (closed) opened.dispose();

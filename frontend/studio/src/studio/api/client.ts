@@ -1,7 +1,6 @@
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { articlePath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
-import type { RunRecord } from '@blog/compute/browser/job-view.ts';
 import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, Backlink, GitStatus, HistoryEntry, HistoryReason, SearchResult, TrashEntry } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -323,46 +322,9 @@ export function searchDrive(query: string, signal?: AbortSignal): Promise<{ resu
 	return request(`/api/studio/drive/search?${new URLSearchParams({ q: query })}`, { signal });
 }
 
-/** A machine jobs run on (compute-hosts.mjs). */
-export type ComputeHost = {
-	name: string;
-	label: string;
-	kind: 'local' | 'ssh';
-	ssh?: string;
-	scheduler: 'direct' | 'slurm';
-	partition?: string;
-	time?: string;
-	workdir: string;
-	threads: number;
-	programs: Partial<Record<'xtb' | 'crest', string>>;
-	setup: string;
+/** The project's plugins' API (plugins/*\/server.mjs), under /api/studio/plugins/: `ctx.studio.api` in their studio.ts. */
+export const pluginApi = {
+	get: <T>(path: string) => request<T>(`/api/studio/plugins${path}`),
+	post: <T>(path: string, body: unknown = {}) => request<T>(`/api/studio/plugins${path}`, jsonOptions('POST', body)),
+	put: <T>(path: string, body: unknown) => request<T>(`/api/studio/plugins${path}`, jsonOptions('PUT', body)),
 };
-
-export async function computeHosts(): Promise<ComputeHost[]> {
-	return (await request<{ hosts: ComputeHost[] }>('/api/studio/compute/hosts')).hosts;
-}
-
-export async function saveComputeHosts(hosts: ComputeHost[]): Promise<ComputeHost[]> {
-	return (await request<{ hosts: ComputeHost[] }>('/api/studio/compute/hosts', jsonOptions('PUT', { hosts }))).hosts;
-}
-
-/** What a machine has: where its programs are, how many processors, whether it has Slurm. */
-export function detectComputeHost(host: ComputeHost): Promise<{ programs: Partial<Record<'xtb' | 'crest', string>>; cpus: number | null; slurm: boolean; partitions: string[] }> {
-	return request('/api/studio/compute/hosts/detect', jsonOptions('POST', { host }));
-}
-
-const runsUrl = (slug: string, id: string) => `/api/studio/articles/${encodeURIComponent(slug)}/jobs/${encodeURIComponent(id)}/runs`;
-
-/** The runs of an article's job, newest first. */
-export async function jobRuns(slug: string, id: string): Promise<RunRecord[]> {
-	return (await request<{ runs: RunRecord[] }>(runsUrl(slug, id))).runs;
-}
-
-/** Starts a run of the job; `body` is the block's text, the structure it starts from. */
-export async function startJobRun(slug: string, id: string, job: { program: string; args: string; host: string; threads: number; body: string }): Promise<RunRecord> {
-	return (await request<{ run: RunRecord }>(runsUrl(slug, id), jsonOptions('POST', job))).run;
-}
-
-export async function cancelJobRun(slug: string, id: string, run: string): Promise<RunRecord> {
-	return (await request<{ run: RunRecord }>(`${runsUrl(slug, id)}/${encodeURIComponent(run)}/cancel`, jsonOptions('POST', {}))).run;
-}

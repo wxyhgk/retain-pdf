@@ -1,4 +1,4 @@
-/* 计算机器 (compute-hosts-dialog.ts): a card for each machine. Black, white and gray. */
+/* 计算机器 (hosts-dialog.ts): a card for each machine. Black, white and gray. */
 .compute-hosts-dialog { width: min(94vw, 680px) !important; }
 .compute-hosts-dialog form { max-height: min(86vh, 820px); overflow: auto; }
 #compute-hosts-list { display: grid; gap: 12px; }

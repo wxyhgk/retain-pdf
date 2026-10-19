@@ -12,17 +12,16 @@ import { chooseFolder } from '../studio/server/choose-folder.mjs';
 import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
 import { Drive } from '../studio/server/drive.mjs';
 import { DriveText, TEXT_FOLDER } from '../studio/server/drive-text.mjs';
-import { articleBundlePaths, StudioPathError } from '../articles/bundle-paths.mjs';
+import { articleBundlePaths, resolveInside, StudioPathError } from '../articles/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 import { revealInFileManager } from '../studio/server/reveal.mjs';
 import { TerminalHost } from '../studio/server/terminal-host.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
 import { pageVersion, studioBlogRoot } from '../studio/server/page-version.mjs';
-import { ComputeHosts, detectHost, readHost } from '../studio/server/compute-hosts.mjs';
-import { JobShell } from '../studio/server/job-shell.mjs';
-import { JobRuns } from '../studio/server/job-runs.mjs';
-import { RetainmolHost } from '../studio/server/retainmol-host.mjs';
+import { atomicWriteText } from '../studio/server/atomic-write.mjs';
+import { serverKernel } from '@blog/kernel/node.mjs';
+import { readAnswer } from '@blog/kernel/routes.mjs';
 
 function json(response, status, data) {
 	// A file was being sent when it failed (the page went away): nothing more can be said.
@@ -121,24 +120,21 @@ export default function studioDev({ site } = {}) {
 			// The drive's words, for search and for an AI to read: `.studio-text/` in the drive.
 			const driveText = new DriveText(drive);
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
-			// The machines jobs run on, and the runs going on them, taken up again from where the last server left them.
-			const computeHosts = new ComputeHosts(settingsFile);
-			const jobRuns = new JobRuns(blogRoot, {
-				hosts: computeHosts,
-				stateFile: testBlogRoot ? resolve(testBlogRoot, '.studio-jobs.json') : resolve(server.config.root, '.studio-jobs.json'),
-			});
-			void jobRuns.resume();
-			// RetainMol, where molecules are built: built from its own checkout (again only when its code
-			// changed) and served from here, got ready now, so that the first sheet need not wait for it.
-			// The browser tests point it at a stand-in (STUDIO_RETAINMOL_URL).
-			const retainmol = new RetainmolHost({ projectRoot: server.config.root, settingsFile, fixedUrl: process.env.STUDIO_RETAINMOL_URL || null });
-			// Not for tests (their own articles, STUDIO_BLOG_DIR): they would build RetainMol for nothing.
-			if (!testBlogRoot) void retainmol.start().catch((error) => server.config.logger.warn(`[studio] RetainMol 没有准备好：${error.message}`));
+			// What the project's plugins do on this server (plugins/*/server.mjs): their API, under /api/studio/plugins/.
+			const privateRoot = testBlogRoot ?? server.config.root;
+			const plugins = serverKernel(server.config.root, {
+				projectRoot: server.config.root,
+				blogRoot,
+				settingsFile,
+				privateFile: (name) => resolve(privateRoot, name),
+				testing: Boolean(testBlogRoot),
+				files: { articleFolder: (slug) => articleBundlePaths(blogRoot, slug).directory, inside: resolveInside, writeText: atomicWriteText },
+				logger: server.config.logger,
+			}, { warn: (message) => server.config.logger.warn(`[studio] ${message}`) });
 			server.httpServer?.on('close', () => {
 				watcher.close();
 				terminals.close();
-				jobRuns.close();
-				retainmol.close();
+				void plugins.then((kernel) => kernel.dispose());
 			});
 			markContentReloads(server);
 
@@ -342,36 +338,13 @@ export default function studioDev({ site } = {}) {
 						return json(response, 200, { issues: await checkArticle(blogRoot, slug, source) });
 					}
 
-					// The machines jobs run on (计算机器): the list, kept as given, and what one of them has.
-					if (url.pathname === '/api/studio/compute/hosts' && request.method === 'GET') {
-						return json(response, 200, { hosts: await computeHosts.list() });
-					}
-					if (url.pathname === '/api/studio/compute/hosts' && request.method === 'PUT') {
-						const { hosts } = await readJsonChange(request);
-						return json(response, 200, { hosts: await computeHosts.save(hosts) });
-					}
-					if (url.pathname === '/api/studio/compute/hosts/detect' && request.method === 'POST') {
-						const { host } = await readJsonChange(request);
-						return json(response, 200, await detectHost(new JobShell(readHost(host))));
-					}
-
-					// RetainMol's address, once built and served (built again only when its code changed).
-					if (url.pathname === '/api/studio/retainmol' && request.method === 'POST') {
-						assertContentType(request, 'application/json');
-						return json(response, 200, { url: await retainmol.start() });
-					}
-
-					// The runs of an article's job (a ```job block): the list, a new one, one stopped.
-					const runsMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/jobs\/([^/]+)\/runs(?:\/([^/]+)\/cancel)?$/u);
-					if (runsMatch) {
-						const slug = decodePathComponent(runsMatch[1]);
-						const id = decodePathComponent(runsMatch[2]);
-						const run = runsMatch[3] ? decodePathComponent(runsMatch[3]) : null;
-						if (!run && request.method === 'GET') return json(response, 200, { runs: await jobRuns.list(slug, id) });
-						if (!run && request.method === 'POST') return json(response, 201, { run: await jobRuns.start(slug, { ...(await readJsonChange(request)), id }) });
-						if (run && request.method === 'POST') {
-							assertContentType(request, 'application/json');
-							return json(response, 200, { run: await jobRuns.cancel(slug, id, run) });
+					// A plugin's API (plugins/*/server.mjs): what it answers, as JSON; a change must say it is JSON.
+					if (url.pathname.startsWith('/api/studio/plugins/')) {
+						const found = (await plugins).routes.match(request.method ?? 'GET', rawPathname.slice('/api/studio/plugins'.length));
+						if (found) {
+							if (request.method !== 'GET') assertContentType(request, 'application/json');
+							const answer = readAnswer(await found.handler({ params: found.params, query: url.searchParams, json: () => readJson(request), request }));
+							return json(response, answer.status, answer.value);
 						}
 					}
 

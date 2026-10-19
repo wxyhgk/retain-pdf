@@ -1,11 +1,12 @@
+import type { BuiltMolecule } from '@blog/kernel/studio.ts';
 import { sheetOverlay } from '@blog/ui/block-sheet.ts';
-import './retainmol-frame.css';
+import './frame.css';
 
 /**
  * RetainMol, the author's molecule editor, in a sheet: its 2D editor
  * (chem-structura) and its 3D builder side by side, with its inspector
  * (elements, hybridization, rings, fragments, PubChem, clean-up). It is
- * built and served by retainmol-host.mjs; here it is in its embedded mode,
+ * built and served by retainmol-host.mjs (server.mjs); here it is in its embedded mode,
  * which takes a structure and tells every change to it:
  *
  *     page → frame   { protocol: 'retainmol-embed', type: 'load', text, report? }
@@ -16,8 +17,6 @@ import './retainmol-frame.css';
  * its tab and gives it its molecule, a new session each time. So a sheet
  * opens on it at once. Messages are taken only from that frame.
  */
-
-export type BuiltMolecule = { mol: string; xyz: string; atoms: number; formula: string };
 
 export type RetainmolFrame = {
 	/** Puts a structure in (MOL/SDF, XYZ, GJF; empty for an empty canvas); `report` sends back what it became (a flat one made 3D). */
@@ -36,11 +35,11 @@ type Attachment = {
 
 const PROTOCOL = 'retainmol-embed';
 
-/** What saves the article (⌘S pressed in the frame, which the page does not hear). */
-let saveArticle: (() => void) | null = null;
+/** Where RetainMol is served (asked of the dev server), and what saves the article (⌘S pressed in the frame, which the page does not hear). */
+let studio: { address(): Promise<string>; save(): void } | null = null;
 
-export function setRetainmolSave(save: () => void): void {
-	saveArticle = save;
+export function setRetainmolStudio(given: { address(): Promise<string>; save(): void } | null): void {
+	studio = given;
 }
 
 const theme = () => (document.documentElement.dataset.theme === 'dark' ? 'night' : 'day');
@@ -63,16 +62,15 @@ function deliver(attachment: Attachment): void {
 /** The page's one frame: RetainMol served, its frame made in the sheet's kept layer, listened to. */
 function sharedFrame(): Promise<{ frame: HTMLIFrameElement; origin: string }> {
 	shared ??= (async () => {
-		const response = await fetch('/api/studio/retainmol', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-		const data = (await response.json().catch(() => ({}))) as { url?: string; error?: string };
-		if (!response.ok || !data.url) throw new Error(data.error || 'RetainMol 没有准备好');
-		const origin = new URL(data.url).origin;
+		if (!studio) throw new Error('RetainMol 没有准备好');
+		const address = await studio.address();
+		const origin = new URL(address).origin;
 		const frame = document.createElement('iframe');
 		frame.className = 'retainmol-frame';
 		frame.title = 'RetainMol 分子编辑器';
 		frame.allow = 'clipboard-read; clipboard-write';
 		frame.hidden = true;
-		frame.src = `${data.url}/?embed=1&parent=${encodeURIComponent(location.origin)}&theme=${theme()}`;
+		frame.src = `${address}/?embed=1&parent=${encodeURIComponent(location.origin)}&theme=${theme()}`;
 		window.addEventListener('message', (event) => {
 			if (event.origin !== origin || event.source !== frame.contentWindow) return;
 			const message = event.data as ({ protocol?: string; type?: string; message?: string } & Partial<BuiltMolecule>) | null;
@@ -88,7 +86,7 @@ function sharedFrame(): Promise<{ frame: HTMLIFrameElement; origin: string }> {
 			} else if (message.type === 'error') {
 				attached?.failed?.(message.message ?? 'RetainMol 读不了这个结构');
 			} else if (message.type === 'save') {
-				saveArticle?.();
+				studio?.save();
 			}
 		});
 		window.addEventListener('themechange', () => send({ type: 'theme', theme: theme() }));

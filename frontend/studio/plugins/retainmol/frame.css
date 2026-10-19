@@ -1,4 +1,4 @@
-/* RetainMol in a sheet (retainmol-frame.ts): the tab holds its place, the one frame of the page lies over it. */
+/* RetainMol in a sheet (frame.ts): the tab holds its place, the one frame of the page lies over it. */
 .retainmol { position: relative; min-height: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); }
 .retainmol-status { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; padding: 24px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
 .retainmol-frame { position: absolute; box-sizing: border-box; border: 0; border-radius: 8px; background: var(--surface); pointer-events: auto; }

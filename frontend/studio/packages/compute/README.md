@@ -30,14 +30,11 @@ H   0.000000  -0.757200  -0.469200
 | `browser/job-card.ts` | 页面上的卡片：名字、状态，加上一行关键数字（或运行进度、出错原因），旁边一张不用 WebGL 的小结构图 |
 | `browser/job-view.ts` | 详情窗口（`@blog/ui` 的 `openBlockSheet`）里的内容：数值、优化曲线、红外光谱（点一下看振动）、构象表；输出；卡片摘要 `summarizeRun` 和小结构图 `structureThumbnail` |
 
-真正去跑计算的部分只在 Studio 的开发服务器里：
+这里只是库。把它接进博客和 Studio 的是插件 `plugins/job/`（见 `plugins/README.md`）：
 
-- `src/studio/server/job-runs.mjs`：开始、跟进、停止、取回结果。
-- `src/studio/server/compute-hosts.mjs`：计算机器（本机、SSH、Slurm）。
-
-博客端：
-
-- `packages/markdown/plugins/remark-jobs.mjs` 在构建时读 `run.json`。
-- `src/components/Jobs.astro` 在页面上读其余文件。
+- `build.mjs`：构建时把 ```job 变成页面上的 figure，读 `run.json`。
+- `page.ts`：博客页面上的卡片和详情窗口，读其余文件。
+- `studio.ts` 和 `studio/`：编辑器里的块、斜杠菜单、计算机器窗口。
+- `server.mjs` 和 `server/`：Studio 开发服务器上真正去跑计算的部分（`job-runs.mjs` 开始、跟进、停止、取回结果；`compute-hosts.mjs` 管计算机器：本机、SSH、Slurm）。
 
 测试：`node --experimental-strip-types --test packages/compute/test/*.test.ts`（仓库根目录的 `npm test` 会一起跑）。`test/fixtures/` 里是 xtb 6.7.1 和 CREST 3.0.2 的真实输出。

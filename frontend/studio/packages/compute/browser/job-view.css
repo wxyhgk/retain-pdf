@@ -63,7 +63,7 @@
 .job-log-text { max-height: 280px; margin: 8px 0 0; padding: 10px 12px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-size: 11.5px; line-height: 1.45; white-space: pre; }
 .job-log-link { display: inline-block; margin-top: 6px; color: rgb(var(--gray)); font-size: 12px; }
 
-/* The figure remark-jobs makes on the blog: without scripts its head and its input; with them a card (job-card.ts) that opens its sheet. */
+/* The figure plugins/job/build.mjs makes on the blog: without scripts its head and its input; with them a card (job-card.ts) that opens its sheet. */
 .note-job { margin: 1.4em 0; padding: 10px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 14px; line-height: 1.5; }
 .note-job-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .note-job-title { font-size: 15px; }

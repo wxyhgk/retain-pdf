@@ -47,7 +47,7 @@ import { withoutTrailingEmptyLines } from '../document/index.ts';
 import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
-import { jobBlockPlugins } from './job-block';
+import { pluginBlocks } from '../plugins';
 import '@blog/markdown/widgets/widgets.css';
 
 /** What the editor needs from the Studio around it. */
@@ -158,6 +158,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			// Another article, or this one anew: a review still open is over.
 			endReview();
 			if (crepe) await crepe.destroy();
+			// The blocks of the project's plugins (plugins/*/studio.ts): their nodes, their slash-menu entries.
+			const blocks = await pluginBlocks();
 			root.replaceChildren();
 			const fileDrop = articleFileDrop(host.files);
 			// Crepe's own config, plus the block menu only the Milkdown fork has.
@@ -171,7 +173,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					}),
 				buildMenu: (builder) => {
 					buildScienceSlashMenu(builder);
-					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host);
+					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks);
 					replaceSlashImageItem(builder, fileDrop.chooseImages);
 					addSearchWords(builder);
 				},
@@ -264,7 +266,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				},
 			});
 			crepe.editor.use(scienceBlockPlugins);
-			crepe.editor.use(jobBlockPlugins);
+			for (const block of blocks) if (block.milkdown) crepe.editor.use(block.milkdown as never);
 			crepe.editor.use(blockFeelPlugins);
 			crepe.editor.use(inlineMathPlugins);
 			crepe.editor.use(displayMathPlugins);

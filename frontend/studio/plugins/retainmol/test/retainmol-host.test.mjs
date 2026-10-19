@@ -4,7 +4,7 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { RetainmolHost } from './retainmol-host.mjs';
+import { RetainmolHost } from '../retainmol-host.mjs';
 
 async function fixture(t) {
 	const folder = await mkdtemp(join(tmpdir(), 'studio-retainmol-'));

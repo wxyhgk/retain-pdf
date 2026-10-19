@@ -10,9 +10,11 @@ import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 import { VFile } from 'vfile';
 
-import { markdownPlugins } from '../pipeline.mjs';
+import { buildBlocks } from '@blog/kernel/testing.mjs';
+import { markdownPlugins } from '@blog/markdown/pipeline.mjs';
+import * as job from '../build.mjs';
 
-const { remarkPlugins, rehypePlugins } = markdownPlugins();
+const { remarkPlugins, rehypePlugins } = markdownPlugins({ blocks: await buildBlocks(job) });
 
 /** An article in a folder with these files, rendered as the blog renders it. */
 async function render(t: { after: (fn: () => void) => void }, markdown: string, files: Record<string, string> = {}) {

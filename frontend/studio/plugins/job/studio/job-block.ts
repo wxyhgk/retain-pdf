@@ -22,8 +22,8 @@ import {
 } from '@blog/compute/job-options.mjs';
 import { formulaOf, parseXyzFrames } from '@blog/compute/parsers/xyz-frames.ts';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
-import { openBlockSheet, type OpenSheet, type SheetAction } from '@blog/ui/block-sheet.ts';
-import { openRetainmol, type RetainmolFrame } from './retainmol-frame.ts';
+import { openBlockSheet, type OpenSheet, type SheetAction, type SheetTab } from '@blog/ui/block-sheet.ts';
+import type { MoleculeEditor, OpenMoleculeEditor } from '@blog/kernel/studio.ts';
 import './job-block.css';
 
 /**
@@ -32,11 +32,12 @@ import './job-block.css';
  * name, how its run went, a few numbers); double-clicking it, or Enter on
  * it, opens its sheet: 结果, 设置 (the form, which writes the command line,
  * or the command line, which the form follows; the structure as text), 搭建
- * (the molecule built in RetainMol, retainmol-frame.ts), 输出 and 历史
- * (every run is kept, job-runs.mjs, to go back to).
+ * (the molecule built in the Studio's molecule editor, RetainMol), 输出
+ * and 历史 (every run is kept, server/job-runs.mjs, to go back to), then
+ * the tabs other plugins add (`ctx.sheetTabs`, given `JobSheetDetail`).
  *
  * What the block does on the server goes through `setJobHost`, which the
- * Studio gives: the article open, its API and its machines.
+ * plugin gives (studio.ts): the article open, its API and its machines.
  */
 
 export const JOB_FENCE_TYPE = 'job_block';
@@ -56,7 +57,14 @@ export type JobHost = {
 	cancel(id: string, run: string): Promise<RunRecord>;
 	/** Opens the list of machines to change it; resolves once it is closed. */
 	manageHosts(): Promise<void>;
+	/** The editor molecules are built in; null when no plugin offers one. */
+	moleculeEditor(): MoleculeEditor | null;
+	/** The tabs other plugins add to the sheet. */
+	extraTabs(detail: JobSheetDetail): SheetTab[];
 };
+
+/** What the tabs other plugins add to a job's sheet are given. */
+export type JobSheetDetail = { id: string; title: string; program: string; args: string; body: string; record: RunRecord | null; runs: RunRecord[] };
 
 let jobHost: JobHost | null = null;
 /** Each block on the page, by its job's name, told when the files of its runs change. */
@@ -64,7 +72,7 @@ const blocks = new Map<string, Set<() => void>>();
 /** A block just made opens its sheet on 设置 once drawn. */
 const opening = new Set<string>();
 
-export function setJobHost(host: JobHost): void {
+export function setJobHost(host: JobHost | null): void {
 	jobHost = host;
 }
 
@@ -552,7 +560,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		};
 
 		/**
-		 * The 搭建 tab: the structure built in RetainMol (2D sketch, 3D builder,
+		 * The 搭建 tab: the structure built in the molecule editor (RetainMol: 2D sketch, 3D builder,
 		 * its inspector), what is built written into the block as XYZ.
 		 */
 		let editingIn3D = false;
@@ -560,7 +568,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			const host = element('div', 'job-build');
 			const note = element('p', 'block-sheet-note');
 			panel.append(host, note);
-			let frame: RetainmolFrame | null = null;
+			let frame: OpenMoleculeEditor | null = null;
 			let closed = false;
 			const structureOf = fence.structure;
 			const sourceOf = async (): Promise<string> => {
@@ -579,7 +587,9 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			void sourceOf().then(async (text) => {
 				if (closed) return;
 				try {
-					frame = await openRetainmol(host, {
+					const editor = jobHost?.moleculeEditor();
+					if (!editor) throw new Error('没有可用的分子编辑器（plugins/ 里没有提供 molecules 的插件）');
+					frame = await editor.open(host, {
 						text,
 						changed: (built) => {
 							if (closed) return;
@@ -592,7 +602,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 							note.textContent = `${built.formula} · ${built.atoms} 个原子，已写进块里。`;
 						},
 						failed: (message) => {
-							note.textContent = `RetainMol 读不了这个结构：${message}`;
+							note.textContent = `${editor.label} 读不了这个结构：${message}`;
 						},
 					});
 					if (closed) frame.dispose();
@@ -629,6 +639,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 					},
 					{ key: 'output', label: '输出', draw: drawOutputTab },
 					{ key: 'history', label: `历史${runs.length > 1 ? ` ${runs.length}` : ''}`, draw: drawHistory },
+					...(jobHost?.extraTabs({ id: fence.id, title: fence.title, program: fence.program, args: fence.args, body: node.textContent, record, runs }) ?? []),
 				],
 				actions: sheetActions(),
 				onClose: () => {

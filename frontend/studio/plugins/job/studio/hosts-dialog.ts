@@ -1,14 +1,31 @@
-import { computeHosts, detectComputeHost, saveComputeHosts, type ComputeHost } from '../api/client';
-import './compute-hosts.css';
+import type { ComputeHost, JobApi } from './api.ts';
+import './hosts-dialog.css';
 
 /**
  * 计算机器: the machines ```job blocks run on, kept with the Studio's
- * settings (compute-hosts.mjs). Each is a card: how it is reached (here, or
+ * settings (server/compute-hosts.mjs). Each is a card: how it is reached (here, or
  * ssh), whether jobs start at once or go to Slurm, where they run, and the
  * programs, which 检测 finds. Saved together.
  */
-export function createComputeHostsDialog() {
-	const dialog = document.querySelector<HTMLDialogElement>('#compute-hosts-dialog')!;
+export function createComputeHostsDialog(api: JobApi) {
+	const dialog = document.createElement('dialog');
+	dialog.className = 'article-dialog compute-hosts-dialog';
+	dialog.innerHTML = `
+		<form onsubmit="return false">
+			<div class="dialog-heading">
+				<div><strong>计算机器</strong><span>计算块在哪里跑：本机、用 SSH 连得上的服务器，或服务器上的 Slurm 队列</span></div>
+				<button type="button" data-close aria-label="关闭">×</button>
+			</div>
+			<div id="compute-hosts-list"></div>
+			<button id="compute-hosts-add" class="compute-hosts-add" type="button">＋ 添加机器</button>
+			<p id="compute-hosts-error" class="dialog-error" role="alert" hidden></p>
+			<div class="dialog-actions">
+				<button type="button" data-close>取消</button>
+				<button id="compute-hosts-save" class="is-primary" type="button">保存</button>
+			</div>
+		</form>`;
+	dialog.id = 'compute-hosts-dialog';
+	document.body.append(dialog);
 	const list = dialog.querySelector<HTMLElement>('#compute-hosts-list')!;
 	const error = dialog.querySelector<HTMLElement>('#compute-hosts-error')!;
 	const add = dialog.querySelector<HTMLButtonElement>('#compute-hosts-add')!;
@@ -32,7 +49,7 @@ export function createComputeHostsDialog() {
 		const taken = new Set(cards.map((card) => card.read().name));
 		let index = 1;
 		while (taken.has(`server-${index}`)) index += 1;
-		const card = hostCard({ name: `server-${index}`, label: '', kind: 'ssh', ssh: '', scheduler: 'direct', workdir: '~/studio-jobs', threads: 8, programs: {}, setup: '' }, remove);
+		const card = hostCard(api, { name: `server-${index}`, label: '', kind: 'ssh', ssh: '', scheduler: 'direct', workdir: '~/studio-jobs', threads: 8, programs: {}, setup: '' }, remove);
 		cards.push(card);
 		list.append(card.root);
 		card.root.querySelector<HTMLInputElement>('[data-key="ssh"]')?.focus();
@@ -47,7 +64,7 @@ export function createComputeHostsDialog() {
 		error.hidden = true;
 		save.disabled = true;
 		try {
-			await saveComputeHosts(cards.map((card) => card.read()));
+			await api.saveHosts(cards.map((card) => card.read()));
 			close();
 		} catch (failure) {
 			error.textContent = failure instanceof Error ? failure.message : String(failure);
@@ -64,8 +81,8 @@ export function createComputeHostsDialog() {
 			list.replaceChildren();
 			cards = [];
 			try {
-				for (const host of await computeHosts()) {
-					const card = hostCard(host, remove);
+				for (const host of await api.hosts()) {
+					const card = hostCard(api, host, remove);
 					cards.push(card);
 					list.append(card.root);
 				}
@@ -78,10 +95,13 @@ export function createComputeHostsDialog() {
 				closed = resolvePromise;
 			});
 		},
+		dispose(): void {
+			dialog.remove();
+		},
 	};
 }
 
-function hostCard(host: ComputeHost, remove: (root: HTMLElement) => void): { root: HTMLElement; read(): ComputeHost } {
+function hostCard(api: JobApi, host: ComputeHost, remove: (root: HTMLElement) => void): { root: HTMLElement; read(): ComputeHost } {
 	const root = document.createElement('section');
 	root.className = 'host-card';
 	const isLocal = host.name === 'local';
@@ -203,7 +223,7 @@ function hostCard(host: ComputeHost, remove: (root: HTMLElement) => void): { roo
 		detect.disabled = true;
 		found.textContent = kind.value === 'ssh' ? `正在连 ${ssh.value.trim() || '…'}` : '正在找';
 		try {
-			const result = await detectComputeHost(read());
+			const result = await api.detect(read());
 			if (result.programs.xtb && !xtb.value.trim()) xtb.value = result.programs.xtb;
 			if (result.programs.crest && !crest.value.trim()) crest.value = result.programs.crest;
 			if (result.slurm && scheduler.value !== 'slurm') {

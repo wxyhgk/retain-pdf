@@ -14,8 +14,6 @@ import {
 	runName,
 } from '@blog/compute/job-fence.mjs';
 import { jobCommand, joinArgs, outputFile } from '@blog/compute/job-options.mjs';
-import { articleBundlePaths, resolveInside } from '../../articles/bundle-paths.mjs';
-import { atomicWriteText } from './atomic-write.mjs';
 import { JobShell, shellPath, shellWord } from './job-shell.mjs';
 
 /**
@@ -138,11 +136,11 @@ export class JobRuns {
 	#saving = Promise.resolve();
 
 	/**
-	 * @param {string} blogRoot
+	 * @param {import('@blog/kernel/server.mjs').StudioFiles} files the articles' folders (the dev server's `ctx.server.files`)
 	 * @param {{ hosts: import('./compute-hosts.mjs').ComputeHosts, stateFile: string, shellFor?: (host: object) => JobShell, now?: () => Date, intervals?: Partial<typeof INTERVALS>, limits?: Partial<typeof LIMITS> }} options
 	 */
-	constructor(blogRoot, { hosts, stateFile, shellFor = (host) => new JobShell(host), now = () => new Date(), intervals = {}, limits = {} }) {
-		this.blogRoot = blogRoot;
+	constructor(files, { hosts, stateFile, shellFor = (host) => new JobShell(host), now = () => new Date(), intervals = {}, limits = {} }) {
+		this.files = files;
 		this.hosts = hosts;
 		this.stateFile = stateFile;
 		this.shellFor = shellFor;
@@ -152,11 +150,11 @@ export class JobRuns {
 	}
 
 	#runDirectory(slug, id, run) {
-		return resolveInside(articleBundlePaths(this.blogRoot, slug).directory, ...runFolder(id, run).split('/'));
+		return this.files.inside(this.files.articleFolder(slug), ...runFolder(id, run).split('/'));
 	}
 
 	async #article(slug) {
-		const { directory } = articleBundlePaths(this.blogRoot, slug);
+		const directory = this.files.articleFolder(slug);
 		const info = await lstat(directory).catch(() => null);
 		if (!info?.isDirectory() || info.isSymbolicLink()) throw new JobRunError(`找不到文章 ${slug}`, 404);
 		return directory;
@@ -177,7 +175,7 @@ export class JobRuns {
 		if (!['img', 'assets'].includes(root) || !rest.length) throw new JobRunError(`${structure.written} 不是文章 img/ 或 assets/ 里的文件`);
 		if (!STRUCTURE_EXTENSIONS.includes(extension)) throw new JobRunError(`${structure.written}：结构文件只能是 ${STRUCTURE_EXTENSIONS.join('、')}`);
 		const directory = await this.#article(slug);
-		const path = resolveInside(directory, root, ...rest);
+		const path = this.files.inside(directory, root, ...rest);
 		const info = await lstat(path).catch(() => null);
 		if (!info?.isFile()) throw new JobRunError(`找不到 ${structure.written}`, 404);
 		if (info.size > 64 * 1024 * 1024) throw new JobRunError(`${structure.written} 太大`);
@@ -204,7 +202,7 @@ export class JobRuns {
 		const directory = await this.#article(slug);
 
 		let run = runName(this.now());
-		for (let suffix = 2; existsSync(resolveInside(directory, ...runFolder(id, run).split('/'))); suffix += 1) run = `${runName(this.now())}-${suffix}`;
+		for (let suffix = 2; existsSync(this.files.inside(directory, ...runFolder(id, run).split('/'))); suffix += 1) run = `${runName(this.now())}-${suffix}`;
 		const folder = this.#runDirectory(slug, id, run);
 		await mkdir(folder, { recursive: true });
 		await writeFile(join(folder, input), contents);
@@ -299,7 +297,7 @@ export class JobRuns {
 	async list(slug, id) {
 		if (!JOB_ID_PATTERN.test(String(id))) throw new JobRunError('计算块的名字不对');
 		const directory = await this.#article(slug);
-		const folder = resolveInside(directory, ...JOBS_FOLDER.split('/'), id);
+		const folder = this.files.inside(directory, ...JOBS_FOLDER.split('/'), id);
 		const names = (await readdir(folder).catch(() => [])).filter((name) => RUN_NAME_PATTERN.test(name)).sort().reverse();
 		const runs = [];
 		for (const run of names) {
@@ -470,7 +468,7 @@ export class JobRuns {
 	}
 
 	async #write(slug, record) {
-		await atomicWriteText(join(this.#runDirectory(slug, record.id, record.run), 'run.json'), `${JSON.stringify(record, null, '\t')}\n`);
+		await this.files.writeText(join(this.#runDirectory(slug, record.id, record.run), 'run.json'), `${JSON.stringify(record, null, '\t')}\n`);
 	}
 
 	async #update(entry, changes) {
@@ -486,7 +484,7 @@ export class JobRuns {
 		for (const [key, { next, misses, cut, ...entry }] of this.#entries) runs[key] = entry;
 		this.#saving = this.#saving.then(async () => {
 			await mkdir(dirname(this.stateFile), { recursive: true });
-			await atomicWriteText(this.stateFile, `${JSON.stringify({ runs }, null, '\t')}\n`);
+			await this.files.writeText(this.stateFile, `${JSON.stringify({ runs }, null, '\t')}\n`);
 		}).catch(() => {});
 		return this.#saving;
 	}
