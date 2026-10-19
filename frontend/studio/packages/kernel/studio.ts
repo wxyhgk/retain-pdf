@@ -2,12 +2,14 @@ import type { SheetTab } from '@blog/ui/block-sheet.ts';
 
 import { Blocks, type Block } from './blocks.mjs';
 import { applyPlugins, Context, pluginProblems, Service } from './index.mjs';
+import { Styles, Theme } from './theme.ts';
 
 /**
  * The Studio (in the browser): each plugin's studio.ts puts its block in the
  * editor and the slash menu (`ctx.blocks`), offers a molecule editor
  * (`ctx.molecules`), adds tabs to another block's sheet (`ctx.sheetTabs`),
- * and reaches its own API on the dev server (`ctx.studio.api`).
+ * changes how the Studio looks (`ctx.theme`, `ctx.styles`: theme.ts), and
+ * reaches its own API on the dev server (`ctx.studio.api`).
  */
 
 /** What the Studio gives its plugins. */
@@ -133,6 +135,8 @@ export async function startStudio(ctx: Context, modules: Record<string, unknown>
 	await ctx.plugin(Blocks);
 	await ctx.plugin(Molecules);
 	await ctx.plugin(SheetTabs);
+	await ctx.plugin(Theme);
+	await ctx.plugin(Styles);
 	const plugins = Object.entries(modules).map(([path, module]) => ({ id: /\/plugins\/([^/]+)\//u.exec(path)?.[1] ?? path, module }));
 	const problems = pluginProblems(await applyPlugins(ctx, plugins));
 	for (const problem of problems) console.warn(`[plugins] ${problem}`);

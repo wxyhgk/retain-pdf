@@ -25,13 +25,13 @@
 .job-input:focus { border-color: rgb(var(--gray)); }
 .job-title-input { height: 36px; font-size: 15px; font-weight: 600; }
 .job-command-field { margin-top: 14px; }
-.job-command { display: flex; align-items: center; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface-soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+.job-command { display: flex; align-items: center; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: 12.5px; }
 .job-command:focus-within { border-color: rgb(var(--gray)); }
 .job-command-prefix { flex: none; padding: 0 4px 0 9px; color: rgb(var(--gray)); white-space: nowrap; }
 .job-args { flex: 1; height: 32px; border: 0; background: transparent; font-family: inherit; font-size: inherit; }
 .job-structure { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; margin-top: 14px; }
 .job-structure-column { display: grid; align-content: start; gap: 4px; min-width: 0; }
-.job-structure-text { height: auto; min-height: 200px; padding: 7px 9px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; line-height: 1.45; resize: vertical; white-space: pre; }
+.job-structure-text { height: auto; min-height: 200px; padding: 7px 9px; font-family: var(--font-mono); font-size: 12px; line-height: 1.45; resize: vertical; white-space: pre; }
 .job-structure-info { margin: 2px 0 0; color: rgb(var(--gray)); font-size: 12px; }
 .job-structure .job-stage { height: 240px; margin-top: 20px; }
 .job-empty { margin: 4px 0 0; color: rgb(var(--gray)); font-size: 13px; }

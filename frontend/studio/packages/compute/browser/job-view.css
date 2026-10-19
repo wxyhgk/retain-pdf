@@ -70,7 +70,7 @@
 .note-job-summary { flex-basis: 100%; color: rgb(var(--gray)); font-size: 12.5px; }
 .note-job-empty { margin: 0; color: rgb(var(--gray)); font-size: 13px; }
 .note-job-input { margin-top: 8px; }
-.note-job-input summary { color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; cursor: pointer; }
+.note-job-input summary { color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
 .note-job-input pre { max-height: 260px; margin: 8px 0 0; padding: 10px 12px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-size: 12px; }
 .note-job.is-openable { cursor: pointer; transition: border-color 0.12s; }
 .note-job.is-openable:hover, .note-job.is-openable:focus-visible { border-color: rgb(var(--gray)); outline: none; }

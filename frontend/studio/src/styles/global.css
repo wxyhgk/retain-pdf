@@ -19,6 +19,9 @@
 	--surface-hover: #efefed;
 	--code-bg: #1e1e1e;
 	--code-text: #f4f4f4;
+	/* The fonts: text, and code (design tokens, @blog/kernel/theme.ts). */
+	--font-text: var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+	--font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 	--box-shadow:
 		0 2px 6px rgba(var(--gray), 25%), 0 8px 24px rgba(var(--gray), 33%),
 		0 16px 32px rgba(var(--gray), 33%);
@@ -41,7 +44,7 @@ html[data-theme='dark'] {
 	--box-shadow: 0 12px 38px rgba(0, 0, 0, 0.34);
 }
 body {
-	font-family: var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
+	font-family: var(--font-text);
 	margin: 0;
 	padding: 0;
 	text-align: left;

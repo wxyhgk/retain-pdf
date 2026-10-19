@@ -9,7 +9,8 @@
 | `routes.mjs` | `ctx.routes`：开发服务器上插件的接口；`created`、`readAnswer` |
 | `node.mjs` | Node 里的加载：`buildKernel(root)`（博客构建）、`serverKernel(root, server)`（开发服务器）；读 `plugins/*/build.mjs`、`server.mjs` |
 | `page.ts` | 博客页面：`ctx.page`、`startPage` |
-| `studio.ts` | Studio：`ctx.studio`、`ctx.molecules`（分子编辑器接缝）、`ctx.sheetTabs`（弹窗页签插槽）、事件、`startStudio` |
+| `studio.ts` | Studio：`ctx.studio`、`ctx.molecules`（分子编辑器接缝）、`ctx.sheetTabs`（弹窗页签插槽）、事件、`startStudio`（也启动 `theme.ts` 的两个服务） |
+| `theme.ts` | 外观：`ctx.theme`（设计变量 `DESIGN_TOKENS`，只认清单里的名字）、`ctx.styles`（插件自己的 CSS） |
 | `server.d.mts` | 开发服务器上的 `ctx.server` 是什么 |
 | `testing.mjs` | 测试用：`buildBlocks(...插件)` |
 

@@ -14,6 +14,7 @@ import '@blog/markdown/references/references.css';
 import '@blog/markdown/widgets/widgets.css';
 import '@blog/office/office.css';
 import '@xterm/xterm/css/xterm.css';
+import './tokens.css';
 import './workspace/drive.css';
 import './workspace/article-table.css';
 import '@blog/ui/block-sheet.css';
@@ -281,7 +282,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 
 <style>
 	:global(body.studio-body) { height: 100vh; overflow: hidden; font-size: 16px; }
-	.studio-shell { --sidebar: 250px; --panel: var(--panel-width, 340px); display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--panel); width: 100%; max-width: none; height: 100vh; margin: 0; padding: 0; transition: grid-template-columns 180ms ease; }
+	.studio-shell { --sidebar: var(--studio-sidebar-width); --panel: var(--panel-width, var(--studio-panel-width)); display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--panel); width: 100%; max-width: none; height: 100vh; margin: 0; padding: 0; transition: grid-template-columns 180ms ease; }
 	.studio-shell.sidebar-collapsed { --sidebar: 0px; }
 	/* The page as it was left, over the page while the editor loads (page-snapshot.ts); until then the page shows no empty fields. */
 	.studio-shell.studio-snapshot { position: fixed; inset: 0; z-index: 30; }
@@ -329,7 +330,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.save-status[data-state='error'] { color: #b42318; }
 	.save-status[data-state='saved'] { color: rgb(var(--gray)); }
 	.panel-label { display: none; }
-	.panel-label { color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 10px; letter-spacing: 0.04em; }
+	.panel-label { color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; }
 	#article-list { flex: 1; padding: 1px 7px 32px; overflow-y: auto; }
 	#article-list :global(.page-list) { display: grid; gap: 1px; }
 	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
@@ -383,7 +384,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.review-bar button { padding: 4px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
 	.review-bar button.review-accept { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 700; }
 	.document-header { box-sizing: border-box; width: 100%; background: transparent; }
-	.page-head { box-sizing: border-box; position: relative; width: min(100%, 850px); margin: 0 auto; padding: 52px 58px 0; }
+	.page-head { box-sizing: border-box; position: relative; width: min(100%, var(--studio-editor-width)); margin: 0 auto; padding: 52px var(--studio-editor-padding) 0; }
 	.document-header.has-cover .page-head { padding-top: 22px; }
 	.document-header.has-cover.has-icon .page-head { padding-top: 0; }
 	/* The cover spans the page, as on the blog. */
@@ -406,7 +407,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.page-head-actions button[hidden] { display: none; }
 	/* Icon and cover both there: nothing to add, no row for it. */
 	:global(.page-head-actions:not(:has(button:not([hidden])))) { display: none; }
-	.article-title-input { box-sizing: border-box; width: 100%; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-atkinson), system-ui, sans-serif; font-size: clamp(30px, 3vw, 40px); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; outline: none; }
+	.article-title-input { box-sizing: border-box; width: 100%; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-text); font-size: var(--studio-title-size); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; outline: none; }
 	.article-title-input::placeholder { color: rgb(var(--gray)); opacity: 0.48; }
 	.article-title-input:disabled { opacity: 0.55; }
 	/* Properties as rows: a name, and its value changed where it is. */
@@ -524,11 +525,11 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 		--crepe-color-selected: color-mix(in srgb, var(--accent) 16%, var(--surface));
 		--crepe-color-inline-area: rgb(var(--gray-light));
 		--crepe-color-inline-code: rgb(var(--gray-dark));
-		--crepe-font-title: var(--font-atkinson), system-ui, sans-serif;
-		--crepe-font-default: var(--font-atkinson), system-ui, sans-serif;
+		--crepe-font-title: var(--font-text);
+		--crepe-font-default: var(--font-text);
 		min-height: 100%;
 	}
-	:global(.crepe-host .milkdown .ProseMirror) { box-sizing: border-box; width: min(100%, 850px); min-height: 100%; margin: 0 auto; padding: 10px 58px 180px; color: rgb(var(--gray-dark)); font-size: 17px; line-height: 1.72; }
+	:global(.crepe-host .milkdown .ProseMirror) { box-sizing: border-box; width: min(100%, var(--studio-editor-width)); min-height: 100%; margin: 0 auto; padding: 10px var(--studio-editor-padding) 180px; color: rgb(var(--gray-dark)); font-size: var(--studio-editor-font-size); line-height: var(--studio-editor-line-height); }
 	:global(.crepe-host .milkdown .ProseMirror h1) { font-size: 1.7em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; margin: 1.5em 0 0.35em; }
 	:global(.crepe-host .milkdown .ProseMirror h2) { font-size: 1.35em; font-weight: 700; line-height: 1.3; margin: 1.5em 0 0.3em; }
 	:global(.crepe-host .milkdown .ProseMirror h3) { font-size: 1.12em; font-weight: 650; line-height: 1.35; margin: 1.2em 0 0.25em; }
@@ -568,7 +569,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* While a formula is typed (formula-typing.ts): the last good drawing faded, and what is wrong only once the typing stops. */
 	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body.is-empty) { display: none; }
 	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body.is-stale > :not(.pm-math-preview-error)) { opacity: 0.45; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-error) { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
+	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-error) { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: var(--font-mono); font-size: 11px; line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
 	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-error) { color: #b42318; }
 	:global(.crepe-host .pm-display-math-formula.is-stale) { opacity: 0.45; }
 	:global(.pm-source-popup-error.is-late) { animation: pm-error-after-typing 0s 1s both; }
@@ -622,15 +623,15 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.latex-completion[hidden]) { display: none; }
 	:global(.latex-completion-item) { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 34px; padding: 2px 8px; border-radius: 6px; color: rgb(var(--gray-dark)); cursor: pointer; }
 	:global(.latex-completion-item.is-selected) { background: var(--surface-soft); color: rgb(var(--black)); }
-	:global(.latex-completion-name) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; white-space: nowrap; }
+	:global(.latex-completion-name) { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
 	:global(.latex-completion-preview) { overflow: hidden; color: rgb(var(--black)); font-size: 13px; white-space: nowrap; }
 	:global(.latex-completion-preview .katex) { font-size: 1.25em; }
 	/* While commands are offered, the formula's own preview would sit under the list. */
 	:global(.crepe-host .milkdown .ProseMirror.is-completing-latex .pm-math-preview) { visibility: hidden; }
 	:global(.pm-source-popup.is-formula .pm-source-popup-preview) { margin: 0 0 6px; padding: 0; background: none; text-align: left; }
 	:global(.pm-source-popup.is-formula .pm-source-popup-error) { margin: 0; }
-	:global(.pm-source-popup-error) { margin: 6px 0 0; color: #b42318; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.4; text-align: left; }
-	:global(.pm-source-popup-input) { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin: 0; padding: 8px 10px; border: 0; border-radius: 8px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.5; resize: none; outline: none; }
+	:global(.pm-source-popup-error) { margin: 6px 0 0; color: #b42318; font-family: var(--font-mono); font-size: 11px; line-height: 1.4; text-align: left; }
+	:global(.pm-source-popup-input) { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin: 0; padding: 8px 10px; border: 0; border-radius: 8px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; resize: none; outline: none; }
 	:global(.pm-source-popup.is-molecule .pm-source-popup-input) { background: var(--surface-soft); white-space: pre; overflow: auto; tab-size: 4; }
 	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview) { padding: 6px 8px; overflow: hidden; }
 	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-viewer) { margin: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; }
@@ -670,7 +671,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .science-block .chem-stage svg) { width: auto; height: auto; max-width: 100%; max-height: 168px; margin: 0 auto; }
 	:global(.crepe-host .science-block-fallback) { margin: 0; padding: 20px 12px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
 	:global(.crepe-host .science-block-placeholder) { display: none; }
-	:global(.crepe-host .science-block.is-empty .science-block-placeholder) { display: block; padding: 14px 12px; padding-right: 120px; border-radius: 8px; background: var(--surface-soft); color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.5; cursor: text; }
+	:global(.crepe-host .science-block.is-empty .science-block-placeholder) { display: block; padding: 14px 12px; padding-right: 120px; border-radius: 8px; background: var(--surface-soft); color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; cursor: text; }
 	:global(.crepe-host .science-block.is-empty .science-block-placeholder:hover) { background: var(--surface-hover); }
 	:global(.crepe-host .science-block.is-empty .science-block-edit) { display: none; }
 	:global(.crepe-host .science-block.is-open:not(.is-inline-source)) { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
@@ -702,7 +703,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.side-pane { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 	.side-pane[hidden] { display: none; }
 	.pane-toolbar { display: flex; flex: none; align-items: center; gap: 8px; min-height: 38px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
-	.pane-path { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+	.pane-path { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 	.pane-actions { display: flex; gap: 2px; }
 	.pane-actions button { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 14px; cursor: pointer; }
 	.pane-actions button:hover:not(:disabled) { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
@@ -762,7 +763,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.dialog-heading button:hover { background: var(--surface-soft); }
 	.article-dialog input { box-sizing: border-box; width: 100%; height: 38px; padding: 0 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; outline: none; }
 	.article-dialog input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
-	.slug-field { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; height: 38px; padding: 0 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface-soft); color: rgb(var(--gray)); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+	.slug-field { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; height: 38px; padding: 0 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface-soft); color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 12px; }
 	.slug-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
 	.slug-field input { height: 34px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; font-family: inherit; }
 	.slug-field input:focus { box-shadow: none; }

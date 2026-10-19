@@ -36,11 +36,46 @@ export function apply(ctx) { … }             // 在这里注册
 | Studio | `ctx.studio` | 打开的文章 `slug()`、`fileUrl(slug, path)`、`save()`、自己的接口 `api.get/post/put('/<插件>/…')` |
 | Studio | `ctx.molecules` | 分子编辑器接缝：`register(editor)` 提供一个，`editor()` 取一个 |
 | Studio | `ctx.sheetTabs` | 给别的块的弹窗加页签：`register('block-job', { key, label, draw(panel, detail) })` |
+| Studio | `ctx.theme` | 改设计变量：`set({ 'editor-width': '720px' }, { scheme? })`；`tokens()` 列出全部和现在的值。见下面「改外观」 |
+| Studio | `ctx.styles` | 加一段自己的 CSS：`add(css)` |
 | Studio | 事件 `studio/files-changed (slug, paths)`、`studio/ready` | 磁盘上文章的文件变了；Studio 打开并稳定下来了 |
 | 服务器 | `ctx.routes.get/post/put('/<插件>/…', handler)` | 接口，挂在 `/api/studio/plugins/` 下；`handler({ params, query, json() })` 的返回值就是 JSON 回答，`created(值)` 回 201；错误的 `statusCode` 和信息会变成回答 |
 | 服务器 | `ctx.server` | `projectRoot`、`blogRoot`、`settingsFile`、`privateFile(名字)`、`testing`、`files`（`articleFolder(slug)`、`inside(…)`、`writeText(…)`）、`logger` |
 
 开发服务器先做了检查（只许本机、只许本机页面；改动必须是 JSON），插件的路由不用自己再查。
+
+## 改外观
+
+先用设计变量，变量做不到的再写 CSS。两样都在插件卸载时撤掉，界面回到原样。
+
+```ts
+// plugins/look-compact/studio.ts
+import type { Context } from '@blog/kernel/index.mjs';
+import type {} from '@blog/kernel/studio.ts';
+
+export const name = 'look-compact';
+export const inject = ['theme', 'styles'];
+
+export function apply(ctx: Context): void {
+	ctx.theme.set({ 'editor-width': '720px', 'editor-font-size': '16px', 'editor-line-height': '1.6' });
+	ctx.theme.set({ surface: '#161616' }, { scheme: 'dark' });   // 只在暗色模式
+	ctx.styles.add('.page-head { padding-top: 24px; }');
+}
+```
+
+设计变量（全部在 `packages/kernel/theme.ts` 的 `DESIGN_TOKENS`，默认值在 `src/styles/global.css` 和 `src/studio/tokens.css`）：
+
+| 类 | 名字 |
+|---|---|
+| 颜色 | `accent`、`accent-strong`、`on-accent`、`heading`、`text`、`text-soft`、`line`、`surface`、`surface-soft`、`surface-hover`、`code-bg`、`code-text` |
+| 字体 | `font-text`、`font-mono` |
+| 版面 | `editor-width`、`editor-padding`、`editor-font-size`、`editor-line-height`、`title-size`、`sidebar-width`、`panel-width` |
+
+- 名字写错会直接报错，列出全部名字；值里不能有 `; { } < > \` 和注释。
+- `heading`、`text`、`text-soft`、`line` 写 `#rrggbb` 就行（内部存成 `r, g, b`）。
+- 不写 `scheme` 就是亮色、暗色都改。
+- `ctx.styles` 的 CSS 排在 Studio 自己的样式后面；同样的选择器不生效，就写得更具体些。
+- **配色只用黑、白、灰；红色只用于删除和出错。** 改颜色时守住这一条。
 
 ## 现有的插件
 
