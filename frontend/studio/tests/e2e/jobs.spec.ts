@@ -99,9 +99,23 @@ test('a calculation is a card; its sheet sets it up, runs it, shows what it foun
 	await expect(tab(page, '结果')).toHaveAttribute('aria-selected', 'true');
 	await expect(sheet(page).locator('.job-mode')).toHaveCount(21);
 	await expect.poll(savedMarkdown).toContain(`run=${first}\n`);
+	// The structure in 3D (RetainMol's editor).
+	await tab(page, '结构').click();
+	await expect(sheet(page).locator('.m3d-stage canvas').first()).toBeVisible();
+	await expect(sheet(page).locator('.m3d-status')).toHaveText('H2O · 3 个原子');
+	await expect(sheet(page).locator('.m3d-button', { hasText: '撤销' })).toBeDisabled();
 	await page.keyboard.press('Escape');
 	await expect(sheet(page)).toHaveCount(0);
 	await expect(job.locator('.job-card-line')).toContainText('无虚频');
+
+	// The structure changed after the run: the card says its results are from before.
+	await job.dblclick();
+	await tab(page, '设置').click();
+	await sheet(page).locator('.job-structure-text').fill(WATER.replace('0.1173', '0.1500'));
+	await expect(job.locator('.job-card-describe')).toContainText('结构改过了，这是改之前的结果');
+	// And the 3D editor opens the structure as it is now.
+	await tab(page, '结构').click();
+	await expect(sheet(page).locator('.m3d-status')).toHaveText('H2O · 3 个原子');
 });
 
 test('a long run followed in its card and its sheet, and stopped from the card', async ({ page }) => {

@@ -16,7 +16,8 @@
     "test:terminal": "cargo test --release --manifest-path tools/studio-terminal/Cargo.toml",
     "terminal:build": "cargo build --release --manifest-path tools/studio-terminal/Cargo.toml",
     "test:e2e": "playwright test -c tests/e2e/playwright.config.ts",
-    "milkdown:setup": "git submodule update --init third_party/milkdown && pnpm --dir third_party/milkdown install --frozen-lockfile"
+    "milkdown:setup": "git submodule update --init third_party/milkdown && pnpm --dir third_party/milkdown install --frozen-lockfile",
+    "retainmol:update": "node tools/retainmol-update.mjs && npm install --no-audit --no-fund"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.2.2",
@@ -58,9 +59,17 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
+    "@retainmol/core": "file:third_party/retainmol/retainmol-core-0.2.0.tgz",
+    "@retainmol/viewer": "file:third_party/retainmol/retainmol-viewer-0.2.0.tgz",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.184.0",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "rehype-stringify": "^10.0.1",
     "remark-rehype": "^11.1.2",
     "remark-stringify": "^11.0.0",
+    "three": "^0.184.0",
     "typescript": "^7.0.2"
   },
   "workspaces": [

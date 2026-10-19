@@ -23,6 +23,7 @@ import {
 import { formulaOf, parseXyzFrames } from '@blog/compute/parsers/xyz-frames.ts';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { openBlockSheet, type OpenSheet, type SheetAction } from '@blog/ui/block-sheet.ts';
+import { open3DEditor, type Editor3D } from './molecule-editor-3d.ts';
 import './job-block.css';
 
 /**
@@ -30,8 +31,9 @@ import './job-block.css';
  * the page, as in a notebook. In the page it is a card of two lines (its
  * name, how its run went, a few numbers); double-clicking it, or Enter on
  * it, opens its sheet: 结果, 设置 (the form, which writes the command line,
- * or the command line, which the form follows; the structure), 输出 and
- * 历史 (every run is kept, job-runs.mjs, to go back to).
+ * or the command line, which the form follows; the structure as text), 结构
+ * (the structure edited in 3D, molecule-editor-3d.ts), 输出 and 历史 (every
+ * run is kept, job-runs.mjs, to go back to).
  *
  * What the block does on the server goes through `setJobHost`, which the
  * Studio gives: the article open, its API and its machines.
@@ -227,7 +229,14 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		const slug = () => jobHost?.slug() ?? null;
 		const options = (): JobOptions => readJobOptions(fence.program, fence.args);
 		const running = () => record !== null && !isFinished(record);
-		const describe = () => `${PROGRAM_NAMES[fence.program as 'xtb' | 'crest'] ?? fence.program} · ${describeJob(fence.program, options())}`;
+		/** Lines without the spaces around them, and no empty lines at the end: two structures written alike. */
+		const sameStructure = (left: string, right: string) => {
+			const lines = (text: string) => text.split(/\r?\n/u).map((line) => line.trim()).join('\n').replace(/\n+$/u, '');
+			return lines(left) === lines(right);
+		};
+		/** Shown with a run whose structure is not the block's any more. */
+		const stale = () => Boolean(record && isFinished(record) && summary?.input && fence.structure.kind === 'inline' && !sameStructure(summary.input, node.textContent));
+		const describe = () => `${PROGRAM_NAMES[fence.program as 'xtb' | 'crest'] ?? fence.program} · ${describeJob(fence.program, options())}${stale() ? ' · 结构改过了，这是改之前的结果' : ''}`;
 
 		/** Writes the fence's meta and text, as one step of undo. */
 		const write = (next: { meta?: string; body?: string }) => {
@@ -542,6 +551,70 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			panel.append(table, element('p', 'job-section-note', `每次运行都在 assets/jobs/${fence.id}/ 里；文章显示哪次，博客上就是哪次。`));
 		};
 
+		/** The 结构 tab: the starting structure in the 3D editor; what is changed there is written into the block. */
+		let editingIn3D = false;
+		const drawStructureEditor = (panel: HTMLElement) => {
+			const host = element('div', 'job-structure-editor');
+			const note = element('p', 'job-section-note');
+			panel.append(host, note);
+			let editor: Editor3D | null = null;
+			let closed = false;
+			let timer: ReturnType<typeof setTimeout> | undefined;
+			const structureOf = fence.structure;
+			const sourceOf = async (): Promise<string | null> => {
+				if (structureOf.kind === 'inline') return structureOf.text;
+				if (structureOf.kind === 'file' && structureOf.path && slug()) {
+					const response = await fetch(studioFileUrl(slug() as string, structureOf.path), { cache: 'no-store' });
+					return response.ok ? response.text() : null;
+				}
+				return null;
+			};
+			note.textContent = structureOf.kind === 'file'
+				? `结构来自文件 ${structureOf.written}；在这里改动后会写进块里，不再引用那个文件。`
+				: '改动会写进块里（XYZ）；运行时用的就是这里的结构。';
+			void sourceOf().then(async (text) => {
+				if (closed) return;
+				if (!text?.trim()) {
+					host.replaceChildren(element('p', 'job-empty', structureOf.kind === 'none' ? '还没有结构：先在「设置」里写上 XYZ，或引用 assets/ 里的结构文件。' : '这个结构文件读不出来。'));
+					return;
+				}
+				try {
+					editor = await open3DEditor(host, text, {
+						changed: () => {
+							clearTimeout(timer);
+							timer = setTimeout(() => {
+								if (!editor || closed) return;
+								editingIn3D = true;
+								try {
+									later({ body: editor.source('xyz') }, 0);
+								} finally {
+									editingIn3D = false;
+								}
+							}, TEXT_WRITE_MS);
+						},
+					});
+					if (closed) editor.dispose();
+				} catch (error) {
+					host.replaceChildren(element('p', 'job-empty', error instanceof Error ? error.message : String(error)));
+				}
+			});
+			return () => {
+				closed = true;
+				clearTimeout(timer);
+				// What was changed last is written before the editor goes.
+				if (editor?.changed()) {
+					editingIn3D = true;
+					try {
+						later({ body: editor.source('xyz') }, 0);
+					} finally {
+						editingIn3D = false;
+					}
+				}
+				editor?.dispose();
+				editor = null;
+			};
+		};
+
 		const openSheet = (tab?: string) => {
 			flush();
 			paintForm();
@@ -561,6 +634,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 							void loadHosts();
 						},
 					},
+					{ key: 'structure', label: '结构', draw: drawStructureEditor },
 					{ key: 'output', label: '输出', draw: drawOutputTab },
 					{ key: 'history', label: `历史${runs.length > 1 ? ` ${runs.length}` : ''}`, draw: drawHistory },
 				],
@@ -657,6 +731,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			update: (updated: ProseMirrorNode) => {
 				if (updated.type.name !== JOB_FENCE_TYPE) return false;
 				const runBefore = fence.run;
+				const bodyBefore = node.textContent;
 				node = updated;
 				// Our own keystrokes still to be written are newer than what the document says.
 				if (!pendingWrite) fence = parseJobFence(String(updated.attrs.meta ?? ''), updated.textContent);
@@ -666,6 +741,8 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				if (sheet?.isOpen()) {
 					paintForm();
 					paintStructure();
+					// The structure changed elsewhere (its text, undo): the 3D editor opens it anew.
+					if (updated.textContent !== bodyBefore && !editingIn3D) sheet.redraw('structure');
 				}
 				if (fence.run !== runBefore) {
 					record = runs.find((candidate) => candidate.run === fence.run) ?? null;

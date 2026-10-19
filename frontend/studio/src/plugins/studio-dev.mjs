@@ -92,7 +92,11 @@ export default function studioDev({ site } = {}) {
 		name: 'local-article-studio',
 		apply: 'serve',
 		// The editor is hundreds of modules: made ready when the server starts, not when the Studio is first opened.
-		config: () => ({ server: { warmup: { clientFiles: ['./src/studio/main.ts'] } } }),
+		config: () => ({
+			server: { warmup: { clientFiles: ['./src/studio/main.ts'] } },
+			// The 3D structure editor loads when first opened; bundled at the start, so that opening it does not make Vite reload the page.
+			optimizeDeps: { include: ['react', 'react-dom/client', 'three', '@retainmol/viewer/viewer', '@retainmol/viewer/runtime', '@retainmol/core/io'] },
+		}),
 		configureServer(server) {
 			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
 			const testBlogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;

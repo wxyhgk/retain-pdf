@@ -356,6 +356,8 @@ export type RunSummary = {
 	problem: string | null;
 	/** The structure to draw small: where it ended, or where it started. */
 	structure: string | null;
+	/** The structure it started from, as it was given. */
+	input: string | null;
 };
 
 const signed = (value: number, digits: number) => value.toFixed(digits).replace(/^-/u, '−');
@@ -371,7 +373,7 @@ export async function summarizeRun(record: RunRecord, read: ReadRunFile): Promis
 		read(record.input).catch(() => null),
 	]);
 	const failure = record.state === 'failed' || record.state === 'lost' ? record.error : null;
-	const summary: RunSummary = { facts: [], progress: null, problem: record.problem ?? failure ?? null, structure: final ?? (record.input.endsWith('.xyz') ? input : null) };
+	const summary: RunSummary = { facts: [], progress: null, problem: record.problem ?? failure ?? null, structure: final ?? (record.input.endsWith('.xyz') ? input : null), input };
 	if (record.program === 'crest') {
 		const out = output ? parseCrestOutput(output) : null;
 		if (finished && record.state === 'failed' && !summary.problem) summary.problem = out?.errors[0] ?? `CREST 退出码 ${record.exitCode}`;
