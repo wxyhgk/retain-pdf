@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Blocks } from '../blocks.mjs';
-import { applyPlugins, Context, pluginProblems } from '../index.mjs';
+import { applyPlugins, Context, pluginProblems, syncPlugins } from '../index.mjs';
 import { created, readAnswer, Routes } from '../routes.mjs';
 
 async function kernel() {
@@ -62,4 +62,43 @@ test('routes match methods and named segments, and go with their plugin', async 
 	assert.deepEqual(readAnswer([1]), { status: 200, value: [1] });
 	await result.fiber!.dispose();
 	assert.equal(ctx.routes.match('GET', '/job/articles/a/jobs/x/runs'), null);
+});
+
+test('plugins are brought in line with a new version of their modules: only what changed is undone and applied again', async () => {
+	const ctx = await kernel();
+	const applied: string[] = [];
+	const block = (name: string, fence: string) => ({ name, inject: ['blocks'], apply: (c: any) => {
+		applied.push(name);
+		c.blocks.register({ name, fence });
+	} });
+	const job = block('job', 'job');
+	const cube = block('cube', 'cube');
+	const loaded = new Map();
+	assert.deepEqual(await syncPlugins(ctx, loaded, [{ id: 'job', module: job }, { id: 'cube', module: cube }]), { changed: ['job', 'cube'], problems: [] });
+	assert.deepEqual(ctx.blocks.fences(), ['job', 'cube']);
+
+	// job edited (another module), cube untouched, a new one, one gone next time.
+	const job2 = block('job-2', 'job');
+	const widget = block('widget', 'widget');
+	applied.length = 0;
+	assert.deepEqual(await syncPlugins(ctx, loaded, [{ id: 'job', module: job2 }, { id: 'cube', module: cube }, { id: 'widget', module: widget }]), { changed: ['job', 'widget'], problems: [] });
+	assert.deepEqual(applied, ['job-2', 'widget']);
+	assert.equal(ctx.blocks.get('job').name, 'job-2');
+
+	assert.deepEqual((await syncPlugins(ctx, loaded, [{ id: 'job', module: job2 }, { id: 'widget', module: widget }])).changed, ['cube']);
+	assert.equal(ctx.blocks.get('cube'), null);
+	assert.deepEqual([...loaded.keys()], ['job', 'widget']);
+});
+
+test('a plugin that failed is not tried again until it changes, and one that is fixed starts', async () => {
+	const ctx = await kernel();
+	const loaded = new Map();
+	let tries = 0;
+	const broken = { apply() { tries += 1; throw new Error('坏了'); } };
+	assert.match((await syncPlugins(ctx, loaded, [{ id: 'look', module: broken }])).problems[0], /look.*坏了/u);
+	assert.deepEqual(await syncPlugins(ctx, loaded, [{ id: 'look', module: broken }]), { changed: [], problems: [] });
+	assert.equal(tries, 1);
+	const fixed = { inject: ['blocks'], apply: (c: any) => c.blocks.register({ name: 'look', fence: 'look' }) };
+	assert.deepEqual(await syncPlugins(ctx, loaded, [{ id: 'look', module: fixed }]), { changed: ['look'], problems: [] });
+	assert.equal(ctx.blocks.get('look').name, 'look');
 });

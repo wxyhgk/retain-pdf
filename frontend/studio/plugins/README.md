@@ -91,4 +91,10 @@ export function apply(ctx: Context): void {
 5. `server.mjs`（需要的话）：`ctx.routes` 挂接口，Studio 那边用 `ctx.studio.api` 调。
 6. 测试放在 `test/`：`*.test.ts` 跟单元测试一起跑，`*.test.mjs` 跟服务器测试一起跑。构建的测试可以用 `@blog/kernel/testing.mjs` 的 `buildBlocks(插件)`，见 `job/test/build.test.ts`。
 
-改了 `server.mjs` 或 `build.mjs` 要重启开发服务器；`studio.ts` 和 `page.ts` 会热更新。
+## 改了插件之后
+
+- **Studio 这边（`studio.ts` 和它引用的文件）是热插拔的：** 新建、修改、删除插件文件夹，Studio 不刷新页面，先把旧插件撤掉（它注册的一切都撤），再装上新的，别的插件不动。右下角会提示「已重新载入插件：…」；启动失败就用红色提示原因，改好后会自动再试。
+- 改的是块插件（注册了编辑器节点），正文会用新的块重新画一遍，没保存的输入不会丢。
+- 模块里自己存的状态（全局变量、自己建的 DOM）要在卸载时清掉：放进 `ctx.effect(() => { …; return () => 清理 })`，或在 `apply` 里注册撤销函数。RetainMol 插件卸载时就会拿掉自己的 iframe。
+- `page.ts` 改了，刷新博客页面就行。
+- `server.mjs` 或 `build.mjs` 改了，要重启开发服务器。

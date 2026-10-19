@@ -1,7 +1,7 @@
 import type { Context } from '@blog/kernel/index.mjs';
 import type {} from '@blog/kernel/studio.ts';
 
-import { openRetainmol, preloadRetainmol, setRetainmolStudio } from './frame.ts';
+import { closeRetainmol, openRetainmol, preloadRetainmol, setRetainmolStudio } from './frame.ts';
 
 /**
  * The Studio: RetainMol as its molecule editor (`ctx.molecules`), which
@@ -18,7 +18,10 @@ export function apply(ctx: Context): void {
 			address: async () => (await ctx.studio.api.post<{ url: string }>('/retainmol/url', {})).url,
 			save: () => ctx.studio.save(),
 		});
-		return () => setRetainmolStudio(null);
+		return () => {
+			setRetainmolStudio(null);
+			closeRetainmol();
+		};
 	}, 'retainmol studio');
 	ctx.molecules.register({ name: 'retainmol', label: 'RetainMol', open: openRetainmol, preload: preloadRetainmol });
 	ctx.on('studio/ready', () => {

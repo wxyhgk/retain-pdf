@@ -60,3 +60,35 @@ export function pluginProblems(results) {
 		.filter((result) => result.state !== 'active')
 		.map((result) => (result.state === 'waiting' ? `插件 ${result.id} 在等它需要的服务（inject），没有启动` : `插件 ${result.id} 没能启动：${result.error ?? result.state}`));
 }
+
+/**
+ * Brings the plugins applied to `ctx` in line with these modules (a new
+ * version of them, after an edit): one gone, or whose module is another
+ * now, is disposed (all it registered undone); one new or changed is
+ * applied. The others are left as they are. `loaded` (id → { module,
+ * fiber }) is what is applied, kept up to date here; a plugin that failed
+ * stays in it, without a fiber, until its module changes.
+ * @param {import('@deepseek-ai/cordis').Context} ctx
+ * @param {Map<string, { module: any, fiber: any }>} loaded
+ * @param {Array<{ id: string, module?: any, error?: unknown }>} plugins
+ * @returns {Promise<{ changed: string[], problems: string[] }>}
+ */
+export async function syncPlugins(ctx, loaded, plugins) {
+	const coming = new Map(plugins.map((plugin) => [plugin.id, plugin]));
+	const changed = [];
+	// The last applied go first, as Cordis undoes things.
+	for (const [id, entry] of [...loaded].reverse()) {
+		const next = coming.get(id);
+		if (next && !next.error && next.module === entry.module) continue;
+		await entry.fiber?.dispose();
+		loaded.delete(id);
+		changed.push(id);
+	}
+	const applying = plugins.filter((plugin) => !loaded.has(plugin.id));
+	const results = await applyPlugins(ctx, applying);
+	results.forEach((result, index) => {
+		loaded.set(result.id, { module: applying[index].module, fiber: result.fiber ?? null });
+		if (!changed.includes(result.id)) changed.push(result.id);
+	});
+	return { changed, problems: pluginProblems(results) };
+}

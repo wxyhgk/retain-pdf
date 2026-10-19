@@ -20,7 +20,8 @@ process.env.STUDIO_BLOG_DIR = articles;
 function isolatedRoot() {
 	// The folder by its real name: on macOS the temporary ones are under a link (/var → /private/var), which Astro would see as two places.
 	// Named as the repository is: the terminal shows its folder's name.
-	const root = join(realpathSync(mkdtempSync(join(tmpdir(), 'studio-e2e-root-'))), basename(repository));
+	const parent = process.env.E2E_ROOT_PARENT || mkdtempSync(join(tmpdir(), 'studio-e2e-root-'));
+	const root = join(realpathSync(parent), basename(repository));
 	mkdirSync(root);
 	for (const name of ['src', 'plugins', 'astro.config.mjs', 'package.json', 'tsconfig.json']) cpSync(join(repository, name), join(root, name), { recursive: true });
 	for (const name of ['node_modules', 'packages', 'public', 'third_party', 'tools', 'vendor']) symlinkSync(join(repository, name), join(root, name));

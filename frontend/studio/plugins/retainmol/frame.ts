@@ -48,6 +48,8 @@ let shared: Promise<{ frame: HTMLIFrameElement; origin: string }> | null = null;
 let ready = false;
 let attached: Attachment | null = null;
 let following = 0;
+/** Takes the frame and its listeners away. */
+let closing: (() => void) | null = null;
 
 function send(message: Record<string, unknown>): void {
 	void shared?.then(({ frame, origin }) => frame.contentWindow?.postMessage({ protocol: PROTOCOL, ...message }, origin));
@@ -71,7 +73,7 @@ function sharedFrame(): Promise<{ frame: HTMLIFrameElement; origin: string }> {
 		frame.allow = 'clipboard-read; clipboard-write';
 		frame.hidden = true;
 		frame.src = `${address}/?embed=1&parent=${encodeURIComponent(location.origin)}&theme=${theme()}`;
-		window.addEventListener('message', (event) => {
+		const listen = (event: MessageEvent) => {
 			if (event.origin !== origin || event.source !== frame.contentWindow) return;
 			const message = event.data as ({ protocol?: string; type?: string; message?: string } & Partial<BuiltMolecule>) | null;
 			if (message?.protocol !== PROTOCOL) return;
@@ -88,9 +90,16 @@ function sharedFrame(): Promise<{ frame: HTMLIFrameElement; origin: string }> {
 			} else if (message.type === 'save') {
 				studio?.save();
 			}
-		});
-		window.addEventListener('themechange', () => send({ type: 'theme', theme: theme() }));
+		};
+		const retheme = () => send({ type: 'theme', theme: theme() });
+		window.addEventListener('message', listen);
+		window.addEventListener('themechange', retheme);
 		sheetOverlay().append(frame);
+		closing = () => {
+			window.removeEventListener('message', listen);
+			window.removeEventListener('themechange', retheme);
+			frame.remove();
+		};
 		return { frame, origin };
 	})();
 	shared.catch(() => {
@@ -116,6 +125,16 @@ function follow(frame: HTMLIFrameElement, attachment: Attachment): void {
 	};
 	// Placed at once: what it is given next is laid out (fitted in view) at the size it is shown at.
 	place();
+}
+
+/** The frame gone, and what listened to it (the plugin is taken out, or loaded again). */
+export function closeRetainmol(): void {
+	closing?.();
+	closing = null;
+	shared = null;
+	ready = false;
+	attached = null;
+	following += 1;
 }
 
 /** Loads RetainMol now, hidden, so that the first sheet to want it has it at once. */

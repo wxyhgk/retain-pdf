@@ -1,5 +1,5 @@
 import { lstat } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { checkArticle } from '../studio/server/article-check.mjs';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
@@ -93,6 +93,14 @@ export default function studioDev({ site } = {}) {
 		apply: 'serve',
 		// The editor is hundreds of modules: made ready when the server starts, not when the Studio is first opened.
 		config: () => ({ server: { warmup: { clientFiles: ['./src/studio/main.ts'] } } }),
+		// A plugin's file that nothing imports any more (its plugin was removed, and now it is written
+		// again) is no dead end that would load the page again: the plugins' list (src/studio/plugin-modules.ts)
+		// takes it in, and the Studio puts the plugin in without loading the page (src/studio/plugins.ts).
+		// (Vite 8's hook for this: handleHotUpdate is not told of files made or removed.)
+		hotUpdate({ file, modules }) {
+			if (this.environment.name !== 'client' || !file.startsWith(resolve(this.environment.config.root, 'plugins') + sep)) return;
+			return modules.filter((module) => module.importers.size > 0 || module.isSelfAccepting);
+		},
 		configureServer(server) {
 			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
 			const testBlogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
@@ -137,6 +145,15 @@ export default function studioDev({ site } = {}) {
 				void plugins.then((kernel) => kernel.dispose());
 			});
 			markContentReloads(server);
+			// A plugin's file made or removed: what Vite kept of it is forgotten, so that one written again where one was is read anew.
+			const pluginsFolder = resolve(server.config.root, 'plugins') + sep;
+			const forgetPluginFile = (file) => {
+				if (!file.startsWith(pluginsFolder)) return;
+				const graph = server.environments?.client?.moduleGraph ?? server.moduleGraph;
+				for (const module of graph?.getModulesByFile(file) ?? []) graph.invalidateModule(module, new Set(), Date.now(), true);
+			};
+			server.watcher?.on('add', forgetPluginFile);
+			server.watcher?.on('unlink', forgetPluginFile);
 
 			server.middlewares.use(async (request, response, next) => {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];

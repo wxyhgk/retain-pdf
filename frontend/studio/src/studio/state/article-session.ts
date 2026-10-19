@@ -178,6 +178,25 @@ export class ArticleSession {
 		this.#noteEdit();
 	}
 
+	/**
+	 * The editor drawn again on what it holds: its blocks are others now (a
+	 * block's plugin was loaded again). The edits not yet reported are
+	 * taken first; nothing is lost, nothing saved.
+	 */
+	async remount(): Promise<void> {
+		const { article } = this.#store.current;
+		if (!article) return;
+		const sequence = this.#sequence;
+		this.#host.settle();
+		const body = parseStudioDocument(this.#store.current.source).body.raw;
+		try {
+			await this.#host.mount(article, body, true);
+		} catch (error) {
+			if (sequence !== this.#sequence) return;
+			this.#setState({ kind: 'unshown', message: `编辑器没能显示正文：${error instanceof Error ? error.message : String(error)}` });
+		}
+	}
+
 	/** The properties as typed. Why they cannot be saved, or null. */
 	editProperties(properties: ArticleProperties): string | null {
 		const { article, source } = this.#store.current;

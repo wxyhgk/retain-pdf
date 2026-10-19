@@ -1,7 +1,7 @@
 import type { SheetTab } from '@blog/ui/block-sheet.ts';
 
 import { Blocks, type Block } from './blocks.mjs';
-import { applyPlugins, Context, pluginProblems, Service } from './index.mjs';
+import { Context, Service } from './index.mjs';
 import { Styles, Theme } from './theme.ts';
 
 /**
@@ -110,6 +110,10 @@ export interface StudioEvents {
 	'studio/files-changed'(slug: string, paths: string[]): void;
 	/** The Studio has opened and settled: a time to get ready what will be wanted. */
 	'studio/ready'(): void;
+	/** Plugins were loaded again after an edit (their names), with what went wrong. */
+	'studio/plugins-reloaded'(changed: string[], problems: string[]): void;
+	/** The blocks in the editor are others now (a block's plugin was loaded again): it must be drawn again. */
+	'studio/blocks-changed'(): void;
 }
 
 declare module '@deepseek-ai/cordis' {
@@ -126,19 +130,17 @@ export function studioBlocks(ctx: Context): StudioBlock[] {
 	return ctx.blocks.list() as StudioBlock[];
 }
 
-/**
- * Starts the Studio's plugins (modules by path, as import.meta.glob gives
- * them). Resolves once they have started, with what went wrong.
- */
-export async function startStudio(ctx: Context, modules: Record<string, unknown>, host: StudioHost): Promise<string[]> {
+/** Gives `ctx` the Studio's services (`ctx.studio` is `host`), for its plugins. */
+export async function provideStudio(ctx: Context, host: StudioHost): Promise<void> {
 	ctx.provide('studio', host);
 	await ctx.plugin(Blocks);
 	await ctx.plugin(Molecules);
 	await ctx.plugin(SheetTabs);
 	await ctx.plugin(Theme);
 	await ctx.plugin(Styles);
-	const plugins = Object.entries(modules).map(([path, module]) => ({ id: /\/plugins\/([^/]+)\//u.exec(path)?.[1] ?? path, module }));
-	const problems = pluginProblems(await applyPlugins(ctx, plugins));
-	for (const problem of problems) console.warn(`[plugins] ${problem}`);
-	return problems;
+}
+
+/** The plugins among these modules (by path, as import.meta.glob gives them), by their folder's name. */
+export function studioPluginList(modules: Record<string, unknown>): Array<{ id: string; module: unknown }> {
+	return Object.entries(modules).map(([path, module]) => ({ id: /\/plugins\/([^/]+)\//u.exec(path)?.[1] ?? path, module }));
 }

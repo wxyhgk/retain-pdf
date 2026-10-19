@@ -10,6 +10,8 @@ const retainmolPort = port + 599;
 process.env.STUDIO_BLOG_DIR ??= mkdtempSync(join(tmpdir(), 'studio-e2e-'));
 // The drive (资料库) the Studio shows: a folder of its own, filled by the tests.
 process.env.STUDIO_DRIVE_DIR ??= mkdtempSync(join(tmpdir(), 'studio-drive-'));
+// With E2E_ISOLATED=1, where the server's own root is made (server.mjs): the tests write plugins into its copy, never into the repository.
+if (process.env.E2E_ISOLATED === '1') process.env.E2E_ROOT_PARENT ??= mkdtempSync(join(tmpdir(), 'studio-e2e-root-'));
 
 export default defineConfig({
 	testDir: '.',
@@ -36,6 +38,7 @@ export default defineConfig({
 				STUDIO_BLOG_DIR: process.env.STUDIO_BLOG_DIR,
 				STUDIO_DRIVE_DIR: process.env.STUDIO_DRIVE_DIR,
 				E2E_ISOLATED: process.env.E2E_ISOLATED ?? '',
+				E2E_ROOT_PARENT: process.env.E2E_ROOT_PARENT ?? '',
 				// RetainMol is its stand-in, below.
 				STUDIO_RETAINMOL_URL: `http://127.0.0.1:${retainmolPort}`,
 			},

@@ -347,7 +347,14 @@ void startStudioPlugins({
 	fileUrl: studioFileUrl,
 	save: () => void session.flush(),
 	api: pluginApi,
+}).then((problems) => {
+	if (problems.length) showToast(problems.join('；'), true);
 });
+// A plugin edited (by hand or by an AI in the terminal) is put in again at once: said here; the article drawn again if its blocks changed.
+studioPlugins.on('studio/plugins-reloaded', (changed, problems) => {
+	showToast(problems.length ? problems.join('；') : `已重新载入插件：${changed.join('、')}`, problems.length > 0);
+});
+studioPlugins.on('studio/blocks-changed', () => void session.remount());
 
 // Widgets read the open article's files (note.file, or a widget that is a file).
 setWidgetFiles((path) => (session.slug ? studioFileUrl(session.slug, path) : path));
