@@ -17,7 +17,14 @@ export class UiError extends Error {
 
 const KEY_NAME = /^[a-z][\w-]*$/u;
 
-/** A tab of the right column: `draw` fills its pane the first time it is shown, and what it returns is called when the tab goes. */
+/**
+ * A tab of the right column. `draw` fills its pane the first time it is
+ * shown; what it returns is called when the tab goes (its plugin turned
+ * off, edited, removed), so a timer or a listener started in `draw` is
+ * stopped there. `shown` and `hidden` say when the pane comes on screen and
+ * leaves it (another tab chosen, the column shut): what only matters on
+ * screen can wait meanwhile.
+ */
 export type StudioPanel = {
 	/** Its name (lowercase letters, digits, - and _); `ctx.studio.showPanel(key)` opens it. */
 	key: string;
@@ -26,6 +33,10 @@ export type StudioPanel = {
 	/** Among the plugins' tabs, after the Studio's own (files, terminal, drive): the smaller first. */
 	order?: number;
 	draw(pane: HTMLElement): void | (() => void);
+	/** The pane is on screen now (also right after the first `draw`). */
+	shown?(pane: HTMLElement): void;
+	/** The pane is off screen now (not called when the tab goes: that is what `draw` returned). */
+	hidden?(pane: HTMLElement): void;
 };
 
 /** The Studio's own tabs: no plugin's can be called so. */

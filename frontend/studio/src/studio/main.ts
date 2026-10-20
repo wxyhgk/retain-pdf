@@ -215,6 +215,8 @@ const session = new ArticleSession(
 		confirm: (message) => window.confirm(message),
 		toast: (message) => showToast(message),
 		opened({ article, properties: shown }) {
+			openTitle = shown.title || article.slug;
+			studioPlugins.emit('studio/article-opened', article.slug);
 			properties.show(shown, article.problems ?? []);
 			topBar.showArticle(article.slug, shown.title || article.slug, shown.kind);
 			topBar.edited(article.modified ?? null);
@@ -234,7 +236,10 @@ const session = new ArticleSession(
 			topBar.saveState(state);
 		},
 		roundtrip: (exact) => topBar.roundtrip(exact),
-		retitled: (title) => topBar.showTitle(title),
+		retitled(title) {
+			openTitle = title;
+			topBar.showTitle(title);
+		},
 		saved(slug, saved, problems) {
 			articleList.saved(slug, saved);
 			topBar.edited(Date.now());
@@ -245,6 +250,23 @@ const session = new ArticleSession(
 	testDelay ? { delay: testDelay, maxWait: testDelay } : {},
 );
 session.subscribe(() => filePanel.sourceChanged());
+
+/** The open article's title as typed (the plugins' `ctx.studio.article()`). */
+let openTitle = '';
+
+// The plugins are told the article's file changed (`studio/source-changed`), a moment after the last change.
+{
+	let told = { slug: '', source: '' };
+	let timer = 0;
+	session.subscribe(({ article, source }) => {
+		window.clearTimeout(timer);
+		if (!article || (article.slug === told.slug && source === told.source)) return;
+		timer = window.setTimeout(() => {
+			told = { slug: article.slug, source };
+			studioPlugins.emit('studio/source-changed', article.slug, source);
+		}, 250);
+	});
+}
 
 /** Where the article's chemistry finds its files and its saved molecule views. */
 function useArticleContext(article: ArticlePayload): void {
@@ -347,11 +369,15 @@ watchDisk((changes) => {
 // The project's plugins (plugins/*/studio.ts: the calculation block, RetainMol…), given the article open, its files and their API.
 // Those turned off (插件) are left out; if the list cannot be read, all are put in.
 void listPlugins()
-	.then((plugins) => plugins.filter((plugin) => !plugin.enabled).map((plugin) => plugin.id), () => [])
-	.then((off) => startStudioPlugins({
+	.then(
+		(plugins) => ({ off: plugins.filter((plugin) => !plugin.enabled).map((plugin) => plugin.id), present: plugins.filter((plugin) => plugin.entries.includes('studio.ts')).map((plugin) => plugin.id) }),
+		() => ({ off: [], present: [] }),
+	)
+	.then(({ off, present }) => startStudioPlugins({
 		slug: () => session.slug,
 		fileUrl: studioFileUrl,
 		save: () => void session.flush(),
+		article: () => (session.slug ? { slug: session.slug, title: openTitle || session.slug } : null),
 		source() {
 			if (!session.slug) return null;
 			editor.settle();
@@ -360,11 +386,17 @@ void listPlugins()
 		editor: {
 			view: () => editor.view(),
 			insert: (markdown) => editor.insertMarkdown(markdown),
+			insertText(text) {
+				const view = editor.view();
+				if (!view) return;
+				view.dispatch(view.state.tr.insertText(text).scrollIntoView());
+				view.focus();
+			},
 		},
 		toast: (message, error = false) => showToast(message, error),
 		showPanel: (key) => sidePanel.show(key),
 		api: pluginApi,
-	}, off))
+	}, off, present))
 	.then((problems) => {
 		// Their tabs in the right column, their commands in the left one and on their keys.
 		showPluginUi({ setPanels: (panels) => sidePanel.setPanels(panels), sidebar: shell.querySelector<HTMLElement>('#plugin-commands')! });

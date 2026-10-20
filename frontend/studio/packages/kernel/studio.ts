@@ -22,7 +22,13 @@ export type StudioHost = {
 	fileUrl(slug: string, path: string): string;
 	/** Saves the article now (what the editor holds). */
 	save(): void;
-	/** The open article's Markdown as the editor holds it, saved or not; null before one is open. */
+	/** The open article: its name and its title (as typed, saved or not); null before one is open. */
+	article(): { slug: string; title: string } | null;
+	/**
+	 * The open article's file as the editor holds it, saved or not: its
+	 * front matter (`---` … `---`) and its body. Null before one is open.
+	 * To follow it, listen to `studio/source-changed` rather than asking again and again.
+	 */
 	source(): string | null;
 	/** The article's editor. */
 	editor: {
@@ -30,6 +36,8 @@ export type StudioHost = {
 		view(): import('prosemirror-view').EditorView | null;
 		/** Puts Markdown in where the caret is, as blocks of their own. */
 		insert(markdown: string): void;
+		/** Types plain text where the caret is, in its line (over what is selected); nothing without an editor. */
+		insertText(text: string): void;
 	};
 	/** Says something for a moment at the bottom of the page (in red when it is an error). */
 	toast(message: string, error?: boolean): void;
@@ -121,6 +129,13 @@ export class SheetTabs extends Service {
 }
 
 export interface StudioEvents {
+	/** An article was opened (another one, or the same one again from disk). */
+	'studio/article-opened'(slug: string): void;
+	/**
+	 * The open article's file is other now (typed in, opened, changed on disk), a
+	 * moment after the last change: the same as `ctx.studio.source()` gives.
+	 */
+	'studio/source-changed'(slug: string, source: string): void;
 	/** Files of an article changed on disk (its paths in the article's folder). */
 	'studio/files-changed'(slug: string, paths: string[]): void;
 	/** The Studio has opened and settled: a time to get ready what will be wanted. */

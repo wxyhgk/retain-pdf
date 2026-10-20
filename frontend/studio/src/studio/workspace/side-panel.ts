@@ -36,7 +36,7 @@ function writeLayout(layout: PanelLayout): void {
 }
 
 /** A tab and its pane; a plugin's is drawn the first time it is shown. */
-type Tab = { tab: HTMLButtonElement; pane: HTMLElement; panel?: StudioPanel; drawn?: boolean; undraw?: (() => void) | void };
+type Tab = { tab: HTMLButtonElement; pane: HTMLElement; panel?: StudioPanel; drawn?: boolean; undraw?: (() => void) | void; onScreen?: boolean };
 
 /**
  * The right column: the open article's files, a terminal and the drive, as
@@ -59,6 +59,18 @@ export function createSidePanel(shell: HTMLElement) {
 
 	/** The tab shown: the one chosen, or the files while it is not there (yet). */
 	const shown = () => (tabs.has(layout.tab) ? layout.tab : 'files');
+
+	/** Tells a plugin's pane it came on screen or left it, once per change. */
+	function tellScreen(entry: Tab, onScreen: boolean): void {
+		if (!entry.panel || Boolean(entry.onScreen) === onScreen) return;
+		entry.onScreen = onScreen;
+		try {
+			if (onScreen) entry.panel.shown?.(entry.pane);
+			else entry.panel.hidden?.(entry.pane);
+		} catch (error) {
+			console.error(`[plugins] 面板 ${entry.panel.key}`, error);
+		}
+	}
 
 	/** A plugin's pane, filled by it; what goes wrong is said in the pane. */
 	function draw(entry: Tab): void {
@@ -88,6 +100,7 @@ export function createSidePanel(shell: HTMLElement) {
 			entry.tab.tabIndex = selected ? 0 : -1;
 			entry.pane.hidden = !selected;
 			if (selected && layout.open) draw(entry);
+			tellScreen(entry, selected && layout.open && entry.drawn === true);
 		}
 	}
 

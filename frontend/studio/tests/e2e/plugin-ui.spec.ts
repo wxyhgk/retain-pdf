@@ -11,7 +11,8 @@ import { editor, openStudio, resetFixture } from './studio.ts';
 test.skip(!process.env.E2E_ROOT_PARENT, 'needs E2E_ISOLATED=1');
 
 const root = () => join(process.env.E2E_ROOT_PARENT!, basename(fileURLToPath(new URL('../..', import.meta.url))));
-const folder = () => join(root(), 'plugins', 'test-ui');
+// Each test its own folder: one removed and made again at once may be missed by the server's file watcher.
+const folder = (name = 'test-ui') => join(root(), 'plugins', name);
 
 const PLUGIN = `
 export const name = 'test-ui';
@@ -24,7 +25,10 @@ export function apply(ctx: any): void {
 			pane.innerHTML = '<p class="test-notes">这是便签</p>';
 			return () => { (window as any).notesUndrawn = ((window as any).notesUndrawn ?? 0) + 1; };
 		},
+		shown: () => { (window as any).notesScreen = ((window as any).notesScreen ?? '') + '+'; },
+		hidden: () => { (window as any).notesScreen = ((window as any).notesScreen ?? '') + '-'; },
 	});
+	ctx.commands.register({ id: 'test-ui.title', label: '插入标题', places: ['page-menu'], run: () => ctx.studio.editor.insertText('〔' + ctx.studio.article().title + '〕') });
 	ctx.commands.register({ id: 'test-ui.open', label: '打开便签', icon: '✎', places: ['sidebar'], run: () => ctx.studio.showPanel('notes') });
 	ctx.commands.register({
 		id: 'test-ui.stamp',
@@ -39,7 +43,9 @@ export function apply(ctx: any): void {
 `;
 
 test.beforeEach(() => resetFixture());
-test.afterEach(() => rmSync(folder(), { recursive: true, force: true }));
+test.afterEach(() => {
+	for (const name of ['test-ui', 'test-ui-kept']) rmSync(folder(name), { recursive: true, force: true });
+});
 
 const tab = (page: Page) => page.locator('.side-tabs [role="tab"]', { hasText: '便签' });
 const sidebarButton = (page: Page) => page.locator('#plugin-commands button', { hasText: '打开便签' });
@@ -54,7 +60,7 @@ test('a plugin’s tab and commands come with it and go with it', async ({ page 
 	await page.evaluate(() => {
 		(window as any).notReloaded = true;
 	});
-	await expect(page.locator('#plugin-commands')).toBeHidden();
+	await expect(sidebarButton(page)).toHaveCount(0);
 
 	mkdirSync(folder(), { recursive: true });
 	writeFileSync(join(folder(), 'studio.ts'), PLUGIN);
@@ -62,12 +68,18 @@ test('a plugin’s tab and commands come with it and go with it', async ({ page 
 
 	// Its tab, after the Studio's own, drawn when it is first shown; its button in the left column opens it.
 	await expect(tab(page)).toBeVisible();
-	await expect(page.locator('.side-tabs [role="tab"]')).toHaveText(['文件', '终端', '资料库', '便签']);
+	const tabs = await page.locator('.side-tabs [role="tab"]').allTextContents();
+	expect(tabs.slice(0, 3)).toEqual(['文件', '终端', '资料库']);
+	expect(tabs.at(-1)).toBe('便签');
 	await expect(page.locator('.test-notes')).toHaveCount(0);
 	await sidebarButton(page).click();
 	await expect(tab(page)).toHaveAttribute('aria-selected', 'true');
 	await expect(page.locator('#side-plugin-notes .test-notes')).toHaveText('这是便签');
 	await expect(page.locator('#side-files')).toBeHidden();
+	// Told when it comes on screen and leaves it.
+	await page.locator('#side-tab-files').click();
+	await tab(page).click();
+	expect(await page.evaluate(() => (window as any).notesScreen)).toBe('+-+');
 
 	// Its shortcut.
 	await caretAtEnd(page);
@@ -89,6 +101,11 @@ test('a plugin’s tab and commands come with it and go with it', async ({ page 
 	await page.locator('#page-menu').click();
 	await page.getByRole('menuitem', { name: '插入印章' }).click();
 	await expect(editor(page)).toContainText('印章来自 page-menu');
+	// The article's title, typed where the caret is.
+	const title = (await page.locator('#article-title-input').inputValue()) || 'studio-fixture';
+	await page.locator('#page-menu').click();
+	await page.getByRole('menuitem', { name: '插入标题' }).click();
+	await expect(editor(page)).toContainText(`〔${title}〕`);
 	await page.locator('#page-menu').click();
 	await page.getByRole('menuitem', { name: '会失败' }).click();
 	await expect(page.locator('.studio-toast', { hasText: '会失败：故意的' })).toBeVisible();
@@ -98,11 +115,14 @@ test('a plugin’s tab and commands come with it and go with it', async ({ page 
 	await expect(tab(page)).toHaveCount(0, { timeout: 20_000 });
 	await expect(page.locator('#side-files')).toBeVisible();
 	expect(await page.evaluate(() => (window as any).notesUndrawn)).toBe(1);
-	await expect(page.locator('#plugin-commands')).toBeHidden();
+	await expect(sidebarButton(page)).toHaveCount(0);
 	await caretAtEnd(page);
 	await page.keyboard.press('Control+Alt+KeyY');
-	await page.locator('#page-menu').click();
-	await expect(page.getByRole('menuitem', { name: '历史版本…' })).toBeVisible();
+	// The editor is drawn again without its slash command, which may close a menu opened meanwhile: opened until it stays.
+	await expect(async () => {
+		await page.locator('#page-menu').click();
+		await expect(page.getByRole('menuitem', { name: '历史版本…' })).toBeVisible({ timeout: 1000 });
+	}).toPass();
 	await expect(page.getByRole('menuitem', { name: '插入印章' })).toHaveCount(0);
 	await page.keyboard.press('Escape');
 	await expect(editor(page).getByText('印章来自 keys')).toHaveCount(1);
@@ -110,8 +130,8 @@ test('a plugin’s tab and commands come with it and go with it', async ({ page 
 });
 
 test('the tab chosen is chosen again after a reload, once its plugin has put it in', async ({ page }) => {
-	mkdirSync(folder(), { recursive: true });
-	writeFileSync(join(folder(), 'studio.ts'), PLUGIN);
+	mkdirSync(folder('test-ui-kept'), { recursive: true });
+	writeFileSync(join(folder('test-ui-kept'), 'studio.ts'), PLUGIN);
 	await openStudio(page);
 	await tab(page).click();
 	await expect(page.locator('#side-plugin-notes .test-notes')).toBeVisible();

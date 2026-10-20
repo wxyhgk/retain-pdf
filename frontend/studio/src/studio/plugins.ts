@@ -39,9 +39,29 @@ function warn(problems: string[]): void {
 	for (const problem of problems) console.warn(`[plugins] ${problem}`);
 }
 
-/** Starts them, once, with what the Studio gives them, but those turned off; resolves with what went wrong. */
-export function startStudioPlugins(host: StudioHost, off: string[] = []): Promise<string[]> {
+/**
+ * A plugin made while the page was loading, before it heard of updates, is
+ * not in its list: when the server has one with a studio.ts that the list
+ * lacks, the list is read anew.
+ */
+async function catchUp(present: string[]): Promise<void> {
+	const known = new Set(studioPluginList(modules).map((plugin) => plugin.id));
+	if (present.every((id) => known.has(id))) return;
+	try {
+		const next = (await import(/* @vite-ignore */ `./plugin-modules.ts?t=${Date.now()}`)) as { pluginModules: Record<string, unknown> };
+		modules = next.pluginModules;
+	} catch (error) {
+		console.warn('[plugins] 没能重新读取插件列表', error);
+	}
+}
+
+/**
+ * Starts them, once, with what the Studio gives them, but those turned off;
+ * `present`: the plugins with a studio.ts the server has. Resolves with what went wrong.
+ */
+export function startStudioPlugins(host: StudioHost, off: string[] = [], present: string[] = []): Promise<string[]> {
 	started ??= (async () => {
+		await catchUp(present);
 		for (const id of off) disabled.add(id);
 		await provideStudio(studioPlugins, host);
 		const { problems } = await syncPlugins(studioPlugins, loaded, applicable());

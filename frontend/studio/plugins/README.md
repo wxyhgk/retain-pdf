@@ -33,7 +33,7 @@ export function apply(ctx) { … }             // 在这里注册
 | 构建 | `ctx.blocks.register({ name, fence, remark(node, file) })` | 认领一种代码块；`remark` 返回替换它的节点，`file.message(…)` 报给发布前检查 |
 | 页面 | `ctx.page` | `articleSlug`、`fileUrl(path)`：文章发布出去的文件地址 |
 | Studio | `ctx.blocks.register({ name, fence, milkdown, menu })` | 编辑器节点（Milkdown 插件）和斜杠菜单里的一项（`insert(view)`） |
-| Studio | `ctx.studio` | 打开的文章 `slug()`、正文 `source()`（编辑器里的样子，没保存的也算）、`fileUrl(slug, path)`、`save()`；编辑器 `editor.view()`（ProseMirror）、`editor.insert(markdown)`；`toast(文字, 出错?)`、`showPanel(key)`；自己的接口 `api.get/post/put('/<插件>/…')` |
+| Studio | `ctx.studio` | 打开的文章 `slug()`、`article()`（`{ slug, title }`，标题是正在编辑的）、整个文件 `source()`（编辑器里的样子，没保存的也算，**含开头的 `---` 属性**）、`fileUrl(slug, path)`、`save()`；编辑器 `editor.view()`（ProseMirror）、`editor.insert(markdown)`（插成独立的块）、`editor.insertText(文字)`（插在光标所在的行里）；`toast(文字, 出错?)`、`showPanel(key)`；自己的接口 `api.get/post/put('/<插件>/…')` |
 | Studio | `ctx.panels` | 右栏的页签：`register({ key, label, order?, draw(pane) })`，见下面「界面：面板和命令」 |
 | Studio | `ctx.commands` | 命令：`register({ id, label, run, keys?, places? })`，可以挂快捷键、斜杠菜单、⋯ 菜单、左栏；`run(id)` 跑别人的命令 |
 | Studio | `ctx.molecules` | 分子编辑器接缝：`register(editor)` 提供一个，`editor()` 取一个 |
@@ -41,6 +41,8 @@ export function apply(ctx) { … }             // 在这里注册
 | Studio | `ctx.sheetTabs` | 给别的块的弹窗加页签：`register('block-job', { key, label, draw(panel, detail) })` |
 | Studio | `ctx.theme` | 改设计变量：`set({ 'editor-width': '720px' }, { scheme? })`；`tokens()` 列出全部和现在的值。见下面「改外观」 |
 | Studio | `ctx.styles` | 加一段自己的 CSS：`add(css)` |
+| Studio | 事件 `studio/source-changed (slug, source)` | 打开的文章变了（打字、换文章、磁盘上被改），停下 250 毫秒后通知一次；`source` 和 `ctx.studio.source()` 一样。要跟着正文更新就听它，不要定时去查 |
+| Studio | 事件 `studio/article-opened (slug)` | 打开了一篇文章（换了一篇，或同一篇从磁盘重新载入） |
 | Studio | 事件 `studio/files-changed (slug, paths)`、`studio/ready`、`studio/plugins-changed (names)` | 磁盘上文章的文件变了；Studio 打开并稳定下来了；有插件装上或撤下了 |
 | 服务器 | `ctx.routes.get/post/put('/<插件>/…', handler)` | 接口，挂在 `/api/studio/plugins/` 下；`handler({ params, query, json() })` 的返回值就是 JSON 回答，`created(值)` 回 201；错误的 `statusCode` 和信息会变成回答 |
 | 服务器 | `ctx.server` | `projectRoot`、`blogRoot`、`settingsFile`、`privateFile(名字)`、`testing`、`files`（`articleFolder(slug)`、`inside(…)`、`writeText(…)`）、`logger` |
@@ -79,6 +81,7 @@ export function apply(ctx: Context): void {
 - 不写 `scheme` 就是亮色、暗色都改。
 - `ctx.styles` 的 CSS 排在 Studio 自己的样式后面；同样的选择器不生效，就写得更具体些。
 - **配色只用黑、白、灰；红色只用于删除和出错。** 改颜色时守住这一条。
+- 插件自己的 CSS（面板内容等）也用这些变量，暗色模式就自动跟着变：文字 `rgb(var(--gray-dark))`、次要文字 `rgb(var(--gray))`、线 `rgb(var(--gray-light))`、底色 `var(--surface)`、浅底 `var(--surface-soft)`、悬停 `var(--surface-hover)`、强调 `var(--accent)`（上面的字用 `var(--on-accent)`）；字体 `var(--font-text)`、`var(--font-mono)`。类名加上插件名做前缀（如 `.word-count-card`），免得和别人撞。
 
 ## 界面：面板和命令
 
@@ -121,8 +124,11 @@ export function apply(ctx: Context): void {
 **面板**（`ctx.panels.register`）
 - `key`：小写字母开头，只含字母、数字、`-`、`_`；`files`、`terminal`、`drive` 是 Studio 自己的。重名直接报错。
 - `order`：插件页签之间的先后，小的在前；都排在 Studio 自己的三个后面。
-- `draw(pane)`：页签第一次显示时调用一次，`pane` 是一个空的竖向 flex 容器，内容超出时整体滚动。返回的函数在页签撤下时调用。画的时候出错，错误会显示在页签里。
+- `draw(pane)`：页签第一次显示时调用一次，`pane` 是一个空的竖向 flex 容器，内容超出时整体滚动。画的时候出错，错误会显示在页签里。
+- `draw` 返回的函数在页签撤下时调用：插件被关掉、被改了重新载入、被删掉。在 `draw` 里开的计时器、`ctx.on(...)` 的监听、自己建的元素，都在这里收掉（`ctx.on` 返回的就是取消函数）。
+- `shown(pane)` / `hidden(pane)`（可选）：页签出现在屏幕上（第一次 `draw` 之后也会调一次）、离开屏幕（选了别的页签、右栏收起）时调用。只在看得见时才有意义的事（重算、动画）可以等到 `shown` 再做。页签撤下时不调 `hidden`，那是 `draw` 返回的函数的事。
 - 上次选中的页签会记住；刷新后，等插件装好就切回它。
+- 完整的例子是 `word-count/`：一个跟着正文更新的面板，加两个命令。
 
 **命令**（`ctx.commands.register`）
 - `id`：小写字母开头，只含字母、数字、`.`、`-`、`_`，建议写成 `插件.动作`。重名直接报错。
@@ -132,7 +138,7 @@ export function apply(ctx: Context): void {
   - 必须按着 Mod 或 Alt（F1–F12 除外），否则会占掉打字用的键。
   - Studio、编辑器和浏览器自己的键不能用：⌘K、⌘S、⌘J、⌘B、⌘C、⌘Z 这些，全部列在 `packages/kernel/ui.ts` 的 `RESERVED_KEYS`。两个插件用同一个键也会报错。
   - 光标在编辑器里时，编辑器自己处理的键优先。
-- `run({ from })`：`from` 说明是从哪里触发的（`keys`、`slash`、`page-menu`、`sidebar`，或别的插件用 `ctx.commands.run(id)` 调的 `call`）。可以是 async；出错时右下角用红色显示「命令名：原因」。
+- `run({ from })`：`from` 说明是从哪里触发的（`keys`、`slash`、`page-menu`、`sidebar`，或别的插件用 `ctx.commands.run(id)` 调的 `call`）。可以是 async；出错时右下角用红色显示「命令名：原因」，所以条件不满足时直接 `throw new Error('还没有打开文章')` 就行。
 
 改了斜杠菜单里的命令（加、删、热替换），正文会重新画一遍，和块插件一样，没保存的输入不会丢。
 
@@ -140,6 +146,7 @@ export function apply(ctx: Context): void {
 
 - `job/`：计算块。四个环境都有，是写块插件最完整的例子。库在 `packages/compute`。它提供 `ctx.jobs`（计算程序接缝），跑哪个程序由程序插件决定。
 - `xtb/`、`crest/`：计算程序。四个环境都把自己注册进 `ctx.jobs`；加一个程序见下面「写一个计算程序」。
+- `word-count/`：字数统计。只有 `studio.ts`：右栏页签（听 `studio/source-changed`，只在看得见时重算）、左栏按钮、一个插入统计的命令。写界面插件可以照着它。
 - `retainmol/`：RetainMol 分子编辑器。Studio 里注册成 `ctx.molecules` 的一个实现，服务器上负责构建和提供它。计算块和化学块的三维结构都通过 `ctx.molecules` 用它，换一个编辑器不用改那些块。
 
 ## 写一个新块
