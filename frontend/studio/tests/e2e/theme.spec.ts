@@ -29,7 +29,7 @@ const width = (page: Page) => editor(page).evaluate((element) => element.getBoun
 test('a plugin sets the text width and size, adds a style, and its going undoes them', async ({ page }) => {
 	await page.setViewportSize({ width: 1600, height: 900 });
 	await openStudio(page);
-	await expect.poll(() => width(page)).toBe(850);
+	await expect.poll(() => width(page)).toBe(926);
 	await expect(editor(page)).toHaveCSS('font-size', '17px');
 
 	await applyPlugin(page, `
@@ -40,10 +40,10 @@ test('a plugin sets the text width and size, adds a style, and its going undoes 
 	await expect(editor(page)).toHaveCSS('font-size', '15px');
 	await expect(page.locator('.page-head')).toHaveCSS('outline-color', 'rgb(1, 2, 3)');
 	const tokens = await page.evaluate(async (url) => (await import(url)).studioPlugins.theme.tokens(), PLUGINS);
-	expect(tokens.find((token: { name: string }) => token.name === 'editor-width')).toMatchObject({ value: '640px', default: '850px' });
+	expect(tokens.find((token: { name: string }) => token.name === 'editor-width')).toMatchObject({ value: '640px', default: '926px' });
 
 	await disposePlugin(page);
-	await expect.poll(() => width(page)).toBe(850);
+	await expect.poll(() => width(page)).toBe(926);
 	await expect(editor(page)).toHaveCSS('font-size', '17px');
 	await expect(page.locator('.page-head')).not.toHaveCSS('outline-color', 'rgb(1, 2, 3)');
 });
@@ -65,5 +65,5 @@ test('a token that does not exist is refused, and what the plugin did before is 
 	await page.setViewportSize({ width: 1600, height: 900 });
 	expect(await applyPlugin(page, `ctx.theme.set({ 'editor-width': '640px' }); ctx.theme.set({ 'editor-widht': '640px' });`)).toMatch(/没有叫 editor-widht 的设计变量/u);
 	// What it set before it threw is undone with it.
-	await expect.poll(() => width(page)).toBe(850);
+	await expect.poll(() => width(page)).toBe(926);
 });

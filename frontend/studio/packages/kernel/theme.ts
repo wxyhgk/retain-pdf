@@ -50,8 +50,8 @@ export const DESIGN_TOKENS: readonly DesignToken[] = [
 	token('font-text', '--font-text', 'font', 'var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif', '正文字体'),
 	token('font-mono', '--font-mono', 'font', 'ui-monospace, SFMono-Regular, Menlo, monospace', '等宽字体（代码、路径）'),
 	// The Studio (src/studio/tokens.css).
-	token('editor-width', '--studio-editor-width', 'length', '850px', '正文区宽度'),
-	token('editor-padding', '--studio-editor-padding', 'length', '58px', '正文左右留白'),
+	token('editor-width', '--studio-editor-width', 'length', '926px', '正文区宽度'),
+	token('editor-padding', '--studio-editor-padding', 'length', '96px', '正文左右留白'),
 	token('editor-font-size', '--studio-editor-font-size', 'length', '17px', '正文字号'),
 	token('editor-line-height', '--studio-editor-line-height', 'number', '1.72', '正文行高'),
 	token('title-size', '--studio-title-size', 'length', 'clamp(30px, 3vw, 40px)', '标题字号'),

@@ -246,3 +246,16 @@ export function blockRangeKey(
 	if (key.key.length === 1) return replaceBlocks(state, key.key, dispatch);
 	return false;
 }
+
+/**
+ * What a block's handle selects (pressed, or its menu opened): the block, as
+ * Esc and the margin select blocks. In blocks selected already, those: the
+ * menu and the drag then take them all, as in Notion.
+ */
+export function selectBlockForHandle(state: EditorState, pos: number): Selection | null {
+	const { selection } = state;
+	const node = state.doc.nodeAt(pos);
+	if (!node) return null;
+	if (selection instanceof BlockRangeSelection && selection.from <= pos && pos + node.nodeSize <= selection.to) return selection;
+	return BlockRangeSelection.tryCreate(state.doc, pos, pos);
+}

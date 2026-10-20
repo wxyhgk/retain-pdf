@@ -5,8 +5,9 @@
  */
 :root {
 	/* The page: how wide the text is, and the space either side of it. */
-	--studio-editor-width: 850px;
-	--studio-editor-padding: 58px;
+	--studio-editor-width: 926px;
+	/* Room in the margin left of a block's handle, to drag there and select blocks (as Notion's 96px). */
+	--studio-editor-padding: 96px;
 	/* The text: its size and line height; the title's size. */
 	--studio-editor-font-size: 17px;
 	--studio-editor-line-height: 1.72;

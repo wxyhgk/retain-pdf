@@ -35,7 +35,7 @@ test('a plugin added, edited and removed takes effect at once', async ({ page })
 	await page.setViewportSize({ width: 1600, height: 900 });
 	await openStudio(page);
 	await mark(page);
-	await expect.poll(() => width(page)).toBe(850);
+	await expect.poll(() => width(page)).toBe(926);
 
 	writeLook(`ctx.theme.set({ 'editor-width': '640px' });`);
 	await expect.poll(() => width(page), { timeout: 20_000 }).toBe(640);
@@ -45,7 +45,7 @@ test('a plugin added, edited and removed takes effect at once', async ({ page })
 	await expect.poll(() => width(page), { timeout: 20_000 }).toBe(700);
 
 	rmSync(lookFolder(), { recursive: true, force: true });
-	await expect.poll(() => width(page), { timeout: 20_000 }).toBe(850);
+	await expect.poll(() => width(page), { timeout: 20_000 }).toBe(926);
 	expect(await stillMarked(page)).toBe(true);
 });
 
@@ -55,7 +55,7 @@ test('a plugin that fails says why, and starts once it is fixed', async ({ page 
 	await mark(page);
 	writeLook(`ctx.theme.set({ 'editor-widht': '640px' });`);
 	await expect(page.locator('.studio-toast', { hasText: '没有叫 editor-widht 的设计变量' })).toBeVisible({ timeout: 20_000 });
-	await expect.poll(() => width(page)).toBe(850);
+	await expect.poll(() => width(page)).toBe(926);
 
 	writeLook(`ctx.theme.set({ 'editor-width': '640px' });`);
 	await expect.poll(() => width(page), { timeout: 20_000 }).toBe(640);

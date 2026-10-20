@@ -11,6 +11,7 @@ import {
 	getPendingChanges,
 	startDiffReviewCmd,
 } from '@milkdown/kit/plugin/diff';
+import { blockConfig } from '@milkdown/kit/plugin/block';
 import { remarkGFMPlugin, strikethroughKeymap } from '@milkdown/kit/preset/gfm';
 import type { Node as ProseNode } from '@milkdown/prose/model';
 import { Plugin, TextSelection } from '@milkdown/prose/state';
@@ -33,6 +34,7 @@ import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
 import { smartPastePlugins } from './smart-paste';
 import { blockKeyPlugins } from './block-key-plugins';
+import { selectBlockForHandle } from './block-range';
 import { buildBlockSlashMenu, buildCommandSlashMenu } from './block-slash-menu';
 import { calloutPlugins } from './callout-block';
 import { citationPlugins, setCitationLibrary, type CitationHost } from './citations';
@@ -297,6 +299,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					// Notion's key for strikethrough; the toolbar's tooltip follows it.
 					ctx.set(strikethroughKeymap.key, { ToggleStrikethrough: { shortcuts: 'Mod-Shift-s' } });
 					ctx.update(diffConfig.key, (prev) => ({ ...prev, ignoreAttrs: { heading: ['id'] } }));
+					// A block's handle selects as Esc and the margin do: one kind of block selection.
+					ctx.update(blockConfig.key, (prev) => ({ ...prev, selectBlock: selectBlockForHandle }));
 					ctx.update(diffComponentConfig.key, (prev) => ({
 						...prev,
 						acceptLabel: '接受',

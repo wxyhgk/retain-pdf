@@ -91,8 +91,78 @@ test('in columns, the way from a block on the right to its handle keeps the hand
 	}
 	expect((await handle.boundingBox())!.x).toBe(there.x);
 	await expect(handle).toHaveCSS('opacity', '1');
-	// Pressed there, it is that block's: its menu opens on it.
+	// Pressed there, it is that block's: it is selected, its menu opens.
 	await page.mouse.down();
 	await page.mouse.up();
-	await expect(editor(page).locator('.ProseMirror-selectednode')).toHaveText('右栏一。');
+	await expect(editor(page).locator('.pm-block-range')).toHaveText(['右栏一。']);
+});
+
+test('the handle selects as Esc does; in blocks selected already, it keeps them all', async ({ page }) => {
+	appendToFixture('\n甲段。\n\n乙段。\n\n丙段。\n');
+	await openStudio(page);
+	const jia = editor(page).getByText('甲段。', { exact: true });
+	await editor(page).getByText('丙段。', { exact: true }).scrollIntoViewIfNeeded();
+	const handle = page.locator('.milkdown-block-handle');
+	const grip = handle.locator('.operation-item').last();
+	const pressHandleOf = async (text: string) => {
+		const b = (await editor(page).getByText(text, { exact: true }).boundingBox())!;
+		await page.mouse.move(b.x + 20, b.y + b.height / 2);
+		await expect.poll(async () => Math.abs((await grip.boundingBox())!.y - b.y)).toBeLessThan(b.height);
+		const g = (await grip.boundingBox())!;
+		await page.mouse.click(g.x + g.width / 2, g.y + g.height / 2);
+	};
+	// One kind of selected block: the same gray as Esc gives, not another.
+	await pressHandleOf('乙段。');
+	await expect(editor(page).locator('.pm-block-range')).toHaveText(['乙段。']);
+	await expect(editor(page).locator('.ProseMirror-selectednode')).toHaveCount(0);
+	await expect(page.locator('.milkdown-block-menu')).toHaveAttribute('data-show', 'true');
+	await page.keyboard.press('Escape');
+
+	// Two blocks selected (Esc, ⇧↓); the handle of one of them: both stay selected, the menu is for them.
+	await jia.click();
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Shift+ArrowDown');
+	await expect(editor(page).locator('.pm-block-range')).toHaveText(['甲段。', '乙段。']);
+	await pressHandleOf('乙段。');
+	await expect(editor(page).locator('.pm-block-range')).toHaveText(['甲段。', '乙段。']);
+	await expect(page.locator('.milkdown-block-menu')).toHaveAttribute('data-show', 'true');
+});
+
+test('blocks selected, dragged by the handle of one of them: they all move', async ({ page }) => {
+	appendToFixture('\n甲段。\n\n乙段。\n\n丙段。\n');
+	await openStudio(page);
+	await editor(page).getByText('丙段。', { exact: true }).scrollIntoViewIfNeeded();
+	await editor(page).getByText('甲段。', { exact: true }).click();
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Shift+ArrowDown');
+	const yi = (await editor(page).getByText('乙段。', { exact: true }).boundingBox())!;
+	await page.mouse.move(yi.x + 20, yi.y + yi.height / 2);
+	const grip = page.locator('.milkdown-block-handle .operation-item').last();
+	await expect.poll(async () => Math.abs((await grip.boundingBox())!.y - yi.y)).toBeLessThan(yi.height);
+	const g = (await grip.boundingBox())!;
+	const bing = (await editor(page).getByText('丙段。', { exact: true }).boundingBox())!;
+	await page.mouse.move(g.x + g.width / 2, g.y + g.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(g.x + 10, g.y + 30, { steps: 5 });
+	await page.mouse.move(bing.x - 10, bing.y + bing.height + 2, { steps: 10 });
+	await page.mouse.up();
+	await expect(editor(page).locator('> p').filter({ hasText: /^[甲乙丙]段/u })).toHaveText(['丙段。', '甲段。', '乙段。']);
+});
+
+test('left of the handle there is room to drag and select blocks', async ({ page }) => {
+	appendToFixture('\n甲段。\n\n乙段。\n\n丙段。\n');
+	await openStudio(page);
+	await editor(page).getByText('丙段。', { exact: true }).scrollIntoViewIfNeeded();
+	const jia = (await editor(page).getByText('甲段。', { exact: true }).boundingBox())!;
+	const bing = (await editor(page).getByText('丙段。', { exact: true }).boundingBox())!;
+	await page.mouse.move(jia.x + 20, jia.y + jia.height / 2);
+	const handle = (await page.locator('.milkdown-block-handle').boundingBox())!;
+	// Left of the handle, still in the editor's margin.
+	const x = handle.x - 12;
+	expect(x).toBeGreaterThan((await page.locator('.editor-scroll').boundingBox())!.x + 4);
+	await page.mouse.move(x, jia.y + 4);
+	await page.mouse.down();
+	await page.mouse.move(x, bing.y + bing.height - 4, { steps: 8 });
+	await page.mouse.up();
+	await expect(editor(page).locator('.pm-block-range')).toHaveText(['甲段。', '乙段。', '丙段。']);
 });
