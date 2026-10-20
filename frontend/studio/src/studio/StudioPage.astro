@@ -658,7 +658,23 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-viewer > figcaption) { display: none; }
 	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-stage) { min-height: 0; background: transparent; }
 	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-stage svg) { width: auto; height: auto; max-width: 100%; max-height: 150px; margin: 0 auto; }
-	:global(.crepe-host .milkdown .milkdown-block-handle) { margin-left: -2px; gap: 0; transition: none; }
+	/* The handle fades in and out; from block to block it jumps (only its opacity moves). */
+	:global(.crepe-host .milkdown .milkdown-block-handle) { margin-left: -2px; gap: 0; transition: opacity 120ms ease; }
+	/* Where a dragged block will land: a line to be seen, in the ink's gray. */
+	:global(.crepe-host .milkdown .crepe-drop-cursor) { background-color: rgb(var(--gray-dark)); opacity: 0.4; }
+	/* Menus come up in a tenth of a second. Opacity only: the block menu measures where it is to place itself. */
+	:global(.crepe-host .milkdown-slash-menu[data-show='true']),
+	:global(.crepe-host .milkdown-block-menu[data-show='true']),
+	:global(.crepe-host .milkdown-toolbar[data-show='true']),
+	:global(.block-menu:not([hidden])) { animation: studio-menu-in 100ms ease-out; }
+	@keyframes studio-menu-in { from { opacity: 0; } to { opacity: 1; } }
+	@media (prefers-reduced-motion: reduce) {
+		:global(.crepe-host .milkdown .milkdown-block-handle) { transition: none; }
+		:global(.crepe-host .milkdown-slash-menu[data-show='true']),
+		:global(.crepe-host .milkdown-block-menu[data-show='true']),
+		:global(.crepe-host .milkdown-toolbar[data-show='true']),
+		:global(.block-menu:not([hidden])) { animation: none; }
+	}
 	:global(.crepe-host .milkdown .milkdown-block-handle .operation-item) { width: 24px; height: 24px; padding: 2px; border-radius: 6px; }
 	:global(.crepe-host .milkdown .milkdown-block-handle .operation-item svg) { width: 18px; height: 18px; }
 	:global(.crepe-host .milkdown .milkdown-slash-menu .tab-group) { padding: 8px 8px 0; }
