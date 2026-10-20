@@ -179,8 +179,11 @@ function withOriginalEnds(body: string, originalBody: string): string {
 	if (!body.trim()) return body;
 	let kept = body;
 	if (leading) kept = leading + kept.replace(LEADING, '');
-	// A single final newline is the editor's to write; blank lines after it are the author's.
+	// A single final newline is the editor's to write; blank lines after it are the author's. Without
+	// those, no blank line is made at the end: a last block put where one from the middle was keeps the
+	// blank line that one had before the next; the body ends in the original's one newline instead.
 	if (/\n[^\n]*\n/u.test(trailing)) kept = kept.replace(TRAILING, '') + trailing;
+	else if (/\n[^\n]*\n/u.test(TRAILING.exec(kept)![0])) kept = kept.replace(TRAILING, '') + (trailing || '\n');
 	return kept;
 }
 

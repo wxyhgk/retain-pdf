@@ -163,6 +163,12 @@ test('editing the first or last block keeps the blank lines around the body', ()
 	assert.equal(mergeMarkdownBody('\n第一段\n\n第二段\n\n', '第一段\n\n第二段改了\n').body, '\n第一段\n\n第二段改了\n\n');
 });
 
+test('a last block put where blocks from the middle were does not leave a blank line at the end', () => {
+	// Columns (several blocks of HTML and Markdown) made back into the paragraph they held.
+	const original = '前\n\n<div class="columns">\n<div>\n\n甲\n\n</div>\n<div>\n\n</div>\n</div>\n';
+	assert.equal(mergeMarkdownBody(original, '前\n\n甲乙\n').body, '前\n\n甲乙\n');
+});
+
 test('an edited block keeps the blank lines after it', () => {
 	assert.equal(mergeMarkdownBody('一\n\n\n## 二\n', '一改了\n\n## 二\n').body, '一改了\n\n\n## 二\n');
 });

@@ -183,6 +183,28 @@ hr {
 	border: none;
 	border-top: 1px solid rgb(var(--gray-light));
 }
+/* Columns (`<div class="columns">` around Markdown, written by the Studio): side by side; one under another on a phone. */
+.columns {
+	display: flex;
+	gap: 1.5em;
+	margin: 1em 0;
+}
+.columns > div {
+	flex: 1 1 0;
+	min-width: 0;
+}
+.columns > div > :first-child {
+	margin-top: 0;
+}
+.columns > div > :last-child {
+	margin-bottom: 0;
+}
+@media (max-width: 640px) {
+	.columns {
+		flex-direction: column;
+		gap: 1em;
+	}
+}
 @media (max-width: 720px) {
 	body {
 		font-size: 18px;

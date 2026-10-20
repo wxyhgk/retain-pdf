@@ -514,6 +514,11 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .toggle-summary::placeholder) { color: rgb(var(--gray)); opacity: 0.6; }
 	:global(.crepe-host .toggle-body) { padding-left: 26px; }
 	:global(.crepe-host .toggle-block.is-folded > .toggle-body) { display: none; }
+	/* Columns: side by side, as many as there are; nothing drawn around them, as in Notion. */
+	:global(.crepe-host .milkdown .ProseMirror .columns) { display: grid; grid-template-columns: repeat(var(--columns, 2), minmax(0, 1fr)); gap: 28px; margin: 4px 0; }
+	:global(.crepe-host .milkdown .ProseMirror .column) { min-width: 0; }
+	:global(.crepe-host .milkdown .ProseMirror .column > :first-child) { margin-top: 0; }
+	:global(.crepe-host .milkdown .ProseMirror .column > :last-child) { margin-bottom: 0; }
 	/* The pickers float over the page. */
 	:global(.page-popover) { position: fixed; z-index: 70; box-sizing: border-box; padding: 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: 0 10px 34px rgba(15, 15, 15, 0.16); }
 	:global(.icon-picker) { width: 336px; }

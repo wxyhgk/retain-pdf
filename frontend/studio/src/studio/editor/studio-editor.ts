@@ -47,6 +47,7 @@ import { addSearchWords, SLASH_TRIGGERS } from './slash-search';
 import { withoutTrailingEmptyLines } from '../document/index.ts';
 import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
+import { columnsPlugins } from './columns-block';
 import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
 import { pluginBlocks, pluginSlashCommands } from '../plugins';
 import { runCommand } from '../workspace/plugin-ui';
@@ -282,6 +283,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(citationPlugins(host));
 			crepe.editor.use(officeCardPlugins(host.fileUrl));
 			crepe.editor.use(togglePlugins());
+			crepe.editor.use(columnsPlugins());
 			crepe.editor.use(articleLinkPlugins(host));
 			crepe.editor.use(smartPastePlugins(host));
 			crepe.editor.use(fileDrop.plugin);
