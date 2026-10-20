@@ -228,7 +228,11 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		let pendingWrite: { meta?: string; body?: string } | null = null;
 		let registeredId = '';
 		let destroyed = false;
+		/** The run (and how it was) that `summary` is of, or that is being read for it. */
 		let summarized = '';
+		/** The run whose summary is being read now. */
+		let reading = '';
+		const summaryKey = (shown: RunRecord) => `${shown.run}:${shown.state}:${shown.problem ?? ''}`;
 
 		const slug = () => jobHost?.slug() ?? null;
 		const programOf = () => jobHost?.program(fence.program) ?? null;
@@ -286,7 +290,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		};
 
 		const paintCard = () => {
-			card.paint({ title: fence.title, describe: describe(), record, summary });
+			card.paint({ title: fence.title, describe: describe(), record, summary, reading: Boolean(record && !summary && reading === summaryKey(record)) });
 			runButton.textContent = running() ? '停止' : busy ? '…' : '运行';
 			runButton.classList.toggle('is-stop', running());
 			runButton.disabled = busy;
@@ -390,13 +394,23 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				paintCard();
 				return;
 			}
-			const key = `${current.run}:${current.state}:${current.problem ?? ''}`;
+			const key = summaryKey(current);
 			if (key === summarized && isFinished(current)) return;
 			summarized = key;
+			reading = key;
+			// Its numbers not there yet: not the last run's meanwhile.
+			if (!summary) paintCard();
 			const next = await summarizeRun(current, readFile(current), jobHost?.program(current.program) ?? null).catch(() => null);
-			if (destroyed || record !== current) return;
+			if (reading === key) reading = '';
+			// Still the run shown, as it was: its record may have been loaded anew meanwhile (another object, the same run).
+			if (destroyed || !record || summaryKey(record) !== key) return;
 			summary = next;
 			paintCard();
+		};
+		/** Another run shown, or one started: its numbers are to be read. */
+		const forgetSummary = () => {
+			summary = null;
+			summarized = '';
 		};
 
 		/** The shown run's time, every second while it goes. */
@@ -494,7 +508,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				const started = await jobHost.start(fence.id, { program: fence.program, args: fence.args, host: fence.host, threads: fence.threads, body: node.textContent });
 				record = started;
 				runs = [started, ...runs];
-				summary = null;
+				forgetSummary();
 				writeMeta({ run: started.run });
 				await summarize();
 				tick();
@@ -522,7 +536,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		const show = (name: string) => {
 			writeMeta({ run: name });
 			record = runs.find((candidate) => candidate.run === name) ?? null;
-			summary = null;
+			forgetSummary();
 			void summarize().then(tick);
 			if (sheet?.isOpen()) {
 				sheet.redraw('result');

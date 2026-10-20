@@ -37,14 +37,16 @@ function drawJobs(ctx: Context, viewOf: (record: RunRecord) => ProgramView | nul
 		const command = figure.querySelector('.note-job-input summary')?.textContent ?? '';
 		const input = figure.querySelector('.note-job-input code')?.textContent ?? '';
 		const card = createJobCard(figure);
-		card.paint({ title, describe, record, summary: null });
+		card.paint({ title, describe, record, summary: null, reading: record !== null });
 		if (!record) continue;
 		const shown = record;
 		const read = async (name: string) => {
 			const response = await fetch(url(shown, name));
 			return response.ok ? response.text() : null;
 		};
-		void summarizeRun(shown, read, viewOf(shown)).then((summary) => card.paint({ title, describe, record: shown, summary })).catch(() => {});
+		void summarizeRun(shown, read, viewOf(shown))
+			.catch(() => null)
+			.then((summary) => card.paint({ title, describe, record: shown, summary }));
 
 		const open = () =>
 			openBlockSheet({

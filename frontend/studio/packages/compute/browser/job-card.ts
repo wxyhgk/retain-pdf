@@ -11,7 +11,8 @@ export type JobCard = {
 	root: HTMLElement;
 	/** Where the Studio puts its buttons (运行, ⋯). */
 	actions: HTMLElement;
-	paint(state: { title: string; describe: string; record: RunRecord | null; summary: RunSummary | null }): void;
+	/** `reading`: its summary is still being read (not there yet, rather than nothing found). */
+	paint(state: { title: string; describe: string; record: RunRecord | null; summary: RunSummary | null; reading?: boolean }): void;
 	/** Only the time, every second while a run goes. */
 	tick(): void;
 };
@@ -54,7 +55,7 @@ export function createJobCard(root: HTMLElement = element('div')): JobCard {
 		root,
 		actions,
 		tick,
-		paint({ title: name, describe: what, record: shown, summary }) {
+		paint({ title: name, describe: what, record: shown, summary, reading = false }) {
 			record = shown;
 			title.textContent = name || '未命名计算';
 			title.classList.toggle('is-untitled', !name);
@@ -71,6 +72,7 @@ export function createJobCard(root: HTMLElement = element('div')): JobCard {
 			if (!shown) line.textContent = '还没有运行';
 			else if (summary?.problem) line.textContent = summary.problem;
 			else if (running) line.textContent = summary?.progress ?? (shown.state === 'queued' ? '在队列里等着' : shown.state === 'preparing' ? '正在准备' : '正在算');
+			else if (!summary && reading) line.textContent = '正在读取结果…';
 			else line.textContent = summary?.facts.join('  ·  ') || '没有读出结果';
 			describe.textContent = what;
 			const structure = summary?.structure ?? null;

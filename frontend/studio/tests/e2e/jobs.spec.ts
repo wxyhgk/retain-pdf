@@ -129,6 +129,43 @@ test('a calculation is a card; its sheet sets it up, runs it, shows what it foun
 	await expect(sheet(page).locator('.job-structure-info')).toHaveText('CH4O · 6 个原子');
 });
 
+test('another run shown: its card says it is reading, and shows it even when its record comes anew meanwhile', async ({ page }) => {
+	appendToFixture(`\n\`\`\`job id=two program=xtb args="--ohess" host=local\n${WATER}\n\`\`\`\n`);
+	await openStudio(page, { autosaveDelay: 300 });
+	const job = block(page);
+	await job.dblclick();
+	const runButton = sheet(page).locator('.block-sheet-action', { hasText: '运行' });
+	await runButton.click();
+	await expect(sheet(page).locator('.job-state')).toHaveText('完成');
+	// Another second, another run's folder.
+	await page.waitForTimeout(1100);
+	await runButton.click();
+	await expect.poll(() => runs('two').length).toBe(2);
+	await expect(sheet(page).locator('.job-state')).toHaveText('完成');
+	const [first] = runs('two');
+
+	// The first run's files held back until the block has loaded its runs again (a file of theirs changed on disk).
+	let release = () => {};
+	const released = new Promise<void>((resolve) => (release = resolve));
+	await page.route(`**/assets/jobs/two/${first}/**`, async (route) => {
+		await released;
+		await route.continue();
+	});
+	try {
+		await tab(page, '历史').click();
+		await sheet(page).locator('.job-run-row').nth(1).click();
+		await page.keyboard.press('Escape');
+		await expect(job.locator('.job-card-line')).toHaveText('正在读取结果…');
+		const reloaded = page.waitForResponse((response) => response.url().endsWith('/jobs/two/runs'));
+		writeFileSync(join(process.env.STUDIO_BLOG_DIR as string, 'studio-fixture', 'assets/jobs/two', first, 'note.txt'), '看过了');
+		await reloaded;
+		await expect(job.locator('.job-card-line')).toHaveText('正在读取结果…');
+	} finally {
+		release();
+	}
+	await expect(job.locator('.job-card-line')).toContainText('无虚频');
+});
+
 test('a long run followed in its card and its sheet, and stopped from the card', async ({ page }) => {
 	appendToFixture(`\n\`\`\`job id=slow program=xtb args="--opt --slow" host=local title=慢\n${WATER}\n\`\`\`\n`);
 	await openStudio(page, { autosaveDelay: 300 });
