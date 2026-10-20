@@ -1,5 +1,6 @@
-import type { MilkdownPlugin } from '@milkdown/ctx';
-import type { Mark } from '@milkdown/prose/model';
+import type { Ctx, MilkdownPlugin } from '@milkdown/ctx';
+import { parserCtx } from '@milkdown/kit/core';
+import { Slice, type Mark } from '@milkdown/prose/model';
 import { Plugin, TextSelection } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
@@ -14,6 +15,9 @@ import type { ArticleLinkHost } from './article-links.ts';
  * - an address of one of the blog's articles (`/blog/slug/`, or the whole
  *   address on this site) comes in as a link titled as the article, to its
  *   address on the blog: `[标题](/blog/slug/)`.
+ * And columns copied as plain text (from a terminal, or a sheet that gave no
+ * HTML): lines of cells between tabs, as many on each line, come in as a
+ * table, the first line its header.
  * Anything else pastes as it did.
  */
 
@@ -64,13 +68,43 @@ function ownOrigins(): string[] {
 	return origins;
 }
 
-function paste(view: EditorView, event: ClipboardEvent, host: SmartPasteHost): boolean {
+/** Plain text that is columns: two lines or more, each with as many cells between tabs, two or more. */
+export function pastedTable(text: string): string[][] | null {
+	const lines = text.replace(/\r\n?/gu, '\n').replace(/\n+$/u, '').split('\n');
+	if (lines.length < 2) return null;
+	const rows = lines.map((line) => line.split('\t'));
+	const width = rows[0]!.length;
+	if (width < 2 || rows.some((row) => row.length !== width)) return null;
+	return rows;
+}
+
+/** The rows as a Markdown table, the first its header. */
+export function tableMarkdown(rows: string[][]): string {
+	const line = (cells: string[]) => `| ${cells.map((cell) => cell.trim().replaceAll('|', '\\|')).join(' | ')} |`;
+	return [line(rows[0]!), line(rows[0]!.map(() => '---')), ...rows.slice(1).map(line)].join('\n');
+}
+
+function pasteTable(ctx: Ctx, view: EditorView, rows: string[][]): boolean {
+	const { $from } = view.state.selection;
+	for (let depth = $from.depth; depth > 0; depth--) if ($from.node(depth).type.spec.tableRole) return false;
+	const doc = ctx.get(parserCtx)(tableMarkdown(rows));
+	if (!doc) return false;
+	view.dispatch(view.state.tr.replaceSelection(new Slice(doc.content, 0, 0)).scrollIntoView());
+	return true;
+}
+
+function paste(ctx: Ctx, view: EditorView, event: ClipboardEvent, host: SmartPasteHost): boolean {
 	const clipboard = event.clipboardData;
 	const link = view.state.schema.marks.link;
 	if (!clipboard || !link) return false;
 	const { selection } = view.state;
 	const { $from } = selection;
 	if ($from.parent.type.spec.code || !$from.parent.isTextblock || $from.marks().some((mark) => mark.type.spec.code)) return false;
+	const rows = clipboard.getData('text/html') ? null : pastedTable(clipboard.getData('text/plain'));
+	if (rows && pasteTable(ctx, view, rows)) {
+		event.preventDefault();
+		return true;
+	}
 	const address = pastedAddress(clipboard.getData('text/plain'));
 	if (!address) return false;
 	const own = ownArticlePath(address, ownOrigins());
@@ -95,6 +129,6 @@ function paste(view: EditorView, event: ClipboardEvent, host: SmartPasteHost): b
 
 export function smartPastePlugins(host: SmartPasteHost): MilkdownPlugin[] {
 	// On the DOM event, ahead of the clipboard's own handling, which would put the address in place of the text.
-	const plugin = $prose(() => new Plugin({ props: { handleDOMEvents: { paste: (view, event) => paste(view, event, host) } } }));
+	const plugin = $prose((ctx) => new Plugin({ props: { handleDOMEvents: { paste: (view, event) => paste(ctx, view, event, host) } } }));
 	return [plugin].flat();
 }

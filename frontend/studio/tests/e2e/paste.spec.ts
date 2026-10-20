@@ -72,3 +72,39 @@ test('the address of one of the blog’s articles comes in as a link titled as i
 		removeArticle('second-note');
 	}
 });
+
+test('columns copied as plain text come in as a table, the first line its header', async ({ page }) => {
+	const tables = await editor(page).locator('.milkdown-table-block').count();
+	await page.keyboard.press('Enter');
+	await paste(page, { text: '方法\t能量 / eV\t备注\r\nB3LYP\t-1.20\ta|b\nPBE0\t-1.31\t\n' });
+	await expect(editor(page).locator('.milkdown-table-block')).toHaveCount(tables + 1);
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toMatch(/结尾段落。\n\n\| 方法 +\| 能量 \/ eV \| 备注 +\|\n\| :?-+ +\| :?-+ +\| :?-+ +\|\n\| B3LYP \| -1\.20 +\| a\\\|b +\|\n\| PBE0 +\| -1\.31 +\| +\|\n$/u);
+
+	// Lines with tabs in other numbers are just lines.
+	await editor(page).getByText('结尾段落。', { exact: true }).click();
+	await page.keyboard.press('End');
+	await paste(page, { text: 'a\tb\nc' });
+	await expect(editor(page).locator('p', { hasText: /^结尾段落。a/u })).toBeVisible();
+	await expect(editor(page).locator('.milkdown-table-block')).toHaveCount(tables + 1);
+});
+
+test('code copied from a web page keeps its language', async ({ page }) => {
+	await page.keyboard.press('Enter');
+	await paste(page, { html: '<p>运行：</p><pre><code class="language-python">print(1)</code></pre>', text: '运行：\nprint(1)' });
+	await expect(editor(page).locator('.milkdown-code-block .language-button').last()).toHaveText(/python/iu);
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('运行：\n\n```python\nprint(1)\n```');
+});
+
+test('Markdown pasted as plain text comes in as its blocks, and is written back the same', async ({ page }) => {
+	const pasted = '## 方法\n\n用 **B3LYP** 和 [ORCA](https://example.com/orca)。\n\n- [ ] 优化\n- [x] 频率\n\n1. 一\n2. 二\n\n> 引用\n\n```python\nprint(1)\n```';
+	await page.keyboard.press('Enter');
+	await paste(page, { text: pasted });
+	await expect(editor(page).locator('h2', { hasText: '方法' })).toBeVisible();
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain(`结尾段落。\n\n${pasted}\n`);
+});
