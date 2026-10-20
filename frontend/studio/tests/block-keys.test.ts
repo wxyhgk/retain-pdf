@@ -4,7 +4,7 @@ import test from 'node:test';
 import { Schema, type Node as ProseNode } from 'prosemirror-model';
 import { EditorState, TextSelection, type Transaction } from 'prosemirror-state';
 
-import { duplicateBlocks, moveBlocks, selectBlockInHand, todoInputRule, writeAtEnd } from '../src/studio/editor/block-keys.ts';
+import { duplicateBlocks, linkInputRule, moveBlocks, selectBlockInHand, selectTextblock, todoInputRule, unlistAtStart, writeAtEnd } from '../src/studio/editor/block-keys.ts';
 import { BlockRangeSelection, blockRangeKey } from '../src/studio/editor/block-range.ts';
 
 const schema = new Schema({
@@ -19,6 +19,10 @@ const schema = new Schema({
 			attrs: { label: { default: '•' }, listType: { default: 'bullet' }, spread: { default: false }, checked: { default: null } },
 		},
 		bullet_list: { content: 'listItem+', group: 'block' },
+	},
+	marks: {
+		link: { attrs: { href: {} } },
+		strong: {},
 	},
 });
 
@@ -144,4 +148,44 @@ test('a click below the last block writes in an empty paragraph at the end, the 
 	const again = run(added, writeAtEnd);
 	assert.equal(again.doc.childCount, added.doc.childCount, 'no second empty paragraph');
 	assert.equal(again.selection.from, again.doc.content.size - 1);
+});
+
+test('⌫ at the start of a list item makes it a line again, splitting the list; in a nested one, one level out', () => {
+	const middle = run(caretIn(doc(ul('a', 'b', 'c')), 'b'), unlistAtStart);
+	assert.deepEqual(middle.doc.toJSON().content.map((node: { type: string }) => node.type), ['bullet_list', 'paragraph', 'bullet_list']);
+	assert.equal(caretText(middle), 'b');
+
+	const inner = schema.nodes.list_item.create(null, [p('outer'), ul('inner')]);
+	const nested = run(caretIn(doc(schema.nodes.bullet_list.create(null, inner)), 'inner'), unlistAtStart);
+	assert.equal(nested.doc.childCount, 1);
+	assert.deepEqual(texts(nested), ['outer', 'inner']);
+	assert.equal(nested.doc.child(0).childCount, 2, 'inner is an item of the outer list now');
+
+	// Not at the start, not in a list, or in a later paragraph of an item: not taken.
+	assert.equal(unlistAtStart(caretIn(doc(ul('a')), 'a', 1)), false);
+	assert.equal(unlistAtStart(caretIn(doc(p('a')), 'a')), false);
+	const twoParagraphs = schema.nodes.list_item.create(null, [p('first'), p('second')]);
+	assert.equal(unlistAtStart(caretIn(doc(schema.nodes.bullet_list.create(null, twoParagraphs)), 'second')), false);
+});
+
+test('⌘A selects the text of the block, then leaves the key to select everything', () => {
+	const first = run(caretIn(doc(p('one'), p('two')), 'two', 1), selectTextblock);
+	assert.equal(first.doc.textBetween(first.selection.from, first.selection.to), 'two');
+	assert.equal(selectTextblock(first), false);
+	assert.equal(selectTextblock(caretIn(doc(p('one'), p('')), '')), false, 'an empty line has nothing to select');
+});
+
+test('`[text](url)` typed becomes the text, linked, keeping its other marks', () => {
+	const typed = '[see **this**](https://example.com)';
+	const bold = schema.marks.strong.create();
+	const paragraph = schema.nodes.paragraph.create(null, [schema.text('x '), schema.text(typed, [bold])]);
+	const state = EditorState.create({ schema, doc: doc(paragraph) });
+	const end = state.doc.content.size - 1;
+	const match = /(?<!!)\[([^[\]]+)\]\(([^()\s]+)\)$/u.exec(state.doc.textBetween(1, end))!;
+	const tr = linkInputRule(state, match, end - match[0].length, end)!;
+	const linked = tr.doc.child(0).child(1);
+	assert.equal(linked.text, 'see **this**');
+	assert.equal(linked.marks.find((mark) => mark.type.name === 'link')?.attrs.href, 'https://example.com');
+	assert.ok(linked.marks.some((mark) => mark.type.name === 'strong'));
+	assert.equal(tr.storedMarks?.some((mark) => mark.type.name === 'link') ?? false, false, 'what is typed next is not linked');
 });

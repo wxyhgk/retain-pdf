@@ -1,3 +1,4 @@
+import { liftListItem } from '@milkdown/prose/schema-list';
 import { NodeSelection, Selection, TextSelection, type EditorState, type Transaction } from '@milkdown/prose/state';
 import type { Node as ProseNode } from 'prosemirror-model';
 
@@ -9,7 +10,10 @@ import { BlockRangeSelection, coveredRange, selectableBlock } from './block-rang
  *   picked from the margin; Esc or ↩ goes back to writing);
  * - ⌘⇧↑ / ⌘⇧↓ move the block (or the selected blocks) past their neighbour;
  * - ⌘D puts a copy of it under it;
- * - `[] ` at the start of a paragraph makes it a to-do.
+ * - `[] ` at the start of a paragraph makes it a to-do;
+ * - ⌫ at the start of a list item makes it a line again;
+ * - ⌘A selects the text of the block being written in, and pressed again everything;
+ * - `[text](url)` typed makes a link.
  * The keys are bound in block-key-plugins.ts. A block is what the margin and the block menu take as one: a list item,
  * a quote or a table whole, otherwise the block at the top of the page.
  */
@@ -99,6 +103,37 @@ export function todoInputRule(state: EditorState, match: RegExpMatchArray, start
 	const range = $paragraph.blockRange();
 	if (!range) return null;
 	return tr.wrap(range, [{ type: list, attrs: { bullet: '-' } }, { type: item, attrs: { listType: 'bullet', checked } }]);
+}
+
+/** ⌫ at the start of a list item: the item is a line again (one level out, if it is in another item), not joined to the one above. */
+export function unlistAtStart(state: EditorState, dispatch?: Dispatch): boolean {
+	const { selection } = state;
+	if (!(selection instanceof TextSelection) || !selection.empty) return false;
+	const { $from } = selection;
+	const item = state.schema.nodes.list_item;
+	if (!item || $from.parentOffset !== 0 || $from.depth < 2 || $from.node(-1).type !== item || $from.index(-1) !== 0) return false;
+	return liftListItem(item)(state, dispatch);
+}
+
+/** ⌘A: the text of the block being written in; if that is all selected already (or there is none), not taken, and the editor selects everything. */
+export function selectTextblock(state: EditorState, dispatch?: Dispatch): boolean {
+	const { selection } = state;
+	if (!(selection instanceof TextSelection)) return false;
+	const { $from, $to } = selection;
+	if (!$from.sameParent($to) || !$from.parent.isTextblock) return false;
+	const start = $from.start();
+	const end = $from.end();
+	if (start === end || (selection.from === start && selection.to === end)) return false;
+	dispatch?.(state.tr.setSelection(TextSelection.create(state.doc, start, end)));
+	return true;
+}
+
+/** `[text](url)` just typed: the text, linked (`![alt](src)`, an image, is left to the image rule). */
+export function linkInputRule(state: EditorState, match: RegExpMatchArray, start: number, end: number): Transaction | null {
+	const link = state.schema.marks.link;
+	const [, text, href] = match;
+	if (!link || !text || !href) return null;
+	return state.tr.replaceWith(start, end, state.schema.text(text, [...state.doc.resolve(start + 1).marks(), link.create({ href })])).removeStoredMark(link);
 }
 
 /**
