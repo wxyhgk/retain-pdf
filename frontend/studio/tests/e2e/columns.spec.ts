@@ -140,7 +140,8 @@ test('the gap between two columns is dragged to make one wider; ＋ adds a colum
 	await columns(page).scrollIntoViewIfNeeded();
 	const left = (await column(page, 0).boundingBox())!;
 	const right = (await column(page, 1).boundingBox())!;
-	const gap = { x: (left.x + left.width + right.x) / 2, y: left.y + 10 };
+	// The strip at the gap's left resizes; the rest of the gap is for the handle of the block on the right.
+	const gap = { x: left.x + left.width + 4, y: left.y + 10 };
 	await page.mouse.move(gap.x, gap.y);
 	await expect(editor(page).locator('.columns-block')).toHaveClass(/is-over-gap/u);
 	await page.mouse.down();

@@ -398,8 +398,9 @@ const columnKeys = $prose(
 		}),
 );
 
-/** How near a block's left or right edge a drop puts the blocks beside it. */
+/** How near a block's right edge a drop puts the blocks beside it; and its left edge. */
 const EDGE_PX = 48;
+const LEFT_EDGE_PX = 24;
 
 /** The side of a block a drag at (x, y) is over, if near enough to one of its edges. */
 function sideAt(view: EditorView, x: number, y: number): (SideDrop & { line: DOMRect }) | null {
@@ -418,8 +419,9 @@ function sideAt(view: EditorView, x: number, y: number): (SideDrop & { line: DOM
 	const rect = dom.getBoundingClientRect();
 	const edge = Math.min(EDGE_PX, rect.width * 0.2);
 	let side: SideDrop['side'] | null = null;
-	// The left edge from inside the block: a drag starts in the margin left of it, where a drop is not beside.
-	if (x >= rect.left && x < rect.left + edge) side = 'left';
+	// The left edge from inside the block, and narrower: a drag from the handle goes up and down just left of
+	// the blocks, and drifting in a little is not meant as beside.
+	if (x >= rect.left + 4 && x < rect.left + LEFT_EDGE_PX) side = 'left';
 	else if (x > rect.right - edge && x < rect.right + 80) side = 'right';
 	if (!side) return null;
 	// The line: at the edge of the column the block is in, or of the block.
@@ -488,6 +490,9 @@ const columnsDrop = $prose(() => {
 		view: (editorView) => ({ destroy: () => hide(editorView) }),
 	});
 });
+
+/** How wide the strip of a gap that resizes is (from the column on its left). */
+const RESIZE_STRIP_PX = 8;
 
 /** The narrowest a column is made by dragging the gap beside it. */
 const NARROWEST_PX = 80;
@@ -571,25 +576,26 @@ class ColumnsView implements NodeView {
 		return [...this.contentDOM.children].filter((child): child is HTMLElement => child instanceof HTMLElement && child.classList.contains('column'));
 	}
 
-	/** The gap at (x, y): the index of the column left of it. */
+	/**
+	 * The strip of a gap that resizes, at (x, y): the index of the column left
+	 * of it. Only a strip at the gap's left: the rest is the way from a block
+	 * in the column on the right to its handle, which is there.
+	 */
 	private gapAt(x: number, y: number): number | null {
 		const box = this.contentDOM.getBoundingClientRect();
 		if (y < box.top || y > box.bottom) return null;
 		const columns = this.columnElements();
 		for (let index = 0; index < columns.length - 1; index += 1) {
 			const left = columns[index]!.getBoundingClientRect().right;
-			const right = columns[index + 1]!.getBoundingClientRect().left;
-			if (x >= left - 2 && x <= right + 2) return index;
+			if (x >= left - 2 && x <= left + RESIZE_STRIP_PX) return index;
 		}
 		return null;
 	}
 
 	private placeLine(index: number): void {
-		const columns = this.columnElements();
 		const box = this.dom.getBoundingClientRect();
-		const left = columns[index]!.getBoundingClientRect().right;
-		const right = columns[index + 1]!.getBoundingClientRect().left;
-		this.line.style.left = `${(left + right) / 2 - box.left - 1}px`;
+		const left = this.columnElements()[index]!.getBoundingClientRect().right;
+		this.line.style.left = `${left + RESIZE_STRIP_PX / 2 - 1 - box.left}px`;
 	}
 
 	private onHover = (event: MouseEvent): void => {

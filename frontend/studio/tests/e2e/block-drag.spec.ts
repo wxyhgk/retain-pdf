@@ -56,3 +56,43 @@ test('a block dragged with the mouse to the right edge of another: the two side 
 	await page.keyboard.type('！');
 	await expect(editor(page).locator('.column').nth(1)).toHaveText('拖到右边去。！');
 });
+
+test('moving down past blocks, the handle stays shown, going from block to block, not out between them', async ({ page }) => {
+	appendToFixture('\n第一段。\n\n第二段，长一点的文字。\n\n## 一个标题\n\n- 列表一\n- 列表二\n\n最后一段。\n');
+	await openStudio(page);
+	const first = editor(page).getByText('第一段。', { exact: true });
+	await editor(page).getByText('最后一段。', { exact: true }).scrollIntoViewIfNeeded();
+	const a = (await first.boundingBox())!;
+	const last = (await editor(page).getByText('最后一段。', { exact: true }).boundingBox())!;
+	const handle = page.locator('.milkdown-block-handle');
+	await page.mouse.move(a.x + 40, a.y + 4);
+	await expect(handle).toHaveAttribute('data-show', 'true');
+	for (let y = a.y + 4; y <= last.y + last.height; y += 6) {
+		await page.mouse.move(a.x + 40, y);
+		await page.waitForTimeout(16);
+		expect(await handle.getAttribute('data-show'), `at ${y}`).toBe('true');
+	}
+	await expect.poll(async () => Math.abs((await handle.boundingBox())!.y - last.y)).toBeLessThan(last.height);
+});
+
+test('in columns, the way from a block on the right to its handle keeps the handle there', async ({ page }) => {
+	appendToFixture('\n<div class="columns">\n<div>\n\n左栏一。\n\n</div>\n<div>\n\n右栏一。\n\n</div>\n</div>\n');
+	await openStudio(page);
+	const right = editor(page).getByText('右栏一。', { exact: true });
+	await right.scrollIntoViewIfNeeded();
+	const r = (await right.boundingBox())!;
+	const handle = page.locator('.milkdown-block-handle');
+	await page.mouse.move(r.x + 20, r.y + r.height / 2);
+	await expect.poll(async () => Math.abs((await handle.boundingBox())!.x + (await handle.boundingBox())!.width - r.x)).toBeLessThan(12);
+	const there = (await handle.boundingBox())!;
+	for (let x = r.x; x >= there.x + there.width / 2; x -= 4) {
+		await page.mouse.move(x, r.y + r.height / 2);
+		await page.waitForTimeout(16);
+	}
+	expect((await handle.boundingBox())!.x).toBe(there.x);
+	await expect(handle).toHaveCSS('opacity', '1');
+	// Pressed there, it is that block's: its menu opens on it.
+	await page.mouse.down();
+	await page.mouse.up();
+	await expect(editor(page).locator('.ProseMirror-selectednode')).toHaveText('右栏一。');
+});

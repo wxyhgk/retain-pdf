@@ -681,8 +681,10 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-stage svg) { width: auto; height: auto; max-width: 100%; max-height: 150px; margin: 0 auto; }
 	/* The handle fades in and out; from block to block it jumps (only its opacity moves). */
 	:global(.crepe-host .milkdown .milkdown-block-handle) { margin-left: -2px; gap: 0; transition: opacity 120ms ease; }
-	/* Where a dragged block will land: a line to be seen, in the ink's gray. */
-	:global(.crepe-host .milkdown .crepe-drop-cursor) { background-color: rgb(var(--gray-dark)); opacity: 0.4; }
+	/* Where a dragged block will land: a line to be seen, in the ink's gray, right where the pointer is (no sliding after it). */
+	:global(.crepe-host .milkdown .crepe-drop-cursor) { background-color: rgb(var(--gray-dark)); opacity: 0.4; transition: none; }
+	/* Selecting blocks by dragging in the margin: no handle jumping from block to block under the pointer meanwhile. */
+	.editor-scroll.pm-block-dragging :global(.milkdown-block-handle) { opacity: 0 !important; pointer-events: none; }
 	/* Menus come up in a tenth of a second. Opacity only: the block menu measures where it is to place itself. */
 	:global(.crepe-host .milkdown-slash-menu[data-show='true']),
 	:global(.crepe-host .milkdown-block-menu[data-show='true']),

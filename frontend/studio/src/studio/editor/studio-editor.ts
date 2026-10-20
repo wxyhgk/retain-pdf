@@ -173,7 +173,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			const filePreview = codeFilePreview(host.codeFile);
 			const blockEdit: ForkBlockEditFeatureConfig = {
 				// A block in a column has its handle close by, in the gap between the columns; others, in the margin.
-				blockHandle: { getOffset: ({ active }) => (active.$pos.parent.type.name === 'column' ? 4 : 16) },
+				blockHandle: { getOffset: ({ active }) => (active.$pos.parent.type.name === 'column' ? 2 : 16) },
 				buildBlockMenu: (builder, target) =>
 					buildBlockMenu(builder, target, {
 						saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) },
