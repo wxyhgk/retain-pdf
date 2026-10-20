@@ -146,6 +146,7 @@ export function apply(ctx: Context): void {
 
 - `job/`：计算块。四个环境都有，是写块插件最完整的例子。库在 `packages/compute`。它提供 `ctx.jobs`（计算程序接缝），跑哪个程序由程序插件决定。
 - `xtb/`、`crest/`：计算程序。四个环境都把自己注册进 `ctx.jobs`；加一个程序见下面「写一个计算程序」。
+- `bookmark/`：网页书签（```bookmark）。四个环境都有，是一个小而完整的块插件：`bookmark.mjs` 是格式和卡片（构建和 Studio 共用一份 HAST），`server.mjs` 在 Studio 里读一次网页（DOI 问 doi.org），读到的写进文章，构建不联网。
 - `word-count/`：字数统计。只有 `studio.ts`：右栏页签（听 `studio/source-changed`，只在看得见时重算）、左栏按钮、一个插入统计的命令。写界面插件可以照着它。
 - `retainmol/`：RetainMol 分子编辑器。Studio 里注册成 `ctx.molecules` 的一个实现，服务器上负责构建和提供它。计算块和化学块的三维结构都通过 `ctx.molecules` 用它，换一个编辑器不用改那些块。
 
