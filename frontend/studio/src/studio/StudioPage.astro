@@ -51,6 +51,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 					<button id="open-table" class="article-search" type="button" aria-pressed="false"><span>▦</span>全部文章</button>
 					<button id="open-drive" class="article-search" type="button" aria-pressed="false"><span>▤</span>资料库</button>
 				</div>
+				<!-- The plugins' commands shown here (ctx.commands, places: ['sidebar']): plugin-ui.ts. -->
+				<div id="plugin-commands" class="plugin-commands" hidden></div>
 				<div class="panel-heading"><h1>Private</h1><button id="new-article" type="button" title="新建文章" aria-label="新建文章">＋</button></div>
 				<nav id="article-list" aria-label="页面列表"></nav>
 				<div class="sidebar-footer">
@@ -319,6 +321,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.panel-heading h1 { margin: 0; color: rgb(var(--gray)); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
 	.panel-heading button { width: 23px; height: 23px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font-size: 17px; cursor: pointer; }
 	.panel-heading button:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+	.plugin-commands { display: grid; gap: 2px; margin-top: -5px; padding: 0 7px 9px; }
+	.plugin-commands[hidden] { display: none; }
+	.plugin-commands :global(button) { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+	.plugin-commands :global(button:hover) { background: rgb(var(--gray-light)); }
+	.plugin-commands :global(button > span) { display: grid; flex: none; width: 15px; place-items: center; color: rgb(var(--gray)); }
+	.plugin-commands :global(button > span svg) { width: 14px; height: 14px; }
 	.sidebar-footer { display: grid; gap: 2px; padding: 7px; border-top: 1px solid rgb(var(--gray-light)); }
 	.sidebar-footer button { width: 100%; cursor: pointer; }
 	.workspace-main { display: flex; min-height: 0; flex-direction: column; }
@@ -705,15 +713,19 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.side-panel-resizer { position: absolute; z-index: 5; top: 0; bottom: 0; left: -3px; width: 6px; cursor: col-resize; }
 	.side-panel-resizer:hover, .side-panel-resizer:focus-visible, .studio-shell.is-resizing .side-panel-resizer { background: color-mix(in srgb, var(--accent) 45%, transparent); outline: none; }
 	.side-tabs { display: flex; flex: none; align-items: flex-end; gap: 2px; height: 46px; padding: 0 8px 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
-	.side-tabs [role='tab'] { position: relative; height: 34px; padding: 0 12px; border: 0; border-radius: 6px 6px 0 0; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
-	.side-tabs [role='tab']:hover { color: rgb(var(--gray-dark)); }
-	.side-tabs [role='tab'][aria-selected='true'] { color: rgb(var(--black)); font-weight: 650; }
-	.side-tabs [role='tab'][aria-selected='true']::after { content: ''; position: absolute; right: 10px; bottom: -1px; left: 10px; height: 2px; border-radius: 2px; background: var(--accent); }
-	.side-tabs [role='tab']:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+	.side-tabs :global([role='tab']) { position: relative; height: 34px; white-space: nowrap; padding: 0 12px; border: 0; border-radius: 6px 6px 0 0; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
+	.side-tabs :global([role='tab']:hover) { color: rgb(var(--gray-dark)); }
+	.side-tabs :global([role='tab'][aria-selected='true']) { color: rgb(var(--black)); font-weight: 650; }
+	.side-tabs :global([role='tab'][aria-selected='true']::after) { content: ''; position: absolute; right: 10px; bottom: -1px; left: 10px; height: 2px; border-radius: 2px; background: var(--accent); }
+	.side-tabs :global([role='tab']:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
 	.side-close { align-self: center; width: 27px; height: 27px; margin-left: auto; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 18px; cursor: pointer; }
 	.side-close:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 	.side-pane { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 	.side-pane[hidden] { display: none; }
+	/* A plugin's tab (ctx.panels): its pane, made by side-panel.ts, scrolls as a whole unless it lays itself out. */
+	.side-panel :global(.plugin-pane) { display: flex; flex: 1; min-height: 0; flex-direction: column; overflow: auto; }
+	.side-panel :global(.plugin-pane[hidden]) { display: none; }
+	.side-panel :global(.side-pane-error) { margin: 16px 12px; color: #b42318; font-size: 12px; line-height: 1.5; }
 	.pane-toolbar { display: flex; flex: none; align-items: center; gap: 8px; min-height: 38px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
 	.pane-path { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 	.pane-actions { display: flex; gap: 2px; }

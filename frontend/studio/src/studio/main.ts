@@ -48,8 +48,9 @@ import { createDriveBrowser } from './workspace/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { createNewArticleDialog } from './workspace/new-article-dialog';
-import { setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
+import { pluginCommands, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
 import { createPluginsDialog } from './workspace/plugins-dialog';
+import { runCommand, showPluginUi } from './workspace/plugin-ui';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
 import { createBacklinks } from './workspace/backlinks';
@@ -351,9 +352,22 @@ void listPlugins()
 		slug: () => session.slug,
 		fileUrl: studioFileUrl,
 		save: () => void session.flush(),
+		source() {
+			if (!session.slug) return null;
+			editor.settle();
+			return session.current.source;
+		},
+		editor: {
+			view: () => editor.view(),
+			insert: (markdown) => editor.insertMarkdown(markdown),
+		},
+		toast: (message, error = false) => showToast(message, error),
+		showPanel: (key) => sidePanel.show(key),
 		api: pluginApi,
 	}, off))
 	.then((problems) => {
+		// Their tabs in the right column, their commands in the left one and on their keys.
+		showPluginUi({ setPanels: (panels) => sidePanel.setPanels(panels), sidebar: shell.querySelector<HTMLElement>('#plugin-commands')! });
 		if (problems.length) showToast(problems.join('；'), true);
 	});
 const pluginsDialog = createPluginsDialog(document.querySelector<HTMLDialogElement>('#plugins-dialog')!, { info: studioPluginInfo, setEnabled: setStudioPluginEnabled });
@@ -362,7 +376,7 @@ shell.querySelector('#open-plugins')!.addEventListener('click', () => void plugi
 studioPlugins.on('studio/plugins-reloaded', (changed, problems) => {
 	showToast(problems.length ? problems.join('；') : `已重新载入插件：${changed.join('、')}`, problems.length > 0);
 });
-studioPlugins.on('studio/blocks-changed', () => void session.remount());
+studioPlugins.on('studio/editor-changed', () => void session.remount());
 
 // Widgets read the open article's files (note.file, or a widget that is a file).
 setWidgetFiles((path) => (session.slug ? studioFileUrl(session.slug, path) : path));
@@ -547,6 +561,8 @@ pageMenu.addEventListener('click', () => {
 		},
 		{ label: /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示', action: () => void revealArticleFile(article.slug, '') },
 		{ label: '历史版本…', action: () => void historyView.open(article.slug) },
+		// The plugins' (`ctx.commands`, `places: ['page-menu']`).
+		...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, action: () => runCommand(command, 'page-menu') })),
 		'separator',
 		{ label: '改文件夹名…', action: () => void articleActions.rename(article) },
 		{ label: '复制一份', action: () => void articleActions.duplicate(article) },

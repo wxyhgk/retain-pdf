@@ -1,8 +1,6 @@
-export type SidePanelTab = 'files' | 'terminal' | 'drive';
+import { STUDIO_PANELS, type StudioPanel } from '@blog/kernel/ui.ts';
 
-const TAB_ORDER: readonly SidePanelTab[] = ['files', 'terminal', 'drive'];
-
-type PanelLayout = { open: boolean; tab: SidePanelTab; width: number };
+type PanelLayout = { open: boolean; tab: string; width: number };
 
 const STORAGE_KEY = 'studio.side-panel';
 const MIN_WIDTH = 260;
@@ -15,12 +13,13 @@ function clampWidth(width: number): number {
 	return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(width)));
 }
 
+/** As it was left; the tab may be a plugin's, shown once its plugin has put it in. */
 function readLayout(): PanelLayout {
 	try {
 		const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null') as Partial<PanelLayout> | null;
 		return {
 			open: typeof saved?.open === 'boolean' ? saved.open : DEFAULT_LAYOUT.open,
-			tab: TAB_ORDER.includes(saved?.tab as SidePanelTab) ? (saved!.tab as SidePanelTab) : 'files',
+			tab: typeof saved?.tab === 'string' && /^[a-z][\w-]*$/u.test(saved.tab) ? saved.tab : DEFAULT_LAYOUT.tab,
 			width: typeof saved?.width === 'number' ? clampWidth(saved.width) : DEFAULT_LAYOUT.width,
 		};
 	} catch {
@@ -36,9 +35,13 @@ function writeLayout(layout: PanelLayout): void {
 	}
 }
 
+/** A tab and its pane; a plugin's is drawn the first time it is shown. */
+type Tab = { tab: HTMLButtonElement; pane: HTMLElement; panel?: StudioPanel; drawn?: boolean; undraw?: (() => void) | void };
+
 /**
  * The right column: the open article's files, a terminal and the drive, as
- * tabs that can be resized and collapsed. The tabs' contents are
+ * tabs that can be resized and collapsed, then the plugins' tabs
+ * (`ctx.panels`, `setPanels`). The Studio's tabs' contents are
  * `file-panel.ts`, `terminal.ts` and `drive-browser.ts`.
  */
 export function createSidePanel(shell: HTMLElement) {
@@ -46,13 +49,31 @@ export function createSidePanel(shell: HTMLElement) {
 	const toggleButton = document.querySelector<HTMLButtonElement>('#toggle-side-panel')!;
 	const closeButton = panel.querySelector<HTMLButtonElement>('#close-side-panel')!;
 	const resizer = panel.querySelector<HTMLElement>('.side-panel-resizer')!;
-	const tabs = new Map<SidePanelTab, { tab: HTMLButtonElement; pane: HTMLElement }>([
-		['files', { tab: panel.querySelector('#side-tab-files')!, pane: panel.querySelector('#side-files')! }],
-		['terminal', { tab: panel.querySelector('#side-tab-terminal')!, pane: panel.querySelector('#side-terminal')! }],
-		['drive', { tab: panel.querySelector('#side-tab-drive')!, pane: panel.querySelector('#side-drive')! }],
-	]);
+	const tabList = panel.querySelector<HTMLElement>('.side-tabs')!;
+	// The Studio's own tabs (STUDIO_PANELS); the plugins' (`ctx.panels`) come after them.
+	const tabs = new Map<string, Tab>(
+		STUDIO_PANELS.map((name) => [name, { tab: panel.querySelector(`#side-tab-${name}`)!, pane: panel.querySelector(`#side-${name}`)! }]),
+	);
 
 	const layout = readLayout();
+
+	/** The tab shown: the one chosen, or the files while it is not there (yet). */
+	const shown = () => (tabs.has(layout.tab) ? layout.tab : 'files');
+
+	/** A plugin's pane, filled by it; what goes wrong is said in the pane. */
+	function draw(entry: Tab): void {
+		if (entry.drawn || !entry.panel) return;
+		entry.drawn = true;
+		try {
+			entry.undraw = entry.panel.draw(entry.pane);
+		} catch (error) {
+			console.error(`[plugins] 面板 ${entry.panel.key}`, error);
+			const message = document.createElement('p');
+			message.className = 'side-pane-error';
+			message.textContent = `面板没能画出来：${error instanceof Error ? error.message : String(error)}`;
+			entry.pane.replaceChildren(message);
+		}
+	}
 
 	function applyLayout(): void {
 		shell.style.setProperty('--panel-width', `${layout.width}px`);
@@ -60,11 +81,13 @@ export function createSidePanel(shell: HTMLElement) {
 		panel.inert = !layout.open;
 		toggleButton.setAttribute('aria-pressed', String(layout.open));
 		toggleButton.setAttribute('aria-label', layout.open ? '收起右侧面板' : '展开右侧面板');
-		for (const [name, { tab, pane }] of tabs) {
-			const selected = name === layout.tab;
-			tab.setAttribute('aria-selected', String(selected));
-			tab.tabIndex = selected ? 0 : -1;
-			pane.hidden = !selected;
+		const current = shown();
+		for (const [name, entry] of tabs) {
+			const selected = name === current;
+			entry.tab.setAttribute('aria-selected', String(selected));
+			entry.tab.tabIndex = selected ? 0 : -1;
+			entry.pane.hidden = !selected;
+			if (selected && layout.open) draw(entry);
 		}
 	}
 
@@ -74,17 +97,19 @@ export function createSidePanel(shell: HTMLElement) {
 		if (persist) writeLayout(layout);
 	}
 
-	for (const [name, { tab }] of tabs) {
+	function bindTab(name: string, tab: HTMLButtonElement): void {
 		tab.addEventListener('click', () => update({ tab: name }));
 		tab.addEventListener('keydown', (event) => {
 			if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
 			event.preventDefault();
-			const at = TAB_ORDER.indexOf(name) + (event.key === 'ArrowRight' ? 1 : -1);
-			const next = TAB_ORDER[(at + TAB_ORDER.length) % TAB_ORDER.length]!;
+			const order = [...tabs.keys()];
+			const at = order.indexOf(name) + (event.key === 'ArrowRight' ? 1 : -1);
+			const next = order[(at + order.length) % order.length]!;
 			update({ tab: next });
 			tabs.get(next)!.tab.focus();
 		});
 	}
+	for (const [name, { tab }] of tabs) bindTab(name, tab);
 	toggleButton.addEventListener('click', () => update({ open: !layout.open }));
 	closeButton.addEventListener('click', () => update({ open: false }));
 	resizer.addEventListener('pointerdown', (event) => {
@@ -114,10 +139,61 @@ export function createSidePanel(shell: HTMLElement) {
 	if (NARROW.matches) layout.open = false;
 	applyLayout();
 
+	/** Takes a plugin's tab out, with what it drew. */
+	function removeTab(name: string, entry: Tab): void {
+		tabs.delete(name);
+		try {
+			if (typeof entry.undraw === 'function') entry.undraw();
+		} catch (error) {
+			console.error(`[plugins] 面板 ${name}`, error);
+		}
+		entry.tab.remove();
+		entry.pane.remove();
+	}
+
 	return {
-		/** Opens the panel on this tab. */
-		show(tab: SidePanelTab): void {
+		/** Opens the panel on this tab; throws when there is none by this name. */
+		show(tab: string): void {
+			if (!tabs.has(tab)) throw new Error(`没有叫 ${tab} 的面板`);
 			update({ open: true, tab });
+		},
+		/**
+		 * The plugins' tabs are these now, in this order: those gone are taken
+		 * out (with what they drew), new ones put in after the Studio's own.
+		 * The tab chosen stays chosen, also while its plugin is away.
+		 */
+		setPanels(panels: StudioPanel[]): void {
+			for (const [name, entry] of tabs) if (entry.panel && !panels.includes(entry.panel)) removeTab(name, entry);
+			const close = tabList.querySelector('.side-close');
+			for (const added of panels) {
+				let entry = tabs.get(added.key);
+				if (!entry) {
+					const tab = document.createElement('button');
+					tab.type = 'button';
+					tab.id = `side-tab-plugin-${added.key}`;
+					tab.setAttribute('role', 'tab');
+					tab.setAttribute('aria-controls', `side-plugin-${added.key}`);
+					tab.dataset.panel = added.key;
+					tab.textContent = added.label;
+					const pane = document.createElement('section');
+					pane.id = `side-plugin-${added.key}`;
+					pane.className = 'side-pane plugin-pane';
+					pane.setAttribute('role', 'tabpanel');
+					pane.setAttribute('aria-labelledby', tab.id);
+					pane.hidden = true;
+					panel.append(pane);
+					entry = { tab, pane, panel: added };
+					tabs.set(added.key, entry);
+					bindTab(added.key, tab);
+				}
+				// In the order given, before ×.
+				tabList.insertBefore(entry.tab, close);
+			}
+			// The arrow keys go through them in the same order.
+			const ordered = [...tabs].filter(([, entry]) => !entry.panel).concat(panels.map((added) => [added.key, tabs.get(added.key)!]));
+			tabs.clear();
+			for (const [name, entry] of ordered) tabs.set(name, entry);
+			applyLayout();
 		},
 	};
 }

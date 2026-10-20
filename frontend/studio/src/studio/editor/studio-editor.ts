@@ -14,6 +14,7 @@ import {
 import { remarkGFMPlugin, strikethroughKeymap } from '@milkdown/kit/preset/gfm';
 import type { Node as ProseNode } from '@milkdown/prose/model';
 import { Plugin, TextSelection } from '@milkdown/prose/state';
+import type { EditorView } from '@milkdown/prose/view';
 import { $prose, callCommand, insert } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
 import '@milkdown/crepe/theme/common/style.css';
@@ -32,7 +33,7 @@ import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
 import { smartPastePlugins } from './smart-paste';
 import { blockKeyPlugins } from './block-key-plugins';
-import { buildBlockSlashMenu } from './block-slash-menu';
+import { buildBlockSlashMenu, buildCommandSlashMenu } from './block-slash-menu';
 import { calloutPlugins } from './callout-block';
 import { citationPlugins, setCitationLibrary, type CitationHost } from './citations';
 import { officeCardPlugins } from './office-card-block';
@@ -47,7 +48,8 @@ import { withoutTrailingEmptyLines } from '../document/index.ts';
 import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
-import { pluginBlocks } from '../plugins';
+import { pluginBlocks, pluginSlashCommands } from '../plugins';
+import { runCommand } from '../workspace/plugin-ui';
 import '@blog/markdown/widgets/widgets.css';
 
 /** What the editor needs from the Studio around it. */
@@ -90,6 +92,8 @@ export type StudioEditor = {
 	setLibrary(library: Map<string, BibEntry> | null): void;
 	/** Puts Markdown in where the caret is, as blocks of their own. */
 	insertMarkdown(markdown: string): void;
+	/** The ProseMirror view of the article shown; null before one is. */
+	view(): EditorView | null;
 };
 
 /** What the editor holds, as Markdown, without empty lines left at the end. */
@@ -160,6 +164,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			if (crepe) await crepe.destroy();
 			// The blocks of the project's plugins (plugins/*/studio.ts): their nodes, their slash-menu entries.
 			const blocks = await pluginBlocks();
+			const commands = await pluginSlashCommands();
 			root.replaceChildren();
 			const fileDrop = articleFileDrop(host.files);
 			// Crepe's own config, plus the block menu only the Milkdown fork has.
@@ -174,6 +179,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				buildMenu: (builder) => {
 					buildScienceSlashMenu(builder);
 					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks);
+					buildCommandSlashMenu(builder as unknown as SlashMenuBuilder, commands, (command) => runCommand(command, 'slash'));
 					replaceSlashImageItem(builder, fileDrop.chooseImages);
 					addSearchWords(builder);
 				},
@@ -359,6 +365,18 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		markSelection,
 		insertMarkdown(markdown) {
 			crepe?.editor.action(insert(markdown));
+		},
+		view() {
+			if (!crepe || mounting) return null;
+			let view: EditorView | null = null;
+			try {
+				crepe.editor.action((ctx) => {
+					view = ctx.get(editorViewCtx);
+				});
+			} catch {
+				// Not made yet.
+			}
+			return view;
 		},
 		setLibrary(next) {
 			library = next;

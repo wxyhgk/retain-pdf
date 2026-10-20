@@ -3,13 +3,15 @@ import type { SheetTab } from '@blog/ui/block-sheet.ts';
 import { Blocks, type Block } from './blocks.mjs';
 import { Context, Service } from './index.mjs';
 import { Styles, Theme } from './theme.ts';
+import { Commands, Panels } from './ui.ts';
 
 /**
  * The Studio (in the browser): each plugin's studio.ts puts its block in the
  * editor and the slash menu (`ctx.blocks`), offers a molecule editor
  * (`ctx.molecules`), adds tabs to another block's sheet (`ctx.sheetTabs`),
- * changes how the Studio looks (`ctx.theme`, `ctx.styles`: theme.ts), and
- * reaches its own API on the dev server (`ctx.studio.api`).
+ * changes how the Studio looks (`ctx.theme`, `ctx.styles`: theme.ts), adds
+ * a tab to the right column (`ctx.panels`) and commands (`ctx.commands`:
+ * ui.ts), and reaches its own API on the dev server (`ctx.studio.api`).
  */
 
 /** What the Studio gives its plugins. */
@@ -20,6 +22,19 @@ export type StudioHost = {
 	fileUrl(slug: string, path: string): string;
 	/** Saves the article now (what the editor holds). */
 	save(): void;
+	/** The open article's Markdown as the editor holds it, saved or not; null before one is open. */
+	source(): string | null;
+	/** The article's editor. */
+	editor: {
+		/** Its ProseMirror view; null before an article is open. */
+		view(): import('prosemirror-view').EditorView | null;
+		/** Puts Markdown in where the caret is, as blocks of their own. */
+		insert(markdown: string): void;
+	};
+	/** Says something for a moment at the bottom of the page (in red when it is an error). */
+	toast(message: string, error?: boolean): void;
+	/** Opens the right column on this tab (the Studio's own `files`, `terminal`, `drive`, or a plugin's `ctx.panels`); throws when there is none. */
+	showPanel(key: string): void;
 	/** The plugins' API on the dev server (plugins/*\/server.mjs), as JSON; a failed request throws its error. */
 	api: {
 		get<T = unknown>(path: string): Promise<T>;
@@ -114,8 +129,8 @@ export interface StudioEvents {
 	'studio/plugins-reloaded'(changed: string[], problems: string[]): void;
 	/** Plugins were taken out or put in, for whatever reason (an edit, a switch): what others registered may be other now. */
 	'studio/plugins-changed'(changed: string[]): void;
-	/** The blocks in the editor are others now (a block's plugin was loaded again): it must be drawn again. */
-	'studio/blocks-changed'(): void;
+	/** What the editor is made with is other now (a block's plugin, or a slash-menu command, came or went): it must be drawn again. */
+	'studio/editor-changed'(): void;
 }
 
 declare module '@deepseek-ai/cordis' {
@@ -140,6 +155,8 @@ export async function provideStudio(ctx: Context, host: StudioHost): Promise<voi
 	await ctx.plugin(SheetTabs);
 	await ctx.plugin(Theme);
 	await ctx.plugin(Styles);
+	await ctx.plugin(Panels);
+	await ctx.plugin(Commands);
 }
 
 /** The plugins among these modules (by path, as import.meta.glob gives them), by their folder's name. */

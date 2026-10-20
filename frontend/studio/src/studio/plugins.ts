@@ -1,18 +1,21 @@
 import { Context, pluginStatus, syncPlugins, type LoadedPlugin, type PluginStatus } from '@blog/kernel/index.mjs';
 import { provideStudio, studioBlocks, studioPluginList, type StudioHost } from '@blog/kernel/studio.ts';
+import type { Commands, Panels } from '@blog/kernel/ui.ts';
 
 import { pluginModules } from './plugin-modules.ts';
 
 /**
  * The project's plugins in the Studio (plugins/*\/studio.ts, @blog/kernel):
  * their blocks in the editor and the slash menu, the molecule editor, the
- * look, the tabs they add. `studioPlugins` is their context, which the
- * Studio tells what happens (files changed on disk, the Studio settled).
+ * look, the tabs they add, their panels and commands. `studioPlugins` is
+ * their context, which the Studio tells what happens (files changed on
+ * disk, the Studio settled).
  *
  * Hot: a plugin edited, added or removed (plugin-modules.ts) is taken out,
  * all it registered undone, and put in again; the others stay as they are.
- * The Studio is told (`studio/plugins-reloaded`), and if the editor's
- * blocks changed (`studio/blocks-changed`) it draws the article again.
+ * The Studio is told (`studio/plugins-reloaded`), and if what the editor is
+ * made with changed (its blocks, the slash menu's commands:
+ * `studio/editor-changed`) it draws the article again.
  * A plugin turned off (插件, `setStudioPluginEnabled`) is taken out the same way.
  */
 export const studioPlugins = new Context();
@@ -48,19 +51,24 @@ export function startStudioPlugins(host: StudioHost, off: string[] = []): Promis
 	return started;
 }
 
+/** What the editor is made with when it draws an article: the plugins' blocks, the slash menu's commands. */
+function editorParts(): unknown[] {
+	return [...studioBlocks(studioPlugins), ...(pluginCommands()?.list('slash') ?? [])];
+}
+
 /** Brings what is applied in line with the plugins as they are now (new versions, some turned off); `announce`: tell the Studio. */
 function reload({ announce }: { announce: boolean }): Promise<void> {
 	reloading = reloading.then(async () => {
 		if (!started) return;
 		await started;
-		const before = studioBlocks(studioPlugins);
+		const before = editorParts();
 		const { changed, problems } = await syncPlugins(studioPlugins, loaded, applicable());
 		if (!changed.length) return;
 		warn(problems);
-		const after = studioBlocks(studioPlugins);
+		const after = editorParts();
 		studioPlugins.emit('studio/plugins-changed', changed);
 		if (announce) studioPlugins.emit('studio/plugins-reloaded', changed, problems);
-		if (before.length !== after.length || before.some((block, index) => block !== after[index])) studioPlugins.emit('studio/blocks-changed');
+		if (before.length !== after.length || before.some((part, index) => part !== after[index])) studioPlugins.emit('studio/editor-changed');
 	}).catch((error) => console.error('[plugins] 重新载入失败', error));
 	return reloading;
 }
@@ -93,4 +101,20 @@ export async function pluginBlocks() {
 /** The molecule editor a plugin offers (the first); null when none does, or before they have started. */
 export function moleculeEditor() {
 	return started ? (studioPlugins.get('molecules') as typeof studioPlugins.molecules | undefined)?.editor() ?? null : null;
+}
+
+/** The plugins' commands (`ctx.commands`); null before they have started. */
+export function pluginCommands(): Commands | null {
+	return started ? ((studioPlugins.get('commands') as Commands | undefined) ?? null) : null;
+}
+
+/** The plugins' tabs of the right column (`ctx.panels`); null before they have started. */
+export function pluginPanels(): Panels | null {
+	return started ? ((studioPlugins.get('panels') as Panels | undefined) ?? null) : null;
+}
+
+/** Once they have started: the commands they put in the slash menu. */
+export async function pluginSlashCommands() {
+	await ready;
+	return pluginCommands()?.list('slash') ?? [];
 }

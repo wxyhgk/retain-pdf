@@ -8,6 +8,7 @@ import type { SlashMenuBuilder } from './science-slash-menu.ts';
 import { wrapInToggle } from './toggle-block.ts';
 import { insertWidget } from './widget-block.ts';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
+import type { StudioCommand } from '@blog/kernel/ui.ts';
 
 const icon = (path: string) =>
 	`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
@@ -17,6 +18,7 @@ const ICONS = {
 	toggle: icon('<path d="M6 8l4 4-4 4"/><path d="M13 12h7"/>'),
 	widget: icon('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 14l-2 2 2 2M16 14l2 2-2 2"/>'),
 	link: icon('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
+	command: icon('<path d="M5 7l5 5-5 5"/><path d="M12 17h7"/>'),
 };
 
 /** The editor, with the `/…` typed so far taken away. */
@@ -50,4 +52,21 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 			void linkArticleAt(view, links, view.state.selection.from);
 		},
 	});
+}
+
+/** The plugins' commands shown in the slash menu (`ctx.commands`, `places: ['slash']`), as a group of their own; `run` runs one, the `/…` typed taken away. */
+export function buildCommandSlashMenu(builder: SlashMenuBuilder, commands: StudioCommand[], run: (command: StudioCommand) => void): void {
+	if (!commands.length) return;
+	const group = builder.addGroup('plugin-commands', '插件');
+	for (const command of commands) {
+		group.addItem(`command:${command.id}`, {
+			label: command.label,
+			icon: command.icon ?? ICONS.command,
+			keywords: [command.id, ...(command.keywords ?? [])],
+			onRun: (ctx) => {
+				emptiedBlock(ctx);
+				run(command);
+			},
+		});
+	}
 }

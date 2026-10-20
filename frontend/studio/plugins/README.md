@@ -33,13 +33,15 @@ export function apply(ctx) { … }             // 在这里注册
 | 构建 | `ctx.blocks.register({ name, fence, remark(node, file) })` | 认领一种代码块；`remark` 返回替换它的节点，`file.message(…)` 报给发布前检查 |
 | 页面 | `ctx.page` | `articleSlug`、`fileUrl(path)`：文章发布出去的文件地址 |
 | Studio | `ctx.blocks.register({ name, fence, milkdown, menu })` | 编辑器节点（Milkdown 插件）和斜杠菜单里的一项（`insert(view)`） |
-| Studio | `ctx.studio` | 打开的文章 `slug()`、`fileUrl(slug, path)`、`save()`、自己的接口 `api.get/post/put('/<插件>/…')` |
+| Studio | `ctx.studio` | 打开的文章 `slug()`、正文 `source()`（编辑器里的样子，没保存的也算）、`fileUrl(slug, path)`、`save()`；编辑器 `editor.view()`（ProseMirror）、`editor.insert(markdown)`；`toast(文字, 出错?)`、`showPanel(key)`；自己的接口 `api.get/post/put('/<插件>/…')` |
+| Studio | `ctx.panels` | 右栏的页签：`register({ key, label, order?, draw(pane) })`，见下面「界面：面板和命令」 |
+| Studio | `ctx.commands` | 命令：`register({ id, label, run, keys?, places? })`，可以挂快捷键、斜杠菜单、⋯ 菜单、左栏；`run(id)` 跑别人的命令 |
 | Studio | `ctx.molecules` | 分子编辑器接缝：`register(editor)` 提供一个，`editor()` 取一个 |
 | 全部 | `ctx.jobs`（由 `job` 插件提供） | 计算程序：`register(program)`、`get(name)`、`list()`；见「写一个计算程序」 |
 | Studio | `ctx.sheetTabs` | 给别的块的弹窗加页签：`register('block-job', { key, label, draw(panel, detail) })` |
 | Studio | `ctx.theme` | 改设计变量：`set({ 'editor-width': '720px' }, { scheme? })`；`tokens()` 列出全部和现在的值。见下面「改外观」 |
 | Studio | `ctx.styles` | 加一段自己的 CSS：`add(css)` |
-| Studio | 事件 `studio/files-changed (slug, paths)`、`studio/ready` | 磁盘上文章的文件变了；Studio 打开并稳定下来了 |
+| Studio | 事件 `studio/files-changed (slug, paths)`、`studio/ready`、`studio/plugins-changed (names)` | 磁盘上文章的文件变了；Studio 打开并稳定下来了；有插件装上或撤下了 |
 | 服务器 | `ctx.routes.get/post/put('/<插件>/…', handler)` | 接口，挂在 `/api/studio/plugins/` 下；`handler({ params, query, json() })` 的返回值就是 JSON 回答，`created(值)` 回 201；错误的 `statusCode` 和信息会变成回答 |
 | 服务器 | `ctx.server` | `projectRoot`、`blogRoot`、`settingsFile`、`privateFile(名字)`、`testing`、`files`（`articleFolder(slug)`、`inside(…)`、`writeText(…)`）、`logger` |
 
@@ -77,6 +79,62 @@ export function apply(ctx: Context): void {
 - 不写 `scheme` 就是亮色、暗色都改。
 - `ctx.styles` 的 CSS 排在 Studio 自己的样式后面；同样的选择器不生效，就写得更具体些。
 - **配色只用黑、白、灰；红色只用于删除和出错。** 改颜色时守住这一条。
+
+## 界面：面板和命令
+
+插件可以在 Studio 里加自己的页签和命令，不用改 Studio 的代码，也不用写 CSS 去挪别人的元素。
+
+```ts
+// plugins/scratch/studio.ts
+import type { Context } from '@blog/kernel/index.mjs';
+import type {} from '@blog/kernel/studio.ts';
+import type {} from '@blog/kernel/ui.ts';
+
+export const name = 'scratch';
+export const inject = ['studio', 'panels', 'commands'];
+
+export function apply(ctx: Context): void {
+	// 右栏的一个页签，排在「文件 / 终端 / 资料库」后面；第一次显示时才画。
+	ctx.panels.register({
+		key: 'scratch',
+		label: '草稿',
+		draw(pane) {
+			const area = document.createElement('textarea');
+			pane.append(area);
+			return () => area.remove();   // 页签撤下时调用（可以不写）
+		},
+	});
+	// 一个命令：左栏一个按钮，打开上面的页签。
+	ctx.commands.register({ id: 'scratch.open', label: '草稿', icon: '✎', places: ['sidebar'], run: () => ctx.studio.showPanel('scratch') });
+	// 另一个：⌘⌥D，或斜杠菜单里的「插入今天的日期」。
+	ctx.commands.register({
+		id: 'scratch.today',
+		label: '插入今天的日期',
+		keys: 'Mod-Alt-d',
+		keywords: ['date', 'riqi'],
+		places: ['slash', 'page-menu'],
+		run: () => ctx.studio.editor.insert(new Date().toISOString().slice(0, 10)),
+	});
+}
+```
+
+**面板**（`ctx.panels.register`）
+- `key`：小写字母开头，只含字母、数字、`-`、`_`；`files`、`terminal`、`drive` 是 Studio 自己的。重名直接报错。
+- `order`：插件页签之间的先后，小的在前；都排在 Studio 自己的三个后面。
+- `draw(pane)`：页签第一次显示时调用一次，`pane` 是一个空的竖向 flex 容器，内容超出时整体滚动。返回的函数在页签撤下时调用。画的时候出错，错误会显示在页签里。
+- 上次选中的页签会记住；刷新后，等插件装好就切回它。
+
+**命令**（`ctx.commands.register`）
+- `id`：小写字母开头，只含字母、数字、`.`、`-`、`_`，建议写成 `插件.动作`。重名直接报错。
+- `places`：除了快捷键，还显示在哪里。`slash` 是斜杠菜单里的「插件」组（先删掉打的 `/…`，再运行），`page-menu` 是右上角的 ⋯ 菜单，`sidebar` 是左栏「资料库」下面的按钮。
+- `icon`：一段 SVG 或一个字符，用在斜杠菜单和左栏。`keywords`：斜杠菜单搜索时多认的词。
+- `keys`：快捷键，写成 `Mod-Shift-d` 这样（`Mod` 在 Mac 上是 ⌘，别处是 Ctrl）。
+  - 必须按着 Mod 或 Alt（F1–F12 除外），否则会占掉打字用的键。
+  - Studio、编辑器和浏览器自己的键不能用：⌘K、⌘S、⌘J、⌘B、⌘C、⌘Z 这些，全部列在 `packages/kernel/ui.ts` 的 `RESERVED_KEYS`。两个插件用同一个键也会报错。
+  - 光标在编辑器里时，编辑器自己处理的键优先。
+- `run({ from })`：`from` 说明是从哪里触发的（`keys`、`slash`、`page-menu`、`sidebar`，或别的插件用 `ctx.commands.run(id)` 调的 `call`）。可以是 async；出错时右下角用红色显示「命令名：原因」。
+
+改了斜杠菜单里的命令（加、删、热替换），正文会重新画一遍，和块插件一样，没保存的输入不会丢。
 
 ## 现有的插件
 
@@ -119,7 +177,7 @@ Studio 左栏底部的「插件」列出 `plugins/` 里的每个插件：它在�
 ## 改了插件之后
 
 - **Studio 这边（`studio.ts` 和它引用的文件）是热插拔的：** 新建、修改、删除插件文件夹，Studio 不刷新页面，先把旧插件撤掉（它注册的一切都撤），再装上新的，别的插件不动。右下角会提示「已重新载入插件：…」；启动失败就用红色提示原因，改好后会自动再试。
-- 改的是块插件（注册了编辑器节点），正文会用新的块重新画一遍，没保存的输入不会丢。
+- 改的是块插件（注册了编辑器节点）或斜杠菜单里的命令，正文会用新的块重新画一遍，没保存的输入不会丢。面板和别的命令直接换上，正文不动。
 - 模块里自己存的状态（全局变量、自己建的 DOM）要在卸载时清掉：放进 `ctx.effect(() => { …; return () => 清理 })`，或在 `apply` 里注册撤销函数。RetainMol 插件卸载时就会拿掉自己的 iframe。
 - `page.ts` 改了，刷新博客页面就行。
 - `server.mjs` 或 `build.mjs` 改了，要重启开发服务器。
