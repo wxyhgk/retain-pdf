@@ -515,7 +515,23 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .toggle-body) { padding-left: 26px; }
 	:global(.crepe-host .toggle-block.is-folded > .toggle-body) { display: none; }
 	/* Columns: side by side, as many as there are; nothing drawn around them, as in Notion. */
-	:global(.crepe-host .milkdown .ProseMirror .columns) { display: grid; grid-template-columns: repeat(var(--columns, 2), minmax(0, 1fr)); gap: 28px; margin: 4px 0; }
+	:global(.crepe-host .milkdown .ProseMirror .columns-block) { position: relative; margin: 4px 0; }
+	/* The gap holds the handle (＋ and ⠿) of a block in the column on its right, with room either side. */
+	:global(.crepe-host .milkdown .ProseMirror .columns) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 56px; }
+	/* ＋ at the right adds a column; shown while the pointer is over the columns. */
+	:global(.crepe-host .milkdown .ProseMirror .columns-add) { position: absolute; top: 0; right: -30px; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 16px; line-height: 22px; cursor: pointer; opacity: 0; transition: opacity 120ms ease; }
+	:global(.crepe-host .milkdown .ProseMirror .columns-block:hover > .columns-add) { opacity: 1; }
+	:global(.crepe-host .milkdown .ProseMirror .columns-add:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	/* The gap between two columns is dragged to share their width otherwise. */
+	:global(.crepe-host .milkdown .ProseMirror .columns-block.is-over-gap > .columns) { cursor: col-resize; }
+	:global(.crepe-host .milkdown:has(.columns-block.is-over-gap) .milkdown-block-handle) { opacity: 0 !important; pointer-events: none; }
+	:global(.crepe-host .milkdown .ProseMirror .columns-resize-line) { position: absolute; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: rgb(var(--gray-dark)); opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
+	:global(.crepe-host .milkdown .ProseMirror .columns-block.is-over-gap > .columns-resize-line) { opacity: 0.2; }
+	:global(.crepe-host .milkdown .ProseMirror .columns-block.is-resizing > .columns-resize-line) { opacity: 0.45; }
+	/* A block dragged to the side of another: an upright line where it goes, instead of the one between blocks. */
+	:global(.columns-drop-line) { position: fixed; z-index: 50; width: 3px; border-radius: 2px; background: rgb(var(--gray-dark)); opacity: 0.4; pointer-events: none; }
+	/* The indicator shows itself with an inline style. */
+	:global(.crepe-host .milkdown.columns-side-drop .crepe-drop-cursor) { display: none !important; }
 	:global(.crepe-host .milkdown .ProseMirror .column) { min-width: 0; }
 	:global(.crepe-host .milkdown .ProseMirror .column > :first-child) { margin-top: 0; }
 	:global(.crepe-host .milkdown .ProseMirror .column > :last-child) { margin-bottom: 0; }

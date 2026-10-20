@@ -37,8 +37,8 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 	const group = builder.addGroup('notion', '块');
 	group.addItem('callout', { label: '提示块', icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(emptiedBlock(ctx), 'tip') });
 	group.addItem('toggle', { label: '折叠块', icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(emptiedBlock(ctx)) });
-	group.addItem('columns', { label: '两栏', icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', 'fenlan'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 2) });
-	group.addItem('columns-3', { label: '三栏', icon: ICONS.columns3, keywords: ['columns', 'three', 'fenlan'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 3) });
+	group.addItem('columns', { label: '两栏', icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', '双栏', '分栏', '并排', 'shuanglan', 'fenlan', 'bingpai'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 2) });
+	group.addItem('columns-3', { label: '三栏', icon: ICONS.columns3, keywords: ['columns', 'three', '分栏', '多栏', '并排', 'fenlan', 'duolan'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 3) });
 	group.addItem('widget', {
 		label: '交互模块',
 		icon: ICONS.widget,

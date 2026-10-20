@@ -3,7 +3,7 @@ import { commandsCtx } from '@milkdown/kit/core';
 import { toggleLinkCommand } from '@milkdown/kit/component/link-tooltip';
 import { extendListItemSchemaForTask } from '@milkdown/kit/preset/gfm';
 import { InputRule, inputRules } from '@milkdown/prose/inputrules';
-import { Plugin, TextSelection, type EditorState } from '@milkdown/prose/state';
+import { NodeSelection, Plugin, Selection, TextSelection, type EditorState } from '@milkdown/prose/state';
 import { $prose } from '@milkdown/utils';
 
 import { duplicateBlocks, linkInputRule, moveBlocks, selectBlockInHand, selectTextblock, todoInputRule, unlistAtStart, type Dispatch } from './block-keys.ts';
@@ -64,6 +64,26 @@ export const todoPlugin = $prose(() =>
 );
 
 /**
+ * A block dropped where it was dragged: the caret at the end of its text, as
+ * after typing it there. Not the block selected whole, which shows it gray
+ * until a click elsewhere (one that seemed not to take) and which a key typed
+ * would replace. A block with no text in it (a picture, a molecule) stays selected.
+ */
+export const dropCaret = $prose(
+	() =>
+		new Plugin({
+			appendTransaction(transactions, _before, state) {
+				if (!transactions.some((tr) => tr.getMeta('uiEvent') === 'drop')) return null;
+				const { selection } = state;
+				if (!(selection instanceof NodeSelection) || !selection.node.isBlock) return null;
+				const end = Selection.findFrom(state.doc.resolve(selection.to), -1, true);
+				if (!end || end.from <= selection.from) return null;
+				return state.tr.setSelection(end);
+			},
+		}),
+);
+
+/**
  * A list item made in the editor is tight, as one typed by hand: a list put in it (Tab) is written without a
  * blank line before it, which would make the whole list loose and spaced out on the blog. Items read from the
  * file keep what it says. (On top of GFM's list item, the one with to-dos.)
@@ -74,5 +94,5 @@ const tightListItems = extendListItemSchemaForTask.extendSchema((schema) => (ctx
 });
 
 export function blockKeyPlugins(host: BlockKeysHost): MilkdownPlugin[] {
-	return [blockKeysPlugin(host), todoPlugin, tightListItems].flat();
+	return [blockKeysPlugin(host), todoPlugin, tightListItems, dropCaret].flat();
 }

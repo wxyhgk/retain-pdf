@@ -21,6 +21,8 @@ const IGNORED_TARGET = [
 	'.chem-stage',
 	// Formula and chemistry blocks select themselves and open their source popup.
 	'.pm-display-math',
+	// The gap between columns is pressed to make one wider (columns-block.ts).
+	'.columns-block.is-over-gap',
 	'.science-block',
 	'button',
 	'a',

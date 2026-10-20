@@ -183,10 +183,11 @@ hr {
 	border: none;
 	border-top: 1px solid rgb(var(--gray-light));
 }
-/* Columns (`<div class="columns">` around Markdown, written by the Studio): side by side; one under another on a phone. */
+/* Columns (`<div class="columns">` around Markdown, written by the Studio): side by side, each as wide as its share
+   (`<div style="flex: 1.5">`, one when none); one under another on a phone. */
 .columns {
 	display: flex;
-	gap: 1.5em;
+	gap: 2em;
 	margin: 1em 0;
 }
 .columns > div {
@@ -203,6 +204,10 @@ hr {
 	.columns {
 		flex-direction: column;
 		gap: 1em;
+	}
+	/* A column's share of the width means nothing one under another. */
+	.columns > div {
+		flex: none !important;
 	}
 }
 @media (max-width: 720px) {

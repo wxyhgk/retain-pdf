@@ -22,7 +22,8 @@ test('两栏 from the slash menu: two columns side by side, the caret in the fir
 	await editor(page).locator('p', { hasText: '结尾段落' }).click();
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
-	await page.keyboard.type('/两栏');
+	// Found by what one calls it: 双栏 too.
+	await page.keyboard.type('/双栏');
 	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index]').first()).toHaveText('两栏');
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');
@@ -36,6 +37,11 @@ test('两栏 from the slash menu: two columns side by side, the caret in the fir
 	const [left, right] = [(await column(page, 0).boundingBox())!, (await column(page, 1).boundingBox())!];
 	expect(Math.abs(left.y - right.y)).toBeLessThan(2);
 	expect(right.x).toBeGreaterThan(left.x + left.width);
+	// The handle of a block in the right column fits in the gap, over none of the left column.
+	await page.mouse.move(right.x + 30, right.y + right.height / 2);
+	const handle = page.locator('.milkdown-block-handle');
+	await expect.poll(async () => Math.abs(((await handle.boundingBox())?.y ?? -100) - right.y)).toBeLessThan(right.height);
+	expect((await handle.boundingBox())!.x).toBeGreaterThanOrEqual(left.x + left.width);
 	expect(await save(page)).toMatch(/结尾段落。\n\n<div class="columns">\n<div>\n\n左边\n\n<\/div>\n<div>\n\n## 右边\n\n<\/div>\n<\/div>\n$/u);
 });
 
@@ -66,4 +72,90 @@ test('⌫ in an empty column takes it away; with one left, its blocks are back i
 	await expect(columns(page)).toHaveCount(0);
 	const saved = await save(page);
 	expect(saved).toMatch(/结尾段落。\n\n甲乙\n$/u);
+});
+
+/** Drags the block holding `text` by its handle and drops it at (x, y) of the page, as the browser would, step by step. */
+async function dragBlock(page: Page, text: string, to: () => Promise<{ x: number; y: number }>, beforeDrop?: () => Promise<void>) {
+	const block = editor(page).getByText(text, { exact: true });
+	await block.scrollIntoViewIfNeeded();
+	const box = (await block.boundingBox())!;
+	await page.mouse.move(box.x + 20, box.y + box.height / 2);
+	const grip = page.locator('.milkdown-block-handle .operation-item').last();
+	// The handle comes to the block a moment after the pointer.
+	await expect.poll(async () => Math.abs(((await grip.boundingBox())?.y ?? -100) - box.y)).toBeLessThan(box.height);
+	// The handle selects its block when pressed, before the drag starts.
+	const at = (await grip.boundingBox())!;
+	await page.mouse.move(at.x + at.width / 2, at.y + at.height / 2);
+	await page.mouse.down();
+	const data = await page.evaluateHandle(() => new DataTransfer());
+	await grip.dispatchEvent('dragstart', { dataTransfer: data });
+	const { x, y } = await to();
+	for (let step = 0; step < 3; step += 1) await editor(page).dispatchEvent('dragover', { dataTransfer: data, clientX: x, clientY: y });
+	await beforeDrop?.();
+	await editor(page).dispatchEvent('drop', { dataTransfer: data, clientX: x, clientY: y });
+	await grip.dispatchEvent('dragend', { dataTransfer: data });
+	await page.mouse.up();
+}
+
+/** Near the right edge of the block holding `text`, at its middle. */
+const rightEdgeOf = (page: Page, text: string) => async () => {
+	const box = (await editor(page).locator('p', { hasText: text }).first().boundingBox())!;
+	return { x: box.x + box.width - 10, y: box.y + box.height / 2 };
+};
+
+test('a block dropped on the right edge of another goes beside it: two columns, an upright line showing where', async ({ page }) => {
+	appendToFixture('\n甲段落。\n\n乙段落。\n');
+	await openStudio(page);
+	await dragBlock(page, '乙段落。', rightEdgeOf(page, '甲段落'), async () => {
+		await expect(page.locator('.columns-drop-line')).toBeVisible();
+		// Not the line between blocks as well.
+		await expect(page.locator('.crepe-drop-cursor')).toBeHidden();
+	});
+	await expect(page.locator('.columns-drop-line')).toHaveCount(0);
+	await expect(column(page, 0)).toHaveText('甲段落。');
+	await expect(column(page, 1)).toHaveText('乙段落。');
+	expect(await save(page)).toMatch(/结尾段落。\n\n<div class="columns">\n<div>\n\n甲段落。\n\n<\/div>\n<div>\n\n乙段落。\n\n<\/div>\n<\/div>\n$/u);
+
+	// Dropped beside a block in the columns: a third column there.
+	await editor(page).locator('p', { hasText: '结尾段落' }).click();
+	await dragBlock(page, '结尾段落。', rightEdgeOf(page, '甲段落'));
+	await expect(columns(page).locator('> .column')).toHaveText(['甲段落。', '结尾段落。', '乙段落。']);
+});
+
+test('the block of a column dragged out leaves no empty column behind', async ({ page }) => {
+	appendToFixture('\n<div class="columns">\n<div>\n\n甲\n\n</div>\n<div>\n\n乙\n\n</div>\n</div>\n\n尾段。\n');
+	await openStudio(page);
+	await dragBlock(page, '甲', async () => {
+		const box = (await editor(page).getByText('尾段。', { exact: true }).boundingBox())!;
+		// In the margin left of the blocks, where a drag from the handle is.
+		return { x: box.x - 20, y: box.y + box.height - 2 };
+	});
+	await expect(columns(page)).toHaveCount(0);
+	expect(await save(page)).toMatch(/结尾段落。\n\n乙\n\n尾段。\n\n甲\n$/u);
+});
+
+test('the gap between two columns is dragged to make one wider; ＋ adds a column', async ({ page }) => {
+	appendToFixture(`\n${TWO}`);
+	await openStudio(page);
+	await columns(page).scrollIntoViewIfNeeded();
+	const left = (await column(page, 0).boundingBox())!;
+	const right = (await column(page, 1).boundingBox())!;
+	const gap = { x: (left.x + left.width + right.x) / 2, y: left.y + 10 };
+	await page.mouse.move(gap.x, gap.y);
+	await expect(editor(page).locator('.columns-block')).toHaveClass(/is-over-gap/u);
+	await page.mouse.down();
+	await page.mouse.move(gap.x + 120, gap.y, { steps: 6 });
+	await page.mouse.up();
+	const wider = (await column(page, 0).boundingBox())!;
+	expect(wider.width).toBeGreaterThan(left.width + 100);
+	const saved = await save(page);
+	expect(saved).toMatch(/<div class="columns">\n<div style="flex: 1\.\d+">\n\n左栏\n\n<\/div>\n<div style="flex: 0\.\d+">\n\n右栏/u);
+
+	await editor(page).locator('.columns-block').hover();
+	await editor(page).locator('.columns-add').click();
+	await expect(columns(page).locator('> .column')).toHaveCount(3);
+	await page.keyboard.type('第三栏');
+	await expect(column(page, 2)).toHaveText('第三栏');
+	// The new column is as wide as they are on average: a share of one, which is not written.
+	expect(await save(page)).toMatch(/<\/div>\n<div>\n\n第三栏\n\n<\/div>\n<\/div>\n$/u);
 });
