@@ -1,3 +1,7 @@
+# 计算化学手记
+
+使用说明在 [docs/](docs/README.md)：[Studio 怎么用](docs/studio.md)、[给大模型用的接口](docs/ai-tools.md)、[开发和测试](docs/development.md)。
+
 # Astro Starter Kit: Blog
 
 ```sh
