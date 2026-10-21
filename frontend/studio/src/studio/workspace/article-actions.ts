@@ -1,5 +1,5 @@
 import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
-import { commitArticle, deleteArticle, duplicateArticle, gitStatus, renameArticle, restoreArticle } from '../api/client.ts';
+import { articleBacklinks, commitArticle, deleteArticle, duplicateArticle, gitStatus, renameArticle, restoreArticle, setArticleParent } from '../api/client.ts';
 import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';
 import { cleanSlug, freeSlug } from './page-names.ts';
@@ -24,6 +24,53 @@ export type ArticleActionsHost = {
 
 function errorText(error: unknown, fallback: string): string {
 	return error instanceof Error ? error.message : fallback;
+}
+
+/** The pages under `slug`, all the way down (a loop is cut). */
+function descendants(articles: ArticleSummary[], slug: string): ArticleSummary[] {
+	const found: ArticleSummary[] = [];
+	const seen = new Set([slug]);
+	for (let index = -1, at = slug; ; ) {
+		for (const page of articles) {
+			if (page.parent === at && !seen.has(page.slug)) {
+				seen.add(page.slug);
+				found.push(page);
+			}
+		}
+		index += 1;
+		if (index >= found.length) return found;
+		at = found[index]!.slug;
+	}
+}
+
+/** What to do with a page to delete: `all` (with the pages under it), `lift` (they go up), or `cancel`. */
+function askDelete(article: ArticleSummary, under: ArticleSummary[], linking: string[]): Promise<'all' | 'lift' | 'cancel'> {
+	const dialog = document.querySelector<HTMLDialogElement>('#delete-page-dialog');
+	const published = article.draft === false;
+	const notes = [
+		...(published ? ['这篇已经发布，下次部署后网页会消失。'] : []),
+		...(linking.length ? [`有 ${linking.length} 篇链接到它：${linking.slice(0, 5).map((title) => `「${title}」`).join('')}${linking.length > 5 ? '…' : ''}，删除后这些链接会失效。`] : []),
+		'删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。',
+	];
+	if (!dialog) return Promise.resolve(window.confirm(`把「${article.title}」移到回收站？\n${notes.join('\n')}`) ? 'all' : 'cancel');
+	dialog.querySelector('#delete-page-title')!.textContent = `删除「${article.title}」`;
+	dialog.querySelector('#delete-page-summary')!.textContent = under.length ? `它下面有 ${under.length} 个页面` : '移到回收站';
+	dialog.querySelector('#delete-page-notes')!.replaceChildren(...notes.map((note) => {
+		const item = document.createElement('li');
+		item.className = 'publish-check-item';
+		item.textContent = note;
+		return item;
+	}));
+	dialog.querySelector<HTMLButtonElement>('#delete-page-lift')!.hidden = under.length === 0;
+	dialog.querySelector('#delete-page-all')!.textContent = under.length ? `连同下面 ${under.length} 个页面一起删除` : '删除';
+	dialog.returnValue = '';
+	dialog.showModal();
+	return new Promise((resolve) => {
+		dialog.addEventListener('close', () => {
+			const value = dialog.returnValue;
+			resolve(value === 'all' || value === 'lift' ? value : 'cancel');
+		}, { once: true });
+	});
 }
 
 /** What the toast says of the links that followed a rename: nothing when there were none. */
@@ -54,6 +101,18 @@ export function createArticleActions(host: ArticleActionsHost) {
 		} catch (error) {
 			showToast(errorText(error, '恢复失败'), true);
 		}
+	}
+
+	/** Brings back what one deletion took, the page first, then those under it. */
+	async function restoreAll(trashed: string[], title: string): Promise<void> {
+		const [first, ...rest] = trashed;
+		if (!first) return;
+		try {
+			for (const entry of rest) await trackWrite(() => restoreArticle(entry));
+		} catch (error) {
+			showToast(errorText(error, '恢复失败'), true);
+		}
+		await restore(first, title);
 	}
 
 	return {
@@ -103,26 +162,41 @@ export function createArticleActions(host: ArticleActionsHost) {
 			showToast(`已复制为草稿 ${to}`);
 		},
 
+		/**
+		 * To the trash, after asking. A page with pages under it (as SiYuan
+		 * asks): with them all, or alone, those under it put under the page it
+		 * was under. The pages that link to it are named first. One 撤销 brings
+		 * back all that went.
+		 */
 		async remove(article: ArticleSummary): Promise<void> {
-			const published = article.draft === false;
-			const question = `把「${article.title}」整篇文章移到回收站？\n`
-				+ (published ? '这篇已经发布，下次部署后网页会消失。\n' : '')
-				+ '删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。';
-			if (!window.confirm(question)) return;
-			const open = host.openSlug() === article.slug;
+			const all = await host.reload();
+			const under = descendants(all, article.slug);
+			const going = new Set([article.slug, ...under.map((page) => page.slug)]);
+			const linking = (await articleBacklinks(article.slug).catch(() => [])).filter((link) => !going.has(link.slug));
+			const choice = await askDelete(article, under, linking.map((link) => link.title));
+			if (choice === 'cancel') return;
+			const removed = choice === 'all' ? [article, ...under] : [article];
+			const open = removed.some((page) => page.slug === host.openSlug());
 			if (open && !(await host.leave())) return;
-			let trashed: string;
+			const trashed: string[] = [];
 			try {
-				({ trashed } = await trackWrite(() => deleteArticle(article.slug)));
+				if (choice === 'lift') {
+					for (const child of all.filter((page) => page.parent === article.slug)) {
+						await trackWrite(() => setArticleParent(child.slug, article.parent ?? ''));
+					}
+				}
+				// The pages under it first: the last to go is the first back.
+				for (const page of [...removed].reverse()) trashed.push((await trackWrite(() => deleteArticle(page.slug))).trashed);
 			} catch (error) {
 				showToast(errorText(error, '删除失败'), true);
+				await host.reload();
 				return;
 			}
 			const articles = await host.reload();
 			if (open && !articles.length) {
 				// Nothing left to show: the Studio starts again, empty, and offers it back then.
 				try {
-					sessionStorage.setItem(PENDING_UNDO, JSON.stringify({ trashed, title: article.title }));
+					sessionStorage.setItem(PENDING_UNDO, JSON.stringify({ trashed: trashed.at(-1), title: article.title }));
 				} catch {
 					// Without storage it stays in the trash, to be fetched from there.
 				}
@@ -130,7 +204,8 @@ export function createArticleActions(host: ArticleActionsHost) {
 				return;
 			}
 			if (open) await host.open(articles[0].slug);
-			showToast(`已删除「${article.title}」`, { action: { label: '撤销', run: () => void restore(trashed, article.title) } });
+			const what = removed.length > 1 ? `「${article.title}」和下面 ${removed.length - 1} 个页面` : `「${article.title}」`;
+			showToast(`已删除${what}`, { action: { label: '撤销', run: () => void restoreAll([...trashed].reverse(), article.title) } });
 		},
 
 		/** Commits the article to git, saved first; pushing stays the author's. */

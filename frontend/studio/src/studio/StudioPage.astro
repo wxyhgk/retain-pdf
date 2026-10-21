@@ -267,6 +267,21 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 			</form>
 		</dialog>
 
+		<dialog id="delete-page-dialog" class="article-dialog publish-check">
+			<form method="dialog">
+				<div class="dialog-heading">
+					<div><strong id="delete-page-title"></strong><span id="delete-page-summary"></span></div>
+					<button type="submit" value="cancel" aria-label="关闭">×</button>
+				</div>
+				<ul id="delete-page-notes" class="publish-check-list"></ul>
+				<div class="dialog-actions">
+					<button type="submit" value="cancel">取消</button>
+					<button id="delete-page-lift" type="submit" value="lift">只删这一篇，下面的移到上一级</button>
+					<button id="delete-page-all" class="is-danger" type="submit" value="all"></button>
+				</div>
+			</form>
+		</dialog>
+
 		<script>import './main';</script>
 	</body>
 </html>
@@ -821,6 +836,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 3px; }
 	.dialog-actions button { padding: 7px 13px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 	.dialog-actions button[type='submit'] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+	.dialog-actions button.is-danger { border-color: #b42318; background: #b42318; color: #fff; }
 	.dialog-actions button:disabled { opacity: 0.55; cursor: wait; }
 	.dialog-actions button.is-primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
 	.dialog-actions button[hidden] { display: none; }

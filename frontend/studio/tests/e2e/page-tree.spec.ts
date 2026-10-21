@@ -141,3 +141,29 @@ test('a page let go of on the top or bottom of another goes just above or below 
 	await expect(item(tab, '第2章')).toHaveCSS('--depth', '0');
 	await expect.poll(() => source('tree-results')).not.toMatch(/parent/u);
 });
+
+test('a page with pages under it is deleted with them, or alone, those under it going up; one 撤销 brings back all', async ({ page: tab }) => {
+	writeArticle('tree-top', page('项目'));
+	writeArticle('tree-method', page('方法', 'parent: tree-top\n'));
+	writeArticle('tree-results', page('结果', 'parent: tree-method\n'));
+	writeArticle('tree-ai', page('提到项目的页', '').replace('的正文。', '的正文，见 [项目](/blog/tree-top/)。'));
+	await openStudio(tab);
+	await item(tab, '项目').locator('.page-row').click({ button: 'right' });
+	await tab.getByRole('menuitem', { name: '移到回收站' }).click();
+	const dialog = tab.locator('#delete-page-dialog');
+	await expect(dialog).toContainText('它下面有 2 个页面');
+	await expect(dialog).toContainText('「提到项目的页」');
+	await tab.locator('#delete-page-all').click();
+	await expect(item(tab, '项目')).toHaveCount(0);
+	await expect(item(tab, '结果')).toHaveCount(0);
+	await tab.locator('.studio-toast-action', { hasText: '撤销' }).click();
+	await expect(item(tab, '结果')).toHaveCSS('--depth', '2');
+
+	// Alone: those under it go up to where it was.
+	await item(tab, '方法').locator('.page-row').click({ button: 'right' });
+	await tab.getByRole('menuitem', { name: '移到回收站' }).click();
+	await tab.locator('#delete-page-lift').click();
+	await expect(item(tab, '方法')).toHaveCount(0);
+	await expect(item(tab, '结果')).toHaveCSS('--depth', '1');
+	expect(source('tree-results')).toMatch(/parent: "?tree-top"?/u);
+});

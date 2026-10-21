@@ -59,10 +59,10 @@ test('a deleted article opens the next one, and 撤销 brings it back', async ({
 	await fromMenu(page, TITLE, '复制一份');
 	await expect(page).toHaveURL(new RegExp(`article=${COPY}`, 'u'));
 
-	answer(page);
 	await fromMenu(page, `${TITLE}（副本）`, '移到回收站');
-	await expect(page).toHaveURL(new RegExp(`article=${slug}`, 'u'));
-	expect(blogHasArticle(COPY)).toBe(false);
+	await page.locator('#delete-page-all').click();
+	await expect.poll(() => blogHasArticle(COPY)).toBe(false);
+	await expect(page).toHaveURL(new RegExp(`article=${slug}(?:&|$)`, 'u'));
 	await expect(row(page, `${TITLE}（副本）`)).toHaveCount(0);
 
 	await page.locator('.studio-toast-action', { hasText: '撤销' }).click();
@@ -72,8 +72,8 @@ test('a deleted article opens the next one, and 撤销 brings it back', async ({
 
 test('deleting the last article leaves the workspace empty, still able to undo', async ({ page }) => {
 	await openStudio(page);
-	answer(page);
 	await fromMenu(page, TITLE, '移到回收站');
+	await page.locator('#delete-page-all').click();
 	await expect(page.locator('.article-list-empty')).toBeVisible();
 	expect(blogHasArticle(slug)).toBe(false);
 	await page.locator('.studio-toast-action', { hasText: '撤销' }).click();

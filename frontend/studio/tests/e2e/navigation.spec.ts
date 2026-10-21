@@ -66,6 +66,7 @@ test('the trash lists deleted files and articles, puts them back, or deletes the
 	await expect(page).toHaveURL(new RegExp(`article=${COPY}`, 'u'));
 	await row(page, `${TITLE}（副本）`).locator('.page-row').click({ button: 'right' });
 	await page.getByRole('menuitem', { name: '移到回收站' }).click();
+	await page.locator('#delete-page-all').click();
 	await expect.poll(() => blogHasArticle(COPY)).toBe(false);
 
 	await page.locator('#open-trash').click();
