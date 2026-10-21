@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -11,7 +11,14 @@ process.env.STUDIO_BLOG_DIR ??= mkdtempSync(join(tmpdir(), 'studio-e2e-'));
 // The drive (资料库) the Studio shows: a folder of its own, filled by the tests.
 process.env.STUDIO_DRIVE_DIR ??= mkdtempSync(join(tmpdir(), 'studio-drive-'));
 // With E2E_ISOLATED=1, where the server's own root is made (server.mjs): the tests write plugins into its copy, never into the repository.
-if (process.env.E2E_ISOLATED === '1') process.env.E2E_ROOT_PARENT ??= mkdtempSync(join(tmpdir(), 'studio-e2e-root-'));
+// The same place at every run (one per port), emptied first: Vite keys its cache of bundled dependencies on the root's
+// path, so a new one each run bundled them all again.
+if (process.env.E2E_ISOLATED === '1' && !process.env.E2E_ROOT_PARENT) {
+	const parent = join(tmpdir(), `studio-e2e-root-${port}`);
+	rmSync(parent, { recursive: true, force: true });
+	mkdirSync(parent, { recursive: true });
+	process.env.E2E_ROOT_PARENT = parent;
+}
 
 export default defineConfig({
 	testDir: '.',

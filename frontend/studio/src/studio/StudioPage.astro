@@ -595,6 +595,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection * ) { caret-color: transparent; }
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection *::selection) { background: transparent; }
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection *::-moz-selection) { background: transparent; }
+	/* The block a handle belongs to, while the pointer is on the handle. */
+	:global(.milkdown-block-handle-target) { z-index: 5; border-radius: 3px; background: color-mix(in srgb, var(--accent) 7%, transparent); }
 	:global(.crepe-host .milkdown .ProseMirror .pm-block-range) { border-radius: 3px; background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
 	.editor-scroll.pm-block-dragging,
 	.editor-scroll.pm-block-dragging :global(.ProseMirror) { user-select: none; }

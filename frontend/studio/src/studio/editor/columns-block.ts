@@ -291,7 +291,7 @@ const holdsColumns = (content: Fragment) => {
  * that cannot be: blocks dropped beside themselves, part of a block, columns
  * (columns are not put in columns by dragging), or columns full already.
  */
-export function dropBeside(state: EditorState, target: SideDrop, slice: Slice, source: { from: number; to: number }): Transaction | null {
+export function dropBeside(state: EditorState, target: SideDrop, slice: Slice, source: { from: number; to: number }, copy = false): Transaction | null {
 	const { content } = slice;
 	if (slice.openStart || slice.openEnd || !content.childCount || holdsColumns(content)) return null;
 	let blocks = true;
@@ -300,8 +300,8 @@ export function dropBeside(state: EditorState, target: SideDrop, slice: Slice, s
 	const node = state.doc.nodeAt(target.pos);
 	if (!node || !node.isBlock) return null;
 	const end = target.pos + node.nodeSize;
-	// Onto itself, or into what is dragged, or around it.
-	if (source.from < end && source.to > target.pos) return null;
+	// Onto itself, or into what is dragged, or around it (a copy may go beside what it is a copy of).
+	if (!copy && source.from < end && source.to > target.pos) return null;
 	const $target = state.doc.resolve(target.pos);
 	const schema = state.schema;
 	const tr = state.tr;
@@ -320,7 +320,7 @@ export function dropBeside(state: EditorState, target: SideDrop, slice: Slice, s
 		landed = target.pos + 2 + (target.side === 'left' ? 0 : there.nodeSize);
 	} else return null;
 	const steps = tr.steps.length;
-	removeBlocks(tr, tr.mapping.map(source.from, 1), tr.mapping.map(source.to, -1));
+	if (!copy) removeBlocks(tr, tr.mapping.map(source.from, 1), tr.mapping.map(source.to, -1));
 	landed = tr.mapping.slice(steps).map(landed, 1);
 	// The caret at the end of what was moved, as after any drop (block-key-plugins.ts, dropCaret).
 	const caret = Selection.findFrom(tr.doc.resolve(landed + content.size), -1, true) ?? TextSelection.near(tr.doc.resolve(landed));
@@ -430,24 +430,27 @@ function sideAt(view: EditorView, x: number, y: number): (SideDrop & { line: DOM
 }
 
 /** What dropping what is dragged at `at` does, if it goes beside the block there. */
-function besideDrop(view: EditorView, at: SideDrop): Transaction | null {
+function besideDrop(view: EditorView, at: SideDrop, copy = false): Transaction | null {
 	const { dragging } = view;
-	if (!dragging?.move) return null;
+	if (!dragging) return null;
 	const dragged = (dragging as { node?: Selection }).node ?? view.state.selection;
 	if (dragged.empty) return null;
-	return dropBeside(view.state, at, dragging.slice, dragged);
+	return dropBeside(view.state, at, dragging.slice, dragged, copy);
 }
+
+/** ⌥ held (Ctrl elsewhere) as the drop is made: a copy goes there, as the editor's other drops do. */
+const copying = (event: DragEvent) => (navigator.platform.includes('Mac') ? event.altKey : event.ctrlKey);
 
 /** Dropping beside a block (dropBeside), shown by an upright line; and the column a drop emptied taken away. */
 const columnsDrop = $prose(() => {
 	let line: HTMLElement | null = null;
 	let over: (SideDrop & { line: DOMRect }) | null = null;
 	// besideDrop's answer, for as long as the drag stays on that side of that block.
-	let last: { doc: EditorState['doc']; pos: number; side: SideDrop['side']; can: boolean } | null = null;
-	const canDropBeside = (view: EditorView, at: SideDrop): boolean => {
+	let last: { doc: EditorState['doc']; pos: number; side: SideDrop['side']; copy: boolean; can: boolean } | null = null;
+	const canDropBeside = (view: EditorView, at: SideDrop, copy: boolean): boolean => {
 		const { doc } = view.state;
-		if (last?.doc === doc && last.pos === at.pos && last.side === at.side) return last.can;
-		last = { doc, pos: at.pos, side: at.side, can: besideDrop(view, at) != null };
+		if (last?.doc === doc && last.pos === at.pos && last.side === at.side && last.copy === copy) return last.can;
+		last = { doc, pos: at.pos, side: at.side, copy, can: besideDrop(view, at, copy) != null };
 		return last.can;
 	};
 	const hide = (view: EditorView) => {
@@ -473,8 +476,8 @@ const columnsDrop = $prose(() => {
 				// not beside the blocks dragged, nor beside full columns, where it
 				// would go between blocks after all.
 				dragover(view, event) {
-					const at = view.dragging?.move ? sideAt(view, event.clientX, event.clientY) : null;
-					if (at && canDropBeside(view, at)) show(view, at);
+					const at = view.dragging ? sideAt(view, event.clientX, event.clientY) : null;
+					if (at && canDropBeside(view, at, copying(event))) show(view, at);
 					else if (over) hide(view);
 					return false;
 				},
@@ -493,7 +496,7 @@ const columnsDrop = $prose(() => {
 					const at = over ?? (dragging ? sideAt(view, event.clientX, event.clientY) : null);
 					hide(view);
 					if (!at) return false;
-					const tr = besideDrop(view, at);
+					const tr = besideDrop(view, at, copying(event));
 					if (!tr) return false;
 					event.preventDefault();
 					// As the editor does once a drop is done.

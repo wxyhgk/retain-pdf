@@ -1,6 +1,11 @@
+import { basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { editor, fixtureHas, openStudio, resetFixture, savedMarkdown } from './studio.ts';
+
+/** The repository's folder, as the terminal names it (a worktree's is not `notion2gitub_blog`). */
+const folder = basename(fileURLToPath(new URL('../..', import.meta.url)));
 
 const screen = (page: Page): Locator => page.locator('#terminal-screen .xterm-rows');
 const running = (page: Page) => expect(page.locator('#terminal-screen')).toHaveAttribute('data-state', 'running');
@@ -19,12 +24,12 @@ test.beforeEach(async ({ page }) => {
 	await page.locator('#side-tab-terminal').click();
 	// The first run may compile tools/studio-terminal.
 	await expect(page.locator('#terminal-screen')).toHaveAttribute('data-state', 'running', { timeout: 120_000 });
-	await expect(page.locator('#terminal-cwd')).toHaveText('notion2gitub_blog/');
+	await expect(page.locator('#terminal-cwd')).toHaveText(`${folder}/`);
 });
 
 test('the terminal runs a shell in the repository', async ({ page }) => {
 	await run(page, 'echo "studio-$((6 * 7)) in $(basename "$PWD")"');
-	await expect(screen(page)).toContainText('studio-42 in notion2gitub_blog');
+	await expect(screen(page)).toContainText(`studio-42 in ${folder}`);
 });
 
 test('in the article’s folder, what the shell writes shows up in the file panel', async ({ page }) => {

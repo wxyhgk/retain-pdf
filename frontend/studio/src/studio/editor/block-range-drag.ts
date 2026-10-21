@@ -1,3 +1,4 @@
+import { blockMenuAPI } from '@milkdown/crepe/feature/block-edit';
 import { TextSelection } from '@milkdown/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import type { EditorView } from '@milkdown/prose/view';
@@ -28,6 +29,10 @@ const IGNORED_TARGET = [
 	'textarea',
 	'select',
 ].join(', ');
+
+/** How near the top or bottom of the editor a selecting drag scrolls it, and how fast at the edge (px a second). */
+const EDGE_PX = 32;
+const EDGE_SPEED = 720;
 
 /** A press in the margin; `end` when it was below the last block. */
 type Press = { x: number; y: number; anchor: number; moved: boolean; end: boolean };
@@ -123,6 +128,7 @@ class BlockRangeDrag {
 		event.stopPropagation();
 		this.press = { x: event.clientX, y: event.clientY, anchor, moved: false, end };
 		this.root.classList.add('pm-block-dragging');
+		this.scroller()?.addEventListener('scroll', this.onScroll);
 		document.addEventListener('mousemove', this.onMouseMove, true);
 		document.addEventListener('mouseup', this.onMouseUp, true);
 		document.addEventListener('selectstart', this.onSelectStart, true);
@@ -135,12 +141,60 @@ class BlockRangeDrag {
 		if (!press.moved && Math.hypot(event.clientX - press.x, event.clientY - press.y) < 5) return;
 		press.moved = true;
 		event.preventDefault();
-		const head = blockPosAt(this.view, event.clientX, event.clientY);
+		this.pointer = { x: event.clientX, y: event.clientY };
+		this.extendTo(event.clientX, event.clientY);
+		this.scrollNearEdge();
+	};
+
+	/** Where the pointer was last seen while blocks are being selected. */
+	private pointer: { x: number; y: number } | null = null;
+	private frame = 0;
+
+	/** The selection taken to the block at (x, y). */
+	private extendTo(x: number, y: number): void {
+		const press = this.press;
+		if (!press) return;
+		const head = blockPosAt(this.view, x, y);
 		if (head == null) return;
 		const next = BlockRangeSelection.tryCreate(this.view.state.doc, press.anchor, head);
 		if (!next || this.view.state.selection.eq(next)) return;
 		this.view.dispatch(this.view.state.tr.setSelection(next));
-		this.nudgeScroll(event.clientY);
+	}
+
+	/** The box that scrolls the editor. */
+	private scroller(): HTMLElement | null {
+		const scroller = this.root.classList.contains('editor-scroll') ? this.root : this.view.dom.closest('.editor-scroll');
+		return scroller instanceof HTMLElement ? scroller : null;
+	}
+
+	/**
+	 * Near the top or bottom of the editor, it scrolls for as long as the
+	 * pointer is held there (as SiYuan has it), faster nearer the edge, the
+	 * selection going on with it; not a step at each move of the pointer.
+	 */
+	private scrollNearEdge(): void {
+		if (this.frame) return;
+		let last = 0;
+		const step = (time: number) => {
+			this.frame = 0;
+			const scroller = this.scroller();
+			const pointer = this.pointer;
+			if (!this.press?.moved || !pointer || !scroller) return;
+			const box = scroller.getBoundingClientRect();
+			const depth = pointer.y < box.top + EDGE_PX ? pointer.y - (box.top + EDGE_PX) : pointer.y > box.bottom - EDGE_PX ? pointer.y - (box.bottom - EDGE_PX) : 0;
+			if (!depth) return;
+			const elapsed = last ? Math.min(50, time - last) : 16;
+			last = time;
+			const speed = Math.max(-1, Math.min(1, depth / EDGE_PX)) * EDGE_SPEED;
+			scroller.scrollTop += (speed * elapsed) / 1000;
+			this.frame = requestAnimationFrame(step);
+		};
+		this.frame = requestAnimationFrame(step);
+	}
+
+	/** The editor scrolled under the pointer (by the wheel, or near the edge): the selection follows to the block now there. */
+	private onScroll = (): void => {
+		if (this.press?.moved && this.pointer) this.extendTo(this.pointer.x, this.pointer.y);
 	};
 
 	private onMouseUp = (event: MouseEvent): void => {
@@ -172,19 +226,25 @@ class BlockRangeDrag {
 
 	private stop(): void {
 		this.press = null;
+		this.pointer = null;
+		cancelAnimationFrame(this.frame);
+		this.frame = 0;
+		this.scroller()?.removeEventListener('scroll', this.onScroll);
 		this.root.classList.remove('pm-block-dragging');
 		document.removeEventListener('mousemove', this.onMouseMove, true);
 		document.removeEventListener('mouseup', this.onMouseUp, true);
 		document.removeEventListener('selectstart', this.onSelectStart, true);
 	}
+}
 
-	private nudgeScroll(clientY: number): void {
-		const scroller = this.root.classList.contains('editor-scroll') ? this.root : this.view.dom.closest('.editor-scroll');
-		if (!(scroller instanceof HTMLElement)) return;
-		const box = scroller.getBoundingClientRect();
-		if (clientY < box.top + 28) scroller.scrollTop -= 18;
-		else if (clientY > box.bottom - 28) scroller.scrollTop += 18;
-	}
+let anchor: HTMLElement | null = null;
+
+/** A point on the page for a menu to open at: where the pointer is. */
+function pointerAnchor(x: number, y: number): HTMLElement {
+	anchor ??= Object.assign(document.createElement('div'), { className: 'pm-pointer-anchor' });
+	Object.assign(anchor.style, { position: 'fixed', left: `${x}px`, top: `${y}px`, width: '0', height: '0', pointerEvents: 'none' });
+	if (!anchor.isConnected) document.body.append(anchor);
+	return anchor;
 }
 
 function blockDecorations(state: EditorView['state']): DecorationSet | null {
@@ -202,7 +262,7 @@ function blockDecorations(state: EditorView['state']): DecorationSet | null {
 
 /** Dragging from the margin selects blocks instead of glyphs. */
 export const blockRangePlugin = $prose(
-	() =>
+	(ctx) =>
 		new Plugin({
 			props: {
 				decorations: blockDecorations,
@@ -213,6 +273,17 @@ export const blockRangePlugin = $prose(
 					return blockRangeKey(view.state, { key: text, text }, (tr) => view.dispatch(tr));
 				},
 				handleDOMEvents: {
+					// A right click on blocks selected: their menu, where the pointer is
+					// (as SiYuan has it), not the browser's.
+					contextmenu(view, event) {
+						const { selection } = view.state;
+						if (!(selection instanceof BlockRangeSelection) || ignoredTarget(event)) return false;
+						const at = view.posAtCoords({ left: event.clientX, top: event.clientY });
+						if (!at || at.pos < selection.from || at.pos > selection.to) return false;
+						event.preventDefault();
+						ctx.get(blockMenuAPI.key).toggle(selection.from, pointerAnchor(event.clientX, event.clientY));
+						return true;
+					},
 					// A press among blocks that are selected: the blocks are let go of
 					// before the browser acts on the press, so that one press puts the
 					// caret there (or, ⇧ held, takes the selection to that block). As

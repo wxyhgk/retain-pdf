@@ -24,8 +24,9 @@ export type BlockSpan = {
 };
 
 /**
- * The block a pointer is aiming at. List items and quotes stay whole.
- * Anywhere else, the block is the top-level node.
+ * The block a pointer is aiming at. List items and quotes stay whole; a
+ * block at its own start (as a handle names it) is that block, in a quote
+ * too. Anywhere else, the block is the top-level node.
  */
 export function selectableBlock(doc: ProseNode, pos: number): { pos: number; node: ProseNode } | null {
 	if (!doc.childCount) return null;
@@ -37,11 +38,11 @@ export function selectableBlock(doc: ProseNode, pos: number): { pos: number; nod
 	}
 	if (after?.isBlock && !LIST.has(after.type.name)) {
 		if ($at.parent.type.name === 'list_item') return { pos: $at.before($at.depth), node: $at.parent };
+		// A block in a quote, named by its own place (its handle): that block, as in a callout. Aimed at
+		// from inside its text (below), the quote whole.
 		for (let depth = $at.depth; depth >= 1; depth -= 1) {
 			const parent = $at.node(depth);
-			if (parent.type.name === 'blockquote' || parent.type.name === 'table') {
-				return { pos: $at.before(depth), node: parent };
-			}
+			if (parent.type.name === 'table') return { pos: $at.before(depth), node: parent };
 		}
 		return { pos: clamped, node: after };
 	}
