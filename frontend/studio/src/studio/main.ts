@@ -6,6 +6,7 @@ import {
 	checkArticle,
 	codeFileFigure,
 	createArticle,
+	setArticleParent,
 	getArticle,
 	gitStatus,
 	listArticleFiles,
@@ -96,6 +97,19 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
+	createChild: (article) => newArticleDialog.openUnder({ slug: article.slug, title: article.title }),
+	// The open article as an edit of it (its text is in the editor); another, on disk.
+	move: (slug, parent) => {
+		if (slug === session.slug) {
+			const problem = session.setParent(parent);
+			if (problem) showToast(problem);
+			return;
+		}
+		setArticleParent(slug, parent).then(
+			() => articleList.load(),
+			(error: unknown) => showToast(error instanceof Error ? error.message : '没能移动这个页面'),
+		);
+	},
 	listed: (articles) => {
 		properties.knowTags(articles.flatMap((article) => article.tags ?? []));
 		if (shell.dataset.view === 'table') articleTable.refresh();
@@ -287,9 +301,9 @@ async function openFromList(slug?: string, discard = false): Promise<void> {
 	else topBar.showEmpty();
 }
 
-createNewArticleDialog([...shell.querySelectorAll<HTMLElement>('#new-article, #new-article-secondary')], {
+const newArticleDialog = createNewArticleDialog([...shell.querySelectorAll<HTMLElement>('#new-article, #new-article-secondary')], {
 	leave: () => session.saveBeforeLeaving(),
-	create: async (slug, title) => { await createArticle(slug, title); },
+	create: async (slug, title, parent) => { await createArticle(slug, title, parent); },
 	open: (slug) => openFromList(slug, true),
 });
 

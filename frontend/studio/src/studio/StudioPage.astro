@@ -356,7 +356,16 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
 	#article-list :global(.page-row:hover), #article-list :global(.page-row.active) { background: rgb(var(--gray-light)); }
 	/* ⋯ on hover, over the badges at the end of the row. */
-	#article-list :global(.page-item) { position: relative; }
+	#article-list :global(.page-item) { position: relative; --indent: calc(var(--depth, 0) * 14px); }
+	/* The tree: each level 14px further in, the triangle that folds what is under a page left of it. */
+	#article-list :global(.page-item .page-row) { padding-left: calc(22px + var(--indent)); }
+	#article-list :global(.page-toggle) { position: absolute; top: 50%; left: calc(4px + var(--indent)); z-index: 1; width: 16px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 10px; line-height: 20px; cursor: pointer; transform: translateY(-50%); }
+	#article-list :global(.page-toggle:hover) { background: rgba(55, 53, 47, 0.12); color: rgb(var(--gray-dark)); }
+	#article-list :global(.page-toggle:disabled) { cursor: default; background: transparent; }
+	/* Dragged onto a page: under it. Below the pages: at the top. */
+	#article-list :global(.page-item.is-drop-into .page-row) { background: rgb(var(--gray-light)); box-shadow: inset 0 0 0 1.5px rgb(var(--gray-dark)); }
+	#article-list:global(.is-drop-top) :global(.page-list) { box-shadow: 0 2px 0 rgb(var(--gray-dark)); }
+	#article-list:global(.is-dragging-page) { min-height: 120px; }
 	#article-list :global(.page-more) { position: absolute; top: 50%; right: 4px; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 22px; cursor: pointer; opacity: 0; transform: translateY(-50%); }
 	#article-list :global(.page-item:hover .page-more), #article-list :global(.page-more:focus-visible) { opacity: 1; }
 	#article-list :global(.page-more:hover) { background: rgba(55, 53, 47, 0.16); color: rgb(var(--gray-dark)); }

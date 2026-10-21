@@ -1,4 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
+import { pageFamily as familyOf } from './articles/page-family.mjs';
 import { isPublishedArticle } from './articles/schemas.mjs';
 
 export type ArticleEntry = CollectionEntry<'blog'>;
@@ -28,4 +29,10 @@ export function relatedArticles(articles: ArticleEntry[], current: ArticleEntry,
 	return articles
 		.filter((entry) => entry.id !== current.id && entry.data.tags.some((tag) => tags.has(tag)))
 		.slice(0, limit);
+}
+
+
+/** Where a page is in the tree of pages: the published pages above it and right under it. */
+export function pageFamily(articles: ArticleEntry[], current: ArticleEntry): { ancestors: ArticleEntry[]; children: ArticleEntry[] } {
+	return familyOf(articles, current);
 }

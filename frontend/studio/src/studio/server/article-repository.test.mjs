@@ -23,7 +23,7 @@ test('bundle paths reject traversal and invalid slugs', () => {
 
 test('frontmatter is parsed as YAML and shares the publication rule', () => {
 	const source = `---\ntitle: "A: quoted title"\ndescription: test\npubDate: 2026-08-09\ntags: []\ndraft: true\n---\n\nBody\n`;
-	assert.deepEqual(articleSummary(source, 'fallback'), { title: 'A: quoted title', draft: true, icon: '', tags: [], kind: 'post' });
+	assert.deepEqual(articleSummary(source, 'fallback'), { title: 'A: quoted title', draft: true, icon: '', tags: [], kind: 'post', parent: '' });
 	assert.equal(validateArticleSource(source).success, true);
 	assert.equal(isPublishedArticle({ data: { draft: true } }), false);
 	assert.equal(isPublishedArticle({ data: { draft: false } }), true);
@@ -37,7 +37,7 @@ test('repository preserves the legacy API while supporting revision aliases', as
 	const listed = await repository.list();
 	assert.equal(typeof listed[0]?.modified, 'number');
 	assert.deepEqual(listed, [{
-		slug: 'first-note', title: "研究者的 '草稿'", draft: true, icon: '', tags: [], kind: 'post',
+		slug: 'first-note', title: "研究者的 '草稿'", draft: true, icon: '', tags: [], kind: 'post', parent: '',
 		pubDate: new Date().toISOString().slice(0, 10), description: '', modified: listed[0].modified,
 	}]);
 
@@ -55,6 +55,7 @@ test('repository preserves the legacy API while supporting revision aliases', as
 		cover: '',
 		kind: 'post',
 		wide: false,
+		parent: '',
 	});
 	assert.ok(Math.abs(initial.modified - Date.now()) < 60_000);
 
@@ -211,7 +212,7 @@ test('a copy is a draft of today, titled 副本, with the files and views', asyn
 
 	await repository.duplicate('original', 'original-copy', { now: new Date('2026-10-16T08:00:00Z') });
 	const copy = await repository.read('original-copy');
-	assert.deepEqual(copy.properties, { title: 'Original（副本）', description: '', pubDate: '2026-10-16', tags: ['DFT'], draft: true, icon: '', cover: '', kind: 'post', wide: false });
+	assert.deepEqual(copy.properties, { title: 'Original（副本）', description: '', pubDate: '2026-10-16', tags: ['DFT'], draft: true, icon: '', cover: '', kind: 'post', wide: false, parent: '' });
 	assert.match(copy.source, /# 标题\n/u);
 	assert.match(copy.source, /macros:\n  Ha: \\hat\{H\}\n---\n\n正文\n$/u);
 	assert.equal(await readFile(join(root, 'original-copy', 'img', 'a.png'), 'utf8'), 'png');
@@ -265,4 +266,31 @@ test('the articles that link to one, with the words around each link', async (t)
 	assert.deepEqual((await repository.backlinks('target')).map((found) => found.mentions.length), [1]);
 	assert.deepEqual((await repository.backlinks('reader')).map((found) => found.slug), ['other']);
 	await assert.rejects(repository.backlinks('../x'), /slug/u);
+});
+
+test('pages under pages: made under one, moved under another or to the top, never under themselves; a rename keeps the pages under it', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'project', title: '项目' });
+	await repository.create({ slug: 'method', title: '方法', parent: 'project' });
+	await repository.create({ slug: 'results', title: '结果' });
+	const parents = async () => Object.fromEntries((await repository.list()).map((page) => [page.slug, page.parent]));
+	assert.deepEqual(await parents(), { project: '', method: 'project', results: '' });
+
+	await repository.setParent('results', 'method');
+	assert.deepEqual(await parents(), { project: '', method: 'project', results: 'method' });
+	// Under itself, or under a page under it: refused, nothing written.
+	await assert.rejects(repository.setParent('project', 'results'), /不能放到它自己/u);
+	await assert.rejects(repository.setParent('method', 'method'), /不能放到它自己/u);
+	await assert.rejects(repository.setParent('method', 'nowhere'), /上级页面不存在/u);
+
+	const before = await readFile(articleBundlePaths(blog, 'results').markdown, 'utf8');
+	await repository.setParent('results', '');
+	const after = await readFile(articleBundlePaths(blog, 'results').markdown, 'utf8');
+	assert.doesNotMatch(after, /parent/u);
+	assert.equal(after, before.replace(/parent: "method"\n/u, ''), 'the rest of the text as it was');
+
+	await repository.rename('project', 'hf-project');
+	assert.deepEqual(await parents(), { 'hf-project': '', method: 'hf-project', results: '' });
+	assert.equal(validateArticleSource(await readFile(articleBundlePaths(blog, 'method').markdown, 'utf8')).success, true);
 });

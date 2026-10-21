@@ -54,8 +54,13 @@ export function getArticle(slug: string): Promise<ArticlePayload> {
 	}));
 }
 
-export function createArticle(slug: string, title: string): Promise<{ slug: string }> {
-	return request('/api/studio/articles', jsonOptions('POST', { slug, title }));
+export function createArticle(slug: string, title: string, parent = ''): Promise<{ slug: string }> {
+	return request('/api/studio/articles', jsonOptions('POST', { slug, title, parent }));
+}
+
+/** Puts an article under another page (its folder name), or at the top with `parent` empty. */
+export function setArticleParent(slug: string, parent: string): Promise<{ slug: string; parent: string }> {
+	return request(`/api/studio/articles/${encodeURIComponent(slug)}/parent`, jsonOptions('POST', { parent }));
 }
 
 /** The articles whose title or text holds `query`. */

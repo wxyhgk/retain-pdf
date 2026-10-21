@@ -20,8 +20,8 @@ export function cleanSlug(typed: string): string {
 export type NewArticleHost = {
 	/** Whether the open article may be left (saved, or its edits let go). */
 	leave(): Promise<boolean>;
-	/** Makes the article; what it throws is shown in the dialog. */
-	create(slug: string, title: string): Promise<void>;
+	/** Makes the article (under `parent`, a page's folder name, when given); what it throws is shown in the dialog. */
+	create(slug: string, title: string, parent: string): Promise<void>;
 	/** Opens the article just made. */
 	open(slug: string): Promise<void>;
 };
@@ -39,13 +39,19 @@ export function createNewArticleDialog(openers: HTMLElement[], host: NewArticleH
 	const submit = dialog.querySelector<HTMLButtonElement>('#create-article')!;
 	const cancels = [...dialog.querySelectorAll<HTMLButtonElement>('#cancel-new-article, #cancel-new-article-secondary')];
 	let slugTyped = false;
+	/** The page the new one goes under: 「在下面新建页面」 from the list. */
+	let parent: { slug: string; title: string } | null = null;
+	const heading = dialog.querySelector<HTMLElement>('.dialog-heading span');
+	const headingText = heading?.textContent ?? '';
 
 	function showError(message: string): void {
 		error.textContent = message;
 		error.hidden = message.length === 0;
 	}
 
-	function open(): void {
+	function open(under: { slug: string; title: string } | null = null): void {
+		parent = under;
+		if (heading) heading.textContent = under ? `放在「${under.title}」下面` : headingText;
 		form.reset();
 		slugTyped = false;
 		showError('');
@@ -57,7 +63,7 @@ export function createNewArticleDialog(openers: HTMLElement[], host: NewArticleH
 		if (!submit.disabled) dialog.close();
 	}
 
-	for (const opener of openers) opener.addEventListener('click', open);
+	for (const opener of openers) opener.addEventListener('click', () => open());
 	for (const cancel of cancels) cancel.addEventListener('click', close);
 	dialog.addEventListener('click', (event) => {
 		if (event.target === dialog) close();
@@ -76,7 +82,7 @@ export function createNewArticleDialog(openers: HTMLElement[], host: NewArticleH
 		showError('');
 		try {
 			const folder = slug.value.trim();
-			await host.create(folder, title.value.trim());
+			await host.create(folder, title.value.trim(), parent?.slug ?? '');
 			dialog.close();
 			await host.open(folder);
 		} catch (problem) {
@@ -85,4 +91,9 @@ export function createNewArticleDialog(openers: HTMLElement[], host: NewArticleH
 			submit.disabled = false;
 		}
 	});
+
+	return {
+		/** The dialog, for a new page under `parent`. */
+		openUnder: (under: { slug: string; title: string }) => open(under),
+	};
 }

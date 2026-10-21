@@ -87,6 +87,7 @@ const PROPERTY_NAMES: Record<keyof ArticleProperties, string> = {
 	cover: '封面',
 	kind: '类型',
 	wide: '全宽',
+	parent: '上级页面',
 };
 
 /** A property as it counts: left out, empty and (for `wide`) off are all none. */
@@ -212,6 +213,15 @@ export class ArticleSession {
 		this.#host.retitled(properties.title || article.slug);
 		this.#noteEdit();
 		return null;
+	}
+
+	/** The open article put under another page (its folder name), or at the top with `parent` empty; saved as an edit of it. */
+	setParent(parent: string): string | null {
+		const properties = this.#properties ?? this.#store.current.article?.properties;
+		if (!properties) return null;
+		const problem = this.editProperties({ ...properties, parent });
+		if (!problem) void this.flush();
+		return problem;
 	}
 
 	/** Saves now. Whether everything is saved. */

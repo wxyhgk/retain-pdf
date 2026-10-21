@@ -14,6 +14,8 @@ export type ArticleSummary = {
 	description?: string;
 	/** When its text last changed on disk, in milliseconds. */
 	modified?: number;
+	/** The folder name of the page it is under (`parent:`); empty for none. */
+	parent?: string;
 };
 
 /** An article that links to the open one, with each link: its line, its words, the words around it. */
@@ -91,6 +93,8 @@ export type ArticleProperties = {
 	kind?: 'post' | 'wiki';
 	/** The page uses the full width. Left out: not changed. */
 	wide?: boolean;
+	/** The folder name of the page it is under; empty for none. Left out: not changed. */
+	parent?: string;
 };
 
 /** Something the check before publishing found: `error` stops the blog's build, `warning` shows broken on the page. */

@@ -261,6 +261,13 @@ export default function studioDev({ site } = {}) {
 						return json(response, 200, await articles.exclusive(slug, () => articleGit.commit(slug, message)));
 					}
 
+					// Under another page, or at the top (`parent` empty): the tree of pages.
+					const parentMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/parent$/u);
+					if (parentMatch && request.method === 'POST') {
+						const { parent } = await readJsonChange(request);
+						return json(response, 200, await articles.setParent(decodePathComponent(parentMatch[1]), typeof parent === 'string' ? parent : ''));
+					}
+
 					// Another folder name for an article, or a copy of it under one.
 					const articleActionMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(rename|duplicate)$/u);
 					if (articleActionMatch && request.method === 'POST') {

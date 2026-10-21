@@ -1,6 +1,6 @@
 import { cp, lstat, mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
-import { updateStudioFrontmatter } from '../document/frontmatter.ts';
+import { setFrontmatterParent, updateStudioFrontmatter } from '../document/frontmatter.ts';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
 import { articleBundlePaths, assertArticleSlug, StudioPathError } from '../../articles/bundle-paths.mjs';
@@ -134,8 +134,9 @@ export class ArticleRepository {
 		return results.slice(0, limit).map(({ count, ...result }) => result);
 	}
 
-	async create({ slug, title }) {
+	async create({ slug, title, parent = '' }) {
 		assertArticleSlug(slug);
+		if (parent) assertArticleSlug(parent);
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		try {
 			await stat(paths.directory);
@@ -145,7 +146,7 @@ export class ArticleRepository {
 			if (error?.code !== 'ENOENT') throw error;
 		}
 
-		const source = createArticleSource({ title });
+		const source = createArticleSource({ title, parent });
 		await Promise.all(ARTICLE_FOLDERS.map((name) => mkdir(paths[name], { recursive: true })));
 		await Promise.all([
 			writeFile(paths.markdown, source, { encoding: 'utf8', flag: 'wx' }),
@@ -156,7 +157,8 @@ export class ArticleRepository {
 
 	/**
 	 * Gives the article another folder name, which is its address on the blog
-	 * (`/blog/<slug>/`). Its text says nothing of its folder, so nothing in it changes.
+	 * (`/blog/<slug>/`). Its text says nothing of its folder, so nothing in it
+	 * changes; the pages under it (`parent:` its old name) are put under its new one.
 	 */
 	rename(slug, to) {
 		return this.exclusive(slug, async () => {
@@ -166,8 +168,42 @@ export class ArticleRepository {
 			const target = articleBundlePaths(this.blogRoot, to);
 			await assertFree(target.directory);
 			await rename(from.directory, target.directory);
+			for (const child of await this.#children(slug)) await this.#writeParent(child, to);
 			return { slug: to };
 		});
+	}
+
+	/**
+	 * Puts the article under another page (`parent:` its folder name), or, with
+	 * `parent` empty, at the top. Not under itself, nor under a page under it.
+	 */
+	setParent(slug, parent) {
+		assertArticleSlug(slug);
+		if (parent) assertArticleSlug(parent);
+		return this.exclusive(slug, async () => {
+			await assertReadableBundle(articleBundlePaths(this.blogRoot, slug));
+			if (parent) {
+				const parents = new Map((await this.#sources()).map(({ slug: page, source }) => [page, articleSummary(source, page).parent]));
+				if (!parents.has(parent)) throw new ArticleNotFoundError('上级页面不存在');
+				for (let at = parent, steps = 0; at && steps <= parents.size; at = parents.get(at) ?? '', steps += 1) {
+					if (at === slug) throw new ArticleValidationError('不能放到它自己或它下面的页面下面');
+				}
+			}
+			await this.#writeParent(slug, parent);
+			return { slug, parent };
+		});
+	}
+
+	/** The folder names of the pages right under `slug`. */
+	async #children(slug) {
+		return (await this.#sources()).filter(({ source, slug: page }) => articleSummary(source, page).parent === slug).map(({ slug: page }) => page);
+	}
+
+	async #writeParent(slug, parent) {
+		const { markdown } = articleBundlePaths(this.blogRoot, slug);
+		const source = await readFile(markdown, 'utf8');
+		const next = setFrontmatterParent(source, parent);
+		if (next !== source) await atomicWriteText(markdown, next);
 	}
 
 	/**

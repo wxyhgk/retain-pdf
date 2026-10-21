@@ -17,6 +17,9 @@ export function createArticleFrontmatterSchema(image = null) {
 		tags: z.array(z.string()).default([]),
 		draft: z.boolean().default(false),
 		kind: z.enum(['wiki', 'post']).default('post'),
+		// The page it is under (its folder name), in the Studio's tree of pages and the blog's path to it: the
+		// pages are each in a folder of their own, side by side; this alone says what is under what.
+		parent: z.string().trim().min(1).optional(),
 		// Formula macros of this article, over the site's (src/katex-macros.json): `\\Ha: \\hat{H}`.
 		macros: z.record(z.string(), z.string()).optional(),
 	});
@@ -53,7 +56,13 @@ export function articleSummary(source, fallbackSlug) {
 		icon: typeof frontmatter.icon === 'string' ? frontmatter.icon.trim() : '',
 		tags: Array.isArray(frontmatter.tags) ? frontmatter.tags.filter((tag) => typeof tag === 'string') : [],
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
+		parent: articleParent(frontmatter),
 	};
+}
+
+/** The folder name of the page the article is under (`parent:`); empty for none. */
+function articleParent(frontmatter) {
+	return typeof frontmatter.parent === 'string' ? frontmatter.parent.trim() : '';
 }
 
 export function articleProperties(source, fallbackSlug = '') {
@@ -70,6 +79,7 @@ export function articleProperties(source, fallbackSlug = '') {
 		cover: typeof frontmatter.heroImage === 'string' ? frontmatter.heroImage.trim() : '',
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 		wide: frontmatter.wide === true,
+		parent: articleParent(frontmatter),
 	};
 }
 
@@ -99,6 +109,7 @@ const PROPERTY_PROBLEMS = Object.freeze({
 	kind: 'kind 只能是 post 或 wiki',
 	macros: '公式宏（macros）应是「名字: 展开」，如 Ha: \\hat{H}',
 	wide: 'wide 只能是 true 或 false',
+	parent: '上级页面（parent）应是一篇文章的文件夹名',
 });
 
 /**
@@ -123,11 +134,13 @@ export function isPublishedArticle(entry) {
 	return entry?.data?.draft !== true;
 }
 
-export function createArticleSource({ title, date = new Date() }) {
+export function createArticleSource({ title, parent = '', date = new Date() }) {
 	if (typeof title !== 'string' || !title.trim()) throw new ArticleValidationError('文章标题不能为空');
 	const escapedTitle = title.trim().replaceAll("'", "''");
 	const publicationDate = date.toISOString().slice(0, 10);
-	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n---\n\n从这里开始写作。\n`;
+	// Under another page: its folder name (checked as one by the caller).
+	const under = parent ? `parent: ${parent}\n` : '';
+	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n${under}---\n\n从这里开始写作。\n`;
 }
 
 export class ArticleValidationError extends Error {

@@ -12,7 +12,7 @@ type SourceLine = {
 const EDITABLE_KEYS = ['title', 'description', 'pubDate', 'tags', 'draft'] as const;
 type EditableKey = typeof EDITABLE_KEYS[number];
 /** Properties a page may go without: written when set, taken out when emptied, left alone when not given. */
-const OPTIONAL_KEYS = { icon: 'icon', cover: 'heroImage', kind: 'kind', wide: 'wide' } as const;
+const OPTIONAL_KEYS = { icon: 'icon', cover: 'heroImage', kind: 'kind', wide: 'wide', parent: 'parent' } as const;
 type OptionalKey = keyof typeof OPTIONAL_KEYS;
 
 function readLines(source: string): SourceLine[] {
@@ -103,6 +103,18 @@ function validateProperties(properties: ArticleProperties): void {
 	if (!properties.title.trim()) throw new Error('文章标题不能为空');
 	if (!/^\d{4}-\d{2}-\d{2}$/u.test(properties.pubDate)) throw new Error('发布日期格式无效');
 	if (properties.tags.some((tag) => !tag.trim())) throw new Error('标签不能为空');
+}
+
+/**
+ * The page the article is under (`parent:`) set, or taken out when empty; the
+ * rest of its text byte for byte as it was (the tree's moves change nothing else).
+ */
+export function setFrontmatterParent(source: string, parent: string): string {
+	const document = parseStudioDocument(source);
+	if (!document.frontmatter) throw new Error('文章缺少 frontmatter，无法修改属性');
+	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
+	const yaml = parent ? replaceYamlField(document.frontmatter.yamlRaw, 'parent', parent, defaultEol) : removeYamlField(document.frontmatter.yamlRaw, 'parent');
+	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
 }
 
 /** Updates only supported top-level fields while retaining all other YAML bytes. */
