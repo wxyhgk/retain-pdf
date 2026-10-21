@@ -1,7 +1,7 @@
 import type { Ctx, MilkdownPlugin } from '@milkdown/ctx';
 import { SchemaReady, nodeViewCtx, prosePluginsCtx } from '@milkdown/kit/core';
 import type { Node as ProseMirrorNode } from '@milkdown/prose/model';
-import { NodeSelection, Plugin, TextSelection, type Selection } from '@milkdown/prose/state';
+import { NodeSelection, Plugin, Selection, TextSelection } from '@milkdown/prose/state';
 import type { Decoration, EditorView, NodeView } from '@milkdown/prose/view';
 
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
@@ -11,6 +11,8 @@ import { renderWhileTyping } from './formula-typing.ts';
 import { SourcePopup } from './source-popup.ts';
 
 const openBlocks = new Set<DisplayMathView>();
+/** Each formula's view, by its element: ↩ or a key typed on one selected opens it. */
+const formulaViews = new WeakMap<Node, DisplayMathView>();
 
 function paintFormula(host: HTMLElement, source: string, emptyLabel: string, view: EditorView): void {
 	host.classList.remove('is-empty', 'is-error');
@@ -77,6 +79,7 @@ class DisplayMathView implements NodeView {
 		this.formula.className = 'pm-display-math-formula';
 		this.dom.append(this.formula);
 		this.dom.addEventListener('mousedown', this.onMouseDown);
+		formulaViews.set(this.dom, this);
 		this.renderFormula();
 	}
 
@@ -90,12 +93,26 @@ class DisplayMathView implements NodeView {
 		return true;
 	}
 
+	// Come to with the arrow keys (or by ⌫ beside it), it is a stop: marked,
+	// not opened (as SiYuan has it); the next arrow goes on past it. A click,
+	// ↩ or a key typed opens it.
 	selectNode(): void {
-		this.open();
+		this.dom.classList.add('is-selected');
 	}
 
 	deselectNode(): void {
+		this.dom.classList.remove('is-selected');
 		this.teardown();
+	}
+
+	/** Opened from the keyboard: ↩, or a key typed (put at the end of its source). */
+	edit(typed = ''): void {
+		this.open();
+		if (!typed || !this.popup) return;
+		const value = this.node.textContent + typed;
+		this.popup.setValue(value);
+		this.popup.input.setSelectionRange(value.length, value.length);
+		this.writeSource(value);
 	}
 
 	setSelection(): void {
@@ -185,6 +202,7 @@ class DisplayMathView implements NodeView {
 			onFinish: () => this.finish(),
 			onRemove: () => this.removeBlock(),
 			onDismiss: () => this.teardown(),
+			onExit: (side) => this.exit(side),
 		});
 		// Opening can happen inside a dispatch whose caller refocuses the editor afterwards.
 		queueMicrotask(() => this.popup?.focus());
@@ -244,6 +262,17 @@ class DisplayMathView implements NodeView {
 		this.view.focus();
 	}
 
+	/** Out by an arrow key at the source's edge: the caret before or after the formula. */
+	private exit(side: -1 | 1): void {
+		const pos = this.getPos();
+		const node = pos === undefined ? null : this.view.state.doc.nodeAt(pos);
+		this.teardown();
+		if (pos === undefined || !node) return;
+		const $at = this.view.state.doc.resolve(side < 0 ? pos : pos + node.nodeSize);
+		this.view.dispatch(this.view.state.tr.setSelection(Selection.near($at, side)).scrollIntoView());
+		this.view.focus();
+	}
+
 	private removeBlock(): void {
 		const pos = this.getPos();
 		if (pos === undefined) return;
@@ -256,6 +285,31 @@ class DisplayMathView implements NodeView {
 		this.view.dispatch(tr.scrollIntoView());
 		this.view.focus();
 	}
+}
+
+const ARROWS: Record<string, { side: -1 | 1; dir: 'up' | 'down' | 'left' | 'right' }> = {
+	ArrowUp: { side: -1, dir: 'up' },
+	ArrowLeft: { side: -1, dir: 'left' },
+	ArrowDown: { side: 1, dir: 'down' },
+	ArrowRight: { side: 1, dir: 'right' },
+};
+
+/**
+ * Where the formula next to the caret (at the edge of its line) or to the
+ * block selected is, if one is there. The arrow key selects it whole: left to
+ * ProseMirror, it would put the caret in its source, and open it.
+ */
+function formulaBeside(view: EditorView, side: -1 | 1, dir: 'up' | 'down' | 'left' | 'right'): number | null {
+	const { selection, doc } = view.state;
+	let edge: number;
+	if (selection instanceof NodeSelection && selection.node.isBlock) edge = side < 0 ? selection.from : selection.to;
+	else if (selection instanceof TextSelection && selection.empty && selection.$from.depth > 0 && view.endOfTextblock(dir)) {
+		edge = side < 0 ? selection.$from.before() : selection.$from.after();
+	} else return null;
+	const $edge = doc.resolve(edge);
+	const node = side < 0 ? $edge.nodeBefore : $edge.nodeAfter;
+	if (!node || !isFormulaBlock(node)) return null;
+	return side < 0 ? edge - node.nodeSize : edge;
 }
 
 const displayMathPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
@@ -275,7 +329,36 @@ const displayMathPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 			],
 		];
 	});
+	/** The formula selected whole, if one is. */
+	const selectedFormula = (view: EditorView) => {
+		const { selection } = view.state;
+		if (!(selection instanceof NodeSelection) || !isFormulaBlock(selection.node)) return null;
+		return formulaViews.get(view.nodeDOM(selection.from) as Node) ?? null;
+	};
 	const plugin = new Plugin({
+		props: {
+			handleKeyDown(view, event) {
+				const arrow = ARROWS[event.key];
+				if (arrow) {
+					if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey) return false;
+					const at = formulaBeside(view, arrow.side, arrow.dir);
+					if (at == null) return false;
+					view.dispatch(view.state.tr.setSelection(NodeSelection.create(view.state.doc, at)).scrollIntoView());
+					return true;
+				}
+				if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.metaKey || event.ctrlKey || event.isComposing) return false;
+				const formula = selectedFormula(view);
+				if (!formula) return false;
+				formula.edit();
+				return true;
+			},
+			handleTextInput(view, _from, _to, text) {
+				const formula = selectedFormula(view);
+				if (!formula) return false;
+				formula.edit(text);
+				return true;
+			},
+		},
 		view() {
 			return {
 				update(view) {

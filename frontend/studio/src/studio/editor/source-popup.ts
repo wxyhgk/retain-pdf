@@ -63,6 +63,8 @@ export type SourcePopupOptions = {
 	onRemove: () => void;
 	/** Pointer down outside the popup and its block. */
 	onDismiss: () => void;
+	/** An arrow key at the source's edge (↑ on its first line, ← at its start; ↓, → at its end): out, before (-1) or after (1) the block. */
+	onExit?: (side: -1 | 1) => void;
 };
 
 export class SourcePopup {
@@ -298,6 +300,23 @@ export class SourcePopup {
 			return;
 		}
 		const input = this.input;
+		const exit = this.options.onExit;
+		const plain = !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey;
+		if (exit && plain && input.selectionStart === input.selectionEnd && event.key.startsWith('Arrow')) {
+			const caret = input.selectionStart;
+			const side =
+				(event.key === 'ArrowLeft' && caret === 0) || (event.key === 'ArrowUp' && !input.value.slice(0, caret).includes('\n'))
+					? -1
+					: (event.key === 'ArrowRight' && caret === input.value.length) || (event.key === 'ArrowDown' && !input.value.slice(caret).includes('\n'))
+						? 1
+						: 0;
+			if (side) {
+				event.preventDefault();
+				event.stopPropagation();
+				exit(side);
+				return;
+			}
+		}
 		if (event.key === 'Backspace' && input.value === '' && input.selectionStart === 0 && input.selectionEnd === 0) {
 			event.preventDefault();
 			this.options.onRemove();

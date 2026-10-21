@@ -115,15 +115,24 @@ export function unlistAtStart(state: EditorState, dispatch?: Dispatch): boolean 
 	return liftListItem(item)(state, dispatch);
 }
 
-/** ⌘A: the text of the block being written in; if that is all selected already (or there is none), not taken, and the editor selects everything. */
+/**
+ * ⌘A: the text of the block being written in; if that is all selected already
+ * (or there is none), every block, selected as blocks (as SiYuan has it), not
+ * all the text highlighted.
+ */
 export function selectTextblock(state: EditorState, dispatch?: Dispatch): boolean {
-	const { selection } = state;
+	const { selection, doc } = state;
 	if (!(selection instanceof TextSelection)) return false;
 	const { $from, $to } = selection;
 	if (!$from.sameParent($to) || !$from.parent.isTextblock) return false;
 	const start = $from.start();
 	const end = $from.end();
-	if (start === end || (selection.from === start && selection.to === end)) return false;
+	if (start === end || (selection.from === start && selection.to === end)) {
+		const all = doc.lastChild ? BlockRangeSelection.tryCreate(doc, 0, doc.content.size - doc.lastChild.nodeSize) : null;
+		if (!all) return false;
+		dispatch?.(state.tr.setSelection(all));
+		return true;
+	}
 	dispatch?.(state.tr.setSelection(TextSelection.create(state.doc, start, end)));
 	return true;
 }

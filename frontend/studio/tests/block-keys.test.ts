@@ -168,11 +168,14 @@ test('⌫ at the start of a list item makes it a line again, splitting the list;
 	assert.equal(unlistAtStart(caretIn(doc(schema.nodes.bullet_list.create(null, twoParagraphs)), 'second')), false);
 });
 
-test('⌘A selects the text of the block, then leaves the key to select everything', () => {
+test('⌘A selects the text of the block, then every block, as blocks', () => {
 	const first = run(caretIn(doc(p('one'), p('two')), 'two', 1), selectTextblock);
 	assert.equal(first.doc.textBetween(first.selection.from, first.selection.to), 'two');
-	assert.equal(selectTextblock(first), false);
-	assert.equal(selectTextblock(caretIn(doc(p('one'), p('')), '')), false, 'an empty line has nothing to select');
+	const all = run(first, selectTextblock);
+	assert.ok(all.selection instanceof BlockRangeSelection);
+	assert.equal(all.doc.textBetween(all.selection.from, all.selection.to, '|'), 'one|two');
+	const empty = run(caretIn(doc(p('one'), p('')), ''), selectTextblock);
+	assert.ok(empty.selection instanceof BlockRangeSelection, 'on an empty line, every block at once');
 });
 
 test('`[text](url)` typed becomes the text, linked, keeping its other marks', () => {

@@ -140,14 +140,15 @@ for (const [keys, markdown] of [
 	});
 }
 
-test('⌘A selects the text of the block first, then the whole article', async ({ page }) => {
+test('⌘A selects the text of the block first, then every block; ⌫ then clears the article', async ({ page }) => {
 	await newLine(page);
 	await page.keyboard.type('只选这段');
 	await page.keyboard.press('ArrowLeft');
 	await page.keyboard.press('ControlOrMeta+a');
 	await expect.poll(() => page.evaluate(() => getSelection()?.toString())).toBe('只选这段');
 	await page.keyboard.press('ControlOrMeta+a');
-	await expect.poll(() => page.evaluate(() => getSelection()?.toString())).toContain('开头段落');
+	await expect(editor(page).locator('.pm-block-range').first()).toContainText('开头段落');
+	await page.keyboard.press('Backspace');
 	await page.keyboard.type('全换掉');
 	const saved = await save(page);
 	expect(saved.slice(saved.indexOf('---', 3) + 3).trim()).toBe('全换掉');

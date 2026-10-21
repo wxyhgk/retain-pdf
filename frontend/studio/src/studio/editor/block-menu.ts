@@ -8,6 +8,7 @@ import { $prose } from '@milkdown/utils';
 import type { Node as ProseNode } from 'prosemirror-model';
 
 import { blockActionItems, headingEnter, keyHint, planBlockEdit, planTurn, type BlockAction, type BlockEdit } from './block-actions.ts';
+import { blockEdgePlugin } from './block-edges.ts';
 import { duplicateBlocks, moveBlocks } from './block-keys.ts';
 import { BlockRangeSelection, blockRangeKey, coveredRange } from './block-range.ts';
 import { blockRangePlugin } from './block-range-drag.ts';
@@ -208,15 +209,17 @@ export function buildToolbarAsk(builder: ToolbarBuilder, ask: () => void): void 
 export const writingKeymap = $prose(() =>
 	keymap({
 		Enter: headingEnter,
-		ArrowUp: (state) => {
+		// ↑ on the first line of the first block (anywhere on it, not only at its start): the title.
+		ArrowUp: (state, _dispatch, view) => {
 			if (!focusTitle) return false;
 			const selection = state.selection;
 			if (!(selection instanceof TextSelection) || !selection.empty) return false;
-			if (selection.from !== TextSelection.atStart(state.doc).from) return false;
+			if (selection.$from.start() !== TextSelection.atStart(state.doc).$from.start()) return false;
+			if (selection.from !== TextSelection.atStart(state.doc).from && !view?.endOfTextblock('up')) return false;
 			focusTitle();
 			return true;
 		},
 	}),
 );
 
-export const blockFeelPlugins = [blockRangePlugin, writingKeymap, paragraphBreakPlugin];
+export const blockFeelPlugins = [blockRangePlugin, writingKeymap, paragraphBreakPlugin, blockEdgePlugin];

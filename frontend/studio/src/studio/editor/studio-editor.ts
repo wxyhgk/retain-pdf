@@ -1,6 +1,6 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import type { ForkBlockEditFeatureConfig } from '@milkdown/crepe/feature/block-edit';
-import { editorViewCtx, serializerCtx } from '@milkdown/kit/core';
+import { editorViewCtx, editorViewOptionsCtx, serializerCtx } from '@milkdown/kit/core';
 import { diffComponent, diffComponentConfig } from '@milkdown/kit/component/diff';
 import {
 	acceptAllDiffsCmd,
@@ -301,6 +301,12 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					ctx.update(diffConfig.key, (prev) => ({ ...prev, ignoreAttrs: { heading: ['id'] } }));
 					// A block's handle selects as Esc and the margin do: one kind of block selection.
 					ctx.update(blockConfig.key, (prev) => ({ ...prev, selectBlock: selectBlockForHandle }));
+					// Room kept round the caret as it is typed or moved, as SiYuan keeps it: not on the window's edge.
+					ctx.update(editorViewOptionsCtx, (prev) => ({
+						...prev,
+						scrollThreshold: { top: 64, bottom: 120, left: 0, right: 0 },
+						scrollMargin: { top: 64, bottom: 120, left: 0, right: 0 },
+					}));
 					ctx.update(diffComponentConfig.key, (prev) => ({
 						...prev,
 						acceptLabel: '接受',

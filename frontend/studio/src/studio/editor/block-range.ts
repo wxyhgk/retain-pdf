@@ -256,7 +256,10 @@ export function blockRangeKey(
 	if (key.key === 'Enter') return placeCaret(state, selection.to, -1, dispatch);
 	if (key.key === 'ArrowUp' || key.key === 'ArrowDown') {
 		const direction = key.key === 'ArrowUp' ? -1 : 1;
-		const nextHead = stepBlock(state.doc, selection.head, direction);
+		// ⇧ grows or shrinks the selection at its head; without it, the next block on from its far edge in
+		// that direction (↑ after selecting downwards goes above the first block, not into the selection).
+		const from = key.shiftKey ? selection.head : direction < 0 ? Math.min(selection.anchor, selection.head) : Math.max(selection.anchor, selection.head);
+		const nextHead = stepBlock(state.doc, from, direction);
 		if (nextHead == null) {
 			const edge = direction < 0 ? selection.from : selection.to;
 			return placeCaret(state, edge, direction, dispatch);
