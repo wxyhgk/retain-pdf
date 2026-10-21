@@ -337,7 +337,7 @@ function showPath(): void {
 		seen.add(at);
 		pages.unshift({ slug: at, title: bySlug.get(at)!.title });
 	}
-	properties.showPath(pages, (slug) => void session.open(slug));
+	properties.showPath(pages, (slug) => void session.open(slug), (slug) => articleList.childrenOf(slug));
 }
 
 /**

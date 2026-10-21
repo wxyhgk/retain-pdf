@@ -167,3 +167,30 @@ test('a page with pages under it is deleted with them, or alone, those under it 
 	await expect(item(tab, '结果')).toHaveCSS('--depth', '1');
 	expect(source('tree-results')).toMatch(/parent: "?tree-top"?/u);
 });
+
+test('the tree from the keyboard; a folded page says how many are under it; the path above the title lists a page’s pages', async ({ page: tab }) => {
+	writeArticle('tree-top', page('项目'));
+	writeArticle('tree-method', page('方法', 'parent: tree-top\n'));
+	writeArticle('tree-results', page('结果', 'parent: tree-top\n'));
+	await openStudio(tab);
+	const row = (title: string) => item(tab, title).locator('.page-row');
+	await row('项目').focus();
+	await tab.keyboard.press('ArrowLeft');
+	await expect(item(tab, '方法')).toHaveCount(0);
+	await expect(item(tab, '项目').locator('.page-count')).toHaveText('2');
+	await tab.keyboard.press('ArrowRight');
+	await expect(item(tab, '方法')).toBeVisible();
+	await tab.keyboard.press('ArrowRight');
+	await expect(row('方法')).toBeFocused();
+	await tab.keyboard.press('ArrowDown');
+	await expect(row('结果')).toBeFocused();
+	await tab.keyboard.press('ArrowLeft');
+	await expect(row('项目')).toBeFocused();
+
+	await row('方法').click();
+	await expect(tab.locator('.page-path-link')).toHaveText(['项目']);
+	await tab.locator('.page-path-separator').click();
+	await expect(tab.getByRole('menuitem')).toHaveText(['方法', '结果']);
+	await tab.getByRole('menuitem', { name: '结果' }).click();
+	await expect(tab).toHaveURL(/article=tree-results/u);
+});

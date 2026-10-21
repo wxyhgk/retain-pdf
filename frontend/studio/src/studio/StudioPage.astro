@@ -345,7 +345,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.panel-label { color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; }
 	#article-list { flex: 1; padding: 1px 7px 32px; overflow-y: auto; }
 	#article-list :global(.page-list) { display: grid; gap: 1px; }
-	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
+	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
 	#article-list :global(.page-row:hover), #article-list :global(.page-row.active) { background: rgb(var(--gray-light)); }
 	/* ⋯ on hover, over the badges at the end of the row. */
 	/* Above the title of a page under others: the way up to them. */
@@ -353,7 +353,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.page-path[hidden]) { display: none; }
 	:global(.page-path-link) { padding: 1px 4px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 	:global(.page-path-link:hover) { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
-	:global(.page-path-separator) { opacity: 0.6; }
+	:global(.page-path-separator) { padding: 1px 3px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; opacity: 0.6; cursor: pointer; }
+	:global(.page-path-separator:hover) { background: rgb(var(--gray-light)); opacity: 1; }
 	#article-list :global(.page-item) { position: relative; --indent: calc(var(--depth, 0) * 14px); }
 	/* The tree: each level 14px further in, the triangle that folds what is under a page left of it. */
 	#article-list :global(.page-item .page-row) { padding-left: calc(22px + var(--indent)); }
@@ -379,6 +380,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	#article-list :global(.page-git.is-modified) { color: rgb(var(--gray)); }
 	#article-list :global(.page-git.is-new) { color: rgb(var(--gray)); }
 	#article-list :global(.page-icon.is-emoji) { font-size: 14px; line-height: 1; text-align: center; }
+	#article-list :global(.page-count) { color: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; }
 	#article-list :global(.page-title) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
 	#article-list :global(.page-row.active .page-title) { color: rgb(var(--black)); font-weight: 650; }
 	#article-list :global(.page-draft) { padding: 1px 4px; border-radius: 4px; color: rgb(var(--gray)); font-size: 8px; opacity: 0.82; }

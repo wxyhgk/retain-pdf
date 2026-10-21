@@ -104,6 +104,23 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		return false;
 	}
 
+	function setFolded(slug: string, fold: boolean): void {
+		if (fold) folded.add(slug);
+		else folded.delete(slug);
+		keepFolded(folded);
+		render();
+		focusRow(slug);
+	}
+
+	function focusRow(slug: string): void {
+		list.querySelector<HTMLElement>(`.page-item[data-slug="${CSS.escape(slug)}"] .page-row`)?.focus();
+	}
+
+	/** How many pages are under `slug`, all the way down. */
+	function countUnder(slug: string): number {
+		return (tree.children.get(slug) ?? []).reduce((total, child) => total + 1 + countUnder(child.slug), 0);
+	}
+
 	function row(article: ArticleSummary, depth: number): HTMLElement {
 		const active = article.slug === selected;
 		const open = document.createElement('button');
@@ -150,9 +167,31 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			menu({ x: event.clientX, y: event.clientY });
 		});
 		open.addEventListener('keydown', (event) => {
-			if (event.key !== 'ContextMenu' && !(event.key === 'F10' && event.shiftKey)) return;
+			if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+				event.preventDefault();
+				menu(open);
+				return;
+			}
+			if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
+			// The tree from the keyboard (as SiYuan has it): ↑↓ from page to page, → unfolds (or goes in), ← folds
+			// (or goes up to the page it is under), ⌫ deletes.
+			const under = tree.children.get(article.slug) ?? [];
+			const folded_ = folded.has(article.slug);
+			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+				const rows = [...list.querySelectorAll<HTMLElement>('.page-row')];
+				rows[rows.indexOf(open) + (event.key === 'ArrowDown' ? 1 : -1)]?.focus();
+			} else if (event.key === 'ArrowRight') {
+				if (!under.length) return;
+				if (folded_) setFolded(article.slug, false);
+				else focusRow(under[0]!.slug);
+			} else if (event.key === 'ArrowLeft') {
+				if (under.length && !folded_) setFolded(article.slug, true);
+				else if (placedUnder(article)) focusRow(placedUnder(article));
+				else return;
+			} else if (event.key === 'Backspace' || event.key === 'Delete') {
+				host.remove(article);
+			} else return;
 			event.preventDefault();
-			menu(open);
 		});
 		// The same menu, from a ⋯ that shows on hover, as in Notion.
 		const more = document.createElement('button');
@@ -181,15 +220,18 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		toggle.className = 'page-toggle';
 		if (under.length) {
 			const isFolded = folded.has(article.slug);
+			// Folded: how many pages are under it, beside its title.
+			if (isFolded) {
+				const count = document.createElement('span');
+				count.className = 'page-count';
+				count.textContent = String(countUnder(article.slug));
+				count.title = `下面有 ${count.textContent} 个页面`;
+				title.after(count);
+			}
 			toggle.textContent = isFolded ? '▸' : '▾';
 			toggle.setAttribute('aria-label', isFolded ? `展开「${article.title}」下面的页面` : `收起「${article.title}」下面的页面`);
 			toggle.setAttribute('aria-expanded', String(!isFolded));
-			toggle.addEventListener('click', () => {
-				if (folded.has(article.slug)) folded.delete(article.slug);
-				else folded.add(article.slug);
-				keepFolded(folded);
-				render();
-			});
+			toggle.addEventListener('click', () => setFolded(article.slug, !folded.has(article.slug)));
 		} else {
 			toggle.tabIndex = -1;
 			toggle.setAttribute('aria-hidden', 'true');
@@ -348,6 +390,12 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			selected = slug;
 			unfoldTo(slug);
 			render();
+			// In sight in the list: the page opened from elsewhere (a link, ⌘K) is found there.
+			list.querySelector('.page-item.active')?.scrollIntoView({ block: 'nearest' });
+		},
+		/** The pages right under `slug` (empty for the top), in the tree's order. */
+		childrenOf(slug: string): ArticleSummary[] {
+			return slug ? (tree.children.get(slug) ?? []) : tree.roots;
 		},
 		/** The open article's title as it is typed, before it is saved: the list follows it, as in Notion. */
 		retitled(slug: string, title: string): void {

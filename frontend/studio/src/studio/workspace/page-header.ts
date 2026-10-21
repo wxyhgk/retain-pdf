@@ -1,3 +1,4 @@
+import { showContextMenu } from './context-menu.ts';
 import type { ArticleProperties } from '../types.ts';
 
 /** What the page header needs from the Studio around it. */
@@ -396,17 +397,30 @@ export function createPageHeader(root: HTMLElement, host: PageHeaderHost) {
 			title.focus();
 			title.select();
 		},
-		/** The pages the open one is under, the nearest last, each a link to it; none, nothing shown. */
-		showPath(pages: Array<{ slug: string; title: string }>, open: (slug: string) => void): void {
+		/**
+		 * The pages the open one is under, the nearest last, each a link to it;
+		 * none, nothing shown. The › after each opens a menu of the pages under
+		 * that one (as SiYuan's path has it): from page to page of a project.
+		 */
+		showPath(
+			pages: Array<{ slug: string; title: string }>,
+			open: (slug: string) => void,
+			under: (slug: string) => Array<{ slug: string; title: string }>,
+		): void {
 			path.replaceChildren(...pages.flatMap((page) => {
 				const link = document.createElement('button');
 				link.type = 'button';
 				link.className = 'page-path-link';
 				link.textContent = page.title;
 				link.addEventListener('click', () => open(page.slug));
-				const separator = document.createElement('span');
+				const separator = document.createElement('button');
+				separator.type = 'button';
 				separator.className = 'page-path-separator';
 				separator.textContent = '›';
+				separator.setAttribute('aria-label', `「${page.title}」下面的页面`);
+				separator.addEventListener('click', () => {
+					showContextMenu(under(page.slug).map((child) => ({ label: child.title, action: () => open(child.slug) })), separator);
+				});
 				return [link, separator];
 			}));
 			path.hidden = pages.length === 0;
