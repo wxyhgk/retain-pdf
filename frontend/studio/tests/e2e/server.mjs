@@ -24,7 +24,7 @@ function isolatedRoot() {
 	const root = join(realpathSync(parent), basename(repository));
 	mkdirSync(root);
 	for (const name of ['src', 'plugins', 'astro.config.mjs', 'package.json', 'tsconfig.json']) cpSync(join(repository, name), join(root, name), { recursive: true });
-	for (const name of ['node_modules', 'packages', 'public', 'third_party', 'tools', 'vendor']) symlinkSync(join(repository, name), join(root, name));
+	for (const name of ['bin', 'node_modules', 'packages', 'public', 'third_party', 'tools', 'vendor']) symlinkSync(join(repository, name), join(root, name));
 	mkdirSync(join(root, 'blog'));
 	return root;
 }

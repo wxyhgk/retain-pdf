@@ -1,5 +1,5 @@
 import { lstat } from 'node:fs/promises';
-import { resolve, sep } from 'node:path';
+import { delimiter, resolve, sep } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { checkArticle } from '../studio/server/article-check.mjs';
 import { ArticleFiles } from '../studio/server/article-files.mjs';
@@ -211,6 +211,8 @@ export default function studioDev({ site } = {}) {
 						if (cwd === 'article') await manager.locate(slug, '');
 						// For a program run there (an AI): which article, and where it is; the drive and its text (blog/CLAUDE.md names these).
 						const env = {
+							// `studio …` (bin/studio): the pages' operations on the command line.
+							PATH: `${resolve(server.config.root, 'bin')}${delimiter}${process.env.PATH ?? ''}`,
 							...(cwd === 'article' ? { STUDIO_ARTICLE: slug, STUDIO_ARTICLE_DIR: folder, STUDIO_ARTICLE_FILE: articleBundlePaths(blogRoot, slug).markdown } : {}),
 							...(driveRoot ? { STUDIO_DRIVE_DIR: driveRoot, STUDIO_DRIVE_TEXT: resolve(driveRoot, TEXT_FOLDER) } : {}),
 						};

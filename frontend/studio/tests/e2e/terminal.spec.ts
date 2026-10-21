@@ -74,3 +74,8 @@ test('⌘J on a block types a question about its lines into the terminal, to fin
 	expect(await typed()).not.toContain('command not found');
 	await expect(page.locator('#terminal-screen')).toHaveAttribute('data-state', 'running');
 });
+
+test('the terminal has `studio`, the pages’ operations for an AI, on its PATH', async ({ page }) => {
+	await run(page, 'echo "pages=$(studio list-pages | grep -c \'Studio 测试夹具\')"');
+	await expect(screen(page)).toContainText('pages=1');
+});
