@@ -1,6 +1,7 @@
 import { cp, lstat, mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import { basename, resolve } from 'node:path';
-import { setFrontmatterParent, updateStudioFrontmatter } from '../document/frontmatter.ts';
+import { setFrontmatterField, updateStudioFrontmatter } from '../document/frontmatter.ts';
+import { comparePages } from '../../articles/page-order.mjs';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
 import { articleBundlePaths, assertArticleSlug, StudioPathError } from '../../articles/bundle-paths.mjs';
@@ -55,7 +56,7 @@ export class ArticleRepository {
 			const { pubDate, description } = articleProperties(source, slug);
 			articles.push({ slug, ...articleSummary(source, slug), pubDate, description, modified });
 		}
-		articles.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
+		articles.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN', { numeric: true }));
 		return articles;
 	}
 
@@ -184,20 +185,39 @@ export class ArticleRepository {
 	/**
 	 * Puts the article under another page (`parent:` its folder name), or, with
 	 * `parent` empty, at the top. Not under itself, nor under a page under it.
+	 * With `before` or `after` (a page under the same one), just there among
+	 * them: those pages are numbered again (`order:` 10, 20, …) in the order
+	 * they then have. Without, after the pages given an order there, if any.
 	 */
-	setParent(slug, parent) {
+	setParent(slug, parent, { before = '', after = '' } = {}) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
 		return this.exclusive(slug, async () => {
 			await assertReadableBundle(articleBundlePaths(this.blogRoot, slug));
+			const pages = (await this.#sources()).map(({ slug: page, source }) => ({ slug: page, source, ...articleSummary(source, page) }));
+			const bySlug = new Map(pages.map((page) => [page.slug, page]));
 			if (parent) {
-				const parents = new Map((await this.#sources()).map(({ slug: page, source }) => [page, articleSummary(source, page).parent]));
-				if (!parents.has(parent)) throw new ArticleNotFoundError('上级页面不存在');
-				for (let at = parent, steps = 0; at && steps <= parents.size; at = parents.get(at) ?? '', steps += 1) {
+				if (!bySlug.has(parent)) throw new ArticleNotFoundError('上级页面不存在');
+				for (let at = parent, steps = 0; at && steps <= pages.length; at = bySlug.get(at)?.parent ?? '', steps += 1) {
 					if (at === slug) throw new ArticleValidationError('不能放到它自己或它下面的页面下面');
 				}
 			}
-			await this.#writeParent(slug, parent);
+			const next = bySlug.get(before || after);
+			if ((before || after) && (!next || next.parent !== parent || next.slug === slug)) throw new ArticleValidationError('要放在旁边的页面不在那里');
+			const siblings = pages.filter((page) => page.parent === parent && page.slug !== slug).sort(comparePages);
+			const moved = bySlug.get(slug);
+			if (next) {
+				const index = siblings.indexOf(next) + (after ? 1 : 0);
+				const placed = [...siblings.slice(0, index), moved, ...siblings.slice(index)];
+				for (const [index, page] of placed.entries()) {
+					if (page === moved) await this.#writeFields(slug, { parent, order: (index + 1) * 10 });
+					else if (page.order !== (index + 1) * 10) await this.#writeFields(page.slug, { order: (index + 1) * 10 });
+				}
+				return { slug, parent };
+			}
+			const ordered = siblings.filter((page) => typeof page.order === 'number');
+			const last = ordered.length ? Math.max(...ordered.map((page) => page.order)) : null;
+			await this.#writeFields(slug, { parent, order: last === null ? null : last + 10 });
 			return { slug, parent };
 		});
 	}
@@ -208,9 +228,15 @@ export class ArticleRepository {
 	}
 
 	async #writeParent(slug, parent) {
+		await this.#writeFields(slug, { parent });
+	}
+
+	/** Sets the tree's fields given (`parent`, `order`; empty or null takes one out), the rest of the text as it was. */
+	async #writeFields(slug, fields) {
 		const { markdown } = articleBundlePaths(this.blogRoot, slug);
 		const source = await readFile(markdown, 'utf8');
-		const next = setFrontmatterParent(source, parent);
+		let next = source;
+		for (const [key, value] of Object.entries(fields)) next = setFrontmatterField(next, key, value);
 		if (next !== source) await atomicWriteText(markdown, next);
 	}
 

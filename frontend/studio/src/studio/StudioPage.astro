@@ -346,6 +346,10 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	#article-list :global(.page-toggle:hover) { background: rgba(55, 53, 47, 0.12); color: rgb(var(--gray-dark)); }
 	#article-list :global(.page-toggle:disabled) { cursor: default; background: transparent; }
 	/* Dragged onto a page: under it. Below the pages: at the top. */
+	/* Above or below a page: a line there, as far in as the page. */
+	#article-list :global(.page-item.is-drop-before)::before, #article-list :global(.page-item.is-drop-after)::after { content: ''; position: absolute; right: 4px; left: calc(22px + var(--indent)); z-index: 2; height: 2px; border-radius: 1px; background: rgb(var(--gray-dark)); pointer-events: none; }
+	#article-list :global(.page-item.is-drop-before)::before { top: -1px; }
+	#article-list :global(.page-item.is-drop-after)::after { bottom: -1px; }
 	#article-list :global(.page-item.is-drop-into .page-row) { background: rgb(var(--gray-light)); box-shadow: inset 0 0 0 1.5px rgb(var(--gray-dark)); }
 	#article-list:global(.is-drop-top) :global(.page-list) { box-shadow: 0 2px 0 rgb(var(--gray-dark)); }
 	#article-list:global(.is-dragging-page) { min-height: 120px; }

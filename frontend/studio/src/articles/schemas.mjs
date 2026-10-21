@@ -20,6 +20,9 @@ export function createArticleFrontmatterSchema(image = null) {
 		// The page it is under (its folder name), in the Studio's tree of pages and the blog's path to it: the
 		// pages are each in a folder of their own, side by side; this alone says what is under what.
 		parent: z.string().trim().min(1).optional(),
+		// Where it goes among the pages under the same page (smaller first), as it was dragged in the Studio's tree;
+		// pages without one come after, by title.
+		order: z.number().optional(),
 		// Formula macros of this article, over the site's (src/katex-macros.json): `\\Ha: \\hat{H}`.
 		macros: z.record(z.string(), z.string()).optional(),
 	});
@@ -57,6 +60,7 @@ export function articleSummary(source, fallbackSlug) {
 		tags: Array.isArray(frontmatter.tags) ? frontmatter.tags.filter((tag) => typeof tag === 'string') : [],
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 		parent: articleParent(frontmatter),
+		...(typeof frontmatter.order === 'number' && Number.isFinite(frontmatter.order) ? { order: frontmatter.order } : {}),
 	};
 }
 
@@ -110,6 +114,7 @@ const PROPERTY_PROBLEMS = Object.freeze({
 	macros: '公式宏（macros）应是「名字: 展开」，如 Ha: \\hat{H}',
 	wide: 'wide 只能是 true 或 false',
 	parent: '上级页面（parent）应是一篇文章的文件夹名',
+	order: '顺序（order）应是一个数',
 });
 
 /**

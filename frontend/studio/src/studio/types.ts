@@ -16,6 +16,8 @@ export type ArticleSummary = {
 	modified?: number;
 	/** The folder name of the page it is under (`parent:`); empty for none. */
 	parent?: string;
+	/** Where it goes among the pages under the same one (`order:`, smaller first); none, after them by title. */
+	order?: number;
 };
 
 /** An article that links to the open one, with each link: its line, its words, the words around it. */

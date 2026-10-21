@@ -16,14 +16,17 @@ const source = (folder: string) => readFileSync(join(process.env.STUDIO_BLOG_DIR
 /**
  * Drags the page `from` onto `onto` (a page's title, or the list's room below the pages), as the browser does it:
  * its drag events, sent here (the browser's own drag, driven by the mouse, at times takes no dragover at all).
+ * `zone`: let go of on the page's top (just above it), middle (under it) or bottom (just below it).
  */
-async function drag(tab: Page, from: string, onto: string | 'below') {
+async function drag(tab: Page, from: string, onto: string | 'below', zone: 'before' | 'into' | 'after' = 'into') {
 	const data = await tab.evaluateHandle(() => new DataTransfer());
 	const source = item(tab, from);
-	const target = onto === 'below' ? tab.locator('#article-list') : item(tab, onto).locator('.page-row');
+	const target = onto === 'below' ? tab.locator('#article-list') : item(tab, onto);
+	const box = (await target.boundingBox())!;
+	const at = { clientX: box.x + box.width / 2, clientY: box.y + box.height * { before: 0.1, into: 0.5, after: 0.9 }[zone] };
 	await source.dispatchEvent('dragstart', { dataTransfer: data });
-	await target.dispatchEvent('dragover', { dataTransfer: data });
-	await target.dispatchEvent('drop', { dataTransfer: data });
+	await target.dispatchEvent('dragover', { dataTransfer: data, ...at });
+	await target.dispatchEvent('drop', { dataTransfer: data, ...at });
 	await source.dispatchEvent('dragend', { dataTransfer: data });
 }
 
@@ -115,4 +118,26 @@ test('the open page dragged under another is put there as an edit of it, saved',
 	await drag(tab, TITLE, '顶层一页');
 	await expect(item(tab, TITLE)).toHaveCSS('--depth', '1');
 	await expect.poll(() => source(slug)).toMatch(/parent: "?tree-top"?/u);
+});
+
+test('a page let go of on the top or bottom of another goes just above or below it; the order is kept', async ({ page: tab }) => {
+	writeArticle('tree-top', page('项目'));
+	writeArticle('tree-method', page('第1章', 'parent: tree-top\n'));
+	writeArticle('tree-results', page('第2章', 'parent: tree-top\n'));
+	writeArticle('tree-ai', page('第10章', 'parent: tree-top\n'));
+	await openStudio(tab);
+	const under = () => tab.locator('.page-item').filter({ has: tab.locator('.page-title', { hasText: /^第\d+章$/u }) }).locator('.page-title').allTextContents();
+	// Numbers in titles read as numbers.
+	await expect.poll(under).toEqual(['第1章', '第2章', '第10章']);
+	await drag(tab, '第10章', '第1章', 'before');
+	await expect.poll(under).toEqual(['第10章', '第1章', '第2章']);
+	await drag(tab, '第1章', '第2章', 'after');
+	await expect.poll(under).toEqual(['第10章', '第2章', '第1章']);
+	await tab.reload();
+	await expect.poll(under).toEqual(['第10章', '第2章', '第1章']);
+	expect(source('tree-ai')).toMatch(/\norder: 10\n/u);
+	// Just below a page at the top: at the top too.
+	await drag(tab, '第2章', '项目', 'after');
+	await expect(item(tab, '第2章')).toHaveCSS('--depth', '0');
+	await expect.poll(() => source('tree-results')).not.toMatch(/parent/u);
 });

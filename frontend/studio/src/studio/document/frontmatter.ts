@@ -57,6 +57,7 @@ function inlineComment(line: string): string {
 
 function encodedValue(key: string, value: string | string[] | boolean): string {
 	if (key === 'draft') return value ? 'true' : 'false';
+	if (key === 'order') return String(value);
 	if (key === 'tags') return `[${(value as string[]).map((tag) => JSON.stringify(tag)).join(', ')}]`;
 	return JSON.stringify(value);
 }
@@ -106,14 +107,17 @@ function validateProperties(properties: ArticleProperties): void {
 }
 
 /**
- * The page the article is under (`parent:`) set, or taken out when empty; the
- * rest of its text byte for byte as it was (the tree's moves change nothing else).
+ * A top-level field the tree of pages keeps (`parent:`, `order:`) set, or
+ * taken out when empty; the rest of the text byte for byte as it was (the
+ * tree's moves change nothing else).
  */
-export function setFrontmatterParent(source: string, parent: string): string {
+export function setFrontmatterField(source: string, key: 'parent' | 'order', value: string | number | null): string {
 	const document = parseStudioDocument(source);
 	if (!document.frontmatter) throw new Error('文章缺少 frontmatter，无法修改属性');
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
-	const yaml = parent ? replaceYamlField(document.frontmatter.yamlRaw, 'parent', parent, defaultEol) : removeYamlField(document.frontmatter.yamlRaw, 'parent');
+	const yaml = value === null || value === ''
+		? removeYamlField(document.frontmatter.yamlRaw, key)
+		: replaceYamlField(document.frontmatter.yamlRaw, key, typeof value === 'number' ? String(value) : value, defaultEol);
 	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
 }
 

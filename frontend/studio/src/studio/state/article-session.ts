@@ -99,6 +99,8 @@ function propertyValue(properties: ArticleProperties, key: keyof ArticleProperti
 /** Which properties differ, by their names on the page: 「标题」「标签」. */
 export function changedProperties(before: ArticleProperties, after: ArticleProperties): string[] {
 	return (Object.keys(PROPERTY_NAMES) as (keyof ArticleProperties)[])
+		// A move in the tree of pages is seen there, not told.
+		.filter((key) => key !== 'parent')
 		.filter((key) => propertyValue(before, key) !== propertyValue(after, key))
 		.map((key) => PROPERTY_NAMES[key]);
 }
@@ -213,15 +215,6 @@ export class ArticleSession {
 		this.#host.retitled(properties.title || article.slug);
 		this.#noteEdit();
 		return null;
-	}
-
-	/** The open article put under another page (its folder name), or at the top with `parent` empty; saved as an edit of it. */
-	setParent(parent: string): string | null {
-		const properties = this.#properties ?? this.#store.current.article?.properties;
-		if (!properties) return null;
-		const problem = this.editProperties({ ...properties, parent });
-		if (!problem) void this.flush();
-		return problem;
 	}
 
 	/** Saves now. Whether everything is saved. */

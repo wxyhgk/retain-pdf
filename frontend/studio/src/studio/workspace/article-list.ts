@@ -1,4 +1,5 @@
-import { listArticles } from '../api/client.ts';
+import { listArticles, type PagePlace } from '../api/client.ts';
+import { comparePages } from '../../articles/page-order.mjs';
 import type { ArticleProperties, ArticleSummary, GitStatus } from '../types.ts';
 import { showContextMenu } from './context-menu.ts';
 import type { DiskChange } from './disk-events.ts';
@@ -15,9 +16,12 @@ export type ArticleListHost = {
 	listed?(articles: ArticleSummary[]): void;
 	/** A new page under this one. */
 	createChild(article: ArticleSummary): void;
-	/** Puts the article under another page (its folder name), or at the top with `parent` empty. */
-	move(slug: string, parent: string): void;
+	/** Puts the article under another page (its folder name), or at the top with `parent` empty; with `place`, there among those. */
+	move(slug: string, parent: string, place?: PagePlace): void;
 };
+
+/** Where on a page what is dragged is let go of: just above it, under it, just below it. */
+type DropZone = 'before' | 'into' | 'after';
 
 const REFRESH_DELAY_MS = 300;
 
@@ -48,7 +52,7 @@ function keepFolded(folded: Set<string>): void {
  * parent is not there (deleted, misspelt), or that would be under itself, is
  * at the top.
  */
-export function pageTree(articles: ArticleSummary[]): { roots: ArticleSummary[]; children: Map<string, ArticleSummary[]> } {
+export function pageTree(articles: ArticleSummary[]): { roots: ArticleSummary[]; children: Map<string, ArticleSummary[]>; placedUnder: (article: ArticleSummary) => string } {
 	const bySlug = new Map(articles.map((article) => [article.slug, article]));
 	const placedUnder = (article: ArticleSummary): string => {
 		const parent = article.parent ?? '';
@@ -61,12 +65,12 @@ export function pageTree(articles: ArticleSummary[]): { roots: ArticleSummary[];
 	};
 	const roots: ArticleSummary[] = [];
 	const children = new Map<string, ArticleSummary[]>();
-	for (const article of articles) {
+	for (const article of [...articles].sort(comparePages)) {
 		const parent = placedUnder(article);
 		if (!parent) roots.push(article);
 		else children.set(parent, [...(children.get(parent) ?? []), article]);
 	}
-	return { roots, children };
+	return { roots, children, placedUnder };
 }
 
 /** Articles whose title or folder holds the query, ignoring case. */
@@ -85,7 +89,9 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	let git: GitStatus | null = null;
 
 	const folded = readFolded();
-	let tree: ReturnType<typeof pageTree> = { roots: [], children: new Map() };
+	let tree: ReturnType<typeof pageTree> = { roots: [], children: new Map(), placedUnder: () => '' };
+	/** The page a page shows under in the tree (its parent if that is there), empty for the top. */
+	const placedUnder = (article: ArticleSummary) => tree.placedUnder(article);
 	/** The page being dragged in the list. */
 	let dragged: string | null = null;
 
@@ -205,27 +211,44 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 				renderLater = false;
 				render();
 			}
-			list.querySelectorAll('.is-drop-into').forEach((element) => element.classList.remove('is-drop-into'));
+			list.querySelectorAll('.is-drop-into, .is-drop-before, .is-drop-after').forEach((element) => element.classList.remove('is-drop-into', 'is-drop-before', 'is-drop-after'));
 			list.classList.remove('is-drop-top');
 		});
+		// Where on the page it is let go of says where it goes (as SiYuan has it): its top fifth, just above it
+		// (under the same page); its bottom fifth, just below; between, under it.
+		const zoneAt = (event: DragEvent): DropZone | null => {
+			if (!dragged || within(article.slug, dragged)) return null;
+			const box = item.getBoundingClientRect();
+			const at = box.height ? (event.clientY - box.top) / box.height : 0.5;
+			const zone: DropZone = at < 0.25 ? 'before' : at > 0.75 ? 'after' : 'into';
+			const page = articles.find((entry) => entry.slug === dragged);
+			// Into the page it is under already: nothing to do.
+			if (zone === 'into' && page?.parent === article.slug) return null;
+			return zone;
+		};
+		const unmark = () => item.classList.remove('is-drop-into', 'is-drop-before', 'is-drop-after');
 		item.addEventListener('dragover', (event) => {
-			if (!dragged || within(article.slug, dragged) || article.slug === articles.find((page) => page.slug === dragged)?.parent) return;
+			const zone = zoneAt(event);
+			if (!zone) return;
 			event.preventDefault();
 			event.stopPropagation();
 			list.classList.remove('is-drop-top');
-			item.classList.add('is-drop-into');
+			unmark();
+			item.classList.add(`is-drop-${zone}`);
 		});
 		item.addEventListener('dragleave', (event) => {
-			if (!(event.relatedTarget instanceof Node) || !item.contains(event.relatedTarget)) item.classList.remove('is-drop-into');
+			if (!(event.relatedTarget instanceof Node) || !item.contains(event.relatedTarget)) unmark();
 		});
 		item.addEventListener('drop', (event) => {
-			item.classList.remove('is-drop-into');
-			if (!dragged || within(article.slug, dragged)) return;
+			unmark();
+			const zone = zoneAt(event);
+			if (!zone || !dragged) return;
 			event.preventDefault();
 			event.stopPropagation();
 			const slug = dragged;
 			dragged = null;
-			host.move(slug, article.slug);
+			if (zone === 'into') host.move(slug, article.slug);
+			else host.move(slug, placedUnder(article), { [zone]: article.slug });
 		});
 		const branch = document.createElement('div');
 		branch.className = 'page-branch';
@@ -249,7 +272,7 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		// Not drawn again for nothing (git's answer, the list read again, the same): what the pointer is on
 		// (a ⋯ about to be clicked, a page about to be dragged) stays.
 		const state = JSON.stringify([
-			articles.map((article) => [article.slug, article.title, article.parent, article.draft, article.icon]),
+			articles.map((article) => [article.slug, article.title, article.parent, article.order, article.draft, article.icon]),
 			git?.available,
 			git?.changed,
 			git?.vanished.length,

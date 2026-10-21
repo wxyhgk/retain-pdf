@@ -29,6 +29,7 @@ import { setScienceResourceBaseUrl } from '@blog/science/browser/resource-contex
 import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
 import { ArticleSession, type SaveState } from './state/article-session';
+import { trackWrite } from './state/writes';
 import type { ArticlePayload, ArticleSummary } from './types';
 import { createArticleActions, relinkedNote } from './workspace/article-actions';
 import { createArticleList } from './workspace/article-list';
@@ -98,17 +99,18 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
 	createChild: (article) => void newPage(article.slug),
-	// The open article as an edit of it (its text is in the editor); another, on disk.
-	move: (slug, parent) => {
-		if (slug === session.slug) {
-			const problem = session.setParent(parent);
-			if (problem) showToast(problem);
-			return;
-		}
-		setArticleParent(slug, parent).then(
-			() => articleList.load(),
-			(error: unknown) => showToast(error instanceof Error ? error.message : '没能移动这个页面'),
-		);
+	// On disk, the open article too (saved first): what changes is its properties alone, which it takes in quietly.
+	move: (slug, parent, place) => {
+		void (async () => {
+			if (slug === session.slug && !(await session.flush())) return;
+			try {
+				await trackWrite(() => setArticleParent(slug, parent, place));
+			} catch (error) {
+				showToast(error instanceof Error ? error.message : '没能移动这个页面', true);
+				return;
+			}
+			await articleList.load();
+		})();
 	},
 	listed: (articles) => {
 		showPath();

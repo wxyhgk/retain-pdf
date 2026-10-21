@@ -306,3 +306,25 @@ test('a rename takes the links to the article with it, in the others and its own
 	assert.deepEqual(result, { slug: 'ji-zu', relinked: 1 });
 	assert.match(await readFile(project, 'utf8'), /\[基组\]\(\/blog\/ji-zu\/#de-xuan-ze\)/u);
 });
+
+test('a page put before or after another under the same page goes just there, the pages there numbered again', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'project', title: '项目' });
+	for (const [slug, title] of [['part-1', '第1章'], ['part-2', '第2章'], ['part-10', '第10章']]) await repository.create({ slug, title, parent: 'project' });
+	const { comparePages } = await import('../../articles/page-order.mjs');
+	const order = async () => (await repository.list()).filter((page) => page.parent === 'project').sort(comparePages).map((page) => page.slug);
+	// By title, numbers as numbers.
+	assert.deepEqual(await order(), ['part-1', 'part-2', 'part-10']);
+	await repository.setParent('part-10', 'project', { before: 'part-1' });
+	assert.deepEqual(await order(), ['part-10', 'part-1', 'part-2']);
+	assert.match(await readFile(articleBundlePaths(blog, 'part-10').markdown, 'utf8'), /\norder: 10\n/u);
+	await repository.setParent('part-10', 'project', { after: 'part-2' });
+	assert.deepEqual(await order(), ['part-1', 'part-2', 'part-10']);
+	// Put under it without a place: after those given one.
+	await repository.create({ slug: 'notes', title: '杂记' });
+	await repository.setParent('notes', 'project');
+	assert.deepEqual(await order(), ['part-1', 'part-2', 'part-10', 'notes']);
+	await assert.rejects(repository.setParent('notes', 'project', { before: 'project' }), /不在那里/u);
+	assert.equal(validateArticleSource(await readFile(articleBundlePaths(blog, 'notes').markdown, 'utf8')).success, true);
+});

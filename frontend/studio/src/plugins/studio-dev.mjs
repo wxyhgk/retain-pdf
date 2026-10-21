@@ -264,8 +264,9 @@ export default function studioDev({ site } = {}) {
 					// Under another page, or at the top (`parent` empty): the tree of pages.
 					const parentMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/parent$/u);
 					if (parentMatch && request.method === 'POST') {
-						const { parent } = await readJsonChange(request);
-						return json(response, 200, await articles.setParent(decodePathComponent(parentMatch[1]), typeof parent === 'string' ? parent : ''));
+						const { parent, before, after } = await readJsonChange(request);
+						const text = (value) => (typeof value === 'string' ? value : '');
+						return json(response, 200, await articles.setParent(decodePathComponent(parentMatch[1]), text(parent), { before: text(before), after: text(after) }));
 					}
 
 					// Another folder name for an article, or a copy of it under one.

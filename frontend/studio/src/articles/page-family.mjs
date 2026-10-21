@@ -1,10 +1,12 @@
+import { comparePages } from './page-order.mjs';
+
 /**
  * Where a page is in the tree of pages (`parent:`): the pages above it, the
- * nearest last, and those right under it, by title. Of `entries` only (the
+ * nearest last, and those right under it, in their order (page-order.mjs). Of `entries` only (the
  * blog gives it the published ones): a page above that is not among them, a
  * draft, ends the line there; a loop is cut.
  *
- * @template {{ id: string, data: { title: string, parent?: string } }} Entry
+ * @template {{ id: string, data: { title: string, parent?: string, order?: number } }} Entry
  * @param {Entry[]} entries
  * @param {Entry} current
  * @returns {{ ancestors: Entry[], children: Entry[] }}
@@ -19,6 +21,6 @@ export function pageFamily(entries, current) {
 	}
 	const children = entries
 		.filter((entry) => entry.data.parent === current.id && entry.id !== current.id)
-		.sort((left, right) => left.data.title.localeCompare(right.data.title, 'zh-CN'));
+		.sort((left, right) => comparePages(left.data, right.data));
 	return { ancestors, children };
 }

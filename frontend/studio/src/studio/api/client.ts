@@ -58,9 +58,12 @@ export function createArticle(slug: string, title: string, parent = ''): Promise
 	return request('/api/studio/articles', jsonOptions('POST', { slug, title, parent }));
 }
 
-/** Puts an article under another page (its folder name), or at the top with `parent` empty. */
-export function setArticleParent(slug: string, parent: string): Promise<{ slug: string; parent: string }> {
-	return request(`/api/studio/articles/${encodeURIComponent(slug)}/parent`, jsonOptions('POST', { parent }));
+/** Where a page goes among those under the same one: just before or after this one (its folder name). */
+export type PagePlace = { before?: string; after?: string };
+
+/** Puts an article under another page (its folder name), or at the top with `parent` empty; with `place`, there among them. */
+export function setArticleParent(slug: string, parent: string, place: PagePlace = {}): Promise<{ slug: string; parent: string }> {
+	return request(`/api/studio/articles/${encodeURIComponent(slug)}/parent`, jsonOptions('POST', { parent, ...place }));
 }
 
 /** The articles whose title or text holds `query`. */
