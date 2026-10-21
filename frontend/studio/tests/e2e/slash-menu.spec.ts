@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { editor, openStudio, resetFixture } from './studio.ts';
+import { appendToFixture, editor, openStudio, resetFixture } from './studio.ts';
 
 // The slash menu as Notion has it: opened by `、` too, found by English names and pinyin.
 
@@ -64,4 +64,93 @@ test('`、` inside a sentence is a comma, not the menu', async ({ page }) => {
 	await page.keyboard.type('乙');
 	await page.waitForTimeout(100);
 	await expect(menu(page)).toBeHidden();
+});
+
+// As SiYuan has it: the menu opens where the trigger is typed, and nowhere else; Esc closes it till the
+// trigger is typed again; keys pressed out of the editor are not its.
+
+test('Esc closes the menu till the trigger is typed again', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('/');
+	await expect(menu(page)).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(menu(page)).toBeHidden();
+	await page.keyboard.type('bt');
+	await page.waitForTimeout(100);
+	await expect(menu(page)).toBeHidden();
+	// Enter is a new line, not an item.
+	await page.keyboard.press('Enter');
+	await expect(editor(page).locator('p', { hasText: /^\/bt$/u })).toHaveCount(1);
+	await page.keyboard.type('/bt');
+	await expect(menu(page)).toBeVisible();
+});
+
+test('a block that begins with `/` is not the menu when the caret comes to it, nor after undo', async ({ page }) => {
+	appendToFixture('\n/abc\n');
+	await openStudio(page);
+	await editor(page).locator('p', { hasText: '/abc' }).click();
+	await page.keyboard.press('End');
+	await page.waitForTimeout(100);
+	await expect(menu(page)).toBeHidden();
+
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('/bt');
+	await expect(menu(page)).toBeVisible();
+	await page.keyboard.press('Escape');
+	// Apart in time, the typing and the deleting are two steps to undo.
+	await page.waitForTimeout(700);
+	for (let index = 0; index < 3; index += 1) await page.keyboard.press('Backspace');
+	await page.waitForTimeout(700);
+	await page.keyboard.press('ControlOrMeta+z');
+	await expect(editor(page).locator('p', { hasText: /^\/bt$/u })).toHaveCount(1);
+	await page.waitForTimeout(100);
+	await expect(menu(page)).toBeHidden();
+});
+
+test('`/` then a space is text', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('/');
+	await expect(menu(page)).toBeVisible();
+	await page.keyboard.type(' ');
+	await expect(menu(page)).toBeHidden();
+	await page.keyboard.press('Enter');
+	await expect(editor(page).locator('p', { hasText: /^\/\s$/u })).toHaveCount(1);
+});
+
+test('what is typed, or the menu opened again, puts the highlight on the item that answers it, not where the arrows were', async ({ page }) => {
+	await newBlock(page);
+	const hovered = () => menu(page).locator('.menu-groups li.hover');
+	await page.keyboard.type('/');
+	await expect(menu(page)).toBeVisible();
+	const first = await shownItems(page).first().textContent();
+	for (let index = 0; index < 3; index += 1) await page.keyboard.press('ArrowDown');
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Backspace');
+	await page.keyboard.type('/');
+	await expect(hovered()).toHaveText(first!);
+	for (let index = 0; index < 4; index += 1) await page.keyboard.press('ArrowDown');
+	// `bt` is 标题's initials: the first heading, before the items that only have the letters.
+	await page.keyboard.type('bt');
+	await expect(hovered()).toHaveText('标题 1');
+	await page.keyboard.press('Escape');
+	for (let index = 0; index < 3; index += 1) await page.keyboard.press('Backspace');
+	await page.keyboard.type('/table');
+	await expect(hovered()).toHaveText('表格');
+});
+
+test('the menu closes when the focus leaves the editor, and takes no key typed there', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('/');
+	await expect(menu(page)).toBeVisible();
+	await page.evaluate(() => {
+		const input = document.createElement('input');
+		input.id = 'elsewhere';
+		document.body.append(input);
+		input.focus();
+	});
+	await expect(menu(page)).toBeHidden();
+	await page.keyboard.press('Enter');
+	await page.keyboard.press('ArrowDown');
+	await expect(editor(page).locator('p', { hasText: /^\/$/u })).toHaveCount(1);
+	await expect(editor(page).locator('h1, h2, h3, ul, ol, pre').filter({ hasText: /^$/u })).toHaveCount(0);
 });

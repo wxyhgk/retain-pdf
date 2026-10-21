@@ -110,3 +110,53 @@ test('a drag held near the bottom of the editor scrolls it, and stops when it en
 	await page.waitForTimeout(300);
 	expect(await scroller.evaluate((el) => el.scrollTop)).toBe(stopped);
 });
+
+test('blocks let go of where they are: nothing is done to them, and over themselves no line is shown', async ({ page }) => {
+	appendToFixture('\n甲段落。\n\n乙段落。\n\n丙段落。\n');
+	await openStudio(page);
+	await editor(page).getByText('丙段落。', { exact: true }).scrollIntoViewIfNeeded();
+	await editor(page).getByText('甲段落。', { exact: true }).click();
+	await page.keyboard.press('Escape');
+	await page.keyboard.press('Shift+ArrowDown');
+	// What the editor shows for them now: a drop that took them out and put them back would draw them anew.
+	await editor(page).getByText('甲段落。', { exact: true }).evaluate((p) => ((window as unknown as { jia: Element }).jia = p));
+	const data = await startDrag(page, '乙段落。');
+	const jia = (await editor(page).getByText('甲段落。', { exact: true }).boundingBox())!;
+	await dragOver(page, data, jia.x + jia.width / 2, jia.y + jia.height / 2);
+	await expect(page.locator('.milkdown-drop-indicator')).toBeHidden();
+	// Under them, away from the sides (where a drop makes columns).
+	const yi = (await editor(page).getByText('乙段落。', { exact: true }).boundingBox())!;
+	await dropAt(page, data, yi.x + yi.width / 2, yi.y + yi.height + 2);
+	await expect(editor(page).locator('> p').filter({ hasText: /^[甲乙丙]段落/u })).toHaveText(['甲段落。', '乙段落。', '丙段落。']);
+	expect(await editor(page).getByText('甲段落。', { exact: true }).evaluate((p) => p === (window as unknown as { jia: Element }).jia)).toBe(true);
+});
+
+test('a block held near the bottom while the editor scrolls goes where the pointer is when it is let go of', async ({ page }) => {
+	appendToFixture(`\n${Array.from({ length: 40 }, (_, i) => `第${i + 1}段。`).join('\n\n')}\n`);
+	await openStudio(page);
+	const scroller = page.locator('.editor-scroll');
+	await editor(page).getByText('第1段。', { exact: true }).scrollIntoViewIfNeeded();
+	const data = await startDrag(page, '第1段。');
+	const box = (await scroller.boundingBox())!;
+	const before = await scroller.evaluate((el) => el.scrollTop);
+	const at = { x: box.x + box.width / 2, y: box.y + box.height - 6 };
+	await dragOver(page, data, at.x, at.y);
+	await expect.poll(() => scroller.evaluate((el) => el.scrollTop), { timeout: 3000 }).toBeGreaterThan(before + 200);
+	// Let go of without moving, while it scrolls: the block nearest the pointer then, in the same moment.
+	const under = await editor(page).evaluate(
+		(root, [transfer, x, y]) => {
+			const lines = [...root.querySelectorAll(':scope > p')].filter((p) => /^第\d+段。$/u.test(p.textContent ?? ''));
+			const middle = (p: Element) => (p.getBoundingClientRect().top + p.getBoundingClientRect().bottom) / 2;
+			const nearest = lines.sort((a, b) => Math.abs(middle(a) - y) - Math.abs(middle(b) - y))[0]?.textContent ?? '';
+			root.dispatchEvent(new DragEvent('drop', { dataTransfer: transfer, clientX: x, clientY: y, bubbles: true, cancelable: true }));
+			return nearest;
+		},
+		[data, at.x, at.y] as const,
+	);
+	await grip(page).dispatchEvent('dragend', { dataTransfer: data });
+	await page.mouse.move(at.x, at.y);
+	await page.mouse.up();
+	expect(under).toMatch(/^第\d+段。$/u);
+	const order = await editor(page).locator('> p').filter({ hasText: /^第\d+段。$/u }).allTextContents();
+	expect(Math.abs(order.indexOf('第1段。') - order.indexOf(under))).toBe(1);
+});

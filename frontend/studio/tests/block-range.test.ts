@@ -116,7 +116,9 @@ test('backspace, typing, and arrows act on the block range', () => {
 	blockRangeKey(state, { key: 'z' }, (tr) => {
 		typed = state.apply(tr);
 	});
-	assert.equal(typed.doc.child(1).textContent, 'z');
+	// Not in the block's place: at its end, the block let go of.
+	assert.equal(typed.doc.child(1).textContent, 'twoz');
+	assert.equal(typed.selection instanceof BlockRangeSelection, false);
 	assert.equal(typed.doc.child(0).textContent, 'one');
 	assert.equal(typed.doc.child(2).textContent, 'three');
 

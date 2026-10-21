@@ -51,6 +51,18 @@ const blockKeysPlugin = (host: BlockKeysHost) => $prose(
 					return false;
 				},
 			},
+			view(editorView) {
+				// Tab or ⇧Tab that nothing took (blocks selected, a line out of a
+				// list): kept in the editor, as SiYuan has it, not moving the focus
+				// out of it to the next field on the page.
+				const keepTab = (event: KeyboardEvent) => {
+					if (event.key !== 'Tab' || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
+					if (event.target instanceof Element && event.target.closest('input, textarea, select, .cm-editor')) return;
+					event.preventDefault();
+				};
+				editorView.dom.addEventListener('keydown', keepTab);
+				return { destroy: () => editorView.dom.removeEventListener('keydown', keepTab) };
+			},
 		}),
 );
 

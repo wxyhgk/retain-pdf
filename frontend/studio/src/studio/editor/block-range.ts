@@ -199,6 +199,31 @@ function replaceBlocks(state: EditorState, text: string, dispatch?: (tr: EditorS
 	return true;
 }
 
+/**
+ * A character typed while blocks are selected: the blocks are let go of and it
+ * is written at the end of the last of them (as SiYuan has it), not put in
+ * their place: one key pressed by mistake loses nothing.
+ */
+function typeAtEnd(state: EditorState, text: string, dispatch?: (tr: EditorState['tr']) => void): boolean {
+	const selection = state.selection;
+	if (!(selection instanceof BlockRangeSelection)) return false;
+	if (!dispatch) return true;
+	const range = coveredRange(state.doc, selection.from, selection.to);
+	const end = TextSelection.near(state.doc.resolve(range.to), -1);
+	let tr = state.tr;
+	if (end instanceof TextSelection && end.$head.parent.inlineContent && end.head > range.from) {
+		tr = tr.setSelection(end).insertText(text);
+	} else {
+		// The last of them holds no text (a figure): a new line after it.
+		const paragraph = state.schema.nodes.paragraph?.create(null, state.schema.text(text));
+		if (!paragraph) return false;
+		tr = tr.insert(range.to, paragraph);
+		tr = tr.setSelection(TextSelection.create(tr.doc, range.to + 1 + text.length));
+	}
+	dispatch(tr.scrollIntoView());
+	return true;
+}
+
 /** Keyboard while whole blocks are selected. Returns false when the key belongs to text editing. */
 export function blockRangeKey(
 	state: EditorState,
@@ -242,8 +267,8 @@ export function blockRangeKey(
 		dispatch?.(state.tr.setSelection(next).scrollIntoView());
 		return true;
 	}
-	if (key.text != null) return replaceBlocks(state, key.text, dispatch);
-	if (key.key.length === 1) return replaceBlocks(state, key.key, dispatch);
+	if (key.text != null) return typeAtEnd(state, key.text, dispatch);
+	if (key.key.length === 1) return typeAtEnd(state, key.key, dispatch);
 	return false;
 }
 

@@ -8,7 +8,8 @@ import { $prose } from '@milkdown/utils';
 import type { Node as ProseNode } from 'prosemirror-model';
 
 import { blockActionItems, headingEnter, keyHint, planBlockEdit, planTurn, type BlockAction, type BlockEdit } from './block-actions.ts';
-import { moveBlocks } from './block-keys.ts';
+import { duplicateBlocks, moveBlocks } from './block-keys.ts';
+import { BlockRangeSelection, blockRangeKey, coveredRange } from './block-range.ts';
 import { blockRangePlugin } from './block-range-drag.ts';
 import { paragraphBreakPlugin } from './paragraph-breaks.ts';
 import { dispatchScienceAction } from './science-block-menu.ts';
@@ -46,6 +47,15 @@ export function dispatchBlockAction(view: EditorView, action: BlockAction): void
 	}
 	const target = blockAt(view.state.doc, view.state.selection.from);
 	if (!target) return;
+	// Several blocks selected: all of them are deleted or copied, not the first.
+	const { selection } = view.state;
+	if (selection instanceof BlockRangeSelection && coveredRange(view.state.doc, selection.from, selection.to).to > target.pos + target.node.nodeSize) {
+		const dispatch = (tr: EditorView['state']['tr']) => view.dispatch(tr);
+		if (action.type === 'delete') blockRangeKey(view.state, { key: 'Backspace' }, dispatch);
+		else duplicateBlocks(view.state, dispatch);
+		view.focus();
+		return;
+	}
 	const edit = planBlockEdit(view.state.doc, target.pos, action);
 	if (!edit) return;
 	dispatchBlockEdit(view, edit);
