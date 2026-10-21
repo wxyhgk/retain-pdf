@@ -49,7 +49,7 @@ test('a row’s ⋯ opens what can be done to it', async ({ page }) => {
 	const item = row(page, TITLE);
 	await item.hover();
 	await item.locator('.page-more').click();
-	await expect(page.getByRole('menuitem')).toHaveText(['在下面新建页面…', '改文件夹名…', '复制一份', '移到回收站']);
+	await expect(page.getByRole('menuitem')).toHaveText(['在下面新建页面', '改文件夹名…', '复制一份', '移到回收站']);
 	await page.keyboard.press('Escape');
 });
 

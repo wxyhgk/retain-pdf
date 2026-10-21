@@ -48,7 +48,7 @@ import { isImage, markdownReference } from './article-files';
 import { createDriveBrowser } from './workspace/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
-import { createNewArticleDialog } from './workspace/new-article-dialog';
+import { autoSlug, freeSlug, isAutoSlug, readableSlug } from './workspace/page-names';
 import { pluginCommands, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
 import { createPluginsDialog } from './workspace/plugins-dialog';
 import { runCommand, showPluginUi } from './workspace/plugin-ui';
@@ -97,7 +97,7 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
-	createChild: (article) => newArticleDialog.openUnder({ slug: article.slug, title: article.title }),
+	createChild: (article) => void newPage(article.slug),
 	// The open article as an edit of it (its text is in the editor); another, on disk.
 	move: (slug, parent) => {
 		if (slug === session.slug) {
@@ -111,6 +111,7 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 		);
 	},
 	listed: (articles) => {
+		showPath();
 		properties.knowTags(articles.flatMap((article) => article.tags ?? []));
 		if (shell.dataset.view === 'table') articleTable.refresh();
 	},
@@ -139,7 +140,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 			return false;
 		}
 	},
-	publish: () => { void session.flush(); },
+	publish: () => void publishAndName(),
 	leaveTitle: () => editor.focusStart(),
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
 	async pictures() {
@@ -236,6 +237,7 @@ const session = new ArticleSession(
 			topBar.edited(article.modified ?? null);
 			editorPanel.classList.toggle('is-wide', Boolean(shown.wide));
 			articleList.select(article.slug);
+			showPath();
 			filesListed = filePanel.show(article.slug);
 			backlinksShown = backlinks.show(article.slug);
 			terminal.showArticle(article.slug);
@@ -253,6 +255,7 @@ const session = new ArticleSession(
 		retitled(title) {
 			openTitle = title;
 			topBar.showTitle(title);
+			if (session.slug) articleList.retitled(session.slug, title);
 		},
 		saved(slug, saved, problems) {
 			articleList.saved(slug, saved);
@@ -301,11 +304,55 @@ async function openFromList(slug?: string, discard = false): Promise<void> {
 	else topBar.showEmpty();
 }
 
-const newArticleDialog = createNewArticleDialog([...shell.querySelectorAll<HTMLElement>('#new-article, #new-article-secondary')], {
-	leave: () => session.saveBeforeLeaving(),
-	create: async (slug, title, parent) => { await createArticle(slug, title, parent); },
-	open: (slug) => openFromList(slug, true),
-});
+/**
+ * A new page, at once (as in Notion): no dialog, no folder name to think of
+ * (one is made up; it gets one read from the title when it is published);
+ * opened with its title selected, to be typed over. Under `parent` when given.
+ */
+async function newPage(parent = ''): Promise<void> {
+	if (!(await session.saveBeforeLeaving())) return;
+	const slug = freeSlug(autoSlug(), articleList.articles().map((article) => article.slug));
+	try {
+		await createArticle(slug, '无标题', parent);
+	} catch (error) {
+		showToast(error instanceof Error ? error.message : '新建失败', true);
+		return;
+	}
+	await openFromList(slug, true);
+	if (session.slug === slug) properties.selectTitle();
+}
+for (const opener of shell.querySelectorAll<HTMLElement>('#new-article, #new-article-secondary')) {
+	opener.addEventListener('click', () => void newPage());
+}
+
+/** The pages the open one is under, above its title. */
+function showPath(): void {
+	const articles = articleList.articles();
+	const bySlug = new Map(articles.map((article) => [article.slug, article]));
+	const pages: Array<{ slug: string; title: string }> = [];
+	const seen = new Set<string>();
+	for (let at = session.slug ? bySlug.get(session.slug)?.parent : undefined; at && !seen.has(at) && bySlug.has(at); at = bySlug.get(at)?.parent) {
+		seen.add(at);
+		pages.unshift({ slug: at, title: bySlug.get(at)!.title });
+	}
+	properties.showPath(pages, (slug) => void session.open(slug));
+}
+
+/**
+ * Published: saved, and, if its folder name is still one made up for a new
+ * page, given one read from its title, which is its address on the blog from
+ * now on (a published page is never renamed so, its address kept).
+ */
+async function publishAndName(): Promise<void> {
+	if (!(await session.flush())) return;
+	const slug = session.slug;
+	const article = articleList.articles().find((entry) => entry.slug === slug);
+	if (!slug || !article || article.draft !== false || !isAutoSlug(slug)) return;
+	const wanted = readableSlug(article.title);
+	if (!wanted || isAutoSlug(wanted)) return;
+	const to = freeSlug(wanted, articleList.articles().map((entry) => entry.slug));
+	if (await articleActions.renameTo(article, to)) showToast(`已发布，网址是 /${article.kind === 'wiki' ? 'wiki' : 'blog'}/${to}/`);
+}
 
 /**
  * 「问 AI」 (⌘J, the toolbar, a block's menu): the article saved, the lines

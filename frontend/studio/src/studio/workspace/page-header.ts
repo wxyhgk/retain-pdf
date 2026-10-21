@@ -68,6 +68,12 @@ function popover(anchor: HTMLElement, className: string, fill: (panel: HTMLEleme
  */
 export function createPageHeader(root: HTMLElement, host: PageHeaderHost) {
 	const title = root.querySelector<HTMLInputElement>('#article-title-input')!;
+	// Above the title: the pages it is under (the tree of pages).
+	const path = document.createElement('nav');
+	path.className = 'page-path';
+	path.setAttribute('aria-label', '上级页面');
+	path.hidden = true;
+	title.before(path);
 	const cover = root.querySelector<HTMLElement>('#page-cover')!;
 	const coverImage = cover.querySelector('img')!;
 	const icon = root.querySelector<HTMLButtonElement>('#page-icon')!;
@@ -384,6 +390,26 @@ export function createPageHeader(root: HTMLElement, host: PageHeaderHost) {
 			const end = title.value.length;
 			title.focus();
 			title.setSelectionRange(end, end);
+		},
+		/** The title selected, for a page just made: what is typed is its title. */
+		selectTitle(): void {
+			title.focus();
+			title.select();
+		},
+		/** The pages the open one is under, the nearest last, each a link to it; none, nothing shown. */
+		showPath(pages: Array<{ slug: string; title: string }>, open: (slug: string) => void): void {
+			path.replaceChildren(...pages.flatMap((page) => {
+				const link = document.createElement('button');
+				link.type = 'button';
+				link.className = 'page-path-link';
+				link.textContent = page.title;
+				link.addEventListener('click', () => open(page.slug));
+				const separator = document.createElement('span');
+				separator.className = 'page-path-separator';
+				separator.textContent = '›';
+				return [link, separator];
+			}));
+			path.hidden = pages.length === 0;
 		},
 	};
 }

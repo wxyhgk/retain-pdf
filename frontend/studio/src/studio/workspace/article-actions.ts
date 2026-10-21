@@ -2,7 +2,7 @@ import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { commitArticle, deleteArticle, duplicateArticle, gitStatus, renameArticle, restoreArticle } from '../api/client.ts';
 import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';
-import { cleanSlug } from './new-article-dialog.ts';
+import { cleanSlug, freeSlug } from './page-names.ts';
 import { showToast } from './toast.ts';
 
 /** An article deleted just before the page went empty, to offer back once it is shown again. */
@@ -24,15 +24,6 @@ export type ArticleActionsHost = {
 
 function errorText(error: unknown, fallback: string): string {
 	return error instanceof Error ? error.message : fallback;
-}
-
-/** A free folder name near `wanted`: `note-copy`, `note-copy-2`, … */
-function freeSlug(wanted: string, taken: ArticleSummary[]): string {
-	const names = new Set(taken.map((article) => article.slug));
-	if (!names.has(wanted)) return wanted;
-	let number = 2;
-	while (names.has(`${wanted}-${number}`)) number += 1;
-	return `${wanted}-${number}`;
 }
 
 /** A folder name typed by the author, made acceptable; null when given up or unusable. */
@@ -68,21 +59,26 @@ export function createArticleActions(host: ArticleActionsHost) {
 				article.slug,
 			);
 			if (!to || to === article.slug) return;
+			if (await this.renameTo(article, to)) showToast(`文件夹已改为 ${to}`);
+		},
+
+		/** Gives the article the folder name `to` (free, checked), reopening it if it is open. Whether it did. */
+		async renameTo(article: ArticleSummary, to: string): Promise<boolean> {
 			const open = host.openSlug() === article.slug;
-			if (open && !(await host.leave())) return;
+			if (open && !(await host.leave())) return false;
 			try {
 				await trackWrite(() => renameArticle(article.slug, to));
 			} catch (error) {
 				showToast(errorText(error, '改名失败'), true);
-				return;
+				return false;
 			}
 			await host.reload();
 			if (open) await host.open(to);
-			showToast(`文件夹已改为 ${to}`);
+			return true;
 		},
 
 		async duplicate(article: ArticleSummary): Promise<void> {
-			const to = askSlug(`复制「${article.title}」，新文章的文件夹名：`, freeSlug(`${article.slug}-copy`, await host.reload()));
+			const to = askSlug(`复制「${article.title}」，新文章的文件夹名：`, freeSlug(`${article.slug}-copy`, (await host.reload()).map((page) => page.slug)));
 			if (!to) return;
 			if (host.openSlug() === article.slug && !(await host.leave())) return;
 			try {

@@ -131,7 +131,7 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		const committable = Boolean(git?.available && (uncommitted || git.vanished.length));
 		const menu = (at: { x: number; y: number } | HTMLElement) => showContextMenu([
 			...(committable ? [{ label: '提交到 git…', action: () => host.commit(article) }, 'separator' as const] : []),
-			{ label: '在下面新建页面…', action: () => host.createChild(article) },
+			{ label: '在下面新建页面', action: () => host.createChild(article) },
 			...(article.parent ? [{ label: '移到最上层', action: () => host.move(article.slug, '') }] : []),
 			'separator',
 			{ label: '改文件夹名…', action: () => host.rename(article) },
@@ -156,6 +156,14 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		more.title = '更多操作';
 		more.setAttribute('aria-label', `${article.title} 的更多操作`);
 		more.addEventListener('click', () => menu(more));
+		// A new page under it, at once: the ＋ that shows on hover, as in Notion.
+		const add = document.createElement('button');
+		add.type = 'button';
+		add.className = 'page-add';
+		add.textContent = '＋';
+		add.title = '在下面新建页面';
+		add.setAttribute('aria-label', `在「${article.title}」下面新建页面`);
+		add.addEventListener('click', () => host.createChild(article));
 		const item = document.createElement('div');
 		item.className = `page-item${active ? ' active' : ''}`;
 		item.dataset.slug = article.slug;
@@ -181,7 +189,7 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			toggle.setAttribute('aria-hidden', 'true');
 			toggle.disabled = true;
 		}
-		item.append(toggle, open, more);
+		item.append(toggle, open, add, more);
 		// Dragged onto another page: under it. Onto the list's room below the pages: at the top.
 		item.draggable = true;
 		item.addEventListener('dragstart', (event) => {
@@ -229,12 +237,27 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	/** Something to show came while a page was being dragged: shown once the drag ends. */
 	let renderLater = false;
 
+	/** What the list was last drawn from: drawn again only when that changed. */
+	let drawn = '';
+
 	function render(): void {
 		// Not under the drag: drawn anew, the page dragged would go and the drag with it.
 		if (dragged) {
 			renderLater = true;
 			return;
 		}
+		// Not drawn again for nothing (git's answer, the list read again, the same): what the pointer is on
+		// (a ⋯ about to be clicked, a page about to be dragged) stays.
+		const state = JSON.stringify([
+			articles.map((article) => [article.slug, article.title, article.parent, article.draft, article.icon]),
+			git?.available,
+			git?.changed,
+			git?.vanished.length,
+			selected,
+			[...folded],
+		]);
+		if (state === drawn && list.childElementCount) return;
+		drawn = state;
 		list.replaceChildren();
 		if (!articles.length) {
 			const empty = document.createElement('p');
@@ -301,6 +324,13 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		select(slug: string): void {
 			selected = slug;
 			unfoldTo(slug);
+			render();
+		},
+		/** The open article's title as it is typed, before it is saved: the list follows it, as in Notion. */
+		retitled(slug: string, title: string): void {
+			const article = articles.find((entry) => entry.slug === slug);
+			if (!article || !title.trim() || article.title === title) return;
+			article.title = title;
 			render();
 		},
 		/** An article's saved title and draft state. */

@@ -267,29 +267,6 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 			</form>
 		</dialog>
 
-		<dialog id="new-article-dialog" class="article-dialog">
-			<form id="new-article-form">
-				<div class="dialog-heading">
-					<div><strong>新建文章</strong><span>创建一个完整的文章文件夹</span></div>
-					<button id="cancel-new-article" type="button" aria-label="关闭">×</button>
-				</div>
-				<label>
-					<span>标题</span>
-					<input id="new-article-title" name="title" type="text" autocomplete="off" placeholder="例如：Hartree–Fock 学习笔记" required />
-				</label>
-				<label>
-					<span>文件夹名称</span>
-					<div class="slug-field"><span>blog/</span><input id="new-article-slug" name="slug" type="text" autocomplete="off" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" required /><span>/</span></div>
-					<small>只能使用小写字母、数字和连字符，创建后暂不支持修改。</small>
-				</label>
-				<p id="new-article-error" class="dialog-error" role="alert" hidden></p>
-				<div class="dialog-actions">
-					<button id="cancel-new-article-secondary" type="button">取消</button>
-					<button id="create-article" type="submit">创建并打开</button>
-				</div>
-			</form>
-		</dialog>
-
 		<script>import './main';</script>
 	</body>
 </html>
@@ -356,6 +333,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
 	#article-list :global(.page-row:hover), #article-list :global(.page-row.active) { background: rgb(var(--gray-light)); }
 	/* ⋯ on hover, over the badges at the end of the row. */
+	/* Above the title of a page under others: the way up to them. */
+	:global(.page-path) { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin: 0 0 4px; color: rgb(var(--gray)); font-size: 13px; }
+	:global(.page-path[hidden]) { display: none; }
+	:global(.page-path-link) { padding: 1px 4px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+	:global(.page-path-link:hover) { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+	:global(.page-path-separator) { opacity: 0.6; }
 	#article-list :global(.page-item) { position: relative; --indent: calc(var(--depth, 0) * 14px); }
 	/* The tree: each level 14px further in, the triangle that folds what is under a page left of it. */
 	#article-list :global(.page-item .page-row) { padding-left: calc(22px + var(--indent)); }
@@ -368,6 +351,9 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	#article-list:global(.is-dragging-page) { min-height: 120px; }
 	#article-list :global(.page-more) { position: absolute; top: 50%; right: 4px; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 22px; cursor: pointer; opacity: 0; transform: translateY(-50%); }
 	#article-list :global(.page-item:hover .page-more), #article-list :global(.page-more:focus-visible) { opacity: 1; }
+	#article-list :global(.page-add) { position: absolute; top: 50%; right: 30px; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font: inherit; font-size: 13px; line-height: 22px; cursor: pointer; opacity: 0; transform: translateY(-50%); }
+	#article-list :global(.page-item:hover .page-add), #article-list :global(.page-add:focus-visible) { opacity: 1; }
+	#article-list :global(.page-add:hover) { background: rgba(55, 53, 47, 0.16); color: rgb(var(--gray-dark)); }
 	#article-list :global(.page-more:hover) { background: rgba(55, 53, 47, 0.16); color: rgb(var(--gray-dark)); }
 	#article-list :global(.page-icon) { color: rgb(var(--gray)); font-size: 12px; text-align: center; }
 	#article-list :global(.page-git) { font-size: 8px; line-height: 1; }
@@ -827,12 +813,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.dialog-heading button:hover { background: var(--surface-soft); }
 	.article-dialog input { box-sizing: border-box; width: 100%; height: 38px; padding: 0 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; outline: none; }
 	.article-dialog input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
-	.slug-field { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; height: 38px; padding: 0 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface-soft); color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 12px; }
-	.slug-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
-	.slug-field input { height: 34px; padding: 0 2px; border: 0; border-radius: 0; background: transparent; font-family: inherit; }
-	.slug-field input:focus { box-shadow: none; }
 	.article-dialog small { color: rgb(var(--gray)); font-size: 10px; line-height: 1.5; }
-	.dialog-error { margin: -5px 0 0; padding: 8px 10px; border-radius: 6px; background: #fff1ef; color: #a12d24; font-size: 11px; }
 	.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 3px; }
 	.dialog-actions button { padding: 7px 13px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 	.dialog-actions button[type='submit'] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }

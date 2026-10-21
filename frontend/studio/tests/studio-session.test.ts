@@ -5,7 +5,7 @@ import { articleFileUrl } from '../src/studio/api/client.ts';
 import { ArticleSession, changedProperties, type SaveState, type SessionApi, type SessionHost } from '../src/studio/state/article-session.ts';
 import type { ArticlePayload, ArticleProperties } from '../src/studio/types.ts';
 import { filterArticles } from '../src/studio/workspace/article-list.ts';
-import { cleanSlug, suggestedSlug } from '../src/studio/workspace/new-article-dialog.ts';
+import { autoSlug, cleanSlug, freeSlug, isAutoSlug, readableSlug } from '../src/studio/workspace/page-names.ts';
 import { parseTags } from '../src/studio/workspace/page-header.ts';
 import { saveStateText } from '../src/studio/workspace/top-bar.ts';
 
@@ -348,8 +348,16 @@ test('small helpers of the page', () => {
 	assert.equal(articleFileUrl('note', 'https://x.y/a.png'), 'https://x.y/a.png');
 	assert.equal(articleFileUrl('note', './ai/a.png'), './ai/a.png');
 	assert.deepEqual(parseTags('量子化学， Python,,  '), ['量子化学', 'Python']);
-	assert.equal(suggestedSlug('Hartree–Fock 学习笔记'), 'hartree-fock');
-	assert.equal(suggestedSlug('水分子', new Date(2026, 9, 4, 8, 5)), 'note-20261004-0805');
+	// Folder names the author never types: made up for a new page, read from the title when it is published.
+	assert.equal(autoSlug(new Date(2026, 9, 4, 8, 5, 9)), 'note-20261004-080509');
+	assert.equal(isAutoSlug('note-20261004-080509'), true);
+	assert.equal(isAutoSlug('note-20261004-0805-2'), true);
+	assert.equal(isAutoSlug('hartree-fock'), false);
+	assert.equal(readableSlug('Hartree–Fock 学习笔记'), 'hartree-fock-xue-xi-bi-ji');
+	assert.equal(readableSlug('基组的选择：6-31G*'), 'ji-zu-de-xuan-ze-6-31g');
+	assert.equal(readableSlug('🧪'), '');
+	assert.ok(readableSlug('很长的标题'.repeat(10)).length <= 60);
+	assert.equal(freeSlug('note', ['note', 'note-2']), 'note-3');
 	assert.equal(cleanSlug('My Note_1'), 'mynote1');
 	const articles = [{ slug: 'hf', title: 'Hartree–Fock 方程' }, { slug: 'water', title: '水分子' }];
 	assert.deepEqual(filterArticles(articles, '  HARTREE').map((article) => article.slug), ['hf']);
