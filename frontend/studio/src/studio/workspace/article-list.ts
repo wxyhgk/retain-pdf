@@ -16,6 +16,8 @@ export type ArticleListHost = {
 	listed?(articles: ArticleSummary[]): void;
 	/** A new page under this one. */
 	createChild(article: ArticleSummary): void;
+	/** 并入上级页面: its text into the page it is under, as a section. */
+	merge(article: ArticleSummary): void;
 	/** Puts the article under another page (its folder name), or at the top with `parent` empty; with `place`, there among those. */
 	move(slug: string, parent: string, place?: PagePlace): void;
 };
@@ -155,7 +157,7 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		const menu = (at: { x: number; y: number } | HTMLElement) => showContextMenu([
 			...(committable ? [{ label: '提交到 git…', action: () => host.commit(article) }, 'separator' as const] : []),
 			{ label: '在下面新建页面', action: () => host.createChild(article) },
-			...(article.parent ? [{ label: '移到最上层', action: () => host.move(article.slug, '') }] : []),
+			...(article.parent ? [{ label: '移到最上层', action: () => host.move(article.slug, '') }, { label: '并入上级页面…', action: () => host.merge(article) }] : []),
 			'separator',
 			{ label: '改文件夹名…', action: () => host.rename(article) },
 			{ label: '复制一份', action: () => host.duplicate(article) },

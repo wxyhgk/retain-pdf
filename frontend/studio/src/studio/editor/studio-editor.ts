@@ -26,6 +26,7 @@ import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
 import { createSciencePreview, observeSciencePreviews } from '@blog/science/browser/science-renderer.ts';
 import { linkPath } from '../article-files';
 import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
+import { filesNamed, headingSection } from './split-section';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { scienceBlockPlugins } from './crepe-science-block';
@@ -69,6 +70,12 @@ export type StudioEditorHost = {
 	reviewing(pending: number | null): void;
 	/** The author asks an AI about the selected blocks (⌘J, 「问 AI」): `markSelection` tells which. */
 	askAI(): void;
+	/**
+	 * 转成子页面: the folder name a page made now under the open article
+	 * would get (null when none is open), and making it with this text and the
+	 * article's files it names; whether it was made.
+	 */
+	subPage: { plan(): string | null; make(slug: string, title: string, body: string, files: string[]): Promise<boolean> };
 } & ArticleLinkHost &
 	CitationHost;
 
@@ -180,6 +187,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					buildBlockMenu(builder, target, {
 						saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) },
 						ask: () => host.askAI(),
+						split: (view, pos) => void splitToPage(view, pos),
 					}),
 				buildMenu: (builder) => {
 					buildScienceSlashMenu(builder);
@@ -353,6 +361,33 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			const marked = state.tr.insert(end, mark(SELECTION_END)).insert(start, mark(SELECTION_START)).doc;
 			return withoutTrailingEmptyLines(ctx.get(serializerCtx)(marked));
 		});
+	}
+
+	/**
+	 * A heading's section made a page under the article (as SiYuan turns a
+	 * heading into a document): its text there, the heading its title, the
+	 * files it names copied along; in its place, a link to the new page. Taken
+	 * back (⌘Z) if the page could not be made.
+	 */
+	async function splitToPage(view: EditorView, pos: number): Promise<void> {
+		if (!crepe) return;
+		const section = headingSection(view.state.doc, pos);
+		const slug = host.subPage.plan();
+		if (!section || !slug) return;
+		const { doc, schema } = view.state;
+		const heading = doc.nodeAt(section.from)!;
+		const content = doc.slice(section.from + heading.nodeSize, section.to).content;
+		const page = schema.topNodeType.createAndFill(null, content) ?? schema.topNodeType.createAndFill()!;
+		const body = crepe.editor.action((ctx) => withoutTrailingEmptyLines(ctx.get(serializerCtx)(page)));
+		const title = section.title || '无标题';
+		const link = schema.marks.link?.create({ href: `/blog/${slug}/`, title: null });
+		const paragraph = schema.nodes.paragraph!.create(null, schema.text(title, link ? [link] : []));
+		const before = view.state.doc;
+		view.dispatch(view.state.tr.replaceWith(section.from, section.to, paragraph).scrollIntoView());
+		const after = view.state.doc;
+		if (await host.subPage.make(slug, title, body, filesNamed(body))) return;
+		// Not made: the section back, if nothing was done since.
+		if (view.state.doc === after) view.dispatch(view.state.tr.replaceWith(0, after.content.size, before.content));
 	}
 
 	function focusStart(): void {

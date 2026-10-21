@@ -85,7 +85,8 @@ const snapshot = createPageSnapshot(shell, {
 const articleActions = createArticleActions({
 	openSlug: () => session.slug,
 	leave: () => session.saveBeforeLeaving(),
-	open: (slug) => session.open(slug, { discard: true }),
+	// The one open already is read again: what was done may have changed it on disk.
+	open: (slug) => (slug === session.slug ? session.reload() : session.open(slug, { discard: true })),
 	reload: () => articleList.load(),
 	refreshGit: () => refreshGit(),
 });
@@ -99,6 +100,7 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
 	createChild: (article) => void newPage(article.slug),
+	merge: (article) => void articleActions.merge(article),
 	// On disk, the open article too (saved first): what changes is its properties alone, which it takes in quietly.
 	move: (slug, parent, place) => {
 		void (async () => {
@@ -172,6 +174,23 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 });
 
 const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-editor')!, {
+	// 转成子页面: a page under the open article, made with a section of it.
+	subPage: {
+		plan: () => (session.slug ? freeSlug(autoSlug(), articleList.articles().map((article) => article.slug)) : null),
+		async make(slug, title, body, files) {
+			const parent = session.slug;
+			if (!parent) return false;
+			try {
+				await trackWrite(() => createArticle(slug, title, parent, { body, files }));
+			} catch (error) {
+				showToast(error instanceof Error ? error.message : '没能转成子页面', true);
+				return false;
+			}
+			await articleList.load();
+			showToast(`已转成子页面「${title}」`, { action: { label: '打开', run: () => void session.open(slug) } });
+			return true;
+		},
+	},
 	// Files dropped or pasted into the editor, and its image uploads, go into the open article's folder.
 	files: {
 		async upload(files) {
@@ -192,8 +211,9 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error('文章尚未载入'))),
 	changed: (markdown) => session.editBody(markdown),
 	async pickArticle() {
-		const slug = await quickFind.pick();
-		const article = articleList.articles().find((entry) => entry.slug === slug);
+		const picked = await quickFind.pick();
+		if (picked && 'create' in picked) return makeLinkedPage(picked.create);
+		const article = articleList.articles().find((entry) => entry.slug === picked?.slug);
 		return article ? { title: article.title, href: articleAddress(article.kind, article.slug) } : null;
 	},
 	openArticle: (slug) => void session.open(slug),
@@ -325,6 +345,26 @@ async function newPage(parent = ''): Promise<void> {
 }
 for (const opener of shell.querySelectorAll<HTMLElement>('#new-article, #new-article-secondary')) {
 	opener.addEventListener('click', () => void newPage());
+}
+
+/**
+ * 新建子页面 from `[[`: a page of this title under the open one, linked
+ * where the `[[` was; the author writes on where they were (as SiYuan's
+ * reference picker makes a document), and opens it from the toast.
+ */
+async function makeLinkedPage(title: string): Promise<{ title: string; href: string } | null> {
+	const parent = session.slug;
+	if (!parent) return null;
+	const slug = freeSlug(autoSlug(), articleList.articles().map((article) => article.slug));
+	try {
+		await trackWrite(() => createArticle(slug, title, parent));
+	} catch (error) {
+		showToast(error instanceof Error ? error.message : '新建失败', true);
+		return null;
+	}
+	await articleList.load();
+	showToast(`已新建子页面「${title}」`, { action: { label: '打开', run: () => void session.open(slug) } });
+	return { title, href: `/blog/${slug}/` };
 }
 
 /** The pages the open one is under, above its title. */

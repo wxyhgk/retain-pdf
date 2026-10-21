@@ -1,5 +1,5 @@
 import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
-import { articleBacklinks, commitArticle, deleteArticle, duplicateArticle, gitStatus, renameArticle, restoreArticle, setArticleParent } from '../api/client.ts';
+import { articleBacklinks, commitArticle, deleteArticle, duplicateArticle, gitStatus, mergeArticle, renameArticle, restoreArticle, setArticleParent } from '../api/client.ts';
 import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';
 import { cleanSlug, freeSlug } from './page-names.ts';
@@ -206,6 +206,31 @@ export function createArticleActions(host: ArticleActionsHost) {
 			if (open) await host.open(articles[0].slug);
 			const what = removed.length > 1 ? `「${article.title}」和下面 ${removed.length - 1} 个页面` : `「${article.title}」`;
 			showToast(`已删除${what}`, { action: { label: '撤销', run: () => void restoreAll([...trashed].reverse(), article.title) } });
+		},
+
+		/**
+		 * 并入上级页面 (the way back from 转成子页面): its text a section of the
+		 * page it is under, which is then opened; itself to the trash.
+		 */
+		async merge(article: ArticleSummary): Promise<void> {
+			const all = await host.reload();
+			const parent = all.find((page) => page.slug === article.parent);
+			if (!parent) return;
+			if (!window.confirm(`把「${article.title}」并入「${parent.title}」，作为其中一节？\n它下面的页面会挂到「${parent.title}」下面，它自己移到回收站；「${parent.title}」改动前的版本存进历史版本。`)) return;
+			const open = host.openSlug();
+			if ((open === article.slug || open === parent.slug) && !(await host.leave())) return;
+			try {
+				// Opened again inside the write: the change on disk is the Studio's, not one to review.
+				await trackWrite(async () => {
+					await mergeArticle(article.slug);
+					await host.reload();
+					await host.open(parent.slug);
+				});
+			} catch (error) {
+				showToast(errorText(error, '并入失败'), true);
+				return;
+			}
+			showToast(`已把「${article.title}」并入「${parent.title}」`);
 		},
 
 		/** Commits the article to git, saved first; pushing stays the author's. */

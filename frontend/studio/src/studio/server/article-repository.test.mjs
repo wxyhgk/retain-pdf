@@ -328,3 +328,43 @@ test('a page put before or after another under the same page goes just there, th
 	await assert.rejects(repository.setParent('notes', 'project', { before: 'project' }), /不在那里/u);
 	assert.equal(validateArticleSource(await readFile(articleBundlePaths(blog, 'notes').markdown, 'utf8')).success, true);
 });
+
+test('a page made with a section of its parent has that text, and the parent’s files it names copied in', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'project', title: '项目' });
+	await mkdir(join(blog, 'project', 'img'), { recursive: true });
+	await writeFile(join(blog, 'project', 'img', 'plot.png'), 'png');
+	await repository.create({
+		slug: 'method',
+		title: '方法',
+		parent: 'project',
+		body: '先算。\n\n![图](./img/plot.png)\n',
+		files: ['img/plot.png', 'img/missing.png', '../project/index.md', 'ai/brief.md'],
+	});
+	const source = await readFile(articleBundlePaths(blog, 'method').markdown, 'utf8');
+	assert.match(source, /\nparent: project\n---\n\n先算。\n\n!\[图\]\(\.\/img\/plot\.png\)\n$/u);
+	assert.equal(await readFile(join(blog, 'method', 'img', 'plot.png'), 'utf8'), 'png');
+	assert.equal(validateArticleSource(source).success, true);
+});
+
+test('a page merged into the one above it: its text a section there, in place of the link to it; its files, pages and links follow', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'project', title: '项目', body: '前言。\n\n[方法](/blog/method/)\n\n尾声。' });
+	await repository.create({ slug: 'method', title: '方法', parent: 'project', body: '先算。\n\n![图](./img/plot.png)' });
+	await mkdir(join(blog, 'method', 'img'), { recursive: true });
+	await writeFile(join(blog, 'method', 'img', 'plot.png'), 'png');
+	await repository.create({ slug: 'detail', title: '细节', parent: 'method' });
+	await repository.create({ slug: 'other', title: '别处', body: '见 [方法](/blog/method/)。' });
+	const kept = [];
+	assert.deepEqual(await repository.merge('method', { before: (parent, source) => kept.push([parent, source]) }), { slug: 'method', parent: 'project' });
+	assert.equal(kept[0][0], 'project');
+	assert.match(kept[0][1], /\[方法\]\(\/blog\/method\/\)/u);
+	const project = await readFile(articleBundlePaths(blog, 'project').markdown, 'utf8');
+	assert.match(project, /前言。\n\n## 方法\n\n先算。\n\n!\[图\]\(\.\/img\/plot\.png\)\n\n尾声。/u);
+	assert.equal(await readFile(join(blog, 'project', 'img', 'plot.png'), 'utf8'), 'png');
+	assert.equal((await repository.list()).find((page) => page.slug === 'detail').parent, 'project');
+	assert.match(await readFile(articleBundlePaths(blog, 'other').markdown, 'utf8'), /\[方法\]\(\/blog\/project\/\)/u);
+	await assert.rejects(repository.merge('project'), /没有可以并入的上级/u);
+});

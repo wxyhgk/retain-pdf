@@ -13,7 +13,11 @@ export type QuickFindHost = {
 };
 
 /** An article, or (with `drivePath`) a file of the drive. */
-type Row = { slug: string; title: string; icon: string; snippet?: string; text?: string; drivePath?: string };
+/** `create`: the row that makes a page of that title (asked for an article to link: 新建子页面). */
+type Row = { slug: string; title: string; icon: string; snippet?: string; text?: string; drivePath?: string; create?: string };
+
+/** What was picked when an article was asked for: one there is, or a new page under the open one, of this title. */
+export type Picked = { slug: string } | { create: string };
 
 /** `text` with each `needle` in it marked. */
 function marked(text: string, needle: string): Node[] {
@@ -51,7 +55,7 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 	let timer = 0;
 	let asking: AbortController | null = null;
 	/** While an article is asked for (`pick`): who gets it. */
-	let picking: ((slug: string | null) => void) | null = null;
+	let picking: ((picked: Picked | null) => void) | null = null;
 
 	function draw(): void {
 		const query = input.value.trim();
@@ -99,9 +103,16 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 		return filterArticles(host.articles(), query).map((article) => ({ slug: article.slug, title: article.title, icon: article.icon ?? '' }));
 	}
 
+	/** Asked for an article to link, with words typed: last, a new page under the open one, of that title (as SiYuan offers). */
+	function withCreate(found: Row[], query: string): Row[] {
+		if (!picking || !query) return found;
+		const exact = found.some((row) => row.title === query);
+		return exact ? found : [...found, { slug: '', title: `新建子页面「${query}」`, icon: '＋', create: query }];
+	}
+
 	function update(): void {
 		const query = input.value.trim();
-		rows = titles(query);
+		rows = withCreate(titles(query), query);
 		index = 0;
 		draw();
 		window.clearTimeout(timer);
@@ -117,6 +128,8 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 				const seen = new Set(rows.map((row) => row.slug));
 				const selected = rows[index]?.slug;
 				// The titles stay first; each article whose text holds it follows, with the first line it is on.
+				const create = rows.filter((row) => row.create);
+				rows = rows.filter((row) => !row.create);
 				for (const result of results) {
 					const line = result.matches[0];
 					const existing = rows.find((row) => row.slug === result.slug);
@@ -128,6 +141,7 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 					seen.add(result.slug);
 					rows.push({ slug: result.slug, title: result.title, icon: result.icon, snippet: line ? around(line.text, query) : undefined, text: line ? query : undefined });
 				}
+				rows.push(...create);
 				index = Math.max(0, rows.findIndex((row) => row.slug === selected));
 				draw();
 			}, () => {});
@@ -152,11 +166,11 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 	function choose(at: number): void {
 		const row = rows[at];
 		if (!row) return;
-		if (!row.slug && !row.drivePath) return;
+		if (!row.slug && !row.drivePath && !row.create) return;
 		const answer = picking;
 		picking = null;
 		dialog.close();
-		if (answer) answer(row.slug);
+		if (answer) answer(row.create ? { create: row.create } : { slug: row.slug });
 		else if (row.drivePath) host.openDriveFile(row.drivePath);
 		else host.open(row.slug, row.text);
 	}
@@ -201,8 +215,8 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 			}
 			show('搜索文章和资料库…');
 		},
-		/** Asks which article: its slug, or null when given up. */
-		pick(): Promise<string | null> {
+		/** Asks which article: one there is, a new one to make (its title typed), or null when given up. */
+		pick(): Promise<Picked | null> {
 			if (dialog.open) dialog.close();
 			return new Promise((resolve) => {
 				picking = resolve;

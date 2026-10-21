@@ -269,6 +269,15 @@ export default function studioDev({ site } = {}) {
 						return json(response, 200, await articles.setParent(decodePathComponent(parentMatch[1]), text(parent), { before: text(before), after: text(after) }));
 					}
 
+					// 并入上级页面: its text into the page it is under (whose text as it was goes into that page's history), then itself to the trash.
+					const mergeMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/merge$/u);
+					if (mergeMatch && request.method === 'POST') {
+						const slug = decodePathComponent(mergeMatch[1]);
+						const merged = await articles.merge(slug, { site, before: (parent, source) => history.keep(parent, source, 'before-change') });
+						const { trashed } = await articles.exclusive(slug, () => manager.trashArticle(slug));
+						return json(response, 200, { ...merged, trashed });
+					}
+
 					// Another folder name for an article, or a copy of it under one.
 					const articleActionMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/(rename|duplicate)$/u);
 					if (articleActionMatch && request.method === 'POST') {

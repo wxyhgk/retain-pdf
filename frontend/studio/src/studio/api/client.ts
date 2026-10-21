@@ -54,8 +54,13 @@ export function getArticle(slug: string): Promise<ArticlePayload> {
 	}));
 }
 
-export function createArticle(slug: string, title: string, parent = ''): Promise<{ slug: string }> {
-	return request('/api/studio/articles', jsonOptions('POST', { slug, title, parent }));
+export function createArticle(slug: string, title: string, parent = '', made: { body?: string; files?: string[] } = {}): Promise<{ slug: string }> {
+	return request('/api/studio/articles', jsonOptions('POST', { slug, title, parent, ...made }));
+}
+
+/** 并入上级页面: the article's text into the page it is under; the article to the trash. */
+export function mergeArticle(slug: string): Promise<{ slug: string; parent: string; trashed: string }> {
+	return request(`/api/studio/articles/${encodeURIComponent(slug)}/merge`, jsonOptions('POST', {}));
 }
 
 /** Where a page goes among those under the same one: just before or after this one (its folder name). */

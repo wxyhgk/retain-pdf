@@ -1,10 +1,10 @@
 import { cp, lstat, mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
-import { basename, resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { setFrontmatterField, updateStudioFrontmatter } from '../document/frontmatter.ts';
 import { comparePages } from '../../articles/page-order.mjs';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
-import { articleBundlePaths, assertArticleSlug, StudioPathError } from '../../articles/bundle-paths.mjs';
+import { articleBundlePaths, assertArticleSlug, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { findArticleLinks, relinkArticle } from '@blog/markdown/articles/article-links.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../articles/schemas.mjs';
@@ -135,9 +135,16 @@ export class ArticleRepository {
 		return results.slice(0, limit).map(({ count, ...result }) => result);
 	}
 
-	async create({ slug, title, parent = '' }) {
+	/**
+	 * A new article: a draft titled `title`, under `parent` when given. With
+	 * `body`, that is its text (a section of its parent, 转成子页面), and the
+	 * parent's files it names (`files`: `img/…`, `assets/…`) are copied into
+	 * its own folder, where its `./img/…` links then find them.
+	 */
+	async create({ slug, title, parent = '', body = '', files = [] }) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
+		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError('新文章的内容无效');
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		try {
 			await stat(paths.directory);
@@ -147,12 +154,28 @@ export class ArticleRepository {
 			if (error?.code !== 'ENOENT') throw error;
 		}
 
-		const source = createArticleSource({ title, parent });
+		const source = createArticleSource({ title, parent, body });
 		await Promise.all(ARTICLE_FOLDERS.map((name) => mkdir(paths[name], { recursive: true })));
 		await Promise.all([
 			writeFile(paths.markdown, source, { encoding: 'utf8', flag: 'wx' }),
 			writeFile(paths.views, DEFAULT_ARTICLE_VIEWS, { encoding: 'utf8', flag: 'wx' }),
 		]);
+		if (parent) {
+			const from = articleBundlePaths(this.blogRoot, parent).directory;
+			for (const file of files) {
+				// Only the parent's published folders, and only what is there.
+				if (typeof file !== 'string' || !/^(?:img|assets)\//u.test(file)) continue;
+				const source = resolveInside(from, file);
+				const target = resolveInside(paths.directory, file);
+				try {
+					if (!(await lstat(source)).isFile()) continue;
+				} catch {
+					continue;
+				}
+				await mkdir(dirname(target), { recursive: true });
+				await cp(source, target, { errorOnExist: false, force: false });
+			}
+		}
 		return { slug };
 	}
 
@@ -218,6 +241,51 @@ export class ArticleRepository {
 			const ordered = siblings.filter((page) => typeof page.order === 'number');
 			const last = ordered.length ? Math.max(...ordered.map((page) => page.order)) : null;
 			await this.#writeFields(slug, { parent, order: last === null ? null : last + 10 });
+			return { slug, parent };
+		});
+	}
+
+	/**
+	 * 并入上级页面 (the way back from 转成子页面): the article's text goes into
+	 * the page it is under, as a section headed by its title, in place of a
+	 * line that is only a link to it, or at the end; its files are copied to
+	 * that page's folder (its own names kept: one there already stays), the
+	 * pages under it go under that page, and links to it go to that page.
+	 * `before(parent, source)` is told the parent's text as it was, first. The
+	 * article itself is left for the caller to put in the trash.
+	 */
+	merge(slug, { site, before } = {}) {
+		assertArticleSlug(slug);
+		return this.exclusive(slug, async () => {
+			const own = articleBundlePaths(this.blogRoot, slug);
+			await assertReadableBundle(own);
+			const source = await readFile(own.markdown, 'utf8');
+			const { title, parent } = articleSummary(source, slug);
+			if (!parent) throw new ArticleValidationError('它不在别的页面下面，没有可以并入的上级');
+			const above = articleBundlePaths(this.blogRoot, parent);
+			await assertReadableBundle(above);
+			const parentSource = await readFile(above.markdown, 'utf8');
+			await before?.(parent, parentSource);
+			const body = source.replace(/^(?:\uFEFF)?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/u, '').trim();
+			const section = `## ${title}\n\n${body}`.trim();
+			const linkLine = new RegExp(`^[ \\t]*\\[[^\\]\\n]*\\]\\((?:https?://[^)\\s]*)?/(?:blog|wiki)/${slug}/?\\)[ \\t]*$`, 'mu');
+			const merged = linkLine.test(parentSource)
+				? parentSource.replace(linkLine, () => section)
+				: `${parentSource.replace(/\s*$/u, '')}\n\n${section}\n`;
+			await atomicWriteText(above.markdown, merged);
+			for (const folder of ['img', 'assets']) {
+				try {
+					await cp(resolveInside(own.directory, folder), resolveInside(above.directory, folder), { recursive: true, errorOnExist: false, force: false });
+				} catch (error) {
+					if (error?.code !== 'ENOENT') throw error;
+				}
+			}
+			for (const child of await this.#children(slug)) await this.#writeParent(child, parent);
+			for (const { slug: page, source: text } of await this.#sources()) {
+				if (page === slug) continue;
+				const { source: next, changed } = relinkArticle(text, slug, parent, { site });
+				if (changed) await atomicWriteText(articleBundlePaths(this.blogRoot, page).markdown, next);
+			}
 			return { slug, parent };
 		});
 	}

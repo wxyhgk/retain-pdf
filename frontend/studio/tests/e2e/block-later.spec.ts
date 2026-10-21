@@ -111,9 +111,11 @@ test('↑ and ↓ through code keep the caret about as far across as it was', as
 	appendToFixture('\n上面一行文字比较长ABCDEFGHIJ。\n\n```js\nlet alpha = 100000;\nlet beta = 200000;\n```\n\n下面一行文字比较长ABCDEFGHIJ。\n');
 	await openStudio(page);
 	await caretIn(page, '下面一行文字比较长ABCDEFGHIJ。', 0.4);
+	// Its code editor made (it is, once the block is in sight; on a busy machine a moment later).
+	const code = editor(page).locator('.cm-content').last();
+	await expect(code.locator('.cm-line')).toHaveCount(2);
 	await page.keyboard.press('ArrowUp');
 	await page.keyboard.type('Z');
-	const code = editor(page).locator('.cm-content').last();
 	await expect(code).toContainText('Z');
 	const lastLine = await code.locator('.cm-line').last().textContent();
 	const z = lastLine!.indexOf('Z');

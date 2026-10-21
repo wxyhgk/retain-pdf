@@ -147,6 +147,20 @@ export class ArticleSession {
 	 * Opens another article, saving this one first. Unless `discard`, the
 	 * author is asked before edits that could not be saved are dropped.
 	 */
+	/**
+	 * The open article read again from disk, as it is there now (after a
+	 * change the Studio made to it there: 并入上级页面). Unsaved edits are let go.
+	 */
+	async reload(): Promise<void> {
+		const slug = this.slug;
+		if (!slug) return;
+		const sequence = ++this.#sequence;
+		this.#setState({ kind: 'loading' });
+		const article = await this.#api.getArticle(slug);
+		if (sequence !== this.#sequence) return;
+		await this.#present(article, sequence, true);
+	}
+
 	async open(slug: string, { discard = false } = {}): Promise<void> {
 		if (this.slug === slug) return;
 		if (!discard && !(await this.saveBeforeLeaving())) return;

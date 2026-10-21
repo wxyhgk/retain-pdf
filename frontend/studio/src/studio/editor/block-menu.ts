@@ -91,6 +91,8 @@ export type BlockMenuHost = {
 	saveAsFile?: { can: (node: ProseNode) => boolean; run: (view: EditorView, pos: number) => void };
 	/** 「问 AI」 about the block (it is selected when its menu runs an entry). */
 	ask?: () => void;
+	/** 转成子页面: the heading at `pos` and its section made a page under the article. */
+	split?: (view: EditorView, pos: number) => void;
 };
 
 /** The menu's 「问 AI…」, when the Studio offers it. */
@@ -110,6 +112,10 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 			hint: item.shortcut ? keyHint(item.shortcut) : undefined,
 			run: (view: EditorView) => dispatchBlockAction(view, item.action),
 		}));
+		const split = host.split;
+		if (split && node.type.name === 'heading') {
+			entries.push({ key: 'split', label: '转成子页面', current: false, danger: false, turn: false, run: (view) => split(view, pos) });
+		}
 		const save = host.saveAsFile;
 		if (save?.can(node)) {
 			entries.push({ key: 'save-file', label: '另存为文件', current: false, danger: false, turn: false, run: (view) => save.run(view, pos) });

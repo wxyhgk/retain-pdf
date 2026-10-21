@@ -139,13 +139,15 @@ export function isPublishedArticle(entry) {
 	return entry?.data?.draft !== true;
 }
 
-export function createArticleSource({ title, parent = '', date = new Date() }) {
+export function createArticleSource({ title, parent = '', body = '', date = new Date() }) {
 	if (typeof title !== 'string' || !title.trim()) throw new ArticleValidationError('文章标题不能为空');
 	const escapedTitle = title.trim().replaceAll("'", "''");
 	const publicationDate = date.toISOString().slice(0, 10);
 	// Under another page: its folder name (checked as one by the caller).
 	const under = parent ? `parent: ${parent}\n` : '';
-	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n${under}---\n\n从这里开始写作。\n`;
+	// What it starts with: the text given (a section of its parent, 转成子页面), or a line to write over.
+	const text = body.trim() ? `${body.trim()}\n` : '从这里开始写作。\n';
+	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n${under}---\n\n${text}`;
 }
 
 export class ArticleValidationError extends Error {
