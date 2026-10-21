@@ -39,7 +39,8 @@ const server = await dev({
 	logLevel: 'warn',
 	server: { port },
 	// Its own Vite cache too, kept between runs so that only the first one waits for the dependencies to be bundled.
-	...(isolated ? { vite: { cacheDir: join(repository, 'node_modules', '.vite-e2e'), server: { fs: { allow: [root, repository] } } } } : {}),
+	// One per port: servers run side by side (playwright.config.ts), and two bundling into one cache would clash.
+	...(isolated ? { vite: { cacheDir: join(repository, 'node_modules', `.vite-e2e-${port}`), server: { fs: { allow: [root, repository] } } } } : {}),
 });
 console.log(`studio e2e server on http://localhost:${port}, articles in ${articles}${isolated ? `, root ${root}` : ''}`);
 
