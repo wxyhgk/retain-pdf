@@ -27,8 +27,8 @@ npm run dev
 tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/Studio.app
 ```
 
-- 打开时，如果博客的服务器已经在跑（比如 `npx astro dev --background` 起的），就直接用它；没有就自己在后台启动一个。
-- 退出应用（⌘Q 或关掉窗口）时，只停掉它自己启动的服务器；原来就在跑的不动。
+- 打开时，如果博客的服务器已经在跑（比如 `npx astro dev --background` 起的），就直接用它，退出时也不动它。
+- 没有就由应用自己启动一个，它跟着应用走：退出应用（⌘Q 或关掉窗口），哪怕应用崩溃，它都会停掉。
 - 服务器用的是你终端里的环境（登录 shell 的 PATH），所以 node、cargo、conda 里的程序都能找到，Studio 的终端里也一样。
 - 文章里 `target="_blank"` 的链接、「打开博客」、打开文件，都在默认浏览器里打开。下载的文件放进「下载」文件夹。
 - 应用记住的是生成它时的博客文件夹。博客挪了地方就重新运行一次 `build.sh`；也可以 `build.sh <博客文件夹>` 指定，或者 `STUDIO_APP_DIR=~/Applications tools/studio-app/build.sh` 换个安装的地方。

@@ -1,9 +1,10 @@
 //! The Studio as a Mac app.
 //!
 //! It shows the blog's dev server's `/studio` in a window. While `astro dev` runs it writes
-//! `.astro/dev.json` (its pid and address); when that names a live server the app uses it, and
-//! otherwise it starts one with `astro dev --background`, the way the server is started by hand.
-//! A server the app started stops when the app quits; one that was already running is left alone.
+//! `.astro/dev.json` (its pid and address); when that names a live server the app uses it and
+//! leaves it alone. Otherwise the app runs `astro dev` itself and the server lives as long as the
+//! app does: its stdin is a pipe from the app, and when that closes (the app quits, or crashes)
+//! the server stops. Its output goes to `.astro/dev.log`, where `astro dev --background` keeps it.
 //!
 //! An app opened from the Finder gets almost no PATH, so the server is started with the
 //! environment of a login shell: it finds node and cargo, and the Studio's terminal gets the
@@ -14,10 +15,11 @@
 mod dialogs;
 
 use std::collections::HashMap;
+use std::fs::File;
 use std::io::Read;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use std::{env, fs, thread};
@@ -37,8 +39,8 @@ struct DevServer {
 struct State {
     /// What the start page shows: (message, is it an error).
     status: Mutex<(String, bool)>,
-    /// The server the app started, to stop when it quits.
-    started: Mutex<Option<(PathBuf, i32)>>,
+    /// The server the app started; it stops with the app.
+    started: Mutex<Option<Child>>,
     /// Where the last download is going (on macOS the finished event doesn't say).
     download: Mutex<Option<PathBuf>>,
 }
@@ -149,9 +151,7 @@ fn find_or_start(app: &AppHandle) -> Result<Url, String> {
         Some(server) => server,
         None => {
             show(app, "正在启动服务器…", false);
-            let server = start(&repo)?;
-            *app.state::<State>().started.lock().unwrap() = Some((repo.clone(), server.pid));
-            server
+            start(app, &repo)?
         }
     };
     let url = Url::parse(&server.url)
@@ -176,28 +176,54 @@ fn running(repo: &Path) -> Option<DevServer> {
     (unsafe { libc::kill(server.pid, 0) } == 0).then_some(server)
 }
 
-fn start(repo: &Path) -> Result<DevServer, String> {
+/// The server's lifeline: when its stdin (a pipe from the app) closes, it removes its lock file and
+/// stops. Run in the blog's folder, where the lock file is.
+const LIFELINE: &str = "data:text/javascript,import{readFileSync,rmSync}from'node:fs';process.stdin.on('end',()=>{try{if(JSON.parse(readFileSync('.astro/dev.json','utf8')).pid===process.pid)rmSync('.astro/dev.json')}catch{}process.kill(process.pid,'SIGTERM')}).resume()";
+
+fn start(app: &AppHandle, repo: &Path) -> Result<DevServer, String> {
     let env = login_env();
     let node = which("node", env.get("PATH").map_or("", String::as_str))
         .ok_or("找不到 node。在终端里装好 node（node --version 能用）以后再打开。")?;
-    let out = Command::new(node)
-        .args(["node_modules/astro/bin/astro.mjs", "dev", "--background"])
+    let log_path = repo.join(".astro/dev.log");
+    let _ = fs::create_dir_all(repo.join(".astro"));
+    let log = File::create(&log_path).map_err(|error| format!("没能写 .astro/dev.log：{error}"))?;
+    let mut child = Command::new(node)
+        .args([
+            "--import",
+            LIFELINE,
+            "node_modules/astro/bin/astro.mjs",
+            "dev",
+        ])
         .current_dir(repo)
         .env_clear()
         .envs(&env)
-        .stdin(Stdio::null())
-        .output()
+        // Keeps astro from going into the background by itself when it thinks an AI agent ran it (then
+        // it would outlive the app); the lock file then says "background", so `astro dev stop` and
+        // `astro dev logs` work on it too.
+        .env("ASTRO_DEV_BACKGROUND", "1")
+        .stdin(Stdio::piped())
+        .stdout(log.try_clone().map_err(|error| error.to_string())?)
+        .stderr(log)
+        .spawn()
         .map_err(|error| format!("没能启动服务器：{error}"))?;
-    if let (true, Some(server)) = (out.status.success(), running(repo)) {
-        return Ok(server);
+    let deadline = Instant::now() + Duration::from_secs(90);
+    loop {
+        if let Some(server) = running(repo).filter(|server| server.pid == child.id() as i32) {
+            *app.state::<State>().started.lock().unwrap() = Some(child);
+            return Ok(server);
+        }
+        let ended = child.try_wait().ok().flatten().is_some();
+        if ended || Instant::now() > deadline {
+            let _ = child.kill();
+            let said = fs::read_to_string(&log_path).unwrap_or_default();
+            let tail: Vec<&str> = said.lines().rev().take(12).collect();
+            return Err(format!(
+                "服务器没能启动。它最后说：\n{}\n\n完整记录在博客的 .astro/dev.log。",
+                tail.into_iter().rev().collect::<Vec<_>>().join("\n")
+            ));
+        }
+        thread::sleep(Duration::from_millis(200));
     }
-    let said =
-        String::from_utf8_lossy(&out.stdout).into_owned() + &String::from_utf8_lossy(&out.stderr);
-    let tail: Vec<&str> = said.lines().rev().take(12).collect();
-    Err(format!(
-        "服务器没能启动。它最后说：\n{}\n\n完整记录在博客的 .astro/dev.log。",
-        tail.into_iter().rev().collect::<Vec<_>>().join("\n")
-    ))
 }
 
 /// The environment the author's terminal has: a login, interactive shell's.
@@ -288,13 +314,19 @@ fn wait_for(url: &Url, patience: Duration) -> Result<(), String> {
     }
 }
 
-/// Stops the server the app started, unless it has since been replaced (restarted by hand, say).
+/// Stops the server the app started (closing its lifeline) and waits a little for it to tidy up.
 fn stop_started(app: &AppHandle) {
-    let Some((repo, pid)) = app.state::<State>().started.lock().unwrap().take() else {
+    let Some(mut child) = app.state::<State>().started.lock().unwrap().take() else {
         return;
     };
-    if running(&repo).is_some_and(|server| server.pid == pid) {
-        unsafe { libc::kill(pid, libc::SIGTERM) };
+    drop(child.stdin.take());
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while child.try_wait().ok().flatten().is_none() {
+        if Instant::now() > deadline {
+            let _ = child.kill();
+            break;
+        }
+        thread::sleep(Duration::from_millis(50));
     }
 }
 
