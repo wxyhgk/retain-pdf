@@ -1,7 +1,7 @@
 import type { Ctx, MilkdownPlugin } from '@milkdown/ctx';
 import { SchemaReady, nodeViewCtx } from '@milkdown/kit/core';
 import type { Node as ProseNode } from '@milkdown/prose/model';
-import { Plugin, PluginKey, TextSelection } from '@milkdown/prose/state';
+import { NodeSelection, Plugin, PluginKey, TextSelection } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView, type NodeView, type NodeViewConstructor } from '@milkdown/prose/view';
 import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
@@ -138,6 +138,8 @@ const figureNumbers = $prose(
 const SNAP = 5;
 const NARROWEST = 10;
 
+const figureViews = new WeakMap<Node, FigureView>();
+
 class FigureView implements NodeView {
 	readonly dom: HTMLElement;
 	private node: ProseNode;
@@ -185,6 +187,14 @@ class FigureView implements NodeView {
 
 		this.dom.append(frame, caption);
 		this.draw(decorations);
+		figureViews.set(this.dom, this);
+	}
+
+	/** Into the caption, from the keyboard: the caret at its end. */
+	focusCaption(): void {
+		this.caption.focus();
+		const end = this.caption.value.length;
+		this.caption.setSelectionRange(end, end);
 	}
 
 	update(node: ProseNode, decorations: readonly Decoration[]): boolean {
@@ -244,9 +254,22 @@ class FigureView implements NodeView {
 		this.setAttrs({ alt: this.caption.value });
 	};
 
-	/** Enter or Esc: back to the text after the figure. */
+	/**
+	 * Enter, Esc or ↓: on to the text after the figure. ↑: the figure
+	 * itself, selected (another ↑ goes above it), as the arrows go through a
+	 * figure: the picture, then its caption.
+	 */
 	private onCaptionKey = (event: KeyboardEvent): void => {
-		if (event.isComposing || (event.key !== 'Enter' && event.key !== 'Escape')) return;
+		if (event.isComposing || event.shiftKey || event.altKey || event.metaKey || event.ctrlKey) return;
+		if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			const pos = this.getPos();
+			if (pos === undefined) return;
+			this.view.dispatch(this.view.state.tr.setSelection(NodeSelection.create(this.view.state.doc, pos)).scrollIntoView());
+			this.view.focus();
+			return;
+		}
+		if (event.key !== 'Enter' && event.key !== 'Escape' && event.key !== 'ArrowDown') return;
 		event.preventDefault();
 		const pos = this.getPos();
 		if (pos === undefined) return;
@@ -306,7 +329,35 @@ function figureView(fileUrl: (src: string) => string): MilkdownPlugin {
 	};
 }
 
+/**
+ * The arrows through a figure (as SiYuan takes captions in): ↓ on it
+ * selected goes into its caption; ↑ from the line under it, into its caption
+ * too, then (from the caption) onto the picture.
+ */
+const figureArrows = $prose(
+	() =>
+		new Plugin({
+			props: {
+				handleKeyDown(view, event) {
+					if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey || event.isComposing) return false;
+					const { selection } = view.state;
+					let at: number | null = null;
+					if (event.key === 'ArrowDown' && selection instanceof NodeSelection && selection.node.type.name === FIGURE_TYPE) at = selection.from;
+					else if (event.key === 'ArrowUp' && selection instanceof TextSelection && selection.empty && selection.$from.depth > 0 && view.endOfTextblock('up')) {
+						const before = view.state.doc.resolve(selection.$from.before());
+						if (before.nodeBefore?.type.name === FIGURE_TYPE) at = before.pos - before.nodeBefore.nodeSize;
+					}
+					if (at == null) return false;
+					const figure = figureViews.get(view.nodeDOM(at) as Node);
+					if (!figure) return false;
+					figure.focusCaption();
+					return true;
+				},
+			},
+		}),
+);
+
 /** The figure block, its Markdown, its numbers and its view; `fileUrl` loads the article's pictures. */
 export function figurePlugins(fileUrl: (src: string) => string): MilkdownPlugin[] {
-	return [figureRemark, ...figureSchema, figureNumbers, figureView(fileUrl)].flat();
+	return [figureRemark, ...figureSchema, figureNumbers, figureView(fileUrl), figureArrows].flat();
 }

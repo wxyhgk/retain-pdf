@@ -73,6 +73,31 @@ export function duplicateBlocks(state: EditorState, dispatch?: Dispatch): boolea
 	return true;
 }
 
+/**
+ * ⇧↑ (or ⇧↓) with the selection's head on the first (or last) line of its
+ * block, as SiYuan has it: the head to the block's start (end); pressed
+ * there, the blocks the selection is in, selected as blocks, which the next
+ * ⇧↑ grows block by block. Without this the selection went on line by line
+ * into the blocks above, as text.
+ */
+export function growIntoBlocks(state: EditorState, direction: -1 | 1, atEdgeLine: boolean, dispatch?: Dispatch): boolean {
+	const { selection, doc } = state;
+	if (!(selection instanceof TextSelection) || !atEdgeLine) return false;
+	const { $head } = selection;
+	if (!$head.parent.isTextblock || $head.parent.type.spec.code) return false;
+	const edge = direction < 0 ? $head.start() : $head.end();
+	if ($head.pos !== edge) {
+		dispatch?.(state.tr.setSelection(TextSelection.create(doc, selection.anchor, edge)).scrollIntoView());
+		return true;
+	}
+	const anchor = selectableBlock(doc, selection.anchor);
+	const head = selectableBlock(doc, $head.pos);
+	const blocks = anchor && head ? BlockRangeSelection.tryCreate(doc, anchor.pos, head.pos) : null;
+	if (!blocks) return false;
+	dispatch?.(state.tr.setSelection(blocks).scrollIntoView());
+	return true;
+}
+
 /** Selects the block being written in, as a click in its margin does. */
 export function selectBlockInHand(state: EditorState, dispatch?: Dispatch): boolean {
 	if (state.selection instanceof BlockRangeSelection) return false;

@@ -4,10 +4,11 @@ import { toggleLinkCommand } from '@milkdown/kit/component/link-tooltip';
 import { extendListItemSchemaForTask } from '@milkdown/kit/preset/gfm';
 import { InputRule, inputRules } from '@milkdown/prose/inputrules';
 import { NodeSelection, Plugin, Selection, TextSelection, type EditorState } from '@milkdown/prose/state';
+import type { EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
 import { typingRulePlugins } from './typing-rules.ts';
-import { duplicateBlocks, linkInputRule, moveBlocks, selectBlockInHand, selectTextblock, todoInputRule, unlistAtStart, type Dispatch } from './block-keys.ts';
+import { duplicateBlocks, growIntoBlocks, linkInputRule, moveBlocks, selectBlockInHand, selectTextblock, todoInputRule, unlistAtStart, type Dispatch } from './block-keys.ts';
 
 /** ⌘ on a Mac, Ctrl elsewhere. */
 const modifier = (event: KeyboardEvent) => (navigator.platform.includes('Mac') ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey);
@@ -24,6 +25,13 @@ export type BlockKeysHost = {
 	askAI(): void;
 };
 
+/** Selects the block the caret is in when nothing is selected; the copy or cut then goes on with it. */
+function wholeBlockIfNothing(view: EditorView): boolean {
+	const { selection } = view.state;
+	if (selection instanceof TextSelection && selection.empty) selectBlockInHand(view.state, (tr) => view.dispatch(tr));
+	return false;
+}
+
 const blockKeysPlugin = (host: BlockKeysHost) => $prose(
 	(ctx) =>
 		new Plugin({
@@ -34,6 +42,10 @@ const blockKeysPlugin = (host: BlockKeysHost) => $prose(
 					const plain = !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey;
 					if (event.key === 'Escape' && plain) return run(selectBlockInHand);
 					if (event.key === 'Backspace' && plain) return run(unlistAtStart);
+					if (event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
+						const up = event.key === 'ArrowUp';
+						return run((state, dispatch) => growIntoBlocks(state, up ? -1 : 1, view.endOfTextblock(up ? 'up' : 'down'), dispatch));
+					}
 					if (!modifier(event) || event.altKey) return false;
 					const key = event.key.toLowerCase();
 					if (event.shiftKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) return run((state, dispatch) => moveBlocks(state, event.key === 'ArrowUp' ? -1 : 1, dispatch));
@@ -50,6 +62,12 @@ const blockKeysPlugin = (host: BlockKeysHost) => $prose(
 						return ctx.get(commandsCtx).call(toggleLinkCommand.key);
 					}
 					return false;
+				},
+				handleDOMEvents: {
+					// ⌘C or ⌘X with nothing selected: the block being written in, as
+					// SiYuan has it (shown selected), not nothing.
+					copy: (view) => wholeBlockIfNothing(view),
+					cut: (view) => wholeBlockIfNothing(view),
 				},
 			},
 			view(editorView) {

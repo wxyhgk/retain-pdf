@@ -1,9 +1,9 @@
 import type { Ctx, MilkdownPlugin } from '@milkdown/ctx';
 import { SchemaReady, nodeViewCtx } from '@milkdown/kit/core';
 import type { Node as ProseNode } from '@milkdown/prose/model';
-import { TextSelection } from '@milkdown/prose/state';
+import { Plugin, Selection, TextSelection } from '@milkdown/prose/state';
 import type { EditorView, NodeView, NodeViewConstructor, ViewMutationRecord } from '@milkdown/prose/view';
-import { $nodeSchema, $remark } from '@milkdown/utils';
+import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
 /**
  * Toggles, as Notion has them and GitHub writes them:
@@ -210,8 +210,22 @@ class ToggleView implements NodeView {
 		this.view.dispatch(this.view.state.tr.setNodeMarkup(pos, undefined, { ...this.node.attrs, summary }));
 	}
 
-	/** Enter or ↓ in the title: into the toggle, opening it. */
+	/** Whether it is folded: its blocks hidden. */
+	get folded(): boolean {
+		return this.dom.classList.contains('is-folded');
+	}
+
+	/** Enter or ↓ in the title: into the toggle, opening it. ↑: on to the line above the toggle. */
 	private onSummaryKey = (event: KeyboardEvent): void => {
+		if (event.key === 'ArrowUp' && !event.isComposing && !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey) {
+			event.preventDefault();
+			const pos = this.getPos();
+			if (pos === undefined) return;
+			const { state } = this.view;
+			this.view.dispatch(state.tr.setSelection(Selection.near(state.doc.resolve(pos), -1)).scrollIntoView());
+			this.view.focus();
+			return;
+		}
 		if (event.isComposing || (event.key !== 'Enter' && event.key !== 'ArrowDown')) return;
 		event.preventDefault();
 		const pos = this.getPos();
@@ -256,6 +270,49 @@ export function wrapInToggle(view: EditorView): boolean {
 	return true;
 }
 
+/**
+ * The arrows through a toggle's title (as SiYuan takes titles in): ↓ from the
+ * line above goes into it, ↑ from the toggle's first line too, and ↑ from the
+ * line under a folded toggle (its blocks hidden).
+ */
+const toggleArrows = $prose(
+	() =>
+		new Plugin({
+			props: {
+				handleKeyDown(view, event) {
+					if ((event.key !== 'ArrowUp' && event.key !== 'ArrowDown') || event.shiftKey || event.altKey || event.metaKey || event.ctrlKey || event.isComposing) return false;
+					const { selection, doc } = view.state;
+					if (!(selection instanceof TextSelection) || !selection.empty || selection.$from.depth < 1) return false;
+					const up = event.key === 'ArrowUp';
+					if (!view.endOfTextblock(up ? 'up' : 'down')) return false;
+					const { $from } = selection;
+					const toggleAt = (pos: number) => views.get(view.nodeDOM(pos) as HTMLElement);
+					let target: ToggleView | undefined;
+					if (up) {
+						// The toggle's first line: the toggle's title above it.
+						for (let depth = $from.depth - 1; depth >= 1 && $from.index(depth) === 0; depth -= 1) {
+							if ($from.node(depth).type.name === TOGGLE_TYPE) {
+								target = toggleAt($from.before(depth));
+								break;
+							}
+						}
+						const $before = doc.resolve($from.before());
+						if (!target && $before.nodeBefore?.type.name === TOGGLE_TYPE) {
+							const folded = toggleAt($before.pos - $before.nodeBefore.nodeSize);
+							if (folded?.folded) target = folded;
+						}
+					} else {
+						const $after = doc.resolve($from.after());
+						if ($after.nodeAfter?.type.name === TOGGLE_TYPE) target = toggleAt($after.pos);
+					}
+					if (!target) return false;
+					target.focusSummary();
+					return true;
+				},
+			},
+		}),
+);
+
 export function togglePlugins(): MilkdownPlugin[] {
-	return [toggleRemark, ...toggleSchema, toggleView()].flat();
+	return [toggleRemark, ...toggleSchema, toggleView(), toggleArrows].flat();
 }
