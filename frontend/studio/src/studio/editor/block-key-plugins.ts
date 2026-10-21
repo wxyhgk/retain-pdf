@@ -64,10 +64,12 @@ export const todoPlugin = $prose(() =>
 );
 
 /**
- * A block dropped where it was dragged: the caret at the end of its text, as
- * after typing it there. Not the block selected whole, which shows it gray
- * until a click elsewhere (one that seemed not to take) and which a key typed
- * would replace. A block with no text in it (a picture, a molecule) stays selected.
+ * Blocks dropped where they were dragged: the caret at the end of their text,
+ * as after typing them there. Not the block selected whole, nor the text of
+ * several blocks, which shows them gray or highlighted until a click elsewhere
+ * (one that seemed not to take, or began to drag the text) and which a key
+ * typed would replace. A block with no text in it (a picture, a molecule)
+ * stays selected.
  */
 export const dropCaret = $prose(
 	() =>
@@ -75,7 +77,7 @@ export const dropCaret = $prose(
 			appendTransaction(transactions, _before, state) {
 				if (!transactions.some((tr) => tr.getMeta('uiEvent') === 'drop')) return null;
 				const { selection } = state;
-				if (!(selection instanceof NodeSelection) || !selection.node.isBlock) return null;
+				if (selection.empty || (selection instanceof NodeSelection && !selection.node.isBlock)) return null;
 				const end = Selection.findFrom(state.doc.resolve(selection.to), -1, true);
 				if (!end || end.from <= selection.from) return null;
 				return state.tr.setSelection(end);

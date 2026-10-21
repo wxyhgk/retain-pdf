@@ -429,10 +429,27 @@ function sideAt(view: EditorView, x: number, y: number): (SideDrop & { line: DOM
 	return { pos: target.pos, side, line: where };
 }
 
+/** What dropping what is dragged at `at` does, if it goes beside the block there. */
+function besideDrop(view: EditorView, at: SideDrop): Transaction | null {
+	const { dragging } = view;
+	if (!dragging?.move) return null;
+	const dragged = (dragging as { node?: Selection }).node ?? view.state.selection;
+	if (dragged.empty) return null;
+	return dropBeside(view.state, at, dragging.slice, dragged);
+}
+
 /** Dropping beside a block (dropBeside), shown by an upright line; and the column a drop emptied taken away. */
 const columnsDrop = $prose(() => {
 	let line: HTMLElement | null = null;
 	let over: (SideDrop & { line: DOMRect }) | null = null;
+	// besideDrop's answer, for as long as the drag stays on that side of that block.
+	let last: { doc: EditorState['doc']; pos: number; side: SideDrop['side']; can: boolean } | null = null;
+	const canDropBeside = (view: EditorView, at: SideDrop): boolean => {
+		const { doc } = view.state;
+		if (last?.doc === doc && last.pos === at.pos && last.side === at.side) return last.can;
+		last = { doc, pos: at.pos, side: at.side, can: besideDrop(view, at) != null };
+		return last.can;
+	};
 	const hide = (view: EditorView) => {
 		over = null;
 		line?.remove();
@@ -452,9 +469,12 @@ const columnsDrop = $prose(() => {
 		key: columnsKey,
 		props: {
 			handleDOMEvents: {
+				// The upright line only where the drop would go beside (dropBeside):
+				// not beside the blocks dragged, nor beside full columns, where it
+				// would go between blocks after all.
 				dragover(view, event) {
-					const at = view.dragging ? sideAt(view, event.clientX, event.clientY) : null;
-					if (at) show(view, at);
+					const at = view.dragging?.move ? sideAt(view, event.clientX, event.clientY) : null;
+					if (at && canDropBeside(view, at)) show(view, at);
 					else if (over) hide(view);
 					return false;
 				},
@@ -472,10 +492,8 @@ const columnsDrop = $prose(() => {
 					const dragging = view.dragging;
 					const at = over ?? (dragging ? sideAt(view, event.clientX, event.clientY) : null);
 					hide(view);
-					if (!at || !dragging?.move) return false;
-					const dragged = (dragging as { node?: Selection }).node ?? view.state.selection;
-					if (dragged.empty) return false;
-					const tr = dropBeside(view.state, at, dragging.slice, dragged);
+					if (!at) return false;
+					const tr = besideDrop(view, at);
 					if (!tr) return false;
 					event.preventDefault();
 					// As the editor does once a drop is done.
