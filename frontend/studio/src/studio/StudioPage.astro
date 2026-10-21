@@ -347,6 +347,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	#article-list :global(.page-list) { display: grid; gap: 1px; }
 	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
 	#article-list :global(.page-row:hover), #article-list :global(.page-row.active) { background: rgb(var(--gray-light)); }
+	/* Chosen with ⌘ or ⇧ to move or delete together. */
+	#article-list :global(.page-item.is-chosen .page-row) { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 	/* ⋯ on hover, over the badges at the end of the row. */
 	/* Above the title of a page under others: the way up to them. */
 	:global(.page-path) { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin: 0 0 4px; color: rgb(var(--gray)); font-size: 13px; }

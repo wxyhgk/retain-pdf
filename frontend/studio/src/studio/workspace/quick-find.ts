@@ -14,7 +14,7 @@ export type QuickFindHost = {
 
 /** An article, or (with `drivePath`) a file of the drive. */
 /** `create`: the row that makes a page of that title (asked for an article to link: 新建子页面). */
-type Row = { slug: string; title: string; icon: string; snippet?: string; text?: string; drivePath?: string; create?: string };
+type Row = { slug: string; title: string; icon: string; snippet?: string; text?: string; drivePath?: string; create?: string; place?: string };
 
 /** What was picked when an article was asked for: one there is, or a new page under the open one, of this title. */
 export type Picked = { slug: string } | { create: string };
@@ -56,6 +56,32 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 	let asking: AbortController | null = null;
 	/** While an article is asked for (`pick`): who gets it. */
 	let picking: ((picked: Picked | null) => void) | null = null;
+	/** While asked where pages go (`pickPlace`): who gets it, and the pages that cannot be there (them, and those under them). */
+	let placing: ((parent: string | null) => void) | null = null;
+	let excluded = new Set<string>();
+
+	/** The pages a page is under, as a path: `项目 › 方法`; empty at the top. */
+	function pathOf(slug: string): string {
+		const bySlug = new Map(host.articles().map((article) => [article.slug, article]));
+		const titles: string[] = [];
+		const seen = new Set<string>();
+		for (let at = bySlug.get(slug)?.parent; at && bySlug.has(at) && !seen.has(at); at = bySlug.get(at)?.parent) {
+			seen.add(at);
+			titles.unshift(bySlug.get(at)!.title);
+		}
+		return titles.join(' › ');
+	}
+
+	/** Where pages can go: the top, then the pages (not those moved, nor under them), each with its path. */
+	function places(query: string): Row[] {
+		const top: Row[] = query ? [] : [{ slug: '', title: '最上层', icon: '⇱', place: '', snippet: '不放在任何页面下面' }];
+		return [
+			...top,
+			...filterArticles(host.articles(), query)
+				.filter((article) => !excluded.has(article.slug))
+				.map((article) => ({ slug: article.slug, title: article.title, icon: article.icon ?? '', place: article.slug, snippet: pathOf(article.slug) || undefined })),
+		];
+	}
 
 	function draw(): void {
 		const query = input.value.trim();
@@ -112,6 +138,12 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 
 	function update(): void {
 		const query = input.value.trim();
+		if (placing) {
+			rows = places(query);
+			index = 0;
+			draw();
+			return;
+		}
 		rows = withCreate(titles(query), query);
 		index = 0;
 		draw();
@@ -166,7 +198,14 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 	function choose(at: number): void {
 		const row = rows[at];
 		if (!row) return;
-		if (!row.slug && !row.drivePath && !row.create) return;
+		if (!row.slug && !row.drivePath && !row.create && row.place === undefined) return;
+		if (placing) {
+			const answer = placing;
+			placing = null;
+			dialog.close();
+			answer(row.place ?? row.slug);
+			return;
+		}
 		const answer = picking;
 		picking = null;
 		dialog.close();
@@ -193,6 +232,9 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 		const answer = picking;
 		picking = null;
 		answer?.(null);
+		const place = placing;
+		placing = null;
+		place?.(null);
 	});
 	dialog.addEventListener('click', (event) => {
 		// A click on the backdrop closes it.
@@ -214,6 +256,30 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 				return;
 			}
 			show('搜索文章和资料库…');
+		},
+		/**
+		 * 移到…: asks where these pages go, by a page's title (each shown with
+		 * its path): that page's folder name, `''` for the top, null when given up.
+		 * Not among the pages moved, nor under them.
+		 */
+		pickPlace(moving: string[]): Promise<string | null> {
+			if (dialog.open) dialog.close();
+			const all = host.articles();
+			excluded = new Set(moving);
+			// And all under them.
+			for (let grew = true; grew; ) {
+				grew = false;
+				for (const article of all) {
+					if (article.parent && excluded.has(article.parent) && !excluded.has(article.slug)) {
+						excluded.add(article.slug);
+						grew = true;
+					}
+				}
+			}
+			return new Promise((resolve) => {
+				placing = resolve;
+				show(moving.length > 1 ? `把 ${moving.length} 个页面移到哪个页面下面…` : '移到哪个页面下面…');
+			});
 		},
 		/** Asks which article: one there is, a new one to make (its title typed), or null when given up. */
 		pick(): Promise<Picked | null> {

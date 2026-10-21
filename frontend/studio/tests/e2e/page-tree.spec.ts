@@ -194,3 +194,51 @@ test('the tree from the keyboard; a folded page says how many are under it; the 
 	await tab.getByRole('menuitem', { name: '结果' }).click();
 	await expect(tab).toHaveURL(/article=tree-results/u);
 });
+
+test('pages chosen with ⌘ or ⇧ move together (by 移到…, or dragged) and go to the trash together', async ({ page: tab }) => {
+	writeArticle('tree-top', page('项目'));
+	writeArticle('tree-method', page('甲页'));
+	writeArticle('tree-results', page('乙页'));
+	writeArticle('tree-ai', page('丙页'));
+	await openStudio(tab);
+	const row = (title: string) => item(tab, title).locator('.page-row');
+	await row('甲页').click({ modifiers: ['ControlOrMeta'] });
+	await row('乙页').click({ modifiers: ['ControlOrMeta'] });
+	await expect(tab.locator('.page-item.is-chosen')).toHaveCount(3);
+	await row('甲页').click({ modifiers: ['ControlOrMeta'] });
+	await expect(tab.locator('.page-item.is-chosen')).toHaveCount(2);
+	await row('甲页').click({ modifiers: ['ControlOrMeta'] });
+	// The open page was chosen with the first ⌘-click: let go of it.
+	await item(tab, TITLE).locator('.page-row').click({ modifiers: ['ControlOrMeta'] });
+	await expect(tab.locator('.page-item.is-chosen .page-title')).toHaveText(['甲页', '乙页']);
+
+	await row('乙页').click({ button: 'right' });
+	await tab.getByRole('menuitem', { name: '移到…（2 篇）' }).click();
+	// Not offered: the pages moved.
+	await expect(tab.locator('.quick-find-item', { hasText: '甲页' })).toHaveCount(0);
+	await tab.locator('#quick-find-input').fill('项目');
+	await tab.keyboard.press('Enter');
+	await expect(item(tab, '甲页')).toHaveCSS('--depth', '1');
+	await expect(item(tab, '乙页')).toHaveCSS('--depth', '1');
+
+	// ⇧-click: a run of them; dragged together onto another page.
+	await row('甲页').click();
+	await row('乙页').click({ modifiers: ['Shift'] });
+	await expect(tab.locator('.page-item.is-chosen .page-title')).toHaveText(['甲页', '乙页']);
+	await drag(tab, '甲页', '丙页');
+	await expect(item(tab, '甲页')).toHaveCSS('--depth', '1');
+	await expect(item(tab, '乙页')).toHaveCSS('--depth', '1');
+	await expect.poll(() => source('tree-results')).toMatch(/parent: "?tree-ai"?/u);
+
+	// To the trash together, and back with one 撤销.
+	await row('甲页').click();
+	await row('乙页').click({ modifiers: ['Shift'] });
+	await row('乙页').click({ button: 'right' });
+	await tab.getByRole('menuitem', { name: '移到回收站（2 篇）' }).click();
+	await tab.locator('#delete-page-all').click();
+	await expect(item(tab, '甲页')).toHaveCount(0);
+	await expect(item(tab, '乙页')).toHaveCount(0);
+	await tab.locator('.studio-toast-action', { hasText: '撤销' }).click();
+	await expect(item(tab, '甲页')).toHaveCSS('--depth', '1');
+	await expect(item(tab, '乙页')).toHaveCSS('--depth', '1');
+});

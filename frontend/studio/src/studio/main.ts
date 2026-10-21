@@ -7,6 +7,7 @@ import {
 	codeFileFigure,
 	createArticle,
 	setArticleParent,
+	type PagePlace,
 	getArticle,
 	gitStatus,
 	listArticleFiles,
@@ -102,18 +103,14 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	createChild: (article) => void newPage(article.slug),
 	merge: (article) => void articleActions.merge(article),
 	// On disk, the open article too (saved first): what changes is its properties alone, which it takes in quietly.
-	move: (slug, parent, place) => {
+	move: (slugs, parent, place) => void movePages(slugs, parent, place),
+	moveTo: (slugs) => {
 		void (async () => {
-			if (slug === session.slug && !(await session.flush())) return;
-			try {
-				await trackWrite(() => setArticleParent(slug, parent, place));
-			} catch (error) {
-				showToast(error instanceof Error ? error.message : '没能移动这个页面', true);
-				return;
-			}
-			await articleList.load();
+			const target = await quickFind.pickPlace(slugs);
+			if (target !== null) await movePages(slugs, target);
 		})();
 	},
+	removeMany: (articles) => void articleActions.removeMany(articles),
 	listed: (articles) => {
 		showPath();
 		properties.knowTags(articles.flatMap((article) => article.tags ?? []));
@@ -365,6 +362,29 @@ async function makeLinkedPage(title: string): Promise<{ title: string; href: str
 	await articleList.load();
 	showToast(`已新建子页面「${title}」`, { action: { label: '打开', run: () => void session.open(slug) } });
 	return { title, href: `/blog/${slug}/` };
+}
+
+/**
+ * Pages (in this order) under `parent`, or at the top with it empty; with
+ * `place`, just before or after that page, one after the other. On disk, the
+ * open one too (saved first): only its properties change, which it takes in
+ * quietly.
+ */
+async function movePages(slugs: string[], parent: string, place: PagePlace = {}): Promise<void> {
+	if (slugs.includes(session.slug ?? '') && !(await session.flush())) return;
+	let previous: string | null = null;
+	try {
+		for (const slug of slugs) {
+			const here: PagePlace = previous ? { after: previous } : place;
+			await trackWrite(() => setArticleParent(slug, parent, here));
+			// The next one after this, where it is (with no place given, each goes after those there).
+			if (previous || place.before || place.after) previous = slug;
+		}
+	} catch (error) {
+		showToast(error instanceof Error ? error.message : '没能移动这个页面', true);
+	}
+	await articleList.load();
+	if (slugs.length > 1) showToast(`已移动 ${slugs.length} 个页面`);
 }
 
 /** The pages the open one is under, above its title. */

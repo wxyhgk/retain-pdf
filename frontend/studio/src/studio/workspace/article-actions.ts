@@ -43,26 +43,20 @@ function descendants(articles: ArticleSummary[], slug: string): ArticleSummary[]
 	}
 }
 
-/** What to do with a page to delete: `all` (with the pages under it), `lift` (they go up), or `cancel`. */
-function askDelete(article: ArticleSummary, under: ArticleSummary[], linking: string[]): Promise<'all' | 'lift' | 'cancel'> {
+/** What to do with pages to delete: `all` (with the pages under them), `lift` (they go up), or `cancel`. */
+function askDelete(title: string, summary: string, notes: string[], deleteLabel: string, canLift: boolean): Promise<'all' | 'lift' | 'cancel'> {
 	const dialog = document.querySelector<HTMLDialogElement>('#delete-page-dialog');
-	const published = article.draft === false;
-	const notes = [
-		...(published ? ['这篇已经发布，下次部署后网页会消失。'] : []),
-		...(linking.length ? [`有 ${linking.length} 篇链接到它：${linking.slice(0, 5).map((title) => `「${title}」`).join('')}${linking.length > 5 ? '…' : ''}，删除后这些链接会失效。`] : []),
-		'删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。',
-	];
-	if (!dialog) return Promise.resolve(window.confirm(`把「${article.title}」移到回收站？\n${notes.join('\n')}`) ? 'all' : 'cancel');
-	dialog.querySelector('#delete-page-title')!.textContent = `删除「${article.title}」`;
-	dialog.querySelector('#delete-page-summary')!.textContent = under.length ? `它下面有 ${under.length} 个页面` : '移到回收站';
+	if (!dialog) return Promise.resolve(window.confirm(`${title}？\n${notes.join('\n')}`) ? 'all' : 'cancel');
+	dialog.querySelector('#delete-page-title')!.textContent = title;
+	dialog.querySelector('#delete-page-summary')!.textContent = summary;
 	dialog.querySelector('#delete-page-notes')!.replaceChildren(...notes.map((note) => {
 		const item = document.createElement('li');
 		item.className = 'publish-check-item';
 		item.textContent = note;
 		return item;
 	}));
-	dialog.querySelector<HTMLButtonElement>('#delete-page-lift')!.hidden = under.length === 0;
-	dialog.querySelector('#delete-page-all')!.textContent = under.length ? `连同下面 ${under.length} 个页面一起删除` : '删除';
+	dialog.querySelector<HTMLButtonElement>('#delete-page-lift')!.hidden = !canLift;
+	dialog.querySelector('#delete-page-all')!.textContent = deleteLabel;
 	dialog.returnValue = '';
 	dialog.showModal();
 	return new Promise((resolve) => {
@@ -71,6 +65,22 @@ function askDelete(article: ArticleSummary, under: ArticleSummary[], linking: st
 			resolve(value === 'all' || value === 'lift' ? value : 'cancel');
 		}, { once: true });
 	});
+}
+
+/** What to ask before deleting one page: what goes with it, what links to it. */
+function askDeletePage(article: ArticleSummary, under: ArticleSummary[], linking: string[]): Promise<'all' | 'lift' | 'cancel'> {
+	const notes = [
+		...(article.draft === false ? ['这篇已经发布，下次部署后网页会消失。'] : []),
+		...(linking.length ? [`有 ${linking.length} 篇链接到它：${linking.slice(0, 5).map((title) => `「${title}」`).join('')}${linking.length > 5 ? '…' : ''}，删除后这些链接会失效。`] : []),
+		'删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。',
+	];
+	return askDelete(
+		`删除「${article.title}」`,
+		under.length ? `它下面有 ${under.length} 个页面` : '移到回收站',
+		notes,
+		under.length ? `连同下面 ${under.length} 个页面一起删除` : '删除',
+		under.length > 0,
+	);
 }
 
 /** What the toast says of the links that followed a rename: nothing when there were none. */
@@ -173,7 +183,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 			const under = descendants(all, article.slug);
 			const going = new Set([article.slug, ...under.map((page) => page.slug)]);
 			const linking = (await articleBacklinks(article.slug).catch(() => [])).filter((link) => !going.has(link.slug));
-			const choice = await askDelete(article, under, linking.map((link) => link.title));
+			const choice = await askDeletePage(article, under, linking.map((link) => link.title));
 			if (choice === 'cancel') return;
 			const removed = choice === 'all' ? [article, ...under] : [article];
 			const open = removed.some((page) => page.slug === host.openSlug());
@@ -206,6 +216,38 @@ export function createArticleActions(host: ArticleActionsHost) {
 			if (open) await host.open(articles[0].slug);
 			const what = removed.length > 1 ? `「${article.title}」和下面 ${removed.length - 1} 个页面` : `「${article.title}」`;
 			showToast(`已删除${what}`, { action: { label: '撤销', run: () => void restoreAll([...trashed].reverse(), article.title) } });
+		},
+
+		/** Several pages to the trash, after asking, each with the pages under it; one 撤销 brings back all. */
+		async removeMany(pages: ArticleSummary[]): Promise<void> {
+			if (pages.length === 1) return this.remove(pages[0]!);
+			const all = await host.reload();
+			const removed = new Map<string, ArticleSummary>();
+			for (const page of pages) for (const one of [page, ...descendants(all, page.slug)]) removed.set(one.slug, one);
+			const under = removed.size - pages.length;
+			const choice = await askDelete(
+				`删除 ${pages.length} 个页面`,
+				under ? `连同它们下面的 ${under} 个页面` : pages.map((page) => `「${page.title}」`).join(''),
+				[...(pages.some((page) => page.draft === false) ? ['其中有已经发布的，下次部署后网页会消失。'] : []), '删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。'],
+				'删除',
+				false,
+			);
+			if (choice !== 'all') return;
+			const open = removed.has(host.openSlug() ?? '');
+			if (open && !(await host.leave())) return;
+			const trashed: string[] = [];
+			try {
+				for (const page of [...removed.values()].reverse()) trashed.push((await trackWrite(() => deleteArticle(page.slug))).trashed);
+			} catch (error) {
+				showToast(errorText(error, '删除失败'), true);
+			}
+			const articles = await host.reload();
+			if (open && articles.length) await host.open(articles[0]!.slug);
+			else if (open) {
+				window.location.assign('/studio');
+				return;
+			}
+			showToast(`已删除 ${removed.size} 个页面`, { action: { label: '撤销', run: () => void restoreAll([...trashed].reverse(), pages[0]!.title) } });
 		},
 
 		/**

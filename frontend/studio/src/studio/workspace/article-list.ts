@@ -18,8 +18,15 @@ export type ArticleListHost = {
 	createChild(article: ArticleSummary): void;
 	/** 并入上级页面: its text into the page it is under, as a section. */
 	merge(article: ArticleSummary): void;
-	/** Puts the article under another page (its folder name), or at the top with `parent` empty; with `place`, there among those. */
-	move(slug: string, parent: string, place?: PagePlace): void;
+	/**
+	 * Puts the pages (in this order) under another page (its folder name), or at the top with `parent` empty; with
+	 * `place`, there among those, one after the other.
+	 */
+	move(slugs: string[], parent: string, place?: PagePlace): void;
+	/** 「移到…」: asks where, then moves the pages there. */
+	moveTo(slugs: string[]): void;
+	/** Several pages to the trash, with the pages under them. */
+	removeMany(articles: ArticleSummary[]): void;
 };
 
 /** Where on a page what is dragged is let go of: just above it, under it, just below it. */
@@ -94,8 +101,55 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	let tree: ReturnType<typeof pageTree> = { roots: [], children: new Map(), placedUnder: () => '' };
 	/** The page a page shows under in the tree (its parent if that is there), empty for the top. */
 	const placedUnder = (article: ArticleSummary) => tree.placedUnder(article);
-	/** The page being dragged in the list. */
+	/** The page being dragged in the list, and the pages that go with it (the pages chosen, when it is one of them). */
 	let dragged: string | null = null;
+	let draggedGroup: string[] = [];
+	/**
+	 * Pages chosen (as SiYuan has it: ⌘-click one by one, ⇧-click a run of
+	 * them), to move or delete together; the last one clicked, where a run starts.
+	 */
+	const chosen = new Set<string>();
+	let chosenFrom: string | null = null;
+
+	/** Of these pages, those not under another of them (moving or deleting that one takes them along), in the list's order. */
+	function topmost(slugs: Iterable<string>): string[] {
+		const all = new Set(slugs);
+		const order = visibleOrder();
+		const rank = (slug: string) => (order.includes(slug) ? order.indexOf(slug) : order.length);
+		return [...all]
+			.filter((slug) => ![...all].some((other) => other !== slug && within(slug, other)))
+			.sort((a, b) => rank(a) - rank(b));
+	}
+
+	/** The pages as the list shows them, top to bottom (folded ones' pages left out). */
+	function visibleOrder(): string[] {
+		return [...list.querySelectorAll<HTMLElement>('.page-item')].map((item) => item.dataset.slug ?? '');
+	}
+
+	function choose(slug: string, event: MouseEvent): boolean {
+		if (event.metaKey || event.ctrlKey) {
+			if (!chosen.size && selected && selected !== slug) chosen.add(selected);
+			if (chosen.has(slug)) chosen.delete(slug);
+			else chosen.add(slug);
+			chosenFrom = slug;
+		} else if (event.shiftKey) {
+			const order = visibleOrder();
+			const from = order.indexOf(chosenFrom ?? selected ?? slug);
+			const to = order.indexOf(slug);
+			if (from < 0 || to < 0) return false;
+			chosen.clear();
+			for (const page of order.slice(Math.min(from, to), Math.max(from, to) + 1)) chosen.add(page);
+		} else return false;
+		render();
+		return true;
+	}
+
+	function unchoose(): void {
+		if (!chosen.size) return;
+		chosen.clear();
+		chosenFrom = null;
+		render();
+	}
 
 	/** Whether `slug` is `ancestor` or under it. */
 	function within(slug: string, ancestor: string): boolean {
@@ -151,13 +205,34 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			mark.title = uncommitted === 'new' ? '新文章，还没提交到 git' : '有改动还没提交到 git';
 			open.append(mark);
 		}
-		open.addEventListener('click', () => host.open(article.slug));
+		open.addEventListener('click', (event) => {
+			if (choose(article.slug, event)) return;
+			unchoose();
+			chosenFrom = article.slug;
+			host.open(article.slug);
+		});
 		// Right-click, or the menu key: what else can be done to it.
 		const committable = Boolean(git?.available && (uncommitted || git.vanished.length));
-		const menu = (at: { x: number; y: number } | HTMLElement) => showContextMenu([
+		const menu = (at: { x: number; y: number } | HTMLElement) => {
+			// One of several chosen: what is done to them all.
+			if (chosen.size > 1 && chosen.has(article.slug)) {
+				const group = topmost(chosen);
+				const pages = group.map((slug) => articles.find((entry) => entry.slug === slug)!).filter(Boolean);
+				showContextMenu([
+					{ label: `移到…（${group.length} 篇）`, action: () => host.moveTo(group) },
+					{ label: '移到最上层', action: () => host.move(group, '') },
+					'separator',
+					{ label: `移到回收站（${group.length} 篇）`, danger: true, action: () => host.removeMany(pages) },
+				], at);
+				return;
+			}
+			singleMenu(at);
+		};
+		const singleMenu = (at: { x: number; y: number } | HTMLElement) => showContextMenu([
 			...(committable ? [{ label: '提交到 git…', action: () => host.commit(article) }, 'separator' as const] : []),
 			{ label: '在下面新建页面', action: () => host.createChild(article) },
-			...(article.parent ? [{ label: '移到最上层', action: () => host.move(article.slug, '') }, { label: '并入上级页面…', action: () => host.merge(article) }] : []),
+			{ label: '移到…', action: () => host.moveTo([article.slug]) },
+			...(article.parent ? [{ label: '移到最上层', action: () => host.move([article.slug], '') }, { label: '并入上级页面…', action: () => host.merge(article) }] : []),
 			'separator',
 			{ label: '改文件夹名…', action: () => host.rename(article) },
 			{ label: '复制一份', action: () => host.duplicate(article) },
@@ -191,7 +266,10 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 				else if (placedUnder(article)) focusRow(placedUnder(article));
 				else return;
 			} else if (event.key === 'Backspace' || event.key === 'Delete') {
-				host.remove(article);
+				if (chosen.size > 1 && chosen.has(article.slug)) host.removeMany(topmost(chosen).map((slug) => articles.find((entry) => entry.slug === slug)!).filter(Boolean));
+				else host.remove(article);
+			} else if (event.key === 'Escape' && chosen.size) {
+				unchoose();
 			} else return;
 			event.preventDefault();
 		});
@@ -212,7 +290,7 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		add.setAttribute('aria-label', `在「${article.title}」下面新建页面`);
 		add.addEventListener('click', () => host.createChild(article));
 		const item = document.createElement('div');
-		item.className = `page-item${active ? ' active' : ''}`;
+		item.className = `page-item${active ? ' active' : ''}${chosen.has(article.slug) ? ' is-chosen' : ''}`;
 		item.dataset.slug = article.slug;
 		item.style.setProperty('--depth', String(depth));
 		// The pages under it: shown or folded by the triangle beside it.
@@ -244,12 +322,14 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		item.draggable = true;
 		item.addEventListener('dragstart', (event) => {
 			dragged = article.slug;
+			draggedGroup = chosen.has(article.slug) && chosen.size > 1 ? topmost(chosen) : [article.slug];
 			event.dataTransfer?.setData(DRAGGED_TYPE, article.slug);
 			if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
 			list.classList.add('is-dragging-page');
 		});
 		item.addEventListener('dragend', () => {
 			dragged = null;
+			draggedGroup = [];
 			list.classList.remove('is-dragging-page');
 			if (renderLater) {
 				renderLater = false;
@@ -261,13 +341,13 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 		// Where on the page it is let go of says where it goes (as SiYuan has it): its top fifth, just above it
 		// (under the same page); its bottom fifth, just below; between, under it.
 		const zoneAt = (event: DragEvent): DropZone | null => {
-			if (!dragged || within(article.slug, dragged)) return null;
+			if (!dragged || draggedGroup.some((slug) => within(article.slug, slug))) return null;
 			const box = item.getBoundingClientRect();
 			const at = box.height ? (event.clientY - box.top) / box.height : 0.5;
 			const zone: DropZone = at < 0.25 ? 'before' : at > 0.75 ? 'after' : 'into';
 			const page = articles.find((entry) => entry.slug === dragged);
 			// Into the page it is under already: nothing to do.
-			if (zone === 'into' && page?.parent === article.slug) return null;
+			if (zone === 'into' && draggedGroup.length === 1 && page?.parent === article.slug) return null;
 			return zone;
 		};
 		const unmark = () => item.classList.remove('is-drop-into', 'is-drop-before', 'is-drop-after');
@@ -289,10 +369,11 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			if (!zone || !dragged) return;
 			event.preventDefault();
 			event.stopPropagation();
-			const slug = dragged;
+			const group = draggedGroup;
 			dragged = null;
-			if (zone === 'into') host.move(slug, article.slug);
-			else host.move(slug, placedUnder(article), { [zone]: article.slug });
+			unchoose();
+			if (zone === 'into') host.move(group, article.slug);
+			else host.move(group, placedUnder(article), { [zone]: article.slug });
 		});
 		const branch = document.createElement('div');
 		branch.className = 'page-branch';
@@ -321,6 +402,7 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 			git?.changed,
 			git?.vanished.length,
 			selected,
+			[...chosen],
 			[...folded],
 		]);
 		if (state === drawn && list.childElementCount) return;
@@ -342,8 +424,9 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 
 	// The room below the pages: a page dropped there goes to the top.
 	list.addEventListener('dragover', (event) => {
-		const page = dragged ? articles.find((article) => article.slug === dragged) : undefined;
-		if (!page?.parent) return;
+		if (!dragged) return;
+		const page = articles.find((article) => article.slug === dragged);
+		if (!page?.parent && draggedGroup.length < 2) return;
 		event.preventDefault();
 		list.classList.add('is-drop-top');
 	});
@@ -352,11 +435,14 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	});
 	list.addEventListener('drop', (event) => {
 		list.classList.remove('is-drop-top');
-		const page = dragged ? articles.find((article) => article.slug === dragged) : undefined;
-		if (!page?.parent) return;
+		if (!dragged) return;
+		const page = articles.find((article) => article.slug === dragged);
+		if (!page?.parent && draggedGroup.length < 2) return;
 		event.preventDefault();
+		const group = draggedGroup;
 		dragged = null;
-		host.move(page.slug, '');
+		unchoose();
+		host.move(group, '');
 	});
 
 	/** The pages it is under unfolded, so that it shows. */
