@@ -6,6 +6,7 @@ import { InputRule, inputRules } from '@milkdown/prose/inputrules';
 import { NodeSelection, Plugin, Selection, TextSelection, type EditorState } from '@milkdown/prose/state';
 import { $prose } from '@milkdown/utils';
 
+import { typingRulePlugins } from './typing-rules.ts';
 import { duplicateBlocks, linkInputRule, moveBlocks, selectBlockInHand, selectTextblock, todoInputRule, unlistAtStart, type Dispatch } from './block-keys.ts';
 
 /** ⌘ on a Mac, Ctrl elsewhere. */
@@ -108,5 +109,5 @@ const tightListItems = extendListItemSchemaForTask.extendSchema((schema) => (ctx
 });
 
 export function blockKeyPlugins(host: BlockKeysHost): MilkdownPlugin[] {
-	return [blockKeysPlugin(host), todoPlugin, tightListItems, dropCaret].flat();
+	return [blockKeysPlugin(host), todoPlugin, ...typingRulePlugins, tightListItems, dropCaret].flat();
 }

@@ -50,13 +50,17 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 		() =>
 			new Plugin({
 				props: {
+					// `[[`, or `【【` as a Chinese input method types it (one that pairs
+					// brackets types `【】` at each press: the `】`s go too).
 					handleTextInput(view, from, to, text) {
-						if (text !== '[' || from !== to || from < 1) return false;
-						const { $from } = view.state.selection;
-						if ($from.parent.type.spec.code || view.state.doc.textBetween(from - 1, from) !== '[') return false;
-						// The first `[` goes; the article finder asks the rest.
-						view.dispatch(view.state.tr.delete(from - 1, from));
-						void linkArticleAt(view, host, from - 1, '[[');
+						const open = text === '[' ? '[' : text === '【' || text === '【】' ? '【' : null;
+						if (!open || from !== to || from < 1) return false;
+						const { doc, selection } = view.state;
+						if (selection.$from.parent.type.spec.code || doc.textBetween(from - 1, from) !== open) return false;
+						const paired = open === '【' && doc.textBetween(from, Math.min(from + 1, selection.$from.end())) === '】';
+						// The first bracket goes; the article finder asks the rest.
+						view.dispatch(view.state.tr.delete(from - 1, paired ? from + 1 : from));
+						void linkArticleAt(view, host, from - 1, open + open);
 						return true;
 					},
 					handleClick(_view, _pos, event) {

@@ -18,6 +18,10 @@ import type { ArticleLinkHost } from './article-links.ts';
  * And columns copied as plain text (from a terminal, or a sheet that gave no
  * HTML): lines of cells between tabs, as many on each line, come in as a
  * table, the first line its header.
+ * As SiYuan takes them: formulas copied from a page (drawn by KaTeX or
+ * MathJax, or MathML, as on Wikipedia) come in as formulas, from the source
+ * the page keeps beside them; and Markdown that a chat app put on the
+ * clipboard as bare HTML (its marks as text) comes in as Markdown.
  * Anything else pastes as it did.
  */
 
@@ -93,6 +97,65 @@ function pasteTable(ctx: Ctx, view: EditorView, rows: string[][]): boolean {
 	return true;
 }
 
+/** What marks Markdown in plain text: a heading, a list, a quote, a fence, a table row, bold, a formula. */
+const MARKDOWN = /^(?:#{1,6}\s|[-*+]\s|\d+[.)]\s|>\s|```|\|.*\|\s*$)|\*\*[^*\n]+\*\*|\$[^$\n]+\$/mu;
+/** HTML that says what its text is (headings, lists, emphasis, links, …), not just lines of it. */
+const SHAPED_HTML = /<(?:h[1-6]|ul|ol|li|table|pre|code|strong|b|em|i|a|blockquote|img|math)[\s>]/iu;
+
+/**
+ * Whether the clipboard's HTML is Markdown as text: unshaped HTML (lines in
+ * `<p>`s, `<div>`s, `<br>`s, maybe a `<span>` of style) round text that has
+ * Markdown's marks. Pasted as the HTML, the marks would be text.
+ */
+export function markdownAsHtml(html: string, text: string): boolean {
+	return Boolean(html) && Boolean(text.trim()) && !SHAPED_HTML.test(html) && MARKDOWN.test(text);
+}
+
+function pasteMarkdown(ctx: Ctx, view: EditorView, text: string): boolean {
+	const doc = ctx.get(parserCtx)(text);
+	if (!doc || typeof doc === 'string' || !doc.childCount) return false;
+	// One line of text joins the line it is pasted into.
+	const inline = doc.childCount === 1 && doc.firstChild?.type.name === 'paragraph';
+	view.dispatch(view.state.tr.replaceSelection(new Slice(doc.content, inline ? 1 : 0, inline ? 1 : 0)).scrollIntoView());
+	return true;
+}
+
+/**
+ * A page's formulas as `$…$` and `$$…$$` text, which the paste then makes
+ * formulas of (as typed ones are): KaTeX's and MathML's TeX annotation,
+ * MathJax's source script, the `alttext` Wikipedia gives its MathML. What
+ * draws them goes.
+ */
+export function formulasAsText(html: string): string {
+	if (!/katex|math\/tex|<math|mwe-math/iu.test(html)) return html;
+	const page = new DOMParser().parseFromString(html, 'text/html');
+	const write = (holder: Element, tex: string, display: boolean) =>
+		holder.replaceWith(page.createTextNode(display ? `$$${tex}$$` : `$${tex}$`));
+	const annotation = (root: Element) => root.querySelector('annotation[encoding="application/x-tex"]')?.textContent?.trim();
+	for (const holder of [...page.querySelectorAll('.katex-display, .katex')]) {
+		if (!holder.isConnected) continue;
+		const tex = annotation(holder);
+		if (tex) write(holder, tex, holder.classList.contains('katex-display'));
+	}
+	for (const script of [...page.querySelectorAll('script[type^="math/tex"]')]) {
+		const display = /mode=display/u.test(script.getAttribute('type') ?? '');
+		// What MathJax drew for it, just before it.
+		const drawn = script.previousElementSibling;
+		if (drawn && /MathJax/u.test(drawn.className)) drawn.remove();
+		write(script, (script.textContent ?? '').trim(), display);
+	}
+	for (const math of [...page.querySelectorAll('math')]) {
+		if (!math.isConnected) continue;
+		let tex = annotation(math) ?? math.getAttribute('alttext')?.trim();
+		if (!tex) continue;
+		tex = /^\{\\displaystyle\s*([\s\S]*)\}$/u.exec(tex)?.[1]?.trim() ?? tex;
+		const holder = math.closest('.mwe-math-element, mjx-container') ?? math;
+		const display = math.getAttribute('display') === 'block' || Boolean(holder.querySelector('.mwe-math-mathml-display')) || holder.getAttribute('display') === 'true';
+		write(holder, tex, display);
+	}
+	return page.body.innerHTML;
+}
+
 function paste(ctx: Ctx, view: EditorView, event: ClipboardEvent, host: SmartPasteHost): boolean {
 	const clipboard = event.clipboardData;
 	const link = view.state.schema.marks.link;
@@ -102,6 +165,10 @@ function paste(ctx: Ctx, view: EditorView, event: ClipboardEvent, host: SmartPas
 	if ($from.parent.type.spec.code || !$from.parent.isTextblock || $from.marks().some((mark) => mark.type.spec.code)) return false;
 	const rows = clipboard.getData('text/html') ? null : pastedTable(clipboard.getData('text/plain'));
 	if (rows && pasteTable(ctx, view, rows)) {
+		event.preventDefault();
+		return true;
+	}
+	if (markdownAsHtml(clipboard.getData('text/html'), clipboard.getData('text/plain')) && pasteMarkdown(ctx, view, clipboard.getData('text/plain'))) {
 		event.preventDefault();
 		return true;
 	}
@@ -129,6 +196,14 @@ function paste(ctx: Ctx, view: EditorView, event: ClipboardEvent, host: SmartPas
 
 export function smartPastePlugins(host: SmartPasteHost): MilkdownPlugin[] {
 	// On the DOM event, ahead of the clipboard's own handling, which would put the address in place of the text.
-	const plugin = $prose((ctx) => new Plugin({ props: { handleDOMEvents: { paste: (view, event) => paste(ctx, view, event, host) } } }));
+	const plugin = $prose(
+		(ctx) =>
+			new Plugin({
+				props: {
+					handleDOMEvents: { paste: (view, event) => paste(ctx, view, event, host) },
+					transformPastedHTML: (html) => formulasAsText(html),
+				},
+			}),
+	);
 	return [plugin].flat();
 }
