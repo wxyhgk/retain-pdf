@@ -50,5 +50,5 @@ PLIST
 codesign --force --sign - "$app"
 mkdir -p "$into"
 rm -rf "$into/Studio.app"
-cp -R "$app" "$into/"
+mv "$app" "$into/"
 echo "已生成 $into/Studio.app（打开的博客：${blog}）"
