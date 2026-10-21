@@ -1,6 +1,7 @@
 import { blockMenuAPI } from '@milkdown/crepe/feature/block-edit';
 import { TextSelection } from '@milkdown/prose/state';
 import { Decoration, DecorationSet } from '@milkdown/prose/view';
+import type { Node as ProseNode } from '@milkdown/prose/model';
 import type { EditorView } from '@milkdown/prose/view';
 import { Plugin } from '@milkdown/prose/state';
 import { $prose } from '@milkdown/utils';
@@ -102,6 +103,47 @@ function blockPosAt(view: EditorView, clientX: number, clientY: number): number 
 	return selectableBlock(doc, coords.pos)?.pos ?? null;
 }
 
+/** What holds blocks one after another, whose blocks a drag can select on their own. */
+const HOLDS_BLOCKS = new Set(['doc', 'column', 'callout', 'toggle', 'blockquote', 'bullet_list', 'ordered_list']);
+
+/** A place as deep in the blocks at (x, y) as it goes: in the text of a line, or before a block with none (a figure). */
+function deepPosAt(view: EditorView, clientX: number, clientY: number): number | null {
+	const { doc } = view.state;
+	const rect = view.dom.getBoundingClientRect();
+	if (clientY <= rect.top) return 0;
+	if (clientY >= rect.bottom) return doc.content.size;
+	const coords = pointerCoords(view, clientX, clientY);
+	if (!coords) return null;
+	const node = coords.inside >= 0 ? doc.nodeAt(coords.inside) : null;
+	return node && (node.isAtom || node.isLeaf) ? coords.inside : coords.pos;
+}
+
+/**
+ * Where a drag from the margin starts in the blocks: at the press (the edge of
+ * the blocks) or, when that is the edge of a callout or quote (between its
+ * blocks), further in on that line, where the drag has gone (the inner edge
+ * of the box it spans): the block there. Not if further in is another block
+ * altogether (the next column): the drag spans both.
+ */
+function anchorPosAt(view: EditorView, pressX: number, innerX: number, y: number): number | null {
+	const edge = deepPosAt(view, pressX, y);
+	const inner = deepPosAt(view, innerX, y);
+	if (edge == null || inner == null) return edge ?? inner;
+	const $edge = view.state.doc.resolve(edge);
+	return $edge.parent.isTextblock || view.state.doc.resolve(inner).sharedDepth(edge) < $edge.depth ? edge : inner;
+}
+
+/** The blocks from the one at `a` to the one at `b`, at the deepest level that holds both (HOLDS_BLOCKS). */
+export function blocksBetween(doc: ProseNode, a: number, b: number): BlockRangeSelection | null {
+	const $a = doc.resolve(a);
+	const $b = doc.resolve(b);
+	let depth = $a.sharedDepth(b);
+	while (depth > 0 && !HOLDS_BLOCKS.has($a.node(depth).type.name)) depth -= 1;
+	const anchor = depth < $a.depth ? $a.before(depth + 1) : a;
+	const head = depth < $b.depth ? $b.before(depth + 1) : b;
+	return BlockRangeSelection.tryCreate(doc, anchor, head);
+}
+
 class BlockRangeDrag {
 	readonly root: HTMLElement;
 	readonly view: EditorView;
@@ -150,13 +192,18 @@ class BlockRangeDrag {
 	private pointer: { x: number; y: number } | null = null;
 	private frame = 0;
 
-	/** The selection taken to the block at (x, y). */
+	/**
+	 * The selection taken to the block at (x, y), as deep in the blocks as
+	 * both ends are (as SiYuan has it): both in one column, callout, toggle,
+	 * quote or list, the blocks in it; otherwise the blocks holding them
+	 * (from one column into the next, the columns whole).
+	 */
 	private extendTo(x: number, y: number): void {
 		const press = this.press;
 		if (!press) return;
-		const head = blockPosAt(this.view, x, y);
-		if (head == null) return;
-		const next = BlockRangeSelection.tryCreate(this.view.state.doc, press.anchor, head);
+		const anchor = anchorPosAt(this.view, press.x, Math.max(press.x, x), press.y);
+		const head = deepPosAt(this.view, x, y);
+		const next = anchor == null || head == null ? null : blocksBetween(this.view.state.doc, anchor, head);
 		if (!next || this.view.state.selection.eq(next)) return;
 		this.view.dispatch(this.view.state.tr.setSelection(next));
 	}
