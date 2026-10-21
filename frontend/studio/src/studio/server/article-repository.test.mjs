@@ -196,7 +196,7 @@ test('an article takes another folder name, never one taken', async (t) => {
 
 	await assert.rejects(repository.rename('old-name', 'taken'), ArticleConflictError);
 	await assert.rejects(repository.rename('old-name', 'Bad Name'), /slug/u);
-	assert.deepEqual(await repository.rename('old-name', 'new-name'), { slug: 'new-name' });
+	assert.deepEqual(await repository.rename('old-name', 'new-name'), { slug: 'new-name', relinked: 0 });
 	assert.deepEqual((await repository.list()).map((article) => article.slug), ['new-name', 'taken']);
 	assert.equal(await readFile(join(root, 'new-name', 'img', 'a.png'), 'utf8'), 'png');
 });
@@ -293,4 +293,16 @@ test('pages under pages: made under one, moved under another or to the top, neve
 	await repository.rename('project', 'hf-project');
 	assert.deepEqual(await parents(), { 'hf-project': '', method: 'hf-project', results: '' });
 	assert.equal(validateArticleSource(await readFile(articleBundlePaths(blog, 'method').markdown, 'utf8')).success, true);
+});
+
+test('a rename takes the links to the article with it, in the others and its own', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'note-20261021-180000', title: '基组' });
+	await repository.create({ slug: 'project', title: '项目' });
+	const project = articleBundlePaths(blog, 'project').markdown;
+	await writeFile(project, `${await readFile(project, 'utf8')}\n见 [基组](/blog/note-20261021-180000/#de-xuan-ze)。\n`);
+	const result = await repository.rename('note-20261021-180000', 'ji-zu');
+	assert.deepEqual(result, { slug: 'ji-zu', relinked: 1 });
+	assert.match(await readFile(project, 'utf8'), /\[基组\]\(\/blog\/ji-zu\/#de-xuan-ze\)/u);
 });

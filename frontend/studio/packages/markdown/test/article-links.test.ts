@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { findArticleLinks } from '../articles/article-links.mjs';
+import { findArticleLinks, relinkArticle } from '../articles/article-links.mjs';
 
 const source = [
 	'---',
@@ -47,4 +47,22 @@ test('a long paragraph is cut around the link', () => {
 	assert.ok(context.includes('链接'));
 	assert.ok(context.length <= 115, String(context.length));
 	assert.equal(findArticleLinks(`短的[链接](/blog/target/)${'后'.repeat(300)}`)[0].context.slice(0, 4), '短的链接');
+});
+
+test('links to a renamed article follow it: the address alone, its # kept, the rest of the text as it was', () => {
+	const source = [
+		'见 [方法](/blog/note-20261021-180000/) 和 [公式](/wiki/note-20261021-180000/#eq-1)。',
+		'',
+		'不动：[别的](/blog/note-20261021-180000-2/)、`/blog/note-20261021-180000/`',
+		'',
+		'[ref]: https://example.org/blog/note-20261021-180000/',
+		'',
+	].join('\n');
+	const { source: next, changed } = relinkArticle(source, 'note-20261021-180000', 'ji-zu', { site: 'https://example.org' });
+	assert.equal(changed, 3);
+	assert.equal(next, source
+		.replace('(/blog/note-20261021-180000/)', '(/blog/ji-zu/)')
+		.replace('(/wiki/note-20261021-180000/#eq-1)', '(/wiki/ji-zu/#eq-1)')
+		.replace('https://example.org/blog/note-20261021-180000/', 'https://example.org/blog/ji-zu/'));
+	assert.deepEqual(relinkArticle('没有链接。', 'a', 'b'), { source: '没有链接。', changed: 0 });
 });

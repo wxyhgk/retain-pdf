@@ -5,7 +5,7 @@ import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
 import { articleBundlePaths, assertArticleSlug, StudioPathError } from '../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
-import { findArticleLinks } from '@blog/markdown/articles/article-links.mjs';
+import { findArticleLinks, relinkArticle } from '@blog/markdown/articles/article-links.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../articles/schemas.mjs';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */
@@ -160,16 +160,24 @@ export class ArticleRepository {
 	 * (`/blog/<slug>/`). Its text says nothing of its folder, so nothing in it
 	 * changes; the pages under it (`parent:` its old name) are put under its new one.
 	 */
-	rename(slug, to) {
+	rename(slug, to, { site } = {}) {
 		return this.exclusive(slug, async () => {
 			const from = articleBundlePaths(this.blogRoot, slug);
 			await assertReadableBundle(from);
-			if (to === slug) return { slug };
+			if (to === slug) return { slug, relinked: 0 };
 			const target = articleBundlePaths(this.blogRoot, to);
 			await assertFree(target.directory);
 			await rename(from.directory, target.directory);
 			for (const child of await this.#children(slug)) await this.#writeParent(child, to);
-			return { slug: to };
+			// The links to it in the articles (its own too) follow it to its new address.
+			let relinked = 0;
+			for (const { slug: page, source } of await this.#sources()) {
+				const { source: next, changed } = relinkArticle(source, slug, to, { site });
+				if (!changed) continue;
+				await atomicWriteText(articleBundlePaths(this.blogRoot, page).markdown, next);
+				relinked += 1;
+			}
+			return { slug: to, relinked };
 		});
 	}
 

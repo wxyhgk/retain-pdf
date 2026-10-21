@@ -26,6 +26,11 @@ function errorText(error: unknown, fallback: string): string {
 	return error instanceof Error ? error.message : fallback;
 }
 
+/** What the toast says of the links that followed a rename: nothing when there were none. */
+export function relinkedNote(relinked: number): string {
+	return relinked ? `，${relinked} 篇里指向它的链接已跟着改` : '';
+}
+
 /** A folder name typed by the author, made acceptable; null when given up or unusable. */
 function askSlug(message: string, suggested: string): string | null {
 	const typed = window.prompt(message, suggested);
@@ -59,22 +64,28 @@ export function createArticleActions(host: ArticleActionsHost) {
 				article.slug,
 			);
 			if (!to || to === article.slug) return;
-			if (await this.renameTo(article, to)) showToast(`文件夹已改为 ${to}`);
+			const renamed = await this.renameTo(article, to);
+			if (renamed) showToast(`文件夹已改为 ${to}${relinkedNote(renamed.relinked)}`);
 		},
 
-		/** Gives the article the folder name `to` (free, checked), reopening it if it is open. Whether it did. */
-		async renameTo(article: ArticleSummary, to: string): Promise<boolean> {
+		/**
+		 * Gives the article the folder name `to` (free, checked), reopening it if
+		 * it is open; the links to it are made to follow. How many articles had
+		 * links changed; null when it was not renamed.
+		 */
+		async renameTo(article: ArticleSummary, to: string): Promise<{ relinked: number } | null> {
 			const open = host.openSlug() === article.slug;
-			if (open && !(await host.leave())) return false;
+			if (open && !(await host.leave())) return null;
+			let relinked = 0;
 			try {
-				await trackWrite(() => renameArticle(article.slug, to));
+				({ relinked = 0 } = await trackWrite(() => renameArticle(article.slug, to)));
 			} catch (error) {
 				showToast(errorText(error, '改名失败'), true);
-				return false;
+				return null;
 			}
 			await host.reload();
 			if (open) await host.open(to);
-			return true;
+			return { relinked };
 		},
 
 		async duplicate(article: ArticleSummary): Promise<void> {

@@ -282,7 +282,7 @@ test('a terminal is only for this repository or an existing article', async (t) 
 test('an article is renamed, copied, deleted and put back', async (t) => {
 	const middleware = await apiFixture(t);
 	const renamed = await call(middleware, { url: '/api/studio/articles/api-note/rename', ...asJson({ to: 'renamed-note' }) });
-	assert.deepEqual(renamed, { status: 200, data: { slug: 'renamed-note' } });
+	assert.deepEqual(renamed, { status: 200, data: { slug: 'renamed-note', relinked: 0 } });
 	const copied = await call(middleware, { url: '/api/studio/articles/renamed-note/duplicate', ...asJson({ to: 'renamed-note-copy' }) });
 	assert.deepEqual(copied, { status: 201, data: { slug: 'renamed-note-copy' } });
 	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note/rename', ...asJson({ to: 'renamed-note-copy' }) })).status, 409);

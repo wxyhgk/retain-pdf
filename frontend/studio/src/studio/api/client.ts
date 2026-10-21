@@ -89,7 +89,7 @@ export function commitArticle(slug: string, message: string): Promise<{ commit: 
 }
 
 /** Gives an article another folder name, which is its address on the blog. */
-export function renameArticle(slug: string, to: string): Promise<{ slug: string }> {
+export function renameArticle(slug: string, to: string): Promise<{ slug: string; relinked?: number }> {
 	return request(articleApi(slug, 'rename'), jsonOptions('POST', { to }));
 }
 

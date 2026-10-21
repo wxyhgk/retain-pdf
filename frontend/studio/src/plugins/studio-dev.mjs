@@ -273,7 +273,7 @@ export default function studioDev({ site } = {}) {
 					if (articleActionMatch && request.method === 'POST') {
 						const slug = decodePathComponent(articleActionMatch[1]);
 						const { to } = await readJsonChange(request);
-						const result = articleActionMatch[2] === 'rename' ? await articles.rename(slug, to) : await articles.duplicate(slug, to);
+						const result = articleActionMatch[2] === 'rename' ? await articles.rename(slug, to, { site }) : await articles.duplicate(slug, to);
 						return json(response, articleActionMatch[2] === 'rename' ? 200 : 201, result);
 					}
 

@@ -30,7 +30,7 @@ import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
 import { ArticleSession, type SaveState } from './state/article-session';
 import type { ArticlePayload, ArticleSummary } from './types';
-import { createArticleActions } from './workspace/article-actions';
+import { createArticleActions, relinkedNote } from './workspace/article-actions';
 import { createArticleList } from './workspace/article-list';
 import { showContextMenu } from './workspace/context-menu';
 import { watchDisk } from './workspace/disk-events';
@@ -351,7 +351,8 @@ async function publishAndName(): Promise<void> {
 	const wanted = readableSlug(article.title);
 	if (!wanted || isAutoSlug(wanted)) return;
 	const to = freeSlug(wanted, articleList.articles().map((entry) => entry.slug));
-	if (await articleActions.renameTo(article, to)) showToast(`已发布，网址是 /${article.kind === 'wiki' ? 'wiki' : 'blog'}/${to}/`);
+	const renamed = await articleActions.renameTo(article, to);
+	if (renamed) showToast(`已发布，网址是 /${article.kind === 'wiki' ? 'wiki' : 'blog'}/${to}/${relinkedNote(renamed.relinked)}`);
 }
 
 /**

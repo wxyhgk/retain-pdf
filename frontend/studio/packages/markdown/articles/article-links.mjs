@@ -49,6 +49,42 @@ export function findArticleLinks(source, { site } = {}) {
 	return links;
 }
 
+/**
+ * `source` with its links to the article `from` pointing at `to` instead
+ * (its folder renamed): the address alone changes, its `#…` kept, every other
+ * byte as it was. With `site`, links written in full too. How many changed.
+ * @param {string} source
+ * @param {string} from
+ * @param {string} to
+ * @param {{ site?: string }} [options]
+ * @returns {{ source: string, changed: number }}
+ */
+export function relinkArticle(source, from, to, { site } = {}) {
+	const origin = site ? new URL(site).origin : null;
+	const spans = [];
+	visitParents(unified().use(remarkParse).parse(source), (node) => {
+		if ((node.type !== 'link' && node.type !== 'definition') || typeof node.url !== 'string') return;
+		const address = origin && node.url.startsWith(`${origin}/`) ? node.url.slice(origin.length) : node.url;
+		const match = ARTICLE_ADDRESS.exec(address);
+		const start = node.position?.start.offset;
+		const end = node.position?.end.offset;
+		if (match?.[2] !== from || start == null || end == null) return;
+		spans.push({ start, end, section: match[1] });
+	});
+	let next = source;
+	let changed = 0;
+	// From the last, so that the places of those before stay.
+	for (const { start, end, section } of spans.sort((a, b) => b.start - a.start)) {
+		const written = next.slice(start, end);
+		// The address in the link's text: `/blog/<from>` not followed by more of a folder name.
+		const pattern = new RegExp(`/${section}/${from}(?![a-z0-9-])`, 'u');
+		if (!pattern.test(written)) continue;
+		next = `${next.slice(0, start)}${written.replace(pattern, `/${section}/${to}`)}${next.slice(end)}`;
+		changed += 1;
+	}
+	return { source: next, changed };
+}
+
 /** A node's words, formulas and code as written. */
 function plainText(node) {
 	if (typeof node.value === 'string' && node.type !== 'html') return node.value;
