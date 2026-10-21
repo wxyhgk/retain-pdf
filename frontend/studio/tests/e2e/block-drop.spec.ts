@@ -32,6 +32,8 @@ async function dropAt(page: Page, data: JSHandle<DataTransfer>, x: number, y: nu
 	await dragOver(page, data, x, y);
 	await editor(page).dispatchEvent('drop', { dataTransfer: data, clientX: x, clientY: y });
 	await grip(page).dispatchEvent('dragend', { dataTransfer: data });
+	// Let go where the drop was: a drag ends in no click (on the handle, it would open its menu).
+	await page.mouse.move(x, y);
 	await page.mouse.up();
 }
 
