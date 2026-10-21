@@ -21,6 +21,7 @@ packages/             博客和 Studio 共用的包（各有 README）
 plugins/              插件：计算任务、分子、书签……（见 plugins/README.md）
 bin/                  studio 命令和 MCP 服务
 tools/studio-terminal/    Studio 终端的后台程序（Rust）
+tools/studio-app/         Studio 的 Mac 应用（Rust、Tauri）：起服务器、开窗口；网页里的 alert/confirm/prompt 由它显示成系统对话框
 third_party/milkdown/     编辑器 Milkdown 的 fork（git submodule）
 tests/                单元测试；tests/e2e/ 浏览器测试
 ```

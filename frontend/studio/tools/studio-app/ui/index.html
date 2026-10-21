@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>Studio</title>
+<style>
+	:root { color-scheme: light dark; --ink: #37352f; --muted: #787774; --paper: #ffffff; }
+	@media (prefers-color-scheme: dark) { :root { --ink: #d4d4d4; --muted: #9b9b9b; --paper: #191919; } }
+	html, body { height: 100%; margin: 0; }
+	body {
+		display: grid; place-items: center; background: var(--paper); color: var(--ink);
+		font: 15px/1.6 -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif; cursor: default; user-select: none;
+	}
+	main { max-width: 560px; padding: 24px; text-align: center; }
+	#status { color: var(--muted); white-space: pre-wrap; }
+	.error #status { color: #e03e3e; text-align: left; user-select: text; font-size: 13px; }
+	.error .hint { display: block; }
+	.hint { display: none; margin-top: 16px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+	<p id="status">正在找博客的服务器…</p>
+	<p class="hint">关掉这个应用（⌘Q）再打开就会重试。</p>
+</main>
+<script>
+	window.studioStatus = (message, error) => {
+		if (message) document.getElementById('status').textContent = message;
+		document.body.classList.toggle('error', error);
+	};
+</script>
+</body>
+</html>
