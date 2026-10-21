@@ -7,8 +7,6 @@ import { $prose } from '@milkdown/utils';
 import { writeAtEnd } from './block-keys.ts';
 import { BlockRangeSelection, blockRangeKey, selectableBlock } from './block-range.ts';
 
-const BLANK_SNAP_PX = 24;
-
 const IGNORED_TARGET = [
 	'.document-header',
 	'.milkdown-block-handle',
@@ -31,7 +29,7 @@ const IGNORED_TARGET = [
 	'select',
 ].join(', ');
 
-/** A press in the margin or blank space; `end` when it was below the last block. */
+/** A press in the margin; `end` when it was below the last block. */
 type Press = { x: number; y: number; anchor: number; moved: boolean; end: boolean };
 
 function contentBox(view: EditorView) {
@@ -47,34 +45,16 @@ function contentBox(view: EditorView) {
 	};
 }
 
-function caretPoint(x: number, y: number): { x: number; y: number; height: number } | null {
-	const doc = document as Document & {
-		caretRangeFromPoint?: (x: number, y: number) => Range | null;
-		caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null;
-	};
-	let range: Range | null = null;
-	if (doc.caretRangeFromPoint) range = doc.caretRangeFromPoint(x, y);
-	else if (doc.caretPositionFromPoint) {
-		const position = doc.caretPositionFromPoint(x, y);
-		if (position) {
-			const node = position.offsetNode;
-			const max = node.nodeType === Node.TEXT_NODE ? (node.textContent?.length ?? 0) : node.childNodes.length;
-			range = document.createRange();
-			range.setStart(node, Math.min(position.offset, max));
-			range.collapse(true);
-		}
-	}
-	if (!range) return null;
-	const rect = range.getClientRects()[0] ?? range.getBoundingClientRect();
-	if (!rect || rect.height === 0) return null;
-	return { x: rect.left, y: rect.top + rect.height / 2, height: rect.height };
-}
-
 function ignoredTarget(event: MouseEvent): boolean {
 	return event.composedPath().some((node) => node instanceof Element && node.matches(IGNORED_TARGET));
 }
 
-/** True when the pointer is in the margin or on blank space beside a line, not on glyphs. */
+/**
+ * True when the pointer is in the margin round the blocks, not among them. A
+ * press among the blocks (on text, or the blank beside a short line) is the
+ * browser's: the caret goes there at once, a drag selects text (as SiYuan has
+ * it; Esc then makes blocks of what is selected).
+ */
 export function isBlockPointer(view: EditorView, event: MouseEvent): boolean {
 	if (event.button !== 0 || ignoredTarget(event)) return false;
 	const scroll = view.dom.closest('.editor-scroll');
@@ -84,13 +64,7 @@ export function isBlockPointer(view: EditorView, event: MouseEvent): boolean {
 	const box = contentBox(view);
 	if (event.clientY < box.top || event.clientY > box.bottom) return false;
 	if (event.clientX < box.contentLeft || event.clientX > box.contentRight) return true;
-	if (event.clientY < box.contentTop || event.clientY > box.contentBottom) return true;
-	if (!onEditor) return false;
-	const caret = caretPoint(event.clientX, event.clientY);
-	if (!caret) return true;
-	const dx = Math.abs(event.clientX - caret.x);
-	const dy = Math.abs(event.clientY - caret.y);
-	return dx > BLANK_SNAP_PX || dy > Math.max(BLANK_SNAP_PX, caret.height);
+	return event.clientY < box.contentTop || event.clientY > box.contentBottom;
 }
 
 /** Whether the pointer is in the blank space below the last block (in the editor's scrolling area). */
@@ -226,7 +200,7 @@ function blockDecorations(state: EditorView['state']): DecorationSet | null {
 	return DecorationSet.create(state.doc, decorations);
 }
 
-/** Dragging from the margin or from blank space selects blocks instead of glyphs. */
+/** Dragging from the margin selects blocks instead of glyphs. */
 export const blockRangePlugin = $prose(
 	() =>
 		new Plugin({
@@ -239,6 +213,36 @@ export const blockRangePlugin = $prose(
 					return blockRangeKey(view.state, { key: text, text }, (tr) => view.dispatch(tr));
 				},
 				handleDOMEvents: {
+					// A press among blocks that are selected: the blocks are let go of
+					// before the browser acts on the press, so that one press puts the
+					// caret there (or, ⇧ held, takes the selection to that block). As
+					// SiYuan has it: the browser never sees a press inside what is
+					// selected, which it would wait to the button's release to act on,
+					// or drag.
+					mousedown(view, event) {
+						const { selection } = view.state;
+						if (!(selection instanceof BlockRangeSelection)) return false;
+						if (event.button !== 0 || event.metaKey || event.ctrlKey || event.altKey || ignoredTarget(event)) return false;
+						if (event.shiftKey) {
+							const head = blockPosAt(view, event.clientX, event.clientY);
+							const next = head == null ? null : BlockRangeSelection.tryCreate(view.state.doc, selection.anchor, head);
+							if (!next) return false;
+							event.preventDefault();
+							view.dispatch(view.state.tr.setSelection(next));
+							return true;
+						}
+						const at = view.posAtCoords({ left: event.clientX, top: event.clientY });
+						if (!at) return false;
+						view.dispatch(view.state.tr.setSelection(TextSelection.near(view.state.doc.resolve(at.pos))));
+						return false;
+					},
+					// A key right after a click is for where the click put the caret:
+					// the browser tells of that caret a moment later (selectionchange),
+					// so what it has is read first.
+					keydown(view) {
+						if (!view.composing) (view as unknown as { domObserver: { flush(): void } }).domObserver.flush();
+						return false;
+					},
 					compositionstart(view) {
 						if (!(view.state.selection instanceof BlockRangeSelection)) return false;
 						blockRangeKey(view.state, { key: 'Enter' }, (tr) => view.dispatch(tr));
