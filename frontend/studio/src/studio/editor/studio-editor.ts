@@ -70,6 +70,8 @@ export type StudioEditorHost = {
 	reviewing(pending: number | null): void;
 	/** The author asks an AI about the selected blocks (⌘J, 「问 AI」): `markSelection` tells which. */
 	askAI(): void;
+	/** 识别…: the picture at `pos` read by the large model of AI 设置. */
+	recognize(view: EditorView, pos: number): void;
 	/**
 	 * 转成子页面: the folder name a page made now under the open article
 	 * would get (null when none is open), and making it with this text and the
@@ -188,6 +190,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) },
 						ask: () => host.askAI(),
 						split: (view, pos) => void splitToPage(view, pos),
+						recognize: (view, pos) => host.recognize(view, pos),
 					}),
 				buildMenu: (builder) => {
 					buildScienceSlashMenu(builder);

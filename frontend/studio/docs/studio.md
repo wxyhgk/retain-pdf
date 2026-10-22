@@ -139,6 +139,25 @@ tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/S
 - 从聊天应用复制的「其实是 Markdown」的内容：按 Markdown 粘贴。
 - 从表格软件或终端复制的几列文字：变成表格。
 
+## 识别图片（AI）
+
+图片的块菜单（拖动手柄点开，或右键）里有「识别…」，选一种读法，大模型就读这张图，结果放在图下面：
+
+| 读法 | 放到图下面的 |
+|---|---|
+| 公式 → LaTeX | `$$ … $$` 公式块 |
+| 文字 → 段落 | 普通段落（里面的公式写成 `$…$`） |
+| 表格 → Markdown 表格 | 表格 |
+| 分子结构 → SMILES | ```smiles 化学块 |
+
+- 结果和终端里 AI 改文章一样，是「外部改动」：逐处接受或拒绝；改之前的文章存进历史版本。大模型读错了，拒绝就好。
+- 第一次用会先弹出「AI 设置」（左栏底部也能打开）：
+  - **Claude（Anthropic）**：模型默认 `claude-opus-5-5`；key 可以不填，用环境变量 `ANTHROPIC_API_KEY`（或 `ant auth login`）；用代理时填接口地址。
+  - **OpenAI 兼容接口**：通义千问、DeepSeek、智谱、OpenRouter 等都行，填接口地址（例如 `https://dashscope.aliyuncs.com/compatible-mode/v1`）和一个能看图的模型名（例如 `qwen-vl-max`）；key 可以用环境变量 `OPENAI_API_KEY`。
+- key 只存在这台电脑的 `.studio-settings.json` 里（不进 git，只有你自己能读），网页拿不到它。
+- 只能识别 PNG、JPEG、GIF、WebP，SVG 不行。
+- 想加别的读法（图表取数、手写笔记……），见 `plugins/README.md` 的「加一种识别」。
+
 ## 发布和提交
 
 - 页面上方的「发布」按钮：先做发布前检查（会让博客构建失败的问题会拦下来），再把草稿改成已发布。网站在推送到 GitHub 之后才更新。

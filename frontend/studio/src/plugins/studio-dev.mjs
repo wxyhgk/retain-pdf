@@ -22,6 +22,9 @@ import { pageVersion, studioBlogRoot } from '../studio/server/page-version.mjs';
 import { atomicWriteText } from '../studio/server/atomic-write.mjs';
 import { listPlugins, serverKernel } from '@blog/kernel/node.mjs';
 import { PluginSettings } from '../studio/server/plugin-settings.mjs';
+import { AiSettings } from '../studio/server/ai-settings.mjs';
+import { askAboutImage } from '../studio/server/ai-vision.mjs';
+import { insertBelowImage } from '../studio/server/image-insert.mjs';
 import { readAnswer } from '@blog/kernel/routes.mjs';
 
 function json(response, status, data) {
@@ -133,6 +136,8 @@ export default function studioDev({ site } = {}) {
 			const privateRoot = testBlogRoot ?? server.config.root;
 			// Those turned off in the Studio (插件) are not applied.
 			const pluginSettings = new PluginSettings(settingsFile);
+			// Which large model the Studio asks (AI 设置); its key stays on this machine.
+			const aiSettings = new AiSettings(settingsFile);
 			const plugins = pluginSettings.disabled().then((disabled) => serverKernel(server.config.root, {
 				projectRoot: server.config.root,
 				blogRoot,
@@ -269,6 +274,40 @@ export default function studioDev({ site } = {}) {
 						const { parent, before, after } = await readJsonChange(request);
 						const text = (value) => (typeof value === 'string' ? value : '');
 						return json(response, 200, await articles.setParent(decodePathComponent(parentMatch[1]), text(parent), { before: text(before), after: text(after) }));
+					}
+
+					// AI 设置: the page sees no key, only whether there is one.
+					if (url.pathname === '/api/studio/ai/settings') {
+						if (request.method === 'GET') return json(response, 200, await aiSettings.shown());
+						if (request.method === 'PUT') return json(response, 200, await aiSettings.set(await readJsonChange(request)));
+					}
+
+					// 识别: a picture of the article (`./img/…` or `./assets/…`) read by the model, as asked by `prompt`.
+					const recognizeMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/recognize$/u);
+					if (recognizeMatch && request.method === 'POST') {
+						const slug = decodePathComponent(recognizeMatch[1]);
+						const { image, prompt } = await readJsonChange(request);
+						if (typeof prompt !== 'string' || !prompt.trim()) return json(response, 400, { error: '要说明识别什么（prompt）' });
+						const picture = String(image ?? '').replace(/^\.\//u, '').match(/^(img|assets)\/(.+)$/u);
+						if (!picture) return json(response, 400, { error: '只能识别文章自己的图片（./img/ 或 ./assets/ 里的）' });
+						const { body, contentType } = await files.read(slug, picture[1], picture[2], { sizeLimit: 20 * 1024 * 1024 });
+						const text = await askAboutImage(await aiSettings.config(), { image: body, mediaType: String(contentType).split(';')[0], prompt });
+						return json(response, 200, { text });
+					}
+
+					// What was read from a picture, put under it in the file (the text as it was goes into history first):
+					// open in the Studio, it comes as a change from outside, to accept or not.
+					const belowImageMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/below-image$/u);
+					if (belowImageMatch && request.method === 'POST') {
+						const slug = decodePathComponent(belowImageMatch[1]);
+						const { image, markdown } = await readJsonChange(request);
+						if (typeof image !== 'string' || typeof markdown !== 'string' || !markdown.trim()) return json(response, 400, { error: '要给出图片和要放的内容' });
+						const { source, revision } = await articles.read(slug);
+						const next = insertBelowImage(source, image, markdown);
+						if (next === null) return json(response, 404, { error: '没在文章里找到这张图' });
+						await history.keep(slug, source, 'before-change');
+						await articles.save(slug, { source: next, expectedRevision: revision });
+						return json(response, 200, { slug });
 					}
 
 					// 并入上级页面: its text into the page it is under (whose text as it was goes into that page's history), then itself to the trash.

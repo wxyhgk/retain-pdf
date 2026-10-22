@@ -1,6 +1,6 @@
 import { Context, pluginStatus, syncPlugins, type LoadedPlugin, type PluginStatus } from '@blog/kernel/index.mjs';
 import { provideStudio, studioBlocks, studioPluginList, type StudioHost } from '@blog/kernel/studio.ts';
-import type { Commands, Panels } from '@blog/kernel/ui.ts';
+import type { Commands, Panels, Recognizers } from '@blog/kernel/ui.ts';
 
 import { pluginModules } from './plugin-modules.ts';
 
@@ -126,6 +126,11 @@ export function moleculeEditor() {
 /** The plugins' commands (`ctx.commands`); null before they have started. */
 export function pluginCommands(): Commands | null {
 	return started ? ((studioPlugins.get('commands') as Commands | undefined) ?? null) : null;
+}
+
+/** What the plugins read pictures as (`ctx.recognizers`, 识别); null before they have started. */
+export function pluginRecognizers(): Recognizers | null {
+	return started ? ((studioPlugins.get('recognizers') as Recognizers | undefined) ?? null) : null;
 }
 
 /** The plugins' tabs of the right column (`ctx.panels`); null before they have started. */

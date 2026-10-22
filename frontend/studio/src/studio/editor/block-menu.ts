@@ -13,6 +13,7 @@ import { duplicateBlocks, moveBlocks } from './block-keys.ts';
 import { BlockRangeSelection, blockRangeKey, coveredRange } from './block-range.ts';
 import { blockRangePlugin } from './block-range-drag.ts';
 import { paragraphBreakPlugin } from './paragraph-breaks.ts';
+import { FIGURE_TYPE } from './figure-block.ts';
 import { dispatchScienceAction } from './science-block-menu.ts';
 import { SCIENCE_FENCE_TYPE, blockAt, scienceBlockMenuItems } from './science-block.ts';
 
@@ -93,7 +94,12 @@ export type BlockMenuHost = {
 	ask?: () => void;
 	/** 转成子页面: the heading at `pos` and its section made a page under the article. */
 	split?: (view: EditorView, pos: number) => void;
+	/** 识别…: the picture at `pos` read by a large model (a formula, text, a table…), what is read put under it. */
+	recognize?: (view: EditorView, pos: number) => void;
 };
+
+/** The blocks that are a picture: what 识别 reads. */
+const PICTURES = ['image-block', FIGURE_TYPE];
 
 /** The menu's 「问 AI…」, when the Studio offers it. */
 function askEntry(host: BlockMenuHost): MenuEntry[] {
@@ -115,6 +121,10 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 		const split = host.split;
 		if (split && node.type.name === 'heading') {
 			entries.push({ key: 'split', label: '转成子页面', current: false, danger: false, turn: false, run: (view) => split(view, pos) });
+		}
+		const recognize = host.recognize;
+		if (recognize && PICTURES.includes(node.type.name) && node.attrs.src) {
+			entries.push({ key: 'recognize', label: '识别…', current: false, danger: false, turn: false, run: (view) => recognize(view, pos) });
 		}
 		const save = host.saveAsFile;
 		if (save?.can(node)) {

@@ -358,3 +358,34 @@ export async function listPlugins(): Promise<PluginEntry[]> {
 export async function setPluginEnabled(id: string, enabled: boolean): Promise<PluginEntry[]> {
 	return (await request<{ plugins: PluginEntry[] }>('/api/studio/plugins', jsonOptions('PUT', { id, enabled }))).plugins;
 }
+
+/** Which large model the Studio asks (AI 设置): never the key itself, only whether there is one. */
+export type AiSettingsShown = {
+	provider: 'anthropic' | 'openai';
+	model: string;
+	baseUrl: string;
+	/** A key is there: saved here, or in the environment. */
+	hasKey: boolean;
+	/** The key is saved in the Studio's settings (not only in the environment). */
+	keySaved: boolean;
+	defaults: { anthropic: string; openai: string };
+};
+
+export function aiSettings(): Promise<AiSettingsShown> {
+	return request('/api/studio/ai/settings');
+}
+
+/** Changes the AI settings; `apiKey: ''` forgets a saved key, and leaving it out keeps it. */
+export function saveAiSettings(change: Partial<Pick<AiSettingsShown, 'provider' | 'model' | 'baseUrl'>> & { apiKey?: string }): Promise<AiSettingsShown> {
+	return request('/api/studio/ai/settings', jsonOptions('PUT', change));
+}
+
+/** 识别: a picture of the article (`./img/…`) read by the model as `prompt` asks; its answer. */
+export async function recognizeImage(slug: string, image: string, prompt: string): Promise<string> {
+	return (await request<{ text: string }>(`/api/studio/articles/${encodeURIComponent(slug)}/recognize`, jsonOptions('POST', { image, prompt }))).text;
+}
+
+/** Puts Markdown under a picture of the article, on disk: it comes to the editor as a change to accept or not. */
+export function putBelowImage(slug: string, image: string, markdown: string): Promise<{ slug: string }> {
+	return request(`/api/studio/articles/${encodeURIComponent(slug)}/below-image`, jsonOptions('POST', { image, markdown }));
+}

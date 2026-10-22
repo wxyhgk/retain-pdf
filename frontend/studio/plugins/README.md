@@ -37,6 +37,7 @@ export function apply(ctx) { … }             // 在这里注册
 | Studio | `ctx.panels` | 右栏的页签：`register({ key, label, order?, draw(pane) })`，见下面「界面：面板和命令」 |
 | Studio | `ctx.commands` | 命令：`register({ id, label, run, keys?, places? })`，可以挂快捷键、斜杠菜单、⋯ 菜单、左栏；`run(id)` 跑别人的命令 |
 | Studio | `ctx.molecules` | 分子编辑器接缝：`register(editor)` 提供一个，`editor()` 取一个 |
+| Studio | `ctx.recognizers` | 识别图片：`register({ id, label, prompt, toMarkdown? })` 加一种读法，图片菜单的「识别…」里列出全部；见下面「加一种识别」 |
 | 全部 | `ctx.jobs`（由 `job` 插件提供） | 计算程序：`register(program)`、`get(name)`、`list()`；见「写一个计算程序」 |
 | Studio | `ctx.sheetTabs` | 给别的块的弹窗加页签：`register('block-job', { key, label, draw(panel, detail) })` |
 | Studio | `ctx.theme` | 改设计变量：`set({ 'editor-width': '720px' }, { scheme? })`；`tokens()` 列出全部和现在的值。见下面「改外观」 |
@@ -148,7 +149,29 @@ export function apply(ctx: Context): void {
 - `xtb/`、`crest/`：计算程序。四个环境都把自己注册进 `ctx.jobs`；加一个程序见下面「写一个计算程序」。
 - `bookmark/`：网页书签（```bookmark）。四个环境都有，是一个小而完整的块插件：`bookmark.mjs` 是格式和卡片（构建和 Studio 共用一份 HAST），`server.mjs` 在 Studio 里读一次网页（DOI 问 doi.org），读到的写进文章，构建不联网。
 - `word-count/`：字数统计。只有 `studio.ts`：右栏页签（听 `studio/source-changed`，只在看得见时重算）、左栏按钮、一个插入统计的命令。写界面插件可以照着它。
+- `recognize/`：识别图片。只有 `studio.ts`：往 `ctx.recognizers` 里登记四种读法（公式、文字、表格、分子结构），是加一种识别的例子。
 - `retainmol/`：RetainMol 分子编辑器。Studio 里注册成 `ctx.molecules` 的一个实现，服务器上负责构建和提供它。计算块和化学块的三维结构都通过 `ctx.molecules` 用它，换一个编辑器不用改那些块。
+
+## 加一种识别
+
+图片菜单里只有一项「识别…」，点开列出所有登记过的读法，选一种，就用「AI 设置」里的大模型读这张图，结果放到图下面，作者逐处接受或拒绝（改之前的文章存进历史版本）。加一种读法就是登记一条，不用改 Studio：
+
+```ts
+export const inject = ['recognizers'];
+
+export function apply(ctx: Context) {
+	ctx.recognizers.register({
+		id: 'chart.data',                 // 小写字母开头
+		label: '图表 → 数据表',            // 菜单里显示的
+		prompt: 'Read the data points of the chart in the picture as a Markdown table: …',  // 和图片一起给大模型的话
+		toMarkdown: (answer) => answer,   // 回答怎样变成放到图下面的 Markdown；不给就原样放
+	});
+}
+```
+
+- `prompt` 只管说清楚读什么、写成什么格式；「只回答结果、不要解释、不要套代码块」已经由 Studio 统一说了，回答外面万一套了 ``` 也会去掉。
+- 回答是空的（图里没有这类东西）时，Studio 提示作者，不改文章。
+- 调哪个大模型、key 在哪里，都是「AI 设置」管的（Claude，或 OpenAI 兼容接口），插件不用管。
 
 ## 写一个新块
 

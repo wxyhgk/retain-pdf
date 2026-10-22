@@ -22,6 +22,9 @@ import {
 	driveInfo,
 	pluginApi,
 	listPlugins,
+	aiSettings,
+	recognizeImage,
+	putBelowImage,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -51,8 +54,10 @@ import { createDriveBrowser } from './workspace/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from './workspace/page-names';
-import { pluginCommands, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
+import { pluginCommands, pluginRecognizers, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
+import { Recognizers, type Recognizer } from '@blog/kernel/ui.ts';
 import { createPluginsDialog } from './workspace/plugins-dialog';
+import { aiReady, createAiSettingsDialog } from './workspace/ai-settings-dialog';
 import { runCommand, showPluginUi } from './workspace/plugin-ui';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
@@ -66,6 +71,7 @@ import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
 import { createTerminalPane } from './workspace/terminal';
 import { showToast } from './workspace/toast';
+import type { EditorView } from '@milkdown/prose/view';
 import { createTopBar } from './workspace/top-bar';
 import { createHistoryView } from './workspace/history-view';
 import { createTrashView } from './workspace/trash-view';
@@ -217,6 +223,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	},
 	openArticle: (slug) => void session.open(slug),
 	askAI: () => void askAI(),
+	recognize: (view, pos) => void recognizePicture(view, pos),
 	pickCitation: () => citePicker.pick(),
 	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
 	reviewing: (pending) => reviewBar.show(pending),
@@ -530,6 +537,48 @@ void listPlugins()
 	});
 const pluginsDialog = createPluginsDialog(document.querySelector<HTMLDialogElement>('#plugins-dialog')!, { info: studioPluginInfo, setEnabled: setStudioPluginEnabled });
 shell.querySelector('#open-plugins')!.addEventListener('click', () => void pluginsDialog.open());
+const aiDialog = createAiSettingsDialog(document.querySelector<HTMLDialogElement>('#ai-settings-dialog')!);
+shell.querySelector('#open-ai-settings')!.addEventListener('click', () => void aiDialog.open());
+
+/**
+ * 识别…: the picture at `pos` read by the large model of AI 设置, as what the author picks
+ * (`ctx.recognizers`: a formula, text, a table…). What is read is put under the picture on disk,
+ * the article saved first: it comes back as a change to accept or not, the text before it in history.
+ */
+function recognizePicture(view: EditorView, pos: number): void {
+	const slug = session.slug;
+	const src = String(view.state.doc.nodeAt(pos)?.attrs.src ?? '');
+	if (!slug || !src) return;
+	const kinds = pluginRecognizers()?.list() ?? [];
+	if (!kinds.length) {
+		showToast('没有可用的识别：插件「recognize」关掉了？', true);
+		return;
+	}
+	const anchor = view.nodeDOM(pos);
+	showContextMenu(
+		kinds.map((kind) => ({ label: kind.label, action: () => void readPicture(slug, src, kind) })),
+		anchor instanceof HTMLElement ? anchor : { x: innerWidth / 2, y: innerHeight / 3 },
+	);
+}
+
+async function readPicture(slug: string, src: string, kind: Recognizer): Promise<void> {
+	let settings = await aiSettings().catch(() => null);
+	if (!settings || !aiReady(settings)) settings = await aiDialog.open('识别图片要用大模型：先选好服务、模型，填上 key。');
+	if (!settings || !aiReady(settings)) return;
+	await session.flush();
+	showToast(`正在识别（${kind.label}）…`);
+	try {
+		const answer = await recognizeImage(slug, src, kind.prompt);
+		if (!answer.trim()) {
+			showToast('图里没读出这一类内容', true);
+			return;
+		}
+		await putBelowImage(slug, src, Recognizers.markdown(kind, answer));
+		showToast('识别好了，放在图下面：接受或拒绝');
+	} catch (error) {
+		showToast(`没能识别：${error instanceof Error ? error.message : String(error)}`, true);
+	}
+}
 // A plugin edited (by hand or by an AI in the terminal) is put in again at once: said here; the article drawn again if its blocks changed.
 studioPlugins.on('studio/plugins-reloaded', (changed, problems) => {
 	showToast(problems.length ? problems.join('；') : `已重新载入插件：${changed.join('、')}`, problems.length > 0);

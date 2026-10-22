@@ -3,7 +3,7 @@ import type { SheetTab } from '@blog/ui/block-sheet.ts';
 import { Blocks, type Block } from './blocks.mjs';
 import { Context, Service } from './index.mjs';
 import { Styles, Theme } from './theme.ts';
-import { Commands, Panels } from './ui.ts';
+import { Commands, Panels, Recognizers } from './ui.ts';
 
 /**
  * The Studio (in the browser): each plugin's studio.ts puts its block in the
@@ -172,6 +172,7 @@ export async function provideStudio(ctx: Context, host: StudioHost): Promise<voi
 	await ctx.plugin(Styles);
 	await ctx.plugin(Panels);
 	await ctx.plugin(Commands);
+	await ctx.plugin(Recognizers);
 }
 
 /** The plugins among these modules (by path, as import.meta.glob gives them), by their folder's name. */

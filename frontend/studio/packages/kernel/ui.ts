@@ -247,9 +247,70 @@ export class Commands extends Service {
 	}
 }
 
+/**
+ * 识别: what a picture of an article can be read as, by the large model set in AI 设置 — a formula,
+ * text, a table, a molecule. A picture's menu has one 「识别…」, which lists them all.
+ */
+export type Recognizer = {
+	/** Its name (lowercase letters, digits, . - and _), unique: `plugin.kind` is a good one. */
+	id: string;
+	/** What it shows as in the list: 「公式 → LaTeX」. */
+	label: string;
+	/** What the model is asked, the picture given with it: what to read, and how to write it out. */
+	prompt: string;
+	/** The answer made into the Markdown put under the picture; the answer as it is when not given. */
+	toMarkdown?(answer: string): string;
+};
+
+/** `ctx.recognizers`: what pictures can be read as (识别). */
+export class Recognizers extends Service {
+	readonly recognizers: Recognizer[] = [];
+	readonly listeners = new Set<() => void>();
+
+	constructor(ctx: Context) {
+		super(ctx, 'recognizers');
+	}
+
+	/** Adds this until the plugin goes; a wrong or taken id throws at once. */
+	register(recognizer: Recognizer): () => Promise<void> {
+		const id = recognizer?.id;
+		if (!COMMAND_NAME.test(id ?? '')) throw new UiError(`识别的 id 要用小写字母开头，只含字母、数字、.、- 和 _：${id}`);
+		if (this.recognizers.some((entry) => entry.id === id)) throw new UiError(`已经有叫 ${id} 的识别了`);
+		if (typeof recognizer.label !== 'string' || !recognizer.label.trim()) throw new UiError(`识别 ${id} 要有 label`);
+		if (typeof recognizer.prompt !== 'string' || !recognizer.prompt.trim()) throw new UiError(`识别 ${id} 要有 prompt`);
+		if (recognizer.toMarkdown !== undefined && typeof recognizer.toMarkdown !== 'function') throw new UiError(`识别 ${id} 的 toMarkdown 要是函数`);
+		return this.ctx.effect(() => {
+			this.recognizers.push(recognizer);
+			tell(this.listeners);
+			return () => {
+				const index = this.recognizers.indexOf(recognizer);
+				if (index >= 0) this.recognizers.splice(index, 1);
+				tell(this.listeners);
+			};
+		}, `recognizers.register(${id})`);
+	}
+
+	/** Them all, in the order they came. */
+	list(): Recognizer[] {
+		return [...this.recognizers];
+	}
+
+	/** The Markdown for `answer`, as `recognizer` makes it. */
+	static markdown(recognizer: Recognizer, answer: string): string {
+		return recognizer.toMarkdown ? recognizer.toMarkdown(answer) : answer;
+	}
+
+	/** Calls `listener` whenever they change; returns how to stop. */
+	watch(listener: () => void): () => void {
+		this.listeners.add(listener);
+		return () => this.listeners.delete(listener);
+	}
+}
+
 declare module '@deepseek-ai/cordis' {
 	interface Context {
 		panels: Panels;
 		commands: Commands;
+		recognizers: Recognizers;
 	}
 }

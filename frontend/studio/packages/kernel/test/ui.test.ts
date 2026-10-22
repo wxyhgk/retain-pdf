@@ -2,12 +2,13 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { applyPlugins, Context } from '../index.mjs';
-import { Commands, matchesShortcut, Panels, parseShortcut, shortcutName } from '../ui.ts';
+import { Commands, matchesShortcut, Panels, parseShortcut, Recognizers, shortcutName } from '../ui.ts';
 
 async function kernel() {
 	const ctx = new Context();
 	await ctx.plugin(Panels);
 	await ctx.plugin(Commands);
+	await ctx.plugin(Recognizers);
 	return ctx as any;
 }
 
@@ -126,4 +127,34 @@ test('a panel is refused for a taken key, the Studio’s own tabs, or no way to 
 		console.error = error;
 	}
 	assert.equal(heard, 1);
+});
+
+test('what pictures are read as (识别) comes and goes with its plugin; the answer made Markdown as it says', async () => {
+	const ctx = await kernel();
+	let heard = 0;
+	ctx.recognizers.watch(() => heard++);
+	const [result] = await applyPlugins(ctx, [{ id: 'read', module: { inject: ['recognizers'], apply(c: any) {
+		c.recognizers.register({ id: 'read.formula', label: '公式 → LaTeX', prompt: 'LaTeX', toMarkdown: (answer: string) => `$$\n${answer}\n$$` });
+		c.recognizers.register({ id: 'read.text', label: '文字', prompt: 'text' });
+	} } }]);
+	assert.equal(result.state, 'active');
+	assert.equal(heard, 2);
+	const [formula, text] = ctx.recognizers.list();
+	assert.deepEqual([formula.id, text.id], ['read.formula', 'read.text']);
+	assert.equal(Recognizers.markdown(formula, 'E = mc^2'), '$$\nE = mc^2\n$$');
+	assert.equal(Recognizers.markdown(text, '一段话'), '一段话');
+	await result.fiber!.dispose();
+	assert.deepEqual(ctx.recognizers.list(), []);
+	assert.equal(heard, 4);
+});
+
+test('a way of reading pictures is refused without an id of the right form, a label or a prompt, or for a taken id', async () => {
+	const ctx = await kernel();
+	const tried = (recognizer: object) => () => ctx.recognizers.register(recognizer);
+	assert.throws(tried({ id: 'Formula', label: 'a', prompt: 'b' }), /小写字母开头/u);
+	assert.throws(tried({ id: 'a.b', label: ' ', prompt: 'b' }), /label/u);
+	assert.throws(tried({ id: 'a.b', label: 'a', prompt: '' }), /prompt/u);
+	assert.throws(tried({ id: 'a.b', label: 'a', prompt: 'b', toMarkdown: 'x' }), /toMarkdown/u);
+	ctx.recognizers.register({ id: 'a.b', label: 'a', prompt: 'b' });
+	assert.throws(tried({ id: 'a.b', label: 'c', prompt: 'd' }), /已经有叫 a.b 的识别了/u);
 });
