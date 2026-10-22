@@ -2,8 +2,8 @@ import { LanguageDescription } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import type { EditorView } from '@milkdown/prose/view';
 
-import { createWidget } from '@blog/markdown/widgets/widget-host.ts';
-import { WIDGET_LANGUAGE, publicArticlePath, widgetFile, widgetOptions } from '@blog/markdown/widgets/widgets.mjs';
+import { createWidget } from './widget-host.ts';
+import { WIDGET_LANGUAGE, publicArticlePath, widgetFile, widgetOptions } from './widgets.mjs';
 
 /**
  * ```widget blocks in the editor (widgets.mjs): their HTML is edited as

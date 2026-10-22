@@ -15,7 +15,7 @@ import {
 	isEmptyMolfile,
 	transformScienceBlock,
 	SCIENCE_FENCE_TYPE,
-} from '../src/studio/editor/science-block.ts';
+} from '../science-block.ts';
 
 test('descriptor classifies scientific fences', () => {
 	const smiles = parseScienceFence('smiles', 'CCO');

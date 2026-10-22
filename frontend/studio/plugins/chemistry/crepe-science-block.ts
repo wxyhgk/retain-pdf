@@ -87,6 +87,8 @@ export const scienceBlockView = $view(scienceBlockSchema.schema.node, (ctx) => {
 		let node = initial;
 		const dom = document.createElement('div');
 		dom.className = 'science-block';
+		// It selects itself and opens its sheet: a press on it is not the start of a selecting drag.
+		dom.dataset.ownsPointer = '';
 		const caption = document.createElement('div');
 		caption.className = 'science-block-caption';
 		const kind = document.createElement('span');

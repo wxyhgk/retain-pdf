@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { referencedPaths } from '@blog/markdown/articles/article-references.mjs';
-import { markdownReference } from '../src/studio/article-files.ts';
+import { markdownReference, setFileBlocks } from '../src/studio/article-files.ts';
 import { subfolderOf } from '../src/studio/dropped-files.ts';
 import type { ArticleFileEntry } from '../src/studio/types.ts';
 import {
@@ -79,6 +79,9 @@ test('a folder counts the references to everything inside it', () => {
 
 test('each kind of file is pasted the way the article uses it', () => {
 	assert.equal(markdownReference('img/水分子 (1).png'), '![水分子 (1)](./img/%E6%B0%B4%E5%88%86%E5%AD%90%20(1).png)');
+	// A structure file is a chemistry block when that plugin is on (it says it shows .cube files), a link when not.
+	assert.equal(markdownReference('assets/orbitals/homo.cube'), '[homo.cube](./assets/orbitals/homo.cube)');
+	setFileBlocks((extension) => (extension === 'cube' ? { fence: 'cube', icon: '⬡' } : null));
 	assert.equal(markdownReference('assets/orbitals/homo.cube'), '```cube\n@file ./assets/orbitals/homo.cube\n```');
 	assert.equal(markdownReference('assets/run.log'), '```output\n@file ./assets/run.log\n```');
 	assert.equal(markdownReference('assets/si/INCAR'), '```incar\n@file ./assets/si/INCAR\n```');
@@ -86,6 +89,7 @@ test('each kind of file is pasted the way the article uses it', () => {
 	assert.equal(markdownReference('assets/[draft].csv'), '[\\[draft\\].csv](./assets/[draft].csv)');
 	assert.equal(markdownReference('ai/notes.md'), null);
 	assert.deepEqual([...referencedPaths(markdownReference('img/水分子 (1).png')!)], ['img/水分子 (1).png']);
+	setFileBlocks(() => null);
 });
 
 test('sizes read like a file manager’s', () => {

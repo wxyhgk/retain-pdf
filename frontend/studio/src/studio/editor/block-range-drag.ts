@@ -19,11 +19,11 @@ const IGNORED_TARGET = [
 	'.pm-inline-math',
 	'.pm-math-preview',
 	'.chem-stage',
-	// Formula and chemistry blocks select themselves and open their source popup.
+	// Formula blocks, and blocks of plugins that say so (chemistry), select themselves and open their source.
 	'.pm-display-math',
+	'[data-owns-pointer]',
 	// The gap between columns is pressed to make one wider (columns-block.ts).
 	'.columns-block.is-over-gap',
-	'.science-block',
 	'button',
 	'a',
 	'input',

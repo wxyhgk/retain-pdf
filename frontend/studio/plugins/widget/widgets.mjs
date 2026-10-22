@@ -23,8 +23,8 @@
  * article (in img/ or assets/), which the page fetches for it.
  */
 
-import { articlePath } from '../articles/article-references.mjs';
-import { PUBLISHED_FOLDERS } from '../articles/rules.mjs';
+import { articlePath } from '@blog/markdown/articles/article-references.mjs';
+import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 
 export const WIDGET_LANGUAGE = 'widget';
 

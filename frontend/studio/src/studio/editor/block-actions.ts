@@ -132,7 +132,8 @@ function asParagraphs(node: ProseNode): ProseNode[] {
 	const name = node.type.name;
 	if (name === 'paragraph') return [node.copy(node.content)];
 	if (name === 'heading') return [paragraph(node.content)];
-	if (name === 'code_block' || name === 'science-block') {
+	// A code block, or a plugin's block that is code (a chemistry block): its text.
+	if (name === 'code_block' || node.type.spec.code) {
 		const text = node.textContent;
 		return [paragraph(text ? Fragment.from(schema.text(text)) : Fragment.empty)];
 	}

@@ -6,6 +6,11 @@ export type Block = {
 	fence: string | string[];
 	/** The build: what its fence becomes in the page (mdast), or nothing to leave it. */
 	remark?: (node: { type: 'code'; lang?: string | null; meta?: string | null; value: string; position?: unknown }, file: { path?: string; message(reason: string, options?: unknown): unknown }) => unknown;
+	/**
+	 * The build, once the page is HTML and made safe (no scripts, no handlers, no `srcdoc`):
+	 * the whole page (hast), for what only the block may add after that (a frame's page).
+	 */
+	rehype?: (tree: { type: 'root'; children: unknown[] }, file: { path?: string; message(reason: string, options?: unknown): unknown }) => void;
 	[key: string]: unknown;
 };
 

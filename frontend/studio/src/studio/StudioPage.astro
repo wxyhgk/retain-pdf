@@ -6,12 +6,10 @@ import { pageVersion, studioBlogRoot } from './server/page-version.mjs';
 // The editor's styles in the page itself, not added by its scripts later, so the first picture is drawn as the editor draws it.
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
-import '@blog/science/browser/molecule-renderer.css';
 import '@blog/markdown/callouts/callouts.css';
 import '@blog/markdown/code-files/code-files.css';
 import '@blog/markdown/figures/figures.css';
 import '@blog/markdown/references/references.css';
-import '@blog/markdown/widgets/widgets.css';
 import '@blog/office/office.css';
 import '@xterm/xterm/css/xterm.css';
 import './tokens.css';
@@ -743,39 +741,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group h6) { padding: 8px 8px 2px; font-size: 11px; letter-spacing: 0.04em; text-transform: none; }
 	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group li) { min-width: 200px; gap: 10px; padding: 6px 8px; }
 	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group li > span) { font-size: 14px; font-weight: 400; line-height: 20px; }
-	:global(.crepe-host .science-block) { position: relative; margin: 0.35em 0 0.85em; border-radius: 8px; }
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden)) { padding: 2px 0 8px; background: transparent; }
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .tools) { position: absolute; z-index: 2; top: 0; right: 0; left: 0; pointer-events: none; }
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .language-button),
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .tools button),
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .language-picker) { pointer-events: auto; }
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .language-button) { margin-bottom: 0; }
-	:global(.crepe-host .science-block-caption) { position: absolute; z-index: 2; top: 6px; right: 6px; display: flex; align-items: center; gap: 2px; margin: 0; padding: 2px; border-radius: 8px; background: color-mix(in srgb, var(--surface) 92%, transparent); color: rgb(var(--gray)); font-size: 12px; opacity: 0; pointer-events: none; user-select: none; }
-	:global(.crepe-host .science-block:hover .science-block-caption),
-	:global(.crepe-host .science-block.ProseMirror-selectednode .science-block-caption),
-	:global(.crepe-host .science-block.is-open .science-block-caption),
-	:global(.crepe-host .science-block.is-empty .science-block-caption) { opacity: 1; pointer-events: auto; }
-	:global(.crepe-host .science-block-kind) { padding: 0 6px; line-height: 24px; }
-	:global(.crepe-host .science-block-caption button) { height: 24px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; line-height: 24px; cursor: pointer; }
-	:global(.crepe-host .science-block-caption button:hover) { background: var(--surface-soft); }
-	:global(.crepe-host .science-block-preview:empty) { display: none; }
-	:global(.crepe-host .science-block .chem-viewer) { margin: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; }
-	:global(.crepe-host .science-block .chem-stage) { min-height: 0; }
-	:global(.crepe-host .science-block .chem-viewer > figcaption) { display: none; }
-	:global(.crepe-host .science-block .chem-2d .chem-stage) { min-height: 0; background: transparent; }
-	:global(.crepe-host .science-block .chem-3d) { overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); }
-	:global(.crepe-host .science-block .chem-3d .chem-stage) { height: 240px; min-height: 0; }
-	:global(.crepe-host .science-block .chem-stage svg) { width: auto; height: auto; max-width: 100%; max-height: 168px; margin: 0 auto; }
-	:global(.crepe-host .science-block-fallback) { margin: 0; padding: 20px 12px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
-	:global(.crepe-host .science-block-placeholder) { display: none; }
-	:global(.crepe-host .science-block.is-empty .science-block-placeholder) { display: block; padding: 14px 12px; padding-right: 120px; border-radius: 8px; background: var(--surface-soft); color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; cursor: text; }
-	:global(.crepe-host .science-block.is-empty .science-block-placeholder:hover) { background: var(--surface-hover); }
-	:global(.crepe-host .science-block.is-empty .science-block-edit) { display: none; }
-	:global(.crepe-host .science-block.is-open:not(.is-inline-source)) { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
-	/* The SMILES popup covers its block and previews itself, like a display formula. */
-	:global(.crepe-host .milkdown .science-block.is-inline-source) { background: transparent; outline: none; }
-	:global(.crepe-host .science-block.is-inline-source > *) { visibility: hidden; }
-	:global(.crepe-host .science-block-preview) { cursor: default; }
 	:global(.block-menu) { position: fixed; z-index: 40; width: 200px; padding: 6px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12); }
 	:global(.block-menu[hidden]) { display: none; }
 	:global(.block-menu-section) { padding: 8px 8px 2px; color: rgb(var(--gray)); font-size: 11px; }

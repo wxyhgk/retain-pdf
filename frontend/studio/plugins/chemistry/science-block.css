@@ -1,0 +1,28 @@
+/* A chemistry block in the Studio's editor (crepe-science-block.ts): its caption, preview and placeholder. */
+.crepe-host .science-block { position: relative; margin: 0.35em 0 0.85em; border-radius: 8px; }
+.crepe-host .science-block-caption { position: absolute; z-index: 2; top: 6px; right: 6px; display: flex; align-items: center; gap: 2px; margin: 0; padding: 2px; border-radius: 8px; background: color-mix(in srgb, var(--surface) 92%, transparent); color: rgb(var(--gray)); font-size: 12px; opacity: 0; pointer-events: none; user-select: none; }
+.crepe-host .science-block:hover .science-block-caption,
+.crepe-host .science-block.ProseMirror-selectednode .science-block-caption,
+.crepe-host .science-block.is-open .science-block-caption,
+.crepe-host .science-block.is-empty .science-block-caption { opacity: 1; pointer-events: auto; }
+.crepe-host .science-block-kind { padding: 0 6px; line-height: 24px; }
+.crepe-host .science-block-caption button { height: 24px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; line-height: 24px; cursor: pointer; }
+.crepe-host .science-block-caption button:hover { background: var(--surface-soft); }
+.crepe-host .science-block-preview:empty { display: none; }
+.crepe-host .science-block .chem-viewer { margin: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; }
+.crepe-host .science-block .chem-stage { min-height: 0; }
+.crepe-host .science-block .chem-viewer > figcaption { display: none; }
+.crepe-host .science-block .chem-2d .chem-stage { min-height: 0; background: transparent; }
+.crepe-host .science-block .chem-3d { overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); }
+.crepe-host .science-block .chem-3d .chem-stage { height: 240px; min-height: 0; }
+.crepe-host .science-block .chem-stage svg { width: auto; height: auto; max-width: 100%; max-height: 168px; margin: 0 auto; }
+.crepe-host .science-block-fallback { margin: 0; padding: 20px 12px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
+.crepe-host .science-block-placeholder { display: none; }
+.crepe-host .science-block.is-empty .science-block-placeholder { display: block; padding: 14px 12px; padding-right: 120px; border-radius: 8px; background: var(--surface-soft); color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; cursor: text; }
+.crepe-host .science-block.is-empty .science-block-placeholder:hover { background: var(--surface-hover); }
+.crepe-host .science-block.is-empty .science-block-edit { display: none; }
+.crepe-host .science-block.is-open:not(.is-inline-source) { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+/* The SMILES popup covers its block and previews itself, like a display formula. */
+.crepe-host .milkdown .science-block.is-inline-source { background: transparent; outline: none; }
+.crepe-host .science-block.is-inline-source > * { visibility: hidden; }
+.crepe-host .science-block-preview { cursor: default; }

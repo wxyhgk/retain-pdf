@@ -4,8 +4,10 @@ import { Service } from '@deepseek-ai/cordis';
  * `ctx.blocks`: the blocks of an article written as fences (```job, ```xyz),
  * each claimed by one plugin. What a block is depends on the environment its
  * plugin registers it in: in the build, `remark(node, file)` turns its fence
- * into what the page shows; in the Studio, `milkdown` are its editor nodes
- * and `menu` its slash-menu entry. The core reads only those fields; a block
+ * into what the page shows, and `rehype(tree, file)` may finish it once the
+ * page is HTML and made safe; in the Studio, `milkdown` are its editor nodes,
+ * `menu` its slash-menu entries, and so on (@blog/kernel/studio.ts,
+ * StudioBlock). The core reads only those fields; a block
  * may carry others for the plugins around it.
  *
  *     ctx.blocks.register({ name: 'block-job', fence: 'job', remark })

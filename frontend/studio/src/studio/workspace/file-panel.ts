@@ -7,7 +7,6 @@ import {
 	trashArticleFile,
 	uploadArticleFile,
 } from '../api/client';
-import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
 import { movedPath, referencedPaths, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { officeKind, tableSource } from '@blog/office/kinds.mjs';
@@ -15,7 +14,7 @@ import { markdownTable, parseDelimited } from '../table-text';
 import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
 import { showContextMenu, type MenuItem } from './context-menu';
-import { extension, fileName, isImage, markdownReference, parentPath, STUDIO_FILE_DRAG_TYPE } from '../article-files';
+import { fileBlock, fileName, isImage, markdownReference, parentPath, STUDIO_FILE_DRAG_TYPE } from '../article-files';
 import { droppedItems, pickedItems, type UploadItem } from '../dropped-files';
 import { buildFileTree, formatSize, isUnused, referenceCount, uploadFolderFor, visibleNodes, type FileNode } from './file-tree';
 import { showToast } from './toast';
@@ -43,15 +42,15 @@ export type FilePanelHost = {
 
 const STATUS_CLEAR_MS = 6000;
 const FINDER = /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示';
-/** A structure file: one a chemistry block draws (its extension is a molecule language), or SMILES in `.smi`. */
-const isStructure = (path: string): boolean => isMoleculeLanguage(extension(path)) || extension(path) === 'smi';
 
 type Editing = { kind: 'rename'; path: string } | { kind: 'folder'; parent: string };
 
 function fileIcon(node: FileNode, open: boolean): string {
 	if (node.entry.kind === 'directory') return open ? '▾' : '▸';
 	if (isImage(node.entry.path)) return '▣';
-	if (isStructure(node.entry.path)) return '⬡';
+	// A file a plugin's block shows has its mark (a structure file: ⬡).
+	const shown = fileBlock(node.entry.path)?.icon;
+	if (shown) return shown;
 	return '▤';
 }
 

@@ -118,9 +118,17 @@ export async function pluginBlocks() {
 	return studioBlocks(studioPlugins);
 }
 
-/** The molecule editor a plugin offers (the first); null when none does, or before they have started. */
-export function moleculeEditor() {
-	return started ? (studioPlugins.get('molecules') as typeof studioPlugins.molecules | undefined)?.editor() ?? null : null;
+/**
+ * The plugin block that shows files of the article with this extension (its `files`), and the
+ * fence it writes for one (when the extension is one of its fences); null when none does, or
+ * before they have started.
+ */
+export function blockForFile(extension: string): { fence: string | null; icon?: string } | null {
+	const blocks = started ? (studioPlugins.get('blocks') as typeof studioPlugins.blocks | undefined) : undefined;
+	const wanted = extension.toLowerCase();
+	const block = blocks ? studioBlocks(studioPlugins).find((candidate) => candidate.files?.extensions.includes(wanted)) : undefined;
+	if (!block?.files) return null;
+	return { fence: [block.fence].flat().includes(wanted) ? wanted : null, icon: block.files.icon };
 }
 
 /** The plugins' commands (`ctx.commands`); null before they have started. */

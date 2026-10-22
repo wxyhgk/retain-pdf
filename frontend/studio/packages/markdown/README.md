@@ -5,9 +5,9 @@
 | 目录 | 内容 |
 |---|---|
 | `articles/` | 一篇文章是一个文件夹：哪些子文件夹随文章发布（`rules.mjs`），正文里怎么引用自己的文件（`article-references.mjs`） |
-| `plugins/` | remark/rehype 插件：GFM 选项、`\(` `\[` 公式、提示框、图注、文献引用、代码文件、交互模块、Office 卡片、HTML 安全、KaTeX + mhchem |
-| `pipeline.mjs` | `markdownPlugins({ macrosFor })`：按顺序排好的全部插件，给 unified 或 Astro 用 |
-| `callouts/`、`figures/`、`references/`、`code-files/`、`widgets/` | 每种写法自己的规则、样式和浏览器里的代码 |
+| `plugins/` | remark/rehype 插件：GFM 选项、`\(` `\[` 公式、插件认领的块（`remark-blocks`、`rehype-blocks`）、提示框、图注、文献引用、代码文件、Office 卡片、HTML 安全、KaTeX + mhchem |
+| `pipeline.mjs` | `markdownPlugins({ macrosFor, blocks })`：按顺序排好的全部插件，给 unified 或 Astro 用；`blocks` 是插件认领的块（`@blog/kernel`，化学块、交互模块、计算块都在 `plugins/` 里） |
+| `callouts/`、`figures/`、`references/`、`code-files/` | 每种写法自己的规则、样式和浏览器里的代码 |
 
 网站要提供的东西：
 

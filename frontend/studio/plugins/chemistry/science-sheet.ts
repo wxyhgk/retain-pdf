@@ -1,8 +1,7 @@
 import { createSciencePreview, hydrateSciencePreviews } from '@blog/science/browser/science-renderer.ts';
+import type { MoleculeEditor } from '@blog/kernel/studio.ts';
 import { openBlockSheet, type OpenSheet, type SheetAction } from '@blog/ui/block-sheet.ts';
 
-import { moleculeEditor } from '../plugins.ts';
-import './science-sheet.css';
 import { parseScienceFence, scienceBlockKindLabel, scienceSourceEditor, structureDrawing } from './science-block.ts';
 import { mountStructureEditor, smilesToMolfile } from './structure-editor.ts';
 
@@ -17,6 +16,13 @@ import { mountStructureEditor, smilesToMolfile } from './structure-editor.ts';
  */
 
 export type ScienceBlockState = { info: string; source: string };
+
+/** The molecule editor a plugin offers for 3D (ctx.molecules: RetainMol); set by studio.ts. */
+let moleculeEditor: () => MoleculeEditor | null = () => null;
+
+export function setMoleculeEditor(editor: () => MoleculeEditor | null): void {
+	moleculeEditor = editor;
+}
 
 export type ScienceSheetHost = {
 	/** The block as it is now. */

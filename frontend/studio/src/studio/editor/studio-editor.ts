@@ -21,22 +21,19 @@ import { languages as codeMirrorLanguages } from '@codemirror/language-data';
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
-import '@blog/science/browser/molecule-renderer.css';
 import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
-import { createSciencePreview, observeSciencePreviews } from '@blog/science/browser/science-renderer.ts';
 import { linkPath } from '../article-files';
 import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
 import { filesNamed, headingSection } from './split-section';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
-import { scienceBlockPlugins } from './crepe-science-block';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
 import { smartPastePlugins } from './smart-paste';
 import { blockKeyPlugins } from './block-key-plugins';
 import { selectBlockForHandle } from './block-range';
-import { buildBlockSlashMenu, buildCommandSlashMenu } from './block-slash-menu';
+import { buildBlockSlashMenu, buildCommandSlashMenu, type SlashMenuBuilder } from './block-slash-menu';
 import { calloutPlugins } from './callout-block';
 import { citationPlugins, setCitationLibrary, type CitationHost } from './citations';
 import { officeCardPlugins } from './office-card-block';
@@ -44,17 +41,13 @@ import type { BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import { FIGURE_TYPE, figurePlugins } from './figure-block';
 import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
-import { SCIENCE_FENCE_TYPE } from './science-block';
-import { buildScienceSlashMenu, type SlashMenuBuilder } from './science-slash-menu';
 import { addSearchWords, SLASH_TRIGGERS } from './slash-search';
 import { withoutTrailingEmptyLines } from '../document/index.ts';
 import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { columnsPlugins } from './columns-block';
-import { observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block';
 import { pluginBlocks, pluginSlashCommands } from '../plugins';
 import { runCommand } from '../workspace/plugin-ui';
-import '@blog/markdown/widgets/widgets.css';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {
@@ -113,7 +106,7 @@ function markdownOf(editor: { getMarkdown(): string }): string {
 	return withoutTrailingEmptyLines(editor.getMarkdown());
 }
 
-/** The Studio's editor: Crepe with the science blocks, formulas, file drops and block feel. */
+/** The Studio's editor: Crepe with the plugins' blocks, formulas, file drops and block feel. */
 export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): StudioEditor {
 	let crepe: Crepe | null = null;
 	let mounting = false;
@@ -132,9 +125,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			host.changed(markdownOf(crepe!));
 		});
 	}
-	observeSciencePreviews(root);
 	observeCodeFiles(root);
-	observeWidgets(root);
+	/** What the plugins' blocks watch on the page (to draw what their previews left), for the article shown. */
+	let unobserve: Array<() => void> = [];
 
 	/** Ends the review, with the Markdown the editor now holds. */
 	function endReview(): void {
@@ -178,6 +171,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			const blocks = await pluginBlocks();
 			const commands = await pluginSlashCommands();
 			root.replaceChildren();
+			for (const stop of unobserve) stop();
+			unobserve = blocks.flatMap((block) => (block.observe ? [block.observe(root)] : []));
+			const codeBlocks = blocks.flatMap((block) => (block.codeBlock ? [block.codeBlock] : []));
 			const fileDrop = articleFileDrop(host.files);
 			// Crepe's own config, plus the block menu only the Milkdown fork has.
 			const saveAsFile = saveCodeBlockAsFile(host.files);
@@ -191,9 +187,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						ask: () => host.askAI(),
 						split: (view, pos) => void splitToPage(view, pos),
 						recognize: (view, pos) => host.recognize(view, pos),
+						blocks,
 					}),
 				buildMenu: (builder) => {
-					buildScienceSlashMenu(builder);
 					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks);
 					buildCommandSlashMenu(builder as unknown as SlashMenuBuilder, commands, (command) => runCommand(command, 'slash'));
 					replaceSlashImageItem(builder, fileDrop.chooseImages);
@@ -235,7 +231,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				},
 				featureConfigs: {
 					[CrepeFeature.CodeMirror]: {
-						languages: [widgetLanguageDescription, ...codeFileLanguageDescriptions, ...codeMirrorLanguages],
+						// The plugins' code blocks first (```widget is HTML), then code files', then CodeMirror's.
+						languages: [...(codeBlocks.flatMap((code) => code.languages ?? []) as typeof codeMirrorLanguages), ...codeFileLanguageDescriptions, ...codeMirrorLanguages],
 						copyText: '复制',
 						previewLabel: '预览',
 						previewLoading: '正在渲染…',
@@ -247,10 +244,12 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						// It comes later (undefined), once the file is read. The fork passes the fence's
 						// `lines=` and `title=` (meta) too, which the npm release's type does not know.
 						renderPreview: (language: string, content: string, apply: (value: HTMLElement) => void, meta = '') => {
-							const widget = widgetPreview(language, content, meta);
-							if (widget) return widget;
-							const file = filePreview(language, content, apply, meta);
-							return file === null ? createSciencePreview(language, content) : file;
+							// A plugin's code block (a widget's frame) previews as its plugin says.
+							for (const code of codeBlocks) {
+								const shown = code.preview?.(language, content, meta);
+								if (shown) return shown;
+							}
+							return filePreview(language, content, apply, meta);
 						},
 					},
 					[CrepeFeature.Placeholder]: {
@@ -287,7 +286,6 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					[CrepeFeature.BlockEdit]: blockEdit,
 				},
 			});
-			crepe.editor.use(scienceBlockPlugins);
 			for (const block of blocks) if (block.milkdown) crepe.editor.use(block.milkdown as never);
 			crepe.editor.use(blockFeelPlugins);
 			crepe.editor.use(inlineMathPlugins);
@@ -323,7 +321,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						acceptLabel: '接受',
 						rejectLabel: '拒绝',
 						// Blocks drawn by their own views: a change inside one replaces it whole.
-						customBlockTypes: ['table', 'image-block', FIGURE_TYPE, 'code_block', SCIENCE_FENCE_TYPE],
+						customBlockTypes: ['table', 'image-block', FIGURE_TYPE, 'code_block', ...blocks.flatMap((block) => block.drawnWhole ?? [])],
 					}));
 				})
 				.use(diff)

@@ -1,7 +1,6 @@
 // The Studio page: its parts, and how they talk to each other. Each part
 // keeps to its own corner of the page; the open article lives in the session.
 import {
-	articleFilesUrl,
 	articleFileUrl,
 	checkArticle,
 	codeFileFigure,
@@ -28,8 +27,6 @@ import {
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
-import { setMoleculeViewContext } from '@blog/science/browser/molecule-renderer.ts';
-import { setScienceResourceBaseUrl } from '@blog/science/browser/resource-context.ts';
 import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
 import { ArticleSession, type SaveState } from './state/article-session';
@@ -43,18 +40,17 @@ import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { BIBLIOGRAPHY_PATH, parseBibtex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import { createCitePicker } from './workspace/cite-picker';
 import { sourceLinesOf } from './document/source-lines';
-import { setWidgetFiles, widgetFilesChanged } from '@blog/markdown/widgets/widget-host.ts';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { officeFilesChanged } from '@blog/office/card.ts';
 import { firstSheetRows } from '@blog/office/render.ts';
 import { openOfficeFile } from '@blog/office/viewer.ts';
 import { createFilePanel } from './workspace/file-panel';
-import { isImage, markdownReference } from './article-files';
+import { isImage, markdownReference, setFileBlocks } from './article-files';
 import { createDriveBrowser } from './workspace/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from './workspace/page-names';
-import { pluginCommands, pluginRecognizers, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
+import { blockForFile, pluginCommands, pluginRecognizers, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
 import { Recognizers, type Recognizer } from '@blog/kernel/ui.ts';
 import { createPluginsDialog } from './workspace/plugins-dialog';
 import { aiReady, createAiSettingsDialog } from './workspace/ai-settings-dialog';
@@ -313,14 +309,15 @@ let openTitle = '';
 	});
 }
 
-/** Where the article's chemistry finds its files and its saved molecule views. */
+/** The article the editor shows, or is about to (the plugins' `ctx.studio.shown()`). */
+let shownArticle: ArticlePayload | null = null;
+
+/** What the article is drawn with: its formulas' macros; the plugins' blocks are told it is the one shown (its files, its saved views). */
 function useArticleContext(article: ArticlePayload): void {
-	setScienceResourceBaseUrl(articleFilesUrl(article.slug));
+	shownArticle = article;
 	useMacros(macrosFor(article.macros));
-	setMoleculeViewContext({
-		views: article.chemistryViews,
-		save: (key, format, view, display) => session.saveView(key, format, view, display),
-	});
+	// Before its blocks are drawn: what they draw with is this article's.
+	studioPlugins.emit('studio/article-showing', article.slug);
 }
 
 /** Reads the article list and opens one: `slug`, the one in the address, or the first. */
@@ -493,7 +490,6 @@ watchDisk((changes) => {
 	if (!change) return;
 	void filePanel.refresh();
 	session.changedOnDisk(change.paths);
-	widgetFilesChanged(change.paths);
 	studioPlugins.emit('studio/files-changed', change.slug, change.paths);
 	officeFilesChanged(change.paths.map((path) => studioFileUrl(change.slug, path)));
 	if (change.paths.includes(BIBLIOGRAPHY_PATH)) void loadLibrary(change.slug);
@@ -528,6 +524,14 @@ void listPlugins()
 		},
 		toast: (message, error = false) => showToast(message, error),
 		showPanel: (key) => sidePanel.show(key),
+		shown: () => shownArticle?.slug ?? null,
+		views: {
+			get: () => shownArticle?.chemistryViews ?? {},
+			save: (key, entry) => {
+				const { format, view, display } = entry as { format: string; view: number[]; display?: unknown };
+				return session.saveView(key, format, view, display);
+			},
+		},
 		api: pluginApi,
 	}, off, present))
 	.then((problems) => {
@@ -535,6 +539,8 @@ void listPlugins()
 		showPluginUi({ setPanels: (panels) => sidePanel.setPanels(panels), sidebar: shell.querySelector<HTMLElement>('#plugin-commands')! });
 		if (problems.length) showToast(problems.join('；'), true);
 	});
+// A file of the article a plugin's block shows (a structure file) is put in as that block, and marked in the file list.
+setFileBlocks(blockForFile);
 const pluginsDialog = createPluginsDialog(document.querySelector<HTMLDialogElement>('#plugins-dialog')!, { info: studioPluginInfo, setEnabled: setStudioPluginEnabled });
 shell.querySelector('#open-plugins')!.addEventListener('click', () => void pluginsDialog.open());
 const aiDialog = createAiSettingsDialog(document.querySelector<HTMLDialogElement>('#ai-settings-dialog')!);
@@ -584,9 +590,6 @@ studioPlugins.on('studio/plugins-reloaded', (changed, problems) => {
 	showToast(problems.length ? problems.join('；') : `已重新载入插件：${changed.join('、')}`, problems.length > 0);
 });
 studioPlugins.on('studio/editor-changed', () => void session.remount());
-
-// Widgets read the open article's files (note.file, or a widget that is a file).
-setWidgetFiles((path) => (session.slug ? studioFileUrl(session.slug, path) : path));
 
 /**
  * After a search: the first block of the open article that holds `text`, in

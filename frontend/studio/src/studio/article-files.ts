@@ -1,6 +1,5 @@
 import { codeFileLanguageForPath } from '@blog/markdown/code-files/languages.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
-import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
 
 /**
  * An article's files as the Studio's page writes and moves them: their
@@ -12,6 +11,22 @@ import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
 export const STUDIO_FILE_DRAG_TYPE = 'application/x-studio-file';
 /** What a file dragged from the drive (资料库) carries: its path there. */
 export const DRIVE_DRAG_TYPE = 'application/x-studio-drive';
+
+/** A plugin's block that shows a file of the article: its fence (when the extension is one), and its mark in the file list. */
+export type FileBlock = { fence: string | null; icon?: string };
+
+/** Which plugin block shows a file with this extension (a chemistry block a structure file): set by the Studio once its plugins have started. */
+let fileBlockFor: (extension: string) => FileBlock | null = () => null;
+
+export function setFileBlocks(lookup: (extension: string) => FileBlock | null): void {
+	fileBlockFor = lookup;
+}
+
+/** The plugin block that shows this file of the article, if one does. */
+export function fileBlock(path: string): FileBlock | null {
+	const ext = extension(path);
+	return ext ? fileBlockFor(ext) : null;
+}
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif']);
 
@@ -41,7 +56,7 @@ export function linkPath(path: string): string {
 
 /**
  * What to paste into the article to use a published file: an image, a
- * chemistry block reading the structure file, or a plain link. `ai/` is not
+ * plugin's block reading it (a chemistry block a structure file), or a plain link. `ai/` is not
  * published and has none.
  */
 export function markdownReference(path: string): string | null {
@@ -49,8 +64,9 @@ export function markdownReference(path: string): string | null {
 	const name = fileName(path);
 	const label = name.replace(/[[\]\\]/gu, '\\$&');
 	if (isImage(path)) return `![${label.replace(/\.[^.]+$/u, '')}](${linkPath(path)})`;
-	const language = extension(path);
-	if (language && isMoleculeLanguage(language)) return `\`\`\`${language}\n@file ./${path}\n\`\`\``;
+	// A block a plugin draws from the file (a structure file in a chemistry block).
+	const fence = fileBlock(path)?.fence;
+	if (fence) return `\`\`\`${fence}\n@file ./${path}\n\`\`\``;
 	// A program's input or output shows as the file, highlighted, to read or download.
 	const codeFile = codeFileLanguageForPath(path);
 	if (codeFile) return `\`\`\`${codeFile}\n@file ./${path}\n\`\`\``;

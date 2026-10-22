@@ -14,8 +14,8 @@ import { BlockRangeSelection, blockRangeKey, coveredRange } from './block-range.
 import { blockRangePlugin } from './block-range-drag.ts';
 import { paragraphBreakPlugin } from './paragraph-breaks.ts';
 import { FIGURE_TYPE } from './figure-block.ts';
-import { dispatchScienceAction } from './science-block-menu.ts';
-import { SCIENCE_FENCE_TYPE, blockAt, scienceBlockMenuItems } from './science-block.ts';
+import type { BlockMenuEntry, StudioBlock } from '@blog/kernel/studio.ts';
+import { blockAt } from '@blog/ui/block-at.ts';
 
 let focusTitle: (() => void) | null = null;
 
@@ -63,15 +63,7 @@ export function dispatchBlockAction(view: EditorView, action: BlockAction): void
 	dispatchBlockEdit(view, edit);
 }
 
-type MenuEntry = {
-	key: string;
-	label: string;
-	current: boolean;
-	danger: boolean;
-	turn: boolean;
-	hint?: string;
-	run: (view: EditorView) => void;
-};
+type MenuEntry = BlockMenuEntry;
 
 
 /** Crepe's block menu builder (the Milkdown fork), as much of it as is used here. */
@@ -96,6 +88,8 @@ export type BlockMenuHost = {
 	split?: (view: EditorView, pos: number) => void;
 	/** 识别…: the picture at `pos` read by a large model (a formula, text, a table…), what is read put under it. */
 	recognize?: (view: EditorView, pos: number) => void;
+	/** The plugins' blocks: one may hold its own node's menu (a chemistry block's). */
+	blocks?: StudioBlock[];
 };
 
 /** The blocks that are a picture: what 识别 reads. */
@@ -108,57 +102,36 @@ function askEntry(host: BlockMenuHost): MenuEntry[] {
 }
 
 function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntry[] {
-	if (node.type.name !== SCIENCE_FENCE_TYPE) {
-		const entries = blockActionItems(node).map((item): MenuEntry => ({
-			key: item.id,
-			label: item.label,
-			current: item.current,
-			danger: item.danger,
-			turn: item.section === '转换成',
-			hint: item.shortcut ? keyHint(item.shortcut) : undefined,
-			run: (view: EditorView) => dispatchBlockAction(view, item.action),
-		}));
-		const split = host.split;
-		if (split && node.type.name === 'heading') {
-			entries.push({ key: 'split', label: '转成子页面', current: false, danger: false, turn: false, run: (view) => split(view, pos) });
-		}
-		const recognize = host.recognize;
-		if (recognize && PICTURES.includes(node.type.name) && node.attrs.src) {
-			entries.push({ key: 'recognize', label: '识别…', current: false, danger: false, turn: false, run: (view) => recognize(view, pos) });
-		}
-		const save = host.saveAsFile;
-		if (save?.can(node)) {
-			entries.push({ key: 'save-file', label: '另存为文件', current: false, danger: false, turn: false, run: (view) => save.run(view, pos) });
-		}
-		return [...entries, ...askEntry(host)];
-	}
-	const science = scienceBlockMenuItems(node.type.name, String(node.attrs.language ?? '')).map((item): MenuEntry => ({
+	const entries = blockActionItems(node).map((item): MenuEntry => ({
 		key: item.id,
 		label: item.label,
 		current: item.current,
-		danger: item.action.type === 'delete',
-		turn: item.section === '转换',
-		run: (view: EditorView) => dispatchScienceAction(view, item.action),
+		danger: item.danger,
+		turn: item.section === '转换成',
+		hint: item.shortcut ? keyHint(item.shortcut) : undefined,
+		run: (view: EditorView) => dispatchBlockAction(view, item.action),
 	}));
-	const duplicate = blockActionItems(node).find((item) => item.action.type === 'duplicate');
-	if (duplicate) {
-		science.splice(1, 0, {
-			key: duplicate.id,
-			label: duplicate.label,
-			current: false,
-			danger: false,
-			turn: false,
-			hint: duplicate.shortcut ? keyHint(duplicate.shortcut) : undefined,
-			run: (view) => dispatchBlockAction(view, duplicate.action),
-		});
+	const split = host.split;
+	if (split && node.type.name === 'heading') {
+		entries.push({ key: 'split', label: '转成子页面', current: false, danger: false, turn: false, run: (view) => split(view, pos) });
 	}
-	return [...science, ...askEntry(host)];
+	const recognize = host.recognize;
+	if (recognize && PICTURES.includes(node.type.name) && node.attrs.src) {
+		entries.push({ key: 'recognize', label: '识别…', current: false, danger: false, turn: false, run: (view) => recognize(view, pos) });
+	}
+	const save = host.saveAsFile;
+	if (save?.can(node)) {
+		entries.push({ key: 'save-file', label: '另存为文件', current: false, danger: false, turn: false, run: (view) => save.run(view, pos) });
+	}
+	// A plugin's block may hold a menu of its own, keeping what it likes of these.
+	const own = host.blocks?.find((block) => block.blockMenu?.nodes.includes(node.type.name))?.blockMenu;
+	return [...(own ? own.entries(node, pos, entries) : entries), ...askEntry(host)];
 }
 
 /**
- * What a block's menu holds, opened from the drag handle or a chemistry
- * block's ⋯ button: duplicate it (or edit a chemistry block's source), turn
- * it into another kind, delete it; save a code block as a file.
+ * What a block's menu holds, opened from the drag handle (or a plugin
+ * block's ⋯ button): duplicate it, turn it into another kind, delete it;
+ * save a code block as a file; a plugin's block holds its own.
  */
 export function buildBlockMenu(builder: BlockMenuBuilder, { node, pos }: { node: ProseNode; pos: number }, host: BlockMenuHost = {}): void {
 	const entries = entriesFor(node, pos, host);

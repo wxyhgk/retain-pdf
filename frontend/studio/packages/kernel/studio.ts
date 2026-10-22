@@ -30,6 +30,16 @@ export type StudioHost = {
 	 * To follow it, listen to `studio/source-changed` rather than asking again and again.
 	 */
 	source(): string | null;
+	/**
+	 * The article the editor shows, or is about to show: it is set before its blocks are drawn, so a
+	 * block drawn with the article's files or saved views has them (`studio/article-showing`). Null before one is.
+	 */
+	shown(): string | null;
+	/**
+	 * What the article shown keeps of how its blocks are seen (article.views.json: a molecule's
+	 * camera, a cube's surfaces…), by key; `save` keeps one (written when the article is saved).
+	 */
+	views: { get(): Record<string, unknown>; save(key: string, entry: unknown): Promise<void> };
 	/** The article's editor. */
 	editor: {
 		/** Its ProseMirror view; null before an article is open. */
@@ -51,12 +61,52 @@ export type StudioHost = {
 	};
 };
 
-/** A block in the Studio: its editor nodes and, if it can be inserted, its slash-menu entry. */
+/** An entry of the slash menu: `insert` puts a new block where the cursor is (its line, emptied of the `/…` typed). */
+export type SlashEntry = { key: string; label: string; icon: string; keywords?: string[]; insert(view: import('prosemirror-view').EditorView): void };
+
+/** An entry of a block's menu (the drag handle's): `turn` puts it under 转换成, `danger` under the line (删除). */
+export type BlockMenuEntry = {
+	key: string;
+	label: string;
+	current?: boolean;
+	danger?: boolean;
+	turn?: boolean;
+	/** The key it has, as shown (⌘D). */
+	hint?: string;
+	run(view: import('prosemirror-view').EditorView): void;
+};
+
+/**
+ * A block in the Studio: its editor nodes, its entries in the slash menu and its node's menu,
+ * and, for a block that is a code block in its language (```widget), its preview.
+ */
 export type StudioBlock = Block & {
 	/** Milkdown plugins (its node, its view); taken when an article is opened. */
 	milkdown?: unknown[];
-	/** Its entry in the slash menu (块): `insert` puts a new one where the cursor is. */
-	menu?: { key: string; label: string; icon: string; keywords?: string[]; insert(view: import('prosemirror-view').EditorView): void };
+	/** Its entries in the slash menu: under 块, or in a group of their own when `menuGroup` names one. */
+	menu?: SlashEntry | SlashEntry[];
+	menuGroup?: { key: string; label: string };
+	/**
+	 * Its node's menu (the drag handle's, for nodes of these types): the entries it holds, given
+	 * those the Studio would have put there (to keep some: 复制 is `duplicate`). 问 AI comes after.
+	 */
+	blockMenu?: { nodes: string[]; entries(node: import('prosemirror-model').Node, pos: number, standard: BlockMenuEntry[]): BlockMenuEntry[] };
+	/** The node types its views draw whole: under review, a change inside one replaces it whole. */
+	drawnWhole?: string[];
+	/**
+	 * When it is a code block in its language (a code_block, not a node of its own): the code
+	 * editor's languages for it (CodeMirror's LanguageDescription), and its preview, for its language
+	 * (null: not its own; the next is asked).
+	 */
+	codeBlock?: { languages?: unknown[]; preview?(language: string, content: string, meta: string): HTMLElement | null };
+	/** Watches the editor's page, to draw what its previews left there; returns what stops it. */
+	observe?(root: HTMLElement): () => void;
+	/**
+	 * Files of the article it shows (`@file ./assets/a.xyz`), by extension: one dropped in or
+	 * inserted from the file list becomes a ```<extension> block (when that is one of its fences);
+	 * the file list marks them with `icon`.
+	 */
+	files?: { extensions: string[]; icon?: string };
 };
 
 /** A molecule built or changed in an editor. */
@@ -129,6 +179,11 @@ export class SheetTabs extends Service {
 }
 
 export interface StudioEvents {
+	/**
+	 * The editor is about to draw an article (opened, or again for a review): what its blocks draw
+	 * with (the article's files, `ctx.studio.views`) is this article's from now on.
+	 */
+	'studio/article-showing'(slug: string): void;
 	/** An article was opened (another one, or the same one again from disk). */
 	'studio/article-opened'(slug: string): void;
 	/**

@@ -1,6 +1,7 @@
 import { Fragment, Slice, type Node as ProseMirrorNode } from 'prosemirror-model';
 
 import type { MoleculeBlock } from '@blog/science/model.ts';
+import { blockAt } from '@blog/ui/block-at.ts';
 import { isMoleculeLanguage, parseMoleculeBlock } from '@blog/science/parsers/molecule-block.ts';
 
 /**
@@ -179,20 +180,6 @@ export function scienceBlockMenuItems(nodeName: string, info: string): ScienceBl
 	return items;
 }
 
-/**
- * Top-level block that owns `pos`. A position directly before a block
- * selects that block; a position inside text walks out to depth 1.
- */
-export function blockAt(doc: ProseMirrorNode, pos: number): { pos: number; node: ProseMirrorNode } | null {
-	const clamped = Math.max(0, Math.min(pos, doc.content.size));
-	const direct = doc.nodeAt(clamped);
-	if (direct?.isBlock && doc.resolve(clamped).nodeAfter === direct) return { pos: clamped, node: direct };
-	const inside = clamped === doc.content.size && clamped > 0 ? clamped - 1 : clamped;
-	const $pos = doc.resolve(inside);
-	if ($pos.depth < 1) return null;
-	return { pos: $pos.before(1), node: $pos.node(1) };
-}
-
 /** A fence keeps its meta and fence characters when its language changes; anything else starts a new fence. */
 export function scienceAttrs(node: ProseMirrorNode, language: string): Record<string, unknown> {
 	return node.type.spec.code ? { ...node.attrs, language } : { language };
@@ -229,3 +216,5 @@ export function transformScienceBlock(doc: ProseMirrorNode, pos: number, action:
 	const next = doc.replace(pos, pos + node.nodeSize, new Slice(Fragment.from(created), 0, 0));
 	return { doc: next, cursor: pos + 1 };
 }
+
+export { blockAt };
