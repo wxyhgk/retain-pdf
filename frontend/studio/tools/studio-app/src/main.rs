@@ -20,6 +20,7 @@ use std::io::Read;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use std::{env, fs, thread};
@@ -72,16 +73,24 @@ fn main() {
 }
 
 fn open_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
+    let studio_open = AtomicBool::new(false);
     WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
         .title("Studio")
         .inner_size(1440.0, 900.0)
         .min_inner_size(820.0, 560.0)
         // Files dropped on the page go to the page (pictures into articles, files into the file list).
         .disable_drag_drop_handler()
-        .on_navigation(|url| {
-            let ours = url.scheme() == "tauri"
-                || is_local(url)
-                || matches!(url.scheme(), "about" | "blob" | "data");
+        .on_navigation(move |url| {
+            // Once the Studio is open, the start page is not gone back to (⌫ and the like are "back" in
+            // WebKit): it would only say 正在打开 Studio… for good.
+            if url.scheme() == "tauri" {
+                return !studio_open.load(Ordering::Relaxed);
+            }
+            if is_local(url) {
+                studio_open.store(true, Ordering::Relaxed);
+                return true;
+            }
+            let ours = matches!(url.scheme(), "about" | "blob" | "data");
             if !ours {
                 open_outside(url.as_str());
             }

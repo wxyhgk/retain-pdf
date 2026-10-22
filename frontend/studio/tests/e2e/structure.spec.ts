@@ -60,3 +60,32 @@ test('a SMILES made 3D: RetainMol is given its flat structure, and the block bec
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect.poll(savedMarkdown).toContain(`\`\`\`sdf\n${BUILT_MOL}\n\`\`\``);
 });
+
+test('everything deleted, ⌫ once more is not "back": the Studio stays (WebKit, the Mac app’s browser, would go back)', async ({ page }) => {
+	await scienceBlock(page, 'SDF').locator('.science-block-preview').dblclick();
+	const editor = editorIn(page);
+	await expect(editor).toBeVisible();
+	await editor.evaluate((app) => {
+		(app as HTMLElement).tabIndex = -1;
+		(app as HTMLElement).focus();
+	});
+	const backspace = () =>
+		page.evaluate(() => new Promise<boolean>((resolve) => {
+			window.addEventListener('keydown', (event) => setTimeout(() => resolve(event.defaultPrevented)), { once: true, capture: true });
+			(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }));
+		}));
+	// The structure editor still deletes with ⌫…
+	await page.keyboard.press('ControlOrMeta+a');
+	await page.keyboard.press('Backspace');
+	// …and ⌫ with nothing left, which it leaves alone, goes nowhere.
+	expect(await backspace()).toBe(true);
+	await sheetTab(page, '源码').click();
+	const source = blockSheet(page).locator('.science-sheet-source');
+	await expect(source).toHaveValue('');
+	// Typed text still loses its letters to ⌫.
+	await source.focus();
+	expect(await backspace()).toBe(false);
+	await source.fill('CC');
+	await source.press('Backspace');
+	await expect(source).toHaveValue('C');
+});

@@ -790,6 +790,14 @@ document.addEventListener('keydown', (event) => {
 	event.preventDefault();
 	void session.flush();
 });
+// ⌫ that nothing took (a structure editor with nothing left to delete) is "back" to WebKit, the Mac
+// app's browser: the Studio would leave for the app's start page. Where it isn't typed into, it does nothing.
+window.addEventListener('keydown', (event) => {
+	if (event.key !== 'Backspace' || event.defaultPrevented) return;
+	const target = event.target instanceof Element ? event.target : null;
+	if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+	event.preventDefault();
+});
 document.addEventListener('visibilitychange', () => {
 	if (document.visibilityState === 'hidden' && session.hasUnsavedEdits()) void session.flush();
 });
