@@ -42,7 +42,14 @@ export async function askAboutImage(config, { image, mediaType, prompt }, seams 
 
 async function askClaude(config, data, mediaType, prompt, make = (options) => new Anthropic(options)) {
 	// No key here: the SDK finds ANTHROPIC_API_KEY, or the profile of `ant auth login`.
-	const client = make({ ...(config.apiKey ? { apiKey: config.apiKey } : {}), ...(config.baseUrl ? { baseURL: config.baseUrl } : {}), timeout: 120_000 });
+	// A key of the whole organization says which workspace it is used in.
+	const workspace = config.workspaceId || process.env.ANTHROPIC_WORKSPACE_ID;
+	const client = make({
+		...(config.apiKey ? { apiKey: config.apiKey } : {}),
+		...(config.baseUrl ? { baseURL: config.baseUrl } : {}),
+		...(workspace ? { defaultHeaders: { 'anthropic-workspace-id': workspace } } : {}),
+		timeout: 120_000,
+	});
 	let response;
 	try {
 		response = await client.beta.messages.create({
@@ -76,7 +83,11 @@ function claudeError(error) {
 	if (error instanceof Anthropic.PermissionDeniedError) return new AiError('这个 key 没有用这个模型的权限', 403);
 	if (error instanceof Anthropic.NotFoundError) return new AiError('没有这个模型，看看「AI 设置」里的模型名', 404);
 	if (error instanceof Anthropic.RateLimitError) return new AiError('请求太多了，过一会儿再试', 429);
-	if (error instanceof Anthropic.BadRequestError) return new AiError(`请求被拒绝：${error.message}`, 400);
+	if (error instanceof Anthropic.BadRequestError) {
+		const said = error.error?.error?.message ?? error.message;
+		if (/workspace/iu.test(said)) return new AiError('这个 key 属于整个组织，不属于某个工作区：在「AI 设置」里填工作区 ID（wrkspc_…，Claude Console 的 Workspaces 页能看到），或者换一个在工作区里建的 key', 400);
+		return new AiError(`请求被拒绝：${said}`, 400);
+	}
 	if (error instanceof Anthropic.APIConnectionError) return new AiError('连不上 Anthropic 的服务（网络，或者「AI 设置」里的接口地址）');
 	if (error instanceof Anthropic.APIError) return new AiError(`Anthropic 的服务出错了（${error.status ?? '?'}）：${error.message}`);
 	return error;

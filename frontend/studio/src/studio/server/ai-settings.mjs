@@ -11,6 +11,8 @@ const PROVIDERS = Object.keys(DEFAULT_MODELS);
  * @property {string} model
  * @property {string} baseUrl the service's address; empty for Anthropic's own
  * @property {string} apiKey empty: for Anthropic, the key in the environment (ANTHROPIC_API_KEY, or `ant auth login`); for the others, OPENAI_API_KEY
+ * @property {string} workspaceId Anthropic only: the workspace (wrkspc_…) asked in, for a key of the whole organization;
+ *   empty: ANTHROPIC_WORKSPACE_ID, or none (a key of one workspace needs none)
  */
 
 /**
@@ -38,7 +40,7 @@ export class AiSettings {
 		const saved = (await this.#read()).ai ?? {};
 		const provider = PROVIDERS.includes(saved.provider) ? saved.provider : 'anthropic';
 		const text = (value) => (typeof value === 'string' ? value.trim() : '');
-		return { provider, model: text(saved.model) || DEFAULT_MODELS[provider], baseUrl: text(saved.baseUrl), apiKey: text(saved.apiKey) };
+		return { provider, model: text(saved.model) || DEFAULT_MODELS[provider], baseUrl: text(saved.baseUrl), apiKey: text(saved.apiKey), workspaceId: text(saved.workspaceId) };
 	}
 
 	/** What the page may see: the settings without the key, and whether a key is there (saved or in the environment). */
@@ -56,13 +58,14 @@ export class AiSettings {
 		const fail = (message) => Object.assign(new Error(message), { statusCode: 400 });
 		if (!change || typeof change !== 'object') throw fail('要给出设置');
 		if (change.provider !== undefined && !PROVIDERS.includes(change.provider)) throw fail(`provider 只能是 ${PROVIDERS.join(' 或 ')}`);
-		for (const key of ['model', 'baseUrl', 'apiKey']) {
+		for (const key of ['model', 'baseUrl', 'apiKey', 'workspaceId']) {
 			if (change[key] !== undefined && typeof change[key] !== 'string') throw fail(`${key} 要是文字`);
 		}
 		if (change.baseUrl && !/^https?:\/\/\S+$/u.test(change.baseUrl.trim())) throw fail('接口地址要以 http:// 或 https:// 开头');
+		if (change.workspaceId && /\s/u.test(change.workspaceId.trim())) throw fail('工作区 ID 里不能有空格（像 wrkspc_01AbC… 这样）');
 		const settings = await this.#read();
 		const ai = { ...settings.ai };
-		for (const key of ['provider', 'model', 'baseUrl', 'apiKey']) {
+		for (const key of ['provider', 'model', 'baseUrl', 'apiKey', 'workspaceId']) {
 			if (change[key] === undefined) continue;
 			const value = change[key].trim();
 			if (value) ai[key] = value;

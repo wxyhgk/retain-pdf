@@ -260,6 +260,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<label><span>接口地址</span><input id="ai-base-url" type="text" autocomplete="off" spellcheck="false" /></label>
 				<label><span>Key</span><input id="ai-key" type="password" autocomplete="off" /></label>
 				<small id="ai-key-note"></small>
+				<label id="ai-workspace-field"><span>工作区 ID</span><input id="ai-workspace" type="text" autocomplete="off" spellcheck="false" /></label>
 				<p id="ai-settings-status" class="trash-status" role="status" aria-live="polite"></p>
 				<div class="dialog-actions">
 					<button id="ai-settings-cancel" type="button">取消</button>
@@ -874,6 +875,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.publish-check { width: min(92vw, 560px); }
 	.ai-settings { width: min(92vw, 520px); }
 	.ai-settings select { box-sizing: border-box; width: 100%; height: 38px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; }
+	.ai-settings label[hidden] { display: none; }
 	.ai-settings-reason { margin: 0; padding: 9px 11px; border-radius: 7px; background: var(--surface-soft); font-size: 12px; }
 	.ai-settings .dialog-actions #ai-settings-cancel { border-color: rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray-dark)); }
 	.publish-check-list { display: grid; gap: 6px; max-height: min(50vh, 360px); margin: 0; padding: 0; overflow-y: auto; list-style: none; }

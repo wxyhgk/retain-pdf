@@ -50,7 +50,7 @@ async function recognize(page: Page, label: string): Promise<void> {
 
 test.afterEach(async ({ page }) => {
 	// Nothing ready for the next test: a test of its own sets what it needs.
-	await setAi(page, { provider: 'openai', model: '', baseUrl: '', apiKey: '' });
+	await setAi(page, { provider: 'openai', model: '', baseUrl: '', apiKey: '', workspaceId: '' });
 });
 
 test('a picture read as a formula: AI 设置 asked for first, the formula comes under the picture, to accept', async ({ page }) => {
@@ -65,7 +65,11 @@ test('a picture read as a formula: AI 设置 asked for first, the formula comes 
 	const dialog = page.locator('#ai-settings-dialog');
 	await expect(dialog).toBeVisible();
 	await expect(dialog.locator('#ai-settings-reason')).toContainText('识别图片要用大模型');
+	await dialog.locator('#ai-provider').selectOption('anthropic');
+	await expect(dialog.locator('#ai-workspace')).toBeVisible();
 	await dialog.locator('#ai-provider').selectOption('openai');
+	// A workspace is Claude's alone.
+	await expect(dialog.locator('#ai-workspace')).toBeHidden();
 	await dialog.locator('#ai-model').fill('fake-vl');
 	await dialog.locator('#ai-base-url').fill(model.url);
 	await dialog.locator('#ai-key').fill('sk-test');

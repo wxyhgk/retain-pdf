@@ -152,7 +152,7 @@ tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/S
 
 - 结果和终端里 AI 改文章一样，是「外部改动」：逐处接受或拒绝；改之前的文章存进历史版本。大模型读错了，拒绝就好。
 - 第一次用会先弹出「AI 设置」（左栏底部也能打开）：
-  - **Claude（Anthropic）**：模型默认 `claude-opus-5-5`；key 可以不填，用环境变量 `ANTHROPIC_API_KEY`（或 `ant auth login`）；用代理时填接口地址。
+  - **Claude（Anthropic）**：模型默认 `claude-opus-5-5`；key 可以不填，用环境变量 `ANTHROPIC_API_KEY`（或 `ant auth login`）；用代理时填接口地址。key 如果属于整个组织、不属于某个工作区（报错说 not scoped to a workspace），在「工作区 ID」里填 `wrkspc_…`（Claude Console 的 Workspaces 页能看到；也可以设环境变量 `ANTHROPIC_WORKSPACE_ID`），或者换一个在工作区里建的 key。
   - **OpenAI 兼容接口**：通义千问、DeepSeek、智谱、OpenRouter 等都行，填接口地址（例如 `https://dashscope.aliyuncs.com/compatible-mode/v1`）和一个能看图的模型名（例如 `qwen-vl-max`）；key 可以用环境变量 `OPENAI_API_KEY`。
 - key 只存在这台电脑的 `.studio-settings.json` 里（不进 git，只有你自己能读），网页拿不到它。
 - 只能识别 PNG、JPEG、GIF、WebP，SVG 不行。

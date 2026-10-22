@@ -364,6 +364,8 @@ export type AiSettingsShown = {
 	provider: 'anthropic' | 'openai';
 	model: string;
 	baseUrl: string;
+	/** Claude only: the workspace (wrkspc_…) a key of the whole organization is used in. */
+	workspaceId: string;
 	/** A key is there: saved here, or in the environment. */
 	hasKey: boolean;
 	/** The key is saved in the Studio's settings (not only in the environment). */
@@ -376,7 +378,7 @@ export function aiSettings(): Promise<AiSettingsShown> {
 }
 
 /** Changes the AI settings; `apiKey: ''` forgets a saved key, and leaving it out keeps it. */
-export function saveAiSettings(change: Partial<Pick<AiSettingsShown, 'provider' | 'model' | 'baseUrl'>> & { apiKey?: string }): Promise<AiSettingsShown> {
+export function saveAiSettings(change: Partial<Pick<AiSettingsShown, 'provider' | 'model' | 'baseUrl' | 'workspaceId'>> & { apiKey?: string }): Promise<AiSettingsShown> {
 	return request('/api/studio/ai/settings', jsonOptions('PUT', change));
 }
 

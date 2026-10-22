@@ -40,6 +40,11 @@ test('Claude is asked with the picture and the prompt, a fallback on refusal, th
 	await askAboutImage({ provider: 'anthropic', model: 'm', baseUrl: 'https://proxy.example/', apiKey: 'sk-1' }, question, { anthropic });
 	assert.equal(made[1].options.apiKey, 'sk-1');
 	assert.equal(made[1].options.baseURL, 'https://proxy.example/');
+	assert.equal(made[1].options.defaultHeaders, undefined);
+
+	// A key of the whole organization: asked in the workspace set.
+	await askAboutImage({ provider: 'anthropic', model: 'm', baseUrl: '', apiKey: 'sk-org', workspaceId: 'wrkspc_01x' }, question, { anthropic });
+	assert.deepEqual(made[2].options.defaultHeaders, { 'anthropic-workspace-id': 'wrkspc_01x' });
 });
 
 test('Claude refusing, or its errors, are said in the Studio’s words', async () => {
@@ -55,6 +60,17 @@ test('Claude refusing, or its errors, are said in the Studio’s words', async (
 		},
 	});
 	await assert.rejects(askAboutImage({ provider: 'anthropic', model: 'm', baseUrl: '', apiKey: '' }, question, { anthropic: failing }), (error) => error.statusCode === 401 && /key/u.test(error.message));
+	const unscoped = () => ({
+		beta: {
+			messages: {
+				create: async () => {
+					const message = 'This API key is not scoped to a workspace, so this request must include the anthropic-workspace-id header with the ID of the workspace to use.';
+					throw new Anthropic.BadRequestError(400, { type: 'error', error: { type: 'invalid_request_error', message } }, message, new Headers());
+				},
+			},
+		},
+	});
+	await assert.rejects(askAboutImage({ provider: 'anthropic', model: 'm', baseUrl: '', apiKey: '' }, question, { anthropic: unscoped }), /工作区 ID/u);
 });
 
 test('an OpenAI-compatible service is asked at its address, with the picture as a data URL', async () => {
@@ -88,7 +104,7 @@ test('answers lose a fence put around them anyway', () => {
 test('AI settings: the page sees no key, only that there is one; a saved key keeps the file private', async () => {
 	const file = join(mkdtempSync(join(tmpdir(), 'ai-settings-')), '.studio-settings.json');
 	const settings = new AiSettings(file, { env: {} });
-	assert.deepEqual(await settings.config(), { provider: 'anthropic', model: 'claude-opus-5-5', baseUrl: '', apiKey: '' });
+	assert.deepEqual(await settings.config(), { provider: 'anthropic', model: 'claude-opus-5-5', baseUrl: '', apiKey: '', workspaceId: '' });
 	assert.equal((await settings.shown()).hasKey, false);
 	assert.equal((await new AiSettings(file, { env: { ANTHROPIC_API_KEY: 'x' } }).shown()).hasKey, true);
 
@@ -104,4 +120,6 @@ test('AI settings: the page sees no key, only that there is one; a saved key kee
 	assert.equal((await settings.config()).apiKey, '');
 	await assert.rejects(settings.set({ provider: 'gemini' }), /provider/u);
 	await assert.rejects(settings.set({ baseUrl: 'ftp://x' }), /http/u);
+	assert.equal((await settings.set({ provider: 'anthropic', workspaceId: ' wrkspc_01x ' })).workspaceId, 'wrkspc_01x');
+	await assert.rejects(settings.set({ workspaceId: 'wrkspc 01' }), /空格/u);
 });
