@@ -70,13 +70,14 @@ async function drawnSource(form: 'smiles' | 'molfile', info: string, source: str
  * The structure editor in `host` (which it fills), on a block's structure;
  * what is drawn is handed to `drawn` as the block's new fence a moment after
  * each change. `current` is the block as it is then (a SMILES block's own
- * spelling is kept against it). Resolves once the editor is on the page.
+ * spelling is kept against it); `dismiss`, an Esc the editor had no use for.
+ * Resolves once the editor is on the page.
  */
 export async function mountStructureEditor(
 	host: HTMLElement,
 	form: 'smiles' | 'molfile',
 	start: { info: string; source: string },
-	{ current, drawn }: { current: () => { info: string; source: string }; drawn: (structure: DrawnStructure) => void },
+	{ current, drawn, dismiss }: { current: () => { info: string; source: string }; drawn: (structure: DrawnStructure) => void; dismiss?: () => void },
 ): Promise<{ dispose(): void }> {
 	const text = start.source.trim();
 	const [chem, molfile] = await Promise.all([
@@ -100,7 +101,17 @@ export async function mountStructureEditor(
 			clearTimeout(timer);
 			timer = setTimeout(() => void write(), 500);
 		},
+		// Esc once the editor has no use for it (nothing to stop or unselect, the lasso in hand).
+		...(dismiss ? { onDismiss: dismiss } : {}),
 	});
+	// The editor takes keys (⌫, ⌘Z, a letter for an element) only when they come from inside it; in the
+	// sheet they would go to the sheet itself. Focusable, it is focused, and a click anywhere in it focuses it.
+	const app = host.querySelector<HTMLElement>('.chem-app');
+	if (app) {
+		app.tabIndex = -1;
+		const typing = document.activeElement?.closest('input, textarea, [contenteditable]:not([contenteditable="false"])');
+		if (host.isConnected && !typing) app.focus({ preventScroll: true });
+	}
 	return {
 		dispose: () => {
 			clearTimeout(timer);

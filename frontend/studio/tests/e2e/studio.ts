@@ -129,9 +129,15 @@ export async function openSource(page: Page, kind: string): Promise<Locator> {
 	return source;
 }
 
-/** Close the sheet open, as Esc does, and wait until it is gone. */
+/**
+ * Close the sheet open, as Esc does, and wait until it is gone. In the structure editor Esc first
+ * puts down what is in hand (a selection, the bond tool for the lasso); then it closes the sheet.
+ */
 export async function closeSheet(page: Page): Promise<void> {
-	await page.keyboard.press('Escape');
+	for (let presses = 0; presses < 3 && (await blockSheet(page).count()) > 0; presses += 1) {
+		await page.keyboard.press('Escape');
+		await page.waitForTimeout(50);
+	}
 	await expect(blockSheet(page)).toHaveCount(0);
 }
 

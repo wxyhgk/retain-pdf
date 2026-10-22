@@ -24,6 +24,15 @@ test('double-clicking a 2D structure opens its sheet with the structure editor; 
 	await expect(editorIn(page)).toBeVisible();
 	await closeSheet(page);
 	await expect(await openSource(page, 'SDF')).toHaveValue(/^Water\n/);
+	await closeSheet(page);
+
+	// Esc in the structure editor: the lasso taken up for the bond tool first, then the sheet closed.
+	await scienceBlock(page, 'SDF').locator('.science-block-preview').dblclick();
+	await expect(editorIn(page)).toBeFocused();
+	await page.keyboard.press('Escape');
+	await expect(blockSheet(page)).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(blockSheet(page)).toHaveCount(0);
 });
 
 test('a drawn change comes back as SMILES; an SDF block gets the editor’s molfile', async ({ page }) => {
@@ -65,16 +74,18 @@ test('everything deleted, ⌫ once more is not "back": the Studio stays (WebKit,
 	await scienceBlock(page, 'SDF').locator('.science-block-preview').dblclick();
 	const editor = editorIn(page);
 	await expect(editor).toBeVisible();
-	await editor.evaluate((app) => {
-		(app as HTMLElement).tabIndex = -1;
-		(app as HTMLElement).focus();
-	});
+	// The keys go to the structure editor as soon as it is open.
+	await expect(editor).toBeFocused();
 	const backspace = () =>
 		page.evaluate(() => new Promise<boolean>((resolve) => {
 			window.addEventListener('keydown', (event) => setTimeout(() => resolve(event.defaultPrevented)), { once: true, capture: true });
 			(document.activeElement ?? document.body).dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', bubbles: true, cancelable: true }));
 		}));
-	// The structure editor still deletes with ⌫…
+	// The structure editor deletes with ⌫ (an atom drawn, everything selected, deleted)…
+	const canvas = editor.locator('[data-testid="canvas"]');
+	const box = (await canvas.boundingBox())!;
+	await page.mouse.click(box.x + box.width * 0.3, box.y + box.height * 0.85);
+	await expect(editor).toBeFocused();
 	await page.keyboard.press('ControlOrMeta+a');
 	await page.keyboard.press('Backspace');
 	// …and ⌫ with nothing left, which it leaves alone, goes nowhere.

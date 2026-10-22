@@ -102,6 +102,7 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 			void mountStructureEditor(stage, form, state, {
 				current: () => host.read() ?? state,
 				drawn: (next) => write('structure', next),
+				dismiss: () => sheet.close(),
 			}).then((editor) => {
 				if (closed) editor.dispose();
 				else dispose = () => editor.dispose();

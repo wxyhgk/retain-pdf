@@ -1,6 +1,7 @@
 /* A chemistry block's sheet (science-sheet.ts). */
 .science-sheet-editor { position: relative; min-height: 0; }
 .science-sheet-editor > .chem-viewer { margin: 0; }
+.science-sheet-editor .chem-app:focus { outline: none; }
 .science-sheet-source { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 12.5px; line-height: 1.45; outline: none; resize: vertical; white-space: pre; }
 .science-sheet-source:focus { border-color: rgb(var(--gray)); }
 .science-sheet-preview { margin-top: 12px; }
