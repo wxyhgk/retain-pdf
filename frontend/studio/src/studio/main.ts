@@ -56,6 +56,7 @@ import { createPluginsDialog } from './workspace/plugins-dialog';
 import { runCommand, showPluginUi } from './workspace/plugin-ui';
 import { createOutline } from './workspace/outline';
 import { createPageSnapshot } from './workspace/page-snapshot';
+import { anchorScroll } from './workspace/scroll-anchor';
 import { createBacklinks } from './workspace/backlinks';
 import { createArticleTable } from './workspace/article-table';
 import { createPageHeader } from './workspace/page-header';
@@ -73,6 +74,7 @@ const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
 const editorPanel = shell.querySelector<HTMLElement>('.editor-panel')!;
 const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
+anchorScroll(editorScroll);
 
 const topBar = createTopBar(shell);
 // The page as it is left, drawn at once on the next visit (page-snapshot.ts).
