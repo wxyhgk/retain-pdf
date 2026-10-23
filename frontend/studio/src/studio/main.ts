@@ -57,6 +57,7 @@ import { createPluginsDialog } from './workspace/plugins-dialog';
 import { aiReady, createAiSettingsDialog } from './workspace/ai-settings-dialog';
 import { runCommand, showPluginUi } from './workspace/plugin-ui';
 import { createOutline } from './workspace/outline';
+import { keepFormulasFitted } from '@blog/science/browser/fit-formulas.ts';
 import { createPageSnapshot } from './workspace/page-snapshot';
 import { anchorScroll } from './workspace/scroll-anchor';
 import { createBacklinks } from './workspace/backlinks';
@@ -77,6 +78,8 @@ const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
 const editorPanel = shell.querySelector<HTMLElement>('.editor-panel')!;
 const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
+// Display formulas wider than the page: in lines, or smaller, not scrolled (fit-formulas.ts).
+keepFormulasFitted(editorScroll);
 anchorScroll(editorScroll);
 
 const topBar = createTopBar(shell);

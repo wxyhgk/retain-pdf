@@ -166,6 +166,8 @@ blockquote {
  * would run under it.
  */
 .katex-display > .katex { width: max-content; min-width: 100%; }
+/* A formula and its lines (fit-formulas.ts): one shown at a time; KaTeX's own display rule would show both. */
+.katex-display[hidden] { display: none; }
 .katex-display > .katex > .katex-html:has(> .tag, > .katex-tag) { box-sizing: border-box; padding-inline: 3.2em; }
 /* Where \eqref links land: just above the numbered formula. */
 .equation-anchor {

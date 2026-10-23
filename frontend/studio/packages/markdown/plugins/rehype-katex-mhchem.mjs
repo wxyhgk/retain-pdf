@@ -5,6 +5,7 @@ import { SKIP, visitParents } from 'unist-util-visit-parents';
 
 import { numberEquations, prepareFormula, resolveReferences, unresolvedReferences } from '@blog/science/rendering/equations.mjs';
 import { katexOptions, lenientOptions, mergeMacros } from '@blog/science/rendering/katex-options.mjs';
+import { breakIntoLines } from '@blog/science/rendering/line-breaks.mjs';
 
 const require = createRequire(import.meta.url);
 const katex = require('katex');
@@ -17,6 +18,10 @@ require('katex/contrib/mhchem');
  * and its own; only its own when not given), equations numbered in
  * order with `\label` / `\eqref` (`equations.mjs`). Only formulas that are
  * blocks of their own are numbered, as in the Studio.
+ *
+ * A display formula that can be broken into lines (line-breaks.mjs)
+ * also has that drawn, hidden after it (`.katex-broken`): the page shows it
+ * instead when the formula is wider than its line (fit-formulas.ts).
  *
  * What the page shows wrong is reported on `file` (the Studio's check before
  * publishing lists it): a formula KaTeX rejects, drawn in red; a reference
@@ -81,8 +86,16 @@ export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => merge
 			}
 			const settings = { ...katexOptions, ...options, macros, displayMode: formula.displayMode };
 			let html;
+			let broken = null;
 			try {
 				html = katex.renderToString(value, settings);
+				const lines = formula.displayMode ? breakIntoLines(value) : null;
+				// In lines it may not draw (a construct `aligned` refuses): then it is only shrunk.
+				try {
+					if (lines) broken = katex.renderToString(lines, settings);
+				} catch {
+					broken = null;
+				}
 			} catch (error) {
 				const reason = error instanceof Error ? error.message.replace(/^KaTeX parse error:\s*/u, '') : '';
 				report(`公式有错，会显示为红字${reason ? `：${reason}` : ''}`, formula, 'formula', error);
@@ -90,6 +103,15 @@ export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => merge
 			}
 
 			const rendered = fromHtmlIsomorphic(html, { fragment: true }).children;
+			if (broken) {
+				const lines = fromHtmlIsomorphic(broken, { fragment: true }).children;
+				const display = lines.find((node) => node.type === 'element');
+				if (display) {
+					display.properties.className = [...(display.properties.className ?? []), 'katex-broken'];
+					display.properties.hidden = true;
+					rendered.push(...lines);
+				}
+			}
 			// What \eqref links to.
 			const anchors = (formula.anchors ?? []).map((id) => ({
 				type: 'element',

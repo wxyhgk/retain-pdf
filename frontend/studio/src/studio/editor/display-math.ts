@@ -4,6 +4,7 @@ import type { Node as ProseMirrorNode } from '@milkdown/prose/model';
 import { NodeSelection, Plugin, Selection, TextSelection } from '@milkdown/prose/state';
 import type { Decoration, EditorView, NodeView } from '@milkdown/prose/view';
 
+import { breakIntoLines } from '@blog/science/rendering/line-breaks.mjs';
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
 import { equationLabels, equationNumbers, numberedSource, referencesKey } from './equation-numbers.ts';
 import { isFormulaBlock } from './formula-block.ts';
@@ -21,8 +22,22 @@ function paintFormula(host: HTMLElement, source: string, emptyLabel: string, vie
 		host.textContent = emptyLabel;
 		return;
 	}
-	const result = renderMathHtml(source, true, equationLabels(view.state));
+	const labels = equationLabels(view.state);
+	const result = renderMathHtml(source, true, labels);
 	host.innerHTML = result.html;
+	// As on the blog: its lines, hidden after it, shown when it is wider than the page (fit-formulas.ts).
+	const lines = result.error ? null : breakIntoLines(source);
+	const broken = lines ? renderMathHtml(lines, true, labels) : null;
+	if (broken && !broken.error) {
+		const holder = document.createElement('div');
+		holder.innerHTML = broken.html;
+		const display = holder.querySelector<HTMLElement>('.katex-display');
+		if (display) {
+			display.classList.add('katex-broken');
+			display.hidden = true;
+			host.append(display);
+		}
+	}
 	host.querySelectorAll('.katex-mathml').forEach((node) => node.remove());
 	host.classList.toggle('is-error', Boolean(result.error));
 }

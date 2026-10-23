@@ -422,8 +422,17 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.breadcrumb-drive, .breadcrumb-table, .studio-shell:is([data-view='drive'], [data-view='table']) #breadcrumb-title { display: none; }
 	.studio-shell[data-view='drive'] .breadcrumb-drive, .studio-shell[data-view='table'] .breadcrumb-table { display: inline; }
 	#open-drive[aria-pressed='true'], #open-table[aria-pressed='true'] { background: var(--surface-hover); font-weight: 600; }
-	/* The outline at the editor's right edge, as on the blog. */
-	.outline-rail { position: absolute; z-index: 12; top: 96px; right: 6px; display: flex; align-items: flex-start; pointer-events: none; }
+	/*
+	 * Scrollbars: thin, a rounded gray thumb on no track, darker under the pointer. The system's
+	 * (WebKit's, in the Mac app) are bars of their own, light on a dark page.
+	 */
+	:global(*::-webkit-scrollbar) { width: 10px; height: 10px; }
+	:global(*::-webkit-scrollbar-track), :global(*::-webkit-scrollbar-corner) { background: transparent; }
+	:global(*::-webkit-scrollbar-thumb) { border: 3px solid transparent; border-radius: 999px; background: rgba(var(--gray), 0.3) padding-box; }
+	:global(*::-webkit-scrollbar-thumb:hover) { background-color: rgba(var(--gray), 0.55); }
+
+	/* The outline at the editor's right edge, as on the blog: clear of the editor's scrollbar. */
+	.outline-rail { position: absolute; z-index: 12; top: 96px; right: 16px; display: flex; align-items: flex-start; pointer-events: none; }
 	.outline-rail[hidden] { display: none; }
 	.outline-pop { width: 220px; max-height: min(68vh, 520px); margin-right: 2px; overflow: auto; border-radius: 8px; background: var(--surface); box-shadow: 0 6px 24px rgba(15, 15, 15, 0.1); opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
 	.outline-rail:hover .outline-pop, .outline-rail:focus-within .outline-pop { opacity: 1; pointer-events: auto; }
@@ -432,10 +441,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.outline-pop :global(li.child a) { font-size: 12px; }
 	.outline-pop :global(a:hover) { background: var(--surface-hover); color: rgb(var(--black)); }
 	.outline-pop :global(a[aria-current]) { color: rgb(var(--black)); font-weight: 600; }
-	.outline-marks { display: grid; justify-items: end; gap: 10px; width: 22px; padding: 8px 2px; pointer-events: auto; }
-	.outline-marks :global(i) { display: block; width: 14px; height: 1px; border-radius: 1px; background: rgb(var(--gray)); opacity: 0.55; }
-	.outline-marks :global(i.child) { width: 8px; }
-	.outline-marks :global(i[data-current]) { height: 2px; background: rgb(var(--gray-dark)); opacity: 1; }
+	/* A short line a heading, the lower levels shorter: their shape, not a ruler. The one the reader is in, dark. */
+	.outline-marks { display: grid; justify-items: end; gap: 8px; width: 24px; padding: 8px 4px; pointer-events: auto; }
+	.outline-marks :global(i) { display: block; width: 16px; height: 2px; border-radius: 2px; background: rgba(var(--gray), 0.32); transition: background-color 120ms ease; }
+	.outline-marks :global(i.child) { width: 9px; }
+	.outline-marks :global(i[data-current]) { background: rgb(var(--gray-dark)); }
+	.outline-rail:hover .outline-marks :global(i:not([data-current])) { background: rgba(var(--gray), 0.5); }
 	.panel-label > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	#roundtrip-status { margin-left: 14px; color: rgb(var(--gray)); font-size: 9px; }
 	#roundtrip-status[data-state='changed'] { color: #b42318; }
