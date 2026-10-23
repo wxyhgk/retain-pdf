@@ -34,6 +34,16 @@ export function setBookmarkHost(next: BookmarkHost | null): void {
 /** Blocks just put in, whose address field takes the caret once drawn. */
 const opening = new WeakSet<ProseNode>();
 
+/** Addresses just made bookmarks (a link pasted, or turned into one): their pages are read once they are drawn. */
+const toRead = new Set<string>();
+
+/** A bookmark of `url`, its page to be read once it is in the article. */
+export function bookmarkMarkdown(url: string): string {
+	const address = webAddress(url);
+	if (address) toRead.add(address);
+	return `\`\`\`${BOOKMARK_LANGUAGE}\n${address || url}\n\`\`\``;
+}
+
 /** A new, empty bookmark where the caret's (empty) block is; its address field takes the caret. */
 export function insertBookmark(view: EditorView): void {
 	const { state } = view;
@@ -178,6 +188,9 @@ export const bookmarkView = $view(bookmarkSchema.schema.node, () => (initial: Pr
 	};
 
 	paint();
+	const address = webAddress(bookmark.url);
+	// Once drawn: the editor is not to be changed while it draws.
+	if (address && toRead.delete(address) && !bookmark.title) queueMicrotask(() => void read(address));
 	return {
 		dom,
 		update: (updated) => {

@@ -756,6 +756,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.block-menu-item) { display: flex; width: 100%; align-items: center; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 	:global(.block-menu-item:hover),
 	:global(.block-menu-item:focus) { background: var(--surface-soft); outline: none; }
+	:global(.link-paste-menu .block-menu-item.is-active) { background: var(--surface-soft); }
 	:global(.block-menu-item.is-current::after) { content: '当前'; margin-left: auto; color: rgb(var(--gray)); font-size: 11px; }
 	:global(.block-menu-item.is-danger) { color: #b42318; }
 	:global(.crepe-host .milkdown-slash-menu), :global(.crepe-host .milkdown-toolbar) { border: 1px solid rgb(var(--gray-light)); }

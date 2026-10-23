@@ -2,7 +2,7 @@ import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 
 import { LOCAL_ONLY_EXTENSIONS } from '@blog/markdown/articles/rules.mjs';
-import { VIDEO_LANGUAGE } from './video.mjs';
+import { onlineVideo, VIDEO_LANGUAGE } from './video.mjs';
 import videoCss from './video.css?raw';
 import { insertVideo, setVideoHost, VIDEO_TYPE, videoBlockPlugins, videoMarkdown } from './video-block.ts';
 
@@ -64,6 +64,14 @@ export function apply(ctx: Context): void {
 		milkdown: videoBlockPlugins,
 		drawnWhole: [VIDEO_TYPE],
 		files: { extensions: [...LOCAL_ONLY_EXTENSIONS], icon: '▶', markdown: videoMarkdown },
+		// A link to a video on Bilibili or YouTube (a Bilibili short link too, opened once in): its player.
+		links: {
+			label: '视频',
+			specific: true,
+			matches: (url) => Boolean(onlineVideo(url)) || /^https?:\/\/b23\.tv\//iu.test(url),
+			markdown: (url) => `\`\`\`${VIDEO_LANGUAGE}\n${url}\n\`\`\``,
+			node: VIDEO_TYPE,
+		},
 		menu: {
 			key: 'video',
 			label: '视频',

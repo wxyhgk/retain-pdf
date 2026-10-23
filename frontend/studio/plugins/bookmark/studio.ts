@@ -1,9 +1,9 @@
 import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 
-import { BOOKMARK_LANGUAGE, type Bookmark } from './bookmark.mjs';
+import { BOOKMARK_LANGUAGE, webAddress, type Bookmark } from './bookmark.mjs';
 import cardCss from './bookmark.css?raw';
-import { bookmarkBlockPlugins, insertBookmark, setBookmarkHost } from './bookmark-block.ts';
+import { BOOKMARK_TYPE, bookmarkBlockPlugins, bookmarkMarkdown, insertBookmark, setBookmarkHost } from './bookmark-block.ts';
 
 const ICON =
 	'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>';
@@ -43,6 +43,8 @@ export function apply(ctx: Context): void {
 		name,
 		fence: BOOKMARK_LANGUAGE,
 		milkdown: bookmarkBlockPlugins,
+		// Any page's address: its card.
+		links: { label: '网页书签', matches: (url) => Boolean(webAddress(url)), markdown: bookmarkMarkdown, node: BOOKMARK_TYPE },
 		menu: {
 			key: 'bookmark',
 			label: '网页书签',

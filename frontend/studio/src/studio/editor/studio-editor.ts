@@ -1,6 +1,6 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import type { ForkBlockEditFeatureConfig } from '@milkdown/crepe/feature/block-edit';
-import { editorViewCtx, editorViewOptionsCtx, serializerCtx } from '@milkdown/kit/core';
+import { editorViewCtx, editorViewOptionsCtx, parserCtx, serializerCtx } from '@milkdown/kit/core';
 import { diffComponent, diffComponentConfig } from '@milkdown/kit/component/diff';
 import {
 	acceptAllDiffsCmd,
@@ -30,6 +30,7 @@ import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
+import { blockToLink, linkTargets, replaceBlock } from './link-embeds';
 import { smartPastePlugins } from './smart-paste';
 import { blockKeyPlugins } from './block-key-plugins';
 import { selectBlockForHandle } from './block-range';
@@ -174,6 +175,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			for (const stop of unobserve) stop();
 			unobserve = blocks.flatMap((block) => (block.observe ? [block.observe(root)] : []));
 			const codeBlocks = blocks.flatMap((block) => (block.codeBlock ? [block.codeBlock] : []));
+			const links = linkTargets(blocks);
 			const fileDrop = articleFileDrop(host.files);
 			// Crepe's own config, plus the block menu only the Milkdown fork has.
 			const saveAsFile = saveCodeBlockAsFile(host.files);
@@ -188,6 +190,11 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						split: (view, pos) => void splitToPage(view, pos),
 						recognize: (view, pos) => host.recognize(view, pos),
 						blocks,
+						links: {
+							targets: links,
+							turn: (view, pos, markdown) => replaceBlock(view, pos, markdown, (text) => crepe!.editor.action((ctx) => ctx.get(parserCtx)(text))),
+							back: blockToLink,
+						},
 					}),
 				buildMenu: (builder) => {
 					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks);
@@ -298,7 +305,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor.use(togglePlugins());
 			crepe.editor.use(columnsPlugins());
 			crepe.editor.use(articleLinkPlugins(host));
-			crepe.editor.use(smartPastePlugins(host));
+			crepe.editor.use(smartPastePlugins({ articleTitle: (slug) => host.articleTitle(slug), links: () => links }));
 			crepe.editor.use(fileDrop.plugin);
 			// Last, so Esc and the other keys go to what is open first.
 			crepe.editor.use(blockKeyPlugins(host));

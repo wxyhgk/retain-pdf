@@ -7,11 +7,14 @@ import { $prose } from '@milkdown/utils';
 
 import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import type { ArticleLinkHost } from './article-links.ts';
+import { offerLinkTargets, type LinkTarget } from './link-embeds.ts';
 
 /**
  * Pasting an address, as Notion takes it:
  * - over selected text, the text becomes a link to it;
- * - on its own, it comes in as a link (its own text);
+ * - on its own, it comes in as a link (its own text); alone on its line, a
+ *   menu under it offers what the plugins make of it (a video's player, a
+ *   bookmark's card: link-embeds.ts);
  * - an address of one of the blog's articles (`/blog/slug/`, or the whole
  *   address on this site) comes in as a link titled as the article, to its
  *   address on the blog: `[标题](/blog/slug/)`.
@@ -26,7 +29,10 @@ import type { ArticleLinkHost } from './article-links.ts';
  */
 
 /** What the paste needs from the Studio around the editor. */
-export type SmartPasteHost = Pick<ArticleLinkHost, 'articleTitle'>;
+export type SmartPasteHost = Pick<ArticleLinkHost, 'articleTitle'> & {
+	/** What the plugins make of an address (link-embeds.ts). */
+	links?: () => readonly LinkTarget[];
+};
 
 /** The one address the clipboard holds, if that is all it holds. */
 function pastedAddress(text: string): string | null {
@@ -181,6 +187,12 @@ function paste(ctx: Ctx, view: EditorView, event: ClipboardEvent, host: SmartPas
 	if (!selection.empty && selection instanceof TextSelection && $from.sameParent(selection.$to)) {
 		tr = tr.addMark(selection.from, selection.to, make());
 	} else if (selection.empty) {
+		// Alone on its line: offered as what it may become, once in.
+		const alone = !own && $from.parent.type.name === 'paragraph' && $from.parent.content.size === 0;
+		if (alone) {
+			const at = $from.before();
+			queueMicrotask(() => offerLinkTargets(view, at, href, host.links?.() ?? [], (markdown) => ctx.get(parserCtx)(markdown)));
+		}
 		const slug = own ? ARTICLE_ADDRESS.exec(own)?.[2] : undefined;
 		const text = (slug && host.articleTitle(slug)) || address;
 		tr = tr.insert(selection.from, view.state.schema.text(text, [make()]));

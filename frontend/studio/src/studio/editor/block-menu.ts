@@ -14,6 +14,7 @@ import { BlockRangeSelection, blockRangeKey, coveredRange } from './block-range.
 import { blockRangePlugin } from './block-range-drag.ts';
 import { paragraphBreakPlugin } from './paragraph-breaks.ts';
 import { FIGURE_TYPE } from './figure-block.ts';
+import { blockAddress, onlyLink, targetsFor, type LinkTarget } from './link-embeds.ts';
 import type { BlockMenuEntry, StudioBlock } from '@blog/kernel/studio.ts';
 import { blockAt } from '@blog/ui/block-at.ts';
 
@@ -90,6 +91,15 @@ export type BlockMenuHost = {
 	recognize?: (view: EditorView, pos: number) => void;
 	/** The plugins' blocks: one may hold its own node's menu (a chemistry block's). */
 	blocks?: StudioBlock[];
+	/**
+	 * What the plugins make of links (link-embeds.ts): a line that is only a link turns into them,
+	 * and they back into the link (转换成).
+	 */
+	links?: {
+		targets: readonly LinkTarget[];
+		turn: (view: EditorView, pos: number, markdown: string) => void;
+		back: (view: EditorView, pos: number, url: string) => void;
+	};
 };
 
 /** The blocks that are a picture: what 识别 reads. */
@@ -118,6 +128,22 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 	const recognize = host.recognize;
 	if (recognize && PICTURES.includes(node.type.name) && node.attrs.src) {
 		entries.push({ key: 'recognize', label: '识别…', current: false, danger: false, turn: false, run: (view) => recognize(view, pos) });
+	}
+	const links = host.links;
+	if (links) {
+		const url = onlyLink(node);
+		for (const target of url ? targetsFor(url, links.targets) : []) {
+			entries.push({ key: `link-${target.node}`, label: target.label, current: false, danger: false, turn: true, run: (view) => links.turn(view, pos, target.markdown(url!)) });
+		}
+		const made = links.targets.find((target) => target.node === node.type.name);
+		const address = made ? blockAddress(node) : null;
+		if (made && address) {
+			for (const target of targetsFor(address, links.targets)) {
+				const current = target.node === node.type.name;
+				entries.push({ key: `link-${target.node}`, label: target.label, current, danger: false, turn: true, run: (view) => !current && links.turn(view, pos, target.markdown(address)) });
+			}
+			entries.push({ key: 'link', label: '链接', current: false, danger: false, turn: true, run: (view) => links.back(view, pos, address) });
+		}
 	}
 	const save = host.saveAsFile;
 	if (save?.can(node)) {

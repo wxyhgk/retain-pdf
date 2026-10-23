@@ -157,6 +157,7 @@ export function apply(ctx: Context): void {
 | `codeBlock: { languages, preview(language, content, meta) }` | 块就是一个普通代码块（不是自己的节点）：代码编辑器里用什么语言高亮（CodeMirror 的 `LanguageDescription`），预览画成什么（不是自己的语言就返回 null） | `widget/` |
 | `observe(root)` | 盯着编辑器的页面，把预览留下的占位画出来；返回停下的函数 | `widget/`、`chemistry/` |
 | `files: { extensions, icon, markdown? }` | 文章里这些扩展名的文件归它显示：从文件栏插入、拖进正文时变成 ```扩展名 加 `@file ./路径` 的块（扩展名也是它的 fence 时），给了 `markdown(路径)` 就用它写的；文件栏里用 `icon` 标出来 | `chemistry/`（结构文件 ⬡）、`video/`（视频 ▶） |
+| `links: { label, specific?, matches(url), markdown(url), node }` | 它认得的链接（像 Notion）：单独粘贴在一行里的网址，下面弹出小菜单，列出认得它的块（`specific` 的排前面：视频先于书签），↩ 选第一个，Esc 或接着打字就保持链接；只有一个链接的一行，块菜单「转换成」里能变成它，它（`node`）也能转回链接（第一行是网址） | `video/`（B 站、YouTube）、`bookmark/`（任何网页） |
 
 ## 现有的插件
 

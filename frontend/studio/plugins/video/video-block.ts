@@ -354,6 +354,8 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 	};
 
 	paint();
+	// A Bilibili short link (pasted, or written so): opened to the video's own address.
+	if (/^https?:\/\/b23\.tv\//iu.test(video.src) && host) queueMicrotask(() => void useLink(video.src));
 	return {
 		dom,
 		update: (updated) => {

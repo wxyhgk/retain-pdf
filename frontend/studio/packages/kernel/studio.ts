@@ -104,6 +104,14 @@ export type StudioBlock = Block & {
 	 * (null: not its own; the next is asked).
 	 */
 	codeBlock?: { languages?: unknown[]; preview?(language: string, content: string, meta: string): HTMLElement | null };
+	/**
+	 * Links it shows, as Notion takes them: an address pasted alone on its line offers to become this
+	 * block (`label`; offered first when `specific`, its sites' addresses only being its own: a video,
+	 * before a bookmark of any page), and a line that is only a link can be turned into it (转换成).
+	 * `markdown` writes the block for an address; its node (`node`), turned back into a link (转换成 →
+	 * 链接), gives the address on its first line.
+	 */
+	links?: { label: string; specific?: boolean; matches(url: string): boolean; markdown(url: string): string; node: string };
 	/** Watches the editor's page, to draw what its previews left there; returns what stops it. */
 	observe?(root: HTMLElement): () => void;
 	/**
