@@ -10,7 +10,7 @@ export type ReadyMoleculeRenderInput =
 	}
 	| {
 		status: 'ready';
-		renderer: '3dmol';
+		renderer: 'fast-mol';
 		source: string;
 		format: MoleculeViewerFormat;
 		label: string;

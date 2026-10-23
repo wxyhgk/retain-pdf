@@ -2,7 +2,7 @@ import { parseMoleculeBlock } from '../parsers/index.ts';
 import { prepareMoleculeRenderInput } from '../rendering/index.ts';
 import { describeRDKitError } from '../rendering/rdkit-messages.ts';
 import { moleculeViewKey } from '../view-key.mjs';
-import { is3DmolView, isFastMolView } from '../view-state.mjs';
+import { isFastMolView } from '../view-state.mjs';
 import { createMoleculeViewer, type FastMolViewer } from './fast-mol.ts';
 
 export type RDKitMol = {
@@ -57,34 +57,15 @@ export function readMolecule(rdkit: RDKitModule, source: string): ReadMolecule {
 	}
 }
 
-export type ThreeDMolViewer = {
-	addModel(source: string, format: string): unknown;
-	addIsosurface(data: unknown, style: object): unknown;
-	removeShape(shape: unknown): void;
-	setStyle(selection: object, style: object): void;
-	setBackgroundColor(color: string): void;
-	getView(): number[];
-	setView(view: number[], noLink?: boolean): unknown;
-	setViewChangeCallback(callback: ((view: number[]) => void) | null): void;
-	zoomTo(): void;
-	render(): void;
-	resize(): void;
-};
-
 type ChemistryWindow = Window & {
 	initRDKitModule?: (options: { locateFile: (file: string) => string }) => Promise<RDKitModule>;
-	$3Dmol?: {
-		createViewer: (element: HTMLElement, config: object) => ThreeDMolViewer;
-		VolumeData: new (source: string, format: string) => unknown;
-	};
 	__rdkitPromise?: Promise<RDKitModule>;
-	__threeDMolPromise?: Promise<ChemistryWindow['$3Dmol']>;
 };
 
 /** Views turned to on this page, not saved: a block drawn again shows the molecule as it was left. */
 const moleculeViewMemory = new Map<string, unknown>();
 
-/** A saved view: fast-mol's or 3Dmol's (view-state.mjs), as the viewer that drew the molecule keeps it. */
+/** A saved view (view-state.mjs): fast-mol's; one 3Dmol saved before is kept in the file but not read. */
 export type SavedMoleculeView = { format: string; view: unknown; display?: unknown };
 type MoleculeViewContext = {
 	views: Record<string, SavedMoleculeView>;
@@ -99,18 +80,6 @@ export function setMoleculeViewContext(context: MoleculeViewContext): void {
 }
 
 export { moleculeViewKey };
-
-export function parseStoredMoleculeView(raw: string | null): number[] | null {
-	if (!raw) return null;
-	try {
-		const view = JSON.parse(raw);
-		if (!Array.isArray(view) || view.length < 8 || view.length > 16) return null;
-		if (!view.every((value) => typeof value === 'number' && Number.isFinite(value))) return null;
-		return view;
-	} catch {
-		return null;
-	}
-}
 
 /** The view turned to on this page, or else the one saved, when `control`'s viewer keeps that kind. */
 function readMoleculeView<View>(key: string, format: string, control: ViewControl<View>): View | null {
@@ -167,17 +136,6 @@ export function loadRDKit(): Promise<RDKitModule> {
 	return chemistryWindow.__rdkitPromise;
 }
 
-export function load3Dmol(): Promise<NonNullable<ChemistryWindow['$3Dmol']>> {
-	const chemistryWindow = window as ChemistryWindow;
-	if (!chemistryWindow.__threeDMolPromise) {
-		chemistryWindow.__threeDMolPromise = loadScript('/vendor/3dmol/3Dmol-min.js').then(() => {
-			if (!chemistryWindow.$3Dmol) throw new Error('3Dmol.js 初始化失败');
-			return chemistryWindow.$3Dmol;
-		});
-	}
-	return chemistryWindow.__threeDMolPromise as Promise<NonNullable<ChemistryWindow['$3Dmol']>>;
-}
-
 /**
  * What the view controls do to a viewer: read and set how it is turned (`View`, the kind it keeps),
  * go back to the view it chose itself, and say when it was turned (returns what stops listening).
@@ -222,39 +180,6 @@ export function fastMolViewControl(viewer: FastMolViewer): ViewControl<unknown> 
 	};
 }
 
-/** A 3Dmol viewer's view (the cubes, and PDB, mol2 and CIF, until fast-mol draws them too). */
-export function threeDMolViewControl(viewer: ThreeDMolViewer): ViewControl<number[]> {
-	viewer.zoomTo();
-	const automatic = viewer.getView();
-	return {
-		accepts: (view): view is number[] => is3DmolView(view),
-		get: () => viewer.getView(),
-		set: (view) => {
-			viewer.setView(view, true);
-			viewer.render();
-		},
-		reset: () => {
-			viewer.setView(automatic, true);
-			viewer.render();
-		},
-		onTurn(listener) {
-			let last = JSON.stringify(viewer.getView());
-			let timer: ReturnType<typeof setTimeout> | undefined;
-			viewer.setViewChangeCallback((view) => {
-				const now = JSON.stringify(view);
-				if (now === last) return;
-				last = now;
-				clearTimeout(timer);
-				timer = setTimeout(listener, 180);
-			});
-			return () => {
-				clearTimeout(timer);
-				viewer.setViewChangeCallback(null);
-			};
-		},
-	};
-}
-
 /**
  * The controls under a 3D molecule: the view the article saved (or the one turned to on this page)
  * shown first, 重置视角, and in the Studio 保存视角到文章 (with the display, when `getDisplay` says
@@ -271,6 +196,8 @@ export function mountViewControls<View>(
 	const viewKey = moleculeViewKey(format, viewIdentity);
 	const storedView = readMoleculeView(viewKey, format, control);
 	if (storedView) control.set(storedView);
+	/** The view last loaded, saved or reset to: a turn noticed late (after a save) that ends there changes nothing. */
+	let settled = JSON.stringify(control.get());
 
 	const controls = document.createElement('div');
 	controls.className = 'chem-view-controls';
@@ -282,6 +209,7 @@ export function mountViewControls<View>(
 	resetView.addEventListener('click', () => {
 		clearMoleculeView(viewKey);
 		control.reset();
+		settled = JSON.stringify(control.get());
 		persistence.textContent = moleculeViewContext.save ? '已重置 · 尚未写入文章' : '已重置';
 	});
 	const buttons = document.createElement('div');
@@ -301,6 +229,7 @@ export function mountViewControls<View>(
 				await moleculeViewContext.save?.(viewKey, format, view, display);
 				moleculeViewContext.views[viewKey] = { format, view: structuredClone(view), display };
 				rememberMoleculeView(viewKey, view);
+				settled = JSON.stringify(view);
 				persistence.textContent = options.getDisplay ? '显示与视角已写入文章配置' : '视角已写入文章配置';
 			} catch (error) {
 				persistence.textContent = error instanceof Error ? error.message : '视角保存失败';
@@ -318,7 +247,9 @@ export function mountViewControls<View>(
 			stop();
 			return;
 		}
-		rememberMoleculeView(viewKey, control.get());
+		const view = control.get();
+		if (JSON.stringify(view) === settled) return;
+		rememberMoleculeView(viewKey, view);
 		persistence.textContent = moleculeViewContext.save ? '视角有改动 · 尚未写入文章' : '临时视角';
 	});
 	return {
@@ -327,33 +258,6 @@ export function mountViewControls<View>(
 		},
 	};
 }
-
-/** The view controls on a 3Dmol viewer, its background following the page's theme. */
-export function mount3DMolInteraction(
-	figure: HTMLElement,
-	stage: HTMLElement,
-	viewer: ThreeDMolViewer,
-	format: string,
-	viewIdentity: string,
-	options: { getDisplay?: () => unknown } = {},
-): { markDisplayDirty: () => void } {
-	const mounted = mountViewControls(figure, stage, threeDMolViewControl(viewer), format, viewIdentity, options);
-	viewer.render();
-	viewer.resize();
-	const onThemeChange = (event: Event) => {
-		if (!figure.isConnected) {
-			window.removeEventListener('themechange', onThemeChange);
-			return;
-		}
-		viewer.setBackgroundColor((event as CustomEvent<string>).detail === 'dark' ? '#181c1b' : '#ffffff');
-		viewer.render();
-	};
-	window.addEventListener('themechange', onThemeChange);
-	return mounted;
-}
-
-/** The formats fast-mol draws, by the name the renderer gives them; the others are still 3Dmol's. */
-const FAST_MOL_FORMATS: Readonly<Record<string, string>> = { xyz: 'xyz', sdf: 'sdf' };
 
 function createFigure(kind: string, source: string, loadingText: string): HTMLElement {
 	const figure = document.createElement('figure');
@@ -425,27 +329,12 @@ export async function hydrateMoleculePreview(figure: HTMLElement): Promise<void>
 			return;
 		}
 
-		const fastMolFormat = FAST_MOL_FORMATS[renderInput.format];
-		if (fastMolFormat) {
-			stage.textContent = '';
-			const viewer = await createMoleculeViewer(stage);
-			if (!figure.isConnected) return viewer.dispose();
-			viewer.loadText(renderInput.source, fastMolFormat);
-			stage.setAttribute('aria-label', `${renderInput.format} 三维分子结构，可拖动旋转和滚轮缩放`);
-			mountViewControls(figure, stage, fastMolViewControl(viewer), renderInput.format, renderInput.source);
-			return;
-		}
-
-		const $3Dmol = await load3Dmol();
-		if (!figure.isConnected) return;
 		stage.textContent = '';
-		const viewer = $3Dmol.createViewer(stage, {
-			backgroundColor: document.documentElement.dataset.theme === 'dark' ? '#181c1b' : '#ffffff',
-		});
-		viewer.addModel(renderInput.source, renderInput.format);
-		viewer.setStyle({}, { stick: { radius: 0.16 }, sphere: { scale: 0.28 } });
+		const viewer = await createMoleculeViewer(stage);
+		if (!figure.isConnected) return viewer.dispose();
+		viewer.loadText(renderInput.source, renderInput.format);
 		stage.setAttribute('aria-label', `${renderInput.format} 三维分子结构，可拖动旋转和滚轮缩放`);
-		mount3DMolInteraction(figure, stage, viewer, renderInput.format, renderInput.source);
+		mountViewControls(figure, stage, fastMolViewControl(viewer), renderInput.format, renderInput.source);
 	} catch (error) {
 		stage.textContent = error instanceof Error ? error.message : '分子结构渲染失败';
 		figure.classList.add('chem-error');

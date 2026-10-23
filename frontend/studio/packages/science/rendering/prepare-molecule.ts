@@ -42,7 +42,7 @@ export function prepareMoleculeRenderInput(
 	}
 	return {
 		status: 'ready',
-		renderer: '3dmol',
+		renderer: 'fast-mol',
 		source: block.language === 'gjf' || block.language === 'com' ? gaussianToXyz(source) : source,
 		format: block.viewerFormat,
 		label,

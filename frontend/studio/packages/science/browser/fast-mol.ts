@@ -29,7 +29,8 @@ export function pageBackground(): string {
 export async function createMoleculeViewer(root: HTMLElement): Promise<FastMolViewer> {
 	const { createViewer } = await loadFastMol();
 	const viewer = createViewer(root);
-	viewer.set({ background: pageBackground() });
+	// Still, as the author saved it: fast-mol turns a molecule by itself unless told not to.
+	viewer.set({ background: pageBackground(), autoRotate: false });
 	const follow = () => {
 		if (!root.isConnected) {
 			window.removeEventListener('themechange', follow);

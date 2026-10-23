@@ -4,9 +4,8 @@ import { sdfHas3DCoordinates } from './sdf.ts';
 
 const EXPLICIT_TWO_D_FORMATS = new Set(['smiles', 'sdf-2d', 'mol-2d']);
 const THREE_D_FORMATS: Readonly<Record<string, MoleculeViewerFormat>> = {
-	xyz: 'xyz', gjf: 'xyz', com: 'xyz', pdb: 'pdb', mol2: 'mol2', cif: 'cif', cube: 'cube',
-	'sdf-3d': 'sdf', 'mol-3d': 'sdf', 'xyz-3d': 'xyz', 'pdb-3d': 'pdb',
-	'mol2-3d': 'mol2', 'cif-3d': 'cif', 'cube-3d': 'cube',
+	xyz: 'xyz', gjf: 'xyz', com: 'xyz', cube: 'cube',
+	'sdf-3d': 'sdf', 'mol-3d': 'sdf', 'xyz-3d': 'xyz', 'cube-3d': 'cube',
 };
 
 /**

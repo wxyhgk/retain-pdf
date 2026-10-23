@@ -7,7 +7,7 @@ import { renderScienceCodeBlocks } from '@blog/science/browser/science-renderer.
 
 /**
  * The blog's pages: the chemistry fences build.mjs left as code are drawn
- * (@blog/science: RDKit for flat structures, 3Dmol for those in space and
+ * (@blog/science: RDKit for flat structures, fast-mol for those in space and
  * cubes), each 3D one from the view the author saved in the Studio
  * (article.views.json); a block that is a file of the article reads it from
  * where the article publishes its files.

@@ -25,7 +25,7 @@ test('prepares the same RDKit input for blog and Studio adapters', () => {
 test('prepares GJF as XYZ before a 3D renderer sees it', async () => {
 	const input = prepareMoleculeRenderInput(molecule('gjf', await fixture('water.gjf')));
 	assert.equal(input.status, 'ready');
-	assert.equal(input.renderer, '3dmol');
+	assert.equal(input.renderer, 'fast-mol');
 	assert.equal(input.format, 'xyz');
 	assert.match(input.source, /^3\nGaussian input\nO /);
 	assert.doesNotMatch(input.source, /%chk|#p b3lyp/);
@@ -35,7 +35,7 @@ test('passes native 3D formats through unchanged', () => {
 	const xyz = '1\nhelium\nHe 0 0 0';
 	const input = prepareMoleculeRenderInput(molecule('xyz', xyz));
 	assert.equal(input.status, 'ready');
-	assert.equal(input.renderer, '3dmol');
+	assert.equal(input.renderer, 'fast-mol');
 	assert.equal(input.format, 'xyz');
 	assert.equal(input.source, xyz);
 });
@@ -57,6 +57,6 @@ test('classifies an auto SDF only after a host resolves its file source', async 
 	assert.equal(twoD.status, 'ready');
 	assert.equal(twoD.renderer, 'rdkit');
 	assert.equal(threeD.status, 'ready');
-	assert.equal(threeD.renderer, '3dmol');
+	assert.equal(threeD.renderer, 'fast-mol');
 	assert.equal(threeD.format, 'sdf');
 });
