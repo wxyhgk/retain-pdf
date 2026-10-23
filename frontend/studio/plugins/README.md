@@ -166,7 +166,7 @@ export function apply(ctx: Context): void {
 - `bookmark/`：网页书签（```bookmark）。四个环境都有，是一个小而完整的块插件：`bookmark.mjs` 是格式和卡片（构建和 Studio 共用一份 HAST），`server.mjs` 在 Studio 里读一次网页（DOI 问 doi.org），读到的写进文章，构建不联网。
 - `word-count/`：字数统计。只有 `studio.ts`：右栏页签（听 `studio/source-changed`，只在看得见时重算）、左栏按钮、一个插入统计的命令。写界面插件可以照着它。
 - `recognize/`：识别图片。只有 `studio.ts`：往 `ctx.recognizers` 里登记四种读法（公式、文字、表格、分子结构），是加一种识别的例子。
-- `chemistry/`：化学块（```smiles、```sdf、```xyz、```cube…）。构建时只认领这些 fence、原样留着；`page.ts` 在页面上画（RDKit 画平面的，3Dmol 画三维的，用作者存的视角）；`studio.ts` 是编辑器里的块、弹窗（「结构」用 Structura 画平面结构、三维的交给 `ctx.molecules`；「源码」）、块菜单、「化学」斜杠菜单。解析和绘图的库在 `packages/science`，计算块也用它。
+- `chemistry/`：化学块（```smiles、```sdf、```xyz、```cube…）。构建时只认领这些 fence、原样留着；`page.ts` 在页面上画（RDKit 画平面的，fast-mol 画三维的（cube 和 PDB、mol2、CIF 暂时还是 3Dmol），用作者存的视角）；`studio.ts` 是编辑器里的块、弹窗（「结构」用 Structura 画平面结构、三维的交给 `ctx.molecules`；「源码」）、块菜单、「化学」斜杠菜单。解析和绘图的库在 `packages/science`，计算块也用它。
 - `widget/`：交互模块（```widget）。构建时变成沙盒 iframe（`rehype` 在 HTML 安全检查之后放进页面），页面和 Studio 里告诉它主题、读文章的文件（`widget-host.ts`）；Studio 里它是普通代码块，用 `codeBlock` 预览。
 - `video/`：视频（```video）。第一行是 B 站或 YouTube 的链接，构建和 Studio 里都是它们的播放器（沙盒 iframe）；是文章 `assets/` 里的视频文件（mp4、mov、webm…），就只在本机：Studio 里能放，自动截一帧做封面放进 `img/`，博客上只显示封面。视频文件不进 git（`.gitignore`）、构建也不发布（`LOCAL_ONLY_EXTENSIONS`，`packages/markdown/articles/rules.mjs`）。B 站的短链接（b23.tv）由 `server.mjs` 打开成完整链接。
 - `energy/`：反应能量图（```energy）。一行一个物种（名字 能量），`# 名字` 开始另一条路径。`energy.mjs` 把它画成 SVG（HAST），构建和 Studio 共用一份：构建时直接写进页面，页面不用脚本；Studio 里它是普通代码块，用 `codeBlock` 预览。是只用 `build.mjs` 加 `codeBlock` 就能做的最小的块。

@@ -20,6 +20,8 @@
 html[data-theme='dark'] .chem-2d .chem-stage svg { filter: invert(1) hue-rotate(180deg); }
 .chem-stage svg { display: block; width: 100%; height: auto; max-height: 420px; border-radius: 0; }
 .chem-3d .chem-stage { position: relative; height: 430px; }
+/* fast-mol draws into a canvas of its own that fills the stage. */
+.chem-3d .chem-stage > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 .chem-view-controls {
 	display: flex;

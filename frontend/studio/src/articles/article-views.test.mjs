@@ -37,3 +37,12 @@ test('camera-only Cube saves preserve an already-valid display configuration', (
 	const second = writeMoleculeView(first, 'cube123', 'cube', nextView);
 	assert.deepEqual(readMoleculeViews(second).cube123, { format: 'cube', view: nextView, display });
 });
+
+test('a fast-mol view (orientation, zoom, pan) is saved and read beside the 3Dmol ones saved before', () => {
+	const turned = { rotation: [1, 0, 0, 0, 0, -1, 0, 1, 0], zoom: 1.4, pan: { x: 12, y: -3 } };
+	const first = writeMoleculeView(JSON.stringify({ version: 1, molecules: { old123: { format: 'xyz', view } } }), 'water123', 'xyz', { ...turned, extra: 'dropped' });
+	assert.deepEqual(readMoleculeViews(first), { old123: { format: 'xyz', view }, water123: { format: 'xyz', view: turned } });
+	for (const wrong of [{ ...turned, rotation: [1, 0, 0] }, { ...turned, zoom: 0 }, { ...turned, pan: { x: 1 } }, 'view']) {
+		assert.throws(() => writeMoleculeView('', 'water123', 'xyz', wrong), ArticleViewsError);
+	}
+});
