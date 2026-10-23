@@ -116,7 +116,11 @@ export function onlineVideo(src) {
 		if (Number.isInteger(page) && page > 1) player.set('p', String(page));
 		const start = seconds(query.get('t'));
 		if (start) player.set('t', String(start));
+		// As embedding sites set it (Bilibili documents none of these): not playing by itself, the best
+		// quality one may watch, the comments (弹幕) off.
 		player.set('autoplay', '0');
+		player.set('high_quality', '1');
+		player.set('danmaku', '0');
 		return { provider: 'bilibili', embed: `https://player.bilibili.com/player.html?${player}` };
 	}
 
@@ -164,11 +168,14 @@ export function videoFigure(video, { fileUrl, play = false }) {
 	};
 	let inside;
 	if (online) {
+		// As YouTube's own embed code has it: the player is told which page it is in (the Referer; without
+		// it YouTube plays nothing, error 153), and given what it may use.
 		inside = element('iframe', {
 			src: online.embed,
 			title: video.caption || '视频',
 			loading: 'lazy',
-			allow: 'fullscreen; picture-in-picture; encrypted-media',
+			allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen',
+			referrerPolicy: 'strict-origin-when-cross-origin',
 			allowFullScreen: true,
 			// The player may not take the page it is in elsewhere.
 			sandbox: 'allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox',

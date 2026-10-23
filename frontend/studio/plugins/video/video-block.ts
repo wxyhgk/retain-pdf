@@ -60,7 +60,7 @@ export function videoMarkdown(path: string): string {
 
 type Hast = { type: 'element'; tagName: string; properties: Record<string, unknown>; children: (Hast | { type: 'text'; value: string })[] };
 
-const ATTRIBUTE_NAMES: Record<string, string> = { allowFullScreen: 'allowfullscreen', playsInline: 'playsinline' };
+const ATTRIBUTE_NAMES: Record<string, string> = { allowFullScreen: 'allowfullscreen', playsInline: 'playsinline', referrerPolicy: 'referrerpolicy' };
 
 function toDom(node: Hast): HTMLElement {
 	const element = document.createElement(node.tagName);

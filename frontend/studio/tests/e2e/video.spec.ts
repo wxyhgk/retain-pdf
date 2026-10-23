@@ -44,7 +44,8 @@ test('视频 from the slash menu takes a Bilibili link (a short one opened first
 	await page.keyboard.type('https://b23.tv/abc');
 	await page.keyboard.press('Enter');
 	const player = block(page).locator('iframe');
-	await expect(player).toHaveAttribute('src', 'https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&autoplay=0');
+	await expect(player).toHaveAttribute('src', 'https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&autoplay=0&high_quality=1&danmaku=0');
+	await expect(player).toHaveAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
 	await expect(player).toHaveAttribute('sandbox', /allow-scripts/u);
 
 	// A caption under it, as under a picture.

@@ -49,10 +49,10 @@ test('a fence is its address, then its cover, caption and width, written back as
 
 test('links to Bilibili and YouTube, as copied from the browser, become their players', () => {
 	const embed = (url: string) => onlineVideo(url)?.embed ?? null;
-	assert.equal(embed('https://www.bilibili.com/video/BV1GJ411x7h7/?spm_id_from=333&vd_source=abc'), 'https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&autoplay=0');
-	assert.equal(embed('https://www.bilibili.com/video/BV1GJ411x7h7?p=3&t=95.2'), 'https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&p=3&t=95&autoplay=0');
-	assert.equal(embed('https://m.bilibili.com/video/av170001'), 'https://player.bilibili.com/player.html?aid=170001&autoplay=0');
-	assert.equal(embed('https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&page=2'), 'https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&p=2&autoplay=0');
+	assert.equal(embed('https://www.bilibili.com/video/BV1GJ411x7h7/?spm_id_from=333&vd_source=abc'), 'https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&autoplay=0&high_quality=1&danmaku=0');
+	assert.equal(embed('https://www.bilibili.com/video/BV1GJ411x7h7?p=3&t=95.2'), 'https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&p=3&t=95&autoplay=0&high_quality=1&danmaku=0');
+	assert.equal(embed('https://m.bilibili.com/video/av170001'), 'https://player.bilibili.com/player.html?aid=170001&autoplay=0&high_quality=1&danmaku=0');
+	assert.equal(embed('https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&page=2'), 'https://player.bilibili.com/player.html?bvid=BV1GJ411x7h7&p=2&autoplay=0&high_quality=1&danmaku=0');
 	assert.equal(embed('https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s'), 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=90');
 	assert.equal(embed('https://youtu.be/dQw4w9WgXcQ?t=42'), 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?start=42');
 	assert.equal(embed('https://youtube.com/shorts/dQw4w9WgXcQ'), 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ');
@@ -78,7 +78,7 @@ test('a video of the article is a video file in its assets/ or img/; its cover g
 test('on the blog a video online is its player, in a frame that may not take the page', async () => {
 	const { html, messages } = await render('```video\nhttps://www.bilibili.com/video/BV1GJ411x7h7\ncaption: 演示\nwidth: 70%\n```\n');
 	assert.deepEqual(messages, []);
-	assert.match(html, /^<figure class="note-video is-online" data-provider="bilibili" style="--figure-width: 70%"><div class="note-video-frame"><iframe src="https:\/\/player\.bilibili\.com\/player\.html\?bvid=BV1GJ411x7h7&#x26;autoplay=0" title="演示" loading="lazy" allow="fullscreen; picture-in-picture; encrypted-media" allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"><\/iframe><\/div><figcaption>演示<\/figcaption><\/figure>$/u);
+	assert.match(html, /^<figure class="note-video is-online" data-provider="bilibili" style="--figure-width: 70%"><div class="note-video-frame"><iframe src="https:\/\/player\.bilibili\.com\/player\.html\?bvid=BV1GJ411x7h7&#x26;autoplay=0&#x26;high_quality=1&#x26;danmaku=0" title="演示" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"><\/iframe><\/div><figcaption>演示<\/figcaption><\/figure>$/u);
 });
 
 test('on the blog a video of the article is its cover: the video itself is never published', async () => {
