@@ -1,0 +1,40 @@
+{
+	"program": "orca",
+	"version": "6.0.1",
+	"route": "! B3LYP def2-SVP Opt Freq",
+	"method": "B3LYP",
+	"reference": "R",
+	"basis": "def2-SVP",
+	"jobs": ["opt","freq"],
+	"charge": 0,
+	"multiplicity": 1,
+	"terminated": true,
+	"errors": [],
+	"energy": -188.36045035473737,
+	"steps": [-188.355293991406,-188.360401695305,-188.360449436856,-188.360450353025],
+	"optimization": {"converged":true,"cycles":4},
+	"atoms": [
+		{"symbol":"C","x":0,"y":0,"z":0},
+		{"symbol":"O","x":0,"y":0,"z":1.163312},
+		{"symbol":"O","x":0,"y":0,"z":-1.163312}
+	],
+	"vibrations": [
+		{
+			"frequency": 652.11,
+			"intensity": 32.77,
+			"symmetry": null,
+			"displacements": [[0.244872,-0.84864,0],[-0.091917,0.318552,0],[-0.091917,0.318552,0]]
+		},
+		{"frequency":652.11,"intensity":32.77,"symmetry":null},
+		{"frequency":1387.73,"intensity":0,"symmetry":null},
+		{"frequency":2469.79,"intensity":612.11,"symmetry":null}
+	],
+	"imaginary": 0,
+	"thermo": {"temperature":298.15,"zpe":0.01175933,"enthalpy":-188.34511153,"freeEnergy":-188.37005065},
+	"homo": -0.370166,
+	"lumo": 0.033527,
+	"s2": null,
+	"excited": [],
+	"dipole": 0.000027877,
+	"wallTime": 25.121
+}

@@ -27,6 +27,7 @@ H   0.000000  -0.757200  -0.469200
 | `parsers/xtb.ts` | `xtb.out`（能量、自由能、能隙、偶极、优化的每一步、虚频、出错原因）、`vibspectrum`、`g98.out`（振动模式） |
 | `parsers/crest.ts` | `crest.out`，以及构象的相对能量和玻尔兹曼占比 |
 | `parsers/xyz-frames.ts` | 多帧 XYZ（`xtbopt.log`、`crest_conformers.xyz`） |
+| `parsers/qc/` | Gaussian、ORCA 的输出读成同一种数据（`QcOutput`）：能量、优化过程、结构、振动和红外、热力学、前线轨道、激发态、出错原因。测试用的真实输出和每个的答案在 `test/fixtures/qc/`；怎么修、怎么加见 `parsers/qc/README.md` |
 | `browser/job-card.ts` | 页面上的卡片：名字、状态，加上一行关键数字（或运行进度、出错原因），旁边一张不用 WebGL 的小结构图 |
 | `browser/job-view.ts` | 详情窗口（`@blog/ui` 的 `openBlockSheet`）里的内容：`drawRun` / `summarizeRun` 交给程序的 `ProgramView`；给程序用的零件：数值、优化曲线、红外光谱（点一下看振动）、构象表、结构；输出；小结构图 `structureThumbnail` |
 | `programs.mjs` | 计算程序接缝 `ctx.jobs`（`JobPrograms`）和程序的类型（`programs.d.mts`）。程序本身是插件：`plugins/xtb`、`plugins/crest` |

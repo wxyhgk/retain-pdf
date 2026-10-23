@@ -1,0 +1,39 @@
+{
+	"program": "gaussian",
+	"version": "16 Rev. C.01",
+	"route": "#p B3LYP/def2SVP Opt(TS,CalcFC,NoEigenTest) Freq",
+	"method": "B3LYP",
+	"reference": "R",
+	"basis": "def2SVP",
+	"jobs": ["opt","ts","freq"],
+	"charge": 0,
+	"multiplicity": 1,
+	"terminated": true,
+	"errors": [],
+	"energy": -93.2758251235,
+	"steps": [-93.2756852957,-93.2758251235],
+	"optimization": {"converged":true,"cycles":2},
+	"atoms": [
+		{"symbol":"C","x":0.081174,"y":0.620803,"z":0},
+		{"symbol":"N","x":0.081174,"y":-0.567189,"z":0},
+		{"symbol":"H","x":-1.055265,"y":0.245505,"z":0}
+	],
+	"vibrations": [
+		{
+			"frequency": -1123.106,
+			"intensity": 89.2864,
+			"symmetry": "A'",
+			"displacements": [[-0.07,-0.05,0],[0.07,-0.02,0],[-0.15,0.98,0]]
+		},
+		{"frequency":2093.3118,"intensity":10.3077,"symmetry":"A'"},
+		{"frequency":2630.7802,"intensity":151.3908,"symmetry":"A'"}
+	],
+	"imaginary": 1,
+	"thermo": {"temperature":298.15,"zpe":0.010762,"enthalpy":-93.261286,"freeEnergy":-93.286071},
+	"homo": -0.34243,
+	"lumo": -0.06475,
+	"s2": null,
+	"excited": [],
+	"dipole": 1.2827,
+	"wallTime": 5.5
+}

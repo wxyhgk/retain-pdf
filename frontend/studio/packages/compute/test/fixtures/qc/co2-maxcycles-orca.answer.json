@@ -1,0 +1,30 @@
+{
+	"program": "orca",
+	"version": "6.0.1",
+	"route": "! B3LYP def2-SVP Opt",
+	"method": "B3LYP",
+	"reference": "R",
+	"basis": "def2-SVP",
+	"jobs": ["opt"],
+	"charge": 0,
+	"multiplicity": 1,
+	"terminated": true,
+	"errors": ["The optimization did not converge but reached the maximum number of optimization cycles."],
+	"energy": -188.32510510583683,
+	"steps": [-188.250672937891,-188.325105105837],
+	"optimization": {"converged":false,"cycles":2},
+	"atoms": [
+		{"symbol":"C","x":0,"y":0.047495,"z":0},
+		{"symbol":"O","x":1.20939,"y":0.325252,"z":0},
+		{"symbol":"O","x":-1.20939,"y":0.325252,"z":0}
+	],
+	"vibrations": [],
+	"imaginary": null,
+	"thermo": null,
+	"homo": -0.358035,
+	"lumo": -0.145606,
+	"s2": null,
+	"excited": [],
+	"dipole": null,
+	"wallTime": 5.921
+}
