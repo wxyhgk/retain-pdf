@@ -1,10 +1,11 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
-import { appendToFixture, editor, openStudio, resetFixture } from './studio.ts';
+import { appendToFixture, editFixture, editor, openStudio, resetFixture, writeFixtureFile } from './studio.ts';
 
 // The text being read stays where it is while things above it change: a code block put to sleep off screen, a
-// widget loading, a picture drawn. Chrome keeps it there by itself (scroll anchoring); WebKit, which shows the
-// Studio in the Mac app, doesn't.
+// widget loading, a picture drawn, a block selected. Chrome keeps it there by itself (scroll anchoring); WebKit,
+// which shows the Studio in the Mac app, doesn't.
 
 test.beforeEach(() => resetFixture());
 
@@ -75,4 +76,25 @@ test('where the browser doesn’t anchor the scroll, the Studio does: text in vi
 	await page.locator('.editor-scroll').evaluate((scroller) => (scroller.scrollTop -= 300));
 	await frames(page);
 	expect(await topOf(page, 40)).toBe(before + 300);
+});
+
+test('selecting a formula or a picture whole doesn’t move the article (a heading first in it stays where it is)', async ({ page }) => {
+	writeFixtureFile('img/plot.png', readFileSync(new URL('./fixtures/plot.png', import.meta.url)));
+	editFixture((markdown) => markdown.replace('\n开头段落', '\n# 开头的标题\n\n![势能面](./img/plot.png){width=40%}\n\n开头段落'));
+	await openStudio(page);
+	const heading = editor(page).locator('h1', { hasText: '开头的标题' });
+	const top = () => heading.evaluate((h) => Math.round(h.getBoundingClientRect().top));
+	const before = await top();
+
+	// A block selected whole: the caret's mark at the article's start goes away…
+	await editor(page).locator('figure.pm-figure img').click();
+	await frames(page);
+	expect(await top()).toBe(before);
+	await editor(page).locator('.pm-display-math-formula').first().click();
+	await frames(page);
+	expect(await top()).toBe(before);
+	// …and back with the caret.
+	await editor(page).locator('p', { hasText: '开头段落' }).click();
+	await frames(page);
+	expect(await top()).toBe(before);
 });

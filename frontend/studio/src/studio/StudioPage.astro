@@ -618,9 +618,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror h1) { font-size: 1.7em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; margin: 1.5em 0 0.35em; }
 	:global(.crepe-host .milkdown .ProseMirror h2) { font-size: 1.35em; font-weight: 700; line-height: 1.3; margin: 1.5em 0 0.3em; }
 	:global(.crepe-host .milkdown .ProseMirror h3) { font-size: 1.12em; font-weight: 650; line-height: 1.35; margin: 1.2em 0 0.25em; }
+	/* The caret's own mark (prosemirror-virtual-cursor) is put first in the article while there is a caret, and taken
+	   away while a block is selected: the heading after it is still the first, or the article jumps at every click. */
 	:global(.crepe-host .milkdown .ProseMirror h1:first-child),
 	:global(.crepe-host .milkdown .ProseMirror h2:first-child),
-	:global(.crepe-host .milkdown .ProseMirror h3:first-child) { margin-top: 0.15em; }
+	:global(.crepe-host .milkdown .ProseMirror h3:first-child),
+	:global(.crepe-host .milkdown .ProseMirror > :is(.ProseMirror-widget, .prosemirror-virtual-cursor):first-child + :is(h1, h2, h3)) { margin-top: 0.15em; }
 	:global(.crepe-host .milkdown .ProseMirror p) { margin: 0; padding: 2px 0; line-height: 1.65; }
 	/* Paragraphs, lists and quotes keep apart as on the blog; inside a list or quote they stay close. */
 	:global(.crepe-host .milkdown .ProseMirror > p),
