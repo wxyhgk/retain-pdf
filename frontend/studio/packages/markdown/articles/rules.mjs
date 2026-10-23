@@ -16,6 +16,19 @@ export const ARTICLE_FOLDERS = Object.freeze(['img', 'assets', 'ai']);
 /** The ones published with it (`ai/` stays private). */
 export const PUBLISHED_FOLDERS = Object.freeze(['img', 'assets']);
 
+/**
+ * Files kept on the author's machine only, wherever they are in the article: videos (too big for
+ * git). The Studio shows and plays them; git ignores them (.gitignore) and the build publishes
+ * nothing of them (a ```video block shows its cover instead).
+ */
+export const LOCAL_ONLY_EXTENSIONS = Object.freeze(['mp4', 'm4v', 'mov', 'webm', 'mkv']);
+
+/** Whether a file of an article (`assets/run.mp4`) stays on this machine only. */
+export function isLocalOnly(path) {
+	const match = /\.([^./]+)$/u.exec(String(path ?? ''));
+	return Boolean(match && LOCAL_ONLY_EXTENSIONS.includes(match[1].toLowerCase()));
+}
+
 /** An address of one of the blog's articles: `/blog/<slug>/`, `/wiki/<slug>/#eq-1`; [1] is `blog` or `wiki`, [2] the slug. */
 export const ARTICLE_ADDRESS = new RegExp(`^/(blog|wiki)/(${SLUG})/?(?:[#?].*)?$`, 'u');
 

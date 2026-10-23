@@ -90,7 +90,8 @@ fn open_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
                 studio_open.store(true, Ordering::Relaxed);
                 return true;
             }
-            let ours = matches!(url.scheme(), "about" | "blob" | "data");
+            // A video's player in its frame (the ```video block) loads its pages: not the Studio leaving.
+            let ours = matches!(url.scheme(), "about" | "blob" | "data") || is_player(url);
             if !ours {
                 open_outside(url.as_str());
             }
@@ -342,6 +343,31 @@ fn stop_started(app: &AppHandle) {
 fn is_local(url: &Url) -> bool {
     matches!(url.scheme(), "http" | "https" | "ws")
         && matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"))
+}
+
+/// The sites of the video players a ```video block shows (Bilibili's, YouTube's) and what they load in
+/// their frames. WebKit asks about a frame's pages as about the window's; the players' frames may not
+/// take the window (`sandbox`), so these are only ever theirs.
+const PLAYER_SITES: &[&str] = &[
+    "bilibili.com",
+    "hdslb.com",
+    "biliapi.net",
+    "youtube-nocookie.com",
+    "youtube.com",
+    "ytimg.com",
+    "googlevideo.com",
+    "google.com",
+    "gstatic.com",
+    "doubleclick.net",
+];
+
+fn is_player(url: &Url) -> bool {
+    url.scheme() == "https"
+        && url.host_str().is_some_and(|host| {
+            PLAYER_SITES
+                .iter()
+                .any(|site| host == *site || host.strip_suffix(site).is_some_and(|rest| rest.ends_with('.')))
+        })
 }
 
 fn open_outside(url: &str) {

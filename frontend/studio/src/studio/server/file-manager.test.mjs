@@ -102,6 +102,10 @@ test('an upload over the limit leaves nothing behind', async (t) => {
 	const { paths: bundle, files } = await fixture(t, { uploadSizeLimit: 4 });
 	await assert.rejects(files.upload('note', 'assets', 'big.cube', bytes('12345')), UploadTooLargeError);
 	assert.deepEqual(await readdir(bundle.assets), []);
+	// A video, never in git, may be larger.
+	assert.equal(files.uploadLimitFor('run.cube'), 4);
+	assert.ok(files.uploadLimitFor('Run.MP4') > 1024 * 1024 * 1024);
+	assert.deepEqual(await files.upload('note', 'assets', 'run.mp4', bytes('12345')), { path: 'assets/run.mp4', size: 5 });
 });
 
 test('uploads go only into existing managed folders', async (t) => {

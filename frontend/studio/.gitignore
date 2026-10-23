@@ -39,3 +39,11 @@ playwright-report/
 
 # earlier versions of articles the Studio keeps (ai/history), local only
 blog/*/ai/history/
+
+# videos in articles stay on the author's machine (too big for git); the page shows a ```video block's cover
+# (LOCAL_ONLY_EXTENSIONS in packages/markdown/articles/rules.mjs)
+blog/**/*.[mM][pP]4
+blog/**/*.[mM]4[vV]
+blog/**/*.[mM][oO][vV]
+blog/**/*.[wW][eE][bB][mM]
+blog/**/*.[mM][kK][vV]

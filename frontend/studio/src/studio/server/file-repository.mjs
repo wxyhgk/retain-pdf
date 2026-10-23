@@ -32,11 +32,15 @@ const CONTENT_TYPES = Object.freeze({
 	'.jpg': 'image/jpeg',
 	'.json': 'application/json; charset=utf-8',
 	'.log': TEXT,
+	'.m4v': 'video/mp4',
 	'.md': 'text/markdown; charset=utf-8',
 	'.mdp': TEXT,
 	'.mol': TEXT,
+	'.mkv': 'video/x-matroska',
 	'.mol2': TEXT,
 	'.molden': TEXT,
+	'.mov': 'video/quicktime',
+	'.mp4': 'video/mp4',
 	'.out': TEXT,
 	'.pdb': TEXT,
 	'.pdf': 'application/pdf',
@@ -53,6 +57,7 @@ const CONTENT_TYPES = Object.freeze({
 	'.tsv': 'text/tab-separated-values; charset=utf-8',
 	'.txt': TEXT,
 	'.vasp': TEXT,
+	'.webm': 'video/webm',
 	'.webp': 'image/webp',
 	'.wfn': TEXT,
 	'.wfx': TEXT,
@@ -130,11 +135,37 @@ export class FileRepository {
 		}
 	}
 
-	/** A file of `img/` or `assets/` as a stream, for serving it whatever its size. */
-	async stream(slug, root, resourcePath) {
+	/**
+	 * A file of `img/` or `assets/` as a stream, for serving it whatever its size; with `range` (a
+	 * request's Range header), only the bytes it asks for (`range` says which, or 'unsatisfiable').
+	 */
+	async stream(slug, root, resourcePath, { range: header } = {}) {
 		const { handle, size, contentType } = await this.open(slug, root, resourcePath);
-		return { body: handle.createReadStream(), contentType, size };
+		const range = byteRange(header, size);
+		if (range === 'unsatisfiable') {
+			await handle.close();
+			return { body: null, contentType, size, range };
+		}
+		return { body: handle.createReadStream(range ? { start: range.start, end: range.end } : {}), contentType, size, range };
 	}
+}
+
+/**
+ * The bytes a Range header asks of a file of `size` bytes (`bytes=0-`, `bytes=100-199`, `bytes=-500`):
+ * `{ start, end }`, both included; null for the whole file (no header, or one not understood,
+ * or several ranges); 'unsatisfiable' when it starts past the end.
+ */
+export function byteRange(header, size) {
+	const match = /^bytes=(\d*)-(\d*)$/u.exec(String(header ?? '').trim());
+	if (!match || (!match[1] && !match[2])) return null;
+	if (!match[1]) {
+		const length = Math.min(Number(match[2]), size);
+		return length > 0 ? { start: size - length, end: size - 1 } : 'unsatisfiable';
+	}
+	const start = Number(match[1]);
+	if (start >= size) return 'unsatisfiable';
+	const end = match[2] ? Math.min(Number(match[2]), size - 1) : size - 1;
+	return end < start ? null : { start, end };
 }
 
 export function assertPublicResourceRoot(root) {

@@ -6,6 +6,7 @@ import test from 'node:test';
 import { ArticleRepository } from './article-repository.mjs';
 import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
 import {
+	byteRange,
 	FileRepository,
 	ResourceAccessError,
 	ResourceTooLargeError,
@@ -51,8 +52,44 @@ test('pictures show and calculation files open as text', () => {
 	for (const path of ['assets/opt.log', 'assets/freq.out', 'assets/opt.inp', 'assets/water.fchk', 'assets/vasp/INCAR', 'assets/vasp/OUTCAR']) {
 		assert.equal(resourceContentType(path), 'text/plain; charset=utf-8', path);
 	}
+	assert.equal(resourceContentType('assets/run.MP4'), 'video/mp4');
+	assert.equal(resourceContentType('assets/run.webm'), 'video/webm');
 	assert.equal(resourceContentType('assets/water.chk'), 'application/octet-stream');
 	assert.equal(resourceContentType('assets/README'), 'application/octet-stream');
+});
+
+test('a Range header asks for part of a file: a video player seeking', () => {
+	assert.equal(byteRange(undefined, 100), null);
+	assert.deepEqual(byteRange('bytes=0-', 100), { start: 0, end: 99 });
+	assert.deepEqual(byteRange('bytes=0-1', 100), { start: 0, end: 1 });
+	assert.deepEqual(byteRange('bytes=90-200', 100), { start: 90, end: 99 });
+	assert.deepEqual(byteRange('bytes=-10', 100), { start: 90, end: 99 });
+	assert.equal(byteRange('bytes=100-', 100), 'unsatisfiable');
+	// Not understood, or several at once: the whole file.
+	assert.equal(byteRange('bytes=0-1,5-9', 100), null);
+	assert.equal(byteRange('items=0-1', 100), null);
+	assert.equal(byteRange('bytes=5-2', 100), null);
+});
+
+test('a file is streamed whole, or the bytes a Range asks for', async (t) => {
+	const { root, paths } = await fixture(t);
+	await writeFile(join(paths.assets, 'run.mp4'), '0123456789');
+	const repository = new FileRepository(root);
+	const read = async (resource) => {
+		let text = '';
+		for await (const chunk of resource.body) text += chunk;
+		return text;
+	};
+	const whole = await repository.stream('molecule-note', 'assets', 'run.mp4');
+	assert.equal(whole.range, null);
+	assert.equal(await read(whole), '0123456789');
+	const part = await repository.stream('molecule-note', 'assets', 'run.mp4', { range: 'bytes=2-4' });
+	assert.deepEqual(part.range, { start: 2, end: 4 });
+	assert.equal(part.contentType, 'video/mp4');
+	assert.equal(await read(part), '234');
+	const past = await repository.stream('molecule-note', 'assets', 'run.mp4', { range: 'bytes=10-' });
+	assert.equal(past.range, 'unsatisfiable');
+	assert.equal(past.body, null);
 });
 
 test('AI resources cannot be read through the public resource endpoint', async (t) => {

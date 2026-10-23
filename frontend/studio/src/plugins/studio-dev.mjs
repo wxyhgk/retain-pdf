@@ -78,9 +78,19 @@ function decodePathComponent(component) {
 
 /** Streams a file of the article: a log of hundreds of megabytes is served like a picture. */
 async function file(response, resource) {
-	response.statusCode = 200;
+	// Asked in part (a video's player seeking; WebKit plays nothing it cannot ask in part): those bytes.
+	response.setHeader('Accept-Ranges', 'bytes');
+	if (resource.range === 'unsatisfiable') {
+		response.statusCode = 416;
+		response.setHeader('Content-Range', `bytes */${resource.size}`);
+		response.end();
+		return;
+	}
+	const { range } = resource;
+	response.statusCode = range ? 206 : 200;
 	response.setHeader('Content-Type', resource.contentType);
-	response.setHeader('Content-Length', resource.size);
+	response.setHeader('Content-Length', range ? range.end - range.start + 1 : resource.size);
+	if (range) response.setHeader('Content-Range', `bytes ${range.start}-${range.end}/${resource.size}`);
 	response.setHeader('Cache-Control', 'no-store');
 	response.setHeader('X-Content-Type-Options', 'nosniff');
 	// Chrome's PDF viewer does not open in a sandboxed page; a PDF is not a page that could run the Studio's API.
@@ -172,7 +182,7 @@ export default function studioDev({ site } = {}) {
 						const slug = decodePathComponent(publicFileMatch[1]);
 						const root = decodePathComponent(publicFileMatch[2]);
 						const resourcePath = decodePathComponent(publicFileMatch[3]);
-						return await file(response, await files.stream(slug, root, resourcePath));
+						return await file(response, await files.stream(slug, root, resourcePath, { range: request.headers.range }));
 					} catch (error) {
 						const message = error instanceof Error ? error.message : '文章资源读取失败';
 						const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
@@ -382,7 +392,7 @@ export default function studioDev({ site } = {}) {
 						const slug = decodePathComponent(fileMatch[1]);
 						const root = decodePathComponent(fileMatch[2]);
 						const resourcePath = decodePathComponent(fileMatch[3]);
-						return await file(response, await files.stream(slug, root, resourcePath));
+						return await file(response, await files.stream(slug, root, resourcePath, { range: request.headers.range }));
 					}
 
 					// Earlier versions of an article, kept in its ai/history: the list, one of them, one more.
@@ -474,8 +484,10 @@ export default function studioDev({ site } = {}) {
 						if (action === 'POST files') {
 							assertContentType(request, 'application/octet-stream');
 							const declared = Number(request.headers['content-length']);
-							if (declared > manager.uploadSizeLimit) return json(response, 413, { error: `文件超过 ${manager.uploadSizeLimit / 1024 / 1024} MB 上传上限` });
-							const uploaded = await manager.upload(slug, url.searchParams.get('folder') ?? '', url.searchParams.get('name') ?? '', request, {
+							const name = url.searchParams.get('name') ?? '';
+							const limit = manager.uploadLimitFor(name);
+							if (declared > limit) return json(response, 413, { error: `文件超过 ${limit / 1024 / 1024} MB 上传上限` });
+							const uploaded = await manager.upload(slug, url.searchParams.get('folder') ?? '', name, request, {
 								replace: url.searchParams.get('replace') === '1',
 								subfolders: (url.searchParams.get('subfolder') ?? '').split('/').filter(Boolean),
 							});
@@ -485,9 +497,10 @@ export default function studioDev({ site } = {}) {
 						if (action === 'POST import') {
 							const { from, folder } = await readJsonChange(request);
 							const source = await drive.stream(String(from ?? ''));
-							if (source.size > manager.uploadSizeLimit) {
+							const limit = manager.uploadLimitFor(source.name);
+							if (source.size > limit) {
 								source.body.destroy();
-								return json(response, 413, { error: `${source.name} 有 ${Math.round(source.size / 1024 / 1024)} MB，超过文章文件 ${manager.uploadSizeLimit / 1024 / 1024} MB 的上限` });
+								return json(response, 413, { error: `${source.name} 有 ${Math.round(source.size / 1024 / 1024)} MB，超过文章文件 ${limit / 1024 / 1024} MB 的上限` });
 							}
 							try {
 								return json(response, 201, await manager.upload(slug, folder ?? 'assets', source.name, source.body));

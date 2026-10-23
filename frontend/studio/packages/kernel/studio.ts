@@ -49,6 +49,11 @@ export type StudioHost = {
 		/** Types plain text where the caret is, in its line (over what is selected); nothing without an editor. */
 		insertText(text: string): void;
 	};
+	/**
+	 * Puts a file into a folder of an article (`img`, `assets`, or one inside them); a taken name gets a
+	 * number (`a-1.png`) unless `replace` is set. Resolves with its path in the article (`img/a.png`).
+	 */
+	upload(slug: string, folder: string, file: File, options?: { replace?: boolean; onProgress?(loaded: number, total: number): void }): Promise<{ path: string }>;
 	/** Says something for a moment at the bottom of the page (in red when it is an error). */
 	toast(message: string, error?: boolean): void;
 	/** Opens the right column on this tab (the Studio's own `files`, `terminal`, `drive`, or a plugin's `ctx.panels`); throws when there is none. */
@@ -106,7 +111,12 @@ export type StudioBlock = Block & {
 	 * inserted from the file list becomes a ```<extension> block (when that is one of its fences);
 	 * the file list marks them with `icon`.
 	 */
-	files?: { extensions: string[]; icon?: string };
+	files?: {
+		extensions: string[];
+		icon?: string;
+		/** The Markdown it is put in as (`path` in the article: `assets/run.mp4`), when not a ```<extension> block. */
+		markdown?(path: string): string;
+	};
 };
 
 /** A molecule built or changed in an editor. */

@@ -5,13 +5,15 @@ import { basename, dirname, extname, join, resolve } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 import { Transform } from 'node:stream';
 import { articleBundlePaths, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
-import { ARTICLE_FOLDERS } from '@blog/markdown/articles/rules.mjs';
+import { ARTICLE_FOLDERS, isLocalOnly } from '@blog/markdown/articles/rules.mjs';
 import { articleSummary } from '../../articles/schemas.mjs';
 import { existingDirectory, existingEntry, exists, FileConflictError, FileNotFoundError, linkUnderFreeName, replaceInto } from './safe-fs.mjs';
 
 export { FileConflictError, FileNotFoundError };
 
 export const DEFAULT_UPLOAD_SIZE_LIMIT = 64 * 1024 * 1024;
+/** A video (kept on this machine only, never in git): as long as a recording runs. */
+export const LOCAL_ONLY_UPLOAD_SIZE_LIMIT = 8 * 1024 * 1024 * 1024;
 /** The article's own files: listed so the author sees them, changed only by the editor. */
 const LOCKED_FILES = Object.freeze(['index.md', 'article.views.json']);
 const MAX_NAME_BYTES = 255;
@@ -28,6 +30,11 @@ export class ArticleFileManager {
 		this.blogRoot = resolve(blogRoot);
 		this.trashRoot = resolve(trashRoot);
 		this.uploadSizeLimit = uploadSizeLimit;
+	}
+
+	/** How large a file of this name may be put in: a video (rules.mjs, never in git) larger than the rest. */
+	uploadLimitFor(name) {
+		return isLocalOnly(name) ? Math.max(this.uploadSizeLimit, LOCAL_ONLY_UPLOAD_SIZE_LIMIT) : this.uploadSizeLimit;
 	}
 
 	/**
@@ -71,7 +78,7 @@ export class ArticleFileManager {
 		const fileName = safeUploadName(name);
 		const temporary = join(folderPath, `.upload-${randomUUID()}`);
 		let size = 0;
-		const limit = this.uploadSizeLimit;
+		const limit = this.uploadLimitFor(fileName);
 		try {
 			await pipeline(
 				body,

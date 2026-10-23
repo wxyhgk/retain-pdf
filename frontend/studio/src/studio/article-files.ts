@@ -13,7 +13,7 @@ export const STUDIO_FILE_DRAG_TYPE = 'application/x-studio-file';
 export const DRIVE_DRAG_TYPE = 'application/x-studio-drive';
 
 /** A plugin's block that shows a file of the article: its fence (when the extension is one), and its mark in the file list. */
-export type FileBlock = { fence: string | null; icon?: string };
+export type FileBlock = { fence: string | null; icon?: string; markdown?: (path: string) => string };
 
 /** Which plugin block shows a file with this extension (a chemistry block a structure file): set by the Studio once its plugins have started. */
 let fileBlockFor: (extension: string) => FileBlock | null = () => null;
@@ -64,9 +64,10 @@ export function markdownReference(path: string): string | null {
 	const name = fileName(path);
 	const label = name.replace(/[[\]\\]/gu, '\\$&');
 	if (isImage(path)) return `![${label.replace(/\.[^.]+$/u, '')}](${linkPath(path)})`;
-	// A block a plugin draws from the file (a structure file in a chemistry block).
-	const fence = fileBlock(path)?.fence;
-	if (fence) return `\`\`\`${fence}\n@file ./${path}\n\`\`\``;
+	// A block a plugin draws from the file (a structure file in a chemistry block, a video).
+	const block = fileBlock(path);
+	if (block?.markdown) return block.markdown(path);
+	if (block?.fence) return `\`\`\`${block.fence}\n@file ./${path}\n\`\`\``;
 	// A program's input or output shows as the file, highlighted, to read or download.
 	const codeFile = codeFileLanguageForPath(path);
 	if (codeFile) return `\`\`\`${codeFile}\n@file ./${path}\n\`\`\``;

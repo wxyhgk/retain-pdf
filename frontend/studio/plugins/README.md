@@ -33,7 +33,7 @@ export function apply(ctx) { … }             // 在这里注册
 | 构建 | `ctx.blocks.register({ name, fence, remark(node, file), rehype?(tree, file) })` | 认领一种（或几种：`fence` 可以是数组）代码块；`remark` 返回替换它的节点，什么都不返回就原样留着（页面上再画），`file.message(…)` 报给发布前检查；`rehype` 在 HTML 安全检查之后拿到整页，补上只有块自己能加的（交互模块的 `srcdoc`） |
 | 页面 | `ctx.page` | `articleSlug`、`fileUrl(path)`：文章发布出去的文件地址；`views`：文章存的块的视角（article.views.json，比如分子的三维视角） |
 | Studio | `ctx.blocks.register({ name, fence, … })` | 块在编辑器里的一切，都是可选的字段，见下面「Studio 里的块」 |
-| Studio | `ctx.studio` | 打开的文章 `slug()`、正在显示（或马上要画）的文章 `shown()`、它存的块视角 `views.get()` / `views.save(key, 值)`、`article()`（`{ slug, title }`，标题是正在编辑的）、整个文件 `source()`（编辑器里的样子，没保存的也算，**含开头的 `---` 属性**）、`fileUrl(slug, path)`、`save()`；编辑器 `editor.view()`（ProseMirror）、`editor.insert(markdown)`（插成独立的块）、`editor.insertText(文字)`（插在光标所在的行里）；`toast(文字, 出错?)`、`showPanel(key)`；自己的接口 `api.get/post/put('/<插件>/…')` |
+| Studio | `ctx.studio` | 打开的文章 `slug()`、正在显示（或马上要画）的文章 `shown()`、它存的块视角 `views.get()` / `views.save(key, 值)`、`article()`（`{ slug, title }`，标题是正在编辑的）、整个文件 `source()`（编辑器里的样子，没保存的也算，**含开头的 `---` 属性**）、`fileUrl(slug, path)`、`save()`；编辑器 `editor.view()`（ProseMirror）、`editor.insert(markdown)`（插成独立的块）、`editor.insertText(文字)`（插在光标所在的行里）；`upload(slug, 文件夹, 文件, { replace?, onProgress? })`（放进文章的 `img/` 或 `assets/`，回给它在文章里的路径）、`toast(文字, 出错?)`、`showPanel(key)`；自己的接口 `api.get/post/put('/<插件>/…')` |
 | Studio | `ctx.panels` | 右栏的页签：`register({ key, label, order?, draw(pane) })`，见下面「界面：面板和命令」 |
 | Studio | `ctx.commands` | 命令：`register({ id, label, run, keys?, places? })`，可以挂快捷键、斜杠菜单、⋯ 菜单、左栏；`run(id)` 跑别人的命令 |
 | Studio | `ctx.molecules` | 分子编辑器接缝：`register(editor)` 提供一个，`editor()` 取一个 |
@@ -156,7 +156,7 @@ export function apply(ctx: Context): void {
 | `drawnWhole` | 这些节点类型由自己的视图整个画出来：审阅改动时，里面一改就算整块替换 | `chemistry/` |
 | `codeBlock: { languages, preview(language, content, meta) }` | 块就是一个普通代码块（不是自己的节点）：代码编辑器里用什么语言高亮（CodeMirror 的 `LanguageDescription`），预览画成什么（不是自己的语言就返回 null） | `widget/` |
 | `observe(root)` | 盯着编辑器的页面，把预览留下的占位画出来；返回停下的函数 | `widget/`、`chemistry/` |
-| `files: { extensions, icon }` | 文章里这些扩展名的文件归它显示：从文件栏插入、拖进正文时变成 ```扩展名 加 `@file ./路径` 的块（扩展名也是它的 fence 时），文件栏里用 `icon` 标出来 | `chemistry/`（结构文件 ⬡） |
+| `files: { extensions, icon, markdown? }` | 文章里这些扩展名的文件归它显示：从文件栏插入、拖进正文时变成 ```扩展名 加 `@file ./路径` 的块（扩展名也是它的 fence 时），给了 `markdown(路径)` 就用它写的；文件栏里用 `icon` 标出来 | `chemistry/`（结构文件 ⬡）、`video/`（视频 ▶） |
 
 ## 现有的插件
 
@@ -167,6 +167,7 @@ export function apply(ctx: Context): void {
 - `recognize/`：识别图片。只有 `studio.ts`：往 `ctx.recognizers` 里登记四种读法（公式、文字、表格、分子结构），是加一种识别的例子。
 - `chemistry/`：化学块（```smiles、```sdf、```xyz、```cube…）。构建时只认领这些 fence、原样留着；`page.ts` 在页面上画（RDKit 画平面的，3Dmol 画三维的，用作者存的视角）；`studio.ts` 是编辑器里的块、弹窗（「结构」用 Structura 画平面结构、三维的交给 `ctx.molecules`；「源码」）、块菜单、「化学」斜杠菜单。解析和绘图的库在 `packages/science`，计算块也用它。
 - `widget/`：交互模块（```widget）。构建时变成沙盒 iframe（`rehype` 在 HTML 安全检查之后放进页面），页面和 Studio 里告诉它主题、读文章的文件（`widget-host.ts`）；Studio 里它是普通代码块，用 `codeBlock` 预览。
+- `video/`：视频（```video）。第一行是 B 站或 YouTube 的链接，构建和 Studio 里都是它们的播放器（沙盒 iframe）；是文章 `assets/` 里的视频文件（mp4、mov、webm…），就只在本机：Studio 里能放，自动截一帧做封面放进 `img/`，博客上只显示封面。视频文件不进 git（`.gitignore`）、构建也不发布（`LOCAL_ONLY_EXTENSIONS`，`packages/markdown/articles/rules.mjs`）。B 站的短链接（b23.tv）由 `server.mjs` 打开成完整链接。
 - `retainmol/`：RetainMol 分子编辑器。Studio 里注册成 `ctx.molecules` 的一个实现，服务器上负责构建和提供它。计算块和化学块的三维结构都通过 `ctx.molecules` 用它，换一个编辑器不用改那些块。
 
 ## 加一种识别

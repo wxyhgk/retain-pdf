@@ -2,6 +2,7 @@ import { Context, pluginStatus, syncPlugins, type LoadedPlugin, type PluginStatu
 import { provideStudio, studioBlocks, studioPluginList, type StudioHost } from '@blog/kernel/studio.ts';
 import type { Commands, Panels, Recognizers } from '@blog/kernel/ui.ts';
 
+import type { FileBlock } from './article-files.ts';
 import { pluginModules } from './plugin-modules.ts';
 
 /**
@@ -123,12 +124,12 @@ export async function pluginBlocks() {
  * fence it writes for one (when the extension is one of its fences); null when none does, or
  * before they have started.
  */
-export function blockForFile(extension: string): { fence: string | null; icon?: string } | null {
+export function blockForFile(extension: string): FileBlock | null {
 	const blocks = started ? (studioPlugins.get('blocks') as typeof studioPlugins.blocks | undefined) : undefined;
 	const wanted = extension.toLowerCase();
 	const block = blocks ? studioBlocks(studioPlugins).find((candidate) => candidate.files?.extensions.includes(wanted)) : undefined;
 	if (!block?.files) return null;
-	return { fence: [block.fence].flat().includes(wanted) ? wanted : null, icon: block.files.icon };
+	return { fence: [block.fence].flat().includes(wanted) ? wanted : null, icon: block.files.icon, markdown: block.files.markdown };
 }
 
 /** The plugins' commands (`ctx.commands`); null before they have started. */

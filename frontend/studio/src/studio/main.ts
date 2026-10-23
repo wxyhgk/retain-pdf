@@ -522,6 +522,7 @@ void listPlugins()
 				view.focus();
 			},
 		},
+		upload: (slug, folder, file, options) => uploadArticleFile(slug, folder, file, options),
 		toast: (message, error = false) => showToast(message, error),
 		showPanel: (key) => sidePanel.show(key),
 		shown: () => shownArticle?.slug ?? null,

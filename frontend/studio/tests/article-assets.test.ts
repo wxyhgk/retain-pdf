@@ -21,6 +21,9 @@ test('only published articles have their pictures and files published; drafts an
 	write(blog, 'public-one/index.md', article(false));
 	write(blog, 'public-one/img/plot.png', PNG);
 	write(blog, 'public-one/assets/run.log', 'Normal termination\n');
+	// A video stays on the author's machine: the page shows its cover.
+	write(blog, 'public-one/assets/run.mp4', 'video');
+	write(blog, 'public-one/assets/clips/Run.MOV', 'video');
 	write(blog, 'public-one/ai/notes.md', '私下的笔记\n');
 	write(blog, 'secret-draft/index.md', article(true));
 	write(blog, 'secret-draft/assets/run.log', '还没发表的结果\n');
@@ -30,6 +33,8 @@ test('only published articles have their pictures and files published; drafts an
 	assert.deepEqual(readFileSync(join(out, 'article-assets/public-one/img/plot.png')), PNG);
 	assert.equal(readFileSync(join(out, 'article-assets/public-one/assets/run.log'), 'utf8'), 'Normal termination\n');
 	assert.equal(existsSync(join(out, 'article-assets/public-one/ai')), false);
+	assert.equal(existsSync(join(out, 'article-assets/public-one/assets/run.mp4')), false);
+	assert.equal(existsSync(join(out, 'article-assets/public-one/assets/clips/Run.MOV')), false);
 	assert.equal(existsSync(join(out, 'article-assets/secret-draft')), false);
 	assert.equal(existsSync(join(out, 'article-assets/no-article')), false);
 });
