@@ -160,13 +160,3 @@ export function parseG98Modes(text: string): NormalModes | null {
 	}
 	return { atoms, modes };
 }
-
-/** One mode as an XYZ file with each atom's displacement after its position, which 3Dmol animates. */
-export function modeToXyz(normal: NormalModes, mode: number): string {
-	const vectors = normal.modes[mode]?.displacements ?? [];
-	const rows = normal.atoms.map((atom, index) => {
-		const [dx, dy, dz] = vectors[index] ?? [0, 0, 0];
-		return [atom.symbol, atom.x, atom.y, atom.z, dx, dy, dz].map((value) => (typeof value === 'number' ? value.toFixed(6) : value)).join(' ');
-	});
-	return [String(normal.atoms.length), formulaOf(normal.atoms), ...rows].join('\n') + '\n';
-}

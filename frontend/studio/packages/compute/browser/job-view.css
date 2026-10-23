@@ -23,6 +23,8 @@
 .job-section-title { margin: 0 0 8px; color: rgb(var(--gray-dark)); font-size: 13px; font-weight: 600; }
 .job-section-note { color: rgb(var(--gray)); font-size: 12px; font-weight: 400; }
 
+/* fast-mol draws into a canvas of its own that fills the stage. */
+.job-stage > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .job-stage { position: relative; height: 300px; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); color: rgb(var(--gray)); font-size: 13px; display: grid; place-items: center; }
 
 .job-chart { margin: 0; }

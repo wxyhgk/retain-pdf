@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { ensembleTable, parseCrestOutput } from '../parsers/crest.ts';
-import { modeToXyz, parseG98Modes, parseVibSpectrum, parseXtbOutput } from '../parsers/xtb.ts';
+import { parseG98Modes, parseVibSpectrum, parseXtbOutput } from '../parsers/xtb.ts';
 import { formulaOf, frameToXyz, parseXyzFrames } from '../parsers/xyz-frames.ts';
 
 // Real outputs: xtb 6.7.1 and CREST 3.0.2 from conda-forge, on water and ethanol.
@@ -70,9 +70,6 @@ test('optimization and frequencies: thermochemistry, the spectrum without transl
 	assert.equal(normal.modes[1].intensity, 140.5693);
 	assert.deepEqual(normal.modes[0].displacements[0], [0.01, -0, 0.01]);
 	assert.deepEqual(normal.modes[2].displacements[8], [0.06, 0.25, -0.09]);
-	const lines = modeToXyz(normal, 0).trim().split('\n');
-	assert.equal(lines.length, 2 + 9);
-	assert.equal(lines[2], 'C 1.060174 0.002727 -0.072578 0.010000 0.000000 0.010000');
 });
 
 test('when xtb stops: not converged is a warning, a fatal error is its lines', () => {

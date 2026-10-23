@@ -1,7 +1,7 @@
-import { load3Dmol, type ThreeDMolViewer } from '@blog/science/browser/molecule-renderer.ts';
+import { createMoleculeViewer, type FastMolViewer } from '@blog/science/browser/fast-mol.ts';
 import { RUN_STATE_NAMES } from '../job-fence.mjs';
 import { HARTREE_IN_KCAL, type ensembleTable } from '../parsers/crest.ts';
-import { modeToXyz, type parseG98Modes, type VibrationalMode } from '../parsers/xtb.ts';
+import type { NormalModes, parseG98Modes, VibrationalMode } from '../parsers/xtb.ts';
 import { formulaOf, frameToXyz, parseXyzFrames, type XyzFrame } from '../parsers/xyz-frames.ts';
 import './job-view.css';
 
@@ -114,40 +114,54 @@ export function notes(kind: 'error' | 'warning', lines: string[]): HTMLElement |
 	return box;
 }
 
-/** A 3D view of a structure, which `show` changes: another frame, or a mode vibrating. */
-export function moleculeStage(label: string): { root: HTMLElement; show(xyz: string, options?: { vibrate?: boolean }): Promise<void> } {
+export type MoleculeStage = {
+	root: HTMLElement;
+	/** A structure (XYZ): the view kept when it has as many atoms as the one shown. */
+	show(xyz: string): Promise<void>;
+	/** Mode `index` of `normal` vibrating, with its displacement arrows; -1: the structure still. */
+	showModes(normal: NormalModes, index: number): Promise<void>;
+};
+
+/** A 3D view (fast-mol) of a structure, which changes: another frame, or a mode vibrating. */
+export function moleculeStage(label: string): MoleculeStage {
 	const root = element('div', 'job-stage');
 	root.setAttribute('role', 'img');
 	root.setAttribute('aria-label', label);
-	let viewer: ThreeDMolViewer | null = null;
-	let view: number[] | null = null;
+	let viewer: Promise<FastMolViewer> | null = null;
+	let loadedModes: NormalModes | null = null;
+	const ready = async () => {
+		viewer ??= (async () => {
+			root.textContent = '';
+			return createMoleculeViewer(root);
+		})();
+		return viewer;
+	};
+	/** Loads a structure (`load`), turned as before when the atoms are as many. */
+	const keepingView = (shown: FastMolViewer, load: () => void) => {
+		const before = shown.atomCount ? shown.view : null;
+		const count = shown.atomCount;
+		load();
+		if (before && shown.atomCount === count) shown.view = before;
+	};
 	return {
 		root,
-		async show(xyz, { vibrate = false } = {}) {
-			const $3Dmol = await load3Dmol();
+		async show(xyz) {
+			const shown = await ready();
 			if (!root.isConnected) return;
-			if (!viewer) {
-				root.textContent = '';
-				viewer = $3Dmol.createViewer(root, { backgroundColor: document.documentElement.dataset.theme === 'dark' ? '#181c1b' : '#ffffff' });
-				const theme = (event: Event) => {
-					if (!root.isConnected) return window.removeEventListener('themechange', theme);
-					viewer?.setBackgroundColor((event as CustomEvent<string>).detail === 'dark' ? '#181c1b' : '#ffffff');
-					viewer?.render();
-				};
-				window.addEventListener('themechange', theme);
-			} else {
-				view = viewer.getView();
+			loadedModes = null;
+			keepingView(shown, () => shown.loadText(xyz, 'xyz'));
+		},
+		async showModes(normal, index) {
+			const shown = await ready();
+			if (!root.isConnected) return;
+			if (loadedModes !== normal) {
+				// The modes as our readers read them (fast-mol plays any program's displacements alike).
+				const frame = Float32Array.from(normal.atoms.flatMap((atom) => [atom.x, atom.y, atom.z]));
+				const modes = normal.modes.map((mode) => ({ frequency: mode.frequency, intensity: mode.intensity, raman: null, displacements: Float32Array.from(mode.displacements.flat()) }));
+				keepingView(shown, () => shown.load({ symbols: normal.atoms.map((atom) => atom.symbol), frames: [frame], modes }));
+				loadedModes = normal;
 			}
-			const extended = viewer as ThreeDMolViewer & { clear(): void; stopAnimate(): void; animate(options: object): void; addModel(source: string, format: string, options?: object): unknown };
-			extended.stopAnimate();
-			extended.clear();
-			extended.addModel(xyz, 'xyz', vibrate ? { vibrate: { frames: 12, amplitude: 1.2 } } : undefined);
-			viewer.setStyle({}, { stick: { radius: 0.16 }, sphere: { scale: 0.28 } });
-			if (view) viewer.setView(view, true);
-			else viewer.zoomTo();
-			if (vibrate) extended.animate({ loop: 'backAndForth', interval: 60 });
-			viewer.render();
-			viewer.resize();
+			shown.modes.show(index >= 0 && index < normal.modes.length ? index : null);
 		},
 	};
 }
@@ -422,8 +436,7 @@ export function vibrationSection(modes: VibrationalMode[], normal: ReturnType<ty
 		const mode = modes[index];
 		label.textContent = index < 0 ? '最终结构' : `第 ${mode.mode} 个振动：${mode.frequency.toFixed(1)} cm⁻¹${mode.frequency < 0 ? '（虚频）' : ''}，强度 ${mode.intensity.toFixed(1)} km/mol`;
 		// g98.out lists the same modes as vibspectrum, without translations and rotations.
-		const xyz = normal && index >= 0 && normal.modes[index] ? modeToXyz(normal, index) : normal ? modeToXyz({ atoms: normal.atoms, modes: [] }, 0) : null;
-		if (xyz) void stage.show(xyz, { vibrate: index >= 0 }).catch(() => (stage.root.textContent = '三维结构画不出来'));
+		if (normal) void stage.showModes(normal, index).catch(() => (stage.root.textContent = '三维结构画不出来'));
 	};
 	modes.forEach((mode, index) => {
 		const row = element('li', `job-mode${mode.frequency < 0 ? ' is-imaginary' : ''}`);
