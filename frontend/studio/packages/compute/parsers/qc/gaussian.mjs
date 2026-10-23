@@ -1,4 +1,4 @@
-import { ELEMENTS, NUMBER, lastLine, linesOf, readRules, seconds, toNumber } from './qc.mjs';
+import { ELEMENTS, NUMBER, lastLine, linesOf, readRules, seconds, toNumber } from './common.mjs';
 
 /**
  * A Gaussian output (`.log`) read into a QcOutput (qc.mjs). An input of

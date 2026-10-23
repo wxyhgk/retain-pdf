@@ -6,7 +6,7 @@ import { Plugin, PluginKey, type EditorState } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
-import { DRIVE_DRAG_TYPE, fileName, markdownReference, STUDIO_FILE_DRAG_TYPE } from '../article-files.ts';
+import { DRIVE_DRAG_TYPE, fileName, readMarkdownReference, STUDIO_FILE_DRAG_TYPE } from '../article-files.ts';
 import { dropHasFolder } from '../dropped-files.ts';
 
 /** What dropping files into the editor needs from the Studio around it. */
@@ -15,6 +15,8 @@ export type ArticleFileDropHost = {
 	upload(files: readonly File[]): Promise<string[]>;
 	/** Copies a file of the drive (资料库) into the open article; the path it got there. */
 	fromDrive(path: string): Promise<string>;
+	/** The start of a file of the open article, to tell what wrote it (a Gaussian output among other logs). */
+	head(path: string): Promise<string | null>;
 	/** Something went wrong, or something the author should know happened. */
 	report(message: string, error?: boolean): void;
 };
@@ -80,10 +82,11 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 		const id = Symbol('upload');
 		view.dispatch(view.state.tr.setMeta(placeholderKey, { add: { id, pos, label } } satisfies PlaceholderAction));
 		task().then(
-			(paths) => {
+			async (paths) => {
+				const references = await Promise.all(paths.map((path) => readMarkdownReference(path, host.head)));
 				if (view.isDestroyed) return;
 				const at = findPlaceholder(view.state, id);
-				const markdown = paths.map(markdownReference).filter((reference): reference is string => reference !== null);
+				const markdown = references.filter((reference): reference is string => reference !== null);
 				if (at < 0) {
 					host.report(`已${verb} ${paths.join('、')}，但插入的位置已被删除`);
 					return;
@@ -151,9 +154,11 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 							upload(view, pos, files);
 							return true;
 						}
-						const reference = markdownReference(path);
-						if (reference) insertAt(view, pos, [reference]);
-						else host.report('ai/ 里的文件不随文章发布，不能插入正文', true);
+						void readMarkdownReference(path, host.head).then((reference) => {
+							if (view.isDestroyed) return;
+							if (reference) insertAt(view, Math.min(pos, view.state.doc.content.size), [reference]);
+							else host.report('ai/ 里的文件不随文章发布，不能插入正文', true);
+						});
 						return true;
 					},
 				},

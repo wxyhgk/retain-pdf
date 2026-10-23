@@ -1,4 +1,4 @@
-import { NUMBER, lastLine, linesOf, readRules, seconds } from './qc.mjs';
+import { NUMBER, lastLine, linesOf, readRules, seconds } from './common.mjs';
 
 /**
  * An ORCA output (`.out`, ORCA 6) read into a QcOutput (qc.mjs). The method

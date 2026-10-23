@@ -124,6 +124,11 @@ export type StudioBlock = Block & {
 		icon?: string;
 		/** The Markdown it is put in as (`path` in the article: `assets/run.mp4`), when not a ```<extension> block. */
 		markdown?(path: string): string;
+		/**
+		 * Only the files whose start (`head`, their first 8 KB as text) says they are its own: a
+		 * Gaussian output among the other `.log` files. The others go on as they would without it.
+		 */
+		sniff?(head: string): boolean;
 	};
 };
 

@@ -156,7 +156,7 @@ export function apply(ctx: Context): void {
 | `drawnWhole` | 这些节点类型由自己的视图整个画出来：审阅改动时，里面一改就算整块替换 | `chemistry/` |
 | `codeBlock: { languages, preview(language, content, meta) }` | 块就是一个普通代码块（不是自己的节点）：代码编辑器里用什么语言高亮（CodeMirror 的 `LanguageDescription`），预览画成什么（不是自己的语言就返回 null） | `widget/` |
 | `observe(root)` | 盯着编辑器的页面，把预览留下的占位画出来；返回停下的函数 | `widget/`、`chemistry/` |
-| `files: { extensions, icon, markdown? }` | 文章里这些扩展名的文件归它显示：从文件栏插入、拖进正文时变成 ```扩展名 加 `@file ./路径` 的块（扩展名也是它的 fence 时），给了 `markdown(路径)` 就用它写的；文件栏里用 `icon` 标出来 | `chemistry/`（结构文件 ⬡）、`video/`（视频 ▶） |
+| `files: { extensions, icon, markdown?, sniff? }` | 文章里这些扩展名的文件归它显示：从文件栏插入、拖进正文时变成 ```扩展名 加 `@file ./路径` 的块（扩展名也是它的 fence 时），给了 `markdown(路径)` 就用它写的；文件栏里用 `icon` 标出来。给了 `sniff(开头)`，就只要开头（前 8 KB）是它的那些（别的照旧），比如同是 `.log`，只要 Gaussian 写的 | `chemistry/`（结构文件 ⬡）、`video/`（视频 ▶）、`qc/`（`sniff`） |
 | `links: { label, specific?, matches(url), markdown(url), node }` | 它认得的链接（像 Notion）：单独粘贴在一行里的网址，下面弹出小菜单，列出认得它的块（`specific` 的排前面：视频先于书签），↩ 选第一个，Esc 或接着打字就保持链接；只有一个链接的一行，块菜单「转换成」里能变成它，它（`node`）也能转回链接（第一行是网址） | `video/`（B 站、YouTube）、`bookmark/`（任何网页） |
 
 ## 现有的插件
@@ -170,6 +170,7 @@ export function apply(ctx: Context): void {
 - `widget/`：交互模块（```widget）。构建时变成沙盒 iframe（`rehype` 在 HTML 安全检查之后放进页面），页面和 Studio 里告诉它主题、读文章的文件（`widget-host.ts`）；Studio 里它是普通代码块，用 `codeBlock` 预览。
 - `video/`：视频（```video）。第一行是 B 站或 YouTube 的链接，构建和 Studio 里都是它们的播放器（沙盒 iframe）；是文章 `assets/` 里的视频文件（mp4、mov、webm…），就只在本机：Studio 里能放，自动截一帧做封面放进 `img/`，博客上只显示封面。视频文件不进 git（`.gitignore`）、构建也不发布（`LOCAL_ONLY_EXTENSIONS`，`packages/markdown/articles/rules.mjs`）。B 站的短链接（b23.tv）由 `server.mjs` 打开成完整链接。
 - `energy/`：反应能量图（```energy）。一行一个物种（名字 能量），`# 名字` 开始另一条路径。`energy.mjs` 把它画成 SVG（HAST），构建和 Studio 共用一份：构建时直接写进页面，页面不用脚本；Studio 里它是普通代码块，用 `codeBlock` 预览。是只用 `build.mjs` 加 `codeBlock` 就能做的最小的块。
+- `qc/`：计算结果（```qc）。Gaussian、ORCA 输出的卡片和详情，解析在 `packages/compute/parsers/qc`；`files` 用 `sniff` 只认开头是这两个程序的 `.log`、`.out`。卡片和详情窗口复用计算块的零件（`@blog/compute/browser/job-view.ts`）。
 - `retainmol/`：RetainMol 分子编辑器。Studio 里注册成 `ctx.molecules` 的一个实现，服务器上负责构建和提供它。计算块和化学块的三维结构都通过 `ctx.molecules` 用它，换一个编辑器不用改那些块。
 
 ## 加一种识别

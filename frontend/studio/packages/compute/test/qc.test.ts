@@ -34,10 +34,10 @@ test('the outputs to check are there, each with its answer', () => {
 });
 
 for (const output of outputs) {
-	test(`${output} is read as its answer says`, async () => {
+	test(`${output} is read as its answer says`, () => {
 		const text = readFileSync(new URL(output, FIXTURES), 'utf8');
 		const answer = JSON.parse(readFileSync(new URL(output.replace(/\.(log|out)$/u, '.answer.json'), FIXTURES), 'utf8'));
-		const read = await parseQcOutput(text);
+		const read = parseQcOutput(text);
 		assert.deepEqual(differences(read, answer), []);
 	});
 }

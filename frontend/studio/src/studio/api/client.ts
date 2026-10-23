@@ -155,6 +155,12 @@ export function articleFileUrl(slug: string, src: string): string {
 	return studioFileUrl(slug, path);
 }
 
+/** The start of a file of the article (its first `bytes`, as text): enough to tell what wrote it. */
+export async function articleFileHead(slug: string, path: string, bytes = 8192): Promise<string | null> {
+	const response = await fetch(studioFileUrl(slug, path), { headers: { Range: `bytes=0-${bytes - 1}` } });
+	return response.ok ? (await response.text()).slice(0, bytes) : null;
+}
+
 /** What would be wrong with the article, as `source`, once published. */
 export async function checkArticle(slug: string, source: string): Promise<ArticleIssue[]> {
 	return (await request<{ issues: ArticleIssue[] }>(articleApi(slug, 'check'), jsonOptions('POST', { source }))).issues;

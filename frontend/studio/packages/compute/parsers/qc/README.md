@@ -4,7 +4,8 @@
 
 | 文件 | 内容 |
 |---|---|
-| `qc.mjs` | `QcOutput` 的样子和单位；`parseQcOutput(text)`（认出程序再交给它）、`qcProgram(开头)`；规则表 `readRules`；公用的小工具 |
+| `qc.mjs` | `QcOutput` 的样子和单位；`parseQcOutput(text)`（认出程序再交给它）、`qcProgram(开头)` |
+| `common.mjs` | 各程序共用的：数字的写法、规则表 `readRules`、从后往前找行、元素符号、单位换算 |
 | `gaussian.mjs` | Gaussian 16（`Opt Freq` 这种多个任务的输入，`Link1:` 后面是第二个任务） |
 | `orca.mjs` | ORCA 6 |
 

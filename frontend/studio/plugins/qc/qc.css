@@ -1,0 +1,8 @@
+/* A calculation's result (qc-card.mjs): the card is a job's (job-view.css); on the blog it opens its sheet. */
+figure.note-qc { margin: 1.25em 0; }
+figure.note-qc.is-openable { cursor: pointer; transition: border-color 0.12s; }
+figure.note-qc.is-openable:hover, figure.note-qc.is-openable:focus-visible { border-color: rgb(var(--gray)); outline: none; }
+.qc-excited { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.qc-excited th, .qc-excited td { padding: 4px 8px; border-bottom: 1px solid rgb(var(--gray-light)); text-align: left; }
+.qc-excited th { color: rgb(var(--gray)); font-weight: 500; }
+.qc-output { max-height: 60vh; overflow: auto; }

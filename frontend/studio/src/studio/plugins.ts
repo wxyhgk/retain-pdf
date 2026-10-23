@@ -119,17 +119,29 @@ export async function pluginBlocks() {
 	return studioBlocks(studioPlugins);
 }
 
+/** The plugin blocks that show files of the article with this extension (their `files`); none before they have started. */
+function blocksForFile(extension: string) {
+	const blocks = started ? (studioPlugins.get('blocks') as typeof studioPlugins.blocks | undefined) : undefined;
+	const wanted = extension.toLowerCase();
+	return blocks ? studioBlocks(studioPlugins).filter((candidate) => candidate.files?.extensions.includes(wanted)) : [];
+}
+
 /**
  * The plugin block that shows files of the article with this extension (its `files`), and the
  * fence it writes for one (when the extension is one of its fences); null when none does, or
- * before they have started.
+ * before they have started. One that tells its files by what they say (`sniff`) takes the file
+ * only when its start (`head`) is given and is its own.
  */
-export function blockForFile(extension: string): FileBlock | null {
-	const blocks = started ? (studioPlugins.get('blocks') as typeof studioPlugins.blocks | undefined) : undefined;
+export function blockForFile(extension: string, head?: string): FileBlock | null {
 	const wanted = extension.toLowerCase();
-	const block = blocks ? studioBlocks(studioPlugins).find((candidate) => candidate.files?.extensions.includes(wanted)) : undefined;
+	const block = blocksForFile(wanted).find((candidate) => !candidate.files!.sniff || (head !== undefined && candidate.files!.sniff(head)));
 	if (!block?.files) return null;
 	return { fence: [block.fence].flat().includes(wanted) ? wanted : null, icon: block.files.icon, markdown: block.files.markdown };
+}
+
+/** Whether a plugin block would read the start of a file with this extension to tell whether it is its own. */
+export function fileHeadWanted(extension: string): boolean {
+	return blocksForFile(extension).some((candidate) => candidate.files!.sniff);
 }
 
 /** The plugins' commands (`ctx.commands`); null before they have started. */

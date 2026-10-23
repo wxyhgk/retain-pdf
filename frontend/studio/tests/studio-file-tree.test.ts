@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { referencedPaths } from '@blog/markdown/articles/article-references.mjs';
-import { markdownReference, setFileBlocks } from '../src/studio/article-files.ts';
+import { markdownReference, readMarkdownReference, setFileBlocks } from '../src/studio/article-files.ts';
 import { subfolderOf } from '../src/studio/dropped-files.ts';
 import type { ArticleFileEntry } from '../src/studio/types.ts';
 import {
@@ -89,6 +89,24 @@ test('each kind of file is pasted the way the article uses it', () => {
 	assert.equal(markdownReference('assets/[draft].csv'), '[\\[draft\\].csv](./assets/[draft].csv)');
 	assert.equal(markdownReference('ai/notes.md'), null);
 	assert.deepEqual([...referencedPaths(markdownReference('img/水分子 (1).png')!)], ['img/水分子 (1).png']);
+	setFileBlocks(() => null);
+});
+
+test('a block that tells its files by what they say gets them only when their start is its own; the start is read only then', async () => {
+	// As the qc plugin: a .log is its card when Gaussian wrote it, output when not.
+	setFileBlocks(
+		(extension, head) => (extension === 'log' && head?.includes('Entering Gaussian System') ? { fence: null, markdown: (path) => `\`\`\`qc\n@file ./${path}\n\`\`\`` } : null),
+		(extension) => extension === 'log',
+	);
+	const heads: Record<string, string> = { 'assets/co2.log': ' Entering Gaussian System, Link 0=g16', 'assets/run.log': 'step 1 ok' };
+	const asked: string[] = [];
+	const readHead = async (path: string) => (asked.push(path), heads[path] ?? null);
+	assert.equal(await readMarkdownReference('assets/co2.log', readHead), '```qc\n@file ./assets/co2.log\n```');
+	assert.equal(await readMarkdownReference('assets/run.log', readHead), '```output\n@file ./assets/run.log\n```');
+	assert.equal(await readMarkdownReference('img/a.png', readHead), '![a](./img/a.png)');
+	assert.deepEqual(asked, ['assets/co2.log', 'assets/run.log']);
+	// Not read (it could not be): as without the plugin.
+	assert.equal(await readMarkdownReference('assets/co2.log', async () => { throw new Error('offline'); }), '```output\n@file ./assets/co2.log\n```');
 	setFileBlocks(() => null);
 });
 

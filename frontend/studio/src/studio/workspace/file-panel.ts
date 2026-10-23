@@ -1,4 +1,5 @@
 import {
+	articleFileHead,
 	createArticleFolder,
 	listArticleFiles,
 	moveArticleFile,
@@ -14,7 +15,7 @@ import { markdownTable, parseDelimited } from '../table-text';
 import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
 import { showContextMenu, type MenuItem } from './context-menu';
-import { fileBlock, fileName, isImage, markdownReference, parentPath, STUDIO_FILE_DRAG_TYPE } from '../article-files';
+import { fileBlock, fileName, isImage, markdownReference, parentPath, readMarkdownReference, STUDIO_FILE_DRAG_TYPE } from '../article-files';
 import { droppedItems, pickedItems, type UploadItem } from '../dropped-files';
 import { buildFileTree, formatSize, isUnused, referenceCount, uploadFolderFor, visibleNodes, type FileNode } from './file-tree';
 import { showToast } from './toast';
@@ -497,7 +498,9 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			const reference = markdownReference(entry.path);
 			if (published) items.push({ label: officeKind(entry.path) ? '预览' : '在新标签页打开', action: () => openFile(entry) });
 			if (published && tableSource(entry.path)) items.push({ label: '插入为表格', action: () => insertTable(entry) });
-			if (reference) items.push({ label: '复制 Markdown 引用', action: () => void copy(reference, ' Markdown 引用') });
+			// A plugin's block may tell the file by what it says (a Gaussian output among other logs): read when copied.
+			const article = slug;
+			if (reference && article) items.push({ label: '复制 Markdown 引用', action: () => void readMarkdownReference(entry.path, (path) => articleFileHead(article, path)).then((read) => copy(read ?? reference, ' Markdown 引用')) });
 		}
 		items.push({ label: '复制路径', action: () => void copy(entry.kind === 'directory' ? `./${entry.path}/` : `./${entry.path}`, '路径') });
 		if (!entry.locked) items.push({ label: '重命名', hint: 'F2', action: () => startRename(entry) });

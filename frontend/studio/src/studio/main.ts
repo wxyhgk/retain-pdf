@@ -1,6 +1,7 @@
 // The Studio page: its parts, and how they talk to each other. Each part
 // keeps to its own corner of the page; the open article lives in the session.
 import {
+	articleFileHead,
 	articleFileUrl,
 	checkArticle,
 	codeFileFigure,
@@ -45,12 +46,12 @@ import { officeFilesChanged } from '@blog/office/card.ts';
 import { firstSheetRows } from '@blog/office/render.ts';
 import { openOfficeFile } from '@blog/office/viewer.ts';
 import { createFilePanel } from './workspace/file-panel';
-import { isImage, markdownReference, setFileBlocks } from './article-files';
+import { isImage, readMarkdownReference, setFileBlocks } from './article-files';
 import { createDriveBrowser } from './workspace/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { uploadFolderFor } from './workspace/file-tree';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from './workspace/page-names';
-import { blockForFile, pluginCommands, pluginRecognizers, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
+import { blockForFile, fileHeadWanted, pluginCommands, pluginRecognizers, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
 import { Recognizers, type Recognizer } from '@blog/kernel/ui.ts';
 import { createPluginsDialog } from './workspace/plugins-dialog';
 import { aiReady, createAiSettingsDialog } from './workspace/ai-settings-dialog';
@@ -206,6 +207,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 			return paths;
 		},
 		fromDrive: (path) => copyFromDrive(path),
+		head: async (path) => (session.slug ? articleFileHead(session.slug, path) : null),
 		report: showToast,
 	},
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
@@ -541,7 +543,7 @@ void listPlugins()
 		if (problems.length) showToast(problems.join('；'), true);
 	});
 // A file of the article a plugin's block shows (a structure file) is put in as that block, and marked in the file list.
-setFileBlocks(blockForFile);
+setFileBlocks(blockForFile, fileHeadWanted);
 const pluginsDialog = createPluginsDialog(document.querySelector<HTMLDialogElement>('#plugins-dialog')!, { info: studioPluginInfo, setEnabled: setStudioPluginEnabled });
 shell.querySelector('#open-plugins')!.addEventListener('click', () => void pluginsDialog.open());
 const aiDialog = createAiSettingsDialog(document.querySelector<HTMLDialogElement>('#ai-settings-dialog')!);
@@ -659,7 +661,7 @@ const driveHost = {
 		terminal.askAboutDriveFile(path, kind !== null && kind !== 'old');
 	},
 	async insertIntoArticle(path: string) {
-		const reference = markdownReference(await copyFromDrive(path));
+		const reference = await readMarkdownReference(await copyFromDrive(path), async (copied) => (session.slug ? articleFileHead(session.slug, copied) : null));
 		if (reference) editor.insertMarkdown(reference);
 	},
 };

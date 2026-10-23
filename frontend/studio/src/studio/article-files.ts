@@ -15,17 +15,23 @@ export const DRIVE_DRAG_TYPE = 'application/x-studio-drive';
 /** A plugin's block that shows a file of the article: its fence (when the extension is one), and its mark in the file list. */
 export type FileBlock = { fence: string | null; icon?: string; markdown?: (path: string) => string };
 
-/** Which plugin block shows a file with this extension (a chemistry block a structure file): set by the Studio once its plugins have started. */
-let fileBlockFor: (extension: string) => FileBlock | null = () => null;
+/**
+ * Which plugin block shows a file with this extension (a chemistry block a structure file), given
+ * the start of the file when it was read; and whether one would read it (a Gaussian output is told
+ * from the other `.log` files by what it says): set by the Studio once its plugins have started.
+ */
+let fileBlockFor: (extension: string, head?: string) => FileBlock | null = () => null;
+let headWanted: (extension: string) => boolean = () => false;
 
-export function setFileBlocks(lookup: (extension: string) => FileBlock | null): void {
+export function setFileBlocks(lookup: (extension: string, head?: string) => FileBlock | null, wantsHead: (extension: string) => boolean = () => false): void {
 	fileBlockFor = lookup;
+	headWanted = wantsHead;
 }
 
-/** The plugin block that shows this file of the article, if one does. */
-export function fileBlock(path: string): FileBlock | null {
+/** The plugin block that shows this file of the article, if one does; `head` is the file's start, when read. */
+export function fileBlock(path: string, head?: string): FileBlock | null {
 	const ext = extension(path);
-	return ext ? fileBlockFor(ext) : null;
+	return ext ? fileBlockFor(ext, head) : null;
 }
 
 const IMAGE_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'avif']);
@@ -59,17 +65,27 @@ export function linkPath(path: string): string {
  * plugin's block reading it (a chemistry block a structure file), or a plain link. `ai/` is not
  * published and has none.
  */
-export function markdownReference(path: string): string | null {
+export function markdownReference(path: string, head?: string): string | null {
 	if (!PUBLISHED_FOLDERS.includes(path.split('/', 1)[0])) return null;
 	const name = fileName(path);
 	const label = name.replace(/[[\]\\]/gu, '\\$&');
 	if (isImage(path)) return `![${label.replace(/\.[^.]+$/u, '')}](${linkPath(path)})`;
 	// A block a plugin draws from the file (a structure file in a chemistry block, a video).
-	const block = fileBlock(path);
+	const block = fileBlock(path, head);
 	if (block?.markdown) return block.markdown(path);
 	if (block?.fence) return `\`\`\`${block.fence}\n@file ./${path}\n\`\`\``;
 	// A program's input or output shows as the file, highlighted, to read or download.
 	const codeFile = codeFileLanguageForPath(path);
 	if (codeFile) return `\`\`\`${codeFile}\n@file ./${path}\n\`\`\``;
 	return `[${label}](${linkPath(path)})`;
+}
+
+/**
+ * markdownReference, the start of the file read first (`readHead`) when a plugin block tells such
+ * files by what they say: a Gaussian or ORCA output becomes its card, another `.log` stays output.
+ */
+export async function readMarkdownReference(path: string, readHead: (path: string) => Promise<string | null>): Promise<string | null> {
+	const ext = extension(path);
+	const head = ext && headWanted(ext) ? await readHead(path).catch(() => null) : null;
+	return markdownReference(path, head ?? undefined);
 }
