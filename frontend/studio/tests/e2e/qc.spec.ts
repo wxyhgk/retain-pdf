@@ -59,6 +59,17 @@ test('a double click opens what it found: numbers, the vibrations and IR spectru
 	await expect(sheet(page).locator('.job-section-title', { hasText: '优化过程' })).toContainText('2 步，已收敛');
 	await expect(sheet(page).locator('.job-modes li')).toHaveCount(3);
 	await expect(sheet(page).locator('.job-modes li.is-imaginary')).toHaveCount(1);
+	// The imaginary mode vibrating, its arrows the page's gray: nothing red in HCN (red says something went wrong).
+	await sheet(page).locator('.job-modes li.is-imaginary button').click();
+	const redPixels = () =>
+		sheet(page).locator('.job-vibration-view canvas').evaluate((canvas: HTMLCanvasElement) => {
+			const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
+			let count = 0;
+			for (let at = 0; at < data.length; at += 4) if (data[at] > 150 && data[at] - data[at + 1] > 90 && data[at] - data[at + 2] > 90) count += 1;
+			return count;
+		});
+	await page.waitForTimeout(400);
+	expect(await redPixels()).toBeLessThan(5);
 	await sheet(page).getByRole('tab', { name: '输出' }).click();
 	await expect(sheet(page).locator('.qc-output')).toContainText('ORCA TERMINATED NORMALLY');
 	await sheet(page).getByRole('tab', { name: '设置' }).click();

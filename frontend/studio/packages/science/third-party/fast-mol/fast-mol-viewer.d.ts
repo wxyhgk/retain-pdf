@@ -33,6 +33,8 @@ export type FastMolViewer = {
 		readonly current: number;
 		/** Mode `index` vibrating (the atom moving most swings `amplitude` Å), or null: the structure as loaded. */
 		show(index: number | null, options?: { amplitude?: number; arrows?: boolean }): void;
+		/** The displacement arrows' colour, any CSS colour (red unless set); redrawn at once. */
+		arrowColor: string;
 	};
 };
 
