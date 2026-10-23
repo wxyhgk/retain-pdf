@@ -37,7 +37,7 @@ test('a Gaussian output dropped in becomes its card; another .log stays output',
 	await drop(page, [{ name: 'co2.log', text: output('co2-g16.log').toString('utf8') }]);
 	await expect(card(page).locator('.job-kind')).toHaveText('Gaussian 16');
 	await expect(card(page).locator('.job-card-line')).toHaveText('E −188.443037 Eh  ·  G −188.451964 Eh  ·  无虚频');
-	await expect(card(page).locator('.job-card-describe')).toHaveText('B3LYP/def2SVP · 优化＋频率 · CO2 · 电荷 0 · 单重态');
+	await expect(card(page).locator('.job-card-describe')).toHaveText('B3LYP/def2SVP · 优化＋频率 · CO₂ · 电荷 0 · 单重态');
 	await expect(card(page).locator('.job-card-picture svg')).toBeVisible();
 	expect(fixtureHas('assets/co2.log')).toBe(true);
 	expect(await save(page)).toContain('```qc\n@file ./assets/co2.log\n```');

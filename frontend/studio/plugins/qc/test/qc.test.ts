@@ -53,9 +53,9 @@ test('the fence names its output and, if it has one, its title; written back the
 });
 
 test('the card says what was done and what was found, from either program', () => {
-	assert.equal(qcDescribe(read('co2-g16.log')), 'B3LYP/def2SVP · 优化＋频率 · CO2 · 电荷 0 · 单重态');
+	assert.equal(qcDescribe(read('co2-g16.log')), 'B3LYP/def2SVP · 优化＋频率 · CO₂ · 电荷 0 · 单重态');
 	assert.deepEqual(qcFacts(read('co2-g16.log')), ['E −188.443037 Eh', 'G −188.451964 Eh', '无虚频']);
-	assert.equal(qcDescribe(read('co2-anion-orca.out')), 'UB3LYP/def2-SVP · 优化＋频率 · CO2 · 电荷 −1 · 双重态');
+	assert.equal(qcDescribe(read('co2-anion-orca.out')), 'UB3LYP/def2-SVP · 优化＋频率 · CO₂ · 电荷 −1 · 双重态');
 	assert.deepEqual(qcFacts(read('co2-anion-orca.out')), ['E −188.311798 Eh', 'G −188.326332 Eh', '无虚频', '⟨S²⟩ 0.7525']);
 	assert.equal(qcDescribe(read('hcn-ts-g16.log')), 'B3LYP/def2SVP · 过渡态优化＋频率 · CHN · 电荷 0 · 单重态');
 	assert.deepEqual(qcFacts(read('hcn-ts-orca.out')).slice(2), ['1 个虚频（−1121.8 cm⁻¹）']);

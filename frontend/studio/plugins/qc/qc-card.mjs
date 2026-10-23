@@ -53,6 +53,8 @@ export function qcFilePath(/** @type {string} */ file) {
 }
 
 const minus = (/** @type {string} */ text) => text.replace(/^-/u, '−');
+/** CO2 → CO₂. */
+const subscripts = (/** @type {string} */ formula) => formula.replace(/\d/gu, (digit) => '₀₁₂₃₄₅₆₇₈₉'[Number(digit)]);
 const signed = (/** @type {number} */ value, /** @type {number} */ digits) => minus(value.toFixed(digits));
 
 const JOB_NAMES = /** @type {Record<string, string>} */ ({ sp: '单点', opt: '优化', freq: '频率', td: '激发态', irc: 'IRC', scan: '扫描' });
@@ -64,14 +66,14 @@ export function qcProgramLabel(/** @type {QcOutput} */ result) {
 	return `ORCA ${result.version ?? ''}`.trim();
 }
 
-/** What was done: B3LYP/def2-SVP · 优化＋频率 · CO2 · 电荷 0 · 单重态. */
+/** What was done: B3LYP/def2-SVP · 优化＋频率 · CO₂ · 电荷 0 · 单重态. */
 export function qcDescribe(/** @type {QcOutput} */ result) {
 	const jobs = result.jobs.filter((job) => job !== 'ts').map((job) => (job === 'opt' && result.jobs.includes('ts') ? '过渡态优化' : JOB_NAMES[job] ?? job));
 	const spin = result.multiplicity === null ? null : (SPINS[result.multiplicity] ?? `${result.multiplicity} 重态`);
 	return [
 		result.method && result.basis ? `${result.reference === 'U' ? 'U' : result.reference === 'RO' ? 'RO' : ''}${result.method}/${result.basis}` : result.method,
 		jobs.join('＋'),
-		result.atoms ? formulaOf(result.atoms) : null,
+		result.atoms ? subscripts(formulaOf(result.atoms)) : null,
 		result.charge === null ? null : `电荷 ${minus(String(result.charge))}`,
 		spin,
 	]
