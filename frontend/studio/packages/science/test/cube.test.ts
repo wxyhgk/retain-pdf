@@ -10,7 +10,7 @@ import {
 	isCubeDisplaySettings,
 	normalizeCubeDisplaySettings,
 } from '../cube-display.mjs';
-import { cubeSurfaceSpecs } from '../browser/cube-renderer.ts';
+import { cubeVolumeStyle } from '../browser/cube-renderer.ts';
 
 const minimalCube = [
 	'water orbital',
@@ -58,11 +58,13 @@ test('Cube display settings normalize safely and generate enabled phase surfaces
 	assert.equal(isCubeDisplaySettings({ ...CUBE_DISPLAY_DEFAULTS, moleculeStyle: 'cartoon' }), false);
 	assert.deepEqual(normalizeCubeDisplaySettings({ broken: true }), CUBE_DISPLAY_DEFAULTS);
 
-	assert.deepEqual(cubeSurfaceSpecs({
-		...CUBE_DISPLAY_DEFAULTS,
-		isovalue: 0.035,
+	// As fast-mol draws them: the level, how solid, which phases, blue + and red −.
+	assert.deepEqual(cubeVolumeStyle({ ...CUBE_DISPLAY_DEFAULTS, isovalue: 0.035, opacity: 0.6, negative: false }), {
+		iso: 0.035,
 		opacity: 0.6,
-		negative: false,
-	}), [{ isoval: 0.035, color: '#2563eb', opacity: 0.6 }]);
-	assert.deepEqual(cubeSurfaceSpecs({ ...CUBE_DISPLAY_DEFAULTS, positive: false, negative: false }), []);
+		showPositive: true,
+		showNegative: false,
+		positive: [37, 99, 235],
+		negative: [220, 38, 38],
+	});
 });

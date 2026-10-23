@@ -11,12 +11,8 @@ import {
 	type CubeDisplaySettings,
 	type CubeMoleculeStyle,
 } from '../cube-display.mjs';
-import {
-	load3Dmol,
-	mount3DMolInteraction,
-	readSavedMoleculeDisplay,
-	type ThreeDMolViewer,
-} from './molecule-renderer.ts';
+import { createMoleculeViewer, type FastMolViewer } from './fast-mol.ts';
+import { fastMolViewControl, mountViewControls, readSavedMoleculeDisplay } from './molecule-renderer.ts';
 import { resolveScienceResourceUrl } from './resource-context.ts';
 
 const MAX_FETCHED_CUBE_BYTES = 8 * 1024 * 1024;
@@ -74,35 +70,24 @@ async function fetchCube(path: string): Promise<string> {
 	return source;
 }
 
-function moleculeStyle(style: CubeMoleculeStyle): object {
-	if (style === 'sphere') return { sphere: { scale: 0.34, colorscheme: 'Jmol' } };
-	if (style === 'line') return { line: { linewidth: 1.5, colorscheme: 'Jmol' } };
+/** How the molecule under the surfaces is drawn, by the names the article saves (3Dmol's, before). */
+const REPRESENTATIONS: Record<CubeMoleculeStyle, 'ball-stick' | 'spacefill' | 'stick'> = { stick: 'ball-stick', sphere: 'spacefill', line: 'stick' };
+
+/** The surfaces as fast-mol draws them: the level, how solid, which phases (blue +, red −). */
+export function cubeVolumeStyle(settings: CubeDisplaySettings) {
 	return {
-		stick: { radius: 0.12, colorscheme: 'Jmol' },
-		sphere: { scale: 0.2, colorscheme: 'Jmol' },
+		iso: settings.isovalue,
+		opacity: settings.opacity,
+		showPositive: settings.positive,
+		showNegative: settings.negative,
+		positive: [37, 99, 235] as [number, number, number],
+		negative: [220, 38, 38] as [number, number, number],
 	};
 }
 
-export function cubeSurfaceSpecs(settings: CubeDisplaySettings): Array<{ isoval: number; color: string; opacity: number }> {
-	const specs = [];
-	if (settings.positive) specs.push({ isoval: settings.isovalue, color: '#2563eb', opacity: settings.opacity });
-	if (settings.negative) specs.push({ isoval: -settings.isovalue, color: '#dc2626', opacity: settings.opacity });
-	return specs;
-}
-
-function applyCubeDisplay(
-	figure: HTMLElement,
-	viewer: ThreeDMolViewer,
-	volumeData: unknown,
-	settings: CubeDisplaySettings,
-	surfaces: unknown[],
-): void {
-	for (const surface of surfaces.splice(0)) viewer.removeShape(surface);
-	viewer.setStyle({}, moleculeStyle(settings.moleculeStyle));
-	const specs = cubeSurfaceSpecs(settings);
-	for (const spec of specs) surfaces.push(viewer.addIsosurface(volumeData, spec));
-	viewer.render();
-	figure.dataset.cubeSurfaceCount = String(specs.length);
+function applyCubeDisplay(figure: HTMLElement, viewer: FastMolViewer, settings: CubeDisplaySettings): void {
+	viewer.set({ representation: REPRESENTATIONS[settings.moleculeStyle] });
+	viewer.volume.set(cubeVolumeStyle(settings));
 	figure.dataset.cubeDisplay = JSON.stringify(settings);
 }
 
@@ -179,7 +164,7 @@ function createCubeControls(
 	styleLabel.textContent = '分子骨架';
 	const styleSelect = document.createElement('select');
 	styleSelect.setAttribute('aria-label', '分子骨架显示方式');
-	for (const [value, text] of [['stick', 'Stick'], ['sphere', 'Sphere'], ['line', 'Line']] as const) {
+	for (const [value, text] of [['stick', '球棍'], ['sphere', '空间填充'], ['line', '细棍']] as const) {
 		const option = document.createElement('option');
 		option.value = value;
 		option.textContent = text;
@@ -218,29 +203,18 @@ export async function hydrateCubePreview(figure: HTMLElement): Promise<void> {
 	try {
 		const payload = JSON.parse(figure.dataset.sciencePreview) as CubePreviewPayload;
 		const source = payload.kind === 'file' ? await fetchCube(payload.path) : payload.source;
-		const $3Dmol = await load3Dmol();
 		if (!figure.isConnected) return;
 		stage.textContent = '';
-		const viewer = $3Dmol.createViewer(stage, {
-			backgroundColor: document.documentElement.dataset.theme === 'dark' ? '#181c1b' : '#ffffff',
-		});
+		const viewer = await createMoleculeViewer(stage);
+		if (!figure.isConnected) return viewer.dispose();
 		const viewIdentity = payload.kind === 'file' ? payload.path : source;
 		const settings = normalizeCubeDisplaySettings(readSavedMoleculeDisplay('cube', viewIdentity));
-		const volumeData = new $3Dmol.VolumeData(source, 'cube');
-		const surfaces: unknown[] = [];
-		viewer.addModel(source, 'cube');
-		applyCubeDisplay(figure, viewer, volumeData, settings, surfaces);
+		viewer.volume.load(source, { iso: settings.isovalue });
+		applyCubeDisplay(figure, viewer, settings);
 		stage.setAttribute('aria-label', 'Cube 分子轨道：分子骨架与正负等值面，可拖动旋转和滚轮缩放');
-		const interaction = mount3DMolInteraction(
-			figure,
-			stage,
-			viewer,
-			'cube',
-			viewIdentity,
-			{ getDisplay: () => ({ ...settings }) },
-		);
+		const interaction = mountViewControls(figure, stage, fastMolViewControl(viewer), 'cube', viewIdentity, { getDisplay: () => ({ ...settings }) });
 		stage.after(createCubeControls(settings, () => {
-			applyCubeDisplay(figure, viewer, volumeData, settings, surfaces);
+			applyCubeDisplay(figure, viewer, settings);
 			interaction.markDisplayDirty();
 		}));
 	} catch (error) {

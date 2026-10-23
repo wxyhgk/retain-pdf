@@ -1,13 +1,13 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
-import { openStudio, resetFixture, scienceBlock } from './studio.ts';
+import { appendToFixture, openStudio, resetFixture, scienceBlock, writeFixtureFile } from './studio.ts';
 
 // A 3D molecule (fast-mol) turned, its view saved in the article (article.views.json) and shown so when it opens again;
 // a view 3Dmol saved before is kept in the file but not read.
 
 const VIEWS = () => `${process.env.STUDIO_BLOG_DIR}/studio-fixture/article.views.json`;
-const savedViews = () => JSON.parse(readFileSync(VIEWS(), 'utf8')).molecules as Record<string, { format: string; view: unknown }>;
+const savedViews = () => JSON.parse(readFileSync(VIEWS(), 'utf8')).molecules as Record<string, { format: string; view: unknown; display?: Record<string, unknown> }>;
 
 test.beforeEach(() => resetFixture());
 
@@ -64,4 +64,59 @@ test('a view 3Dmol saved before is kept in the file, the molecule drawn from its
 	await expect(water(page).locator('.chem-stage canvas')).toBeVisible();
 	await expect(water(page).locator('.chem-view-controls span')).toHaveText('使用自动视角');
 	expect(savedViews()[key].view).toEqual([0, 0, -0.33, 142.8, 0.5, 0.46, -0.08, 0.72]);
+});
+
+/** A p orbital along z on a small grid (Bohr): a positive lobe above, a negative one below, a carbon at the middle. */
+function pOrbitalCube(): string {
+	const n = 25;
+	const step = 0.4;
+	const origin = -((n - 1) / 2) * step;
+	const lines = ['p orbital', 'made for a test', ` 1 ${origin} ${origin} ${origin}`, ` ${n} ${step} 0 0`, ` ${n} 0 ${step} 0`, ` ${n} 0 0 ${step}`, ' 6 6.0 0 0 0'];
+	const values: string[] = [];
+	for (let i = 0; i < n; i += 1)
+		for (let j = 0; j < n; j += 1)
+			for (let k = 0; k < n; k += 1) {
+				const [x, y, z] = [origin + i * step, origin + j * step, origin + k * step];
+				values.push((z * Math.exp(-Math.hypot(x, y, z) / 1.2) * 0.2).toExponential(5));
+			}
+	for (let at = 0; at < values.length; at += 6) lines.push(values.slice(at, at + 6).join(' '));
+	return `${lines.join('\n')}\n`;
+}
+
+/** How many pixels of the cube's canvas are about the positive phase's blue. */
+async function bluePixels(page: Page): Promise<number> {
+	return scienceBlock(page, 'Cube').locator('.chem-stage canvas').evaluate((canvas: HTMLCanvasElement) => {
+		const { data } = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height);
+		let count = 0;
+		for (let at = 0; at < data.length; at += 4) if (data[at + 2] > 150 && data[at + 2] - data[at] > 80 && data[at + 2] - data[at + 1] > 40) count += 1;
+		return count;
+	});
+}
+
+test('a cube’s surfaces follow its display (a phase hidden, the molecule drawn otherwise), saved with its view', async ({ page }) => {
+	writeFixtureFile('assets/p.cube', pOrbitalCube());
+	appendToFixture('\n```cube\n@file ./assets/p.cube\n```\n');
+	await openStudio(page);
+	const cube = scienceBlock(page, 'Cube');
+	await cube.locator('.chem-stage canvas').scrollIntoViewIfNeeded();
+	await expect(cube.locator('.chem-stage canvas')).toBeVisible();
+	await expect.poll(() => bluePixels(page)).toBeGreaterThan(200);
+
+	await cube.getByLabel('显示正相位').uncheck();
+	await expect.poll(() => bluePixels(page)).toBeLessThan(20);
+	await cube.getByLabel('分子骨架显示方式').selectOption('sphere');
+	await expect(cube.locator('.chem-view-controls span')).toHaveText('显示有改动 · 尚未写入文章');
+	await cube.getByRole('button', { name: '保存显示与视角' }).click();
+	await expect(cube.locator('.chem-view-controls span')).toHaveText('显示与视角已写入文章配置');
+	const saved = Object.values(savedViews()).find((entry) => entry.format === 'cube')!;
+	expect(saved.view).toMatchObject({ zoom: expect.any(Number) });
+	expect(saved.display).toMatchObject({ positive: false, negative: true, moleculeStyle: 'sphere' });
+
+	await page.reload();
+	const again = scienceBlock(page, 'Cube');
+	await again.locator('.chem-stage canvas').scrollIntoViewIfNeeded();
+	await expect(again.locator('.chem-view-controls span')).toHaveText('已载入文章视角');
+	await expect(again.getByLabel('显示正相位')).not.toBeChecked();
+	await expect(again.getByLabel('分子骨架显示方式')).toHaveValue('sphere');
+	await expect.poll(() => bluePixels(page)).toBeLessThan(20);
 });

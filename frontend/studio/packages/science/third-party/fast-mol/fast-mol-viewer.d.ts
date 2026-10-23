@@ -22,6 +22,12 @@ export type FastMolViewer = {
 	/** How it is turned, how near and where: saved, set later. */
 	view: FastMolView;
 	resetView(): void;
+	/** A cube's field as an isosurface (its atoms the structure): an orbital's two phases, a density. */
+	readonly volume: {
+		load(text: string, options?: { orbital?: number; iso?: number }): void;
+		set(patch: { iso?: number; opacity?: number; showPositive?: boolean; showNegative?: boolean; positive?: [number, number, number]; negative?: [number, number, number]; display?: 'solid' | 'mesh' }): void;
+		clear(): void;
+	};
 	readonly modes: {
 		readonly list: ReadonlyArray<{ frequency: number; intensity: number | null }>;
 		readonly current: number;
