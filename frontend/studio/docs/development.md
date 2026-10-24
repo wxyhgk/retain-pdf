@@ -36,6 +36,8 @@ npm run milkdown:setup
 
 Studio 用到了只有 fork 里才有的扩展，`src/studio/editor/milkdown-fork.d.ts` 列出了它们。发布的博客不含编辑器。
 
+改编辑器时注意别让长文章变慢：几十万字的文章是分段显示的，公式到屏幕附近才画，要在 WebKit 里测。见 [超长文章：开发记录](long-articles.md)。
+
 ## 命令
 
 | 命令 | 作用 |

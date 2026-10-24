@@ -7,6 +7,7 @@
 | [Studio 使用说明](studio.md) | 打开 Studio，写文章，整理页面树，发布和提交 |
 | [给大模型用的接口](ai-tools.md) | `studio` 命令和 MCP 服务：让 AI 建页、拆分、移动、发布 |
 | [开发和测试](development.md) | 目录结构、命令、测试怎么跑 |
+| [超长文章：开发记录](long-articles.md) | 500 页的文章怎么做到点开就看见、滚动和打字不卡；改编辑器时要守的规矩 |
 | [插件](../plugins/README.md) | 计算任务、分子、书签等块是怎么做成插件的 |
 | [写作约定（给 AI）](../blog/CLAUDE.md) | AI 在 `blog/` 里写文章时要遵守的规矩 |
 
