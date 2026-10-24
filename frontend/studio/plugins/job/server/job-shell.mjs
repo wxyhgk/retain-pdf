@@ -121,7 +121,7 @@ export class JobShell {
 		// macOS's tar would add `._name` files for the extended attributes; the other end has no use for them.
 		const tar = this.spawnImpl('tar', ['-cf', '-', '-C', folder, ...names], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, COPYFILE_DISABLE: '1' } });
 		const sent = this.check(`mkdir -p ${shellPath(remote)} && tar -xf - -C ${shellPath(remote)}`, { input: tar.stdout });
-		const [packed] = await Promise.all([new Promise((resolvePromise) => tar.on('close', resolvePromise)), sent]);
+		const [packed] = await Promise.all([ended(tar), sent]);
 		if (packed !== 0) throw new JobShellError('打包输入文件失败');
 	}
 
@@ -141,15 +141,23 @@ export class JobShell {
 		const [command, args] = this.#command(`cd ${shellPath(remote)} && tar -cf - -T -`);
 		const sender = this.spawnImpl(command, args, { stdio: ['pipe', 'pipe', 'pipe'] });
 		const receiver = this.spawnImpl('tar', ['-xf', '-', '-C', folder], { stdio: ['pipe', 'ignore', 'pipe'] });
+		// Either end may go first (the connection lost, tar failing): what is written to it then fails, quietly.
+		sender.stdin.on('error', () => {});
+		receiver.stdin.on('error', () => {});
 		sender.stdin.end(`${names.join('\n')}\n`);
 		sender.stdout.pipe(receiver.stdin);
 		const errors = [];
 		sender.stderr.on('data', (chunk) => errors.push(chunk));
-		const [sent, received] = await Promise.all([
-			new Promise((resolvePromise) => sender.on('close', resolvePromise)),
-			new Promise((resolvePromise) => receiver.on('close', resolvePromise)),
-		]);
+		const [sent, received] = await Promise.all([ended(sender), ended(receiver)]);
 		if (sent !== 0 || received !== 0) throw new JobShellError(Buffer.concat(errors).toString('utf8').trim().split('\n').at(-1) || '取回结果失败');
 		return names;
 	}
+}
+
+/** A program's exit code once it is over; -1 when it could not be started. */
+function ended(child) {
+	return new Promise((resolvePromise) => {
+		child.once('error', () => resolvePromise(-1));
+		child.once('close', (code) => resolvePromise(code ?? -1));
+	});
 }

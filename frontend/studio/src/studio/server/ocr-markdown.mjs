@@ -11,18 +11,28 @@
  * - a table as a Markdown table, unless cells are joined (rowspan, colspan):
  *   that one stays the HTML it is.
  *
- * Returns the Markdown and the pictures it names (their file names in `imgs/`).
+ * Returns the Markdown and the pictures it names: `file`, the name in `imgs/`,
+ * and `name`, the one it is linked by (no spaces: a link stops at one).
  */
 export function fromPaddleMarkdown(text, { folder = './img/ocr/' } = {}) {
 	const pictures = [];
-	const blocks = String(text).replace(/\r\n?/gu, '\n').split(/\n{2,}/u).map((block) => block.trim()).filter(Boolean);
+	const blocks = String(text)
+		.replace(/\r\n?/gu, '\n')
+		// Centred lines one under the other are each a block.
+		.replace(/<\/div>\n(?=<div\b)/giu, '</div>\n\n')
+		.split(/\n{2,}/u)
+		.map((block) => block.trim())
+		.filter(Boolean);
 	const out = [];
 	for (let index = 0; index < blocks.length; index += 1) {
 		const block = blocks[index];
-		const picture = /^(?:<div[^>]*>\s*)?<img\b[^>]*\bsrc=["']imgs\/([^"']+)["'][^>]*>(?:\s*<\/div>)?$/iu.exec(block);
+		// In as many <div>s as it may be.
+		const bare = block.replace(/^(?:<div\b[^>]*>\s*)+/iu, '').replace(/(?:\s*<\/div>)+$/iu, '');
+		const picture = /^<img\b[^>]*\bsrc=["']imgs\/([^"']+)["'][^>]*>$/iu.exec(bare);
 		if (picture) {
-			const name = picture[1];
-			pictures.push(name);
+			const file = picture[1];
+			const name = file.replace(/\s+/gu, '-');
+			pictures.push({ file, name });
 			const width = /\bwidth=["']?(\d+(?:\.\d+)?%?)/iu.exec(block)?.[1];
 			// The caption, a centred line right under it.
 			const next = centred(blocks[index + 1] ?? '');
@@ -40,7 +50,8 @@ export function fromPaddleMarkdown(text, { folder = './img/ocr/' } = {}) {
 			out.push(table(block) ?? block);
 			continue;
 		}
-		const display = /^\$\$\s*([\s\S]*?)\s*\$\$$/u.exec(block);
+		// One formula: a line with two ($$ a $$ and $$ b $$) is left as it is.
+		const display = /^\$\$\s*((?:[^$]|\$(?!\$))*?)\s*\$\$$/u.exec(block);
 		if (display) {
 			out.push(`$$\n${display[1]}\n$$`);
 			continue;
@@ -56,16 +67,30 @@ function centred(block) {
 	return match && !/<img\b/iu.test(match[1]) ? match[1].trim() : null;
 }
 
-/** Inline formulas without the spaces inside their dollars. */
+/**
+ * Inline formulas without the spaces inside their dollars. Prices are not formulas: what reads as an amount and
+ * a word (`$ 5 and $ 10`) is left alone.
+ */
 function inline(text) {
-	return text.replace(/(^|[^$\\])\$ +([^$\n]*?) +\$(?!\$)/gu, (_, before, formula) => `${before}$${formula}$`);
+	return text.replace(/(^|[^$\\])\$ +([^$\n]*?) +\$(?!\$)/gu, (whole, before, formula) => (/^\d[\d.,]*\s+[A-Za-z]{2,}/u.test(formula) ? whole : `${before}$${formula}$`));
+}
+
+/**
+ * A table cell's words: its `|` escaped, as a table needs, but in a formula written as TeX (`\vert`, `\Vert`):
+ * the table's `\|` reaches a formula as it is, a double bar.
+ */
+function cellText(text) {
+	return text
+		.split(/(\$[^$\n]+\$)/u)
+		.map((part, index) => (index % 2 ? part.replace(/\\\|/gu, '\\Vert ').replace(/\|/gu, '\\vert ').replace(/ \$$/u, '$') : part.replace(/\|/gu, '\\|')))
+		.join('');
 }
 
 /** An HTML table as a Markdown table (its first row the head); null when cells are joined or it cannot be read. */
 function table(html) {
 	if (/\b(?:rowspan|colspan)\s*=/iu.test(html)) return null;
 	const rows = [...html.matchAll(/<tr\b[^>]*>([\s\S]*?)<\/tr>/giu)].map((row) =>
-		[...row[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/giu)].map((cell) => inline(cell[1].replace(/<br\s*\/?>/giu, ' ').replace(/<[^>]+>/gu, '').trim()).replace(/\|/gu, '\\|')),
+		[...row[1].matchAll(/<t[dh]\b[^>]*>([\s\S]*?)<\/t[dh]>/giu)].map((cell) => cellText(inline(cell[1].replace(/<br\s*\/?>/giu, ' ').replace(/<[^>]+>/gu, '').trim()))),
 	);
 	if (!rows.length || rows.some((row) => row.length !== rows[0].length) || !rows[0].length) return null;
 	const line = (cells) => `| ${cells.join(' | ')} |`;

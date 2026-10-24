@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 import { AgentSettings } from './agent-settings.mjs';
 import { runProgram } from './tasks.mjs';
 
@@ -32,20 +35,47 @@ export function instructionPrompt({ text, start, end, heading }) {
 }
 
 /**
- * Starts the AI on a line of an article, as a task of `tasks`.
+ * How long a line may be: it goes to the AI as a word of its command, and a word has a limit (128 KB on Linux;
+ * Chinese takes three bytes a character).
+ */
+export const MAX_INSTRUCTION = 30_000;
+
+/** Per article folder, the end of its queue of AI runs: two at once would both change index.md. */
+const queues = new Map();
+
+/**
+ * Starts the AI on a line of an article, as a task of `tasks`. A run already going in the article is waited
+ * for first (the task says so, and can be cancelled while it waits). It goes on from the last talk only when
+ * there was one here before (the work log is there): a first `resume` may find nothing to resume.
  * @param {{ tasks: import('./tasks.mjs').Tasks, agents: AgentSettings, slug: string, folder: string, env: Record<string, string>, line: { text: string, start: number, end: number, heading: string }, fresh?: boolean, agentId?: string }} options
  */
 export async function startInstruction({ tasks, agents, slug, folder, env, line, fresh = false, agentId }) {
 	const fail = (message) => Object.assign(new Error(message), { statusCode: 400 });
 	if (!line?.text?.trim()) throw fail('这一行是空的，没有要做的事');
 	if (!Number.isInteger(line.start) || !Number.isInteger(line.end) || line.start < 1 || line.end < line.start) throw fail('行号不对');
+	if (line.text.length > MAX_INSTRUCTION) throw fail(`要做的事太长（${line.text.length} 字，最多 ${MAX_INSTRUCTION} 字）：把材料放进文件，这一行只写要做什么、用哪个文件`);
 	const { list, default: chosen } = await agents.config();
 	const agent = list.find((candidate) => candidate.id === (agentId ?? chosen));
 	if (!agent) throw fail('AI 设置里没有这个 AI');
-	const words = AgentSettings.words(agent, instructionPrompt(line), !fresh);
 	const title = line.text.trim().replace(/\s+/gu, ' ').slice(0, 60);
-	return tasks.start({ kind: 'instruction', title: `${agent.name}：${title}`, slug }, async ({ log, signal }) => {
-		await runProgram(words, { cwd: folder, env, log, signal });
-		return { agent: agent.id, start: line.start, end: line.end };
+	const before = queues.get(folder);
+	let done;
+	const turn = new Promise((resolve) => (done = resolve));
+	queues.set(folder, turn);
+	const task = tasks.start({ kind: 'instruction', title: `${agent.name}：${title}`, slug }, async ({ log, signal }) => {
+		try {
+			if (before) {
+				log('这篇文章里还有一件事在做，等它做完…\n');
+				await Promise.race([before, new Promise((resolve) => signal.addEventListener('abort', resolve, { once: true }))]);
+				if (signal.aborted) throw new Error('已取消');
+			}
+			const resume = !fresh && existsSync(join(folder, 'ai', 'work', 'log.md'));
+			await runProgram(AgentSettings.words(agent, instructionPrompt(line), resume), { cwd: folder, env, log, signal });
+			return { agent: agent.id, start: line.start, end: line.end };
+		} finally {
+			done();
+			if (queues.get(folder) === turn) queues.delete(folder);
+		}
 	});
+	return task;
 }

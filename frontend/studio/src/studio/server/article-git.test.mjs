@@ -101,3 +101,12 @@ test('outside a git repository there is nothing to show', async (t) => {
 	assert.deepEqual(await articles.status(), { available: false, changed: {}, vanished: [] });
 	await assert.rejects(articles.commit('note', 'x'), /不在 git 仓库/u);
 });
+
+test('an article gone whose removal was staged already is committed with the next one, not an error', async (t) => {
+	const { blog, git, articles } = await repository(t);
+	git('rm', '-r', '--quiet', 'blog/second');
+	await rm(join(blog, 'second'), { recursive: true, force: true });
+	await writeFile(join(blog, 'first', 'index.md'), '# first, edited\n');
+	assert.deepEqual((await articles.commit('first', 'content: first')).vanished, ['second']);
+	assert.deepEqual(git('show', '--name-only', '--format=', 'HEAD').trim().split('\n'), ['blog/first/index.md', 'blog/second/index.md']);
+});

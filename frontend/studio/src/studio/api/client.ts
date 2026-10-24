@@ -45,8 +45,8 @@ export async function pageVersion(slug: string): Promise<string> {
 export function getArticle(slug: string): Promise<ArticlePayload> {
 	return request<ArticlePayload>(`/api/studio/articles/${encodeURIComponent(slug)}`).then((article) => ({
 		...article,
-		source: article.source ?? article.content ?? '',
-		revision: article.revision ?? article.hash ?? '',
+		source: article.source ?? '',
+		revision: article.revision ?? '',
 		properties: article.properties,
 		problems: article.problems ?? [],
 		chemistryViews: article.chemistryViews ?? {},
@@ -117,10 +117,10 @@ export function restoreArticle(trashed: string): Promise<{ slug: string }> {
 }
 
 export function saveArticle(slug: string, source: string, expectedRevision: string): Promise<{ revision: string; problems: string[] }> {
-	return request<{ revision?: string; hash?: string; problems?: string[] }>(
+	return request<{ revision?: string; problems?: string[] }>(
 		`/api/studio/articles/${encodeURIComponent(slug)}`,
 		jsonOptions('PUT', { source, expectedRevision }),
-	).then((result) => ({ revision: result.revision ?? result.hash ?? '', problems: result.problems ?? [] }));
+	).then((result) => ({ revision: result.revision ?? '', problems: result.problems ?? [] }));
 }
 
 export function saveMoleculeView(

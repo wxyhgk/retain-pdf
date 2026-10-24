@@ -116,9 +116,6 @@ export type ArticlePayload = {
 	modified?: number;
 	/** Why the blog could not build its properties (a missing description, broken YAML…); empty when none. */
 	problems?: string[];
-	/** Temporary compatibility fields returned by the first Studio API. */
-	content?: string;
-	hash?: string;
 	chemistryViews: Record<string, { format: string; view: number[]; display?: CubeDisplaySettings }>;
 	/** The article's own formula macros, from its `macros:` property. */
 	macros?: Record<string, string>;

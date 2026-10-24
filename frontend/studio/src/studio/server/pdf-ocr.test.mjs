@@ -15,7 +15,7 @@ const PADDLE = await readFile(new URL('./test-data/paddleocr-figure.md', import.
 
 test('PaddleOCR’s Markdown as the notes write it: formulas, a picture with its caption, a table', () => {
 	const { markdown, pictures } = fromPaddleMarkdown(PADDLE);
-	assert.deepEqual(pictures, ['img_in_image_box_6_343_832_762.jpg']);
+	assert.deepEqual(pictures, [{ file: 'img_in_image_box_6_343_832_762.jpg', name: 'img_in_image_box_6_343_832_762.jpg' }]);
 	assert.equal(markdown, [
 		'## 势能面上的过渡态',
 		'过渡态是势能面上的一阶鞍点：Hessian 矩阵恰好有一个负本征值。速率常数由 Eyring 公式给出：',
@@ -28,6 +28,18 @@ test('PaddleOCR’s Markdown as the notes write it: formulas, a picture with its
 	// Joined cells: the table stays as it is.
 	const joined = '<table><tr><td colspan=2>a</td></tr></table>';
 	assert.equal(fromPaddleMarkdown(joined).markdown, `${joined}\n`);
+});
+
+test('PaddleOCR’s edge cases: centred lines one under the other, prices, bars in a table’s formula, names with spaces, pictures in divs in divs, two formulas on a line', () => {
+	const read = (text) => fromPaddleMarkdown(text).markdown;
+	assert.equal(read('<div style="text-align: center;">a</div>\n<div style="text-align: center;">b</div>'), 'a\n\nb\n');
+	assert.equal(read('costs $ 5 and $ 10, but $ x $ is math'), 'costs $ 5 and $ 10, but $x$ is math\n');
+	// The table's own bars escaped; a formula's written as TeX (a table's \| reaches the formula as it is: ‖).
+	assert.equal(read('<table><tr><td>a</td></tr><tr><td>$|x| + \\|y\\|$ or |</td></tr></table>'), '| a |\n| --- |\n| $\\vert x\\vert  + \\Vert y\\Vert$ or \\| |\n');
+	const nested = fromPaddleMarkdown('<div style="text-align: center;"><div><img src="imgs/a b.jpg" width="50%"></div></div>');
+	assert.equal(nested.markdown, '![](./img/ocr/a-b.jpg){width=50%}\n');
+	assert.deepEqual(nested.pictures, [{ file: 'a b.jpg', name: 'a-b.jpg' }]);
+	assert.equal(read('$$ a $$ and $$ b $$'), '$$ a $$ and $$ b $$\n');
 });
 
 async function ended(tasks, id) {

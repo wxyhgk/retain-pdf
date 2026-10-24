@@ -36,11 +36,22 @@ test('Alt+Enter has the AI do what the line says; what it writes in its place is
 	await expect(editor(page).locator('.is-instructing')).toHaveCount(0);
 	await expect(saveStatus(page)).toHaveText(/已载入|已保存/u);
 	expect(savedMarkdown()).toBe(before.replace('结尾段落。\n', '结尾段落。\n\n结果：画一个 sin x 的图（替身）\n'));
-	// It went on from the last talk in the folder; its work noted.
-	expect(workLog()).toBe('- 画一个 sin x 的图；接着上次：是\n');
+	// The first in this article: nothing to go on from; its work noted.
+	expect(workLog()).toBe('- 画一个 sin x 的图；接着上次：否\n');
+
+	// Again: it goes on from the last talk in the folder.
+	await editor(page).getByText('结果：画一个 sin x 的图（替身）').click();
+	await page.keyboard.press('End');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('加上图例');
+	await page.keyboard.press('Alt+Enter');
+	await expect(reviewBar(page)).toBeVisible();
+	await reviewBar(page).getByRole('button', { name: '全部接受' }).click();
+	await expect(editor(page)).toContainText('结果：加上图例（替身）');
+	expect(workLog()).toBe('- 画一个 sin x 的图；接着上次：否\n- 加上图例；接着上次：是\n');
 
 	// ⇧Alt+Enter: a new talk.
-	await editor(page).getByText('结果：画一个 sin x 的图（替身）').click();
+	await editor(page).getByText('结果：加上图例（替身）').click();
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('换成 cos x');
@@ -48,7 +59,7 @@ test('Alt+Enter has the AI do what the line says; what it writes in its place is
 	await expect(reviewBar(page)).toBeVisible();
 	await reviewBar(page).getByRole('button', { name: '全部接受' }).click();
 	await expect(editor(page)).toContainText('结果：换成 cos x（替身）');
-	expect(workLog()).toBe('- 画一个 sin x 的图；接着上次：是\n- 换成 cos x；接着上次：否\n');
+	expect(workLog()).toBe('- 画一个 sin x 的图；接着上次：否\n- 加上图例；接着上次：是\n- 换成 cos x；接着上次：否\n');
 });
 
 test('AI 助手 lists the AIs, adds another, and the one Alt+Enter uses is chosen there', async ({ page }) => {

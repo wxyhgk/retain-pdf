@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { basename } from 'node:path';
 
 /**
  * Work the Studio does in the background, the page told how it goes: an AI
@@ -101,44 +102,104 @@ export class Tasks {
 	}
 }
 
+/** Process groups of the programs running for tasks: ended with the server, however it ends. */
+const running = new Set();
+
+/** How long a program stopped is given to end before it is killed, in ms. */
+const STOP_GRACE = 5000;
+
+/** Ends every program the tasks started (the server going away): at once, nothing waited for. */
+export function stopAllPrograms(signal = 'SIGTERM') {
+	for (const group of running) {
+		try {
+			process.kill(-group, signal);
+		} catch {
+			// Over already.
+		}
+	}
+}
+
+let watching = false;
+
+/**
+ * The programs are in process groups of their own (so a stop takes what they started too), which a Ctrl+C in the
+ * terminal does not reach: they are ended when the server ends, by a signal or otherwise. A signal is then let do
+ * what it did (exit) unless something else listens for it.
+ */
+function watchExit() {
+	if (watching) return;
+	watching = true;
+	process.once('exit', () => stopAllPrograms());
+	for (const name of ['SIGINT', 'SIGTERM', 'SIGHUP']) {
+		const ended = () => {
+			stopAllPrograms();
+			if (process.listenerCount(name) === 0) process.kill(process.pid, name);
+		};
+		process.once(name, ended);
+	}
+}
+
+/** Shells that run `exec "$@"` as sh does; another (fish, nushell) has a program run by sh instead. */
+const POSIX_SHELLS = new Set(['sh', 'bash', 'zsh', 'dash', 'ksh', 'mksh', 'yash']);
+
+/** The login shell that starts a program as the author's terminal would find it, and how. */
+export function loginShell(shell = process.env.SHELL || '/bin/zsh') {
+	return POSIX_SHELLS.has(basename(shell)) ? shell : '/bin/sh';
+}
+
 /**
  * Runs a program for a task, its output into the task's log, stopped (with
- * what it started) when the task is cancelled. Started through a login shell,
- * so it is found as the author's terminal finds it; `argv` goes to it as it
- * is, no word of it read by the shell. Rejects when it fails or is stopped.
+ * what it started) when the task is cancelled: asked to end, then killed if
+ * it has not after a few seconds. Started through a login shell, so it is
+ * found as the author's terminal finds it; `argv` goes to it as it is, no
+ * word of it read by the shell. Rejects when it fails or is stopped.
  * @param {string[]} argv
- * @param {{ cwd: string, env?: Record<string, string>, log: (text: string) => void, signal: AbortSignal, shell?: string }} options
+ * @param {{ cwd: string, env?: Record<string, string>, log: (text: string) => void, signal: AbortSignal, shell?: string, grace?: number }} options
  */
-export function runProgram(argv, { cwd, env = {}, log, signal, shell = process.env.SHELL || '/bin/zsh' }) {
+export function runProgram(argv, { cwd, env = {}, log, signal, shell = process.env.SHELL || '/bin/zsh', grace = STOP_GRACE }) {
 	return new Promise((resolve, reject) => {
 		if (signal.aborted) return reject(new Error('已取消'));
-		const child = spawn(shell, ['-lc', 'exec "$@"', 'studio-task', ...argv], {
+		watchExit();
+		const child = spawn(loginShell(shell), ['-lc', 'exec "$@"', 'studio-task', ...argv], {
 			cwd,
 			env: { ...process.env, ...env },
 			stdio: ['ignore', 'pipe', 'pipe'],
 			// Its own process group: stopping it stops what it started too.
 			detached: true,
 		});
+		if (child.pid) running.add(child.pid);
 		const decoder = (stream) => {
 			stream.setEncoding('utf8');
 			stream.on('data', log);
+			stream.on('error', () => {});
 		};
 		decoder(child.stdout);
 		decoder(child.stderr);
-		const stop = () => {
+		let killer = null;
+		const kill = (name) => {
 			try {
-				process.kill(-child.pid, 'SIGTERM');
+				process.kill(-child.pid, name);
 			} catch {
 				// Over already.
 			}
 		};
+		const stop = () => {
+			kill('SIGTERM');
+			killer = setTimeout(() => kill('SIGKILL'), grace);
+			killer.unref?.();
+		};
+		const over = () => {
+			signal.removeEventListener('abort', stop);
+			clearTimeout(killer);
+			running.delete(child.pid);
+		};
 		signal.addEventListener('abort', stop, { once: true });
 		child.on('error', (error) => {
-			signal.removeEventListener('abort', stop);
+			over();
 			reject(error);
 		});
 		child.on('close', (code, killed) => {
-			signal.removeEventListener('abort', stop);
+			over();
 			if (signal.aborted) reject(new Error('已取消'));
 			else if (code === 0) resolve();
 			else reject(new Error(killed ? `被信号 ${killed} 结束` : `退出码 ${code}`));
@@ -148,8 +209,10 @@ export function runProgram(argv, { cwd, env = {}, log, signal, shell = process.e
 
 /**
  * A command line as its words, as a shell would split it (quotes kept
- * together, a backslash escaping the next character), but nothing run or
- * expanded: for the commands the author sets (agent-settings.mjs).
+ * together, a backslash escaping the next character, in double quotes only
+ * `$`, `` ` ``, `"` and itself; words apart by spaces, tabs and new lines,
+ * not by a full-width space), but nothing run or expanded: for the commands
+ * the author sets (agent-settings.mjs).
  * @returns {string[]}
  */
 export function commandWords(line) {
@@ -160,14 +223,14 @@ export function commandWords(line) {
 		const character = line[index];
 		if (quote) {
 			if (character === quote) quote = null;
-			else if (character === '\\' && quote === '"' && index + 1 < line.length) word += line[++index];
+			else if (character === '\\' && quote === '"' && /[$`"\\]/u.test(line[index + 1] ?? '')) word += line[++index];
 			else word += character;
 		} else if (character === '"' || character === "'") {
 			quote = character;
 			word ??= '';
 		} else if (character === '\\' && index + 1 < line.length) {
 			word = (word ?? '') + line[++index];
-		} else if (/\s/u.test(character)) {
+		} else if (character === ' ' || character === '\t' || character === '\n') {
 			if (word !== null) words.push(word);
 			word = null;
 		} else {

@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { access, constants } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { commandWords } from './tasks.mjs';
+import { commandWords, loginShell } from './tasks.mjs';
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 
 /**
@@ -108,7 +108,7 @@ export class AgentSettings {
 		const key = wanted.join(' ');
 		if (!this.#found || this.#found.key !== key || Date.now() - this.#found.at > KEPT_FOR) {
 			const found = await new Promise((resolve) => {
-				execFile(this.shell, ['-lc', 'for c in "$@"; do command -v "$c" >/dev/null 2>&1 && echo "found:$c"; done', 'studio', ...wanted], { env: this.env, timeout: 5000 }, (_error, stdout) => {
+				execFile(loginShell(this.shell), ['-lc', 'for c in "$@"; do command -v "$c" >/dev/null 2>&1 && echo "found:$c"; done', 'studio', ...wanted], { env: this.env, timeout: 5000 }, (_error, stdout) => {
 					resolve(new Set(String(stdout ?? '').split('\n').filter((line) => line.startsWith('found:')).map((line) => line.slice('found:'.length).trim())));
 				});
 			});

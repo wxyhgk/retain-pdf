@@ -29,7 +29,7 @@ test('frontmatter is parsed as YAML and shares the publication rule', () => {
 	assert.equal(isPublishedArticle({ data: { draft: false } }), true);
 });
 
-test('repository preserves the legacy API while supporting revision aliases', async (t) => {
+test('an article is read with its text and revision, once each, and saved against that revision', async (t) => {
 	const root = await temporaryBlog(t);
 	const repository = new ArticleRepository(root);
 	await repository.create({ slug: 'first-note', title: "研究者的 '草稿'" });
@@ -42,9 +42,10 @@ test('repository preserves the legacy API while supporting revision aliases', as
 	}]);
 
 	const initial = await repository.read('first-note');
-	assert.equal(initial.content, initial.source);
-	assert.equal(initial.hash, initial.revision);
-	assert.match(initial.content, /draft: true/u);
+	// The text once: a book's is megabytes.
+	assert.equal('content' in initial, false);
+	assert.equal('hash' in initial, false);
+	assert.match(initial.source, /draft: true/u);
 	assert.deepEqual(initial.properties, {
 		title: "研究者的 '草稿'",
 		description: '',
@@ -63,11 +64,11 @@ test('repository preserves the legacy API while supporting revision aliases', as
 		source: `${initial.source}\nNew paragraph.\n`,
 		expectedRevision: initial.revision,
 	});
-	assert.equal(saved.hash, saved.revision);
+	assert.match(saved.revision, /^[0-9a-f]{64}$/u);
 	assert.match(await readFile(join(root, 'first-note', 'index.md'), 'utf8'), /New paragraph\./u);
 
 	await assert.rejects(
-		repository.save('first-note', { content: initial.content, expectedHash: initial.hash }),
+		repository.save('first-note', { source: initial.source, expectedRevision: initial.revision }),
 		ArticleConflictError,
 	);
 });

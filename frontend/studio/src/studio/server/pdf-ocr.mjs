@@ -70,7 +70,7 @@ export async function startPdfOcr({ tasks, articles, blogRoot, slug, path, env, 
 			const into = join(page.directory, 'img', 'ocr');
 			await mkdir(into, { recursive: true });
 			const made = new Set(await readdir(join(work, 'imgs')).catch(() => []));
-			for (const picture of pictures) if (made.has(picture)) await rename(join(work, 'imgs', picture), join(into, picture));
+			for (const { file, name } of pictures) if (made.has(file)) await rename(join(work, 'imgs', file), join(into, name));
 			await write(`由 PaddleOCR 从上级页面里的 ${named} 识别。\n\n${markdown}`);
 			log(`\n识别完，写进了子页面「${title}」（${pictures.length} 张图）。\n`);
 			return { page: folder, title, pictures: pictures.length };

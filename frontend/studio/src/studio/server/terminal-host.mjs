@@ -44,6 +44,11 @@ export class TerminalHost {
 				if (this.#acks.delete(ticket)) reject(new TerminalUnavailableError('终端程序没有响应'));
 			}, 5000);
 		});
+		// Gone between its start and now (it crashed): the next terminal starts it again.
+		if (!this.#child?.stdin.writable) {
+			this.#acks.delete(ticket);
+			throw new TerminalUnavailableError('终端程序刚刚退出了，再试一次');
+		}
 		this.#child.stdin.write(`${JSON.stringify({ ticket, cwd, env })}\n`);
 		await granted;
 		return { url: `ws://127.0.0.1:${port}/pty?ticket=${ticket}` };
@@ -67,12 +72,19 @@ export class TerminalHost {
 		await this.#build();
 		const child = this.spawnImpl(this.binary, [], { stdio: ['pipe', 'pipe', 'inherit'] });
 		this.#child = child;
+		// Written to as it exits: the write fails (EPIPE), the server goes on.
+		child.stdin.on('error', () => {});
 		const lines = createInterface({ input: child.stdout });
 		const port = await new Promise((resolve, reject) => {
 			child.once('error', (error) => reject(new TerminalUnavailableError(`终端程序无法启动：${error.message}`)));
 			child.once('exit', () => reject(new TerminalUnavailableError('终端程序启动后立即退出了')));
 			lines.once('line', (line) => {
-				const { port } = JSON.parse(line);
+				let port;
+				try {
+					({ port } = JSON.parse(line));
+				} catch {
+					// Something else said first (a warning): no port.
+				}
 				Number.isInteger(port) ? resolve(port) : reject(new TerminalUnavailableError('终端程序没有报告端口'));
 			});
 		});

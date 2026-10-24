@@ -414,8 +414,6 @@ export class ArticleRepository {
 			// When its text last changed, in milliseconds.
 			modified: info.mtimeMs,
 			slug,
-			content: source,
-			hash: revision,
 			source,
 			revision,
 			properties: articleProperties(source, slug),
@@ -458,16 +456,15 @@ export class ArticleRepository {
 		return retitled ? { ...saved, retitled } : saved;
 	}
 
-	async #save(slug, { content, source, expectedHash, expectedRevision }, { before }) {
-		const nextSource = source ?? content;
+	async #save(slug, { source: nextSource, expectedRevision }, { before }) {
 		if (typeof nextSource !== 'string') throw new ArticleValidationError('文章内容必须是文本');
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
 		const [current, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
 		const currentRevision = bundleRevision(current, viewsSource);
 		// Already so: a save sent again (its answer lost on the way) is the same save, not someone else's change.
-		if (current === nextSource) return { hash: currentRevision, revision: currentRevision, problems: articleProblems(current) };
-		const expected = expectedRevision ?? expectedHash;
+		if (current === nextSource) return { revision: currentRevision, problems: articleProblems(current) };
+		const expected = expectedRevision;
 		if (expected && currentRevision !== expected) {
 			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');
 		}
@@ -487,7 +484,7 @@ export class ArticleRepository {
 		// Titles as typed (none, not the folder name it is listed by then).
 		const was = articleSummary(current, '').title;
 		const is = articleSummary(nextSource, '').title;
-		return { hash: revision, revision, problems: articleProblems(nextSource), ...(was && is && was !== is ? { retitle: { from: was, to: is } } : {}) };
+		return { revision, problems: articleProblems(nextSource), ...(was && is && was !== is ? { retitle: { from: was, to: is } } : {}) };
 	}
 
 	/**

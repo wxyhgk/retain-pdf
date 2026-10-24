@@ -45,3 +45,19 @@ test('without Rust the terminal says how to get it', async () => {
 	const host = new TerminalHost(crate, { cargo: join(tmpdir(), 'no-cargo-here') });
 	await assert.rejects(host.open(tmpdir()), (error) => error instanceof TerminalUnavailableError && /rustup\.rs/u.test(error.message));
 });
+
+test('a terminal program that says something else first, or exits at once, is an error, not the server’s end', async (t) => {
+	const { mkdtemp, writeFile, chmod, rm } = await import('node:fs/promises');
+	const folder = await mkdtemp(join(tmpdir(), 'studio-terminal-'));
+	t.after(() => rm(folder, { recursive: true, force: true }));
+	const chatty = join(folder, 'chatty');
+	await writeFile(chatty, '#!/bin/sh\necho "warning: something"\nsleep 5\n');
+	await chmod(chatty, 0o755);
+	const host = new TerminalHost(folder, { cargo: 'true', binary: chatty });
+	t.after(() => host.close());
+	await assert.rejects(host.open(tmpdir()), /没有报告端口/u);
+	const gone = join(folder, 'gone');
+	await writeFile(gone, '#!/bin/sh\nexit 0\n');
+	await chmod(gone, 0o755);
+	await assert.rejects(new TerminalHost(folder, { cargo: 'true', binary: gone }).open(tmpdir()), TerminalUnavailableError);
+});

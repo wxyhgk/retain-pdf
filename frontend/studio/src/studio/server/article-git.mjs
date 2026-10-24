@@ -81,7 +81,10 @@ export class ArticleGit {
 		const { changed, vanished } = await this.status();
 		if (!changed[slug] && !vanished.length) throw new GitError('这篇文章没有要提交的改动', 409);
 		const folders = [slug, ...vanished].map((name) => resolve(this.#blog, name));
-		await this.#git(root, ['add', '-A', '--', ...folders, this.#private(root)]);
+		// A folder gone whose removal is staged already is neither on disk nor in the index: `add` would not find it.
+		const indexed = [];
+		for (const folder of folders.slice(1)) if ((await this.#git(root, ['ls-files', '--', folder])).trim()) indexed.push(folder);
+		await this.#git(root, ['add', '-A', '--', folders[0], ...indexed, this.#private(root)]);
 		// With paths, only they are committed: whatever else was staged stays staged.
 		await this.#git(root, ['commit', '--quiet', '-m', message.trim(), '--', ...folders, this.#private(root)]);
 		const commit = (await this.#git(root, ['rev-parse', '--short', 'HEAD'])).trim();

@@ -283,7 +283,11 @@ export default function studioDev({ site } = {}) {
 						response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive' });
 						response.write('retry: 2000\n\n');
 						response.write(`data: ${JSON.stringify({ type: 'all', tasks: tasks.list() })}\n\n`);
-						const stop = tasks.subscribe((event) => response.write(`data: ${JSON.stringify(event)}\n\n`));
+						const stop = tasks.subscribe((event) => {
+							// A page that reads slower than a program writes: its log is skipped (the task keeps it whole), not piled up here.
+							if (event.type === 'log' && response.writableLength > 1024 * 1024) return;
+							response.write(`data: ${JSON.stringify(event)}\n\n`);
+						});
 						const keepAlive = setInterval(() => response.write(': keep-alive\n\n'), 25_000);
 						request.on('close', () => {
 							clearInterval(keepAlive);

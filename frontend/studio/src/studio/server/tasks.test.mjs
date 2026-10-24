@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { Tasks, commandWords, runProgram } from './tasks.mjs';
+import { Tasks, commandWords, loginShell, runProgram, stopAllPrograms } from './tasks.mjs';
 
 const over = (tasks, id) => new Promise((resolve) => {
 	const check = () => (tasks.get(id).state !== 'running' ? resolve(tasks.get(id)) : setTimeout(check, 10));
@@ -53,6 +53,8 @@ test('a command line is split as a shell would, nothing in it run', () => {
 	assert.deepEqual(commandWords(`claude -p --settings '{"sandbox":{"enabled":true}}' {prompt}`), ['claude', '-p', '--settings', '{"sandbox":{"enabled":true}}', '{prompt}']);
 	assert.deepEqual(commandWords('codex exec -c sandbox_mode="workspace-write" "a \\"b\\"" c\\ d'), ['codex', 'exec', '-c', 'sandbox_mode=workspace-write', 'a "b"', 'c d']);
 	assert.deepEqual(commandWords("''"), ['']);
+	// In double quotes a backslash escapes only what sh says; a full-width space is a character, not a gap.
+	assert.deepEqual(commandWords('run "C:\\x" "\\$HOME" 甲\u3000乙'), ['run', 'C:\\x', '$HOME', '甲\u3000乙']);
 	assert.throws(() => commandWords('pi "open'), /引号/u);
 });
 
@@ -76,12 +78,67 @@ test('Alt+Enter: the AI is told where the line is and what it says, not the arti
 	await settings.set({ list: [{ id: 'stand-in', name: '替身', launch: `${root}/agent`, run: `${root}/agent {prompt}`, resume: `${root}/agent --continue {prompt}` }], default: 'stand-in' });
 	const tasks = new Tasks();
 	const line = { text: '画一个 sin x 的图', start: 3, end: 3, heading: '' };
-	const task = await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: { STUDIO_ARTICLE: 'note' }, line });
-	const done = await over(tasks, task.id);
-	assert.equal(done.state, 'done', done.error ?? '');
-	assert.equal(done.title, '替身：画一个 sin x 的图');
-	assert.match(done.log, /^in note for note\narg:--continue\narg:作者在这篇文章的 index\.md 第 3 行/u);
+	// The first in the folder: nothing to go on from.
+	const first = await over(tasks, (await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: { STUDIO_ARTICLE: 'note' }, line })).id);
+	assert.equal(first.state, 'done', first.error ?? '');
+	assert.equal(first.title, '替身：画一个 sin x 的图');
+	assert.match(first.log, /^in note for note\narg:作者在这篇文章的 index\.md 第 3 行/u);
+	// Work done here before (its log): it goes on from there, unless told to start anew.
+	await (await import('node:fs/promises')).mkdir(join(folder, 'ai', 'work'), { recursive: true });
+	await writeFile(join(folder, 'ai', 'work', 'log.md'), '- 2026-10-25 画图\n');
+	const done = await over(tasks, (await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line })).id);
+	assert.match(done.log, /^in note for \narg:--continue\narg:作者在这篇文章的 index\.md 第 3 行/u);
 	const fresh = await over(tasks, (await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line, fresh: true })).id);
 	assert.doesNotMatch(fresh.log, /--continue/u);
 	await assert.rejects(startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line: { ...line, text: '  ' } }), /空/u);
+	await assert.rejects(startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line: { ...line, text: '长'.repeat(30_001) } }), /太长/u);
+});
+
+test('Alt+Enter twice in one article: the second waits for the first, and can be cancelled while it waits', async (t) => {
+	const { startInstruction } = await import('./instructions.mjs');
+	const { AgentSettings } = await import('./agent-settings.mjs');
+	const { writeFile, chmod, mkdir } = await import('node:fs/promises');
+	const root = await mkdtemp(join(tmpdir(), 'studio-instruct-'));
+	t.after(() => rm(root, { recursive: true, force: true }));
+	// Says so when another is running beside it.
+	await writeFile(join(root, 'agent'), `#!/bin/sh\n[ -e '${root}/running' ] && echo overlap\ntouch '${root}/running'; sleep 0.3; rm '${root}/running'; echo ran\n`);
+	await chmod(join(root, 'agent'), 0o755);
+	const folder = join(root, 'note');
+	await mkdir(folder);
+	const settings = new AgentSettings(join(root, 'settings.json'), { env: { PATH: '/usr/bin:/bin' }, shell: '/bin/sh' });
+	await settings.set({ list: [{ id: 'stand-in', name: '替身', launch: `${root}/agent`, run: `${root}/agent {prompt}`, resume: `${root}/agent {prompt}` }], default: 'stand-in' });
+	const tasks = new Tasks();
+	const line = { text: '算一下', start: 1, end: 1, heading: '' };
+	const one = await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line });
+	const two = await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line });
+	const three = await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line });
+	tasks.cancel(three.id);
+	const [first, second, third] = await Promise.all([over(tasks, one.id), over(tasks, two.id), over(tasks, three.id)]);
+	assert.equal(third.state, 'cancelled');
+	assert.match(second.log, /^这篇文章里还有一件事在做/u);
+	assert.equal(first.log, 'ran\n');
+	assert.match(second.log, /\nran\n$/u);
+	assert.doesNotMatch(second.log, /overlap/u);
+});
+
+test('a program that will not stop is killed after a while; all of them end with the server', async () => {
+	const tasks = new Tasks();
+	const stubborn = tasks.start({ kind: 'test', title: '不肯停' }, ({ log, signal }) =>
+		runProgram(['/bin/sh', '-c', "trap '' TERM; echo started; sleep 30"], { cwd: tmpdir(), log, signal, shell: '/bin/sh', grace: 200 }),
+	);
+	while (!tasks.get(stubborn.id).log) await new Promise((resolve) => setTimeout(resolve, 10));
+	const at = Date.now();
+	tasks.cancel(stubborn.id);
+	assert.equal((await over(tasks, stubborn.id)).state, 'cancelled');
+	assert.ok(Date.now() - at < 3000);
+
+	const left = tasks.start({ kind: 'test', title: '还在跑' }, ({ log, signal }) => runProgram(['/bin/sh', '-c', 'echo started; sleep 30'], { cwd: tmpdir(), log, signal, shell: '/bin/sh' }));
+	while (!tasks.get(left.id).log) await new Promise((resolve) => setTimeout(resolve, 10));
+	stopAllPrograms();
+	const ended = await over(tasks, left.id);
+	assert.equal(ended.state, 'failed');
+	assert.match(ended.error, /SIGTERM/u);
+	// A shell that runs no `exec "$@"` (fish) has sh start programs.
+	assert.equal(loginShell('/opt/homebrew/bin/fish'), '/bin/sh');
+	assert.equal(loginShell('/bin/zsh'), '/bin/zsh');
 });
