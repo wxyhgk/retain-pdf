@@ -62,8 +62,25 @@ export function driveSegments(path, { allowRoot = false } = {}) {
 	return segments;
 }
 
-function trashStamp() {
-	return new Date().toISOString().replace(/[:.]/gu, '-');
+function trashStamp(at = Date.now()) {
+	return new Date(at).toISOString().replace(/[:.]/gu, '-');
+}
+
+/**
+ * A folder of its own in `trash`, named by now (`name` of the time): one made in the same millisecond is a
+ * millisecond on, so two things trashed at once never share one (putting one back would take the other).
+ */
+async function ownTrashFolder(trash, name = (stamp) => stamp) {
+	await mkdir(trash, { recursive: true });
+	for (let at = Date.now(); ; at += 1) {
+		const folder = name(trashStamp(at));
+		try {
+			await mkdir(join(trash, folder));
+			return folder;
+		} catch (error) {
+			if (error?.code !== 'EEXIST') throw error;
+		}
+	}
 }
 
 export class Drive {
@@ -206,7 +223,7 @@ export class Drive {
 		const root = await this.#root();
 		const segments = driveSegments(path);
 		const sourcePath = await existingEntry(root, segments);
-		const trashed = [trashStamp(), ...segments].join('/');
+		const trashed = [await ownTrashFolder(join(root, TRASH)), ...segments].join('/');
 		const trashedTo = join(root, TRASH, ...trashed.split('/'));
 		await mkdir(dirname(trashedTo), { recursive: true });
 		await rename(sourcePath, trashedTo);

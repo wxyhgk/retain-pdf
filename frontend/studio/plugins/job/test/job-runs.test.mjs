@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chmod, mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -261,4 +261,18 @@ test('the script a run executes, and the machines as written', () => {
 	assert.deepEqual(readHost({ name: 'q', kind: 'ssh', ssh: 'me@box', scheduler: 'slurm', partition: 'batch', time: '24:00:00', threads: 16 }), {
 		name: 'q', label: 'q', kind: 'ssh', scheduler: 'slurm', workdir: '~/studio-jobs', threads: 16, programs: {}, setup: '', ssh: 'me@box', partition: 'batch', time: '24:00:00',
 	});
+});
+
+test('a run goes on with its article renamed meanwhile (published, renamed by the CLI), and two started at once each have their folder', async (t) => {
+	const { runs, blogRoot } = await fixture(t);
+	const [first, second] = await Promise.all([
+		runs.start('note', { id: 'water-opt', program: 'xtb', args: '--steps 20 --sleep 0.05', host: 'local', body: WATER }),
+		runs.start('note', { id: 'water-opt', program: 'xtb', args: '--steps 1', host: 'local', body: WATER }),
+	]);
+	assert.notEqual(first.run, second.run);
+	await until(() => record(join(blogRoot, 'note'), 'water-opt', first.run), (value) => value.state === 'running');
+	await rename(join(blogRoot, 'note'), join(blogRoot, 'water'));
+	const done = await until(() => record(join(blogRoot, 'water'), 'water-opt', first.run), (value) => value.state === 'done');
+	assert.deepEqual(done.files, ['input.xyz', 'xtb.out', 'xtbopt.xyz']);
+	assert.match(await readFile(join(blogRoot, 'water', 'assets/jobs/water-opt', first.run, 'xtb.out'), 'utf8'), /normal termination of xtb/u);
 });

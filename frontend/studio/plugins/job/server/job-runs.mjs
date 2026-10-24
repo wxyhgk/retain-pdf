@@ -201,10 +201,20 @@ export class JobRuns {
 		const [input, contents] = await this.#input(slug, String(request.body ?? ''));
 		const directory = await this.#article(slug);
 
-		let run = runName(this.now());
-		for (let suffix = 2; existsSync(this.files.inside(directory, ...runFolder(id, run).split('/'))); suffix += 1) run = `${runName(this.now())}-${suffix}`;
-		const folder = this.#runDirectory(slug, id, run);
-		await mkdir(folder, { recursive: true });
+		// Making its folder takes the name: two started in the same second get two.
+		let run;
+		let folder;
+		for (let suffix = 1; ; suffix += 1) {
+			run = suffix === 1 ? runName(this.now()) : `${runName(this.now())}-${suffix}`;
+			folder = this.#runDirectory(slug, id, run);
+			await mkdir(dirname(folder), { recursive: true });
+			try {
+				await mkdir(folder);
+				break;
+			} catch (error) {
+				if (error?.code !== 'EEXIST') throw error;
+			}
+		}
 		await writeFile(join(folder, input), contents);
 		const command = program.command(input, args, threads);
 		const record = {
@@ -337,6 +347,22 @@ export class JobRuns {
 		while (this.#busy.size) await new Promise((resolvePromise) => setTimeout(resolvePromise, 10));
 	}
 
+	/** The article whose folder now holds the run, when it is no longer in its own; null when none does. */
+	async #movedTo({ slug, id, run }) {
+		// The articles' folder: the one an article's folder is in.
+		const blog = dirname(this.files.articleFolder(slug));
+		for (const name of await readdir(blog).catch(() => [])) {
+			let folder;
+			try {
+				folder = this.#runDirectory(name, id, run);
+			} catch {
+				continue;
+			}
+			if (existsSync(join(folder, 'run.json'))) return name;
+		}
+		return null;
+	}
+
 	#key({ slug, id, run }) {
 		return `${slug}/${id}/${run}`;
 	}
@@ -361,8 +387,11 @@ export class JobRuns {
 		this.#busy.add(key);
 		try {
 			if (!existsSync(join(this.#runDirectory(entry.slug, entry.id, entry.run), 'run.json'))) {
-				// The article or the run went (renamed, deleted): nothing to write into any more.
 				this.#entries.delete(key);
+				// The article took another name (published, renamed in the Studio or by the CLI): the run went with it.
+				const moved = await this.#movedTo(entry);
+				if (moved) this.#entries.set(this.#key({ ...entry, slug: (entry.slug = moved) }), entry);
+				// Else the article or the run went (deleted): nothing to write into any more.
 				await this.#save();
 				return;
 			}

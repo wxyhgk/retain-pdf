@@ -1,5 +1,5 @@
-import { cp, lstat, mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
-import { basename, dirname, resolve } from 'node:path';
+import { cp, lstat, mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 import { setFrontmatterField, updateStudioFrontmatter } from '../document/frontmatter.ts';
 import { comparePages } from '../../articles/page-order.mjs';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
@@ -7,6 +7,7 @@ import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../
 import { articleBundlePaths, assertArticleSlug, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { findArticleLinks, relinkArticle, retitleArticleLinks } from '@blog/markdown/articles/article-links.mjs';
+import { parseBibtex } from '@blog/markdown/references/bibtex.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../articles/schemas.mjs';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */
@@ -26,15 +27,30 @@ async function readViewsSource(path) {
 export class ArticleRepository {
 	/** Per article, the end of its queue of writes. */
 	#writes = new Map();
+	/** Per article whose title is being changed: the title it had, the newest, and when the links follow. */
+	#titles = new Map();
 
-	constructor(blogRoot) {
+	/**
+	 * @param {string} blogRoot
+	 * @param {{ keep?: (slug: string, source: string) => unknown, retitleAfter?: number }} [options]
+	 * `keep`: keeps a page's text as a version before the Studio rewrites it for another page's change
+	 * (the links to a page renamed, retitled, merged). `retitleAfter`: how long a title stays as typed
+	 * before the links that were its title follow it (ms; 0: at once), so a title typed one letter at a
+	 * time is followed once, from what it was to what it became.
+	 */
+	constructor(blogRoot, { keep = null, retitleAfter = 0 } = {}) {
 		this.blogRoot = resolve(blogRoot);
+		this.keep = keep;
+		this.retitleAfter = retitleAfter;
 	}
 
 	/**
 	 * Runs `task` once the article's earlier writes are done. A write reads
 	 * the article, checks its revision and writes it back; two of them at once
 	 * could both pass the check and the later one silently undo the earlier.
+	 * What changes other articles too changes them each in its own queue,
+	 * after its own (#rewrite): never one queue waiting on another's, which
+	 * two such changes at once could do the other way round, forever.
 	 */
 	exclusive(slug, task) {
 		const run = (this.#writes.get(slug) ?? Promise.resolve()).then(task);
@@ -146,37 +162,51 @@ export class ArticleRepository {
 		if (parent) assertArticleSlug(parent);
 		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError('新文章的内容无效');
 		const paths = articleBundlePaths(this.blogRoot, slug);
-		try {
-			await stat(paths.directory);
-			throw new ArticleConflictError('该文章目录已经存在');
-		} catch (error) {
-			if (error instanceof ArticleConflictError) throw error;
-			if (error?.code !== 'ENOENT') throw error;
-		}
-
 		const source = createArticleSource({ title, parent, body });
-		await Promise.all(ARTICLE_FOLDERS.map((name) => mkdir(paths[name], { recursive: true })));
-		await Promise.all([
-			writeFile(paths.markdown, source, { encoding: 'utf8', flag: 'wx' }),
-			writeFile(paths.views, DEFAULT_ARTICLE_VIEWS, { encoding: 'utf8', flag: 'wx' }),
-		]);
-		if (parent) {
-			const from = articleBundlePaths(this.blogRoot, parent).directory;
-			for (const file of files) {
-				// Only the parent's published folders, and only what is there.
-				if (typeof file !== 'string' || !/^(?:img|assets)\//u.test(file)) continue;
-				const source = resolveInside(from, file);
-				const target = resolveInside(paths.directory, file);
-				try {
-					if (!(await lstat(source)).isFile()) continue;
-				} catch {
-					continue;
-				}
-				await mkdir(dirname(target), { recursive: true });
-				await cp(source, target, { errorOnExist: false, force: false });
-			}
+		// Making the folder is taking the name: two made at once, one of them is refused.
+		try {
+			await mkdir(paths.directory);
+		} catch (error) {
+			if (error?.code === 'EEXIST') throw new ArticleConflictError('该文章目录已经存在');
+			throw error;
+		}
+		try {
+			await Promise.all(ARTICLE_FOLDERS.map((name) => mkdir(paths[name], { recursive: true })));
+			await Promise.all([
+				writeFile(paths.markdown, source, { encoding: 'utf8', flag: 'wx' }),
+				writeFile(paths.views, DEFAULT_ARTICLE_VIEWS, { encoding: 'utf8', flag: 'wx' }),
+			]);
+			if (parent) await this.#copyParentFiles(parent, paths.directory, body, files);
+		} catch (error) {
+			// Not half an article.
+			await rm(paths.directory, { recursive: true, force: true }).catch(() => {});
+			throw error;
 		}
 		return { slug };
+	}
+
+	/**
+	 * The parent's files a section taken from it names (`img/…`, `assets/…`), copied into the new page's
+	 * folder; its library (assets/refs.bib) too when the section cites. Only files really in the parent's
+	 * folder: a folder there that is a link to elsewhere is not followed.
+	 */
+	async #copyParentFiles(parent, into, body, files) {
+		const from = articleBundlePaths(this.blogRoot, parent).directory;
+		const root = await realpath(from);
+		const wanted = new Set(files.filter((file) => typeof file === 'string' && /^(?:img|assets)\//u.test(file)));
+		if (CITATION.test(body)) wanted.add('assets/refs.bib');
+		for (const file of wanted) {
+			let real;
+			try {
+				real = await realpath(resolveInside(from, file));
+				if (!isInside(root, real) || !(await lstat(real)).isFile()) continue;
+			} catch {
+				continue;
+			}
+			const target = resolveInside(into, file);
+			await mkdir(dirname(target), { recursive: true });
+			await cp(real, target, { errorOnExist: false, force: false });
+		}
 	}
 
 	/**
@@ -184,25 +214,25 @@ export class ArticleRepository {
 	 * (`/blog/<slug>/`). Its text says nothing of its folder, so nothing in it
 	 * changes; the pages under it (`parent:` its old name) are put under its new one.
 	 */
-	rename(slug, to, { site } = {}) {
-		return this.exclusive(slug, async () => {
+	async rename(slug, to, { site } = {}) {
+		const moved = await this.exclusive(slug, async () => {
 			const from = articleBundlePaths(this.blogRoot, slug);
 			await assertReadableBundle(from);
-			if (to === slug) return { slug, relinked: 0 };
+			if (to === slug) return false;
 			const target = articleBundlePaths(this.blogRoot, to);
 			await assertFree(target.directory);
 			await rename(from.directory, target.directory);
-			for (const child of await this.#children(slug)) await this.#writeParent(child, to);
-			// The links to it in the articles (its own too) follow it to its new address.
-			let relinked = 0;
-			for (const { slug: page, source } of await this.#sources()) {
-				const { source: next, changed } = relinkArticle(source, slug, to, { site });
-				if (!changed) continue;
-				await atomicWriteText(articleBundlePaths(this.blogRoot, page).markdown, next);
-				relinked += 1;
-			}
-			return { slug: to, relinked };
+			return true;
 		});
+		if (!moved) return { slug, relinked: 0 };
+		for (const child of await this.#children(slug)) await this.#rewrite(child, (source) => withFields(source, { parent: to }));
+		// The links to it in the articles (its own too) follow it to its new address.
+		let relinked = 0;
+		for (const { slug: page, source } of await this.#sources()) {
+			if (!source.includes(slug)) continue;
+			if (await this.#rewrite(page, (text) => relinkArticle(text, slug, to, { site }).source, { keep: true })) relinked += 1;
+		}
+		return { slug: to, relinked };
 	}
 
 	/**
@@ -212,10 +242,11 @@ export class ArticleRepository {
 	 * them: those pages are numbered again (`order:` 10, 20, …) in the order
 	 * they then have. Without, after the pages given an order there, if any.
 	 */
-	setParent(slug, parent, { before = '', after = '' } = {}) {
+	async setParent(slug, parent, { before = '', after = '' } = {}) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
-		return this.exclusive(slug, async () => {
+		// The pages around it numbered again, each in its own queue once this one's is done.
+		const others = await this.exclusive(slug, async () => {
 			await assertReadableBundle(articleBundlePaths(this.blogRoot, slug));
 			const pages = (await this.#sources()).map(({ slug: page, source }) => ({ slug: page, source, ...articleSummary(source, page) }));
 			const bySlug = new Map(pages.map((page) => [page.slug, page]));
@@ -232,17 +263,20 @@ export class ArticleRepository {
 			if (next) {
 				const index = siblings.indexOf(next) + (after ? 1 : 0);
 				const placed = [...siblings.slice(0, index), moved, ...siblings.slice(index)];
+				const renumbered = [];
 				for (const [index, page] of placed.entries()) {
 					if (page === moved) await this.#writeFields(slug, { parent, order: (index + 1) * 10 });
-					else if (page.order !== (index + 1) * 10) await this.#writeFields(page.slug, { order: (index + 1) * 10 });
+					else if (page.order !== (index + 1) * 10) renumbered.push([page.slug, (index + 1) * 10]);
 				}
-				return { slug, parent };
+				return renumbered;
 			}
 			const ordered = siblings.filter((page) => typeof page.order === 'number');
 			const last = ordered.length ? Math.max(...ordered.map((page) => page.order)) : null;
 			await this.#writeFields(slug, { parent, order: last === null ? null : last + 10 });
-			return { slug, parent };
+			return [];
 		});
+		for (const [page, order] of others) await this.#rewrite(page, (source) => withFields(source, { order }));
+		return { slug, parent };
 	}
 
 	/**
@@ -254,40 +288,74 @@ export class ArticleRepository {
 	 * `before(parent, source)` is told the parent's text as it was, first. The
 	 * article itself is left for the caller to put in the trash.
 	 */
-	merge(slug, { site, before } = {}) {
+	async merge(slug, { site, before } = {}) {
 		assertArticleSlug(slug);
-		return this.exclusive(slug, async () => {
+		const parent = await this.exclusive(slug, async () => {
 			const own = articleBundlePaths(this.blogRoot, slug);
 			await assertReadableBundle(own);
 			const source = await readFile(own.markdown, 'utf8');
 			const { title, parent } = articleSummary(source, slug);
 			if (!parent) throw new ArticleValidationError('它不在别的页面下面，没有可以并入的上级');
 			const above = articleBundlePaths(this.blogRoot, parent);
-			await assertReadableBundle(above);
-			const parentSource = await readFile(above.markdown, 'utf8');
-			await before?.(parent, parentSource);
-			const body = source.replace(/^(?:\uFEFF)?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/u, '').trim();
-			const section = `## ${title}\n\n${body}`.trim();
-			const linkLine = new RegExp(`^[ \\t]*\\[[^\\]\\n]*\\]\\((?:https?://[^)\\s]*)?/(?:blog|wiki)/${slug}/?\\)[ \\t]*$`, 'mu');
-			const merged = linkLine.test(parentSource)
-				? parentSource.replace(linkLine, () => section)
-				: `${parentSource.replace(/\s*$/u, '')}\n\n${section}\n`;
-			await atomicWriteText(above.markdown, merged);
-			for (const folder of ['img', 'assets']) {
-				try {
-					await cp(resolveInside(own.directory, folder), resolveInside(above.directory, folder), { recursive: true, errorOnExist: false, force: false });
-				} catch (error) {
-					if (error?.code !== 'ENOENT') throw error;
-				}
-			}
-			for (const child of await this.#children(slug)) await this.#writeParent(child, parent);
-			for (const { slug: page, source: text } of await this.#sources()) {
-				if (page === slug) continue;
-				const { source: next, changed } = relinkArticle(text, slug, parent, { site });
-				if (changed) await atomicWriteText(articleBundlePaths(this.blogRoot, page).markdown, next);
-			}
-			return { slug, parent };
+			// The parent's queue inside this one's: never the other way round (a page is not above its parent).
+			await this.exclusive(parent, async () => {
+				await assertReadableBundle(above);
+				const parentSource = await readFile(above.markdown, 'utf8');
+				// Its files first, so what the section links to is there once the section is; one of the same name
+				// that is another file is copied under another name, and the section's links to it changed.
+				const renamed = await mergeFiles(own.directory, above.directory);
+				const body = relinkFiles(source.replace(/^(?:\uFEFF)?---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/u, '').trim(), renamed);
+				const section = `## ${title}\n\n${body}`.trim();
+				// There already (a merge stopped halfway, asked again): not twice.
+				if (parentSource.includes(section)) return;
+				await before?.(parent, parentSource);
+				const linkLine = new RegExp(`^[ \\t]*\\[[^\\]\\n]*\\]\\((?:https?://[^)\\s]*)?/(?:blog|wiki)/${slug}/?\\)[ \\t]*$`, 'mu');
+				const merged = linkLine.test(parentSource)
+					? parentSource.replace(linkLine, () => section)
+					: `${parentSource.replace(/\s*$/u, '')}\n\n${section}\n`;
+				await atomicWriteText(above.markdown, merged);
+			});
+			return parent;
 		});
+		for (const child of await this.#children(slug)) await this.#rewrite(child, (source) => withFields(source, { parent }));
+		for (const { slug: page, source: text } of await this.#sources()) {
+			if (page === slug || !text.includes(slug)) continue;
+			await this.#rewrite(page, (current) => relinkArticle(current, slug, parent, { site }).source, { keep: true });
+		}
+		return { slug, parent };
+	}
+
+	/**
+	 * Changes another article than the one whose queue this runs in: in its own queue, read again there
+	 * (whatever was saved meanwhile is what is changed), its text kept as a version first when `keep`.
+	 * Whether it changed; an article gone meanwhile is left gone.
+	 * @param {(source: string) => string} change
+	 */
+	#rewrite(slug, change, { keep = false } = {}) {
+		return this.exclusive(slug, async () => {
+			const { markdown } = articleBundlePaths(this.blogRoot, slug);
+			let source;
+			try {
+				source = await readFile(markdown, 'utf8');
+			} catch (error) {
+				if (error?.code === 'ENOENT') return false;
+				throw error;
+			}
+			const next = change(source);
+			if (next === source) return false;
+			if (keep) await this.#keep(slug, source);
+			await atomicWriteText(markdown, next);
+			return true;
+		});
+	}
+
+	/** Keeps a version of the article; one that cannot be kept stops nothing (it is said in the server's log). */
+	async #keep(slug, source) {
+		try {
+			await this.keep?.(slug, source);
+		} catch (error) {
+			console.warn(`[studio] 没能存下 ${slug} 的历史版本：${error instanceof Error ? error.message : error}`);
+		}
 	}
 
 	/** The folder names of the pages right under `slug`. */
@@ -295,16 +363,11 @@ export class ArticleRepository {
 		return (await this.#sources()).filter(({ source, slug: page }) => articleSummary(source, page).parent === slug).map(({ slug: page }) => page);
 	}
 
-	async #writeParent(slug, parent) {
-		await this.#writeFields(slug, { parent });
-	}
-
-	/** Sets the tree's fields given (`parent`, `order`; empty or null takes one out), the rest of the text as it was. */
+	/** Sets the article's tree fields (withFields), in its own queue (the caller's). */
 	async #writeFields(slug, fields) {
 		const { markdown } = articleBundlePaths(this.blogRoot, slug);
 		const source = await readFile(markdown, 'utf8');
-		let next = source;
-		for (const [key, value] of Object.entries(fields)) next = setFrontmatterField(next, key, value);
+		const next = withFields(source, fields);
 		if (next !== source) await atomicWriteText(markdown, next);
 	}
 
@@ -388,11 +451,14 @@ export class ArticleRepository {
 	 * for links written in full. `before` is given the text as it was, before
 	 * it is written over (to keep it as a version).
 	 */
-	save(slug, change, { site, before } = {}) {
-		return this.exclusive(slug, () => this.#save(slug, change, { site, before }));
+	async save(slug, change, { site, before } = {}) {
+		const { retitle, ...saved } = await this.exclusive(slug, () => this.#save(slug, change, { before }));
+		// The links in the other articles: once this one's queue is done (#rewrite).
+		const retitled = retitle ? await this.#titleChanged(slug, retitle.from, retitle.to, { site }) : 0;
+		return retitled ? { ...saved, retitled } : saved;
 	}
 
-	async #save(slug, { content, source, expectedHash, expectedRevision }, { site, before }) {
+	async #save(slug, { content, source, expectedHash, expectedRevision }, { before }) {
 		const nextSource = source ?? content;
 		if (typeof nextSource !== 'string') throw new ArticleValidationError('文章内容必须是文本');
 		const paths = articleBundlePaths(this.blogRoot, slug);
@@ -405,26 +471,55 @@ export class ArticleRepository {
 		if (expected && currentRevision !== expected) {
 			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');
 		}
-		await before?.(current);
+		// A version that cannot be kept (a full disk…) does not keep the text typed from being saved.
+		try {
+			await before?.(current);
+		} catch (error) {
+			console.warn(`[studio] 没能存下 ${slug} 的历史版本：${error instanceof Error ? error.message : error}`);
+		}
+		// Another program (the CLI, an AI) may have written it meanwhile: it is not in this queue.
+		if (expected && (await readFile(paths.markdown, 'utf8')) !== current) {
+			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');
+		}
 		// Saved even when the properties are wrong, so nothing typed is lost; `problems` says what to fix.
 		await atomicWriteText(paths.markdown, nextSource);
 		const revision = bundleRevision(nextSource, viewsSource);
 		// Titles as typed (none, not the folder name it is listed by then).
 		const was = articleSummary(current, '').title;
 		const is = articleSummary(nextSource, '').title;
-		const retitled = was && is && was !== is ? await this.#retitleLinks(slug, was, is, { site }) : 0;
-		return { hash: revision, revision, problems: articleProblems(nextSource), ...(retitled ? { retitled } : {}) };
+		return { hash: revision, revision, problems: articleProblems(nextSource), ...(was && is && was !== is ? { retitle: { from: was, to: is } } : {}) };
+	}
+
+	/**
+	 * The article's title went from `from` to `to`: the links to it whose words were its title follow, at
+	 * once (in how many articles), or once the title has stayed `retitleAfter` ms (0 then): from the title it
+	 * had before it began to change, so links that happen to read as a title half typed are left alone.
+	 */
+	async #titleChanged(slug, from, to, { site }) {
+		if (!this.retitleAfter) return this.#retitleLinks(slug, from, to, { site });
+		const waiting = this.#titles.get(slug);
+		clearTimeout(waiting?.timer);
+		const first = waiting?.from ?? from;
+		if (first === to) {
+			this.#titles.delete(slug);
+			return 0;
+		}
+		const timer = setTimeout(() => {
+			this.#titles.delete(slug);
+			this.#retitleLinks(slug, first, to, { site }).catch((error) => console.warn(`[studio] 链接文字没能跟着 ${slug} 的新标题改：${error?.message ?? error}`));
+		}, this.retitleAfter);
+		timer.unref?.();
+		this.#titles.set(slug, { from: first, timer });
+		return 0;
 	}
 
 	/** The links to `slug` in the other articles whose words are `from`, in words `to`; in how many articles. */
 	async #retitleLinks(slug, from, to, { site }) {
 		let retitled = 0;
 		for (const { slug: page, source } of await this.#sources()) {
-			if (page === slug) continue;
-			const { source: next, changed } = retitleArticleLinks(source, slug, from, to, { site });
-			if (!changed) continue;
-			await atomicWriteText(articleBundlePaths(this.blogRoot, page).markdown, next);
-			retitled += 1;
+			// Not parsed unless it may link there: a book's text takes a while to parse.
+			if (page === slug || !source.includes(slug)) continue;
+			if (await this.#rewrite(page, (text) => retitleArticleLinks(text, slug, from, to, { site }).source, { keep: true })) retitled += 1;
 		}
 		return retitled;
 	}
@@ -483,4 +578,104 @@ export class ArticleConflictError extends Error {
 		this.name = 'ArticleConflictError';
 		this.statusCode = 409;
 	}
+}
+
+/** A citation in Markdown: `[@key]`, `[see @key, p. 3]`. */
+const CITATION = /\[[^\]\n]*@[\w:.-]/u;
+
+function isInside(root, path) {
+	return path === root || path.startsWith(root + sep);
+}
+
+/** The text with the tree's fields given (`parent`, `order`; empty or null takes one out), the rest as it was. */
+function withFields(source, fields) {
+	let next = source;
+	for (const [key, value] of Object.entries(fields)) next = setFrontmatterField(next, key, value);
+	return next;
+}
+
+/** The files under `folder` (relative, with `/`): no links, nothing hidden. */
+async function filesUnder(folder, prefix = '') {
+	let entries;
+	try {
+		entries = await readdir(folder, { withFileTypes: true });
+	} catch (error) {
+		if (error?.code === 'ENOENT') return [];
+		throw error;
+	}
+	const found = [];
+	for (const entry of entries) {
+		if (entry.name.startsWith('.') || entry.isSymbolicLink()) continue;
+		if (entry.isDirectory()) found.push(...(await filesUnder(join(folder, entry.name), `${prefix}${entry.name}/`)));
+		else if (entry.isFile()) found.push(`${prefix}${entry.name}`);
+	}
+	return found;
+}
+
+async function sameFile(left, right) {
+	const [a, b] = await Promise.all([stat(left), stat(right)]);
+	if (a.size !== b.size) return false;
+	const [x, y] = await Promise.all([readFile(left), readFile(right)]);
+	return x.equals(y);
+}
+
+/**
+ * A page's img/ and assets/ copied into the folder of the page it is merged into. A file of the same name
+ * there that is the same stays; one that is another file stays too, and this one is copied beside it as
+ * `name-2.ext` (…-3, …); a library (assets/refs.bib) gets the entries it lacks. What was copied under
+ * another name, by its path (`img/a.png` → `img/a-2.png`).
+ */
+async function mergeFiles(from, into) {
+	const renamed = new Map();
+	for (const folder of ['img', 'assets']) {
+		for (const file of await filesUnder(join(from, folder), `${folder}/`)) {
+			const source = resolveInside(from, file);
+			const target = resolveInside(into, file);
+			const there = await lstat(target).catch(() => null);
+			if (!there) {
+				await mkdir(dirname(target), { recursive: true });
+				await cp(source, target, { errorOnExist: true, force: false });
+				continue;
+			}
+			if (there.isFile() && (await sameFile(source, target))) continue;
+			if (file === 'assets/refs.bib' && there.isFile()) {
+				await atomicWriteText(target, mergedLibrary(await readFile(target, 'utf8'), await readFile(source, 'utf8')));
+				continue;
+			}
+			const extension = extname(file);
+			const stem = file.slice(0, file.length - extension.length);
+			for (let number = 2; ; number += 1) {
+				const name = `${stem}-${number}${extension}`;
+				const other = resolveInside(into, name);
+				const taken = await lstat(other).catch(() => null);
+				if (taken && !(taken.isFile() && (await sameFile(source, other)))) continue;
+				if (!taken) await cp(source, other, { errorOnExist: true, force: false });
+				renamed.set(file, name);
+				break;
+			}
+		}
+	}
+	return renamed;
+}
+
+/** `kept`'s library with the entries of `added` whose keys it lacks (one it has keeps its own). */
+function mergedLibrary(kept, added) {
+	const known = parseBibtex(kept);
+	const heads = [...added.matchAll(/@\s*([A-Za-z]+)\s*[{(]\s*([^,\s]+)\s*,/gu)];
+	const missing = [];
+	for (const [index, head] of heads.entries()) {
+		if (known.has(head[2]) || /^(?:comment|preamble|string)$/iu.test(head[1])) continue;
+		missing.push(added.slice(head.index, heads[index + 1]?.index ?? added.length).trim());
+	}
+	return missing.length ? `${kept.replace(/\s*$/u, '')}\n\n${missing.join('\n\n')}\n` : kept;
+}
+
+/** The text with its links to files copied under other names (`renamed`) changed to them. */
+function relinkFiles(text, renamed) {
+	let next = text;
+	for (const [from, to] of renamed) {
+		const escaped = from.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
+		next = next.replace(new RegExp(`(^|[\\s("'=:])(\\./)?${escaped}(?=$|[\\s)"'#?}\\]])`, 'gmu'), (_, lead, dot = '') => `${lead}${dot}${to}`);
+	}
+	return next;
 }

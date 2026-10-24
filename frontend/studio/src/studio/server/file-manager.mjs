@@ -131,7 +131,7 @@ export class ArticleFileManager {
 		const { directory } = await this.#article(slug);
 		const segments = managedSegments(path);
 		const sourcePath = await existingEntry(directory, segments);
-		const folder = `${trashStamp()}-${slug}`;
+		const folder = await ownTrashFolder(this.trashRoot, (stamp) => `${stamp}-${slug}`);
 		const trashed = [folder, ...segments].join('/');
 		const trashedTo = join(this.trashRoot, ...trashed.split('/'));
 		await mkdir(dirname(trashedTo), { recursive: true });
@@ -316,8 +316,25 @@ const ARTICLE_TRASH = 'articles';
 /** The time a trashed entry's name starts with: `2026-10-16T12-34-56-789Z`. */
 const TRASH_STAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z/u;
 
-function trashStamp() {
-	return new Date().toISOString().replace(/[:.]/gu, '-');
+function trashStamp(at = Date.now()) {
+	return new Date(at).toISOString().replace(/[:.]/gu, '-');
+}
+
+/**
+ * A folder of its own in `trash`, named by now (`name` of the time): one made in the same millisecond is a
+ * millisecond on, so two things trashed at once never share one (putting one back would take the other).
+ */
+async function ownTrashFolder(trash, name = (stamp) => stamp) {
+	await mkdir(trash, { recursive: true });
+	for (let at = Date.now(); ; at += 1) {
+		const folder = name(trashStamp(at));
+		try {
+			await mkdir(join(trash, folder));
+			return folder;
+		} catch (error) {
+			if (error?.code !== 'EEXIST') throw error;
+		}
+	}
 }
 
 /** When an entry of the trash was put there, from its name; null for anything else. */

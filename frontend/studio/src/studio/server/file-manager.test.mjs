@@ -292,3 +292,15 @@ test('a deleted article is listed with its title', async (t) => {
 	await files.purge(trashed);
 	assert.deepEqual(await files.listTrash(), []);
 });
+
+test('two files trashed in the same instant each have their own place there: one put back leaves the other', async (t) => {
+	const { paths: bundle, files } = await fixture(t);
+	await writeFile(join(bundle.assets, 'a.xyz'), 'a');
+	await writeFile(join(bundle.assets, 'b.xyz'), 'b');
+	const [a, b] = await Promise.all([files.trash('note', 'assets/a.xyz'), files.trash('note', 'assets/b.xyz')]);
+	assert.notEqual(a.trashed.split('/')[0], b.trashed.split('/')[0]);
+	await files.restore('note', a.trashed);
+	assert.equal(await readFile(join(bundle.assets, 'a.xyz'), 'utf8'), 'a');
+	await files.restore('note', b.trashed);
+	assert.equal(await readFile(join(bundle.assets, 'b.xyz'), 'utf8'), 'b');
+});

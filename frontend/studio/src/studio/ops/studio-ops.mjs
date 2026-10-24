@@ -38,9 +38,10 @@ export function createStudioOps({ root, site } = {}) {
 	const projectRoot = resolve(root ?? process.cwd());
 	const testBlog = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
 	const blogRoot = testBlog ?? studioBlogRoot(projectRoot);
-	const articles = new ArticleRepository(blogRoot);
-	const manager = new ArticleFileManager(blogRoot, { trashRoot: testBlog ? resolve(testBlog, '.studio-trash') : resolve(projectRoot, '.studio-trash') });
 	const history = new ArticleHistory(blogRoot);
+	// One command and done: links follow a new title at once.
+	const articles = new ArticleRepository(blogRoot, { keep: (slug, source) => history.keep(slug, source, 'before-change') });
+	const manager = new ArticleFileManager(blogRoot, { trashRoot: testBlog ? resolve(testBlog, '.studio-trash') : resolve(projectRoot, '.studio-trash') });
 	const git = new ArticleGit(blogRoot);
 	const settingsFile = testBlog ? resolve(testBlog, '.studio-settings.json') : resolve(projectRoot, '.studio-settings.json');
 	const drive = new Drive({ settingsFile, fixedRoot: process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null, forbidden: [projectRoot, blogRoot] });

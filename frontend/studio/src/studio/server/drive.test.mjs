@@ -81,3 +81,14 @@ test('the folder dialog: the path chosen, null when cancelled, refused off macOS
 	assert.equal(await chooseFolder('选择资料库', { platform: 'darwin', run: answer(Object.assign(new Error('User canceled. (-128)'), { stderr: '' })) }), null);
 	await assert.rejects(chooseFolder('选择资料库', { platform: 'linux' }), /直接输入/u);
 });
+
+test('two things trashed from the drive in the same instant each have their own place there', async (t) => {
+	const { root, drive } = setUp(t);
+	await drive.choose(root);
+	const [log, slides] = await Promise.all([drive.trash('water.log'), drive.trash('组会/第 3 次 (定稿).pptx')]);
+	assert.notEqual(log.trashed.split('/')[0], slides.trashed.split('/')[0]);
+	await drive.restore(log.trashed);
+	await drive.restore(slides.trashed);
+	assert.equal(readFileSync(join(root, 'water.log'), 'utf8'), 'SCF Done');
+	assert.equal(readFileSync(join(root, '组会', '第 3 次 (定稿).pptx'), 'utf8'), 'pptx');
+});

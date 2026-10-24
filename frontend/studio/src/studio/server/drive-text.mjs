@@ -150,7 +150,11 @@ export class DriveText {
 	async #manifest(root) {
 		try {
 			const read = JSON.parse(await readFile(join(root, TEXT_FOLDER, MANIFEST), 'utf8'));
-			return read?.version === VERSION && read.files ? read : { version: VERSION, files: {} };
+			if (read?.version !== VERSION || !read.files || typeof read.files !== 'object') return { version: VERSION, files: {} };
+			// The file is in the drive, which others may write (a shared folder): only paths of the drive are taken,
+			// each a name its words are read from and removed by.
+			const files = Object.fromEntries(Object.entries(read.files).filter(([path]) => isDrivePath(path)));
+			return { ...read, files };
 		} catch {
 			return { version: VERSION, files: {} };
 		}
@@ -270,4 +274,9 @@ export class DriveText {
 		const order = (left, right) => left.path.localeCompare(right.path, 'zh-CN', { numeric: true });
 		return { results: [...byName.sort(order), ...byText.sort(order)].slice(0, limit), indexing };
 	}
+}
+
+/** A path as #files gives it: names joined by `/`, none empty, hidden or going up. */
+function isDrivePath(path) {
+	return typeof path === 'string' && path.length > 0 && path.split('/').every((name) => name && !name.startsWith('.'));
 }

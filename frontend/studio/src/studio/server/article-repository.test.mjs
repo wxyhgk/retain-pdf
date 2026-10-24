@@ -389,3 +389,102 @@ test('a page given another title takes along the links to it that were its title
 	assert.equal((await repository.save('sub-page', { source: `${again.source}\n正文。\n`, expectedRevision: again.revision })).retitled, undefined);
 	assert.equal((await repository.read('parent-page')).source, after);
 });
+
+test('merged into the page above, a file of the same name that is another file is copied beside it, the library gets what it lacks, and a merge asked again adds nothing', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'project', title: '项目', body: '前言 [@old]。\n\n[方法](/blog/method/)' });
+	await repository.create({ slug: 'method', title: '方法', parent: 'project', body: '![图](./img/plot.png) ![同](img/same.png)\n\n见 [@new] 和 [@old]。' });
+	for (const [page, name, text] of [
+		['project', 'img/plot.png', 'the parent’s plot'],
+		['method', 'img/plot.png', 'the page’s plot'],
+		['project', 'img/same.png', 'same'],
+		['method', 'img/same.png', 'same'],
+		['project', 'assets/refs.bib', '@article{old,\n  title = {Parent’s},\n}\n'],
+		['method', 'assets/refs.bib', '@article{old,\n  title = {Page’s},\n}\n\n@book{new,\n  title = {New},\n}\n'],
+	]) {
+		await mkdir(join(blog, page, name, '..'), { recursive: true });
+		await writeFile(join(blog, page, name), text);
+	}
+	await repository.merge('method');
+	const project = () => readFile(articleBundlePaths(blog, 'project').markdown, 'utf8');
+	assert.match(await project(), /## 方法\n\n!\[图\]\(\.\/img\/plot-2\.png\) !\[同\]\(img\/same\.png\)\n\n见 \[@new\] 和 \[@old\]。/u);
+	assert.equal(await readFile(join(blog, 'project', 'img', 'plot.png'), 'utf8'), 'the parent’s plot');
+	assert.equal(await readFile(join(blog, 'project', 'img', 'plot-2.png'), 'utf8'), 'the page’s plot');
+	const library = await readFile(join(blog, 'project', 'assets', 'refs.bib'), 'utf8');
+	assert.match(library, /title = \{Parent’s\}/u);
+	assert.doesNotMatch(library, /Page’s/u);
+	assert.match(library, /@book\{new,\n {2}title = \{New\},\n\}/u);
+	// Stopped before the page went to the trash, and asked again: the same files, one section.
+	const once = await project();
+	await repository.merge('method');
+	assert.equal(await project(), once);
+	assert.equal((await readFile(join(blog, 'project', 'assets', 'refs.bib'), 'utf8')), library);
+});
+
+test('a page made from a section takes the parent’s library when it cites, never a file through a link to elsewhere, and is not left half made', async (t) => {
+	const blog = await temporaryBlog(t);
+	const outside = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'project', title: '项目' });
+	await mkdir(join(blog, 'project', 'assets'), { recursive: true });
+	await writeFile(join(blog, 'project', 'assets', 'refs.bib'), '@article{a,\n  title = {A},\n}\n');
+	await writeFile(join(outside, 'secret.png'), 'secret');
+	await rm(join(blog, 'project', 'img'), { recursive: true, force: true });
+	await symlink(outside, join(blog, 'project', 'img'));
+	await repository.create({ slug: 'method', title: '方法', parent: 'project', body: '见 [@a]。\n\n![](./img/secret.png)', files: ['img/secret.png'] });
+	assert.equal(await readFile(join(blog, 'method', 'assets', 'refs.bib'), 'utf8'), '@article{a,\n  title = {A},\n}\n');
+	await assert.rejects(stat(join(blog, 'method', 'img', 'secret.png')), { code: 'ENOENT' });
+	// Taken: refused, and what is there stays.
+	await assert.rejects(repository.create({ slug: 'method', title: '又一个' }), ArticleConflictError);
+	assert.match(await readFile(articleBundlePaths(blog, 'method').markdown, 'utf8'), /title: '方法'/u);
+});
+
+test('a version that cannot be kept does not stop a save; a write by another program meanwhile does', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'note', title: 'Note' });
+	const first = await repository.read('note');
+	const warn = t.mock.method(console, 'warn', () => {});
+	const saved = await repository.save('note', { source: `${first.source}\n一。\n`, expectedRevision: first.revision }, { before: () => Promise.reject(new Error('ENOSPC')) });
+	assert.equal(warn.mock.callCount(), 1);
+	assert.match((await repository.read('note')).source, /一。/u);
+	// Written by another program between the check and the write (here: while the version is kept).
+	const markdown = articleBundlePaths(blog, 'note').markdown;
+	await assert.rejects(
+		repository.save('note', { source: `${first.source}\n二。\n`, expectedRevision: saved.revision }, { before: (current) => writeFile(markdown, `${current}\n别人。\n`) }),
+		ArticleConflictError,
+	);
+	assert.match(await readFile(markdown, 'utf8'), /别人。/u);
+});
+
+test('a title typed a letter at a time is followed once it stays, from what it was; the pages changed keep a version', async (t) => {
+	const blog = await temporaryBlog(t);
+	const kept = [];
+	const repository = new ArticleRepository(blog, { retitleAfter: 30, keep: (slug, source) => kept.push([slug, source]) });
+	await repository.create({ slug: 'hf', title: 'Hartree-Fock 方法' });
+	await repository.create({ slug: 'notes', title: '笔记', body: '[Hartree-Fock 方法](/blog/hf/) 和 [Hartree-Fock](/blog/hf/)' });
+	for (const title of ['Hartree-Fock', 'Hartree-Fock 理', 'Hartree-Fock 理论']) {
+		const page = await repository.read('hf');
+		await repository.save('hf', { source: page.source.replace(/title: .*/u, `title: ${title}`), expectedRevision: page.revision });
+	}
+	assert.equal(kept.length, 0);
+	await new Promise((done) => setTimeout(done, 80));
+	assert.match(await readFile(articleBundlePaths(blog, 'notes').markdown, 'utf8'), /\[Hartree-Fock 理论\]\(\/blog\/hf\/\) 和 \[Hartree-Fock\]\(\/blog\/hf\/\)/u);
+	assert.deepEqual(kept.map(([slug]) => slug), ['notes']);
+});
+
+test('two pages linking to each other given new titles at once both finish', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'one', title: '一', body: '[二](/blog/two/)' });
+	await repository.create({ slug: 'two', title: '二', body: '[一](/blog/one/)' });
+	const [one, two] = await Promise.all([repository.read('one'), repository.read('two')]);
+	const answers = await Promise.all([
+		repository.save('one', { source: one.source.replace(/title: .*/u, 'title: 甲'), expectedRevision: one.revision }),
+		repository.save('two', { source: two.source.replace(/title: .*/u, 'title: 乙'), expectedRevision: two.revision }),
+	]);
+	assert.deepEqual(answers.map((answer) => answer.retitled), [1, 1]);
+	assert.match((await repository.read('one')).source, /title: 甲[\s\S]*\[乙\]\(\/blog\/two\/\)/u);
+	assert.match((await repository.read('two')).source, /title: 乙[\s\S]*\[甲\]\(\/blog\/one\/\)/u);
+});

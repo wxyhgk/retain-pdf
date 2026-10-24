@@ -139,7 +139,10 @@ export default function studioDev({ site } = {}) {
 			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
 			const testBlogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
 			const blogRoot = studioBlogRoot(server.config.root);
-			const articles = new ArticleRepository(blogRoot);
+			const history = new ArticleHistory(blogRoot);
+			// What the Studio rewrites in other pages (links that follow a page) is kept as a version first; links
+			// follow a title once it has stayed a few seconds as typed.
+			const articles = new ArticleRepository(blogRoot, { keep: (slug, source) => history.keep(slug, source, 'before-change'), retitleAfter: 3000 });
 			const files = new FileRepository(blogRoot);
 			const codeFiles = new CodeFilePreviews(files);
 			// Removed files wait here, outside blog/ and ignored by git, until someone empties it.
@@ -148,7 +151,6 @@ export default function studioDev({ site } = {}) {
 			});
 			const articleFiles = new ArticleFiles(articles, manager);
 			const articleGit = new ArticleGit(blogRoot);
-			const history = new ArticleHistory(blogRoot);
 			const library = new ArticleLibrary(blogRoot, articles);
 			const watcher = new BlogWatcher(blogRoot);
 			// The author's own folder of files (资料库), chosen once and kept outside git; the browser tests bring their own.

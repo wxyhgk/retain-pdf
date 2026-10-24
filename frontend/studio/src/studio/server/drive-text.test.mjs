@@ -55,3 +55,16 @@ test('the drive kept as text, read again only when changed, searched by name and
 	const manifest = JSON.parse(readFileSync(join(root, TEXT_FOLDER, 'index.json'), 'utf8'));
 	assert.deepEqual(Object.keys(manifest.files).sort(), ['组会/water opt.log', '组会/第 3 次.pptx', 'photo.png'].sort());
 });
+
+test('an index written by someone else names nothing outside the drive: nothing there is removed or read', async (t) => {
+	const base = mkdtempSync(join(tmpdir(), 'drive-text-'));
+	t.after(() => rmSync(base, { recursive: true, force: true }));
+	const root = join(base, 'drive');
+	mkdirSync(join(root, TEXT_FOLDER), { recursive: true });
+	writeFileSync(join(base, 'notes.txt'), '外面的文字');
+	writeFileSync(join(root, TEXT_FOLDER, 'index.json'), JSON.stringify({ version: 1, files: { '../../notes': { size: 1, modified: 1, text: true } } }));
+	const text = new DriveText({ root: async () => root }, { pdftotext: null });
+	assert.deepEqual((await text.search('外面')).results, []);
+	await text.refresh();
+	assert.equal(readFileSync(join(base, 'notes.txt'), 'utf8'), '外面的文字');
+});
