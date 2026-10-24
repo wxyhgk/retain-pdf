@@ -2,7 +2,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 
-import { openTerminal } from '../api/client';
+import { listTerminalAgents, openTerminal, type TerminalAgent } from '../api/client';
 import type { SourceLines } from '../document/source-lines';
 
 type Cwd = 'root' | 'article' | 'drive';
@@ -73,6 +73,7 @@ export function createTerminalPane(pane: HTMLElement) {
 	const where = pane.querySelector<HTMLElement>('#terminal-cwd')!;
 	const restartButton = pane.querySelector<HTMLButtonElement>('#restart-terminal')!;
 	const cwdOptions = [...pane.querySelectorAll<HTMLButtonElement>('[data-cwd]')];
+	const agentBar = pane.querySelector<HTMLElement>('#terminal-agents')!;
 
 	let cwd = readCwd();
 	let article: string | null = null;
@@ -89,7 +90,7 @@ export function createTerminalPane(pane: HTMLElement) {
 	/** Whether the running shell is in the drive. */
 	let shellInDrive = false;
 	/** A question to put in once the shell is ready, and whether it is. */
-	let pending: { slug: string; lines: SourceLines } | { drivePath: string; text: boolean } | null = null;
+	let pending: { slug: string; lines: SourceLines } | { drivePath: string; text: boolean } | { command: string } | null = null;
 	let ready = false;
 
 	const terminal = new Terminal({
@@ -210,11 +211,57 @@ export function createTerminalPane(pane: HTMLElement) {
 	/** Types the question waiting into the shell: nothing in it runs until Enter. */
 	function putPending(): void {
 		if (!pending || !ready || socket?.readyState !== WebSocket.OPEN) return;
+		// An AI to start: its command, run.
+		if ('command' in pending) {
+			socket.send(encoder.encode(`${pending.command}\r`));
+			pending = null;
+			terminal.focus();
+			return;
+		}
 		const question = 'slug' in pending ? questionAbout(pathFor(pending.slug), pending.lines) : driveQuestion(pending.drivePath, pending.text);
 		pending = null;
 		// Typed as keys, one line without Enter: it waits for the author.
 		socket.send(encoder.encode(question));
 		terminal.focus();
+	}
+
+	/**
+	 * Starts an AI in a new shell: in the open article's folder (none open: the repository), where it finds the
+	 * notes' rules and skills by itself (blog/AGENTS.md), the drive still named in the shell's environment. What runs
+	 * in the terminal now ends, the author asked first.
+	 */
+	function launch(agent: TerminalAgent): void {
+		const target: Cwd = article ? 'article' : 'root';
+		const place = target === 'article' ? '当前文章' : '仓库根目录';
+		if (state === 'running' && !confirm(`在${place}打开 ${agent.name}？终端里正在运行的程序会被结束。`)) return;
+		cwd = target;
+		writeCwd(cwd);
+		renderCwd();
+		pending = { command: agent.command };
+		void start();
+	}
+
+	/** The buttons of the AIs this machine has; those it has not, greyed, saying how to get them. */
+	async function showAgents(): Promise<void> {
+		let agents: TerminalAgent[];
+		try {
+			agents = await listTerminalAgents();
+		} catch {
+			return;
+		}
+		const label = document.createElement('span');
+		label.textContent = '启动 AI：';
+		agentBar.replaceChildren(label, ...agents.map((agent) => {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.dataset.agent = agent.id;
+			button.textContent = agent.name;
+			button.disabled = !agent.installed;
+			button.title = agent.installed ? `在终端里启动 ${agent.command}` : `没有找到 ${agent.command} 命令。安装：${agent.install}`;
+			button.addEventListener('click', () => launch(agent));
+			return button;
+		}));
+		agentBar.hidden = false;
 	}
 
 	/** Starts over in the chosen folder, asking first if a shell is running there now. */
@@ -263,6 +310,7 @@ export function createTerminalPane(pane: HTMLElement) {
 	}
 	restartButton.addEventListener('click', restart);
 	renderCwd();
+	void showAgents();
 
 	return {
 		/**

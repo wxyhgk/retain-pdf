@@ -3,7 +3,10 @@
 ## 目录
 
 ```text
-blog/                 文章，每篇一个文件夹（见 docs/README.md）
+AGENTS.md             给 AI 的总说明：写笔记看 blog/AGENTS.md，改代码看本文
+blog/                 文章，每篇一个文件夹（见 docs/README.md）；blog/AGENTS.md 是写作约定（CLAUDE.md 只引入它）
+.agents/skills/       给 AI 的技能（Claude Code、Codex、pi 都读；.claude/skills 指向这里）
+.agents/memory/       AI 记下的作者偏好，只在本机（不进 git）
 src/
   pages/ layouts/ components/   博客的页面
   articles/           文章的属性规则、页面树（parent、order）等，博客和 Studio 共用

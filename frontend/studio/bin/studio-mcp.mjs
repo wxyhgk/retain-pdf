@@ -14,7 +14,7 @@ const VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05'];
 const INSTRUCTIONS = [
 	'「计算化学手记」博客的页面：每篇是 blog/<文件夹名>/index.md（普通 Markdown，开头 YAML 属性）。',
 	'页面可以挂在别的页面下面（属性 parent），组成一棵树；新建的都是草稿。',
-	'写作约定见 blog/CLAUDE.md。改页面优先用这些工具：它们会顺带改好链接、存历史版本、复制图片。',
+	'写作约定见 blog/AGENTS.md。改页面优先用这些工具：它们会顺带改好链接、存历史版本、复制图片。',
 ].join('\n');
 
 const send = (message) => process.stdout.write(`${JSON.stringify(message)}\n`);

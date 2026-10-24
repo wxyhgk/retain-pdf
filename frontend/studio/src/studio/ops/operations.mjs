@@ -155,7 +155,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'list_history',
-		description: '一个页面存下的历史版本（每次被外部改动前、恢复前存的），新的在前。',
+		description: '一个页面存下的历史版本（写作时每 10 分钟自动存的，每次被外部改动前、恢复前存的），新的在前。',
 		input: { type: 'object', properties: { slug }, required: ['slug'] },
 		run: (ops, args) => ops.listHistory(args),
 	},

@@ -174,6 +174,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 							<button id="restart-terminal" type="button" title="重新打开终端" aria-label="重新打开终端">↻</button>
 						</div>
 					</header>
+					<div id="terminal-agents" class="terminal-agents" role="group" aria-label="在终端里启动 AI" hidden></div>
 					<div id="terminal-screen" class="terminal-screen" aria-label="终端"></div>
 				</section>
 			</aside>
@@ -842,6 +843,11 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.cwd-switch button { height: 24px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; cursor: pointer; }
 	.cwd-switch button[aria-checked='true'] { background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 1px 2px rgb(0 0 0 / 8%); }
 	.cwd-switch button:disabled { opacity: 0.45; cursor: default; }
+	/* The AIs started with a click (terminal.ts): one row under the toolbar. */
+	.terminal-agents { display: flex; flex: none; align-items: center; gap: 4px; padding: 5px 8px 5px 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; }
+	.terminal-agents :global(button) { height: 22px; padding: 0 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; cursor: pointer; }
+	.terminal-agents :global(button:hover:not(:disabled)) { background: var(--surface-soft); }
+	.terminal-agents :global(button:disabled) { opacity: 0.45; cursor: default; }
 	.terminal-screen { flex: 1; min-height: 0; padding: 8px 4px 4px 10px; overflow: hidden; background: #16181d; }
 	.terminal-screen :global(.xterm) { height: 100%; }
 	.terminal-screen :global(.xterm-viewport) { background: #16181d !important; }

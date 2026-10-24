@@ -79,3 +79,17 @@ test('the terminal has `studio`, the pages’ operations for an AI, on its PATH'
 	await run(page, 'echo "pages=$(studio list-pages | grep -c \'Studio 测试夹具\')"');
 	await expect(screen(page)).toContainText('pages=1');
 });
+
+test('an AI starts with a click, in the article’s folder; one this machine has not is greyed, saying how to get it', async ({ page }) => {
+	const agents = page.locator('#terminal-agents');
+	await expect(agents.getByRole('button')).toHaveText(['Claude', 'Codex', 'pi']);
+	// The stand-ins (fake-agents/) have Claude only.
+	await expect(agents.getByRole('button', { name: 'Codex' })).toBeDisabled();
+	await expect(agents.getByRole('button', { name: 'Codex' })).toHaveAttribute('title', /npm install -g @openai\/codex/u);
+	// A shell is running: asked first.
+	page.once('dialog', (dialog) => void dialog.accept());
+	await agents.getByRole('button', { name: 'Claude' }).click();
+	await expect(page.locator('#terminal-cwd')).toHaveText('blog/studio-fixture/');
+	await expect(screen(page)).toContainText('fake-claude in studio-fixture for studio-fixture');
+	await expect(page.getByRole('radio', { name: '当前文章' })).toHaveAttribute('aria-checked', 'true');
+});

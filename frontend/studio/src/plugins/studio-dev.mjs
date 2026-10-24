@@ -17,6 +17,7 @@ import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 import { revealInFileManager } from '../studio/server/reveal.mjs';
 import { TerminalHost } from '../studio/server/terminal-host.mjs';
+import { terminalAgents } from '../studio/server/terminal-agents.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
 import { pageVersion, studioBlogRoot } from '../studio/server/page-version.mjs';
 import { atomicWriteText } from '../studio/server/atomic-write.mjs';
@@ -217,6 +218,11 @@ export default function studioDev({ site } = {}) {
 						return;
 					}
 
+					// The AIs the 终端 tab starts with a click, and which of them this machine has.
+					if (url.pathname === '/api/studio/terminal/agents' && request.method === 'GET') {
+						return json(response, 200, { agents: await terminalAgents() });
+					}
+
 					// A shell for the 终端 tab: in the repository, the open article's folder, or the drive.
 					if (url.pathname === '/api/studio/terminal' && request.method === 'POST') {
 						const { cwd, slug } = await readJsonChange(request);
@@ -224,7 +230,7 @@ export default function studioDev({ site } = {}) {
 						if (cwd === 'drive' && !driveRoot) return json(response, 409, { error: '还没有选择资料库文件夹' });
 						const folder = cwd === 'article' ? articleBundlePaths(blogRoot, slug).directory : cwd === 'drive' ? driveRoot : server.config.root;
 						if (cwd === 'article') await manager.locate(slug, '');
-						// For a program run there (an AI): which article, and where it is; the drive and its text (blog/CLAUDE.md names these).
+						// For a program run there (an AI): which article, and where it is; the drive and its text (blog/AGENTS.md names these).
 						const env = {
 							// `studio …` (bin/studio): the pages' operations on the command line.
 							PATH: `${resolve(server.config.root, 'bin')}${delimiter}${process.env.PATH ?? ''}`,

@@ -11,7 +11,7 @@
 | [和 Notion 的差距](notion-gaps.md) | 每次对照 Notion 的结果：还差什么、难不难、先做哪个，哪些不做 |
 | [规划](plans/README.md) | 交给别的 AI 去做的计划：要做什么、用哪些现成零件、分几期、怎么验收 |
 | [插件](../plugins/README.md) | 计算任务、分子、书签等块是怎么做成插件的 |
-| [写作约定（给 AI）](../blog/CLAUDE.md) | AI 在 `blog/` 里写文章时要遵守的规矩 |
+| [写作约定（给 AI）](../blog/AGENTS.md) | AI 在 `blog/` 里写文章时要遵守的规矩，Claude Code、Codex、pi 都读；写法细节在技能里（`.agents/skills/`） |
 
 ## 文章放在哪里
 

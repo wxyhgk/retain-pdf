@@ -254,6 +254,13 @@ export function openTerminal(target: { cwd: 'root' } | { cwd: 'drive' } | { cwd:
 	return request('/api/studio/terminal', jsonOptions('POST', target));
 }
 
+/** An AI the 终端 tab starts with a click (server/terminal-agents.mjs), and whether this machine has it. */
+export type TerminalAgent = { id: string; name: string; command: string; install: string; installed: boolean };
+
+export async function listTerminalAgents(): Promise<TerminalAgent[]> {
+	return (await request<{ agents: TerminalAgent[] }>('/api/studio/terminal/agents')).agents;
+}
+
 /** Keeps a version of the article in its ai/history (nothing when the newest kept one is the same). */
 export async function keepVersion(slug: string, source: string, reason: HistoryReason): Promise<void> {
 	await request(`/api/studio/articles/${encodeURIComponent(slug)}/history`, jsonOptions('POST', { source, reason }));

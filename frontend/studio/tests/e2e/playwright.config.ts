@@ -67,6 +67,8 @@ export default defineConfig({
 				E2E_ROOT_PARENT: process.env[`E2E_ROOT_PARENT_${slot}`] ?? '',
 				// RetainMol is its stand-in, below (it keeps nothing: one serves them all).
 				STUDIO_RETAINMOL_URL: `http://127.0.0.1:${retainmolPort}`,
+				// The AIs the terminal starts with a click: stand-ins that say where they were started (fake-agents/).
+				STUDIO_TERMINAL_AGENT_DIR: fileURLToPath(new URL('./fake-agents', import.meta.url)),
 			},
 			reuseExistingServer: false,
 			timeout: 120_000,
