@@ -1,6 +1,7 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import type { ForkBlockEditFeatureConfig } from '@milkdown/crepe/feature/block-edit';
-import { editorStateOptionsCtx, editorViewCtx, editorViewOptionsCtx, parserCtx, serializerCtx } from '@milkdown/kit/core';
+import { editorStateCtx, editorStateOptionsCtx, editorViewCtx, editorViewOptionsCtx, parserCtx, serializerCtx } from '@milkdown/kit/core';
+import type { Ctx } from '@milkdown/kit/ctx';
 import { diffComponent, diffComponentConfig } from '@milkdown/kit/component/diff';
 import {
 	acceptAllDiffsCmd,
@@ -152,6 +153,18 @@ const nextPart = $prose(
 /** ProseMirror's own step of applying a transaction, without the plugins' answers to it (appendTransaction). */
 type Applying = EditorState & { applyInner(tr: Transaction): EditorState };
 
+/**
+ * `doc` with the ids the editor gives its headings: given as an article is read, not in an edit of the plugin's own
+ * once it is shown, which goes over the whole article again (a tenth of a second for one with many headings).
+ */
+function withHeadingIds(ctx: Ctx, doc: ProseNode): ProseNode {
+	const { tr } = EditorState.create({ doc });
+	return syncHeadingIds(ctx, tr) ? tr.doc : doc;
+}
+
+/** Whether two lists hold the same things, in order. */
+const sameItems = (one: readonly unknown[], other: readonly unknown[]) => one.length === other.length && one.every((item, index) => item === other[index]);
+
 /** How many blocks of an article just opened are written as Markdown at a frame (a few milliseconds' work). */
 const WRITTEN_AT_A_FRAME = 40;
 
@@ -168,6 +181,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	let loading = false;
 	/** Done once the article shown is all in. */
 	let loaded: Promise<unknown> = Promise.resolve();
+	/** The plugins' blocks and commands the editor was made with: made again only when they change. */
+	let madeWith: { blocks: readonly unknown[]; commands: readonly unknown[] } | null = null;
 	/** The review under way: what to call once every change is decided. */
 	let review: ((markdown: string) => void) | null = null;
 	/** The body as last reported, or as mounted. */
@@ -236,6 +251,203 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			}),
 	);
 
+	/**
+	 * Makes the editor, showing `opening`: with the plugins' `blocks` (their nodes) and `commands` (in the slash menu).
+	 * Made once, and again only when they change: the other articles are shown in it (showDocument).
+	 */
+	async function make(blocks: Awaited<ReturnType<typeof pluginBlocks>>, commands: Awaited<ReturnType<typeof pluginSlashCommands>>, opening: string): Promise<void> {
+		if (crepe) await crepe.destroy();
+		madeWith = null;
+		root.replaceChildren();
+		for (const stop of unobserve) stop();
+		unobserve = blocks.flatMap((block) => (block.observe ? [block.observe(root)] : []));
+		const codeBlocks = blocks.flatMap((block) => (block.codeBlock ? [block.codeBlock] : []));
+		const links = linkTargets(blocks);
+		const fileDrop = articleFileDrop(host.files);
+		// Crepe's own config, plus the block menu only the Milkdown fork has.
+		const saveAsFile = saveCodeBlockAsFile(host.files);
+		const filePreview = codeFilePreview(host.codeFile);
+		const blockEdit: ForkBlockEditFeatureConfig = {
+			// A block in a column has its handle close by, in the gap between the columns; others, in the margin.
+			blockHandle: { getOffset: ({ active }) => (active.$pos.parent.type.name === 'column' ? 2 : 16) },
+			buildBlockMenu: (builder, target) =>
+				buildBlockMenu(builder, target, {
+					saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) },
+					ask: () => host.askAI(),
+					split: (view, pos) => void splitToPage(view, pos),
+					recognize: (view, pos) => host.recognize(view, pos),
+					blocks,
+					links: {
+						targets: links,
+						turn: (view, pos, markdown) => replaceBlock(view, pos, markdown, (text) => crepe!.editor.action((ctx) => ctx.get(parserCtx)(text))),
+						back: blockToLink,
+					},
+				}),
+			buildMenu: (builder) => {
+				buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks);
+				buildCommandSlashMenu(builder as unknown as SlashMenuBuilder, commands, (command) => runCommand(command, 'slash'));
+				replaceSlashImageItem(builder, fileDrop.chooseImages);
+				addSearchWords(builder);
+			},
+			slashMenu: { triggers: SLASH_TRIGGERS },
+			textGroup: {
+				label: '文本',
+				text: { label: '正文' },
+				h1: { label: '标题 1' },
+				h2: { label: '标题 2' },
+				h3: { label: '标题 3' },
+				h4: null,
+				h5: null,
+				h6: null,
+				quote: { label: '引用' },
+				divider: { label: '分割线' },
+			},
+			listGroup: {
+				label: '列表',
+				bulletList: { label: '无序列表' },
+				orderedList: { label: '有序列表' },
+				taskList: { label: '待办' },
+			},
+			advancedGroup: {
+				label: '插入',
+				image: { label: '图片' },
+				codeBlock: { label: '代码' },
+				table: { label: '表格' },
+				math: { label: '公式' },
+			},
+		};
+		crepe = new Crepe({
+			root,
+			defaultValue: opening,
+			features: {
+				[CrepeFeature.TopBar]: false,
+				[CrepeFeature.AI]: false,
+			},
+			featureConfigs: {
+				[CrepeFeature.CodeMirror]: {
+					// The plugins' code blocks first (```widget is HTML), then code files', then CodeMirror's.
+					languages: [...(codeBlocks.flatMap((code) => code.languages ?? []) as typeof codeMirrorLanguages), ...codeFileLanguageDescriptions, ...codeMirrorLanguages],
+					copyText: '复制',
+					previewLabel: '预览',
+					previewLoading: '正在渲染…',
+					previewOnlyByDefault: true,
+					previewToggleText: (previewOnly: boolean) => (previewOnly ? '编辑' : '收起'),
+					searchPlaceholder: '搜索语言',
+					noResultText: '没有匹配的语言',
+					// A block that shows a file of the article (`@file ./assets/opt.log`) previews it as the blog does.
+					// It comes later (undefined), once the file is read. The fork passes the fence's
+					// `lines=` and `title=` (meta) too, which the npm release's type does not know.
+					renderPreview: (language: string, content: string, apply: (value: HTMLElement) => void, meta = '') => {
+						// A plugin's code block (a widget's frame) previews as its plugin says.
+						for (const code of codeBlocks) {
+							const shown = code.preview?.(language, content, meta);
+							if (shown) return shown;
+						}
+						return filePreview(language, content, apply, meta);
+					},
+				},
+				[CrepeFeature.Placeholder]: {
+					text: "输入 '/' 插入块",
+					mode: 'block',
+				},
+				// Formulas are drawn by inline-math.ts and display-math.ts; a ```latex fence is code.
+				[CrepeFeature.Latex]: { blockPreview: false },
+				[CrepeFeature.Toolbar]: {
+					boldLabel: '粗体',
+					italicLabel: '斜体',
+					strikethroughLabel: '删除线',
+					codeLabel: '行内代码',
+					linkLabel: '链接',
+					latexLabel: '公式',
+					buildToolbar: (builder) => {
+						buildToolbarTurn(builder);
+						buildToolbarAsk(builder, () => host.askAI());
+					},
+				},
+				[CrepeFeature.LinkTooltip]: {
+					inputPlaceholder: '粘贴链接…',
+				},
+				[CrepeFeature.ImageBlock]: {
+					proxyDomURL: host.fileUrl,
+					onUpload: async (file: File) => linkPath((await host.files.upload([file]))[0]),
+					inlineUploadButton: '上传',
+					inlineUploadPlaceholderText: '或粘贴链接',
+					blockUploadButton: '上传图片',
+					blockCaptionPlaceholderText: '添加说明',
+					blockUploadPlaceholderText: '或粘贴图片链接',
+					blockConfirmButton: '确定',
+				},
+				[CrepeFeature.BlockEdit]: blockEdit,
+			},
+		});
+		for (const block of blocks) if (block.milkdown) crepe.editor.use(block.milkdown as never);
+		crepe.editor.use(blockFeelPlugins);
+		crepe.editor.use(inlineMathPlugins);
+		crepe.editor.use(displayMathPlugins);
+		crepe.editor.use(mathBracketsRemark);
+		crepe.editor.use(figurePlugins(host.fileUrl));
+		crepe.editor.use(calloutPlugins());
+		crepe.editor.use(citationPlugins(host));
+		crepe.editor.use(officeCardPlugins(host.fileUrl));
+		crepe.editor.use(togglePlugins());
+		crepe.editor.use(columnsPlugins());
+		crepe.editor.use(articleLinkPlugins(host));
+		crepe.editor.use(smartPastePlugins({ articleTitle: (slug) => host.articleTitle(slug), links: () => links }));
+		crepe.editor.use(fileDrop.plugin);
+		// Last, so Esc and the other keys go to what is open first.
+		crepe.editor.use(blockKeyPlugins(host));
+		crepe.editor
+			.config((ctx) => {
+				ctx.set(remarkGFMPlugin.options.key, gfmOptions);
+				ctx.update(editorStateOptionsCtx, (prev) => (options) => {
+					const next = prev(options);
+					return next.doc ? { ...next, doc: withHeadingIds(ctx, next.doc) } : next;
+				});
+				// Notion's key for strikethrough; the toolbar's tooltip follows it.
+				ctx.set(strikethroughKeymap.key, { ToggleStrikethrough: { shortcuts: 'Mod-Shift-s' } });
+				ctx.update(diffConfig.key, (prev) => ({ ...prev, ignoreAttrs: { heading: ['id'] } }));
+				// A block's handle selects as Esc and the margin do: one kind of block selection.
+				ctx.update(blockConfig.key, (prev) => ({ ...prev, selectBlock: selectBlockForHandle }));
+				// Room kept round the caret as it is typed or moved, as SiYuan keeps it: not on the window's edge.
+				ctx.update(editorViewOptionsCtx, (prev) => ({
+					...prev,
+					scrollThreshold: { top: 64, bottom: 120, left: 0, right: 0 },
+					scrollMargin: { top: 64, bottom: 120, left: 0, right: 0 },
+				}));
+				ctx.update(diffComponentConfig.key, (prev) => ({
+					...prev,
+					acceptLabel: '接受',
+					rejectLabel: '拒绝',
+					// Blocks drawn by their own views: a change inside one replaces it whole.
+					customBlockTypes: ['table', 'image-block', FIGURE_TYPE, 'code_block', ...blocks.flatMap((block) => block.drawnWhole ?? [])],
+				}));
+			})
+			.use(diff)
+			.use(diffComponent)
+			.use(reviewWatch)
+			.use(longArticle)
+			.use(nextPart);
+		crepe.on((listener) => {
+			// Opening the body is not an edit, nor is deciding a change under review.
+			listener.updated(() => report());
+		});
+		await crepe.create();
+		madeWith = { blocks, commands };
+	}
+
+	/**
+	 * Shows `markdown` in the editor there is, in place of what it shows: a new state (no undo of the article before),
+	 * the editor, its menus and toolbar kept. Made anew, they took a while at every article opened.
+	 */
+	function showDocument(shown: Crepe, markdown: string): void {
+		shown.editor.action((ctx) => {
+			const view = ctx.get(editorViewCtx);
+			const state = EditorState.create({ doc: withHeadingIds(ctx, ctx.get(parserCtx)(markdown)), plugins: view.state.plugins });
+			view.updateState(state);
+			ctx.set(editorStateCtx, state);
+		});
+	}
+
 	async function mount(body: string, whole = false): Promise<string> {
 		mounting = true;
 		let mounted: Crepe;
@@ -251,195 +463,18 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		try {
 			// Another article, or this one anew: a review still open is over.
 			endReview();
-			if (crepe) await crepe.destroy();
 			// The blocks of the project's plugins (plugins/*/studio.ts): their nodes, their slash-menu entries.
 			const blocks = await pluginBlocks();
 			const commands = await pluginSlashCommands();
-			root.replaceChildren();
-			for (const stop of unobserve) stop();
-			unobserve = blocks.flatMap((block) => (block.observe ? [block.observe(root)] : []));
-			const codeBlocks = blocks.flatMap((block) => (block.codeBlock ? [block.codeBlock] : []));
-			const links = linkTargets(blocks);
-			const fileDrop = articleFileDrop(host.files);
-			// Crepe's own config, plus the block menu only the Milkdown fork has.
-			const saveAsFile = saveCodeBlockAsFile(host.files);
-			const filePreview = codeFilePreview(host.codeFile);
-			const blockEdit: ForkBlockEditFeatureConfig = {
-				// A block in a column has its handle close by, in the gap between the columns; others, in the margin.
-				blockHandle: { getOffset: ({ active }) => (active.$pos.parent.type.name === 'column' ? 2 : 16) },
-				buildBlockMenu: (builder, target) =>
-					buildBlockMenu(builder, target, {
-						saveAsFile: { can: canSaveAsFile, run: (view, pos) => void saveAsFile(view, pos) },
-						ask: () => host.askAI(),
-						split: (view, pos) => void splitToPage(view, pos),
-						recognize: (view, pos) => host.recognize(view, pos),
-						blocks,
-						links: {
-							targets: links,
-							turn: (view, pos, markdown) => replaceBlock(view, pos, markdown, (text) => crepe!.editor.action((ctx) => ctx.get(parserCtx)(text))),
-							back: blockToLink,
-						},
-					}),
-				buildMenu: (builder) => {
-					buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks);
-					buildCommandSlashMenu(builder as unknown as SlashMenuBuilder, commands, (command) => runCommand(command, 'slash'));
-					replaceSlashImageItem(builder, fileDrop.chooseImages);
-					addSearchWords(builder);
-				},
-				slashMenu: { triggers: SLASH_TRIGGERS },
-				textGroup: {
-					label: '文本',
-					text: { label: '正文' },
-					h1: { label: '标题 1' },
-					h2: { label: '标题 2' },
-					h3: { label: '标题 3' },
-					h4: null,
-					h5: null,
-					h6: null,
-					quote: { label: '引用' },
-					divider: { label: '分割线' },
-				},
-				listGroup: {
-					label: '列表',
-					bulletList: { label: '无序列表' },
-					orderedList: { label: '有序列表' },
-					taskList: { label: '待办' },
-				},
-				advancedGroup: {
-					label: '插入',
-					image: { label: '图片' },
-					codeBlock: { label: '代码' },
-					table: { label: '表格' },
-					math: { label: '公式' },
-				},
-			};
-			crepe = new Crepe({
-				root,
-				defaultValue: opening,
-				features: {
-					[CrepeFeature.TopBar]: false,
-					[CrepeFeature.AI]: false,
-				},
-				featureConfigs: {
-					[CrepeFeature.CodeMirror]: {
-						// The plugins' code blocks first (```widget is HTML), then code files', then CodeMirror's.
-						languages: [...(codeBlocks.flatMap((code) => code.languages ?? []) as typeof codeMirrorLanguages), ...codeFileLanguageDescriptions, ...codeMirrorLanguages],
-						copyText: '复制',
-						previewLabel: '预览',
-						previewLoading: '正在渲染…',
-						previewOnlyByDefault: true,
-						previewToggleText: (previewOnly: boolean) => (previewOnly ? '编辑' : '收起'),
-						searchPlaceholder: '搜索语言',
-						noResultText: '没有匹配的语言',
-						// A block that shows a file of the article (`@file ./assets/opt.log`) previews it as the blog does.
-						// It comes later (undefined), once the file is read. The fork passes the fence's
-						// `lines=` and `title=` (meta) too, which the npm release's type does not know.
-						renderPreview: (language: string, content: string, apply: (value: HTMLElement) => void, meta = '') => {
-							// A plugin's code block (a widget's frame) previews as its plugin says.
-							for (const code of codeBlocks) {
-								const shown = code.preview?.(language, content, meta);
-								if (shown) return shown;
-							}
-							return filePreview(language, content, apply, meta);
-						},
-					},
-					[CrepeFeature.Placeholder]: {
-						text: "输入 '/' 插入块",
-						mode: 'block',
-					},
-					// Formulas are drawn by inline-math.ts and display-math.ts; a ```latex fence is code.
-					[CrepeFeature.Latex]: { blockPreview: false },
-					[CrepeFeature.Toolbar]: {
-						boldLabel: '粗体',
-						italicLabel: '斜体',
-						strikethroughLabel: '删除线',
-						codeLabel: '行内代码',
-						linkLabel: '链接',
-						latexLabel: '公式',
-						buildToolbar: (builder) => {
-							buildToolbarTurn(builder);
-							buildToolbarAsk(builder, () => host.askAI());
-						},
-					},
-					[CrepeFeature.LinkTooltip]: {
-						inputPlaceholder: '粘贴链接…',
-					},
-					[CrepeFeature.ImageBlock]: {
-						proxyDomURL: host.fileUrl,
-						onUpload: async (file: File) => linkPath((await host.files.upload([file]))[0]),
-						inlineUploadButton: '上传',
-						inlineUploadPlaceholderText: '或粘贴链接',
-						blockUploadButton: '上传图片',
-						blockCaptionPlaceholderText: '添加说明',
-						blockUploadPlaceholderText: '或粘贴图片链接',
-						blockConfirmButton: '确定',
-					},
-					[CrepeFeature.BlockEdit]: blockEdit,
-				},
-			});
-			for (const block of blocks) if (block.milkdown) crepe.editor.use(block.milkdown as never);
-			crepe.editor.use(blockFeelPlugins);
-			crepe.editor.use(inlineMathPlugins);
-			crepe.editor.use(displayMathPlugins);
-			crepe.editor.use(mathBracketsRemark);
-			crepe.editor.use(figurePlugins(host.fileUrl));
-			crepe.editor.use(calloutPlugins());
-			crepe.editor.use(citationPlugins(host));
-			crepe.editor.use(officeCardPlugins(host.fileUrl));
-			crepe.editor.use(togglePlugins());
-			crepe.editor.use(columnsPlugins());
-			crepe.editor.use(articleLinkPlugins(host));
-			crepe.editor.use(smartPastePlugins({ articleTitle: (slug) => host.articleTitle(slug), links: () => links }));
-			crepe.editor.use(fileDrop.plugin);
-			// Last, so Esc and the other keys go to what is open first.
-			crepe.editor.use(blockKeyPlugins(host));
-			crepe.editor
-				.config((ctx) => {
-					ctx.set(remarkGFMPlugin.options.key, gfmOptions);
-					// The headings' ids given as the article is read: not in an edit of the plugin's own once it is shown,
-					// which goes over the whole article again (a tenth of a second for one with many headings).
-					ctx.update(editorStateOptionsCtx, (prev) => (options) => {
-						const next = prev(options);
-						if (!next.doc) return next;
-						const { tr } = EditorState.create({ doc: next.doc });
-						return syncHeadingIds(ctx, tr) ? { ...next, doc: tr.doc } : next;
-					});
-					// Notion's key for strikethrough; the toolbar's tooltip follows it.
-					ctx.set(strikethroughKeymap.key, { ToggleStrikethrough: { shortcuts: 'Mod-Shift-s' } });
-					ctx.update(diffConfig.key, (prev) => ({ ...prev, ignoreAttrs: { heading: ['id'] } }));
-					// A block's handle selects as Esc and the margin do: one kind of block selection.
-					ctx.update(blockConfig.key, (prev) => ({ ...prev, selectBlock: selectBlockForHandle }));
-					// Room kept round the caret as it is typed or moved, as SiYuan keeps it: not on the window's edge.
-					ctx.update(editorViewOptionsCtx, (prev) => ({
-						...prev,
-						scrollThreshold: { top: 64, bottom: 120, left: 0, right: 0 },
-						scrollMargin: { top: 64, bottom: 120, left: 0, right: 0 },
-					}));
-					ctx.update(diffComponentConfig.key, (prev) => ({
-						...prev,
-						acceptLabel: '接受',
-						rejectLabel: '拒绝',
-						// Blocks drawn by their own views: a change inside one replaces it whole.
-						customBlockTypes: ['table', 'image-block', FIGURE_TYPE, 'code_block', ...blocks.flatMap((block) => block.drawnWhole ?? [])],
-					}));
-				})
-				.use(diff)
-				.use(diffComponent)
-				.use(reviewWatch)
-				.use(longArticle)
-				.use(nextPart);
-			crepe.on((listener) => {
-				// Opening the body is not an edit, nor is deciding a change under review.
-				listener.updated(() => report());
-			});
-			await crepe.create();
+			if (crepe && madeWith && sameItems(madeWith.blocks, blocks) && sameItems(madeWith.commands, commands)) showDocument(crepe, opening);
+			else await make(blocks, commands, opening);
+			mounted = crepe!;
 			applyLibrary();
-			crepe.editor.action((ctx) => {
+			mounted.editor.action((ctx) => {
 				const { state } = ctx.get(editorViewCtx);
 				reported = state.doc;
 				firstEnd = nextPartKey.getState(state)!;
 			});
-			mounted = crepe;
 		} finally {
 			mounting = false;
 		}

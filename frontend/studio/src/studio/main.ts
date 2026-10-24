@@ -256,6 +256,8 @@ const session = new ArticleSession(
 		async mount(article, body, again) {
 			useArticleContext(article);
 			const scrollTop = editorScroll.scrollTop;
+			// Another article: from its top (the editor is kept from one to the next, and with it where it was scrolled to).
+			if (!again) editorScroll.scrollTop = 0;
 			// Shown again (changed on disk): all at once, to be where it was.
 			const markdown = await editor.mount(body, again);
 			if (again) editorScroll.scrollTop = scrollTop;
