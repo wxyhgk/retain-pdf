@@ -17,7 +17,11 @@ import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 import { revealInFileManager } from '../studio/server/reveal.mjs';
 import { TerminalHost } from '../studio/server/terminal-host.mjs';
-import { terminalAgents } from '../studio/server/terminal-agents.mjs';
+import { AgentSettings } from '../studio/server/agent-settings.mjs';
+import { startInstruction } from '../studio/server/instructions.mjs';
+import { OCR_COMMAND, startPdfOcr } from '../studio/server/pdf-ocr.mjs';
+import { MiniApps, proxyFetch } from '../studio/server/mini-apps.mjs';
+import { Tasks, commandWords, runProgram } from '../studio/server/tasks.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
 import { pageVersion, studioBlogRoot } from '../studio/server/page-version.mjs';
 import { atomicWriteText } from '../studio/server/atomic-write.mjs';
@@ -149,6 +153,20 @@ export default function studioDev({ site } = {}) {
 			const pluginSettings = new PluginSettings(settingsFile);
 			// Which large model the Studio asks (AI 设置); its key stays on this machine.
 			const aiSettings = new AiSettings(settingsFile);
+			const agentSettings = new AgentSettings(settingsFile);
+			// 小程序: the tools of apps/ at the repository's root, each in a floating window.
+			const miniApps = new MiniApps(resolve(server.config.root, 'apps'));
+			const tasks = new Tasks();
+			/**
+			 * The environment of a program the Studio runs for an AI (a terminal's shell, an agent run by Alt+Enter):
+			 * `studio …` on its PATH (the pages' operations), which article and where it is, the drive and its text
+			 * (blog/AGENTS.md names these).
+			 */
+			const programEnv = (slug, driveRoot) => ({
+				PATH: `${resolve(server.config.root, 'bin')}${delimiter}${process.env.PATH ?? ''}`,
+				...(slug ? { STUDIO_ARTICLE: slug, STUDIO_ARTICLE_DIR: articleBundlePaths(blogRoot, slug).directory, STUDIO_ARTICLE_FILE: articleBundlePaths(blogRoot, slug).markdown } : {}),
+				...(driveRoot ? { STUDIO_DRIVE_DIR: driveRoot, STUDIO_DRIVE_TEXT: resolve(driveRoot, TEXT_FOLDER) } : {}),
+			});
 			const plugins = pluginSettings.disabled().then((disabled) => serverKernel(server.config.root, {
 				projectRoot: server.config.root,
 				blogRoot,
@@ -161,6 +179,8 @@ export default function studioDev({ site } = {}) {
 			server.httpServer?.on('close', () => {
 				watcher.close();
 				terminals.close();
+				// What runs in the background stops with the server (an AI left alone would go on writing).
+				for (const task of tasks.list()) if (task.state === 'running') tasks.cancel(task.id);
 				void plugins.then((kernel) => kernel.dispose());
 			});
 			markContentReloads(server);
@@ -177,6 +197,14 @@ export default function studioDev({ site } = {}) {
 			server.middlewares.use(async (request, response, next) => {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];
 				const url = new URL(request.url ?? '/', 'http://localhost');
+				// A 小程序's files, for its frame (which has no origin of its own: it asks nothing of the Studio's API but through `studio`).
+				const appFileMatch = rawPathname.match(/^\/studio-apps\/([^/]+)\/(.*)$/u);
+				if (appFileMatch && request.method === 'GET') {
+					const found = await miniApps.file(decodePathComponent(appFileMatch[1]), decodePathComponent(appFileMatch[2]));
+					if (!found) return json(response, 404, { error: '没有这个小程序文件' });
+					response.writeHead(200, { 'Content-Type': found.type, 'Cache-Control': 'no-store' });
+					return response.end(found.body);
+				}
 				const publicFileMatch = rawPathname.match(/^\/article-assets\/([^/]+)\/([^/]+)\/(.+)$/u);
 				if (publicFileMatch && request.method === 'GET') {
 					try {
@@ -218,9 +246,71 @@ export default function studioDev({ site } = {}) {
 						return;
 					}
 
-					// The AIs the 终端 tab starts with a click, and which of them this machine has.
-					if (url.pathname === '/api/studio/terminal/agents' && request.method === 'GET') {
-						return json(response, 200, { agents: await terminalAgents() });
+					// The AIs the Studio starts (the 终端 tab's buttons, Alt+Enter), set in AI 设置.
+					if (url.pathname === '/api/studio/agents') {
+						if (request.method === 'GET') return json(response, 200, await agentSettings.shown());
+						if (request.method === 'PUT') return json(response, 200, await agentSettings.set(await readJsonChange(request)));
+					}
+
+					// The background tasks: the list, each one's log, and as events while they go; one cancelled.
+					if (url.pathname === '/api/studio/tasks/events' && request.method === 'GET') {
+						response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive' });
+						response.write('retry: 2000\n\n');
+						response.write(`data: ${JSON.stringify({ type: 'all', tasks: tasks.list() })}\n\n`);
+						const stop = tasks.subscribe((event) => response.write(`data: ${JSON.stringify(event)}\n\n`));
+						const keepAlive = setInterval(() => response.write(': keep-alive\n\n'), 25_000);
+						request.on('close', () => {
+							clearInterval(keepAlive);
+							stop();
+						});
+						return;
+					}
+					const taskMatch = url.pathname.match(/^\/api\/studio\/tasks\/([^/]+)(\/cancel)?$/u);
+					if (taskMatch) {
+						const id = decodePathComponent(taskMatch[1]);
+						if (taskMatch[2] && request.method === 'POST') return json(response, 200, { cancelled: tasks.cancel(id) });
+						if (!taskMatch[2] && request.method === 'GET') {
+							const task = tasks.get(id);
+							return task ? json(response, 200, task) : json(response, 404, { error: '没有这个任务' });
+						}
+					}
+
+					// 小程序: the list; what one may do beyond its frame, if its app.json asks for it (net, run).
+					if (url.pathname === '/api/studio/apps' && request.method === 'GET') return json(response, 200, { apps: await miniApps.list() });
+					const appMatch = url.pathname.match(/^\/api\/studio\/apps\/([^/]+)\/(fetch|run)$/u);
+					if (appMatch && request.method === 'POST') {
+						const app = await miniApps.get(decodePathComponent(appMatch[1]));
+						if (!app) return json(response, 404, { error: '没有这个小程序' });
+						const wanted = appMatch[2] === 'fetch' ? 'net' : 'run';
+						if (!app.permissions.includes(wanted)) return json(response, 403, { error: `小程序「${app.name}」没有在 app.json 里要「${wanted}」这个权限` });
+						const asked = await readJsonChange(request);
+						if (wanted === 'net') return json(response, 200, await proxyFetch(asked));
+						const argv = Array.isArray(asked.argv) ? asked.argv.map(String) : [];
+						if (!argv.length) return json(response, 400, { error: '要给出运行的命令（argv）' });
+						const slug = typeof asked.slug === 'string' && asked.slug ? asked.slug : null;
+						const cwd = slug ? articleBundlePaths(blogRoot, slug).directory : server.config.root;
+						const task = tasks.start({ kind: 'app', title: `${app.name}：${argv.join(' ').slice(0, 60)}`, slug }, ({ log, signal }) => runProgram(argv, { cwd, env: programEnv(slug, null), log, signal }));
+						return json(response, 202, { id: task.id });
+					}
+
+					// A PDF of the article read by PaddleOCR into a page under it, as a task (STUDIO_OCR_COMMAND: browser tests' stand-in).
+					const ocrMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/ocr$/u);
+					if (ocrMatch && request.method === 'POST') {
+						const slug = decodePathComponent(ocrMatch[1]);
+						const { path } = await readJsonChange(request);
+						const command = process.env.STUDIO_OCR_COMMAND ? commandWords(process.env.STUDIO_OCR_COMMAND) : OCR_COMMAND;
+						return json(response, 202, await startPdfOcr({ tasks, articles, blogRoot, slug, path, env: programEnv(slug, await drive.root()), command }));
+					}
+
+					// Alt+Enter: an AI does what a line of the article asks, in its folder, as a task.
+					const instructMatch = url.pathname.match(/^\/api\/studio\/articles\/([^/]+)\/instruct$/u);
+					if (instructMatch && request.method === 'POST') {
+						const slug = decodePathComponent(instructMatch[1]);
+						const { line, fresh, agent } = await readJsonChange(request);
+						const folder = articleBundlePaths(blogRoot, slug).directory;
+						await manager.locate(slug, '');
+						const task = await startInstruction({ tasks, agents: agentSettings, slug, folder, env: programEnv(slug, await drive.root()), line, fresh: Boolean(fresh), agentId: agent });
+						return json(response, 202, { id: task.id });
 					}
 
 					// A shell for the 终端 tab: in the repository, the open article's folder, or the drive.
@@ -230,13 +320,7 @@ export default function studioDev({ site } = {}) {
 						if (cwd === 'drive' && !driveRoot) return json(response, 409, { error: '还没有选择资料库文件夹' });
 						const folder = cwd === 'article' ? articleBundlePaths(blogRoot, slug).directory : cwd === 'drive' ? driveRoot : server.config.root;
 						if (cwd === 'article') await manager.locate(slug, '');
-						// For a program run there (an AI): which article, and where it is; the drive and its text (blog/AGENTS.md names these).
-						const env = {
-							// `studio …` (bin/studio): the pages' operations on the command line.
-							PATH: `${resolve(server.config.root, 'bin')}${delimiter}${process.env.PATH ?? ''}`,
-							...(cwd === 'article' ? { STUDIO_ARTICLE: slug, STUDIO_ARTICLE_DIR: folder, STUDIO_ARTICLE_FILE: articleBundlePaths(blogRoot, slug).markdown } : {}),
-							...(driveRoot ? { STUDIO_DRIVE_DIR: driveRoot, STUDIO_DRIVE_TEXT: resolve(driveRoot, TEXT_FOLDER) } : {}),
-						};
+						const env = programEnv(cwd === 'article' ? slug : null, driveRoot);
 						// The drive's text brought up to date for what the AI may read.
 						if (driveRoot) void driveText.refresh().catch(() => {});
 						return json(response, 200, { ...(await terminals.open(folder, env)), cwd: folder });

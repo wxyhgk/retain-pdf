@@ -48,6 +48,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 					<button id="open-search" class="article-search" type="button"><span>⌕</span>搜索<kbd>⌘K</kbd></button>
 					<button id="open-table" class="article-search" type="button" aria-pressed="false"><span>▦</span>全部文章</button>
 					<button id="open-drive" class="article-search" type="button" aria-pressed="false"><span>▤</span>资料库</button>
+					<button id="open-apps" class="article-search" type="button" aria-haspopup="menu"><span>◇</span>小程序</button>
 				</div>
 				<!-- The plugins' commands shown here (ctx.commands, places: ['sidebar']): plugin-ui.ts. -->
 				<div id="plugin-commands" class="plugin-commands" hidden></div>
@@ -178,6 +179,10 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 					<div id="terminal-screen" class="terminal-screen" aria-label="终端"></div>
 				</section>
 			</aside>
+			<!-- The background tasks: an AI doing what a line asks, a PDF being read (task-tray.ts). -->
+			<div id="task-tray" class="task-tray" aria-live="polite" hidden></div>
+			<!-- The 小程序's floating windows (mini-apps.ts). -->
+			<div id="mini-app-layer" class="mini-app-layer"></div>
 		</main>
 		<script is:inline define:vars={{ pages }}>
 			// Before the editor loads: the right column as it was left, and the page as
@@ -264,6 +269,26 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<div class="dialog-actions">
 					<button id="ai-settings-cancel" type="button">取消</button>
 					<button id="ai-settings-save" class="is-primary" type="submit" value="save">保存</button>
+				</div>
+			</form>
+		</dialog>
+
+		<dialog id="agents-dialog" class="article-dialog agents-settings">
+			<form method="dialog">
+				<div class="dialog-heading">
+					<div><strong>AI 助手</strong><span>终端上的按钮和 Alt+Enter 用的 AI。只存在这台电脑上（.studio-settings.json，不进 git）</span></div>
+					<button id="agents-close" type="button" aria-label="关闭">×</button>
+				</div>
+				<p class="agents-hint">在正文里写一句要做的事，按 Alt+Enter，选中的 AI 就在这篇文章的文件夹里后台去做，做完把这几行换成结果，你逐处审阅；⇧Alt+Enter 是另开一个新会话。后台命令里的 {'{prompt}'} 换成交给它的话。Claude 的预设开了沙箱（只写这篇文章的文件夹、不联网），Codex 的是 workspace-write；pi 没有沙箱。</p>
+				<ol id="agents-list" class="agents-list"></ol>
+				<div class="agents-more">
+					<button id="agents-add" type="button">＋ 添加一个</button>
+					<button id="agents-presets" type="button">恢复预设</button>
+				</div>
+				<p id="agents-status" class="trash-status" role="status" aria-live="polite"></p>
+				<div class="dialog-actions">
+					<button id="agents-cancel" type="button">取消</button>
+					<button id="agents-save" class="is-primary" type="submit" value="save">保存</button>
 				</div>
 			</form>
 		</dialog>
@@ -832,6 +857,47 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.files-status[data-state='busy'] { color: rgb(var(--gray-dark)); }
 	.files-status[data-state='error'] { color: #a12d24; white-space: normal; }
 	:global(.upload-placeholder) { display: inline-block; margin: 2px 0; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: rgb(var(--gray-dark)); font-size: 12px; }
+	/* The background tasks, at the bottom right (task-tray.ts). */
+	.task-tray { position: fixed; z-index: 55; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; width: min(340px, calc(100vw - 32px)); }
+	.task-tray[hidden] { display: none; }
+	.task-tray :global(.task-item) { padding: 9px 11px; border: 1px solid rgb(var(--gray-light)); border-radius: 9px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 12px; box-shadow: 0 6px 22px rgb(0 0 0 / 12%); }
+	.task-tray :global(.task-head) { display: flex; gap: 8px; align-items: baseline; }
+	.task-tray :global(.task-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+	.task-tray :global(.task-time) { flex: none; color: rgb(var(--gray)); font-variant-numeric: tabular-nums; }
+	.task-tray :global(.task-foot) { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
+	.task-tray :global(.task-state) { flex: 1; min-width: 0; color: rgb(var(--gray)); overflow-wrap: anywhere; }
+	.task-tray :global(.task-item[data-state='running'] .task-state)::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: 1px; animation: task-pulse 1.2s ease-in-out infinite; }
+	.task-tray :global(.task-item[data-state='failed'] .task-state) { color: #b42318; }
+	.task-tray :global(.task-foot button) { flex: none; height: 22px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
+	.task-tray :global(.task-log) { max-height: 220px; margin: 8px 0 0; padding: 7px 8px; overflow: auto; border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: 11px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+	@keyframes task-pulse { 50% { opacity: 0.25; } }
+	/* Blocks an AI is working on (Alt+Enter). */
+	:global(.crepe-host .milkdown .ProseMirror .is-instructing) { position: relative; border-radius: 6px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); box-shadow: inset 2px 0 0 rgb(var(--gray)); }
+	:global(.crepe-host .milkdown .ProseMirror .is-instructing::after) { content: 'AI 处理中…'; position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: 11px; pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
+	/* 小程序: floating windows (mini-apps.ts). */
+	.mini-app-layer { position: fixed; z-index: 50; inset: 0; pointer-events: none; }
+	.mini-app-layer :global(.mini-app-window) { position: absolute; display: flex; flex-direction: column; min-width: 220px; min-height: 140px; overflow: hidden; resize: both; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 34px rgb(0 0 0 / 16%); pointer-events: auto; }
+	.mini-app-layer :global(.mini-app-bar) { display: flex; flex: none; gap: 4px; align-items: center; height: 32px; padding: 0 6px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; cursor: grab; user-select: none; touch-action: none; }
+	.mini-app-layer :global(.mini-app-bar:active) { cursor: grabbing; }
+	.mini-app-layer :global(.mini-app-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+	.mini-app-layer :global(.mini-app-bar button) { width: 24px; height: 24px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 14px; cursor: pointer; }
+	.mini-app-layer :global(.mini-app-bar button:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	.mini-app-layer :global(.mini-app-frame) { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
+	/* AI 助手 (agents-dialog.ts). */
+	.article-dialog.agents-settings { width: min(94vw, 720px); }
+	.agents-hint { margin: 0 0 10px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; }
+	.agents-list { display: flex; flex-direction: column; gap: 10px; max-height: 56vh; margin: 0; padding: 0; overflow: auto; list-style: none; }
+	.agents-list :global(.agent-row) { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; }
+	.agents-list :global(.agent-head) { display: grid; grid-template-columns: minmax(0, 130px) minmax(0, 130px) max-content minmax(0, 1fr) max-content; gap: 8px; align-items: end; }
+	.agents-list :global(.agent-field) { display: flex; flex-direction: column; gap: 3px; color: rgb(var(--gray)); font-size: 11px; }
+	.agents-list :global(.agent-field.is-short) { min-width: 0; }
+	.agents-list :global(.agent-field input) { box-sizing: border-box; width: 100%; height: 30px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 12px; }
+	.agents-list :global(.agent-default) { display: flex; gap: 5px; align-items: center; height: 30px; color: rgb(var(--gray-dark)); font-size: 12px; white-space: nowrap; }
+	.agents-list :global(.agent-installed) { overflow: hidden; height: 30px; line-height: 30px; color: rgb(var(--gray)); text-overflow: ellipsis; white-space: nowrap; }
+	.agents-list :global(.agent-remove) { height: 26px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: #b42318; font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; }
+	.agents-more { display: flex; gap: 8px; margin-top: 10px; }
+	.agents-more button { height: 28px; padding: 0 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+	.terminal-agents :global(.terminal-agents-settings) { margin-left: auto; border-color: transparent; background: transparent; color: rgb(var(--gray)); }
 	:global(.studio-toast) { position: fixed; z-index: 60; bottom: 24px; left: 50%; max-width: min(560px, calc(100vw - 32px)); padding: 9px 14px; border-radius: 8px; background: #2f2f2f; color: white; font-size: 12px; line-height: 1.5; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2); transform: translateX(-50%); }
 	:global(.studio-toast.is-error) { background: #a12d24; }
 	:global(.studio-toast-action) { margin-left: 14px; padding: 2px 8px; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 5px; background: transparent; color: white; font: inherit; font-weight: 600; cursor: pointer; }

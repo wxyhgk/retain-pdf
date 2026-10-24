@@ -254,11 +254,67 @@ export function openTerminal(target: { cwd: 'root' } | { cwd: 'drive' } | { cwd:
 	return request('/api/studio/terminal', jsonOptions('POST', target));
 }
 
-/** An AI the 终端 tab starts with a click (server/terminal-agents.mjs), and whether this machine has it. */
-export type TerminalAgent = { id: string; name: string; command: string; install: string; installed: boolean };
+/** An AI the Studio starts (server/agent-settings.mjs): in the terminal (`launch`), and by itself for Alt+Enter (`run`, `resume`). */
+export type Agent = { id: string; name: string; launch: string; run: string; resume: string; install?: string };
+export type AgentsShown = { agents: Array<Agent & { installed: boolean }>; default: string; presets: Agent[] };
 
-export async function listTerminalAgents(): Promise<TerminalAgent[]> {
-	return (await request<{ agents: TerminalAgent[] }>('/api/studio/terminal/agents')).agents;
+export function listAgents(): Promise<AgentsShown> {
+	return request<AgentsShown>('/api/studio/agents');
+}
+
+export function saveAgents(list: Agent[], chosen: string): Promise<AgentsShown> {
+	return request<AgentsShown>('/api/studio/agents', jsonOptions('PUT', { list, default: chosen }));
+}
+
+/** A background task (server/tasks.mjs), without its log. */
+export type TaskSummary = { id: string; kind: string; title: string; slug: string | null; state: 'running' | 'done' | 'failed' | 'cancelled'; started: number; ended: number | null; error: string | null; result: unknown; logSize: number };
+export type TaskEvent = { type: 'all'; tasks: TaskSummary[] } | { type: 'task'; task: TaskSummary } | { type: 'log'; id: string; text: string };
+
+/** Follows the background tasks: all of them first, then each change. Returns the function that stops. */
+export function followTasks(listener: (event: TaskEvent) => void): () => void {
+	const source = new EventSource('/api/studio/tasks/events');
+	source.addEventListener('message', (event) => listener(JSON.parse(event.data) as TaskEvent));
+	return () => source.close();
+}
+
+export async function taskLog(id: string): Promise<string> {
+	return (await request<{ log: string }>(`/api/studio/tasks/${encodeURIComponent(id)}`)).log;
+}
+
+export async function cancelTask(id: string): Promise<void> {
+	await request(`/api/studio/tasks/${encodeURIComponent(id)}/cancel`, jsonOptions('POST', {}));
+}
+
+/** A 小程序 (server/mini-apps.mjs): what it is, how big its window opens, what it may do (`problem`: its app.json is wrong). */
+export type MiniApp = { id: string; name: string; icon: string; description: string; width: number; height: number; permissions: string[]; problem?: string };
+
+export async function listMiniApps(): Promise<MiniApp[]> {
+	return (await request<{ apps: MiniApp[] }>('/api/studio/apps')).apps;
+}
+
+/** A 小程序's request to the network (its `net`), made by the Studio: no limit of the browser's on where to. */
+export function appFetch(id: string, init: { url: string; method?: string; headers?: Record<string, string>; body?: string }): Promise<{ status: number; ok: boolean; headers: Record<string, string>; text: string }> {
+	return request(`/api/studio/apps/${encodeURIComponent(id)}/fetch`, jsonOptions('POST', init));
+}
+
+/** A 小程序's command (its `run`), as a background task, in the article's folder (`slug`) or the repository's. */
+export async function appRun(id: string, argv: string[], slug: string | null): Promise<string> {
+	return (await request<{ id: string }>(`/api/studio/apps/${encodeURIComponent(id)}/run`, jsonOptions('POST', { argv, slug }))).id;
+}
+
+/** A background task, its log with it. */
+export function getTask(id: string): Promise<TaskSummary & { log: string }> {
+	return request(`/api/studio/tasks/${encodeURIComponent(id)}`);
+}
+
+/** A PDF of the article read by PaddleOCR into a page under it (made at once): the task, and the page. */
+export function startOcr(slug: string, path: string): Promise<{ task: string; page: { slug: string; title: string; href: string } }> {
+	return request(`/api/studio/articles/${encodeURIComponent(slug)}/ocr`, jsonOptions('POST', { path }));
+}
+
+/** Alt+Enter: an AI does what these lines of the article ask, by itself; the task it is. */
+export async function instruct(slug: string, line: { text: string; start: number; end: number; heading: string }, fresh: boolean): Promise<string> {
+	return (await request<{ id: string }>(`/api/studio/articles/${encodeURIComponent(slug)}/instruct`, jsonOptions('POST', { line, fresh }))).id;
 }
 
 /** Keeps a version of the article in its ai/history (nothing when the newest kept one is the same). */

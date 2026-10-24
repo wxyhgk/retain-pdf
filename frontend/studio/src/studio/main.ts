@@ -25,6 +25,8 @@ import {
 	aiSettings,
 	recognizeImage,
 	putBelowImage,
+	instruct,
+	startOcr,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -68,6 +70,9 @@ import { createQuickFind } from './workspace/quick-find';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
 import { createTerminalPane } from './workspace/terminal';
+import { createAgentsDialog } from './workspace/agents-dialog';
+import { createTaskTray } from './workspace/task-tray';
+import { createMiniApps } from './workspace/mini-apps';
 import { showToast } from './workspace/toast';
 import type { EditorView } from '@milkdown/prose/view';
 import { createTopBar } from './workspace/top-bar';
@@ -176,7 +181,35 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 	},
 });
 const sidePanel = createSidePanel(shell);
-const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!);
+const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
+const agentsDialog = createAgentsDialog(document.querySelector<HTMLDialogElement>('#agents-dialog')!, { saved: () => terminal.refreshAgents() });
+// 小程序: the tools of apps/, in floating windows; what they may reach of the article shown.
+createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.querySelector<HTMLElement>('#mini-app-layer')!, {
+	article: () => (session.slug ? { slug: session.slug, title: openTitle, source: session.current.source } : null),
+	insert: (markdown) => editor.insertMarkdown(markdown),
+	toast: (message) => showToast(message),
+	openPage: (slug) => void session.open(slug),
+});
+/** The blocks marked as an AI works on them (Alt+Enter), by the task it is: the mark's own name. */
+const instructing = new Map<string, string>();
+/** Tasks over before their mark was known (an AI quicker than the answer that started it). */
+const overEarly = new Set<string>();
+createTaskTray(shell.querySelector<HTMLElement>('#task-tray')!, {
+	ended(task) {
+		const mark = instructing.get(task.id);
+		if (mark) {
+			instructing.delete(task.id);
+			editor.unmarkInstructing(mark);
+		} else if (task.kind === 'instruction') overEarly.add(task.id);
+		if (task.state === 'failed') showToast(`${task.title}：${task.error ?? '出错了'}`, true);
+		// A PDF read: its page, to open.
+		const page = task.kind === 'ocr' && task.state === 'done' ? (task.result as { page?: string } | null)?.page : undefined;
+		if (page) {
+			void articleList.load();
+			showToast(`已识别成子页面「${task.title.replace(/^PaddleOCR：/u, '')}」`, { action: { label: '打开', run: () => void session.open(page) } });
+		}
+	},
+});
 const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files')!, {
 	source: () => session.current.source,
 	revision: () => session.current.revision,
@@ -185,6 +218,7 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	insertMarkdown: (markdown) => editor.insertMarkdown(markdown),
 	viewOffice: (url, name) => void openOfficeFile(url, name),
 	sheetRows: firstSheetRows,
+	ocr: (path) => void ocrPdf(path),
 });
 
 const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-editor')!, {
@@ -247,6 +281,8 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	},
 	enterPage: (slug) => void enterNewPage(slug),
 	askAI: () => void askAI(),
+	instruct: (fresh) => void instructHere(fresh),
+	ocrPdf: (view, pos, path) => void ocrPdf(path, view, pos),
 	recognize: (view, pos) => void recognizePicture(view, pos),
 	pickCitation: () => citePicker.pick(),
 	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
@@ -484,6 +520,69 @@ async function askAI(): Promise<void> {
 	}
 	sidePanel.show('terminal');
 	terminal.ask(slug, lines);
+}
+
+/**
+ * OCR 成子页面: a PDF of the open article (`path` in it) read by PaddleOCR into a page under it (server/pdf-ocr.mjs),
+ * made at once and filled in as a task; from the line linking to the PDF (`view`, `pos`), the page linked on a line under it.
+ */
+async function ocrPdf(path: string, view?: EditorView, pos?: number): Promise<void> {
+	const slug = session.slug;
+	if (!slug) return;
+	try {
+		const { page } = await startOcr(slug, path);
+		void articleList.load();
+		showToast(`正在用 PaddleOCR 识别 ${path}，结果写进子页面「${page.title}」`);
+		const at = view && pos !== undefined && !view.isDestroyed ? view.state.doc.nodeAt(pos) : null;
+		const link = view?.state.schema.marks.link;
+		// Still the line linking to the PDF: the page under it.
+		if (view && at?.textContent && at.isTextblock && link) {
+			const line = view.state.schema.nodes.paragraph!.create(null, view.state.schema.text(page.title, [link.create({ href: page.href, title: null })]));
+			view.dispatch(view.state.tr.insert(pos! + at.nodeSize, line));
+		}
+	} catch (error) {
+		showToast(error instanceof Error ? error.message : '没能开始识别', true);
+	}
+}
+
+/** The heading the line `line` (from 1) of `source` is under, skipping what is in code fences; empty for none. */
+function headingAbove(source: string, line: number): string {
+	let heading = '';
+	let fence: string | null = null;
+	for (const text of source.split('\n').slice(0, line - 1)) {
+		const opening = /^\s{0,3}(`{3,}|~{3,})/u.exec(text)?.[1];
+		if (fence) {
+			if (opening && opening[0] === fence[0] && opening.length >= fence.length) fence = null;
+		} else if (opening) fence = opening;
+		else heading = /^#{1,6}\s+(.*?)\s*#*\s*$/u.exec(text)?.[1] ?? heading;
+	}
+	return heading;
+}
+
+let instructions = 0;
+/**
+ * Alt+Enter: what the blocks the caret is in say is done by the AI of AI 助手, by itself, in the article's folder
+ * (server/instructions.mjs); ⇧ as well, in a new talk. The blocks are marked till it is over; what it changes in the
+ * file comes back as a change on disk, to accept or reject where it is.
+ */
+async function instructHere(fresh: boolean): Promise<void> {
+	const slug = session.slug;
+	const marked = slug ? editor.markSelection() : null;
+	if (!slug || !marked) return;
+	// Marked at once, where the caret is now, whatever it does meanwhile.
+	const mark = `instruction-${++instructions}`;
+	editor.markInstructing(mark);
+	try {
+		if (!(await session.flush())) throw new Error('文章还没保存好，保存后再交给 AI');
+		const lines = sourceLinesOf(session.current.source, marked);
+		if (!lines?.text.trim()) throw new Error('这一行是空的，没有要交给 AI 的事');
+		const id = await instruct(slug, { text: lines.text, start: lines.start, end: lines.end, heading: headingAbove(session.current.source, lines.start) }, fresh);
+		if (overEarly.delete(id)) editor.unmarkInstructing(mark);
+		else instructing.set(id, mark);
+	} catch (error) {
+		editor.unmarkInstructing(mark);
+		showToast(error instanceof Error ? error.message : '没能交给 AI', true);
+	}
 }
 
 /** The open article's library (assets/refs.bib), read again when it changes; null when it has none. */

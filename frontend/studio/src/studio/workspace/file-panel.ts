@@ -40,6 +40,8 @@ export type FilePanelHost = {
 	viewOffice(url: string, name: string): void;
 	/** A workbook's first sheet as rows (office-viewer.ts). */
 	sheetRows(url: string): Promise<string[][]>;
+	/** A PDF of the article (its path in it) read by PaddleOCR into a page under the article. */
+	ocr(path: string): void;
 };
 
 const STATUS_CLEAR_MS = 6000;
@@ -501,6 +503,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			const reference = markdownReference(entry.path);
 			if (published) items.push({ label: officeKind(entry.path) ? '预览' : '在新标签页打开', action: () => openFile(entry) });
 			if (published && tableSource(entry.path)) items.push({ label: '插入为表格', action: () => insertTable(entry) });
+			if (/\.pdf$/iu.test(entry.path)) items.push({ label: 'OCR 成子页面（PaddleOCR）', action: () => host.ocr(entry.path) });
 			// A plugin's block may tell the file by what it says (a Gaussian output among other logs): read when copied.
 			const article = slug;
 			if (reference && article) items.push({ label: '复制 Markdown 引用', action: () => void readMarkdownReference(entry.path, (path) => articleFileHead(article, path)).then((read) => copy(read ?? reference, ' Markdown 引用')) });

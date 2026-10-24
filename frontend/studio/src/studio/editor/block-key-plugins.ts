@@ -23,6 +23,8 @@ const modifier = (event: KeyboardEvent) => (navigator.platform.includes('Mac') ?
 export type BlockKeysHost = {
 	/** ⌘J: 「问 AI」 about the selected blocks. */
 	askAI(): void;
+	/** Alt+Enter: an AI does what the blocks the caret is in say (⇧ as well: in a new talk). */
+	instruct(fresh: boolean): void;
 };
 
 /** Selects the block the caret is in when nothing is selected; the copy or cut then goes on with it. */
@@ -45,6 +47,10 @@ const blockKeysPlugin = (host: BlockKeysHost) => $prose(
 					if (event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
 						const up = event.key === 'ArrowUp';
 						return run((state, dispatch) => growIntoBlocks(state, up ? -1 : 1, view.endOfTextblock(up ? 'up' : 'down'), dispatch));
+					}
+					if (event.key === 'Enter' && event.altKey && !event.metaKey && !event.ctrlKey) {
+						host.instruct(event.shiftKey);
+						return true;
 					}
 					if (!modifier(event) || event.altKey) return false;
 					const key = event.key.toLowerCase();

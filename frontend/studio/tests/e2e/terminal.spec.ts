@@ -82,7 +82,7 @@ test('the terminal has `studio`, the pages’ operations for an AI, on its PATH'
 
 test('an AI starts with a click, in the article’s folder; one this machine has not is greyed, saying how to get it', async ({ page }) => {
 	const agents = page.locator('#terminal-agents');
-	await expect(agents.getByRole('button')).toHaveText(['Claude', 'Codex', 'pi']);
+	await expect(agents.locator('button[data-agent]')).toHaveText(['Claude', 'Codex', 'pi']);
 	// The stand-ins (fake-agents/) have Claude only.
 	await expect(agents.getByRole('button', { name: 'Codex' })).toBeDisabled();
 	await expect(agents.getByRole('button', { name: 'Codex' })).toHaveAttribute('title', /npm install -g @openai\/codex/u);

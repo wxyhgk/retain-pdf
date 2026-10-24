@@ -89,6 +89,8 @@ export type BlockMenuHost = {
 	split?: (view: EditorView, pos: number) => void;
 	/** 识别…: the picture at `pos` read by a large model (a formula, text, a table…), what is read put under it. */
 	recognize?: (view: EditorView, pos: number) => void;
+	/** OCR 成子页面: the PDF the line at `pos` links to (`path` in the article) read into a page under the article. */
+	ocr?: (view: EditorView, pos: number, path: string) => void;
 	/** The plugins' blocks: one may hold its own node's menu (a chemistry block's). */
 	blocks?: StudioBlock[];
 	/**
@@ -101,6 +103,15 @@ export type BlockMenuHost = {
 		back: (view: EditorView, pos: number, url: string) => void;
 	};
 };
+
+/** Where a paragraph that is one link and nothing else points, whatever the address (a file of the article too). */
+function linkedAlone(node: ProseNode): string | null {
+	if (node.type.name !== 'paragraph' || !node.childCount) return null;
+	const hrefs = new Set<string>();
+	node.forEach((child) => hrefs.add(String(child.marks.find((mark) => mark.type.name === 'link')?.attrs.href ?? '')));
+	const [href] = hrefs;
+	return hrefs.size === 1 && href ? href : null;
+}
 
 /** The blocks that are a picture: what 识别 reads. */
 const PICTURES = ['image-block', FIGURE_TYPE];
@@ -129,6 +140,10 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 	if (recognize && PICTURES.includes(node.type.name) && node.attrs.src) {
 		entries.push({ key: 'recognize', label: '识别…', current: false, danger: false, turn: false, run: (view) => recognize(view, pos) });
 	}
+	const ocr = host.ocr;
+	// A PDF of the article: a line that is only a link to it (as a PDF dropped in comes in).
+	const pdf = /^\.\/(.+\.pdf)$/iu.exec(linkedAlone(node) ?? '')?.[1];
+	if (ocr && pdf) entries.push({ key: 'ocr', label: 'OCR 成子页面（PaddleOCR）', current: false, danger: false, turn: false, run: (view) => ocr(view, pos, decodeURI(pdf)) });
 	const links = host.links;
 	if (links) {
 		const url = onlyLink(node);

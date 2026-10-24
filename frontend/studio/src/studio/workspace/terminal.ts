@@ -2,7 +2,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 
-import { listTerminalAgents, openTerminal, type TerminalAgent } from '../api/client';
+import { listAgents, openTerminal, type AgentsShown } from '../api/client';
 import type { SourceLines } from '../document/source-lines';
 
 type Cwd = 'root' | 'article' | 'drive';
@@ -68,7 +68,7 @@ function writeCwd(cwd: Cwd): void {
  * the open article's folder. It starts the first time the tab is shown; after
  * the shell exits, any key opens a new one. Closing the page hangs the shell up.
  */
-export function createTerminalPane(pane: HTMLElement) {
+export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void }) {
 	const screen = pane.querySelector<HTMLElement>('#terminal-screen')!;
 	const where = pane.querySelector<HTMLElement>('#terminal-cwd')!;
 	const restartButton = pane.querySelector<HTMLButtonElement>('#restart-terminal')!;
@@ -230,22 +230,22 @@ export function createTerminalPane(pane: HTMLElement) {
 	 * notes' rules and skills by itself (blog/AGENTS.md), the drive still named in the shell's environment. What runs
 	 * in the terminal now ends, the author asked first.
 	 */
-	function launch(agent: TerminalAgent): void {
+	function launch(agent: AgentsShown['agents'][number]): void {
 		const target: Cwd = article ? 'article' : 'root';
 		const place = target === 'article' ? '当前文章' : '仓库根目录';
 		if (state === 'running' && !confirm(`在${place}打开 ${agent.name}？终端里正在运行的程序会被结束。`)) return;
 		cwd = target;
 		writeCwd(cwd);
 		renderCwd();
-		pending = { command: agent.command };
+		pending = { command: agent.launch };
 		void start();
 	}
 
-	/** The buttons of the AIs this machine has; those it has not, greyed, saying how to get them. */
+	/** The buttons of the AIs (AI 助手, set by the author); those this machine has not, greyed, saying how to get them. */
 	async function showAgents(): Promise<void> {
-		let agents: TerminalAgent[];
+		let agents: AgentsShown['agents'];
 		try {
-			agents = await listTerminalAgents();
+			({ agents } = await listAgents());
 		} catch {
 			return;
 		}
@@ -257,10 +257,19 @@ export function createTerminalPane(pane: HTMLElement) {
 			button.dataset.agent = agent.id;
 			button.textContent = agent.name;
 			button.disabled = !agent.installed;
-			button.title = agent.installed ? `在终端里启动 ${agent.command}` : `没有找到 ${agent.command} 命令。安装：${agent.install}`;
+			const program = agent.launch.split(/\s+/u)[0];
+			button.title = agent.installed ? `在终端里启动 ${agent.launch}` : `没有找到 ${program} 命令${agent.install ? `。安装：${agent.install}` : ''}`;
 			button.addEventListener('click', () => launch(agent));
 			return button;
 		}));
+		const settings = document.createElement('button');
+		settings.type = 'button';
+		settings.className = 'terminal-agents-settings';
+		settings.textContent = '⚙';
+		settings.title = 'AI 助手：有哪些、怎么启动、Alt+Enter 用哪个';
+		settings.setAttribute('aria-label', 'AI 助手设置');
+		settings.addEventListener('click', () => host.editAgents());
+		agentBar.append(settings);
 		agentBar.hidden = false;
 	}
 
@@ -331,6 +340,10 @@ export function createTerminalPane(pane: HTMLElement) {
 			pending = { slug, lines };
 			if (state === 'ended') void start();
 			else putPending();
+		},
+		/** The AIs changed (AI 助手): the buttons again. */
+		refreshAgents(): void {
+			void showAgents();
 		},
 		/** The drive's folder (null: none chosen), for 资料库. */
 		showDrive(root: string | null): void {

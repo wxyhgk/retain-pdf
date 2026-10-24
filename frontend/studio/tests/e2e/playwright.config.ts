@@ -69,6 +69,8 @@ export default defineConfig({
 				STUDIO_RETAINMOL_URL: `http://127.0.0.1:${retainmolPort}`,
 				// The AIs the terminal starts with a click: stand-ins that say where they were started (fake-agents/).
 				STUDIO_TERMINAL_AGENT_DIR: fileURLToPath(new URL('./fake-agents', import.meta.url)),
+				// OCR 成子页面: a stand-in for `paddleocr api` (fake-agents/paddleocr).
+				STUDIO_OCR_COMMAND: fileURLToPath(new URL('./fake-agents/paddleocr', import.meta.url)),
 			},
 			reuseExistingServer: false,
 			timeout: 120_000,

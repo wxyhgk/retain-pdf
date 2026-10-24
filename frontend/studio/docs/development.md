@@ -5,6 +5,7 @@
 ```text
 AGENTS.md             给 AI 的总说明：写笔记看 blog/AGENTS.md，改代码看本文
 blog/                 文章，每篇一个文件夹（见 docs/README.md）；blog/AGENTS.md 是写作约定（CLAUDE.md 只引入它）
+apps/                 小程序：每个一个文件夹（app.json + app.html），在 Studio 里以悬浮窗打开（见 .agents/skills/studio-mini-apps）
 .agents/skills/       给 AI 的技能（Claude Code、Codex、pi 都读；.claude/skills 指向这里）
 .agents/memory/       AI 记下的作者偏好，只在本机（不进 git）
 src/

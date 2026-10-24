@@ -5,7 +5,7 @@
 // configuration copied, the rest linked), so that beside the author's own
 // dev server it keeps to its own .astro/: two servers on one root both
 // write .astro/data-store.json, and break each other's writes.
-import { cpSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +23,8 @@ function isolatedRoot() {
 	const parent = process.env.E2E_ROOT_PARENT || mkdtempSync(join(tmpdir(), 'studio-e2e-root-'));
 	const root = join(realpathSync(parent), basename(repository));
 	mkdirSync(root);
-	for (const name of ['src', 'plugins', 'astro.config.mjs', 'package.json', 'tsconfig.json']) cpSync(join(repository, name), join(root, name), { recursive: true });
+	// Copied: what the server reads and the tests may write in (a 小程序 of apps/ made by a test stays in the copy).
+	for (const name of ['src', 'plugins', 'apps', 'astro.config.mjs', 'package.json', 'tsconfig.json']) if (existsSync(join(repository, name))) cpSync(join(repository, name), join(root, name), { recursive: true });
 	for (const name of ['bin', 'node_modules', 'packages', 'public', 'third_party', 'tools', 'vendor']) symlinkSync(join(repository, name), join(root, name));
 	mkdirSync(join(root, 'blog'));
 	return root;

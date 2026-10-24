@@ -17,7 +17,7 @@ import { syncHeadingIds } from '@milkdown/kit/preset/commonmark';
 import { remarkGFMPlugin, strikethroughKeymap } from '@milkdown/kit/preset/gfm';
 import { Fragment, Slice, type Node as ProseNode } from '@milkdown/prose/model';
 import { EditorState, Plugin, PluginKey, TextSelection, type Transaction } from '@milkdown/prose/state';
-import type { EditorView } from '@milkdown/prose/view';
+import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view';
 import { $prose, callCommand, insert } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
 import '@milkdown/crepe/theme/common/style.css';
@@ -72,6 +72,10 @@ export type StudioEditorHost = {
 	shown(): void;
 	/** The author asks an AI about the selected blocks (⌘J, 「问 AI」): `markSelection` tells which. */
 	askAI(): void;
+	/** Alt+Enter: an AI does what the blocks the caret is in say, by itself (⇧ as well: in a new talk). */
+	instruct(fresh: boolean): void;
+	/** OCR 成子页面: the PDF the line at `pos` links to (`path` in the article) read into a page under it, linked under that line. */
+	ocrPdf(view: EditorView, pos: number, path: string): void;
 	/** 识别…: the picture at `pos` read by the large model of AI 设置. */
 	recognize(view: EditorView, pos: number): void;
 	/**
@@ -111,6 +115,9 @@ export type StudioEditor = {
 	insertMarkdown(markdown: string): void;
 	/** The ProseMirror view of the article shown; null before one is. */
 	view(): EditorView | null;
+	/** The blocks the selection is in shown as being worked on by an AI (Alt+Enter), as `id`, till `unmarkInstructing`. */
+	markInstructing(id: string): void;
+	unmarkInstructing(id: string): void;
 };
 
 /** Each editor's writer: its blocks' Markdown, remembered (a long article is not written whole at every edit). */
@@ -147,6 +154,34 @@ const nextPart = $prose(
 				// What is put in right there (an empty line the editor keeps last) stays after the parts.
 				apply: (tr, at) => (tr.getMeta(nextPartKey) as number | undefined) ?? tr.mapping.map(at, -1),
 			},
+		}),
+);
+
+/** The blocks an AI is working on (Alt+Enter), each marked till its task is over: `add` or `remove` (a task's id) as meta. */
+const instructingKey = new PluginKey<DecorationSet>('studio-instructing');
+const instructing = $prose(
+	() =>
+		new Plugin<DecorationSet>({
+			key: instructingKey,
+			state: {
+				init: () => DecorationSet.empty,
+				apply(tr, marks) {
+					const meta = tr.getMeta(instructingKey) as { add?: { id: string; from: number; to: number }; remove?: string } | undefined;
+					let next = marks.map(tr.mapping, tr.doc);
+					if (meta?.remove) next = next.remove(next.find(undefined, undefined, (spec) => spec.instructing === meta.remove));
+					if (meta?.add) {
+						const { id, from, to } = meta.add;
+						const blocks: Decoration[] = [];
+						tr.doc.nodesBetween(from, to, (node, pos) => {
+							blocks.push(Decoration.node(pos, pos + node.nodeSize, { class: 'is-instructing' }, { instructing: id }));
+							return false;
+						});
+						next = next.add(tr.doc, blocks);
+					}
+					return next;
+				},
+			},
+			props: { decorations: (state) => instructingKey.getState(state) },
 		}),
 );
 
@@ -276,6 +311,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					ask: () => host.askAI(),
 					split: (view, pos) => void splitToPage(view, pos),
 					recognize: (view, pos) => host.recognize(view, pos),
+					ocr: (view, pos, path) => host.ocrPdf(view, pos, path),
 					blocks,
 					links: {
 						targets: links,
@@ -426,7 +462,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			.use(diffComponent)
 			.use(reviewWatch)
 			.use(longArticle)
-			.use(nextPart);
+			.use(nextPart)
+			.use(instructing);
 		crepe.on((listener) => {
 			// Opening the body is not an edit, nor is deciding a change under review.
 			listener.updated(() => report());
@@ -658,6 +695,22 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			applyLibrary();
 		},
 		mount,
+		markInstructing(id) {
+			crepe?.editor.action((ctx) => {
+				const view = ctx.get(editorViewCtx);
+				const { $from, $to } = view.state.selection;
+				// The whole top-level blocks the selection is in, as markSelection takes them.
+				const from = $from.depth ? $from.before(1) : $from.pos;
+				const to = $to.depth ? $to.after(1) : $to.pos;
+				view.dispatch(view.state.tr.setMeta(instructingKey, { add: { id, from, to } }).setMeta('addToHistory', false));
+			});
+		},
+		unmarkInstructing(id) {
+			crepe?.editor.action((ctx) => {
+				const view = ctx.get(editorViewCtx);
+				view.dispatch(view.state.tr.setMeta(instructingKey, { remove: id }).setMeta('addToHistory', false));
+			});
+		},
 		focusStart,
 		settle: report,
 		// A review of a long article waits for all of it to be in.
