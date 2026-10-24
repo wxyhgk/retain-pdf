@@ -15,12 +15,12 @@
 
 | # | 问题 | 位置 | 后果 |
 |---|---|---|---|
-| 1 | 在 Studio 里「提交」文章会把 `ai/` 一起提交（`git add -A -- blog/<slug>`，`.gitignore` 只排除了 `ai/history/`） | `src/studio/server/article-git.mjs:73` | 仓库 `wxyhgk.github.io` 是公开的：`ai/brief.md`，以及 ⌥↩ 时 AI 写的 `ai/work/` 脚本、数据、记录，推送后都公开 |
-| 2 | 小程序的 `studio.fetch` 不限制目标地址，能访问 `127.0.0.1:4321` 上 Studio 自己的接口。服务器发出的请求没有 Origin，所以安全检查直接放行 | `src/studio/server/mini-apps.mjs`（`proxyFetch`） | 一个只有 `net` 权限的小程序，可以先改「AI 助手」的命令，再触发 ⌥↩，从而在本机执行任意命令；也能访问本机别的服务 |
-| 3 | 小程序的桥只认「这个 iframe」，不管里面现在是哪个页面 | `src/studio/workspace/mini-apps.ts` | 小程序里点开的外部网页，也能用这个小程序的权限调桥 |
-| 4 | `/studio-apps/…` 和 Studio 同一个来源，又没有加沙盒的 CSP | `src/plugins/studio-dev.mjs`（小程序文件的路由） | 任何网站 `window.open` 这个地址，小程序代码就以 Studio 的身份运行，能调用全部接口 |
-| 5 | 来源检查放行任何端口的 `http://localhost` | `studio-dev.mjs` 的安全检查 | 本机别的开发服务器上的页面，也能读、写 Studio 接口（终端、AI 助手、⌥↩ 都在其中） |
-| 6 | `.studio-settings.json` 有五个模块各自读、改、写，没有统一的锁；AI 助手保存时还把文件权限从 600 改成了 644 | `agent-settings.mjs`、`ai-settings.mjs`、`drive.mjs`、`compute-hosts.mjs`、`plugin-settings.mjs` | 存着 API key 的文件变成谁都能读；两处同时保存，有一方的设置会丢（资料库路径、AI key、计算服务器） |
+| 1 | ~~在 Studio 里「提交」文章会把 `ai/` 一起提交（`git add -A -- blog/<slug>`，`.gitignore` 只排除了 `ai/history/`）~~ 已修 27df566 | `src/studio/server/article-git.mjs:73` | 仓库 `wxyhgk.github.io` 是公开的：`ai/brief.md`，以及 ⌥↩ 时 AI 写的 `ai/work/` 脚本、数据、记录，推送后都公开 |
+| 2 | ~~小程序的 `studio.fetch` 不限制目标地址，能访问 `127.0.0.1:4321` 上 Studio 自己的接口。服务器发出的请求没有 Origin，所以安全检查直接放行~~ 已修 27df566 | `src/studio/server/mini-apps.mjs`（`proxyFetch`） | 一个只有 `net` 权限的小程序，可以先改「AI 助手」的命令，再触发 ⌥↩，从而在本机执行任意命令；也能访问本机别的服务 |
+| 3 | ~~小程序的桥只认「这个 iframe」，不管里面现在是哪个页面~~ 已修 27df566 | `src/studio/workspace/mini-apps.ts` | 小程序里点开的外部网页，也能用这个小程序的权限调桥 |
+| 4 | ~~`/studio-apps/…` 和 Studio 同一个来源，又没有加沙盒的 CSP~~ 已修 27df566 | `src/plugins/studio-dev.mjs`（小程序文件的路由） | 任何网站 `window.open` 这个地址，小程序代码就以 Studio 的身份运行，能调用全部接口 |
+| 5 | ~~来源检查放行任何端口的 `http://localhost`~~ 已修 27df566 | `studio-dev.mjs` 的安全检查 | 本机别的开发服务器上的页面，也能读、写 Studio 接口（终端、AI 助手、⌥↩ 都在其中） |
+| 6 | ~~`.studio-settings.json` 有五个模块各自读、改、写，没有统一的锁；AI 助手保存时还把文件权限从 600 改成了 644~~ 已修 27df566 | `agent-settings.mjs`、`ai-settings.mjs`、`drive.mjs`、`compute-hosts.mjs`、`plugin-settings.mjs` | 存着 API key 的文件变成谁都能读；两处同时保存，有一方的设置会丢（资料库路径、AI key、计算服务器） |
 
 ### P1：会丢数据或结果错
 
@@ -35,7 +35,7 @@
 | 13 | 文章改名（发布时会自动改名）后，正在跑的计算任务就找不到了；取消时也不会去停远端的任务 | `plugins/job/server/job-runs.mjs` |
 | 14 | 资料库文字索引里的路径没有检查，可以删或读资料库外面的 `.txt`（资料库可能是共享的 Dropbox） | `drive-text.mjs` |
 | 15 | 新建子页面时复制上级的文件，中间的文件夹如果是链接，会把外面的文件复制进来 | `article-repository.mjs` 的 `create` |
-| 16 | 小程序加载不了自己文件夹里的其他文件（`./data.json`、模块脚本），因为没有跨域头；可技能里写了可以这么用 | 小程序文件的路由 |
+| 16 | ~~小程序加载不了自己文件夹里的其他文件（`./data.json`、模块脚本），因为没有跨域头；可技能里写了可以这么用~~ 已修 27df566：其实是 Astro 开发服务器拦截所有跨站子资源，改为 `studio.appFile(name)` 由 Studio 代读 | 小程序文件的路由 |
 
 ### P2：健壮性
 
@@ -44,7 +44,7 @@
 - 需要核实：一个从没跑过 agent 的文件夹里，`codex exec resume --last`、`claude -p --continue` 会不会报错。⌥↩ 默认就是「接着上次」。
 - 传文件的管道、终端子进程的写入、终端输出的 JSON 解析，有几处出错没处理，可能让开发服务器崩溃。
 - 提交时文件夹已经被删（vanished），会让 git 报错，之后每次提交都失败。
-- `/studio-apps/%ZZ/` 这类坏地址会让请求一直挂着；同一秒发起两次 PDF 识别，文件夹名会冲突。
+- ~~`/studio-apps/%ZZ/` 这类坏地址会让请求一直挂着~~（已修 27df566）；同一秒发起两次 PDF 识别，文件夹名会冲突。
 - PDF 识别的格式转换有几处边界情况：两个相邻的居中块、`$ 5` 这样的货币、表格里的 `|`、带空格的图片名、嵌套的 div、一行两个公式。
 - `commandWords` 处理双引号里的反斜杠和全角空格，和 shell 的规则不一样；fish 这类非 POSIX 的 shell 下，任务和「找 AI 命令」都用不了。
 - pi 没有沙箱，⌥↩ 时它会读文章；文章里如果混进别人写的指令（OCR、资料库的文字），可能被它照做。
