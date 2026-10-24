@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
 import { resolveInside } from '../../articles/bundle-paths.mjs';
+import { publicFetch } from './public-fetch.mjs';
 
 /**
  * 小程序: small tools the author (or an AI, by the skill studio-mini-apps)
@@ -99,12 +100,9 @@ export class MiniApps {
 	}
 }
 
-/** What the network proxy (`studio.fetch`) answers: status, headers, and the body as text. */
-export async function proxyFetch({ url, method = 'GET', headers = {}, body }) {
-	const address = new URL(String(url));
-	if (!['http:', 'https:'].includes(address.protocol)) throw Object.assign(new Error('只能访问 http 和 https 的地址'), { statusCode: 400 });
-	const response = await fetch(address, { method, headers, body: body === undefined ? undefined : String(body), redirect: 'follow', signal: AbortSignal.timeout(60_000) });
-	return { status: response.status, ok: response.ok, headers: Object.fromEntries(response.headers), text: await response.text() };
+/** What `studio.fetch` asks, fetched by the Studio: to the internet only (public-fetch.mjs). */
+export function proxyFetch(asked) {
+	return publicFetch(asked);
 }
 
 const STYLE = `
@@ -134,11 +132,27 @@ const BRIDGE = `
 	const listeners = [];
 	let asked = 0;
 	const answers = new Map();
+	// The line to the Studio, given once this page is ready; calls made before wait for it.
+	let port = null;
+	const waiting = [];
 	const call = (method, ...args) => new Promise((resolve, reject) => {
 		asked += 1;
 		answers.set(asked, { resolve, reject });
-		parent.postMessage({ kind: KIND, type: 'call', id: asked, method, args }, '*');
+		const message = { type: 'call', id: asked, method, args };
+		if (port) port.postMessage(message);
+		else waiting.push(message);
 	});
+	const heard = (data) => {
+		if (!data) return;
+		if (data.type === 'answer') {
+			const answer = answers.get(data.id);
+			answers.delete(data.id);
+			if (answer) 'error' in data ? answer.reject(new Error(data.error)) : answer.resolve(data.result);
+		} else if (data.type === 'theme' && data.theme !== studio.theme) {
+			studio.theme = root.dataset.theme = data.theme;
+			for (const listener of listeners) listener(studio.theme);
+		}
+	};
 	const studio = {
 		theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
 		onTheme(listener) { listeners.push(listener); },
@@ -149,6 +163,7 @@ const BRIDGE = `
 		fetch: (url, init = {}) => call('fetch', String(url), init),
 		run: (argv, options = {}) => call('run', argv, options),
 		toast: (text) => call('toast', String(text)),
+		appFile: (path) => call('appFile', String(path)),
 		storage: { get: (key) => call('storage.get', String(key)), set: (key, value) => call('storage.set', String(key), value) },
 		openPage: (slug) => call('openPage', String(slug)),
 	};
@@ -156,15 +171,11 @@ const BRIDGE = `
 	window.studio = studio;
 	addEventListener('message', (event) => {
 		const data = event.data;
-		if (event.source !== parent || !data || data.kind !== KIND) return;
-		if (data.type === 'answer') {
-			const answer = answers.get(data.id);
-			answers.delete(data.id);
-			if (answer) 'error' in data ? answer.reject(new Error(data.error)) : answer.resolve(data.result);
-		} else if (data.type === 'theme' && data.theme !== studio.theme) {
-			studio.theme = root.dataset.theme = data.theme;
-			for (const listener of listeners) listener(studio.theme);
-		}
+		if (port || event.source !== parent || !data || data.kind !== KIND || data.type !== 'port' || !event.ports[0]) return;
+		port = event.ports[0];
+		port.onmessage = (message) => heard(message.data);
+		heard({ type: 'theme', theme: data.theme });
+		for (const message of waiting.splice(0)) port.postMessage(message);
 	});
 	parent.postMessage({ kind: KIND, type: 'ready' }, '*');
 })();

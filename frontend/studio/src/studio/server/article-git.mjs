@@ -34,7 +34,7 @@ export class ArticleGit {
 	async status() {
 		const root = await this.#repository();
 		if (!root) return { available: false, changed: {}, vanished: [] };
-		const output = await this.#git(root, ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--', this.#blog]);
+		const output = await this.#git(root, ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--', this.#blog, this.#private(root)]);
 		const changed = {};
 		const touched = new Set();
 		const entries = output.split('\0');
@@ -62,6 +62,16 @@ export class ArticleGit {
 		return { available: true, changed, vanished: vanished.sort() };
 	}
 
+	/**
+	 * What is never committed, whatever .gitignore says: an article's ai/ (its brief, the AIs' work and log,
+	 * earlier versions), as a pathspec. The repository is public.
+	 */
+	#private(root) {
+		const blog = relative(root, this.#blog).split(sep).join('/');
+		// blog/ may be the repository itself.
+		return `:(glob,exclude)${blog ? `${blog}/` : ''}*/ai/**`;
+	}
+
 	/** Commits the article's folder, and the folders of articles gone from disk, with `message`. */
 	async commit(slug, message) {
 		assertArticleSlug(slug);
@@ -71,9 +81,9 @@ export class ArticleGit {
 		const { changed, vanished } = await this.status();
 		if (!changed[slug] && !vanished.length) throw new GitError('这篇文章没有要提交的改动', 409);
 		const folders = [slug, ...vanished].map((name) => resolve(this.#blog, name));
-		await this.#git(root, ['add', '-A', '--', ...folders]);
+		await this.#git(root, ['add', '-A', '--', ...folders, this.#private(root)]);
 		// With paths, only they are committed: whatever else was staged stays staged.
-		await this.#git(root, ['commit', '--quiet', '-m', message.trim(), '--', ...folders]);
+		await this.#git(root, ['commit', '--quiet', '-m', message.trim(), '--', ...folders, this.#private(root)]);
 		const commit = (await this.#git(root, ['rev-parse', '--short', 'HEAD'])).trim();
 		return { commit, vanished };
 	}

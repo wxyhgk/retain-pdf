@@ -72,3 +72,62 @@ test('an app that did not ask for the article cannot read it', async ({ page }) 
 		rmSync(folder, { recursive: true, force: true });
 	}
 });
+
+/** An app of the test's own in apps/, removed after `run`. */
+async function withApp(files: Record<string, string>, run: () => Promise<void>): Promise<void> {
+	const folder = join(apps(), 'probe');
+	mkdirSync(folder, { recursive: true });
+	for (const [name, text] of Object.entries(files)) writeFileSync(join(folder, name), text);
+	try {
+		await run();
+	} finally {
+		rmSync(folder, { recursive: true, force: true });
+	}
+}
+
+test('a page the app’s frame goes to (a link clicked) gets nothing of the Studio; the app’s own files load', async ({ page }) => {
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '探针', icon: '?', permissions: ['article'] }),
+			'app.html': '<a id="go" href="./other.html">去别处</a><p id="out">…</p><p id="data">…</p><script>studio.article().then((a) => { out.textContent = a.slug; }); studio.appFile("data.json").then((t) => { data.textContent = JSON.parse(t).value; }, (e) => { data.textContent = e.message; });</script>',
+			'data.json': JSON.stringify({ value: '数据读到了' }),
+			// What a page out on the web could do once in the frame: say it is ready, and ask.
+			'other.html': '<p id="out">…</p><script>let heard = false; addEventListener("message", (e) => { heard = true; out.textContent = "answered " + JSON.stringify(e.data); }); parent.postMessage({ kind: "studio-app", type: "ready" }, "*"); parent.postMessage({ kind: "studio-app", type: "call", id: 1, method: "article", args: [] }, "*"); setTimeout(() => { if (!heard) out.textContent = "silent"; }, 1500);</script>',
+		},
+		async () => {
+			await openStudio(page);
+			await openApp(page, '?  探针');
+			const frame = appFrame(page, 'probe');
+			await expect(frame.locator('#out')).toHaveText(slug);
+			await expect(frame.locator('#data')).toHaveText('数据读到了');
+			await frame.locator('#go').click();
+			await expect(page.locator('.studio-toast', { hasText: '打开了别的网页' })).toBeVisible();
+			await expect(frame.locator('#out')).toHaveText('silent');
+			// ↻ brings the app back, and its line with it.
+			await page.locator('.mini-app-window[data-app="probe"] .mini-app-bar button', { hasText: '↻' }).click();
+			await expect(frame.locator('#out')).toHaveText(slug);
+		},
+	);
+});
+
+test('an app may not reach this machine through studio.fetch, nor the Studio’s API opened on its own; nor may other local pages', async ({ page }) => {
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '探针', icon: '?', permissions: ['net'] }),
+			'app.html': '<p id="out">…</p><script>studio.fetch(new URL("/api/studio/agents", location.href).href, { method: "PUT", headers: { "content-type": "application/json" }, body: "{}" }).then((r) => { out.textContent = "reached " + r.status; }, (e) => { out.textContent = e.message; });</script>',
+		},
+		async () => {
+			await openStudio(page);
+			const own = new URL(page.url()).origin;
+			await openApp(page, '?  探针');
+			await expect(appFrame(page, 'probe').locator('#out')).toContainText('小程序不能访问本机或局域网的地址');
+			// Opened as a page of its own, the app has no origin either: the API refuses it.
+			await page.goto(`${own}/studio-apps/probe/`);
+			expect(await page.evaluate(() => fetch('/api/studio/agents').then((r) => r.status, () => 'blocked'))).not.toBe(200);
+			// A page of another server on this machine (another port) is refused; the Studio's own is not.
+			expect((await page.request.get(`${own}/api/studio/agents`, { headers: { origin: 'http://localhost:3999' } })).status()).toBe(403);
+			expect((await page.request.get(`${own}/api/studio/agents`, { headers: { 'sec-fetch-site': 'same-site' } })).status()).toBe(403);
+			expect((await page.request.get(`${own}/api/studio/agents`, { headers: { origin: own } })).status()).toBe(200);
+		},
+	);
+});

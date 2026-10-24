@@ -1,6 +1,5 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
 import { shellWord } from './job-shell.mjs';
+import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 
 /**
  * The machines a job can run on (计算机器), kept with the Studio's other
@@ -66,12 +65,8 @@ export class ComputeHosts {
 		this.settingsFile = settingsFile;
 	}
 
-	async #settings() {
-		try {
-			return JSON.parse(await readFile(this.settingsFile, 'utf8'));
-		} catch {
-			return {};
-		}
+	#settings() {
+		return readSettings(this.settingsFile);
 	}
 
 	/** Every machine, this one first (as set, or as it is by default). */
@@ -111,9 +106,7 @@ export class ComputeHosts {
 			names.add(host.name);
 			if (host.name === LOCAL_HOST.name && host.kind !== 'local') throw new ComputeHostError('local 是本机的名字');
 		}
-		const settings = await this.#settings();
-		await mkdir(dirname(this.settingsFile), { recursive: true });
-		await writeFile(this.settingsFile, `${JSON.stringify({ ...settings, computeHosts: hosts }, null, '\t')}\n`);
+		await updateSettings(this.settingsFile, (settings) => ({ ...settings, computeHosts: hosts }));
 		return this.list();
 	}
 }

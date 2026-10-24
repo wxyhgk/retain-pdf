@@ -134,7 +134,7 @@ async function call(middleware, { url, method = 'POST', headers = {}, body }) {
 	const request = Object.assign(Readable.from(body === undefined ? [] : [Buffer.from(body)]), {
 		url,
 		method,
-		headers: { origin: 'http://localhost:4321', ...headers },
+		headers: { host: 'localhost:4321', origin: 'http://localhost:4321', ...headers },
 		socket: { remoteAddress: '127.0.0.1' },
 	});
 	const response = fakeResponse();
@@ -324,6 +324,9 @@ test('a plugin answers under /api/studio/plugins/, after the same checks as the 
 	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/articles/missing/jobs/opt/runs', method: 'GET' })).status, 404);
 	assert.equal((await call(middleware, { url: '/api/studio/plugins/nothing', method: 'GET' })).status, 404);
 	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET', headers: { origin: 'https://example.com' } })).status, 403);
+	// Another server on this machine (another port) is another site; so is a request the browser says came from one.
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET', headers: { origin: 'http://localhost:3000' } })).status, 403);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET', headers: { origin: undefined, 'sec-fetch-site': 'cross-site' } })).status, 403);
 });
 
 test('plugins are listed, and one turned off in the Studio leaves the server until it is turned on', async (t) => {

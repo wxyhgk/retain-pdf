@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createReadStream, createWriteStream } from 'node:fs';
-import { lstat, mkdir, readdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { lstat, mkdir, readdir, rename, rm } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
@@ -8,6 +8,7 @@ import { pipeline } from 'node:stream/promises';
 import { resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
 import { resourceContentType } from './file-repository.mjs';
 import { existingDirectory, existingEntry, exists, FileConflictError, FileNotFoundError, linkUnderFreeName, replaceInto } from './safe-fs.mjs';
+import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 
 /**
  * The drive (资料库): a folder of the author's, anywhere on the machine and
@@ -77,12 +78,8 @@ export class Drive {
 		this.uploadSizeLimit = uploadSizeLimit;
 	}
 
-	async #settings() {
-		try {
-			return JSON.parse(await readFile(this.settingsFile, 'utf8'));
-		} catch {
-			return {};
-		}
+	#settings() {
+		return readSettings(this.settingsFile);
 	}
 
 	/** The drive's folder; null when none is chosen, or the chosen one is gone. */
@@ -110,9 +107,7 @@ export class Drive {
 			if (isInside(kept, root)) throw new StudioPathError('资料库不能放在博客仓库里：仓库里的东西会公开');
 			if (isInside(root, kept)) throw new StudioPathError('资料库不能是包含博客仓库的文件夹');
 		}
-		const settings = await this.#settings();
-		await mkdir(dirname(this.settingsFile), { recursive: true });
-		await writeFile(this.settingsFile, `${JSON.stringify({ ...settings, driveRoot: root }, null, '\t')}\n`);
+		await updateSettings(this.settingsFile, (settings) => ({ ...settings, driveRoot: root }));
 		return this.describe();
 	}
 

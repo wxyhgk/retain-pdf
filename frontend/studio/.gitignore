@@ -37,8 +37,10 @@ playwright-report/
 # what the Studio builds for itself (RetainMol's page)
 .studio-cache/
 
-# earlier versions of articles the Studio keeps (ai/history), local only
-blog/*/ai/history/
+# an article's ai/: material for the AIs (a brief, ai/work/ an AI's scripts and log, ai/history/ earlier
+# versions), never published and never committed: the repository is public. Only the folder itself is kept.
+blog/*/ai/*
+!blog/*/ai/.gitkeep
 # the author's preferences the AIs note down (blog/AGENTS.md), local only
 .agents/memory/
 

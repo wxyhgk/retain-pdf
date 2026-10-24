@@ -1,9 +1,9 @@
 import { execFile } from 'node:child_process';
-import { access, constants, readFile } from 'node:fs/promises';
+import { access, constants } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { atomicWriteText } from './atomic-write.mjs';
 import { commandWords } from './tasks.mjs';
+import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 
 /**
  * The AIs the Studio starts: coding agents that run in a terminal and read the
@@ -46,12 +46,8 @@ export class AgentSettings {
 		this.shell = shell;
 	}
 
-	async #read() {
-		try {
-			return JSON.parse(await readFile(this.settingsFile, 'utf8'));
-		} catch {
-			return {};
-		}
+	#read() {
+		return readSettings(this.settingsFile);
 	}
 
 	/** @returns {Promise<{ list: Agent[], default: string }>} */
@@ -80,9 +76,8 @@ export class AgentSettings {
 			ids.add(agent.id);
 		}
 		if (!ids.has(change.default)) throw fail('默认的 AI 不在列表里');
-		const settings = await this.#read();
-		settings.agents = { list: change.list.map(({ id, name, launch, run, resume, install }) => ({ id, name, launch, run, resume, ...(install ? { install } : {}) })), default: change.default };
-		await atomicWriteText(this.settingsFile, `${JSON.stringify(settings, null, '\t')}\n`);
+		const agents = { list: change.list.map(({ id, name, launch, run, resume, install }) => ({ id, name, launch, run, resume, ...(install ? { install } : {}) })), default: change.default };
+		await updateSettings(this.settingsFile, (settings) => ({ ...settings, agents }));
 		this.#found = null;
 		return this.shown();
 	}

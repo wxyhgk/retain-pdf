@@ -106,6 +106,21 @@ async function file(response, resource) {
 /**
  * @param {{ site?: string }} [options] the blog's address, so links to its articles written in full count as theirs
  */
+/**
+ * Whether a request to the API comes from the Studio's own pages. Its `Origin`, if it has one, is this server's
+ * (scheme, host, port: the Host it was asked by, which Vite has checked), so a page of another local server (another
+ * port) is refused; and the browser does not say it came from another site (`Sec-Fetch-Site`, which comes with
+ * requests that have no Origin, an image's say). Programs on this machine (no Origin) are let through: they could
+ * read the files anyway, and what the Studio itself fetches for an app never reaches here (mini-apps.mjs).
+ */
+function fromStudio(request) {
+	const origin = request.headers.origin;
+	const host = request.headers.host;
+	if (origin !== undefined && origin !== `http://${host}` && origin !== `https://${host}`) return false;
+	const site = request.headers['sec-fetch-site'];
+	return site === undefined || site === 'same-origin' || site === 'none';
+}
+
 export default function studioDev({ site } = {}) {
 	return {
 		name: 'local-article-studio',
@@ -200,10 +215,22 @@ export default function studioDev({ site } = {}) {
 				// A 小程序's files, for its frame (which has no origin of its own: it asks nothing of the Studio's API but through `studio`).
 				const appFileMatch = rawPathname.match(/^\/studio-apps\/([^/]+)\/(.*)$/u);
 				if (appFileMatch && request.method === 'GET') {
-					const found = await miniApps.file(decodePathComponent(appFileMatch[1]), decodePathComponent(appFileMatch[2]));
-					if (!found) return json(response, 404, { error: '没有这个小程序文件' });
-					response.writeHead(200, { 'Content-Type': found.type, 'Cache-Control': 'no-store' });
-					return response.end(found.body);
+					try {
+						const found = await miniApps.file(decodePathComponent(appFileMatch[1]), decodePathComponent(appFileMatch[2]));
+						if (!found) return json(response, 404, { error: '没有这个小程序文件' });
+						response.writeHead(200, {
+							'Content-Type': found.type,
+							'Cache-Control': 'no-store',
+							'X-Content-Type-Options': 'nosniff',
+							// Never the Studio's origin, in its frame or opened on its own: a site opening this address
+							// gets a page that cannot call the Studio's API.
+							'Content-Security-Policy': 'sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads',
+						});
+						return response.end(found.body);
+					} catch (error) {
+						const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
+						return json(response, status, { error: error instanceof Error ? error.message : '读不到小程序文件' });
+					}
 				}
 				const publicFileMatch = rawPathname.match(/^\/article-assets\/([^/]+)\/([^/]+)\/(.+)$/u);
 				if (publicFileMatch && request.method === 'GET') {
@@ -222,10 +249,7 @@ export default function studioDev({ site } = {}) {
 				const remoteAddress = request.socket.remoteAddress ?? '';
 				const isLoopback = remoteAddress === '::1' || remoteAddress === '127.0.0.1' || remoteAddress.startsWith('::ffff:127.');
 				if (!isLoopback) return json(response, 403, { error: 'Studio 只允许本机访问' });
-				const origin = request.headers.origin;
-				if (origin && !/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/u.test(origin)) {
-					return json(response, 403, { error: '拒绝非本地页面访问 Studio' });
-				}
+				if (!fromStudio(request)) return json(response, 403, { error: '只有 Studio 自己的页面能访问 Studio 的接口' });
 
 				try {
 					// What changes in blog/, as server-sent events: `data: [{"slug":"note","paths":["index.md"]}]`.

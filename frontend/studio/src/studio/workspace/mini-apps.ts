@@ -15,7 +15,12 @@ const MESSAGE = 'studio-app';
 const PLACES = 'studio.mini-app-places';
 
 type Place = { left: number; top: number; width: number; height: number };
-type AppWindow = { app: MiniApp; root: HTMLElement; frame: HTMLIFrameElement };
+/**
+ * `port`: the app's line to the Studio, handed to the page the Studio put in the frame (its first `ready`) and to
+ * no other: a page the frame goes to afterwards (a link clicked in it) gets none, and the line is cut. `loading`:
+ * the Studio has just set the frame's address and waits for the app's `ready`; `loaded`: the app's page loaded.
+ */
+type AppWindow = { app: MiniApp; root: HTMLElement; frame: HTMLIFrameElement; port: MessagePort | null; loading: boolean; loaded: boolean };
 
 const theme = (): 'dark' | 'light' => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
@@ -49,8 +54,48 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 	}
 
 	function close(id: string): void {
-		open.get(id)?.root.remove();
+		const shown = open.get(id);
+		shown?.port?.close();
+		shown?.root.remove();
 		open.delete(id);
+	}
+
+	/** Puts the app's own page in its frame (again, with `query`), to be given a line when it is ready. */
+	function load(shown: AppWindow, query = ''): void {
+		cut(shown);
+		shown.loading = true;
+		shown.loaded = false;
+		shown.frame.src = `/studio-apps/${encodeURIComponent(shown.app.id)}/${query}`;
+	}
+
+	/** The frame shows a page the Studio did not put there: it gets nothing of the Studio. */
+	function leave(shown: AppWindow): void {
+		if (!shown.port && !shown.loaded) return;
+		cut(shown);
+		shown.loaded = false;
+		host.toast(`「${shown.app.name}」打开了别的网页，那个网页用不了 studio；点 ↻ 回到小程序`);
+	}
+
+	function cut(shown: AppWindow): void {
+		shown.port?.close();
+		shown.port = null;
+	}
+
+	/** The app's page is ready: its line to the Studio, through which alone it is answered. */
+	function connect(shown: AppWindow): void {
+		const channel = new MessageChannel();
+		shown.port = channel.port1;
+		channel.port1.onmessage = (event: MessageEvent) => {
+			const data = event.data as { type?: unknown; id?: unknown; method?: unknown; args?: unknown } | null;
+			if (!data || data.type !== 'call') return;
+			const reply = (message: Record<string, unknown>) => channel.port1.postMessage({ type: 'answer', id: data.id, ...message });
+			answer(shown.app, String(data.method), Array.isArray(data.args) ? data.args : []).then(
+				(result) => reply({ result }),
+				(error: unknown) => reply({ error: error instanceof Error ? error.message : String(error) }),
+			);
+		};
+		// The frame has no origin to name: the port goes to whatever page is in it, which is the app's (just ready).
+		shown.frame.contentWindow?.postMessage({ kind: MESSAGE, type: 'port', theme: theme() }, '*', [channel.port2]);
 	}
 
 	function show(app: MiniApp): void {
@@ -87,16 +132,19 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		frame.title = app.name;
 		// Scripts, forms, its own windows and downloads; never the Studio's origin.
 		frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups allow-modals allow-downloads');
-		frame.src = `/studio-apps/${encodeURIComponent(app.id)}/`;
+		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false };
+		// Any page loaded after the app's own is another one: the app followed a link, or went elsewhere.
+		frame.addEventListener('load', () => {
+			if (shown.loaded) leave(shown);
+			else if (!shown.loading) shown.loaded = true;
+		});
+		load(shown);
 		root.append(bar, frame);
 		layer.append(root);
-		const shown: AppWindow = { app, root, frame };
 		open.set(app.id, shown);
 		focus(shown);
 		root.addEventListener('pointerdown', () => focus(shown));
-		reload.addEventListener('click', () => {
-			frame.src = `/studio-apps/${encodeURIComponent(app.id)}/?${Date.now()}`;
-		});
+		reload.addEventListener('click', () => load(shown, `?${Date.now()}`));
 		shut.addEventListener('click', () => close(app.id));
 		const remember = () => keepPlace(app.id, { left: root.offsetLeft, top: root.offsetTop, width: root.offsetWidth, height: root.offsetHeight });
 		new ResizeObserver(remember).observe(root);
@@ -176,6 +224,14 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			case 'toast':
 				host.toast(String(args[0] ?? ''));
 				return true;
+			// A file of its own folder (data.json…), as text: the frame cannot load it itself (it has no origin, and the
+			// dev server serves no other site's subresources), the Studio can.
+			case 'appFile': {
+				const path = String(args[0] ?? '').split('/').map(encodeURIComponent).join('/');
+				const response = await fetch(`/studio-apps/${encodeURIComponent(app.id)}/${path}`);
+				if (!response.ok) throw new Error(`「${app.name}」的文件夹里没有 ${String(args[0])}`);
+				return response.text();
+			}
 			// Its own settings (a key it asks for…), kept in this browser: the frame has no storage of its own.
 			case 'storage.get':
 				try {
@@ -194,21 +250,18 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		}
 	}
 
+	// Only `ready` comes as a message to the window: everything else goes through the app's port.
 	window.addEventListener('message', (event) => {
-		const data = event.data as { kind?: unknown; type?: unknown; id?: unknown; method?: unknown; args?: unknown } | null;
-		if (!data || data.kind !== MESSAGE) return;
+		const data = event.data as { kind?: unknown; type?: unknown } | null;
+		if (!data || data.kind !== MESSAGE || data.type !== 'ready') return;
 		const shown = [...open.values()].find((candidate) => candidate.frame.contentWindow === event.source);
 		if (!shown) return;
-		const reply = (message: Record<string, unknown>) => shown.frame.contentWindow?.postMessage({ kind: MESSAGE, ...message }, '*');
-		if (data.type === 'ready') reply({ type: 'theme', theme: theme() });
-		if (data.type !== 'call') return;
-		answer(shown.app, String(data.method), Array.isArray(data.args) ? data.args : []).then(
-			(result) => reply({ type: 'answer', id: data.id, result }),
-			(error: unknown) => reply({ type: 'answer', id: data.id, error: error instanceof Error ? error.message : String(error) }),
-		);
+		if (!shown.loading) return leave(shown);
+		shown.loading = false;
+		connect(shown);
 	});
 	new MutationObserver(() => {
-		for (const shown of open.values()) shown.frame.contentWindow?.postMessage({ kind: MESSAGE, type: 'theme', theme: theme() }, '*');
+		for (const shown of open.values()) shown.port?.postMessage({ type: 'theme', theme: theme() });
 	}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 	launcher.addEventListener('click', () => {

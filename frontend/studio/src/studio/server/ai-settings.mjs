@@ -1,5 +1,5 @@
-import { chmod, mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+
+import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 
 /** The model asked when none is set, for each kind of service. */
 export const DEFAULT_MODELS = { anthropic: 'claude-opus-5-5', openai: '' };
@@ -27,12 +27,8 @@ export class AiSettings {
 		this.env = env;
 	}
 
-	async #read() {
-		try {
-			return JSON.parse(await readFile(this.settingsFile, 'utf8'));
-		} catch {
-			return {};
-		}
+	#read() {
+		return readSettings(this.settingsFile);
 	}
 
 	/** @returns {Promise<AiConfig>} */
@@ -63,18 +59,17 @@ export class AiSettings {
 		}
 		if (change.baseUrl && !/^https?:\/\/\S+$/u.test(change.baseUrl.trim())) throw fail('接口地址要以 http:// 或 https:// 开头');
 		if (change.workspaceId && /\s/u.test(change.workspaceId.trim())) throw fail('工作区 ID 里不能有空格（像 wrkspc_01AbC… 这样）');
-		const settings = await this.#read();
-		const ai = { ...settings.ai };
-		for (const key of ['provider', 'model', 'baseUrl', 'apiKey', 'workspaceId']) {
-			if (change[key] === undefined) continue;
-			const value = change[key].trim();
-			if (value) ai[key] = value;
-			else delete ai[key];
-		}
-		await mkdir(dirname(this.settingsFile), { recursive: true });
-		await writeFile(this.settingsFile, `${JSON.stringify({ ...settings, ai }, null, '\t')}\n`);
-		// A key in it: for the author's eyes only.
-		if (ai.apiKey) await chmod(this.settingsFile, 0o600);
+		// Written for the author's eyes only (settings-file.mjs): a key may be in it.
+		await updateSettings(this.settingsFile, (settings) => {
+			const ai = { ...settings.ai };
+			for (const key of ['provider', 'model', 'baseUrl', 'apiKey', 'workspaceId']) {
+				if (change[key] === undefined) continue;
+				const value = change[key].trim();
+				if (value) ai[key] = value;
+				else delete ai[key];
+			}
+			return { ...settings, ai };
+		});
 		return this.shown();
 	}
 }

@@ -1,5 +1,5 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+
+import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 
 /**
  * Which of the project's plugins are turned off in the Studio (插件, in
@@ -13,12 +13,8 @@ export class PluginSettings {
 		this.settingsFile = settingsFile;
 	}
 
-	async #read() {
-		try {
-			return JSON.parse(await readFile(this.settingsFile, 'utf8'));
-		} catch {
-			return {};
-		}
+	#read() {
+		return readSettings(this.settingsFile);
 	}
 
 	/** The plugins turned off, by folder name. */
@@ -31,13 +27,14 @@ export class PluginSettings {
 	async setEnabled(id, enabled) {
 		if (typeof id !== 'string' || !/^[\w.-]+$/u.test(id)) throw Object.assign(new Error('插件的名字不对'), { statusCode: 400 });
 		if (typeof enabled !== 'boolean') throw Object.assign(new Error('enabled 要是 true 或 false'), { statusCode: 400 });
-		const settings = await this.#read();
-		const disabled = new Set(Array.isArray(settings.plugins?.disabled) ? settings.plugins.disabled : []);
-		if (enabled) disabled.delete(id);
-		else disabled.add(id);
-		const list = [...disabled].sort();
-		await mkdir(dirname(this.settingsFile), { recursive: true });
-		await writeFile(this.settingsFile, `${JSON.stringify({ ...settings, plugins: { ...settings.plugins, disabled: list } }, null, '\t')}\n`);
+		let list = [];
+		await updateSettings(this.settingsFile, (settings) => {
+			const disabled = new Set(Array.isArray(settings.plugins?.disabled) ? settings.plugins.disabled : []);
+			if (enabled) disabled.delete(id);
+			else disabled.add(id);
+			list = [...disabled].sort();
+			return { ...settings, plugins: { ...settings.plugins, disabled: list } };
+		});
 		return list;
 	}
 }
