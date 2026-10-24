@@ -21,6 +21,8 @@ declare module '@milkdown/kit/preset/commonmark' {
 		match: (language: string) => boolean,
 		spec?: (ctx: Ctx) => FencedBlockSpec,
 	): $FencedBlock<T>;
+	/** packages/plugins/preset-commonmark/src/plugin/sync-heading-id-plugin.ts */
+	export function syncHeadingIds(ctx: Ctx, tr: import('@milkdown/kit/prose/state').Transaction): boolean;
 }
 
 declare module '@milkdown/crepe/feature/block-edit' {

@@ -9,7 +9,7 @@ import { renderMathHtml } from '@blog/science/rendering/math.ts';
 import { equationLabels, equationNumbers, numberedSource, referencesKey } from './equation-numbers.ts';
 import { isFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';
-import { drawNow, drawWhenNear, isLongArticle, isWaiting } from './near-screen.ts';
+import { drawNow, drawWhenNear, isLong, isWaiting } from './near-screen.ts';
 import { SourcePopup } from './source-popup.ts';
 
 const openBlocks = new Set<DisplayMathView>();
@@ -97,7 +97,7 @@ class DisplayMathView implements NodeView {
 		this.dom.addEventListener('mousedown', this.onMouseDown);
 		formulaViews.set(this.dom, this);
 		// In a long article, drawn once near the screen; its LaTeX till then.
-		if (isLongArticle(view.state.doc)) {
+		if (isLong(view)) {
 			this.formula.textContent = node.textContent;
 			drawWhenNear(view.dom, this.dom, () => this.renderFormula());
 		} else this.renderFormula();

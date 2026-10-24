@@ -1,4 +1,5 @@
 import type { Node as ProseNode } from '@milkdown/prose/model';
+import type { EditorView } from '@milkdown/prose/view';
 
 /**
  * What a long article draws only once it comes near the screen: its
@@ -16,6 +17,12 @@ import type { Node as ProseNode } from '@milkdown/prose/model';
 export const LONG_ARTICLE = 400;
 
 export const isLongArticle = (doc: ProseNode): boolean => doc.childCount > LONG_ARTICLE;
+
+/** The class of a long article's element (studio-editor.ts): one being shown a part at a time has it from its first part. */
+export const LONG = 'is-long';
+
+/** Whether `view` shows a long article: what a formula's view asks as it is made (the class is there before them). */
+export const isLong = (view: EditorView): boolean => view.dom.classList.contains(LONG);
 
 const WAITING = 'is-waiting';
 

@@ -92,7 +92,8 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 
 	let slug: string | null = null;
 	let entries: ArticleFileEntry[] = [];
-	let referenced = new Set<string>();
+	/** The files the article names; null till they are read, after it is shown (main.ts). */
+	let referenced: Set<string> | null = null;
 	const readReferenced = referencedFilesReader();
 	let selected: string | null = null;
 	let editing: Editing | null = null;
@@ -199,7 +200,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		item.classList.toggle('is-folder', entry.kind === 'directory');
 		item.classList.toggle('is-locked', Boolean(entry.locked));
 		if (entry.kind === 'directory') item.setAttribute('aria-expanded', String(open));
-		const unused = isUnused(entry, referenced);
+		const unused = referenced !== null && isUnused(entry, referenced);
 		item.classList.toggle('is-unused', unused);
 
 		item.append(element('span', 'file-icon', fileIcon(node, open)));
@@ -672,8 +673,8 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 				selected = null;
 				editing = null;
 				setStatus('');
+				referenced = null;
 			}
-			referenced = readReferenced(host.source());
 			render();
 			return refresh();
 		},
@@ -684,7 +685,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			window.clearTimeout(sourceTimer);
 			sourceTimer = window.setTimeout(() => {
 				const next = readReferenced(host.source());
-				if (next.size === referenced.size && [...next].every((path) => referenced.has(path))) return;
+				if (next.size === referenced?.size && [...next].every((path) => referenced!.has(path))) return;
 				referenced = next;
 				if (!editing) render();
 			}, 250);

@@ -56,11 +56,11 @@ function semanticFingerprint(block: MarkdownBlockSlice): string {
 
 /**
  * Bodies' blocks, remembered: the original's, the same until the article is
- * saved or opened again, and the editor's last, which the next edit's are
- * cut from again only round the change.
+ * saved or opened again, and the editor's last (and the original it was
+ * edited from), which the next edit's are cut from again only round the change.
  */
 let lastOriginal: { body: string; blocks: MarkdownBlockSlice[] } | null = null;
-let lastEdited: { body: string; blocks: MarkdownBlockSlice[] } | null = null;
+let lastEdited: { body: string; blocks: MarkdownBlockSlice[]; from: string } | null = null;
 
 function originalBlocksOf(body: string): MarkdownBlockSlice[] {
 	if (lastOriginal?.body === body) return lastOriginal.blocks;
@@ -69,9 +69,10 @@ function originalBlocksOf(body: string): MarkdownBlockSlice[] {
 	return lastOriginal.blocks;
 }
 
-function editedBlocksOf(body: string): MarkdownBlockSlice[] {
-	const before = lastEdited ?? lastOriginal;
-	lastEdited = { body, blocks: before ? reparseBodyBlocks(before, body) : parseMarkdownBodyBlocks(body) };
+function editedBlocksOf(body: string, original: string): MarkdownBlockSlice[] {
+	// The last edit of another original (another article, or this one before it was saved) is no nearer than this one.
+	const before = lastEdited?.from === original ? lastEdited : lastOriginal;
+	lastEdited = { body, blocks: before ? reparseBodyBlocks(before, body) : parseMarkdownBodyBlocks(body), from: original };
 	return lastEdited.blocks;
 }
 
@@ -82,20 +83,20 @@ function editedBlocksOf(body: string): MarkdownBlockSlice[] {
  * them is the table worked out, which is as big as the two lengths
  * multiplied (millions of entries for a book, when it was the whole).
  */
-function align(original: readonly string[], edited: readonly string[]): (number | null)[] {
-	const aligned: (number | null)[] = edited.map(() => null);
+function align(originalCount: number, editedCount: number, same: (original: number, edited: number) => boolean): (number | null)[] {
+	const aligned: (number | null)[] = Array.from({ length: editedCount }, () => null);
 	let head = 0;
-	while (head < original.length && head < edited.length && original[head] === edited[head]) {
+	while (head < originalCount && head < editedCount && same(head, head)) {
 		aligned[head] = head;
 		head += 1;
 	}
 	let tail = 0;
-	while (tail < original.length - head && tail < edited.length - head && original[original.length - 1 - tail] === edited[edited.length - 1 - tail]) {
-		aligned[edited.length - 1 - tail] = original.length - 1 - tail;
+	while (tail < originalCount - head && tail < editedCount - head && same(originalCount - 1 - tail, editedCount - 1 - tail)) {
+		aligned[editedCount - 1 - tail] = originalCount - 1 - tail;
 		tail += 1;
 	}
-	const originalEnd = original.length - tail;
-	const editedEnd = edited.length - tail;
+	const originalEnd = originalCount - tail;
+	const editedEnd = editedCount - tail;
 	const width = editedEnd - head + 1;
 	/** From each pair of positions on, how long the longest run in common is. */
 	const lengths = new Uint32Array((originalEnd - head + 1) * width);
@@ -103,13 +104,13 @@ function align(original: readonly string[], edited: readonly string[]): (number 
 	for (let originalIndex = originalEnd - 1; originalIndex >= head; originalIndex -= 1) {
 		for (let editedIndex = editedEnd - 1; editedIndex >= head; editedIndex -= 1) {
 			const cell = at(originalIndex, editedIndex);
-			lengths[cell] = original[originalIndex] === edited[editedIndex] ? lengths[cell + width + 1]! + 1 : Math.max(lengths[cell + width]!, lengths[cell + 1]!);
+			lengths[cell] = same(originalIndex, editedIndex) ? lengths[cell + width + 1]! + 1 : Math.max(lengths[cell + width]!, lengths[cell + 1]!);
 		}
 	}
 	let originalIndex = head;
 	let editedIndex = head;
 	while (originalIndex < originalEnd && editedIndex < editedEnd) {
-		if (original[originalIndex] === edited[editedIndex]) {
+		if (same(originalIndex, editedIndex)) {
 			aligned[editedIndex] = originalIndex;
 			originalIndex += 1;
 			editedIndex += 1;
@@ -125,7 +126,12 @@ function align(original: readonly string[], edited: readonly string[]): (number 
  * same lining up the merge below makes.
  */
 export function alignBodyBlocks(originalBlocks: readonly MarkdownBlockSlice[], editedBlocks: readonly MarkdownBlockSlice[]): (number | null)[] {
-	return align(originalBlocks.map(semanticFingerprint), editedBlocks.map(semanticFingerprint));
+	const originalMeanings: string[] = [];
+	const editedMeanings: string[] = [];
+	// The same bytes mean the same: what a block means is worked out only for one that differs (as a long article is
+	// opened, or edited, nearly all are the same).
+	return align(originalBlocks.length, editedBlocks.length, (original, edited) => originalBlocks[original]!.raw === editedBlocks[edited]!.raw
+		|| (originalMeanings[original] ??= semanticFingerprint(originalBlocks[original]!)) === (editedMeanings[edited] ??= semanticFingerprint(editedBlocks[edited]!)));
 }
 
 /**
@@ -164,7 +170,7 @@ export function mergeMarkdownBody(originalBody: string, editedBody: string): Mar
 	}
 
 	const originalBlocks = originalBlocksOf(originalBody);
-	const editedBlocks = editedBlocksOf(editedBody);
+	const editedBlocks = editedBlocksOf(editedBody, originalBody);
 	if (!originalBlocks.length || !editedBlocks.length) {
 		return {
 			body: editedBody,

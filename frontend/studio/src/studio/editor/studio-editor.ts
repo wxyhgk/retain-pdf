@@ -12,9 +12,10 @@ import {
 	startDiffReviewCmd,
 } from '@milkdown/kit/plugin/diff';
 import { blockConfig } from '@milkdown/kit/plugin/block';
+import { syncHeadingIds } from '@milkdown/kit/preset/commonmark';
 import { remarkGFMPlugin, strikethroughKeymap } from '@milkdown/kit/preset/gfm';
-import type { Node as ProseNode } from '@milkdown/prose/model';
-import { Plugin, TextSelection } from '@milkdown/prose/state';
+import { Slice, type Fragment, type Node as ProseNode } from '@milkdown/prose/model';
+import { Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
 import { $prose, callCommand, insert } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
@@ -28,7 +29,7 @@ import { filesNamed, headingSection } from './split-section';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { blockwiseMarkdown } from './blockwise-markdown';
-import { isLongArticle } from './near-screen';
+import { isLongArticle, LONG } from './near-screen';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
@@ -46,6 +47,8 @@ import { inlineMathPlugins } from './inline-math';
 import { mathBracketsRemark } from './math-brackets';
 import { addSearchWords, SLASH_TRIGGERS } from './slash-search';
 import { withoutTrailingEmptyLines } from '../document/index.ts';
+import { bodyParts } from '../document/parse.ts';
+import type { MarkdownBlockSlice } from '../document/types.ts';
 import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { columnsPlugins } from './columns-block';
@@ -64,6 +67,8 @@ export type StudioEditorHost = {
 	changed(markdown: string): void;
 	/** How many changes are left to review, or null when none is under review. */
 	reviewing(pending: number | null): void;
+	/** The article mounted is on the page: a long one's first part, the rest coming in after. */
+	shown(): void;
 	/** The author asks an AI about the selected blocks (⌘J, 「问 AI」): `markSelection` tells which. */
 	askAI(): void;
 	/** 识别…: the picture at `pos` read by the large model of AI 设置. */
@@ -78,8 +83,11 @@ export type StudioEditorHost = {
 	CitationHost;
 
 export type StudioEditor = {
-	/** Shows a Markdown body, replacing what was shown; the Markdown the editor writes for it. */
-	mount(body: string): Promise<string>;
+	/**
+	 * Shows a Markdown body, replacing what was shown; the Markdown the editor writes for it. A long one is shown a
+	 * part at a time (the first at once), unless `whole`; it resolves once all of it is.
+	 */
+	mount(body: string, whole?: boolean): Promise<string>;
 	/** The caret at the start of the body. */
 	focusStart(): void;
 	/** Reports the edits not reported yet (`changed` follows the typing by a moment). */
@@ -107,19 +115,54 @@ export type StudioEditor = {
 /** Each editor's writer: its blocks' Markdown, remembered (a long article is not written whole at every edit). */
 const writers = new WeakMap<Crepe, (doc: ProseNode) => string>();
 
+function writerOf(editor: Crepe): (doc: ProseNode) => string {
+	let write = writers.get(editor);
+	if (!write) writers.set(editor, (write = editor.editor.action((ctx) => blockwiseMarkdown(ctx.get(serializerCtx)))));
+	return write;
+}
+
 /** What the editor holds, as Markdown, without empty lines left at the end. */
 function markdownOf(editor: Crepe): string {
-	return editor.editor.action((ctx) => {
-		let write = writers.get(editor);
-		if (!write) writers.set(editor, (write = blockwiseMarkdown(ctx.get(serializerCtx))));
-		return withoutTrailingEmptyLines(write(ctx.get(editorViewCtx).state.doc));
-	});
+	return withoutTrailingEmptyLines(writerOf(editor)(editor.editor.action((ctx) => ctx.get(editorViewCtx).state.doc)));
 }
+
+/**
+ * A body longer than this (in characters; the longest article in this blog has about 24 000) is shown a part at a
+ * time, as SiYuan shows a long document: a book's blocks take seconds to make and lay out, a few screens' a moment.
+ */
+const IN_PARTS = 50_000;
+/** About how long the first part is (a few screens), and each after it (a frame's work). */
+const FIRST_PART = 12_000;
+const PART = 12_000;
+
+/** Where the next part of an article shown a part at a time goes: after those in, moved by what is typed meanwhile. */
+const nextPartKey = new PluginKey<number>('studio-next-part');
+const nextPart = $prose(
+	() =>
+		new Plugin<number>({
+			key: nextPartKey,
+			state: {
+				init: (_, state) => state.doc.content.size,
+				// What is put in right there (an empty line the editor keeps last) stays after the parts.
+				apply: (tr, at) => (tr.getMeta(nextPartKey) as number | undefined) ?? tr.mapping.map(at, -1),
+			},
+		}),
+);
+
+/** ProseMirror's own step of applying a transaction, without the plugins' answers to it (appendTransaction). */
+type Applying = EditorState & { applyInner(tr: Transaction): EditorState };
+
+const nextFrame = () => new Promise((done) => requestAnimationFrame(() => setTimeout(done)));
 
 /** The Studio's editor: Crepe with the plugins' blocks, formulas, file drops and block feel. */
 export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): StudioEditor {
 	let crepe: Crepe | null = null;
 	let mounting = false;
+	/** The article shown is a long one, put in a part at a time; `loading` till the last is in. */
+	let inParts = false;
+	let loading = false;
+	/** Done once the article shown is all in. */
+	let loaded: Promise<unknown> = Promise.resolve();
 	/** The review under way: what to call once every change is decided. */
 	let review: ((markdown: string) => void) | null = null;
 	/** The body as last reported, or as mounted. */
@@ -127,7 +170,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 
 	/** Reports the body, when it is an edit and not what was reported already. */
 	function report(): void {
-		if (!crepe || mounting || review) return;
+		if (!crepe || mounting || loading || review) return;
 		crepe.editor.action((ctx) => {
 			const { doc } = ctx.get(editorViewCtx).state;
 			if (reported?.eq(doc)) return;
@@ -151,7 +194,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	}
 
 	/** A long article (a book's worth of blocks) marked so: its formulas are drawn as they come near (near-screen.ts), and the outline goes to a heading at once (outline.ts). */
-	const longArticle = $prose(() => new Plugin({ props: { attributes: (state): Record<string, string> => (isLongArticle(state.doc) ? { class: 'is-long' } : {}) } }));
+	const longArticle = $prose(() => new Plugin({ props: { attributes: (state): Record<string, string> => (inParts || isLongArticle(state.doc) ? { class: LONG } : {}) } }));
 
 	/** Follows the review: what is left of it, and its end. */
 	const reviewWatch = $prose(
@@ -174,9 +217,17 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			}),
 	);
 
-	async function mount(body: string): Promise<string> {
+	async function mount(body: string, whole = false): Promise<string> {
 		mounting = true;
 		let mounted: Crepe;
+		/** Where the first part ends, as shown: the next goes there. */
+		let firstEnd = 0;
+		// Browser tests show short articles a part at a time too, in small parts.
+		const sizes = { from: IN_PARTS, first: FIRST_PART, rest: PART, ...(window as { STUDIO_PARTS?: object }).STUDIO_PARTS };
+		const parts = !whole && body.length > sizes.from ? bodyParts(body, sizes.first, sizes.rest) : null;
+		const first = parts?.next().value;
+		const opening = first?.length ? body.slice(0, first.at(-1)!.end) : body;
+		inParts = opening !== body;
 		try {
 			// Another article, or this one anew: a review still open is over.
 			endReview();
@@ -244,7 +295,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			};
 			crepe = new Crepe({
 				root,
-				defaultValue: body,
+				defaultValue: opening,
 				features: {
 					[CrepeFeature.TopBar]: false,
 					[CrepeFeature.AI]: false,
@@ -347,22 +398,81 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				.use(diff)
 				.use(diffComponent)
 				.use(reviewWatch)
-				.use(longArticle);
+				.use(longArticle)
+				.use(nextPart);
 			crepe.on((listener) => {
 				// Opening the body is not an edit, nor is deciding a change under review.
 				listener.updated(() => report());
 			});
 			await crepe.create();
 			applyLibrary();
-			crepe.editor.action((ctx) => { reported = ctx.get(editorViewCtx).state.doc; });
+			crepe.editor.action((ctx) => {
+				const { state } = ctx.get(editorViewCtx);
+				reported = state.doc;
+				firstEnd = nextPartKey.getState(state)!;
+			});
 			mounted = crepe;
 		} finally {
 			mounting = false;
 		}
 		// Shown first: what it holds as Markdown (whether it reads back as written) is worked out after, a long
 		// article's taking a while. Another article shown meanwhile: this one's text as it was.
-		await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
-		return mounted === crepe ? markdownOf(mounted) : body;
+		await nextFrame();
+		if (mounted !== crepe) return body;
+		host.shown();
+		if (!inParts) return markdownOf(mounted);
+		const rest = showRest(mounted, body, parts!, reported!, firstEnd);
+		loaded = rest;
+		return (await rest) ?? body;
+	}
+
+	/**
+	 * Puts the rest of a long article after its first part, a part a frame: it is shown, scrolled and typed in
+	 * meanwhile, and what is typed is reported once all is in. `opening` is the first part as shown, the next going at
+	 * `end`. The Markdown the article as written is (null: another article was shown meanwhile).
+	 */
+	async function showRest(shown: Crepe, body: string, parts: Iterator<MarkdownBlockSlice[]>, opening: ProseNode, end: number): Promise<string | null> {
+		loading = true;
+		root.setAttribute('aria-busy', 'true');
+		const write = writerOf(shown);
+		try {
+			/** The article as shown, without what is typed meanwhile: each part put in where it goes in the editor. */
+			let asShown = opening;
+			/** The part put in last, its Markdown not written yet. */
+			let unwritten: Fragment | null = null;
+			// Two frames a part, each a short while's work: the part is read (and the one before written as Markdown, a
+			// part at a time rather than all at the end); then put in, made and laid out.
+			for (let part = parts.next(); !part.done; part = parts.next()) {
+				const blocks = part.value;
+				const doc = shown.editor.action((ctx) => ctx.get(parserCtx)(body.slice(blocks[0]!.start, blocks.at(-1)!.end)));
+				if (unwritten) write(opening.copy(unwritten));
+				await nextFrame();
+				if (crepe !== shown) return null;
+				unwritten = shown.editor.action((ctx) => {
+					const view = ctx.get(editorViewCtx);
+					const $at = view.state.doc.resolve(nextPartKey.getState(view.state)!);
+					const at = $at.depth ? $at.after(1) : $at.pos;
+					const tr = view.state.tr.insert(at, doc.content).setMeta(nextPartKey, at + doc.content.size).setMeta('addToHistory', false);
+					// The ids the editor gives headings, given here, not in an edit of its own after each part.
+					syncHeadingIds(ctx, tr);
+					// Not an edit: the plugins' answers to an edit (paragraph breaks, a last empty line) are not given it,
+					// as they are not given the first part.
+					view.updateState((view.state as Applying).applyInner(tr));
+					return tr.doc.slice(at, at + doc.content.size).content;
+				});
+				asShown = asShown.replace(end, end, new Slice(unwritten, 0, 0));
+				end += unwritten.size;
+				await nextFrame();
+				if (crepe !== shown) return null;
+			}
+			reported = asShown;
+			// What was typed meanwhile, as an edit: once the article is settled as shown (when mount has returned).
+			setTimeout(report);
+			return withoutTrailingEmptyLines(write(asShown));
+		} finally {
+			loading = false;
+			root.removeAttribute('aria-busy');
+		}
 	}
 
 	/** The library the citations are numbered by; kept for the next article shown too, until it is set again. */
@@ -460,7 +570,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		mount,
 		focusStart,
 		settle: report,
-		review: startReview,
+		// A review of a long article waits for all of it to be in.
+		review: (body) => loaded.then(() => startReview(body)),
 		acceptAll: () => crepe?.editor.action(callCommand(acceptAllDiffsCmd.key)),
 		rejectAll: () => crepe?.editor.action(callCommand(clearDiffReviewCmd.key)),
 	};

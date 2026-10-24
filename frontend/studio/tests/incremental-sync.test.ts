@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
 import { parseMarkdownBodyBlocks, parseStudioDocument } from '../src/studio/document/index.ts';
-import { reparseBodyBlocks } from '../src/studio/document/parse.ts';
+import { bodyParts, reparseBodyBlocks } from '../src/studio/document/parse.ts';
 
 // A body's blocks cut again only round an edit (what the Studio does at every edit of a long article)
 // are the blocks of the whole cut again, whatever the edit: tried on every article, at many places.
@@ -60,6 +60,39 @@ test('edit after edit, each cut from the last, still gives the whole cut again',
 			before = { body: edited, blocks };
 		}
 	}
+});
+
+/** What the editor makes one block of though it is cut as several, lists and fences round the edges of parts, a setext heading, a table. */
+const TRICKY = [
+	'<details>\n<summary>开</summary>\n\n里面\n\n- 甲\n\n</details>',
+	'<div class="columns">\n<div>\n\n左\n\n</div>\n<div>\n\n右\n\n</div>\n</div>',
+	'- 一\n\n  续\n\n- 二\n  - 里\n',
+	'标题\n===',
+	'```js\na\n\nb\n```',
+	'$$\nx\n\ny\n$$',
+	'| a | b |\n|---|---|\n| 1 | 2 |',
+	'    缩进的代码\n\n    还是',
+	'> 引用\n续上\n\n> 又一段',
+	'<div>\n未闭合',
+].join('\n\n');
+
+test('a body cut a part at a time gives the blocks of cutting it whole, and each part reads the same by itself', () => {
+	const bodies = [...articles, TRICKY.repeat(20), `${TRICKY}\n\n[a]: https://x.y\n`];
+	for (const body of bodies) {
+		if (!body.trim()) continue;
+		const whole = parseMarkdownBodyBlocks(body);
+		for (const length of [1, 40, 700, 9000]) {
+			const parts = [...bodyParts(body, length, length * 2)];
+			assert.deepEqual(parts.flat(), whole, `parts of ${length} in ${JSON.stringify(body.slice(0, 40))}`);
+			for (const part of parts) {
+				const start = part[0]!.start;
+				const alone = parseMarkdownBodyBlocks(body.slice(start, part.at(-1)!.end)).map((block) => ({ ...block, start: block.start + start, end: block.end + start }));
+				assert.deepEqual(alone, part);
+			}
+		}
+	}
+	// With a definition, one part: the link before it is defined by it.
+	assert.equal([...bodyParts(`${TRICKY}\n\n[a]: https://x.y\n`, 10, 10)].length, 1);
 });
 
 test('the files an article names, read a block at a time, are those read from the whole, as it is edited', async () => {

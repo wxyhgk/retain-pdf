@@ -80,9 +80,17 @@ export function createOutline(scroller: HTMLElement, rail: HTMLElement) {
 		mark();
 	}
 
+	/** When the article began to change, since it was last drawn. */
+	let since = 0;
+	// Drawn a moment after the article last changed, or each second while it goes on changing (a long one comes in a
+	// part at a time).
 	new MutationObserver(() => {
+		if (!timer) since = performance.now();
 		window.clearTimeout(timer);
-		timer = window.setTimeout(draw, 250);
+		timer = window.setTimeout(() => {
+			timer = 0;
+			draw();
+		}, Math.min(250, Math.max(0, since + 1000 - performance.now())));
 	}).observe(scroller, { childList: true, subtree: true, characterData: true });
 	scroller.addEventListener('scroll', mark, { passive: true });
 	draw();

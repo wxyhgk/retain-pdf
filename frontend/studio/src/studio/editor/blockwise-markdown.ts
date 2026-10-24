@@ -30,6 +30,8 @@ export function blockwiseMarkdown(serialize: Serialize): (doc: ProseNode) => str
 			else runs.push([node]);
 		});
 		const parts = runs.map((nodes) => {
+			// An empty paragraph is written `<br />`, unless it is the last block the editor shows: written each time.
+			if (nodes.length === 1 && nodes[0]!.type.name === 'paragraph' && !nodes[0]!.content.size) return serialize(doc.type.create(doc.attrs, nodes)).replace(/\n+$/u, '');
 			const known = written.get(nodes[0]!);
 			if (known && known.nodes.length === nodes.length && known.nodes.every((node, index) => node === nodes[index])) return known.markdown;
 			const markdown = serialize(doc.type.create(doc.attrs, nodes)).replace(/\n+$/u, '');

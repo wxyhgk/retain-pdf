@@ -99,9 +99,72 @@ function sliceBody(bodyRaw: string, bodyStart: number): MarkdownBlockSlice[] {
 	});
 }
 
+/** The body last cut whole, and its blocks: a long body is cut once for all who ask (the merge, the file panel). */
+let lastCut: { body: string; blocks: readonly MarkdownBlockSlice[] } | null = null;
+
 /** Parses a body without treating a leading thematic break as frontmatter. */
 export function parseMarkdownBodyBlocks(body: string): MarkdownBlockSlice[] {
-	return sliceBody(body, 0);
+	if (lastCut?.body !== body) lastCut = { body, blocks: sliceBody(body, 0) };
+	return [...lastCut.blocks];
+}
+
+/** A link reference or footnote definition: what it defines is used anywhere in the body, before it too. */
+const DEFINITION = /^ {0,3}\[[^\]\n]+\]:/mu;
+
+/** How deep in `<details>` and `<div>` the HTML blocks so far leave the body: the editor makes what is between one block. */
+function nesting(depth: number, block: MarkdownBlockSlice): number {
+	if (block.kind !== 'html') return depth;
+	const opened = block.raw.match(/<(?:details|div)\b/giu)?.length ?? 0;
+	const closed = block.raw.match(/<\/(?:details|div)\s*>/giu)?.length ?? 0;
+	return Math.max(0, depth + opened - closed);
+}
+
+/**
+ * A body's blocks a part at a time, for a long body to be shown before all
+ * of it is read: the first part about `first` characters of whole blocks,
+ * the others about `rest`, each read by itself as it reads in the body. As
+ * parseMarkdownBodyBlocks, together; remembered as its blocks once all are cut.
+ *
+ * Each part is cut from a stretch of the body the length asked for: its last
+ * block may go on past the stretch, so it goes to the next part, and the
+ * blocks before it are whole (what comes after a block does not change it, but
+ * for these). A part ends only where a block starts a line, outside the HTML
+ * the editor makes one block of. A body with definitions in it is one part:
+ * a link may be defined after it is used.
+ */
+export function* bodyParts(body: string, first: number, rest: number): Generator<MarkdownBlockSlice[]> {
+	if (DEFINITION.test(body)) {
+		yield parseMarkdownBodyBlocks(body);
+		return;
+	}
+	const blocks: MarkdownBlockSlice[] = [];
+	let start = 0;
+	let length = first;
+	while (start < body.length) {
+		let end = start + length;
+		const line = end < body.length ? body.indexOf('\n', end) : -1;
+		end = line < 0 ? body.length : line + 1;
+		const cut = sliceBody(body.slice(start, end), start);
+		// Up to the last block that can start a part (all, at the end of the body).
+		let part = end === body.length ? cut.length : 0;
+		if (!part) {
+			for (let index = 0, depth = 0; index < cut.length - 1; index += 1) {
+				depth = nesting(depth, cut[index]!);
+				if (depth === 0 && body[cut[index + 1]!.start - 1] === '\n') part = index + 1;
+			}
+		}
+		// One block longer than the stretch: a longer one.
+		if (!part) {
+			length *= 2;
+			continue;
+		}
+		const whole = cut.slice(0, part);
+		blocks.push(...whole);
+		if (end === body.length) lastCut = { body, blocks };
+		yield whole;
+		start = cut[part]?.start ?? body.length;
+		length = rest;
+	}
 }
 
 /** The first index in `blocks` whose block ends past `offset` (or at it, with `orAt`). */
@@ -127,6 +190,7 @@ export function reparseBodyBlocks(before: { body: string; blocks: readonly Markd
 	const old = before.body;
 	const blocks = before.blocks;
 	if (old === body) return [...blocks];
+	if (lastCut?.body === body) return [...lastCut.blocks];
 	if (!blocks.length || !body.length) return parseMarkdownBodyBlocks(body);
 	let head = 0;
 	const shorter = Math.min(old.length, body.length);

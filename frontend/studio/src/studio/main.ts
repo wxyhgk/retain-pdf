@@ -87,6 +87,11 @@ const topBar = createTopBar(shell);
 let saveState: SaveState['kind'] = 'loading';
 let filesListed: Promise<void> = Promise.resolve();
 let backlinksShown: Promise<void> = Promise.resolve();
+/** Done once the editor first shows an article. */
+let articleShown: () => void = () => {};
+const shown = new Promise<void>((resolve) => {
+	articleShown = resolve;
+});
 const snapshot = createPageSnapshot(shell, {
 	slug: () => session.slug,
 	settled: () => (shell.dataset.view ?? 'editor') === 'editor' && (saveState === 'loaded' || saveState === 'saved') && !session.hasUnsavedEdits(),
@@ -228,6 +233,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	pickCitation: () => citePicker.pick(),
 	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
 	reviewing: (pending) => reviewBar.show(pending),
+	shown: () => articleShown(),
 });
 const reviewBar = createReviewBar(shell, { acceptAll: () => editor.acceptAll(), rejectAll: () => editor.rejectAll() });
 bindTitleFocus(() => properties.focusTitle());
@@ -246,8 +252,11 @@ const session = new ArticleSession(
 		async mount(article, body, again) {
 			useArticleContext(article);
 			const scrollTop = editorScroll.scrollTop;
-			const markdown = await editor.mount(body);
+			// Shown again (changed on disk): all at once, to be where it was.
+			const markdown = await editor.mount(body, again);
 			if (again) editorScroll.scrollTop = scrollTop;
+			// The files it names, once it is shown (a book's take a while to read).
+			filePanel.sourceChanged();
 			return markdown;
 		},
 		review(article, body, from) {
@@ -295,7 +304,8 @@ const session = new ArticleSession(
 	},
 	testDelay ? { delay: testDelay, maxWait: testDelay } : {},
 );
-session.subscribe(() => filePanel.sourceChanged());
+// Not while an article is being shown: its files are read once it is (a book's take a while).
+session.subscribe(() => saveState !== 'loading' && filePanel.sourceChanged());
 
 /** The open article's title as typed (the plugins' `ctx.studio.article()`). */
 let openTitle = '';
@@ -824,19 +834,21 @@ import.meta.hot?.on('vite:beforeFullReload', (payload: { path?: string; studioCo
 	if (payload.studioContentChange) payload.path = '/studio-keeps-open.html';
 });
 
-openFromList().then(
+const opening = openFromList().then(
 	() => {
 		articleActions.offerPendingUndo();
 		refreshGit();
 	},
 	(error) => topBar.error(error instanceof Error ? error.message : '无法连接本地 Studio'),
-).finally(() => {
-	// The page takes over from its picture once it looks the same: the article's files and backlinks listed, its outline drawn.
+);
+// The page takes over from its picture once it looks the same: the article shown (a long one's first part; the rest
+// comes in after), its files and backlinks listed, its outline drawn.
+void Promise.race([opening, shown]).then(() => {
 	const listed = Promise.all([filesListed, backlinksShown]).catch(() => {});
 	void Promise.race([listed, new Promise((resolve) => window.setTimeout(resolve, 1000))]).then(() => {
 		outline.draw();
 		snapshot.ready();
 	});
-	// The plugins get ready what will be wanted (RetainMol, loaded in the background), once the page has settled.
-	studioPlugins.emit('studio/ready');
 });
+// The plugins get ready what will be wanted (RetainMol, loaded in the background), once the page has settled.
+void opening.finally(() => studioPlugins.emit('studio/ready'));
