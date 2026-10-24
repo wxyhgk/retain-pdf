@@ -9,14 +9,38 @@ export function createOutline(scroller: HTMLElement, rail: HTMLElement) {
 	let headings: HTMLElement[] = [];
 	let timer = 0;
 
-	/** The heading the reader is in: the last one above the top of the view. */
+	/** The heading the reader is in: the last one above the top of the view (found by halving: a book has hundreds). */
 	function current(): HTMLElement | undefined {
 		const limit = scroller.getBoundingClientRect().top + 88;
-		let found: HTMLElement | undefined;
-		for (const heading of headings) {
-			if (heading.getBoundingClientRect().top <= limit) found = heading;
+		let low = 0;
+		let high = headings.length;
+		while (low < high) {
+			const middle = (low + high) >> 1;
+			if (headings[middle]!.getBoundingClientRect().top <= limit) low = middle + 1;
+			else high = middle;
 		}
-		return found ?? headings[0];
+		return headings[low - 1] ?? headings[0];
+	}
+
+	/**
+	 * Takes the editor to `heading`: smoothly, in an article drawn whole. A long one draws its formulas as they come
+	 * near the screen (near-screen.ts), which changes the heights round the heading, so a smooth scroll's end, worked
+	 * out at the start, is off: there it goes at once, then again, as long as what is drawn round it moves it.
+	 */
+	function reach(heading: HTMLElement): void {
+		if (!heading.closest('.is-long')) {
+			heading.scrollIntoView({ block: 'start', behavior: 'smooth' });
+			return;
+		}
+		let tries = 0;
+		const go = () => {
+			heading.scrollIntoView({ block: 'start' });
+			const top = heading.getBoundingClientRect().top;
+			requestAnimationFrame(() => {
+				if (Math.abs(heading.getBoundingClientRect().top - top) > 1 && ++tries < 10) go();
+			});
+		};
+		go();
 	}
 
 	function mark(): void {
@@ -43,7 +67,7 @@ export function createOutline(scroller: HTMLElement, rail: HTMLElement) {
 			link.textContent = heading.textContent!.trim();
 			link.addEventListener('click', (event) => {
 				event.preventDefault();
-				heading.scrollIntoView({ block: 'start', behavior: 'smooth' });
+				reach(heading);
 			});
 			item.append(link);
 			return item;

@@ -16,10 +16,28 @@ export function anchorScroll(scroller: HTMLElement): void {
 		const top = scroller.getBoundingClientRect().top;
 		anchor = null;
 		anchorScrollTop = scroller.scrollTop;
-		for (const block of scroller.querySelectorAll('.document-header, .ProseMirror > *')) {
-			const box = block.getBoundingClientRect();
+		const header = scroller.querySelector('.document-header');
+		const headerBox = header?.getBoundingClientRect();
+		if (header && headerBox && headerBox.height > 0 && headerBox.bottom > top) {
+			anchor = header;
+			anchorTop = headerBox.top;
+			return;
+		}
+		const blocks = scroller.querySelector('.ProseMirror')?.children;
+		if (!blocks?.length) return;
+		// The blocks go down the page in order: halved till the first whose bottom is in view, not measured one by one
+		// from the start (thousands, in a long article, at every scroll).
+		let low = 0;
+		let high = blocks.length;
+		while (low < high) {
+			const middle = (low + high) >> 1;
+			if (blocks[middle]!.getBoundingClientRect().bottom > top) high = middle;
+			else low = middle + 1;
+		}
+		for (let index = low; index < blocks.length; index += 1) {
+			const box = blocks[index]!.getBoundingClientRect();
 			if (box.height > 0 && box.bottom > top) {
-				anchor = block;
+				anchor = blocks[index]!;
 				anchorTop = box.top;
 				return;
 			}

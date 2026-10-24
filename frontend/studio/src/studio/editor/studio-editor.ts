@@ -28,6 +28,7 @@ import { filesNamed, headingSection } from './split-section';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { blockwiseMarkdown } from './blockwise-markdown';
+import { isLongArticle } from './near-screen';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
@@ -103,9 +104,6 @@ export type StudioEditor = {
 	view(): EditorView | null;
 };
 
-/** How many top-level blocks make an article long (a long article in this blog has about 200). */
-const LONG_ARTICLE = 400;
-
 /** Each editor's writer: its blocks' Markdown, remembered (a long article is not written whole at every edit). */
 const writers = new WeakMap<Crepe, (doc: ProseNode) => string>();
 
@@ -152,8 +150,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		finish(crepe ? markdownOf(crepe) : '');
 	}
 
-	/** A long article (a book's worth of blocks) marked so: what is off the screen is not laid out (StudioPage.astro). */
-	const longArticle = $prose(() => new Plugin({ props: { attributes: (state): Record<string, string> => (state.doc.childCount > LONG_ARTICLE ? { class: 'is-long' } : {}) } }));
+	/** A long article (a book's worth of blocks) marked so: its formulas are drawn as they come near (near-screen.ts), and the outline goes to a heading at once (outline.ts). */
+	const longArticle = $prose(() => new Plugin({ props: { attributes: (state): Record<string, string> => (isLongArticle(state.doc) ? { class: 'is-long' } : {}) } }));
 
 	/** Follows the review: what is left of it, and its end. */
 	const reviewWatch = $prose(
@@ -178,6 +176,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 
 	async function mount(body: string): Promise<string> {
 		mounting = true;
+		let mounted: Crepe;
 		try {
 			// Another article, or this one anew: a review still open is over.
 			endReview();
@@ -356,10 +355,14 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			await crepe.create();
 			applyLibrary();
 			crepe.editor.action((ctx) => { reported = ctx.get(editorViewCtx).state.doc; });
-			return markdownOf(crepe);
+			mounted = crepe;
 		} finally {
 			mounting = false;
 		}
+		// Shown first: what it holds as Markdown (whether it reads back as written) is worked out after, a long
+		// article's taking a while. Another article shown meanwhile: this one's text as it was.
+		await new Promise((painted) => requestAnimationFrame(() => setTimeout(painted)));
+		return mounted === crepe ? markdownOf(mounted) : body;
 	}
 
 	/** The library the citations are numbered by; kept for the next article shown too, until it is set again. */

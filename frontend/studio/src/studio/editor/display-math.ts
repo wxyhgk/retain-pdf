@@ -9,6 +9,7 @@ import { renderMathHtml } from '@blog/science/rendering/math.ts';
 import { equationLabels, equationNumbers, numberedSource, referencesKey } from './equation-numbers.ts';
 import { isFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';
+import { drawNow, drawWhenNear, isLongArticle, isWaiting } from './near-screen.ts';
 import { SourcePopup } from './source-popup.ts';
 
 const openBlocks = new Set<DisplayMathView>();
@@ -95,7 +96,11 @@ class DisplayMathView implements NodeView {
 		this.dom.append(this.formula);
 		this.dom.addEventListener('mousedown', this.onMouseDown);
 		formulaViews.set(this.dom, this);
-		this.renderFormula();
+		// In a long article, drawn once near the screen; its LaTeX till then.
+		if (isLongArticle(view.state.doc)) {
+			this.formula.textContent = node.textContent;
+			drawWhenNear(view.dom, this.dom, () => this.renderFormula());
+		} else this.renderFormula();
 	}
 
 	update(node: ProseMirrorNode, decorations: readonly Decoration[]): boolean {
@@ -103,7 +108,8 @@ class DisplayMathView implements NodeView {
 		this.node = node;
 		this.numbered = numberedSource(node, decorations);
 		this.references = referencesKey(decorations);
-		this.renderFormula();
+		if (isWaiting(this.dom)) this.formula.textContent = node.textContent;
+		else this.renderFormula();
 		if (!this.writing) this.popup?.setValue(node.textContent);
 		return true;
 	}
@@ -197,6 +203,7 @@ class DisplayMathView implements NodeView {
 
 	private open(): void {
 		if (this.popup) return;
+		drawNow(this.dom);
 		// The formula stays where it is and follows the typing, so the text around it does not move.
 		this.dom.classList.add('is-open');
 		openBlocks.add(this);

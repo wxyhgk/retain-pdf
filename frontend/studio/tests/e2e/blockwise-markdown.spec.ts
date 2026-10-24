@@ -58,14 +58,20 @@ test('an edit between lists, code, HTML and a table saves the characters typed a
 	expect(savedMarkdown()).toBe(before.replace('\n改这里\n', '\n改这里一\n').replace('\n也改这里\n', '\n也改这里二\n'));
 });
 
-test('in a long article, what is off the screen is not laid out, and an edit saves only itself', async ({ page }) => {
+test('in a long article, a formula is drawn once it comes near the screen, and an edit saves only itself', async ({ page }) => {
 	const paragraphs = Array.from({ length: 450 }, (_, index) => `第 ${index + 1} 段，$x_{${index}}$ 在这里。`);
 	appendToFixture(`\n${paragraphs.join('\n\n')}\n`);
 	const before = savedMarkdown();
 	await openStudio(page);
 	await expect(editor(page)).toHaveClass(/\bis-long\b/u);
-	expect(await editor(page).locator('> p').first().evaluate((node) => getComputedStyle(node).contentVisibility)).toBe('auto');
-	await editor(page).locator('p', { hasText: '第 450 段' }).click();
+	// Far down, its LaTeX till then (near-screen.ts).
+	const last = editor(page).locator('p', { hasText: '第 450 段' });
+	await expect(last.locator('.pm-inline-math')).toHaveClass(/\bis-waiting\b/u);
+	await expect(last.locator('.pm-inline-math')).toHaveText('x_{449}');
+	await last.scrollIntoViewIfNeeded();
+	await expect(last.locator('.pm-inline-math .katex')).toHaveCount(1);
+	await expect(last.locator('.pm-inline-math')).not.toHaveClass(/\bis-waiting\b/u);
+	await last.click();
 	await page.keyboard.press('End');
 	await page.keyboard.type('末');
 	await page.keyboard.press('ControlOrMeta+s');
