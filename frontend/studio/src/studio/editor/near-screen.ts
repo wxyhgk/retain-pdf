@@ -11,6 +11,12 @@ import type { EditorView } from '@milkdown/prose/view';
  * away are found by halving (they go down the page in order) and what
  * waits in them is drawn: not each formula watched by itself (the browser
  * would work out where each of thousands is at every frame).
+ *
+ * An article of any length, as it is opened, draws only what is near the
+ * screen before it is first shown; the rest after, a few at every frame
+ * (KaTeX and laying out an article of formulas took a quarter of a second
+ * after each click on it in the list). Formulas made once it is shown (typed,
+ * pasted) are drawn at once.
  */
 
 /** How many top-level blocks make an article long (a long article in this blog has about 200). */
@@ -21,8 +27,17 @@ export const isLongArticle = (doc: ProseNode): boolean => doc.childCount > LONG_
 /** The class of a long article's element (studio-editor.ts): one being shown a part at a time has it from its first part. */
 export const LONG = 'is-long';
 
-/** Whether `view` shows a long article: what a formula's view asks as it is made (the class is there before them). */
-export const isLong = (view: EditorView): boolean => view.dom.classList.contains(LONG);
+/** The class of an article's element as it is opened, till it is first shown (studio-editor.ts). */
+export const OPENING = 'is-opening';
+
+/**
+ * Whether a formula made in `view` waits to be drawn: in a long article, or in one being opened. What a formula's
+ * view asks as it is made (the classes are there before them).
+ */
+export const drawsLater = (view: EditorView): boolean => view.dom.classList.contains(LONG) || view.dom.classList.contains(OPENING);
+
+/** How long a frame spends drawing what waits far from the screen in an article that is not long, in ms. */
+const SPELL = 8;
 
 const WAITING = 'is-waiting';
 
@@ -49,6 +64,9 @@ export function drawWhenNear(root: HTMLElement, element: HTMLElement, draw: () =
 
 /** Whether `element` is still to be drawn. */
 export const isWaiting = (element: Element): boolean => waiting.has(element);
+
+/** Whether anything in `root` (an article's element) is still to be drawn. */
+export const anyWaiting = (root: Element): boolean => root.querySelector(`.${WAITING}`) !== null;
 
 /** Draws `element` now, if it waits (it is being edited, say). */
 export function drawNow(element: Element): void {
@@ -91,14 +109,23 @@ function drawNear(): void {
 	frame = 0;
 	const screen = window.innerHeight;
 	for (const root of roots) {
-		if (!root.isConnected || !root.querySelector(`.${WAITING}`)) {
+		if (!root.isConnected || !anyWaiting(root)) {
 			roots.delete(root);
 			continue;
 		}
-		if (!blocksWithin(root, -screen, 2 * screen).some(waits)) continue;
-		for (const block of blocksWithin(root, -3 * screen, 4 * screen)) {
-			for (const element of [block, ...block.querySelectorAll(`.${WAITING}`)]) drawNow(element);
+		if (blocksWithin(root, -screen, 2 * screen).some(waits)) {
+			for (const block of blocksWithin(root, -3 * screen, 4 * screen)) {
+				for (const element of [block, ...block.querySelectorAll(`.${WAITING}`)]) drawNow(element);
+			}
 		}
+		// Not a long article: the rest too, down the article, a few at a frame.
+		if (root.classList.contains(LONG)) continue;
+		const until = performance.now() + SPELL;
+		for (const element of root.querySelectorAll(`.${WAITING}`)) {
+			if (performance.now() > until) break;
+			drawNow(element);
+		}
+		if (anyWaiting(root)) soon();
 	}
 }
 

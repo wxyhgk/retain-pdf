@@ -1,6 +1,6 @@
 import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import type { ForkBlockEditFeatureConfig } from '@milkdown/crepe/feature/block-edit';
-import { editorViewCtx, editorViewOptionsCtx, parserCtx, serializerCtx } from '@milkdown/kit/core';
+import { editorStateOptionsCtx, editorViewCtx, editorViewOptionsCtx, parserCtx, serializerCtx } from '@milkdown/kit/core';
 import { diffComponent, diffComponentConfig } from '@milkdown/kit/component/diff';
 import {
 	acceptAllDiffsCmd,
@@ -14,8 +14,8 @@ import {
 import { blockConfig } from '@milkdown/kit/plugin/block';
 import { syncHeadingIds } from '@milkdown/kit/preset/commonmark';
 import { remarkGFMPlugin, strikethroughKeymap } from '@milkdown/kit/preset/gfm';
-import { Slice, type Fragment, type Node as ProseNode } from '@milkdown/prose/model';
-import { Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from '@milkdown/prose/state';
+import { Fragment, Slice, type Node as ProseNode } from '@milkdown/prose/model';
+import { EditorState, Plugin, PluginKey, TextSelection, type Transaction } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
 import { $prose, callCommand, insert } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
@@ -29,7 +29,7 @@ import { filesNamed, headingSection } from './split-section';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { blockwiseMarkdown } from './blockwise-markdown';
-import { isLongArticle, LONG } from './near-screen';
+import { isLongArticle, LONG, OPENING } from './near-screen';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
@@ -152,12 +152,17 @@ const nextPart = $prose(
 /** ProseMirror's own step of applying a transaction, without the plugins' answers to it (appendTransaction). */
 type Applying = EditorState & { applyInner(tr: Transaction): EditorState };
 
+/** How many blocks of an article just opened are written as Markdown at a frame (a few milliseconds' work). */
+const WRITTEN_AT_A_FRAME = 40;
+
 const nextFrame = () => new Promise((done) => requestAnimationFrame(() => setTimeout(done)));
 
 /** The Studio's editor: Crepe with the plugins' blocks, formulas, file drops and block feel. */
 export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): StudioEditor {
 	let crepe: Crepe | null = null;
 	let mounting = false;
+	/** The article is being opened, till it is first shown: its formulas far from the screen are drawn after (near-screen.ts). */
+	let beingOpened = false;
 	/** The article shown is a long one, put in a part at a time; `loading` till the last is in. */
 	let inParts = false;
 	let loading = false;
@@ -193,8 +198,22 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		finish(crepe ? markdownOf(crepe) : '');
 	}
 
-	/** A long article (a book's worth of blocks) marked so: its formulas are drawn as they come near (near-screen.ts), and the outline goes to a heading at once (outline.ts). */
-	const longArticle = $prose(() => new Plugin({ props: { attributes: (state): Record<string, string> => (inParts || isLongArticle(state.doc) ? { class: LONG } : {}) } }));
+	/**
+	 * A long article (a book's worth of blocks) marked so: its formulas are drawn as they come near (near-screen.ts),
+	 * and the outline goes to a heading at once (outline.ts). And an article being opened: its formulas far from the
+	 * screen are drawn after it is shown.
+	 */
+	const longArticle = $prose(
+		() =>
+			new Plugin({
+				props: {
+					attributes: (state): Record<string, string> => {
+						const classes = [...(inParts || isLongArticle(state.doc) ? [LONG] : []), ...(beingOpened ? [OPENING] : [])];
+						return classes.length ? { class: classes.join(' ') } : {};
+					},
+				},
+			}),
+	);
 
 	/** Follows the review: what is left of it, and its end. */
 	const reviewWatch = $prose(
@@ -228,6 +247,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		const first = parts?.next().value;
 		const opening = first?.length ? body.slice(0, first.at(-1)!.end) : body;
 		inParts = opening !== body;
+		beingOpened = true;
 		try {
 			// Another article, or this one anew: a review still open is over.
 			endReview();
@@ -376,6 +396,14 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			crepe.editor
 				.config((ctx) => {
 					ctx.set(remarkGFMPlugin.options.key, gfmOptions);
+					// The headings' ids given as the article is read: not in an edit of the plugin's own once it is shown,
+					// which goes over the whole article again (a tenth of a second for one with many headings).
+					ctx.update(editorStateOptionsCtx, (prev) => (options) => {
+						const next = prev(options);
+						if (!next.doc) return next;
+						const { tr } = EditorState.create({ doc: next.doc });
+						return syncHeadingIds(ctx, tr) ? { ...next, doc: tr.doc } : next;
+					});
 					// Notion's key for strikethrough; the toolbar's tooltip follows it.
 					ctx.set(strikethroughKeymap.key, { ToggleStrikethrough: { shortcuts: 'Mod-Shift-s' } });
 					ctx.update(diffConfig.key, (prev) => ({ ...prev, ignoreAttrs: { heading: ['id'] } }));
@@ -415,15 +443,42 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		} finally {
 			mounting = false;
 		}
+		// Shown with what is near the screen drawn (in the frame before it is shown): what is made from now on is drawn at once.
+		beingOpened = false;
+		root.querySelector('.ProseMirror')?.classList.remove(OPENING);
 		// Shown first: what it holds as Markdown (whether it reads back as written) is worked out after, a long
 		// article's taking a while. Another article shown meanwhile: this one's text as it was.
 		await nextFrame();
 		if (mounted !== crepe) return body;
 		host.shown();
-		if (!inParts) return markdownOf(mounted);
+		if (!inParts) return (await writeOpened(mounted, reported!)) ?? body;
 		const rest = showRest(mounted, body, parts!, reported!, firstEnd);
 		loaded = rest;
 		return (await rest) ?? body;
+	}
+
+	/**
+	 * The Markdown of the article as opened (`doc`), written a few blocks at a frame: written whole, an article of
+	 * formulas took a frame of its own right after it was shown. What is typed meanwhile is reported after. Null:
+	 * another article was shown meanwhile.
+	 */
+	async function writeOpened(shown: Crepe, doc: ProseNode): Promise<string | null> {
+		loading = true;
+		const write = writerOf(shown);
+		try {
+			for (let from = 0; from < doc.childCount; from += WRITTEN_AT_A_FRAME) {
+				const blocks: ProseNode[] = [];
+				for (let index = from; index < Math.min(doc.childCount, from + WRITTEN_AT_A_FRAME); index += 1) blocks.push(doc.child(index));
+				write(doc.copy(Fragment.from(blocks)));
+				await nextFrame();
+				if (crepe !== shown) return null;
+			}
+			reported = doc;
+			setTimeout(report);
+			return withoutTrailingEmptyLines(write(doc));
+		} finally {
+			loading = false;
+		}
 	}
 
 	/**

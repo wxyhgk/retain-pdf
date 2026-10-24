@@ -22,6 +22,8 @@ test.beforeEach(async ({ page }) => {
 		appendToFixture('\n见式 $\\eqref{eq:energy}$ 和 $\\eqref{eq:missing}$。\n\n$$\nE = \\Ha \\psi \\label{eq:energy}\n$$\n');
 		editFixture((markdown) => markdown.replace('draft: true\n', 'draft: true\nmacros:\n  Ha: \\hat{H}\n'));
 	}
+	// An article longer than the screen: what is far down it is drawn after it is shown (near-screen.ts).
+	if (test.info().title.includes('far down')) appendToFixture(`\n${Array.from({ length: 150 }, (_, index) => `第 ${index + 1} 段。`).join('\n\n')}\n\n最后 $y_{far}$。\n\n$$\nz_{far}\n$$\n`);
 	await openStudio(page);
 });
 
@@ -270,4 +272,17 @@ test.describe('typing an inline formula', () => {
 		await expect(inlineFormulas(page)).toHaveCount(2);
 		await expect(editor(page).getByText('前 $x$', { exact: true })).toBeVisible();
 	});
+});
+
+test('formulas far down an article being opened are drawn after it is shown, without scrolling to them', async ({ page }) => {
+	await expect(editor(page)).not.toHaveClass(/\bis-(?:long|opening)\b/u);
+	const last = editor(page).locator('p', { hasText: '最后' });
+	await expect(last.locator('.pm-inline-math .katex')).toHaveCount(1);
+	await expect(displayFormulas(page).last().locator('.katex')).toHaveCount(1);
+	await expect(editor(page).locator('.is-waiting')).toHaveCount(0);
+	expect(await last.evaluate((element) => element.getBoundingClientRect().top > window.innerHeight)).toBe(true);
+	// One typed now is drawn as it is made.
+	await caretAfter(page, '第 1 段。');
+	await page.keyboard.type('$a^2$ ');
+	await expect(editor(page).locator('p', { hasText: '第 1 段。' }).locator('.pm-inline-math .katex')).toHaveCount(1);
 });

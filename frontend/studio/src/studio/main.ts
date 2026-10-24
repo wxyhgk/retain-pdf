@@ -107,7 +107,11 @@ const articleActions = createArticleActions({
 const articleList = createArticleList(shell.querySelector<HTMLElement>('.article-sidebar')!, {
 	open: (slug) => {
 		showView('editor');
-		void session.open(slug);
+		// Marked at once, as it is clicked, not once it is shown; back on the one open if it is not opened.
+		articleList.select(slug);
+		void session.open(slug).then(() => {
+			if (session.slug && session.slug !== slug) articleList.select(session.slug);
+		});
 	},
 	rename: (article) => void articleActions.rename(article),
 	duplicate: (article) => void articleActions.duplicate(article),

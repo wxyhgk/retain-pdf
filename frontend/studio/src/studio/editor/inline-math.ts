@@ -12,7 +12,7 @@ import { createFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';
 import { applyCompletion, completionQuery, deleteBracePair, nextSlot, typeBrace, type LatexCommand, type LatexEdit } from './latex-assist.ts';
 import { LatexCompletionMenu } from './latex-completion-menu.ts';
-import { drawWhenNear, isLong, isWaiting } from './near-screen.ts';
+import { drawWhenNear, drawsLater, isWaiting } from './near-screen.ts';
 
 export type InlineMathKeyAction = 'commit' | 'exit-before' | 'exit-after' | 'delete' | 'promote';
 
@@ -738,8 +738,8 @@ class InlineMathView implements NodeView {
 		this.dom.contentEditable = 'false';
 		this.dom.addEventListener('mousedown', this.onMouseDown);
 		this.dom.addEventListener('dragstart', this.onDragStart);
-		// In a long article, drawn once near the screen; its LaTeX till then.
-		if (isLong(view)) {
+		// In a long article, or one being opened, drawn once near the screen; its LaTeX till then.
+		if (drawsLater(view)) {
 			this.dom.textContent = String(node.attrs.value ?? '');
 			drawWhenNear(view.dom, this.dom, () => this.renderFormula());
 		} else this.renderFormula();

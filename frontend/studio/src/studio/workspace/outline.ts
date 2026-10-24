@@ -24,11 +24,12 @@ export function createOutline(scroller: HTMLElement, rail: HTMLElement) {
 
 	/**
 	 * Takes the editor to `heading`: smoothly, in an article drawn whole. A long one draws its formulas as they come
-	 * near the screen (near-screen.ts), which changes the heights round the heading, so a smooth scroll's end, worked
-	 * out at the start, is off: there it goes at once, then again, as long as what is drawn round it moves it.
+	 * near the screen (near-screen.ts), and one just opened is still drawing those far from it, which changes the
+	 * heights round the heading, so a smooth scroll's end, worked out at the start, is off: there it goes at once,
+	 * then again, as long as what is drawn round it moves it.
 	 */
 	function reach(heading: HTMLElement): void {
-		if (!heading.closest('.is-long')) {
+		if (!heading.closest('.is-long') && !heading.parentElement?.querySelector('.is-waiting')) {
 			heading.scrollIntoView({ block: 'start', behavior: 'smooth' });
 			return;
 		}
