@@ -8,7 +8,7 @@ import {
 	trashArticleFile,
 	uploadArticleFile,
 } from '../api/client';
-import { movedPath, referencedPaths, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
+import { movedPath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { officeKind, tableSource } from '@blog/office/kinds.mjs';
 import { markdownTable, parseDelimited } from '../table-text';
@@ -18,6 +18,7 @@ import { showContextMenu, type MenuItem } from './context-menu';
 import { fileBlock, fileName, isImage, markdownReference, parentPath, readMarkdownReference, STUDIO_FILE_DRAG_TYPE } from '../article-files';
 import { droppedItems, pickedItems, type UploadItem } from '../dropped-files';
 import { buildFileTree, formatSize, isUnused, referenceCount, uploadFolderFor, visibleNodes, type FileNode } from './file-tree';
+import { referencedFilesReader } from './referenced-files';
 import { showToast } from './toast';
 
 /** What the file panel needs from the editor around it. */
@@ -92,6 +93,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	let slug: string | null = null;
 	let entries: ArticleFileEntry[] = [];
 	let referenced = new Set<string>();
+	const readReferenced = referencedFilesReader();
 	let selected: string | null = null;
 	let editing: Editing | null = null;
 	let uploadTarget: ArticleFileEntry | null = null;
@@ -671,7 +673,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 				editing = null;
 				setStatus('');
 			}
-			referenced = referencedPaths(host.source());
+			referenced = readReferenced(host.source());
 			render();
 			return refresh();
 		},
@@ -681,7 +683,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		sourceChanged(): void {
 			window.clearTimeout(sourceTimer);
 			sourceTimer = window.setTimeout(() => {
-				const next = referencedPaths(host.source());
+				const next = readReferenced(host.source());
 				if (next.size === referenced.size && [...next].every((path) => referenced.has(path))) return;
 				referenced = next;
 				if (!editing) render();

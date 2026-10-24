@@ -27,6 +27,7 @@ import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } f
 import { filesNamed, headingSection } from './split-section';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
+import { blockwiseMarkdown } from './blockwise-markdown';
 import { displayMathPlugins } from './display-math';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
 import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
@@ -102,9 +103,19 @@ export type StudioEditor = {
 	view(): EditorView | null;
 };
 
+/** How many top-level blocks make an article long (a long article in this blog has about 200). */
+const LONG_ARTICLE = 400;
+
+/** Each editor's writer: its blocks' Markdown, remembered (a long article is not written whole at every edit). */
+const writers = new WeakMap<Crepe, (doc: ProseNode) => string>();
+
 /** What the editor holds, as Markdown, without empty lines left at the end. */
-function markdownOf(editor: { getMarkdown(): string }): string {
-	return withoutTrailingEmptyLines(editor.getMarkdown());
+function markdownOf(editor: Crepe): string {
+	return editor.editor.action((ctx) => {
+		let write = writers.get(editor);
+		if (!write) writers.set(editor, (write = blockwiseMarkdown(ctx.get(serializerCtx))));
+		return withoutTrailingEmptyLines(write(ctx.get(editorViewCtx).state.doc));
+	});
 }
 
 /** The Studio's editor: Crepe with the plugins' blocks, formulas, file drops and block feel. */
@@ -140,6 +151,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		crepe?.editor.action((ctx) => { reported = ctx.get(editorViewCtx).state.doc; });
 		finish(crepe ? markdownOf(crepe) : '');
 	}
+
+	/** A long article (a book's worth of blocks) marked so: what is off the screen is not laid out (StudioPage.astro). */
+	const longArticle = $prose(() => new Plugin({ props: { attributes: (state): Record<string, string> => (state.doc.childCount > LONG_ARTICLE ? { class: 'is-long' } : {}) } }));
 
 	/** Follows the review: what is left of it, and its end. */
 	const reviewWatch = $prose(
@@ -333,10 +347,11 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				})
 				.use(diff)
 				.use(diffComponent)
-				.use(reviewWatch);
+				.use(reviewWatch)
+				.use(longArticle);
 			crepe.on((listener) => {
 				// Opening the body is not an edit, nor is deciding a change under review.
-				listener.markdownUpdated(() => report());
+				listener.updated(() => report());
 			});
 			await crepe.create();
 			applyLibrary();

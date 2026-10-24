@@ -643,12 +643,18 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror > blockquote) { margin: 0 0 0.75em; }
 	:global(.crepe-host .milkdown .ProseMirror > .milkdown-table-block),
 	:global(.crepe-host .milkdown .ProseMirror > .milkdown-code-block) { margin: 0.4em 0 1em; }
+	/*
+	 * In a long article, text blocks off the screen are not laid out or painted till they come near, so typing in
+	 * a book stays quick. Only these: nothing of theirs reaches outside them (content-visibility clips it).
+	 */
+	:global(.crepe-host .milkdown .ProseMirror.is-long > :is(p, h2, h3, h4, h5, h6, ul, ol, blockquote, .pm-display-math)) {
+		content-visibility: auto;
+		contain-intrinsic-size: auto 2em;
+	}
 	:global(.crepe-host .milkdown .ProseMirror blockquote) { box-sizing: border-box; padding: 2px 0 2px 14px; border-left: 3px solid rgb(var(--gray-light)); color: rgb(var(--gray)); }
 	:global(.crepe-host .milkdown .ProseMirror blockquote::before) { content: none; }
 	:global(.crepe-host .milkdown .milkdown-code-block .cm-activeLineGutter) { background: transparent; color: rgb(var(--gray-dark)); }
 	:global(.crepe-host .milkdown .milkdown-code-block .cm-activeLine) { background: color-mix(in srgb, rgb(var(--gray-light)) 35%, transparent); }
-	/* Astro's dev toolbar sits over the end of the article; the Studio has no use for it. */
-	:global(astro-dev-toolbar) { display: none !important; }
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection),
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection * ) { caret-color: transparent; }
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection *::selection) { background: transparent; }

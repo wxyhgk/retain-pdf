@@ -7,6 +7,7 @@ import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
 import { BIBLIOGRAPHY_PATH, CITATION, authorList, numberRanges, parseCitation, plainTex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import '@blog/markdown/references/references.css';
+import { changedRange, editTouches } from './changed-range.ts';
 
 /**
  * Citations in the editor (`src/references/`): `[@becke1993]` is one piece
@@ -122,11 +123,14 @@ const citationKey = new PluginKey<LabelState>('article-citations');
  * Text that reads as a citation, made one: one typed to its closing
  * bracket, or left so by an edit. Prose only.
  */
-function citationsFromText(state: EditorState): Transaction | null {
+function citationsFromText(state: EditorState, before: ProseNode): Transaction | null {
 	const type = state.schema.nodes[CITATION_TYPE];
 	if (!type) return null;
+	// Only where the edit changed the text.
+	const range = changedRange(before, state.doc);
+	if (!range) return null;
 	const found: { from: number; to: number; value: string }[] = [];
-	state.doc.descendants((node, pos, parent) => {
+	state.doc.nodesBetween(range.from, Math.min(range.toAfter, state.doc.content.size), (node, pos, parent) => {
 		if (node.type.spec.code || node.marks.some((mark) => mark.type.spec.code || mark.type.name === 'link')) return false;
 		if (!node.isText || !parent?.isTextblock || parent.type.spec.code || !node.text?.includes('[@')) return;
 		for (const match of node.text.matchAll(CITATION)) {
@@ -211,10 +215,12 @@ const citationPlugin = (host: CitationHost) =>
 						const given = tr.getMeta(citationKey) as { library: Library | null } | undefined;
 						const library = given ? given.library : previous.library;
 						if (!given && !tr.docChanged) return previous;
+						// An edit that left the citations as they were (most: typing in a long article) moves their labels along.
+						if (!given && !editTouches(tr.before, tr.doc, (node) => node.type.name === CITATION_TYPE)) return { library, labels: previous.labels.map(tr.mapping, tr.doc) };
 						return { library, labels: labels(tr.doc, library) };
 					},
 				},
-				appendTransaction: (transactions, _old, state) => (transactions.some((tr) => tr.docChanged) ? citationsFromText(state) : null),
+				appendTransaction: (transactions, old, state) => (transactions.some((tr) => tr.docChanged) ? citationsFromText(state, old.doc) : null),
 				props: {
 					decorations: (state) => citationKey.getState(state)?.labels,
 					handleTextInput(view, from, to, text) {

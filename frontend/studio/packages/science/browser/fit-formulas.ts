@@ -38,32 +38,64 @@ export function fitFormula(display: HTMLElement): void {
 	if (!fits(lines)) shrink(lines);
 }
 
-/** Keeps the display formulas under `root` fitted: those there, those that come, and when its width changes. Returns what stops it. */
+/**
+ * Keeps the display formulas under `root` fitted: those there, those that come, and when its width changes. Each is
+ * measured as it comes near the screen, not all at once: measuring one lays it out, and a book has thousands, off
+ * the screen and not laid out (content-visibility). Returns what stops it.
+ */
 export function keepFormulasFitted(root: HTMLElement): () => void {
-	let frame = 0;
 	let width = root.clientWidth;
-	const fitAll = () => {
-		cancelAnimationFrame(frame);
-		frame = requestAnimationFrame(() => {
-			for (const display of root.querySelectorAll<HTMLElement>('.katex-display')) fitFormula(display);
-		});
+	const near = new IntersectionObserver(
+		(entries) => {
+			for (const entry of entries) {
+				if (!entry.isIntersecting) continue;
+				near.unobserve(entry.target);
+				fitFormula(entry.target as HTMLElement);
+			}
+		},
+		{ rootMargin: '100% 0px' },
+	);
+	/** To be fitted once near: observed afresh, so one already fitted is again (the width changed). */
+	const watch = (displays: Iterable<HTMLElement>) => {
+		for (const display of displays) {
+			if (display.classList.contains('katex-broken')) continue;
+			near.unobserve(display);
+			near.observe(display);
+		}
 	};
 	const resized = new ResizeObserver(() => {
 		if (root.clientWidth === width) return;
 		width = root.clientWidth;
-		fitAll();
+		watch(root.querySelectorAll<HTMLElement>('.katex-display'));
 	});
 	resized.observe(root);
 	// A formula drawn (or drawn again, as it is edited); not the size this sets, which changes no nodes.
 	const added = new MutationObserver((changes) => {
-		if (changes.some((change) => [...change.addedNodes].some((node) => node instanceof Element && (node.matches('.katex-display, .katex') || node.querySelector('.katex-display'))))) fitAll();
+		const displays = new Set<HTMLElement>();
+		for (const change of changes) {
+			// One drawn over before it came near is not waited for.
+			for (const node of change.removedNodes) {
+				if (!(node instanceof HTMLElement)) continue;
+				if (node.matches('.katex-display')) near.unobserve(node);
+				else node.querySelectorAll('.katex-display').forEach((display) => near.unobserve(display));
+			}
+			for (const node of change.addedNodes) {
+				if (!(node instanceof HTMLElement)) continue;
+				if (node.matches('.katex-display')) displays.add(node);
+				else if (node.matches('.katex')) {
+					const display = node.closest<HTMLElement>('.katex-display');
+					if (display) displays.add(display);
+				} else node.querySelectorAll<HTMLElement>('.katex-display').forEach((display) => displays.add(display));
+			}
+		}
+		watch(displays);
 	});
 	added.observe(root, { childList: true, subtree: true });
-	fitAll();
+	watch(root.querySelectorAll<HTMLElement>('.katex-display'));
 	// Its fonts come later than its boxes: measured again once they are in.
-	void document.fonts?.ready.then(fitAll);
+	void document.fonts?.ready.then(() => watch(root.querySelectorAll<HTMLElement>('.katex-display')));
 	return () => {
-		cancelAnimationFrame(frame);
+		near.disconnect();
 		resized.disconnect();
 		added.disconnect();
 	};

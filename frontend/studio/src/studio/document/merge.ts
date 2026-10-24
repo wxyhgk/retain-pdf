@@ -1,5 +1,5 @@
 import { markdownParser } from './markdown-parser.ts';
-import { parseMarkdownBodyBlocks } from './parse.ts';
+import { parseMarkdownBodyBlocks, reparseBodyBlocks } from './parse.ts';
 import type { MarkdownBlockSlice } from './types.ts';
 
 export type MarkdownBodyMerge = {
@@ -36,20 +36,87 @@ function meaning(markdown: string): string {
 	}
 }
 
+/**
+ * What each block means, remembered: an edit changes a block or two, and
+ * the editor writes the others the same each time, so a long article's
+ * thousands of blocks are not parsed again at every edit.
+ */
+const meanings = new Map<string, string>();
+const MEANINGS_KEPT = 50_000;
+
 function semanticFingerprint(block: MarkdownBlockSlice): string {
-	return meaning(block.raw);
+	let known = meanings.get(block.raw);
+	if (known === undefined) {
+		if (meanings.size >= MEANINGS_KEPT) meanings.clear();
+		known = meaning(block.raw);
+		meanings.set(block.raw, known);
+	}
+	return known;
 }
 
-function lcsLengths(original: readonly string[], edited: readonly string[]): number[][] {
-	const rows = Array.from({ length: original.length + 1 }, () => Array<number>(edited.length + 1).fill(0));
-	for (let originalIndex = original.length - 1; originalIndex >= 0; originalIndex -= 1) {
-		for (let editedIndex = edited.length - 1; editedIndex >= 0; editedIndex -= 1) {
-			rows[originalIndex]![editedIndex] = original[originalIndex] === edited[editedIndex]
-				? rows[originalIndex + 1]![editedIndex + 1]! + 1
-				: Math.max(rows[originalIndex + 1]![editedIndex]!, rows[originalIndex]![editedIndex + 1]!);
+/**
+ * Bodies' blocks, remembered: the original's, the same until the article is
+ * saved or opened again, and the editor's last, which the next edit's are
+ * cut from again only round the change.
+ */
+let lastOriginal: { body: string; blocks: MarkdownBlockSlice[] } | null = null;
+let lastEdited: { body: string; blocks: MarkdownBlockSlice[] } | null = null;
+
+function originalBlocksOf(body: string): MarkdownBlockSlice[] {
+	if (lastOriginal?.body === body) return lastOriginal.blocks;
+	// Just saved: cut again round what changed since the last original.
+	lastOriginal = { body, blocks: lastOriginal ? reparseBodyBlocks(lastOriginal, body) : parseMarkdownBodyBlocks(body) };
+	return lastOriginal.blocks;
+}
+
+function editedBlocksOf(body: string): MarkdownBlockSlice[] {
+	const before = lastEdited ?? lastOriginal;
+	lastEdited = { body, blocks: before ? reparseBodyBlocks(before, body) : parseMarkdownBodyBlocks(body) };
+	return lastEdited.blocks;
+}
+
+/**
+ * For each edited fingerprint, the original one it is lined up with (its
+ * index there), or null: a longest run the two have in common, in order.
+ * The start and the end they share are lined up as they are; only between
+ * them is the table worked out, which is as big as the two lengths
+ * multiplied (millions of entries for a book, when it was the whole).
+ */
+function align(original: readonly string[], edited: readonly string[]): (number | null)[] {
+	const aligned: (number | null)[] = edited.map(() => null);
+	let head = 0;
+	while (head < original.length && head < edited.length && original[head] === edited[head]) {
+		aligned[head] = head;
+		head += 1;
+	}
+	let tail = 0;
+	while (tail < original.length - head && tail < edited.length - head && original[original.length - 1 - tail] === edited[edited.length - 1 - tail]) {
+		aligned[edited.length - 1 - tail] = original.length - 1 - tail;
+		tail += 1;
+	}
+	const originalEnd = original.length - tail;
+	const editedEnd = edited.length - tail;
+	const width = editedEnd - head + 1;
+	/** From each pair of positions on, how long the longest run in common is. */
+	const lengths = new Uint32Array((originalEnd - head + 1) * width);
+	const at = (originalIndex: number, editedIndex: number) => (originalIndex - head) * width + (editedIndex - head);
+	for (let originalIndex = originalEnd - 1; originalIndex >= head; originalIndex -= 1) {
+		for (let editedIndex = editedEnd - 1; editedIndex >= head; editedIndex -= 1) {
+			const cell = at(originalIndex, editedIndex);
+			lengths[cell] = original[originalIndex] === edited[editedIndex] ? lengths[cell + width + 1]! + 1 : Math.max(lengths[cell + width]!, lengths[cell + 1]!);
 		}
 	}
-	return rows;
+	let originalIndex = head;
+	let editedIndex = head;
+	while (originalIndex < originalEnd && editedIndex < editedEnd) {
+		if (original[originalIndex] === edited[editedIndex]) {
+			aligned[editedIndex] = originalIndex;
+			originalIndex += 1;
+			editedIndex += 1;
+		} else if (lengths[at(originalIndex + 1, editedIndex)]! >= lengths[at(originalIndex, editedIndex + 1)]!) originalIndex += 1;
+		else editedIndex += 1;
+	}
+	return aligned;
 }
 
 /**
@@ -58,21 +125,7 @@ function lcsLengths(original: readonly string[], edited: readonly string[]): num
  * same lining up the merge below makes.
  */
 export function alignBodyBlocks(originalBlocks: readonly MarkdownBlockSlice[], editedBlocks: readonly MarkdownBlockSlice[]): (number | null)[] {
-	const original = originalBlocks.map(semanticFingerprint);
-	const edited = editedBlocks.map(semanticFingerprint);
-	const lengths = lcsLengths(original, edited);
-	const aligned: (number | null)[] = edited.map(() => null);
-	let originalIndex = 0;
-	let editedIndex = 0;
-	while (originalIndex < original.length && editedIndex < edited.length) {
-		if (original[originalIndex] === edited[editedIndex]) {
-			aligned[editedIndex] = originalIndex;
-			originalIndex += 1;
-			editedIndex += 1;
-		} else if (lengths[originalIndex + 1]![editedIndex]! >= lengths[originalIndex]![editedIndex + 1]!) originalIndex += 1;
-		else editedIndex += 1;
-	}
-	return aligned;
+	return align(originalBlocks.map(semanticFingerprint), editedBlocks.map(semanticFingerprint));
 }
 
 /**
@@ -107,11 +160,11 @@ function withOriginalBullet(edited: MarkdownBlockSlice, original: MarkdownBlockS
  */
 export function mergeMarkdownBody(originalBody: string, editedBody: string): MarkdownBodyMerge {
 	if (originalBody === editedBody) {
-		return { body: originalBody, retainedBlocks: parseMarkdownBodyBlocks(originalBody).length, changedBlocks: 0 };
+		return { body: originalBody, retainedBlocks: originalBlocksOf(originalBody).length, changedBlocks: 0 };
 	}
 
-	const originalBlocks = parseMarkdownBodyBlocks(originalBody);
-	const editedBlocks = parseMarkdownBodyBlocks(editedBody);
+	const originalBlocks = originalBlocksOf(originalBody);
+	const editedBlocks = editedBlocksOf(editedBody);
 	if (!originalBlocks.length || !editedBlocks.length) {
 		return {
 			body: editedBody,
@@ -120,41 +173,29 @@ export function mergeMarkdownBody(originalBody: string, editedBody: string): Mar
 		};
 	}
 
-	const originalFingerprints = originalBlocks.map(semanticFingerprint);
-	const editedFingerprints = editedBlocks.map(semanticFingerprint);
-	const lengths = lcsLengths(originalFingerprints, editedFingerprints);
+	const aligned = alignBodyBlocks(originalBlocks, editedBlocks);
 	const pieces: Piece[] = [];
-	/** Original blocks passed over since the last kept one: what the next edited blocks replace. */
+	/** Original blocks between two kept ones: what the edited blocks between them replace, in order. */
 	let replaced: number[] = [];
-	let originalIndex = 0;
-	let editedIndex = 0;
-
-	const pushEdited = () => {
-		const block = editedBlocks[editedIndex]!;
-		const counterpart = replaced.shift();
-		const original = counterpart === undefined ? undefined : originalBlocks[counterpart];
-		pieces.push({ raw: withOriginalSpacing(withOriginalBullet(block, original), original), edited: block.raw });
-		editedIndex += 1;
-	};
-	while (originalIndex < originalBlocks.length && editedIndex < editedBlocks.length) {
-		if (originalFingerprints[originalIndex] === editedFingerprints[editedIndex]) {
-			pieces.push({ raw: originalBlocks[originalIndex]!.raw, edited: editedBlocks[editedIndex]!.raw, original: originalIndex });
-			originalIndex += 1;
-			editedIndex += 1;
+	let nextOriginal = 0;
+	for (const [editedIndex, block] of editedBlocks.entries()) {
+		const kept = aligned[editedIndex];
+		if (kept !== null && kept !== undefined) {
+			pieces.push({ raw: originalBlocks[kept]!.raw, edited: block.raw, original: kept });
+			nextOriginal = kept + 1;
 			replaced = [];
 			continue;
 		}
-		if (lengths[originalIndex + 1]![editedIndex]! >= lengths[originalIndex]![editedIndex + 1]!) {
-			replaced.push(originalIndex);
-			originalIndex += 1;
-		} else {
-			pushEdited();
+		if (editedIndex === 0 || aligned[editedIndex - 1] !== null) {
+			const until = aligned.slice(editedIndex).find((index) => index !== null) ?? originalBlocks.length;
+			replaced = Array.from({ length: until - nextOriginal }, (_, index) => nextOriginal + index);
 		}
+		const counterpart = replaced.shift();
+		const original = counterpart === undefined ? undefined : originalBlocks[counterpart];
+		pieces.push({ raw: withOriginalSpacing(withOriginalBullet(block, original), original), edited: block.raw });
 	}
-	while (originalIndex < originalBlocks.length) replaced.push(originalIndex++);
-	while (editedIndex < editedBlocks.length) pushEdited();
 
-	const merged = settle(pieces, meaning(editedBody), editedBody);
+	const merged = settle(pieces, originalBlocks.length, editedBody);
 	return { ...merged, body: withOriginalEnds(merged.body, originalBody) };
 }
 
@@ -193,20 +234,46 @@ const counts = (pieces: readonly Piece[]) => {
 };
 
 /**
+ * Whether the merged body means what the editor wrote. Only where it was
+ * put together differently is it read again: from the piece before the
+ * first one that is not the original's next block to the piece after the
+ * last, each side as it is there. The rest is the original's blocks as they
+ * were, each meaning what the editor wrote (that is how they were kept), so
+ * a long article is not parsed whole twice at every edit.
+ */
+function meansTheSame(pieces: readonly Piece[], originalCount: number): boolean {
+	const odd = (index: number) => {
+		const piece = pieces[index]!;
+		if (piece.original === undefined) return true;
+		const before = index ? pieces[index - 1]!.original : -1;
+		const after = index < pieces.length - 1 ? pieces[index + 1]!.original : originalCount;
+		return before !== piece.original - 1 || after !== piece.original + 1;
+	};
+	let first = -1;
+	let last = -1;
+	for (let index = 0; index < pieces.length; index += 1) {
+		if (!odd(index)) continue;
+		if (first < 0) first = index;
+		last = index;
+	}
+	if (first < 0) return true;
+	const around = pieces.slice(Math.max(0, first - 1), last + 2);
+	return meaning(joinBlocks(around)) === meaning(around.map((piece) => piece.edited).join(''));
+}
+
+/**
  * The merged body, once it means what the editor wrote. If it does not,
  * edited blocks first lose the bullets given back to them, then kept blocks
  * next to a change are written the editor's way, one ring at a time; at
  * worst the body is the editor's.
  */
-function settle(pieces: Piece[], target: string, editedBody: string): MarkdownBodyMerge {
+function settle(pieces: Piece[], originalCount: number, editedBody: string): MarkdownBodyMerge {
 	let current = pieces;
-	let body = joinBlocks(current);
-	if (meaning(body) === target) return { body, ...counts(current) };
+	if (meansTheSame(current, originalCount)) return { body: joinBlocks(current), ...counts(current) };
 
 	current = current.map((piece) => (piece.original === undefined ? { ...piece, raw: piece.edited } : piece));
 	for (;;) {
-		body = joinBlocks(current);
-		if (meaning(body) === target) return { body, ...counts(current) };
+		if (meansTheSame(current, originalCount)) return { body: joinBlocks(current), ...counts(current) };
 		const settled = (index: number) => {
 			const piece = current[index];
 			const next = current[index + 1];

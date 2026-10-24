@@ -104,6 +104,50 @@ export function parseMarkdownBodyBlocks(body: string): MarkdownBlockSlice[] {
 	return sliceBody(body, 0);
 }
 
+/** The first index in `blocks` whose block ends past `offset` (or at it, with `orAt`). */
+function blockAt(blocks: readonly MarkdownBlockSlice[], offset: number, orAt: boolean): number {
+	let low = 0;
+	let high = blocks.length - 1;
+	while (low < high) {
+		const middle = (low + high) >> 1;
+		if (orAt ? blocks[middle]!.end >= offset : blocks[middle]!.end > offset) high = middle;
+		else low = middle + 1;
+	}
+	return low;
+}
+
+/**
+ * A body's blocks, from those of the body before an edit to it: only from
+ * the block before the change to the block after it is cut again; the rest
+ * are the ones before, moved by what the edit added or took away. The block
+ * after the change has to come out as it was, or the change reaches further
+ * (a fence opened, say) and the whole is cut again. As parseMarkdownBodyBlocks.
+ */
+export function reparseBodyBlocks(before: { body: string; blocks: readonly MarkdownBlockSlice[] }, body: string): MarkdownBlockSlice[] {
+	const old = before.body;
+	const blocks = before.blocks;
+	if (old === body) return [...blocks];
+	if (!blocks.length || !body.length) return parseMarkdownBodyBlocks(body);
+	let head = 0;
+	const shorter = Math.min(old.length, body.length);
+	while (head < shorter && old.charCodeAt(head) === body.charCodeAt(head)) head += 1;
+	let tail = 0;
+	while (tail < shorter - head && old.charCodeAt(old.length - 1 - tail) === body.charCodeAt(body.length - 1 - tail)) tail += 1;
+	const moved = body.length - old.length;
+	const from = Math.max(0, blockAt(blocks, head, false) - 1);
+	const until = Math.min(blocks.length - 1, blockAt(blocks, old.length - tail, true) + 1);
+	const start = blocks[from]!.start;
+	const lastBlock = blocks[until]!;
+	const end = lastBlock.end + moved;
+	const cut = sliceBody(body.slice(start, end), start);
+	if (until < blocks.length - 1) {
+		const last = cut.at(-1);
+		if (!last || last.start !== lastBlock.start + moved || last.raw !== lastBlock.raw || last.kind !== lastBlock.kind) return parseMarkdownBodyBlocks(body);
+	}
+	const after = blocks.slice(until + 1).map((block) => ({ ...block, start: block.start + moved, end: block.end + moved }));
+	return [...blocks.slice(0, from), ...cut, ...after];
+}
+
 /**
  * Creates a lossless, raw-first document view. Parsing records source ranges but
  * never normalizes Markdown, YAML, HTML, whitespace, or line endings.
@@ -115,6 +159,7 @@ export function parseStudioDocument(source: string): StudioDocument {
 	const bodyStart = frontmatter?.end ?? contentStart;
 	const bodyRaw = source.slice(bodyStart);
 
+	let blocks: MarkdownBlockSlice[] | undefined;
 	return {
 		preambleRaw,
 		frontmatter,
@@ -122,7 +167,11 @@ export function parseStudioDocument(source: string): StudioDocument {
 			start: bodyStart,
 			end: source.length,
 			raw: bodyRaw,
-			blocks: sliceBody(bodyRaw, bodyStart),
+			// Cut when asked for: most callers want the frontmatter or the body as text, and parsing a long body takes a while.
+			get blocks() {
+				blocks ??= sliceBody(bodyRaw, bodyStart);
+				return blocks;
+			},
 		},
 	};
 }

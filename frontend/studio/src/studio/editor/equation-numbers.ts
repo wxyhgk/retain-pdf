@@ -4,6 +4,7 @@ import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
 import { numberEquations, type EquationLabel } from '@blog/science/rendering/equations.mjs';
+import { editTouches } from './changed-range.ts';
 import { isFormulaBlock } from './formula-block.ts';
 
 /**
@@ -43,6 +44,12 @@ export function referencesKey(decorations: readonly Decoration[]): string {
 	return '';
 }
 
+/** What numbering looks at: formula blocks, and inline formulas that refer to one. */
+function numbered(node: ProseMirrorNode): boolean {
+	if (node.type.name === 'code_block') return isFormulaBlock(node);
+	return node.type.name === 'math_inline' && REFERENCES.test(String(node.attrs.value ?? ''));
+}
+
 function number(doc: ProseMirrorNode): EquationState {
 	const blocks: { pos: number; node: ProseMirrorNode }[] = [];
 	const referring: { pos: number; node: ProseMirrorNode }[] = [];
@@ -74,7 +81,12 @@ export const equationNumbers = $prose(
 			key: equationKey,
 			state: {
 				init: (_config, state) => number(state.doc),
-				apply: (tr, value) => (tr.docChanged ? number(tr.doc) : value),
+				apply: (tr, value) => {
+					if (!tr.docChanged) return value;
+					// An edit away from the formulas (most: typing in a long article) moves their numbers along.
+					if (!editTouches(tr.before, tr.doc, numbered)) return { labels: value.labels, decorations: value.decorations.map(tr.mapping, tr.doc) };
+					return number(tr.doc);
+				},
 			},
 			props: {
 				decorations: (state) => equationKey.getState(state)?.decorations,
