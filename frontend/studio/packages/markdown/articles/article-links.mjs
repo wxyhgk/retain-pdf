@@ -85,6 +85,40 @@ export function relinkArticle(source, from, to, { site } = {}) {
 	return { source: next, changed };
 }
 
+/** What Markdown would read as something else in a link's text, with a backslash before it. */
+const SPECIAL = /[\\`*_[\]<>$~|]/gu;
+
+/**
+ * `source` with its links to the article `slug` whose words are its title as
+ * it was, `from`, in its title as it is, `to` (it was renamed, as Notion's
+ * links to a page follow it). A link given words of its own is left as it is,
+ * and so is one whose words are not plain text. How many changed.
+ * @param {string} source
+ * @param {string} slug
+ * @param {string} from
+ * @param {string} to
+ * @param {{ site?: string }} [options]
+ * @returns {{ source: string, changed: number }}
+ */
+export function retitleArticleLinks(source, slug, from, to, { site } = {}) {
+	const origin = site ? new URL(site).origin : null;
+	const spans = [];
+	visitParents(unified().use(remarkParse).parse(source), (node) => {
+		if (node.type !== 'link' || typeof node.url !== 'string') return;
+		const address = origin && node.url.startsWith(`${origin}/`) ? node.url.slice(origin.length) : node.url;
+		if (ARTICLE_ADDRESS.exec(address)?.[2] !== slug) return;
+		const [words, ...more] = node.children ?? [];
+		if (more.length || words?.type !== 'text' || words.value !== from) return;
+		const start = words.position?.start.offset;
+		const end = words.position?.end.offset;
+		if (start != null && end != null) spans.push({ start, end });
+	});
+	let next = source;
+	// From the last, so that the places of those before stay.
+	for (const { start, end } of spans.sort((a, b) => b.start - a.start)) next = `${next.slice(0, start)}${to.replace(SPECIAL, '\\$&')}${next.slice(end)}`;
+	return { source: next, changed: spans.length };
+}
+
 /** A node's words, formulas and code as written. */
 function plainText(node) {
 	if (typeof node.value === 'string' && node.type !== 'html') return node.value;

@@ -6,7 +6,7 @@ import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
 import { articleBundlePaths, assertArticleSlug, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
-import { findArticleLinks, relinkArticle } from '@blog/markdown/articles/article-links.mjs';
+import { findArticleLinks, relinkArticle, retitleArticleLinks } from '@blog/markdown/articles/article-links.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../articles/schemas.mjs';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */
@@ -381,11 +381,17 @@ export class ArticleRepository {
 		return bundleRevision(source, viewsSource);
 	}
 
-	save(slug, change) {
-		return this.exclusive(slug, () => this.#save(slug, change));
+	/**
+	 * Writes the article. Its title changed: the links to it in the other
+	 * articles whose words were its title follow it (`retitled`: in how many
+	 * articles), as Notion's links to a page do; `site` is the blog's address,
+	 * for links written in full.
+	 */
+	save(slug, change, { site } = {}) {
+		return this.exclusive(slug, () => this.#save(slug, change, { site }));
 	}
 
-	async #save(slug, { content, source, expectedHash, expectedRevision }) {
+	async #save(slug, { content, source, expectedHash, expectedRevision }, { site }) {
 		const nextSource = source ?? content;
 		if (typeof nextSource !== 'string') throw new ArticleValidationError('文章内容必须是文本');
 		const paths = articleBundlePaths(this.blogRoot, slug);
@@ -401,7 +407,24 @@ export class ArticleRepository {
 		// Saved even when the properties are wrong, so nothing typed is lost; `problems` says what to fix.
 		await atomicWriteText(paths.markdown, nextSource);
 		const revision = bundleRevision(nextSource, viewsSource);
-		return { hash: revision, revision, problems: articleProblems(nextSource) };
+		// Titles as typed (none, not the folder name it is listed by then).
+		const was = articleSummary(current, '').title;
+		const is = articleSummary(nextSource, '').title;
+		const retitled = was && is && was !== is ? await this.#retitleLinks(slug, was, is, { site }) : 0;
+		return { hash: revision, revision, problems: articleProblems(nextSource), ...(retitled ? { retitled } : {}) };
+	}
+
+	/** The links to `slug` in the other articles whose words are `from`, in words `to`; in how many articles. */
+	async #retitleLinks(slug, from, to, { site }) {
+		let retitled = 0;
+		for (const { slug: page, source } of await this.#sources()) {
+			if (page === slug) continue;
+			const { source: next, changed } = retitleArticleLinks(source, slug, from, to, { site });
+			if (!changed) continue;
+			await atomicWriteText(articleBundlePaths(this.blogRoot, page).markdown, next);
+			retitled += 1;
+		}
+		return retitled;
 	}
 
 	saveMoleculeView(slug, key, change) {

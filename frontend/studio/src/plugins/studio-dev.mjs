@@ -542,7 +542,7 @@ export default function studioDev({ site } = {}) {
 						}
 
 						if (request.method === 'PUT') {
-							return json(response, 200, await articles.save(slug, await readJson(request)));
+							return json(response, 200, await articles.save(slug, await readJson(request), { site }));
 						}
 
 						// To the trash, from where it can be put back.

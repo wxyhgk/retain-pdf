@@ -368,3 +368,24 @@ test('a page merged into the one above it: its text a section there, in place of
 	assert.match(await readFile(articleBundlePaths(blog, 'other').markdown, 'utf8'), /\[方法\]\(\/blog\/project\/\)/u);
 	await assert.rejects(repository.merge('project'), /没有可以并入的上级/u);
 });
+
+test('a page given another title takes along the links to it that were its title, and only those', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'parent-page', title: '上级' });
+	await repository.create({ slug: 'sub-page', title: '无标题', parent: 'parent-page' });
+	const linking = await repository.read('parent-page');
+	const body = '\n[无标题](/blog/sub-page/)\n\n见 [这一页](/blog/sub-page/) 和 [无标题](https://example.org/blog/sub-page/)，[无标题](/blog/parent-page/)。\n\n`[无标题](/blog/sub-page/)`\n';
+	await repository.save('parent-page', { source: `${linking.source}${body}`, expectedRevision: linking.revision });
+
+	const page = await repository.read('sub-page');
+	const saved = await repository.save('sub-page', { source: page.source.replace("title: '无标题'", "title: '量子化学 [一]'"), expectedRevision: page.revision }, { site: 'https://example.org' });
+	assert.equal(saved.retitled, 1);
+	const after = (await repository.read('parent-page')).source;
+	assert.ok(after.endsWith('\n[量子化学 \\[一\\]](/blog/sub-page/)\n\n见 [这一页](/blog/sub-page/) 和 [量子化学 \\[一\\]](https://example.org/blog/sub-page/)，[无标题](/blog/parent-page/)。\n\n`[无标题](/blog/sub-page/)`\n'), after);
+
+	// Saved again as it is, and with its title taken away: nothing more changes.
+	const again = await repository.read('sub-page');
+	assert.equal((await repository.save('sub-page', { source: `${again.source}\n正文。\n`, expectedRevision: again.revision })).retitled, undefined);
+	assert.equal((await repository.read('parent-page')).source, after);
+});

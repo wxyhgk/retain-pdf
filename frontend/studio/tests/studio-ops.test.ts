@@ -52,7 +52,8 @@ test('pages made, moved, split, merged, published, deleted and brought back thro
 	await ops.updatePage({ slug: split.slug, title: 'Computational Methods', description: '怎么算的' });
 	const published = await ops.publishPage({ slug: split.slug });
 	assert.equal(published.slug, 'computational-methods');
-	assert.match((await ops.readPage({ slug: project.slug })).source, /\[计算方法\]\(\/blog\/computational-methods\/\)/u);
+	// The link to it in the page above follows it: its new address, and its new title (its words were its title).
+	assert.match((await ops.readPage({ slug: project.slug })).source, /\[Computational Methods\]\(\/blog\/computational-methods\/\)/u);
 
 	await ops.mergePage({ slug: 'computational-methods' });
 	assert.match((await ops.readPage({ slug: project.slug })).source, /## Computational Methods\n\n先算一遍。/u);

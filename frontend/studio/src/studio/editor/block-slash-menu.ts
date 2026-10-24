@@ -2,7 +2,7 @@ import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
 import { clearTextInCurrentBlockCommand } from '@milkdown/kit/preset/commonmark';
 import type { EditorView } from 'prosemirror-view';
 
-import { linkArticleAt, type ArticleLinkHost } from './article-links.ts';
+import { insertPage, linkArticleAt, type ArticleLinkHost } from './article-links.ts';
 import { wrapInCallout } from './callout-block.ts';
 import { insertColumns } from './columns-block.ts';
 import { wrapInToggle } from './toggle-block.ts';
@@ -27,6 +27,7 @@ const ICONS = {
 	toggle: icon('<path d="M6 8l4 4-4 4"/><path d="M13 12h7"/>'),
 	columns: icon('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/>'),
 	columns3: icon('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16M15 4v16"/>'),
+	page: icon('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'),
 	link: icon('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
 	command: icon('<path d="M5 7l5 5-5 5"/><path d="M12 17h7"/>'),
 };
@@ -39,7 +40,7 @@ function emptiedBlock(ctx: never): EditorView {
 	return context.get(editorViewCtx) as EditorView;
 }
 
-/** Notion's blocks in the slash menu: a callout, a toggle, columns, the plugins' blocks (a widget, a calculation…), a link to another article. */
+/** Notion's blocks in the slash menu: a page under the article, a callout, a toggle, columns, the plugins' blocks (a widget, a calculation…), a link to another article. */
 export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLinkHost, blocks: StudioBlock[] = []): void {
 	const add = (into: ReturnType<SlashMenuBuilder['addGroup']>, block: StudioBlock) => {
 		for (const entry of [block.menu ?? []].flat()) {
@@ -55,6 +56,12 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 		add(groups.get(key)!, block);
 	}
 	const group = builder.addGroup('notion', '块');
+	group.addItem('page', {
+		label: '页面',
+		icon: ICONS.page,
+		keywords: ['page', 'subpage', 'new page', '子页面', '新页面', '新建页面', 'yemian', 'ziyemian'],
+		onRun: (ctx) => void insertPage(emptiedBlock(ctx), links),
+	});
 	group.addItem('callout', { label: '提示块', icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(emptiedBlock(ctx), 'tip') });
 	group.addItem('toggle', { label: '折叠块', icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(emptiedBlock(ctx)) });
 	group.addItem('columns', { label: '两栏', icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', '双栏', '分栏', '并排', 'shuanglan', 'fenlan', 'bingpai'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 2) });

@@ -232,6 +232,20 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		return article ? { title: article.title, href: articleAddress(article.kind, article.slug) } : null;
 	},
 	openArticle: (slug) => void session.open(slug),
+	// 页面 (/page): a page under the open one, linked where the caret is, and gone into.
+	async makePage() {
+		const parent = session.slug;
+		if (!parent) return null;
+		const slug = freeSlug(autoSlug(), articleList.articles().map((article) => article.slug));
+		try {
+			await trackWrite(() => createArticle(slug, '无标题', parent));
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : '新建失败', true);
+			return null;
+		}
+		return { slug, title: '无标题', href: `/blog/${slug}/` };
+	},
+	enterPage: (slug) => void enterNewPage(slug),
 	askAI: () => void askAI(),
 	recognize: (view, pos) => void recognizePicture(view, pos),
 	pickCitation: () => citePicker.pick(),
@@ -364,6 +378,12 @@ async function newPage(parent = ''): Promise<void> {
 		showToast(error instanceof Error ? error.message : '新建失败', true);
 		return;
 	}
+	await enterNewPage(slug);
+}
+
+/** Opens a page just made, its title selected to be typed over; what is open saved first. */
+async function enterNewPage(slug: string): Promise<void> {
+	if (!(await session.saveBeforeLeaving())) return;
 	await openFromList(slug, true);
 	if (session.slug === slug) properties.selectTitle();
 }
