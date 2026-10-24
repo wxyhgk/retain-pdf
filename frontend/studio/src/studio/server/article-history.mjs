@@ -7,17 +7,33 @@ import { articleBundlePaths, resolveInside } from '../../articles/bundle-paths.m
  * Earlier versions of an article's `index.md`, kept in its private `ai/`
  * folder (never published) as `ai/history/<time>-<reason>.md`, so that a
  * change made on disk (the terminal, an AI, another editor) or a choice
- * made in review can always be gone back on. The newest few are kept.
+ * made in review can always be gone back on; and, as Notion keeps a page's
+ * history, what was written, every while (`edit`).
  *
  * Reasons: `before-change` (what was saved before a change on disk),
  * `unsaved` (edits not yet saved when the disk changed under them),
- * `before-restore` (what was there before an earlier version was brought back).
+ * `before-restore` (what was there before an earlier version was brought back),
+ * `edit` (the article as it was when a save came, `EDIT_EVERY` or more after the last version kept).
+ *
+ * Kept: the newest `HISTORY_LIMIT` of the first three. Of the versions kept
+ * while writing, all of the last day, then the last of each day for a month,
+ * and no more than `EDIT_BYTES` of them (a book's are megabytes each).
  */
 
-export const HISTORY_REASONS = Object.freeze(['before-change', 'unsaved', 'before-restore']);
+export const HISTORY_REASONS = Object.freeze(['before-change', 'unsaved', 'before-restore', 'edit']);
 
-/** How many versions an article keeps. */
+/** How many versions an article keeps, besides those kept while writing. */
 export const HISTORY_LIMIT = 50;
+
+/** How long writing goes on between two versions kept of it, in ms. */
+export const EDIT_EVERY = 10 * 60_000;
+
+/** How long the versions kept while writing are all kept, and how long the last of each day is, in ms. */
+const ALL_FOR = 24 * 60 * 60_000;
+const DAILY_FOR = 30 * 24 * 60 * 60_000;
+
+/** How many bytes of versions kept while writing an article keeps at most. */
+const EDIT_BYTES = 50 * 1024 * 1024;
 
 const NAME = /^(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3})-([a-z-]+)\.md$/u;
 
@@ -106,7 +122,37 @@ export class ArticleHistory {
 		while (kept.some((entry) => entry.name.startsWith(stamp(new Date(at))))) at += 1;
 		const name = `${stamp(new Date(at))}-${reason}.md`;
 		await writeFile(resolveInside(folder, name), source, { flag: 'wx' });
-		for (const old of [{ name }, ...kept].slice(HISTORY_LIMIT)) await rm(resolveInside(folder, old.name), { force: true });
+		const entries = [{ name, time: at, reason, size: Buffer.byteLength(source) }, ...kept];
+		for (const old of forgotten(entries, now.getTime())) await rm(resolveInside(folder, old.name), { force: true });
 		return { name };
 	}
+
+	/**
+	 * Keeps `source`, the article as it is before a save, as a version written
+	 * (`edit`), when the newest version kept is `every` ms old or older: one a
+	 * while, however often the article is saved as it is typed.
+	 * @returns {Promise<{ name: string | null }>} the version kept, or null when none was
+	 */
+	async keepWritten(slug, source, now = new Date(), every = EDIT_EVERY) {
+		const [newest] = await this.list(slug);
+		if (newest && now.getTime() - newest.time < every) return { name: null };
+		return this.keep(slug, source, 'edit', now);
+	}
+}
+
+/** Of `entries` (newest first), those no longer kept at `now`. */
+function forgotten(entries, now) {
+	const gone = entries.filter((entry) => entry.reason !== 'edit').slice(HISTORY_LIMIT);
+	const days = new Set();
+	let bytes = 0;
+	for (const entry of entries.filter((candidate) => candidate.reason === 'edit')) {
+		const age = now - entry.time;
+		// Older than a day: the newest of its day only (the entries go newest first).
+		const day = new Date(entry.time).toDateString();
+		const kept = age < ALL_FOR || (age < DAILY_FOR && !days.has(day));
+		if (age >= ALL_FOR) days.add(day);
+		bytes += kept ? entry.size : 0;
+		if (!kept || bytes > EDIT_BYTES) gone.push(entry);
+	}
+	return gone;
 }

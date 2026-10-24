@@ -41,7 +41,7 @@ export type SearchResult = {
 
 /** Something in the trash: a whole article, or a file or folder of one. */
 /** Why an earlier version of an article was kept (article-history.mjs). */
-export type HistoryReason = 'before-change' | 'unsaved' | 'before-restore';
+export type HistoryReason = 'before-change' | 'unsaved' | 'before-restore' | 'edit';
 
 /** An earlier version of an article, kept in its ai/history. */
 export type HistoryEntry = { name: string; time: number; reason: HistoryReason; size: number };

@@ -12,7 +12,17 @@ const REASONS: Record<HistoryReason, string> = {
 	'before-change': '磁盘上改动之前',
 	unsaved: '你没保存的改动',
 	'before-restore': '恢复旧版本之前',
+	edit: '自动存档',
 };
+
+/** The day a version was kept, as the list heads it: 今天, 昨天, or its date. */
+function dayOf(time: number): string {
+	const day = new Date(time).toDateString();
+	const today = new Date();
+	if (day === today.toDateString()) return '今天';
+	if (day === new Date(today.getTime() - 24 * 60 * 60_000).toDateString()) return '昨天';
+	return new Date(time).toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+}
 
 function size(bytes: number): string {
 	return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
@@ -20,8 +30,9 @@ function size(bytes: number): string {
 
 /**
  * 历史版本: the versions of the open article the Studio kept in its ai/history
- * before a change on disk or a restore, each to compare with what is there
- * now and bring back, through review.
+ * (every ten minutes of writing, before a change on disk or a restore; see
+ * article-history.mjs), by day, each to compare with what is there now and
+ * bring back, through review.
  */
 export function createHistoryView(dialog: HTMLDialogElement, host: HistoryViewHost) {
 	const list = dialog.querySelector<HTMLElement>('#history-list')!;
@@ -56,7 +67,7 @@ export function createHistoryView(dialog: HTMLDialogElement, host: HistoryViewHo
 		name.textContent = REASONS[entry.reason];
 		const when = document.createElement('span');
 		when.className = 'trash-where';
-		when.textContent = `${timeAgo(entry.time)} · ${new Date(entry.time).toLocaleString('zh-CN')} · ${size(entry.size)}`;
+		when.textContent = `${new Date(entry.time).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })} · ${timeAgo(entry.time)} · ${size(entry.size)}`;
 		words.append(name, when);
 		const back = document.createElement('button');
 		back.type = 'button';
@@ -77,11 +88,23 @@ export function createHistoryView(dialog: HTMLDialogElement, host: HistoryViewHo
 				say(error instanceof Error ? error.message : '读不到历史版本', true);
 				entries = [];
 			}
-			list.replaceChildren(...entries.map(row));
+			const items: HTMLElement[] = [];
+			let day = '';
+			for (const entry of entries) {
+				if (dayOf(entry.time) !== day) {
+					day = dayOf(entry.time);
+					const heading = document.createElement('li');
+					heading.className = 'trash-day';
+					heading.textContent = day;
+					items.push(heading);
+				}
+				items.push(row(entry));
+			}
+			list.replaceChildren(...items);
 			if (!entries.length) {
 				const empty = document.createElement('li');
 				empty.className = 'trash-empty';
-				empty.textContent = '还没有历史版本。终端、AI 或别的编辑器改动这篇文章时，Studio 会先把原来的版本存在这里。';
+				empty.textContent = '还没有历史版本。写作时每 10 分钟自动存一份；终端、AI 或别的编辑器改动这篇文章前，也会先把原来的存在这里。';
 				list.append(empty);
 			}
 			if (!dialog.open) dialog.showModal();

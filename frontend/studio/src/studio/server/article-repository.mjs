@@ -385,13 +385,14 @@ export class ArticleRepository {
 	 * Writes the article. Its title changed: the links to it in the other
 	 * articles whose words were its title follow it (`retitled`: in how many
 	 * articles), as Notion's links to a page do; `site` is the blog's address,
-	 * for links written in full.
+	 * for links written in full. `before` is given the text as it was, before
+	 * it is written over (to keep it as a version).
 	 */
-	save(slug, change, { site } = {}) {
-		return this.exclusive(slug, () => this.#save(slug, change, { site }));
+	save(slug, change, { site, before } = {}) {
+		return this.exclusive(slug, () => this.#save(slug, change, { site, before }));
 	}
 
-	async #save(slug, { content, source, expectedHash, expectedRevision }, { site }) {
+	async #save(slug, { content, source, expectedHash, expectedRevision }, { site, before }) {
 		const nextSource = source ?? content;
 		if (typeof nextSource !== 'string') throw new ArticleValidationError('文章内容必须是文本');
 		const paths = articleBundlePaths(this.blogRoot, slug);
@@ -404,6 +405,7 @@ export class ArticleRepository {
 		if (expected && currentRevision !== expected) {
 			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');
 		}
+		await before?.(current);
 		// Saved even when the properties are wrong, so nothing typed is lost; `problems` says what to fix.
 		await atomicWriteText(paths.markdown, nextSource);
 		const revision = bundleRevision(nextSource, viewsSource);

@@ -36,7 +36,8 @@ export function driveHas(path: string): boolean {
 /** Put the fixture article back as it was, whatever the last test saved. */
 export function resetFixture(): void {
 	const target = join(articles(), slug);
-	rmSync(target, { recursive: true, force: true });
+	// The server may still be writing in it (a version kept as the last test saved, in ai/history): tried again a moment later.
+	rmSync(target, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
 	cpSync(fixture, target, { recursive: true });
 }
 

@@ -97,7 +97,7 @@ MCP 工具名和命令一一对应（下划线换成连字符）。参数后面�
 | `unpublish_page` | `studio unpublish-page` | `slug` | 撤回发布：改回草稿，下次构建后从博客上消失。 |
 | `commit_page` | `studio commit-page` | `slug`、`message` | 把这一页的文件夹提交到 git（连同已经删掉的页面的文件夹），不推送。 |
 | `git_status` | `studio git-status` | — | git 里还没提交的页面：changed 是有改动的页面（new 为新页面），vanished 是已经删掉的页面。 |
-| `list_history` | `studio list-history` | `slug` | 一个页面存下的历史版本（每次被外部改动前、恢复前存的），新的在前。 |
+| `list_history` | `studio list-history` | `slug` | 一个页面存下的历史版本（写作时每 10 分钟自动存的，每次被外部改动前、恢复前存的），新的在前。 |
 | `read_history` | `studio read-history` | `slug`、`name` | 读一个历史版本的完整 Markdown。 |
 | `search_drive` | `studio search-drive` | `query`、`limit`? | 在资料库（作者选的本地文件夹，放论文、数据等）里按文件名和文字找文件；给出资料库的路径和每个文件在里面的路径。 |
 

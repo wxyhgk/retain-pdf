@@ -270,7 +270,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 		<dialog id="history-dialog" class="article-dialog trash-view">
 			<form method="dialog">
 				<div class="dialog-heading">
-					<div><strong>历史版本</strong><span>存在文章的 ai/history 里，不会发布</span></div>
+					<div><strong>历史版本</strong><span>写作时每 10 分钟自动存一份，存在文章的 ai/history 里，不会发布</span></div>
 					<button type="submit" aria-label="关闭">×</button>
 				</div>
 				<!-- The trash's list look: things to bring back. -->
@@ -556,6 +556,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.trash-list :global(button) { padding: 3px 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 	.trash-list :global(button:hover) { background: var(--surface-soft); }
 	.trash-list :global(button.is-danger) { color: #b42318; }
+	.trash-list :global(.trash-day) { padding: 10px 8px 2px; color: rgb(var(--gray)); font-size: 12px; font-weight: 600; }
 	.trash-list :global(.trash-empty) { padding: 22px 8px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
 	.trash-status { min-height: 16px; margin: 0; color: rgb(var(--gray)); font-size: 12px; }
 	:global(.trash-status.is-error) { color: #b42318; }

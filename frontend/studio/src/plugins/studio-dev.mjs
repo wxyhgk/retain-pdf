@@ -542,7 +542,8 @@ export default function studioDev({ site } = {}) {
 						}
 
 						if (request.method === 'PUT') {
-							return json(response, 200, await articles.save(slug, await readJson(request), { site }));
+							// What was written kept as a version every while (as Notion keeps a page's history).
+							return json(response, 200, await articles.save(slug, await readJson(request), { site, before: (current) => history.keepWritten(slug, current) }));
 						}
 
 						// To the trash, from where it can be put back.
