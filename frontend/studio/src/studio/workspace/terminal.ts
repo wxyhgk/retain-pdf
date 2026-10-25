@@ -341,6 +341,18 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 			if (state === 'ended') void start();
 			else putPending();
 		},
+		/**
+		 * Runs `command` in a new shell in the repository (an account's login, with the project's own programs): what
+		 * runs in the terminal now ends, the author asked first.
+		 */
+		run(command: string): void {
+			if (state === 'running' && !confirm(`在终端里运行 ${command}？终端里正在运行的程序会被结束。`)) return;
+			cwd = 'root';
+			writeCwd(cwd);
+			renderCwd();
+			pending = { command };
+			void start();
+		},
 		/** The AIs changed (AI 助手): the buttons again. */
 		refreshAgents(): void {
 			void showAgents();

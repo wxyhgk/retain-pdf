@@ -1,3 +1,5 @@
+import { createServer } from 'node:http';
+
 import { expect, test, type Page } from '@playwright/test';
 
 import { openStudio, resetFixture } from './studio.ts';
@@ -116,4 +118,44 @@ test('an agent whose adapter is missing says so where the answer would be', asyn
 	await pane(page).locator('.ai-agent').selectOption('codex');
 	await expect(pane(page).locator('.ai-status')).toContainText('Codex 没能启动');
 	await expect(pane(page).locator('.ai-status')).toHaveClass(/is-error/u);
+});
+
+test('⚙ 模型和账号: another service, tried with a word and saved, is the one the next conversation is started for; its key never comes back', async ({ page }) => {
+	// A service that speaks Anthropic's API, here: it answers 「好」.
+	const asked: string[] = [];
+	const service = createServer((request, response) => {
+		asked.push(`${request.url} ${request.headers.authorization}`);
+		response.writeHead(200, { 'content-type': 'application/json' });
+		response.end(JSON.stringify({ content: [{ type: 'text', text: '好' }] }));
+	});
+	await new Promise<void>((resolve) => service.listen(0, '127.0.0.1', resolve));
+	const address = `http://127.0.0.1:${(service.address() as import('node:net').AddressInfo).port}`;
+	try {
+		await openAi(page);
+		await pane(page).getByRole('button', { name: '模型和账号' }).click();
+		const sheet = pane(page).locator('.ai-sheet');
+		await expect(sheet).toBeVisible();
+		await expect(pane(page).locator('.ai-input')).toBeHidden();
+		await sheet.locator('.ai-sheet-provider').selectOption('custom');
+		await sheet.getByLabel('接口地址').fill(address);
+		await sheet.getByLabel('API key').fill('sk-test');
+		await sheet.getByLabel('主模型').fill('fake-main');
+		await sheet.getByRole('button', { name: '检查' }).click();
+		await expect(sheet.locator('.ai-sheet-result')).toHaveText('能用：fake-main 回答了「好」');
+		expect(asked).toEqual(['/v1/messages Bearer sk-test']);
+		await sheet.getByRole('button', { name: '保存' }).click();
+		// Back to the conversation, a new one, on that service: its models by their names.
+		await expect(sheet).toBeHidden();
+		await expect(pane(page).locator('.ai-where')).toHaveText('在这篇文章里 · 其他（兼容 Anthropic 接口）');
+		await expect(pane(page).locator('.ai-options select[aria-label="Model"] option')).toHaveText(['fake-main']);
+		await tell(page, '环境');
+		await expect(pane(page).locator('.ai-message')).toHaveText(`地址 ${address} 模型 fake-main key 有`);
+		// The key stays on the server.
+		await pane(page).getByRole('button', { name: '模型和账号' }).click();
+		await expect(sheet.getByLabel('API key')).toHaveValue('');
+		await expect(sheet.getByLabel('API key')).toHaveAttribute('placeholder', '已保存（不改就留空）');
+		expect(await page.content()).not.toContain('sk-test');
+	} finally {
+		service.close();
+	}
 });

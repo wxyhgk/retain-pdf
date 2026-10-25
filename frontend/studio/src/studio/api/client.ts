@@ -289,6 +289,8 @@ export type Conversation = {
 	configOptions: ConversationOption[];
 	commands: Array<{ name: string; description: string }>;
 	usage: { used: number; size: number; cost: { amount: number; currency: string } | null } | null;
+	/** The service Claude Code talks to, when not the Claude account. */
+	service: string | null;
 };
 /** A tool call's content: words, a change to a file, or a terminal. */
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
@@ -343,6 +345,29 @@ export async function answerConversation(id: string, permission: string, option:
 
 export function setConversationOption(id: string, configId: string, value: string | boolean): Promise<Conversation> {
 	return request(conversationApi(id, 'options'), jsonOptions('POST', { configId, value }));
+}
+
+/** A service the panel's Claude Code can talk to (server/panel-models.mjs): its address and models; whether a key is saved. */
+export type PanelProvider = { id: string; name: string; baseUrl: string; keyStyle: string; main: string; fast: string; keyUrl: string; hasKey: boolean; suggested: { baseUrl: string; main: string; fast: string } };
+export type PanelModelsShown = { chosen: string; providers: PanelProvider[] };
+export type PanelAccounts = { claude: { loggedIn: boolean; plan: string; missing: boolean }; codex: { loggedIn: boolean; how: string; missing: boolean } };
+
+export function panelModels(): Promise<PanelModelsShown> {
+	return request('/api/studio/panel-models');
+}
+
+/** Chooses a service, with what is given of it (`apiKey: ''` forgets its key; left out, kept). */
+export function savePanelModels(change: { provider: string; baseUrl?: string; apiKey?: string; main?: string; fast?: string }): Promise<PanelModelsShown> {
+	return request('/api/studio/panel-models', jsonOptions('PUT', change));
+}
+
+/** Tries the service chosen with a word: what it answered, or why it did not. */
+export function checkPanelModels(): Promise<{ ok: true; model: string; answered: string }> {
+	return request('/api/studio/panel-models/check', jsonOptions('POST', {}));
+}
+
+export function panelAccounts(): Promise<PanelAccounts> {
+	return request('/api/studio/panel-models/accounts');
 }
 
 export async function closeConversation(id: string): Promise<void> {

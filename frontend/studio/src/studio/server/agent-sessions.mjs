@@ -48,11 +48,13 @@ export class AgentSessions {
 
 	/**
 	 * Starts a conversation with `agent` (its ACP command) in `cwd`; resolves once its adapter has a session.
-	 * @param {{ agent: { id: string, name: string, acp: string }, cwd: string, slug?: string | null, env?: Record<string, string> }} options
+	 * `models`: the service's models Claude Code is told to use for its tiers (panel-models.mjs), shown by their names
+	 * in place of Claude's.
+	 * @param {{ agent: { id: string, name: string, acp: string }, cwd: string, slug?: string | null, env?: Record<string, string>, models?: { name: string, main: string, fast: string } | null }} options
 	 */
-	async start({ agent, cwd, slug = null, env = {} }) {
+	async start({ agent, cwd, slug = null, env = {}, models = null }) {
 		// As the agent sees it (no link in it: /private/var… on a Mac), so the paths it names are shown under it.
-		const session = new AgentSession({ agent, cwd: await realpath(cwd), slug });
+		const session = new AgentSession({ agent, cwd: await realpath(cwd), slug, models });
 		this.#sessions.set(session.id, session);
 		this.#forgetOld();
 		const path = `${this.binFolder}${delimiter}${env.PATH ?? (await this.#loginPath())}`;
@@ -123,15 +125,30 @@ class AgentSession {
 	#stderr = '';
 	#forget = () => {};
 
-	constructor({ agent, cwd, slug }) {
+	constructor({ agent, cwd, slug, models = null }) {
 		this.agent = { id: agent.id, name: agent.name };
 		this.cwd = cwd;
 		this.slug = slug;
+		this.models = models;
 		this.created = new Date().toISOString();
 	}
 
 	summary() {
-		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.title, state: this.state, error: this.error, created: this.created, configOptions: this.configOptions, modes: this.modes, commands: this.commands, usage: this.usage };
+		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.title, state: this.state, error: this.error, created: this.created, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null };
+	}
+
+	/**
+	 * Its options as the page shows them: on another service, the models are that service's (Claude Code's tiers are
+	 * all it was told of: the main model for the default, opus and sonnet, the fast one for haiku), not Claude's.
+	 */
+	#shownOptions() {
+		if (!this.models) return this.configOptions;
+		const { main, fast } = this.models;
+		return this.configOptions.map((option) => {
+			if (option.category !== 'model' || option.type !== 'select') return option;
+			const options = [{ value: 'default', name: main }, ...(fast && fast !== main ? [{ value: 'haiku', name: `${fast}（快）` }] : [])];
+			return { ...option, options, currentValue: option.currentValue === 'haiku' && options.length > 1 ? 'haiku' : 'default' };
+		});
 	}
 
 	/** Follows the conversation: told it whole at once, then each change. Returns how to stop. */

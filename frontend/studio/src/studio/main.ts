@@ -185,6 +185,10 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 	article: () => (session.slug ? { slug: session.slug, title: openTitle } : null),
 	toast: (message) => showToast(message),
+	runInTerminal(command) {
+		sidePanel.show('terminal');
+		terminal.run(command);
+	},
 });
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });

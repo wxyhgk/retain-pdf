@@ -14,6 +14,7 @@ import { FileRepository } from '../studio/server/file-repository.mjs';
 import { TerminalHost } from '../studio/server/terminal-host.mjs';
 import { AgentSettings } from '../studio/server/agent-settings.mjs';
 import { AgentSessions } from '../studio/server/agent-sessions.mjs';
+import { PanelModels } from '../studio/server/panel-models.mjs';
 import { MiniApps } from '../studio/server/mini-apps.mjs';
 import { Tasks } from '../studio/server/tasks.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
@@ -149,6 +150,7 @@ export default function studioDev({ site } = {}) {
 				aiSettings,
 				agentSettings,
 				conversations,
+				panelModels: new PanelModels(settingsFile),
 				plugins,
 			});
 

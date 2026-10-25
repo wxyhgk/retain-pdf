@@ -35,6 +35,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../ai-settings.mjs').AiSettings} aiSettings
  * @property {import('../agent-settings.mjs').AgentSettings} agentSettings
  * @property {import('../agent-sessions.mjs').AgentSessions} conversations the AI panel's
+ * @property {import('../panel-models.mjs').PanelModels} panelModels the service the panel's Claude Code talks to
  * @property {Promise<any>} plugins the plugins' kernel on this server
  */
 

@@ -1,6 +1,7 @@
 // A stand-in for an agent's ACP adapter (the AI panel's browser tests): an agent that thinks a little, says what it
 // will do, asks leave to run a command, runs it (or not) and says how it went, with a plan; told 「慢」 it goes on
-// until it is stopped; told 「退出」 it exits. Its options: a mode and a model.
+// until it is stopped; told 「退出」 it exits; told 「环境」 it says the service it was started for. Its options: a
+// mode and a model.
 import { Readable, Writable } from 'node:stream';
 import { createRequire } from 'node:module';
 
@@ -38,6 +39,11 @@ const app = agent({ name: 'fake' })
 		state.turns += 1;
 		const run = `run-${state.turns}`;
 		if (said.includes('退出')) process.exit(3);
+		// The service it was started for (AI 面板 ⚙): what Claude Code would be told.
+		if (said.includes('环境')) {
+			await words('agent_message_chunk', `地址 ${process.env.ANTHROPIC_BASE_URL ?? '无'} 模型 ${process.env.ANTHROPIC_MODEL ?? '无'} key ${process.env.ANTHROPIC_AUTH_TOKEN ? '有' : '无'}`);
+			return { stopReason: 'end_turn' };
+		}
 		if (said.includes('慢')) {
 			await update({ sessionUpdate: 'tool_call', toolCallId: 'slow', title: 'sleep 100', kind: 'execute', status: 'in_progress' });
 			while (!state.cancelled) await pause(20);

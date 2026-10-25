@@ -13,6 +13,7 @@ import {
 	type ConversationOption,
 } from '../api/client';
 import { renderAiMarkdown } from './ai-markdown';
+import { createModelsSheet } from './ai-models-sheet';
 import { showContextMenu, type MenuItem } from './context-menu';
 
 /** What the AI panel needs of the Studio around it. */
@@ -20,6 +21,8 @@ export type AiPanelHost = {
 	/** The article open, if one is. */
 	article(): { slug: string; title: string } | null;
 	toast(message: string): void;
+	/** Runs a command in the 终端 tab (an account's login). */
+	runInTerminal(command: string): void;
 };
 
 type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
@@ -96,7 +99,11 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	newButton.type = 'button';
 	newButton.title = '新对话';
 	newButton.setAttribute('aria-label', '新对话');
-	actions.append(historyButton, newButton);
+	const modelsButton = element('button', '', '⚙');
+	modelsButton.type = 'button';
+	modelsButton.title = '模型和账号：Claude 账号、DeepSeek 等 API key';
+	modelsButton.setAttribute('aria-label', '模型和账号');
+	actions.append(modelsButton, historyButton, newButton);
 	toolbar.append(title, where, actions);
 
 	const transcript = element('div', 'ai-transcript');
@@ -138,7 +145,27 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	send.setAttribute('aria-label', '发送');
 	bar.append(agentSelect, optionSelects, usage, send);
 	composer.append(status, input, bar);
-	pane.replaceChildren(toolbar, transcript, composer);
+	const sheet = createModelsSheet({
+		runInTerminal: (command) => host.runInTerminal(command),
+		saved(name) {
+			showSheet(false);
+			// What was saved is for conversations begun from now on: one begun for Claude Code, with it.
+			if (agentSelect.value === 'claude') {
+				const unused = conversation && !items.length ? conversation : null;
+				void begin();
+				if (unused) void closeConversation(unused.id).catch(() => {});
+			}
+			host.toast(name ? `AI 面板的 Claude Code 改用「${name}」` : '已保存');
+		},
+	});
+	pane.replaceChildren(toolbar, sheet.element, transcript, composer);
+
+	/** 模型和账号 in place of the conversation, or the conversation again. */
+	function showSheet(open: boolean): void {
+		pane.classList.toggle('is-settings', open);
+		if (open) void sheet.show();
+		else sheet.hide();
+	}
 
 	let agents: Array<{ id: string; name: string }> = [];
 	let conversation: Conversation | null = null;
@@ -303,13 +330,21 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	function say(text: string, isError = false): void {
 		status.textContent = text;
 		status.classList.toggle('is-error', isError);
+		// What fails is most often a login or a key: where to set them, right there.
+		if (isError) {
+			const fix = element('button', 'ai-status-fix', '模型和账号');
+			fix.type = 'button';
+			fix.addEventListener('click', () => showSheet(true));
+			status.append(' ', fix);
+		}
 	}
 
 	function showSession(): void {
 		const running = conversation?.state === 'running';
 		title.textContent = conversation?.title || '新对话';
 		title.title = title.textContent;
-		where.textContent = conversation?.slug ? (conversation.slug === article?.slug ? '在这篇文章里' : `在 ${conversation.slug} 里`) : conversation ? '在仓库里' : '';
+		const place = conversation?.slug ? (conversation.slug === article?.slug ? '在这篇文章里' : `在 ${conversation.slug} 里`) : conversation ? '在仓库里' : '';
+		where.textContent = conversation?.service ? `${place} · ${conversation.service}` : place;
 		empty.hidden = items.length > 0;
 		send.textContent = running ? '■' : '↑';
 		send.title = running ? '停下' : '发送（Enter；换行用 Shift+Enter）';
@@ -340,7 +375,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		select.setAttribute('aria-label', option.name);
 		select.title = option.description ?? option.name;
 		const choices = (option.options ?? []).flatMap((entry) => ('options' in entry ? entry.options : [entry]));
-		const named = (value: string, name: string) => (option.category === 'thought_level' ? EFFORT_NAMES[value] ?? `思考：${name}` : OPTION_NAMES[value] ?? name);
+		const named = (value: string, name: string) => (option.category === 'thought_level' ? EFFORT_NAMES[value] ?? `思考：${name}` : option.category === 'mode' ? OPTION_NAMES[value] ?? name : name);
 		select.replaceChildren(...choices.map((choice) => new Option(named(choice.value, choice.name), choice.value)));
 		select.value = String(option.currentValue);
 		select.addEventListener('change', () => {
@@ -569,6 +604,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		void begin().then(() => input.focus());
 		if (unused) void closeConversation(unused.id).catch(() => {});
 	});
+	modelsButton.addEventListener('click', () => showSheet(!sheet.open));
 	historyButton.addEventListener('click', () => {
 		void listConversations().then((known) => {
 			const entries = known.conversations.filter((entry) => entry.id !== conversation?.id);
