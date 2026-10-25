@@ -308,7 +308,8 @@ export type ConversationItem =
 	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
 	| { kind: 'plan'; id: string; entries: Array<{ content: string; priority: string; status: 'pending' | 'in_progress' | 'completed' }> }
 	| { kind: 'permission'; id: string; title: string; toolCallId: string | null; options: Array<{ optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' }>; chosen: string | null }
-	| { kind: 'notice'; id: string; severity: string; title: string; description: string }
+	/** `resume`: a turn over with nothing said; it can be asked to go on (接着说). */
+	| { kind: 'notice'; id: string; severity: string; title: string; description: string; resume?: boolean }
 	| { kind: 'stop'; id: string; reason: string }
 	| { kind: 'error'; id: string; message: string };
 export type ConversationEvent =

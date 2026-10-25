@@ -362,8 +362,11 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 	/** Whether `item` is drawn here: on a page, those not yet written on it (the turn going on). */
 	function going(item: ConversationItem): boolean {
 		if (!page || !conversation?.pageThrough) return true;
+		const at = items.indexOf(item);
+		// How the last turn ended (stopped, failed, nothing said) stays in sight till something else is said.
+		if (['notice', 'error', 'stop'].includes(item.kind) && !items.slice(at + 1).some((entry) => entry.kind === 'user')) return true;
 		const through = items.findIndex((entry) => entry.id === conversation!.pageThrough);
-		return items.indexOf(item) > through;
+		return at > through;
 	}
 
 	/** A turn written on the page: once the editor shows it, taken from here. */
@@ -660,6 +663,16 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 			case 'notice':
 				node = element('div', `ai-notice is-${item.severity}`);
 				node.append(element('strong', '', item.title), element('span', '', item.description ? ` ${item.description}` : ''));
+				// Nothing said: asked to say it, while it is the last thing in the conversation.
+				if (item.resume && items.at(-1)?.id === item.id) {
+					const resume = element('button', 'ai-status-fix', '接着说');
+					resume.type = 'button';
+					resume.addEventListener('click', () => {
+						input.value = '接着说：把你刚才的结论告诉我。';
+						void submit();
+					});
+					node.append(' ', resume);
+				}
 				break;
 			case 'stop':
 				node = element('div', 'ai-stop', STOP_NAMES[item.reason] ?? `停了（${item.reason}）`);

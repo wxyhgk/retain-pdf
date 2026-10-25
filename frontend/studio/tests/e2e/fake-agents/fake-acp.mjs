@@ -66,6 +66,24 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '能量和质量的关系：\n\n$$\nE = mc^2\n$$\n\n- 要点一\n- 要点二');
 			return { stopReason: 'end_turn' };
 		}
+		// A turn over after thinking, nothing said (as some models end one).
+		if (said.startsWith('只想不说')) {
+			await words('agent_thought_chunk', '想了很多，结论是……');
+			return { stopReason: 'end_turn' };
+		}
+		if (said.startsWith('接着说')) {
+			await words('agent_message_chunk', '结论是这样的。');
+			return { stopReason: 'end_turn' };
+		}
+		// A turn over after thinking, nothing said (as some models end one); asked to go on, it says it.
+		if (said.startsWith('只想不说')) {
+			await words('agent_thought_chunk', '想了很多，结论是……');
+			return { stopReason: 'end_turn' };
+		}
+		if (said.startsWith('接着说')) {
+			await words('agent_message_chunk', '结论是这样的。');
+			return { stopReason: 'end_turn' };
+		}
 		// Which session it goes on with: the one loaded, if one was.
 		if (said.startsWith('接上了吗')) {
 			await words('agent_message_chunk', state.loaded ? `接上了 ${state.loaded}` : `新的会话 ${sessionId}`);

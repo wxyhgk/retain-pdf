@@ -110,3 +110,19 @@ test('⤢ in the AI tab: the conversation there opened as a page, what was said 
 	await expect(editor(page).locator('.note-ask-bubble')).toHaveText('几块 侧边');
 	await expect(page.getByRole('tab', { name: 'AI 问答' })).toHaveAttribute('aria-selected', 'true');
 });
+
+test('a turn over with nothing said (only thought): said so, and 接着说 asks for it; it stays in sight once the turn is on the page', async ({ page }) => {
+	await openStudio(page);
+	await page.getByRole('tab', { name: 'AI 问答' }).click();
+	await page.getByRole('button', { name: '新对话页' }).click();
+	await expect(page.locator('#article-title-input')).toHaveValue('新对话');
+	await composer(page).locator('.ai-input').fill('只想不说');
+	await composer(page).locator('.ai-input').press('Enter');
+	await expect(editor(page).locator('.note-ask-bubble')).toHaveText('只想不说');
+	const notice = page.locator('#chat-live .ai-notice');
+	await expect(notice).toContainText('停下了，但没有说结论');
+	await notice.getByRole('button', { name: '接着说' }).click();
+	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['只想不说', '接着说：把你刚才的结论告诉我。']);
+	await expect(editor(page)).toContainText('结论是这样的。');
+	await expect(notice).toHaveCount(0);
+});

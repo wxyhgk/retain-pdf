@@ -278,3 +278,13 @@ test('a conversation is kept in chats/ as a page: there again once the page is o
 	await expect(pane(page).locator('.ai-empty')).toBeVisible();
 	expect(existsSync(folder)).toBe(false);
 });
+
+test('a turn over with nothing said (only thought) is said so; 接着说 asks for what it concluded', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '只想不说');
+	const notice = pane(page).locator('.ai-notice');
+	await expect(notice).toContainText('停下了，但没有说结论');
+	await notice.getByRole('button', { name: '接着说' }).click();
+	await expect(pane(page).locator('.ai-user .ai-bubble').last()).toHaveText('接着说：把你刚才的结论告诉我。');
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('结论是这样的。');
+});

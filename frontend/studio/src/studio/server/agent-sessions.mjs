@@ -463,9 +463,14 @@ class AgentSession {
 		const turn = this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: told }] });
 		void turn.then(
 			(done) => {
+				const turn = this.items.slice(this.items.findLastIndex((item) => item.kind === 'user') + 1);
 				if (done.stopReason !== 'end_turn') this.#add({ kind: 'stop', id: randomUUID(), reason: done.stopReason });
 				// A turn over with nothing said or done: its service refused it (pi-acp says no more than that).
-				else if (this.items.at(-1)?.kind === 'user') this.#add({ kind: 'error', id: randomUUID(), message: `${this.agent.name} 没有回答：可能是 API key 不对、模型用不了，或者连不上网络` });
+				else if (!turn.length) this.#add({ kind: 'error', id: randomUUID(), message: `${this.agent.name} 没有回答：可能是 API key 不对、模型用不了，或者连不上网络` });
+				// Over after thinking or running tools, nothing said: some models end so (all their output thinking).
+				else if (!turn.some((item) => item.kind === 'message' && item.text.trim())) {
+					this.#add({ kind: 'notice', id: randomUUID(), severity: 'warning', title: `${this.agent.name} 停下了，但没有说结论`, description: '模型有时想完或做完就结束了这一轮。', resume: true });
+				}
 				if (this.state === 'running') this.#setState('idle');
 			},
 			(error) => {
