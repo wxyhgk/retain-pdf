@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { PanelModels } from './panel-models.mjs';
+import { PanelModels, PiModels } from './panel-models.mjs';
 
 async function settings(t, options) {
 	const folder = await mkdtemp(join(tmpdir(), 'panel-models-'));
@@ -70,4 +70,25 @@ test('another address must be one; a service tried with a word says what it answ
 	assert.equal(asked[0].init.headers.authorization, 'Bearer k');
 	assert.equal(JSON.parse(asked[0].init.body).model, 'm1');
 	await assert.rejects(models.check(), /回答 401：invalid api key/u);
+});
+
+test('pi: its own setting first; a service of its catalog given by the key pi reads, kept apart from Claude Code’s', async (t) => {
+	const { file, models } = await settings(t);
+	const pi = new PiModels(file, '/project/node_modules/.bin');
+	assert.equal((await pi.shown()).chosen, 'pi-own');
+	assert.deepEqual(await pi.env(), { PI_ACP_PI_COMMAND: '/project/node_modules/.bin/pi', PI_OFFLINE: '1' });
+	assert.equal(await pi.service(), null);
+	await assert.rejects(pi.check(), /pi 自己的设置/u);
+
+	const shown = await pi.set({ provider: 'moonshotai-cn', apiKey: 'sk-kimi' });
+	assert.equal(shown.providers.find((entry) => entry.id === 'moonshotai-cn').hasKey, true);
+	assert.equal(JSON.stringify(shown).includes('sk-kimi'), false);
+	assert.deepEqual(await pi.env(), { PI_ACP_PI_COMMAND: '/project/node_modules/.bin/pi', PI_OFFLINE: '1', MOONSHOT_API_KEY: 'sk-kimi' });
+	assert.deepEqual(await pi.service(), { name: 'Kimi（月之暗面，国内）', provider: 'moonshotai-cn' });
+	await pi.set({ provider: 'deepseek' });
+	await assert.rejects(pi.env(), /还没有填 pi 用的 DeepSeek 的 API key/u);
+	// Claude Code's choice is its own.
+	await models.set({ provider: 'deepseek', apiKey: 'sk-claude' });
+	assert.equal((await pi.shown()).chosen, 'deepseek');
+	assert.equal((await models.env()).ANTHROPIC_API_KEY, 'sk-claude');
 });

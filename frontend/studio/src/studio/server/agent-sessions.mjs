@@ -48,9 +48,10 @@ export class AgentSessions {
 
 	/**
 	 * Starts a conversation with `agent` (its ACP command) in `cwd`; resolves once its adapter has a session.
-	 * `models`: the service's models Claude Code is told to use for its tiers (panel-models.mjs), shown by their names
-	 * in place of Claude's.
-	 * @param {{ agent: { id: string, name: string, acp: string }, cwd: string, slug?: string | null, env?: Record<string, string>, models?: { name: string, main: string, fast: string } | null }} options
+	 * `models`: the service it was started for (panel-models.mjs), whose models are shown: Claude Code's tiers by the
+	 * names of the models they stand for (`main`, `fast`), or pi's models of one service (`provider`), the first of
+	 * them chosen if another was.
+	 * @param {{ agent: { id: string, name: string, acp: string }, cwd: string, slug?: string | null, env?: Record<string, string>, models?: { name: string, main?: string, fast?: string, provider?: string } | null }} options
 	 */
 	async start({ agent, cwd, slug = null, env = {}, models = null }) {
 		// As the agent sees it (no link in it: /private/var… on a Mac), so the paths it names are shown under it.
@@ -59,6 +60,7 @@ export class AgentSessions {
 		this.#forgetOld();
 		const path = `${this.binFolder}${delimiter}${env.PATH ?? (await this.#loginPath())}`;
 		await session.open(commandWords(agent.acp), { ...this.env, ...env, PATH: path });
+		if (models?.provider) await session.useService(models.provider);
 		return session;
 	}
 
@@ -123,6 +125,8 @@ class AgentSession {
 	#connection = null;
 	#acpId = null;
 	#stderr = '';
+	/** Words the agent sends unasked when a session begins, left out of the conversation. */
+	#prelude = null;
 	#forget = () => {};
 
 	constructor({ agent, cwd, slug, models = null }) {
@@ -143,9 +147,10 @@ class AgentSession {
 	 */
 	#shownOptions() {
 		if (!this.models) return this.configOptions;
-		const { main, fast } = this.models;
+		const { main, fast, provider } = this.models;
 		return this.configOptions.map((option) => {
 			if (option.category !== 'model' || option.type !== 'select') return option;
+			if (provider) return { ...option, options: modelChoices(option).filter((choice) => choice.value.startsWith(`${provider}/`)) };
 			const options = [{ value: 'default', name: main }, ...(fast && fast !== main ? [{ value: 'haiku', name: `${fast}（快）` }] : [])];
 			return { ...option, options, currentValue: option.currentValue === 'haiku' && options.length > 1 ? 'haiku' : 'default' };
 		});
@@ -186,6 +191,8 @@ class AgentSession {
 			// An adapter that exits before it answers (not installed, not logged in) says so on stderr.
 			const made = await Promise.race([opening, exited.then((error) => Promise.reject(error ?? new Error('提前退出了')))]);
 			this.#acpId = made.sessionId;
+			// What pi-acp says of pi when a session begins (its version, skills, extensions): not an answer.
+			this.#prelude = made._meta?.piAcp?.startupInfo ?? null;
 			this.configOptions = made.configOptions ?? [];
 			this.modes = made.modes ?? null;
 			this.#setState('idle');
@@ -195,6 +202,14 @@ class AgentSession {
 			this.#setState('failed');
 			throw Object.assign(new Error(`${this.agent.name} 没能启动：${this.error}`), { statusCode: 502 });
 		}
+	}
+
+	/** A model of the service `provider` (pi's `provider/model`), if the one chosen is another's. */
+	async useService(provider) {
+		const option = this.configOptions.find((entry) => entry.category === 'model' && entry.type === 'select');
+		if (!option || String(option.currentValue).startsWith(`${provider}/`)) return;
+		const first = modelChoices(option).find((choice) => choice.value.startsWith(`${provider}/`));
+		if (first) await this.configure(option.id, first.value).catch(() => {});
 	}
 
 	/** Tells the agent `text`; resolves when it has begun, the turn going on by itself. */
@@ -207,6 +222,8 @@ class AgentSession {
 		void turn.then(
 			(done) => {
 				if (done.stopReason !== 'end_turn') this.#add({ kind: 'stop', id: randomUUID(), reason: done.stopReason });
+				// A turn over with nothing said or done: its service refused it (pi-acp says no more than that).
+				else if (this.items.at(-1)?.kind === 'user') this.#add({ kind: 'error', id: randomUUID(), message: `${this.agent.name} 没有回答：可能是 API key 不对、模型用不了，或者连不上网络` });
 				if (this.state === 'running') this.#setState('idle');
 			},
 			(error) => {
@@ -308,6 +325,10 @@ class AgentSession {
 	#words(kind, update) {
 		const text = update.content?.type === 'text' ? update.content.text : '';
 		if (!text) return;
+		if (kind === 'message' && this.#prelude && text === this.#prelude) {
+			this.#prelude = null;
+			return;
+		}
 		const last = this.items.at(-1);
 		if (last?.kind === kind && (!update.messageId || last.messageId === update.messageId)) {
 			last.text += text;
@@ -383,4 +404,9 @@ class AgentSession {
 			}
 		}
 	}
+}
+
+/** A select option's choices, its groups flattened. */
+function modelChoices(option) {
+	return (option.options ?? []).flatMap((entry) => (Array.isArray(entry.options) ? entry.options : [entry]));
 }

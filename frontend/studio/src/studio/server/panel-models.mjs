@@ -206,3 +206,118 @@ export async function accountsLoggedIn(binFolder) {
 	const how = /ChatGPT/iu.test(codex.out) ? 'ChatGPT' : /API key/iu.test(codex.out) ? 'API key' : '';
 	return { claude: claudeStatus, codex: { loggedIn: codex.ok && /logged in/iu.test(codex.out) && !/not logged in/iu.test(codex.out), how, missing: Boolean(codex.missing) } };
 }
+
+/**
+ * pi's services (its own catalog of them and of their models, so nothing is typed but the key): which one the panel's
+ * pi uses, by the environment variable pi reads its key from. `pi-own`: as pi is set up on this machine (~/.pi).
+ */
+export const PI_PROVIDERS = Object.freeze([
+	{ id: 'pi-own', name: 'pi 自己的设置（~/.pi）', env: '', keyUrl: '' },
+	{ id: 'deepseek', name: 'DeepSeek', env: 'DEEPSEEK_API_KEY', keyUrl: 'https://platform.deepseek.com/api_keys' },
+	{ id: 'moonshotai-cn', name: 'Kimi（月之暗面，国内）', env: 'MOONSHOT_API_KEY', keyUrl: 'https://platform.moonshot.cn/console/api-keys' },
+	{ id: 'kimi-coding', name: 'Kimi Code 会员', env: 'KIMI_API_KEY', keyUrl: 'https://www.kimi.com/code' },
+	{ id: 'zai-coding-cn', name: '智谱 GLM Coding（国内）', env: 'ZAI_CODING_CN_API_KEY', keyUrl: 'https://open.bigmodel.cn/usercenter/apikeys' },
+	{ id: 'minimax-cn', name: 'MiniMax（国内）', env: 'MINIMAX_CN_API_KEY', keyUrl: 'https://platform.minimaxi.com/user-center/basic-information/interface-key' },
+	{ id: 'qwen-token-plan-cn', name: '通义千问 Token Plan（国内）', env: 'QWEN_TOKEN_PLAN_CN_API_KEY', keyUrl: 'https://bailian.console.aliyun.com/' },
+	{ id: 'xiaomi-token-plan-cn', name: '小米 MiMo Token Plan（国内）', env: 'XIAOMI_TOKEN_PLAN_CN_API_KEY', keyUrl: '' },
+	{ id: 'openrouter', name: 'OpenRouter', env: 'OPENROUTER_API_KEY', keyUrl: 'https://openrouter.ai/keys' },
+	{ id: 'openai', name: 'OpenAI', env: 'OPENAI_API_KEY', keyUrl: 'https://platform.openai.com/api-keys' },
+	{ id: 'google', name: 'Google Gemini', env: 'GEMINI_API_KEY', keyUrl: 'https://aistudio.google.com/apikey' },
+	{ id: 'anthropic', name: 'Anthropic', env: 'ANTHROPIC_API_KEY', keyUrl: 'https://platform.claude.com/settings/keys' },
+	{ id: 'xai', name: 'xAI Grok', env: 'XAI_API_KEY', keyUrl: 'https://console.x.ai/' },
+]);
+
+/**
+ * pi in the AI panel (pi-acp): the service and its key, kept as `panelModels.pi` with the rest; what pi is started
+ * with; its catalog of the service's models; a word asked to try it. pi is the project's own (node_modules/.bin).
+ */
+export class PiModels {
+	/** @param {string} settingsFile @param {string} binFolder the project's node_modules/.bin */
+	constructor(settingsFile, binFolder) {
+		this.settingsFile = settingsFile;
+		this.binFolder = binFolder;
+	}
+
+	async #saved() {
+		const saved = (await readSettings(this.settingsFile)).panelModels?.pi;
+		return saved && typeof saved === 'object' ? saved : {};
+	}
+
+	async chosen() {
+		const saved = await this.#saved();
+		const provider = PI_PROVIDERS.find((entry) => entry.id === saved.provider) ?? PI_PROVIDERS[0];
+		return { provider, apiKey: text(saved.keys?.[provider.id]) };
+	}
+
+	async shown() {
+		const saved = await this.#saved();
+		const { provider } = await this.chosen();
+		return { chosen: provider.id, providers: PI_PROVIDERS.map((entry) => ({ ...entry, hasKey: Boolean(text(saved.keys?.[entry.id])) })) };
+	}
+
+	/** Chooses a service; `apiKey: ''` forgets its key, left out keeps it. */
+	async set(change) {
+		const provider = PI_PROVIDERS.find((entry) => entry.id === change?.provider);
+		if (!provider) throw fail('没有这个模型来源');
+		if (change.apiKey !== undefined && typeof change.apiKey !== 'string') throw fail('apiKey 要是文字');
+		await updateSettings(this.settingsFile, (settings) => {
+			const panel = settings.panelModels && typeof settings.panelModels === 'object' ? settings.panelModels : {};
+			const pi = panel.pi && typeof panel.pi === 'object' ? panel.pi : {};
+			const keys = { ...(pi.keys ?? {}) };
+			if (change.apiKey !== undefined) {
+				if (change.apiKey.trim()) keys[provider.id] = change.apiKey.trim();
+				else delete keys[provider.id];
+			}
+			return { ...settings, panelModels: { ...panel, pi: { provider: provider.id, keys } } };
+		});
+		return this.shown();
+	}
+
+	/** What pi is started with: the project's pi, no network at its start, the key where pi looks for it. */
+	async env() {
+		const { provider, apiKey } = await this.chosen();
+		const base = { PI_ACP_PI_COMMAND: join(this.binFolder, 'pi'), PI_OFFLINE: '1' };
+		if (!provider.env) return base;
+		if (!apiKey) throw fail(`还没有填 pi 用的 ${provider.name} 的 API key：在 AI 面板的 ⚙ 里填`, 409);
+		return { ...base, [provider.env]: apiKey };
+	}
+
+	/** The service pi is to use (its models are those shown), or null: pi's own setting. */
+	async service() {
+		const { provider } = await this.chosen();
+		return provider.env ? { name: provider.name, provider: provider.id } : null;
+	}
+
+	/** Runs the project's pi with the service's key: its output, or why it failed. */
+	async #pi(args) {
+		const env = { ...process.env, ...(await this.env()) };
+		const program = await realpath(join(this.binFolder, 'pi'));
+		return new Promise((resolve, reject) => {
+			const child = execFile(process.execPath, [program, '--offline', ...args], { env, timeout: 60_000, maxBuffer: 4 * 1024 * 1024 }, (error, stdout, stderr) => {
+				if (error) reject(fail(`${String(stderr || stdout || (error.killed ? '一分钟没有回答' : error.message)).trim().split('\n').slice(-3).join(' ').slice(0, 400)}`, 502));
+				else resolve(String(stdout));
+			});
+			// pi takes what comes on its input as part of what it is asked: nothing comes.
+			child.stdin?.end();
+		});
+	}
+
+	/** The service's models in pi's catalog (`provider/id`), the first the one it suggests. */
+	async models() {
+		const { provider } = await this.chosen();
+		if (!provider.env) return [];
+		const listed = await this.#pi(['--list-models', provider.id]);
+		return listed.split('\n').slice(1).map((line) => line.trim().split(/\s+/u)).filter(([id]) => id === provider.id).map(([id, model]) => `${id}/${model}`);
+	}
+
+	/** The service asked a word with its first model: what it answered. */
+	async check() {
+		const { provider } = await this.chosen();
+		if (!provider.env) throw fail('用 pi 自己的设置时不用在这里检查');
+		const models = await this.models();
+		if (!models.length) throw fail(`pi 的目录里没有 ${provider.name} 的模型`, 502);
+		const answered = (await this.#pi(['-p', '--no-session', '--no-tools', '--no-extensions', '--no-skills', '--no-context-files', '--model', models[0], '说「好」，只说这一个字'])).trim();
+		if (!answered) throw fail(`${provider.name} 没有回答：可能是 key 不对，或者连不上`, 502);
+		return { ok: true, model: models[0], answered, models };
+	}
+}

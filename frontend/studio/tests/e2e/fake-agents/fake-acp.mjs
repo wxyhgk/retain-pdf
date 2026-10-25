@@ -8,11 +8,16 @@ import { createRequire } from 'node:module';
 const require = createRequire(new URL('../../../package.json', import.meta.url));
 const { agent, ndJsonStream, PROTOCOL_VERSION } = await import(require.resolve('@agentclientprotocol/sdk'));
 
+// As pi (pi-acp): models of several services, `service/model`.
+const asPi = Boolean(process.env.PI_ACP_PI_COMMAND);
+const MODELS = asPi
+	? [{ value: 'other/one', name: 'other/one' }, { value: 'deepseek/deepseek-flash', name: 'deepseek/deepseek-flash' }, { value: 'deepseek/deepseek-v4-pro', name: 'deepseek/deepseek-v4-pro' }]
+	: [{ value: 'small', name: 'Small' }, { value: 'large', name: 'Large' }];
 const options = () => [
 	{ id: 'mode', name: 'Mode', category: 'mode', type: 'select', currentValue: state.mode, options: [{ value: 'default', name: 'Manual' }, { value: 'plan', name: 'Plan' }] },
-	{ id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: state.model, options: [{ value: 'small', name: 'Small' }, { value: 'large', name: 'Large' }] },
+	{ id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: state.model, options: MODELS },
 ];
-const state = { mode: 'default', model: 'small', turns: 0 };
+const state = { mode: 'default', model: MODELS[0].value, turns: 0 };
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const app = agent({ name: 'fake' })
@@ -41,7 +46,7 @@ const app = agent({ name: 'fake' })
 		if (said.includes('退出')) process.exit(3);
 		// The service it was started for (AI 面板 ⚙): what Claude Code would be told.
 		if (said.includes('环境')) {
-			await words('agent_message_chunk', `地址 ${process.env.ANTHROPIC_BASE_URL ?? '无'} 模型 ${process.env.ANTHROPIC_MODEL ?? '无'} key ${process.env.ANTHROPIC_AUTH_TOKEN ? '有' : '无'}`);
+			await words('agent_message_chunk', asPi ? `pi 模型 ${state.model} DeepSeek key ${process.env.DEEPSEEK_API_KEY ?? '无'}` : `地址 ${process.env.ANTHROPIC_BASE_URL ?? '无'} 模型 ${process.env.ANTHROPIC_MODEL ?? '无'} key ${process.env.ANTHROPIC_AUTH_TOKEN ? '有' : '无'}`);
 			return { stopReason: 'end_turn' };
 		}
 		if (said.includes('慢')) {

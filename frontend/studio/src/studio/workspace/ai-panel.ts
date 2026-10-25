@@ -147,15 +147,15 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	composer.append(status, input, bar);
 	const sheet = createModelsSheet({
 		runInTerminal: (command) => host.runInTerminal(command),
-		saved(name) {
+		saved(agent, name) {
 			showSheet(false);
-			// What was saved is for conversations begun from now on: one begun for Claude Code, with it.
-			if (agentSelect.value === 'claude') {
+			// What was saved is for conversations begun from now on: one begun with that AI, with it.
+			if (agentSelect.value === agent) {
 				const unused = conversation && !items.length ? conversation : null;
 				void begin();
 				if (unused) void closeConversation(unused.id).catch(() => {});
 			}
-			host.toast(name ? `AI 面板的 Claude Code 改用「${name}」` : '已保存');
+			host.toast(name ? `AI 面板的 ${agent === 'pi' ? 'pi' : 'Claude Code'} 改用「${name}」` : '已保存');
 		},
 	});
 	pane.replaceChildren(toolbar, sheet.element, transcript, composer);
@@ -445,9 +445,14 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 			case 'stop':
 				node = element('div', 'ai-stop', STOP_NAMES[item.reason] ?? `停了（${item.reason}）`);
 				break;
-			case 'error':
+			case 'error': {
 				node = element('div', 'ai-error', item.message);
+				const fix = element('button', 'ai-status-fix', '模型和账号');
+				fix.type = 'button';
+				fix.addEventListener('click', () => showSheet(true));
+				node.append(' ', fix);
 				break;
+			}
 		}
 		node.dataset.item = item.id;
 		drawn.set(item.id, node);

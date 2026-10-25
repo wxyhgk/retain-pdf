@@ -1,10 +1,10 @@
-import { checkPanelModels, panelAccounts, panelModels, savePanelModels, type PanelModelsShown, type PanelProvider } from '../api/client';
+import { checkPanelModels, checkPiModels, panelAccounts, panelModels, piModels, savePanelModels, savePiModels, type PanelModelsShown, type PanelProvider, type PiProvider } from '../api/client';
 
 export type ModelsSheetHost = {
 	/** Runs a command in the 终端 tab (an account's login, which asks in the browser and the terminal). */
 	runInTerminal(command: string): void;
-	/** The service was saved: a conversation begun from now on uses it. */
-	saved(name: string): void;
+	/** A service was saved for `agent` (claude, pi): a conversation begun with it from now on uses it. */
+	saved(agent: string, name: string): void;
 };
 
 /** The logins, with the project's own Claude Code and Codex (their commands as the dependencies install them). */
@@ -28,8 +28,9 @@ function field(label: string, input: HTMLInputElement, hint?: HTMLElement): HTML
 /**
  * 模型和账号, in the AI panel: which models Claude Code talks to (the Claude account, or a service that speaks
  * Anthropic's API: Anthropic with a key, DeepSeek, Kimi, 智谱, 通义千问, MiniMax, another address), the key and the
- * models, tried with a word; and whether the Claude and Codex accounts are logged in, with a login for each. The key
- * goes to this machine's settings only; the page is never given it back.
+ * models, tried with a word; which service pi uses (one of its catalog, a key: its models are listed by pi); and
+ * whether the Claude and Codex accounts are logged in, with a login for each. Keys go to this machine's settings
+ * only; the page is never given them back.
  */
 export function createModelsSheet(host: ModelsSheetHost) {
 	const root = element('section', 'ai-sheet');
@@ -73,9 +74,84 @@ export function createModelsSheet(host: ModelsSheetHost) {
 
 	const codexTitle = element('h4', '', 'Codex');
 	const codexAccount = element('div', 'ai-sheet-account');
-	root.append(head, claudeTitle, provider, account, keyed, actions, result, codexTitle, codexAccount);
+
+	// pi: a service of its catalog and a key; its models are then those of the service.
+	const piTitle = element('h4', '', 'pi 用哪家的模型');
+	const piProvider = element('select', 'ai-sheet-provider');
+	piProvider.setAttribute('aria-label', 'pi 的模型来源');
+	const piKeyed = element('div', 'ai-sheet-keyed');
+	const piKey = element('input');
+	piKey.type = 'password';
+	piKey.autocomplete = 'off';
+	piKey.spellcheck = false;
+	const piKeyLink = element('a', 'ai-sheet-link', '去哪里拿 key');
+	piKeyLink.target = '_blank';
+	piKeyLink.rel = 'noopener noreferrer';
+	const piNote = element('p', 'ai-sheet-note', 'pi 自带各家的模型列表，只要填 key；「检查」会列出这家的模型。');
+	piKeyed.append(field('API key', piKey, piKeyLink), piNote);
+	const piActions = element('div', 'ai-sheet-actions');
+	const piCheck = element('button', '', '检查');
+	piCheck.type = 'button';
+	const piSave = element('button', 'is-primary', '保存');
+	piSave.type = 'button';
+	piActions.append(piCheck, piSave);
+	const piResult = element('p', 'ai-sheet-result');
+	piResult.setAttribute('role', 'status');
+	root.append(head, claudeTitle, provider, account, keyed, actions, result, piTitle, piProvider, piKeyed, piActions, piResult, codexTitle, codexAccount);
 
 	let shown: PanelModelsShown | null = null;
+	let piShown: { chosen: string; providers: PiProvider[] } | null = null;
+	const piCurrent = (): PiProvider | undefined => piShown?.providers.find((entry) => entry.id === piProvider.value);
+
+	function piSay(text: string, tone: '' | 'ok' | 'error' = ''): void {
+		piResult.textContent = text;
+		piResult.dataset.tone = tone;
+	}
+
+	function showPiService(): void {
+		const entry = piCurrent();
+		const own = !entry?.env;
+		piKeyed.hidden = own;
+		piCheck.hidden = own;
+		piKey.value = '';
+		piKey.placeholder = entry?.hasKey ? '已保存（不改就留空）' : `粘贴 API key（pi 从 ${entry?.env ?? ''} 读）`;
+		piKeyLink.hidden = !entry?.keyUrl;
+		piKeyLink.href = entry?.keyUrl || '#';
+		piSay(own ? '用 pi 在这台电脑上自己的设置和登录（~/.pi），模型从输入框下面选。' : '');
+	}
+
+	async function piStore(): Promise<boolean> {
+		const entry = piCurrent();
+		if (!entry) return false;
+		try {
+			piShown = await savePiModels({ provider: entry.id, ...(piKey.value.trim() ? { apiKey: piKey.value.trim() } : {}) });
+			showPiService();
+			return true;
+		} catch (error) {
+			piSay(error instanceof Error ? error.message : '没能保存', 'error');
+			return false;
+		}
+	}
+
+	piProvider.addEventListener('change', showPiService);
+	piSave.addEventListener('click', async () => {
+		if (!(await piStore())) return;
+		piSay('已保存；新开的 pi 对话会用它。', 'ok');
+		host.saved('pi', piCurrent()?.name ?? '');
+	});
+	piCheck.addEventListener('click', async () => {
+		if (!(await piStore())) return;
+		piSay('正在问一句…');
+		piCheck.disabled = true;
+		try {
+			const answer = await checkPiModels();
+			piSay(`能用：${answer.model} 回答了「${answer.answered.slice(0, 40)}」。这家的模型：${answer.models.map((model) => model.split('/').slice(1).join('/')).join('、')}`, 'ok');
+		} catch (error) {
+			piSay(error instanceof Error ? error.message : '不能用', 'error');
+		} finally {
+			piCheck.disabled = false;
+		}
+	});
 
 	const current = (): PanelProvider | undefined => shown?.providers.find((entry) => entry.id === provider.value);
 
@@ -162,7 +238,7 @@ export function createModelsSheet(host: ModelsSheetHost) {
 		if (!(await store())) return;
 		const entry = current();
 		say('已保存；新开的对话会用它。', 'ok');
-		host.saved(entry?.name ?? '');
+		host.saved('claude', entry?.name ?? '');
 	});
 	check.addEventListener('click', async () => {
 		if (!(await store())) return;
@@ -194,6 +270,14 @@ export function createModelsSheet(host: ModelsSheetHost) {
 				showService();
 			} catch (error) {
 				say(error instanceof Error ? error.message : '读不到设置', 'error');
+			}
+			try {
+				piShown = await piModels();
+				piProvider.replaceChildren(...piShown.providers.map((entry) => new Option(entry.name, entry.id)));
+				piProvider.value = piShown.chosen;
+				showPiService();
+			} catch (error) {
+				piSay(error instanceof Error ? error.message : '读不到设置', 'error');
 			}
 			void showAccounts();
 		},

@@ -366,6 +366,22 @@ export function checkPanelModels(): Promise<{ ok: true; model: string; answered:
 	return request('/api/studio/panel-models/check', jsonOptions('POST', {}));
 }
 
+/** A service pi can use (its own catalog of them), by the environment variable it reads the key from. */
+export type PiProvider = { id: string; name: string; env: string; keyUrl: string; hasKey: boolean };
+
+export function piModels(): Promise<{ chosen: string; providers: PiProvider[] }> {
+	return request('/api/studio/panel-models/pi');
+}
+
+export function savePiModels(change: { provider: string; apiKey?: string }): Promise<{ chosen: string; providers: PiProvider[] }> {
+	return request('/api/studio/panel-models/pi', jsonOptions('PUT', change));
+}
+
+/** pi asks the service a word with its first model: what it answered, and the service's models in pi's catalog. */
+export function checkPiModels(): Promise<{ ok: true; model: string; answered: string; models: string[] }> {
+	return request('/api/studio/panel-models/pi/check', jsonOptions('POST', {}));
+}
+
 export function panelAccounts(): Promise<PanelAccounts> {
 	return request('/api/studio/panel-models/accounts');
 }

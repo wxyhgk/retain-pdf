@@ -1,4 +1,4 @@
-import { accountsLoggedIn } from '../panel-models.mjs';
+import { accountsLoggedIn, PiModels } from '../panel-models.mjs';
 import { refuse, reply, sendEvents } from '../api.mjs';
 
 /**
@@ -10,8 +10,15 @@ import { refuse, reply, sendEvents } from '../api.mjs';
  */
 export function conversationRoutes(api, { projectRoot, conversations, agentSettings, panelModels, manager, drive, programEnv, articleFolder }) {
 	const agents = async () => (await agentSettings.config()).list.filter((agent) => agent.acp);
-	/** Claude Code, which talks to the service chosen in the panel (panel-models.mjs); the others to their own. */
+	/** Claude Code and pi talk to the services chosen in the panel (panel-models.mjs); Codex to its own. */
 	const isClaude = (agent) => /(^|\/)claude-agent-acp(\s|$)/u.test(agent.acp);
+	const isPi = (agent) => /(^|\/)pi-acp(\s|$)/u.test(agent.acp);
+	const piModels = new PiModels(panelModels.settingsFile, conversations.binFolder);
+	const serviceOf = async (agent) => {
+		if (isClaude(agent)) return { env: await panelModels.env(), models: await panelModels.models() };
+		if (isPi(agent)) return { env: await piModels.env(), models: await piModels.service() };
+		return { env: {}, models: null };
+	};
 
 	api.get('/conversations', async () => ({
 		agents: (await agents()).map(({ id, name }) => ({ id, name })),
@@ -24,7 +31,7 @@ export function conversationRoutes(api, { projectRoot, conversations, agentSetti
 		if (!agent) throw refuse(404, `没有能在面板里用的 AI「${wanted}」`);
 		const article = typeof slug === 'string' && slug ? slug : null;
 		if (article) await manager.locate(article, '');
-		const service = isClaude(agent) ? { env: await panelModels.env(), models: await panelModels.models() } : { env: {}, models: null };
+		const service = await serviceOf(agent);
 		const session = await conversations.start({ agent, cwd: article ? articleFolder(article) : projectRoot, slug: article, env: { ...programEnv(article, await drive.root()), ...service.env }, models: service.models });
 		return reply(201, session.summary());
 	});
@@ -55,6 +62,10 @@ export function conversationRoutes(api, { projectRoot, conversations, agentSetti
 	api.put('/panel-models', async ({ json }) => panelModels.set(await json()));
 	api.post('/panel-models/check', () => panelModels.check());
 	api.get('/panel-models/accounts', () => accountsLoggedIn(conversations.binFolder));
+	// pi's: the service and its key; tried with a word, its models listed.
+	api.get('/panel-models/pi', () => piModels.shown());
+	api.put('/panel-models/pi', async ({ json }) => piModels.set(await json()));
+	api.post('/panel-models/pi/check', () => piModels.check());
 
 	api.post('/conversations/:id/close', ({ params }) => {
 		conversations.close(params.id);

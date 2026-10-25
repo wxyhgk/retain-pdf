@@ -1,0 +1,3 @@
+#!/bin/sh
+# A stand-in for pi's ACP adapter (the AI panel): fake-acp.mjs, as pi.
+exec node "$(dirname "$0")/fake-acp.mjs" "$@"

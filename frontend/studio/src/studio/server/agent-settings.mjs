@@ -14,7 +14,8 @@ import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
  * - `run`: once, by itself, to do what a line of an article asks (Alt+Enter), `{prompt}` standing for what it is told;
  * - `resume`: the same, going on from the last talk in the article's folder (where each article's work goes on);
  * - `acp`: its adapter for the Agent Client Protocol, which the AI panel talks to it through (agent-sessions.mjs).
- *   Claude Code's and Codex's are in the project's dependencies; an agent without one is not in the panel.
+ *   Claude Code's, Codex's and pi's (with pi itself) are in the project's dependencies; an agent without one is not
+ *   in the panel.
  *
  * Presets for Claude Code, Codex and pi; the author changes them or adds others (omp…) in AI 设置, kept in the
  * Studio's settings (out of git) as `agents: { list, default }`. Their `run` keeps them to the article's folder
@@ -27,7 +28,7 @@ const CLAUDE_RUN = `claude -p --permission-mode dontAsk --allowedTools "Read Edi
 export const AGENT_PRESETS = Object.freeze([
 	{ id: 'claude', name: 'Claude', launch: 'claude', run: `${CLAUDE_RUN} {prompt}`, resume: `${CLAUDE_RUN} --continue {prompt}`, acp: 'claude-agent-acp', install: 'npm install -g @anthropic-ai/claude-code' },
 	{ id: 'codex', name: 'Codex', launch: 'codex', run: 'codex exec -c sandbox_mode="workspace-write" {prompt}', resume: 'codex exec resume --last -c sandbox_mode="workspace-write" {prompt}', acp: 'codex-acp', install: 'npm install -g @openai/codex' },
-	{ id: 'pi', name: 'pi', launch: 'pi', run: 'pi -p -a {prompt}', resume: 'pi -p -a --continue {prompt}', install: '见 https://pi.dev' },
+	{ id: 'pi', name: 'pi', launch: 'pi', run: 'pi -p -a {prompt}', resume: 'pi -p -a --continue {prompt}', acp: 'pi-acp', install: '见 https://pi.dev' },
 ]);
 
 /** How long what was found installed is taken as still so, in ms. */

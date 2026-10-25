@@ -285,11 +285,12 @@ title: CO₂ 的优化和频率
 
 右边的「AI」面板像图形界面的 Claude Code：说一件事，AI 自己读文件、运行命令、改文件，面板上一步一步显示它在做什么。背后就是你本机的 Claude Code 或 Codex（用它们自己的登录和设置），Studio 通过 Agent Client Protocol（ACP）和它们说话，转接程序 `claude-agent-acp`、`codex-acp` 已经装在项目依赖里。
 
-- **模型和账号**（面板右上角 ⚙）：Claude Code 和 Codex 程序都随项目依赖装好了，用的人只要有账号或 API key：
+- **模型和账号**（面板右上角 ⚙）：Claude Code、Codex、pi 都随项目依赖装好了，用的人只要有账号或 API key：
   - **Claude Code 用哪家的模型**：
     - Claude 账号（订阅）：点「登录 Claude 账号」，在终端里按提示登录（会打开浏览器）。
     - 或者填一个兼容 Anthropic 接口的 API key：Anthropic、DeepSeek、Kimi、智谱、通义千问、MiniMax，或「其他」填接口地址。主模型、快速模型预先填了各家推荐的名字，可以改（各家常改名字，以官网为准）；「检查」用一句话试一下能不能用。
     - 换了以后新对话才用新的设置；输入框下面的模型就是这家的模型。
+  - **pi 用哪家的模型**：pi 自带各家的接口和模型列表（DeepSeek、Kimi、智谱 GLM Coding、MiniMax、通义千问 Token Plan、小米 MiMo、OpenRouter、OpenAI、Gemini、Anthropic、xAI），选一家、填 key 就行，模型从输入框下面选（只列这一家的）；「检查」用一句话试一下，并列出这家的模型。也可以选「pi 自己的设置」，用这台电脑上 pi 的登录和设置（~/.pi）。pi 不问就运行命令、改文件。
   - **Codex**：用 ChatGPT 账号登录。
   - 两边都显示是否已登录。API key 只存在这台电脑的 `.studio-settings.json` 里（不进 git），页面上不会再显示出来。
 - **在哪里做**：对话开始时打开的是哪篇文章，它就在那篇的文件夹里做（标题栏写着「在这篇文章里」），会读 `blog/AGENTS.md` 和技能；没打开文章时在仓库根目录。「＋」开一个新对话，「≡」回到之前的对话（Studio 重启前都在）。

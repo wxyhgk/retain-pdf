@@ -136,14 +136,14 @@ test('⚙ 模型和账号: another service, tried with a word and saved, is the 
 		const sheet = pane(page).locator('.ai-sheet');
 		await expect(sheet).toBeVisible();
 		await expect(pane(page).locator('.ai-input')).toBeHidden();
-		await sheet.locator('.ai-sheet-provider').selectOption('custom');
+		await sheet.getByLabel('模型来源', { exact: true }).selectOption('custom');
 		await sheet.getByLabel('接口地址').fill(address);
-		await sheet.getByLabel('API key').fill('sk-test');
+		await sheet.getByLabel('API key').first().fill('sk-test');
 		await sheet.getByLabel('主模型').fill('fake-main');
-		await sheet.getByRole('button', { name: '检查' }).click();
-		await expect(sheet.locator('.ai-sheet-result')).toHaveText('能用：fake-main 回答了「好」');
+		await sheet.getByRole('button', { name: '检查' }).first().click();
+		await expect(sheet.locator('.ai-sheet-result').first()).toHaveText('能用：fake-main 回答了「好」');
 		expect(asked).toEqual(['/v1/messages Bearer sk-test']);
-		await sheet.getByRole('button', { name: '保存' }).click();
+		await sheet.getByRole('button', { name: '保存' }).first().click();
 		// Back to the conversation, a new one, on that service: its models by their names.
 		await expect(sheet).toBeHidden();
 		await expect(pane(page).locator('.ai-where')).toHaveText('在这篇文章里 · 其他（兼容 Anthropic 接口）');
@@ -152,10 +152,26 @@ test('⚙ 模型和账号: another service, tried with a word and saved, is the 
 		await expect(pane(page).locator('.ai-message')).toHaveText(`地址 ${address} 模型 fake-main key 有`);
 		// The key stays on the server.
 		await pane(page).getByRole('button', { name: '模型和账号' }).click();
-		await expect(sheet.getByLabel('API key')).toHaveValue('');
-		await expect(sheet.getByLabel('API key')).toHaveAttribute('placeholder', '已保存（不改就留空）');
+		await expect(sheet.getByLabel('API key').first()).toHaveValue('');
+		await expect(sheet.getByLabel('API key').first()).toHaveAttribute('placeholder', '已保存（不改就留空）');
 		expect(await page.content()).not.toContain('sk-test');
 	} finally {
 		service.close();
 	}
+});
+
+test('pi: a service of its catalog and a key, saved; the next pi conversation has that key and only that service’s models', async ({ page }) => {
+	await openAi(page);
+	await pane(page).getByRole('button', { name: '模型和账号' }).click();
+	const sheet = pane(page).locator('.ai-sheet');
+	await sheet.getByLabel('pi 的模型来源').selectOption('deepseek');
+	await expect(sheet.getByLabel('API key').nth(1)).toHaveAttribute('placeholder', '粘贴 API key（pi 从 DEEPSEEK_API_KEY 读）');
+	await sheet.getByLabel('API key').nth(1).fill('sk-deepseek');
+	await sheet.locator('.ai-sheet-actions').nth(1).getByRole('button', { name: '保存' }).click();
+	await expect(sheet).toBeHidden();
+	await pane(page).locator('.ai-agent').selectOption('pi');
+	await expect(pane(page).locator('.ai-where')).toHaveText('在这篇文章里 · DeepSeek');
+	await expect(pane(page).locator('.ai-options select[aria-label="Model"] option')).toHaveText(['deepseek/deepseek-flash', 'deepseek/deepseek-v4-pro']);
+	await tell(page, '环境');
+	await expect(pane(page).locator('.ai-message')).toHaveText('pi 模型 deepseek/deepseek-flash DeepSeek key sk-deepseek');
 });
