@@ -62,7 +62,7 @@ export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => merge
 		if (!formulas.length) return;
 
 		const blocks = formulas.filter((formula) => formula.block);
-		const { equations, labels, duplicates } = numberEquations(blocks.map((formula) => formula.value));
+		const { equations, labels, duplicates, untagged } = numberEquations(blocks.map((formula) => formula.value));
 		blocks.forEach((formula, index) => Object.assign(formula, equations[index]));
 		// A display formula's innermost element has no place in the source; the nearest one that has, does.
 		const report = (message, formula, ruleId, cause) =>
@@ -74,6 +74,8 @@ export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => merge
 				source: 'rehype-katex-mhchem',
 			});
 		for (const { key, index } of duplicates) report(`公式标签 \\label{${key}} 用了不止一次，引用的是第一个`, blocks[index], 'duplicate-label');
+		// A label on a formula with no number is said where it is referred to (one never referred to does no harm).
+		const untaggedKeys = new Set(untagged.map(({ key }) => key));
 		// One per article: a \gdef in one formula holds in the ones after it, as in LaTeX.
 		const macros = macrosFor(file.data?.astro?.frontmatter?.macros);
 
@@ -82,7 +84,8 @@ export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => merge
 				? resolveReferences(formula.source, labels)
 				: prepareFormula(formula.value, labels);
 			for (const key of unresolvedReferences(formula.value, labels)) {
-				report(`找不到公式标签 ${key}：没有公式写 \\label{${key}}，这里显示为 (??)`, formula, 'missing-label');
+				if (untaggedKeys.has(key)) report(`公式标签 ${key} 所在的公式没有编号：公式不会自动编号，在它后面写 \\tag{编号} 才能引用；这里显示为 (??)`, formula, 'untagged-label');
+				else report(`找不到公式标签 ${key}：没有公式写 \\label{${key}}，这里显示为 (??)`, formula, 'missing-label');
 			}
 			const settings = { ...katexOptions, ...options, macros, displayMode: formula.displayMode };
 			let html;

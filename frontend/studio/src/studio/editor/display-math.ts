@@ -60,13 +60,6 @@ function paintError(host: HTMLElement, source: string, caret: number, view: Edit
 	host.append(message);
 }
 
-/** The number written into a formula (`\tag{3}` at its end), put back on what is written so far. */
-function keepNumber(numbered: string, typed: string): ((written: string) => string) | undefined {
-	const tag = /\\tag\*?\{[^{}]*\}\s*$/.exec(numbered)?.[0];
-	if (!tag || /\\tag/.test(typed)) return undefined;
-	return (written) => `${written} ${tag.trim()}`;
-}
-
 class DisplayMathView implements NodeView {
 	readonly dom: HTMLElement;
 	private node: ProseMirrorNode;
@@ -179,7 +172,6 @@ class DisplayMathView implements NodeView {
 			display: true,
 			labels: equationLabels(this.view.state),
 			lastGood: this.lastGood,
-			decorate: keepNumber(this.numbered, typed),
 		});
 		this.formula.classList.remove('is-empty', 'is-error');
 		this.formula.innerHTML = drawn.html;

@@ -23,7 +23,7 @@ async function render(markdown: string) {
 }
 
 test('a display formula that can be broken into lines has them drawn, hidden, after it; its number in both', async () => {
-	const { html, messages } = await render('$$\na = b + c = d + e = f\n$$\n\n$$\nE = mc^2\n$$\n');
+	const { html, messages } = await render('$$\na = b + c = d + e = f \\tag{1}\n$$\n\n$$\nE = mc^2 \\tag{2}\n$$\n');
 	assert.deepEqual(messages, []);
 	const displays = html.match(/<span class="katex-display[^"]*"[^>]*>/gu) ?? [];
 	assert.deepEqual(displays, ['<span class="katex-display">', '<span class="katex-display katex-broken" hidden>', '<span class="katex-display">']);

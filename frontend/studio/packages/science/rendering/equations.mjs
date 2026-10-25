@@ -1,11 +1,13 @@
 /**
- * Equation numbers, labels and references, the way LaTeX does them, for
- * KaTeX, which has none of it. Every display formula in an article gets the
- * next number, written into it as `\tag{n}`, unless it says `\notag` or
- * `\nonumber`, or gives its own `\tag{…}`. A numbered environment
- * (`align`, `gather`, `equation`, …) numbers each of its rows instead.
- * `\label{key}` names the number; `\eqref{key}` and `\ref{key}` anywhere in
- * the article show it, linked to the formula.
+ * Equation numbers, labels and references, for KaTeX. A formula has the
+ * number its source gives it, `\tag{3}`, and no other: none is added, so the
+ * numbers the author sees are the ones written in the Markdown, where an AI
+ * reading or changing the article finds them too. In a numbered environment
+ * (`align`, `gather`, `equation`, …) each row has its own `\tag`, and KaTeX
+ * is given it starred so that it adds none either. `\label{key}` names the
+ * number of its row; `\eqref{key}` and `\ref{key}` anywhere in the article
+ * show it, linked to the formula. A label on a row without a number names
+ * nothing (`untagged`).
  *
  * Pure text in, text out, so the blog's renderer and the Studio's editor
  * number the same article the same way.
@@ -15,7 +17,6 @@ const NUMBERED_ENVIRONMENTS = ['equation', 'align', 'alignat', 'gather', 'flalig
 const ENVIRONMENT = new RegExp(String.raw`\\begin\{(${NUMBERED_ENVIRONMENTS.join('|')})\}`, 'u');
 const LABEL = /\\label\s*\{([^{}]*)\}/gu;
 const TAG = /\\tag(\*?)\s*\{([^{}]*)\}/u;
-const NO_NUMBER = /\\(?:notag|nonumber)(?![A-Za-z])/u;
 const REFERENCE = /\\(eqref|ref)\s*\{([^{}]*)\}/gu;
 
 /** The `id` of the element a label links to. */
@@ -75,38 +76,34 @@ function rows(body) {
 }
 
 /**
- * Number the display formulas of one article, in order. Returns each one
- * ready for KaTeX (numbers as `\tag`, labels gone), the anchors each one
- * holds, what every label stands for, and the labels given again later
- * (`duplicates`, with the formula each is in), which the first one keeps.
+ * The display formulas of one article, in order, with their numbers. Returns
+ * each one ready for KaTeX (labels gone, environments starred), the anchors
+ * each one holds, what every label stands for, the labels given again later
+ * (`duplicates`, with the formula each is in), which the first one keeps, and
+ * those on a row with no `\tag` (`untagged`).
  */
 export function numberEquations(sources) {
-	let count = 0;
 	const labels = new Map();
 	const duplicates = [];
+	const untagged = [];
 	let current = 0;
 
 	const numberRow = (row, anchors) => {
 		const keys = [...row.matchAll(LABEL)].map((match) => match[1].trim()).filter(Boolean);
-		let text = row.replace(LABEL, '');
-		let tag = null;
-		const manual = TAG.exec(text);
-		if (manual) tag = manual[1] ? manual[2] : `(${manual[2]})`;
-		else if (!NO_NUMBER.test(text) && text.trim()) {
-			count += 1;
-			tag = `(${count})`;
-			const trailing = /\s*$/u.exec(text)[0];
-			text = `${text.slice(0, text.length - trailing.length)} \\tag{${count}}${trailing}`;
+		const text = row.replace(LABEL, '');
+		const written = TAG.exec(text);
+		const tag = written ? (written[1] ? written[2] : `(${written[2]})`) : null;
+		if (!tag) {
+			untagged.push(...keys.map((key) => ({ key, index: current })));
+			return text;
 		}
-		if (tag) {
-			for (const key of keys) {
-				if (labels.has(key)) {
-					duplicates.push({ key, index: current });
-					continue;
-				}
-				labels.set(key, { tag, anchor: equationAnchor(key) });
-				anchors.push(equationAnchor(key));
+		for (const key of keys) {
+			if (labels.has(key)) {
+				duplicates.push({ key, index: current });
+				continue;
 			}
+			labels.set(key, { tag, anchor: equationAnchor(key) });
+			anchors.push(equationAnchor(key));
 		}
 		return text;
 	};
@@ -139,7 +136,7 @@ export function numberEquations(sources) {
 		}
 		return { source: output + source.slice(at).replace(LABEL, ''), anchors };
 	});
-	return { equations: results, labels, duplicates };
+	return { equations: results, labels, duplicates, untagged };
 }
 
 /**

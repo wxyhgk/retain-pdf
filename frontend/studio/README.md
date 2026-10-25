@@ -72,8 +72,8 @@ Studio 的编辑器在 dev 时直接用 `third_party/milkdown`（git submodule�
     Ha: \hat{H}
   ```
 
-- **编号**：单独成块的公式（`$$…$$`、```` ```math ````、单独成行的 `\[…\]`）按顺序编号 (1)(2)…；写 `\notag` 或 `\nonumber` 的不编号，写 `\tag{…}` 的用自己的编号。`align`、`gather`、`equation` 等带编号的环境每行一个号。
-- **引用**：`\label{eq:energy}` 给编号起名，正文里 `$\eqref{eq:energy}$` 显示为 (1)、`$\ref{eq:energy}$` 显示为 1，点击跳到公式；找不到名字时显示 (??)。
+- **编号**：公式不会自动编号，只显示原文里写的 `\tag{…}`：`$$ E = mc^2 \tag{3} $$` 显示为 (3)。这样作者看到的号就是 Markdown 里写的号，AI 读原文也能对上。`align`、`gather`、`equation` 等环境里每行各写各的 `\tag`。
+- **引用**：`\label{eq:energy}` 给编号起名，正文里 `$\eqref{eq:energy}$` 显示为它的号（如 (3)）、`$\ref{eq:energy}$` 显示为 3，点击跳到公式；找不到名字、或那个公式没写 `\tag` 时显示 (??)，发布前检查会提示。
 
 ## 图片
 

@@ -6,6 +6,8 @@ export declare function numberEquations(sources: string[]): {
 	equations: NumberedEquation[];
 	labels: Map<string, EquationLabel>;
 	duplicates: Array<{ key: string; index: number }>;
+	/** Labels on a row with no `\tag`: they name nothing. */
+	untagged: Array<{ key: string; index: number }>;
 };
 export declare function unresolvedReferences(source: string, labels: Map<string, EquationLabel>): string[];
 export declare function prepareFormula(source: string, labels?: Map<string, EquationLabel>): string;

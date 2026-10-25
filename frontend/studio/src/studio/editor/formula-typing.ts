@@ -66,7 +66,7 @@ export type TypedFormula = {
 };
 
 export type TypingOptions = {
-	/** What is drawn: the typed text, or that with its number (`\tag`). */
+	/** What is drawn: the typed text, ready for KaTeX (labels gone). */
 	source: string;
 	/** What is typed, and the caret in it. */
 	typed: string;
@@ -75,18 +75,16 @@ export type TypingOptions = {
 	labels?: Map<string, EquationLabel>;
 	/** The last good drawing of this formula. */
 	lastGood: string | null;
-	/** Turns what is written so far into what is drawn (adds the number back). */
-	decorate?: (written: string) => string;
 };
 
 /** Draws a formula being typed, by the rules above. */
-export function renderWhileTyping({ source, typed, caret, display, labels, lastGood, decorate }: TypingOptions): TypedFormula {
+export function renderWhileTyping({ source, typed, caret, display, labels, lastGood }: TypingOptions): TypedFormula {
 	const full = renderMathHtml(source, display, labels);
 	if (!full.error) return { html: full.html, state: 'ok' };
 	const written = writtenSoFar(typed, caret);
 	if (written !== null) {
 		if (!written.trim()) return { html: '', state: 'typing' };
-		const partial = renderMathHtml(decorate ? decorate(written) : written, display, labels);
+		const partial = renderMathHtml(written, display, labels);
 		if (!partial.error) return { html: partial.html, state: 'typing' };
 	}
 	return lastGood !== null ? { html: lastGood, state: 'stale', error: full.error } : { html: full.html, state: 'error', error: full.error };

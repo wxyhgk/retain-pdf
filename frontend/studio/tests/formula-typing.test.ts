@@ -34,15 +34,4 @@ test('a formula being typed is drawn as far as it is written, or as it last was'
 	assert.equal(stale.html, '<span>good</span>');
 	assert.match(stale.error ?? '', /\\fra/u);
 	assert.equal(typing('\\fra{a} + x', 11).state, 'error', 'nothing good to show yet');
-	// The number goes back on what is written so far.
-	const numbered = renderWhileTyping({
-		source: 'x + \\si \\tag{3}',
-		typed: 'x + \\si',
-		caret: 7,
-		display: true,
-		lastGood: null,
-		decorate: (written) => `${written} \\tag{3}`,
-	});
-	assert.equal(numbered.state, 'typing');
-	assert.match(numbered.html, /\(3\)/u);
 });
