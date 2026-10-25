@@ -283,9 +283,11 @@ export type Conversation = {
 	slug: string | null;
 	cwd: string;
 	title: string;
-	state: 'starting' | 'idle' | 'running' | 'closed' | 'failed';
+	/** `saved`: kept in chats/, its agent not running; spoken to, it goes on (its agent's session loaded again). */
+	state: 'starting' | 'idle' | 'running' | 'closed' | 'failed' | 'saved';
 	error: string;
 	created: string;
+	updated: string;
 	configOptions: ConversationOption[];
 	commands: Array<{ name: string; description: string }>;
 	usage: { used: number; size: number; cost: { amount: number; currency: string } | null } | null;
@@ -408,6 +410,11 @@ export async function cancelInline(id: string): Promise<void> {
 
 export async function closeConversation(id: string): Promise<void> {
 	await request(conversationApi(id, 'close'), jsonOptions('POST', {}));
+}
+
+/** A conversation gone, its folder of chats/ too. */
+export async function deleteConversation(id: string): Promise<void> {
+	await request(conversationApi(id, 'delete'), jsonOptions('POST', {}));
 }
 
 /** A background task (server/tasks.mjs), without its log. */

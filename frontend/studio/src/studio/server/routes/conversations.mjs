@@ -26,7 +26,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	api.get('/conversations', async () => ({
 		agents: (await agents()).map(({ id, name }) => ({ id, name })),
 		default: (await agentSettings.config()).default,
-		conversations: conversations.list(),
+		conversations: await conversations.list(),
 	}));
 	// A conversation goes on in blog/ whatever article is open (blog/AGENTS.md read there): each thing said is told
 	// which one is, with the lines selected and the articles named with @ (contextOf).
@@ -38,6 +38,15 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const session = await conversations.start({ agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
 		return reply(201, session.summary());
 	});
+	/** A conversation to speak to: one over (kept in chats/, its agent gone) gone on with, its agent started again. */
+	const awake = async (id) => {
+		const session = await conversations.find(id);
+		if (!['saved', 'closed', 'failed'].includes(session.state)) return session;
+		const agent = (await agents()).find((candidate) => candidate.id === session.agent.id);
+		if (!agent) throw refuse(404, `「${session.agent.name}」不能在面板里用了：新开一个对话`);
+		const service = await serviceOf(agent);
+		return conversations.wake(session, { agent, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
+	};
 	/**
 	 * The page's account of where the author is, made the agent's: each article by its file from blog/, as it is there,
 	 * and its ai/brief.md if it has one (blog/AGENTS.md: read it first), so the agent need not try for one not there.
@@ -59,13 +68,15 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const mentions = (await Promise.all((Array.isArray(asked.mentions) ? asked.mentions : []).map(article))).filter(Boolean).filter((entry) => entry.path !== open?.path);
 		return { ...(open ? { article: open } : {}), ...(selection ? { selection } : {}), ...(mentions.length ? { mentions } : {}) };
 	};
-	api.get('/conversations/:id/events', ({ params, request, response }) => {
-		const session = conversations.get(params.id);
+	api.get('/conversations/:id/events', async ({ params, request, response }) => {
+		// One kept in chats/ is read back, shown as it was left.
+		const session = await conversations.find(params.id);
 		sendEvents(request, response, (send) => session.subscribe(send));
 	}, { streams: true });
 	api.post('/conversations/:id/prompt', async ({ params, json }) => {
 		const { text, context } = await json();
-		conversations.get(params.id).prompt(text, await contextOf(context));
+		const session = await awake(params.id);
+		session.prompt(text, await contextOf(context));
 		return reply(202, { id: params.id });
 	});
 	api.post('/conversations/:id/cancel', ({ params }) => {
@@ -80,7 +91,12 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	api.post('/conversations/:id/options', async ({ params, json }) => {
 		const { configId, value } = await json();
 		if (typeof configId !== 'string' || (typeof value !== 'string' && typeof value !== 'boolean')) throw refuse(400, '要给出选项和它的值');
-		return conversations.get(params.id).configure(configId, value);
+		return (await awake(params.id)).configure(configId, value);
+	});
+	// A conversation gone: its folder of chats/ too.
+	api.post('/conversations/:id/delete', async ({ params }) => {
+		await conversations.remove(params.id);
+		return { id: params.id };
 	});
 	// Which service Claude Code talks to, its key and models; whether the accounts are logged in; the service tried.
 	api.get('/panel-models', () => panelModels.shown());

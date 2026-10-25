@@ -39,5 +39,5 @@ test('asked, it answers with the Markdown alone, in a session of its own, anothe
 	assert.deepEqual(await inline.ask({ ...asked, id: 'two', mode: 'write' }), { markdown: 'AI 写的新段落。' });
 	// One for each ask, and one ready for the next; none of them the panel's conversations.
 	assert.equal(started, 3);
-	assert.deepEqual(sessions.list(), []);
+	assert.deepEqual(await sessions.list(), []);
 });

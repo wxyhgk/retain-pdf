@@ -36,6 +36,8 @@ playwright-report/
 .studio-jobs.json
 # what the Studio builds for itself (RetainMol's page)
 .studio-cache/
+# the AI panel's conversations (chats/<chat-…>/index.md and ai/): the author's, not published
+/chats/
 
 # an article's ai/: material for the AIs (a brief, ai/work/ an AI's scripts and log, ai/history/ earlier
 # versions), never published and never committed: the repository is public. Only the folder itself is kept.

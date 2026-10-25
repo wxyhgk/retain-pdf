@@ -1,4 +1,6 @@
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
+import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
@@ -248,4 +250,30 @@ test('what the AI says is blocks: each dragged into the article, or clicked in w
 	await pane(page).locator('.ai-message').hover();
 	await pane(page).getByRole('button', { name: '插入到文章' }).click();
 	await expect(editor(page)).toContainText('能量和质量的关系：');
+});
+
+test('a conversation is kept in chats/ as a page: there again once the page is opened again; deleted from the list, its folder too', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '几块 记下来');
+	await expect(pane(page).locator('.ai-message .ai-block')).toHaveCount(3);
+	// The tests' chats/ is beside their copy of blog/.
+	const chats = `${process.env.STUDIO_BLOG_DIR}-chats`;
+	const kept = () => (existsSync(chats) ? readdirSync(chats) : []).find((name) => existsSync(join(chats, name, 'index.md')) && readFileSync(join(chats, name, 'index.md'), 'utf8').includes('```ask\n几块 记下来\n```')) ?? null;
+	await expect.poll(kept).not.toBeNull();
+	const folder = join(chats, kept()!);
+	expect(readFileSync(join(folder, 'index.md'), 'utf8')).toContain('kind: chat');
+	expect(existsSync(join(folder, 'ai', 'conversation.json'))).toBe(true);
+
+	// Opened again: the same conversation, as it was.
+	await page.reload();
+	await page.locator('#side-tab-ai').click();
+	await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('几块 记下来');
+	await expect(pane(page).locator('.ai-message .ai-block')).toHaveCount(3);
+
+	// Deleted, once the author says yes: its folder gone, a new conversation begun.
+	page.once('dialog', (dialog) => void dialog.accept());
+	await pane(page).getByRole('button', { name: '对话记录' }).click();
+	await page.getByRole('menuitem', { name: '删除这个对话' }).click();
+	await expect(pane(page).locator('.ai-empty')).toBeVisible();
+	expect(existsSync(folder)).toBe(false);
 });

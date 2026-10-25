@@ -1,7 +1,7 @@
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { realpath } from 'node:fs/promises';
-import { delimiter } from 'node:path';
+import { delimiter, relative } from 'node:path';
 import { Readable, Writable } from 'node:stream';
 import { client, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 
@@ -24,12 +24,20 @@ import { commandWords, endWithServer, loginShell } from './tasks.mjs';
  *
  * Events to a follower: `all` (the session and its items), `item` (one new or changed), `append` (text added to a
  * message or thought) and `session` (its state, title, options, modes, usage changed).
+ *
+ * Given a store (chat-store.mjs), each conversation is kept in `chats/` as it goes, and is there after the Studio
+ * restarts: shown as it was (state `saved`, no adapter running), and gone on with when it is next spoken to, the
+ * agent's own session loaded again (ACP `session/resume` or `session/load`), so that it remembers what was said.
  */
 
 /** What the adapter wrote to stderr, kept to say why it failed. */
 const STDERR_KEPT = 4000;
-/** Conversations kept once over (closed or failed); the oldest go. */
+/** Conversations kept in memory once over (closed, failed, or read back from chats/); the oldest go. */
 const KEPT_OVER = 20;
+/** How long after a change a conversation is written to chats/ (another change in that time, later). */
+const SAVE_AFTER = 400;
+/** States a conversation is gone on with from: its agent's session loaded again, in a new adapter. */
+const ASLEEP = new Set(['saved', 'closed', 'failed']);
 
 export class AgentSessions {
 	/** @type {Map<string, AgentSession>} */
@@ -39,15 +47,19 @@ export class AgentSessions {
 	/** All closed (the server going away): one that comes up after is closed at once. */
 	#closed = false;
 	#path = null;
+	/** Conversations changed and not yet written: each one's timer. */
+	#saving = new Map();
 
 	/**
-	 * @param {{ binFolder: string, shell?: string, env?: NodeJS.ProcessEnv }} options `binFolder`: the project's
-	 * node_modules/.bin, where the adapters are, put first on their PATH
+	 * @param {{ binFolder: string, shell?: string, env?: NodeJS.ProcessEnv, store?: import('./chat-store.mjs').ChatStore | null }} options
+	 * `binFolder`: the project's node_modules/.bin, where the adapters are, put first on their PATH; `store`: where
+	 * the conversations are kept (none: forgotten when the server stops)
 	 */
-	constructor({ binFolder, shell = process.env.SHELL || '/bin/zsh', env = process.env }) {
+	constructor({ binFolder, shell = process.env.SHELL || '/bin/zsh', env = process.env, store = null }) {
 		this.binFolder = binFolder;
 		this.shell = shell;
 		this.env = env;
+		this.store = store;
 	}
 
 	/**
@@ -59,45 +71,118 @@ export class AgentSessions {
 	 */
 	async start({ agent, cwd, slug = null, env = {}, models = null, listed = true }) {
 		// As the agent sees it (no link in it: /private/var… on a Mac), so the paths it names are shown under it.
-		const session = new AgentSession({ agent, cwd: await realpath(cwd), slug, models });
+		const session = new AgentSession({ agent, cwd: await realpath(cwd), slug, models, id: listed ? this.store?.newId() : undefined });
 		if (listed) {
 			this.#sessions.set(session.id, session);
 			this.#forgetOld();
+			this.#keep(session);
+			if (this.store) session.page = this.store.page(session.id);
 		} else {
 			this.#unlisted.add(session);
 			session.onClose = () => this.#unlisted.delete(session);
 		}
-		const path = `${this.binFolder}${delimiter}${env.PATH ?? (await this.#loginPath())}`;
-		await session.open(commandWords(agent.acp), { ...this.env, ...env, PATH: path });
-		if (this.#closed) {
-			session.close();
-			throw Object.assign(new Error('Studio 正在停下'), { statusCode: 503 });
-		}
+		await this.#open(session, agent, env, false);
 		if (models?.provider) await session.useService(models.provider);
 		return session;
 	}
 
-	get(id) {
-		const session = this.#sessions.get(id);
-		if (!session) throw Object.assign(new Error('没有这个对话（Studio 重启后要新开一个）'), { statusCode: 404 });
+	/**
+	 * Goes on with a conversation over (read back from chats/, closed, or its agent gone): `agent` started again, its
+	 * session of before loaded; resolves once it can be spoken to. One going on is as it is.
+	 * @param {AgentSession} session
+	 * @param {{ agent: { id: string, name: string, acp: string }, env?: Record<string, string>, models?: object | null }} options
+	 */
+	async wake(session, { agent, env = {}, models = null }) {
+		if (!ASLEEP.has(session.state)) return session;
+		session.models = models;
+		await this.#open(session, agent, env, true);
+		if (models?.provider) await session.useService(models.provider);
 		return session;
 	}
 
-	list() {
-		return [...this.#sessions.values()].map((session) => session.summary()).reverse();
+	async #open(session, agent, env, again) {
+		const path = `${this.binFolder}${delimiter}${env.PATH ?? (await this.#loginPath())}`;
+		await session.open(commandWords(agent.acp), { ...this.env, ...env, PATH: path }, { again });
+		if (this.#closed) {
+			session.close();
+			throw Object.assign(new Error('Studio 正在停下'), { statusCode: 503 });
+		}
+	}
+
+	/** A conversation going on (or over, still in memory). */
+	get(id) {
+		const session = this.#sessions.get(id);
+		if (!session) throw Object.assign(new Error('没有这个对话'), { statusCode: 404 });
+		return session;
+	}
+
+	/** A conversation going on, or one kept in chats/, read back (state `saved`). */
+	async find(id) {
+		const known = this.#sessions.get(id);
+		if (known || !this.store) return known ?? this.get(id);
+		const record = await this.store.read(id);
+		// Read twice at once: the first one read.
+		if (this.#sessions.has(id)) return this.#sessions.get(id);
+		const session = AgentSession.kept(record, this.store.page(id));
+		this.#sessions.set(id, session);
+		this.#forgetOld();
+		this.#keep(session);
+		return session;
+	}
+
+	/** Those going on, then those kept in chats/ (the latest first); none begun and not spoken to that is over. */
+	async list() {
+		const live = [...this.#sessions.values()].filter((session) => spokenTo(session) || !ASLEEP.has(session.state)).reverse();
+		const kept = this.store ? (await this.store.list()).filter((record) => !this.#sessions.has(record.id)).map(AgentSession.summaryOf) : [];
+		return [...live.map((session) => session.summary()), ...kept];
 	}
 
 	close(id) {
 		this.get(id).close();
 	}
 
+	/** A conversation gone: stopped, and its folder of chats/ removed. */
+	async remove(id) {
+		const session = this.#sessions.get(id);
+		if (session) {
+			clearTimeout(this.#saving.get(session));
+			this.#saving.delete(session);
+			session.close();
+			this.#sessions.delete(id);
+		}
+		await this.store?.remove(id);
+	}
+
 	closeAll() {
 		this.#closed = true;
 		for (const session of [...this.#sessions.values(), ...this.#unlisted]) session.close();
+		// What changed last, written before the server goes.
+		for (const [session, timer] of this.#saving) {
+			clearTimeout(timer);
+			try {
+				this.store?.save(session.record(), { sync: true });
+			} catch {
+				// Kept as it was last written.
+			}
+		}
+		this.#saving.clear();
+	}
+
+	/** Each change to `session` written to chats/ a moment later (once it has been spoken to). */
+	#keep(session) {
+		if (!this.store) return;
+		session.subscribe((event) => {
+			if (event.type === 'all' || !spokenTo(session) || this.#closed) return;
+			clearTimeout(this.#saving.get(session));
+			this.#saving.set(session, setTimeout(() => {
+				this.#saving.delete(session);
+				this.store.save(session.record()).catch(() => {});
+			}, SAVE_AFTER));
+		});
 	}
 
 	#forgetOld() {
-		const over = [...this.#sessions.values()].filter((session) => session.state === 'closed' || session.state === 'failed');
+		const over = [...this.#sessions.values()].filter((session) => ASLEEP.has(session.state) && !this.#saving.has(session));
 		for (const session of over.slice(0, Math.max(0, over.length - KEPT_OVER))) this.#sessions.delete(session.id);
 	}
 
@@ -118,8 +203,7 @@ export class AgentSessions {
 
 /** One conversation: its adapter, its ACP session, its transcript, who follows it. */
 class AgentSession {
-	id = randomUUID();
-	/** 'starting' | 'idle' | 'running' | 'closed' | 'failed' */
+	/** 'starting' | 'idle' | 'running' | 'closed' | 'failed' | 'saved' (read back from chats/, no adapter) */
 	state = 'starting';
 	title = '';
 	error = '';
@@ -141,18 +225,60 @@ class AgentSession {
 	#stderr = '';
 	/** Words the agent sends unasked when a session begins, left out of the conversation. */
 	#prelude = null;
+	/** What was said before, told again by an adapter as its session is loaded: not said anew. */
+	#replaying = false;
+	/** Gone on with in a new session of the agent's (the one before could not be loaded): it is told where what was said is. */
+	#forgot = false;
 	#forget = () => {};
 
-	constructor({ agent, cwd, slug, models = null }) {
+	constructor({ agent, cwd, slug, models = null, id = randomUUID() }) {
+		this.id = id;
 		this.agent = { id: agent.id, name: agent.name };
 		this.cwd = cwd;
 		this.slug = slug;
 		this.models = models;
 		this.created = new Date().toISOString();
+		this.updated = this.created;
+		/** Where it is kept as a page (chats/…/index.md), if it is. */
+		this.page = null;
+	}
+
+	/** A conversation of chats/, as it was left: shown, not going on until it is woken (AgentSessions.wake). */
+	static kept(record, page) {
+		const session = new AgentSession({ agent: record.agent, cwd: record.cwd, slug: record.slug ?? null, id: record.id });
+		session.state = 'saved';
+		session.title = record.title ?? '';
+		session.created = record.created;
+		session.updated = record.updated ?? record.created;
+		session.configOptions = record.configOptions ?? [];
+		session.items = record.items ?? [];
+		for (const item of session.items) session.#byId.set(item.id, item);
+		session.#acpId = record.acpSessionId ?? null;
+		session.page = page;
+		return session;
+	}
+
+	/** What the list says of a conversation of chats/ not read back. */
+	static summaryOf(record) {
+		return { id: record.id, agent: record.agent, slug: record.slug ?? null, cwd: record.cwd, title: record.title ?? '', state: 'saved', error: '', created: record.created, updated: record.updated ?? record.created, configOptions: record.configOptions ?? [], modes: null, commands: [], usage: null, service: record.service ?? null };
 	}
 
 	summary() {
-		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.title, state: this.state, error: this.error, created: this.created, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null };
+		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null };
+	}
+
+	/** The title its agent gave it, or (Codex gives none) the start of what the author said first. */
+	#title() {
+		if (this.title) return this.title;
+		const first = this.items.find((item) => item.kind === 'user')?.text.trim().split('\n')[0] ?? '';
+		return first.length > 40 ? `${first.slice(0, 40)}…` : first;
+	}
+
+	/** It as kept in chats/ (chat-store.mjs): leave still asked, refused, as it will be once it is read back. */
+	record() {
+		this.updated = new Date().toISOString();
+		const items = this.items.map((item) => (item.kind === 'permission' && !item.chosen ? { ...item, chosen: 'cancelled' } : item));
+		return { id: this.id, agent: this.agent, acpSessionId: this.#acpId, cwd: this.cwd, slug: this.slug, title: this.#title(), created: this.created, updated: this.updated, service: this.models?.name ?? null, configOptions: this.configOptions, items };
 	}
 
 	/**
@@ -177,8 +303,17 @@ class AgentSession {
 		return () => this.#listeners.delete(listener);
 	}
 
-	async open(argv, env) {
+	/**
+	 * Starts its adapter and a session of the agent's; `again`: the session it had loaded instead (a new one if that
+	 * cannot be, the agent then told where what was said is).
+	 */
+	async open(argv, env, { again = false } = {}) {
 		if (!argv.length) throw Object.assign(new Error(`${this.agent.name} 没有 ACP 命令`), { statusCode: 400 });
+		if (again) {
+			this.error = '';
+			this.#stderr = '';
+			this.#setState('starting');
+		}
 		const child = spawn(argv[0], argv.slice(1), { cwd: this.cwd, env, stdio: ['pipe', 'pipe', 'pipe'], detached: true });
 		this.#child = child;
 		if (child.pid) this.#forget = endWithServer(child.pid);
@@ -191,7 +326,8 @@ class AgentSession {
 			child.on('error', (error) => resolve(error));
 			child.on('close', (code, signal) => resolve(code === 0 || signal === 'SIGTERM' ? null : new Error(`退出码 ${code ?? signal}`)));
 		});
-		void exited.then((error) => this.#ended(error));
+		// An adapter of before (gone on with in another) ends unheeded.
+		void exited.then((error) => this.#child === child && this.#ended(error));
 		const app = client({ name: 'studio' })
 			.onNotification('session/update', ({ params }) => this.#update(params.update))
 			.onRequest('session/request_permission', ({ params, signal }) => this.#askLeave(params, signal));
@@ -199,12 +335,15 @@ class AgentSession {
 		try {
 			const agent = this.#connection.agent;
 			const opening = (async () => {
-				await agent.request('initialize', { protocolVersion: PROTOCOL_VERSION, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false } });
+				const begun = await agent.request('initialize', { protocolVersion: PROTOCOL_VERSION, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false } });
+				const before = again ? await this.#loadAgain(agent, begun.agentCapabilities ?? {}) : null;
+				if (before) return before;
+				if (again && this.items.length) this.#forgot = true;
 				return agent.request('session/new', { cwd: this.cwd, mcpServers: [] });
 			})();
 			// An adapter that exits before it answers (not installed, not logged in) says so on stderr.
 			const made = await Promise.race([opening, exited.then((error) => Promise.reject(error ?? new Error('提前退出了')))]);
-			this.#acpId = made.sessionId;
+			this.#acpId = made.sessionId ?? this.#acpId;
 			// What pi-acp says of pi when a session begins (its version, skills, extensions): not an answer.
 			this.#prelude = made._meta?.piAcp?.startupInfo ?? null;
 			this.configOptions = made.configOptions ?? [];
@@ -215,6 +354,25 @@ class AgentSession {
 			this.close();
 			this.#setState('failed');
 			throw Object.assign(new Error(`${this.agent.name} 没能启动：${this.error}`), { statusCode: 502 });
+		}
+	}
+
+	/**
+	 * Its agent's session of before, loaded again (resumed, as Codex can, or loaded, what was said told again and left
+	 * out); null when there was none or it is not there any more.
+	 */
+	async #loadAgain(agent, capabilities) {
+		if (!this.#acpId) return null;
+		const asked = { sessionId: this.#acpId, cwd: this.cwd, mcpServers: [] };
+		try {
+			if (capabilities.sessionCapabilities?.resume) return { sessionId: this.#acpId, ...(await agent.request('session/resume', asked)) };
+			if (!capabilities.loadSession) return null;
+			this.#replaying = true;
+			return { sessionId: this.#acpId, ...(await agent.request('session/load', asked)) };
+		} catch {
+			return null;
+		} finally {
+			this.#replaying = false;
 		}
 	}
 
@@ -243,7 +401,8 @@ class AgentSession {
 		};
 		this.#add({ kind: 'user', id: randomUUID(), text, context: named });
 		this.#setState('running');
-		const told = withContext(text, context);
+		const told = withContext(text, { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) });
+		this.#forgot = false;
 		const turn = this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: told }] });
 		void turn.then(
 			(done) => {
@@ -319,6 +478,8 @@ class AgentSession {
 	}
 
 	#update(update) {
+		// What was said before, as a session is loaded: kept already.
+		if (this.#replaying && !['config_option_update', 'current_mode_update', 'available_commands_update'].includes(update.sessionUpdate)) return;
 		switch (update.sessionUpdate) {
 			case 'agent_message_chunk':
 			case 'agent_thought_chunk':
@@ -436,6 +597,9 @@ class AgentSession {
 	}
 }
 
+/** Whether the author has said something in it (one never spoken to is not kept, nor listed once over). */
+const spokenTo = (session) => session.items.some((item) => item.kind === 'user');
+
 /** A select option's choices, its groups flattened. */
 function modelChoices(option) {
 	return (option.options ?? []).flatMap((entry) => (Array.isArray(entry.options) ? entry.options : [entry]));
@@ -446,6 +610,7 @@ function modelChoices(option) {
  * @property {{ title: string, path: string, brief?: string | null }} [article] the article open (its ai/brief.md, or null for none)
  * @property {{ start: number, end: number, text: string }} [selection] the lines of it selected
  * @property {Array<{ title: string, path: string, brief?: string | null }>} [mentions] the articles named with @
+ * @property {string} [history] where what was said before is kept (chats/…/index.md), for an agent that cannot remember it
  */
 
 const lineRange = ({ start, end }) => (start === end ? `第 ${start} 行` : `第 ${start}–${end} 行`);
@@ -457,8 +622,9 @@ function briefOf({ brief }) {
 }
 
 /** What the author said, then what the Studio adds of where they are, marked as the Studio's. */
-export function withContext(text, { article, selection, mentions = [] } = {}) {
+export function withContext(text, { article, selection, mentions = [], history } = {}) {
 	const lines = [];
+	if (history) lines.push(`这是接着之前的对话说的，但你那边接不上之前的会话了：之前说过的话记在 ${history}，需要时去读`);
 	if (article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}${briefOf(article)}`);
 	if (article && selection) {
 		const fence = '`'.repeat(Math.max(3, ...[...selection.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));

@@ -1,6 +1,7 @@
 import {
 	answerConversation,
 	closeConversation,
+	deleteConversation,
 	followConversation,
 	listConversations,
 	setConversationOption,
@@ -38,6 +39,16 @@ type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
 type PermissionItem = Extract<ConversationItem, { kind: 'permission' }>;
 
 const CONVERSATION_KEY = 'studio.ai.conversation';
+
+/** When a conversation was last spoken in: the time today, else the day (and the year, another year's). */
+function when(iso: string | undefined): string {
+	const date = new Date(iso ?? '');
+	if (Number.isNaN(date.getTime())) return '';
+	const now = new Date();
+	const pad = (value: number) => String(value).padStart(2, '0');
+	if (date.toDateString() === now.toDateString()) return `今天 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+	return `${date.getFullYear() === now.getFullYear() ? '' : `${date.getFullYear()}-`}${date.getMonth() + 1}-${date.getDate()}`;
+}
 const AGENT_KEY = 'studio.ai.agent';
 
 /** The options shown under the input, in this order: who decides, which model, how hard it thinks. */
@@ -211,7 +222,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				say('没有能在面板里用的 AI：在「AI 助手」设置里给 Claude 或 Codex 配上 ACP 命令');
 				return;
 			}
-			const kept = known.conversations.find((entry) => entry.id === remembered(CONVERSATION_KEY) && entry.state !== 'closed' && entry.state !== 'failed');
+			// The one left open, kept in chats/ across restarts.
+			const kept = known.conversations.find((entry) => entry.id === remembered(CONVERSATION_KEY));
 			if (kept) follow(kept);
 			else void begin();
 		} catch (error) {
@@ -305,8 +317,18 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				conversation = event.session;
 				break;
 		}
+		thoughtsOver();
 		showSession();
 		keepAtBottom();
+	}
+
+	/** A thought drawn as going on (思考中…) once something came after it, or the turn is over: drawn again as done. */
+	function thoughtsOver(): void {
+		for (const node of list.querySelectorAll<HTMLElement>('.ai-thought.is-going')) {
+			const item = items.find((entry) => entry.id === node.dataset.item);
+			if (!item || (items.at(-1) === item && conversation?.state === 'running')) continue;
+			node.replaceWith(draw(item, node));
+		}
 	}
 
 	/** Words streaming in are drawn again once a frame, not once a piece. */
@@ -330,7 +352,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		if (!text) return;
 		if (conversation?.state === 'running') return;
 		let target = conversation;
-		if (!target || target.state === 'closed' || target.state === 'failed') target = await (starting ?? begin());
+		// One over goes on (its agent started again), unless nothing was said in it.
+		if (!target || ((target.state === 'closed' || target.state === 'failed') && !items.length)) target = await (starting ?? begin());
 		else if (starting) target = await starting;
 		if (!target) return;
 		const open = article && leftOut !== article.slug ? article : null;
@@ -477,10 +500,11 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		send.title = running ? '停下' : '发送（Enter；换行用 Shift+Enter）';
 		send.setAttribute('aria-label', running ? '停下' : '发送');
 		send.classList.toggle('is-stop', running);
-		if (conversation?.state === 'starting' || (!conversation && starting)) {
+		if (conversation?.state === 'starting' && items.length) say(`正在接上之前的对话（启动 ${conversation.agent.name}）…`);
+		else if (conversation?.state === 'starting' || (!conversation && starting)) {
 			// Said by begin().
 		} else if (conversation?.state === 'failed') say(conversation.error || '它停了', true);
-		else if (conversation?.state === 'closed') say('这个对话已经结束了；再说话会开始新的对话');
+		else if (conversation?.state === 'closed') say('这个对话停下了；再说话会接着聊');
 		else if (running) say('正在做…');
 		else say('');
 		const used = conversation?.usage;
@@ -824,10 +848,24 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 			const menu: MenuItem[] = entries.length
 				? entries.map((entry) => ({
 						label: `${entry.title || '（还没说话）'}`,
-						hint: `${entry.agent.name}${entry.slug ? ` · ${entry.slug}` : ''}${entry.state === 'running' ? ' · 进行中' : entry.state === 'failed' || entry.state === 'closed' ? ' · 已结束' : ''}`,
+						hint: `${entry.agent.name} · ${when(entry.updated)}${entry.state === 'running' ? ' · 进行中' : ''}`,
 						action: () => follow(entry),
 					}))
 				: [{ label: '还没有别的对话', action: () => {} }];
+			// The one shown, gone (its folder of chats/ too), after asking.
+			const shown = conversation;
+			if (shown && items.length) {
+				menu.push({
+					label: '删除这个对话',
+					action: () => {
+						if (!window.confirm(`删除对话「${shown.title || '新对话'}」？\n它在 chats/ 里的记录也会删掉，不能恢复。`)) return;
+						void deleteConversation(shown.id).then(
+							() => void begin(),
+							(error: unknown) => host.toast(error instanceof Error ? error.message : '没能删除'),
+						);
+					},
+				});
+			}
 			showContextMenu(menu, historyButton);
 		});
 	});

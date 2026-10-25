@@ -21,8 +21,16 @@ const state = { mode: 'default', model: MODELS[0].value, turns: 0 };
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const app = agent({ name: 'fake' })
-	.onRequest('initialize', () => ({ protocolVersion: PROTOCOL_VERSION, agentCapabilities: {}, authMethods: [] }))
-	.onRequest('session/new', () => ({ sessionId: 'fake-session', configOptions: options(), modes: { currentModeId: state.mode, availableModes: [{ id: 'default', name: 'Manual' }, { id: 'plan', name: 'Plan' }] } }))
+	.onRequest('initialize', () => ({ protocolVersion: PROTOCOL_VERSION, agentCapabilities: { loadSession: true }, authMethods: [] }))
+	.onRequest('session/new', () => ({ sessionId: `fake-session-${process.pid}`, configOptions: options(), modes: { currentModeId: state.mode, availableModes: [{ id: 'default', name: 'Manual' }, { id: 'plan', name: 'Plan' }] } }))
+	// A session gone on with (after the Studio restarted): what was said in it told again first, as adapters do; one
+	// whose id says 「gone」 is not there any more.
+	.onRequest('session/load', async ({ params, client }) => {
+		if (params.sessionId.includes('gone')) throw new Error('Session not found');
+		state.loaded = params.sessionId;
+		await client.notify('session/update', { sessionId: params.sessionId, update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: '（重放的历史）' } } });
+		return { configOptions: options() };
+	})
 	.onRequest('session/set_config_option', ({ params }) => {
 		state[params.configId] = params.value;
 		return { configOptions: options() };
@@ -56,6 +64,11 @@ const app = agent({ name: 'fake' })
 		// An answer of several blocks, to put in the article (dragged, or clicked).
 		if (said.startsWith('几块')) {
 			await words('agent_message_chunk', '能量和质量的关系：\n\n$$\nE = mc^2\n$$\n\n- 要点一\n- 要点二');
+			return { stopReason: 'end_turn' };
+		}
+		// Which session it goes on with: the one loaded, if one was.
+		if (said.startsWith('接上了吗')) {
+			await words('agent_message_chunk', state.loaded ? `接上了 ${state.loaded}` : `新的会话 ${sessionId}`);
 			return { stopReason: 'end_turn' };
 		}
 		// What it was told, as it came (with what the Studio adds of where the author is).

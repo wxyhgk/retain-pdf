@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 import { AgentSessions, withContext } from './agent-sessions.mjs';
+import { ChatStore } from './chat-store.mjs';
 
 const standIn = fileURLToPath(new URL('../../../tests/e2e/fake-agents/claude-agent-acp', import.meta.url));
 const agent = { id: 'claude', name: 'Claude', acp: standIn };
@@ -101,7 +102,82 @@ test('an adapter that is not there: the conversation fails, saying so', async (t
 	t.after(() => rm(cwd, { recursive: true, force: true }));
 	const sessions = new AgentSessions({ binFolder: join(cwd, 'none') });
 	await assert.rejects(sessions.start({ agent: { ...agent, acp: join(cwd, 'missing-acp') }, cwd, env: { PATH: '/usr/bin:/bin' } }), /Claude 没能启动：.*ENOENT/u);
-	assert.equal(sessions.list()[0].state, 'failed');
+	// Never spoken to: not in the list.
+	assert.deepEqual(await sessions.list(), []);
+});
+
+/** Resolves once `holds` of `session`, checked as each event comes. */
+function until(session, holds) {
+	return new Promise((resolve, reject) => {
+		const timer = setTimeout(() => reject(new Error(`等不到：${holds}`)), 5000);
+		const stop = session.subscribe(() => {
+			if (!holds(session)) return;
+			clearTimeout(timer);
+			resolve();
+			queueMicrotask(() => stop());
+		});
+	});
+}
+
+test('kept in chats/ as a page; read back after the Studio restarts, as it was; gone on with, its agent’s session loaded again', async (t) => {
+	const cwd = await realpath(await mkdtemp(join(tmpdir(), 'agent-sessions-')));
+	t.after(() => rm(cwd, { recursive: true, force: true }));
+	const store = new ChatStore(join(cwd, 'chats'));
+	const restarted = () => {
+		const sessions = new AgentSessions({ binFolder: join(cwd, 'none'), env: process.env, store });
+		t.after(() => sessions.closeAll());
+		return sessions;
+	};
+	const env = { PATH: process.env.PATH };
+
+	const first = restarted();
+	const said = await first.start({ agent, cwd, env });
+	assert.match(said.id, /^chat-\d{8}-\d{6}$/u);
+	// Begun, not spoken to: nothing kept.
+	assert.deepEqual(await store.list(), []);
+	said.prompt('几块');
+	await until(said, (s) => s.state === 'idle');
+	const adapterSession = `fake-session-`;
+	// The server stopping: what changed last written at once.
+	first.closeAll();
+	const page = await readFile(join(cwd, 'chats', said.id, 'index.md'), 'utf8');
+	assert.match(page, /^---\ntitle: "几块"\nkind: chat\nagent: "Claude"\n/u);
+	assert.match(page, /\n```ask\n几块\n```\n\n能量和质量的关系：\n\n\$\$\nE = mc\^2\n\$\$\n\n- 要点一\n- 要点二\n$/u);
+
+	// After a restart: listed, read back as it was, no agent running.
+	const second = restarted();
+	const listed = await second.list();
+	assert.deepEqual(listed.map((entry) => [entry.id, entry.state, entry.title]), [[said.id, 'saved', '几块']]);
+	const back = await second.find(said.id);
+	assert.equal(back.state, 'saved');
+	assert.deepEqual(back.items.map((item) => item.kind), ['user', 'message']);
+	// Spoken to: its session of before loaded again, what the adapter tells again of it not added.
+	await second.wake(back, { agent, env });
+	assert.equal(back.state, 'idle');
+	back.prompt('接上了吗');
+	await until(back, (s) => s.state === 'idle');
+	assert.match(back.items.at(-1).text, new RegExp(`^接上了 ${adapterSession}\\d+$`, 'u'));
+	assert.equal(back.items.some((item) => item.text?.includes('重放的历史')), false);
+	assert.deepEqual(back.items.map((item) => item.kind), ['user', 'message', 'user', 'message']);
+	second.closeAll();
+
+	// Its session not there any more: a new one, told where what was said is.
+	const record = JSON.parse(await readFile(join(cwd, 'chats', said.id, 'ai', 'conversation.json'), 'utf8'));
+	await writeFile(join(cwd, 'chats', said.id, 'ai', 'conversation.json'), JSON.stringify({ ...record, acpSessionId: 'gone' }));
+	const third = restarted();
+	const forgot = await third.wake(await third.find(said.id), { agent, env });
+	forgot.prompt('上下文');
+	await until(forgot, (s) => s.state === 'idle');
+	assert.match(forgot.items.at(-1).text, new RegExp(`之前说过的话记在 chats/${said.id}/index\\.md，需要时去读`, 'u'));
+	// Told once: what is said next is as it is.
+	forgot.prompt('上下文 再说');
+	await until(forgot, (s) => s.state === 'idle');
+	assert.doesNotMatch(forgot.items.at(-1).text, /之前说过的话/u);
+
+	// Gone: its folder too.
+	await third.remove(said.id);
+	await assert.rejects(stat(join(cwd, 'chats', said.id)), /ENOENT/u);
+	assert.deepEqual(await third.list(), []);
 });
 
 test('what is said is told where the author is, marked as the Studio’s; with nothing to tell, as it was said', () => {
