@@ -12,7 +12,7 @@ import { ChatStore } from './chat-store.mjs';
  * A service as OpenAI's chat completions (streamed): asked to run something, it calls pi's shell tool, then says what
  * that printed; else it says what it was told last. A key other than `good` is refused.
  */
-async function fakeService(t) {
+async function fakeService(t, picturePath = '') {
 	const asked = [];
 	const server = createServer(async (request, response) => {
 		let body = '';
@@ -25,14 +25,21 @@ async function fakeService(t) {
 			return;
 		}
 		response.writeHead(200, { 'content-type': 'text/event-stream' });
-		const chunk = (delta, finish = null) => response.write(`data: ${JSON.stringify({ id: 'c', object: 'chat.completion.chunk', created: 0, model: 'm1', choices: [{ index: 0, delta, finish_reason: finish }] })}\n\n`);
+		// Each answer says what it used (the context counted from it).
+		const chunk = (delta, finish = null) => response.write(`data: ${JSON.stringify({ id: 'c', object: 'chat.completion.chunk', created: 0, model: 'm1', choices: [{ index: 0, delta, finish_reason: finish }], ...(finish ? { usage: { prompt_tokens: 1200, completion_tokens: 30, total_tokens: 1230 } } : {}) })}\n\n`);
+		const call = (name, args) => {
+			chunk({ role: 'assistant', tool_calls: [{ index: 0, id: `call_${asked.length}`, type: 'function', function: { name, arguments: JSON.stringify(args) } }] });
+			chunk({}, 'tool_calls');
+		};
 		const last = messages.at(-1);
 		const said = typeof last.content === 'string' ? last.content : last.content?.map?.((part) => part.text ?? '').join('') ?? '';
-		if (last.role === 'user' && said.includes('运行')) {
-			chunk({ role: 'assistant', tool_calls: [{ index: 0, id: 'call_1', type: 'function', function: { name: 'bash', arguments: JSON.stringify({ command: 'echo "mark=$STUDIO_MARK"' }) } }] });
-			chunk({}, 'tool_calls');
-		} else {
-			chunk({ role: 'assistant', content: last.role === 'tool' ? `输出是 ${said.trim()}` : `收到：${said}` });
+		if (last.role === 'user' && said.includes('运行')) call('bash', { command: 'echo "mark=$STUDIO_MARK"' });
+		else if (last.role === 'user' && said.includes('读页面')) call('read_page', { slug: 'note-a' });
+		else if (last.role === 'user' && said.includes('看图')) call('show_picture', { path: picturePath, caption: '一张图' });
+		else {
+			// Slow, to be spoken to meanwhile.
+			if (said.includes('慢慢说')) await new Promise((done) => setTimeout(done, 1500));
+			chunk({ role: 'assistant', content: last.role === 'tool' ? `输出是 ${said.trim().slice(0, 200)}` : `收到：${said}` });
 			chunk({}, 'stop');
 		}
 		response.end('data: [DONE]\n\n');
@@ -66,7 +73,11 @@ test('pi in this process: no process started; words and a command (in the Studio
 	process.env.PI_OFFLINE = '1';
 	const cwd = await realpath(await mkdtemp(join(tmpdir(), 'pi-agent-')));
 	t.after(() => rm(cwd, { recursive: true, force: true }));
-	const service = await fakeService(t);
+	await mkdir(join(cwd, 'blog', 'note-a'), { recursive: true });
+	await writeFile(join(cwd, 'blog', 'note-a', 'index.md'), "---\ntitle: '甲'\npubDate: '2026-10-20'\ndraft: true\n---\n\n甲的正文。\n");
+	const picturePath = join(cwd, 'plot.png');
+	await writeFile(picturePath, 'png');
+	const service = await fakeService(t, picturePath);
 	const agent = { id: 'pi', name: 'pi', acp: 'pi-acp' };
 	const env = { PATH: process.env.PATH, PI_CODING_AGENT_DIR: await piFolder(cwd, service.url, 'good'), STUDIO_MARK: 'studio' };
 	const store = new ChatStore(join(cwd, 'chats'));
@@ -76,13 +87,40 @@ test('pi in this process: no process started; words and a command (in the Studio
 	assert.equal(session.state, 'idle');
 	assert.deepEqual(session.summary().configOptions.find((option) => option.id === 'model').currentValue, 'fake/m1');
 
-	session.prompt('你好');
+	// Where the author is: in its system prompt for this run, not in what was said.
+	session.prompt('你好', { article: { title: '甲', path: 'note-a/index.md' } });
 	await until(session, (s) => s.state === 'idle');
 	assert.equal(session.items.at(-1).text, '收到：你好');
+	const system = service.asked.at(-1).find((message) => message.role === 'system' || message.role === 'developer');
+	assert.match(JSON.stringify(system), /当前打开的文章：《甲》/u);
+	assert.equal(JSON.stringify(service.asked.at(-1).filter((message) => message.role === 'user')).includes('当前打开的文章'), false);
+	// How much of the context is used.
+	assert.ok(session.usage?.used >= 1200, `用量：${JSON.stringify(session.usage)}`);
+
+	// The Studio's operations are its tools: a page read, named as the panel names it.
+	session.prompt('读页面');
+	await until(session, (s) => s.state === 'idle');
+	const read = session.items.filter((item) => item.kind === 'tool').at(-1);
+	assert.equal(read.title, '读页面 note-a');
+	assert.equal(read.toolKind, 'read');
+	assert.match(session.items.at(-1).text, /甲的正文/u);
+	// A picture shown to the author: in its words.
+	session.prompt('看图');
+	await until(session, (s) => s.state === 'idle');
+	assert.ok(session.items.some((item) => item.kind === 'message' && item.text.includes(`![一张图](${picturePath})`)));
+	// Spoken to while it works: taken once its step is done, the turn going on.
+	assert.equal(session.summary().canSteer, true);
+	session.prompt('慢慢说');
+	await until(session, (s) => s.state === 'running');
+	await new Promise((done) => setTimeout(done, 300));
+	session.steer('插一句');
+	await until(session, (s) => s.state === 'idle');
+	assert.equal(session.items.filter((item) => item.kind === 'user').at(-1).text, '插一句');
+	assert.ok(session.items.some((item) => item.kind === 'message' && item.text.includes('收到：插一句')), JSON.stringify(session.items.slice(-4)));
 
 	session.prompt('运行一下');
 	await until(session, (s) => s.state === 'idle');
-	const run = session.items.find((item) => item.kind === 'tool');
+	const run = session.items.find((item) => item.kind === 'tool' && item.toolKind === 'execute');
 	assert.equal(run.title, 'echo "mark=$STUDIO_MARK"');
 	assert.equal(run.toolKind, 'execute');
 	assert.equal(run.status, 'completed');

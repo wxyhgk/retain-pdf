@@ -390,7 +390,7 @@ class AgentSession {
 	}
 
 	summary() {
-		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, pageThrough: this.pageThrough, onPage: this.madePage || spokenTo(this) };
+		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, pageThrough: this.pageThrough, onPage: this.madePage || spokenTo(this), canSteer: this.#here !== null };
 	}
 
 	/** The items since the last put on its page. */
@@ -552,9 +552,12 @@ class AgentSession {
 		// Running before what was said is added: a turn is put on the page once it is over, not as it begins.
 		this.#setState('running');
 		this.#add({ kind: 'user', id: randomUUID(), text, context: named });
-		const told = withContext(text, { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) });
+		const where = { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) };
 		this.#forgot = false;
-		const turn = this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: told }] });
+		// pi in this process takes where the author is into its system prompt for this run, what was said as it is.
+		const turn = this.#here
+			? this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text }], _meta: { studioContext: contextBlock(where) } })
+			: this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: withContext(text, where) }] });
 		void turn.then(
 			(done) => {
 				const turn = this.items.slice(this.items.findLastIndex((item) => item.kind === 'user') + 1);
@@ -573,6 +576,19 @@ class AgentSession {
 				this.#setState('idle');
 			},
 		);
+	}
+
+	/**
+	 * Words of the author's while it works (pi in this process: `canSteer`): shown as said, taken by it once its step
+	 * is done, the turn going on.
+	 */
+	steer(text) {
+		if (this.state !== 'running' || !this.#here) throw Object.assign(new Error('现在不能插话：等它做完，或者先停下'), { statusCode: 409 });
+		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error('要说点什么'), { statusCode: 400 });
+		this.#add({ kind: 'user', id: randomUUID(), text, context: { article: null, selection: null, mentions: [] }, steer: true });
+		void this.#connection.agent.request('_studio/steer', { sessionId: this.#acpId, text }).catch((error) => {
+			this.#add({ kind: 'error', id: randomUUID(), message: `插话没送到：${this.#why(error)}` });
+		});
 	}
 
 	/** Stops what it is doing: what it asked leave for is refused. */
@@ -840,7 +856,16 @@ function briefOf({ brief }) {
 }
 
 /** What the author said, then what the Studio adds of where they are, marked as the Studio's. */
-export function withContext(text, { article, selection, mentions = [], history } = {}) {
+export function withContext(text, context = {}) {
+	const block = contextBlock(context);
+	return block ? `${text}\n\n${block}` : text;
+}
+
+/**
+ * Where the author is, as the Studio tells the agent (withContext puts it after what was said; pi in this process
+ * takes it into its system prompt instead): empty when there is nothing to tell.
+ */
+export function contextBlock({ article, selection, mentions = [], history } = {}) {
 	const lines = [];
 	if (history) lines.push(`这是接着之前的对话说的，但你那边接不上之前的会话了：之前说过的话记在 ${history}，需要时去读`);
 	if (article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}${briefOf(article)}`);
@@ -849,8 +874,8 @@ export function withContext(text, { article, selection, mentions = [], history }
 		lines.push(`选中的是这篇的${lineRange(selection)}：`, `${fence}markdown`, selection.text, fence);
 	}
 	for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`);
-	if (!lines.length) return text;
-	return `${text}\n\n<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`;
+	if (!lines.length) return '';
+	return `<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`;
 }
 
 /**

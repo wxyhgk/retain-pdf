@@ -548,7 +548,11 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	async function submit(): Promise<void> {
 		const text = input.value.trim();
 		if (!text) return;
-		if (conversation?.state === 'running') return;
+		if (conversation?.state === 'running') {
+			// While it works: to one that can take it, words it reads once its step is done (插话).
+			if (conversation.canSteer) await steer(conversation.id, text);
+			return;
+		}
 		// Said before the AIs were read (the tab just opened), or before the conversation chosen is followed: that first.
 		await load();
 		await showing;
@@ -575,6 +579,18 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 			mentions = named;
 			grow();
 			showContext();
+			say(error instanceof Error ? error.message : '没发出去', true);
+		}
+	}
+
+	async function steer(id: string, text: string): Promise<void> {
+		input.value = '';
+		grow();
+		try {
+			await tellConversation(id, text, {}, { steer: true });
+		} catch (error) {
+			input.value = text;
+			grow();
 			say(error instanceof Error ? error.message : '没发出去', true);
 		}
 	}
@@ -701,6 +717,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		send.title = running ? '停下' : '发送（Enter；换行用 Shift+Enter）';
 		send.setAttribute('aria-label', running ? '停下' : '发送');
 		send.classList.toggle('is-stop', running);
+		// While it works, to one that can take it: what is typed is a word in between (Enter), taken once its step is done.
+		input.placeholder = running && conversation?.canSteer ? '插话：它做完手头这一步就会看到（Enter）' : '让 AI 做点什么…（@ 提到别的文章）';
 		if (conversation?.state === 'starting' && items.length) say(`正在接上之前的对话（启动 ${conversation.agent.name}）…`);
 		else if (conversation?.state === 'starting' || (!conversation && starting)) {
 			// Said by begin().
@@ -773,6 +791,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 			case 'user': {
 				node = element('div', 'ai-user');
 				node.append(element('div', 'ai-bubble', item.text));
+				if (item.steer) node.append(element('div', 'ai-user-context', '插话'));
 				const told = item.context;
 				const names = [told?.article ? `📄 ${told.article}${told.selection ? ` · ${told.selection}` : ''}` : '', ...(told?.mentions ?? []).map((title) => `@ ${title}`)].filter(Boolean);
 				if (names.length) {

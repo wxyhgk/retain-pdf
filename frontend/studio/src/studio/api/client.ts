@@ -297,12 +297,14 @@ export type Conversation = {
 	pageThrough: string | null;
 	/** Whether it has a page (opened in the editor as one): spoken to, or begun as one. */
 	onPage: boolean;
+	/** Whether it can be spoken to while it works (pi in the Studio's process). */
+	canSteer?: boolean;
 };
 /** A tool call's content: words, a change to a file, or a terminal. */
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
 /** What a conversation is made of, in order. */
 export type ConversationItem =
-	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[] } }
+	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[] }; steer?: boolean }
 	| { kind: 'message'; id: string; text: string }
 	| { kind: 'thought'; id: string; text: string }
 	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
@@ -341,8 +343,9 @@ export function followConversation(id: string, listener: (event: ConversationEve
 /** Where the author is, told with what they say: the article open, the lines selected in it, the articles named with @. */
 export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string }; mentions?: string[] };
 
-export async function tellConversation(id: string, text: string, context: ConversationContext = {}): Promise<void> {
-	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context }));
+/** Says `text` in a conversation; `steer`: while it works (pi in the Studio's process: `canSteer`), taken once its step is done. */
+export async function tellConversation(id: string, text: string, context: ConversationContext = {}, { steer = false }: { steer?: boolean } = {}): Promise<void> {
+	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context, ...(steer ? { steer } : {}) }));
 }
 
 export async function stopConversation(id: string): Promise<void> {

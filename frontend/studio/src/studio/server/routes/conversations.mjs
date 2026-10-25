@@ -82,9 +82,11 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		sendEvents(request, response, (send) => session.subscribe(send));
 	}, { streams: true });
 	api.post('/conversations/:id/prompt', async ({ params, json }) => {
-		const { text, context } = await json();
+		const { text, context, steer } = await json();
 		const session = await awake(params.id);
-		session.prompt(text, await contextOf(context));
+		// Said while it works (pi in this process): taken once its step is done.
+		if (steer === true && session.state === 'running') session.steer(text);
+		else session.prompt(text, await contextOf(context));
 		return reply(202, { id: params.id });
 	});
 	api.post('/conversations/:id/cancel', ({ params }) => {
