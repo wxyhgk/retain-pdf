@@ -389,6 +389,23 @@ export function panelAccounts(): Promise<PanelAccounts> {
 	return request('/api/studio/panel-models/accounts');
 }
 
+/** The AI in the editor (server/inline-ai.mjs): a session of `agent` made ready, as the author is about to ask. */
+export async function warmInline(agent: string): Promise<void> {
+	await request('/api/studio/inline/warm', jsonOptions('POST', { agent }));
+}
+
+/** What the AI in the editor is asked: the blocks selected rewritten, or something written where the caret is. */
+export type InlineAsk = { id: string; agent: string; options: Record<string, string>; mode: 'rewrite' | 'write'; instruction: string; slug: string; selected: string; before: string; after: string };
+
+/** The Markdown that goes in place of the blocks selected (rewrite), or where the caret is (write). */
+export function askInline(asked: InlineAsk): Promise<{ markdown: string }> {
+	return request('/api/studio/inline', jsonOptions('POST', asked));
+}
+
+export async function cancelInline(id: string): Promise<void> {
+	await request(`/api/studio/inline/${encodeURIComponent(id)}/cancel`, jsonOptions('POST', {}));
+}
+
 export async function closeConversation(id: string): Promise<void> {
 	await request(conversationApi(id, 'close'), jsonOptions('POST', {}));
 }

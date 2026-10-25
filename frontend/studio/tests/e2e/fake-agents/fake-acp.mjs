@@ -44,6 +44,15 @@ const app = agent({ name: 'fake' })
 		state.turns += 1;
 		const run = `run-${state.turns}`;
 		if (said.includes('退出')) process.exit(3);
+		// The AI in the editor's asks: a paragraph rewritten, or one written where the caret is.
+		if (said.includes('只输出改好的这一段')) {
+			await words('agent_message_chunk', `这是 AI 改写后的段落（第 ${state.turns} 次）。`);
+			return { stopReason: 'end_turn' };
+		}
+		if (said.includes('只输出要放进去的')) {
+			await words('agent_message_chunk', 'AI 写的新段落。');
+			return { stopReason: 'end_turn' };
+		}
 		// What it was told, as it came (with what the Studio adds of where the author is).
 		if (said.startsWith('上下文')) {
 			await words('agent_message_chunk', `收到的是：\n\n~~~~~~text\n${said}\n~~~~~~`);

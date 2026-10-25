@@ -54,7 +54,7 @@ export type SessionHost = {
 	 * or reject, and resolves with the Markdown the editor holds once every
 	 * one is decided.
 	 */
-	review(article: ArticlePayload, body: string, from: 'disk' | 'history'): Promise<string>;
+	review(article: ArticlePayload, body: string, from: 'disk' | 'history' | 'ai'): Promise<string>;
 	/**
 	 * Reports, through `editBody`, the edits the editor holds but has not
 	 * reported yet: it reports them a moment after the typing, and a save
@@ -298,6 +298,27 @@ export class ArticleSession {
 		if (sequence !== this.#sequence) return;
 		this.#setState({ kind: this.#store.current.dirty ? 'dirty' : 'loaded' });
 		// What was taken is an edit, saved as any other.
+		this.editBody(markdown);
+	}
+
+	/**
+	 * What the AI in the editor proposes for the body: shown as the differences to take or leave, where they are, as a
+	 * change on disk is reviewed; what is taken is an edit, saved as any other.
+	 */
+	async reviewProposal(body: string): Promise<void> {
+		this.#host.settle();
+		const { article, source: now } = this.#store.current;
+		if (!article) return;
+		if (body.trim() === parseStudioDocument(now).body.raw.trim()) {
+			this.#host.toast('AI 写的和原来一样');
+			return;
+		}
+		const sequence = ++this.#sequence;
+		this.#autosave.cancel();
+		this.#setState({ kind: 'reviewing' });
+		const markdown = await this.#host.review(article, body, 'ai');
+		if (sequence !== this.#sequence) return;
+		this.#setState({ kind: this.#store.current.dirty ? 'dirty' : 'loaded' });
 		this.editBody(markdown);
 	}
 

@@ -63,7 +63,7 @@ test('the menu moves a block, tells each action’s key, and turns a block into 
 	await clickHandleOf(page, '结尾段落。');
 	await expect(item(page, 'duplicate').locator('.hint')).toHaveText(/D$/u);
 	await expect(item(page, 'move-up').locator('.hint')).toHaveText(/↑$/u);
-	await expect(item(page, 'ask-ai')).toHaveText(/问 AI…/u);
+	await expect(item(page, 'ask-ai')).toHaveText(/AI 改写…/u);
 	await expect(item(page, 'ask-ai').locator('.hint')).toHaveText(/J$/u);
 	await item(page, 'move-up').click();
 	await expect(menu(page)).toBeHidden();
@@ -85,7 +85,7 @@ test('「转换成」 in the toolbar over selected text opens the block’s menu
 	const turn = page.locator('.milkdown-toolbar [aria-label="转换成"]');
 	await expect(turn).toBeVisible();
 	await expect(page.locator('.milkdown-toolbar [aria-label="删除线"]')).toHaveAttribute('title', /⇧⌘S|Ctrl\+Shift\+S/u);
-	await expect(page.locator('.milkdown-toolbar [aria-label="问 AI"]')).toBeVisible();
+	await expect(page.locator('.milkdown-toolbar [aria-label="AI 改写"]')).toBeVisible();
 	await turn.click();
 	await expect(menu(page)).toBeVisible();
 	await item(page, 'turn-h3').click();

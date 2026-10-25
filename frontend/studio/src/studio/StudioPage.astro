@@ -86,7 +86,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 					</div>
 					<div id="review-bar" class="review-bar" role="status" hidden>
 						<span id="review-count"></span>
-						<span class="review-hint">已经保存在磁盘上；拒绝的会改回去</span>
+						<span id="review-hint" class="review-hint">已经保存在磁盘上；拒绝的会改回去</span>
+						<button id="review-retry" type="button" hidden>重试</button>
 						<button id="review-reject-all" type="button">全部拒绝</button>
 						<button id="review-accept-all" type="button" class="review-accept">全部接受</button>
 					</div>

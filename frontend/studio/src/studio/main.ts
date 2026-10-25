@@ -27,6 +27,9 @@ import {
 	putBelowImage,
 	instruct,
 	startOcr,
+	askInline,
+	cancelInline,
+	warmInline,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -42,7 +45,7 @@ import { watchDisk } from './workspace/disk-events';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { BIBLIOGRAPHY_PATH, parseBibtex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import { createCitePicker } from './workspace/cite-picker';
-import { sourceLinesOf } from './document/source-lines';
+import { SELECTION_END, SELECTION_START, sourceLinesOf } from './document/source-lines';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { officeFilesChanged } from '@blog/office/card.ts';
 import { firstSheetRows } from '@blog/office/render.ts';
@@ -69,7 +72,8 @@ import { createPublishCheck } from './workspace/publish-check';
 import { createQuickFind } from './workspace/quick-find';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
-import { createAiPanel } from './workspace/ai-panel';
+import { chosenAI, createAiPanel } from './workspace/ai-panel';
+import { createInlineAi } from './workspace/inline-ai';
 import { createTerminalPane } from './workspace/terminal';
 import { createAgentsDialog } from './workspace/agents-dialog';
 import { createTaskTray } from './workspace/task-tray';
@@ -298,6 +302,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	},
 	enterPage: (slug) => void enterNewPage(slug),
 	askAI: () => void askAI(),
+	writeWithAI: () => void askAI(),
 	instruct: (fresh) => void instructHere(fresh),
 	ocrPdf: (view, pos, path) => void ocrPdf(path, view, pos),
 	recognize: (view, pos) => void recognizePicture(view, pos),
@@ -306,7 +311,16 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	reviewing: (pending) => reviewBar.show(pending),
 	shown: () => articleShown(),
 });
-const reviewBar = createReviewBar(shell, { acceptAll: () => editor.acceptAll(), rejectAll: () => editor.rejectAll() });
+const reviewBar = createReviewBar(shell, {
+	acceptAll: () => editor.acceptAll(),
+	rejectAll: () => editor.rejectAll(),
+	// What the AI wrote, not wanted as it is: let go, and asked again once the article is as it was.
+	async retry() {
+		editor.rejectAll();
+		for (let waited = 0; saveState === 'reviewing' && waited < 2000; waited += 50) await new Promise((done) => setTimeout(done, 50));
+		inlineAi.retry();
+	},
+});
 bindTitleFocus(() => properties.focusTitle());
 
 // Browser tests wait longer before saving, to have unsaved edits to work with.
@@ -519,11 +533,10 @@ async function publishAndName(): Promise<void> {
 }
 
 /**
- * 「问 AI」 (⌘J, the toolbar, a block's menu): the article saved, the lines
- * the selected blocks are in, and a question about them typed into the
- * terminal for the author to finish and send.
+ * 在终端里问 AI: the article saved, the lines the selected blocks are in, and a question about them typed into the
+ * terminal for the author to finish and send (what 「问 AI」 did before the AI in the editor).
  */
-async function askAI(): Promise<void> {
+async function askInTerminal(): Promise<void> {
 	const slug = session.slug;
 	const marked = slug ? editor.markSelection() : null;
 	if (!slug || !marked) return;
@@ -538,6 +551,71 @@ async function askAI(): Promise<void> {
 	}
 	sidePanel.show('terminal');
 	terminal.ask(slug, lines);
+}
+
+/** What the AI in the editor is asked about: the blocks selected (or the empty line), what is before and after, kept for 重试. */
+let inlineAsk: { slug: string; mode: 'rewrite' | 'write'; selected: string; before: string; after: string; source: string } | null = null;
+let inlineId = '';
+const inlineAi = createInlineAi({
+	async run(instruction) {
+		const asked = inlineAsk;
+		if (!asked || session.slug !== asked.slug) throw new Error('已经换了文章');
+		const { agent, options } = chosenAI();
+		inlineId = crypto.randomUUID();
+		const { markdown } = await askInline({ id: inlineId, agent, options, mode: asked.mode, instruction, slug: asked.slug, selected: asked.selected, before: asked.before, after: asked.after });
+		if (session.slug !== asked.slug) throw new Error('已经换了文章');
+		if (session.current.source !== asked.source || session.hasUnsavedEdits()) throw new Error('AI 写的时候文章改过了：再选一次，重新问');
+		// Shown in place, to accept or reject (the review bar); taken, it is saved as any edit.
+		void session.reviewProposal([asked.before, markdown.trim(), asked.after].filter((part) => part.trim()).join('\n\n') + '\n');
+	},
+	stop() {
+		if (inlineId) void cancelInline(inlineId).catch(() => {});
+	},
+	askInTerminal: () => void askInTerminal(),
+});
+
+/** Where the selection (or the caret) is on screen, for the AI's box to open under. */
+function selectionRect(): DOMRect | null {
+	const selection = window.getSelection();
+	if (!selection?.rangeCount) return null;
+	const range = selection.getRangeAt(0);
+	const rect = range.getBoundingClientRect();
+	if (rect.width || rect.height) return rect;
+	const node = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
+	return node?.getBoundingClientRect() ?? null;
+}
+
+/**
+ * The AI in the editor (⌘J, the toolbar, a block's menu; Space on an empty line), as Notion's: the selected blocks
+ * (or the one the caret is in) rewritten, or something written on the empty line, as the author says in its box;
+ * what it writes comes in place as differences to accept or reject. The article is saved first, so what is asked
+ * about is what is on disk.
+ */
+async function askAI(): Promise<void> {
+	const slug = session.slug;
+	const marked = slug ? editor.markSelection() : null;
+	if (!slug || !marked) return;
+	const anchor = selectionRect();
+	const start = marked.indexOf(SELECTION_START);
+	const end = marked.indexOf(SELECTION_END);
+	if (start < 0 || end < start) return;
+	if (!(await session.flush())) {
+		showToast('文章还没保存好，保存后再问 AI', true);
+		return;
+	}
+	const selected = marked.slice(start + SELECTION_START.length, end).trim();
+	const mode = selected && selected !== '<br />' ? 'rewrite' : 'write';
+	inlineAsk = {
+		slug,
+		mode,
+		selected,
+		before: marked.slice(0, start).trimEnd(),
+		after: marked.slice(end + SELECTION_END.length).trimStart(),
+		source: session.current.source,
+	};
+	inlineAi.open(mode, anchor);
+	// The AI made ready while the author says what they want.
+	void warmInline(chosenAI().agent).catch(() => {});
 }
 
 /**

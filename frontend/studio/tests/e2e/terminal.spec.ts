@@ -56,12 +56,13 @@ test('after the shell exits, a key opens a new one', async ({ page }) => {
 	await expect(screen(page)).toContainText('again-2');
 });
 
-test('⌘J on a block types a question about its lines into the terminal, to finish and send', async ({ page }) => {
+test('⌘J, 在终端里问 AI: a question about the block’s lines typed into the terminal, to finish and send', async ({ page }) => {
 	await page.locator('#side-tab-files').click();
 	await editor(page).locator('p', { hasText: '结尾段落' }).click();
 	await page.keyboard.press('End');
 	await page.keyboard.type('，刚改的');
 	await page.keyboard.press('ControlOrMeta+j');
+	await page.locator('.inline-ai').getByRole('option', { name: '在终端里问 AI…' }).click();
 	// The article is saved first, so the lines named are the file's.
 	await expect.poll(savedMarkdown).toContain('结尾段落。，刚改的');
 	const line = savedMarkdown().split('\n').findIndex((text) => text.includes('结尾段落。，刚改的')) + 1;

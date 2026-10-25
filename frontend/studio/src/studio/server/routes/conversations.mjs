@@ -1,4 +1,5 @@
 import { join, relative } from 'node:path';
+import { InlineAi } from '../inline-ai.mjs';
 import { accountsLoggedIn, PiModels } from '../panel-models.mjs';
 import { refuse, reply, sendEvents } from '../api.mjs';
 
@@ -83,6 +84,37 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	api.get('/panel-models/pi', () => piModels.shown());
 	api.put('/panel-models/pi', async ({ json }) => piModels.set(await json()));
 	api.post('/panel-models/pi/check', () => piModels.check());
+
+	// The AI in the editor (inline-ai.mjs): a session of the AI chosen made ready; one thing asked; stopped.
+	const inline = new InlineAi({
+		sessions: conversations,
+		cwd: blogRoot,
+		start: async (agentId) => {
+			const agent = (await agents()).find((candidate) => candidate.id === agentId);
+			if (!agent) throw refuse(404, `没有能用的 AI「${agentId}」`);
+			const service = await serviceOf(agent);
+			return { agent, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models };
+		},
+	});
+	api.post('/inline/warm', async ({ json }) => {
+		const { agent } = await json();
+		void inline.warm(String(agent ?? '')).catch(() => {});
+		return { agent };
+	});
+	api.post('/inline', async ({ json }) => {
+		const asked = await json();
+		const text = (value) => (typeof value === 'string' ? value : '');
+		if (asked.mode !== 'rewrite' && asked.mode !== 'write') throw refuse(400, 'mode 只能是 rewrite 或 write');
+		if (!text(asked.instruction).trim()) throw refuse(400, '要说明让 AI 做什么');
+		const { article } = await contextOf({ article: asked.slug });
+		if (!article) throw refuse(404, '没有这篇文章');
+		const options = asked.options && typeof asked.options === 'object' ? Object.fromEntries(Object.entries(asked.options).filter(([, value]) => typeof value === 'string')) : {};
+		return inline.ask({ id: text(asked.id), agent: text(asked.agent), options, mode: asked.mode, instruction: text(asked.instruction), article, selected: text(asked.selected), before: text(asked.before), after: text(asked.after) });
+	});
+	api.post('/inline/:id/cancel', ({ params }) => {
+		inline.cancel(params.id);
+		return { id: params.id };
+	});
 
 	api.post('/conversations/:id/close', ({ params }) => {
 		conversations.close(params.id);

@@ -34,6 +34,10 @@ const KEPT_OVER = 20;
 export class AgentSessions {
 	/** @type {Map<string, AgentSession>} */
 	#sessions = new Map();
+	/** Those of the Studio's own (inline-ai.mjs): not the panel's conversations, ended with them. */
+	#unlisted = new Set();
+	/** All closed (the server going away): one that comes up after is closed at once. */
+	#closed = false;
 	#path = null;
 
 	/**
@@ -53,13 +57,22 @@ export class AgentSessions {
 	 * them chosen if another was.
 	 * @param {{ agent: { id: string, name: string, acp: string }, cwd: string, slug?: string | null, env?: Record<string, string>, models?: { name: string, main?: string, fast?: string, provider?: string } | null }} options
 	 */
-	async start({ agent, cwd, slug = null, env = {}, models = null }) {
+	async start({ agent, cwd, slug = null, env = {}, models = null, listed = true }) {
 		// As the agent sees it (no link in it: /private/var… on a Mac), so the paths it names are shown under it.
 		const session = new AgentSession({ agent, cwd: await realpath(cwd), slug, models });
-		this.#sessions.set(session.id, session);
-		this.#forgetOld();
+		if (listed) {
+			this.#sessions.set(session.id, session);
+			this.#forgetOld();
+		} else {
+			this.#unlisted.add(session);
+			session.onClose = () => this.#unlisted.delete(session);
+		}
 		const path = `${this.binFolder}${delimiter}${env.PATH ?? (await this.#loginPath())}`;
 		await session.open(commandWords(agent.acp), { ...this.env, ...env, PATH: path });
+		if (this.#closed) {
+			session.close();
+			throw Object.assign(new Error('Studio 正在停下'), { statusCode: 503 });
+		}
 		if (models?.provider) await session.useService(models.provider);
 		return session;
 	}
@@ -79,7 +92,8 @@ export class AgentSessions {
 	}
 
 	closeAll() {
-		for (const session of this.#sessions.values()) session.close();
+		this.#closed = true;
+		for (const session of [...this.#sessions.values(), ...this.#unlisted]) session.close();
 	}
 
 	#forgetOld() {
@@ -271,7 +285,11 @@ class AgentSession {
 		return this.summary();
 	}
 
+	/** Told when it is closed (unlisted ones are let go then). */
+	onClose = () => {};
+
 	close() {
+		this.onClose();
 		for (const answer of this.#asked.values()) answer(null);
 		this.#connection?.close();
 		if (this.#child?.pid && this.#child.exitCode === null) {

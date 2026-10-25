@@ -804,3 +804,13 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		},
 	};
 }
+
+/** The AI chosen in the panel (the one asked by the AI in the editor too), and the options chosen for it. */
+export function chosenAI(): { agent: string; options: Record<string, string> } {
+	const agent = remembered(AGENT_KEY) || 'claude';
+	try {
+		return { agent, options: JSON.parse(remembered(OPTIONS_KEY(agent)) ?? '{}') as Record<string, string> };
+	} catch {
+		return { agent, options: {} };
+	}
+}

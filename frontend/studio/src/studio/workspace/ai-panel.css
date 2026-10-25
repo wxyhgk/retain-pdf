@@ -153,3 +153,16 @@
 .ai-mention span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-mention.is-current, .ai-mention:hover { background: var(--surface-soft); }
 .ai-mention-slug { flex: none; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 10.5px; }
+
+/* The AI in the editor (inline-ai.ts): a box under what is asked about, like a menu. */
+.inline-ai { position: fixed; z-index: 60; box-sizing: border-box; padding: 6px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 32px rgb(0 0 0 / 14%); color: rgb(var(--gray-dark)); font-size: 13px; }
+.inline-ai[hidden] { display: none; }
+.inline-ai-input { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); color: inherit; font: inherit; outline: none; }
+.inline-ai-input:focus { border-color: rgb(var(--gray)); }
+.inline-ai-status { margin: 6px 4px 2px; color: rgb(var(--gray)); font-size: 12px; }
+.inline-ai-status:empty { display: none; }
+.inline-ai-status.is-error { color: #b42318; }
+.inline-ai.is-running .inline-ai-status { animation: ai-breathe 1.4s ease-in-out infinite; }
+.inline-ai-list { display: flex; flex-direction: column; margin-top: 4px; max-height: 260px; overflow: auto; }
+.inline-ai-choice { padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.inline-ai-choice.is-current, .inline-ai-choice:hover { background: var(--surface-soft); }

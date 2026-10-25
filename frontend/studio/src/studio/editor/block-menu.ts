@@ -119,7 +119,7 @@ const PICTURES = ['image-block', FIGURE_TYPE];
 /** The menu's 「问 AI…」, when the Studio offers it. */
 function askEntry(host: BlockMenuHost): MenuEntry[] {
 	const ask = host.ask;
-	return ask ? [{ key: 'ask-ai', label: '问 AI…', current: false, danger: false, turn: false, hint: keyHint('Mod-j'), run: () => ask() }] : [];
+	return ask ? [{ key: 'ask-ai', label: 'AI 改写…', current: false, danger: false, turn: false, hint: keyHint('Mod-j'), run: () => ask() }] : [];
 }
 
 function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntry[] {
@@ -233,7 +233,7 @@ const ASK_ICON =
 
 /** 「问 AI」 at the end of the toolbar over selected text. */
 export function buildToolbarAsk(builder: ToolbarBuilder, ask: () => void): void {
-	builder.addGroup('ask', '问 AI').addItem('ask-ai', { icon: ASK_ICON, label: '问 AI', active: () => false, onRun: () => ask() });
+	builder.addGroup('ask', 'AI').addItem('ask-ai', { icon: ASK_ICON, label: 'AI 改写', active: () => false, onRun: () => ask() });
 }
 
 export const writingKeymap = $prose(() =>

@@ -70,8 +70,10 @@ export type StudioEditorHost = {
 	reviewing(pending: number | null): void;
 	/** The article mounted is on the page: a long one's first part, the rest coming in after. */
 	shown(): void;
-	/** The author asks an AI about the selected blocks (⌘J, 「问 AI」): `markSelection` tells which. */
+	/** The AI in the editor, on the selected blocks (⌘J, 「AI」): `markSelection` tells which. */
 	askAI(): void;
+	/** Space on an empty line: the AI in the editor, to write there. */
+	writeWithAI(): void;
 	/** Alt+Enter: an AI does what the blocks the caret is in say, by itself (⇧ as well: in a new talk). */
 	instruct(fresh: boolean): void;
 	/** OCR 成子页面: the PDF the line at `pos` links to (`path` in the article) read into a page under it, linked under that line. */

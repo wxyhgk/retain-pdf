@@ -21,8 +21,10 @@ const modifier = (event: KeyboardEvent) => (navigator.platform.includes('Mac') ?
  */
 /** What the keys need from the Studio around the editor. */
 export type BlockKeysHost = {
-	/** ⌘J: 「问 AI」 about the selected blocks. */
+	/** ⌘J: the AI in the editor, on the selected blocks. */
 	askAI(): void;
+	/** Space on an empty line: the AI in the editor, to write there. */
+	writeWithAI(): void;
 	/** Alt+Enter: an AI does what the blocks the caret is in say (⇧ as well: in a new talk). */
 	instruct(fresh: boolean): void;
 };
@@ -43,6 +45,15 @@ const blockKeysPlugin = (host: BlockKeysHost) => $prose(
 					const run = (command: (state: EditorState, dispatch?: Dispatch) => boolean) => command(view.state, (tr) => view.dispatch(tr));
 					const plain = !event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey;
 					if (event.key === 'Escape' && plain) return run(selectBlockInHand);
+					// Space on an empty line of its own (not in a list or quote): the AI writes there, as Notion's.
+					if (event.key === ' ' && plain) {
+						const { selection } = view.state;
+						const { $from } = selection;
+						if (selection instanceof TextSelection && selection.empty && $from.depth === 1 && $from.parent.type.name === 'paragraph' && $from.parent.content.size === 0) {
+							host.writeWithAI();
+							return true;
+						}
+					}
 					if (event.key === 'Backspace' && plain) return run(unlistAtStart);
 					if (event.shiftKey && !event.altKey && !event.metaKey && !event.ctrlKey && (event.key === 'ArrowUp' || event.key === 'ArrowDown')) {
 						const up = event.key === 'ArrowUp';
