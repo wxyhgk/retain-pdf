@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { appendToFixture, editFixture, editor, openStudio, resetFixture, saveStatus, savedMarkdown, slug } from './studio.ts';
+import { appendToFixture, editFixture, editor, openStudio, removeArticle, resetFixture, saveStatus, savedMarkdown, slug, writeArticle } from './studio.ts';
 
 // A long article is shown a part at a time (studio-editor.ts, as SiYuan shows a long document): its first part at
 // once, the rest after, a part every other frame. Here a short one is too, in small parts (STUDIO_PARTS), so that a
@@ -97,4 +97,27 @@ test('an empty line at the end of a part is written back as it was', async ({ pa
 	await openInParts(page, { from: 0, first: 1, rest: 11 });
 	await expect(saveStatus(page)).toHaveText('已载入');
 	await expect(page.locator('#roundtrip-status')).toHaveAttribute('data-state', 'exact');
+});
+
+test('left while the rest of it comes in, a long article puts none of it into the next article shown', async ({ page }) => {
+	// The rest of an article left early went on into the next one (the editor is the same one), which then saved it.
+	writeArticle('other-short', '---\ntitle: 另一篇短文\npubDate: 2026-10-01\ndraft: true\n---\n\n短文的一段。\n');
+	try {
+		appendToFixture(`\n${sections(40)}\n`);
+		await page.addInitScript(() => {
+			(window as { STUDIO_PARTS?: object }).STUDIO_PARTS = { from: 2000, first: 1500, rest: 400 };
+		});
+		await page.goto(`/studio?article=${slug}`);
+		await expect(editor(page).locator('h2', { hasText: '第 1 节' })).toBeVisible();
+		// Still coming in when left.
+		await expect(page.locator('[aria-busy="true"]:has(.ProseMirror)')).toHaveCount(1);
+		await page.locator('#article-list').getByText('另一篇短文', { exact: true }).click();
+		await expect(page.locator('#breadcrumb-title')).toHaveText('另一篇短文');
+		await page.waitForTimeout(1500);
+		await expect(editor(page)).toHaveText('短文的一段。');
+		await expect(saveStatus(page)).toHaveText('已载入');
+		await expect(page.locator('[aria-busy="true"]:has(.ProseMirror)')).toHaveCount(0);
+	} finally {
+		removeArticle('other-short');
+	}
 });

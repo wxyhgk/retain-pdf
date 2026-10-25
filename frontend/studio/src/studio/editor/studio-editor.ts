@@ -216,6 +216,12 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	let loading = false;
 	/** Done once the article shown is all in. */
 	let loaded: Promise<unknown> = Promise.resolve();
+	/**
+	 * How many times an article has been shown: what is still being done for one (the rest of a long one put in,
+	 * its Markdown written) stops once another is. Not the editor: it is kept from one article to the next
+	 * (showDocument), and the rest of a long article left early went on into the next one shown.
+	 */
+	let shownCount = 0;
 	/** The plugins' blocks and commands the editor was made with: made again only when they change. */
 	let madeWith: { blocks: readonly unknown[]; commands: readonly unknown[] } | null = null;
 	/** The review under way: what to call once every change is decided. */
@@ -487,6 +493,10 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 
 	async function mount(body: string, whole = false): Promise<string> {
 		mounting = true;
+		const showing = ++shownCount;
+		// What was being done for the article before (left while it was put in) is over.
+		loading = false;
+		root.removeAttribute('aria-busy');
 		let mounted: Crepe;
 		/** Where the first part ends, as shown: the next goes there. */
 		let firstEnd = 0;
@@ -521,10 +531,10 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		// Shown first: what it holds as Markdown (whether it reads back as written) is worked out after, a long
 		// article's taking a while. Another article shown meanwhile: this one's text as it was.
 		await nextFrame();
-		if (mounted !== crepe) return body;
+		if (showing !== shownCount) return body;
 		host.shown();
-		if (!inParts) return (await writeOpened(mounted, reported!)) ?? body;
-		const rest = showRest(mounted, body, parts!, reported!, firstEnd);
+		if (!inParts) return (await writeOpened(mounted, reported!, showing)) ?? body;
+		const rest = showRest(mounted, body, parts!, reported!, firstEnd, showing);
 		loaded = rest;
 		return (await rest) ?? body;
 	}
@@ -534,7 +544,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	 * formulas took a frame of its own right after it was shown. What is typed meanwhile is reported after. Null:
 	 * another article was shown meanwhile.
 	 */
-	async function writeOpened(shown: Crepe, doc: ProseNode): Promise<string | null> {
+	async function writeOpened(shown: Crepe, doc: ProseNode, showing: number): Promise<string | null> {
 		loading = true;
 		const write = writerOf(shown);
 		try {
@@ -543,13 +553,14 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				for (let index = from; index < Math.min(doc.childCount, from + WRITTEN_AT_A_FRAME); index += 1) blocks.push(doc.child(index));
 				write(doc.copy(Fragment.from(blocks)));
 				await nextFrame();
-				if (crepe !== shown) return null;
+				if (showing !== shownCount) return null;
 			}
 			reported = doc;
 			setTimeout(report);
 			return withoutTrailingEmptyLines(write(doc));
 		} finally {
-			loading = false;
+			// Another article shown meanwhile: its loading is its own.
+			if (showing === shownCount) loading = false;
 		}
 	}
 
@@ -558,7 +569,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	 * meanwhile, and what is typed is reported once all is in. `opening` is the first part as shown, the next going at
 	 * `end`. The Markdown the article as written is (null: another article was shown meanwhile).
 	 */
-	async function showRest(shown: Crepe, body: string, parts: Iterator<MarkdownBlockSlice[]>, opening: ProseNode, end: number): Promise<string | null> {
+	async function showRest(shown: Crepe, body: string, parts: Iterator<MarkdownBlockSlice[]>, opening: ProseNode, end: number, showing: number): Promise<string | null> {
 		loading = true;
 		root.setAttribute('aria-busy', 'true');
 		const write = writerOf(shown);
@@ -574,7 +585,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				const doc = shown.editor.action((ctx) => ctx.get(parserCtx)(body.slice(blocks[0]!.start, blocks.at(-1)!.end)));
 				if (unwritten) write(opening.copy(unwritten));
 				await nextFrame();
-				if (crepe !== shown) return null;
+				if (showing !== shownCount) return null;
 				unwritten = shown.editor.action((ctx) => {
 					const view = ctx.get(editorViewCtx);
 					const $at = view.state.doc.resolve(nextPartKey.getState(view.state)!);
@@ -590,15 +601,17 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				asShown = asShown.replace(end, end, new Slice(unwritten, 0, 0));
 				end += unwritten.size;
 				await nextFrame();
-				if (crepe !== shown) return null;
+				if (showing !== shownCount) return null;
 			}
 			reported = asShown;
 			// What was typed meanwhile, as an edit: once the article is settled as shown (when mount has returned).
 			setTimeout(report);
 			return withoutTrailingEmptyLines(write(asShown));
 		} finally {
-			loading = false;
-			root.removeAttribute('aria-busy');
+			if (showing === shownCount) {
+				loading = false;
+				root.removeAttribute('aria-busy');
+			}
 		}
 	}
 
