@@ -81,6 +81,19 @@ const OPTIONS_KEY = (agent: string) => `studio.ai.options.${agent}`;
 const EFFORT_NAMES: Record<string, string> = { default: '思考：默认', low: '思考：低', medium: '思考：中', high: '思考：高', xhigh: '思考：很高', max: '思考：最高', ultra: '思考：极限' };
 const PERMISSION_NAMES: Record<string, string> = { allow_once: '允许', allow_always: '总是允许', reject_once: '拒绝', reject_always: '总是拒绝' };
 const TOOL_ICONS: Record<string, string> = { execute: '›_', read: '◫', edit: '✎', delete: '⌫', move: '⇄', search: '⌕', fetch: '⇣', think: '…', switch_mode: '⇆', other: '•' };
+/** What each kind of tool call did, counted in a stretch of work: 读了 3 个文件. */
+const TOOL_DONE: Record<string, (count: number) => string> = {
+	read: (count) => `读了 ${count} 个文件`,
+	execute: (count) => `运行了 ${count} 个命令`,
+	search: (count) => `搜索 ${count} 次`,
+	fetch: (count) => `查了 ${count} 个网页`,
+	delete: (count) => `删了 ${count} 个文件`,
+	move: (count) => `移动 ${count} 个文件`,
+};
+/** What a tool call going on is doing: 正在运行 echo hi. */
+const TOOL_DOING: Record<string, string> = { read: '正在读', edit: '正在改', execute: '正在运行', search: '正在搜索', fetch: '正在查', delete: '正在删除', move: '正在移动' };
+/** Items that are work toward an answer (thinking, tools, the plan): a stretch of them is one row, opened in a dialog. */
+const WORK_KINDS = new Set(['thought', 'tool', 'plan']);
 const STOP_NAMES: Record<string, string> = { cancelled: '已停止', max_tokens: '回答太长，停在这里了', max_turn_requests: '步数到了上限，停在这里了', refusal: '它拒绝了这个请求' };
 
 const remembered = (key: string): string | null => {
@@ -319,7 +332,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				conversation = event.session;
 				items = [...event.items];
 				drawn.clear();
-				list.replaceChildren(...items.map((item) => draw(item)));
+				workRows.clear();
 				break;
 			case 'item': {
 				const at = items.findIndex((entry) => entry.id === event.item.id);
@@ -327,8 +340,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				else items.push(event.item);
 				const old = drawn.get(event.item.id);
 				const next = draw(event.item, old);
-				if (!old) list.append(next);
-				else if (old !== next) old.replaceWith(next);
+				if (old && old !== next) old.replaceWith(next);
 				break;
 			}
 			case 'append': {
@@ -347,17 +359,133 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 			}
 		}
 		thoughtsOver();
+		if (event.type !== 'append') layout();
 		showSession();
 		keepAtBottom();
 	}
 
 	/** A thought drawn as going on (思考中…) once something came after it, or the turn is over: drawn again as done. */
 	function thoughtsOver(): void {
-		for (const node of list.querySelectorAll<HTMLElement>('.ai-thought.is-going')) {
-			const item = items.find((entry) => entry.id === node.dataset.item);
-			if (!item || (items.at(-1) === item && conversation?.state === 'running')) continue;
+		for (const item of items) {
+			const node = drawn.get(item.id);
+			if (item.kind !== 'thought' || !node?.classList.contains('is-going') || (items.at(-1) === item && conversation?.state === 'running')) continue;
 			node.replaceWith(draw(item, node));
 		}
+	}
+
+	// ——— Work (thinking, tools, the plan): one row a stretch, its detail in a dialog ———
+
+	/** Each stretch's row, by its first item's id. */
+	const workRows = new Map<string, HTMLElement>();
+	const workDialog = element('dialog', 'ai-pane ai-work-dialog');
+	workDialog.setAttribute('aria-label', '过程');
+	const workHead = element('header', 'ai-work-head');
+	const workTitle = element('strong', 'ai-work-title');
+	const workClose = element('button', 'ai-work-close', '×');
+	workClose.type = 'button';
+	workClose.setAttribute('aria-label', '关闭');
+	workHead.append(workTitle, workClose);
+	const workBody = element('div', 'ai-work-body');
+	workDialog.append(workHead, workBody);
+	document.body.append(workDialog);
+	/** The stretch shown in the dialog, by its first item's id. */
+	let workShown: string | null = null;
+	workClose.addEventListener('click', () => workDialog.close());
+	// A click outside it (on the backdrop, which is the dialog itself) closes it.
+	workDialog.addEventListener('click', (event) => {
+		if (event.target === workDialog) workDialog.close();
+	});
+	workDialog.addEventListener('close', () => {
+		workShown = null;
+	});
+
+	/** The stretches of work, each the items between what is said, asked or told. */
+	function stretches(): ConversationItem[][] {
+		const found: ConversationItem[][] = [];
+		let run: ConversationItem[] = [];
+		for (const item of items) {
+			if (WORK_KINDS.has(item.kind)) run.push(item);
+			else if (run.length) {
+				found.push(run);
+				run = [];
+			}
+		}
+		if (run.length) found.push(run);
+		return found;
+	}
+
+	/** The list as the conversation has it: what is said as it is, each stretch of work one row. */
+	function layout(): void {
+		const runs = new Map(stretches().map((run) => [run[0]!.id, run]));
+		const nodes: HTMLElement[] = [];
+		for (const item of items) {
+			const run = runs.get(item.id);
+			if (run) nodes.push(workRow(run));
+			else if (!WORK_KINDS.has(item.kind)) nodes.push(drawn.get(item.id) ?? draw(item));
+		}
+		for (const key of [...workRows.keys()]) if (!runs.has(key)) workRows.delete(key);
+		if (nodes.length !== list.children.length || nodes.some((node, at) => list.children[at] !== node)) list.replaceChildren(...nodes);
+		if (workShown) {
+			const run = runs.get(workShown);
+			if (run) fillWork(run);
+			else workDialog.close();
+		}
+	}
+
+	/** The row of a stretch: what it did (读了 3 个文件 · 运行了 1 个命令), or what it is doing now; opened, its detail. */
+	function workRow(run: ConversationItem[]): HTMLElement {
+		const key = run[0]!.id;
+		let row = workRows.get(key);
+		if (!row) {
+			const button = element('button', 'ai-work');
+			button.type = 'button';
+			row = button;
+			row.addEventListener('click', () => {
+				workShown = key;
+				const now = stretches().find((entry) => entry[0]!.id === key);
+				if (now) fillWork(now);
+				workDialog.showModal();
+			});
+			workRows.set(key, row);
+		}
+		const { text, going, failed } = workSummary(run);
+		row.classList.toggle('is-going', going);
+		row.title = '点开看过程';
+		row.replaceChildren(element('span', 'ai-work-icon', going ? '' : '⚙'), element('span', 'ai-work-text', text), ...(failed ? [element('span', 'ai-work-failed', `${failed} 步失败`)] : []), element('span', 'ai-work-more', '›'));
+		return row;
+	}
+
+	function workSummary(run: ConversationItem[]): { text: string; going: boolean; failed: number } {
+		const tools = run.filter((item): item is ToolItem => item.kind === 'tool');
+		const failed = tools.filter((tool) => tool.status === 'failed').length;
+		const last = run.at(-1)!;
+		const going = conversation?.state === 'running' && items.at(-1) === last;
+		if (going) {
+			if (last.kind === 'tool') return { text: `${TOOL_DOING[last.toolKind] ?? '正在做'} ${commandOf(last) ?? (last.title || '…')}`, going, failed };
+			return { text: last.kind === 'plan' ? '正在定计划…' : '正在思考…', going, failed };
+		}
+		const parts: string[] = [];
+		if (run.some((item) => item.kind === 'thought')) parts.push('思考');
+		const byKind = new Map<string, ToolItem[]>();
+		for (const tool of tools) byKind.set(tool.toolKind, [...(byKind.get(tool.toolKind) ?? []), tool]);
+		for (const [kind, those] of byKind) {
+			if (kind === 'edit') {
+				const files = [...new Set(those.flatMap((tool) => [...tool.locations.map((location) => location.path), ...tool.content.flatMap((content) => (content.type === 'diff' ? [content.path] : []))]).map((path) => relative(path).split('/').pop()!))];
+				parts.push(files.length ? `改了 ${files.slice(0, 2).join('、')}${files.length > 2 ? ` 等 ${files.length} 个文件` : ''}` : `改了 ${those.length} 处`);
+			} else {
+				parts.push((TOOL_DONE[kind] ?? ((count: number) => `${count} 个其他操作`))(those.length));
+			}
+		}
+		const plan = run.find((item): item is Extract<ConversationItem, { kind: 'plan' }> => item.kind === 'plan');
+		if (plan) parts.push(`计划 ${plan.entries.filter((entry) => entry.status === 'completed').length}/${plan.entries.length}`);
+		return { text: parts.join(' · ') || '过程', going, failed };
+	}
+
+	/** The dialog shows this stretch: each step as the panel draws it (thinking, a command and its output, a change). */
+	function fillWork(run: ConversationItem[]): void {
+		workTitle.textContent = workSummary(run).text;
+		const nodes = run.map((item) => drawn.get(item.id) ?? draw(item));
+		if (nodes.length !== workBody.children.length || nodes.some((node, at) => workBody.children[at] !== node)) workBody.replaceChildren(...nodes);
 	}
 
 	/** Words streaming in are drawn again once a frame, not once a piece. */
@@ -710,7 +838,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	function drawThought(item: Extract<ConversationItem, { kind: 'thought' }>, old?: HTMLElement): HTMLElement {
 		const details = element('details', 'ai-thought');
 		const thinking = items.at(-1) === item && conversation?.state === 'running';
-		details.open = old instanceof HTMLDetailsElement ? old.open : false;
+		// In the dialog of its stretch: open, as it is opened to be read.
+		details.open = old instanceof HTMLDetailsElement ? old.open : true;
 		details.classList.toggle('is-going', thinking);
 		details.append(element('summary', '', thinking ? '思考中…' : '思考过程'), element('div', 'ai-thought-text', item.text));
 		return details;

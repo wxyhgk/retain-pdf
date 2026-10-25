@@ -45,32 +45,39 @@ test('the agent thinks, asks leave to run a command, runs it once allowed, chang
 	await asked.getByRole('button', { name: '允许', exact: true }).click();
 	await expect(asked.locator('.ai-permission-answer')).toHaveText('已允许');
 
-	// Its words, drawn as Markdown with formulas; its thinking folded.
+	// Its words, drawn as Markdown with formulas.
 	const last = pane(page).locator('.ai-message').last();
 	await expect(last.locator('strong')).toHaveText('hi');
 	await expect(last.locator('.katex')).toHaveCount(1);
 	await expect(pane(page).locator('.ai-message').first()).toHaveText('收到（模型 small）。我来运行命令。');
-	const thought = pane(page).locator('.ai-thought');
-	await expect(thought.locator('summary')).toHaveText('思考过程');
-	await expect(thought.locator('.ai-thought-text')).toBeHidden();
-	await thought.locator('summary').click();
-	await expect(thought.locator('.ai-thought-text')).toHaveText('先看看要做什么。');
-
-	// The command: done, its output when opened.
-	const run = pane(page).locator('.ai-tool[data-kind="execute"]');
+	// The work toward it, a row a stretch (what the leave asked splits): what it did, nothing of it shown.
+	const work = pane(page).locator('.ai-work');
+	await expect(work).toHaveText(['⚙思考›', '⚙运行了 1 个命令 · 计划 2/2›', '⚙改了 index.md›']);
+	await expect(pane(page).locator('.ai-thought, .ai-tool, .ai-plan')).toHaveCount(0);
+	// Opened: its detail in a dialog, the thinking open, closed with Esc.
+	const dialog = page.locator('dialog.ai-work-dialog');
+	await work.first().click();
+	await expect(dialog).toBeVisible();
+	await expect(dialog.locator('.ai-thought-text')).toHaveText('先看看要做什么。');
+	await page.keyboard.press('Escape');
+	await expect(dialog).toBeHidden();
+	// The command: done, its output when opened; the plan, the latest of it.
+	await work.nth(1).click();
+	const run = dialog.locator('.ai-tool[data-kind="execute"]');
 	await expect(run).toHaveAttribute('data-status', 'completed');
 	await expect(run.locator('.ai-tool-title')).toHaveText('echo hi');
 	await expect(run.locator('.ai-tool-detail')).toBeHidden();
 	await run.locator('.ai-tool-row').click();
 	await expect(run.locator('.ai-tool-detail pre')).toHaveText('hi');
+	await expect(dialog.locator('.ai-plan li')).toHaveClass([/is-completed/u, /is-completed/u]);
+	await dialog.getByRole('button', { name: '关闭' }).click();
 	// The change to a file, as lines taken away and put in.
-	const edit = pane(page).locator('.ai-tool[data-kind="edit"]');
+	await work.nth(2).click();
+	const edit = dialog.locator('.ai-tool[data-kind="edit"]');
 	await edit.locator('.ai-tool-row').click();
 	await expect(edit.locator('.ai-diff-path')).toHaveText('index.md');
 	await expect(edit.locator('.ai-diff-lines span')).toHaveText(['- 旧的一行\n', '+ 新的一行\n']);
-	// The plan, the latest of it.
-	await expect(pane(page).locator('.ai-plan')).toHaveCount(1);
-	await expect(pane(page).locator('.ai-plan li')).toHaveClass([/is-completed/u, /is-completed/u]);
+	await page.keyboard.press('Escape');
 
 	await expect(pane(page).locator('.ai-title')).toHaveText('问：跑一下');
 	await expect(pane(page).locator('.ai-send')).toHaveAttribute('aria-label', '发送');
@@ -81,7 +88,7 @@ test('the agent thinks, asks leave to run a command, runs it once allowed, chang
 	await pane(page).locator('.ai-permission').last().getByRole('button', { name: '拒绝' }).click();
 	await expect(pane(page).locator('.ai-message').last()).toHaveText('好，不运行了。');
 	await expect(pane(page).locator('.ai-message').nth(2)).toHaveText('收到（模型 large）。我来运行命令。');
-	await expect(pane(page).locator('.ai-tool[data-kind="execute"]').last()).toHaveAttribute('data-status', 'failed');
+	await expect(pane(page).locator('.ai-work').nth(4)).toContainText('1 步失败');
 
 	// The page loaded again: the same conversation, as it was.
 	await page.reload();
@@ -95,7 +102,8 @@ test('a turn is stopped from the send button; ＋ begins another conversation, t
 	await tell(page, '慢慢来');
 	const send = pane(page).locator('.ai-send');
 	await expect(send).toHaveAttribute('aria-label', '停下');
-	await expect(pane(page).locator('.ai-tool[data-status="in_progress"]')).toHaveCount(1);
+	// What it is doing now, on its row.
+	await expect(pane(page).locator('.ai-work.is-going')).toContainText('正在运行 sleep 100');
 	await send.click();
 	await expect(pane(page).locator('.ai-stop')).toHaveText('已停止');
 	await expect(send).toHaveAttribute('aria-label', '发送');

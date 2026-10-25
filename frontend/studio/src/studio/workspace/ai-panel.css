@@ -182,3 +182,20 @@
 
 /* Whole, in the middle (AI 问答): the same panel as in the side, its conversation at a reading width. */
 .ai-pane.is-full .ai-items, .ai-pane.is-full .ai-empty, .ai-pane.is-full .ai-composer { box-sizing: border-box; width: min(100%, 820px); margin-right: auto; margin-left: auto; }
+
+/* A stretch of work (thinking, tools, the plan): one quiet row; its detail in a dialog, to keep to what is said. */
+.ai-work { display: flex; align-items: center; gap: 7px; width: fit-content; max-width: 100%; min-height: 26px; padding: 2px 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.ai-work:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+.ai-work-icon { flex: none; width: 14px; text-align: center; }
+.ai-work.is-going .ai-work-icon::after { display: inline-block; width: 8px; height: 8px; border: 1.5px solid rgb(var(--gray-light)); border-top-color: rgb(var(--gray-dark)); border-radius: 50%; animation: ai-spin 0.8s linear infinite; content: ''; }
+.ai-work-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-work-failed { flex: none; color: #b42318; }
+.ai-work-more { flex: none; }
+.ai-work-dialog { width: min(720px, 92vw); max-height: 80vh; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18); }
+.ai-work-dialog[open] { display: flex; flex-direction: column; }
+.ai-work-dialog::backdrop { background: rgba(0, 0, 0, 0.22); }
+.ai-work-head { display: flex; flex: none; align-items: center; gap: 8px; padding: 12px 14px 12px 18px; border-bottom: 1px solid rgb(var(--gray-light)); }
+.ai-work-title { flex: 1; min-width: 0; font-size: 13px; font-weight: 600; }
+.ai-work-close { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 16px; cursor: pointer; }
+.ai-work-close:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+.ai-work-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 14px 18px 20px; overflow: auto; }
