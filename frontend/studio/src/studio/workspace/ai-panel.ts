@@ -30,18 +30,23 @@ const AGENT_KEY = 'studio.ai.agent';
 
 /** The options shown under the input, in this order: who decides, which model, how hard it thinks. */
 const SHOWN_OPTIONS = ['mode', 'model', 'thought_level'];
-/** Names the adapters give in English, said in Chinese (the rest as they come). */
+/**
+ * Names the adapters give in English, said in Chinese as what they let it do without asking (the rest as they come).
+ * Claude Code's "accept edits" lets it change files, but asks before a command that does something (python, rm…).
+ */
 const OPTION_NAMES: Record<string, string> = {
 	default: '每步都问',
-	acceptEdits: '自动接受改动',
+	acceptEdits: '自动改文件（命令要问）',
 	plan: '只做计划',
-	auto: '自动判断',
-	bypassPermissions: '全部允许',
-	'read-only': '只读',
-	'workspace-write': '可改文件夹',
-	agent: '自动审查',
-	'agent-full-access': '完全访问',
+	auto: '自动（只问危险的）',
+	bypassPermissions: '全部允许（不再问）',
+	'read-only': '只读（改动都要问）',
+	'workspace-write': '可改文件夹（联网要问）',
+	agent: '自动（只问不安全的）',
+	'agent-full-access': '完全访问（不再问）',
 };
+/** The options the author chose for an AI, given again to each conversation begun with it. */
+const OPTIONS_KEY = (agent: string) => `studio.ai.options.${agent}`;
 const EFFORT_NAMES: Record<string, string> = { default: '思考：默认', low: '思考：低', medium: '思考：中', high: '思考：高', xhigh: '思考：很高', max: '思考：最高', ultra: '思考：极限' };
 const PERMISSION_NAMES: Record<string, string> = { allow_once: '允许', allow_always: '总是允许', reject_once: '拒绝', reject_always: '总是拒绝' };
 const TOOL_ICONS: Record<string, string> = { execute: '›_', read: '◫', edit: '✎', delete: '⌫', move: '⇄', search: '⌕', fetch: '⇣', think: '…', switch_mode: '⇆', other: '•' };
@@ -174,7 +179,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		const slug = host.article()?.slug ?? null;
 		follow(null);
 		say(`正在启动 ${agents.find((entry) => entry.id === agent)?.name ?? 'AI'}…`);
-		const started = startConversation(agent, slug).then(
+		const started = startConversation(agent, slug).then(chosenAgain).then(
 			(made) => {
 				if (starting === started) {
 					starting = null;
@@ -190,6 +195,25 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		);
 		starting = started;
 		return started;
+	}
+
+	/** A conversation just begun, given the options the author chose last time for its AI (those it still has). */
+	async function chosenAgain(made: Conversation): Promise<Conversation> {
+		let chosen: Record<string, string> = {};
+		try {
+			chosen = JSON.parse(remembered(OPTIONS_KEY(made.agent.id)) ?? '{}') as Record<string, string>;
+		} catch {
+			// Kept wrong: as the AI offers them.
+		}
+		let now = made;
+		for (const option of made.configOptions) {
+			const value = chosen[option.id];
+			if (typeof value !== 'string' || value === option.currentValue || !SHOWN_OPTIONS.includes(option.category ?? option.id)) continue;
+			const choices = (option.options ?? []).flatMap((entry) => ('options' in entry ? entry.options : [entry]));
+			if (!choices.some((choice) => choice.value === value)) continue;
+			now = await setConversationOption(made.id, option.id, value).catch(() => now);
+		}
+		return now;
 	}
 
 	/** Shows `next` (or nothing yet), following it. */
@@ -321,10 +345,19 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		select.value = String(option.currentValue);
 		select.addEventListener('change', () => {
 			if (!conversation) return;
+			const agent = conversation.agent.id;
 			setConversationOption(conversation.id, option.id, select.value).then(
 				(changed) => {
 					conversation = changed;
 					showSession();
+					// Given again to the next conversation with this AI.
+					let chosen: Record<string, string> = {};
+					try {
+						chosen = JSON.parse(remembered(OPTIONS_KEY(agent)) ?? '{}') as Record<string, string>;
+					} catch {
+						// Kept wrong: started afresh.
+					}
+					remember(OPTIONS_KEY(agent), JSON.stringify({ ...chosen, [option.id]: select.value }));
 				},
 				(error: unknown) => {
 					select.value = String(option.currentValue);

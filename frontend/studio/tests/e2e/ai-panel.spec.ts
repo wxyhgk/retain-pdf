@@ -96,9 +96,15 @@ test('a turn is stopped from the send button; ＋ begins another conversation, t
 	await expect(pane(page).locator('.ai-stop')).toHaveText('已停止');
 	await expect(send).toHaveAttribute('aria-label', '发送');
 
+	// What is chosen for an AI is given to its next conversation too.
+	await pane(page).locator('.ai-options select[aria-label="Model"]').selectOption('large');
+	await pane(page).locator('.ai-options select[aria-label="Mode"]').selectOption('plan');
+	await expect(pane(page).locator('.ai-options select[aria-label="Mode"] option:checked')).toHaveText('只做计划');
 	await pane(page).getByRole('button', { name: '新对话' }).click();
 	await expect(pane(page).locator('.ai-empty')).toBeVisible();
 	await expect(pane(page).locator('.ai-options select')).toHaveCount(2);
+	await expect(pane(page).locator('.ai-options select[aria-label="Model"]')).toHaveValue('large');
+	await expect(pane(page).locator('.ai-options select[aria-label="Mode"]')).toHaveValue('plan');
 	await pane(page).getByRole('button', { name: '对话记录' }).click();
 	await page.getByRole('menuitem', { name: /慢慢来|还没说话/u }).first().click();
 	await expect(pane(page).locator('.ai-user')).toHaveText('慢慢来');

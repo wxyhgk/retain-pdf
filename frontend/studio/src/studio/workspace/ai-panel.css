@@ -96,7 +96,7 @@
 .ai-composer-bar { display: flex; align-items: center; gap: 4px; padding: 4px 6px 6px; border: 1px solid rgb(var(--gray-light)); border-top: 0; border-radius: 0 0 10px 10px; background: var(--surface); }
 .ai-composer:focus-within .ai-input, .ai-composer:focus-within .ai-composer-bar { border-color: rgb(var(--gray)); }
 .ai-options { display: flex; flex: 0 1 auto; min-width: 0; gap: 2px; overflow: hidden; }
-.ai-select { min-width: 0; max-width: 112px; padding: 3px 4px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11.5px; text-overflow: ellipsis; cursor: pointer; }
+.ai-select { min-width: 0; max-width: 140px; padding: 3px 4px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11.5px; text-overflow: ellipsis; cursor: pointer; }
 .ai-select:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 .ai-select.ai-agent { color: rgb(var(--gray-dark)); font-weight: 600; }
 .ai-usage { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-size: 10.5px; text-align: right; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
