@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { editor, openStudio, removeArticle, resetFixture, writeArticle } from './studio.ts';
+import { editor, openStudio, removeArticle, resetFixture, writeArticle, writeFixtureFile } from './studio.ts';
 
 // The AI tab: a coding agent spoken to over the Agent Client Protocol (a stand-in here:
 // tests/e2e/fake-agents/fake-acp.mjs), which thinks, says what it will do, asks leave to run a command, runs it,
@@ -178,6 +178,8 @@ test('pi: a service of its catalog and a key, saved; the next pi conversation ha
 
 test('what is said is told where the author is: the article open (followed as another is opened), what is selected, the articles named with @', async ({ page }) => {
 	writeArticle('other-note', '---\ntitle: 另一篇笔记\npubDate: 2026-10-01\ndraft: true\n---\n\n另一篇的一段。\n');
+	// The fixture has its brief (blog/AGENTS.md: read it first), the other none: said of each, so none is tried for.
+	writeFixtureFile('ai/brief.md', '写给刚学量子化学的本科生。\n');
 	try {
 		await openAi(page);
 		const chips = pane(page).locator('.ai-context .ai-chip-label');
@@ -193,10 +195,10 @@ test('what is said is told where the author is: the article open (followed as an
 		await expect(chips).toHaveText(['📄 Studio 测试夹具', '选中的内容', '@ 另一篇笔记']);
 		await input(page).press('Enter');
 		const answer = pane(page).locator('.ai-message').last();
-		await expect(answer).toContainText('当前打开的文章：《Studio 测试夹具》，文件 studio-fixture/index.md');
+		await expect(answer).toContainText('当前打开的文章：《Studio 测试夹具》，文件 studio-fixture/index.md；它的写作要求在 studio-fixture/ai/brief.md，先读');
 		await expect(answer).toContainText('选中的是这篇的第');
 		await expect(answer).toContainText('结尾段落。');
-		await expect(answer).toContainText('用 @ 提到的文章：《另一篇笔记》，文件 other-note/index.md');
+		await expect(answer).toContainText('用 @ 提到的文章：《另一篇笔记》，文件 other-note/index.md（没有 ai/brief.md，不用找）');
 		// What was said is shown as said, with what it named.
 		await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('上下文 看看');
 		await expect(pane(page).locator('.ai-user-context')).toContainText('@ 另一篇笔记');

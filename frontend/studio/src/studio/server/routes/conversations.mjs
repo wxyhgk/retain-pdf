@@ -1,3 +1,4 @@
+import { access } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { InlineAi } from '../inline-ai.mjs';
 import { accountsLoggedIn, PiModels } from '../panel-models.mjs';
@@ -37,19 +38,25 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const session = await conversations.start({ agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
 		return reply(201, session.summary());
 	});
-	/** The page's account of where the author is, made the agent's: each article by its file from blog/, as it is there. */
+	/**
+	 * The page's account of where the author is, made the agent's: each article by its file from blog/, as it is there,
+	 * and its ai/brief.md if it has one (blog/AGENTS.md: read it first), so the agent need not try for one not there.
+	 */
 	const contextOf = async (asked) => {
 		if (!asked || typeof asked !== 'object') return {};
 		const known = new Map((await articles.list()).map((entry) => [entry.slug, entry]));
-		const article = (slug) => {
+		const article = async (slug) => {
 			const found = typeof slug === 'string' ? known.get(slug) : null;
-			return found ? { title: found.title || slug, path: relative(blogRoot, join(articleFolder(slug), 'index.md')) } : null;
+			if (!found) return null;
+			const brief = join(articleFolder(slug), 'ai', 'brief.md');
+			const hasBrief = await access(brief).then(() => true, () => false);
+			return { title: found.title || slug, path: relative(blogRoot, join(articleFolder(slug), 'index.md')), brief: hasBrief ? relative(blogRoot, brief) : null };
 		};
-		const open = article(asked.article);
+		const open = await article(asked.article);
 		const selection = open && asked.selection && Number.isInteger(asked.selection.start) && Number.isInteger(asked.selection.end) && typeof asked.selection.text === 'string'
 			? { start: asked.selection.start, end: asked.selection.end, text: asked.selection.text.slice(0, 20_000) }
 			: null;
-		const mentions = (Array.isArray(asked.mentions) ? asked.mentions : []).map(article).filter(Boolean).filter((entry) => entry.path !== open?.path);
+		const mentions = (await Promise.all((Array.isArray(asked.mentions) ? asked.mentions : []).map(article))).filter(Boolean).filter((entry) => entry.path !== open?.path);
 		return { ...(open ? { article: open } : {}), ...(selection ? { selection } : {}), ...(mentions.length ? { mentions } : {}) };
 	};
 	api.get('/conversations/:id/events', ({ params, request, response }) => {

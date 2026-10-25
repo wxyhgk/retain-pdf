@@ -443,22 +443,28 @@ function modelChoices(option) {
 
 /**
  * @typedef {object} PromptContext where the author is, as the Studio tells the agent (paths from its folder)
- * @property {{ title: string, path: string }} [article] the article open
+ * @property {{ title: string, path: string, brief?: string | null }} [article] the article open (its ai/brief.md, or null for none)
  * @property {{ start: number, end: number, text: string }} [selection] the lines of it selected
- * @property {Array<{ title: string, path: string }>} [mentions] the articles named with @
+ * @property {Array<{ title: string, path: string, brief?: string | null }>} [mentions] the articles named with @
  */
 
 const lineRange = ({ start, end }) => (start === end ? `第 ${start} 行` : `第 ${start}–${end} 行`);
 
+/** Whether an article has its ai/brief.md (blog/AGENTS.md: read it first), said, so that one not there is not tried for. */
+function briefOf({ brief }) {
+	if (brief === undefined) return '';
+	return brief ? `；它的写作要求在 ${brief}，先读` : '（没有 ai/brief.md，不用找）';
+}
+
 /** What the author said, then what the Studio adds of where they are, marked as the Studio's. */
 export function withContext(text, { article, selection, mentions = [] } = {}) {
 	const lines = [];
-	if (article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}`);
+	if (article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}${briefOf(article)}`);
 	if (article && selection) {
 		const fence = '`'.repeat(Math.max(3, ...[...selection.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
 		lines.push(`选中的是这篇的${lineRange(selection)}：`, `${fence}markdown`, selection.text, fence);
 	}
-	for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}`);
+	for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`);
 	if (!lines.length) return text;
 	return `${text}\n\n<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`;
 }

@@ -107,21 +107,21 @@ test('an adapter that is not there: the conversation fails, saying so', async (t
 test('what is said is told where the author is, marked as the Studio’s; with nothing to tell, as it was said', () => {
 	assert.equal(withContext('总结一下'), '总结一下');
 	const told = withContext('总结一下', {
-		article: { title: '方法', path: 'method/index.md' },
+		article: { title: '方法', path: 'method/index.md', brief: 'method/ai/brief.md' },
 		selection: { start: 12, end: 14, text: '```py\nx = 1\n```' },
-		mentions: [{ title: '结果', path: 'result/index.md' }],
+		mentions: [{ title: '结果', path: 'result/index.md', brief: null }],
 	});
 	assert.equal(told, [
 		'总结一下',
 		'',
 		'<studio-context>',
 		'（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）',
-		'当前打开的文章：《方法》，文件 method/index.md',
+		'当前打开的文章：《方法》，文件 method/index.md；它的写作要求在 method/ai/brief.md，先读',
 		'选中的是这篇的第 12–14 行：',
 		'````markdown',
 		'```py\nx = 1\n```',
 		'````',
-		'用 @ 提到的文章：《结果》，文件 result/index.md',
+		'用 @ 提到的文章：《结果》，文件 result/index.md（没有 ai/brief.md，不用找）',
 		'</studio-context>',
 	].join('\n'));
 });
