@@ -131,3 +131,47 @@ test('an app may not reach this machine through studio.fetch, nor the Studio’s
 		},
 	);
 });
+
+test('a window opens roomy, is sized from its edges and corners, made large by a double-click, and opens again as it was left', async ({ page }) => {
+	await openStudio(page);
+	await openApp(page, '⚡  能量单位换算');
+	const window = page.locator('.mini-app-window[data-app="energy-units"]');
+	const box = async () => (await window.boundingBox())!;
+	const opened = await box();
+	expect(opened.width).toBeGreaterThanOrEqual(420);
+	expect(opened.height).toBeGreaterThanOrEqual(520);
+	/** Drags the grip on `edge` by (dx, dy). */
+	const pull = async (edge: string, dx: number, dy: number) => {
+		const grip = (await window.locator(`.mini-app-grip[data-edge="${edge}"]`).boundingBox())!;
+		const x = grip.x + grip.width / 2;
+		const y = grip.y + grip.height / 2;
+		await page.mouse.move(x, y);
+		await page.mouse.down();
+		await page.mouse.move(x + dx / 2, y + dy / 2);
+		await page.mouse.move(x + dx, y + dy);
+		await page.mouse.up();
+	};
+	// The left edge out: wider, the right edge where it was.
+	await pull('w', -100, 0);
+	let now = await box();
+	expect(Math.round(now.width)).toBe(Math.round(opened.width + 100));
+	expect(Math.round(now.x + now.width)).toBe(Math.round(opened.x + opened.width));
+	// The corner below right in: smaller both ways, not below the least.
+	await pull('se', -1000, -1000);
+	now = await box();
+	expect(Math.round(now.width)).toBe(280);
+	expect(Math.round(now.height)).toBe(180);
+	await pull('se', 120, 200);
+	const left = await box();
+	// Double-click on the bar: as large as the page allows; again: as it was.
+	await window.locator('.mini-app-title').dblclick();
+	const viewport = page.viewportSize()!;
+	await expect.poll(async () => Math.round((await box()).width)).toBe(viewport.width - 32);
+	await window.locator('.mini-app-title').dblclick();
+	await expect.poll(async () => Math.round((await box()).width)).toBe(Math.round(left.width));
+	// Closed and opened again: where and as large as it was left.
+	await window.getByRole('button', { name: '关闭 能量单位换算' }).click();
+	await openApp(page, '⚡  能量单位换算');
+	const again = await box();
+	expect([again.x, again.y, again.width, again.height].map(Math.round)).toEqual([left.x, left.y, left.width, left.height].map(Math.round));
+});

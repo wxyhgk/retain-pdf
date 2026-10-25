@@ -876,13 +876,28 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror .is-instructing::after) { content: 'AI 处理中…'; position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: 11px; pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
 	/* 小程序: floating windows (mini-apps.ts). */
 	.mini-app-layer { position: fixed; z-index: 50; inset: 0; pointer-events: none; }
-	.mini-app-layer :global(.mini-app-window) { position: absolute; display: flex; flex-direction: column; min-width: 220px; min-height: 140px; overflow: hidden; resize: both; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 34px rgb(0 0 0 / 16%); pointer-events: auto; }
+	.mini-app-layer :global(.mini-app-window) { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 34px rgb(0 0 0 / 16%); pointer-events: auto; }
 	.mini-app-layer :global(.mini-app-bar) { display: flex; flex: none; gap: 4px; align-items: center; height: 32px; padding: 0 6px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; cursor: grab; user-select: none; touch-action: none; }
 	.mini-app-layer :global(.mini-app-bar:active) { cursor: grabbing; }
 	.mini-app-layer :global(.mini-app-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 	.mini-app-layer :global(.mini-app-bar button) { width: 24px; height: 24px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 14px; cursor: pointer; }
 	.mini-app-layer :global(.mini-app-bar button:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 	.mini-app-layer :global(.mini-app-frame) { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
+	/* Edges and corners to size it from: thin strips over the frame; the corner below right is marked. */
+	.mini-app-layer :global(.mini-app-grip) { position: absolute; z-index: 1; touch-action: none; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='n']), .mini-app-layer :global(.mini-app-grip[data-edge='s']) { right: 14px; left: 14px; height: 6px; cursor: ns-resize; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='e']), .mini-app-layer :global(.mini-app-grip[data-edge='w']) { top: 14px; bottom: 14px; width: 6px; cursor: ew-resize; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='n']) { top: 0; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='s']) { bottom: 0; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='e']) { right: 0; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='w']) { left: 0; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='ne']), .mini-app-layer :global(.mini-app-grip[data-edge='sw']) { width: 14px; height: 14px; cursor: nesw-resize; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='nw']), .mini-app-layer :global(.mini-app-grip[data-edge='se']) { width: 14px; height: 14px; cursor: nwse-resize; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='ne']) { top: 0; right: 0; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='nw']) { top: 0; left: 0; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='sw']) { bottom: 0; left: 0; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='se']) { right: 0; bottom: 0; }
+	.mini-app-layer :global(.mini-app-grip[data-edge='se']::after) { position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px; border-right: 2px solid rgb(var(--gray)); border-bottom: 2px solid rgb(var(--gray)); border-bottom-right-radius: 3px; opacity: 0.5; content: ''; }
 	/* AI 助手 (agents-dialog.ts). */
 	.article-dialog.agents-settings { width: min(94vw, 720px); }
 	.agents-hint { margin: 0 0 10px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; }

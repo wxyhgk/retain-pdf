@@ -12,9 +12,16 @@ export type MiniAppsHost = {
 };
 
 const MESSAGE = 'studio-app';
-const PLACES = 'studio.mini-app-places';
+// Sizes kept before the windows could be sized from their edges (opened smaller) are let go.
+const PLACES = 'studio.mini-app-windows';
 
 type Place = { left: number; top: number; width: number; height: number };
+/** The smallest a window is made, opened or sized by hand; the least it opens at; the room kept around it. */
+const SMALLEST = { width: 280, height: 180 };
+const ROOMY = { width: 420, height: 520 };
+const MARGIN = 16;
+/** Where a window is sized from: its edges and corners, each moving the sides it names. */
+const GRIPS = ['n', 'e', 's', 'w', 'ne', 'se', 'sw', 'nw'] as const;
 /**
  * `port`: the app's line to the Studio, handed to the page the Studio put in the frame (its first `ready`) and to
  * no other: a page the frame goes to afterwards (a link clicked in it) gets none, and the line is cut. `loading`:
@@ -40,9 +47,26 @@ function keepPlace(id: string, place: Place): void {
 	}
 }
 
+/** `place` made to fit the Studio's window: no smaller than the least, no larger than the window, on screen. */
+function fitted(place: Place): Place {
+	const width = Math.min(Math.max(place.width, SMALLEST.width), innerWidth - 2 * MARGIN);
+	const height = Math.min(Math.max(place.height, SMALLEST.height), innerHeight - 2 * MARGIN);
+	const left = Math.min(Math.max(place.left, MARGIN), innerWidth - MARGIN - width);
+	const top = Math.min(Math.max(place.top, MARGIN), innerHeight - MARGIN - height);
+	return { left, top, width, height };
+}
+
+function placeOf(root: HTMLElement): Place {
+	return { left: root.offsetLeft, top: root.offsetTop, width: root.offsetWidth, height: root.offsetHeight };
+}
+
+function put(root: HTMLElement, place: Place): void {
+	Object.assign(root.style, { left: `${place.left}px`, top: `${place.top}px`, width: `${place.width}px`, height: `${place.height}px` });
+}
+
 /**
- * 小程序: the tools of apps/, each in a floating window over the Studio (moved by its bar, sized from its corner,
- * where it was left the next time), in a frame with no origin of its own. What an app asks of the Studio comes as
+ * 小程序: the tools of apps/, each in a floating window over the Studio (moved by its bar, sized from any edge or
+ * corner, as large as the Studio's window by a double-click on its bar, where it was left the next time), in a frame with no origin of its own. What an app asks of the Studio comes as
  * messages, each answered only when its app.json asked for what it needs (`permissions`).
  */
 export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, host: MiniAppsHost) {
@@ -104,15 +128,18 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			focus(already);
 			return;
 		}
-		const saved = readPlaces()[app.id];
-		const place: Place = saved ?? { left: Math.max(16, innerWidth - app.width - 40 - open.size * 24), top: 80 + open.size * 24, width: app.width, height: app.height };
+		// The size its app.json asks, but roomy enough to work in; where it was left, if it was.
+		const width = Math.max(app.width, ROOMY.width);
+		const height = Math.max(app.height, ROOMY.height);
+		const place = fitted(readPlaces()[app.id] ?? { left: innerWidth - width - 40 - open.size * 24, top: 80 + open.size * 24, width, height });
 		const root = document.createElement('section');
 		root.className = 'mini-app-window';
 		root.dataset.app = app.id;
 		root.setAttribute('aria-label', app.name);
-		Object.assign(root.style, { left: `${Math.min(place.left, innerWidth - 120)}px`, top: `${Math.min(place.top, innerHeight - 60)}px`, width: `${place.width}px`, height: `${place.height}px` });
+		put(root, place);
 		const bar = document.createElement('header');
 		bar.className = 'mini-app-bar';
+		bar.title = '拖动移动；双击放大或还原';
 		const title = document.createElement('span');
 		title.className = 'mini-app-title';
 		title.textContent = `${app.icon} ${app.name}`;
@@ -139,32 +166,80 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			else if (!shown.loading) shown.loaded = true;
 		});
 		load(shown);
-		root.append(bar, frame);
+		const grips = GRIPS.map((edge) => {
+			const grip = document.createElement('div');
+			grip.className = 'mini-app-grip';
+			grip.dataset.edge = edge;
+			return grip;
+		});
+		root.append(bar, frame, ...grips);
 		layer.append(root);
 		open.set(app.id, shown);
 		focus(shown);
 		root.addEventListener('pointerdown', () => focus(shown));
 		reload.addEventListener('click', () => load(shown, `?${Date.now()}`));
 		shut.addEventListener('click', () => close(app.id));
-		const remember = () => keepPlace(app.id, { left: root.offsetLeft, top: root.offsetTop, width: root.offsetWidth, height: root.offsetHeight });
-		new ResizeObserver(remember).observe(root);
-		// Moved by its bar; the frame takes no pointer meanwhile, so a quick move does not lose it.
-		bar.addEventListener('pointerdown', (event) => {
-			if ((event.target as Element).closest('button')) return;
-			const start = { x: event.clientX, y: event.clientY, left: root.offsetLeft, top: root.offsetTop };
-			bar.setPointerCapture(event.pointerId);
+		const remember = () => keepPlace(app.id, placeOf(root));
+		// Double-click on the bar: as large as the Studio's window allows, and back to where it was.
+		let enlarged: Place | null = null;
+		/**
+		 * Follows the pointer from `handle` until it is let go, `change` given how far it went. The frame takes no
+		 * pointer meanwhile, so a quick move does not lose it.
+		 */
+		const drag = (handle: HTMLElement, event: PointerEvent, change: (start: Place, dx: number, dy: number) => Place) => {
+			event.preventDefault();
+			const start = placeOf(root);
+			const from = { x: event.clientX, y: event.clientY };
+			handle.setPointerCapture(event.pointerId);
 			frame.style.pointerEvents = 'none';
 			const move = (moved: PointerEvent) => {
-				root.style.left = `${Math.max(0, Math.min(innerWidth - 80, start.left + moved.clientX - start.x))}px`;
-				root.style.top = `${Math.max(0, Math.min(innerHeight - 40, start.top + moved.clientY - start.y))}px`;
+				put(root, change(start, moved.clientX - from.x, moved.clientY - from.y));
+				enlarged = null;
 			};
 			const up = () => {
-				bar.removeEventListener('pointermove', move);
+				handle.removeEventListener('pointermove', move);
 				frame.style.pointerEvents = '';
 				remember();
 			};
-			bar.addEventListener('pointermove', move);
-			bar.addEventListener('pointerup', up, { once: true });
+			handle.addEventListener('pointermove', move);
+			handle.addEventListener('pointerup', up, { once: true });
+			handle.addEventListener('pointercancel', up, { once: true });
+		};
+		// Moved by its bar, kept on screen.
+		bar.addEventListener('pointerdown', (event) => {
+			if ((event.target as Element).closest('button')) return;
+			drag(bar, event, (start, dx, dy) => fitted({ ...start, left: start.left + dx, top: start.top + dy }));
+		});
+		// Sized from any edge or corner: the opposite sides stay where they are.
+		for (const grip of grips) {
+			const edge = grip.dataset.edge ?? '';
+			grip.addEventListener('pointerdown', (event) => drag(grip, event, (start, dx, dy) => {
+				const right = start.left + start.width;
+				const bottom = start.top + start.height;
+				let { left, top, width, height } = start;
+				if (edge.includes('e')) width = Math.min(Math.max(start.width + dx, SMALLEST.width), innerWidth - left);
+				if (edge.includes('s')) height = Math.min(Math.max(start.height + dy, SMALLEST.height), innerHeight - top);
+				if (edge.includes('w')) {
+					left = Math.min(Math.max(start.left + dx, 0), right - SMALLEST.width);
+					width = right - left;
+				}
+				if (edge.includes('n')) {
+					top = Math.min(Math.max(start.top + dy, 0), bottom - SMALLEST.height);
+					height = bottom - top;
+				}
+				return { left, top, width, height };
+			}));
+		}
+		bar.addEventListener('dblclick', (event) => {
+			if ((event.target as Element).closest('button')) return;
+			if (enlarged) {
+				put(root, fitted(enlarged));
+				enlarged = null;
+			} else {
+				enlarged = placeOf(root);
+				put(root, { left: MARGIN, top: MARGIN, width: innerWidth - 2 * MARGIN, height: innerHeight - 2 * MARGIN });
+			}
+			remember();
 		});
 	}
 
