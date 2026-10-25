@@ -32,16 +32,23 @@ test('AI 问答: a conversation whole in the middle, listed on the left; there a
 	const shown = () => new URL(page.url()).searchParams.get('chat');
 	await expect.poll(shown).toMatch(/^chat-\d{8}-\d{6}/u);
 	const first = shown();
-	// ＋: a new one, listed and in the address once begun.
+	// ＋: a new one, in the address once begun; not listed until something is said in it (no empty 新对话 left).
 	const before = await page.locator('#chat-list .chat-row').count();
 	await page.getByRole('button', { name: '新对话页' }).click();
 	await expect.poll(shown).not.toBe(first);
-	await expect(page.locator('#chat-list .chat-row')).toHaveCount(before + 1);
+	const unused = shown()!;
+	// ＋ again, nothing said in that one: it is let go, the list as it was.
+	await page.getByRole('button', { name: '新对话页' }).click();
+	await expect.poll(shown).not.toBe(unused);
+	await page.waitForTimeout(500);
+	await expect(page.locator('#chat-list .chat-row')).toHaveCount(before);
 	const id = shown()!;
-	await expect(page.locator('#chat-list .chat-row.active')).toHaveAttribute('data-chat', id);
 
 	// Drawn as the AI tab draws it: what was asked, the answer's blocks, a plugin's block as the editor draws it.
 	await say(page, '几块');
+	// Listed once spoken to.
+	await expect(page.locator('#chat-list .chat-row')).toHaveCount(before + 1);
+	await expect(page.locator('#chat-list .chat-row.active')).toHaveAttribute('data-chat', id);
 	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText('几块');
 	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(4);
 	await say(page, '能量图');

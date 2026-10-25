@@ -204,3 +204,43 @@ test('what is said is told where the author is, marked as the Studio’s; with n
 		'</studio-context>',
 	].join('\n'));
 });
+
+test('one made ready is taken by the next begun with the same (no adapter started then); the idle beyond the latest few are put to sleep, woken when spoken to', async (t) => {
+	const cwd = await realpath(await mkdtemp(join(tmpdir(), 'agent-sessions-')));
+	t.after(() => rm(cwd, { recursive: true, force: true }));
+	const log = join(cwd, 'adapters.log');
+	const started = async () => (await readFile(log, 'utf8').catch(() => '')).trim().split('\n').filter(Boolean).length;
+	const sessions = new AgentSessions({ binFolder: join(cwd, 'none'), env: process.env, store: new ChatStore(join(cwd, 'chats')) });
+	t.after(() => sessions.closeAll());
+	const env = { PATH: process.env.PATH, FAKE_ACP_LOG: log };
+	sessions.prepare({ agent, cwd, env });
+	for (let waited = 0; (await started()) < 1 && waited < 5000; waited += 50) await new Promise((done) => setTimeout(done, 50));
+	assert.equal(await started(), 1);
+	// Not listed while made ready.
+	assert.deepEqual(await sessions.list(), []);
+	const first = await sessions.start({ agent, cwd, env });
+	assert.equal(first.state, 'idle');
+	assert.equal(await started(), 1, 'the one made ready, no other started');
+	// For another service: not that one.
+	const other = await sessions.start({ agent, cwd, env: { ...env, OTHER: '1' } });
+	assert.equal(await started(), 2);
+
+	// Spoken in one after the other: of those idle, beyond the latest three, the oldest put to sleep.
+	const spoken = [first, other];
+	for (let more = 0; more < 3; more += 1) {
+		for (const session of spoken) {
+			if (session.items.length || session.state !== 'idle') continue;
+			session.prompt('几块');
+			await until(session, (s) => s.state === 'idle');
+		}
+		if (more < 2) spoken.push(await sessions.start({ agent, cwd, env }));
+	}
+	await sessions.start({ agent, cwd, env });
+	assert.deepEqual(spoken.map((session) => session.state), ['saved', 'saved', 'idle', 'idle']);
+	// Spoken to again: woken, its session loaded again.
+	await sessions.wake(first, { agent, env });
+	first.prompt('接上了吗');
+	await until(first, (s) => s.state === 'idle');
+	assert.match(first.items.at(-1).text, /^接上了 fake-session-\d+$/u);
+	assert.equal(first.items.some((item) => item.kind === 'error'), false, 'put to sleep is not a failure');
+});

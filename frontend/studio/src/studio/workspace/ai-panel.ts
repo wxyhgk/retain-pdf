@@ -277,8 +277,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		const agent = agentSelect.value;
 		follow(null);
 		say(`正在启动 ${agents.find((entry) => entry.id === agent)?.name ?? 'AI'}…`);
-		// Whole, it is listed (AI 问答) from the start.
-		const started = startConversation(agent, { page: full }).then(chosenAgain).then(
+		// Listed (AI 问答) once something is said in it, not before.
+		const started = startConversation(agent).then(chosenAgain).then(
 			(made) => {
 				if (starting === started) {
 					starting = null;
@@ -338,6 +338,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				workRows.clear();
 				break;
 			case 'item': {
+				// Something said: the conversation is listed now.
+				if (event.item.kind === 'user' && conversation) host.changed?.(conversation.id);
 				const at = items.findIndex((entry) => entry.id === event.item.id);
 				if (at >= 0) items[at] = event.item;
 				else items.push(event.item);
@@ -1162,8 +1164,12 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		async newChat(): Promise<string | null> {
 			asked = true;
 			await load();
+			// The one shown, never spoken to, let go: no empty 新对话 left behind.
+			const unused = conversation && !items.length ? conversation : null;
 			// What is typed meanwhile is said in it, once it is there (submit waits for `starting`).
-			return (await begin())?.id ?? null;
+			const made = begin();
+			if (unused) void closeConversation(unused.id).catch(() => {});
+			return (await made)?.id ?? null;
 		},
 		focus(): void {
 			input.focus();

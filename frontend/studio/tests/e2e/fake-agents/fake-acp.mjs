@@ -21,7 +21,11 @@ const state = { mode: 'default', model: MODELS[0].value, turns: 0 };
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const app = agent({ name: 'fake' })
-	.onRequest('initialize', () => ({ protocolVersion: PROTOCOL_VERSION, agentCapabilities: { loadSession: true }, authMethods: [] }))
+	.onRequest('initialize', async () => {
+		// Each adapter started, told (the tests count them).
+		if (process.env.FAKE_ACP_LOG) (await import('node:fs')).appendFileSync(process.env.FAKE_ACP_LOG, `${process.pid}\n`);
+		return { protocolVersion: PROTOCOL_VERSION, agentCapabilities: { loadSession: true }, authMethods: [] };
+	})
 	.onRequest('session/new', () => ({ sessionId: `fake-session-${process.pid}`, configOptions: options(), modes: { currentModeId: state.mode, availableModes: [{ id: 'default', name: 'Manual' }, { id: 'plan', name: 'Plan' }] } }))
 	// A session gone on with (after the Studio restarted): what was said in it told again first, as adapters do; one
 	// whose id says 「gone」 is not there any more.

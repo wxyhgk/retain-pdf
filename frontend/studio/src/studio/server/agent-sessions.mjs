@@ -40,6 +40,14 @@ const KEPT_OVER = 20;
 const SAVE_AFTER = 400;
 /** States a conversation is gone on with from: its agent's session loaded again, in a new adapter. */
 const ASLEEP = new Set(['saved', 'closed', 'failed']);
+/**
+ * An adapter left running takes 100–300 MB (Codex's two processes): those of conversations not spoken in for this
+ * long are stopped, and of the others no more than so many are kept; each is woken (its session loaded again, about
+ * 1.5 s) when spoken to next.
+ */
+const IDLE_SLEEP = 10 * 60_000;
+const AWAKE_MAX = 3;
+const TIDY_EVERY = 60_000;
 
 export class AgentSessions {
 	/** @type {Map<string, AgentSession>} */
@@ -51,6 +59,13 @@ export class AgentSessions {
 	#path = null;
 	/** Conversations changed and not yet written: each one's timer. */
 	#saving = new Map();
+	/**
+	 * A conversation made ready before it is asked for (an agent takes 2–5 s to start): the next begun with the same
+	 * agent, place and service takes it, and another is made ready. One at most.
+	 * @type {{ key: string, session: AgentSession, ready: Promise<boolean> } | null}
+	 */
+	#spare = null;
+	#tidying = null;
 
 	/**
 	 * @param {{ binFolder: string, shell?: string, env?: NodeJS.ProcessEnv, store?: import('./chat-store.mjs').ChatStore | null }} options
@@ -62,6 +77,8 @@ export class AgentSessions {
 		this.shell = shell;
 		this.env = env;
 		this.store = store;
+		this.#tidying = setInterval(() => this.#tidy(), TIDY_EVERY);
+		this.#tidying.unref?.();
 	}
 
 	/**
@@ -72,20 +89,79 @@ export class AgentSessions {
 	 * @param {{ agent: { id: string, name: string, acp: string }, cwd: string, slug?: string | null, env?: Record<string, string>, models?: { name: string, main?: string, fast?: string, provider?: string } | null }} options
 	 */
 	async start({ agent, cwd, slug = null, env = {}, models = null, listed = true }) {
+		// The one made ready for these, if it is.
+		const spare = listed ? await this.#takeSpare(spareKey(agent, cwd, env, models)) : null;
+		if (spare) {
+			this.#list(spare);
+			this.#tidy();
+			return spare;
+		}
 		// As the agent sees it (no link in it: /private/var… on a Mac), so the paths it names are shown under it.
 		const session = new AgentSession({ agent, cwd: await realpath(cwd), slug, models, id: listed ? this.store?.newId() : undefined });
 		if (listed) {
-			this.#sessions.set(session.id, session);
-			this.#forgetOld();
-			this.#keep(session);
-			if (this.store) session.page = this.store.page(session.id);
+			this.#list(session);
 		} else {
 			this.#unlisted.add(session);
 			session.onClose = () => this.#unlisted.delete(session);
 		}
 		await this.#open(session, agent, env, false);
 		if (models?.provider) await session.useService(models.provider);
+		if (listed) this.#tidy();
 		return session;
+	}
+
+	/**
+	 * A conversation made ready with `agent` (its adapter started, a session of its own), for the next begun with the
+	 * same; one made ready for others before is let go.
+	 */
+	prepare({ agent, cwd, env = {}, models = null }) {
+		const key = spareKey(agent, cwd, env, models);
+		if (this.#closed || this.#spare?.key === key) return;
+		this.#dropSpare();
+		const session = new AgentSession({ agent, cwd, slug: null, models, id: this.store?.newId() });
+		const ready = (async () => {
+			session.cwd = await realpath(cwd);
+			await this.#open(session, agent, env, false);
+			if (models?.provider) await session.useService(models.provider);
+			return true;
+		})().catch(() => false);
+		this.#spare = { key, session, ready };
+	}
+
+	/** The conversation made ready for `key`, once it is, taken (null: none, or it failed). */
+	async #takeSpare(key) {
+		const spare = this.#spare;
+		if (!spare || spare.key !== key) return null;
+		this.#spare = null;
+		if ((await spare.ready) && spare.session.state === 'idle') return spare.session;
+		spare.session.close();
+		return null;
+	}
+
+	#dropSpare() {
+		const spare = this.#spare;
+		this.#spare = null;
+		if (spare) void spare.ready.then(() => spare.session.close());
+	}
+
+	/** A conversation among those listed, kept in chats/ once spoken to. */
+	#list(session) {
+		this.#sessions.set(session.id, session);
+		this.#forgetOld();
+		this.#keep(session);
+		if (this.store) session.page = this.store.page(session.id);
+	}
+
+	/**
+	 * The adapters left running, few: a conversation not spoken in for IDLE_SLEEP has its stopped, and of the others idle
+	 * the latest AWAKE_MAX are kept running. Stopped, it is as it was (state `saved`), woken when spoken to.
+	 */
+	#tidy() {
+		const now = Date.now();
+		const idle = [...this.#sessions.values()].filter((session) => session.state === 'idle').sort((a, b) => b.activeAt - a.activeAt);
+		idle.forEach((session, at) => {
+			if (at >= AWAKE_MAX || now - session.activeAt > IDLE_SLEEP) session.sleep();
+		});
 	}
 
 	/**
@@ -99,6 +175,7 @@ export class AgentSessions {
 		session.models = models;
 		await this.#open(session, agent, env, true);
 		if (models?.provider) await session.useService(models.provider);
+		this.#tidy();
 		return session;
 	}
 
@@ -135,7 +212,8 @@ export class AgentSessions {
 	/** Those going on, then those kept in chats/ (the latest first); none begun and not spoken to that is over. */
 	async list() {
 		const live = [...this.#sessions.values()].filter((session) => spokenTo(session) || !ASLEEP.has(session.state)).reverse();
-		const kept = this.store ? (await this.store.list()).filter((record) => !this.#sessions.has(record.id)).map(AgentSession.summaryOf) : [];
+		// Kept ones never spoken to (begun as pages, left empty) are not listed.
+		const kept = this.store ? (await this.store.list()).filter((record) => !this.#sessions.has(record.id) && record.items?.some((item) => item.kind === 'user')).map(AgentSession.summaryOf) : [];
 		return [...live.map((session) => session.summary()), ...kept];
 	}
 
@@ -157,6 +235,8 @@ export class AgentSessions {
 
 	closeAll() {
 		this.#closed = true;
+		clearInterval(this.#tidying);
+		this.#dropSpare();
 		for (const session of [...this.#sessions.values(), ...this.#unlisted]) session.close();
 		// What changed last, written before the server goes.
 		// A turn going on as the server stops: what there is of it put on the page.
@@ -308,7 +388,7 @@ class AgentSession {
 	}
 
 	summary() {
-		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, pageThrough: this.pageThrough, onPage: this.madePage || this.pageThrough !== null };
+		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, pageThrough: this.pageThrough, onPage: this.madePage || spokenTo(this) };
 	}
 
 	/** The items since the last put on its page. */
@@ -506,6 +586,30 @@ class AgentSession {
 		return this.summary();
 	}
 
+	/** When something last happened in it (said, done, changed): the latest are left running (AgentSessions #tidy). */
+	activeAt = Date.now();
+
+	/**
+	 * Its agent stopped for now, idle (an adapter takes memory): kept as it is (state `saved`), woken when spoken to
+	 * (AgentSessions.wake), its session loaded again.
+	 */
+	sleep() {
+		if (this.state !== 'idle') return;
+		const child = this.#child;
+		// Its end not taken for a failure.
+		this.#child = null;
+		this.#connection?.close();
+		this.#forget();
+		if (child?.pid && child.exitCode === null) {
+			try {
+				process.kill(-child.pid, 'SIGTERM');
+			} catch {
+				// Over already.
+			}
+		}
+		this.#setState('saved');
+	}
+
 	/** Told when it is closed (unlisted ones are let go then). */
 	onClose = () => {};
 
@@ -668,6 +772,7 @@ class AgentSession {
 	}
 
 	#tell(event) {
+		this.activeAt = Date.now();
 		for (const listener of this.#listeners) {
 			try {
 				listener(event);
@@ -677,6 +782,9 @@ class AgentSession {
 		}
 	}
 }
+
+/** What a conversation made ready is for: the same agent, place, and service. */
+const spareKey = (agent, cwd, env, models) => JSON.stringify([agent.id, agent.acp, cwd, env, models]);
 
 /** Whether the author has said something in it (one never spoken to is not kept, nor listed once over). */
 const spokenTo = (session) => session.items.some((item) => item.kind === 'user');

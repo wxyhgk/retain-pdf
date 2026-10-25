@@ -39,9 +39,11 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const agent = (await agents()).find((candidate) => candidate.id === wanted);
 		if (!agent) throw refuse(404, `没有能在面板里用的 AI「${wanted}」`);
 		const service = await serviceOf(agent);
-		const session = await conversations.start({ agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
-		// Begun to be opened in the editor (问答为主): its page there at once.
+		const begun = { agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models };
+		const session = await conversations.start(begun);
 		if (page === true) await conversations.makePage(session);
+		// The next one begun with this AI made ready meanwhile (its agent takes seconds to start).
+		conversations.prepare(begun);
 		return reply(201, session.summary());
 	});
 	/** A conversation to speak to: one over (kept in chats/, its agent gone) gone on with, its agent started again. */
@@ -102,7 +104,8 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	// A conversation of the AI tab opened as a page (问答为主): its page made if it has none yet.
 	api.post('/conversations/:id/page', async ({ params }) => {
 		const session = await conversations.find(params.id);
-		if (!session.madePage && session.pageThrough === null) await conversations.makePage(session);
+		// Listed once something is said in it: one not spoken to is not made a page of.
+		if (!session.madePage && session.pageThrough === null && session.items.some((item) => item.kind === 'user')) await conversations.makePage(session);
 		return session.summary();
 	});
 	// A picture an AI's answer shows from this machine (a plot it drew in ai/work/…): its path as written, absolute
