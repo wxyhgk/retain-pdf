@@ -29,6 +29,12 @@ export class ArticleRepository {
 	#writes = new Map();
 	/** Per article whose title is being changed: the title it had, the newest, and when the links follow. */
 	#titles = new Map();
+	/**
+	 * Per article, the links in its text as last read (`{ source, site, links }`): each article opened asks what
+	 * links to it, and reading every article's Markdown again each time took most of a second (two OCR'd books),
+	 * with what was clicked next waiting behind it.
+	 */
+	#links = new Map();
 
 	/**
 	 * @param {string} blogRoot
@@ -83,14 +89,27 @@ export class ArticleRepository {
 	async backlinks(slug, { site } = {}) {
 		assertArticleSlug(slug);
 		const found = [];
-		for (const { slug: from, source } of await this.#sources()) {
+		const sources = await this.#sources();
+		for (const { slug: from, source } of sources) {
 			if (from === slug) continue;
-			const mentions = findArticleLinks(source, { site }).filter((link) => link.slug === slug);
+			const mentions = this.#linksIn(from, source, site).filter((link) => link.slug === slug);
 			if (!mentions.length) continue;
 			const { title, icon, draft } = articleSummary(source, from);
 			found.push({ slug: from, title, icon, draft, mentions: mentions.map(({ line, text, context }) => ({ line, text, context })) });
 		}
+		// Those gone from disk are forgotten.
+		const there = new Set(sources.map((entry) => entry.slug));
+		for (const page of this.#links.keys()) if (!there.has(page)) this.#links.delete(page);
 		return found.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN'));
+	}
+
+	/** The links in `page`'s text: read again only when the text is not what was read before. */
+	#linksIn(page, source, site) {
+		const known = this.#links.get(page);
+		if (known && known.source === source && known.site === site) return known.links;
+		const links = findArticleLinks(source, { site });
+		this.#links.set(page, { source, site, links });
+		return links;
 	}
 
 	/** Each article's folder name, its `index.md`, and when that last changed. */
