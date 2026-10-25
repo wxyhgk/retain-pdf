@@ -141,6 +141,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 						</div>
 					</header>
 					<div id="crepe-editor" class="crepe-host" aria-label="文章编辑器"></div>
+					<!-- On a conversation's page: the turn going on, right after its last block (ai-panel.ts). -->
+					<div id="chat-live" class="ai-pane chat-live" hidden></div>
 					</div>
 					<!-- On a conversation's page: the turn going on and the input (ai-panel.ts, as a page). -->
 					<div id="chat-composer" class="ai-pane chat-composer" aria-label="对 AI 说" hidden></div>
@@ -396,7 +398,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.chat-composer { flex: none; }
 	.chat-composer[hidden] { display: none; }
 	.studio-shell.is-chat #open-article, .studio-shell.is-chat .page-properties, .studio-shell.is-chat .page-head-actions, .studio-shell.is-chat #page-cover, .studio-shell.is-chat #page-icon, .studio-shell.is-chat #property-error { display: none; }
-	.studio-shell.is-chat :global(.crepe-host .milkdown .ProseMirror) { padding-bottom: 48px; }
+	.studio-shell.is-chat :global(.crepe-host .milkdown .ProseMirror) { min-height: 0; padding-bottom: 0; }
+	.studio-shell.is-chat .crepe-host, .studio-shell.is-chat :global(.crepe-host .milkdown) { min-height: 0; }
+	/* The empty line an editor keeps at its end: on a page only read, nothing to type there, and the turn going on comes right after the last block. */
+	.studio-shell.is-chat :global(.crepe-host .milkdown .ProseMirror > p:last-child:has(> br.ProseMirror-trailingBreak:only-child)) { display: none; }
+	.chat-live { padding-bottom: 72px; }
+	.chat-live[hidden] { display: none; }
 	.plugin-commands { display: grid; gap: 2px; margin-top: -5px; padding: 0 7px 9px; }
 	.plugin-commands[hidden] { display: none; }
 	.plugin-commands :global(button) { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }

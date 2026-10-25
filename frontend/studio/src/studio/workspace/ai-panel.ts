@@ -111,7 +111,7 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', 
  * comes back as a change on disk, to look over as any other. Under the input: which AI, and its options (who
  * decides, model, effort). A conversation goes on in the article it began in; ＋ begins another.
  */
-export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = false }: { page?: boolean } = {}) {
+export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = false, live }: { page?: boolean; live?: HTMLElement } = {}) {
 	const toolbar = element('header', 'pane-toolbar ai-toolbar');
 	const title = element('span', 'ai-title', '新对话');
 	const where = element('span', 'ai-where');
@@ -198,7 +198,15 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 	if (page) {
 		pane.classList.add('is-page');
 		agentSelect.hidden = true;
-		pane.replaceChildren(sheet.element, transcript, composer);
+		// The turn going on right after the page's last block (`live`), drawn as the editor draws: once written on the
+		// page, the editor's blocks take its place where it was.
+		if (live) {
+			live.classList.add('ai-live');
+			live.replaceChildren(transcript);
+			pane.replaceChildren(sheet.element, composer);
+		} else {
+			pane.replaceChildren(sheet.element, transcript, composer);
+		}
 	} else {
 		pane.replaceChildren(toolbar, sheet.element, transcript, composer);
 	}
@@ -604,13 +612,16 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		return select;
 	}
 
+	/** What scrolls the turn going on: the transcript; on a page, the page (the editor's). */
+	const scroller = (live?.closest<HTMLElement>('.editor-scroll') ?? transcript);
+
 	function keepAtBottom(): void {
-		if (transcript.dataset.away === 'true') return;
-		transcript.scrollTop = transcript.scrollHeight;
+		if (scroller.dataset.away === 'true') return;
+		scroller.scrollTop = scroller.scrollHeight;
 	}
 
-	transcript.addEventListener('scroll', () => {
-		transcript.dataset.away = String(transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight > 40);
+	scroller.addEventListener('scroll', () => {
+		scroller.dataset.away = String(scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight > 40);
 	});
 
 	// ——— Each item ———

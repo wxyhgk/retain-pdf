@@ -189,3 +189,27 @@
 .ai-pane.is-page .ai-items { padding: 4px var(--studio-editor-padding) 0; }
 .ai-pane.is-page .ai-transcript:not(:has(.ai-items > *)) { display: none; }
 .ai-pane.is-page .ai-message-actions, .ai-pane.is-page .ai-block-handle { display: none; }
+
+/*
+ * The turn going on, right after the page's last block, drawn as the editor draws (its width, type and spacing; what
+ * was asked as the page's ```ask bubble): once written on the page, the editor's blocks take its place unchanged.
+ */
+.ai-live .ai-transcript { max-height: none; padding: 0; overflow: visible; }
+.ai-live .ai-transcript:not(:has(.ai-items > *)) { display: none; }
+.ai-live .ai-items { box-sizing: border-box; width: min(100%, var(--studio-editor-width)); margin: 0 auto; padding: 2px var(--studio-editor-padding) 0; gap: 0; color: rgb(var(--gray-dark)); font-size: var(--studio-editor-font-size); }
+.ai-live .ai-user { margin: 4px 0; }
+.ai-live .ai-bubble { max-width: 82%; padding: 8px 13px; border-radius: 14px; color: rgb(var(--black)); font-size: inherit; line-height: 1.6; }
+.ai-live .ai-user-context { display: none; }
+.ai-live .ai-message { line-height: 1.65; }
+.ai-live .ai-message .ai-block { margin: 0; }
+.ai-live .ai-message p { margin: 0; padding: 2px 0; }
+.ai-live .ai-message ul, .ai-live .ai-message ol { margin: 0; padding: 2px 0 2px 1.6em; }
+.ai-live .ai-message li { padding: 2px 0; }
+.ai-live .ai-message h1, .ai-live .ai-message h2, .ai-live .ai-message h3 { margin: 1.2em 0 0.3em; font-size: 1.35em; line-height: 1.3; }
+.ai-live .ai-message h3 { font-size: 1.15em; }
+.ai-live .ai-message pre { margin: 6px 0; font-size: 14px; }
+.ai-live .ai-message code { font-size: 0.88em; }
+.ai-live .ai-math-display { margin: 8px 0; text-align: center; }
+.ai-live .ai-block:hover { background: transparent; }
+.ai-live .ai-thought, .ai-live .ai-tool, .ai-live .ai-plan, .ai-live .ai-permission, .ai-live .ai-stop, .ai-live .ai-error, .ai-live .ai-notice { margin: 4px 0; font-size: 13px; }
+.ai-live .ai-message-actions, .ai-live .ai-block-handle { display: none; }

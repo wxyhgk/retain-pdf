@@ -232,7 +232,7 @@ const chatComposer = createAiPanel(
 			if (session.slug === id) await session.checkDisk();
 		},
 	},
-	{ page: true },
+	{ page: true, live: shell.querySelector<HTMLElement>('#chat-live')! },
 );
 const chatList = createChatList(shell.querySelector<HTMLElement>('#chat-list')!, {
 	open(id) {
@@ -466,6 +466,9 @@ const session = new ArticleSession(
 			if (!chat) lastArticle = article.slug;
 			chatList.select(chat ? article.slug : null);
 			shell.querySelector<HTMLElement>('#chat-composer')!.hidden = !chat;
+			shell.querySelector<HTMLElement>('#chat-live')!.hidden = !chat;
+			// A conversation's page is the record of what was said: read, copied, taken into notes; not typed in.
+			editor.setReadonly(chat);
 			void chatComposer.showChat(chat ? article.slug : null);
 			aiPanel.showArticle(chat ? null : { slug: article.slug, title: openTitle });
 			void loadLibrary(article.slug);
@@ -486,6 +489,7 @@ const session = new ArticleSession(
 		},
 		saved(slug, saved, problems) {
 			articleList.saved(slug, saved);
+			if (isChatSlug(slug)) void chatList.refresh();
 			topBar.edited(Date.now());
 			properties.showProblems(problems);
 			snapshot.changed();
@@ -694,6 +698,11 @@ function selectionRect(): DOMRect | null {
  */
 async function askAI(): Promise<void> {
 	const slug = session.slug;
+	// A conversation's page is not rewritten: ask there, in its input.
+	if (isChatSlug(slug)) {
+		chatComposer.focus();
+		return;
+	}
 	const marked = slug ? editor.markSelection() : null;
 	if (!slug || !marked) return;
 	const anchor = selectionRect();

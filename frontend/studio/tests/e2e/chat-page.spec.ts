@@ -14,7 +14,7 @@ const chats = () => `${process.env.STUDIO_BLOG_DIR}-chats`;
 
 test.beforeEach(() => resetFixture());
 
-test('a conversation as a page: begun from AI 问答, each turn written on it as blocks; edited as a page, the next turn added after; there again once reloaded; deleted', async ({ page }) => {
+test('a conversation as a page: begun from AI 问答, each turn written on it as blocks, read only (its title renamed); there again once reloaded; deleted', async ({ page }) => {
 	await openStudio(page);
 	await expect(composer(page)).toBeHidden();
 	await expect(page.locator('#chat-list')).toBeHidden();
@@ -41,7 +41,7 @@ test('a conversation as a page: begun from AI 问答, each turn written on it as
 	await expect(editor(page).locator('.note-ask-bubble')).toHaveText('几块');
 	await expect(editor(page).locator('.pm-display-math')).toHaveCount(1);
 	await expect(editor(page).locator('li', { hasText: '要点二' })).toHaveCount(1);
-	await expect(composer(page).locator('.ai-items > *')).toHaveCount(0);
+	await expect(page.locator('#chat-live .ai-items > *')).toHaveCount(0);
 	// Titled as the conversation is, no longer 新对话.
 	await expect(page.locator('#article-title-input')).toHaveValue('几块');
 	await expect(page.locator('#chat-list .chat-row.active .chat-row-title')).toHaveText('几块');
@@ -49,22 +49,24 @@ test('a conversation as a page: begun from AI 问答, each turn written on it as
 	const file = join(chats(), id, 'index.md');
 	expect(readFileSync(file, 'utf8')).toContain('```ask\n几块\n```');
 
-	// Edited as any page; the next turn comes after, the edit kept.
+	// A record of what was said: read, not typed in; the next turn comes after.
+	await expect(editor(page)).toHaveAttribute('contenteditable', 'false');
 	await editor(page).locator('li', { hasText: '要点一' }).click();
-	await page.keyboard.press('End');
 	await page.keyboard.type('（我补的）');
+	await expect(editor(page)).not.toContainText('我补的');
 	await composer(page).locator('.ai-input').fill('接上了吗');
 	await composer(page).locator('.ai-input').press('Enter');
 	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
-	await expect(editor(page)).toContainText('要点一（我补的）');
 	await expect(page.locator('#review-bar')).toBeHidden();
+	await expect.poll(() => readFileSync(file, 'utf8')).toMatch(/- 要点二\n\n```ask\n接上了吗\n```\n\n新的会话 fake-session-\d+\n$/u);
+	// Its title can be changed, as a conversation is renamed.
+	await page.locator('#article-title-input').fill('改过的标题');
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
-	const saved = readFileSync(file, 'utf8');
-	expect(saved).toContain('要点一（我补的）');
-	expect(saved.indexOf('```ask\n接上了吗\n```')).toBeGreaterThan(saved.indexOf('要点一（我补的）'));
+	await expect.poll(() => readFileSync(file, 'utf8')).toMatch(/title: ['"]?改过的标题/u);
+	await expect(page.locator('#chat-list .chat-row.active .chat-row-title')).toHaveText('改过的标题');
 
-	// Opened again: the page, its input, the list of conversations.
+	// Opened again: the page, its input, the list of conversations; the article after it editable again.
 	await page.reload();
 	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
 	await expect(composer(page)).toBeVisible();
@@ -73,6 +75,7 @@ test('a conversation as a page: begun from AI 问答, each turn written on it as
 	// 页面: back to the article; AI 问答 again, to the conversation spoken in last.
 	await page.getByRole('tab', { name: '页面' }).click();
 	await expect(page.locator('#article-title-input')).toHaveValue('Studio 测试夹具');
+	await expect(editor(page)).toHaveAttribute('contenteditable', 'true');
 	await expect(composer(page)).toBeHidden();
 	await expect(page.locator('#article-list')).toBeVisible();
 	await page.getByRole('tab', { name: 'AI 问答' }).click();

@@ -134,7 +134,9 @@ export class AgentSessions {
 	async list() {
 		const live = [...this.#sessions.values()].filter((session) => spokenTo(session) || !ASLEEP.has(session.state)).reverse();
 		const kept = this.store ? (await this.store.list()).filter((record) => !this.#sessions.has(record.id)).map(AgentSession.summaryOf) : [];
-		return [...live.map((session) => session.summary()), ...kept];
+		// Titled as their pages are (renamed there, perhaps).
+		const titled = (summary) => ({ ...summary, title: (summary.onPage && this.store?.pageTitle(summary.id)) || summary.title });
+		return [...live.map((session) => titled(session.summary())), ...kept];
 	}
 
 	close(id) {
