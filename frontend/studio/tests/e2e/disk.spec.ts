@@ -2,7 +2,7 @@ import { cpSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:f
 import { join } from 'node:path';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
-import { editor, openStudio, resetFixture, saveStatus, savedMarkdown, slug, writeFixtureFile } from './studio.ts';
+import { editFixture, editor, openStudio, resetFixture, saveStatus, savedMarkdown, slug, writeFixtureFile } from './studio.ts';
 
 const articleFile = (): string => join(process.env.STUDIO_BLOG_DIR!, slug, 'index.md');
 const toast = (page: Page): Locator => page.locator('.studio-toast');
@@ -175,4 +175,21 @@ test('an article made on disk joins the list', async ({ page }) => {
 	} finally {
 		rmSync(copy, { recursive: true, force: true });
 	}
+});
+
+test('changes on disk made one after another (an AI writing on) are all in the review, the latest taking over', async ({ page }) => {
+	await openStudio(page);
+	editFixture((markdown) => markdown.replace('结尾段落。', '结尾段落，第一处。'));
+	await expect(page.locator('#review-bar')).toBeVisible();
+	editFixture((markdown) => markdown.replace('开头段落', '开头段落（第二处）'));
+	editFixture((markdown) => markdown.replace('结尾段落，第一处。', '结尾段落，第三处。'));
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(editor(page)).toContainText('第二处');
+	await expect(editor(page)).toContainText('第三处');
+	await page.locator('#review-accept-all').click();
+	await expect(page.locator('#review-bar')).toBeHidden();
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(page.locator('#save-status')).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('开头段落（第二处）');
+	expect(savedMarkdown()).toContain('结尾段落，第三处。');
 });

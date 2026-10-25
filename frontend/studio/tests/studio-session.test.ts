@@ -226,6 +226,31 @@ test('a change on disk is reviewed when nothing is unsaved; accepted, it stays a
 	assert.deepEqual(api.kept, [[SOURCE, 'before-change']]);
 });
 
+test('a change on disk while one is under review is reviewed at once, taking over: the latest is what is decided', async () => {
+	const page = fakeHost();
+	// The author takes their time: a review is decided only when asked.
+	const open: Array<(markdown: string) => void> = [];
+	page.host.review = (_article, body) => {
+		page.reviews.push(body);
+		return new Promise((resolve) => open.push(() => resolve(body)));
+	};
+	const { session, api } = await opened(fakeApi(), page);
+	api.write(SOURCE.replace('第二段。', 'AI 改的第一处。'));
+	session.changedOnDisk(['index.md']);
+	await settle();
+	assert.equal(page.reviews.length, 1);
+	api.write(api.disk.source.replace('第一段', 'AI 改的第二处'));
+	session.changedOnDisk(['index.md']);
+	await settle();
+	assert.equal(page.reviews.length, 2, 'not held back till the first is decided');
+	assert.match(page.reviews[1], /AI 改的第二处[\s\S]*AI 改的第一处/u);
+	// Each version the AI wrote is kept, to go back to.
+	assert.deepEqual(api.kept.map(([, reason]) => reason), ['before-change', 'before-change']);
+	open.at(-1)!('');
+	await settle();
+	assert.equal(session.current.source, api.disk.source);
+});
+
 test('what is rejected in review is saved back over the change on disk', async () => {
 	// The author rejects every change: the editor keeps what it showed.
 	const { session, api } = await opened(fakeApi(), fakeHost([], (_body, shown) => shown));

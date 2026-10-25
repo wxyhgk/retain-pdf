@@ -451,7 +451,9 @@ export class ArticleSession {
 		if (current.dirty) kept.push([current.source, 'unsaved']);
 		await this.#keep(slug, kept, article.source);
 		if (sequence !== this.#sequence || this.slug !== slug) return;
-		await this.#review(article, current.source, ++this.#sequence, {
+		// Not waited for: the author decides when they will, and a later change on disk (an AI writing on) is compared
+		// meanwhile, its review taking over this one.
+		void this.#review(article, current.source, ++this.#sequence, {
 			unsaved: current.dirty && current.source !== article.source,
 			// Against what was saved: properties typed and not yet saved are the author's, not the disk's.
 			properties: changedProperties(current.article.properties, article.properties),

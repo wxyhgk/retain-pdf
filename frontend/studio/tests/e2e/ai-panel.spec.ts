@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { editor, openStudio, removeArticle, resetFixture, saveStatus, savedMarkdown, writeArticle, writeFixtureFile } from './studio.ts';
+import { editFixture, editor, openStudio, removeArticle, resetFixture, saveStatus, savedMarkdown, writeArticle, writeFixtureFile } from './studio.ts';
 
 // The AI tab: a coding agent spoken to over the Agent Client Protocol (a stand-in here:
 // tests/e2e/fake-agents/fake-acp.mjs), which thinks, says what it will do, asks leave to run a command, runs it,
@@ -303,4 +303,19 @@ test('a picture the AI drew on this machine is shown, by its path', async ({ pag
 	const picture = pane(page).locator('.ai-message img[alt="势能曲线"]');
 	await expect(picture).toHaveCount(1);
 	await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth)).toBeGreaterThan(0);
+});
+
+test('what the AI changes in the article open while it works is looked over once its turn is over, all at once', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '慢慢来');
+	await expect(pane(page).locator('.ai-work.is-going')).toBeVisible();
+	editFixture((markdown) => markdown.replace('结尾段落。', '结尾段落，AI 改的。'));
+	await expect(page.locator('.studio-toast')).toContainText('AI 在改这篇文章，做完后一起给你过目');
+	editFixture((markdown) => markdown.replace('开头段落', '开头段落（AI 又改了）'));
+	await page.waitForTimeout(1500);
+	await expect(page.locator('#review-bar')).toBeHidden();
+	// Its turn over (stopped here): the changes, together.
+	await pane(page).locator('.ai-send').click();
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(editor(page)).toContainText('AI 又改了');
 });

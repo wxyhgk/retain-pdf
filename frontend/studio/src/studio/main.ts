@@ -215,6 +215,12 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 		if (shell.dataset.view === 'chat') showChatAddress(id);
 	},
 	changed: () => void chatList.refresh(),
+	// What it changed in the article open, held while it worked: looked over now, all at once.
+	turnOver() {
+		const held = heldChanges;
+		heldChanges = null;
+		if (held && held.slug === session.slug) session.changedOnDisk([...held.paths]);
+	},
 });
 // AI 问答, as Notion's: the AI tab's panel itself, moved whole into the middle (showView), the conversations listed in
 // the left column in place of the pages; back in the side when an article is shown again.
@@ -810,6 +816,9 @@ const citePicker = createCitePicker(document.querySelector<HTMLDialogElement>('#
 	},
 });
 
+/** The changes on disk to the article open while the AI worked (its files), to be looked over once it is done. */
+let heldChanges: { slug: string; paths: Set<string> } | null = null;
+
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
 	snapshot.changed();
@@ -819,6 +828,15 @@ watchDisk((changes) => {
 	const change = changes.find((entry) => entry.slug === session.slug);
 	if (!change) return;
 	void filePanel.refresh();
+	// The AI at work, writing the article bit by bit: looked over once its turn is over (turnOver), not at each bit.
+	if (aiPanel.working() && session.slug) {
+		if (!heldChanges || heldChanges.slug !== session.slug) {
+			heldChanges = { slug: session.slug, paths: new Set() };
+			showToast('AI 在改这篇文章，做完后一起给你过目');
+		}
+		for (const path of change.paths) heldChanges.paths.add(path);
+		return;
+	}
 	session.changedOnDisk(change.paths);
 	studioPlugins.emit('studio/files-changed', change.slug, change.paths);
 	officeFilesChanged(change.paths.map((path) => studioFileUrl(change.slug, path)));

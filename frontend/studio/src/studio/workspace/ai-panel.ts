@@ -41,6 +41,8 @@ export type AiPanelHost = {
 	followed?(id: string): void;
 	/** The conversation shown was given a title, or spoken in (listed anew). */
 	changed?(id: string): void;
+	/** Its turn is over (done, stopped, failed): what it changed on disk meanwhile can be looked over now. */
+	turnOver?(): void;
 };
 
 type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
@@ -355,6 +357,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				const before = conversation;
 				conversation = event.session;
 				if (before?.id === conversation.id && (before.title !== conversation.title || before.updated !== conversation.updated)) host.changed?.(conversation.id);
+				if (before?.state === 'running' && conversation.state !== 'running') host.turnOver?.();
 				break;
 			}
 		}
@@ -1078,6 +1081,10 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 			pageButton.title = on ? '收回到右边' : '在页面中打开（AI 问答）';
 			pageButton.setAttribute('aria-label', on ? '收回到右边' : '在页面中打开');
 			if (on) void load();
+		},
+		/** Whether the AI is at work (a turn going on), changing files perhaps. */
+		working(): boolean {
+			return conversation?.state === 'running';
 		},
 		/** The conversation shown (null: none yet). */
 		current(): string | null {
