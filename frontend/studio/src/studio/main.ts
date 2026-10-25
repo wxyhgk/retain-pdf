@@ -206,37 +206,25 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 		editor.insertMarkdown(markdown);
 		return true;
 	},
-	// ⤢: the conversation whole, in the middle (AI 问答).
-	openAsPage: (id) => openChat(id),
-});
-// AI 问答, as Notion's: a conversation whole, in the middle; the same panel as the AI tab's, wider. The left column
-// lists the conversations (chats/) in place of the pages.
-const chatView = createAiPanel(
-	shell.querySelector<HTMLElement>('#chat-view')!,
-	{
-		article: () => null,
-		articles: () => articleList.articles().map((entry) => ({ slug: entry.slug, title: entry.title || entry.slug })),
-		hasSelection: () => false,
-		selection: async () => null,
-		toast: (message) => showToast(message),
-		runInTerminal(command) {
-			sidePanel.show('terminal');
-			terminal.run(command);
-		},
-		insert: () => false,
-		begun(id) {
-			chatList.select(id);
-			showChatAddress(id);
-			void chatList.refresh();
-		},
-		changed: () => void chatList.refresh(),
+	// ⤢ / ⤡: the panel whole in the middle (AI 问答), or back in the side.
+	openWhole: () => showView('chat'),
+	closeWhole: () => showView('editor'),
+	followed(id) {
+		chatList.select(id);
+		void chatList.refresh();
+		if (shell.dataset.view === 'chat') showChatAddress(id);
 	},
-	{ full: true },
-);
+	changed: () => void chatList.refresh(),
+});
+// AI 问答, as Notion's: the AI tab's panel itself, moved whole into the middle (showView), the conversations listed in
+// the left column in place of the pages; back in the side when an article is shown again.
+const aiPane = shell.querySelector<HTMLElement>('#side-ai')!;
+const aiPaneHome = { parent: aiPane.parentElement!, next: aiPane.nextSibling };
+const chatView = shell.querySelector<HTMLElement>('#chat-view')!;
 const chatList = createChatList(shell.querySelector<HTMLElement>('#chat-list')!, {
 	open: (id) => openChat(id),
 	removed(id) {
-		if (chatView.current() === id) void openLatestChat();
+		if (aiPanel.current() === id) void openLatestChat();
 	},
 	toast: (message) => showToast(message),
 });
@@ -253,19 +241,39 @@ function showChatAddress(id: string | null): void {
 /** AI 问答 with the conversation `id`. */
 function openChat(id: string): void {
 	showView('chat');
-	chatList.select(id);
-	showChatAddress(id);
-	void chatView.open(id).then(() => chatView.focus());
+	void aiPanel.open(id).then(() => aiPanel.focus());
 }
 
-/** AI 问答 with a new conversation (listed and in the address once begun: `begun`). */
+/** AI 问答 with a new conversation (listed and in the address once begun: `followed`). */
 function newChat(): void {
 	showView('chat');
-	chatList.select(null);
-	void chatView.newChat();
-	chatView.focus();
+	void aiPanel.newChat();
+	aiPanel.focus();
 }
 shell.querySelector<HTMLButtonElement>('#new-chat')!.addEventListener('click', () => newChat());
+
+/**
+ * The AI panel whole in the middle (AI 问答), moved there from the side and lent by it, or back where it was; the
+ * left column lists the conversations meanwhile.
+ */
+function showChat(on: boolean): void {
+	const there = chatView.contains(aiPane);
+	chatView.hidden = !on;
+	showSidebar(on);
+	if (on && !there) {
+		chatView.append(aiPane);
+		sidePanel.lend('ai', true);
+		aiPanel.setFull(true);
+	} else if (!on && there) {
+		aiPaneHome.parent.insertBefore(aiPane, aiPaneHome.next);
+		aiPanel.setFull(false);
+		sidePanel.lend('ai', false);
+	}
+	const shown = on ? aiPanel.current() : null;
+	chatList.select(shown);
+	showChatAddress(shown);
+	if (on) void chatList.refresh();
+}
 
 /** AI 问答 with the conversation spoken in last; a new one when there is none. */
 async function openLatestChat(): Promise<void> {
@@ -284,11 +292,8 @@ function showSidebar(chats: boolean): void {
 	sidebarChats.setAttribute('aria-selected', String(chats));
 }
 sidebarPages.addEventListener('click', () => showView('editor'));
-sidebarChats.addEventListener('click', () => {
-	const shown = chatView.current();
-	if (shown) openChat(shown);
-	else void openLatestChat();
-});
+// The conversation the panel shows, whole.
+sidebarChats.addEventListener('click', () => showView('chat'));
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
 const agentsDialog = createAgentsDialog(document.querySelector<HTMLDialogElement>('#agents-dialog')!, { saved: () => terminal.refreshAgents() });
@@ -1034,9 +1039,7 @@ function showView(view: 'editor' | 'drive' | 'table' | 'chat', folder?: string):
 	shell.dataset.view = view;
 	driveView.hidden = view !== 'drive';
 	tableView.hidden = view !== 'table';
-	shell.querySelector<HTMLElement>('#chat-view')!.hidden = view !== 'chat';
-	showSidebar(view === 'chat');
-	if (view !== 'chat') showChatAddress(null);
+	showChat(view === 'chat');
 	driveButton.setAttribute('aria-pressed', String(view === 'drive'));
 	tableButton.setAttribute('aria-pressed', String(view === 'table'));
 	const url = new URL(window.location.href);

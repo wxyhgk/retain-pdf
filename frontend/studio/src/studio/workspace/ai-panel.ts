@@ -34,11 +34,12 @@ export type AiPanelHost = {
 	runInTerminal(command: string): void;
 	/** Puts Markdown in the article open, where its caret is, as blocks; false when no article is open. */
 	insert(markdown: string): boolean;
-	/** Opens the conversation `id` whole, in the middle (AI 问答). */
-	openAsPage?(id: string): void;
-	/** Whole (`full`): a conversation was begun here (＋, another AI chosen), to be listed and in the address. */
-	begun?(id: string): void;
-	/** Whole: the conversation shown was given a title, or spoken in (listed anew). */
+	/** ⤢: the panel whole, in the middle (AI 问答); ⤡: back in the side. */
+	openWhole?(): void;
+	closeWhole?(): void;
+	/** Another conversation shown (chosen, begun): the one AI 问答 lists as shown. */
+	followed?(id: string): void;
+	/** The conversation shown was given a title, or spoken in (listed anew). */
 	changed?(id: string): void;
 };
 
@@ -113,7 +114,9 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', 
  * comes back as a change on disk, to look over as any other. Under the input: which AI, and its options (who
  * decides, model, effort). A conversation goes on in the article it began in; ＋ begins another.
  */
-export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = false }: { full?: boolean } = {}) {
+export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
+	/** Shown whole in the middle (AI 问答, as Notion's), not in the side: the same panel, wider (setFull). */
+	let full = false;
 	const toolbar = element('header', 'pane-toolbar ai-toolbar');
 	const title = element('span', 'ai-title', '新对话');
 	const where = element('span', 'ai-where');
@@ -196,16 +199,6 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 		},
 	});
 	pane.replaceChildren(toolbar, sheet.element, transcript, composer);
-	// Whole, in the middle (AI 问答, as Notion's): the same conversation as in the AI tab, wider. Which one is shown is
-	// chosen in the left column (its list, ＋), the article open is not told of.
-	if (full) {
-		pane.classList.add('is-full');
-		historyButton.hidden = true;
-		newButton.hidden = true;
-		pageButton.hidden = true;
-		emptyHint.textContent = '它能读你的文章和资料库、运行命令、算东西；回答里的块可以复制进笔记。';
-		suggestions.hidden = true;
-	}
 
 	/** 模型和账号 in place of the conversation, or the conversation again. */
 	function showSheet(open: boolean): void {
@@ -222,8 +215,10 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 	let starting: Promise<Conversation | null> | null = null;
 	/** The AIs and conversations read (once; again after a failure): what is said waits for it. */
 	let loading: Promise<void> | null = null;
-	/** Whole: the conversation chosen being found, to be followed (open): what is said waits for it. */
+	/** The conversation chosen being found, to be followed (open): what is said waits for it. */
 	let showing: Promise<void> = Promise.resolve();
+	/** A conversation was asked for (open, newChat): none is begun or taken up by itself once the list is read. */
+	let asked = false;
 	let article: { slug: string; title: string } | null = null;
 	/** The article left out of what is told (its × clicked), till another is opened. */
 	let leftOut: string | null = null;
@@ -249,12 +244,10 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 				say('没有能在面板里用的 AI：在「AI 助手」设置里给 Claude 或 Codex 配上 ACP 命令');
 				return;
 			}
-			// Whole, the one shown is chosen around it (open, newChat).
-			if (full) return;
 			// The one left open, kept in chats/ across restarts.
 			const kept = known.conversations.find((entry) => entry.id === remembered(CONVERSATION_KEY));
-			// Spoken to while the list was read: that conversation (begun then) is the one.
-			if (conversation || starting) return;
+			// Spoken to while the list was read, or one asked for (open, newChat): that one is the one.
+			if (conversation || starting || asked) return;
 			if (kept) follow(kept);
 			else void begin();
 		} catch (error) {
@@ -274,7 +267,6 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 				if (starting === started) {
 					starting = null;
 					follow(made);
-					if (full) host.begun?.(made.id);
 				}
 				return made;
 			},
@@ -315,7 +307,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 		items = [];
 		drawn.clear();
 		list.replaceChildren();
-		if (!full) remember(CONVERSATION_KEY, next?.id ?? null);
+		remember(CONVERSATION_KEY, next?.id ?? null);
+		if (next) host.followed?.(next.id);
 		showSession();
 		if (next) unfollow = followConversation(next.id, receive);
 	}
@@ -349,7 +342,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 			case 'session': {
 				const before = conversation;
 				conversation = event.session;
-				if (full && before?.id === conversation.id && (before.title !== conversation.title || before.updated !== conversation.updated)) host.changed?.(conversation.id);
+				if (before?.id === conversation.id && (before.title !== conversation.title || before.updated !== conversation.updated)) host.changed?.(conversation.id);
 				break;
 			}
 		}
@@ -891,14 +884,12 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 		if (unused) void closeConversation(unused.id).catch(() => {});
 	});
 	modelsButton.addEventListener('click', () => showSheet(!sheet.open));
-	// The conversation, whole, in the editor: its page made now if nothing was written on one yet.
+	// ⤢: the panel whole, in the middle; the conversation listed there (in chats/) though nothing was said yet. ⤡: back.
 	pageButton.addEventListener('click', () => {
+		if (full) return host.closeWhole?.();
 		const shown = conversation;
-		if (!shown || !host.openAsPage) return;
-		void pageConversation(shown.id).then(
-			() => host.openAsPage!(shown.id),
-			(error: unknown) => host.toast(error instanceof Error ? error.message : '没能在页面中打开'),
-		);
+		// Listed there once it is kept.
+		void (shown ? pageConversation(shown.id).catch(() => null) : Promise.resolve(null)).then(() => host.openWhole?.());
 	});
 	historyButton.addEventListener('click', () => {
 		void listConversations().then((known) => {
@@ -950,12 +941,22 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 		articleShown(): void {
 			followSelection();
 		},
+		/** Shown whole in the middle (AI 问答), or in the side: the same panel, its ⤢ then ⤡. */
+		setFull(on: boolean): void {
+			full = on;
+			pane.classList.toggle('is-full', on);
+			pageButton.textContent = on ? '⤡' : '⤢';
+			pageButton.title = on ? '收回到右边' : '在页面中打开（AI 问答）';
+			pageButton.setAttribute('aria-label', on ? '收回到右边' : '在页面中打开');
+			if (on) void load();
+		},
 		/** The conversation shown (null: none yet). */
 		current(): string | null {
 			return conversation?.id ?? null;
 		},
-		/** Whole: the conversation `id` shown, followed. */
+		/** The conversation `id` shown, followed. */
 		open(id: string): Promise<void> {
+			asked = true;
 			if (conversation?.id === id) return showing;
 			follow(null);
 			showing = (async () => {
@@ -970,8 +971,9 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = fal
 			})();
 			return showing;
 		},
-		/** Whole: a new conversation, with the AI chosen and its options; its id, once begun. */
+		/** A new conversation, with the AI chosen and its options (listed at once when whole); its id, once begun. */
 		async newChat(): Promise<string | null> {
+			asked = true;
 			await load();
 			// What is typed meanwhile is said in it, once it is there (submit waits for `starting`).
 			return (await begin())?.id ?? null;

@@ -149,8 +149,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				</section>
 				<section id="drive-view" class="drive-page" aria-label="资料库" hidden></section>
 				<section id="table-view" class="table-page" aria-label="全部文章" hidden></section>
-				<!-- AI 问答: a conversation whole, the AI tab's panel in the middle (ai-panel.ts, full). -->
-				<section id="chat-view" class="ai-pane chat-view" aria-label="AI 问答" hidden></section>
+				<!-- AI 问答: the AI tab's panel, moved here whole (main.ts showChat). -->
+				<section id="chat-view" class="chat-view" aria-label="AI 问答" hidden></section>
 			</section>
 
 			<aside id="side-panel" class="side-panel" aria-label="AI、文件与终端">
@@ -392,7 +392,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	#chat-list :global(.chat-row-title) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	#chat-list :global(.chat-row-when) { flex: none; color: rgb(var(--gray)); font-size: 11px; }
 	#chat-list :global(.chat-list-empty) { margin: 2px 8px 6px; color: rgb(var(--gray)); font-size: 11px; line-height: 1.5; }
-	.chat-view { flex: 1; min-height: 0; }
+	.chat-view { display: flex; flex: 1; min-height: 0; flex-direction: column; background: var(--surface); }
 	.chat-view[hidden] { display: none; }
 	.plugin-commands { display: grid; gap: 2px; margin-top: -5px; padding: 0 7px 9px; }
 	.plugin-commands[hidden] { display: none; }

@@ -58,8 +58,11 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 
 	const layout = readLayout();
 
-	/** The tab shown: the one chosen, or the files while it is not there (yet). */
-	const shown = () => (tabs.has(layout.tab) ? layout.tab : 'files');
+	/** Tabs whose pane is shown elsewhere for now (the AI tab's, whole in the middle: AI 问答): not shown here. */
+	const lent = new Set<string>();
+
+	/** The tab shown: the one chosen, or the files while it is not there (yet), or lent. */
+	const shown = () => (tabs.has(layout.tab) && !lent.has(layout.tab) ? layout.tab : 'files');
 
 	/** Tells a plugin's pane it came on screen or left it, once per change. */
 	function tellScreen(entry: Tab, onScreen: boolean): void {
@@ -96,6 +99,8 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		toggleButton.setAttribute('aria-label', layout.open ? '收起右侧面板' : '展开右侧面板');
 		const current = shown();
 		for (const [name, entry] of tabs) {
+			entry.tab.hidden = lent.has(name);
+			if (lent.has(name)) continue;
 			const selected = name === current;
 			entry.tab.setAttribute('aria-selected', String(selected));
 			entry.tab.tabIndex = selected ? 0 : -1;
@@ -167,6 +172,21 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 	}
 
 	return {
+		/**
+		 * The tab's pane shown elsewhere (`lent`: moved out of the panel by the caller), its tab away meanwhile, the
+		 * files shown in its place when it was the one chosen; or back. The tab chosen stays chosen.
+		 */
+		lend(tab: string, isLent: boolean): void {
+			const entry = tabs.get(tab);
+			if (!entry) return;
+			if (isLent) {
+				lent.add(tab);
+				entry.pane.hidden = false;
+			} else {
+				lent.delete(tab);
+			}
+			applyLayout();
+		},
 		/** Opens the panel on this tab; throws when there is none by this name. */
 		show(tab: string): void {
 			if (!tabs.has(tab)) throw new Error(`没有叫 ${tab} 的面板`);

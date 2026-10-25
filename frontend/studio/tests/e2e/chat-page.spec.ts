@@ -5,8 +5,8 @@ import { expect, test, type Page } from '@playwright/test';
 
 import { openStudio, resetFixture } from './studio.ts';
 
-// AI 问答, as Notion's: a conversation whole, in the middle; the AI tab's panel, wider, the same conversation. The
-// left column lists the conversations (chats/) in place of the pages. The AI is a stand-in (fake-agents/fake-acp.mjs).
+// AI 问答, as Notion's: the AI tab's panel itself, moved whole into the middle; the left column lists the conversations
+// (chats/) in place of the pages. The AI is a stand-in (fake-agents/fake-acp.mjs).
 
 const view = (page: Page) => page.locator('#chat-view');
 const input = (page: Page) => view(page).locator('.ai-input');
@@ -75,7 +75,7 @@ test('AI 问答: a conversation whole in the middle, listed on the left; there a
 	expect(existsSync(join(chats(), id))).toBe(false);
 });
 
-test('⤢ in the AI tab: the same conversation whole, in the middle; said there, it is in the AI tab too', async ({ page }) => {
+test('⤢ in the AI tab: the panel itself whole, in the middle; ⤡ back in the side, as it was', async ({ page }) => {
 	await openStudio(page);
 	await page.locator('#side-tab-ai').click();
 	const side = page.locator('#side-ai');
@@ -87,6 +87,16 @@ test('⤢ in the AI tab: the same conversation whole, in the middle; said there,
 	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText('几块 侧边');
 	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(3);
 	await expect(page.getByRole('tab', { name: 'AI 问答' })).toHaveAttribute('aria-selected', 'true');
+	// The very panel of the AI tab, moved: the tab away meanwhile.
+	await expect(view(page).locator('#side-ai')).toHaveCount(1);
+	await expect(page.locator('#side-tab-ai')).toBeHidden();
 	await say(page, '接着说');
 	await expect(side.locator('.ai-message').last()).toHaveText('结论是这样的。');
+	// ⤡: back in the side, as it was; the article in the middle.
+	await side.getByRole('button', { name: '收回到右边' }).click();
+	await expect(view(page)).toBeHidden();
+	await expect(page.locator('#side-panel #side-ai')).toBeVisible();
+	await expect(page.locator('#side-tab-ai')).toHaveAttribute('aria-selected', 'true');
+	await expect(side.locator('.ai-message').last()).toHaveText('结论是这样的。');
+	await expect(page.locator('#article-title-input')).toHaveValue('Studio 测试夹具');
 });

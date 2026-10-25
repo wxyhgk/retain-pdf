@@ -180,13 +180,5 @@
 .inline-ai-choice { padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .inline-ai-choice.is-current, .inline-ai-choice:hover { background: var(--surface-soft); }
 
-/* Whole, in the middle (AI 问答): the same conversation as in the AI tab, at a reading width. */
-.ai-pane.is-full { display: flex; flex-direction: column; font-size: 14px; }
-.ai-pane.is-full .ai-toolbar { padding: 0 16px 0 24px; }
+/* Whole, in the middle (AI 问答): the same panel as in the side, its conversation at a reading width. */
 .ai-pane.is-full .ai-items, .ai-pane.is-full .ai-empty, .ai-pane.is-full .ai-composer { box-sizing: border-box; width: min(100%, 820px); margin-right: auto; margin-left: auto; }
-.ai-pane.is-full .ai-transcript { padding: 24px 24px 12px; }
-.ai-pane.is-full .ai-items { gap: 14px; }
-.ai-pane.is-full .ai-message { font-size: 15px; line-height: 1.75; }
-.ai-pane.is-full .ai-composer { padding: 8px 24px 18px; }
-/* No article behind it to put blocks in: copied instead. */
-.ai-pane.is-full .ai-block-handle, .ai-pane.is-full .ai-message-actions button:first-child { display: none; }
