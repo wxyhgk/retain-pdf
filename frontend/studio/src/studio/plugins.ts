@@ -132,6 +132,17 @@ export function codeBlockPreview(language: string, content: string): HTMLElement
 	return null;
 }
 
+/**
+ * The plugins' blocks watching `root` (an AI's answers) as they watch the editor's page, to draw what their previews
+ * left there (a molecule's 3D view, a widget's frame); once they have started. Returns what stops them.
+ */
+export async function observePluginBlocks(root: HTMLElement): Promise<() => void> {
+	const stops = (await pluginBlocks()).flatMap((block) => (block.observe ? [block.observe(root)] : []));
+	return () => {
+		for (const stop of stops) stop();
+	};
+}
+
 /** The plugin blocks that show files of the article with this extension (their `files`); none before they have started. */
 function blocksForFile(extension: string) {
 	const blocks = started ? (studioPlugins.get('blocks') as typeof studioPlugins.blocks | undefined) : undefined;

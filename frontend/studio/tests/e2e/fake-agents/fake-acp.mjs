@@ -66,7 +66,19 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '能量和质量的关系：\n\n$$\nE = mc^2\n$$\n\n- 要点一\n- 要点二');
 			return { stopReason: 'end_turn' };
 		}
-		// A picture it looked at with its read tool (seen only by it), and one it sends as an attachment.
+		// The plugins' blocks in what it says: molecules (2D, 3D), an energy diagram, a widget, a bookmark.
+		if (said.startsWith('组件')) {
+			const blocks = [
+				'```smiles\nCC(=O)Oc1ccccc1C(=O)O\n```',
+				'```xyz\n3\nwater\nO   0.000000   0.000000   0.117300\nH   0.000000   0.757200  -0.469200\nH   0.000000  -0.757200  -0.469200\n```',
+				'```energy\n反应物 0\nTS1 12.3\n产物 -15.2\n```',
+				'```widget title="问候" height=120\n<p id="hello">你好，交互模块</p>\n```',
+				'```bookmark\nhttps://example.com/\ntitle: 例子网页\ndescription: 一个书签\n```',
+			];
+			await words('agent_message_chunk', `这些块：\n\n${blocks.join('\n\n')}`);
+			return { stopReason: 'end_turn' };
+		}
+				// A picture it looked at with its read tool (seen only by it), and one it sends as an attachment.
 		if (said.startsWith('看图')) {
 			const plot = new URL('../fixtures/plot.png', import.meta.url).pathname;
 			await update({ sessionUpdate: 'tool_call', toolCallId: 'look', title: 'read', kind: 'read', status: 'completed', locations: [{ path: plot }], rawInput: { path: plot }, content: [{ type: 'content', content: { type: 'text', text: 'Read image file [image/png]' } }] });

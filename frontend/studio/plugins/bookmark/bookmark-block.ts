@@ -70,6 +70,12 @@ function toDom(node: Hast): HTMLElement {
 	return element;
 }
 
+/** A ```bookmark block drawn where there is no editor to make it a block of its own (an AI's answer): its card. */
+export function bookmarkPreview(language: string, content: string): HTMLElement | null {
+	if (language.trim().toLowerCase() !== BOOKMARK_LANGUAGE) return null;
+	return toDom(bookmarkCard(parseBookmark(content)) as Hast);
+}
+
 function button(label: string, action: () => void): HTMLButtonElement {
 	const element = document.createElement('button');
 	element.type = 'button';

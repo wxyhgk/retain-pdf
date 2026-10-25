@@ -15,6 +15,11 @@ export type ArticleFileDropHost = {
 	upload(files: readonly File[]): Promise<string[]>;
 	/** Copies a file of the drive (资料库) into the open article; the path it got there. */
 	fromDrive(path: string): Promise<string>;
+	/**
+	 * Markdown from elsewhere (an AI's answer) as the article takes it: the pictures it shows from this machine copied
+	 * into the article, their links pointed there.
+	 */
+	withPictures(markdown: string): Promise<string>;
 	/** The start of a file of the open article, to tell what wrote it (a Gaussian output among other logs). */
 	head(path: string): Promise<string | null>;
 	/** Something went wrong, or something the author should know happened. */
@@ -138,8 +143,21 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 						if (said) {
 							event.preventDefault();
 							const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? view.state.selection.from;
-							insertAt(view, at, [said]);
-							view.focus();
+							// Its pictures copied in first (a placeholder there meanwhile), so that they show in the article.
+							const id = Symbol('blocks');
+							view.dispatch(view.state.tr.setMeta(placeholderKey, { add: { id, pos: at, label: '正在放进来…' } } satisfies PlaceholderAction));
+							host.withPictures(said).then(
+								(markdown) => {
+									if (view.isDestroyed) return;
+									const there = findPlaceholder(view.state, id);
+									insertAt(view, there < 0 ? view.state.selection.from : there, [markdown], id);
+									view.focus();
+								},
+								(error: unknown) => {
+									if (!view.isDestroyed) view.dispatch(view.state.tr.setMeta(placeholderKey, { remove: id } satisfies PlaceholderAction));
+									host.report(error instanceof Error ? error.message : '没能放进来', true);
+								},
+							);
 							return true;
 						}
 						// From the drive: copied into the article first.

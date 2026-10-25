@@ -554,6 +554,11 @@ export function revealDriveFile(path: string): Promise<{ path: string }> {
 }
 
 /** A file of the drive copied into the article's `folder` (`img` or `assets`): its path there. */
+/** A picture on this machine (by its path, absolute or from blog/) copied into the article's img/; its path there. */
+export function importPicture(slug: string, path: string): Promise<{ path: string; size: number }> {
+	return request(articleApi(slug, 'import-picture'), jsonOptions('POST', { path }));
+}
+
 export function importDriveFile(slug: string, from: string, folder: string): Promise<{ path: string; size: number }> {
 	return request(articleApi(slug, 'import'), jsonOptions('POST', { from, folder }));
 }

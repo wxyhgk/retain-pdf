@@ -19,6 +19,7 @@ import {
 	keepVersion,
 	addReference,
 	importDriveFile,
+	importPicture,
 	driveInfo,
 	pluginApi,
 	listPlugins,
@@ -203,7 +204,11 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 	},
 	insert(markdown) {
 		if (!session.slug) return false;
-		editor.insertMarkdown(markdown);
+		// Its pictures copied into the article first, so that they show there.
+		withArticlePictures(markdown).then(
+			(taken) => editor.insertMarkdown(taken),
+			(error: unknown) => showToast(error instanceof Error ? error.message : '没能放进来', true),
+		);
 		return true;
 	},
 	// ⤢ / ⤡: the panel whole in the middle (AI 问答), or back in the side.
@@ -373,6 +378,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 			return paths;
 		},
 		fromDrive: (path) => copyFromDrive(path),
+		withPictures: (markdown) => withArticlePictures(markdown),
 		head: async (path) => (session.slug ? articleFileHead(session.slug, path) : null),
 		report: showToast,
 	},
@@ -992,6 +998,28 @@ const quickFind = createQuickFind(document.querySelector<HTMLDialogElement>('#qu
 shell.querySelector('#open-search')!.addEventListener('click', () => quickFind.open());
 
 /** A file of the drive copied into the open article (`img/` for a picture, else `assets/`): its path there. */
+/**
+ * Markdown from an AI's answer as the open article takes it: each picture it shows from this machine (`![](/…/ai/work/
+ * plot.png)`) copied into the article's img/, its link pointed there (`./img/plot.png`); the web's and the article's
+ * own left as they are.
+ */
+async function withArticlePictures(markdown: string): Promise<string> {
+	const slug = session.slug;
+	if (!slug) return markdown;
+	const local = [...new Set([...markdown.matchAll(/!\[[^\]]*\]\(<?([^)>\s]+)>?\)/gu)].map((match) => match[1]!))].filter((src) => !/^[a-z][a-z0-9+.-]*:/iu.test(src) || src.startsWith('file://')).filter((src) => !/^(\.\/)?(img|assets)\//u.test(src));
+	if (!local.length) return markdown;
+	let taken = markdown;
+	try {
+		for (const src of local) {
+			const { path } = await importPicture(slug, decodeURI(src));
+			taken = taken.split(`(${src})`).join(`(./${path})`).split(`(<${src}>)`).join(`(./${path})`);
+		}
+	} finally {
+		void filePanel.refresh();
+	}
+	return taken;
+}
+
 async function copyFromDrive(path: string): Promise<string> {
 	const slug = session.slug;
 	if (!slug) throw new Error('先打开一篇文章');

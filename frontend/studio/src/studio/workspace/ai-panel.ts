@@ -15,6 +15,7 @@ import {
 	type ConversationOption,
 } from '../api/client';
 import { STUDIO_MARKDOWN_DRAG_TYPE } from '../article-files';
+import { observePluginBlocks } from '../plugins';
 import { isPicture, pictureUrl, renderAiMarkdown } from './ai-markdown';
 import { createModelsSheet } from './ai-models-sheet';
 import { showContextMenu, type MenuItem } from './context-menu';
@@ -380,6 +381,25 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 
 	/** Each stretch's row, by its first item's id. */
 	const workRows = new Map<string, HTMLElement>();
+	// A picture in what is said or in a step, clicked: whole, over everything; a click or Esc closes it.
+	const pictureDialog = element('dialog', 'ai-picture-dialog');
+	pictureDialog.setAttribute('aria-label', '图片');
+	const pictureWhole = element('img');
+	pictureDialog.append(pictureWhole);
+	document.body.append(pictureDialog);
+	pictureDialog.addEventListener('click', () => pictureDialog.close());
+	const showWhole = (event: MouseEvent) => {
+		const picture = (event.target as Element | null)?.closest?.<HTMLImageElement>('.ai-message img, .ai-tool-picture');
+		if (!picture) return;
+		event.preventDefault();
+		pictureWhole.src = picture.src;
+		pictureWhole.alt = picture.alt;
+		pictureDialog.showModal();
+	};
+	list.addEventListener('click', showWhole);
+	// What the plugins' previews leave to be drawn (a molecule's 3D view, a widget's frame), drawn here too.
+	void observePluginBlocks(list);
+
 	/** The pictures shown small on the rows, by their paths. */
 	const thumbnails = new Map<string, HTMLImageElement>();
 	const workDialog = element('dialog', 'ai-pane ai-work-dialog');
@@ -391,6 +411,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	workClose.setAttribute('aria-label', '关闭');
 	workHead.append(workTitle, workClose);
 	const workBody = element('div', 'ai-work-body');
+	workBody.addEventListener('click', (event) => showWhole(event));
+	void observePluginBlocks(workBody);
 	workDialog.append(workHead, workBody);
 	document.body.append(workDialog);
 	/** The stretch shown in the dialog, by its first item's id. */

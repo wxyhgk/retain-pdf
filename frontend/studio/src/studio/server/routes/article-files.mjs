@@ -1,4 +1,6 @@
+import { createReadStream } from 'node:fs';
 import { lstat } from 'node:fs/promises';
+import { basename, isAbsolute, resolve } from 'node:path';
 import { revealInFileManager } from '../reveal.mjs';
 import { refuse, reply, sendFile } from '../api.mjs';
 
@@ -9,7 +11,7 @@ import { refuse, reply, sendFile } from '../api.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function articleFileRoutes(api, { files, manager, articleFiles, drive, testing }) {
+export function articleFileRoutes(api, { files, manager, articleFiles, drive, testing, blogRoot }) {
 	api.get('/articles/:slug/files/:root/*path', async ({ params, request, response }) => {
 		await sendFile(response, await files.stream(params.slug, params.root, params.path, { range: request.headers.range }));
 	}, { streams: true });
@@ -35,6 +37,17 @@ export function articleFileRoutes(api, { files, manager, articleFiles, drive, te
 			return reply(201, await manager.upload(params.slug, folder ?? 'assets', source.name, source.body));
 		} finally {
 			source.body.destroy();
+		}
+	});
+	// A picture on this machine (one an AI drew, put in an article from its answer), copied into the article's img/.
+	api.post('/articles/:slug/import-picture', async ({ params, json }) => {
+		const written = String((await json()).path ?? '').replace(/^file:\/\//u, '');
+		const path = isAbsolute(written) ? written : resolve(blogRoot, written);
+		const body = createReadStream(path);
+		try {
+			return reply(201, await manager.upload(params.slug, 'img', basename(path), body));
+		} finally {
+			body.destroy();
 		}
 	});
 	api.post('/articles/:slug/folders', async ({ params, json }) => reply(201, await manager.createFolder(params.slug, (await json()).path)));

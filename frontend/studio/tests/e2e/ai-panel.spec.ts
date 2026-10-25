@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { editFixture, editor, openStudio, removeArticle, resetFixture, saveStatus, savedMarkdown, writeArticle, writeFixtureFile } from './studio.ts';
+import { editFixture, editor, fixtureHas, openStudio, removeArticle, resetFixture, saveStatus, savedMarkdown, scienceBlock, writeArticle, writeFixtureFile } from './studio.ts';
 
 // The AI tab: a coding agent spoken to over the Agent Client Protocol (a stand-in here:
 // tests/e2e/fake-agents/fake-acp.mjs), which thinks, says what it will do, asks leave to run a command, runs it,
@@ -307,6 +307,14 @@ test('a picture the AI drew on this machine is shown, by its path', async ({ pag
 	const picture = pane(page).locator('.ai-message img[alt="势能曲线"]');
 	await expect(picture).toHaveCount(1);
 	await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth)).toBeGreaterThan(0);
+	// Small in the conversation, whole when clicked.
+	expect((await picture.boundingBox())!.height).toBeLessThanOrEqual(300);
+	await picture.click();
+	const whole = page.locator('dialog.ai-picture-dialog');
+	await expect(whole).toBeVisible();
+	await expect(whole.locator('img')).toHaveAttribute('alt', '势能曲线');
+	await whole.click();
+	await expect(whole).toBeHidden();
 });
 
 test('what the AI changes in the article open while it works is looked over once its turn is over, all at once', async ({ page }) => {
@@ -337,4 +345,41 @@ test('a picture the AI looked at is on its row, small, and whole in the dialog; 
 	await pane(page).locator('.ai-work').click();
 	await page.locator('dialog.ai-work-dialog .ai-tool-row').click();
 	await expect.poll(() => loaded(page.locator('dialog.ai-work-dialog .ai-tool-picture'))).toBeGreaterThan(0);
+});
+
+test('the plugins’ blocks in an answer are drawn as in the editor, and put in the article are those blocks; a picture of this machine is copied in', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '组件');
+	const blocks = pane(page).locator('.ai-message .ai-block');
+	await expect(blocks).toHaveCount(6);
+	// A molecule in 2D and in 3D, an energy diagram, a widget's frame, a bookmark's card.
+	// (Drawn as they come in sight, as in the editor.)
+	await blocks.nth(1).scrollIntoViewIfNeeded();
+	await expect(blocks.nth(1).locator('.ai-preview svg').first()).toBeVisible();
+	await blocks.nth(2).scrollIntoViewIfNeeded();
+	await expect(blocks.nth(2).locator('.ai-preview canvas')).toHaveCount(1);
+	await expect(blocks.nth(2).getByRole('button', { name: '保存视角到文章' })).toBeHidden();
+	await expect(blocks.nth(3).locator('.note-energy')).toHaveCount(1);
+	await expect(blocks.nth(4).locator('iframe')).toHaveCount(1);
+	await expect(blocks.nth(5).locator('.note-bookmark')).toContainText('例子网页');
+	// The 3D molecule dragged in: a block of the article.
+	const molecules = await scienceBlock(page, 'XYZ').count();
+	await blocks.nth(2).hover();
+	await blocks.nth(2).locator('.ai-block-handle').dragTo(editor(page).locator('p', { hasText: '结尾段落' }));
+	await expect(scienceBlock(page, 'XYZ')).toHaveCount(molecules + 1);
+
+	// A picture the AI drew, put in where the caret is: copied into the article's img/, shown there.
+	await tell(page, '画图');
+	const picture = pane(page).locator('.ai-message .ai-block', { has: page.locator('img') });
+	await editor(page).locator('p', { hasText: '结尾段落' }).click();
+	await page.keyboard.press('End');
+	await page.keyboard.press('Enter');
+	await picture.hover();
+	await picture.locator('.ai-block-handle').click();
+	const shown = editor(page).locator('img[alt="势能曲线"]');
+	await expect.poll(() => shown.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth).catch(() => 0)).toBeGreaterThan(0);
+	expect(fixtureHas('img/plot.png')).toBe(true);
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('](./img/plot.png)');
 });
