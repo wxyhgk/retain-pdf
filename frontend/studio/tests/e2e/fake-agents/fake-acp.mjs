@@ -66,7 +66,15 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '能量和质量的关系：\n\n$$\nE = mc^2\n$$\n\n- 要点一\n- 要点二');
 			return { stopReason: 'end_turn' };
 		}
-		// A picture it drew on this machine, shown by its path.
+		// A picture it looked at with its read tool (seen only by it), and one it sends as an attachment.
+		if (said.startsWith('看图')) {
+			const plot = new URL('../fixtures/plot.png', import.meta.url).pathname;
+			await update({ sessionUpdate: 'tool_call', toolCallId: 'look', title: 'read', kind: 'read', status: 'completed', locations: [{ path: plot }], rawInput: { path: plot }, content: [{ type: 'content', content: { type: 'text', text: 'Read image file [image/png]' } }] });
+			await update({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: '附上的图：' } });
+			await update({ sessionUpdate: 'agent_message_chunk', content: { type: 'image', mimeType: 'image/png', data: (await import('node:fs')).readFileSync(plot).toString('base64') } });
+			return { stopReason: 'end_turn' };
+		}
+				// A picture it drew on this machine, shown by its path.
 		if (said.startsWith('画图')) {
 			const plot = new URL('../fixtures/plot.png', import.meta.url).pathname;
 			await words('agent_message_chunk', `图画好了：\n\n![势能曲线](${plot})`);

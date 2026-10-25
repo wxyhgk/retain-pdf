@@ -204,3 +204,7 @@
 .ai-work-close { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 16px; cursor: pointer; }
 .ai-work-close:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
 .ai-work-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; padding: 14px 18px 20px; overflow: auto; }
+
+/* Pictures the AI looked at: on its row small, in the dialog whole. */
+.ai-work-picture { flex: none; width: 34px; height: 24px; border: 1px solid rgb(var(--gray-light)); border-radius: 4px; background: var(--surface); object-fit: cover; }
+.ai-tool-picture { display: block; max-width: 100%; height: auto; margin: 6px 0; border-radius: 6px; }

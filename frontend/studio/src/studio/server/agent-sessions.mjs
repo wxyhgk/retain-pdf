@@ -1,7 +1,9 @@
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
-import { delimiter, relative } from 'node:path';
+import { delimiter, dirname, join, relative } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Readable, Writable } from 'node:stream';
 import { client, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 
@@ -542,8 +544,11 @@ class AgentSession {
 		if (this.#replaying && !['config_option_update', 'current_mode_update', 'available_commands_update'].includes(update.sessionUpdate)) return;
 		switch (update.sessionUpdate) {
 			case 'agent_message_chunk':
+				// A picture it sends (some agents attach one): kept, and in its words as Markdown, shown there.
+				if (update.content?.type === 'image') return this.#picture(update);
+				return this.#words('message', update);
 			case 'agent_thought_chunk':
-				return this.#words(update.sessionUpdate === 'agent_message_chunk' ? 'message' : 'thought', update);
+				return this.#words('thought', update);
 			case 'tool_call':
 			case 'tool_call_update':
 				return this.#tool(update);
@@ -587,6 +592,22 @@ class AgentSession {
 			return;
 		}
 		this.#add({ kind, id: randomUUID(), messageId: update.messageId ?? null, text });
+	}
+
+	/**
+	 * A picture the agent sent, kept in its conversation's folder (chats/<id>/ai/pictures/), or where it says it is (a
+	 * file:// uri); its words take it as Markdown, which the panel shows. One of a conversation not kept is left out.
+	 */
+	#picture(update) {
+		const { data, mimeType, uri } = update.content;
+		let path = typeof uri === 'string' && uri.startsWith('file://') ? fileURLToPath(uri) : null;
+		if (!path && typeof data === 'string' && this.page) {
+			const extension = { 'image/jpeg': 'jpg', 'image/gif': 'gif', 'image/webp': 'webp', 'image/svg+xml': 'svg' }[mimeType] ?? 'png';
+			path = join(dirname(this.page), 'ai', 'pictures', `${randomUUID()}.${extension}`);
+			mkdirSync(dirname(path), { recursive: true });
+			writeFileSync(path, Buffer.from(data, 'base64'));
+		}
+		if (path) this.#words('message', { ...update, content: { type: 'text', text: `\n\n![](${path})\n\n` } });
 	}
 
 	/** A tool call, made or changed: its fields as they now are; what a command prints added to its output. */

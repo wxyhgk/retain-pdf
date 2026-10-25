@@ -323,3 +323,18 @@ test('what the AI changes in the article open while it works is looked over once
 	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
 	await expect(editor(page)).toContainText('AI 又改了');
 });
+
+test('a picture the AI looked at is on its row, small, and whole in the dialog; one it sends as an attachment is in its words', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '看图');
+	const loaded = (picture: import('@playwright/test').Locator) => picture.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth);
+	const thumbnail = pane(page).locator('.ai-work .ai-work-picture');
+	await expect(thumbnail).toHaveCount(1);
+	await expect.poll(() => loaded(thumbnail)).toBeGreaterThan(0);
+	const sent = pane(page).locator('.ai-message img');
+	await expect(sent).toHaveCount(1);
+	await expect.poll(() => loaded(sent)).toBeGreaterThan(0);
+	await pane(page).locator('.ai-work').click();
+	await page.locator('dialog.ai-work-dialog .ai-tool-row').click();
+	await expect.poll(() => loaded(page.locator('dialog.ai-work-dialog .ai-tool-picture'))).toBeGreaterThan(0);
+});

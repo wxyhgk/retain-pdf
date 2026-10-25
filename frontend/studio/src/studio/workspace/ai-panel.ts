@@ -15,7 +15,7 @@ import {
 	type ConversationOption,
 } from '../api/client';
 import { STUDIO_MARKDOWN_DRAG_TYPE } from '../article-files';
-import { renderAiMarkdown } from './ai-markdown';
+import { isPicture, pictureUrl, renderAiMarkdown } from './ai-markdown';
 import { createModelsSheet } from './ai-models-sheet';
 import { showContextMenu, type MenuItem } from './context-menu';
 
@@ -380,6 +380,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 
 	/** Each stretch's row, by its first item's id. */
 	const workRows = new Map<string, HTMLElement>();
+	/** The pictures shown small on the rows, by their paths. */
+	const thumbnails = new Map<string, HTMLImageElement>();
 	const workDialog = element('dialog', 'ai-pane ai-work-dialog');
 	workDialog.setAttribute('aria-label', '过程');
 	const workHead = element('header', 'ai-work-head');
@@ -454,7 +456,19 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		const { text, going, failed } = workSummary(run);
 		row.classList.toggle('is-going', going);
 		row.title = '点开看过程';
-		row.replaceChildren(element('span', 'ai-work-icon', going ? '' : '⚙'), element('span', 'ai-work-text', text), ...(failed ? [element('span', 'ai-work-failed', `${failed} 步失败`)] : []), element('span', 'ai-work-more', '›'));
+		// The pictures it looked at, small: what it saw, in sight without opening.
+		const pictures = [...new Set(run.flatMap((item) => (item.kind === 'tool' ? picturesOf(item) : [])))].slice(0, 4).map((path) => {
+			// The same one each time the row is drawn again, not asked for again.
+			let picture = thumbnails.get(path);
+			if (!picture) {
+				picture = element('img', 'ai-work-picture');
+				picture.src = pictureUrl(path);
+				picture.alt = '';
+				thumbnails.set(path, picture);
+			}
+			return picture;
+		});
+		row.replaceChildren(element('span', 'ai-work-icon', going ? '' : '⚙'), element('span', 'ai-work-text', text), ...(failed ? [element('span', 'ai-work-failed', `${failed} 步失败`)] : []), ...pictures, element('span', 'ai-work-more', '›'));
 		return row;
 	}
 
@@ -879,11 +893,26 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				detail.append(words);
 			}
 		}
+		// A picture it looked at (read): shown, as the agent saw it.
+		for (const path of picturesOf(item)) {
+			const picture = element('img', 'ai-tool-picture');
+			picture.src = pictureUrl(path);
+			picture.alt = relative(path);
+			detail.append(picture);
+		}
 		if (item.output) detail.append(element('pre', 'ai-tool-output', item.output.length > 20_000 ? `…${item.output.slice(-20_000)}` : item.output));
 		if (item.exitCode !== null && item.exitCode !== 0) detail.append(element('p', 'ai-tool-exit', `退出码 ${item.exitCode}`));
 		node.classList.toggle('has-detail', detail.childElementCount > 0);
 		node.append(row, detail);
 		return node;
+	}
+
+	/** The pictures a tool call read (a plot the agent drew, looked at): their paths. */
+	function picturesOf(item: ToolItem): string[] {
+		if (item.toolKind !== 'read') return [];
+		const input = item.rawInput as { path?: unknown; file_path?: unknown } | null;
+		const paths = [...item.locations.map((location) => location.path), input?.path, input?.file_path].filter((path): path is string => typeof path === 'string' && isPicture(path));
+		return [...new Set(paths)];
 	}
 
 	/** The command a tool call runs, if it runs one. */

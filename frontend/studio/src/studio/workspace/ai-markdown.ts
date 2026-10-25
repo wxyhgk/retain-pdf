@@ -16,6 +16,14 @@ import { codeBlockPreview } from '../plugins';
 
 const toHtml = unified().use(remarkRehype).use(rehypeStringify).freeze();
 
+/** A picture on this machine, by its path (absolute, or from blog/), as the Studio shows it. */
+export function pictureUrl(path: string): string {
+	return `/api/studio/conversations/picture?path=${encodeURIComponent(path)}`;
+}
+
+/** Whether a path is of a picture the panel shows. */
+export const isPicture = (path: string): boolean => /\.(png|jpe?g|gif|webp|svg)$/iu.test(path);
+
 /** A path as written in Markdown (spaces as %20), as it is on disk. */
 function decoded(path: string): string {
 	try {
@@ -85,7 +93,7 @@ function drawn(tree: Tree): DocumentFragment {
 		const src = image.getAttribute('src') ?? '';
 		if (/^https?:\/\//iu.test(src)) continue;
 		if (/^[a-z][a-z0-9+.-]*:/iu.test(src) && !src.startsWith('file://')) image.replaceWith(document.createTextNode(image.alt ? `[${image.alt}]` : ''));
-		else image.src = `/api/studio/conversations/picture?path=${encodeURIComponent(decoded(src))}`;
+		else image.src = pictureUrl(decoded(src));
 	}
 	for (const code of fragment.querySelectorAll('code.language-math')) {
 		const display = code.classList.contains('math-display');
