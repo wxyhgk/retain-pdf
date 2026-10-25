@@ -40,7 +40,7 @@ export type StudioPanel = {
 };
 
 /** The Studio's own tabs: no plugin's can be called so. */
-export const STUDIO_PANELS = ['files', 'terminal', 'drive'] as const;
+export const STUDIO_PANELS = ['ai', 'files', 'terminal', 'drive'] as const;
 
 /** Calls each listener; one that throws does not keep the others from hearing. */
 function tell(listeners: Set<() => void>): void {

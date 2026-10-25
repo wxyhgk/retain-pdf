@@ -13,6 +13,7 @@ import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 import { TerminalHost } from '../studio/server/terminal-host.mjs';
 import { AgentSettings } from '../studio/server/agent-settings.mjs';
+import { AgentSessions } from '../studio/server/agent-sessions.mjs';
 import { MiniApps } from '../studio/server/mini-apps.mjs';
 import { Tasks } from '../studio/server/tasks.mjs';
 import { markContentReloads } from '../studio/server/content-reloads.mjs';
@@ -83,6 +84,8 @@ export default function studioDev({ site } = {}) {
 			// 小程序: the tools of apps/ at the repository's root, each in a floating window.
 			const miniApps = new MiniApps(resolve(server.config.root, 'apps'));
 			const tasks = new Tasks();
+			// The AI panel's conversations, with the agents' ACP adapters of the project's dependencies.
+			const conversations = new AgentSessions({ binFolder: resolve(server.config.root, 'node_modules', '.bin') });
 			/**
 			 * The environment of a program the Studio runs for an AI (a terminal's shell, an agent run by Alt+Enter):
 			 * `studio …` on its PATH (the pages' operations), which article and where it is, the drive and its text
@@ -105,6 +108,7 @@ export default function studioDev({ site } = {}) {
 			server.httpServer?.on('close', () => {
 				watcher.close();
 				terminals.close();
+				conversations.closeAll();
 				// What runs in the background stops with the server (an AI left alone would go on writing).
 				for (const task of tasks.list()) if (task.state === 'running') tasks.cancel(task.id);
 				void plugins.then((kernel) => kernel.dispose());
@@ -144,6 +148,7 @@ export default function studioDev({ site } = {}) {
 				pluginSettings,
 				aiSettings,
 				agentSettings,
+				conversations,
 				plugins,
 			});
 

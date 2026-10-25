@@ -12,7 +12,9 @@ import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
  *
  * - `launch`: in the 终端 tab, to talk with (its button there);
  * - `run`: once, by itself, to do what a line of an article asks (Alt+Enter), `{prompt}` standing for what it is told;
- * - `resume`: the same, going on from the last talk in the article's folder (where each article's work goes on).
+ * - `resume`: the same, going on from the last talk in the article's folder (where each article's work goes on);
+ * - `acp`: its adapter for the Agent Client Protocol, which the AI panel talks to it through (agent-sessions.mjs).
+ *   Claude Code's and Codex's are in the project's dependencies; an agent without one is not in the panel.
  *
  * Presets for Claude Code, Codex and pi; the author changes them or adds others (omp…) in AI 设置, kept in the
  * Studio's settings (out of git) as `agents: { list, default }`. Their `run` keeps them to the article's folder
@@ -23,8 +25,8 @@ const CLAUDE_SANDBOX = `'{"sandbox":{"enabled":true,"failIfUnavailable":true,"al
 const CLAUDE_RUN = `claude -p --permission-mode dontAsk --allowedTools "Read Edit Write Glob Grep Bash" --settings ${CLAUDE_SANDBOX}`;
 
 export const AGENT_PRESETS = Object.freeze([
-	{ id: 'claude', name: 'Claude', launch: 'claude', run: `${CLAUDE_RUN} {prompt}`, resume: `${CLAUDE_RUN} --continue {prompt}`, install: 'npm install -g @anthropic-ai/claude-code' },
-	{ id: 'codex', name: 'Codex', launch: 'codex', run: 'codex exec -c sandbox_mode="workspace-write" {prompt}', resume: 'codex exec resume --last -c sandbox_mode="workspace-write" {prompt}', install: 'npm install -g @openai/codex' },
+	{ id: 'claude', name: 'Claude', launch: 'claude', run: `${CLAUDE_RUN} {prompt}`, resume: `${CLAUDE_RUN} --continue {prompt}`, acp: 'claude-agent-acp', install: 'npm install -g @anthropic-ai/claude-code' },
+	{ id: 'codex', name: 'Codex', launch: 'codex', run: 'codex exec -c sandbox_mode="workspace-write" {prompt}', resume: 'codex exec resume --last -c sandbox_mode="workspace-write" {prompt}', acp: 'codex-acp', install: 'npm install -g @openai/codex' },
 	{ id: 'pi', name: 'pi', launch: 'pi', run: 'pi -p -a {prompt}', resume: 'pi -p -a --continue {prompt}', install: '见 https://pi.dev' },
 ]);
 
@@ -33,7 +35,7 @@ const KEPT_FOR = 60_000;
 const ID = /^[a-z0-9][a-z0-9-]{0,31}$/u;
 
 /**
- * @typedef {{ id: string, name: string, launch: string, run: string, resume: string, install?: string }} Agent
+ * @typedef {{ id: string, name: string, launch: string, run: string, resume: string, acp?: string, install?: string }} Agent
  */
 
 export class AgentSettings {
@@ -53,7 +55,7 @@ export class AgentSettings {
 	/** @returns {Promise<{ list: Agent[], default: string }>} */
 	async config() {
 		const saved = (await this.#read()).agents ?? {};
-		const list = Array.isArray(saved.list) && saved.list.length ? saved.list.filter(valid) : AGENT_PRESETS.map((agent) => ({ ...agent }));
+		const list = Array.isArray(saved.list) && saved.list.length ? saved.list.filter(valid).map(withAdapter) : AGENT_PRESETS.map((agent) => ({ ...agent }));
 		const chosen = list.some((agent) => agent.id === saved.default) ? saved.default : list[0]?.id ?? '';
 		return { list: this.#standIns(list), default: chosen };
 	}
@@ -76,7 +78,7 @@ export class AgentSettings {
 			ids.add(agent.id);
 		}
 		if (!ids.has(change.default)) throw fail('默认的 AI 不在列表里');
-		const agents = { list: change.list.map(({ id, name, launch, run, resume, install }) => ({ id, name, launch, run, resume, ...(install ? { install } : {}) })), default: change.default };
+		const agents = { list: change.list.map(({ id, name, launch, run, resume, acp, install }) => ({ id, name, launch, run, resume, ...(acp ? { acp } : {}), ...(install ? { install } : {}) })), default: change.default };
 		await updateSettings(this.settingsFile, (settings) => ({ ...settings, agents }));
 		this.#found = null;
 		return this.shown();
@@ -95,7 +97,7 @@ export class AgentSettings {
 		const folder = this.env.STUDIO_TERMINAL_AGENT_DIR;
 		if (!folder) return list;
 		const local = (line) => line.replace(/^(\S+)/u, (word) => (word.startsWith(folder) ? word : join(folder, word)));
-		return list.map((agent) => ({ ...agent, launch: local(agent.launch), run: local(agent.run), resume: local(agent.resume) }));
+		return list.map((agent) => ({ ...agent, launch: local(agent.launch), run: local(agent.run), resume: local(agent.resume), ...(agent.acp ? { acp: local(agent.acp) } : {}) }));
 	}
 
 	/** Which of these programs a login shell finds (the terminal's PATH, longer than the server's when the Mac app started it). */
@@ -118,6 +120,13 @@ export class AgentSettings {
 	}
 }
 
+/** A saved agent of the presets' (saved before they had one) given their ACP adapter. */
+function withAdapter(agent) {
+	if (typeof agent.acp === 'string' && agent.acp.trim()) return agent;
+	const preset = AGENT_PRESETS.find((candidate) => candidate.id === agent.id);
+	return preset?.acp ? { ...agent, acp: preset.acp } : agent;
+}
+
 /** Whether `agent` is a whole one: an id, a name, its three commands, `{prompt}` in the two that run by themselves. */
 function valid(agent) {
 	if (!agent || typeof agent !== 'object' || !ID.test(agent.id ?? '') || typeof agent.name !== 'string' || !agent.name.trim()) return false;
@@ -126,6 +135,13 @@ function valid(agent) {
 		try {
 			const words = commandWords(agent[key]);
 			if (key !== 'launch' && !words.includes('{prompt}')) return false;
+		} catch {
+			return false;
+		}
+	}
+	if (agent.acp !== undefined) {
+		try {
+			if (typeof agent.acp !== 'string' || !commandWords(agent.acp).length) return false;
 		} catch {
 			return false;
 		}

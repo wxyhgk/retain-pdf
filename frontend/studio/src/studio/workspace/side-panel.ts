@@ -39,12 +39,13 @@ function writeLayout(layout: PanelLayout): void {
 type Tab = { tab: HTMLButtonElement; pane: HTMLElement; panel?: StudioPanel; drawn?: boolean; undraw?: (() => void) | void; onScreen?: boolean };
 
 /**
- * The right column: the open article's files, a terminal and the drive, as
- * tabs that can be resized and collapsed, then the plugins' tabs
- * (`ctx.panels`, `setPanels`). The Studio's tabs' contents are
- * `file-panel.ts`, `terminal.ts` and `drive-browser.ts`.
+ * The right column: the AI, the open article's files, a terminal and the
+ * drive, as tabs that can be resized and collapsed, then the plugins' tabs
+ * (`ctx.panels`, `setPanels`). The Studio's tabs' contents are `ai-panel.ts`,
+ * `file-panel.ts`, `terminal.ts` and `drive-browser.ts`; `shown` is told which
+ * of them is on screen, each time the panel is laid out.
  */
-export function createSidePanel(shell: HTMLElement) {
+export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?: (tab: string) => void } = {}) {
 	const panel = shell.querySelector<HTMLElement>('#side-panel')!;
 	const toggleButton = document.querySelector<HTMLButtonElement>('#toggle-side-panel')!;
 	const closeButton = panel.querySelector<HTMLButtonElement>('#close-side-panel')!;
@@ -100,6 +101,7 @@ export function createSidePanel(shell: HTMLElement) {
 			entry.tab.tabIndex = selected ? 0 : -1;
 			entry.pane.hidden = !selected;
 			if (selected && layout.open) draw(entry);
+			if (selected && layout.open && !entry.panel) onShown?.(name);
 			tellScreen(entry, selected && layout.open && entry.drawn === true);
 		}
 	}

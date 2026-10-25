@@ -15,6 +15,7 @@ import '@xterm/xterm/css/xterm.css';
 import './tokens.css';
 import './workspace/drive.css';
 import './workspace/article-table.css';
+import './workspace/ai-panel.css';
 import '@blog/ui/block-sheet.css';
 // KaTeX draws nothing until its fonts are in: the ones most formulas use, asked for with the page.
 import katexMain from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
@@ -141,14 +142,17 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<section id="table-view" class="table-page" aria-label="全部文章" hidden></section>
 			</section>
 
-			<aside id="side-panel" class="side-panel" aria-label="文件与终端">
+			<aside id="side-panel" class="side-panel" aria-label="AI、文件与终端">
 				<div class="side-panel-resizer" role="separator" aria-orientation="vertical" aria-label="调整面板宽度" tabindex="0" title="拖动调整宽度，双击恢复"></div>
 				<div class="side-tabs" role="tablist" aria-label="右侧面板">
+					<button id="side-tab-ai" role="tab" type="button" aria-controls="side-ai" aria-selected="false">AI</button>
 					<button id="side-tab-files" role="tab" type="button" aria-controls="side-files" aria-selected="true">文件</button>
 					<button id="side-tab-terminal" role="tab" type="button" aria-controls="side-terminal" aria-selected="false">终端</button>
 					<button id="side-tab-drive" role="tab" type="button" aria-controls="side-drive" aria-selected="false">资料库</button>
 					<button id="close-side-panel" class="side-close" type="button" aria-label="收起右侧面板">×</button>
 				</div>
+				<!-- The AI (ai-panel.ts draws it). -->
+				<section id="side-ai" class="side-pane ai-pane" role="tabpanel" aria-labelledby="side-tab-ai" hidden></section>
 				<section id="side-files" class="side-pane" role="tabpanel" aria-labelledby="side-tab-files">
 					<header class="pane-toolbar">
 						<span id="files-root" class="pane-path">未打开文章</span>

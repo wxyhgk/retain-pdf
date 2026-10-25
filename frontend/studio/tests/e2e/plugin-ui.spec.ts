@@ -69,7 +69,7 @@ test('a plugin’s tab and commands come with it and go with it', async ({ page 
 	// Its tab, after the Studio's own, drawn when it is first shown; its button in the left column opens it.
 	await expect(tab(page)).toBeVisible();
 	const tabs = await page.locator('.side-tabs [role="tab"]').allTextContents();
-	expect(tabs.slice(0, 3)).toEqual(['文件', '终端', '资料库']);
+	expect(tabs.slice(0, 4)).toEqual(['AI', '文件', '终端', '资料库']);
 	expect(tabs.at(-1)).toBe('便签');
 	await expect(page.locator('.test-notes')).toHaveCount(0);
 	await sidebarButton(page).click();

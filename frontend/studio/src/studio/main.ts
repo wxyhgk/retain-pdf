@@ -69,6 +69,7 @@ import { createPublishCheck } from './workspace/publish-check';
 import { createQuickFind } from './workspace/quick-find';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
+import { createAiPanel } from './workspace/ai-panel';
 import { createTerminalPane } from './workspace/terminal';
 import { createAgentsDialog } from './workspace/agents-dialog';
 import { createTaskTray } from './workspace/task-tray';
@@ -180,7 +181,12 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 		return `./${path}`;
 	},
 });
-const sidePanel = createSidePanel(shell);
+// The AI tab: a coding agent doing what it is asked, by itself, shown as it goes.
+const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
+	article: () => (session.slug ? { slug: session.slug, title: openTitle } : null),
+	toast: (message) => showToast(message),
+});
+const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
 const agentsDialog = createAgentsDialog(document.querySelector<HTMLDialogElement>('#agents-dialog')!, { saved: () => terminal.refreshAgents() });
 // 小程序: the tools of apps/, in floating windows; what they may reach of the article shown.
@@ -335,6 +341,7 @@ const session = new ArticleSession(
 			filesListed = filePanel.show(article.slug);
 			backlinksShown = backlinks.show(article.slug);
 			terminal.showArticle(article.slug);
+			aiPanel.showArticle({ slug: article.slug, title: openTitle });
 			void loadLibrary(article.slug);
 			const url = new URL(window.location.href);
 			url.searchParams.set('article', article.slug);

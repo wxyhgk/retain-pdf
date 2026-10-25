@@ -119,6 +119,16 @@ export function stopAllPrograms(signal = 'SIGTERM') {
 	}
 }
 
+/**
+ * A process group the Studio started otherwise (an AI's conversation, agent-sessions.mjs): ended with the server
+ * too. Returns how to let it go once it has ended.
+ */
+export function endWithServer(group) {
+	watchExit();
+	running.add(group);
+	return () => running.delete(group);
+}
+
 let watching = false;
 
 /**

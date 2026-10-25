@@ -254,8 +254,8 @@ export function openTerminal(target: { cwd: 'root' } | { cwd: 'drive' } | { cwd:
 	return request('/api/studio/terminal', jsonOptions('POST', target));
 }
 
-/** An AI the Studio starts (server/agent-settings.mjs): in the terminal (`launch`), and by itself for Alt+Enter (`run`, `resume`). */
-export type Agent = { id: string; name: string; launch: string; run: string; resume: string; install?: string };
+/** An AI the Studio starts (server/agent-settings.mjs): in the terminal (`launch`), by itself for Alt+Enter (`run`, `resume`), in the AI panel (`acp`). */
+export type Agent = { id: string; name: string; launch: string; run: string; resume: string; acp?: string; install?: string };
 export type AgentsShown = { agents: Array<Agent & { installed: boolean }>; default: string; presets: Agent[] };
 
 export function listAgents(): Promise<AgentsShown> {
@@ -264,6 +264,89 @@ export function listAgents(): Promise<AgentsShown> {
 
 export function saveAgents(list: Agent[], chosen: string): Promise<AgentsShown> {
 	return request<AgentsShown>('/api/studio/agents', jsonOptions('PUT', { list, default: chosen }));
+}
+
+/** One of a conversation's options (model, mode, effort…), as its agent offers them (ACP's session config options). */
+export type ConversationOption = {
+	id: string;
+	name: string;
+	description?: string | null;
+	category?: string | null;
+	type: 'select' | 'boolean';
+	currentValue: string | boolean;
+	options?: Array<{ value: string; name: string; description?: string | null } | { group: string; name: string; options: Array<{ value: string; name: string; description?: string | null }> }>;
+};
+/** A conversation of the AI panel (server/agent-sessions.mjs). */
+export type Conversation = {
+	id: string;
+	agent: { id: string; name: string };
+	slug: string | null;
+	cwd: string;
+	title: string;
+	state: 'starting' | 'idle' | 'running' | 'closed' | 'failed';
+	error: string;
+	created: string;
+	configOptions: ConversationOption[];
+	commands: Array<{ name: string; description: string }>;
+	usage: { used: number; size: number; cost: { amount: number; currency: string } | null } | null;
+};
+/** A tool call's content: words, a change to a file, or a terminal. */
+export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
+/** What a conversation is made of, in order. */
+export type ConversationItem =
+	| { kind: 'user'; id: string; text: string }
+	| { kind: 'message'; id: string; text: string }
+	| { kind: 'thought'; id: string; text: string }
+	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
+	| { kind: 'plan'; id: string; entries: Array<{ content: string; priority: string; status: 'pending' | 'in_progress' | 'completed' }> }
+	| { kind: 'permission'; id: string; title: string; toolCallId: string | null; options: Array<{ optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' }>; chosen: string | null }
+	| { kind: 'notice'; id: string; severity: string; title: string; description: string }
+	| { kind: 'stop'; id: string; reason: string }
+	| { kind: 'error'; id: string; message: string };
+export type ConversationEvent =
+	| { type: 'all'; session: Conversation; items: ConversationItem[] }
+	| { type: 'item'; item: ConversationItem }
+	| { type: 'append'; id: string; text: string }
+	| { type: 'session'; session: Conversation };
+
+const conversationApi = (id: string, action = '') => `/api/studio/conversations/${encodeURIComponent(id)}${action ? `/${action}` : ''}`;
+
+/** The AIs the panel can talk to, the one chosen first, and the conversations going on. */
+export function listConversations(): Promise<{ agents: Array<{ id: string; name: string }>; default: string; conversations: Conversation[] }> {
+	return request('/api/studio/conversations');
+}
+
+/** Begins a conversation with `agent`, in the article's folder (`slug`) or the repository's; resolves once it is ready. */
+export function startConversation(agent: string, slug: string | null): Promise<Conversation> {
+	return request('/api/studio/conversations', jsonOptions('POST', { agent, slug }));
+}
+
+/** Follows a conversation: all of it first, then each change. Returns the function that stops. */
+export function followConversation(id: string, listener: (event: ConversationEvent) => void): () => void {
+	const source = new EventSource(conversationApi(id, 'events'));
+	source.addEventListener('message', (event) => listener(JSON.parse(event.data) as ConversationEvent));
+	return () => source.close();
+}
+
+export async function tellConversation(id: string, text: string): Promise<void> {
+	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text }));
+}
+
+export async function stopConversation(id: string): Promise<void> {
+	await request(conversationApi(id, 'cancel'), jsonOptions('POST', {}));
+}
+
+/** The author's answer to leave the agent asked: one of its options, or `null` for no. */
+export async function answerConversation(id: string, permission: string, option: string | null): Promise<void> {
+	await request(conversationApi(id, `permissions/${encodeURIComponent(permission)}`), jsonOptions('POST', { option }));
+}
+
+export function setConversationOption(id: string, configId: string, value: string | boolean): Promise<Conversation> {
+	return request(conversationApi(id, 'options'), jsonOptions('POST', { configId, value }));
+}
+
+export async function closeConversation(id: string): Promise<void> {
+	await request(conversationApi(id, 'close'), jsonOptions('POST', {}));
 }
 
 /** A background task (server/tasks.mjs), without its log. */

@@ -2,6 +2,7 @@ import { StudioApi } from '../api.mjs';
 import { aiRoutes } from './ai.mjs';
 import { articleFileRoutes } from './article-files.mjs';
 import { articleRoutes } from './articles.mjs';
+import { conversationRoutes } from './conversations.mjs';
 import { driveRoutes } from './drive.mjs';
 import { pluginRoutes } from './plugins.mjs';
 import { taskRoutes } from './tasks.mjs';
@@ -33,6 +34,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../plugin-settings.mjs').PluginSettings} pluginSettings
  * @property {import('../ai-settings.mjs').AiSettings} aiSettings
  * @property {import('../agent-settings.mjs').AgentSettings} agentSettings
+ * @property {import('../agent-sessions.mjs').AgentSessions} conversations the AI panel's
  * @property {Promise<any>} plugins the plugins' kernel on this server
  */
 
@@ -44,6 +46,7 @@ export function studioApi(studio) {
 	driveRoutes(api, studio);
 	aiRoutes(api, studio);
 	taskRoutes(api, studio);
+	conversationRoutes(api, studio);
 	pluginRoutes(api, studio);
 	return api;
 }
