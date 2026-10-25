@@ -179,3 +179,13 @@
 .inline-ai-list { display: flex; flex-direction: column; margin-top: 4px; max-height: 260px; overflow: auto; }
 .inline-ai-choice { padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .inline-ai-choice.is-current, .inline-ai-choice:hover { background: var(--surface-soft); }
+
+/* On a conversation's page, under the editor: the turn going on, then the input; what was said is the page's blocks. */
+.ai-pane.is-page { display: flex; flex-direction: column; border-top: 1px solid rgb(var(--gray-light)); background: var(--surface); }
+.ai-pane.is-page[hidden] { display: none; }
+.ai-pane.is-page .ai-transcript { flex: 0 1 auto; max-height: 45vh; }
+.ai-pane.is-page .ai-items, .ai-pane.is-page .ai-composer { box-sizing: border-box; width: min(100%, var(--studio-editor-width)); margin: 0 auto; }
+.ai-pane.is-page .ai-composer { padding: 8px var(--studio-editor-padding) 14px; }
+.ai-pane.is-page .ai-items { padding: 4px var(--studio-editor-padding) 0; }
+.ai-pane.is-page .ai-transcript:not(:has(.ai-items > *)) { display: none; }
+.ai-pane.is-page .ai-message-actions, .ai-pane.is-page .ai-block-handle { display: none; }

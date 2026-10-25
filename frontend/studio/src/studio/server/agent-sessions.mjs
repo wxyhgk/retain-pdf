@@ -157,6 +157,13 @@ export class AgentSessions {
 		this.#closed = true;
 		for (const session of [...this.#sessions.values(), ...this.#unlisted]) session.close();
 		// What changed last, written before the server goes.
+		// A turn going on as the server stops: what there is of it put on the page.
+		for (const session of this.#sessions.values()) {
+			if (this.store && session.unwritten().length) {
+				this.#page(session);
+				this.#saving.set(session, null);
+			}
+		}
 		for (const [session, timer] of this.#saving) {
 			clearTimeout(timer);
 			try {
@@ -168,17 +175,45 @@ export class AgentSessions {
 		this.#saving.clear();
 	}
 
-	/** Each change to `session` written to chats/ a moment later (once it has been spoken to). */
+	/** A conversation begun to be a page (opened in the editor): its page and record there at once, before it is spoken to. */
+	async makePage(session) {
+		if (!this.store) throw Object.assign(new Error('对话没有地方存'), { statusCode: 500 });
+		await this.store.append(session.record(), []);
+		await this.store.save(session.record());
+		session.madePage = true;
+	}
+
+	/**
+	 * Each change to `session` written to chats/ a moment later (once it has been spoken to); each turn, once over,
+	 * put at the end of its page.
+	 */
 	#keep(session) {
 		if (!this.store) return;
 		session.subscribe((event) => {
 			if (event.type === 'all' || !spokenTo(session) || this.#closed) return;
+			// After this event has reached every follower: the page written tells them after it, not before.
+			if (session.state !== 'running' && session.state !== 'starting') setImmediate(() => !this.#closed && this.#page(session));
 			clearTimeout(this.#saving.get(session));
 			this.#saving.set(session, setTimeout(() => {
 				this.#saving.delete(session);
 				this.store.save(session.record()).catch(() => {});
 			}, SAVE_AFTER));
 		});
+	}
+
+	/**
+	 * What was said since the page was last added to, added at its end (at once, so that it is there once and only
+	 * once whatever comes next); followers told once it is there.
+	 */
+	#page(session) {
+		const turn = session.unwritten();
+		if (!turn.length) return;
+		try {
+			this.store.append(session.record(), turn, { sync: true });
+			session.pageWrote(turn.at(-1).id);
+		} catch (error) {
+			console.warn(`[studio] 没能把对话写进 ${session.id}/index.md：${error instanceof Error ? error.message : error}`);
+		}
 	}
 
 	#forgetOld() {
@@ -241,6 +276,10 @@ class AgentSession {
 		this.updated = this.created;
 		/** Where it is kept as a page (chats/…/index.md), if it is. */
 		this.page = null;
+		/** The last item put on that page (null: none yet). */
+		this.pageThrough = null;
+		/** Begun as a page (AgentSessions.makePage), before anything was said. */
+		this.madePage = false;
 	}
 
 	/** A conversation of chats/, as it was left: shown, not going on until it is woken (AgentSessions.wake). */
@@ -255,16 +294,31 @@ class AgentSession {
 		for (const item of session.items) session.#byId.set(item.id, item);
 		session.#acpId = record.acpSessionId ?? null;
 		session.page = page;
+		session.madePage = true;
+		// Kept before pages were added to turn by turn: all of it was written on it.
+		session.pageThrough = record.pageThrough === undefined ? session.items.at(-1)?.id ?? null : record.pageThrough;
 		return session;
 	}
 
 	/** What the list says of a conversation of chats/ not read back. */
 	static summaryOf(record) {
-		return { id: record.id, agent: record.agent, slug: record.slug ?? null, cwd: record.cwd, title: record.title ?? '', state: 'saved', error: '', created: record.created, updated: record.updated ?? record.created, configOptions: record.configOptions ?? [], modes: null, commands: [], usage: null, service: record.service ?? null };
+		return { id: record.id, agent: record.agent, slug: record.slug ?? null, cwd: record.cwd, title: record.title ?? '', state: 'saved', error: '', created: record.created, updated: record.updated ?? record.created, configOptions: record.configOptions ?? [], modes: null, commands: [], usage: null, service: record.service ?? null, pageThrough: record.pageThrough === undefined ? record.items?.at(-1)?.id ?? null : record.pageThrough, onPage: true };
 	}
 
 	summary() {
-		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null };
+		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, pageThrough: this.pageThrough, onPage: this.madePage || this.pageThrough !== null };
+	}
+
+	/** The items since the last put on its page. */
+	unwritten() {
+		const from = this.pageThrough ? this.items.findIndex((item) => item.id === this.pageThrough) + 1 : 0;
+		return this.items.slice(from);
+	}
+
+	/** Its page has what was said up to the item `id`: its followers told (a page open in the editor reads it again). */
+	pageWrote(id) {
+		this.pageThrough = id;
+		this.#tell({ type: 'session', session: this.summary() });
 	}
 
 	/** The title its agent gave it, or (Codex gives none) the start of what the author said first. */
@@ -278,7 +332,7 @@ class AgentSession {
 	record() {
 		this.updated = new Date().toISOString();
 		const items = this.items.map((item) => (item.kind === 'permission' && !item.chosen ? { ...item, chosen: 'cancelled' } : item));
-		return { id: this.id, agent: this.agent, acpSessionId: this.#acpId, cwd: this.cwd, slug: this.slug, title: this.#title(), created: this.created, updated: this.updated, service: this.models?.name ?? null, configOptions: this.configOptions, items };
+		return { id: this.id, agent: this.agent, acpSessionId: this.#acpId, cwd: this.cwd, slug: this.slug, title: this.#title(), created: this.created, updated: this.updated, service: this.models?.name ?? null, configOptions: this.configOptions, items, pageThrough: this.pageThrough };
 	}
 
 	/**
@@ -399,8 +453,9 @@ class AgentSession {
 			selection: context.selection ? lineRange(context.selection) : null,
 			mentions: (context.mentions ?? []).map((mention) => mention.title),
 		};
-		this.#add({ kind: 'user', id: randomUUID(), text, context: named });
+		// Running before what was said is added: a turn is put on the page once it is over, not as it begins.
 		this.#setState('running');
+		this.#add({ kind: 'user', id: randomUUID(), text, context: named });
 		const told = withContext(text, { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) });
 		this.#forgot = false;
 		const turn = this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: told }] });

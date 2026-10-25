@@ -261,8 +261,9 @@ test('a conversation is kept in chats/ as a page: there again once the page is o
 	const kept = () => (existsSync(chats) ? readdirSync(chats) : []).find((name) => existsSync(join(chats, name, 'index.md')) && readFileSync(join(chats, name, 'index.md'), 'utf8').includes('```ask\n几块 记下来\n```')) ?? null;
 	await expect.poll(kept).not.toBeNull();
 	const folder = join(chats, kept()!);
-	expect(readFileSync(join(folder, 'index.md'), 'utf8')).toContain('kind: chat');
-	expect(existsSync(join(folder, 'ai', 'conversation.json'))).toBe(true);
+	expect(readFileSync(join(folder, 'index.md'), 'utf8')).toContain('draft: true');
+	// All of it, a moment after.
+	await expect.poll(() => existsSync(join(folder, 'ai', 'conversation.json'))).toBe(true);
 
 	// Opened again: the same conversation, as it was.
 	await page.reload();

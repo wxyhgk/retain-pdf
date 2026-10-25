@@ -20,6 +20,7 @@ import { droppedItems, pickedItems, type UploadItem } from '../dropped-files';
 import { buildFileTree, formatSize, isUnused, referenceCount, uploadFolderFor, visibleNodes, type FileNode } from './file-tree';
 import { referencedFilesReader } from './referenced-files';
 import { showToast } from './toast';
+import { isChatSlug } from './chat-list';
 
 /** What the file panel needs from the editor around it. */
 export type FilePanelHost = {
@@ -165,10 +166,12 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			tree.append(element('p', 'file-tree-empty', '打开一篇文章后，这里显示它的文件夹。'));
 			return;
 		}
-		rootLabel.textContent = `blog/${slug}/`;
+		// A conversation's page is in chats/.
+		const folder = `${isChatSlug(slug) ? 'chats' : 'blog'}/${slug}/`;
+		rootLabel.textContent = folder;
 		const list = element('ul', 'file-tree-list');
 		list.setAttribute('role', 'tree');
-		list.setAttribute('aria-label', `blog/${slug}/ 的文件`);
+		list.setAttribute('aria-label', `${folder} 的文件`);
 		const open = expanded();
 		const rows = visibleNodes(buildFileTree(entries), open);
 		for (const node of rows) {

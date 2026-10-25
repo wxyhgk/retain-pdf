@@ -73,6 +73,7 @@ import { createQuickFind } from './workspace/quick-find';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
 import { chosenAI, createAiPanel } from './workspace/ai-panel';
+import { createChatList, isChatSlug } from './workspace/chat-list';
 import { createInlineAi } from './workspace/inline-ai';
 import { createTerminalPane } from './workspace/terminal';
 import { createAgentsDialog } from './workspace/agents-dialog';
@@ -205,6 +206,48 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 		editor.insertMarkdown(markdown);
 		return true;
 	},
+});
+// A conversation kept as a page (chats/), opened in the editor (问答为主): under its blocks, the turn going on and
+// the input; each turn, once over, written at the end of the page and shown there.
+const chatComposer = createAiPanel(
+	shell.querySelector<HTMLElement>('#chat-composer')!,
+	{
+		article: () => null,
+		articles: () => articleList.articles().map((entry) => ({ slug: entry.slug, title: entry.title || entry.slug })),
+		hasSelection: () => false,
+		selection: async () => null,
+		toast: (message) => showToast(message),
+		runInTerminal(command) {
+			sidePanel.show('terminal');
+			terminal.run(command);
+		},
+		insert: () => false,
+		async pageWritten(id) {
+			void chatList.refresh();
+			if (session.slug === id) await session.checkDisk();
+		},
+	},
+	{ page: true },
+);
+const chatList = createChatList(shell.querySelector<HTMLElement>('#chat-list')!, {
+	open(id) {
+		showView('editor');
+		chatList.select(id);
+		void session.open(id);
+	},
+	removed(id) {
+		if (session.slug === id) void openFromList(articleList.articles()[0]?.slug, true);
+	},
+	toast: (message) => showToast(message),
+});
+void chatList.refresh();
+shell.querySelector<HTMLButtonElement>('#new-chat')!.addEventListener('click', async () => {
+	const id = await chatComposer.newChat();
+	if (!id) return;
+	showView('editor');
+	await session.open(id);
+	void chatList.refresh();
+	chatComposer.focus();
 });
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
@@ -358,6 +401,13 @@ const session = new ArticleSession(
 			return editor.review(body);
 		},
 		settle: () => editor.settle(),
+		// A conversation's page: its turns, written at its end, come in as they are.
+		appended(slug, markdown) {
+			if (!isChatSlug(slug)) return null;
+			const body = editor.appendMarkdown(markdown);
+			if (body !== null) requestAnimationFrame(() => editorScroll.scrollTo({ top: editorScroll.scrollHeight, behavior: 'smooth' }));
+			return body;
+		},
 		confirm: (message) => window.confirm(message),
 		toast: (message) => showToast(message),
 		opened({ article, properties: shown }) {
@@ -372,7 +422,13 @@ const session = new ArticleSession(
 			filesListed = filePanel.show(article.slug);
 			backlinksShown = backlinks.show(article.slug);
 			terminal.showArticle(article.slug);
-			aiPanel.showArticle({ slug: article.slug, title: openTitle });
+			// A conversation's page: its input under it; the AI tab is not told of it as an article.
+			const chat = isChatSlug(article.slug);
+			shell.classList.toggle('is-chat', chat);
+			chatList.select(chat ? article.slug : null);
+			shell.querySelector<HTMLElement>('#chat-composer')!.hidden = !chat;
+			void chatComposer.showChat(chat ? article.slug : null);
+			aiPanel.showArticle(chat ? null : { slug: article.slug, title: openTitle });
 			void loadLibrary(article.slug);
 			const url = new URL(window.location.href);
 			url.searchParams.set('article', article.slug);
@@ -433,7 +489,7 @@ function useArticleContext(article: ArticlePayload): void {
 async function openFromList(slug?: string, discard = false): Promise<void> {
 	const articles = await articleList.load();
 	const requested = slug ?? new URL(window.location.href).searchParams.get('article') ?? undefined;
-	const initial = articles.some((article) => article.slug === requested) ? requested : articles[0]?.slug;
+	const initial = articles.some((article) => article.slug === requested) || isChatSlug(requested) ? requested : articles[0]?.slug;
 	if (initial) await session.open(initial, { discard });
 	else topBar.showEmpty();
 }

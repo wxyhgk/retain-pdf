@@ -73,6 +73,11 @@ export type SessionHost = {
 	retitled(title: string): void;
 	/** These properties are now on disk; `problems` says why the blog could not build them. */
 	saved(slug: string, properties: ArticleProperties, problems: string[]): void;
+	/**
+	 * Blocks written at the end of the article on disk (`markdown`), added at the end of the editor as they are, not
+	 * reviewed: for a conversation's page, its turns. The body's Markdown after; null when not taken so.
+	 */
+	appended?(slug: string, markdown: string): string | null;
 };
 
 const ARTICLE_TEXT_FILES = ['index.md', 'article.views.json'];
@@ -322,6 +327,13 @@ export class ArticleSession {
 		this.editBody(markdown);
 	}
 
+	/** The open article compared with what is on disk now (it was written there); resolves once that is done. */
+	checkDisk(): Promise<void> {
+		const slug = this.slug;
+		if (slug) this.#checkDisk(slug);
+		return this.#diskCheck;
+	}
+
 	/** These files of the open article changed on disk (paths in its folder). */
 	changedOnDisk(paths: string[]): void {
 		const slug = this.slug;
@@ -447,6 +459,7 @@ export class ArticleSession {
 		const article = await this.#api.getArticle(slug);
 		const current = this.#store.current;
 		if (sequence !== this.#sequence || this.slug !== slug || article.revision === current.revision || !current.article) return;
+		if (this.#tookAppended(article)) return;
 		const kept: [string, HistoryReason][] = [[current.article.source, 'before-change']];
 		if (current.dirty) kept.push([current.source, 'unsaved']);
 		await this.#keep(slug, kept, article.source);
@@ -456,6 +469,35 @@ export class ArticleSession {
 			// Against what was saved: properties typed and not yet saved are the author's, not the disk's.
 			properties: changedProperties(current.article.properties, article.properties),
 		});
+	}
+
+	/**
+	 * What was written at the end of the article on disk, and only that (a turn on a conversation's page), added at
+	 * the end of the editor, unreviewed: the version on disk becomes the saved one, unsaved edits kept as edits.
+	 * Whether it was so.
+	 */
+	#tookAppended(article: ArticlePayload): boolean {
+		const current = this.#store.current;
+		if (!this.#host.appended || !current.article) return false;
+		const saved = parseStudioDocument(current.article.source).body.raw.trimEnd();
+		const disk = parseStudioDocument(article.source).body.raw;
+		const added = disk.startsWith(saved) ? disk.slice(saved.length).trim() : '';
+		if (!added) return false;
+		const markdown = this.#host.appended(article.slug, added);
+		if (markdown === null) return false;
+		// Properties typed and not yet saved stay the author's.
+		const typed = current.dirty && this.#properties ? this.#properties : null;
+		const retitled = !typed && changedProperties(current.article.properties, article.properties).length > 0;
+		this.#store.load(article);
+		if (typed) this.#store.updateSource(updateStudioFrontmatter(article.source, typed));
+		// Given its title with the turn (a conversation begun as 新对话): shown.
+		if (retitled) {
+			this.#properties = article.properties;
+			this.#host.opened({ article, properties: article.properties });
+		}
+		this.#setState({ kind: 'loaded' });
+		this.editBody(markdown);
+		return true;
 	}
 
 	/**

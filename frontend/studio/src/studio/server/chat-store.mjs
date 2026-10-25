@@ -1,4 +1,4 @@
-import { mkdirSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
@@ -7,10 +7,11 @@ import { atomicWriteText } from './atomic-write.mjs';
 /**
  * The AI panel's conversations kept, each a folder of `chats/` (beside blog/, never published, kept out of git):
  *
- * - `index.md`: what was said, written as a page is (YAML frontmatter, `kind: chat`): what the author said in an
- *   ` ```ask ` block, the AI's answers as they came, its Markdown blocks (formulas, molecules, code…) as an article's;
- * - `ai/conversation.json`: all of it (its thinking, the tools it called, leave asked), the agent it was, and which
- *   session of the agent's, to go on with it.
+ * - `index.md`: a page, opened in the editor as an article is (its id its slug: bundle-paths.mjs): what the author
+ *   said in an ` ```ask ` block, the AI's answers as they came, its Markdown blocks (formulas, molecules, code…) as an
+ *   article's. Each turn is added at its end once it is over; the rest is the author's, to edit as any page;
+ * - `ai/conversation.json`: all of it (its thinking, the tools it called, leave asked), the agent it was, which
+ *   session of the agent's (to go on with it), and the last item put on the page (`pageThrough`).
  *
  * A conversation is a folder named for when it began (`chat-20261025-153012`); that name is its id.
  */
@@ -61,22 +62,39 @@ export class ChatStore {
 		}
 	}
 
-	/** Writes `record` (index.md and ai/conversation.json); `sync`, as the server stops. */
+	/** Writes `record` (ai/conversation.json); `sync`, as the server stops. */
 	async save(record, { sync = false } = {}) {
 		if (!isId(record.id)) throw new Error(`对话的名字不对：${record.id}`);
-		const folder = join(this.root, record.id);
 		const json = `${JSON.stringify(record, null, '\t')}\n`;
-		const markdown = chatMarkdown(record);
 		if (sync) {
-			mkdirSync(join(folder, 'ai'), { recursive: true });
+			mkdirSync(join(this.root, record.id, 'ai'), { recursive: true });
 			writeAtOnce(this.#record(record.id), json);
-			writeAtOnce(join(folder, 'index.md'), markdown);
 		} else {
-			await mkdir(join(folder, 'ai'), { recursive: true });
+			await mkdir(join(this.root, record.id, 'ai'), { recursive: true });
 			await atomicWriteText(this.#record(record.id), json);
-			await atomicWriteText(join(folder, 'index.md'), markdown);
 		}
 		this.given.delete(record.id);
+	}
+
+	/**
+	 * What was said in a turn (`items`: the author's words, the AI's answers) added at the end of the page, as it is
+	 * now (edited in the editor, perhaps); the page begun if there is none (`record`: its title and date).
+	 */
+	async append(record, items, { sync = false } = {}) {
+		if (!isId(record.id)) throw new Error(`对话的名字不对：${record.id}`);
+		const blocks = turnMarkdown(items);
+		const page = this.page(record.id);
+		const read = () => (existsSync(page) ? readFileSync(page, 'utf8') : chatFront(record));
+		// A page begun before anything was said is titled 新对话 until the conversation has a title (the author's, if retitled).
+		const titled = (before) => (record.title ? before.replace(/^(---\n(?:[^\n]*\n)*?)title: "新对话"\n/u, `$1title: ${JSON.stringify(record.title)}\n`) : before);
+		const next = (before) => titled(blocks ? `${before.replace(/\s*$/u, '')}\n\n${blocks}\n` : before);
+		if (sync) {
+			mkdirSync(join(this.root, record.id, 'ai'), { recursive: true });
+			writeAtOnce(page, next(read()));
+			return;
+		}
+		await mkdir(join(this.root, record.id, 'ai'), { recursive: true });
+		await atomicWriteText(page, next(read()));
 	}
 
 	async remove(id) {
@@ -106,6 +124,7 @@ export class ChatStore {
  * @property {string | null} service
  * @property {Array<Record<string, any>>} configOptions
  * @property {Array<Record<string, any>>} items
+ * @property {string | null} [pageThrough] the last item put on the page (none: all of them are, as they were before)
  */
 
 const isId = (id) => typeof id === 'string' && /^chat-\d{8}-\d{6}(-\d+)?$/u.test(id);
@@ -116,9 +135,13 @@ function writeAtOnce(path, content) {
 	renameSync(temporary, path);
 }
 
-/** A conversation as a page: what the author said in ` ```ask ` blocks, each answer's Markdown as it is. */
-export function chatMarkdown({ title, agent, created, updated, items }) {
-	const front = ['---', `title: ${JSON.stringify(title || '对话')}`, 'kind: chat', `agent: ${JSON.stringify(agent?.name ?? '')}`, `created: ${created}`, `updated: ${updated}`, '---'];
+/** A conversation's page begun: its properties as an article's (a draft, dated the day it began), no text yet. */
+export function chatFront({ title, created }) {
+	return ['---', `title: ${JSON.stringify(title || '新对话')}`, `pubDate: ${String(created).slice(0, 10)}`, 'draft: true', '---', ''].join('\n');
+}
+
+/** What was said, as a page has it: the author's words in ` ```ask ` blocks, each answer's Markdown as it is. */
+export function turnMarkdown(items) {
 	const blocks = [];
 	for (const item of items) {
 		if (item.kind === 'user') {
@@ -128,5 +151,5 @@ export function chatMarkdown({ title, agent, created, updated, items }) {
 			blocks.push(item.text.trim());
 		}
 	}
-	return `${front.join('\n')}\n\n${blocks.join('\n\n')}\n`;
+	return blocks.join('\n\n');
 }

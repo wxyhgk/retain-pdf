@@ -4,7 +4,7 @@ import { setFrontmatterField, updateStudioFrontmatter } from '../document/frontm
 import { comparePages } from '../../articles/page-order.mjs';
 import { atomicWriteText, contentRevision } from './atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../articles/article-views.mjs';
-import { articleBundlePaths, assertArticleSlug, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
+import { articleBundlePaths, assertArticleSlug, isChatSlug, resolveInside, StudioPathError } from '../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { findArticleLinks, relinkArticle, retitleArticleLinks } from '@blog/markdown/articles/article-links.mjs';
 import { parseBibtex } from '@blog/markdown/references/bibtex.mjs';
@@ -22,6 +22,11 @@ async function readViewsSource(path) {
 		if (error?.code === 'ENOENT') return DEFAULT_ARTICLE_VIEWS;
 		throw error;
 	}
+}
+
+/** Conversations (chat-…, in chats/) are opened and saved as articles are, but are not made, moved or merged as they are. */
+function notChats(...slugs) {
+	if (slugs.some(isChatSlug)) throw new ArticleValidationError('对话页在 chats/ 里，不能当文章新建、改名、移动或合并');
 }
 
 export class ArticleRepository {
@@ -178,6 +183,7 @@ export class ArticleRepository {
 	 */
 	async create({ slug, title, parent = '', body = '', files = [] }) {
 		assertArticleSlug(slug);
+		notChats(slug, parent);
 		if (parent) assertArticleSlug(parent);
 		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError('新文章的内容无效');
 		const paths = articleBundlePaths(this.blogRoot, slug);
@@ -234,6 +240,7 @@ export class ArticleRepository {
 	 * changes; the pages under it (`parent:` its old name) are put under its new one.
 	 */
 	async rename(slug, to, { site } = {}) {
+		notChats(slug, to);
 		const moved = await this.exclusive(slug, async () => {
 			const from = articleBundlePaths(this.blogRoot, slug);
 			await assertReadableBundle(from);
@@ -263,6 +270,7 @@ export class ArticleRepository {
 	 */
 	async setParent(slug, parent, { before = '', after = '' } = {}) {
 		assertArticleSlug(slug);
+		notChats(slug, parent);
 		if (parent) assertArticleSlug(parent);
 		// The pages around it numbered again, each in its own queue once this one's is done.
 		const others = await this.exclusive(slug, async () => {
@@ -309,6 +317,7 @@ export class ArticleRepository {
 	 */
 	async merge(slug, { site, before } = {}) {
 		assertArticleSlug(slug);
+		notChats(slug);
 		const parent = await this.exclusive(slug, async () => {
 			const own = articleBundlePaths(this.blogRoot, slug);
 			await assertReadableBundle(own);

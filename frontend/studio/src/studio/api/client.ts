@@ -293,6 +293,10 @@ export type Conversation = {
 	usage: { used: number; size: number; cost: { amount: number; currency: string } | null } | null;
 	/** The service Claude Code talks to, when not the Claude account. */
 	service: string | null;
+	/** The last item written on its page (chats/<id>/index.md); what comes after is the turn going on. */
+	pageThrough: string | null;
+	/** Whether it has a page (opened in the editor as one): spoken to, or begun as one. */
+	onPage: boolean;
 };
 /** A tool call's content: words, a change to a file, or a terminal. */
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
@@ -321,8 +325,9 @@ export function listConversations(): Promise<{ agents: Array<{ id: string; name:
 }
 
 /** Begins a conversation with `agent`, in blog/ (each thing said is told where the author is); resolves once it is ready. */
-export function startConversation(agent: string): Promise<Conversation> {
-	return request('/api/studio/conversations', jsonOptions('POST', { agent }));
+/** A conversation begun with `agent`; `page`: to be opened in the editor, its page in chats/ made at once. */
+export function startConversation(agent: string, { page = false }: { page?: boolean } = {}): Promise<Conversation> {
+	return request('/api/studio/conversations', jsonOptions('POST', { agent, page }));
 }
 
 /** Follows a conversation: all of it first, then each change. Returns the function that stops. */

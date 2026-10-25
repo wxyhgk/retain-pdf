@@ -141,8 +141,9 @@ test('kept in chats/ as a page; read back after the Studio restarts, as it was; 
 	// The server stopping: what changed last written at once.
 	first.closeAll();
 	const page = await readFile(join(cwd, 'chats', said.id, 'index.md'), 'utf8');
-	assert.match(page, /^---\ntitle: "几块"\nkind: chat\nagent: "Claude"\n/u);
-	assert.match(page, /\n```ask\n几块\n```\n\n能量和质量的关系：\n\n\$\$\nE = mc\^2\n\$\$\n\n- 要点一\n- 要点二\n$/u);
+	assert.match(page, /^---\ntitle: "几块"\npubDate: \d{4}-\d\d-\d\d\ndraft: true\n---\n\n```ask\n几块\n```\n\n能量和质量的关系：\n\n\$\$\nE = mc\^2\n\$\$\n\n- 要点一\n- 要点二\n$/u);
+	// The page is the author's to edit: a turn after is added at its end, the edit kept.
+	await writeFile(join(cwd, 'chats', said.id, 'index.md'), page.replace('- 要点一', '- 我改的要点'));
 
 	// After a restart: listed, read back as it was, no agent running.
 	const second = restarted();
@@ -159,6 +160,8 @@ test('kept in chats/ as a page; read back after the Studio restarts, as it was; 
 	assert.match(back.items.at(-1).text, new RegExp(`^接上了 ${adapterSession}\\d+$`, 'u'));
 	assert.equal(back.items.some((item) => item.text?.includes('重放的历史')), false);
 	assert.deepEqual(back.items.map((item) => item.kind), ['user', 'message', 'user', 'message']);
+	await until(back, (s) => s.pageThrough === s.items.at(-1).id);
+	assert.match(await readFile(join(cwd, 'chats', said.id, 'index.md'), 'utf8'), /\n- 我改的要点\n- 要点二\n\n```ask\n接上了吗\n```\n\n接上了 fake-session-\d+\n$/u);
 	second.closeAll();
 
 	// Its session not there any more: a new one, told where what was said is.

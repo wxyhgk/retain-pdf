@@ -31,11 +31,13 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	// A conversation goes on in blog/ whatever article is open (blog/AGENTS.md read there): each thing said is told
 	// which one is, with the lines selected and the articles named with @ (contextOf).
 	api.post('/conversations', async ({ json }) => {
-		const { agent: wanted } = await json();
+		const { agent: wanted, page } = await json();
 		const agent = (await agents()).find((candidate) => candidate.id === wanted);
 		if (!agent) throw refuse(404, `没有能在面板里用的 AI「${wanted}」`);
 		const service = await serviceOf(agent);
 		const session = await conversations.start({ agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
+		// Begun to be opened in the editor (问答为主): its page there at once.
+		if (page === true) await conversations.makePage(session);
 		return reply(201, session.summary());
 	});
 	/** A conversation to speak to: one over (kept in chats/, its agent gone) gone on with, its agent started again. */

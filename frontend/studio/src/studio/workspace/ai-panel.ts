@@ -33,6 +33,8 @@ export type AiPanelHost = {
 	runInTerminal(command: string): void;
 	/** Puts Markdown in the article open, where its caret is, as blocks; false when no article is open. */
 	insert(markdown: string): boolean;
+	/** On a conversation's page (`page`): a turn was written on it; resolves once the editor shows it. */
+	pageWritten?(id: string): Promise<void>;
 };
 
 type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
@@ -106,7 +108,7 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', 
  * comes back as a change on disk, to look over as any other. Under the input: which AI, and its options (who
  * decides, model, effort). A conversation goes on in the article it began in; ＋ begins another.
  */
-export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
+export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = false }: { page?: boolean } = {}) {
 	const toolbar = element('header', 'pane-toolbar ai-toolbar');
 	const title = element('span', 'ai-title', '新对话');
 	const where = element('span', 'ai-where');
@@ -184,7 +186,15 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 			host.toast(name ? `AI 面板的 ${agent === 'pi' ? 'pi' : 'Claude Code'} 改用「${name}」` : '已保存');
 		},
 	});
-	pane.replaceChildren(toolbar, sheet.element, transcript, composer);
+	// On a conversation's page (问答为主), under the editor: what was said is the page's blocks; here, the turn going
+	// on and the input. The conversation is the page's; the AI, the one it began with.
+	if (page) {
+		pane.classList.add('is-page');
+		agentSelect.hidden = true;
+		pane.replaceChildren(sheet.element, transcript, composer);
+	} else {
+		pane.replaceChildren(toolbar, sheet.element, transcript, composer);
+	}
 
 	/** 模型和账号 in place of the conversation, or the conversation again. */
 	function showSheet(open: boolean): void {
@@ -282,7 +292,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		items = [];
 		drawn.clear();
 		list.replaceChildren();
-		remember(CONVERSATION_KEY, next?.id ?? null);
+		if (!page) remember(CONVERSATION_KEY, next?.id ?? null);
 		showSession();
 		if (next) unfollow = followConversation(next.id, receive);
 	}
@@ -293,12 +303,13 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				conversation = event.session;
 				items = [...event.items];
 				drawn.clear();
-				list.replaceChildren(...items.map((item) => draw(item)));
+				list.replaceChildren(...items.filter(going).map((item) => draw(item)));
 				break;
 			case 'item': {
 				const at = items.findIndex((entry) => entry.id === event.item.id);
 				if (at >= 0) items[at] = event.item;
 				else items.push(event.item);
+				if (!going(event.item)) break;
 				const old = drawn.get(event.item.id);
 				const next = draw(event.item, old);
 				if (!old) list.append(next);
@@ -313,13 +324,34 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				}
 				break;
 			}
-			case 'session':
+			case 'session': {
+				const before = conversation?.pageThrough;
 				conversation = event.session;
+				if (page && conversation.pageThrough !== before) void written(conversation.id);
 				break;
+			}
 		}
 		thoughtsOver();
 		showSession();
 		keepAtBottom();
+	}
+
+	/** Whether `item` is drawn here: on a page, those not yet written on it (the turn going on). */
+	function going(item: ConversationItem): boolean {
+		if (!page || !conversation?.pageThrough) return true;
+		const through = items.findIndex((entry) => entry.id === conversation!.pageThrough);
+		return items.indexOf(item) > through;
+	}
+
+	/** A turn written on the page: once the editor shows it, taken from here. */
+	async function written(id: string): Promise<void> {
+		await host.pageWritten?.(id).catch(() => {});
+		if (conversation?.id !== id) return;
+		for (const item of items) {
+			if (going(item)) continue;
+			drawn.get(item.id)?.remove();
+			drawn.delete(item.id);
+		}
 	}
 
 	/** A thought drawn as going on (思考中…) once something came after it, or the turn is over: drawn again as done. */
@@ -352,8 +384,9 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		if (!text) return;
 		if (conversation?.state === 'running') return;
 		let target = conversation;
-		// One over goes on (its agent started again), unless nothing was said in it.
-		if (!target || ((target.state === 'closed' || target.state === 'failed') && !items.length)) target = await (starting ?? begin());
+		// One over goes on (its agent started again), unless nothing was said in it; a page's is the page's.
+		if (page && !target) return;
+		if (!target || (!page && (target.state === 'closed' || target.state === 'failed') && !items.length)) target = await (starting ?? begin());
 		else if (starting) target = await starting;
 		if (!target) return;
 		const open = article && leftOut !== article.slug ? article : null;
@@ -495,7 +528,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		title.textContent = conversation?.title || '新对话';
 		title.title = title.textContent;
 		where.textContent = conversation?.service ?? '';
-		empty.hidden = items.length > 0;
+		empty.hidden = page || items.length > 0;
 		send.textContent = running ? '■' : '↑';
 		send.title = running ? '停下' : '发送（Enter；换行用 Shift+Enter）';
 		send.setAttribute('aria-label', running ? '停下' : '发送');
@@ -891,6 +924,36 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		 */
 		articleShown(): void {
 			followSelection();
+		},
+		/** On a page: the conversation `id` (a page of chats/ opened in the editor) followed; null, none. */
+		async showChat(id: string | null): Promise<void> {
+			if (!id) {
+				if (conversation) follow(null);
+				return;
+			}
+			if (conversation?.id === id) return;
+			follow(null);
+			try {
+				const known = await listConversations();
+				agents = known.agents;
+				const entry = known.conversations.find((candidate) => candidate.id === id);
+				if (entry) follow(entry);
+				else say('找不到这个对话', true);
+			} catch (error) {
+				say(error instanceof Error ? error.message : '读不到对话', true);
+			}
+		},
+		/** A conversation begun as a page, with the AI chosen in the panel and its options; its id. */
+		async newChat(): Promise<string | null> {
+			try {
+				return (await startConversation(chosenAI().agent, { page: true }).then(chosenAgain)).id;
+			} catch (error) {
+				host.toast(error instanceof Error ? error.message : '没能开始对话');
+				return null;
+			}
+		},
+		focus(): void {
+			input.focus();
 		},
 		/** Puts `text` in the input, for the author to finish and send. */
 		ask(text: string): void {

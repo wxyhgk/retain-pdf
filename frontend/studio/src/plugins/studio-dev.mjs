@@ -8,7 +8,7 @@ import { BlogWatcher } from '../studio/server/blog-watcher.mjs';
 import { CodeFilePreviews } from '../studio/server/code-file-previews.mjs';
 import { Drive } from '../studio/server/drive.mjs';
 import { DriveText, TEXT_FOLDER } from '../studio/server/drive-text.mjs';
-import { articleBundlePaths, resolveInside } from '../articles/bundle-paths.mjs';
+import { articleBundlePaths, chatsRootOf, resolveInside } from '../articles/bundle-paths.mjs';
 import { ArticleFileManager } from '../studio/server/file-manager.mjs';
 import { FileRepository } from '../studio/server/file-repository.mjs';
 import { TerminalHost } from '../studio/server/terminal-host.mjs';
@@ -88,7 +88,7 @@ export default function studioDev({ site } = {}) {
 			const tasks = new Tasks();
 			// The AI panel's conversations, with the agents' ACP adapters of the project's dependencies.
 			// Kept in chats/ beside blog/ (out of git), each a page; the browser tests' beside their copy of blog/.
-			const chats = new ChatStore(testBlogRoot ? `${testBlogRoot}-chats` : resolve(server.config.root, 'chats'));
+			const chats = new ChatStore(chatsRootOf(blogRoot));
 			const conversations = new AgentSessions({ binFolder: resolve(server.config.root, 'node_modules', '.bin'), store: chats });
 			/**
 			 * The environment of a program the Studio runs for an AI (a terminal's shell, an agent run by Alt+Enter):
