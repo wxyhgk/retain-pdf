@@ -1,8 +1,12 @@
-import { access } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { createReadStream } from 'node:fs';
+import { access, stat } from 'node:fs/promises';
+import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { InlineAi } from '../inline-ai.mjs';
 import { accountsLoggedIn, PiModels } from '../panel-models.mjs';
-import { refuse, reply, sendEvents } from '../api.mjs';
+import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
+
+/** The pictures an AI's answer may show from this machine, by extension. */
+const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 
 /**
  * The AI panel's conversations (agent-sessions.mjs): the agents it can talk to (those with an ACP adapter) and the
@@ -101,6 +105,18 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		if (!session.madePage && session.pageThrough === null) await conversations.makePage(session);
 		return session.summary();
 	});
+	// A picture an AI's answer shows from this machine (a plot it drew in ai/work/…): its path as written, absolute
+	// or from blog/ (where the agents work).
+	api.get('/conversations/picture', async ({ query, request, response }) => {
+		const written = (query.get('path') ?? '').replace(/^file:\/\//u, '');
+		const path = isAbsolute(written) ? written : resolve(blogRoot, written);
+		const contentType = PICTURES[extname(path).toLowerCase()];
+		if (!contentType) throw refuse(415, '只显示图片（png、jpg、gif、webp、svg）');
+		const info = await stat(path).catch(() => null);
+		if (!info?.isFile()) throw refuse(404, `没有这张图：${written}`);
+		void request;
+		await sendFile(response, { body: createReadStream(path), contentType, size: info.size, range: null });
+	}, { streams: true });
 	// A conversation gone: its folder of chats/ too.
 	api.post('/conversations/:id/delete', async ({ params }) => {
 		await conversations.remove(params.id);

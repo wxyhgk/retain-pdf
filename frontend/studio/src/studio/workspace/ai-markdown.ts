@@ -9,11 +9,21 @@ import { codeBlockPreview } from '../plugins';
 
 /**
  * What an AI says in the AI panel, drawn: its Markdown read as articles are (GFM, formulas), formulas drawn with
- * KaTeX as in the editor, the plugins' blocks (an energy diagram, a molecule) as they draw them there. Raw HTML in it is dropped, and links go only to the web or within the page, opened
- * elsewhere: it is text from a model, which may have read anything.
+ * KaTeX as in the editor, the plugins' blocks (an energy diagram, a molecule) as they draw them there, pictures on
+ * this machine shown by their path. Raw HTML in it is dropped, and links go only to the web or within the page,
+ * opened elsewhere.
  */
 
 const toHtml = unified().use(remarkRehype).use(rehypeStringify).freeze();
+
+/** A path as written in Markdown (spaces as %20), as it is on disk. */
+function decoded(path: string): string {
+	try {
+		return decodeURI(path);
+	} catch {
+		return path;
+	}
+}
 
 type Tree = ReturnType<typeof articleParser.parse>;
 type TopNode = Tree['children'][number];
@@ -58,8 +68,12 @@ function drawn(tree: Tree): DocumentFragment {
 			link.removeAttribute('href');
 		}
 	}
+	// A picture on this machine (a plot the AI drew: ai/work/plot.png, by its path) through the Studio.
 	for (const image of fragment.querySelectorAll('img')) {
-		if (!/^https?:\/\//iu.test(image.getAttribute('src') ?? '')) image.replaceWith(document.createTextNode(image.alt ? `[${image.alt}]` : ''));
+		const src = image.getAttribute('src') ?? '';
+		if (/^https?:\/\//iu.test(src)) continue;
+		if (/^[a-z][a-z0-9+.-]*:/iu.test(src) && !src.startsWith('file://')) image.replaceWith(document.createTextNode(image.alt ? `[${image.alt}]` : ''));
+		else image.src = `/api/studio/conversations/picture?path=${encodeURIComponent(decoded(src))}`;
 	}
 	for (const code of fragment.querySelectorAll('code.language-math')) {
 		const display = code.classList.contains('math-display');

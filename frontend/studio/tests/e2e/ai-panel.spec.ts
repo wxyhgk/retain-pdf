@@ -296,3 +296,11 @@ test('a turn over with nothing said (only thought) is said so; 接着说 asks fo
 	await expect(pane(page).locator('.ai-user .ai-bubble').last()).toHaveText('接着说：把你刚才的结论告诉我。');
 	await expect(pane(page).locator('.ai-message').last()).toHaveText('结论是这样的。');
 });
+
+test('a picture the AI drew on this machine is shown, by its path', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '画图');
+	const picture = pane(page).locator('.ai-message img[alt="势能曲线"]');
+	await expect(picture).toHaveCount(1);
+	await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth)).toBeGreaterThan(0);
+});

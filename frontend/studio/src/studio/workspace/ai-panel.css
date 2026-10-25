@@ -33,6 +33,7 @@
 .ai-message table { border-collapse: collapse; font-size: 12px; }
 .ai-message th, .ai-message td { padding: 3px 8px; border: 1px solid rgb(var(--gray-light)); }
 .ai-message a { color: inherit; }
+.ai-message img { display: block; max-width: 100%; height: auto; margin: 6px 0; border-radius: 6px; }
 /* Each block of what the AI said: a handle at its left on hover, to drag it into the article or click to put it there. */
 .ai-message .ai-block { position: relative; margin-bottom: 8px; }
 .ai-message .ai-block:last-of-type { margin-bottom: 0; }
