@@ -26,7 +26,7 @@ test('an article whose files are there and formulas sound has nothing to fix', a
 ![势能面](./img/plot.png){width=60%}
 
 $$
-E = mc^2 \\label{eq:energy}
+E = mc^2 \\tag{1} \\label{eq:energy}
 $$
 
 由 $\\eqref{eq:energy}$ 可知。
@@ -50,11 +50,11 @@ pubDate: 2026-10-16
 [数据](./assets/data.csv) 和 [笔记](./ai/notes.md)
 
 $$
-x \\label{eq:a}
+x \\tag{1} \\label{eq:a}
 $$
 
 $$
-y \\label{eq:a}
+y \\tag{2} \\label{eq:a}
 $$
 
 见 $\\eqref{eq:none}$，还有 $\\frac{1}{$。
