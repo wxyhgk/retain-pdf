@@ -43,7 +43,7 @@ test('AI 问答: a conversation whole in the middle, listed on the left; there a
 	// Drawn as the AI tab draws it: what was asked, the answer's blocks, a plugin's block as the editor draws it.
 	await say(page, '几块');
 	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText('几块');
-	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(3);
+	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(4);
 	await say(page, '能量图');
 	await expect(view(page).locator('.ai-preview .note-energy')).toHaveCount(1);
 	// Kept: its record read as a page.
@@ -81,11 +81,11 @@ test('⤢ in the AI tab: the panel itself whole, in the middle; ⤡ back in the 
 	const side = page.locator('#side-ai');
 	await side.locator('.ai-input').fill('几块 侧边');
 	await side.locator('.ai-input').press('Enter');
-	await expect(side.locator('.ai-message .ai-block')).toHaveCount(3);
+	await expect(side.locator('.ai-message .ai-block')).toHaveCount(4);
 	await side.getByRole('button', { name: '在页面中打开' }).click();
 	await expect(view(page)).toBeVisible();
 	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText('几块 侧边');
-	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(3);
+	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(4);
 	await expect(page.getByRole('tab', { name: 'AI 问答' })).toHaveAttribute('aria-selected', 'true');
 	// The very panel of the AI tab, moved: the tab away meanwhile.
 	await expect(view(page).locator('#side-ai')).toHaveCount(1);

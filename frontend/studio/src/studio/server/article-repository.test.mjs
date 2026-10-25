@@ -308,6 +308,28 @@ test('a rename takes the links to the article with it, in the others and its own
 	assert.match(await readFile(project, 'utf8'), /\[基组\]\(\/blog\/ji-zu\/#de-xuan-ze\)/u);
 });
 
+test('a page moved under another is a page block at its end (as Notion has it), and no longer one in the page it left', async (t) => {
+	const blog = await temporaryBlog(t);
+	const repository = new ArticleRepository(blog);
+	await repository.create({ slug: 'project', title: '项目', body: '项目的话。' });
+	await repository.create({ slug: 'other', title: '别处', body: '别处的话。' });
+	await repository.create({ slug: 'notes', title: '笔记 [草]', body: '笔记的话。' });
+	const body = async (slug) => (await readFile(articleBundlePaths(blog, slug).markdown, 'utf8')).replace(/^---[\s\S]*?---\n/u, '');
+	await repository.setParent('notes', 'project');
+	assert.equal(await body('project'), '\n项目的话。\n\n[笔记 \\[草\\]](/blog/notes/)\n');
+	// Moved again: there, and gone from where it was; a link to it in a sentence stays.
+	await repository.save('project', { source: (await readFile(articleBundlePaths(blog, 'project').markdown, 'utf8')).replace('项目的话。', '项目的话，见[笔记](/blog/notes/)。'), expectedRevision: '' });
+	await repository.setParent('notes', 'other');
+	assert.equal(await body('project'), '\n项目的话，见[笔记](/blog/notes/)。\n');
+	assert.match(await body('other'), /别处的话。\n\n\[笔记 \\\[草\\\]\]\(\/blog\/notes\/\)\n$/u);
+	// Put in its place among those under it again (same page): nothing more added.
+	await repository.setParent('notes', 'other');
+	assert.equal((await body('other')).match(/\/blog\/notes\//gu).length, 1);
+	// To the top: out of the page it left.
+	await repository.setParent('notes', '');
+	assert.equal(await body('other'), '\n别处的话。\n');
+});
+
 test('a page put before or after another under the same page goes just there, the pages there numbered again', async (t) => {
 	const blog = await temporaryBlog(t);
 	const repository = new ArticleRepository(blog);

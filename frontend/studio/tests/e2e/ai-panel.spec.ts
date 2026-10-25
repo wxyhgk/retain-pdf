@@ -231,27 +231,31 @@ test('what the AI says is blocks: each dragged into the article, or clicked in w
 	await openAi(page);
 	await tell(page, '几块');
 	const blocks = pane(page).locator('.ai-message .ai-block');
-	await expect(blocks).toHaveCount(3);
+	// A paragraph, a formula, and the list an item a block, as the editor has them.
+	await expect(blocks).toHaveCount(4);
 	await expect(blocks.nth(1).locator('.ai-math-display')).toHaveCount(1);
+	await expect(blocks.nth(2)).toHaveAttribute('data-markdown', '- 要点一');
+	await expect(blocks.nth(3)).toHaveAttribute('data-markdown', '- 要点二');
 	// The formula dragged onto the last paragraph: it goes after it.
 	const formulas = editor(page).locator('.pm-display-math');
 	const before = await formulas.count();
 	await blocks.nth(1).hover();
 	await blocks.nth(1).locator('.ai-block-handle').dragTo(editor(page).locator('p', { hasText: '结尾段落' }));
 	await expect(formulas).toHaveCount(before + 1);
-	// The list clicked in, where the caret is: on a new line after that paragraph.
+	// The list's second item clicked in, where the caret is: on a new line after that paragraph.
 	await editor(page).locator('p', { hasText: '结尾段落' }).click();
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
-	await blocks.nth(2).hover();
-	await blocks.nth(2).locator('.ai-block-handle').click();
+	await blocks.nth(3).hover();
+	await blocks.nth(3).locator('.ai-block-handle').click();
 	await expect(editor(page).locator('li', { hasText: '要点二' })).toHaveCount(1);
+	await expect(editor(page).locator('li', { hasText: '要点一' })).toHaveCount(0);
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
 	const saved = savedMarkdown();
 	const at = (text: string) => saved.indexOf(text);
 	expect(at('结尾段落。')).toBeGreaterThan(-1);
-	expect(at('- 要点一\n- 要点二')).toBeGreaterThan(at('结尾段落。'));
+	expect(at('- 要点二')).toBeGreaterThan(at('结尾段落。'));
 	expect(at('$$\nE = mc^2\n$$')).toBeGreaterThan(at('- 要点二'));
 
 	// All of it, from under the answer.
@@ -263,7 +267,7 @@ test('what the AI says is blocks: each dragged into the article, or clicked in w
 test('a conversation is kept in chats/ as a page: there again once the page is opened again; deleted from the list, its folder too', async ({ page }) => {
 	await openAi(page);
 	await tell(page, '几块 记下来');
-	await expect(pane(page).locator('.ai-message .ai-block')).toHaveCount(3);
+	await expect(pane(page).locator('.ai-message .ai-block')).toHaveCount(4);
 	// The tests' chats/ is beside their copy of blog/.
 	const chats = `${process.env.STUDIO_BLOG_DIR}-chats`;
 	const kept = () => (existsSync(chats) ? readdirSync(chats) : []).find((name) => existsSync(join(chats, name, 'index.md')) && readFileSync(join(chats, name, 'index.md'), 'utf8').includes('```ask\n几块 记下来\n```')) ?? null;
@@ -277,7 +281,7 @@ test('a conversation is kept in chats/ as a page: there again once the page is o
 	await page.reload();
 	await page.locator('#side-tab-ai').click();
 	await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('几块 记下来');
-	await expect(pane(page).locator('.ai-message .ai-block')).toHaveCount(3);
+	await expect(pane(page).locator('.ai-message .ai-block')).toHaveCount(4);
 
 	// Deleted, once the author says yes: its folder gone, a new conversation begun.
 	page.once('dialog', (dialog) => void dialog.accept());

@@ -37,6 +37,10 @@
 /* Each block of what the AI said: a handle at its left on hover, to drag it into the article or click to put it there. */
 .ai-message .ai-block { position: relative; margin-bottom: 8px; }
 .ai-message .ai-block:last-of-type { margin-bottom: 0; }
+/* A list's items, a block each: one list still to look at. */
+.ai-message .ai-block.is-item { margin-bottom: 2px; }
+.ai-message .ai-block.is-item.is-last-item { margin-bottom: 8px; }
+.ai-message .ai-block.is-item > ul, .ai-message .ai-block.is-item > ol { margin: 0; }
 .ai-block-handle { position: absolute; top: 1px; left: -14px; width: 13px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font-size: 10px; letter-spacing: -2px; line-height: 20px; opacity: 0; cursor: grab; }
 .ai-block-handle::before { content: '⋮⋮'; }
 .ai-block:hover > .ai-block-handle, .ai-block-handle:focus-visible { opacity: 1; }

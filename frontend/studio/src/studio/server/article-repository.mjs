@@ -24,6 +24,26 @@ async function readViewsSource(path) {
 	}
 }
 
+/** A line that is only a link to the page `slug`: the page block the editor shows for it. */
+const pageBlockLine = (slug) => new RegExp(`^[ \\t]*\\[(?:\\\\.|[^\\]\\\\\\n])*\\]\\((?:https?://[^)\\s]*)?/(?:blog|wiki)/${slug}/?\\)[ \\t]*$`, 'u');
+
+/** The page `slug` as a page block at the end of `source`, unless one is there already. */
+export function withPageBlock(source, slug, title) {
+	if (source.split('\n').some((line) => pageBlockLine(slug).test(line))) return source;
+	return `${source.replace(/\s*$/u, '')}\n\n[${title.replace(/[[\]\\]/gu, '\\$&')}](/blog/${slug}/)\n`;
+}
+
+/** `source` without the page blocks of `slug` (lines that are only a link to it), nor the blank line each leaves. */
+export function withoutPageBlock(source, slug) {
+	const lines = source.split('\n');
+	for (let at = lines.length - 1; at >= 0; at -= 1) {
+		if (!pageBlockLine(slug).test(lines[at])) continue;
+		lines.splice(at, 1);
+		if (lines[at - 1] === '' && (lines[at] === '' || at === lines.length)) lines.splice(at - 1, 1);
+	}
+	return lines.join('\n');
+}
+
 export class ArticleRepository {
 	/** Per article, the end of its queue of writes. */
 	#writes = new Map();
@@ -279,6 +299,7 @@ export class ArticleRepository {
 			if ((before || after) && (!next || next.parent !== parent || next.slug === slug)) throw new ArticleValidationError('要放在旁边的页面不在那里');
 			const siblings = pages.filter((page) => page.parent === parent && page.slug !== slug).sort(comparePages);
 			const moved = bySlug.get(slug);
+			const was = { from: moved.parent ?? '', title: moved.title || slug };
 			if (next) {
 				const index = siblings.indexOf(next) + (after ? 1 : 0);
 				const placed = [...siblings.slice(0, index), moved, ...siblings.slice(index)];
@@ -287,14 +308,20 @@ export class ArticleRepository {
 					if (page === moved) await this.#writeFields(slug, { parent, order: (index + 1) * 10 });
 					else if (page.order !== (index + 1) * 10) renumbered.push([page.slug, (index + 1) * 10]);
 				}
-				return renumbered;
+				return { ...was, renumbered };
 			}
 			const ordered = siblings.filter((page) => typeof page.order === 'number');
 			const last = ordered.length ? Math.max(...ordered.map((page) => page.order)) : null;
 			await this.#writeFields(slug, { parent, order: last === null ? null : last + 10 });
-			return [];
+			return { ...was, renumbered: [] };
 		});
-		for (const [page, order] of others) await this.#rewrite(page, (source) => withFields(source, { order }));
+		for (const [page, order] of others.renumbered) await this.#rewrite(page, (source) => withFields(source, { order }));
+		// As Notion has it: a page moved under another is a page block at the end of it, and no longer one in the page
+		// it left (only a line that is just a link to it; a link in a sentence stays).
+		if (others.from !== parent) {
+			if (others.from) await this.#rewrite(others.from, (source) => withoutPageBlock(source, slug));
+			if (parent) await this.#rewrite(parent, (source) => withPageBlock(source, slug, others.title));
+		}
 		return { slug, parent };
 	}
 

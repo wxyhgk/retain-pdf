@@ -29,8 +29,9 @@ type Tree = ReturnType<typeof articleParser.parse>;
 type TopNode = Tree['children'][number];
 
 /**
- * `blocks`: each block of it (a paragraph, a list, a formula, a code block, a table…) in its own `.ai-block`, with
- * the Markdown it was written as in `data-markdown`, to be put in an article as it is.
+ * `blocks`: each block of it (a paragraph, each item of a list, a formula, a code block, a table…) in its own
+ * `.ai-block`, as the editor has them, with the Markdown it was written as in `data-markdown`, to be put in an
+ * article as it is.
  */
 export function renderAiMarkdown(markdown: string, { blocks = false }: { blocks?: boolean } = {}): DocumentFragment {
 	const tree = articleParser.runSync(articleParser.parse(markdown)) as Tree;
@@ -38,14 +39,25 @@ export function renderAiMarkdown(markdown: string, { blocks = false }: { blocks?
 	const fragment = document.createDocumentFragment();
 	// Link definitions drawn with each block, as its links may need them.
 	const definitions = tree.children.filter((node) => node.type === 'definition');
+	const block = (node: TopNode, className = 'ai-block'): HTMLElement => {
+		const holder = document.createElement('div');
+		holder.className = className;
+		const source = sourceOf(markdown, node);
+		if (source) holder.dataset.markdown = source;
+		holder.append(drawn({ ...tree, children: [node, ...definitions] }));
+		return holder;
+	};
 	for (const node of tree.children) {
 		if (node.type === 'definition') continue;
-		const block = document.createElement('div');
-		block.className = 'ai-block';
-		const source = sourceOf(markdown, node);
-		if (source) block.dataset.markdown = source;
-		block.append(drawn({ ...tree, children: [node, ...definitions] }));
-		fragment.append(block);
+		if (node.type !== 'list') {
+			fragment.append(block(node));
+			continue;
+		}
+		// A list, an item a block: each a list of one, numbered on from where it is (2. for the second).
+		node.children.forEach((item, at) => {
+			const one = { ...node, start: node.ordered ? (node.start ?? 1) + at : node.start, children: [item], position: item.position } as TopNode;
+			fragment.append(block(one, `ai-block is-item${at === node.children.length - 1 ? ' is-last-item' : ''}`));
+		});
 	}
 	return fragment;
 }

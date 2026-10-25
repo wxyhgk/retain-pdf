@@ -81,7 +81,7 @@ test('each change is accepted or rejected on its own, and nothing is typed meanw
 	await expect(editor(page)).not.toContainText('不该出现');
 
 	await editor(page).locator('.milkdown-diff-reject').first().click();
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 1 处改动');
+	await expect(page.locator('#review-count')).toHaveText('已决定 1 处，还剩 1 处');
 	await editor(page).locator('.milkdown-diff-accept').first().click();
 	await expect(reviewBar(page)).toBeHidden();
 	await page.keyboard.press('ControlOrMeta+s');
@@ -192,4 +192,19 @@ test('changes on disk made one after another (an AI writing on) are all in the r
 	await expect(page.locator('#save-status')).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('开头段落（第二处）');
 	expect(savedMarkdown()).toContain('结尾段落，第三处。');
+});
+
+test('some changes kept one by one, the rest rejected at once: what was kept stays', async ({ page }) => {
+	await openStudio(page);
+	editFixture((markdown) => markdown.replace('开头段落', '开头段落（留下）').replace('结尾段落。', '结尾段落，不要。'));
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await editor(page).locator('.milkdown-diff-accept').first().click();
+	await expect(page.locator('#review-count')).toHaveText('已决定 1 处，还剩 1 处');
+	await expect(page.locator('#review-reject-all')).toHaveText('其余拒绝');
+	await page.locator('#review-reject-all').click();
+	await expect(page.locator('#review-bar')).toBeHidden();
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(page.locator('#save-status')).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('开头段落（留下）');
+	expect(savedMarkdown()).not.toContain('不要');
 });

@@ -107,9 +107,18 @@ test('a page dragged onto another goes under it; dragged below the pages, to the
 	await drag(tab, '下面一页', TITLE);
 	await expect(item(tab, '下面一页')).toHaveCSS('--depth', '1');
 	await expect.poll(() => source('tree-under')).toMatch(new RegExp(`parent: "?${slug}"?`, 'u'));
+	// As Notion has it: a page block at the end of the page it went under (open here: shown at once, not as a change
+	// to review), and none left in the page it came from.
+	await expect(tab.locator('.milkdown .ProseMirror p.pm-page-link').last()).toHaveText('下面一页');
+	await expect(tab.locator('#review-bar')).toBeHidden();
+	expect(source(slug)).toMatch(/\n\[下面一页\]\(\/blog\/tree-under\/\)\n$/u);
+	expect(source('tree-top')).not.toContain('/blog/tree-under/');
 	await drag(tab, '下面一页', 'below');
 	await expect(item(tab, '下面一页')).toHaveCSS('--depth', '0');
 	await expect.poll(() => source('tree-under')).not.toMatch(/parent/u);
+	await expect.poll(() => source(slug)).not.toContain('/blog/tree-under/');
+	await expect(tab.locator('.milkdown .ProseMirror p.pm-page-link', { hasText: '下面一页' })).toHaveCount(0);
+	await expect(tab.locator('#review-bar')).toBeHidden();
 });
 
 test('the open page dragged under another is put there as an edit of it, saved', async ({ page: tab }) => {

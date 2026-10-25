@@ -586,15 +586,23 @@ async function makeLinkedPage(title: string): Promise<{ title: string; href: str
  * quietly.
  */
 async function movePages(slugs: string[], parent: string, place: PagePlace = {}): Promise<void> {
-	if (slugs.includes(session.slug ?? '') && !(await session.flush())) return;
+	// The pages they leave and the one they go under get a page block taken out or put in (as Notion has it): the open
+	// one among them, saved first, is read again after, quietly, not reviewed as a change made by someone else.
+	const left = slugs.map((slug) => articleList.articles().find((article) => article.slug === slug)?.parent ?? '');
+	const open = session.slug ?? '';
+	const changesOpen = Boolean(open) && [parent, ...left].includes(open);
+	if ((slugs.includes(open) || changesOpen) && !(await session.flush())) return;
 	let previous: string | null = null;
 	try {
-		for (const slug of slugs) {
-			const here: PagePlace = previous ? { after: previous } : place;
-			await trackWrite(() => setArticleParent(slug, parent, here));
-			// The next one after this, where it is (with no place given, each goes after those there).
-			if (previous || place.before || place.after) previous = slug;
-		}
+		await trackWrite(async () => {
+			for (const slug of slugs) {
+				const here: PagePlace = previous ? { after: previous } : place;
+				await setArticleParent(slug, parent, here);
+				// The next one after this, where it is (with no place given, each goes after those there).
+				if (previous || place.before || place.after) previous = slug;
+			}
+			if (changesOpen && session.slug === open) await session.reload();
+		});
 	} catch (error) {
 		showToast(error instanceof Error ? error.message : '没能移动这个页面', true);
 	}
