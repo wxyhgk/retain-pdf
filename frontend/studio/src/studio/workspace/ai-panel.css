@@ -21,8 +21,8 @@
 .ai-bubble { max-width: 88%; padding: 7px 11px; border-radius: 12px; background: var(--surface-soft); line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
 
 .ai-message { line-height: 1.65; overflow-wrap: anywhere; }
-.ai-message > :first-child { margin-top: 0; }
-.ai-message > :last-child { margin-bottom: 0; }
+.ai-message > :first-child, .ai-block > :first-child { margin-top: 0; }
+.ai-message > :last-child, .ai-block > :last-child { margin-bottom: 0; }
 .ai-message p, .ai-message ul, .ai-message ol, .ai-message pre, .ai-message table, .ai-message blockquote { margin: 0 0 8px; }
 .ai-message ul, .ai-message ol { padding-left: 20px; }
 .ai-message h1, .ai-message h2, .ai-message h3, .ai-message h4 { margin: 12px 0 6px; color: rgb(var(--black)); font-size: 14px; }
@@ -33,6 +33,19 @@
 .ai-message table { border-collapse: collapse; font-size: 12px; }
 .ai-message th, .ai-message td { padding: 3px 8px; border: 1px solid rgb(var(--gray-light)); }
 .ai-message a { color: inherit; }
+/* Each block of what the AI said: a handle at its left on hover, to drag it into the article or click to put it there. */
+.ai-message .ai-block { position: relative; margin-bottom: 8px; }
+.ai-message .ai-block:last-of-type { margin-bottom: 0; }
+.ai-block-handle { position: absolute; top: 1px; left: -14px; width: 13px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font-size: 10px; letter-spacing: -2px; line-height: 20px; opacity: 0; cursor: grab; }
+.ai-block-handle::before { content: '⋮⋮'; }
+.ai-block:hover > .ai-block-handle, .ai-block-handle:focus-visible { opacity: 1; }
+.ai-block-handle:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+.ai-block:hover { border-radius: 4px; background: var(--surface-soft); }
+.ai-block.is-dragged { opacity: 0.5; }
+.ai-message-actions { display: flex; gap: 4px; margin-top: 2px; opacity: 0; }
+.ai-answer:hover .ai-message-actions, .ai-message-actions:focus-within { opacity: 1; }
+.ai-message-actions button { padding: 2px 6px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; cursor: pointer; }
+.ai-message-actions button:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
 .ai-math-display { margin: 6px 0; overflow-x: auto; overflow-y: hidden; }
 
 .ai-thought { color: rgb(var(--gray)); font-size: 12px; }

@@ -13,8 +13,37 @@ import { renderMathHtml } from '@blog/science/rendering/math.ts';
 
 const toHtml = unified().use(remarkRehype).use(rehypeStringify).freeze();
 
-export function renderAiMarkdown(markdown: string): DocumentFragment {
-	const tree = articleParser.runSync(articleParser.parse(markdown));
+type Tree = ReturnType<typeof articleParser.parse>;
+type TopNode = Tree['children'][number];
+
+/**
+ * `blocks`: each block of it (a paragraph, a list, a formula, a code block, a table…) in its own `.ai-block`, with
+ * the Markdown it was written as in `data-markdown`, to be put in an article as it is.
+ */
+export function renderAiMarkdown(markdown: string, { blocks = false }: { blocks?: boolean } = {}): DocumentFragment {
+	const tree = articleParser.runSync(articleParser.parse(markdown)) as Tree;
+	if (!blocks) return drawn(tree);
+	const fragment = document.createDocumentFragment();
+	// Link definitions drawn with each block, as its links may need them.
+	const definitions = tree.children.filter((node) => node.type === 'definition');
+	for (const node of tree.children) {
+		if (node.type === 'definition') continue;
+		const block = document.createElement('div');
+		block.className = 'ai-block';
+		const source = sourceOf(markdown, node);
+		if (source) block.dataset.markdown = source;
+		block.append(drawn({ ...tree, children: [node, ...definitions] }));
+		fragment.append(block);
+	}
+	return fragment;
+}
+
+function sourceOf(markdown: string, node: TopNode): string {
+	const { start, end } = node.position ?? {};
+	return start?.offset === undefined || end?.offset === undefined ? '' : markdown.slice(start.offset, end.offset).trim();
+}
+
+function drawn(tree: Tree): DocumentFragment {
 	const template = document.createElement('template');
 	template.innerHTML = toHtml.stringify(toHtml.runSync(tree as never) as never);
 	const fragment = template.content;

@@ -6,7 +6,7 @@ import { Plugin, PluginKey, type EditorState } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
-import { DRIVE_DRAG_TYPE, fileName, readMarkdownReference, STUDIO_FILE_DRAG_TYPE } from '../article-files.ts';
+import { DRIVE_DRAG_TYPE, fileName, readMarkdownReference, STUDIO_FILE_DRAG_TYPE, STUDIO_MARKDOWN_DRAG_TYPE } from '../article-files.ts';
 import { dropHasFolder } from '../dropped-files.ts';
 
 /** What dropping files into the editor needs from the Studio around it. */
@@ -133,6 +133,15 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 					drop(view, event) {
 						const transfer = event.dataTransfer;
 						if (!transfer) return false;
+						// Blocks of what an AI said (the AI panel): their Markdown made blocks here, as pasted Markdown is.
+						const said = transfer.getData(STUDIO_MARKDOWN_DRAG_TYPE);
+						if (said) {
+							event.preventDefault();
+							const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? view.state.selection.from;
+							insertAt(view, at, [said]);
+							view.focus();
+							return true;
+						}
 						// From the drive: copied into the article first.
 						const fromDrive = transfer.getData(DRIVE_DRAG_TYPE);
 						if (fromDrive) {

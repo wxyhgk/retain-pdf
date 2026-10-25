@@ -53,6 +53,11 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', 'AI 写的新段落。');
 			return { stopReason: 'end_turn' };
 		}
+		// An answer of several blocks, to put in the article (dragged, or clicked).
+		if (said.startsWith('几块')) {
+			await words('agent_message_chunk', '能量和质量的关系：\n\n$$\nE = mc^2\n$$\n\n- 要点一\n- 要点二');
+			return { stopReason: 'end_turn' };
+		}
 		// What it was told, as it came (with what the Studio adds of where the author is).
 		if (said.startsWith('上下文')) {
 			await words('agent_message_chunk', `收到的是：\n\n~~~~~~text\n${said}\n~~~~~~`);

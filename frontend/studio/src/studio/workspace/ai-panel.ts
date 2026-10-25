@@ -12,6 +12,7 @@ import {
 	type ConversationItem,
 	type ConversationOption,
 } from '../api/client';
+import { STUDIO_MARKDOWN_DRAG_TYPE } from '../article-files';
 import { renderAiMarkdown } from './ai-markdown';
 import { createModelsSheet } from './ai-models-sheet';
 import { showContextMenu, type MenuItem } from './context-menu';
@@ -29,6 +30,8 @@ export type AiPanelHost = {
 	toast(message: string): void;
 	/** Runs a command in the 终端 tab (an account's login). */
 	runInTerminal(command: string): void;
+	/** Puts Markdown in the article open, where its caret is, as blocks; false when no article is open. */
+	insert(markdown: string): boolean;
 };
 
 type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
@@ -441,13 +444,14 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 
 	// The selection in the article, followed: a chip while there is one.
 	let lastSelected = false;
-	document.addEventListener('selectionchange', () => {
+	function followSelection(): void {
 		const selected = host.hasSelection();
 		if (selected === lastSelected) return;
 		lastSelected = selected;
 		if (selected) selectionLeftOut = false;
 		showContext();
-	});
+	}
+	document.addEventListener('selectionchange', followSelection);
 
 	// ——— What is shown around the transcript ———
 
@@ -554,8 +558,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 				break;
 			}
 			case 'message':
-				node = element('div', 'ai-message');
-				node.append(renderAiMarkdown(item.text));
+				node = drawMessage(item);
 				break;
 			case 'thought':
 				node = drawThought(item, old);
@@ -588,6 +591,54 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		node.dataset.item = item.id;
 		drawn.set(item.id, node);
 		return node;
+	}
+
+	/**
+	 * What the AI said, block by block as in an article: each with a handle at its left to drag it into the article
+	 * (or click, to put it where the caret is); under it, all of it put in, or copied as Markdown.
+	 */
+	function drawMessage(item: Extract<ConversationItem, { kind: 'message' }>): HTMLElement {
+		const node = element('div', 'ai-answer');
+		const words = element('div', 'ai-message');
+		words.append(renderAiMarkdown(item.text, { blocks: true }));
+		node.append(words);
+		for (const block of words.querySelectorAll<HTMLElement>(':scope > .ai-block[data-markdown]')) {
+			const markdown = block.dataset.markdown!;
+			const handle = element('button', 'ai-block-handle');
+			handle.type = 'button';
+			handle.draggable = true;
+			handle.title = '拖到文章里；点一下插入到光标处';
+			handle.setAttribute('aria-label', '插入这一块到文章');
+			handle.addEventListener('dragstart', (event) => {
+				if (!event.dataTransfer) return;
+				event.dataTransfer.setData(STUDIO_MARKDOWN_DRAG_TYPE, markdown);
+				event.dataTransfer.setData('text/plain', markdown);
+				event.dataTransfer.effectAllowed = 'copy';
+				event.dataTransfer.setDragImage(block, 0, 0);
+				block.classList.add('is-dragged');
+			});
+			handle.addEventListener('dragend', () => block.classList.remove('is-dragged'));
+			handle.addEventListener('click', () => insertInArticle(markdown));
+			block.prepend(handle);
+		}
+		if (item.text.trim()) {
+			const actions = element('div', 'ai-message-actions');
+			const insertAll = element('button', '', '插入到文章');
+			insertAll.type = 'button';
+			insertAll.addEventListener('click', () => insertInArticle(item.text.trim()));
+			const copy = element('button', '', '复制');
+			copy.type = 'button';
+			copy.addEventListener('click', () => {
+				navigator.clipboard.writeText(item.text.trim()).then(() => host.toast('已复制 Markdown'), () => host.toast('没能复制'));
+			});
+			actions.append(insertAll, copy);
+			node.append(actions);
+		}
+		return node;
+	}
+
+	function insertInArticle(markdown: string): void {
+		host.toast(host.insert(markdown) ? '已插入到文章' : '先打开一篇文章');
 	}
 
 	function drawThought(item: Extract<ConversationItem, { kind: 'thought' }>, old?: HTMLElement): HTMLElement {
@@ -795,6 +846,13 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 			article = next;
 			showSession();
 			showContext();
+		},
+		/**
+		 * The editor shown another article (after showArticle, which comes first): what was selected in the last one
+		 * gone, which WebKit tells no selectionchange of.
+		 */
+		articleShown(): void {
+			followSelection();
 		},
 		/** Puts `text` in the input, for the author to finish and send. */
 		ask(text: string): void {

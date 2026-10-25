@@ -11,6 +11,8 @@ import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 export const STUDIO_FILE_DRAG_TYPE = 'application/x-studio-file';
 /** What a file dragged from the drive (资料库) carries: its path there. */
 export const DRIVE_DRAG_TYPE = 'application/x-studio-drive';
+/** Blocks dragged from what an AI said in the AI panel: their Markdown, put in the article as it is. */
+export const STUDIO_MARKDOWN_DRAG_TYPE = 'application/x-studio-markdown';
 
 /** A plugin's block that shows a file of the article: its fence (when the extension is one), and its mark in the file list. */
 export type FileBlock = { fence: string | null; icon?: string; markdown?: (path: string) => string };

@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { editor, openStudio, removeArticle, resetFixture, writeArticle, writeFixtureFile } from './studio.ts';
+import { editor, openStudio, removeArticle, resetFixture, saveStatus, savedMarkdown, writeArticle, writeFixtureFile } from './studio.ts';
 
 // The AI tab: a coding agent spoken to over the Agent Client Protocol (a stand-in here:
 // tests/e2e/fake-agents/fake-acp.mjs), which thinks, says what it will do, asks leave to run a command, runs it,
@@ -215,4 +215,37 @@ test('what is said is told where the author is: the article open (followed as an
 	} finally {
 		removeArticle('other-note');
 	}
+});
+
+test('what the AI says is blocks: each dragged into the article, or clicked in where the caret is; all of it put in at once', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '几块');
+	const blocks = pane(page).locator('.ai-message .ai-block');
+	await expect(blocks).toHaveCount(3);
+	await expect(blocks.nth(1).locator('.ai-math-display')).toHaveCount(1);
+	// The formula dragged onto the last paragraph: it goes after it.
+	const formulas = editor(page).locator('.pm-display-math');
+	const before = await formulas.count();
+	await blocks.nth(1).hover();
+	await blocks.nth(1).locator('.ai-block-handle').dragTo(editor(page).locator('p', { hasText: '结尾段落' }));
+	await expect(formulas).toHaveCount(before + 1);
+	// The list clicked in, where the caret is: on a new line after that paragraph.
+	await editor(page).locator('p', { hasText: '结尾段落' }).click();
+	await page.keyboard.press('End');
+	await page.keyboard.press('Enter');
+	await blocks.nth(2).hover();
+	await blocks.nth(2).locator('.ai-block-handle').click();
+	await expect(editor(page).locator('li', { hasText: '要点二' })).toHaveCount(1);
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	const saved = savedMarkdown();
+	const at = (text: string) => saved.indexOf(text);
+	expect(at('结尾段落。')).toBeGreaterThan(-1);
+	expect(at('- 要点一\n- 要点二')).toBeGreaterThan(at('结尾段落。'));
+	expect(at('$$\nE = mc^2\n$$')).toBeGreaterThan(at('- 要点二'));
+
+	// All of it, from under the answer.
+	await pane(page).locator('.ai-message').hover();
+	await pane(page).getByRole('button', { name: '插入到文章' }).click();
+	await expect(editor(page)).toContainText('能量和质量的关系：');
 });

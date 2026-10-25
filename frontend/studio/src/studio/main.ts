@@ -200,6 +200,11 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 		sidePanel.show('terminal');
 		terminal.run(command);
 	},
+	insert(markdown) {
+		if (!session.slug) return false;
+		editor.insertMarkdown(markdown);
+		return true;
+	},
 });
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
@@ -344,6 +349,7 @@ const session = new ArticleSession(
 			if (again) editorScroll.scrollTop = scrollTop;
 			// The files it names, once it is shown (a book's take a while to read).
 			filePanel.sourceChanged();
+			aiPanel.articleShown();
 			return markdown;
 		},
 		review(article, body, from) {
