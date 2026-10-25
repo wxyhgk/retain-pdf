@@ -1,104 +1,81 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
-import { editor, openStudio, resetFixture, saveStatus } from './studio.ts';
+import { openStudio, resetFixture } from './studio.ts';
 
-// A conversation kept as a page (chats/), opened in the editor (问答为主): what was asked a bubble, what the AI
-// answered the page's own blocks, to edit as any page; the turn going on and the input under them. The AI is a
-// stand-in (fake-agents/fake-acp.mjs).
+// AI 问答, as Notion's: a conversation whole, in the middle; the AI tab's panel, wider, the same conversation. The
+// left column lists the conversations (chats/) in place of the pages. The AI is a stand-in (fake-agents/fake-acp.mjs).
 
-const composer = (page: import('@playwright/test').Page) => page.locator('#chat-composer');
+const view = (page: Page) => page.locator('#chat-view');
+const input = (page: Page) => view(page).locator('.ai-input');
 const chats = () => `${process.env.STUDIO_BLOG_DIR}-chats`;
+
+async function say(page: Page, text: string): Promise<void> {
+	await input(page).fill(text);
+	await input(page).press('Enter');
+}
 
 test.beforeEach(() => resetFixture());
 
-test('a conversation as a page: begun from AI 问答, each turn written on it as blocks, read only (its title renamed); there again once reloaded; deleted', async ({ page }) => {
+test('AI 问答: a conversation whole in the middle, listed on the left; there again once reloaded; 页面 back to the article; deleted', async ({ page }) => {
 	await openStudio(page);
-	await expect(composer(page)).toBeHidden();
-	await expect(page.locator('#chat-list')).toBeHidden();
-	// AI 问答: the latest conversation (a new one when there is none), the list of them in place of the pages.
+	await expect(view(page)).toBeHidden();
 	await page.getByRole('tab', { name: 'AI 问答' }).click();
-	await expect(composer(page)).toBeVisible();
+	await expect(view(page)).toBeVisible();
+	await expect(page.locator('.editor-panel')).toBeHidden();
 	await expect(page.locator('#article-list')).toBeHidden();
 	await expect(page.locator('#chat-list')).toBeVisible();
-	// ＋: a new one, to be spoken to.
+
+	// The latest conversation, or a new one: in the address once there.
+	const shown = () => new URL(page.url()).searchParams.get('chat');
+	await expect.poll(shown).toMatch(/^chat-\d{8}-\d{6}/u);
+	const first = shown();
+	// ＋: a new one, listed and in the address once begun.
 	const before = await page.locator('#chat-list .chat-row').count();
 	await page.getByRole('button', { name: '新对话页' }).click();
-	await expect(page.locator('#article-title-input')).toHaveValue('新对话');
+	await expect.poll(shown).not.toBe(first);
 	await expect(page.locator('#chat-list .chat-row')).toHaveCount(before + 1);
-	await expect(composer(page).locator('.ai-input')).toBeFocused();
-	const id = new URL(page.url()).searchParams.get('article')!;
-	expect(id).toMatch(/^chat-\d{8}-\d{6}/u);
-	await expect(page.locator('#chat-list .chat-row.active')).toHaveText(/新对话/u);
-	// No article's properties on it.
-	await expect(page.locator('.page-properties')).toBeHidden();
+	const id = shown()!;
+	await expect(page.locator('#chat-list .chat-row.active')).toHaveAttribute('data-chat', id);
 
-	await composer(page).locator('.ai-input').fill('几块');
-	await composer(page).locator('.ai-input').press('Enter');
-	// Once over, on the page: the question a bubble, the answer its blocks; gone from under it.
-	await expect(editor(page).locator('.note-ask-bubble')).toHaveText('几块');
-	await expect(editor(page).locator('.pm-display-math')).toHaveCount(1);
-	await expect(editor(page).locator('li', { hasText: '要点二' })).toHaveCount(1);
-	await expect(page.locator('#chat-live .ai-items > *')).toHaveCount(0);
-	// Titled as the conversation is, no longer 新对话.
-	await expect(page.locator('#article-title-input')).toHaveValue('几块');
-	await expect(page.locator('#chat-list .chat-row.active .chat-row-title')).toHaveText('几块');
-	await expect(page.locator('#review-bar')).toBeHidden();
+	// Drawn as the AI tab draws it: what was asked, the answer's blocks, a plugin's block as the editor draws it.
+	await say(page, '几块');
+	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText('几块');
+	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(3);
+	await say(page, '能量图');
+	await expect(view(page).locator('.ai-preview .note-energy')).toHaveCount(1);
+	// Kept: its record read as a page.
 	const file = join(chats(), id, 'index.md');
-	expect(readFileSync(file, 'utf8')).toContain('```ask\n几块\n```');
+	await expect.poll(() => (existsSync(file) ? readFileSync(file, 'utf8') : '')).toContain('```ask\n能量图\n```');
+	await expect(page.locator('#chat-list .chat-row.active .chat-row-title')).toHaveText('几块');
 
-	// A record of what was said: read, not typed in; the next turn comes after.
-	await expect(editor(page)).toHaveAttribute('contenteditable', 'false');
-	await editor(page).locator('li', { hasText: '要点一' }).click();
-	await page.keyboard.type('（我补的）');
-	await expect(editor(page)).not.toContainText('我补的');
-	await composer(page).locator('.ai-input').fill('接上了吗');
-	await composer(page).locator('.ai-input').press('Enter');
-	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
-	await expect(page.locator('#review-bar')).toBeHidden();
-	await expect.poll(() => readFileSync(file, 'utf8')).toMatch(/- 要点二\n\n```ask\n接上了吗\n```\n\n新的会话 fake-session-\d+\n$/u);
-	// Its title can be changed, as a conversation is renamed.
-	await page.locator('#article-title-input').fill('改过的标题');
-	await page.keyboard.press('ControlOrMeta+s');
-	await expect(saveStatus(page)).toHaveText('已保存');
-	await expect.poll(() => readFileSync(file, 'utf8')).toMatch(/title: ['"]?改过的标题/u);
-	await expect(page.locator('#chat-list .chat-row.active .chat-row-title')).toHaveText('改过的标题');
-
-	// Opened again: the page, its input, the list of conversations; the article after it editable again.
+	// Reloaded: the same conversation, as it was.
 	await page.reload();
-	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
-	await expect(composer(page)).toBeVisible();
+	await expect(view(page)).toBeVisible();
+	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText(['几块', '能量图']);
 	await expect(page.getByRole('tab', { name: 'AI 问答' })).toHaveAttribute('aria-selected', 'true');
 
-	// 页面: back to the article; AI 问答 again, to the conversation spoken in last.
+	// 页面: the article, its list; AI 问答 again: this conversation.
 	await page.getByRole('tab', { name: '页面' }).click();
+	await expect(view(page)).toBeHidden();
 	await expect(page.locator('#article-title-input')).toHaveValue('Studio 测试夹具');
-	await expect(editor(page)).toHaveAttribute('contenteditable', 'true');
-	await expect(composer(page)).toBeHidden();
 	await expect(page.locator('#article-list')).toBeVisible();
+	expect(new URL(page.url()).searchParams.get('chat')).toBeNull();
 	await page.getByRole('tab', { name: 'AI 问答' }).click();
-	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
-	// Another opened from the list, and this one again.
-	const others = page.locator('#chat-list .chat-row:not(.active)');
-	if (await others.count()) {
-		await others.first().click();
-		await expect(page.locator('#chat-list .chat-row.active')).not.toHaveAttribute('data-chat', id);
-	}
-	await page.locator(`#chat-list [data-chat="${id}"]`).click();
-	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
+	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText(['几块', '能量图']);
 
-	// Deleted from 对话: an article opened instead, its folder gone.
+	// Deleted from the list: another shown, its folder gone.
 	page.once('dialog', (dialog) => void dialog.accept());
-	await page.locator('#chat-list .chat-row.active').click({ button: 'right' });
+	await page.locator(`#chat-list [data-chat="${id}"]`).click({ button: 'right' });
 	await page.getByRole('menuitem', { name: '删除这个对话' }).click();
-	await expect(composer(page)).toBeHidden();
 	await expect(page.locator(`#chat-list [data-chat="${id}"]`)).toHaveCount(0);
+	await expect(view(page).locator('.ai-user .ai-bubble', { hasText: '能量图' })).toHaveCount(0);
 	expect(existsSync(join(chats(), id))).toBe(false);
 });
 
-test('⤢ in the AI tab: the conversation there opened as a page, what was said on it', async ({ page }) => {
+test('⤢ in the AI tab: the same conversation whole, in the middle; said there, it is in the AI tab too', async ({ page }) => {
 	await openStudio(page);
 	await page.locator('#side-tab-ai').click();
 	const side = page.locator('#side-ai');
@@ -106,23 +83,10 @@ test('⤢ in the AI tab: the conversation there opened as a page, what was said 
 	await side.locator('.ai-input').press('Enter');
 	await expect(side.locator('.ai-message .ai-block')).toHaveCount(3);
 	await side.getByRole('button', { name: '在页面中打开' }).click();
-	await expect(composer(page)).toBeVisible();
-	await expect(editor(page).locator('.note-ask-bubble')).toHaveText('几块 侧边');
+	await expect(view(page)).toBeVisible();
+	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText('几块 侧边');
+	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(3);
 	await expect(page.getByRole('tab', { name: 'AI 问答' })).toHaveAttribute('aria-selected', 'true');
-});
-
-test('a turn over with nothing said (only thought): said so, and 接着说 asks for it; it stays in sight once the turn is on the page', async ({ page }) => {
-	await openStudio(page);
-	await page.getByRole('tab', { name: 'AI 问答' }).click();
-	await page.getByRole('button', { name: '新对话页' }).click();
-	await expect(page.locator('#article-title-input')).toHaveValue('新对话');
-	await composer(page).locator('.ai-input').fill('只想不说');
-	await composer(page).locator('.ai-input').press('Enter');
-	await expect(editor(page).locator('.note-ask-bubble')).toHaveText('只想不说');
-	const notice = page.locator('#chat-live .ai-notice');
-	await expect(notice).toContainText('停下了，但没有说结论');
-	await notice.getByRole('button', { name: '接着说' }).click();
-	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['只想不说', '接着说：把你刚才的结论告诉我。']);
-	await expect(editor(page)).toContainText('结论是这样的。');
-	await expect(notice).toHaveCount(0);
+	await say(page, '接着说');
+	await expect(side.locator('.ai-message').last()).toHaveText('结论是这样的。');
 });

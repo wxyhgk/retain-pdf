@@ -19,13 +19,8 @@ export function resolveInside(root, ...segments) {
 	return target;
 }
 
-/** A conversation of the AI panel kept as a page (chat-store.mjs): `chat-20261025-153012`, `chat-20261025-153012-2`. */
-export const CHAT_SLUG_PATTERN = /^chat-\d{8}-\d{6}(-\d+)?$/u;
-
-export const isChatSlug = (slug) => typeof slug === 'string' && CHAT_SLUG_PATTERN.test(slug);
-
 /**
- * Where the conversations are kept: `chats/` beside `blog/` (or, for another folder of articles, as the browser
+ * Where the AI panel's conversations are kept (chat-store.mjs): `chats/` beside `blog/` (or, for another folder of articles, as the browser
  * tests' copy, the folder of that name with `-chats`).
  */
 export function chatsRootOf(blogRoot) {
@@ -33,10 +28,9 @@ export function chatsRootOf(blogRoot) {
 	return basename(root) === 'blog' ? resolve(dirname(root), 'chats') : `${root}-chats`;
 }
 
-/** An article's files; a conversation's (chat-…) are in chats/, opened, saved and kept in versions as an article's are. */
 export function articleBundlePaths(blogRoot, slug) {
 	const safeSlug = assertArticleSlug(slug);
-	const directory = isChatSlug(safeSlug) ? resolveInside(chatsRootOf(blogRoot), safeSlug) : resolveInside(blogRoot, safeSlug);
+	const directory = resolveInside(blogRoot, safeSlug);
 	return Object.freeze({
 		directory,
 		markdown: resolveInside(directory, 'index.md'),

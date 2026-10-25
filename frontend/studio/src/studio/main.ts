@@ -73,7 +73,7 @@ import { createQuickFind } from './workspace/quick-find';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
 import { chosenAI, createAiPanel } from './workspace/ai-panel';
-import { createChatList, isChatSlug } from './workspace/chat-list';
+import { createChatList } from './workspace/chat-list';
 import { createInlineAi } from './workspace/inline-ai';
 import { createTerminalPane } from './workspace/terminal';
 import { createAgentsDialog } from './workspace/agents-dialog';
@@ -206,16 +206,13 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 		editor.insertMarkdown(markdown);
 		return true;
 	},
-	// ⤢: the conversation in the editor, as a page (AI 问答).
-	openAsPage(id) {
-		showView('editor');
-		void session.open(id).then(() => chatList.refresh());
-	},
+	// ⤢: the conversation whole, in the middle (AI 问答).
+	openAsPage: (id) => openChat(id),
 });
-// A conversation kept as a page (chats/), opened in the editor (问答为主): under its blocks, the turn going on and
-// the input; each turn, once over, written at the end of the page and shown there.
-const chatComposer = createAiPanel(
-	shell.querySelector<HTMLElement>('#chat-composer')!,
+// AI 问答, as Notion's: a conversation whole, in the middle; the same panel as the AI tab's, wider. The left column
+// lists the conversations (chats/) in place of the pages.
+const chatView = createAiPanel(
+	shell.querySelector<HTMLElement>('#chat-view')!,
 	{
 		article: () => null,
 		articles: () => articleList.articles().map((entry) => ({ slug: entry.slug, title: entry.title || entry.slug })),
@@ -227,64 +224,70 @@ const chatComposer = createAiPanel(
 			terminal.run(command);
 		},
 		insert: () => false,
-		async pageWritten(id) {
+		begun(id) {
+			chatList.select(id);
+			showChatAddress(id);
 			void chatList.refresh();
-			if (session.slug === id) await session.checkDisk();
 		},
+		changed: () => void chatList.refresh(),
 	},
-	{ page: true, live: shell.querySelector<HTMLElement>('#chat-live')! },
+	{ full: true },
 );
 const chatList = createChatList(shell.querySelector<HTMLElement>('#chat-list')!, {
-	open(id) {
-		showView('editor');
-		chatList.select(id);
-		void session.open(id);
-	},
+	open: (id) => openChat(id),
 	removed(id) {
-		if (session.slug === id) void openFromList(articleList.articles()[0]?.slug, true);
+		if (chatView.current() === id) void openLatestChat();
 	},
 	toast: (message) => showToast(message),
 });
 void chatList.refresh();
 
-/** A new conversation, as a page, opened. */
-async function newChatPage(): Promise<void> {
-	const id = await chatComposer.newChat();
-	if (!id) return;
-	showView('editor');
-	await session.open(id);
-	void chatList.refresh();
-	chatComposer.focus();
+/** The conversation shown in the address (?chat=…), to be shown again on reload. */
+function showChatAddress(id: string | null): void {
+	const url = new URL(window.location.href);
+	if (id) url.searchParams.set('chat', id);
+	else url.searchParams.delete('chat');
+	history.replaceState(null, '', url);
 }
-shell.querySelector<HTMLButtonElement>('#new-chat')!.addEventListener('click', () => void newChatPage());
 
-// The left column, as Notion's: the pages, or the AI conversations (AI 问答). Each opens what it lists: the article
-// open last, or the latest conversation (a new one when there is none); opening one shows its list.
+/** AI 问答 with the conversation `id`. */
+function openChat(id: string): void {
+	showView('chat');
+	chatList.select(id);
+	showChatAddress(id);
+	void chatView.open(id).then(() => chatView.focus());
+}
+
+/** AI 问答 with a new conversation (listed and in the address once begun: `begun`). */
+function newChat(): void {
+	showView('chat');
+	chatList.select(null);
+	void chatView.newChat();
+	chatView.focus();
+}
+shell.querySelector<HTMLButtonElement>('#new-chat')!.addEventListener('click', () => newChat());
+
+/** AI 问答 with the conversation spoken in last; a new one when there is none. */
+async function openLatestChat(): Promise<void> {
+	const latest = await chatList.latest();
+	if (latest) openChat(latest);
+	else newChat();
+}
+
+// The left column, as Notion's: the pages, or the AI conversations (AI 问答), as the middle shows an article or a
+// conversation (showView). 页面 goes back to the article; AI 问答 to the conversation shown last, or the latest.
 const sidebarPages = shell.querySelector<HTMLButtonElement>('#sidebar-pages')!;
 const sidebarChats = shell.querySelector<HTMLButtonElement>('#sidebar-chats')!;
-/** The article open last, to go back to from the conversations. */
-let lastArticle: string | null = null;
 function showSidebar(chats: boolean): void {
 	shell.classList.toggle('sidebar-chats', chats);
 	sidebarPages.setAttribute('aria-selected', String(!chats));
 	sidebarChats.setAttribute('aria-selected', String(chats));
 }
-sidebarPages.addEventListener('click', () => {
-	showSidebar(false);
-	if (!isChatSlug(session.slug)) return;
-	const back = lastArticle ?? articleList.articles()[0]?.slug;
-	if (back) {
-		showView('editor');
-		void session.open(back);
-	}
-});
-sidebarChats.addEventListener('click', async () => {
-	showSidebar(true);
-	if (isChatSlug(session.slug)) return;
-	const latest = await chatList.latest();
-	if (!latest) return void newChatPage();
-	showView('editor');
-	void session.open(latest);
+sidebarPages.addEventListener('click', () => showView('editor'));
+sidebarChats.addEventListener('click', () => {
+	const shown = chatView.current();
+	if (shown) openChat(shown);
+	else void openLatestChat();
 });
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
@@ -438,13 +441,6 @@ const session = new ArticleSession(
 			return editor.review(body);
 		},
 		settle: () => editor.settle(),
-		// A conversation's page: its turns, written at its end, come in as they are.
-		appended(slug, markdown) {
-			if (!isChatSlug(slug)) return null;
-			const body = editor.appendMarkdown(markdown);
-			if (body !== null) requestAnimationFrame(() => editorScroll.scrollTo({ top: editorScroll.scrollHeight, behavior: 'smooth' }));
-			return body;
-		},
 		confirm: (message) => window.confirm(message),
 		toast: (message) => showToast(message),
 		opened({ article, properties: shown }) {
@@ -459,18 +455,7 @@ const session = new ArticleSession(
 			filesListed = filePanel.show(article.slug);
 			backlinksShown = backlinks.show(article.slug);
 			terminal.showArticle(article.slug);
-			// A conversation's page: its input under it; the AI tab is not told of it as an article.
-			const chat = isChatSlug(article.slug);
-			shell.classList.toggle('is-chat', chat);
-			showSidebar(chat);
-			if (!chat) lastArticle = article.slug;
-			chatList.select(chat ? article.slug : null);
-			shell.querySelector<HTMLElement>('#chat-composer')!.hidden = !chat;
-			shell.querySelector<HTMLElement>('#chat-live')!.hidden = !chat;
-			// A conversation's page is the record of what was said: read, copied, taken into notes; not typed in.
-			editor.setReadonly(chat);
-			void chatComposer.showChat(chat ? article.slug : null);
-			aiPanel.showArticle(chat ? null : { slug: article.slug, title: openTitle });
+			aiPanel.showArticle({ slug: article.slug, title: openTitle });
 			void loadLibrary(article.slug);
 			const url = new URL(window.location.href);
 			url.searchParams.set('article', article.slug);
@@ -489,7 +474,6 @@ const session = new ArticleSession(
 		},
 		saved(slug, saved, problems) {
 			articleList.saved(slug, saved);
-			if (isChatSlug(slug)) void chatList.refresh();
 			topBar.edited(Date.now());
 			properties.showProblems(problems);
 			snapshot.changed();
@@ -532,7 +516,7 @@ function useArticleContext(article: ArticlePayload): void {
 async function openFromList(slug?: string, discard = false): Promise<void> {
 	const articles = await articleList.load();
 	const requested = slug ?? new URL(window.location.href).searchParams.get('article') ?? undefined;
-	const initial = articles.some((article) => article.slug === requested) || isChatSlug(requested) ? requested : articles[0]?.slug;
+	const initial = articles.some((article) => article.slug === requested) ? requested : articles[0]?.slug;
 	if (initial) await session.open(initial, { discard });
 	else topBar.showEmpty();
 }
@@ -698,11 +682,6 @@ function selectionRect(): DOMRect | null {
  */
 async function askAI(): Promise<void> {
 	const slug = session.slug;
-	// A conversation's page is not rewritten: ask there, in its input.
-	if (isChatSlug(slug)) {
-		chatComposer.focus();
-		return;
-	}
 	const marked = slug ? editor.markSelection() : null;
 	if (!slug || !marked) return;
 	const anchor = selectionRect();
@@ -1051,10 +1030,13 @@ const articleTable = createArticleTable(tableView, {
 });
 
 /** The article in the middle, the drive or the table of all articles (the article stays open behind them). */
-function showView(view: 'editor' | 'drive' | 'table', folder?: string): void {
+function showView(view: 'editor' | 'drive' | 'table' | 'chat', folder?: string): void {
 	shell.dataset.view = view;
 	driveView.hidden = view !== 'drive';
 	tableView.hidden = view !== 'table';
+	shell.querySelector<HTMLElement>('#chat-view')!.hidden = view !== 'chat';
+	showSidebar(view === 'chat');
+	if (view !== 'chat') showChatAddress(null);
 	driveButton.setAttribute('aria-pressed', String(view === 'drive'));
 	tableButton.setAttribute('aria-pressed', String(view === 'table'));
 	const url = new URL(window.location.href);
@@ -1073,8 +1055,10 @@ tableButton.addEventListener('click', () => showView(shell.dataset.view === 'tab
 {
 	const address = new URL(window.location.href).searchParams;
 	const folder = address.get('drive');
+	const chat = address.get('chat');
 	if (folder !== null) showView('drive', folder);
 	else if (address.has('pages')) showView('table');
+	else if (chat) openChat(chat);
 }
 
 const trashView = createTrashView(document.querySelector<HTMLDialogElement>('#trash-dialog')!, {

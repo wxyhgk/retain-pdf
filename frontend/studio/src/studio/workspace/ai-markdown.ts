@@ -5,9 +5,11 @@ import { unified } from 'unified';
 import { articleParser } from '@blog/markdown/syntax.mjs';
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
 
+import { codeBlockPreview } from '../plugins';
+
 /**
  * What an AI says in the AI panel, drawn: its Markdown read as articles are (GFM, formulas), formulas drawn with
- * KaTeX as in the editor. Raw HTML in it is dropped, and links go only to the web or within the page, opened
+ * KaTeX as in the editor, the plugins' blocks (an energy diagram, a molecule) as they draw them there. Raw HTML in it is dropped, and links go only to the web or within the page, opened
  * elsewhere: it is text from a model, which may have read anything.
  */
 
@@ -71,6 +73,16 @@ function drawn(tree: Tree): DocumentFragment {
 			holder.innerHTML = drawn.html;
 		}
 		(display && code.parentElement?.tagName === 'PRE' ? code.parentElement : code).replaceWith(holder);
+	}
+	// A plugin's block (```energy, ```smiles, ```widget…) drawn as the editor draws it.
+	for (const code of fragment.querySelectorAll('pre > code[class*="language-"]')) {
+		const language = /language-([\w+-]+)/u.exec(code.className)?.[1];
+		const drawn = language ? codeBlockPreview(language, (code.textContent ?? '').replace(/\n$/u, '')) : null;
+		if (!drawn) continue;
+		const holder = document.createElement('div');
+		holder.className = 'ai-preview';
+		holder.append(drawn);
+		code.parentElement!.replaceWith(holder);
 	}
 	return fragment;
 }

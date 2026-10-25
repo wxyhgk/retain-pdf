@@ -117,13 +117,6 @@ export type StudioEditor = {
 	setLibrary(library: Map<string, BibEntry> | null): void;
 	/** Puts Markdown in where the caret is, as blocks of their own. */
 	insertMarkdown(markdown: string): void;
-	/**
-	 * Adds Markdown at the end of the body shown, as blocks (a turn of a conversation, written on its page), what is
-	 * there left as it is; the body's Markdown after it. Null with nothing shown.
-	 */
-	appendMarkdown(markdown: string): string | null;
-	/** Shown only, not typed in (a conversation's page: a record of what was said), or editable again. */
-	setReadonly(readonly: boolean): void;
 	/** The ProseMirror view of the article shown; null before one is. */
 	view(): EditorView | null;
 	/** The blocks the selection is in shown as being worked on by an AI (Alt+Enter), as `id`, till `unmarkInstructing`. */
@@ -235,8 +228,6 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	let shownCount = 0;
 	/** The plugins' blocks and commands the editor was made with: made again only when they change. */
 	let madeWith: { blocks: readonly unknown[]; commands: readonly unknown[] } | null = null;
-	/** Whether what is shown is only read (setReadonly), for the editors made after too. */
-	let readonly = false;
 	/** The review under way: what to call once every change is decided. */
 	let review: ((markdown: string) => void) | null = null;
 	/** The body as last reported, or as mounted. */
@@ -488,7 +479,6 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			listener.updated(() => report());
 		});
 		await crepe.create();
-		crepe.setReadonly(readonly);
 		madeWith = { blocks, commands };
 	}
 
@@ -705,23 +695,6 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		hasSelection: () => crepe?.editor.action((ctx) => !ctx.get(editorViewCtx).state.selection.empty) ?? false,
 		insertMarkdown(markdown) {
 			crepe?.editor.action(insert(markdown));
-		},
-		setReadonly(value) {
-			readonly = value;
-			crepe?.setReadonly(value);
-		},
-		appendMarkdown(markdown) {
-			if (!crepe || mounting) return null;
-			crepe.editor.action((ctx) => {
-				const view = ctx.get(editorViewCtx);
-				const blocks = ctx.get(parserCtx)(markdown).content;
-				const { doc } = view.state;
-				// An empty paragraph left at the end (as a new page has) is where they go.
-				const last = doc.lastChild;
-				const from = last?.type.name === 'paragraph' && last.content.size === 0 ? doc.content.size - last.nodeSize : doc.content.size;
-				view.dispatch(view.state.tr.replaceWith(from, doc.content.size, blocks).setMeta('addToHistory', false));
-			});
-			return markdownOf(crepe);
 		},
 		view() {
 			if (!crepe || mounting) return null;

@@ -226,44 +226,6 @@ test('a change on disk is reviewed when nothing is unsaved; accepted, it stays a
 	assert.deepEqual(api.kept, [[SOURCE, 'before-change']]);
 });
 
-test('blocks written at the end on disk (a conversation’s page, its turns) are added unreviewed; edits not yet saved are kept', async () => {
-	const page = fakeHost();
-	let shown = body(SOURCE);
-	const added: string[] = [];
-	page.host.appended = (_slug, markdown) => {
-		added.push(markdown);
-		shown = `${shown.trimEnd()}\n\n${markdown}\n`;
-		return shown;
-	};
-	const { session, api } = await opened(fakeApi(), page);
-	api.write(`${SOURCE}\n\`\`\`ask\n问\n\`\`\`\n\n答。\n`);
-	session.changedOnDisk(['index.md']);
-	await settle();
-	assert.deepEqual(added, ['```ask\n问\n```\n\n答。']);
-	assert.equal(page.reviews.length, 0);
-	assert.deepEqual(api.kept, []);
-	assert.equal(session.current.dirty, false);
-
-	// Typed, its save meeting the turn written meanwhile: both are there.
-	const release = api.holdSaves();
-	shown = shown.replace('第二段。', '我改的。');
-	session.editBody(shown);
-	await settle(10);
-	api.write(`${api.disk.source.trimEnd()}\n\n下一轮的回答。\n`);
-	release();
-	await settle(80);
-	assert.deepEqual(added.at(-1), '下一轮的回答。');
-	assert.equal(page.reviews.length, 0);
-	assert.match(api.disk.source, /我改的。[\s\S]*答。\n\n下一轮的回答。\n$/u);
-	assert.equal(page.states.at(-1), '已保存');
-
-	// Anything else changed on disk is reviewed, as on any page.
-	api.write(api.disk.source.replace('我改的。', '别处改的。'));
-	session.changedOnDisk(['index.md']);
-	await settle();
-	assert.equal(page.reviews.length, 1);
-});
-
 test('what is rejected in review is saved back over the change on disk', async () => {
 	// The author rejects every change: the editor keeps what it showed.
 	const { session, api } = await opened(fakeApi(), fakeHost([], (_body, shown) => shown));

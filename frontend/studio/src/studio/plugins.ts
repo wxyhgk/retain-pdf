@@ -119,6 +119,19 @@ export async function pluginBlocks() {
 	return studioBlocks(studioPlugins);
 }
 
+/**
+ * A code block in `language` drawn as the plugin that knows it draws it in the editor (an energy diagram, a molecule,
+ * a widget's frame); null when none does, or before they have started.
+ */
+export function codeBlockPreview(language: string, content: string): HTMLElement | null {
+	if (!started || !studioPlugins.get('blocks')) return null;
+	for (const block of studioBlocks(studioPlugins)) {
+		const shown = block.codeBlock?.preview?.(language, content, '');
+		if (shown) return shown;
+	}
+	return null;
+}
+
 /** The plugin blocks that show files of the article with this extension (their `files`); none before they have started. */
 function blocksForFile(extension: string) {
 	const blocks = started ? (studioPlugins.get('blocks') as typeof studioPlugins.blocks | undefined) : undefined;

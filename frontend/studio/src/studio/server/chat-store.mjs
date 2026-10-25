@@ -7,9 +7,9 @@ import { atomicWriteText } from './atomic-write.mjs';
 /**
  * The AI panel's conversations kept, each a folder of `chats/` (beside blog/, never published, kept out of git):
  *
- * - `index.md`: a page, opened in the editor as an article is (its id its slug: bundle-paths.mjs): what the author
- *   said in an ` ```ask ` block, the AI's answers as they came, its Markdown blocks (formulas, molecules, code…) as an
- *   article's. Each turn is added at its end once it is over; the rest is the author's, to edit as any page;
+ * - `index.md`: what was said, to read as a page (YAML frontmatter as an article's draft): what the author said in an
+ *   ` ```ask ` block, the AI's answers as they came, their Markdown blocks (formulas, molecules, code…) as an
+ *   article's. Each turn is added at its end once it is over;
  * - `ai/conversation.json`: all of it (its thinking, the tools it called, leave asked), the agent it was, which
  *   session of the agent's (to go on with it), and the last item put on the page (`pageThrough`).
  *
@@ -47,7 +47,7 @@ export class ChatStore {
 		} catch {
 			return [];
 		}
-		const read = await Promise.all(names.map((id) => this.read(id).then((record) => ({ ...record, title: this.pageTitle(id) ?? record.title }), () => null)));
+		const read = await Promise.all(names.map((id) => this.read(id).catch(() => null)));
 		return read.filter(Boolean).sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
 	}
 
@@ -100,18 +100,6 @@ export class ChatStore {
 	async remove(id) {
 		if (!isId(id)) throw Object.assign(new Error('没有这个对话'), { statusCode: 404 });
 		await rm(join(this.root, id), { recursive: true, force: true });
-	}
-
-	/** The title on a conversation's page (the author may rename it there); null without a page. */
-	pageTitle(id) {
-		try {
-			const title = /^---\n(?:[^\n]*\n)*?title: (.*)\n/u.exec(readFileSync(this.page(id), 'utf8'))?.[1]?.trim();
-			if (!title) return null;
-			if (/^["']/u.test(title)) return title.startsWith('"') ? JSON.parse(title) : title.slice(1, -1).replaceAll("''", "'");
-			return title;
-		} catch {
-			return null;
-		}
 	}
 
 	/** Where a conversation is written as a page. */

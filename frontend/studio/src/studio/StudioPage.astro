@@ -76,7 +76,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<header class="studio-bar">
 					<div class="document-breadcrumb">
 						<button id="toggle-sidebar" type="button" aria-label="收起侧边栏" aria-pressed="false">◧</button>
-						<span class="breadcrumb-workspace">{SITE_TITLE}</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb-title">选择一篇文章</strong><strong class="breadcrumb-drive">资料库</strong><strong class="breadcrumb-table">全部文章</strong>
+						<span class="breadcrumb-workspace">{SITE_TITLE}</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb-title">选择一篇文章</strong><strong class="breadcrumb-drive">资料库</strong><strong class="breadcrumb-table">全部文章</strong><strong class="breadcrumb-chat">AI 问答</strong>
 					</div>
 					<div class="studio-actions">
 						<span id="edited-at" class="edited-at"></span>
@@ -141,11 +141,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 						</div>
 					</header>
 					<div id="crepe-editor" class="crepe-host" aria-label="文章编辑器"></div>
-					<!-- On a conversation's page: the turn going on, right after its last block (ai-panel.ts). -->
-					<div id="chat-live" class="ai-pane chat-live" hidden></div>
 					</div>
-					<!-- On a conversation's page: the turn going on and the input (ai-panel.ts, as a page). -->
-					<div id="chat-composer" class="ai-pane chat-composer" aria-label="对 AI 说" hidden></div>
 					<nav id="editor-outline" class="outline-rail" aria-label="文章目录" hidden>
 						<div class="outline-pop"><ol></ol></div>
 						<div class="outline-marks" aria-hidden="true"></div>
@@ -153,6 +149,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				</section>
 				<section id="drive-view" class="drive-page" aria-label="资料库" hidden></section>
 				<section id="table-view" class="table-page" aria-label="全部文章" hidden></section>
+				<!-- AI 问答: a conversation whole, the AI tab's panel in the middle (ai-panel.ts, full). -->
+				<section id="chat-view" class="ai-pane chat-view" aria-label="AI 问答" hidden></section>
 			</section>
 
 			<aside id="side-panel" class="side-panel" aria-label="AI、文件与终端">
@@ -394,16 +392,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	#chat-list :global(.chat-row-title) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	#chat-list :global(.chat-row-when) { flex: none; color: rgb(var(--gray)); font-size: 11px; }
 	#chat-list :global(.chat-list-empty) { margin: 2px 8px 6px; color: rgb(var(--gray)); font-size: 11px; line-height: 1.5; }
-	/* A conversation's page (问答为主): its title and blocks, the input under them; no article's properties. */
-	.chat-composer { flex: none; }
-	.chat-composer[hidden] { display: none; }
-	.studio-shell.is-chat #open-article, .studio-shell.is-chat .page-properties, .studio-shell.is-chat .page-head-actions, .studio-shell.is-chat #page-cover, .studio-shell.is-chat #page-icon, .studio-shell.is-chat #property-error { display: none; }
-	.studio-shell.is-chat :global(.crepe-host .milkdown .ProseMirror) { min-height: 0; padding-bottom: 0; }
-	.studio-shell.is-chat .crepe-host, .studio-shell.is-chat :global(.crepe-host .milkdown) { min-height: 0; }
-	/* The empty line an editor keeps at its end: on a page only read, nothing to type there, and the turn going on comes right after the last block. */
-	.studio-shell.is-chat :global(.crepe-host .milkdown .ProseMirror > p:last-child:has(> br.ProseMirror-trailingBreak:only-child)) { display: none; }
-	.chat-live { padding-bottom: 72px; }
-	.chat-live[hidden] { display: none; }
+	.chat-view { flex: 1; min-height: 0; }
+	.chat-view[hidden] { display: none; }
 	.plugin-commands { display: grid; gap: 2px; margin-top: -5px; padding: 0 7px 9px; }
 	.plugin-commands[hidden] { display: none; }
 	.plugin-commands :global(button) { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
@@ -482,10 +472,10 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* The drive in the middle, the article kept open behind it; the bar keeps only the side panel's button. */
 	.drive-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; }
 	.drive-page[hidden] { display: none; }
-	.studio-shell:is([data-view='drive'], [data-view='table']) .editor-panel { display: none; }
-	.studio-shell:is([data-view='drive'], [data-view='table']) .studio-actions > :not(#toggle-side-panel) { display: none; }
-	.breadcrumb-drive, .breadcrumb-table, .studio-shell:is([data-view='drive'], [data-view='table']) #breadcrumb-title { display: none; }
-	.studio-shell[data-view='drive'] .breadcrumb-drive, .studio-shell[data-view='table'] .breadcrumb-table { display: inline; }
+	.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat']) .editor-panel { display: none; }
+	.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat']) .studio-actions > :not(#toggle-side-panel) { display: none; }
+	.breadcrumb-drive, .breadcrumb-table, .breadcrumb-chat, .studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat']) #breadcrumb-title { display: none; }
+	.studio-shell[data-view='drive'] .breadcrumb-drive, .studio-shell[data-view='table'] .breadcrumb-table, .studio-shell[data-view='chat'] .breadcrumb-chat { display: inline; }
 	#open-drive[aria-pressed='true'], #open-table[aria-pressed='true'] { background: var(--surface-hover); font-weight: 600; }
 	/*
 	 * Scrollbars: thin, a rounded gray thumb on no track, darker under the pointer. The system's

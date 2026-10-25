@@ -34,10 +34,12 @@ export type AiPanelHost = {
 	runInTerminal(command: string): void;
 	/** Puts Markdown in the article open, where its caret is, as blocks; false when no article is open. */
 	insert(markdown: string): boolean;
-	/** On a conversation's page (`page`): a turn was written on it; resolves once the editor shows it. */
-	pageWritten?(id: string): Promise<void>;
-	/** Opens the conversation `id` as a page in the editor (问答为主). */
+	/** Opens the conversation `id` whole, in the middle (AI 问答). */
 	openAsPage?(id: string): void;
+	/** Whole (`full`): a conversation was begun here (＋, another AI chosen), to be listed and in the address. */
+	begun?(id: string): void;
+	/** Whole: the conversation shown was given a title, or spoken in (listed anew). */
+	changed?(id: string): void;
 };
 
 type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
@@ -111,7 +113,7 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', 
  * comes back as a change on disk, to look over as any other. Under the input: which AI, and its options (who
  * decides, model, effort). A conversation goes on in the article it began in; ＋ begins another.
  */
-export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = false, live }: { page?: boolean; live?: HTMLElement } = {}) {
+export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { full = false }: { full?: boolean } = {}) {
 	const toolbar = element('header', 'pane-toolbar ai-toolbar');
 	const title = element('span', 'ai-title', '新对话');
 	const where = element('span', 'ai-where');
@@ -193,22 +195,16 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 			host.toast(name ? `AI 面板的 ${agent === 'pi' ? 'pi' : 'Claude Code'} 改用「${name}」` : '已保存');
 		},
 	});
-	// On a conversation's page (问答为主), under the editor: what was said is the page's blocks; here, the turn going
-	// on and the input. The conversation is the page's; the AI, the one it began with.
-	if (page) {
-		pane.classList.add('is-page');
-		agentSelect.hidden = true;
-		// The turn going on right after the page's last block (`live`), drawn as the editor draws: once written on the
-		// page, the editor's blocks take its place where it was.
-		if (live) {
-			live.classList.add('ai-live');
-			live.replaceChildren(transcript);
-			pane.replaceChildren(sheet.element, composer);
-		} else {
-			pane.replaceChildren(sheet.element, transcript, composer);
-		}
-	} else {
-		pane.replaceChildren(toolbar, sheet.element, transcript, composer);
+	pane.replaceChildren(toolbar, sheet.element, transcript, composer);
+	// Whole, in the middle (AI 问答, as Notion's): the same conversation as in the AI tab, wider. Which one is shown is
+	// chosen in the left column (its list, ＋), the article open is not told of.
+	if (full) {
+		pane.classList.add('is-full');
+		historyButton.hidden = true;
+		newButton.hidden = true;
+		pageButton.hidden = true;
+		emptyHint.textContent = '它能读你的文章和资料库、运行命令、算东西；回答里的块可以复制进笔记。';
+		suggestions.hidden = true;
 	}
 
 	/** 模型和账号 in place of the conversation, or the conversation again. */
@@ -226,7 +222,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 	let starting: Promise<Conversation | null> | null = null;
 	/** The AIs and conversations read (once; again after a failure): what is said waits for it. */
 	let loading: Promise<void> | null = null;
-	/** On a page: its conversation being found, to be followed (showChat). */
+	/** Whole: the conversation chosen being found, to be followed (open): what is said waits for it. */
 	let showing: Promise<void> = Promise.resolve();
 	let article: { slug: string; title: string } | null = null;
 	/** The article left out of what is told (its × clicked), till another is opened. */
@@ -253,6 +249,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 				say('没有能在面板里用的 AI：在「AI 助手」设置里给 Claude 或 Codex 配上 ACP 命令');
 				return;
 			}
+			// Whole, the one shown is chosen around it (open, newChat).
+			if (full) return;
 			// The one left open, kept in chats/ across restarts.
 			const kept = known.conversations.find((entry) => entry.id === remembered(CONVERSATION_KEY));
 			// Spoken to while the list was read: that conversation (begun then) is the one.
@@ -270,11 +268,13 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		const agent = agentSelect.value;
 		follow(null);
 		say(`正在启动 ${agents.find((entry) => entry.id === agent)?.name ?? 'AI'}…`);
-		const started = startConversation(agent).then(chosenAgain).then(
+		// Whole, it is listed (AI 问答) from the start.
+		const started = startConversation(agent, { page: full }).then(chosenAgain).then(
 			(made) => {
 				if (starting === started) {
 					starting = null;
 					follow(made);
+					if (full) host.begun?.(made.id);
 				}
 				return made;
 			},
@@ -315,7 +315,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		items = [];
 		drawn.clear();
 		list.replaceChildren();
-		if (!page) remember(CONVERSATION_KEY, next?.id ?? null);
+		if (!full) remember(CONVERSATION_KEY, next?.id ?? null);
 		showSession();
 		if (next) unfollow = followConversation(next.id, receive);
 	}
@@ -326,13 +326,12 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 				conversation = event.session;
 				items = [...event.items];
 				drawn.clear();
-				list.replaceChildren(...items.filter(going).map((item) => draw(item)));
+				list.replaceChildren(...items.map((item) => draw(item)));
 				break;
 			case 'item': {
 				const at = items.findIndex((entry) => entry.id === event.item.id);
 				if (at >= 0) items[at] = event.item;
 				else items.push(event.item);
-				if (!going(event.item)) break;
 				const old = drawn.get(event.item.id);
 				const next = draw(event.item, old);
 				if (!old) list.append(next);
@@ -348,36 +347,15 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 				break;
 			}
 			case 'session': {
-				const before = conversation?.pageThrough;
+				const before = conversation;
 				conversation = event.session;
-				if (page && conversation.pageThrough !== before) void written(conversation.id);
+				if (full && before?.id === conversation.id && (before.title !== conversation.title || before.updated !== conversation.updated)) host.changed?.(conversation.id);
 				break;
 			}
 		}
 		thoughtsOver();
 		showSession();
 		keepAtBottom();
-	}
-
-	/** Whether `item` is drawn here: on a page, those not yet written on it (the turn going on). */
-	function going(item: ConversationItem): boolean {
-		if (!page || !conversation?.pageThrough) return true;
-		const at = items.indexOf(item);
-		// How the last turn ended (stopped, failed, nothing said) stays in sight till something else is said.
-		if (['notice', 'error', 'stop'].includes(item.kind) && !items.slice(at + 1).some((entry) => entry.kind === 'user')) return true;
-		const through = items.findIndex((entry) => entry.id === conversation!.pageThrough);
-		return at > through;
-	}
-
-	/** A turn written on the page: once the editor shows it, taken from here. */
-	async function written(id: string): Promise<void> {
-		await host.pageWritten?.(id).catch(() => {});
-		if (conversation?.id !== id) return;
-		for (const item of items) {
-			if (going(item)) continue;
-			drawn.get(item.id)?.remove();
-			drawn.delete(item.id);
-		}
 	}
 
 	/** A thought drawn as going on (思考中…) once something came after it, or the turn is over: drawn again as done. */
@@ -409,12 +387,12 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		const text = input.value.trim();
 		if (!text) return;
 		if (conversation?.state === 'running') return;
-		// Said before the AIs were read (the tab just opened), or before a page's conversation is followed: that first.
-		await (page ? showing : load());
+		// Said before the AIs were read (the tab just opened), or before the conversation chosen is followed: that first.
+		await load();
+		await showing;
 		let target = conversation;
-		// One over goes on (its agent started again), unless nothing was said in it; a page's is the page's.
-		if (page && !target) return;
-		if (!target || (!page && (target.state === 'closed' || target.state === 'failed') && !items.length)) target = await (starting ?? begin());
+		// One over goes on (its agent started again), unless nothing was said in it.
+		if (!target || ((target.state === 'closed' || target.state === 'failed') && !items.length)) target = await (starting ?? begin());
 		else if (starting) target = await starting;
 		if (!target) return;
 		const open = article && leftOut !== article.slug ? article : null;
@@ -556,7 +534,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		title.textContent = conversation?.title || '新对话';
 		title.title = title.textContent;
 		where.textContent = conversation?.service ?? '';
-		empty.hidden = page || items.length > 0;
+		empty.hidden = items.length > 0;
 		send.textContent = running ? '■' : '↑';
 		send.title = running ? '停下' : '发送（Enter；换行用 Shift+Enter）';
 		send.setAttribute('aria-label', running ? '停下' : '发送');
@@ -615,16 +593,13 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		return select;
 	}
 
-	/** What scrolls the turn going on: the transcript; on a page, the page (the editor's). */
-	const scroller = (live?.closest<HTMLElement>('.editor-scroll') ?? transcript);
-
 	function keepAtBottom(): void {
-		if (scroller.dataset.away === 'true') return;
-		scroller.scrollTop = scroller.scrollHeight;
+		if (transcript.dataset.away === 'true') return;
+		transcript.scrollTop = transcript.scrollHeight;
 	}
 
-	scroller.addEventListener('scroll', () => {
-		scroller.dataset.away = String(scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight > 40);
+	transcript.addEventListener('scroll', () => {
+		transcript.dataset.away = String(transcript.scrollHeight - transcript.scrollTop - transcript.clientHeight > 40);
 	});
 
 	// ——— Each item ———
@@ -975,43 +950,31 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		articleShown(): void {
 			followSelection();
 		},
-		/** On a page: the conversation `id` (a page of chats/ opened in the editor) followed; null, none. */
-		showChat(id: string | null): Promise<void> {
-			if (!id) {
-				if (conversation) follow(null);
-				return showing;
-			}
+		/** The conversation shown (null: none yet). */
+		current(): string | null {
+			return conversation?.id ?? null;
+		},
+		/** Whole: the conversation `id` shown, followed. */
+		open(id: string): Promise<void> {
 			if (conversation?.id === id) return showing;
 			follow(null);
 			showing = (async () => {
 				try {
-					const known = await listConversations();
-					agents = known.agents;
-					const entry = known.conversations.find((candidate) => candidate.id === id);
+					await load();
+					const entry = (await listConversations()).conversations.find((candidate) => candidate.id === id);
 					if (entry) follow(entry);
-					else say('找不到这个对话', true);
+					else say('找不到这个对话（可能已经删了）', true);
 				} catch (error) {
 					say(error instanceof Error ? error.message : '读不到对话', true);
 				}
 			})();
 			return showing;
 		},
-		/** A conversation begun as a page, with the AI chosen in the panel and its options; its id. */
+		/** Whole: a new conversation, with the AI chosen and its options; its id, once begun. */
 		async newChat(): Promise<string | null> {
-			// Off the conversation shown at once: what is typed meanwhile is said in the new one, once it is there.
-			follow(null);
-			say('正在开始新对话…');
-			let made: Conversation | null = null;
-			showing = (async () => {
-				try {
-					made = await startConversation(chosenAI().agent, { page: true }).then(chosenAgain);
-					follow(made);
-				} catch (error) {
-					say(error instanceof Error ? error.message : '没能开始对话', true);
-				}
-			})();
-			await showing;
-			return (made as Conversation | null)?.id ?? null;
+			await load();
+			// What is typed meanwhile is said in it, once it is there (submit waits for `starting`).
+			return (await begin())?.id ?? null;
 		},
 		focus(): void {
 			input.focus();

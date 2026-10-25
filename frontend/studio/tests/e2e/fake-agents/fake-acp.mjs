@@ -66,6 +66,11 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '能量和质量的关系：\n\n$$\nE = mc^2\n$$\n\n- 要点一\n- 要点二');
 			return { stopReason: 'end_turn' };
 		}
+		// A plugin's block in what it says (an energy diagram): drawn as the editor draws it.
+		if (said.startsWith('能量图')) {
+			await words('agent_message_chunk', '路径如下：\n\n```energy\n反应物 0\nTS1 12.3\n产物 -15.2\n```');
+			return { stopReason: 'end_turn' };
+		}
 		// A turn over after thinking, nothing said (as some models end one).
 		if (said.startsWith('只想不说')) {
 			await words('agent_thought_chunk', '想了很多，结论是……');
