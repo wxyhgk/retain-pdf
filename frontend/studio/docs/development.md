@@ -14,7 +14,7 @@ src/
   studio/             Studio 的前端（编辑器、侧边栏、面板）
     server/           Studio 的后端：读写文章、回收站、历史版本、git、资料库、终端
     ops/              给大模型用的页面操作（见 docs/ai-tools.md）
-  plugins/studio-dev.mjs   把 Studio 挂到 astro dev 上：/studio 页面和 /api/studio/* 接口
+  plugins/studio-dev.mjs   把 Studio 挂到 astro dev 上：组装后端，接口在 studio/server/routes/
 packages/             博客和 Studio 共用的包（各有 README）
   markdown/           一篇笔记怎么写：构建、发布前检查、编辑器共用的规则
   science/            化学结构和公式
@@ -72,6 +72,13 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 ## Studio 的接口
 
 Studio 的前端通过 `/api/studio/*` 和后端说话，这些接口只接受本机的请求，也只接受本机页面发来的请求。它们是给 Studio 自己用的，没有承诺稳定；程序和 AI 要操作页面，请用 [studio 命令或 MCP 服务](ai-tools.md)，它们直接调用同样的后端模块。
+
+接口按领域分在 `src/studio/server/routes/` 里（文章、文章的文件、资料库、AI、后台任务和小程序、插件），每个文件用 `api.get('/articles/:slug', …)` 这样登记。安全检查都在 `src/studio/server/api.mjs` 里统一做，登记的接口不用自己管：
+- 只接受本机的请求；
+- 只接受 Studio 自己页面发来的请求；
+- POST、PUT 必须声明请求类型：默认是 JSON，上传文件的接口登记时写 `{ body: 'application/octet-stream' }`。
+
+`src/plugins/studio-dev.mjs` 只负责把各个后端模块组装起来，再把请求交给这个路由。
 
 ## 插件
 

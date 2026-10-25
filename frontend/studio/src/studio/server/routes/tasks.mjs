@@ -1,0 +1,50 @@
+import { proxyFetch } from '../mini-apps.mjs';
+import { runProgram } from '../tasks.mjs';
+import { refuse, reply, sendEvents } from '../api.mjs';
+
+/**
+ * The background tasks (the list, each one's log, and as events while they
+ * go; one cancelled), and the 小程序 (the list; what one may do beyond its
+ * frame, if its app.json asks for it: net, run).
+ * @param {import('../api.mjs').StudioApi} api
+ * @param {import('./index.mjs').Studio} studio
+ */
+export function taskRoutes(api, { projectRoot, tasks, miniApps, programEnv, articleFolder }) {
+	api.get('/tasks/events', ({ request, response }) => sendEvents(request, response, (send) => {
+		send({ type: 'all', tasks: tasks.list() });
+		return tasks.subscribe((event) => {
+			// A page that reads slower than a program writes: its log is skipped (the task keeps it whole), not piled up here.
+			if (event.type === 'log' && response.writableLength > 1024 * 1024) return;
+			send(event);
+		});
+	}), { streams: true });
+	api.get('/tasks/:id', ({ params }) => {
+		const task = tasks.get(params.id);
+		if (!task) throw refuse(404, '没有这个任务');
+		return task;
+	});
+	api.post('/tasks/:id/cancel', ({ params }) => ({ cancelled: tasks.cancel(params.id) }));
+
+	api.get('/apps', async () => ({ apps: await miniApps.list() }));
+	/** The app `id`, if its app.json asks for `permission`. */
+	const allowed = async (id, permission) => {
+		const app = await miniApps.get(id);
+		if (!app) throw refuse(404, '没有这个小程序');
+		if (!app.permissions.includes(permission)) throw refuse(403, `小程序「${app.name}」没有在 app.json 里要「${permission}」这个权限`);
+		return app;
+	};
+	api.post('/apps/:id/fetch', async ({ params, json }) => {
+		await allowed(params.id, 'net');
+		return proxyFetch(await json());
+	});
+	api.post('/apps/:id/run', async ({ params, json }) => {
+		const app = await allowed(params.id, 'run');
+		const asked = await json();
+		const argv = Array.isArray(asked.argv) ? asked.argv.map(String) : [];
+		if (!argv.length) throw refuse(400, '要给出运行的命令（argv）');
+		const slug = typeof asked.slug === 'string' && asked.slug ? asked.slug : null;
+		const cwd = slug ? articleFolder(slug) : projectRoot;
+		const task = tasks.start({ kind: 'app', title: `${app.name}：${argv.join(' ').slice(0, 60)}`, slug }, ({ log, signal }) => runProgram(argv, { cwd, env: programEnv(slug, null), log, signal }));
+		return reply(202, { id: task.id });
+	});
+}

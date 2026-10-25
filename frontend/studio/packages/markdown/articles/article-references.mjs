@@ -1,11 +1,8 @@
-import remarkMath from 'remark-math';
-import remarkParse from 'remark-parse';
-import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
 
 import { officeKind } from '@blog/office/kinds.mjs';
 import { PUBLISHED_FOLDERS } from './rules.mjs';
-import remarkMathBrackets from '../plugins/remark-math-brackets.mjs';
+import { parseArticle } from '../syntax.mjs';
 
 /**
  * Where an article's `index.md` points at its own files: images and links,
@@ -18,8 +15,6 @@ import remarkMathBrackets from '../plugins/remark-math-brackets.mjs';
  * else the author wrote. Web addresses, site paths (`/…`) and anchors are not
  * the article's files and are left out.
  */
-
-const parser = unified().use(remarkParse).use(remarkMath).use(remarkMathBrackets);
 
 const HTML_ATTRIBUTE = /\b(?:src|href|poster)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/giu;
 const FILE_DIRECTIVE = /^@file[ \t]+(.+?)[ \t]*$/u;
@@ -43,7 +38,7 @@ export function findArticleReferences(source) {
 	const body = source.slice(bodyStart);
 	let tree;
 	try {
-		tree = parser.runSync(parser.parse(body));
+		tree = parseArticle(body);
 	} catch {
 		return references;
 	}

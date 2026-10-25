@@ -1,5 +1,4 @@
-import remarkParse from 'remark-parse';
-import { unified } from 'unified';
+import { parseArticle } from '@blog/markdown/syntax.mjs';
 
 /** A node's words. */
 function words(node) {
@@ -18,7 +17,7 @@ function words(node) {
  */
 export function markdownSection(markdown, heading) {
 	const wanted = heading.trim();
-	const blocks = unified().use(remarkParse).parse(markdown).children;
+	const blocks = parseArticle(markdown).children;
 	const index = blocks.findIndex((node) => node.type === 'heading' && words(node).trim() === wanted);
 	if (index < 0) return null;
 	const start = blocks[index];

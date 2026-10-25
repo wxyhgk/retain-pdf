@@ -1,16 +1,13 @@
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import { gfmOptions } from './plugins/markdown-gfm.mjs';
 import rehypeArticleHtml from './plugins/rehype-article-html.mjs';
 import rehypeKatexMhchem from './plugins/rehype-katex-mhchem.mjs';
 import remarkCallouts from './plugins/remark-callouts.mjs';
 import remarkCitations from './plugins/remark-citations.mjs';
 import remarkCodeFiles from './plugins/remark-code-files.mjs';
 import remarkFigures from './plugins/remark-figures.mjs';
-import remarkMathBrackets from './plugins/remark-math-brackets.mjs';
 import remarkOfficeCards from './plugins/remark-office-cards.mjs';
 import remarkBlocks from './plugins/remark-blocks.mjs';
 import rehypeBlocks from './plugins/rehype-blocks.mjs';
+import { articleSyntax } from './syntax.mjs';
 
 /**
  * How an article's Markdown becomes its page: the blog's build, and the
@@ -32,7 +29,7 @@ import rehypeBlocks from './plugins/rehype-blocks.mjs';
 export function markdownPlugins({ macrosFor, blocks = null } = {}) {
 	return {
 		// A fence a plugin claims is its own, even left as it is (a molecule drawn in the page): not a code file.
-		remarkPlugins: [[remarkGfm, gfmOptions], remarkMath, remarkMathBrackets, [remarkBlocks, { blocks }], [remarkCodeFiles, { skip: blocks?.fences() ?? [] }], remarkFigures, remarkOfficeCards, remarkCallouts, remarkCitations],
+		remarkPlugins: [...articleSyntax, [remarkBlocks, { blocks }], [remarkCodeFiles, { skip: blocks?.fences() ?? [] }], remarkFigures, remarkOfficeCards, remarkCallouts, remarkCitations],
 		rehypePlugins: [rehypeArticleHtml, [rehypeBlocks, { blocks }], [rehypeKatexMhchem, { macrosFor }]],
 	};
 }

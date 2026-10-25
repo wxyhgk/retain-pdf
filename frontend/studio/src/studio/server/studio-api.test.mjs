@@ -311,6 +311,24 @@ test('search and the trash are served', async (t) => {
 	assert.deepEqual((await call(middleware, { url: '/api/studio/trash', method: 'GET' })).data.entries, []);
 });
 
+test('every change must say what it sends, checked once for all routes: a form posted from elsewhere changes nothing', async (t) => {
+	const middleware = await apiFixture(t);
+	const form = { headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'source=x' };
+	// Those that once read their body without asking (a new page, a save, a molecule's view), and those with none to read.
+	for (const [method, url] of [
+		['POST', '/api/studio/articles'],
+		['PUT', '/api/studio/articles/api-note'],
+		['PUT', '/api/studio/articles/api-note/chemistry-views/a'],
+		['POST', '/api/studio/articles/api-note/merge'],
+		['POST', '/api/studio/tasks/1/cancel'],
+		['POST', '/api/studio/drive/choose'],
+	]) assert.equal((await call(middleware, { url, method, ...form })).status, 415, `${method} ${url}`);
+	assert.equal((await call(middleware, { url: '/api/studio/articles/api-note', method: 'GET' })).data.source.includes('source=x'), false);
+	// The path as sent: a `..` is not resolved into another route.
+	assert.equal((await call(middleware, { url: '/api/studio/articles/other/../api-note', method: 'GET' })).status, 404);
+	assert.equal((await call(middleware, { url: '/api/studio/nothing', method: 'GET' })).status, 404);
+});
+
 test('a plugin answers under /api/studio/plugins/, after the same checks as the rest', async (t) => {
 	const middleware = await apiFixture(t, { plugins: true });
 	const base = '/api/studio/plugins/job/articles/api-note/jobs/opt/runs';

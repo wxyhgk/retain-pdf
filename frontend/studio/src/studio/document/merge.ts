@@ -1,4 +1,5 @@
-import { markdownParser } from './markdown-parser.ts';
+import { parseArticle } from '@blog/markdown/syntax.mjs';
+
 import { parseMarkdownBodyBlocks, reparseBodyBlocks } from './parse.ts';
 import type { MarkdownBlockSlice } from './types.ts';
 
@@ -29,7 +30,7 @@ function withoutPositions(value: unknown): unknown {
 /** What Markdown means, however it is written. */
 function meaning(markdown: string): string {
 	try {
-		const root = markdownParser.runSync(markdownParser.parse(markdown)) as { children?: unknown[] };
+		const root = parseArticle(markdown) as { children?: unknown[] };
 		return JSON.stringify(withoutPositions(root.children ?? []));
 	} catch {
 		return `raw:${markdown}`;

@@ -30,6 +30,10 @@ test('a heading’s section in Markdown runs to the next heading as high or high
 	assert.equal(body.slice(section.from, section.to), '## 方法\n\n甲。\n\n### 细节\n\n乙。\n\n- ## 列表里的\n\n');
 	assert.equal(section.text, '甲。\n\n### 细节\n\n乙。\n\n- ## 列表里的');
 	assert.equal(markdownSection(body, '列表里的'), null);
+	// A line in a formula is no heading.
+	const formula = '## 推导\n\n$$\n# 不是标题\n$$\n\n## 下一节\n';
+	assert.equal(markdownSection(formula, '推导')!.text, '$$\n# 不是标题\n$$');
+	assert.equal(markdownSection(formula, '不是标题'), null);
 });
 
 test('pages made, moved, split, merged, published, deleted and brought back through the operations', async (t) => {

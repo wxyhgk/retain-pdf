@@ -1,7 +1,6 @@
-import remarkParse from 'remark-parse';
-import { unified } from 'unified';
 import { visitParents } from 'unist-util-visit-parents';
 
+import { parseArticle } from '../syntax.mjs';
 import { ARTICLE_ADDRESS } from './rules.mjs';
 
 /** Blocks a link is read in, for the words around it. */
@@ -22,7 +21,8 @@ const CONTEXT = 110;
 /**
  * The links in an article to the blog's articles: `[标题](/blog/<slug>/)`,
  * `/wiki/<slug>/#eq-1`, and with `site` (the blog's own address) the same
- * written in full, `https://…/blog/<slug>/`. What is in code is not a link.
+ * written in full, `https://…/blog/<slug>/` (bare too). What is in code or a
+ * formula is not a link.
  * @param {string} source
  * @param {{ site?: string }} [options]
  * @returns {ArticleLink[]}
@@ -30,7 +30,7 @@ const CONTEXT = 110;
 export function findArticleLinks(source, { site } = {}) {
 	const origin = site ? new URL(site).origin : null;
 	const links = [];
-	visitParents(unified().use(remarkParse).parse(source), (node, ancestors) => {
+	visitParents(parseArticle(source), (node, ancestors) => {
 		if ((node.type !== 'link' && node.type !== 'definition') || typeof node.url !== 'string') return;
 		const address = origin && node.url.startsWith(`${origin}/`) ? node.url.slice(origin.length) : node.url;
 		const match = ARTICLE_ADDRESS.exec(address);
@@ -62,7 +62,7 @@ export function findArticleLinks(source, { site } = {}) {
 export function relinkArticle(source, from, to, { site } = {}) {
 	const origin = site ? new URL(site).origin : null;
 	const spans = [];
-	visitParents(unified().use(remarkParse).parse(source), (node) => {
+	visitParents(parseArticle(source), (node) => {
 		if ((node.type !== 'link' && node.type !== 'definition') || typeof node.url !== 'string') return;
 		const address = origin && node.url.startsWith(`${origin}/`) ? node.url.slice(origin.length) : node.url;
 		const match = ARTICLE_ADDRESS.exec(address);
@@ -103,7 +103,7 @@ const SPECIAL = /[\\`*_[\]<>$~|]/gu;
 export function retitleArticleLinks(source, slug, from, to, { site } = {}) {
 	const origin = site ? new URL(site).origin : null;
 	const spans = [];
-	visitParents(unified().use(remarkParse).parse(source), (node) => {
+	visitParents(parseArticle(source), (node) => {
 		if (node.type !== 'link' || typeof node.url !== 'string') return;
 		const address = origin && node.url.startsWith(`${origin}/`) ? node.url.slice(origin.length) : node.url;
 		if (ARTICLE_ADDRESS.exec(address)?.[2] !== slug) return;

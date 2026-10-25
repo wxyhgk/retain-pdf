@@ -66,3 +66,23 @@ test('links to a renamed article follow it: the address alone, its # kept, the r
 		.replace('https://example.org/blog/note-20261021-180000/', 'https://example.org/blog/ji-zu/'));
 	assert.deepEqual(relinkArticle('没有链接。', 'a', 'b'), { source: '没有链接。', changed: 0 });
 });
+
+test('read as the blog reads it: a bare address written in full is a link and follows a rename; one in a formula or a table is what it is there', () => {
+	const source = [
+		'原文在 https://example.org/blog/old-name/ 里。',
+		'',
+		'公式 $[a](/blog/old-name/)$ 不是链接。',
+		'',
+		'| 页 | 说明 |',
+		'|---|---|',
+		'| [旧](/blog/old-name/) | 表格里 |',
+		'',
+	].join('\n');
+	assert.deepEqual(findArticleLinks(source, { site: 'https://example.org' }).map(({ slug, line, context }) => ({ slug, line, context })), [
+		{ slug: 'old-name', line: 1, context: '原文在 https://example.org/blog/old-name/ 里。' },
+		{ slug: 'old-name', line: 7, context: '旧' },
+	]);
+	const { source: next, changed } = relinkArticle(source, 'old-name', 'new-name', { site: 'https://example.org' });
+	assert.equal(changed, 2);
+	assert.equal(next, source.replace('https://example.org/blog/old-name/', 'https://example.org/blog/new-name/').replace('[旧](/blog/old-name/)', '[旧](/blog/new-name/)'));
+});

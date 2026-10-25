@@ -1,4 +1,5 @@
-import { markdownParser } from './markdown-parser.ts';
+import { parseArticle } from '@blog/markdown/syntax.mjs';
+
 import type { FrontmatterSlice, MarkdownBlockSlice, StudioDocument } from './types.ts';
 
 type SourceLine = {
@@ -74,7 +75,7 @@ function sliceBody(bodyRaw: string, bodyStart: number): MarkdownBlockSlice[] {
 	let root: { children?: PositionedNode[] };
 	try {
 		// Run the parser's transforms too: a display formula on its own lines is a block of its own.
-		root = markdownParser.runSync(markdownParser.parse(bodyRaw)) as { children?: PositionedNode[] };
+		root = parseArticle(bodyRaw) as unknown as { children?: PositionedNode[] };
 	} catch {
 		return fallbackBlock(bodyRaw, bodyStart);
 	}
