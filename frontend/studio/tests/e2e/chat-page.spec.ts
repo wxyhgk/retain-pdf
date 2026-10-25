@@ -14,11 +14,20 @@ const chats = () => `${process.env.STUDIO_BLOG_DIR}-chats`;
 
 test.beforeEach(() => resetFixture());
 
-test('a conversation as a page: begun from 对话, each turn written on it as blocks; edited as a page, the next turn added after; there again once reloaded; deleted', async ({ page }) => {
+test('a conversation as a page: begun from AI 问答, each turn written on it as blocks; edited as a page, the next turn added after; there again once reloaded; deleted', async ({ page }) => {
 	await openStudio(page);
 	await expect(composer(page)).toBeHidden();
-	await page.getByRole('button', { name: '新对话页' }).click();
+	await expect(page.locator('#chat-list')).toBeHidden();
+	// AI 问答: the latest conversation (a new one when there is none), the list of them in place of the pages.
+	await page.getByRole('tab', { name: 'AI 问答' }).click();
 	await expect(composer(page)).toBeVisible();
+	await expect(page.locator('#article-list')).toBeHidden();
+	await expect(page.locator('#chat-list')).toBeVisible();
+	// ＋: a new one, to be spoken to.
+	const before = await page.locator('#chat-list .chat-row').count();
+	await page.getByRole('button', { name: '新对话页' }).click();
+	await expect(page.locator('#article-title-input')).toHaveValue('新对话');
+	await expect(page.locator('#chat-list .chat-row')).toHaveCount(before + 1);
 	await expect(composer(page).locator('.ai-input')).toBeFocused();
 	const id = new URL(page.url()).searchParams.get('article')!;
 	expect(id).toMatch(/^chat-\d{8}-\d{6}/u);
@@ -55,10 +64,27 @@ test('a conversation as a page: begun from 对话, each turn written on it as bl
 	expect(saved).toContain('要点一（我补的）');
 	expect(saved.indexOf('```ask\n接上了吗\n```')).toBeGreaterThan(saved.indexOf('要点一（我补的）'));
 
-	// Opened again: the page, its input.
+	// Opened again: the page, its input, the list of conversations.
 	await page.reload();
 	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
 	await expect(composer(page)).toBeVisible();
+	await expect(page.getByRole('tab', { name: 'AI 问答' })).toHaveAttribute('aria-selected', 'true');
+
+	// 页面: back to the article; AI 问答 again, to the conversation spoken in last.
+	await page.getByRole('tab', { name: '页面' }).click();
+	await expect(page.locator('#article-title-input')).toHaveValue('Studio 测试夹具');
+	await expect(composer(page)).toBeHidden();
+	await expect(page.locator('#article-list')).toBeVisible();
+	await page.getByRole('tab', { name: 'AI 问答' }).click();
+	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
+	// Another opened from the list, and this one again.
+	const others = page.locator('#chat-list .chat-row:not(.active)');
+	if (await others.count()) {
+		await others.first().click();
+		await expect(page.locator('#chat-list .chat-row.active')).not.toHaveAttribute('data-chat', id);
+	}
+	await page.locator(`#chat-list [data-chat="${id}"]`).click();
+	await expect(editor(page).locator('.note-ask-bubble')).toHaveText(['几块', '接上了吗']);
 
 	// Deleted from 对话: an article opened instead, its folder gone.
 	page.once('dialog', (dialog) => void dialog.accept());
@@ -67,4 +93,17 @@ test('a conversation as a page: begun from 对话, each turn written on it as bl
 	await expect(composer(page)).toBeHidden();
 	await expect(page.locator(`#chat-list [data-chat="${id}"]`)).toHaveCount(0);
 	expect(existsSync(join(chats(), id))).toBe(false);
+});
+
+test('⤢ in the AI tab: the conversation there opened as a page, what was said on it', async ({ page }) => {
+	await openStudio(page);
+	await page.locator('#side-tab-ai').click();
+	const side = page.locator('#side-ai');
+	await side.locator('.ai-input').fill('几块 侧边');
+	await side.locator('.ai-input').press('Enter');
+	await expect(side.locator('.ai-message .ai-block')).toHaveCount(3);
+	await side.getByRole('button', { name: '在页面中打开' }).click();
+	await expect(composer(page)).toBeVisible();
+	await expect(editor(page).locator('.note-ask-bubble')).toHaveText('几块 侧边');
+	await expect(page.getByRole('tab', { name: 'AI 问答' })).toHaveAttribute('aria-selected', 'true');
 });

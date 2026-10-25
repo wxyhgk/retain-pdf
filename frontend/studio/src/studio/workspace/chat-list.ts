@@ -89,6 +89,11 @@ export function createChatList(root: HTMLElement, host: ChatListHost) {
 
 	return {
 		refresh,
+		/** The conversation spoken in last (read anew); null when there is none. */
+		async latest(): Promise<string | null> {
+			await refresh();
+			return shown[0]?.id ?? null;
+		},
 		/** The conversation open in the editor (null: an article is), marked. */
 		select(id: string | null): void {
 			chosen = id;

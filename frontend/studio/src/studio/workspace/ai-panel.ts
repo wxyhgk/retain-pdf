@@ -3,6 +3,7 @@ import {
 	closeConversation,
 	deleteConversation,
 	followConversation,
+	pageConversation,
 	listConversations,
 	setConversationOption,
 	startConversation,
@@ -35,6 +36,8 @@ export type AiPanelHost = {
 	insert(markdown: string): boolean;
 	/** On a conversation's page (`page`): a turn was written on it; resolves once the editor shows it. */
 	pageWritten?(id: string): Promise<void>;
+	/** Opens the conversation `id` as a page in the editor (问答为主). */
+	openAsPage?(id: string): void;
 };
 
 type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
@@ -125,7 +128,11 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 	modelsButton.type = 'button';
 	modelsButton.title = '模型和账号：Claude 账号、DeepSeek 等 API key';
 	modelsButton.setAttribute('aria-label', '模型和账号');
-	actions.append(modelsButton, historyButton, newButton);
+	const pageButton = element('button', '', '⤢');
+	pageButton.type = 'button';
+	pageButton.title = '在页面中打开（AI 问答）';
+	pageButton.setAttribute('aria-label', '在页面中打开');
+	actions.append(pageButton, modelsButton, historyButton, newButton);
 	toolbar.append(title, where, actions);
 
 	const transcript = element('div', 'ai-transcript');
@@ -209,7 +216,10 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 	const drawn = new Map<string, HTMLElement>();
 	let unfollow: (() => void) | null = null;
 	let starting: Promise<Conversation | null> | null = null;
-	let loaded = false;
+	/** The AIs and conversations read (once; again after a failure): what is said waits for it. */
+	let loading: Promise<void> | null = null;
+	/** On a page: its conversation being found, to be followed (showChat). */
+	let showing: Promise<void> = Promise.resolve();
 	let article: { slug: string; title: string } | null = null;
 	/** The article left out of what is told (its × clicked), till another is opened. */
 	let leftOut: string | null = null;
@@ -219,9 +229,12 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 
 	// ——— The conversation ———
 
-	async function load(): Promise<void> {
-		if (loaded) return;
-		loaded = true;
+	function load(): Promise<void> {
+		loading ??= read();
+		return loading;
+	}
+
+	async function read(): Promise<void> {
 		try {
 			const known = await listConversations();
 			agents = known.agents;
@@ -234,10 +247,12 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 			}
 			// The one left open, kept in chats/ across restarts.
 			const kept = known.conversations.find((entry) => entry.id === remembered(CONVERSATION_KEY));
+			// Spoken to while the list was read: that conversation (begun then) is the one.
+			if (conversation || starting) return;
 			if (kept) follow(kept);
 			else void begin();
 		} catch (error) {
-			loaded = false;
+			loading = null;
 			say(error instanceof Error ? error.message : '读不到 AI 列表');
 		}
 	}
@@ -383,6 +398,8 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		const text = input.value.trim();
 		if (!text) return;
 		if (conversation?.state === 'running') return;
+		// Said before the AIs were read (the tab just opened), or before a page's conversation is followed: that first.
+		await (page ? showing : load());
 		let target = conversation;
 		// One over goes on (its agent started again), unless nothing was said in it; a page's is the page's.
 		if (page && !target) return;
@@ -875,6 +892,15 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 		if (unused) void closeConversation(unused.id).catch(() => {});
 	});
 	modelsButton.addEventListener('click', () => showSheet(!sheet.open));
+	// The conversation, whole, in the editor: its page made now if nothing was written on one yet.
+	pageButton.addEventListener('click', () => {
+		const shown = conversation;
+		if (!shown || !host.openAsPage) return;
+		void pageConversation(shown.id).then(
+			() => host.openAsPage!(shown.id),
+			(error: unknown) => host.toast(error instanceof Error ? error.message : '没能在页面中打开'),
+		);
+	});
 	historyButton.addEventListener('click', () => {
 		void listConversations().then((known) => {
 			const entries = known.conversations.filter((entry) => entry.id !== conversation?.id);
@@ -926,31 +952,42 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost, { page = fal
 			followSelection();
 		},
 		/** On a page: the conversation `id` (a page of chats/ opened in the editor) followed; null, none. */
-		async showChat(id: string | null): Promise<void> {
+		showChat(id: string | null): Promise<void> {
 			if (!id) {
 				if (conversation) follow(null);
-				return;
+				return showing;
 			}
-			if (conversation?.id === id) return;
+			if (conversation?.id === id) return showing;
 			follow(null);
-			try {
-				const known = await listConversations();
-				agents = known.agents;
-				const entry = known.conversations.find((candidate) => candidate.id === id);
-				if (entry) follow(entry);
-				else say('找不到这个对话', true);
-			} catch (error) {
-				say(error instanceof Error ? error.message : '读不到对话', true);
-			}
+			showing = (async () => {
+				try {
+					const known = await listConversations();
+					agents = known.agents;
+					const entry = known.conversations.find((candidate) => candidate.id === id);
+					if (entry) follow(entry);
+					else say('找不到这个对话', true);
+				} catch (error) {
+					say(error instanceof Error ? error.message : '读不到对话', true);
+				}
+			})();
+			return showing;
 		},
 		/** A conversation begun as a page, with the AI chosen in the panel and its options; its id. */
 		async newChat(): Promise<string | null> {
-			try {
-				return (await startConversation(chosenAI().agent, { page: true }).then(chosenAgain)).id;
-			} catch (error) {
-				host.toast(error instanceof Error ? error.message : '没能开始对话');
-				return null;
-			}
+			// Off the conversation shown at once: what is typed meanwhile is said in the new one, once it is there.
+			follow(null);
+			say('正在开始新对话…');
+			let made: Conversation | null = null;
+			showing = (async () => {
+				try {
+					made = await startConversation(chosenAI().agent, { page: true }).then(chosenAgain);
+					follow(made);
+				} catch (error) {
+					say(error instanceof Error ? error.message : '没能开始对话', true);
+				}
+			})();
+			await showing;
+			return (made as Conversation | null)?.id ?? null;
 		},
 		focus(): void {
 			input.focus();

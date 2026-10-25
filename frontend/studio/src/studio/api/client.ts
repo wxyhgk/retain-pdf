@@ -417,6 +417,11 @@ export async function closeConversation(id: string): Promise<void> {
 	await request(conversationApi(id, 'close'), jsonOptions('POST', {}));
 }
 
+/** A conversation of the AI tab given its page (chats/<id>/index.md), to be opened in the editor. */
+export function pageConversation(id: string): Promise<Conversation> {
+	return request(conversationApi(id, 'page'), jsonOptions('POST', {}));
+}
+
 /** A conversation gone, its folder of chats/ too. */
 export async function deleteConversation(id: string): Promise<void> {
 	await request(conversationApi(id, 'delete'), jsonOptions('POST', {}));

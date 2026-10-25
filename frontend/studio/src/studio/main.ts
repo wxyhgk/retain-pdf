@@ -206,6 +206,11 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 		editor.insertMarkdown(markdown);
 		return true;
 	},
+	// ⤢: the conversation in the editor, as a page (AI 问答).
+	openAsPage(id) {
+		showView('editor');
+		void session.open(id).then(() => chatList.refresh());
+	},
 });
 // A conversation kept as a page (chats/), opened in the editor (问答为主): under its blocks, the turn going on and
 // the input; each turn, once over, written at the end of the page and shown there.
@@ -241,13 +246,45 @@ const chatList = createChatList(shell.querySelector<HTMLElement>('#chat-list')!,
 	toast: (message) => showToast(message),
 });
 void chatList.refresh();
-shell.querySelector<HTMLButtonElement>('#new-chat')!.addEventListener('click', async () => {
+
+/** A new conversation, as a page, opened. */
+async function newChatPage(): Promise<void> {
 	const id = await chatComposer.newChat();
 	if (!id) return;
 	showView('editor');
 	await session.open(id);
 	void chatList.refresh();
 	chatComposer.focus();
+}
+shell.querySelector<HTMLButtonElement>('#new-chat')!.addEventListener('click', () => void newChatPage());
+
+// The left column, as Notion's: the pages, or the AI conversations (AI 问答). Each opens what it lists: the article
+// open last, or the latest conversation (a new one when there is none); opening one shows its list.
+const sidebarPages = shell.querySelector<HTMLButtonElement>('#sidebar-pages')!;
+const sidebarChats = shell.querySelector<HTMLButtonElement>('#sidebar-chats')!;
+/** The article open last, to go back to from the conversations. */
+let lastArticle: string | null = null;
+function showSidebar(chats: boolean): void {
+	shell.classList.toggle('sidebar-chats', chats);
+	sidebarPages.setAttribute('aria-selected', String(!chats));
+	sidebarChats.setAttribute('aria-selected', String(chats));
+}
+sidebarPages.addEventListener('click', () => {
+	showSidebar(false);
+	if (!isChatSlug(session.slug)) return;
+	const back = lastArticle ?? articleList.articles()[0]?.slug;
+	if (back) {
+		showView('editor');
+		void session.open(back);
+	}
+});
+sidebarChats.addEventListener('click', async () => {
+	showSidebar(true);
+	if (isChatSlug(session.slug)) return;
+	const latest = await chatList.latest();
+	if (!latest) return void newChatPage();
+	showView('editor');
+	void session.open(latest);
 });
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
@@ -425,6 +462,8 @@ const session = new ArticleSession(
 			// A conversation's page: its input under it; the AI tab is not told of it as an article.
 			const chat = isChatSlug(article.slug);
 			shell.classList.toggle('is-chat', chat);
+			showSidebar(chat);
+			if (!chat) lastArticle = article.slug;
 			chatList.select(chat ? article.slug : null);
 			shell.querySelector<HTMLElement>('#chat-composer')!.hidden = !chat;
 			void chatComposer.showChat(chat ? article.slug : null);

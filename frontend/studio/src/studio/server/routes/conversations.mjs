@@ -95,6 +95,12 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		if (typeof configId !== 'string' || (typeof value !== 'string' && typeof value !== 'boolean')) throw refuse(400, '要给出选项和它的值');
 		return (await awake(params.id)).configure(configId, value);
 	});
+	// A conversation of the AI tab opened as a page (问答为主): its page made if it has none yet.
+	api.post('/conversations/:id/page', async ({ params }) => {
+		const session = await conversations.find(params.id);
+		if (!session.madePage && session.pageThrough === null) await conversations.makePage(session);
+		return session.summary();
+	});
 	// A conversation gone: its folder of chats/ too.
 	api.post('/conversations/:id/delete', async ({ params }) => {
 		await conversations.remove(params.id);

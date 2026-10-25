@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { rmSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
@@ -93,6 +93,9 @@ test.describe('with blog/ in a git repository', () => {
 		git('config', 'user.email', 'studio@example.com');
 		git('config', 'user.name', 'Studio Test');
 		git('config', 'commit.gpgsign', 'false');
+		// The Studio's settings (written beside the tests' blog/, the AI panel's among them) are not the author's work, as
+		// the project's .gitignore has it.
+		writeFileSync(join(blog(), '.git', 'info', 'exclude'), '.studio-settings.json\n');
 	});
 	test.afterAll(() => rmSync(join(blog(), '.git'), { recursive: true, force: true }));
 
