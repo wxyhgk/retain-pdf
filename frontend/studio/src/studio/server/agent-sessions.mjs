@@ -337,6 +337,8 @@ class AgentSession {
 	commands = [];
 	usage = null;
 	#child = null;
+	/** pi served in this process instead of a child (pi-agent.mjs): how to stop it. */
+	#here = null;
 	#connection = null;
 	#acpId = null;
 	#stderr = '';
@@ -450,24 +452,36 @@ class AgentSession {
 			this.#stderr = '';
 			this.#setState('starting');
 		}
-		const child = spawn(argv[0], argv.slice(1), { cwd: this.cwd, env, stdio: ['pipe', 'pipe', 'pipe'], detached: true });
-		this.#child = child;
-		if (child.pid) this.#forget = endWithServer(child.pid);
-		child.stderr.setEncoding('utf8');
-		child.stderr.on('data', (text) => {
-			this.#stderr = (this.#stderr + text).slice(-STDERR_KEPT);
-		});
-		for (const stream of [child.stdin, child.stdout, child.stderr]) stream.on('error', () => {});
-		const exited = new Promise((resolve) => {
-			child.on('error', (error) => resolve(error));
-			child.on('close', (code, signal) => resolve(code === 0 || signal === 'SIGTERM' ? null : new Error(`退出码 ${code ?? signal}`)));
-		});
-		// An adapter of before (gone on with in another) ends unheeded.
-		void exited.then((error) => this.#child === child && this.#ended(error));
 		const app = client({ name: 'studio' })
 			.onNotification('session/update', ({ params }) => this.#update(params.update))
 			.onRequest('session/request_permission', ({ params, signal }) => this.#askLeave(params, signal));
-		this.#connection = app.connect(ndJsonStream(Writable.toWeb(child.stdin), Readable.toWeb(child.stdout)));
+		/** Resolves when its adapter ends (with why, if it failed); pi in this process never does. */
+		let exited;
+		if (servedHere(argv)) {
+			// The project's pi-acp: pi in this process instead (pi-agent.mjs), no process started; its SDK loaded when first asked for.
+			const { piInProcess } = await import('./pi-agent.mjs');
+			const pi = piInProcess(env);
+			this.#child = null;
+			this.#here = pi.stop;
+			exited = new Promise(() => {});
+			this.#connection = app.connect(pi.stream);
+		} else {
+			const child = spawn(argv[0], argv.slice(1), { cwd: this.cwd, env, stdio: ['pipe', 'pipe', 'pipe'], detached: true });
+			this.#child = child;
+			if (child.pid) this.#forget = endWithServer(child.pid);
+			child.stderr.setEncoding('utf8');
+			child.stderr.on('data', (text) => {
+				this.#stderr = (this.#stderr + text).slice(-STDERR_KEPT);
+			});
+			for (const stream of [child.stdin, child.stdout, child.stderr]) stream.on('error', () => {});
+			exited = new Promise((resolve) => {
+				child.on('error', (error) => resolve(error));
+				child.on('close', (code, signal) => resolve(code === 0 || signal === 'SIGTERM' ? null : new Error(`退出码 ${code ?? signal}`)));
+			});
+			// An adapter of before (gone on with in another) ends unheeded.
+			void exited.then((error) => this.#child === child && this.#ended(error));
+			this.#connection = app.connect(ndJsonStream(Writable.toWeb(child.stdin), Readable.toWeb(child.stdout)));
+		}
 		try {
 			const agent = this.#connection.agent;
 			const opening = (async () => {
@@ -599,6 +613,7 @@ class AgentSession {
 		// Its end not taken for a failure.
 		this.#child = null;
 		this.#connection?.close();
+		this.#letHereGo();
 		this.#forget();
 		if (child?.pid && child.exitCode === null) {
 			try {
@@ -610,6 +625,13 @@ class AgentSession {
 		this.#setState('saved');
 	}
 
+	/** pi in this process (servedHere), its sessions let go. */
+	#letHereGo() {
+		const stop = this.#here;
+		this.#here = null;
+		stop?.();
+	}
+
 	/** Told when it is closed (unlisted ones are let go then). */
 	onClose = () => {};
 
@@ -617,6 +639,7 @@ class AgentSession {
 		this.onClose();
 		for (const answer of this.#asked.values()) answer(null);
 		this.#connection?.close();
+		this.#letHereGo();
 		if (this.#child?.pid && this.#child.exitCode === null) {
 			try {
 				process.kill(-this.#child.pid, 'SIGTERM');
@@ -782,6 +805,12 @@ class AgentSession {
 		}
 	}
 }
+
+/**
+ * Whether an adapter is served in this process rather than started: the project's pi-acp, named as the presets name it
+ * (pi-agent.mjs). One named by its path (another's, a test's stand-in) is started as it is.
+ */
+const servedHere = (argv) => argv.length === 1 && argv[0] === 'pi-acp';
 
 /** What a conversation made ready is for: the same agent, place, and service. */
 const spareKey = (agent, cwd, env, models) => JSON.stringify([agent.id, agent.acp, cwd, env, models]);
