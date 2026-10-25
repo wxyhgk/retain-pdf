@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { openStudio, resetFixture } from './studio.ts';
+import { editor, openStudio, removeArticle, resetFixture, writeArticle } from './studio.ts';
 
 // The AI tab: a coding agent spoken to over the Agent Client Protocol (a stand-in here:
 // tests/e2e/fake-agents/fake-acp.mjs), which thinks, says what it will do, asks leave to run a command, runs it,
@@ -28,11 +28,11 @@ test.beforeEach(() => resetFixture());
 
 test('the agent thinks, asks leave to run a command, runs it once allowed, changes a file, keeps a plan; drawn as it goes', async ({ page }) => {
 	await openAi(page);
-	await expect(pane(page).locator('.ai-where')).toHaveText('在这篇文章里');
+	await expect(pane(page).locator('.ai-where')).toHaveText('');
 	await expect(pane(page).locator('.ai-empty')).toBeVisible();
 	await tell(page, '跑一下');
 	await expect(input(page)).toHaveValue('');
-	await expect(pane(page).locator('.ai-user')).toHaveText('跑一下');
+	await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('跑一下');
 	await expect(pane(page).locator('.ai-empty')).toBeHidden();
 
 	// Leave asked: the command shown, three answers.
@@ -84,7 +84,7 @@ test('the agent thinks, asks leave to run a command, runs it once allowed, chang
 	// The page loaded again: the same conversation, as it was.
 	await page.reload();
 	await page.locator('#side-tab-ai').click();
-	await expect(pane(page).locator('.ai-user')).toHaveText(['跑一下', '再跑一下']);
+	await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText(['跑一下', '再跑一下']);
 	await expect(pane(page).locator('.ai-title')).toHaveText('问：再跑一下');
 });
 
@@ -109,7 +109,7 @@ test('a turn is stopped from the send button; ＋ begins another conversation, t
 	await expect(pane(page).locator('.ai-options select[aria-label="Mode"]')).toHaveValue('plan');
 	await pane(page).getByRole('button', { name: '对话记录' }).click();
 	await page.getByRole('menuitem', { name: /慢慢来|还没说话/u }).first().click();
-	await expect(pane(page).locator('.ai-user')).toHaveText('慢慢来');
+	await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('慢慢来');
 });
 
 test('an agent whose adapter is missing says so where the answer would be', async ({ page }) => {
@@ -146,7 +146,7 @@ test('⚙ 模型和账号: another service, tried with a word and saved, is the 
 		await sheet.getByRole('button', { name: '保存' }).first().click();
 		// Back to the conversation, a new one, on that service: its models by their names.
 		await expect(sheet).toBeHidden();
-		await expect(pane(page).locator('.ai-where')).toHaveText('在这篇文章里 · 其他（兼容 Anthropic 接口）');
+		await expect(pane(page).locator('.ai-where')).toHaveText('其他（兼容 Anthropic 接口）');
 		await expect(pane(page).locator('.ai-options select[aria-label="Model"] option')).toHaveText(['fake-main']);
 		await tell(page, '环境');
 		await expect(pane(page).locator('.ai-message')).toHaveText(`地址 ${address} 模型 fake-main key 有`);
@@ -170,8 +170,47 @@ test('pi: a service of its catalog and a key, saved; the next pi conversation ha
 	await sheet.locator('.ai-sheet-actions').nth(1).getByRole('button', { name: '保存' }).click();
 	await expect(sheet).toBeHidden();
 	await pane(page).locator('.ai-agent').selectOption('pi');
-	await expect(pane(page).locator('.ai-where')).toHaveText('在这篇文章里 · DeepSeek');
+	await expect(pane(page).locator('.ai-where')).toHaveText('DeepSeek');
 	await expect(pane(page).locator('.ai-options select[aria-label="Model"] option')).toHaveText(['deepseek/deepseek-flash', 'deepseek/deepseek-v4-pro']);
 	await tell(page, '环境');
 	await expect(pane(page).locator('.ai-message')).toHaveText('pi 模型 deepseek/deepseek-flash DeepSeek key sk-deepseek');
+});
+
+test('what is said is told where the author is: the article open (followed as another is opened), what is selected, the articles named with @', async ({ page }) => {
+	writeArticle('other-note', '---\ntitle: 另一篇笔记\npubDate: 2026-10-01\ndraft: true\n---\n\n另一篇的一段。\n');
+	try {
+		await openAi(page);
+		const chips = pane(page).locator('.ai-context .ai-chip-label');
+		await expect(chips).toHaveText(['📄 Studio 测试夹具']);
+		// Something selected in the article: a chip too.
+		await editor(page).locator('p', { hasText: '结尾段落' }).click({ clickCount: 3 });
+		await expect(chips).toHaveText(['📄 Studio 测试夹具', '选中的内容']);
+		// @ names another article, from the list.
+		await input(page).fill('上下文 看看 @另一');
+		await expect(pane(page).locator('.ai-mention')).toHaveCount(1);
+		await input(page).press('Enter');
+		await expect(input(page)).toHaveValue('上下文 看看 ');
+		await expect(chips).toHaveText(['📄 Studio 测试夹具', '选中的内容', '@ 另一篇笔记']);
+		await input(page).press('Enter');
+		const answer = pane(page).locator('.ai-message').last();
+		await expect(answer).toContainText('当前打开的文章：《Studio 测试夹具》，文件 studio-fixture/index.md');
+		await expect(answer).toContainText('选中的是这篇的第');
+		await expect(answer).toContainText('结尾段落。');
+		await expect(answer).toContainText('用 @ 提到的文章：《另一篇笔记》，文件 other-note/index.md');
+		// What was said is shown as said, with what it named.
+		await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('上下文 看看');
+		await expect(pane(page).locator('.ai-user-context')).toContainText('@ 另一篇笔记');
+
+		// Another article opened: the same conversation, told of that one now.
+		await page.locator('#article-list').getByText('另一篇笔记', { exact: true }).click();
+		await expect(chips).toHaveText(['📄 另一篇笔记']);
+		await expect(pane(page).locator('.ai-user')).toHaveCount(1);
+		// Left out by its ×.
+		await pane(page).getByRole('button', { name: '不带上📄 另一篇笔记' }).click();
+		await expect(pane(page).locator('.ai-context')).toBeHidden();
+		await tell(page, '上下文');
+		await expect(pane(page).locator('.ai-message').last()).not.toContainText('当前打开的文章');
+	} finally {
+		removeArticle('other-note');
+	}
 });

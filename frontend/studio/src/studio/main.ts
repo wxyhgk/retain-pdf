@@ -184,6 +184,13 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 // The AI tab: a coding agent doing what it is asked, by itself, shown as it goes.
 const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 	article: () => (session.slug ? { slug: session.slug, title: openTitle } : null),
+	articles: () => articleList.articles().map((entry) => ({ slug: entry.slug, title: entry.title || entry.slug })),
+	hasSelection: () => Boolean(session.slug) && editor.hasSelection(),
+	async selection() {
+		const marked = session.slug && editor.hasSelection() ? editor.markSelection() : null;
+		if (!marked || !(await session.flush())) return null;
+		return sourceLinesOf(session.current.source, marked);
+	},
 	toast: (message) => showToast(message),
 	runInTerminal(command) {
 		sidePanel.show('terminal');

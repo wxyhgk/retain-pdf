@@ -20,6 +20,12 @@ import { showContextMenu, type MenuItem } from './context-menu';
 export type AiPanelHost = {
 	/** The article open, if one is. */
 	article(): { slug: string; title: string } | null;
+	/** The articles, to name one with @. */
+	articles(): Array<{ slug: string; title: string }>;
+	/** Whether something is selected in the article open. */
+	hasSelection(): boolean;
+	/** The lines of the article selected (the article saved first, so they are the file's); null when none. */
+	selection(): Promise<{ start: number; end: number; text: string } | null>;
 	toast(message: string): void;
 	/** Runs a command in the 终端 tab (an account's login). */
 	runInTerminal(command: string): void;
@@ -132,7 +138,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	status.setAttribute('role', 'status');
 	const input = element('textarea', 'ai-input');
 	input.rows = 1;
-	input.placeholder = '让 AI 做点什么…';
+	input.placeholder = '让 AI 做点什么…（@ 提到别的文章）';
 	input.setAttribute('aria-label', '对 AI 说');
 	const bar = element('div', 'ai-composer-bar');
 	const agentSelect = element('select', 'ai-select ai-agent');
@@ -144,7 +150,13 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	send.title = '发送（Enter；换行用 Shift+Enter）';
 	send.setAttribute('aria-label', '发送');
 	bar.append(agentSelect, optionSelects, usage, send);
-	composer.append(status, input, bar);
+	// What is told with what is said: the article open (followed as another is opened), what is selected in it, the
+	// articles named with @. Each taken off by its ×.
+	const contextRow = element('div', 'ai-context');
+	const mentionMenu = element('div', 'ai-mention-menu');
+	mentionMenu.setAttribute('role', 'listbox');
+	mentionMenu.hidden = true;
+	composer.append(status, contextRow, mentionMenu, input, bar);
 	const sheet = createModelsSheet({
 		runInTerminal: (command) => host.runInTerminal(command),
 		saved(agent, name) {
@@ -175,6 +187,11 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	let starting: Promise<Conversation | null> | null = null;
 	let loaded = false;
 	let article: { slug: string; title: string } | null = null;
+	/** The article left out of what is told (its × clicked), till another is opened. */
+	let leftOut: string | null = null;
+	/** The selection left out (its × clicked), till something else is selected. */
+	let selectionLeftOut = false;
+	let mentions: Array<{ slug: string; title: string }> = [];
 
 	// ——— The conversation ———
 
@@ -203,10 +220,9 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	/** A new conversation with the AI chosen, in the article open; the one before goes on in the list. */
 	function begin(): Promise<Conversation | null> {
 		const agent = agentSelect.value;
-		const slug = host.article()?.slug ?? null;
 		follow(null);
 		say(`正在启动 ${agents.find((entry) => entry.id === agent)?.name ?? 'AI'}…`);
-		const started = startConversation(agent, slug).then(chosenAgain).then(
+		const started = startConversation(agent).then(chosenAgain).then(
 			(made) => {
 				if (starting === started) {
 					starting = null;
@@ -314,16 +330,124 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		if (!target || target.state === 'closed' || target.state === 'failed') target = await (starting ?? begin());
 		else if (starting) target = await starting;
 		if (!target) return;
+		const open = article && leftOut !== article.slug ? article : null;
+		const selection = open && !selectionLeftOut && host.hasSelection() ? await host.selection() : null;
+		const named = mentions;
 		input.value = '';
+		mentions = [];
 		grow();
+		showContext();
 		try {
-			await tellConversation(target.id, text);
+			await tellConversation(target.id, text, {
+				...(open ? { article: open.slug } : {}),
+				...(selection ? { selection } : {}),
+				...(named.length ? { mentions: named.map((entry) => entry.slug) } : {}),
+			});
 		} catch (error) {
 			input.value = text;
+			mentions = named;
 			grow();
+			showContext();
 			say(error instanceof Error ? error.message : '没发出去', true);
 		}
 	}
+
+	// ——— What is told with what is said ———
+
+	function chip(label: string, title: string, remove: () => void): HTMLElement {
+		const node = element('span', 'ai-chip');
+		node.title = title;
+		const drop = element('button', 'ai-chip-remove', '×');
+		drop.type = 'button';
+		drop.setAttribute('aria-label', `不带上${label}`);
+		drop.addEventListener('click', () => {
+			remove();
+			showContext();
+			input.focus();
+		});
+		node.append(element('span', 'ai-chip-label', label), drop);
+		return node;
+	}
+
+	function showContext(): void {
+		const chips: HTMLElement[] = [];
+		const open = article && leftOut !== article.slug ? article : null;
+		if (open) chips.push(chip(`📄 ${open.title}`, '当前文章：说话时会告诉 AI 你在看这篇', () => (leftOut = open.slug)));
+		if (open && !selectionLeftOut && host.hasSelection()) chips.push(chip('选中的内容', '文章里选中的那几行会一起告诉 AI', () => (selectionLeftOut = true)));
+		for (const entry of mentions) chips.push(chip(`@ ${entry.title}`, '用 @ 提到的文章', () => (mentions = mentions.filter((other) => other !== entry))));
+		contextRow.replaceChildren(...chips);
+		contextRow.hidden = !chips.length;
+	}
+
+	/** What follows an @ before the caret, if the author is naming an article. */
+	function naming(): { from: number; query: string } | null {
+		const before = input.value.slice(0, input.selectionStart ?? input.value.length);
+		const found = /(^|\s)@([^\s@]*)$/u.exec(before);
+		return found ? { from: before.length - found[2].length - 1, query: found[2] } : null;
+	}
+
+	let mentionChoices: Array<{ slug: string; title: string }> = [];
+	let mentionAt = 0;
+
+	function showMentions(): void {
+		const asked = naming();
+		if (!asked) {
+			mentionMenu.hidden = true;
+			return;
+		}
+		const needle = asked.query.toLocaleLowerCase('zh-CN');
+		mentionChoices = host
+			.articles()
+			.filter((entry) => !mentions.some((named) => named.slug === entry.slug))
+			.filter((entry) => !needle || entry.title.toLocaleLowerCase('zh-CN').includes(needle) || entry.slug.includes(needle))
+			.slice(0, 8);
+		mentionAt = Math.min(mentionAt, Math.max(0, mentionChoices.length - 1));
+		if (!mentionChoices.length) {
+			mentionMenu.hidden = true;
+			return;
+		}
+		mentionMenu.replaceChildren(
+			...mentionChoices.map((entry, index) => {
+				const option = element('button', `ai-mention${index === mentionAt ? ' is-current' : ''}`);
+				option.type = 'button';
+				option.setAttribute('role', 'option');
+				option.setAttribute('aria-selected', String(index === mentionAt));
+				option.append(element('span', '', entry.title), element('span', 'ai-mention-slug', entry.slug));
+				// Chosen before the input loses its caret.
+				option.addEventListener('mousedown', (event) => {
+					event.preventDefault();
+					mention(entry);
+				});
+				return option;
+			}),
+		);
+		mentionMenu.hidden = false;
+	}
+
+	/** `entry` named: the @ and what was typed after it taken out of the input, the article a chip. */
+	function mention(entry: { slug: string; title: string }): void {
+		const asked = naming();
+		if (asked) {
+			const caret = input.selectionStart ?? input.value.length;
+			input.value = `${input.value.slice(0, asked.from)}${input.value.slice(caret)}`;
+			input.setSelectionRange(asked.from, asked.from);
+		}
+		mentions = [...mentions, entry];
+		mentionMenu.hidden = true;
+		mentionAt = 0;
+		grow();
+		showContext();
+	}
+
+	// The selection in the article, followed: a chip while there is one.
+	let lastSelected = false;
+	document.addEventListener('selectionchange', () => {
+		const selected = host.hasSelection();
+		if (selected === lastSelected) return;
+		lastSelected = selected;
+		if (selected) selectionLeftOut = false;
+		showContext();
+	});
 
 	// ——— What is shown around the transcript ———
 
@@ -343,8 +467,7 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		const running = conversation?.state === 'running';
 		title.textContent = conversation?.title || '新对话';
 		title.title = title.textContent;
-		const place = conversation?.slug ? (conversation.slug === article?.slug ? '在这篇文章里' : `在 ${conversation.slug} 里`) : conversation ? '在仓库里' : '';
-		where.textContent = conversation?.service ? `${place} · ${conversation.service}` : place;
+		where.textContent = conversation?.service ?? '';
 		empty.hidden = items.length > 0;
 		send.textContent = running ? '■' : '↑';
 		send.title = running ? '停下' : '发送（Enter；换行用 Shift+Enter）';
@@ -418,10 +541,18 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	function draw(item: ConversationItem, old?: HTMLElement): HTMLElement {
 		let node: HTMLElement;
 		switch (item.kind) {
-			case 'user':
+			case 'user': {
 				node = element('div', 'ai-user');
 				node.append(element('div', 'ai-bubble', item.text));
+				const told = item.context;
+				const names = [told?.article ? `📄 ${told.article}${told.selection ? ` · ${told.selection}` : ''}` : '', ...(told?.mentions ?? []).map((title) => `@ ${title}`)].filter(Boolean);
+				if (names.length) {
+					const row = element('div', 'ai-user-context');
+					row.append(...names.map((name) => element('span', 'ai-chip-label', name)));
+					node.append(row);
+				}
 				break;
+			}
 			case 'message':
 				node = element('div', 'ai-message');
 				node.append(renderAiMarkdown(item.text));
@@ -586,8 +717,34 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		input.style.height = `${Math.min(input.scrollHeight, 200)}px`;
 	}
 
-	input.addEventListener('input', grow);
+	input.addEventListener('input', () => {
+		grow();
+		showMentions();
+	});
+	input.addEventListener('blur', () => {
+		mentionMenu.hidden = true;
+	});
 	input.addEventListener('keydown', (event) => {
+		// Choosing an article to name.
+		if (!mentionMenu.hidden && !event.isComposing) {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+				event.preventDefault();
+				mentionAt = (mentionAt + (event.key === 'ArrowDown' ? 1 : mentionChoices.length - 1)) % mentionChoices.length;
+				showMentions();
+				return;
+			}
+			if (event.key === 'Enter' || event.key === 'Tab') {
+				event.preventDefault();
+				const chosen = mentionChoices[mentionAt];
+				if (chosen) mention(chosen);
+				return;
+			}
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				mentionMenu.hidden = true;
+				return;
+			}
+		}
 		// Enter sends; not while a Chinese input method is still choosing words.
 		if (event.key !== 'Enter' || event.shiftKey || event.isComposing || event.keyCode === 229) return;
 		event.preventDefault();
@@ -631,8 +788,13 @@ export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 		},
 		/** The article open changed (null: none); a conversation begun later goes on in it. */
 		showArticle(next: { slug: string; title: string } | null): void {
+			if (next?.slug !== article?.slug) {
+				leftOut = null;
+				selectionLeftOut = false;
+			}
 			article = next;
 			showSession();
+			showContext();
 		},
 		/** Puts `text` in the input, for the author to finish and send. */
 		ask(text: string): void {

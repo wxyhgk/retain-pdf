@@ -212,13 +212,25 @@ class AgentSession {
 		if (first) await this.configure(option.id, first.value).catch(() => {});
 	}
 
-	/** Tells the agent `text`; resolves when it has begun, the turn going on by itself. */
-	prompt(text) {
+	/**
+	 * Tells the agent `text`, with what the Studio adds of where the author is (`context`: the article open, the lines
+	 * selected in it, the articles named with @, each by its file); resolves when it has begun, the turn going on by
+	 * itself. The conversation shows what the author said, and the context as what it names.
+	 * @param {string} text
+	 * @param {PromptContext} [context]
+	 */
+	prompt(text, context = {}) {
 		if (this.state !== 'idle') throw Object.assign(new Error(this.state === 'running' ? '它还在做上一件事：等它做完，或者先停下' : '这个对话已经结束了'), { statusCode: 409 });
 		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error('要说点什么'), { statusCode: 400 });
-		this.#add({ kind: 'user', id: randomUUID(), text });
+		const named = {
+			article: context.article?.title ?? null,
+			selection: context.selection ? lineRange(context.selection) : null,
+			mentions: (context.mentions ?? []).map((mention) => mention.title),
+		};
+		this.#add({ kind: 'user', id: randomUUID(), text, context: named });
 		this.#setState('running');
-		const turn = this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text }] });
+		const told = withContext(text, context);
+		const turn = this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: told }] });
 		void turn.then(
 			(done) => {
 				if (done.stopReason !== 'end_turn') this.#add({ kind: 'stop', id: randomUUID(), reason: done.stopReason });
@@ -301,7 +313,7 @@ class AgentSession {
 			case 'notice':
 				return this.#add({ kind: 'notice', id: randomUUID(), severity: update.severity, title: update.title, description: update.description ?? '' });
 			case 'session_info_update':
-				if (typeof update.title === 'string') this.title = update.title;
+				if (typeof update.title === 'string') this.title = withoutContext(update.title, this.items.find((item) => item.kind === 'user')?.text ?? '');
 				break;
 			case 'config_option_update':
 				this.configOptions = update.configOptions ?? this.configOptions;
@@ -409,4 +421,36 @@ class AgentSession {
 /** A select option's choices, its groups flattened. */
 function modelChoices(option) {
 	return (option.options ?? []).flatMap((entry) => (Array.isArray(entry.options) ? entry.options : [entry]));
+}
+
+/**
+ * @typedef {object} PromptContext where the author is, as the Studio tells the agent (paths from its folder)
+ * @property {{ title: string, path: string }} [article] the article open
+ * @property {{ start: number, end: number, text: string }} [selection] the lines of it selected
+ * @property {Array<{ title: string, path: string }>} [mentions] the articles named with @
+ */
+
+const lineRange = ({ start, end }) => (start === end ? `第 ${start} 行` : `第 ${start}–${end} 行`);
+
+/** What the author said, then what the Studio adds of where they are, marked as the Studio's. */
+export function withContext(text, { article, selection, mentions = [] } = {}) {
+	const lines = [];
+	if (article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}`);
+	if (article && selection) {
+		const fence = '`'.repeat(Math.max(3, ...[...selection.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
+		lines.push(`选中的是这篇的${lineRange(selection)}：`, `${fence}markdown`, selection.text, fence);
+	}
+	for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}`);
+	if (!lines.length) return text;
+	return `${text}\n\n<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`;
+}
+
+/**
+ * A title some agents make of the first thing told (cut short, perhaps): what the author said of it, not what the
+ * Studio added after it (withContext).
+ */
+function withoutContext(title, said) {
+	const at = said ? title.indexOf(said.trim()) : -1;
+	if (at >= 0 && /^\s*</u.test(title.slice(at + said.trim().length))) return title.slice(0, at + said.trim().length).trim();
+	return title.split('<studio-context>')[0].trim();
 }

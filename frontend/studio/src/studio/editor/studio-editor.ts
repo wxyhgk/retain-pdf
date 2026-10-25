@@ -109,6 +109,8 @@ export type StudioEditor = {
 	 * (source-lines.ts): which lines of the file they are. Null with nothing shown.
 	 */
 	markSelection(): string | null;
+	/** Whether something is selected in the article (not a caret alone). */
+	hasSelection(): boolean;
 	/** The article's library (assets/refs.bib), to number its citations by; null when it has none. */
 	setLibrary(library: Map<string, BibEntry> | null): void;
 	/** Puts Markdown in where the caret is, as blocks of their own. */
@@ -688,6 +690,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 
 	return {
 		markSelection,
+		hasSelection: () => crepe?.editor.action((ctx) => !ctx.get(editorViewCtx).state.selection.empty) ?? false,
 		insertMarkdown(markdown) {
 			crepe?.editor.action(insert(markdown));
 		},

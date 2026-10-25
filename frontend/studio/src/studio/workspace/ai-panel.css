@@ -136,3 +136,20 @@
 .ai-sheet-result[data-tone='ok'] { color: rgb(var(--gray-dark)); }
 .ai-sheet-result[data-tone='error'] { color: #b42318; }
 .ai-status-fix { padding: 0 4px; border: 0; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-decoration: underline; cursor: pointer; }
+
+/* What is told with what is said: the article open, what is selected, the articles named with @ (ai-panel.ts). */
+.ai-composer { position: relative; }
+.ai-context { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 2px 6px; }
+.ai-context[hidden] { display: none; }
+.ai-chip { display: inline-flex; align-items: center; max-width: 100%; height: 22px; padding: 0 2px 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 11px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 11.5px; }
+.ai-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-chip-remove { flex: none; width: 18px; height: 18px; margin-left: 2px; border: 0; border-radius: 50%; background: transparent; color: rgb(var(--gray)); font-size: 12px; line-height: 1; cursor: pointer; }
+.ai-chip-remove:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+.ai-user { flex-direction: column; align-items: flex-end; gap: 3px; }
+.ai-user-context { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 88%; color: rgb(var(--gray)); font-size: 11px; }
+.ai-mention-menu { position: absolute; z-index: 5; right: 10px; bottom: calc(100% - 4px); left: 10px; max-height: 260px; padding: 4px; overflow: auto; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
+.ai-mention-menu[hidden] { display: none; }
+.ai-mention { display: flex; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+.ai-mention span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-mention.is-current, .ai-mention:hover { background: var(--surface-soft); }
+.ai-mention-slug { flex: none; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 10.5px; }

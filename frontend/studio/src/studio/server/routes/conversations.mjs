@@ -1,3 +1,4 @@
+import { join, relative } from 'node:path';
 import { accountsLoggedIn, PiModels } from '../panel-models.mjs';
 import { refuse, reply, sendEvents } from '../api.mjs';
 
@@ -8,7 +9,7 @@ import { refuse, reply, sendEvents } from '../api.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function conversationRoutes(api, { projectRoot, conversations, agentSettings, panelModels, manager, drive, programEnv, articleFolder }) {
+export function conversationRoutes(api, { blogRoot, conversations, agentSettings, panelModels, articles, drive, programEnv, articleFolder }) {
 	const agents = async () => (await agentSettings.config()).list.filter((agent) => agent.acp);
 	/** Claude Code and pi talk to the services chosen in the panel (panel-models.mjs); Codex to its own. */
 	const isClaude = (agent) => /(^|\/)claude-agent-acp(\s|$)/u.test(agent.acp);
@@ -25,22 +26,38 @@ export function conversationRoutes(api, { projectRoot, conversations, agentSetti
 		default: (await agentSettings.config()).default,
 		conversations: conversations.list(),
 	}));
+	// A conversation goes on in blog/ whatever article is open (blog/AGENTS.md read there): each thing said is told
+	// which one is, with the lines selected and the articles named with @ (contextOf).
 	api.post('/conversations', async ({ json }) => {
-		const { agent: wanted, slug } = await json();
+		const { agent: wanted } = await json();
 		const agent = (await agents()).find((candidate) => candidate.id === wanted);
 		if (!agent) throw refuse(404, `没有能在面板里用的 AI「${wanted}」`);
-		const article = typeof slug === 'string' && slug ? slug : null;
-		if (article) await manager.locate(article, '');
 		const service = await serviceOf(agent);
-		const session = await conversations.start({ agent, cwd: article ? articleFolder(article) : projectRoot, slug: article, env: { ...programEnv(article, await drive.root()), ...service.env }, models: service.models });
+		const session = await conversations.start({ agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
 		return reply(201, session.summary());
 	});
+	/** The page's account of where the author is, made the agent's: each article by its file from blog/, as it is there. */
+	const contextOf = async (asked) => {
+		if (!asked || typeof asked !== 'object') return {};
+		const known = new Map((await articles.list()).map((entry) => [entry.slug, entry]));
+		const article = (slug) => {
+			const found = typeof slug === 'string' ? known.get(slug) : null;
+			return found ? { title: found.title || slug, path: relative(blogRoot, join(articleFolder(slug), 'index.md')) } : null;
+		};
+		const open = article(asked.article);
+		const selection = open && asked.selection && Number.isInteger(asked.selection.start) && Number.isInteger(asked.selection.end) && typeof asked.selection.text === 'string'
+			? { start: asked.selection.start, end: asked.selection.end, text: asked.selection.text.slice(0, 20_000) }
+			: null;
+		const mentions = (Array.isArray(asked.mentions) ? asked.mentions : []).map(article).filter(Boolean).filter((entry) => entry.path !== open?.path);
+		return { ...(open ? { article: open } : {}), ...(selection ? { selection } : {}), ...(mentions.length ? { mentions } : {}) };
+	};
 	api.get('/conversations/:id/events', ({ params, request, response }) => {
 		const session = conversations.get(params.id);
 		sendEvents(request, response, (send) => session.subscribe(send));
 	}, { streams: true });
 	api.post('/conversations/:id/prompt', async ({ params, json }) => {
-		conversations.get(params.id).prompt((await json()).text);
+		const { text, context } = await json();
+		conversations.get(params.id).prompt(text, await contextOf(context));
 		return reply(202, { id: params.id });
 	});
 	api.post('/conversations/:id/cancel', ({ params }) => {

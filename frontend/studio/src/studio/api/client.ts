@@ -296,7 +296,7 @@ export type Conversation = {
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
 /** What a conversation is made of, in order. */
 export type ConversationItem =
-	| { kind: 'user'; id: string; text: string }
+	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[] } }
 	| { kind: 'message'; id: string; text: string }
 	| { kind: 'thought'; id: string; text: string }
 	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
@@ -318,9 +318,9 @@ export function listConversations(): Promise<{ agents: Array<{ id: string; name:
 	return request('/api/studio/conversations');
 }
 
-/** Begins a conversation with `agent`, in the article's folder (`slug`) or the repository's; resolves once it is ready. */
-export function startConversation(agent: string, slug: string | null): Promise<Conversation> {
-	return request('/api/studio/conversations', jsonOptions('POST', { agent, slug }));
+/** Begins a conversation with `agent`, in blog/ (each thing said is told where the author is); resolves once it is ready. */
+export function startConversation(agent: string): Promise<Conversation> {
+	return request('/api/studio/conversations', jsonOptions('POST', { agent }));
 }
 
 /** Follows a conversation: all of it first, then each change. Returns the function that stops. */
@@ -330,8 +330,11 @@ export function followConversation(id: string, listener: (event: ConversationEve
 	return () => source.close();
 }
 
-export async function tellConversation(id: string, text: string): Promise<void> {
-	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text }));
+/** Where the author is, told with what they say: the article open, the lines selected in it, the articles named with @. */
+export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string }; mentions?: string[] };
+
+export async function tellConversation(id: string, text: string, context: ConversationContext = {}): Promise<void> {
+	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context }));
 }
 
 export async function stopConversation(id: string): Promise<void> {

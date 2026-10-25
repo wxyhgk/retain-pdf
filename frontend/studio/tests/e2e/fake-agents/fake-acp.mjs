@@ -44,6 +44,11 @@ const app = agent({ name: 'fake' })
 		state.turns += 1;
 		const run = `run-${state.turns}`;
 		if (said.includes('退出')) process.exit(3);
+		// What it was told, as it came (with what the Studio adds of where the author is).
+		if (said.startsWith('上下文')) {
+			await words('agent_message_chunk', `收到的是：\n\n~~~~~~text\n${said}\n~~~~~~`);
+			return { stopReason: 'end_turn' };
+		}
 		// The service it was started for (AI 面板 ⚙): what Claude Code would be told.
 		if (said.includes('环境')) {
 			await words('agent_message_chunk', asPi ? `pi 模型 ${state.model} DeepSeek key ${process.env.DEEPSEEK_API_KEY ?? '无'}` : `地址 ${process.env.ANTHROPIC_BASE_URL ?? '无'} 模型 ${process.env.ANTHROPIC_MODEL ?? '无'} key ${process.env.ANTHROPIC_AUTH_TOKEN ? '有' : '无'}`);

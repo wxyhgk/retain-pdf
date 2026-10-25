@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { AgentSessions } from './agent-sessions.mjs';
+import { AgentSessions, withContext } from './agent-sessions.mjs';
 
 const standIn = fileURLToPath(new URL('../../../tests/e2e/fake-agents/claude-agent-acp', import.meta.url));
 const agent = { id: 'claude', name: 'Claude', acp: standIn };
@@ -102,4 +102,26 @@ test('an adapter that is not there: the conversation fails, saying so', async (t
 	const sessions = new AgentSessions({ binFolder: join(cwd, 'none') });
 	await assert.rejects(sessions.start({ agent: { ...agent, acp: join(cwd, 'missing-acp') }, cwd, env: { PATH: '/usr/bin:/bin' } }), /Claude 没能启动：.*ENOENT/u);
 	assert.equal(sessions.list()[0].state, 'failed');
+});
+
+test('what is said is told where the author is, marked as the Studio’s; with nothing to tell, as it was said', () => {
+	assert.equal(withContext('总结一下'), '总结一下');
+	const told = withContext('总结一下', {
+		article: { title: '方法', path: 'method/index.md' },
+		selection: { start: 12, end: 14, text: '```py\nx = 1\n```' },
+		mentions: [{ title: '结果', path: 'result/index.md' }],
+	});
+	assert.equal(told, [
+		'总结一下',
+		'',
+		'<studio-context>',
+		'（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）',
+		'当前打开的文章：《方法》，文件 method/index.md',
+		'选中的是这篇的第 12–14 行：',
+		'````markdown',
+		'```py\nx = 1\n```',
+		'````',
+		'用 @ 提到的文章：《结果》，文件 result/index.md',
+		'</studio-context>',
+	].join('\n'));
 });
