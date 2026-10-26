@@ -39,7 +39,7 @@ test('a service chosen: its key kept here and never shown, Claude Code given its
 		API_TIMEOUT_MS: '600000',
 		CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
 	});
-	assert.deepEqual(await models.models(), { name: 'DeepSeek', main: 'deepseek-v4-pro', fast: 'deepseek-flash' });
+	assert.deepEqual(await models.models(), { id: 'deepseek', name: 'DeepSeek', main: 'deepseek-v4-pro', fast: 'deepseek-flash' });
 
 	// Another, with its own models; the first keeps its key for when it is chosen again.
 	await models.set({ provider: 'glm', apiKey: 'glm-key', main: 'glm-x', fast: '' });
@@ -84,9 +84,13 @@ test('pi: its own setting first; a service of its catalog given by the key pi re
 	assert.equal(shown.providers.find((entry) => entry.id === 'moonshotai-cn').hasKey, true);
 	assert.equal(JSON.stringify(shown).includes('sk-kimi'), false);
 	assert.deepEqual(await pi.env(), { PI_ACP_PI_COMMAND: '/project/node_modules/.bin/pi', PI_OFFLINE: '1', MOONSHOT_API_KEY: 'sk-kimi' });
-	assert.deepEqual(await pi.service(), { name: 'Kimi（月之暗面，国内）', provider: 'moonshotai-cn' });
+	assert.deepEqual(await pi.service(), { id: 'moonshotai-cn', name: 'Kimi（月之暗面，国内）', provider: 'moonshotai-cn', providers: ['moonshotai-cn'] });
 	await pi.set({ provider: 'deepseek' });
 	await assert.rejects(pi.env(), /还没有填 pi 用的 DeepSeek 的 API key/u);
+	// Each key saved given to pi: another service's model chosen in a conversation without starting pi again.
+	await pi.set({ provider: 'deepseek', apiKey: 'sk-deepseek' });
+	assert.deepEqual(await pi.env(), { PI_ACP_PI_COMMAND: '/project/node_modules/.bin/pi', PI_OFFLINE: '1', DEEPSEEK_API_KEY: 'sk-deepseek', MOONSHOT_API_KEY: 'sk-kimi' });
+	assert.deepEqual((await pi.service()).providers, ['deepseek', 'moonshotai-cn']);
 	// Claude Code's choice is its own.
 	await models.set({ provider: 'deepseek', apiKey: 'sk-claude' });
 	assert.equal((await pi.shown()).chosen, 'deepseek');

@@ -5,31 +5,16 @@ import { BookOpenCheck, Calculator, History, Maximize2, Minimize2, ScanSearch, S
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
-import type { Conversation, ConversationItem, ConversationOption } from '../../api/client';
+import type { Conversation, ConversationItem } from '../../api/client';
 import { observePluginBlocks } from '../../plugins';
 import { useStore, type Store } from '../../shell/store';
 import { pictureUrl } from '../ai-markdown';
+import { EffortMenu, ModelMenu } from './ModelMenu';
 import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
 import { commandOf, Item, ItemsContext, PageChip, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { PagePeek } from './PagePeek';
-import { SHOWN_OPTIONS, type ArticleRef, type PageInfo, type PanelActions, type PanelState } from './panel-state';
+import { type ArticleRef, type PageInfo, type PanelActions, type PanelState } from './panel-state';
 
-/**
- * Names the adapters give in English, said in Chinese as what they let it do without asking (the rest as they come).
- * Claude Code's "accept edits" lets it change files, but asks before a command that does something (python, rm…).
- */
-const OPTION_NAMES: Record<string, string> = {
-	default: t('每步都问'),
-	acceptEdits: t('自动改文件（命令要问）'),
-	plan: t('只做计划'),
-	auto: t('自动（只问危险的）'),
-	bypassPermissions: t('全部允许（不再问）'),
-	'read-only': t('只读（改动都要问）'),
-	'workspace-write': t('可改文件夹（联网要问）'),
-	agent: t('自动（只问不安全的）'),
-	'agent-full-access': t('完全访问（不再问）'),
-};
-const EFFORT_NAMES: Record<string, string> = { default: t('思考：默认'), low: t('思考：低'), medium: t('思考：中'), high: t('思考：高'), xhigh: t('思考：很高'), max: t('思考：最高'), ultra: t('思考：极限') };
 /** What each kind of tool call did, counted in a stretch of work: 读了 3 个文件. */
 const TOOL_DONE: Record<string, (count: number) => string> = {
 	read: (count) => t('读了 {count} 个文件', { count }),
@@ -258,20 +243,6 @@ function Chip({ label, title, page, onRemove }: { label: string; title: string; 
 	);
 }
 
-function OptionSelect({ option, onChange }: { option: ConversationOption; onChange(value: string): void }) {
-	const choices = (option.options ?? []).flatMap((entry) => ('options' in entry ? entry.options : [entry]));
-	const named = (value: string, name: string) => (option.category === 'thought_level' ? (EFFORT_NAMES[value] ?? t('思考：{name}', { name })) : option.category === 'mode' ? (OPTION_NAMES[value] ?? name) : name);
-	return (
-		<select className="ai-select" aria-label={option.name} title={option.description ?? option.name} value={String(option.currentValue)} onChange={(event) => onChange(event.target.value)}>
-			{choices.map((choice) => (
-				<option key={choice.value} value={choice.value}>
-					{named(choice.value, choice.name)}
-				</option>
-			))}
-		</select>
-	);
-}
-
 function Composer({ state, actions }: { state: PanelState; actions: PanelActions }) {
 	const { conversation, article, leftOut, selected, selectionLeftOut, mentions, draft, status } = state;
 	const input = useRef<HTMLTextAreaElement>(null);
@@ -348,7 +319,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 		actions.submit();
 	}
 
-	const options = (conversation?.configOptions ?? []).filter((option) => option.type === 'select' && SHOWN_OPTIONS.includes(option.category ?? option.id));
+	const effort = conversation?.configOptions.find((option) => option.type === 'select' && option.category === 'thought_level');
 	const used = conversation?.usage;
 	return (
 		<div className="ai-composer">
@@ -405,21 +376,11 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				onKeyDown={keyDown}
 			/>
 			<div className="ai-composer-bar">
-				<select className="ai-select ai-agent" aria-label={t('用哪个 AI')} value={state.agent} onChange={(event) => actions.chooseAgent(event.target.value)}>
-					{state.agents.map((agent) => (
-						<option key={agent.id} value={agent.id}>
-							{agent.name}
-						</option>
-					))}
-				</select>
-				<div className="ai-options">
-					{options.map((option) => (
-						<OptionSelect key={`${conversation?.id}:${option.id}:${String(option.currentValue)}`} option={option} onChange={(value) => actions.setOption(option.id, value)} />
-					))}
-				</div>
 				<span className="ai-usage" title={used ? t('用掉的上下文 / 上下文上限（· 这次对话花费）') : ''}>
 					{used ? `${Math.round(used.used / 1000)}k / ${used.size >= 1_000_000 ? `${used.size / 1_000_000}M` : `${Math.round(used.size / 1000)}k`}${used.cost ? ` · $${used.cost.amount.toFixed(2)}` : ''}` : ''}
 				</span>
+				{effort && <EffortMenu key={`${conversation?.id}:${String(effort.currentValue)}`} option={effort} onChange={(value) => actions.setOption(effort.id, value)} />}
+				<ModelMenu state={state} actions={actions} />
 				<button type="button" className={cn('ai-send', running && 'is-stop')} title={running ? t('停下') : t('发送（Enter；换行用 Shift+Enter）')} aria-label={running ? t('停下') : t('发送')} onClick={actions.sendOrStop}>
 					{running ? '■' : '↑'}
 				</button>

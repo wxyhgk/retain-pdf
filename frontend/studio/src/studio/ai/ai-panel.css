@@ -117,11 +117,26 @@
 .ai-input { display: block; box-sizing: border-box; width: 100%; min-height: 64px; max-height: 200px; padding: 10px 12px 4px; resize: none; border: 1px solid rgb(var(--gray-light)); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--surface); color: inherit; font: inherit; font-size: 13px; line-height: 1.5; outline: none; }
 .ai-composer-bar { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; border: 1px solid rgb(var(--gray-light)); border-top: 0; border-radius: 0 0 12px 12px; background: var(--surface); box-shadow: 0 4px 12px rgba(var(--black), 0.04); }
 .ai-composer:focus-within .ai-input, .ai-composer:focus-within .ai-composer-bar { border-color: rgb(var(--gray)); }
-.ai-options { display: flex; flex: 0 1 auto; min-width: 0; gap: 2px; overflow: hidden; }
-/* Which AI and its options: native selects (their menus the system's), drawn as quiet words with a small ⌄, not as the system's buttons. */
-.ai-select { -webkit-appearance: none; appearance: none; min-width: 0; max-width: 150px; padding: 3px 17px 3px 6px; border: 0; border-radius: 5px; background-color: transparent; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23908f8b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-position: right 4px center; background-repeat: no-repeat; background-size: 10px; color: rgb(var(--gray)); font: inherit; font-size: 12px; text-overflow: ellipsis; cursor: pointer; }
-.ai-select:hover { background-color: rgba(var(--black), 0.05); color: rgb(var(--gray-dark)); }
-.ai-select.ai-agent { color: rgb(var(--gray-dark)); font-weight: 500; }
+/* The model and how hard it thinks, as Notion's: a name and bars under the input, each a menu (ModelMenu.tsx). */
+.ai-model, .ai-effort { display: inline-flex; flex: none; align-items: center; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; cursor: pointer; }
+.ai-model { gap: 3px; max-width: 170px; padding: 0 6px 0 8px; color: rgb(var(--gray-dark)); font-size: 12.5px; }
+.ai-model > svg { flex: none; width: 12px; height: 12px; color: rgb(var(--gray)); }
+.ai-model-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-effort { justify-content: center; width: 26px; }
+.ai-model:hover, .ai-effort:hover, .ai-model[data-state='open'], .ai-effort[data-state='open'] { background: rgba(var(--black), 0.05); color: rgb(var(--gray-dark)); }
+.ai-menu .ai-menu-label { padding: 6px 8px 2px; color: rgb(var(--gray)); font-size: 11.5px; font-weight: 500; }
+.ai-menu .ai-menu-item { min-height: 28px; font-size: 13px; }
+.ai-model-item { gap: 6px; }
+.ai-model-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-model-note { flex: none; color: rgb(var(--gray)); font-size: 11.5px; }
+.ai-model-star { display: grid; flex: none; place-items: center; width: 20px; height: 20px; margin-left: auto; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); opacity: 0; cursor: pointer; }
+.ai-model-star svg { width: 13px; height: 13px; }
+.ai-model-item:hover .ai-model-star, .ai-model-item[data-highlighted] .ai-model-star, .ai-model-star.is-starred { opacity: 1; }
+.ai-model-star.is-starred svg { fill: currentColor; }
+.ai-model-star:hover { background: rgba(var(--black), 0.06); color: rgb(var(--gray-dark)); }
+.ai-model-check { flex: none; width: 14px; height: 14px; }
+.ai-model-check.is-off { visibility: hidden; }
+.ai-model-keyless { color: rgb(var(--gray)); }
 .ai-usage { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-size: 10.5px; text-align: right; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ai-send { flex: none; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgb(var(--black)); color: var(--surface); font-size: 13px; cursor: pointer; }
 .ai-send.is-stop { font-size: 9px; }

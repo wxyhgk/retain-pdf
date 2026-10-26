@@ -148,7 +148,8 @@ function servePi(stream, env) {
 	async function options(session) {
 		const available = await (await models()).getAvailable().catch(() => []);
 		const current = session.model ? `${session.model.provider}/${session.model.id}` : '';
-		const choices = available.map((model) => ({ value: `${model.provider}/${model.id}`, name: `${model.provider}/${model.id}` }));
+		// Named as pi's catalog names them (Claude Haiku 4.5), else by its id.
+		const choices = available.map((model) => ({ value: `${model.provider}/${model.id}`, name: model.name || `${model.provider}/${model.id}` }));
 		if (current && !choices.some((choice) => choice.value === current)) choices.unshift({ value: current, name: current });
 		const levels = session.getAvailableThinkingLevels();
 		const thinking = thinkingNames();

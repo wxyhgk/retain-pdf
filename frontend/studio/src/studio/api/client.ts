@@ -292,8 +292,9 @@ export type Conversation = {
 	configOptions: ConversationOption[];
 	commands: Array<{ name: string; description: string }>;
 	usage: { used: number; size: number; cost: { amount: number; currency: string } | null } | null;
-	/** The service Claude Code talks to, when not the Claude account. */
+	/** The service Claude Code or pi talks to (its name, its id), when not the Claude account or pi's own setting. */
 	service: string | null;
+	serviceId?: string | null;
 	/** The last item written on its page (chats/<id>/index.md); what comes after is the turn going on. */
 	pageThrough: string | null;
 	/** Whether it has a page (opened in the editor as one): spoken to, or begun as one. */
@@ -324,7 +325,7 @@ export type ConversationEvent =
 const conversationApi = (id: string, action = '') => `/api/studio/conversations/${encodeURIComponent(id)}${action ? `/${action}` : ''}`;
 
 /** The AIs the panel can talk to, the one chosen first, and the conversations going on. */
-export function listConversations(): Promise<{ agents: Array<{ id: string; name: string }>; default: string; conversations: Conversation[] }> {
+export function listConversations(): Promise<{ agents: Array<{ id: string; name: string; kind?: 'claude' | 'pi' | 'other' }>; default: string; conversations: Conversation[] }> {
 	return request('/api/studio/conversations');
 }
 
@@ -356,6 +357,11 @@ export async function stopConversation(id: string): Promise<void> {
 /** The author's answer to leave the agent asked: one of its options, or `null` for no. */
 export async function answerConversation(id: string, permission: string, option: string | null): Promise<void> {
 	await request(conversationApi(id, `permissions/${encodeURIComponent(permission)}`), jsonOptions('POST', { option }));
+}
+
+/** Gone on with by another service (`provider`: Claude Code's or pi's) or another AI (`agent`), what was said kept. */
+export function switchConversation(id: string, to: { agent?: string; provider?: string }): Promise<Conversation> {
+	return request(conversationApi(id, 'switch'), jsonOptions('POST', to));
 }
 
 export function setConversationOption(id: string, configId: string, value: string | boolean): Promise<Conversation> {

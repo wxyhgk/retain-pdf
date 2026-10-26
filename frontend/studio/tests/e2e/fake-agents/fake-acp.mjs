@@ -1,7 +1,7 @@
 // A stand-in for an agent's ACP adapter (the AI panel's browser tests): an agent that thinks a little, says what it
 // will do, asks leave to run a command, runs it (or not) and says how it went, with a plan; told 「慢」 it goes on
 // until it is stopped; told 「退出」 it exits; told 「环境」 it says the service it was started for. Its options: a
-// mode and a model.
+// mode, a model and how hard it thinks.
 import { Readable, Writable } from 'node:stream';
 import { createRequire } from 'node:module';
 
@@ -16,8 +16,9 @@ const MODELS = asPi
 const options = () => [
 	{ id: 'mode', name: 'Mode', category: 'mode', type: 'select', currentValue: state.mode, options: [{ value: 'default', name: 'Manual' }, { value: 'plan', name: 'Plan' }] },
 	{ id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: state.model, options: MODELS },
+	{ id: 'thought_level', name: 'Thinking', category: 'thought_level', type: 'select', currentValue: state.thought_level, options: [{ value: 'low', name: 'Low' }, { value: 'medium', name: 'Medium' }, { value: 'high', name: 'High' }] },
 ];
-const state = { mode: 'default', model: MODELS[0].value, turns: 0 };
+const state = { mode: 'default', model: MODELS[0].value, thought_level: 'medium', turns: 0 };
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const app = agent({ name: 'fake' })

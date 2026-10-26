@@ -29,7 +29,8 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	};
 
 	api.get('/conversations', async () => ({
-		agents: (await agents()).map(({ id, name }) => ({ id, name })),
+		// Which ones talk to the services of the panel's ⚙ (their models listed by service in the model menu).
+		agents: (await agents()).map((agent) => ({ id: agent.id, name: agent.name, kind: isClaude(agent) ? 'claude' : isPi(agent) ? 'pi' : 'other' })),
 		default: (await agentSettings.config()).default,
 		conversations: await conversations.list(),
 	}));
@@ -56,6 +57,26 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const service = await serviceOf(agent);
 		return conversations.wake(session, { agent, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
 	};
+	// Gone on with by another service (Claude Code's, pi's) or another agent: its agent started again for it, what
+	// was said kept (told to another agent where it is).
+	api.post('/conversations/:id/switch', async ({ params, json }) => {
+		const { agent: wanted, provider } = await json();
+		const session = await conversations.find(params.id);
+		if (session.state === 'running' || session.state === 'starting') throw refuse(409, t('它还在做事：等它做完再换'));
+		const agent = (await agents()).find((candidate) => candidate.id === (typeof wanted === 'string' && wanted ? wanted : session.agent.id));
+		if (!agent) throw refuse(404, t('没有能在面板里用的 AI「{id}」', { id: wanted }));
+		if (typeof provider === 'string' && provider) {
+			if (isClaude(agent)) {
+				if (!(await panelModels.usable(provider))) throw refuse(409, t('这个模型来源还没有 key：在 AI 面板的 ⚙ 里填'));
+				await panelModels.set({ provider });
+			} else if (isPi(agent)) {
+				await piModels.set({ provider });
+			}
+		}
+		session.sleep();
+		if (agent.id !== session.agent.id) session.handTo(agent);
+		return (await awake(params.id)).summary();
+	});
 	/**
 	 * The page's account of where the author is, made the agent's: each article by its file from blog/, as it is there,
 	 * and its ai/brief.md if it has one (blog/AGENTS.md: read it first), so the agent need not try for one not there.

@@ -122,10 +122,20 @@ export class PanelModels {
 		return { ANTHROPIC_BASE_URL: baseUrl, ...key, ...models, API_TIMEOUT_MS: '600000', CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1' };
 	}
 
-	/** The models Claude Code is told to use, by tier (null: its own, the Claude account's or Anthropic's). */
+	/**
+	 * The service Claude Code is started for (`id`, `name`) and the models it is told to use, by tier (none: its own,
+	 * Anthropic's); null for the Claude account.
+	 */
 	async models() {
 		const { provider, main, fast } = await this.chosen();
-		return provider.id === 'claude-account' || !main ? null : { name: provider.name, main, fast };
+		if (provider.id === 'claude-account') return null;
+		return main ? { id: provider.id, name: provider.name, main, fast } : { id: provider.id, name: provider.name };
+	}
+
+	/** Whether the service `id` can be used now: the Claude account (its login is its own), or one with a key. */
+	async usable(id) {
+		if (id === 'claude-account') return true;
+		return Boolean(this.#choice(await this.#saved(), id).apiKey);
 	}
 
 	/**
@@ -252,19 +262,30 @@ export class PiModels {
 		return this.shown();
 	}
 
-	/** What pi is started with: the project's pi, no network at its start, the key where pi looks for it. */
+	/** The services with a key saved, by their ids. */
+	async #keyed() {
+		const saved = await this.#saved();
+		return PI_PROVIDERS.filter((entry) => entry.env && text(saved.keys?.[entry.id])).map((entry) => ({ ...entry, apiKey: text(saved.keys[entry.id]) }));
+	}
+
+	/**
+	 * What pi is started with: the project's pi, no network at its start, each key saved where pi looks for it (so a
+	 * model of any of those services can be chosen in a conversation, without starting pi again).
+	 */
 	async env() {
 		const { provider, apiKey } = await this.chosen();
 		const base = { PI_ACP_PI_COMMAND: join(this.binFolder, 'pi'), PI_OFFLINE: '1' };
-		if (!provider.env) return base;
-		if (!apiKey) throw fail(t('还没有填 pi 用的 {name} 的 API key：在 AI 面板的 ⚙ 里填', { name: provider.name }), 409);
-		return { ...base, [provider.env]: apiKey };
+		if (provider.env && !apiKey) throw fail(t('还没有填 pi 用的 {name} 的 API key：在 AI 面板的 ⚙ 里填', { name: provider.name }), 409);
+		return { ...base, ...Object.fromEntries((await this.#keyed()).map((entry) => [entry.env, entry.apiKey])) };
 	}
 
-	/** The service pi is to use (its models are those shown), or null: pi's own setting. */
+	/**
+	 * The service pi is to use first (`provider`), and those whose models are shown (each with a key); null: pi's own
+	 * setting, all its models shown.
+	 */
 	async service() {
 		const { provider } = await this.chosen();
-		return provider.env ? { name: provider.name, provider: provider.id } : null;
+		return provider.env ? { id: provider.id, name: provider.name, provider: provider.id, providers: (await this.#keyed()).map((entry) => entry.id) } : null;
 	}
 
 	/** Runs the project's pi with the service's key: its output, or why it failed. */

@@ -6,9 +6,12 @@ import {
 	followConversation,
 	listConversations,
 	pageConversation,
+	panelModels,
+	piModels,
 	setConversationOption,
 	startConversation,
 	stopConversation,
+	switchConversation,
 	tellConversation,
 	type Conversation,
 	type ConversationEvent,
@@ -53,7 +56,7 @@ export type PageInfo = ArticleRef & Pick<ArticleSummary, 'icon' | 'parent' | 'de
 
 /** What the panel shows (AiPanel.tsx draws it). */
 export type PanelState = {
-	agents: Array<{ id: string; name: string }>;
+	agents: Array<{ id: string; name: string; kind?: 'claude' | 'pi' | 'other' }>;
 	/** The AI chosen for what is begun next. */
 	agent: string;
 	conversation: Conversation | null;
@@ -75,12 +78,24 @@ export type PanelState = {
 	draft: string;
 	/** Asked to take the keys (focus): counted, so each ask is one. */
 	focusAsked: number;
+	/** The models starred in the model menu, first in it. */
+	favorites: ModelChoice[];
+	/** Gone on with by another service or AI (switchTo), until it can be spoken to. */
+	switching: boolean;
 };
+
+/**
+ * A model as the model menu offers it: of which AI, run for which service (Claude Code's or pi's; null: the one the
+ * conversation has), its value in the conversation's model option, its name.
+ */
+export type ModelChoice = { agent: string; provider: string | null; value: string; name: string };
+/** The services the model menu lists for an AI: their models, whether they can be used (a key saved). */
+export type MenuService = { id: string; name: string; usable: boolean; models: Array<{ value: string; name: string }> };
 
 const CONVERSATION_KEY = 'studio.ai.conversation';
 const AGENT_KEY = 'studio.ai.agent';
-/** The options shown under the input, in this order: who decides, which model, how hard it thinks. */
-export const SHOWN_OPTIONS = ['mode', 'model', 'thought_level'];
+/** The options the author chooses (the model menu, the bars): who decides, which model, how hard it thinks. */
+const SHOWN_OPTIONS = ['mode', 'model', 'thought_level'];
 /** The options the author chose for an AI, given again to each conversation begun with it. */
 const OPTIONS_KEY = (agent: string) => `studio.ai.options.${agent}`;
 
@@ -99,6 +114,19 @@ const remember = (key: string, value: string | null): void => {
 		// Private windows may refuse storage: the panel then starts afresh each visit.
 	}
 };
+
+const FAVORITES_KEY = 'studio.ai.favorites';
+
+function readFavorites(): ModelChoice[] {
+	try {
+		const kept = JSON.parse(remembered(FAVORITES_KEY) ?? '[]') as unknown;
+		return Array.isArray(kept) ? kept.filter((entry): entry is ModelChoice => typeof entry?.agent === 'string' && typeof entry?.value === 'string' && typeof entry?.name === 'string') : [];
+	} catch {
+		return [];
+	}
+}
+
+export const sameChoice = (one: ModelChoice, other: ModelChoice): boolean => one.agent === other.agent && (one.provider ?? '') === (other.provider ?? '') && one.value === other.value;
 
 /** When a conversation was last spoken in: the time today, else the day (and the year, another year's). */
 function when(iso: string | undefined): string {
@@ -134,6 +162,8 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		mentions: [],
 		draft: '',
 		focusAsked: 0,
+		favorites: readFavorites(),
+		switching: false,
 	});
 	const get = store.get;
 	const set = store.set;
@@ -348,6 +378,43 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		}
 	}
 
+	/** The service a conversation runs for: Claude Code's Claude account, pi's own setting (`pi-own`), when it names none. */
+	function currentService(shown: Conversation): string | null {
+		const kind = get().agents.find((entry) => entry.id === shown.agent.id)?.kind;
+		return shown.serviceId ?? (kind === 'claude' ? 'claude-account' : kind === 'pi' ? 'pi-own' : null);
+	}
+
+	/**
+	 * A model chosen in the menu: one of the conversation's, set; one of another service (Claude Code's) or another
+	 * AI's, the conversation gone on with by it first.
+	 */
+	async function switchTo(choice: ModelChoice): Promise<void> {
+		const shown = get().conversation;
+		if (!shown) return;
+		if (shown.state === 'running') return host.toast(t('它还在做事：等它做完再换'));
+		const otherAgent = choice.agent !== shown.agent.id;
+		const otherService = choice.provider !== null && choice.provider !== currentService(shown);
+		let now = shown;
+		if (otherAgent || otherService) {
+			set({ switching: true });
+			say(t('正在换到 {name}…', { name: choice.name || (get().agents.find((agent) => agent.id === choice.agent)?.name ?? 'AI') }));
+			try {
+				now = await switchConversation(shown.id, { ...(otherAgent ? { agent: choice.agent } : {}), ...(otherService ? { provider: choice.provider! } : {}) });
+			} catch (error) {
+				say(error instanceof Error ? error.message : t('没能换'), true);
+				return;
+			} finally {
+				set({ switching: false });
+			}
+			if (get().conversation?.id === now.id) set({ conversation: now });
+			remember(AGENT_KEY, choice.agent);
+			set({ agent: choice.agent });
+			sessionSaid();
+		}
+		const model = now.configOptions.find((option) => option.category === 'model');
+		if (choice.value && model && model.currentValue !== choice.value) actions.setOption(model.id, choice.value);
+	}
+
 	async function steer(id: string, text: string): Promise<void> {
 		set({ draft: '' });
 		try {
@@ -379,11 +446,36 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		type: (draft: string) => set({ draft }),
 		/** `text` in the input, for the author to finish and send. */
 		ask: (text: string) => set({ draft: text, focusAsked: get().focusAsked + 1 }),
-		/** Another AI is another conversation; one begun and not yet spoken to is let go. */
+		/** Another AI: the conversation gone on with by it (what was said kept); one not yet spoken to, begun afresh. */
 		chooseAgent(agent: string): void {
 			remember(AGENT_KEY, agent);
 			set({ agent });
-			void beginAfresh();
+			if (get().conversation && get().items.length) void switchTo({ agent, provider: null, value: '', name: '' });
+			else void beginAfresh();
+		},
+		switchTo: (choice: ModelChoice) => void switchTo(choice),
+		currentService,
+		/** ☆: a model first in the menu, or no longer. */
+		toggleFavorite(choice: ModelChoice): void {
+			const { favorites } = get();
+			const next = favorites.some((entry) => sameChoice(entry, choice)) ? favorites.filter((entry) => !sameChoice(entry, choice)) : [...favorites, choice];
+			remember(FAVORITES_KEY, JSON.stringify(next));
+			set({ favorites: next });
+		},
+		/** The services the model menu lists for `agent` (Claude Code's, pi's; none for another AI). */
+		async services(agent: string): Promise<MenuService[]> {
+			const kind = get().agents.find((entry) => entry.id === agent)?.kind;
+			if (kind === 'claude') {
+				const shown = await panelModels();
+				return shown.providers.map((entry) => ({
+					id: entry.id,
+					name: entry.name,
+					usable: entry.id === 'claude-account' || entry.hasKey,
+					models: entry.main ? [{ value: 'default', name: entry.main }, ...(entry.fast && entry.fast !== entry.main ? [{ value: 'haiku', name: t('{fast}（快）', { fast: entry.fast }) }] : [])] : [],
+				}));
+			}
+			if (kind === 'pi') return (await piModels()).providers.filter((entry) => entry.env).map((entry) => ({ id: entry.id, name: entry.name, usable: entry.hasKey, models: [] }));
+			return [];
 		},
 		newConversation(): void {
 			void beginAfresh().then(() => set({ focusAsked: get().focusAsked + 1 }));

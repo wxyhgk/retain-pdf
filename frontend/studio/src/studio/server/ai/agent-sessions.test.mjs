@@ -40,7 +40,7 @@ async function conversation(t) {
 test('a conversation: thinking, words, a tool call asking leave, run once allowed, its plan; the options set', async (t) => {
 	const { session, events, until } = await conversation(t);
 	assert.equal(session.state, 'idle');
-	assert.deepEqual(session.configOptions.map((option) => [option.id, option.currentValue]), [['mode', 'default'], ['model', 'small']]);
+	assert.deepEqual(session.configOptions.map((option) => [option.id, option.currentValue]), [['mode', 'default'], ['model', 'small'], ['thought_level', 'medium']]);
 
 	await session.configure('model', 'large');
 	assert.equal(session.configOptions.find((option) => option.id === 'model').currentValue, 'large');

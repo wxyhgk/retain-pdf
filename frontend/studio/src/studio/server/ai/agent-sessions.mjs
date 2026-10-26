@@ -391,7 +391,18 @@ class AgentSession {
 	}
 
 	summary() {
-		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, pageThrough: this.pageThrough, onPage: this.madePage || spokenTo(this), canSteer: this.#here !== null };
+		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, serviceId: this.models?.id ?? null, pageThrough: this.pageThrough, onPage: this.madePage || spokenTo(this), canSteer: this.#here !== null };
+	}
+
+	/**
+	 * Gone on with by another agent (asleep: AgentSessions.wake starts it): a session of its own, told where what was
+	 * said before is.
+	 */
+	handTo(agent) {
+		if (!ASLEEP.has(this.state)) throw Object.assign(new Error(t('它还在做事：等它做完再换')), { statusCode: 409 });
+		this.agent = { id: agent.id, name: agent.name };
+		this.#acpId = null;
+		this.configOptions = [];
 	}
 
 	/** The items since the last put on its page. */
@@ -425,11 +436,11 @@ class AgentSession {
 	 * all it was told of: the main model for the default, opus and sonnet, the fast one for haiku), not Claude's.
 	 */
 	#shownOptions() {
-		if (!this.models) return this.configOptions;
-		const { main, fast, provider } = this.models;
+		if (!this.models || (!this.models.main && !this.models.provider)) return this.configOptions;
+		const { main, fast, provider, providers = [provider] } = this.models;
 		return this.configOptions.map((option) => {
 			if (option.category !== 'model' || option.type !== 'select') return option;
-			if (provider) return { ...option, options: modelChoices(option).filter((choice) => choice.value.startsWith(`${provider}/`)) };
+			if (provider) return { ...option, options: modelChoices(option).filter((choice) => providers.some((id) => choice.value.startsWith(`${id}/`))) };
 			const options = [{ value: 'default', name: main }, ...(fast && fast !== main ? [{ value: 'haiku', name: t('{fast}（快）', { fast }) }] : [])];
 			return { ...option, options, currentValue: option.currentValue === 'haiku' && options.length > 1 ? 'haiku' : 'default' };
 		});
