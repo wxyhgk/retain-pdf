@@ -48,10 +48,22 @@ function Markdown({ text, blocks = false, className }: { text: string; blocks?: 
 	const node = useRef<HTMLDivElement>(null);
 	useEffect(() => {
 		const words = node.current!;
-		words.replaceChildren(renderAiMarkdown(text, { blocks }));
-		if (!blocks) return;
-		for (const block of words.querySelectorAll<HTMLElement>(':scope > .ai-block[data-markdown]')) {
-			const markdown = block.dataset.markdown!;
+		const drawn = renderAiMarkdown(text, { blocks });
+		if (!blocks) {
+			words.replaceChildren(drawn);
+			return;
+		}
+		// As words stream in, only the blocks that changed are drawn again: those done (a molecule's 3D view…) stay as they are.
+		const before = [...words.children] as HTMLElement[];
+		const kept = ([...drawn.children] as HTMLElement[]).map((block, at) => {
+			const old = before[at];
+			return old?.dataset.markdown !== undefined && old.dataset.markdown === block.dataset.markdown && old.className === block.className ? old : block;
+		});
+		if (kept.length === before.length && kept.every((block, at) => block === before[at])) return;
+		words.replaceChildren(...kept);
+		for (const block of kept) {
+			const markdown = block.dataset.markdown;
+			if (markdown === undefined || block.querySelector(':scope > .ai-block-handle')) continue;
 			const handle = document.createElement('button');
 			handle.className = 'ai-block-handle';
 			handle.type = 'button';

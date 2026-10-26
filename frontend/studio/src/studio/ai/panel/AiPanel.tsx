@@ -6,6 +6,7 @@ import type { Conversation, ConversationItem, ConversationOption } from '../../a
 import { observePluginBlocks } from '../../plugins';
 import { useStore, type Store } from '../../shell/store';
 import { pictureUrl } from '../ai-markdown';
+import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
 import { commandOf, Item, ItemsContext, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { SHOWN_OPTIONS, type ArticleRef, type PanelActions, type PanelState } from './panel-state';
 
@@ -405,29 +406,19 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	);
 }
 
-/** The models sheet (ai-models-sheet.ts draws it), put where React leaves room for it. */
-function SheetHost({ sheet }: { sheet: HTMLElement }) {
-	const node = useRef<HTMLDivElement>(null);
-	useLayoutEffect(() => {
-		node.current!.replaceWith(sheet);
-		return () => sheet.replaceWith(node.current!);
-	}, []);
-	return <div ref={node} data-host />;
-}
-
 /**
  * The AI panel (the right column's AI tab, or whole in the middle: AI 问答): a coding agent (Claude Code, Codex, pi)
  * that does what it is asked by itself, reading, running commands and changing files in the article's folder, shown as
  * it goes; its work (thinking, tools, the plan) one row a stretch, its detail in a dialog. Under the input: which AI,
  * and its options (who decides, model, effort).
  */
-export function AiPanel({ store, actions, sheet }: { store: Store<PanelState>; actions: PanelActions; sheet: HTMLElement }) {
+export function AiPanel({ store, actions, sheetHost }: { store: Store<PanelState>; actions: PanelActions; sheetHost: ModelsSheetHost }) {
 	const state = useStore(store);
 	const context = useMemo(() => ({ conversation: state.conversation, items: state.items, actions }), [state.conversation, state.items]);
 	return (
 		<ItemsContext value={context}>
 			<Toolbar state={state} actions={actions} />
-			<SheetHost sheet={sheet} />
+			<ModelsSheet open={state.settings} host={sheetHost} onClose={() => actions.showSheet(false)} />
 			<Transcript state={state} actions={actions} />
 			<Composer state={state} actions={actions} />
 		</ItemsContext>

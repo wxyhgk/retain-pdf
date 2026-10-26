@@ -128,7 +128,7 @@
 	.ai-thought.is-going summary, .ai-tool[data-status='in_progress'] .ai-tool-state::after { animation: none; }
 }
 
-/* 模型和账号 (ai-models-sheet.ts), in place of the conversation while open. */
+/* 模型和账号 (panel/ModelsSheet.tsx), in place of the conversation while open. */
 .ai-pane.is-settings .ai-transcript, .ai-pane.is-settings .ai-composer { display: none; }
 .ai-sheet { flex: 1; min-height: 0; overflow: auto; padding: 12px 14px 16px; }
 .ai-sheet[hidden] { display: none; }

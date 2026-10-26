@@ -170,6 +170,15 @@ test('⚙ 模型和账号: another service, tried with a word and saved, is the 
 	}
 });
 
+test('⚙ 模型和账号 closed by its ×: the conversation is back', async ({ page }) => {
+	await openAi(page);
+	await pane(page).getByRole('button', { name: '模型和账号' }).click();
+	await expect(pane(page).locator('.ai-sheet')).toBeVisible();
+	await pane(page).getByRole('button', { name: '关闭模型和账号' }).click();
+	await expect(pane(page).locator('.ai-sheet')).toBeHidden();
+	await expect(pane(page).locator('.ai-input')).toBeVisible();
+});
+
 test('pi: a service of its catalog and a key, saved; the next pi conversation has that key and only that service’s models', async ({ page }) => {
 	await openAi(page);
 	await pane(page).getByRole('button', { name: '模型和账号' }).click();

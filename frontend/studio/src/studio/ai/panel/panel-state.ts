@@ -15,7 +15,7 @@ import {
 } from '../../api/client';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
 import { createStore, type Store } from '../../shell/store';
-import { createModelsSheet } from '../ai-models-sheet';
+import type { ModelsSheetHost } from './ModelsSheet';
 
 /** What the AI panel needs of the Studio around it. */
 export type AiPanelHost = {
@@ -141,7 +141,8 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	/** A conversation was asked for (open, newChat): none is begun or taken up by itself once the list is read. */
 	let asked = false;
 
-	const sheet = createModelsSheet({
+	/** What 模型和账号 tells: a service saved for `agent`, for conversations begun with it from now on. */
+	const sheetHost: ModelsSheetHost = {
 		runInTerminal: (command) => host.runInTerminal(command),
 		saved(agent, name) {
 			showSheet(false);
@@ -149,7 +150,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			if (get().agent === agent) beginAfresh();
 			host.toast(name ? `AI 面板的 ${agent === 'pi' ? 'pi' : 'Claude Code'} 改用「${name}」` : '已保存');
 		},
-	});
+	};
 
 	function say(text: string, error = false): void {
 		set({ status: { text, error } });
@@ -159,8 +160,6 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	function showSheet(open: boolean): void {
 		pane.classList.toggle('is-settings', open);
 		set({ settings: open });
-		if (open) void sheet.show();
-		else sheet.hide();
 	}
 
 	function load(): Promise<void> {
@@ -522,7 +521,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		},
 	};
 
-	return { store, actions, panel, sheet: sheet.element };
+	return { store, actions, panel, sheetHost };
 }
 
 /** The AI chosen in the panel (the one asked by the AI in the editor too), and the options chosen for it. */
