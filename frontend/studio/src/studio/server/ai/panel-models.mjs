@@ -3,6 +3,7 @@ import { realpath } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
+import presets from './model-presets.json' with { type: 'json' };
 
 /**
  * Which models the AI panel's Claude Code talks to: the author's Claude account (its own login), or any service
@@ -12,23 +13,14 @@ import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
  *
  * A service is given to Claude Code the way their guides say, by its environment: the address, the key, and the
  * models it uses for its tiers (`main` for opus and sonnet, `fast` for haiku and its helpers). Their model names
- * change often: each preset's are only first suggestions, changed in the panel and tried there (`check`).
+ * change often: each preset's (model-presets.json) are only first suggestions, changed in the panel and tried there (`check`).
  */
 
 /** @typedef {'bearer' | 'x-api-key'} KeyStyle how the key is sent: ANTHROPIC_AUTH_TOKEN or ANTHROPIC_API_KEY */
 /** @typedef {{ id: string, name: string, baseUrl: string, keyStyle: KeyStyle, main: string, fast: string, keyUrl: string }} Provider */
 
-/** @type {Provider[]} */
-export const PROVIDERS = Object.freeze([
-	{ id: 'claude-account', name: 'Claude 账号（订阅）', baseUrl: '', keyStyle: 'x-api-key', main: '', fast: '', keyUrl: '' },
-	{ id: 'anthropic', name: 'Anthropic API key', baseUrl: 'https://api.anthropic.com', keyStyle: 'x-api-key', main: '', fast: '', keyUrl: 'https://platform.claude.com/settings/keys' },
-	{ id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/anthropic', keyStyle: 'x-api-key', main: 'deepseek-v4-pro', fast: 'deepseek-flash', keyUrl: 'https://platform.deepseek.com/api_keys' },
-	{ id: 'kimi', name: 'Kimi（月之暗面）', baseUrl: 'https://api.moonshot.cn/anthropic', keyStyle: 'bearer', main: 'kimi-k3', fast: 'kimi-k3', keyUrl: 'https://platform.moonshot.cn/console/api-keys' },
-	{ id: 'glm', name: '智谱 GLM', baseUrl: 'https://open.bigmodel.cn/api/anthropic', keyStyle: 'bearer', main: 'glm-5.1', fast: 'glm-4.5-air', keyUrl: 'https://open.bigmodel.cn/usercenter/apikeys' },
-	{ id: 'qwen', name: '通义千问（阿里云百炼）', baseUrl: 'https://dashscope.aliyuncs.com/apps/anthropic', keyStyle: 'bearer', main: 'qwen3.5-plus', fast: 'qwen3.5-plus', keyUrl: 'https://bailian.console.aliyun.com/?tab=model#/api-key' },
-	{ id: 'minimax', name: 'MiniMax', baseUrl: 'https://api.minimaxi.com/anthropic', keyStyle: 'bearer', main: 'MiniMax-M3', fast: 'MiniMax-M3', keyUrl: 'https://platform.minimaxi.com/user-center/basic-information/interface-key' },
-	{ id: 'custom', name: '其他（兼容 Anthropic 接口）', baseUrl: '', keyStyle: 'bearer', main: '', fast: '', keyUrl: '' },
-]);
+/** @type {readonly Provider[]} The services and their first suggestions (model-presets.json, where their names are kept up to date). */
+export const PROVIDERS = Object.freeze(presets.claudeCode);
 
 const ADDRESS = /^https?:\/\/[^\s/]+(\/\S*)?$/u;
 const fail = (message, statusCode = 400) => Object.assign(new Error(message), { statusCode });
@@ -144,7 +136,7 @@ export class PanelModels {
 		if (provider.id === 'claude-account') throw fail('Claude 账号不用检查：登录以后就能用');
 		if (!apiKey) throw fail('还没有填 API key');
 		const headers = { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', ...(provider.keyStyle === 'bearer' ? { authorization: `Bearer ${apiKey}` } : { 'x-api-key': apiKey }) };
-		const model = main || 'claude-haiku-5-5';
+		const model = main || presets.checkModel;
 		let response;
 		try {
 			response = await this.fetch(`${baseUrl.replace(/\/+$/u, '')}/v1/messages`, {
@@ -211,21 +203,7 @@ export async function accountsLoggedIn(binFolder) {
  * pi's services (its own catalog of them and of their models, so nothing is typed but the key): which one the panel's
  * pi uses, by the environment variable pi reads its key from. `pi-own`: as pi is set up on this machine (~/.pi).
  */
-export const PI_PROVIDERS = Object.freeze([
-	{ id: 'pi-own', name: 'pi 自己的设置（~/.pi）', env: '', keyUrl: '' },
-	{ id: 'deepseek', name: 'DeepSeek', env: 'DEEPSEEK_API_KEY', keyUrl: 'https://platform.deepseek.com/api_keys' },
-	{ id: 'moonshotai-cn', name: 'Kimi（月之暗面，国内）', env: 'MOONSHOT_API_KEY', keyUrl: 'https://platform.moonshot.cn/console/api-keys' },
-	{ id: 'kimi-coding', name: 'Kimi Code 会员', env: 'KIMI_API_KEY', keyUrl: 'https://www.kimi.com/code' },
-	{ id: 'zai-coding-cn', name: '智谱 GLM Coding（国内）', env: 'ZAI_CODING_CN_API_KEY', keyUrl: 'https://open.bigmodel.cn/usercenter/apikeys' },
-	{ id: 'minimax-cn', name: 'MiniMax（国内）', env: 'MINIMAX_CN_API_KEY', keyUrl: 'https://platform.minimaxi.com/user-center/basic-information/interface-key' },
-	{ id: 'qwen-token-plan-cn', name: '通义千问 Token Plan（国内）', env: 'QWEN_TOKEN_PLAN_CN_API_KEY', keyUrl: 'https://bailian.console.aliyun.com/' },
-	{ id: 'xiaomi-token-plan-cn', name: '小米 MiMo Token Plan（国内）', env: 'XIAOMI_TOKEN_PLAN_CN_API_KEY', keyUrl: '' },
-	{ id: 'openrouter', name: 'OpenRouter', env: 'OPENROUTER_API_KEY', keyUrl: 'https://openrouter.ai/keys' },
-	{ id: 'openai', name: 'OpenAI', env: 'OPENAI_API_KEY', keyUrl: 'https://platform.openai.com/api-keys' },
-	{ id: 'google', name: 'Google Gemini', env: 'GEMINI_API_KEY', keyUrl: 'https://aistudio.google.com/apikey' },
-	{ id: 'anthropic', name: 'Anthropic', env: 'ANTHROPIC_API_KEY', keyUrl: 'https://platform.claude.com/settings/keys' },
-	{ id: 'xai', name: 'xAI Grok', env: 'XAI_API_KEY', keyUrl: 'https://console.x.ai/' },
-]);
+export const PI_PROVIDERS = Object.freeze(presets.pi);
 
 /**
  * pi in the AI panel (pi-acp): the service and its key, kept as `panelModels.pi` with the rest; what pi is started

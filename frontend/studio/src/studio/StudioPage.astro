@@ -283,7 +283,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.page-cover:hover .page-cover-actions, .page-cover:focus-within .page-cover-actions { opacity: 1; }
 	.page-cover-actions button { padding: 5px 10px; border: 0; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 	.page-cover-actions button + button { border-left: 1px solid rgb(var(--gray-light)); }
-	.page-cover-actions button:hover { background: rgba(55, 53, 47, 0.08); }
+	.page-cover-actions button:hover { background: rgba(var(--black), 0.08); }
 	.page-emoji { display: block; width: 78px; height: 78px; margin: 0 0 4px -4px; padding: 0; border: 0; border-radius: 6px; background: transparent; font-size: 64px; line-height: 78px; text-align: center; cursor: pointer; }
 	.page-emoji[hidden] { display: none; }
 	.page-emoji:hover { background: var(--surface-soft); }
@@ -314,7 +314,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.tag-field :global(.tag-chip) { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 7px; border-radius: 4px; background: rgba(var(--gray), 0.16); color: rgb(var(--gray-dark)); font-size: 13px; line-height: 22px; }
 	.tag-field :global(.tag-chip-remove) { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: transparent; color: rgb(var(--gray)); font: inherit; line-height: 18px; cursor: pointer; opacity: 0; }
 	.tag-field:hover :global(.tag-chip-remove), .tag-field:focus-within :global(.tag-chip-remove) { opacity: 1; }
-	.tag-field :global(.tag-chip-remove:hover) { background: rgba(55, 53, 47, 0.12); color: rgb(var(--gray-dark)); }
+	.tag-field :global(.tag-chip-remove:hover) { background: rgba(var(--black), 0.12); color: rgb(var(--gray-dark)); }
 	.status-field { display: flex; align-items: center; gap: 8px; padding-block: 5px; }
 	.status-pill { padding: 0 8px; border-radius: 4px; background: rgba(var(--gray), 0.16); color: rgb(var(--gray)); font-size: 13px; line-height: 22px; }
 	.status-pill.is-published { color: rgb(var(--gray-dark)); }

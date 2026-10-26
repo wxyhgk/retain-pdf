@@ -1,8 +1,9 @@
 
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
+import presets from './model-presets.json' with { type: 'json' };
 
-/** The model asked when none is set, for each kind of service. */
-export const DEFAULT_MODELS = { anthropic: 'claude-opus-5-5', openai: '' };
+/** The model asked when none is set, for each kind of service (model-presets.json). */
+export const DEFAULT_MODELS = Object.freeze(presets.aiSettings);
 const PROVIDERS = Object.keys(DEFAULT_MODELS);
 
 /**

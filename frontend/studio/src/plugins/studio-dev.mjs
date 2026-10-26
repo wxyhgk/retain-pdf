@@ -9,7 +9,7 @@ import { CodeFilePreviews } from '../studio/server/articles/code-file-previews.m
 import { Drive } from '../studio/server/drive/drive.mjs';
 import { DriveText, TEXT_FOLDER } from '../studio/server/drive/drive-text.mjs';
 import { articleBundlePaths, chatsRootOf, resolveInside } from '../articles/bundle-paths.mjs';
-import { ArticleFileManager } from '../studio/server/files/file-manager.mjs';
+import { ArticleFileManager, TRASH_FOLDER } from '../studio/server/files/file-manager.mjs';
 import { FileRepository } from '../studio/server/files/file-repository.mjs';
 import { TerminalHost } from '../studio/server/system/terminal-host.mjs';
 import { AgentSettings } from '../studio/server/ai/agent-settings.mjs';
@@ -59,7 +59,7 @@ export default function studioDev({ site } = {}) {
 			const codeFiles = new CodeFilePreviews(files);
 			// Removed files wait here, outside blog/ and ignored by git, until someone empties it.
 			const manager = new ArticleFileManager(blogRoot, {
-				trashRoot: testBlogRoot ? resolve(testBlogRoot, '.studio-trash') : resolve(server.config.root, '.studio-trash'),
+				trashRoot: testBlogRoot ? resolve(testBlogRoot, TRASH_FOLDER) : resolve(server.config.root, TRASH_FOLDER),
 			});
 			const articleFiles = new ArticleFiles(articles, manager);
 			const articleGit = new ArticleGit(blogRoot);

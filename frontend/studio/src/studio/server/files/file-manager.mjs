@@ -25,8 +25,11 @@ const MAX_NAME_BYTES = 255;
  * follows a symbolic link, nothing overwrites a file unasked, and removing a
  * file moves it to the trash folder instead of deleting it.
  */
+/** The trash's folder: beside blog/ (the articles' and their files'), in the drive (its own). */
+export const TRASH_FOLDER = '.studio-trash';
+
 export class ArticleFileManager {
-	constructor(blogRoot, { trashRoot = resolve(blogRoot, '..', '.studio-trash'), uploadSizeLimit = DEFAULT_UPLOAD_SIZE_LIMIT } = {}) {
+	constructor(blogRoot, { trashRoot = resolve(blogRoot, '..', TRASH_FOLDER), uploadSizeLimit = DEFAULT_UPLOAD_SIZE_LIMIT } = {}) {
 		this.blogRoot = resolve(blogRoot);
 		this.trashRoot = resolve(trashRoot);
 		this.uploadSizeLimit = uploadSizeLimit;

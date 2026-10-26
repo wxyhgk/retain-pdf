@@ -6,6 +6,7 @@ import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
 import { resolveInside, StudioPathError } from '../../../articles/bundle-paths.mjs';
+import { TRASH_FOLDER } from '../files/file-manager.mjs';
 import { resourceContentType } from '../files/file-repository.mjs';
 import { existingDirectory, existingEntry, exists, FileConflictError, FileNotFoundError, linkUnderFreeName, replaceInto } from '../files/safe-fs.mjs';
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
@@ -24,7 +25,6 @@ import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
  */
 
 export const DEFAULT_DRIVE_UPLOAD_LIMIT = 4 * 1024 * 1024 * 1024;
-const TRASH = '.studio-trash';
 const MAX_NAME_BYTES = 255;
 
 export class DriveNotSetError extends Error {
@@ -223,8 +223,8 @@ export class Drive {
 		const root = await this.#root();
 		const segments = driveSegments(path);
 		const sourcePath = await existingEntry(root, segments);
-		const trashed = [await ownTrashFolder(join(root, TRASH)), ...segments].join('/');
-		const trashedTo = join(root, TRASH, ...trashed.split('/'));
+		const trashed = [await ownTrashFolder(join(root, TRASH_FOLDER)), ...segments].join('/');
+		const trashedTo = join(root, TRASH_FOLDER, ...trashed.split('/'));
 		await mkdir(dirname(trashedTo), { recursive: true });
 		await rename(sourcePath, trashedTo);
 		return { path: segments.join('/'), trashed };
@@ -235,14 +235,14 @@ export class Drive {
 		const root = await this.#root();
 		const [stamp, ...segments] = driveSegments(String(trashed ?? ''));
 		if (!/^\d{4}-\d{2}-\d{2}T[\d-]+Z$/u.test(stamp ?? '') || !segments.length) throw new StudioPathError('无效的回收站路径');
-		const source = await existingEntry(join(root, TRASH), [stamp, ...segments]);
+		const source = await existingEntry(join(root, TRASH_FOLDER), [stamp, ...segments]);
 		const parent = await existingDirectory(root, segments.slice(0, -1)).catch(() => {
 			throw new FileNotFoundError(`${segments.slice(0, -1).join('/')} 已经不在了，放不回去`);
 		});
 		const target = resolveInside(parent, segments[segments.length - 1]);
 		if (await exists(target)) throw new FileConflictError(`${segments.join('/')} 已经有同名的文件`);
 		await rename(source, target);
-		await rm(join(root, TRASH, stamp), { recursive: true, force: true }).catch(() => {});
+		await rm(join(root, TRASH_FOLDER, stamp), { recursive: true, force: true }).catch(() => {});
 		return { path: segments.join('/') };
 	}
 }

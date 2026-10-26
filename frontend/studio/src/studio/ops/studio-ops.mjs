@@ -15,7 +15,7 @@ import { ArticleHistory } from '../server/articles/article-history.mjs';
 import { ArticleRepository } from '../server/articles/article-repository.mjs';
 import { Drive } from '../server/drive/drive.mjs';
 import { DriveText } from '../server/drive/drive-text.mjs';
-import { ArticleFileManager } from '../server/files/file-manager.mjs';
+import { ArticleFileManager, TRASH_FOLDER } from '../server/files/file-manager.mjs';
 import { studioBlogRoot } from '../server/articles/page-version.mjs';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from '../pages/page-names.ts';
 import { filesNamed } from '../editor/split-section.ts';
@@ -41,7 +41,7 @@ export function createStudioOps({ root, site } = {}) {
 	const history = new ArticleHistory(blogRoot);
 	// One command and done: links follow a new title at once.
 	const articles = new ArticleRepository(blogRoot, { keep: (slug, source) => history.keep(slug, source, 'before-change') });
-	const manager = new ArticleFileManager(blogRoot, { trashRoot: testBlog ? resolve(testBlog, '.studio-trash') : resolve(projectRoot, '.studio-trash') });
+	const manager = new ArticleFileManager(blogRoot, { trashRoot: testBlog ? resolve(testBlog, TRASH_FOLDER) : resolve(projectRoot, TRASH_FOLDER) });
 	const git = new ArticleGit(blogRoot);
 	const settingsFile = testBlog ? resolve(testBlog, '.studio-settings.json') : resolve(projectRoot, '.studio-settings.json');
 	const drive = new Drive({ settingsFile, fixedRoot: process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null, forbidden: [projectRoot, blogRoot] });
