@@ -55,7 +55,7 @@ test('the agent thinks, asks leave to run a command, runs it once allowed, chang
 	await expect(work).toHaveText(['⚙思考›', '⚙运行了 1 个命令 · 计划 2/2›', '⚙改了 index.md›']);
 	await expect(pane(page).locator('.ai-thought, .ai-tool, .ai-plan')).toHaveCount(0);
 	// Opened: its detail in a dialog, the thinking open, closed with Esc.
-	const dialog = page.locator('dialog.ai-work-dialog');
+	const dialog = page.locator('.ai-work-dialog');
 	await work.first().click();
 	await expect(dialog).toBeVisible();
 	await expect(dialog.locator('.ai-thought-text')).toHaveText('先看看要做什么。');
@@ -310,7 +310,7 @@ test('a picture the AI drew on this machine is shown, by its path', async ({ pag
 	// Small in the conversation, whole when clicked.
 	expect((await picture.boundingBox())!.height).toBeLessThanOrEqual(300);
 	await picture.click();
-	const whole = page.locator('dialog.ai-picture-dialog');
+	const whole = page.locator('.ai-picture-dialog');
 	await expect(whole).toBeVisible();
 	await expect(whole.locator('img')).toHaveAttribute('alt', '势能曲线');
 	await whole.click();
@@ -343,8 +343,8 @@ test('a picture the AI looked at is on its row, small, and whole in the dialog; 
 	await expect(sent).toHaveCount(1);
 	await expect.poll(() => loaded(sent)).toBeGreaterThan(0);
 	await pane(page).locator('.ai-work').click();
-	await page.locator('dialog.ai-work-dialog .ai-tool-row').click();
-	await expect.poll(() => loaded(page.locator('dialog.ai-work-dialog .ai-tool-picture'))).toBeGreaterThan(0);
+	await page.locator('.ai-work-dialog .ai-tool-row').click();
+	await expect.poll(() => loaded(page.locator('.ai-work-dialog .ai-tool-picture'))).toBeGreaterThan(0);
 });
 
 test('the plugins’ blocks in an answer are drawn as in the editor, and put in the article are those blocks; a picture of this machine is copied in', async ({ page }) => {
