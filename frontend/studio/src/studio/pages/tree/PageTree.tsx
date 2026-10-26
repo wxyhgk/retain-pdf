@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
+import { ChevronRight, Ellipsis, FileText, Plus } from 'lucide-react';
+
 import { t } from '@blog/i18n/index.mjs';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
 import { useStore, type Store } from '../../shell/store';
@@ -116,8 +118,9 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 	return (
 		<div className="page-branch">
 			<div
-				className={`page-item${active ? ' active' : ''}${chosen.has(article.slug) ? ' is-chosen' : ''}${marked}`}
+				className={`page-item${active ? ' active' : ''}${chosen.has(article.slug) ? ' is-chosen' : ''}${under.length ? ' has-children' : ''}${marked}`}
 				data-slug={article.slug}
+				data-draft={article.draft !== false ? '' : undefined}
 				style={{ '--depth': String(depth) } as CSSProperties}
 				draggable
 				onDragStart={(event) => {
@@ -164,7 +167,7 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 						aria-expanded={!isFolded}
 						onClick={() => actions.setFolded(article.slug, !isFolded)}
 					>
-						{isFolded ? '▸' : '▾'}
+						<ChevronRight aria-hidden />
 					</button>
 				) : (
 					<button type="button" className="page-toggle" tabIndex={-1} aria-hidden disabled />
@@ -183,17 +186,14 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 					}}
 					onKeyDown={keyDown}
 				>
-					<span className={`page-icon${article.icon ? ' is-emoji' : ''}`}>{article.icon || '▤'}</span>
-					<span className="page-title">{article.title}</span>
+					<span className={`page-icon${article.icon ? ' is-emoji' : ''}`}>{article.icon || <FileText aria-hidden />}</span>
+					<span className="page-title" title={article.draft !== false ? t('{title}（草稿，尚未发布）', { title: article.title }) : article.title}>
+						{article.title}
+					</span>
 					{/* Folded: how many pages are under it, beside its title. */}
 					{under.length > 0 && isFolded && (
 						<span className="page-count" title={t('下面有 {count} 个页面', { count: countUnder(state, article.slug) })}>
 							{countUnder(state, article.slug)}
-						</span>
-					)}
-					{article.draft !== false && (
-						<span className="page-draft" title={t('尚未发布')}>
-							{t('草稿')}
 						</span>
 					)}
 					{uncommitted && (
@@ -204,10 +204,10 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 				</button>
 				{/* A new page under it, at once, and what else can be done to it: shown on hover, as in Notion. */}
 				<button type="button" className="page-add" title={t('在下面新建页面')} aria-label={t('在「{title}」下面新建页面', { title: article.title })} onClick={() => host.createChild(article)}>
-					＋
+					<Plus aria-hidden />
 				</button>
 				<button type="button" className="page-more" title={t('更多操作')} aria-label={t('{title} 的更多操作', { title: article.title })} onClick={(event) => menu(event.currentTarget)}>
-					⋯
+					<Ellipsis aria-hidden />
 				</button>
 			</div>
 			{!isFolded && under.map((child) => <Row key={child.slug} article={child} depth={depth + 1} state={state} actions={actions} drag={drag} setDrag={setDrag} drop={drop} setDrop={setDrop} overPage={overPage} />)}

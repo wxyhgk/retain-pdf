@@ -49,7 +49,7 @@ test('a copy is a draft titled 副本, opened at once', async ({ page }) => {
 	await fromMenu(page, TITLE, '复制一份');
 	await expect(page).toHaveURL(new RegExp(`article=${COPY}`, 'u'));
 	await expect(page.locator('#article-title-input')).toHaveValue(`${TITLE}（副本）`);
-	await expect(row(page, `${TITLE}（副本）`).locator('.page-draft')).toBeVisible();
+	await expect(page.locator('#article-list .page-item', { hasText: `${TITLE}（副本）` })).toHaveAttribute('data-draft', '');
 	expect(blogHasArticle(slug)).toBe(true);
 });
 
@@ -101,6 +101,8 @@ test.describe('with blog/ in a git repository', () => {
 
 	test('an article never committed is marked, and committed from its menu', async ({ page }) => {
 		await openStudio(page);
+		// Shown on hover, as the page's other marks.
+		await row(page, TITLE).hover();
 		await expect(row(page, TITLE).locator('.page-git.is-new')).toBeVisible();
 		page.once('dialog', (dialog) => {
 			expect(dialog.defaultValue()).toBe(`content: ${TITLE}`);

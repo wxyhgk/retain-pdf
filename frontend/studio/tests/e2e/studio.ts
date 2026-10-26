@@ -102,6 +102,12 @@ export async function openStudio(page: Page, { autosaveDelay = 600_000 }: { auto
 	await expect(scienceBlock(page, 'XYZ').locator('.science-block-preview canvas')).toBeVisible();
 }
 
+/** An entry of the workspace's menu at the foot of the left column (回收站, 插件, AI 设置, 语言), by its id. */
+export async function workspaceMenu(page: Page, id: string): Promise<void> {
+	await page.locator('#workspace-menu').click();
+	await page.locator(`#${id}`).click();
+}
+
 export const editor = (page: Page): Locator => page.locator('.milkdown .ProseMirror');
 export const popup = (page: Page): Locator => page.locator('.pm-source-popup');
 export const popupInput = (page: Page): Locator => page.locator('.pm-source-popup-input');

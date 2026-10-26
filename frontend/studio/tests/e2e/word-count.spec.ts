@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { appendToFixture, editor, openStudio, removeArticle, resetFixture, writeArticle } from './studio.ts';
+import { appendToFixture, editor, openStudio, removeArticle, resetFixture, workspaceMenu, writeArticle } from './studio.ts';
 
 // 字数统计 (plugins/word-count): a tab that counts the open article as it is typed in, and a command that writes the count as a line.
 
@@ -83,7 +83,7 @@ test('the command types the count in where the caret is: by its keys, from the s
 
 test('the plugins dialog says what it is, and turning it off takes the tab and the button away', async ({ page }) => {
 	await openStudio(page);
-	await page.locator('#open-plugins').click();
+	await workspaceMenu(page, 'open-plugins');
 	const row = page.locator('#plugins-dialog .plugin-row[data-plugin="word-count"]');
 	await expect(row).toContainText('字数统计');
 	await expect(row.locator('.plugin-state')).toHaveText('运行中');
@@ -93,7 +93,7 @@ test('the plugins dialog says what it is, and turning it off takes the tab and t
 	await expect(page.locator('.side-tabs [role="tab"]', { hasText: '字数' })).toHaveCount(0);
 	await expect(page.locator('#plugin-commands')).toBeHidden();
 	// Turned on again, so that the settings file is as it was.
-	await page.locator('#open-plugins').click();
+	await workspaceMenu(page, 'open-plugins');
 	await row.getByRole('switch').click({ force: true });
 	await expect(row.locator('.plugin-state')).toHaveText('运行中');
 });

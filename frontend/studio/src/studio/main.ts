@@ -106,6 +106,8 @@ mountShell(shell, {
 	openAiSettings: () => void openAiSettings(),
 	openLocale: () => void openLocale(),
 	pageMenu: (anchor) => showPageMenu(anchor),
+	back: () => visited.step(-1),
+	forward: () => visited.step(1),
 	chooseTab: (tab) => sidePanel.choose(tab),
 	togglePanel: () => sidePanel.toggle(),
 	closePanel: () => sidePanel.close(),
@@ -483,6 +485,7 @@ const session = new ArticleSession(
 			const url = new URL(window.location.href);
 			url.searchParams.set('article', article.slug);
 			history.replaceState(null, '', url);
+			visited.shown(article.slug);
 			snapshot.changed();
 		},
 		saveState: (state) => {
@@ -534,6 +537,36 @@ function useArticleContext(article: ArticlePayload): void {
 	// Before its blocks are drawn: what they draw with is this article's.
 	studioPlugins.emit('studio/article-showing', article.slug);
 }
+
+/** The pages opened, in order, for ‹ and › in the bar (as Notion's). */
+const visited = (() => {
+	const slugs: string[] = [];
+	let at = -1;
+	/** Where ‹ or › is taking the page, till it is shown. */
+	let going: number | null = null;
+	const tell = () => shellState.set({ nav: { back: at > 0, forward: at < slugs.length - 1 } });
+	return {
+		shown(slug: string): void {
+			if (going !== null && slugs[going] === slug) at = going;
+			else if (slugs[at] !== slug) {
+				slugs.splice(at + 1, Infinity, slug);
+				at = slugs.length - 1;
+			}
+			going = null;
+			tell();
+		},
+		/** One page back (-1) or forward (1), past those deleted since. */
+		step(by: number): void {
+			const exists = new Set(articleList.articles().map((article) => article.slug));
+			let to = at + by;
+			while (slugs[to] !== undefined && !exists.has(slugs[to])) to += by;
+			if (slugs[to] === undefined) return;
+			going = to;
+			showView('editor');
+			void session.open(slugs[to]);
+		},
+	};
+})();
 
 /** Reads the article list and opens one: `slug`, the one in the address, or the first. */
 async function openFromList(slug?: string, discard = false): Promise<void> {

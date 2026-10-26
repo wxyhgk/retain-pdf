@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
-import { blogHasArticle, fixtureHas, openStudio, removeArticle, resetFixture, slug, writeFixtureFile } from './studio.ts';
+import { blogHasArticle, fixtureHas, openStudio, removeArticle, resetFixture, slug, workspaceMenu, writeArticle, writeFixtureFile } from './studio.ts';
 
 // Getting about as in Notion: ⌘K finds titles and text, ⋯ on a row, the trash.
 
@@ -69,7 +69,7 @@ test('the trash lists deleted files and articles, puts them back, or deletes the
 	await page.locator('#delete-page-all').click();
 	await expect.poll(() => blogHasArticle(COPY)).toBe(false);
 
-	await page.locator('#open-trash').click();
+	await workspaceMenu(page, 'open-trash');
 	const items = page.locator('#trash-list .trash-item');
 	await expect(items.locator('.trash-name')).toHaveText([`${TITLE}（副本）`, 'img/plot.png']);
 	await items.filter({ hasText: 'img/plot.png' }).getByRole('button', { name: '恢复' }).click();
@@ -78,4 +78,23 @@ test('the trash lists deleted files and articles, puts them back, or deletes the
 	await items.filter({ hasText: '（副本）' }).getByRole('button', { name: '彻底删除' }).click();
 	await expect(page.locator('#trash-list .trash-empty')).toBeVisible();
 	expect(blogHasArticle(COPY)).toBe(false);
+});
+
+test('‹ and › in the bar go back to the page open before, and forward again', async ({ page }) => {
+	writeArticle('nav-other', '---\ntitle: 另一页\npubDate: 2026-10-01\ndraft: true\n---\n\n另一页的正文。\n');
+	try {
+		await openStudio(page);
+		const title = page.locator('#breadcrumb-title');
+		await expect(page.locator('#go-back')).toBeDisabled();
+		await page.locator('#article-list .page-row', { hasText: '另一页' }).click();
+		await expect(title).toHaveText('另一页');
+		await page.locator('#go-back').click();
+		await expect(title).toHaveText('Studio 测试夹具');
+		await expect(page.locator('#go-back')).toBeDisabled();
+		await page.locator('#go-forward').click();
+		await expect(title).toHaveText('另一页');
+		await expect(page.locator('#go-forward')).toBeDisabled();
+	} finally {
+		removeArticle('nav-other');
+	}
 });

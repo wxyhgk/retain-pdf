@@ -1,5 +1,5 @@
 import { useEffect, useState, type ComponentProps } from 'react';
-import { Ellipsis, PanelLeft, PanelRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Ellipsis, ExternalLink, PanelLeft, PanelRight } from 'lucide-react';
 
 import { locale, t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -28,13 +28,13 @@ function useTicking(ms: number): void {
 
 /** The bar above the middle: the sidebar's toggle, where one is, when the article was edited and saved, its menu, the right column's toggle. */
 export function TopBar({ siteTitle }: { siteTitle: string }) {
-	const { view, sidebarCollapsed, title, status, edited, articleHref, panelOpen } = useShell();
+	const { view, sidebarCollapsed, title, status, edited, articleHref, panelOpen, nav } = useShell();
 	const act = useActions();
 	useTicking(30_000);
 	const article = view === 'editor';
 	return (
 		<>
-			<div className="flex min-w-0 items-center gap-[7px] text-[11px]">
+			<div className="flex min-w-0 items-center gap-[5px] text-xs">
 				<IconButton
 					id="toggle-sidebar"
 					aria-label={sidebarCollapsed ? t('展开侧边栏') : t('收起侧边栏')}
@@ -42,6 +42,12 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 					onClick={() => shell.set({ sidebarCollapsed: !sidebarCollapsed })}
 				>
 					<PanelLeft aria-hidden />
+				</IconButton>
+				<IconButton id="go-back" aria-label={t('后退')} title={t('后退')} disabled={!nav.back} onClick={act.back}>
+					<ChevronLeft aria-hidden />
+				</IconButton>
+				<IconButton id="go-forward" aria-label={t('前进')} title={t('前进')} disabled={!nav.forward} onClick={act.forward} className="mr-1">
+					<ChevronRight aria-hidden />
 				</IconButton>
 				<span className="text-muted-foreground max-[720px]:hidden">{siteTitle}</span>
 				<span className="text-muted-foreground max-[720px]:hidden">/</span>
@@ -51,12 +57,13 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				{!article && <strong className="truncate font-semibold">{viewName(view)}</strong>}
 			</div>
 			<div className="flex min-w-0 items-center gap-[7px]">
-				<span id="edited-at" className="text-[10px] whitespace-nowrap text-muted-foreground opacity-85" title={edited === null ? '' : new Date(edited).toLocaleString(locale())} hidden={!article}>
+				<span id="edited-at" className="text-[11px] whitespace-nowrap text-muted-foreground opacity-85" title={edited === null ? '' : new Date(edited).toLocaleString(locale())} hidden={!article}>
 					{edited === null ? '' : t('编辑于{time}', { time: timeAgo(edited) })}
 				</span>
+				{/* Saved, nothing is said (as in Notion): only what is waiting, under way or wrong. */}
 				<span
 					id="save-status"
-					className="max-w-[230px] truncate text-[10px] text-muted-foreground data-[state=error]:text-destructive max-[720px]:hidden"
+					className="max-w-[230px] truncate text-[11px] text-muted-foreground data-[state=error]:text-destructive data-[state=saved]:sr-only max-[720px]:hidden"
 					data-state={status.tone}
 					title={t('改动会自动保存，⌘S 立即保存')}
 					aria-live="polite"
@@ -64,8 +71,9 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				>
 					{status.text}
 				</span>
-				<Button asChild variant="outline" size="xs" className="h-[26px] px-2 text-[11px] font-normal shadow-none max-[720px]:hidden">
+				<Button asChild variant="ghost" size="xs" className="h-7 gap-1.5 px-2 text-xs font-normal text-foreground max-[720px]:hidden [&_svg]:size-3.5 [&_svg]:text-muted-foreground">
 					<a id="open-article" href={articleHref} target="_blank" hidden={!article}>
+						<ExternalLink aria-hidden />
 						{t('打开博客')}
 					</a>
 				</Button>

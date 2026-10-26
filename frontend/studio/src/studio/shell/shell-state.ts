@@ -25,6 +25,8 @@ export type ShellState = {
 	edited: number | null;
 	/** The open article on the blog. */
 	articleHref: string;
+	/** Whether there is a page to go back to, or forward to. */
+	nav: { back: boolean; forward: boolean };
 	panelOpen: boolean;
 	/** The right column's tabs not lent elsewhere, in order, and the one shown. */
 	tabs: SideTab[];
@@ -47,6 +49,9 @@ export type ShellActions = {
 	openAiSettings(): void;
 	openLocale(): void;
 	pageMenu(anchor: HTMLElement): void;
+	/** The page open before (or after) this one, as a browser's ‹ and ›. */
+	back(): void;
+	forward(): void;
 	chooseTab(key: string): void;
 	togglePanel(): void;
 	closePanel(): void;
@@ -61,6 +66,7 @@ function initialState(): ShellState {
 		status: { text: t('正在连接…'), tone: '' },
 		edited: null,
 		articleHref: '/blog',
+		nav: { back: false, forward: false },
 		panelOpen: true,
 		tabs: [
 			{ key: 'ai', label: 'AI' },
@@ -96,6 +102,8 @@ export const ActionsContext = createContext<ShellActions>({
 	openAiSettings: nothing,
 	openLocale: nothing,
 	pageMenu: nothing,
+	back: nothing,
+	forward: nothing,
 	chooseTab: nothing,
 	togglePanel: nothing,
 	closePanel: nothing,
