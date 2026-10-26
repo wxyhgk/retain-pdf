@@ -45,7 +45,7 @@ async function recognize(page: Page, label: string): Promise<void> {
 	await expect(handle).toBeVisible();
 	await handle.click();
 	await page.locator('.milkdown-block-menu [data-key="recognize"]').click();
-	await page.locator('.context-menu').getByRole('menuitem', { name: label }).click();
+	await page.getByRole('menu').getByRole('menuitem', { name: label }).click();
 }
 
 test.afterEach(async ({ page }) => {
