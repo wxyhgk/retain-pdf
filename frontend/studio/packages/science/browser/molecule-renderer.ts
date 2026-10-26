@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { parseMoleculeBlock } from '../parsers/index.ts';
 import { prepareMoleculeRenderInput } from '../rendering/index.ts';
 import { describeRDKitError } from '../rendering/rdkit-messages.ts';
@@ -48,9 +49,9 @@ export function readMolecule(rdkit: RDKitModule, source: string): ReadMolecule {
 		const loose = rdkit.get_mol(source, JSON.stringify({ sanitize: false }));
 		if (!loose?.is_valid()) {
 			loose?.delete();
-			throw new Error(reason ? `无法解析分子结构：${reason}` : '无法解析分子结构');
+			throw new Error(reason ? t('无法解析分子结构：{reason}', { reason }) : t('无法解析分子结构'));
 		}
-		return { mol: loose, problem: reason || '结构没有通过 RDKit 的化学检查' };
+		return { mol: loose, problem: reason || t('结构没有通过 RDKit 的化学检查') };
 	} finally {
 		capture?.clear_buffer();
 		capture?.delete?.();
@@ -113,7 +114,7 @@ function loadScript(src: string): Promise<void> {
 			script.dataset.loaded = 'true';
 			resolve();
 		}, { once: true });
-		script.addEventListener('error', () => reject(new Error(`无法加载 ${src}`)), { once: true });
+		script.addEventListener('error', () => reject(new Error(t('无法加载 {src}', { src }))), { once: true });
 		if (!loaded) {
 			script.src = src;
 			script.dataset.chemSrc = src;
@@ -127,7 +128,7 @@ export function loadRDKit(): Promise<RDKitModule> {
 	const chemistryWindow = window as ChemistryWindow;
 	if (!chemistryWindow.__rdkitPromise) {
 		chemistryWindow.__rdkitPromise = loadScript('/vendor/rdkit/RDKit_minimal.js').then(() => {
-			if (!chemistryWindow.initRDKitModule) throw new Error('RDKit 初始化函数不存在');
+			if (!chemistryWindow.initRDKitModule) throw new Error(t('RDKit 初始化函数不存在'));
 			return chemistryWindow.initRDKitModule({
 				locateFile: (file) => `/vendor/rdkit/${file}`,
 			});
@@ -202,15 +203,15 @@ export function mountViewControls<View>(
 	const controls = document.createElement('div');
 	controls.className = 'chem-view-controls';
 	const persistence = document.createElement('span');
-	persistence.textContent = storedView ? '已载入文章视角' : '使用自动视角';
+	persistence.textContent = storedView ? t('已载入文章视角') : t('使用自动视角');
 	const resetView = document.createElement('button');
 	resetView.type = 'button';
-	resetView.textContent = '重置视角';
+	resetView.textContent = t('重置视角');
 	resetView.addEventListener('click', () => {
 		clearMoleculeView(viewKey);
 		control.reset();
 		settled = JSON.stringify(control.get());
-		persistence.textContent = moleculeViewContext.save ? '已重置 · 尚未写入文章' : '已重置';
+		persistence.textContent = moleculeViewContext.save ? t('已重置 · 尚未写入文章') : t('已重置');
 	});
 	const buttons = document.createElement('div');
 	buttons.className = 'chem-view-buttons';
@@ -219,10 +220,10 @@ export function mountViewControls<View>(
 		const saveView = document.createElement('button');
 		saveView.type = 'button';
 		saveView.className = 'primary';
-		saveView.textContent = options.getDisplay ? '保存显示与视角' : '保存视角到文章';
+		saveView.textContent = options.getDisplay ? t('保存显示与视角') : t('保存视角到文章');
 		saveView.addEventListener('click', async () => {
 			saveView.disabled = true;
-			persistence.textContent = '正在写入 article.views.json…';
+			persistence.textContent = t('正在写入 article.views.json…');
 			try {
 				const view = control.get();
 				const display = options.getDisplay?.();
@@ -230,9 +231,9 @@ export function mountViewControls<View>(
 				moleculeViewContext.views[viewKey] = { format, view: structuredClone(view), display };
 				rememberMoleculeView(viewKey, view);
 				settled = JSON.stringify(view);
-				persistence.textContent = options.getDisplay ? '显示与视角已写入文章配置' : '视角已写入文章配置';
+				persistence.textContent = options.getDisplay ? t('显示与视角已写入文章配置') : t('视角已写入文章配置');
 			} catch (error) {
-				persistence.textContent = error instanceof Error ? error.message : '视角保存失败';
+				persistence.textContent = error instanceof Error ? error.message : t('视角保存失败');
 			} finally {
 				saveView.disabled = false;
 			}
@@ -250,11 +251,11 @@ export function mountViewControls<View>(
 		const view = control.get();
 		if (JSON.stringify(view) === settled) return;
 		rememberMoleculeView(viewKey, view);
-		persistence.textContent = moleculeViewContext.save ? '视角有改动 · 尚未写入文章' : '临时视角';
+		persistence.textContent = moleculeViewContext.save ? t('视角有改动 · 尚未写入文章') : t('临时视角');
 	});
 	return {
 		markDisplayDirty: () => {
-			persistence.textContent = moleculeViewContext.save ? '显示有改动 · 尚未写入文章' : '临时显示参数';
+			persistence.textContent = moleculeViewContext.save ? t('显示有改动 · 尚未写入文章') : t('临时显示参数');
 		},
 	};
 }
@@ -284,18 +285,18 @@ export function createMoleculePreview(language: string, source: string): HTMLEle
 		if (!block) return null;
 		const renderInput = prepareMoleculeRenderInput(block);
 		if (renderInput.status === 'needs-resource') {
-			return createFigure('chem-resource', renderInput.resource.path, '文章资源将在文件解析器接入后显示');
+			return createFigure('chem-resource', renderInput.resource.path, t('文章资源将在文件解析器接入后显示'));
 		}
 
 		const figure = createFigure(
 			renderInput.renderer === 'rdkit' ? 'chem-2d' : 'chem-3d',
 			renderInput.label,
-			renderInput.renderer === 'rdkit' ? '正在生成二维结构…' : '正在加载三维结构…',
+			renderInput.renderer === 'rdkit' ? t('正在生成二维结构…') : t('正在加载三维结构…'),
 		);
 		figure.dataset.sciencePreview = JSON.stringify(renderInput);
 		return figure;
 	} catch (error) {
-		return errorFigure(language.toUpperCase(), error instanceof Error ? error.message : '无法解析科学内容');
+		return errorFigure(language.toUpperCase(), error instanceof Error ? error.message : t('无法解析科学内容'));
 	}
 }
 
@@ -314,7 +315,7 @@ export async function hydrateMoleculePreview(figure: HTMLElement): Promise<void>
 			try {
 				// No background: the structure sits on the page itself, light or dark.
 				stage.innerHTML = mol.get_svg_with_highlights(JSON.stringify({ width: 720, height: 360, clearBackground: false }));
-				stage.setAttribute('aria-label', `${renderInput.block.language} 二维分子结构`);
+				stage.setAttribute('aria-label', t('{language} 二维分子结构', { language: renderInput.block.language }));
 			} finally {
 				mol.delete();
 			}
@@ -323,7 +324,7 @@ export async function hydrateMoleculePreview(figure: HTMLElement): Promise<void>
 				const warning = document.createElement('p');
 				warning.className = 'chem-warning';
 				warning.setAttribute('role', 'note');
-				warning.textContent = `结构有问题，按原样显示：${problem}`;
+				warning.textContent = t('结构有问题，按原样显示：{problem}', { problem });
 				stage.after(warning);
 			}
 			return;
@@ -333,10 +334,10 @@ export async function hydrateMoleculePreview(figure: HTMLElement): Promise<void>
 		const viewer = await createMoleculeViewer(stage);
 		if (!figure.isConnected) return viewer.dispose();
 		viewer.loadText(renderInput.source, renderInput.format);
-		stage.setAttribute('aria-label', `${renderInput.format} 三维分子结构，可拖动旋转和滚轮缩放`);
+		stage.setAttribute('aria-label', t('{format} 三维分子结构，可拖动旋转和滚轮缩放', { format: renderInput.format }));
 		mountViewControls(figure, stage, fastMolViewControl(viewer), renderInput.format, renderInput.source);
 	} catch (error) {
-		stage.textContent = error instanceof Error ? error.message : '分子结构渲染失败';
+		stage.textContent = error instanceof Error ? error.message : t('分子结构渲染失败');
 		figure.classList.add('chem-error');
 	}
 }

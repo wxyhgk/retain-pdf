@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import katex from 'katex';
 import 'katex/contrib/mhchem';
 
@@ -22,7 +23,7 @@ export function currentMacros(): Record<string, unknown> {
 }
 
 function errorMessage(error: unknown): string {
-	return error instanceof Error ? error.message : '无法渲染公式';
+	return error instanceof Error ? error.message : t('无法渲染公式');
 }
 
 function escapeHtml(value: string): string {

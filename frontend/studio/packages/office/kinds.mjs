@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * Office files shown in a page (render.ts), by extension: Word
  * documents, PowerPoint slides and workbooks. The older binary `.doc` and
@@ -16,7 +18,18 @@ const KINDS = Object.freeze({
 });
 
 /** What each kind is called on its card. */
-export const OFFICE_KIND_NAMES = Object.freeze({ document: 'Word 文档', slides: 'PowerPoint', sheet: '表格', old: 'Office 文件' });
+export const OFFICE_KIND_NAMES = Object.freeze({
+	get document() {
+		return t('Word 文档');
+	},
+	slides: 'PowerPoint',
+	get sheet() {
+		return t('表格');
+	},
+	get old() {
+		return t('Office 文件');
+	},
+});
 
 function extensionOf(path) {
 	const name = String(path).replace(/[?#].*$/su, '');

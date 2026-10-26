@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { RUN_STATE_NAMES } from '../job-fence.mjs';
 import { formatDuration, isFinished, runDuration, structureThumbnail, type RunRecord, type RunSummary } from './job-view.ts';
 
@@ -27,7 +28,7 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', 
 export function createJobCard(root: HTMLElement = element('div')): JobCard {
 	root.classList.add('job-card');
 	const head = element('div', 'job-card-head');
-	const kind = element('span', 'job-kind', '计算');
+	const kind = element('span', 'job-kind', t('计算'));
 	const title = element('span', 'job-card-title');
 	const state = element('span', 'job-state');
 	const when = element('span', 'job-card-when');
@@ -48,7 +49,7 @@ export function createJobCard(root: HTMLElement = element('div')): JobCard {
 
 	const tick = () => {
 		const duration = record ? runDuration(record) : null;
-		when.textContent = !record ? '' : duration === null ? '' : isFinished(record) ? formatDuration(duration) : `已运行 ${formatDuration(duration)}`;
+		when.textContent = !record ? '' : duration === null ? '' : isFinished(record) ? formatDuration(duration) : t('已运行 {duration}', { duration: formatDuration(duration) });
 	};
 
 	return {
@@ -57,7 +58,7 @@ export function createJobCard(root: HTMLElement = element('div')): JobCard {
 		tick,
 		paint({ title: name, describe: what, record: shown, summary, reading = false }) {
 			record = shown;
-			title.textContent = name || '未命名计算';
+			title.textContent = name || t('未命名计算');
 			title.classList.toggle('is-untitled', !name);
 			state.hidden = !shown;
 			if (shown) {
@@ -69,11 +70,11 @@ export function createJobCard(root: HTMLElement = element('div')): JobCard {
 			const running = Boolean(shown && !isFinished(shown));
 			progress.hidden = !running;
 			line.classList.toggle('is-problem', Boolean(summary?.problem));
-			if (!shown) line.textContent = '还没有运行';
+			if (!shown) line.textContent = t('还没有运行');
 			else if (summary?.problem) line.textContent = summary.problem;
-			else if (running) line.textContent = summary?.progress ?? (shown.state === 'queued' ? '在队列里等着' : shown.state === 'preparing' ? '正在准备' : '正在算');
-			else if (!summary && reading) line.textContent = '正在读取结果…';
-			else line.textContent = summary?.facts.join('  ·  ') || '没有读出结果';
+			else if (running) line.textContent = summary?.progress ?? (shown.state === 'queued' ? t('在队列里等着') : shown.state === 'preparing' ? t('正在准备') : t('正在算'));
+			else if (!summary && reading) line.textContent = t('正在读取结果…');
+			else line.textContent = summary?.facts.join('  ·  ') || t('没有读出结果');
 			describe.textContent = what;
 			const structure = summary?.structure ?? null;
 			if (structure !== drawnStructure) {

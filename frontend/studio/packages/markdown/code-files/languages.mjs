@@ -279,13 +279,13 @@ const output = {
  * }[]}
  */
 export const codeFileLanguages = Object.freeze([
-	{ name: 'gaussian', label: 'Gaussian 输入', aliases: ['g16', 'g09'], file: 'input.gjf', extensions: [], names: [], parser: gaussian },
-	{ name: 'orca', label: 'ORCA 输入', aliases: [], file: 'input.inp', extensions: [], names: [], parser: orca },
+	{ name: 'gaussian', label: 'Gaussian 输入', aliases: ['g16', 'g09'], file: 'input.gjf', extensions: [], names: [], parser: gaussian }, // i18n-ignore: rendered into the blog
+	{ name: 'orca', label: 'ORCA 输入', aliases: [], file: 'input.inp', extensions: [], names: [], parser: orca }, // i18n-ignore: rendered into the blog
 	{ name: 'incar', label: 'INCAR', aliases: [], file: 'INCAR', extensions: [], names: ['INCAR'], parser: incar },
 	{ name: 'poscar', label: 'POSCAR', aliases: ['contcar'], file: 'POSCAR', extensions: ['vasp'], names: ['POSCAR', 'CONTCAR'], parser: poscar },
 	{ name: 'kpoints', label: 'KPOINTS', aliases: [], file: 'KPOINTS', extensions: [], names: ['KPOINTS'], parser: kpoints },
-	{ name: 'cp2k', label: 'CP2K 输入', aliases: [], file: 'input.inp', extensions: [], names: [], parser: cp2k },
-	{ name: 'output', label: '输出', aliases: ['out'], file: 'output.out', extensions: ['out', 'log'], names: ['OUTCAR', 'OSZICAR'], parser: output },
+	{ name: 'cp2k', label: 'CP2K 输入', aliases: [], file: 'input.inp', extensions: [], names: [], parser: cp2k }, // i18n-ignore: rendered into the blog
+	{ name: 'output', label: '输出', aliases: ['out'], file: 'output.out', extensions: ['out', 'log'], names: ['OUTCAR', 'OSZICAR'], parser: output }, // i18n-ignore: rendered into the blog
 ]);
 
 /** The code-file language a fence names, by name or alias, or undefined. */

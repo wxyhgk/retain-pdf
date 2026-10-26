@@ -3,6 +3,7 @@ import { toText } from 'hast-util-to-text';
 import { createRequire } from 'node:module';
 import { SKIP, visitParents } from 'unist-util-visit-parents';
 
+import { t } from '@blog/i18n/index.mjs';
 import { numberEquations, prepareFormula, resolveReferences, unresolvedReferences } from '@blog/science/rendering/equations.mjs';
 import { katexOptions, lenientOptions, mergeMacros } from '@blog/science/rendering/katex-options.mjs';
 import { breakIntoLines } from '@blog/science/rendering/line-breaks.mjs';
@@ -73,7 +74,7 @@ export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => merge
 				ruleId,
 				source: 'rehype-katex-mhchem',
 			});
-		for (const { key, index } of duplicates) report(`公式标签 \\label{${key}} 用了不止一次，引用的是第一个`, blocks[index], 'duplicate-label');
+		for (const { key, index } of duplicates) report(t('公式标签 \\label{{key}} 用了不止一次，引用的是第一个', { key }), blocks[index], 'duplicate-label');
 		// A label on a formula with no number is said where it is referred to (one never referred to does no harm).
 		const untaggedKeys = new Set(untagged.map(({ key }) => key));
 		// One per article: a \gdef in one formula holds in the ones after it, as in LaTeX.
@@ -84,8 +85,8 @@ export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => merge
 				? resolveReferences(formula.source, labels)
 				: prepareFormula(formula.value, labels);
 			for (const key of unresolvedReferences(formula.value, labels)) {
-				if (untaggedKeys.has(key)) report(`公式标签 ${key} 所在的公式没有编号：公式不会自动编号，在它后面写 \\tag{编号} 才能引用；这里显示为 (??)`, formula, 'untagged-label');
-				else report(`找不到公式标签 ${key}：没有公式写 \\label{${key}}，这里显示为 (??)`, formula, 'missing-label');
+				if (untaggedKeys.has(key)) report(t('公式标签 {key} 所在的公式没有编号：公式不会自动编号，在它后面写 \\tag{编号} 才能引用；这里显示为 (??)', { key }), formula, 'untagged-label');
+				else report(t('找不到公式标签 {key}：没有公式写 \\label{{key}}，这里显示为 (??)', { key }), formula, 'missing-label');
 			}
 			const settings = { ...katexOptions, ...options, macros, displayMode: formula.displayMode };
 			let html;
@@ -101,7 +102,7 @@ export default function rehypeKatexMhchem({ macrosFor = (articleMacros) => merge
 				}
 			} catch (error) {
 				const reason = error instanceof Error ? error.message.replace(/^KaTeX parse error:\s*/u, '') : '';
-				report(`公式有错，会显示为红字${reason ? `：${reason}` : ''}`, formula, 'formula', error);
+				report(reason ? t('公式有错，会显示为红字：{reason}', { reason }) : t('公式有错，会显示为红字'), formula, 'formula', error);
 				html = katex.renderToString(value, { ...settings, ...lenientOptions });
 			}
 

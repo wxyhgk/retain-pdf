@@ -5,6 +5,7 @@ import { visit } from 'unist-util-visit';
 import { excerptLines, parseFenceMeta } from '../code-files/highlight.mjs';
 import { codeFileLanguage } from '../code-files/languages.mjs';
 import { codeFileBar, codeFileFigure, codeFileProblem, figureProperties, foldFor } from '../code-files/render.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import { parseScienceResourceRef } from '@blog/science/parsers/resource-reference.ts';
 
 /**
@@ -48,16 +49,15 @@ export default function remarkCodeFiles({ skip = [] } = {}) {
 				try {
 					fileText = readFileSync(resolve(article, reference), 'utf8');
 				} catch {
-					const message = `找不到文件 ${reference}`;
-					parent.children[index] = hast(codeFileProblem(language, message));
-					file.message(message, { place: node.position, ruleId: 'missing-file', source: 'remark-code-files' });
+					parent.children[index] = hast(codeFileProblem(language, `找不到文件 ${reference}`)); // i18n-ignore: rendered into the blog
+					file.message(t('找不到文件 {path}', { path: reference }), { place: node.position, ruleId: 'missing-file', source: 'remark-code-files' });
 					return;
 				}
 			}
 			// Lines looked for and not there: shown in the block, and told before publishing.
 			if (reference && (meta.match || meta.from)) {
 				const { missing } = excerptLines(fileText, meta);
-				if (missing) file.message(`${reference} 里没有找到「${missing}」`, { place: node.position, ruleId: 'code-file-match', source: 'remark-code-files' });
+				if (missing) file.message(t('{path} 里没有找到「{missing}」', { path: reference, missing }), { place: node.position, ruleId: 'code-file-match', source: 'remark-code-files' });
 			}
 			const href = reference ? `/article-assets/${encodeURIComponent(slug)}/${reference.slice(2).split('/').map(encodeURIComponent).join('/')}` : '';
 

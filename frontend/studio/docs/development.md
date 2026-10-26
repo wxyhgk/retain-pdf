@@ -70,13 +70,13 @@ Studio 用到了只有 fork 里才有的扩展，`src/studio/editor/milkdown-for
 
 ## 多语言
 
-Studio 的界面、提示和服务器返回给界面的话，都可以换成别的语言。语言在左栏「语言」里选，默认跟随系统，存在本机的 `.studio-settings.json`。现在只有中文一种，架子已经搭好。
+Studio 的界面、提示和服务器返回给界面的话，都已经交给 `t()`，可以换成别的语言。语言在左栏「语言」里选，默认跟随系统，存在本机的 `.studio-settings.json`。现在只有中文一种。
 
 - **写法**：代码里直接写中文，交给 `t()`：`t('已移动到 {path}', { path })`（`@blog/i18n/index.mjs`）。参数用 `{名字}`，不要用模板字符串拼。中文就是原文，不需要翻译表；别的语言是 `packages/i18n/locales/<语言>.json`，从中文原文对到译文，在 `locales/index.mjs` 里登记。表里没有的句子照样显示中文。
 - **不要翻译的中文**：写进文章的内容（标题、图注、参考文献）、匹配用的正则、给 AI 的提示词。在这一行加注释 `i18n-ignore`。
 - **页面**：服务器按设置（或浏览器的语言）定下语言，写在 `<html lang data-studio-locale>` 上；`main.ts` 第一个导入 `locale.ts` 设好语言，后面模块里的文字才会用这个语言。页面每个请求都带一个 `studio-locale` cookie。
 - **服务器**：`api.mjs` 在请求自己的语言里处理它（`@blog/i18n/server.mjs`，AsyncLocalStorage），所以 `t()` 要在处理请求时调用，不要在模块顶层先算好。
-- **检查**：`packages/i18n/test/i18n.test.ts` 的 `DONE` 列出已经改完的部分，这些文件里不能再有没交给 `t()` 的中文；每改完一块就加进去。
+- **检查**：`packages/i18n/test/i18n.test.ts` 检查 Studio 的代码（`src/studio`、`src/plugins`、`plugins`、`packages`）里没有漏掉的中文：要么交给 `t()`，要么标 `i18n-ignore`。
 
 ## 命令
 

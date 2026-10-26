@@ -24,15 +24,15 @@ function text(value) {
  */
 export function codeFileBar({ language, title = '', path = '', href = '', total }) {
 	const name = downloadName(language, title, path);
-	const kind = codeFileLanguage(language)?.label ?? (language || '代码');
+	const kind = codeFileLanguage(language)?.label ?? (language || '代码'); // i18n-ignore: rendered into the blog
 	const children = [h('span', { className: ['code-file-name'] }, [text(title || path.split('/').pop() || kind)])];
 	if ((title || path) && kind) children.push(h('span', { className: ['code-file-kind'] }, [text(kind)]));
-	if (total !== undefined) children.push(h('span', { className: ['code-file-size'] }, [text(`${total} 行`)]));
+	if (total !== undefined) children.push(h('span', { className: ['code-file-size'] }, [text(`${total} 行`)])); // i18n-ignore: rendered into the blog
 	children.push(h('span', { className: ['code-file-actions'] }, [
-		h('button', { type: 'button', className: ['code-file-copy'], dataCodeAction: 'copy' }, [text('复制')]),
+		h('button', { type: 'button', className: ['code-file-copy'], dataCodeAction: 'copy' }, [text('复制')]), // i18n-ignore: rendered into the blog
 		href
-			? h('a', { className: ['code-file-download'], href, download: name }, [text('下载')])
-			: h('button', { type: 'button', className: ['code-file-download'], dataCodeAction: 'download', dataFileName: name }, [text('下载')]),
+			? h('a', { className: ['code-file-download'], href, download: name }, [text('下载')]) // i18n-ignore: rendered into the blog
+			: h('button', { type: 'button', className: ['code-file-download'], dataCodeAction: 'download', dataFileName: name }, [text('下载')]), // i18n-ignore: rendered into the blog
 	]));
 	return h('figcaption', { className: ['code-file-bar'] }, children);
 }
@@ -85,8 +85,8 @@ export function codeFileFigure({ language, meta, source, file }) {
 		const tokens = highlightLines(name, file.text.replace(/\r?\n$/, ''), (number) => kept.has(number));
 		const gap = (message) => lines.push(h('span', { className: ['line', 'code-file-gap'] }, [text(`⋯ ${message} ⋯`)]));
 		// Many gaps between picked lines: each says only what it leaves out.
-		const skipped = (from, to) => gap(picked ? `省略第 ${from}–${to} 行` : `省略第 ${from}–${to} 行，下载可看完整文件`);
-		if (missing) gap(`没有找到「${missing}」`);
+		const skipped = (from, to) => gap(picked ? `省略第 ${from}–${to} 行` : `省略第 ${from}–${to} 行，下载可看完整文件`); // i18n-ignore: rendered into the blog
+		if (missing) gap(`没有找到「${missing}」`); // i18n-ignore: rendered into the blog
 		// Lines picked by what they say: what comes before and after them is left out too.
 		if (picked && parts[0]?.start > 1) skipped(1, parts[0].start - 1);
 		parts.forEach((part, index) => {

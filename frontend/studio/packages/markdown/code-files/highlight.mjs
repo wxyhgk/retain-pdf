@@ -186,12 +186,12 @@ function pickLines(lines, within, meta) {
 		}
 		// One that does not end runs to the end of the file.
 		if (stretch) stretches.push(stretch);
-		if (!stretches.length) return { picked: [], missing: meta.from.join('」或「') };
+		if (!stretches.length) return { picked: [], missing: meta.from.join('」或「') }; // i18n-ignore: rendered into the blog
 		picked = (meta.last && !meta.match ? stretches.slice(-1) : stretches).flat();
 	}
 	if (meta.match) {
 		let found = picked.filter((number) => holdsAny(lines[number - 1], meta.match));
-		if (!found.length) return { picked: [], missing: meta.match.join('」或「') };
+		if (!found.length) return { picked: [], missing: meta.match.join('」或「') }; // i18n-ignore: rendered into the blog
 		if (meta.last) found = found.slice(-1);
 		const allowed = new Set(picked);
 		const around = new Set();

@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { Context, Service } from './index.mjs';
 
 /**
@@ -64,11 +65,11 @@ export class Panels extends Service {
 
 	/** Adds this tab until the plugin goes; a wrong or taken key throws at once. */
 	register(panel: StudioPanel): () => Promise<void> {
-		if (!KEY_NAME.test(panel?.key ?? '')) throw new UiError(`面板的 key 要用小写字母开头，只含字母、数字、- 和 _：${panel?.key}`);
-		if ((STUDIO_PANELS as readonly string[]).includes(panel.key)) throw new UiError(`面板 ${panel.key} 是 Studio 自己的`);
-		if (this.panels.some((entry) => entry.key === panel.key)) throw new UiError(`已经有叫 ${panel.key} 的面板了`);
-		if (typeof panel.label !== 'string' || !panel.label.trim()) throw new UiError(`面板 ${panel.key} 要有 label`);
-		if (typeof panel.draw !== 'function') throw new UiError(`面板 ${panel.key} 要有 draw(pane)`);
+		if (!KEY_NAME.test(panel?.key ?? '')) throw new UiError(t('面板的 key 要用小写字母开头，只含字母、数字、- 和 _：{key}', { key: panel?.key }));
+		if ((STUDIO_PANELS as readonly string[]).includes(panel.key)) throw new UiError(t('面板 {key} 是 Studio 自己的', { key: panel.key }));
+		if (this.panels.some((entry) => entry.key === panel.key)) throw new UiError(t('已经有叫 {key} 的面板了', { key: panel.key }));
+		if (typeof panel.label !== 'string' || !panel.label.trim()) throw new UiError(t('面板 {key} 要有 label', { key: panel.key }));
+		if (typeof panel.draw !== 'function') throw new UiError(t('面板 {key} 要有 draw(pane)', { key: panel.key }));
 		return this.ctx.effect(() => {
 			this.panels.push(panel);
 			tell(this.listeners);
@@ -144,12 +145,12 @@ export function parseShortcut(keys: string): Shortcut {
 	const key = parts.pop() ?? '';
 	const held = parts.map((part) => part.toLowerCase());
 	if (!key || held.some((part) => !MODIFIERS.has(part)) || new Set(held).size !== held.length) {
-		throw new UiError(`快捷键写成 Mod-Shift-d 这样（Mod、Shift、Alt 加一个键）：${keys}`);
+		throw new UiError(t('快捷键写成 Mod-Shift-d 这样（Mod、Shift、Alt 加一个键）：{keys}', { keys }));
 	}
 	const named = KEY_NAMES.get(key.toLowerCase());
-	if (!named && [...key].length !== 1) throw new UiError(`没有叫 ${key} 的键：${keys}`);
+	if (!named && [...key].length !== 1) throw new UiError(t('没有叫 {key} 的键：{keys}', { key, keys }));
 	const shortcut = { key: named ?? key.toLowerCase(), mod: held.includes('mod'), shift: held.includes('shift'), alt: held.includes('alt') };
-	if (!shortcut.mod && !shortcut.alt && !/^f\d+$/iu.test(shortcut.key)) throw new UiError(`快捷键要按着 Mod 或 Alt，不然会占掉打字的键：${keys}`);
+	if (!shortcut.mod && !shortcut.alt && !/^f\d+$/iu.test(shortcut.key)) throw new UiError(t('快捷键要按着 Mod 或 Alt，不然会占掉打字的键：{keys}', { keys }));
 	return shortcut;
 }
 
@@ -193,19 +194,19 @@ export class Commands extends Service {
 	/** Adds this command until the plugin goes; a wrong or taken id or shortcut throws at once. */
 	register(command: StudioCommand): () => Promise<void> {
 		const id = command?.id;
-		if (!COMMAND_NAME.test(id ?? '')) throw new UiError(`命令的 id 要用小写字母开头，只含字母、数字、.、- 和 _：${id}`);
-		if (this.commands.some((entry) => entry.command.id === id)) throw new UiError(`已经有叫 ${id} 的命令了`);
-		if (typeof command.label !== 'string' || !command.label.trim()) throw new UiError(`命令 ${id} 要有 label`);
-		if (typeof command.run !== 'function') throw new UiError(`命令 ${id} 要有 run()`);
+		if (!COMMAND_NAME.test(id ?? '')) throw new UiError(t('命令的 id 要用小写字母开头，只含字母、数字、.、- 和 _：{id}', { id }));
+		if (this.commands.some((entry) => entry.command.id === id)) throw new UiError(t('已经有叫 {id} 的命令了', { id }));
+		if (typeof command.label !== 'string' || !command.label.trim()) throw new UiError(t('命令 {id} 要有 label', { id }));
+		if (typeof command.run !== 'function') throw new UiError(t('命令 {id} 要有 run()', { id }));
 		for (const place of command.places ?? []) {
-			if (!COMMAND_PLACES.includes(place)) throw new UiError(`命令 ${id} 的 places 里没有 ${place} 这个地方；有：${COMMAND_PLACES.join('、')}`);
+			if (!COMMAND_PLACES.includes(place)) throw new UiError(t('命令 {id} 的 places 里没有 {place} 这个地方；有：{places}', { id, place, places: COMMAND_PLACES.join('、') }));
 		}
 		const shortcut = command.keys === undefined ? null : parseShortcut(command.keys);
 		if (shortcut) {
 			const name = shortcutName(shortcut);
-			if (RESERVED.has(name)) throw new UiError(`快捷键 ${command.keys} 是 Studio 或浏览器自己的`);
+			if (RESERVED.has(name)) throw new UiError(t('快捷键 {keys} 是 Studio 或浏览器自己的', { keys: command.keys }));
 			const taken = this.commands.find((entry) => entry.shortcut && shortcutName(entry.shortcut) === name);
-			if (taken) throw new UiError(`快捷键 ${command.keys} 已经给了命令 ${taken.command.id}`);
+			if (taken) throw new UiError(t('快捷键 {keys} 已经给了命令 {id}', { keys: command.keys, id: taken.command.id }));
 		}
 		const entry = { command, shortcut };
 		return this.ctx.effect(() => {
@@ -236,7 +237,7 @@ export class Commands extends Service {
 	/** Runs a command (another plugin's too); throws when there is none by this id, or it fails. */
 	async run(id: string, context: CommandContext = { from: 'call' }): Promise<void> {
 		const command = this.get(id);
-		if (!command) throw new UiError(`没有叫 ${id} 的命令`);
+		if (!command) throw new UiError(t('没有叫 {id} 的命令', { id }));
 		await command.run(context);
 	}
 
@@ -274,11 +275,11 @@ export class Recognizers extends Service {
 	/** Adds this until the plugin goes; a wrong or taken id throws at once. */
 	register(recognizer: Recognizer): () => Promise<void> {
 		const id = recognizer?.id;
-		if (!COMMAND_NAME.test(id ?? '')) throw new UiError(`识别的 id 要用小写字母开头，只含字母、数字、.、- 和 _：${id}`);
-		if (this.recognizers.some((entry) => entry.id === id)) throw new UiError(`已经有叫 ${id} 的识别了`);
-		if (typeof recognizer.label !== 'string' || !recognizer.label.trim()) throw new UiError(`识别 ${id} 要有 label`);
-		if (typeof recognizer.prompt !== 'string' || !recognizer.prompt.trim()) throw new UiError(`识别 ${id} 要有 prompt`);
-		if (recognizer.toMarkdown !== undefined && typeof recognizer.toMarkdown !== 'function') throw new UiError(`识别 ${id} 的 toMarkdown 要是函数`);
+		if (!COMMAND_NAME.test(id ?? '')) throw new UiError(t('识别的 id 要用小写字母开头，只含字母、数字、.、- 和 _：{id}', { id }));
+		if (this.recognizers.some((entry) => entry.id === id)) throw new UiError(t('已经有叫 {id} 的识别了', { id }));
+		if (typeof recognizer.label !== 'string' || !recognizer.label.trim()) throw new UiError(t('识别 {id} 要有 label', { id }));
+		if (typeof recognizer.prompt !== 'string' || !recognizer.prompt.trim()) throw new UiError(t('识别 {id} 要有 prompt', { id }));
+		if (recognizer.toMarkdown !== undefined && typeof recognizer.toMarkdown !== 'function') throw new UiError(t('识别 {id} 的 toMarkdown 要是函数', { id }));
 		return this.ctx.effect(() => {
 			this.recognizers.push(recognizer);
 			tell(this.listeners);

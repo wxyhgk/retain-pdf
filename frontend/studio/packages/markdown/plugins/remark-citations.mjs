@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { SKIP, visit } from 'unist-util-visit';
 
 import { BIBLIOGRAPHY_PATH, CITATION, numberRanges, parseBibtex, parseCitation, referencePieces } from '../references/bibtex.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Citations (`[@becke1993]`, `[@a; @b, p. 12]`) numbered as they first
@@ -58,7 +59,7 @@ export default function remarkCitations() {
 					if (!library()) withoutLibrary = true;
 					else if (!entry && !missing.has(key)) {
 						missing.add(key);
-						file.message(`找不到文献 @${key}：${BIBLIOGRAPHY_PATH} 里没有这个 key`, { place: node.position, ruleId: 'citation', source: 'remark-citations' });
+						file.message(t('找不到文献 @{key}：{file} 里没有这个 key', { key, file: BIBLIOGRAPHY_PATH }), { place: node.position, ruleId: 'citation', source: 'remark-citations' });
 					}
 					if (!entry) continue;
 					if (!cited.includes(key)) cited.push(key);
@@ -86,11 +87,11 @@ export default function remarkCitations() {
 		});
 
 		if (withoutLibrary) {
-			file.message(`文章引用了文献，但没有 ${BIBLIOGRAPHY_PATH}`, { ruleId: 'citation', source: 'remark-citations' });
+			file.message(t('文章引用了文献，但没有 {file}', { file: BIBLIOGRAPHY_PATH }), { ruleId: 'citation', source: 'remark-citations' });
 		}
 		if (!cited.length) return;
 		tree.children.push(
-			{ type: 'heading', depth: 2, children: [text('参考文献')] },
+			{ type: 'heading', depth: 2, children: [text('参考文献')] }, // i18n-ignore: rendered into the blog
 			{
 				type: 'references',
 				data: {

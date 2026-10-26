@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { OfficeKind } from './kinds.mjs';
 
 /**
@@ -17,7 +18,7 @@ export async function officeBytes(url: string): Promise<ArrayBuffer> {
 	const response = await fetch(url, { cache: 'no-cache' });
 	if (!response.ok) {
 		const reason = ((await response.json().catch(() => null)) as { error?: string } | null)?.error;
-		throw new Error(reason ?? (response.status === 404 ? '文件不存在' : `读不到这个文件（${response.status}）`));
+		throw new Error(reason ?? (response.status === 404 ? t('文件不存在') : t('读不到这个文件（{status}）', { status: response.status })));
 	}
 	return response.arrayBuffer();
 }

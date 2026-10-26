@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { formulaOf, type Atom } from './xyz-frames.ts';
 
 /**
@@ -71,9 +72,9 @@ export function parseXtbOutput(text: string): XtbOutput {
 	const converged = last(text, /GEOMETRY OPTIMIZATION CONVERGED AFTER (\d+) ITERATIONS/u);
 	const failed = last(text, /FAILED TO CONVERGE GEOMETRY OPTIMIZATION(?: IN (\d+) ITERATIONS)?/u);
 	const warnings: string[] = [];
-	if (failed) warnings.push(`结构优化在 ${failed[1] ?? '?'} 步内没有收敛`);
+	if (failed) warnings.push(t('结构优化在 {steps} 步内没有收敛', { steps: failed[1] ?? '?' }));
 	const imaginary = toNumber(last(text, /#\s*imaginary freq\.\s+(\d+)/u)?.[1]);
-	if (imaginary) warnings.push(`有 ${imaginary} 个虚频`);
+	if (imaginary) warnings.push(t('有 {count} 个虚频', { count: imaginary }));
 	const solvation = last(text, /Solvation model:\s+(\S+)\s*\n\s*Solvent\s+(\S+)/u);
 	return {
 		version: last(text, /\* xtb version (\S+)/u)?.[1] ?? null,

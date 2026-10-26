@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { Service } from '@deepseek-ai/cordis';
 
 /**
@@ -22,7 +23,7 @@ export class Routes extends Service {
 
 	/** Registers `handler` for `method` on `path` (`:name` takes one segment). */
 	register(method, path, handler) {
-		if (!/^\/[\w\-./:]*$/u.test(path)) throw new TypeError(`路由 ${path} 不对：以 / 开头，段可用 :名字`);
+		if (!/^\/[\w\-./:]*$/u.test(path)) throw new TypeError(t('路由 {path} 不对：以 / 开头，段可用 :名字', { path }));
 		const names = [];
 		const pattern = new RegExp(`^${path.replace(/[.]/gu, '\\.').replace(/:(\w+)/gu, (_, name) => {
 			names.push(name);
@@ -61,7 +62,7 @@ export class Routes extends Service {
 				try {
 					params[name] = decodeURIComponent(found[index + 1]);
 				} catch {
-					throw Object.assign(new Error('地址的编码不对'), { statusCode: 400 });
+					throw Object.assign(new Error(t('地址的编码不对')), { statusCode: 400 });
 				}
 			});
 			return { handler: entry.handler, params };

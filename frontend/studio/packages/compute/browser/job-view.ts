@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { createMoleculeViewer, type FastMolViewer } from '@blog/science/browser/fast-mol.ts';
 import { RUN_STATE_NAMES } from '../job-fence.mjs';
 import { HARTREE_IN_KCAL, type ensembleTable } from '../parsers/crest.ts';
@@ -47,11 +48,11 @@ export function isFinished(record: RunRecord): boolean {
 
 /** `1 分 05 秒`, `2 时 03 分`, `0.4 秒`. */
 export function formatDuration(seconds: number): string {
-	if (seconds < 10) return `${Number(seconds.toFixed(1))} 秒`;
-	if (seconds < 60) return `${Math.round(seconds)} 秒`;
+	if (seconds < 10) return t('{seconds} 秒', { seconds: Number(seconds.toFixed(1)) });
+	if (seconds < 60) return t('{seconds} 秒', { seconds: Math.round(seconds) });
 	const minutes = Math.floor(seconds / 60);
-	if (minutes < 60) return `${minutes} 分 ${String(Math.round(seconds % 60)).padStart(2, '0')} 秒`;
-	return `${Math.floor(minutes / 60)} 时 ${String(minutes % 60).padStart(2, '0')} 分`;
+	if (minutes < 60) return t('{minutes} 分 {seconds} 秒', { minutes, seconds: String(Math.round(seconds % 60)).padStart(2, '0') });
+	return t('{hours} 时 {minutes} 分', { hours: Math.floor(minutes / 60), minutes: String(minutes % 60).padStart(2, '0') });
 }
 
 /** How long it has run or ran, from run.json's times. */
@@ -84,8 +85,8 @@ export function runFacts(record: RunRecord, version: string | null): HTMLElement
 	const parts = [record.hostLabel || record.host];
 	if (record.scheduler === 'slurm') parts[0] += '（Slurm）';
 	const duration = runDuration(record);
-	if (duration !== null) parts.push(isFinished(record) ? `用时 ${formatDuration(duration)}` : `已运行 ${formatDuration(duration)}`);
-	if (record.threads) parts.push(`${record.threads} 线程`);
+	if (duration !== null) parts.push(isFinished(record) ? t('用时 {duration}', { duration: formatDuration(duration) }) : t('已运行 {duration}', { duration: formatDuration(duration) }));
+	if (record.threads) parts.push(t('{threads} 线程', { threads: record.threads }));
 	if (version) parts.push(`${record.program} ${version}`);
 	parts.push(record.run.replace(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2}).*$/u, '$1/$2/$3 $4:$5'));
 	facts.append(element('span', 'job-fact', parts.join(' · ')));
@@ -178,7 +179,7 @@ export function energyChart(points: Array<{ energy: number; gradientNorm: number
 	const bottom = Math.min(...values, 0);
 	const x = (index: number) => pad.left + (points.length > 1 ? (index / (points.length - 1)) * (width - pad.left - pad.right) : 0);
 	const y = (value: number) => pad.top + ((top - value) / (top - bottom || 1)) * (height - pad.top - pad.bottom);
-	const chart = svg('svg', { viewBox: `0 0 ${width} ${height}`, class: 'job-chart-svg', role: 'img', 'aria-label': `优化过程：${points.length} 步的能量` });
+	const chart = svg('svg', { viewBox: `0 0 ${width} ${height}`, class: 'job-chart-svg', role: 'img', 'aria-label': t('优化过程：{count} 步的能量', { count: points.length }) });
 	for (const tick of [top, (top + bottom) / 2, bottom]) {
 		chart.append(svg('line', { x1: pad.left, x2: width - pad.right, y1: y(tick), y2: y(tick), class: 'job-grid' }));
 		const label = svg('text', { x: pad.left - 6, y: y(tick) + 4, class: 'job-axis', 'text-anchor': 'end' });
@@ -188,12 +189,12 @@ export function energyChart(points: Array<{ energy: number; gradientNorm: number
 	chart.append(svg('polyline', { points: values.map((value, index) => `${x(index)},${y(value)}`).join(' '), class: 'job-line' }));
 	values.forEach((value, index) => chart.append(svg('circle', { cx: x(index), cy: y(value), r: 2.4, class: 'job-dot' })));
 	const axis = svg('text', { x: (width + pad.left) / 2, y: height - 6, class: 'job-axis', 'text-anchor': 'middle' });
-	axis.textContent = `步数（共 ${points.length} 步${live ? '，还在算' : ''}）`;
+	axis.textContent = live ? t('步数（共 {count} 步，还在算）', { count: points.length }) : t('步数（共 {count} 步）', { count: points.length });
 	chart.append(axis);
 	const unit = svg('text', { x: 12, y: (height - pad.bottom) / 2, class: 'job-axis', 'text-anchor': 'middle', transform: `rotate(-90 12 ${(height - pad.bottom) / 2})` });
 	unit.textContent = 'ΔE / kcal·mol⁻¹';
 	chart.append(unit);
-	const caption = element('figcaption', '', '结构优化：每一步的能量（相对最后一步）');
+	const caption = element('figcaption', '', t('结构优化：每一步的能量（相对最后一步）'));
 	figure.append(chart, caption);
 	return figure;
 }
@@ -208,7 +209,7 @@ export function irSpectrum(modes: VibrationalMode[], { selected = -1, pick }: { 
 	const strongest = Math.max(...modes.map((mode) => mode.intensity), 1e-9);
 	const x = (wavenumber: number) => pad.left + ((from - wavenumber) / (from - to)) * (width - pad.left - pad.right);
 	const base = height - pad.bottom;
-	const chart = svg('svg', { viewBox: `0 0 ${width} ${height}`, class: 'job-chart-svg', role: 'img', 'aria-label': `红外光谱：${modes.length} 个振动` });
+	const chart = svg('svg', { viewBox: `0 0 ${width} ${height}`, class: 'job-chart-svg', role: 'img', 'aria-label': t('红外光谱：{count} 个振动', { count: modes.length }) });
 	const half = 10;
 	const curve: number[] = [];
 	for (let wavenumber = from; wavenumber >= to; wavenumber -= 4) {
@@ -249,14 +250,14 @@ function outputTail(record: RunRecord, text: string | null, url: string | null, 
 	if (text === null) return null;
 	const details = element('details', 'job-log');
 	details.open = open;
-	const summary = element('summary', '', `输出 ${record.output}`);
+	const summary = element('summary', '', t('输出 {file}', { file: record.output }));
 	details.append(summary);
 	const lines = text.split(/\r?\n/u);
 	const tail = lines.slice(-200).join('\n');
 	const pre = element('pre', 'job-log-text', tail);
 	details.append(pre);
 	if (url) {
-		const link = element('a', 'job-log-link', lines.length > 200 ? `完整文件（${lines.length} 行）` : '打开文件');
+		const link = element('a', 'job-log-link', lines.length > 200 ? t('完整文件（{count} 行）', { count: lines.length }) : t('打开文件'));
 		link.href = url;
 		link.target = '_blank';
 		link.rel = 'noopener';
@@ -318,7 +319,7 @@ export function runErrors(context: RunContext, fromOutput: string[] = []): HTMLE
  */
 export async function drawRun(root: HTMLElement, record: RunRecord, read: ReadRunFile, options: DrawOptions = {}, view: ProgramView | null = null): Promise<void> {
 	const context = await runContext(record, read);
-	const parts = view ? await view.draw(context) : [runFacts(record, null), runErrors(context), notes('warning', [`没有插件认识程序 ${record.program}：这里只有它的输出`])];
+	const parts = view ? await view.draw(context) : [runFacts(record, null), runErrors(context), notes('warning', [t('没有插件认识程序 {program}：这里只有它的输出', { program: record.program })])];
 	if (options.output !== false) parts.push(outputTail(record, context.output, options.url?.(record.output) ?? null, Boolean(options.followOutput) && !context.finished));
 	root.replaceChildren(...parts.filter((part): part is HTMLElement => part !== null));
 }
@@ -327,15 +328,15 @@ export async function drawRun(root: HTMLElement, record: RunRecord, read: ReadRu
 export async function drawOutput(root: HTMLElement, record: RunRecord, read: ReadRunFile, url: string | null): Promise<void> {
 	const text = record.files.includes(record.output) || !isFinished(record) ? await read(record.output).catch(() => null) : null;
 	if (text === null) {
-		root.replaceChildren(element('p', 'job-empty', isFinished(record) ? '这次运行没有留下输出。' : '还没有输出。'));
+		root.replaceChildren(element('p', 'job-empty', isFinished(record) ? t('这次运行没有留下输出。') : t('还没有输出。')));
 		return;
 	}
 	const lines = text.split(/\r?\n/u);
 	const pre = element('pre', 'job-log-text is-whole', lines.slice(-2000).join('\n'));
 	const parts: HTMLElement[] = [];
-	const head = element('p', 'job-section-note', `${record.output} · ${lines.length} 行${lines.length > 2000 ? '，这里是最后 2000 行' : ''}`);
+	const head = element('p', 'job-section-note', lines.length > 2000 ? t('{file} · {count} 行，这里是最后 2000 行', { file: record.output, count: lines.length }) : t('{file} · {count} 行', { file: record.output, count: lines.length }));
 	if (url) {
-		const link = element('a', 'job-log-link', '打开完整文件');
+		const link = element('a', 'job-log-link', t('打开完整文件'));
 		link.href = url;
 		link.target = '_blank';
 		link.rel = 'noopener';
@@ -368,7 +369,7 @@ export async function summarizeRun(record: RunRecord, read: ReadRunFile, view: P
 	const failure = record.state === 'failed' || record.state === 'lost' ? record.error : null;
 	const summary: RunSummary = { facts: [], progress: null, problem: record.problem ?? failure ?? null, structure: record.input.endsWith('.xyz') ? context.input : null, input: context.input };
 	if (view) await view.summarize(context, summary);
-	if (context.finished && record.state === 'failed' && !summary.problem) summary.problem = `${record.program} 退出码 ${record.exitCode}`;
+	if (context.finished && record.state === 'failed' && !summary.problem) summary.problem = t('{program} 退出码 {exitCode}', { program: record.program, exitCode: record.exitCode });
 	return summary;
 }
 
@@ -418,15 +419,15 @@ export function structureThumbnail(xyz: string, size = { width: 96, height: 72 }
 
 export function structureSection(title: string, xyz: string): HTMLElement {
 	const frames = parseXyzFrames(xyz);
-	const stage = moleculeStage(`${title}，可拖动旋转`);
+	const stage = moleculeStage(t('{title}，可拖动旋转', { title }));
 	const part = section(title, stage.root);
-	if (frames[0]) part.querySelector('.job-section-title')?.append(element('span', 'job-section-note', ` ${formulaOf(frames[0].atoms)} · ${frames[0].atoms.length} 个原子`));
-	queueMicrotask(() => void stage.show(frames[0] ? frameToXyz(frames[0]) : xyz).catch(() => (stage.root.textContent = '三维结构画不出来')));
+	if (frames[0]) part.querySelector('.job-section-title')?.append(element('span', 'job-section-note', t(' {formula} · {count} 个原子', { formula: formulaOf(frames[0].atoms), count: frames[0].atoms.length })));
+	queueMicrotask(() => void stage.show(frames[0] ? frameToXyz(frames[0]) : xyz).catch(() => (stage.root.textContent = t('三维结构画不出来'))));
 	return part;
 }
 
 export function vibrationSection(modes: VibrationalMode[], normal: ReturnType<typeof parseG98Modes>): HTMLElement {
-	const stage = moleculeStage('振动，可拖动旋转');
+	const stage = moleculeStage(t('振动，可拖动旋转'));
 	const spectrum = element('div', 'job-spectrum');
 	const list = element('ol', 'job-modes');
 	const label = element('p', 'job-mode-label');
@@ -434,9 +435,12 @@ export function vibrationSection(modes: VibrationalMode[], normal: ReturnType<ty
 		spectrum.replaceChildren(irSpectrum(modes, { selected: index, pick }));
 		for (const [position, row] of [...list.children].entries()) row.classList.toggle('is-selected', position === index);
 		const mode = modes[index];
-		label.textContent = index < 0 ? '最终结构' : `第 ${mode.mode} 个振动：${mode.frequency.toFixed(1)} cm⁻¹${mode.frequency < 0 ? '（虚频）' : ''}，强度 ${mode.intensity.toFixed(1)} km/mol`;
+		const words = mode && { mode: mode.mode, frequency: mode.frequency.toFixed(1), intensity: mode.intensity.toFixed(1) };
+		if (index < 0) label.textContent = t('最终结构');
+		else if (mode.frequency < 0) label.textContent = t('第 {mode} 个振动：{frequency} cm⁻¹（虚频），强度 {intensity} km/mol', words);
+		else label.textContent = t('第 {mode} 个振动：{frequency} cm⁻¹，强度 {intensity} km/mol', words);
 		// g98.out lists the same modes as vibspectrum, without translations and rotations.
-		if (normal) void stage.showModes(normal, index).catch(() => (stage.root.textContent = '三维结构画不出来'));
+		if (normal) void stage.showModes(normal, index).catch(() => (stage.root.textContent = t('三维结构画不出来')));
 	};
 	modes.forEach((mode, index) => {
 		const row = element('li', `job-mode${mode.frequency < 0 ? ' is-imaginary' : ''}`);
@@ -451,18 +455,18 @@ export function vibrationSection(modes: VibrationalMode[], normal: ReturnType<ty
 	const view = element('div', 'job-vibration-view');
 	view.append(stage.root, label);
 	body.append(view, list);
-	const part = section('振动与红外光谱', spectrum, body);
-	part.querySelector('.job-section-title')?.append(element('span', 'job-section-note', ` 点谱线或频率看它怎么振动 · cm⁻¹`));
+	const part = section(t('振动与红外光谱'), spectrum, body);
+	part.querySelector('.job-section-title')?.append(element('span', 'job-section-note', t(' 点谱线或频率看它怎么振动 · cm⁻¹')));
 	queueMicrotask(() => pick(-1));
 	return part;
 }
 
 export function conformerSection(frames: XyzFrame[], table: ReturnType<typeof ensembleTable>): HTMLElement {
-	const stage = moleculeStage('构象，可拖动旋转');
+	const stage = moleculeStage(t('构象，可拖动旋转'));
 	const grid = element('table', 'job-conformers');
 	const head = element('thead');
 	const headRow = element('tr');
-	for (const [name, title] of [['#', ''], ['ΔE', '比最低的高多少，kcal/mol'], ['占比', '298.15 K 下的玻尔兹曼分布']]) {
+	for (const [name, title] of [['#', ''], ['ΔE', t('比最低的高多少，kcal/mol')], [t('占比'), t('298.15 K 下的玻尔兹曼分布')]]) {
 		const cell = element('th', '', name);
 		if (title) cell.title = title;
 		headRow.append(cell);
@@ -471,7 +475,7 @@ export function conformerSection(frames: XyzFrame[], table: ReturnType<typeof en
 	const rows = element('tbody');
 	const show = (index: number) => {
 		for (const [position, row] of [...rows.children].entries()) row.classList.toggle('is-selected', position === index);
-		void stage.show(frameToXyz(frames[index])).catch(() => (stage.root.textContent = '三维结构画不出来'));
+		void stage.show(frameToXyz(frames[index])).catch(() => (stage.root.textContent = t('三维结构画不出来')));
 	};
 	table.slice(0, 50).forEach((conformer, index) => {
 		const row = element('tr', 'job-conformer');
@@ -485,9 +489,9 @@ export function conformerSection(frames: XyzFrame[], table: ReturnType<typeof en
 	const body = element('div', 'job-vibrations');
 	const list = element('div', 'job-conformer-list');
 	list.append(grid);
-	list.append(element('p', 'job-section-note', `ΔE 单位 kcal/mol，占比按 298 K 玻尔兹曼分布${table.length > 50 ? `；只列出前 50 个，共 ${table.length} 个` : ''}`));
+	list.append(element('p', 'job-section-note', table.length > 50 ? t('ΔE 单位 kcal/mol，占比按 298 K 玻尔兹曼分布；只列出前 50 个，共 {count} 个', { count: table.length }) : t('ΔE 单位 kcal/mol，占比按 298 K 玻尔兹曼分布')));
 	body.append(stage.root, list);
-	const part = section('构象', body);
+	const part = section(t('构象'), body);
 	queueMicrotask(() => show(0));
 	return part;
 }

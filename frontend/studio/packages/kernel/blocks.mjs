@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { Service } from '@deepseek-ai/cordis';
 
 /**
@@ -29,11 +30,11 @@ export class Blocks extends Service {
 	 */
 	register(block) {
 		const fences = [block.fence].flat().map((fence) => String(fence).trim().toLowerCase()).filter(Boolean);
-		if (!block?.name || !fences.length) throw new TypeError('块要有 name 和 fence');
+		if (!block?.name || !fences.length) throw new TypeError(t('块要有 name 和 fence'));
 		return this.ctx.effect(() => {
 			for (const fence of fences) {
 				const owner = this.byFence.get(fence);
-				if (owner) throw new Error(`代码块 ${fence} 已经由插件 ${owner.name} 认领`);
+				if (owner) throw new Error(t('代码块 {fence} 已经由插件 {name} 认领', { fence, name: owner.name }));
 			}
 			for (const fence of fences) this.byFence.set(fence, block);
 			return () => {

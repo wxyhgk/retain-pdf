@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { OFFICE_KIND_NAMES, fileSize, type OfficeKind } from './kinds.mjs';
 import { drawOffice, officeBytes } from './render.ts';
 import { openOfficeFile } from './viewer.ts';
@@ -55,9 +56,9 @@ const drawings = new Map<string, Promise<Drawn>>();
 
 function countText(kind: OfficeKind, count: number): string {
 	if (!count) return '';
-	if (kind === 'document') return `${count} 页`;
-	if (kind === 'slides') return `${count} 张`;
-	return count > 1 ? `${count} 个工作表` : '';
+	if (kind === 'document') return t('{count} 页', { count });
+	if (kind === 'slides') return t('{count} 张', { count });
+	return count > 1 ? t('{count} 个工作表', { count }) : '';
 }
 
 /** The start of a file, small: drawn full size off to the side, then scaled to the card. */
@@ -123,7 +124,7 @@ async function draw(card: HTMLElement): Promise<void> {
 		describe(card, kind, drawn.count, drawn.size);
 	} catch (error) {
 		thumb.dataset.state = 'failed';
-		thumb.textContent = '无法预览';
+		thumb.textContent = t('无法预览');
 		thumb.title = error instanceof Error ? error.message : String(error);
 	}
 }
@@ -146,13 +147,13 @@ function connect(card: HTMLElement): void {
 		const open = document.createElement('button');
 		open.type = 'button';
 		open.className = 'office-card-button';
-		open.textContent = '预览';
+		open.textContent = t('预览');
 		open.addEventListener('click', show);
 		actions.append(open);
 	}
 	const save = document.createElement('a');
 	save.className = 'office-card-button';
-	save.textContent = '下载';
+	save.textContent = t('下载');
 	save.href = link.href;
 	save.download = link.textContent ?? '';
 	save.addEventListener('click', (event) => event.stopPropagation());

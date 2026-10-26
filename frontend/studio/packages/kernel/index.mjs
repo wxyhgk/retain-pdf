@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * The plugin kernel. Everything the site does beyond plain Markdown is a
  * plugin (plugins/<name>/): a block such as ```job, a molecule editor such
@@ -42,7 +44,7 @@ export async function applyPlugins(ctx, plugins) {
 		}
 		const plugin = module?.default ?? module;
 		if (typeof plugin?.apply !== 'function' && typeof plugin !== 'function') {
-			results.push({ id, state: 'invalid', error: `${id} 没有导出 apply(ctx)` });
+			results.push({ id, state: 'invalid', error: t('{id} 没有导出 apply(ctx)', { id }) });
 			continue;
 		}
 		try {
@@ -64,7 +66,7 @@ export async function applyPlugins(ctx, plugins) {
 export function pluginProblems(results) {
 	return results
 		.filter((result) => result.state !== 'active')
-		.map((result) => (result.state === 'waiting' ? `插件 ${result.id} 在等它需要的服务（inject），没有启动` : `插件 ${result.id} 没能启动：${result.error ?? result.state}`));
+		.map((result) => (result.state === 'waiting' ? t('插件 {id} 在等它需要的服务（inject），没有启动', { id: result.id }) : t('插件 {id} 没能启动：{error}', { id: result.id, error: result.error ?? result.state })));
 }
 
 /**
@@ -107,8 +109,8 @@ export async function syncPlugins(ctx, loaded, plugins) {
  */
 export function pluginStatus(entry) {
 	if (!entry) return { state: 'off' };
-	if (!entry.fiber) return { state: 'failed', error: entry.error ?? '没能启动' };
+	if (!entry.fiber) return { state: 'failed', error: entry.error ?? t('没能启动') };
 	if (entry.fiber.state === PluginState.ACTIVE) return { state: 'active' };
 	if (entry.fiber.state === PluginState.PENDING) return { state: 'waiting' };
-	return { state: 'failed', error: entry.error ?? '没能启动' };
+	return { state: 'failed', error: entry.error ?? t('没能启动') };
 }

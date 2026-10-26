@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { officeKind } from './kinds.mjs';
 import { drawOffice, officeBytes } from './render.ts';
 import './office.css';
@@ -25,14 +26,14 @@ function createViewer() {
 	dialog.setAttribute('aria-labelledby', title.id);
 	const status = element('span', 'office-viewer-status');
 	status.setAttribute('role', 'status');
-	const download = element('a', 'office-viewer-button', '下载');
-	const close = element('button', 'office-viewer-button', '关闭');
+	const download = element('a', 'office-viewer-button', t('下载'));
+	const close = element('button', 'office-viewer-button', t('关闭'));
 	close.type = 'button';
 	close.addEventListener('click', () => dialog.close());
 	bar.append(title, status, element('span', 'office-viewer-space'), download, close);
 	const tabs = element('nav', 'office-viewer-sheets');
 	tabs.setAttribute('role', 'tablist');
-	tabs.setAttribute('aria-label', '工作表');
+	tabs.setAttribute('aria-label', t('工作表'));
 	tabs.hidden = true;
 	const body = element('div', 'office-viewer-body');
 	dialog.append(bar, tabs, body);
@@ -65,10 +66,10 @@ function createViewer() {
 			if (!dialog.open) dialog.showModal();
 			if (!kind || kind === 'old') {
 				status.textContent = '';
-				note(`${name} 是旧的 Office 格式，网页里打不开。可以下载后用本机的程序打开，或在 Word / PowerPoint 里另存为 .docx / .pptx。`);
+				note(t('{name} 是旧的 Office 格式，网页里打不开。可以下载后用本机的程序打开，或在 Word / PowerPoint 里另存为 .docx / .pptx。', { name }));
 				return;
 			}
-			status.textContent = '正在打开…';
+			status.textContent = t('正在打开…');
 			try {
 				const bytes = await officeBytes(url);
 				if (at !== shown) return;
@@ -95,7 +96,7 @@ function createViewer() {
 			} catch (error) {
 				if (at !== shown) return;
 				status.textContent = '';
-				note(`打不开 ${name}：${error instanceof Error ? error.message : String(error)}。可以下载后用本机的程序打开。`);
+				note(t('打不开 {name}：{error}。可以下载后用本机的程序打开。', { name, error: error instanceof Error ? error.message : String(error) }));
 			}
 		},
 	};

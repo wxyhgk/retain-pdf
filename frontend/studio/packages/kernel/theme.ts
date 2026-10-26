@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { Context, Service } from './index.mjs';
 
 /**
@@ -34,30 +35,30 @@ const token = (name: string, css: string, kind: TokenKind, value: string, label:
 
 export const DESIGN_TOKENS: readonly DesignToken[] = [
 	// Colors (global.css): light here; dark mode has its own (html[data-theme='dark']).
-	token('accent', '--accent', 'color', '#37352f', '强调色：主按钮、选中'),
-	token('accent-strong', '--accent-dark', 'color', '#000000', '强调色的深一档'),
-	token('on-accent', '--on-accent', 'color', '#ffffff', '强调色上的字'),
-	token('heading', '--black', 'rgb', '55, 53, 47', '标题的颜色'),
-	token('text', '--gray-dark', 'rgb', '55, 53, 47', '正文的颜色'),
-	token('text-soft', '--gray', 'rgb', '120, 119, 116', '次要文字、图标'),
-	token('line', '--gray-light', 'rgb', '233, 232, 229', '分隔线、边框'),
-	token('surface', '--surface', 'color', '#ffffff', '页面底色'),
-	token('surface-soft', '--surface-soft', 'color', '#f7f7f5', '侧栏、卡片的浅底色'),
-	token('surface-hover', '--surface-hover', 'color', '#efefed', '悬停时的底色'),
-	token('code-bg', '--code-bg', 'color', '#1e1e1e', '代码块底色'),
-	token('code-text', '--code-text', 'color', '#f4f4f4', '代码块文字'),
-	token('danger', '--danger', 'color', '#b42318', '出错、删除的红色'),
+	token('accent', '--accent', 'color', '#37352f', t('强调色：主按钮、选中')),
+	token('accent-strong', '--accent-dark', 'color', '#000000', t('强调色的深一档')),
+	token('on-accent', '--on-accent', 'color', '#ffffff', t('强调色上的字')),
+	token('heading', '--black', 'rgb', '55, 53, 47', t('标题的颜色')),
+	token('text', '--gray-dark', 'rgb', '55, 53, 47', t('正文的颜色')),
+	token('text-soft', '--gray', 'rgb', '120, 119, 116', t('次要文字、图标')),
+	token('line', '--gray-light', 'rgb', '233, 232, 229', t('分隔线、边框')),
+	token('surface', '--surface', 'color', '#ffffff', t('页面底色')),
+	token('surface-soft', '--surface-soft', 'color', '#f7f7f5', t('侧栏、卡片的浅底色')),
+	token('surface-hover', '--surface-hover', 'color', '#efefed', t('悬停时的底色')),
+	token('code-bg', '--code-bg', 'color', '#1e1e1e', t('代码块底色')),
+	token('code-text', '--code-text', 'color', '#f4f4f4', t('代码块文字')),
+	token('danger', '--danger', 'color', '#b42318', t('出错、删除的红色')),
 	// Fonts (global.css).
-	token('font-text', '--font-text', 'font', 'var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif', '正文字体'),
-	token('font-mono', '--font-mono', 'font', 'ui-monospace, SFMono-Regular, Menlo, monospace', '等宽字体（代码、路径）'),
+	token('font-text', '--font-text', 'font', 'var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif', t('正文字体')),
+	token('font-mono', '--font-mono', 'font', 'ui-monospace, SFMono-Regular, Menlo, monospace', t('等宽字体（代码、路径）')),
 	// The Studio (src/studio/tokens.css).
-	token('editor-width', '--studio-editor-width', 'length', '926px', '正文区宽度'),
-	token('editor-padding', '--studio-editor-padding', 'length', '96px', '正文左右留白'),
-	token('editor-font-size', '--studio-editor-font-size', 'length', '17px', '正文字号'),
-	token('editor-line-height', '--studio-editor-line-height', 'number', '1.72', '正文行高'),
-	token('title-size', '--studio-title-size', 'length', 'clamp(30px, 3vw, 40px)', '标题字号'),
-	token('sidebar-width', '--studio-sidebar-width', 'length', '250px', '左栏宽度'),
-	token('panel-width', '--studio-panel-width', 'length', '340px', '右栏宽度（拖动过就按拖动的）'),
+	token('editor-width', '--studio-editor-width', 'length', '926px', t('正文区宽度')),
+	token('editor-padding', '--studio-editor-padding', 'length', '96px', t('正文左右留白')),
+	token('editor-font-size', '--studio-editor-font-size', 'length', '17px', t('正文字号')),
+	token('editor-line-height', '--studio-editor-line-height', 'number', '1.72', t('正文行高')),
+	token('title-size', '--studio-title-size', 'length', 'clamp(30px, 3vw, 40px)', t('标题字号')),
+	token('sidebar-width', '--studio-sidebar-width', 'length', '250px', t('左栏宽度')),
+	token('panel-width', '--studio-panel-width', 'length', '340px', t('右栏宽度（拖动过就按拖动的）')),
 ];
 
 export type TokenName = (typeof DESIGN_TOKENS)[number]['name'];
@@ -87,17 +88,17 @@ function rgbTriplet(value: string): string | null {
 /** The token by this name and the value as CSS takes it; throws, saying why, if either is wrong. */
 export function checkToken(name: string, value: unknown): { token: DesignToken; value: string } {
 	const found = byName.get(name);
-	if (!found) throw new ThemeError(`没有叫 ${name} 的设计变量；有：${DESIGN_TOKENS.map((entry) => entry.name).join('、')}`);
-	if (typeof value !== 'string' || !value.trim()) throw new ThemeError(`设计变量 ${name} 的值要是一段非空的文字`);
+	if (!found) throw new ThemeError(t('没有叫 {name} 的设计变量；有：{names}', { name, names: DESIGN_TOKENS.map((entry) => entry.name).join('、') }));
+	if (typeof value !== 'string' || !value.trim()) throw new ThemeError(t('设计变量 {name} 的值要是一段非空的文字', { name }));
 	const text = value.trim();
 	// One declaration's value, nothing that could end it or open another rule.
-	if (text.length > 300 || /[;{}<>\\]|\/\*/u.test(text)) throw new ThemeError(`设计变量 ${name} 的值不能含 ; { } < > \\ 或注释`);
+	if (text.length > 300 || /[;{}<>\\]|\/\*/u.test(text)) throw new ThemeError(t('设计变量 {name} 的值不能含 ; { } < > \\ 或注释', { name }));
 	if (found.kind === 'rgb') {
 		const triplet = rgbTriplet(text);
-		if (!triplet) throw new ThemeError(`设计变量 ${name} 要写成 #rrggbb 或 "r, g, b"`);
+		if (!triplet) throw new ThemeError(t('设计变量 {name} 要写成 #rrggbb 或 "r, g, b"', { name }));
 		return { token: found, value: triplet };
 	}
-	if (found.kind === 'number' && !/^\d+(\.\d+)?$/u.test(text)) throw new ThemeError(`设计变量 ${name} 要是一个数`);
+	if (found.kind === 'number' && !/^\d+(\.\d+)?$/u.test(text)) throw new ThemeError(t('设计变量 {name} 要是一个数', { name }));
 	return { token: found, value: text };
 }
 
@@ -171,7 +172,7 @@ export class Styles extends Service {
 	 * Studio's sheets; a rule that does not win needs a more specific selector.
 	 */
 	add(css: string): () => Promise<void> {
-		if (typeof css !== 'string') throw new ThemeError('样式要是 CSS 文字');
+		if (typeof css !== 'string') throw new ThemeError(t('样式要是 CSS 文字'));
 		return this.ctx.effect(() => {
 			const element = styleElement('data-plugin-style');
 			element.textContent = css;

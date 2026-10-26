@@ -4,6 +4,7 @@ import { visit } from 'unist-util-visit';
 
 import { articlePath, officeFileOf } from '../articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '../articles/rules.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import { officeKind } from '@blog/office/kinds.mjs';
 
 /**
@@ -61,7 +62,7 @@ export default function remarkOfficeCards() {
 					element('span', { className: ['office-card-meta'] }),
 				]),
 			];
-			if (!target) file.message(`找不到文件 ./${path}`, { place: link.position, ruleId: 'missing-file', source: 'remark-office-cards' });
+			if (!target) file.message(t('找不到文件 ./{path}', { path }), { place: link.position, ruleId: 'missing-file', source: 'remark-office-cards' });
 		});
 
 		if (!article) return;
@@ -71,7 +72,7 @@ export default function remarkOfficeCards() {
 			if (!path || !PUBLISHED_FOLDERS.includes(root) || !rest.length) return;
 			const anchor = /[?#].*$/su.exec(link.url)?.[0] ?? '';
 			link.url = `${published(path)}${anchor}`;
-			if (!located(path)) file.message(`找不到文件 ./${path}`, { place: link.position, ruleId: 'missing-file', source: 'remark-office-cards' });
+			if (!located(path)) file.message(t('找不到文件 ./{path}', { path }), { place: link.position, ruleId: 'missing-file', source: 'remark-office-cards' });
 		});
 	};
 }

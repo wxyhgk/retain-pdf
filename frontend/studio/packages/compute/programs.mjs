@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { Service } from '@blog/kernel/index.mjs';
 
 /**
@@ -26,9 +27,9 @@ export class JobPrograms extends Service {
 
 	/** Registers a program until the plugin that did goes; a name taken is refused. */
 	register(program) {
-		if (!/^[a-z][\w-]*$/u.test(String(program?.name ?? ''))) throw new TypeError(`程序名 ${program?.name} 不对：小写字母开头，字母、数字、- 和 _`);
+		if (!/^[a-z][\w-]*$/u.test(String(program?.name ?? ''))) throw new TypeError(t('程序名 {name} 不对：小写字母开头，字母、数字、- 和 _', { name: program?.name }));
 		return this.ctx.effect(() => {
-			if (this.get(program.name)) throw new Error(`程序 ${program.name} 已经有插件注册了`);
+			if (this.get(program.name)) throw new Error(t('程序 {name} 已经有插件注册了', { name: program.name }));
 			this.programs.push(program);
 			return () => {
 				const index = this.programs.indexOf(program);

@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * A calculation in an article: a ```job fence names the program and how it
  * is run, and holds the structure it starts from, so that without the
@@ -118,8 +120,8 @@ export function jobFenceMeta(options) {
 
 /** The folder a run of a job is kept in, in its article: `assets/jobs/<id>/<run>`. */
 export function runFolder(id, run) {
-	if (!JOB_ID_PATTERN.test(String(id))) throw new Error(`任务名 ${id} 只能用小写字母、数字和连字符`);
-	if (!RUN_NAME_PATTERN.test(String(run))) throw new Error(`运行名 ${run} 不对`);
+	if (!JOB_ID_PATTERN.test(String(id))) throw new Error(t('任务名 {id} 只能用小写字母、数字和连字符', { id }));
+	if (!RUN_NAME_PATTERN.test(String(run))) throw new Error(t('运行名 {run} 不对', { run }));
 	return `${JOBS_FOLDER}/${id}/${run}`;
 }
 
@@ -145,11 +147,25 @@ export const FINISHED_STATES = Object.freeze(['done', 'failed', 'cancelled', 'lo
 
 /** Words for a run's state. */
 export const RUN_STATE_NAMES = Object.freeze({
-	preparing: '准备中',
-	queued: '排队中',
-	running: '运行中',
-	done: '完成',
-	failed: '失败',
-	cancelled: '已停止',
-	lost: '失去联系',
+	get preparing() {
+		return t('准备中');
+	},
+	get queued() {
+		return t('排队中');
+	},
+	get running() {
+		return t('运行中');
+	},
+	get done() {
+		return t('完成');
+	},
+	get failed() {
+		return t('失败');
+	},
+	get cancelled() {
+		return t('已停止');
+	},
+	get lost() {
+		return t('失去联系');
+	},
 });

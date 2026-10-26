@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * Command lines, for the programs (programs.mjs): split and joined as a
  * shell does, and what xtb and the programs built on it (CREST) take alike —
@@ -8,26 +10,28 @@
  */
 
 /** The solvents both ALPB and GBSA have (xtb's names), with what to call them. */
-export const SOLVENTS = Object.freeze({
-	water: '水',
-	methanol: '甲醇',
-	ethanol: '乙醇',
-	acetone: '丙酮',
-	acetonitrile: '乙腈',
-	chcl3: '氯仿',
-	ch2cl2: '二氯甲烷',
-	dmso: 'DMSO',
-	dmf: 'DMF',
-	thf: 'THF',
-	toluene: '甲苯',
-	benzene: '苯',
-	hexane: '正己烷',
-	ether: '乙醚',
-	cs2: '二硫化碳',
-	octanol: '正辛醇',
-	ethylacetate: '乙酸乙酯',
-	nitromethane: '硝基甲烷',
-});
+export function solventNames() {
+	return {
+		water: t('水'),
+		methanol: t('甲醇'),
+		ethanol: t('乙醇'),
+		acetone: t('丙酮'),
+		acetonitrile: t('乙腈'),
+		chcl3: t('氯仿'),
+		ch2cl2: t('二氯甲烷'),
+		dmso: 'DMSO',
+		dmf: 'DMF',
+		thf: 'THF',
+		toluene: t('甲苯'),
+		benzene: t('苯'),
+		hexane: t('正己烷'),
+		ether: t('乙醚'),
+		cs2: t('二硫化碳'),
+		octanol: t('正辛醇'),
+		ethylacetate: t('乙酸乙酯'),
+		nitromethane: t('硝基甲烷'),
+	};
+}
 
 /** Words of a command line, as a shell splits them (quotes, no expansion). */
 export function splitArgs(text) {
@@ -96,32 +100,56 @@ export function writeXtbCommon(options) {
 /** Those as parts of the line saying what the job does. */
 export function describeXtbCommon(options) {
 	const parts = [];
-	if (options.charge) parts.push(`电荷 ${options.charge > 0 ? '+' : ''}${options.charge}`);
-	if (options.uhf) parts.push(`${options.uhf} 个未成对电子`);
-	if (options.solvent) parts.push(`${SOLVENTS[options.solvent.name] ?? options.solvent.name}（${options.solvent.model.toUpperCase()}）`);
+	if (options.charge) parts.push(t('电荷 {charge}', { charge: `${options.charge > 0 ? '+' : ''}${options.charge}` }));
+	if (options.uhf) parts.push(t('{count} 个未成对电子', { count: options.uhf }));
+	if (options.solvent) parts.push(`${solventNames()[options.solvent.name] ?? options.solvent.name}（${options.solvent.model.toUpperCase()}）`);
 	return parts;
 }
 
-const solventChoices = (options) => [
-	...(options.solvent && !SOLVENTS[options.solvent.name] ? [[options.solvent.name, options.solvent.name]] : []),
-	...Object.entries(SOLVENTS).map(([key, name]) => [key, `${name} ${key}`]),
-];
+const solventChoices = (options) => {
+	const names = solventNames();
+	return [...(options.solvent && !names[options.solvent.name] ? [[options.solvent.name, options.solvent.name]] : []), ...Object.entries(names).map(([key, name]) => [key, `${name} ${key}`])];
+};
 
 /** Those as the form's fields (programs.d.mts ProgramField). */
 export const XTB_COMMON_FIELDS = Object.freeze([
-	{ key: 'charge', label: '电荷', kind: 'number', min: -20, max: 20, get: (options) => String(options.charge), set: (options, value) => ({ ...options, charge: Number.parseInt(value, 10) || 0 }) },
-	{ key: 'uhf', label: '未成对电子', kind: 'number', min: 0, max: 20, get: (options) => String(options.uhf), set: (options, value) => ({ ...options, uhf: Math.max(0, Number.parseInt(value, 10) || 0) }) },
+	{
+		key: 'charge',
+		get label() {
+			return t('电荷');
+		},
+		kind: 'number',
+		min: -20,
+		max: 20,
+		get: (options) => String(options.charge),
+		set: (options, value) => ({ ...options, charge: Number.parseInt(value, 10) || 0 }),
+	},
+	{
+		key: 'uhf',
+		get label() {
+			return t('未成对电子');
+		},
+		kind: 'number',
+		min: 0,
+		max: 20,
+		get: (options) => String(options.uhf),
+		set: (options, value) => ({ ...options, uhf: Math.max(0, Number.parseInt(value, 10) || 0) }),
+	},
 	{
 		key: 'solvent-model',
-		label: '溶剂模型',
+		get label() {
+			return t('溶剂模型');
+		},
 		kind: 'select',
-		choices: () => [['', '无（气相）'], ['alpb', 'ALPB'], ['gbsa', 'GBSA']],
+		choices: () => [['', t('无（气相）')], ['alpb', 'ALPB'], ['gbsa', 'GBSA']],
 		get: (options) => options.solvent?.model ?? '',
 		set: (options, value) => ({ ...options, solvent: value ? { model: value, name: options.solvent?.name ?? 'water' } : null }),
 	},
 	{
 		key: 'solvent',
-		label: '溶剂',
+		get label() {
+			return t('溶剂');
+		},
 		kind: 'select',
 		choices: solventChoices,
 		shown: (options) => Boolean(options.solvent),

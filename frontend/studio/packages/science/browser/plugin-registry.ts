@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 export interface ScienceRendererPlugin {
 	/** Stable machine name stored on preview placeholders. */
 	id: string;
@@ -11,8 +13,8 @@ export class SciencePluginRegistry {
 	private readonly plugins = new Map<string, ScienceRendererPlugin>();
 
 	register(plugin: ScienceRendererPlugin): () => void {
-		if (!/^[a-z][a-z0-9-]*$/u.test(plugin.id)) throw new Error(`无效的科学插件 ID：${plugin.id}`);
-		if (this.plugins.has(plugin.id)) throw new Error(`科学插件已经注册：${plugin.id}`);
+		if (!/^[a-z][a-z0-9-]*$/u.test(plugin.id)) throw new Error(t('无效的科学插件 ID：{id}', { id: plugin.id }));
+		if (this.plugins.has(plugin.id)) throw new Error(t('科学插件已经注册：{id}', { id: plugin.id }));
 		this.plugins.set(plugin.id, plugin);
 		return () => this.plugins.delete(plugin.id);
 	}

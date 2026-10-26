@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 const ELEMENT_SYMBOLS = [
 	'', 'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg', 'Al', 'Si',
 	'P', 'S', 'Cl', 'Ar', 'K', 'Ca', 'Sc', 'Ti', 'V', 'Cr', 'Mn', 'Fe', 'Co', 'Ni',
@@ -22,7 +24,7 @@ export function gaussianToXyz(source: string): string {
 	const lines = source.split(/\r?\n/);
 	const chargeMultiplicityIndex = lines.findIndex((line) => /^\s*[+-]?\d+\s+\d+\s*$/.test(line));
 	if (chargeMultiplicityIndex < 0) {
-		throw new UnsupportedGaussianCoordinatesError('GJF 中没有找到电荷与多重度行');
+		throw new UnsupportedGaussianCoordinatesError(t('GJF 中没有找到电荷与多重度行'));
 	}
 
 	const atoms: string[] = [];
@@ -33,7 +35,7 @@ export function gaussianToXyz(source: string): string {
 			.map((value) => value.replace(/[dD]/g, 'E'))
 			.filter((value) => Number.isFinite(Number(value)));
 		if (coordinateValues.length < 3) {
-			throw new UnsupportedGaussianCoordinatesError('GJF 暂时只支持笛卡尔坐标，不支持 Z-matrix');
+			throw new UnsupportedGaussianCoordinatesError(t('GJF 暂时只支持笛卡尔坐标，不支持 Z-matrix'));
 		}
 
 		const atomicNumber = Number.parseInt(parts[0], 10);
@@ -44,12 +46,12 @@ export function gaussianToXyz(source: string): string {
 			: matchedSymbol
 				? `${matchedSymbol[0].toUpperCase()}${matchedSymbol.slice(1).toLowerCase()}`
 				: undefined;
-		if (!symbol) throw new UnsupportedGaussianCoordinatesError(`无法识别 GJF 原子：${parts[0]}`);
+		if (!symbol) throw new UnsupportedGaussianCoordinatesError(t('无法识别 GJF 原子：{atom}', { atom: parts[0] }));
 
 		const [x, y, z] = coordinateValues.slice(-3);
 		atoms.push(`${symbol} ${x} ${y} ${z}`);
 	}
 
-	if (!atoms.length) throw new UnsupportedGaussianCoordinatesError('GJF 中没有找到笛卡尔坐标');
+	if (!atoms.length) throw new UnsupportedGaussianCoordinatesError(t('GJF 中没有找到笛卡尔坐标'));
 	return `${atoms.length}\nGaussian input\n${atoms.join('\n')}`;
 }

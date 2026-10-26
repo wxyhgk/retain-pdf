@@ -8,12 +8,6 @@ import { readWords, studioSources } from '../sources.mjs';
 
 const projectRoot = resolve(import.meta.dirname, '../../..');
 
-/**
- * The Studio's code that is in the language chosen: no Chinese left outside t(). Each part is added here as its words
- * are given to t(), until it is all of it.
- */
-const DONE = [/^src\/studio\/shell\/dialogs\/LocaleDialog\.tsx$/u, /^src\/studio\/server\/locale-settings\.mjs$/u, /^src\/studio\/server\/routes\/settings\.mjs$/u];
-
 test('t: the Chinese as written, its {names} given', () => {
 	setLocale('zh-CN');
 	assert.equal(t('已移动到 {path}', { path: 'img/a.png' }), '已移动到 img/a.png');
@@ -58,10 +52,9 @@ test('scan: t() arguments, and Chinese outside t()', () => {
 	assert.throws(() => translatable('t(`第 ${n} 页`)'));
 });
 
-test("the Studio's parts done have no Chinese left outside t()", async () => {
+test("the Studio's code has no Chinese left outside t() (or marked i18n-ignore)", async () => {
 	const left: string[] = [];
 	for (const path of await studioSources(projectRoot)) {
-		if (!DONE.some((done) => done.test(path))) continue;
 		for (const piece of (await readWords(projectRoot, path)).untranslated) left.push(`${path}:${piece.line} ${piece.text}`);
 	}
 	assert.deepEqual(left, []);

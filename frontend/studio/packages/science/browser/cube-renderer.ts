@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { parseCubeBlock } from '../parsers/index.ts';
 import {
 	CUBE_DISPLAY_DEFAULTS,
@@ -47,26 +48,26 @@ export function createCubePreview(language: string, source: string): HTMLElement
 		if (!block) return null;
 		const payload: CubePreviewPayload = block.resource.kind === 'file'
 			? { kind: 'file', path: block.resource.path, label: block.resource.path }
-			: { kind: 'inline', source: block.resource.text, label: 'CUBE · 内联体数据' };
-		const figure = createCubeFigure(payload.label, '正在载入 Cube 体数据…');
+			: { kind: 'inline', source: block.resource.text, label: t('CUBE · 内联体数据') };
+		const figure = createCubeFigure(payload.label, t('正在载入 Cube 体数据…'));
 		// @file previews contain only a small validated bundle path, never the multi-megabyte file.
 		figure.dataset.sciencePreview = JSON.stringify(payload);
 		return figure;
 	} catch (error) {
-		return errorFigure('CUBE', error instanceof Error ? error.message : '无法解析 Cube 内容');
+		return errorFigure('CUBE', error instanceof Error ? error.message : t('无法解析 Cube 内容'));
 	}
 }
 
 async function fetchCube(path: string): Promise<string> {
 	const url = resolveScienceResourceUrl(path);
 	const response = await fetch(url, { credentials: 'same-origin' });
-	if (!response.ok) throw new Error(`Cube 文件读取失败（HTTP ${response.status}）`);
+	if (!response.ok) throw new Error(t('Cube 文件读取失败（HTTP {status}）', { status: response.status }));
 	const declaredSize = Number(response.headers.get('content-length'));
 	if (Number.isFinite(declaredSize) && declaredSize > MAX_FETCHED_CUBE_BYTES) {
-		throw new Error('Cube 文件超过 8 MB 渲染上限');
+		throw new Error(t('Cube 文件超过 8 MB 渲染上限'));
 	}
 	const source = await response.text();
-	if (source.length > MAX_FETCHED_CUBE_BYTES) throw new Error('Cube 文件超过 8 MB 渲染上限');
+	if (source.length > MAX_FETCHED_CUBE_BYTES) throw new Error(t('Cube 文件超过 8 MB 渲染上限'));
 	return source;
 }
 
@@ -122,12 +123,12 @@ function createCubeControls(
 	const panel = document.createElement('fieldset');
 	panel.className = 'cube-controls';
 	const legend = document.createElement('legend');
-	legend.textContent = 'Cube 显示';
+	legend.textContent = t('Cube 显示');
 	const grid = document.createElement('div');
 	grid.className = 'cube-control-grid';
 
-	const iso = rangeControl('等值面 |ψ|', settings.isovalue, CUBE_ISOVALUE_MIN, CUBE_ISOVALUE_MAX, CUBE_ISOVALUE_STEP);
-	const opacity = rangeControl('表面透明度', settings.opacity, CUBE_OPACITY_MIN, CUBE_OPACITY_MAX, CUBE_OPACITY_STEP);
+	const iso = rangeControl(t('等值面 |ψ|'), settings.isovalue, CUBE_ISOVALUE_MIN, CUBE_ISOVALUE_MAX, CUBE_ISOVALUE_STEP);
+	const opacity = rangeControl(t('表面透明度'), settings.opacity, CUBE_OPACITY_MIN, CUBE_OPACITY_MAX, CUBE_OPACITY_STEP);
 	const syncRangeOutput = (control: ReturnType<typeof rangeControl>, digits: number) => {
 		control.output.value = Number(control.input.value).toFixed(digits).replace(/0+$/u, '').replace(/\.$/u, '');
 	};
@@ -139,17 +140,17 @@ function createCubeControls(
 	const phaseGroup = document.createElement('div');
 	phaseGroup.className = 'cube-control cube-phase-control';
 	const phaseLabel = document.createElement('span');
-	phaseLabel.textContent = '等值面相位';
+	phaseLabel.textContent = t('等值面相位');
 	const phaseOptions = document.createElement('div');
-	for (const [key, text, className] of [
-		['positive', '正相位', 'positive'],
-		['negative', '负相位', 'negative'],
+	for (const [key, text, shown, className] of [
+		['positive', t('正相位'), t('显示正相位'), 'positive'],
+		['negative', t('负相位'), t('显示负相位'), 'negative'],
 	] as const) {
 		const label = document.createElement('label');
 		const input = document.createElement('input');
 		input.type = 'checkbox';
 		input.checked = settings[key];
-		input.setAttribute('aria-label', `显示${text}`);
+		input.setAttribute('aria-label', shown);
 		input.addEventListener('change', () => { settings[key] = input.checked; apply(); });
 		const swatch = document.createElement('i');
 		swatch.className = className;
@@ -161,10 +162,10 @@ function createCubeControls(
 	const styleField = document.createElement('label');
 	styleField.className = 'cube-control';
 	const styleLabel = document.createElement('span');
-	styleLabel.textContent = '分子骨架';
+	styleLabel.textContent = t('分子骨架');
 	const styleSelect = document.createElement('select');
-	styleSelect.setAttribute('aria-label', '分子骨架显示方式');
-	for (const [value, text] of [['stick', '球棍'], ['sphere', '空间填充'], ['line', '细棍']] as const) {
+	styleSelect.setAttribute('aria-label', t('分子骨架显示方式'));
+	for (const [value, text] of [['stick', t('球棍')], ['sphere', t('空间填充')], ['line', t('细棍')]] as const) {
 		const option = document.createElement('option');
 		option.value = value;
 		option.textContent = text;
@@ -177,8 +178,8 @@ function createCubeControls(
 	const reset = document.createElement('button');
 	reset.type = 'button';
 	reset.className = 'cube-reset-display';
-	reset.textContent = '恢复默认显示';
-	reset.setAttribute('aria-label', '恢复 Cube 默认显示参数');
+	reset.textContent = t('恢复默认显示');
+	reset.setAttribute('aria-label', t('恢复 Cube 默认显示参数'));
 	reset.addEventListener('click', () => {
 		Object.assign(settings, CUBE_DISPLAY_DEFAULTS);
 		iso.input.value = String(settings.isovalue);
@@ -211,14 +212,14 @@ export async function hydrateCubePreview(figure: HTMLElement): Promise<void> {
 		const settings = normalizeCubeDisplaySettings(readSavedMoleculeDisplay('cube', viewIdentity));
 		viewer.volume.load(source, { iso: settings.isovalue });
 		applyCubeDisplay(figure, viewer, settings);
-		stage.setAttribute('aria-label', 'Cube 分子轨道：分子骨架与正负等值面，可拖动旋转和滚轮缩放');
+		stage.setAttribute('aria-label', t('Cube 分子轨道：分子骨架与正负等值面，可拖动旋转和滚轮缩放'));
 		const interaction = mountViewControls(figure, stage, fastMolViewControl(viewer), 'cube', viewIdentity, { getDisplay: () => ({ ...settings }) });
 		stage.after(createCubeControls(settings, () => {
 			applyCubeDisplay(figure, viewer, settings);
 			interaction.markDisplayDirty();
 		}));
 	} catch (error) {
-		stage.textContent = error instanceof Error ? error.message : 'Cube 体数据渲染失败';
+		stage.textContent = error instanceof Error ? error.message : t('Cube 体数据渲染失败');
 		figure.classList.add('chem-error');
 	}
 }

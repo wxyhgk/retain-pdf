@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { MoleculeBlock, MoleculeView } from '../model.ts';
 import { gaussianToXyz } from '../parsers/gaussian.ts';
 import { sdfHas3DCoordinates } from '../parsers/sdf.ts';
@@ -38,7 +39,7 @@ export function prepareMoleculeRenderInput(
 	}
 
 	if (!block.viewerFormat) {
-		throw new Error(`三维格式 ${block.language} 缺少 viewerFormat`);
+		throw new Error(t('三维格式 {language} 缺少 viewerFormat', { language: block.language }));
 	}
 	return {
 		status: 'ready',

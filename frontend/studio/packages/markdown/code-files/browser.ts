@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * What a code file's bar and fold do in the page: copy, download, unfold.
  * The figures come from render.mjs, at build time on the blog and in the
@@ -27,9 +29,9 @@ function flash(button: HTMLElement, label: string): void {
 async function copy(figure: HTMLElement, button: HTMLElement): Promise<void> {
 	try {
 		await navigator.clipboard.writeText(codeText(figure));
-		flash(button, '已复制');
+		flash(button, t('已复制'));
 	} catch {
-		flash(button, '复制失败');
+		flash(button, t('复制失败'));
 	}
 }
 
@@ -61,7 +63,7 @@ function fold(figure: HTMLElement): void {
 	button.className = 'code-file-unfold';
 	// A file shown in part says how much unfolds, not that it is all of it.
 	const excerpt = lines.some((line) => line.classList.contains('code-file-gap'));
-	const label = (): string => (figure.classList.contains('is-folded') ? (excerpt ? `展开（显示 ${total} 行）` : `展开全部 ${total} 行`) : '收起');
+	const label = (): string => (figure.classList.contains('is-folded') ? (excerpt ? t('展开（显示 {total} 行）', { total }) : t('展开全部 {total} 行', { total })) : t('收起'));
 	button.textContent = label();
 	button.addEventListener('click', () => {
 		const folding = !figure.classList.contains('is-folded');

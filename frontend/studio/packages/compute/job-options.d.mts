@@ -5,7 +5,7 @@ export type Solvent = { model: 'alpb' | 'gbsa'; name: string };
 /** What xtb and the programs built on it take alike. */
 export type XtbCommon = { charge: number; uhf: number; solvent: Solvent | null };
 
-export declare const SOLVENTS: Readonly<Record<string, string>>;
+export declare function solventNames(): Record<string, string>;
 export declare function splitArgs(text: string): string[];
 export declare function joinArgs(words: string[]): string;
 export declare function readXtbCommon(words: string[], index: number, options: XtbCommon): number;

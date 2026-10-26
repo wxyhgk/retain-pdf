@@ -9,11 +9,11 @@
 
 /** Each kind of callout: what the icon is and what it means. */
 export const CALLOUT_KINDS = Object.freeze({
-	note: { icon: 'ℹ️', label: '说明' },
-	tip: { icon: '💡', label: '提示' },
-	important: { icon: '❗', label: '重要' },
-	warning: { icon: '⚠️', label: '警告' },
-	caution: { icon: '🛑', label: '小心' },
+	note: { icon: 'ℹ️', label: '说明' }, // i18n-ignore: rendered into the blog
+	tip: { icon: '💡', label: '提示' }, // i18n-ignore: rendered into the blog
+	important: { icon: '❗', label: '重要' }, // i18n-ignore: rendered into the blog
+	warning: { icon: '⚠️', label: '警告' }, // i18n-ignore: rendered into the blog
+	caution: { icon: '🛑', label: '小心' }, // i18n-ignore: rendered into the blog
 });
 
 /** The kinds in the order clicking the icon goes through them. */

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The Studio's settings file (.studio-settings.json, out of git): each part of
@@ -41,7 +42,7 @@ export async function readSettings(file, { strict = false } = {}) {
 	} catch {
 		// Below.
 	}
-	if (strict) throw new SettingsFileError(`设置文件 ${file} 不是有效的 JSON，没有改动它；修好或删掉它再试`);
+	if (strict) throw new SettingsFileError(t('设置文件 {file} 不是有效的 JSON，没有改动它；修好或删掉它再试', { file }));
 	return {};
 }
 

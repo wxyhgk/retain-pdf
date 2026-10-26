@@ -82,5 +82,5 @@ export function figureCaption(alt, src) {
 
 /** What a figure's number says. */
 export function figureLabel(number) {
-	return `图 ${number}`;
+	return `图 ${number}`; // i18n-ignore: rendered into the blog
 }

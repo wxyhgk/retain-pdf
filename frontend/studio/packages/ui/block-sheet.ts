@@ -1,4 +1,5 @@
 import './block-sheet.css';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Where a block's details open: a large window over the page, the block's
@@ -110,7 +111,7 @@ export function openBlockSheet(options: SheetOptions): OpenSheet {
 	const actions = element('div', 'block-sheet-actions');
 	const close = element('button', 'block-sheet-close', '×');
 	close.type = 'button';
-	close.setAttribute('aria-label', '关闭');
+	close.setAttribute('aria-label', t('关闭'));
 	close.addEventListener('click', () => sheet.close());
 	head.append(kind, title, actions, close);
 
