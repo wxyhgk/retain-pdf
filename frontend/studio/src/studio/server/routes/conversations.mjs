@@ -1,8 +1,8 @@
 import { createReadStream } from 'node:fs';
 import { access, stat } from 'node:fs/promises';
 import { extname, isAbsolute, join, relative, resolve } from 'node:path';
-import { InlineAi } from '../inline-ai.mjs';
-import { accountsLoggedIn, PiModels } from '../panel-models.mjs';
+import { InlineAi } from '../ai/inline-ai.mjs';
+import { accountsLoggedIn, PiModels } from '../ai/panel-models.mjs';
 import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
 
 /** The pictures an AI's answer may show from this machine, by extension. */

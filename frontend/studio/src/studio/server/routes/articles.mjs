@@ -1,5 +1,5 @@
-import { checkArticle } from '../article-check.mjs';
-import { pageVersion } from '../page-version.mjs';
+import { checkArticle } from '../articles/article-check.mjs';
+import { pageVersion } from '../articles/page-version.mjs';
 import { refuse, reply, sendEvents } from '../api.mjs';
 
 /**

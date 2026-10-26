@@ -126,7 +126,7 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', 
  * The AI panel (the right column's AI tab): a coding agent (Claude Code, Codex) that does what it is asked by
  * itself, reading, running commands and changing files in the article's folder, shown as it goes. Its words,
  * thinking, each tool it calls (the command, its output, the change to a file), its plan and the leave it asks are
- * drawn as they come (server/agent-sessions.mjs, over the Agent Client Protocol); what it changes in the article
+ * drawn as they come (server/ai/agent-sessions.mjs, over the Agent Client Protocol); what it changes in the article
  * comes back as a change on disk, to look over as any other. Under the input: which AI, and its options (who
  * decides, model, effort). A conversation goes on in the article it began in; ＋ begins another.
  */

@@ -17,25 +17,25 @@ import { taskRoutes } from './tasks.mjs';
  * @property {{ blog: boolean, drive: boolean }} testing browser tests' own blog/ and drive: no windows opened
  * @property {(slug: string) => string} articleFolder
  * @property {(slug: string | null, driveRoot: string | null) => Record<string, string>} programEnv
- * @property {import('../article-repository.mjs').ArticleRepository} articles
- * @property {import('../article-history.mjs').ArticleHistory} history
- * @property {import('../file-repository.mjs').FileRepository} files
- * @property {import('../code-file-previews.mjs').CodeFilePreviews} codeFiles
- * @property {import('../file-manager.mjs').ArticleFileManager} manager
- * @property {import('../article-files.mjs').ArticleFiles} articleFiles
- * @property {import('../article-git.mjs').ArticleGit} articleGit
- * @property {import('../article-library.mjs').ArticleLibrary} library
- * @property {import('../blog-watcher.mjs').BlogWatcher} watcher
- * @property {import('../drive.mjs').Drive} drive
- * @property {import('../drive-text.mjs').DriveText} driveText
- * @property {import('../terminal-host.mjs').TerminalHost} terminals
- * @property {import('../tasks.mjs').Tasks} tasks
- * @property {import('../mini-apps.mjs').MiniApps} miniApps
+ * @property {import('../articles/article-repository.mjs').ArticleRepository} articles
+ * @property {import('../articles/article-history.mjs').ArticleHistory} history
+ * @property {import('../files/file-repository.mjs').FileRepository} files
+ * @property {import('../articles/code-file-previews.mjs').CodeFilePreviews} codeFiles
+ * @property {import('../files/file-manager.mjs').ArticleFileManager} manager
+ * @property {import('../articles/article-files.mjs').ArticleFiles} articleFiles
+ * @property {import('../articles/article-git.mjs').ArticleGit} articleGit
+ * @property {import('../articles/article-library.mjs').ArticleLibrary} library
+ * @property {import('../articles/blog-watcher.mjs').BlogWatcher} watcher
+ * @property {import('../drive/drive.mjs').Drive} drive
+ * @property {import('../drive/drive-text.mjs').DriveText} driveText
+ * @property {import('../system/terminal-host.mjs').TerminalHost} terminals
+ * @property {import('../tasks/tasks.mjs').Tasks} tasks
+ * @property {import('../apps/mini-apps.mjs').MiniApps} miniApps
  * @property {import('../plugin-settings.mjs').PluginSettings} pluginSettings
- * @property {import('../ai-settings.mjs').AiSettings} aiSettings
- * @property {import('../agent-settings.mjs').AgentSettings} agentSettings
- * @property {import('../agent-sessions.mjs').AgentSessions} conversations the AI panel's
- * @property {import('../panel-models.mjs').PanelModels} panelModels the service the panel's Claude Code talks to
+ * @property {import('../ai/ai-settings.mjs').AiSettings} aiSettings
+ * @property {import('../ai/agent-settings.mjs').AgentSettings} agentSettings
+ * @property {import('../ai/agent-sessions.mjs').AgentSessions} conversations the AI panel's
+ * @property {import('../ai/panel-models.mjs').PanelModels} panelModels the service the panel's Claude Code talks to
  * @property {Promise<any>} plugins the plugins' kernel on this server
  */
 

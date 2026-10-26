@@ -742,7 +742,7 @@ async function askAI(): Promise<void> {
 }
 
 /**
- * OCR 成子页面: a PDF of the open article (`path` in it) read by PaddleOCR into a page under it (server/pdf-ocr.mjs),
+ * OCR 成子页面: a PDF of the open article (`path` in it) read by PaddleOCR into a page under it (server/tasks/pdf-ocr.mjs),
  * made at once and filled in as a task; from the line linking to the PDF (`view`, `pos`), the page linked on a line under it.
  */
 async function ocrPdf(path: string, view?: EditorView, pos?: number): Promise<void> {
@@ -782,7 +782,7 @@ function headingAbove(source: string, line: number): string {
 let instructions = 0;
 /**
  * Alt+Enter: what the blocks the caret is in say is done by the AI of AI 助手, by itself, in the article's folder
- * (server/instructions.mjs); ⇧ as well, in a new talk. The blocks are marked till it is over; what it changes in the
+ * (server/ai/instructions.mjs); ⇧ as well, in a new talk. The blocks are marked till it is over; what it changes in the
  * file comes back as a change on disk, to accept or reject where it is.
  */
 async function instructHere(fresh: boolean): Promise<void> {

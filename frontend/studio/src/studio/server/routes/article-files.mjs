@@ -1,7 +1,7 @@
 import { createReadStream } from 'node:fs';
 import { lstat } from 'node:fs/promises';
 import { basename, isAbsolute, resolve } from 'node:path';
-import { revealInFileManager } from '../reveal.mjs';
+import { revealInFileManager } from '../system/reveal.mjs';
 import { refuse, reply, sendFile } from '../api.mjs';
 
 /**

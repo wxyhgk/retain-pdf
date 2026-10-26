@@ -17,7 +17,7 @@ function elapsed(task: TaskSummary): string {
 }
 
 /**
- * The background tasks (server/tasks.mjs), at the bottom right of the page: what each is, how long it has
+ * The background tasks (server/tasks/tasks.mjs), at the bottom right of the page: what each is, how long it has
  * taken, its log on asking, and a way to stop it. One that went well goes after a moment; one that went
  * wrong stays, saying why, till it is closed.
  */

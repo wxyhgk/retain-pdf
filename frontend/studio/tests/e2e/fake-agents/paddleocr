@@ -1,6 +1,6 @@
 #!/bin/sh
 # A stand-in for `paddleocr api` (OCR 成子页面): writes what PaddleOCR's document parsing gave for a page
-# (src/studio/server/test-data/paddleocr-figure.md) where --output_md says, its picture next to it.
+# (src/studio/server/tasks/test-data/paddleocr-figure.md) where --output_md says, its picture next to it.
 here="$(cd "$(dirname "$0")" && pwd)"
 out=""
 while [ $# -gt 0 ]; do
@@ -10,5 +10,5 @@ done
 mkdir -p "$(dirname "$out")/imgs"
 # A 1×1 JPEG.
 printf '\377\330\377\340\000\020JFIF\000\001\001\000\000\001\000\001\000\000\377\333\000C\000\010\006\006\007\006\005\010\007\007\007\011\011\010\012\014\024\015\014\013\013\014\031\022\023\017\024\035\032\037\036\035\032\034\034 $.\047 ",#\034\034(7),01444\037\047=9=82<.342\377\300\000\013\010\000\001\000\001\001\001\021\000\377\304\000\024\000\001\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\011\377\304\000\024\020\001\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\377\332\000\010\001\001\000\000?\000T\337\377\331' > "$(dirname "$out")/imgs/img_in_image_box_6_343_832_762.jpg"
-cat "$here/../../../src/studio/server/test-data/paddleocr-figure.md" > "$out"
+cat "$here/../../../src/studio/server/tasks/test-data/paddleocr-figure.md" > "$out"
 echo "Markdown saved to: $out (1 images)"

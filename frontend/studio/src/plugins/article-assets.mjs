@@ -1,10 +1,10 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
-import { ArticleRepository } from '../studio/server/article-repository.mjs';
+import { ArticleRepository } from '../studio/server/articles/article-repository.mjs';
 import { resolveInside } from '../articles/bundle-paths.mjs';
 import { isLocalOnly, PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
-import { FileRepository } from '../studio/server/file-repository.mjs';
+import { FileRepository } from '../studio/server/files/file-repository.mjs';
 
 /**
  * Copies the img/ and assets/ files of the published articles to

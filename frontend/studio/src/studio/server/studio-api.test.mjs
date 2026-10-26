@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { Readable, Writable } from 'node:stream';
 import test from 'node:test';
 import studioDev from '../../plugins/studio-dev.mjs';
-import { ArticleRepository } from './article-repository.mjs';
+import { ArticleRepository } from './articles/article-repository.mjs';
 import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
 
 /** The Studio's API on an article of its own; with `plugins`, this project's plugins too (plugins/). */

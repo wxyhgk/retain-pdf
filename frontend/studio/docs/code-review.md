@@ -15,8 +15,8 @@
 
 | # | 问题 | 位置 | 后果 |
 |---|---|---|---|
-| 1 | ~~在 Studio 里「提交」文章会把 `ai/` 一起提交（`git add -A -- blog/<slug>`，`.gitignore` 只排除了 `ai/history/`）~~ 已修 27df566 | `src/studio/server/article-git.mjs:73` | 仓库 `wxyhgk.github.io` 是公开的：`ai/brief.md`，以及 ⌥↩ 时 AI 写的 `ai/work/` 脚本、数据、记录，推送后都公开 |
-| 2 | ~~小程序的 `studio.fetch` 不限制目标地址，能访问 `127.0.0.1:4321` 上 Studio 自己的接口。服务器发出的请求没有 Origin，所以安全检查直接放行~~ 已修 27df566 | `src/studio/server/mini-apps.mjs`（`proxyFetch`） | 一个只有 `net` 权限的小程序，可以先改「AI 助手」的命令，再触发 ⌥↩，从而在本机执行任意命令；也能访问本机别的服务 |
+| 1 | ~~在 Studio 里「提交」文章会把 `ai/` 一起提交（`git add -A -- blog/<slug>`，`.gitignore` 只排除了 `ai/history/`）~~ 已修 27df566 | `src/studio/server/articles/article-git.mjs:73` | 仓库 `wxyhgk.github.io` 是公开的：`ai/brief.md`，以及 ⌥↩ 时 AI 写的 `ai/work/` 脚本、数据、记录，推送后都公开 |
+| 2 | ~~小程序的 `studio.fetch` 不限制目标地址，能访问 `127.0.0.1:4321` 上 Studio 自己的接口。服务器发出的请求没有 Origin，所以安全检查直接放行~~ 已修 27df566 | `src/studio/server/apps/mini-apps.mjs`（`proxyFetch`） | 一个只有 `net` 权限的小程序，可以先改「AI 助手」的命令，再触发 ⌥↩，从而在本机执行任意命令；也能访问本机别的服务 |
 | 3 | ~~小程序的桥只认「这个 iframe」，不管里面现在是哪个页面~~ 已修 27df566 | `src/studio/panels/mini-apps.ts` | 小程序里点开的外部网页，也能用这个小程序的权限调桥 |
 | 4 | ~~`/studio-apps/…` 和 Studio 同一个来源，又没有加沙盒的 CSP~~ 已修 27df566 | `src/plugins/studio-dev.mjs`（小程序文件的路由） | 任何网站 `window.open` 这个地址，小程序代码就以 Studio 的身份运行，能调用全部接口 |
 | 5 | ~~来源检查放行任何端口的 `http://localhost`~~ 已修 27df566 | `studio-dev.mjs` 的安全检查 | 本机别的开发服务器上的页面，也能读、写 Studio 接口（终端、AI 助手、⌥↩ 都在其中） |

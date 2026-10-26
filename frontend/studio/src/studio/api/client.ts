@@ -254,7 +254,7 @@ export function openTerminal(target: { cwd: 'root' } | { cwd: 'drive' } | { cwd:
 	return request('/api/studio/terminal', jsonOptions('POST', target));
 }
 
-/** An AI the Studio starts (server/agent-settings.mjs): in the terminal (`launch`), by itself for Alt+Enter (`run`, `resume`), in the AI panel (`acp`). */
+/** An AI the Studio starts (server/ai/agent-settings.mjs): in the terminal (`launch`), by itself for Alt+Enter (`run`, `resume`), in the AI panel (`acp`). */
 export type Agent = { id: string; name: string; launch: string; run: string; resume: string; acp?: string; install?: string };
 export type AgentsShown = { agents: Array<Agent & { installed: boolean }>; default: string; presets: Agent[] };
 
@@ -276,7 +276,7 @@ export type ConversationOption = {
 	currentValue: string | boolean;
 	options?: Array<{ value: string; name: string; description?: string | null } | { group: string; name: string; options: Array<{ value: string; name: string; description?: string | null }> }>;
 };
-/** A conversation of the AI panel (server/agent-sessions.mjs). */
+/** A conversation of the AI panel (server/ai/agent-sessions.mjs). */
 export type Conversation = {
 	id: string;
 	agent: { id: string; name: string };
@@ -361,7 +361,7 @@ export function setConversationOption(id: string, configId: string, value: strin
 	return request(conversationApi(id, 'options'), jsonOptions('POST', { configId, value }));
 }
 
-/** A service the panel's Claude Code can talk to (server/panel-models.mjs): its address and models; whether a key is saved. */
+/** A service the panel's Claude Code can talk to (server/ai/panel-models.mjs): its address and models; whether a key is saved. */
 export type PanelProvider = { id: string; name: string; baseUrl: string; keyStyle: string; main: string; fast: string; keyUrl: string; hasKey: boolean; suggested: { baseUrl: string; main: string; fast: string } };
 export type PanelModelsShown = { chosen: string; providers: PanelProvider[] };
 export type PanelAccounts = { claude: { loggedIn: boolean; plan: string; missing: boolean }; codex: { loggedIn: boolean; how: string; missing: boolean } };
@@ -400,7 +400,7 @@ export function panelAccounts(): Promise<PanelAccounts> {
 	return request('/api/studio/panel-models/accounts');
 }
 
-/** The AI in the editor (server/inline-ai.mjs): a session of `agent` made ready, as the author is about to ask. */
+/** The AI in the editor (server/ai/inline-ai.mjs): a session of `agent` made ready, as the author is about to ask. */
 export async function warmInline(agent: string): Promise<void> {
 	await request('/api/studio/inline/warm', jsonOptions('POST', { agent }));
 }
@@ -431,7 +431,7 @@ export async function deleteConversation(id: string): Promise<void> {
 	await request(conversationApi(id, 'delete'), jsonOptions('POST', {}));
 }
 
-/** A background task (server/tasks.mjs), without its log. */
+/** A background task (server/tasks/tasks.mjs), without its log. */
 export type TaskSummary = { id: string; kind: string; title: string; slug: string | null; state: 'running' | 'done' | 'failed' | 'cancelled'; started: number; ended: number | null; error: string | null; result: unknown; logSize: number };
 export type TaskEvent = { type: 'all'; tasks: TaskSummary[] } | { type: 'task'; task: TaskSummary } | { type: 'log'; id: string; text: string };
 
@@ -450,7 +450,7 @@ export async function cancelTask(id: string): Promise<void> {
 	await request(`/api/studio/tasks/${encodeURIComponent(id)}/cancel`, jsonOptions('POST', {}));
 }
 
-/** A 小程序 (server/mini-apps.mjs): what it is, how big its window opens, what it may do (`problem`: its app.json is wrong). */
+/** A 小程序 (server/apps/mini-apps.mjs): what it is, how big its window opens, what it may do (`problem`: its app.json is wrong). */
 export type MiniApp = { id: string; name: string; icon: string; description: string; width: number; height: number; permissions: string[]; problem?: string };
 
 export async function listMiniApps(): Promise<MiniApp[]> {

@@ -1,5 +1,5 @@
-import { proxyFetch } from '../mini-apps.mjs';
-import { runProgram } from '../tasks.mjs';
+import { proxyFetch } from '../apps/mini-apps.mjs';
+import { runProgram } from '../tasks/tasks.mjs';
 import { refuse, reply, sendEvents } from '../api.mjs';
 
 /**

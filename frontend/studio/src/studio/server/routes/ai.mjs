@@ -1,8 +1,8 @@
-import { askAboutImage } from '../ai-vision.mjs';
-import { insertBelowImage } from '../image-insert.mjs';
-import { startInstruction } from '../instructions.mjs';
-import { OCR_COMMAND, startPdfOcr } from '../pdf-ocr.mjs';
-import { commandWords } from '../tasks.mjs';
+import { askAboutImage } from '../ai/ai-vision.mjs';
+import { insertBelowImage } from '../articles/image-insert.mjs';
+import { startInstruction } from '../ai/instructions.mjs';
+import { OCR_COMMAND, startPdfOcr } from '../tasks/pdf-ocr.mjs';
+import { commandWords } from '../tasks/tasks.mjs';
 import { refuse, reply } from '../api.mjs';
 
 /**

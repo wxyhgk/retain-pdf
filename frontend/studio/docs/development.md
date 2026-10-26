@@ -23,7 +23,12 @@ src/
     common/           提示条、右键菜单、时间、磁盘上的改动
     state/            打开的文章：保存、自动保存、审阅
     document/ api/    Markdown 文档的读写；和后端说话
-    server/           Studio 的后端：读写文章、回收站、历史版本、git、资料库、终端
+    server/           Studio 的后端：api.mjs 是路由和安全检查，routes/ 是各个接口；模块按领域分：
+      articles/       文章：读写、文件、发布前检查、git、历史版本、文献库、磁盘监视
+      files/ drive/   文章的文件（含回收站）；资料库和它的全文
+      ai/             AI 对话（ACP、Studio 里的 pi）、AI 助手和 AI 设置、编辑器里的 AI、识图
+      tasks/ apps/    后台任务和 PDF 识别；小程序
+      system/         终端、在 Finder 中显示、选文件夹
     ops/              给大模型用的页面操作（见 docs/ai-tools.md）
   plugins/studio-dev.mjs   把 Studio 挂到 astro dev 上：组装后端，接口在 studio/server/routes/
 packages/             博客和 Studio 共用的包（各有 README）

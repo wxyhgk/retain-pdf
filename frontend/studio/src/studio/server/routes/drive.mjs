@@ -1,6 +1,6 @@
 import { lstat } from 'node:fs/promises';
-import { chooseFolder } from '../choose-folder.mjs';
-import { revealInFileManager } from '../reveal.mjs';
+import { chooseFolder } from '../system/choose-folder.mjs';
+import { revealInFileManager } from '../system/reveal.mjs';
 import { refuse, reply, sendFile } from '../api.mjs';
 
 /**
