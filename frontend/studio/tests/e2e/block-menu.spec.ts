@@ -17,7 +17,8 @@ async function clickHandleOf(page: Page, text: string): Promise<void> {
 
 /** The page loaded again, laid out as it will stay: its molecules drawn (the 3D one moves what is under it). */
 async function reload(page: Page): Promise<void> {
-	await reload(page);
+	await page.reload();
+	await expect(saveStatus(page)).toHaveText('已载入');
 	await expect(scienceBlock(page, 'XYZ').locator('.science-block-preview canvas')).toBeVisible();
 }
 
