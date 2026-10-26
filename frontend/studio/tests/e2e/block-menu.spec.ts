@@ -15,6 +15,12 @@ async function clickHandleOf(page: Page, text: string): Promise<void> {
 	await handle.click();
 }
 
+/** The page loaded again, laid out as it will stay: its molecules drawn (the 3D one moves what is under it). */
+async function reload(page: Page): Promise<void> {
+	await reload(page);
+	await expect(scienceBlock(page, 'XYZ').locator('.science-block-preview canvas')).toBeVisible();
+}
+
 test.beforeEach(async ({ page }) => {
 	resetFixture();
 	await openStudio(page);
@@ -94,8 +100,7 @@ test('「转换成」 in the toolbar over selected text opens the block’s menu
 
 test('several blocks selected turn together into one list', async ({ page }) => {
 	appendToFixture('\n第一点\n\n第二点\n\n第三点\n');
-	await page.reload();
-	await expect(saveStatus(page)).toHaveText('已载入');
+	await reload(page);
 	// From inside the first to inside the third.
 	await editor(page).getByText('第一点', { exact: true }).click();
 	await page.keyboard.press('Home');
@@ -113,8 +118,7 @@ test('several blocks selected turn together into one list', async ({ page }) => 
 
 test('in a list, the block menu turns only the item it is for', async ({ page }) => {
 	appendToFixture('\n- 甲\n- 乙\n- 丙\n');
-	await page.reload();
-	await expect(saveStatus(page)).toHaveText('已载入');
+	await reload(page);
 	await clickHandleOf(page, '乙');
 	await item(page, 'turn-h3').click();
 	await expect(editor(page).locator('h3', { hasText: '乙' })).toBeVisible();

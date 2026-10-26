@@ -1,271 +1,45 @@
-import { searchArticles, searchDrive } from '../api/client.ts';
-import type { ArticleSummary, SearchResult } from '../types.ts';
-import { filterArticles } from './article-list.ts';
+import { openDialog } from '../shell/dialogs/Dialogs';
+import type { Picked, QuickFindHost } from '../shell/dialogs/QuickFindDialog';
 
-/** What the quick find needs from the Studio around it. */
-export type QuickFindHost = {
-	/** The articles, to offer before anything is typed and to match titles at once. */
-	articles(): ArticleSummary[];
-	/** Opens an article; `text` is what was searched for, to show where it is. */
-	open(slug: string, text?: string): void;
-	/** Shows a file of the drive (资料库) that was found. */
-	openDriveFile(path: string): void;
-};
+/** The finder asked last (one at a time): given up when another is asked for. */
+let round = 0;
+let givenUp: (() => void) | null = null;
 
-/** An article, or (with `drivePath`) a file of the drive. */
-/** `create`: the row that makes a page of that title (asked for an article to link: 新建子页面). */
-type Row = { slug: string; title: string; icon: string; snippet?: string; text?: string; drivePath?: string; create?: string; place?: string };
-
-/** What was picked when an article was asked for: one there is, or a new page under the open one, of this title. */
-export type Picked = { slug: string } | { create: string };
-
-/** `text` with each `needle` in it marked. */
-function marked(text: string, needle: string): Node[] {
-	const nodes: Node[] = [];
-	const lower = text.toLocaleLowerCase('zh-CN');
-	const wanted = needle.toLocaleLowerCase('zh-CN');
-	let at = 0;
-	for (let found = lower.indexOf(wanted); wanted && found !== -1; found = lower.indexOf(wanted, at)) {
-		nodes.push(document.createTextNode(text.slice(at, found)));
-		const mark = document.createElement('mark');
-		mark.textContent = text.slice(found, found + wanted.length);
-		nodes.push(mark);
-		at = found + wanted.length;
-	}
-	nodes.push(document.createTextNode(text.slice(at)));
-	return nodes;
-}
-
-/** The part of a long line around what was found. */
-function around(text: string, needle: string): string {
-	const found = text.toLocaleLowerCase('zh-CN').indexOf(needle.toLocaleLowerCase('zh-CN'));
-	if (found < 40) return text;
-	return `…${text.slice(found - 30)}`;
-}
-
-/**
- * ⌘K: find an article by its title or its text, as Notion's search does.
- * Titles match as they are typed; the text is asked of the server a moment later.
- */
-export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) {
-	const input = dialog.querySelector<HTMLInputElement>('#quick-find-input')!;
-	const list = dialog.querySelector<HTMLElement>('#quick-find-results')!;
-	let rows: Row[] = [];
-	let index = 0;
-	let timer = 0;
-	let asking: AbortController | null = null;
-	/** While an article is asked for (`pick`): who gets it. */
-	let picking: ((picked: Picked | null) => void) | null = null;
-	/** While asked where pages go (`pickPlace`): who gets it, and the pages that cannot be there (them, and those under them). */
-	let placing: ((parent: string | null) => void) | null = null;
-	let excluded = new Set<string>();
-
-	/** The pages a page is under, as a path: `项目 › 方法`; empty at the top. */
-	function pathOf(slug: string): string {
-		const bySlug = new Map(host.articles().map((article) => [article.slug, article]));
-		const titles: string[] = [];
-		const seen = new Set<string>();
-		for (let at = bySlug.get(slug)?.parent; at && bySlug.has(at) && !seen.has(at); at = bySlug.get(at)?.parent) {
-			seen.add(at);
-			titles.unshift(bySlug.get(at)!.title);
-		}
-		return titles.join(' › ');
-	}
-
-	/** Where pages can go: the top, then the pages (not those moved, nor under them), each with its path. */
-	function places(query: string): Row[] {
-		const top: Row[] = query ? [] : [{ slug: '', title: '最上层', icon: '⇱', place: '', snippet: '不放在任何页面下面' }];
-		return [
-			...top,
-			...filterArticles(host.articles(), query)
-				.filter((article) => !excluded.has(article.slug))
-				.map((article) => ({ slug: article.slug, title: article.title, icon: article.icon ?? '', place: article.slug, snippet: pathOf(article.slug) || undefined })),
-		];
-	}
-
-	function draw(): void {
-		const query = input.value.trim();
-		list.replaceChildren(...rows.map((row, at) => {
-			const item = document.createElement('li');
-			item.className = `quick-find-item${at === index ? ' is-selected' : ''}`;
-			item.setAttribute('role', 'option');
-			item.setAttribute('aria-selected', String(at === index));
-			const icon = document.createElement('span');
-			icon.className = `quick-find-icon${row.drivePath ? ' is-drive' : ''}`;
-			icon.textContent = row.icon || '▤';
-			if (row.drivePath) icon.title = '资料库';
-			const words = document.createElement('span');
-			words.className = 'quick-find-words';
-			const title = document.createElement('span');
-			title.className = 'quick-find-title';
-			title.append(...marked(row.title, query));
-			words.append(title);
-			if (row.snippet) {
-				const snippet = document.createElement('span');
-				snippet.className = 'quick-find-snippet';
-				snippet.append(...marked(row.snippet, query));
-				words.append(snippet);
-			}
-			item.append(icon, words);
-			item.addEventListener('mousemove', () => {
-				if (index === at) return;
-				index = at;
-				draw();
-			});
-			item.addEventListener('click', () => choose(at));
-			return item;
-		}));
-		if (!rows.length) {
-			const empty = document.createElement('li');
-			empty.className = 'quick-find-empty';
-			empty.textContent = query ? '没有找到' : '还没有文章';
-			list.append(empty);
-		}
-		list.querySelector('.is-selected')?.scrollIntoView({ block: 'nearest' });
-	}
-
-	/** Titles at once, as typed. */
-	function titles(query: string): Row[] {
-		return filterArticles(host.articles(), query).map((article) => ({ slug: article.slug, title: article.title, icon: article.icon ?? '' }));
-	}
-
-	/** Asked for an article to link, with words typed: last, a new page under the open one, of that title (as SiYuan offers). */
-	function withCreate(found: Row[], query: string): Row[] {
-		if (!picking || !query) return found;
-		const exact = found.some((row) => row.title === query);
-		return exact ? found : [...found, { slug: '', title: `新建子页面「${query}」`, icon: '＋', create: query }];
-	}
-
-	function update(): void {
-		const query = input.value.trim();
-		if (placing) {
-			rows = places(query);
-			index = 0;
-			draw();
-			return;
-		}
-		rows = withCreate(titles(query), query);
-		index = 0;
-		draw();
-		window.clearTimeout(timer);
-		asking?.abort();
-		if (!query) return;
-		timer = window.setTimeout(() => {
-			const controller = new AbortController();
-			asking = controller;
-			// The drive's files follow the articles; not offered when an article is asked for.
-			const drive = picking ? Promise.resolve(null) : searchDrive(query, controller.signal).catch(() => null);
-			const articles = searchArticles(query, controller.signal).then((results: SearchResult[]) => {
-				if (controller.signal.aborted || input.value.trim() !== query) return;
-				const seen = new Set(rows.map((row) => row.slug));
-				const selected = rows[index]?.slug;
-				// The titles stay first; each article whose text holds it follows, with the first line it is on.
-				const create = rows.filter((row) => row.create);
-				rows = rows.filter((row) => !row.create);
-				for (const result of results) {
-					const line = result.matches[0];
-					const existing = rows.find((row) => row.slug === result.slug);
-					if (existing && line && !existing.snippet) {
-						existing.snippet = around(line.text, query);
-						existing.text = query;
-					}
-					if (seen.has(result.slug)) continue;
-					seen.add(result.slug);
-					rows.push({ slug: result.slug, title: result.title, icon: result.icon, snippet: line ? around(line.text, query) : undefined, text: line ? query : undefined });
-				}
-				rows.push(...create);
-				index = Math.max(0, rows.findIndex((row) => row.slug === selected));
-				draw();
-			}, () => {});
-			void Promise.all([drive, articles]).then(([found]) => {
-				if (!found || controller.signal.aborted || input.value.trim() !== query) return;
-				for (const result of found.results) {
-					const slash = result.path.lastIndexOf('/');
-					rows.push({
-						slug: '',
-						drivePath: result.path,
-						title: result.path.slice(slash + 1),
-						icon: '▢',
-						snippet: result.snippet ?? (slash > 0 ? `资料库 / ${result.path.slice(0, slash)}` : '资料库'),
-					});
-				}
-				if (found.indexing) rows.push({ slug: '', title: '资料库还在建立文字索引，结果可能不全', icon: '…' });
-				draw();
-			});
-		}, 120);
-	}
-
-	function choose(at: number): void {
-		const row = rows[at];
-		if (!row) return;
-		if (!row.slug && !row.drivePath && !row.create && row.place === undefined) return;
-		if (placing) {
-			const answer = placing;
-			placing = null;
-			dialog.close();
-			answer(row.place ?? row.slug);
-			return;
-		}
-		const answer = picking;
-		picking = null;
-		dialog.close();
-		if (answer) answer(row.create ? { create: row.create } : { slug: row.slug });
-		else if (row.drivePath) host.openDriveFile(row.drivePath);
-		else host.open(row.slug, row.text);
-	}
-
-	input.addEventListener('input', update);
-	input.addEventListener('keydown', (event) => {
-		if (event.isComposing) return;
-		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-			event.preventDefault();
-			if (!rows.length) return;
-			index = (index + (event.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length;
-			draw();
-		} else if (event.key === 'Enter') {
-			event.preventDefault();
-			choose(index);
-		}
-	});
-	// Closed without a choice: nothing was picked.
-	dialog.addEventListener('close', () => {
-		const answer = picking;
-		picking = null;
-		answer?.(null);
-		const place = placing;
-		placing = null;
-		place?.(null);
-	});
-	dialog.addEventListener('click', (event) => {
-		// A click on the backdrop closes it.
-		if (event.target === dialog) dialog.close();
-	});
-
-	function show(placeholder: string): void {
-		input.placeholder = placeholder;
-		input.value = '';
-		update();
-		dialog.showModal();
-		input.focus();
+/** ⌘K, and the questions asked through it (shell/dialogs/QuickFindDialog.tsx): which article to link, where pages go. */
+export function createQuickFind(host: QuickFindHost) {
+	function ask<T>(mode: 'pick' | 'place', more: { excluded?: Set<string>; placeholder?: string } = {}): Promise<T | null> {
+		givenUp?.();
+		return new Promise((resolve) => {
+			let answered = false;
+			const done = (answer: T | null) => {
+				if (answered) return;
+				answered = true;
+				givenUp = null;
+				resolve(answer);
+			};
+			givenUp = () => done(null);
+			openDialog('finder', { round: ++round, host, mode, ...more, done } as never);
+		});
 	}
 
 	return {
+		/** ⌘K: finds an article or a file of the drive; open already, its words selected to be typed over. */
 		open(): void {
-			if (dialog.open) {
-				input.select();
+			const field = document.querySelector<HTMLInputElement>('#quick-find-dialog #quick-find-input');
+			if (field && !givenUp) {
+				field.select();
 				return;
 			}
-			show('搜索文章和资料库…');
+			givenUp?.();
+			openDialog('finder', { round: ++round, host, mode: 'find' });
 		},
 		/**
-		 * 移到…: asks where these pages go, by a page's title (each shown with
-		 * its path): that page's folder name, `''` for the top, null when given up.
-		 * Not among the pages moved, nor under them.
+		 * 移到…: asks where these pages go, by a page's title (each shown with its path): that page's folder name, `''`
+		 * for the top, null when given up. Not among the pages moved, nor under them.
 		 */
 		pickPlace(moving: string[]): Promise<string | null> {
-			if (dialog.open) dialog.close();
 			const all = host.articles();
-			excluded = new Set(moving);
+			const excluded = new Set(moving);
 			// And all under them.
 			for (let grew = true; grew; ) {
 				grew = false;
@@ -276,18 +50,9 @@ export function createQuickFind(dialog: HTMLDialogElement, host: QuickFindHost) 
 					}
 				}
 			}
-			return new Promise((resolve) => {
-				placing = resolve;
-				show(moving.length > 1 ? `把 ${moving.length} 个页面移到哪个页面下面…` : '移到哪个页面下面…');
-			});
+			return ask<string>('place', { excluded, placeholder: moving.length > 1 ? `把 ${moving.length} 个页面移到哪个页面下面…` : '移到哪个页面下面…' });
 		},
 		/** Asks which article: one there is, a new one to make (its title typed), or null when given up. */
-		pick(): Promise<Picked | null> {
-			if (dialog.open) dialog.close();
-			return new Promise((resolve) => {
-				picking = resolve;
-				show('链接到哪篇文章…');
-			});
-		},
+		pick: (): Promise<Picked | null> => ask<Picked>('pick'),
 	};
 }

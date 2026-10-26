@@ -832,7 +832,7 @@ async function loadLibrary(slug: string): Promise<void> {
 	editor.setLibrary(library);
 }
 
-const citePicker = createCitePicker(document.querySelector<HTMLDialogElement>('#cite-dialog')!, {
+const citePicker = createCitePicker({
 	library: () => library,
 	async addDoi(doi) {
 		const slug = session.slug;
@@ -996,7 +996,7 @@ async function openAt(slug: string, text = ''): Promise<void> {
 
 const backlinks = createBacklinks(shell.querySelector<HTMLElement>('#page-backlinks')!, { open: (slug, text) => void openAt(slug, text) });
 
-const quickFind = createQuickFind(document.querySelector<HTMLDialogElement>('#quick-find-dialog')!, {
+const quickFind = createQuickFind({
 	articles: () => articleList.articles(),
 	open: openAt,
 	openDriveFile(path) {
