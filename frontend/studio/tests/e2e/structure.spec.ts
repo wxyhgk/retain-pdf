@@ -58,6 +58,32 @@ test('a drawn change comes back as SMILES; an SDF block gets the editor’s molf
 	await expect(scienceBlock(page, 'SDF').locator('.chem-2d svg')).toBeVisible();
 });
 
+test('structura popups open inside the sheet, above its backdrop, and take clicks', async ({ page }) => {
+	await scienceBlock(page, 'SDF').locator('.science-block-preview').dblclick();
+	const editor = editorIn(page);
+	await expect(editor).toBeVisible();
+	// A header menu: its content portals into the sheet (not document.body behind the modal backdrop)…
+	await editor.getByText('查看', { exact: true }).click();
+	const overlay = blockSheet(page).locator('.chem-overlay');
+	await expect(overlay).not.toHaveCount(0);
+	// …and its items take clicks (a checkbox item toggles in place, by design staying open)…
+	// (Role queries stay away: Radix hides the sheet from the access tree while its menu is open.)
+	const hetero = blockSheet(page).locator('.chem-overlay div[role="menuitemcheckbox"]', { hasText: '杂原子着色' });
+	await hetero.click();
+	await expect(hetero).toHaveAttribute('aria-checked', 'false');
+	await expect(overlay).not.toHaveCount(0);
+	// …toggling the trigger shuts the menu.
+	await editor.getByText('查看', { exact: true }).click();
+	await expect(overlay).toHaveCount(0);
+	// A tool's flyout (the ring's caret): the same, then picking a kind closes it.
+	await editor.locator('[data-testid="tool-ring-caret"]').click();
+	await expect(overlay).not.toHaveCount(0);
+	await blockSheet(page).locator('.chem-overlay button[title="环丙烷 (T)"]').click();
+	await expect(overlay).toHaveCount(0);
+	await expect(editor).toBeVisible();
+	await closeSheet(page);
+});
+
 test('a SMILES made 3D: RetainMol is given its flat structure, and the block becomes the 3D SDF it built', async ({ page }) => {
 	await scienceBlock(page, 'SMILES').locator('.science-block-preview').dblclick();
 	await blockSheet(page).locator('.block-sheet-action', { hasText: '生成三维结构' }).click();

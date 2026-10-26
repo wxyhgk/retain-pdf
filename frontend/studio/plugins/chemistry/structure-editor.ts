@@ -23,6 +23,62 @@ function loadStandalone(): Promise<Standalone> {
 	return standalone;
 }
 
+/**
+ * Structura's menus, tooltips and dialogs portal to document.body (Radix
+ * Portal). The sheet is a modal <dialog>: its backdrop covers everything
+ * outside it and the browser makes the rest inert, so those overlays end up
+ * behind the backdrop taking no clicks. Moved into the sheet they paint above
+ * its content and work again; their `fixed` positioning stays viewport-
+ * relative (the sheet adds no transform), so they stay where they were.
+ * Structura's own fullscreen editor (`.chem-sheet`) is not used here and
+ * stays where it is.
+ *
+ * React removes a portal from the parent it rendered into (body): with the
+ * wrapper sitting in the sheet that removal would throw (and leave the node
+ * orphaned), so while the editor is mounted `removeChild` falls back to the
+ * node's actual parent when the given one no longer holds it. That only
+ * changes the throwing case, and the original is restored on dispose.
+ */
+let removeChildPatched = false;
+const originalRemoveChild = Node.prototype.removeChild;
+
+function keepStructuraOverlaysIn(host: HTMLElement): () => void {
+	const sheet = host.closest('dialog');
+	if (!sheet) return () => {};
+	const take = (node: unknown) => {
+		if (!(node instanceof Element)) return;
+		if (node.parentElement !== document.body || node === sheet) return;
+		// Radix portals lay a classless positioning wrapper directly under body,
+		// the `chem-overlay` content inside it: move the whole wrapper.
+		if (node.classList.contains('chem-sheet')) return;
+		if (!node.matches('.chem-overlay') && !node.querySelector('.chem-overlay')) return;
+		sheet.append(node);
+	};
+	for (const node of [...document.body.children]) take(node);
+	const watch = new MutationObserver((mutations) => {
+		for (const mutation of mutations) for (const node of mutation.addedNodes) take(node);
+	});
+	watch.observe(document.body, { childList: true });
+	if (!removeChildPatched) {
+		removeChildPatched = true;
+		Node.prototype.removeChild = function <T extends Node>(child: T): T {
+			try {
+				return originalRemoveChild.call(this, child) as T;
+			} catch {
+				if (child.parentNode && child.parentNode !== this) return child.parentNode.removeChild(child) as T;
+				throw new DOMException("Failed to execute 'removeChild' on 'Node': The node to be removed is not a child of this node.");
+			}
+		};
+	}
+	return () => {
+		watch.disconnect();
+		if (removeChildPatched) {
+			removeChildPatched = false;
+			Node.prototype.removeChild = originalRemoveChild;
+		}
+	};
+}
+
 /** A SMILES as a molfile with 2D coordinates, as the structure editor reads it. */
 export async function smilesToMolfile(smiles: string): Promise<string> {
 	const rdkit = await loadRDKit();
@@ -94,6 +150,7 @@ export async function mountStructureEditor(
 		// A SMILES block that became SDF is a molfile block from then on.
 		drawn(await drawnSource(block.info.trim().toLowerCase() === 'smiles' ? 'smiles' : 'molfile', block.info, block.source, molfileNow));
 	};
+	const releaseOverlays = keepStructuraOverlaysIn(host);
 	const editor = chem.mount(host, {
 		initialMolfile: molfile,
 		onChange: (changed) => {
@@ -117,7 +174,12 @@ export async function mountStructureEditor(
 			clearTimeout(timer);
 			// What was drawn last is written before the editor goes.
 			void write();
-			editor.unmount();
+			// Unmount while the removeChild fallback still stands, then restore it.
+			try {
+				editor.unmount();
+			} finally {
+				releaseOverlays();
+			}
 		},
 	};
 }
