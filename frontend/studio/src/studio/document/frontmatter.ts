@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { parseStudioDocument } from './parse.ts';
 import type { ArticleProperties } from '../types.ts';
 
@@ -101,9 +102,9 @@ function replaceYamlField(yaml: string, key: string, value: string | string[] | 
 }
 
 function validateProperties(properties: ArticleProperties): void {
-	if (!properties.title.trim()) throw new Error('文章标题不能为空');
-	if (!/^\d{4}-\d{2}-\d{2}$/u.test(properties.pubDate)) throw new Error('发布日期格式无效');
-	if (properties.tags.some((tag) => !tag.trim())) throw new Error('标签不能为空');
+	if (!properties.title.trim()) throw new Error(t('文章标题不能为空'));
+	if (!/^\d{4}-\d{2}-\d{2}$/u.test(properties.pubDate)) throw new Error(t('发布日期格式无效'));
+	if (properties.tags.some((tag) => !tag.trim())) throw new Error(t('标签不能为空'));
 }
 
 /**
@@ -113,7 +114,7 @@ function validateProperties(properties: ArticleProperties): void {
  */
 export function setFrontmatterField(source: string, key: 'parent' | 'order', value: string | number | null): string {
 	const document = parseStudioDocument(source);
-	if (!document.frontmatter) throw new Error('文章缺少 frontmatter，无法修改属性');
+	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
 	const yaml = value === null || value === ''
 		? removeYamlField(document.frontmatter.yamlRaw, key)
@@ -125,7 +126,7 @@ export function setFrontmatterField(source: string, key: 'parent' | 'order', val
 export function updateStudioFrontmatter(source: string, properties: ArticleProperties): string {
 	validateProperties(properties);
 	const document = parseStudioDocument(source);
-	if (!document.frontmatter) throw new Error('文章缺少 frontmatter，无法修改属性');
+	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
 	let yaml = document.frontmatter.yamlRaw;
 	for (const key of EDITABLE_KEYS) yaml = replaceYamlField(yaml, key, properties[key], defaultEol);

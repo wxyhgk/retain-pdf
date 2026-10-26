@@ -1,5 +1,6 @@
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import type { Conversation } from '../api/client';
 import { createStore, useStore } from './store.ts';
 
@@ -51,31 +52,34 @@ export type ShellActions = {
 	closePanel(): void;
 };
 
-const initial: ShellState = {
-	view: 'editor',
-	sidebarCollapsed: false,
-	title: '选择一篇文章',
-	status: { text: '正在连接…', tone: '' },
-	edited: null,
-	articleHref: '/blog',
-	panelOpen: true,
-	tabs: [
-		{ key: 'ai', label: 'AI' },
-		{ key: 'files', label: '文件' },
-		{ key: 'terminal', label: '终端' },
-		{ key: 'drive', label: '资料库' },
-	].map((tab) => ({ ...tab, id: `side-tab-${tab.key}`, controls: `side-${tab.key}` })),
-	tab: 'files',
-	chats: null,
-	chat: null,
-};
+/** The shell before the page's script changes it, as the server draws it. */
+function initialState(): ShellState {
+	return {
+		view: 'editor',
+		sidebarCollapsed: false,
+		title: t('选择一篇文章'),
+		status: { text: t('正在连接…'), tone: '' },
+		edited: null,
+		articleHref: '/blog',
+		panelOpen: true,
+		tabs: [
+			{ key: 'ai', label: 'AI' },
+			{ key: 'files', label: t('文件') },
+			{ key: 'terminal', label: t('终端') },
+			{ key: 'drive', label: t('资料库') },
+		].map((tab) => ({ ...tab, id: `side-tab-${tab.key}`, controls: `side-${tab.key}` })),
+		tab: 'files',
+		chats: null,
+		chat: null,
+	};
+}
 
 /** The shell's state: read, changed (what is given, the rest as it was), and followed. */
-export const shell = createStore(initial);
+export const shell = createStore(initialState());
 
 /** The shell's state, drawn again when it changes. */
 export function useShell(): ShellState {
-	return useStore(shell, initial);
+	return useStore(shell, useMemo(initialState, []));
 }
 
 const nothing = () => {};

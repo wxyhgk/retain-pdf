@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { deleteConversation, listConversations, type Conversation } from '../api/client';
 import { shell } from './shell-state';
 import { showContextMenu } from '../common/context-menu';
@@ -15,13 +16,13 @@ export type ChatListHost = {
  */
 export function createChatList(host: ChatListHost) {
 	async function remove(entry: Conversation): Promise<void> {
-		if (!window.confirm(`删除对话「${entry.title || '新对话'}」？\n它在 chats/ 里的记录会删掉，不能恢复。`)) return;
+		if (!window.confirm(t('删除对话「{title}」？\n它在 chats/ 里的记录会删掉，不能恢复。', { title: entry.title || t('新对话') }))) return;
 		try {
 			await deleteConversation(entry.id);
 			host.removed(entry.id);
 			await refresh();
 		} catch (error) {
-			host.toast(error instanceof Error ? error.message : '没能删除');
+			host.toast(error instanceof Error ? error.message : t('没能删除'));
 		}
 	}
 
@@ -46,7 +47,7 @@ export function createChatList(host: ChatListHost) {
 		},
 		/** A conversation's menu, at its row. */
 		menu(entry: Conversation, row: HTMLElement): void {
-			showContextMenu([{ label: '删除这个对话', danger: true, action: () => void remove(entry) }], row);
+			showContextMenu([{ label: t('删除这个对话'), danger: true, action: () => void remove(entry) }], row);
 		},
 	};
 }

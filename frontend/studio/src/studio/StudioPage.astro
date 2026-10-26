@@ -4,7 +4,7 @@ import { SITE_TITLE } from '../consts';
 import { ArticleRepository } from './server/articles/article-repository.mjs';
 import { pageVersion, studioBlogRoot } from './server/articles/page-version.mjs';
 import { LocaleSettings, studioSettingsFile } from './server/locale-settings.mjs';
-import { setLocale } from '@blog/i18n/index.mjs';
+import { setLocale, t } from '@blog/i18n/index.mjs';
 import { askedLocales } from '@blog/i18n/server.mjs';
 import { SideTabs } from './shell/SideTabs';
 import { Sidebar } from './shell/Sidebar';
@@ -50,7 +50,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 <!doctype html>
 <html lang={spoken} data-studio-locale={spoken}>
 	<head>
-		<BaseHead title={`Studio · ${SITE_TITLE}`} description="本地文章工作台" />
+		<BaseHead title={`Studio · ${SITE_TITLE}`} description={t('本地文章工作台')} />
 		{[katexMain, katexMath, katexSize1, katexSize2, katexAms].map((font) => <link rel="preload" href={font} as="font" type="font/woff2" crossorigin />)}
 		<!-- React's fast refresh for the shell (shell/), before its components load: what @astrojs/react puts in a page with islands only. -->
 		<script is:inline type="module">
@@ -60,7 +60,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 			window.$RefreshSig$ = () => (type) => type;
 		</script>
 	</head>
-	<body class="studio-body">
+	<body class="studio-body" style={{ '--word-current': JSON.stringify(t('当前')), '--word-drop-files': JSON.stringify(t('拖入文件即可上传 · 右键查看更多操作')), '--word-instructing': JSON.stringify(t('AI 处理中…')) }}>
 		<main class="studio-shell">
 			<!-- The shell, drawn by React (shell/): here as the server draws it, then by the page's script (mount.tsx). -->
 			<aside class="article-sidebar" data-ui><Sidebar siteTitle={SITE_TITLE} /></aside>
@@ -68,46 +68,46 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 			<section class="workspace-main">
 				<header class="studio-bar" data-ui><TopBar siteTitle={SITE_TITLE} /></header>
 
-				<section class="editor-panel" aria-label="文章编辑器">
+				<section class="editor-panel" aria-label={t('文章编辑器')}>
 					<div class="panel-label">
-						<span id="editor-path">选择一篇文章</span>
-						<span id="roundtrip-status">等待载入</span>
+						<span id="editor-path">{t('选择一篇文章')}</span>
+						<span id="roundtrip-status">{t('等待载入')}</span>
 					</div>
 					<div id="review-bar" class="review-bar" role="status" hidden>
 						<span id="review-count"></span>
-						<span id="review-hint" class="review-hint">已经保存在磁盘上；拒绝的会改回去</span>
-						<button id="review-retry" type="button" hidden>重试</button>
-						<button id="review-reject-all" type="button">全部拒绝</button>
-						<button id="review-accept-all" type="button" class="review-accept">全部接受</button>
+						<span id="review-hint" class="review-hint">{t('已经保存在磁盘上；拒绝的会改回去')}</span>
+						<button id="review-retry" type="button" hidden>{t('重试')}</button>
+						<button id="review-reject-all" type="button">{t('全部拒绝')}</button>
+						<button id="review-accept-all" type="button" class="review-accept">{t('全部接受')}</button>
 					</div>
 					<div class="editor-scroll">
 					<!-- The cover, the icon, the title, the properties: drawn by React (pages/header/), here as the server draws it. -->
 					<header class="document-header"><PageHeader store={header.store} actions={header.actions} /></header>
-					<div id="crepe-editor" class="crepe-host" aria-label="文章编辑器"></div>
+					<div id="crepe-editor" class="crepe-host" aria-label={t('文章编辑器')}></div>
 					</div>
-					<nav id="editor-outline" class="outline-rail" aria-label="文章目录" hidden>
+					<nav id="editor-outline" class="outline-rail" aria-label={t('文章目录')} hidden>
 						<div class="outline-pop"><ol></ol></div>
 						<div class="outline-marks" aria-hidden="true"></div>
 					</nav>
 				</section>
-				<section id="drive-view" class="drive-page" aria-label="资料库" hidden></section>
-				<section id="table-view" class="table-page" aria-label="全部文章" hidden></section>
+				<section id="drive-view" class="drive-page" aria-label={t('资料库')} hidden></section>
+				<section id="table-view" class="table-page" aria-label={t('全部文章')} hidden></section>
 				<!-- AI 问答: the AI tab's panel, moved here whole (main.ts showChat). -->
-				<section id="chat-view" class="chat-view" aria-label="AI 问答" hidden></section>
+				<section id="chat-view" class="chat-view" aria-label={t('AI 问答')} hidden></section>
 			</section>
 
-			<aside id="side-panel" class="side-panel" aria-label="AI、文件与终端">
-				<div class="side-panel-resizer" role="separator" aria-orientation="vertical" aria-label="调整面板宽度" tabindex="0" title="拖动调整宽度，双击恢复"></div>
-				<div class="side-tabs" role="tablist" aria-label="右侧面板" data-ui><SideTabs /></div>
+			<aside id="side-panel" class="side-panel" aria-label={t('AI、文件与终端')}>
+				<div class="side-panel-resizer" role="separator" aria-orientation="vertical" aria-label={t('调整面板宽度')} tabindex="0" title={t('拖动调整宽度，双击恢复')}></div>
+				<div class="side-tabs" role="tablist" aria-label={t('右侧面板')} data-ui><SideTabs /></div>
 				<!-- The AI (ai-panel.ts draws it). -->
 				<section id="side-ai" class="side-pane ai-pane" role="tabpanel" aria-labelledby="side-tab-ai" hidden></section>
 				<section id="side-files" class="side-pane" role="tabpanel" aria-labelledby="side-tab-files">
 					<header class="pane-toolbar">
-						<span id="files-root" class="pane-path">未打开文章</span>
+						<span id="files-root" class="pane-path">{t('未打开文章')}</span>
 						<div class="pane-actions">
-							<button id="upload-files" type="button" title="上传文件；文件和整个文件夹也可以直接拖进来" aria-label="上传文件" disabled>⤒</button>
-							<button id="new-folder" type="button" title="新建文件夹" aria-label="新建文件夹" disabled>＋</button>
-							<button id="refresh-files" type="button" title="重新读取文件夹" aria-label="刷新" disabled>↻</button>
+							<button id="upload-files" type="button" title={t('上传文件；文件和整个文件夹也可以直接拖进来')} aria-label={t('上传文件')} disabled>⤒</button>
+							<button id="new-folder" type="button" title={t('新建文件夹')} aria-label={t('新建文件夹')} disabled>＋</button>
+							<button id="refresh-files" type="button" title={t('重新读取文件夹')} aria-label={t('刷新')} disabled>↻</button>
 						</div>
 						<input id="file-upload-input" type="file" multiple hidden />
 					</header>
@@ -117,18 +117,18 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<section id="side-drive" class="side-pane" role="tabpanel" aria-labelledby="side-tab-drive" hidden></section>
 				<section id="side-terminal" class="side-pane" role="tabpanel" aria-labelledby="side-tab-terminal" hidden>
 					<header class="pane-toolbar">
-						<div class="cwd-switch" role="radiogroup" aria-label="终端启动目录">
-							<button type="button" role="radio" data-cwd="root" aria-checked="true">仓库根目录</button>
-							<button type="button" role="radio" data-cwd="article" aria-checked="false">当前文章</button>
-							<button type="button" role="radio" data-cwd="drive" aria-checked="false" title="先在左侧「资料库」里选好文件夹">资料库</button>
+						<div class="cwd-switch" role="radiogroup" aria-label={t('终端启动目录')}>
+							<button type="button" role="radio" data-cwd="root" aria-checked="true">{t('仓库根目录')}</button>
+							<button type="button" role="radio" data-cwd="article" aria-checked="false">{t('当前文章')}</button>
+							<button type="button" role="radio" data-cwd="drive" aria-checked="false" title={t('先在左侧「资料库」里选好文件夹')}>{t('资料库')}</button>
 						</div>
 						<span id="terminal-cwd" class="pane-path"></span>
 						<div class="pane-actions">
-							<button id="restart-terminal" type="button" title="重新打开终端" aria-label="重新打开终端">↻</button>
+							<button id="restart-terminal" type="button" title={t('重新打开终端')} aria-label={t('重新打开终端')}>↻</button>
 						</div>
 					</header>
-					<div id="terminal-agents" class="terminal-agents" role="group" aria-label="在终端里启动 AI" hidden></div>
-					<div id="terminal-screen" class="terminal-screen" aria-label="终端"></div>
+					<div id="terminal-agents" class="terminal-agents" role="group" aria-label={t('在终端里启动 AI')} hidden></div>
+					<div id="terminal-screen" class="terminal-screen" aria-label={t('终端')}></div>
 				</section>
 			</aside>
 			<!-- The background tasks: an AI doing what a line asks, a PDF being read (task-tray.ts). -->
@@ -440,7 +440,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.block-menu-item:hover),
 	:global(.block-menu-item:focus) { background: var(--surface-soft); outline: none; }
 	:global(.link-paste-menu .block-menu-item.is-active) { background: var(--surface-soft); }
-	:global(.block-menu-item.is-current::after) { content: '当前'; margin-left: auto; color: rgb(var(--gray)); font-size: 11px; }
+	:global(.block-menu-item.is-current::after) { content: var(--word-current); margin-left: auto; color: rgb(var(--gray)); font-size: 11px; }
 	:global(.block-menu-item.is-danger) { color: var(--danger); }
 	:global(.crepe-host .milkdown-slash-menu), :global(.crepe-host .milkdown-toolbar) { border: 1px solid rgb(var(--gray-light)); }
 	.side-panel { position: relative; display: flex; min-height: 0; flex-direction: column; border-left: 1px solid rgb(var(--gray-light)); background: var(--surface-soft); transition: opacity 120ms ease; }
@@ -486,7 +486,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.file-tree :global(.file-name-input) { grid-column: 2 / -1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 4px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-weight: 400; outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
 	.file-tree :global(.file-tree-empty) { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
 	.files-status { flex: none; min-height: 16px; margin: 0; padding: 8px 12px; overflow: hidden; border-top: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-	.files-status:empty::before { content: '拖入文件即可上传 · 右键查看更多操作'; opacity: 0.7; }
+	.files-status:empty::before { content: var(--word-drop-files); opacity: 0.7; }
 	.files-status[data-state='busy'] { color: rgb(var(--gray-dark)); }
 	.files-status[data-state='error'] { color: #a12d24; white-space: normal; }
 	:global(.upload-placeholder) { display: inline-block; margin: 2px 0; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: rgb(var(--gray-dark)); font-size: 12px; }
@@ -506,7 +506,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	@keyframes task-pulse { 50% { opacity: 0.25; } }
 	/* Blocks an AI is working on (Alt+Enter). */
 	:global(.crepe-host .milkdown .ProseMirror .is-instructing) { position: relative; border-radius: 6px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); box-shadow: inset 2px 0 0 rgb(var(--gray)); }
-	:global(.crepe-host .milkdown .ProseMirror .is-instructing::after) { content: 'AI 处理中…'; position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: 11px; pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
+	:global(.crepe-host .milkdown .ProseMirror .is-instructing::after) { content: var(--word-instructing); position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: 11px; pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
 	/* 小程序: floating windows (mini-apps.ts). */
 	.mini-app-layer { position: fixed; z-index: 50; inset: 0; pointer-events: none; }
 	.mini-app-layer :global(.mini-app-window) { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 34px rgb(0 0 0 / 16%); pointer-events: auto; }

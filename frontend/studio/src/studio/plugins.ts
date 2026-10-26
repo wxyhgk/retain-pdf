@@ -52,7 +52,7 @@ async function catchUp(present: string[]): Promise<void> {
 		const next = (await import(/* @vite-ignore */ `./plugin-modules.ts?t=${Date.now()}`)) as { pluginModules: Record<string, unknown> };
 		modules = next.pluginModules;
 	} catch (error) {
-		console.warn('[plugins] 没能重新读取插件列表', error);
+		console.warn('[plugins] 没能重新读取插件列表', error); // i18n-ignore: developer log
 	}
 }
 
@@ -90,7 +90,7 @@ function reload({ announce }: { announce: boolean }): Promise<void> {
 		studioPlugins.emit('studio/plugins-changed', changed);
 		if (announce) studioPlugins.emit('studio/plugins-reloaded', changed, problems);
 		if (before.length !== after.length || before.some((part, index) => part !== after[index])) studioPlugins.emit('studio/editor-changed');
-	}).catch((error) => console.error('[plugins] 重新载入失败', error));
+	}).catch((error) => console.error('[plugins] 重新载入失败', error)); // i18n-ignore: developer log
 	return reloading;
 }
 

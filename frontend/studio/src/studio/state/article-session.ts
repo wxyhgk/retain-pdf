@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from '../document/index.ts';
 import { rewriteMovedReferences } from '@blog/markdown/articles/article-references.mjs';
 import type { ArticlePayload, ArticleProperties, HistoryReason } from '../types.ts';
@@ -78,16 +79,16 @@ export type SessionHost = {
 const ARTICLE_TEXT_FILES = ['index.md', 'article.views.json'];
 
 const PROPERTY_NAMES: Record<keyof ArticleProperties, string> = {
-	title: '标题',
-	description: '简介',
-	pubDate: '发布日期',
-	tags: '标签',
-	draft: '状态',
-	icon: '图标',
-	cover: '封面',
-	kind: '类型',
-	wide: '全宽',
-	parent: '上级页面',
+	title: t('标题'),
+	description: t('简介'),
+	pubDate: t('发布日期'),
+	tags: t('标签'),
+	draft: t('状态'),
+	icon: t('图标'),
+	cover: t('封面'),
+	kind: t('类型'),
+	wide: t('全宽'),
+	parent: t('上级页面'),
 };
 
 /** A property as it counts: left out, empty and (for `wide`) off are all none. */
@@ -172,9 +173,9 @@ export class ArticleSession {
 		} catch (error) {
 			if (sequence !== this.#sequence) return;
 			// The article open before stays open, as it was.
-			this.#host.toast(`打不开「${slug}」：${error instanceof Error ? error.message : String(error)}`);
+			this.#host.toast(t('打不开「{slug}」：{error}', { slug, error: error instanceof Error ? error.message : String(error) }));
 			const { article: open, dirty } = this.#store.current;
-			this.#setState(open ? { kind: dirty ? 'dirty' : 'loaded' } : { kind: 'failed', message: '没有打开文章' });
+			this.#setState(open ? { kind: dirty ? 'dirty' : 'loaded' } : { kind: 'failed', message: t('没有打开文章') });
 			return;
 		}
 		if (sequence !== this.#sequence) return;
@@ -210,7 +211,7 @@ export class ArticleSession {
 			await this.#host.mount(article, body, true);
 		} catch (error) {
 			if (sequence !== this.#sequence) return;
-			this.#setState({ kind: 'unshown', message: `编辑器没能显示正文：${error instanceof Error ? error.message : String(error)}` });
+			this.#setState({ kind: 'unshown', message: t('编辑器没能显示正文：{error}', { error: error instanceof Error ? error.message : String(error) }) });
 		}
 	}
 
@@ -222,7 +223,7 @@ export class ArticleSession {
 			this.#store.updateSource(updateStudioFrontmatter(source, properties));
 		} catch (error) {
 			this.#propertiesValid = false;
-			return error instanceof Error ? error.message : '文章属性无效';
+			return error instanceof Error ? error.message : t('文章属性无效');
 		}
 		this.#properties = properties;
 		this.#propertiesValid = true;
@@ -246,14 +247,14 @@ export class ArticleSession {
 	/** Before the author leaves this article: saves it, or asks to let the edits go if it cannot. */
 	async saveBeforeLeaving(): Promise<boolean> {
 		if (!this.hasUnsavedEdits() || (await this.#autosave.flush())) return true;
-		return this.#host.confirm('当前文章没能保存，切换后未保存的改动会丢失。确定吗？');
+		return this.#host.confirm(t('当前文章没能保存，切换后未保存的改动会丢失。确定吗？'));
 	}
 
 	/** Saves a molecule's view, after the text, on the revision that leaves. */
 	async saveView(key: string, format: string, view: number[], display?: unknown): Promise<void> {
 		await this.flush();
 		const { article, revision } = this.#store.current;
-		if (!article) throw new Error('文章尚未载入');
+		if (!article) throw new Error(t('文章尚未载入'));
 		const result = await trackWrite(() => this.#api.saveMoleculeView(article.slug, key, format, view, revision, display));
 		this.#store.updateRevision(result.revision, result.chemistryViews);
 	}
@@ -287,7 +288,7 @@ export class ArticleSession {
 		if (!article) return;
 		const body = parseStudioDocument(source).body.raw;
 		if (body === parseStudioDocument(now).body.raw) {
-			this.#host.toast('正文和这个版本一样，没有要恢复的');
+			this.#host.toast(t('正文和这个版本一样，没有要恢复的'));
 			return;
 		}
 		if (!(await this.#keep(article.slug, [[now, 'before-restore']]))) return;
@@ -310,7 +311,7 @@ export class ArticleSession {
 		const { article, source: now } = this.#store.current;
 		if (!article) return;
 		if (body.trim() === parseStudioDocument(now).body.raw.trim()) {
-			this.#host.toast('AI 写的和原来一样');
+			this.#host.toast(t('AI 写的和原来一样'));
 			return;
 		}
 		const sequence = ++this.#sequence;
@@ -355,7 +356,7 @@ export class ArticleSession {
 			markdown = await this.#host.mount(article, original.body.raw, again);
 		} catch (error) {
 			if (sequence !== this.#sequence) return;
-			this.#setState({ kind: 'unshown', message: `编辑器没能显示正文：${error instanceof Error ? error.message : String(error)}` });
+			this.#setState({ kind: 'unshown', message: t('编辑器没能显示正文：{error}', { error: error instanceof Error ? error.message : String(error) }) });
 			return;
 		}
 		if (sequence !== this.#sequence) return;
@@ -401,7 +402,7 @@ export class ArticleSession {
 				this.#checkDisk(article.slug, () => this.#autosave.resume());
 				return 'conflict';
 			}
-			this.#setState({ kind: 'failed', message: error instanceof Error ? error.message : '保存失败' });
+			this.#setState({ kind: 'failed', message: error instanceof Error ? error.message : t('保存失败') });
 			return 'failed';
 		}
 	}
@@ -424,7 +425,7 @@ export class ArticleSession {
 			}
 			return true;
 		} catch (error) {
-			this.#host.toast(`没能存下历史版本：${error instanceof Error ? error.message : String(error)}`);
+			this.#host.toast(t('没能存下历史版本：{error}', { error: error instanceof Error ? error.message : String(error) }));
 			return false;
 		}
 	}
@@ -472,8 +473,8 @@ export class ArticleSession {
 		this.#autosave.cancel();
 		this.#host.opened({ article, properties: article.properties });
 		const notes = [
-			...(told.properties.length ? [`磁盘上改了${told.properties.join('、')}`] : []),
-			...(told.unsaved ? ['你没保存的版本已存进「历史版本」'] : []),
+			...(told.properties.length ? [t('磁盘上改了{properties}', { properties: told.properties.join('、') })] : []),
+			...(told.unsaved ? [t('你没保存的版本已存进「历史版本」')] : []),
 		];
 		if (notes.length) this.#host.toast(notes.join('；'));
 		const body = parseStudioDocument(article.source).body.raw;

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { Button } from '@studio/ui/button';
 import { Input } from '@studio/ui/input';
 import { saveAgents, type Agent, type AgentsShown } from '../../api/client';
@@ -9,9 +10,9 @@ import { Actions, errorText, Frame, Status } from './Frame';
 export type AgentsAsk = { shown: AgentsShown; saved(): void };
 
 const FIELDS: Array<{ key: 'launch' | 'run' | 'resume'; label: string; hint: string }> = [
-	{ key: 'launch', label: '终端里启动', hint: '点终端上的按钮时运行，比如 claude' },
-	{ key: 'run', label: 'Alt+Enter：后台跑一次', hint: '{prompt} 换成交给它的话' },
-	{ key: 'resume', label: 'Alt+Enter：接着上次', hint: '接着这篇文章文件夹里最近的会话；{prompt} 同上' },
+	{ key: 'launch', label: t('终端里启动'), hint: t('点终端上的按钮时运行，比如 claude') },
+	{ key: 'run', label: t('Alt+Enter：后台跑一次'), hint: t('{prompt} 换成交给它的话') },
+	{ key: 'resume', label: t('Alt+Enter：接着上次'), hint: t('接着这篇文章文件夹里最近的会话；{prompt} 同上') },
 ];
 
 /** An AI of the list as it is typed: `row` keeps it apart from the others while its id is typed. */
@@ -59,7 +60,7 @@ export function AgentsDialog({ shown, saved, onClose }: AgentsAsk & { onClose():
 
 	async function save(event: FormEvent): Promise<void> {
 		event.preventDefault();
-		setStatus({ text: '正在保存…', error: false });
+		setStatus({ text: t('正在保存…'), error: false });
 		// Its adapter is not sent: the server knows the presets' (and shows them with this machine's paths).
 		const list = agents.map(({ row: _, acp: __, ...agent }) => Object.fromEntries(Object.entries(agent).map(([key, value]) => [key, typeof value === 'string' ? value.trim() : value])) as Agent);
 		try {
@@ -67,16 +68,15 @@ export function AgentsDialog({ shown, saved, onClose }: AgentsAsk & { onClose():
 			onClose();
 			saved();
 		} catch (error) {
-			setStatus({ text: errorText(error, '没能保存'), error: true });
+			setStatus({ text: errorText(error, t('没能保存')), error: true });
 		}
 	}
 
 	return (
-		<Frame id="agents-dialog" title="AI 助手" description="终端上的按钮和 Alt+Enter 用的 AI。只存在这台电脑上（.studio-settings.json，不进 git）" className="sm:max-w-[720px]" onClose={onClose}>
+		<Frame id="agents-dialog" title={t('AI 助手')} description={t('终端上的按钮和 Alt+Enter 用的 AI。只存在这台电脑上（.studio-settings.json，不进 git）')} className="sm:max-w-[720px]" onClose={onClose}>
 			<form className="grid min-h-0 gap-3" onSubmit={(event) => void save(event)}>
 				<p className="text-xs leading-relaxed text-muted-foreground">
-					在正文里写一句要做的事，按 Alt+Enter，选中的 AI 就在这篇文章的文件夹里后台去做，做完把这几行换成结果，你逐处审阅；⇧Alt+Enter 是另开一个新会话。后台命令里的 {'{prompt}'}{' '}
-					换成交给它的话。Claude 的预设开了沙箱（只写这篇文章的文件夹、不联网），Codex 的是 workspace-write；pi 没有沙箱。
+					{t('在正文里写一句要做的事，按 Alt+Enter，选中的 AI 就在这篇文章的文件夹里后台去做，做完把这几行换成结果，你逐处审阅；⇧Alt+Enter 是另开一个新会话。后台命令里的 {prompt} 换成交给它的话。Claude 的预设开了沙箱（只写这篇文章的文件夹、不联网），Codex 的是 workspace-write；pi 没有沙箱。')}
 				</p>
 				<ol id="agents-list" className="flex max-h-[56vh] flex-col gap-2.5 overflow-auto">
 					{agents.map((agent) => {
@@ -84,15 +84,15 @@ export function AgentsDialog({ shown, saved, onClose }: AgentsAsk & { onClose():
 						return (
 							<li key={agent.row} className="agent-row flex flex-col gap-1.5 rounded-lg border p-2.5">
 								<div className="grid grid-cols-[minmax(0,130px)_minmax(0,130px)_max-content_minmax(0,1fr)_max-content] items-end gap-2">
-									<TextField label="名字" name="name" value={agent.name} onChange={(value) => change(agent.row, 'name', value)} />
-									<TextField label="代号" name="id" value={agent.id} onChange={(value) => change(agent.row, 'id', value)} />
+									<TextField label={t('名字')} name="name" value={agent.name} onChange={(value) => change(agent.row, 'name', value)} />
+									<TextField label={t('代号')} name="id" value={agent.id} onChange={(value) => change(agent.row, 'id', value)} />
 									<label className="flex h-[30px] items-center gap-1.5 text-xs whitespace-nowrap">
 										<input type="radio" name="agents-default" className="accent-primary" checked={chosen === agent.row} onChange={() => setChosen(agent.row)} />
-										Alt+Enter 用它
+										{t('Alt+Enter 用它')}
 									</label>
-									<small className="truncate text-[11px] leading-[30px] text-muted-foreground">{known === undefined ? '' : known ? '已安装' : '这台电脑上没找到'}</small>
+									<small className="truncate text-[11px] leading-[30px] text-muted-foreground">{known === undefined ? '' : known ? t('已安装') : t('这台电脑上没找到')}</small>
 									<Button type="button" variant="outline" size="xs" className="text-destructive hover:text-destructive" onClick={() => remove(agent.row)}>
-										删除
+										{t('删除')}
 									</Button>
 								</div>
 								{FIELDS.map((field) => (
@@ -104,19 +104,19 @@ export function AgentsDialog({ shown, saved, onClose }: AgentsAsk & { onClose():
 				</ol>
 				<div className="flex gap-2">
 					<Button type="button" variant="outline" size="sm" onClick={add}>
-						＋ 添加一个
+						{t('＋ 添加一个')}
 					</Button>
 					<Button type="button" variant="outline" size="sm" onClick={presets}>
-						恢复预设
+						{t('恢复预设')}
 					</Button>
 				</div>
 				<Status id="agents-status" {...status} />
 				<Actions>
 					<Button type="button" variant="outline" size="sm" onClick={onClose}>
-						取消
+						{t('取消')}
 					</Button>
 					<Button type="submit" size="sm">
-						保存
+						{t('保存')}
 					</Button>
 				</Actions>
 			</form>

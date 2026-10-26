@@ -1,6 +1,7 @@
 import { useRef, type ReactNode } from 'react';
 import { Command as CommandPrimitive } from 'cmdk';
 
+import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Command, CommandItem, CommandList } from '@studio/ui/command';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
@@ -95,7 +96,7 @@ export function Finder({
 					<CommandList id={`${id}-results`} className="max-h-[min(56vh,440px)] p-1.5">
 						{rows.map((row) => (
 							<CommandItem key={row.key} value={row.key} className="quick-find-item items-start gap-2.5 rounded-md px-2.5 py-2" onSelect={() => onChoose(row.key)}>
-								<span className={cn('quick-find-icon w-5 flex-none text-center text-muted-foreground', row.drive && 'is-drive')} title={row.drive ? '资料库' : undefined}>
+								<span className={cn('quick-find-icon w-5 flex-none text-center text-muted-foreground', row.drive && 'is-drive')} title={row.drive ? t('资料库') : undefined}>
 									{row.icon || '▤'}
 								</span>
 								<span className="grid min-w-0 gap-0.5 [&_mark]:bg-transparent [&_mark]:font-semibold [&_mark]:text-accent-foreground">

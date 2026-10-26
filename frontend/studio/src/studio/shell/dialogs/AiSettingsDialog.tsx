@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent, type ReactNode } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { Button } from '@studio/ui/button';
 import { Input } from '@studio/ui/input';
 import { NativeSelect, NativeSelectOption } from '@studio/ui/native-select';
@@ -43,7 +44,7 @@ export function AiSettingsDialog({ shown, why, done, onClose }: AiSettingsAsk & 
 	async function save(event: FormEvent): Promise<void> {
 		event.preventDefault();
 		setSaving(true);
-		setStatus('正在保存…');
+		setStatus(t('正在保存…'));
 		try {
 			const settings = await saveAiSettings({
 				provider,
@@ -55,7 +56,7 @@ export function AiSettingsDialog({ shown, why, done, onClose }: AiSettingsAsk & 
 			});
 			close(settings);
 		} catch (error) {
-			setStatus(errorText(error, '没能保存'));
+			setStatus(errorText(error, t('没能保存')));
 			setSaving(false);
 		}
 	}
@@ -63,8 +64,8 @@ export function AiSettingsDialog({ shown, why, done, onClose }: AiSettingsAsk & 
 	return (
 		<Frame
 			id="ai-settings-dialog"
-			title="AI 设置"
-			description="识别图片时用的大模型。key 只存在这台电脑上（.studio-settings.json，不进 git）"
+			title={t('AI 设置')}
+			description={t('识别图片时用的大模型。key 只存在这台电脑上（.studio-settings.json，不进 git）')}
 			className="sm:max-w-[520px]"
 			onClose={() => close(null)}
 			focus={() => (why ? (openai && !baseUrl ? fields.baseUrl : fields.key) : fields.provider).current}
@@ -75,41 +76,41 @@ export function AiSettingsDialog({ shown, why, done, onClose }: AiSettingsAsk & 
 						{why}
 					</p>
 				)}
-				<Field label="服务">
+				<Field label={t('服务')}>
 					<NativeSelect id="ai-provider" ref={fields.provider} className="w-full" value={provider} onChange={(event) => setProvider(event.target.value as AiSettingsShown['provider'])}>
 						<NativeSelectOption value="anthropic">Claude（Anthropic）</NativeSelectOption>
-						<NativeSelectOption value="openai">OpenAI 兼容接口（通义千问、DeepSeek、智谱、OpenRouter…）</NativeSelectOption>
+						<NativeSelectOption value="openai">{t('OpenAI 兼容接口（通义千问、DeepSeek、智谱、OpenRouter…）')}</NativeSelectOption>
 					</NativeSelect>
 				</Field>
-				<Field label="模型">
-					<Input id="ai-model" autoComplete="off" spellCheck={false} value={model} placeholder={openai ? '例如 qwen-vl-max、glm-4v-plus' : shown.defaults.anthropic} onChange={(event) => setModel(event.target.value)} />
+				<Field label={t('模型')}>
+					<Input id="ai-model" autoComplete="off" spellCheck={false} value={model} placeholder={openai ? t('例如 qwen-vl-max、glm-4v-plus') : shown.defaults.anthropic} onChange={(event) => setModel(event.target.value)} />
 				</Field>
-				<Field label="接口地址">
+				<Field label={t('接口地址')}>
 					<Input
 						id="ai-base-url"
 						ref={fields.baseUrl}
 						autoComplete="off"
 						spellCheck={false}
 						value={baseUrl}
-						placeholder={openai ? '例如 https://dashscope.aliyuncs.com/compatible-mode/v1' : '空着就是 Anthropic 自己的（用代理时再填）'}
+						placeholder={openai ? t('例如 https://dashscope.aliyuncs.com/compatible-mode/v1') : t('空着就是 Anthropic 自己的（用代理时再填）')}
 						onChange={(event) => setBaseUrl(event.target.value)}
 					/>
 				</Field>
 				<Field label="Key">
-					<Input id="ai-key" ref={fields.key} type="password" autoComplete="off" value={key} placeholder={saved ? '已保存（不改就空着）' : openai ? '空着就用环境变量 OPENAI_API_KEY' : '空着就用环境变量 ANTHROPIC_API_KEY'} onChange={(event) => setKey(event.target.value)} />
+					<Input id="ai-key" ref={fields.key} type="password" autoComplete="off" value={key} placeholder={saved ? t('已保存（不改就空着）') : openai ? t('空着就用环境变量 OPENAI_API_KEY') : t('空着就用环境变量 ANTHROPIC_API_KEY')} onChange={(event) => setKey(event.target.value)} />
 				</Field>
-				{saved && <small className="-mt-2 text-[10px] leading-normal text-muted-foreground">要换 key 就填新的；要删掉保存的 key，填一个空格再保存。</small>}
+				{saved && <small className="-mt-2 text-[10px] leading-normal text-muted-foreground">{t('要换 key 就填新的；要删掉保存的 key，填一个空格再保存。')}</small>}
 				{/* Only Claude's keys may belong to a whole organization rather than one workspace. */}
-				<Field label="工作区 ID" id="ai-workspace-field" hidden={openai}>
-					<Input id="ai-workspace" autoComplete="off" spellCheck={false} value={workspace} placeholder="一般空着；key 属于整个组织时填 wrkspc_…" onChange={(event) => setWorkspace(event.target.value)} />
+				<Field label={t('工作区 ID')} id="ai-workspace-field" hidden={openai}>
+					<Input id="ai-workspace" autoComplete="off" spellCheck={false} value={workspace} placeholder={t('一般空着；key 属于整个组织时填 wrkspc_…')} onChange={(event) => setWorkspace(event.target.value)} />
 				</Field>
 				<Status id="ai-settings-status" text={status} />
 				<Actions>
 					<Button id="ai-settings-cancel" type="button" variant="outline" size="sm" onClick={() => close(null)}>
-						取消
+						{t('取消')}
 					</Button>
 					<Button id="ai-settings-save" type="submit" size="sm" disabled={saving}>
-						保存
+						{t('保存')}
 					</Button>
 				</Actions>
 			</form>

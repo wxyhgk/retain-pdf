@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { SaveState } from '../state/article-session.ts';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { shell } from './shell-state.ts';
@@ -5,14 +6,14 @@ import { shell } from './shell-state.ts';
 /** What the status line says, and the colour it says it in. */
 export function saveStateText(state: SaveState): { text: string; tone: 'saved' | 'dirty' | 'saving' | 'error' | '' } {
 	switch (state.kind) {
-		case 'loading': return { text: '正在载入…', tone: '' };
-		case 'loaded': return { text: '已载入', tone: 'saved' };
-		case 'dirty': return { text: '未保存', tone: 'dirty' };
-		case 'saving': return { text: '正在保存…', tone: 'saving' };
-		case 'saved': return { text: '已保存', tone: 'saved' };
-		case 'reviewing': return { text: '改动待审阅', tone: 'dirty' };
-		case 'conflict': return { text: '文章在磁盘上被修改，暂停自动保存', tone: 'error' };
-		case 'failed': return { text: `${state.message}，稍后自动重试`, tone: 'error' };
+		case 'loading': return { text: t('正在载入…'), tone: '' };
+		case 'loaded': return { text: t('已载入'), tone: 'saved' };
+		case 'dirty': return { text: t('未保存'), tone: 'dirty' };
+		case 'saving': return { text: t('正在保存…'), tone: 'saving' };
+		case 'saved': return { text: t('已保存'), tone: 'saved' };
+		case 'reviewing': return { text: t('改动待审阅'), tone: 'dirty' };
+		case 'conflict': return { text: t('文章在磁盘上被修改，暂停自动保存'), tone: 'error' };
+		case 'failed': return { text: t('{message}，稍后自动重试', { message: state.message }), tone: 'error' };
 		case 'unshown': return { text: state.message, tone: 'error' };
 	}
 }
@@ -40,8 +41,8 @@ export function createTopBar(shellElement: HTMLElement) {
 		},
 		/** No article to open yet. */
 		showEmpty(): void {
-			shell.set({ status: { text: '还没有文章', tone: '' }, title: '空工作区' });
-			path.textContent = '创建第一篇文章后即可开始写作';
+			shell.set({ status: { text: t('还没有文章'), tone: '' }, title: t('空工作区') });
+			path.textContent = t('创建第一篇文章后即可开始写作');
 		},
 		saveState(state: SaveState): void {
 			shell.set({ status: saveStateText(state) });
@@ -51,7 +52,7 @@ export function createTopBar(shellElement: HTMLElement) {
 			shell.set({ status: { text: message, tone: 'error' } });
 		},
 		roundtrip(exact: boolean): void {
-			roundtrip.textContent = exact ? 'Markdown 完整保留' : 'Markdown 已规范化';
+			roundtrip.textContent = exact ? t('Markdown 完整保留') : t('Markdown 已规范化');
 			roundtrip.dataset.state = exact ? 'exact' : 'changed';
 		},
 	};

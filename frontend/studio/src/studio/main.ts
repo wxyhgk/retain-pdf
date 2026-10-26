@@ -40,11 +40,12 @@ import { macrosFor } from '../math-macros.mjs';
 import { ArticleSession, type SaveState } from './state/article-session';
 import { trackWrite } from './state/writes';
 import type { ArticlePayload, ArticleSummary } from './types';
-import { createArticleActions, relinkedNote } from './pages/article-actions';
+import { createArticleActions } from './pages/article-actions';
 import { createArticleList } from './pages/article-list';
 import { showContextMenu } from './common/context-menu';
 import { watchDisk } from './common/disk-events';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import { BIBLIOGRAPHY_PATH, parseBibtex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import { SELECTION_END, SELECTION_START, sourceLinesOf } from './document/source-lines';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
@@ -187,7 +188,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 		try {
 			return await confirmPublish(await checkArticle(slug, session.current.source));
 		} catch (error) {
-			showToast(`发布前检查没能完成：${error instanceof Error ? error.message : '未知错误'}`);
+			showToast(t('发布前检查没能完成：{error}', { error: error instanceof Error ? error.message : t('未知错误') }));
 			return false;
 		}
 	},
@@ -202,7 +203,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 	},
 	async upload(file) {
 		const slug = session.slug;
-		if (!slug) throw new Error('文章尚未载入');
+		if (!slug) throw new Error(t('文章尚未载入'));
 		const { path } = await uploadArticleFile(slug, 'img', file);
 		void filePanel.refresh();
 		return `./${path}`;
@@ -228,7 +229,7 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 		// Its pictures copied into the article first, so that they show there.
 		withArticlePictures(markdown).then(
 			(taken) => editor.insertMarkdown(taken),
-			(error: unknown) => showToast(error instanceof Error ? error.message : '没能放进来', true),
+			(error: unknown) => showToast(error instanceof Error ? error.message : t('没能放进来'), true),
 		);
 		return true;
 	},
@@ -331,12 +332,12 @@ createTaskTray(shell.querySelector<HTMLElement>('#task-tray')!, {
 			instructing.delete(task.id);
 			editor.unmarkInstructing(mark);
 		} else if (task.kind === 'instruction' || task.kind === 'ocr') overEarly.add(task.id);
-		if (task.state === 'failed') showToast(`${task.title}：${task.error ?? '出错了'}`, true);
+		if (task.state === 'failed') showToast(`${task.title}：${task.error ?? t('出错了')}`, true);
 		// A PDF read: its page, to open.
 		const page = task.kind === 'ocr' && task.state === 'done' ? (task.result as { page?: string } | null)?.page : undefined;
 		if (page) {
 			void articleList.load();
-			showToast(`已识别成子页面「${task.title.replace(/^PaddleOCR：/u, '')}」`, { action: { label: '打开', run: () => void session.open(page) } });
+			showToast(t('已识别成子页面「{title}」', { title: task.title.replace(/^PaddleOCR：/u, '') }), { action: { label: t('打开'), run: () => void session.open(page) } });
 		}
 	},
 });
@@ -361,11 +362,11 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 			try {
 				await trackWrite(() => createArticle(slug, title, parent, { body, files }));
 			} catch (error) {
-				showToast(error instanceof Error ? error.message : '没能转成子页面', true);
+				showToast(error instanceof Error ? error.message : t('没能转成子页面'), true);
 				return false;
 			}
 			await articleList.load();
-			showToast(`已转成子页面「${title}」`, { action: { label: '打开', run: () => void session.open(slug) } });
+			showToast(t('已转成子页面「{title}」', { title }), { action: { label: t('打开'), run: () => void session.open(slug) } });
 			return true;
 		},
 	},
@@ -373,7 +374,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	files: {
 		async upload(files) {
 			const slug = session.slug;
-			if (!slug) throw new Error('文章尚未载入');
+			if (!slug) throw new Error(t('文章尚未载入'));
 			const paths: string[] = [];
 			try {
 				for (const file of files) paths.push((await uploadArticleFile(slug, uploadFolderFor(null, file), file)).path);
@@ -388,7 +389,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		report: showToast,
 	},
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
-	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error('文章尚未载入'))),
+	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error(t('文章尚未载入')))),
 	changed: (markdown) => session.editBody(markdown),
 	async pickArticle() {
 		const picked = await quickFind.pick();
@@ -403,12 +404,12 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		if (!parent) return null;
 		const slug = freeSlug(autoSlug(), articleList.articles().map((article) => article.slug));
 		try {
-			await trackWrite(() => createArticle(slug, '无标题', parent));
+			await trackWrite(() => createArticle(slug, '无标题', parent)); // i18n-ignore: saved as the page's title
 		} catch (error) {
-			showToast(error instanceof Error ? error.message : '新建失败', true);
+			showToast(error instanceof Error ? error.message : t('新建失败'), true);
 			return null;
 		}
-		return { slug, title: '无标题', href: `/blog/${slug}/` };
+		return { slug, title: '无标题', href: `/blog/${slug}/` }; // i18n-ignore: the link written into the article
 	},
 	enterPage: (slug) => void enterNewPage(slug),
 	askAI: () => void askAI(),
@@ -552,9 +553,9 @@ async function newPage(parent = ''): Promise<void> {
 	if (!(await session.saveBeforeLeaving())) return;
 	const slug = freeSlug(autoSlug(), articleList.articles().map((article) => article.slug));
 	try {
-		await createArticle(slug, '无标题', parent);
+		await createArticle(slug, '无标题', parent); // i18n-ignore: saved as the page's title
 	} catch (error) {
-		showToast(error instanceof Error ? error.message : '新建失败', true);
+		showToast(error instanceof Error ? error.message : t('新建失败'), true);
 		return;
 	}
 	await enterNewPage(slug);
@@ -579,11 +580,11 @@ async function makeLinkedPage(title: string): Promise<{ title: string; href: str
 	try {
 		await trackWrite(() => createArticle(slug, title, parent));
 	} catch (error) {
-		showToast(error instanceof Error ? error.message : '新建失败', true);
+		showToast(error instanceof Error ? error.message : t('新建失败'), true);
 		return null;
 	}
 	await articleList.load();
-	showToast(`已新建子页面「${title}」`, { action: { label: '打开', run: () => void session.open(slug) } });
+	showToast(t('已新建子页面「{title}」', { title }), { action: { label: t('打开'), run: () => void session.open(slug) } });
 	return { title, href: `/blog/${slug}/` };
 }
 
@@ -621,10 +622,10 @@ async function movePagesNow(slugs: string[], parent: string, place: PagePlace): 
 			if (changesOpen && session.slug === open) await session.reload();
 		});
 	} catch (error) {
-		showToast(error instanceof Error ? error.message : '没能移动这个页面', true);
+		showToast(error instanceof Error ? error.message : t('没能移动这个页面'), true);
 	}
 	await articleList.load();
-	if (slugs.length > 1) showToast(`已移动 ${slugs.length} 个页面`);
+	if (slugs.length > 1) showToast(t('已移动 {count} 个页面', { count: slugs.length }));
 }
 
 /** The pages the open one is under, above its title. */
@@ -654,7 +655,9 @@ async function publishAndName(): Promise<void> {
 	if (!wanted || isAutoSlug(wanted)) return;
 	const to = freeSlug(wanted, articleList.articles().map((entry) => entry.slug));
 	const renamed = await articleActions.renameTo(article, to);
-	if (renamed) showToast(`已发布，网址是 /${article.kind === 'wiki' ? 'wiki' : 'blog'}/${to}/${relinkedNote(renamed.relinked)}`);
+	if (!renamed) return;
+	const address = articleAddress(article.kind, to);
+	showToast(renamed.relinked ? t('已发布，网址是 {address}，{count} 篇里指向它的链接已跟着改', { address, count: renamed.relinked }) : t('已发布，网址是 {address}', { address }));
 }
 
 /**
@@ -666,12 +669,12 @@ async function askInTerminal(): Promise<void> {
 	const marked = slug ? editor.markSelection() : null;
 	if (!slug || !marked) return;
 	if (!(await session.flush())) {
-		showToast('文章还没保存好，保存后再问 AI', true);
+		showToast(t('文章还没保存好，保存后再问 AI'), true);
 		return;
 	}
 	const lines = sourceLinesOf(session.current.source, marked);
 	if (!lines) {
-		showToast('没找到选中的内容在文件里的位置', true);
+		showToast(t('没找到选中的内容在文件里的位置'), true);
 		return;
 	}
 	sidePanel.show('terminal');
@@ -684,12 +687,12 @@ let inlineId = '';
 const inlineAi = createInlineAi({
 	async run(instruction) {
 		const asked = inlineAsk;
-		if (!asked || session.slug !== asked.slug) throw new Error('已经换了文章');
+		if (!asked || session.slug !== asked.slug) throw new Error(t('已经换了文章'));
 		const { agent, options } = chosenAI();
 		inlineId = crypto.randomUUID();
 		const { markdown } = await askInline({ id: inlineId, agent, options, mode: asked.mode, instruction, slug: asked.slug, selected: asked.selected, before: asked.before, after: asked.after });
-		if (session.slug !== asked.slug) throw new Error('已经换了文章');
-		if (session.current.source !== asked.source || session.hasUnsavedEdits()) throw new Error('AI 写的时候文章改过了：再选一次，重新问');
+		if (session.slug !== asked.slug) throw new Error(t('已经换了文章'));
+		if (session.current.source !== asked.source || session.hasUnsavedEdits()) throw new Error(t('AI 写的时候文章改过了：再选一次，重新问'));
 		// Shown in place, to accept or reject (the review bar); taken, it is saved as any edit.
 		void session.reviewProposal([asked.before, markdown.trim(), asked.after].filter((part) => part.trim()).join('\n\n') + '\n');
 	},
@@ -725,7 +728,7 @@ async function askAI(): Promise<void> {
 	const end = marked.indexOf(SELECTION_END);
 	if (start < 0 || end < start) return;
 	if (!(await session.flush())) {
-		showToast('文章还没保存好，保存后再问 AI', true);
+		showToast(t('文章还没保存好，保存后再问 AI'), true);
 		return;
 	}
 	const selected = marked.slice(start + SELECTION_START.length, end).trim();
@@ -754,7 +757,7 @@ async function ocrPdf(path: string, view?: EditorView, pos?: number): Promise<vo
 		const { task, page } = await startOcr(slug, path);
 		void articleList.load();
 		// Already read: what says so (with 打开) stays, not covered by this.
-		if (!overEarly.delete(task)) showToast(`正在用 PaddleOCR 识别 ${path}，结果写进子页面「${page.title}」`);
+		if (!overEarly.delete(task)) showToast(t('正在用 PaddleOCR 识别 {path}，结果写进子页面「{title}」', { path, title: page.title }));
 		const at = view && pos !== undefined && !view.isDestroyed ? view.state.doc.nodeAt(pos) : null;
 		const link = view?.state.schema.marks.link;
 		// Still the line linking to the PDF: the page under it.
@@ -763,7 +766,7 @@ async function ocrPdf(path: string, view?: EditorView, pos?: number): Promise<vo
 			view.dispatch(view.state.tr.insert(pos! + at.nodeSize, line));
 		}
 	} catch (error) {
-		showToast(error instanceof Error ? error.message : '没能开始识别', true);
+		showToast(error instanceof Error ? error.message : t('没能开始识别'), true);
 	}
 }
 
@@ -795,15 +798,15 @@ async function instructHere(fresh: boolean): Promise<void> {
 	const mark = `instruction-${++instructions}`;
 	editor.markInstructing(mark);
 	try {
-		if (!(await session.flush())) throw new Error('文章还没保存好，保存后再交给 AI');
+		if (!(await session.flush())) throw new Error(t('文章还没保存好，保存后再交给 AI'));
 		const lines = sourceLinesOf(session.current.source, marked);
-		if (!lines?.text.trim()) throw new Error('这一行是空的，没有要交给 AI 的事');
+		if (!lines?.text.trim()) throw new Error(t('这一行是空的，没有要交给 AI 的事'));
 		const id = await instruct(slug, { text: lines.text, start: lines.start, end: lines.end, heading: headingAbove(session.current.source, lines.start) }, fresh);
 		if (overEarly.delete(id)) editor.unmarkInstructing(mark);
 		else instructing.set(id, mark);
 	} catch (error) {
 		editor.unmarkInstructing(mark);
-		showToast(error instanceof Error ? error.message : '没能交给 AI', true);
+		showToast(error instanceof Error ? error.message : t('没能交给 AI'), true);
 	}
 }
 
@@ -835,7 +838,7 @@ const citePicker = createCitePicker({
 	library: () => library,
 	async addDoi(doi) {
 		const slug = session.slug;
-		if (!slug) throw new Error('还没有打开文章');
+		if (!slug) throw new Error(t('还没有打开文章'));
 		const { key } = await addReference(slug, doi);
 		await loadLibrary(slug);
 		return key;
@@ -858,7 +861,7 @@ watchDisk((changes) => {
 	if (aiPanel.working() && session.slug) {
 		if (!heldChanges || heldChanges.slug !== session.slug) {
 			heldChanges = { slug: session.slug, paths: new Set() };
-			showToast('AI 在改这篇文章，做完后一起给你过目');
+			showToast(t('AI 在改这篇文章，做完后一起给你过目'));
 		}
 		for (const path of change.paths) heldChanges.paths.add(path);
 		return;
@@ -928,7 +931,7 @@ function recognizePicture(view: EditorView, pos: number): void {
 	if (!slug || !src) return;
 	const kinds = pluginRecognizers()?.list() ?? [];
 	if (!kinds.length) {
-		showToast('没有可用的识别：插件「recognize」关掉了？', true);
+		showToast(t('没有可用的识别：插件「recognize」关掉了？'), true);
 		return;
 	}
 	const anchor = view.nodeDOM(pos);
@@ -940,25 +943,25 @@ function recognizePicture(view: EditorView, pos: number): void {
 
 async function readPicture(slug: string, src: string, kind: Recognizer): Promise<void> {
 	let settings = await aiSettings().catch(() => null);
-	if (!settings || !aiReady(settings)) settings = await openAiSettings('识别图片要用大模型：先选好服务、模型，填上 key。');
+	if (!settings || !aiReady(settings)) settings = await openAiSettings(t('识别图片要用大模型：先选好服务、模型，填上 key。'));
 	if (!settings || !aiReady(settings)) return;
 	await session.flush();
-	showToast(`正在识别（${kind.label}）…`);
+	showToast(t('正在识别（{label}）…', { label: kind.label }));
 	try {
 		const answer = await recognizeImage(slug, src, kind.prompt);
 		if (!answer.trim()) {
-			showToast('图里没读出这一类内容', true);
+			showToast(t('图里没读出这一类内容'), true);
 			return;
 		}
 		await putBelowImage(slug, src, Recognizers.markdown(kind, answer));
-		showToast('识别好了，放在图下面：接受或拒绝');
+		showToast(t('识别好了，放在图下面：接受或拒绝'));
 	} catch (error) {
-		showToast(`没能识别：${error instanceof Error ? error.message : String(error)}`, true);
+		showToast(t('没能识别：{error}', { error: error instanceof Error ? error.message : String(error) }), true);
 	}
 }
 // A plugin edited (by hand or by an AI in the terminal) is put in again at once: said here; the article drawn again if its blocks changed.
 studioPlugins.on('studio/plugins-reloaded', (changed, problems) => {
-	showToast(problems.length ? problems.join('；') : `已重新载入插件：${changed.join('、')}`, problems.length > 0);
+	showToast(problems.length ? problems.join('；') : t('已重新载入插件：{plugins}', { plugins: changed.join('、') }), problems.length > 0);
 });
 studioPlugins.on('studio/editor-changed', () => void session.remount());
 
@@ -1029,7 +1032,7 @@ async function withArticlePictures(markdown: string): Promise<string> {
 
 async function copyFromDrive(path: string): Promise<string> {
 	const slug = session.slug;
-	if (!slug) throw new Error('先打开一篇文章');
+	if (!slug) throw new Error(t('先打开一篇文章'));
 	try {
 		return (await importDriveFile(slug, path, isImage(path) ? 'img' : 'assets')).path;
 	} finally {
@@ -1135,26 +1138,26 @@ function showPageMenu(pageMenu: HTMLElement): void {
 	const address = articleAddress(article.kind, article.slug);
 	showContextMenu([
 		{
-			label: properties.isWide() ? '全宽 ✓' : '全宽',
+			label: properties.isWide() ? t('全宽 ✓') : t('全宽'),
 			action: () => {
 				if (properties.setWide(!properties.isWide())) editorPanel.classList.toggle('is-wide', properties.isWide());
 			},
 		},
 		{
-			label: '复制博客链接',
+			label: t('复制博客链接'),
 			action: () => {
 				const link = new URL(address, import.meta.env.SITE ?? window.location.origin).href;
-				navigator.clipboard.writeText(link).then(() => showToast(`已复制 ${link}`), () => showToast('浏览器不允许写入剪贴板', true));
+				navigator.clipboard.writeText(link).then(() => showToast(t('已复制 {link}', { link })), () => showToast(t('浏览器不允许写入剪贴板'), true));
 			},
 		},
-		{ label: /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示', action: () => void revealArticleFile(article.slug, '') },
-		{ label: '历史版本…', action: () => openDialog('history', { slug: article.slug, host: { restore: (source) => void session.restoreVersion(source) } }) },
+		{ label: /Mac/u.test(navigator.platform) ? t('在 Finder 中显示') : t('在文件管理器中显示'), action: () => void revealArticleFile(article.slug, '') },
+		{ label: t('历史版本…'), action: () => openDialog('history', { slug: article.slug, host: { restore: (source) => void session.restoreVersion(source) } }) },
 		// The plugins' (`ctx.commands`, `places: ['page-menu']`).
 		...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, action: () => runCommand(command, 'page-menu') })),
 		'separator',
-		{ label: '改文件夹名…', action: () => void articleActions.rename(article) },
-		{ label: '复制一份', action: () => void articleActions.duplicate(article) },
-		{ label: '移到回收站', danger: true, action: () => void articleActions.remove(article) },
+		{ label: t('改文件夹名…'), action: () => void articleActions.rename(article) },
+		{ label: t('复制一份'), action: () => void articleActions.duplicate(article) },
+		{ label: t('移到回收站'), danger: true, action: () => void articleActions.remove(article) },
 	], pageMenu);
 }
 
@@ -1201,7 +1204,7 @@ const opening = openFromList().then(
 		articleActions.offerPendingUndo();
 		refreshGit();
 	},
-	(error) => topBar.error(error instanceof Error ? error.message : '无法连接本地 Studio'),
+	(error) => topBar.error(error instanceof Error ? error.message : t('无法连接本地 Studio')),
 );
 // The page takes over from its picture once it looks the same: the article shown (a long one's first part; the rest
 // comes in after), its files and backlinks listed, its outline drawn.

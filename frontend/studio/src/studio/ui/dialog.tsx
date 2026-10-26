@@ -3,6 +3,7 @@ import { cn, uiLayer } from "@studio/lib/utils"
 import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
+import { t } from "@blog/i18n/index.mjs"
 import { Button } from "@studio/ui/button"
 
 function Dialog({
@@ -72,7 +73,7 @@ function DialogContent({
             className="absolute top-4 right-4 grid size-7 place-items-center rounded-md text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
           >
             <XIcon />
-            <span className="sr-only">关闭</span>
+            <span className="sr-only">{t('关闭')}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Content>

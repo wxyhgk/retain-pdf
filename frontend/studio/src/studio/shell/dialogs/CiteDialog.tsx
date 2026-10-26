@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { authorList, plainTex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import { Finder, type FinderRow } from './Finder';
 
@@ -33,7 +34,7 @@ function found(library: Map<string, BibEntry> | null, query: string): FinderRow[
 			title: plainTex(entry.fields.title) || entry.key,
 			snippet: `${[authorList(entry.fields.author ?? entry.fields.editor), plainTex(entry.fields.journal ?? entry.fields.booktitle ?? ''), plainTex(entry.fields.year ?? '')].filter(Boolean).join(' · ')} · @${entry.key}`,
 		}));
-	if (DOI.test(query)) rows.unshift({ key: `doi:${query}`, icon: '＋', title: `用 DOI 添加：${query}`, snippet: '从 doi.org 取回 BibTeX，加进 assets/refs.bib' });
+	if (DOI.test(query)) rows.unshift({ key: `doi:${query}`, icon: '＋', title: t('用 DOI 添加：{query}', { query }), snippet: t('从 doi.org 取回 BibTeX，加进 assets/refs.bib') });
 	return rows;
 }
 
@@ -61,13 +62,13 @@ export function CiteDialog({ ask, onClose }: { ask: CiteAsk; onClose(): void }) 
 			return;
 		}
 		setAdding(true);
-		setStatus('正在从 doi.org 取回…');
+		setStatus(t('正在从 doi.org 取回…'));
 		try {
 			const added = await ask.host.addDoi(key.slice('doi:'.length));
 			onClose();
 			ask.done(added);
 		} catch (error) {
-			setStatus(error instanceof Error ? error.message : '没能添加');
+			setStatus(error instanceof Error ? error.message : t('没能添加'));
 			setAdding(false);
 		}
 	}
@@ -76,22 +77,22 @@ export function CiteDialog({ ask, onClose }: { ask: CiteAsk; onClose(): void }) 
 		<Finder
 			id="cite-dialog"
 			inputId="cite-input"
-			title="引用文献"
+			title={t('引用文献')}
 			icon="❝"
-			placeholder="按作者、题目、年份找，或粘贴 DOI…"
+			placeholder={t('按作者、题目、年份找，或粘贴 DOI…')}
 			query={query}
 			onQuery={typed}
 			rows={rows}
 			selected={selected}
 			onSelected={setSelected}
 			onChoose={(key) => void choose(key)}
-			empty={library ? '没有找到。粘贴一个 DOI 可以添加新文献' : '这篇还没有 assets/refs.bib。粘贴一个 DOI 添加第一篇'}
+			empty={library ? t('没有找到。粘贴一个 DOI 可以添加新文献') : t('这篇还没有 assets/refs.bib。粘贴一个 DOI 添加第一篇')}
 			hint={
 				<>
 					<span id="cite-status" role="status" aria-live="polite">
 						{status}
 					</span>{' '}
-					<kbd>↵</kbd> 引用 · <kbd>esc</kbd> 关闭
+					<kbd>↵</kbd> {t('引用')} · <kbd>esc</kbd> {t('关闭')}
 				</>
 			}
 			onClose={() => {

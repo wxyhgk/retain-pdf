@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { searchArticles, searchDrive } from '../../api/client';
 import type { ArticleSummary } from '../../types';
 import { filterArticles } from '../../pages/tree/page-tree';
@@ -60,13 +61,13 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 	/** What is offered for `query` at once: where pages can go, or the titles (and, asked to link, the page to make). */
 	function atOnce(query: string): Row[] {
 		if (ask.mode === 'place') {
-			const top: Row[] = query ? [] : [{ key: 'p:', slug: '', title: '最上层', icon: '⇱', place: '', snippet: '不放在任何页面下面' }];
+			const top: Row[] = query ? [] : [{ key: 'p:', slug: '', title: t('最上层'), icon: '⇱', place: '', snippet: t('不放在任何页面下面') }];
 			const pages = filterArticles(host.articles(), query).filter((entry) => !ask.excluded.has(entry.slug));
 			return [...top, ...pages.map((entry) => ({ ...article(entry), key: `p:${entry.slug}`, place: entry.slug, snippet: pathOf(entry.slug) || undefined }))];
 		}
 		const found = filterArticles(host.articles(), query).map(article);
 		if (ask.mode !== 'pick' || !query || found.some((row) => row.title === query)) return found;
-		return [...found, { key: 'c:', slug: '', title: `新建子页面「${query}」`, icon: '＋', create: query }];
+		return [...found, { key: 'c:', slug: '', title: t('新建子页面「{query}」', { query }), icon: '＋', create: query }];
 	}
 
 	const [query, setQuery] = useState('');
@@ -109,9 +110,9 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 				if (!found || controller.signal.aborted) return;
 				const files: Row[] = found.results.map((result) => {
 					const slash = result.path.lastIndexOf('/');
-					return { key: `d:${result.path}`, slug: '', drivePath: result.path, drive: true, title: result.path.slice(slash + 1), icon: '▢', snippet: result.snippet ?? (slash > 0 ? `资料库 / ${result.path.slice(0, slash)}` : '资料库') };
+					return { key: `d:${result.path}`, slug: '', drivePath: result.path, drive: true, title: result.path.slice(slash + 1), icon: '▢', snippet: result.snippet ?? (slash > 0 ? t('资料库 / {folder}', { folder: result.path.slice(0, slash) }) : t('资料库')) };
 				});
-				if (found.indexing) files.push({ key: 'n:indexing', slug: '', title: '资料库还在建立文字索引，结果可能不全', icon: '…' });
+				if (found.indexing) files.push({ key: 'n:indexing', slug: '', title: t('资料库还在建立文字索引，结果可能不全'), icon: '…' });
 				setRows((before) => [...before, ...files]);
 			});
 		}, 120);
@@ -135,20 +136,20 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 		<Finder
 			id="quick-find-dialog"
 			inputId="quick-find-input"
-			title="搜索"
+			title={t('搜索')}
 			icon="⌕"
-			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? '链接到哪篇文章…' : '搜索文章和资料库…'}
+			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪篇文章…') : t('搜索文章和资料库…')}
 			query={query}
 			onQuery={typed}
 			rows={rows}
 			selected={selected}
 			onSelected={setSelected}
 			onChoose={choose}
-			empty={query.trim() ? '没有找到' : '还没有文章'}
+			empty={query.trim() ? t('没有找到') : t('还没有文章')}
 			hint={
 				<>
 					<kbd>↑</kbd>
-					<kbd>↓</kbd> 选择 · <kbd>↵</kbd> 打开 · <kbd>esc</kbd> 关闭
+					<kbd>↓</kbd> {t('选择')} · <kbd>↵</kbd> {t('打开')} · <kbd>esc</kbd> {t('关闭')}
 				</>
 			}
 			onClose={() => {

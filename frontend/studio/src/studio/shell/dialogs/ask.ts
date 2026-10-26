@@ -27,7 +27,7 @@ export async function openAgents(saved: () => void): Promise<void> {
 	try {
 		openDialog('agents', { shown: await listAgents(), saved });
 	} catch (error) {
-		showToast(error instanceof Error ? error.message : '读不到 AI 助手的设置', true);
+		showToast(error instanceof Error ? error.message : t('读不到 AI 助手的设置'), true);
 	}
 }
 
@@ -89,7 +89,7 @@ export function createQuickFind(host: QuickFindHost) {
 					}
 				}
 			}
-			return ask<string>('place', { excluded, placeholder: moving.length > 1 ? `把 ${moving.length} 个页面移到哪个页面下面…` : '移到哪个页面下面…' });
+			return ask<string>('place', { excluded, placeholder: moving.length > 1 ? t('把 {count} 个页面移到哪个页面下面…', { count: moving.length }) : t('移到哪个页面下面…') });
 		},
 		/** Asks which article: one there is, a new one to make (its title typed), or null when given up. */
 		pick: (): Promise<Picked | null> => ask<Picked>('pick'),

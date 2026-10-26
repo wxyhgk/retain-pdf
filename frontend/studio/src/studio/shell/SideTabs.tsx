@@ -2,6 +2,7 @@ import type { KeyboardEvent } from 'react';
 import { flushSync } from 'react-dom';
 import { X } from 'lucide-react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { Button } from '@studio/ui/button';
 import { useActions, useShell } from './shell-state';
 
@@ -39,7 +40,7 @@ export function SideTabs() {
 					{entry.label}
 				</button>
 			))}
-			<Button id="close-side-panel" type="button" variant="ghost" size="icon-sm" className="ml-auto size-[27px] self-center text-muted-foreground hover:text-foreground" aria-label="收起右侧面板" onClick={act.closePanel}>
+			<Button id="close-side-panel" type="button" variant="ghost" size="icon-sm" className="ml-auto size-[27px] self-center text-muted-foreground hover:text-foreground" aria-label={t('收起右侧面板')} onClick={act.closePanel}>
 				<X aria-hidden className="size-4" />
 			</Button>
 		</>

@@ -16,7 +16,7 @@ export function runCommand(command: StudioCommand, from: CommandContext['from'])
 	void Promise.resolve()
 		.then(() => command.run({ from }))
 		.catch((error: unknown) => {
-			console.error(`[plugins] 命令 ${command.id}`, error);
+			console.error(`[plugins] 命令 ${command.id}`, error); // i18n-ignore: developer log
 			showToast(`${command.label}：${error instanceof Error ? error.message : String(error)}`, true);
 		});
 }

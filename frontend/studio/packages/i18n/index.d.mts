@@ -5,4 +5,4 @@ export declare function setLocale(id: string): void;
 export declare function setLocaleResolver(find: (() => string | undefined) | null): void;
 export declare function locale(): string;
 export declare function matchLocale(wanted: readonly string[]): string;
-export declare function t(source: string, params?: Record<string, string | number>): string;
+export declare function t(source: string, params?: Record<string, unknown>): string;

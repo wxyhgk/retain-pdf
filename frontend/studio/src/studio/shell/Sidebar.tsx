@@ -79,55 +79,55 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 			</div>
 			<div className="grid gap-0.5 px-[7px] pt-1 pb-[9px]">
 				<Item icon={House} href="/">
-					首页
+					{t('首页')}
 				</Item>
 				<Item id="open-search" icon={Search} onClick={act.search}>
-					搜索
+					{t('搜索')}
 					<Kbd className="ml-auto h-4 bg-transparent px-0 text-[10px] text-muted-foreground">⌘K</Kbd>
 				</Item>
 				<Item id="open-table" icon={Table2} aria-pressed={view === 'table'} onClick={toggle('table')}>
-					全部文章
+					{t('全部文章')}
 				</Item>
 				<Item id="open-drive" icon={Library} aria-pressed={view === 'drive'} onClick={toggle('drive')}>
-					资料库
+					{t('资料库')}
 				</Item>
 				{/* Its menu is mini-apps.ts's. */}
 				<Item id="open-apps" icon={Blocks} aria-haspopup="menu">
-					小程序
+					{t('小程序')}
 				</Item>
 			</div>
 			{/* The plugins' commands (ctx.commands, places: ['sidebar']): plugin-ui.ts draws them. */}
 			<div id="plugin-commands" className="plugin-commands" data-host hidden />
-			<div className="mx-[7px] mb-1.5 grid grid-cols-2 gap-0.5 rounded-[7px] bg-accent p-0.5" role="tablist" aria-label="侧边栏">
+			<div className="mx-[7px] mb-1.5 grid grid-cols-2 gap-0.5 rounded-[7px] bg-accent p-0.5" role="tablist" aria-label={t('侧边栏')}>
 				<Mode id="sidebar-pages" icon={FileText} selected={!chatting} onClick={() => act.showView('editor')}>
-					页面
+					{t('页面')}
 				</Mode>
 				<Mode id="sidebar-chats" icon={MessagesSquare} selected={chatting} onClick={() => act.showView('chat')}>
-					AI 问答
+					{t('AI 问答')}
 				</Mode>
 			</div>
-			<Heading title="Private" add="new-article" label="新建文章" onAdd={act.newPage} hidden={chatting} />
+			<Heading title="Private" add="new-article" label={t('新建文章')} onAdd={act.newPage} hidden={chatting} />
 			{/* The pages, as a tree: article-list.ts draws it. */}
-			<nav id="article-list" aria-label="页面列表" data-host hidden={chatting} />
-			<Heading title="对话" add="new-chat" label="新建对话" onAdd={act.newChat} hidden={!chatting} />
-			<nav id="chat-list" aria-label="对话列表" className="min-h-0 flex-1 overflow-y-auto px-[7px] pt-px pb-8" hidden={!chatting}>
+			<nav id="article-list" aria-label={t('页面列表')} data-host hidden={chatting} />
+			<Heading title={t('对话')} add="new-chat" label={t('新建对话')} onAdd={act.newChat} hidden={!chatting} />
+			<nav id="chat-list" aria-label={t('对话列表')} className="min-h-0 flex-1 overflow-y-auto px-[7px] pt-px pb-8" hidden={!chatting}>
 				<ChatList chats={chats} chosen={chat} />
 			</nav>
 			<div className="grid gap-0.5 border-t p-[7px]">
 				<Item id="new-article-secondary" icon={SquarePen} onClick={act.newPage}>
-					新建文章
+					{t('新建文章')}
 				</Item>
 				<Item icon={Globe} href="/blog/">
-					博客首页
+					{t('博客首页')}
 				</Item>
 				<Item id="open-trash" icon={Trash2} onClick={act.openTrash}>
-					回收站
+					{t('回收站')}
 				</Item>
 				<Item id="open-plugins" icon={Puzzle} onClick={act.openPlugins}>
-					插件
+					{t('插件')}
 				</Item>
 				<Item id="open-ai-settings" icon={Settings2} onClick={act.openAiSettings}>
-					AI 设置
+					{t('AI 设置')}
 				</Item>
 				<Item id="open-locale" icon={Languages} onClick={act.openLocale}>
 					{t('语言')}

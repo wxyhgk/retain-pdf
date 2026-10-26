@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 
-import { matchLocale, setLocaleResolver } from './index.mjs';
+import { matchLocale, setLocale, setLocaleResolver } from './index.mjs';
 import { registerLocales } from './locales/index.mjs';
 
 registerLocales();
@@ -20,5 +20,8 @@ export const LOCALE_COOKIE = 'studio-locale';
 /** Answers `request` (by `answer`) with what the server says in its language: the page's, else its Accept-Language. */
 export function inRequestLocale(request, answer) {
 	const said = /(?:^|;\s*)studio-locale=([\w-]+)/u.exec(String(request.headers.cookie ?? ''))?.[1];
-	return requests.run(matchLocale(said ? [said] : askedLocales(request.headers['accept-language'])), answer);
+	const spoken = matchLocale(said ? [said] : askedLocales(request.headers['accept-language']));
+	// What the server says outside a request (a task's progress, a terminal's) is in the page's last.
+	setLocale(spoken);
+	return requests.run(spoken, answer);
 }

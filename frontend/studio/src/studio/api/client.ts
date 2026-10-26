@@ -1,12 +1,13 @@
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { articlePath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, Backlink, GitStatus, HistoryEntry, HistoryReason, SearchResult, TrashEntry } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
 	const response = await fetch(url, options);
 	const data = await response.json();
-	if (!response.ok) throw new StudioApiError(data.error || '请求失败', response.status);
+	if (!response.ok) throw new StudioApiError(data.error || t('请求失败'), response.status);
 	return data;
 }
 
@@ -210,9 +211,9 @@ function sendFile(url: string, file: File, options: UploadOptions): Promise<{ pa
 		xhr.addEventListener('load', () => {
 			const data = (xhr.response ?? {}) as { path?: string; size?: number; error?: string };
 			if (xhr.status >= 200 && xhr.status < 300) resolve(data as { path: string; size: number });
-			else reject(new StudioApiError(data.error || `上传 ${file.name} 失败`, xhr.status));
+			else reject(new StudioApiError(data.error || t('上传 {name} 失败', { name: file.name }), xhr.status));
 		});
-		xhr.addEventListener('error', () => reject(new StudioApiError(`上传 ${file.name} 失败：连不上本地 Studio`, 0)));
+		xhr.addEventListener('error', () => reject(new StudioApiError(t('上传 {name} 失败：连不上本地 Studio', { name: file.name }), 0)));
 		xhr.send(file);
 	});
 }

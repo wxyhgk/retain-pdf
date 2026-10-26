@@ -1,5 +1,6 @@
 import { useRef, type ReactNode } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Button } from '@studio/ui/button';
 import type { ArticleIssue } from '../../types';
@@ -32,8 +33,8 @@ export function PublishCheckDialog({ issues, done, onClose }: PublishCheckAsk & 
 	return (
 		<Frame
 			id="publish-check-dialog"
-			title="发布前检查"
-			description={<span id="publish-check-summary">{errors ? `${errors} 处问题会让博客构建失败（整个网站都发布不了），修好后再发布` : `${issues.length} 处问题会在页面上显示出错，可以先修好，也可以照样发布`}</span>}
+			title={t('发布前检查')}
+			description={<span id="publish-check-summary">{errors ? t('{count} 处问题会让博客构建失败（整个网站都发布不了），修好后再发布', { count: errors }) : t('{count} 处问题会在页面上显示出错，可以先修好，也可以照样发布', { count: issues.length })}</span>}
 			className="sm:max-w-[560px]"
 			onClose={() => answer(false)}
 			focus={() => cancel.current}
@@ -41,18 +42,18 @@ export function PublishCheckDialog({ issues, done, onClose }: PublishCheckAsk & 
 			<Notes id="publish-check-list">
 				{issues.map((issue, at) => (
 					<li key={at} className={cn(noteLook, `is-${issue.severity}`, 'grid-cols-[52px_minmax(0,1fr)]', issue.severity === 'error' && 'border-l-destructive')}>
-						<span className="pt-px text-[11px] text-muted-foreground tabular-nums">{issue.line ? `第 ${issue.line} 行` : '属性'}</span>
+						<span className="pt-px text-[11px] text-muted-foreground tabular-nums">{issue.line ? t('第 {line} 行', { line: issue.line }) : t('属性')}</span>
 						{issue.message}
 					</li>
 				))}
 			</Notes>
 			<Actions>
 				<Button id="publish-check-cancel" ref={cancel} type="button" variant="outline" size="sm" onClick={() => answer(false)}>
-					{errors ? '知道了' : '先不发布'}
+					{errors ? t('知道了') : t('先不发布')}
 				</Button>
 				{!errors && (
 					<Button id="publish-anyway" type="button" size="sm" onClick={() => answer(true)}>
-						仍然发布
+						{t('仍然发布')}
 					</Button>
 				)}
 			</Actions>
@@ -81,11 +82,11 @@ export function DeletePageDialog({ title, summary, notes, deleteLabel, canLift, 
 			</Notes>
 			<Actions>
 				<Button type="button" variant="outline" size="sm" onClick={() => answer('cancel')}>
-					取消
+					{t('取消')}
 				</Button>
 				{canLift && (
 					<Button id="delete-page-lift" type="button" variant="outline" size="sm" onClick={() => answer('lift')}>
-						只删这一篇，下面的移到上一级
+						{t('只删这一篇，下面的移到上一级')}
 					</Button>
 				)}
 				<Button id="delete-page-all" type="button" variant="destructive" size="sm" onClick={() => answer('all')}>
