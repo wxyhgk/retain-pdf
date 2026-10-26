@@ -1,6 +1,7 @@
 import { pipeline } from 'node:stream/promises';
 import { inRequestLocale } from '@blog/i18n/server.mjs';
 import { StudioPathError } from '../../articles/bundle-paths.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The Studio's API, `/api/studio/…`: each part of the Studio registers its
@@ -71,12 +72,12 @@ export class StudioApi {
 		const remoteAddress = request.socket.remoteAddress ?? '';
 		const isLoopback = remoteAddress === '::1' || remoteAddress === '127.0.0.1' || remoteAddress.startsWith('::ffff:127.');
 		try {
-			if (!isLoopback) throw refuse(403, 'Studio 只允许本机访问');
-			if (!fromStudio(request)) throw refuse(403, '只有 Studio 自己的页面能访问 Studio 的接口');
+			if (!isLoopback) throw refuse(403, t('Studio 只允许本机访问'));
+			if (!fromStudio(request)) throw refuse(403, t('只有 Studio 自己的页面能访问 Studio 的接口'));
 			const path = raw.slice('/api/studio'.length);
 			const method = request.method ?? 'GET';
 			const found = this.#match(method, path);
-			if (!found) throw refuse(404, 'Studio API 不存在');
+			if (!found) throw refuse(404, t('Studio API 不存在'));
 			const { route, params } = found;
 			if (method === 'POST' || method === 'PUT') assertContentType(request, route.body);
 			const answer = await route.handler({
@@ -91,7 +92,7 @@ export class StudioApi {
 			const { status, value } = readReply(answer);
 			sendJson(response, status, value);
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Studio 操作失败';
+			const message = error instanceof Error ? error.message : t('Studio 操作失败');
 			const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
 			sendJson(response, status, { error: message });
 		}
@@ -155,7 +156,7 @@ async function readJson(request) {
 	let size = 0;
 	for await (const chunk of request) {
 		size += chunk.length;
-		if (size > 5 * 1024 * 1024) throw new Error('请求内容超过 5 MB');
+		if (size > 5 * 1024 * 1024) throw new Error(t('请求内容超过 5 MB'));
 		chunks.push(chunk);
 	}
 	return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
@@ -163,14 +164,14 @@ async function readJson(request) {
 
 function assertContentType(request, expected) {
 	const type = String(request.headers['content-type'] ?? '').split(';', 1)[0].trim().toLowerCase();
-	if (type !== expected) throw refuse(415, `请求类型必须是 ${expected}`);
+	if (type !== expected) throw refuse(415, t('请求类型必须是 {expected}', { expected }));
 }
 
 export function decodePathComponent(component) {
 	try {
 		return decodeURIComponent(component);
 	} catch {
-		throw new StudioPathError('资源 URL 编码无效');
+		throw new StudioPathError(t('资源 URL 编码无效'));
 	}
 }
 

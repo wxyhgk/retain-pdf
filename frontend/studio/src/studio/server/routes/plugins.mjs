@@ -1,6 +1,7 @@
 import { listPlugins } from '@blog/kernel/node.mjs';
 import { readAnswer } from '@blog/kernel/routes.mjs';
 import { refuse, reply } from '../api.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The project's plugins (插件): each, the environments it is in, whether it
@@ -23,7 +24,7 @@ export function pluginRoutes(api, { projectRoot, plugins, pluginSettings }) {
 	api.get('/plugins', async () => shown(await pluginSettings.disabled()));
 	api.put('/plugins', async ({ json }) => {
 		const { id, enabled } = await json();
-		if (!listPlugins(projectRoot).some((plugin) => plugin.id === id)) throw refuse(404, `没有叫 ${id} 的插件`);
+		if (!listPlugins(projectRoot).some((plugin) => plugin.id === id)) throw refuse(404, t('没有叫 {id} 的插件', { id }));
 		const disabled = await pluginSettings.setEnabled(id, enabled);
 		await (await plugins).setDisabled(disabled);
 		return shown(disabled);
@@ -32,7 +33,7 @@ export function pluginRoutes(api, { projectRoot, plugins, pluginSettings }) {
 	for (const method of ['GET', 'POST', 'PUT']) {
 		api.route(method, '/plugins/*rest', async ({ path, query, request, json }) => {
 			const found = (await plugins).routes.match(method, path.slice('/plugins'.length));
-			if (!found) throw refuse(404, 'Studio API 不存在');
+			if (!found) throw refuse(404, t('Studio API 不存在'));
 			const answer = readAnswer(await found.handler({ params: found.params, query, json, request }));
 			return reply(answer.status, answer.value);
 		});

@@ -4,6 +4,7 @@ import { extname, join } from 'node:path';
 import { resolveInside } from '../../../articles/bundle-paths.mjs';
 import { colorDeclarations, siteColors } from '../../../styles/palette.mjs';
 import { publicFetch } from './public-fetch.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * 小程序: small tools the author (or an AI, by the skill studio-mini-apps)
@@ -20,11 +21,11 @@ import { publicFetch } from './public-fetch.mjs';
  */
 
 export const APP_PERMISSIONS = Object.freeze({
-	article: '读当前文章',
-	insert: '往光标处插入内容',
-	files: '读写当前文章的文件',
-	net: '联网',
-	run: '在后台运行命令',
+	article: '读当前文章', // i18n-ignore: not shown
+	insert: '往光标处插入内容', // i18n-ignore: not shown
+	files: '读写当前文章的文件', // i18n-ignore: not shown
+	net: '联网', // i18n-ignore: not shown
+	run: '在后台运行命令', // i18n-ignore: not shown
 });
 
 const ID = /^[a-z0-9][a-z0-9-]{0,47}$/u;
@@ -72,7 +73,7 @@ export class MiniApps {
 		try {
 			manifest = JSON.parse(await readFile(join(this.folder, id, 'app.json'), 'utf8'));
 		} catch (error) {
-			return { ...plain, problem: `app.json 读不了：${error instanceof Error ? error.message : String(error)}` };
+			return { ...plain, problem: t('app.json 读不了：{error}', { error: error instanceof Error ? error.message : String(error) }) };
 		}
 		const text = (value, fallback) => (typeof value === 'string' && value.trim() ? value.trim() : fallback);
 		const size = (value, fallback) => (Number.isFinite(value) ? Math.max(200, Math.min(1600, Math.round(value))) : fallback);

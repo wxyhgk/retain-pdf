@@ -2,6 +2,7 @@ import { lstat } from 'node:fs/promises';
 import { chooseFolder } from '../system/choose-folder.mjs';
 import { revealInFileManager } from '../system/reveal.mjs';
 import { refuse, reply, sendFile } from '../api.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The drive (资料库): which folder it is, choosing it, what is in it, its
@@ -24,7 +25,7 @@ export function driveRoutes(api, { drive, driveText, testing }) {
 		return chosen;
 	});
 	api.post('/drive/choose', async () => {
-		const chosen = await chooseFolder('选择资料库文件夹');
+		const chosen = await chooseFolder(t('选择资料库文件夹'));
 		if (!chosen) return { ...(await drive.describe()), cancelled: true };
 		const described = await drive.choose(chosen);
 		refresh();
@@ -36,7 +37,7 @@ export function driveRoutes(api, { drive, driveText, testing }) {
 
 	api.post('/drive/upload', changing(async ({ query, request }) => {
 		const declared = Number(request.headers['content-length']);
-		if (declared > drive.uploadSizeLimit) throw refuse(413, `文件超过 ${drive.uploadSizeLimit / 1024 / 1024} MB 上传上限`);
+		if (declared > drive.uploadSizeLimit) throw refuse(413, t('文件超过 {limit} MB 上传上限', { limit: drive.uploadSizeLimit / 1024 / 1024 }));
 		return reply(201, await drive.upload(query.get('folder') ?? '', query.get('name') ?? '', request, { replace: query.get('replace') === '1' }));
 	}), { body: 'application/octet-stream' });
 	api.post('/drive/folders', changing(async ({ json }) => reply(201, await drive.createFolder((await json()).path))));

@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What the services read: the kinds of picture they take. */
 export const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'];
@@ -34,7 +35,7 @@ export function answerText(text) {
  * @returns {Promise<string>}
  */
 export async function askAboutImage(config, { image, mediaType, prompt }, seams = {}) {
-	if (!IMAGE_TYPES.includes(mediaType)) throw new AiError('大模型只看 PNG、JPEG、GIF、WebP 图片', 415);
+	if (!IMAGE_TYPES.includes(mediaType)) throw new AiError(t('大模型只看 PNG、JPEG、GIF、WebP 图片'), 415);
 	const data = image.toString('base64');
 	const text = config.provider === 'openai' ? await askOpenAi(config, data, mediaType, prompt, seams.fetch ?? fetch) : await askClaude(config, data, mediaType, prompt, seams.anthropic);
 	return answerText(text);
@@ -74,30 +75,30 @@ async function askClaude(config, data, mediaType, prompt, make = (options) => ne
 	} catch (error) {
 		throw claudeError(error);
 	}
-	if (response.stop_reason === 'refusal') throw new AiError('大模型拒绝了这个请求');
+	if (response.stop_reason === 'refusal') throw new AiError(t('大模型拒绝了这个请求'));
 	return response.content.flatMap((block) => (block.type === 'text' ? [block.text] : [])).join('');
 }
 
 function claudeError(error) {
-	if (error instanceof Anthropic.AuthenticationError) return new AiError('Anthropic 的 key 不对或没有给（在「AI 设置」里填，或者设 ANTHROPIC_API_KEY）', 401);
-	if (error instanceof Anthropic.PermissionDeniedError) return new AiError('这个 key 没有用这个模型的权限', 403);
-	if (error instanceof Anthropic.NotFoundError) return new AiError('没有这个模型，看看「AI 设置」里的模型名', 404);
-	if (error instanceof Anthropic.RateLimitError) return new AiError('请求太多了，过一会儿再试', 429);
+	if (error instanceof Anthropic.AuthenticationError) return new AiError(t('Anthropic 的 key 不对或没有给（在「AI 设置」里填，或者设 ANTHROPIC_API_KEY）'), 401);
+	if (error instanceof Anthropic.PermissionDeniedError) return new AiError(t('这个 key 没有用这个模型的权限'), 403);
+	if (error instanceof Anthropic.NotFoundError) return new AiError(t('没有这个模型，看看「AI 设置」里的模型名'), 404);
+	if (error instanceof Anthropic.RateLimitError) return new AiError(t('请求太多了，过一会儿再试'), 429);
 	if (error instanceof Anthropic.BadRequestError) {
 		const said = error.error?.error?.message ?? error.message;
-		if (/workspace/iu.test(said)) return new AiError('这个 key 属于整个组织，不属于某个工作区：在「AI 设置」里填工作区 ID（wrkspc_…，Claude Console 的 Workspaces 页能看到），或者换一个在工作区里建的 key', 400);
-		return new AiError(`请求被拒绝：${said}`, 400);
+		if (/workspace/iu.test(said)) return new AiError(t('这个 key 属于整个组织，不属于某个工作区：在「AI 设置」里填工作区 ID（wrkspc_…，Claude Console 的 Workspaces 页能看到），或者换一个在工作区里建的 key'), 400);
+		return new AiError(t('请求被拒绝：{message}', { message: said }), 400);
 	}
-	if (error instanceof Anthropic.APIConnectionError) return new AiError('连不上 Anthropic 的服务（网络，或者「AI 设置」里的接口地址）');
-	if (error instanceof Anthropic.APIError) return new AiError(`Anthropic 的服务出错了（${error.status ?? '?'}）：${error.message}`);
+	if (error instanceof Anthropic.APIConnectionError) return new AiError(t('连不上 Anthropic 的服务（网络，或者「AI 设置」里的接口地址）'));
+	if (error instanceof Anthropic.APIError) return new AiError(t('Anthropic 的服务出错了（{status}）：{message}', { status: error.status ?? '?', message: error.message }));
 	return error;
 }
 
 async function askOpenAi(config, data, mediaType, prompt, fetchImpl) {
-	if (!config.baseUrl) throw new AiError('OpenAI 兼容接口要填接口地址（例如 https://dashscope.aliyuncs.com/compatible-mode/v1）', 400);
-	if (!config.model) throw new AiError('OpenAI 兼容接口要填模型名（例如 qwen-vl-max）', 400);
+	if (!config.baseUrl) throw new AiError(t('OpenAI 兼容接口要填接口地址（例如 https://dashscope.aliyuncs.com/compatible-mode/v1）'), 400);
+	if (!config.model) throw new AiError(t('OpenAI 兼容接口要填模型名（例如 qwen-vl-max）'), 400);
 	const key = config.apiKey || process.env.OPENAI_API_KEY;
-	if (!key) throw new AiError('没有 key：在「AI 设置」里填，或者设 OPENAI_API_KEY', 401);
+	if (!key) throw new AiError(t('没有 key：在「AI 设置」里填，或者设 OPENAI_API_KEY'), 401);
 	let response;
 	try {
 		response = await fetchImpl(`${config.baseUrl.replace(/\/+$/u, '')}/chat/completions`, {
@@ -119,7 +120,7 @@ async function askOpenAi(config, data, mediaType, prompt, fetchImpl) {
 			signal: AbortSignal.timeout(120_000),
 		});
 	} catch (error) {
-		throw new AiError(`连不上 ${config.baseUrl}：${error instanceof Error ? error.message : String(error)}`);
+		throw new AiError(t('连不上 {baseUrl}：{error}', { baseUrl: config.baseUrl, error: error instanceof Error ? error.message : String(error) }));
 	}
 	const body = await response.text();
 	if (!response.ok) {
@@ -131,7 +132,7 @@ async function askOpenAi(config, data, mediaType, prompt, fetchImpl) {
 			}
 		})();
 		const status = response.status;
-		const why = status === 401 || status === 403 ? 'key 不对或没有权限' : status === 404 ? '接口地址或模型名不对' : status === 429 ? '请求太多了，过一会儿再试' : '服务出错了';
+		const why = status === 401 || status === 403 ? t('key 不对或没有权限') : status === 404 ? t('接口地址或模型名不对') : status === 429 ? t('请求太多了，过一会儿再试') : t('服务出错了');
 		throw new AiError(`${why}（${status}）${said ? `：${said}` : ''}`, status === 429 ? 429 : 502);
 	}
 	try {
@@ -139,6 +140,6 @@ async function askOpenAi(config, data, mediaType, prompt, fetchImpl) {
 		// Some services give the answer in parts.
 		return Array.isArray(content) ? content.map((part) => part?.text ?? '').join('') : String(content ?? '');
 	} catch {
-		throw new AiError('服务的回答看不懂（不是 OpenAI 兼容的格式）');
+		throw new AiError(t('服务的回答看不懂（不是 OpenAI 兼容的格式）'));
 	}
 }

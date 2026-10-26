@@ -20,6 +20,7 @@ import { studioBlogRoot } from '../server/articles/page-version.mjs';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from '../pages/page-names.ts';
 import { filesNamed } from '../editor/split-section.ts';
 import { markdownSection } from './markdown-section.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /** A mistake in what was asked: said back as it is, not as a failure of the program. */
 export class StudioOpsError extends Error {
@@ -49,7 +50,7 @@ export function createStudioOps({ root, site } = {}) {
 	const pages = () => articles.list();
 	const find = async (slug) => {
 		const page = (await pages()).find((entry) => entry.slug === slug);
-		if (!page) throw new StudioOpsError(`没有文件夹名为 ${slug} 的页面`);
+		if (!page) throw new StudioOpsError(t('没有文件夹名为 {slug} 的页面', { slug }));
 		return page;
 	};
 	/** The pages under `slug`, all the way down. */
@@ -114,9 +115,9 @@ export function createStudioOps({ root, site } = {}) {
 		 */
 		/** @param {{ title: string, parent?: string, body?: string, slug?: string }} args */
 		async createPage({ title, parent = '', body = '', slug }) {
-			if (!title?.trim()) throw new StudioOpsError('标题不能为空');
+			if (!title?.trim()) throw new StudioOpsError(t('标题不能为空'));
 			const all = await pages();
-			if (parent && !all.some((page) => page.slug === parent)) throw new StudioOpsError(`上级页面 ${parent} 不存在`);
+			if (parent && !all.some((page) => page.slug === parent)) throw new StudioOpsError(t('上级页面 {parent} 不存在', { parent }));
 			const folder = slug || freeSlug(autoSlug(), all.map((page) => page.slug));
 			await articles.create({ slug: folder, title: title.trim(), parent, body, files: parent ? filesNamed(body) : [] });
 			return { slug: folder, address: `/blog/${folder}/`, parent };
@@ -170,7 +171,7 @@ export function createStudioOps({ root, site } = {}) {
 			const { source } = await articles.read(slug);
 			const document = parseStudioDocument(source);
 			const section = markdownSection(document.body.raw, heading);
-			if (!section) throw new StudioOpsError(`这篇里没有标题「${heading}」`);
+			if (!section) throw new StudioOpsError(t('这篇里没有标题「{heading}」', { heading }));
 			const all = await pages();
 			const folder = freeSlug(autoSlug(), all.map((page) => page.slug));
 			await articles.create({ slug: folder, title: section.title, parent: slug, body: section.text, files: filesNamed(section.text) });
@@ -230,7 +231,7 @@ export function createStudioOps({ root, site } = {}) {
 		async publishPage({ slug }) {
 			const { source, properties } = await articles.read(slug);
 			const errors = (await checkArticle(blogRoot, slug, source)).filter((issue) => issue.severity === 'error');
-			if (errors.length) throw new StudioOpsError(`发布前检查没通过：${errors.map((issue) => issue.message).join('；')}`);
+			if (errors.length) throw new StudioOpsError(t('发布前检查没通过：{problems}', { problems: errors.map((issue) => issue.message).join('；') }));
 			await write(slug, updateStudioFrontmatter(source, { ...properties, draft: false }));
 			let at = slug;
 			if (isAutoSlug(slug)) {
@@ -275,7 +276,7 @@ export function createStudioOps({ root, site } = {}) {
 		/** @param {{ query: string, limit?: number }} args */
 		async searchDrive({ query, limit }) {
 			const root = await drive.root();
-			if (!root) throw new StudioOpsError('还没有选资料库的文件夹（在 Studio 的「资料库」里选）');
+			if (!root) throw new StudioOpsError(t('还没有选资料库的文件夹（在 Studio 的「资料库」里选）'));
 			const found = await new DriveText(drive).search(query, { limit });
 			return { root, ...found };
 		},

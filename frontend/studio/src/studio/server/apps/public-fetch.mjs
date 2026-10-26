@@ -3,6 +3,7 @@ import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
 import { BlockList, isIP } from 'node:net';
 import { createBrotliDecompress, createGunzip, createInflate } from 'node:zlib';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * A request the Studio makes for a 小程序 (`studio.fetch`): to the internet
@@ -48,7 +49,7 @@ export function isPublicAddress(address) {
 }
 
 function refused(where) {
-	return Object.assign(new Error(`小程序不能访问本机或局域网的地址（${where}）`), { statusCode: 403, code: 'STUDIO_PRIVATE_ADDRESS' });
+	return Object.assign(new Error(t('小程序不能访问本机或局域网的地址（{where}）', { where })), { statusCode: 403, code: 'STUDIO_PRIVATE_ADDRESS' });
 }
 
 const MAX_REDIRECTS = 5;
@@ -65,12 +66,12 @@ export async function publicFetch({ url, method = 'GET', headers = {}, body }, {
 	let asked = { method: String(method).toUpperCase(), headers: { ...headers }, body: body === undefined ? undefined : String(body) };
 	const signal = AbortSignal.timeout(timeout);
 	for (let hop = 0; ; hop += 1) {
-		if (!['http:', 'https:'].includes(address.protocol)) throw Object.assign(new Error('只能访问 http 和 https 的地址'), { statusCode: 400 });
+		if (!['http:', 'https:'].includes(address.protocol)) throw Object.assign(new Error(t('只能访问 http 和 https 的地址')), { statusCode: 400 });
 		const response = await send(address, asked, { allowed, signal });
 		const location = response.headers.location;
 		if (response.statusCode >= 300 && response.statusCode < 400 && location) {
 			response.resume();
-			if (hop >= MAX_REDIRECTS) throw Object.assign(new Error('重定向太多次'), { statusCode: 502 });
+			if (hop >= MAX_REDIRECTS) throw Object.assign(new Error(t('重定向太多次')), { statusCode: 502 });
 			address = new URL(location, address);
 			// 301, 302, 303: what was sent is not sent again (as browsers do).
 			if (response.statusCode !== 307 && response.statusCode !== 308) asked = { method: asked.method === 'HEAD' ? 'HEAD' : 'GET', headers: withoutBody(asked.headers), body: undefined };
@@ -108,7 +109,7 @@ function send(address, { method, headers, body }, { allowed, signal }) {
 			{ method, headers: { 'accept-encoding': 'gzip, deflate, br', ...headers }, lookup: checkedLookup, signal },
 			resolve,
 		);
-		request.on('error', (error) => reject(error?.code === 'STUDIO_PRIVATE_ADDRESS' ? error : Object.assign(new Error(`请求失败：${error.message}`), { statusCode: 502 })));
+		request.on('error', (error) => reject(error?.code === 'STUDIO_PRIVATE_ADDRESS' ? error : Object.assign(new Error(t('请求失败：{message}', { message: error.message })), { statusCode: 502 })));
 		request.end(body);
 	});
 }
@@ -126,12 +127,12 @@ function read(response, limit) {
 			if (size > limit) {
 				response.destroy();
 				stream.destroy();
-				reject(Object.assign(new Error(`返回的内容超过 ${Math.round(limit / 1024 / 1024)} MB`), { statusCode: 502 }));
+				reject(Object.assign(new Error(t('返回的内容超过 {limit} MB', { limit: Math.round(limit / 1024 / 1024) })), { statusCode: 502 }));
 				return;
 			}
 			chunks.push(chunk);
 		});
 		stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-		stream.on('error', (error) => reject(Object.assign(new Error(`读取返回内容失败：${error.message}`), { statusCode: 502 })));
+		stream.on('error', (error) => reject(Object.assign(new Error(t('读取返回内容失败：{message}', { message: error.message })), { statusCode: 502 })));
 	});
 }

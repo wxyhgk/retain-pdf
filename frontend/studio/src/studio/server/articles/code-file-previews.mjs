@@ -3,6 +3,7 @@ import { codeFileFigure } from '@blog/markdown/code-files/render.mjs';
 import { articlePath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { ResourceTooLargeError } from '../files/file-repository.mjs';
 import { StudioPathError } from '../../../articles/bundle-paths.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What the Studio previews; the blog build reads any size. */
 export const CODE_FILE_SIZE_LIMIT = 256 * 1024 * 1024;
@@ -34,7 +35,7 @@ export class CodeFilePreviews {
 	async figure(slug, reference, language, meta) {
 		const path = typeof reference === 'string' ? articlePath(reference) : null;
 		const [root, ...rest] = path?.split('/') ?? [];
-		if (!path || !rest.length) throw new StudioPathError('无效的文件路径');
+		if (!path || !rest.length) throw new StudioPathError(t('无效的文件路径'));
 		const { handle, size, modified } = await this.files.open(slug, root, rest.join('/'));
 		const key = JSON.stringify([slug, path, size, modified, language, meta]);
 		let text;

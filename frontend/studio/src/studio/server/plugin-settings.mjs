@@ -1,5 +1,6 @@
 
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Which of the project's plugins are turned off in the Studio (插件, in
@@ -25,8 +26,8 @@ export class PluginSettings {
 
 	/** Turns a plugin on or off; resolves with the plugins off. */
 	async setEnabled(id, enabled) {
-		if (typeof id !== 'string' || !/^[\w.-]+$/u.test(id)) throw Object.assign(new Error('插件的名字不对'), { statusCode: 400 });
-		if (typeof enabled !== 'boolean') throw Object.assign(new Error('enabled 要是 true 或 false'), { statusCode: 400 });
+		if (typeof id !== 'string' || !/^[\w.-]+$/u.test(id)) throw Object.assign(new Error(t('插件的名字不对')), { statusCode: 400 });
+		if (typeof enabled !== 'boolean') throw Object.assign(new Error(t('enabled 要是 true 或 false')), { statusCode: 400 });
 		let list = [];
 		await updateSettings(this.settingsFile, (settings) => {
 			const disabled = new Set(Array.isArray(settings.plugins?.disabled) ? settings.plugins.disabled : []);

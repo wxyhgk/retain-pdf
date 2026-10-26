@@ -2,6 +2,7 @@ import { ArticleConflictError } from './article-repository.mjs';
 import { moveMoleculeViews } from '../../../articles/article-views.mjs';
 import { managedSegments } from '../files/file-manager.mjs';
 import { rewriteMovedReferences } from '@blog/markdown/articles/article-references.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * File changes that the article's text has to follow. Moving a file the
@@ -38,7 +39,7 @@ export class ArticleFiles {
 			return { ...moved, revision: snapshot.revision, references: 0, views: 0 };
 		}
 		if (expectedRevision !== snapshot.revision) {
-			throw new ArticleConflictError('文章已被修改，请先保存或重新载入，再移动它引用的文件');
+			throw new ArticleConflictError(t('文章已被修改，请先保存或重新载入，再移动它引用的文件'));
 		}
 		const fileMoves = rewritten.moves.filter((move) => move.kind === 'file').map((move) => [move.from, move.to]);
 		const views = moveMoleculeViews(snapshot.viewsSource, fileMoves);

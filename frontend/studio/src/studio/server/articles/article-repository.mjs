@@ -9,6 +9,7 @@ import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs
 import { findArticleLinks, relinkArticle, retitleArticleLinks } from '@blog/markdown/articles/article-links.mjs';
 import { parseBibtex } from '@blog/markdown/references/bibtex.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../../articles/schemas.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What the editor must have read for a change to apply: the article's text and its saved views. */
 function bundleRevision(source, viewsSource) {
@@ -199,14 +200,14 @@ export class ArticleRepository {
 	async create({ slug, title, parent = '', body = '', files = [] }) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
-		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError('新文章的内容无效');
+		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError(t('新文章的内容无效'));
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		const source = createArticleSource({ title, parent, body });
 		// Making the folder is taking the name: two made at once, one of them is refused.
 		try {
 			await mkdir(paths.directory);
 		} catch (error) {
-			if (error?.code === 'EEXIST') throw new ArticleConflictError('该文章目录已经存在');
+			if (error?.code === 'EEXIST') throw new ArticleConflictError(t('该文章目录已经存在'));
 			throw error;
 		}
 		try {
@@ -290,13 +291,13 @@ export class ArticleRepository {
 			const pages = (await this.#sources()).map(({ slug: page, source }) => ({ slug: page, source, ...articleSummary(source, page) }));
 			const bySlug = new Map(pages.map((page) => [page.slug, page]));
 			if (parent) {
-				if (!bySlug.has(parent)) throw new ArticleNotFoundError('上级页面不存在');
+				if (!bySlug.has(parent)) throw new ArticleNotFoundError(t('上级页面不存在'));
 				for (let at = parent, steps = 0; at && steps <= pages.length; at = bySlug.get(at)?.parent ?? '', steps += 1) {
-					if (at === slug) throw new ArticleValidationError('不能放到它自己或它下面的页面下面');
+					if (at === slug) throw new ArticleValidationError(t('不能放到它自己或它下面的页面下面'));
 				}
 			}
 			const next = bySlug.get(before || after);
-			if ((before || after) && (!next || next.parent !== parent || next.slug === slug)) throw new ArticleValidationError('要放在旁边的页面不在那里');
+			if ((before || after) && (!next || next.parent !== parent || next.slug === slug)) throw new ArticleValidationError(t('要放在旁边的页面不在那里'));
 			const siblings = pages.filter((page) => page.parent === parent && page.slug !== slug).sort(comparePages);
 			const moved = bySlug.get(slug);
 			const was = { from: moved.parent ?? '', title: moved.title || slug };
@@ -341,7 +342,7 @@ export class ArticleRepository {
 			await assertReadableBundle(own);
 			const source = await readFile(own.markdown, 'utf8');
 			const { title, parent } = articleSummary(source, slug);
-			if (!parent) throw new ArticleValidationError('它不在别的页面下面，没有可以并入的上级');
+			if (!parent) throw new ArticleValidationError(t('它不在别的页面下面，没有可以并入的上级'));
 			const above = articleBundlePaths(this.blogRoot, parent);
 			// The parent's queue inside this one's: never the other way round (a page is not above its parent).
 			await this.exclusive(parent, async () => {
@@ -400,7 +401,7 @@ export class ArticleRepository {
 		try {
 			await this.keep?.(slug, source);
 		} catch (error) {
-			console.warn(`[studio] 没能存下 ${slug} 的历史版本：${error instanceof Error ? error.message : error}`);
+			console.warn(`[studio] 没能存下 ${slug} 的历史版本：${error instanceof Error ? error.message : error}`); // i18n-ignore: developer log
 		}
 	}
 
@@ -439,7 +440,7 @@ export class ArticleRepository {
 			try {
 				const copy = updateStudioFrontmatter(source, {
 					...properties,
-					title: `${properties.title}（副本）`,
+					title: `${properties.title}（副本）`, // i18n-ignore: written into the article
 					pubDate: now.toISOString().slice(0, 10),
 					draft: true,
 				});
@@ -503,7 +504,7 @@ export class ArticleRepository {
 	}
 
 	async #save(slug, { source: nextSource, expectedRevision }, { before }) {
-		if (typeof nextSource !== 'string') throw new ArticleValidationError('文章内容必须是文本');
+		if (typeof nextSource !== 'string') throw new ArticleValidationError(t('文章内容必须是文本'));
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		await assertReadableBundle(paths);
 		const [current, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
@@ -512,17 +513,17 @@ export class ArticleRepository {
 		if (current === nextSource) return { revision: currentRevision, problems: articleProblems(current) };
 		const expected = expectedRevision;
 		if (expected && currentRevision !== expected) {
-			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');
+			throw new ArticleConflictError(t('文件已被其他程序修改，请重新载入后再保存'));
 		}
 		// A version that cannot be kept (a full disk…) does not keep the text typed from being saved.
 		try {
 			await before?.(current);
 		} catch (error) {
-			console.warn(`[studio] 没能存下 ${slug} 的历史版本：${error instanceof Error ? error.message : error}`);
+			console.warn(`[studio] 没能存下 ${slug} 的历史版本：${error instanceof Error ? error.message : error}`); // i18n-ignore: developer log
 		}
 		// Another program (the CLI, an AI) may have written it meanwhile: it is not in this queue.
 		if (expected && (await readFile(paths.markdown, 'utf8')) !== current) {
-			throw new ArticleConflictError('文件已被其他程序修改，请重新载入后再保存');
+			throw new ArticleConflictError(t('文件已被其他程序修改，请重新载入后再保存'));
 		}
 		// Saved even when the properties are wrong, so nothing typed is lost; `problems` says what to fix.
 		await atomicWriteText(paths.markdown, nextSource);
@@ -549,7 +550,7 @@ export class ArticleRepository {
 		}
 		const timer = setTimeout(() => {
 			this.#titles.delete(slug);
-			this.#retitleLinks(slug, first, to, { site }).catch((error) => console.warn(`[studio] 链接文字没能跟着 ${slug} 的新标题改：${error?.message ?? error}`));
+			this.#retitleLinks(slug, first, to, { site }).catch((error) => console.warn(`[studio] 链接文字没能跟着 ${slug} 的新标题改：${error?.message ?? error}`)); // i18n-ignore: developer log
 		}, this.retitleAfter);
 		timer.unref?.();
 		this.#titles.set(slug, { from: first, timer });
@@ -577,7 +578,7 @@ export class ArticleRepository {
 		const [source, viewsSource] = await Promise.all([readFile(paths.markdown, 'utf8'), readViewsSource(paths.views)]);
 		const currentRevision = bundleRevision(source, viewsSource);
 		if (expectedRevision && currentRevision !== expectedRevision) {
-			throw new ArticleConflictError('文章或视角配置已被其他程序修改，请重新载入后再保存');
+			throw new ArticleConflictError(t('文章或视角配置已被其他程序修改，请重新载入后再保存'));
 		}
 		const nextViewsSource = writeMoleculeView(viewsSource, key, format, view, display);
 		await atomicWriteText(paths.views, nextViewsSource);
@@ -592,7 +593,7 @@ async function assertReadableBundle(paths) {
 		throw error;
 	});
 	if (directory.isSymbolicLink() || !directory.isDirectory() || markdown.isSymbolicLink() || !markdown.isFile()) {
-		throw new StudioPathError('文章目录包含不允许的符号链接或文件类型');
+		throw new StudioPathError(t('文章目录包含不允许的符号链接或文件类型'));
 	}
 }
 
@@ -604,11 +605,11 @@ async function assertFree(directory) {
 		if (error?.code === 'ENOENT') return;
 		throw error;
 	}
-	throw new ArticleConflictError(`已经有一篇叫 ${basename(directory)} 的文章了`);
+	throw new ArticleConflictError(t('已经有一篇叫 {name} 的文章了', { name: basename(directory) }));
 }
 
 export class ArticleNotFoundError extends Error {
-	constructor(message = '文章不存在') {
+	constructor(message = t('文章不存在')) {
 		super(message);
 		this.name = 'ArticleNotFoundError';
 		this.statusCode = 404;

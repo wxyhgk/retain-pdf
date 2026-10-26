@@ -5,6 +5,7 @@ import { dirname, extname, join } from 'node:path';
 
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The drive's files as text, to search and for an AI to read: Word, PowerPoint
@@ -78,14 +79,14 @@ async function pptxText(bytes) {
 		const words = paragraphs(await zip.file(name).async('string'), 'a');
 		const note = zip.file(`ppt/notesSlides/notesSlide${slide.exec(name)[1]}.xml`);
 		const spoken = note ? paragraphs(await note.async('string'), 'a').replace(/^\d+$/mu, '').trim() : '';
-		texts.push([`## 第 ${index + 1} 张`, words, spoken ? `备注：${spoken}` : ''].filter(Boolean).join('\n'));
+		texts.push([`## 第 ${index + 1} 张`, words, spoken ? `备注：${spoken}` : ''].filter(Boolean).join('\n')); // i18n-ignore: text kept for search and the AI
 	}
 	return texts.join('\n\n');
 }
 
 function sheetText(bytes) {
 	const book = XLSX.read(bytes, { type: 'buffer' });
-	return book.SheetNames.map((name) => `## 工作表 ${name}\n${XLSX.utils.sheet_to_csv(book.Sheets[name], { blankrows: false }).trim()}`).join('\n\n');
+	return book.SheetNames.map((name) => `## 工作表 ${name}\n${XLSX.utils.sheet_to_csv(book.Sheets[name], { blankrows: false }).trim()}`).join('\n\n'); // i18n-ignore: text kept for search and the AI
 }
 
 /** Where poppler's `pdftotext` is; null without it. */
@@ -97,7 +98,7 @@ export function findPdftotext() {
 function pdfText(file, pdftotext) {
 	return new Promise((resolve, reject) => {
 		execFile(pdftotext, ['-enc', 'UTF-8', '-layout', file, '-'], { timeout: 120_000, maxBuffer: 64 * 1024 * 1024 }, (error, stdout) => {
-			if (error) reject(new Error(`pdftotext 读不了这个 PDF：${error.message}`));
+			if (error) reject(new Error(t('pdftotext 读不了这个 PDF：{message}', { message: error.message })));
 			else resolve(String(stdout).replace(/\f/gu, '\n\n').replace(/[ \t]+$/gmu, '').trim());
 		});
 	});

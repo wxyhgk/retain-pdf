@@ -3,6 +3,7 @@ import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { atomicWriteText } from '../files/atomic-write.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The AI panel's conversations kept, each a folder of `chats/` (beside blog/, never published, kept out of git):
@@ -53,18 +54,18 @@ export class ChatStore {
 
 	/** @returns {Promise<ChatRecord>} */
 	async read(id) {
-		if (!isId(id)) throw Object.assign(new Error('没有这个对话'), { statusCode: 404 });
+		if (!isId(id)) throw Object.assign(new Error(t('没有这个对话')), { statusCode: 404 });
 		try {
 			return { ...JSON.parse(await readFile(this.#record(id), 'utf8')), id };
 		} catch (error) {
-			if (error?.code === 'ENOENT') throw Object.assign(new Error('没有这个对话'), { statusCode: 404 });
+			if (error?.code === 'ENOENT') throw Object.assign(new Error(t('没有这个对话')), { statusCode: 404 });
 			throw error;
 		}
 	}
 
 	/** Writes `record` (ai/conversation.json); `sync`, as the server stops. */
 	async save(record, { sync = false } = {}) {
-		if (!isId(record.id)) throw new Error(`对话的名字不对：${record.id}`);
+		if (!isId(record.id)) throw new Error(t('对话的名字不对：{id}', { id: record.id }));
 		const json = `${JSON.stringify(record, null, '\t')}\n`;
 		if (sync) {
 			mkdirSync(join(this.root, record.id, 'ai'), { recursive: true });
@@ -81,7 +82,7 @@ export class ChatStore {
 	 * now (edited in the editor, perhaps); the page begun if there is none (`record`: its title and date).
 	 */
 	async append(record, items, { sync = false } = {}) {
-		if (!isId(record.id)) throw new Error(`对话的名字不对：${record.id}`);
+		if (!isId(record.id)) throw new Error(t('对话的名字不对：{id}', { id: record.id }));
 		const blocks = turnMarkdown(items);
 		const page = this.page(record.id);
 		const read = () => (existsSync(page) ? readFileSync(page, 'utf8') : chatFront(record));
@@ -98,7 +99,7 @@ export class ChatStore {
 	}
 
 	async remove(id) {
-		if (!isId(id)) throw Object.assign(new Error('没有这个对话'), { statusCode: 404 });
+		if (!isId(id)) throw Object.assign(new Error(t('没有这个对话')), { statusCode: 404 });
 		await rm(join(this.root, id), { recursive: true, force: true });
 	}
 
@@ -137,7 +138,7 @@ function writeAtOnce(path, content) {
 
 /** A conversation's page begun: its properties as an article's (a draft, dated the day it began), no text yet. */
 export function chatFront({ title, created }) {
-	return ['---', `title: ${JSON.stringify(title || '新对话')}`, `pubDate: ${String(created).slice(0, 10)}`, 'draft: true', '---', ''].join('\n');
+	return ['---', `title: ${JSON.stringify(title || '新对话')}`, `pubDate: ${String(created).slice(0, 10)}`, 'draft: true', '---', ''].join('\n'); // i18n-ignore: written into the file
 }
 
 /** What was said, as a page has it: the author's words in ` ```ask ` blocks, each answer's Markdown as it is. */

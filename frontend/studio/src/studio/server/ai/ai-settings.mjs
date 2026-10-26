@@ -1,6 +1,7 @@
 
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 import presets from './model-presets.json' with { type: 'json' };
+import { t } from '@blog/i18n/index.mjs';
 
 /** The model asked when none is set, for each kind of service (model-presets.json). */
 export const DEFAULT_MODELS = Object.freeze(presets.aiSettings);
@@ -53,13 +54,13 @@ export class AiSettings {
 	 */
 	async set(change) {
 		const fail = (message) => Object.assign(new Error(message), { statusCode: 400 });
-		if (!change || typeof change !== 'object') throw fail('要给出设置');
-		if (change.provider !== undefined && !PROVIDERS.includes(change.provider)) throw fail(`provider 只能是 ${PROVIDERS.join(' 或 ')}`);
+		if (!change || typeof change !== 'object') throw fail(t('要给出设置'));
+		if (change.provider !== undefined && !PROVIDERS.includes(change.provider)) throw fail(t('provider 只能是 {providers}', { providers: PROVIDERS.join(t(' 或 ')) }));
 		for (const key of ['model', 'baseUrl', 'apiKey', 'workspaceId']) {
-			if (change[key] !== undefined && typeof change[key] !== 'string') throw fail(`${key} 要是文字`);
+			if (change[key] !== undefined && typeof change[key] !== 'string') throw fail(t('{key} 要是文字', { key }));
 		}
-		if (change.baseUrl && !/^https?:\/\/\S+$/u.test(change.baseUrl.trim())) throw fail('接口地址要以 http:// 或 https:// 开头');
-		if (change.workspaceId && /\s/u.test(change.workspaceId.trim())) throw fail('工作区 ID 里不能有空格（像 wrkspc_01AbC… 这样）');
+		if (change.baseUrl && !/^https?:\/\/\S+$/u.test(change.baseUrl.trim())) throw fail(t('接口地址要以 http:// 或 https:// 开头'));
+		if (change.workspaceId && /\s/u.test(change.workspaceId.trim())) throw fail(t('工作区 ID 里不能有空格（像 wrkspc_01AbC… 这样）'));
 		// Written for the author's eyes only (settings-file.mjs): a key may be in it.
 		await updateSettings(this.settingsFile, (settings) => {
 			const ai = { ...settings.ai };

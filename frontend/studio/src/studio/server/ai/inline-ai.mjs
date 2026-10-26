@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * The AI in the editor (选中文字 → AI 改写, 空行按空格): one thing asked at a time of the AI chosen in the panel, in a
  * session of its own, kept ready (an agent takes seconds to start), let go once it has answered and another made
@@ -66,9 +68,9 @@ export class InlineAi {
 			await done;
 			const said = session.items.slice(session.items.findIndex((item) => item.kind === 'user') + 1);
 			const failed = said.find((item) => item.kind === 'error' || item.kind === 'stop');
-			if (failed) throw Object.assign(new Error(failed.kind === 'stop' ? '已停止' : failed.message), { statusCode: failed.kind === 'stop' ? 409 : 502 });
+			if (failed) throw Object.assign(new Error(failed.kind === 'stop' ? t('已停止') : failed.message), { statusCode: failed.kind === 'stop' ? 409 : 502 });
 			const text = unfenced(said.filter((item) => item.kind === 'message').map((item) => item.text).join('\n\n'));
-			if (!text.trim()) throw Object.assign(new Error('AI 没有给出内容'), { statusCode: 502 });
+			if (!text.trim()) throw Object.assign(new Error(t('AI 没有给出内容')), { statusCode: 502 });
 			return { markdown: text };
 		} finally {
 			this.#asking.delete(asked.id);
@@ -92,16 +94,16 @@ export function promptFor({ mode, instruction, article, selected = '', before = 
 	};
 	const tail = (text, lines) => text.split('\n').slice(-lines).join('\n').trim();
 	const head = (text, lines) => text.split('\n').slice(0, lines).join('\n').trim();
-	const parts = [`你在帮作者改一篇 Markdown 笔记（博客「计算化学手记」，写法见 blog/AGENTS.md）：《${article.title}》，文件 ${article.path}。`];
-	if (before.trim()) parts.push(`前文（最后 ${AROUND} 行以内）：`, fence(tail(before, AROUND)));
-	if (mode === 'rewrite') parts.push('要改的是这一段：', fence(selected.trim()));
-	else parts.push('要在这里（前文和后文之间）写新的内容。');
-	if (after.trim()) parts.push(`后文（开头 ${AROUND} 行以内）：`, fence(head(after, AROUND)));
-	parts.push(`要求：${instruction.trim()}`);
+	const parts = [`你在帮作者改一篇 Markdown 笔记（博客「计算化学手记」，写法见 blog/AGENTS.md）：《${article.title}》，文件 ${article.path}。`]; // i18n-ignore: for the AI
+	if (before.trim()) parts.push(`前文（最后 ${AROUND} 行以内）：`, fence(tail(before, AROUND))); // i18n-ignore: for the AI
+	if (mode === 'rewrite') parts.push('要改的是这一段：', fence(selected.trim())); // i18n-ignore: for the AI
+	else parts.push('要在这里（前文和后文之间）写新的内容。'); // i18n-ignore: for the AI
+	if (after.trim()) parts.push(`后文（开头 ${AROUND} 行以内）：`, fence(head(after, AROUND))); // i18n-ignore: for the AI
+	parts.push(`要求：${instruction.trim()}`); // i18n-ignore: for the AI
 	parts.push(
 		mode === 'rewrite'
-			? '只输出改好的这一段 Markdown，它会原样换掉上面那段：不要解释，不要在外面加代码围栏，不要读写文件、不要运行命令。公式、化学式、链接、图片、文献引用、代码块等写法要保持有效。'
-			: '只输出要放进去的 Markdown，它会原样放在前文和后文之间：不要解释，不要在外面加代码围栏，不要读写文件、不要运行命令。公式、化学式、链接、图片、文献引用、代码块等按这篇的写法写。',
+			? '只输出改好的这一段 Markdown，它会原样换掉上面那段：不要解释，不要在外面加代码围栏，不要读写文件、不要运行命令。公式、化学式、链接、图片、文献引用、代码块等写法要保持有效。' // i18n-ignore: for the AI
+			: '只输出要放进去的 Markdown，它会原样放在前文和后文之间：不要解释，不要在外面加代码围栏，不要读写文件、不要运行命令。公式、化学式、链接、图片、文献引用、代码块等按这篇的写法写。', // i18n-ignore: for the AI
 	);
 	return parts.join('\n\n');
 }

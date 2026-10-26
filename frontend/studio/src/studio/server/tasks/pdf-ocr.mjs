@@ -5,6 +5,7 @@ import { articleBundlePaths, resolveInside } from '../../../articles/bundle-path
 import { autoSlug, freeSlug } from '../../pages/page-names.ts';
 import { fromPaddleMarkdown } from './ocr-markdown.mjs';
 import { runProgram } from './tasks.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * A PDF of an article read by PaddleOCR's online service (its document parsing: text, formulas, tables, pictures)
@@ -35,13 +36,13 @@ function withBody(source, placeholder, body) {
  */
 export async function startPdfOcr({ tasks, articles, blogRoot, slug, path, env, command = OCR_COMMAND }) {
 	const fail = (message) => Object.assign(new Error(message), { statusCode: 400 });
-	if (typeof path !== 'string' || !/\.pdf$/iu.test(path)) throw fail('只能识别 PDF');
+	if (typeof path !== 'string' || !/\.pdf$/iu.test(path)) throw fail(t('只能识别 PDF'));
 	const parent = articleBundlePaths(blogRoot, slug).directory;
 	const pdf = resolveInside(parent, path);
-	if (!(await stat(pdf).catch(() => null))?.isFile()) throw fail('文章里没有这个 PDF');
+	if (!(await stat(pdf).catch(() => null))?.isFile()) throw fail(t('文章里没有这个 PDF'));
 	const title = basename(path).replace(/\.pdf$/iu, '');
 	const named = `\`${basename(path).replaceAll('`', '')}\``;
-	const placeholder = `正在用 PaddleOCR 识别上级页面里的 ${named}…\n`;
+	const placeholder = `正在用 PaddleOCR 识别上级页面里的 ${named}…\n`; // i18n-ignore: written into the page
 	const folder = await makePage(articles, { title, parent: slug, body: placeholder });
 	const page = articleBundlePaths(blogRoot, folder);
 	// The page's text as the task leaves it, kept as a version first; nothing when the page is gone meanwhile.
@@ -64,20 +65,20 @@ export async function startPdfOcr({ tasks, articles, blogRoot, slug, path, env, 
 			await runProgram([...command, '--file_path', pdf, '--output_md', join(work, 'result.md')], { cwd: work, env, log, signal });
 			const { markdown, pictures } = fromPaddleMarkdown(await readFile(join(work, 'result.md'), 'utf8'));
 			// Cancelled as it ended, or the page put in the trash meanwhile: nothing is written.
-			if (signal.aborted) throw new Error('已取消');
+			if (signal.aborted) throw new Error(t('已取消'));
 			await articles.read(folder);
 			// Its pictures, into the page's img/ (published with it).
 			const into = join(page.directory, 'img', 'ocr');
 			await mkdir(into, { recursive: true });
 			const made = new Set(await readdir(join(work, 'imgs')).catch(() => []));
 			for (const { file, name } of pictures) if (made.has(file)) await rename(join(work, 'imgs', file), join(into, name));
-			await write(`由 PaddleOCR 从上级页面里的 ${named} 识别。\n\n${markdown}`);
-			log(`\n识别完，写进了子页面「${title}」（${pictures.length} 张图）。\n`);
+			await write(`由 PaddleOCR 从上级页面里的 ${named} 识别。\n\n${markdown}`); // i18n-ignore: written into the page
+			log(`\n${t('识别完，写进了子页面「{title}」（{count} 张图）。', { title, count: pictures.length })}\n`);
 			return { page: folder, title, pictures: pictures.length };
 		} catch (error) {
 			// The page says so, not 正在识别 forever.
-			const why = signal.aborted ? '识别已取消' : `识别失败：${error instanceof Error ? error.message : error}`;
-			await write(`PaddleOCR 没有读完上级页面里的 ${named}（${why.replace(/\s+/gu, ' ').slice(0, 300)}）。\n`).catch(() => {});
+			const why = signal.aborted ? '识别已取消' : `识别失败：${error instanceof Error ? error.message : error}`; // i18n-ignore: written into the page
+			await write(`PaddleOCR 没有读完上级页面里的 ${named}（${why.replace(/\s+/gu, ' ').slice(0, 300)}）。\n`).catch(() => {}); // i18n-ignore: written into the page
 			throw error;
 		}
 	});

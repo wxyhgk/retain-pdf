@@ -1,6 +1,7 @@
 import { proxyFetch } from '../apps/mini-apps.mjs';
 import { runProgram } from '../tasks/tasks.mjs';
 import { refuse, reply, sendEvents } from '../api.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The background tasks (the list, each one's log, and as events while they
@@ -20,7 +21,7 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, programEnv, arti
 	}), { streams: true });
 	api.get('/tasks/:id', ({ params }) => {
 		const task = tasks.get(params.id);
-		if (!task) throw refuse(404, '没有这个任务');
+		if (!task) throw refuse(404, t('没有这个任务'));
 		return task;
 	});
 	api.post('/tasks/:id/cancel', ({ params }) => ({ cancelled: tasks.cancel(params.id) }));
@@ -29,8 +30,8 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, programEnv, arti
 	/** The app `id`, if its app.json asks for `permission`. */
 	const allowed = async (id, permission) => {
 		const app = await miniApps.get(id);
-		if (!app) throw refuse(404, '没有这个小程序');
-		if (!app.permissions.includes(permission)) throw refuse(403, `小程序「${app.name}」没有在 app.json 里要「${permission}」这个权限`);
+		if (!app) throw refuse(404, t('没有这个小程序'));
+		if (!app.permissions.includes(permission)) throw refuse(403, t('小程序「{name}」没有在 app.json 里要「{permission}」这个权限', { name: app.name, permission }));
 		return app;
 	};
 	api.post('/apps/:id/fetch', async ({ params, json }) => {
@@ -41,7 +42,7 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, programEnv, arti
 		const app = await allowed(params.id, 'run');
 		const asked = await json();
 		const argv = Array.isArray(asked.argv) ? asked.argv.map(String) : [];
-		if (!argv.length) throw refuse(400, '要给出运行的命令（argv）');
+		if (!argv.length) throw refuse(400, t('要给出运行的命令（argv）'));
 		const slug = typeof asked.slug === 'string' && asked.slug ? asked.slug : null;
 		const cwd = slug ? articleFolder(slug) : projectRoot;
 		const task = tasks.start({ kind: 'app', title: `${app.name}：${argv.join(' ').slice(0, 60)}`, slug }, ({ log, signal }) => runProgram(argv, { cwd, env: programEnv(slug, null), log, signal }));

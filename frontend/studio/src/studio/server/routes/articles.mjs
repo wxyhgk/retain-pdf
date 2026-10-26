@@ -1,6 +1,7 @@
 import { checkArticle } from '../articles/article-check.mjs';
 import { pageVersion } from '../articles/page-version.mjs';
 import { refuse, reply, sendEvents } from '../api.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The articles: the list and search, one read, saved, deleted and put back,
@@ -54,7 +55,7 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 	// What would be wrong with the article, as the editor holds it, once published.
 	api.post('/articles/:slug/check', async ({ params: { slug }, json }) => {
 		const { source } = await json();
-		if (typeof source !== 'string') throw refuse(400, '文章内容必须是文本');
+		if (typeof source !== 'string') throw refuse(400, t('文章内容必须是文本'));
 		await manager.locate(slug, '');
 		return { issues: await checkArticle(blogRoot, slug, source) };
 	});

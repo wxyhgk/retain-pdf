@@ -3,6 +3,7 @@ import { lstat } from 'node:fs/promises';
 import { basename, isAbsolute, resolve } from 'node:path';
 import { revealInFileManager } from '../system/reveal.mjs';
 import { refuse, reply, sendFile } from '../api.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * An article's own files (img/, assets/…): read, listed, uploaded, brought
@@ -21,7 +22,7 @@ export function articleFileRoutes(api, { files, manager, articleFiles, drive, te
 		const declared = Number(request.headers['content-length']);
 		const name = query.get('name') ?? '';
 		const limit = manager.uploadLimitFor(name);
-		if (declared > limit) throw refuse(413, `文件超过 ${limit / 1024 / 1024} MB 上传上限`);
+		if (declared > limit) throw refuse(413, t('文件超过 {limit} MB 上传上限', { limit: limit / 1024 / 1024 }));
 		return reply(201, await manager.upload(params.slug, query.get('folder') ?? '', name, request, {
 			replace: query.get('replace') === '1',
 			subfolders: (query.get('subfolder') ?? '').split('/').filter(Boolean),
@@ -33,7 +34,7 @@ export function articleFileRoutes(api, { files, manager, articleFiles, drive, te
 		const source = await drive.stream(String(from ?? ''));
 		try {
 			const limit = manager.uploadLimitFor(source.name);
-			if (source.size > limit) throw refuse(413, `${source.name} 有 ${Math.round(source.size / 1024 / 1024)} MB，超过文章文件 ${limit / 1024 / 1024} MB 的上限`);
+			if (source.size > limit) throw refuse(413, t('{name} 有 {size} MB，超过文章文件 {limit} MB 的上限', { name: source.name, size: Math.round(source.size / 1024 / 1024), limit: limit / 1024 / 1024 }));
 			return reply(201, await manager.upload(params.slug, folder ?? 'assets', source.name, source.body));
 		} finally {
 			source.body.destroy();

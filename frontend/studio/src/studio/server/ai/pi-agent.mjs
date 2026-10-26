@@ -7,6 +7,7 @@ import { createAgentSession, createBashToolDefinition, DefaultResourceLoader, ge
 import { OPERATIONS } from '../../ops/operations.mjs';
 import { createStudioOps } from '../../ops/studio-ops.mjs';
 import { PI_PROVIDERS } from './panel-models.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * pi run in the Studio's own process, as an ACP agent: what pi-acp does with a pi of its own for each conversation
@@ -29,7 +30,7 @@ import { PI_PROVIDERS } from './panel-models.mjs';
  */
 
 /** The reasoning levels, as the options show them. */
-const THINKING = { off: '不思考', minimal: '最少', low: '少', medium: '中', high: '多', xhigh: '很多', max: '最多' };
+const thinkingNames = () => ({ off: t('不思考'), minimal: t('最少'), low: t('少'), medium: t('中'), high: t('多'), xhigh: t('很多'), max: t('最多') });
 /** What each of pi's tools does, as ACP says it; the Studio's operations too. */
 const KINDS = {
 	read: 'read', ls: 'read', write: 'edit', edit: 'edit', bash: 'execute', grep: 'search', find: 'search',
@@ -38,12 +39,12 @@ const KINDS = {
 	create_page: 'edit', update_page: 'edit', move_page: 'edit', rename_page: 'edit', split_page: 'edit', merge_page: 'edit', restore_page: 'edit',
 };
 /** The Studio's operations, as the panel names them. */
-const OPERATION_NAMES = {
-	list_pages: '列出页面', page_tree: '看页面树', read_page: '读页面', search_pages: '搜页面', backlinks: '看反向链接', create_page: '新建页面',
-	update_page: '改页面', move_page: '移动页面', rename_page: '改页面的文件夹名', split_page: '拆出子页面', merge_page: '并入上级页面', delete_page: '删页面',
-	list_trash: '看回收站', restore_page: '恢复页面', check_page: '检查页面', publish_page: '发布页面', unpublish_page: '取消发布', commit_page: '提交页面',
-	git_status: '看 git 状态', list_history: '看历史版本', read_history: '读历史版本', search_drive: '搜资料库', show_picture: '给作者看图',
-};
+const operationNames = () => ({
+	list_pages: t('列出页面'), page_tree: t('看页面树'), read_page: t('读页面'), search_pages: t('搜页面'), backlinks: t('看反向链接'), create_page: t('新建页面'),
+	update_page: t('改页面'), move_page: t('移动页面'), rename_page: t('改页面的文件夹名'), split_page: t('拆出子页面'), merge_page: t('并入上级页面'), delete_page: t('删页面'),
+	list_trash: t('看回收站'), restore_page: t('恢复页面'), check_page: t('检查页面'), publish_page: t('发布页面'), unpublish_page: t('取消发布'), commit_page: t('提交页面'),
+	git_status: t('看 git 状态'), list_history: t('看历史版本'), read_history: t('读历史版本'), search_drive: t('搜资料库'), show_picture: t('给作者看图'),
+});
 /** What an operation's result says, at most so long (the rest left out, said so). */
 const RESULT_KEPT = 60_000;
 
@@ -51,27 +52,28 @@ const RESULT_KEPT = 60_000;
 function studioTools(cwd) {
 	const root = basename(cwd) === 'blog' ? dirname(cwd) : cwd;
 	let ops = null;
+	const names = operationNames();
 	const operations = OPERATIONS.map((operation) => ({
 		name: operation.name,
-		label: OPERATION_NAMES[operation.name] ?? operation.name,
-		description: `${operation.description}（Studio 的操作，直接用这个工具，不用通过 studio 命令）`,
+		label: names[operation.name] ?? operation.name,
+		description: `${operation.description}（Studio 的操作，直接用这个工具，不用通过 studio 命令）`, // i18n-ignore: for the AI
 		parameters: operation.input,
 		async execute(_id, params) {
 			ops ??= createStudioOps({ root });
 			const result = await operation.run(ops, params ?? {});
 			const text = typeof result === 'string' ? result : JSON.stringify(result ?? null, null, 2);
-			return { content: [{ type: 'text', text: text.length > RESULT_KEPT ? `${text.slice(0, RESULT_KEPT)}\n…（太长，后面的省略了）` : text }], details: undefined };
+			return { content: [{ type: 'text', text: text.length > RESULT_KEPT ? `${text.slice(0, RESULT_KEPT)}\n…（太长，后面的省略了）` : text }], details: undefined }; // i18n-ignore: for the AI
 		},
 	}));
 	const picture = {
 		name: 'show_picture',
-		label: OPERATION_NAMES.show_picture,
-		description: '把本机的一张图片（png、jpg、gif、webp、svg）显示在和作者的对话里。画了图、要作者看的时候用它；用 read 读图只有你自己看得到，作者看不到。',
-		parameters: { type: 'object', properties: { path: { type: 'string', description: '图片的路径：绝对路径，或相对当前目录' }, caption: { type: 'string', description: '图的说明，一句话' } }, required: ['path'] },
+		label: names.show_picture,
+		description: '把本机的一张图片（png、jpg、gif、webp、svg）显示在和作者的对话里。画了图、要作者看的时候用它；用 read 读图只有你自己看得到，作者看不到。', // i18n-ignore: for the AI
+		parameters: { type: 'object', properties: { path: { type: 'string', description: '图片的路径：绝对路径，或相对当前目录' }, caption: { type: 'string', description: '图的说明，一句话' } }, required: ['path'] }, // i18n-ignore: for the AI
 		async execute(_id, params) {
 			const path = isAbsolute(params.path) ? params.path : resolve(cwd, params.path);
-			if (!(await stat(path).catch(() => null))?.isFile()) throw new Error(`没有这张图：${path}`);
-			return { content: [{ type: 'text', text: '已经显示给作者了。' }], details: { path, caption: params.caption ?? '' } };
+			if (!(await stat(path).catch(() => null))?.isFile()) throw new Error(t('没有这张图：{path}', { path }));
+			return { content: [{ type: 'text', text: '已经显示给作者了。' }], details: { path, caption: params.caption ?? '' } }; // i18n-ignore: for the AI
 		},
 	};
 	return [...operations, picture];
@@ -149,15 +151,16 @@ function servePi(stream, env) {
 		const choices = available.map((model) => ({ value: `${model.provider}/${model.id}`, name: `${model.provider}/${model.id}` }));
 		if (current && !choices.some((choice) => choice.value === current)) choices.unshift({ value: current, name: current });
 		const levels = session.getAvailableThinkingLevels();
+		const thinking = thinkingNames();
 		return [
 			...(choices.length ? [{ type: 'select', id: 'model', category: 'model', name: 'Model', currentValue: current, options: choices }] : []),
-			...(levels.length > 1 ? [{ type: 'select', id: 'thought_level', category: 'thought_level', name: 'Thinking', currentValue: session.thinkingLevel, options: levels.map((level) => ({ value: level, name: THINKING[level] ?? level })) }] : []),
+			...(levels.length > 1 ? [{ type: 'select', id: 'thought_level', category: 'thought_level', name: 'Thinking', currentValue: session.thinkingLevel, options: levels.map((level) => ({ value: level, name: thinking[level] ?? level })) }] : []),
 		];
 	}
 
 	const known = (sessionId) => {
 		const entry = sessions.get(sessionId);
-		if (!entry) throw said(`没有这个 pi 会话：${sessionId}`);
+		if (!entry) throw said(t('没有这个 pi 会话：{sessionId}', { sessionId }));
 		return entry;
 	};
 
@@ -180,7 +183,7 @@ function servePi(stream, env) {
 		.onRequest('session/load', told(async ({ params, client }) => {
 			if (sessions.has(params.sessionId)) return { configOptions: await options(known(params.sessionId).session) };
 			const kept = (await SessionManager.list(params.cwd, sessionDir)).find((info) => info.id === params.sessionId);
-			if (!kept) throw said(`pi 那边没有这个会话了：${params.sessionId}`);
+			if (!kept) throw said(t('pi 那边没有这个会话了：{sessionId}', { sessionId: params.sessionId }));
 			const { session } = await open(params.cwd, SessionManager.open(kept.path, sessionDir), client);
 			return { configOptions: await options(session) };
 		}))
@@ -198,14 +201,14 @@ function servePi(stream, env) {
 			if (entry.cancelled) return { stopReason: 'cancelled' };
 			// Its service refused it (a key not right, a model not to be had): said, as an adapter's error is.
 			const last = entry.session.messages.at(-1);
-			if (last?.role === 'assistant' && last.stopReason === 'error') throw said(last.errorMessage || 'pi 的模型没能回答');
+			if (last?.role === 'assistant' && last.stopReason === 'error') throw said(last.errorMessage || t('pi 的模型没能回答'));
 			return { stopReason: 'end_turn' };
 		}))
 		// The author's words while it works: taken once its step is done.
 		.onRequest('_studio/steer', { parse: (params) => params }, told(async ({ params }) => {
 			const entry = known(params.sessionId);
 			if (entry.session.isStreaming) await entry.session.steer(String(params.text ?? ''));
-			else throw said('pi 已经做完了：直接说就行');
+			else throw said(t('pi 已经做完了：直接说就行'));
 			return {};
 		}))
 		.onNotification('session/cancel', ({ params }) => {
@@ -219,7 +222,7 @@ function servePi(stream, env) {
 			if (params.configId === 'model') {
 				const at = String(params.value).indexOf('/');
 				const model = (await models()).getModel(String(params.value).slice(0, at), String(params.value).slice(at + 1));
-				if (!model) throw said(`pi 没有这个模型：${params.value}`);
+				if (!model) throw said(t('pi 没有这个模型：{value}', { value: params.value }));
 				await session.setModel(model);
 			} else if (params.configId === 'thought_level') {
 				session.setThinkingLevel(params.value);
@@ -268,7 +271,8 @@ function translator(cwd, send, session) {
 					}
 					before.set(toolCallId, { path: locations[0].path, old });
 				}
-				const title = toolName === 'bash' && typeof args?.command === 'string' ? args.command : OPERATION_NAMES[toolName] ? [OPERATION_NAMES[toolName], args?.slug ?? args?.query ?? args?.title ?? ''].filter(Boolean).join(' ') : toolName;
+				const named = operationNames()[toolName];
+				const title = toolName === 'bash' && typeof args?.command === 'string' ? args.command : named ? [named, args?.slug ?? args?.query ?? args?.title ?? ''].filter(Boolean).join(' ') : toolName;
 				send({ sessionUpdate: 'tool_call', toolCallId, title, kind: KINDS[toolName] ?? 'other', status: 'in_progress', locations, rawInput: args });
 				return;
 			}
@@ -306,10 +310,10 @@ function translator(cwd, send, session) {
 				return;
 			}
 			case 'auto_retry_start':
-				send({ sessionUpdate: 'notice', severity: 'info', title: 'pi 在重试', description: event.errorMessage ?? '' });
+				send({ sessionUpdate: 'notice', severity: 'info', title: t('pi 在重试'), description: event.errorMessage ?? '' });
 				return;
 			case 'auto_compaction_start':
-				send({ sessionUpdate: 'notice', severity: 'info', title: '上下文快满了，pi 在压缩之前的内容', description: '' });
+				send({ sessionUpdate: 'notice', severity: 'info', title: t('上下文快满了，pi 在压缩之前的内容'), description: '' });
 				return;
 			default:
 		}

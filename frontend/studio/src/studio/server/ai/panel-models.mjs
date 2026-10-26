@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 import presets from './model-presets.json' with { type: 'json' };
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Which models the AI panel's Claude Code talks to: the author's Claude account (its own login), or any service
@@ -84,13 +85,13 @@ export class PanelModels {
 	 */
 	async set(change) {
 		const provider = PROVIDERS.find((entry) => entry.id === change?.provider);
-		if (!provider) throw fail('没有这个模型来源');
+		if (!provider) throw fail(t('没有这个模型来源'));
 		for (const key of ['baseUrl', 'apiKey', 'main', 'fast']) {
-			if (change[key] !== undefined && typeof change[key] !== 'string') throw fail(`${key} 要是文字`);
+			if (change[key] !== undefined && typeof change[key] !== 'string') throw fail(t('{key} 要是文字', { key }));
 		}
-		if (change.baseUrl !== undefined && change.baseUrl.trim() && !ADDRESS.test(change.baseUrl.trim())) throw fail('接口地址要以 http:// 或 https:// 开头');
+		if (change.baseUrl !== undefined && change.baseUrl.trim() && !ADDRESS.test(change.baseUrl.trim())) throw fail(t('接口地址要以 http:// 或 https:// 开头'));
 		const before = this.#choice(await this.#saved(), provider.id);
-		if (provider.id !== 'claude-account' && !(change.baseUrl !== undefined ? change.baseUrl.trim() || provider.baseUrl : before.baseUrl)) throw fail('要填接口地址');
+		if (provider.id !== 'claude-account' && !(change.baseUrl !== undefined ? change.baseUrl.trim() || provider.baseUrl : before.baseUrl)) throw fail(t('要填接口地址'));
 		await updateSettings(this.settingsFile, (settings) => {
 			const saved = settings.panelModels && typeof settings.panelModels === 'object' ? settings.panelModels : {};
 			const own = { ...(saved.services?.[provider.id] ?? {}) };
@@ -113,7 +114,7 @@ export class PanelModels {
 	async env() {
 		const { provider, baseUrl, apiKey, main, fast } = await this.chosen();
 		if (provider.id === 'claude-account') return {};
-		if (!apiKey) throw fail(`还没有填 ${provider.name} 的 API key：在 AI 面板的 ⚙ 里填`, 409);
+		if (!apiKey) throw fail(t('还没有填 {name} 的 API key：在 AI 面板的 ⚙ 里填', { name: provider.name }), 409);
 		const key = provider.keyStyle === 'bearer' ? { ANTHROPIC_AUTH_TOKEN: apiKey, ANTHROPIC_API_KEY: '' } : { ANTHROPIC_API_KEY: apiKey, ANTHROPIC_AUTH_TOKEN: '' };
 		const models = main
 			? { ANTHROPIC_MODEL: main, ANTHROPIC_DEFAULT_OPUS_MODEL: main, ANTHROPIC_DEFAULT_SONNET_MODEL: main, ANTHROPIC_DEFAULT_HAIKU_MODEL: fast, CLAUDE_CODE_SUBAGENT_MODEL: fast }
@@ -133,8 +134,8 @@ export class PanelModels {
 	 */
 	async check() {
 		const { provider, baseUrl, apiKey, main } = await this.chosen();
-		if (provider.id === 'claude-account') throw fail('Claude 账号不用检查：登录以后就能用');
-		if (!apiKey) throw fail('还没有填 API key');
+		if (provider.id === 'claude-account') throw fail(t('Claude 账号不用检查：登录以后就能用'));
+		if (!apiKey) throw fail(t('还没有填 API key'));
 		const headers = { 'content-type': 'application/json', 'anthropic-version': '2023-06-01', ...(provider.keyStyle === 'bearer' ? { authorization: `Bearer ${apiKey}` } : { 'x-api-key': apiKey }) };
 		const model = main || presets.checkModel;
 		let response;
@@ -142,11 +143,11 @@ export class PanelModels {
 			response = await this.fetch(`${baseUrl.replace(/\/+$/u, '')}/v1/messages`, {
 				method: 'POST',
 				headers,
-				body: JSON.stringify({ model, max_tokens: 8, messages: [{ role: 'user', content: '说「好」' }] }),
+				body: JSON.stringify({ model, max_tokens: 8, messages: [{ role: 'user', content: '说「好」' }] }), // i18n-ignore: for the AI
 				signal: AbortSignal.timeout(30_000),
 			});
 		} catch (error) {
-			throw fail(`连不上 ${baseUrl}：${error instanceof Error ? error.message : String(error)}`, 502);
+			throw fail(t('连不上 {baseUrl}：{error}', { baseUrl, error: error instanceof Error ? error.message : String(error) }), 502);
 		}
 		const body = await response.text();
 		if (!response.ok) {
@@ -157,14 +158,14 @@ export class PanelModels {
 			} catch {
 				// As it came.
 			}
-			throw fail(`${provider.name} 回答 ${response.status}：${said}`, 502);
+			throw fail(t('{name} 回答 {status}：{message}', { name: provider.name, status: response.status, message: said }), 502);
 		}
 		let answered = '';
 		try {
 			answered = (JSON.parse(body).content ?? []).map((block) => block.text ?? '').join('').trim();
 		} catch {
 			// A body that is not the Messages API's: the service is something else.
-			throw fail(`${baseUrl} 的回答不是 Anthropic 接口的格式`, 502);
+			throw fail(t('{baseUrl} 的回答不是 Anthropic 接口的格式', { baseUrl }), 502);
 		}
 		return { ok: true, model, answered };
 	}
@@ -236,8 +237,8 @@ export class PiModels {
 	/** Chooses a service; `apiKey: ''` forgets its key, left out keeps it. */
 	async set(change) {
 		const provider = PI_PROVIDERS.find((entry) => entry.id === change?.provider);
-		if (!provider) throw fail('没有这个模型来源');
-		if (change.apiKey !== undefined && typeof change.apiKey !== 'string') throw fail('apiKey 要是文字');
+		if (!provider) throw fail(t('没有这个模型来源'));
+		if (change.apiKey !== undefined && typeof change.apiKey !== 'string') throw fail(t('apiKey 要是文字'));
 		await updateSettings(this.settingsFile, (settings) => {
 			const panel = settings.panelModels && typeof settings.panelModels === 'object' ? settings.panelModels : {};
 			const pi = panel.pi && typeof panel.pi === 'object' ? panel.pi : {};
@@ -256,7 +257,7 @@ export class PiModels {
 		const { provider, apiKey } = await this.chosen();
 		const base = { PI_ACP_PI_COMMAND: join(this.binFolder, 'pi'), PI_OFFLINE: '1' };
 		if (!provider.env) return base;
-		if (!apiKey) throw fail(`还没有填 pi 用的 ${provider.name} 的 API key：在 AI 面板的 ⚙ 里填`, 409);
+		if (!apiKey) throw fail(t('还没有填 pi 用的 {name} 的 API key：在 AI 面板的 ⚙ 里填', { name: provider.name }), 409);
 		return { ...base, [provider.env]: apiKey };
 	}
 
@@ -272,7 +273,7 @@ export class PiModels {
 		const program = await realpath(join(this.binFolder, 'pi'));
 		return new Promise((resolve, reject) => {
 			const child = execFile(process.execPath, [program, '--offline', ...args], { env, timeout: 60_000, maxBuffer: 4 * 1024 * 1024 }, (error, stdout, stderr) => {
-				if (error) reject(fail(`${String(stderr || stdout || (error.killed ? '一分钟没有回答' : error.message)).trim().split('\n').slice(-3).join(' ').slice(0, 400)}`, 502));
+				if (error) reject(fail(`${String(stderr || stdout || (error.killed ? t('一分钟没有回答') : error.message)).trim().split('\n').slice(-3).join(' ').slice(0, 400)}`, 502));
 				else resolve(String(stdout));
 			});
 			// pi takes what comes on its input as part of what it is asked: nothing comes.
@@ -291,11 +292,11 @@ export class PiModels {
 	/** The service asked a word with its first model: what it answered. */
 	async check() {
 		const { provider } = await this.chosen();
-		if (!provider.env) throw fail('用 pi 自己的设置时不用在这里检查');
+		if (!provider.env) throw fail(t('用 pi 自己的设置时不用在这里检查'));
 		const models = await this.models();
-		if (!models.length) throw fail(`pi 的目录里没有 ${provider.name} 的模型`, 502);
-		const answered = (await this.#pi(['-p', '--no-session', '--no-tools', '--no-extensions', '--no-skills', '--no-context-files', '--model', models[0], '说「好」，只说这一个字'])).trim();
-		if (!answered) throw fail(`${provider.name} 没有回答：可能是 key 不对，或者连不上`, 502);
+		if (!models.length) throw fail(t('pi 的目录里没有 {name} 的模型', { name: provider.name }), 502);
+		const answered = (await this.#pi(['-p', '--no-session', '--no-tools', '--no-extensions', '--no-skills', '--no-context-files', '--model', models[0], '说「好」，只说这一个字'])).trim(); // i18n-ignore: for the AI
+		if (!answered) throw fail(t('{name} 没有回答：可能是 key 不对，或者连不上', { name: provider.name }), 502);
 		return { ok: true, model: models[0], answered, models };
 	}
 }

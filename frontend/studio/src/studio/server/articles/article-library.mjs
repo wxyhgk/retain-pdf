@@ -4,6 +4,7 @@ import { dirname } from 'node:path';
 import { articleBundlePaths, resolveInside } from '../../../articles/bundle-paths.mjs';
 import { BIBLIOGRAPHY_PATH, parseBibtex, plainTex } from '@blog/markdown/references/bibtex.mjs';
 import { atomicWriteText } from '../files/atomic-write.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * An article's library, `assets/refs.bib`, as the Studio adds to it: a work
@@ -70,13 +71,13 @@ export class ArticleLibrary {
 				signal: AbortSignal.timeout(15_000),
 			});
 		} catch {
-			throw new LibraryError('连不上 doi.org，检查一下网络', 502);
+			throw new LibraryError(t('连不上 doi.org，检查一下网络'), 502);
 		}
-		if (response.status === 404) throw new LibraryError(`doi.org 上没有 ${doi}`, 404);
-		if (!response.ok) throw new LibraryError(`doi.org 没有给出这篇的 BibTeX（${response.status}）`, 502);
+		if (response.status === 404) throw new LibraryError(t('doi.org 上没有 {doi}', { doi }), 404);
+		if (!response.ok) throw new LibraryError(t('doi.org 没有给出这篇的 BibTeX（{status}）', { status: response.status }), 502);
 		const text = await response.text();
 		const entry = [...parseBibtex(text).values()][0];
-		if (!entry) throw new LibraryError('doi.org 给的不是 BibTeX', 502);
+		if (!entry) throw new LibraryError(t('doi.org 给的不是 BibTeX'), 502);
 		return { text, entry };
 	}
 
@@ -87,7 +88,7 @@ export class ArticleLibrary {
 	 */
 	async addDoi(slug, pasted) {
 		const doi = doiOf(pasted);
-		if (!doi) throw new LibraryError('这不像一个 DOI（形如 10.1063/1.464913）');
+		if (!doi) throw new LibraryError(t('这不像一个 DOI（形如 10.1063/1.464913）'));
 		const before = parseBibtex(await this.#read(slug));
 		const same = (entries) => [...entries.values()].find((entry) => doiOf(entry.fields.doi ?? '')?.toLowerCase() === doi.toLowerCase());
 		const known = same(before);

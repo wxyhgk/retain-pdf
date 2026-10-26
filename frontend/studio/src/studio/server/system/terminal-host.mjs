@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
+import { t } from '@blog/i18n/index.mjs';
 
 export class TerminalUnavailableError extends Error {
 	constructor(message) {
@@ -41,13 +42,13 @@ export class TerminalHost {
 		const granted = new Promise((resolve, reject) => {
 			this.#acks.set(ticket, resolve);
 			setTimeout(() => {
-				if (this.#acks.delete(ticket)) reject(new TerminalUnavailableError('终端程序没有响应'));
+				if (this.#acks.delete(ticket)) reject(new TerminalUnavailableError(t('终端程序没有响应')));
 			}, 5000);
 		});
 		// Gone between its start and now (it crashed): the next terminal starts it again.
 		if (!this.#child?.stdin.writable) {
 			this.#acks.delete(ticket);
-			throw new TerminalUnavailableError('终端程序刚刚退出了，再试一次');
+			throw new TerminalUnavailableError(t('终端程序刚刚退出了，再试一次'));
 		}
 		this.#child.stdin.write(`${JSON.stringify({ ticket, cwd, env })}\n`);
 		await granted;
@@ -76,8 +77,8 @@ export class TerminalHost {
 		child.stdin.on('error', () => {});
 		const lines = createInterface({ input: child.stdout });
 		const port = await new Promise((resolve, reject) => {
-			child.once('error', (error) => reject(new TerminalUnavailableError(`终端程序无法启动：${error.message}`)));
-			child.once('exit', () => reject(new TerminalUnavailableError('终端程序启动后立即退出了')));
+			child.once('error', (error) => reject(new TerminalUnavailableError(t('终端程序无法启动：{message}', { message: error.message }))));
+			child.once('exit', () => reject(new TerminalUnavailableError(t('终端程序启动后立即退出了'))));
 			lines.once('line', (line) => {
 				let port;
 				try {
@@ -85,7 +86,7 @@ export class TerminalHost {
 				} catch {
 					// Something else said first (a warning): no port.
 				}
-				Number.isInteger(port) ? resolve(port) : reject(new TerminalUnavailableError('终端程序没有报告端口'));
+				Number.isInteger(port) ? resolve(port) : reject(new TerminalUnavailableError(t('终端程序没有报告端口')));
 			});
 		});
 		lines.on('line', (line) => {
@@ -113,12 +114,12 @@ export class TerminalHost {
 			const build = this.spawnImpl(this.cargo, ['build', '--release', '--quiet'], { cwd: this.crateRoot, stdio: ['ignore', 'inherit', 'inherit'] });
 			build.once('error', (error) => {
 				reject(new TerminalUnavailableError(
-					error.code === 'ENOENT' ? '终端需要 Rust 来编译：请先安装 https://rustup.rs' : `无法编译终端程序：${error.message}`,
+					error.code === 'ENOENT' ? t('终端需要 Rust 来编译：请先安装 https://rustup.rs') : t('无法编译终端程序：{message}', { message: error.message }),
 				));
 			});
 			build.once('exit', (code) => {
 				if (code === 0) resolve();
-				else reject(new TerminalUnavailableError('终端程序编译失败，详情见运行开发服务器的窗口'));
+				else reject(new TerminalUnavailableError(t('终端程序编译失败，详情见运行开发服务器的窗口')));
 			});
 		});
 	}

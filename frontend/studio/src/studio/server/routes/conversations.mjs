@@ -4,6 +4,7 @@ import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { InlineAi } from '../ai/inline-ai.mjs';
 import { accountsLoggedIn, PiModels } from '../ai/panel-models.mjs';
 import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /** The pictures an AI's answer may show from this machine, by extension. */
 const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
@@ -37,7 +38,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	api.post('/conversations', async ({ json }) => {
 		const { agent: wanted, page } = await json();
 		const agent = (await agents()).find((candidate) => candidate.id === wanted);
-		if (!agent) throw refuse(404, `没有能在面板里用的 AI「${wanted}」`);
+		if (!agent) throw refuse(404, t('没有能在面板里用的 AI「{id}」', { id: wanted }));
 		const service = await serviceOf(agent);
 		const begun = { agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models };
 		const session = await conversations.start(begun);
@@ -51,7 +52,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const session = await conversations.find(id);
 		if (!['saved', 'closed', 'failed'].includes(session.state)) return session;
 		const agent = (await agents()).find((candidate) => candidate.id === session.agent.id);
-		if (!agent) throw refuse(404, `「${session.agent.name}」不能在面板里用了：新开一个对话`);
+		if (!agent) throw refuse(404, t('「{name}」不能在面板里用了：新开一个对话', { name: session.agent.name }));
 		const service = await serviceOf(agent);
 		return conversations.wake(session, { agent, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
 	};
@@ -100,7 +101,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	});
 	api.post('/conversations/:id/options', async ({ params, json }) => {
 		const { configId, value } = await json();
-		if (typeof configId !== 'string' || (typeof value !== 'string' && typeof value !== 'boolean')) throw refuse(400, '要给出选项和它的值');
+		if (typeof configId !== 'string' || (typeof value !== 'string' && typeof value !== 'boolean')) throw refuse(400, t('要给出选项和它的值'));
 		return (await awake(params.id)).configure(configId, value);
 	});
 	// A conversation of the AI tab opened as a page (问答为主): its page made if it has none yet.
@@ -116,9 +117,9 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const written = (query.get('path') ?? '').replace(/^file:\/\//u, '');
 		const path = isAbsolute(written) ? written : resolve(blogRoot, written);
 		const contentType = PICTURES[extname(path).toLowerCase()];
-		if (!contentType) throw refuse(415, '只显示图片（png、jpg、gif、webp、svg）');
+		if (!contentType) throw refuse(415, t('只显示图片（png、jpg、gif、webp、svg）'));
 		const info = await stat(path).catch(() => null);
-		if (!info?.isFile()) throw refuse(404, `没有这张图：${written}`);
+		if (!info?.isFile()) throw refuse(404, t('没有这张图：{path}', { path: written }));
 		void request;
 		await sendFile(response, { body: createReadStream(path), contentType, size: info.size, range: null });
 	}, { streams: true });
@@ -143,7 +144,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		cwd: blogRoot,
 		start: async (agentId) => {
 			const agent = (await agents()).find((candidate) => candidate.id === agentId);
-			if (!agent) throw refuse(404, `没有能用的 AI「${agentId}」`);
+			if (!agent) throw refuse(404, t('没有能用的 AI「{id}」', { id: agentId }));
 			const service = await serviceOf(agent);
 			return { agent, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models };
 		},
@@ -156,10 +157,10 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 	api.post('/inline', async ({ json }) => {
 		const asked = await json();
 		const text = (value) => (typeof value === 'string' ? value : '');
-		if (asked.mode !== 'rewrite' && asked.mode !== 'write') throw refuse(400, 'mode 只能是 rewrite 或 write');
-		if (!text(asked.instruction).trim()) throw refuse(400, '要说明让 AI 做什么');
+		if (asked.mode !== 'rewrite' && asked.mode !== 'write') throw refuse(400, t('mode 只能是 rewrite 或 write'));
+		if (!text(asked.instruction).trim()) throw refuse(400, t('要说明让 AI 做什么'));
 		const { article } = await contextOf({ article: asked.slug });
-		if (!article) throw refuse(404, '没有这篇文章');
+		if (!article) throw refuse(404, t('没有这篇文章'));
 		const options = asked.options && typeof asked.options === 'object' ? Object.fromEntries(Object.entries(asked.options).filter(([, value]) => typeof value === 'string')) : {};
 		return inline.ask({ id: text(asked.id), agent: text(asked.agent), options, mode: asked.mode, instruction: text(asked.instruction), article, selected: text(asked.selected), before: text(asked.before), after: text(asked.after) });
 	});

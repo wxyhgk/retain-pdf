@@ -4,6 +4,7 @@ import { basename, extname, isAbsolute, resolve } from 'node:path';
 import { codeFileLanguages } from '@blog/markdown/code-files/languages.mjs';
 import { articleBundlePaths, resolveInside, StudioPathError } from '../../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
+import { t } from '@blog/i18n/index.mjs';
 export const DEFAULT_RESOURCE_SIZE_LIMIT = 8 * 1024 * 1024;
 
 const TEXT = 'text/plain; charset=utf-8';
@@ -77,7 +78,7 @@ export class FileRepository {
 
 	async list(slug) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
-		await assertDirectoryWithoutSymlink(paths.directory, '文章目录不可用');
+		await assertDirectoryWithoutSymlink(paths.directory, t('文章目录不可用'));
 		const [img, assets, ai] = await Promise.all(
 			ARTICLE_FOLDERS.map((root) => listRegularFiles(paths[root])),
 		);
@@ -92,8 +93,8 @@ export class FileRepository {
 		assertPublicResourceRoot(root);
 		const segments = validateResourcePath(resourcePath);
 		const paths = articleBundlePaths(this.blogRoot, slug);
-		await assertDirectoryWithoutSymlink(paths.directory, '文章目录不可用');
-		await assertDirectoryWithoutSymlink(paths[root], '资源目录不存在');
+		await assertDirectoryWithoutSymlink(paths.directory, t('文章目录不可用'));
+		await assertDirectoryWithoutSymlink(paths[root], t('资源目录不存在'));
 
 		let current = paths[root];
 		for (let index = 0; index < segments.length; index += 1) {
@@ -105,7 +106,7 @@ export class FileRepository {
 				if (error?.code === 'ENOENT') throw new ResourceNotFoundError();
 				throw error;
 			}
-			if (info.isSymbolicLink()) throw new StudioPathError('资源路径不能包含符号链接');
+			if (info.isSymbolicLink()) throw new StudioPathError(t('资源路径不能包含符号链接'));
 			const isLast = index === segments.length - 1;
 			if (!isLast && !info.isDirectory()) throw new ResourceNotFoundError();
 			if (isLast && !info.isFile()) throw new ResourceNotFoundError();
@@ -119,7 +120,7 @@ export class FileRepository {
 		} catch (error) {
 			await handle?.close();
 			if (error?.code === 'ENOENT') throw new ResourceNotFoundError();
-			if (error?.code === 'ELOOP') throw new StudioPathError('资源路径不能包含符号链接');
+			if (error?.code === 'ELOOP') throw new StudioPathError(t('资源路径不能包含符号链接'));
 			throw error;
 		}
 	}
@@ -170,21 +171,21 @@ export function byteRange(header, size) {
 
 export function assertPublicResourceRoot(root) {
 	if (!PUBLISHED_FOLDERS.includes(root)) {
-		throw new ResourceAccessError(root === 'ai' ? 'AI 工作目录不可通过资源接口读取' : '无效的资源目录');
+		throw new ResourceAccessError(root === 'ai' ? t('AI 工作目录不可通过资源接口读取') : t('无效的资源目录'));
 	}
 	return root;
 }
 
 export function validateResourcePath(resourcePath) {
 	if (typeof resourcePath !== 'string' || !resourcePath || resourcePath.includes('\0')) {
-		throw new StudioPathError('无效的资源路径');
+		throw new StudioPathError(t('无效的资源路径'));
 	}
 	if (resourcePath.includes('\\') || isAbsolute(resourcePath) || /^[A-Za-z]:/u.test(resourcePath)) {
-		throw new StudioPathError('资源路径必须是文章内的相对路径');
+		throw new StudioPathError(t('资源路径必须是文章内的相对路径'));
 	}
 	const segments = resourcePath.split('/');
 	if (segments.some((segment) => !segment || segment === '.' || segment === '..')) {
-		throw new StudioPathError('资源路径不能包含空段、. 或 ..');
+		throw new StudioPathError(t('资源路径不能包含空段、. 或 ..'));
 	}
 	return segments;
 }
@@ -235,7 +236,7 @@ export class ResourceAccessError extends Error {
 }
 
 export class ResourceNotFoundError extends Error {
-	constructor(message = '资源不存在') {
+	constructor(message = t('资源不存在')) {
 		super(message);
 		this.name = 'ResourceNotFoundError';
 		this.statusCode = 404;
@@ -244,7 +245,7 @@ export class ResourceNotFoundError extends Error {
 
 export class ResourceTooLargeError extends Error {
 	constructor(sizeLimit) {
-		super(`资源超过 ${Math.floor(sizeLimit / 1024 / 1024)} MB 读取上限`);
+		super(t('资源超过 {limit} MB 读取上限', { limit: Math.floor(sizeLimit / 1024 / 1024) }));
 		this.name = 'ResourceTooLargeError';
 		this.statusCode = 413;
 	}

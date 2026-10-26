@@ -4,6 +4,7 @@ import { startInstruction } from '../ai/instructions.mjs';
 import { OCR_COMMAND, startPdfOcr } from '../tasks/pdf-ocr.mjs';
 import { commandWords } from '../tasks/tasks.mjs';
 import { refuse, reply } from '../api.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * What an AI does in the Studio: the AIs it starts (the 终端 tab's buttons,
@@ -24,7 +25,7 @@ export function aiRoutes(api, { projectRoot, blogRoot, articles, files, history,
 	api.post('/terminal', async ({ json }) => {
 		const { cwd, slug } = await json();
 		const driveRoot = await drive.root();
-		if (cwd === 'drive' && !driveRoot) throw refuse(409, '还没有选择资料库文件夹');
+		if (cwd === 'drive' && !driveRoot) throw refuse(409, t('还没有选择资料库文件夹'));
 		const folder = cwd === 'article' ? articleFolder(slug) : cwd === 'drive' ? driveRoot : projectRoot;
 		if (cwd === 'article') await manager.locate(slug, '');
 		const env = programEnv(cwd === 'article' ? slug : null, driveRoot);
@@ -51,9 +52,9 @@ export function aiRoutes(api, { projectRoot, blogRoot, articles, files, history,
 	// 识别: a picture of the article (`./img/…` or `./assets/…`) read by the model, as asked by `prompt`.
 	api.post('/articles/:slug/recognize', async ({ params: { slug }, json }) => {
 		const { image, prompt } = await json();
-		if (typeof prompt !== 'string' || !prompt.trim()) throw refuse(400, '要说明识别什么（prompt）');
+		if (typeof prompt !== 'string' || !prompt.trim()) throw refuse(400, t('要说明识别什么（prompt）'));
 		const picture = String(image ?? '').replace(/^\.\//u, '').match(/^(img|assets)\/(.+)$/u);
-		if (!picture) throw refuse(400, '只能识别文章自己的图片（./img/ 或 ./assets/ 里的）');
+		if (!picture) throw refuse(400, t('只能识别文章自己的图片（./img/ 或 ./assets/ 里的）'));
 		const { body, contentType } = await files.read(slug, picture[1], picture[2], { sizeLimit: 20 * 1024 * 1024 });
 		return { text: await askAboutImage(await aiSettings.config(), { image: body, mediaType: String(contentType).split(';')[0], prompt }) };
 	});
@@ -62,10 +63,10 @@ export function aiRoutes(api, { projectRoot, blogRoot, articles, files, history,
 	// open in the Studio, it comes as a change from outside, to accept or not.
 	api.post('/articles/:slug/below-image', async ({ params: { slug }, json }) => {
 		const { image, markdown } = await json();
-		if (typeof image !== 'string' || typeof markdown !== 'string' || !markdown.trim()) throw refuse(400, '要给出图片和要放的内容');
+		if (typeof image !== 'string' || typeof markdown !== 'string' || !markdown.trim()) throw refuse(400, t('要给出图片和要放的内容'));
 		const { source, revision } = await articles.read(slug);
 		const next = insertBelowImage(source, image, markdown);
-		if (next === null) throw refuse(404, '没在文章里找到这张图');
+		if (next === null) throw refuse(404, t('没在文章里找到这张图'));
 		await history.keep(slug, source, 'before-change');
 		await articles.save(slug, { source: next, expectedRevision: revision });
 		return { slug };

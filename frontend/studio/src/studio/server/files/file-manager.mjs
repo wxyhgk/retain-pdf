@@ -8,6 +8,7 @@ import { articleBundlePaths, resolveInside, StudioPathError } from '../../../art
 import { ARTICLE_FOLDERS, isLocalOnly } from '@blog/markdown/articles/rules.mjs';
 import { articleSummary } from '../../../articles/schemas.mjs';
 import { existingDirectory, existingEntry, exists, FileConflictError, FileNotFoundError, linkUnderFreeName, replaceInto } from './safe-fs.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 export { FileConflictError, FileNotFoundError };
 
@@ -117,11 +118,11 @@ export class ArticleFileManager {
 		const source = managedSegments(from);
 		const target = managedSegments(to);
 		assertName(target[target.length - 1]);
-		if (target.join('/').startsWith(`${source.join('/')}/`)) throw new StudioPathError('不能把文件夹移到它自己里面');
+		if (target.join('/').startsWith(`${source.join('/')}/`)) throw new StudioPathError(t('不能把文件夹移到它自己里面'));
 		const sourcePath = await existingEntry(directory, source);
 		const targetFolder = await existingDirectory(directory, target.slice(0, -1));
 		const targetPath = resolveInside(targetFolder, target[target.length - 1]);
-		if (await exists(targetPath)) throw new FileConflictError(`${target.join('/')} 已经存在`);
+		if (await exists(targetPath)) throw new FileConflictError(t('{path} 已经存在', { path: target.join('/') }));
 		await rename(sourcePath, targetPath);
 		return { path: target.join('/') };
 	}
@@ -150,16 +151,16 @@ export class ArticleFileManager {
 		const { directory } = await this.#article(slug);
 		const [folder, ...segments] = trashedSegments(trashed);
 		const stamp = TRASH_STAMP.exec(folder)?.[0];
-		if (!stamp || folder !== `${stamp}-${slug}`) throw new StudioPathError('不是这篇文章删除的文件');
+		if (!stamp || folder !== `${stamp}-${slug}`) throw new StudioPathError(t('不是这篇文章删除的文件'));
 		managedSegments(segments.join('/'));
 		const source = await existingEntry(this.trashRoot, [folder, ...segments]).catch((error) => {
-			if (error instanceof FileNotFoundError) throw new FileNotFoundError('回收站里已经没有这个文件了');
+			if (error instanceof FileNotFoundError) throw new FileNotFoundError(t('回收站里已经没有这个文件了'));
 			throw error;
 		});
 		await ensureResourceFolder(directory, segments[0]);
 		const parent = await makeFolders(directory, segments.slice(0, -1));
 		const target = resolveInside(parent, segments[segments.length - 1]);
-		if (await exists(target)) throw new FileConflictError(`${segments.join('/')} 已经有同名的文件，先改名或删除它`);
+		if (await exists(target)) throw new FileConflictError(t('{path} 已经有同名的文件，先改名或删除它', { path: segments.join('/') }));
 		await rename(source, target);
 		// Nothing else was trashed with it: its folder in the trash goes too.
 		await rm(join(this.trashRoot, folder), { recursive: true, force: true }).catch(() => {});
@@ -184,14 +185,14 @@ export class ArticleFileManager {
 	async restoreArticle(trashed) {
 		const [folder, name, ...rest] = trashedSegments(trashed);
 		const match = TRASH_STAMP.exec(name ?? '');
-		if (folder !== ARTICLE_TRASH || !match || rest.length) throw new StudioPathError('不是删除的文章');
+		if (folder !== ARTICLE_TRASH || !match || rest.length) throw new StudioPathError(t('不是删除的文章'));
 		const slug = name.slice(match[0].length + 1);
 		const target = articleBundlePaths(this.blogRoot, slug).directory;
 		const source = await existingEntry(this.trashRoot, [folder, name]).catch((error) => {
-			if (error instanceof FileNotFoundError) throw new FileNotFoundError('回收站里已经没有这篇文章了');
+			if (error instanceof FileNotFoundError) throw new FileNotFoundError(t('回收站里已经没有这篇文章了'));
 			throw error;
 		});
-		if (await exists(target)) throw new FileConflictError(`已经有一篇叫 ${slug} 的文章了`);
+		if (await exists(target)) throw new FileConflictError(t('已经有一篇叫 {slug} 的文章了', { slug }));
 		await rename(source, target);
 		return { slug };
 	}
@@ -238,9 +239,9 @@ export class ArticleFileManager {
 	async purge(trashed) {
 		const [folder, name] = trashedSegments(trashed);
 		const target = folder === ARTICLE_TRASH ? [folder, name] : [folder];
-		if (!TRASH_STAMP.test(target[target.length - 1] ?? '')) throw new StudioPathError('不是回收站里的东西');
+		if (!TRASH_STAMP.test(target[target.length - 1] ?? '')) throw new StudioPathError(t('不是回收站里的东西'));
 		const path = await existingEntry(this.trashRoot, target).catch((error) => {
-			if (error instanceof FileNotFoundError) throw new FileNotFoundError('回收站里已经没有它了');
+			if (error instanceof FileNotFoundError) throw new FileNotFoundError(t('回收站里已经没有它了'));
 			throw error;
 		});
 		await rm(path, { recursive: true, force: true });
@@ -269,19 +270,19 @@ export class ArticleFileManager {
 	async locate(slug, path) {
 		const { directory } = await this.#article(slug);
 		if (path === '') return directory;
-		if (typeof path !== 'string' || path.includes('\\') || path.includes('\0')) throw new StudioPathError('无效的文件路径');
+		if (typeof path !== 'string' || path.includes('\\') || path.includes('\0')) throw new StudioPathError(t('无效的文件路径'));
 		const segments = path.replace(/\/+$/u, '').split('/');
-		if (segments.some((segment) => !segment || segment === '.' || segment === '..' || isHidden(segment))) throw new StudioPathError('无效的文件路径');
+		if (segments.some((segment) => !segment || segment === '.' || segment === '..' || isHidden(segment))) throw new StudioPathError(t('无效的文件路径'));
 		return existingEntry(directory, segments);
 	}
 
 	async #article(slug) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		const info = await lstat(paths.directory).catch((error) => {
-			if (error?.code === 'ENOENT') throw new FileNotFoundError('文章不存在');
+			if (error?.code === 'ENOENT') throw new FileNotFoundError(t('文章不存在'));
 			throw error;
 		});
-		if (!info.isDirectory() || info.isSymbolicLink()) throw new FileNotFoundError('文章不存在');
+		if (!info.isDirectory() || info.isSymbolicLink()) throw new FileNotFoundError(t('文章不存在'));
 		return paths;
 	}
 }
@@ -350,9 +351,9 @@ function trashTime(name) {
 
 /** A name `trash` gave, split: no empty, `.` or `..` part, nothing hidden. */
 function trashedSegments(trashed) {
-	if (typeof trashed !== 'string' || !trashed || trashed.includes('\\') || trashed.includes('\0')) throw new StudioPathError('无效的回收站路径');
+	if (typeof trashed !== 'string' || !trashed || trashed.includes('\\') || trashed.includes('\0')) throw new StudioPathError(t('无效的回收站路径'));
 	const segments = trashed.split('/');
-	if (segments.some((segment) => !segment || segment === '.' || segment === '..' || isHidden(segment))) throw new StudioPathError('无效的回收站路径');
+	if (segments.some((segment) => !segment || segment === '.' || segment === '..' || isHidden(segment))) throw new StudioPathError(t('无效的回收站路径'));
 	return segments;
 }
 
@@ -395,26 +396,26 @@ async function walk(directory, prefix) {
  * article's resource folders, and (unless `allowFolderRoot`) not the folder itself.
  */
 export function managedSegments(path, { allowFolderRoot = false } = {}) {
-	if (typeof path !== 'string' || !path || path.includes('\0') || path.includes('\\')) throw new StudioPathError('无效的文件路径');
+	if (typeof path !== 'string' || !path || path.includes('\0') || path.includes('\\')) throw new StudioPathError(t('无效的文件路径'));
 	const segments = path.replace(/\/+$/u, '').split('/');
 	if (segments.some((segment) => !segment || segment === '.' || segment === '..')) {
-		throw new StudioPathError('文件路径不能包含空段、. 或 ..');
+		throw new StudioPathError(t('文件路径不能包含空段、. 或 ..'));
 	}
 	if (!ARTICLE_FOLDERS.includes(segments[0])) {
-		if (LOCKED_FILES.includes(segments[0])) throw new FileLockedError(`${segments[0]} 只能在编辑器里修改`);
-		throw new StudioPathError('只能管理 img/、assets/ 和 ai/ 里的文件');
+		if (LOCKED_FILES.includes(segments[0])) throw new FileLockedError(t('{name} 只能在编辑器里修改', { name: segments[0] }));
+		throw new StudioPathError(t('只能管理 img/、assets/ 和 ai/ 里的文件'));
 	}
-	if (segments.length === 1 && !allowFolderRoot) throw new FileLockedError(`${segments[0]}/ 是文章的固定文件夹`);
+	if (segments.length === 1 && !allowFolderRoot) throw new FileLockedError(t('{folder}/ 是文章的固定文件夹', { folder: segments[0] }));
 	return segments;
 }
 
 /** A file or folder name the panel accepts: visible, no spaces or characters Markdown links trip over. */
 export function assertName(name) {
-	if (typeof name !== 'string' || !name || name === '.' || name === '..') throw new StudioPathError('名称不能为空');
-	if (Buffer.byteLength(name) > MAX_NAME_BYTES) throw new StudioPathError('名称太长');
-	if (isHidden(name)) throw new StudioPathError('名称不能以 . 开头');
+	if (typeof name !== 'string' || !name || name === '.' || name === '..') throw new StudioPathError(t('名称不能为空'));
+	if (Buffer.byteLength(name) > MAX_NAME_BYTES) throw new StudioPathError(t('名称太长'));
+	if (isHidden(name)) throw new StudioPathError(t('名称不能以 . 开头'));
 	if (/[\s/\\<>:"|?*#%()[\]\u0000-\u001f\u007f]/u.test(name)) {
-		throw new StudioPathError('名称不能包含空格或 / \\ < > : " | ? * # % ( ) [ ]');
+		throw new StudioPathError(t('名称不能包含空格或 / \\ < > : " | ? * # % ( ) [ ]'));
 	}
 	return name;
 }
@@ -455,8 +456,8 @@ async function makeFolders(directory, segments, existing = 1) {
 				// Two uploads from one dropped folder may make it at the same time.
 				if (error?.code !== 'EEXIST') throw error;
 			});
-		} else if (info.isSymbolicLink()) throw new StudioPathError('路径不能包含符号链接');
-		else if (!info.isDirectory()) throw new FileConflictError(`${segments.join('/')} 已被同名文件占用`);
+		} else if (info.isSymbolicLink()) throw new StudioPathError(t('路径不能包含符号链接'));
+		else if (!info.isDirectory()) throw new FileConflictError(t('{path} 已被同名文件占用', { path: segments.join('/') }));
 	}
 	return current;
 }
@@ -491,7 +492,7 @@ export class FileLockedError extends Error {
 
 export class UploadTooLargeError extends Error {
 	constructor(limit) {
-		super(`文件超过 ${Math.floor(limit / 1024 / 1024)} MB 上传上限`);
+		super(t('文件超过 {limit} MB 上传上限', { limit: Math.floor(limit / 1024 / 1024) }));
 		this.name = 'UploadTooLargeError';
 		this.statusCode = 413;
 	}

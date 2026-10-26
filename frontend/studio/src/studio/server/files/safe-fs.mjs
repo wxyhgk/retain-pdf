@@ -3,6 +3,7 @@ import { createReadStream } from 'node:fs';
 import { link, lstat, rename } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { resolveInside, StudioPathError } from '../../../articles/bundle-paths.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Reaching files under a folder without being led out of it: no symbolic
@@ -13,7 +14,7 @@ import { resolveInside, StudioPathError } from '../../../articles/bundle-paths.m
 /** Resolves an existing folder, refusing symbolic links on the way. */
 export async function existingDirectory(directory, segments) {
 	const path = await existingEntry(directory, segments);
-	if (!(await lstat(path)).isDirectory()) throw new FileConflictError(`${segments.join('/')} 不是文件夹`);
+	if (!(await lstat(path)).isDirectory()) throw new FileConflictError(t('{path} 不是文件夹', { path: segments.join('/') }));
 	return path;
 }
 
@@ -26,11 +27,11 @@ export async function existingEntry(directory, segments) {
 		try {
 			info = await lstat(current);
 		} catch (error) {
-			if (error?.code === 'ENOENT') throw new FileNotFoundError(`${segments.slice(0, index + 1).join('/')} 不存在`);
+			if (error?.code === 'ENOENT') throw new FileNotFoundError(t('{path} 不存在', { path: segments.slice(0, index + 1).join('/') }));
 			throw error;
 		}
-		if (info.isSymbolicLink()) throw new StudioPathError('路径不能包含符号链接');
-		if (index < segments.length - 1 && !info.isDirectory()) throw new FileNotFoundError(`${segments.join('/')} 不存在`);
+		if (info.isSymbolicLink()) throw new StudioPathError(t('路径不能包含符号链接'));
+		if (index < segments.length - 1 && !info.isDirectory()) throw new FileNotFoundError(t('{path} 不存在', { path: segments.join('/') }));
 	}
 	return current;
 }
@@ -65,7 +66,7 @@ export async function linkUnderFreeName(temporary, folder, name) {
 		}
 		if (await sameBytes(temporary, join(folder, candidate))) return candidate;
 	}
-	throw new FileConflictError('同名文件太多');
+	throw new FileConflictError(t('同名文件太多'));
 }
 
 /** Whether `other` is a plain file holding exactly what `file` holds. */
@@ -83,13 +84,13 @@ async function sameBytes(file, other) {
 export async function replaceInto(temporary, folder, name) {
 	const target = join(folder, name);
 	const info = await lstat(target).catch(() => null);
-	if (info && (!info.isFile() || info.isSymbolicLink())) throw new FileConflictError(`${name} 不是普通文件，不能替换`);
+	if (info && (!info.isFile() || info.isSymbolicLink())) throw new FileConflictError(t('{name} 不是普通文件，不能替换', { name }));
 	await rename(temporary, target);
 	return name;
 }
 
 export class FileNotFoundError extends Error {
-	constructor(message = '文件不存在') {
+	constructor(message = t('文件不存在')) {
 		super(message);
 		this.name = 'FileNotFoundError';
 		this.statusCode = 404;

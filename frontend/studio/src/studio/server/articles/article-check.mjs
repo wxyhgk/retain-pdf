@@ -12,6 +12,7 @@ import { findArticleReferences } from '@blog/markdown/articles/article-reference
 import { ArticleRepository } from './article-repository.mjs';
 import { articleBundlePaths, resolveInside } from '../../../articles/bundle-paths.mjs';
 import { articleProblems } from '../../../articles/schemas.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * What would be wrong with an article once published, found before it is:
@@ -71,11 +72,11 @@ async function referenceIssues(directory, source) {
 		const shown = `./${reference.path}`;
 		if (!(await isFile(directory, reference.path))) {
 			// Astro stops the build at a Markdown picture or cover it cannot find.
-			if (reference.kind === 'image') issues.push({ severity: 'error', message: `找不到图片 ${shown}，博客构建会失败`, line });
-			else if (reference.kind === 'frontmatter') issues.push({ severity: 'error', message: `找不到封面图 ${shown}，博客构建会失败`, line });
-			else issues.push({ severity: 'warning', message: `找不到文件 ${shown}，页面上的链接会失效`, line });
+			if (reference.kind === 'image') issues.push({ severity: 'error', message: t('找不到图片 {path}，博客构建会失败', { path: shown }), line });
+			else if (reference.kind === 'frontmatter') issues.push({ severity: 'error', message: t('找不到封面图 {path}，博客构建会失败', { path: shown }), line });
+			else issues.push({ severity: 'warning', message: t('找不到文件 {path}，页面上的链接会失效', { path: shown }), line });
 		} else if (!PUBLISHED_FOLDERS.includes(reference.path.split('/', 1)[0])) {
-			issues.push({ severity: 'warning', message: `${shown} 不在 img/ 或 assets/ 里，不会随文章发布`, line });
+			issues.push({ severity: 'warning', message: t('{path} 不在 img/ 或 assets/ 里，不会随文章发布', { path: shown }), line });
 		}
 	}
 	return issues;
@@ -90,10 +91,10 @@ async function articleLinkIssues(blogRoot, slug, source) {
 	for (const { url, line, section, slug: target } of wanted) {
 		const article = articles.get(target);
 		const at = line ? { line } : {};
-		if (!article) issues.push({ severity: 'warning', message: `链接的文章 ${url} 不存在`, ...at });
-		else if (article.draft) issues.push({ severity: 'warning', message: `链接的文章「${article.title}」还是草稿，发布前这个链接打不开`, ...at });
+		if (!article) issues.push({ severity: 'warning', message: t('链接的文章 {url} 不存在', { url }), ...at });
+		else if (article.draft) issues.push({ severity: 'warning', message: t('链接的文章「{title}」还是草稿，发布前这个链接打不开', { title: article.title }), ...at });
 		else if ((article.kind === 'wiki') !== (section === 'wiki')) {
-			issues.push({ severity: 'warning', message: `「${article.title}」的网址是 ${articleAddress(article.kind, target)}，不是 ${url}`, ...at });
+			issues.push({ severity: 'warning', message: t('「{title}」的网址是 {address}，不是 {url}', { title: article.title, address: articleAddress(article.kind, target), url }), ...at });
 		}
 	}
 	return issues;

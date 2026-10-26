@@ -4,6 +4,7 @@ import { join } from 'node:path';
 
 import { commandWords, loginShell } from '../tasks/tasks.mjs';
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The AIs the Studio starts: coding agents that run in a terminal and read the
@@ -28,7 +29,7 @@ const CLAUDE_RUN = `claude -p --permission-mode dontAsk --allowedTools "Read Edi
 export const AGENT_PRESETS = Object.freeze([
 	{ id: 'claude', name: 'Claude', launch: 'claude', run: `${CLAUDE_RUN} {prompt}`, resume: `${CLAUDE_RUN} --continue {prompt}`, acp: 'claude-agent-acp', install: 'npm install -g @anthropic-ai/claude-code' },
 	{ id: 'codex', name: 'Codex', launch: 'codex', run: 'codex exec -c sandbox_mode="workspace-write" {prompt}', resume: 'codex exec resume --last -c sandbox_mode="workspace-write" {prompt}', acp: 'codex-acp', install: 'npm install -g @openai/codex' },
-	{ id: 'pi', name: 'pi', launch: 'pi', run: 'pi -p -a {prompt}', resume: 'pi -p -a --continue {prompt}', acp: 'pi-acp', install: '见 https://pi.dev' },
+	{ id: 'pi', name: 'pi', launch: 'pi', run: 'pi -p -a {prompt}', resume: 'pi -p -a --continue {prompt}', acp: 'pi-acp', install: '见 https://pi.dev' }, // i18n-ignore: a preset saved into the settings
 ]);
 
 /** How long what was found installed is taken as still so, in ms. */
@@ -71,14 +72,14 @@ export class AgentSettings {
 	/** Saves the list and the one Alt+Enter uses. */
 	async set(change) {
 		const fail = (message) => Object.assign(new Error(message), { statusCode: 400 });
-		if (!change || !Array.isArray(change.list) || !change.list.length) throw fail('至少要有一个 AI');
+		if (!change || !Array.isArray(change.list) || !change.list.length) throw fail(t('至少要有一个 AI'));
 		const ids = new Set();
 		for (const agent of change.list) {
-			if (!valid(agent)) throw fail(`「${agent?.name ?? ''}」没写全：名字、代号（小写英文）、三条命令都要有，后台命令里要有 {prompt}`);
-			if (ids.has(agent.id)) throw fail(`代号「${agent.id}」重复了`);
+			if (!valid(agent)) throw fail(t('「{name}」没写全：名字、代号（小写英文）、三条命令都要有，后台命令里要有 {prompt}', { name: agent?.name ?? '' }));
+			if (ids.has(agent.id)) throw fail(t('代号「{id}」重复了', { id: agent.id }));
 			ids.add(agent.id);
 		}
-		if (!ids.has(change.default)) throw fail('默认的 AI 不在列表里');
+		if (!ids.has(change.default)) throw fail(t('默认的 AI 不在列表里'));
 		const agents = { list: change.list.map(({ id, name, launch, run, resume, acp, install }) => ({ id, name, launch, run, resume, ...(acp ? { acp } : {}), ...(install ? { install } : {}) })), default: change.default };
 		await updateSettings(this.settingsFile, (settings) => ({ ...settings, agents }));
 		this.#found = null;

@@ -8,6 +8,7 @@ import { Readable, Writable } from 'node:stream';
 import { client, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 
 import { commandWords, endWithServer, loginShell } from '../tasks/tasks.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The AI panel's conversations: a coding agent (Claude Code, Codex) that reads, runs and writes by itself, spoken to
@@ -184,14 +185,14 @@ export class AgentSessions {
 		await session.open(commandWords(agent.acp), { ...this.env, ...env, PATH: path }, { again });
 		if (this.#closed) {
 			session.close();
-			throw Object.assign(new Error('Studio 正在停下'), { statusCode: 503 });
+			throw Object.assign(new Error(t('Studio 正在停下')), { statusCode: 503 });
 		}
 	}
 
 	/** A conversation going on (or over, still in memory). */
 	get(id) {
 		const session = this.#sessions.get(id);
-		if (!session) throw Object.assign(new Error('没有这个对话'), { statusCode: 404 });
+		if (!session) throw Object.assign(new Error(t('没有这个对话')), { statusCode: 404 });
 		return session;
 	}
 
@@ -259,7 +260,7 @@ export class AgentSessions {
 
 	/** A conversation begun to be a page (opened in the editor): its page and record there at once, before it is spoken to. */
 	async makePage(session) {
-		if (!this.store) throw Object.assign(new Error('对话没有地方存'), { statusCode: 500 });
+		if (!this.store) throw Object.assign(new Error(t('对话没有地方存')), { statusCode: 500 });
 		await this.store.append(session.record(), []);
 		await this.store.save(session.record());
 		session.madePage = true;
@@ -294,7 +295,7 @@ export class AgentSessions {
 			this.store.append(session.record(), turn, { sync: true });
 			session.pageWrote(turn.at(-1).id);
 		} catch (error) {
-			console.warn(`[studio] 没能把对话写进 ${session.id}/index.md：${error instanceof Error ? error.message : error}`);
+			console.warn(`[studio] 没能把对话写进 ${session.id}/index.md：${error instanceof Error ? error.message : error}`); // i18n-ignore: developer log
 		}
 	}
 
@@ -429,7 +430,7 @@ class AgentSession {
 		return this.configOptions.map((option) => {
 			if (option.category !== 'model' || option.type !== 'select') return option;
 			if (provider) return { ...option, options: modelChoices(option).filter((choice) => choice.value.startsWith(`${provider}/`)) };
-			const options = [{ value: 'default', name: main }, ...(fast && fast !== main ? [{ value: 'haiku', name: `${fast}（快）` }] : [])];
+			const options = [{ value: 'default', name: main }, ...(fast && fast !== main ? [{ value: 'haiku', name: t('{fast}（快）', { fast }) }] : [])];
 			return { ...option, options, currentValue: option.currentValue === 'haiku' && options.length > 1 ? 'haiku' : 'default' };
 		});
 	}
@@ -446,7 +447,7 @@ class AgentSession {
 	 * cannot be, the agent then told where what was said is).
 	 */
 	async open(argv, env, { again = false } = {}) {
-		if (!argv.length) throw Object.assign(new Error(`${this.agent.name} 没有 ACP 命令`), { statusCode: 400 });
+		if (!argv.length) throw Object.assign(new Error(t('{name} 没有 ACP 命令', { name: this.agent.name })), { statusCode: 400 });
 		if (again) {
 			this.error = '';
 			this.#stderr = '';
@@ -476,7 +477,7 @@ class AgentSession {
 			for (const stream of [child.stdin, child.stdout, child.stderr]) stream.on('error', () => {});
 			exited = new Promise((resolve) => {
 				child.on('error', (error) => resolve(error));
-				child.on('close', (code, signal) => resolve(code === 0 || signal === 'SIGTERM' ? null : new Error(`退出码 ${code ?? signal}`)));
+				child.on('close', (code, signal) => resolve(code === 0 || signal === 'SIGTERM' ? null : new Error(t('退出码 {code}', { code: code ?? signal }))));
 			});
 			// An adapter of before (gone on with in another) ends unheeded.
 			void exited.then((error) => this.#child === child && this.#ended(error));
@@ -492,7 +493,7 @@ class AgentSession {
 				return agent.request('session/new', { cwd: this.cwd, mcpServers: [] });
 			})();
 			// An adapter that exits before it answers (not installed, not logged in) says so on stderr.
-			const made = await Promise.race([opening, exited.then((error) => Promise.reject(error ?? new Error('提前退出了')))]);
+			const made = await Promise.race([opening, exited.then((error) => Promise.reject(error ?? new Error(t('提前退出了'))))]);
 			this.#acpId = made.sessionId ?? this.#acpId;
 			// What pi-acp says of pi when a session begins (its version, skills, extensions): not an answer.
 			this.#prelude = made._meta?.piAcp?.startupInfo ?? null;
@@ -503,7 +504,7 @@ class AgentSession {
 			this.error = this.#why(error);
 			this.close();
 			this.#setState('failed');
-			throw Object.assign(new Error(`${this.agent.name} 没能启动：${this.error}`), { statusCode: 502 });
+			throw Object.assign(new Error(t('{name} 没能启动：{error}', { name: this.agent.name, error: this.error })), { statusCode: 502 });
 		}
 	}
 
@@ -542,8 +543,8 @@ class AgentSession {
 	 * @param {PromptContext} [context]
 	 */
 	prompt(text, context = {}) {
-		if (this.state !== 'idle') throw Object.assign(new Error(this.state === 'running' ? '它还在做上一件事：等它做完，或者先停下' : '这个对话已经结束了'), { statusCode: 409 });
-		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error('要说点什么'), { statusCode: 400 });
+		if (this.state !== 'idle') throw Object.assign(new Error(this.state === 'running' ? t('它还在做上一件事：等它做完，或者先停下') : t('这个对话已经结束了')), { statusCode: 409 });
+		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error(t('要说点什么')), { statusCode: 400 });
 		const named = {
 			article: context.article?.title ?? null,
 			selection: context.selection ? lineRange(context.selection) : null,
@@ -563,10 +564,10 @@ class AgentSession {
 				const turn = this.items.slice(this.items.findLastIndex((item) => item.kind === 'user') + 1);
 				if (done.stopReason !== 'end_turn') this.#add({ kind: 'stop', id: randomUUID(), reason: done.stopReason });
 				// A turn over with nothing said or done: its service refused it (pi-acp says no more than that).
-				else if (!turn.length) this.#add({ kind: 'error', id: randomUUID(), message: `${this.agent.name} 没有回答：可能是 API key 不对、模型用不了，或者连不上网络` });
+				else if (!turn.length) this.#add({ kind: 'error', id: randomUUID(), message: t('{name} 没有回答：可能是 API key 不对、模型用不了，或者连不上网络', { name: this.agent.name }) });
 				// Over after thinking or running tools, nothing said: some models end so (all their output thinking).
 				else if (!turn.some((item) => item.kind === 'message' && item.text.trim())) {
-					this.#add({ kind: 'notice', id: randomUUID(), severity: 'warning', title: `${this.agent.name} 停下了，但没有说结论`, description: '模型有时想完或做完就结束了这一轮。', resume: true });
+					this.#add({ kind: 'notice', id: randomUUID(), severity: 'warning', title: t('{name} 停下了，但没有说结论', { name: this.agent.name }), description: t('模型有时想完或做完就结束了这一轮。'), resume: true });
 				}
 				if (this.state === 'running') this.#setState('idle');
 			},
@@ -583,11 +584,11 @@ class AgentSession {
 	 * is done, the turn going on.
 	 */
 	steer(text) {
-		if (this.state !== 'running' || !this.#here) throw Object.assign(new Error('现在不能插话：等它做完，或者先停下'), { statusCode: 409 });
-		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error('要说点什么'), { statusCode: 400 });
+		if (this.state !== 'running' || !this.#here) throw Object.assign(new Error(t('现在不能插话：等它做完，或者先停下')), { statusCode: 409 });
+		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error(t('要说点什么')), { statusCode: 400 });
 		this.#add({ kind: 'user', id: randomUUID(), text, context: { article: null, selection: null, mentions: [] }, steer: true });
 		void this.#connection.agent.request('_studio/steer', { sessionId: this.#acpId, text }).catch((error) => {
-			this.#add({ kind: 'error', id: randomUUID(), message: `插话没送到：${this.#why(error)}` });
+			this.#add({ kind: 'error', id: randomUUID(), message: t('插话没送到：{error}', { error: this.#why(error) }) });
 		});
 	}
 
@@ -601,13 +602,13 @@ class AgentSession {
 	/** The author's answer to leave asked (`optionId`), or no (`null`). */
 	answer(permission, optionId) {
 		const answer = this.#asked.get(permission);
-		if (!answer) throw Object.assign(new Error('这个请求已经回答过了'), { statusCode: 409 });
+		if (!answer) throw Object.assign(new Error(t('这个请求已经回答过了')), { statusCode: 409 });
 		answer(optionId);
 	}
 
 	/** One of its options (model, mode, effort…) set to `value`. */
 	async configure(configId, value) {
-		if (this.state !== 'idle' && this.state !== 'running') throw Object.assign(new Error('这个对话已经结束了'), { statusCode: 409 });
+		if (this.state !== 'idle' && this.state !== 'running') throw Object.assign(new Error(t('这个对话已经结束了')), { statusCode: 409 });
 		const done = await this.#connection.agent.request('session/set_config_option', { sessionId: this.#acpId, configId, value });
 		this.configOptions = done.configOptions ?? this.configOptions;
 		const mode = this.configOptions.find((option) => option.category === 'mode');
@@ -670,8 +671,8 @@ class AgentSession {
 		this.#forget();
 		for (const answer of this.#asked.values()) answer(null);
 		if (this.state === 'closed' || this.state === 'failed') return;
-		this.error = this.#why(error ?? new Error('它结束了'));
-		this.#add({ kind: 'error', id: randomUUID(), message: `${this.agent.name} 停了：${this.error}` });
+		this.error = this.#why(error ?? new Error(t('它结束了')));
+		this.#add({ kind: 'error', id: randomUUID(), message: t('{name} 停了：{error}', { name: this.agent.name, error: this.error }) });
 		this.#setState('failed');
 	}
 
@@ -847,12 +848,13 @@ function modelChoices(option) {
  * @property {string} [history] where what was said before is kept (chats/…/index.md), for an agent that cannot remember it
  */
 
-const lineRange = ({ start, end }) => (start === end ? `第 ${start} 行` : `第 ${start}–${end} 行`);
+const lineRange = ({ start, end }) => (start === end ? t('第 {start} 行', { start }) : t('第 {start}–{end} 行', { start, end }));
+const promptLineRange = ({ start, end }) => (start === end ? `第 ${start} 行` : `第 ${start}–${end} 行`); // i18n-ignore: for the AI
 
 /** Whether an article has its ai/brief.md (blog/AGENTS.md: read it first), said, so that one not there is not tried for. */
 function briefOf({ brief }) {
 	if (brief === undefined) return '';
-	return brief ? `；它的写作要求在 ${brief}，先读` : '（没有 ai/brief.md，不用找）';
+	return brief ? `；它的写作要求在 ${brief}，先读` : '（没有 ai/brief.md，不用找）'; // i18n-ignore: for the AI
 }
 
 /** What the author said, then what the Studio adds of where they are, marked as the Studio's. */
@@ -867,15 +869,15 @@ export function withContext(text, context = {}) {
  */
 export function contextBlock({ article, selection, mentions = [], history } = {}) {
 	const lines = [];
-	if (history) lines.push(`这是接着之前的对话说的，但你那边接不上之前的会话了：之前说过的话记在 ${history}，需要时去读`);
-	if (article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}${briefOf(article)}`);
+	if (history) lines.push(`这是接着之前的对话说的，但你那边接不上之前的会话了：之前说过的话记在 ${history}，需要时去读`); // i18n-ignore: for the AI
+	if (article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}${briefOf(article)}`); // i18n-ignore: for the AI
 	if (article && selection) {
 		const fence = '`'.repeat(Math.max(3, ...[...selection.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
-		lines.push(`选中的是这篇的${lineRange(selection)}：`, `${fence}markdown`, selection.text, fence);
+		lines.push(`选中的是这篇的${promptLineRange(selection)}：`, `${fence}markdown`, selection.text, fence); // i18n-ignore: for the AI
 	}
-	for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`);
+	for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`); // i18n-ignore: for the AI
 	if (!lines.length) return '';
-	return `<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`;
+	return `<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`; // i18n-ignore: for the AI
 }
 
 /**

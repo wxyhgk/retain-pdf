@@ -2,6 +2,7 @@ import { lstat, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises
 
 import { ArticleNotFoundError } from './article-repository.mjs';
 import { articleBundlePaths, resolveInside } from '../../../articles/bundle-paths.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Earlier versions of an article's `index.md`, kept in its private `ai/`
@@ -95,12 +96,12 @@ export class ArticleHistory {
 
 	/** One kept version's text. */
 	async read(slug, name) {
-		if (typeof name !== 'string' || !NAME.test(name)) throw new HistoryError('历史版本的名字无效');
+		if (typeof name !== 'string' || !NAME.test(name)) throw new HistoryError(t('历史版本的名字无效'));
 		const folder = await this.#folder(slug);
 		try {
 			return await readFile(resolveInside(folder, name), 'utf8');
 		} catch (error) {
-			if (error?.code === 'ENOENT') throw new HistoryError('找不到这个历史版本', 404);
+			if (error?.code === 'ENOENT') throw new HistoryError(t('找不到这个历史版本'), 404);
 			throw error;
 		}
 	}
@@ -111,8 +112,8 @@ export class ArticleHistory {
 	 * @returns {Promise<{ name: string | null }>} the version kept, or null when it was there already
 	 */
 	async keep(slug, source, reason, now = new Date()) {
-		if (typeof source !== 'string') throw new HistoryError('文章内容必须是文本');
-		if (!HISTORY_REASONS.includes(reason)) throw new HistoryError('历史版本的原因无效');
+		if (typeof source !== 'string') throw new HistoryError(t('文章内容必须是文本'));
+		if (!HISTORY_REASONS.includes(reason)) throw new HistoryError(t('历史版本的原因无效'));
 		const folder = await this.#folder(slug);
 		const kept = await this.list(slug);
 		if (kept[0] && (await this.read(slug, kept[0].name)) === source) return { name: null };

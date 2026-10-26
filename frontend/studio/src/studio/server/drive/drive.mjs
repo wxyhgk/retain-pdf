@@ -10,6 +10,7 @@ import { TRASH_FOLDER } from '../files/file-manager.mjs';
 import { resourceContentType } from '../files/file-repository.mjs';
 import { existingDirectory, existingEntry, exists, FileConflictError, FileNotFoundError, linkUnderFreeName, replaceInto } from '../files/safe-fs.mjs';
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The drive (资料库): a folder of the author's, anywhere on the machine and
@@ -29,17 +30,17 @@ const MAX_NAME_BYTES = 255;
 
 export class DriveNotSetError extends Error {
 	constructor() {
-		super('还没有选择资料库文件夹');
+		super(t('还没有选择资料库文件夹'));
 		this.statusCode = 409;
 	}
 }
 
 /** A name the drive accepts: any a file system takes, but visible and in one piece. */
 export function assertDriveName(name) {
-	if (typeof name !== 'string' || !name.trim() || name === '.' || name === '..') throw new StudioPathError('名称不能为空');
-	if (Buffer.byteLength(name) > MAX_NAME_BYTES) throw new StudioPathError('名称太长');
-	if (name.startsWith('.')) throw new StudioPathError('名称不能以 . 开头');
-	if (/[/\\:\u0000-\u001f\u007f]/u.test(name)) throw new StudioPathError('名称不能包含 / \\ : 或控制字符');
+	if (typeof name !== 'string' || !name.trim() || name === '.' || name === '..') throw new StudioPathError(t('名称不能为空'));
+	if (Buffer.byteLength(name) > MAX_NAME_BYTES) throw new StudioPathError(t('名称太长'));
+	if (name.startsWith('.')) throw new StudioPathError(t('名称不能以 . 开头'));
+	if (/[/\\:\u0000-\u001f\u007f]/u.test(name)) throw new StudioPathError(t('名称不能包含 / \\ : 或控制字符'));
 	return name;
 }
 
@@ -51,14 +52,14 @@ export function driveUploadName(name) {
 
 /** A path in the drive split into names; '' is the drive itself. Nothing hidden, no `..`. */
 export function driveSegments(path, { allowRoot = false } = {}) {
-	if (typeof path !== 'string' || path.includes('\0') || path.includes('\\')) throw new StudioPathError('无效的文件路径');
+	if (typeof path !== 'string' || path.includes('\0') || path.includes('\\')) throw new StudioPathError(t('无效的文件路径'));
 	const trimmed = path.replace(/^\/+|\/+$/gu, '');
 	if (!trimmed) {
 		if (allowRoot) return [];
-		throw new StudioPathError('不能对资料库本身这样做');
+		throw new StudioPathError(t('不能对资料库本身这样做'));
 	}
 	const segments = trimmed.split('/');
-	if (segments.some((segment) => !segment || segment === '.' || segment === '..' || segment.startsWith('.'))) throw new StudioPathError('文件路径不能包含空段、. 、.. 或隐藏的名字');
+	if (segments.some((segment) => !segment || segment === '.' || segment === '..' || segment.startsWith('.'))) throw new StudioPathError(t('文件路径不能包含空段、. 、.. 或隐藏的名字'));
 	return segments;
 }
 
@@ -115,14 +116,14 @@ export class Drive {
 
 	/** Makes `folder` the drive: an existing folder, outside the repository. */
 	async choose(folder) {
-		if (this.fixedRoot) throw new StudioPathError('测试用的资料库不能更换');
-		if (typeof folder !== 'string' || !isAbsolute(folder)) throw new StudioPathError('资料库要用完整路径');
+		if (this.fixedRoot) throw new StudioPathError(t('测试用的资料库不能更换'));
+		if (typeof folder !== 'string' || !isAbsolute(folder)) throw new StudioPathError(t('资料库要用完整路径'));
 		const root = resolve(folder);
 		const info = await lstat(root).catch(() => null);
-		if (!info?.isDirectory()) throw new FileNotFoundError(`${root} 不是一个文件夹`);
+		if (!info?.isDirectory()) throw new FileNotFoundError(t('{root} 不是一个文件夹', { root }));
 		for (const kept of this.forbidden) {
-			if (isInside(kept, root)) throw new StudioPathError('资料库不能放在博客仓库里：仓库里的东西会公开');
-			if (isInside(root, kept)) throw new StudioPathError('资料库不能是包含博客仓库的文件夹');
+			if (isInside(kept, root)) throw new StudioPathError(t('资料库不能放在博客仓库里：仓库里的东西会公开'));
+			if (isInside(root, kept)) throw new StudioPathError(t('资料库不能是包含博客仓库的文件夹'));
 		}
 		await updateSettings(this.settingsFile, (settings) => ({ ...settings, driveRoot: root }));
 		return this.describe();
@@ -160,7 +161,7 @@ export class Drive {
 	async stream(path) {
 		const absolute = await this.locate(path);
 		const info = await lstat(absolute);
-		if (!info.isFile()) throw new FileNotFoundError(`${path} 不是文件`);
+		if (!info.isFile()) throw new FileNotFoundError(t('{path} 不是文件', { path }));
 		return { body: createReadStream(absolute), size: info.size, contentType: resourceContentType(absolute), name: basename(absolute) };
 	}
 
@@ -179,7 +180,7 @@ export class Drive {
 				new Transform({
 					transform(chunk, _encoding, done) {
 						size += chunk.length;
-						done(size > limit ? Object.assign(new Error(`文件超过 ${Math.floor(limit / 1024 / 1024)} MB 上传上限`), { statusCode: 413 }) : null, chunk);
+						done(size > limit ? Object.assign(new Error(t('文件超过 {limit} MB 上传上限', { limit: Math.floor(limit / 1024 / 1024) })), { statusCode: 413 }) : null, chunk);
 					},
 				}),
 				createWriteStream(temporary, { flags: 'wx' }),
@@ -198,7 +199,7 @@ export class Drive {
 		assertDriveName(segments[segments.length - 1]);
 		const parent = await existingDirectory(root, segments.slice(0, -1));
 		const target = resolveInside(parent, segments[segments.length - 1]);
-		if (await exists(target)) throw new FileConflictError(`${segments.join('/')} 已经存在`);
+		if (await exists(target)) throw new FileConflictError(t('{path} 已经存在', { path: segments.join('/') }));
 		await mkdir(target);
 		return { path: segments.join('/') };
 	}
@@ -209,11 +210,11 @@ export class Drive {
 		const source = driveSegments(from);
 		const target = driveSegments(to);
 		assertDriveName(target[target.length - 1]);
-		if (`${target.join('/')}/`.startsWith(`${source.join('/')}/`)) throw new StudioPathError('不能把文件夹移到它自己里面');
+		if (`${target.join('/')}/`.startsWith(`${source.join('/')}/`)) throw new StudioPathError(t('不能把文件夹移到它自己里面'));
 		const sourcePath = await existingEntry(root, source);
 		const targetFolder = await existingDirectory(root, target.slice(0, -1));
 		const targetPath = resolveInside(targetFolder, target[target.length - 1]);
-		if (await exists(targetPath)) throw new FileConflictError(`${target.join('/')} 已经存在`);
+		if (await exists(targetPath)) throw new FileConflictError(t('{path} 已经存在', { path: target.join('/') }));
 		await rename(sourcePath, targetPath);
 		return { path: target.join('/') };
 	}
@@ -234,13 +235,13 @@ export class Drive {
 	async restore(trashed) {
 		const root = await this.#root();
 		const [stamp, ...segments] = driveSegments(String(trashed ?? ''));
-		if (!/^\d{4}-\d{2}-\d{2}T[\d-]+Z$/u.test(stamp ?? '') || !segments.length) throw new StudioPathError('无效的回收站路径');
+		if (!/^\d{4}-\d{2}-\d{2}T[\d-]+Z$/u.test(stamp ?? '') || !segments.length) throw new StudioPathError(t('无效的回收站路径'));
 		const source = await existingEntry(join(root, TRASH_FOLDER), [stamp, ...segments]);
 		const parent = await existingDirectory(root, segments.slice(0, -1)).catch(() => {
-			throw new FileNotFoundError(`${segments.slice(0, -1).join('/')} 已经不在了，放不回去`);
+			throw new FileNotFoundError(t('{path} 已经不在了，放不回去', { path: segments.slice(0, -1).join('/') }));
 		});
 		const target = resolveInside(parent, segments[segments.length - 1]);
-		if (await exists(target)) throw new FileConflictError(`${segments.join('/')} 已经有同名的文件`);
+		if (await exists(target)) throw new FileConflictError(t('{path} 已经有同名的文件', { path: segments.join('/') }));
 		await rename(source, target);
 		await rm(join(root, TRASH_FOLDER, stamp), { recursive: true, force: true }).catch(() => {});
 		return { path: segments.join('/') };

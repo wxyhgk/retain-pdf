@@ -27,6 +27,7 @@ import { PluginSettings } from '../studio/server/plugin-settings.mjs';
 import { AiSettings } from '../studio/server/ai/ai-settings.mjs';
 import { decodePathComponent, sendFile, sendJson } from '../studio/server/api.mjs';
 import { studioApi } from '../studio/server/routes/index.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The Studio on the dev server: its parts put together, the files of articles
@@ -166,7 +167,7 @@ export default function studioDev({ site } = {}) {
 				if (appFileMatch && request.method === 'GET') {
 					try {
 						const found = await miniApps.file(decodePathComponent(appFileMatch[1]), decodePathComponent(appFileMatch[2]));
-						if (!found) return sendJson(response, 404, { error: '没有这个小程序文件' });
+						if (!found) return sendJson(response, 404, { error: t('没有这个小程序文件') });
 						response.writeHead(200, {
 							'Content-Type': found.type,
 							'Cache-Control': 'no-store',
@@ -178,7 +179,7 @@ export default function studioDev({ site } = {}) {
 						return response.end(found.body);
 					} catch (error) {
 						const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
-						return sendJson(response, status, { error: error instanceof Error ? error.message : '读不到小程序文件' });
+						return sendJson(response, status, { error: error instanceof Error ? error.message : t('读不到小程序文件') });
 					}
 				}
 				const publicFileMatch = rawPathname.match(/^\/article-assets\/([^/]+)\/([^/]+)\/(.+)$/u);
@@ -189,7 +190,7 @@ export default function studioDev({ site } = {}) {
 						const resourcePath = decodePathComponent(publicFileMatch[3]);
 						return await sendFile(response, await files.stream(slug, root, resourcePath, { range: request.headers.range }));
 					} catch (error) {
-						const message = error instanceof Error ? error.message : '文章资源读取失败';
+						const message = error instanceof Error ? error.message : t('文章资源读取失败');
 						const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
 						return sendJson(response, status, { error: message });
 					}

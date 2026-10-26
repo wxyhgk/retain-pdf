@@ -3,6 +3,7 @@ import { lstat, realpath } from 'node:fs/promises';
 import { relative, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 import { assertArticleSlug } from '../../../articles/bundle-paths.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 const run = promisify(execFile);
 
@@ -75,11 +76,11 @@ export class ArticleGit {
 	/** Commits the article's folder, and the folders of articles gone from disk, with `message`. */
 	async commit(slug, message) {
 		assertArticleSlug(slug);
-		if (typeof message !== 'string' || !message.trim()) throw new GitError('提交说明不能为空', 400);
+		if (typeof message !== 'string' || !message.trim()) throw new GitError(t('提交说明不能为空'), 400);
 		const root = await this.#repository();
-		if (!root) throw new GitError('blog/ 不在 git 仓库里', 409);
+		if (!root) throw new GitError(t('blog/ 不在 git 仓库里'), 409);
 		const { changed, vanished } = await this.status();
-		if (!changed[slug] && !vanished.length) throw new GitError('这篇文章没有要提交的改动', 409);
+		if (!changed[slug] && !vanished.length) throw new GitError(t('这篇文章没有要提交的改动'), 409);
 		const folders = [slug, ...vanished].map((name) => resolve(this.#blog, name));
 		// A folder gone whose removal is staged already is neither on disk nor in the index: `add` would not find it.
 		const indexed = [];
@@ -118,7 +119,7 @@ export class ArticleGit {
 			return stdout;
 		} catch (error) {
 			const said = String(error?.stderr ?? '').trim().split('\n').filter(Boolean).pop();
-			throw new GitError(said ? `git：${said}` : 'git 命令失败', 500);
+			throw new GitError(said ? `git：${said}` : t('git 命令失败'), 500);
 		}
 	}
 }

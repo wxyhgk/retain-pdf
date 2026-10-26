@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process';
 import { basename } from 'node:path';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Work the Studio does in the background, the page told how it goes: an AI
@@ -168,7 +169,7 @@ export function loginShell(shell = process.env.SHELL || '/bin/zsh') {
  */
 export function runProgram(argv, { cwd, env = {}, log, signal, shell = process.env.SHELL || '/bin/zsh', grace = STOP_GRACE }) {
 	return new Promise((resolve, reject) => {
-		if (signal.aborted) return reject(new Error('已取消'));
+		if (signal.aborted) return reject(new Error(t('已取消')));
 		watchExit();
 		const child = spawn(loginShell(shell), ['-lc', 'exec "$@"', 'studio-task', ...argv], {
 			cwd,
@@ -210,9 +211,9 @@ export function runProgram(argv, { cwd, env = {}, log, signal, shell = process.e
 		});
 		child.on('close', (code, killed) => {
 			over();
-			if (signal.aborted) reject(new Error('已取消'));
+			if (signal.aborted) reject(new Error(t('已取消')));
 			else if (code === 0) resolve();
-			else reject(new Error(killed ? `被信号 ${killed} 结束` : `退出码 ${code}`));
+			else reject(new Error(killed ? t('被信号 {killed} 结束', { killed }) : t('退出码 {code}', { code })));
 		});
 	});
 }
@@ -247,7 +248,7 @@ export function commandWords(line) {
 			word = (word ?? '') + character;
 		}
 	}
-	if (quote) throw new Error('命令里的引号没有配对');
+	if (quote) throw new Error(t('命令里的引号没有配对'));
 	if (word !== null) words.push(word);
 	return words;
 }
