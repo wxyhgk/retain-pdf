@@ -9,7 +9,7 @@
 	/* Room in the margin left of a block's handle, to drag there and select blocks (as Notion's 96px). */
 	--studio-editor-padding: 96px;
 	/* The text: its size and line height; the title's size. */
-	--studio-editor-font-size: 17px;
+	--studio-editor-font-size: 16px;
 	--studio-editor-line-height: 1.72;
 	--studio-title-size: clamp(30px, 3vw, 40px);
 	/* The columns: the article list on the left, the panel on the right (until it is dragged). */

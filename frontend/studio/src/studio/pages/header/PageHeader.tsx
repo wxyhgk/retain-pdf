@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
+import { AlignLeft, Calendar, CircleDashed, Plus, Shapes, Tags } from 'lucide-react';
+
 import { t } from '@blog/i18n/index.mjs';
 import { Popover, PopoverAnchor, PopoverContent } from '@studio/ui/popover';
 import { showContextMenu } from '../../common/context-menu';
@@ -110,29 +112,6 @@ function CoverPicker({ actions, onPick }: { actions: HeaderActions; onPick(cover
 	);
 }
 
-/** The pages the open one is under, each a link; the › after each, a menu of the pages under it. */
-function PathAbove({ state }: { state: HeaderState }) {
-	const { pages, open, under } = state.path;
-	return (
-		<nav className="page-path" aria-label={t('上级页面')} hidden={!pages.length}>
-			{pages.map((page) => [
-				<button key={`${page.slug}:link`} type="button" className="page-path-link" onClick={() => open(page.slug)}>
-					{page.title}
-				</button>,
-				<button
-					key={`${page.slug}:under`}
-					type="button"
-					className="page-path-separator"
-					aria-label={t('「{title}」下面的页面', { title: page.title })}
-					onClick={(event) => showContextMenu(under(page.slug).map((child) => ({ label: child.title, action: () => open(child.slug) })), event.currentTarget)}
-				>
-					›
-				</button>,
-			])}
-		</nav>
-	);
-}
-
 /** Tags as chips: Enter or a comma adds what is typed, Backspace in the empty field takes the last off. */
 function TagField({ tags, known, disabled, onChange }: { tags: string[]; known: string[]; disabled: boolean; onChange(tags: string[]): void }) {
 	const [typed, setTyped] = useState('');
@@ -219,10 +198,22 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 	}, [cover, icon]);
 	// The description as tall as what it says.
 	useLayoutEffect(() => {
-		const node = description.current!;
+		const node = description.current;
+		if (!node) return;
 		node.style.height = 'auto';
 		node.style.height = `${node.scrollHeight}px`;
 	}, [shown?.description]);
+
+	// 标签 and 简介 left empty are shown once added (for this article: let go when another is shown).
+	const [added, setAdded] = useState<{ fields: ReadonlySet<'tags' | 'description'>; focus: 'tags' | 'description' | null }>({ fields: new Set(), focus: null });
+	useEffect(() => setAdded({ fields: new Set(), focus: null }), [state.shownAt]);
+	const showTags = Boolean(shown?.tags.length) || added.fields.has('tags');
+	const showDescription = Boolean(shown?.description) || added.fields.has('description');
+	const add = (field: 'tags' | 'description') => setAdded({ fields: new Set([...added.fields, field]), focus: field });
+	useEffect(() => {
+		if (added.focus === 'tags') document.querySelector<HTMLInputElement>('#article-tag-input')?.focus();
+		if (added.focus === 'description') description.current?.focus();
+	}, [added]);
 
 	const error = state.typedError ?? state.problems.join('；');
 	return (
@@ -268,7 +259,6 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 						{t('▨ 添加封面')}
 					</button>
 				</div>
-				<PathAbove state={state} />
 				<input
 					id="article-title-input"
 					className="article-title-input"
@@ -287,28 +277,51 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 					}}
 				/>
 				<div className="page-properties" role="group" aria-label={t('属性')}>
-					<span className="property-name">{t('◷ 发布日期')}</span>
+					<span className="property-name">
+						<Calendar aria-hidden />
+						{t('发布日期')}
+					</span>
 					<input id="article-pub-date" className="property-value" type="date" aria-label={t('发布日期')} disabled={disabled} value={shown?.pubDate ?? ''} onChange={(event) => actions.edit({ pubDate: event.target.value })} />
-					<span className="property-name">{t('⌗ 标签')}</span>
-					<TagField tags={shown?.tags ?? []} known={state.knownTags} disabled={disabled} onChange={(tags) => actions.edit({ tags })} />
-					<span className="property-name">{t('≡ 简介')}</span>
-					<textarea
-						ref={description}
-						id="article-description"
-						className="property-value"
-						rows={1}
-						aria-label={t('简介')}
-						placeholder={t('空')}
-						disabled={disabled}
-						value={shown?.description ?? ''}
-						onChange={(event) => actions.edit({ description: event.target.value })}
-					/>
-					<span className="property-name">{t('◫ 类型')}</span>
+					{showTags && (
+						<>
+							<span className="property-name">
+								<Tags aria-hidden />
+								{t('标签')}
+							</span>
+							<TagField tags={shown?.tags ?? []} known={state.knownTags} disabled={disabled} onChange={(tags) => actions.edit({ tags })} />
+						</>
+					)}
+					{showDescription && (
+						<>
+							<span className="property-name">
+								<AlignLeft aria-hidden />
+								{t('简介')}
+							</span>
+							<textarea
+								ref={description}
+								id="article-description"
+								className="property-value"
+								rows={1}
+								aria-label={t('简介')}
+								placeholder={t('空')}
+								disabled={disabled}
+								value={shown?.description ?? ''}
+								onChange={(event) => actions.edit({ description: event.target.value })}
+							/>
+						</>
+					)}
+					<span className="property-name">
+						<Shapes aria-hidden />
+						{t('类型')}
+					</span>
 					<select id="article-kind" className="property-value" aria-label={t('类型')} disabled={disabled} value={shown?.kind ?? 'post'} onChange={(event) => actions.edit({ kind: event.target.value === 'wiki' ? 'wiki' : 'post' })}>
 						<option value="post">{t('博客')}</option>
 						<option value="wiki">{t('维基')}</option>
 					</select>
-					<span className="property-name">{t('◌ 状态')}</span>
+					<span className="property-name">
+						<CircleDashed aria-hidden />
+						{t('状态')}
+					</span>
 					<div className="property-value status-field">
 						<span id="article-status" className={`status-pill${shown && !shown.draft ? ' is-published' : ''}`}>
 							{!shown || shown.draft ? t('草稿') : t('已发布')}
@@ -317,6 +330,27 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 							{!shown || shown.draft ? t('发布') : t('撤回')}
 						</button>
 					</div>
+					{/* The properties left empty, as Notion keeps them: out of the way till added. */}
+					{(!showTags || !showDescription) && (
+						<button
+							id="add-property"
+							className="property-add"
+							type="button"
+							disabled={disabled}
+							onClick={(event) =>
+								showContextMenu(
+									[
+										...(showTags ? [] : [{ label: t('标签'), action: () => add('tags') }]),
+										...(showDescription ? [] : [{ label: t('简介'), action: () => add('description') }]),
+									],
+									event.currentTarget,
+								)
+							}
+						>
+							<Plus aria-hidden />
+							{t('添加属性')}
+						</button>
+					)}
 					{/* The articles that link here: backlinks.ts draws them. */}
 					<div id="page-backlinks" className="page-backlinks" data-host hidden />
 				</div>

@@ -54,7 +54,7 @@ export const DESIGN_TOKENS: readonly DesignToken[] = [
 	// The Studio (src/studio/tokens.css).
 	token('editor-width', '--studio-editor-width', 'length', '926px', t('正文区宽度')),
 	token('editor-padding', '--studio-editor-padding', 'length', '96px', t('正文左右留白')),
-	token('editor-font-size', '--studio-editor-font-size', 'length', '17px', t('正文字号')),
+	token('editor-font-size', '--studio-editor-font-size', 'length', '16px', t('正文字号')),
 	token('editor-line-height', '--studio-editor-line-height', 'number', '1.72', t('正文行高')),
 	token('title-size', '--studio-title-size', 'length', 'clamp(30px, 3vw, 40px)', t('标题字号')),
 	token('sidebar-width', '--studio-sidebar-width', 'length', '250px', t('左栏宽度')),

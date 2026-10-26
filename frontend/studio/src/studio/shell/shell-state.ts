@@ -25,6 +25,8 @@ export type ShellState = {
 	edited: number | null;
 	/** The open article on the blog. */
 	articleHref: string;
+	/** The pages the open one is under, the nearest last: links in the bar, each with a menu of the pages under it. */
+	path: Array<{ slug: string; title: string }>;
 	/** Whether there is a page to go back to, or forward to. */
 	nav: { back: boolean; forward: boolean };
 	panelOpen: boolean;
@@ -51,6 +53,9 @@ export type ShellActions = {
 	pageMenu(anchor: HTMLElement): void;
 	/** The page open before (or after) this one, as a browser's ‹ and ›. */
 	back(): void;
+	/** A page of the path in the bar opened; the pages under one, for the menu after it. */
+	openPage(slug: string): void;
+	pagesUnder(slug: string): Array<{ slug: string; title: string }>;
 	forward(): void;
 	chooseTab(key: string): void;
 	togglePanel(): void;
@@ -67,6 +72,7 @@ function initialState(): ShellState {
 		edited: null,
 		articleHref: '/blog',
 		nav: { back: false, forward: false },
+		path: [],
 		panelOpen: true,
 		tabs: [
 			{ key: 'ai', label: 'AI' },
@@ -103,6 +109,8 @@ export const ActionsContext = createContext<ShellActions>({
 	openLocale: nothing,
 	pageMenu: nothing,
 	back: nothing,
+	openPage: nothing,
+	pagesUnder: () => [],
 	forward: nothing,
 	chooseTab: nothing,
 	togglePanel: nothing,

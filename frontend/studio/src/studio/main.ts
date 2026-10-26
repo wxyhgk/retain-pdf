@@ -107,6 +107,11 @@ mountShell(shell, {
 	openLocale: () => void openLocale(),
 	pageMenu: (anchor) => showPageMenu(anchor),
 	back: () => visited.step(-1),
+	openPage: (slug) => {
+		showView('editor');
+		void session.open(slug);
+	},
+	pagesUnder: (slug) => articleList.childrenOf(slug),
 	forward: () => visited.step(1),
 	chooseTab: (tab) => sidePanel.choose(tab),
 	togglePanel: () => sidePanel.toggle(),
@@ -661,7 +666,7 @@ async function movePagesNow(slugs: string[], parent: string, place: PagePlace): 
 	if (slugs.length > 1) showToast(t('已移动 {count} 个页面', { count: slugs.length }));
 }
 
-/** The pages the open one is under, above its title. */
+/** The pages the open one is under, in the bar. */
 function showPath(): void {
 	const articles = articleList.articles();
 	const bySlug = new Map(articles.map((article) => [article.slug, article]));
@@ -671,7 +676,7 @@ function showPath(): void {
 		seen.add(at);
 		pages.unshift({ slug: at, title: bySlug.get(at)!.title });
 	}
-	properties.showPath(pages, (slug) => void session.open(slug), (slug) => articleList.childrenOf(slug));
+	shellState.set({ path: pages });
 }
 
 /**

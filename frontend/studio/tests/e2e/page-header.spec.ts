@@ -57,7 +57,12 @@ test('a cover is one of the article’s pictures, or one uploaded, and is its he
 
 test('tags are chips: Enter or a comma adds one, Backspace takes the last off', async ({ page }) => {
 	await openStudio(page);
+	// No tags yet: 标签 is added from 添加属性.
+	await expect(page.locator('#article-tags')).toHaveCount(0);
+	await page.locator('#add-property').click();
+	await page.getByRole('menuitem', { name: '标签' }).click();
 	const input = page.locator('#article-tag-input');
+	await expect(input).toBeFocused();
 	await input.click();
 	await input.pressSequentially('DFT');
 	await input.press('Enter');

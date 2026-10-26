@@ -1,12 +1,5 @@
-/* The top of the page (pages/header/PageHeader.tsx): the cover, the icon, the pages it is under, the title, the properties as rows; the icon's and the cover's pickers. */
+/* The top of the page (pages/header/PageHeader.tsx): the cover, the icon, the title, the properties as rows; the icon's and the cover's pickers. */
 .editor-panel.is-wide .page-head { width: min(100%, 1180px); }
-/* Above the title of a page under others: the way up to them. */
-.page-path { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin: 0 0 4px; color: rgb(var(--gray)); font-size: 13px; }
-.page-path[hidden] { display: none; }
-.page-path-link { padding: 1px 4px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
-.page-path-link:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
-.page-path-separator { padding: 1px 3px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; opacity: 0.6; cursor: pointer; }
-.page-path-separator:hover { background: rgb(var(--gray-light)); opacity: 1; }
 .document-header { box-sizing: border-box; width: 100%; background: transparent; }
 .page-head { box-sizing: border-box; position: relative; width: min(100%, var(--studio-editor-width)); margin: 0 auto; padding: 52px var(--studio-editor-padding) 0; }
 .document-header.has-cover .page-head { padding-top: 22px; }
@@ -35,8 +28,9 @@
 .article-title-input::placeholder { color: rgb(var(--gray)); opacity: 0.48; }
 .article-title-input:disabled { opacity: 0.55; }
 /* Properties as rows: a name, and its value changed where it is. */
-.page-properties { display: grid; grid-template-columns: 132px minmax(0, 1fr); align-items: start; gap: 1px 6px; margin-top: 14px; padding-bottom: 12px; border-bottom: 1px solid rgb(var(--gray-light)); font-size: 14px; }
-.property-name { padding: 6px 6px; color: rgb(var(--gray)); line-height: 20px; white-space: nowrap; }
+.page-properties { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: start; gap: 1px 6px; margin-top: 14px; padding-bottom: 12px; border-bottom: 1px solid rgb(var(--gray-light)); font-size: 14px; }
+.property-name { display: flex; align-items: center; gap: 7px; padding: 6px 6px; color: rgb(var(--gray)); line-height: 20px; white-space: nowrap; }
+.property-name svg, .property-add svg { flex: none; width: 15px; height: 15px; stroke-width: 1.75; }
 .property-value { box-sizing: border-box; min-height: 32px; width: 100%; margin: 0; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 14px; line-height: 20px; outline: none; }
 .property-value:hover, .property-value:focus, .property-value:focus-within { background: var(--surface-soft); }
 textarea.property-value { display: block; resize: none; overflow: hidden; }
@@ -51,13 +45,16 @@ input[type='date'].property-value:hover::-webkit-calendar-picker-indicator, inpu
 .tag-field .tag-chip-remove { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: transparent; color: rgb(var(--gray)); font: inherit; line-height: 18px; cursor: pointer; opacity: 0; }
 .tag-field:hover .tag-chip-remove, .tag-field:focus-within .tag-chip-remove { opacity: 1; }
 .tag-field .tag-chip-remove:hover { background: rgba(var(--black), 0.12); color: rgb(var(--gray-dark)); }
-.status-field { display: flex; align-items: center; gap: 8px; padding-block: 5px; }
+.status-field { display: flex; align-items: center; gap: 6px; padding-block: 5px; }
 .status-pill { padding: 0 8px; border-radius: 4px; background: rgba(var(--gray), 0.16); color: rgb(var(--gray)); font-size: 13px; line-height: 22px; }
 .status-pill.is-published { color: rgb(var(--gray-dark)); }
-.status-action { padding: 2px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
-.status-action:hover { background: var(--surface-soft); }
-.status-action:not([data-published='true']) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
+/* 发布 and 撤回: a quiet button beside the status, as the rest of the properties. */
+.status-action { padding: 0 7px; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 13px; line-height: 22px; cursor: pointer; }
+.status-action:hover { background: rgba(var(--black), 0.06); color: rgb(var(--gray-dark)); }
 .status-action:disabled { opacity: 0.5; cursor: default; }
+/* The properties left empty: added from here. */
+.property-add { grid-column: 1 / -1; display: flex; align-items: center; gap: 7px; justify-self: start; padding: 6px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 20px; cursor: pointer; opacity: 0.75; }
+.property-add:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); opacity: 1; }
 #property-error { margin: 8px 0 0; color: var(--danger); font-size: 12px; line-height: 1.5; }
 /* Under the properties: the articles that link here (backlinks.ts). */
 .page-backlinks { grid-column: 1 / -1; margin-top: 4px; }

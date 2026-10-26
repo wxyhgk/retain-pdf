@@ -77,7 +77,7 @@ test('the ＋ beside a page makes a page under it at once: no dialog, no folder 
 	expect(made[0]).toMatch(/^note-\d{8}-\d{6}$/u);
 	PAGES.push(made[0]!);
 	expect(source(made[0]!)).toMatch(new RegExp(`\\nparent: ${slug}\\n`, 'u'));
-	// Above its title, the page it is under; a click opens that one.
+	// In the bar, the page it is under; a click opens that one.
 	await tab.locator('.page-path-link', { hasText: TITLE }).click();
 	await expect(tab).toHaveURL(new RegExp(`article=${slug}`, 'u'));
 });

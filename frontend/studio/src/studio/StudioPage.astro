@@ -304,6 +304,11 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror > blockquote) { margin: 0 0 0.75em; }
 	:global(.crepe-host .milkdown .ProseMirror > .milkdown-table-block),
 	:global(.crepe-host .milkdown .ProseMirror > .milkdown-code-block) { margin: 0.4em 0 1em; }
+	/* Tables as Notion's: smaller text than the body, thin gray lines, close cells. */
+	:global(.crepe-host .milkdown .ProseMirror .milkdown-table-block table) { font-size: 0.875em; }
+	:global(.crepe-host .milkdown .ProseMirror .milkdown-table-block :is(th, td)) { padding: 6px 10px; border-color: rgb(var(--gray-light)); vertical-align: top; }
+	:global(.crepe-host .milkdown .ProseMirror .milkdown-table-block :is(th, td) p) { padding: 0; line-height: 1.5; }
+	:global(.crepe-host .milkdown .ProseMirror .milkdown-table-block th) { background: color-mix(in srgb, rgb(var(--gray-light)) 35%, transparent); color: rgb(var(--gray-dark)); font-weight: 600; text-align: left; }
 	:global(.crepe-host .milkdown .ProseMirror blockquote) { box-sizing: border-box; padding: 2px 0 2px 14px; border-left: 3px solid rgb(var(--gray-light)); color: rgb(var(--gray)); }
 	:global(.crepe-host .milkdown .ProseMirror blockquote::before) { content: none; }
 	:global(.crepe-host .milkdown .milkdown-code-block .cm-activeLineGutter) { background: transparent; color: rgb(var(--gray-dark)); }

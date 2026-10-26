@@ -30,7 +30,7 @@ test('a plugin sets the text width and size, adds a style, and its going undoes 
 	await page.setViewportSize({ width: 1600, height: 900 });
 	await openStudio(page);
 	await expect.poll(() => width(page)).toBe(926);
-	await expect(editor(page)).toHaveCSS('font-size', '17px');
+	await expect(editor(page)).toHaveCSS('font-size', '16px');
 
 	await applyPlugin(page, `
 		ctx.theme.set({ 'editor-width': '640px', 'editor-font-size': '15px' });
@@ -44,7 +44,7 @@ test('a plugin sets the text width and size, adds a style, and its going undoes 
 
 	await disposePlugin(page);
 	await expect.poll(() => width(page)).toBe(926);
-	await expect(editor(page)).toHaveCSS('font-size', '17px');
+	await expect(editor(page)).toHaveCSS('font-size', '16px');
 	await expect(page.locator('.page-head')).not.toHaveCSS('outline-color', 'rgb(1, 2, 3)');
 });
 

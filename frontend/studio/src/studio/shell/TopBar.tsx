@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Ellipsis, ExternalLink, PanelLeft, PanelRigh
 import { locale, t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Button } from '@studio/ui/button';
+import { showContextMenu } from '../common/context-menu';
 import { timeAgo } from '../common/time-ago';
 import { shell, useActions, useShell, type View } from './shell-state';
 
@@ -28,7 +29,7 @@ function useTicking(ms: number): void {
 
 /** The bar above the middle: the sidebar's toggle, where one is, when the article was edited and saved, its menu, the right column's toggle. */
 export function TopBar({ siteTitle }: { siteTitle: string }) {
-	const { view, sidebarCollapsed, title, status, edited, articleHref, panelOpen, nav } = useShell();
+	const { view, sidebarCollapsed, title, status, edited, articleHref, panelOpen, nav, path } = useShell();
 	const act = useActions();
 	useTicking(30_000);
 	const article = view === 'editor';
@@ -51,6 +52,22 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				</IconButton>
 				<span className="text-muted-foreground max-[720px]:hidden">{siteTitle}</span>
 				<span className="text-muted-foreground max-[720px]:hidden">/</span>
+				{/* The pages the open one is under, as Notion's path; the / after each, a menu of the pages under it (as SiYuan's). */}
+				{article &&
+					path.map((page) => [
+						<button key={`${page.slug}:link`} type="button" className="page-path-link max-w-[180px] truncate rounded px-1 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground max-[720px]:hidden" onClick={() => act.openPage(page.slug)}>
+							{page.title}
+						</button>,
+						<button
+							key={`${page.slug}:under`}
+							type="button"
+							className="page-path-separator rounded px-0.5 text-muted-foreground hover:bg-accent hover:text-foreground max-[720px]:hidden"
+							aria-label={t('「{title}」下面的页面', { title: page.title })}
+							onClick={(event) => showContextMenu(act.pagesUnder(page.slug).map((child) => ({ label: child.title, action: () => act.openPage(child.slug) })), event.currentTarget)}
+						>
+							/
+						</button>,
+					])}
 				<strong id="breadcrumb-title" className="max-w-[340px] truncate font-semibold max-[720px]:max-w-[150px]" hidden={!article}>
 					{title}
 				</strong>

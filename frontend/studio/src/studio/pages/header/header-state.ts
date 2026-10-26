@@ -19,14 +19,6 @@ export type PageHeaderHost = {
 	upload(file: File): Promise<string>;
 };
 
-export type PagePath = {
-	/** The pages the open one is under, the nearest last. */
-	pages: Array<{ slug: string; title: string }>;
-	open(slug: string): void;
-	/** The pages under one, for the › after it. */
-	under(slug: string): Array<{ slug: string; title: string }>;
-};
-
 /** What the page header shows (PageHeader.tsx draws it). */
 export type HeaderState = {
 	/** An article's properties to edit; none yet: the fields wait, disabled. */
@@ -37,11 +29,12 @@ export type HeaderState = {
 	typedError: string | null;
 	/** The tags other articles use, offered while typing one. */
 	knownTags: string[];
-	path: PagePath;
+	/** Counted each time an article is shown: what was added for the one before (an empty property) is let go. */
+	shownAt: number;
 	publishing: boolean;
 };
 
-const initial: HeaderState = { properties: null, problems: [], typedError: null, knownTags: [], path: { pages: [], open: () => {}, under: () => [] }, publishing: false };
+const initial: HeaderState = { properties: null, problems: [], typedError: null, knownTags: [], shownAt: 0, publishing: false };
 
 /** The page header's state, and what changes it: each change handed to the Studio (`host.changed`) as it is made. */
 export function createHeaderState(host: PageHeaderHost) {
@@ -90,6 +83,7 @@ export function createHeaderState(host: PageHeaderHost) {
 				properties: { title: properties.title, description: properties.description, pubDate: properties.pubDate, tags: [...properties.tags], draft: properties.draft, icon: properties.icon ?? '', cover: properties.cover ?? '', kind: properties.kind ?? 'post', wide: properties.wide ?? false },
 				problems: saved,
 				typedError: null,
+				shownAt: get().shownAt + 1,
 			});
 		},
 		/** What is wrong with the properties now saved; an empty list when nothing is. */
@@ -116,13 +110,6 @@ export function createHeaderState(host: PageHeaderHost) {
 			const title = document.querySelector<HTMLInputElement>('#article-title-input');
 			title?.focus();
 			title?.select();
-		},
-		/**
-		 * The pages the open one is under, the nearest last, each a link to it; none, nothing shown. The › after each
-		 * opens a menu of the pages under that one (as SiYuan's path has it): from page to page of a project.
-		 */
-		showPath(pages: PagePath['pages'], open: PagePath['open'], under: PagePath['under']): void {
-			store.set({ path: { pages, open, under } });
 		},
 	};
 

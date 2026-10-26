@@ -12,6 +12,10 @@ test('a missing description is shown, and goes once one is typed and saved', asy
 	await openStudio(page);
 	await expect(page.locator('#property-error')).toContainText('缺少简介（description）');
 
+	// Empty, 简介 is out of the way: added from 添加属性.
+	await page.locator('#add-property').click();
+	await page.getByRole('menuitem', { name: '简介' }).click();
+	await expect(page.locator('#article-description')).toBeFocused();
 	await page.locator('#article-description').fill('水分子的势能面');
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
