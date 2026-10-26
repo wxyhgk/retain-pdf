@@ -11,6 +11,8 @@ import { Sidebar } from './shell/Sidebar';
 import { TopBar } from './shell/TopBar';
 import { createHeaderState } from './pages/header/header-state';
 import { PageHeader } from './pages/header/PageHeader';
+import { createFilePanelState } from './files/panel/file-panel-state';
+import { FilePanel } from './files/panel/FilePanel';
 // The editor's styles in the page itself, not added by its scripts later, so the first picture is drawn as the editor draws it.
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
@@ -23,6 +25,7 @@ import '@xterm/xterm/css/xterm.css';
 import './tokens.css';
 import './shell/shell.css';
 import './pages/page-header.css';
+import './files/file-panel.css';
 import './shell/sidebar-hosts.css';
 import './files/drive.css';
 import './pages/article-table.css';
@@ -44,6 +47,8 @@ const blogRoot = studioBlogRoot(process.cwd());
 const articles = await new ArticleRepository(blogRoot).list().catch(() => []);
 // The page header as it is before an article is shown (its fields waiting); the page's script draws it from then on.
 const header = createHeaderState({ changed: () => null, mayPublish: async () => false, publish() {}, leaveTitle() {}, fileUrl: (src) => src, pictures: async () => [], upload: async () => '' });
+// The 文件 tab as it is with no article open; the page's script draws it from then on.
+const files = createFilePanelState({ source: () => '', revision: () => '', settle: async () => {}, moved: async () => {}, insertMarkdown() {}, viewOffice() {}, sheetRows: async () => [], ocr() {} });
 const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(await Promise.all(articles.map(async ({ slug }) => [slug, await pageVersion(blogRoot, slug)]))) };
 ---
 
@@ -101,19 +106,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				<div class="side-tabs" role="tablist" aria-label={t('右侧面板')} data-ui><SideTabs /></div>
 				<!-- The AI (ai-panel.ts draws it). -->
 				<section id="side-ai" class="side-pane ai-pane" role="tabpanel" aria-labelledby="side-tab-ai" hidden></section>
-				<section id="side-files" class="side-pane" role="tabpanel" aria-labelledby="side-tab-files">
-					<header class="pane-toolbar">
-						<span id="files-root" class="pane-path">{t('未打开文章')}</span>
-						<div class="pane-actions">
-							<button id="upload-files" type="button" title={t('上传文件；文件和整个文件夹也可以直接拖进来')} aria-label={t('上传文件')} disabled>⤒</button>
-							<button id="new-folder" type="button" title={t('新建文件夹')} aria-label={t('新建文件夹')} disabled>＋</button>
-							<button id="refresh-files" type="button" title={t('重新读取文件夹')} aria-label={t('刷新')} disabled>↻</button>
-						</div>
-						<input id="file-upload-input" type="file" multiple hidden />
-					</header>
-					<div id="file-tree" class="file-tree"></div>
-					<p id="files-status" class="files-status" role="status" aria-live="polite"></p>
-				</section>
+				<!-- The article's files: drawn by React (files/panel/), here as the server draws it. -->
+				<section id="side-files" class="side-pane" role="tabpanel" aria-labelledby="side-tab-files"><FilePanel store={files.store} actions={files.actions} /></section>
 				<section id="side-drive" class="side-pane" role="tabpanel" aria-labelledby="side-tab-drive" hidden></section>
 				<section id="side-terminal" class="side-pane" role="tabpanel" aria-labelledby="side-tab-terminal" hidden>
 					<header class="pane-toolbar">
@@ -454,41 +448,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.side-panel :global(.plugin-pane) { display: flex; flex: 1; min-height: 0; flex-direction: column; overflow: auto; }
 	.side-panel :global(.plugin-pane[hidden]) { display: none; }
 	.side-panel :global(.side-pane-error) { margin: 16px 12px; color: var(--danger); font-size: 12px; line-height: 1.5; }
-	.pane-toolbar { display: flex; flex: none; align-items: center; gap: 8px; min-height: 38px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
-	.pane-path { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-	.pane-actions { display: flex; gap: 2px; }
-	.pane-actions button { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 14px; cursor: pointer; }
-	.pane-actions button:hover:not(:disabled) { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
-	.pane-actions button:disabled { opacity: 0.45; cursor: default; }
-	.file-tree { flex: 1; min-height: 0; padding: 6px; overflow-y: auto; }
-	.file-tree :global(.file-tree-list) { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
-	.file-tree.is-drop-target { outline: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: -4px; border-radius: 8px; }
-	.file-tree :global(.file-row) { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 calc(8px + var(--depth, 0) * 16px); border-radius: 6px; color: rgb(var(--gray-dark)); font-size: 12px; cursor: default; user-select: none; }
-	.file-tree :global(.file-row:hover) { background: rgb(var(--gray-light)); }
-	.file-tree :global(.file-row:focus) { outline: none; }
-	.file-tree :global(.file-row:focus-visible) { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
-	.file-tree :global(.file-row.is-selected) { background: color-mix(in srgb, var(--accent) 14%, transparent); }
-	.file-tree :global(.file-row.is-drop-target) { background: color-mix(in srgb, var(--accent) 24%, transparent); box-shadow: inset 0 0 0 1px var(--accent); }
-	.file-tree :global(.file-row.is-folder) { font-weight: 600; }
-	.file-tree :global(.file-row.is-locked:not(.is-folder) .file-name) { color: rgb(var(--gray)); }
-	.file-tree :global(.file-row.is-unused .file-name), .file-tree :global(.file-row.is-unused .file-icon) { opacity: 0.45; }
-	.file-tree :global(.file-row.is-unused .file-name) { text-decoration: line-through dotted rgb(var(--gray)); }
-	.file-tree :global(.file-icon) { color: rgb(var(--gray)); font-size: 11px; text-align: center; }
-	.file-tree :global(.file-name) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.file-tree :global(.file-meta) { color: rgb(var(--gray)); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; }
-	.file-tree :global(.file-row-actions) { display: flex; gap: 1px; }
-	.file-tree :global(.file-row-actions button) { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font-size: 13px; line-height: 1; cursor: pointer; opacity: 0; }
-	.file-tree :global(.file-row:hover .file-row-actions button), .file-tree :global(.file-row.is-selected .file-row-actions button) { opacity: 1; }
-	.file-tree :global(.file-row-actions button:hover) { background: color-mix(in srgb, rgb(var(--gray-dark)) 10%, transparent); color: rgb(var(--gray-dark)); }
-	.file-tree :global(.file-row-empty) { padding: 2px 8px 4px calc(8px + var(--depth, 0) * 16px); list-style: none; }
-	.file-tree :global(.file-empty-upload) { width: 100%; padding: 7px 8px; border: 1px dashed rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
-	.file-tree :global(.file-empty-upload:hover) { border-color: color-mix(in srgb, var(--accent) 55%, transparent); color: rgb(var(--gray-dark)); }
-	.file-tree :global(.file-name-input) { grid-column: 2 / -1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 4px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-weight: 400; outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
-	.file-tree :global(.file-tree-empty) { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
-	.files-status { flex: none; min-height: 16px; margin: 0; padding: 8px 12px; overflow: hidden; border-top: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-	.files-status:empty::before { content: var(--word-drop-files); opacity: 0.7; }
-	.files-status[data-state='busy'] { color: rgb(var(--gray-dark)); }
-	.files-status[data-state='error'] { color: #a12d24; white-space: normal; }
+	:global(.pane-toolbar) { display: flex; flex: none; align-items: center; gap: 8px; min-height: 38px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
+	:global(.pane-path) { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+	:global(.pane-actions) { display: flex; gap: 2px; }
+	:global(.pane-actions button) { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 14px; cursor: pointer; }
+	:global(.pane-actions button:hover:not(:disabled)) { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+	:global(.pane-actions button:disabled) { opacity: 0.45; cursor: default; }
 	:global(.upload-placeholder) { display: inline-block; margin: 2px 0; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: rgb(var(--gray-dark)); font-size: 12px; }
 	/* The background tasks, at the bottom right (task-tray.ts). */
 	.task-tray { position: fixed; z-index: 55; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; width: min(340px, calc(100vw - 32px)); }

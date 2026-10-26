@@ -18,7 +18,7 @@ src/
     editor/           编辑器（Milkdown）和它的块
     pages/            页面：页面树、页面操作、全部文章、页头属性、反链、目录、审阅条、页面快照
     ai/               AI 面板、AI 回答的显示、模型选择、编辑器里的 AI
-    files/            文章的文件、资料库、文件面板
+    files/            文章的文件、资料库、文件面板（panel/、drive/，两者共用的改名框、拖放、状态行在 shared/）
     panels/           右栏、终端、后台任务、小程序
     common/           提示条、右键菜单、时间、磁盘上的改动
     state/            打开的文章：保存、自动保存、审阅
@@ -61,7 +61,7 @@ Studio 用到了只有 fork 里才有的扩展，`src/studio/editor/milkdown-for
 
 ## Studio 的外壳
 
-左栏、顶栏和右栏的标签是 React 19 画的，用 Tailwind 4 和 [shadcn/ui](https://ui.shadcn.com) 的组件，代码在 `src/studio/shell/`；弹窗、右键菜单、AI 面板、页头和页面树也是。编辑器、文件面板、资料库、终端还是原来的写法，直接操作 DOM。这三样只在 `astro dev` 里加载（`astro.config.mjs` 的 `studioPage`），构建的博客里没有。
+左栏、顶栏和右栏的标签是 React 19 画的，用 Tailwind 4 和 [shadcn/ui](https://ui.shadcn.com) 的组件，代码在 `src/studio/shell/`；弹窗、右键菜单、AI 面板、页头、页面树、文件面板和资料库也是。编辑器和终端还是原来的写法，直接操作 DOM。这三样只在 `astro dev` 里加载（`astro.config.mjs` 的 `studioPage`），构建的博客里没有。
 
 - **两边怎么说话**：外壳显示什么，看 `shell/shell-state.ts` 里的状态，别的部分用 `shell.set({...})` 改它（比如 `shell/top-bar.ts` 设保存状态）。外壳上的按钮调用 `main.ts` 交给 `mountShell` 的那些函数。
 - **外壳里的「宿主」元素**：React 画出元素，内容由原来的代码填，比如页面树 `#article-list`、插件命令 `#plugin-commands`。这种元素要加 `data-host`，React 从不往里面画。元素的 id 不变，原来的代码和测试照样能找到。
