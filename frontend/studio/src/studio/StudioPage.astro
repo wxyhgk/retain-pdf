@@ -262,7 +262,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.outline-rail:hover .outline-marks :global(i:not([data-current])) { background: rgba(var(--gray), 0.5); }
 	.panel-label > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	#roundtrip-status { margin-left: 14px; color: rgb(var(--gray)); font-size: 9px; }
-	#roundtrip-status[data-state='changed'] { color: #b42318; }
+	#roundtrip-status[data-state='changed'] { color: var(--danger); }
 	#roundtrip-status[data-state='exact'] { color: rgb(var(--gray)); }
 	.editor-scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; background: var(--surface); }
 	.review-bar { display: flex; flex: none; align-items: center; gap: 10px; padding: 8px 20px; border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, rgb(var(--gray-light))); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); font-size: 13px; }
@@ -322,7 +322,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.status-action:hover { background: var(--surface-soft); }
 	.status-action:not([data-published='true']) { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
 	.status-action:disabled { opacity: 0.5; cursor: default; }
-	#property-error { margin: 8px 0 0; color: #b42318; font-size: 12px; line-height: 1.5; }
+	#property-error { margin: 8px 0 0; color: var(--danger); font-size: 12px; line-height: 1.5; }
 	/* Under the properties: the articles that link here (backlinks.ts). */
 	.page-backlinks { grid-column: 1 / -1; margin-top: 4px; }
 	.page-backlinks[hidden] { display: none; }
@@ -452,7 +452,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body.is-empty) { display: none; }
 	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body.is-stale > :not(.pm-math-preview-error)) { opacity: 0.45; }
 	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-error) { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: var(--font-mono); font-size: 11px; line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
-	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-error) { color: #b42318; }
+	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-error) { color: var(--danger); }
 	:global(.crepe-host .pm-display-math-formula.is-stale) { opacity: 0.45; }
 	:global(.pm-source-popup-error.is-late) { animation: pm-error-after-typing 0s 1s both; }
 	@keyframes pm-error-after-typing { from { margin: 0; font-size: 0; line-height: 0; } to { font-size: 11px; } }
@@ -463,7 +463,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math) { display: inline-block; vertical-align: middle; margin: 0 1px; padding-inline: 0.2em; line-height: 1; color: inherit; cursor: text; user-select: none; }
 	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math .katex-mathml) { display: none; }
 	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math:hover),
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math.is-error) { text-decoration: underline wavy #b42318; }
+	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math.is-error) { text-decoration: underline wavy var(--danger); }
 	/* A long article's formula not drawn yet (near-screen.ts): its LaTeX, quietly. */
 	:global(.crepe-host .milkdown .ProseMirror :is(.pm-inline-math, .pm-display-math).is-waiting) { color: rgb(var(--gray)); }
 	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math-placeholder) { padding: 0 4px; color: rgb(var(--gray)); font-size: 0.85em; }
@@ -481,7 +481,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* Come to with the arrow keys: a stop, marked as blocks selected are; ↩ or typing opens it. */
 	:global(.crepe-host .pm-display-math.is-selected:not(.is-open) .pm-display-math-formula) { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
 	:global(.crepe-host .pm-display-math-formula.is-empty) { color: rgb(var(--gray)); font-size: 0.92em; }
-	:global(.crepe-host .pm-display-math-formula.is-error) { text-decoration: underline wavy #b42318; }
+	:global(.crepe-host .pm-display-math-formula.is-error) { text-decoration: underline wavy var(--danger); }
 	:global(.crepe-host .pm-display-math-formula .katex-display) { margin: 0; }
 	:global(.crepe-host .pm-display-math-formula .katex-mathml) { display: none; }
 	:global(.pm-source-popup) { position: fixed; z-index: 50; box-sizing: border-box; padding: 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 40px rgb(0 0 0 / 14%); }
@@ -521,7 +521,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror.is-completing-latex .pm-math-preview) { visibility: hidden; }
 	:global(.pm-source-popup.is-formula .pm-source-popup-preview) { margin: 0 0 6px; padding: 0; background: none; text-align: left; }
 	:global(.pm-source-popup.is-formula .pm-source-popup-error) { margin: 0; }
-	:global(.pm-source-popup-error) { margin: 6px 0 0; color: #b42318; font-family: var(--font-mono); font-size: 11px; line-height: 1.4; text-align: left; }
+	:global(.pm-source-popup-error) { margin: 6px 0 0; color: var(--danger); font-family: var(--font-mono); font-size: 11px; line-height: 1.4; text-align: left; }
 	:global(.pm-source-popup-input) { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin: 0; padding: 8px 10px; border: 0; border-radius: 8px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; resize: none; outline: none; }
 	:global(.pm-source-popup.is-molecule .pm-source-popup-input) { background: var(--surface-soft); white-space: pre; overflow: auto; tab-size: 4; }
 	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview) { padding: 6px 8px; overflow: hidden; }
@@ -557,7 +557,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.block-menu-item:focus) { background: var(--surface-soft); outline: none; }
 	:global(.link-paste-menu .block-menu-item.is-active) { background: var(--surface-soft); }
 	:global(.block-menu-item.is-current::after) { content: '当前'; margin-left: auto; color: rgb(var(--gray)); font-size: 11px; }
-	:global(.block-menu-item.is-danger) { color: #b42318; }
+	:global(.block-menu-item.is-danger) { color: var(--danger); }
 	:global(.crepe-host .milkdown-slash-menu), :global(.crepe-host .milkdown-toolbar) { border: 1px solid rgb(var(--gray-light)); }
 	.side-panel { position: relative; display: flex; min-height: 0; flex-direction: column; border-left: 1px solid rgb(var(--gray-light)); background: var(--surface-soft); transition: opacity 120ms ease; }
 	.studio-shell.panel-collapsed .side-panel { opacity: 0; pointer-events: none; }
@@ -569,7 +569,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* A plugin's tab (ctx.panels): its pane, made by side-panel.ts, scrolls as a whole unless it lays itself out. */
 	.side-panel :global(.plugin-pane) { display: flex; flex: 1; min-height: 0; flex-direction: column; overflow: auto; }
 	.side-panel :global(.plugin-pane[hidden]) { display: none; }
-	.side-panel :global(.side-pane-error) { margin: 16px 12px; color: #b42318; font-size: 12px; line-height: 1.5; }
+	.side-panel :global(.side-pane-error) { margin: 16px 12px; color: var(--danger); font-size: 12px; line-height: 1.5; }
 	.pane-toolbar { display: flex; flex: none; align-items: center; gap: 8px; min-height: 38px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
 	.pane-path { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 	.pane-actions { display: flex; gap: 2px; }
@@ -616,7 +616,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.task-tray :global(.task-foot) { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
 	.task-tray :global(.task-state) { flex: 1; min-width: 0; color: rgb(var(--gray)); overflow-wrap: anywhere; }
 	.task-tray :global(.task-item[data-state='running'] .task-state)::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: 1px; animation: task-pulse 1.2s ease-in-out infinite; }
-	.task-tray :global(.task-item[data-state='failed'] .task-state) { color: #b42318; }
+	.task-tray :global(.task-item[data-state='failed'] .task-state) { color: var(--danger); }
 	.task-tray :global(.task-foot button) { flex: none; height: 22px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
 	.task-tray :global(.task-log) { max-height: 220px; margin: 8px 0 0; padding: 7px 8px; overflow: auto; border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: 11px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 	@keyframes task-pulse { 50% { opacity: 0.25; } }

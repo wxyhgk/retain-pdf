@@ -37,7 +37,7 @@
 .drive-icon[data-kind='directory']::before { content: ''; position: absolute; top: -5px; left: -1.5px; width: 8px; height: 4px; border: 1.5px solid rgb(var(--gray)); border-bottom: 0; border-radius: 2px 2px 0 0; background: rgb(var(--gray-light)); }
 .drive-empty { margin: 32px 0; color: rgb(var(--gray)); text-align: center; }
 .drive-status { flex: none; min-height: 1.4em; margin: 6px 10px; color: rgb(var(--gray)); font-size: 12px; }
-.drive-status[data-kind='error'] { color: #e03e3e; }
+.drive-status[data-kind='error'] { color: var(--danger); }
 
 .drive-setup { max-width: 560px; padding: 24px 0; line-height: 1.7; }
 .drive--pane .drive-setup { padding: 14px; font-size: 13px; }

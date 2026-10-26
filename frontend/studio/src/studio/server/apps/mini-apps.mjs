@@ -2,6 +2,7 @@ import { readdir, readFile, stat } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 
 import { resolveInside } from '../../../articles/bundle-paths.mjs';
+import { colorDeclarations, siteColors } from '../../../styles/palette.mjs';
 import { publicFetch } from './public-fetch.mjs';
 
 /**
@@ -106,14 +107,8 @@ export function proxyFetch(asked) {
 }
 
 const STYLE = `
-:root {
-	--ink: #37352f; --muted: #787774; --line: #e9e9e7; --soft: #f7f7f5; --surface: #ffffff;
-	color-scheme: light;
-}
-:root[data-theme='dark'] {
-	--ink: #d4d4d4; --muted: #9b9b9b; --line: #2f2f2f; --soft: #202020; --surface: #191919;
-	color-scheme: dark;
-}
+:root { ${colorDeclarations(siteColors('light'))} color-scheme: light; }
+:root[data-theme='dark'] { ${colorDeclarations(siteColors('dark'))} color-scheme: dark; }
 html, body { margin: 0; background: var(--surface); }
 body { color: var(--ink); font: 14px/1.6 -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif; overflow-wrap: anywhere; }
 canvas, svg, img, video { max-width: 100%; }

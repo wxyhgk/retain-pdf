@@ -4,14 +4,14 @@
 .job-state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .job-state[data-state='preparing']::before, .job-state[data-state='queued']::before { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
 .job-state[data-state='running']::before { animation: job-pulse 1.2s ease-in-out infinite; }
-.job-state[data-state='failed'], .job-state[data-state='lost'] { border-color: #e03e3e; color: #e03e3e; }
+.job-state[data-state='failed'], .job-state[data-state='lost'] { border-color: var(--danger); color: var(--danger); }
 .job-state[data-state='cancelled'] { border-style: dashed; color: rgb(var(--gray)); }
 @keyframes job-pulse { 50% { opacity: 0.25; } }
 @media (prefers-reduced-motion: reduce) { .job-state[data-state='running']::before { animation: none; } }
 
 .job-note { margin: 10px 0 0; padding: 8px 12px; border-radius: 6px; background: var(--surface-soft); font-size: 13px; line-height: 1.55; }
 .job-note p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.job-note.is-error { color: #e03e3e; background: rgba(224, 62, 62, 0.07); }
+.job-note.is-error { color: var(--danger); background: rgba(224, 62, 62, 0.07); }
 
 /* Lines between the cells, none after the last: each cell draws its right and bottom edge, the frame hides the outer ones. */
 .job-numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 12px 0 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); }
@@ -47,7 +47,7 @@
 .job-mode button { width: 100%; padding: 3px 6px; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; cursor: pointer; }
 .job-mode button:hover { background: var(--surface-hover); }
 .job-mode.is-selected button { background: var(--surface-hover); font-weight: 600; }
-.job-mode.is-imaginary button { color: #e03e3e; }
+.job-mode.is-imaginary button { color: var(--danger); }
 .job-conformer-list { max-height: 330px; overflow: auto; }
 .job-conformers { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
 .job-conformers th { position: sticky; top: 0; padding: 4px 6px; background: var(--surface); color: rgb(var(--gray)); font-weight: 500; text-align: right; white-space: nowrap; }
@@ -96,7 +96,7 @@
 .job-card-picture[hidden] { display: none; }
 .job-card-text { min-width: 0; }
 .job-card-line { margin: 0; color: rgb(var(--gray-dark)); font-size: 13.5px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.job-card-line.is-problem { color: #e03e3e; }
+.job-card-line.is-problem { color: var(--danger); }
 .job-card-describe { margin: 2px 0 0; color: rgb(var(--gray)); font-size: 12px; }
 .job-card-progress { position: absolute; right: 12px; bottom: 0; left: 12px; height: 2px; overflow: hidden; border-radius: 1px; }
 .job-card-progress[hidden] { display: none; }

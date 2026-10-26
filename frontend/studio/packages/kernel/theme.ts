@@ -46,6 +46,7 @@ export const DESIGN_TOKENS: readonly DesignToken[] = [
 	token('surface-hover', '--surface-hover', 'color', '#efefed', '悬停时的底色'),
 	token('code-bg', '--code-bg', 'color', '#1e1e1e', '代码块底色'),
 	token('code-text', '--code-text', 'color', '#f4f4f4', '代码块文字'),
+	token('danger', '--danger', 'color', '#b42318', '出错、删除的红色'),
 	// Fonts (global.css).
 	token('font-text', '--font-text', 'font', 'var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif', '正文字体'),
 	token('font-mono', '--font-mono', 'font', 'ui-monospace, SFMono-Regular, Menlo, monospace', '等宽字体（代码、路径）'),

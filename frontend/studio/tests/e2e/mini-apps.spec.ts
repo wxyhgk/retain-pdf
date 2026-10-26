@@ -25,6 +25,8 @@ async function openApp(page: Page, name: string): Promise<void> {
 async function untilFrameTakesPointer(page: Page): Promise<void> {
 	const element = page.locator('.mini-app-window iframe').last();
 	await expect(element).toBeVisible();
+	// Chromium's (WebKit gives a click there to the frame at once; the pointer moved over it, it tells the frame nothing).
+	if (page.context().browser()?.browserType().name() !== 'chromium') return;
 	await expect
 		.poll(async () => {
 			const frame = await (await element.elementHandle())?.contentFrame();

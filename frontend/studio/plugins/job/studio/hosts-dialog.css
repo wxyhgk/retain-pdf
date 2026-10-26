@@ -18,7 +18,7 @@
 .host-foot button:hover { background: var(--surface-hover); }
 .host-foot button:disabled { opacity: 0.55; cursor: wait; }
 .host-found { flex: 1; min-width: 0; color: rgb(var(--gray)); font-size: 12px; overflow-wrap: anywhere; }
-.host-foot .host-remove { margin-left: auto; border-color: transparent; color: #e03e3e; }
+.host-foot .host-remove { margin-left: auto; border-color: transparent; color: var(--danger); }
 .compute-hosts-add { justify-self: start; padding: 6px 12px; border: 1px dashed rgb(var(--gray-light)); border-radius: 8px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; cursor: pointer; }
 .compute-hosts-add:hover { background: var(--surface-hover); }
 @media (max-width: 560px) { .host-fields { grid-template-columns: 1fr 1fr; } }

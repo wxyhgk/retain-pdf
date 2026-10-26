@@ -73,7 +73,7 @@ html[data-theme='dark'] .chem-2d .chem-stage svg { filter: invert(1) hue-rotate(
 	overflow-wrap: anywhere;
 }
 
-.chem-error .chem-stage { color: #b42318; }
+.chem-error .chem-stage { color: var(--danger); }
 .chem-warning { margin: 0; padding: 6px 12px; border-top: 1px solid rgb(var(--gray-light)); color: #b54708; font-size: 12px; line-height: 1.5; }
 html[data-theme='dark'] .chem-warning { color: #fdb022; }
 
@@ -114,12 +114,12 @@ html[data-theme='dark'] .chem-warning { color: #fdb022; }
 }
 
 .cube-control > span { color: rgb(var(--gray-dark)); }
-.cube-range input { grid-column: 1 / -1; width: 100%; accent-color: #2563eb; }
+.cube-range input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
 .cube-control output { min-width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
 
 .cube-phase-control > div { display: flex; flex-wrap: wrap; gap: 0.35em 0.7em; }
 .cube-phase-control label { display: inline-flex; align-items: center; gap: 0.3em; white-space: nowrap; }
-.cube-phase-control input { margin: 0; accent-color: #2563eb; }
+.cube-phase-control input { margin: 0; accent-color: var(--accent); }
 .cube-phase-control i { width: 0.75em; height: 0.75em; border-radius: 999px; }
 .cube-phase-control .positive { background: #2563eb; }
 .cube-phase-control .negative { background: #dc2626; }

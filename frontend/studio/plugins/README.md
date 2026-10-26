@@ -74,7 +74,7 @@ export function apply(ctx: Context): void {
 
 | 类 | 名字 |
 |---|---|
-| 颜色 | `accent`、`accent-strong`、`on-accent`、`heading`、`text`、`text-soft`、`line`、`surface`、`surface-soft`、`surface-hover`、`code-bg`、`code-text` |
+| 颜色 | `accent`、`accent-strong`、`on-accent`、`heading`、`text`、`text-soft`、`line`、`surface`、`surface-soft`、`surface-hover`、`code-bg`、`code-text`、`danger` |
 | 字体 | `font-text`、`font-mono` |
 | 版面 | `editor-width`、`editor-padding`、`editor-font-size`、`editor-line-height`、`title-size`、`sidebar-width`、`panel-width` |
 

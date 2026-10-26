@@ -19,6 +19,8 @@
 	--surface-hover: #efefed;
 	--code-bg: #1e1e1e;
 	--code-text: #f4f4f4;
+	/* The one color besides them: what failed, what deletes. */
+	--danger: #b42318;
 	/* The fonts: text, and code (design tokens, @blog/kernel/theme.ts). */
 	--font-text: var(--font-atkinson), -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -41,6 +43,7 @@ html[data-theme='dark'] {
 	--surface-hover: #2a2a2a;
 	--code-bg: #111111;
 	--code-text: #e9e9e9;
+	--danger: #ff7b72;
 	--box-shadow: 0 12px 38px rgba(0, 0, 0, 0.34);
 }
 body {

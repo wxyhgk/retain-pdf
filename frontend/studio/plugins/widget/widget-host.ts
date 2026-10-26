@@ -12,6 +12,14 @@ const FRAMES = 'iframe.note-widget-frame';
 
 const theme = (): 'dark' | 'light' => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
+/** The page's colors now (global.css's tokens, light or dark, as a plugin may have set them), for a frame, which cannot read them. */
+function colors(): Record<string, string> {
+	const style = getComputedStyle(document.documentElement);
+	const token = (name: string) => style.getPropertyValue(name).trim();
+	// The grays are kept as "r, g, b" (rgb(var(--gray))).
+	return { ink: `rgb(${token('--gray-dark')})`, muted: `rgb(${token('--gray')})`, line: `rgb(${token('--gray-light')})`, soft: token('--surface-soft'), surface: token('--surface'), danger: token('--danger') };
+}
+
 /** Where a published file of the article (`assets/opt.log`) is fetched from; null until an article is shown. */
 let fileUrl: ((path: string) => string) | null = null;
 
@@ -29,7 +37,7 @@ function post(frame: HTMLIFrameElement, message: Record<string, unknown>): void 
 }
 
 function tellTheme(frame: HTMLIFrameElement): void {
-	post(frame, { type: 'theme', theme: theme() });
+	post(frame, { type: 'theme', theme: theme(), colors: colors() });
 }
 
 /** The text of a published file of the article. */
@@ -88,10 +96,10 @@ export function connectWidgets(): void {
 /** Shows a widget that is a file of the article, as it is now. */
 async function loadFile(frame: HTMLIFrameElement, path: string): Promise<void> {
 	try {
-		frame.srcdoc = widgetDocument(await fetchText(path));
+		frame.srcdoc = widgetDocument(await fetchText(path), colors());
 	} catch (error) {
 		const message = (error instanceof Error ? error.message : String(error)).replace(/[<&]/gu, '');
-		frame.srcdoc = widgetDocument(`<p style="color: var(--muted)">${message}</p>`);
+		frame.srcdoc = widgetDocument(`<p style="color: var(--muted)">${message}</p>`, colors());
 	}
 }
 
@@ -130,7 +138,7 @@ export function createWidget(widget: { source: string } | { file: string }, meta
 	if ('file' in widget) {
 		frame.dataset.widgetFile = widget.file;
 		void loadFile(frame, widget.file);
-	} else frame.srcdoc = widgetDocument(widget.source);
+	} else frame.srcdoc = widgetDocument(widget.source, colors());
 	figure.append(frame);
 	if (title) {
 		const caption = document.createElement('figcaption');

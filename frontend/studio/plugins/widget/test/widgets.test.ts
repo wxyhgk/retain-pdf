@@ -50,9 +50,9 @@ test('with other HTML in the article, the widget keeps its page and a hand-writt
 });
 
 test('the frame’s page holds the tokens, the bridge and the source; a whole page keeps its own shape', () => {
-	const page = widgetDocument('<p>hi</p>');
+	const page = widgetDocument('<p>hi</p>', { ink: '#37352f', muted: 'rgb(120, 119, 116)' });
 	assert.match(page, /^<!doctype html><html><head><meta charset="utf-8">/u);
-	assert.match(page, /--ink: #37352f/u);
+	assert.match(page, /:root \{ --ink: #37352f; --muted: rgb\(120, 119, 116\); \}/u);
 	assert.match(page, /window\.note = note/u);
 	assert.match(page, /<body><p>hi<\/p><\/body><\/html>$/u);
 	const whole = widgetDocument('<html lang="zh"><head><title>t</title></head><body>b</body></html>');

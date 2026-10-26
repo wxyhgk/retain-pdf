@@ -13,7 +13,7 @@
 .block-sheet-action:hover { background: var(--surface-hover); }
 .block-sheet-action.is-primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .block-sheet-action.is-primary:hover { opacity: 0.88; }
-.block-sheet-action.is-danger { border-color: #e03e3e; background: transparent; color: #e03e3e; }
+.block-sheet-action.is-danger { border-color: var(--danger); background: transparent; color: var(--danger); }
 .block-sheet-action:disabled { opacity: 0.5; cursor: default; }
 .block-sheet-close { flex: none; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 21px; line-height: 1; cursor: pointer; }
 .block-sheet-close:hover { background: var(--surface-hover); }

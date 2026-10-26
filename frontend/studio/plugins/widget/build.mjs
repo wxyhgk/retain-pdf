@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { visit } from 'unist-util-visit';
+import { siteColors } from '../../src/styles/palette.mjs';
 
 import {
 	DEFAULT_WIDGET_HEIGHT,
@@ -78,7 +79,8 @@ export function widgetFigure(node, file) {
 			loading: 'lazy',
 			title: title || '交互模块',
 			style: `height:${height || DEFAULT_WIDGET_HEIGHT}px`,
-			dataWidget: widgetDocument(source),
+			// Light until the page tells it the theme (widget-host.ts), with the colors it has then.
+			dataWidget: widgetDocument(source, siteColors('light')),
 		},
 		children: [],
 	};

@@ -11,7 +11,7 @@
 .job-card-actions button:hover { background: var(--surface-hover); }
 .job-card-actions .job-run { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; }
 .job-card-actions .job-run:hover { opacity: 0.88; background: var(--accent); }
-.job-card-actions .job-run.is-stop { border-color: #e03e3e; background: transparent; color: #e03e3e; }
+.job-card-actions .job-run.is-stop { border-color: var(--danger); background: transparent; color: var(--danger); }
 .job-card-actions .job-run:disabled { opacity: 0.55; cursor: wait; }
 .job-card-actions .job-menu-button { width: 26px; padding: 0; border-color: transparent; color: rgb(var(--gray)); }
 

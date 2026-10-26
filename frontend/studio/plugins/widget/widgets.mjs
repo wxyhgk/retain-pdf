@@ -47,14 +47,6 @@ export function widgetOptions(meta) {
 }
 
 const STYLE = `
-:root {
-	--ink: #37352f; --muted: #787774; --line: #e9e9e7; --soft: #f7f7f5; --surface: #ffffff;
-	color-scheme: light;
-}
-:root[data-theme='dark'] {
-	--ink: #d4d4d4; --muted: #9b9b9b; --line: #2f2f2f; --soft: #202020; --surface: #191919;
-	color-scheme: dark;
-}
 html, body { margin: 0; background: transparent; }
 body {
 	color: var(--ink);
@@ -109,6 +101,8 @@ const BRIDGE = `
 			return;
 		}
 		if (data.type !== 'theme') return;
+		// The page's colors as they are now (its tokens, light or dark, as a plugin may have set them).
+		for (const [name, value] of Object.entries(data.colors ?? {})) root.style.setProperty('--' + name, value);
 		// The page may have come after what was said: say the height again, ask for the files again.
 		sent = 0;
 		for (const [id, { path }] of answers) ask(id, path);
@@ -124,9 +118,13 @@ const BRIDGE = `
 })();
 `;
 
-/** The page a widget's frame shows: its source, with the tokens and the bridge put in its head. */
-export function widgetDocument(source) {
-	const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>${STYLE}</style><script>${BRIDGE}</script>`;
+/**
+ * The page a widget's frame shows: its source, with the bridge and the page's colors (`colors`: --ink, --muted…, as
+ * widget-host.ts reads them from the page, which the frame cannot) put in its head.
+ */
+export function widgetDocument(source, colors = {}) {
+	const tokens = Object.entries(colors).map(([name, value]) => `--${name}: ${value};`).join(' ');
+	const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>:root { ${tokens} }${STYLE}</style><script>${BRIDGE}</script>`;
 	const text = String(source ?? '');
 	// A whole page of its own: ours goes first in its head.
 	if (/<head[\s>]/i.test(text)) return text.replace(/<head(\s[^>]*)?>/i, (tag) => tag + head);

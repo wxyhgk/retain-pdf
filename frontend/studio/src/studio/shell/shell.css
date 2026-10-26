@@ -34,7 +34,7 @@
 	--color-muted-foreground: rgb(var(--gray));
 	--color-accent: rgb(var(--gray-light));
 	--color-accent-foreground: rgb(var(--black));
-	--color-destructive: #b42318;
+	--color-destructive: var(--danger);
 	--color-border: rgb(var(--gray-light));
 	--color-input: rgb(var(--gray-light));
 	--color-ring: rgb(var(--gray));
