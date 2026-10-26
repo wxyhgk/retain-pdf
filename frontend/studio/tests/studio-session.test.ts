@@ -4,7 +4,7 @@ import test from 'node:test';
 import { articleFileUrl } from '../src/studio/api/client.ts';
 import { ArticleSession, changedProperties, type SaveState, type SessionApi, type SessionHost } from '../src/studio/state/article-session.ts';
 import type { ArticlePayload, ArticleProperties } from '../src/studio/types.ts';
-import { filterArticles } from '../src/studio/pages/article-list.ts';
+import { filterArticles } from '../src/studio/pages/tree/page-tree.ts';
 import { autoSlug, cleanSlug, freeSlug, isAutoSlug, readableSlug } from '../src/studio/pages/page-names.ts';
 import { parseTags } from '../src/studio/pages/header/tags.ts';
 import { saveStateText } from '../src/studio/shell/top-bar.ts';
