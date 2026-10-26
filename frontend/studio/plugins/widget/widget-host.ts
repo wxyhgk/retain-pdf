@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { WIDGET_MESSAGE, publicArticlePath, widgetDocument, widgetOptions } from './widgets.mjs';
 
 /**
@@ -42,16 +43,16 @@ function tellTheme(frame: HTMLIFrameElement): void {
 
 /** The text of a published file of the article. */
 async function fetchText(path: string): Promise<string> {
-	if (!fileUrl) throw new Error('还没有打开文章');
+	if (!fileUrl) throw new Error(t('还没有打开文章'));
 	const response = await fetch(fileUrl(path), { cache: 'no-store' });
-	if (!response.ok) throw new Error(`找不到 ./${path}`);
+	if (!response.ok) throw new Error(t('找不到 ./{path}', { path }));
 	return response.text();
 }
 
 async function answerFile(frame: HTMLIFrameElement, id: unknown, written: unknown): Promise<void> {
 	const path = publicArticlePath(String(written ?? ''));
 	if (!path) {
-		post(frame, { type: 'file', id, error: `${String(written)} 不在文章的 img/ 或 assets/ 里` });
+		post(frame, { type: 'file', id, error: t('{path} 不在文章的 img/ 或 assets/ 里', { path: String(written) }) });
 		return;
 	}
 	const read = reads.get(frame) ?? new Set<string>();
@@ -133,7 +134,7 @@ export function createWidget(widget: { source: string } | { file: string }, meta
 	const frame = document.createElement('iframe');
 	frame.className = 'note-widget-frame';
 	frame.setAttribute('sandbox', 'allow-scripts');
-	frame.title = title || '交互模块';
+	frame.title = title || t('交互模块');
 	frame.style.height = `${height}px`;
 	if ('file' in widget) {
 		frame.dataset.widgetFile = widget.file;

@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 import type { EditorView } from '@milkdown/prose/view';
@@ -39,7 +40,7 @@ function energyPreview(language: string, content: string): HTMLElement | null {
 		list.className = 'note-energy-problems';
 		for (const problem of profile.problems) {
 			const item = document.createElement('li');
-			item.textContent = `第 ${problem.line} 行：${problem.reason}`;
+			item.textContent = t('第 {line} 行：{reason}', { line: problem.line, reason: problem.reason });
 			list.append(item);
 		}
 		figure.append(list);
@@ -63,7 +64,7 @@ function insertEnergy(view: EditorView): void {
  * blog shows, redrawn as they change; in the slash menu's 化学 as 能量图.
  */
 export const name = 'block-energy';
-export const description = '反应能量图（```energy）：一行一个物种（名字 能量），# 开始另一条路径，画成论文里那样的能量剖面图；博客上是 SVG，不要脚本。';
+export const description = t('反应能量图（```energy）：一行一个物种（名字 能量），# 开始另一条路径，画成论文里那样的能量剖面图；博客上是 SVG，不要脚本。');
 export const inject = ['blocks', 'styles'];
 
 export function apply(ctx: Context): void {
@@ -72,12 +73,12 @@ export function apply(ctx: Context): void {
 		name,
 		fence: ENERGY_LANGUAGE,
 		codeBlock: { preview: energyPreview },
-		menuGroup: { key: 'science', label: '化学' },
+		menuGroup: { key: 'science', label: t('化学') },
 		menu: {
 			key: 'energy',
-			label: '能量图',
+			label: t('能量图'),
 			icon: ICON,
-			keywords: ['energy', 'profile', 'diagram', 'pes', 'reaction', '势能面', '反应', '过渡态', 'nengliangtu', 'nlt', 'shinengmian'],
+			keywords: ['energy', 'profile', 'diagram', 'pes', 'reaction', '势能面', '反应', '过渡态', 'nengliangtu', 'nlt', 'shinengmian'], // i18n-ignore: matched against what is typed
 			insert: insertEnergy,
 		},
 	} satisfies StudioBlock);

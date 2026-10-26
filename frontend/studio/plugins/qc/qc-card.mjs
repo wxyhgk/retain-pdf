@@ -1,4 +1,5 @@
 import { HARTREE_IN_EV, formulaOf } from '@blog/compute/parsers/qc/qc.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 
 /**
@@ -57,8 +58,8 @@ const minus = (/** @type {string} */ text) => text.replace(/^-/u, '−');
 const subscripts = (/** @type {string} */ formula) => formula.replace(/\d/gu, (digit) => '₀₁₂₃₄₅₆₇₈₉'[Number(digit)]);
 const signed = (/** @type {number} */ value, /** @type {number} */ digits) => minus(value.toFixed(digits));
 
-const JOB_NAMES = /** @type {Record<string, string>} */ ({ sp: '单点', opt: '优化', freq: '频率', td: '激发态', irc: 'IRC', scan: '扫描' });
-const SPINS = ['', '单重态', '双重态', '三重态', '四重态', '五重态', '六重态'];
+const jobNames = () => /** @type {Record<string, string>} */ ({ sp: t('单点'), opt: t('优化'), freq: t('频率'), td: t('激发态'), irc: 'IRC', scan: t('扫描') });
+const spins = () => ['', t('单重态'), t('双重态'), t('三重态'), t('四重态'), t('五重态'), t('六重态')];
 
 /** The program as the card names it: Gaussian 16, ORCA 6.0.1. */
 export function qcProgramLabel(/** @type {QcOutput} */ result) {
@@ -68,13 +69,14 @@ export function qcProgramLabel(/** @type {QcOutput} */ result) {
 
 /** What was done: B3LYP/def2-SVP · 优化＋频率 · CO₂ · 电荷 0 · 单重态. */
 export function qcDescribe(/** @type {QcOutput} */ result) {
-	const jobs = result.jobs.filter((job) => job !== 'ts').map((job) => (job === 'opt' && result.jobs.includes('ts') ? '过渡态优化' : JOB_NAMES[job] ?? job));
-	const spin = result.multiplicity === null ? null : (SPINS[result.multiplicity] ?? `${result.multiplicity} 重态`);
+	const names = jobNames();
+	const jobs = result.jobs.filter((job) => job !== 'ts').map((job) => (job === 'opt' && result.jobs.includes('ts') ? t('过渡态优化') : names[job] ?? job));
+	const spin = result.multiplicity === null ? null : (spins()[result.multiplicity] ?? t('{multiplicity} 重态', { multiplicity: result.multiplicity }));
 	return [
 		result.method && result.basis ? `${result.reference === 'U' ? 'U' : result.reference === 'RO' ? 'RO' : ''}${result.method}/${result.basis}` : result.method,
 		jobs.join('＋'),
 		result.atoms ? subscripts(formulaOf(result.atoms)) : null,
-		result.charge === null ? null : `电荷 ${minus(String(result.charge))}`,
+		result.charge === null ? null : t('电荷 {charge}', { charge: minus(String(result.charge)) }),
 		spin,
 	]
 		.filter(Boolean)
@@ -84,9 +86,9 @@ export function qcDescribe(/** @type {QcOutput} */ result) {
 /** What went wrong, when something did: the optimization did not end, the program stopped on an error. */
 export function qcProblem(/** @type {QcOutput} */ result) {
 	if (result.optimization && !result.optimization.converged) {
-		return result.terminated || result.errors.length ? `优化没有收敛（走了 ${result.optimization.cycles} 步就停了）` : `优化还没结束（第 ${result.optimization.cycles} 步）：输出不完整，可能还在算或被中断了`;
+		return result.terminated || result.errors.length ? t('优化没有收敛（走了 {cycles} 步就停了）', { cycles: result.optimization.cycles }) : t('优化还没结束（第 {cycles} 步）：输出不完整，可能还在算或被中断了', { cycles: result.optimization.cycles });
 	}
-	if (!result.terminated) return result.errors.length ? `出错结束：${result.errors.at(-1)}` : '没有正常结束：输出不完整，可能还在算或被中断了';
+	if (!result.terminated) return result.errors.length ? t('出错结束：{error}', { error: result.errors.at(-1) }) : t('没有正常结束：输出不完整，可能还在算或被中断了');
 	if (result.errors.length) return result.errors[0];
 	return null;
 }
@@ -96,17 +98,17 @@ export function qcFacts(/** @type {QcOutput} */ result) {
 	const facts = [];
 	if (result.energy !== null) facts.push(`E ${signed(result.energy, 6)} Eh`);
 	if (result.thermo?.freeEnergy != null) facts.push(`G ${signed(result.thermo.freeEnergy, 6)} Eh`);
-	if (result.imaginary === 0) facts.push('无虚频');
+	if (result.imaginary === 0) facts.push(t('无虚频'));
 	else if (result.imaginary) {
 		const imaginary = result.vibrations.filter((mode) => mode.frequency < 0).map((mode) => `${signed(mode.frequency, 1)}`);
-		facts.push(`${result.imaginary} 个虚频（${imaginary.join('、')} cm⁻¹）`);
+		facts.push(t('{count} 个虚频（{frequencies} cm⁻¹）', { count: result.imaginary, frequencies: imaginary.join('、') }));
 	}
 	if (result.reference !== 'R' && result.s2 !== null) facts.push(`⟨S²⟩ ${result.s2.toFixed(4)}`);
 	if (result.excited.length) {
 		const lowest = result.excited[0];
-		facts.push(`${result.excited.length} 个激发态，最低 ${lowest.energy.toFixed(2)} eV（${Math.round(lowest.wavelength)} nm）`);
+		facts.push(t('{count} 个激发态，最低 {energy} eV（{wavelength} nm）', { count: result.excited.length, energy: lowest.energy.toFixed(2), wavelength: Math.round(lowest.wavelength) }));
 	}
-	if (!facts.length && result.homo !== null && result.lumo !== null) facts.push(`能隙 ${((result.lumo - result.homo) * HARTREE_IN_EV).toFixed(2)} eV`);
+	if (!facts.length && result.homo !== null && result.lumo !== null) facts.push(t('能隙 {gap} eV', { gap: ((result.lumo - result.homo) * HARTREE_IN_EV).toFixed(2) }));
 	return facts;
 }
 
@@ -128,20 +130,20 @@ const txt = (value) => ({ type: 'text', value });
  * @param {{ result: QcOutput | null, problem?: string | null }} read
  */
 export function qcCard(fence, { result, problem = null }) {
-	const name = fence.title || fence.file.replace(/^.*\//u, '') || '计算结果';
+	const name = fence.title || fence.file.replace(/^.*\//u, '') || t('计算结果');
 	const trouble = problem ?? (result ? qcProblem(result) : null);
-	const state = !result ? null : trouble ? (result.optimization && !result.optimization.converged ? '没收敛' : '出错') : '正常结束';
+	const state = !result ? null : trouble ? (result.optimization && !result.optimization.converged ? t('没收敛') : t('出错')) : t('正常结束');
 	const structure = result ? qcStructure(result) : null;
 	return el('figure', { className: ['note-qc', 'job-card'], dataState: trouble ? 'failed' : 'done', ...(fence.file ? { dataFile: qcFilePath(fence.file) ?? fence.file } : {}), ...(structure ? { dataStructure: structure } : {}) }, [
 		el('div', { className: ['job-card-head'] }, [
-			el('span', { className: ['job-kind'] }, [txt(result ? qcProgramLabel(result) : '计算结果')]),
+			el('span', { className: ['job-kind'] }, [txt(result ? qcProgramLabel(result) : t('计算结果'))]),
 			el('span', { className: ['job-card-title'] }, [txt(name)]),
 			...(state ? [el('span', { className: ['job-state'], dataState: trouble ? 'failed' : 'done' }, [txt(state)])] : []),
 		]),
 		el('div', { className: ['job-card-body'] }, [
 			el('div', { className: ['job-card-picture'] }),
 			el('div', { className: ['job-card-text'] }, [
-				el('p', { className: ['job-card-line', ...(trouble ? ['is-problem'] : [])] }, [txt(trouble ?? (result ? qcFacts(result).join('  ·  ') || '没有读出结果' : ''))]),
+				el('p', { className: ['job-card-line', ...(trouble ? ['is-problem'] : [])] }, [txt(trouble ?? (result ? qcFacts(result).join('  ·  ') || t('没有读出结果') : ''))]),
 				...(result ? [el('p', { className: ['job-card-describe'] }, [txt(qcDescribe(result))])] : []),
 			]),
 		]),

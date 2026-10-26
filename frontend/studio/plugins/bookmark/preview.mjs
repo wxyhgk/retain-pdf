@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { hostOf, webAddress } from './bookmark.mjs';
 
 /**
@@ -27,7 +28,7 @@ const DOI = /^https?:\/\/(?:dx\.)?doi\.org\/(10\.\d{4,9}\/\S+)$/iu;
  */
 export async function previewPage(address, fetchPage = globalThis.fetch) {
 	const url = webAddress(address);
-	if (!url) throw new PreviewError('网址要以 http:// 或 https:// 开头', 400);
+	if (!url) throw new PreviewError(t('网址要以 http:// 或 https:// 开头'), 400);
 	const doi = DOI.exec(url);
 	if (doi) return { url, ...(await previewDoi(decodeURIComponent(doi[1]), fetchPage)) };
 	let response;
@@ -38,9 +39,9 @@ export async function previewPage(address, fetchPage = globalThis.fetch) {
 			signal: AbortSignal.timeout(12_000),
 		});
 	} catch {
-		throw new PreviewError(`连不上 ${hostOf(url)}，检查一下网络`);
+		throw new PreviewError(t('连不上 {host}，检查一下网络', { host: hostOf(url) }));
 	}
-	if (!response.ok) throw new PreviewError(`${hostOf(url)} 没有给出这个页面（${response.status}）`);
+	if (!response.ok) throw new PreviewError(t('{host} 没有给出这个页面（{status}）', { host: hostOf(url), status: response.status }));
 	const type = response.headers.get('content-type') ?? '';
 	if (type && !/html|xml/iu.test(type)) return { url, title: '', description: '', image: '', site: hostOf(url) };
 	const html = await readHead(response, type);
@@ -137,19 +138,19 @@ async function previewDoi(doi, fetchPage) {
 			signal: AbortSignal.timeout(15_000),
 		});
 	} catch {
-		throw new PreviewError('连不上 doi.org，检查一下网络');
+		throw new PreviewError(t('连不上 doi.org，检查一下网络'));
 	}
-	if (response.status === 404) throw new PreviewError(`doi.org 上没有 ${doi}`, 404);
-	if (!response.ok) throw new PreviewError(`doi.org 没有给出这篇的信息（${response.status}）`);
+	if (response.status === 404) throw new PreviewError(t('doi.org 上没有 {doi}', { doi }), 404);
+	if (!response.ok) throw new PreviewError(t('doi.org 没有给出这篇的信息（{status}）', { status: response.status }));
 	let paper;
 	try {
 		paper = await response.json();
 	} catch {
-		throw new PreviewError('doi.org 给的不是论文信息');
+		throw new PreviewError(t('doi.org 给的不是论文信息'));
 	}
 	const text = (value) => (Array.isArray(value) ? value[0] : value) ?? '';
 	const authors = (paper.author ?? []).map((author) => author.family ?? author.literal ?? '').filter(Boolean);
-	const byline = authors.length > 2 ? `${authors[0]} 等` : authors.join('、');
+	const byline = authors.length > 2 ? `${authors[0]} 等` : authors.join('、'); // i18n-ignore: written into the article
 	const year = paper.issued?.['date-parts']?.[0]?.[0] ?? '';
 	const journal = String(text(paper['container-title-short']) || text(paper['container-title']));
 	const strip = (value) => String(value).replace(/<[^>]+>/gu, '').replace(/\s+/gu, ' ').trim();

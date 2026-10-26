@@ -13,6 +13,7 @@ import {
 	runName,
 } from '@blog/compute/job-fence.mjs';
 import { joinArgs } from '@blog/compute/job-options.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import { JobShell, shellPath, shellWord } from './job-shell.mjs';
 
 /**
@@ -156,29 +157,29 @@ export class JobRuns {
 	async #article(slug) {
 		const directory = this.files.articleFolder(slug);
 		const info = await lstat(directory).catch(() => null);
-		if (!info?.isDirectory() || info.isSymbolicLink()) throw new JobRunError(`找不到文章 ${slug}`, 404);
+		if (!info?.isDirectory() || info.isSymbolicLink()) throw new JobRunError(t('找不到文章 {slug}', { slug }), 404);
 		return directory;
 	}
 
 	/** What the job starts from, as the file its run reads: [name, contents]. */
 	async #input(slug, body) {
 		const structure = jobStructure(body);
-		if (structure.kind === 'none') throw new JobRunError('这个计算块还没有结构：写上 XYZ，或 @file ./assets/分子.xyz');
+		if (structure.kind === 'none') throw new JobRunError(t('这个计算块还没有结构：写上 XYZ，或 @file ./assets/分子.xyz'));
 		if (structure.kind === 'inline') {
-			if (structure.text.length > MAX_INLINE_STRUCTURE) throw new JobRunError('写在块里的结构太大，放到 assets/ 的文件里再引用');
+			if (structure.text.length > MAX_INLINE_STRUCTURE) throw new JobRunError(t('写在块里的结构太大，放到 assets/ 的文件里再引用'));
 			const text = structure.text.endsWith('\n') ? structure.text : `${structure.text}\n`;
-			if (structure.format === 'xyz' && !/^\s*\d+\s*$/u.test(text.split('\n')[0])) throw new JobRunError('XYZ 的第一行应是原子数');
+			if (structure.format === 'xyz' && !/^\s*\d+\s*$/u.test(text.split('\n')[0])) throw new JobRunError(t('XYZ 的第一行应是原子数'));
 			return [`input.${structure.format}`, text];
 		}
 		const [root, ...rest] = structure.path?.split('/') ?? [];
 		const extension = posix.extname(structure.path ?? '').slice(1).toLowerCase() || posix.basename(structure.path ?? '');
-		if (!['img', 'assets'].includes(root) || !rest.length) throw new JobRunError(`${structure.written} 不是文章 img/ 或 assets/ 里的文件`);
-		if (!STRUCTURE_EXTENSIONS.includes(extension)) throw new JobRunError(`${structure.written}：结构文件只能是 ${STRUCTURE_EXTENSIONS.join('、')}`);
+		if (!['img', 'assets'].includes(root) || !rest.length) throw new JobRunError(t('{path} 不是文章 img/ 或 assets/ 里的文件', { path: structure.written }));
+		if (!STRUCTURE_EXTENSIONS.includes(extension)) throw new JobRunError(t('{path}：结构文件只能是 {extensions}', { path: structure.written, extensions: STRUCTURE_EXTENSIONS.join('、') }));
 		const directory = await this.#article(slug);
 		const path = this.files.inside(directory, root, ...rest);
 		const info = await lstat(path).catch(() => null);
-		if (!info?.isFile()) throw new JobRunError(`找不到 ${structure.written}`, 404);
-		if (info.size > 64 * 1024 * 1024) throw new JobRunError(`${structure.written} 太大`);
+		if (!info?.isFile()) throw new JobRunError(t('找不到 {path}', { path: structure.written }), 404);
+		if (info.size > 64 * 1024 * 1024) throw new JobRunError(t('{path} 太大', { path: structure.written }));
 		return [extension === 'coord' ? 'coord' : `input.${extension}`, await readFile(path)];
 	}
 
@@ -191,11 +192,14 @@ export class JobRuns {
 	 */
 	async start(slug, request) {
 		const id = String(request?.id ?? '');
-		if (!JOB_ID_PATTERN.test(id) || id.length > 64) throw new JobRunError('计算块的名字只能用小写字母、数字和连字符');
+		if (!JOB_ID_PATTERN.test(id) || id.length > 64) throw new JobRunError(t('计算块的名字只能用小写字母、数字和连字符'));
 		const program = this.programs.get(String(request.program ?? ''));
-		if (!program) throw new JobRunError(`不认识的程序 ${request.program}，现在能算 ${this.programs.list().map((known) => known.name).join('、') || '的一个也没有（plugins/ 里没有程序插件）'}`);
+		if (!program) {
+			const known = this.programs.list().map((entry) => entry.name);
+			throw new JobRunError(known.length ? t('不认识的程序 {program}，现在能算 {programs}', { program: request.program, programs: known.join('、') }) : t('不认识的程序 {program}，现在能算的一个也没有（plugins/ 里没有程序插件）', { program: request.program }));
+		}
 		const args = String(request.args ?? '');
-		if (args.length > MAX_ARGS || /[\r\n\0]/u.test(args)) throw new JobRunError('命令行参数要写在一行里');
+		if (args.length > MAX_ARGS || /[\r\n\0]/u.test(args)) throw new JobRunError(t('命令行参数要写在一行里'));
 		const host = await this.hosts.get(String(request.host || 'local'));
 		const threads = Number.isInteger(request.threads) && request.threads > 0 && request.threads <= 1024 ? request.threads : host.threads;
 		const [input, contents] = await this.#input(slug, String(request.body ?? ''));
@@ -272,7 +276,7 @@ export class JobRuns {
 			const launched = await shell.check(launchScript(entry, host), { detached: true });
 			if (entry.scheduler === 'slurm') {
 				const slurmId = launched.stdout.toString('utf8').trim().split(/[;\s]/u)[0];
-				if (!/^\d+$/u.test(slurmId)) throw new JobRunError(`sbatch 没有给出任务号：${launched.stdout.toString('utf8').trim() || launched.stderr}`, 502);
+				if (!/^\d+$/u.test(slurmId)) throw new JobRunError(`sbatch 没有给出任务号：${launched.stdout.toString('utf8').trim() || launched.stderr}`, 502); // i18n-ignore: kept in run.json
 				entry.slurmId = slurmId;
 			}
 			if (entry.cancel) await shell.exec(cancelScript(entry)).catch(() => {});
@@ -281,7 +285,7 @@ export class JobRuns {
 			this.#schedule();
 		} catch (error) {
 			this.#entries.delete(key);
-			await this.#update(entry, { state: 'failed', finished: this.now().toISOString(), error: `没能开始：${error.message}` }).catch(() => {});
+			await this.#update(entry, { state: 'failed', finished: this.now().toISOString(), error: `没能开始：${error.message}` }).catch(() => {}); // i18n-ignore: kept in run.json
 		} finally {
 			this.#busy.delete(key);
 			if (staging) await rm(staging, { recursive: true, force: true }).catch(() => {});
@@ -306,7 +310,7 @@ export class JobRuns {
 
 	/** The runs of a job, newest first, with what keeps a running one from being seen (a machine out of reach). */
 	async list(slug, id) {
-		if (!JOB_ID_PATTERN.test(String(id))) throw new JobRunError('计算块的名字不对');
+		if (!JOB_ID_PATTERN.test(String(id))) throw new JobRunError(t('计算块的名字不对'));
 		const directory = await this.#article(slug);
 		const folder = this.files.inside(directory, ...JOBS_FOLDER.split('/'), id);
 		const names = (await readdir(folder).catch(() => [])).filter((name) => RUN_NAME_PATTERN.test(name)).sort().reverse();
@@ -401,12 +405,12 @@ export class JobRuns {
 			let probe;
 			try {
 				const result = await shell.exec(probeScript(entry), { timeout: 60_000 });
-				if (result.code !== 0) throw new Error(result.stderr.trim().split('\n').at(-1) || `退出码 ${result.code}`);
+				if (result.code !== 0) throw new Error(result.stderr.trim().split('\n').at(-1) || `退出码 ${result.code}`); // i18n-ignore: kept in run.json
 				probe = parseProbe(result.stdout.toString('utf8'));
 				await this.#problem(entry, null);
 			} catch (error) {
 				// Out of reach for now: the run goes on there; look again later.
-				await this.#problem(entry, `暂时连不上 ${host.label}：${error.message}`);
+				await this.#problem(entry, `暂时连不上 ${host.label}：${error.message}`); // i18n-ignore: kept in run.json
 				entry.next = Date.now() + Math.max(this.intervals[kind] * 4, 15_000);
 				return;
 			}
@@ -446,7 +450,7 @@ export class JobRuns {
 				const result = await shell.exec(`cd ${shellPath(entry.folder)} && tail -c ${this.limits.tail} ${shellWord(name)}`, { timeout: 60_000 });
 				if (result.code !== 0) continue;
 				const text = result.stdout.toString('utf8');
-				const note = `[Studio] ${name} 有 ${(size / 1024 / 1024).toFixed(1)} MB，这里只有最后 ${(this.limits.tail / 1024 / 1024).toFixed(1)} MB；完整的文件留在计算机器的运行目录里。\n`;
+				const note = `[Studio] ${name} 有 ${(size / 1024 / 1024).toFixed(1)} MB，这里只有最后 ${(this.limits.tail / 1024 / 1024).toFixed(1)} MB；完整的文件留在计算机器的运行目录里。\n`; // i18n-ignore: written into the output file
 				await writeFile(local, note + text.slice(text.indexOf('\n') + 1));
 				entry.cut[name] = size;
 				continue;
@@ -470,12 +474,12 @@ export class JobRuns {
 				// The output left behind as too big: its end, at least.
 				await this.#follow(entry, shell, probe.sizes);
 			} catch (pullError) {
-				error = `结果没能取回：${pullError.message}`;
+				error = `结果没能取回：${pullError.message}`; // i18n-ignore: kept in run.json
 			}
 		}
 		files = (await readdir(folder, { withFileTypes: true })).filter((item) => item.isFile() && !item.name.startsWith('.') && item.name !== 'run.json').map((item) => item.name).sort();
 		const state = entry.cancel ? 'cancelled' : probe.state === 'exit' ? (probe.code === 0 ? 'done' : 'failed') : 'lost';
-		if (state === 'lost' && !error) error = probe.state === 'gone' ? '机器上找不到这次运行的文件夹' : entry.scheduler === 'slurm' ? `Slurm 任务结束了，但没有正常退出${probe.slurm ? `（${probe.slurm}）` : ''}` : '进程不在了，也没有留下退出码（机器重启过？）';
+		if (state === 'lost' && !error) error = probe.state === 'gone' ? '机器上找不到这次运行的文件夹' : entry.scheduler === 'slurm' ? `Slurm 任务结束了，但没有正常退出${probe.slurm ? `（${probe.slurm}）` : ''}` : '进程不在了，也没有留下退出码（机器重启过？）'; // i18n-ignore: kept in run.json
 		await this.#update(entry, { state, exitCode: probe.code, finished: this.now().toISOString(), files, error });
 		this.#entries.delete(this.#key(entry));
 		this.#problems.delete(this.#key(entry));
@@ -493,7 +497,7 @@ export class JobRuns {
 
 	async #read(slug, id, run) {
 		const text = await readFile(join(this.#runDirectory(slug, id, run), 'run.json'), 'utf8').catch(() => null);
-		if (text === null) throw new JobRunError(`找不到这次运行：${id}/${run}`, 404);
+		if (text === null) throw new JobRunError(t('找不到这次运行：{id}/{run}', { id, run }), 404);
 		return JSON.parse(text);
 	}
 

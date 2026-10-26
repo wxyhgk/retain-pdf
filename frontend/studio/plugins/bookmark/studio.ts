@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 
@@ -27,7 +28,7 @@ const EDITOR_CSS = `
  * 网页书签; what they show of the page is read by the dev server (server.mjs).
  */
 export const name = 'block-bookmark';
-export const description = '网页书签（```bookmark）：贴一个网址或 DOI，显示成带标题、简介和图片的卡片；网页只在 Studio 里读一次，写进文章。';
+export const description = t('网页书签（```bookmark）：贴一个网址或 DOI，显示成带标题、简介和图片的卡片；网页只在 Studio 里读一次，写进文章。');
 export const inject = ['studio', 'blocks', 'styles'];
 
 export function apply(ctx: Context): void {
@@ -46,10 +47,10 @@ export function apply(ctx: Context): void {
 		// Where there is no editor (an AI's answer): its card.
 		codeBlock: { preview: bookmarkPreview },
 		// Any page's address: its card.
-		links: { label: '网页书签', matches: (url) => Boolean(webAddress(url)), markdown: bookmarkMarkdown, node: BOOKMARK_TYPE },
+		links: { label: t('网页书签'), matches: (url) => Boolean(webAddress(url)), markdown: bookmarkMarkdown, node: BOOKMARK_TYPE },
 		menu: {
 			key: 'bookmark',
-			label: '网页书签',
+			label: t('网页书签'),
 			icon: ICON,
 			keywords: ['bookmark', 'link', 'url', 'web', 'doi', 'shuqian', 'wangye'],
 			insert: insertBookmark,

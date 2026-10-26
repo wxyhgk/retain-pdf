@@ -1,4 +1,5 @@
 import { shellWord } from './job-shell.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 
 /**
@@ -15,7 +16,18 @@ import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
  * `partition` and, if it should be limited, `time` (`24:00:00`).
  */
 
-export const LOCAL_HOST = Object.freeze({ name: 'local', label: '本机', kind: 'local', scheduler: 'direct', workdir: '~/studio-jobs', threads: 4, programs: {}, setup: '' });
+export const LOCAL_HOST = Object.freeze({
+	name: 'local',
+	get label() {
+		return t('本机');
+	},
+	kind: 'local',
+	scheduler: 'direct',
+	workdir: '~/studio-jobs',
+	threads: 4,
+	programs: {},
+	setup: '',
+});
 
 const NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/u;
 const PROGRAM = /^[a-z][\w-]*$/u;
@@ -30,18 +42,18 @@ export class ComputeHostError extends Error {
 
 /** A machine as written, checked and with its defaults; throws ComputeHostError for one that cannot be used. */
 export function readHost(value) {
-	if (!value || typeof value !== 'object') throw new ComputeHostError('机器的设置不对');
+	if (!value || typeof value !== 'object') throw new ComputeHostError(t('机器的设置不对'));
 	const name = String(value.name ?? '').trim();
-	if (!NAME.test(name)) throw new ComputeHostError(`机器名 ${name || '（空）'} 只能用小写字母、数字和连字符`);
+	if (!NAME.test(name)) throw new ComputeHostError(name ? t('机器名 {name} 只能用小写字母、数字和连字符', { name }) : t('机器名 （空） 只能用小写字母、数字和连字符'));
 	const kind = value.kind === 'ssh' ? 'ssh' : 'local';
 	const scheduler = value.scheduler === 'slurm' ? 'slurm' : 'direct';
 	const ssh = String(value.ssh ?? '').trim();
 	// Given to ssh as one word: never an option, never two words.
-	if (kind === 'ssh' && !/^[\w.@%:[\]-]+$/u.test(ssh)) throw new ComputeHostError('ssh 地址不对：写 ~/.ssh/config 里的 Host，或 用户@地址');
-	if (kind === 'ssh' && ssh.startsWith('-')) throw new ComputeHostError('ssh 地址不能以 - 开头');
+	if (kind === 'ssh' && !/^[\w.@%:[\]-]+$/u.test(ssh)) throw new ComputeHostError(t('ssh 地址不对：写 ~/.ssh/config 里的 Host，或 用户@地址'));
+	if (kind === 'ssh' && ssh.startsWith('-')) throw new ComputeHostError(t('ssh 地址不能以 - 开头'));
 	const workdir = String(value.workdir ?? LOCAL_HOST.workdir).trim() || LOCAL_HOST.workdir;
 	if (!(workdir.startsWith('/') || workdir === '~' || workdir.startsWith('~/')) || workdir.split('/').includes('..')) {
-		throw new ComputeHostError('工作目录要写完整路径，或以 ~/ 开头');
+		throw new ComputeHostError(t('工作目录要写完整路径，或以 ~/ 开头'));
 	}
 	// Each program's path, by its name (any program's: one whose plugin is off now keeps its path).
 	const programs = {};
@@ -89,7 +101,7 @@ export class ComputeHosts {
 	async get(name) {
 		const host = (await this.list()).find((candidate) => candidate.name === name);
 		if (!host) {
-			const error = new ComputeHostError(`没有叫 ${name} 的计算机器，先在「计算机器」里加上它`);
+			const error = new ComputeHostError(t('没有叫 {name} 的计算机器，先在「计算机器」里加上它', { name }));
 			error.statusCode = 404;
 			throw error;
 		}
@@ -98,15 +110,17 @@ export class ComputeHosts {
 
 	/** Keeps these machines, in this order. `local` stays this machine. */
 	async save(values) {
-		if (!Array.isArray(values)) throw new ComputeHostError('机器列表不对');
+		if (!Array.isArray(values)) throw new ComputeHostError(t('机器列表不对'));
 		const hosts = values.map(readHost);
 		const names = new Set();
 		for (const host of hosts) {
-			if (names.has(host.name)) throw new ComputeHostError(`有两台机器都叫 ${host.name}`);
+			if (names.has(host.name)) throw new ComputeHostError(t('有两台机器都叫 {name}', { name: host.name }));
 			names.add(host.name);
-			if (host.name === LOCAL_HOST.name && host.kind !== 'local') throw new ComputeHostError('local 是本机的名字');
+			if (host.name === LOCAL_HOST.name && host.kind !== 'local') throw new ComputeHostError(t('local 是本机的名字'));
 		}
-		await updateSettings(this.settingsFile, (settings) => ({ ...settings, computeHosts: hosts }));
+		// This machine's default name (本机) is kept unsaid: it is given in the language of whoever reads the list.
+		const kept = hosts.map((host) => (host.name === LOCAL_HOST.name && host.label === LOCAL_HOST.label ? { ...host, label: '' } : host));
+		await updateSettings(this.settingsFile, (settings) => ({ ...settings, computeHosts: kept }));
 		return this.list();
 	}
 }

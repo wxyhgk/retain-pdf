@@ -50,12 +50,12 @@ function drawJobs(ctx: Context, viewOf: (record: RunRecord) => ProgramView | nul
 
 		const open = () =>
 			openBlockSheet({
-				kind: '计算',
-				title: title || '未命名计算',
+				kind: '计算', // i18n-ignore: the blog's page
+				title: title || '未命名计算', // i18n-ignore: the blog's page
 				tabs: [
 					{
 						key: 'result',
-						label: '结果',
+						label: '结果', // i18n-ignore: the blog's page
 						draw: (panel) => {
 							const target = document.createElement('div');
 							panel.append(target);
@@ -64,7 +64,7 @@ function drawJobs(ctx: Context, viewOf: (record: RunRecord) => ProgramView | nul
 					},
 					{
 						key: 'input',
-						label: '输入',
+						label: '输入', // i18n-ignore: the blog's page
 						draw: (panel) => {
 							const line = document.createElement('p');
 							line.className = 'job-section-note';
@@ -75,12 +75,12 @@ function drawJobs(ctx: Context, viewOf: (record: RunRecord) => ProgramView | nul
 							panel.append(line, pre);
 						},
 					},
-					{ key: 'output', label: '输出', draw: (panel) => void drawOutput(panel, shown, read, url(shown, shown.output)) },
+					{ key: 'output', label: '输出', draw: (panel) => void drawOutput(panel, shown, read, url(shown, shown.output)) }, // i18n-ignore: the blog's page
 				],
 			});
 		figure.tabIndex = 0;
 		figure.setAttribute('role', 'button');
-		figure.setAttribute('aria-label', `${title || '计算'}：打开结果`);
+		figure.setAttribute('aria-label', `${title || '计算'}：打开结果`); // i18n-ignore: the blog's page
 		figure.classList.add('is-openable');
 		figure.addEventListener('click', open);
 		figure.addEventListener('keydown', (event) => {

@@ -2,6 +2,7 @@ import { LanguageDescription } from '@codemirror/language';
 import { languages } from '@codemirror/language-data';
 import type { EditorView } from '@milkdown/prose/view';
 
+import { t } from '@blog/i18n/index.mjs';
 import { createWidget } from './widget-host.ts';
 import { WIDGET_LANGUAGE, publicArticlePath, widgetFile, widgetOptions } from './widgets.mjs';
 
@@ -43,7 +44,7 @@ export function widgetPreview(language: string, content: string, meta: string): 
 	const widget = file
 		? { file }
 		: named
-			? { source: `<p style="color: var(--muted)">./${named.replace(/[<&]/gu, '')} 不在文章的 img/ 或 assets/ 里，发布后读不到</p>` }
+			? { source: `<p style="color: var(--muted)">${t('./{path} 不在文章的 img/ 或 assets/ 里，发布后读不到', { path: named.replace(/[<&]/gu, '') })}</p>` }
 			: { source: content };
 	waiting.delete(key);
 	waiting.set(key, { widget, meta });
@@ -70,8 +71,8 @@ export function observeWidgets(root: HTMLElement): () => void {
 
 /** What a new widget starts as: a small one to change, in the notes' black and white. */
 export const WIDGET_STARTER = {
-	meta: 'title="Morse 势能" height=300',
-	source: `<label>阱深 Dₑ <input id="depth" type="range" min="1" max="10" value="5"></label>
+	meta: 'title="Morse 势能" height=300', // i18n-ignore: written into the article
+	source: /* i18n-ignore: written into the article */ `<label>阱深 Dₑ <input id="depth" type="range" min="1" max="10" value="5"></label>
 <canvas id="plot" width="640" height="240"></canvas>
 <script>
 const depth = document.querySelector('#depth');

@@ -5,6 +5,7 @@ import type { EditorView, NodeView } from '@milkdown/prose/view';
 import { $view } from '@milkdown/utils';
 
 import { parseQcOutput, type QcOutput } from '@blog/compute/parsers/qc/qc.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import type { OpenSheet } from '@blog/ui/block-sheet.ts';
 
 import { QC_EXTENSIONS, QC_LANGUAGE, parseQcFence, qcCard, qcFilePath, writeQcFence, type QcFence } from './qc-card.mjs';
@@ -121,7 +122,7 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 	/** An output of this machine, put into the article's assets/. */
 	const useFile = async (file: File) => {
 		if (!host) return;
-		busy = `正在放入 ${file.name}…`;
+		busy = t('正在放入 {name}…', { name: file.name });
 		paint();
 		try {
 			const path = await host.upload('assets', file);
@@ -132,7 +133,7 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 		} catch (error) {
 			busy = '';
 			paint();
-			host.toast(`没能放入 ${file.name}：${error instanceof Error ? error.message : String(error)}`, true);
+			host.toast(t('没能放入 {name}：{error}', { name: file.name, error: error instanceof Error ? error.message : String(error) }), true);
 		}
 	};
 
@@ -169,10 +170,10 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 	const problem = () => {
 		if (!fence.file) return null;
 		const path = qcFilePath(fence.file);
-		if (!path) return `${fence.file} 不在文章的 img/ 或 assets/ 里`;
+		if (!path) return t('{file} 不在文章的 img/ 或 assets/ 里', { file: fence.file });
 		if (!read || read.path !== path) return null;
-		if (read.text === null) return `找不到 ./${path}`;
-		if (!read.result) return `./${path} 认不出是 Gaussian 或 ORCA 的输出`;
+		if (read.text === null) return t('找不到 ./{path}', { path });
+		if (!read.result) return t('./{path} 认不出是 Gaussian 或 ORCA 的输出', { path });
 		return null;
 	};
 
@@ -183,8 +184,8 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 			if (busy) empty.textContent = busy;
 			else {
 				empty.append(
-					Object.assign(document.createElement('span'), { textContent: 'Gaussian 的 .log 或 ORCA 的 .out，也可以直接拖进正文' }),
-					button('选择输出文件…', chooseFile, '放进文章的 assets/'),
+					Object.assign(document.createElement('span'), { textContent: t('Gaussian 的 .log 或 ORCA 的 .out，也可以直接拖进正文') }),
+					button(t('选择输出文件…'), chooseFile, t('放进文章的 assets/')),
 				);
 			}
 			dom.replaceChildren(empty);
@@ -193,7 +194,7 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 		const path = qcFilePath(fence.file);
 		const reading = Boolean(path && (!read || read.path !== path));
 		const card = toDom(qcCard(fence, { result: reading ? null : (read?.result ?? null), problem: problem() }) as Hast);
-		if (reading) card.querySelector('.job-card-line')!.textContent = '正在读取结果…';
+		if (reading) card.querySelector('.job-card-line')!.textContent = t('正在读取结果…');
 		paintPicture(card);
 		dom.replaceChildren(card);
 	};
@@ -204,9 +205,9 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 		form.className = 'qc-settings';
 		const title = document.createElement('input');
 		title.className = 'qc-settings-title';
-		title.placeholder = fence.file.replace(/^.*\//u, '') || '计算结果';
+		title.placeholder = fence.file.replace(/^.*\//u, '') || t('计算结果');
 		title.value = fence.title;
-		title.setAttribute('aria-label', '标题');
+		title.setAttribute('aria-label', t('标题'));
 		title.addEventListener('change', () => {
 			fence = { ...fence, title: title.value };
 			write(fence);
@@ -214,10 +215,10 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 		});
 		const file = document.createElement('p');
 		file.className = 'job-section-note';
-		file.textContent = `输出文件：${fence.file || '还没有'}`;
+		file.textContent = fence.file ? t('输出文件：{file}', { file: fence.file }) : t('输出文件：还没有');
 		const label = document.createElement('label');
-		label.append('标题 ', title);
-		form.append(label, file, button('换文件…', chooseFile, '另一个 Gaussian 或 ORCA 的输出，放进文章的 assets/'));
+		label.append(`${t('标题')} `, title);
+		form.append(label, file, button(t('换文件…'), chooseFile, t('另一个 Gaussian 或 ORCA 的输出，放进文章的 assets/')));
 		panel.append(form);
 	};
 
@@ -230,8 +231,8 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 			text: read?.text ?? null,
 			url: host?.fileUrl(path) ?? path,
 			name: path.replace(/^.*\//u, ''),
-			problem: problem() ?? '正在读取结果…',
-			extraTabs: [{ key: 'settings', label: '设置', draw: settings }],
+			problem: problem() ?? t('正在读取结果…'),
+			extraTabs: [{ key: 'settings', label: t('设置'), draw: settings }],
 		});
 		if (tab) sheet.select(tab);
 	};

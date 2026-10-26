@@ -1,5 +1,6 @@
 import { JOB_LANGUAGE } from '@blog/compute/job-fence.mjs';
 import { JobPrograms as Programs } from '@blog/compute/programs.mjs';
+import { t } from '@blog/i18n/index.mjs';
 import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 
@@ -19,7 +20,7 @@ const ICON =
  * own (plugins/xtb, plugins/crest) in `ctx.jobs`, which this one provides.
  */
 export const name = 'block-job';
-export const description = '计算块（```job）：在笔记里搭分子、跑计算（程序是各自的插件，如 xtb、CREST），每次运行都留着；计算机器在块的窗口里设置。';
+export const description = t('计算块（```job）：在笔记里搭分子、跑计算（程序是各自的插件，如 xtb、CREST），每次运行都留着；计算机器在块的窗口里设置。');
 export const inject = ['studio', 'blocks', 'molecules', 'sheetTabs'];
 
 export async function apply(ctx: Context): Promise<void> {
@@ -37,11 +38,11 @@ export async function apply(ctx: Context): Promise<void> {
 			},
 			start: (id, job) => {
 				const slug = ctx.studio.slug();
-				return slug ? api.start(slug, id, job) : Promise.reject(new Error('文章尚未载入'));
+				return slug ? api.start(slug, id, job) : Promise.reject(new Error(t('文章尚未载入')));
 			},
 			cancel: (id, run) => {
 				const slug = ctx.studio.slug();
-				return slug ? api.cancel(slug, id, run) : Promise.reject(new Error('文章尚未载入'));
+				return slug ? api.cancel(slug, id, run) : Promise.reject(new Error(t('文章尚未载入')));
 			},
 			manageHosts: () => dialog.open(),
 			programs: () => programs.list() as JobPrograms[],
@@ -67,7 +68,7 @@ export async function apply(ctx: Context): Promise<void> {
 			// Read when the menu is made: the programs there are then.
 			get label() {
 				const labels = programs.list().map((program) => program.label);
-				return labels.length ? `计算（${labels.join(' / ')}）` : '计算';
+				return labels.length ? t('计算（{programs}）', { programs: labels.join(' / ') }) : t('计算');
 			},
 			icon: ICON,
 			keywords: ['job', 'compute', 'calculation', 'xtb', 'crest', 'run', 'jisuan'],

@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * A reaction's energy profile, written in the article as a fence: a species a
  * line, its name then its energy; `# 名字` starts another path, and a line
@@ -26,7 +28,7 @@
 export const ENERGY_LANGUAGE = 'energy';
 
 /** What a new diagram starts as. */
-export const ENERGY_STARTER = 'y: ΔG / kcal·mol⁻¹\n反应物 0\nTS1 12.3\n中间体 -4.1\nTS2 8.0\n产物 -15.2';
+export const ENERGY_STARTER = 'y: ΔG / kcal·mol⁻¹\n反应物 0\nTS1 12.3\n中间体 -4.1\nTS2 8.0\n产物 -15.2'; // i18n-ignore: written into the article
 
 /**
  * @typedef {{ name: string, value: number, shown: string, line: number }} Level
@@ -62,7 +64,7 @@ export function parseEnergy(text) {
 			const number = line.slice(cut);
 			const name = line.slice(0, cut).trim();
 			if (!NUMBER.test(number) || !name) {
-				profile.problems.push({ line: index + 1, reason: `读不出「${line}」：要写成「名字 能量」，比如「TS1 12.3」` });
+				profile.problems.push({ line: index + 1, reason: t('读不出「{text}」：要写成「名字 能量」，比如「TS1 12.3」', { text: line }) });
 				return;
 			}
 			if (!path) {
@@ -149,7 +151,7 @@ const PLOT = 220;
 export function energyFigure(profile) {
 	const levels = profile.paths.flatMap((path) => path.levels);
 	if (!levels.length) {
-		return el('figure', { className: ['note-energy', 'is-empty'] }, [el('p', { className: ['note-energy-empty'] }, [txt('能量图还没有数据：一行写一个物种，名字后面跟能量，比如「TS1 12.3」')])]);
+		return el('figure', { className: ['note-energy', 'is-empty'] }, [el('p', { className: ['note-energy-empty'] }, [txt(t('能量图还没有数据：一行写一个物种，名字后面跟能量，比如「TS1 12.3」'))])]);
 	}
 	const columns = energyColumns(profile.paths);
 	const step = Math.max(110, ...levels.map((level) => textWidth(level.name, SIZE) + 24));
@@ -169,7 +171,7 @@ export function energyFigure(profile) {
 	shapes.push(el('line', { className: ['energy-axis'], x1: left, y1: axisBottom, x2: left, y2: top - 20 }));
 	shapes.push(el('path', { className: ['energy-arrow'], d: `M${left - 4} ${top - 12}L${left} ${top - 22}L${left + 4} ${top - 12}Z` }));
 	const middle = round((top - 20 + axisBottom) / 2);
-	shapes.push(el('text', { className: ['energy-axis-name'], x: -middle, y: 16, transform: 'rotate(-90)' }, [txt(profile.axis || '相对能量')]));
+	shapes.push(el('text', { className: ['energy-axis-name'], x: -middle, y: 16, transform: 'rotate(-90)' }, [txt(profile.axis || t('相对能量'))]));
 
 	// The lines between first, then the levels, then their numbers and names over them all.
 	const links = [];
@@ -209,7 +211,7 @@ export function energyFigure(profile) {
 	if (legend) {
 		let along = left + 16;
 		profile.paths.forEach((path, which) => {
-			const name = path.name || `路径 ${which + 1}`;
+			const name = path.name || t('路径 {number}', { number: which + 1 });
 			shapes.push(el('line', { className: ['energy-link', `energy-path-${which % 4}`], x1: along, y1: 14, x2: along + 24, y2: 14 }));
 			shapes.push(el('text', { className: ['energy-legend'], x: along + 30, y: 18 }, [txt(name)]));
 			along += 30 + textWidth(name, SIZE) + 20;
@@ -219,7 +221,7 @@ export function energyFigure(profile) {
 	const height = Math.ceil(Math.max(top + PLOT + 34, lowest + 8));
 	const svg = el(
 		'svg',
-		{ className: ['note-energy-plot'], viewBox: `0 0 ${width} ${height}`, role: 'img', ariaLabel: profile.title || '反应能量图', style: `max-width:${width}px` },
+		{ className: ['note-energy-plot'], viewBox: `0 0 ${width} ${height}`, role: 'img', ariaLabel: profile.title || t('反应能量图'), style: `max-width:${width}px` },
 		shapes,
 	);
 	const caption = profile.title ? [el('figcaption', {}, [txt(profile.title)])] : [];

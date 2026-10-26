@@ -1,4 +1,5 @@
 import { describeXtbCommon, joinArgs, readXtbCommon, splitArgs, writeXtbCommon, XTB_COMMON_FIELDS } from '@blog/compute/job-options.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * CREST as a program of ```job blocks (@blog/compute/programs.mjs): a
@@ -47,17 +48,30 @@ export const crest = Object.freeze({
 	starter: '--gfn2',
 	read: readCrestOptions,
 	write: writeCrestArgs,
-	describe: (options) => ['构象搜索', CREST_METHODS[options.method] ?? options.method, ...describeXtbCommon(options)].join(' · '),
+	describe: (options) => [t('构象搜索'), CREST_METHODS[options.method] ?? options.method, ...describeXtbCommon(options)].join(' · '),
 	fields: [
-		{ key: 'method', label: '方法', kind: 'select', choices: () => Object.entries(CREST_METHODS), get: (options) => options.method, set: (options, value) => ({ ...options, method: value }) },
+		{
+			key: 'method',
+			get label() {
+				return t('方法');
+			},
+			kind: 'select',
+			choices: () => Object.entries(CREST_METHODS),
+			get: (options) => options.method,
+			set: (options, value) => ({ ...options, method: value }),
+		},
 		{
 			key: 'ewin',
-			label: '能量窗口 kcal/mol',
+			get label() {
+				return t('能量窗口 kcal/mol');
+			},
 			kind: 'number',
 			min: 0,
 			max: 100,
 			step: 0.5,
-			placeholder: '默认 6',
+			get placeholder() {
+				return t('默认 6');
+			},
 			get: (options) => (options.ewin === null ? '' : String(options.ewin)),
 			set: (options, value) => ({ ...options, ewin: value.trim() === '' || !Number.isFinite(Number(value)) ? null : Number(value) }),
 		},

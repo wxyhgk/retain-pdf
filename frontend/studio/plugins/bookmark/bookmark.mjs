@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * A web bookmark, written in the article as a fence: the address on its
  * first line, then what the Studio read of the page, one `key: value` a line.
@@ -79,7 +81,7 @@ export function bookmarkCard(bookmark) {
 	const image = webAddress(bookmark.image);
 	const text = (value) => ({ type: 'text', value });
 	const span = (name, value) => ({ type: 'element', tagName: 'span', properties: { className: [`note-bookmark-${name}`] }, children: [text(value)] });
-	const words = [span('title', bookmark.title || bookmark.url || '网页书签')];
+	const words = [span('title', bookmark.title || bookmark.url || t('网页书签'))];
 	if (bookmark.description) words.push(span('description', bookmark.description));
 	words.push(span('site', bookmark.site || hostOf(url)));
 	const children = [{ type: 'element', tagName: 'span', properties: { className: ['note-bookmark-text'] }, children: words }];

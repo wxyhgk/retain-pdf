@@ -4,6 +4,7 @@ import type { Node as ProseNode } from '@milkdown/prose/model';
 import type { EditorView, NodeView } from '@milkdown/prose/view';
 import { $view } from '@milkdown/utils';
 
+import { t } from '@blog/i18n/index.mjs';
 import { BOOKMARK_LANGUAGE, bookmarkCard, parseBookmark, webAddress, writeBookmark, type Bookmark } from './bookmark.mjs';
 
 /**
@@ -112,7 +113,7 @@ export const bookmarkView = $view(bookmarkSchema.schema.node, () => (initial: Pr
 	const read = async (url: string) => {
 		const address = webAddress(url);
 		if (!address) {
-			host?.toast('网址要以 http:// 或 https:// 开头', true);
+			host?.toast(t('网址要以 http:// 或 https:// 开头'), true);
 			return;
 		}
 		editing = false;
@@ -122,7 +123,7 @@ export const bookmarkView = $view(bookmarkSchema.schema.node, () => (initial: Pr
 		write(bookmark);
 		paint();
 		try {
-			if (!host) throw new Error('网页书签插件没有启动');
+			if (!host) throw new Error(t('网页书签插件没有启动'));
 			const found = await host.preview(address);
 			reading = false;
 			bookmark = { ...found, url: address };
@@ -130,7 +131,7 @@ export const bookmarkView = $view(bookmarkSchema.schema.node, () => (initial: Pr
 		} catch (error) {
 			reading = false;
 			paint();
-			host?.toast(`没能读取这个网页：${error instanceof Error ? error.message : String(error)}`, true);
+			host?.toast(t('没能读取这个网页：{error}', { error: error instanceof Error ? error.message : String(error) }), true);
 		}
 	};
 
@@ -144,11 +145,11 @@ export const bookmarkView = $view(bookmarkSchema.schema.node, () => (initial: Pr
 			form.noValidate = true;
 			const input = document.createElement('input');
 			input.type = 'url';
-			input.placeholder = '粘贴网址，回车（网页、DOI 都行）';
+			input.placeholder = t('粘贴网址，回车（网页、DOI 都行）');
 			input.value = bookmark.url;
-			input.setAttribute('aria-label', '书签的网址');
+			input.setAttribute('aria-label', t('书签的网址'));
 			form.append(input);
-			if (bookmark.url) form.append(button('取消', () => {
+			if (bookmark.url) form.append(button(t('取消'), () => {
 				editing = false;
 				paint();
 				view.focus();
@@ -175,16 +176,16 @@ export const bookmarkView = $view(bookmarkSchema.schema.node, () => (initial: Pr
 		if (reading) {
 			const note = document.createElement('div');
 			note.className = 'bookmark-block-reading';
-			note.textContent = '正在读取网页…';
+			note.textContent = t('正在读取网页…');
 			dom.append(note);
 			return;
 		}
 		const actions = document.createElement('div');
 		actions.className = 'bookmark-block-actions';
 		actions.append(
-			button('打开', () => window.open(webAddress(bookmark.url), '_blank', 'noopener,noreferrer')),
-			button('重新获取', () => void read(bookmark.url)),
-			button('改网址', () => {
+			button(t('打开'), () => window.open(webAddress(bookmark.url), '_blank', 'noopener,noreferrer')),
+			button(t('重新获取'), () => void read(bookmark.url)),
+			button(t('改网址'), () => {
 				editing = true;
 				opening.add(node);
 				paint();

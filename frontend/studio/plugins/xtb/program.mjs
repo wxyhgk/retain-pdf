@@ -1,4 +1,5 @@
 import { describeXtbCommon, joinArgs, readXtbCommon, splitArgs, writeXtbCommon, XTB_COMMON_FIELDS } from '@blog/compute/job-options.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * xtb as a program of ```job blocks (@blog/compute/programs.mjs): its
@@ -9,10 +10,30 @@ import { describeXtbCommon, joinArgs, readXtbCommon, splitArgs, writeXtbCommon, 
 
 /** What an xtb job does; `--opt`, `--hess`, `--ohess` take a level. */
 export const XTB_TASKS = Object.freeze({
-	sp: { name: '单点能', flag: '' },
-	opt: { name: '结构优化', flag: '--opt' },
-	hess: { name: '频率', flag: '--hess' },
-	ohess: { name: '优化 + 频率', flag: '--ohess' },
+	sp: {
+		get name() {
+			return t('单点能');
+		},
+		flag: '',
+	},
+	opt: {
+		get name() {
+			return t('结构优化');
+		},
+		flag: '--opt',
+	},
+	hess: {
+		get name() {
+			return t('频率');
+		},
+		flag: '--hess',
+	},
+	ohess: {
+		get name() {
+			return t('优化 + 频率');
+		},
+		flag: '--ohess',
+	},
 });
 
 export const XTB_METHODS = Object.freeze({ gfn2: 'GFN2-xTB', gfn1: 'GFN1-xTB', gfn0: 'GFN0-xTB', gfnff: 'GFN-FF' });
@@ -70,13 +91,33 @@ export const xtb = Object.freeze({
 	write: writeXtbArgs,
 	describe: (options) => [XTB_TASKS[options.task]?.name ?? options.task, XTB_METHODS[options.method] ?? options.method, ...describeXtbCommon(options)].join(' · '),
 	fields: [
-		{ key: 'task', label: '任务', kind: 'select', choices: () => Object.entries(XTB_TASKS).map(([key, value]) => [key, value.name]), get: (options) => options.task, set: (options, value) => ({ ...options, task: value, level: ['opt', 'ohess'].includes(value) ? options.level : '' }) },
-		{ key: 'method', label: '方法', kind: 'select', choices: () => Object.entries(XTB_METHODS), get: (options) => options.method, set: (options, value) => ({ ...options, method: value }) },
+		{
+			key: 'task',
+			get label() {
+				return t('任务');
+			},
+			kind: 'select',
+			choices: () => Object.entries(XTB_TASKS).map(([key, value]) => [key, value.name]),
+			get: (options) => options.task,
+			set: (options, value) => ({ ...options, task: value, level: ['opt', 'ohess'].includes(value) ? options.level : '' }),
+		},
+		{
+			key: 'method',
+			get label() {
+				return t('方法');
+			},
+			kind: 'select',
+			choices: () => Object.entries(XTB_METHODS),
+			get: (options) => options.method,
+			set: (options, value) => ({ ...options, method: value }),
+		},
 		{
 			key: 'level',
-			label: '优化精度',
+			get label() {
+				return t('优化精度');
+			},
 			kind: 'select',
-			choices: () => [['', '默认'], ...OPT_LEVELS.map((name) => [name, name])],
+			choices: () => [['', t('默认')], ...OPT_LEVELS.map((name) => [name, name])],
 			shown: (options) => ['opt', 'ohess'].includes(options.task),
 			get: (options) => options.level,
 			set: (options, value) => ({ ...options, level: value }),

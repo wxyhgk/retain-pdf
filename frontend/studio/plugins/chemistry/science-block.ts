@@ -1,5 +1,6 @@
 import { Fragment, Slice, type Node as ProseMirrorNode } from 'prosemirror-model';
 
+import { t } from '@blog/i18n/index.mjs';
 import type { MoleculeBlock } from '@blog/science/model.ts';
 import { blockAt } from '@blog/ui/block-at.ts';
 import { isMoleculeLanguage, parseMoleculeBlock } from '@blog/science/parsers/molecule-block.ts';
@@ -68,7 +69,7 @@ export type ScienceBlockEdit = {
 };
 
 export type ScienceBlockMenuItem = {
-	section: '插入' | '转换' | '操作';
+	section: 'insert' | 'convert' | 'actions';
 	id: string;
 	label: string;
 	current: boolean;
@@ -79,7 +80,7 @@ export type ScienceBlockMenuItem = {
 export function scienceBlockKindLabel(info: string): string {
 	const normalized = info.trim().toLowerCase();
 	const kind = SCIENCE_BLOCK_KINDS.find((item) => item.info === normalized);
-	return kind?.label ?? (info.trim() || '化学');
+	return kind?.label ?? (info.trim() || t('化学'));
 }
 
 /**
@@ -140,7 +141,7 @@ export function scienceSourceEditor(info: string): ScienceSourceEditor {
 	const inline = info.trim().toLowerCase() === 'smiles';
 	return {
 		label,
-		placeholder: inline ? '输入 SMILES，例如 CCO' : `粘贴 ${label} 内容，或 @file ./assets/…`,
+		placeholder: inline ? t('输入 SMILES，例如 CCO') : t('粘贴 {kind} 内容，或 @file ./assets/…', { kind: label }),
 		inline,
 	};
 }
@@ -153,9 +154,9 @@ export function scienceBlockMenuItems(nodeName: string, info: string): ScienceBl
 	const items: ScienceBlockMenuItem[] = [];
 	if (nodeName === SCIENCE_FENCE_TYPE) {
 		items.push({
-			section: '操作',
+			section: 'actions',
 			id: 'edit',
-			label: '编辑源码',
+			label: t('编辑源码'),
 			current: false,
 			action: { type: 'edit' },
 		});
@@ -163,7 +164,7 @@ export function scienceBlockMenuItems(nodeName: string, info: string): ScienceBl
 	const currentInfo = info.trim().toLowerCase();
 	for (const kind of SCIENCE_BLOCK_KINDS) {
 		items.push({
-			section: '转换',
+			section: 'convert',
 			id: `convert-${kind.key}`,
 			label: kind.label,
 			current: nodeName === SCIENCE_FENCE_TYPE && currentInfo === kind.info,
@@ -171,9 +172,9 @@ export function scienceBlockMenuItems(nodeName: string, info: string): ScienceBl
 		});
 	}
 	items.push({
-		section: '操作',
+		section: 'actions',
 		id: 'delete',
-		label: '删除',
+		label: t('删除'),
 		current: false,
 		action: { type: 'delete' },
 	});

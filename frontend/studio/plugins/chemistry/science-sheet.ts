@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { createSciencePreview, hydrateSciencePreviews } from '@blog/science/browser/science-renderer.ts';
 import type { MoleculeEditor } from '@blog/kernel/studio.ts';
 import { openBlockSheet, type OpenSheet, type SheetAction } from '@blog/ui/block-sheet.ts';
@@ -46,9 +47,9 @@ function editableIn3D(info: string, source: string): 'xyz' | 'mol' | null {
 /** Why a block's structure is shown, not edited, in 结构. */
 function readOnlyReason(info: string, source: string): string {
 	const descriptor = parseScienceFence(info, source);
-	if (descriptor?.block?.resource.kind === 'file') return '结构来自文章里的文件：这里只显示；改文件，或在「源码」里换成直接写的结构。';
-	if (!source.trim()) return '还没有结构：在「源码」里写上。';
-	return `${scienceBlockKindLabel(info)} 只能在「源码」里改；这里显示它画出来的样子。`;
+	if (descriptor?.block?.resource.kind === 'file') return t('结构来自文章里的文件：这里只显示；改文件，或在「源码」里换成直接写的结构。');
+	if (!source.trim()) return t('还没有结构：在「源码」里写上。');
+	return t('{kind} 只能在「源码」里改；这里显示它画出来的样子。', { kind: scienceBlockKindLabel(info) });
 }
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text?: string): HTMLElementTagNameMap[K] {
@@ -62,7 +63,7 @@ function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', 
 function preview(host: HTMLElement, state: ScienceBlockState): void {
 	const descriptor = parseScienceFence(state.info, state.source);
 	const drawn = descriptor?.block && state.source.trim() ? createSciencePreview(descriptor.block.language, state.source) : null;
-	host.replaceChildren(drawn ?? element('p', 'science-sheet-empty', descriptor?.problem ? `无法预览：${descriptor.problem}` : state.source.trim() ? '无法预览这段结构' : '还没有结构'));
+	host.replaceChildren(drawn ?? element('p', 'science-sheet-empty', descriptor?.problem ? t('无法预览：{problem}', { problem: descriptor.problem }) : state.source.trim() ? t('无法预览这段结构') : t('还没有结构')));
 	hydrateSciencePreviews(host);
 }
 
@@ -103,8 +104,8 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 		const in3D = editableIn3D(state.info, state.source);
 		// Being made 3D comes first: a flat structure would otherwise go to the structure editor.
 		if (form && flatTo3D === null) {
-			note.textContent = form === 'smiles' ? '画好的结构会写回成 SMILES；SMILES 写不下的（如通用基团）会改成 SDF 块。' : '画好的结构会写回块里（MOL）。';
-			stage.textContent = '正在载入结构编辑器…';
+			note.textContent = form === 'smiles' ? t('画好的结构会写回成 SMILES；SMILES 写不下的（如通用基团）会改成 SDF 块。') : t('画好的结构会写回块里（MOL）。');
+			stage.textContent = t('正在载入结构编辑器…');
 			void mountStructureEditor(stage, form, state, {
 				current: () => host.read() ?? state,
 				drawn: (next) => write('structure', next),
@@ -121,11 +122,11 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 			flatTo3D = null;
 			const format = making !== null ? 'mol' : in3D;
 			note.textContent = making !== null
-				? '正在用 RetainMol 生成三维结构，补上氢；生成后块会变成三维 SDF。'
-				: format === 'xyz' ? '在 RetainMol 里改结构，改动写回块里（XYZ）。' : '在 RetainMol 里改结构，改动写回块里（MOL）；SD 文件里的数据字段不会保留。';
+				? t('正在用 RetainMol 生成三维结构，补上氢；生成后块会变成三维 SDF。')
+				: format === 'xyz' ? t('在 RetainMol 里改结构，改动写回块里（XYZ）。') : t('在 RetainMol 里改结构，改动写回块里（MOL）；SD 文件里的数据字段不会保留。');
 			const editor = moleculeEditor();
 			if (!editor) {
-				stage.replaceChildren(element('p', 'science-sheet-empty', '没有可用的分子编辑器（plugins/ 里没有提供 molecules 的插件）'));
+				stage.replaceChildren(element('p', 'science-sheet-empty', t('没有可用的分子编辑器（plugins/ 里没有提供 molecules 的插件）')));
 				return;
 			}
 			void editor.open(stage, {
@@ -137,10 +138,10 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 					const source = (format === 'xyz' ? built.xyz : built.mol).replace(/\s+$/u, '');
 					const info = making !== null ? 'sdf' : current.info;
 					if (source !== current.source || info !== current.info) write('structure', { info, source });
-					note.textContent = `${built.formula} · ${built.atoms} 个原子，已写回块里。`;
+					note.textContent = t('{formula} · {count} 个原子，已写回块里。', { formula: built.formula, count: built.atoms });
 				},
 				failed: (message) => {
-					note.textContent = `${editor.label} 读不了这个结构：${message}`;
+					note.textContent = t('{editor} 读不了这个结构：{error}', { editor: editor.label, error: message });
 				},
 			}).then((opened) => {
 				if (closed) opened.dispose();
@@ -167,7 +168,7 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 		text.placeholder = editor.placeholder;
 		text.spellcheck = false;
 		text.rows = editor.inline ? 2 : 14;
-		text.setAttribute('aria-label', `${editor.label} 源码`);
+		text.setAttribute('aria-label', t('{kind} 源码', { kind: editor.label }));
 		const shown = element('div', 'science-sheet-preview');
 		panel.append(text, shown);
 		preview(shown, state);
@@ -206,23 +207,23 @@ export function openScienceSheet(host: ScienceSheetHost, initial: 'structure' | 
 			sheet.redraw('structure');
 			sheet.select('structure');
 		} catch (error) {
-			window.alert(`没能生成三维结构：${error instanceof Error ? error.message : String(error)}`);
+			window.alert(t('没能生成三维结构：{error}', { error: error instanceof Error ? error.message : String(error) }));
 		}
 	};
 
 	const actions = (): SheetAction[] => {
 		const state = host.read();
 		if (!state || !structureDrawing(state.info, state.source) || !state.source.trim()) return [];
-		return [{ label: '生成三维结构', title: '交给 RetainMol 生成三维构象、补上氢，块变成三维 SDF', run: () => void make3D() }];
+		return [{ label: t('生成三维结构'), title: t('交给 RetainMol 生成三维构象、补上氢，块变成三维 SDF'), run: () => void make3D() }];
 	};
 
 	sheet = openBlockSheet({
-		kind: '化学',
+		kind: t('化学'),
 		title: scienceBlockKindLabel(start.info),
 		initial,
 		tabs: [
-			{ key: 'structure', label: '结构', draw: drawStructure, wide: true },
-			{ key: 'source', label: '源码', draw: drawSource },
+			{ key: 'structure', label: t('结构'), draw: drawStructure, wide: true },
+			{ key: 'source', label: t('源码'), draw: drawSource },
 		],
 		actions: actions(),
 		onClose: () => host.onClose(),

@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 
@@ -36,7 +37,7 @@ const EDITOR_CSS = `
  * opened by the dev server (server.mjs).
  */
 export const name = 'block-video';
-export const description = '视频（```video）：B 站或 YouTube 的链接显示成它们的播放器；本机的视频放在文章的 assets/ 里（不进 git），Studio 里能放，博客上显示它的封面。';
+export const description = t('视频（```video）：B 站或 YouTube 的链接显示成它们的播放器；本机的视频放在文章的 assets/ 里（不进 git），Studio 里能放，博客上显示它的封面。');
 export const inject = ['studio', 'blocks', 'styles'];
 
 export function apply(ctx: Context): void {
@@ -44,7 +45,7 @@ export function apply(ctx: Context): void {
 	ctx.effect(() => {
 		const shown = () => {
 			const slug = ctx.studio.shown();
-			if (!slug) throw new Error('没有打开文章');
+			if (!slug) throw new Error(t('没有打开文章'));
 			return slug;
 		};
 		setVideoHost({
@@ -66,7 +67,7 @@ export function apply(ctx: Context): void {
 		files: { extensions: [...LOCAL_ONLY_EXTENSIONS], icon: '▶', markdown: videoMarkdown },
 		// A link to a video on Bilibili or YouTube (a Bilibili short link too, opened once in): its player.
 		links: {
-			label: '视频',
+			label: t('视频'),
 			specific: true,
 			matches: (url) => Boolean(onlineVideo(url)) || /^https?:\/\/b23\.tv\//iu.test(url),
 			markdown: (url) => `\`\`\`${VIDEO_LANGUAGE}\n${url}\n\`\`\``,
@@ -74,7 +75,7 @@ export function apply(ctx: Context): void {
 		},
 		menu: {
 			key: 'video',
-			label: '视频',
+			label: t('视频'),
 			icon: ICON,
 			keywords: ['video', 'movie', 'bilibili', 'youtube', 'mp4', 'shipin', 'sp'],
 			insert: insertVideo,

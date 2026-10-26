@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { Context } from '@blog/kernel/index.mjs';
 import type {} from '@blog/kernel/studio.ts';
 import type {} from '@blog/kernel/ui.ts';
@@ -13,7 +14,7 @@ import { countMarkdown, statsLine, type Stats } from './count.ts';
  * counting itself is count.ts.
  */
 export const name = 'word-count';
-export const description = '字数统计：右栏一个页签，随着打字实时数中文字、英文词、阅读时间，以及标题、公式、图片、代码块；还能把统计写成一行插进正文。';
+export const description = t('字数统计：右栏一个页签，随着打字实时数中文字、英文词、阅读时间，以及标题、公式、图片、代码块；还能把统计写成一行插进正文。');
 export const inject = ['studio', 'panels', 'commands', 'styles'];
 
 const STYLE = `
@@ -51,17 +52,17 @@ function render(pane: HTMLElement, title: string, stats: Stats): void {
 	main.className = 'word-count-main';
 	main.dataset.stat = 'main';
 	main.append(
-		card(number(stats.chinese), '中文字'),
-		card(number(stats.english), '英文词'),
-		card(stats.minutes ? `${stats.minutes} 分钟` : '—', '阅读时间'),
+		card(number(stats.chinese), t('中文字')),
+		card(number(stats.english), t('英文词')),
+		card(stats.minutes ? t('{minutes} 分钟', { minutes: stats.minutes }) : '—', t('阅读时间')),
 	);
 	const list = document.createElement('dl');
 	list.className = 'word-count-list';
 	const rows: Array<[string, string, keyof Stats]> = [
-		['标题', '', 'headings'],
-		['行间公式', '', 'formulas'],
-		['图片', '', 'images'],
-		['代码块', stats.jobBlocks ? `其中计算块 ${stats.jobBlocks}` : '', 'codeBlocks'],
+		[t('标题'), '', 'headings'],
+		[t('行间公式'), '', 'formulas'],
+		[t('图片'), '', 'images'],
+		[t('代码块'), stats.jobBlocks ? t('其中计算块 {count}', { count: stats.jobBlocks }) : '', 'codeBlocks'],
 	];
 	for (const [label, note, key] of rows) {
 		const term = document.createElement('dt');
@@ -93,7 +94,7 @@ export function apply(ctx: Context): void {
 
 	ctx.panels.register({
 		key: 'word-count',
-		label: '字数',
+		label: t('字数'),
 		draw(pane) {
 			const root = document.createElement('div');
 			root.className = 'word-count';
@@ -109,7 +110,7 @@ export function apply(ctx: Context): void {
 				if (!article || source === null) {
 					const empty = document.createElement('p');
 					empty.className = 'word-count-empty';
-					empty.textContent = '还没有打开文章。';
+					empty.textContent = t('还没有打开文章。');
 					root.replaceChildren(empty);
 					return;
 				}
@@ -136,7 +137,7 @@ export function apply(ctx: Context): void {
 
 	ctx.commands.register({
 		id: 'word-count.open',
-		label: '字数统计',
+		label: t('字数统计'),
 		icon: '#',
 		places: ['sidebar'],
 		run: () => ctx.studio.showPanel('word-count'),
@@ -144,14 +145,14 @@ export function apply(ctx: Context): void {
 
 	ctx.commands.register({
 		id: 'word-count.insert',
-		label: '插入字数统计',
+		label: t('插入字数统计'),
 		icon: '#',
 		keys: 'Mod-Alt-w',
-		keywords: ['wordcount', 'zishu', 'tongji', '字数'],
+		keywords: ['wordcount', 'zishu', 'tongji', '字数'], // i18n-ignore: matched against what is typed
 		places: ['slash', 'page-menu'],
 		run() {
 			const now = current();
-			if (!now) throw new Error('还没有打开文章');
+			if (!now) throw new Error(t('还没有打开文章'));
 			ctx.studio.editor.insertText(statsLine(now.stats));
 		},
 	});

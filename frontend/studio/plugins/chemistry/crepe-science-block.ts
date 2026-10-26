@@ -5,6 +5,7 @@ import { NodeSelection, Plugin, TextSelection } from '@milkdown/prose/state';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
 import type { EditorView, NodeView } from 'prosemirror-view';
 
+import { t } from '@blog/i18n/index.mjs';
 import { createSciencePreview } from '@blog/science/browser/science-renderer.ts';
 import type { OpenSheet } from '@blog/ui/block-sheet.ts';
 import { isMoleculeLanguage } from '@blog/science/parsers/molecule-block.ts';
@@ -72,7 +73,7 @@ function paintMolecule(host: HTMLElement, info: string, source: string): void {
 	}
 	const fallback = document.createElement('p');
 	fallback.className = 'science-block-fallback';
-	fallback.textContent = descriptor?.problem ? `无法预览：${descriptor.problem}` : '无法预览这段结构';
+	fallback.textContent = descriptor?.problem ? t('无法预览：{problem}', { problem: descriptor.problem }) : t('无法预览这段结构');
 	host.append(fallback);
 }
 
@@ -97,12 +98,12 @@ export const scienceBlockView = $view(scienceBlockSchema.schema.node, (ctx) => {
 		const editButton = document.createElement('button');
 		editButton.type = 'button';
 		editButton.className = 'science-block-edit';
-		editButton.textContent = '编辑';
+		editButton.textContent = t('编辑');
 		const menuButton = document.createElement('button');
 		menuButton.type = 'button';
 		menuButton.className = 'science-block-menu-button';
 		menuButton.textContent = '⋯';
-		menuButton.setAttribute('aria-label', '块操作');
+		menuButton.setAttribute('aria-label', t('块操作'));
 		caption.append(kind, editButton, menuButton);
 		const preview = document.createElement('div');
 		preview.className = 'science-block-preview';

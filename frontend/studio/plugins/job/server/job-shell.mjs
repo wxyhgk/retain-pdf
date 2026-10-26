@@ -2,6 +2,8 @@ import { spawn } from 'node:child_process';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * How the Studio reaches a machine that runs jobs: a shell here, or one
  * through ssh. Both run a bash script and give what it prints; files go
@@ -105,14 +107,14 @@ export class JobShell {
 		try {
 			return await run(command, args, { input, spawnImpl: this.spawnImpl, timeout, detached: detached && this.host.kind !== 'ssh' });
 		} catch (error) {
-			throw new JobShellError(`${command} 启动不了：${error.message}`);
+			throw new JobShellError(t('{command} 启动不了：{error}', { command, error: error.message }));
 		}
 	}
 
 	/** Runs `script` and throws with what it said when it fails. */
 	async check(script, options) {
 		const result = await this.exec(script, options);
-		if (result.code !== 0) throw failure(result, this.host.kind === 'ssh' ? `连不上 ${this.host.ssh}（退出码 ${result.code}）` : `命令失败（退出码 ${result.code}）`);
+		if (result.code !== 0) throw failure(result, this.host.kind === 'ssh' ? t('连不上 {host}（退出码 {code}）', { host: this.host.ssh, code: result.code }) : t('命令失败（退出码 {code}）', { code: result.code }));
 		return result;
 	}
 
@@ -122,7 +124,7 @@ export class JobShell {
 		const tar = this.spawnImpl('tar', ['-cf', '-', '-C', folder, ...names], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, COPYFILE_DISABLE: '1' } });
 		const sent = this.check(`mkdir -p ${shellPath(remote)} && tar -xf - -C ${shellPath(remote)}`, { input: tar.stdout });
 		const [packed] = await Promise.all([ended(tar), sent]);
-		if (packed !== 0) throw new JobShellError('打包输入文件失败');
+		if (packed !== 0) throw new JobShellError(t('打包输入文件失败'));
 	}
 
 	/**
@@ -149,7 +151,7 @@ export class JobShell {
 		const errors = [];
 		sender.stderr.on('data', (chunk) => errors.push(chunk));
 		const [sent, received] = await Promise.all([ended(sender), ended(receiver)]);
-		if (sent !== 0 || received !== 0) throw new JobShellError(Buffer.concat(errors).toString('utf8').trim().split('\n').at(-1) || '取回结果失败');
+		if (sent !== 0 || received !== 0) throw new JobShellError(Buffer.concat(errors).toString('utf8').trim().split('\n').at(-1) || t('取回结果失败'));
 		return names;
 	}
 }

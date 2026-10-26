@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { BuiltMolecule } from '@blog/kernel/studio.ts';
 import { sheetOverlay } from '@blog/ui/block-sheet.ts';
 import './frame.css';
@@ -64,12 +65,12 @@ function deliver(attachment: Attachment): void {
 /** The page's one frame: RetainMol served, its frame made in the sheet's kept layer, listened to. */
 function sharedFrame(): Promise<{ frame: HTMLIFrameElement; origin: string }> {
 	shared ??= (async () => {
-		if (!studio) throw new Error('RetainMol 没有准备好');
+		if (!studio) throw new Error(t('RetainMol 没有准备好'));
 		const address = await studio.address();
 		const origin = new URL(address).origin;
 		const frame = document.createElement('iframe');
 		frame.className = 'retainmol-frame';
-		frame.title = 'RetainMol 分子编辑器';
+		frame.title = t('RetainMol 分子编辑器');
 		frame.allow = 'clipboard-read; clipboard-write';
 		frame.hidden = true;
 		frame.src = `${address}/?embed=1&parent=${encodeURIComponent(location.origin)}&theme=${theme()}`;
@@ -86,7 +87,7 @@ function sharedFrame(): Promise<{ frame: HTMLIFrameElement; origin: string }> {
 			} else if (message.type === 'changed' && typeof message.mol === 'string' && typeof message.xyz === 'string') {
 				attached?.changed({ mol: message.mol, xyz: message.xyz, atoms: Number(message.atoms) || 0, formula: String(message.formula ?? '') });
 			} else if (message.type === 'error') {
-				attached?.failed?.(message.message ?? 'RetainMol 读不了这个结构');
+				attached?.failed?.(message.message ?? t('RetainMol 读不了这个结构'));
 			} else if (message.type === 'save') {
 				studio?.save();
 			}
@@ -156,7 +157,7 @@ export async function openRetainmol(
 	host.classList.add('retainmol');
 	const status = document.createElement('p');
 	status.className = 'retainmol-status';
-	status.textContent = shared ? '正在载入 RetainMol…' : '正在准备 RetainMol…（RetainMol 的代码改过之后，第一次要重新打包，约一分钟）';
+	status.textContent = shared ? t('正在载入 RetainMol…') : t('正在准备 RetainMol…（RetainMol 的代码改过之后，第一次要重新打包，约一分钟）');
 	host.replaceChildren(status);
 	const attachment: Attachment = { host, status, changed, failed, pending: { text, report } };
 	attached = attachment;
@@ -164,7 +165,7 @@ export async function openRetainmol(
 	const { frame } = await sharedFrame();
 	if (attached !== attachment) return { load: () => {}, dispose: () => {} };
 	if (ready) status.remove();
-	else status.textContent = '正在载入 RetainMol…';
+	else status.textContent = t('正在载入 RetainMol…');
 	follow(frame, attachment);
 	deliver(attachment);
 

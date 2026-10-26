@@ -10,6 +10,7 @@ import { drawOutput, drawRun, formatDuration, isFinished, moleculeStage, runDura
 import { JOB_LANGUAGE, RUN_STATE_NAMES, jobFenceMeta, newJobId, parseJobFence, runFolder } from '@blog/compute/job-fence.mjs';
 import type { JobProgram, ProgramField } from '@blog/compute/programs.mjs';
 import { formulaOf, parseXyzFrames } from '@blog/compute/parsers/xyz-frames.ts';
+import { t } from '@blog/i18n/index.mjs';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { openBlockSheet, type OpenSheet, type SheetAction, type SheetTab } from '@blog/ui/block-sheet.ts';
 import type { MoleculeEditor, OpenMoleculeEditor } from '@blog/kernel/studio.ts';
@@ -171,51 +172,51 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		let node = initial;
 		let fence = parseJobFence(String(node.attrs.meta ?? ''), node.textContent);
 		const dom = element('div', 'job-block');
-		dom.title = '双击打开';
+		dom.title = t('双击打开');
 
 		// The card: two lines, and on hover running it and the block's menu.
 		const card = createJobCard(element('div'));
-		const runButton = element('button', 'job-run', '运行');
+		const runButton = element('button', 'job-run', t('运行'));
 		runButton.type = 'button';
 		const menuButton = element('button', 'job-menu-button', '⋯');
 		menuButton.type = 'button';
-		menuButton.setAttribute('aria-label', '块操作');
+		menuButton.setAttribute('aria-label', t('块操作'));
 		card.actions.append(runButton, menuButton);
 		dom.append(card.root);
 
 		// The form, the command line, the structure: the sheet's 设置.
 		const settings = element('div', 'job-settings');
 		const title = element('input', 'job-input job-title-input');
-		title.placeholder = '未命名计算';
+		title.placeholder = t('未命名计算');
 		const program = select([]);
-		const machine = select([['local', '本机']]);
+		const machine = select([['local', t('本机')]]);
 		const threads = numberInput(1, 1024);
 		const form = element('div', 'job-form');
-		const titleField = field('名称', title, 'is-wide');
-		const programField = field('程序', program);
-		const machineField = field('机器', machine);
-		const threadsField = field('线程', threads);
+		const titleField = field(t('名称'), title, 'is-wide');
+		const programField = field(t('程序'), program);
+		const machineField = field(t('机器'), machine);
+		const threadsField = field(t('线程'), threads);
 		/** The program's own fields, as drawn for the program they are of. */
 		let drawnFields: { program: JobPrograms | null; controls: Array<{ field: ProgramField; control: HTMLSelectElement | HTMLInputElement; label: HTMLLabelElement }> } = { program: null, controls: [] };
 		form.append(titleField, programField, machineField, threadsField);
 		const commandLine = element('input', 'job-input job-args');
 		commandLine.spellcheck = false;
-		commandLine.setAttribute('aria-label', '命令行参数');
+		commandLine.setAttribute('aria-label', t('命令行参数'));
 		const commandPrefix = element('span', 'job-command-prefix');
 		const command = element('div', 'job-command');
 		command.append(commandPrefix, commandLine);
 		const structureText = element('textarea', 'job-input job-structure-text');
 		structureText.spellcheck = false;
 		structureText.rows = 9;
-		structureText.placeholder = '3\n水\nO  0.000  0.000  0.117\nH  0.000  0.757 -0.469\nH  0.000 -0.757 -0.469\n\n或 @file ./assets/分子.xyz';
-		structureText.setAttribute('aria-label', '起始结构（XYZ）');
+		structureText.placeholder = t('3\n水\nO  0.000  0.000  0.117\nH  0.000  0.757 -0.469\nH  0.000 -0.757 -0.469\n\n或 @file ./assets/分子.xyz');
+		structureText.setAttribute('aria-label', t('起始结构（XYZ）'));
 		const structureInfo = element('p', 'job-structure-info');
-		const structureStage = moleculeStage('起始结构，可拖动旋转');
+		const structureStage = moleculeStage(t('起始结构，可拖动旋转'));
 		const structure = element('div', 'job-structure');
 		const structureColumn = element('div', 'job-structure-column');
-		structureColumn.append(element('span', 'job-field-name', '起始结构'), structureText, structureInfo);
+		structureColumn.append(element('span', 'job-field-name', t('起始结构')), structureText, structureInfo);
 		structure.append(structureColumn, structureStage.root);
-		settings.append(form, field('命令行', command, 'job-command-field'), structure);
+		settings.append(form, field(t('命令行'), command, 'job-command-field'), structure);
 
 		let record: RunRecord | null = null;
 		let summary: RunSummary | null = null;
@@ -248,8 +249,8 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		const stale = () => Boolean(record && isFinished(record) && summary?.input && fence.structure.kind === 'inline' && !sameStructure(summary.input, node.textContent));
 		const describe = () => {
 			const known = programOf();
-			const what = known ? `${known.label} · ${known.describe(known.read(fence.args))}` : `${fence.program} · ${fence.args || '没有插件认识这个程序'}`;
-			return `${what}${stale() ? ' · 结构改过了，这是改之前的结果' : ''}`;
+			const what = known ? `${known.label} · ${known.describe(known.read(fence.args))}` : `${fence.program} · ${fence.args || t('没有插件认识这个程序')}`;
+			return `${what}${stale() ? ` · ${t('结构改过了，这是改之前的结果')}` : ''}`;
 		};
 
 		/** Writes the fence's meta and text, as one step of undo. */
@@ -291,11 +292,11 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 
 		const paintCard = () => {
 			card.paint({ title: fence.title, describe: describe(), record, summary, reading: Boolean(record && !summary && reading === summaryKey(record)) });
-			runButton.textContent = running() ? '停止' : busy ? '…' : '运行';
+			runButton.textContent = running() ? t('停止') : busy ? '…' : t('运行');
 			runButton.classList.toggle('is-stop', running());
 			runButton.disabled = busy;
 			dom.dataset.state = record?.state ?? 'none';
-			sheet?.setTitle(fence.title || '未命名计算');
+			sheet?.setTitle(fence.title || t('未命名计算'));
 			sheet?.setActions(sheetActions());
 		};
 
@@ -327,7 +328,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			const current = options();
 			if (document.activeElement !== title) title.value = fence.title;
 			const programs = jobHost?.programs() ?? [];
-			setOptions(program, [...programs.map((entry): [string, string] => [entry.name, entry.label]), ...(known ? [] : [[fence.program, `${fence.program}（没有插件）`] as [string, string]])]);
+			setOptions(program, [...programs.map((entry): [string, string] => [entry.name, entry.label]), ...(known ? [] : [[fence.program, t('{program}（没有插件）', { program: fence.program })] as [string, string]])]);
 			program.value = fence.program;
 			drawFields(known);
 			for (const { field: entry, control, label } of drawnFields.controls) {
@@ -338,7 +339,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			}
 			machine.value = fence.host;
 			if (document.activeElement !== threads) threads.value = fence.threads ? String(fence.threads) : '';
-			commandPrefix.textContent = `${fence.program} 输入文件`;
+			commandPrefix.textContent = t('{program} 输入文件', { program: fence.program });
 			if (document.activeElement !== commandLine) commandLine.value = fence.args;
 		};
 
@@ -350,26 +351,26 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			paintedStructure = body;
 			const structureOf = fence.structure;
 			if (structureOf.kind === 'file') {
-				structureInfo.textContent = structureOf.path ? `用文章里的文件 ${structureOf.path}` : `${structureOf.written} 不是文章里的文件`;
+				structureInfo.textContent = structureOf.path ? t('用文章里的文件 {path}', { path: structureOf.path }) : t('{path} 不是文章里的文件', { path: structureOf.written });
 				const url = structureOf.path && slug() ? studioFileUrl(slug() as string, structureOf.path) : null;
 				if (url && /\.xyz$/iu.test(structureOf.path ?? '')) {
 					void fetch(url, { cache: 'no-store' }).then((response) => (response.ok ? response.text() : null)).then((text) => (text ? structureStage.show(text) : undefined)).catch(() => {});
 				} else {
-					structureStage.root.textContent = '这种文件只在运行时读';
+					structureStage.root.textContent = t('这种文件只在运行时读');
 				}
 				return;
 			}
 			if (structureOf.kind === 'none') {
-				structureInfo.textContent = '写上起始结构：XYZ，或 @file ./assets/分子.xyz';
-				structureStage.root.textContent = '还没有结构';
+				structureInfo.textContent = t('写上起始结构：XYZ，或 @file ./assets/分子.xyz');
+				structureStage.root.textContent = t('还没有结构');
 				return;
 			}
 			const frames = structureOf.format === 'xyz' ? parseXyzFrames(structureOf.text) : [];
 			if (frames[0]) {
-				structureInfo.textContent = `${formulaOf(frames[0].atoms)} · ${frames[0].atoms.length} 个原子`;
-				void structureStage.show(structureOf.text).catch(() => (structureStage.root.textContent = '三维结构画不出来'));
+				structureInfo.textContent = t('{formula} · {count} 个原子', { formula: formulaOf(frames[0].atoms), count: frames[0].atoms.length });
+				void structureStage.show(structureOf.text).catch(() => (structureStage.root.textContent = t('三维结构画不出来')));
 			} else {
-				structureInfo.textContent = structureOf.format === 'mol' ? 'MOL 结构' : 'XYZ 读不出来：第一行是原子数，第二行是注释，之后每行一个原子';
+				structureInfo.textContent = structureOf.format === 'mol' ? t('MOL 结构') : t('XYZ 读不出来：第一行是原子数，第二行是注释，之后每行一个原子');
 				structureStage.root.textContent = '';
 			}
 		};
@@ -465,8 +466,8 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			try {
 				const hosts = await jobHost.hosts();
 				const choices: Array<[string, string]> = hosts.map((host) => [host.name, `${host.label}${host.scheduler === 'slurm' ? '（Slurm）' : ''}`]);
-				if (!hosts.some((host) => host.name === fence.host)) choices.push([fence.host, `${fence.host}（没有这台机器）`]);
-				choices.push(['__manage', '管理计算机器…']);
+				if (!hosts.some((host) => host.name === fence.host)) choices.push([fence.host, t('{host}（没有这台机器）', { host: fence.host })]);
+				choices.push(['__manage', t('管理计算机器…')]);
 				setOptions(machine, choices);
 				machine.value = fence.host;
 				threads.placeholder = String(hosts.find((host) => host.name === fence.host)?.threads ?? '');
@@ -528,8 +529,8 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 
 		const sheetActions = (): SheetAction[] => [
 			running()
-				? { label: '停止', danger: true, disabled: busy, run: () => void run() }
-				: { label: busy ? '…' : '运行', title: '⌘↩', primary: true, disabled: busy, run: () => void run() },
+				? { label: t('停止'), danger: true, disabled: busy, run: () => void run() }
+				: { label: busy ? '…' : t('运行'), title: '⌘↩', primary: true, disabled: busy, run: () => void run() },
 		];
 
 		/** Shows another of the runs kept. */
@@ -548,7 +549,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		const drawResult = (panel: HTMLElement) => {
 			const current = record;
 			if (!current) {
-				panel.append(element('p', 'job-empty', '还没有运行。在「设置」里设好，点「运行」（⌘↩），结果会显示在这里；每次运行都会保留。'));
+				panel.append(element('p', 'job-empty', t('还没有运行。在「设置」里设好，点「运行」（⌘↩），结果会显示在这里；每次运行都会保留。')));
 				return;
 			}
 			const target = element('div', 'job-result-body');
@@ -558,19 +559,19 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 		const drawOutputTab = (panel: HTMLElement) => {
 			const current = record;
 			if (!current) {
-				panel.append(element('p', 'job-empty', '还没有运行。'));
+				panel.append(element('p', 'job-empty', t('还没有运行。')));
 				return;
 			}
 			void drawOutput(panel, current, readFile(current), fileUrl(current, current.output));
 		};
 		const drawHistory = (panel: HTMLElement) => {
 			if (!runs.length) {
-				panel.append(element('p', 'job-empty', '还没有运行过。'));
+				panel.append(element('p', 'job-empty', t('还没有运行过。')));
 				return;
 			}
 			const table = element('table', 'job-runs');
 			const head = element('tr');
-			for (const name of ['开始时间', '机器', '状态', '用时', '']) head.append(element('th', '', name));
+			for (const name of [t('开始时间'), t('机器'), t('状态'), t('用时'), '']) head.append(element('th', '', name));
 			table.append(element('thead'));
 			table.tHead?.append(head);
 			const body = element('tbody');
@@ -582,7 +583,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 					element('td', '', candidate.hostLabel || candidate.host),
 					element('td', '', RUN_STATE_NAMES[candidate.state] ?? candidate.state),
 					element('td', '', duration === null ? '' : formatDuration(duration)),
-					element('td', 'job-run-shown', candidate.run === fence.run ? '文章显示这次' : '显示这次'),
+					element('td', 'job-run-shown', candidate.run === fence.run ? t('文章显示这次') : t('显示这次')),
 				);
 				row.addEventListener('click', () => {
 					show(candidate.run);
@@ -591,7 +592,7 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				body.append(row);
 			}
 			table.append(body);
-			panel.append(table, element('p', 'job-section-note', `每次运行都在 assets/jobs/${fence.id}/ 里；文章显示哪次，博客上就是哪次。`));
+			panel.append(table, element('p', 'job-section-note', t('每次运行都在 assets/jobs/{id}/ 里；文章显示哪次，博客上就是哪次。', { id: fence.id })));
 		};
 
 		/**
@@ -615,15 +616,15 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 				return '';
 			};
 			note.textContent = structureOf.kind === 'file'
-				? `结构来自文件 ${structureOf.written}；在这里改动后会写进块里，不再引用那个文件。`
+				? t('结构来自文件 {path}；在这里改动后会写进块里，不再引用那个文件。', { path: structureOf.written })
 				: structureOf.kind === 'none'
-					? '在这里搭出分子：左边画 2D，右边在 3D 里接原子、并环、调结构。搭好后到「设置」选方法，点「运行」。'
-					: '改动会写进块里（XYZ），运行时用的就是这里的结构。';
+					? t('在这里搭出分子：左边画 2D，右边在 3D 里接原子、并环、调结构。搭好后到「设置」选方法，点「运行」。')
+					: t('改动会写进块里（XYZ），运行时用的就是这里的结构。');
 			void sourceOf().then(async (text) => {
 				if (closed) return;
 				try {
 					const editor = jobHost?.moleculeEditor();
-					if (!editor) throw new Error('没有可用的分子编辑器（plugins/ 里没有提供 molecules 的插件）');
+					if (!editor) throw new Error(t('没有可用的分子编辑器（plugins/ 里没有提供 molecules 的插件）'));
 					frame = await editor.open(host, {
 						text,
 						changed: (built) => {
@@ -634,10 +635,10 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 							} finally {
 								editingIn3D = false;
 							}
-							note.textContent = `${built.formula} · ${built.atoms} 个原子，已写进块里。`;
+							note.textContent = t('{formula} · {count} 个原子，已写进块里。', { formula: built.formula, count: built.atoms });
 						},
 						failed: (message) => {
-							note.textContent = `${editor.label} 读不了这个结构：${message}`;
+							note.textContent = t('{editor} 读不了这个结构：{error}', { editor: editor.label, error: message });
 						},
 					});
 					if (closed) frame.dispose();
@@ -657,23 +658,23 @@ export const jobBlockView = $view(jobBlockSchema.schema.node, (ctx) => {
 			paintForm();
 			paintedStructure = null;
 			sheet = openBlockSheet({
-				kind: '计算',
-				title: fence.title || '未命名计算',
+				kind: t('计算'),
+				title: fence.title || t('未命名计算'),
 				initial: tab ?? (record ? 'result' : 'build'),
 				tabs: [
-					{ key: 'build', label: '搭建', draw: drawBuild, wide: true },
-					{ key: 'result', label: '结果', draw: drawResult },
+					{ key: 'build', label: t('搭建'), draw: drawBuild, wide: true },
+					{ key: 'result', label: t('结果'), draw: drawResult },
 					{
 						key: 'settings',
-						label: '设置',
+						label: t('设置'),
 						draw: (panel) => {
 							panel.append(settings);
 							paintStructure();
 							void loadHosts();
 						},
 					},
-					{ key: 'output', label: '输出', draw: drawOutputTab },
-					{ key: 'history', label: `历史${runs.length > 1 ? ` ${runs.length}` : ''}`, draw: drawHistory },
+					{ key: 'output', label: t('输出'), draw: drawOutputTab },
+					{ key: 'history', label: runs.length > 1 ? t('历史 {count}', { count: runs.length }) : t('历史'), draw: drawHistory },
 					...(jobHost?.extraTabs({ id: fence.id, title: fence.title, program: fence.program, args: fence.args, body: node.textContent, record, runs }) ?? []),
 				],
 				actions: sheetActions(),

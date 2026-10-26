@@ -99,8 +99,8 @@ export function readingMinutes(chinese: number, english: number): number {
 
 /** One line of it, to put in an article: `全文 1,234 字 · 56 词 · 约 4 分钟`. */
 export function statsLine(stats: Stats): string {
-	const parts = [`全文 ${stats.chinese.toLocaleString('en-US')} 字`];
-	if (stats.english) parts.push(`${stats.english.toLocaleString('en-US')} 词`);
-	parts.push(stats.minutes ? `约 ${stats.minutes} 分钟` : '不到 1 分钟');
+	const parts = [`全文 ${stats.chinese.toLocaleString('en-US')} 字`]; // i18n-ignore: written into the article
+	if (stats.english) parts.push(`${stats.english.toLocaleString('en-US')} 词`); // i18n-ignore: written into the article
+	parts.push(stats.minutes ? `约 ${stats.minutes} 分钟` : '不到 1 分钟'); // i18n-ignore: written into the article
 	return parts.join(' · ');
 }

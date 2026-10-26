@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { isLocalOnly, PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 
 /**
@@ -136,11 +137,11 @@ export function onlineVideo(src) {
 
 /** What is wrong with a fence's address, said to the author; '' when nothing is. */
 export function videoProblem(video) {
-	if (!video.src) return '视频还没有选文件或填链接';
+	if (!video.src) return t('视频还没有选文件或填链接');
 	if (onlineVideo(video.src)) return '';
-	if (/^https?:\/\/b23\.tv\//iu.test(video.src)) return `B 站的短链接要先打开成完整链接（在 Studio 里填一次就好）：${video.src}`;
-	if (/^https?:/iu.test(video.src)) return `只认 B 站和 YouTube 的视频链接：${video.src}`;
-	if (!localVideo(video.src)) return `视频文件要放在文章的 assets/ 里（mp4、mov、webm…）：${video.src}`;
+	if (/^https?:\/\/b23\.tv\//iu.test(video.src)) return t('B 站的短链接要先打开成完整链接（在 Studio 里填一次就好）：{src}', { src: video.src });
+	if (/^https?:/iu.test(video.src)) return t('只认 B 站和 YouTube 的视频链接：{src}', { src: video.src });
+	if (!localVideo(video.src)) return t('视频文件要放在文章的 assets/ 里（mp4、mov、webm…）：{src}', { src: video.src });
 	return '';
 }
 
@@ -172,7 +173,7 @@ export function videoFigure(video, { fileUrl, play = false }) {
 		// it YouTube plays nothing, error 153), and given what it may use.
 		inside = element('iframe', {
 			src: online.embed,
-			title: video.caption || '视频',
+			title: video.caption || t('视频'),
 			loading: 'lazy',
 			allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen',
 			referrerPolicy: 'strict-origin-when-cross-origin',
@@ -189,9 +190,9 @@ export function videoFigure(video, { fileUrl, play = false }) {
 			...(cover ? { poster: fileUrl(cover) } : {}),
 		});
 	} else if (cover) {
-		inside = element('img', { src: fileUrl(cover), alt: video.caption || '视频的封面', loading: 'lazy' });
+		inside = element('img', { src: fileUrl(cover), alt: video.caption || t('视频的封面'), loading: 'lazy' });
 	} else {
-		inside = element('div', { className: ['note-video-missing'] }, [text(local ? '视频（还没有封面）' : '视频')]);
+		inside = element('div', { className: ['note-video-missing'] }, [text(local ? t('视频（还没有封面）') : t('视频'))]);
 	}
 	return element('figure', properties, [element('div', { className: ['note-video-frame'] }, [inside]), ...caption]);
 }

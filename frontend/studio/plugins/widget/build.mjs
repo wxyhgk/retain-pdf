@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { visit } from 'unist-util-visit';
+import { t } from '@blog/i18n/index.mjs';
 import { siteColors } from '../../src/styles/palette.mjs';
 
 import {
@@ -55,20 +56,20 @@ export function widgetFigure(node, file) {
 	if (named) {
 		source = read(named);
 		if (source === null) {
-			file.message(`找不到交互模块文件 ./${named}`, { ...place, ruleId: 'missing-file' });
-			source = `<p style="color: var(--muted)">找不到交互模块文件 ./${named.replace(/[<&]/gu, '')}</p>`;
+			file.message(t('找不到交互模块文件 ./{path}', { path: named }), { ...place, ruleId: 'missing-file' });
+			source = `<p style="color: var(--muted)">找不到交互模块文件 ./${named.replace(/[<&]/gu, '')}</p>`; // i18n-ignore: the blog's page
 		}
 	}
 	for (const wanted of widgetReads(source)) {
 		const published = publicArticlePath(wanted);
 		if (!published) {
-			file.message(`交互模块读的 ${wanted} 不在文章的 img/ 或 assets/ 里，发布后读不到`, { ...place, ruleId: 'widget-file' });
+			file.message(t('交互模块读的 {path} 不在文章的 img/ 或 assets/ 里，发布后读不到', { path: wanted }), { ...place, ruleId: 'widget-file' });
 		} else if (article && !locate(published)) {
-			file.message(`交互模块读的 ./${published} 不存在`, { ...place, ruleId: 'widget-file' });
+			file.message(t('交互模块读的 ./{path} 不存在', { path: published }), { ...place, ruleId: 'widget-file' });
 		}
 	}
 	for (const url of unpinnedScripts(source)) {
-		file.message(`交互模块加载的 ${url} 没写版本号，以后它一变，模块可能就打不开了`, { ...place, ruleId: 'widget-script' });
+		file.message(t('交互模块加载的 {url} 没写版本号，以后它一变，模块可能就打不开了', { url }), { ...place, ruleId: 'widget-script' });
 	}
 	const frame = {
 		type: 'element',
@@ -77,7 +78,7 @@ export function widgetFigure(node, file) {
 			className: ['note-widget-frame'],
 			sandbox: 'allow-scripts',
 			loading: 'lazy',
-			title: title || '交互模块',
+			title: title || '交互模块', // i18n-ignore: the blog's page
 			style: `height:${height || DEFAULT_WIDGET_HEIGHT}px`,
 			// Light until the page tells it the theme (widget-host.ts), with the colors it has then.
 			dataWidget: widgetDocument(source, siteColors('light')),

@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { onlineVideo } from './video.mjs';
 
 /**
@@ -25,19 +26,19 @@ export async function resolveShortLink(address, fetchPage = globalThis.fetch) {
 	try {
 		url = new URL(address.trim());
 	} catch {
-		throw fail('不是网址');
+		throw fail(t('不是网址'));
 	}
 	for (let hop = 0; hop < 4 && url.hostname.toLowerCase() === 'b23.tv'; hop += 1) {
 		let response;
 		try {
 			response = await fetchPage(url.href, { redirect: 'manual', signal: AbortSignal.timeout(10_000) });
 		} catch (error) {
-			throw Object.assign(new Error(`打不开 ${url.href}：${error instanceof Error ? error.message : String(error)}`), { statusCode: 502 });
+			throw Object.assign(new Error(t('打不开 {url}：{error}', { url: url.href, error: error instanceof Error ? error.message : String(error) })), { statusCode: 502 });
 		}
 		const location = response.headers.get('location');
-		if (!location) throw fail('这个短链接没有指向别处');
+		if (!location) throw fail(t('这个短链接没有指向别处'));
 		url = new URL(location, url);
 	}
-	if (!onlineVideo(url.href)) throw fail(`这个链接打开后不是 B 站的视频：${url.href}`);
+	if (!onlineVideo(url.href)) throw fail(t('这个链接打开后不是 B 站的视频：{url}', { url: url.href }));
 	return url.href;
 }

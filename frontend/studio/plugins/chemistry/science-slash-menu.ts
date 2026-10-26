@@ -1,5 +1,6 @@
 import type { EditorView } from 'prosemirror-view';
 
+import { t } from '@blog/i18n/index.mjs';
 import type { SlashEntry } from '@blog/kernel/studio.ts';
 
 import { dispatchScienceAction, placeCursorInScienceBlock } from './science-block-menu.ts';
@@ -8,7 +9,7 @@ import { SCIENCE_BLOCK_KINDS, SCIENCE_FENCE_TYPE } from './science-block.ts';
 /** Slash menu entries: one insert per scientific fence language, plus delete. */
 export const SCIENCE_SLASH_LANGUAGES = SCIENCE_BLOCK_KINDS.map((kind) => ({
 	key: kind.key,
-	label: `化学 ${kind.label}`,
+	label: t('化学 {kind}', { kind: kind.label }),
 	info: kind.info,
 }));
 
@@ -43,7 +44,7 @@ export function scienceSlashEntries(): SlashEntry[] {
 		})),
 		{
 			key: 'delete',
-			label: '删除当前块',
+			label: t('删除当前块'),
 			icon: scienceSlashIcon,
 			keywords: ['delete', 'remove'],
 			insert: (view: EditorView) => dispatchScienceAction(view, { type: 'delete' }),

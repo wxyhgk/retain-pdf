@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 
@@ -28,7 +29,7 @@ const EDITOR_CSS = `
  * start tells it from another `.log`), and the slash menu's 化学 has 计算结果.
  */
 export const name = 'block-qc';
-export const description = '计算结果（```qc）：Gaussian 的 .log、ORCA 的 .out 显示成卡片——能量、自由能、虚频、激发态，双击看优化过程、红外光谱和振动、结构和输出；拖进正文就行。';
+export const description = t('计算结果（```qc）：Gaussian 的 .log、ORCA 的 .out 显示成卡片——能量、自由能、虚频、激发态，双击看优化过程、红外光谱和振动、结构和输出；拖进正文就行。');
 export const inject = ['studio', 'blocks', 'styles'];
 
 export function apply(ctx: Context): void {
@@ -41,7 +42,7 @@ export function apply(ctx: Context): void {
 			},
 			upload: async (folder, file) => {
 				const slug = ctx.studio.shown();
-				if (!slug) throw new Error('没有打开文章');
+				if (!slug) throw new Error(t('没有打开文章'));
 				return (await ctx.studio.upload(slug, folder, file)).path;
 			},
 			toast: (message, error) => ctx.studio.toast(message, error),
@@ -55,12 +56,12 @@ export function apply(ctx: Context): void {
 		milkdown: qcBlockPlugins,
 		drawnWhole: [QC_TYPE],
 		files: { extensions: QC_EXTENSIONS, icon: '⚛', markdown: qcMarkdown, sniff: (head) => qcProgram(head) !== null },
-		menuGroup: { key: 'science', label: '化学' },
+		menuGroup: { key: 'science', label: t('化学') },
 		menu: {
 			key: 'qc',
-			label: '计算结果',
+			label: t('计算结果'),
 			icon: ICON,
-			keywords: ['gaussian', 'orca', 'log', 'out', 'output', 'result', 'qc', 'jisuanjieguo', 'jsjg', '高斯'],
+			keywords: ['gaussian', 'orca', 'log', 'out', 'output', 'result', 'qc', 'jisuanjieguo', 'jsjg', '高斯'], // i18n-ignore: matched against what is typed
 			insert: insertQc,
 		},
 	} satisfies StudioBlock);

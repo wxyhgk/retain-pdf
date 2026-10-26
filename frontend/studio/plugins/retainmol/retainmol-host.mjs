@@ -6,6 +6,8 @@ import { createServer } from 'node:http';
 import { extname, isAbsolute, join, normalize, resolve, sep } from 'node:path';
 import { promisify } from 'node:util';
 
+import { t } from '@blog/i18n/index.mjs';
+
 const execFileAsync = promisify(execFile);
 
 /**
@@ -62,7 +64,7 @@ function runCommand(command, args, cwd) {
 		child.on('error', reject);
 		child.on('close', (code) => {
 			if (code === 0) resolvePromise();
-			else reject(new Error(`${command} ${args.join(' ')} 失败：${output.join('').trim().split('\n').slice(-3).join(' ')}`));
+			else reject(new Error(t('{command} 失败：{output}', { command: `${command} ${args.join(' ')}`, output: output.join('').trim().split('\n').slice(-3).join(' ') })));
 		});
 	});
 }
@@ -104,7 +106,7 @@ export class RetainmolHost {
 		}
 		const root = isAbsolute(written) ? written : resolve(this.projectRoot, written);
 		if (!existsSync(join(root, 'apps', 'retainmol', 'package.json'))) {
-			throw new RetainmolUnavailableError(`找不到 RetainMol：${root} 里没有 apps/retainmol。在 .studio-settings.json 的 retainmolRoot 里写上它的位置`);
+			throw new RetainmolUnavailableError(t('找不到 RetainMol：{root} 里没有 apps/retainmol。在 .studio-settings.json 的 retainmolRoot 里写上它的位置', { root }));
 		}
 		return root;
 	}

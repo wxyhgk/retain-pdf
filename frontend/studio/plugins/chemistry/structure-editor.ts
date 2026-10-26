@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { loadRDKit } from '@blog/science/browser/molecule-renderer.ts';
 import { isEmptyMolfile } from './science-block.ts';
 
@@ -85,7 +86,7 @@ export async function smilesToMolfile(smiles: string): Promise<string> {
 	const mol = rdkit.get_mol(smiles);
 	if (!mol?.is_valid()) {
 		mol?.delete();
-		throw new Error('这段 SMILES 读不出来，先在源码里改对再画');
+		throw new Error(t('这段 SMILES 读不出来，先在源码里改对再画'));
 	}
 	try {
 		mol.set_new_coords(true);

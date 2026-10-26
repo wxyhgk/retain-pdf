@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
+import { t } from '@blog/i18n/index.mjs';
 import { articleFile, localVideo, parseVideo, VIDEO_LANGUAGE, videoFigure, videoProblem } from './video.mjs';
 
 /**
@@ -27,8 +28,8 @@ export function videoBlock(node, file) {
 	const slug = article ? basename(article) : '';
 	const cover = articleFile(video.cover);
 	if (localVideo(video.src) && !problem) {
-		if (!cover) report('视频只在本机，博客上显示它的封面：在 Studio 里点开这个视频做一张封面', 'video-cover');
-		else if (article && !existsSync(join(article, ...cover.split('/')))) report(`找不到视频的封面 ./${cover}`, 'video-cover');
+		if (!cover) report(t('视频只在本机，博客上显示它的封面：在 Studio 里点开这个视频做一张封面'), 'video-cover');
+		else if (article && !existsSync(join(article, ...cover.split('/')))) report(t('找不到视频的封面 ./{cover}', { cover }), 'video-cover');
 	}
 	const fileUrl = (path) => `/article-assets/${encodeURIComponent(slug)}/${path.split('/').map(encodeURIComponent).join('/')}`;
 	const figure = videoFigure(video, { fileUrl });

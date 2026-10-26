@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 
@@ -16,7 +17,7 @@ const ICON =
  * menu as 交互模块.
  */
 export const name = 'block-widget';
-export const description = '交互模块（```widget）：一小段 HTML（滑块、画布、脚本）在沙盒框里运行，博客和 Studio 里一样；大的可以是文章里的一个文件（@file ./assets/….html）。';
+export const description = t('交互模块（```widget）：一小段 HTML（滑块、画布、脚本）在沙盒框里运行，博客和 Studio 里一样；大的可以是文章里的一个文件（@file ./assets/….html）。');
 export const inject = ['studio', 'blocks', 'styles'];
 
 export function apply(ctx: Context): void {
@@ -36,7 +37,7 @@ export function apply(ctx: Context): void {
 		observe: observeWidgets,
 		menu: {
 			key: 'widget',
-			label: '交互模块',
+			label: t('交互模块'),
 			icon: ICON,
 			keywords: ['widget', 'html', 'interactive', 'embed', 'demo'],
 			insert: insertWidget,

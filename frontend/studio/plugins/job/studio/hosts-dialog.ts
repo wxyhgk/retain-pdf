@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { ComputeHost, JobApi } from './api.ts';
 import './hosts-dialog.css';
 
@@ -16,15 +17,15 @@ export function createComputeHostsDialog(api: JobApi, programs: () => ProgramNam
 	dialog.innerHTML = `
 		<form onsubmit="return false">
 			<div class="dialog-heading">
-				<div><strong>计算机器</strong><span>计算块在哪里跑：本机、用 SSH 连得上的服务器，或服务器上的 Slurm 队列</span></div>
-				<button type="button" data-close aria-label="关闭">×</button>
+				<div><strong>${t('计算机器')}</strong><span>${t('计算块在哪里跑：本机、用 SSH 连得上的服务器，或服务器上的 Slurm 队列')}</span></div>
+				<button type="button" data-close aria-label="${t('关闭')}">×</button>
 			</div>
 			<div id="compute-hosts-list"></div>
-			<button id="compute-hosts-add" class="compute-hosts-add" type="button">＋ 添加机器</button>
+			<button id="compute-hosts-add" class="compute-hosts-add" type="button">＋ ${t('添加机器')}</button>
 			<p id="compute-hosts-error" class="dialog-error" role="alert" hidden></p>
 			<div class="dialog-actions">
-				<button type="button" data-close>取消</button>
-				<button id="compute-hosts-save" class="is-primary" type="button">保存</button>
+				<button type="button" data-close>${t('取消')}</button>
+				<button id="compute-hosts-save" class="is-primary" type="button">${t('保存')}</button>
 			</div>
 		</form>`;
 	dialog.id = 'compute-hosts-dialog';
@@ -141,48 +142,48 @@ function hostCard(api: JobApi, programs: ProgramName[], host: ComputeHost, remov
 
 	const name = input('name', host.name, 'server-1');
 	name.readOnly = isLocal;
-	const display = input('label', host.label === host.name ? '' : host.label, isLocal ? '本机' : '5090 服务器');
-	const kind = choice('kind', [['local', '本机'], ['ssh', 'SSH']], host.kind);
+	const display = input('label', host.label === host.name ? '' : host.label, isLocal ? t('本机') : t('5090 服务器'));
+	const kind = choice('kind', [['local', t('本机')], ['ssh', 'SSH']], host.kind);
 	kind.disabled = isLocal;
-	const ssh = input('ssh', host.ssh ?? '', '~/.ssh/config 里的 Host，或 用户@地址');
-	const scheduler = choice('scheduler', [['direct', '直接运行'], ['slurm', '交给 Slurm 排队']], host.scheduler);
-	const partition = input('partition', host.partition ?? '', '默认分区');
-	const time = input('time', host.time ?? '', '不限，如 24:00:00');
+	const ssh = input('ssh', host.ssh ?? '', t('~/.ssh/config 里的 Host，或 用户@地址'));
+	const scheduler = choice('scheduler', [['direct', t('直接运行')], ['slurm', t('交给 Slurm 排队')]], host.scheduler);
+	const partition = input('partition', host.partition ?? '', t('默认分区'));
+	const time = input('time', host.time ?? '', t('不限，如 24:00:00'));
 	const workdir = input('workdir', host.workdir, '~/studio-jobs');
 	const threads = input('threads', String(host.threads), '4', 'number');
 	threads.min = '1';
 	// A path for each program there is; those of programs not there now (their plugin off) are kept as they were.
-	const paths = programs.map((program) => ({ program, control: input(program.name, host.programs[program.name] ?? '', `${program.name}（在 PATH 里）`) }));
+	const paths = programs.map((program) => ({ program, control: input(program.name, host.programs[program.name] ?? '', t('{program}（在 PATH 里）', { program: program.name })) }));
 	const setup = document.createElement('textarea');
 	setup.rows = 2;
 	setup.value = host.setup;
-	setup.placeholder = '运行前执行，如 module load xtb 或 source ~/miniconda3/bin/activate chem';
+	setup.placeholder = t('运行前执行，如 module load xtb 或 source ~/miniconda3/bin/activate chem');
 	setup.spellcheck = false;
 
-	const sshField = label('SSH 地址', ssh);
-	const partitionField = label('Slurm 分区', partition);
-	const timeField = label('时间上限', time);
+	const sshField = label(t('SSH 地址'), ssh);
+	const partitionField = label(t('Slurm 分区'), partition);
+	const timeField = label(t('时间上限'), time);
 	const fields = document.createElement('div');
 	fields.className = 'host-fields';
 	fields.append(
-		label('名称（计算块里写的 host=）', name),
-		label('显示名', display),
-		label('连接', kind),
+		label(t('名称（计算块里写的 host=）'), name),
+		label(t('显示名'), display),
+		label(t('连接'), kind),
 		sshField,
-		label('运行方式', scheduler),
+		label(t('运行方式'), scheduler),
 		partitionField,
 		timeField,
-		label('工作目录', workdir),
-		label('默认线程', threads),
+		label(t('工作目录'), workdir),
+		label(t('默认线程'), threads),
 		...paths.map(({ program, control }) => label(program.label, control, true)),
-		label('环境设置', setup, true),
+		label(t('环境设置'), setup, true),
 	);
 
 	const foot = document.createElement('div');
 	foot.className = 'host-foot';
 	const detect = document.createElement('button');
 	detect.type = 'button';
-	detect.textContent = '检测程序';
+	detect.textContent = t('检测程序');
 	const found = document.createElement('span');
 	found.className = 'host-found';
 	foot.append(detect, found);
@@ -190,7 +191,7 @@ function hostCard(api: JobApi, programs: ProgramName[], host: ComputeHost, remov
 		const drop = document.createElement('button');
 		drop.type = 'button';
 		drop.className = 'host-remove';
-		drop.textContent = '删除这台机器';
+		drop.textContent = t('删除这台机器');
 		drop.addEventListener('click', () => remove(root));
 		foot.append(drop);
 	}
@@ -226,7 +227,7 @@ function hostCard(api: JobApi, programs: ProgramName[], host: ComputeHost, remov
 
 	detect.addEventListener('click', async () => {
 		detect.disabled = true;
-		found.textContent = kind.value === 'ssh' ? `正在连 ${ssh.value.trim() || '…'}` : '正在找';
+		found.textContent = kind.value === 'ssh' ? t('正在连 {host}', { host: ssh.value.trim() || '…' }) : t('正在找');
 		try {
 			const result = await api.detect(read());
 			for (const { program, control } of paths) if (result.programs[program.name] && !control.value.trim()) control.value = result.programs[program.name]!;
@@ -237,9 +238,9 @@ function hostCard(api: JobApi, programs: ProgramName[], host: ComputeHost, remov
 			const defaultPartition = result.partitions.find((value) => value.endsWith('*'));
 			if (result.slurm && defaultPartition && !partition.value.trim()) partition.value = defaultPartition.replace(/\*$/u, '');
 			const parts = [
-				...programs.map((program) => (result.programs[program.name] ? `${program.label} ✓` : `没有 ${program.label}`)),
-				result.cpus ? `${result.cpus} 个处理器` : '',
-				result.slurm ? `Slurm（${result.partitions.join(' ') || '无分区'}）` : '',
+				...programs.map((program) => (result.programs[program.name] ? `${program.label} ✓` : t('没有 {program}', { program: program.label }))),
+				result.cpus ? t('{count} 个处理器', { count: result.cpus }) : '',
+				result.slurm ? `Slurm（${result.partitions.join(' ') || t('无分区')}）` : '',
 			];
 			found.textContent = parts.filter(Boolean).join(' · ');
 		} catch (failure) {

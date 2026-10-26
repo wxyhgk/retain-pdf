@@ -4,6 +4,7 @@ import type { Node as ProseNode } from '@milkdown/prose/model';
 import type { EditorView, NodeView } from '@milkdown/prose/view';
 import { $view } from '@milkdown/utils';
 
+import { t } from '@blog/i18n/index.mjs';
 import { LOCAL_ONLY_EXTENSIONS } from '@blog/markdown/articles/rules.mjs';
 import { articleFile, coverFor, localVideo, onlineVideo, parseVideo, VIDEO_LANGUAGE, videoFigure, writeVideo, type Video } from './video.mjs';
 
@@ -95,7 +96,7 @@ function frameOf(video: HTMLVideoElement, name: string): Promise<File> {
 	canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
 	canvas.getContext('2d')!.drawImage(video, 0, 0, canvas.width, canvas.height);
 	return new Promise((resolve, reject) =>
-		canvas.toBlob((blob) => (blob ? resolve(new File([blob], name, { type: 'image/jpeg' })) : reject(new Error('画面取不出来'))), 'image/jpeg', 0.86),
+		canvas.toBlob((blob) => (blob ? resolve(new File([blob], name, { type: 'image/jpeg' })) : reject(new Error(t('画面取不出来')))), 'image/jpeg', 0.86),
 	);
 }
 
@@ -165,21 +166,21 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 		let url = text.trim();
 		if (!url) return;
 		if (/^https?:\/\/b23\.tv\//iu.test(url)) {
-			busy = '正在打开短链接…';
+			busy = t('正在打开短链接…');
 			paint();
 			try {
 				url = await host!.resolve(url);
 			} catch (error) {
 				busy = '';
 				paint();
-				fail('没能打开这个短链接', error);
+				fail(t('没能打开这个短链接'), error);
 				return;
 			}
 			busy = '';
 		}
 		if (!onlineVideo(url)) {
 			paint();
-			host?.toast('只认 B 站和 YouTube 的视频链接；本机的视频用「选本地视频…」', true);
+			host?.toast(t('只认 B 站和 YouTube 的视频链接；本机的视频用「选本地视频…」'), true);
 			return;
 		}
 		editing = false;
@@ -192,11 +193,11 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 	/** A video file of this machine: put in the article's assets/, then played here. */
 	const useFile = async (file: File) => {
 		if (!host) return;
-		busy = '正在放入视频…';
+		busy = t('正在放入视频…');
 		paint();
 		try {
 			const path = await host.upload('assets', file, {
-				onProgress: (loaded, total) => say(`正在放入视频… ${Math.floor((loaded / (total || 1)) * 100)}%`),
+				onProgress: (loaded, total) => say(t('正在放入视频… {percent}%', { percent: Math.floor((loaded / (total || 1)) * 100) })),
 			});
 			busy = '';
 			editing = false;
@@ -207,7 +208,7 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 		} catch (error) {
 			busy = '';
 			paint();
-			fail(`没能放入 ${file.name}`, error);
+			fail(t('没能放入 {name}', { name: file.name }), error);
 		}
 	};
 
@@ -218,7 +219,7 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 		if (!host || !shown || !path) return;
 		const kept = articleFile(video.cover);
 		const target = kept?.startsWith('img/') ? kept : coverFor(path);
-		say('正在做封面…');
+		say(t('正在做封面…'));
 		try {
 			if (!here) await seek(shown, Math.min(1, (shown.duration || 0) * 0.1));
 			const saved = await host.upload(target.slice(0, target.lastIndexOf('/')), await frameOf(shown, target.slice(target.lastIndexOf('/') + 1)), { replace: true });
@@ -226,10 +227,10 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 			video = { ...video, cover: `./${saved}` };
 			// Made by itself, or from a button: where the caret is stays.
 			write(video, false);
-			if (here) host.toast('封面换成了这一帧；博客上显示的就是它');
+			if (here) host.toast(t('封面换成了这一帧；博客上显示的就是它'));
 		} catch (error) {
 			say('');
-			fail('没能做封面', error);
+			fail(t('没能做封面'), error);
 		}
 	};
 
@@ -239,9 +240,9 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 		element.noValidate = true;
 		const input = document.createElement('input');
 		input.type = 'url';
-		input.placeholder = '粘贴 B 站或 YouTube 的视频链接，回车';
+		input.placeholder = t('粘贴 B 站或 YouTube 的视频链接，回车');
 		input.value = onlineVideo(video.src) ? video.src : '';
-		input.setAttribute('aria-label', '视频链接');
+		input.setAttribute('aria-label', t('视频链接'));
 		const picker = document.createElement('input');
 		picker.type = 'file';
 		picker.accept = ACCEPT;
@@ -250,13 +251,13 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 			const file = picker.files?.[0];
 			if (file) void useFile(file);
 		});
-		element.append(input, button('选本地视频…', () => picker.click(), '只放在这台电脑上（不进 git）；博客上显示它的封面'), picker);
+		element.append(input, button(t('选本地视频…'), () => picker.click(), t('只放在这台电脑上（不进 git）；博客上显示它的封面')), picker);
 		const cancel = () => {
 			editing = false;
 			paint();
 			view.focus();
 		};
-		if (video.src) element.append(button('取消', cancel));
+		if (video.src) element.append(button(t('取消'), cancel));
 		element.addEventListener('submit', (event) => {
 			event.preventDefault();
 			void useLink(input.value);
@@ -297,7 +298,7 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 		if (player) {
 			const shown = player;
 			shown.addEventListener('error', () => {
-				if (shown.error) frame.append(Object.assign(document.createElement('div'), { className: 'video-block-missing', textContent: `放不了 ./${local}：文件不在，或这种视频这里放不了` }));
+				if (shown.error) frame.append(Object.assign(document.createElement('div'), { className: 'video-block-missing', textContent: t('放不了 ./{path}：文件不在，或这种视频这里放不了', { path: local }) }));
 			});
 			if (!articleFile(video.cover) && !coverAsked) {
 				// Told its length (WebKit loads no frame of a video not played before it is sought): to a frame, and that one.
@@ -311,9 +312,9 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 		// The caption, typed under it as under a picture.
 		caption = document.createElement('input');
 		caption.className = 'video-block-caption';
-		caption.placeholder = '添加说明';
+		caption.placeholder = t('添加说明');
 		caption.value = video.caption;
-		caption.setAttribute('aria-label', '视频说明');
+		caption.setAttribute('aria-label', t('视频说明'));
 		caption.addEventListener('input', () => {
 			video = { ...video, caption: caption!.value };
 			write(video, false);
@@ -336,13 +337,13 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 		if (local) {
 			const note = document.createElement('span');
 			note.className = 'video-block-note';
-			note.textContent = '只在本机 · 博客上显示封面';
-			actions.append(note, button('做封面', () => void makeCover(true), '把现在这一帧做成封面（博客上显示的图）'));
+			note.textContent = t('只在本机 · 博客上显示封面');
+			actions.append(note, button(t('做封面'), () => void makeCover(true), t('把现在这一帧做成封面（博客上显示的图）')));
 		} else if (onlineVideo(video.src)) {
-			actions.append(button('打开', () => window.open(video.src, '_blank', 'noopener,noreferrer')));
+			actions.append(button(t('打开'), () => window.open(video.src, '_blank', 'noopener,noreferrer')));
 		}
 		actions.append(
-			button(local ? '换视频' : '改链接', () => {
+			button(local ? t('换视频') : t('改链接'), () => {
 				editing = true;
 				opening.add(node);
 				paint();

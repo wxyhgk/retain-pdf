@@ -100,7 +100,7 @@ test('block menu edits, converts and deletes the selected block', () => {
 	const science = scienceBlockMenuItems(SCIENCE_FENCE_TYPE, 'xyz');
 	assert.equal(science[0]?.action.type, 'edit');
 	assert.deepEqual(
-		science.filter((item) => item.section === '转换').map((item) => item.id),
+		science.filter((item) => item.section === 'convert').map((item) => item.id),
 		['convert-smiles', 'convert-sdf', 'convert-xyz', 'convert-gjf', 'convert-cube'],
 	);
 	assert.equal(science.find((item) => item.id === 'convert-xyz')?.current, true);
@@ -109,7 +109,7 @@ test('block menu edits, converts and deletes the selected block', () => {
 	assert.equal(science.at(-1)?.action.type, 'delete');
 	const paragraph = scienceBlockMenuItems('paragraph', '');
 	assert.equal(paragraph.some((item) => item.action.type === 'edit'), false);
-	assert.equal(paragraph[0]?.section, '转换');
+	assert.equal(paragraph[0]?.section, 'convert');
 	assert.equal(paragraph.at(-1)?.label, '删除');
 });
 

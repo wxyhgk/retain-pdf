@@ -1,6 +1,7 @@
 import { ensembleTable, parseCrestOutput } from '@blog/compute/parsers/crest.ts';
 import { parseXyzFrames } from '@blog/compute/parsers/xyz-frames.ts';
 import { conformerSection, fixed, numbers, runErrors, runFacts, signed, structureSection, type ProgramView } from '@blog/compute/browser/job-view.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * A CREST run, drawn (in the browser): how many conformers, the lowest
@@ -16,12 +17,12 @@ export const crestView: ProgramView = {
 		const table = ensembleTable(ensemble);
 		const parts: Array<HTMLElement | null> = [runFacts(record, out?.version ?? null), runErrors(context, out?.errors ?? [])];
 		parts.push(numbers([
-			['构象数', table.length ? String(table.length) : out?.conformers !== null && out?.conformers !== undefined ? String(out.conformers) : null],
-			['最低能量', fixed(table[0] ? Math.min(...table.map((row) => row.energy)) : out?.lowest ?? null, 6, 'Eh')],
-			['最低构象占比', table.length ? `${(Math.max(...table.map((row) => row.population)) * 100).toFixed(1)} %` : null],
+			[t('构象数'), table.length ? String(table.length) : out?.conformers !== null && out?.conformers !== undefined ? String(out.conformers) : null],
+			[t('最低能量'), fixed(table[0] ? Math.min(...table.map((row) => row.energy)) : out?.lowest ?? null, 6, 'Eh')],
+			[t('最低构象占比'), table.length ? `${(Math.max(...table.map((row) => row.population)) * 100).toFixed(1)} %` : null],
 		]));
 		if (table.length) parts.push(conformerSection(ensemble, table));
-		else if (final) parts.push(structureSection('最低能量构象', final));
+		else if (final) parts.push(structureSection(t('最低能量构象'), final));
 		return parts;
 	},
 	async summarize(context, summary) {
@@ -33,8 +34,8 @@ export const crestView: ProgramView = {
 		if (!finished) return;
 		const conformers = record.files.includes('crest_conformers.xyz') ? await read('crest_conformers.xyz').catch(() => null) : null;
 		const table = conformers ? ensembleTable(parseXyzFrames(conformers)) : [];
-		if (table.length) summary.facts.push(`${table.length} 个构象`, `最低占比 ${(Math.max(...table.map((row) => row.population)) * 100).toFixed(1)}%`);
-		else if (out?.conformers) summary.facts.push(`${out.conformers} 个构象`);
+		if (table.length) summary.facts.push(t('{count} 个构象', { count: table.length }), t('最低占比 {percent}%', { percent: (Math.max(...table.map((row) => row.population)) * 100).toFixed(1) }));
+		else if (out?.conformers) summary.facts.push(t('{count} 个构象', { count: out.conformers }));
 		if (out?.lowest !== null && out?.lowest !== undefined) summary.facts.push(`E ${signed(out.lowest, 5)} Eh`);
 	},
 };

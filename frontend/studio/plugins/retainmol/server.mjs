@@ -16,7 +16,7 @@ export function apply(ctx) {
 	const { server } = ctx;
 	const host = new RetainmolHost({ projectRoot: server.projectRoot, settingsFile: server.settingsFile, fixedUrl: process.env.STUDIO_RETAINMOL_URL || null });
 	ctx.effect(() => {
-		if (!server.testing) void host.start().catch((error) => server.logger.warn(`[studio] RetainMol 没有准备好：${error.message}`));
+		if (!server.testing) void host.start().catch((error) => server.logger.warn(`[studio] RetainMol 没有准备好：${error.message}`)); // i18n-ignore: log
 		return () => host.close();
 	}, 'retainmol host');
 	ctx.routes.post('/retainmol/url', async () => ({ url: await host.start() }));
