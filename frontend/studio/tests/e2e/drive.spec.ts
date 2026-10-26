@@ -139,6 +139,8 @@ test('问 AI: the file and where its words are, typed into a shell in the drive'
 	await expect(page.locator('#terminal-screen')).toHaveAttribute('data-state', 'running', { timeout: 120_000 });
 	await expect(page.locator('#terminal-cwd')).toHaveText(/^studio-drive-.+\/$/u);
 	const rows = page.locator('#terminal-screen .xterm-rows');
-	await expect.poll(async () => (await rows.innerText()).replace(/\s*\n\s*/gu, ''), { timeout: 20_000 })
-		.toContain('资料库里的 组会/第 3 次组会 (定稿).pptx（文字版：.studio-text/组会/第 3 次组会 (定稿).pptx.txt）。要求：');
+	// Without spaces on either side: where the shell's lines wrap (after its prompt, as long as it is) a space may go.
+	const spaceless = (text: string) => text.replace(/\s+/gu, '');
+	await expect.poll(async () => spaceless(await rows.innerText()), { timeout: 20_000 })
+		.toContain(spaceless('资料库里的 组会/第 3 次组会 (定稿).pptx（文字版：.studio-text/组会/第 3 次组会 (定稿).pptx.txt）。要求：'));
 });

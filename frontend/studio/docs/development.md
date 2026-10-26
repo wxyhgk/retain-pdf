@@ -104,6 +104,7 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 浏览器是 Playwright 自带的无头 Chromium，不是系统里的 Chrome：Google Chrome 启动时会带起自动更新和崩溃上报程序，它们在浏览器关掉后还占着它的输出好几分钟，测试进程要等它们，三个并行时一轮多等了十几分钟。缓存里没有这个 Playwright 要的那一版时，用缓存里最接近的一版（`~/Library/Caches/ms-playwright`），不会去下载。`E2E_CHROME_CHANNEL=chrome` 换回系统的 Chrome。
 - WebKit（Mac 应用用的浏览器）：`E2E_CHROME_CHANNEL= … --browser=webkit`。
 - 失败的测试默认只留截图。要 trace（能逐步回看的记录）加 `E2E_TRACE=1`：它存下页面加载的每个模块，每次失败要多写一分钟左右。
+- 测试服务器和你自己的有两处不同：编辑器（Milkdown 的 fork）预先打成包（`STUDIO_MILKDOWN_BUNDLED=1`，见 `src/plugins/milkdown-source.mjs`），一页从一千多个请求降到四百个；终端的 zsh 不读你的 `~/.zshrc` 这些（`ZDOTDIR` 指向空文件夹），启动快，各台机器一样。
 - 同一组端口上同时只能跑一轮：第二轮会直接报错，不会去清空第一轮正在用的文件夹。要同时跑，用 `E2E_PORT` 换一组端口。
 
 **不要在仓库根目录上再开第二个 `astro dev`**：两个服务器会同时写 `.astro/data-store.json`，互相弄坏。测试、预览都用上面这种独立的根目录。

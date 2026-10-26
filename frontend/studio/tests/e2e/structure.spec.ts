@@ -72,9 +72,11 @@ test('structura popups open inside the sheet, above its backdrop, and take click
 	await hetero.click();
 	await expect(hetero).toHaveAttribute('aria-checked', 'false');
 	await expect(overlay).not.toHaveCount(0);
-	// …toggling the trigger shuts the menu.
-	await editor.getByText('查看', { exact: true }).click();
+	// …Escape shuts the menu, and the sheet stays. (Not its trigger clicked again: with the machine busy, the click outside
+	// the menu that shuts it and the trigger's own that opens it come as shut-then-open.)
+	await page.keyboard.press('Escape');
 	await expect(overlay).toHaveCount(0);
+	await expect(editor).toBeVisible();
 	// A tool's flyout (the ring's caret): the same, then picking a kind closes it.
 	await editor.locator('[data-testid="tool-ring-caret"]').click();
 	await expect(overlay).not.toHaveCount(0);
