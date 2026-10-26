@@ -2,6 +2,7 @@ import rehypeStringify from 'rehype-stringify';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 
+import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { articleParser } from '@blog/markdown/syntax.mjs';
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
 
@@ -11,8 +12,12 @@ import { codeBlockPreview } from '../plugins';
  * What an AI says in the AI panel, drawn: its Markdown read as articles are (GFM, formulas), formulas drawn with
  * KaTeX as in the editor, the plugins' blocks (an energy diagram, a molecule) as they draw them there, pictures on
  * this machine shown by their path. Raw HTML in it is dropped, and links go only to the web or within the page,
- * opened elsewhere.
+ * opened elsewhere. The blog's articles it names (《标题》, a link to one, its index.md) are links to them, as Notion's
+ * page mentions: `[data-page]`, opened and previewed by the panel.
  */
+
+/** An article of the blog as the panel names it. */
+export type PageRef = { slug: string; title: string; icon?: string };
 
 const toHtml = unified().use(remarkRehype).use(rehypeStringify).freeze();
 
@@ -41,8 +46,13 @@ type TopNode = Tree['children'][number];
  * `.ai-block`, as the editor has them, with the Markdown it was written as in `data-markdown`, to be put in an
  * article as it is.
  */
-export function renderAiMarkdown(markdown: string, { blocks = false }: { blocks?: boolean } = {}): DocumentFragment {
+export function renderAiMarkdown(markdown: string, { blocks = false, pages = [] }: { blocks?: boolean; pages?: PageRef[] } = {}): DocumentFragment {
 	const tree = articleParser.runSync(articleParser.parse(markdown)) as Tree;
+	const drawn = (shown: Tree) => {
+		const fragment = drawnTree(shown);
+		if (pages.length) linkPages(fragment, indexOf(pages));
+		return fragment;
+	};
 	if (!blocks) return drawn(tree);
 	const fragment = document.createDocumentFragment();
 	// Link definitions drawn with each block, as its links may need them.
@@ -75,7 +85,7 @@ function sourceOf(markdown: string, node: TopNode): string {
 	return start?.offset === undefined || end?.offset === undefined ? '' : markdown.slice(start.offset, end.offset).trim();
 }
 
-function drawn(tree: Tree): DocumentFragment {
+function drawnTree(tree: Tree): DocumentFragment {
 	const template = document.createElement('template');
 	template.innerHTML = toHtml.stringify(toHtml.runSync(tree as never) as never);
 	const fragment = template.content;
@@ -85,6 +95,8 @@ function drawn(tree: Tree): DocumentFragment {
 			link.target = '_blank';
 			link.rel = 'noopener noreferrer';
 		} else if (!href.startsWith('#')) {
+			// Kept to be read: it may be one of the blog's articles (linkPages).
+			link.dataset.target = href;
 			link.removeAttribute('href');
 		}
 	}
@@ -119,4 +131,92 @@ function drawn(tree: Tree): DocumentFragment {
 		code.parentElement!.replaceWith(holder);
 	}
 	return fragment;
+}
+
+type PageIndex = { bySlug: Map<string, PageRef>; byTitle: Map<string, PageRef> };
+const indexes = new WeakMap<PageRef[], PageIndex>();
+
+function indexOf(pages: PageRef[]): PageIndex {
+	let index = indexes.get(pages);
+	if (!index) {
+		index = { bySlug: new Map(pages.map((page) => [page.slug, page])), byTitle: new Map() };
+		for (const page of pages) if (!index.byTitle.has(page.title)) index.byTitle.set(page.title, page);
+		indexes.set(pages, index);
+	}
+	return index;
+}
+
+/**
+ * The article an address or a path is of: `/blog/<slug>/`, its folder (`<slug>/`, `../<slug>`, `blog/<slug>`), its
+ * index.md from wherever; null for anything else.
+ */
+export function pageAt(target: string, index: PageIndex): PageRef | null {
+	const address = ARTICLE_ADDRESS.exec(target);
+	if (address) return index.bySlug.get(address[2]!) ?? null;
+	const path = decoded(target.replace(/^file:\/\//u, '')).replace(/[#?].*$/u, '');
+	const file = /(?:^|\/)([^/]+)\/index\.md$/u.exec(path);
+	if (file) return index.bySlug.get(file[1]!) ?? null;
+	const folder = /^(?:\.{1,2}\/)?(?:blog\/)?([^/]+)\/?$/u.exec(path);
+	return folder ? (index.bySlug.get(folder[1]!) ?? null) : null;
+}
+
+/** A link to an article, as the panel shows one: its icon (unless not `marked`), then `words` (its title, unless given). */
+function pageLink(page: PageRef, words?: Node, marked = true): HTMLAnchorElement {
+	const link = document.createElement('a');
+	link.className = 'ai-page-link';
+	link.dataset.page = page.slug;
+	link.tabIndex = 0;
+	link.setAttribute('role', 'link');
+	const title = document.createElement('span');
+	title.className = 'ai-page-title';
+	title.append(words ?? page.title);
+	if (marked) {
+		const icon = document.createElement('span');
+		icon.className = 'ai-page-icon';
+		icon.setAttribute('aria-hidden', 'true');
+		if (page.icon) icon.textContent = page.icon;
+		link.append(icon);
+	}
+	link.append(title);
+	return link;
+}
+
+/** In what was drawn: links to articles, their paths in code, 《title》 of one, each a link to it. */
+function linkPages(fragment: DocumentFragment, index: PageIndex): void {
+	for (const link of fragment.querySelectorAll<HTMLAnchorElement>('a:not([data-page])')) {
+		const page = pageAt(link.getAttribute('href') ?? link.dataset.target ?? '', index);
+		if (page) link.replaceWith(pageLink(page, wordsOf(link)));
+	}
+	for (const code of fragment.querySelectorAll('code:not(pre code)')) {
+		const page = code.closest('a') ? null : pageAt((code.textContent ?? '').trim(), index);
+		if (page && /index\.md$|^\/(?:blog|wiki)\//u.test((code.textContent ?? '').trim())) code.replaceWith(pageLink(page, code.cloneNode(true)));
+	}
+	const walker = document.createTreeWalker(fragment, NodeFilter.SHOW_TEXT, {
+		acceptNode: (node) => (node.parentElement?.closest('a, code, pre, .ai-math, .ai-math-display, .ai-preview') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT),
+	});
+	const texts: Text[] = [];
+	for (let node = walker.nextNode(); node; node = walker.nextNode()) if ((node.textContent ?? '').includes('《')) texts.push(node as Text);
+	for (const text of texts) {
+		const value = text.data;
+		const parts: Node[] = [];
+		let last = 0;
+		// The title linked, its 《》 kept: as said, no icon in them.
+		for (const found of value.matchAll(/《([^《》\n]+)》/gu)) {
+			const page = index.byTitle.get(found[1]!.trim());
+			if (!page) continue;
+			parts.push(document.createTextNode(value.slice(last, found.index + 1)));
+			parts.push(pageLink(page, document.createTextNode(found[1]!), false));
+			last = found.index + found[0].length - 1;
+		}
+		if (!parts.length) continue;
+		if (last < value.length) parts.push(document.createTextNode(value.slice(last)));
+		text.replaceWith(...parts);
+	}
+}
+
+/** A link's words, as they are (formatting kept). */
+function wordsOf(link: HTMLElement): DocumentFragment {
+	const words = document.createDocumentFragment();
+	words.append(...link.childNodes);
+	return words;
 }

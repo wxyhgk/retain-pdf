@@ -549,6 +549,9 @@ class AgentSession {
 			article: context.article?.title ?? null,
 			selection: context.selection ? lineRange(context.selection) : null,
 			mentions: (context.mentions ?? []).map((mention) => mention.title),
+			// Which articles they are, for the panel to open them.
+			articleSlug: context.article?.slug ?? null,
+			mentionSlugs: (context.mentions ?? []).map((mention) => mention.slug ?? ''),
 		};
 		// Running before what was said is added: a turn is put on the page once it is over, not as it begins.
 		this.#setState('running');
@@ -842,9 +845,9 @@ function modelChoices(option) {
 
 /**
  * @typedef {object} PromptContext where the author is, as the Studio tells the agent (paths from its folder)
- * @property {{ title: string, path: string, brief?: string | null }} [article] the article open (its ai/brief.md, or null for none)
+ * @property {{ slug?: string, title: string, path: string, brief?: string | null }} [article] the article open (its ai/brief.md, or null for none)
  * @property {{ start: number, end: number, text: string }} [selection] the lines of it selected
- * @property {Array<{ title: string, path: string, brief?: string | null }>} [mentions] the articles named with @
+ * @property {Array<{ slug?: string, title: string, path: string, brief?: string | null }>} [mentions] the articles named with @
  * @property {string} [history] where what was said before is kept (chats/…/index.md), for an agent that cannot remember it
  */
 
@@ -876,6 +879,7 @@ export function contextBlock({ article, selection, mentions = [], history } = {}
 		lines.push(`选中的是这篇的${promptLineRange(selection)}：`, `${fence}markdown`, selection.text, fence); // i18n-ignore: for the AI
 	}
 	for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`); // i18n-ignore: for the AI
+	if (article || mentions.length) lines.push('回答里说到这些或别的文章时，写出标题并用《》括起来：Studio 会把它变成能点开的链接'); // i18n-ignore: for the AI
 	if (!lines.length) return '';
 	return `<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`; // i18n-ignore: for the AI
 }

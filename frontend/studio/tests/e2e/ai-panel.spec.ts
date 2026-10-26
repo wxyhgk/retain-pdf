@@ -202,16 +202,16 @@ test('what is said is told where the author is: the article open (followed as an
 	try {
 		await openAi(page);
 		const chips = pane(page).locator('.ai-context .ai-chip-label');
-		await expect(chips).toHaveText(['📄 Studio 测试夹具']);
+		await expect(chips).toHaveText(['Studio 测试夹具']);
 		// Something selected in the article: a chip too.
 		await editor(page).locator('p', { hasText: '结尾段落' }).click({ clickCount: 3 });
-		await expect(chips).toHaveText(['📄 Studio 测试夹具', '选中的内容']);
+		await expect(chips).toHaveText(['Studio 测试夹具', '选中的内容']);
 		// @ names another article, from the list.
 		await input(page).fill('上下文 看看 @另一');
 		await expect(pane(page).locator('.ai-mention')).toHaveCount(1);
 		await input(page).press('Enter');
 		await expect(input(page)).toHaveValue('上下文 看看 ');
-		await expect(chips).toHaveText(['📄 Studio 测试夹具', '选中的内容', '@ 另一篇笔记']);
+		await expect(chips).toHaveText(['Studio 测试夹具', '选中的内容', '另一篇笔记']);
 		await input(page).press('Enter');
 		const answer = pane(page).locator('.ai-message').last();
 		await expect(answer).toContainText('当前打开的文章：《Studio 测试夹具》，文件 studio-fixture/index.md；它的写作要求在 studio-fixture/ai/brief.md，先读');
@@ -220,17 +220,52 @@ test('what is said is told where the author is: the article open (followed as an
 		await expect(answer).toContainText('用 @ 提到的文章：《另一篇笔记》，文件 other-note/index.md（没有 ai/brief.md，不用找）');
 		// What was said is shown as said, with what it named.
 		await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('上下文 看看');
-		await expect(pane(page).locator('.ai-user-context')).toContainText('@ 另一篇笔记');
+		await expect(pane(page).locator('.ai-user-context')).toContainText('另一篇笔记');
 
 		// Another article opened: the same conversation, told of that one now.
 		await page.locator('#article-list').getByText('另一篇笔记', { exact: true }).click();
-		await expect(chips).toHaveText(['📄 另一篇笔记']);
+		await expect(chips).toHaveText(['另一篇笔记']);
 		await expect(pane(page).locator('.ai-user')).toHaveCount(1);
 		// Left out by its ×.
-		await pane(page).getByRole('button', { name: '不带上📄 另一篇笔记' }).click();
+		await pane(page).getByRole('button', { name: '不带上另一篇笔记' }).click();
 		await expect(pane(page).locator('.ai-context')).toBeHidden();
 		await tell(page, '上下文');
 		await expect(pane(page).locator('.ai-message').last()).not.toContainText('当前打开的文章');
+	} finally {
+		removeArticle('other-note');
+	}
+});
+
+test('the articles a conversation names are links to them, as Notion’s page mentions: a card as the pointer rests on one, opened when clicked', async ({ page }) => {
+	writeArticle('other-note', '---\ntitle: 另一篇笔记\ndescription: 另一篇的简介。\npubDate: 2026-10-01\ndraft: true\n---\n\n另一篇的一段。\n');
+	try {
+		await openAi(page);
+		await tell(page, '提到');
+		// By title (its 《》 kept), by a link to its file, by its path in code; a title of none, as it is.
+		const answer = pane(page).locator('.ai-message').last();
+		const links = answer.locator('.ai-page-link');
+		await expect(links).toHaveText(['另一篇笔记', '这篇夹具', 'other-note/index.md']);
+		await expect(answer).toContainText('参见《另一篇笔记》');
+		await expect(answer).toContainText('《没有这篇》不是');
+
+		// Rested on: its card (its 简介, its date); clicked, the article open.
+		await links.first().hover();
+		const card = page.locator('.page-peek');
+		await expect(card.locator('.page-peek-title')).toHaveText('另一篇笔记');
+		await expect(card.locator('.page-peek-description')).toHaveText('另一篇的简介。');
+		await expect(card.locator('.page-peek-facts')).toHaveText('草稿 · 2026-10-01');
+		await links.first().click();
+		await expect(card).toBeHidden();
+		const chips = pane(page).locator('.ai-context .ai-chip-label');
+		await expect(chips).toHaveText(['另一篇笔记']);
+		await expect(page.locator('#article-title-input')).toHaveValue('另一篇笔记');
+
+		// What was told with what was said too: from AI 问答 whole, back in the editor.
+		await pane(page).getByRole('button', { name: '在页面中打开' }).click();
+		await expect(pane(page).getByRole('button', { name: '收回到右边' })).toBeVisible();
+		await pane(page).locator('.ai-user-context').getByRole('button', { name: 'Studio 测试夹具' }).click();
+		await expect(chips).toHaveText(['Studio 测试夹具']);
+		await expect(pane(page).getByRole('button', { name: '在页面中打开' })).toBeVisible();
 	} finally {
 		removeArticle('other-note');
 	}

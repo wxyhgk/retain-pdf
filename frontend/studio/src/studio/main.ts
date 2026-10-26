@@ -218,9 +218,19 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 	},
 });
 // The AI tab: a coding agent doing what it is asked, by itself, shown as it goes.
+let aiArticles: { from: ArticleSummary[] | null; named: ArticleSummary[] } = { from: null, named: [] };
 const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 	article: () => (session.slug ? { slug: session.slug, title: openTitle } : null),
-	articles: () => articleList.articles().map((entry) => ({ slug: entry.slug, title: entry.title || entry.slug })),
+	articles() {
+		// The same list while the pages are (the panel's links drawn again only when they change).
+		const listed = articleList.articles();
+		if (aiArticles.from !== listed) aiArticles = { from: listed, named: listed.map((entry) => ({ ...entry, title: entry.title || entry.slug })) };
+		return aiArticles.named;
+	},
+	openArticle(slug) {
+		showView('editor');
+		void session.open(slug);
+	},
 	hasSelection: () => Boolean(session.slug) && editor.hasSelection(),
 	async selection() {
 		const marked = session.slug && editor.hasSelection() ? editor.markSelection() : null;

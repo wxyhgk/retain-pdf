@@ -15,6 +15,6 @@ export type { AiPanelHost };
 export function createAiPanel(pane: HTMLElement, host: AiPanelHost) {
 	const { store, actions, panel, sheetHost } = createPanelState(pane, host);
 	// Drawn at once: what is asked of it next finds it there.
-	flushSync(() => createRoot(pane).render(createElement(AiPanel, { store, actions, sheetHost })));
+	flushSync(() => createRoot(pane).render(createElement(AiPanel, { store, actions, sheetHost, pane })));
 	return panel;
 }

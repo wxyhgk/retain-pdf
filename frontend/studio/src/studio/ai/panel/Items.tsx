@@ -4,7 +4,8 @@ import { t } from '@blog/i18n/index.mjs';
 import type { Conversation, ConversationItem } from '../../api/client';
 import { STUDIO_MARKDOWN_DRAG_TYPE } from '../../files/article-files';
 import { isPicture, pictureUrl, renderAiMarkdown } from '../ai-markdown';
-import type { PanelActions } from './panel-state';
+import { PageIcon } from './PagePeek';
+import type { PageInfo, PanelActions } from './panel-state';
 
 export type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
 
@@ -48,9 +49,10 @@ export function relativeTo(conversation: Conversation | null, path: string): str
 function Markdown({ text, blocks = false, className }: { text: string; blocks?: boolean; className: string }) {
 	const { actions } = useItems();
 	const node = useRef<HTMLDivElement>(null);
+	const pages = actions.articles();
 	useEffect(() => {
 		const words = node.current!;
-		const drawn = renderAiMarkdown(text, { blocks });
+		const drawn = renderAiMarkdown(text, { blocks, pages });
 		if (!blocks) {
 			words.replaceChildren(drawn);
 			return;
@@ -84,23 +86,39 @@ function Markdown({ text, blocks = false, className }: { text: string; blocks?: 
 			handle.addEventListener('click', () => actions.insert(markdown));
 			block.prepend(handle);
 		}
-	}, [text, blocks]);
+	}, [text, blocks, pages]);
 	return <div ref={node} className={className} data-host />;
 }
 
+/** An article told with what was said, as a link to it (PagePeek opens it); as words, one no longer there. */
+export function PageChip({ page, label, title }: { page: PageInfo | undefined; label: string; title?: string }) {
+	if (!page) return <span className="ai-chip-label">{label}</span>;
+	return (
+		<button type="button" className="ai-chip-label ai-page-chip" data-page={page.slug} title={title}>
+			<PageIcon page={page} />
+			<span className="ai-page-title">{label}</span>
+		</button>
+	);
+}
+
 function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
+	const { actions } = useItems();
 	const told = item.context;
-	const names = [told?.article ? `📄 ${told.article}${told.selection ? ` · ${told.selection}` : ''}` : '', ...(told?.mentions ?? []).map((title) => `@ ${title}`)].filter(Boolean);
+	const pages = actions.articles();
+	// By the article it was, else (said before that was kept, or renamed since) by its title.
+	const find = (title: string, slug?: string | null) => (slug ? pages.find((page) => page.slug === slug) : undefined) ?? pages.find((page) => page.title === title);
+	const named = [
+		...(told?.article ? [{ label: `${told.article}${told.selection ? ` · ${told.selection}` : ''}`, page: find(told.article, told.articleSlug) }] : []),
+		...(told?.mentions ?? []).map((title, at) => ({ label: title, page: find(title, told?.mentionSlugs?.[at]) })),
+	];
 	return (
 		<div className="ai-user">
 			<div className="ai-bubble">{item.text}</div>
 			{item.steer && <div className="ai-user-context">{t('插话')}</div>}
-			{names.length > 0 && (
+			{named.length > 0 && (
 				<div className="ai-user-context">
-					{names.map((name) => (
-						<span key={name} className="ai-chip-label">
-							{name}
-						</span>
+					{named.map(({ label, page }, at) => (
+						<PageChip key={at} page={page} label={label} />
 					))}
 				</div>
 			)}

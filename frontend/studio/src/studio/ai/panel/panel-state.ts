@@ -15,6 +15,7 @@ import {
 	type ConversationItem,
 } from '../../api/client';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
+import type { ArticleSummary } from '../../types';
 import { createStore, type Store } from '../../shell/store';
 import type { ModelsSheetHost } from './ModelsSheet';
 
@@ -22,8 +23,10 @@ import type { ModelsSheetHost } from './ModelsSheet';
 export type AiPanelHost = {
 	/** The article open, if one is. */
 	article(): { slug: string; title: string } | null;
-	/** The articles, to name one with @. */
-	articles(): Array<{ slug: string; title: string }>;
+	/** The articles, to name one with @, and to show one the conversation names. */
+	articles(): PageInfo[];
+	/** Opens one of the articles (from AI 问答, back in the editor). */
+	openArticle(slug: string): void;
 	/** Whether something is selected in the article open. */
 	hasSelection(): boolean;
 	/** The lines of the article selected (the article saved first, so they are the file's); null when none. */
@@ -45,6 +48,8 @@ export type AiPanelHost = {
 };
 
 export type ArticleRef = { slug: string; title: string };
+/** An article as the panel shows one it names: its link, and what its card says of it as the pointer rests on it. */
+export type PageInfo = ArticleRef & Pick<ArticleSummary, 'icon' | 'parent' | 'description' | 'pubDate' | 'tags' | 'draft'>;
 
 /** What the panel shows (AiPanel.tsx draws it). */
 export type PanelState = {
@@ -424,6 +429,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		mention: (entry: ArticleRef, draft: string) => set({ mentions: [...get().mentions, entry], draft }),
 		unmention: (entry: ArticleRef) => set({ mentions: get().mentions.filter((other) => other !== entry) }),
 		articles: () => host.articles(),
+		openArticle: (slug: string) => host.openArticle(slug),
 		/** ⤢: the panel whole, in the middle; the conversation listed there (in chats/) though nothing was said yet. ⤡: back. */
 		toggleWhole(): void {
 			if (get().full) return host.closeWhole?.();

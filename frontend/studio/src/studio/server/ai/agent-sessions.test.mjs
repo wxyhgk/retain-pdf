@@ -201,6 +201,7 @@ test('what is said is told where the author is, marked as the Studio’s; with n
 		'```py\nx = 1\n```',
 		'````',
 		'用 @ 提到的文章：《结果》，文件 result/index.md（没有 ai/brief.md，不用找）',
+		'回答里说到这些或别的文章时，写出标题并用《》括起来：Studio 会把它变成能点开的链接',
 		'</studio-context>',
 	].join('\n'));
 });

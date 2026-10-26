@@ -10,8 +10,9 @@ import { observePluginBlocks } from '../../plugins';
 import { useStore, type Store } from '../../shell/store';
 import { pictureUrl } from '../ai-markdown';
 import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
-import { commandOf, Item, ItemsContext, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
-import { SHOWN_OPTIONS, type ArticleRef, type PanelActions, type PanelState } from './panel-state';
+import { commandOf, Item, ItemsContext, PageChip, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
+import { PagePeek } from './PagePeek';
+import { SHOWN_OPTIONS, type ArticleRef, type PageInfo, type PanelActions, type PanelState } from './panel-state';
 
 /**
  * Names the adapters give in English, said in Chinese as what they let it do without asking (the rest as they come).
@@ -245,10 +246,11 @@ function naming(draft: string, caret: number): { from: number; query: string } |
 	return found ? { from: before.length - found[2]!.length - 1, query: found[2]! } : null;
 }
 
-function Chip({ label, title, onRemove }: { label: string; title: string; onRemove(): void }) {
+/** What is told with what is said; an article's, a link to it. */
+function Chip({ label, title, page, onRemove }: { label: string; title: string; page?: PageInfo; onRemove(): void }) {
 	return (
-		<span className="ai-chip" title={title}>
-			<span className="ai-chip-label">{label}</span>
+		<span className="ai-chip" title={page ? undefined : title}>
+			{page ? <PageChip page={page} label={label} title={title} /> : <span className="ai-chip-label">{label}</span>}
 			<button type="button" className="ai-chip-remove" aria-label={t('不带上{label}', { label })} onClick={onRemove}>
 				×
 			</button>
@@ -290,10 +292,12 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	}, [state.focusAsked]);
 
 	const open = article && leftOut !== article.slug ? article : null;
+	const pages = actions.articles();
+	const pageOf = (slug: string) => pages.find((page) => page.slug === slug);
 	const chips: ReactNode[] = [];
-	if (open) chips.push(<Chip key="article" label={`📄 ${open.title}`} title={t('当前文章：说话时会告诉 AI 你在看这篇')} onRemove={actions.leaveOutArticle} />);
+	if (open) chips.push(<Chip key="article" label={open.title} page={pageOf(open.slug)} title={t('当前文章：说话时会告诉 AI 你在看这篇')} onRemove={actions.leaveOutArticle} />);
 	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label={t('选中的内容')} title={t('文章里选中的那几行会一起告诉 AI')} onRemove={actions.leaveOutSelection} />);
-	for (const entry of mentions) chips.push(<Chip key={entry.slug} label={`@ ${entry.title}`} title={t('用 @ 提到的文章')} onRemove={() => actions.unmention(entry)} />);
+	for (const entry of mentions) chips.push(<Chip key={entry.slug} label={entry.title} page={pageOf(entry.slug)} title={t('用 @ 提到的文章')} onRemove={() => actions.unmention(entry)} />);
 
 	const asked = mentionsClosed ? null : naming(draft, caret);
 	const needle = asked?.query.toLocaleLowerCase('zh-CN') ?? '';
@@ -430,11 +434,12 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
  * it goes; its work (thinking, tools, the plan) one row a stretch, its detail in a dialog. Under the input: which AI,
  * and its options (who decides, model, effort).
  */
-export function AiPanel({ store, actions, sheetHost }: { store: Store<PanelState>; actions: PanelActions; sheetHost: ModelsSheetHost }) {
+export function AiPanel({ store, actions, sheetHost, pane }: { store: Store<PanelState>; actions: PanelActions; sheetHost: ModelsSheetHost; pane: HTMLElement }) {
 	const state = useStore(store);
 	const context = useMemo(() => ({ conversation: state.conversation, items: state.items, actions }), [state.conversation, state.items]);
 	return (
 		<ItemsContext value={context}>
+			<PagePeek root={pane} pages={actions.articles} open={actions.openArticle} />
 			<Toolbar state={state} actions={actions} />
 			<ModelsSheet open={state.settings} host={sheetHost} onClose={() => actions.showSheet(false)} />
 			<Transcript state={state} actions={actions} />

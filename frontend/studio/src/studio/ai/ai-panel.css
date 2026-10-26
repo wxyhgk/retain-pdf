@@ -220,3 +220,19 @@
 .ai-preview { max-width: 560px; margin: 6px 0; }
 .ai-preview figure svg { max-height: 280px; }
 .ai-preview .chem-view-buttons .primary, .ai-preview .chem-view-controls > span { display: none; }
+
+/* The blog's articles the conversation names: links to them, as Notion's page mentions (ai-markdown.ts, PagePeek.tsx). */
+.ai-page-link { padding: 0 2px; border-radius: 4px; color: inherit; cursor: pointer; }
+.ai-page-link:hover, .ai-page-link:focus-visible { background: var(--surface-soft); outline: none; }
+.ai-page-link .ai-page-title { font-weight: 500; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 3px; }
+.ai-page-icon { display: inline-block; margin-right: 3px; line-height: 1; vertical-align: -0.1em; }
+.ai-page-icon:empty, .page-peek-icon:empty { width: 1em; height: 1em; background: currentColor; opacity: 0.55; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E") center / contain no-repeat; }
+.ai-page-chip { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
+.ai-page-chip .ai-page-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-page-chip:hover .ai-page-title, .ai-page-chip:focus-visible .ai-page-title { text-decoration: underline; text-underline-offset: 2px; }
+.page-peek { position: fixed; z-index: 60; width: 280px; padding: 14px 16px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 30px rgb(0 0 0 / 12%); color: rgb(var(--gray-dark)); font-size: 13px; line-height: 1.5; cursor: pointer; }
+.page-peek-icon { display: block; margin-bottom: 8px; font-size: 26px; line-height: 1; }
+.page-peek-path { overflow: hidden; color: rgb(var(--gray)); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.page-peek-title { color: rgb(var(--black)); font-size: 14px; font-weight: 600; }
+.page-peek-description { display: -webkit-box; margin-top: 6px; overflow: hidden; color: rgb(var(--gray)); -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
+.page-peek-facts { margin-top: 8px; color: rgb(var(--gray)); font-size: 11.5px; }

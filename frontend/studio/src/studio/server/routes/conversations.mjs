@@ -68,7 +68,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 			if (!found) return null;
 			const brief = join(articleFolder(slug), 'ai', 'brief.md');
 			const hasBrief = await access(brief).then(() => true, () => false);
-			return { title: found.title || slug, path: relative(blogRoot, join(articleFolder(slug), 'index.md')), brief: hasBrief ? relative(blogRoot, brief) : null };
+			return { slug, title: found.title || slug, path: relative(blogRoot, join(articleFolder(slug), 'index.md')), brief: hasBrief ? relative(blogRoot, brief) : null };
 		};
 		const open = await article(asked.article);
 		const selection = open && asked.selection && Number.isInteger(asked.selection.start) && Number.isInteger(asked.selection.end) && typeof asked.selection.text === 'string'

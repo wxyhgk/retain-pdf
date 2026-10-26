@@ -124,6 +124,11 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', state.loaded ? `接上了 ${state.loaded}` : `新的会话 ${sessionId}`);
 			return { stopReason: 'end_turn' };
 		}
+		// The blog's articles named: by title, by a link to the file, by its path; and one not there.
+		if (said.startsWith('提到')) {
+			await words('agent_message_chunk', '参见《另一篇笔记》，还有[这篇夹具](studio-fixture/index.md)和 `other-note/index.md`；《没有这篇》不是。');
+			return { stopReason: 'end_turn' };
+		}
 		// What it was told, as it came (with what the Studio adds of where the author is).
 		if (said.startsWith('上下文')) {
 			await words('agent_message_chunk', `收到的是：\n\n~~~~~~text\n${said}\n~~~~~~`);
