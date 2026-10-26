@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import {
 	answerConversation,
 	closeConversation,
@@ -100,7 +101,7 @@ function when(iso: string | undefined): string {
 	if (Number.isNaN(date.getTime())) return '';
 	const now = new Date();
 	const pad = (value: number) => String(value).padStart(2, '0');
-	if (date.toDateString() === now.toDateString()) return `今天 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+	if (date.toDateString() === now.toDateString()) return t('今天 {time}', { time: `${pad(date.getHours())}:${pad(date.getMinutes())}` });
 	return `${date.getFullYear() === now.getFullYear() ? '' : `${date.getFullYear()}-`}${date.getMonth() + 1}-${date.getDate()}`;
 }
 
@@ -148,7 +149,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			showSheet(false);
 			// What was saved is for conversations begun from now on: one begun with that AI, with it.
 			if (get().agent === agent) beginAfresh();
-			host.toast(name ? `AI 面板的 ${agent === 'pi' ? 'pi' : 'Claude Code'} 改用「${name}」` : '已保存');
+			host.toast(name ? t('AI 面板的 {agent} 改用「{name}」', { agent: agent === 'pi' ? 'pi' : 'Claude Code', name }) : t('已保存'));
 		},
 	};
 
@@ -174,7 +175,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			const agents = known.agents;
 			set({ agents, agent: agents.some((agent) => agent.id === chosen) ? chosen! : agents.some((agent) => agent.id === known.default) ? known.default : (agents[0]?.id ?? '') });
 			if (!agents.length) {
-				say('没有能在面板里用的 AI：在「AI 助手」设置里给 Claude 或 Codex 配上 ACP 命令');
+				say(t('没有能在面板里用的 AI：在「AI 助手」设置里给 Claude 或 Codex 配上 ACP 命令'));
 				return;
 			}
 			// The one left open, kept in chats/ across restarts.
@@ -185,7 +186,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			else void begin();
 		} catch (error) {
 			loading = null;
-			say(error instanceof Error ? error.message : '读不到 AI 列表');
+			say(error instanceof Error ? error.message : t('读不到 AI 列表'));
 		}
 	}
 
@@ -194,7 +195,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		const agent = get().agent;
 		follow(null);
 		set({ starting: true });
-		say(`正在启动 ${get().agents.find((entry) => entry.id === agent)?.name ?? 'AI'}…`);
+		say(t('正在启动 {name}…', { name: get().agents.find((entry) => entry.id === agent)?.name ?? 'AI' }));
 		// Listed (AI 问答) once something is said in it, not before.
 		const started = startConversation(agent).then(chosenAgain).then(
 			(made) => {
@@ -210,7 +211,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 					starting = null;
 					set({ starting: false });
 				}
-				say(error instanceof Error ? error.message : '没能启动', true);
+				say(error instanceof Error ? error.message : t('没能启动'), true);
 				return null;
 			},
 		);
@@ -300,12 +301,12 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	function sessionSaid(): void {
 		const { conversation, items } = get();
 		const running = conversation?.state === 'running';
-		if (conversation?.state === 'starting' && items.length) say(`正在接上之前的对话（启动 ${conversation.agent.name}）…`);
+		if (conversation?.state === 'starting' && items.length) say(t('正在接上之前的对话（启动 {name}）…', { name: conversation.agent.name }));
 		else if (conversation?.state === 'starting' || (!conversation && starting)) {
 			// Said by begin().
-		} else if (conversation?.state === 'failed') say(conversation.error || '它停了', true);
-		else if (conversation?.state === 'closed') say('这个对话停下了；再说话会接着聊');
-		else if (running) say('正在做…');
+		} else if (conversation?.state === 'failed') say(conversation.error || t('它停了'), true);
+		else if (conversation?.state === 'closed') say(t('这个对话停下了；再说话会接着聊'));
+		else if (running) say(t('正在做…'));
 		else say('');
 	}
 
@@ -338,7 +339,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			});
 		} catch (error) {
 			set({ draft: text, mentions: named });
-			say(error instanceof Error ? error.message : '没发出去', true);
+			say(error instanceof Error ? error.message : t('没发出去'), true);
 		}
 	}
 
@@ -348,7 +349,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			await tellConversation(id, text, {}, { steer: true });
 		} catch (error) {
 			set({ draft: text });
-			say(error instanceof Error ? error.message : '没发出去', true);
+			say(error instanceof Error ? error.message : t('没发出去'), true);
 		}
 	}
 
@@ -367,7 +368,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		/** Stopped while it works, else what is typed said. */
 		sendOrStop(): void {
 			const shown = get().conversation;
-			if (shown?.state === 'running') void stopConversation(shown.id).catch((error: unknown) => host.toast(error instanceof Error ? error.message : '没能停下'));
+			if (shown?.state === 'running') void stopConversation(shown.id).catch((error: unknown) => host.toast(error instanceof Error ? error.message : t('没能停下')));
 			else void submit();
 		},
 		type: (draft: string) => set({ draft }),
@@ -398,24 +399,24 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 					}
 					remember(OPTIONS_KEY(agent), JSON.stringify({ ...chosen, [id]: value }));
 				},
-				(error: unknown) => host.toast(error instanceof Error ? error.message : '没能改'),
+				(error: unknown) => host.toast(error instanceof Error ? error.message : t('没能改')),
 			);
 		},
 		answer(item: string, option: string): void {
 			const shown = get().conversation;
 			if (!shown) return;
-			answerConversation(shown.id, item, option).catch((error: unknown) => host.toast(error instanceof Error ? error.message : '没能回答'));
+			answerConversation(shown.id, item, option).catch((error: unknown) => host.toast(error instanceof Error ? error.message : t('没能回答')));
 		},
 		/** Nothing said after its work: asked to say it. */
 		resume(): void {
-			set({ draft: '接着说：把你刚才的结论告诉我。' });
+			set({ draft: '接着说：把你刚才的结论告诉我。' }); // i18n-ignore: said to the AI
 			void submit();
 		},
 		insert(markdown: string): void {
-			host.toast(host.insert(markdown) ? '已插入到文章' : '先打开一篇文章');
+			host.toast(host.insert(markdown) ? t('已插入到文章') : t('先打开一篇文章'));
 		},
 		copy(markdown: string): void {
-			navigator.clipboard.writeText(markdown).then(() => host.toast('已复制 Markdown'), () => host.toast('没能复制'));
+			navigator.clipboard.writeText(markdown).then(() => host.toast(t('已复制 Markdown')), () => host.toast(t('没能复制')));
 		},
 		leaveOutArticle: () => set({ leftOut: get().article?.slug ?? null }),
 		leaveOutSelection: () => set({ selectionLeftOut: true }),
@@ -437,20 +438,20 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 				const entries = known.conversations.filter((entry) => entry.id !== shown?.id);
 				const menu: MenuItem[] = entries.length
 					? entries.map((entry) => ({
-							label: `${entry.title || '（还没说话）'}`,
-							hint: `${entry.agent.name} · ${when(entry.updated)}${entry.state === 'running' ? ' · 进行中' : ''}`,
+							label: entry.title || t('（还没说话）'),
+							hint: entry.state === 'running' ? t('{agent} · {when} · 进行中', { agent: entry.agent.name, when: when(entry.updated) }) : `${entry.agent.name} · ${when(entry.updated)}`,
 							action: () => follow(entry),
 						}))
-					: [{ label: '还没有别的对话', action: () => {} }];
+					: [{ label: t('还没有别的对话'), action: () => {} }];
 				// The one shown, gone (its folder of chats/ too), after asking.
 				if (shown && get().items.length) {
 					menu.push({
-						label: '删除这个对话',
+						label: t('删除这个对话'),
 						action: () => {
-							if (!window.confirm(`删除对话「${shown.title || '新对话'}」？\n它在 chats/ 里的记录也会删掉，不能恢复。`)) return;
+							if (!window.confirm(t('删除对话「{title}」？\n它在 chats/ 里的记录也会删掉，不能恢复。', { title: shown.title || t('新对话') }))) return;
 							void deleteConversation(shown.id).then(
 								() => void begin(),
-								(error: unknown) => host.toast(error instanceof Error ? error.message : '没能删除'),
+								(error: unknown) => host.toast(error instanceof Error ? error.message : t('没能删除')),
 							);
 						},
 					});
@@ -498,9 +499,9 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 					await load();
 					const entry = (await listConversations()).conversations.find((candidate) => candidate.id === id);
 					if (entry) follow(entry);
-					else say('找不到这个对话（可能已经删了）', true);
+					else say(t('找不到这个对话（可能已经删了）'), true);
 				} catch (error) {
-					say(error instanceof Error ? error.message : '读不到对话', true);
+					say(error instanceof Error ? error.message : t('读不到对话'), true);
 				}
 			})();
 			return showing;

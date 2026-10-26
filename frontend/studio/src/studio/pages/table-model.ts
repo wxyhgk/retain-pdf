@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { ArticleSummary } from '../types.ts';
 
 /**
@@ -39,8 +40,8 @@ export function readSettings(kept: unknown): TableSettings {
 	};
 }
 
-export const STATUS_NAMES = { draft: '草稿', published: '已发布' } as const;
-export const KIND_NAMES = { post: '博客', wiki: '维基' } as const;
+export const STATUS_NAMES = { draft: t('草稿'), published: t('已发布') } as const;
+export const KIND_NAMES = { post: t('博客'), wiki: t('维基') } as const;
 
 export const statusOf = (article: ArticleSummary): 'draft' | 'published' => (article.draft ? 'draft' : 'published');
 export const kindOf = (article: ArticleSummary): 'post' | 'wiki' => (article.kind === 'wiki' ? 'wiki' : 'post');

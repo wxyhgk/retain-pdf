@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /** What the AI in the editor box needs of the Studio: to ask (resolving once what the AI wrote is shown), to stop, the old way. */
 export type InlineAiHost = {
 	/** Asks the AI to do `instruction`; resolves once what it wrote is shown to review, rejects with why not. */
@@ -8,8 +10,8 @@ export type InlineAiHost = {
 };
 
 /** What the AI is most often asked, with the selection and on an empty line. */
-const REWRITES = ['改得更通顺', '改得更简洁', '扩写，讲得更清楚', '修正错别字和语法', '翻译成英文', '翻译成中文', '改成要点列表'];
-const WRITES = ['接着写下一段', '写一个小结', '列出要点', '举一个计算化学里的例子'];
+const REWRITES = [t('改得更通顺'), t('改得更简洁'), t('扩写，讲得更清楚'), t('修正错别字和语法'), t('翻译成英文'), t('翻译成中文'), t('改成要点列表')];
+const WRITES = [t('接着写下一段'), t('写一个小结'), t('列出要点'), t('举一个计算化学里的例子')];
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = ''): HTMLElementTagNameMap[K] {
 	const node = document.createElement(tag);
@@ -30,7 +32,7 @@ export function createInlineAi(host: InlineAiHost) {
 	root.setAttribute('aria-label', 'AI');
 	const input = element('input', 'inline-ai-input');
 	input.type = 'text';
-	input.setAttribute('aria-label', '让 AI 做什么');
+	input.setAttribute('aria-label', t('让 AI 做什么'));
 	const status = element('p', 'inline-ai-status');
 	status.setAttribute('role', 'status');
 	const list = element('div', 'inline-ai-list');
@@ -71,7 +73,7 @@ export function createInlineAi(host: InlineAiHost) {
 		list.replaceChildren();
 		const started = Date.now();
 		const tick = () => {
-			status.textContent = `AI 正在写…（${Math.round((Date.now() - started) / 1000)} 秒，Esc 停下）`;
+			status.textContent = t('AI 正在写…（{seconds} 秒，Esc 停下）', { seconds: Math.round((Date.now() - started) / 1000) });
 		};
 		tick();
 		const timer = window.setInterval(tick, 1000);
@@ -79,9 +81,9 @@ export function createInlineAi(host: InlineAiHost) {
 			await host.run(instruction);
 			root.hidden = true;
 		} catch (error) {
-			status.textContent = error instanceof Error ? error.message : 'AI 没能写出来';
+			status.textContent = error instanceof Error ? error.message : t('AI 没能写出来');
 			status.classList.add('is-error');
-			choices = [{ label: '重试', run: () => void run(last) }];
+			choices = [{ label: t('重试'), run: () => void run(last) }];
 			at = 0;
 			draw();
 		} finally {
@@ -96,7 +98,7 @@ export function createInlineAi(host: InlineAiHost) {
 	input.addEventListener('input', () => {
 		const typed = input.value.trim();
 		const presets = (root.dataset.mode === 'write' ? WRITES : REWRITES).filter((label) => !typed || label.includes(typed));
-		choices = [...(typed ? [{ label: `让 AI：${typed}`, run: () => void run(typed) }] : []), ...presets.map((label) => ({ label, run: () => void run(label) }))];
+		choices = [...(typed ? [{ label: t('让 AI：{typed}', { typed }), run: () => void run(typed) }] : []), ...presets.map((label) => ({ label, run: () => void run(label) }))];
 		at = 0;
 		draw();
 	});
@@ -130,8 +132,8 @@ export function createInlineAi(host: InlineAiHost) {
 			status.textContent = '';
 			status.classList.remove('is-error');
 			input.value = '';
-			input.placeholder = mode === 'rewrite' ? '让 AI 怎么改这段…' : '让 AI 在这里写什么…';
-			choices = [...(mode === 'rewrite' ? REWRITES : WRITES).map((label) => ({ label, run: () => void run(label) })), { label: '在终端里问 AI…', run: () => { root.hidden = true; host.askInTerminal(); } }];
+			input.placeholder = mode === 'rewrite' ? t('让 AI 怎么改这段…') : t('让 AI 在这里写什么…');
+			choices = [...(mode === 'rewrite' ? REWRITES : WRITES).map((label) => ({ label, run: () => void run(label) })), { label: t('在终端里问 AI…'), run: () => { root.hidden = true; host.askInTerminal(); } }];
 			at = 0;
 			draw();
 			const width = Math.min(460, window.innerWidth - 32);

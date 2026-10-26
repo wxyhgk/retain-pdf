@@ -1,5 +1,6 @@
 import { createContext, memo, useContext, useEffect, useRef, useState } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import type { Conversation, ConversationItem } from '../../api/client';
 import { STUDIO_MARKDOWN_DRAG_TYPE } from '../../files/article-files';
 import { isPicture, pictureUrl, renderAiMarkdown } from '../ai-markdown';
@@ -11,9 +12,10 @@ export type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
 export const ItemsContext = createContext<{ conversation: Conversation | null; items: ConversationItem[]; actions: PanelActions } | null>(null);
 const useItems = () => useContext(ItemsContext)!;
 
-const PERMISSION_NAMES: Record<string, string> = { allow_once: '允许', allow_always: '总是允许', reject_once: '拒绝', reject_always: '总是拒绝' };
+const PERMISSION_NAMES: Record<string, string> = { allow_once: t('允许'), allow_always: t('总是允许'), reject_once: t('拒绝'), reject_always: t('总是拒绝') };
+const PERMISSION_CHOSEN: Record<string, string> = { allow_once: t('已允许'), allow_always: t('已总是允许'), reject_once: t('已拒绝'), reject_always: t('已总是拒绝') };
 const TOOL_ICONS: Record<string, string> = { execute: '›_', read: '◫', edit: '✎', delete: '⌫', move: '⇄', search: '⌕', fetch: '⇣', think: '…', switch_mode: '⇆', other: '•' };
-const STOP_NAMES: Record<string, string> = { cancelled: '已停止', max_tokens: '回答太长，停在这里了', max_turn_requests: '步数到了上限，停在这里了', refusal: '它拒绝了这个请求' };
+const STOP_NAMES: Record<string, string> = { cancelled: t('已停止'), max_tokens: t('回答太长，停在这里了'), max_turn_requests: t('步数到了上限，停在这里了'), refusal: t('它拒绝了这个请求') };
 
 /** The pictures a tool call read (a plot the agent drew, looked at): their paths. */
 export function picturesOf(item: ToolItem): string[] {
@@ -68,8 +70,8 @@ function Markdown({ text, blocks = false, className }: { text: string; blocks?: 
 			handle.className = 'ai-block-handle';
 			handle.type = 'button';
 			handle.draggable = true;
-			handle.title = '拖到文章里；点一下插入到光标处';
-			handle.setAttribute('aria-label', '插入这一块到文章');
+			handle.title = t('拖到文章里；点一下插入到光标处');
+			handle.setAttribute('aria-label', t('插入这一块到文章'));
 			handle.addEventListener('dragstart', (event) => {
 				if (!event.dataTransfer) return;
 				event.dataTransfer.setData(STUDIO_MARKDOWN_DRAG_TYPE, markdown);
@@ -92,7 +94,7 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 	return (
 		<div className="ai-user">
 			<div className="ai-bubble">{item.text}</div>
-			{item.steer && <div className="ai-user-context">插话</div>}
+			{item.steer && <div className="ai-user-context">{t('插话')}</div>}
 			{names.length > 0 && (
 				<div className="ai-user-context">
 					{names.map((name) => (
@@ -116,10 +118,10 @@ function Message({ item }: { item: Extract<ConversationItem, { kind: 'message' }
 			{whole && (
 				<div className="ai-message-actions">
 					<button type="button" onClick={() => actions.insert(whole)}>
-						插入到文章
+						{t('插入到文章')}
 					</button>
 					<button type="button" onClick={() => actions.copy(whole)}>
-						复制
+						{t('复制')}
 					</button>
 				</div>
 			)}
@@ -133,7 +135,7 @@ function Thought({ item }: { item: Extract<ConversationItem, { kind: 'thought' }
 	// In the dialog of its stretch: open, as it is opened to be read.
 	return (
 		<details className={`ai-thought${thinking ? ' is-going' : ''}`} open>
-			<summary>{thinking ? '思考中…' : '思考过程'}</summary>
+			<summary>{thinking ? t('思考中…') : t('思考过程')}</summary>
 			<div className="ai-thought-text">{item.text}</div>
 		</details>
 	);
@@ -160,7 +162,7 @@ function Diff({ path, before, after }: { path: string; before: string; after: st
 				{added.map((line, at) => (
 					<span key={`+${at}`} className="is-added">{`+ ${line}\n`}</span>
 				))}
-				{!removed.length && !added.length && <span>（没有改动）</span>}
+				{!removed.length && !added.length && <span>{t('（没有改动）')}</span>}
 			</pre>
 		</div>
 	);
@@ -185,8 +187,8 @@ function Tool({ item }: { item: ToolItem }) {
 				<span className={`ai-tool-title${command ? ' is-command' : ''}`} title={label}>
 					{label}
 				</span>
-				<span className="ai-tool-state" aria-label={{ pending: '等待', in_progress: '进行中', completed: '完成', failed: '失败' }[item.status]}>
-					{item.status === 'completed' ? '✓' : item.status === 'failed' ? '✗' : item.status === 'pending' ? '等待' : ''}
+				<span className="ai-tool-state" aria-label={{ pending: t('等待'), in_progress: t('进行中'), completed: t('完成'), failed: t('失败') }[item.status]}>
+					{item.status === 'completed' ? '✓' : item.status === 'failed' ? '✗' : item.status === 'pending' ? t('等待') : ''}
 				</span>
 			</button>
 			<div className="ai-tool-detail">
@@ -202,7 +204,7 @@ function Tool({ item }: { item: ToolItem }) {
 					<img key={path} className="ai-tool-picture" src={pictureUrl(path)} alt={relativeTo(conversation, path)} />
 				))}
 				{output && <pre className="ai-tool-output">{output}</pre>}
-				{failedExit && <p className="ai-tool-exit">退出码 {item.exitCode}</p>}
+				{failedExit && <p className="ai-tool-exit">{t('退出码 {code}', { code: item.exitCode })}</p>}
 			</div>
 		</div>
 	);
@@ -211,7 +213,7 @@ function Tool({ item }: { item: ToolItem }) {
 function Plan({ item }: { item: Extract<ConversationItem, { kind: 'plan' }> }) {
 	return (
 		<div className="ai-plan">
-			<p className="ai-plan-title">计划</p>
+			<p className="ai-plan-title">{t('计划')}</p>
 			<ul>
 				{item.entries.map((entry, at) => (
 					<li key={at} className={`is-${entry.status}`}>
@@ -228,14 +230,14 @@ function Permission({ item }: { item: Extract<ConversationItem, { kind: 'permiss
 	const { items, actions } = useItems();
 	const [answered, setAnswered] = useState(false);
 	const tool = items.find((entry): entry is ToolItem => entry.kind === 'tool' && entry.id === item.toolCallId);
-	const what = (tool && commandOf(tool)) || item.title || '这一步';
+	const what = (tool && commandOf(tool)) || item.title || t('这一步');
 	const chosen = item.chosen ? item.options.find((entry) => entry.optionId === item.chosen) : undefined;
 	return (
 		<div className={`ai-permission${item.chosen ? ' is-answered' : ''}`}>
-			<p className="ai-permission-ask">要允许它这么做吗？</p>
+			<p className="ai-permission-ask">{t('要允许它这么做吗？')}</p>
 			<code className="ai-permission-what">{what}</code>
 			{item.chosen ? (
-				<p className="ai-permission-answer">{chosen ? `已${PERMISSION_NAMES[chosen.kind] ?? chosen.name}` : '没有回答（已停止）'}</p>
+				<p className="ai-permission-answer">{chosen ? (PERMISSION_CHOSEN[chosen.kind] ?? t('已{choice}', { choice: chosen.name })) : t('没有回答（已停止）')}</p>
 			) : (
 				<div className="ai-permission-choices">
 					{item.options.map((option) => (
@@ -264,7 +266,7 @@ export function SettingsFix() {
 	const { actions } = useItems();
 	return (
 		<button type="button" className="ai-status-fix" onClick={() => actions.showSheet(true)}>
-			模型和账号
+			{t('模型和账号')}
 		</button>
 	);
 }
@@ -295,14 +297,14 @@ export const Item = memo(function Item({ item }: { item: ConversationItem }) {
 						<>
 							{' '}
 							<button type="button" className="ai-status-fix" onClick={actions.resume}>
-								接着说
+								{t('接着说')}
 							</button>
 						</>
 					)}
 				</div>
 			);
 		case 'stop':
-			return <div className="ai-stop">{STOP_NAMES[item.reason] ?? `停了（${item.reason}）`}</div>;
+			return <div className="ai-stop">{STOP_NAMES[item.reason] ?? t('停了（{reason}）', { reason: item.reason })}</div>;
 		case 'error':
 			return (
 				<div className="ai-error">

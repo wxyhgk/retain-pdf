@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { articleBacklinks, commitArticle, deleteArticle, duplicateArticle, gitStatus, mergeArticle, renameArticle, restoreArticle, setArticleParent } from '../api/client.ts';
 import { trackWrite } from '../state/writes.ts';
@@ -53,22 +54,17 @@ function askDelete(title: string, summary: string, notes: string[], deleteLabel:
 /** What to ask before deleting one page: what goes with it, what links to it. */
 function askDeletePage(article: ArticleSummary, under: ArticleSummary[], linking: string[]): Promise<DeletePageChoice> {
 	const notes = [
-		...(article.draft === false ? ['这篇已经发布，下次部署后网页会消失。'] : []),
-		...(linking.length ? [`有 ${linking.length} 篇链接到它：${linking.slice(0, 5).map((title) => `「${title}」`).join('')}${linking.length > 5 ? '…' : ''}，删除后这些链接会失效。`] : []),
-		'删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。',
+		...(article.draft === false ? [t('这篇已经发布，下次部署后网页会消失。')] : []),
+		...(linking.length ? [t('有 {count} 篇链接到它：{titles}，删除后这些链接会失效。', { count: linking.length, titles: `${linking.slice(0, 5).map((title) => `「${title}」`).join('')}${linking.length > 5 ? '…' : ''}` })] : []),
+		t('删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。'),
 	];
 	return askDelete(
-		`删除「${article.title}」`,
-		under.length ? `它下面有 ${under.length} 个页面` : '移到回收站',
+		t('删除「{title}」', { title: article.title }),
+		under.length ? t('它下面有 {count} 个页面', { count: under.length }) : t('移到回收站'),
 		notes,
-		under.length ? `连同下面 ${under.length} 个页面一起删除` : '删除',
+		under.length ? t('连同下面 {count} 个页面一起删除', { count: under.length }) : t('删除'),
 		under.length > 0,
 	);
-}
-
-/** What the toast says of the links that followed a rename: nothing when there were none. */
-export function relinkedNote(relinked: number): string {
-	return relinked ? `，${relinked} 篇里指向它的链接已跟着改` : '';
 }
 
 /** A folder name typed by the author, made acceptable; null when given up or unusable. */
@@ -77,7 +73,7 @@ function askSlug(message: string, suggested: string): string | null {
 	if (typed === null) return null;
 	const slug = cleanSlug(typed.trim()).replace(/^-+|-+$/gu, '').replace(/-{2,}/gu, '-');
 	if (!SLUG_PATTERN.test(slug)) {
-		showToast('文件夹名只能用小写字母、数字和连字符', true);
+		showToast(t('文件夹名只能用小写字母、数字和连字符'), true);
 		return null;
 	}
 	return slug;
@@ -90,9 +86,9 @@ export function createArticleActions(host: ArticleActionsHost) {
 			const { slug } = await trackWrite(() => restoreArticle(trashed));
 			await host.reload();
 			await host.open(slug);
-			showToast(`已恢复「${title}」`);
+			showToast(t('已恢复「{title}」', { title }));
 		} catch (error) {
-			showToast(errorText(error, '恢复失败'), true);
+			showToast(errorText(error, t('恢复失败')), true);
 		}
 	}
 
@@ -103,7 +99,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 		try {
 			for (const entry of rest) await trackWrite(() => restoreArticle(entry));
 		} catch (error) {
-			showToast(errorText(error, '恢复失败'), true);
+			showToast(errorText(error, t('恢复失败')), true);
 		}
 		await restore(first, title);
 	}
@@ -112,12 +108,14 @@ export function createArticleActions(host: ArticleActionsHost) {
 		async rename(article: ArticleSummary): Promise<void> {
 			const published = article.draft === false;
 			const to = askSlug(
-				`「${article.title}」的新文件夹名，也是它在博客上的网址 /blog/<文件夹名>/${published ? '\n这篇已经发布，改名后旧网址会失效。' : ''}`,
+				published
+					? t('「{title}」的新文件夹名，也是它在博客上的网址 /blog/<文件夹名>/\n这篇已经发布，改名后旧网址会失效。', { title: article.title })
+					: t('「{title}」的新文件夹名，也是它在博客上的网址 /blog/<文件夹名>/', { title: article.title }),
 				article.slug,
 			);
 			if (!to || to === article.slug) return;
 			const renamed = await this.renameTo(article, to);
-			if (renamed) showToast(`文件夹已改为 ${to}${relinkedNote(renamed.relinked)}`);
+			if (renamed) showToast(renamed.relinked ? t('文件夹已改为 {to}，{count} 篇里指向它的链接已跟着改', { to, count: renamed.relinked }) : t('文件夹已改为 {to}', { to }));
 		},
 
 		/**
@@ -132,7 +130,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 			try {
 				({ relinked = 0 } = await trackWrite(() => renameArticle(article.slug, to)));
 			} catch (error) {
-				showToast(errorText(error, '改名失败'), true);
+				showToast(errorText(error, t('改名失败')), true);
 				return null;
 			}
 			await host.reload();
@@ -141,18 +139,18 @@ export function createArticleActions(host: ArticleActionsHost) {
 		},
 
 		async duplicate(article: ArticleSummary): Promise<void> {
-			const to = askSlug(`复制「${article.title}」，新文章的文件夹名：`, freeSlug(`${article.slug}-copy`, (await host.reload()).map((page) => page.slug)));
+			const to = askSlug(t('复制「{title}」，新文章的文件夹名：', { title: article.title }), freeSlug(`${article.slug}-copy`, (await host.reload()).map((page) => page.slug)));
 			if (!to) return;
 			if (host.openSlug() === article.slug && !(await host.leave())) return;
 			try {
 				await trackWrite(() => duplicateArticle(article.slug, to));
 			} catch (error) {
-				showToast(errorText(error, '复制失败'), true);
+				showToast(errorText(error, t('复制失败')), true);
 				return;
 			}
 			await host.reload();
 			await host.open(to);
-			showToast(`已复制为草稿 ${to}`);
+			showToast(t('已复制为草稿 {to}', { to }));
 		},
 
 		/**
@@ -181,7 +179,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 				// The pages under it first: the last to go is the first back.
 				for (const page of [...removed].reverse()) trashed.push((await trackWrite(() => deleteArticle(page.slug))).trashed);
 			} catch (error) {
-				showToast(errorText(error, '删除失败'), true);
+				showToast(errorText(error, t('删除失败')), true);
 				await host.reload();
 				return;
 			}
@@ -197,8 +195,8 @@ export function createArticleActions(host: ArticleActionsHost) {
 				return;
 			}
 			if (open) await host.open(articles[0].slug);
-			const what = removed.length > 1 ? `「${article.title}」和下面 ${removed.length - 1} 个页面` : `「${article.title}」`;
-			showToast(`已删除${what}`, { action: { label: '撤销', run: () => void restoreAll([...trashed].reverse(), article.title) } });
+			const said = removed.length > 1 ? t('已删除「{title}」和下面 {count} 个页面', { title: article.title, count: removed.length - 1 }) : t('已删除「{title}」', { title: article.title });
+			showToast(said, { action: { label: t('撤销'), run: () => void restoreAll([...trashed].reverse(), article.title) } });
 		},
 
 		/** Several pages to the trash, after asking, each with the pages under it; one 撤销 brings back all. */
@@ -209,10 +207,10 @@ export function createArticleActions(host: ArticleActionsHost) {
 			for (const page of pages) for (const one of [page, ...descendants(all, page.slug)]) removed.set(one.slug, one);
 			const under = removed.size - pages.length;
 			const choice = await askDelete(
-				`删除 ${pages.length} 个页面`,
-				under ? `连同它们下面的 ${under} 个页面` : pages.map((page) => `「${page.title}」`).join(''),
-				[...(pages.some((page) => page.draft === false) ? ['其中有已经发布的，下次部署后网页会消失。'] : []), '删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。'],
-				'删除',
+				t('删除 {count} 个页面', { count: pages.length }),
+				under ? t('连同它们下面的 {count} 个页面', { count: under }) : pages.map((page) => `「${page.title}」`).join(''),
+				[...(pages.some((page) => page.draft === false) ? [t('其中有已经发布的，下次部署后网页会消失。')] : []), t('删除后可以撤销；回收站（项目的 .studio-trash/）里保留 30 天。')],
+				t('删除'),
 				false,
 			);
 			if (choice !== 'all') return;
@@ -222,7 +220,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 			try {
 				for (const page of [...removed.values()].reverse()) trashed.push((await trackWrite(() => deleteArticle(page.slug))).trashed);
 			} catch (error) {
-				showToast(errorText(error, '删除失败'), true);
+				showToast(errorText(error, t('删除失败')), true);
 			}
 			const articles = await host.reload();
 			if (open && articles.length) await host.open(articles[0]!.slug);
@@ -230,7 +228,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 				window.location.assign('/studio');
 				return;
 			}
-			showToast(`已删除 ${removed.size} 个页面`, { action: { label: '撤销', run: () => void restoreAll([...trashed].reverse(), pages[0]!.title) } });
+			showToast(t('已删除 {count} 个页面', { count: removed.size }), { action: { label: t('撤销'), run: () => void restoreAll([...trashed].reverse(), pages[0]!.title) } });
 		},
 
 		/**
@@ -241,7 +239,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 			const all = await host.reload();
 			const parent = all.find((page) => page.slug === article.parent);
 			if (!parent) return;
-			if (!window.confirm(`把「${article.title}」并入「${parent.title}」，作为其中一节？\n它下面的页面会挂到「${parent.title}」下面，它自己移到回收站；「${parent.title}」改动前的版本存进历史版本。`)) return;
+			if (!window.confirm(t('把「{title}」并入「{parent}」，作为其中一节？\n它下面的页面会挂到「{parent}」下面，它自己移到回收站；「{parent}」改动前的版本存进历史版本。', { title: article.title, parent: parent.title }))) return;
 			const open = host.openSlug();
 			if ((open === article.slug || open === parent.slug) && !(await host.leave())) return;
 			try {
@@ -252,10 +250,10 @@ export function createArticleActions(host: ArticleActionsHost) {
 					await host.open(parent.slug);
 				});
 			} catch (error) {
-				showToast(errorText(error, '并入失败'), true);
+				showToast(errorText(error, t('并入失败')), true);
 				return;
 			}
-			showToast(`已把「${article.title}」并入「${parent.title}」`);
+			showToast(t('已把「{title}」并入「{parent}」', { title: article.title, parent: parent.title }));
 		},
 
 		/** Commits the article to git, saved first; pushing stays the author's. */
@@ -265,19 +263,19 @@ export function createArticleActions(host: ArticleActionsHost) {
 			try {
 				({ vanished } = await gitStatus());
 			} catch (error) {
-				showToast(errorText(error, '读不到 git 状态'), true);
+				showToast(errorText(error, t('读不到 git 状态')), true);
 				return;
 			}
-			const also = vanished.length
-				? `\n会一起提交改名或删除后不在了的文章文件夹：${vanished.map((name) => `blog/${name}/`).join('、')}`
-				: '';
-			const message = window.prompt(`把「${article.title}」提交到 git，提交说明：${also}`, `content: ${article.title}`);
+			const asked = vanished.length
+				? t('把「{title}」提交到 git，提交说明：\n会一起提交改名或删除后不在了的文章文件夹：{folders}', { title: article.title, folders: vanished.map((name) => `blog/${name}/`).join('、') })
+				: t('把「{title}」提交到 git，提交说明：', { title: article.title });
+			const message = window.prompt(asked, `content: ${article.title}`);
 			if (message === null || !message.trim()) return;
 			try {
 				const { commit } = await commitArticle(article.slug, message);
-				showToast(`已提交 ${commit}；推送到网站请在终端里运行 git push`);
+				showToast(t('已提交 {commit}；推送到网站请在终端里运行 git push', { commit }));
 			} catch (error) {
-				showToast(errorText(error, '提交失败'), true);
+				showToast(errorText(error, t('提交失败')), true);
 			}
 			host.refreshGit();
 		},
@@ -294,7 +292,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 			}
 			if (!pending || typeof pending.trashed !== 'string') return;
 			const { trashed, title } = pending;
-			showToast(`已删除「${title}」`, { action: { label: '撤销', run: () => void restore(trashed, title) } });
+			showToast(t('已删除「{title}」', { title }), { action: { label: t('撤销'), run: () => void restore(trashed, title) } });
 		},
 	};
 }

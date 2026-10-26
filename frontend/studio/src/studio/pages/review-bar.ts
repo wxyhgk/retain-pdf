@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * The bar over the body while differences are reviewed, those of a change
  * made on disk (saved already: what is rejected is saved back over it), of
@@ -24,7 +26,7 @@ export function createReviewBar(root: HTMLElement, host: { acceptAll(): void; re
 		/** What the next review is of. */
 		reviewing(what: ReviewKind): void {
 			from = what;
-			hint.textContent = { disk: '已经保存在磁盘上；拒绝的会改回去', history: '接受的会保存', ai: '接受的会保存；不满意可以重试' }[what];
+			hint.textContent = { disk: t('已经保存在磁盘上；拒绝的会改回去'), history: t('接受的会保存'), ai: t('接受的会保存；不满意可以重试') }[what];
 			retry.hidden = what !== 'ai';
 			first = null;
 		},
@@ -38,10 +40,10 @@ export function createReviewBar(root: HTMLElement, host: { acceptAll(): void; re
 			first ??= pending;
 			const some = pending < first;
 			count.textContent = some
-				? `已决定 ${first - pending} 处，还剩 ${pending} 处`
-				: { disk: `磁盘上的文章有 ${pending} 处改动`, history: `这个历史版本和现在有 ${pending} 处不同`, ai: `AI 写的有 ${pending} 处改动` }[from];
-			acceptAll.textContent = some ? '其余接受' : '全部接受';
-			rejectAll.textContent = some ? '其余拒绝' : '全部拒绝';
+				? t('已决定 {decided} 处，还剩 {pending} 处', { decided: first - pending, pending })
+				: { disk: t('磁盘上的文章有 {pending} 处改动', { pending }), history: t('这个历史版本和现在有 {pending} 处不同', { pending }), ai: t('AI 写的有 {pending} 处改动', { pending }) }[from];
+			acceptAll.textContent = some ? t('其余接受') : t('全部接受');
+			rejectAll.textContent = some ? t('其余拒绝') : t('全部拒绝');
 		},
 	};
 }

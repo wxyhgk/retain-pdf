@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
 import { useStore, type Store } from '../../shell/store';
 import type { ArticleSummary } from '../../types';
@@ -47,23 +48,23 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 			const group = actions.topmost(chosen);
 			const pages = group.map((slug) => articles.find((entry) => entry.slug === slug)!).filter(Boolean);
 			showContextMenu([
-				{ label: `移到…（${group.length} 篇）`, action: () => host.moveTo(group) },
-				{ label: '移到最上层', action: () => host.move(group, '') },
+				{ label: t('移到…（{count} 篇）', { count: group.length }), action: () => host.moveTo(group) },
+				{ label: t('移到最上层'), action: () => host.move(group, '') },
 				'separator',
-				{ label: `移到回收站（${group.length} 篇）`, danger: true, action: () => host.removeMany(pages) },
+				{ label: t('移到回收站（{count} 篇）', { count: group.length }), danger: true, action: () => host.removeMany(pages) },
 			], at);
 			return;
 		}
 		const items: MenuItem[] = [
-			...(committable ? [{ label: '提交到 git…', action: () => host.commit(article) }, 'separator' as const] : []),
-			{ label: '在下面新建页面', action: () => host.createChild(article) },
-			{ label: '移到…', action: () => host.moveTo([article.slug]) },
-			...(article.parent ? [{ label: '移到最上层', action: () => host.move([article.slug], '') }, { label: '并入上级页面…', action: () => host.merge(article) }] : []),
+			...(committable ? [{ label: t('提交到 git…'), action: () => host.commit(article) }, 'separator' as const] : []),
+			{ label: t('在下面新建页面'), action: () => host.createChild(article) },
+			{ label: t('移到…'), action: () => host.moveTo([article.slug]) },
+			...(article.parent ? [{ label: t('移到最上层'), action: () => host.move([article.slug], '') }, { label: t('并入上级页面…'), action: () => host.merge(article) }] : []),
 			'separator',
-			{ label: '改文件夹名…', action: () => host.rename(article) },
-			{ label: '复制一份', action: () => host.duplicate(article) },
+			{ label: t('改文件夹名…'), action: () => host.rename(article) },
+			{ label: t('复制一份'), action: () => host.duplicate(article) },
 			'separator',
-			{ label: '移到回收站', danger: true, action: () => host.remove(article) },
+			{ label: t('移到回收站'), danger: true, action: () => host.remove(article) },
 		];
 		showContextMenu(items, at);
 	}
@@ -159,7 +160,7 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 					<button
 						type="button"
 						className="page-toggle"
-						aria-label={isFolded ? `展开「${article.title}」下面的页面` : `收起「${article.title}」下面的页面`}
+						aria-label={isFolded ? t('展开「{title}」下面的页面', { title: article.title }) : t('收起「{title}」下面的页面', { title: article.title })}
 						aria-expanded={!isFolded}
 						onClick={() => actions.setFolded(article.slug, !isFolded)}
 					>
@@ -186,26 +187,26 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 					<span className="page-title">{article.title}</span>
 					{/* Folded: how many pages are under it, beside its title. */}
 					{under.length > 0 && isFolded && (
-						<span className="page-count" title={`下面有 ${countUnder(state, article.slug)} 个页面`}>
+						<span className="page-count" title={t('下面有 {count} 个页面', { count: countUnder(state, article.slug) })}>
 							{countUnder(state, article.slug)}
 						</span>
 					)}
 					{article.draft !== false && (
-						<span className="page-draft" title="尚未发布">
-							草稿
+						<span className="page-draft" title={t('尚未发布')}>
+							{t('草稿')}
 						</span>
 					)}
 					{uncommitted && (
-						<span className={`page-git is-${uncommitted}`} title={uncommitted === 'new' ? '新文章，还没提交到 git' : '有改动还没提交到 git'}>
+						<span className={`page-git is-${uncommitted}`} title={uncommitted === 'new' ? t('新文章，还没提交到 git') : t('有改动还没提交到 git')}>
 							●
 						</span>
 					)}
 				</button>
 				{/* A new page under it, at once, and what else can be done to it: shown on hover, as in Notion. */}
-				<button type="button" className="page-add" title="在下面新建页面" aria-label={`在「${article.title}」下面新建页面`} onClick={() => host.createChild(article)}>
+				<button type="button" className="page-add" title={t('在下面新建页面')} aria-label={t('在「{title}」下面新建页面', { title: article.title })} onClick={() => host.createChild(article)}>
 					＋
 				</button>
-				<button type="button" className="page-more" title="更多操作" aria-label={`${article.title} 的更多操作`} onClick={(event) => menu(event.currentTarget)}>
+				<button type="button" className="page-more" title={t('更多操作')} aria-label={t('{title} 的更多操作', { title: article.title })} onClick={(event) => menu(event.currentTarget)}>
 					⋯
 				</button>
 			</div>
@@ -274,7 +275,7 @@ export function PageTree({ store, actions, root }: { store: Store<TreeState>; ac
 		};
 	}, [drag, state.articles]);
 
-	if (!state.articles.length) return state.read ? <p className="article-list-empty">还没有文章。点击 ＋ 创建第一篇笔记。</p> : null;
+	if (!state.articles.length) return state.read ? <p className="article-list-empty">{t('还没有文章。点击 ＋ 创建第一篇笔记。')}</p> : null;
 	return (
 		<div className="page-list">
 			{state.tree.roots.map((article) => (

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { Popover, PopoverAnchor, PopoverContent } from '@studio/ui/popover';
 import { showContextMenu } from '../../common/context-menu';
 import { useStore, type Store } from '../../shell/store';
@@ -41,8 +42,8 @@ function IconPicker({ current, onPick }: { current: string; onPick(icon: string)
 				<input
 					type="text"
 					autoFocus
-					placeholder="输入或粘贴一个 emoji，回车"
-					aria-label="自己的图标"
+					placeholder={t('输入或粘贴一个 emoji，回车')}
+					aria-label={t('自己的图标')}
 					value={own}
 					onChange={(event) => setOwn(event.target.value)}
 					onKeyDown={(event) => {
@@ -53,13 +54,13 @@ function IconPicker({ current, onPick }: { current: string; onPick(icon: string)
 				/>
 				{current && (
 					<button type="button" onClick={() => onPick('')}>
-						移除
+						{t('移除')}
 					</button>
 				)}
 			</div>
 			<div className="icon-picker-grid">
 				{ICONS.map((choice) => (
-					<button key={choice} type="button" aria-label={`图标 ${choice}`} onClick={() => onPick(choice)}>
+					<button key={choice} type="button" aria-label={t('图标 {choice}', { choice })} onClick={() => onPick(choice)}>
 						{choice}
 					</button>
 				))}
@@ -79,7 +80,7 @@ function CoverPicker({ actions, onPick }: { actions: HeaderActions; onPick(cover
 	return (
 		<>
 			<button type="button" className="cover-picker-upload" disabled={upload.busy} onClick={() => file.current?.click()}>
-				{upload.busy ? '正在上传…' : upload.error ? `上传失败：${upload.error}` : '上传图片…'}
+				{upload.busy ? t('正在上传…') : upload.error ? t('上传失败：{error}', { error: upload.error }) : t('上传图片…')}
 			</button>
 			<input
 				ref={file}
@@ -97,10 +98,10 @@ function CoverPicker({ actions, onPick }: { actions: HeaderActions; onPick(cover
 					}
 				}}
 			/>
-			<p className="cover-picker-note">{failed ? '读不到文章的图片' : pictures && !pictures.length ? '文章的 img/ 里还没有图片。' : '或者用文章 img/ 里的图片：'}</p>
+			<p className="cover-picker-note">{failed ? t('读不到文章的图片') : pictures && !pictures.length ? t('文章的 img/ 里还没有图片。') : t('或者用文章 img/ 里的图片：')}</p>
 			<div className="cover-picker-grid">
 				{pictures?.map((picture) => (
-					<button key={picture} type="button" title={picture} aria-label={`封面 ${picture}`} onClick={() => onPick(picture)}>
+					<button key={picture} type="button" title={picture} aria-label={t('封面 {picture}', { picture })} onClick={() => onPick(picture)}>
 						<img src={actions.host.fileUrl(picture)} alt="" />
 					</button>
 				))}
@@ -113,7 +114,7 @@ function CoverPicker({ actions, onPick }: { actions: HeaderActions; onPick(cover
 function PathAbove({ state }: { state: HeaderState }) {
 	const { pages, open, under } = state.path;
 	return (
-		<nav className="page-path" aria-label="上级页面" hidden={!pages.length}>
+		<nav className="page-path" aria-label={t('上级页面')} hidden={!pages.length}>
 			{pages.map((page) => [
 				<button key={`${page.slug}:link`} type="button" className="page-path-link" onClick={() => open(page.slug)}>
 					{page.title}
@@ -122,7 +123,7 @@ function PathAbove({ state }: { state: HeaderState }) {
 					key={`${page.slug}:under`}
 					type="button"
 					className="page-path-separator"
-					aria-label={`「${page.title}」下面的页面`}
+					aria-label={t('「{title}」下面的页面', { title: page.title })}
 					onClick={(event) => showContextMenu(under(page.slug).map((child) => ({ label: child.title, action: () => open(child.slug) })), event.currentTarget)}
 				>
 					›
@@ -152,7 +153,7 @@ function TagField({ tags, known, disabled, onChange }: { tags: string[]; known: 
 			{tags.map((tag) => (
 				<span key={tag} className="tag-chip">
 					{tag}
-					<button type="button" className="tag-chip-remove" aria-label={`去掉标签 ${tag}`} onClick={() => onChange(tags.filter((other) => other !== tag))}>
+					<button type="button" className="tag-chip-remove" aria-label={t('去掉标签 {tag}', { tag })} onClick={() => onChange(tags.filter((other) => other !== tag))}>
 						×
 					</button>
 				</span>
@@ -162,8 +163,8 @@ function TagField({ tags, known, disabled, onChange }: { tags: string[]; known: 
 				id="article-tag-input"
 				type="text"
 				list="known-tags"
-				aria-label="添加标签"
-				placeholder={tags.length ? '' : '空'}
+				aria-label={t('添加标签')}
+				placeholder={tags.length ? '' : t('空')}
 				disabled={disabled}
 				value={typed}
 				onChange={(event) => {
@@ -238,20 +239,20 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 							setPicking(picking === 'cover' ? null : 'cover');
 						}}
 					>
-						更换封面
+						{t('更换封面')}
 					</button>
 					<button id="remove-cover" type="button" onClick={() => actions.edit({ cover: '' })}>
-						移除
+						{t('移除')}
 					</button>
 				</div>
 			</div>
 			<div className="page-head">
-				<button ref={iconButton} id="page-icon" className="page-emoji" type="button" aria-label="更换图标" hidden={!icon} onClick={() => setPicking(picking === 'icon' ? null : 'icon')}>
+				<button ref={iconButton} id="page-icon" className="page-emoji" type="button" aria-label={t('更换图标')} hidden={!icon} onClick={() => setPicking(picking === 'icon' ? null : 'icon')}>
 					{icon}
 				</button>
 				<div className="page-head-actions">
 					<button ref={addIcon} id="add-icon" type="button" disabled={disabled} hidden={Boolean(icon)} onClick={() => setPicking(picking === 'icon' ? null : 'icon')}>
-						☺ 添加图标
+						{t('☺ 添加图标')}
 					</button>
 					<button
 						ref={addCover}
@@ -264,7 +265,7 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 							setPicking(picking === 'cover' ? null : 'cover');
 						}}
 					>
-						▨ 添加封面
+						{t('▨ 添加封面')}
 					</button>
 				</div>
 				<PathAbove state={state} />
@@ -272,8 +273,8 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 					id="article-title-input"
 					className="article-title-input"
 					type="text"
-					aria-label="文章标题"
-					placeholder="无标题"
+					aria-label={t('文章标题')}
+					placeholder={t('无标题')}
 					disabled={disabled}
 					value={shown?.title ?? ''}
 					onChange={(event) => actions.edit({ title: event.target.value })}
@@ -285,35 +286,35 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 						actions.host.leaveTitle();
 					}}
 				/>
-				<div className="page-properties" role="group" aria-label="属性">
-					<span className="property-name">◷ 发布日期</span>
-					<input id="article-pub-date" className="property-value" type="date" aria-label="发布日期" disabled={disabled} value={shown?.pubDate ?? ''} onChange={(event) => actions.edit({ pubDate: event.target.value })} />
-					<span className="property-name">⌗ 标签</span>
+				<div className="page-properties" role="group" aria-label={t('属性')}>
+					<span className="property-name">{t('◷ 发布日期')}</span>
+					<input id="article-pub-date" className="property-value" type="date" aria-label={t('发布日期')} disabled={disabled} value={shown?.pubDate ?? ''} onChange={(event) => actions.edit({ pubDate: event.target.value })} />
+					<span className="property-name">{t('⌗ 标签')}</span>
 					<TagField tags={shown?.tags ?? []} known={state.knownTags} disabled={disabled} onChange={(tags) => actions.edit({ tags })} />
-					<span className="property-name">≡ 简介</span>
+					<span className="property-name">{t('≡ 简介')}</span>
 					<textarea
 						ref={description}
 						id="article-description"
 						className="property-value"
 						rows={1}
-						aria-label="简介"
-						placeholder="空"
+						aria-label={t('简介')}
+						placeholder={t('空')}
 						disabled={disabled}
 						value={shown?.description ?? ''}
 						onChange={(event) => actions.edit({ description: event.target.value })}
 					/>
-					<span className="property-name">◫ 类型</span>
-					<select id="article-kind" className="property-value" aria-label="类型" disabled={disabled} value={shown?.kind ?? 'post'} onChange={(event) => actions.edit({ kind: event.target.value === 'wiki' ? 'wiki' : 'post' })}>
-						<option value="post">博客</option>
-						<option value="wiki">维基</option>
+					<span className="property-name">{t('◫ 类型')}</span>
+					<select id="article-kind" className="property-value" aria-label={t('类型')} disabled={disabled} value={shown?.kind ?? 'post'} onChange={(event) => actions.edit({ kind: event.target.value === 'wiki' ? 'wiki' : 'post' })}>
+						<option value="post">{t('博客')}</option>
+						<option value="wiki">{t('维基')}</option>
 					</select>
-					<span className="property-name">◌ 状态</span>
+					<span className="property-name">{t('◌ 状态')}</span>
 					<div className="property-value status-field">
 						<span id="article-status" className={`status-pill${shown && !shown.draft ? ' is-published' : ''}`}>
-							{!shown || shown.draft ? '草稿' : '已发布'}
+							{!shown || shown.draft ? t('草稿') : t('已发布')}
 						</span>
 						<button id="publish-article" className="status-action" type="button" disabled={disabled || state.publishing} data-published={String(Boolean(shown && !shown.draft))} onClick={() => void actions.togglePublished()}>
-							{!shown || shown.draft ? '发布' : '撤回'}
+							{!shown || shown.draft ? t('发布') : t('撤回')}
 						</button>
 					</div>
 					{/* The articles that link here: backlinks.ts draws them. */}

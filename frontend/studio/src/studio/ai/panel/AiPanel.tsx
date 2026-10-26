@@ -1,5 +1,6 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
 import type { Conversation, ConversationItem, ConversationOption } from '../../api/client';
@@ -15,31 +16,39 @@ import { SHOWN_OPTIONS, type ArticleRef, type PanelActions, type PanelState } fr
  * Claude Code's "accept edits" lets it change files, but asks before a command that does something (python, rm…).
  */
 const OPTION_NAMES: Record<string, string> = {
-	default: '每步都问',
-	acceptEdits: '自动改文件（命令要问）',
-	plan: '只做计划',
-	auto: '自动（只问危险的）',
-	bypassPermissions: '全部允许（不再问）',
-	'read-only': '只读（改动都要问）',
-	'workspace-write': '可改文件夹（联网要问）',
-	agent: '自动（只问不安全的）',
-	'agent-full-access': '完全访问（不再问）',
+	default: t('每步都问'),
+	acceptEdits: t('自动改文件（命令要问）'),
+	plan: t('只做计划'),
+	auto: t('自动（只问危险的）'),
+	bypassPermissions: t('全部允许（不再问）'),
+	'read-only': t('只读（改动都要问）'),
+	'workspace-write': t('可改文件夹（联网要问）'),
+	agent: t('自动（只问不安全的）'),
+	'agent-full-access': t('完全访问（不再问）'),
 };
-const EFFORT_NAMES: Record<string, string> = { default: '思考：默认', low: '思考：低', medium: '思考：中', high: '思考：高', xhigh: '思考：很高', max: '思考：最高', ultra: '思考：极限' };
+const EFFORT_NAMES: Record<string, string> = { default: t('思考：默认'), low: t('思考：低'), medium: t('思考：中'), high: t('思考：高'), xhigh: t('思考：很高'), max: t('思考：最高'), ultra: t('思考：极限') };
 /** What each kind of tool call did, counted in a stretch of work: 读了 3 个文件. */
 const TOOL_DONE: Record<string, (count: number) => string> = {
-	read: (count) => `读了 ${count} 个文件`,
-	execute: (count) => `运行了 ${count} 个命令`,
-	search: (count) => `搜索 ${count} 次`,
-	fetch: (count) => `查了 ${count} 个网页`,
-	delete: (count) => `删了 ${count} 个文件`,
-	move: (count) => `移动 ${count} 个文件`,
+	read: (count) => t('读了 {count} 个文件', { count }),
+	execute: (count) => t('运行了 {count} 个命令', { count }),
+	search: (count) => t('搜索 {count} 次', { count }),
+	fetch: (count) => t('查了 {count} 个网页', { count }),
+	delete: (count) => t('删了 {count} 个文件', { count }),
+	move: (count) => t('移动 {count} 个文件', { count }),
 };
 /** What a tool call going on is doing: 正在运行 echo hi. */
-const TOOL_DOING: Record<string, string> = { read: '正在读', edit: '正在改', execute: '正在运行', search: '正在搜索', fetch: '正在查', delete: '正在删除', move: '正在移动' };
+const TOOL_DOING: Record<string, (what: string) => string> = {
+	read: (what) => t('正在读 {what}', { what }),
+	edit: (what) => t('正在改 {what}', { what }),
+	execute: (what) => t('正在运行 {what}', { what }),
+	search: (what) => t('正在搜索 {what}', { what }),
+	fetch: (what) => t('正在查 {what}', { what }),
+	delete: (what) => t('正在删除 {what}', { what }),
+	move: (what) => t('正在移动 {what}', { what }),
+};
 /** Items that are work toward an answer (thinking, tools, the plan): a stretch of them is one row, opened in a dialog. */
 const WORK_KINDS = new Set(['thought', 'tool', 'plan']);
-const SUGGESTIONS = ['总结这篇文章', '检查这篇的公式和单位有没有错', '把文章里的计算重新跑一遍，核对结果', '找出正文里引用了却没在 refs.bib 里的文献'];
+const SUGGESTIONS = [t('总结这篇文章'), t('检查这篇的公式和单位有没有错'), t('把文章里的计算重新跑一遍，核对结果'), t('找出正文里引用了却没在 refs.bib 里的文献')];
 
 /** What the conversation shows: what is said as it is, each stretch of work (the items between what is said) one row. */
 function laidOut(items: ConversationItem[]): Array<{ work: ConversationItem[] } | { item: ConversationItem }> {
@@ -60,24 +69,25 @@ function workSummary(run: ConversationItem[], conversation: Conversation | null,
 	const last = run.at(-1)!;
 	const going = conversation?.state === 'running' && items.at(-1) === last;
 	if (going) {
-		if (last.kind === 'tool') return { text: `${TOOL_DOING[last.toolKind] ?? '正在做'} ${commandOf(last) ?? (last.title || '…')}`, going, failed };
-		return { text: last.kind === 'plan' ? '正在定计划…' : '正在思考…', going, failed };
+		if (last.kind === 'tool') return { text: (TOOL_DOING[last.toolKind] ?? ((what: string) => t('正在做 {what}', { what })))(commandOf(last) ?? (last.title || '…')), going, failed };
+		return { text: last.kind === 'plan' ? t('正在定计划…') : t('正在思考…'), going, failed };
 	}
 	const parts: string[] = [];
-	if (run.some((item) => item.kind === 'thought')) parts.push('思考');
+	if (run.some((item) => item.kind === 'thought')) parts.push(t('思考'));
 	const byKind = new Map<string, ToolItem[]>();
 	for (const tool of tools) byKind.set(tool.toolKind, [...(byKind.get(tool.toolKind) ?? []), tool]);
 	for (const [kind, those] of byKind) {
 		if (kind === 'edit') {
 			const files = [...new Set(those.flatMap((tool) => [...tool.locations.map((location) => location.path), ...tool.content.flatMap((content) => (content.type === 'diff' ? [content.path] : []))]).map((path) => relativeTo(conversation, path).split('/').pop()!))];
-			parts.push(files.length ? `改了 ${files.slice(0, 2).join('、')}${files.length > 2 ? ` 等 ${files.length} 个文件` : ''}` : `改了 ${those.length} 处`);
+			const named = files.slice(0, 2).join('、');
+			parts.push(files.length > 2 ? t('改了 {files} 等 {count} 个文件', { files: named, count: files.length }) : files.length ? t('改了 {files}', { files: named }) : t('改了 {count} 处', { count: those.length }));
 		} else {
-			parts.push((TOOL_DONE[kind] ?? ((count: number) => `${count} 个其他操作`))(those.length));
+			parts.push((TOOL_DONE[kind] ?? ((count: number) => t('{count} 个其他操作', { count })))(those.length));
 		}
 	}
 	const plan = run.find((item): item is Extract<ConversationItem, { kind: 'plan' }> => item.kind === 'plan');
-	if (plan) parts.push(`计划 ${plan.entries.filter((entry) => entry.status === 'completed').length}/${plan.entries.length}`);
-	return { text: parts.join(' · ') || '过程', going, failed };
+	if (plan) parts.push(t('计划 {done}/{total}', { done: plan.entries.filter((entry) => entry.status === 'completed').length, total: plan.entries.length }));
+	return { text: parts.join(' · ') || t('过程'), going, failed };
 }
 
 /** A picture in what is said or in a step, clicked: whole, over everything. */
@@ -96,7 +106,7 @@ function usePluginBlocks(node: React.RefObject<HTMLElement | null>, ready = true
 }
 
 function Toolbar({ state, actions }: { state: PanelState; actions: PanelActions }) {
-	const title = state.conversation?.title || '新对话';
+	const title = state.conversation?.title || t('新对话');
 	const button = (label: string, text: string, onClick: (event: MouseEvent<HTMLButtonElement>) => void, hint = label) => (
 		<button type="button" title={hint} aria-label={label} onClick={onClick}>
 			{text}
@@ -109,10 +119,10 @@ function Toolbar({ state, actions }: { state: PanelState; actions: PanelActions 
 			</span>
 			<span className="ai-where">{state.conversation?.service ?? ''}</span>
 			<div className="pane-actions">
-				{state.full ? button('收回到右边', '⤡', actions.toggleWhole) : button('在页面中打开', '⤢', actions.toggleWhole, '在页面中打开（AI 问答）')}
-				{button('模型和账号', '⚙', () => actions.showSheet(!state.settings), '模型和账号：Claude 账号、DeepSeek 等 API key')}
-				{button('对话记录', '≡', (event) => actions.history(event.currentTarget))}
-				{button('新对话', '＋', actions.newConversation)}
+				{state.full ? button(t('收回到右边'), '⤡', actions.toggleWhole) : button(t('在页面中打开'), '⤢', actions.toggleWhole, t('在页面中打开（AI 问答）'))}
+				{button(t('模型和账号'), '⚙', () => actions.showSheet(!state.settings), t('模型和账号：Claude 账号、DeepSeek 等 API key'))}
+				{button(t('对话记录'), '≡', (event) => actions.history(event.currentTarget))}
+				{button(t('新对话'), '＋', actions.newConversation)}
 			</div>
 		</header>
 	);
@@ -124,10 +134,10 @@ function WorkRow({ run, onOpen }: { run: ConversationItem[]; onOpen(): void }) {
 	const { text, going, failed } = workSummary(run, conversation, items);
 	const pictures = [...new Set(run.flatMap((item) => (item.kind === 'tool' ? picturesOf(item) : [])))].slice(0, 4);
 	return (
-		<button type="button" className={cn('ai-work', going && 'is-going')} title="点开看过程" onClick={onOpen}>
+		<button type="button" className={cn('ai-work', going && 'is-going')} title={t('点开看过程')} onClick={onOpen}>
 			<span className="ai-work-icon">{going ? '' : '⚙'}</span>
 			<span className="ai-work-text">{text}</span>
-			{failed > 0 && <span className="ai-work-failed">{failed} 步失败</span>}
+			{failed > 0 && <span className="ai-work-failed">{t('{count} 步失败', { count: failed })}</span>}
 			{pictures.map((path) => (
 				<img key={path} className="ai-work-picture" src={pictureUrl(path)} alt="" />
 			))}
@@ -144,10 +154,10 @@ function WorkDialog({ run, title, onClose, onPicture }: { run: ConversationItem[
 	}, [body]);
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
-			<DialogContent className="ai-pane ai-work-dialog flex max-h-[80vh] w-[min(720px,92vw)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]" aria-label="过程">
+			<DialogContent className="ai-pane ai-work-dialog flex max-h-[80vh] w-[min(720px,92vw)] flex-col gap-0 overflow-hidden p-0 sm:max-w-[720px]" aria-label={t('过程')}>
 				<header className="ai-work-head">
 					<DialogTitle className="ai-work-title text-[13px] font-semibold">{title}</DialogTitle>
-					<DialogDescription className="sr-only">这一段过程的每一步</DialogDescription>
+					<DialogDescription className="sr-only">{t('这一段过程的每一步')}</DialogDescription>
 				</header>
 				<div ref={setBody} className="ai-work-body" onClick={(event) => pictureClicked(event, onPicture)}>
 					{run.map((item) => (
@@ -163,7 +173,7 @@ function PictureDialog({ picture, onClose }: { picture: { src: string; alt: stri
 	return (
 		<Dialog open onOpenChange={(open) => !open && onClose()}>
 			<DialogContent showCloseButton={false} className="ai-picture-dialog max-h-[94vh] w-auto max-w-[94vw] cursor-zoom-out gap-0 overflow-hidden p-0 sm:max-w-[94vw]" onClick={onClose}>
-				<DialogTitle className="sr-only">图片</DialogTitle>
+				<DialogTitle className="sr-only">{t('图片')}</DialogTitle>
 				<DialogDescription className="sr-only">{picture.alt}</DialogDescription>
 				<img src={picture.src} alt={picture.alt} />
 			</DialogContent>
@@ -199,8 +209,8 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 			}}
 		>
 			<div className="ai-empty" hidden={items.length > 0}>
-				<p className="ai-empty-title">要做点什么？</p>
-				<p className="ai-empty-hint">它会自己读文件、运行命令、改文章；改了文章会像别的改动一样让你过目。</p>
+				<p className="ai-empty-title">{t('要做点什么？')}</p>
+				<p className="ai-empty-hint">{t('它会自己读文件、运行命令、改文章；改了文章会像别的改动一样让你过目。')}</p>
 				<div className="ai-suggestions">
 					{SUGGESTIONS.map((text) => (
 						<button key={text} type="button" className="ai-suggestion" onClick={() => actions.ask(text)}>
@@ -231,7 +241,7 @@ function Chip({ label, title, onRemove }: { label: string; title: string; onRemo
 	return (
 		<span className="ai-chip" title={title}>
 			<span className="ai-chip-label">{label}</span>
-			<button type="button" className="ai-chip-remove" aria-label={`不带上${label}`} onClick={onRemove}>
+			<button type="button" className="ai-chip-remove" aria-label={t('不带上{label}', { label })} onClick={onRemove}>
 				×
 			</button>
 		</span>
@@ -240,7 +250,7 @@ function Chip({ label, title, onRemove }: { label: string; title: string; onRemo
 
 function OptionSelect({ option, onChange }: { option: ConversationOption; onChange(value: string): void }) {
 	const choices = (option.options ?? []).flatMap((entry) => ('options' in entry ? entry.options : [entry]));
-	const named = (value: string, name: string) => (option.category === 'thought_level' ? (EFFORT_NAMES[value] ?? `思考：${name}`) : option.category === 'mode' ? (OPTION_NAMES[value] ?? name) : name);
+	const named = (value: string, name: string) => (option.category === 'thought_level' ? (EFFORT_NAMES[value] ?? t('思考：{name}', { name })) : option.category === 'mode' ? (OPTION_NAMES[value] ?? name) : name);
 	return (
 		<select className="ai-select" aria-label={option.name} title={option.description ?? option.name} value={String(option.currentValue)} onChange={(event) => onChange(event.target.value)}>
 			{choices.map((choice) => (
@@ -273,9 +283,9 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 
 	const open = article && leftOut !== article.slug ? article : null;
 	const chips: ReactNode[] = [];
-	if (open) chips.push(<Chip key="article" label={`📄 ${open.title}`} title="当前文章：说话时会告诉 AI 你在看这篇" onRemove={actions.leaveOutArticle} />);
-	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label="选中的内容" title="文章里选中的那几行会一起告诉 AI" onRemove={actions.leaveOutSelection} />);
-	for (const entry of mentions) chips.push(<Chip key={entry.slug} label={`@ ${entry.title}`} title="用 @ 提到的文章" onRemove={() => actions.unmention(entry)} />);
+	if (open) chips.push(<Chip key="article" label={`📄 ${open.title}`} title={t('当前文章：说话时会告诉 AI 你在看这篇')} onRemove={actions.leaveOutArticle} />);
+	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label={t('选中的内容')} title={t('文章里选中的那几行会一起告诉 AI')} onRemove={actions.leaveOutSelection} />);
+	for (const entry of mentions) chips.push(<Chip key={entry.slug} label={`@ ${entry.title}`} title={t('用 @ 提到的文章')} onRemove={() => actions.unmention(entry)} />);
 
 	const asked = mentionsClosed ? null : naming(draft, caret);
 	const needle = asked?.query.toLocaleLowerCase('zh-CN') ?? '';
@@ -368,9 +378,9 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				ref={input}
 				className="ai-input"
 				rows={1}
-				aria-label="对 AI 说"
+				aria-label={t('对 AI 说')}
 				// While it works, to one that can take it: what is typed is a word in between (Enter), taken once its step is done.
-				placeholder={running && conversation?.canSteer ? '插话：它做完手头这一步就会看到（Enter）' : '让 AI 做点什么…（@ 提到别的文章）'}
+				placeholder={running && conversation?.canSteer ? t('插话：它做完手头这一步就会看到（Enter）') : t('让 AI 做点什么…（@ 提到别的文章）')}
 				value={draft}
 				onChange={(event) => {
 					actions.type(event.target.value);
@@ -383,7 +393,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				onKeyDown={keyDown}
 			/>
 			<div className="ai-composer-bar">
-				<select className="ai-select ai-agent" aria-label="用哪个 AI" value={state.agent} onChange={(event) => actions.chooseAgent(event.target.value)}>
+				<select className="ai-select ai-agent" aria-label={t('用哪个 AI')} value={state.agent} onChange={(event) => actions.chooseAgent(event.target.value)}>
 					{state.agents.map((agent) => (
 						<option key={agent.id} value={agent.id}>
 							{agent.name}
@@ -395,10 +405,10 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 						<OptionSelect key={`${conversation?.id}:${option.id}:${String(option.currentValue)}`} option={option} onChange={(value) => actions.setOption(option.id, value)} />
 					))}
 				</div>
-				<span className="ai-usage" title={used ? '用掉的上下文 / 上下文上限（· 这次对话花费）' : ''}>
+				<span className="ai-usage" title={used ? t('用掉的上下文 / 上下文上限（· 这次对话花费）') : ''}>
 					{used ? `${Math.round(used.used / 1000)}k / ${used.size >= 1_000_000 ? `${used.size / 1_000_000}M` : `${Math.round(used.size / 1000)}k`}${used.cost ? ` · $${used.cost.amount.toFixed(2)}` : ''}` : ''}
 				</span>
-				<button type="button" className={cn('ai-send', running && 'is-stop')} title={running ? '停下' : '发送（Enter；换行用 Shift+Enter）'} aria-label={running ? '停下' : '发送'} onClick={actions.sendOrStop}>
+				<button type="button" className={cn('ai-send', running && 'is-stop')} title={running ? t('停下') : t('发送（Enter；换行用 Shift+Enter）')} aria-label={running ? t('停下') : t('发送')} onClick={actions.sendOrStop}>
 					{running ? '■' : '↑'}
 				</button>
 			</div>

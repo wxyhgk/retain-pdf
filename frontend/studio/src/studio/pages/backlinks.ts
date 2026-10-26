@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import { articleBacklinks } from '../api/client';
 import type { Backlink } from '../types';
 
@@ -26,7 +27,7 @@ export function createBacklinks(root: HTMLElement, host: BacklinksHost) {
 		toggle.type = 'button';
 		toggle.className = 'backlinks-toggle';
 		toggle.setAttribute('aria-expanded', String(open));
-		toggle.textContent = `↗ ${found.length} 篇文章链接到这里${links > found.length ? `（${links} 处）` : ''}`;
+		toggle.textContent = links > found.length ? t('↗ {count} 篇文章链接到这里（{links} 处）', { count: found.length, links }) : t('↗ {count} 篇文章链接到这里', { count: found.length });
 		toggle.addEventListener('click', () => {
 			open = !open;
 			writeOpen(open);
@@ -49,7 +50,7 @@ export function createBacklinks(root: HTMLElement, host: BacklinksHost) {
 			if (article.draft) {
 				const draft = document.createElement('span');
 				draft.className = 'backlinks-draft';
-				draft.textContent = '草稿';
+				draft.textContent = t('草稿');
 				title.append(draft);
 			}
 			title.addEventListener('click', () => host.open(article.slug, article.mentions[0]?.text ?? ''));

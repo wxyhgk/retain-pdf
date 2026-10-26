@@ -1,3 +1,4 @@
+import { t } from '@blog/i18n/index.mjs';
 import type { ArticleSummary } from '../types';
 import './article-table.css';
 import {
@@ -27,13 +28,13 @@ export type ArticleTableHost = {
 
 /** The table's columns: name, what it sorts by (none for those it cannot). */
 const COLUMNS: Array<{ name: string; sort?: SortKey; className: string }> = [
-	{ name: '标题', sort: 'title', className: 'col-title' },
-	{ name: '简介', className: 'col-description' },
-	{ name: '标签', className: 'col-tags' },
-	{ name: '类型', sort: 'kind', className: 'col-kind' },
-	{ name: '状态', sort: 'status', className: 'col-status' },
-	{ name: '发布日期', sort: 'pubDate', className: 'col-date' },
-	{ name: '编辑时间', sort: 'modified', className: 'col-modified' },
+	{ name: t('标题'), sort: 'title', className: 'col-title' },
+	{ name: t('简介'), className: 'col-description' },
+	{ name: t('标签'), className: 'col-tags' },
+	{ name: t('类型'), sort: 'kind', className: 'col-kind' },
+	{ name: t('状态'), sort: 'status', className: 'col-status' },
+	{ name: t('发布日期'), sort: 'pubDate', className: 'col-date' },
+	{ name: t('编辑时间'), sort: 'modified', className: 'col-modified' },
 ];
 
 /**
@@ -47,7 +48,7 @@ export function createArticleTable(root: HTMLElement, host: ArticleTableHost) {
 	let query = '';
 
 	const heading = element('header', 'table-heading');
-	const title = element('h1', '', '全部文章');
+	const title = element('h1', '', t('全部文章'));
 	const count = element('span', 'table-count');
 	heading.append(title, count);
 
@@ -55,7 +56,7 @@ export function createArticleTable(root: HTMLElement, host: ArticleTableHost) {
 	const layouts = element('div', 'table-layouts');
 	layouts.setAttribute('role', 'tablist');
 	const layoutButtons = (['table', 'board'] as const).map((layout) => {
-		const button = element('button', 'table-layout', layout === 'table' ? '▤ 表格' : '▥ 看板');
+		const button = element('button', 'table-layout', layout === 'table' ? t('▤ 表格') : t('▥ 看板'));
 		button.type = 'button';
 		button.setAttribute('role', 'tab');
 		button.dataset.layout = layout;
@@ -65,16 +66,16 @@ export function createArticleTable(root: HTMLElement, host: ArticleTableHost) {
 	layouts.append(...layoutButtons);
 	const search = element('input', 'table-search');
 	search.type = 'search';
-	search.placeholder = '筛选标题、简介、标签…';
-	search.setAttribute('aria-label', '筛选文章');
+	search.placeholder = t('筛选标题、简介、标签…');
+	search.setAttribute('aria-label', t('筛选文章'));
 	search.addEventListener('input', () => {
 		query = search.value;
 		draw();
 	});
-	const statusFilter = choice('状态', [['', '全部状态'], ['draft', STATUS_NAMES.draft], ['published', STATUS_NAMES.published]], (value) => change({ status: value as TableSettings['status'] }));
-	const kindFilter = choice('类型', [['', '全部类型'], ['post', KIND_NAMES.post], ['wiki', KIND_NAMES.wiki]], (value) => change({ kind: value as TableSettings['kind'] }));
-	const tagFilter = choice('标签', [], (value) => change({ tag: value }));
-	const groupChoice = choice('分组', [['status', '按状态分组'], ['kind', '按类型分组']], (value) => change({ group: value as TableSettings['group'] }));
+	const statusFilter = choice(t('状态'), [['', t('全部状态')], ['draft', STATUS_NAMES.draft], ['published', STATUS_NAMES.published]], (value) => change({ status: value as TableSettings['status'] }));
+	const kindFilter = choice(t('类型'), [['', t('全部类型')], ['post', KIND_NAMES.post], ['wiki', KIND_NAMES.wiki]], (value) => change({ kind: value as TableSettings['kind'] }));
+	const tagFilter = choice(t('标签'), [], (value) => change({ tag: value }));
+	const groupChoice = choice(t('分组'), [['status', t('按状态分组')], ['kind', t('按类型分组')]], (value) => change({ group: value as TableSettings['group'] }));
 	bar.append(layouts, groupChoice, search, statusFilter, kindFilter, tagFilter);
 
 	const body = element('div', 'table-body');
@@ -89,19 +90,19 @@ export function createArticleTable(root: HTMLElement, host: ArticleTableHost) {
 	function draw(): void {
 		const all = host.articles();
 		const shown = sortArticles(matchArticles(all, settings, query), settings.sort, settings.descending);
-		count.textContent = shown.length === all.length ? `${all.length} 篇` : `${shown.length} / ${all.length} 篇`;
+		count.textContent = shown.length === all.length ? t('{count} 篇', { count: all.length }) : t('{shown} / {count} 篇', { shown: shown.length, count: all.length });
 		for (const button of layoutButtons) button.setAttribute('aria-selected', String(button.dataset.layout === settings.layout));
 		statusFilter.value = settings.status;
 		kindFilter.value = settings.kind;
 		const tags = knownTags(all);
 		// A tag no article has any more is still shown while it is the filter, so it can be cleared.
 		const offered = settings.tag && !tags.includes(settings.tag) ? [settings.tag, ...tags] : tags;
-		tagFilter.replaceChildren(option('', '全部标签'), ...offered.map((tag) => option(tag, tag)));
+		tagFilter.replaceChildren(option('', t('全部标签')), ...offered.map((tag) => option(tag, tag)));
 		tagFilter.value = settings.tag;
 		groupChoice.value = settings.group;
 		groupChoice.hidden = settings.layout !== 'board';
-		if (!all.length) body.replaceChildren(element('p', 'table-empty', '还没有文章。'));
-		else if (!shown.length) body.replaceChildren(element('p', 'table-empty', '没有符合筛选的文章。'));
+		if (!all.length) body.replaceChildren(element('p', 'table-empty', t('还没有文章。')));
+		else if (!shown.length) body.replaceChildren(element('p', 'table-empty', t('没有符合筛选的文章。')));
 		else body.replaceChildren(settings.layout === 'table' ? table(shown) : board(shown));
 	}
 
