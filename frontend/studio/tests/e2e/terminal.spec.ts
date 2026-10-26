@@ -78,7 +78,8 @@ test('⌘J, 在终端里问 AI: a question about the block’s lines typed into 
 
 test('the terminal has `studio`, the pages’ operations for an AI, on its PATH', async ({ page }) => {
 	await run(page, 'echo "pages=$(studio list-pages | grep -c \'Studio 测试夹具\')"');
-	await expect(screen(page)).toContainText('pages=1');
+	// A Node process started and the articles read: slower with other test runs beside it.
+	await expect(screen(page)).toContainText('pages=1', { timeout: 30_000 });
 });
 
 test('an AI starts with a click, in the article’s folder; one this machine has not is greyed, saying how to get it', async ({ page }) => {

@@ -122,8 +122,9 @@ test('a calculation is a card; its sheet sets it up, runs it, shows what it foun
 	await expect(job.locator('.job-card-describe')).toContainText('结构改过了，这是改之前的结果');
 	// ⌘S in RetainMol's frame saves the article.
 	await retainmolFrame(page).locator('#save').click();
+	// Polled: 已保存 may still be the save before this one's.
+	await expect.poll(savedMarkdown).toContain('\n6\nmethanol\nC 0.000000 0.000000 0.000000\nO 1.420000');
 	await expect(saveStatus(page)).toHaveText('已保存');
-	expect(savedMarkdown()).toContain('\n6\nmethanol\nC 0.000000 0.000000 0.000000\nO 1.420000');
 	// And the 设置 tab shows it as text.
 	await tab(page, '设置').click();
 	await expect(sheet(page).locator('.job-structure-info')).toHaveText('CH4O · 6 个原子');

@@ -7,8 +7,8 @@ import { editFixture, editor, openStudio, resetFixture } from './studio.ts';
 // A book in one article, in WebKit (the Mac app's): the outline takes the editor to a heading far down and leaves it
 // there, and scrolling up and back down comes back to where it was, though formulas are drawn on the way as they come
 // near (near-screen.ts) and change the heights above. WebKit keeps nothing still by itself (scroll-anchor.ts).
-// Playwright's WebKit (`npx playwright install webkit`), not the system Chrome the others use.
-test.use({ browserName: 'webkit', channel: '', trace: 'off' });
+// Playwright's WebKit (`npx playwright install webkit`), not the Chromium the others use (nor its executable).
+test.use({ browserName: 'webkit', channel: '', launchOptions: {}, trace: 'off' });
 test.skip(!existsSync(webkit.executablePath()), 'WebKit is not installed (npx playwright install webkit)');
 
 const PAGE = (n: number) => {

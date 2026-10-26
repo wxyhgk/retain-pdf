@@ -1,20 +1,59 @@
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { availableParallelism, homedir, tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from '@playwright/test';
 
-// With E2E_WORKERS=3, several Studios side by side, each with its own copy of everything a test writes to (the articles,
-// the drive, the server's root), the test files shared out among them. One by default: on this machine (10 cores, the
-// author's own server running) three took twice as long, the servers and browsers waiting on each other.
-const workers = Math.max(1, Number(process.env.E2E_WORKERS ?? 1));
+// Several Studios side by side, each with its own copy of everything a test writes to (the articles, the drive, the
+// server's root), the test files shared out among them: each has its own dev server and browser, so a few less than the
+// cores (6 on this machine of 10: the whole suite in 4½ minutes, against 15 or more one at a time). E2E_WORKERS=n to choose.
+const workers = Math.max(1, Number(process.env.E2E_WORKERS ?? Math.min(6, Math.floor(availableParallelism() * 0.6))));
 const basePort = Number(process.env.E2E_PORT ?? 4400);
 // 20 apart: 4410 is the preview server's (preview-server.mjs).
 const portOf = (slot: number) => basePort + 20 * slot;
 const retainmolPort = basePort + 599;
 
+/**
+ * The browser for Chromium: Playwright's own headless one, not the system's Chrome (E2E_CHROME_CHANNEL=chrome for that).
+ * Google Chrome starts its updater and its crash reporter, which keep the browser's output open for minutes after it is
+ * closed; a worker waits for that before it ends, and three took 16 minutes for 90 seconds of tests. Nothing is
+ * downloaded here: when the one this Playwright asks for is not installed, the nearest one in its cache stands in.
+ */
+function headlessShell(): string | undefined {
+	const cache = process.env.PLAYWRIGHT_BROWSERS_PATH || (process.platform === 'darwin' ? join(homedir(), 'Library', 'Caches', 'ms-playwright') : join(homedir(), '.cache', 'ms-playwright'));
+	const browsers = JSON.parse(readFileSync(join(dirname(createRequire(import.meta.url).resolve('playwright-core/package.json')), 'browsers.json'), 'utf8'));
+	const wanted = Number(browsers.browsers.find((browser: { name: string }) => browser.name === 'chromium-headless-shell')?.revision);
+	const cached = existsSync(cache) ? readdirSync(cache).flatMap((name) => /^chromium_headless_shell-(\d+)$/u.exec(name)?.[1] ?? []).map(Number) : [];
+	if (!cached.length || cached.includes(wanted)) return undefined;
+	const nearest = cached.sort((a, b) => Math.abs(a - wanted) - Math.abs(b - wanted))[0];
+	const folder = join(cache, `chromium_headless_shell-${nearest}`);
+	for (const build of readdirSync(folder)) {
+		const executable = join(folder, build, 'chrome-headless-shell');
+		if (existsSync(executable)) return executable;
+	}
+	return undefined;
+}
+
 // Made once, in the runner (workers inherit them): for each slot, its own folders.
 if (!process.env.E2E_SLOTS_READY) {
+	// One run at a time on these ports: a second one would empty the first one's folders under it.
+	for (let slot = 0; slot < workers; slot += 1) {
+		const lock = join(tmpdir(), `studio-e2e-${portOf(slot)}.lock`);
+		const holder = existsSync(lock) ? Number(readFileSync(lock, 'utf8')) : 0;
+		let alive = false;
+		try {
+			alive = holder > 0 && process.kill(holder, 0);
+		} catch {
+			alive = false;
+		}
+		if (alive) throw new Error(`Another browser test run (process ${holder}) is using port ${portOf(slot)}: wait for it, or set E2E_PORT.`);
+		writeFileSync(lock, String(process.pid));
+		process.on('exit', () => rmSync(lock, { force: true }));
+	}
+	// Which browser the run is for (--browser webkit), told to the workers, which are not given the command line.
+	const named = process.argv.findIndex((arg) => arg === '--browser' || arg.startsWith('--browser='));
+	process.env.E2E_BROWSER = named < 0 ? 'chromium' : process.argv[named].includes('=') ? process.argv[named].split('=')[1] : process.argv[named + 1];
 	for (let slot = 0; slot < workers; slot += 1) {
 		process.env[`STUDIO_BLOG_DIR_${slot}`] = mkdtempSync(join(tmpdir(), 'studio-e2e-'));
 		// The drive (资料库) the Studio shows: a folder of its own, filled by the tests.
@@ -49,10 +88,12 @@ export default defineConfig({
 	reporter: process.env.CI ? 'github' : 'list',
 	use: {
 		baseURL: `http://localhost:${portOf(slot)}`,
-		// The system Chrome, so no browser download is needed.
-		channel: process.env.E2E_CHROME_CHANNEL ?? 'chrome',
+		channel: process.env.E2E_CHROME_CHANNEL || undefined,
+		...(process.env.E2E_CHROME_CHANNEL || process.env.E2E_BROWSER !== 'chromium' ? {} : { launchOptions: { executablePath: headlessShell() } }),
 		viewport: { width: 1400, height: 1000 },
-		trace: 'retain-on-failure',
+		// A failure's trace holds every module the page loaded and takes a minute to write: kept with E2E_TRACE=1.
+		trace: process.env.E2E_TRACE ? 'retain-on-failure' : 'off',
+		screenshot: 'only-on-failure',
 	},
 	webServer: [
 		...Array.from({ length: workers }, (_, slot) => ({
