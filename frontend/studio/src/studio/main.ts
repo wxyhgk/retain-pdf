@@ -589,13 +589,22 @@ async function makeLinkedPage(title: string): Promise<{ title: string; href: str
 	return { title, href: `/blog/${slug}/` };
 }
 
+/** The moves asked for, one after the other: each reads where the pages are once the last is over (the list read again). */
+let moving: Promise<void> = Promise.resolve();
+
 /**
  * Pages (in this order) under `parent`, or at the top with it empty; with
  * `place`, just before or after that page, one after the other. On disk, the
  * open one too (saved first): only its properties change, which it takes in
  * quietly.
  */
-async function movePages(slugs: string[], parent: string, place: PagePlace = {}): Promise<void> {
+function movePages(slugs: string[], parent: string, place: PagePlace = {}): Promise<void> {
+	const moved = moving.then(() => movePagesNow(slugs, parent, place));
+	moving = moved.catch(() => {});
+	return moved;
+}
+
+async function movePagesNow(slugs: string[], parent: string, place: PagePlace): Promise<void> {
 	// The pages they leave and the one they go under get a page block taken out or put in (as Notion has it): the open
 	// one among them, saved first, is read again after, quietly, not reviewed as a change made by someone else.
 	const left = slugs.map((slug) => articleList.articles().find((article) => article.slug === slug)?.parent ?? '');

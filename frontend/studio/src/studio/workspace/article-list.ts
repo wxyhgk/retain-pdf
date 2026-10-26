@@ -456,10 +456,18 @@ export function createArticleList(root: HTMLElement, host: ArticleListHost) {
 	}
 
 	/** Reads the articles again. */
+	/** Reads asked for, and the latest of them shown: one read sooner that comes back later is not shown over it. */
+	let asked = 0;
+	let shownRead = 0;
 	async function load(): Promise<ArticleSummary[]> {
-		articles = await listArticles();
-		render();
-		host.listed?.(articles);
+		const read = ++asked;
+		const listed = await listArticles();
+		if (read > shownRead) {
+			shownRead = read;
+			articles = listed;
+			render();
+			host.listed?.(articles);
+		}
 		return articles;
 	}
 
