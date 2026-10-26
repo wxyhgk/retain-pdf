@@ -1,5 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 
+import { BookOpenCheck, Calculator, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
+
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
@@ -48,7 +50,12 @@ const TOOL_DOING: Record<string, (what: string) => string> = {
 };
 /** Items that are work toward an answer (thinking, tools, the plan): a stretch of them is one row, opened in a dialog. */
 const WORK_KINDS = new Set(['thought', 'tool', 'plan']);
-const SUGGESTIONS = [t('总结这篇文章'), t('检查这篇的公式和单位有没有错'), t('把文章里的计算重新跑一遍，核对结果'), t('找出正文里引用了却没在 refs.bib 里的文献')];
+const SUGGESTIONS: Array<{ icon: LucideIcon; text: string }> = [
+	{ icon: TextQuote, text: t('总结这篇文章') },
+	{ icon: ScanSearch, text: t('检查这篇的公式和单位有没有错') },
+	{ icon: Calculator, text: t('把文章里的计算重新跑一遍，核对结果') },
+	{ icon: BookOpenCheck, text: t('找出正文里引用了却没在 refs.bib 里的文献') },
+];
 
 /** What the conversation shows: what is said as it is, each stretch of work (the items between what is said) one row. */
 function laidOut(items: ConversationItem[]): Array<{ work: ConversationItem[] } | { item: ConversationItem }> {
@@ -107,9 +114,9 @@ function usePluginBlocks(node: React.RefObject<HTMLElement | null>, ready = true
 
 function Toolbar({ state, actions }: { state: PanelState; actions: PanelActions }) {
 	const title = state.conversation?.title || t('新对话');
-	const button = (label: string, text: string, onClick: (event: MouseEvent<HTMLButtonElement>) => void, hint = label) => (
+	const button = (label: string, Icon: LucideIcon, onClick: (event: MouseEvent<HTMLButtonElement>) => void, hint = label) => (
 		<button type="button" title={hint} aria-label={label} onClick={onClick}>
-			{text}
+			<Icon aria-hidden />
 		</button>
 	);
 	return (
@@ -119,10 +126,10 @@ function Toolbar({ state, actions }: { state: PanelState; actions: PanelActions 
 			</span>
 			<span className="ai-where">{state.conversation?.service ?? ''}</span>
 			<div className="pane-actions">
-				{state.full ? button(t('收回到右边'), '⤡', actions.toggleWhole) : button(t('在页面中打开'), '⤢', actions.toggleWhole, t('在页面中打开（AI 问答）'))}
-				{button(t('模型和账号'), '⚙', () => actions.showSheet(!state.settings), t('模型和账号：Claude 账号、DeepSeek 等 API key'))}
-				{button(t('对话记录'), '≡', (event) => actions.history(event.currentTarget))}
-				{button(t('新对话'), '＋', actions.newConversation)}
+				{state.full ? button(t('收回到右边'), Minimize2, actions.toggleWhole) : button(t('在页面中打开'), Maximize2, actions.toggleWhole, t('在页面中打开（AI 问答）'))}
+				{button(t('模型和账号'), Settings2, () => actions.showSheet(!state.settings), t('模型和账号：Claude 账号、DeepSeek 等 API key'))}
+				{button(t('对话记录'), History, (event) => actions.history(event.currentTarget))}
+				{button(t('新对话'), SquarePen, actions.newConversation)}
 			</div>
 		</header>
 	);
@@ -212,8 +219,9 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 				<p className="ai-empty-title">{t('要做点什么？')}</p>
 				<p className="ai-empty-hint">{t('它会自己读文件、运行命令、改文章；改了文章会像别的改动一样让你过目。')}</p>
 				<div className="ai-suggestions">
-					{SUGGESTIONS.map((text) => (
+					{SUGGESTIONS.map(({ icon: Icon, text }) => (
 						<button key={text} type="button" className="ai-suggestion" onClick={() => actions.ask(text)}>
+							<Icon aria-hidden />
 							{text}
 						</button>
 					))}

@@ -6,7 +6,7 @@ import { t } from '@blog/i18n/index.mjs';
 import { Button } from '@studio/ui/button';
 import { useActions, useShell } from './shell-state';
 
-/** The right column's tabs (side-panel.ts says which there are and which is shown; it shows their panes), and ×. */
+/** The right column's tabs, quiet as Notion's (side-panel.ts says which there are and which is shown; it shows their panes), and ×. */
 export function SideTabs() {
 	const { tabs, tab: shown } = useShell();
 	const act = useActions();
@@ -33,7 +33,7 @@ export function SideTabs() {
 					aria-selected={entry.key === shown}
 					tabIndex={entry.key === shown ? 0 : -1}
 					data-panel={entry.id.startsWith('side-tab-plugin-') ? entry.key : undefined}
-					className="relative h-[34px] rounded-t-md px-3 text-xs whitespace-nowrap text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset aria-selected:font-semibold aria-selected:text-accent-foreground aria-selected:after:absolute aria-selected:after:inset-x-2.5 aria-selected:after:-bottom-px aria-selected:after:h-0.5 aria-selected:after:rounded-full aria-selected:after:bg-primary"
+					className="h-7 rounded-md px-2.5 text-xs whitespace-nowrap text-muted-foreground outline-none transition-colors hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset aria-selected:bg-accent aria-selected:font-medium aria-selected:text-foreground"
 					onClick={() => act.chooseTab(entry.key)}
 					onKeyDown={(event) => step(event, at)}
 				>

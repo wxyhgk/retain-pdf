@@ -446,7 +446,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.studio-shell.panel-collapsed .side-panel { opacity: 0; pointer-events: none; }
 	.side-panel-resizer { position: absolute; z-index: 5; top: 0; bottom: 0; left: -3px; width: 6px; cursor: col-resize; }
 	.side-panel-resizer:hover, .side-panel-resizer:focus-visible, .studio-shell.is-resizing .side-panel-resizer { background: color-mix(in srgb, var(--accent) 45%, transparent); outline: none; }
-	.side-tabs { display: flex; flex: none; align-items: flex-end; gap: 2px; height: 46px; padding: 0 8px 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
+	.side-tabs { display: flex; flex: none; align-items: center; gap: 2px; height: 46px; padding: 0 8px 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
 	.side-pane { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 	.side-pane[hidden] { display: none; }
 	/* A plugin's tab (ctx.panels): its pane, made by side-panel.ts, scrolls as a whole unless it lays itself out. */
