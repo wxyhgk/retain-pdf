@@ -1,0 +1,9 @@
+{
+  "name": "@blog/i18n",
+  "private": true,
+  "description": "The Studio's words in other languages: t('中文原文', { 参数 }) gives them in the language chosen.",
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  }
+}

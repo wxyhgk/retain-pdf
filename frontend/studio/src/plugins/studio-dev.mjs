@@ -22,6 +22,7 @@ import { markContentReloads } from '../studio/server/articles/content-reloads.mj
 import { studioBlogRoot } from '../studio/server/articles/page-version.mjs';
 import { atomicWriteText } from '../studio/server/files/atomic-write.mjs';
 import { serverKernel } from '@blog/kernel/node.mjs';
+import { LocaleSettings, studioSettingsFile } from '../studio/server/locale-settings.mjs';
 import { PluginSettings } from '../studio/server/plugin-settings.mjs';
 import { AiSettings } from '../studio/server/ai/ai-settings.mjs';
 import { decodePathComponent, sendFile, sendJson } from '../studio/server/api.mjs';
@@ -67,7 +68,7 @@ export default function studioDev({ site } = {}) {
 			const watcher = new BlogWatcher(blogRoot);
 			// The author's own folder of files (资料库), chosen once and kept outside git; the browser tests bring their own.
 			const testDriveRoot = process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null;
-			const settingsFile = testBlogRoot ? resolve(testBlogRoot, '.studio-settings.json') : resolve(server.config.root, '.studio-settings.json');
+			const settingsFile = studioSettingsFile(server.config.root);
 			const drive = new Drive({
 				settingsFile,
 				fixedRoot: testDriveRoot,
@@ -150,6 +151,7 @@ export default function studioDev({ site } = {}) {
 				tasks,
 				miniApps,
 				pluginSettings,
+				localeSettings: new LocaleSettings(settingsFile),
 				aiSettings,
 				agentSettings,
 				conversations,

@@ -5,6 +5,7 @@ import { articleRoutes } from './articles.mjs';
 import { conversationRoutes } from './conversations.mjs';
 import { driveRoutes } from './drive.mjs';
 import { pluginRoutes } from './plugins.mjs';
+import { settingRoutes } from './settings.mjs';
 import { taskRoutes } from './tasks.mjs';
 
 /**
@@ -32,6 +33,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../tasks/tasks.mjs').Tasks} tasks
  * @property {import('../apps/mini-apps.mjs').MiniApps} miniApps
  * @property {import('../plugin-settings.mjs').PluginSettings} pluginSettings
+ * @property {import('../locale-settings.mjs').LocaleSettings} localeSettings the language the Studio speaks
  * @property {import('../ai/ai-settings.mjs').AiSettings} aiSettings
  * @property {import('../ai/agent-settings.mjs').AgentSettings} agentSettings
  * @property {import('../ai/agent-sessions.mjs').AgentSessions} conversations the AI panel's
@@ -49,5 +51,6 @@ export function studioApi(studio) {
 	taskRoutes(api, studio);
 	conversationRoutes(api, studio);
 	pluginRoutes(api, studio);
+	settingRoutes(api, studio);
 	return api;
 }

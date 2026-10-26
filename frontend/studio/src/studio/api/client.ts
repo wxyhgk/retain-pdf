@@ -630,3 +630,14 @@ export async function recognizeImage(slug: string, image: string, prompt: string
 export function putBelowImage(slug: string, image: string, markdown: string): Promise<{ slug: string }> {
 	return request(`/api/studio/articles/${encodeURIComponent(slug)}/below-image`, jsonOptions('POST', { image, markdown }));
 }
+
+/** The language the Studio speaks: chosen (`system`: the browser's), and the languages there are. */
+export type LocalesShown = { chosen: string; locales: Array<{ id: string; name: string }> };
+
+export function localeSettings(): Promise<LocalesShown> {
+	return request<LocalesShown>('/api/studio/settings/locale');
+}
+
+export function saveLocale(locale: string): Promise<LocalesShown> {
+	return request<LocalesShown>('/api/studio/settings/locale', jsonOptions('PUT', { locale }));
+}

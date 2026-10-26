@@ -1,6 +1,7 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Blocks, FileText, Globe, House, Library, MessagesSquare, Plus, Puzzle, Search, Settings2, SquarePen, Table2, Trash2, type LucideIcon } from 'lucide-react';
+import { Blocks, FileText, Globe, House, Languages, Library, MessagesSquare, Plus, Puzzle, Search, Settings2, SquarePen, Table2, Trash2, type LucideIcon } from 'lucide-react';
 
+import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Button } from '@studio/ui/button';
 import { Kbd } from '@studio/ui/kbd';
@@ -127,6 +128,9 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				</Item>
 				<Item id="open-ai-settings" icon={Settings2} onClick={act.openAiSettings}>
 					AI 设置
+				</Item>
+				<Item id="open-locale" icon={Languages} onClick={act.openLocale}>
+					{t('语言')}
 				</Item>
 			</div>
 		</>

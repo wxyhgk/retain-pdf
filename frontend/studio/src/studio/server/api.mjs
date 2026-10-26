@@ -1,4 +1,5 @@
 import { pipeline } from 'node:stream/promises';
+import { inRequestLocale } from '@blog/i18n/server.mjs';
 import { StudioPathError } from '../../articles/bundle-paths.mjs';
 
 /**
@@ -61,6 +62,12 @@ export class StudioApi {
 	async handle(request, response) {
 		const raw = (request.url ?? '/').split('?', 1)[0];
 		if (!raw.startsWith('/api/studio/')) return false;
+		// What is said back (errors, notes) in the page's language.
+		await inRequestLocale(request, () => this.#answer(request, response, raw));
+		return true;
+	}
+
+	async #answer(request, response, raw) {
 		const remoteAddress = request.socket.remoteAddress ?? '';
 		const isLoopback = remoteAddress === '::1' || remoteAddress === '127.0.0.1' || remoteAddress.startsWith('::ffff:127.');
 		try {
@@ -88,7 +95,6 @@ export class StudioApi {
 			const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
 			sendJson(response, status, { error: message });
 		}
-		return true;
 	}
 
 	#match(method, path) {

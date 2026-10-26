@@ -44,6 +44,7 @@ export type ShellActions = {
 	openTrash(): void;
 	openPlugins(): void;
 	openAiSettings(): void;
+	openLocale(): void;
 	pageMenu(anchor: HTMLElement): void;
 	chooseTab(key: string): void;
 	togglePanel(): void;
@@ -89,6 +90,7 @@ export const ActionsContext = createContext<ShellActions>({
 	openTrash: nothing,
 	openPlugins: nothing,
 	openAiSettings: nothing,
+	openLocale: nothing,
 	pageMenu: nothing,
 	chooseTab: nothing,
 	togglePanel: nothing,

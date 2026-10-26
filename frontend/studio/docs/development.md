@@ -37,6 +37,7 @@ packages/             博客和 Studio 共用的包（各有 README）
   compute/            ```job 计算块（xtb、CREST）
   office/             在网页里看 Word、PowerPoint、Excel
   kernel/             插件内核
+  i18n/               Studio 的多语言：t('中文原文')，各语言的翻译表在 locales/
   ui/                 共用的页面部件
 plugins/              插件：计算任务、分子、书签……（见 plugins/README.md）
 bin/                  studio 命令和 MCP 服务
@@ -60,12 +61,22 @@ Studio 用到了只有 fork 里才有的扩展，`src/studio/editor/milkdown-for
 
 ## Studio 的外壳
 
-左栏、顶栏和右栏的标签是 React 19 画的，用 Tailwind 4 和 [shadcn/ui](https://ui.shadcn.com) 的组件，代码在 `src/studio/shell/`。编辑器、页面树、文件、终端、AI 面板还是原来的写法，直接操作 DOM。这三样只在 `astro dev` 里加载（`astro.config.mjs` 的 `studioPage`），构建的博客里没有。
+左栏、顶栏和右栏的标签是 React 19 画的，用 Tailwind 4 和 [shadcn/ui](https://ui.shadcn.com) 的组件，代码在 `src/studio/shell/`；弹窗、右键菜单、AI 面板、页头和页面树也是。编辑器、文件面板、资料库、终端还是原来的写法，直接操作 DOM。这三样只在 `astro dev` 里加载（`astro.config.mjs` 的 `studioPage`），构建的博客里没有。
 
 - **两边怎么说话**：外壳显示什么，看 `shell/shell-state.ts` 里的状态，别的部分用 `shell.set({...})` 改它（比如 `shell/top-bar.ts` 设保存状态）。外壳上的按钮调用 `main.ts` 交给 `mountShell` 的那些函数。
 - **外壳里的「宿主」元素**：React 画出元素，内容由原来的代码填，比如页面树 `#article-list`、插件命令 `#plugin-commands`。这种元素要加 `data-host`，React 从不往里面画。元素的 id 不变，原来的代码和测试照样能找到。
 - **样式只管外壳**：Tailwind 的工具类和重置样式只作用在 `[data-ui]` 里面，`[data-host]` 里面除外（`shell/shell.css` 用 `@scope`）；编辑器和文章的 CSS 不受影响。颜色用 `global.css` 的黑白灰，暗色跟着 `html[data-theme='dark']` 切换。
 - **加 shadcn 组件**：`npx shadcn@latest add dialog`，组件放进 `src/studio/ui/`。CLI 认不出 `@studio/lib/utils` 这个别名，会去装一个叫 `cn` 的 npm 包：装完卸掉这个包，再把组件里的 `from "cn"` 改成 `from "@studio/lib/utils"`。弹出层（Dialog、菜单）要放进带 `data-ui` 的容器里，否则没有样式。
+
+## 多语言
+
+Studio 的界面、提示和服务器返回给界面的话，都可以换成别的语言。语言在左栏「语言」里选，默认跟随系统，存在本机的 `.studio-settings.json`。现在只有中文一种，架子已经搭好。
+
+- **写法**：代码里直接写中文，交给 `t()`：`t('已移动到 {path}', { path })`（`@blog/i18n/index.mjs`）。参数用 `{名字}`，不要用模板字符串拼。中文就是原文，不需要翻译表；别的语言是 `packages/i18n/locales/<语言>.json`，从中文原文对到译文，在 `locales/index.mjs` 里登记。表里没有的句子照样显示中文。
+- **不要翻译的中文**：写进文章的内容（标题、图注、参考文献）、匹配用的正则、给 AI 的提示词。在这一行加注释 `i18n-ignore`。
+- **页面**：服务器按设置（或浏览器的语言）定下语言，写在 `<html lang data-studio-locale>` 上；`main.ts` 第一个导入 `locale.ts` 设好语言，后面模块里的文字才会用这个语言。页面每个请求都带一个 `studio-locale` cookie。
+- **服务器**：`api.mjs` 在请求自己的语言里处理它（`@blog/i18n/server.mjs`，AsyncLocalStorage），所以 `t()` 要在处理请求时调用，不要在模块顶层先算好。
+- **检查**：`packages/i18n/test/i18n.test.ts` 的 `DONE` 列出已经改完的部分，这些文件里不能再有没交给 `t()` 的中文；每改完一块就加进去。
 
 ## 命令
 
@@ -78,6 +89,7 @@ Studio 用到了只有 fork 里才有的扩展，`src/studio/editor/milkdown-for
 | `npm run test:server` | Studio 后端的测试 |
 | `npm run test:terminal` | 终端后台程序的测试（Rust） |
 | `npm run studio -- <命令>` | 页面操作的命令行（见 docs/ai-tools.md） |
+| `npm run i18n:strings` | 列出要翻译的文字；`-- --left` 列出还没交给 `t()` 的中文，`-- --locale en` 更新英文的翻译表 |
 
 ## 浏览器测试
 

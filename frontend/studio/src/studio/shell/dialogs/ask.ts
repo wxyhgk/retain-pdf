@@ -1,4 +1,5 @@
-import { aiSettings, listAgents, type AiSettingsShown } from '../../api/client';
+import { t } from '@blog/i18n/index.mjs';
+import { aiSettings, listAgents, localeSettings, type AiSettingsShown } from '../../api/client';
 import { showToast } from '../../common/toast';
 import type { ArticleIssue } from '../../types';
 import type { CiteHost } from './CiteDialog';
@@ -113,4 +114,13 @@ export function createCitePicker(host: CiteHost) {
 			});
 		},
 	};
+}
+
+/** 语言 (shell/dialogs/LocaleDialog.tsx), opened with what is chosen and what there is. */
+export async function openLocale(): Promise<void> {
+	try {
+		openDialog('locale', { shown: await localeSettings() });
+	} catch (error) {
+		showToast(error instanceof Error ? error.message : t('读不到语言设置'), true);
+	}
 }

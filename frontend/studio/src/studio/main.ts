@@ -1,5 +1,6 @@
 // The Studio page: its parts, and how they talk to each other. Each part
 // keeps to its own corner of the page; the open article lives in the session.
+import './locale';
 import {
 	articleFileHead,
 	articleFileUrl,
@@ -80,7 +81,7 @@ import { createTopBar } from './shell/top-bar';
 import { mountShell } from './shell/mount';
 import { shell as shellState, type View } from './shell/shell-state';
 import { openDialog } from './shell/dialogs/Dialogs';
-import { aiReady, confirmPublish, createCitePicker, createQuickFind, openAgents, openAiSettings } from './shell/dialogs/ask';
+import { aiReady, confirmPublish, createCitePicker, createQuickFind, openAgents, openAiSettings, openLocale } from './shell/dialogs/ask';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 // The left column, the bar above and the right column's tabs, drawn by React (shell/), before anything looks in them.
@@ -102,6 +103,7 @@ mountShell(shell, {
 		}),
 	openPlugins: () => openDialog('plugins', { host: { info: studioPluginInfo, setEnabled: setStudioPluginEnabled } }),
 	openAiSettings: () => void openAiSettings(),
+	openLocale: () => void openLocale(),
 	pageMenu: (anchor) => showPageMenu(anchor),
 	chooseTab: (tab) => sidePanel.choose(tab),
 	togglePanel: () => sidePanel.toggle(),

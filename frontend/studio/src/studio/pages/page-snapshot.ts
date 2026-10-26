@@ -1,3 +1,4 @@
+import { locale } from '@blog/i18n/index.mjs';
 import { pageVersion } from '../api/client';
 
 /** Where the picture is kept; StudioPage.astro reads it before anything else loads. */
@@ -46,7 +47,7 @@ export function createPageSnapshot(shell: HTMLElement, host: PageSnapshotHost) {
 			const slug = host.slug();
 			const html = known && known.slug === slug && host.settled() ? picture(shell) : '';
 			if (!html || html.length > MAX_LENGTH) localStorage.removeItem(STORAGE_KEY);
-			else localStorage.setItem(STORAGE_KEY, JSON.stringify({ slug, version: known!.version, html }));
+			else localStorage.setItem(STORAGE_KEY, JSON.stringify({ slug, version: known!.version, locale: locale(), html }));
 		} catch {
 			// Storage refused or full: the next visit loads as it did before.
 		}

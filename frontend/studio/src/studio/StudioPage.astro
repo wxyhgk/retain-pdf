@@ -3,6 +3,9 @@ import BaseHead from '../components/BaseHead.astro';
 import { SITE_TITLE } from '../consts';
 import { ArticleRepository } from './server/articles/article-repository.mjs';
 import { pageVersion, studioBlogRoot } from './server/articles/page-version.mjs';
+import { LocaleSettings, studioSettingsFile } from './server/locale-settings.mjs';
+import { setLocale } from '@blog/i18n/index.mjs';
+import { askedLocales } from '@blog/i18n/server.mjs';
 import { SideTabs } from './shell/SideTabs';
 import { Sidebar } from './shell/Sidebar';
 import { TopBar } from './shell/TopBar';
@@ -34,6 +37,9 @@ import katexAms from 'katex/dist/fonts/KaTeX_AMS-Regular.woff2?url';
 
 // The mark of what the page shows with each article open (page-snapshot.ts); the
 // address, which picks the article, is the browser's to read.
+// The language the Studio speaks (its setting, or the browser's): what the server draws is in it, and the page goes on in it.
+const spoken = await new LocaleSettings(studioSettingsFile(process.cwd())).spoken(askedLocales(Astro.request.headers.get('accept-language')));
+setLocale(spoken);
 const blogRoot = studioBlogRoot(process.cwd());
 const articles = await new ArticleRepository(blogRoot).list().catch(() => []);
 // The page header as it is before an article is shown (its fields waiting); the page's script draws it from then on.
@@ -42,7 +48,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 ---
 
 <!doctype html>
-<html lang="zh-CN">
+<html lang={spoken} data-studio-locale={spoken}>
 	<head>
 		<BaseHead title={`Studio · ${SITE_TITLE}`} description="本地文章工作台" />
 		{[katexMain, katexMath, katexSize1, katexSize2, katexAms].map((font) => <link rel="preload" href={font} as="font" type="font/woff2" crossorigin />)}
@@ -142,7 +148,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				const address = new URLSearchParams(window.location.search);
 				const slug = Object.hasOwn(pages.versions, address.get('article')) ? address.get('article') : pages.first;
 				const kept = JSON.parse(localStorage.getItem('studio.snapshot') ?? 'null');
-				if (slug && !address.has('drive') && !address.has('pages') && kept?.slug === slug && kept.version === pages.versions[slug] && !navigator.webdriver) {
+				if (slug && !address.has('drive') && !address.has('pages') && kept?.slug === slug && kept.version === pages.versions[slug] && kept.locale === document.documentElement.lang && !navigator.webdriver) {
 					const template = document.createElement('template');
 					template.innerHTML = kept.html;
 					const picture = template.content.firstElementChild;
@@ -154,7 +160,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 					setTimeout(() => picture.remove(), 10000);
 				}
 			} catch {
-				// Storage refused, or a picture from another version of the page: it loads as it is.
+				// Storage refused, or a picture from another version of the page (or in another language): it loads as it is.
 			}
 		</script>
 

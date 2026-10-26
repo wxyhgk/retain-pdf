@@ -4,6 +4,8 @@ import { AiSettingsDialog, type AiSettingsAsk } from './AiSettingsDialog';
 import { CiteDialog, type CiteAsk } from './CiteDialog';
 import { DeletePageDialog, PublishCheckDialog, type DeletePageAsk, type PublishCheckAsk } from './AskDialogs';
 import { HistoryDialog, type HistoryHost } from './HistoryDialog';
+import { LocaleDialog } from './LocaleDialog';
+import type { LocalesShown } from '../../api/client';
 import { PluginsDialog, type PluginsHost } from './PluginsDialog';
 import { QuickFindDialog, type QuickFindAsk } from './QuickFindDialog';
 import { TrashDialog, type TrashHost } from './TrashDialog';
@@ -19,6 +21,7 @@ type Asks = {
 	deletePage: DeletePageAsk;
 	finder: QuickFindAsk;
 	cite: CiteAsk;
+	locale: { shown: LocalesShown };
 };
 
 /** The dialogs open: one at a time of each kind. */
@@ -45,6 +48,7 @@ export function Dialogs() {
 			{asks.deletePage && <DeletePageDialog {...asks.deletePage} onClose={closer('deletePage')} />}
 			{/* Asked again while open: a new one, empty. */}
 			{asks.finder && <QuickFindDialog key={asks.finder.round} ask={asks.finder} onClose={closer('finder')} />}
+			{asks.locale && <LocaleDialog {...asks.locale} onClose={closer('locale')} />}
 			{asks.cite && <CiteDialog key={asks.cite.round} ask={asks.cite} onClose={closer('cite')} />}
 		</>
 	);
