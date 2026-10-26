@@ -1,7 +1,7 @@
 import type { CommandContext, StudioCommand, StudioPanel } from '@blog/kernel/ui.ts';
 
-import { pluginCommands, pluginPanels } from '../plugins';
-import { showToast } from './toast';
+import { pluginCommands, pluginPanels } from './plugins';
+import { showToast } from './common/toast';
 
 /**
  * Where the plugins' tabs and commands (`ctx.panels`, `ctx.commands`) show

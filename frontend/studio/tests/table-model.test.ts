@@ -8,7 +8,7 @@ import {
 	matchArticles,
 	readSettings,
 	sortArticles,
-} from '../src/studio/workspace/table-model.ts';
+} from '../src/studio/pages/table-model.ts';
 import type { ArticleSummary } from '../src/studio/types.ts';
 
 const articles: ArticleSummary[] = [

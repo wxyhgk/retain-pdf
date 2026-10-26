@@ -3,7 +3,7 @@ import { articleBacklinks, commitArticle, deleteArticle, duplicateArticle, gitSt
 import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';
 import { cleanSlug, freeSlug } from './page-names.ts';
-import { showToast } from './toast.ts';
+import { showToast } from '../common/toast.ts';
 import { openDialog } from '../shell/dialogs/Dialogs';
 import type { DeletePageChoice } from '../shell/dialogs/AskDialogs';
 

@@ -2,7 +2,7 @@ import { Context, pluginStatus, syncPlugins, type LoadedPlugin, type PluginStatu
 import { provideStudio, studioBlocks, studioPluginList, type StudioHost } from '@blog/kernel/studio.ts';
 import type { Commands, Panels, Recognizers } from '@blog/kernel/ui.ts';
 
-import type { FileBlock } from './article-files.ts';
+import type { FileBlock } from './files/article-files.ts';
 import { pluginModules } from './plugin-modules.ts';
 
 /**

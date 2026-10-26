@@ -1,4 +1,4 @@
-import { showContextMenu } from './context-menu.ts';
+import { showContextMenu } from '../common/context-menu.ts';
 import type { ArticleProperties } from '../types.ts';
 
 /** What the page header needs from the Studio around it. */

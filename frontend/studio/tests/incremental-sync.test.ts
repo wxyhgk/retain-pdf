@@ -97,7 +97,7 @@ test('a body cut a part at a time gives the blocks of cutting it whole, and each
 
 test('the files an article names, read a block at a time, are those read from the whole, as it is edited', async () => {
 	const { referencedPaths } = await import('@blog/markdown/articles/article-references.mjs');
-	const { referencedFilesReader } = await import('../src/studio/workspace/referenced-files.ts');
+	const { referencedFilesReader } = await import('../src/studio/files/referenced-files.ts');
 	const next = random(13);
 	const names = ['\n\n![图](img/a.png)\n\n', '[x](assets/b.pdf)', '\n\n[r]: ./c.txt\n\n', '<img src="img/d.png">', '\n\n```xyz\n@file ./assets/e.xyz\n```\n\n', '```', 'x'];
 	for (const body of articles) {

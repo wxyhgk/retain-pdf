@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 import { searchArticles, searchDrive } from '../../api/client';
 import type { ArticleSummary } from '../../types';
-import { filterArticles } from '../../workspace/article-list';
+import { filterArticles } from '../../pages/article-list';
 import { Finder, type FinderRow } from './Finder';
 
 /** What the quick find needs from the Studio around it. */

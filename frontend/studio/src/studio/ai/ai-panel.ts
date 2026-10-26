@@ -14,11 +14,11 @@ import {
 	type ConversationItem,
 	type ConversationOption,
 } from '../api/client';
-import { STUDIO_MARKDOWN_DRAG_TYPE } from '../article-files';
+import { STUDIO_MARKDOWN_DRAG_TYPE } from '../files/article-files';
 import { observePluginBlocks } from '../plugins';
 import { isPicture, pictureUrl, renderAiMarkdown } from './ai-markdown';
 import { createModelsSheet } from './ai-models-sheet';
-import { showContextMenu, type MenuItem } from './context-menu';
+import { showContextMenu, type MenuItem } from '../common/context-menu';
 
 /** What the AI panel needs of the Studio around it. */
 export type AiPanelHost = {

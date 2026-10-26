@@ -2,7 +2,7 @@ import { mkdir, readFile, readdir, rename, stat } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
 import { articleBundlePaths, resolveInside } from '../../articles/bundle-paths.mjs';
-import { autoSlug, freeSlug } from '../workspace/page-names.ts';
+import { autoSlug, freeSlug } from '../pages/page-names.ts';
 import { fromPaddleMarkdown } from './ocr-markdown.mjs';
 import { runProgram } from './tasks.mjs';
 

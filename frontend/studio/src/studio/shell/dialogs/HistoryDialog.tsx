@@ -3,7 +3,7 @@ import { Fragment, useEffect, useState } from 'react';
 import { Button } from '@studio/ui/button';
 import { listVersions, readVersion } from '../../api/client';
 import type { HistoryEntry, HistoryReason } from '../../types';
-import { timeAgo } from '../../workspace/time-ago';
+import { timeAgo } from '../../common/time-ago';
 import { errorText, Frame, Status } from './Frame';
 import { emptyLook, listLook, Row } from './TrashDialog';
 

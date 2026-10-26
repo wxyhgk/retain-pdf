@@ -24,7 +24,7 @@ import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
 import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
-import { linkPath } from '../article-files';
+import { linkPath } from '../files/article-files';
 import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
 import { filesNamed, headingSection } from './split-section';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
@@ -54,7 +54,7 @@ import { SELECTION_END, SELECTION_START } from '../document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { columnsPlugins } from './columns-block';
 import { pluginBlocks, pluginSlashCommands } from '../plugins';
-import { runCommand } from '../workspace/plugin-ui';
+import { runCommand } from '../plugin-ui';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {

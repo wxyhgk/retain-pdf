@@ -13,7 +13,7 @@ import {
 	type SortKey,
 	type TableSettings,
 } from './table-model';
-import { timeAgo } from './time-ago';
+import { timeAgo } from '../common/time-ago';
 
 const STORAGE_KEY = 'studio.article-table';
 

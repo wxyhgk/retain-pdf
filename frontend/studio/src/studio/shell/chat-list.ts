@@ -1,6 +1,6 @@
 import { deleteConversation, listConversations, type Conversation } from '../api/client';
-import { shell } from '../shell/shell-state';
-import { showContextMenu } from './context-menu';
+import { shell } from './shell-state';
+import { showContextMenu } from '../common/context-menu';
 
 /** What the left column's 对话 needs of the Studio around it. */
 export type ChatListHost = {

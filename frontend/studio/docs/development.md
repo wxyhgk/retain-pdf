@@ -11,9 +11,18 @@ apps/                 小程序：每个一个文件夹（app.json + app.html）
 src/
   pages/ layouts/ components/   博客的页面
   articles/           文章的属性规则、页面树（parent、order）等，博客和 Studio 共用
-  studio/             Studio 的前端（编辑器、侧边栏、面板）
-    shell/            Studio 的外壳（左栏、顶栏、右栏的标签），React 画的（见下面「Studio 的外壳」）
-    ui/               shadcn/ui 的组件（按钮……），外壳用
+  studio/             Studio 的前端；main.ts 把各部分接起来，plugins.ts、plugin-ui.ts 接插件
+    shell/            外壳（左栏、顶栏、右栏的标签），React 画的（见下面「Studio 的外壳」）
+      dialogs/        弹窗和 ⌘K 搜索框；ask.ts 是别处打开它们用的
+    ui/ lib/          shadcn/ui 的组件和 cn()，外壳用
+    editor/           编辑器（Milkdown）和它的块
+    pages/            页面：页面树、页面操作、全部文章、页头属性、反链、目录、审阅条、页面快照
+    ai/               AI 面板、AI 回答的显示、模型选择、编辑器里的 AI
+    files/            文章的文件、资料库、文件面板
+    panels/           右栏、终端、后台任务、小程序
+    common/           提示条、右键菜单、时间、磁盘上的改动
+    state/            打开的文章：保存、自动保存、审阅
+    document/ api/    Markdown 文档的读写；和后端说话
     server/           Studio 的后端：读写文章、回收站、历史版本、git、资料库、终端
     ops/              给大模型用的页面操作（见 docs/ai-tools.md）
   plugins/studio-dev.mjs   把 Studio 挂到 astro dev 上：组装后端，接口在 studio/server/routes/
@@ -48,7 +57,7 @@ Studio 用到了只有 fork 里才有的扩展，`src/studio/editor/milkdown-for
 
 左栏、顶栏和右栏的标签是 React 19 画的，用 Tailwind 4 和 [shadcn/ui](https://ui.shadcn.com) 的组件，代码在 `src/studio/shell/`。编辑器、页面树、文件、终端、AI 面板还是原来的写法，直接操作 DOM。这三样只在 `astro dev` 里加载（`astro.config.mjs` 的 `studioPage`），构建的博客里没有。
 
-- **两边怎么说话**：外壳显示什么，看 `shell/shell-state.ts` 里的状态，别的部分用 `shell.set({...})` 改它（比如 `workspace/top-bar.ts` 设保存状态）。外壳上的按钮调用 `main.ts` 交给 `mountShell` 的那些函数。
+- **两边怎么说话**：外壳显示什么，看 `shell/shell-state.ts` 里的状态，别的部分用 `shell.set({...})` 改它（比如 `shell/top-bar.ts` 设保存状态）。外壳上的按钮调用 `main.ts` 交给 `mountShell` 的那些函数。
 - **外壳里的「宿主」元素**：React 画出元素，内容由原来的代码填，比如页面树 `#article-list`、插件命令 `#plugin-commands`。这种元素要加 `data-host`，React 从不往里面画。元素的 id 不变，原来的代码和测试照样能找到。
 - **样式只管外壳**：Tailwind 的工具类和重置样式只作用在 `[data-ui]` 里面，`[data-host]` 里面除外（`shell/shell.css` 用 `@scope`）；编辑器和文章的 CSS 不受影响。颜色用 `global.css` 的黑白灰，暗色跟着 `html[data-theme='dark']` 切换。
 - **加 shadcn 组件**：`npx shadcn@latest add dialog`，组件放进 `src/studio/ui/`。CLI 认不出 `@studio/lib/utils` 这个别名，会去装一个叫 `cn` 的 npm 包：装完卸掉这个包，再把组件里的 `from "cn"` 改成 `from "@studio/lib/utils"`。弹出层（Dialog、菜单）要放进带 `data-ui` 的容器里，否则没有样式。

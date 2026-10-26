@@ -11,15 +11,15 @@ import {
 import { movedPath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { officeKind, tableSource } from '@blog/office/kinds.mjs';
-import { markdownTable, parseDelimited } from '../table-text';
+import { markdownTable, parseDelimited } from './table-text';
 import { trackWrite } from '../state/writes';
 import type { ArticleFileEntry } from '../types';
-import { showContextMenu, type MenuItem } from './context-menu';
-import { fileBlock, fileName, isImage, markdownReference, parentPath, readMarkdownReference, STUDIO_FILE_DRAG_TYPE } from '../article-files';
-import { droppedItems, pickedItems, type UploadItem } from '../dropped-files';
+import { showContextMenu, type MenuItem } from '../common/context-menu';
+import { fileBlock, fileName, isImage, markdownReference, parentPath, readMarkdownReference, STUDIO_FILE_DRAG_TYPE } from './article-files';
+import { droppedItems, pickedItems, type UploadItem } from './dropped-files';
 import { buildFileTree, formatSize, isUnused, referenceCount, uploadFolderFor, visibleNodes, type FileNode } from './file-tree';
 import { referencedFilesReader } from './referenced-files';
-import { showToast } from './toast';
+import { showToast } from '../common/toast';
 
 /** What the file panel needs from the editor around it. */
 export type FilePanelHost = {

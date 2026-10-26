@@ -11,7 +11,7 @@
 | `page.ts` | 博客页面：`ctx.page`（文章名、文件地址、存的块视角）、`startPage` |
 | `studio.ts` | Studio：`ctx.studio`、`ctx.molecules`（分子编辑器接缝）、`ctx.sheetTabs`（弹窗页签插槽）、事件；`provideStudio`（各服务，也包括 `theme.ts`、`ui.ts` 的）、`studioPluginList` |
 | `theme.ts` | 外观：`ctx.theme`（设计变量 `DESIGN_TOKENS`，只认清单里的名字）、`ctx.styles`（插件自己的 CSS） |
-| `ui.ts` | Studio 界面：`ctx.panels`（右栏页签）、`ctx.commands`（命令：快捷键、斜杠菜单、⋯ 菜单、左栏；`RESERVED_KEYS` 是不给插件的键）。Studio 在 `src/studio/workspace/plugin-ui.ts` 和 `side-panel.ts` 画它们 |
+| `ui.ts` | Studio 界面：`ctx.panels`（右栏页签）、`ctx.commands`（命令：快捷键、斜杠菜单、⋯ 菜单、左栏；`RESERVED_KEYS` 是不给插件的键）。Studio 在 `src/studio/plugin-ui.ts` 和 `panels/side-panel.ts` 画它们 |
 | `server.d.mts` | 开发服务器上的 `ctx.server` 是什么 |
 | `testing.mjs` | 测试用：`buildBlocks(...插件)` |
 

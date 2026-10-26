@@ -17,7 +17,7 @@
 |---|---|---|---|
 | 1 | ~~在 Studio 里「提交」文章会把 `ai/` 一起提交（`git add -A -- blog/<slug>`，`.gitignore` 只排除了 `ai/history/`）~~ 已修 27df566 | `src/studio/server/article-git.mjs:73` | 仓库 `wxyhgk.github.io` 是公开的：`ai/brief.md`，以及 ⌥↩ 时 AI 写的 `ai/work/` 脚本、数据、记录，推送后都公开 |
 | 2 | ~~小程序的 `studio.fetch` 不限制目标地址，能访问 `127.0.0.1:4321` 上 Studio 自己的接口。服务器发出的请求没有 Origin，所以安全检查直接放行~~ 已修 27df566 | `src/studio/server/mini-apps.mjs`（`proxyFetch`） | 一个只有 `net` 权限的小程序，可以先改「AI 助手」的命令，再触发 ⌥↩，从而在本机执行任意命令；也能访问本机别的服务 |
-| 3 | ~~小程序的桥只认「这个 iframe」，不管里面现在是哪个页面~~ 已修 27df566 | `src/studio/workspace/mini-apps.ts` | 小程序里点开的外部网页，也能用这个小程序的权限调桥 |
+| 3 | ~~小程序的桥只认「这个 iframe」，不管里面现在是哪个页面~~ 已修 27df566 | `src/studio/panels/mini-apps.ts` | 小程序里点开的外部网页，也能用这个小程序的权限调桥 |
 | 4 | ~~`/studio-apps/…` 和 Studio 同一个来源，又没有加沙盒的 CSP~~ 已修 27df566 | `src/plugins/studio-dev.mjs`（小程序文件的路由） | 任何网站 `window.open` 这个地址，小程序代码就以 Studio 的身份运行，能调用全部接口 |
 | 5 | ~~来源检查放行任何端口的 `http://localhost`~~ 已修 27df566 | `studio-dev.mjs` 的安全检查 | 本机别的开发服务器上的页面，也能读、写 Studio 接口（终端、AI 助手、⌥↩ 都在其中） |
 | 6 | ~~`.studio-settings.json` 有五个模块各自读、改、写，没有统一的锁；AI 助手保存时还把文件权限从 600 改成了 644~~ 已修 27df566 | `agent-settings.mjs`、`ai-settings.mjs`、`drive.mjs`、`compute-hosts.mjs`、`plugin-settings.mjs` | 存着 API key 的文件变成谁都能读；两处同时保存，有一方的设置会丢（资料库路径、AI key、计算服务器） |
@@ -60,7 +60,7 @@
 3. 前后端的接口约定靠手写，已经对不上了：多余的旧字段、`retitled` 没有被用上、`HistoryReason` 写了两份；后台任务的类型靠字符串，页面标题靠从任务名里去前缀拿。
 4. ~~Markdown 的语法配置散在六处，配置还不一样。比如反向链接没开 GFM，正文里裸写的 `https://…/blog/x/` 不会被算作反向链接，改名时也不会跟着改。~~ 已修 c4cac08（编辑器是 Milkdown 自己的解析器，用同样的 GFM 选项）
 5. 服务器和 CLI 各自组装同一套服务；「转成子页面」有两种实现，CLI 版遇到标题里有 `]` 会生成坏链接；新页面的文件夹名在页面里有四处各自生成。
-6. 越层引用：CLI 和服务端引用了 `workspace/page-names.ts`、`editor/split-section.ts`；编辑器引用了全局的插件注册表。
+6. 越层引用：CLI 和服务端引用了 `pages/page-names.ts`、`editor/split-section.ts`；编辑器引用了全局的插件注册表。
 7. 已有常量没被用上：`/blog/${slug}/` 硬写了 7 处、`img|assets` 硬写了 6 处；插件快捷键的保留表漏了 ⌥↩。
 8. `main.ts` 混着六类事，还依赖声明的先后顺序。拆法：页面的新建和打开、AI 相关的动作、文献库、插件宿主、视图切换。
 9. `inline-math.ts`（1317 行）可以机械地拆成几块；它自己又写了一套公式切分规则，和 remark-math 不一致。

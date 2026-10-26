@@ -4,7 +4,7 @@ import { Button } from '@studio/ui/button';
 import { listTrash, purgeTrash, restoreArticle, restoreArticleFile } from '../../api/client';
 import { trackWrite } from '../../state/writes';
 import type { TrashEntry } from '../../types';
-import { timeAgo } from '../../workspace/time-ago';
+import { timeAgo } from '../../common/time-ago';
 import { errorText, Frame, Status } from './Frame';
 
 /** What the trash needs from the Studio around it. */

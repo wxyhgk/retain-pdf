@@ -39,52 +39,48 @@ import { macrosFor } from '../math-macros.mjs';
 import { ArticleSession, type SaveState } from './state/article-session';
 import { trackWrite } from './state/writes';
 import type { ArticlePayload, ArticleSummary } from './types';
-import { createArticleActions, relinkedNote } from './workspace/article-actions';
-import { createArticleList } from './workspace/article-list';
-import { showContextMenu } from './workspace/context-menu';
-import { watchDisk } from './workspace/disk-events';
+import { createArticleActions, relinkedNote } from './pages/article-actions';
+import { createArticleList } from './pages/article-list';
+import { showContextMenu } from './common/context-menu';
+import { watchDisk } from './common/disk-events';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { BIBLIOGRAPHY_PATH, parseBibtex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
-import { createCitePicker } from './workspace/cite-picker';
 import { SELECTION_END, SELECTION_START, sourceLinesOf } from './document/source-lines';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { officeFilesChanged } from '@blog/office/card.ts';
 import { firstSheetRows } from '@blog/office/render.ts';
 import { openOfficeFile } from '@blog/office/viewer.ts';
-import { createFilePanel } from './workspace/file-panel';
-import { isImage, readMarkdownReference, setFileBlocks } from './article-files';
-import { createDriveBrowser } from './workspace/drive-browser';
+import { createFilePanel } from './files/file-panel';
+import { isImage, readMarkdownReference, setFileBlocks } from './files/article-files';
+import { createDriveBrowser } from './files/drive-browser';
 import { officeKind } from '@blog/office/kinds.mjs';
-import { uploadFolderFor } from './workspace/file-tree';
-import { autoSlug, freeSlug, isAutoSlug, readableSlug } from './workspace/page-names';
+import { uploadFolderFor } from './files/file-tree';
+import { autoSlug, freeSlug, isAutoSlug, readableSlug } from './pages/page-names';
 import { blockForFile, fileHeadWanted, pluginCommands, pluginRecognizers, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
 import { Recognizers, type Recognizer } from '@blog/kernel/ui.ts';
-import { aiReady, openAiSettings } from './workspace/ai-settings-dialog';
-import { runCommand, showPluginUi } from './workspace/plugin-ui';
-import { createOutline } from './workspace/outline';
+import { runCommand, showPluginUi } from './plugin-ui';
+import { createOutline } from './pages/outline';
 import { keepFormulasFitted } from '@blog/science/browser/fit-formulas.ts';
-import { createPageSnapshot } from './workspace/page-snapshot';
-import { anchorScroll } from './workspace/scroll-anchor';
-import { createBacklinks } from './workspace/backlinks';
-import { createArticleTable } from './workspace/article-table';
-import { createPageHeader } from './workspace/page-header';
-import { confirmPublish } from './workspace/publish-check';
-import { createQuickFind } from './workspace/quick-find';
-import { createReviewBar } from './workspace/review-bar';
-import { createSidePanel } from './workspace/side-panel';
-import { chosenAI, createAiPanel } from './workspace/ai-panel';
-import { createChatList } from './workspace/chat-list';
-import { createInlineAi } from './workspace/inline-ai';
-import { createTerminalPane } from './workspace/terminal';
-import { openAgents } from './workspace/agents-dialog';
-import { createTaskTray } from './workspace/task-tray';
-import { createMiniApps } from './workspace/mini-apps';
-import { showToast } from './workspace/toast';
+import { createPageSnapshot } from './pages/page-snapshot';
+import { anchorScroll } from './pages/scroll-anchor';
+import { createBacklinks } from './pages/backlinks';
+import { createArticleTable } from './pages/article-table';
+import { createPageHeader } from './pages/page-header';
+import { createReviewBar } from './pages/review-bar';
+import { createSidePanel } from './panels/side-panel';
+import { chosenAI, createAiPanel } from './ai/ai-panel';
+import { createChatList } from './shell/chat-list';
+import { createInlineAi } from './ai/inline-ai';
+import { createTerminalPane } from './panels/terminal';
+import { createTaskTray } from './panels/task-tray';
+import { createMiniApps } from './panels/mini-apps';
+import { showToast } from './common/toast';
 import type { EditorView } from '@milkdown/prose/view';
-import { createTopBar } from './workspace/top-bar';
+import { createTopBar } from './shell/top-bar';
 import { mountShell } from './shell/mount';
 import { shell as shellState, type View } from './shell/shell-state';
 import { openDialog } from './shell/dialogs/Dialogs';
+import { aiReady, confirmPublish, createCitePicker, createQuickFind, openAgents, openAiSettings } from './shell/dialogs/ask';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 // The left column, the bar above and the right column's tabs, drawn by React (shell/), before anything looks in them.
@@ -324,7 +320,7 @@ createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.quer
 });
 /** The blocks marked as an AI works on them (Alt+Enter), by the task it is: the mark's own name. */
 const instructing = new Map<string, string>();
-/** Tasks over before their mark was known (an AI quicker than the answer that started it). */
+/** Tasks over before their mark was known (an AI quicker than the answer that started it); PDFs read before their start was said. */
 const overEarly = new Set<string>();
 createTaskTray(shell.querySelector<HTMLElement>('#task-tray')!, {
 	ended(task) {
@@ -332,7 +328,7 @@ createTaskTray(shell.querySelector<HTMLElement>('#task-tray')!, {
 		if (mark) {
 			instructing.delete(task.id);
 			editor.unmarkInstructing(mark);
-		} else if (task.kind === 'instruction') overEarly.add(task.id);
+		} else if (task.kind === 'instruction' || task.kind === 'ocr') overEarly.add(task.id);
 		if (task.state === 'failed') showToast(`${task.title}：${task.error ?? '出错了'}`, true);
 		// A PDF read: its page, to open.
 		const page = task.kind === 'ocr' && task.state === 'done' ? (task.result as { page?: string } | null)?.page : undefined;
@@ -753,9 +749,10 @@ async function ocrPdf(path: string, view?: EditorView, pos?: number): Promise<vo
 	const slug = session.slug;
 	if (!slug) return;
 	try {
-		const { page } = await startOcr(slug, path);
+		const { task, page } = await startOcr(slug, path);
 		void articleList.load();
-		showToast(`正在用 PaddleOCR 识别 ${path}，结果写进子页面「${page.title}」`);
+		// Already read: what says so (with 打开) stays, not covered by this.
+		if (!overEarly.delete(task)) showToast(`正在用 PaddleOCR 识别 ${path}，结果写进子页面「${page.title}」`);
 		const at = view && pos !== undefined && !view.isDestroyed ? view.state.doc.nodeAt(pos) : null;
 		const link = view?.state.schema.marks.link;
 		// Still the line linking to the PDF: the page under it.

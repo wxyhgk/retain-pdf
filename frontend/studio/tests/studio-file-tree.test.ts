@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { referencedPaths } from '@blog/markdown/articles/article-references.mjs';
-import { markdownReference, readMarkdownReference, setFileBlocks } from '../src/studio/article-files.ts';
-import { subfolderOf } from '../src/studio/dropped-files.ts';
+import { markdownReference, readMarkdownReference, setFileBlocks } from '../src/studio/files/article-files.ts';
+import { subfolderOf } from '../src/studio/files/dropped-files.ts';
 import type { ArticleFileEntry } from '../src/studio/types.ts';
 import {
 	buildFileTree,
@@ -12,7 +12,7 @@ import {
 	referenceCount,
 	uploadFolderFor,
 	visibleNodes,
-} from '../src/studio/workspace/file-tree.ts';
+} from '../src/studio/files/file-tree.ts';
 
 const file = (path: string): ArticleFileEntry => ({ path, kind: 'file', size: 1, modified: 0 });
 const folder = (path: string, locked = false): ArticleFileEntry => ({ path, kind: 'directory', modified: 0, ...(locked ? { locked } : {}) });

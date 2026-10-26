@@ -6,8 +6,8 @@ import { Plugin, PluginKey, type EditorState } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
-import { DRIVE_DRAG_TYPE, fileName, readMarkdownReference, STUDIO_FILE_DRAG_TYPE, STUDIO_MARKDOWN_DRAG_TYPE } from '../article-files.ts';
-import { dropHasFolder } from '../dropped-files.ts';
+import { DRIVE_DRAG_TYPE, fileName, readMarkdownReference, STUDIO_FILE_DRAG_TYPE, STUDIO_MARKDOWN_DRAG_TYPE } from '../files/article-files.ts';
+import { dropHasFolder } from '../files/dropped-files.ts';
 
 /** What dropping files into the editor needs from the Studio around it. */
 export type ArticleFileDropHost = {

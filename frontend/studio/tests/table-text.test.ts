@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { markdownTable, parseDelimited } from '../src/studio/table-text.ts';
+import { markdownTable, parseDelimited } from '../src/studio/files/table-text.ts';
 
 test('CSV as rows: quotes, quoted commas and newlines, CRLF, empty rows at the end', () => {
 	assert.deepEqual(parseDelimited('﻿"能量","kcal/mol"\r\nRC2,-0.45\n"TS, 2",-0.21\n"a ""b""","x\ny"\n,\n\n'), [

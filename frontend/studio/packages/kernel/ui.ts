@@ -4,7 +4,7 @@ import { Context, Service } from './index.mjs';
  * The Studio's own places for plugins: a tab in the right column
  * (`ctx.panels`) and commands (`ctx.commands`) run from a shortcut, the
  * slash menu, the page's ⋯ menu or a button in the left column. Both are
- * lists the Studio draws (src/studio/workspace/plugin-ui.ts) and is told of
+ * lists the Studio draws (src/studio/plugin-ui.ts) and is told of
  * when they change; what a plugin registered goes with it.
  */
 

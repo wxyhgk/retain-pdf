@@ -1,5 +1,5 @@
 import { appFetch, appRun, articleFileUrl, getTask, listArticleFiles, listMiniApps, uploadArticleFile, type MiniApp } from '../api/client';
-import { showContextMenu, type MenuItem } from './context-menu';
+import { showContextMenu, type MenuItem } from '../common/context-menu';
 
 /** What the 小程序 may reach of the Studio around them, through their bridge (server/mini-apps.mjs). */
 export type MiniAppsHost = {

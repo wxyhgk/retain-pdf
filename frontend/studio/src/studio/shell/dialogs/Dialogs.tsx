@@ -24,7 +24,7 @@ type Asks = {
 /** The dialogs open: one at a time of each kind. */
 const open = createStore<{ [K in keyof Asks]?: Asks[K] }>({});
 
-/** Opens a dialog (the workspace's modules do: trash-view.ts…), with what it shows and whom it tells. */
+/** Opens a dialog (shell/dialogs/ask.ts and the rest of the Studio do), with what it shows and whom it tells. */
 export function openDialog<K extends keyof Asks>(kind: K, ask: Asks[K]): void {
 	open.set({ [kind]: ask });
 }

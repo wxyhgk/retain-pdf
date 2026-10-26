@@ -1,6 +1,6 @@
 import type { SaveState } from '../state/article-session.ts';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
-import { shell } from '../shell/shell-state.ts';
+import { shell } from './shell-state.ts';
 
 /** What the status line says, and the colour it says it in. */
 export function saveStateText(state: SaveState): { text: string; tone: 'saved' | 'dirty' | 'saving' | 'error' | '' } {

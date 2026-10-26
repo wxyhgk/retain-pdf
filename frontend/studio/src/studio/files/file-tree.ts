@@ -1,7 +1,7 @@
 import { findArticleReferences, movedPath } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { BIBLIOGRAPHY_PATH } from '@blog/markdown/references/bibtex.mjs';
-import { fileName, isImage, parentPath } from '../article-files.ts';
+import { fileName, isImage, parentPath } from './article-files.ts';
 import type { ArticleFileEntry } from '../types.ts';
 
 /** One row of the file panel's tree. */

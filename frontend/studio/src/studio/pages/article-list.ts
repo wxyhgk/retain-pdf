@@ -1,8 +1,8 @@
 import { listArticles, type PagePlace } from '../api/client.ts';
 import { comparePages } from '../../articles/page-order.mjs';
 import type { ArticleProperties, ArticleSummary, GitStatus } from '../types.ts';
-import { showContextMenu } from './context-menu.ts';
-import type { DiskChange } from './disk-events.ts';
+import { showContextMenu } from '../common/context-menu.ts';
+import type { DiskChange } from '../common/disk-events.ts';
 
 /** What can be done to a whole article from the list. */
 export type ArticleListHost = {

@@ -17,7 +17,7 @@ import { Drive } from '../server/drive.mjs';
 import { DriveText } from '../server/drive-text.mjs';
 import { ArticleFileManager } from '../server/file-manager.mjs';
 import { studioBlogRoot } from '../server/page-version.mjs';
-import { autoSlug, freeSlug, isAutoSlug, readableSlug } from '../workspace/page-names.ts';
+import { autoSlug, freeSlug, isAutoSlug, readableSlug } from '../pages/page-names.ts';
 import { filesNamed } from '../editor/split-section.ts';
 import { markdownSection } from './markdown-section.mjs';
 
