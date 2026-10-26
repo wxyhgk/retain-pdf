@@ -6,7 +6,7 @@ import { ArticleSession, changedProperties, type SaveState, type SessionApi, typ
 import type { ArticlePayload, ArticleProperties } from '../src/studio/types.ts';
 import { filterArticles } from '../src/studio/pages/article-list.ts';
 import { autoSlug, cleanSlug, freeSlug, isAutoSlug, readableSlug } from '../src/studio/pages/page-names.ts';
-import { parseTags } from '../src/studio/pages/page-header.ts';
+import { parseTags } from '../src/studio/pages/header/tags.ts';
 import { saveStateText } from '../src/studio/shell/top-bar.ts';
 
 const SOURCE = "---\ntitle: '笔记'\ndescription: ''\npubDate: '2026-10-14'\ntags: []\ndraft: true\n---\n\n第一段  \n用了 *星号*。\n\n第二段。\n";
