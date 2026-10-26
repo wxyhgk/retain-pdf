@@ -40,12 +40,17 @@ export function droppedItems(transfer: DataTransfer): Promise<UploadItem[]> {
 	const entries = [...transfer.items]
 		.filter((item) => item.kind === 'file')
 		.map((item) => item.webkitGetAsEntry?.() ?? null);
-	if (!entries.length || entries.some((entry) => entry === null)) {
-		return Promise.resolve([...transfer.files].map((file) => ({ file, subfolder: '' })));
-	}
+	const files = [...transfer.files].map((file) => ({ file, subfolder: '' }));
+	if (!entries.length || entries.some((entry) => entry === null)) return Promise.resolve(files);
 	return (async () => {
 		const items: UploadItem[] = [];
-		for (const entry of entries) await walk(entry!, items);
+		try {
+			for (const entry of entries) await walk(entry!, items);
+		} catch (error) {
+			// Entries the browser cannot read (WebKit's, for files not on disk as such): the files themselves, when no folder was dropped.
+			if (entries.some((entry) => entry!.isDirectory)) throw error;
+			return files;
+		}
 		return items;
 	})();
 }
