@@ -203,115 +203,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 			<p class="quick-find-hint"><span id="cite-status" role="status" aria-live="polite"></span> <kbd>↵</kbd> 引用 · <kbd>esc</kbd> 关闭</p>
 		</dialog>
 
-		<dialog id="trash-dialog" class="article-dialog trash-view">
-			<form method="dialog">
-				<div class="dialog-heading">
-					<div><strong>回收站</strong><span>删除的文章和文件保留 30 天</span></div>
-					<button type="submit" aria-label="关闭">×</button>
-				</div>
-				<ul id="trash-list" class="trash-list"></ul>
-				<p id="trash-status" class="trash-status" role="status" aria-live="polite"></p>
-			</form>
-		</dialog>
-
-		<dialog id="plugins-dialog" class="article-dialog trash-view">
-			<form method="dialog">
-				<div class="dialog-heading">
-					<div><strong>插件</strong><span>plugins/ 里的每个文件夹。关掉只影响 Studio 和开发服务器，马上生效；博客构建和发布的页面照常用全部插件</span></div>
-					<button type="submit" aria-label="关闭">×</button>
-				</div>
-				<ul id="plugins-list" class="plugins-list"></ul>
-				<p id="plugins-status" class="trash-status" role="status" aria-live="polite"></p>
-			</form>
-		</dialog>
-
-		<dialog id="ai-settings-dialog" class="article-dialog ai-settings">
-			<form method="dialog">
-				<div class="dialog-heading">
-					<div><strong>AI 设置</strong><span>识别图片时用的大模型。key 只存在这台电脑上（.studio-settings.json，不进 git）</span></div>
-					<!-- Not a submit button: Return in a field saves. -->
-					<button id="ai-settings-close" type="button" aria-label="关闭">×</button>
-				</div>
-				<p id="ai-settings-reason" class="ai-settings-reason" hidden></p>
-				<label><span>服务</span>
-					<select id="ai-provider">
-						<option value="anthropic">Claude（Anthropic）</option>
-						<option value="openai">OpenAI 兼容接口（通义千问、DeepSeek、智谱、OpenRouter…）</option>
-					</select>
-				</label>
-				<label><span>模型</span><input id="ai-model" type="text" autocomplete="off" spellcheck="false" /></label>
-				<label><span>接口地址</span><input id="ai-base-url" type="text" autocomplete="off" spellcheck="false" /></label>
-				<label><span>Key</span><input id="ai-key" type="password" autocomplete="off" /></label>
-				<small id="ai-key-note"></small>
-				<label id="ai-workspace-field"><span>工作区 ID</span><input id="ai-workspace" type="text" autocomplete="off" spellcheck="false" /></label>
-				<p id="ai-settings-status" class="trash-status" role="status" aria-live="polite"></p>
-				<div class="dialog-actions">
-					<button id="ai-settings-cancel" type="button">取消</button>
-					<button id="ai-settings-save" class="is-primary" type="submit" value="save">保存</button>
-				</div>
-			</form>
-		</dialog>
-
-		<dialog id="agents-dialog" class="article-dialog agents-settings">
-			<form method="dialog">
-				<div class="dialog-heading">
-					<div><strong>AI 助手</strong><span>终端上的按钮和 Alt+Enter 用的 AI。只存在这台电脑上（.studio-settings.json，不进 git）</span></div>
-					<button id="agents-close" type="button" aria-label="关闭">×</button>
-				</div>
-				<p class="agents-hint">在正文里写一句要做的事，按 Alt+Enter，选中的 AI 就在这篇文章的文件夹里后台去做，做完把这几行换成结果，你逐处审阅；⇧Alt+Enter 是另开一个新会话。后台命令里的 {'{prompt}'} 换成交给它的话。Claude 的预设开了沙箱（只写这篇文章的文件夹、不联网），Codex 的是 workspace-write；pi 没有沙箱。</p>
-				<ol id="agents-list" class="agents-list"></ol>
-				<div class="agents-more">
-					<button id="agents-add" type="button">＋ 添加一个</button>
-					<button id="agents-presets" type="button">恢复预设</button>
-				</div>
-				<p id="agents-status" class="trash-status" role="status" aria-live="polite"></p>
-				<div class="dialog-actions">
-					<button id="agents-cancel" type="button">取消</button>
-					<button id="agents-save" class="is-primary" type="submit" value="save">保存</button>
-				</div>
-			</form>
-		</dialog>
-
-		<dialog id="history-dialog" class="article-dialog trash-view">
-			<form method="dialog">
-				<div class="dialog-heading">
-					<div><strong>历史版本</strong><span>写作时每 10 分钟自动存一份，存在文章的 ai/history 里，不会发布</span></div>
-					<button type="submit" aria-label="关闭">×</button>
-				</div>
-				<!-- The trash's list look: things to bring back. -->
-				<ul id="history-list" class="trash-list"></ul>
-				<p id="history-status" class="trash-status" role="status" aria-live="polite"></p>
-			</form>
-		</dialog>
-
-		<dialog id="publish-check-dialog" class="article-dialog publish-check">
-			<form method="dialog">
-				<div class="dialog-heading">
-					<div><strong>发布前检查</strong><span id="publish-check-summary"></span></div>
-					<button type="submit" value="cancel" aria-label="关闭">×</button>
-				</div>
-				<ul id="publish-check-list" class="publish-check-list"></ul>
-				<div class="dialog-actions">
-					<button id="publish-check-cancel" type="submit" value="cancel">先不发布</button>
-					<button id="publish-anyway" class="is-primary" type="submit" value="publish">仍然发布</button>
-				</div>
-			</form>
-		</dialog>
-
-		<dialog id="delete-page-dialog" class="article-dialog publish-check">
-			<form method="dialog">
-				<div class="dialog-heading">
-					<div><strong id="delete-page-title"></strong><span id="delete-page-summary"></span></div>
-					<button type="submit" value="cancel" aria-label="关闭">×</button>
-				</div>
-				<ul id="delete-page-notes" class="publish-check-list"></ul>
-				<div class="dialog-actions">
-					<button type="submit" value="cancel">取消</button>
-					<button id="delete-page-lift" type="submit" value="lift">只删这一篇，下面的移到上一级</button>
-					<button id="delete-page-all" class="is-danger" type="submit" value="all"></button>
-				</div>
-			</form>
-		</dialog>
+		<!-- What the shell opens over the page: its dialogs (shell/dialogs/), drawn by React (mount.tsx). -->
+		<div id="ui-layer" data-ui></div>
 
 		<script>import './main';</script>
 	</body>
@@ -477,21 +370,6 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* Where a search took the author to, for a moment. */
 	:global(.search-flash) { position: absolute; z-index: 1; border-radius: 4px; pointer-events: none; animation: search-flash 1.6s ease-out forwards; }
 	@keyframes search-flash { from { background: rgba(var(--gray), 0.28); } to { background: transparent; } }
-	.trash-view { width: min(92vw, 600px); }
-	.trash-list { display: grid; gap: 2px; max-height: min(56vh, 460px); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
-	.trash-list :global(.trash-item) { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; }
-	.trash-list :global(.trash-item:hover) { background: var(--surface-soft); }
-	.trash-list :global(.trash-icon) { color: rgb(var(--gray)); font-size: 15px; text-align: center; }
-	.trash-list :global(.trash-words) { display: grid; min-width: 0; gap: 1px; }
-	.trash-list :global(.trash-name) { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
-	.trash-list :global(.trash-where) { overflow: hidden; color: rgb(var(--gray)); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-	.trash-list :global(button) { padding: 3px 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
-	.trash-list :global(button:hover) { background: var(--surface-soft); }
-	.trash-list :global(button.is-danger) { color: #b42318; }
-	.trash-list :global(.trash-day) { padding: 10px 8px 2px; color: rgb(var(--gray)); font-size: 12px; font-weight: 600; }
-	.trash-list :global(.trash-empty) { padding: 22px 8px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
-	.trash-status { min-height: 16px; margin: 0; color: rgb(var(--gray)); font-size: 12px; }
-	:global(.trash-status.is-error) { color: #b42318; }
 	/* Toggles: a triangle and a title, the blocks under them folded away or not. */
 	:global(.crepe-host .toggle-block) { margin: 4px 0; }
 	:global(.crepe-host .toggle-head) { display: flex; align-items: center; gap: 2px; }
@@ -797,20 +675,6 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.mini-app-layer :global(.mini-app-grip[data-edge='sw']) { bottom: 0; left: 0; }
 	.mini-app-layer :global(.mini-app-grip[data-edge='se']) { right: 0; bottom: 0; }
 	.mini-app-layer :global(.mini-app-grip[data-edge='se']::after) { position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px; border-right: 2px solid rgb(var(--gray)); border-bottom: 2px solid rgb(var(--gray)); border-bottom-right-radius: 3px; opacity: 0.5; content: ''; }
-	/* AI 助手 (agents-dialog.ts). */
-	.article-dialog.agents-settings { width: min(94vw, 720px); }
-	.agents-hint { margin: 0 0 10px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; }
-	.agents-list { display: flex; flex-direction: column; gap: 10px; max-height: 56vh; margin: 0; padding: 0; overflow: auto; list-style: none; }
-	.agents-list :global(.agent-row) { display: flex; flex-direction: column; gap: 6px; padding: 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; }
-	.agents-list :global(.agent-head) { display: grid; grid-template-columns: minmax(0, 130px) minmax(0, 130px) max-content minmax(0, 1fr) max-content; gap: 8px; align-items: end; }
-	.agents-list :global(.agent-field) { display: flex; flex-direction: column; gap: 3px; color: rgb(var(--gray)); font-size: 11px; }
-	.agents-list :global(.agent-field.is-short) { min-width: 0; }
-	.agents-list :global(.agent-field input) { box-sizing: border-box; width: 100%; height: 30px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 12px; }
-	.agents-list :global(.agent-default) { display: flex; gap: 5px; align-items: center; height: 30px; color: rgb(var(--gray-dark)); font-size: 12px; white-space: nowrap; }
-	.agents-list :global(.agent-installed) { overflow: hidden; height: 30px; line-height: 30px; color: rgb(var(--gray)); text-overflow: ellipsis; white-space: nowrap; }
-	.agents-list :global(.agent-remove) { height: 26px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: #b42318; font: inherit; font-size: 12px; white-space: nowrap; cursor: pointer; }
-	.agents-more { display: flex; gap: 8px; margin-top: 10px; }
-	.agents-more button { height: 28px; padding: 0 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 	.terminal-agents :global(.terminal-agents-settings) { margin-left: auto; border-color: transparent; background: transparent; color: rgb(var(--gray)); }
 	:global(.studio-toast) { position: fixed; z-index: 60; bottom: 24px; left: 50%; max-width: min(560px, calc(100vw - 32px)); padding: 9px 14px; border-radius: 8px; background: #2f2f2f; color: white; font-size: 12px; line-height: 1.5; box-shadow: 0 8px 28px rgba(0, 0, 0, 0.2); transform: translateX(-50%); }
 	:global(.studio-toast.is-error) { background: #a12d24; }
@@ -831,37 +695,6 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.terminal-screen { flex: 1; min-height: 0; padding: 8px 4px 4px 10px; overflow: hidden; background: #16181d; }
 	.terminal-screen :global(.xterm) { height: 100%; }
 	.terminal-screen :global(.xterm-viewport) { background: #16181d !important; }
-	.article-dialog { box-sizing: border-box; width: min(92vw, 480px); padding: 0; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 18px 65px rgba(0, 0, 0, 0.2); }
-	.article-dialog::backdrop { background: rgba(28, 31, 35, 0.32); backdrop-filter: blur(2px); }
-	.article-dialog form { display: grid; gap: 17px; padding: 22px; }
-	.dialog-heading { display: flex; align-items: flex-start; justify-content: space-between; }
-	.dialog-heading div, .article-dialog label { display: grid; gap: 5px; }
-	.dialog-heading strong { color: rgb(var(--black)); font-size: 17px; }
-	.dialog-heading span, .article-dialog label > span { color: rgb(var(--gray)); font-size: 11px; }
-	.dialog-heading button { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 21px; cursor: pointer; }
-	.dialog-heading button:hover { background: var(--surface-soft); }
-	.article-dialog input { box-sizing: border-box; width: 100%; height: 38px; padding: 0 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; outline: none; }
-	.article-dialog input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
-	.article-dialog small { color: rgb(var(--gray)); font-size: 10px; line-height: 1.5; }
-	.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; padding-top: 3px; }
-	.dialog-actions button { padding: 7px 13px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
-	.dialog-actions button[type='submit'] { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-	.dialog-actions button.is-danger { border-color: #b42318; background: #b42318; color: #fff; }
-	.dialog-actions button:disabled { opacity: 0.55; cursor: wait; }
-	.dialog-actions button.is-primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-	.dialog-actions button[hidden] { display: none; }
-	.publish-check { width: min(92vw, 560px); }
-	.ai-settings { width: min(92vw, 520px); }
-	.ai-settings select { box-sizing: border-box; width: 100%; height: 38px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; }
-	.ai-settings label[hidden] { display: none; }
-	.ai-settings-reason { margin: 0; padding: 9px 11px; border-radius: 7px; background: var(--surface-soft); font-size: 12px; }
-	.ai-settings .dialog-actions #ai-settings-cancel { border-color: rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray-dark)); }
-	.publish-check-list { display: grid; gap: 6px; max-height: min(50vh, 360px); margin: 0; padding: 0; overflow-y: auto; list-style: none; }
-	/* The items are made in the page's script, out of reach of scoped styles. */
-	.publish-check-list :global(.publish-check-item) { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 8px; padding: 7px 10px; border-left: 3px solid rgb(var(--gray)); border-radius: 5px; background: var(--surface-soft); font-size: 12px; line-height: 1.55; overflow-wrap: anywhere; }
-	.publish-check-list :global(.publish-check-item.is-error) { border-left-color: #b42318; }
-	.publish-check-list :global(.publish-check-line) { padding-top: 1px; color: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; }
-	.publish-check .dialog-actions #publish-check-cancel { border-color: rgb(var(--gray-light)); background: var(--surface); color: rgb(var(--gray-dark)); }
 	@media (max-width: 1100px) {
 		.studio-shell { --sidebar: 220px; grid-template-columns: var(--sidebar) minmax(0, 1fr); }
 		.side-panel { position: fixed; z-index: 30; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; box-shadow: -12px 0 38px rgba(0, 0, 0, 0.15); }

@@ -59,8 +59,7 @@ import { uploadFolderFor } from './workspace/file-tree';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from './workspace/page-names';
 import { blockForFile, fileHeadWanted, pluginCommands, pluginRecognizers, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
 import { Recognizers, type Recognizer } from '@blog/kernel/ui.ts';
-import { createPluginsDialog } from './workspace/plugins-dialog';
-import { aiReady, createAiSettingsDialog } from './workspace/ai-settings-dialog';
+import { aiReady, openAiSettings } from './workspace/ai-settings-dialog';
 import { runCommand, showPluginUi } from './workspace/plugin-ui';
 import { createOutline } from './workspace/outline';
 import { keepFormulasFitted } from '@blog/science/browser/fit-formulas.ts';
@@ -69,7 +68,7 @@ import { anchorScroll } from './workspace/scroll-anchor';
 import { createBacklinks } from './workspace/backlinks';
 import { createArticleTable } from './workspace/article-table';
 import { createPageHeader } from './workspace/page-header';
-import { createPublishCheck } from './workspace/publish-check';
+import { confirmPublish } from './workspace/publish-check';
 import { createQuickFind } from './workspace/quick-find';
 import { createReviewBar } from './workspace/review-bar';
 import { createSidePanel } from './workspace/side-panel';
@@ -77,7 +76,7 @@ import { chosenAI, createAiPanel } from './workspace/ai-panel';
 import { createChatList } from './workspace/chat-list';
 import { createInlineAi } from './workspace/inline-ai';
 import { createTerminalPane } from './workspace/terminal';
-import { createAgentsDialog } from './workspace/agents-dialog';
+import { openAgents } from './workspace/agents-dialog';
 import { createTaskTray } from './workspace/task-tray';
 import { createMiniApps } from './workspace/mini-apps';
 import { showToast } from './workspace/toast';
@@ -85,8 +84,7 @@ import type { EditorView } from '@milkdown/prose/view';
 import { createTopBar } from './workspace/top-bar';
 import { mountShell } from './shell/mount';
 import { shell as shellState, type View } from './shell/shell-state';
-import { createHistoryView } from './workspace/history-view';
-import { createTrashView } from './workspace/trash-view';
+import { openDialog } from './shell/dialogs/Dialogs';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 // The left column, the bar above and the right column's tabs, drawn by React (shell/), before anything looks in them.
@@ -97,9 +95,17 @@ mountShell(shell, {
 	newChat: () => newChat(),
 	openChat: (id) => openChat(id),
 	chatMenu: (entry, row) => chatList.menu(entry, row),
-	openTrash: () => void trashView.open(),
-	openPlugins: () => void pluginsDialog.open(),
-	openAiSettings: () => void aiDialog.open(),
+	openTrash: () =>
+		openDialog('trash', {
+			host: {
+				articleRestored: (slug) => void articleList.load().then(() => session.open(slug)),
+				fileRestored(slug) {
+					if (slug === session.slug) void filePanel.refresh();
+				},
+			},
+		}),
+	openPlugins: () => openDialog('plugins', { host: { info: studioPluginInfo, setEnabled: setStudioPluginEnabled } }),
+	openAiSettings: () => void openAiSettings(),
 	pageMenu: (anchor) => showPageMenu(anchor),
 	chooseTab: (tab) => sidePanel.choose(tab),
 	togglePanel: () => sidePanel.toggle(),
@@ -173,7 +179,6 @@ function refreshGit(): void {
 		gitStatus().then((status) => articleList.showGit(status), () => {});
 	}, 400);
 }
-const publishCheck = createPublishCheck(document.querySelector<HTMLDialogElement>('#publish-check-dialog')!);
 const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-header')!, {
 	changed: (typed) => session.editProperties(typed),
 	// The article as the editor holds it, saved or not, is what gets published.
@@ -182,7 +187,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 		if (!slug) return false;
 		editor.settle();
 		try {
-			return await publishCheck.confirm(await checkArticle(slug, session.current.source));
+			return await confirmPublish(await checkArticle(slug, session.current.source));
 		} catch (error) {
 			showToast(`发布前检查没能完成：${error instanceof Error ? error.message : '未知错误'}`);
 			return false;
@@ -309,8 +314,7 @@ async function openLatestChat(): Promise<void> {
 }
 
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
-const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
-const agentsDialog = createAgentsDialog(document.querySelector<HTMLDialogElement>('#agents-dialog')!, { saved: () => terminal.refreshAgents() });
+const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void openAgents(() => terminal.refreshAgents()) });
 // 小程序: the tools of apps/, in floating windows; what they may reach of the article shown.
 createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.querySelector<HTMLElement>('#mini-app-layer')!, {
 	article: () => (session.slug ? { slug: session.slug, title: openTitle, source: session.current.source } : null),
@@ -904,8 +908,6 @@ void listPlugins()
 	});
 // A file of the article a plugin's block shows (a structure file) is put in as that block, and marked in the file list.
 setFileBlocks(blockForFile, fileHeadWanted);
-const pluginsDialog = createPluginsDialog(document.querySelector<HTMLDialogElement>('#plugins-dialog')!, { info: studioPluginInfo, setEnabled: setStudioPluginEnabled });
-const aiDialog = createAiSettingsDialog(document.querySelector<HTMLDialogElement>('#ai-settings-dialog')!);
 
 /**
  * 识别…: the picture at `pos` read by the large model of AI 设置, as what the author picks
@@ -930,7 +932,7 @@ function recognizePicture(view: EditorView, pos: number): void {
 
 async function readPicture(slug: string, src: string, kind: Recognizer): Promise<void> {
 	let settings = await aiSettings().catch(() => null);
-	if (!settings || !aiReady(settings)) settings = await aiDialog.open('识别图片要用大模型：先选好服务、模型，填上 key。');
+	if (!settings || !aiReady(settings)) settings = await openAiSettings('识别图片要用大模型：先选好服务、模型，填上 key。');
 	if (!settings || !aiReady(settings)) return;
 	await session.flush();
 	showToast(`正在识别（${kind.label}）…`);
@@ -1113,19 +1115,6 @@ function showView(view: View, folder?: string): void {
 	else if (chat) openChat(chat);
 }
 
-const trashView = createTrashView(document.querySelector<HTMLDialogElement>('#trash-dialog')!, {
-	articleRestored(slug) {
-		void articleList.load().then(() => session.open(slug));
-	},
-	fileRestored(slug) {
-		if (slug === session.slug) void filePanel.refresh();
-	},
-});
-
-const historyView = createHistoryView(document.querySelector<HTMLDialogElement>('#history-dialog')!, {
-	restore: (source) => void session.restoreVersion(source),
-});
-
 /** The open article, as the list knows it, for the actions on a whole article. */
 function openSummary(): ArticleSummary | null {
 	return articleList.articles().find((article) => article.slug === session.slug) ?? null;
@@ -1151,7 +1140,7 @@ function showPageMenu(pageMenu: HTMLElement): void {
 			},
 		},
 		{ label: /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示', action: () => void revealArticleFile(article.slug, '') },
-		{ label: '历史版本…', action: () => void historyView.open(article.slug) },
+		{ label: '历史版本…', action: () => openDialog('history', { slug: article.slug, host: { restore: (source) => void session.restoreVersion(source) } }) },
 		// The plugins' (`ctx.commands`, `places: ['page-menu']`).
 		...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, action: () => runCommand(command, 'page-menu') })),
 		'separator',

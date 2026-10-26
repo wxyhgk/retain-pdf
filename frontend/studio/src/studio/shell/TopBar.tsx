@@ -3,7 +3,7 @@ import { Ellipsis, PanelLeft, PanelRight } from 'lucide-react';
 
 import { cn } from '@studio/lib/utils';
 import { Button } from '@studio/ui/button';
-import { timeAgo } from '../workspace/trash-view';
+import { timeAgo } from '../workspace/time-ago';
 import { shell, useActions, useShell, type View } from './shell-state';
 
 const VIEW_NAMES: Record<Exclude<View, 'editor'>, string> = { drive: '资料库', table: '全部文章', chat: 'AI 问答' };

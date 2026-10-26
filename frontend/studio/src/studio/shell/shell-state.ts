@@ -1,6 +1,7 @@
-import { createContext, useContext, useSyncExternalStore } from 'react';
+import { createContext, useContext } from 'react';
 
 import type { Conversation } from '../api/client';
+import { createStore, useStore } from './store.ts';
 
 /** What the middle shows: the article, the drive, the table of all articles, or AI 问答. */
 export type View = 'editor' | 'drive' | 'table' | 'chat';
@@ -68,26 +69,12 @@ const initial: ShellState = {
 	chat: null,
 };
 
-let state = initial;
-const listeners = new Set<() => void>();
-
 /** The shell's state: read, changed (what is given, the rest as it was), and followed. */
-export const shell = {
-	get: (): ShellState => state,
-	set(change: Partial<ShellState>): void {
-		if (Object.entries(change).every(([key, value]) => Object.is(state[key as keyof ShellState], value))) return;
-		state = { ...state, ...change };
-		for (const listener of listeners) listener();
-	},
-	subscribe(listener: () => void): () => void {
-		listeners.add(listener);
-		return () => listeners.delete(listener);
-	},
-};
+export const shell = createStore(initial);
 
 /** The shell's state, drawn again when it changes. */
 export function useShell(): ShellState {
-	return useSyncExternalStore(shell.subscribe, shell.get, () => initial);
+	return useStore(shell, initial);
 }
 
 const nothing = () => {};

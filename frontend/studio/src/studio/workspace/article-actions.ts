@@ -4,6 +4,8 @@ import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';
 import { cleanSlug, freeSlug } from './page-names.ts';
 import { showToast } from './toast.ts';
+import { openDialog } from '../shell/dialogs/Dialogs';
+import type { DeletePageChoice } from '../shell/dialogs/AskDialogs';
 
 /** An article deleted just before the page went empty, to offer back once it is shown again. */
 const PENDING_UNDO = 'studio-deleted-article';
@@ -43,32 +45,13 @@ function descendants(articles: ArticleSummary[], slug: string): ArticleSummary[]
 	}
 }
 
-/** What to do with pages to delete: `all` (with the pages under them), `lift` (they go up), or `cancel`. */
-function askDelete(title: string, summary: string, notes: string[], deleteLabel: string, canLift: boolean): Promise<'all' | 'lift' | 'cancel'> {
-	const dialog = document.querySelector<HTMLDialogElement>('#delete-page-dialog');
-	if (!dialog) return Promise.resolve(window.confirm(`${title}？\n${notes.join('\n')}`) ? 'all' : 'cancel');
-	dialog.querySelector('#delete-page-title')!.textContent = title;
-	dialog.querySelector('#delete-page-summary')!.textContent = summary;
-	dialog.querySelector('#delete-page-notes')!.replaceChildren(...notes.map((note) => {
-		const item = document.createElement('li');
-		item.className = 'publish-check-item';
-		item.textContent = note;
-		return item;
-	}));
-	dialog.querySelector<HTMLButtonElement>('#delete-page-lift')!.hidden = !canLift;
-	dialog.querySelector('#delete-page-all')!.textContent = deleteLabel;
-	dialog.returnValue = '';
-	dialog.showModal();
-	return new Promise((resolve) => {
-		dialog.addEventListener('close', () => {
-			const value = dialog.returnValue;
-			resolve(value === 'all' || value === 'lift' ? value : 'cancel');
-		}, { once: true });
-	});
+/** What to do with pages to delete (shell/dialogs/AskDialogs.tsx): `all` (with the pages under them), `lift` (they go up), or `cancel`. */
+function askDelete(title: string, summary: string, notes: string[], deleteLabel: string, canLift: boolean): Promise<DeletePageChoice> {
+	return new Promise((done) => openDialog('deletePage', { title, summary, notes, deleteLabel, canLift, done }));
 }
 
 /** What to ask before deleting one page: what goes with it, what links to it. */
-function askDeletePage(article: ArticleSummary, under: ArticleSummary[], linking: string[]): Promise<'all' | 'lift' | 'cancel'> {
+function askDeletePage(article: ArticleSummary, under: ArticleSummary[], linking: string[]): Promise<DeletePageChoice> {
 	const notes = [
 		...(article.draft === false ? ['这篇已经发布，下次部署后网页会消失。'] : []),
 		...(linking.length ? [`有 ${linking.length} 篇链接到它：${linking.slice(0, 5).map((title) => `「${title}」`).join('')}${linking.length > 5 ? '…' : ''}，删除后这些链接会失效。`] : []),
