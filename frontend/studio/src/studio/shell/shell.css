@@ -1,0 +1,119 @@
+/*
+ * The Studio's shell (shell/, with the shadcn/ui components of ui/): Tailwind 4, in what React draws only.
+ *
+ * Its reset and utilities apply inside [data-ui] (the left column, the bar above the middle, the right column's
+ * tabs, mount.tsx) and not inside [data-host] (what the rest of the Studio draws in them: the page tree…), nor
+ * anywhere else: the editor, the articles and the other parts keep their own CSS. Its colours are global.css's
+ * (black, white and grays; dark with html[data-theme='dark']).
+ */
+@layer theme;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tw-animate-css';
+
+@source './';
+@source '../ui';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+	--color-*: initial;
+	--color-white: #fff;
+	--color-black: #000;
+	--color-transparent: transparent;
+	--color-background: var(--surface);
+	--color-foreground: rgb(var(--gray-dark));
+	--color-card: var(--surface);
+	--color-card-foreground: rgb(var(--gray-dark));
+	--color-popover: var(--surface);
+	--color-popover-foreground: rgb(var(--gray-dark));
+	--color-primary: var(--accent);
+	--color-primary-foreground: var(--on-accent);
+	--color-secondary: var(--surface-hover);
+	--color-secondary-foreground: rgb(var(--gray-dark));
+	--color-muted: var(--surface-soft);
+	--color-muted-foreground: rgb(var(--gray));
+	--color-accent: rgb(var(--gray-light));
+	--color-accent-foreground: rgb(var(--black));
+	--color-destructive: #b42318;
+	--color-border: rgb(var(--gray-light));
+	--color-input: rgb(var(--gray-light));
+	--color-ring: rgb(var(--gray));
+	--font-sans: var(--font-text);
+	--radius-sm: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+	--radius-xl: 12px;
+}
+
+@scope ([data-ui]) to ([data-host]) {
+	/* Tailwind's preflight, here only. */
+	*,
+	::before,
+	::after,
+	::backdrop {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+		border: 0 solid var(--color-border);
+	}
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		font-size: inherit;
+		font-weight: inherit;
+		color: inherit;
+		line-height: inherit;
+	}
+	p {
+		margin: 0;
+	}
+	a {
+		color: inherit;
+		text-decoration: inherit;
+	}
+	ol,
+	ul,
+	menu {
+		list-style: none;
+	}
+	img,
+	svg,
+	video,
+	canvas {
+		display: block;
+		vertical-align: middle;
+	}
+	img,
+	video {
+		max-width: 100%;
+		height: auto;
+		border-radius: 0;
+	}
+	button,
+	input,
+	select,
+	optgroup,
+	textarea {
+		font: inherit;
+		letter-spacing: inherit;
+		color: inherit;
+		border-radius: 0;
+		background-color: transparent;
+		opacity: 1;
+	}
+	button:not(:disabled),
+	[role='button']:not(:disabled) {
+		cursor: pointer;
+	}
+	::placeholder {
+		color: color-mix(in oklab, currentcolor 50%, transparent);
+	}
+	[hidden]:where(:not([hidden='until-found'])) {
+		display: none !important;
+	}
+
+	@tailwind utilities source(none);
+}

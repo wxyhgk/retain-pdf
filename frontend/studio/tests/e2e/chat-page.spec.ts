@@ -34,11 +34,11 @@ test('AI 问答: a conversation whole in the middle, listed on the left; there a
 	const first = shown();
 	// ＋: a new one, in the address once begun; not listed until something is said in it (no empty 新对话 left).
 	const before = await page.locator('#chat-list .chat-row').count();
-	await page.getByRole('button', { name: '新对话页' }).click();
+	await page.getByRole('button', { name: '新建对话' }).click();
 	await expect.poll(shown).not.toBe(first);
 	const unused = shown()!;
 	// ＋ again, nothing said in that one: it is let go, the list as it was.
-	await page.getByRole('button', { name: '新对话页' }).click();
+	await page.getByRole('button', { name: '新建对话' }).click();
 	await expect.poll(shown).not.toBe(unused);
 	await page.waitForTimeout(500);
 	await expect(page.locator('#chat-list .chat-row')).toHaveCount(before);

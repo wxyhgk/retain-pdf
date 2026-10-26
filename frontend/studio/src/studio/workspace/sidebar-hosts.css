@@ -1,0 +1,42 @@
+/* What the rest of the Studio draws in the left column (React draws the column itself: shell/Sidebar.tsx): the page
+ * tree (article-list.ts) and the plugins' commands (plugin-ui.ts). */
+.plugin-commands { display: grid; gap: 2px; margin-top: -5px; padding: 0 7px 9px; }
+.plugin-commands[hidden] { display: none; }
+.plugin-commands button { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.plugin-commands button:hover { background: rgb(var(--gray-light)); }
+.plugin-commands button > span { display: grid; flex: none; width: 15px; place-items: center; color: rgb(var(--gray)); }
+.plugin-commands button > span svg { width: 14px; height: 14px; }
+#article-list { flex: 1; padding: 1px 7px 32px; overflow-y: auto; }
+#article-list .page-list { display: grid; gap: 1px; }
+#article-list .page-row { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
+#article-list .page-row:hover, #article-list .page-row.active { background: rgb(var(--gray-light)); }
+#article-list .page-item.is-chosen .page-row { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+#article-list .page-item { position: relative; --indent: calc(var(--depth, 0) * 14px); }
+#article-list .page-item .page-row { padding-left: calc(22px + var(--indent)); }
+#article-list .page-toggle { position: absolute; top: 50%; left: calc(4px + var(--indent)); z-index: 1; width: 16px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 10px; line-height: 20px; cursor: pointer; transform: translateY(-50%); }
+#article-list .page-toggle:hover { background: rgba(55, 53, 47, 0.12); color: rgb(var(--gray-dark)); }
+#article-list .page-toggle:disabled { cursor: default; background: transparent; }
+#article-list .page-item.is-drop-before::before, #article-list .page-item.is-drop-after::after { content: ''; position: absolute; right: 4px; left: calc(22px + var(--indent)); z-index: 2; height: 2px; border-radius: 1px; background: rgb(var(--gray-dark)); pointer-events: none; }
+#article-list .page-item.is-drop-before::before { top: -1px; }
+#article-list .page-item.is-drop-after::after { bottom: -1px; }
+#article-list .page-item.is-drop-into .page-row { background: rgb(var(--gray-light)); box-shadow: inset 0 0 0 1.5px rgb(var(--gray-dark)); }
+#article-list.is-drop-top .page-list { box-shadow: 0 2px 0 rgb(var(--gray-dark)); }
+#article-list.is-dragging-page { min-height: 120px; }
+#article-list .page-more { position: absolute; top: 50%; right: 4px; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 22px; cursor: pointer; opacity: 0; transform: translateY(-50%); }
+#article-list .page-item:hover .page-more, #article-list .page-more:focus-visible { opacity: 1; }
+#article-list .page-add { position: absolute; top: 50%; right: 30px; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font: inherit; font-size: 13px; line-height: 22px; cursor: pointer; opacity: 0; transform: translateY(-50%); }
+#article-list .page-item:hover .page-add, #article-list .page-add:focus-visible { opacity: 1; }
+#article-list .page-add:hover { background: rgba(55, 53, 47, 0.16); color: rgb(var(--gray-dark)); }
+#article-list .page-more:hover { background: rgba(55, 53, 47, 0.16); color: rgb(var(--gray-dark)); }
+#article-list .page-icon { color: rgb(var(--gray)); font-size: 12px; text-align: center; }
+#article-list .page-git { font-size: 8px; line-height: 1; }
+#article-list .page-git.is-modified { color: rgb(var(--gray)); }
+#article-list .page-git.is-new { color: rgb(var(--gray)); }
+#article-list .page-icon.is-emoji { font-size: 14px; line-height: 1; text-align: center; }
+#article-list .page-count { color: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; }
+#article-list .page-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
+#article-list .page-row.active .page-title { color: rgb(var(--black)); font-weight: 650; }
+#article-list .page-draft { padding: 1px 4px; border-radius: 4px; color: rgb(var(--gray)); font-size: 8px; opacity: 0.82; }
+#article-list .article-list-empty { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
+/* Until the editor has the article (page-snapshot.ts), as the editor's: no empty list. */
+.studio-shell:not([data-ready]) #article-list { visibility: hidden; }

@@ -1,4 +1,5 @@
 import { STUDIO_PANELS, type StudioPanel } from '@blog/kernel/ui.ts';
+import { shell as shellState, type SideTab } from '../shell/shell-state.ts';
 
 type PanelLayout = { open: boolean; tab: string; width: number };
 
@@ -8,6 +9,8 @@ const MAX_WIDTH = 720;
 const DEFAULT_LAYOUT: PanelLayout = { open: true, tab: 'files', width: 340 };
 /** Below this the panel floats over the editor instead of taking a column. */
 const NARROW = window.matchMedia('(max-width: 1100px)');
+/** The Studio's own tabs' names. */
+const STUDIO_LABELS: Record<(typeof STUDIO_PANELS)[number], string> = { ai: 'AI', files: '文件', terminal: '终端', drive: '资料库' };
 
 function clampWidth(width: number): number {
 	return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(width)));
@@ -35,25 +38,23 @@ function writeLayout(layout: PanelLayout): void {
 	}
 }
 
-/** A tab and its pane; a plugin's is drawn the first time it is shown. */
-type Tab = { tab: HTMLButtonElement; pane: HTMLElement; panel?: StudioPanel; drawn?: boolean; undraw?: (() => void) | void; onScreen?: boolean };
+/** A tab (the shell draws it: shell/SideTabs.tsx) and its pane; a plugin's is drawn the first time it is shown. */
+type Tab = { tab: SideTab; pane: HTMLElement; panel?: StudioPanel; drawn?: boolean; undraw?: (() => void) | void; onScreen?: boolean };
 
 /**
  * The right column: the AI, the open article's files, a terminal and the
  * drive, as tabs that can be resized and collapsed, then the plugins' tabs
  * (`ctx.panels`, `setPanels`). The Studio's tabs' contents are `ai-panel.ts`,
  * `file-panel.ts`, `terminal.ts` and `drive-browser.ts`; `shown` is told which
- * of them is on screen, each time the panel is laid out.
+ * of them is on screen, each time the panel is laid out. The tabs, the toggle in the bar above and × are the
+ * shell's (shell-state.ts); it calls `choose`, `toggle` and `close`.
  */
 export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?: (tab: string) => void } = {}) {
 	const panel = shell.querySelector<HTMLElement>('#side-panel')!;
-	const toggleButton = document.querySelector<HTMLButtonElement>('#toggle-side-panel')!;
-	const closeButton = panel.querySelector<HTMLButtonElement>('#close-side-panel')!;
 	const resizer = panel.querySelector<HTMLElement>('.side-panel-resizer')!;
-	const tabList = panel.querySelector<HTMLElement>('.side-tabs')!;
 	// The Studio's own tabs (STUDIO_PANELS); the plugins' (`ctx.panels`) come after them.
 	const tabs = new Map<string, Tab>(
-		STUDIO_PANELS.map((name) => [name, { tab: panel.querySelector(`#side-tab-${name}`)!, pane: panel.querySelector(`#side-${name}`)! }]),
+		STUDIO_PANELS.map((name) => [name, { tab: { key: name, label: STUDIO_LABELS[name], id: `side-tab-${name}`, controls: `side-${name}` }, pane: panel.querySelector(`#side-${name}`)! }]),
 	);
 
 	const layout = readLayout();
@@ -95,15 +96,14 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		shell.style.setProperty('--panel-width', `${layout.width}px`);
 		shell.classList.toggle('panel-collapsed', !layout.open);
 		panel.inert = !layout.open;
-		toggleButton.setAttribute('aria-pressed', String(layout.open));
-		toggleButton.setAttribute('aria-label', layout.open ? '收起右侧面板' : '展开右侧面板');
 		const current = shown();
+		const listed = [...tabs].filter(([name]) => !lent.has(name)).map(([, entry]) => entry.tab);
+		const before = shellState.get().tabs;
+		const same = listed.length === before.length && listed.every((tab, at) => tab === before[at]);
+		shellState.set({ panelOpen: layout.open, tab: current, ...(same ? {} : { tabs: listed }) });
 		for (const [name, entry] of tabs) {
-			entry.tab.hidden = lent.has(name);
 			if (lent.has(name)) continue;
 			const selected = name === current;
-			entry.tab.setAttribute('aria-selected', String(selected));
-			entry.tab.tabIndex = selected ? 0 : -1;
 			entry.pane.hidden = !selected;
 			if (selected && layout.open) draw(entry);
 			if (selected && layout.open && !entry.panel) onShown?.(name);
@@ -117,21 +117,6 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		if (persist) writeLayout(layout);
 	}
 
-	function bindTab(name: string, tab: HTMLButtonElement): void {
-		tab.addEventListener('click', () => update({ tab: name }));
-		tab.addEventListener('keydown', (event) => {
-			if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
-			event.preventDefault();
-			const order = [...tabs.keys()];
-			const at = order.indexOf(name) + (event.key === 'ArrowRight' ? 1 : -1);
-			const next = order[(at + order.length) % order.length]!;
-			update({ tab: next });
-			tabs.get(next)!.tab.focus();
-		});
-	}
-	for (const [name, { tab }] of tabs) bindTab(name, tab);
-	toggleButton.addEventListener('click', () => update({ open: !layout.open }));
-	closeButton.addEventListener('click', () => update({ open: false }));
 	resizer.addEventListener('pointerdown', (event) => {
 		if (event.button !== 0 || NARROW.matches) return;
 		event.preventDefault();
@@ -167,11 +152,15 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		} catch (error) {
 			console.error(`[plugins] 面板 ${name}`, error);
 		}
-		entry.tab.remove();
 		entry.pane.remove();
 	}
 
 	return {
+		/** The tab chosen (the shell's tabs). */
+		choose: (tab: string): void => update({ tab }),
+		/** The panel opened, or closed (the toggle in the bar). */
+		toggle: (): void => update({ open: !layout.open }),
+		close: (): void => update({ open: false }),
 		/**
 		 * The tab's pane shown elsewhere (`lent`: moved out of the panel by the caller), its tab away meanwhile, the
 		 * files shown in its place when it was the one chosen; or back. The tab chosen stays chosen.
@@ -199,32 +188,19 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		 */
 		setPanels(panels: StudioPanel[]): void {
 			for (const [name, entry] of tabs) if (entry.panel && !panels.includes(entry.panel)) removeTab(name, entry);
-			const close = tabList.querySelector('.side-close');
 			for (const added of panels) {
-				let entry = tabs.get(added.key);
-				if (!entry) {
-					const tab = document.createElement('button');
-					tab.type = 'button';
-					tab.id = `side-tab-plugin-${added.key}`;
-					tab.setAttribute('role', 'tab');
-					tab.setAttribute('aria-controls', `side-plugin-${added.key}`);
-					tab.dataset.panel = added.key;
-					tab.textContent = added.label;
-					const pane = document.createElement('section');
-					pane.id = `side-plugin-${added.key}`;
-					pane.className = 'side-pane plugin-pane';
-					pane.setAttribute('role', 'tabpanel');
-					pane.setAttribute('aria-labelledby', tab.id);
-					pane.hidden = true;
-					panel.append(pane);
-					entry = { tab, pane, panel: added };
-					tabs.set(added.key, entry);
-					bindTab(added.key, tab);
-				}
-				// In the order given, before ×.
-				tabList.insertBefore(entry.tab, close);
+				if (tabs.has(added.key)) continue;
+				const tab = { key: added.key, label: added.label, id: `side-tab-plugin-${added.key}`, controls: `side-plugin-${added.key}` };
+				const pane = document.createElement('section');
+				pane.id = tab.controls;
+				pane.className = 'side-pane plugin-pane';
+				pane.setAttribute('role', 'tabpanel');
+				pane.setAttribute('aria-labelledby', tab.id);
+				pane.hidden = true;
+				panel.append(pane);
+				tabs.set(added.key, { tab, pane, panel: added });
 			}
-			// The arrow keys go through them in the same order.
+			// In the order given, after the Studio's own (the arrow keys go through them so too).
 			const ordered = [...tabs].filter(([, entry]) => !entry.panel).concat(panels.map((added) => [added.key, tabs.get(added.key)!]));
 			tabs.clear();
 			for (const [name, entry] of ordered) tabs.set(name, entry);

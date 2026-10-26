@@ -1,6 +1,6 @@
 import type { SaveState } from '../state/article-session.ts';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
-import { timeAgo } from './trash-view.ts';
+import { shell } from '../shell/shell-state.ts';
 
 /** What the status line says, and the colour it says it in. */
 export function saveStateText(state: SaveState): { text: string; tone: 'saved' | 'dirty' | 'saving' | 'error' | '' } {
@@ -18,68 +18,37 @@ export function saveStateText(state: SaveState): { text: string; tone: 'saved' |
 }
 
 /**
- * The bar above the editor (sidebar toggle, title, save status, 打开博客)
- * and the line over the body (the file, and whether its Markdown is kept as written).
+ * The bar above the editor (the shell draws it: shell/TopBar.tsx; this says what it shows) and the line over the body
+ * (the file, and whether its Markdown is kept as written).
  */
-export function createTopBar(shell: HTMLElement) {
-	const toggleSidebar = shell.querySelector<HTMLButtonElement>('#toggle-sidebar')!;
-	const title = shell.querySelector<HTMLElement>('#breadcrumb-title')!;
-	const status = shell.querySelector<HTMLElement>('#save-status')!;
-	const openArticle = shell.querySelector<HTMLAnchorElement>('#open-article')!;
-	const path = shell.querySelector<HTMLElement>('#editor-path')!;
-	const roundtrip = shell.querySelector<HTMLElement>('#roundtrip-status')!;
-	const edited = shell.querySelector<HTMLElement>('#edited-at')!;
-	let editedAt: number | null = null;
-
-	/** 编辑于 3 分钟前, kept current as the minutes pass. */
-	function drawEdited(): void {
-		edited.textContent = editedAt === null ? '' : `编辑于${timeAgo(editedAt)}`;
-		edited.title = editedAt === null ? '' : new Date(editedAt).toLocaleString('zh-CN');
-	}
-	window.setInterval(drawEdited, 30_000);
-
-	function setStatus(text: string, tone = ''): void {
-		status.textContent = text;
-		status.dataset.state = tone;
-	}
-
-	function setSidebarCollapsed(collapsed: boolean): void {
-		shell.classList.toggle('sidebar-collapsed', collapsed);
-		toggleSidebar.setAttribute('aria-pressed', String(collapsed));
-		toggleSidebar.setAttribute('aria-label', collapsed ? '展开侧边栏' : '收起侧边栏');
-	}
-
-	toggleSidebar.addEventListener('click', () => setSidebarCollapsed(!shell.classList.contains('sidebar-collapsed')));
-	if (window.matchMedia('(max-width: 720px)').matches) setSidebarCollapsed(true);
+export function createTopBar(shellElement: HTMLElement) {
+	const path = shellElement.querySelector<HTMLElement>('#editor-path')!;
+	const roundtrip = shellElement.querySelector<HTMLElement>('#roundtrip-status')!;
 
 	return {
 		/** The open article. */
 		showArticle(slug: string, articleTitle: string, kind: 'post' | 'wiki' = 'post'): void {
 			path.textContent = `blog/${slug}/index.md`;
-			title.textContent = articleTitle;
-			openArticle.href = articleAddress(kind, slug);
+			shell.set({ title: articleTitle, articleHref: articleAddress(kind, slug) });
 		},
 		/** When the open article's text last changed (now, after a save); null for none. */
 		edited(time: number | null): void {
-			editedAt = time;
-			drawEdited();
+			shell.set({ edited: time });
 		},
 		showTitle(articleTitle: string): void {
-			title.textContent = articleTitle;
+			shell.set({ title: articleTitle });
 		},
 		/** No article to open yet. */
 		showEmpty(): void {
-			setStatus('还没有文章');
+			shell.set({ status: { text: '还没有文章', tone: '' }, title: '空工作区' });
 			path.textContent = '创建第一篇文章后即可开始写作';
-			title.textContent = '空工作区';
 		},
 		saveState(state: SaveState): void {
-			const { text, tone } = saveStateText(state);
-			setStatus(text, tone);
+			shell.set({ status: saveStateText(state) });
 		},
 		/** Something went wrong outside saving, such as reaching the Studio at all. */
 		error(message: string): void {
-			setStatus(message, 'error');
+			shell.set({ status: { text: message, tone: 'error' } });
 		},
 		roundtrip(exact: boolean): void {
 			roundtrip.textContent = exact ? 'Markdown 完整保留' : 'Markdown 已规范化';

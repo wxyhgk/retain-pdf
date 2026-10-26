@@ -3,6 +3,9 @@ import BaseHead from '../components/BaseHead.astro';
 import { SITE_TITLE } from '../consts';
 import { ArticleRepository } from './server/article-repository.mjs';
 import { pageVersion, studioBlogRoot } from './server/page-version.mjs';
+import { SideTabs } from './shell/SideTabs';
+import { Sidebar } from './shell/Sidebar';
+import { TopBar } from './shell/TopBar';
 // The editor's styles in the page itself, not added by its scripts later, so the first picture is drawn as the editor draws it.
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
@@ -13,6 +16,8 @@ import '@blog/markdown/references/references.css';
 import '@blog/office/office.css';
 import '@xterm/xterm/css/xterm.css';
 import './tokens.css';
+import './shell/shell.css';
+import './workspace/sidebar-hosts.css';
 import './workspace/drive.css';
 import './workspace/article-table.css';
 import './workspace/ai-panel.css';
@@ -36,56 +41,21 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	<head>
 		<BaseHead title={`Studio · ${SITE_TITLE}`} description="本地文章工作台" />
 		{[katexMain, katexMath, katexSize1, katexSize2, katexAms].map((font) => <link rel="preload" href={font} as="font" type="font/woff2" crossorigin />)}
+		<!-- React's fast refresh for the shell (shell/), before its components load: what @astrojs/react puts in a page with islands only. -->
+		<script is:inline type="module">
+			import { injectIntoGlobalHook } from '/@react-refresh';
+			injectIntoGlobalHook(window);
+			window.$RefreshReg$ = () => {};
+			window.$RefreshSig$ = () => (type) => type;
+		</script>
 	</head>
 	<body class="studio-body">
 		<main class="studio-shell">
-			<aside class="article-sidebar">
-				<div class="workspace-heading">
-					<a href="/" class="workspace-identity"><span class="workspace-avatar">C</span><strong>{SITE_TITLE}</strong></a>
-					<span class="studio-badge">Studio</span>
-				</div>
-				<div class="workspace-navigation">
-					<a href="/"><span>⌂</span>首页</a>
-					<button id="open-search" class="article-search" type="button"><span>⌕</span>搜索<kbd>⌘K</kbd></button>
-					<button id="open-table" class="article-search" type="button" aria-pressed="false"><span>▦</span>全部文章</button>
-					<button id="open-drive" class="article-search" type="button" aria-pressed="false"><span>▤</span>资料库</button>
-					<button id="open-apps" class="article-search" type="button" aria-haspopup="menu"><span>◇</span>小程序</button>
-				</div>
-				<!-- The plugins' commands shown here (ctx.commands, places: ['sidebar']): plugin-ui.ts. -->
-				<div id="plugin-commands" class="plugin-commands" hidden></div>
-				<!-- What the list below is, as Notion's: the pages, or the AI conversations (AI 问答); each opens what it lists. -->
-				<div class="sidebar-modes" role="tablist" aria-label="侧边栏">
-					<button id="sidebar-pages" role="tab" type="button" aria-selected="true"><span>▤</span>页面</button>
-					<button id="sidebar-chats" role="tab" type="button" aria-selected="false"><span>✦</span>AI 问答</button>
-				</div>
-				<div class="panel-heading private-heading"><h1>Private</h1><button id="new-article" type="button" title="新建文章" aria-label="新建文章">＋</button></div>
-				<nav id="article-list" aria-label="页面列表"></nav>
-				<!-- The AI conversations kept as pages (chats/), opened in the editor: chat-list.ts. -->
-				<div class="panel-heading chats-heading"><h1>对话</h1><button id="new-chat" type="button" title="新对话页" aria-label="新对话页">＋</button></div>
-				<nav id="chat-list" aria-label="对话列表"></nav>
-				<div class="sidebar-footer">
-					<button id="new-article-secondary" type="button"><span>＋</span>新建文章</button>
-					<a href="/blog/"><span>◫</span>博客首页</a>
-					<button id="open-trash" type="button"><span>♲</span>回收站</button>
-					<button id="open-plugins" type="button"><span>⧉</span>插件</button>
-					<button id="open-ai-settings" type="button"><span>✦</span>AI 设置</button>
-				</div>
-			</aside>
+			<!-- The shell, drawn by React (shell/): here as the server draws it, then by the page's script (mount.tsx). -->
+			<aside class="article-sidebar" data-ui><Sidebar siteTitle={SITE_TITLE} /></aside>
 
 			<section class="workspace-main">
-				<header class="studio-bar">
-					<div class="document-breadcrumb">
-						<button id="toggle-sidebar" type="button" aria-label="收起侧边栏" aria-pressed="false">◧</button>
-						<span class="breadcrumb-workspace">{SITE_TITLE}</span><span class="breadcrumb-separator">/</span><strong id="breadcrumb-title">选择一篇文章</strong><strong class="breadcrumb-drive">资料库</strong><strong class="breadcrumb-table">全部文章</strong><strong class="breadcrumb-chat">AI 问答</strong>
-					</div>
-					<div class="studio-actions">
-						<span id="edited-at" class="edited-at"></span>
-						<span id="save-status" class="save-status" title="改动会自动保存，⌘S 立即保存" aria-live="polite">正在连接…</span>
-						<a id="open-article" href="/blog" target="_blank">打开博客</a>
-						<button id="page-menu" class="icon-action" type="button" aria-label="页面菜单" title="页面菜单">⋯</button>
-						<button id="toggle-side-panel" class="icon-action" type="button" aria-pressed="true" aria-label="收起右侧面板" title="文件与终端">◨</button>
-					</div>
-				</header>
+				<header class="studio-bar" data-ui><TopBar siteTitle={SITE_TITLE} /></header>
 
 				<section class="editor-panel" aria-label="文章编辑器">
 					<div class="panel-label">
@@ -155,13 +125,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 
 			<aside id="side-panel" class="side-panel" aria-label="AI、文件与终端">
 				<div class="side-panel-resizer" role="separator" aria-orientation="vertical" aria-label="调整面板宽度" tabindex="0" title="拖动调整宽度，双击恢复"></div>
-				<div class="side-tabs" role="tablist" aria-label="右侧面板">
-					<button id="side-tab-ai" role="tab" type="button" aria-controls="side-ai" aria-selected="false">AI</button>
-					<button id="side-tab-files" role="tab" type="button" aria-controls="side-files" aria-selected="true">文件</button>
-					<button id="side-tab-terminal" role="tab" type="button" aria-controls="side-terminal" aria-selected="false">终端</button>
-					<button id="side-tab-drive" role="tab" type="button" aria-controls="side-drive" aria-selected="false">资料库</button>
-					<button id="close-side-panel" class="side-close" type="button" aria-label="收起右侧面板">×</button>
-				</div>
+				<div class="side-tabs" role="tablist" aria-label="右侧面板" data-ui><SideTabs /></div>
 				<!-- The AI (ai-panel.ts draws it). -->
 				<section id="side-ai" class="side-pane ai-pane" role="tabpanel" aria-labelledby="side-tab-ai" hidden></section>
 				<section id="side-files" class="side-pane" role="tabpanel" aria-labelledby="side-tab-files">
@@ -359,77 +323,21 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.studio-shell.sidebar-collapsed { --sidebar: 0px; }
 	/* The page as it was left, over the page while the editor loads (page-snapshot.ts); until then the page shows no empty fields. */
 	.studio-shell.studio-snapshot { position: fixed; inset: 0; z-index: 30; }
-	.studio-shell:not([data-ready]) .editor-scroll, .studio-shell:not([data-ready]) #article-list { visibility: hidden; }
+	.studio-shell:not([data-ready]) .editor-scroll { visibility: hidden; }
 	.studio-shell.panel-collapsed { --panel: 0px; }
 	.studio-shell.is-resizing { transition: none; cursor: col-resize; user-select: none; }
 	.article-sidebar, .workspace-main, .editor-panel, .side-panel { min-width: 0; overflow: hidden; background: var(--surface); }
 	.article-sidebar { display: flex; flex-direction: column; border-right: 1px solid rgb(var(--gray-light)); background: var(--surface-soft); transition: opacity 120ms ease; }
 	.studio-shell.sidebar-collapsed .article-sidebar { opacity: 0; pointer-events: none; }
-	.workspace-heading { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 0 11px; }
-	.workspace-identity { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; color: rgb(var(--gray-dark)); text-decoration: none; }
-	.workspace-avatar { display: grid; flex: none; width: 23px; height: 23px; place-items: center; border-radius: 5px; background: var(--accent); color: var(--on-accent); font-size: 11px; font-weight: 800; }
-	.workspace-identity strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
-	.studio-badge { padding: 2px 5px; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 8px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-	.workspace-navigation { display: grid; gap: 2px; padding: 4px 7px 9px; }
-	.workspace-navigation a, .article-search, .sidebar-footer a, .sidebar-footer button { display: flex; align-items: center; gap: 9px; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; text-decoration: none; }
-	.workspace-navigation a:hover, .article-search:hover, .sidebar-footer a:hover, .sidebar-footer button:hover { background: rgb(var(--gray-light)); }
-	.article-search { width: 100%; cursor: pointer; }
-	.article-search kbd { margin-left: auto; color: rgb(var(--gray)); font: inherit; font-size: 10px; opacity: 0.8; }
-	.workspace-navigation a > span, .article-search > span, .sidebar-footer > * > span { width: 15px; color: rgb(var(--gray)); text-align: center; }
-	.panel-heading { display: flex; align-items: center; justify-content: space-between; min-height: 31px; padding: 0 11px 0 15px; }
-	.panel-heading h1 { margin: 0; color: rgb(var(--gray)); font-size: 10px; font-weight: 700; letter-spacing: 0.04em; }
-	.panel-heading button { width: 23px; height: 23px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font-size: 17px; cursor: pointer; }
-	.panel-heading button:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
-	.sidebar-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; margin: 0 7px 6px; padding: 2px; border-radius: 7px; background: rgb(var(--gray-light)); }
-	.sidebar-modes button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 26px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
-	.sidebar-modes button:hover { color: rgb(var(--gray-dark)); }
-	.sidebar-modes button[aria-selected='true'] { background: var(--surface); color: rgb(var(--black)); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08); }
-	.studio-shell:not(.sidebar-chats) .chats-heading, .studio-shell:not(.sidebar-chats) #chat-list { display: none; }
-	.studio-shell.sidebar-chats .private-heading, .studio-shell.sidebar-chats #article-list { display: none; }
-	#chat-list { flex: 1; min-height: 0; padding: 1px 7px 32px; overflow-y: auto; }
-	#chat-list :global(.chat-row) { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 29px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
-	#chat-list :global(.chat-row:hover), #chat-list :global(.chat-row.active) { background: rgb(var(--gray-light)); }
-	#chat-list :global(.chat-row-title) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	#chat-list :global(.chat-row-when) { flex: none; color: rgb(var(--gray)); font-size: 11px; }
-	#chat-list :global(.chat-list-empty) { margin: 2px 8px 6px; color: rgb(var(--gray)); font-size: 11px; line-height: 1.5; }
 	.chat-view { display: flex; flex: 1; min-height: 0; flex-direction: column; background: var(--surface); }
 	.chat-view[hidden] { display: none; }
-	.plugin-commands { display: grid; gap: 2px; margin-top: -5px; padding: 0 7px 9px; }
-	.plugin-commands[hidden] { display: none; }
-	.plugin-commands :global(button) { display: flex; align-items: center; gap: 9px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
-	.plugin-commands :global(button:hover) { background: rgb(var(--gray-light)); }
-	.plugin-commands :global(button > span) { display: grid; flex: none; width: 15px; place-items: center; color: rgb(var(--gray)); }
-	.plugin-commands :global(button > span svg) { width: 14px; height: 14px; }
-	.sidebar-footer { display: grid; gap: 2px; padding: 7px; border-top: 1px solid rgb(var(--gray-light)); }
-	.sidebar-footer button { width: 100%; cursor: pointer; }
 	.workspace-main { display: flex; min-height: 0; flex-direction: column; }
 	.studio-bar { position: relative; z-index: 10; display: flex; flex: none; align-items: center; justify-content: space-between; height: 46px; padding: 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
-	.document-breadcrumb, .studio-actions { display: flex; align-items: center; gap: 7px; min-width: 0; }
-	.document-breadcrumb button { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); cursor: pointer; }
-	.document-breadcrumb button:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
-	.breadcrumb-workspace, .breadcrumb-separator { color: rgb(var(--gray)); font-size: 11px; }
-	.document-breadcrumb strong { max-width: 340px; overflow: hidden; color: rgb(var(--gray-dark)); font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-	.studio-actions a, .studio-actions button { padding: 5px 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 11px; text-decoration: none; cursor: pointer; }
-	.studio-actions button { border-color: var(--accent); background: var(--accent); color: var(--on-accent); }
-	.studio-actions button.icon-action { width: 28px; height: 28px; padding: 0; border: 0; background: transparent; color: rgb(var(--gray)); font-size: 15px; }
-	.studio-actions button.icon-action:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
-	.studio-actions button.icon-action[aria-pressed='true'] { color: var(--accent); }
-	.studio-actions button:disabled { opacity: 0.5; cursor: default; }
-	.edited-at { color: rgb(var(--gray)); font-size: 10px; white-space: nowrap; opacity: 0.85; }
 	/* 全宽: the page as wide as the editor allows, as on the blog. */
 	.editor-panel.is-wide .page-head, .editor-panel.is-wide :global(.crepe-host .milkdown .ProseMirror) { width: min(100%, 1180px); }
-	.save-status { max-width: 230px; color: rgb(var(--gray)); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-	.save-status[data-state='dirty'] { color: rgb(var(--gray)); }
-	.save-status[data-state='error'] { color: #b42318; }
-	.save-status[data-state='saved'] { color: rgb(var(--gray)); }
 	.panel-label { display: none; }
 	.panel-label { color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.04em; }
-	#article-list { flex: 1; padding: 1px 7px 32px; overflow-y: auto; }
-	#article-list :global(.page-list) { display: grid; gap: 1px; }
-	#article-list :global(.page-row) { display: grid; grid-template-columns: 19px minmax(0, 1fr) auto auto auto; align-items: center; gap: 6px; width: 100%; min-height: 31px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
-	#article-list :global(.page-row:hover), #article-list :global(.page-row.active) { background: rgb(var(--gray-light)); }
 	/* Chosen with ⌘ or ⇧ to move or delete together. */
-	#article-list :global(.page-item.is-chosen .page-row) { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 	/* ⋯ on hover, over the badges at the end of the row. */
 	/* Above the title of a page under others: the way up to them. */
 	:global(.page-path) { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 4px; margin: 0 0 4px; color: rgb(var(--gray)); font-size: 13px; }
@@ -438,45 +346,14 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.page-path-link:hover) { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
 	:global(.page-path-separator) { padding: 1px 3px; border: 0; border-radius: 4px; background: transparent; color: inherit; font: inherit; opacity: 0.6; cursor: pointer; }
 	:global(.page-path-separator:hover) { background: rgb(var(--gray-light)); opacity: 1; }
-	#article-list :global(.page-item) { position: relative; --indent: calc(var(--depth, 0) * 14px); }
 	/* The tree: each level 14px further in, the triangle that folds what is under a page left of it. */
-	#article-list :global(.page-item .page-row) { padding-left: calc(22px + var(--indent)); }
-	#article-list :global(.page-toggle) { position: absolute; top: 50%; left: calc(4px + var(--indent)); z-index: 1; width: 16px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 10px; line-height: 20px; cursor: pointer; transform: translateY(-50%); }
-	#article-list :global(.page-toggle:hover) { background: rgba(55, 53, 47, 0.12); color: rgb(var(--gray-dark)); }
-	#article-list :global(.page-toggle:disabled) { cursor: default; background: transparent; }
 	/* Dragged onto a page: under it. Below the pages: at the top. */
 	/* Above or below a page: a line there, as far in as the page. */
-	#article-list :global(.page-item.is-drop-before)::before, #article-list :global(.page-item.is-drop-after)::after { content: ''; position: absolute; right: 4px; left: calc(22px + var(--indent)); z-index: 2; height: 2px; border-radius: 1px; background: rgb(var(--gray-dark)); pointer-events: none; }
-	#article-list :global(.page-item.is-drop-before)::before { top: -1px; }
-	#article-list :global(.page-item.is-drop-after)::after { bottom: -1px; }
-	#article-list :global(.page-item.is-drop-into .page-row) { background: rgb(var(--gray-light)); box-shadow: inset 0 0 0 1.5px rgb(var(--gray-dark)); }
-	#article-list:global(.is-drop-top) :global(.page-list) { box-shadow: 0 2px 0 rgb(var(--gray-dark)); }
-	#article-list:global(.is-dragging-page) { min-height: 120px; }
-	#article-list :global(.page-more) { position: absolute; top: 50%; right: 4px; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 22px; cursor: pointer; opacity: 0; transform: translateY(-50%); }
-	#article-list :global(.page-item:hover .page-more), #article-list :global(.page-more:focus-visible) { opacity: 1; }
-	#article-list :global(.page-add) { position: absolute; top: 50%; right: 30px; width: 24px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font: inherit; font-size: 13px; line-height: 22px; cursor: pointer; opacity: 0; transform: translateY(-50%); }
-	#article-list :global(.page-item:hover .page-add), #article-list :global(.page-add:focus-visible) { opacity: 1; }
-	#article-list :global(.page-add:hover) { background: rgba(55, 53, 47, 0.16); color: rgb(var(--gray-dark)); }
-	#article-list :global(.page-more:hover) { background: rgba(55, 53, 47, 0.16); color: rgb(var(--gray-dark)); }
-	#article-list :global(.page-icon) { color: rgb(var(--gray)); font-size: 12px; text-align: center; }
-	#article-list :global(.page-git) { font-size: 8px; line-height: 1; }
-	#article-list :global(.page-git.is-modified) { color: rgb(var(--gray)); }
-	#article-list :global(.page-git.is-new) { color: rgb(var(--gray)); }
-	#article-list :global(.page-icon.is-emoji) { font-size: 14px; line-height: 1; text-align: center; }
-	#article-list :global(.page-count) { color: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; }
-	#article-list :global(.page-title) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
-	#article-list :global(.page-row.active .page-title) { color: rgb(var(--black)); font-weight: 650; }
-	#article-list :global(.page-draft) { padding: 1px 4px; border-radius: 4px; color: rgb(var(--gray)); font-size: 8px; opacity: 0.82; }
-	#article-list :global(.article-list-empty) { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
 	.editor-panel { position: relative; display: flex; flex: 1; min-height: 0; flex-direction: column; }
 	/* The drive in the middle, the article kept open behind it; the bar keeps only the side panel's button. */
 	.drive-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; }
 	.drive-page[hidden] { display: none; }
 	.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat']) .editor-panel { display: none; }
-	.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat']) .studio-actions > :not(#toggle-side-panel) { display: none; }
-	.breadcrumb-drive, .breadcrumb-table, .breadcrumb-chat, .studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat']) #breadcrumb-title { display: none; }
-	.studio-shell[data-view='drive'] .breadcrumb-drive, .studio-shell[data-view='table'] .breadcrumb-table, .studio-shell[data-view='chat'] .breadcrumb-chat { display: inline; }
-	#open-drive[aria-pressed='true'], #open-table[aria-pressed='true'] { background: var(--surface-hover); font-weight: 600; }
 	/*
 	 * Scrollbars: thin, a rounded gray thumb on no track, darker under the pointer. The system's
 	 * (WebKit's, in the Mac app) are bars of their own, light on a dark page.
@@ -837,13 +714,6 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.side-panel-resizer { position: absolute; z-index: 5; top: 0; bottom: 0; left: -3px; width: 6px; cursor: col-resize; }
 	.side-panel-resizer:hover, .side-panel-resizer:focus-visible, .studio-shell.is-resizing .side-panel-resizer { background: color-mix(in srgb, var(--accent) 45%, transparent); outline: none; }
 	.side-tabs { display: flex; flex: none; align-items: flex-end; gap: 2px; height: 46px; padding: 0 8px 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
-	.side-tabs :global([role='tab']) { position: relative; height: 34px; white-space: nowrap; padding: 0 12px; border: 0; border-radius: 6px 6px 0 0; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
-	.side-tabs :global([role='tab']:hover) { color: rgb(var(--gray-dark)); }
-	.side-tabs :global([role='tab'][aria-selected='true']) { color: rgb(var(--black)); font-weight: 650; }
-	.side-tabs :global([role='tab'][aria-selected='true']::after) { content: ''; position: absolute; right: 10px; bottom: -1px; left: 10px; height: 2px; border-radius: 2px; background: var(--accent); }
-	.side-tabs :global([role='tab']:focus-visible) { outline: 2px solid var(--accent); outline-offset: -2px; }
-	.side-close { align-self: center; width: 27px; height: 27px; margin-left: auto; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 18px; cursor: pointer; }
-	.side-close:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 	.side-pane { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 	.side-pane[hidden] { display: none; }
 	/* A plugin's tab (ctx.panels): its pane, made by side-panel.ts, scrolls as a whole unless it lays itself out. */
@@ -1003,9 +873,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 		.studio-shell { grid-template-columns: minmax(0, 1fr); }
 		.article-sidebar { position: fixed; z-index: 40; top: 0; bottom: 0; left: 0; width: min(280px, 86vw); box-shadow: 12px 0 38px rgba(0, 0, 0, 0.18); }
 		.studio-shell.sidebar-collapsed .article-sidebar { transform: translateX(-100%); }
-		.breadcrumb-workspace, .breadcrumb-separator, .save-status, #roundtrip-status { display: none; }
-		.document-breadcrumb strong { max-width: 150px; }
-		.studio-actions a { display: none; }
+		#roundtrip-status { display: none; }
 		.page-head { padding: 28px 24px 0; }
 		.page-properties { grid-template-columns: 96px minmax(0, 1fr); }
 		:global(.crepe-host .milkdown .ProseMirror) { padding: 8px 24px 140px; }

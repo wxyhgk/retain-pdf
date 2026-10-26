@@ -83,10 +83,28 @@ import { createMiniApps } from './workspace/mini-apps';
 import { showToast } from './workspace/toast';
 import type { EditorView } from '@milkdown/prose/view';
 import { createTopBar } from './workspace/top-bar';
+import { mountShell } from './shell/mount';
+import { shell as shellState, type View } from './shell/shell-state';
 import { createHistoryView } from './workspace/history-view';
 import { createTrashView } from './workspace/trash-view';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
+// The left column, the bar above and the right column's tabs, drawn by React (shell/), before anything looks in them.
+mountShell(shell, {
+	search: () => quickFind.open(),
+	showView: (view) => showView(view),
+	newPage: () => void newPage(),
+	newChat: () => newChat(),
+	openChat: (id) => openChat(id),
+	chatMenu: (entry, row) => chatList.menu(entry, row),
+	openTrash: () => void trashView.open(),
+	openPlugins: () => void pluginsDialog.open(),
+	openAiSettings: () => void aiDialog.open(),
+	pageMenu: (anchor) => showPageMenu(anchor),
+	chooseTab: (tab) => sidePanel.choose(tab),
+	togglePanel: () => sidePanel.toggle(),
+	closePanel: () => sidePanel.close(),
+});
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
 const editorPanel = shell.querySelector<HTMLElement>('.editor-panel')!;
 const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
@@ -232,8 +250,7 @@ const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
 const aiPane = shell.querySelector<HTMLElement>('#side-ai')!;
 const aiPaneHome = { parent: aiPane.parentElement!, next: aiPane.nextSibling };
 const chatView = shell.querySelector<HTMLElement>('#chat-view')!;
-const chatList = createChatList(shell.querySelector<HTMLElement>('#chat-list')!, {
-	open: (id) => openChat(id),
+const chatList = createChatList({
 	removed(id) {
 		if (aiPanel.current() === id) void openLatestChat();
 	},
@@ -261,7 +278,6 @@ function newChat(): void {
 	void aiPanel.newChat();
 	aiPanel.focus();
 }
-shell.querySelector<HTMLButtonElement>('#new-chat')!.addEventListener('click', () => newChat());
 
 /**
  * The AI panel whole in the middle (AI 问答), moved there from the side and lent by it, or back where it was; the
@@ -270,7 +286,6 @@ shell.querySelector<HTMLButtonElement>('#new-chat')!.addEventListener('click', (
 function showChat(on: boolean): void {
 	const there = chatView.contains(aiPane);
 	chatView.hidden = !on;
-	showSidebar(on);
 	if (on && !there) {
 		chatView.append(aiPane);
 		sidePanel.lend('ai', true);
@@ -293,18 +308,6 @@ async function openLatestChat(): Promise<void> {
 	else newChat();
 }
 
-// The left column, as Notion's: the pages, or the AI conversations (AI 问答), as the middle shows an article or a
-// conversation (showView). 页面 goes back to the article; AI 问答 to the conversation shown last, or the latest.
-const sidebarPages = shell.querySelector<HTMLButtonElement>('#sidebar-pages')!;
-const sidebarChats = shell.querySelector<HTMLButtonElement>('#sidebar-chats')!;
-function showSidebar(chats: boolean): void {
-	shell.classList.toggle('sidebar-chats', chats);
-	sidebarPages.setAttribute('aria-selected', String(!chats));
-	sidebarChats.setAttribute('aria-selected', String(chats));
-}
-sidebarPages.addEventListener('click', () => showView('editor'));
-// The conversation the panel shows, whole.
-sidebarChats.addEventListener('click', () => showView('chat'));
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void agentsDialog.open() });
 const agentsDialog = createAgentsDialog(document.querySelector<HTMLDialogElement>('#agents-dialog')!, { saved: () => terminal.refreshAgents() });
@@ -560,9 +563,6 @@ async function enterNewPage(slug: string): Promise<void> {
 	if (!(await session.saveBeforeLeaving())) return;
 	await openFromList(slug, true);
 	if (session.slug === slug) properties.selectTitle();
-}
-for (const opener of shell.querySelectorAll<HTMLElement>('#new-article, #new-article-secondary')) {
-	opener.addEventListener('click', () => void newPage());
 }
 
 /**
@@ -905,9 +905,7 @@ void listPlugins()
 // A file of the article a plugin's block shows (a structure file) is put in as that block, and marked in the file list.
 setFileBlocks(blockForFile, fileHeadWanted);
 const pluginsDialog = createPluginsDialog(document.querySelector<HTMLDialogElement>('#plugins-dialog')!, { info: studioPluginInfo, setEnabled: setStudioPluginEnabled });
-shell.querySelector('#open-plugins')!.addEventListener('click', () => void pluginsDialog.open());
 const aiDialog = createAiSettingsDialog(document.querySelector<HTMLDialogElement>('#ai-settings-dialog')!);
-shell.querySelector('#open-ai-settings')!.addEventListener('click', () => void aiDialog.open());
 
 /**
  * 识别…: the picture at `pos` read by the large model of AI 设置, as what the author picks
@@ -995,7 +993,6 @@ const quickFind = createQuickFind(document.querySelector<HTMLDialogElement>('#qu
 		void drivePage.reveal(path);
 	},
 });
-shell.querySelector('#open-search')!.addEventListener('click', () => quickFind.open());
 
 /** A file of the drive copied into the open article (`img/` for a picture, else `assets/`): its path there. */
 /**
@@ -1048,7 +1045,6 @@ const driveHost = {
 	},
 };
 const driveView = shell.querySelector<HTMLElement>('#drive-view')!;
-const driveButton = shell.querySelector<HTMLButtonElement>('#open-drive')!;
 const drivePage = createDriveBrowser(driveView, {
 	...driveHost,
 	changed: () => {
@@ -1078,7 +1074,6 @@ void drivePane.open('');
 
 // All the articles, as a table or a board (article-table.ts).
 const tableView = shell.querySelector<HTMLElement>('#table-view')!;
-const tableButton = shell.querySelector<HTMLButtonElement>('#open-table')!;
 const articleTable = createArticleTable(tableView, {
 	articles: () => articleList.articles(),
 	current: () => session.slug,
@@ -1088,14 +1083,16 @@ const articleTable = createArticleTable(tableView, {
 	},
 });
 
-/** The article in the middle, the drive or the table of all articles (the article stays open behind them). */
-function showView(view: 'editor' | 'drive' | 'table' | 'chat', folder?: string): void {
+/**
+ * The article in the middle, the drive, the table of all articles or AI 问答 (the article stays open behind them); the
+ * left column lists the conversations for AI 问答, the pages for the others.
+ */
+function showView(view: View, folder?: string): void {
 	shell.dataset.view = view;
+	shellState.set({ view });
 	driveView.hidden = view !== 'drive';
 	tableView.hidden = view !== 'table';
 	showChat(view === 'chat');
-	driveButton.setAttribute('aria-pressed', String(view === 'drive'));
-	tableButton.setAttribute('aria-pressed', String(view === 'table'));
 	const url = new URL(window.location.href);
 	if (view === 'drive') void drivePage.open(folder);
 	else url.searchParams.delete('drive');
@@ -1107,8 +1104,6 @@ function showView(view: 'editor' | 'drive' | 'table' | 'chat', folder?: string):
 	}
 	history.replaceState(null, '', url);
 }
-driveButton.addEventListener('click', () => showView(shell.dataset.view === 'drive' ? 'editor' : 'drive'));
-tableButton.addEventListener('click', () => showView(shell.dataset.view === 'table' ? 'editor' : 'table'));
 {
 	const address = new URL(window.location.href).searchParams;
 	const folder = address.get('drive');
@@ -1126,7 +1121,6 @@ const trashView = createTrashView(document.querySelector<HTMLDialogElement>('#tr
 		if (slug === session.slug) void filePanel.refresh();
 	},
 });
-shell.querySelector('#open-trash')!.addEventListener('click', () => void trashView.open());
 
 const historyView = createHistoryView(document.querySelector<HTMLDialogElement>('#history-dialog')!, {
 	restore: (source) => void session.restoreVersion(source),
@@ -1137,9 +1131,8 @@ function openSummary(): ArticleSummary | null {
 	return articleList.articles().find((article) => article.slug === session.slug) ?? null;
 }
 
-// ⋯: what can be done to the page, as in Notion's page menu.
-const pageMenu = shell.querySelector<HTMLButtonElement>('#page-menu')!;
-pageMenu.addEventListener('click', () => {
+/** ⋯: what can be done to the page, as in Notion's page menu. */
+function showPageMenu(pageMenu: HTMLElement): void {
 	const article = openSummary();
 	if (!article) return;
 	const address = articleAddress(article.kind, article.slug);
@@ -1166,7 +1159,7 @@ pageMenu.addEventListener('click', () => {
 		{ label: '复制一份', action: () => void articleActions.duplicate(article) },
 		{ label: '移到回收站', danger: true, action: () => void articleActions.remove(article) },
 	], pageMenu);
-});
+}
 
 // ⌘K or ⌘P (Ctrl elsewhere) finds an article, from anywhere; ⌘K on text selected in the editor links it instead.
 document.addEventListener('keydown', (event) => {

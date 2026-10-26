@@ -15,6 +15,33 @@ const apps = () => join(process.env.E2E_ROOT_PARENT!, basename(fileURLToPath(new
 async function openApp(page: Page, name: string): Promise<void> {
 	await page.locator('#open-apps').click();
 	await page.getByRole('menuitem', { name }).click();
+	await untilFrameTakesPointer(page);
+}
+
+/**
+ * Until the window just opened has its frame taking the pointer: for a moment after a frame is put in the page, the
+ * browser gives a click there to the page instead (to the frame element), and the app never hears it.
+ */
+async function untilFrameTakesPointer(page: Page): Promise<void> {
+	const element = page.locator('.mini-app-window iframe').last();
+	await expect(element).toBeVisible();
+	await expect
+		.poll(async () => {
+			const frame = await (await element.elementHandle())?.contentFrame();
+			const box = await element.boundingBox();
+			if (!frame || !box) return false;
+			const heard = await frame.evaluate(() => {
+				const marked = window as { pointerHeard?: boolean };
+				if (marked.pointerHeard === undefined) {
+					marked.pointerHeard = false;
+					addEventListener('pointermove', () => (marked.pointerHeard = true), { once: true });
+				}
+				return marked.pointerHeard;
+			});
+			if (!heard) await page.mouse.move(box.x + box.width / 2 + Math.random() * 4, box.y + box.height / 2);
+			return heard;
+		})
+		.toBe(true);
 }
 
 const appFrame = (page: Page, id: string) => page.frameLocator(`.mini-app-window[data-app="${id}"] iframe`);
