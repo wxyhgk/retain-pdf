@@ -1,5 +1,5 @@
 import { useEffect, useState, type ComponentProps } from 'react';
-import { ChevronLeft, ChevronRight, Ellipsis, ExternalLink, PanelLeft, PanelRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Ellipsis, ExternalLink, FileText, PanelLeft, PanelRight } from 'lucide-react';
 
 import { locale, t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -63,7 +63,7 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 							type="button"
 							className="page-path-separator rounded px-0.5 text-muted-foreground hover:bg-accent hover:text-foreground max-[720px]:hidden"
 							aria-label={t('「{title}」下面的页面', { title: page.title })}
-							onClick={(event) => showContextMenu(act.pagesUnder(page.slug).map((child) => ({ label: child.title, action: () => act.openPage(child.slug) })), event.currentTarget)}
+							onClick={(event) => showContextMenu(act.pagesUnder(page.slug).map((child) => ({ label: child.title, icon: FileText, action: () => act.openPage(child.slug) })), event.currentTarget)}
 						>
 							/
 						</button>,
@@ -88,10 +88,9 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				>
 					{status.text}
 				</span>
-				<Button asChild variant="ghost" size="xs" className="h-7 gap-1.5 px-2 text-xs font-normal text-foreground max-[720px]:hidden [&_svg]:size-3.5 [&_svg]:text-muted-foreground">
-					<a id="open-article" href={articleHref} target="_blank" hidden={!article}>
+				<Button asChild variant="ghost" size="icon-sm" className="size-7 text-muted-foreground hover:text-foreground max-[720px]:hidden [&_svg]:size-4">
+					<a id="open-article" href={articleHref} target="_blank" hidden={!article} title={t('在博客上打开')} aria-label={t('在博客上打开')}>
 						<ExternalLink aria-hidden />
-						{t('打开博客')}
 					</a>
 				</Button>
 				<IconButton id="page-menu" aria-label={t('页面菜单')} title={t('页面菜单')} hidden={!article} onClick={(event) => act.pageMenu(event.currentTarget)}>

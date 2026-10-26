@@ -1,3 +1,5 @@
+import { Copy, ExternalLink, Eye, FolderPlus, FolderSearch, FolderUp, Link2, PenLine, ScanText, Table, Trash2, Upload } from 'lucide-react';
+
 import { t } from '@blog/i18n/index.mjs';
 import { movedPath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
@@ -324,34 +326,34 @@ export function createFilePanelState(host: FilePanelHost) {
 	function menuFor(entry: ArticleFileEntry | null): MenuItem[] {
 		if (!entry) {
 			return [
-				{ label: t('上传文件…'), action: () => chooseUpload(null) },
-				{ label: t('上传文件夹…'), action: () => chooseUpload(null, true) },
-				{ label: t('新建文件夹'), action: () => startNewFolder(null) },
+				{ label: t('上传文件…'), icon: Upload, action: () => chooseUpload(null) },
+				{ label: t('上传文件夹…'), icon: FolderUp, action: () => chooseUpload(null, true) },
+				{ label: t('新建文件夹'), icon: FolderPlus, action: () => startNewFolder(null) },
 				'separator',
-				{ label: FINDER(), action: () => reveal('') },
+				{ label: FINDER(), icon: FolderSearch, action: () => reveal('') },
 			];
 		}
 		const items: MenuItem[] = [];
 		const published = entry.path.startsWith('img/') || entry.path.startsWith('assets/');
 		if (entry.kind === 'directory') {
 			items.push(
-				{ label: t('上传文件到这里…'), action: () => chooseUpload(entry) },
-				{ label: t('上传文件夹到这里…'), action: () => chooseUpload(entry, true) },
-				{ label: t('新建子文件夹'), action: () => startNewFolder(entry) },
+				{ label: t('上传文件到这里…'), icon: Upload, action: () => chooseUpload(entry) },
+				{ label: t('上传文件夹到这里…'), icon: FolderUp, action: () => chooseUpload(entry, true) },
+				{ label: t('新建子文件夹'), icon: FolderPlus, action: () => startNewFolder(entry) },
 			);
 		} else {
 			const reference = markdownReference(entry.path);
-			if (published) items.push({ label: officeKind(entry.path) ? t('预览') : t('在新标签页打开'), action: () => openFile(entry) });
-			if (published && tableSource(entry.path)) items.push({ label: t('插入为表格'), action: () => insertTable(entry) });
-			if (/\.pdf$/iu.test(entry.path)) items.push({ label: t('OCR 成子页面（PaddleOCR）'), action: () => host.ocr(entry.path) });
+			if (published) items.push({ label: officeKind(entry.path) ? t('预览') : t('在新标签页打开'), icon: officeKind(entry.path) ? Eye : ExternalLink, action: () => openFile(entry) });
+			if (published && tableSource(entry.path)) items.push({ label: t('插入为表格'), icon: Table, action: () => insertTable(entry) });
+			if (/\.pdf$/iu.test(entry.path)) items.push({ label: t('OCR 成子页面（PaddleOCR）'), icon: ScanText, action: () => host.ocr(entry.path) });
 			// A plugin's block may tell the file by what it says (a Gaussian output among other logs): read when copied.
 			const article = get().slug;
-			if (reference && article) items.push({ label: t('复制 Markdown 引用'), action: () => void readMarkdownReference(entry.path, (path) => articleFileHead(article, path)).then((read) => copy(read ?? reference, t('已复制 Markdown 引用'))) });
+			if (reference && article) items.push({ label: t('复制 Markdown 引用'), icon: Link2, action: () => void readMarkdownReference(entry.path, (path) => articleFileHead(article, path)).then((read) => copy(read ?? reference, t('已复制 Markdown 引用'))) });
 		}
-		items.push({ label: t('复制路径'), action: () => void copy(entry.kind === 'directory' ? `./${entry.path}/` : `./${entry.path}`, t('已复制路径')) });
-		if (!entry.locked) items.push({ label: t('重命名'), hint: 'F2', action: () => startRename(entry) });
-		items.push('separator', { label: FINDER(), action: () => reveal(entry.path) });
-		if (!entry.locked) items.push('separator', { label: t('移到回收站'), hint: '⌫', danger: true, action: () => trash(entry) });
+		items.push({ label: t('复制路径'), icon: Copy, action: () => void copy(entry.kind === 'directory' ? `./${entry.path}/` : `./${entry.path}`, t('已复制路径')) });
+		if (!entry.locked) items.push({ label: t('重命名'), hint: 'F2', icon: PenLine, action: () => startRename(entry) });
+		items.push('separator', { label: FINDER(), icon: FolderSearch, action: () => reveal(entry.path) });
+		if (!entry.locked) items.push('separator', { label: t('移到回收站'), hint: '⌫', danger: true, icon: Trash2, action: () => trash(entry) });
 		return items;
 	}
 

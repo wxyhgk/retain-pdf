@@ -18,7 +18,7 @@ const main = (page: Page) => pane(page).locator('.word-count-card strong');
 
 async function openTab(page: Page): Promise<void> {
 	await page.locator('#plugin-commands button', { hasText: '字数统计' }).click();
-	await expect(page.locator('.side-tabs [role="tab"]', { hasText: '字数' })).toHaveAttribute('aria-selected', 'true');
+	await expect(page.locator('.side-tabs [role="tab"][aria-label="字数"]')).toHaveAttribute('aria-selected', 'true');
 }
 
 async function caretAtEnd(page: Page): Promise<void> {
@@ -90,7 +90,7 @@ test('the plugins dialog says what it is, and turning it off takes the tab and t
 	await row.getByRole('switch').click({ force: true });
 	await expect(row.locator('.plugin-state')).toHaveText('已关闭');
 	await page.keyboard.press('Escape');
-	await expect(page.locator('.side-tabs [role="tab"]', { hasText: '字数' })).toHaveCount(0);
+	await expect(page.locator('.side-tabs [role="tab"][aria-label="字数"]')).toHaveCount(0);
 	await expect(page.locator('#plugin-commands')).toBeHidden();
 	// Turned on again, so that the settings file is as it was.
 	await workspaceMenu(page, 'open-plugins');

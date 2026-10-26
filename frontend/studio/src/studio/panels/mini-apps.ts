@@ -1,3 +1,5 @@
+import { CircleHelp } from 'lucide-react';
+
 import { appFetch, appRun, articleFileUrl, getTask, listArticleFiles, listMiniApps, uploadArticleFile, type MiniApp } from '../api/client';
 import { showContextMenu, type MenuItem } from '../common/context-menu';
 import { t } from '@blog/i18n/index.mjs';
@@ -344,12 +346,13 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		void listMiniApps().then(
 			(apps) => {
 				const items: MenuItem[] = apps.map((app) => ({
-					label: `${app.icon}  ${app.name}`,
+					label: app.name,
+					icon: app.icon,
 					hint: app.problem ? t('出错') : undefined,
 					action: () => (app.problem ? host.toast(`${app.name}：${app.problem}`) : show(app)),
 				}));
 				if (items.length) items.push('separator');
-				items.push({ label: t('怎么做一个小程序…'), action: () => host.toast(t('在终端里让 AI 做一个，比如「做一个能量单位换算的小程序」：它会照着技能 studio-mini-apps 写进 apps/。')) });
+				items.push({ label: t('怎么做一个小程序…'), icon: CircleHelp, action: () => host.toast(t('在终端里让 AI 做一个，比如「做一个能量单位换算的小程序」：它会照着技能 studio-mini-apps 写进 apps/。')) });
 				showContextMenu(items, launcher);
 			},
 			(error: unknown) => host.toast(error instanceof Error ? error.message : t('读不到小程序')),

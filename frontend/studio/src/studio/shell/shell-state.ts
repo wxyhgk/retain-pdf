@@ -8,7 +8,8 @@ import { createStore, useStore } from './store.ts';
 export type View = 'editor' | 'drive' | 'table' | 'chat';
 
 /** A tab of the right column: the Studio's (`ai`, `files`…) or a plugin's. */
-export type SideTab = { key: string; label: string; id: string; controls: string };
+/** A tab of the right column; `icon`, a plugin's (an SVG or a character): the Studio's own are drawn by key. */
+export type SideTab = { key: string; label: string; id: string; controls: string; icon?: string };
 
 /**
  * What the shell (the parts React draws: the left column, the bar above the editor, the right column's tabs) shows.

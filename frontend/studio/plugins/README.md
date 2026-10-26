@@ -34,7 +34,7 @@ export function apply(ctx) { … }             // 在这里注册
 | 页面 | `ctx.page` | `articleSlug`、`fileUrl(path)`：文章发布出去的文件地址；`views`：文章存的块的视角（article.views.json，比如分子的三维视角） |
 | Studio | `ctx.blocks.register({ name, fence, … })` | 块在编辑器里的一切，都是可选的字段，见下面「Studio 里的块」 |
 | Studio | `ctx.studio` | 打开的文章 `slug()`、正在显示（或马上要画）的文章 `shown()`、它存的块视角 `views.get()` / `views.save(key, 值)`、`article()`（`{ slug, title }`，标题是正在编辑的）、整个文件 `source()`（编辑器里的样子，没保存的也算，**含开头的 `---` 属性**）、`fileUrl(slug, path)`、`save()`；编辑器 `editor.view()`（ProseMirror）、`editor.insert(markdown)`（插成独立的块）、`editor.insertText(文字)`（插在光标所在的行里）；`upload(slug, 文件夹, 文件, { replace?, onProgress? })`（放进文章的 `img/` 或 `assets/`，回给它在文章里的路径）、`toast(文字, 出错?)`、`showPanel(key)`；自己的接口 `api.get/post/put('/<插件>/…')` |
-| Studio | `ctx.panels` | 右栏的页签：`register({ key, label, order?, draw(pane) })`，见下面「界面：面板和命令」 |
+| Studio | `ctx.panels` | 右栏的页签：`register({ key, label, icon?, order?, draw(pane) })`（`icon` 是 SVG 或一个字符，有它时页签只显示图标，名字在悬停时显示），见下面「界面：面板和命令」 |
 | Studio | `ctx.commands` | 命令：`register({ id, label, run, keys?, places? })`，可以挂快捷键、斜杠菜单、⋯ 菜单、左栏；`run(id)` 跑别人的命令 |
 | Studio | `ctx.molecules` | 分子编辑器接缝：`register(editor)` 提供一个，`editor()` 取一个 |
 | Studio | `ctx.recognizers` | 识别图片：`register({ id, label, prompt, toMarkdown? })` 加一种读法，图片菜单的「识别…」里列出全部；见下面「加一种识别」 |

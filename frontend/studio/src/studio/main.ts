@@ -1,6 +1,7 @@
 // The Studio page: its parts, and how they talk to each other. Each part
 // keeps to its own corner of the page; the open article lives in the session.
 import './locale';
+import { Copy, FolderPen, FolderSearch, History, Link, MoveHorizontal, Trash2 } from 'lucide-react';
 import {
 	articleFileHead,
 	articleFileUrl,
@@ -1177,25 +1178,27 @@ function showPageMenu(pageMenu: HTMLElement): void {
 	showContextMenu([
 		{
 			label: properties.isWide() ? t('全宽 ✓') : t('全宽'),
+			icon: MoveHorizontal,
 			action: () => {
 				if (properties.setWide(!properties.isWide())) editorPanel.classList.toggle('is-wide', properties.isWide());
 			},
 		},
 		{
 			label: t('复制博客链接'),
+			icon: Link,
 			action: () => {
 				const link = new URL(address, import.meta.env.SITE ?? window.location.origin).href;
 				navigator.clipboard.writeText(link).then(() => showToast(t('已复制 {link}', { link })), () => showToast(t('浏览器不允许写入剪贴板'), true));
 			},
 		},
-		{ label: /Mac/u.test(navigator.platform) ? t('在 Finder 中显示') : t('在文件管理器中显示'), action: () => void revealArticleFile(article.slug, '') },
-		{ label: t('历史版本…'), action: () => openDialog('history', { slug: article.slug, host: { restore: (source) => void session.restoreVersion(source) } }) },
+		{ label: /Mac/u.test(navigator.platform) ? t('在 Finder 中显示') : t('在文件管理器中显示'), icon: FolderSearch, action: () => void revealArticleFile(article.slug, '') },
+		{ label: t('历史版本…'), icon: History, action: () => openDialog('history', { slug: article.slug, host: { restore: (source) => void session.restoreVersion(source) } }) },
 		// The plugins' (`ctx.commands`, `places: ['page-menu']`).
-		...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, action: () => runCommand(command, 'page-menu') })),
+		...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, icon: command.icon, action: () => runCommand(command, 'page-menu') })),
 		'separator',
-		{ label: t('改文件夹名…'), action: () => void articleActions.rename(article) },
-		{ label: t('复制一份'), action: () => void articleActions.duplicate(article) },
-		{ label: t('移到回收站'), danger: true, action: () => void articleActions.remove(article) },
+		{ label: t('改文件夹名…'), icon: FolderPen, action: () => void articleActions.rename(article) },
+		{ label: t('复制一份'), icon: Copy, action: () => void articleActions.duplicate(article) },
+		{ label: t('移到回收站'), danger: true, icon: Trash2, action: () => void articleActions.remove(article) },
 	], pageMenu);
 }
 

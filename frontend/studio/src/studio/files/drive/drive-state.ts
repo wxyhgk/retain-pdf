@@ -1,3 +1,5 @@
+import { Copy, ExternalLink, Eye, FileInput, FolderOpen, FolderPlus, FolderSearch, PenLine, RefreshCw, Sparkles, Trash2, Upload } from 'lucide-react';
+
 import { t } from '@blog/i18n/index.mjs';
 import { officeKind } from '@blog/office/kinds.mjs';
 import { openOfficeFile } from '@blog/office/viewer.ts';
@@ -236,15 +238,15 @@ export function createDriveState(host: DriveBrowserHost) {
 			const article = host.article();
 			const items: MenuItem[] = [];
 			if (entry) {
-				items.push({ label: entry.kind === 'directory' ? t('打开') : officeKind(entry.path) ? t('预览') : t('在新标签页打开'), action: () => activate(entry) });
-				if (entry.kind === 'file' && article) items.push({ label: t('插入到《{title}》', { title: article.title }), action: () => void insert(entry) });
-				if (entry.kind === 'file') items.push({ label: t('问 AI'), hint: t('终端'), action: () => host.askAI(entry.path) });
-				items.push('separator', { label: t('重命名'), hint: 'F2', action: () => actions.rename(entry) });
-				if (!info?.fixed) items.push({ label: t('在 Finder 中显示'), action: () => reveal(entry.path) });
-				items.push({ label: t('复制路径'), action: () => void navigator.clipboard.writeText(`${info?.root ?? ''}/${entry.path}`).then(() => say(t('已复制路径'))) });
-				items.push('separator', { label: t('移到回收站'), danger: true, action: () => trash(entry) });
+				items.push({ label: entry.kind === 'directory' ? t('打开') : officeKind(entry.path) ? t('预览') : t('在新标签页打开'), icon: entry.kind === 'directory' ? FolderOpen : officeKind(entry.path) ? Eye : ExternalLink, action: () => activate(entry) });
+				if (entry.kind === 'file' && article) items.push({ label: t('插入到《{title}》', { title: article.title }), icon: FileInput, action: () => void insert(entry) });
+				if (entry.kind === 'file') items.push({ label: t('问 AI'), hint: t('终端'), icon: Sparkles, action: () => host.askAI(entry.path) });
+				items.push('separator', { label: t('重命名'), hint: 'F2', icon: PenLine, action: () => actions.rename(entry) });
+				if (!info?.fixed) items.push({ label: t('在 Finder 中显示'), icon: FolderSearch, action: () => reveal(entry.path) });
+				items.push({ label: t('复制路径'), icon: Copy, action: () => void navigator.clipboard.writeText(`${info?.root ?? ''}/${entry.path}`).then(() => say(t('已复制路径'))) });
+				items.push('separator', { label: t('移到回收站'), danger: true, icon: Trash2, action: () => trash(entry) });
 			} else {
-				items.push({ label: t('上传文件…'), action: () => picker.input?.click() }, { label: t('新建文件夹'), action: () => void createFolder() }, { label: t('重新读取'), action: () => void open(get().folder) });
+				items.push({ label: t('上传文件…'), icon: Upload, action: () => picker.input?.click() }, { label: t('新建文件夹'), icon: FolderPlus, action: () => void createFolder() }, { label: t('重新读取'), icon: RefreshCw, action: () => void open(get().folder) });
 			}
 			showContextMenu(items, at);
 		},

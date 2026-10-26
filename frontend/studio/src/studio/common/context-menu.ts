@@ -1,7 +1,12 @@
+import type { LucideIcon } from 'lucide-react';
+
 import { createStore } from '../shell/store.ts';
 
+/** An item's mark before it, as Notion's menus have: a lucide icon, or a plugin's SVG or character. */
+export type MenuIcon = LucideIcon | string;
+
 export type MenuItem =
-	| { label: string; action: () => void; danger?: boolean; hint?: string }
+	| { label: string; action: () => void; danger?: boolean; hint?: string; icon?: MenuIcon }
 	| 'separator';
 
 /** The menu open (shell/ContextMenu.tsx draws it): its items, where, and what had the keys before it. */

@@ -54,7 +54,7 @@ test('能量单位换算 opens floating, converts, and puts a value into the art
 	await openStudio(page);
 	await editor(page).locator('p', { hasText: '结尾段落' }).click();
 	await page.keyboard.press('End');
-	await openApp(page, '⚡  能量单位换算');
+	await openApp(page, '能量单位换算');
 	const window = page.locator('.mini-app-window[data-app="energy-units"]');
 	await expect(window.locator('.mini-app-title')).toHaveText('⚡ 能量单位换算');
 	const frame = appFrame(page, 'energy-units');
@@ -77,7 +77,7 @@ test('能量单位换算 opens floating, converts, and puts a value into the art
 test('Gaussian 输入生成 takes a structure of the article and saves an input into its assets/', async ({ page }) => {
 	writeFixtureFile('assets/h2o.xyz', '3\nwater\nO 0.000000 0.000000 0.117300\nH 0.000000 0.757200 -0.469200\nH 0.000000 -0.757200 -0.469200\n');
 	await openStudio(page);
-	await openApp(page, '⚛  Gaussian 输入生成');
+	await openApp(page, 'Gaussian 输入生成');
 	const frame = appFrame(page, 'gaussian-input');
 	await frame.locator('#source').selectOption('assets/h2o.xyz');
 	await expect(frame.locator('#preview')).toContainText('#p B3LYP/def2SVP opt freq em=GD3BJ');
@@ -95,7 +95,7 @@ test('an app that did not ask for the article cannot read it', async ({ page }) 
 	writeFileSync(join(folder, 'app.html'), '<p id="out">…</p><script>studio.article().then((a) => { out.textContent = a.slug; }, (e) => { out.textContent = e.message; });</script>');
 	try {
 		await openStudio(page);
-		await openApp(page, '?  探针');
+		await openApp(page, '探针');
 		await expect(appFrame(page, 'probe').locator('#out')).toHaveText('「探针」的 app.json 里没有要「article」权限');
 	} finally {
 		rmSync(folder, { recursive: true, force: true });
@@ -125,7 +125,7 @@ test('a page the app’s frame goes to (a link clicked) gets nothing of the Stud
 		},
 		async () => {
 			await openStudio(page);
-			await openApp(page, '?  探针');
+			await openApp(page, '探针');
 			const frame = appFrame(page, 'probe');
 			await expect(frame.locator('#out')).toHaveText(slug);
 			await expect(frame.locator('#data')).toHaveText('数据读到了');
@@ -148,7 +148,7 @@ test('an app may not reach this machine through studio.fetch, nor the Studio’s
 		async () => {
 			await openStudio(page);
 			const own = new URL(page.url()).origin;
-			await openApp(page, '?  探针');
+			await openApp(page, '探针');
 			await expect(appFrame(page, 'probe').locator('#out')).toContainText('小程序不能访问本机或局域网的地址');
 			// Opened as a page of its own, the app has no origin either: the API refuses it.
 			await page.goto(`${own}/studio-apps/probe/`);
@@ -163,7 +163,7 @@ test('an app may not reach this machine through studio.fetch, nor the Studio’s
 
 test('a window opens roomy, is sized from its edges and corners, made large by a double-click, and opens again as it was left', async ({ page }) => {
 	await openStudio(page);
-	await openApp(page, '⚡  能量单位换算');
+	await openApp(page, '能量单位换算');
 	const window = page.locator('.mini-app-window[data-app="energy-units"]');
 	const box = async () => (await window.boundingBox())!;
 	const opened = await box();
@@ -200,7 +200,7 @@ test('a window opens roomy, is sized from its edges and corners, made large by a
 	await expect.poll(async () => Math.round((await box()).width)).toBe(Math.round(left.width));
 	// Closed and opened again: where and as large as it was left.
 	await window.getByRole('button', { name: '关闭 能量单位换算' }).click();
-	await openApp(page, '⚡  能量单位换算');
+	await openApp(page, '能量单位换算');
 	const again = await box();
 	expect([again.x, again.y, again.width, again.height].map(Math.round)).toEqual([left.x, left.y, left.width, left.height].map(Math.round));
 });

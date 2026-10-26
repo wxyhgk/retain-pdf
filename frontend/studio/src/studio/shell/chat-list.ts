@@ -1,3 +1,5 @@
+import { Trash2 } from 'lucide-react';
+
 import { t } from '@blog/i18n/index.mjs';
 import { deleteConversation, listConversations, type Conversation } from '../api/client';
 import { shell } from './shell-state';
@@ -47,7 +49,7 @@ export function createChatList(host: ChatListHost) {
 		},
 		/** A conversation's menu, at its row. */
 		menu(entry: Conversation, row: HTMLElement): void {
-			showContextMenu([{ label: t('删除这个对话'), danger: true, action: () => void remove(entry) }], row);
+			showContextMenu([{ label: t('删除这个对话'), danger: true, icon: Trash2, action: () => void remove(entry) }], row);
 		},
 	};
 }

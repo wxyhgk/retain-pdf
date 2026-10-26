@@ -1,4 +1,5 @@
 import { Fragment, useLayoutEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent, type MouseEvent } from 'react';
+import { Ellipsis, File, Folder, FolderOpen, FolderPlus, Image, RefreshCw, Upload, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { showContextMenu } from '../../common/context-menu';
@@ -11,11 +12,12 @@ import { NameInput } from '../shared/NameInput';
 import { useDropZone } from '../shared/use-drop-zone';
 import type { FilePanelActions, FilePanelState } from './file-panel-state';
 
-function fileIcon(node: FileNode, open: boolean): string {
-	if (node.entry.kind === 'directory') return open ? '▾' : '▸';
-	if (isImage(node.entry.path)) return '▣';
+function FileIcon({ node, open }: { node: FileNode; open: boolean }) {
+	if (node.entry.kind === 'directory') return open ? <FolderOpen aria-hidden /> : <Folder aria-hidden />;
+	if (isImage(node.entry.path)) return <Image aria-hidden />;
 	// A file a plugin's block shows has its mark (a structure file: ⬡).
-	return fileBlock(node.entry.path)?.icon || '▤';
+	const mark = fileBlock(node.entry.path)?.icon;
+	return mark ? <>{mark}</> : <File aria-hidden />;
 }
 
 const rowOf = (target: EventTarget | null): HTMLElement | null => (target instanceof Element ? target.closest<HTMLElement>('.file-row[data-path]') : null);
@@ -141,9 +143,9 @@ export function FilePanel({ store, actions }: { store: Store<FilePanelState>; ac
 		const unused = referenced !== null && isUnused(entry, referenced);
 		const renaming = editing?.kind === 'rename' && editing.path === entry.path;
 		const className = ['file-row', entry.path === selected && 'is-selected', entry.kind === 'directory' && 'is-folder', entry.locked && 'is-locked', unused && 'is-unused', drop.lit === entry.path && 'is-drop-target'].filter(Boolean).join(' ');
-		const button = (name: string, text: string, label: string) => (
+		const button = (name: string, Icon: LucideIcon, label: string) => (
 			<button className={name} type="button" tabIndex={-1} title={label} aria-label={label}>
-				{text}
+				<Icon aria-hidden />
 			</button>
 		);
 		return (
@@ -166,7 +168,9 @@ export function FilePanel({ store, actions }: { store: Store<FilePanelState>; ac
 					actions.select(entry.path);
 				}}
 			>
-				<span className="file-icon">{fileIcon(node, isOpen)}</span>
+				<span className="file-icon">
+					<FileIcon node={node} open={isOpen} />
+				</span>
 				{renaming ? (
 					<NameInput className="file-name-input" value={node.name} label={t('重命名 {name}', { name: node.name })} keepExtension={entry.kind === 'file'} onDone={actions.named} />
 				) : (
@@ -174,8 +178,8 @@ export function FilePanel({ store, actions }: { store: Store<FilePanelState>; ac
 						<span className="file-name">{node.name}</span>
 						<span className="file-meta">{entry.kind === 'directory' ? (node.children.length ? String(node.children.length) : t('空')) : entry.size !== undefined ? formatSize(entry.size) : ''}</span>
 						<span className="file-row-actions">
-							{entry.kind === 'directory' && button('file-row-upload', '⤒', t('上传文件到 {name}/', { name: node.name }))}
-							{button('file-row-menu', '⋯', t('{name} 的操作', { name: node.name }))}
+							{entry.kind === 'directory' && button('file-row-upload', Upload, t('上传文件到 {name}/', { name: node.name }))}
+							{button('file-row-menu', Ellipsis, t('{name} 的操作', { name: node.name }))}
 						</span>
 					</>
 				)}
@@ -190,7 +194,9 @@ export function FilePanel({ store, actions }: { store: Store<FilePanelState>; ac
 		if (editing?.kind === 'folder' && editing.parent === entry.path) {
 			return (
 				<li className="file-row is-folder is-editing" style={depth}>
-					<span className="file-icon">▸</span>
+					<span className="file-icon">
+						<Folder aria-hidden />
+					</span>
 					<NameInput className="file-name-input" value="" label={t('新文件夹名称')} keepExtension={false} onDone={actions.named} />
 				</li>
 			);
@@ -221,13 +227,13 @@ export function FilePanel({ store, actions }: { store: Store<FilePanelState>; ac
 				</span>
 				<div className="pane-actions">
 					<button id="upload-files" type="button" title={t('上传文件；文件和整个文件夹也可以直接拖进来')} aria-label={t('上传文件')} disabled={!slug} onClick={() => actions.chooseUpload(actions.entryAt(store.get().selected))}>
-						⤒
+						<Upload aria-hidden />
 					</button>
 					<button id="new-folder" type="button" title={t('新建文件夹')} aria-label={t('新建文件夹')} disabled={!slug} onClick={() => actions.startNewFolder(actions.entryAt(store.get().selected))}>
-						＋
+						<FolderPlus aria-hidden />
 					</button>
 					<button id="refresh-files" type="button" title={t('重新读取文件夹')} aria-label={t('刷新')} disabled={!slug} onClick={actions.refresh}>
-						↻
+						<RefreshCw aria-hidden />
 					</button>
 				</div>
 				<input

@@ -10,12 +10,14 @@
 .drive-crumb[aria-current='page'] { color: rgb(var(--gray-dark)); font-weight: 600; }
 .drive--pane .drive-crumb { max-width: 9em; }
 .drive-crumb-separator { flex: none; color: rgb(var(--gray)); }
-.drive-actions { display: flex; flex: none; gap: 6px; }
-.drive-button { padding: 3px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; cursor: pointer; }
-.drive-button:hover { background: var(--surface-hover); }
+.drive-actions { display: flex; flex: none; gap: 2px; }
+/* The bar's buttons: icons, their names on hover. */
+.drive-button { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; cursor: pointer; }
+.drive-button svg { width: 16px; height: 16px; }
+.drive-button:hover { background: var(--surface-hover); color: rgb(var(--gray-dark)); }
 .drive-button[hidden] { display: none; }
-.drive--pane .drive-button { padding: 1px 6px; border-color: transparent; background: none; font-size: 13px; }
-.drive--pane .drive-button:hover { background: var(--surface-hover); }
+.drive--pane .drive-button { width: 26px; height: 26px; }
+.drive--pane .drive-button svg { width: 15px; height: 15px; }
 
 .drive-list { flex: 1; min-height: 0; overflow: auto; outline: none; }
 .drive--page .drive-list { padding-top: 6px; }
@@ -47,3 +49,5 @@
 .drive-primary { padding: 6px 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--on-accent); font: inherit; cursor: pointer; }
 .drive-typed { display: flex; gap: 6px; margin-top: 14px; }
 .drive-typed input { flex: 1; min-width: 0; padding: 4px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 12px; }
+.drive-typed button { padding: 3px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; cursor: pointer; }
+.drive-typed button:hover { background: var(--surface-hover); }

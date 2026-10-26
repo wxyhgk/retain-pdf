@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@studio/ui/dropdown-menu';
-import { contextMenu, type MenuAsk } from '../common/context-menu';
+import { contextMenu, type MenuAsk, type MenuIcon } from '../common/context-menu';
 import { useStore } from './store';
 
 /** Closed, if it is still this one (another may have opened meanwhile). */
@@ -9,8 +9,21 @@ const closer = (round: number) => () => {
 	if (contextMenu.get().ask?.round === round) contextMenu.set({ ask: null });
 };
 
+/** An item's icon; none, a space as wide, so the words of a menu with icons line up. */
+function MenuMark({ icon: Icon }: { icon?: MenuIcon }) {
+	if (!Icon) return <span aria-hidden className="size-4 flex-none" />;
+	if (typeof Icon !== 'string') return <Icon aria-hidden className="size-4 text-muted-foreground" />;
+	if (Icon.trimStart().startsWith('<svg')) return <span aria-hidden className="grid size-4 flex-none place-items-center text-muted-foreground [&_svg]:size-4" dangerouslySetInnerHTML={{ __html: Icon }} />;
+	return (
+		<span aria-hidden className="grid size-4 flex-none place-items-center text-[13px] text-muted-foreground">
+			{Icon}
+		</span>
+	);
+}
+
 function Menu({ ask }: { ask: MenuAsk }) {
 	const close = closer(ask.round);
+	const marked = ask.items.some((item) => item !== 'separator' && item.icon);
 	const content = useRef<HTMLDivElement>(null);
 	const escaped = useRef(false);
 
@@ -71,6 +84,7 @@ function Menu({ ask }: { ask: MenuAsk }) {
 								item.action();
 							}}
 						>
+							{marked && <MenuMark icon={item.icon} />}
 							{item.label}
 							{item.hint && <DropdownMenuShortcut className="pl-4 tracking-normal">{item.hint}</DropdownMenuShortcut>}
 						</DropdownMenuItem>

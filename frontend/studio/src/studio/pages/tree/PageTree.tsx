@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
-import { ChevronRight, Ellipsis, FileText, Plus } from 'lucide-react';
+import { ArrowUpToLine, ChevronRight, Copy, Ellipsis, FileText, FolderInput, FolderPen, GitCommitHorizontal, Merge, Plus, Trash2 } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
@@ -50,23 +50,23 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 			const group = actions.topmost(chosen);
 			const pages = group.map((slug) => articles.find((entry) => entry.slug === slug)!).filter(Boolean);
 			showContextMenu([
-				{ label: t('移到…（{count} 篇）', { count: group.length }), action: () => host.moveTo(group) },
-				{ label: t('移到最上层'), action: () => host.move(group, '') },
+				{ label: t('移到…（{count} 篇）', { count: group.length }), icon: FolderInput, action: () => host.moveTo(group) },
+				{ label: t('移到最上层'), icon: ArrowUpToLine, action: () => host.move(group, '') },
 				'separator',
-				{ label: t('移到回收站（{count} 篇）', { count: group.length }), danger: true, action: () => host.removeMany(pages) },
+				{ label: t('移到回收站（{count} 篇）', { count: group.length }), danger: true, icon: Trash2, action: () => host.removeMany(pages) },
 			], at);
 			return;
 		}
 		const items: MenuItem[] = [
-			...(committable ? [{ label: t('提交到 git…'), action: () => host.commit(article) }, 'separator' as const] : []),
-			{ label: t('在下面新建页面'), action: () => host.createChild(article) },
-			{ label: t('移到…'), action: () => host.moveTo([article.slug]) },
-			...(article.parent ? [{ label: t('移到最上层'), action: () => host.move([article.slug], '') }, { label: t('并入上级页面…'), action: () => host.merge(article) }] : []),
+			...(committable ? [{ label: t('提交到 git…'), icon: GitCommitHorizontal, action: () => host.commit(article) }, 'separator' as const] : []),
+			{ label: t('在下面新建页面'), icon: Plus, action: () => host.createChild(article) },
+			{ label: t('移到…'), icon: FolderInput, action: () => host.moveTo([article.slug]) },
+			...(article.parent ? [{ label: t('移到最上层'), icon: ArrowUpToLine, action: () => host.move([article.slug], '') }, { label: t('并入上级页面…'), icon: Merge, action: () => host.merge(article) }] : []),
 			'separator',
-			{ label: t('改文件夹名…'), action: () => host.rename(article) },
-			{ label: t('复制一份'), action: () => host.duplicate(article) },
+			{ label: t('改文件夹名…'), icon: FolderPen, action: () => host.rename(article) },
+			{ label: t('复制一份'), icon: Copy, action: () => host.duplicate(article) },
 			'separator',
-			{ label: t('移到回收站'), danger: true, action: () => host.remove(article) },
+			{ label: t('移到回收站'), danger: true, icon: Trash2, action: () => host.remove(article) },
 		];
 		showContextMenu(items, at);
 	}

@@ -29,8 +29,10 @@ const KEY_NAME = /^[a-z][\w-]*$/u;
 export type StudioPanel = {
 	/** Its name (lowercase letters, digits, - and _); `ctx.studio.showPanel(key)` opens it. */
 	key: string;
-	/** The tab's text. */
+	/** The tab's name (shown on hover when it has an icon). */
 	label: string;
+	/** An SVG, or a character, for its tab; none, the tab shows its label. */
+	icon?: string;
 	/** Among the plugins' tabs, after the Studio's own (files, terminal, drive): the smaller first. */
 	order?: number;
 	draw(pane: HTMLElement): void | (() => void);

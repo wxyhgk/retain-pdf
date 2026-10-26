@@ -12,11 +12,13 @@
 .file-tree .file-row.is-locked:not(.is-folder .file-name) { color: rgb(var(--gray)); }
 .file-tree .file-row.is-unused .file-name, .file-tree .file-row.is-unused .file-icon { opacity: 0.45; }
 .file-tree .file-row.is-unused .file-name { text-decoration: line-through dotted rgb(var(--gray)); }
-.file-tree .file-icon { color: rgb(var(--gray)); font-size: 11px; text-align: center; }
+.file-tree .file-icon { display: grid; place-items: center; color: rgb(var(--gray)); font-size: 11px; }
+.file-tree .file-icon svg { width: 15px; height: 15px; stroke-width: 1.75; }
 .file-tree .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-tree .file-meta { color: rgb(var(--gray)); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; }
 .file-tree .file-row-actions { display: flex; gap: 1px; }
-.file-tree .file-row-actions button { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font-size: 13px; line-height: 1; cursor: pointer; opacity: 0; }
+.file-tree .file-row-actions button { display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); cursor: pointer; opacity: 0; }
+.file-tree .file-row-actions button svg { width: 14px; height: 14px; }
 .file-tree .file-row:hover .file-row-actions button, .file-tree .file-row.is-selected .file-row-actions button { opacity: 1; }
 .file-tree .file-row-actions button:hover { background: color-mix(in srgb, rgb(var(--gray-dark)) 10%, transparent); color: rgb(var(--gray-dark)); }
 .file-tree .file-row-empty { padding: 2px 8px 4px calc(8px + var(--depth, 0) * 16px); list-style: none; }

@@ -191,7 +191,7 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 			for (const [name, entry] of tabs) if (entry.panel && !panels.includes(entry.panel)) removeTab(name, entry);
 			for (const added of panels) {
 				if (tabs.has(added.key)) continue;
-				const tab = { key: added.key, label: added.label, id: `side-tab-plugin-${added.key}`, controls: `side-plugin-${added.key}` };
+				const tab = { key: added.key, label: added.label, icon: added.icon, id: `side-tab-plugin-${added.key}`, controls: `side-plugin-${added.key}` };
 				const pane = document.createElement('section');
 				pane.id = tab.controls;
 				pane.className = 'side-pane plugin-pane';

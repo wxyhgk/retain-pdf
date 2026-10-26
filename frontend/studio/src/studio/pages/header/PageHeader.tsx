@@ -340,8 +340,8 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 							onClick={(event) =>
 								showContextMenu(
 									[
-										...(showTags ? [] : [{ label: t('标签'), action: () => add('tags') }]),
-										...(showDescription ? [] : [{ label: t('简介'), action: () => add('description') }]),
+										...(showTags ? [] : [{ label: t('标签'), icon: Tags, action: () => add('tags') }]),
+										...(showDescription ? [] : [{ label: t('简介'), icon: AlignLeft, action: () => add('description') }]),
 									],
 									event.currentTarget,
 								)

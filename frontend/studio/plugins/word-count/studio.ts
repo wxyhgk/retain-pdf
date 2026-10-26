@@ -17,6 +17,9 @@ export const name = 'word-count';
 export const description = t('字数统计：右栏一个页签，随着打字实时数中文字、英文词、阅读时间，以及标题、公式、图片、代码块；还能把统计写成一行插进正文。');
 export const inject = ['studio', 'panels', 'commands', 'styles'];
 
+/** Its tab's and its commands' mark: a bar chart (lucide's). */
+const CHART_ICON = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>';
+
 const STYLE = `
 .word-count { display: flex; flex-direction: column; gap: 14px; padding: 14px 16px; color: rgb(var(--gray-dark)); }
 .word-count-title { margin: 0; font-size: 12px; color: rgb(var(--gray)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -95,6 +98,7 @@ export function apply(ctx: Context): void {
 	ctx.panels.register({
 		key: 'word-count',
 		label: t('字数'),
+		icon: CHART_ICON,
 		draw(pane) {
 			const root = document.createElement('div');
 			root.className = 'word-count';
@@ -138,7 +142,7 @@ export function apply(ctx: Context): void {
 	ctx.commands.register({
 		id: 'word-count.open',
 		label: t('字数统计'),
-		icon: '#',
+		icon: CHART_ICON,
 		places: ['sidebar'],
 		run: () => ctx.studio.showPanel('word-count'),
 	});
@@ -146,7 +150,7 @@ export function apply(ctx: Context): void {
 	ctx.commands.register({
 		id: 'word-count.insert',
 		label: t('插入字数统计'),
-		icon: '#',
+		icon: CHART_ICON,
 		keys: 'Mod-Alt-w',
 		keywords: ['wordcount', 'zishu', 'tongji', '字数'], // i18n-ignore: matched against what is typed
 		places: ['slash', 'page-menu'],

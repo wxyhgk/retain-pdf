@@ -13,6 +13,7 @@ import { createHeaderState } from './pages/header/header-state';
 import { PageHeader } from './pages/header/PageHeader';
 import { createFilePanelState } from './files/panel/file-panel-state';
 import { FilePanel } from './files/panel/FilePanel';
+import { RotateCw } from 'lucide-react';
 // The editor's styles in the page itself, not added by its scripts later, so the first picture is drawn as the editor draws it.
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
@@ -118,7 +119,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 						</div>
 						<span id="terminal-cwd" class="pane-path"></span>
 						<div class="pane-actions">
-							<button id="restart-terminal" type="button" title={t('重新打开终端')} aria-label={t('重新打开终端')}>↻</button>
+							<button id="restart-terminal" type="button" title={t('重新打开终端')} aria-label={t('重新打开终端')}><RotateCw aria-hidden="true" /></button>
 						</div>
 					</header>
 					<div id="terminal-agents" class="terminal-agents" role="group" aria-label={t('在终端里启动 AI')} hidden></div>
@@ -456,7 +457,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.pane-toolbar) { display: flex; flex: none; align-items: center; gap: 8px; min-height: 38px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
 	:global(.pane-path) { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 	:global(.pane-actions) { display: flex; gap: 2px; }
-	:global(.pane-actions button) { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 14px; cursor: pointer; }
+	:global(.pane-actions button) { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 14px; cursor: pointer; }
+	:global(.pane-actions button svg) { width: 15px; height: 15px; }
 	:global(.pane-actions button:hover:not(:disabled)) { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
 	:global(.pane-actions button:disabled) { opacity: 0.45; cursor: default; }
 	:global(.upload-placeholder) { display: inline-block; margin: 2px 0; padding: 2px 8px; border-radius: 6px; background: color-mix(in srgb, var(--accent) 12%, transparent); color: rgb(var(--gray-dark)); font-size: 12px; }

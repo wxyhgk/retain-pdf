@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
+import { FolderPlus, FolderSearch, RefreshCw, Upload, type LucideIcon } from 'lucide-react';
 
 import { locale, t } from '@blog/i18n/index.mjs';
 import { officeKind } from '@blog/office/kinds.mjs';
@@ -78,9 +79,9 @@ export function DriveBrowser({ store, actions, mode }: { store: Store<DriveState
 	const settingUp = Boolean(info && !info.root);
 	const parts = folder ? folder.split('/') : [];
 	const crumbs = [{ label: info?.name ?? t('资料库'), path: '' }, ...parts.map((part, index) => ({ label: part, path: parts.slice(0, index + 1).join('/') }))];
-	const button = (label: string, title: string, onClick: () => void, hidden = false) => (
+	const button = (Icon: LucideIcon, title: string, onClick: () => void, hidden = false) => (
 		<button className="drive-button" type="button" title={title} aria-label={title} hidden={hidden} onClick={onClick}>
-			{label}
+			<Icon aria-hidden />
 		</button>
 	);
 	const page = mode === 'page';
@@ -101,10 +102,10 @@ export function DriveBrowser({ store, actions, mode }: { store: Store<DriveState
 					])}
 				</nav>
 				<div className="drive-actions">
-					{button(page ? t('上传') : '⤒', t('上传文件到这个文件夹；也可以直接把文件拖进来'), actions.chooseFiles)}
-					{button(page ? t('新建文件夹') : '＋', t('新建文件夹'), actions.createFolder)}
-					{button('↻', t('重新读取'), actions.refresh)}
-					{button(page ? t('在 Finder 中显示') : '◳', t('在 Finder 中显示'), actions.revealFolder, Boolean(info?.fixed))}
+					{button(Upload, t('上传文件到这个文件夹；也可以直接把文件拖进来'), actions.chooseFiles)}
+					{button(FolderPlus, t('新建文件夹'), actions.createFolder)}
+					{button(RefreshCw, t('重新读取'), actions.refresh)}
+					{button(FolderSearch, t('在 Finder 中显示'), actions.revealFolder, Boolean(info?.fixed))}
 				</div>
 			</header>
 			<div className="drive-setup" hidden={!settingUp}>
@@ -237,7 +238,7 @@ function Setup({ actions }: { actions: DriveActions }) {
 				}}
 			>
 				<input name="path" type="text" placeholder={t('或者输入文件夹的完整路径，如 /Users/me/Library/Mobile Documents/com~apple~CloudDocs/资料')} aria-label={t('资料库文件夹路径')} />
-				<button className="drive-button" type="submit">
+				<button type="submit">
 					{t('使用')}
 				</button>
 			</form>
