@@ -1,5 +1,6 @@
 import { currentMacros, renderMathHtml } from '@blog/science/rendering/math.ts';
 import { completeLatex, latexCommands, type LatexCommand } from './latex-assist.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 type Caret = { left: number; top: number; bottom: number };
 
@@ -22,7 +23,7 @@ export class LatexCompletionMenu {
 		this.root = document.createElement('div');
 		this.root.className = 'latex-completion';
 		this.root.setAttribute('role', 'listbox');
-		this.root.setAttribute('aria-label', 'LaTeX 命令');
+		this.root.setAttribute('aria-label', t('LaTeX 命令'));
 		this.root.hidden = true;
 		// The field keeps the focus; a click picks.
 		this.root.addEventListener('mousedown', (event) => {

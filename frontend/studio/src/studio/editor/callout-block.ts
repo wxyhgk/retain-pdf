@@ -5,6 +5,12 @@ import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
 import { CALLOUT_KINDS, CALLOUT_ORDER, takeCalloutMarker, type CalloutKind } from '@blog/markdown/callouts/callouts.mjs';
 import '@blog/markdown/callouts/callouts.css';
+import { t } from '@blog/i18n/index.mjs';
+
+/** A callout's kind as the Studio names it (CALLOUT_KINDS' labels are the blog's, written into its pages). */
+function calloutName(kind: CalloutKind): string {
+	return { note: t('说明'), tip: t('提示'), important: t('重要'), warning: t('警告'), caution: t('小心') }[kind];
+}
 
 /**
  * Callouts as the blog shows them (`src/callouts/`): `> [!TIP]` opens as a
@@ -70,11 +76,12 @@ export const calloutSchema = $nodeSchema(CALLOUT_TYPE, () => ({
 	],
 	toDOM: (node) => {
 		const kind = (node.attrs.kind in CALLOUT_KINDS ? node.attrs.kind : 'note') as CalloutKind;
-		const { icon, label } = CALLOUT_KINDS[kind];
+		const { icon } = CALLOUT_KINDS[kind];
+		const label = calloutName(kind);
 		return [
 			'aside',
 			{ class: `callout callout-${kind}`, 'data-kind': kind },
-			['span', { class: 'callout-icon', contenteditable: 'false', title: `${label}：点击换一种` }, icon],
+			['span', { class: 'callout-icon', contenteditable: 'false', title: t('{label}：点击换一种', { label }) }, icon],
 			['div', { class: 'callout-body' }, 0],
 		];
 	},

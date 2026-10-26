@@ -6,6 +6,7 @@
 
 import { applyCompletion, completionQuery, deleteBracePair, nextSlot, typeBrace, type LatexCommand, type LatexEdit } from './latex-assist.ts';
 import { LatexCompletionMenu } from './latex-completion-menu.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 export type SourcePopupPlacement = 'over' | 'below';
 
@@ -112,7 +113,7 @@ export class SourcePopup {
 		input.rows = options.rows;
 		input.spellcheck = false;
 		input.placeholder = options.placeholder;
-		input.setAttribute('aria-label', `${options.label}源码`);
+		input.setAttribute('aria-label', t('{label}源码', { label: options.label }));
 		input.value = options.value;
 		root.append(input);
 		document.body.append(root);

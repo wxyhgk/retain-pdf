@@ -4,6 +4,7 @@ import type { Node as ProseNode } from '@milkdown/prose/model';
 import { Plugin, Selection, TextSelection } from '@milkdown/prose/state';
 import type { EditorView, NodeView, NodeViewConstructor, ViewMutationRecord } from '@milkdown/prose/view';
 import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Toggles, as Notion has them and GitHub writes them:
@@ -161,8 +162,8 @@ class ToggleView implements NodeView {
 		this.arrow.addEventListener('click', () => this.fold(!this.dom.classList.contains('is-folded')));
 		this.summary = document.createElement('input');
 		this.summary.className = 'toggle-summary';
-		this.summary.placeholder = '折叠块';
-		this.summary.setAttribute('aria-label', '折叠块的标题');
+		this.summary.placeholder = t('折叠块');
+		this.summary.setAttribute('aria-label', t('折叠块的标题'));
 		this.summary.addEventListener('input', () => this.setSummary(this.summary.value));
 		this.summary.addEventListener('keydown', this.onSummaryKey);
 		head.append(this.arrow, this.summary);
@@ -201,7 +202,7 @@ class ToggleView implements NodeView {
 	private fold(folded: boolean): void {
 		this.dom.classList.toggle('is-folded', folded);
 		this.arrow.setAttribute('aria-expanded', String(!folded));
-		this.arrow.setAttribute('aria-label', folded ? '展开' : '折叠');
+		this.arrow.setAttribute('aria-label', folded ? t('展开') : t('折叠'));
 	}
 
 	private setSummary(summary: string): void {

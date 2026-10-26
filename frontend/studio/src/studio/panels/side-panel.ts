@@ -1,5 +1,6 @@
 import { STUDIO_PANELS, type StudioPanel } from '@blog/kernel/ui.ts';
 import { shell as shellState, type SideTab } from '../shell/shell-state.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 type PanelLayout = { open: boolean; tab: string; width: number };
 
@@ -10,7 +11,7 @@ const DEFAULT_LAYOUT: PanelLayout = { open: true, tab: 'files', width: 340 };
 /** Below this the panel floats over the editor instead of taking a column. */
 const NARROW = window.matchMedia('(max-width: 1100px)');
 /** The Studio's own tabs' names. */
-const STUDIO_LABELS: Record<(typeof STUDIO_PANELS)[number], string> = { ai: 'AI', files: '文件', terminal: '终端', drive: '资料库' };
+const STUDIO_LABELS: Record<(typeof STUDIO_PANELS)[number], string> = { ai: 'AI', files: t('文件'), terminal: t('终端'), drive: t('资料库') };
 
 function clampWidth(width: number): number {
 	return Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(width)));
@@ -73,7 +74,7 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 			if (onScreen) entry.panel.shown?.(entry.pane);
 			else entry.panel.hidden?.(entry.pane);
 		} catch (error) {
-			console.error(`[plugins] 面板 ${entry.panel.key}`, error);
+			console.error(`[plugins] 面板 ${entry.panel.key}`, error); // i18n-ignore: developer log
 		}
 	}
 
@@ -84,10 +85,10 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		try {
 			entry.undraw = entry.panel.draw(entry.pane);
 		} catch (error) {
-			console.error(`[plugins] 面板 ${entry.panel.key}`, error);
+			console.error(`[plugins] 面板 ${entry.panel.key}`, error); // i18n-ignore: developer log
 			const message = document.createElement('p');
 			message.className = 'side-pane-error';
-			message.textContent = `面板没能画出来：${error instanceof Error ? error.message : String(error)}`;
+			message.textContent = t('面板没能画出来：{error}', { error: error instanceof Error ? error.message : String(error) });
 			entry.pane.replaceChildren(message);
 		}
 	}
@@ -150,7 +151,7 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		try {
 			if (typeof entry.undraw === 'function') entry.undraw();
 		} catch (error) {
-			console.error(`[plugins] 面板 ${name}`, error);
+			console.error(`[plugins] 面板 ${name}`, error); // i18n-ignore: developer log
 		}
 		entry.pane.remove();
 	}
@@ -178,7 +179,7 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		},
 		/** Opens the panel on this tab; throws when there is none by this name. */
 		show(tab: string): void {
-			if (!tabs.has(tab)) throw new Error(`没有叫 ${tab} 的面板`);
+			if (!tabs.has(tab)) throw new Error(t('没有叫 {tab} 的面板', { tab }));
 			update({ open: true, tab });
 		},
 		/**

@@ -3,6 +3,7 @@ import { NodeSelection, Selection, TextSelection } from '@milkdown/prose/state';
 import type { EditorView } from '@milkdown/prose/view';
 
 import type { StudioBlock } from '@blog/kernel/studio.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Links as Notion takes them: what a plugin's block makes of an address
@@ -94,12 +95,12 @@ export function offerLinkTargets(view: EditorView, pos: number, url: string, tar
 	if (!choices.length) return;
 	const paragraph = view.state.doc.nodeAt(pos);
 	if (!paragraph) return;
-	const items = [...choices.map((target) => ({ label: target.label, run: () => replaceBlock(view, pos, target.markdown(url), parse) })), { label: '保持链接', run: () => {} }];
+	const items = [...choices.map((target) => ({ label: target.label, run: () => replaceBlock(view, pos, target.markdown(url), parse) })), { label: t('保持链接'), run: () => {} }];
 
 	const root = document.createElement('div');
 	root.className = 'block-menu context-menu link-paste-menu';
 	root.setAttribute('role', 'menu');
-	root.setAttribute('aria-label', '粘贴的链接变成');
+	root.setAttribute('aria-label', t('粘贴的链接变成'));
 	const buttons = items.map((item, index) => {
 		const button = document.createElement('button');
 		button.type = 'button';

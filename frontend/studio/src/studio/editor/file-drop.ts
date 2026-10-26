@@ -8,6 +8,7 @@ import { $prose } from '@milkdown/utils';
 
 import { DRIVE_DRAG_TYPE, fileName, readMarkdownReference, STUDIO_FILE_DRAG_TYPE, STUDIO_MARKDOWN_DRAG_TYPE } from '../files/article-files.ts';
 import { dropHasFolder } from '../files/dropped-files.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What dropping files into the editor needs from the Studio around it. */
 export type ArticleFileDropHost = {
@@ -27,6 +28,23 @@ export type ArticleFileDropHost = {
 };
 
 type PlaceholderAction = { add: { id: symbol; pos: number; label: string } } | { remove: symbol };
+
+/** What is said when files have come into the article, or not. */
+type Brought = { lost(paths: string): string; one(path: string): string; many(count: number): string; failed(): string };
+
+const UPLOADED: Brought = {
+	lost: (paths) => t('已上传 {paths}，但插入的位置已被删除', { paths }),
+	one: (path) => t('已上传 {path}', { path }),
+	many: (count) => t('已上传 {count} 个文件', { count }),
+	failed: () => t('上传失败'),
+};
+
+const COPIED: Brought = {
+	lost: (paths) => t('已复制到文章 {paths}，但插入的位置已被删除', { paths }),
+	one: (path) => t('已复制到文章 {path}', { path }),
+	many: (count) => t('已复制到文章 {count} 个文件', { count }),
+	failed: () => t('复制到文章失败'),
+};
 
 const placeholderKey = new PluginKey<DecorationSet>('article-file-placeholders');
 
@@ -78,12 +96,12 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 	}
 
 	function upload(view: EditorView, pos: number, files: readonly File[]): void {
-		const label = files.length === 1 ? `正在上传 ${files[0].name}…` : `正在上传 ${files.length} 个文件…`;
-		bring(view, pos, label, () => host.upload(files), '上传');
+		const label = files.length === 1 ? t('正在上传 {name}…', { name: files[0].name }) : t('正在上传 {count} 个文件…', { count: files.length });
+		bring(view, pos, label, () => host.upload(files), UPLOADED);
 	}
 
 	/** Files coming into the article (`task`), a placeholder at `pos` until they are there and put in its place. */
-	function bring(view: EditorView, pos: number, label: string, task: () => Promise<string[]>, verb: string): void {
+	function bring(view: EditorView, pos: number, label: string, task: () => Promise<string[]>, said: Brought): void {
 		const id = Symbol('upload');
 		view.dispatch(view.state.tr.setMeta(placeholderKey, { add: { id, pos, label } } satisfies PlaceholderAction));
 		task().then(
@@ -93,15 +111,15 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 				const at = findPlaceholder(view.state, id);
 				const markdown = references.filter((reference): reference is string => reference !== null);
 				if (at < 0) {
-					host.report(`已${verb} ${paths.join('、')}，但插入的位置已被删除`);
+					host.report(said.lost(paths.join('、')));
 					return;
 				}
 				insertAt(view, at, markdown, id);
-				host.report(paths.length === 1 ? `已${verb} ${paths[0]}` : `已${verb} ${paths.length} 个文件`);
+				host.report(paths.length === 1 ? said.one(paths[0]) : said.many(paths.length));
 			},
 			(error: unknown) => {
 				if (!view.isDestroyed) view.dispatch(view.state.tr.setMeta(placeholderKey, { remove: id } satisfies PlaceholderAction));
-				host.report(error instanceof Error ? error.message : `${verb}失败`, true);
+				host.report(error instanceof Error ? error.message : said.failed(), true);
 			},
 		);
 	}
@@ -145,7 +163,7 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 							const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? view.state.selection.from;
 							// Its pictures copied in first (a placeholder there meanwhile), so that they show in the article.
 							const id = Symbol('blocks');
-							view.dispatch(view.state.tr.setMeta(placeholderKey, { add: { id, pos: at, label: '正在放进来…' } } satisfies PlaceholderAction));
+							view.dispatch(view.state.tr.setMeta(placeholderKey, { add: { id, pos: at, label: t('正在放进来…') } } satisfies PlaceholderAction));
 							host.withPictures(said).then(
 								(markdown) => {
 									if (view.isDestroyed) return;
@@ -155,7 +173,7 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 								},
 								(error: unknown) => {
 									if (!view.isDestroyed) view.dispatch(view.state.tr.setMeta(placeholderKey, { remove: id } satisfies PlaceholderAction));
-									host.report(error instanceof Error ? error.message : '没能放进来', true);
+									host.report(error instanceof Error ? error.message : t('没能放进来'), true);
 								},
 							);
 							return true;
@@ -165,7 +183,7 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 						if (fromDrive) {
 							event.preventDefault();
 							const at = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? view.state.selection.from;
-							bring(view, at, `正在从资料库复制 ${fileName(fromDrive)}…`, async () => [await host.fromDrive(fromDrive)], '复制到文章');
+							bring(view, at, t('正在从资料库复制 {name}…', { name: fileName(fromDrive) }), async () => [await host.fromDrive(fromDrive)], COPIED);
 							return true;
 						}
 						const path = transfer.getData(STUDIO_FILE_DRAG_TYPE);
@@ -173,7 +191,7 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 						if (!path && !files.length) return false;
 						event.preventDefault();
 						if (dropHasFolder(transfer)) {
-							host.report('文件夹请拖到右侧的文件面板，那里会保留它的子文件夹', true);
+							host.report(t('文件夹请拖到右侧的文件面板，那里会保留它的子文件夹'), true);
 							return true;
 						}
 						const pos = view.posAtCoords({ left: event.clientX, top: event.clientY })?.pos ?? view.state.selection.from;
@@ -184,7 +202,7 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 						void readMarkdownReference(path, host.head).then((reference) => {
 							if (view.isDestroyed) return;
 							if (reference) insertAt(view, Math.min(pos, view.state.doc.content.size), [reference]);
-							else host.report('ai/ 里的文件不随文章发布，不能插入正文', true);
+							else host.report(t('ai/ 里的文件不随文章发布，不能插入正文'), true);
 						});
 						return true;
 					},

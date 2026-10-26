@@ -20,6 +20,7 @@ import { droppedItems, pickedItems, type UploadItem } from './dropped-files';
 import { buildFileTree, formatSize, isUnused, referenceCount, uploadFolderFor, visibleNodes, type FileNode } from './file-tree';
 import { referencedFilesReader } from './referenced-files';
 import { showToast } from '../common/toast';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What the file panel needs from the editor around it. */
 export type FilePanelHost = {
@@ -45,7 +46,7 @@ export type FilePanelHost = {
 };
 
 const STATUS_CLEAR_MS = 6000;
-const FINDER = /Mac/u.test(navigator.platform) ? '在 Finder 中显示' : '在文件管理器中显示';
+const FINDER = /Mac/u.test(navigator.platform) ? t('在 Finder 中显示') : t('在文件管理器中显示');
 
 type Editing = { kind: 'rename'; path: string } | { kind: 'folder'; parent: string };
 
@@ -133,7 +134,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 				const done = await task();
 				setStatus(done ?? '');
 			} catch (error) {
-				setStatus(errorMessage(error, '操作失败'), 'error');
+				setStatus(errorMessage(error, t('操作失败')), 'error');
 			}
 			if (article === slug) await refresh();
 		});
@@ -152,7 +153,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			if (selected && !entryAt(selected)) selected = null;
 			render();
 		} catch (error) {
-			if (sequence === loadSequence) setStatus(errorMessage(error, '无法列出文件'), 'error');
+			if (sequence === loadSequence) setStatus(errorMessage(error, t('无法列出文件')), 'error');
 		}
 	}
 
@@ -161,14 +162,14 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		tree.replaceChildren();
 		uploadButton.disabled = folderButton.disabled = refreshButton.disabled = !slug;
 		if (!slug) {
-			rootLabel.textContent = '未打开文章';
-			tree.append(element('p', 'file-tree-empty', '打开一篇文章后，这里显示它的文件夹。'));
+			rootLabel.textContent = t('未打开文章');
+			tree.append(element('p', 'file-tree-empty', t('打开一篇文章后，这里显示它的文件夹。')));
 			return;
 		}
 		rootLabel.textContent = `blog/${slug}/`;
 		const list = element('ul', 'file-tree-list');
 		list.setAttribute('role', 'tree');
-		list.setAttribute('aria-label', `blog/${slug}/ 的文件`);
+		list.setAttribute('aria-label', t('blog/{slug}/ 的文件', { slug }));
 		const open = expanded();
 		const rows = visibleNodes(buildFileTree(entries), open);
 		for (const node of rows) {
@@ -211,15 +212,15 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		} else {
 			item.append(element('span', 'file-name', node.name));
 			const meta = entry.kind === 'directory'
-				? (node.children.length ? String(node.children.length) : '空')
+				? (node.children.length ? String(node.children.length) : t('空'))
 				: entry.size !== undefined ? formatSize(entry.size) : '';
 			item.append(element('span', 'file-meta', meta));
 			const actions = element('span', 'file-row-actions');
-			if (entry.kind === 'directory') actions.append(rowButton('file-row-upload', '⤒', `上传文件到 ${node.name}/`));
-			actions.append(rowButton('file-row-menu', '⋯', `${node.name} 的操作`));
+			if (entry.kind === 'directory') actions.append(rowButton('file-row-upload', '⤒', t('上传文件到 {name}/', { name: node.name })));
+			actions.append(rowButton('file-row-menu', '⋯', t('{name} 的操作', { name: node.name })));
 			item.append(actions);
 		}
-		item.title = unused ? `${entry.path}\n正文没有引用它` : entry.path;
+		item.title = unused ? t('{path}\n正文没有引用它', { path: entry.path }) : entry.path;
 		if (!entry.locked) item.draggable = true;
 		return item;
 	}
@@ -239,7 +240,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		item.setAttribute('role', 'none');
 		item.dataset.dropFolder = node.entry.path;
 		item.style.setProperty('--depth', String(node.depth + 1));
-		const button = element('button', 'file-empty-upload', '拖文件到这里，或点击上传');
+		const button = element('button', 'file-empty-upload', t('拖文件到这里，或点击上传'));
 		button.type = 'button';
 		button.tabIndex = -1;
 		button.addEventListener('click', (event) => {
@@ -261,7 +262,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		const input = element('input', 'file-name-input');
 		input.value = value;
 		input.spellcheck = false;
-		input.setAttribute('aria-label', value ? `重命名 ${value}` : '新文件夹名称');
+		input.setAttribute('aria-label', value ? t('重命名 {name}', { name: value }) : t('新文件夹名称'));
 		let done = false;
 		const finish = (save: boolean) => {
 			if (done) return;
@@ -316,36 +317,36 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	function upload(items: readonly UploadItem[], target: ArticleFileEntry | null): void {
 		if (!items.length) return;
 		const total = items.reduce((sum, item) => sum + item.file.size, 0) || 1;
-		void run(`正在上传 ${items.length} 个文件…`, async () => {
+		void run(t('正在上传 {count} 个文件…', { count: items.length }), async () => {
 			const stored: string[] = [];
 			let sent = 0;
 			for (const [index, { file, subfolder }] of items.entries()) {
 				const folder = target || !subfolder ? uploadFolderFor(target, file) : 'assets';
 				const progress = (loaded: number) => {
 					const percent = Math.min(100, Math.floor(((sent + loaded) / total) * 100));
-					const what = items.length === 1 ? file.name : `${index + 1}/${items.length}`;
-					setStatus(`正在上传 ${what} · ${percent}%`, 'busy');
+					setStatus(items.length === 1 ? t('正在上传 {name} · {percent}%', { name: file.name, percent }) : t('正在上传 {index}/{count} · {percent}%', { index: index + 1, count: items.length, percent }), 'busy');
 				};
 				try {
 					const result = await uploadArticleFile(slug!, folder, file, { subfolder, onProgress: progress });
 					stored.push(result.path);
 					for (let path = parentPath(result.path); path; path = parentPath(path)) expanded().add(path);
 				} catch (error) {
-					const done = stored.length ? `已上传 ${stored.length} 个，` : '';
-					throw new Error(`${done}${file.name} 没有传上去：${errorMessage(error, '上传失败')}`);
+					const said = { count: stored.length, name: file.name, error: errorMessage(error, t('上传失败')) };
+					throw new Error(stored.length ? t('已上传 {count} 个，{name} 没有传上去：{error}', said) : t('{name} 没有传上去：{error}', said));
 				}
 				sent += file.size;
 			}
 			selected = stored[stored.length - 1];
 			const renamed = items.length === 1 && fileName(stored[0]) !== items[0].file.name;
-			return stored.length === 1 ? `已上传 ${stored[0]}${renamed ? '（已改名）' : ''}` : `已上传 ${stored.length} 个文件`;
+			if (stored.length !== 1) return t('已上传 {count} 个文件', { count: stored.length });
+			return renamed ? t('已上传 {path}（已改名）', { path: stored[0] }) : t('已上传 {path}', { path: stored[0] });
 		});
 	}
 
 	function move(entry: ArticleFileEntry, to: string): void {
 		if (to === entry.path) return;
 		const from = entry.path;
-		void run(`正在移动 ${fileName(from)}…`, async () => {
+		void run(t('正在移动 {name}…', { name: fileName(from) }), async () => {
 			await host.settle();
 			// The move and the reload after it are one write of the Studio's own.
 			const result = await trackWrite(async () => {
@@ -363,7 +364,7 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 			}
 			set.add(parentPath(result.path));
 			selected = result.path;
-			return result.references ? `已移动到 ${result.path}，正文里 ${result.references} 处引用已同步修改` : `已移动到 ${result.path}`;
+			return result.references ? t('已移动到 {path}，正文里 {references} 处引用已同步修改', { path: result.path, references: result.references }) : t('已移动到 {path}', { path: result.path });
 		});
 	}
 
@@ -379,11 +380,11 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	}
 
 	function createFolder(parent: string, name: string): void {
-		void run('正在新建文件夹…', async () => {
+		void run(t('正在新建文件夹…'), async () => {
 			const result = await createArticleFolder(slug!, `${parent}/${name}`);
 			expanded().add(parent);
 			selected = result.path;
-			return `已新建 ${result.path}`;
+			return t('已新建 {path}', { path: result.path });
 		});
 	}
 
@@ -404,17 +405,21 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		if (entry.locked) return;
 		const name = fileName(entry.path);
 		const uses = referenceCount(host.source(), entry.path);
-		const what = entry.kind === 'directory' ? `文件夹「${name}」及其中所有文件` : `「${name}」`;
+		const folder = entry.kind === 'directory';
 		const warning = uses
-			? `正文里有 ${uses} 处引用${entry.kind === 'directory' ? '这个文件夹里的文件' : '它'}，删除后它们会失效。\n\n确定把${what}移到回收站吗？`
-			: `把${what}移到回收站？\n删除后可以撤销；回收站（项目的 .studio-trash/）里的文件保留 30 天。`;
+			? folder
+				? t('正文里有 {count} 处引用这个文件夹里的文件，删除后它们会失效。\n\n确定把文件夹「{name}」及其中所有文件移到回收站吗？', { count: uses, name })
+				: t('正文里有 {count} 处引用它，删除后它们会失效。\n\n确定把「{name}」移到回收站吗？', { count: uses, name })
+			: folder
+				? t('把文件夹「{name}」及其中所有文件移到回收站？\n删除后可以撤销；回收站（项目的 .studio-trash/）里的文件保留 30 天。', { name })
+				: t('把「{name}」移到回收站？\n删除后可以撤销；回收站（项目的 .studio-trash/）里的文件保留 30 天。', { name });
 		if (!confirm(warning)) return;
 		const article = slug!;
-		void run(`正在删除 ${name}…`, async () => {
+		void run(t('正在删除 {name}…', { name }), async () => {
 			const { trashed } = await trashArticleFile(article, entry.path);
 			if (selected === entry.path) selected = parentPath(entry.path) || null;
-			showToast(`已删除 ${entry.path}`, { action: { label: '撤销', run: () => restore(article, trashed, entry.path) } });
-			return `已把 ${entry.path} 移到 .studio-trash/`;
+			showToast(t('已删除 {path}', { path: entry.path }), { action: { label: t('撤销'), run: () => restore(article, trashed, entry.path) } });
+			return t('已把 {path} 移到 .studio-trash/', { path: entry.path });
 		});
 	}
 
@@ -422,29 +427,29 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		// Another article open by now: put the file back all the same.
 		if (article !== slug) {
 			restoreArticleFile(article, trashed).then(
-				() => showToast(`已恢复 ${path}`),
-				(error) => showToast(errorMessage(error, '恢复失败'), true),
+				() => showToast(t('已恢复 {path}', { path })),
+				(error) => showToast(errorMessage(error, t('恢复失败')), true),
 			);
 			return;
 		}
-		void run(`正在恢复 ${fileName(path)}…`, async () => {
+		void run(t('正在恢复 {name}…', { name: fileName(path) }), async () => {
 			await restoreArticleFile(article, trashed);
 			selected = path;
-			return `已恢复 ${path}`;
+			return t('已恢复 {path}', { path });
 		});
 	}
 
 	function reveal(path: string): void {
 		const article = slug!;
-		revealArticleFile(article, path).catch((error) => setStatus(errorMessage(error, '无法打开文件管理器'), 'error'));
+		revealArticleFile(article, path).catch((error) => setStatus(errorMessage(error, t('无法打开文件管理器')), 'error'));
 	}
 
-	async function copy(text: string, what: string): Promise<void> {
+	async function copy(text: string, done: string): Promise<void> {
 		try {
 			await navigator.clipboard.writeText(text);
-			setStatus(`已复制${what}`);
+			setStatus(done);
 		} catch {
-			setStatus('浏览器不允许写入剪贴板', 'error');
+			setStatus(t('浏览器不允许写入剪贴板'), 'error');
 		}
 	}
 
@@ -461,18 +466,18 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		const source = tableSource(entry.path);
 		if (!source || !slug) return;
 		const article = slug;
-		void run(`正在读取 ${fileName(entry.path)}…`, async () => {
+		void run(t('正在读取 {name}…', { name: fileName(entry.path) }), async () => {
 			const url = studioFileUrl(article, entry.path);
 			let rows: string[][];
 			if (source.sheet) rows = await host.sheetRows(url);
 			else {
 				const response = await fetch(url, { cache: 'no-store' });
-				if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { error?: string } | null)?.error ?? `读不到 ${entry.path}`);
+				if (!response.ok) throw new Error(((await response.json().catch(() => null)) as { error?: string } | null)?.error ?? t('读不到 {path}', { path: entry.path }));
 				rows = parseDelimited(await response.text(), source.delimiter);
 			}
-			if (!rows.length) throw new Error(`${fileName(entry.path)} 里没有数据`);
+			if (!rows.length) throw new Error(t('{name} 里没有数据', { name: fileName(entry.path) }));
 			host.insertMarkdown(markdownTable(rows));
-			return `已插入 ${rows.length - 1} 行的表格`;
+			return t('已插入 {count} 行的表格', { count: rows.length - 1 });
 		});
 	}
 
@@ -484,9 +489,9 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 	function menuFor(entry: ArticleFileEntry | null): MenuItem[] {
 		if (!entry) {
 			return [
-				{ label: '上传文件…', action: () => chooseUpload(null) },
-				{ label: '上传文件夹…', action: () => chooseUpload(null, true) },
-				{ label: '新建文件夹', action: () => startNewFolder(null) },
+				{ label: t('上传文件…'), action: () => chooseUpload(null) },
+				{ label: t('上传文件夹…'), action: () => chooseUpload(null, true) },
+				{ label: t('新建文件夹'), action: () => startNewFolder(null) },
 				'separator',
 				{ label: FINDER, action: () => reveal('') },
 			];
@@ -495,23 +500,23 @@ export function createFilePanel(pane: HTMLElement, host: FilePanelHost) {
 		const published = entry.path.startsWith('img/') || entry.path.startsWith('assets/');
 		if (entry.kind === 'directory') {
 			items.push(
-				{ label: '上传文件到这里…', action: () => chooseUpload(entry) },
-				{ label: '上传文件夹到这里…', action: () => chooseUpload(entry, true) },
-				{ label: '新建子文件夹', action: () => startNewFolder(entry) },
+				{ label: t('上传文件到这里…'), action: () => chooseUpload(entry) },
+				{ label: t('上传文件夹到这里…'), action: () => chooseUpload(entry, true) },
+				{ label: t('新建子文件夹'), action: () => startNewFolder(entry) },
 			);
 		} else {
 			const reference = markdownReference(entry.path);
-			if (published) items.push({ label: officeKind(entry.path) ? '预览' : '在新标签页打开', action: () => openFile(entry) });
-			if (published && tableSource(entry.path)) items.push({ label: '插入为表格', action: () => insertTable(entry) });
-			if (/\.pdf$/iu.test(entry.path)) items.push({ label: 'OCR 成子页面（PaddleOCR）', action: () => host.ocr(entry.path) });
+			if (published) items.push({ label: officeKind(entry.path) ? t('预览') : t('在新标签页打开'), action: () => openFile(entry) });
+			if (published && tableSource(entry.path)) items.push({ label: t('插入为表格'), action: () => insertTable(entry) });
+			if (/\.pdf$/iu.test(entry.path)) items.push({ label: t('OCR 成子页面（PaddleOCR）'), action: () => host.ocr(entry.path) });
 			// A plugin's block may tell the file by what it says (a Gaussian output among other logs): read when copied.
 			const article = slug;
-			if (reference && article) items.push({ label: '复制 Markdown 引用', action: () => void readMarkdownReference(entry.path, (path) => articleFileHead(article, path)).then((read) => copy(read ?? reference, ' Markdown 引用')) });
+			if (reference && article) items.push({ label: t('复制 Markdown 引用'), action: () => void readMarkdownReference(entry.path, (path) => articleFileHead(article, path)).then((read) => copy(read ?? reference, t('已复制 Markdown 引用'))) });
 		}
-		items.push({ label: '复制路径', action: () => void copy(entry.kind === 'directory' ? `./${entry.path}/` : `./${entry.path}`, '路径') });
-		if (!entry.locked) items.push({ label: '重命名', hint: 'F2', action: () => startRename(entry) });
+		items.push({ label: t('复制路径'), action: () => void copy(entry.kind === 'directory' ? `./${entry.path}/` : `./${entry.path}`, t('已复制路径')) });
+		if (!entry.locked) items.push({ label: t('重命名'), hint: 'F2', action: () => startRename(entry) });
 		items.push('separator', { label: FINDER, action: () => reveal(entry.path) });
-		if (!entry.locked) items.push('separator', { label: '移到回收站', hint: '⌫', danger: true, action: () => trash(entry) });
+		if (!entry.locked) items.push('separator', { label: t('移到回收站'), hint: '⌫', danger: true, action: () => trash(entry) });
 		return items;
 	}
 

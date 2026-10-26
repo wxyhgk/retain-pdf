@@ -13,6 +13,7 @@ import { renderWhileTyping } from './formula-typing.ts';
 import { applyCompletion, completionQuery, deleteBracePair, nextSlot, typeBrace, type LatexCommand, type LatexEdit } from './latex-assist.ts';
 import { LatexCompletionMenu } from './latex-completion-menu.ts';
 import { drawWhenNear, drawsLater, isWaiting } from './near-screen.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 export type InlineMathKeyAction = 'commit' | 'exit-before' | 'exit-after' | 'delete' | 'promote';
 
@@ -788,7 +789,7 @@ class InlineMathView implements NodeView {
 		if (!value) {
 			const placeholder = document.createElement('span');
 			placeholder.className = 'pm-inline-math-placeholder';
-			placeholder.textContent = '公式';
+			placeholder.textContent = t('公式');
 			this.dom.replaceChildren(placeholder);
 			this.dom.classList.remove('is-error');
 			this.dom.removeAttribute('title');

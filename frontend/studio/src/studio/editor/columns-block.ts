@@ -3,6 +3,7 @@ import type { Fragment, Node as ProseNode, ResolvedPos, Slice } from '@milkdown/
 import { Plugin, PluginKey, Selection, TextSelection, type EditorState, type Transaction } from '@milkdown/prose/state';
 import type { EditorView, NodeView, ViewMutationRecord } from '@milkdown/prose/view';
 import { $nodeSchema, $prose, $remark, $view } from '@milkdown/utils';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Columns, as Notion has them, written as HTML around Markdown (as toggles
@@ -547,8 +548,8 @@ class ColumnsView implements NodeView {
 		add.className = 'columns-add';
 		add.contentEditable = 'false';
 		add.textContent = '+';
-		add.title = '加一栏';
-		add.setAttribute('aria-label', '加一栏');
+		add.title = t('加一栏');
+		add.setAttribute('aria-label', t('加一栏'));
 		add.addEventListener('mousedown', (event) => event.preventDefault());
 		add.addEventListener('click', () => this.addColumn());
 		this.line = document.createElement('div');

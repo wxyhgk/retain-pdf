@@ -1,5 +1,6 @@
 import { appFetch, appRun, articleFileUrl, getTask, listArticleFiles, listMiniApps, uploadArticleFile, type MiniApp } from '../api/client';
 import { showContextMenu, type MenuItem } from '../common/context-menu';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What the 小程序 may reach of the Studio around them, through their bridge (server/apps/mini-apps.mjs). */
 export type MiniAppsHost = {
@@ -97,7 +98,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		if (!shown.port && !shown.loaded) return;
 		cut(shown);
 		shown.loaded = false;
-		host.toast(`「${shown.app.name}」打开了别的网页，那个网页用不了 studio；点 ↻ 回到小程序`);
+		host.toast(t('「{name}」打开了别的网页，那个网页用不了 studio；点 ↻ 回到小程序', { name: shown.app.name }));
 	}
 
 	function cut(shown: AppWindow): void {
@@ -139,7 +140,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		put(root, place);
 		const bar = document.createElement('header');
 		bar.className = 'mini-app-bar';
-		bar.title = '拖动移动；双击放大或还原';
+		bar.title = t('拖动移动；双击放大或还原');
 		const title = document.createElement('span');
 		title.className = 'mini-app-title';
 		title.textContent = `${app.icon} ${app.name}`;
@@ -147,12 +148,12 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		const reload = document.createElement('button');
 		reload.type = 'button';
 		reload.textContent = '↻';
-		reload.title = '重新加载（改了它的代码之后）';
+		reload.title = t('重新加载（改了它的代码之后）');
 		const shut = document.createElement('button');
 		shut.type = 'button';
 		shut.textContent = '×';
-		shut.title = '关闭';
-		shut.setAttribute('aria-label', `关闭 ${app.name}`);
+		shut.title = t('关闭');
+		shut.setAttribute('aria-label', t('关闭 {name}', { name: app.name }));
 		bar.append(title, reload, shut);
 		const frame = document.createElement('iframe');
 		frame.className = 'mini-app-frame';
@@ -246,11 +247,11 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 	/** What an app asks, if it may: its answer, or why not. */
 	async function answer(app: MiniApp, method: string, args: unknown[]): Promise<unknown> {
 		const may = (permission: string) => {
-			if (!app.permissions.includes(permission)) throw new Error(`「${app.name}」的 app.json 里没有要「${permission}」权限`);
+			if (!app.permissions.includes(permission)) throw new Error(t('「{name}」的 app.json 里没有要「{permission}」权限', { name: app.name, permission }));
 		};
 		const article = () => {
 			const shown = host.article();
-			if (!shown) throw new Error('还没有打开文章');
+			if (!shown) throw new Error(t('还没有打开文章'));
 			return shown;
 		};
 		switch (method) {
@@ -268,7 +269,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			case 'files.read': {
 				may('files');
 				const response = await fetch(articleFileUrl(article().slug, `./${String(args[0] ?? '').replace(/^\.\//u, '')}`), { cache: 'no-store' });
-				if (!response.ok) throw new Error(`读不到 ${String(args[0])}`);
+				if (!response.ok) throw new Error(t('读不到 {path}', { path: String(args[0]) }));
 				return response.text();
 			}
 			case 'files.write': {
@@ -276,7 +277,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 				const path = String(args[0] ?? '').replace(/^\.\//u, '');
 				const slash = path.lastIndexOf('/');
 				const name = path.slice(slash + 1);
-				if (!name) throw new Error('要给出文件名');
+				if (!name) throw new Error(t('要给出文件名'));
 				return (await uploadArticleFile(article().slug, slash < 0 ? '' : path.slice(0, slash), new File([String(args[1] ?? '')], name), { replace: true })).path;
 			}
 			case 'fetch': {
@@ -304,7 +305,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			case 'appFile': {
 				const path = String(args[0] ?? '').split('/').map(encodeURIComponent).join('/');
 				const response = await fetch(`/studio-apps/${encodeURIComponent(app.id)}/${path}`);
-				if (!response.ok) throw new Error(`「${app.name}」的文件夹里没有 ${String(args[0])}`);
+				if (!response.ok) throw new Error(t('「{name}」的文件夹里没有 {path}', { name: app.name, path: String(args[0]) }));
 				return response.text();
 			}
 			// Its own settings (a key it asks for…), kept in this browser: the frame has no storage of its own.
@@ -321,7 +322,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 				host.openPage(String(args[0] ?? ''));
 				return true;
 			default:
-				throw new Error(`没有 studio.${method}`);
+				throw new Error(t('没有 studio.{method}', { method }));
 		}
 	}
 
@@ -344,14 +345,14 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			(apps) => {
 				const items: MenuItem[] = apps.map((app) => ({
 					label: `${app.icon}  ${app.name}`,
-					hint: app.problem ? '出错' : undefined,
+					hint: app.problem ? t('出错') : undefined,
 					action: () => (app.problem ? host.toast(`${app.name}：${app.problem}`) : show(app)),
 				}));
 				if (items.length) items.push('separator');
-				items.push({ label: '怎么做一个小程序…', action: () => host.toast('在终端里让 AI 做一个，比如「做一个能量单位换算的小程序」：它会照着技能 studio-mini-apps 写进 apps/。') });
+				items.push({ label: t('怎么做一个小程序…'), action: () => host.toast(t('在终端里让 AI 做一个，比如「做一个能量单位换算的小程序」：它会照着技能 studio-mini-apps 写进 apps/。')) });
 				showContextMenu(items, launcher);
 			},
-			(error: unknown) => host.toast(error instanceof Error ? error.message : '读不到小程序'),
+			(error: unknown) => host.toast(error instanceof Error ? error.message : t('读不到小程序')),
 		);
 	});
 

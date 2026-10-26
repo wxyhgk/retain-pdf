@@ -8,6 +8,7 @@ import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 import { BIBLIOGRAPHY_PATH, CITATION, authorList, numberRanges, parseCitation, plainTex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import '@blog/markdown/references/references.css';
 import { changedRange, editTouches } from './changed-range.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Citations in the editor (`src/references/`): `[@becke1993]` is one piece
@@ -79,9 +80,9 @@ export const citationSchema = $nodeSchema(CITATION_TYPE, () => ({
 /** How a work is told on hover: `Becke, A. D. 1993. Density-functional thermochemistry…`. */
 export function citedWork(entry: BibEntry): string {
 	const first = authorList(entry.fields.author ?? entry.fields.editor).split('; ')[0] ?? '';
-	const more = /\sand\s/iu.test(entry.fields.author ?? '') ? ' 等' : '';
+	const authors = /\sand\s/iu.test(entry.fields.author ?? '') ? t('{author} 等', { author: first }) : first;
 	const year = plainTex(entry.fields.year ?? entry.fields.date ?? '').slice(0, 4);
-	return [`${first}${more}`, year, plainTex(entry.fields.title)].filter(Boolean).join(' · ');
+	return [authors, year, plainTex(entry.fields.title)].filter(Boolean).join(' · ');
 }
 
 type Label = { label: string; title: string; missing: boolean };
@@ -95,14 +96,14 @@ function labels(doc: ProseNode, library: Library | null): DecorationSet {
 		const value = String(node.attrs.value);
 		const items = parseCitation(value.slice(1, -1)) ?? [];
 		let spec: Label;
-		if (!library) spec = { label: value, title: `没有找到 ${BIBLIOGRAPHY_PATH}`, missing: true };
+		if (!library) spec = { label: value, title: t('没有找到 {path}', { path: BIBLIOGRAPHY_PATH }), missing: true };
 		else {
 			const numbers: number[] = [];
 			const titles: string[] = [];
 			for (const { key, locator } of items) {
 				const entry = library.get(key);
 				if (!entry) {
-					titles.push(`找不到 @${key}`);
+					titles.push(t('找不到 @{key}', { key }));
 					continue;
 				}
 				if (!cited.includes(key)) cited.push(key);

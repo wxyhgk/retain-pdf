@@ -1,4 +1,5 @@
 import { cancelTask, followTasks, taskLog, type TaskSummary } from '../api/client';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What the tray tells the Studio around it. */
 export type TaskTrayHost = {
@@ -9,11 +10,11 @@ export type TaskTrayHost = {
 /** How long a task that went well stays in the tray once it is over, in ms. */
 const DONE_SHOWN_FOR = 6000;
 
-const STATES: Record<TaskSummary['state'], string> = { running: '进行中', done: '完成', failed: '出错', cancelled: '已取消' };
+const STATES: Record<TaskSummary['state'], string> = { running: t('进行中'), done: t('完成'), failed: t('出错'), cancelled: t('已取消') };
 
 function elapsed(task: TaskSummary): string {
 	const seconds = Math.max(0, Math.round(((task.ended ?? Date.now()) - task.started) / 1000));
-	return seconds < 60 ? `${seconds} 秒` : `${Math.floor(seconds / 60)} 分 ${seconds % 60} 秒`;
+	return seconds < 60 ? t('{seconds} 秒', { seconds }) : t('{minutes} 分 {seconds} 秒', { minutes: Math.floor(seconds / 60), seconds: seconds % 60 });
 }
 
 /**
@@ -35,9 +36,9 @@ export function createTaskTray(tray: HTMLElement, host: TaskTrayHost) {
 	function update(entry: Shown): void {
 		const { task } = entry;
 		entry.item.dataset.state = task.state;
-		entry.state.textContent = task.state === 'failed' && task.error ? `出错：${task.error}` : STATES[task.state];
+		entry.state.textContent = task.state === 'failed' && task.error ? t('出错：{error}', { error: task.error }) : STATES[task.state];
 		entry.time.textContent = elapsed(task);
-		entry.action.textContent = task.state === 'running' ? '取消' : '关闭';
+		entry.action.textContent = task.state === 'running' ? t('取消') : t('关闭');
 	}
 
 	function show(task: TaskSummary): Shown {
@@ -58,7 +59,7 @@ export function createTaskTray(tray: HTMLElement, host: TaskTrayHost) {
 		state.className = 'task-state';
 		const logButton = document.createElement('button');
 		logButton.type = 'button';
-		logButton.textContent = '日志';
+		logButton.textContent = t('日志');
 		const action = document.createElement('button');
 		action.type = 'button';
 		foot.append(state, logButton, action);
@@ -69,10 +70,10 @@ export function createTaskTray(tray: HTMLElement, host: TaskTrayHost) {
 		const entry: Shown = { task, item, time, state, log, action };
 		logButton.addEventListener('click', () => {
 			log.hidden = !log.hidden;
-			logButton.textContent = log.hidden ? '日志' : '收起';
+			logButton.textContent = log.hidden ? t('日志') : t('收起');
 			if (!log.hidden) {
 				void taskLog(entry.task.id).then((text) => {
-					log.textContent = text || '（还没有输出）';
+					log.textContent = text || t('（还没有输出）');
 					log.scrollTop = log.scrollHeight;
 				});
 			}

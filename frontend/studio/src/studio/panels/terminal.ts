@@ -4,6 +4,7 @@ import '@xterm/xterm/css/xterm.css';
 
 import { listAgents, openTerminal, type AgentsShown } from '../api/client';
 import type { SourceLines } from '../document/source-lines';
+import { t } from '@blog/i18n/index.mjs';
 
 type Cwd = 'root' | 'article' | 'drive';
 type State = 'idle' | 'starting' | 'running' | 'ended';
@@ -31,10 +32,10 @@ function typeable(text: string): string {
  * as the shell finds it.
  */
 export function questionAbout(path: string, lines: SourceLines): string {
-	const where = lines.start === lines.end ? `第 ${lines.start} 行` : `第 ${lines.start}–${lines.end} 行`;
+	const where = lines.start === lines.end ? `第 ${lines.start} 行` : `第 ${lines.start}–${lines.end} 行`; // i18n-ignore: a question for an AI
 	const opening = typeable(lines.text.split('\n').find((line) => line.trim()) ?? '');
 	const quoted = opening.length > QUOTED_CHARACTERS ? `${opening.slice(0, QUOTED_CHARACTERS)}…` : opening;
-	return typeable(`${path} ${where}${quoted ? `（从「${quoted}」开始）` : ''}。要求：`);
+	return typeable(`${path} ${where}${quoted ? `（从「${quoted}」开始）` : ''}。要求：`); // i18n-ignore: a question for an AI
 }
 
 /**
@@ -43,7 +44,7 @@ export function questionAbout(path: string, lines: SourceLines): string {
  * its words are (drive-text.mjs).
  */
 export function questionAboutDriveFile(path: string, text: string | null): string {
-	return typeable(`资料库里的 ${path}${text ? `（文字版：${text}）` : ''}。要求：`);
+	return typeable(`资料库里的 ${path}${text ? `（文字版：${text}）` : ''}。要求：`); // i18n-ignore: a question for an AI
 }
 
 function readCwd(): Cwd {
@@ -136,16 +137,16 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 		shellArticle = target === 'article' ? slug : null;
 		shellInDrive = target === 'drive';
 		terminal.reset();
-		dim('正在打开终端…');
-		const hint = window.setTimeout(() => dim('第一次使用要先编译终端程序（Rust），大约需要一分钟…'), FIRST_BUILD_HINT_MS);
+		dim(t('正在打开终端…'));
+		const hint = window.setTimeout(() => dim(t('第一次使用要先编译终端程序（Rust），大约需要一分钟…')), FIRST_BUILD_HINT_MS);
 		let url: string;
 		let folder: string;
 		try {
 			({ url, cwd: folder } = await openTerminal(target === 'article' ? { cwd: 'article', slug: slug! } : { cwd: target }));
 		} catch (error) {
 			setState('ended');
-			terminal.writeln(`\x1b[31m${error instanceof Error ? error.message : '终端打不开'}\x1b[0m`);
-			dim('按任意键重试');
+			terminal.writeln(`\x1b[31m${error instanceof Error ? error.message : t('终端打不开')}\x1b[0m`);
+			dim(t('按任意键重试'));
 			return;
 		} finally {
 			window.clearTimeout(hint);
@@ -177,7 +178,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 			const message = JSON.parse(event.data) as { type: string; code?: number };
 			if (message.type === 'exit') {
 				setState('ended');
-				dim(`\r\n[终端已结束${message.code ? `（退出码 ${message.code}）` : ''}，按任意键重新打开]`);
+				dim(message.code ? t('\r\n[终端已结束（退出码 {code}），按任意键重新打开]', { code: message.code }) : t('\r\n[终端已结束，按任意键重新打开]'));
 			}
 		});
 		connection.addEventListener('close', () => {
@@ -185,7 +186,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 			socket = null;
 			if (state !== 'ended') {
 				setState('ended');
-				dim('\r\n[与终端的连接断开了，按任意键重新打开]');
+				dim(t('\r\n[与终端的连接断开了，按任意键重新打开]'));
 			}
 		});
 	}
@@ -232,8 +233,10 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 	 */
 	function launch(agent: AgentsShown['agents'][number]): void {
 		const target: Cwd = article ? 'article' : 'root';
-		const place = target === 'article' ? '当前文章' : '仓库根目录';
-		if (state === 'running' && !confirm(`在${place}打开 ${agent.name}？终端里正在运行的程序会被结束。`)) return;
+		const question = target === 'article'
+			? t('在当前文章打开 {name}？终端里正在运行的程序会被结束。', { name: agent.name })
+			: t('在仓库根目录打开 {name}？终端里正在运行的程序会被结束。', { name: agent.name });
+		if (state === 'running' && !confirm(question)) return;
 		cwd = target;
 		writeCwd(cwd);
 		renderCwd();
@@ -250,7 +253,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 			return;
 		}
 		const label = document.createElement('span');
-		label.textContent = '启动 AI：';
+		label.textContent = t('启动 AI：');
 		agentBar.replaceChildren(label, ...agents.map((agent) => {
 			const button = document.createElement('button');
 			button.type = 'button';
@@ -258,7 +261,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 			button.textContent = agent.name;
 			button.disabled = !agent.installed;
 			const program = agent.launch.split(/\s+/u)[0];
-			button.title = agent.installed ? `在终端里启动 ${agent.launch}` : `没有找到 ${program} 命令${agent.install ? `。安装：${agent.install}` : ''}`;
+			button.title = agent.installed ? t('在终端里启动 {launch}', { launch: agent.launch }) : agent.install ? t('没有找到 {program} 命令。安装：{install}', { program, install: agent.install }) : t('没有找到 {program} 命令', { program });
 			button.addEventListener('click', () => launch(agent));
 			return button;
 		}));
@@ -266,8 +269,8 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 		settings.type = 'button';
 		settings.className = 'terminal-agents-settings';
 		settings.textContent = '⚙';
-		settings.title = 'AI 助手：有哪些、怎么启动、Alt+Enter 用哪个';
-		settings.setAttribute('aria-label', 'AI 助手设置');
+		settings.title = t('AI 助手：有哪些、怎么启动、Alt+Enter 用哪个');
+		settings.setAttribute('aria-label', t('AI 助手设置'));
 		settings.addEventListener('click', () => host.editAgents());
 		agentBar.append(settings);
 		agentBar.hidden = false;
@@ -275,7 +278,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 
 	/** Starts over in the chosen folder, asking first if a shell is running there now. */
 	function restart(): void {
-		if (state === 'running' && !confirm('重新打开终端会结束它里面正在运行的程序，继续吗？')) return;
+		if (state === 'running' && !confirm(t('重新打开终端会结束它里面正在运行的程序，继续吗？'))) return;
 		void start();
 	}
 
@@ -307,7 +310,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 			const previous = cwd;
 			cwd = next;
 			if (state !== 'idle' && effectiveCwd() !== before) {
-				if (state === 'running' && !confirm('在另一个目录重新打开终端？正在运行的程序会被结束。')) {
+				if (state === 'running' && !confirm(t('在另一个目录重新打开终端？正在运行的程序会被结束。'))) {
 					cwd = previous;
 					return;
 				}
@@ -346,7 +349,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 		 * runs in the terminal now ends, the author asked first.
 		 */
 		run(command: string): void {
-			if (state === 'running' && !confirm(`在终端里运行 ${command}？终端里正在运行的程序会被结束。`)) return;
+			if (state === 'running' && !confirm(t('在终端里运行 {command}？终端里正在运行的程序会被结束。', { command }))) return;
 			cwd = 'root';
 			writeCwd(cwd);
 			renderCwd();

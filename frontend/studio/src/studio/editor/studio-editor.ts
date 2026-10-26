@@ -55,6 +55,7 @@ import { togglePlugins } from './toggle-block';
 import { columnsPlugins } from './columns-block';
 import { pluginBlocks, pluginSlashCommands } from '../plugins';
 import { runCommand } from '../plugin-ui';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {
@@ -337,29 +338,29 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			},
 			slashMenu: { triggers: SLASH_TRIGGERS },
 			textGroup: {
-				label: '文本',
-				text: { label: '正文' },
-				h1: { label: '标题 1' },
-				h2: { label: '标题 2' },
-				h3: { label: '标题 3' },
+				label: t('文本'),
+				text: { label: t('正文') },
+				h1: { label: t('标题 1') },
+				h2: { label: t('标题 2') },
+				h3: { label: t('标题 3') },
 				h4: null,
 				h5: null,
 				h6: null,
-				quote: { label: '引用' },
-				divider: { label: '分割线' },
+				quote: { label: t('引用') },
+				divider: { label: t('分割线') },
 			},
 			listGroup: {
-				label: '列表',
-				bulletList: { label: '无序列表' },
-				orderedList: { label: '有序列表' },
-				taskList: { label: '待办' },
+				label: t('列表'),
+				bulletList: { label: t('无序列表') },
+				orderedList: { label: t('有序列表') },
+				taskList: { label: t('待办') },
 			},
 			advancedGroup: {
-				label: '插入',
-				image: { label: '图片' },
-				codeBlock: { label: '代码' },
-				table: { label: '表格' },
-				math: { label: '公式' },
+				label: t('插入'),
+				image: { label: t('图片') },
+				codeBlock: { label: t('代码') },
+				table: { label: t('表格') },
+				math: { label: t('公式') },
 			},
 		};
 		crepe = new Crepe({
@@ -373,13 +374,13 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				[CrepeFeature.CodeMirror]: {
 					// The plugins' code blocks first (```widget is HTML), then code files', then CodeMirror's.
 					languages: [...(codeBlocks.flatMap((code) => code.languages ?? []) as typeof codeMirrorLanguages), ...codeFileLanguageDescriptions, ...codeMirrorLanguages],
-					copyText: '复制',
-					previewLabel: '预览',
-					previewLoading: '正在渲染…',
+					copyText: t('复制'),
+					previewLabel: t('预览'),
+					previewLoading: t('正在渲染…'),
 					previewOnlyByDefault: true,
-					previewToggleText: (previewOnly: boolean) => (previewOnly ? '编辑' : '收起'),
-					searchPlaceholder: '搜索语言',
-					noResultText: '没有匹配的语言',
+					previewToggleText: (previewOnly: boolean) => (previewOnly ? t('编辑') : t('收起')),
+					searchPlaceholder: t('搜索语言'),
+					noResultText: t('没有匹配的语言'),
 					// A block that shows a file of the article (`@file ./assets/opt.log`) previews it as the blog does.
 					// It comes later (undefined), once the file is read. The fork passes the fence's
 					// `lines=` and `title=` (meta) too, which the npm release's type does not know.
@@ -393,35 +394,35 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					},
 				},
 				[CrepeFeature.Placeholder]: {
-					text: "输入 '/' 插入块",
+					text: t('输入 \'/\' 插入块'),
 					mode: 'block',
 				},
 				// Formulas are drawn by inline-math.ts and display-math.ts; a ```latex fence is code.
 				[CrepeFeature.Latex]: { blockPreview: false },
 				[CrepeFeature.Toolbar]: {
-					boldLabel: '粗体',
-					italicLabel: '斜体',
-					strikethroughLabel: '删除线',
-					codeLabel: '行内代码',
-					linkLabel: '链接',
-					latexLabel: '公式',
+					boldLabel: t('粗体'),
+					italicLabel: t('斜体'),
+					strikethroughLabel: t('删除线'),
+					codeLabel: t('行内代码'),
+					linkLabel: t('链接'),
+					latexLabel: t('公式'),
 					buildToolbar: (builder) => {
 						buildToolbarTurn(builder);
 						buildToolbarAsk(builder, () => host.askAI());
 					},
 				},
 				[CrepeFeature.LinkTooltip]: {
-					inputPlaceholder: '粘贴链接…',
+					inputPlaceholder: t('粘贴链接…'),
 				},
 				[CrepeFeature.ImageBlock]: {
 					proxyDomURL: host.fileUrl,
 					onUpload: async (file: File) => linkPath((await host.files.upload([file]))[0]),
-					inlineUploadButton: '上传',
-					inlineUploadPlaceholderText: '或粘贴链接',
-					blockUploadButton: '上传图片',
-					blockCaptionPlaceholderText: '添加说明',
-					blockUploadPlaceholderText: '或粘贴图片链接',
-					blockConfirmButton: '确定',
+					inlineUploadButton: t('上传'),
+					inlineUploadPlaceholderText: t('或粘贴链接'),
+					blockUploadButton: t('上传图片'),
+					blockCaptionPlaceholderText: t('添加说明'),
+					blockUploadPlaceholderText: t('或粘贴图片链接'),
+					blockConfirmButton: t('确定'),
 				},
 				[CrepeFeature.BlockEdit]: blockEdit,
 			},
@@ -462,8 +463,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				}));
 				ctx.update(diffComponentConfig.key, (prev) => ({
 					...prev,
-					acceptLabel: '接受',
-					rejectLabel: '拒绝',
+					acceptLabel: t('接受'),
+					rejectLabel: t('拒绝'),
 					// Blocks drawn by their own views: a change inside one replaces it whole.
 					customBlockTypes: ['table', 'image-block', FIGURE_TYPE, 'code_block', ...blocks.flatMap((block) => block.drawnWhole ?? [])],
 				}));
@@ -659,7 +660,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		const content = doc.slice(section.from + heading.nodeSize, section.to).content;
 		const page = schema.topNodeType.createAndFill(null, content) ?? schema.topNodeType.createAndFill()!;
 		const body = crepe.editor.action((ctx) => withoutTrailingEmptyLines(ctx.get(serializerCtx)(page)));
-		const title = section.title || '无标题';
+		const title = section.title || '无标题'; // i18n-ignore: saved as the page's title
 		const link = schema.marks.link?.create({ href: `/blog/${slug}/`, title: null });
 		const paragraph = schema.nodes.paragraph!.create(null, schema.text(title, link ? [link] : []));
 		const before = view.state.doc;

@@ -1,3 +1,5 @@
+import { t } from '@blog/i18n/index.mjs';
+
 /**
  * Help typing LaTeX: completing `\al` to `\alpha`, pairing braces, and Tab
  * to the next `{}`. These work on a formula's text and the caret in it, so
@@ -44,7 +46,7 @@ const TEMPLATES: [string, string, string][] = [
 	['dfrac', '\\dfrac{‸}{}', '\\dfrac{a}{b}'],
 	['sqrt', '\\sqrt{‸}', '\\sqrt{x}'],
 	['sqrt[n]', '\\sqrt[‸]{}', '\\sqrt[n]{x}'],
-	['text', '\\text{‸}', '\\text{文字}'],
+	['text', '\\text{‸}', t('\\text{文字}')],
 	['mathrm', '\\mathrm{‸}', '\\mathrm{d}x'],
 	['mathbf', '\\mathbf{‸}', '\\mathbf{r}'],
 	['boldsymbol', '\\boldsymbol{‸}', '\\boldsymbol{\\mu}'],

@@ -17,6 +17,7 @@ import { FIGURE_TYPE } from './figure-block.ts';
 import { blockAddress, onlyLink, targetsFor, type LinkTarget } from './link-embeds.ts';
 import type { BlockMenuEntry, StudioBlock } from '@blog/kernel/studio.ts';
 import { blockAt } from '@blog/ui/block-at.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 let focusTitle: (() => void) | null = null;
 
@@ -119,7 +120,7 @@ const PICTURES = ['image-block', FIGURE_TYPE];
 /** The menu's 「问 AI…」, when the Studio offers it. */
 function askEntry(host: BlockMenuHost): MenuEntry[] {
 	const ask = host.ask;
-	return ask ? [{ key: 'ask-ai', label: 'AI 改写…', current: false, danger: false, turn: false, hint: keyHint('Mod-j'), run: () => ask() }] : [];
+	return ask ? [{ key: 'ask-ai', label: t('AI 改写…'), current: false, danger: false, turn: false, hint: keyHint('Mod-j'), run: () => ask() }] : [];
 }
 
 function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntry[] {
@@ -128,22 +129,22 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 		label: item.label,
 		current: item.current,
 		danger: item.danger,
-		turn: item.section === '转换成',
+		turn: item.section === '转换成', // i18n-ignore: group key
 		hint: item.shortcut ? keyHint(item.shortcut) : undefined,
 		run: (view: EditorView) => dispatchBlockAction(view, item.action),
 	}));
 	const split = host.split;
 	if (split && node.type.name === 'heading') {
-		entries.push({ key: 'split', label: '转成子页面', current: false, danger: false, turn: false, run: (view) => split(view, pos) });
+		entries.push({ key: 'split', label: t('转成子页面'), current: false, danger: false, turn: false, run: (view) => split(view, pos) });
 	}
 	const recognize = host.recognize;
 	if (recognize && PICTURES.includes(node.type.name) && node.attrs.src) {
-		entries.push({ key: 'recognize', label: '识别…', current: false, danger: false, turn: false, run: (view) => recognize(view, pos) });
+		entries.push({ key: 'recognize', label: t('识别…'), current: false, danger: false, turn: false, run: (view) => recognize(view, pos) });
 	}
 	const ocr = host.ocr;
 	// A PDF of the article: a line that is only a link to it (as a PDF dropped in comes in).
 	const pdf = /^\.\/(.+\.pdf)$/iu.exec(linkedAlone(node) ?? '')?.[1];
-	if (ocr && pdf) entries.push({ key: 'ocr', label: 'OCR 成子页面（PaddleOCR）', current: false, danger: false, turn: false, run: (view) => ocr(view, pos, decodeURI(pdf)) });
+	if (ocr && pdf) entries.push({ key: 'ocr', label: t('OCR 成子页面（PaddleOCR）'), current: false, danger: false, turn: false, run: (view) => ocr(view, pos, decodeURI(pdf)) });
 	const links = host.links;
 	if (links) {
 		const url = onlyLink(node);
@@ -157,12 +158,12 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 				const current = target.node === node.type.name;
 				entries.push({ key: `link-${target.node}`, label: target.label, current, danger: false, turn: true, run: (view) => !current && links.turn(view, pos, target.markdown(address)) });
 			}
-			entries.push({ key: 'link', label: '链接', current: false, danger: false, turn: true, run: (view) => links.back(view, pos, address) });
+			entries.push({ key: 'link', label: t('链接'), current: false, danger: false, turn: true, run: (view) => links.back(view, pos, address) });
 		}
 	}
 	const save = host.saveAsFile;
 	if (save?.can(node)) {
-		entries.push({ key: 'save-file', label: '另存为文件', current: false, danger: false, turn: false, run: (view) => save.run(view, pos) });
+		entries.push({ key: 'save-file', label: t('另存为文件'), current: false, danger: false, turn: false, run: (view) => save.run(view, pos) });
 	}
 	// A plugin's block may hold a menu of its own, keeping what it likes of these.
 	const own = host.blocks?.find((block) => block.blockMenu?.nodes.includes(node.type.name))?.blockMenu;
@@ -180,7 +181,7 @@ export function buildBlockMenu(builder: BlockMenuBuilder, { node, pos }: { node:
 	const groups = [
 		{ key: 'actions', label: '', entries: entries.filter((entry) => !entry.turn && !entry.danger) },
 		{ key: 'remove', label: '', entries: entries.filter((entry) => entry.danger) },
-		{ key: 'turn', label: '转换成', entries: entries.filter((entry) => entry.turn) },
+		{ key: 'turn', label: t('转换成'), entries: entries.filter((entry) => entry.turn) },
 	];
 	for (const group of groups) {
 		if (!group.entries.length) continue;
@@ -213,9 +214,9 @@ const TURN_ICON =
  * block menu of the block the selection starts in, next to the button.
  */
 export function buildToolbarTurn(builder: ToolbarBuilder): void {
-	builder.addGroup('turn', '转换成').addItem('turn-into', {
+	builder.addGroup('turn', t('转换成')).addItem('turn-into', {
 		icon: TURN_ICON,
-		label: '转换成',
+		label: t('转换成'),
 		active: () => false,
 		onRun: (ctx) => {
 			const view = ctx.get(editorViewCtx);
@@ -233,7 +234,7 @@ const ASK_ICON =
 
 /** 「问 AI」 at the end of the toolbar over selected text. */
 export function buildToolbarAsk(builder: ToolbarBuilder, ask: () => void): void {
-	builder.addGroup('ask', 'AI').addItem('ask-ai', { icon: ASK_ICON, label: 'AI 改写', active: () => false, onRun: () => ask() });
+	builder.addGroup('ask', 'AI').addItem('ask-ai', { icon: ASK_ICON, label: t('AI 改写'), active: () => false, onRun: () => ask() });
 }
 
 export const writingKeymap = $prose(() =>

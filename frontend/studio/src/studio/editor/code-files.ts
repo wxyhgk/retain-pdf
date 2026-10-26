@@ -10,6 +10,7 @@ import '@blog/markdown/code-files/code-files.css';
 import { parseScienceResourceRef } from '@blog/science/parsers/resource-reference.ts';
 import type { ArticleFileDropHost } from './file-drop.ts';
 import { isFormulaBlock } from './formula-block.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 /** The code-file languages for CodeMirror, coloured by the parsers the blog uses. */
 export const codeFileLanguageDescriptions: LanguageDescription[] = codeFileLanguages.map((language) =>
@@ -78,7 +79,7 @@ export function codeFilePreview(
 		if (!path) return null;
 		figure(path, language, meta).then(
 			(drawn) => apply(draw(drawn)),
-			(error: unknown) => apply(draw(codeFileProblem(language, error instanceof Error ? error.message : `找不到文件 ${path}`))),
+			(error: unknown) => apply(draw(codeFileProblem(language, error instanceof Error ? error.message : t('找不到文件 {path}', { path })))),
 		);
 		return undefined;
 	};
@@ -105,7 +106,7 @@ export function saveCodeBlockAsFile(host: ArticleFileDropHost): (view: EditorVie
 		try {
 			[path] = await host.upload([file]);
 		} catch (error) {
-			host.report(error instanceof Error ? error.message : '保存文件失败', true);
+			host.report(error instanceof Error ? error.message : t('保存文件失败'), true);
 			return;
 		}
 		if (view.isDestroyed) return;
@@ -118,11 +119,11 @@ export function saveCodeBlockAsFile(host: ArticleFileDropHost): (view: EditorVie
 			});
 		}
 		if (at < 0) {
-			host.report(`已存为 ${path}；代码块已改动，没有替换`);
+			host.report(t('已存为 {path}；代码块已改动，没有替换', { path }));
 			return;
 		}
 		const replaced = node.type.create(node.attrs, view.state.schema.text(`@file ./${path}`));
 		view.dispatch(view.state.tr.replaceWith(at, at + node.nodeSize, replaced));
-		host.report(`已存为 ${path}`);
+		host.report(t('已存为 {path}', { path }));
 	};
 }

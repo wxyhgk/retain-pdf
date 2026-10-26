@@ -8,6 +8,7 @@ import {
 	restoreDriveFile,
 	revealDriveFile,
 	setDriveFolder,
+	StudioApiError,
 	trashDriveFile,
 	uploadDriveFile,
 	type DriveEntry,
@@ -20,6 +21,7 @@ import { showContextMenu, type MenuItem } from '../common/context-menu';
 import { formatSize } from './file-tree';
 import { showToast } from '../common/toast';
 import './drive.css';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The drive (资料库, drive.mjs) as a file browser: its folders one at a
@@ -88,23 +90,23 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 	root.classList.add('drive', `drive--${mode}`);
 	const bar = element('header', 'drive-bar');
 	const crumbs = element('nav', 'drive-crumbs');
-	crumbs.setAttribute('aria-label', '资料库路径');
+	crumbs.setAttribute('aria-label', t('资料库路径'));
 	const actions = element('div', 'drive-actions');
-	const upload = button('⤒', '上传文件到这个文件夹；也可以直接把文件拖进来');
-	const newFolder = button('＋', '新建文件夹');
-	const refresh = button('↻', '重新读取');
-	const reveal = button('◳', '在 Finder 中显示');
+	const upload = button('⤒', t('上传文件到这个文件夹；也可以直接把文件拖进来'));
+	const newFolder = button('＋', t('新建文件夹'));
+	const refresh = button('↻', t('重新读取'));
+	const reveal = button('◳', t('在 Finder 中显示'));
 	if (mode === 'page') {
-		reveal.textContent = '在 Finder 中显示';
-		upload.textContent = '上传';
-		newFolder.textContent = '新建文件夹';
+		reveal.textContent = t('在 Finder 中显示');
+		upload.textContent = t('上传');
+		newFolder.textContent = t('新建文件夹');
 	}
 	actions.append(upload, newFolder, refresh, reveal);
 	bar.append(crumbs, actions);
 	const setup = element('div', 'drive-setup');
 	const list = element('div', 'drive-list');
 	list.setAttribute('role', 'listbox');
-	list.setAttribute('aria-label', '资料库里的文件');
+	list.setAttribute('aria-label', t('资料库里的文件'));
 	list.tabIndex = 0;
 	const status = element('p', 'drive-status');
 	status.setAttribute('role', 'status');
@@ -124,19 +126,19 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 		bar.hidden = true;
 		list.hidden = true;
 		setup.hidden = false;
-		const intro = element('p', '', '资料库是你电脑上的一个文件夹，比如放在 iCloud 云盘或 Dropbox 里，由它们负责同步。Studio 在这里浏览、预览里面的文件，并把它们用进文章。');
-		const choose = element('button', 'drive-primary', '选择文件夹…');
+		const intro = element('p', '', t('资料库是你电脑上的一个文件夹，比如放在 iCloud 云盘或 Dropbox 里，由它们负责同步。Studio 在这里浏览、预览里面的文件，并把它们用进文章。'));
+		const choose = element('button', 'drive-primary', t('选择文件夹…'));
 		choose.type = 'button';
 		const typed = element('form', 'drive-typed');
 		const input = element('input');
 		input.type = 'text';
-		input.placeholder = '或者输入文件夹的完整路径，如 /Users/me/Library/Mobile Documents/com~apple~CloudDocs/资料';
-		input.setAttribute('aria-label', '资料库文件夹路径');
-		const use = element('button', 'drive-button', '使用');
+		input.placeholder = t('或者输入文件夹的完整路径，如 /Users/me/Library/Mobile Documents/com~apple~CloudDocs/资料');
+		input.setAttribute('aria-label', t('资料库文件夹路径'));
+		const use = element('button', 'drive-button', t('使用'));
 		use.type = 'submit';
 		typed.append(input, use);
 		const use_ = async (task: () => Promise<DriveInfo>) => {
-			say('正在设置…', 'busy');
+			say(t('正在设置…'), 'busy');
 			try {
 				const chosen = await task();
 				if (chosen.cancelled) return say('');
@@ -145,7 +147,7 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 				host.changed();
 				await open('');
 			} catch (error) {
-				say(message(error, '设置失败'), 'error');
+				say(message(error, t('设置失败')), 'error');
 			}
 		};
 		choose.addEventListener('click', () => void use_(chooseDriveFolder));
@@ -153,12 +155,12 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 			event.preventDefault();
 			if (input.value.trim()) void use_(() => setDriveFolder(input.value.trim()));
 		});
-		setup.replaceChildren(element('h2', '', '选择资料库文件夹'), intro, choose, typed);
+		setup.replaceChildren(element('h2', '', t('选择资料库文件夹')), intro, choose, typed);
 	}
 
 	function drawCrumbs(): void {
 		const parts = folder ? folder.split('/') : [];
-		const items = [{ label: info?.name ?? '资料库', path: '' }, ...parts.map((part, index) => ({ label: part, path: parts.slice(0, index + 1).join('/') }))];
+		const items = [{ label: info?.name ?? t('资料库'), path: '' }, ...parts.map((part, index) => ({ label: part, path: parts.slice(0, index + 1).join('/') }))];
 		crumbs.replaceChildren(
 			...items.flatMap((item, index) => {
 				const link = element('button', 'drive-crumb', item.label);
@@ -193,14 +195,14 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 	function draw(): void {
 		drawCrumbs();
 		if (!entries.length) {
-			list.replaceChildren(element('p', 'drive-empty', '这个文件夹是空的。把文件拖到这里上传。'));
+			list.replaceChildren(element('p', 'drive-empty', t('这个文件夹是空的。把文件拖到这里上传。')));
 			return;
 		}
 		const rows = entries.map(row);
 		if (mode === 'page') {
 			const head = element('div', 'drive-row drive-head');
 			head.setAttribute('aria-hidden', 'true');
-			head.append(element('span'), element('span', 'drive-name', '名称'), element('span', 'drive-date', '修改时间'), element('span', 'drive-size', '大小'));
+			head.append(element('span'), element('span', 'drive-name', t('名称')), element('span', 'drive-date', t('修改时间')), element('span', 'drive-size', t('大小')));
 			list.replaceChildren(head, ...rows);
 		} else list.replaceChildren(...rows);
 	}
@@ -216,7 +218,7 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 			bar.hidden = false;
 			list.hidden = false;
 			reveal.hidden = info.fixed;
-			if (!quiet) say('正在读取…', 'busy');
+			if (!quiet) say(t('正在读取…'), 'busy');
 			const read = await listDrive(next);
 			if (at !== listing) return;
 			if (next !== folder) selected = null;
@@ -229,8 +231,8 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 		} catch (error) {
 			if (at !== listing) return;
 			// The folder went away (moved in Finder, trashed from the other browser): its parent instead.
-			if (next && /不存在/u.test(message(error, ''))) return open(parentPath(next), { quiet });
-			say(message(error, '读取资料库失败'), 'error');
+			if (next && error instanceof StudioApiError && error.status === 404) return open(parentPath(next), { quiet });
+			say(message(error, t('读取资料库失败')), 'error');
 		}
 	}
 
@@ -261,7 +263,7 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 			say(done ?? '');
 			host.changed();
 		} catch (error) {
-			say(message(error, '操作失败'), 'error');
+			say(message(error, t('操作失败')), 'error');
 			await open(folder, { quiet: true });
 		}
 	}
@@ -273,7 +275,7 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 		const input = element('input', 'drive-name-input');
 		const old = fileName(entry.path);
 		input.value = old;
-		input.setAttribute('aria-label', '新名称');
+		input.setAttribute('aria-label', t('新名称'));
 		name.replaceWith(input);
 		item.draggable = false;
 		input.focus();
@@ -290,10 +292,10 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 				then?.();
 				return;
 			}
-			void change(`正在重命名…`, async () => {
+			void change(t('正在重命名…'), async () => {
 				const { path } = await moveDriveFile(entry.path, join(parentPath(entry.path), next));
 				selected = path;
-				return `已重命名为 ${next}`;
+				return t('已重命名为 {name}', { name: next });
 			}).then(() => then?.());
 		};
 		input.addEventListener('keydown', (event) => {
@@ -305,14 +307,14 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 	}
 
 	function trash(entry: DriveEntry): void {
-		void change(`正在删除 ${fileName(entry.path)}…`, async () => {
+		void change(t('正在删除 {name}…', { name: fileName(entry.path) }), async () => {
 			const { trashed } = await trashDriveFile(entry.path);
-			showToast(`已把 ${fileName(entry.path)} 移到资料库的回收站`, {
+			showToast(t('已把 {name} 移到资料库的回收站', { name: fileName(entry.path) }), {
 				action: {
-					label: '撤销',
-					run: () => void change('正在放回…', async () => {
+					label: t('撤销'),
+					run: () => void change(t('正在放回…'), async () => {
 						await restoreDriveFile(trashed);
-						return `已放回 ${fileName(entry.path)}`;
+						return t('已放回 {name}', { name: fileName(entry.path) });
 					}),
 				},
 			});
@@ -321,9 +323,10 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 
 	async function createFolder(): Promise<void> {
 		const names = new Set(entries.map((entry) => fileName(entry.path)));
-		let name = '新建文件夹';
-		for (let count = 2; names.has(name); count += 1) name = `新建文件夹 ${count}`;
-		await change('正在新建文件夹…', async () => {
+		// Named in the Studio's language, as Finder names its own.
+		let name = t('新建文件夹');
+		for (let count = 2; names.has(name); count += 1) name = t('新建文件夹 {count}', { count });
+		await change(t('正在新建文件夹…'), async () => {
 			const { path } = await createDriveFolder(join(folder, name));
 			selected = path;
 		});
@@ -333,13 +336,16 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 
 	function uploadFiles(files: readonly File[], into: string): void {
 		if (!files.length) return;
-		void change(files.length === 1 ? `正在上传 ${files[0]!.name}…` : `正在上传 ${files.length} 个文件…`, async () => {
+		void change(files.length === 1 ? t('正在上传 {name}…', { name: files[0]!.name }) : t('正在上传 {count} 个文件…', { count: files.length }), async () => {
 			for (const [index, file] of files.entries()) {
 				await uploadDriveFile(into, file, {
-					onProgress: (loaded, total) => say(`正在上传 ${file.name}（${index + 1}/${files.length}）${total ? ` ${Math.round((loaded / total) * 100)}%` : ''}`, 'busy'),
+					onProgress: (loaded, total) => {
+						const at = { name: file.name, index: index + 1, count: files.length };
+						say(total ? t('正在上传 {name}（{index}/{count}） {percent}%', { ...at, percent: Math.round((loaded / total) * 100) }) : t('正在上传 {name}（{index}/{count}）', at), 'busy');
+					},
 				});
 			}
-			return files.length === 1 ? `已上传 ${files[0]!.name}` : `已上传 ${files.length} 个文件`;
+			return files.length === 1 ? t('已上传 {name}', { name: files[0]!.name }) : t('已上传 {count} 个文件', { count: files.length });
 		});
 	}
 
@@ -347,28 +353,28 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 		const article = host.article();
 		const items: MenuItem[] = [];
 		if (entry) {
-			items.push({ label: entry.kind === 'directory' ? '打开' : officeKind(entry.path) ? '预览' : '在新标签页打开', action: () => activate(entry) });
+			items.push({ label: entry.kind === 'directory' ? t('打开') : officeKind(entry.path) ? t('预览') : t('在新标签页打开'), action: () => activate(entry) });
 			if (entry.kind === 'file' && article) {
-				items.push({ label: `插入到《${article.title}》`, action: () => void insert(entry) });
+				items.push({ label: t('插入到《{title}》', { title: article.title }), action: () => void insert(entry) });
 			}
-			if (entry.kind === 'file') items.push({ label: '问 AI', hint: '终端', action: () => host.askAI(entry.path) });
-			items.push('separator', { label: '重命名', hint: 'F2', action: () => rename(entry) });
-			if (!info?.fixed) items.push({ label: '在 Finder 中显示', action: () => void revealDriveFile(entry.path).catch((error) => say(message(error, '打不开'), 'error')) });
-			items.push({ label: '复制路径', action: () => void navigator.clipboard.writeText(`${info?.root ?? ''}/${entry.path}`).then(() => say('已复制路径')) });
-			items.push('separator', { label: '移到回收站', danger: true, action: () => trash(entry) });
+			if (entry.kind === 'file') items.push({ label: t('问 AI'), hint: t('终端'), action: () => host.askAI(entry.path) });
+			items.push('separator', { label: t('重命名'), hint: 'F2', action: () => rename(entry) });
+			if (!info?.fixed) items.push({ label: t('在 Finder 中显示'), action: () => void revealDriveFile(entry.path).catch((error) => say(message(error, t('打不开')), 'error')) });
+			items.push({ label: t('复制路径'), action: () => void navigator.clipboard.writeText(`${info?.root ?? ''}/${entry.path}`).then(() => say(t('已复制路径'))) });
+			items.push('separator', { label: t('移到回收站'), danger: true, action: () => trash(entry) });
 		} else {
-			items.push({ label: '上传文件…', action: () => picker.click() }, { label: '新建文件夹', action: () => void createFolder() }, { label: '重新读取', action: () => void open(folder) });
+			items.push({ label: t('上传文件…'), action: () => picker.click() }, { label: t('新建文件夹'), action: () => void createFolder() }, { label: t('重新读取'), action: () => void open(folder) });
 		}
 		showContextMenu(items, at);
 	}
 
 	async function insert(entry: DriveEntry): Promise<void> {
-		say(`正在把 ${fileName(entry.path)} 放进文章…`, 'busy');
+		say(t('正在把 {name} 放进文章…', { name: fileName(entry.path) }), 'busy');
 		try {
 			await host.insertIntoArticle(entry.path);
-			say(`已复制到文章并插入：${fileName(entry.path)}`);
+			say(t('已复制到文章并插入：{name}', { name: fileName(entry.path) }));
 		} catch (error) {
-			say(message(error, '插入失败'), 'error');
+			say(message(error, t('插入失败')), 'error');
 		}
 	}
 
@@ -445,16 +451,16 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 		if (moved) {
 			event.preventDefault();
 			if (parentPath(moved) === into || into === moved || into.startsWith(`${moved}/`)) return;
-			void change(`正在移动 ${fileName(moved)}…`, async () => {
+			void change(t('正在移动 {name}…', { name: fileName(moved) }), async () => {
 				await moveDriveFile(moved, join(into, fileName(moved)));
-				return `已移到 ${into || info?.name || '资料库'}`;
+				return t('已移到 {folder}', { folder: into || info?.name || t('资料库') });
 			});
 			return;
 		}
 		if (!transfer.files.length) return;
 		event.preventDefault();
 		const folders = [...transfer.items].filter((item) => item.webkitGetAsEntry?.()?.isDirectory).length;
-		if (folders) say('暂时不能上传整个文件夹：可以在 Finder 里直接把它拖进资料库文件夹', 'error');
+		if (folders) say(t('暂时不能上传整个文件夹：可以在 Finder 里直接把它拖进资料库文件夹'), 'error');
 		uploadFiles([...transfer.items].filter((item) => item.kind === 'file' && !item.webkitGetAsEntry?.()?.isDirectory).map((item) => item.getAsFile()!).filter(Boolean), into);
 	});
 
@@ -465,7 +471,7 @@ export function createDriveBrowser(root: HTMLElement, host: DriveBrowserHost, { 
 	});
 	newFolder.addEventListener('click', () => void createFolder());
 	refresh.addEventListener('click', () => void open(folder));
-	reveal.addEventListener('click', () => void revealDriveFile(folder).catch((error) => say(message(error, '打不开'), 'error')));
+	reveal.addEventListener('click', () => void revealDriveFile(folder).catch((error) => say(message(error, t('打不开')), 'error')));
 	// What syncing or Finder changed while the window was elsewhere.
 	window.addEventListener('focus', () => {
 		if (info?.root && !root.closest('[hidden]')) void open(folder, { quiet: true });

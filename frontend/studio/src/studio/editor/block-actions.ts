@@ -1,5 +1,6 @@
 import { Fragment, Slice, type Node as ProseNode } from 'prosemirror-model';
 import { TextSelection, type EditorState } from 'prosemirror-state';
+import { t } from '@blog/i18n/index.mjs';
 
 export type BlockTurn =
 	| 'paragraph'
@@ -21,7 +22,7 @@ export type BlockAction =
 	| { type: 'turn'; kind: BlockTurn };
 
 export type BlockMenuItem = {
-	section: '操作' | '转换成';
+	section: '操作' | '转换成'; // i18n-ignore: group key, not shown
 	id: string;
 	label: string;
 	current: boolean;
@@ -39,17 +40,17 @@ export type BlockEdit = {
 };
 
 const TURNS: { kind: BlockTurn; label: string }[] = [
-	{ kind: 'paragraph', label: '正文' },
-	{ kind: 'h1', label: '标题 1' },
-	{ kind: 'h2', label: '标题 2' },
-	{ kind: 'h3', label: '标题 3' },
-	{ kind: 'bullet', label: '无序列表' },
-	{ kind: 'ordered', label: '有序列表' },
-	{ kind: 'task', label: '待办' },
-	{ kind: 'quote', label: '引用' },
-	{ kind: 'code', label: '代码' },
-	{ kind: 'callout', label: '提示块' },
-	{ kind: 'toggle', label: '折叠块' },
+	{ kind: 'paragraph', label: t('正文') },
+	{ kind: 'h1', label: t('标题 1') },
+	{ kind: 'h2', label: t('标题 2') },
+	{ kind: 'h3', label: t('标题 3') },
+	{ kind: 'bullet', label: t('无序列表') },
+	{ kind: 'ordered', label: t('有序列表') },
+	{ kind: 'task', label: t('待办') },
+	{ kind: 'quote', label: t('引用') },
+	{ kind: 'code', label: t('代码') },
+	{ kind: 'callout', label: t('提示块') },
+	{ kind: 'toggle', label: t('折叠块') },
 ];
 
 /** What a block becomes wrapped in, for the kinds that hold blocks as they are. */
@@ -93,20 +94,20 @@ export function blockActionItems(node: KindSource): BlockMenuItem[] {
 	const current = blockKind(node);
 	const items: BlockMenuItem[] = [
 		{
-			section: '操作',
+			section: '操作', // i18n-ignore: group key
 			id: 'duplicate',
-			label: '创建副本',
+			label: t('创建副本'),
 			current: false,
 			danger: false,
 			action: { type: 'duplicate' },
 			shortcut: 'Mod-d',
 		},
-		{ section: '操作', id: 'move-up', label: '上移', current: false, danger: false, action: { type: 'move', direction: -1 }, shortcut: 'Mod-Shift-ArrowUp' },
-		{ section: '操作', id: 'move-down', label: '下移', current: false, danger: false, action: { type: 'move', direction: 1 }, shortcut: 'Mod-Shift-ArrowDown' },
+		{ section: '操作', id: 'move-up', label: t('上移'), current: false, danger: false, action: { type: 'move', direction: -1 }, shortcut: 'Mod-Shift-ArrowUp' }, // i18n-ignore: group key
+		{ section: '操作', id: 'move-down', label: t('下移'), current: false, danger: false, action: { type: 'move', direction: 1 }, shortcut: 'Mod-Shift-ArrowDown' }, // i18n-ignore: group key
 	];
 	for (const turn of TURNS) {
 		items.push({
-			section: '转换成',
+			section: '转换成', // i18n-ignore: group key
 			id: `turn-${turn.kind}`,
 			label: turn.label,
 			current: current === turn.kind,
@@ -115,9 +116,9 @@ export function blockActionItems(node: KindSource): BlockMenuItem[] {
 		});
 	}
 	items.push({
-		section: '操作',
+		section: '操作', // i18n-ignore: group key
 		id: 'delete',
-		label: '删除',
+		label: t('删除'),
 		current: false,
 		danger: true,
 		action: { type: 'delete' },

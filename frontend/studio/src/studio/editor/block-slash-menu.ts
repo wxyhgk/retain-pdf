@@ -8,6 +8,7 @@ import { insertColumns } from './columns-block.ts';
 import { wrapInToggle } from './toggle-block.ts';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 import type { StudioCommand } from '@blog/kernel/ui.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 /** Crepe's slash menu builder (BlockEdit's `buildMenu`), as much of it as is used here. */
 export type SlashMenuBuilder = {
@@ -55,21 +56,21 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 		if (!groups.has(key)) groups.set(key, builder.addGroup(key, label));
 		add(groups.get(key)!, block);
 	}
-	const group = builder.addGroup('notion', '块');
+	const group = builder.addGroup('notion', t('块'));
 	group.addItem('page', {
-		label: '页面',
+		label: t('页面'),
 		icon: ICONS.page,
-		keywords: ['page', 'subpage', 'new page', '子页面', '新页面', '新建页面', 'yemian', 'ziyemian'],
+		keywords: ['page', 'subpage', 'new page', '子页面', '新页面', '新建页面', 'yemian', 'ziyemian'], // i18n-ignore: matched against what is typed
 		onRun: (ctx) => void insertPage(emptiedBlock(ctx), links),
 	});
-	group.addItem('callout', { label: '提示块', icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(emptiedBlock(ctx), 'tip') });
-	group.addItem('toggle', { label: '折叠块', icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(emptiedBlock(ctx)) });
-	group.addItem('columns', { label: '两栏', icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', '双栏', '分栏', '并排', 'shuanglan', 'fenlan', 'bingpai'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 2) });
-	group.addItem('columns-3', { label: '三栏', icon: ICONS.columns3, keywords: ['columns', 'three', '分栏', '多栏', '并排', 'fenlan', 'duolan'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 3) });
+	group.addItem('callout', { label: t('提示块'), icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(emptiedBlock(ctx), 'tip') });
+	group.addItem('toggle', { label: t('折叠块'), icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(emptiedBlock(ctx)) });
+	group.addItem('columns', { label: t('两栏'), icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', '双栏', '分栏', '并排', 'shuanglan', 'fenlan', 'bingpai'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 2) }); // i18n-ignore: keywords matched against what is typed
+	group.addItem('columns-3', { label: t('三栏'), icon: ICONS.columns3, keywords: ['columns', 'three', '分栏', '多栏', '并排', 'fenlan', 'duolan'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 3) }); // i18n-ignore: keywords matched against what is typed
 	// The others (a widget, a calculation…) are among these.
 	for (const block of blocks) if (!block.menuGroup) add(group, block);
 	group.addItem('article-link', {
-		label: '链接到文章',
+		label: t('链接到文章'),
 		icon: ICONS.link,
 		keywords: ['link', 'page', 'article', 'mention'],
 		onRun: (ctx) => {
@@ -82,7 +83,7 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 /** The plugins' commands shown in the slash menu (`ctx.commands`, `places: ['slash']`), as a group of their own; `run` runs one, the `/…` typed taken away. */
 export function buildCommandSlashMenu(builder: SlashMenuBuilder, commands: StudioCommand[], run: (command: StudioCommand) => void): void {
 	if (!commands.length) return;
-	const group = builder.addGroup('plugin-commands', '插件');
+	const group = builder.addGroup('plugin-commands', t('插件'));
 	for (const command of commands) {
 		group.addItem(`command:${command.id}`, {
 			label: command.label,

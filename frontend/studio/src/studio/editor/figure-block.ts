@@ -7,6 +7,7 @@ import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
 import { figureCaption, figureLabel, figureWidth, standaloneImage, withWidth } from '@blog/markdown/figures/figures.mjs';
 import '@blog/markdown/figures/figures.css';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * Pictures as the blog shows them (`src/figures/`): an image alone in its
@@ -168,7 +169,7 @@ class FigureView implements NodeView {
 		this.image.draggable = false;
 		const handle = document.createElement('span');
 		handle.className = 'pm-figure-handle';
-		handle.title = '拖动调整宽度';
+		handle.title = t('拖动调整宽度');
 		handle.addEventListener('pointerdown', this.resize);
 		this.badge = document.createElement('span');
 		this.badge.className = 'pm-figure-badge';
@@ -179,8 +180,8 @@ class FigureView implements NodeView {
 		this.label.className = 'figure-label';
 		this.caption = document.createElement('input');
 		this.caption.className = 'pm-figure-caption';
-		this.caption.placeholder = '添加图注';
-		this.caption.setAttribute('aria-label', '图注');
+		this.caption.placeholder = t('添加图注');
+		this.caption.setAttribute('aria-label', t('图注'));
 		this.caption.addEventListener('input', this.onCaption);
 		this.caption.addEventListener('keydown', this.onCaptionKey);
 		caption.append(this.label, this.caption);

@@ -11,6 +11,7 @@ import { isFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';
 import { drawNow, drawWhenNear, drawsLater, isWaiting } from './near-screen.ts';
 import { SourcePopup } from './source-popup.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 const openBlocks = new Set<DisplayMathView>();
 /** Each formula's view, by its element: ↩ or a key typed on one selected opens it. */
@@ -160,7 +161,7 @@ class DisplayMathView implements NodeView {
 		this.drawn = key;
 		if (!input || !this.numbered.trim()) {
 			this.lastGood = null;
-			paintFormula(this.formula, this.numbered, '公式', this.view);
+			paintFormula(this.formula, this.numbered, t('公式'), this.view);
 			return;
 		}
 		// Being typed: drawn as far as it is written, never red while the typing goes on.
@@ -200,8 +201,8 @@ class DisplayMathView implements NodeView {
 		this.dom.classList.add('is-open');
 		openBlocks.add(this);
 		this.popup = new SourcePopup({
-			label: '行间公式',
-			placeholder: '输入 LaTeX',
+			label: t('行间公式'),
+			placeholder: t('输入 LaTeX'),
 			value: this.node.textContent,
 			rows: 2,
 			variant: 'is-formula',
