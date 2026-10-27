@@ -5,7 +5,8 @@ Studio 里 Milkdown 编辑器的部件里，**不认识 Studio 的那些**：不
 | 文件 | 内容 |
 |---|---|
 | `math/inline-math.ts` | 行内公式：`$…$` 在原处显示源码、上面浮着渲染结果，离开就画成公式；`formulaTakesEnter` 说回车该不该归公式 |
-| `math/display-math.ts` | 行间公式：画在原处，点开在弹窗里改 |
+| `math/display-math.ts` | 行间公式：画在原处，点开就在原处所见即所得地改（`visual-math.ts`），「源码」或 MathLive 不认识的写法在弹窗里改 LaTeX |
+| `math/visual-math.ts` | 用 MathLive（cortexjs.io，MIT）所见即所得地改公式：第一次用时才加载；没改过就不写回，原文一字不动；末尾的 `\tag` 暂时拿开再放回；空位写回成 `{}` |
 | `math/formula-typing.ts` | 边打边画：画不出来时留着上一次画好的，停手一秒才报错 |
 | `math/latex-assist.ts`、`math/latex-completion-menu.ts` | 命令补全（`\fr` → `\frac{}{}`）和括号自动配对 |
 | `math/equation-numbers.ts` | 作者写的 `\tag{…}` 编号 |

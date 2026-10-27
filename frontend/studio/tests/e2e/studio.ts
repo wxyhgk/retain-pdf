@@ -115,6 +115,12 @@ export const saveStatus = (page: Page): Locator => page.locator('#save-status');
 export const inlineFormulas = (page: Page): Locator => editor(page).locator('[data-type="math_inline"], .pm-inline-math');
 export const displayFormulas = (page: Page): Locator => editor(page).locator('.pm-display-math');
 
+/** The display formula being edited as it looks (MathLive), turned to its LaTeX: 源码, the popup's input focused. */
+export async function toFormulaSource(page: Page): Promise<void> {
+	await page.locator('.pm-visual-math-source').click();
+	await expect(popupInput(page)).toBeFocused();
+}
+
 /** The sheet a block's details are in (@blog/ui block-sheet), while it is open. */
 export const blockSheet = (page: Page): Locator => page.locator('dialog.block-sheet[open]');
 export const sheetTab = (page: Page, name: string): Locator => blockSheet(page).locator('.block-sheet-tab', { hasText: name });

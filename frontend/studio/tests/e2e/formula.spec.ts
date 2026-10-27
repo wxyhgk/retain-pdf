@@ -14,6 +14,7 @@ import {
 	resetFixture,
 	savedMarkdown,
 	saveStatus,
+	toFormulaSource,
 	writeArticle,
 } from './studio.ts';
 
@@ -43,8 +44,7 @@ test('a display formula opens its popup with the caret in it, the text around it
 	const around = () => formula.evaluate((block) => [block.previousElementSibling, block.nextElementSibling].map((node) => Math.round(node!.getBoundingClientRect().top)));
 	const before = await around();
 	await formula.locator('.pm-display-math-formula').click();
-	await expect(popup(page)).toBeVisible();
-	await expect(popupInput(page)).toBeFocused();
+	await toFormulaSource(page);
 	await expect(popupInput(page)).toHaveValue('\\sum_i x_i');
 	expect(await around()).toEqual(before);
 	await expect(formula.locator('.pm-display-math-formula .katex')).toBeVisible();
@@ -65,6 +65,7 @@ test('a display formula being typed is drawn as far as it is written; a mistake 
 	const drawn = formula.locator('.pm-display-math-formula');
 	const error = popup(page).locator('.pm-source-popup-error');
 	await drawn.click();
+	await toFormulaSource(page);
 	// The command at the caret is not finished: no error, the rest drawn.
 	await page.keyboard.type(' + \\si');
 	await expect(drawn.locator('.katex')).toBeVisible();
@@ -94,7 +95,7 @@ test('a display formula being typed is drawn as far as it is written; a mistake 
 
 test('the display formula’s source completes commands and pairs braces', async ({ page }) => {
 	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
-	await expect(popupInput(page)).toBeFocused();
+	await toFormulaSource(page);
 	await page.keyboard.type(' + \\sq');
 	const menu = page.locator('.latex-completion:not([hidden])');
 	await expect(menu.locator('.latex-completion-item.is-selected .latex-completion-name')).toHaveText('\\sqrt');
@@ -144,7 +145,7 @@ test('a ```math fence is a formula and a ```latex fence is code, as the blog dra
 
 test('a $$ block edited is written back as $$', async ({ page }) => {
 	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
-	await expect(popupInput(page)).toBeFocused();
+	await toFormulaSource(page);
 	await page.keyboard.type(' + 1');
 	await page.keyboard.press('Escape');
 	await expect(saveStatus(page)).toHaveText('未保存');
@@ -166,13 +167,13 @@ test('a formula block has the number its source gives, none added; \\eqref shows
 
 	// A block added before it changes nothing: it has no number, and that one keeps its own.
 	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
-	await expect(popupInput(page)).toBeFocused();
+	await toFormulaSource(page);
 	await page.keyboard.press('Escape');
 	await caretAfter(page, '结尾段落。');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('$$');
 	await page.keyboard.press('Enter');
-	await expect(popupInput(page)).toBeFocused();
+	await toFormulaSource(page);
 	await page.keyboard.type('x');
 	await page.keyboard.press('Escape');
 	await expect(displayFormulas(page)).toHaveCount(4);
