@@ -147,17 +147,6 @@
 .ai-model:hover, .ai-effort:hover, .ai-model[data-state='open'], .ai-effort[data-state='open'] { background: rgba(var(--black), 0.05); color: rgb(var(--gray-dark)); }
 .ai-menu .ai-menu-label { padding: 6px 8px 2px; color: rgb(var(--gray)); font-size: 11.5px; font-weight: 500; }
 .ai-menu .ai-menu-item { min-height: 28px; font-size: 13px; }
-.ai-model-item { gap: 6px; }
-.ai-model-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ai-model-note { flex: none; color: rgb(var(--gray)); font-size: 11.5px; }
-.ai-model-star { display: grid; flex: none; place-items: center; width: 20px; height: 20px; margin-left: auto; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); opacity: 0; cursor: pointer; }
-.ai-model-star svg { width: 13px; height: 13px; }
-.ai-model-item:hover .ai-model-star, .ai-model-item[data-highlighted] .ai-model-star, .ai-model-star.is-starred { opacity: 1; }
-.ai-model-star.is-starred svg { fill: currentColor; }
-.ai-model-star:hover { background: rgba(var(--black), 0.06); color: rgb(var(--gray-dark)); }
-.ai-model-check { flex: none; width: 14px; height: 14px; }
-.ai-model-check.is-off { visibility: hidden; }
-.ai-model-keyless { color: rgb(var(--gray)); }
 .ai-usage { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-size: 10.5px; text-align: right; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ai-send { flex: none; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgb(var(--black)); color: var(--surface); font-size: 13px; cursor: pointer; }
 .ai-send.is-stop { font-size: 9px; }
@@ -351,3 +340,39 @@ details.ai-compaction > summary { cursor: pointer; }
 
 /* An article named with @ in the input: a link to it, drawn as its mention (its page, its title). */
 .ai-input .ProseMirror a[href^="/blog/"], .ai-input .ProseMirror a[href^="/wiki/"] { padding: 0 2px 0 1.2em; border-radius: 4px; background: rgba(var(--black), 0.04) no-repeat 0.2em center / 0.9em; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23908f8b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E"); color: inherit; font-weight: 500; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 3px; }
+
+/* The makers' logos (logos.ts): one colour under the input, their own in the picker. */
+.ai-logo { display: inline-grid; flex: none; place-items: center; width: 16px; height: 16px; font-size: 15px; line-height: 1; }
+.ai-logo svg { display: block; width: 1em; height: 1em; }
+.ai-logo.is-none { width: 15px; height: 15px; color: rgb(var(--gray)); }
+.ai-model .ai-logo { color: rgb(var(--gray-dark)); font-size: 14px; }
+
+/* The model picker: the search and the foot stay, the models between them scroll. */
+.ai-picker.ai-picker { display: flex; flex-direction: column; width: 300px; max-width: calc(100vw - 24px); max-height: min(460px, 70vh); padding: 0; overflow: hidden; }
+.ai-picker-search { display: flex; flex: none; align-items: center; gap: 6px; padding: 8px 10px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); }
+.ai-picker-search svg { flex: none; width: 14px; height: 14px; }
+.ai-picker-search input { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font: inherit; font-size: 13px; outline: none; }
+.ai-picker-list { flex: 1; min-height: 0; padding: 4px; overflow-y: auto; overscroll-behavior: contain; }
+.ai-picker-label { margin: 0; padding: 8px 8px 3px; color: rgb(var(--gray)); font-size: 11.5px; }
+.ai-picker-empty { margin: 0; padding: 14px 8px; color: rgb(var(--gray)); font-size: 12.5px; text-align: center; }
+.ai-pick, .ai-picker-keyless { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--black)); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.ai-pick.is-active, .ai-picker-keyless:hover { background: var(--surface-soft); }
+.ai-pick[aria-disabled='true'] { cursor: default; opacity: 0.55; }
+.ai-pick-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-pick-via { flex: none; padding: 0 5px; border-radius: 4px; background: rgba(var(--black), 0.05); color: rgb(var(--gray)); font-size: 11px; line-height: 18px; }
+.ai-pick-check { flex: none; width: 14px; height: 14px; visibility: hidden; }
+.ai-pick.is-current .ai-pick-check { visibility: visible; }
+.ai-pick-star { display: grid; flex: none; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); opacity: 0; cursor: pointer; }
+.ai-pick-star svg { width: 13px; height: 13px; }
+.ai-pick.is-active .ai-pick-star, .ai-pick-star.is-starred, .ai-pick-star:focus-visible { opacity: 1; }
+.ai-pick-star.is-starred svg { fill: currentColor; }
+.ai-pick-star:hover { background: rgba(var(--black), 0.06); color: rgb(var(--gray-dark)); }
+.ai-picker-keyless { margin-top: 4px; color: rgb(var(--gray)); }
+.ai-picker-keyless svg { flex: none; width: 14px; height: 14px; }
+.ai-picker-foot { display: flex; flex: none; gap: 2px; padding: 4px; border-top: 1px solid rgb(var(--gray-light)); }
+.ai-picker-foot-item { display: flex; flex: 1; align-items: center; gap: 5px; min-width: 0; height: 28px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+.ai-picker-foot-item:hover:not(:disabled), .ai-picker-foot-item[data-state='open'] { background: var(--surface-soft); }
+.ai-picker-foot-item:disabled { cursor: default; opacity: 0.55; }
+.ai-picker-foot-label { flex: none; color: rgb(var(--gray)); }
+.ai-picker-foot-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ai-picker-foot-item > svg { flex: none; width: 12px; height: 12px; margin-left: auto; color: rgb(var(--gray)); }

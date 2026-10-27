@@ -1,22 +1,12 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 
-import { Check, ChevronDown, KeyRound, Star } from 'lucide-react';
+import { Box, Check, ChevronDown, KeyRound, Search, Star } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuRadioGroup,
-	DropdownMenuRadioItem,
-	DropdownMenuSeparator,
-	DropdownMenuSub,
-	DropdownMenuSubContent,
-	DropdownMenuSubTrigger,
-	DropdownMenuTrigger,
-} from '@studio/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@studio/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@studio/ui/popover';
+import { LOGOS, type Vendor } from '../logos/logos';
 import type { ConversationOption } from '../../api/client';
 import { sameChoice, type MenuService, type ModelChoice, type PanelActions, type PanelState } from './panel-state';
 
@@ -101,14 +91,59 @@ export function EffortMenu({ option, onChange }: { option: ConversationOption; o
 	);
 }
 
+/** The makers, in the order the picker groups their models, with the names their groups go by. */
+const VENDORS: Array<{ id: Vendor; name: string; match: RegExp }> = [
+	{ id: 'claude', name: 'Claude', match: /claude|anthropic|opus|sonnet|haiku|fable/u },
+	{ id: 'openai', name: 'OpenAI', match: /gpt|openai|codex|\bo[134]\b/u },
+	{ id: 'gemini', name: 'Gemini', match: /gemini|google/u },
+	{ id: 'deepseek', name: 'DeepSeek', match: /deepseek/u },
+	{ id: 'kimi', name: 'Kimi', match: /kimi|moonshot/u },
+	{ id: 'qwen', name: t('通义千问'), match: /qwen|tongyi/u },
+	{ id: 'zhipu', name: t('智谱 GLM'), match: /glm|zhipu|zai/u },
+	{ id: 'minimax', name: 'MiniMax', match: /minimax/u },
+	{ id: 'grok', name: 'Grok', match: /grok|xai/u },
+	{ id: 'xiaomi', name: t('小米 MiMo'), match: /mimo|xiaomi/u },
+	{ id: 'openrouter', name: 'OpenRouter', match: /openrouter/u },
+];
+
+/** Whose model it is, by its id, its name, the service it is had through (by its id: Claude Code's tiers, through the Claude account, are Claude's). */
+function vendorOf(...said: Array<string | null | undefined>): Vendor | null {
+	const text = said.filter(Boolean).join(' ').toLowerCase();
+	return VENDORS.find((vendor) => vendor.match.test(text))?.id ?? null;
+}
+
+/** A maker's logo: in its own colours in the picker, in one colour (the words') under the input. */
+export function Logo({ vendor, color = false }: { vendor: Vendor | null; color?: boolean }) {
+	if (!vendor) return <Box className="ai-logo is-none" aria-hidden />;
+	// Our own copies of their SVGs (logos.ts), nothing of the page's.
+	return <span className="ai-logo" aria-hidden="true" dangerouslySetInnerHTML={{ __html: color ? LOGOS[vendor].color : LOGOS[vendor].mono }} />;
+}
+
+/** A name without its maker's (the logo says it): DeepSeek V4 Pro → V4 Pro, Claude Haiku 5.5 → Haiku 5.5. */
+function shortName(name: string, vendor: Vendor | null): string {
+	const maker = VENDORS.find((entry) => entry.id === vendor);
+	const words = [maker?.name, vendor === 'claude' ? 'Claude' : '', vendor === 'kimi' ? 'Kimi' : ''].filter(Boolean) as string[];
+	for (const word of words) {
+		if (name.toLowerCase().startsWith(`${word.toLowerCase()} `) && name.length > word.length + 1) return name.slice(word.length + 1);
+	}
+	return name;
+}
+
+/** A model as the picker lists it: what choosing it does, whose it is, its names, how it is paid for. */
+type Entry = { key: string; choice: ModelChoice; vendor: Vendor | null; name: string; via: 'account' | 'key' | null };
+
 /**
- * The model, as Notion's: its name under the input; chosen from a menu of the starred ones, those of the service the
- * conversation runs for, each other service (another's models, or one to give a key to in ⚙), and at its foot which
- * AI runs it and what it may do without asking. Another service's or AI's: the conversation gone on with by it.
+ * The model, as Notion's: its maker's logo and its name under the input; chosen from a picker of the starred ones and
+ * each maker's (with whether a subscription account or an API key pays for it), found by typing its name; at its foot,
+ * which AI runs it and what it may do without asking. Another service's or AI's: the conversation gone on with by it.
  */
 export function ModelMenu({ state, actions }: { state: PanelState; actions: PanelActions }) {
 	const { conversation, agents, favorites, switching } = state;
+	const [open, setOpen] = useState(false);
+	const [query, setQuery] = useState('');
+	const [active, setActive] = useState(0);
 	const [services, setServices] = useState<MenuService[]>([]);
+	const list = useRef<HTMLDivElement>(null);
 	const agentId = conversation?.agent.id ?? state.agent;
 	const agent = agents.find((entry) => entry.id === agentId);
 	const kind = agent?.kind ?? 'other';
@@ -119,125 +154,209 @@ export function ModelMenu({ state, actions }: { state: PanelState; actions: Pane
 	const current = choices.find((choice) => choice.value === String(model?.currentValue));
 	const here = conversation ? actions.currentService(conversation) : null;
 	const busy = conversation?.state === 'running' || conversation?.state === 'starting' || switching;
-	const label = switching ? t('正在换…') : current ? modelName(current) : (agent?.name ?? 'AI');
+	/** How a service is paid for: Claude's account a subscription; one with a key, by use. */
+	const viaOf = (service: string | null): Entry['via'] => (service === 'claude-account' ? 'account' : service && service !== 'pi-own' ? 'key' : null);
 
-	/** One of this conversation's models, as a starred one keeps it (Claude Code's by its service). */
-	const ours = (choice: Choice): ModelChoice => ({ agent: agentId, provider: kind === 'claude' ? here : null, value: choice.value, name: modelName(choice) });
+	/** The service its models are had through, telling whose they are (pi's say so themselves: `deepseek/…`). */
+	const through = kind === 'pi' ? null : here;
+	// Every model it can choose: the conversation's (pi's by their service), the other services' (Claude Code's).
+	const entries: Entry[] = [];
+	for (const choice of choices) {
+		const named = modelName(choice);
+		const provider = kind === 'pi' && choice.value.includes('/') ? choice.value.split('/')[0]! : here;
+		const vendor = vendorOf(choice.value, named, choice.description, through);
+		entries.push({ key: `here:${choice.value}`, choice: { agent: agentId, provider: kind === 'claude' ? here : null, value: choice.value, name: named }, vendor, name: named, via: viaOf(provider) });
+	}
+	for (const service of services) {
+		if (!service.usable || service.id === here || kind !== 'claude') continue;
+		const models = service.models.length ? service.models : [{ value: '', name: t('默认模型') }];
+		for (const choice of models) {
+			const named = choice.value ? modelName(choice) : choice.name;
+			const vendor = vendorOf(choice.value, named, service.id);
+			entries.push({ key: `${service.id}:${choice.value}`, choice: { agent: agentId, provider: service.id, value: choice.value, name: named }, vendor, name: named, via: viaOf(service.id) });
+		}
+	}
+	const keyless = services.filter((service) => !service.usable);
 	const isCurrent = (choice: ModelChoice) => choice.agent === agentId && choice.value === String(model?.currentValue) && (kind !== 'claude' || (choice.provider ?? here) === here);
 
-	const item = (choice: ModelChoice, key: string, note?: string) => {
-		const starred = favorites.some((entry) => sameChoice(entry, choice));
+	// What the picker lists: the starred first, then each maker's; as typed for, those whose names have it.
+	const needle = query.trim().toLowerCase();
+	const matches = (entry: Entry) => !needle || [entry.name, VENDORS.find((vendor) => vendor.id === entry.vendor)?.name, entry.choice.value].join(' ').toLowerCase().includes(needle);
+	const starred: Entry[] = needle
+		? []
+		: favorites.map((choice) => entries.find((entry) => sameChoice(entry.choice, choice)) ?? { key: `star:${choice.agent}:${choice.provider}:${choice.value}`, choice, vendor: vendorOf(choice.value, choice.name), name: choice.name, via: viaOf(choice.provider) });
+	const groups = [...VENDORS.map((vendor) => vendor.id), null].map((vendor) => ({ vendor, entries: entries.filter((entry) => entry.vendor === vendor && matches(entry)) })).filter((group) => group.entries.length);
+	const rows = [...starred, ...groups.flatMap((group) => group.entries)];
+	const at = Math.min(active, Math.max(0, rows.length - 1));
+
+	const shownVendor = current ? vendorOf(current.value, modelName(current), current.description, through) : null;
+	const label = switching ? t('正在换…') : current ? shortName(modelName(current), shownVendor) : (agent?.name ?? 'AI');
+
+	function choose(entry: Entry): void {
+		if (busy) return;
+		setOpen(false);
+		actions.switchTo(entry.choice);
+	}
+
+	function keyDown(event: React.KeyboardEvent): void {
+		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+			event.preventDefault();
+			const next = (at + (event.key === 'ArrowDown' ? 1 : rows.length - 1)) % Math.max(1, rows.length);
+			setActive(next);
+			list.current?.querySelector(`[data-row="${next}"]`)?.scrollIntoView({ block: 'nearest' });
+		} else if (event.key === 'Enter' && rows[at]) {
+			event.preventDefault();
+			choose(rows[at]!);
+		}
+	}
+
+	let index = 0;
+	/** One model's row; `short`, under its maker's name (the name without the maker's). */
+	const row = (entry: Entry, short = false) => {
+		const position = index++;
+		const name = short ? shortName(entry.name, entry.vendor) : entry.name;
+		const starredNow = favorites.some((choice) => sameChoice(choice, entry.choice));
 		return (
-			<DropdownMenuItem key={key} className="ai-menu-item ai-model-item" disabled={busy} onSelect={() => actions.switchTo(choice)}>
-				<span className="ai-model-name">{choice.name}</span>
-				{note && <span className="ai-model-note">{note}</span>}
+			<div
+				key={`${position}:${entry.key}`}
+				data-row={position}
+				role="option"
+				aria-selected={position === at}
+				aria-disabled={busy}
+				className={cn('ai-pick', position === at && 'is-active', isCurrent(entry.choice) && 'is-current')}
+				onPointerMove={() => setActive(position)}
+				onClick={() => choose(entry)}
+			>
+				<Logo vendor={entry.vendor} color />
+				<span className="ai-pick-name" title={entry.name}>
+					{name}
+				</span>
+				{entry.via && <span className="ai-pick-via">{entry.via === 'account' ? t('账号') : 'key'}</span>}
+				<Check className="ai-pick-check" aria-hidden />
 				<button
 					type="button"
-					className={cn('ai-model-star', starred && 'is-starred')}
-					aria-label={starred ? t('取消常用') : t('设为常用')}
-					title={starred ? t('取消常用') : t('设为常用')}
+					className={cn('ai-pick-star', starredNow && 'is-starred')}
+					aria-label={starredNow ? t('取消常用') : t('设为常用')}
+					title={starredNow ? t('取消常用') : t('设为常用')}
 					onClick={(event) => {
-						event.preventDefault();
 						event.stopPropagation();
-						actions.toggleFavorite(choice);
+						actions.toggleFavorite(entry.choice);
 					}}
 				>
 					<Star aria-hidden />
 				</button>
-				<Check className={cn('ai-model-check', !isCurrent(choice) && 'is-off')} aria-hidden />
-			</DropdownMenuItem>
+			</div>
 		);
 	};
-	const needsKey = (service: MenuService) => (
-		<DropdownMenuItem key={service.id} className="ai-menu-item ai-model-keyless" onSelect={() => actions.showSheet(true)}>
-			<span className="ai-model-name">{service.name}</span>
-			<KeyRound className="ml-auto" aria-hidden />
-		</DropdownMenuItem>
-	);
-	const sub = (key: string, title: string, children: ReactNode) => (
-		<DropdownMenuSub key={key}>
-			<DropdownMenuSubTrigger className="ai-menu-item">{title}</DropdownMenuSubTrigger>
-			<DropdownMenuSubContent className="ai-menu max-h-[70vh] w-60 overflow-y-auto">{children}</DropdownMenuSubContent>
-		</DropdownMenuSub>
-	);
-
-	// The conversation's models by service: pi's by the service of each (`deepseek/…`), the others' all of one.
-	const sections: Array<{ key: string; title: string; models: Choice[] }> = [];
-	if (kind === 'pi') {
-		for (const choice of choices) {
-			const id = choice.value.includes('/') ? choice.value.split('/')[0]! : '';
-			let section = sections.find((entry) => entry.key === id);
-			if (!section) sections.push((section = { key: id, title: services.find((service) => service.id === id)?.name ?? id, models: [] }));
-			section.models.push(choice);
-		}
-	} else if (choices.length) {
-		sections.push({ key: here ?? '', title: (here && services.find((service) => service.id === here)?.name) || (conversation?.service ?? agent?.name ?? ''), models: choices });
-	}
-	// The section of the model chosen first, open; the others each a submenu.
-	const shown = sections.find((section) => section.models.some((choice) => choice.value === current?.value)) ?? sections[0];
-	const listed = new Set(sections.map((section) => section.key));
-	const others = services.filter((service) => service.id !== here && !listed.has(service.id));
 
 	return (
-		<DropdownMenu
-			onOpenChange={(open) => {
-				if (open) actions.services(agentId).then(setServices, () => setServices([]));
+		<Popover
+			open={open}
+			onOpenChange={(next) => {
+				setOpen(next);
+				if (!next) return;
+				setQuery('');
+				setActive(0);
+				actions.services(agentId).then(setServices, () => setServices([]));
 			}}
 		>
-			<DropdownMenuTrigger asChild>
-				<button type="button" className="ai-model" aria-label={t('模型：{name}', { name: label })} title={agent ? t('{model}（{agent} 运行）', { model: label, agent: agent.name }) : label}>
+			<PopoverTrigger asChild>
+				<button type="button" className="ai-model" aria-label={t('模型：{name}', { name: label })} title={agent ? t('{model}（{agent} 运行）', { model: current ? modelName(current) : label, agent: agent.name }) : label}>
+					<Logo vendor={shownVendor} />
 					<span className="ai-model-label">{label}</span>
 					<ChevronDown aria-hidden />
 				</button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent side="top" align="end" className="ai-menu max-h-[70vh] w-64 overflow-y-auto">
-				{favorites.length > 0 && (
-					<>
-						<DropdownMenuLabel className="ai-menu-label">{t('常用')}</DropdownMenuLabel>
-						{favorites.map((choice, at) => item(choice, `star-${at}`, choice.agent === agentId ? undefined : agents.find((entry) => entry.id === choice.agent)?.name))}
-						<DropdownMenuSeparator />
-					</>
-				)}
-				{shown && (
-					<>
-						{shown.title && <DropdownMenuLabel className="ai-menu-label">{shown.title}</DropdownMenuLabel>}
-						{shown.models.map((choice) => item(ours(choice), `here-${choice.value}`))}
-					</>
-				)}
-				{(sections.length > 1 || others.length > 0) && <DropdownMenuSeparator />}
-				{sections.filter((section) => section !== shown).map((section) => sub(`section-${section.key}`, section.title, section.models.map((choice) => item(ours(choice), choice.value))))}
-				{others.map((service) => {
-					if (!service.usable) return null;
-					// Claude Code's other services: their models; one that names none (Anthropic's), its own.
-					if (!service.models.length) return item({ agent: agentId, provider: service.id, value: '', name: service.name }, `service-${service.id}`);
-					return sub(`service-${service.id}`, service.name, service.models.map((choice) => item({ agent: agentId, provider: service.id, value: choice.value, name: modelName(choice) }, choice.value)));
-				})}
-				{/* The services with no key yet, together: each opens ⚙ to give it one. */}
-				{others.some((service) => !service.usable) && sub('keyless', t('更多模型来源'), others.filter((service) => !service.usable).map(needsKey))}
-				<DropdownMenuSeparator />
-				{sub(
-					'agent',
-					t('用 {name} 运行', { name: agent?.name ?? 'AI' }),
-					<DropdownMenuRadioGroup value={agentId} onValueChange={actions.chooseAgent}>
-						{agents.map((entry) => (
-							<DropdownMenuRadioItem key={entry.id} value={entry.id} className="ai-menu-item" disabled={busy}>
-								{entry.name}
-							</DropdownMenuRadioItem>
-						))}
-					</DropdownMenuRadioGroup>,
-				)}
-				{mode &&
-					sub(
-						'mode',
-						t('权限：{name}', { name: OPTION_NAMES[String(mode.currentValue)] ?? choicesOf(mode).find((choice) => choice.value === String(mode.currentValue))?.name ?? '' }),
-						<DropdownMenuRadioGroup value={String(mode.currentValue)} onValueChange={(value) => actions.setOption(mode.id, value)}>
-							{choicesOf(mode).map((choice) => (
-								<DropdownMenuRadioItem key={choice.value} value={choice.value} className="ai-menu-item">
-									{OPTION_NAMES[choice.value] ?? choice.name}
+			</PopoverTrigger>
+			<PopoverContent side="top" align="end" className="ai-picker" onOpenAutoFocus={(event) => event.preventDefault()}>
+				<div className="ai-picker-search">
+					<Search aria-hidden />
+					<input
+						autoFocus
+						value={query}
+						placeholder={t('搜索模型')}
+						aria-label={t('搜索模型')}
+						onChange={(event) => {
+							setQuery(event.target.value);
+							setActive(0);
+						}}
+						onKeyDown={keyDown}
+					/>
+				</div>
+				<div ref={list} className="ai-picker-list" role="listbox" aria-label={t('模型')}>
+					{starred.length > 0 && (
+						<>
+							<p className="ai-picker-label">{t('常用')}</p>
+							{starred.map((entry) => row(entry))}
+						</>
+					)}
+					{groups.map((group) => (
+						<div key={group.vendor ?? 'other'} role="group" aria-label={VENDORS.find((vendor) => vendor.id === group.vendor)?.name ?? t('其他')}>
+							<p className="ai-picker-label">{VENDORS.find((vendor) => vendor.id === group.vendor)?.name ?? t('其他')}</p>
+							{group.entries.map((entry) => row(entry, true))}
+						</div>
+					))}
+					{!rows.length && <p className="ai-picker-empty">{t('没有匹配的模型')}</p>}
+					{!needle && keyless.length > 0 && (
+						<button
+							type="button"
+							className="ai-picker-keyless"
+							onClick={() => {
+								setOpen(false);
+								actions.showSheet(true);
+							}}
+						>
+							<KeyRound aria-hidden />
+							<span className="ai-pick-name">{keyless.map((service) => service.name).join(' · ')}</span>
+							<span className="ai-pick-via">{t('填 key')}</span>
+						</button>
+					)}
+				</div>
+				<div className="ai-picker-foot">
+					<FootMenu label={t('程序')} value={agent?.name ?? 'AI'} disabled={busy}>
+						<DropdownMenuRadioGroup value={agentId} onValueChange={(value) => { setOpen(false); actions.chooseAgent(value); }}>
+							{agents.map((entry) => (
+								<DropdownMenuRadioItem key={entry.id} value={entry.id} className="ai-menu-item">
+									{entry.name}
 								</DropdownMenuRadioItem>
 							))}
-						</DropdownMenuRadioGroup>,
+						</DropdownMenuRadioGroup>
+					</FootMenu>
+					{mode && (
+						<FootMenu label={t('权限')} value={OPTION_NAMES[String(mode.currentValue)] ?? choicesOf(mode).find((choice) => choice.value === String(mode.currentValue))?.name ?? ''}>
+							<DropdownMenuRadioGroup
+								value={String(mode.currentValue)}
+								onValueChange={(value) => {
+									setOpen(false);
+									actions.setOption(mode.id, value);
+								}}
+							>
+								{choicesOf(mode).map((choice) => (
+									<DropdownMenuRadioItem key={choice.value} value={choice.value} className="ai-menu-item">
+										{OPTION_NAMES[choice.value] ?? choice.name}
+									</DropdownMenuRadioItem>
+								))}
+							</DropdownMenuRadioGroup>
+						</FootMenu>
 					)}
+				</div>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
+/** One of the picker's foot: what it is and what it is now, its choices in a menu over it. */
+function FootMenu({ label, value, disabled = false, children }: { label: string; value: string; disabled?: boolean; children: ReactNode }) {
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<button type="button" className="ai-picker-foot-item" disabled={disabled} aria-label={t('{label}：{value}', { label, value })}>
+					<span className="ai-picker-foot-label">{label}</span>
+					<span className="ai-picker-foot-value">{value}</span>
+					<ChevronDown aria-hidden />
+				</button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent side="top" align="start" className="ai-menu w-56">
+				{children}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

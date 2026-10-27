@@ -15,15 +15,26 @@ const pane = (page: Page) => page.locator('#side-ai');
 const input = (page: Page) => pane(page).locator('.ai-input .ProseMirror');
 const placeholder = (page: Page) => pane(page).locator('.ai-input-placeholder');
 const modelButton = (page: Page) => pane(page).locator('.ai-model');
-/** The model menu's items: a model of it, one of a submenu (`under`), an option of the menu's foot. */
+const exactly = (name: string) => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}$`, 'u');
+/** A menu's item (the bars', the picker's foot's): by the words it begins with. */
 const menuItem = (page: Page, name: string) => page.locator('.ai-menu [role^="menuitem"]', { hasText: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}`, 'u') }).first();
+/** The model picker, and a model in it by its name as listed. */
+const picker = (page: Page) => page.locator('.ai-picker');
+const pick = (page: Page, name: string) => picker(page).locator('.ai-pick', { has: page.locator('.ai-pick-name', { hasText: exactly(name) }) }).first();
 
-/** `name` chosen from the model menu (from the submenu `under`, if given). */
-async function fromModelMenu(page: Page, name: string, under?: string): Promise<void> {
+/** The model `name` chosen from the picker. */
+async function chooseModel(page: Page, name: string): Promise<void> {
 	await modelButton(page).click();
-	if (under) await menuItem(page, under).click();
-	await menuItem(page, name).click();
-	await expect(page.locator('.ai-menu')).toHaveCount(0);
+	await pick(page, name).click();
+	await expect(picker(page)).toHaveCount(0);
+}
+
+/** From the picker's foot: the AI that runs it (程序), or what it may do without asking (权限). */
+async function chooseAtFoot(page: Page, which: '程序' | '权限', name: string): Promise<void> {
+	await modelButton(page).click();
+	await picker(page).locator('.ai-picker-foot-item', { hasText: which }).click();
+	await page.getByRole('menuitemradio', { name, exact: true }).click();
+	await expect(picker(page)).toHaveCount(0);
 }
 
 async function openAi(page: Page): Promise<void> {
@@ -97,7 +108,7 @@ test('the agent thinks, asks leave to run a command, runs it once allowed, chang
 	await expect(pane(page).locator('.ai-send')).toHaveAttribute('aria-label', '发送');
 
 	// Another model for what comes next.
-	await fromModelMenu(page, 'Large');
+	await chooseModel(page, 'Large');
 	await tell(page, '再跑一下');
 	await pane(page).locator('.ai-permission').last().getByRole('button', { name: '拒绝' }).click();
 	await expect(pane(page).locator('.ai-message').last()).toHaveText('好，不运行了。');
@@ -123,17 +134,18 @@ test('a turn is stopped from the send button; ＋ begins another conversation, t
 	await expect(send).toHaveAttribute('aria-label', '发送');
 
 	// What is chosen for an AI is given to its next conversation too.
-	await fromModelMenu(page, 'Large');
+	await chooseModel(page, 'Large');
 	await expect(modelButton(page)).toHaveAttribute('aria-label', '模型：Large');
-	await fromModelMenu(page, '只做计划', '权限：每步都问');
+	await chooseAtFoot(page, '权限', '只做计划');
+	const permission = () => picker(page).locator('.ai-picker-foot-item', { hasText: '权限' });
 	await modelButton(page).click();
-	await expect(menuItem(page, '权限：')).toHaveText('权限：只做计划');
+	await expect(permission()).toContainText('只做计划');
 	await page.keyboard.press('Escape');
 	await pane(page).getByRole('button', { name: '新对话' }).click();
 	await expect(pane(page).locator('.ai-empty')).toBeVisible();
 	await expect(modelButton(page)).toHaveAttribute('aria-label', '模型：Large');
 	await modelButton(page).click();
-	await expect(menuItem(page, '权限：')).toHaveText('权限：只做计划');
+	await expect(permission()).toContainText('只做计划');
 	await page.keyboard.press('Escape');
 	await pane(page).getByRole('button', { name: '对话记录' }).click();
 	await page.getByRole('menuitem', { name: /慢慢来|还没说话/u }).first().click();
@@ -143,7 +155,7 @@ test('a turn is stopped from the send button; ＋ begins another conversation, t
 test('an agent whose adapter is missing says so where the answer would be', async ({ page }) => {
 	await openAi(page);
 	// The tests have no Codex stand-in: its adapter is not found.
-	await fromModelMenu(page, 'Codex', '用 Claude 运行');
+	await chooseAtFoot(page, '程序', 'Codex');
 	await expect(pane(page).locator('.ai-status')).toContainText('Codex 没能启动');
 	await expect(pane(page).locator('.ai-status')).toHaveClass(/is-error/u);
 	// Tried again from there.
@@ -230,17 +242,28 @@ test('pi: a service of its catalog and a key, saved; the next pi conversation ha
 	await sheet.getByLabel('API key').nth(1).fill('sk-deepseek');
 	await sheet.locator('.ai-sheet-actions').nth(1).getByRole('button', { name: '保存' }).click();
 	await expect(sheet).toBeHidden();
-	await fromModelMenu(page, 'pi', '用 Claude 运行');
+	await chooseAtFoot(page, '程序', 'pi');
 	await expect(pane(page).locator('.ai-where')).toHaveText('DeepSeek');
-	// Its models by their names, under their service's; the services with no key, to give one in ⚙.
+	// Its models under their maker's name and logo, paid for by a key; the services with no key, to give one in ⚙.
+	await expect(modelButton(page)).toHaveAttribute('aria-label', '模型：Flash');
 	await modelButton(page).click();
-	await expect(page.locator('.ai-menu-label')).toHaveText(['DeepSeek']);
-	await expect(page.locator('.ai-model-item .ai-model-name')).toHaveText(['DeepSeek Flash', 'DeepSeek V4 Pro']);
-	await menuItem(page, '更多模型来源').click();
-	await expect(page.locator('.ai-model-keyless', { hasText: 'Kimi' }).first()).toBeVisible();
+	await expect(picker(page).locator('.ai-picker-label')).toHaveText(['DeepSeek']);
+	await expect(picker(page).locator('.ai-pick .ai-pick-name')).toHaveText(['Flash', 'V4 Pro']);
+	await expect(picker(page).locator('.ai-pick .ai-pick-via')).toHaveText(['key', 'key']);
+	await expect(picker(page).locator('.ai-pick .ai-logo svg')).toHaveCount(2);
+	await expect(picker(page).locator('.ai-picker-keyless')).toContainText('Kimi');
+	// Found by typing.
+	await picker(page).getByRole('textbox', { name: '搜索模型' }).fill('pro');
+	await expect(picker(page).locator('.ai-pick .ai-pick-name')).toHaveText(['V4 Pro']);
 	await page.keyboard.press('Escape');
 	await tell(page, '环境');
 	await expect(pane(page).locator('.ai-message')).toHaveText('pi 模型 deepseek/deepseek-flash DeepSeek key sk-deepseek');
+	// Chosen with the keys: what is typed narrows it, ↓ and Enter take one.
+	await modelButton(page).click();
+	await page.keyboard.type('v4');
+	await page.keyboard.press('Enter');
+	await expect(picker(page)).toHaveCount(0);
+	await expect(modelButton(page)).toHaveAttribute('aria-label', '模型：V4 Pro');
 });
 
 test('the model menu: another service or AI goes on with the same conversation; a starred model is first in it; how hard it thinks, from the bars', async ({ page }) => {
@@ -259,8 +282,10 @@ test('the model menu: another service or AI goes on with the same conversation; 
 
 	// The Claude account, another service: the same conversation, its agent started again for it.
 	await modelButton(page).click();
-	await expect(page.locator('.ai-menu-label').first()).toHaveText('其他（兼容 Anthropic 接口）');
-	await menuItem(page, 'Claude 账号').click();
+	// Its own maker's (none known: 其他); the Claude account's, under Claude, paid for by the account.
+	await expect(picker(page).locator('.ai-picker-label')).toHaveText(['Claude', '其他']);
+	await expect(pick(page, '默认模型').locator('.ai-pick-via')).toHaveText('账号');
+	await pick(page, '默认模型').click();
 	await expect(modelButton(page)).toHaveAttribute('aria-label', '模型：Small');
 	await expect(pane(page).locator('.ai-where')).toHaveText('');
 	await tell(page, '环境');
@@ -269,10 +294,10 @@ test('the model menu: another service or AI goes on with the same conversation; 
 
 	// Starred: first in the menu, chosen from there.
 	await modelButton(page).click();
-	await page.locator('.ai-model-item', { hasText: 'Large' }).hover();
-	await page.locator('.ai-model-item', { hasText: 'Large' }).getByRole('button', { name: '设为常用' }).click();
-	await expect(page.locator('.ai-menu-label').first()).toHaveText('常用');
-	await page.locator('.ai-model-item').first().click();
+	await pick(page, 'Large').hover();
+	await pick(page, 'Large').getByRole('button', { name: '设为常用' }).click();
+	await expect(picker(page).locator('.ai-picker-label').first()).toHaveText('常用');
+	await picker(page).locator('.ai-pick').first().click();
 	await expect(modelButton(page)).toHaveAttribute('aria-label', '模型：Large');
 	// How hard it thinks: bars, a level from their menu.
 	const effort = pane(page).locator('.ai-effort');
@@ -282,7 +307,7 @@ test('the model menu: another service or AI goes on with the same conversation; 
 	await expect(effort).toHaveAttribute('aria-label', '思考：高');
 
 	// Another AI: the same conversation, told where what was said is.
-	await fromModelMenu(page, 'pi', '用 Claude 运行');
+	await chooseAtFoot(page, '程序', 'pi');
 	await expect(modelButton(page)).toHaveAttribute('title', /（pi 运行）$/u);
 	await tell(page, '上下文');
 	await expect(pane(page).locator('.ai-message').last()).toContainText('之前说过的话记在');
@@ -538,7 +563,7 @@ test('said while it works: Claude Code takes it in between; pi, once its turn is
 	await expect(pane(page).locator('.ai-user-context', { hasText: '插话' })).toHaveCount(1);
 
 	// pi (here, an adapter that takes nothing in between): what is said waits for its turn to be over.
-	await fromModelMenu(page, 'pi', '用 Claude 运行');
+	await chooseAtFoot(page, '程序', 'pi');
 	await tell(page, '慢慢来');
 	await expect(placeholder(page)).toHaveText('排队：它做完这一轮就发（Enter）');
 	await tell(page, '环境');
