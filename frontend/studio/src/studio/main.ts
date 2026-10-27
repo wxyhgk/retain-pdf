@@ -220,7 +220,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 		}
 	},
 	publish: () => void pages.publishAndName(),
-	leaveTitle: () => editor.focusStart(),
+	leaveTitle: (newBlock, text) => (newBlock ? editor.startNewBlock(text) : editor.focusStart()),
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
 	async pictures() {
 		const slug = session.slug;
@@ -351,10 +351,10 @@ const session = new ArticleSession(
 		confirm: (message) => window.confirm(message),
 		toast: (message) => showToast(message),
 		opened({ article, properties: shown }) {
-			openTitle = shown.title || article.slug;
+			openTitle = shown.title || t('无标题');
 			studioPlugins.emit('studio/article-opened', article.slug);
 			properties.show(shown, article.problems ?? []);
-			topBar.showArticle(article.slug, shown.title || article.slug, shown.kind);
+			topBar.showArticle(article.slug, shown.title || t('无标题'), shown.kind);
 			topBar.edited(article.modified ?? null);
 			editorPanel.classList.toggle('is-wide', Boolean(shown.wide));
 			articleList.select(article.slug);
@@ -376,8 +376,8 @@ const session = new ArticleSession(
 		},
 		roundtrip: (exact) => topBar.roundtrip(exact),
 		retitled(title) {
-			openTitle = title;
-			topBar.showTitle(title);
+			openTitle = title || t('无标题');
+			topBar.showTitle(openTitle);
 			if (session.slug) articleList.retitled(session.slug, title);
 		},
 		saved(slug, saved, problems) {

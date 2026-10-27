@@ -179,7 +179,8 @@ test('an article whose properties are broken still lists, opens and saves, and s
 
 	assert.deepEqual((await repository.list()).map((article) => article.slug), ['broken-note', 'good-note']);
 	const opened = await repository.read('broken-note');
-	assert.equal(opened.properties.title, 'broken-note');
+	// No title read: none shown (the page's 无标题, in grey), not its folder name.
+	assert.equal(opened.properties.title, '');
 	assert.match(opened.problems[0], /YAML/u);
 	assert.deepEqual((await repository.read('good-note')).problems, []);
 
@@ -510,4 +511,39 @@ test('two pages linking to each other given new titles at once both finish', asy
 	assert.deepEqual(answers.map((answer) => answer.retitled), [1, 1]);
 	assert.match((await repository.read('one')).source, /title: 甲[\s\S]*\[乙\]\(\/blog\/two\/\)/u);
 	assert.match((await repository.read('two')).source, /title: 乙[\s\S]*\[甲\]\(\/blog\/one\/\)/u);
+});
+
+test('a page put under another by someone editing its file gets a page block there, and leaves the one it was under', async (t) => {
+	const root = await temporaryBlog(t);
+	const repository = new ArticleRepository(root);
+	await repository.create({ slug: 'page-a', title: '甲' });
+	await repository.create({ slug: 'page-b', title: '乙' });
+	await repository.create({ slug: 'page-c', title: '丙' });
+	await repository.followParents();
+	const markdown = (slug) => articleBundlePaths(root, slug).markdown;
+	const edit = async (slug, change) => writeFile(markdown(slug), change(await readFile(markdown(slug), 'utf8')));
+
+	// As an AI writes it: parent: in the file, by hand.
+	await edit('page-a', (source) => source.replace('draft: true\n', 'draft: true\nparent: "page-b"\n'));
+	await repository.followParents(['page-a']);
+	assert.match(await readFile(markdown('page-b'), 'utf8'), /\n\[甲\]\(\/blog\/page-a\/\)\n$/u);
+
+	// Moved on: out of 乙, into 丙; told twice, written once.
+	await edit('page-a', (source) => source.replace('parent: "page-b"', 'parent: page-c'));
+	await repository.followParents(['page-a']);
+	await repository.followParents(['page-a']);
+	assert.doesNotMatch(await readFile(markdown('page-b'), 'utf8'), /page-a/u);
+	assert.equal((await readFile(markdown('page-c'), 'utf8')).match(/\/blog\/page-a\//gu)?.length, 1);
+
+	// A page not seen before (new, back from the trash) is learned, not taken as moved; moved after, an untitled one is
+	// linked as 无标题.
+	await repository.create({ slug: 'page-d', title: '' });
+	await repository.followParents(['page-d']);
+	await edit('page-d', (source) => source.replace('draft: true\n', 'draft: true\nparent: page-c\n'));
+	await repository.followParents(['page-d']);
+	assert.match(await readFile(markdown('page-c'), 'utf8'), /\[无标题\]\(\/blog\/page-d\/\)/u);
+	await repository.create({ slug: 'page-e', title: '戊', parent: 'page-c' });
+	const before = await readFile(markdown('page-c'), 'utf8');
+	await repository.followParents(['page-e']);
+	assert.equal(await readFile(markdown('page-c'), 'utf8'), before);
 });

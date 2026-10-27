@@ -142,9 +142,10 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				const layout = JSON.parse(localStorage.getItem('studio.side-panel') ?? 'null');
 				if (layout?.open === false) shell.classList.add('panel-collapsed');
 				if (typeof layout?.width === 'number') shell.style.setProperty('--panel-width', `${Math.min(720, Math.max(260, Math.round(layout.width)))}px`);
-				// The article main.ts opens: the address's, or the first.
+				// The article main.ts opens (wiring/pages.ts): the address's, the one open last, or the first.
 				const address = new URLSearchParams(window.location.search);
-				const slug = Object.hasOwn(pages.versions, address.get('article')) ? address.get('article') : pages.first;
+				const last = localStorage.getItem('studio.lastArticle');
+				const slug = Object.hasOwn(pages.versions, address.get('article')) ? address.get('article') : Object.hasOwn(pages.versions, last) ? last : pages.first;
 				const kept = JSON.parse(localStorage.getItem('studio.snapshot') ?? 'null');
 				if (slug && !address.has('drive') && !address.has('pages') && kept?.slug === slug && kept.version === pages.versions[slug] && kept.locale === document.documentElement.lang && !navigator.webdriver) {
 					const template = document.createElement('template');

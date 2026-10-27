@@ -5,7 +5,8 @@ import { z } from 'astro/zod';
 export function createArticleFrontmatterSchema(image = null) {
 	const heroImage = image ? image() : z.string();
 	return z.object({
-		title: z.string().min(1),
+		// A page may have none (a note not named, as Notion lets one be): the blog shows it as 无标题.
+		title: z.string().default('').transform((title) => title.trim() || '无标题'), // i18n-ignore: what the blog shows
 		description: z.string(),
 		pubDate: z.coerce.date(),
 		updatedDate: z.coerce.date().optional(),
@@ -139,8 +140,9 @@ export function isPublishedArticle(entry) {
 	return entry?.data?.draft !== true;
 }
 
-export function createArticleSource({ title, parent = '', body = '', date = new Date() }) {
-	if (typeof title !== 'string' || !title.trim()) throw new ArticleValidationError('文章标题不能为空');
+/** A new article's file; with no title (empty), a page not named yet. */
+export function createArticleSource({ title = '', parent = '', body = '', date = new Date() }) {
+	if (typeof title !== 'string') throw new ArticleValidationError('文章标题应是文字');
 	const escapedTitle = title.trim().replaceAll("'", "''");
 	const publicationDate = date.toISOString().slice(0, 10);
 	// Under another page: its folder name (checked as one by the caller).

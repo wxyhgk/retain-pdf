@@ -99,6 +99,8 @@ export type StudioEditor = {
 	mount(body: string, whole?: boolean): Promise<string>;
 	/** The caret at the start of the body. */
 	focusStart(): void;
+	/** A new block at the top, holding `text`, the caret at its start (Enter in the title); the empty one there, if it is. */
+	startNewBlock(text?: string): void;
 	/** Reports the edits not reported yet (`changed` follows the typing by a moment). */
 	settle(): void;
 	/**
@@ -674,6 +676,22 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		if (view.state.doc === after) view.dispatch(view.state.tr.replaceWith(0, after.content.size, before.content));
 	}
 
+	function startNewBlock(text = ''): void {
+		crepe?.editor.action((ctx) => {
+			const view = ctx.get(editorViewCtx);
+			const { state } = view;
+			const paragraph = state.schema.nodes.paragraph;
+			const first = state.doc.firstChild;
+			if (!paragraph) return;
+			let tr = state.tr;
+			if (first?.type === paragraph && !first.content.size) {
+				if (text) tr = tr.insertText(text, 1);
+			} else tr = tr.insert(0, paragraph.create(null, text ? state.schema.text(text) : null));
+			view.dispatch(tr.setSelection(TextSelection.create(tr.doc, 1)).scrollIntoView());
+			view.focus();
+		});
+	}
+
 	function focusStart(): void {
 		crepe?.editor.action((ctx) => {
 			const view = ctx.get(editorViewCtx);
@@ -734,6 +752,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			});
 		},
 		focusStart,
+		startNewBlock,
 		settle: report,
 		// A review of a long article waits for all of it to be in.
 		review: (body) => loaded.then(() => startReview(body)),

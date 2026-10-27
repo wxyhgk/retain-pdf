@@ -102,7 +102,6 @@ function replaceYamlField(yaml: string, key: string, value: string | string[] | 
 }
 
 function validateProperties(properties: ArticleProperties): void {
-	if (!properties.title.trim()) throw new Error(t('文章标题不能为空'));
 	if (!/^\d{4}-\d{2}-\d{2}$/u.test(properties.pubDate)) throw new Error(t('发布日期格式无效'));
 	if (properties.tags.some((tag) => !tag.trim())) throw new Error(t('标签不能为空'));
 }

@@ -5,7 +5,9 @@ export type { ArticleProperties };
 
 export type ArticleSummary = {
 	slug: string;
+	/** Its title; 无标题 for a page not named (`untitled`). */
 	title: string;
+	untitled?: boolean;
 	draft?: boolean;
 	/** Its icon, an emoji; empty for none. */
 	icon?: string;

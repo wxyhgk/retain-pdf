@@ -147,7 +147,9 @@ test('an edit is saved by itself, and blocks it did not touch keep their bytes',
 
 test('properties that cannot be saved hold the save back until they can', async () => {
 	const { session, api, page } = await opened();
-	assert.equal(session.editProperties({ ...PROPERTIES, title: '' }), '文章标题不能为空');
+	// A note may have no title (as in Notion); a date that is not one cannot be saved.
+	assert.equal(session.editProperties({ ...PROPERTIES, title: '' }), null);
+	assert.equal(session.editProperties({ ...PROPERTIES, pubDate: '2026-13' }), '发布日期格式无效');
 	session.editBody(`${body(SOURCE)}\n第三段。\n`);
 	await settle();
 	assert.equal(api.saves.length, 0);

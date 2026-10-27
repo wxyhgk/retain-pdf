@@ -3,6 +3,7 @@ import type { DiskChange } from '../../common/disk-events.ts';
 import { createStore, type Store } from '../../shell/store.ts';
 import type { ArticleProperties, ArticleSummary, GitStatus } from '../../types.ts';
 import { pageTree, visibleOrder, within, type PageTree } from './page-tree.ts';
+import { t } from '@blog/i18n/index.mjs';
 
 /** What can be done to a whole article from the list. */
 export type ArticleListHost = {
@@ -72,6 +73,11 @@ function keepFolded(folded: ReadonlySet<string>): void {
 }
 
 /** The page tree's state, and what changes it. */
+/** A title as the list shows it: 无标题 for none, marked as not one (`untitled`). */
+function titled(title: string): Pick<ArticleSummary, 'title' | 'untitled'> {
+	return title.trim() ? { title, untitled: false } : { title: t('无标题'), untitled: true };
+}
+
 export function createTreeState(host: ArticleListHost) {
 	const store: Store<TreeState> = createStore<TreeState>({ articles: [], read: false, tree: pageTree([]), selected: null, chosen: new Set(), chosenFrom: null, folded: readFolded(), git: null, focus: null });
 	const get = store.get;
@@ -182,14 +188,15 @@ export function createTreeState(host: ArticleListHost) {
 		/** The open article's title as it is typed, before it is saved: the list follows it, as in Notion. */
 		retitled(slug: string, title: string): void {
 			const article = get().articles.find((entry) => entry.slug === slug);
-			if (!article || !title.trim() || article.title === title) return;
-			setArticles(get().articles.map((entry) => (entry === article ? { ...entry, title } : entry)));
+			const named = titled(title);
+			if (!article || (article.title === named.title && Boolean(article.untitled) === Boolean(named.untitled))) return;
+			setArticles(get().articles.map((entry) => (entry === article ? { ...entry, ...named } : entry)));
 		},
 		/** An article's saved title and draft state. */
 		saved(slug: string, properties: ArticleProperties): void {
 			const article = get().articles.find((entry) => entry.slug === slug);
 			if (!article) return;
-			const next: ArticleSummary = { ...article, title: properties.title, draft: properties.draft, tags: properties.tags };
+			const next: ArticleSummary = { ...article, ...titled(properties.title), draft: properties.draft, tags: properties.tags };
 			if (properties.icon !== undefined) next.icon = properties.icon;
 			if (properties.parent !== undefined) next.parent = properties.parent;
 			setArticles(get().articles.map((entry) => (entry === article ? next : entry)));

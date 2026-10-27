@@ -50,6 +50,8 @@ export class ArticleRepository {
 	#writes = new Map();
 	/** Per article whose title is being changed: the title it had, the newest, and when the links follow. */
 	#titles = new Map();
+	/** Per article, the page it is under as last seen (`followParents`); null till first looked at. */
+	#parents = null;
 	/**
 	 * Per article, the links in its text as last read (`{ source, site, links }`): each article opened asks what
 	 * links to it, and reading every article's Markdown again each time took most of a second (two OCR'd books),
@@ -97,7 +99,10 @@ export class ArticleRepository {
 		const articles = [];
 		for (const { slug, source, modified } of await this.#sources()) {
 			const { pubDate, description } = articleProperties(source, slug);
-			articles.push({ slug, ...articleSummary(source, slug), pubDate, description, modified });
+			// Not named (an empty title): listed as 无标题, as Notion lists Untitled; `untitled` says it is not a title.
+			const summary = articleSummary(source, '');
+			const untitled = !summary.title;
+			articles.push({ slug, ...summary, title: summary.title || t('无标题'), ...(untitled ? { untitled } : {}), pubDate, description, modified });
 		}
 		articles.sort((a, b) => a.title.localeCompare(b.title, 'zh-CN', { numeric: true }));
 		return articles;
@@ -317,6 +322,7 @@ export class ArticleRepository {
 			return { ...was, renumbered: [] };
 		});
 		for (const [page, order] of others.renumbered) await this.#rewrite(page, (source) => withFields(source, { order }));
+		this.#parents?.set(slug, parent);
 		// As Notion has it: a page moved under another is a page block at the end of it, and no longer one in the page
 		// it left (only a line that is just a link to it; a link in a sentence stays).
 		if (others.from !== parent) {
@@ -324,6 +330,36 @@ export class ArticleRepository {
 			if (parent) await this.#rewrite(parent, (source) => withPageBlock(source, slug, others.title));
 		}
 		return { slug, parent };
+	}
+
+	/**
+	 * Pages whose place (`parent:`) was written by someone else (an AI editing the file, another editor): as when one is
+	 * moved here (`setParent`), the page it went under gets a page block for it at its end, and the one it left loses
+	 * its own. A page not seen before (new, or back from the trash) is only learned: it was not moved. The first call
+	 * (with none) learns where every page is.
+	 */
+	async followParents(slugs = []) {
+		if (!this.#parents) {
+			this.#parents = new Map();
+			for (const { slug, source } of await this.#sources()) this.#parents.set(slug, articleSummary(source, slug).parent ?? '');
+			return;
+		}
+		for (const slug of new Set(slugs)) {
+			let source;
+			try {
+				source = await readFile(articleBundlePaths(this.blogRoot, slug).markdown, 'utf8');
+			} catch {
+				// Gone (to the trash), or not an article.
+				this.#parents.delete(slug);
+				continue;
+			}
+			const { parent = '', title } = articleSummary(source, '');
+			const from = this.#parents.get(slug);
+			this.#parents.set(slug, parent);
+			if (from === undefined || from === parent) continue;
+			if (from) await this.#rewrite(from, (text) => withoutPageBlock(text, slug));
+			if (parent) await this.#rewrite(parent, (text) => withPageBlock(text, slug, title || '无标题')); // i18n-ignore: the words of the link to it
+		}
 	}
 
 	/**
@@ -440,7 +476,7 @@ export class ArticleRepository {
 			try {
 				const copy = updateStudioFrontmatter(source, {
 					...properties,
-					title: `${properties.title}（副本）`, // i18n-ignore: written into the article
+					title: `${properties.title || '无标题'}（副本）`, // i18n-ignore: written into the article
 					pubDate: now.toISOString().slice(0, 10),
 					draft: true,
 				});
@@ -463,7 +499,8 @@ export class ArticleRepository {
 			slug,
 			source,
 			revision,
-			properties: articleProperties(source, slug),
+			// Not named: no title (the page shows 无标题 in grey, to type over), not its folder name.
+			properties: articleProperties(source, ''),
 			problems: articleProblems(source),
 			macros: articleMacros(source),
 			chemistryViews: readMoleculeViews(viewsSource),
@@ -528,10 +565,10 @@ export class ArticleRepository {
 		// Saved even when the properties are wrong, so nothing typed is lost; `problems` says what to fix.
 		await atomicWriteText(paths.markdown, nextSource);
 		const revision = bundleRevision(nextSource, viewsSource);
-		// Titles as typed (none, not the folder name it is listed by then).
-		const was = articleSummary(current, '').title;
-		const is = articleSummary(nextSource, '').title;
-		return { revision, problems: articleProblems(nextSource), ...(was && is && was !== is ? { retitle: { from: was, to: is } } : {}) };
+		// Titles as typed; a page not named is linked to as 无标题 (`/page`), which its links follow from when it is named.
+		const was = articleSummary(current, '').title || '无标题'; // i18n-ignore: the words of the links to it
+		const is = articleSummary(nextSource, '').title || '无标题'; // i18n-ignore: the words of the links to it
+		return { revision, problems: articleProblems(nextSource), ...(was !== is ? { retitle: { from: was, to: is } } : {}) };
 	}
 
 	/**

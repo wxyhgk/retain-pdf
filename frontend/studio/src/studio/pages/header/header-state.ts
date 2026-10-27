@@ -9,8 +9,11 @@ export type PageHeaderHost = {
 	mayPublish(): Promise<boolean>;
 	/** 发布 or 撤回 was pressed, and the new draft state taken: save it now. */
 	publish(): void;
-	/** Enter or ↓ in the title: on to the body. */
-	leaveTitle(): void;
+	/**
+	 * On to the body from the title: ↓, to its first block; Enter (`newBlock`), to a new block at its top, as Notion
+	 * has it, with what was after the caret in the title (`text`).
+	 */
+	leaveTitle(newBlock?: boolean, text?: string): void;
 	/** Where to load a file the article names (`./img/cover.jpg`) from. */
 	fileUrl(src: string): string;
 	/** The article's pictures, as the article names them: `./img/plot.png`. */

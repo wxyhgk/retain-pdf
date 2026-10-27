@@ -15,6 +15,25 @@ import { trackWrite } from '../state/writes';
 import type { ArticleSummary } from '../types';
 import type { Studio } from './studio';
 
+/** The page open last, kept on this machine: what the Studio opens again when it is started, not the first page. */
+const LAST_OPENED = 'studio.lastArticle';
+
+function lastOpened(): string | null {
+	try {
+		return localStorage.getItem(LAST_OPENED);
+	} catch {
+		return null;
+	}
+}
+
+function rememberOpened(slug: string): void {
+	try {
+		localStorage.setItem(LAST_OPENED, slug);
+	} catch {
+		// Storage refused (a private window): the first page next time.
+	}
+}
+
 export function createPages(studio: Studio) {
 	const { session, articleList, articleActions, properties, editorScroll } = studio;
 	const slugs = () => articleList.articles().map((article) => article.slug);
@@ -28,6 +47,7 @@ export function createPages(studio: Studio) {
 		const tell = () => shellState.set({ nav: { back: at > 0, forward: at < opened.length - 1 } });
 		return {
 			shown(slug: string): void {
+				rememberOpened(slug);
 				if (going !== null && opened[going] === slug) at = going;
 				else if (opened[at] !== slug) {
 					opened.splice(at + 1, Infinity, slug);
@@ -49,11 +69,11 @@ export function createPages(studio: Studio) {
 		};
 	})();
 
-	/** Reads the article list and opens one: `slug`, the one in the address, or the first. */
+	/** Reads the article list and opens one: `slug`, the one in the address, the one open last, or the first. */
 	async function openFromList(slug?: string, discard = false): Promise<void> {
 		const articles = await articleList.load();
-		const requested = slug ?? new URL(window.location.href).searchParams.get('article') ?? undefined;
-		const initial = articles.some((article) => article.slug === requested) ? requested : articles[0]?.slug;
+		const exists = (wanted: string | null | undefined) => (wanted && articles.some((article) => article.slug === wanted) ? wanted : undefined);
+		const initial = exists(slug) ?? exists(new URL(window.location.href).searchParams.get('article')) ?? exists(lastOpened()) ?? articles[0]?.slug;
 		if (initial) await session.open(initial, { discard });
 		else studio.topBar.showEmpty();
 	}
@@ -67,7 +87,8 @@ export function createPages(studio: Studio) {
 		if (!(await session.saveBeforeLeaving())) return;
 		const slug = freeSlug(autoSlug(), slugs());
 		try {
-			await createArticle(slug, '无标题', parent); // i18n-ignore: saved as the page's title
+			// Not named: its title to type, or not (a note may have none, as in Notion).
+			await createArticle(slug, '', parent);
 		} catch (error) {
 			showToast(error instanceof Error ? error.message : t('新建失败'), true);
 			return;
@@ -108,7 +129,7 @@ export function createPages(studio: Studio) {
 		if (!parent) return null;
 		const slug = freeSlug(autoSlug(), slugs());
 		try {
-			await trackWrite(() => createArticle(slug, '无标题', parent)); // i18n-ignore: saved as the page's title
+			await trackWrite(() => createArticle(slug, '', parent));
 		} catch (error) {
 			showToast(error instanceof Error ? error.message : t('新建失败'), true);
 			return null;
@@ -214,7 +235,7 @@ export function createPages(studio: Studio) {
 		if (!(await session.flush())) return;
 		const slug = session.slug;
 		const article = articleList.articles().find((entry) => entry.slug === slug);
-		if (!slug || !article || article.draft !== false || !isAutoSlug(slug)) return;
+		if (!slug || !article || article.draft !== false || article.untitled || !isAutoSlug(slug)) return;
 		const wanted = readableSlug(article.title);
 		if (!wanted || isAutoSlug(wanted)) return;
 		const to = freeSlug(wanted, slugs());

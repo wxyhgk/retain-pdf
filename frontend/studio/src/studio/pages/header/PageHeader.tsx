@@ -273,7 +273,15 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 						if (event.key !== 'Enter' && event.key !== 'ArrowDown') return;
 						if (event.shiftKey || event.metaKey || event.altKey || event.ctrlKey) return;
 						event.preventDefault();
-						actions.host.leaveTitle();
+						if (event.key === 'ArrowDown') {
+							actions.host.leaveTitle();
+							return;
+						}
+						// Enter: a new block at the top; what is after the caret goes into it, out of the title.
+						const input = event.currentTarget;
+						const rest = input.value.slice(input.selectionEnd ?? input.value.length);
+						if (rest) actions.edit({ title: input.value.slice(0, input.selectionStart ?? input.value.length) });
+						actions.host.leaveTitle(true, rest);
 					}}
 				/>
 				<div className="page-properties" role="group" aria-label={t('属性')}>
