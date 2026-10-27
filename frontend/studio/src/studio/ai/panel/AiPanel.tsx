@@ -1,4 +1,4 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
@@ -12,6 +12,7 @@ import { useStore, type Store } from '../../shell/store';
 import { markdownOfSelection, pictureUrl } from '../ai-markdown';
 import { EffortMenu, ModelMenu } from './ModelMenu';
 import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
+import { createPromptEditor, type PromptCaret, type PromptEditor, type PromptEditorHost } from './prompt-editor';
 import { commandOf, Item, ItemsContext, Markdown, PageChip, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { PagePeek } from './PagePeek';
 import { PASTE_CHARACTERS, PASTE_LINES, type ArticleRef, type PageInfo, type PanelActions, type PanelState } from './panel-state';
@@ -381,30 +382,62 @@ function Chip({ label, title, page, onRemove }: { label: string; title: string; 
 	);
 }
 
+/**
+ * The input: written as articles are (prompt-editor.ts: formulas drawn as they are typed), what is written the
+ * panel's `draft` (Markdown) both ways; what it tells, to `handlers` as they are now.
+ */
+function PromptInput({ draft, placeholder, editor, handlers }: { draft: string; placeholder: string; editor: React.MutableRefObject<PromptEditor | null>; handlers: React.RefObject<PromptEditorHost | null> }) {
+	const root = useRef<HTMLDivElement>(null);
+	const latest = useRef(draft);
+	latest.current = draft;
+	useEffect(() => {
+		let made: PromptEditor | null = null;
+		let gone = false;
+		const host: PromptEditorHost = {
+			changed: (markdown, caret) => handlers.current!.changed(markdown, caret),
+			key: (event, sends) => handlers.current!.key(event, sends),
+			paste: (event) => handlers.current!.paste(event),
+			drop: (event) => handlers.current!.drop(event),
+			focused: (focus) => handlers.current!.focused(focus),
+		};
+		void createPromptEditor(root.current!, host, latest.current).then((ready) => {
+			if (gone) return ready.destroy();
+			made = ready;
+			editor.current = ready;
+			// What was put in while it was being made.
+			ready.set(latest.current);
+		});
+		return () => {
+			gone = true;
+			made?.destroy();
+			editor.current = null;
+		};
+	}, []);
+	useEffect(() => editor.current?.set(draft), [draft]);
+	return (
+		<div className="ai-input">
+			<div ref={root} className="ai-input-editor" data-host />
+			{!draft.trim() && (
+				<div className="ai-input-placeholder" aria-hidden="true">
+					{placeholder}
+				</div>
+			)}
+		</div>
+	);
+}
+
 function Composer({ state, actions }: { state: PanelState; actions: PanelActions }) {
 	const { conversation, article, leftOut, selected, selectionLeftOut, mentions, draft, status, pictures, quotes, pastes, queued } = state;
-	const input = useRef<HTMLTextAreaElement>(null);
-	const [caret, setCaret] = useState(0);
+	const editor = useRef<PromptEditor | null>(null);
+	const [caret, setCaret] = useState<PromptCaret>({ before: '', first: true });
 	const [mentionAt, setMentionAt] = useState(0);
 	const [mentionsClosed, setMentionsClosed] = useState(false);
 	const [dropping, setDropping] = useState(false);
 	const running = conversation?.state === 'running';
 
-	/** Where the caret goes once what is typed is drawn anew (an article named, a command written). */
-	const caretAfter = useRef<number | null>(null);
-	// The input as tall as what is typed, up to 200px; the caret where it was asked to go.
-	useLayoutEffect(() => {
-		const node = input.current!;
-		node.style.height = 'auto';
-		node.style.height = `${Math.min(node.scrollHeight, 200)}px`;
-		if (caretAfter.current !== null) {
-			node.setSelectionRange(caretAfter.current, caretAfter.current);
-			caretAfter.current = null;
-		}
-	}, [draft]);
 	// Asked to take the keys (focus, ask).
 	useEffect(() => {
-		if (state.focusAsked) input.current?.focus();
+		if (state.focusAsked) editor.current?.focus();
 	}, [state.focusAsked]);
 
 	const open = article && leftOut !== article.slug ? article : null;
@@ -438,7 +471,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 		);
 	});
 
-	const asked = mentionsClosed ? null : naming(draft, caret);
+	const asked = mentionsClosed ? null : naming(caret.before, caret.before.length);
 	const needle = asked?.query.toLocaleLowerCase('zh-CN') ?? '';
 	const choices = asked
 		? actions
@@ -448,19 +481,15 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				.slice(0, 8)
 		: [];
 	// A slash command its agent offers (/compact), typed at the start: chosen from a list as an article is with @.
-	const slash = mentionsClosed ? null : /^\/(\S*)$/u.exec(draft.slice(0, caret));
+	const slash = mentionsClosed || !caret.first ? null : /^\/(\S*)$/u.exec(caret.before);
 	const commands = slash ? (conversation?.commands ?? []).filter((command) => command.name.toLowerCase().startsWith(slash[1]!.toLowerCase())).slice(0, 12) : [];
 	const listed = choices.length || commands.length;
 	const current = Math.min(mentionAt, Math.max(0, (choices.length || commands.length) - 1));
 
 	/** The command `name` written at the start, what to write after it to follow. */
 	function command(name: string): void {
-		const rest = draft.slice(caret).replace(/^\S*/u, '');
-		const next = `/${name} ${rest.trimStart()}`;
-		actions.type(next);
+		editor.current?.replaceBefore(caret.before.length, `/${name} `);
 		setMentionAt(0);
-		setCaret(name.length + 2);
-		caretAfter.current = name.length + 2;
 	}
 
 	/** Pictures among what is pasted or dropped: given with what is said next. */
@@ -470,43 +499,75 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 
 	/** `entry` named: the @ and what was typed after it taken out of the input, the article a chip. */
 	function mention(entry: ArticleRef): void {
-		const at = naming(draft, caret);
-		const next = at ? `${draft.slice(0, at.from)}${draft.slice(caret)}` : draft;
-		actions.mention(entry, next);
+		const at = naming(caret.before, caret.before.length);
+		if (at) editor.current?.replaceBefore(caret.before.length - at.from, '');
+		actions.mention(entry);
 		setMentionAt(0);
-		if (at) {
-			setCaret(at.from);
-			caretAfter.current = at.from;
-		}
 	}
 
-	function keyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
-		const composing = event.nativeEvent.isComposing || event.keyCode === 229;
+	/** A key in the input, before the editor: a menu's, or Enter to send (`sends`: not a formula's, nor in code). */
+	function keyDown(event: KeyboardEvent, sends: boolean): boolean {
+		const composing = event.isComposing || event.keyCode === 229;
+		if (composing) return false;
 		// Choosing an article to name, or a command.
-		if (listed && !composing) {
+		if (listed) {
 			const count = choices.length || commands.length;
 			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-				event.preventDefault();
 				setMentionAt((current + (event.key === 'ArrowDown' ? 1 : count - 1)) % count);
-				return;
+				return true;
 			}
 			if (event.key === 'Enter' || event.key === 'Tab') {
-				event.preventDefault();
 				if (choices.length) mention(choices[current]!);
 				else command(commands[current]!.name);
-				return;
+				return true;
 			}
 			if (event.key === 'Escape') {
-				event.preventDefault();
 				setMentionsClosed(true);
-				return;
+				return true;
 			}
 		}
-		// Enter sends; not while a Chinese input method is still choosing words.
-		if (event.key !== 'Enter' || event.shiftKey || composing) return;
-		event.preventDefault();
+		// Enter sends (⌘Enter too, from wherever it is); Shift+Enter is a new line.
+		if (event.key !== 'Enter' || event.shiftKey || event.altKey || !(sends || event.metaKey || event.ctrlKey)) return false;
 		actions.submit();
+		return true;
 	}
+
+	/** Pasted: pictures given with what is said; words at length (a log, an output) a chip, sent after it. */
+	function pasted(event: ClipboardEvent): boolean {
+		const transfer = event.clipboardData;
+		if (!transfer) return false;
+		const words = transfer.getData('text/plain');
+		if (words.split('\n').length >= PASTE_LINES || words.length >= PASTE_CHARACTERS) {
+			actions.paste(words);
+			return true;
+		}
+		const files = picturesIn(transfer);
+		if (!files.length) return false;
+		void actions.addPictures(files);
+		// A picture copied with words (from a page): the words pasted too.
+		return !words;
+	}
+
+	const handlers = useRef<PromptEditorHost>(null);
+	handlers.current = {
+		changed(markdown, at) {
+			if (markdown !== draft) {
+				actions.type(markdown);
+				setMentionsClosed(false);
+			}
+			setCaret(at);
+		},
+		key: keyDown,
+		paste: pasted,
+		drop(event) {
+			const files = event.dataTransfer ? picturesIn(event.dataTransfer) : [];
+			if (!files.length) return false;
+			setDropping(false);
+			void actions.addPictures(files);
+			return true;
+		},
+		focused: (focus) => setMentionsClosed(!focus),
+	};
 
 	const effort = conversation?.configOptions.find((option) => option.type === 'select' && option.category === 'thought_level');
 	const used = conversation?.usage;
@@ -524,6 +585,8 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 			}}
 			onDrop={(event) => {
 				setDropping(false);
+				// Taken by the input already.
+				if (event.defaultPrevented) return;
 				const files = picturesIn(event.dataTransfer);
 				if (!files.length) return;
 				event.preventDefault();
@@ -611,37 +674,12 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 					))}
 				</div>
 			)}
-			<textarea
-				ref={input}
-				className="ai-input"
-				rows={1}
-				aria-label={t('对 AI 说')}
+			<PromptInput
+				draft={draft}
+				editor={editor}
+				handlers={handlers}
 				// While it works: to one that can take it, a word in between (Enter); else said once it is done.
-				placeholder={running ? (conversation?.canSteer ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到文章，/ 命令，可以粘贴图片）')}
-				value={draft}
-				onChange={(event) => {
-					actions.type(event.target.value);
-					setCaret(event.target.selectionStart ?? event.target.value.length);
-					setMentionsClosed(false);
-				}}
-				onSelect={(event) => setCaret(event.currentTarget.selectionStart ?? 0)}
-				onBlur={() => setMentionsClosed(true)}
-				onFocus={() => setMentionsClosed(false)}
-				onKeyDown={keyDown}
-				onPaste={(event) => {
-					// Words pasted at length (a log, an output): a chip, sent after what is typed.
-					const words = event.clipboardData.getData('text/plain');
-					if (words.split('\n').length >= PASTE_LINES || words.length >= PASTE_CHARACTERS) {
-						event.preventDefault();
-						actions.paste(words);
-						return;
-					}
-					const files = picturesIn(event.clipboardData);
-					if (!files.length) return;
-					// A picture copied with words (from a page): the words pasted too.
-					if (!event.clipboardData.getData('text/plain')) event.preventDefault();
-					void actions.addPictures(files);
-				}}
+				placeholder={running ? (conversation?.canSteer ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到文章，/ 命令，$ 写公式，可以粘贴图片）')}
 			/>
 			<div className="ai-composer-bar">
 				<span className="ai-usage">{used && used.size > 0 && <Usage used={used} canCompact={Boolean(conversation?.commands.some((entry) => entry.name === 'compact'))} onCompact={() => actions.ask('/compact')} />}</span>

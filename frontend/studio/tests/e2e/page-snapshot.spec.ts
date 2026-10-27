@@ -37,14 +37,14 @@ test('the page as it was left shows before the editor loads, and the editor take
 	await openAndLeave(page);
 	const release = await openHeld(page);
 	const picture = page.locator('.studio-snapshot');
-	await expect(picture.locator('.ProseMirror')).toContainText('结尾段落');
+	await expect(picture.locator('#crepe-editor .ProseMirror')).toContainText('结尾段落');
 	await expect(picture.locator('#article-title-input')).toHaveValue(TITLE);
 	await expect(picture.locator('.page-row', { hasText: TITLE })).toBeVisible();
 	await expect(picture.locator('#file-tree')).toContainText('index.md');
 
 	release();
 	await expect(picture).toHaveCount(0);
-	await expect(page.locator('.milkdown .ProseMirror')).toContainText('结尾段落');
+	await expect(page.locator('#crepe-editor .milkdown .ProseMirror')).toContainText('结尾段落');
 	await expect(page.locator('#article-title-input')).toHaveValue(TITLE);
 });
 
@@ -59,7 +59,7 @@ test('not once the article changed on disk: the page shows no empty fields until
 	await expect(page.locator('#article-list')).toBeHidden();
 
 	release();
-	await expect(page.locator('.milkdown .ProseMirror')).toContainText('磁盘上改过的结尾段落');
+	await expect(page.locator('#crepe-editor .milkdown .ProseMirror')).toContainText('磁盘上改过的结尾段落');
 	await expect(page.locator('.editor-scroll')).toBeVisible();
 	await expect(page.locator('#article-list .page-row', { hasText: TITLE })).toBeVisible();
 });

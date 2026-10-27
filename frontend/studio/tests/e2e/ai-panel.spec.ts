@@ -11,7 +11,9 @@ import { editFixture, editor, fixtureHas, openStudio, removeArticle, resetFixtur
 // changes a file and keeps a plan; each drawn as it comes, the leave answered in the panel.
 
 const pane = (page: Page) => page.locator('#side-ai');
-const input = (page: Page) => pane(page).locator('.ai-input');
+/** The input: an editor as articles' (its words while empty over it). */
+const input = (page: Page) => pane(page).locator('.ai-input .ProseMirror');
+const placeholder = (page: Page) => pane(page).locator('.ai-input-placeholder');
 const modelButton = (page: Page) => pane(page).locator('.ai-model');
 /** The model menu's items: a model of it, one of a submenu (`under`), an option of the menu's foot. */
 const menuItem = (page: Page, name: string) => page.locator('.ai-menu [role^="menuitem"]', { hasText: new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}`, 'u') }).first();
@@ -45,7 +47,7 @@ test('the agent thinks, asks leave to run a command, runs it once allowed, chang
 	await expect(pane(page).locator('.ai-where')).toHaveText('');
 	await expect(pane(page).locator('.ai-empty')).toBeVisible();
 	await tell(page, '跑一下');
-	await expect(input(page)).toHaveValue('');
+	await expect(input(page)).toHaveText('');
 	await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('跑一下');
 	await expect(pane(page).locator('.ai-empty')).toBeHidden();
 
@@ -278,7 +280,7 @@ test('what is said is told where the author is: the article open (followed as an
 		await input(page).fill('上下文 看看 @另一');
 		await expect(pane(page).locator('.ai-mention')).toHaveCount(1);
 		await input(page).press('Enter');
-		await expect(input(page)).toHaveValue('上下文 看看 ');
+		await expect(input(page)).toHaveText('上下文 看看');
 		await expect(chips).toHaveText(['Studio 测试夹具', '选中的内容', '另一篇笔记']);
 		await input(page).press('Enter');
 		const answer = pane(page).locator('.ai-message').last();
@@ -499,7 +501,7 @@ test('the plugins’ blocks in an answer are drawn as in the editor, and put in 
 test('said while it works: Claude Code takes it in between; pi, once its turn is over (queued, or said now)', async ({ page }) => {
 	await openAi(page);
 	await tell(page, '慢慢来');
-	await expect(input(page)).toHaveAttribute('placeholder', '插话：它会尽快看到（Enter）');
+	await expect(placeholder(page)).toHaveText('插话：它会尽快看到（Enter）');
 	await tell(page, '换个方向');
 	await expect(pane(page).locator('.ai-message').last()).toHaveText('插话收到：换个方向');
 	await expect(pane(page).locator('.ai-user-context', { hasText: '插话' })).toHaveCount(1);
@@ -507,11 +509,11 @@ test('said while it works: Claude Code takes it in between; pi, once its turn is
 	// pi (here, an adapter that takes nothing in between): what is said waits for its turn to be over.
 	await fromModelMenu(page, 'pi', '用 Claude 运行');
 	await tell(page, '慢慢来');
-	await expect(input(page)).toHaveAttribute('placeholder', '排队：它做完这一轮就发（Enter）');
+	await expect(placeholder(page)).toHaveText('排队：它做完这一轮就发（Enter）');
 	await tell(page, '环境');
 	const queued = pane(page).locator('.ai-queued');
 	await expect(queued.locator('.ai-queued-text')).toHaveText('环境');
-	await expect(input(page)).toHaveValue('');
+	await expect(input(page)).toHaveText('');
 	// Said now: what it does stopped, then said.
 	await queued.getByRole('button', { name: '立刻发' }).click();
 	await expect(pane(page).locator('.ai-stop').last()).toHaveText('已停止');
@@ -542,7 +544,7 @@ test('/ lists the commands its agent offers; one is sent as it is, nothing added
 	const menu = pane(page).locator('.ai-command');
 	await expect(menu).toHaveText([/^\/review/u]);
 	await input(page).press('Enter');
-	await expect(input(page)).toHaveValue('/review ');
+	await expect(input(page)).toHaveText('/review');
 	await input(page).pressSequentially('这段');
 	await input(page).press('Enter');
 	await expect(pane(page).locator('.ai-message').last()).toHaveText('命令 /review 这段');
@@ -603,7 +605,7 @@ test('what was said: copied, or put back to be changed; what failed, said again;
 	// Under the answer, its actions there without a pointer on it.
 	await expect(pane(page).locator('.ai-answer').last().getByRole('button', { name: '插入到文章' })).toBeVisible();
 	await pane(page).locator('.ai-user').last().getByRole('button', { name: '改一改再问' }).click();
-	await expect(input(page)).toHaveValue('用量');
+	await expect(input(page)).toHaveText('用量');
 	await input(page).fill('');
 
 	// Nearly full: the ring says so, and clicked, /compact is in the input; sent, a line where it was compacted.
@@ -612,7 +614,7 @@ test('what was said: copied, or put back to be changed; what failed, said again;
 	await expect(ring).toHaveClass(/is-full/u);
 	await expect(ring).toHaveAttribute('title', /\$0\.42/u);
 	await ring.click();
-	await expect(input(page)).toHaveValue('/compact');
+	await expect(input(page)).toHaveText('/compact');
 	await pane(page).locator('.ai-send').click();
 	const compacted = pane(page).locator('.ai-compaction');
 	await expect(compacted.locator('summary')).toHaveText('上下文已压缩');
@@ -674,7 +676,7 @@ test('words pasted at length are a chip, sent after what is typed and folded und
 		transfer.setData('text/plain', words);
 		node.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }));
 	}, log);
-	await expect(input(page)).toHaveValue('');
+	await expect(input(page)).toHaveText('');
 	await expect(pane(page).locator('.ai-paste-chip')).toHaveText(/已粘贴 20 行/u);
 	await tell(page, '上下文 看看日志');
 	const told = pane(page).locator('.ai-message').last();
@@ -700,4 +702,17 @@ test('a conversation of before, opened, is shown at its end', async ({ page }) =
 	const transcript = pane(page).locator('.ai-transcript');
 	await expect.poll(() => transcript.evaluate((node) => node.scrollHeight - node.scrollTop - node.clientHeight)).toBeLessThan(5);
 	await expect.poll(() => transcript.evaluate((node) => node.scrollTop)).toBeGreaterThan(100);
+});
+
+test('the input is written as articles are: a formula typed is drawn there, and said as written', async ({ page }) => {
+	await openAi(page);
+	await input(page).click();
+	await input(page).pressSequentially('上下文 质能 $E=mc^2$ 是什么');
+	await expect(pane(page).locator('.ai-input .katex')).toHaveCount(1);
+	await expect(placeholder(page)).toHaveCount(0);
+	await input(page).press('Enter');
+	const told = pane(page).locator('.ai-message').last();
+	await expect(told).toContainText('上下文 质能 $E=mc^2$ 是什么');
+	await expect(input(page)).toHaveText('');
+	await expect(placeholder(page)).toBeVisible();
 });

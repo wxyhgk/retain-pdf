@@ -27,7 +27,7 @@ test('an article whose YAML is broken still opens, and says so', async ({ page }
 	editFixture((markdown) => markdown.replace(/^tags: \[\]$/mu, 'tags: [unclosed'));
 	await openStudio(page);
 	await expect(page.locator('#property-error')).toContainText('属性的 YAML 写错了');
-	await expect(page.locator('.milkdown .ProseMirror')).toContainText('开头段落');
+	await expect(page.locator('#crepe-editor .milkdown .ProseMirror')).toContainText('开头段落');
 });
 
 const publishButton = (page: import('@playwright/test').Page) => page.locator('#publish-article');
@@ -56,7 +56,7 @@ test('what would stop the build keeps the article a draft', async ({ page }) => 
 
 test('what would only show broken may be published all the same, unsaved edits checked too', async ({ page }) => {
 	await openStudio(page);
-	const editor = page.locator('.milkdown .ProseMirror');
+	const editor = page.locator('#crepe-editor .milkdown .ProseMirror');
 	await editor.locator('p').first().click();
 	await page.keyboard.press('End');
 	await page.keyboard.type(' 见 $\\eqref{eq:none}$ ');

@@ -119,7 +119,16 @@
 .ai-status { min-height: 0; margin: 0 2px 4px; color: rgb(var(--gray)); font-size: 11px; }
 .ai-status:empty { display: none; }
 .ai-status.is-error { color: var(--danger); }
-.ai-input { display: block; box-sizing: border-box; width: 100%; min-height: 64px; max-height: 200px; padding: 10px 12px 4px; resize: none; border: 1px solid rgb(var(--gray-light)); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--surface); color: inherit; font: inherit; font-size: 13px; line-height: 1.5; outline: none; }
+/* The input: an editor as articles' (prompt-editor.ts), in the panel's size; its words while it is empty over it. */
+.ai-input { position: relative; box-sizing: border-box; width: 100%; border: 1px solid rgb(var(--gray-light)); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--surface); }
+.ai-input-editor { max-height: 220px; overflow: auto; cursor: text; }
+.ai-input .milkdown { --crepe-base-font-size: 13px; --crepe-font-default: inherit; --crepe-color-background: transparent; background: transparent; color: inherit; font-size: 13px; }
+.ai-input .milkdown .ProseMirror { min-height: 54px; padding: 10px 12px 6px; line-height: 1.55; outline: none; overflow-wrap: anywhere; }
+.ai-input .milkdown .ProseMirror p { margin: 0; padding: 0; font-size: 13px; line-height: 1.55; }
+.ai-input .milkdown .ProseMirror ul, .ai-input .milkdown .ProseMirror ol { padding-left: 4px; }
+.ai-input .milkdown .ProseMirror li p { padding: 0; }
+.ai-input .milkdown .ProseMirror pre, .ai-input .milkdown .milkdown-code-block { margin: 4px 0; }
+.ai-input-placeholder { position: absolute; top: 10px; right: 12px; left: 12px; overflow: hidden; color: rgb(var(--gray)); font-size: 13px; line-height: 1.55; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 .ai-composer-bar { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; border: 1px solid rgb(var(--gray-light)); border-top: 0; border-radius: 0 0 12px 12px; background: var(--surface); box-shadow: 0 4px 12px rgba(var(--black), 0.04); }
 .ai-composer:focus-within .ai-input, .ai-composer:focus-within .ai-composer-bar { border-color: rgb(var(--gray)); }
 /* The model and how hard it thinks, as Notion's: a name and bars under the input, each a menu (ModelMenu.tsx). */

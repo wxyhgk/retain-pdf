@@ -38,7 +38,7 @@ const blocks = (source: string) => parseMarkdownBodyBlocks(parseStudioDocument(s
 /** Puts the caret at the end of the last text the author can type into, inside the `index`th top-level block. */
 async function caretAtEndOf(page: Page, index: number): Promise<string | null> {
 	return page.evaluate(async (index) => {
-		const root = document.querySelector('.milkdown .ProseMirror')!;
+		const root = document.querySelector('#crepe-editor .milkdown .ProseMirror')!;
 		const block = [...root.children].filter((child) => !child.classList.contains('ProseMirror-widget'))[index];
 		if (!block) return null;
 		// Code blocks draw only the lines in view.
@@ -91,7 +91,7 @@ test('a character typed into a block changes that block only', async ({ page }) 
 		await expect(saveStatus(page)).toHaveText('已载入');
 		const where = await caretAtEndOf(page, index);
 		if (where === null) {
-			const count = await page.locator('.milkdown .ProseMirror > :not(.ProseMirror-widget)').count();
+			const count = await page.locator('#crepe-editor .milkdown .ProseMirror > :not(.ProseMirror-widget)').count();
 			if (index >= count) break;
 			continue;
 		}
@@ -125,6 +125,6 @@ test('one tilde stays text as it is typed; two strike through', async ({ page })
 	await caretAtEndOf(page, 0);
 	await page.keyboard.type('H~2~O 约 ~300 K，~~删~~');
 	await expect(saveStatus(page)).toHaveText('已保存');
-	await expect(page.locator('.milkdown .ProseMirror > p').first().locator('del')).toHaveText(['删除线', '删']);
+	await expect(page.locator('#crepe-editor .milkdown .ProseMirror > p').first().locator('del')).toHaveText(['删除线', '删']);
 	expect(readFileSync(join(articleDir(), 'index.md'), 'utf8')).toContain('H~2~O 约 ~300 K，~~删~~');
 });

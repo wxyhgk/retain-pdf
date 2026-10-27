@@ -9,7 +9,7 @@ import { openStudio, resetFixture } from './studio.ts';
 // (chats/) in place of the pages. The AI is a stand-in (fake-agents/fake-acp.mjs).
 
 const view = (page: Page) => page.locator('#chat-view');
-const input = (page: Page) => view(page).locator('.ai-input');
+const input = (page: Page) => view(page).locator('.ai-input .ProseMirror');
 const chats = () => `${process.env.STUDIO_BLOG_DIR}-chats`;
 
 async function say(page: Page, text: string): Promise<void> {
@@ -86,8 +86,8 @@ test('⤢ in the AI tab: the panel itself whole, in the middle; ⤡ back in the 
 	await openStudio(page);
 	await page.locator('#side-tab-ai').click();
 	const side = page.locator('#side-ai');
-	await side.locator('.ai-input').fill('几块 侧边');
-	await side.locator('.ai-input').press('Enter');
+	await side.locator('.ai-input .ProseMirror').fill('几块 侧边');
+	await side.locator('.ai-input .ProseMirror').press('Enter');
 	await expect(side.locator('.ai-message .ai-block')).toHaveCount(4);
 	await side.getByRole('button', { name: '在页面中打开' }).click();
 	await expect(view(page)).toBeVisible();

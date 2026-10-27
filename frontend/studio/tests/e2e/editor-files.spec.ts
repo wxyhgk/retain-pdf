@@ -39,7 +39,7 @@ test('a picture pasted into the editor is uploaded to img/ and inserted after th
 	await page.evaluate((base64) => {
 		const clipboard = new DataTransfer();
 		clipboard.items.add(new File([Uint8Array.from(atob(base64), (char) => char.charCodeAt(0))], 'Screen Shot 1.png', { type: 'image/png' }));
-		document.querySelector('.milkdown .ProseMirror')!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: clipboard, bubbles: true, cancelable: true }));
+		document.querySelector('#crepe-editor .milkdown .ProseMirror')!.dispatchEvent(new ClipboardEvent('paste', { clipboardData: clipboard, bubbles: true, cancelable: true }));
 	}, PNG.toString('base64'));
 	const image = editor(page).locator('img[src="/api/studio/articles/studio-fixture/files/img/Screen-Shot-1.png"]');
 	await expect(image).toBeVisible();

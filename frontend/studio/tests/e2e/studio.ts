@@ -95,7 +95,7 @@ export async function openStudio(page: Page, { autosaveDelay = 600_000 }: { auto
 		(window as { STUDIO_AUTOSAVE_DELAY?: number }).STUDIO_AUTOSAVE_DELAY = delay;
 	}, autosaveDelay);
 	await page.goto(`/studio?article=${slug}`);
-	await expect(page.locator('.milkdown .ProseMirror')).toBeVisible();
+	await expect(page.locator('#crepe-editor .milkdown .ProseMirror')).toBeVisible();
 	await expect(page.locator('#save-status')).toHaveText('已载入');
 	await expect(scienceBlock(page, 'SMILES').locator('.science-block-preview svg')).toBeVisible();
 	await expect(scienceBlock(page, 'SDF').locator('.science-block-preview svg')).toBeVisible();
@@ -108,7 +108,7 @@ export async function workspaceMenu(page: Page, id: string): Promise<void> {
 	await page.locator(`#${id}`).click();
 }
 
-export const editor = (page: Page): Locator => page.locator('.milkdown .ProseMirror');
+export const editor = (page: Page): Locator => page.locator('#crepe-editor .milkdown .ProseMirror');
 export const popup = (page: Page): Locator => page.locator('.pm-source-popup');
 export const popupInput = (page: Page): Locator => page.locator('.pm-source-popup-input');
 export const saveStatus = (page: Page): Locator => page.locator('#save-status');
@@ -151,7 +151,7 @@ export async function closeSheet(page: Page): Promise<void> {
 /** Paste as a browser would, with the clipboard holding HTML (when given) and plain text. */
 export async function paste(page: Page, data: { html?: string; text: string; vscode?: string }): Promise<void> {
 	await page.evaluate(({ html, text, vscode }) => {
-		const target = document.querySelector('.milkdown .ProseMirror');
+		const target = document.querySelector('#crepe-editor .milkdown .ProseMirror');
 		if (!target) throw new Error('no editor');
 		const clipboard = new DataTransfer();
 		if (html) clipboard.setData('text/html', html);

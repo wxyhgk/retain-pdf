@@ -616,6 +616,14 @@ export function planExpandInlineMath(
 	return { from: pos, to: pos + node.nodeSize, text, cursor };
 }
 
+/**
+ * Whether Enter where the caret is is a formula's (one being written or its completions, a `$$` line becoming a
+ * formula block): an editor that sends with Enter (the AI panel's input) leaves it to the formula then.
+ */
+export function formulaTakesEnter(state: EditorState): boolean {
+	return formulaSourceAt(state, (liveMathKey.getState(state) ?? idleMath).live) !== null || planDollarBlock(state.doc, state.selection.from) !== null;
+}
+
 /** Enter at the end of a paragraph whose text is `$$` turns it into a LaTeX block. */
 export function planDollarBlock(
 	doc: ProseMirrorNode,

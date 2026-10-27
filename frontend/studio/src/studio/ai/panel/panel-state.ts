@@ -642,8 +642,8 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		},
 		leaveOutArticle: () => set({ leftOut: get().article?.slug ?? null }),
 		leaveOutSelection: () => set({ selectionLeftOut: true }),
-		/** `entry` named with @: a chip; `draft` is what is typed with the @ and what followed it taken out. */
-		mention: (entry: ArticleRef, draft: string) => set({ mentions: [...get().mentions, entry], draft }),
+		/** `entry` named with @: a chip (the @ and what followed it taken out of the input by the input). */
+		mention: (entry: ArticleRef) => set({ mentions: [...get().mentions, entry] }),
 		unmention: (entry: ArticleRef) => set({ mentions: get().mentions.filter((other) => other !== entry) }),
 		articles: () => host.articles(),
 		openArticle: (slug: string) => host.openArticle(slug),
