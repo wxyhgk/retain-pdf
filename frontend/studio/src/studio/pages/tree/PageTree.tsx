@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
-import { ArrowUpToLine, ChevronRight, Copy, Ellipsis, FileText, FolderInput, FolderPen, GitCommitHorizontal, Merge, Plus, Star, Trash2 } from 'lucide-react';
+import { ArrowUpToLine, ChevronRight, Copy, Ellipsis, FileText, FolderInput, GitCommitHorizontal, Merge, Plus, Star, Trash2 } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
@@ -64,7 +64,6 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 			{ label: t('移到…'), icon: FolderInput, action: () => host.moveTo([article.slug]) },
 			...(article.parent ? [{ label: t('移到最上层'), icon: ArrowUpToLine, action: () => host.move([article.slug], '') }, { label: t('并入上级页面…'), icon: Merge, action: () => host.merge(article) }] : []),
 			'separator',
-			{ label: t('改文件夹名…'), icon: FolderPen, action: () => host.rename(article) },
 			{ label: t('复制一份'), icon: Copy, action: () => host.duplicate(article) },
 			'separator',
 			{ label: t('移到回收站'), danger: true, icon: Trash2, action: () => host.remove(article) },

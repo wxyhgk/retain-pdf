@@ -1,5 +1,5 @@
 // The pages: made, opened, moved, published, starred; where the open one is (the bar's path, ‹ ›); its ⋯ menu.
-import { Copy, FolderPen, FolderSearch, History, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
+import { Copy, FolderSearch, History, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
 import { t } from '@blog/i18n/index.mjs';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { createArticle, revealArticleFile, setArticleParent, type PagePlace } from '../api/client';
@@ -309,7 +309,6 @@ export function createPages(studio: Studio) {
 			// The plugins' (`ctx.commands`, `places: ['page-menu']`).
 			...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, icon: command.icon, action: () => runCommand(command, 'page-menu') })),
 			'separator',
-			{ label: t('改文件夹名…'), icon: FolderPen, action: () => void articleActions.rename(article) },
 			{ label: t('复制一份'), icon: Copy, action: () => void articleActions.duplicate(article) },
 			{ label: t('移到回收站'), danger: true, icon: Trash2, action: () => void articleActions.remove(article) },
 		], pageMenu);

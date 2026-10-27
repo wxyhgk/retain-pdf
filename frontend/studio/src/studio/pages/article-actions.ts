@@ -1,9 +1,8 @@
 import { t } from '@blog/i18n/index.mjs';
-import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { articleBacklinks, commitArticle, deleteArticle, duplicateArticle, gitStatus, mergeArticle, renameArticle, restoreArticle, setArticleParent } from '../api/client.ts';
 import { trackWrite } from '../state/writes.ts';
 import type { ArticleSummary } from '../types.ts';
-import { cleanSlug, freeSlug } from './page-names.ts';
+import { freeSlug } from './page-names.ts';
 import { showToast } from '../common/toast.ts';
 import { openDialog } from '../shell/dialogs/Dialogs';
 import type { DeletePageChoice } from '../shell/dialogs/AskDialogs';
@@ -68,17 +67,6 @@ function askDeletePage(article: ArticleSummary, under: ArticleSummary[], linking
 	);
 }
 
-/** A folder name typed by the author, made acceptable; null when given up or unusable. */
-function askSlug(message: string, suggested: string): string | null {
-	const typed = window.prompt(message, suggested);
-	if (typed === null) return null;
-	const slug = cleanSlug(typed.trim()).replace(/^-+|-+$/gu, '').replace(/-{2,}/gu, '-');
-	if (!SLUG_PATTERN.test(slug)) {
-		showToast(t('文件夹名只能用小写字母、数字和连字符'), true);
-		return null;
-	}
-	return slug;
-}
 
 /** Renaming, copying and deleting whole articles, from the article list. */
 export function createArticleActions(host: ArticleActionsHost) {
@@ -106,19 +94,6 @@ export function createArticleActions(host: ArticleActionsHost) {
 	}
 
 	return {
-		async rename(article: ArticleSummary): Promise<void> {
-			const published = article.draft === false;
-			const to = askSlug(
-				published
-					? t('「{title}」的新文件夹名，也是它在博客上的网址 /blog/<文件夹名>/\n这篇已经发布，改名后旧网址会失效。', { title: article.title })
-					: t('「{title}」的新文件夹名，也是它在博客上的网址 /blog/<文件夹名>/', { title: article.title }),
-				article.slug,
-			);
-			if (!to || to === article.slug) return;
-			const renamed = await this.renameTo(article, to);
-			if (renamed) showToast(renamed.relinked ? t('文件夹已改为 {to}，{count} 篇里指向它的链接已跟着改', { to, count: renamed.relinked }) : t('文件夹已改为 {to}', { to }));
-		},
-
 		/**
 		 * Gives the article the folder name `to` (free, checked), reopening it if
 		 * it is open; the links to it are made to follow. How many articles had
@@ -141,9 +116,9 @@ export function createArticleActions(host: ArticleActionsHost) {
 			return { relinked };
 		},
 
+		/** 复制一份: a draft of it, its folder named for it (not asked: folder names are not the author's to manage). */
 		async duplicate(article: ArticleSummary): Promise<void> {
-			const to = askSlug(t('复制「{title}」，新文章的文件夹名：', { title: article.title }), freeSlug(`${article.slug}-copy`, (await host.reload()).map((page) => page.slug)));
-			if (!to) return;
+			const to = freeSlug(`${article.slug}-copy`, (await host.reload()).map((page) => page.slug));
 			if (host.openSlug() === article.slug && !(await host.leave())) return;
 			try {
 				await trackWrite(() => duplicateArticle(article.slug, to));

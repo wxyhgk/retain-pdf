@@ -9,7 +9,6 @@ import { blogHasArticle, openStudio, removeArticle, resetFixture, slug } from '.
 // Whole articles, from the list: another folder name, a copy, the trash and back, a commit.
 
 const TITLE = 'Studio 测试夹具';
-const RENAMED = 'renamed-fixture';
 const COPY = `${slug}-copy`;
 const row = (page: Page, title: string) => page.locator('.page-row', { hasText: title });
 
@@ -24,23 +23,12 @@ function answer(page: Page, value?: string): void {
 }
 
 test.beforeEach(() => {
-	for (const folder of [RENAMED, COPY]) removeArticle(folder);
+	for (const folder of [COPY]) removeArticle(folder);
 	resetFixture();
 });
 test.afterAll(() => {
-	for (const folder of [RENAMED, COPY]) removeArticle(folder);
+	for (const folder of [COPY]) removeArticle(folder);
 	resetFixture();
-});
-
-test('the open article takes another folder name and stays open under it', async ({ page }) => {
-	await openStudio(page);
-	answer(page, RENAMED);
-	await fromMenu(page, TITLE, '改文件夹名…');
-	await expect(page).toHaveURL(new RegExp(`article=${RENAMED}`, 'u'));
-	await expect(page.locator('#save-status')).toHaveText('已载入');
-	expect(blogHasArticle(RENAMED)).toBe(true);
-	expect(blogHasArticle(slug)).toBe(false);
-	await expect(row(page, TITLE)).toHaveCount(1);
 });
 
 test('a copy is a draft titled 副本, opened at once', async ({ page }) => {

@@ -8,7 +8,6 @@ import { t } from '@blog/i18n/index.mjs';
 /** What can be done to a whole article from the list. */
 export type ArticleListHost = {
 	open(slug: string): void;
-	rename(article: ArticleSummary): void;
 	duplicate(article: ArticleSummary): void;
 	remove(article: ArticleSummary): void;
 	/** Commits it to git; offered when git has changes of it to commit. */

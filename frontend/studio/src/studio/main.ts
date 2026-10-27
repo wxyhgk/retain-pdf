@@ -175,7 +175,6 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 			if (session.slug && session.slug !== slug) articleList.select(session.slug);
 		});
 	},
-	rename: (article) => void articleActions.rename(article),
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
