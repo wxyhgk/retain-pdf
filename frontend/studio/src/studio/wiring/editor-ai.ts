@@ -9,7 +9,7 @@ import { chosenAI } from '../ai/ai-panel';
 import { createInlineAi } from '../ai/inline-ai';
 import { showContextMenu } from '../common/context-menu';
 import { showToast } from '../common/toast';
-import { SELECTION_END, SELECTION_START, sourceLinesOf } from '../document/source-lines';
+import { SELECTION_END, SELECTION_START, sourceLinesOf } from '@blog/document/source-lines.ts';
 import { createTaskTray } from '../panels/task-tray';
 import { pluginRecognizers } from '../plugins';
 import { aiReady, openAiSettings } from '../shell/dialogs/ask';

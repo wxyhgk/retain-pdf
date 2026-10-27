@@ -8,7 +8,7 @@ import remarkParse from 'remark-parse';
 import { unified } from 'unified';
 
 import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
-import { parseMarkdownBodyBlocks, parseStudioDocument } from '../../src/studio/document/index.ts';
+import { parseMarkdownBodyBlocks, parseStudioDocument } from '@blog/document/index.ts';
 import { saveStatus } from './studio.ts';
 
 // One block of each kind of Markdown an article may hold. A character typed

@@ -1,6 +1,6 @@
 import { t } from '@blog/i18n/index.mjs';
 import { parseStudioDocument } from './parse.ts';
-import type { ArticleProperties } from '../types.ts';
+import type { ArticleProperties } from './types.ts';
 
 type SourceLine = {
 	start: number;

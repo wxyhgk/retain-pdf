@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { parseMarkdownBodyBlocks, parseStudioDocument } from '../src/studio/document/index.ts';
-import { bodyParts, reparseBodyBlocks } from '../src/studio/document/parse.ts';
+import { parseMarkdownBodyBlocks, parseStudioDocument } from '@blog/document/index.ts';
+import { bodyParts, reparseBodyBlocks } from '@blog/document/parse.ts';
 
 // A body's blocks cut again only round an edit (what the Studio does at every edit of a long article)
 // are the blocks of the whole cut again, whatever the edit: tried on every article, at many places.

@@ -6,9 +6,9 @@ import { resolve } from 'node:path';
 
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { comparePages } from '../../articles/page-order.mjs';
-import { parseStudioDocument } from '../document/parse.ts';
-import { replaceStudioDocumentBody } from '../document/serialize.ts';
-import { updateStudioFrontmatter } from '../document/frontmatter.ts';
+import { parseStudioDocument } from '@blog/document/parse.ts';
+import { replaceStudioDocumentBody } from '@blog/document/serialize.ts';
+import { updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
 import { checkArticle } from '../server/articles/article-check.mjs';
 import { ArticleGit } from '../server/articles/article-git.mjs';
 import { ArticleHistory } from '../server/articles/article-history.mjs';

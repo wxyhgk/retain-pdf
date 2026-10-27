@@ -1,5 +1,5 @@
 import { t } from '@blog/i18n/index.mjs';
-import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from '../document/index.ts';
+import { mergeMarkdownBody, parseStudioDocument, replaceStudioDocumentBody, updateStudioFrontmatter } from '@blog/document/index.ts';
 import { rewriteMovedReferences } from '@blog/markdown/articles/article-references.mjs';
 import type { ArticlePayload, ArticleProperties, HistoryReason } from '../types.ts';
 import { ArticleStore, type ArticleSnapshot } from './article-store.ts';

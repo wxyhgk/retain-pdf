@@ -23,7 +23,7 @@ src/
     panels/           右栏、终端、后台任务、小程序
     common/           提示条、右键菜单、时间、磁盘上的改动
     state/            打开的文章：保存、自动保存、审阅
-    document/ api/    Markdown 文档的读写；和后端说话
+    api/              和后端说话
     server/           Studio 的后端：api.mjs 是路由和安全检查，routes/ 是各个接口；模块按领域分：
       articles/       文章：读写、文件、发布前检查、git、历史版本、文献库、磁盘监视
       files/ drive/   文章的文件（含回收站）；资料库和它的全文

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { SELECTION_END, SELECTION_START, sourceLinesOf } from '../src/studio/document/source-lines.ts';
+import { SELECTION_END, SELECTION_START, sourceLinesOf } from '@blog/document/source-lines.ts';
 
 const SOURCE = [
 	'---',

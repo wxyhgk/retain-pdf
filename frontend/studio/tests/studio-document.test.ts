@@ -8,7 +8,7 @@ import {
 	serializeStudioDocument,
 	updateStudioFrontmatter,
 	withoutTrailingEmptyLines,
-} from '../src/studio/document/index.ts';
+} from '@blog/document/index.ts';
 import { ArticleStore } from '../src/studio/state/article-store.ts';
 
 const losslessCases = [

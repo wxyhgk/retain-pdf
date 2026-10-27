@@ -27,3 +27,22 @@ export type StudioDocument = {
 		readonly blocks: readonly MarkdownBlockSlice[];
 	};
 };
+
+/** An article's properties, as the page header shows and edits them (its frontmatter). */
+export type ArticleProperties = {
+	title: string;
+	description: string;
+	pubDate: string;
+	tags: string[];
+	draft: boolean;
+	/** The page's icon, an emoji (`icon:`); empty for none. Left out: not changed. */
+	icon?: string;
+	/** The cover picture as written (`heroImage: ./img/cover.jpg`); empty for none. Left out: not changed. */
+	cover?: string;
+	/** Where the blog lists it. Left out: not changed. */
+	kind?: 'post' | 'wiki';
+	/** The page uses the full width. Left out: not changed. */
+	wide?: boolean;
+	/** The folder name of the page it is under; empty for none. Left out: not changed. */
+	parent?: string;
+};

@@ -3,7 +3,7 @@ import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 
 import { listAgents, openTerminal, type AgentsShown } from '../api/client';
-import type { SourceLines } from '../document/source-lines';
+import type { SourceLines } from '@blog/document/source-lines.ts';
 import { t } from '@blog/i18n/index.mjs';
 
 type Cwd = 'root' | 'article' | 'drive';

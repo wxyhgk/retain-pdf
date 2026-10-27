@@ -7,7 +7,7 @@ import remarkStringify from 'remark-stringify';
 import { unified } from 'unified';
 
 import remarkMathBrackets from '@blog/markdown/plugins/remark-math-brackets.mjs';
-import { mergeMarkdownBody, parseStudioDocument, serializeStudioDocument } from '../src/studio/document/index.ts';
+import { mergeMarkdownBody, parseStudioDocument, serializeStudioDocument } from '@blog/document/index.ts';
 
 /** Markdown an article can hold, one construct per sample. */
 const samples: Array<[kind: string, source: string]> = [

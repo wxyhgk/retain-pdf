@@ -22,7 +22,7 @@ Mac 应用（WebKit）里，先打开另一篇文章，再从列表点这篇：
 - **按块写 Markdown**（`src/studio/editor/blockwise-markdown.ts`）。ProseMirror 改动时，没动过的节点还是原来那个对象，所以每块写出的 Markdown 按节点对象记住，下次只写改过的一两块。
   - 相邻的两个列表要一起写，否则写出来会连成一个列表。
   - 空段落不能记：它在中间写成 `<br />`，是最后一块时写成空。
-- **合并只看改动附近**（`src/studio/document/merge.ts`、`parse.ts`）：
+- **合并只看改动附近**（`packages/document/merge.ts`、`parse.ts`）：
   - 只重新切改动前后的块（`reparseBodyBlocks`）；
   - 每块的「含义」算过就记住；
   - 对齐先跳过首尾相同的块，字节相同的块直接算相同，不再算含义。原来是「块数 × 块数」的整张表。

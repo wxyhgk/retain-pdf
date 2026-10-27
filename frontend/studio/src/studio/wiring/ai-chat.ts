@@ -4,7 +4,7 @@
 import { t } from '@blog/i18n/index.mjs';
 import { createAiPanel } from '../ai/ai-panel';
 import { showToast } from '../common/toast';
-import { sourceLinesOf } from '../document/source-lines';
+import { sourceLinesOf } from '@blog/document/source-lines.ts';
 import { createChatList } from '../shell/chat-list';
 import type { ArticleSummary } from '../types';
 import type { Studio } from './studio';

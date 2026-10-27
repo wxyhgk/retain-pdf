@@ -1,6 +1,6 @@
 import { referencedPaths } from '@blog/markdown/articles/article-references.mjs';
-import { parseMarkdownBodyBlocks, parseStudioDocument, reparseBodyBlocks } from '../document/parse.ts';
-import type { MarkdownBlockSlice } from '../document/types.ts';
+import { parseMarkdownBodyBlocks, parseStudioDocument, reparseBodyBlocks } from '@blog/document/parse.ts';
+import type { MarkdownBlockSlice } from '@blog/document/types.ts';
 
 const KEPT = 20_000;
 

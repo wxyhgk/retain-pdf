@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { mergeMarkdownBody } from '../src/studio/document/merge.ts';
+import { mergeMarkdownBody } from '@blog/document/merge.ts';
 
 test('Studio keeps the author\'s \\( \\) and \\[ \\] when the editor writes dollars back', () => {
 	const original = '能量 \\(E = mc^2\\) 的推导：\n\n\\[\nE_{HF} = \\sum_i h_{ii}\n\\]\n\n结束。\n';

@@ -1,6 +1,6 @@
 import { cp, lstat, mkdir, readdir, readFile, realpath, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, extname, join, resolve, sep } from 'node:path';
-import { setFrontmatterField, updateStudioFrontmatter } from '../../document/frontmatter.ts';
+import { setFrontmatterField, updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
 import { comparePages } from '../../../articles/page-order.mjs';
 import { atomicWriteText, contentRevision } from '../files/atomic-write.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../../articles/article-views.mjs';

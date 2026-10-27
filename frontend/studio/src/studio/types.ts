@@ -1,4 +1,7 @@
 import type { CubeDisplaySettings } from '@blog/science/cube-display.mjs';
+import type { ArticleProperties } from '@blog/document/types.ts';
+
+export type { ArticleProperties };
 
 export type ArticleSummary = {
 	slug: string;
@@ -81,23 +84,6 @@ export type ArticleFileEntry = {
 	locked?: boolean;
 };
 
-export type ArticleProperties = {
-	title: string;
-	description: string;
-	pubDate: string;
-	tags: string[];
-	draft: boolean;
-	/** The page's icon, an emoji (`icon:`); empty for none. Left out: not changed. */
-	icon?: string;
-	/** The cover picture as written (`heroImage: ./img/cover.jpg`); empty for none. Left out: not changed. */
-	cover?: string;
-	/** Where the blog lists it. Left out: not changed. */
-	kind?: 'post' | 'wiki';
-	/** The page uses the full width. Left out: not changed. */
-	wide?: boolean;
-	/** The folder name of the page it is under; empty for none. Left out: not changed. */
-	parent?: string;
-};
 
 /** Something the check before publishing found: `error` stops the blog's build, `warning` shows broken on the page. */
 export type ArticleIssue = {
