@@ -338,7 +338,19 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection *::-moz-selection) { background: transparent; }
 	/* The block a handle belongs to, while the pointer is on the handle. */
 	:global(.milkdown-block-handle-target) { z-index: 5; border-radius: 3px; background: color-mix(in srgb, var(--accent) 7%, transparent); }
-	:global(.crepe-host .milkdown .ProseMirror .pm-block-range) { border-radius: 3px; background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+	/* Blocks selected (a drag from the margin, Esc…), as Notion has them: each under one translucent layer, whatever it is
+	   (code, a formula, a figure: what they paint themselves stays under it); the browser's own selection of their text,
+	   and CodeMirror's, not shown meanwhile. The box being dragged out, over them. */
+	:global(.crepe-host .milkdown .ProseMirror .pm-block-range) { position: relative; }
+	:global(.crepe-host .milkdown .ProseMirror .pm-block-range::after) { content: ''; position: absolute; z-index: 4; inset: 0 -4px; border-radius: var(--studio-radius-xs); background: rgba(var(--gray), 0.2); pointer-events: none; }
+	:global(.crepe-host .milkdown .ProseMirror.pm-has-block-range),
+	:global(.crepe-host .milkdown .ProseMirror.pm-has-block-range *) { caret-color: transparent; }
+	:global(.crepe-host .milkdown .ProseMirror.pm-has-block-range *::selection) { background: transparent; }
+	:global(.crepe-host .milkdown .ProseMirror.pm-has-block-range .cm-selectionBackground) { background: transparent !important; }
+	/* What is not text (a picture, a drawn formula, a code block's bar and line numbers) is never the browser's to select:
+	   a drag across it selects blocks, and no highlight lands on its labels or glyphs. */
+	:global(.crepe-host .milkdown .ProseMirror :is(.pm-figure-frame, .pm-display-math-formula, .milkdown-code-block .tools, .milkdown-code-block .cm-gutters)) { user-select: none; -webkit-user-select: none; }
+	:global(.pm-block-marquee) { position: absolute; z-index: 20; box-sizing: border-box; border: 1px solid rgba(var(--gray), 0.4); border-radius: 2px; background: rgba(var(--gray), 0.1); pointer-events: none; }
 	.editor-scroll.pm-block-dragging,
 	.editor-scroll.pm-block-dragging :global(.ProseMirror) { user-select: none; }
 	/* Until Crepe first places it, the hidden block handle sits after the last block and makes the article scroll further. */

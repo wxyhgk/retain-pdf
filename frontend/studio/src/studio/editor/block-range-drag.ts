@@ -35,8 +35,29 @@ const IGNORED_TARGET = [
 const EDGE_PX = 32;
 const EDGE_SPEED = 720;
 
-/** A press in the margin; `end` when it was below the last block. */
-type Press = { x: number; y: number; anchor: number; moved: boolean; end: boolean };
+/**
+ * A press in the margin; `end` when it was below the last block; `top`, where it was in the scrolled page. `text`: a
+ * press among the blocks, a selection of text till it goes into another block (then blocks, as Notion has it).
+ */
+type Press = { x: number; y: number; top: number; anchor: number; moved: boolean; end: boolean; text?: boolean; fromText?: boolean };
+
+/** Where a press among the blocks is not one that selects (a button, a field, a link, a menu). */
+const NOT_SELECTING = [
+	'.document-header',
+	'.milkdown-block-handle',
+	'.milkdown-block-menu',
+	'.milkdown-slash-menu',
+	'.milkdown-toolbar',
+	'.pm-math-preview',
+	'.pm-source-popup',
+	'[data-owns-pointer]',
+	'.columns-block.is-over-gap',
+	'button',
+	'a',
+	'input',
+	'textarea',
+	'select',
+].join(', ');
 
 function contentBox(view: EditorView) {
 	const rect = view.dom.getBoundingClientRect();
@@ -106,31 +127,39 @@ function blockPosAt(view: EditorView, clientX: number, clientY: number): number 
 /** What holds blocks one after another, whose blocks a drag can select on their own. */
 const HOLDS_BLOCKS = new Set(['doc', 'column', 'callout', 'toggle', 'blockquote', 'bullet_list', 'ordered_list']);
 
-/** A place as deep in the blocks at (x, y) as it goes: in the text of a line, or before a block with none (a figure). */
-function deepPosAt(view: EditorView, clientX: number, clientY: number): number | null {
-	const { doc } = view.state;
-	const rect = view.dom.getBoundingClientRect();
-	if (clientY <= rect.top) return 0;
-	if (clientY >= rect.bottom) return doc.content.size;
-	const coords = pointerCoords(view, clientX, clientY);
-	if (!coords) return null;
-	const node = coords.inside >= 0 ? doc.nodeAt(coords.inside) : null;
-	return node && (node.isAtom || node.isLeaf) ? coords.inside : coords.pos;
-}
+/** What holds blocks side by side: the block under the pointer in it is the one across from it. */
+const SIDE_BY_SIDE = new Set(['columns']);
 
 /**
- * Where a drag from the margin starts in the blocks: at the press (the edge of
- * the blocks) or, when that is the edge of a callout or quote (between its
- * blocks), further in on that line, where the drag has gone (the inner edge
- * of the box it spans): the block there. Not if further in is another block
- * altogether (the next column): the drag spans both.
+ * The block on screen at (x, y), as deep in the blocks as it goes (into a callout, a toggle, a list, a column), as
+ * Notion finds it: by where each block is drawn, not by the text there. So a picture, code, a formula, a widget is
+ * found as any line is. Between two blocks, the nearer; above the first or below the last, that one.
  */
-function anchorPosAt(view: EditorView, pressX: number, innerX: number, y: number): number | null {
-	const edge = deepPosAt(view, pressX, y);
-	const inner = deepPosAt(view, innerX, y);
-	if (edge == null || inner == null) return edge ?? inner;
-	const $edge = view.state.doc.resolve(edge);
-	return $edge.parent.isTextblock || view.state.doc.resolve(inner).sharedDepth(edge) < $edge.depth ? edge : inner;
+export function blockAt(view: EditorView, x: number, y: number): number | null {
+	let container: ProseNode = view.state.doc;
+	let base = 0;
+	let found: number | null = null;
+	for (;;) {
+		const across = SIDE_BY_SIDE.has(container.type.name);
+		let best: { pos: number; node: ProseNode; distance: number } | null = null;
+		container.forEach((node, offset) => {
+			const pos = base + offset;
+			const dom = view.nodeDOM(pos);
+			if (!(dom instanceof HTMLElement)) return;
+			const box = dom.getBoundingClientRect();
+			// Not drawn (in a toggle that is shut): not there to be found.
+			if (!box.width && !box.height) return;
+			const [low, high, at] = across ? [box.left, box.right, x] : [box.top, box.bottom, y];
+			const distance = at < low ? low - at : at > high ? at - high : 0;
+			if (!best || distance < best.distance) best = { pos, node, distance };
+		});
+		if (!best) return found;
+		const chosen: { pos: number; node: ProseNode } = best;
+		found = chosen.pos;
+		if (!chosen.node.childCount || !(HOLDS_BLOCKS.has(chosen.node.type.name) || SIDE_BY_SIDE.has(chosen.node.type.name))) return found;
+		container = chosen.node;
+		base = chosen.pos + 1;
+	}
 }
 
 /** The blocks from the one at `a` to the one at `b`, at the deepest level that holds both (HOLDS_BLOCKS). */
@@ -143,6 +172,19 @@ export function blocksBetween(doc: ProseNode, a: number, b: number): BlockRangeS
 	const head = depth < $b.depth ? $b.before(depth + 1) : b;
 	return BlockRangeSelection.tryCreate(doc, anchor, head);
 }
+
+/** A block of lines of text (a paragraph, a heading, a list's item): what text is selected across. Not code. */
+function holdsText(node: ProseNode | null): boolean {
+	if (!node) return false;
+	if (node.type.name === 'list_item') return Boolean(node.firstChild?.isTextblock);
+	return node.isTextblock && !node.type.spec.code;
+}
+
+/**
+ * While a drag begun among the blocks selects blocks: the browser goes on selecting text as the pointer moves (the press
+ * was its own), and ProseMirror would take that as the selection; it is not taken, till the button is let go.
+ */
+let holdingBlocks = false;
 
 class BlockRangeDrag {
 	readonly root: HTMLElement;
@@ -163,12 +205,17 @@ class BlockRangeDrag {
 	private onMouseDown = (event: MouseEvent): void => {
 		if (event.shiftKey || event.altKey || event.metaKey || event.ctrlKey) return;
 		const end = isBelowLastBlock(this.view, event);
-		if (!end && !isBlockPointer(this.view, event)) return;
+		if (!end && !isBlockPointer(this.view, event)) {
+			this.watchTextPress(event);
+			return;
+		}
 		const anchor = blockPosAt(this.view, event.clientX, event.clientY);
 		if (anchor == null) return;
 		event.preventDefault();
 		event.stopPropagation();
-		this.press = { x: event.clientX, y: event.clientY, anchor, moved: false, end };
+		const scroller = this.scroller();
+		const top = scroller ? event.clientY - scroller.getBoundingClientRect().top + scroller.scrollTop : event.clientY;
+		this.press = { x: event.clientX, y: event.clientY, top, anchor, moved: false, end };
 		this.root.classList.add('pm-block-dragging');
 		this.scroller()?.addEventListener('scroll', this.onScroll);
 		document.addEventListener('mousemove', this.onMouseMove, true);
@@ -177,16 +224,84 @@ class BlockRangeDrag {
 		this.view.focus();
 	};
 
+	/**
+	 * A press among the blocks: the browser's (text selected, the caret put), till the pointer goes into a block that is
+	 * not lines of text (code, a picture, a formula), or from one into another. The blocks from the one pressed in to
+	 * that one are then selected, whole, as Notion has them. The browser is let go on with the press; it is not let
+	 * select further.
+	 */
+	private watchTextPress(event: MouseEvent): void {
+		if (event.button !== 0 || event.composedPath().some((node) => node instanceof Element && node.matches(NOT_SELECTING))) return;
+		if (!event.composedPath().includes(this.view.dom)) return;
+		const anchor = blockAt(this.view, event.clientX, event.clientY);
+		if (anchor == null) return;
+		const scroller = this.scroller();
+		const top = scroller ? event.clientY - scroller.getBoundingClientRect().top + scroller.scrollTop : event.clientY;
+		this.press = { x: event.clientX, y: event.clientY, top, anchor, moved: false, end: false, text: true };
+		this.scroller()?.addEventListener('scroll', this.onScroll);
+		document.addEventListener('mousemove', this.onMouseMove, true);
+		document.addEventListener('mouseup', this.onMouseUp, true);
+	}
+
 	private onMouseMove = (event: MouseEvent): void => {
 		const press = this.press;
 		if (!press) return;
+		if (press.text) {
+			if (!event.buttons) {
+				this.stop();
+				return;
+			}
+			const at = blockAt(this.view, event.clientX, event.clientY);
+			if (at === null || at === press.anchor) return;
+			// From a line to another, text still (the end of one paragraph and the start of the next, as SiYuan has it).
+			if (holdsText(this.view.state.doc.nodeAt(at)) && holdsText(this.view.state.doc.nodeAt(press.anchor))) return;
+			// Into a block that is not lines of text (code, a picture, a formula, a table), or from one: blocks from now on.
+			press.text = false;
+			press.fromText = true;
+			press.moved = true;
+			holdingBlocks = true;
+			this.root.classList.add('pm-block-dragging');
+			document.addEventListener('selectstart', this.onSelectStart, true);
+			getSelection()?.removeAllRanges();
+			this.view.focus();
+			this.pointer = { x: event.clientX, y: event.clientY };
+			this.extendTo(event.clientX, event.clientY);
+			this.scrollNearEdge();
+			return;
+		}
 		if (!press.moved && Math.hypot(event.clientX - press.x, event.clientY - press.y) < 5) return;
 		press.moved = true;
 		event.preventDefault();
 		this.pointer = { x: event.clientX, y: event.clientY };
 		this.extendTo(event.clientX, event.clientY);
+		this.drawMarquee();
 		this.scrollNearEdge();
 	};
+
+	/** The box being dragged out, as Notion draws it: from the press to the pointer, in the page as it scrolls. */
+	private marquee: HTMLElement | null = null;
+
+	/** Drawn for a drag begun in the margin (one begun in a block, as Notion has it, draws none). */
+	private drawMarquee(): void {
+		const press = this.press;
+		const pointer = this.pointer;
+		const scroller = this.scroller();
+		if (!press?.moved || press.fromText || !pointer || !scroller) return;
+		const box = scroller.getBoundingClientRect();
+		const top = pointer.y - box.top + scroller.scrollTop;
+		const left = Math.min(press.x, pointer.x) - box.left + scroller.scrollLeft;
+		if (!this.marquee) {
+			this.marquee = document.createElement('div');
+			this.marquee.className = 'pm-block-marquee';
+			scroller.append(this.marquee);
+		}
+		Object.assign(this.marquee.style, {
+			left: `${left}px`,
+			top: `${Math.min(press.top, top)}px`,
+			width: `${Math.abs(pointer.x - press.x)}px`,
+			height: `${Math.abs(top - press.top)}px`,
+		});
+	}
 
 	/** Where the pointer was last seen while blocks are being selected. */
 	private pointer: { x: number; y: number } | null = null;
@@ -201,8 +316,13 @@ class BlockRangeDrag {
 	private extendTo(x: number, y: number): void {
 		const press = this.press;
 		if (!press) return;
-		const anchor = anchorPosAt(this.view, press.x, Math.max(press.x, x), press.y);
-		const head = deepPosAt(this.view, x, y);
+		// The press where it is in the page now (it may have scrolled since), inside the blocks' column.
+		const scroller = this.scroller();
+		const pressY = scroller ? press.top - scroller.scrollTop + scroller.getBoundingClientRect().top : press.y;
+		const box = contentBox(this.view);
+		const inside = (at: number) => Math.min(Math.max(at, box.contentLeft + 1), box.contentRight - 1);
+		const anchor = blockAt(this.view, inside(press.x), pressY);
+		const head = blockAt(this.view, inside(x), y);
 		const next = anchor == null || head == null ? null : blocksBetween(this.view.state.doc, anchor, head);
 		if (!next || this.view.state.selection.eq(next)) return;
 		this.view.dispatch(this.view.state.tr.setSelection(next));
@@ -241,12 +361,26 @@ class BlockRangeDrag {
 
 	/** The editor scrolled under the pointer (by the wheel, or near the edge): the selection follows to the block now there. */
 	private onScroll = (): void => {
-		if (this.press?.moved && this.pointer) this.extendTo(this.pointer.x, this.pointer.y);
+		if (!this.press?.moved || !this.pointer) return;
+		this.extendTo(this.pointer.x, this.pointer.y);
+		this.drawMarquee();
 	};
 
 	private onMouseUp = (event: MouseEvent): void => {
 		const press = this.press;
 		this.stop();
+		if (press?.text) return;
+		// Begun among the blocks, the press is the browser's and ProseMirror's too: they read the selection back once it
+		// is over; the blocks are selected again after.
+		if (press?.fromText) {
+			// After ProseMirror has read the browser's selection back (which is let go of then): the blocks still.
+			setTimeout(() => {
+				holdingBlocks = false;
+				getSelection()?.removeAllRanges();
+				this.view.focus();
+			});
+		}
+
 		if (!press || press.moved) {
 			this.view.focus();
 			return;
@@ -272,6 +406,9 @@ class BlockRangeDrag {
 	};
 
 	private stop(): void {
+		if (!this.press?.fromText) holdingBlocks = false;
+		this.marquee?.remove();
+		this.marquee = null;
 		this.press = null;
 		this.pointer = null;
 		cancelAnimationFrame(this.frame);
@@ -311,8 +448,11 @@ function blockDecorations(state: EditorView['state']): DecorationSet | null {
 export const blockRangePlugin = $prose(
 	(ctx) =>
 		new Plugin({
+			filterTransaction: (tr) => !(holdingBlocks && tr.selectionSet && !tr.docChanged && !(tr.selection instanceof BlockRangeSelection)),
 			props: {
 				decorations: blockDecorations,
+				// While blocks are selected, the browser's own selection of their text is not shown (the CSS).
+				attributes: (state): Record<string, string> => (state.selection instanceof BlockRangeSelection ? { class: 'pm-has-block-range' } : {}),
 				handleKeyDown(view, event) {
 					return blockRangeKey(view.state, event, (tr) => view.dispatch(tr));
 				},
