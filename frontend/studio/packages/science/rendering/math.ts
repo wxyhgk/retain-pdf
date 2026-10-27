@@ -36,23 +36,34 @@ function escapeHtml(value: string): string {
 }
 
 /**
+ * For a formula being typed in the Studio (`marks`): the editor's own `\htmlClass{pm-math-…}` marks trusted too (the
+ * caret, the part it is in, the empty places), and not warned of as not standard.
+ */
+const markOptions = {
+	trust: (context: { command: string; url?: string; class?: string }) =>
+		(context.command === '\\href' && Boolean(context.url?.startsWith('#'))) || (context.command === '\\htmlClass' && /^pm-math-[a-z]+$/u.test(context.class ?? '')),
+	strict: (code: string) => (code === 'htmlExtension' ? 'ignore' : 'warn'),
+};
+
+/**
  * Render trusted application output from untrusted LaTeX source.
  *
  * Parse failures are represented in the returned HTML and `error`; callers do
  * not need a try/catch. `mhchem` is registered on the same KaTeX instance.
  * `\label`s are dropped and `\eqref`s shown from `labels` (`equations.mjs`).
  */
-export function renderMathHtml(latex: string, displayMode: boolean, labels?: Map<string, EquationLabel>): MathRenderResult {
+export function renderMathHtml(latex: string, displayMode: boolean, labels?: Map<string, EquationLabel>, { marks = false }: { marks?: boolean } = {}): MathRenderResult {
 	const source = prepareFormula(latex, labels);
+	const options = marks ? { ...katexOptions, ...markOptions } : katexOptions;
 	try {
 		return {
-			html: katex.renderToString(source, { ...katexOptions, macros, displayMode }),
+			html: katex.renderToString(source, { ...options, macros, displayMode }),
 		};
 	} catch (error) {
 		const message = errorMessage(error);
 		try {
 			return {
-				html: katex.renderToString(source, { ...katexOptions, ...lenientOptions, macros, displayMode }),
+				html: katex.renderToString(source, { ...options, ...lenientOptions, macros, displayMode }),
 				error: message,
 			};
 		} catch {

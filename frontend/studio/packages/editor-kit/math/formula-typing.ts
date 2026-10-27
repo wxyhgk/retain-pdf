@@ -1,6 +1,8 @@
 import type { EquationLabel } from '@blog/science/rendering/equations.mjs';
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
 
+import { markFormula } from './formula-marks.ts';
+
 /**
  * A formula drawn while it is typed. What is not finished yet is not an
  * error: the command at the caret (`\`, `\si`), a `^` or `_` waiting for its
@@ -18,6 +20,11 @@ function backslashesBefore(text: string, index: number): number {
 
 /** The formula as far as it is written, `caret` being where the typing is; null when nothing is unfinished. */
 export function writtenSoFar(source: string, caret: number): string | null {
+	return writtenUpTo(source, caret)?.text ?? null;
+}
+
+/** The same, with where the caret is in what is written. */
+function writtenUpTo(source: string, caret: number): { text: string; caret: number } | null {
 	let text = source;
 	let at = Math.max(0, Math.min(caret, text.length));
 	// The command being typed: `\`, `\si|`, `\si|n`. After `\\` (a line break) a backslash is not one.
@@ -54,7 +61,7 @@ export function writtenSoFar(source: string, caret: number): string | null {
 		index += word[1].length;
 	}
 	text += '}'.repeat(depth) + ' \\right.'.repeat(lefts) + environments.reverse().map((name) => `\\end{${name}}`).join('');
-	return text === source ? null : text;
+	return text === source ? null : { text, caret: at };
 }
 
 export type TypedFormula = {
@@ -75,17 +82,28 @@ export type TypingOptions = {
 	labels?: Map<string, EquationLabel>;
 	/** The last good drawing of this formula. */
 	lastGood: string | null;
+	/** The caret, the part it is in and the empty places marked in the drawing (formula-marks.ts); when `source` is what is typed. */
+	marks?: boolean;
 };
 
+/** `text` drawn with its marks for `caret`; null when it cannot be (it is then drawn without them). */
+function drawMarked(text: string, caret: number, display: boolean, labels?: Map<string, EquationLabel>): string | null {
+	const marked = markFormula(text, caret);
+	if (marked === null) return null;
+	const drawn = renderMathHtml(marked, display, labels, { marks: true });
+	return drawn.error ? null : drawn.html;
+}
+
 /** Draws a formula being typed, by the rules above. */
-export function renderWhileTyping({ source, typed, caret, display, labels, lastGood }: TypingOptions): TypedFormula {
+export function renderWhileTyping({ source, typed, caret, display, labels, lastGood, marks = false }: TypingOptions): TypedFormula {
+	const marking = marks && source === typed && caret >= 0;
 	const full = renderMathHtml(source, display, labels);
-	if (!full.error) return { html: full.html, state: 'ok' };
-	const written = writtenSoFar(typed, caret);
+	if (!full.error) return { html: (marking && drawMarked(typed, caret, display, labels)) || full.html, state: 'ok' };
+	const written = writtenUpTo(typed, caret);
 	if (written !== null) {
-		if (!written.trim()) return { html: '', state: 'typing' };
-		const partial = renderMathHtml(written, display, labels);
-		if (!partial.error) return { html: partial.html, state: 'typing' };
+		if (!written.text.trim()) return { html: '', state: 'typing' };
+		const partial = renderMathHtml(written.text, display, labels);
+		if (!partial.error) return { html: (marking && drawMarked(written.text, written.caret, display, labels)) || partial.html, state: 'typing' };
 	}
 	return lastGood !== null ? { html: lastGood, state: 'stale', error: full.error } : { html: full.html, state: 'error', error: full.error };
 }

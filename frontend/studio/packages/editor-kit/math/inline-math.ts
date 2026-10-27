@@ -905,6 +905,7 @@ function mathPreviewWidget(from: number, to: number, value: string, caret: numbe
 				display: false,
 				labels: equationLabels(view.state),
 				lastGood: kept?.from === from ? kept.html : null,
+				marks: true,
 			});
 			body.innerHTML = drawn.html;
 			body.querySelectorAll('.katex-mathml').forEach((node) => node.remove());

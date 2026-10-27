@@ -35,11 +35,10 @@ test('the arrows stop on a formula without opening it, ↩ opens it, and an arro
 
 	await page.keyboard.press('ArrowDown');
 	await expect(formula).toHaveClass(/is-selected/u);
-	// Edited as it looks (MathLive): ↓ at its bottom goes out.
 	await page.keyboard.press('Enter');
-	await expect(formula.locator('math-field')).toBeFocused();
+	await expect(popup(page)).toBeVisible();
 	await page.keyboard.press('ArrowDown');
-	await expect(formula.locator('math-field')).toHaveCount(0);
+	await expect(popup(page)).toHaveCount(0);
 	await page.keyboard.type('乙');
 	await expect(editor(page).getByText(/^乙下一行。$|^下一行。乙$/u)).toBeVisible();
 	await expect(formula).toContainText('E');

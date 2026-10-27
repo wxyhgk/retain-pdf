@@ -64,26 +64,10 @@ html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-preview-bod
 .pm-source-popup-error { margin: 6px 0 0; color: var(--danger); font-family: var(--font-mono); font-size: 11px; line-height: 1.4; text-align: left; }
 .pm-source-popup-input { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin: 0; padding: 8px 10px; border: 0; border-radius: 8px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; resize: none; outline: none; }
 
-/* Edited as it looks (visual-math.ts, MathLive): its field where the drawing was, in the page's grays; 源码 under it. */
-.math-editor .pm-display-math.is-visual .pm-display-math-formula { display: none; }
-.math-editor .pm-visual-math { padding: 6px 8px 4px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 5%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent); }
-.math-editor .pm-visual-math math-field {
-	display: block;
-	width: 100%;
-	box-sizing: border-box;
-	padding: 6px 4px;
-	border: 0;
-	outline: 0;
-	background: transparent;
-	color: inherit;
-	font-size: 1.2em;
-	--caret-color: rgb(var(--black));
-	--selection-background-color: color-mix(in srgb, var(--accent) 16%, transparent);
-	--contains-highlight-background-color: color-mix(in srgb, var(--accent) 7%, transparent);
-	--placeholder-color: rgb(var(--gray));
-	--smart-fence-color: rgb(var(--gray));
-}
-.math-editor .pm-visual-math math-field::part(virtual-keyboard-toggle),
-.math-editor .pm-visual-math math-field::part(menu-toggle) { color: rgb(var(--gray)); }
-.math-editor .pm-visual-math-source { display: block; height: 22px; margin: 2px 0 0 auto; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
-.math-editor .pm-visual-math-source:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+/* A formula being typed, drawn as MathLive shows one (formula-marks.ts): the caret in the drawing, blinking; the part
+   it is in (a numerator, an exponent) shaded; empty places (\frac{}{}) as dashed boxes. In the ink's colour, so that
+   they show on the article and in the dark preview over an inline formula. */
+.math-editor .pm-math-caret { display: inline-block; width: 0; height: 1.1em; margin-right: -1.5px; vertical-align: -0.22em; border-left: 1.5px solid currentColor; animation: pm-math-caret-blink 1.06s steps(1) infinite; }
+@keyframes pm-math-caret-blink { 50% { border-left-color: transparent; } }
+.math-editor .pm-math-here { border-radius: 2px; background: color-mix(in srgb, currentColor 10%, transparent); box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 10%, transparent); }
+.math-editor .pm-math-slot { display: inline-block; min-width: 0.8em; border-radius: 2px; outline: 1px dashed color-mix(in srgb, currentColor 55%, transparent); outline-offset: -1px; }

@@ -11,7 +11,6 @@ import { isFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';
 import { drawNow, drawWhenNear, drawsLater, isWaiting } from '../near-screen.ts';
 import { SourcePopup } from './source-popup.ts';
-import { createVisualMath, type VisualMath } from './visual-math.ts';
 import { t } from '@blog/i18n/index.mjs';
 
 const openBlocks = new Set<DisplayMathView>();
@@ -69,11 +68,6 @@ class DisplayMathView implements NodeView {
 	private readonly getPos: () => number | undefined;
 	private readonly formula: HTMLElement;
 	private popup: SourcePopup | null = null;
-	/** Edited as it looks (visual-math.ts), in place of its drawing; `opening` while MathLive is being loaded. */
-	private visual: VisualMath | null = null;
-	private opening = false;
-	/** 源码 asked for: edited as LaTeX till it is left. */
-	private asSource = false;
 	private writing = false;
 	/** The source with its number, as drawn. */
 	private numbered: string;
@@ -110,10 +104,7 @@ class DisplayMathView implements NodeView {
 		this.references = referencesKey(decorations);
 		if (isWaiting(this.dom)) this.formula.textContent = node.textContent;
 		else this.renderFormula();
-		if (!this.writing) {
-			this.popup?.setValue(node.textContent);
-			this.visual?.set(node.textContent);
-		}
+		if (!this.writing) this.popup?.setValue(node.textContent);
 		return true;
 	}
 
@@ -131,7 +122,7 @@ class DisplayMathView implements NodeView {
 
 	/** Opened from the keyboard: ↩, or a key typed (put at the end of its source). */
 	edit(typed = ''): void {
-		this.open(typed);
+		this.open();
 		if (!typed || !this.popup) return;
 		const value = this.node.textContent + typed;
 		this.popup.setValue(value);
@@ -147,18 +138,13 @@ class DisplayMathView implements NodeView {
 		return true;
 	}
 
-	/** What happens in the formula being edited as it looks is its own, not the editor's (⌫ would take the block). */
-	stopEvent(event: Event): boolean {
-		return Boolean(this.visual?.owns(event.target));
-	}
-
 	destroy(): void {
 		this.dom.removeEventListener('mousedown', this.onMouseDown);
 		this.teardown();
 	}
 
 	holds(selection: Selection): boolean {
-		if (!this.popup && !this.visual && !this.opening) return false;
+		if (!this.popup) return false;
 		const pos = this.getPos();
 		if (pos === undefined) return false;
 		const node = this.view.state.doc.nodeAt(pos);
@@ -187,6 +173,7 @@ class DisplayMathView implements NodeView {
 			display: true,
 			labels: equationLabels(this.view.state),
 			lastGood: this.lastGood,
+			marks: true,
 		});
 		this.formula.classList.remove('is-empty', 'is-error');
 		this.formula.innerHTML = drawn.html;
@@ -196,7 +183,7 @@ class DisplayMathView implements NodeView {
 	}
 
 	private onMouseDown = (event: MouseEvent): void => {
-		if (event.button !== 0 || this.popup?.contains(event.target as Node) || this.visual?.owns(event.target)) return;
+		if (event.button !== 0 || this.popup?.contains(event.target as Node)) return;
 		event.preventDefault();
 		event.stopPropagation();
 		const pos = this.getPos();
@@ -208,73 +195,7 @@ class DisplayMathView implements NodeView {
 		this.open();
 	};
 
-	/**
-	 * Opened: edited as it looks (MathLive), in place; as LaTeX in the popup under it when 源码 was asked for, or when
-	 * MathLive does not know something in it. `typed`: the key that opened it.
-	 */
-	private open(typed = ''): void {
-		if (this.popup || this.visual || this.opening) return;
-		if (this.asSource) {
-			this.openSource();
-			return;
-		}
-		drawNow(this.dom);
-		this.dom.classList.add('is-open');
-		openBlocks.add(this);
-		this.opening = true;
-		void createVisualMath(this.dom, this.node.textContent, {
-			input: (value) => this.writeSource(value),
-			finish: () => this.finish(),
-			exit: (side) => this.exit(side),
-			remove: () => this.removeBlock(),
-			source: () => {
-				this.closeVisual();
-				this.asSource = true;
-				this.openSource();
-			},
-		}).then(
-			(visual) => {
-				this.opening = false;
-				// Left meanwhile.
-				if (!this.dom.classList.contains('is-open')) {
-					visual?.destroy();
-					return;
-				}
-				if (!visual) {
-					this.openSource();
-					return;
-				}
-				this.visual = visual;
-				this.dom.classList.add('is-visual');
-				document.addEventListener('pointerdown', this.onPointerDownOutside, true);
-				visual.focus();
-				if (typed) visual.type(typed);
-			},
-			() => {
-				this.opening = false;
-				this.openSource();
-			},
-		);
-	}
-
-	/** A press outside the formula and MathLive's menus: it is left. */
-	private onPointerDownOutside = (event: PointerEvent): void => {
-		if (this.visual?.owns(event.target) || this.dom.contains(event.target as Node)) return;
-		this.teardown();
-	};
-
-	private closeVisual(): void {
-		document.removeEventListener('pointerdown', this.onPointerDownOutside, true);
-		// What was typed last, not told yet: written in, after whatever closed it (it may be the editor's own update).
-		const typed = this.visual?.changed();
-		if (typed != null && typed !== this.node.textContent) queueMicrotask(() => this.writeSource(typed, false));
-		this.visual?.destroy();
-		this.visual = null;
-		this.dom.classList.remove('is-visual');
-	}
-
-	/** Edited as LaTeX, in the popup under it. */
-	private openSource(): void {
+	private open(): void {
 		if (this.popup) return;
 		drawNow(this.dom);
 		// The formula stays where it is and follows the typing, so the text around it does not move.
@@ -299,14 +220,16 @@ class DisplayMathView implements NodeView {
 			onDismiss: () => this.teardown(),
 			onExit: (side) => this.exit(side),
 		});
+		// The caret moved in the source (an arrow, a click): moved in the drawing too.
+		for (const name of ['keyup', 'click', 'select']) this.popup.input.addEventListener(name, this.onCaretMoved);
 		// Opening can happen inside a dispatch whose caller refocuses the editor afterwards.
 		queueMicrotask(() => this.popup?.focus());
 	}
 
+	private onCaretMoved = (): void => this.renderFormula();
+
 	private teardown(): void {
 		this.dom.classList.remove('is-open');
-		this.closeVisual();
-		this.asSource = false;
 		this.popup?.destroy();
 		this.popup = null;
 		openBlocks.delete(this);
@@ -315,8 +238,7 @@ class DisplayMathView implements NodeView {
 		this.renderFormula();
 	}
 
-	/** The formula's source made `value`; the formula selected after (not when written in as it is left). */
-	private writeSource(value: string, select = true): void {
+	private writeSource(value: string): void {
 		const pos = this.getPos();
 		if (pos === undefined) return;
 		const current = this.view.state.doc.nodeAt(pos);
@@ -324,7 +246,7 @@ class DisplayMathView implements NodeView {
 		const next = current.type.create(current.attrs, value ? this.view.state.schema.text(value) : null);
 		this.writing = true;
 		const tr = this.view.state.tr.replaceWith(pos, pos + current.nodeSize, next);
-		if (select) tr.setSelection(NodeSelection.create(tr.doc, pos));
+		tr.setSelection(NodeSelection.create(tr.doc, pos));
 		this.view.dispatch(tr);
 		this.writing = false;
 	}

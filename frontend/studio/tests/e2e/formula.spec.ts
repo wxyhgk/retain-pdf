@@ -14,7 +14,6 @@ import {
 	resetFixture,
 	savedMarkdown,
 	saveStatus,
-	toFormulaSource,
 	writeArticle,
 } from './studio.ts';
 
@@ -44,7 +43,8 @@ test('a display formula opens its popup with the caret in it, the text around it
 	const around = () => formula.evaluate((block) => [block.previousElementSibling, block.nextElementSibling].map((node) => Math.round(node!.getBoundingClientRect().top)));
 	const before = await around();
 	await formula.locator('.pm-display-math-formula').click();
-	await toFormulaSource(page);
+	await expect(popup(page)).toBeVisible();
+	await expect(popupInput(page)).toBeFocused();
 	await expect(popupInput(page)).toHaveValue('\\sum_i x_i');
 	expect(await around()).toEqual(before);
 	await expect(formula.locator('.pm-display-math-formula .katex')).toBeVisible();
@@ -65,7 +65,6 @@ test('a display formula being typed is drawn as far as it is written; a mistake 
 	const drawn = formula.locator('.pm-display-math-formula');
 	const error = popup(page).locator('.pm-source-popup-error');
 	await drawn.click();
-	await toFormulaSource(page);
 	// The command at the caret is not finished: no error, the rest drawn.
 	await page.keyboard.type(' + \\si');
 	await expect(drawn.locator('.katex')).toBeVisible();
@@ -95,7 +94,7 @@ test('a display formula being typed is drawn as far as it is written; a mistake 
 
 test('the display formula’s source completes commands and pairs braces', async ({ page }) => {
 	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
-	await toFormulaSource(page);
+	await expect(popupInput(page)).toBeFocused();
 	await page.keyboard.type(' + \\sq');
 	const menu = page.locator('.latex-completion:not([hidden])');
 	await expect(menu.locator('.latex-completion-item.is-selected .latex-completion-name')).toHaveText('\\sqrt');
@@ -145,7 +144,7 @@ test('a ```math fence is a formula and a ```latex fence is code, as the blog dra
 
 test('a $$ block edited is written back as $$', async ({ page }) => {
 	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
-	await toFormulaSource(page);
+	await expect(popupInput(page)).toBeFocused();
 	await page.keyboard.type(' + 1');
 	await page.keyboard.press('Escape');
 	await expect(saveStatus(page)).toHaveText('未保存');
@@ -167,13 +166,13 @@ test('a formula block has the number its source gives, none added; \\eqref shows
 
 	// A block added before it changes nothing: it has no number, and that one keeps its own.
 	await displayFormulas(page).first().locator('.pm-display-math-formula').click();
-	await toFormulaSource(page);
+	await expect(popupInput(page)).toBeFocused();
 	await page.keyboard.press('Escape');
 	await caretAfter(page, '结尾段落。');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('$$');
 	await page.keyboard.press('Enter');
-	await toFormulaSource(page);
+	await expect(popupInput(page)).toBeFocused();
 	await page.keyboard.type('x');
 	await page.keyboard.press('Escape');
 	await expect(displayFormulas(page)).toHaveCount(4);
@@ -304,4 +303,26 @@ test('an article with a formula whose $$ is written against it (as an AI writes 
 	} finally {
 		removeArticle('glued-formula');
 	}
+});
+
+test('a display formula being typed shows, as MathLive does, the caret, the part it is in and its empty places; left, none', async ({ page }) => {
+	const formula = displayFormulas(page).first();
+	const drawn = formula.locator('.pm-display-math-formula');
+	await drawn.click();
+	await expect(popupInput(page)).toBeFocused();
+	await page.keyboard.press('ControlOrMeta+End');
+	await page.keyboard.type(' + \\frac');
+	await page.waitForTimeout(150);
+	await page.keyboard.press('Tab');
+	await expect(drawn.locator('.pm-math-slot')).toHaveCount(2);
+	await expect(drawn.locator('.pm-math-here')).toHaveCount(1);
+	await page.keyboard.type('n');
+	await expect(drawn.locator('.pm-math-slot')).toHaveCount(1);
+	await expect(drawn.locator('.pm-math-here .pm-math-caret')).toHaveCount(1);
+	// The caret moved without typing: moved in the drawing too.
+	await page.keyboard.press('ArrowLeft');
+	await expect(drawn.locator('.pm-math-here .pm-math-caret')).toHaveCount(1);
+	await page.keyboard.press('Escape');
+	await expect(popupInput(page)).toBeHidden();
+	await expect(drawn.locator('.pm-math-caret, .pm-math-here, .pm-math-slot')).toHaveCount(0);
 });
