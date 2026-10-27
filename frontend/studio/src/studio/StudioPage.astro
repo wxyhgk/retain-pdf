@@ -24,6 +24,8 @@ import '@blog/markdown/references/references.css';
 import '@blog/office/office.css';
 import '@xterm/xterm/css/xterm.css';
 import './tokens.css';
+import '@fontsource-variable/inter/opsz.css';
+import './design.css';
 import './shell/shell.css';
 import './pages/page-header.css';
 import './files/file-panel.css';
@@ -176,12 +178,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.studio-shell.panel-collapsed { --panel: 0px; }
 	.studio-shell.is-resizing { transition: none; cursor: col-resize; user-select: none; }
 	.article-sidebar, .workspace-main, .editor-panel, .side-panel { min-width: 0; overflow: hidden; background: var(--surface); }
-	.article-sidebar { display: flex; flex-direction: column; border-right: 1px solid rgb(var(--gray-light)); background: var(--surface-soft); transition: opacity 120ms ease; }
+	.article-sidebar { display: flex; flex-direction: column; border-right: 1px solid var(--studio-hairline); background: var(--studio-sidebar); transition: opacity 120ms ease; }
 	.studio-shell.sidebar-collapsed .article-sidebar { opacity: 0; pointer-events: none; }
 	.chat-view { display: flex; flex: 1; min-height: 0; flex-direction: column; background: var(--surface); }
 	.chat-view[hidden] { display: none; }
 	.workspace-main { display: flex; min-height: 0; flex-direction: column; }
-	.studio-bar { position: relative; z-index: 10; display: flex; flex: none; align-items: center; justify-content: space-between; height: 46px; padding: 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
+	.studio-bar { position: relative; z-index: 10; display: flex; flex: none; align-items: center; justify-content: space-between; height: 48px; padding: 0 10px; border-bottom: 1px solid var(--studio-hairline); background: var(--surface); }
 	/* 全宽: the page as wide as the editor allows, as on the blog. */
 	.editor-panel.is-wide :global(.crepe-host .milkdown .ProseMirror) { width: min(100%, 1180px); }
 	.panel-label { display: none; }
@@ -208,7 +210,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* The outline at the editor's right edge, as on the blog: clear of the editor's scrollbar. */
 	.outline-rail { position: absolute; z-index: 12; top: 96px; right: 16px; display: flex; align-items: flex-start; pointer-events: none; }
 	.outline-rail[hidden] { display: none; }
-	.outline-pop { width: 220px; max-height: min(68vh, 520px); margin-right: 2px; overflow: auto; border-radius: 8px; background: var(--surface); box-shadow: 0 6px 24px rgba(15, 15, 15, 0.1); opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
+	.outline-pop { width: 220px; max-height: min(68vh, 520px); margin-right: 2px; overflow: auto; border-radius: 8px; background: var(--surface); box-shadow: var(--studio-shadow-pop); opacity: 0; pointer-events: none; transition: opacity 120ms ease; }
 	.outline-rail:hover .outline-pop, .outline-rail:focus-within .outline-pop { opacity: 1; pointer-events: auto; }
 	.outline-pop ol { display: grid; gap: 1px; margin: 0; padding: 4px; list-style: none; }
 	.outline-pop :global(a) { display: block; padding: 3px 8px; border-radius: 4px; color: rgb(var(--gray)); font-size: 13px; line-height: 1.35; text-align: right; text-decoration: none; }
@@ -285,6 +287,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 		--crepe-color-inline-code: rgb(var(--gray-dark));
 		--crepe-font-title: var(--font-text);
 		--crepe-font-default: var(--font-text);
+		--crepe-shadow-1: var(--studio-shadow-sm);
+		--crepe-shadow-2: var(--studio-shadow-pop);
 		min-height: 100%;
 	}
 	:global(.crepe-host .milkdown .ProseMirror) { box-sizing: border-box; width: min(100%, var(--studio-editor-width)); min-height: 100%; margin: 0 auto; padding: 10px var(--studio-editor-padding) 180px; color: rgb(var(--gray-dark)); font-size: var(--studio-editor-font-size); line-height: var(--studio-editor-line-height); }
@@ -328,7 +332,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-source) { color: #9a9a9a; background: none; }
 	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-cmd) { color: rgb(var(--gray-dark)); font-weight: 600; }
 	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview) { position: relative; display: inline-block; width: 0; height: 0; vertical-align: baseline; pointer-events: none; user-select: none; z-index: 40; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body) { position: absolute; top: 14px; left: 0; padding: 7px 12px 8px; border-radius: 7px; background: #1c1c1c; color: #fff; white-space: nowrap; box-shadow: 0 8px 18px rgb(0 0 0 / 16%); }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body) { position: absolute; top: 14px; left: 0; padding: 7px 12px 8px; border-radius: 7px; background: #1c1c1c; color: #fff; white-space: nowrap; box-shadow: var(--studio-shadow-pop); }
 	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body::before) { content: ''; position: absolute; top: -6px; left: var(--arrow, 16px); transform: translateX(-50%); border-width: 0 6px 6px; border-style: solid; border-color: transparent transparent #1c1c1c; }
 	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body .katex) { color: inherit; font-size: 1.12em; }
 	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-source) { color: #b5b5b5; }
@@ -372,7 +376,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula.is-error) { text-decoration: underline wavy var(--danger); }
 	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula .katex-display) { margin: 0; }
 	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula .katex-mathml) { display: none; }
-	:global(.pm-source-popup) { position: fixed; z-index: 50; box-sizing: border-box; padding: 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 40px rgb(0 0 0 / 14%); }
+	:global(.pm-source-popup) { position: fixed; z-index: 50; box-sizing: border-box; padding: 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
 	:global(.pm-source-popup-bar) { display: flex; align-items: center; gap: 4px; margin: -4px 0 6px 2px; }
 	:global(.pm-source-popup-caption) { flex: 1; min-width: 0; color: rgb(var(--gray)); font-size: 12px; line-height: 18px; user-select: none; }
 	:global(.pm-source-popup-action) { height: 24px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--accent); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
@@ -398,7 +402,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .pm-figure-caption:placeholder-shown) { min-width: 6em; }
 	:global(.crepe-host .pm-figure-caption::placeholder) { color: rgb(var(--gray)); opacity: 0.6; }
 	:global(.crepe-host .pm-figure:not(:hover):not(.is-selected) .pm-figure-caption:placeholder-shown:not(:focus)) { visibility: hidden; }
-	:global(.latex-completion) { position: fixed; z-index: 60; box-sizing: border-box; min-width: 240px; max-width: 380px; max-height: 288px; overflow-y: auto; padding: 4px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 30px rgb(0 0 0 / 16%); }
+	:global(.latex-completion) { position: fixed; z-index: 60; box-sizing: border-box; min-width: 240px; max-width: 380px; max-height: 288px; overflow-y: auto; padding: 4px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
 	:global(.latex-completion[hidden]) { display: none; }
 	:global(.latex-completion-item) { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 34px; padding: 2px 8px; border-radius: 6px; color: rgb(var(--gray-dark)); cursor: pointer; }
 	:global(.latex-completion-item.is-selected) { background: var(--surface-soft); color: rgb(var(--black)); }
@@ -437,7 +441,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .tools button),
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .language-picker) { pointer-events: auto; }
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .language-button) { margin-bottom: 0; }
-	:global(.block-menu) { position: fixed; z-index: 40; width: 200px; padding: 6px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12); }
+	:global(.block-menu) { position: fixed; z-index: 40; width: 200px; padding: 6px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
 	:global(.block-menu[hidden]) { display: none; }
 	:global(.block-menu-section) { padding: 8px 8px 2px; color: rgb(var(--gray)); font-size: 11px; }
 	:global(.block-menu-item) { display: flex; width: 100%; align-items: center; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
@@ -469,7 +473,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* The background tasks, at the bottom right (task-tray.ts). */
 	.task-tray { position: fixed; z-index: 55; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; width: min(340px, calc(100vw - 32px)); }
 	.task-tray[hidden] { display: none; }
-	.task-tray :global(.task-item) { padding: 9px 11px; border: 1px solid rgb(var(--gray-light)); border-radius: 9px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 12px; box-shadow: 0 6px 22px rgb(0 0 0 / 12%); }
+	.task-tray :global(.task-item) { padding: 9px 11px; border: 1px solid rgb(var(--gray-light)); border-radius: 9px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 12px; box-shadow: var(--studio-shadow-pop); }
 	.task-tray :global(.task-head) { display: flex; gap: 8px; align-items: baseline; }
 	.task-tray :global(.task-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 	.task-tray :global(.task-time) { flex: none; color: rgb(var(--gray)); font-variant-numeric: tabular-nums; }
@@ -485,7 +489,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror .is-instructing::after) { content: var(--word-instructing); position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: 11px; pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
 	/* 小程序: floating windows (mini-apps.ts). */
 	.mini-app-layer { position: fixed; z-index: 50; inset: 0; pointer-events: none; }
-	.mini-app-layer :global(.mini-app-window) { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 34px rgb(0 0 0 / 16%); pointer-events: auto; }
+	.mini-app-layer :global(.mini-app-window) { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-modal); pointer-events: auto; }
 	.mini-app-layer :global(.mini-app-bar) { display: flex; flex: none; gap: 4px; align-items: center; height: 32px; padding: 0 6px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; cursor: grab; user-select: none; touch-action: none; }
 	.mini-app-layer :global(.mini-app-bar:active) { cursor: grabbing; }
 	.mini-app-layer :global(.mini-app-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
@@ -513,7 +517,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.context-menu-separator) { height: 1px; margin: 4px 6px; background: rgb(var(--gray-light)); }
 	.cwd-switch { display: flex; padding: 2px; border-radius: 7px; background: rgb(var(--gray-light)); }
 	.cwd-switch button { height: 24px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; cursor: pointer; }
-	.cwd-switch button[aria-checked='true'] { background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 1px 2px rgb(0 0 0 / 8%); }
+	.cwd-switch button[aria-checked='true'] { background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: var(--studio-shadow-sm); }
 	.cwd-switch button:disabled { opacity: 0.45; cursor: default; }
 	/* The AIs started with a click (terminal.ts): one row under the toolbar. */
 	.terminal-agents { display: flex; flex: none; align-items: center; gap: 4px; padding: 5px 8px 5px 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; }
@@ -525,13 +529,13 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.terminal-screen :global(.xterm-viewport) { background: #16181d !important; }
 	@media (max-width: 1100px) {
 		.studio-shell { --sidebar: 220px; grid-template-columns: var(--sidebar) minmax(0, 1fr); }
-		.side-panel { position: fixed; z-index: 30; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; box-shadow: -12px 0 38px rgba(0, 0, 0, 0.15); }
+		.side-panel { position: fixed; z-index: 30; top: 0; right: 0; width: min(380px, 88vw); height: 100vh; box-shadow: var(--studio-shadow-modal); }
 		.side-panel-resizer { display: none; }
 		:global(.crepe-host .milkdown .ProseMirror) { padding-inline: 36px; }
 	}
 	@media (max-width: 720px) {
 		.studio-shell { grid-template-columns: minmax(0, 1fr); }
-		.article-sidebar { position: fixed; z-index: 40; top: 0; bottom: 0; left: 0; width: min(280px, 86vw); box-shadow: 12px 0 38px rgba(0, 0, 0, 0.18); }
+		.article-sidebar { position: fixed; z-index: 40; top: 0; bottom: 0; left: 0; width: min(280px, 86vw); box-shadow: var(--studio-shadow-modal); }
 		.studio-shell.sidebar-collapsed .article-sidebar { transform: translateX(-100%); }
 		#roundtrip-status { display: none; }
 		:global(.crepe-host .milkdown .ProseMirror) { padding: 8px 24px 140px; }

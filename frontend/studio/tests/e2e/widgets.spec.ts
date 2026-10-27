@@ -34,8 +34,8 @@ test('the slash menu makes a widget; it runs in its own frame, sized to it, and 
 	// And it follows the theme.
 	await page.evaluate(() => (document.documentElement.dataset.theme = 'dark'));
 	await expect(widget.locator('html')).toHaveAttribute('data-theme', 'dark');
-	// In the page's dark colors (given by the page: global.css's --gray-dark there).
-	await expect(widget.locator('body')).toHaveCSS('color', 'rgb(211, 211, 211)');
+	// In the page's dark colors (given by the page: the Studio's --gray-dark there, design.css).
+	await expect(widget.locator('body')).toHaveCSS('color', 'rgb(229, 229, 234)');
 
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');

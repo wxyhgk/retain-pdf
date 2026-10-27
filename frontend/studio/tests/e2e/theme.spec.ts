@@ -57,7 +57,7 @@ test('a color set for dark mode only is not seen in light mode', async ({ page }
 	await page.evaluate(() => document.documentElement.setAttribute('data-theme', 'dark'));
 	expect(await surface()).toBe('#101010');
 	await disposePlugin(page);
-	expect(await surface()).toBe('#191919');
+	expect(await surface()).toBe('#1c1c1e');
 });
 
 test('a token that does not exist is refused, and what the plugin did before is undone', async ({ page }) => {

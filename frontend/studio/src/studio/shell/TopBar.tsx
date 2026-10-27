@@ -35,7 +35,7 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 	const article = view === 'editor';
 	return (
 		<>
-			<div className="flex min-w-0 items-center gap-[5px] text-xs">
+			<div className="flex min-w-0 items-center gap-[5px] text-[13px]">
 				<IconButton
 					id="toggle-sidebar"
 					aria-label={sidebarCollapsed ? t('展开侧边栏') : t('收起侧边栏')}

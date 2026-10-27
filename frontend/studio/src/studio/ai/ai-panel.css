@@ -79,7 +79,7 @@
 .ai-tool.has-detail .ai-tool-row:hover { background: var(--surface-soft); }
 .ai-tool-icon { flex: none; width: 18px; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-align: center; }
 .ai-tool-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ai-tool-title.is-command { font-family: var(--font-mono); font-size: 11.5px; }
+.ai-tool-title.is-command { font-family: var(--font-mono); font-size: 12px; }
 .ai-tool-state { flex: none; color: rgb(var(--gray)); font-size: 11px; }
 .ai-tool[data-status='in_progress'] .ai-tool-state::after { display: inline-block; width: 8px; height: 8px; border: 1.5px solid rgb(var(--gray-light)); border-top-color: rgb(var(--gray-dark)); border-radius: 50%; animation: ai-spin 0.8s linear infinite; content: ''; }
 .ai-tool[data-status='failed'] .ai-tool-state { color: var(--danger); }
@@ -89,10 +89,10 @@
 .ai-tool-exit { color: var(--danger); }
 .ai-tool-text { font-size: 12px; }
 .ai-tool-text p { margin: 0 0 6px; }
-.ai-tool-output { max-height: 280px; margin: 4px 0; padding: 8px 10px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 11.5px; line-height: 1.45; white-space: pre-wrap; }
+.ai-tool-output { max-height: 280px; margin: 4px 0; padding: 8px 10px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
 .ai-diff { margin: 4px 0; }
 .ai-diff-path { margin: 0 0 2px; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; }
-.ai-diff-lines { max-height: 320px; margin: 0; padding: 6px 0; overflow: auto; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 11.5px; line-height: 1.45; white-space: pre-wrap; }
+.ai-diff-lines { max-height: 320px; margin: 0; padding: 6px 0; overflow: auto; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
 .ai-diff-lines span { display: block; padding: 0 8px; }
 .ai-diff-lines .is-removed { background: var(--surface-soft); color: rgb(var(--gray)); text-decoration: line-through; text-decoration-color: rgb(var(--gray-light)); }
 .ai-diff-lines .is-added { color: rgb(var(--black)); font-weight: 500; }
@@ -109,7 +109,7 @@
 .ai-permission.is-answered { border-color: rgb(var(--gray-light)); color: rgb(var(--gray)); }
 .ai-permission-ask { margin: 0 0 4px; font-weight: 600; }
 .ai-permission.is-answered .ai-permission-ask { font-weight: 400; }
-.ai-permission-what { display: block; max-height: 120px; padding: 6px 8px; overflow: auto; border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: 11.5px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-permission-what { display: block; max-height: 120px; padding: 6px 8px; overflow: auto; border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .ai-permission-choices { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
 .ai-permission-choices button { padding: 4px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 .ai-permission-choices button.is-allow:first-child { border-color: rgb(var(--black)); background: rgb(var(--black)); color: var(--surface); }
@@ -136,18 +136,18 @@
 .ai-input .milkdown .ProseMirror li p { padding: 0; }
 .ai-input .milkdown .ProseMirror pre, .ai-input .milkdown .milkdown-code-block { margin: 4px 0; }
 .ai-input-placeholder { position: absolute; top: 10px; right: 12px; left: 12px; overflow: hidden; color: rgb(var(--gray)); font-size: 13px; line-height: 1.55; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
-.ai-composer-bar { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; border: 1px solid rgb(var(--gray-light)); border-top: 0; border-radius: 0 0 12px 12px; background: var(--surface); box-shadow: 0 4px 12px rgba(var(--black), 0.04); }
+.ai-composer-bar { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; border: 1px solid rgb(var(--gray-light)); border-top: 0; border-radius: 0 0 12px 12px; background: var(--surface); box-shadow: var(--studio-shadow-sm); }
 .ai-composer:focus-within .ai-input, .ai-composer:focus-within .ai-composer-bar { border-color: rgb(var(--gray)); }
 /* The model and how hard it thinks, as Notion's: a name and bars under the input, each a menu (ModelMenu.tsx). */
 .ai-model, .ai-effort { display: inline-flex; flex: none; align-items: center; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; cursor: pointer; }
-.ai-model { gap: 3px; max-width: 170px; padding: 0 6px 0 8px; color: rgb(var(--gray-dark)); font-size: 12.5px; }
+.ai-model { gap: 3px; max-width: 170px; padding: 0 6px 0 8px; color: rgb(var(--gray-dark)); font-size: 13px; }
 .ai-model > svg { flex: none; width: 12px; height: 12px; color: rgb(var(--gray)); }
 .ai-model-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-effort { justify-content: center; width: 26px; }
 .ai-model:hover, .ai-effort:hover, .ai-model[data-state='open'], .ai-effort[data-state='open'] { background: rgba(var(--black), 0.05); color: rgb(var(--gray-dark)); }
-.ai-menu .ai-menu-label { padding: 6px 8px 2px; color: rgb(var(--gray)); font-size: 11.5px; font-weight: 500; }
+.ai-menu .ai-menu-label { padding: 6px 8px 2px; color: rgb(var(--gray)); font-size: 12px; font-weight: 500; }
 .ai-menu .ai-menu-item { min-height: 28px; font-size: 13px; }
-.ai-usage { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-size: 10.5px; text-align: right; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ai-usage { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-size: 11px; text-align: right; text-overflow: ellipsis; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .ai-send { flex: none; width: 26px; height: 26px; border: 0; border-radius: 50%; background: rgb(var(--black)); color: var(--surface); font-size: 13px; cursor: pointer; }
 .ai-send.is-stop { font-size: 9px; }
 
@@ -163,18 +163,18 @@
 .ai-sheet[hidden] { display: none; }
 .ai-sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .ai-sheet-head h3 { margin: 0; color: rgb(var(--black)); font-size: 15px; }
-.ai-sheet h4 { margin: 16px 0 6px; color: rgb(var(--gray-dark)); font-size: 12.5px; }
+.ai-sheet h4 { margin: 16px 0 6px; color: rgb(var(--gray-dark)); font-size: 13px; }
 .ai-sheet-close { width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 15px; cursor: pointer; }
 .ai-sheet-close:hover { background: var(--surface-soft); }
-.ai-sheet select, .ai-sheet input { box-sizing: border-box; width: 100%; padding: 6px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 12.5px; outline: none; }
+.ai-sheet select, .ai-sheet input { box-sizing: border-box; width: 100%; padding: 6px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 13px; outline: none; }
 .ai-sheet select:focus, .ai-sheet input:focus { border-color: rgb(var(--gray)); }
 .ai-sheet-field { display: block; margin-top: 10px; }
-.ai-sheet-label { display: block; margin-bottom: 3px; color: rgb(var(--gray)); font-size: 11.5px; }
+.ai-sheet-label { display: block; margin-bottom: 3px; color: rgb(var(--gray)); font-size: 12px; }
 .ai-sheet-link { display: inline-block; margin-top: 3px; color: rgb(var(--gray)); font-size: 11px; }
-.ai-sheet-note { margin: 10px 0 0; color: rgb(var(--gray)); font-size: 11.5px; line-height: 1.5; }
+.ai-sheet-note { margin: 10px 0 0; color: rgb(var(--gray)); font-size: 12px; line-height: 1.5; }
 .ai-sheet-keyed[hidden], .ai-sheet-account[hidden], .ai-sheet button[hidden] { display: none; }
 .ai-sheet-account { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 8px; }
-.ai-sheet-account p { flex: 1 1 100%; margin: 0; font-size: 12.5px; }
+.ai-sheet-account p { flex: 1 1 100%; margin: 0; font-size: 13px; }
 .ai-sheet button:not(.ai-sheet-close) { padding: 4px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 .ai-sheet button.is-primary { border-color: rgb(var(--black)); background: rgb(var(--black)); color: var(--surface); }
 .ai-sheet button:disabled { opacity: 0.5; cursor: default; }
@@ -189,21 +189,21 @@
 .ai-composer { position: relative; }
 .ai-context { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 2px 6px; }
 .ai-context[hidden] { display: none; }
-.ai-chip { display: inline-flex; align-items: center; max-width: 100%; height: 22px; padding: 0 2px 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 11px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 11.5px; }
+.ai-chip { display: inline-flex; align-items: center; max-width: 100%; height: 22px; padding: 0 2px 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 11px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 12px; }
 .ai-chip-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-chip-remove { flex: none; width: 18px; height: 18px; margin-left: 2px; border: 0; border-radius: 50%; background: transparent; color: rgb(var(--gray)); font-size: 12px; line-height: 1; cursor: pointer; }
 .ai-chip-remove:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 .ai-user { flex-direction: column; align-items: flex-end; gap: 3px; }
 .ai-user-context { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; max-width: 88%; color: rgb(var(--gray)); font-size: 11px; }
-.ai-mention-menu { position: absolute; z-index: 5; right: 10px; bottom: calc(100% - 4px); left: 10px; max-height: 260px; padding: 4px; overflow: auto; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: 0 8px 24px rgb(0 0 0 / 12%); }
+.ai-mention-menu { position: absolute; z-index: 5; right: 10px; bottom: calc(100% - 4px); left: 10px; max-height: 260px; padding: 4px; overflow: auto; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
 .ai-mention-menu[hidden] { display: none; }
-.ai-mention { display: flex; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+.ai-mention { display: flex; justify-content: space-between; gap: 8px; width: 100%; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .ai-mention span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-mention.is-current, .ai-mention:hover { background: var(--surface-soft); }
-.ai-mention-slug { flex: none; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 10.5px; }
+.ai-mention-slug { flex: none; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; }
 
 /* The AI in the editor (inline-ai.ts): a box under what is asked about, like a menu. */
-.inline-ai { position: fixed; z-index: 60; box-sizing: border-box; padding: 6px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 12px 32px rgb(0 0 0 / 14%); color: rgb(var(--gray-dark)); font-size: 13px; }
+.inline-ai { position: fixed; z-index: 60; box-sizing: border-box; padding: 6px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); font-size: 13px; }
 .inline-ai[hidden] { display: none; }
 .inline-ai-input { box-sizing: border-box; width: 100%; padding: 8px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); color: inherit; font: inherit; outline: none; }
 .inline-ai-input:focus { border-color: rgb(var(--gray)); }
@@ -226,7 +226,7 @@
 .ai-work-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-work-failed { flex: none; color: var(--danger); }
 .ai-work-more { flex: none; }
-.ai-work-dialog { width: min(720px, 92vw); max-height: 80vh; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18); }
+.ai-work-dialog { width: min(720px, 92vw); max-height: 80vh; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: var(--studio-shadow-modal); }
 .ai-work-dialog[open] { display: flex; flex-direction: column; }
 .ai-work-dialog::backdrop { background: rgba(0, 0, 0, 0.22); }
 .ai-work-head { display: flex; flex: none; align-items: center; gap: 8px; padding: 12px 14px 12px 18px; border-bottom: 1px solid rgb(var(--gray-light)); }
@@ -238,7 +238,7 @@
 /* Pictures the AI looked at: on its row small, in the dialog whole. */
 .ai-work-picture { flex: none; width: 34px; height: 24px; border: 1px solid rgb(var(--gray-light)); border-radius: 4px; background: var(--surface); object-fit: cover; }
 .ai-tool-picture { display: block; width: auto; max-width: 100%; height: auto; max-height: 360px; margin: 6px 0; border-radius: 6px; object-fit: contain; cursor: zoom-in; }
-.ai-picture-dialog { max-width: 94vw; max-height: 94vh; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: var(--surface); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.25); cursor: zoom-out; }
+.ai-picture-dialog { max-width: 94vw; max-height: 94vh; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-modal); cursor: zoom-out; }
 .ai-picture-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
 .ai-picture-dialog img { display: block; max-width: 94vw; max-height: 94vh; object-fit: contain; }
 /* A plugin's block in what is said: at a size to read beside the words; a molecule's view not saved into any article. */
@@ -255,21 +255,21 @@
 .ai-page-chip { display: inline-flex; align-items: center; min-width: 0; max-width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; }
 .ai-page-chip .ai-page-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-page-chip:hover .ai-page-title, .ai-page-chip:focus-visible .ai-page-title { text-decoration: underline; text-underline-offset: 2px; }
-.page-peek { position: fixed; z-index: 60; width: 280px; padding: 14px 16px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: 0 10px 30px rgb(0 0 0 / 12%); color: rgb(var(--gray-dark)); font-size: 13px; line-height: 1.5; cursor: pointer; }
+.page-peek { position: fixed; z-index: 60; width: 280px; padding: 14px 16px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); font-size: 13px; line-height: 1.5; cursor: pointer; }
 .page-peek-icon { display: block; margin-bottom: 8px; font-size: 26px; line-height: 1; }
 .page-peek-path { overflow: hidden; color: rgb(var(--gray)); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .page-peek-title { color: rgb(var(--black)); font-size: 14px; font-weight: 600; }
 .page-peek-description { display: -webkit-box; margin-top: 6px; overflow: hidden; color: rgb(var(--gray)); -webkit-box-orient: vertical; -webkit-line-clamp: 4; }
-.page-peek-facts { margin-top: 8px; color: rgb(var(--gray)); font-size: 11.5px; }
+.page-peek-facts { margin-top: 8px; color: rgb(var(--gray)); font-size: 12px; }
 
 /* What was quoted of what the AI said: a quote, its formulas drawn; 引用 over a selection of it. */
-.ai-quote { padding: 2px 0 2px 10px; border-left: 3px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12.5px; line-height: 1.55; }
+.ai-quote { padding: 2px 0 2px 10px; border-left: 3px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 13px; line-height: 1.55; }
 .ai-quote p { margin: 0 0 4px; }
 .ai-quote > :last-child { margin-bottom: 0; }
 .ai-quote-row { display: flex; align-items: flex-start; gap: 4px; max-height: 120px; margin: 0 2px 6px; overflow: auto; }
 .ai-quote-row .ai-quote { flex: 1; min-width: 0; }
 .ai-user-quote { max-width: 88%; margin-bottom: 2px; color: rgb(var(--gray)); }
-.ai-quote-button { position: fixed; z-index: 60; display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; transform: translateX(-50%); border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); box-shadow: 0 4px 14px rgb(0 0 0 / 12%); color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; cursor: pointer; }
+.ai-quote-button { position: fixed; z-index: 60; display: inline-flex; align-items: center; gap: 4px; height: 28px; padding: 0 10px; transform: translateX(-50%); border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; cursor: pointer; }
 .ai-quote-button:hover { background: var(--surface-soft); }
 .ai-quote-button svg { width: 14px; height: 14px; }
 
@@ -282,35 +282,35 @@
 
 /* Said while it worked, waiting for its turn to be over. */
 .ai-queue { display: flex; flex-direction: column; gap: 3px; margin: 0 2px 6px; }
-.ai-queued { display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 10px; border: 1px dashed rgb(var(--gray-light)); border-radius: 8px; color: rgb(var(--gray)); font-size: 12.5px; }
+.ai-queued { display: flex; align-items: center; gap: 6px; padding: 4px 4px 4px 10px; border: 1px dashed rgb(var(--gray-light)); border-radius: 8px; color: rgb(var(--gray)); font-size: 13px; }
 .ai-queued-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ai-queued > button:not(.ai-chip-remove) { flex: none; padding: 1px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 11.5px; cursor: pointer; }
+.ai-queued > button:not(.ai-chip-remove) { flex: none; padding: 1px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
 .ai-command > span:first-child { font-family: var(--font-mono); }
 
 /* A question it asks: its choices as buttons, words of one's own; answered, in a line. */
 .ai-question { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); }
 .ai-question-ask { margin: 0; color: rgb(var(--black)); font-size: 13px; font-weight: 500; }
-.ai-question-label { margin: 0 0 4px; color: rgb(var(--gray)); font-size: 11.5px; }
+.ai-question-label { margin: 0 0 4px; color: rgb(var(--gray)); font-size: 12px; }
 .ai-question-choices { display: flex; flex-direction: column; gap: 4px; }
-.ai-question-choices button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; }
+.ai-question-choices button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 7px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .ai-question-choices button:hover:not(:disabled) { background: var(--surface-soft); }
 .ai-question-choices button.is-chosen { border-color: rgb(var(--black)); color: rgb(var(--black)); box-shadow: inset 0 0 0 1px rgb(var(--black)); }
-.ai-question-note { color: rgb(var(--gray)); font-size: 11.5px; }
-.ai-question-words { width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 12.5px; }
+.ai-question-note { color: rgb(var(--gray)); font-size: 12px; }
+.ai-question-words { width: 100%; box-sizing: border-box; padding: 5px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; font-size: 13px; }
 .ai-question-actions { display: flex; gap: 6px; }
-.ai-question-actions button { padding: 3px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12.5px; cursor: pointer; }
+.ai-question-actions button { padding: 3px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; cursor: pointer; }
 .ai-question-actions button.is-answer { border-color: rgb(var(--black)); background: rgb(var(--black)); color: var(--surface); }
 .ai-question-actions button:disabled { opacity: 0.5; cursor: default; }
 .ai-question.is-answered { gap: 2px; background: transparent; }
 .ai-question-answer { margin: 0; color: rgb(var(--gray)); font-size: 12px; }
 
 /* Away from the end: ↓ back to it, a dot when something came meanwhile. */
-.ai-latest { position: sticky; bottom: 10px; display: grid; place-items: center; width: 30px; height: 30px; margin: 0 auto; padding: 0; border: 1px solid rgb(var(--gray-light)); border-radius: 50%; background: var(--surface); box-shadow: 0 4px 12px rgb(0 0 0 / 10%); color: rgb(var(--gray-dark)); cursor: pointer; }
+.ai-latest { position: sticky; bottom: 10px; display: grid; place-items: center; width: 30px; height: 30px; margin: 0 auto; padding: 0; border: 1px solid rgb(var(--gray-light)); border-radius: 50%; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); cursor: pointer; }
 .ai-latest svg { width: 15px; height: 15px; }
 .ai-latest.is-fresh::after { content: ''; position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; border-radius: 50%; background: rgb(var(--black)); }
 
 /* How full its context is: a ring and a percentage; dark when nearly full. */
-.ai-usage-ring { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 10.5px; cursor: default; }
+.ai-usage-ring { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; cursor: default; }
 .ai-usage-ring.is-full { color: rgb(var(--black)); cursor: pointer; }
 .ai-usage-ring.is-full:hover { background: rgba(var(--black), 0.05); }
 
@@ -319,7 +319,7 @@
 .ai-permission-detail .ai-diff { margin: 0; }
 
 /* Its context compacted: a line across, the summary opened from it. */
-.ai-compaction { display: flex; flex-direction: column; color: rgb(var(--gray)); font-size: 11.5px; text-align: center; }
+.ai-compaction { display: flex; flex-direction: column; color: rgb(var(--gray)); font-size: 12px; text-align: center; }
 .ai-compaction > summary, div.ai-compaction { display: flex; align-items: center; gap: 8px; cursor: default; list-style: none; }
 details.ai-compaction > summary { cursor: pointer; }
 .ai-compaction > summary::before, .ai-compaction > summary::after, div.ai-compaction::before, div.ai-compaction::after { content: ''; flex: 1; height: 1px; background: rgb(var(--gray-light)); }
@@ -334,9 +334,9 @@ details.ai-compaction > summary { cursor: pointer; }
 /* What was pasted at length: a chip in the input's row; folded under what was said, opened to be read. */
 .ai-paste-chip { gap: 4px; padding-left: 7px; }
 .ai-paste-chip > svg { flex: none; width: 13px; height: 13px; color: rgb(var(--gray)); }
-.ai-paste { max-width: 88%; color: rgb(var(--gray)); font-size: 11.5px; }
+.ai-paste { max-width: 88%; color: rgb(var(--gray)); font-size: 12px; }
 .ai-paste > summary { cursor: pointer; text-align: right; }
-.ai-paste > pre { max-height: 240px; margin: 4px 0 0; padding: 8px 10px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 11.5px; white-space: pre; }
+.ai-paste > pre { max-height: 240px; margin: 4px 0 0; padding: 8px 10px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 12px; white-space: pre; }
 
 /* An article named with @ in the input: a link to it, drawn as its mention (its page, its title). */
 .ai-input .ProseMirror a[href^="/blog/"], .ai-input .ProseMirror a[href^="/wiki/"] { padding: 0 2px 0 1.2em; border-radius: 4px; background: rgba(var(--black), 0.04) no-repeat 0.2em center / 0.9em; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23908f8b' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E"); color: inherit; font-weight: 500; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 30%, transparent); text-underline-offset: 3px; }
@@ -353,8 +353,8 @@ details.ai-compaction > summary { cursor: pointer; }
 .ai-picker-search svg { flex: none; width: 14px; height: 14px; }
 .ai-picker-search input { flex: 1; min-width: 0; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font: inherit; font-size: 13px; outline: none; }
 .ai-picker-list { flex: 1; min-height: 0; padding: 4px; overflow-y: auto; overscroll-behavior: contain; }
-.ai-picker-label { margin: 0; padding: 8px 8px 3px; color: rgb(var(--gray)); font-size: 11.5px; }
-.ai-picker-empty { margin: 0; padding: 14px 8px; color: rgb(var(--gray)); font-size: 12.5px; text-align: center; }
+.ai-picker-label { margin: 0; padding: 8px 8px 3px; color: rgb(var(--gray)); font-size: 12px; }
+.ai-picker-empty { margin: 0; padding: 14px 8px; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
 .ai-pick, .ai-picker-keyless { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--black)); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .ai-pick.is-active, .ai-picker-keyless:hover { background: var(--surface-soft); }
 .ai-pick[aria-disabled='true'] { cursor: default; opacity: 0.55; }

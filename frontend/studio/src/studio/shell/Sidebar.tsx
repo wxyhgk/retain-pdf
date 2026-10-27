@@ -11,10 +11,10 @@ import { useActions, useShell } from './shell-state';
 
 /** A line of the left column: an icon, what it does; `href` makes it a link. */
 function Item({ icon: Icon, href, children, className, ...props }: { icon: LucideIcon; href?: string; children: ReactNode } & ComponentProps<'button'>) {
-	const look = cn('h-[30px] w-full justify-start gap-2.5 px-2 has-[>svg]:px-2 text-xs font-normal text-foreground aria-pressed:bg-accent', className);
+	const look = cn('h-8 w-full justify-start gap-2.5 rounded-lg px-2 has-[>svg]:px-2 text-[14px] font-normal text-foreground hover:bg-[var(--studio-fill)] aria-pressed:bg-[var(--studio-fill-2)]', className);
 	const inside = (
 		<>
-			<Icon aria-hidden className="size-[15px] text-muted-foreground" />
+			<Icon aria-hidden className="size-4 text-muted-foreground" />
 			{children}
 		</>
 	);
@@ -34,8 +34,8 @@ function Item({ icon: Icon, href, children, className, ...props }: { icon: Lucid
 /** A heading over the pages or the conversations, with ＋ to make one. */
 function Heading({ title, add, label, onAdd, hidden }: { title: string; add: string; label: string; onAdd(): void; hidden: boolean }) {
 	return (
-		<div className="flex min-h-[31px] items-center justify-between pr-[11px] pl-[15px]" hidden={hidden}>
-			<h2 className="text-[10px] font-bold tracking-[0.04em] text-muted-foreground">{title}</h2>
+		<div className="flex min-h-8 items-center justify-between pt-2 pr-[11px] pl-[15px]" hidden={hidden}>
+			<h2 className="text-[12px] font-medium text-muted-foreground">{title}</h2>
 			<Button id={add} type="button" variant="ghost" size="icon-xs" className="text-muted-foreground hover:text-foreground" title={label} aria-label={label} onClick={onAdd}>
 				<Plus aria-hidden className="size-4" />
 			</Button>
@@ -53,7 +53,7 @@ function Mode({ id, icon: Icon, label, selected, onClick }: { id: string; icon: 
 			aria-selected={selected}
 			aria-label={label}
 			title={label}
-			className="grid size-7 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground aria-selected:bg-accent aria-selected:text-foreground"
+			className="grid size-8 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-[var(--studio-fill)] hover:text-foreground aria-selected:bg-[var(--studio-fill-2)] aria-selected:text-foreground"
 			onClick={onClick}
 		>
 			<Icon aria-hidden className="size-4" />
@@ -68,7 +68,7 @@ function WorkspaceMenu({ siteTitle }: { siteTitle: string }) {
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>
-				<Button id="workspace-menu" type="button" variant="ghost" className="h-8 w-full justify-start gap-2 px-2 has-[>svg]:px-2 text-xs font-normal text-foreground">
+				<Button id="workspace-menu" type="button" variant="ghost" className="h-9 w-full justify-start gap-2 rounded-lg px-2 has-[>svg]:px-2 text-[14px] font-normal text-foreground hover:bg-[var(--studio-fill)]">
 					<span className="grid size-5 flex-none place-items-center rounded-[5px] bg-primary text-[10px] font-extrabold text-primary-foreground">C</span>
 					<strong className="min-w-0 truncate font-semibold">{siteTitle}</strong>
 					<ChevronDown aria-hidden className="size-3.5 text-muted-foreground" />
@@ -119,12 +119,12 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				<button
 					id="open-search"
 					type="button"
-					className="flex h-7 min-w-0 flex-1 items-center gap-2 rounded-md border bg-background px-2 text-xs text-muted-foreground transition-colors hover:text-foreground"
+					className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-lg bg-[var(--studio-fill-2)] px-2.5 text-[13px] text-muted-foreground transition-colors hover:bg-[var(--studio-fill-3)] hover:text-foreground"
 					onClick={act.search}
 				>
-					<Search aria-hidden className="size-3.5" />
+					<Search aria-hidden className="size-4" />
 					<span className="flex-1 truncate text-left">{t('搜索')}</span>
-					<Kbd className="h-4 bg-transparent px-0 text-[10px] text-muted-foreground">⌘K</Kbd>
+					<Kbd className="h-[18px] rounded-[5px] bg-[var(--surface)] px-1.5 text-[11px] text-muted-foreground shadow-xs">⌘K</Kbd>
 				</button>
 				<Button id="new-article-secondary" type="button" variant="ghost" size="icon-sm" className="size-7 text-muted-foreground hover:text-foreground" title={t('新建文章')} aria-label={t('新建文章')} onClick={act.newPage}>
 					<SquarePen aria-hidden className="size-4" />
