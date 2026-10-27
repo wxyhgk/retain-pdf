@@ -309,7 +309,7 @@ export type Conversation = {
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
 /** What a conversation is made of, in order. */
 export type ConversationItem =
-	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[] }; steer?: boolean; quotes?: string[]; pictures?: string[] }
+	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[] }; steer?: boolean; quotes?: string[]; pictures?: string[]; pastes?: string[] }
 	| { kind: 'message'; id: string; text: string }
 	| { kind: 'thought'; id: string; text: string }
 	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
@@ -358,10 +358,11 @@ export type FormSchema = { type: 'object'; properties: Record<string, FormField>
 
 /**
  * Says `text` in a conversation; `steer`: while it works (`canSteer`), taken as soon as it can be. `pictures`: paths
- * of pictures kept for it (keepConversationPicture); `quotes`: what was quoted of it (Markdown), put before.
+ * of pictures kept for it (keepConversationPicture); `quotes`: what was quoted of it (Markdown), put before;
+ * `pastes`: what was pasted at length, after.
  */
-export async function tellConversation(id: string, text: string, context: ConversationContext = {}, { steer = false, pictures = [], quotes = [] }: { steer?: boolean; pictures?: string[]; quotes?: string[] } = {}): Promise<void> {
-	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context, ...(steer ? { steer } : {}), ...(pictures.length ? { pictures } : {}), ...(quotes.length ? { quotes } : {}) }));
+export async function tellConversation(id: string, text: string, context: ConversationContext = {}, { steer = false, pictures = [], quotes = [], pastes = [] }: { steer?: boolean; pictures?: string[]; quotes?: string[]; pastes?: string[] } = {}): Promise<void> {
+	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context, ...(steer ? { steer } : {}), ...(pictures.length ? { pictures } : {}), ...(quotes.length ? { quotes } : {}), ...(pastes.length ? { pastes } : {}) }));
 }
 
 /** A picture given with what is said, kept in the conversation's folder: its path, to send it by. */

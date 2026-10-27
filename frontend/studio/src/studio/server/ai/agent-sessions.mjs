@@ -8,6 +8,7 @@ import { Readable, Writable } from 'node:stream';
 import { client, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
 
 import { commandWords, endWithServer, loginShell } from '../tasks/tasks.mjs';
+import { saidWhole } from './chat-store.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
@@ -563,12 +564,12 @@ class AgentSession {
 	 * itself. The conversation shows what the author said, and the context as what it names.
 	 * @param {string} text
 	 * @param {PromptContext} [context]
-	 * @param {{ pictures?: string[], quotes?: string[] }} [with_] pictures sent with it (keepPicture's paths), and
-	 *   what was quoted of the conversation (Markdown), put before it
+	 * @param {{ pictures?: string[], quotes?: string[], pastes?: string[] }} [with_] pictures sent with it (keepPicture's
+	 *   paths), what was quoted of the conversation (Markdown), put before it, and what was pasted at length, after it
 	 */
-	prompt(text, context = {}, { pictures = [], quotes = [] } = {}) {
+	prompt(text, context = {}, { pictures = [], quotes = [], pastes = [] } = {}) {
 		if (this.state !== 'idle') throw Object.assign(new Error(this.state === 'running' ? t('它还在做上一件事：等它做完，或者先停下') : t('这个对话已经结束了')), { statusCode: 409 });
-		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error(t('要说点什么')), { statusCode: 400 });
+		if (typeof text !== 'string' || (!text.trim() && !pastes.some((paste) => typeof paste === 'string' && paste.trim()))) throw Object.assign(new Error(t('要说点什么')), { statusCode: 400 });
 		const named = {
 			article: context.article?.title ?? null,
 			selection: context.selection ? lineRange(context.selection) : null,
@@ -580,13 +581,13 @@ class AgentSession {
 		const shown = this.#picturesOf(pictures);
 		if (shown.length && !this.#seesPictures) throw Object.assign(new Error(t('{name} 不收图片', { name: this.agent.name })), { statusCode: 400 });
 		const quoted = quotes.filter((quote) => typeof quote === 'string' && quote.trim()).map((quote) => quote.trim());
-		// What was quoted, as Markdown quotes before what was said.
-		const said = [...quoted.map((quote) => quote.split('\n').map((line) => `> ${line}`.trimEnd()).join('\n')), text].join('\n\n');
+		const pasted = pastes.filter((paste) => typeof paste === 'string' && paste.trim());
+		const said = saidWhole({ text, quotes: quoted, pastes: pasted });
 		// A slash command (/compact) as it is: what the Studio adds after it would be taken for its arguments.
-		const command = /^\/\S/u.test(text) && !quoted.length;
+		const command = /^\/\S/u.test(text) && !quoted.length && !pasted.length;
 		// Running before what was said is added: a turn is put on the page once it is over, not as it begins.
 		this.#setState('running');
-		this.#add({ kind: 'user', id: randomUUID(), text, context: command ? { article: null, selection: null, mentions: [] } : named, ...(quoted.length ? { quotes: quoted } : {}), ...(shown.length ? { pictures: shown.map((picture) => picture.path) } : {}) });
+		this.#add({ kind: 'user', id: randomUUID(), text, context: command ? { article: null, selection: null, mentions: [] } : named, ...(quoted.length ? { quotes: quoted } : {}), ...(pasted.length ? { pastes: pasted } : {}), ...(shown.length ? { pictures: shown.map((picture) => picture.path) } : {}) });
 		const where = command ? {} : { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) };
 		if (!command) this.#forgot = false;
 		const images = shown.map(({ data, mimeType }) => ({ type: 'image', data, mimeType }));

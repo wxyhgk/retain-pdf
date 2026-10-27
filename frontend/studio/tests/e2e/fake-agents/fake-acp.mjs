@@ -193,6 +193,11 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '参见《另一篇笔记》，还有[这篇夹具](studio-fixture/index.md)和 `other-note/index.md`；《没有这篇》不是。');
 			return { stopReason: 'end_turn' };
 		}
+		// Code, and formulas in a line and on their own, to copy.
+		if (said.startsWith('代码')) {
+			await words('agent_message_chunk', '```python\nprint(1)\n```\n\n行内 $a+b$ 和\n\n$$\nE = mc^2\n$$');
+			return { stopReason: 'end_turn' };
+		}
 		// Words with a formula in them, to quote.
 		if (said.startsWith('公式')) {
 			await words('agent_message_chunk', '质能关系 $E = mc^2$ 说明质量就是能量。\n\n第二段。');

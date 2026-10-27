@@ -1,7 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import { ArrowDown, BookOpenCheck, Calculator, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
+import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn, uiLayer } from '@studio/lib/utils';
@@ -14,7 +14,7 @@ import { EffortMenu, ModelMenu } from './ModelMenu';
 import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
 import { commandOf, Item, ItemsContext, Markdown, PageChip, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { PagePeek } from './PagePeek';
-import { type ArticleRef, type PageInfo, type PanelActions, type PanelState } from './panel-state';
+import { PASTE_CHARACTERS, PASTE_LINES, type ArticleRef, type PageInfo, type PanelActions, type PanelState } from './panel-state';
 
 /** What each kind of tool call did, counted in a stretch of work: 读了 3 个文件. */
 const TOOL_DONE: Record<string, (count: number) => string> = {
@@ -92,6 +92,23 @@ function pictureClicked(event: MouseEvent, show: (picture: { src: string; alt: s
 	show({ src: picture.src, alt: picture.alt });
 }
 
+/**
+ * A copy button clicked (code, a formula on its own lines: ai-markdown.ts), or a formula in a line: what it copies
+ * copied, as written.
+ */
+function copyClicked(event: MouseEvent, copy: PanelActions['copy']): void {
+	const target = event.target as Element | null;
+	const button = target?.closest?.<HTMLElement>('.ai-copy');
+	if (button) {
+		event.preventDefault();
+		copy(button.dataset.copy ?? '', button.dataset.what === 'code' ? t('已复制代码') : t('已复制公式'));
+		return;
+	}
+	const math = target?.closest?.<HTMLElement>('.ai-message .ai-math, .ai-tool-text .ai-math');
+	// Clicked, not selected across.
+	if (math?.dataset.tex && document.getSelection()?.isCollapsed !== false) copy(`$${math.dataset.tex}$`, t('已复制公式'));
+}
+
 /** What the plugins' previews leave to be drawn (a molecule's 3D view, a widget's frame), drawn in `node` too. */
 function usePluginBlocks(node: React.RefObject<HTMLElement | null>, ready = true): void {
 	useEffect(() => {
@@ -141,7 +158,7 @@ function WorkRow({ run, onOpen }: { run: ConversationItem[]; onOpen(): void }) {
 }
 
 /** A stretch's detail: each step as the panel draws it (thinking, a command and its output, a change). */
-function WorkDialog({ run, title, onClose, onPicture }: { run: ConversationItem[]; title: string; onClose(): void; onPicture(picture: { src: string; alt: string }): void }) {
+function WorkDialog({ run, title, onClose, onPicture, copy }: { run: ConversationItem[]; title: string; onClose(): void; onPicture(picture: { src: string; alt: string }): void; copy: PanelActions['copy'] }) {
 	const [body, setBody] = useState<HTMLDivElement | null>(null);
 	useEffect(() => {
 		if (body) void observePluginBlocks(body);
@@ -153,7 +170,14 @@ function WorkDialog({ run, title, onClose, onPicture }: { run: ConversationItem[
 					<DialogTitle className="ai-work-title text-[13px] font-semibold">{title}</DialogTitle>
 					<DialogDescription className="sr-only">{t('这一段过程的每一步')}</DialogDescription>
 				</header>
-				<div ref={setBody} className="ai-work-body" onClick={(event) => pictureClicked(event, onPicture)}>
+				<div
+					ref={setBody}
+					className="ai-work-body"
+					onClick={(event) => {
+						pictureClicked(event, onPicture);
+						copyClicked(event, copy);
+					}}
+				>
 					{run.map((item) => (
 						<Item key={item.id} item={item} />
 					))}
@@ -217,6 +241,23 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 	useLayoutEffect(() => {
 		if (!away.current && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
 	});
+	// Another conversation shown (one of before, opened): at its end, wherever the one before was scrolled to.
+	useLayoutEffect(() => {
+		away.current = false;
+		setFar(null);
+		if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
+	}, [conversation?.id]);
+	// What is drawn after (pictures loaded, formulas, molecules, widgets) or the panel shown again: kept at the end.
+	useEffect(() => {
+		const node = scroller.current;
+		if (!node || !list.current) return;
+		const stay = new ResizeObserver(() => {
+			if (!away.current) node.scrollTop = node.scrollHeight;
+		});
+		stay.observe(node);
+		stay.observe(list.current);
+		return () => stay.disconnect();
+	}, []);
 
 	const shownRun = workShown ? rows.find((row): row is { work: ConversationItem[] } => 'work' in row && row.work[0]!.id === workShown)?.work : undefined;
 	return (
@@ -246,7 +287,13 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 					))}
 				</div>
 			</div>
-			<div ref={list} className="ai-items" onClick={(event) => pictureClicked(event, setPicture)} onMouseUp={() => requestAnimationFrame(offerQuote)} onKeyUp={(event) => event.shiftKey && offerQuote()}>
+			<div
+				ref={list}
+				className="ai-items"
+				onClick={(event) => {
+					pictureClicked(event, setPicture);
+					copyClicked(event, actions.copy);
+				}} onMouseUp={() => requestAnimationFrame(offerQuote)} onKeyUp={(event) => event.shiftKey && offerQuote()}>
 				{rows.map((row) =>
 					'work' in row ? <WorkRow key={row.work[0]!.id} run={row.work} onOpen={() => setWorkShown(row.work[0]!.id)} /> : <Item key={row.item.id} item={row.item} />,
 				)}
@@ -262,7 +309,7 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 					<ArrowDown aria-hidden />
 				</button>
 			)}
-			{shownRun && <WorkDialog run={shownRun} title={workSummary(shownRun, conversation, items).text} onClose={() => setWorkShown(null)} onPicture={setPicture} />}
+			{shownRun && <WorkDialog run={shownRun} title={workSummary(shownRun, conversation, items).text} onClose={() => setWorkShown(null)} onPicture={setPicture} copy={actions.copy} />}
 			{picture && <PictureDialog picture={picture} onClose={() => setPicture(null)} />}
 			{quoting &&
 				createPortal(
@@ -335,7 +382,7 @@ function Chip({ label, title, page, onRemove }: { label: string; title: string; 
 }
 
 function Composer({ state, actions }: { state: PanelState; actions: PanelActions }) {
-	const { conversation, article, leftOut, selected, selectionLeftOut, mentions, draft, status, pictures, quotes, queued } = state;
+	const { conversation, article, leftOut, selected, selectionLeftOut, mentions, draft, status, pictures, quotes, pastes, queued } = state;
 	const input = useRef<HTMLTextAreaElement>(null);
 	const [caret, setCaret] = useState(0);
 	const [mentionAt, setMentionAt] = useState(0);
@@ -377,6 +424,19 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 			</span>,
 		);
 	}
+
+	pastes.forEach((paste, at) => {
+		const lines = paste.replace(/\n+$/u, '').split('\n');
+		chips.push(
+			<span key={`paste-${at}`} className="ai-chip ai-paste-chip" title={lines.slice(0, 12).join('\n') + (lines.length > 12 ? '\n…' : '')}>
+				<ClipboardList aria-hidden />
+				<span className="ai-chip-label">{t('已粘贴 {count} 行', { count: lines.length })}</span>
+				<button type="button" className="ai-chip-remove" aria-label={t('不带上粘贴的内容')} onClick={() => actions.unpaste(at)}>
+					×
+				</button>
+			</span>,
+		);
+	});
 
 	const asked = mentionsClosed ? null : naming(draft, caret);
 	const needle = asked?.query.toLocaleLowerCase('zh-CN') ?? '';
@@ -569,6 +629,13 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				onFocus={() => setMentionsClosed(false)}
 				onKeyDown={keyDown}
 				onPaste={(event) => {
+					// Words pasted at length (a log, an output): a chip, sent after what is typed.
+					const words = event.clipboardData.getData('text/plain');
+					if (words.split('\n').length >= PASTE_LINES || words.length >= PASTE_CHARACTERS) {
+						event.preventDefault();
+						actions.paste(words);
+						return;
+					}
 					const files = picturesIn(event.clipboardData);
 					if (!files.length) return;
 					// A picture copied with words (from a page): the words pasted too.

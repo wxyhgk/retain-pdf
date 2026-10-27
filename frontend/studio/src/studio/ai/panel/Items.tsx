@@ -134,7 +134,14 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 					))}
 				</div>
 			) : null}
-			<div className="ai-bubble">{item.text}</div>
+			{item.text.trim() && <div className="ai-bubble">{item.text}</div>}
+			{/* What was pasted at length: folded, opened to be read. */}
+			{(item.pastes ?? []).map((paste, at) => (
+				<details key={at} className="ai-paste">
+					<summary>{t('已粘贴 {count} 行', { count: paste.replace(/\n+$/u, '').split('\n').length })}</summary>
+					<pre>{paste}</pre>
+				</details>
+			))}
 			{/* Copied, or put back in the input to be changed and said again. */}
 			<div className="ai-message-actions ai-user-actions">
 				<Act icon={Copy} label={t('复制')} onClick={() => actions.copy(item.text)} />

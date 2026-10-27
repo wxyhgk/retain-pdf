@@ -106,11 +106,11 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		sendEvents(request, response, (send) => session.subscribe(send));
 	}, { streams: true });
 	api.post('/conversations/:id/prompt', async ({ params, json }) => {
-		const { text, context, steer, pictures, quotes } = await json();
+		const { text, context, steer, pictures, quotes, pastes } = await json();
 		const session = await awake(params.id);
 		// Said while it works (to one that takes it): taken as soon as it can be.
 		if (steer === true && session.state === 'running') session.steer(text);
-		else session.prompt(text, await contextOf(context), { pictures: Array.isArray(pictures) ? pictures : [], quotes: Array.isArray(quotes) ? quotes : [] });
+		else session.prompt(text, await contextOf(context), { pictures: Array.isArray(pictures) ? pictures : [], quotes: Array.isArray(quotes) ? quotes : [], pastes: Array.isArray(pastes) ? pastes : [] });
 		return reply(202, { id: params.id });
 	});
 	api.post('/conversations/:id/cancel', ({ params }) => {

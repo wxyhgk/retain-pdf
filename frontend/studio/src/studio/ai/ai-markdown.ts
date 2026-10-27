@@ -2,6 +2,7 @@ import rehypeStringify from 'rehype-stringify';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
 
+import { t } from '@blog/i18n/index.mjs';
 import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { articleParser } from '@blog/markdown/syntax.mjs';
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
@@ -20,6 +21,22 @@ import { codeBlockPreview } from '../plugins';
 export type PageRef = { slug: string; title: string; icon?: string };
 
 const toHtml = unified().use(remarkRehype).use(rehypeStringify).freeze();
+
+const COPY_ICON = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>';
+
+/** A button that copies `text` (the panel copies it: `.ai-copy`), of code or a formula (`what`). */
+function copyButton(text: string, what: 'code' | 'formula'): HTMLButtonElement {
+	const label = what === 'code' ? t('复制代码') : t('复制公式');
+	const button = document.createElement('button');
+	button.type = 'button';
+	button.className = 'ai-copy';
+	button.dataset.copy = text;
+	button.dataset.what = what;
+	button.title = label;
+	button.setAttribute('aria-label', label);
+	button.innerHTML = COPY_ICON;
+	return button;
+}
 
 /** A picture on this machine, by its path (absolute, or from blog/), as the Studio shows it. */
 export function pictureUrl(path: string): string {
@@ -120,7 +137,16 @@ function drawnTree(tree: Tree): DocumentFragment {
 		} else {
 			holder.innerHTML = drawn.html;
 		}
-		(display && code.parentElement?.tagName === 'PRE' ? code.parentElement : code).replaceWith(holder);
+		// A formula copied as written: one in a line clicked, one on its own lines by its button.
+		let placed: HTMLElement = holder;
+		if (display) {
+			placed = document.createElement('div');
+			placed.className = 'ai-math-block';
+			placed.append(holder, copyButton(`$$\n${holder.dataset.tex}\n$$`, 'formula'));
+		} else if (!drawn.error) {
+			holder.title = t('点一下复制公式');
+		}
+		(display && code.parentElement?.tagName === 'PRE' ? code.parentElement : code).replaceWith(placed);
 	}
 	// A plugin's block (```energy, ```smiles, ```widget…) drawn as the editor draws it.
 	for (const code of fragment.querySelectorAll('pre > code[class*="language-"]')) {
@@ -132,6 +158,13 @@ function drawnTree(tree: Tree): DocumentFragment {
 		holder.dataset.source = `\`\`\`${code.className.match(/language-([\w+-]+)/u)?.[1] ?? ''}\n${(code.textContent ?? '').replace(/\n$/u, '')}\n\`\`\``;
 		holder.append(drawn);
 		code.parentElement!.replaceWith(holder);
+	}
+	// Code, copied whole by its button.
+	for (const pre of fragment.querySelectorAll('pre')) {
+		const holder = document.createElement('div');
+		holder.className = 'ai-code';
+		pre.replaceWith(holder);
+		holder.append(pre, copyButton((pre.textContent ?? '').replace(/\n$/u, ''), 'code'));
 	}
 	return fragment;
 }

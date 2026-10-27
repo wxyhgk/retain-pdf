@@ -88,13 +88,19 @@ export type PanelState = {
 	pictures: Picture[];
 	/** What was quoted of the conversation (Markdown, formulas as written), said before what is said next. */
 	quotes: string[];
+	/** What was pasted at length (a log, an output), a chip each: said after what is said next. */
+	pastes: string[];
 	/** Said while it worked, to one that cannot take words then: each said in turn once it is done. */
 	queued: Said[];
 };
 
 export type Picture = { id: string; blob: Blob; url: string };
-/** Something to say: the words, the articles named with @, the pictures (`kept`: sent before), what was quoted. */
-export type Said = { id: string; text: string; mentions: ArticleRef[]; pictures: Picture[]; quotes: string[]; kept?: string[] };
+/** Something to say: the words, the articles named with @, the pictures (`kept`: sent before), what was quoted and pasted. */
+export type Said = { id: string; text: string; mentions: ArticleRef[]; pictures: Picture[]; quotes: string[]; pastes: string[]; kept?: string[] };
+
+/** Pasted text this long (lines, or characters) is a chip, not words in the input. */
+export const PASTE_LINES = 10;
+export const PASTE_CHARACTERS = 1500;
 
 /** How big a picture given is sent at most, on its longer side (larger, it is made smaller first). */
 const PICTURE_SIDE = 2000;
@@ -199,6 +205,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		switching: false,
 		pictures: [],
 		quotes: [],
+		pastes: [],
 		queued: [],
 	});
 	const get = store.get;
@@ -390,28 +397,28 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	}
 
 	async function submit(): Promise<void> {
-		const { draft, mentions, pictures, quotes } = get();
+		const { draft, mentions, pictures, quotes, pastes } = get();
 		const text = draft.trim();
-		if (!text) return;
-		const said: Said = { id: crypto.randomUUID(), text, mentions, pictures, quotes };
+		if (!text && !pastes.length) return;
+		const said: Said = { id: crypto.randomUUID(), text, mentions, pictures, quotes, pastes };
 		const shown = get().conversation;
 		if (shown?.state === 'running') {
 			// While it works: to one that can take it, words it reads as soon as it can (插话); else said once it is done.
-			if (shown.canSteer && !pictures.length && !quotes.length) await steer(shown.id, text);
-			else set({ queued: [...get().queued, said], draft: '', mentions: [], pictures: [], quotes: [] });
+			if (shown.canSteer && !pictures.length && !quotes.length && !pastes.length) await steer(shown.id, text);
+			else set({ queued: [...get().queued, said], draft: '', mentions: [], pictures: [], quotes: [], pastes: [] });
 			return;
 		}
-		set({ draft: '', mentions: [], pictures: [], quotes: [] });
+		set({ draft: '', mentions: [], pictures: [], quotes: [], pastes: [] });
 		await send(said);
 	}
 
 	/** Back where it was typed, not said (failed, or taken back from the queue). */
 	function unsay(said: Said): void {
-		set({ draft: said.text, mentions: said.mentions, pictures: said.pictures, quotes: said.quotes });
+		set({ draft: said.text, mentions: said.mentions, pictures: said.pictures, quotes: said.quotes, pastes: said.pastes });
 	}
 
 	async function send(said: Said): Promise<void> {
-		const { text, mentions: named, quotes } = said;
+		const { text, mentions: named, quotes, pastes } = said;
 		// Said before the AIs were read (the tab just opened), or before the conversation chosen is followed: that first.
 		await load();
 		await showing;
@@ -433,7 +440,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 					...(selection ? { selection } : {}),
 					...(named.length ? { mentions: named.map((entry) => entry.slug) } : {}),
 				},
-				{ pictures, quotes },
+				{ pictures, quotes, pastes },
 			);
 			for (const picture of said.pictures) URL.revokeObjectURL(picture.url);
 		} catch (error) {
@@ -569,7 +576,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			if (!last || get().conversation?.state === 'running') return;
 			const pages = host.articles();
 			const mentions = (last.context?.mentionSlugs ?? []).flatMap((slug) => pages.filter((page) => page.slug === slug).map(({ slug: named, title }) => ({ slug: named, title })));
-			void send({ id: crypto.randomUUID(), text: last.text, mentions, pictures: [], quotes: last.quotes ?? [], kept: last.pictures ?? [] });
+			void send({ id: crypto.randomUUID(), text: last.text, mentions, pictures: [], quotes: last.quotes ?? [], pastes: last.pastes ?? [], kept: last.pictures ?? [] });
 		},
 		/** Pictures given with what is said next (pasted, dropped); those not pictures left out. */
 		async addPictures(files: File[]): Promise<void> {
@@ -593,6 +600,8 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			if (markdown.trim()) set({ quotes: [...get().quotes, markdown.trim()], focusAsked: get().focusAsked + 1 });
 		},
 		unquote: (at: number) => set({ quotes: get().quotes.filter((_, index) => index !== at) }),
+		paste: (text: string) => set({ pastes: [...get().pastes, text] }),
+		unpaste: (at: number) => set({ pastes: get().pastes.filter((_, index) => index !== at) }),
 		/** Taken back from the queue, to be changed (or left unsaid). */
 		unqueue(id: string): void {
 			const said = get().queued.find((entry) => entry.id === id);
@@ -627,8 +636,9 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		insert(markdown: string): void {
 			host.toast(host.insert(markdown) ? t('已插入到文章') : t('先打开一篇文章'));
 		},
-		copy(markdown: string): void {
-			navigator.clipboard.writeText(markdown).then(() => host.toast(t('已复制 Markdown')), () => host.toast(t('没能复制')));
+		/** `text` copied; `said`, what is said once it is. */
+		copy(text: string, said = t('已复制 Markdown')): void {
+			navigator.clipboard.writeText(text).then(() => host.toast(said), () => host.toast(t('没能复制')));
 		},
 		leaveOutArticle: () => set({ leftOut: get().article?.slug ?? null }),
 		leaveOutSelection: () => set({ selectionLeftOut: true }),

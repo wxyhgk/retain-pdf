@@ -141,13 +141,27 @@ export function chatFront({ title, created }) {
 	return ['---', `title: ${JSON.stringify(title || '新对话')}`, `pubDate: ${String(created).slice(0, 10)}`, 'draft: true', '---', ''].join('\n'); // i18n-ignore: written into the file
 }
 
+/**
+ * What the author said, whole: what they quoted of the conversation (as quotes) before their words, what they pasted
+ * at length (each in a ```text block) after them.
+ * @param {{ text: string, quotes?: string[], pastes?: string[] }} said
+ */
+export function saidWhole({ text, quotes = [], pastes = [] }) {
+	const quoted = quotes.map((quote) => quote.split('\n').map((line) => `> ${line}`.trimEnd()).join('\n'));
+	const pasted = pastes.map((paste) => {
+		const fence = '`'.repeat(Math.max(3, ...[...paste.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
+		return `${fence}text\n${paste.replace(/\n+$/u, '')}\n${fence}`;
+	});
+	return [...quoted, text.trim(), ...pasted].filter(Boolean).join('\n\n');
+}
+
 /** What was said, as a page has it: the author's words in ` ```ask ` blocks, each answer's Markdown as it is. */
 export function turnMarkdown(items) {
 	const blocks = [];
 	for (const item of items) {
 		if (item.kind === 'user') {
-			// What was quoted, as quotes before the words; the pictures given, after them (from the page's folder).
-			const said = [...(item.quotes ?? []).map((quote) => quote.split('\n').map((line) => `> ${line}`.trimEnd()).join('\n')), item.text.trim()].join('\n\n');
+			// What was quoted, as quotes before the words, what was pasted after; the pictures given, after them (from the page's folder).
+			const said = saidWhole(item);
 			const fence = '`'.repeat(Math.max(3, ...[...said.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
 			blocks.push(`${fence}ask\n${said}\n${fence}`);
 			for (const path of item.pictures ?? []) blocks.push(`![](ai/pictures/${basename(path)})`);

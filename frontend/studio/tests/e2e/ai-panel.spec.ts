@@ -630,8 +630,9 @@ test('what was said: copied, or put back to be changed; what failed, said again;
 test('scrolled up, away from the end: ↓ back to it, with a dot when something came meanwhile', async ({ page }) => {
 	await openAi(page);
 	await page.setViewportSize({ width: 1400, height: 600 });
-	for (const _ of Array(8)) {
+	for (let count = 1; count <= 8; count += 1) {
 		await tell(page, '几块');
+		await expect(pane(page).locator('.ai-answer')).toHaveCount(count);
 		await expect(pane(page).locator('.ai-send')).toHaveAttribute('aria-label', '发送');
 	}
 	const transcript = pane(page).locator('.ai-transcript');
@@ -644,4 +645,59 @@ test('scrolled up, away from the end: ↓ back to it, with a dot when something 
 	await latest.click();
 	await expect(latest).toBeHidden();
 	await expect.poll(() => transcript.evaluate((node) => node.scrollHeight - node.scrollTop - node.clientHeight)).toBeLessThan(5);
+});
+
+test.describe('copied from what the AI said', () => {
+	test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+
+	test('code by its button; a formula on its own lines by its button, one in a line clicked: as written', async ({ page }) => {
+		await openAi(page);
+		await tell(page, '代码');
+		const answer = pane(page).locator('.ai-message').last();
+		const clipboard = () => page.evaluate(() => navigator.clipboard.readText());
+		await answer.locator('.ai-code').hover();
+		await answer.locator('.ai-code .ai-copy').click();
+		await expect.poll(clipboard).toBe('print(1)');
+		await answer.locator('.ai-math-block').hover();
+		await answer.locator('.ai-math-block .ai-copy').click();
+		await expect.poll(clipboard).toBe('$$\nE = mc^2\n$$');
+		await answer.locator('.ai-math').click();
+		await expect.poll(clipboard).toBe('$a+b$');
+	});
+});
+
+test('words pasted at length are a chip, sent after what is typed and folded under it', async ({ page }) => {
+	await openAi(page);
+	const log = Array.from({ length: 20 }, (_, at) => `line ${at + 1}`).join('\n');
+	await input(page).evaluate((node, words) => {
+		const transfer = new DataTransfer();
+		transfer.setData('text/plain', words);
+		node.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }));
+	}, log);
+	await expect(input(page)).toHaveValue('');
+	await expect(pane(page).locator('.ai-paste-chip')).toHaveText(/已粘贴 20 行/u);
+	await tell(page, '上下文 看看日志');
+	const told = pane(page).locator('.ai-message').last();
+	await expect(told).toContainText('上下文 看看日志');
+	await expect(told).toContainText('line 20');
+	await expect(pane(page).locator('.ai-paste-chip')).toHaveCount(0);
+	await expect(pane(page).locator('.ai-user .ai-paste summary')).toHaveText('已粘贴 20 行');
+});
+
+test('a conversation of before, opened, is shown at its end', async ({ page }) => {
+	await openAi(page);
+	await page.setViewportSize({ width: 1400, height: 600 });
+	for (let count = 1; count <= 8; count += 1) {
+		await tell(page, '代码');
+		await expect(pane(page).locator('.ai-message')).toHaveCount(count);
+		await expect(pane(page).locator('.ai-send')).toHaveAttribute('aria-label', '发送');
+	}
+	await pane(page).getByRole('button', { name: '新对话' }).click();
+	await expect(pane(page).locator('.ai-empty')).toBeVisible();
+	await pane(page).getByRole('button', { name: '对话记录' }).click();
+	await page.getByRole('menuitem', { name: /代码/u }).first().click();
+	await expect(pane(page).locator('.ai-message')).toHaveCount(8);
+	const transcript = pane(page).locator('.ai-transcript');
+	await expect.poll(() => transcript.evaluate((node) => node.scrollHeight - node.scrollTop - node.clientHeight)).toBeLessThan(5);
+	await expect.poll(() => transcript.evaluate((node) => node.scrollTop)).toBeGreaterThan(100);
 });
