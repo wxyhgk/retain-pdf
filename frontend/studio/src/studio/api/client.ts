@@ -5,8 +5,21 @@ import { t } from '@blog/i18n/index.mjs';
 import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, Backlink, GitStatus, HistoryEntry, HistoryReason, SearchResult, TrashEntry } from '../types.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-	const response = await fetch(url, options);
-	const data = await response.json();
+	let response: Response;
+	try {
+		response = await fetch(url, options);
+	} catch (error) {
+		// Given up by the page itself (a search typed on): as it is.
+		if (error instanceof DOMException && error.name === 'AbortError') throw error;
+		// The connection itself gone ("Load failed", "Failed to fetch"): the server, not what was asked.
+		throw new StudioApiError(t('连不上 Studio 的服务器：它可能正在重启，过一会儿再试'), 0);
+	}
+	let data: T & { error?: string };
+	try {
+		data = await response.json();
+	} catch {
+		throw new StudioApiError(response.ok ? t('服务器的回答读不懂') : t('服务器出错了（{status}）', { status: response.status }), response.status);
+	}
 	if (!response.ok) throw new StudioApiError(data.error || t('请求失败'), response.status);
 	return data;
 }
@@ -327,7 +340,9 @@ export type ConversationEvent =
 	| { type: 'all'; session: Conversation; items: ConversationItem[] }
 	| { type: 'item'; item: ConversationItem }
 	| { type: 'append'; id: string; text: string }
-	| { type: 'session'; session: Conversation };
+	| { type: 'session'; session: Conversation }
+	/** Its connection to the server gone; followed again (it comes back as `all`). */
+	| { type: 'lost' };
 
 const conversationApi = (id: string, action = '') => `/api/studio/conversations/${encodeURIComponent(id)}${action ? `/${action}` : ''}`;
 
@@ -344,9 +359,31 @@ export function startConversation(agent: string, { page = false }: { page?: bool
 
 /** Follows a conversation: all of it first, then each change. Returns the function that stops. */
 export function followConversation(id: string, listener: (event: ConversationEvent) => void): () => void {
-	const source = new EventSource(conversationApi(id, 'events'));
-	source.addEventListener('message', (event) => listener(JSON.parse(event.data) as ConversationEvent));
-	return () => source.close();
+	let source: EventSource | null = null;
+	let over = false;
+	let timer = 0;
+	let wait = 1000;
+	const open = () => {
+		source = new EventSource(conversationApi(id, 'events'));
+		source.addEventListener('message', (event) => {
+			wait = 1000;
+			listener(JSON.parse(event.data) as ConversationEvent);
+		});
+		// Lost: said, and followed again (the browser tries again by itself, unless the server refused it: then here).
+		source.addEventListener('error', () => {
+			if (over) return;
+			listener({ type: 'lost' });
+			if (source?.readyState !== EventSource.CLOSED) return;
+			timer = window.setTimeout(open, wait);
+			wait = Math.min(wait * 2, 15_000);
+		});
+	};
+	open();
+	return () => {
+		over = true;
+		window.clearTimeout(timer);
+		source?.close();
+	};
 }
 
 /** Where the author is, told with what they say: the article open, the lines selected in it, the articles named with @. */

@@ -66,7 +66,8 @@ export type PanelState = {
 	items: ConversationItem[];
 	/** A conversation being begun (said by `status` meanwhile). */
 	starting: boolean;
-	status: { text: string; error: boolean };
+	/** `retry`: what 重试 does after it (said again what failed, the last thing said, the AI started again). */
+	status: { text: string; error: boolean; retry?: 'send' | 'last' | 'start' };
 	/** 模型和账号 in place of the conversation. */
 	settings: boolean;
 	/** Whole in the middle (AI 问答). */
@@ -239,9 +240,12 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		},
 	};
 
-	function say(text: string, error = false): void {
-		set({ status: { text, error } });
+	function say(text: string, error = false, retry?: PanelState['status']['retry']): void {
+		set({ status: { text, error, ...(retry ? { retry } : {}) } });
 	}
+
+	/** Its connection to the server gone (followConversation follows it again): said until it is back. */
+	let lost = false;
 
 	/** 模型和账号 in place of the conversation, or the conversation again. */
 	function showSheet(open: boolean): void {
@@ -297,7 +301,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 					starting = null;
 					set({ starting: false });
 				}
-				say(error instanceof Error ? error.message : t('没能启动'), true);
+				say(error instanceof Error ? error.message : t('没能启动'), true, 'start');
 				return null;
 			},
 		);
@@ -358,7 +362,11 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		if (event.type !== 'append') flushPieces();
 		switch (event.type) {
 			case 'all':
+				lost = false;
 				set({ conversation: event.session, items: [...event.items] });
+				break;
+			case 'lost':
+				lost = true;
 				break;
 			case 'item': {
 				const { conversation, items } = get();
@@ -395,10 +403,11 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	function sessionSaid(): void {
 		const { conversation, items } = get();
 		const running = conversation?.state === 'running';
+		if (lost) return say(t('和 Studio 服务器断开了，正在重新连上…'), true);
 		if (conversation?.state === 'starting' && items.length) say(t('正在接上之前的对话（启动 {name}）…', { name: conversation.agent.name }));
 		else if (conversation?.state === 'starting' || (!conversation && starting)) {
 			// Said by begin().
-		} else if (conversation?.state === 'failed') say(conversation.error || t('它停了'), true);
+		} else if (conversation?.state === 'failed') say(conversation.error || t('它停了'), true, items.some((item) => item.kind === 'user') ? 'last' : 'start');
 		else if (conversation?.state === 'closed') say(t('这个对话停下了；再说话会接着聊'));
 		else if (running) say(t('正在做…'));
 		else say('');
@@ -453,7 +462,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			for (const picture of said.pictures) URL.revokeObjectURL(picture.url);
 		} catch (error) {
 			unsay(said);
-			say(error instanceof Error ? error.message : t('没发出去'), true);
+			say(error instanceof Error ? error.message : t('没发出去'), true, 'send');
 		}
 	}
 
@@ -519,8 +528,12 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		/** Stopped while it works, else what is typed said. */
 		sendOrStop(): void {
 			const shown = get().conversation;
-			if (shown?.state === 'running') void stopConversation(shown.id).catch((error: unknown) => host.toast(error instanceof Error ? error.message : t('没能停下')));
-			else void submit();
+			if (shown?.state !== 'running') return void submit();
+			void stopConversation(shown.id).catch((error: unknown) => {
+				host.toast(error instanceof Error ? error.message : t('没能停下'));
+				// Perhaps not going on any more (its server restarted): shown as it is now.
+				follow(get().conversation);
+			});
 		},
 		type: (draft: string) => set({ draft }),
 		/** `text` in the input, for the author to finish and send. */
@@ -577,6 +590,13 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 				},
 				(error: unknown) => host.toast(error instanceof Error ? error.message : t('没能改')),
 			);
+		},
+		/** 重试 after what the status says went wrong. */
+		retryStatus(): void {
+			const { retry } = get().status;
+			if (retry === 'send') void submit();
+			else if (retry === 'last') actions.retry();
+			else if (retry === 'start') void beginAfresh();
 		},
 		/** What was said last, said again (it failed): with what was told and given with it. */
 		retry(): void {

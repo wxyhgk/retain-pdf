@@ -94,21 +94,12 @@ function pictureClicked(event: MouseEvent, show: (picture: { src: string; alt: s
 	show({ src: picture.src, alt: picture.alt });
 }
 
-/**
- * A copy button clicked (code, a formula on its own lines: ai-markdown.ts), or a formula in a line: what it copies
- * copied, as written.
- */
+/** A code block's copy button clicked (ai-markdown.ts): its code copied. */
 function copyClicked(event: MouseEvent, copy: PanelActions['copy']): void {
-	const target = event.target as Element | null;
-	const button = target?.closest?.<HTMLElement>('.ai-copy');
-	if (button) {
-		event.preventDefault();
-		copy(button.dataset.copy ?? '', button.dataset.what === 'code' ? t('已复制代码') : t('已复制公式'));
-		return;
-	}
-	const math = target?.closest?.<HTMLElement>('.ai-message .ai-math, .ai-tool-text .ai-math');
-	// Clicked, not selected across.
-	if (math?.dataset.tex && document.getSelection()?.isCollapsed !== false) copy(`$${math.dataset.tex}$`, t('已复制公式'));
+	const button = (event.target as Element | null)?.closest?.<HTMLElement>('.ai-copy');
+	if (!button) return;
+	event.preventDefault();
+	copy(button.dataset.copy ?? '', t('已复制代码'));
 }
 
 /** What the plugins' previews leave to be drawn (a molecule's 3D view, a widget's frame), drawn in `node` too. */
@@ -207,6 +198,21 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 	const list = useRef<HTMLDivElement>(null);
 	/** Scrolled up, away from the end: not taken back down as words come. */
 	const away = useRef(false);
+	/**
+	 * When the author last scrolled it (wheel, touch, keys, its scroll bar): only then is it away. Its own scrolls to
+	 * the end are not, though what is drawn meanwhile may have made it longer by the time it is told of them (WebKit).
+	 */
+	const touched = useRef(0);
+	const byAuthor = () => performance.now() - touched.current < 1000;
+	const touch = () => {
+		touched.current = performance.now();
+	};
+	/** Where it last took itself, to the end: a scroll told at that place is that one (others, a focus's, are as they are). */
+	const ownTop = useRef(-1);
+	const toEnd = (node: HTMLElement) => {
+		node.scrollTop = node.scrollHeight;
+		ownTop.current = node.scrollTop;
+	};
 	/** Away from the end by more than a screen: ↓ to it; `fresh`, something came meanwhile. */
 	const [far, setFar] = useState<{ at: number } | null>(null);
 	const fresh = far !== null && items.length > far.at;
@@ -241,20 +247,20 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 	}
 
 	useLayoutEffect(() => {
-		if (!away.current && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
+		if (!away.current && scroller.current) toEnd(scroller.current);
 	});
 	// Another conversation shown (one of before, opened): at its end, wherever the one before was scrolled to.
 	useLayoutEffect(() => {
 		away.current = false;
 		setFar(null);
-		if (scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
+		if (scroller.current) toEnd(scroller.current);
 	}, [conversation?.id]);
 	// What is drawn after (pictures loaded, formulas, molecules, widgets) or the panel shown again: kept at the end.
 	useEffect(() => {
 		const node = scroller.current;
 		if (!node || !list.current) return;
 		const stay = new ResizeObserver(() => {
-			if (!away.current) node.scrollTop = node.scrollHeight;
+			if (!away.current) toEnd(node);
 		});
 		stay.observe(node);
 		stay.observe(list.current);
@@ -268,9 +274,18 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 			className="ai-transcript"
 			role="log"
 			aria-live="polite"
+			onWheel={touch}
+			onTouchMove={touch}
+			onPointerDown={touch}
+			onKeyDown={touch}
 			onScroll={(event) => {
 				const node = event.currentTarget;
 				const left = node.scrollHeight - node.scrollTop - node.clientHeight;
+				// Its own scroll to the end, told late (longer by then): kept at the end.
+				if (!byAuthor() && !away.current && Math.abs(node.scrollTop - ownTop.current) < 2) {
+					toEnd(node);
+					return;
+				}
 				away.current = left > 40;
 				if (left > node.clientHeight) setFar((now) => now ?? { at: items.length });
 				else setFar(null);
@@ -596,6 +611,14 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 		>
 			<p className={cn('ai-status', status.error && 'is-error')} role="status">
 				{status.text}
+				{status.error && status.retry && (
+					<>
+						{' '}
+						<button type="button" className="ai-status-fix" onClick={actions.retryStatus}>
+							{t('重试')}
+						</button>
+					</>
+				)}
 				{status.error && (
 					<>
 						{' '}

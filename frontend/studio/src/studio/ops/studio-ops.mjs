@@ -19,10 +19,13 @@ import { ArticleFileManager, TRASH_FOLDER } from '../server/files/file-manager.m
 import { studioBlogRoot } from '../server/articles/page-version.mjs';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from '../pages/page-names.ts';
 import { filesNamed } from '../editor/split-section.ts';
-import { markdownSection } from './markdown-section.mjs';
+import { markdownOutline, markdownSection } from './markdown-section.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /** A mistake in what was asked: said back as it is, not as a failure of the program. */
+/** How much of a page is given at once (a tool's result is kept to 60 000 characters by pi): a longer one in parts. */
+const PAGE_PART = 40_000;
+
 export class StudioOpsError extends Error {
 	constructor(message) {
 		super(message);
@@ -76,9 +79,15 @@ export function createStudioOps({ root, site } = {}) {
 	return {
 		blogRoot,
 
-		/** Every page: folder name, title, the page it is under, its order there, draft or not, kind, tags, address. */
-		async listPages() {
-			return (await pages()).map((page) => ({ ...page, address: address(page) }));
+		/**
+		 * Every page (or those under `parent`, `''` for those at the top; of a `kind`; drafts or not): folder name,
+		 * title, the page it is under, its order there, draft or not, kind, tags, address.
+		 * @param {{ parent?: string, kind?: string, draft?: boolean }} [only]
+		 */
+		async listPages({ parent, kind, draft } = {}) {
+			return (await pages())
+				.filter((page) => (parent === undefined || (page.parent || '') === parent) && (kind === undefined || page.kind === kind) && (draft === undefined || Boolean(page.draft) === draft))
+				.map((page) => ({ ...page, address: address(page) }));
 		},
 
 		/** The pages as a tree, each with those under it, in the order the Studio shows them. */
@@ -90,10 +99,46 @@ export function createStudioOps({ root, site } = {}) {
 			return all.filter((page) => !page.parent || !known.has(page.parent)).sort(comparePages).map(node);
 		},
 
-		/** A page: its whole Markdown, its properties, what is wrong with them. */
-		async readPage({ slug }) {
+		/**
+		 * A page: its Markdown, its properties, what is wrong with them, how long it is. A long one in parts (up to
+		 * PAGE_PART characters, cut at a line's end), each saying where the next begins and the heading after it;
+		 * `outline`: its headings only; `heading`: the section that heading begins; `offset`, `limit`: a part of it.
+		 * @param {{ slug: string, outline?: boolean, heading?: string, offset?: number, limit?: number }} args
+		 */
+		async readPage({ slug, outline = false, heading, offset, limit }) {
 			const page = await articles.read(slug);
-			return { slug, source: page.source, properties: page.properties, problems: page.problems };
+			const { source } = page;
+			// Its headings in the text after its properties (`---` … `---`), where they are in the whole of it.
+			const start = /^---\r?\n[\s\S]*?\r?\n---\r?\n/u.exec(source)?.[0].length ?? 0;
+			const skipped = source.slice(0, start).split('\n').length - 1;
+			const headings = markdownOutline(source.slice(start)).map((entry) => ({ ...entry, line: entry.line + skipped, offset: entry.offset + start }));
+			// After what is read (a reader that keeps only the start of a result keeps that).
+			const about = { properties: page.properties, problems: page.problems, length: source.length, lines: source.split('\n').length };
+			const headingAfter = (at) => headings.find((entry) => entry.offset >= at)?.title ?? null;
+			if (outline) return { slug, outline: headings.map(({ depth, title, line }) => ({ depth, title, line })), ...about };
+			if (typeof heading === 'string' && heading.trim()) {
+				const section = markdownSection(source, heading);
+				if (!section) throw new StudioOpsError(t('这一页没有标题「{heading}」：先用 outline 看有哪些标题', { heading: heading.trim() }));
+				return { slug, heading: section.title, source: source.slice(section.from, section.to), nextHeading: headingAfter(section.to), ...about };
+			}
+			const from = Math.max(0, Math.min(Number.isInteger(offset) ? offset : 0, source.length));
+			let to = Math.min(source.length, from + Math.max(1, Math.min(Number.isInteger(limit) ? limit : PAGE_PART, PAGE_PART)));
+			// At a line's end, where there is one in the part.
+			if (to < source.length) {
+				const end = source.lastIndexOf('\n', to);
+				if (end > from) to = end + 1;
+			}
+			if (from === 0 && to === source.length) return { slug, source, ...about };
+			return {
+				slug,
+				note: `只给了这一部分（第 ${from}–${to} 个字符，共 ${source.length}）：用 offset 读后面的，或用 outline 看目录、用 heading 读一节`, // i18n-ignore: for the AI
+				from,
+				to,
+				next: to < source.length ? to : null,
+				nextHeading: to < source.length ? headingAfter(to) : null,
+				source: source.slice(from, to),
+				...about,
+			};
 		},
 
 		/** The pages whose title or text holds `query`, with the lines it is on. */
@@ -219,7 +264,10 @@ export function createStudioOps({ root, site } = {}) {
 		/** What would stop the blog's build, or show broken on the page, if it were published as it is now. */
 		async checkPage({ slug }) {
 			const { source } = await articles.read(slug);
-			return checkArticle(blogRoot, slug, source);
+			const issues = await checkArticle(blogRoot, slug, source);
+			const errors = issues.filter((issue) => issue.severity === 'error').length;
+			// Said in so many words: nothing found is passed, not a check that did not run.
+			return { ok: errors === 0, errors, warnings: issues.length - errors, issues };
 		},
 
 		/**
@@ -257,9 +305,12 @@ export function createStudioOps({ root, site } = {}) {
 			return git.commit(slug, message);
 		},
 
-		/** What git has not committed yet, by page. */
-		gitStatus() {
-			return git.status();
+		/** What git has not committed yet, by page; of one page (`slug`): new, modified, vanished, or clean. */
+		async gitStatus({ slug } = {}) {
+			const status = await git.status();
+			if (typeof slug !== 'string' || !slug) return status;
+			const state = status.changed[slug] ?? (status.vanished.includes(slug) ? 'vanished' : 'clean');
+			return { available: status.available, slug, state };
 		},
 
 		/** The versions kept of a page (before each change made on disk, before restoring), newest first. */

@@ -336,13 +336,11 @@ details.ai-compaction > summary { cursor: pointer; }
 .ai-compaction > summary::before, .ai-compaction > summary::after, div.ai-compaction::before, div.ai-compaction::after { content: ''; flex: 1; height: 1px; background: rgb(var(--gray-light)); }
 .ai-compaction-summary { margin-top: 6px; text-align: left; }
 
-/* Code and formulas on their own lines: a copy button as the pointer rests on them; a formula in a line, clicked. */
-.ai-code, .ai-math-block { position: relative; }
+/* Code: a copy button as the pointer rests on it. (Formulas none: selecting in them is for quoting.) */
+.ai-code { position: relative; }
 .ai-copy { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray)); opacity: 0; cursor: pointer; }
-.ai-code:hover .ai-copy, .ai-math-block:hover .ai-copy, .ai-copy:focus-visible { opacity: 1; }
+.ai-code:hover .ai-copy, .ai-copy:focus-visible { opacity: 1; }
 .ai-copy:hover { color: rgb(var(--gray-dark)); }
-.ai-message .ai-math[data-tex], .ai-tool-text .ai-math[data-tex] { border-radius: 3px; cursor: copy; }
-.ai-message .ai-math[data-tex]:hover, .ai-tool-text .ai-math[data-tex]:hover { background: rgba(var(--black), 0.05); }
 
 /* What was pasted at length: a chip in the input's row; folded under what was said, opened to be read. */
 .ai-paste-chip { gap: 4px; padding-left: 7px; }

@@ -26,3 +26,15 @@ export function markdownSection(markdown, heading) {
 	const to = next ? next.position.start.offset : markdown.length;
 	return { from, to, title: wanted, text: markdown.slice(start.position.end.offset, to).trim() };
 }
+
+/**
+ * The headings of `markdown` at its top level (not in a list or quote), in order: how deep each is, its words, the
+ * line it is on (from 1) and where it is (`offset`).
+ * @param {string} markdown
+ * @returns {Array<{ depth: number, title: string, line: number, offset: number }>}
+ */
+export function markdownOutline(markdown) {
+	return parseArticle(markdown)
+		.children.filter((node) => node.type === 'heading')
+		.map((node) => ({ depth: node.depth, title: words(node).trim(), line: node.position.start.line, offset: node.position.start.offset }));
+}

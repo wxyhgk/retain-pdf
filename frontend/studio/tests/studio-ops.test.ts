@@ -70,6 +70,47 @@ test('pages made, moved, split, merged, published, deleted and brought back thro
 	assert.ok(readFileSync(join(blog, project.slug, 'index.md'), 'utf8'));
 });
 
+test('a long page read in parts, by its outline, or a section; pages listed by what they are; a check that says it passed', async (t) => {
+	temporaryBlog(t);
+	const ops = createStudioOps({ root });
+	const paragraph = `${'很长的一段。'.repeat(500)}\n\n`;
+	const body = ['## 一、引言', paragraph.repeat(8), '## 二、方法', paragraph.repeat(8), '### 细节', '一小节。', '## 三、结果', '完。'].join('\n\n');
+	const long = await ops.createPage({ title: '长文', body });
+	const short = await ops.createPage({ title: '短文', body: '短。', parent: long.slug });
+
+	// A short one, whole, as before.
+	const whole = await ops.readPage({ slug: short.slug });
+	assert.match(whole.source, /短。/u);
+	assert.equal(whole.next, undefined);
+	// A long one: a part, where the next begins, the heading after it.
+	const first = await ops.readPage({ slug: long.slug });
+	assert.ok(first.source.length <= 40_000 && first.length > 40_000);
+	assert.ok(first.source.endsWith('\n'), 'cut at a line’s end');
+	assert.equal(typeof first.next, 'number');
+	assert.equal(first.nextHeading, '细节');
+	const second = await ops.readPage({ slug: long.slug, offset: first.next });
+	assert.equal(second.from, first.next);
+	// Its outline; a section.
+	const { outline } = await ops.readPage({ slug: long.slug, outline: true });
+	assert.deepEqual(outline.map((entry: { depth: number; title: string }) => `${entry.depth} ${entry.title}`), ['2 一、引言', '2 二、方法', '3 细节', '2 三、结果']);
+	const section = await ops.readPage({ slug: long.slug, heading: '三、结果' });
+	assert.match(section.source, /^## 三、结果\n\n完。/u);
+	assert.equal(section.nextHeading, null);
+	await assert.rejects(ops.readPage({ slug: long.slug, heading: '没有这节' }), /没有标题「没有这节」/u);
+
+	// Listed by where they are, and whether drafts.
+	assert.deepEqual((await ops.listPages({ parent: long.slug })).map((page: { slug: string }) => page.slug), [short.slug]);
+	assert.deepEqual((await ops.listPages({ parent: '' })).map((page: { slug: string }) => page.slug), [long.slug]);
+	assert.equal((await ops.listPages({ draft: false })).length, 0);
+
+	// A check that found nothing says it passed.
+	const checked = await ops.checkPage({ slug: short.slug });
+	assert.equal(checked.ok, true);
+	assert.deepEqual(checked.issues, []);
+	// One page's git state (the blog here is in no repository).
+	assert.deepEqual(Object.keys(await ops.gitStatus({ slug: short.slug })).sort(), ['available', 'slug', 'state']);
+});
+
 test('the command line: one operation per command, JSON out, its mistakes said on stderr', (t) => {
 	temporaryBlog(t);
 	const studio = (...args: string[]) => execFileSync(process.execPath, [join(root, 'bin/studio.mjs'), ...args], { env: process.env, encoding: 'utf8' });

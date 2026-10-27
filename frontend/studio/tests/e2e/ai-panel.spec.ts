@@ -146,6 +146,30 @@ test('an agent whose adapter is missing says so where the answer would be', asyn
 	await fromModelMenu(page, 'Codex', '用 Claude 运行');
 	await expect(pane(page).locator('.ai-status')).toContainText('Codex 没能启动');
 	await expect(pane(page).locator('.ai-status')).toHaveClass(/is-error/u);
+	// Tried again from there.
+	await pane(page).locator('.ai-status').getByRole('button', { name: '重试' }).click();
+	await expect(pane(page).locator('.ai-status')).toContainText('Codex 没能启动');
+});
+
+test('the server out of reach: said so in its words (not the browser’s), and what was said is back to be sent again', async ({ page }) => {
+	await openAi(page);
+	await page.route('**/api/studio/conversations/*/prompt', (route) => route.abort('failed'));
+	await tell(page, '环境');
+	await expect(pane(page).locator('.ai-status')).toContainText('连不上 Studio 的服务器');
+	await expect(input(page)).toHaveText('环境');
+	await page.unroute('**/api/studio/conversations/*/prompt');
+	await pane(page).locator('.ai-status').getByRole('button', { name: '重试' }).click();
+	await expect(pane(page).locator('.ai-message').last()).toContainText('地址');
+
+	// A stop that does not get through: said so, and the conversation shown as it is.
+	await tell(page, '慢慢来');
+	await expect(pane(page).locator('.ai-send')).toHaveAttribute('aria-label', '停下');
+	await page.route('**/api/studio/conversations/*/cancel', (route) => route.abort('failed'));
+	await pane(page).locator('.ai-send').click();
+	await expect(page.locator('.studio-toast')).toContainText('连不上 Studio 的服务器');
+	await page.unroute('**/api/studio/conversations/*/cancel');
+	await pane(page).locator('.ai-send').click();
+	await expect(pane(page).locator('.ai-stop').last()).toHaveText('已停止');
 });
 
 test('⚙ 模型和账号: another service, tried with a word and saved, is the one the next conversation is started for; its key never comes back', async ({ page }) => {
@@ -645,7 +669,9 @@ test('scrolled up, away from the end: ↓ back to it, with a dot when something 
 		await expect(pane(page).locator('.ai-send')).toHaveAttribute('aria-label', '发送');
 	}
 	const transcript = pane(page).locator('.ai-transcript');
-	await transcript.evaluate((node) => node.scrollTo({ top: 0 }));
+	// Scrolled up by the author (the wheel).
+	await transcript.hover();
+	await page.mouse.wheel(0, -10_000);
 	const latest = pane(page).locator('.ai-latest');
 	await expect(latest).toBeVisible();
 	await expect(latest).not.toHaveClass(/is-fresh/u);
@@ -657,9 +683,11 @@ test('scrolled up, away from the end: ↓ back to it, with a dot when something 
 });
 
 test.describe('copied from what the AI said', () => {
-	test.use({ permissions: ['clipboard-read', 'clipboard-write'] });
+	// Playwright's WebKit knows no clipboard permissions (the test is skipped there).
+	test.use({ permissions: async ({ browserName }, use) => use(browserName === 'webkit' ? [] : ['clipboard-read', 'clipboard-write']) });
 
-	test('code by its button; a formula on its own lines by its button, one in a line clicked: as written', async ({ page }) => {
+	test('code by its button; formulas have none (selecting in them is for quoting), and a click on one copies nothing', async ({ page, browserName }) => {
+		test.skip(browserName === 'webkit', 'Playwright’s WebKit grants no clipboard permissions');
 		await openAi(page);
 		await tell(page, '代码');
 		const answer = pane(page).locator('.ai-message').last();
@@ -667,11 +695,10 @@ test.describe('copied from what the AI said', () => {
 		await answer.locator('.ai-code').hover();
 		await answer.locator('.ai-code .ai-copy').click();
 		await expect.poll(clipboard).toBe('print(1)');
-		await answer.locator('.ai-math-block').hover();
-		await answer.locator('.ai-math-block .ai-copy').click();
-		await expect.poll(clipboard).toBe('$$\nE = mc^2\n$$');
+		await expect(answer.locator('.ai-math-display .ai-copy, .ai-math .ai-copy')).toHaveCount(0);
 		await answer.locator('.ai-math').click();
-		await expect.poll(clipboard).toBe('$a+b$');
+		await page.waitForTimeout(200);
+		expect(await clipboard()).toBe('print(1)');
 	});
 });
 

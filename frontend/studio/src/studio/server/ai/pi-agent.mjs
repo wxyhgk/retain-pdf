@@ -79,6 +79,23 @@ function studioTools(cwd) {
 	return [...operations, picture];
 }
 
+/** Told a model that takes no pictures. */
+const NO_PICTURES = '你现在用的模型看不了图片：用 read 读图片拿不到内容，不要猜图里有什么。要给作者看图，用 show_picture；要你看图，就请作者换一个能看图的模型。'; // i18n-ignore: for the AI
+
+/** Before what is said after a turn the author stopped (as Claude Code marks one). */
+const INTERRUPTED = '[用户中断了上一个请求，不要再继续它；只回答下面这句]'; // i18n-ignore: for the AI
+
+/**
+ * A run of pi's stopped, and kept stopped until pi is idle: one asked to stop before its first request may begin all
+ * the same, and go on (seen with a long answer stopped in its first seconds).
+ */
+async function stopped(session) {
+	for (let tries = 0; tries < 5 && !session.isIdle; tries += 1) {
+		await session.abort().catch(() => {});
+		if (!session.isIdle) await new Promise((resolve) => setTimeout(resolve, 100));
+	}
+}
+
 /** pi in this process: the stream to speak to it over, and how to stop it (its sessions let go). */
 export function piInProcess(env) {
 	const toAgent = new TransformStream();
@@ -137,7 +154,7 @@ function servePi(stream, env) {
 				throw said(error instanceof Error ? error.message : String(error));
 			});
 		const { session } = made;
-		const entry = { session, cwd, where, cancelled: false, stop: () => {} };
+		const entry = { session, cwd, where, cancelled: false, stopping: Promise.resolve(), stop: () => {} };
 		const send = (update) => void client.notify('session/update', { sessionId: session.sessionId, update }).catch(() => {});
 		entry.stop = session.subscribe(translator(cwd, send, session));
 		sessions.set(session.sessionId, entry);
@@ -190,9 +207,18 @@ function servePi(stream, env) {
 		}))
 		.onRequest('session/prompt', told(async ({ params }) => {
 			const entry = known(params.sessionId);
+			// One stopped before: really over first, or what is said now would be taken into it (its answer this one's).
+			await entry.stopping;
+			if (!entry.session.isIdle) await stopped(entry.session);
+			// The one before stopped by the author: said so, or the model answers what was asked then (it is unanswered).
+			const interrupted = entry.cancelled;
 			entry.cancelled = false;
-			entry.where.context = typeof params._meta?.studioContext === 'string' ? params._meta.studioContext : '';
-			const text = params.prompt.map((block) => (block.type === 'text' ? block.text : '')).join('');
+			const where = typeof params._meta?.studioContext === 'string' ? params._meta.studioContext : '';
+			// A model that takes no pictures: told so, or it reads one (read) for nothing and guesses.
+			const blind = Array.isArray(entry.session.model?.input) && !entry.session.model.input.includes('image');
+			entry.where.context = [where, blind ? NO_PICTURES : ''].filter(Boolean).join('\n\n');
+			const asked = params.prompt.map((block) => (block.type === 'text' ? block.text : '')).join('');
+			const text = interrupted ? `${INTERRUPTED}\n\n${asked}` : asked;
 			const images = params.prompt.filter((block) => block.type === 'image').map((block) => ({ type: 'image', data: block.data, mimeType: block.mimeType }));
 			try {
 				await entry.session.prompt(text, images.length ? { images } : undefined);
@@ -216,7 +242,7 @@ function servePi(stream, env) {
 			const entry = sessions.get(params.sessionId);
 			if (!entry) return;
 			entry.cancelled = true;
-			void entry.session.abort().catch(() => {});
+			entry.stopping = stopped(entry.session);
 		})
 		.onRequest('session/set_config_option', told(async ({ params }) => {
 			const { session } = known(params.sessionId);

@@ -17,9 +17,16 @@ const text = (description) => ({ type: 'string', description });
 export const OPERATIONS = [
 	{
 		name: 'list_pages',
-		description: '列出所有页面：文件夹名、标题、上级（parent）、顺序（order）、是不是草稿、类型、标签、网址。', // i18n-ignore: for the AI
-		input: { type: 'object', properties: {} },
-		run: (ops) => ops.listPages(),
+		description: '列出页面：文件夹名、标题、上级（parent）、顺序（order）、是不是草稿、类型、标签、网址。可以只要某个上级下面的（parent，顶层用空字符串）、某种类型的（kind）、草稿或已发布的（draft）。', // i18n-ignore: for the AI
+		input: {
+			type: 'object',
+			properties: {
+				parent: text('只要这个页面（文件夹名）下面的；空字符串是顶层的'), // i18n-ignore: for the AI
+				kind: { type: 'string', enum: ['post', 'wiki'], description: '只要博客文章（post）或知识库（wiki）' }, // i18n-ignore: for the AI
+				draft: { type: 'boolean', description: 'true 只要草稿，false 只要已发布的' }, // i18n-ignore: for the AI
+			},
+		},
+		run: (ops, args) => ops.listPages(args),
 	},
 	{
 		name: 'page_tree',
@@ -29,8 +36,18 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'read_page',
-		description: '读一个页面：完整的 Markdown（含开头的属性）、属性、属性里的问题。', // i18n-ignore: for the AI
-		input: { type: 'object', properties: { slug }, required: ['slug'] },
+		description: '读一个页面：Markdown（含开头的属性）、属性、属性里的问题、总长度。长页面一次只给一部分（4 万字以内），带 next（下一部分从哪开始）和 nextHeading（后面第一个标题）。outline 只要目录（每个标题和它在第几行）；heading 只读那个标题开始的一节；offset/limit 读其中一段。长页面先看目录再按节读。', // i18n-ignore: for the AI
+		input: {
+			type: 'object',
+			properties: {
+				slug,
+				outline: { type: 'boolean', description: '只要目录' }, // i18n-ignore: for the AI
+				heading: text('只读这个标题开始的一节（标题的文字，不含 #）'), // i18n-ignore: for the AI
+				offset: { type: 'number', description: '从第几个字符开始读（上一次给的 next）' }, // i18n-ignore: for the AI
+				limit: { type: 'number', description: '最多读多少字符（不超过 40000）' }, // i18n-ignore: for the AI
+			},
+			required: ['slug'],
+		},
 		run: (ops, args) => ops.readPage(args),
 	},
 	{
@@ -125,7 +142,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'check_page',
-		description: '发布前检查：照现在的样子发布，哪些会让博客构建失败（error），哪些会在页面上显示出错（warning）。', // i18n-ignore: for the AI
+		description: '发布前检查：照现在的样子发布，哪些会让博客构建失败（error），哪些会在页面上显示出错（warning）。ok 为 true 就是能发布（没有 error）；issues 是查出的每一处。', // i18n-ignore: for the AI
 		input: { type: 'object', properties: { slug }, required: ['slug'] },
 		run: (ops, args) => ops.checkPage(args),
 	},
@@ -149,9 +166,9 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'git_status',
-		description: 'git 里还没提交的页面：changed 是有改动的页面（new 为新页面），vanished 是已经删掉的页面。', // i18n-ignore: for the AI
-		input: { type: 'object', properties: {} },
-		run: (ops) => ops.gitStatus(),
+		description: 'git 里还没提交的页面：changed 是有改动的页面（new 为新页面），vanished 是已经删掉的页面。给了 slug 就只说这一页：new、modified、vanished 或 clean（没有改动）。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { slug: text('只看这一页（文件夹名）') } }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.gitStatus(args),
 	},
 	{
 		name: 'list_history',
