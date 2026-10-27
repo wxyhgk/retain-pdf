@@ -7,6 +7,7 @@ Studio 里 Milkdown 编辑器的部件里，**不认识 Studio 的那些**：不
 | `math/inline-math.ts` | 行内公式：`$…$` 在原处显示源码、上面浮着渲染结果，离开就画成公式；`formulaTakesEnter` 说回车该不该归公式 |
 | `math/display-math.ts` | 行间公式：画在原处，点开在弹窗里改 |
 | `math/formula-typing.ts` | 边打边画：画不出来时留着上一次画好的，停手一秒才报错 |
+| `math/formula-marks.ts` | 正在写的公式像 MathLive 那样画：光标画在公式里、光标所在的一层有浅底、空位是虚线方框（只给画用的 LaTeX 加 `\htmlClass{pm-math-…}`，源码不动） |
 | `math/latex-assist.ts`、`math/latex-completion-menu.ts` | 命令补全（`\fr` → `\frac{}{}`）和括号自动配对 |
 | `math/equation-numbers.ts` | 作者写的 `\tag{…}` 编号 |
 | `math/math-brackets.ts` | `\(…\)`、`\[…\]` 写法也当公式（用 `@blog/markdown` 的 remark 插件） |
