@@ -27,6 +27,9 @@ export type ArticleListHost = {
 	moveTo(slugs: string[]): void;
 	/** Several pages to the trash, with the pages under them. */
 	removeMany(articles: ArticleSummary[]): void;
+	/** 常用: whether a page is starred; starred, or no longer. */
+	isFavorite?(slug: string): boolean;
+	toggleFavorite?(slug: string): void;
 };
 
 /** What the tree shows (PageTree.tsx draws it). */

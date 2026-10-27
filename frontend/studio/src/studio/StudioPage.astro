@@ -462,7 +462,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.side-panel :global(.plugin-pane) { display: flex; flex: 1; min-height: 0; flex-direction: column; overflow: auto; }
 	.side-panel :global(.plugin-pane[hidden]) { display: none; }
 	.side-panel :global(.side-pane-error) { margin: 16px 12px; color: var(--danger); font-size: 12px; line-height: 1.5; }
-	:global(.pane-toolbar) { display: flex; flex: none; align-items: center; gap: 8px; min-height: 38px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); }
+	:global(.pane-toolbar) { display: flex; flex: none; align-items: center; gap: 8px; min-height: 40px; padding: 0 8px 0 12px; border-bottom: 1px solid var(--studio-hairline); }
 	:global(.pane-path) { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 	:global(.pane-actions) { display: flex; gap: 2px; }
 	:global(.pane-actions button) { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 14px; cursor: pointer; }

@@ -18,8 +18,9 @@ export type SideTab = { key: string; label: string; id: string; controls: string
 export type ShellState = {
 	view: View;
 	sidebarCollapsed: boolean;
-	/** The open article's title, in the bar. */
+	/** The open article's title, in the bar; its icon (an emoji; empty for none). */
 	title: string;
+	icon: string;
 	/** What the status line says, and in which tone (top-bar.ts `saveStateText`). */
 	status: { text: string; tone: string };
 	/** When the open article last changed; null for none. */
@@ -27,7 +28,12 @@ export type ShellState = {
 	/** The open article on the blog. */
 	articleHref: string;
 	/** The pages the open one is under, the nearest last: links in the bar, each with a menu of the pages under it. */
-	path: Array<{ slug: string; title: string }>;
+	path: Array<{ slug: string; title: string; icon?: string }>;
+	/** 常用: the pages starred, shown at the top of the left column; whether the open one is. */
+	favorites: Array<{ slug: string; title: string; icon?: string }>;
+	favorite: boolean;
+	/** How many articles there are (全部文章). */
+	count: number;
 	/** Whether there is a page to go back to, or forward to. */
 	nav: { back: boolean; forward: boolean };
 	panelOpen: boolean;
@@ -57,6 +63,8 @@ export type ShellActions = {
 	/** A page of the path in the bar opened; the pages under one, for the menu after it. */
 	openPage(slug: string): void;
 	pagesUnder(slug: string): Array<{ slug: string; title: string }>;
+	/** ☆: the page (the open one, unless named) starred in 常用, or no longer. */
+	toggleFavorite(slug?: string): void;
 	forward(): void;
 	chooseTab(key: string): void;
 	togglePanel(): void;
@@ -74,6 +82,10 @@ function initialState(): ShellState {
 		articleHref: '/blog',
 		nav: { back: false, forward: false },
 		path: [],
+		favorites: [],
+		favorite: false,
+		count: 0,
+		icon: '',
 		panelOpen: true,
 		tabs: [
 			{ key: 'ai', label: 'AI' },
@@ -111,6 +123,7 @@ export const ActionsContext = createContext<ShellActions>({
 	pageMenu: nothing,
 	back: nothing,
 	openPage: nothing,
+	toggleFavorite: nothing,
 	pagesUnder: () => [],
 	forward: nothing,
 	chooseTab: nothing,

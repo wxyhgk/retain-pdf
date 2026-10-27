@@ -15,7 +15,7 @@
 .page-cover-actions button:hover { background: rgba(var(--black), 0.08); }
 .page-emoji { display: block; width: 78px; height: 78px; margin: 0 0 4px -4px; padding: 0; border: 0; border-radius: 6px; background: transparent; font-size: 64px; line-height: 78px; text-align: center; cursor: pointer; }
 .page-emoji[hidden] { display: none; }
-.page-emoji:hover { background: var(--surface-soft); }
+.page-emoji:hover { background: var(--studio-fill); }
 .document-header.has-cover .page-emoji { margin-top: -40px; position: relative; }
 .page-head-actions { display: flex; gap: 4px; min-height: 28px; margin-bottom: 4px; opacity: 0; transition: opacity 120ms ease; }
 .page-head:hover .page-head-actions, .page-head-actions:focus-within { opacity: 1; }
@@ -24,15 +24,15 @@
 .page-head-actions button[hidden] { display: none; }
 /* Icon and cover both there: nothing to add, no row for it. */
 :global(.page-head-actions:not(:has(button:not([hidden])))) { display: none; }
-.article-title-input { box-sizing: border-box; width: 100%; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-text); font-size: var(--studio-title-size); font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; outline: none; }
+.article-title-input { box-sizing: border-box; width: 100%; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-text); font-size: var(--studio-title-size); font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; outline: none; }
 .article-title-input::placeholder { color: rgb(var(--gray)); opacity: 0.48; }
 .article-title-input:disabled { opacity: 0.55; }
 /* Properties as rows: a name, and its value changed where it is. */
-.page-properties { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: start; gap: 1px 6px; margin-top: 14px; padding-bottom: 12px; border-bottom: 1px solid rgb(var(--gray-light)); font-size: 14px; }
-.property-name { display: flex; align-items: center; gap: 7px; padding: 6px 6px; color: rgb(var(--gray)); line-height: 20px; white-space: nowrap; }
+.page-properties { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: start; gap: 1px 6px; margin-top: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--studio-hairline); font-size: 14px; }
+.property-name { display: flex; align-items: center; gap: 7px; padding: 5px 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-ui); line-height: 20px; white-space: nowrap; }
 .property-name svg, .property-add svg { flex: none; width: 15px; height: 15px; stroke-width: 1.75; }
-.property-value { box-sizing: border-box; min-height: 32px; width: 100%; margin: 0; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 14px; line-height: 20px; outline: none; }
-.property-value:hover, .property-value:focus, .property-value:focus-within { background: var(--surface-soft); }
+.property-value { box-sizing: border-box; min-height: 30px; width: 100%; margin: 0; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 14px; line-height: 20px; outline: none; }
+.property-value:hover, .property-value:focus, .property-value:focus-within { background: var(--studio-fill); }
 textarea.property-value { display: block; resize: none; overflow: hidden; }
 .property-value::placeholder, .tag-field input::placeholder { color: rgb(var(--gray)); opacity: 0.6; }
 select.property-value { appearance: none; cursor: pointer; }

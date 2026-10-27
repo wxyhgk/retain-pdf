@@ -1,7 +1,7 @@
 // The Studio page: its parts, and how they talk to each other. Each part
 // keeps to its own corner of the page; the open article lives in the session.
 import './locale';
-import { Copy, FolderPen, FolderSearch, History, Link, MoveHorizontal, Trash2 } from 'lucide-react';
+import { Copy, FolderPen, FolderSearch, History, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
 import {
 	articleFileHead,
 	articleFileUrl,
@@ -42,6 +42,7 @@ import { ArticleSession, type SaveState } from './state/article-session';
 import { trackWrite } from './state/writes';
 import type { ArticlePayload, ArticleSummary } from './types';
 import { createArticleActions } from './pages/article-actions';
+import { favoriteSlugs, toggleFavorite } from './pages/favorites';
 import { createArticleList } from './pages/article-list';
 import { showContextMenu } from './common/context-menu';
 import { watchDisk } from './common/disk-events';
@@ -113,6 +114,7 @@ mountShell(shell, {
 		void session.open(slug);
 	},
 	pagesUnder: (slug) => articleList.childrenOf(slug),
+	toggleFavorite: (slug) => starPage(slug ?? session.slug),
 	forward: () => visited.step(1),
 	chooseTab: (tab) => sidePanel.choose(tab),
 	togglePanel: () => sidePanel.toggle(),
@@ -171,6 +173,8 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 		})();
 	},
 	removeMany: (articles) => void articleActions.removeMany(articles),
+	isFavorite: (slug) => favoriteSlugs().includes(slug),
+	toggleFavorite: (slug) => starPage(slug),
 	listed: (articles) => {
 		showPath();
 		properties.knowTags(articles.flatMap((article) => article.tags ?? []));
@@ -677,17 +681,35 @@ async function movePagesNow(slugs: string[], parent: string, place: PagePlace): 
 	if (slugs.length > 1) showToast(t('已移动 {count} 个页面', { count: slugs.length }));
 }
 
-/** The pages the open one is under, in the bar. */
+/** The pages the open one is under, in the bar, with their icons and its own; 常用, at the top of the left column; how many there are. */
 function showPath(): void {
 	const articles = articleList.articles();
 	const bySlug = new Map(articles.map((article) => [article.slug, article]));
-	const pages: Array<{ slug: string; title: string }> = [];
+	const pages: Array<{ slug: string; title: string; icon?: string }> = [];
 	const seen = new Set<string>();
 	for (let at = session.slug ? bySlug.get(session.slug)?.parent : undefined; at && !seen.has(at) && bySlug.has(at); at = bySlug.get(at)?.parent) {
 		seen.add(at);
-		pages.unshift({ slug: at, title: bySlug.get(at)!.title });
+		pages.unshift({ slug: at, title: bySlug.get(at)!.title, icon: bySlug.get(at)!.icon });
 	}
-	shellState.set({ path: pages });
+	const starred = favoriteSlugs();
+	shellState.set({
+		path: pages,
+		icon: (session.slug && bySlug.get(session.slug)?.icon) || '',
+		count: articles.length,
+		favorite: Boolean(session.slug && starred.includes(session.slug)),
+		favorites: starred.flatMap((slug) => {
+			const page = bySlug.get(slug);
+			return page ? [{ slug, title: page.title || slug, icon: page.icon }] : [];
+		}),
+	});
+}
+
+/** ☆: a page starred in 常用, or no longer; said so. */
+function starPage(slug: string | null): void {
+	if (!slug) return;
+	const starred = toggleFavorite(slug).includes(slug);
+	showToast(starred ? t('已加入常用') : t('已移出常用'));
+	showPath();
 }
 
 /**
@@ -1186,6 +1208,7 @@ function showPageMenu(pageMenu: HTMLElement): void {
 	if (!article) return;
 	const address = articleAddress(article.kind, article.slug);
 	showContextMenu([
+		{ label: favoriteSlugs().includes(article.slug) ? t('移出常用') : t('加入常用'), icon: Star, action: () => starPage(article.slug) },
 		{
 			label: properties.isWide() ? t('全宽 ✓') : t('全宽'),
 			icon: MoveHorizontal,

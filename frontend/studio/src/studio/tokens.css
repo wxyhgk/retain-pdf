@@ -11,7 +11,7 @@
 	/* The text: its size and line height; the title's size. */
 	--studio-editor-font-size: 16px;
 	--studio-editor-line-height: 1.72;
-	--studio-title-size: clamp(30px, 3vw, 40px);
+	--studio-title-size: clamp(32px, 3.2vw, 44px);
 	/* The columns: the article list on the left, the panel on the right (until it is dragged). */
 	--studio-sidebar-width: 250px;
 	--studio-panel-width: 340px;

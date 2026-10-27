@@ -2,20 +2,20 @@
 .file-tree { flex: 1; min-height: 0; padding: 6px; overflow-y: auto; }
 .file-tree .file-tree-list { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
 .file-tree.is-drop-target { outline: 2px dashed color-mix(in srgb, var(--accent) 55%, transparent); outline-offset: -4px; border-radius: 8px; }
-.file-tree .file-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-height: 28px; padding: 0 4px 0 calc(8px + var(--depth, 0) * 16px); border-radius: 6px; color: rgb(var(--gray-dark)); font-size: 12px; cursor: default; user-select: none; }
-.file-tree .file-row:hover { background: rgb(var(--gray-light)); }
+.file-tree .file-row { display: grid; grid-template-columns: 16px minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-height: 30px; padding: 0 4px 0 calc(8px + var(--depth, 0) * 16px); border-radius: var(--studio-radius-xs); color: rgb(var(--gray-dark)); font-size: var(--studio-fs-ui); cursor: default; user-select: none; }
+.file-tree .file-row:hover { background: var(--studio-fill); }
 .file-tree .file-row:focus { outline: none; }
 .file-tree .file-row:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
-.file-tree .file-row.is-selected { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.file-tree .file-row.is-selected { background: var(--studio-fill-2); }
 .file-tree .file-row.is-drop-target { background: color-mix(in srgb, var(--accent) 24%, transparent); box-shadow: inset 0 0 0 1px var(--accent); }
-.file-tree .file-row.is-folder { font-weight: 600; }
+.file-tree .file-row.is-folder { font-weight: 550; }
 .file-tree .file-row.is-locked:not(.is-folder .file-name) { color: rgb(var(--gray)); }
 .file-tree .file-row.is-unused .file-name, .file-tree .file-row.is-unused .file-icon { opacity: 0.45; }
 .file-tree .file-row.is-unused .file-name { text-decoration: line-through dotted rgb(var(--gray)); }
 .file-tree .file-icon { display: grid; place-items: center; color: rgb(var(--gray)); font-size: 11px; }
-.file-tree .file-icon svg { width: 15px; height: 15px; stroke-width: 1.75; }
+.file-tree .file-icon svg { width: 16px; height: 16px; stroke-width: 1.75; }
 .file-tree .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.file-tree .file-meta { color: rgb(var(--gray)); font-size: 10px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.file-tree .file-meta { color: rgb(var(--gray)); font-size: var(--studio-fs-caption); font-weight: 400; font-variant-numeric: tabular-nums; }
 .file-tree .file-row-actions { display: flex; gap: 1px; }
 .file-tree .file-row-actions button { display: grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); cursor: pointer; opacity: 0; }
 .file-tree .file-row-actions button svg { width: 14px; height: 14px; }

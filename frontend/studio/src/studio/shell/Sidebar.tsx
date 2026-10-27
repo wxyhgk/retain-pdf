@@ -1,21 +1,23 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Blocks, ChevronDown, Globe, House, Languages, Library, MessageCircle, Plus, Puzzle, Search, Settings2, SquarePen, Table2, Trash2, type LucideIcon } from 'lucide-react';
+import { Blocks, ChevronDown, FileText, Globe, House, Languages, Library, MessageCircle, Plus, Puzzle, Search, Settings2, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Button } from '@studio/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@studio/ui/dropdown-menu';
 import { Kbd } from '@studio/ui/kbd';
+import { showContextMenu } from '../common/context-menu';
 import { ChatList } from './ChatList';
 import { useActions, useShell } from './shell-state';
 
-/** A line of the left column: an icon, what it does; `href` makes it a link. */
-function Item({ icon: Icon, href, children, className, ...props }: { icon: LucideIcon; href?: string; children: ReactNode } & ComponentProps<'button'>) {
+/** A line of the left column: an icon, what it does, how many there are (`count`); `href` makes it a link. */
+function Item({ icon: Icon, href, count, children, className, ...props }: { icon: LucideIcon; href?: string; count?: number; children: ReactNode } & ComponentProps<'button'>) {
 	const look = cn('h-8 w-full justify-start gap-2.5 rounded-lg px-2 has-[>svg]:px-2 text-[14px] font-normal text-foreground hover:bg-[var(--studio-fill)] aria-pressed:bg-[var(--studio-fill-2)]', className);
 	const inside = (
 		<>
 			<Icon aria-hidden className="size-4 text-muted-foreground" />
-			{children}
+			<span className="min-w-0 flex-1 truncate text-left">{children}</span>
+			{count !== undefined && count > 0 && <span className="text-[12px] text-muted-foreground tabular-nums">{count}</span>}
 		</>
 	);
 	if (href)
@@ -31,15 +33,49 @@ function Item({ icon: Icon, href, children, className, ...props }: { icon: Lucid
 	);
 }
 
-/** A heading over the pages or the conversations, with ＋ to make one. */
-function Heading({ title, add, label, onAdd, hidden }: { title: string; add: string; label: string; onAdd(): void; hidden: boolean }) {
+/** A heading over a group of the left column (常用, the pages, the conversations); with ＋ to make one, where there is. */
+function Heading({ title, add, label, onAdd, hidden }: { title: string; add?: string; label?: string; onAdd?(): void; hidden: boolean }) {
 	return (
 		<div className="flex min-h-8 items-center justify-between pt-2 pr-[11px] pl-[15px]" hidden={hidden}>
 			<h2 className="text-[12px] font-medium text-muted-foreground">{title}</h2>
-			<Button id={add} type="button" variant="ghost" size="icon-xs" className="text-muted-foreground hover:text-foreground" title={label} aria-label={label} onClick={onAdd}>
-				<Plus aria-hidden className="size-4" />
-			</Button>
+			{onAdd && (
+				<Button id={add} type="button" variant="ghost" size="icon-xs" className="text-muted-foreground hover:text-foreground" title={label} aria-label={label} onClick={onAdd}>
+					<Plus aria-hidden className="size-4" />
+				</Button>
+			)}
 		</div>
+	);
+}
+
+/** 常用: the pages starred, each opened with a click; its menu (the right button) to unstar it. */
+function Favorites({ hidden }: { hidden: boolean }) {
+	const { favorites } = useShell();
+	const act = useActions();
+	if (!favorites.length) return null;
+	return (
+		<>
+			<Heading title={t('常用')} hidden={hidden} />
+			<div id="favorites" className="grid gap-px px-[7px] pb-1" hidden={hidden}>
+				{favorites.map((page) => (
+					<Button
+						key={page.slug}
+						type="button"
+						variant="ghost"
+						data-slug={page.slug}
+						className="h-8 w-full justify-start gap-2.5 rounded-lg px-2 has-[>svg]:px-2 text-[14px] font-normal text-foreground hover:bg-[var(--studio-fill)]"
+						title={page.title}
+						onClick={() => act.openPage(page.slug)}
+						onContextMenu={(event) => {
+							event.preventDefault();
+							showContextMenu([{ label: t('移出常用'), icon: StarOff, action: () => act.toggleFavorite(page.slug) }], { x: event.clientX, y: event.clientY });
+						}}
+					>
+						{page.icon ? <span className="grid size-4 place-items-center text-[15px] leading-none">{page.icon}</span> : <FileText aria-hidden className="size-4 text-muted-foreground" />}
+						<span className="min-w-0 flex-1 truncate text-left">{page.title}</span>
+					</Button>
+				))}
+			</div>
+		</>
 	);
 }
 
@@ -108,7 +144,7 @@ function WorkspaceMenu({ siteTitle }: { siteTitle: string }) {
  * or the conversations of AI 问答; the workspace's menu (the blog, the trash, the plugins, the settings) at the foot.
  */
 export function Sidebar({ siteTitle }: { siteTitle: string }) {
-	const { view, chats, chat } = useShell();
+	const { view, chats, chat, count } = useShell();
 	const act = useActions();
 	const chatting = view === 'chat';
 	const toggle = (to: 'drive' | 'table') => () => act.showView(view === to ? 'editor' : to);
@@ -135,7 +171,7 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				<Mode id="sidebar-chats" icon={MessageCircle} label={t('AI 问答')} selected={chatting} onClick={() => act.showView('chat')} />
 			</div>
 			<div className="grid gap-px px-[7px] pb-2">
-				<Item id="open-table" icon={Table2} aria-pressed={view === 'table'} onClick={toggle('table')}>
+				<Item id="open-table" icon={Table2} count={count} aria-pressed={view === 'table'} onClick={toggle('table')}>
 					{t('全部文章')}
 				</Item>
 				<Item id="open-drive" icon={Library} aria-pressed={view === 'drive'} onClick={toggle('drive')}>
@@ -148,7 +184,8 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				{/* The plugins' commands (ctx.commands, places: ['sidebar']): plugin-ui.ts draws them. */}
 				<div id="plugin-commands" className="plugin-commands" data-host hidden />
 			</div>
-			<Heading title="Private" add="new-article" label={t('新建文章')} onAdd={act.newPage} hidden={chatting} />
+			<Favorites hidden={chatting} />
+			<Heading title={t('页面')} add="new-article" label={t('新建文章')} onAdd={act.newPage} hidden={chatting} />
 			{/* The pages, as a tree: article-list.ts draws it. */}
 			<nav id="article-list" aria-label={t('页面列表')} data-host hidden={chatting} />
 			<Heading title={t('对话')} add="new-chat" label={t('新建对话')} onAdd={act.newChat} hidden={!chatting} />

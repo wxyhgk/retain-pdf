@@ -7,6 +7,7 @@ import { cleanSlug, freeSlug } from './page-names.ts';
 import { showToast } from '../common/toast.ts';
 import { openDialog } from '../shell/dialogs/Dialogs';
 import type { DeletePageChoice } from '../shell/dialogs/AskDialogs';
+import { renameFavorite } from './favorites';
 
 /** An article deleted just before the page went empty, to offer back once it is shown again. */
 const PENDING_UNDO = 'studio-deleted-article';
@@ -133,6 +134,8 @@ export function createArticleActions(host: ArticleActionsHost) {
 				showToast(errorText(error, t('改名失败')), true);
 				return null;
 			}
+			// Still starred (常用), by its new name.
+			renameFavorite(article.slug, to);
 			await host.reload();
 			if (open) await host.open(to);
 			return { relinked };

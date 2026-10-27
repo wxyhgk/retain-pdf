@@ -721,7 +721,8 @@ test.describe('copied from what the AI said', () => {
 		await answer.locator('.ai-code .ai-copy').click();
 		await expect.poll(clipboard).toBe('print(1)');
 		await expect(answer.locator('.ai-math-display .ai-copy, .ai-math .ai-copy')).toHaveCount(0);
-		await answer.locator('.ai-math').click();
+		// Clicked where it is drawn (KaTeX's struts can leave its middle to the line around it).
+		await answer.locator('.ai-math').click({ force: true });
 		await page.waitForTimeout(200);
 		expect(await clipboard()).toBe('print(1)');
 	});

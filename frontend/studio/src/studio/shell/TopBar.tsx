@@ -1,5 +1,5 @@
 import { useEffect, useState, type ComponentProps } from 'react';
-import { ChevronLeft, ChevronRight, Ellipsis, ExternalLink, FileText, PanelLeft, PanelRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Ellipsis, ExternalLink, FileText, PanelLeft, PanelRight, Star } from 'lucide-react';
 
 import { locale, t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -18,6 +18,11 @@ function IconButton({ className, ...props }: ComponentProps<'button'>) {
 	return <Button type="button" variant="ghost" size="icon-sm" className={cn('size-7 text-muted-foreground hover:text-foreground aria-pressed:text-foreground [&_svg]:size-4', className)} {...props} />;
 }
 
+/** A page's icon in the bar: its emoji, or a page drawn. */
+function PageIcon({ icon }: { icon?: string }) {
+	return icon ? <span className="grid size-4 flex-none place-items-center text-[14px] leading-none">{icon}</span> : <FileText aria-hidden className="size-4 flex-none text-muted-foreground" />;
+}
+
 /** Drawn again every `ms`, for what says how long ago something was. */
 function useTicking(ms: number): void {
 	const [, tick] = useState(0);
@@ -29,7 +34,7 @@ function useTicking(ms: number): void {
 
 /** The bar above the middle: the sidebar's toggle, where one is, when the article was edited and saved, its menu, the right column's toggle. */
 export function TopBar({ siteTitle }: { siteTitle: string }) {
-	const { view, sidebarCollapsed, title, status, edited, articleHref, panelOpen, nav, path } = useShell();
+	const { view, sidebarCollapsed, title, icon, status, edited, articleHref, panelOpen, nav, path, favorite } = useShell();
 	const act = useActions();
 	useTicking(30_000);
 	const article = view === 'editor';
@@ -50,27 +55,31 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				<IconButton id="go-forward" aria-label={t('前进')} title={t('前进')} disabled={!nav.forward} onClick={act.forward} className="mr-1">
 					<ChevronRight aria-hidden />
 				</IconButton>
-				<span className="text-muted-foreground max-[720px]:hidden">{siteTitle}</span>
-				<span className="text-muted-foreground max-[720px]:hidden">/</span>
-				{/* The pages the open one is under, as Notion's path; the / after each, a menu of the pages under it (as SiYuan's). */}
+				{/* The pages the open one is under, as Notion's path, each with its icon; the › after each, a menu of the pages under it (as SiYuan's). */}
 				{article &&
 					path.map((page) => [
-						<button key={`${page.slug}:link`} type="button" className="page-path-link max-w-[180px] truncate rounded px-1 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground max-[720px]:hidden" onClick={() => act.openPage(page.slug)}>
-							{page.title}
+						<button key={`${page.slug}:link`} type="button" className="page-path-link flex h-7 max-w-[180px] min-w-0 items-center gap-1.5 rounded-md px-1.5 text-muted-foreground hover:bg-[var(--studio-fill)] hover:text-foreground max-[720px]:hidden" onClick={() => act.openPage(page.slug)}>
+							<PageIcon icon={page.icon} />
+							<span className="truncate">{page.title}</span>
 						</button>,
 						<button
 							key={`${page.slug}:under`}
 							type="button"
-							className="page-path-separator rounded px-0.5 text-muted-foreground hover:bg-accent hover:text-foreground max-[720px]:hidden"
+							className="page-path-separator grid h-7 w-4 place-items-center rounded-md text-muted-foreground/70 hover:bg-[var(--studio-fill)] hover:text-foreground max-[720px]:hidden"
 							aria-label={t('「{title}」下面的页面', { title: page.title })}
 							onClick={(event) => showContextMenu(act.pagesUnder(page.slug).map((child) => ({ label: child.title, icon: FileText, action: () => act.openPage(child.slug) })), event.currentTarget)}
 						>
-							/
+							<ChevronRight aria-hidden className="size-3.5" />
 						</button>,
 					])}
-				<strong id="breadcrumb-title" className="max-w-[340px] truncate font-semibold max-[720px]:max-w-[150px]" hidden={!article}>
-					{title}
-				</strong>
+				{article && (
+					<span className="flex min-w-0 items-center gap-1.5 px-1">
+						<PageIcon icon={icon} />
+						<strong id="breadcrumb-title" className="max-w-[340px] truncate font-semibold max-[720px]:max-w-[150px]">
+							{title}
+						</strong>
+					</span>
+				)}
 				{!article && <strong className="truncate font-semibold">{viewName(view)}</strong>}
 			</div>
 			<div className="flex min-w-0 items-center gap-[7px]">
@@ -93,6 +102,9 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 						<ExternalLink aria-hidden />
 					</a>
 				</Button>
+				<IconButton id="page-favorite" aria-pressed={favorite} aria-label={favorite ? t('移出常用') : t('加入常用')} title={favorite ? t('移出常用') : t('加入常用')} hidden={!article} onClick={() => act.toggleFavorite()}>
+					<Star aria-hidden className={favorite ? 'fill-current' : ''} />
+				</IconButton>
 				<IconButton id="page-menu" aria-label={t('页面菜单')} title={t('页面菜单')} hidden={!article} onClick={(event) => act.pageMenu(event.currentTarget)}>
 					<Ellipsis aria-hidden />
 				</IconButton>

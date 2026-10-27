@@ -21,7 +21,7 @@
 .ai-items { display: flex; flex-direction: column; gap: 10px; }
 
 .ai-user { display: flex; justify-content: flex-end; }
-.ai-bubble { max-width: 88%; padding: 7px 11px; border-radius: 12px; background: rgba(var(--black), 0.05); line-height: 1.55; overflow-wrap: anywhere; }
+.ai-bubble { max-width: 88%; padding: 7px 12px; border-radius: var(--studio-radius-lg); background: var(--studio-fill-2); font-size: var(--studio-fs-body); line-height: 1.55; overflow-wrap: anywhere; }
 /* What was said, drawn from its Markdown: its lines as they were written. */
 .ai-bubble p { margin: 0; white-space: pre-wrap; }
 .ai-bubble > * + * { margin-top: 6px; }
@@ -29,17 +29,17 @@
 .ai-bubble pre { margin: 4px 0 0; padding: 6px 8px; overflow: auto; border-radius: 6px; background: rgba(var(--black), 0.05); font-size: 12px; }
 .ai-bubble code { font-family: var(--font-mono); font-size: 12px; }
 
-.ai-message { line-height: 1.65; overflow-wrap: anywhere; }
+.ai-message { font-size: var(--studio-fs-body); line-height: 1.65; overflow-wrap: anywhere; }
 .ai-message > :first-child, .ai-block > :first-child { margin-top: 0; }
 .ai-message > :last-child, .ai-block > :last-child { margin-bottom: 0; }
 .ai-message p, .ai-message ul, .ai-message ol, .ai-message pre, .ai-message table, .ai-message blockquote { margin: 0 0 8px; }
 .ai-message ul, .ai-message ol { padding-left: 20px; }
-.ai-message h1, .ai-message h2, .ai-message h3, .ai-message h4 { margin: 12px 0 6px; color: rgb(var(--black)); font-size: 14px; }
-.ai-message code { padding: 1px 4px; border-radius: 4px; background: var(--surface-soft); font-family: var(--font-mono); font-size: 12px; }
+.ai-message h1, .ai-message h2, .ai-message h3, .ai-message h4 { margin: 14px 0 6px; color: rgb(var(--black)); font-size: 15px; font-weight: 650; }
+.ai-message code { padding: 1px 4px; border-radius: 4px; background: var(--studio-fill-2); font-family: var(--font-mono); font-size: var(--studio-fs-ui); }
 .ai-message pre, .ai-tool-text pre { padding: 8px 10px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-size: 12px; line-height: 1.5; }
 .ai-message pre code, .ai-tool-text pre code { padding: 0; background: none; }
 .ai-message blockquote { padding-left: 10px; border-left: 3px solid rgb(var(--gray-light)); color: rgb(var(--gray)); }
-.ai-message table { border-collapse: collapse; font-size: 12px; }
+.ai-message table { border-collapse: collapse; font-size: var(--studio-fs-ui); }
 .ai-message th, .ai-message td { padding: 3px 8px; border: 1px solid rgb(var(--gray-light)); }
 .ai-message a { color: inherit; }
 /* A picture in what is said: small in the conversation (as it fits), whole when clicked. */
@@ -129,13 +129,13 @@
 .ai-input { position: relative; box-sizing: border-box; width: 100%; border: 1px solid rgb(var(--gray-light)); border-bottom: 0; border-radius: 12px 12px 0 0; background: var(--surface); }
 /* Not a scroller of its own: a formula's preview pops out over it (a long one is a chip: PASTE_LINES). */
 .ai-input-editor { cursor: text; }
-.ai-input .milkdown { --crepe-base-font-size: 13px; --crepe-font-default: inherit; --crepe-color-background: transparent; background: transparent; color: inherit; font-size: 13px; }
+.ai-input .milkdown { --crepe-base-font-size: 14px; --crepe-font-default: inherit; --crepe-color-background: transparent; background: transparent; color: inherit; font-size: var(--studio-fs-body); }
 .ai-input .milkdown .ProseMirror { min-height: 54px; padding: 10px 12px 6px; line-height: 1.55; outline: none; overflow-wrap: anywhere; }
-.ai-input .milkdown .ProseMirror p { margin: 0; padding: 0; font-size: 13px; line-height: 1.55; }
+.ai-input .milkdown .ProseMirror p { margin: 0; padding: 0; font-size: var(--studio-fs-body); line-height: 1.55; }
 .ai-input .milkdown .ProseMirror ul, .ai-input .milkdown .ProseMirror ol { padding-left: 4px; }
 .ai-input .milkdown .ProseMirror li p { padding: 0; }
 .ai-input .milkdown .ProseMirror pre, .ai-input .milkdown .milkdown-code-block { margin: 4px 0; }
-.ai-input-placeholder { position: absolute; top: 10px; right: 12px; left: 12px; overflow: hidden; color: rgb(var(--gray)); font-size: 13px; line-height: 1.55; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
+.ai-input-placeholder { position: absolute; top: 10px; right: 12px; left: 12px; overflow: hidden; color: rgb(var(--gray)); font-size: var(--studio-fs-body); line-height: 1.55; text-overflow: ellipsis; white-space: nowrap; pointer-events: none; }
 .ai-composer-bar { display: flex; align-items: center; gap: 2px; padding: 4px 6px 6px; border: 1px solid rgb(var(--gray-light)); border-top: 0; border-radius: 0 0 12px 12px; background: var(--surface); box-shadow: var(--studio-shadow-sm); }
 .ai-composer:focus-within .ai-input, .ai-composer:focus-within .ai-composer-bar { border-color: rgb(var(--gray)); }
 /* The model and how hard it thinks, as Notion's: a name and bars under the input, each a menu (ModelMenu.tsx). */
