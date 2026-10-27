@@ -12,7 +12,7 @@ test('能量图 from the slash menu draws its diagram, redrawn as a path is adde
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('/能量图');
-	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index]')).toHaveText(['能量图']);
+	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index] .menu-item-label')).toHaveText(['能量图']);
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');
 

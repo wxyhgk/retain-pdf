@@ -361,11 +361,17 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.editor-scroll.pm-block-dragging :global(.milkdown-block-handle) { opacity: 0 !important; pointer-events: none; }
 	:global(.crepe-host .milkdown .milkdown-block-handle .operation-item) { width: 24px; height: 24px; padding: 2px; border-radius: 6px; }
 	:global(.crepe-host .milkdown .milkdown-block-handle .operation-item svg) { width: 18px; height: 18px; }
-	:global(.crepe-host .milkdown .milkdown-slash-menu .tab-group) { padding: 8px 8px 0; }
-	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups) { max-height: 320px; padding: 0 6px 6px; }
-	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group h6) { padding: 8px 8px 2px; font-size: 11px; letter-spacing: 0.04em; text-transform: none; }
-	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group li) { min-width: 200px; gap: 10px; padding: 6px 8px; }
-	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group li > span) { font-size: 14px; font-weight: 400; line-height: 20px; }
+	/* The slash menu, as Notion's: one list under its groups' names; each block a tile, its name, what it is for, and what
+	   written in Markdown makes the same. Popped up as the other menus are. */
+	:global(.crepe-host .milkdown .milkdown-slash-menu) { border-radius: var(--studio-radius-lg); box-shadow: var(--studio-shadow-pop); }
+	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups) { scroll-behavior: auto; }
+	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group h6) { color: rgb(var(--gray)); font-size: var(--studio-fs-caption); letter-spacing: 0.01em; }
+	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group li) { border-radius: var(--studio-radius-sm); }
+	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-groups .menu-group li.hover) { background: var(--studio-fill-2); }
+	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-item-icon) { box-shadow: 0 0 0 0.5px var(--studio-hairline), 0 1px 2px rgba(0, 0, 0, 0.04); }
+	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-item-label) { color: rgb(var(--black)); font-size: var(--studio-fs-body); }
+	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-item-description) { color: rgb(var(--gray)); font-size: var(--studio-fs-footnote); }
+	:global(.crepe-host .milkdown .milkdown-slash-menu .menu-item-hint) { color: rgb(var(--gray)); font-family: var(--font-mono); }
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden)) { padding: 2px 0 8px; background: transparent; }
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .tools) { position: absolute; z-index: 2; top: 0; right: 0; left: 0; pointer-events: none; }
 	:global(.crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .language-button),
@@ -381,7 +387,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.link-paste-menu .block-menu-item.is-active) { background: var(--surface-soft); }
 	:global(.block-menu-item.is-current::after) { content: var(--word-current); margin-left: auto; color: rgb(var(--gray)); font-size: 11px; }
 	:global(.block-menu-item.is-danger) { color: var(--danger); }
-	:global(.crepe-host .milkdown-slash-menu), :global(.crepe-host .milkdown-toolbar) { border: 1px solid rgb(var(--gray-light)); }
+	:global(.crepe-host .milkdown-toolbar) { border: 1px solid rgb(var(--gray-light)); }
 	.side-panel { position: relative; display: flex; min-height: 0; flex-direction: column; border-left: 1px solid rgb(var(--gray-light)); background: var(--surface-soft); transition: opacity 120ms ease; }
 	.studio-shell.panel-collapsed .side-panel { opacity: 0; pointer-events: none; }
 	.side-panel-resizer { position: absolute; z-index: 5; top: 0; bottom: 0; left: -3px; width: 6px; cursor: col-resize; }

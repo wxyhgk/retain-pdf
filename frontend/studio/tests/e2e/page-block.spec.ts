@@ -25,7 +25,7 @@ test('/页面 makes a page under the article, linked on its own line, and goes i
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('/页面');
-	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index]').first()).toHaveText('页面');
+	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index] .menu-item-label').first()).toHaveText('页面');
 	// Crepe takes in the typing 20 ms late (a debounce); a person is slower than that.
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');

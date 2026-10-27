@@ -67,7 +67,22 @@ export type StudioHost = {
 };
 
 /** An entry of the slash menu: `insert` puts a new block where the cursor is (its line, emptied of the `/…` typed). */
-export type SlashEntry = { key: string; label: string; icon: string; keywords?: string[]; insert(view: import('prosemirror-view').EditorView): void };
+export type SlashEntry = {
+	key: string;
+	label: string;
+	icon: string;
+	keywords?: string[];
+	/** A line under the label in the menu: what it is for. */
+	description?: string;
+	/** What written in Markdown makes the same (```xyz), shown at the menu row's end. */
+	hint?: string;
+	/**
+	 * Where it goes when picked in a line with words in it: a block of its own on a new line below (`below`, the
+	 * default), the line itself made it (`turn`), or where the caret is (`inline`). On an empty line, there.
+	 */
+	place?: 'turn' | 'below' | 'inline';
+	insert(view: import('prosemirror-view').EditorView): void;
+};
 
 /** An entry of a block's menu (the drag handle's): `turn` puts it under 转换成, `danger` under the line (删除). */
 export type BlockMenuEntry = {

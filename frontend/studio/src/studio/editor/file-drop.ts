@@ -1,6 +1,6 @@
 import type { Ctx } from '@milkdown/ctx';
-import { commandsCtx, editorViewCtx, parserCtx } from '@milkdown/kit/core';
-import { clearTextInCurrentBlockCommand } from '@milkdown/kit/preset/commonmark';
+import { placePick } from '@milkdown/crepe/feature/block-edit';
+import { editorViewCtx, parserCtx } from '@milkdown/kit/core';
 import type { Fragment } from '@milkdown/prose/model';
 import { Plugin, PluginKey, type EditorState } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view';
@@ -213,7 +213,7 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 
 	/** The slash menu's 图片: choose pictures, upload them, and put them where the menu was opened. */
 	function chooseImages(ctx: Ctx): void {
-		ctx.get(commandsCtx).call(clearTextInCurrentBlockCommand.key);
+		placePick(ctx, 'below');
 		const view = ctx.get(editorViewCtx);
 		const input = document.createElement('input');
 		input.type = 'file';

@@ -70,6 +70,8 @@ export async function apply(ctx: Context): Promise<void> {
 				const labels = programs.list().map((program) => program.label);
 				return labels.length ? t('计算（{programs}）', { programs: labels.join(' / ') }) : t('计算');
 			},
+			description: t('在本机或服务器上跑一个计算'),
+			hint: '```job',
 			icon: ICON,
 			keywords: ['job', 'compute', 'calculation', 'xtb', 'crest', 'run', 'jisuan'],
 			insert: insertJob,

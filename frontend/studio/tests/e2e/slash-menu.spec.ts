@@ -7,7 +7,7 @@ import { appendToFixture, editor, openStudio, resetFixture } from './studio.ts';
 test.beforeEach(() => resetFixture());
 
 const menu = (page: Page) => page.locator('.milkdown-slash-menu');
-const shownItems = (page: Page) => menu(page).locator('.menu-groups [data-index]');
+const shownItems = (page: Page) => menu(page).locator('.menu-groups [data-index] .menu-item-label');
 
 /** A new empty block after the fixture's last paragraph. */
 async function newBlock(page: Page): Promise<void> {
@@ -119,7 +119,7 @@ test('`/` then a space is text', async ({ page }) => {
 
 test('what is typed, or the menu opened again, puts the highlight on the item that answers it, not where the arrows were', async ({ page }) => {
 	await newBlock(page);
-	const hovered = () => menu(page).locator('.menu-groups li.hover');
+	const hovered = () => menu(page).locator('.menu-groups li.hover .menu-item-label');
 	await page.keyboard.type('/');
 	await expect(menu(page)).toBeVisible();
 	const first = await shownItems(page).first().textContent();
@@ -153,4 +153,64 @@ test('the menu closes when the focus leaves the editor, and takes no key typed t
 	await page.keyboard.press('ArrowDown');
 	await expect(editor(page).locator('p', { hasText: /^\/$/u })).toHaveCount(1);
 	await expect(editor(page).locator('h1, h2, h3, ul, ol, pre').filter({ hasText: /^$/u })).toHaveCount(0);
+});
+
+// As Notion has it: `/` in a line too, after a space or a Chinese character (not a letter or a digit), as often as
+// wanted; what is picked takes the line (a heading, a list), or goes on a line of its own below it (a divider), the
+// words written kept.
+
+test('`/` inside a line opens the menu; a heading picked there is the line, its words kept', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('看这个');
+	await page.keyboard.type('/');
+	await expect(menu(page)).toBeVisible();
+	await page.keyboard.type('bt2');
+	await expect(shownItems(page)).toHaveText(['标题 2']);
+	await pick(page);
+	await expect(editor(page).locator('h2', { hasText: /^看这个$/u })).toBeVisible();
+});
+
+test('`/` after a letter or a digit is text: 1/2, and/or', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('1/2 and/or');
+	await page.waitForTimeout(100);
+	await expect(menu(page)).toBeHidden();
+	await expect(editor(page).locator('p', { hasText: /^1\/2 and\/or$/u })).toHaveCount(1);
+});
+
+test('`/` as often as wanted in a line; a divider picked there goes under it, the line as it was', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('甲 /');
+	await expect(menu(page)).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(menu(page)).toBeHidden();
+	await page.keyboard.type('乙 /');
+	await expect(menu(page)).toBeVisible();
+	await page.keyboard.type('fgx');
+	await expect(shownItems(page)).toHaveText(['分割线']);
+	await pick(page);
+	const line = editor(page).locator('p', { hasText: '甲 /乙' });
+	await expect(line).toHaveText('甲 /乙 ');
+	await expect(editor(page).locator('p:has-text("甲 /乙") + hr')).toHaveCount(1);
+});
+
+test('`/` where the caret is in the middle of a line; what follows stays', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('前半句后半句');
+	for (let index = 0; index < 3; index += 1) await page.keyboard.press('ArrowLeft');
+	await page.keyboard.type('/');
+	await expect(menu(page)).toBeVisible();
+	await page.keyboard.type('yy');
+	await expect(shownItems(page).first()).toHaveText('引用');
+	await pick(page);
+	await expect(editor(page).locator('blockquote', { hasText: /^前半句后半句$/u })).toBeVisible();
+});
+
+test('each block says what it is for, and what in Markdown makes it', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('/bt1');
+	const row = menu(page).locator('.menu-groups li', { hasText: '标题 1' });
+	await expect(row.locator('.menu-item-description')).toHaveText('大标题');
+	await expect(row.locator('.menu-item-hint')).toHaveText('#');
+	await expect(menu(page).locator('.tab-group')).toHaveCount(0);
 });

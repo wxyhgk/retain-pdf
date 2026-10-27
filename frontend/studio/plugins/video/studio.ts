@@ -76,6 +76,7 @@ export function apply(ctx: Context): void {
 		menu: {
 			key: 'video',
 			label: t('视频'),
+			description: t('本地视频或 B 站、YouTube 链接'),
 			icon: ICON,
 			keywords: ['video', 'movie', 'bilibili', 'youtube', 'mp4', 'shipin', 'sp'],
 			insert: insertVideo,

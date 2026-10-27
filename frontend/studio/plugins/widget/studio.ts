@@ -38,6 +38,8 @@ export function apply(ctx: Context): void {
 		menu: {
 			key: 'widget',
 			label: t('交互模块'),
+			description: t('能动的小页面：滑块、画图'),
+			hint: '```widget',
 			icon: ICON,
 			keywords: ['widget', 'html', 'interactive', 'embed', 'demo'],
 			insert: insertWidget,

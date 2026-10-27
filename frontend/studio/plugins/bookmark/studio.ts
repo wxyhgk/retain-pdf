@@ -51,6 +51,7 @@ export function apply(ctx: Context): void {
 		menu: {
 			key: 'bookmark',
 			label: t('网页书签'),
+			description: t('网址或 DOI 显示成卡片'),
 			icon: ICON,
 			keywords: ['bookmark', 'link', 'url', 'web', 'doi', 'shuqian', 'wangye'],
 			insert: insertBookmark,

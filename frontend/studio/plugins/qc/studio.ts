@@ -60,6 +60,8 @@ export function apply(ctx: Context): void {
 		menu: {
 			key: 'qc',
 			label: t('计算结果'),
+			description: t('从输出文件里挑出能量、频率'),
+			hint: '```qc',
 			icon: ICON,
 			keywords: ['gaussian', 'orca', 'log', 'out', 'output', 'result', 'qc', 'jisuanjieguo', 'jsjg', '高斯'], // i18n-ignore: matched against what is typed
 			insert: insertQc,

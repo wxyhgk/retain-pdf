@@ -1,5 +1,5 @@
-import { commandsCtx, editorViewCtx } from '@milkdown/kit/core';
-import { clearTextInCurrentBlockCommand } from '@milkdown/kit/preset/commonmark';
+import { placePick, type MenuPlace } from '@milkdown/crepe/feature/block-edit';
+import { editorViewCtx } from '@milkdown/kit/core';
 import type { EditorView } from 'prosemirror-view';
 
 import { insertPage, linkArticleAt, type ArticleLinkHost } from './article-links.ts';
@@ -16,7 +16,7 @@ export type SlashMenuBuilder = {
 		key: string,
 		label: string,
 	) => {
-		addItem: (key: string, item: { label: string; icon: string; keywords?: string[]; onRun: (ctx: never) => void }) => unknown;
+		addItem: (key: string, item: { label: string; icon: string; keywords?: string[]; description?: string; hint?: string; onRun: (ctx: never) => void }) => unknown;
 	};
 };
 
@@ -33,19 +33,17 @@ const ICONS = {
 	command: icon('<path d="M5 7l5 5-5 5"/><path d="M12 17h7"/>'),
 };
 
-/** The editor, with the `/…` typed so far taken away. */
-function emptiedBlock(ctx: never): EditorView {
-	const context = ctx as { get: (slice: unknown) => never };
-	const commands = context.get(commandsCtx) as { call: (key: unknown, payload?: unknown) => void };
-	commands.call(clearTextInCurrentBlockCommand.key);
-	return context.get(editorViewCtx) as EditorView;
+/** The editor, the `/…` typed taken away and room made for what was picked (`how`: see `MenuPlace`). */
+function placed(ctx: never, how: MenuPlace): EditorView {
+	placePick(ctx, how);
+	return (ctx as { get: (slice: unknown) => never }).get(editorViewCtx) as EditorView;
 }
 
 /** Notion's blocks in the slash menu: a page under the article, a callout, a toggle, columns, the plugins' blocks (a widget, a calculation…), a link to another article. */
 export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLinkHost, blocks: StudioBlock[] = []): void {
 	const add = (into: ReturnType<SlashMenuBuilder['addGroup']>, block: StudioBlock) => {
 		for (const entry of [block.menu ?? []].flat()) {
-			into.addItem(entry.key, { label: entry.label, icon: entry.icon, keywords: entry.keywords ?? [], onRun: (ctx) => entry.insert(emptiedBlock(ctx)) });
+			into.addItem(entry.key, { label: entry.label, icon: entry.icon, keywords: entry.keywords ?? [], description: entry.description, hint: entry.hint, onRun: (ctx) => entry.insert(placed(ctx, entry.place ?? 'below')) });
 		}
 	};
 	// The plugins' blocks with a group of their own (化学) come first, each group once.
@@ -59,22 +57,25 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 	const group = builder.addGroup('notion', t('块'));
 	group.addItem('page', {
 		label: t('页面'),
+		description: t('在这篇下面新建一个子页面'),
 		icon: ICONS.page,
 		keywords: ['page', 'subpage', 'new page', '子页面', '新页面', '新建页面', 'yemian', 'ziyemian'], // i18n-ignore: matched against what is typed
-		onRun: (ctx) => void insertPage(emptiedBlock(ctx), links),
+		onRun: (ctx) => void insertPage(placed(ctx, 'below'), links),
 	});
-	group.addItem('callout', { label: t('提示块'), icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(emptiedBlock(ctx), 'tip') });
-	group.addItem('toggle', { label: t('折叠块'), icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(emptiedBlock(ctx)) });
-	group.addItem('columns', { label: t('两栏'), icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', '双栏', '分栏', '并排', 'shuanglan', 'fenlan', 'bingpai'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 2) }); // i18n-ignore: keywords matched against what is typed
-	group.addItem('columns-3', { label: t('三栏'), icon: ICONS.columns3, keywords: ['columns', 'three', '分栏', '多栏', '并排', 'fenlan', 'duolan'], onRun: (ctx) => void insertColumns(emptiedBlock(ctx), 3) }); // i18n-ignore: keywords matched against what is typed
+	group.addItem('callout', { label: t('提示块'), description: t('让一段话醒目'), icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(placed(ctx, 'turn'), 'tip') });
+	group.addItem('toggle', { label: t('折叠块'), description: t('把内容收起来，点开再看'), icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(placed(ctx, 'turn')) });
+	group.addItem('columns', { label: t('两栏'), description: t('左右并排两块内容'), icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', '双栏', '分栏', '并排', 'shuanglan', 'fenlan', 'bingpai'], onRun: (ctx) => void insertColumns(placed(ctx, 'below'), 2) }); // i18n-ignore: keywords matched against what is typed
+	group.addItem('columns-3', { label: t('三栏'), description: t('并排三块内容'), icon: ICONS.columns3, keywords: ['columns', 'three', '分栏', '多栏', '并排', 'fenlan', 'duolan'], onRun: (ctx) => void insertColumns(placed(ctx, 'below'), 3) }); // i18n-ignore: keywords matched against what is typed
 	// The others (a widget, a calculation…) are among these.
 	for (const block of blocks) if (!block.menuGroup) add(group, block);
 	group.addItem('article-link', {
 		label: t('链接到文章'),
+		description: t('在光标处链接另一篇'),
+		hint: '[[',
 		icon: ICONS.link,
 		keywords: ['link', 'page', 'article', 'mention'],
 		onRun: (ctx) => {
-			const view = emptiedBlock(ctx);
+			const view = placed(ctx, 'inline');
 			void linkArticleAt(view, links, view.state.selection.from);
 		},
 	});
@@ -90,7 +91,7 @@ export function buildCommandSlashMenu(builder: SlashMenuBuilder, commands: Studi
 			icon: command.icon ?? ICONS.command,
 			keywords: [command.id, ...(command.keywords ?? [])],
 			onRun: (ctx) => {
-				emptiedBlock(ctx);
+				placed(ctx, 'inline');
 				run(command);
 			},
 		});

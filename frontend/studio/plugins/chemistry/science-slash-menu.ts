@@ -38,6 +38,8 @@ export function scienceSlashEntries(): SlashEntry[] {
 		...SCIENCE_SLASH_LANGUAGES.map((entry) => ({
 			key: entry.key,
 			label: entry.label,
+			description: t('分子结构'),
+			hint: `\`\`\`${entry.info}`,
 			icon: scienceSlashIcon,
 			keywords: [entry.info, 'chem', 'molecule'],
 			insert: (view: EditorView) => insertScienceBlock(view, entry.info),
@@ -45,6 +47,7 @@ export function scienceSlashEntries(): SlashEntry[] {
 		{
 			key: 'delete',
 			label: t('删除当前块'),
+			description: t('删掉光标所在的这一块'),
 			icon: scienceSlashIcon,
 			keywords: ['delete', 'remove'],
 			insert: (view: EditorView) => dispatchScienceAction(view, { type: 'delete' }),

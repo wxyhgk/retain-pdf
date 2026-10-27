@@ -77,6 +77,8 @@ export function apply(ctx: Context): void {
 		menu: {
 			key: 'energy',
 			label: t('能量图'),
+			description: t('反应的势能面'),
+			hint: '```energy',
 			icon: ICON,
 			keywords: ['energy', 'profile', 'diagram', 'pes', 'reaction', '势能面', '反应', '过渡态', 'nengliangtu', 'nlt', 'shinengmian'], // i18n-ignore: matched against what is typed
 			insert: insertEnergy,

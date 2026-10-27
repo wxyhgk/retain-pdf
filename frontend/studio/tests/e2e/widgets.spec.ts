@@ -12,7 +12,7 @@ test('the slash menu makes a widget; it runs in its own frame, sized to it, and 
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('/widget');
-	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index]')).toHaveText(['交互模块']);
+	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index] .menu-item-label')).toHaveText(['交互模块']);
 	// Crepe takes in the typing 20 ms late (a debounce); a person is slower than that.
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');

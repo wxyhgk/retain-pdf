@@ -46,7 +46,7 @@ import type { BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import { FIGURE_TYPE, figurePlugins } from './figure-block';
 import { inlineMathPlugins } from '@blog/editor-kit/math/inline-math.ts';
 import { mathBracketsRemark } from '@blog/editor-kit/math/math-brackets.ts';
-import { addSearchWords, SLASH_TRIGGERS } from './slash-search';
+import { addSearchWords, SLASH_INLINE_TRIGGERS, SLASH_TRIGGERS } from './slash-search';
 import { withoutTrailingEmptyLines } from '@blog/document/index.ts';
 import { bodyParts } from '@blog/document/parse.ts';
 import type { MarkdownBlockSlice } from '@blog/document/types.ts';
@@ -336,7 +336,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				replaceSlashImageItem(builder, fileDrop.chooseImages);
 				addSearchWords(builder);
 			},
-			slashMenu: { triggers: SLASH_TRIGGERS },
+			slashMenu: { triggers: SLASH_TRIGGERS, inlineTriggers: SLASH_INLINE_TRIGGERS },
 			textGroup: {
 				label: t('文本'),
 				text: { label: t('正文') },
@@ -394,7 +394,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					},
 				},
 				[CrepeFeature.Placeholder]: {
-					text: t('输入 \'/\' 插入块'),
+					text: t('写点什么，或输入 / 插入块'),
 					mode: 'block',
 				},
 				// Formulas are drawn by inline-math.ts and display-math.ts; a ```latex fence is code.

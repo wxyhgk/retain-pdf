@@ -24,7 +24,7 @@ test('两栏 from the slash menu: two columns side by side, the caret in the fir
 	await page.keyboard.press('Enter');
 	// Found by what one calls it: 双栏 too.
 	await page.keyboard.type('/双栏');
-	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index]').first()).toHaveText('两栏');
+	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index] .menu-item-label').first()).toHaveText('两栏');
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');
 	await expect(columns(page)).toHaveCount(1);

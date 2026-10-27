@@ -196,7 +196,7 @@ test('a block made from the slash menu opens on 搭建; its form; and the machin
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('/xtb');
-	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index]').first()).toHaveText('计算（xtb / CREST）');
+	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index] .menu-item-label').first()).toHaveText('计算（xtb / CREST）');
 	// Crepe takes in the typing 20 ms late (a debounce); a person is slower than that.
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');

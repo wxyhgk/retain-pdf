@@ -30,7 +30,7 @@ async function insertVideo(page: Page): Promise<void> {
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('/视频');
-	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index]').first()).toHaveText('视频');
+	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index] .menu-item-label').first()).toHaveText('视频');
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');
 }

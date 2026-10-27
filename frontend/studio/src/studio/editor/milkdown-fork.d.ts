@@ -58,8 +58,11 @@ declare module '@milkdown/crepe/feature/block-edit' {
 	 */
 	export type ForkBlockEditFeatureConfig = Omit<BlockEditFeatureConfig, 'slashMenu'> & {
 		buildBlockMenu?: BuildBlockMenu;
-		slashMenu?: BlockEditFeatureConfig['slashMenu'] & { triggers?: string[] };
+		slashMenu?: BlockEditFeatureConfig['slashMenu'] & { triggers?: string[]; inlineTriggers?: string[] };
 	};
+	/** packages/crepe/src/feature/block-edit/menu/api.ts */
+	export type MenuPlace = 'turn' | 'below' | 'inline';
+	export function placePick(ctx: Ctx, how: MenuPlace): void;
 }
 
 declare module '@milkdown/crepe/feature/latex' {

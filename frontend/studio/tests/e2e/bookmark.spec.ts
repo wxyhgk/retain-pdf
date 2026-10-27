@@ -35,7 +35,7 @@ test('网页书签 from the slash menu asks for an address; the page read fills 
 	await page.keyboard.press('End');
 	await page.keyboard.press('Enter');
 	await page.keyboard.type('/书签');
-	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index]').first()).toHaveText('网页书签');
+	await expect(page.locator('.milkdown-slash-menu .menu-groups [data-index] .menu-item-label').first()).toHaveText('网页书签');
 	await page.waitForTimeout(100);
 	await page.keyboard.press('Enter');
 	const input = block(page).locator('input');
