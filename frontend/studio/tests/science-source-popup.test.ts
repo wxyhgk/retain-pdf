@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { placeSourcePopup } from '../src/studio/editor/source-popup.ts';
+import { placeSourcePopup } from '@blog/editor-kit/math/source-popup.ts';
 
 const viewport = { width: 1200, height: 800 };
 const block = { top: 200, bottom: 440, left: 300, width: 600 };

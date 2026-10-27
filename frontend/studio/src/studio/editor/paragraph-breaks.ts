@@ -4,7 +4,7 @@ import { canSplit } from '@milkdown/prose/transform';
 import type { EditorView } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
-import { changedRange } from './changed-range.ts';
+import { changedRange } from '@blog/editor-kit/changed-range.ts';
 
 /** Where to look: the whole document, or (after an edit) the stretch it changed. */
 type Stretch = { from: number; to: number } | null;

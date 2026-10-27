@@ -9,7 +9,7 @@ import { codeFileProblem, type HastChild, type HastElement } from '@blog/markdow
 import '@blog/markdown/code-files/code-files.css';
 import { parseScienceResourceRef } from '@blog/science/parsers/resource-reference.ts';
 import type { ArticleFileDropHost } from './file-drop.ts';
-import { isFormulaBlock } from './formula-block.ts';
+import { isFormulaBlock } from '@blog/editor-kit/math/formula-block.ts';
 import { t } from '@blog/i18n/index.mjs';
 
 /** The code-file languages for CodeMirror, coloured by the parsers the blog uses. */

@@ -431,7 +431,7 @@ function PromptInput({ draft, placeholder, editor, handlers }: { draft: string; 
 	}, []);
 	useEffect(() => editor.current?.set(draft), [draft]);
 	return (
-		<div className="ai-input">
+		<div className="ai-input math-editor">
 			<div ref={root} className="ai-input-editor" data-host />
 			{!draft.trim() && (
 				<div className="ai-input-placeholder" aria-hidden="true">

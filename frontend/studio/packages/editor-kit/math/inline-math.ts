@@ -3,7 +3,7 @@ import { SchemaReady, nodeViewCtx, prosePluginsCtx } from '@milkdown/kit/core';
 import { Fragment, Slice, type Node as ProseMirrorNode, type NodeType } from '@milkdown/prose/model';
 import { closeHistory } from '@milkdown/prose/history';
 import { NodeSelection, Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from '@milkdown/prose/state';
-import { Decoration, DecorationSet, type EditorView, type NodeView } from '@milkdown/prose/view';
+import { Decoration, DecorationSet, type EditorView, type NodeView, type NodeViewConstructor } from '@milkdown/prose/view';
 import { $markSchema } from '@milkdown/utils';
 
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
@@ -12,7 +12,7 @@ import { createFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';
 import { applyCompletion, completionQuery, deleteBracePair, nextSlot, typeBrace, type LatexCommand, type LatexEdit } from './latex-assist.ts';
 import { LatexCompletionMenu } from './latex-completion-menu.ts';
-import { drawWhenNear, drawsLater, isWaiting } from './near-screen.ts';
+import { drawWhenNear, drawsLater, isWaiting } from '../near-screen.ts';
 import { t } from '@blog/i18n/index.mjs';
 
 export type InlineMathKeyAction = 'commit' | 'exit-before' | 'exit-after' | 'delete' | 'promote';
@@ -1320,9 +1320,9 @@ const inlineMathEditPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 
 const inlineMathViewPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	await ctx.wait(SchemaReady);
-	ctx.update(nodeViewCtx, (views) => [
+	ctx.update(nodeViewCtx, (views): Array<[id: string, view: NodeViewConstructor]> => [
 		...views.filter(([id]) => id !== 'math_inline'),
-		['math_inline', (node, view, getPos, decorations) => new InlineMathView(node, view, getPos, decorations)],
+		['math_inline', ((node, view, getPos, decorations) => new InlineMathView(node, view, getPos, decorations)) as NodeViewConstructor],
 	]);
 	return () => {
 		ctx.update(nodeViewCtx, (views) => views.filter(([id]) => id !== 'math_inline'));

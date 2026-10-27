@@ -14,6 +14,11 @@ import { createStudioOps } from '../src/studio/ops/studio-ops.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
+type Ops = ReturnType<typeof createStudioOps>;
+/** What read_page gives, whichever way it is asked (whole, a part, the outline, a section). */
+type PageRead = { source: string; length: number; from: number; next?: number; nextHeading?: string | null; outline: Array<{ depth: number; title: string }> };
+const readPage = (ops: Ops, args: Parameters<Ops['readPage']>[0]) => ops.readPage(args) as Promise<unknown> as Promise<PageRead>;
+
 function temporaryBlog(t: { after: (fn: () => void) => void }): string {
 	const blog = mkdtempSync(join(tmpdir(), 'studio-ops-'));
 	process.env.STUDIO_BLOG_DIR = blog;
@@ -45,9 +50,9 @@ test('pages made, moved, split, merged, published, deleted and brought back thro
 	assert.deepEqual((await ops.pageTree()).map((page) => [page.title, page.children.map((child: { title: string }) => child.title)]), [['项目', ['杂记']]]);
 
 	const split = await ops.splitPage({ slug: project.slug, heading: '计算方法' });
-	const projectSource = (await ops.readPage({ slug: project.slug })).source;
+	const projectSource = (await readPage(ops, { slug: project.slug })).source;
 	assert.match(projectSource, new RegExp(`\\[计算方法\\]\\(/blog/${split.slug}/\\)\\n\\n## 结果`, 'u'));
-	assert.match((await ops.readPage({ slug: split.slug })).source, /先算一遍。\n$/u);
+	assert.match((await readPage(ops, { slug: split.slug })).source, /先算一遍。\n$/u);
 	assert.equal((await ops.listHistory({ slug: project.slug })).length, 1, 'the text before kept');
 
 	await ops.movePage({ slug: split.slug, parent: project.slug, before: notes.slug });
@@ -57,10 +62,10 @@ test('pages made, moved, split, merged, published, deleted and brought back thro
 	const published = await ops.publishPage({ slug: split.slug });
 	assert.equal(published.slug, 'computational-methods');
 	// The link to it in the page above follows it: its new address, and its new title (its words were its title).
-	assert.match((await ops.readPage({ slug: project.slug })).source, /\[Computational Methods\]\(\/blog\/computational-methods\/\)/u);
+	assert.match((await readPage(ops, { slug: project.slug })).source, /\[Computational Methods\]\(\/blog\/computational-methods\/\)/u);
 
 	await ops.mergePage({ slug: 'computational-methods' });
-	assert.match((await ops.readPage({ slug: project.slug })).source, /## Computational Methods\n\n先算一遍。/u);
+	assert.match((await readPage(ops, { slug: project.slug })).source, /## Computational Methods\n\n先算一遍。/u);
 
 	const { trashed } = await ops.deletePage({ slug: project.slug });
 	assert.equal(trashed.length, 2, 'with the page under it');
@@ -79,24 +84,24 @@ test('a long page read in parts, by its outline, or a section; pages listed by w
 	const short = await ops.createPage({ title: '短文', body: '短。', parent: long.slug });
 
 	// A short one, whole, as before.
-	const whole = await ops.readPage({ slug: short.slug });
+	const whole = await readPage(ops, { slug: short.slug });
 	assert.match(whole.source, /短。/u);
 	assert.equal(whole.next, undefined);
 	// A long one: a part, where the next begins, the heading after it.
-	const first = await ops.readPage({ slug: long.slug });
+	const first = await readPage(ops, { slug: long.slug });
 	assert.ok(first.source.length <= 40_000 && first.length > 40_000);
 	assert.ok(first.source.endsWith('\n'), 'cut at a line’s end');
 	assert.equal(typeof first.next, 'number');
 	assert.equal(first.nextHeading, '细节');
-	const second = await ops.readPage({ slug: long.slug, offset: first.next });
+	const second = await readPage(ops, { slug: long.slug, offset: first.next });
 	assert.equal(second.from, first.next);
 	// Its outline; a section.
-	const { outline } = await ops.readPage({ slug: long.slug, outline: true });
+	const { outline } = await readPage(ops, { slug: long.slug, outline: true });
 	assert.deepEqual(outline.map((entry: { depth: number; title: string }) => `${entry.depth} ${entry.title}`), ['2 一、引言', '2 二、方法', '3 细节', '2 三、结果']);
-	const section = await ops.readPage({ slug: long.slug, heading: '三、结果' });
+	const section = await readPage(ops, { slug: long.slug, heading: '三、结果' });
 	assert.match(section.source, /^## 三、结果\n\n完。/u);
 	assert.equal(section.nextHeading, null);
-	await assert.rejects(ops.readPage({ slug: long.slug, heading: '没有这节' }), /没有标题「没有这节」/u);
+	await assert.rejects(readPage(ops, { slug: long.slug, heading: '没有这节' }), /没有标题「没有这节」/u);
 
 	// Listed by where they are, and whether drafts.
 	assert.deepEqual((await ops.listPages({ parent: long.slug })).map((page: { slug: string }) => page.slug), [short.slug]);

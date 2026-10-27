@@ -2,14 +2,14 @@ import type { Ctx, MilkdownPlugin } from '@milkdown/ctx';
 import { SchemaReady, nodeViewCtx, prosePluginsCtx } from '@milkdown/kit/core';
 import type { Node as ProseMirrorNode } from '@milkdown/prose/model';
 import { NodeSelection, Plugin, Selection, TextSelection } from '@milkdown/prose/state';
-import type { Decoration, EditorView, NodeView } from '@milkdown/prose/view';
+import type { Decoration, EditorView, NodeView, NodeViewConstructor } from '@milkdown/prose/view';
 
 import { breakIntoLines } from '@blog/science/rendering/line-breaks.mjs';
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
 import { equationLabels, equationNumbers, numberedSource, referencesKey } from './equation-numbers.ts';
 import { isFormulaBlock } from './formula-block.ts';
 import { renderWhileTyping } from './formula-typing.ts';
-import { drawNow, drawWhenNear, drawsLater, isWaiting } from './near-screen.ts';
+import { drawNow, drawWhenNear, drawsLater, isWaiting } from '../near-screen.ts';
 import { SourcePopup } from './source-popup.ts';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -327,20 +327,24 @@ function formulaBeside(view: EditorView, side: -1 | 1, dir: 'up' | 'down' | 'lef
 	return side < 0 ? edge - node.nodeSize : edge;
 }
 
+/** A node's view, as Milkdown lists them (`nodeViewCtx`). */
+type ViewEntry = [id: string, view: NodeViewConstructor];
+
 const displayMathPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	await ctx.wait(SchemaReady);
 	let fallback: ((node: ProseMirrorNode, view: EditorView, getPos: () => number | undefined) => NodeView | null | undefined) | undefined;
-	ctx.update(nodeViewCtx, (views) => {
+	ctx.update(nodeViewCtx, (views): ViewEntry[] => {
 		const existing = views.filter(([id]) => id === 'code_block');
 		fallback = existing[existing.length - 1]?.[1] as typeof fallback;
 		return [
 			...views.filter(([id]) => id !== 'code_block'),
 			[
 				'code_block',
-				(node, view, getPos, decorations) => {
+				// None for a block of code that is not a formula, without a view before this one: ProseMirror draws it itself.
+				((node, view, getPos, decorations) => {
 					if (!isFormulaBlock(node)) return fallback?.(node, view, getPos as () => number | undefined);
 					return new DisplayMathView(node, view, getPos as () => number | undefined, decorations);
-				},
+				}) as NodeViewConstructor,
 			],
 		];
 	});
@@ -388,9 +392,9 @@ const displayMathPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	ctx.update(prosePluginsCtx, (plugins) => [plugin, ...plugins]);
 	return () => {
 		ctx.update(prosePluginsCtx, (plugins) => plugins.filter((item) => item !== plugin));
-		ctx.update(nodeViewCtx, (views) => {
+		ctx.update(nodeViewCtx, (views): ViewEntry[] => {
 			const rest = views.filter(([id]) => id !== 'code_block');
-			return fallback ? [...rest, ['code_block', fallback]] : rest;
+			return fallback ? [...rest, ['code_block', fallback as NodeViewConstructor]] : rest;
 		});
 	};
 };

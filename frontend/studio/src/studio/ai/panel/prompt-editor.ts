@@ -13,9 +13,9 @@ import 'katex/contrib/mhchem';
 import { t } from '@blog/i18n/index.mjs';
 import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
-import { displayMathPlugins } from '../../editor/display-math';
-import { formulaTakesEnter, inlineMathPlugins } from '../../editor/inline-math';
-import { mathBracketsRemark } from '../../editor/math-brackets';
+import { displayMathPlugins } from '@blog/editor-kit/math/display-math.ts';
+import { formulaTakesEnter, inlineMathPlugins } from '@blog/editor-kit/math/inline-math.ts';
+import { mathBracketsRemark } from '@blog/editor-kit/math/math-brackets.ts';
 
 /** Where the caret is, as the panel's menus need it: the words before it in its block; whether that is the first. */
 export type PromptCaret = { before: string; first: boolean };

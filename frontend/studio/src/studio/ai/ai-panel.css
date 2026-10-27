@@ -376,3 +376,7 @@ details.ai-compaction > summary { cursor: pointer; }
 .ai-picker-foot-label { flex: none; color: rgb(var(--gray)); }
 .ai-picker-foot-value { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-picker-foot-item > svg { flex: none; width: 12px; height: 12px; margin-left: auto; color: rgb(var(--gray)); }
+/* In the AI panel's input (at the panel's foot): the preview over the formula, its arrow under it. */
+.ai-input.math-editor .milkdown .ProseMirror .pm-math-preview-body { top: auto; bottom: 1.25em; }
+.ai-input.math-editor .milkdown .ProseMirror .pm-math-preview-body::before { top: auto; bottom: -6px; border-width: 6px 6px 0; border-color: #1c1c1c transparent transparent; }
+html[data-theme='dark'] .ai-input.math-editor .milkdown .ProseMirror .pm-math-preview-body::before { border-color: #f3f3f3 transparent transparent; }

@@ -63,7 +63,7 @@
 6. 越层引用：CLI 和服务端引用了 `pages/page-names.ts`、`editor/split-section.ts`；编辑器引用了全局的插件注册表。
 7. 已有常量没被用上：`/blog/${slug}/` 硬写了 7 处、`img|assets` 硬写了 6 处；插件快捷键的保留表漏了 ⌥↩。
 8. ~~`main.ts` 混着六类事，还依赖声明的先后顺序。拆法：页面的新建和打开、AI 相关的动作、文献库、插件宿主、视图切换。~~ 已修：各项功能拆到 `src/studio/wiring/`，`main.ts` 只造部件（1293 行 → 502 行）
-9. `inline-math.ts`（1317 行）可以机械地拆成几块；它自己又写了一套公式切分规则，和 remark-math 不一致。
+9. `inline-math.ts`（1317 行，现在在 `packages/editor-kit/math/`）可以机械地拆成几块；它自己又写了一套公式切分规则，和 remark-math 不一致。
 10. `studio-editor.ts` 应该拆成 Crepe 配置、长文章分段加载、审阅、⌥↩ 标记几块。
 11. 目录、滚动锚定、页面快照读的是编辑器的 DOM，不是文档本身。所以折叠块、分栏里的标题不在目录里。
 12. 「这次写入是 Studio 自己发起的」要靠约 15 处调用各自记得包一层，应该收进 `client.ts` 里统一处理。

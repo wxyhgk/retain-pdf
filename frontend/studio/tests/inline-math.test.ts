@@ -22,8 +22,8 @@ import {
 	planPromoteInlineMath,
 	readMathSource,
 	splitInlineMath,
-} from '../src/studio/editor/inline-math.ts';
-import { createFormulaBlock, isFormulaBlock } from '../src/studio/editor/formula-block.ts';
+} from '@blog/editor-kit/math/inline-math.ts';
+import { createFormulaBlock, isFormulaBlock } from '@blog/editor-kit/math/formula-block.ts';
 
 function applyPlan(doc: Node, plan: { from: number; to: number; nodes: Node[] }) {
 	return EditorState.create({ doc }).tr.replaceWith(plan.from, plan.to, plan.nodes).doc;

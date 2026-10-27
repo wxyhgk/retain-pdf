@@ -9,7 +9,7 @@ import {
 	latexCommands,
 	nextSlot,
 	typeBrace,
-} from '../src/studio/editor/latex-assist.ts';
+} from '@blog/editor-kit/math/latex-assist.ts';
 
 const names = (prefix: string, macros = {}) => completeLatex(prefix, latexCommands(macros)).map((command) => command.name);
 

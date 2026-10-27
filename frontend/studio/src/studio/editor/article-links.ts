@@ -5,7 +5,7 @@ import { Decoration, DecorationSet, type EditorView } from '@milkdown/prose/view
 import { $prose } from '@milkdown/utils';
 
 import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
-import { changedRange } from './changed-range.ts';
+import { changedRange } from '@blog/editor-kit/changed-range.ts';
 
 /**
  * Links to the blog's other articles, as Notion links its pages: `[[` opens

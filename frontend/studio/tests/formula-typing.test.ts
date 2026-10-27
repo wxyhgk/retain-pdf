@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { renderWhileTyping, writtenSoFar } from '../src/studio/editor/formula-typing.ts';
+import { renderWhileTyping, writtenSoFar } from '@blog/editor-kit/math/formula-typing.ts';
 
 test('what is still being typed is set aside, and what is open is closed', () => {
 	assert.equal(writtenSoFar('x + \\', 5), 'x + ');

@@ -9,7 +9,7 @@ import { liftTarget } from '@milkdown/prose/transform';
 
 import { CALLOUT_TYPE } from './callout-block.ts';
 import { COLUMNS_TYPE } from './columns-block.ts';
-import { isFormulaBlock } from './formula-block.ts';
+import { isFormulaBlock } from '@blog/editor-kit/math/formula-block.ts';
 import { TOGGLE_TYPE } from './toggle-block.ts';
 
 // ⌫, ⌦ and ↩ at the edges of blocks, as SiYuan has them: text is never

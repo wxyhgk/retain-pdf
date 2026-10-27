@@ -7,7 +7,7 @@ import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 
 import { BIBLIOGRAPHY_PATH, CITATION, authorList, numberRanges, parseCitation, plainTex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
 import '@blog/markdown/references/references.css';
-import { changedRange, editTouches } from './changed-range.ts';
+import { changedRange, editTouches } from '@blog/editor-kit/changed-range.ts';
 import { t } from '@blog/i18n/index.mjs';
 
 /**

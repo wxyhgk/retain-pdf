@@ -4,7 +4,7 @@ import { Decoration, DecorationSet } from '@milkdown/prose/view';
 import { $prose } from '@milkdown/utils';
 
 import { numberEquations, type EquationLabel } from '@blog/science/rendering/equations.mjs';
-import { editTouches } from './changed-range.ts';
+import { editTouches } from '../changed-range.ts';
 import { isFormulaBlock } from './formula-block.ts';
 
 /**

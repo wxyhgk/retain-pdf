@@ -17,6 +17,7 @@ import { RotateCw } from 'lucide-react';
 // The editor's styles in the page itself, not added by its scripts later, so the first picture is drawn as the editor draws it.
 import '@milkdown/crepe/theme/common/style.css';
 import '@milkdown/crepe/theme/classic.css';
+import '@blog/editor-kit/math/math.css';
 import '@blog/markdown/callouts/callouts.css';
 import '@blog/markdown/code-files/code-files.css';
 import '@blog/markdown/figures/figures.css';
@@ -91,7 +92,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 					<div class="editor-scroll">
 					<!-- The cover, the icon, the title, the properties: drawn by React (pages/header/), here as the server draws it. -->
 					<header class="document-header"><PageHeader store={header.store} actions={header.actions} /></header>
-					<div id="crepe-editor" class="crepe-host" aria-label={t('文章编辑器')}></div>
+					<div id="crepe-editor" class="crepe-host math-editor" aria-label={t('文章编辑器')}></div>
 					</div>
 					<nav id="editor-outline" class="outline-rail" aria-label={t('文章目录')} hidden>
 						<div class="outline-pop"><ol></ol></div>
@@ -329,63 +330,12 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.editor-scroll.pm-block-dragging :global(.ProseMirror) { user-select: none; }
 	/* Until Crepe first places it, the hidden block handle sits after the last block and makes the article scroll further. */
 	:global(.crepe-host .milkdown-block-handle) { top: 0; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-source) { color: #9a9a9a; background: none; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-cmd) { color: rgb(var(--gray-dark)); font-weight: 600; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview) { position: relative; display: inline-block; width: 0; height: 0; vertical-align: baseline; pointer-events: none; user-select: none; z-index: 40; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body) { position: absolute; top: 14px; left: 0; padding: 7px 12px 8px; border-radius: 7px; background: #1c1c1c; color: #fff; white-space: nowrap; box-shadow: var(--studio-shadow-pop); }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body::before) { content: ''; position: absolute; top: -6px; left: var(--arrow, 16px); transform: translateX(-50%); border-width: 0 6px 6px; border-style: solid; border-color: transparent transparent #1c1c1c; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body .katex) { color: inherit; font-size: 1.12em; }
-	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-source) { color: #b5b5b5; }
-	/* While a formula is typed (formula-typing.ts): the last good drawing faded, and what is wrong only once the typing stops. */
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body.is-empty) { display: none; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body.is-stale > :not(.pm-math-preview-error)) { opacity: 0.45; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-error) { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: var(--font-mono); font-size: 11px; line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
-	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-error) { color: var(--danger); }
-	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula.is-stale) { opacity: 0.45; }
-	:global(.pm-source-popup-error.is-late) { animation: pm-error-after-typing 0s 1s both; }
-	@keyframes pm-error-after-typing { from { margin: 0; font-size: 0; line-height: 0; } to { font-size: 11px; } }
 
-	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-cmd) { color: rgb(var(--gray-dark)); }
-	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body) { background: #f3f3f3; color: #191919; }
-	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body::before) { border-color: transparent transparent #f3f3f3; }
-	/* In the AI panel's input (at the panel's foot): the preview over the formula, its arrow under it. */
-	:global(.ai-input .milkdown .ProseMirror .pm-math-preview-body) { top: auto; bottom: 1.25em; }
-	:global(.ai-input .milkdown .ProseMirror .pm-math-preview-body::before) { top: auto; bottom: -6px; border-width: 6px 6px 0; border-color: #1c1c1c transparent transparent; }
-	:global(html[data-theme='dark'] .ai-input .milkdown .ProseMirror .pm-math-preview-body::before) { border-color: #f3f3f3 transparent transparent; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math) { display: inline-block; vertical-align: middle; margin: 0 1px; padding-inline: 0.2em; line-height: 1; color: inherit; cursor: text; user-select: none; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math .katex-mathml) { display: none; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math:hover),
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math.is-error) { text-decoration: underline wavy var(--danger); }
-	/* A long article's formula not drawn yet (near-screen.ts): its LaTeX, quietly. */
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror :is(.pm-inline-math, .pm-display-math).is-waiting) { color: rgb(var(--gray)); }
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math-placeholder) { padding: 0 4px; color: rgb(var(--gray)); font-size: 0.85em; }
-	:global(:is(.crepe-host, .ai-input) .milkdown .milkdown-latex-inline-edit) { display: none; }
 	/* A line that is only a link to one of the blog's articles: a page, as in Notion, opened with a click (article-links.ts). */
 	:global(.crepe-host .milkdown .ProseMirror p.pm-page-link) { position: relative; width: fit-content; max-width: 100%; box-sizing: border-box; margin-left: -6px; padding: 2px 8px 2px 1.75em; border-radius: 6px; }
 	:global(.crepe-host .milkdown .ProseMirror p.pm-page-link::before) { content: ''; position: absolute; left: 6px; top: 50%; width: 1.05em; height: 1.05em; transform: translateY(-50%); background: currentColor; opacity: 0.65; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E") center / contain no-repeat; pointer-events: none; }
 	:global(.crepe-host .milkdown .ProseMirror p.pm-page-link:hover) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 	:global(.crepe-host .milkdown .ProseMirror p.pm-page-link a) { color: inherit; font-weight: 500; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 25%, transparent); text-underline-offset: 3px; cursor: pointer; }
-	:global(:is(.crepe-host, .ai-input) .pm-display-math) { margin: 0.65em 0 0.85em; }
-	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula) { padding: 8px 12px; border-radius: 8px; overflow-x: auto; text-align: center; cursor: pointer; }
-	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula:hover) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
-	/* Being edited: drawn in place, marked, the popup under it. */
-	:global(:is(.crepe-host, .ai-input) .pm-display-math.is-open .pm-display-math-formula) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
-	/* Come to with the arrow keys: a stop, marked as blocks selected are; ↩ or typing opens it. */
-	:global(:is(.crepe-host, .ai-input) .pm-display-math.is-selected:not(.is-open) .pm-display-math-formula) { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
-	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula.is-empty) { color: rgb(var(--gray)); font-size: 0.92em; }
-	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula.is-error) { text-decoration: underline wavy var(--danger); }
-	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula .katex-display) { margin: 0; }
-	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula .katex-mathml) { display: none; }
-	:global(.pm-source-popup) { position: fixed; z-index: 50; box-sizing: border-box; padding: 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
-	:global(.pm-source-popup-bar) { display: flex; align-items: center; gap: 4px; margin: -4px 0 6px 2px; }
-	:global(.pm-source-popup-caption) { flex: 1; min-width: 0; color: rgb(var(--gray)); font-size: 12px; line-height: 18px; user-select: none; }
-	:global(.pm-source-popup-action) { height: 24px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--accent); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
-	:global(.pm-source-popup-action:hover) { background: var(--surface-soft); }
-	:global(.pm-source-popup-action:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
-	:global(.pm-source-popup-preview) { max-height: 180px; margin-bottom: 8px; padding: 10px 8px; overflow: auto; border-radius: 8px; background: var(--surface-soft); text-align: center; }
-	:global(.pm-source-popup-preview.is-empty) { color: rgb(var(--gray)); font-size: 13px; line-height: 28px; }
-	:global(.pm-source-popup-preview .katex-display) { margin: 0; }
-	:global(.pm-source-popup-preview .katex-mathml) { display: none; }
 	/* Figures: the picture's frame takes the width, the edge drags it, the caption is typed under it. */
 	:global(.crepe-host .pm-figure) { position: relative; }
 	:global(.crepe-host .pm-figure .pm-figure-frame) { position: relative; width: var(--figure-width, fit-content); max-width: 100%; margin: 0 auto; }
@@ -402,25 +352,6 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .pm-figure-caption:placeholder-shown) { min-width: 6em; }
 	:global(.crepe-host .pm-figure-caption::placeholder) { color: rgb(var(--gray)); opacity: 0.6; }
 	:global(.crepe-host .pm-figure:not(:hover):not(.is-selected) .pm-figure-caption:placeholder-shown:not(:focus)) { visibility: hidden; }
-	:global(.latex-completion) { position: fixed; z-index: 60; box-sizing: border-box; min-width: 240px; max-width: 380px; max-height: 288px; overflow-y: auto; padding: 4px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
-	:global(.latex-completion[hidden]) { display: none; }
-	:global(.latex-completion-item) { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 34px; padding: 2px 8px; border-radius: 6px; color: rgb(var(--gray-dark)); cursor: pointer; }
-	:global(.latex-completion-item.is-selected) { background: var(--surface-soft); color: rgb(var(--black)); }
-	:global(.latex-completion-name) { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
-	:global(.latex-completion-preview) { overflow: hidden; color: rgb(var(--black)); font-size: 13px; white-space: nowrap; }
-	:global(.latex-completion-preview .katex) { font-size: 1.25em; }
-	/* While commands are offered, the formula's own preview would sit under the list. */
-	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror.is-completing-latex .pm-math-preview) { visibility: hidden; }
-	:global(.pm-source-popup.is-formula .pm-source-popup-preview) { margin: 0 0 6px; padding: 0; background: none; text-align: left; }
-	:global(.pm-source-popup.is-formula .pm-source-popup-error) { margin: 0; }
-	:global(.pm-source-popup-error) { margin: 6px 0 0; color: var(--danger); font-family: var(--font-mono); font-size: 11px; line-height: 1.4; text-align: left; }
-	:global(.pm-source-popup-input) { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin: 0; padding: 8px 10px; border: 0; border-radius: 8px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; resize: none; outline: none; }
-	:global(.pm-source-popup.is-molecule .pm-source-popup-input) { background: var(--surface-soft); white-space: pre; overflow: auto; tab-size: 4; }
-	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview) { padding: 6px 8px; overflow: hidden; }
-	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-viewer) { margin: 0; border: 0; border-radius: 0; background: transparent; overflow: visible; }
-	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-viewer > figcaption) { display: none; }
-	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-stage) { min-height: 0; background: transparent; }
-	:global(.pm-source-popup.is-molecule-inline .pm-source-popup-preview .chem-stage svg) { width: auto; height: auto; max-width: 100%; max-height: 150px; margin: 0 auto; }
 	/* The handle and the menus show and go at once, with no fading: whatever is done right after (a press just
 	   after a drag, a click as a menu opens) finds them there. Crepe's own `transition: all` is undone too. */
 	:global(.crepe-host .milkdown .milkdown-block-handle) { margin-left: -2px; gap: 0; transition: none; }
