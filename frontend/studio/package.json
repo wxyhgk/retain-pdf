@@ -35,6 +35,7 @@
     "@blog/office": "*",
     "@blog/science": "*",
     "@codemirror/language-data": "^6.5.2",
+    "@codemirror/view": "^6.43.8",
     "@deepseek-ai/cordis": "4.0.5",
     "@earendil-works/pi-coding-agent": "1.4.0",
     "@fontsource-variable/inter": "^5.3.0",

@@ -47,6 +47,7 @@ import { FIGURE_TYPE, figurePlugins } from './figure-block';
 import { inlineMathPlugins } from '@blog/editor-kit/math/inline-math.ts';
 import { mathBracketsRemark } from '@blog/editor-kit/math/math-brackets.ts';
 import { addSearchWords, SLASH_INLINE_TRIGGERS, SLASH_TRIGGERS } from './slash-search';
+import { clickIntoCodeBlocks } from './code-block-clicks';
 import { withoutTrailingEmptyLines } from '@blog/document/index.ts';
 import { bodyParts } from '@blog/document/parse.ts';
 import type { MarkdownBlockSlice } from '@blog/document/types.ts';
@@ -212,6 +213,7 @@ const nextFrame = () => new Promise((done) => requestAnimationFrame(() => setTim
 
 /** The Studio's editor: Crepe with the plugins' blocks, formulas, file drops and block feel. */
 export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): StudioEditor {
+	clickIntoCodeBlocks(root);
 	let crepe: Crepe | null = null;
 	let mounting = false;
 	/** The article is being opened, till it is first shown: its formulas far from the screen are drawn after (near-screen.ts). */

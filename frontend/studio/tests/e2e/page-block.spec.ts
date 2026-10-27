@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
-import { editor, openStudio, removeArticle, resetFixture, savedMarkdown, slug } from './studio.ts';
+import { appendToFixture, editor, openStudio, removeArticle, resetFixture, savedMarkdown, slug } from './studio.ts';
 
 // 页面 (/page), as Notion's: a page made under the article, a line linking to it where the slash was, and the
 // editor goes into it, its title to type. The line is a Markdown link (`[标题](/blog/<folder>/)`) that follows
@@ -51,4 +51,23 @@ test('/页面 makes a page under the article, linked on its own line, and goes i
 	await line.locator('a').click();
 	await expect(page).toHaveURL(new RegExp(`article=${folder}`, 'u'));
 	await expect(page.locator('#article-title-input')).toHaveValue('量子化学笔记');
+});
+
+test('page lines stay pages when a line is written under them', async ({ page }) => {
+	appendToFixture('\n[测试计算](/blog/test-calc/)\n\n[公式测试](/blog/test-formula/)\n');
+	await openStudio(page);
+	const pages = editor(page).locator('p.pm-page-link');
+	await expect(pages).toHaveText(['测试计算', '公式测试']);
+	await editor(page).locator('p', { hasText: '公式测试' }).evaluate((line) => {
+		const range = document.createRange();
+		range.selectNodeContents(line);
+		range.collapse(false);
+		getSelection()!.removeAllRanges();
+		getSelection()!.addRange(range);
+	});
+	await page.keyboard.press('End');
+	await page.keyboard.press('Enter');
+	await page.keyboard.type('打字后');
+	await expect(editor(page).locator('p', { hasText: /^打字后$/u })).toHaveCount(1);
+	await expect(pages).toHaveText(['测试计算', '公式测试']);
 });

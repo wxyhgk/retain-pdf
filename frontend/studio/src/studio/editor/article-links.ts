@@ -145,7 +145,12 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 						if (!range) return mapped;
 						const from = Math.max(0, range.from - 1);
 						const to = Math.min(after.doc.content.size, range.toAfter + 1);
-						return mapped.remove(mapped.find(from, to)).add(after.doc, pageLines(after.doc, from, to));
+						// Those found touch the stretch, a line just before or after it among them (one written under a page
+						// line ends where the new one begins): each looked at again, not only those in the stretch.
+						const stale = mapped.find(from, to);
+						const start = Math.min(from, ...stale.map((line) => line.from));
+						const end = Math.max(to, ...stale.map((line) => line.to));
+						return mapped.remove(stale).add(after.doc, pageLines(after.doc, start, end));
 					},
 				},
 				props: { decorations: (state) => pageLinesKey.getState(state) },

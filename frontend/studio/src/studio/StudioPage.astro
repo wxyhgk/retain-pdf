@@ -317,8 +317,21 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror .milkdown-table-block th) { background: color-mix(in srgb, rgb(var(--gray-light)) 35%, transparent); color: rgb(var(--gray-dark)); font-weight: 600; text-align: left; }
 	:global(.crepe-host .milkdown .ProseMirror blockquote) { box-sizing: border-box; padding: 2px 0 2px 14px; border-left: 3px solid rgb(var(--gray-light)); color: rgb(var(--gray)); }
 	:global(.crepe-host .milkdown .ProseMirror blockquote::before) { content: none; }
+	/* Code blocks as Notion's and thought-desk's: a gray ground with round corners, so where one begins and ends is seen;
+	   all of it is the code's (a click anywhere in it is in it), the language and 复制 laid over its top. The line being
+	   written is marked only while it is written in; selected whole, a ring. */
+	:global(.crepe-host .milkdown .milkdown-code-block) { padding: 0; border-radius: var(--studio-radius-md); background: var(--surface-soft); }
+	:global(.crepe-host .milkdown .milkdown-code-block :is(.cm-editor, .cm-gutters)) { background: transparent; }
+	:global(.crepe-host .milkdown .milkdown-code-block .cm-scroller) { padding: 34px 6px 12px 4px; }
+	:global(.crepe-host .milkdown .milkdown-code-block .tools) { position: absolute; z-index: 2; top: 6px; right: 8px; left: 10px; pointer-events: none; }
+	:global(.crepe-host .milkdown .milkdown-code-block .tools :is(button, .language-picker)) { pointer-events: auto; }
+	:global(.crepe-host .milkdown .milkdown-code-block .language-button) { margin-bottom: 0; padding: 2px 2px 2px 6px; background: transparent; color: rgb(var(--gray)); font-weight: 500; opacity: 1; }
+	:global(.crepe-host .milkdown .milkdown-code-block .language-button:hover) { background: var(--studio-fill-2); color: rgb(var(--gray-dark)); }
+	:global(.crepe-host .milkdown .milkdown-code-block .tools-button-group > button) { background: var(--surface); box-shadow: var(--studio-shadow-sm); }
+	:global(.crepe-host .milkdown .milkdown-code-block.selected) { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
 	:global(.crepe-host .milkdown .milkdown-code-block .cm-activeLineGutter) { background: transparent; color: rgb(var(--gray-dark)); }
-	:global(.crepe-host .milkdown .milkdown-code-block .cm-activeLine) { background: color-mix(in srgb, rgb(var(--gray-light)) 35%, transparent); }
+	:global(.crepe-host .milkdown .milkdown-code-block .cm-activeLine) { background: transparent; }
+	:global(.crepe-host .milkdown .milkdown-code-block .cm-focused .cm-activeLine) { background: var(--studio-fill); }
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection),
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection * ) { caret-color: transparent; }
 	:global(.crepe-host .milkdown .ProseMirror.ProseMirror-hideselection *::selection) { background: transparent; }
