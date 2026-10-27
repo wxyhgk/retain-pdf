@@ -7,7 +7,7 @@ import type { Conversation, ConversationItem } from '../../api/client';
 import { STUDIO_MARKDOWN_DRAG_TYPE } from '../../files/article-files';
 import { isPicture, pictureUrl, renderAiMarkdown } from '../ai-markdown';
 import { PageIcon } from './PagePeek';
-import type { PageInfo, PanelActions } from './panel-state';
+import { mentionsIn, type PageInfo, type PanelActions } from './panel-state';
 
 export type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
 
@@ -118,9 +118,11 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 	const pages = actions.articles();
 	// By the article it was, else (said before that was kept, or renamed since) by its title.
 	const find = (title: string, slug?: string | null) => (slug ? pages.find((page) => page.slug === slug) : undefined) ?? pages.find((page) => page.title === title);
+	// The articles named with @ are links in what was said (said before that, they were named under it).
+	const inText = new Set(mentionsIn(item.text, pages).map((page) => page.slug));
 	const named = [
 		...(told?.article ? [{ label: `${told.article}${told.selection ? ` · ${told.selection}` : ''}`, page: find(told.article, told.articleSlug) }] : []),
-		...(told?.mentions ?? []).map((title, at) => ({ label: title, page: find(title, told?.mentionSlugs?.[at]) })),
+		...(told?.mentions ?? []).map((title, at) => ({ label: title, page: find(title, told?.mentionSlugs?.[at]) })).filter(({ page }) => !page || !inText.has(page.slug)),
 	];
 	return (
 		<div className="ai-user">
@@ -134,7 +136,8 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 					))}
 				</div>
 			) : null}
-			{item.text.trim() && <div className="ai-bubble">{item.text}</div>}
+			{/* As it was written: Markdown, its formulas drawn, the articles named links to them. */}
+			{item.text.trim() && <Markdown className="ai-bubble" text={item.text} />}
 			{/* What was pasted at length: folded, opened to be read. */}
 			{(item.pastes ?? []).map((paste, at) => (
 				<details key={at} className="ai-paste">

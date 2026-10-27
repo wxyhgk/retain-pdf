@@ -19,6 +19,7 @@ import {
 	type ConversationEvent,
 	type ConversationItem,
 } from '../../api/client';
+import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
 import type { ArticleSummary } from '../../types';
 import { createStore, type Store } from '../../shell/store';
@@ -54,7 +55,7 @@ export type AiPanelHost = {
 
 export type ArticleRef = { slug: string; title: string };
 /** An article as the panel shows one it names: its link, and what its card says of it as the pointer rests on it. */
-export type PageInfo = ArticleRef & Pick<ArticleSummary, 'icon' | 'parent' | 'description' | 'pubDate' | 'tags' | 'draft'>;
+export type PageInfo = ArticleRef & Pick<ArticleSummary, 'icon' | 'parent' | 'description' | 'pubDate' | 'tags' | 'draft' | 'kind'>;
 
 /** What the panel shows (AiPanel.tsx draws it). */
 export type PanelState = {
@@ -70,12 +71,11 @@ export type PanelState = {
 	settings: boolean;
 	/** Whole in the middle (AI 问答). */
 	full: boolean;
-	/** What is told with what is said: the article open (unless left out), whether something is selected in it (and not left out), the articles named with @. */
+	/** What is told with what is said: the article open (unless left out), whether something is selected in it (and not left out); the articles named with @ are links in what is written. */
 	article: ArticleRef | null;
 	leftOut: string | null;
 	selected: boolean;
 	selectionLeftOut: boolean;
-	mentions: ArticleRef[];
 	/** What is typed. */
 	draft: string;
 	/** Asked to take the keys (focus): counted, so each ask is one. */
@@ -165,6 +165,15 @@ function readFavorites(): ModelChoice[] {
 	}
 }
 
+/**
+ * The articles named in what is written (with @: a link to each, `[标题](/blog/slug/)`), each once, as the list has
+ * them.
+ */
+export function mentionsIn(markdown: string, pages: ArticleRef[]): ArticleRef[] {
+	const slugs = new Set([...markdown.matchAll(/\]\((\/(?:blog|wiki)\/[^)\s]+)\)/gu)].map((found) => ARTICLE_ADDRESS.exec(found[1]!)?.[2]).filter((slug): slug is string => Boolean(slug)));
+	return pages.filter((page) => slugs.has(page.slug)).map(({ slug, title }) => ({ slug, title }));
+}
+
 export const sameChoice = (one: ModelChoice, other: ModelChoice): boolean => one.agent === other.agent && (one.provider ?? '') === (other.provider ?? '') && one.value === other.value;
 
 /** When a conversation was last spoken in: the time today, else the day (and the year, another year's). */
@@ -198,7 +207,6 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		leftOut: null,
 		selected: false,
 		selectionLeftOut: false,
-		mentions: [],
 		draft: '',
 		focusAsked: 0,
 		favorites: readFavorites(),
@@ -397,24 +405,24 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	}
 
 	async function submit(): Promise<void> {
-		const { draft, mentions, pictures, quotes, pastes } = get();
+		const { draft, pictures, quotes, pastes } = get();
 		const text = draft.trim();
 		if (!text && !pastes.length) return;
-		const said: Said = { id: crypto.randomUUID(), text, mentions, pictures, quotes, pastes };
+		const said: Said = { id: crypto.randomUUID(), text, mentions: mentionsIn(text, host.articles()), pictures, quotes, pastes };
 		const shown = get().conversation;
 		if (shown?.state === 'running') {
 			// While it works: to one that can take it, words it reads as soon as it can (插话); else said once it is done.
 			if (shown.canSteer && !pictures.length && !quotes.length && !pastes.length) await steer(shown.id, text);
-			else set({ queued: [...get().queued, said], draft: '', mentions: [], pictures: [], quotes: [], pastes: [] });
+			else set({ queued: [...get().queued, said], draft: '', pictures: [], quotes: [], pastes: [] });
 			return;
 		}
-		set({ draft: '', mentions: [], pictures: [], quotes: [], pastes: [] });
+		set({ draft: '', pictures: [], quotes: [], pastes: [] });
 		await send(said);
 	}
 
 	/** Back where it was typed, not said (failed, or taken back from the queue). */
 	function unsay(said: Said): void {
-		set({ draft: said.text, mentions: said.mentions, pictures: said.pictures, quotes: said.quotes, pastes: said.pastes });
+		set({ draft: said.text, pictures: said.pictures, quotes: said.quotes, pastes: said.pastes });
 	}
 
 	async function send(said: Said): Promise<void> {
@@ -642,9 +650,6 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		},
 		leaveOutArticle: () => set({ leftOut: get().article?.slug ?? null }),
 		leaveOutSelection: () => set({ selectionLeftOut: true }),
-		/** `entry` named with @: a chip (the @ and what followed it taken out of the input by the input). */
-		mention: (entry: ArticleRef) => set({ mentions: [...get().mentions, entry] }),
-		unmention: (entry: ArticleRef) => set({ mentions: get().mentions.filter((other) => other !== entry) }),
 		articles: () => host.articles(),
 		openArticle: (slug: string) => host.openArticle(slug),
 		/** ⤢: the panel whole, in the middle; the conversation listed there (in chats/) though nothing was said yet. ⤡: back. */

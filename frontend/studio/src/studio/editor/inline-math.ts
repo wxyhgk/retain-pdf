@@ -621,7 +621,13 @@ export function planExpandInlineMath(
  * formula block): an editor that sends with Enter (the AI panel's input) leaves it to the formula then.
  */
 export function formulaTakesEnter(state: EditorState): boolean {
-	return formulaSourceAt(state, (liveMathKey.getState(state) ?? idleMath).live) !== null || planDollarBlock(state.doc, state.selection.from) !== null;
+	const { selection } = state;
+	const live = (liveMathKey.getState(state) ?? idleMath).live;
+	// Inside a formula being edited; where commands are offered (Enter chooses one); a `$$` line.
+	if (live && selection.from > live.from && selection.from < live.to) return true;
+	const source = formulaSourceAt(state, live);
+	if (source && completionQuery(source.text, source.caret)) return true;
+	return planDollarBlock(state.doc, selection.from) !== null;
 }
 
 /** Enter at the end of a paragraph whose text is `$$` turns it into a LaTeX block. */

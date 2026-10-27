@@ -2,6 +2,7 @@ import { Crepe, CrepeFeature } from '@milkdown/crepe';
 import { editorViewCtx, editorViewOptionsCtx, serializerCtx } from '@milkdown/kit/core';
 import { remarkGFMPlugin } from '@milkdown/kit/preset/gfm';
 import { Plugin, TextSelection } from '@milkdown/prose/state';
+import type { Node as ProseNode } from '@milkdown/prose/model';
 import type { EditorView } from '@milkdown/prose/view';
 import { $prose, replaceAll } from '@milkdown/utils';
 import { languages as codeMirrorLanguages } from '@codemirror/language-data';
@@ -10,6 +11,7 @@ import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
 
 import { t } from '@blog/i18n/index.mjs';
+import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
 import { displayMathPlugins } from '../../editor/display-math';
 import { formulaTakesEnter, inlineMathPlugins } from '../../editor/inline-math';
@@ -36,11 +38,37 @@ export type PromptEditorHost = {
 export type PromptEditor = {
 	/** What is written replaced (the input emptied once said, words put back). */
 	set(markdown: string): void;
-	/** The `count` characters before the caret in its block replaced by `text` (an @ named, a command written). */
+	/** The `count` characters before the caret in its block replaced by `text` (a command written). */
 	replaceBefore(count: number, text: string): void;
+	/** The `count` characters before the caret (an @ and what followed it) replaced by a link to an article, as its title. */
+	mention(count: number, title: string, href: string): void;
 	focus(): void;
 	destroy(): void;
 };
+
+/** A link to one of the blog's articles (an @ named): `/blog/<slug>/`. */
+const isArticleLink = (href: unknown) => typeof href === 'string' && ARTICLE_ADDRESS.test(href);
+
+/**
+ * The article named just before the caret (a link to one), from where to where: ⌫ there takes it whole, as Notion's
+ * mentions are taken.
+ */
+function mentionBefore(view: EditorView): { from: number; to: number } | null {
+	const { selection } = view.state;
+	if (!selection.empty) return null;
+	const { $from } = selection;
+	const linked = (node: ProseNode | null | undefined) => node?.marks.find((mark) => mark.type.name === 'link' && isArticleLink(mark.attrs.href));
+	const mark = linked($from.nodeBefore);
+	if (!mark) return null;
+	// The link's whole stretch in its block, around the caret.
+	let from = $from.pos;
+	let index = $from.index();
+	while (index > 0 && mark.isInSet($from.parent.child(index - 1).marks)) {
+		from -= $from.parent.child(index - 1).nodeSize;
+		index -= 1;
+	}
+	return { from, to: $from.pos };
+}
 
 /** Where the caret is, as the panel's menus need it. */
 function caretOf(view: EditorView): PromptCaret {
@@ -95,6 +123,11 @@ export async function createPromptEditor(root: HTMLElement, host: PromptEditorHo
 			attributes: { ...(typeof prev.attributes === 'object' ? prev.attributes : {}), class: 'ai-input-doc', 'aria-label': t('对 AI 说'), role: 'textbox', 'aria-multiline': 'true' },
 			// The panel first: its menus' keys, Enter to send (where it would not be a formula's, nor a line of code).
 			handleKeyDown: (view, event) => {
+				const named = event.key === 'Backspace' && !event.altKey && !event.metaKey ? mentionBefore(view) : null;
+				if (named) {
+					view.dispatch(view.state.tr.delete(named.from, named.to));
+					return true;
+				}
 				const { $from } = view.state.selection;
 				const sends = !$from.parent.type.spec.code && !formulaTakesEnter(view.state);
 				return host.key(event, sends);
@@ -125,6 +158,15 @@ export async function createPromptEditor(root: HTMLElement, host: PromptEditorHo
 		replaceBefore(count, text) {
 			const { from, $from } = view.state.selection;
 			view.dispatch(view.state.tr.insertText(text, Math.max($from.start(), from - count), from));
+			view.focus();
+		},
+		mention(count, title, href) {
+			const { from, $from } = view.state.selection;
+			const { schema } = view.state;
+			const link = schema.marks.link!.create({ href, title: null });
+			// A space after it, not part of it: what is typed next is not the link's.
+			const tr = view.state.tr.replaceWith(Math.max($from.start(), from - count), from, [schema.text(title, [link]), schema.text(' ')]);
+			view.dispatch(tr.setStoredMarks([]));
 			view.focus();
 		},
 		focus: () => view.focus(),

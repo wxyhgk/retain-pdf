@@ -276,21 +276,28 @@ test('what is said is told where the author is: the article open (followed as an
 		// Something selected in the article: a chip too.
 		await editor(page).locator('p', { hasText: '结尾段落' }).click({ clickCount: 3 });
 		await expect(chips).toHaveText(['Studio 测试夹具', '选中的内容']);
-		// @ names another article, from the list.
+		// @ names another article, from the list: a link to it where the @ was, in what is written.
 		await input(page).fill('上下文 看看 @另一');
 		await expect(pane(page).locator('.ai-mention')).toHaveCount(1);
 		await input(page).press('Enter');
-		await expect(input(page)).toHaveText('上下文 看看');
-		await expect(chips).toHaveText(['Studio 测试夹具', '选中的内容', '另一篇笔记']);
+		await expect(input(page)).toHaveText('上下文 看看 另一篇笔记');
+		await expect(input(page).locator('a')).toHaveText('另一篇笔记');
+		await expect(chips).toHaveText(['Studio 测试夹具', '选中的内容']);
+		// Named once: not offered again.
+		await input(page).pressSequentially('和 @另一');
+		await expect(pane(page).locator('.ai-mention')).toHaveCount(0);
+		for (const _ of '@另一') await input(page).press('Backspace');
 		await input(page).press('Enter');
 		const answer = pane(page).locator('.ai-message').last();
 		await expect(answer).toContainText('当前打开的文章：《Studio 测试夹具》，文件 studio-fixture/index.md；它的写作要求在 studio-fixture/ai/brief.md，先读');
 		await expect(answer).toContainText('选中的是这篇的第');
 		await expect(answer).toContainText('结尾段落。');
 		await expect(answer).toContainText('用 @ 提到的文章：《另一篇笔记》，文件 other-note/index.md（没有 ai/brief.md，不用找）');
-		// What was said is shown as said, with what it named.
-		await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('上下文 看看');
-		await expect(pane(page).locator('.ai-user-context')).toContainText('另一篇笔记');
+		await expect(answer).toContainText('上下文 看看 [另一篇笔记](/blog/other-note/) 和');
+		// What was said is shown as said, what it named a link to it (not again under it).
+		await expect(pane(page).locator('.ai-user .ai-bubble')).toHaveText('上下文 看看 另一篇笔记 和');
+		await expect(pane(page).locator('.ai-user .ai-bubble .ai-page-link')).toHaveText('另一篇笔记');
+		await expect(pane(page).locator('.ai-user-context')).not.toContainText('另一篇笔记');
 
 		// Another article opened: the same conversation, told of that one now.
 		await page.locator('#article-list').getByText('另一篇笔记', { exact: true }).click();
@@ -710,9 +717,41 @@ test('the input is written as articles are: a formula typed is drawn there, and 
 	await input(page).pressSequentially('上下文 质能 $E=mc^2$ 是什么');
 	await expect(pane(page).locator('.ai-input .katex')).toHaveCount(1);
 	await expect(placeholder(page)).toHaveCount(0);
+	// Back in it: its source where it is, drawn over it (as in articles), not after it.
+	await pane(page).locator('.ai-input .pm-inline-math').click();
+	const preview = pane(page).locator('.ai-input .pm-math-preview-body');
+	await expect(preview).toBeVisible();
+	await expect(pane(page).locator('.ai-input .pm-math-source')).toBeVisible();
+	const source = (await pane(page).locator('.ai-input .pm-math-source').first().boundingBox())!;
+	expect((await preview.boundingBox())!.y + (await preview.boundingBox())!.height).toBeLessThanOrEqual(source.y + 1);
+	// Enter there is the formula's (done with it, as in articles); out of it, it sends.
+	await input(page).press('Enter');
+	await expect(preview).toHaveCount(0);
+	await expect(pane(page).locator('.ai-message')).toHaveCount(0);
+	await input(page).press('End');
 	await input(page).press('Enter');
 	const told = pane(page).locator('.ai-message').last();
 	await expect(told).toContainText('上下文 质能 $E=mc^2$ 是什么');
 	await expect(input(page)).toHaveText('');
 	await expect(placeholder(page)).toBeVisible();
+	// What was said: its formula drawn.
+	await expect(pane(page).locator('.ai-user .ai-bubble .katex')).toHaveCount(1);
+});
+
+test('an article named with @ in the input goes whole with ⌫, as a mention, and is a link in what is said', async ({ page }) => {
+	writeArticle('other-note', '---\ntitle: 另一篇笔记\npubDate: 2026-10-01\ndraft: true\n---\n\n另一篇的一段。\n');
+	try {
+		await openAi(page);
+		await input(page).click();
+		await input(page).pressSequentially('@另一');
+		await input(page).press('Enter');
+		await expect(input(page).locator('a')).toHaveText('另一篇笔记');
+		// The space after it, then it whole.
+		await input(page).press('Backspace');
+		await input(page).press('Backspace');
+		await expect(input(page).locator('a')).toHaveCount(0);
+		await expect(input(page)).toHaveText('');
+	} finally {
+		removeArticle('other-note');
+	}
 });

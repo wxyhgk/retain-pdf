@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
+import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { cn, uiLayer } from '@studio/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
 import type { Conversation, ConversationItem } from '../../api/client';
@@ -15,7 +16,7 @@ import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
 import { createPromptEditor, type PromptCaret, type PromptEditor, type PromptEditorHost } from './prompt-editor';
 import { commandOf, Item, ItemsContext, Markdown, PageChip, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { PagePeek } from './PagePeek';
-import { PASTE_CHARACTERS, PASTE_LINES, type ArticleRef, type PageInfo, type PanelActions, type PanelState } from './panel-state';
+import { mentionsIn, PASTE_CHARACTERS, PASTE_LINES, type PageInfo, type PanelActions, type PanelState } from './panel-state';
 
 /** What each kind of tool call did, counted in a stretch of work: 读了 3 个文件. */
 const TOOL_DONE: Record<string, (count: number) => string> = {
@@ -427,7 +428,7 @@ function PromptInput({ draft, placeholder, editor, handlers }: { draft: string; 
 }
 
 function Composer({ state, actions }: { state: PanelState; actions: PanelActions }) {
-	const { conversation, article, leftOut, selected, selectionLeftOut, mentions, draft, status, pictures, quotes, pastes, queued } = state;
+	const { conversation, article, leftOut, selected, selectionLeftOut, draft, status, pictures, quotes, pastes, queued } = state;
 	const editor = useRef<PromptEditor | null>(null);
 	const [caret, setCaret] = useState<PromptCaret>({ before: '', first: true });
 	const [mentionAt, setMentionAt] = useState(0);
@@ -446,7 +447,6 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	const chips: ReactNode[] = [];
 	if (open) chips.push(<Chip key="article" label={open.title} page={pageOf(open.slug)} title={t('当前文章：说话时会告诉 AI 你在看这篇')} onRemove={actions.leaveOutArticle} />);
 	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label={t('选中的内容')} title={t('文章里选中的那几行会一起告诉 AI')} onRemove={actions.leaveOutSelection} />);
-	for (const entry of mentions) chips.push(<Chip key={entry.slug} label={entry.title} page={pageOf(entry.slug)} title={t('用 @ 提到的文章')} onRemove={() => actions.unmention(entry)} />);
 	for (const picture of pictures) {
 		chips.push(
 			<span key={picture.id} className="ai-chip ai-picture-chip">
@@ -472,11 +472,13 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	});
 
 	const asked = mentionsClosed ? null : naming(caret.before, caret.before.length);
+	// Those named already (links in what is written): not offered again.
+	const named = asked ? mentionsIn(draft, pages) : [];
 	const needle = asked?.query.toLocaleLowerCase('zh-CN') ?? '';
 	const choices = asked
 		? actions
 				.articles()
-				.filter((entry) => !mentions.some((named) => named.slug === entry.slug))
+				.filter((entry) => !named.some((other) => other.slug === entry.slug))
 				.filter((entry) => !needle || entry.title.toLocaleLowerCase('zh-CN').includes(needle) || entry.slug.includes(needle))
 				.slice(0, 8)
 		: [];
@@ -497,11 +499,10 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 		return [...transfer.files].filter((file) => file.type.startsWith('image/'));
 	}
 
-	/** `entry` named: the @ and what was typed after it taken out of the input, the article a chip. */
-	function mention(entry: ArticleRef): void {
+	/** `entry` named: the @ and what was typed after it, a link to it in their place (as Notion's page mentions). */
+	function mention(entry: PageInfo): void {
 		const at = naming(caret.before, caret.before.length);
-		if (at) editor.current?.replaceBefore(caret.before.length - at.from, '');
-		actions.mention(entry);
+		editor.current?.mention(at ? caret.before.length - at.from : 0, entry.title, articleAddress(entry.kind, entry.slug));
 		setMentionAt(0);
 	}
 

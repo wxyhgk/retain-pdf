@@ -325,49 +325,53 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.editor-scroll.pm-block-dragging :global(.ProseMirror) { user-select: none; }
 	/* Until Crepe first places it, the hidden block handle sits after the last block and makes the article scroll further. */
 	:global(.crepe-host .milkdown-block-handle) { top: 0; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-source) { color: #9a9a9a; background: none; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-cmd) { color: rgb(var(--gray-dark)); font-weight: 600; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview) { position: relative; display: inline-block; width: 0; height: 0; vertical-align: baseline; pointer-events: none; user-select: none; z-index: 40; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body) { position: absolute; top: 14px; left: 0; padding: 7px 12px 8px; border-radius: 7px; background: #1c1c1c; color: #fff; white-space: nowrap; box-shadow: 0 8px 18px rgb(0 0 0 / 16%); }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body::before) { content: ''; position: absolute; top: -6px; left: var(--arrow, 16px); transform: translateX(-50%); border-width: 0 6px 6px; border-style: solid; border-color: transparent transparent #1c1c1c; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body .katex) { color: inherit; font-size: 1.12em; }
-	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-source) { color: #b5b5b5; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-source) { color: #9a9a9a; background: none; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-cmd) { color: rgb(var(--gray-dark)); font-weight: 600; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview) { position: relative; display: inline-block; width: 0; height: 0; vertical-align: baseline; pointer-events: none; user-select: none; z-index: 40; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body) { position: absolute; top: 14px; left: 0; padding: 7px 12px 8px; border-radius: 7px; background: #1c1c1c; color: #fff; white-space: nowrap; box-shadow: 0 8px 18px rgb(0 0 0 / 16%); }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body::before) { content: ''; position: absolute; top: -6px; left: var(--arrow, 16px); transform: translateX(-50%); border-width: 0 6px 6px; border-style: solid; border-color: transparent transparent #1c1c1c; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body .katex) { color: inherit; font-size: 1.12em; }
+	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-source) { color: #b5b5b5; }
 	/* While a formula is typed (formula-typing.ts): the last good drawing faded, and what is wrong only once the typing stops. */
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body.is-empty) { display: none; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-body.is-stale > :not(.pm-math-preview-error)) { opacity: 0.45; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-math-preview-error) { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: var(--font-mono); font-size: 11px; line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
-	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-error) { color: var(--danger); }
-	:global(.crepe-host .pm-display-math-formula.is-stale) { opacity: 0.45; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body.is-empty) { display: none; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body.is-stale > :not(.pm-math-preview-error)) { opacity: 0.45; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-error) { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: var(--font-mono); font-size: 11px; line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
+	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-error) { color: var(--danger); }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula.is-stale) { opacity: 0.45; }
 	:global(.pm-source-popup-error.is-late) { animation: pm-error-after-typing 0s 1s both; }
 	@keyframes pm-error-after-typing { from { margin: 0; font-size: 0; line-height: 0; } to { font-size: 11px; } }
 
-	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-cmd) { color: rgb(var(--gray-dark)); }
-	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-body) { background: #f3f3f3; color: #191919; }
-	:global(html[data-theme='dark'] .crepe-host .milkdown .ProseMirror .pm-math-preview-body::before) { border-color: transparent transparent #f3f3f3; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math) { display: inline-block; vertical-align: middle; margin: 0 1px; padding-inline: 0.2em; line-height: 1; color: inherit; cursor: text; user-select: none; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math .katex-mathml) { display: none; }
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math:hover),
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math.is-error) { text-decoration: underline wavy var(--danger); }
+	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-cmd) { color: rgb(var(--gray-dark)); }
+	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body) { background: #f3f3f3; color: #191919; }
+	:global(html[data-theme='dark'] :is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-math-preview-body::before) { border-color: transparent transparent #f3f3f3; }
+	/* In the AI panel's input (at the panel's foot): the preview over the formula, its arrow under it. */
+	:global(.ai-input .milkdown .ProseMirror .pm-math-preview-body) { top: auto; bottom: 1.25em; }
+	:global(.ai-input .milkdown .ProseMirror .pm-math-preview-body::before) { top: auto; bottom: -6px; border-width: 6px 6px 0; border-color: #1c1c1c transparent transparent; }
+	:global(html[data-theme='dark'] .ai-input .milkdown .ProseMirror .pm-math-preview-body::before) { border-color: #f3f3f3 transparent transparent; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math) { display: inline-block; vertical-align: middle; margin: 0 1px; padding-inline: 0.2em; line-height: 1; color: inherit; cursor: text; user-select: none; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math .katex-mathml) { display: none; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math:hover),
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math.is-error) { text-decoration: underline wavy var(--danger); }
 	/* A long article's formula not drawn yet (near-screen.ts): its LaTeX, quietly. */
-	:global(.crepe-host .milkdown .ProseMirror :is(.pm-inline-math, .pm-display-math).is-waiting) { color: rgb(var(--gray)); }
-	:global(.crepe-host .milkdown .ProseMirror .pm-inline-math-placeholder) { padding: 0 4px; color: rgb(var(--gray)); font-size: 0.85em; }
-	:global(.crepe-host .milkdown .milkdown-latex-inline-edit) { display: none; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror :is(.pm-inline-math, .pm-display-math).is-waiting) { color: rgb(var(--gray)); }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror .pm-inline-math-placeholder) { padding: 0 4px; color: rgb(var(--gray)); font-size: 0.85em; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .milkdown-latex-inline-edit) { display: none; }
 	/* A line that is only a link to one of the blog's articles: a page, as in Notion, opened with a click (article-links.ts). */
 	:global(.crepe-host .milkdown .ProseMirror p.pm-page-link) { position: relative; width: fit-content; max-width: 100%; box-sizing: border-box; margin-left: -6px; padding: 2px 8px 2px 1.75em; border-radius: 6px; }
 	:global(.crepe-host .milkdown .ProseMirror p.pm-page-link::before) { content: ''; position: absolute; left: 6px; top: 50%; width: 1.05em; height: 1.05em; transform: translateY(-50%); background: currentColor; opacity: 0.65; -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E") center / contain no-repeat; mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z'/%3E%3Cpath d='M14 3v5h5M9 13h6M9 17h4'/%3E%3C/svg%3E") center / contain no-repeat; pointer-events: none; }
 	:global(.crepe-host .milkdown .ProseMirror p.pm-page-link:hover) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 	:global(.crepe-host .milkdown .ProseMirror p.pm-page-link a) { color: inherit; font-weight: 500; text-decoration: underline; text-decoration-color: color-mix(in srgb, currentColor 25%, transparent); text-underline-offset: 3px; cursor: pointer; }
-	:global(.crepe-host .pm-display-math) { margin: 0.65em 0 0.85em; }
-	:global(.crepe-host .pm-display-math-formula) { padding: 8px 12px; border-radius: 8px; overflow-x: auto; text-align: center; cursor: pointer; }
-	:global(.crepe-host .pm-display-math-formula:hover) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math) { margin: 0.65em 0 0.85em; }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula) { padding: 8px 12px; border-radius: 8px; overflow-x: auto; text-align: center; cursor: pointer; }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula:hover) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
 	/* Being edited: drawn in place, marked, the popup under it. */
-	:global(.crepe-host .pm-display-math.is-open .pm-display-math-formula) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math.is-open .pm-display-math-formula) { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
 	/* Come to with the arrow keys: a stop, marked as blocks selected are; ↩ or typing opens it. */
-	:global(.crepe-host .pm-display-math.is-selected:not(.is-open) .pm-display-math-formula) { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
-	:global(.crepe-host .pm-display-math-formula.is-empty) { color: rgb(var(--gray)); font-size: 0.92em; }
-	:global(.crepe-host .pm-display-math-formula.is-error) { text-decoration: underline wavy var(--danger); }
-	:global(.crepe-host .pm-display-math-formula .katex-display) { margin: 0; }
-	:global(.crepe-host .pm-display-math-formula .katex-mathml) { display: none; }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math.is-selected:not(.is-open) .pm-display-math-formula) { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula.is-empty) { color: rgb(var(--gray)); font-size: 0.92em; }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula.is-error) { text-decoration: underline wavy var(--danger); }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula .katex-display) { margin: 0; }
+	:global(:is(.crepe-host, .ai-input) .pm-display-math-formula .katex-mathml) { display: none; }
 	:global(.pm-source-popup) { position: fixed; z-index: 50; box-sizing: border-box; padding: 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: 0 12px 40px rgb(0 0 0 / 14%); }
 	:global(.pm-source-popup-bar) { display: flex; align-items: center; gap: 4px; margin: -4px 0 6px 2px; }
 	:global(.pm-source-popup-caption) { flex: 1; min-width: 0; color: rgb(var(--gray)); font-size: 12px; line-height: 18px; user-select: none; }
@@ -402,7 +406,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.latex-completion-preview) { overflow: hidden; color: rgb(var(--black)); font-size: 13px; white-space: nowrap; }
 	:global(.latex-completion-preview .katex) { font-size: 1.25em; }
 	/* While commands are offered, the formula's own preview would sit under the list. */
-	:global(.crepe-host .milkdown .ProseMirror.is-completing-latex .pm-math-preview) { visibility: hidden; }
+	:global(:is(.crepe-host, .ai-input) .milkdown .ProseMirror.is-completing-latex .pm-math-preview) { visibility: hidden; }
 	:global(.pm-source-popup.is-formula .pm-source-popup-preview) { margin: 0 0 6px; padding: 0; background: none; text-align: left; }
 	:global(.pm-source-popup.is-formula .pm-source-popup-error) { margin: 0; }
 	:global(.pm-source-popup-error) { margin: 6px 0 0; color: var(--danger); font-family: var(--font-mono); font-size: 11px; line-height: 1.4; text-align: left; }
