@@ -38,7 +38,7 @@ import { blockToLink, linkTargets, replaceBlock } from './link-embeds';
 import { smartPastePlugins } from './smart-paste';
 import { blockKeyPlugins } from './block-key-plugins';
 import { selectBlockForHandle } from './block-range';
-import { buildBlockSlashMenu, buildCommandSlashMenu, type SlashMenuBuilder } from './block-slash-menu';
+import { addInlineFormulaItem, buildBlockSlashMenu, buildCommandSlashMenu, type SlashMenuBuilder } from './block-slash-menu';
 import { calloutPlugins } from './callout-block';
 import { citationPlugins, setCitationLibrary, type CitationHost } from './citations';
 import { officeCardPlugins } from './office-card-block';
@@ -334,6 +334,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 				buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks);
 				buildCommandSlashMenu(builder as unknown as SlashMenuBuilder, commands, (command) => runCommand(command, 'slash'));
 				replaceSlashImageItem(builder, fileDrop.chooseImages);
+				addInlineFormulaItem(builder as unknown as Parameters<typeof addInlineFormulaItem>[0]);
 				addSearchWords(builder);
 			},
 			slashMenu: { triggers: SLASH_TRIGGERS, inlineTriggers: SLASH_INLINE_TRIGGERS },

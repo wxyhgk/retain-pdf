@@ -4,7 +4,8 @@ import { Fragment, Slice, type Node as ProseMirrorNode, type NodeType } from '@m
 import { closeHistory } from '@milkdown/prose/history';
 import { NodeSelection, Plugin, PluginKey, TextSelection, type EditorState, type Transaction } from '@milkdown/prose/state';
 import { Decoration, DecorationSet, type EditorView, type NodeView, type NodeViewConstructor } from '@milkdown/prose/view';
-import { $markSchema } from '@milkdown/utils';
+import { keymap } from '@milkdown/prose/keymap';
+import { $markSchema, $prose } from '@milkdown/utils';
 
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
 import { equationLabels, referencesKey } from './equation-numbers.ts';
@@ -1329,4 +1330,25 @@ const inlineMathViewPlugin: MilkdownPlugin = (ctx: Ctx) => async () => {
 	};
 };
 
-export const inlineMathPlugins = [...literalDollarSchema, ...mathPendingSchema, inlineMathEditPlugin, inlineMathViewPlugin];
+/**
+ * A new inline formula where the caret is, being written: `$$` with the caret between them, as typing them makes one
+ * (the 行内公式 of the slash menu, ⌘⇧E). What was selected becomes its source. False where none can go (in code).
+ */
+export function insertInlineFormula(view: EditorView): boolean {
+	const { state } = view;
+	const { from, to, $from } = state.selection;
+	if (!$from.parent.isTextblock || $from.parent.type.spec.code) return false;
+	if ($from.marks().some((mark) => mark.type.spec.code)) return false;
+	const selected = state.doc.textBetween(from, to, ' ').trim();
+	const tr = state.tr.insertText('$$', from, to);
+	view.dispatch(tr.setSelection(TextSelection.create(tr.doc, from + 1)).scrollIntoView());
+	// Typed into the formula now open, as if typed.
+	if (selected) view.dispatch(view.state.tr.insertText(selected));
+	view.focus();
+	return true;
+}
+
+/** ⌘⇧E (Ctrl elsewhere): an inline formula where the caret is. */
+const inlineMathKeys = $prose(() => keymap({ 'Mod-Shift-e': (_state, _dispatch, view) => (view ? insertInlineFormula(view) : false) }));
+
+export const inlineMathPlugins = [...literalDollarSchema, ...mathPendingSchema, inlineMathEditPlugin, inlineMathViewPlugin, inlineMathKeys];

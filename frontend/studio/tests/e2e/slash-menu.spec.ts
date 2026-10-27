@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { appendToFixture, editor, openStudio, resetFixture } from './studio.ts';
+import { appendToFixture, editor, openStudio, resetFixture, savedMarkdown } from './studio.ts';
 
 // The slash menu as Notion has it: opened by `、` too, found by English names and pinyin.
 
@@ -213,4 +213,33 @@ test('each block says what it is for, and what in Markdown makes it', async ({ p
 	await expect(row.locator('.menu-item-description')).toHaveText('大标题');
 	await expect(row.locator('.menu-item-hint')).toHaveText('#');
 	await expect(menu(page).locator('.tab-group')).toHaveCount(0);
+});
+
+// 行内公式, as thought-desk has Inline Math: from the menu inside a sentence, or ⌘⇧E; what is selected, its source.
+
+test('行内公式 from the menu inside a sentence is a formula there, being written', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('质能关系 /hngs');
+	await expect(shownItems(page).first()).toHaveText('行内公式');
+	await pick(page);
+	await page.keyboard.type('E=mc^2');
+	await page.keyboard.press('ArrowRight');
+	await page.keyboard.type(' 成立');
+	await expect(editor(page).locator('p', { hasText: '质能关系' }).locator('.pm-inline-math .katex')).toHaveCount(1);
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect.poll(savedMarkdown).toContain('质能关系 $E=mc^2$ 成立');
+});
+
+test('⌘⇧E makes an inline formula at the caret, or of what is selected', async ({ page }) => {
+	await newBlock(page);
+	await page.keyboard.type('面积 ');
+	await page.keyboard.press('ControlOrMeta+Shift+e');
+	await page.keyboard.type('a+b');
+	await page.keyboard.press('ArrowRight');
+	await page.keyboard.type('，周长 x+y');
+	for (let index = 0; index < 3; index += 1) await page.keyboard.press('Shift+ArrowLeft');
+	await page.keyboard.press('ControlOrMeta+Shift+e');
+	await page.keyboard.press('ArrowRight');
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect.poll(savedMarkdown).toContain('面积 $a+b$，周长 $x+y$');
 });

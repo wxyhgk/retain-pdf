@@ -2,6 +2,8 @@ import { placePick, type MenuPlace } from '@milkdown/crepe/feature/block-edit';
 import { editorViewCtx } from '@milkdown/kit/core';
 import type { EditorView } from 'prosemirror-view';
 
+import { insertInlineFormula } from '@blog/editor-kit/math/inline-math.ts';
+
 import { insertPage, linkArticleAt, type ArticleLinkHost } from './article-links.ts';
 import { wrapInCallout } from './callout-block.ts';
 import { insertColumns } from './columns-block.ts';
@@ -31,6 +33,7 @@ const ICONS = {
 	page: icon('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'),
 	link: icon('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
 	command: icon('<path d="M5 7l5 5-5 5"/><path d="M12 17h7"/>'),
+	inlineMath: icon('<path d="M8 21s-4-3-4-9 4-9 4-9"/><path d="M16 3s4 3 4 9-4 9-4 9"/><path d="M15 9l-6 6M9 9l6 6"/>'),
 };
 
 /** The editor, the `/…` typed taken away and room made for what was picked (`how`: see `MenuPlace`). */
@@ -96,4 +99,25 @@ export function buildCommandSlashMenu(builder: SlashMenuBuilder, commands: Studi
 			},
 		});
 	}
+}
+
+type ItemsOf = { getGroup(key: string): { group: { items: Array<{ key: string } & Record<string, unknown>> } } };
+
+/**
+ * 行内公式 in the menu's 插入, after 公式 (as thought-desk has Inline Math beside Math Equation): a formula in the
+ * sentence where `/` was typed, being written; ⌘⇧E does the same.
+ */
+export function addInlineFormulaItem(builder: ItemsOf): void {
+	const { items } = builder.getGroup('advanced').group;
+	const at = items.findIndex((item) => item.key === 'math');
+	items.splice(at < 0 ? items.length : at + 1, 0, {
+		key: 'inline-math',
+		label: t('行内公式'),
+		description: t('句子里的公式，⌘⇧E'),
+		hint: '$…$',
+		icon: ICONS.inlineMath,
+		// 行 read hang here (pinyin-pro reads it xing).
+		keywords: ['inline math', 'inline', 'math', 'formula', 'equation', 'latex', 'tex', 'katex', '公式', 'hangnei', 'hangneigongshi', 'hngs', 'gongshi', 'gs'], // i18n-ignore: matched against what is typed
+		onRun: (ctx: never) => void insertInlineFormula(placed(ctx, 'inline')),
+	});
 }
