@@ -36,7 +36,8 @@ if (isolated) process.chdir(root);
 
 const port = Number(process.env.E2E_PORT ?? 4400);
 // The editor bundled as the other dependencies are (milkdown-source.mjs): a page loads in some 400 requests, not 1000.
-process.env.STUDIO_MILKDOWN_BUNDLED = '1';
+// E2E_MILKDOWN_SOURCE=1: as the author's own server has it (from its source), to measure that.
+if (process.env.E2E_MILKDOWN_SOURCE !== '1') process.env.STUDIO_MILKDOWN_BUNDLED = '1';
 // The terminal's shell without the author's own startup files (ZDOTDIR, for zsh): a conda or a prompt theme there took
 // it ten seconds and more to start with other test servers beside it, and the tests are the same on every machine.
 process.env.ZDOTDIR = mkdtempSync(join(tmpdir(), 'studio-e2e-zsh-'));
