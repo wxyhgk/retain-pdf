@@ -469,19 +469,36 @@ const columnsDrop = $prose(() => {
 		// The usual line, between blocks, is not where these go.
 		view.dom.closest('.milkdown')?.classList.add('columns-side-drop');
 	};
+	// The upright line only where the drop would go beside (dropBeside): not beside the blocks dragged, nor beside full
+	// columns, where it would go between blocks after all.
+	const dragover = (view: EditorView, event: DragEvent) => {
+		const at = view.dragging ? sideAt(view, event.clientX, event.clientY) : null;
+		if (at && canDropBeside(view, at, copying(event))) {
+			show(view, at);
+			// Over a block that takes its own events (code, a chemistry block): a drop is let happen here.
+			event.preventDefault();
+		} else if (over) hide(view);
+	};
+	// Before the usual drop (the drop indicator's, a `handleDrop`), which would put the blocks between others; and
+	// before a block's own (code takes a drop as text).
+	const drop = (view: EditorView, event: DragEvent) => {
+		const dragging = view.dragging;
+		const at = over ?? (dragging ? sideAt(view, event.clientX, event.clientY) : null);
+		hide(view);
+		if (!at) return;
+		const tr = besideDrop(view, at, copying(event));
+		if (!tr) return;
+		event.preventDefault();
+		event.stopPropagation();
+		// As the editor does once a drop is done.
+		view.dragging = null;
+		view.dispatch(tr);
+		view.focus();
+	};
 	return new Plugin({
 		key: columnsKey,
 		props: {
 			handleDOMEvents: {
-				// The upright line only where the drop would go beside (dropBeside):
-				// not beside the blocks dragged, nor beside full columns, where it
-				// would go between blocks after all.
-				dragover(view, event) {
-					const at = view.dragging ? sideAt(view, event.clientX, event.clientY) : null;
-					if (at && canDropBeside(view, at, copying(event))) show(view, at);
-					else if (over) hide(view);
-					return false;
-				},
 				dragleave(view, event) {
 					const into = event.relatedTarget;
 					if (!(into instanceof Node) || !view.dom.contains(into)) hide(view);
@@ -491,25 +508,35 @@ const columnsDrop = $prose(() => {
 					hide(view);
 					return false;
 				},
-				// Before the usual drop (the drop indicator's, a `handleDrop`), which would put the blocks between others.
-				drop(view, event) {
-					const dragging = view.dragging;
-					const at = over ?? (dragging ? sideAt(view, event.clientX, event.clientY) : null);
-					hide(view);
-					if (!at) return false;
-					const tr = besideDrop(view, at, copying(event));
-					if (!tr) return false;
-					event.preventDefault();
-					// As the editor does once a drop is done.
-					view.dragging = null;
-					view.dispatch(tr);
-					view.focus();
-					return true;
-				},
 			},
 		},
 		appendTransaction: (transactions, before, after) => emptiedColumn(transactions, before, after),
-		view: (editorView) => ({ destroy: () => hide(editorView) }),
+		// Listened to on the editor itself, first (capture): a drag over a block that takes its own events (code, a
+		// chemistry block) never reaches ProseMirror's own handlers. Frames in the blocks (a widget's) are not let take
+		// the drag meanwhile (the CSS): it would go into them.
+		view: (editorView) => {
+			const dom = editorView.dom;
+			const onOver = (event: DragEvent) => {
+				// A block of the editor dragged (from its handle, outside the editor): marked from the first move over it.
+				if (editorView.dragging) dom.classList.add('pm-dragging');
+				dragover(editorView, event);
+			};
+			const onDrop = (event: DragEvent) => drop(editorView, event);
+			const onEnd = () => dom.classList.remove('pm-dragging');
+			dom.addEventListener('dragover', onOver, true);
+			dom.addEventListener('drop', onDrop, true);
+			document.addEventListener('dragend', onEnd, true);
+			document.addEventListener('drop', onEnd, true);
+			return {
+				destroy: () => {
+					hide(editorView);
+					dom.removeEventListener('dragover', onOver, true);
+					dom.removeEventListener('drop', onDrop, true);
+					document.removeEventListener('dragend', onEnd, true);
+					document.removeEventListener('drop', onEnd, true);
+				},
+			};
+		},
 	});
 });
 

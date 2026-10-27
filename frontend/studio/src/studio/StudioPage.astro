@@ -352,6 +352,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* What is not text (a picture, a drawn formula, a code block's bar and line numbers) is never the browser's to select:
 	   a drag across it selects blocks, and no highlight lands on its labels or glyphs. */
 	:global(.crepe-host .milkdown .ProseMirror :is(.pm-figure-frame, .pm-display-math-formula, .milkdown-code-block .tools, .milkdown-code-block .cm-gutters)) { user-select: none; -webkit-user-select: none; }
+	/* A block being dragged: the frames in the article (a widget's) do not take the drag (it would go into them). */
+	:global(.crepe-host .milkdown .ProseMirror.pm-dragging iframe) { pointer-events: none; }
 	:global(.pm-block-marquee) { position: absolute; z-index: 20; box-sizing: border-box; border: 1px solid var(--studio-select-edge); border-radius: 2px; background: color-mix(in srgb, var(--studio-select) 60%, transparent); pointer-events: none; }
 	.editor-scroll.pm-block-dragging,
 	.editor-scroll.pm-block-dragging :global(.ProseMirror) { user-select: none; }
