@@ -11,7 +11,8 @@ apps/                 小程序：每个一个文件夹（app.json + app.html）
 src/
   pages/ layouts/ components/   博客的页面
   articles/           文章的属性规则、页面树（parent、order）等，博客和 Studio 共用
-  studio/             Studio 的前端；main.ts 把各部分接起来，plugins.ts、plugin-ui.ts 接插件
+  studio/             Studio 的前端；main.ts 造出各部分，plugins.ts、plugin-ui.ts 接插件
+    wiring/           各项功能怎么用这些部分：页面操作、编辑器里的 AI、AI 问答、资料库、文献库、插件、全局快捷键
     shell/            外壳（左栏、顶栏、右栏的标签），React 画的（见下面「Studio 的外壳」）
       dialogs/        弹窗和 ⌘K 搜索框；ask.ts 是别处打开它们用的
     ui/ lib/          shadcn/ui 的组件和 cn()，外壳用

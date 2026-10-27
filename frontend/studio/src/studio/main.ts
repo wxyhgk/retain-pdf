@@ -1,68 +1,43 @@
 // The Studio page: its parts, and how they talk to each other. Each part
 // keeps to its own corner of the page; the open article lives in the session.
+// What each feature does with the parts is in wiring/: the pages, the AI in the
+// editor, AI 问答, the drive, the library, the plugins, the page's keys.
 import './locale';
-import { Copy, FolderPen, FolderSearch, History, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
 import {
 	articleFileHead,
 	articleFileUrl,
 	checkArticle,
 	codeFileFigure,
-	createArticle,
-	setArticleParent,
-	type PagePlace,
 	getArticle,
 	gitStatus,
 	listArticleFiles,
-	revealArticleFile,
 	saveArticle,
 	saveMoleculeView,
 	StudioApiError,
 	uploadArticleFile,
 	keepVersion,
-	addReference,
-	importDriveFile,
-	importPicture,
-	driveInfo,
-	pluginApi,
-	listPlugins,
-	aiSettings,
-	recognizeImage,
-	putBelowImage,
-	instruct,
-	startOcr,
-	askInline,
-	cancelInline,
-	warmInline,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
 import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
 import { ArticleSession, type SaveState } from './state/article-session';
-import { trackWrite } from './state/writes';
-import type { ArticlePayload, ArticleSummary } from './types';
+import type { ArticlePayload } from './types';
 import { createArticleActions } from './pages/article-actions';
-import { favoriteSlugs, toggleFavorite } from './pages/favorites';
+import { favoriteSlugs } from './pages/favorites';
 import { createArticleList } from './pages/article-list';
-import { showContextMenu } from './common/context-menu';
 import { watchDisk } from './common/disk-events';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { t } from '@blog/i18n/index.mjs';
-import { BIBLIOGRAPHY_PATH, parseBibtex, type BibEntry } from '@blog/markdown/references/bibtex.mjs';
-import { SELECTION_END, SELECTION_START, sourceLinesOf } from './document/source-lines';
+import { BIBLIOGRAPHY_PATH } from '@blog/markdown/references/bibtex.mjs';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { officeFilesChanged } from '@blog/office/card.ts';
 import { firstSheetRows } from '@blog/office/render.ts';
 import { openOfficeFile } from '@blog/office/viewer.ts';
 import { createFilePanel } from './files/file-panel';
-import { isImage, readMarkdownReference, setFileBlocks } from './files/article-files';
-import { createDriveBrowser } from './files/drive-browser';
-import { officeKind } from '@blog/office/kinds.mjs';
+import { isImage } from './files/article-files';
 import { uploadFolderFor } from './files/file-tree';
-import { autoSlug, freeSlug, isAutoSlug, readableSlug } from './pages/page-names';
-import { blockForFile, fileHeadWanted, pluginCommands, pluginRecognizers, setStudioPluginEnabled, startStudioPlugins, studioPluginInfo, studioPlugins } from './plugins';
-import { Recognizers, type Recognizer } from '@blog/kernel/ui.ts';
-import { runCommand, showPluginUi } from './plugin-ui';
+import { setStudioPluginEnabled, studioPluginInfo, studioPlugins } from './plugins';
 import { createOutline } from './pages/outline';
 import { keepFormulasFitted } from '@blog/science/browser/fit-formulas.ts';
 import { createPageSnapshot } from './pages/page-snapshot';
@@ -72,29 +47,32 @@ import { createArticleTable } from './pages/article-table';
 import { createPageHeader } from './pages/page-header';
 import { createReviewBar } from './pages/review-bar';
 import { createSidePanel } from './panels/side-panel';
-import { chosenAI, createAiPanel } from './ai/ai-panel';
-import { createChatList } from './shell/chat-list';
-import { createInlineAi } from './ai/inline-ai';
 import { createTerminalPane } from './panels/terminal';
-import { createTaskTray } from './panels/task-tray';
 import { createMiniApps } from './panels/mini-apps';
 import { showToast } from './common/toast';
-import type { EditorView } from '@milkdown/prose/view';
 import { createTopBar } from './shell/top-bar';
 import { mountShell } from './shell/mount';
 import { shell as shellState, type View } from './shell/shell-state';
 import { openDialog } from './shell/dialogs/Dialogs';
-import { aiReady, confirmPublish, createCitePicker, createQuickFind, openAgents, openAiSettings, openLocale } from './shell/dialogs/ask';
+import { confirmPublish, createQuickFind, openAgents, openAiSettings, openLocale } from './shell/dialogs/ask';
+import type { Studio } from './wiring/studio';
+import { createPages } from './wiring/pages';
+import { createEditorAi } from './wiring/editor-ai';
+import { createAiChat } from './wiring/ai-chat';
+import { createDrive } from './wiring/drive';
+import { createLibrary } from './wiring/library';
+import { startPlugins } from './wiring/plugins';
+import { bindPageKeys } from './wiring/keys';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 // The left column, the bar above and the right column's tabs, drawn by React (shell/), before anything looks in them.
 mountShell(shell, {
 	search: () => quickFind.open(),
 	showView: (view) => showView(view),
-	newPage: () => void newPage(),
-	newChat: () => newChat(),
-	openChat: (id) => openChat(id),
-	chatMenu: (entry, row) => chatList.menu(entry, row),
+	newPage: () => void pages.newPage(),
+	newChat: () => chat.newChat(),
+	openChat: (id) => chat.openChat(id),
+	chatMenu: (entry, row) => chat.chatList.menu(entry, row),
 	openTrash: () =>
 		openDialog('trash', {
 			host: {
@@ -107,15 +85,15 @@ mountShell(shell, {
 	openPlugins: () => openDialog('plugins', { host: { info: studioPluginInfo, setEnabled: setStudioPluginEnabled } }),
 	openAiSettings: () => void openAiSettings(),
 	openLocale: () => void openLocale(),
-	pageMenu: (anchor) => showPageMenu(anchor),
-	back: () => visited.step(-1),
+	pageMenu: (anchor) => pages.showPageMenu(anchor),
+	back: () => pages.visited.step(-1),
 	openPage: (slug) => {
 		showView('editor');
 		void session.open(slug);
 	},
 	pagesUnder: (slug) => articleList.childrenOf(slug),
-	toggleFavorite: (slug) => starPage(slug ?? session.slug),
-	forward: () => visited.step(1),
+	toggleFavorite: (slug) => pages.starPage(slug ?? session.slug),
+	forward: () => pages.visited.step(1),
 	chooseTab: (tab) => sidePanel.choose(tab),
 	togglePanel: () => sidePanel.toggle(),
 	closePanel: () => sidePanel.close(),
@@ -126,6 +104,43 @@ const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#e
 // Display formulas wider than the page: in lines, or smaller, not scrolled (fit-formulas.ts).
 keepFormulasFitted(editorScroll);
 anchorScroll(editorScroll);
+
+/** The open article's title as typed (the plugins' `ctx.studio.article()`). */
+let openTitle = '';
+/** The parts, for the features (wiring/), each read when used: some features are made before the parts they reach. */
+const studio: Studio = {
+	shell,
+	editorScroll,
+	get session() {
+		return session;
+	},
+	get editor() {
+		return editor;
+	},
+	get articleList() {
+		return articleList;
+	},
+	get articleActions() {
+		return articleActions;
+	},
+	get properties() {
+		return properties;
+	},
+	get topBar() {
+		return topBar;
+	},
+	get sidePanel() {
+		return sidePanel;
+	},
+	get terminal() {
+		return terminal;
+	},
+	get filePanel() {
+		return filePanel;
+	},
+	title: () => openTitle,
+	showView: (view, folder) => showView(view, folder),
+};
 
 const topBar = createTopBar(shell);
 // The page as it is left, drawn at once on the next visit (page-snapshot.ts).
@@ -162,21 +177,21 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
-	createChild: (article) => void newPage(article.slug),
+	createChild: (article) => void pages.newPage(article.slug),
 	merge: (article) => void articleActions.merge(article),
 	// On disk, the open article too (saved first): what changes is its properties alone, which it takes in quietly.
-	move: (slugs, parent, place) => void movePages(slugs, parent, place),
+	move: (slugs, parent, place) => void pages.movePages(slugs, parent, place),
 	moveTo: (slugs) => {
 		void (async () => {
 			const target = await quickFind.pickPlace(slugs);
-			if (target !== null) await movePages(slugs, target);
+			if (target !== null) await pages.movePages(slugs, target);
 		})();
 	},
 	removeMany: (articles) => void articleActions.removeMany(articles),
 	isFavorite: (slug) => favoriteSlugs().includes(slug),
-	toggleFavorite: (slug) => starPage(slug),
+	toggleFavorite: (slug) => pages.starPage(slug),
 	listed: (articles) => {
-		showPath();
+		pages.showPath();
 		properties.knowTags(articles.flatMap((article) => article.tags ?? []));
 		if (shell.dataset.view === 'table') articleTable.refresh();
 	},
@@ -204,7 +219,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 			return false;
 		}
 	},
-	publish: () => void publishAndName(),
+	publish: () => void pages.publishAndName(),
 	leaveTitle: () => editor.focusStart(),
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
 	async pictures() {
@@ -221,120 +236,10 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 		return `./${path}`;
 	},
 });
-// The AI tab: a coding agent doing what it is asked, by itself, shown as it goes.
-let aiArticles: { from: ArticleSummary[] | null; named: ArticleSummary[] } = { from: null, named: [] };
-const aiPanel = createAiPanel(shell.querySelector<HTMLElement>('#side-ai')!, {
-	article: () => (session.slug ? { slug: session.slug, title: openTitle } : null),
-	articles() {
-		// The same list while the pages are (the panel's links drawn again only when they change).
-		const listed = articleList.articles();
-		if (aiArticles.from !== listed) aiArticles = { from: listed, named: listed.map((entry) => ({ ...entry, title: entry.title || entry.slug })) };
-		return aiArticles.named;
-	},
-	openArticle(slug) {
-		showView('editor');
-		void session.open(slug);
-	},
-	hasSelection: () => Boolean(session.slug) && editor.hasSelection(),
-	async selection() {
-		const marked = session.slug && editor.hasSelection() ? editor.markSelection() : null;
-		if (!marked || !(await session.flush())) return null;
-		return sourceLinesOf(session.current.source, marked);
-	},
-	toast: (message) => showToast(message),
-	runInTerminal(command) {
-		sidePanel.show('terminal');
-		terminal.run(command);
-	},
-	insert(markdown) {
-		if (!session.slug) return false;
-		// Its pictures copied into the article first, so that they show there.
-		withArticlePictures(markdown).then(
-			(taken) => editor.insertMarkdown(taken),
-			(error: unknown) => showToast(error instanceof Error ? error.message : t('没能放进来'), true),
-		);
-		return true;
-	},
-	// ⤢ / ⤡: the panel whole in the middle (AI 问答), or back in the side.
-	openWhole: () => showView('chat'),
-	closeWhole: () => showView('editor'),
-	followed(id) {
-		chatList.select(id);
-		void chatList.refresh();
-		if (shell.dataset.view === 'chat') showChatAddress(id);
-	},
-	changed: () => void chatList.refresh(),
-	// What it changed in the article open, held while it worked: looked over now, all at once.
-	turnOver() {
-		const held = heldChanges;
-		heldChanges = null;
-		if (held && held.slug === session.slug) session.changedOnDisk([...held.paths]);
-	},
-});
-// AI 问答, as Notion's: the AI tab's panel itself, moved whole into the middle (showView), the conversations listed in
-// the left column in place of the pages; back in the side when an article is shown again.
-const aiPane = shell.querySelector<HTMLElement>('#side-ai')!;
-const aiPaneHome = { parent: aiPane.parentElement!, next: aiPane.nextSibling };
-const chatView = shell.querySelector<HTMLElement>('#chat-view')!;
-const chatList = createChatList({
-	removed(id) {
-		if (aiPanel.current() === id) void openLatestChat();
-	},
-	toast: (message) => showToast(message),
-});
-void chatList.refresh();
+// The AI tab and AI 问答 (wiring/ai-chat.ts), before the right column, which asks at once whether its tab is shown.
+const chat = createAiChat(studio, { withArticlePictures: (markdown) => drive.withArticlePictures(markdown) });
 
-/** The conversation shown in the address (?chat=…), to be shown again on reload. */
-function showChatAddress(id: string | null): void {
-	const url = new URL(window.location.href);
-	if (id) url.searchParams.set('chat', id);
-	else url.searchParams.delete('chat');
-	history.replaceState(null, '', url);
-}
-
-/** AI 问答 with the conversation `id`. */
-function openChat(id: string): void {
-	showView('chat');
-	void aiPanel.open(id).then(() => aiPanel.focus());
-}
-
-/** AI 问答 with a new conversation (listed and in the address once begun: `followed`). */
-function newChat(): void {
-	showView('chat');
-	void aiPanel.newChat();
-	aiPanel.focus();
-}
-
-/**
- * The AI panel whole in the middle (AI 问答), moved there from the side and lent by it, or back where it was; the
- * left column lists the conversations meanwhile.
- */
-function showChat(on: boolean): void {
-	const there = chatView.contains(aiPane);
-	chatView.hidden = !on;
-	if (on && !there) {
-		chatView.append(aiPane);
-		sidePanel.lend('ai', true);
-		aiPanel.setFull(true);
-	} else if (!on && there) {
-		aiPaneHome.parent.insertBefore(aiPane, aiPaneHome.next);
-		aiPanel.setFull(false);
-		sidePanel.lend('ai', false);
-	}
-	const shown = on ? aiPanel.current() : null;
-	chatList.select(shown);
-	showChatAddress(shown);
-	if (on) void chatList.refresh();
-}
-
-/** AI 问答 with the conversation spoken in last; a new one when there is none. */
-async function openLatestChat(): Promise<void> {
-	const latest = await chatList.latest();
-	if (latest) openChat(latest);
-	else newChat();
-}
-
-const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && aiPanel.shown() });
+const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && chat.aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void openAgents(() => terminal.refreshAgents()) });
 // 小程序: the tools of apps/, in floating windows; what they may reach of the article shown.
 createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.querySelector<HTMLElement>('#mini-app-layer')!, {
@@ -342,26 +247,6 @@ createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.quer
 	insert: (markdown) => editor.insertMarkdown(markdown),
 	toast: (message) => showToast(message),
 	openPage: (slug) => void session.open(slug),
-});
-/** The blocks marked as an AI works on them (Alt+Enter), by the task it is: the mark's own name. */
-const instructing = new Map<string, string>();
-/** Tasks over before their mark was known (an AI quicker than the answer that started it); PDFs read before their start was said. */
-const overEarly = new Set<string>();
-createTaskTray(shell.querySelector<HTMLElement>('#task-tray')!, {
-	ended(task) {
-		const mark = instructing.get(task.id);
-		if (mark) {
-			instructing.delete(task.id);
-			editor.unmarkInstructing(mark);
-		} else if (task.kind === 'instruction' || task.kind === 'ocr') overEarly.add(task.id);
-		if (task.state === 'failed') showToast(`${task.title}：${task.error ?? t('出错了')}`, true);
-		// A PDF read: its page, to open.
-		const page = task.kind === 'ocr' && task.state === 'done' ? (task.result as { page?: string } | null)?.page : undefined;
-		if (page) {
-			void articleList.load();
-			showToast(t('已识别成子页面「{title}」', { title: task.title.replace(/^PaddleOCR：/u, '') }), { action: { label: t('打开'), run: () => void session.open(page) } });
-		}
-	},
 });
 const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files')!, {
 	source: () => session.current.source,
@@ -371,26 +256,14 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	insertMarkdown: (markdown) => editor.insertMarkdown(markdown),
 	viewOffice: (url, name) => void openOfficeFile(url, name),
 	sheetRows: firstSheetRows,
-	ocr: (path) => void ocrPdf(path),
+	ocr: (path) => void editorAi.ocrPdf(path),
 });
 
 const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-editor')!, {
 	// 转成子页面: a page under the open article, made with a section of it.
 	subPage: {
-		plan: () => (session.slug ? freeSlug(autoSlug(), articleList.articles().map((article) => article.slug)) : null),
-		async make(slug, title, body, files) {
-			const parent = session.slug;
-			if (!parent) return false;
-			try {
-				await trackWrite(() => createArticle(slug, title, parent, { body, files }));
-			} catch (error) {
-				showToast(error instanceof Error ? error.message : t('没能转成子页面'), true);
-				return false;
-			}
-			await articleList.load();
-			showToast(t('已转成子页面「{title}」', { title }), { action: { label: t('打开'), run: () => void session.open(slug) } });
-			return true;
-		},
+		plan: () => pages.subPage.plan(),
+		make: (slug, title, body, files) => pages.subPage.make(slug, title, body, files),
 	},
 	// Files dropped or pasted into the editor, and its image uploads, go into the open article's folder.
 	files: {
@@ -405,8 +278,8 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 			}
 			return paths;
 		},
-		fromDrive: (path) => copyFromDrive(path),
-		withPictures: (markdown) => withArticlePictures(markdown),
+		fromDrive: (path) => drive.copyFromDrive(path),
+		withPictures: (markdown) => drive.withArticlePictures(markdown),
 		head: async (path) => (session.slug ? articleFileHead(session.slug, path) : null),
 		report: showToast,
 	},
@@ -415,31 +288,20 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	changed: (markdown) => session.editBody(markdown),
 	async pickArticle() {
 		const picked = await quickFind.pick();
-		if (picked && 'create' in picked) return makeLinkedPage(picked.create);
+		if (picked && 'create' in picked) return pages.makeLinkedPage(picked.create);
 		const article = articleList.articles().find((entry) => entry.slug === picked?.slug);
 		return article ? { title: article.title, href: articleAddress(article.kind, article.slug) } : null;
 	},
 	openArticle: (slug) => void session.open(slug),
 	// 页面 (/page): a page under the open one, linked where the caret is, and gone into.
-	async makePage() {
-		const parent = session.slug;
-		if (!parent) return null;
-		const slug = freeSlug(autoSlug(), articleList.articles().map((article) => article.slug));
-		try {
-			await trackWrite(() => createArticle(slug, '无标题', parent)); // i18n-ignore: saved as the page's title
-		} catch (error) {
-			showToast(error instanceof Error ? error.message : t('新建失败'), true);
-			return null;
-		}
-		return { slug, title: '无标题', href: `/blog/${slug}/` }; // i18n-ignore: the link written into the article
-	},
-	enterPage: (slug) => void enterNewPage(slug),
-	askAI: () => void askAI(),
-	writeWithAI: () => void askAI(),
-	instruct: (fresh) => void instructHere(fresh),
-	ocrPdf: (view, pos, path) => void ocrPdf(path, view, pos),
-	recognize: (view, pos) => void recognizePicture(view, pos),
-	pickCitation: () => citePicker.pick(),
+	makePage: () => pages.makePage(),
+	enterPage: (slug) => void pages.enterNewPage(slug),
+	askAI: () => void editorAi.askAI(),
+	writeWithAI: () => void editorAi.askAI(),
+	instruct: (fresh) => void editorAi.instructHere(fresh),
+	ocrPdf: (view, pos, path) => void editorAi.ocrPdf(path, view, pos),
+	recognize: (view, pos) => editorAi.recognizePicture(view, pos),
+	pickCitation: () => library.pick(),
 	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
 	reviewing: (pending) => reviewBar.show(pending),
 	shown: () => articleShown(),
@@ -451,7 +313,7 @@ const reviewBar = createReviewBar(shell, {
 	async retry() {
 		editor.rejectAll();
 		for (let waited = 0; saveState === 'reviewing' && waited < 2000; waited += 50) await new Promise((done) => setTimeout(done, 50));
-		inlineAi.retry();
+		editorAi.retry();
 	},
 });
 bindTitleFocus(() => properties.focusTitle());
@@ -477,7 +339,7 @@ const session = new ArticleSession(
 			if (again) editorScroll.scrollTop = scrollTop;
 			// The files it names, once it is shown (a book's take a while to read).
 			filePanel.sourceChanged();
-			aiPanel.articleShown();
+			chat.aiPanel.articleShown();
 			return markdown;
 		},
 		review(article, body, from) {
@@ -496,16 +358,16 @@ const session = new ArticleSession(
 			topBar.edited(article.modified ?? null);
 			editorPanel.classList.toggle('is-wide', Boolean(shown.wide));
 			articleList.select(article.slug);
-			showPath();
+			pages.showPath();
 			filesListed = filePanel.show(article.slug);
 			backlinksShown = backlinks.show(article.slug);
 			terminal.showArticle(article.slug);
-			aiPanel.showArticle({ slug: article.slug, title: openTitle });
-			void loadLibrary(article.slug);
+			chat.aiPanel.showArticle({ slug: article.slug, title: openTitle });
+			void library.load(article.slug);
 			const url = new URL(window.location.href);
 			url.searchParams.set('article', article.slug);
 			history.replaceState(null, '', url);
-			visited.shown(article.slug);
+			pages.visited.shown(article.slug);
 			snapshot.changed();
 		},
 		saveState: (state) => {
@@ -530,23 +392,6 @@ const session = new ArticleSession(
 // Not while an article is being shown: its files are read once it is (a book's take a while).
 session.subscribe(() => saveState !== 'loading' && filePanel.sourceChanged());
 
-/** The open article's title as typed (the plugins' `ctx.studio.article()`). */
-let openTitle = '';
-
-// The plugins are told the article's file changed (`studio/source-changed`), a moment after the last change.
-{
-	let told = { slug: '', source: '' };
-	let timer = 0;
-	session.subscribe(({ article, source }) => {
-		window.clearTimeout(timer);
-		if (!article || (article.slug === told.slug && source === told.source)) return;
-		timer = window.setTimeout(() => {
-			told = { slug: article.slug, source };
-			studioPlugins.emit('studio/source-changed', article.slug, source);
-		}, 250);
-	});
-}
-
 /** The article the editor shows, or is about to (the plugins' `ctx.studio.shown()`). */
 let shownArticle: ArticlePayload | null = null;
 
@@ -558,366 +403,11 @@ function useArticleContext(article: ArticlePayload): void {
 	studioPlugins.emit('studio/article-showing', article.slug);
 }
 
-/** The pages opened, in order, for ‹ and › in the bar (as Notion's). */
-const visited = (() => {
-	const slugs: string[] = [];
-	let at = -1;
-	/** Where ‹ or › is taking the page, till it is shown. */
-	let going: number | null = null;
-	const tell = () => shellState.set({ nav: { back: at > 0, forward: at < slugs.length - 1 } });
-	return {
-		shown(slug: string): void {
-			if (going !== null && slugs[going] === slug) at = going;
-			else if (slugs[at] !== slug) {
-				slugs.splice(at + 1, Infinity, slug);
-				at = slugs.length - 1;
-			}
-			going = null;
-			tell();
-		},
-		/** One page back (-1) or forward (1), past those deleted since. */
-		step(by: number): void {
-			const exists = new Set(articleList.articles().map((article) => article.slug));
-			let to = at + by;
-			while (slugs[to] !== undefined && !exists.has(slugs[to])) to += by;
-			if (slugs[to] === undefined) return;
-			going = to;
-			showView('editor');
-			void session.open(slugs[to]);
-		},
-	};
-})();
-
-/** Reads the article list and opens one: `slug`, the one in the address, or the first. */
-async function openFromList(slug?: string, discard = false): Promise<void> {
-	const articles = await articleList.load();
-	const requested = slug ?? new URL(window.location.href).searchParams.get('article') ?? undefined;
-	const initial = articles.some((article) => article.slug === requested) ? requested : articles[0]?.slug;
-	if (initial) await session.open(initial, { discard });
-	else topBar.showEmpty();
-}
-
-/**
- * A new page, at once (as in Notion): no dialog, no folder name to think of
- * (one is made up; it gets one read from the title when it is published);
- * opened with its title selected, to be typed over. Under `parent` when given.
- */
-async function newPage(parent = ''): Promise<void> {
-	if (!(await session.saveBeforeLeaving())) return;
-	const slug = freeSlug(autoSlug(), articleList.articles().map((article) => article.slug));
-	try {
-		await createArticle(slug, '无标题', parent); // i18n-ignore: saved as the page's title
-	} catch (error) {
-		showToast(error instanceof Error ? error.message : t('新建失败'), true);
-		return;
-	}
-	await enterNewPage(slug);
-}
-
-/** Opens a page just made, its title selected to be typed over; what is open saved first. */
-async function enterNewPage(slug: string): Promise<void> {
-	if (!(await session.saveBeforeLeaving())) return;
-	await openFromList(slug, true);
-	if (session.slug === slug) properties.selectTitle();
-}
-
-/**
- * 新建子页面 from `[[`: a page of this title under the open one, linked
- * where the `[[` was; the author writes on where they were (as SiYuan's
- * reference picker makes a document), and opens it from the toast.
- */
-async function makeLinkedPage(title: string): Promise<{ title: string; href: string } | null> {
-	const parent = session.slug;
-	if (!parent) return null;
-	const slug = freeSlug(autoSlug(), articleList.articles().map((article) => article.slug));
-	try {
-		await trackWrite(() => createArticle(slug, title, parent));
-	} catch (error) {
-		showToast(error instanceof Error ? error.message : t('新建失败'), true);
-		return null;
-	}
-	await articleList.load();
-	showToast(t('已新建子页面「{title}」', { title }), { action: { label: t('打开'), run: () => void session.open(slug) } });
-	return { title, href: `/blog/${slug}/` };
-}
-
-/** The moves asked for, one after the other: each reads where the pages are once the last is over (the list read again). */
-let moving: Promise<void> = Promise.resolve();
-
-/**
- * Pages (in this order) under `parent`, or at the top with it empty; with
- * `place`, just before or after that page, one after the other. On disk, the
- * open one too (saved first): only its properties change, which it takes in
- * quietly.
- */
-function movePages(slugs: string[], parent: string, place: PagePlace = {}): Promise<void> {
-	const moved = moving.then(() => movePagesNow(slugs, parent, place));
-	moving = moved.catch(() => {});
-	return moved;
-}
-
-async function movePagesNow(slugs: string[], parent: string, place: PagePlace): Promise<void> {
-	// The pages they leave and the one they go under get a page block taken out or put in (as Notion has it): the open
-	// one among them, saved first, is read again after, quietly, not reviewed as a change made by someone else.
-	const left = slugs.map((slug) => articleList.articles().find((article) => article.slug === slug)?.parent ?? '');
-	const open = session.slug ?? '';
-	const changesOpen = Boolean(open) && [parent, ...left].includes(open);
-	if ((slugs.includes(open) || changesOpen) && !(await session.flush())) return;
-	let previous: string | null = null;
-	try {
-		await trackWrite(async () => {
-			for (const slug of slugs) {
-				const here: PagePlace = previous ? { after: previous } : place;
-				await setArticleParent(slug, parent, here);
-				// The next one after this, where it is (with no place given, each goes after those there).
-				if (previous || place.before || place.after) previous = slug;
-			}
-			if (changesOpen && session.slug === open) await session.reload();
-		});
-	} catch (error) {
-		showToast(error instanceof Error ? error.message : t('没能移动这个页面'), true);
-	}
-	await articleList.load();
-	if (slugs.length > 1) showToast(t('已移动 {count} 个页面', { count: slugs.length }));
-}
-
-/** The pages the open one is under, in the bar, with their icons and its own; 常用, at the top of the left column; how many there are. */
-function showPath(): void {
-	const articles = articleList.articles();
-	const bySlug = new Map(articles.map((article) => [article.slug, article]));
-	const pages: Array<{ slug: string; title: string; icon?: string }> = [];
-	const seen = new Set<string>();
-	for (let at = session.slug ? bySlug.get(session.slug)?.parent : undefined; at && !seen.has(at) && bySlug.has(at); at = bySlug.get(at)?.parent) {
-		seen.add(at);
-		pages.unshift({ slug: at, title: bySlug.get(at)!.title, icon: bySlug.get(at)!.icon });
-	}
-	const starred = favoriteSlugs();
-	shellState.set({
-		path: pages,
-		icon: (session.slug && bySlug.get(session.slug)?.icon) || '',
-		count: articles.length,
-		favorite: Boolean(session.slug && starred.includes(session.slug)),
-		favorites: starred.flatMap((slug) => {
-			const page = bySlug.get(slug);
-			return page ? [{ slug, title: page.title || slug, icon: page.icon }] : [];
-		}),
-	});
-}
-
-/** ☆: a page starred in 常用, or no longer; said so. */
-function starPage(slug: string | null): void {
-	if (!slug) return;
-	const starred = toggleFavorite(slug).includes(slug);
-	showToast(starred ? t('已加入常用') : t('已移出常用'));
-	showPath();
-}
-
-/**
- * Published: saved, and, if its folder name is still one made up for a new
- * page, given one read from its title, which is its address on the blog from
- * now on (a published page is never renamed so, its address kept).
- */
-async function publishAndName(): Promise<void> {
-	if (!(await session.flush())) return;
-	const slug = session.slug;
-	const article = articleList.articles().find((entry) => entry.slug === slug);
-	if (!slug || !article || article.draft !== false || !isAutoSlug(slug)) return;
-	const wanted = readableSlug(article.title);
-	if (!wanted || isAutoSlug(wanted)) return;
-	const to = freeSlug(wanted, articleList.articles().map((entry) => entry.slug));
-	const renamed = await articleActions.renameTo(article, to);
-	if (!renamed) return;
-	const address = articleAddress(article.kind, to);
-	showToast(renamed.relinked ? t('已发布，网址是 {address}，{count} 篇里指向它的链接已跟着改', { address, count: renamed.relinked }) : t('已发布，网址是 {address}', { address }));
-}
-
-/**
- * 在终端里问 AI: the article saved, the lines the selected blocks are in, and a question about them typed into the
- * terminal for the author to finish and send (what 「问 AI」 did before the AI in the editor).
- */
-async function askInTerminal(): Promise<void> {
-	const slug = session.slug;
-	const marked = slug ? editor.markSelection() : null;
-	if (!slug || !marked) return;
-	if (!(await session.flush())) {
-		showToast(t('文章还没保存好，保存后再问 AI'), true);
-		return;
-	}
-	const lines = sourceLinesOf(session.current.source, marked);
-	if (!lines) {
-		showToast(t('没找到选中的内容在文件里的位置'), true);
-		return;
-	}
-	sidePanel.show('terminal');
-	terminal.ask(slug, lines);
-}
-
-/** What the AI in the editor is asked about: the blocks selected (or the empty line), what is before and after, kept for 重试. */
-let inlineAsk: { slug: string; mode: 'rewrite' | 'write'; selected: string; before: string; after: string; source: string } | null = null;
-let inlineId = '';
-const inlineAi = createInlineAi({
-	async run(instruction) {
-		const asked = inlineAsk;
-		if (!asked || session.slug !== asked.slug) throw new Error(t('已经换了文章'));
-		const { agent, options } = chosenAI();
-		inlineId = crypto.randomUUID();
-		const { markdown } = await askInline({ id: inlineId, agent, options, mode: asked.mode, instruction, slug: asked.slug, selected: asked.selected, before: asked.before, after: asked.after });
-		if (session.slug !== asked.slug) throw new Error(t('已经换了文章'));
-		if (session.current.source !== asked.source || session.hasUnsavedEdits()) throw new Error(t('AI 写的时候文章改过了：再选一次，重新问'));
-		// Shown in place, to accept or reject (the review bar); taken, it is saved as any edit.
-		void session.reviewProposal([asked.before, markdown.trim(), asked.after].filter((part) => part.trim()).join('\n\n') + '\n');
-	},
-	stop() {
-		if (inlineId) void cancelInline(inlineId).catch(() => {});
-	},
-	askInTerminal: () => void askInTerminal(),
-});
-
-/** Where the selection (or the caret) is on screen, for the AI's box to open under. */
-function selectionRect(): DOMRect | null {
-	const selection = window.getSelection();
-	if (!selection?.rangeCount) return null;
-	const range = selection.getRangeAt(0);
-	const rect = range.getBoundingClientRect();
-	if (rect.width || rect.height) return rect;
-	const node = range.startContainer instanceof Element ? range.startContainer : range.startContainer.parentElement;
-	return node?.getBoundingClientRect() ?? null;
-}
-
-/**
- * The AI in the editor (⌘J, the toolbar, a block's menu; Space on an empty line), as Notion's: the selected blocks
- * (or the one the caret is in) rewritten, or something written on the empty line, as the author says in its box;
- * what it writes comes in place as differences to accept or reject. The article is saved first, so what is asked
- * about is what is on disk.
- */
-async function askAI(): Promise<void> {
-	const slug = session.slug;
-	const marked = slug ? editor.markSelection() : null;
-	if (!slug || !marked) return;
-	const anchor = selectionRect();
-	const start = marked.indexOf(SELECTION_START);
-	const end = marked.indexOf(SELECTION_END);
-	if (start < 0 || end < start) return;
-	if (!(await session.flush())) {
-		showToast(t('文章还没保存好，保存后再问 AI'), true);
-		return;
-	}
-	const selected = marked.slice(start + SELECTION_START.length, end).trim();
-	const mode = selected && selected !== '<br />' ? 'rewrite' : 'write';
-	inlineAsk = {
-		slug,
-		mode,
-		selected,
-		before: marked.slice(0, start).trimEnd(),
-		after: marked.slice(end + SELECTION_END.length).trimStart(),
-		source: session.current.source,
-	};
-	inlineAi.open(mode, anchor);
-	// The AI made ready while the author says what they want.
-	void warmInline(chosenAI().agent).catch(() => {});
-}
-
-/**
- * OCR 成子页面: a PDF of the open article (`path` in it) read by PaddleOCR into a page under it (server/tasks/pdf-ocr.mjs),
- * made at once and filled in as a task; from the line linking to the PDF (`view`, `pos`), the page linked on a line under it.
- */
-async function ocrPdf(path: string, view?: EditorView, pos?: number): Promise<void> {
-	const slug = session.slug;
-	if (!slug) return;
-	try {
-		const { task, page } = await startOcr(slug, path);
-		void articleList.load();
-		// Already read: what says so (with 打开) stays, not covered by this.
-		if (!overEarly.delete(task)) showToast(t('正在用 PaddleOCR 识别 {path}，结果写进子页面「{title}」', { path, title: page.title }));
-		const at = view && pos !== undefined && !view.isDestroyed ? view.state.doc.nodeAt(pos) : null;
-		const link = view?.state.schema.marks.link;
-		// Still the line linking to the PDF: the page under it.
-		if (view && at?.textContent && at.isTextblock && link) {
-			const line = view.state.schema.nodes.paragraph!.create(null, view.state.schema.text(page.title, [link.create({ href: page.href, title: null })]));
-			view.dispatch(view.state.tr.insert(pos! + at.nodeSize, line));
-		}
-	} catch (error) {
-		showToast(error instanceof Error ? error.message : t('没能开始识别'), true);
-	}
-}
-
-/** The heading the line `line` (from 1) of `source` is under, skipping what is in code fences; empty for none. */
-function headingAbove(source: string, line: number): string {
-	let heading = '';
-	let fence: string | null = null;
-	for (const text of source.split('\n').slice(0, line - 1)) {
-		const opening = /^\s{0,3}(`{3,}|~{3,})/u.exec(text)?.[1];
-		if (fence) {
-			if (opening && opening[0] === fence[0] && opening.length >= fence.length) fence = null;
-		} else if (opening) fence = opening;
-		else heading = /^#{1,6}\s+(.*?)\s*#*\s*$/u.exec(text)?.[1] ?? heading;
-	}
-	return heading;
-}
-
-let instructions = 0;
-/**
- * Alt+Enter: what the blocks the caret is in say is done by the AI of AI 助手, by itself, in the article's folder
- * (server/ai/instructions.mjs); ⇧ as well, in a new talk. The blocks are marked till it is over; what it changes in the
- * file comes back as a change on disk, to accept or reject where it is.
- */
-async function instructHere(fresh: boolean): Promise<void> {
-	const slug = session.slug;
-	const marked = slug ? editor.markSelection() : null;
-	if (!slug || !marked) return;
-	// Marked at once, where the caret is now, whatever it does meanwhile.
-	const mark = `instruction-${++instructions}`;
-	editor.markInstructing(mark);
-	try {
-		if (!(await session.flush())) throw new Error(t('文章还没保存好，保存后再交给 AI'));
-		const lines = sourceLinesOf(session.current.source, marked);
-		if (!lines?.text.trim()) throw new Error(t('这一行是空的，没有要交给 AI 的事'));
-		const id = await instruct(slug, { text: lines.text, start: lines.start, end: lines.end, heading: headingAbove(session.current.source, lines.start) }, fresh);
-		if (overEarly.delete(id)) editor.unmarkInstructing(mark);
-		else instructing.set(id, mark);
-	} catch (error) {
-		editor.unmarkInstructing(mark);
-		showToast(error instanceof Error ? error.message : t('没能交给 AI'), true);
-	}
-}
-
-/** The open article's library (assets/refs.bib), read again when it changes; null when it has none. */
-let library: Map<string, BibEntry> | null = null;
-let librarySlug: string | null = null;
-let libraryRead = 0;
-async function loadLibrary(slug: string): Promise<void> {
-	const reading = ++libraryRead;
-	// Another article's library numbers nothing here.
-	if (librarySlug !== slug) {
-		librarySlug = slug;
-		library = null;
-		editor.setLibrary(null);
-	}
-	let next: Map<string, BibEntry> | null = null;
-	try {
-		const response = await fetch(articleFileUrl(slug, `./${BIBLIOGRAPHY_PATH}`), { cache: 'no-store' });
-		if (response.ok) next = parseBibtex(await response.text());
-	} catch {
-		// Unreadable: as if there were none.
-	}
-	if (reading !== libraryRead || session.slug !== slug) return;
-	library = next;
-	editor.setLibrary(library);
-}
-
-const citePicker = createCitePicker({
-	library: () => library,
-	async addDoi(doi) {
-		const slug = session.slug;
-		if (!slug) throw new Error(t('还没有打开文章'));
-		const { key } = await addReference(slug, doi);
-		await loadLibrary(slug);
-		return key;
-	},
-});
-
-/** The changes on disk to the article open while the AI worked (its files), to be looked over once it is done. */
-let heldChanges: { slug: string; paths: Set<string> } | null = null;
+// The features, once the parts they use are made (wiring/).
+const pages = createPages(studio);
+const editorAi = createEditorAi(studio);
+const library = createLibrary(studio);
+startPlugins(studio, { shown: () => shownArticle });
 
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
@@ -928,233 +418,26 @@ watchDisk((changes) => {
 	const change = changes.find((entry) => entry.slug === session.slug);
 	if (!change) return;
 	void filePanel.refresh();
-	// The AI at work, writing the article bit by bit: looked over once its turn is over (turnOver), not at each bit.
-	if (aiPanel.working() && session.slug) {
-		if (!heldChanges || heldChanges.slug !== session.slug) {
-			heldChanges = { slug: session.slug, paths: new Set() };
-			showToast(t('AI 在改这篇文章，做完后一起给你过目'));
-		}
-		for (const path of change.paths) heldChanges.paths.add(path);
-		return;
-	}
+	// The AI at work, writing the article bit by bit: looked over once its turn is over, not at each bit.
+	if (chat.hold(change)) return;
 	session.changedOnDisk(change.paths);
 	studioPlugins.emit('studio/files-changed', change.slug, change.paths);
 	officeFilesChanged(change.paths.map((path) => studioFileUrl(change.slug, path)));
-	if (change.paths.includes(BIBLIOGRAPHY_PATH)) void loadLibrary(change.slug);
+	if (change.paths.includes(BIBLIOGRAPHY_PATH)) void library.load(change.slug);
 });
 
-// The project's plugins (plugins/*/studio.ts: the calculation block, RetainMol…), given the article open, its files and their API.
-// Those turned off (插件) are left out; if the list cannot be read, all are put in.
-void listPlugins()
-	.then(
-		(plugins) => ({ off: plugins.filter((plugin) => !plugin.enabled).map((plugin) => plugin.id), present: plugins.filter((plugin) => plugin.entries.includes('studio.ts')).map((plugin) => plugin.id) }),
-		() => ({ off: [], present: [] }),
-	)
-	.then(({ off, present }) => startStudioPlugins({
-		slug: () => session.slug,
-		fileUrl: studioFileUrl,
-		save: () => void session.flush(),
-		article: () => (session.slug ? { slug: session.slug, title: openTitle || session.slug } : null),
-		source() {
-			if (!session.slug) return null;
-			editor.settle();
-			return session.current.source;
-		},
-		editor: {
-			view: () => editor.view(),
-			insert: (markdown) => editor.insertMarkdown(markdown),
-			insertText(text) {
-				const view = editor.view();
-				if (!view) return;
-				view.dispatch(view.state.tr.insertText(text).scrollIntoView());
-				view.focus();
-			},
-		},
-		upload: (slug, folder, file, options) => uploadArticleFile(slug, folder, file, options),
-		toast: (message, error = false) => showToast(message, error),
-		showPanel: (key) => sidePanel.show(key),
-		shown: () => shownArticle?.slug ?? null,
-		views: {
-			get: () => shownArticle?.chemistryViews ?? {},
-			save: (key, entry) => {
-				const { format, view, display } = entry as { format: string; view: number[]; display?: unknown };
-				return session.saveView(key, format, view, display);
-			},
-		},
-		api: pluginApi,
-	}, off, present))
-	.then((problems) => {
-		// Their tabs in the right column, their commands in the left one and on their keys.
-		showPluginUi({ setPanels: (panels) => sidePanel.setPanels(panels), sidebar: shell.querySelector<HTMLElement>('#plugin-commands')! });
-		if (problems.length) showToast(problems.join('；'), true);
-	});
-// A file of the article a plugin's block shows (a structure file) is put in as that block, and marked in the file list.
-setFileBlocks(blockForFile, fileHeadWanted);
-
-/**
- * 识别…: the picture at `pos` read by the large model of AI 设置, as what the author picks
- * (`ctx.recognizers`: a formula, text, a table…). What is read is put under the picture on disk,
- * the article saved first: it comes back as a change to accept or not, the text before it in history.
- */
-function recognizePicture(view: EditorView, pos: number): void {
-	const slug = session.slug;
-	const src = String(view.state.doc.nodeAt(pos)?.attrs.src ?? '');
-	if (!slug || !src) return;
-	const kinds = pluginRecognizers()?.list() ?? [];
-	if (!kinds.length) {
-		showToast(t('没有可用的识别：插件「recognize」关掉了？'), true);
-		return;
-	}
-	const anchor = view.nodeDOM(pos);
-	showContextMenu(
-		kinds.map((kind) => ({ label: kind.label, action: () => void readPicture(slug, src, kind) })),
-		anchor instanceof HTMLElement ? anchor : { x: innerWidth / 2, y: innerHeight / 3 },
-	);
-}
-
-async function readPicture(slug: string, src: string, kind: Recognizer): Promise<void> {
-	let settings = await aiSettings().catch(() => null);
-	if (!settings || !aiReady(settings)) settings = await openAiSettings(t('识别图片要用大模型：先选好服务、模型，填上 key。'));
-	if (!settings || !aiReady(settings)) return;
-	await session.flush();
-	showToast(t('正在识别（{label}）…', { label: kind.label }));
-	try {
-		const answer = await recognizeImage(slug, src, kind.prompt);
-		if (!answer.trim()) {
-			showToast(t('图里没读出这一类内容'), true);
-			return;
-		}
-		await putBelowImage(slug, src, Recognizers.markdown(kind, answer));
-		showToast(t('识别好了，放在图下面：接受或拒绝'));
-	} catch (error) {
-		showToast(t('没能识别：{error}', { error: error instanceof Error ? error.message : String(error) }), true);
-	}
-}
-// A plugin edited (by hand or by an AI in the terminal) is put in again at once: said here; the article drawn again if its blocks changed.
-studioPlugins.on('studio/plugins-reloaded', (changed, problems) => {
-	showToast(problems.length ? problems.join('；') : t('已重新载入插件：{plugins}', { plugins: changed.join('、') }), problems.length > 0);
-});
-studioPlugins.on('studio/editor-changed', () => void session.remount());
-
-/**
- * After a search: the first block of the open article that holds `text`, in
- * view and marked for a moment. The mark is laid over the block, since the
- * editor redraws its own elements and would drop a class added to them.
- */
-function showFound(text: string): void {
-	const needle = text.toLocaleLowerCase('zh-CN');
-	const blocks = editorScroll.querySelectorAll<HTMLElement>('.ProseMirror > *, .ProseMirror li, .ProseMirror td');
-	const block = [...blocks].find((element) => element.textContent?.toLocaleLowerCase('zh-CN').includes(needle));
-	if (!block) return;
-	block.scrollIntoView({ block: 'center' });
-	editorScroll.querySelector('.search-flash')?.remove();
-	const box = block.getBoundingClientRect();
-	const frame = editorScroll.getBoundingClientRect();
-	const mark = document.createElement('div');
-	mark.className = 'search-flash';
-	mark.style.top = `${box.top - frame.top + editorScroll.scrollTop - 2}px`;
-	mark.style.left = `${box.left - frame.left + editorScroll.scrollLeft - 6}px`;
-	mark.style.width = `${box.width + 12}px`;
-	mark.style.height = `${box.height + 4}px`;
-	editorScroll.append(mark);
-	window.setTimeout(() => mark.remove(), 1700);
-}
-
-/** Opens an article from somewhere else on the page, at the first paragraph holding `text`. */
-async function openAt(slug: string, text = ''): Promise<void> {
-	showView('editor');
-	await session.open(slug);
-	if (text && session.slug === slug) requestAnimationFrame(() => showFound(text));
-}
-
-const backlinks = createBacklinks(shell.querySelector<HTMLElement>('#page-backlinks')!, { open: (slug, text) => void openAt(slug, text) });
+const backlinks = createBacklinks(shell.querySelector<HTMLElement>('#page-backlinks')!, { open: (slug, text) => void pages.openAt(slug, text) });
 
 const quickFind = createQuickFind({
 	articles: () => articleList.articles(),
-	open: openAt,
+	open: (slug, text) => pages.openAt(slug, text),
 	openDriveFile(path) {
 		showView('drive');
-		void drivePage.reveal(path);
+		void drive.page.reveal(path);
 	},
 });
 
-/** A file of the drive copied into the open article (`img/` for a picture, else `assets/`): its path there. */
-/**
- * Markdown from an AI's answer as the open article takes it: each picture it shows from this machine (`![](/…/ai/work/
- * plot.png)`) copied into the article's img/, its link pointed there (`./img/plot.png`); the web's and the article's
- * own left as they are.
- */
-async function withArticlePictures(markdown: string): Promise<string> {
-	const slug = session.slug;
-	if (!slug) return markdown;
-	const local = [...new Set([...markdown.matchAll(/!\[[^\]]*\]\(<?([^)>\s]+)>?\)/gu)].map((match) => match[1]!))].filter((src) => !/^[a-z][a-z0-9+.-]*:/iu.test(src) || src.startsWith('file://')).filter((src) => !/^(\.\/)?(img|assets)\//u.test(src));
-	if (!local.length) return markdown;
-	let taken = markdown;
-	try {
-		for (const src of local) {
-			const { path } = await importPicture(slug, decodeURI(src));
-			taken = taken.split(`(${src})`).join(`(./${path})`).split(`(<${src}>)`).join(`(./${path})`);
-		}
-	} finally {
-		void filePanel.refresh();
-	}
-	return taken;
-}
-
-async function copyFromDrive(path: string): Promise<string> {
-	const slug = session.slug;
-	if (!slug) throw new Error(t('先打开一篇文章'));
-	try {
-		return (await importDriveFile(slug, path, isImage(path) ? 'img' : 'assets')).path;
-	} finally {
-		void filePanel.refresh();
-	}
-}
-
-// The drive (资料库): a page in the middle, and a list in the side panel to drag files into the article from.
-const driveHost = {
-	article: () => {
-		const slug = session.slug;
-		return slug ? { slug, title: articleList.articles().find((article) => article.slug === slug)?.title || slug } : null;
-	},
-	askAI(path: string) {
-		sidePanel.show('terminal');
-		// The words of an Office file are in the drive's text (drive-text.mjs); an AI reads the rest itself.
-		const kind = officeKind(path);
-		terminal.askAboutDriveFile(path, kind !== null && kind !== 'old');
-	},
-	async insertIntoArticle(path: string) {
-		const reference = await readMarkdownReference(await copyFromDrive(path), async (copied) => (session.slug ? articleFileHead(session.slug, copied) : null));
-		if (reference) editor.insertMarkdown(reference);
-	},
-};
-const driveView = shell.querySelector<HTMLElement>('#drive-view')!;
-const drivePage = createDriveBrowser(driveView, {
-	...driveHost,
-	changed: () => {
-		void drivePane.refresh();
-		void showDriveRoot();
-	},
-	navigated(folder) {
-		if (shell.dataset.view !== 'drive') return;
-		const url = new URL(window.location.href);
-		url.searchParams.set('drive', folder);
-		history.replaceState(null, '', url);
-	},
-}, { mode: 'page' });
-const drivePane = createDriveBrowser(shell.querySelector<HTMLElement>('#side-drive')!, {
-	...driveHost,
-	changed: () => {
-		void drivePage.refresh();
-		void showDriveRoot();
-	},
-}, { mode: 'pane' });
-/** Tells the terminal where the drive is, for its 资料库 folder. */
-async function showDriveRoot(): Promise<void> {
-	terminal.showDrive((await driveInfo().catch(() => null))?.root ?? null);
-}
-void showDriveRoot();
-void drivePane.open('');
+const drive = createDrive(studio);
 
 // All the articles, as a table or a board (article-table.ts).
 const tableView = shell.querySelector<HTMLElement>('#table-view')!;
@@ -1174,11 +457,11 @@ const articleTable = createArticleTable(tableView, {
 function showView(view: View, folder?: string): void {
 	shell.dataset.view = view;
 	shellState.set({ view });
-	driveView.hidden = view !== 'drive';
+	drive.view.hidden = view !== 'drive';
 	tableView.hidden = view !== 'table';
-	showChat(view === 'chat');
+	chat.showChat(view === 'chat');
 	const url = new URL(window.location.href);
-	if (view === 'drive') void drivePage.open(folder);
+	if (view === 'drive') void drive.page.open(folder);
 	else url.searchParams.delete('drive');
 	if (view === 'table') {
 		url.searchParams.set('pages', '');
@@ -1191,89 +474,15 @@ function showView(view: View, folder?: string): void {
 {
 	const address = new URL(window.location.href).searchParams;
 	const folder = address.get('drive');
-	const chat = address.get('chat');
+	const chatId = address.get('chat');
 	if (folder !== null) showView('drive', folder);
 	else if (address.has('pages')) showView('table');
-	else if (chat) openChat(chat);
+	else if (chatId) chat.openChat(chatId);
 }
 
-/** The open article, as the list knows it, for the actions on a whole article. */
-function openSummary(): ArticleSummary | null {
-	return articleList.articles().find((article) => article.slug === session.slug) ?? null;
-}
+bindPageKeys(session, { find: () => quickFind.open() });
 
-/** ⋯: what can be done to the page, as in Notion's page menu. */
-function showPageMenu(pageMenu: HTMLElement): void {
-	const article = openSummary();
-	if (!article) return;
-	const address = articleAddress(article.kind, article.slug);
-	showContextMenu([
-		{ label: favoriteSlugs().includes(article.slug) ? t('移出常用') : t('加入常用'), icon: Star, action: () => starPage(article.slug) },
-		{
-			label: properties.isWide() ? t('全宽 ✓') : t('全宽'),
-			icon: MoveHorizontal,
-			action: () => {
-				if (properties.setWide(!properties.isWide())) editorPanel.classList.toggle('is-wide', properties.isWide());
-			},
-		},
-		{
-			label: t('复制博客链接'),
-			icon: Link,
-			action: () => {
-				const link = new URL(address, import.meta.env.SITE ?? window.location.origin).href;
-				navigator.clipboard.writeText(link).then(() => showToast(t('已复制 {link}', { link })), () => showToast(t('浏览器不允许写入剪贴板'), true));
-			},
-		},
-		{ label: /Mac/u.test(navigator.platform) ? t('在 Finder 中显示') : t('在文件管理器中显示'), icon: FolderSearch, action: () => void revealArticleFile(article.slug, '') },
-		{ label: t('历史版本…'), icon: History, action: () => openDialog('history', { slug: article.slug, host: { restore: (source) => void session.restoreVersion(source) } }) },
-		// The plugins' (`ctx.commands`, `places: ['page-menu']`).
-		...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, icon: command.icon, action: () => runCommand(command, 'page-menu') })),
-		'separator',
-		{ label: t('改文件夹名…'), icon: FolderPen, action: () => void articleActions.rename(article) },
-		{ label: t('复制一份'), icon: Copy, action: () => void articleActions.duplicate(article) },
-		{ label: t('移到回收站'), danger: true, icon: Trash2, action: () => void articleActions.remove(article) },
-	], pageMenu);
-}
-
-// ⌘K or ⌘P (Ctrl elsewhere) finds an article, from anywhere; ⌘K on text selected in the editor links it instead.
-document.addEventListener('keydown', (event) => {
-	if (event.defaultPrevented || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || !['k', 'p'].includes(event.key.toLowerCase())) return;
-	event.preventDefault();
-	quickFind.open();
-});
-
-// Saving is automatic; ⌘S (or ⌘↩) saves at once (in a plugin's frame too, through its `ctx.studio.save`).
-document.addEventListener('keydown', (event) => {
-	if (!(event.metaKey || event.ctrlKey) || event.altKey || (event.key !== 'Enter' && event.key.toLowerCase() !== 's')) return;
-	event.preventDefault();
-	void session.flush();
-});
-// ⌫ that nothing took (a structure editor with nothing left to delete) is "back" to WebKit, the Mac
-// app's browser: the Studio would leave for the app's start page. Where it isn't typed into, it does nothing.
-window.addEventListener('keydown', (event) => {
-	if (event.key !== 'Backspace' || event.defaultPrevented) return;
-	const target = event.target instanceof Element ? event.target : null;
-	if (target?.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
-	event.preventDefault();
-});
-document.addEventListener('visibilitychange', () => {
-	if (document.visibilityState === 'hidden' && session.hasUnsavedEdits()) void session.flush();
-});
-window.addEventListener('beforeunload', (event) => {
-	if (!session.hasUnsavedEdits()) return;
-	void session.flush();
-	event.preventDefault();
-});
-
-// Astro reloads every open page when an article's Markdown changes, which
-// with autosave is every few seconds. The Studio follows those changes
-// itself, so a reload marked as theirs (content-reloads.mjs) is pointed at
-// another page, which Vite then leaves alone.
-import.meta.hot?.on('vite:beforeFullReload', (payload: { path?: string; studioContentChange?: boolean }) => {
-	if (payload.studioContentChange) payload.path = '/studio-keeps-open.html';
-});
-
-const opening = openFromList().then(
+const opening = pages.openFromList().then(
 	() => {
 		articleActions.offerPendingUndo();
 		refreshGit();
