@@ -93,8 +93,8 @@ export type PanelState = {
 };
 
 export type Picture = { id: string; blob: Blob; url: string };
-/** Something to say: the words, the articles named with @, the pictures, what was quoted. */
-export type Said = { id: string; text: string; mentions: ArticleRef[]; pictures: Picture[]; quotes: string[] };
+/** Something to say: the words, the articles named with @, the pictures (`kept`: sent before), what was quoted. */
+export type Said = { id: string; text: string; mentions: ArticleRef[]; pictures: Picture[]; quotes: string[]; kept?: string[] };
 
 /** How big a picture given is sent at most, on its longer side (larger, it is made smaller first). */
 const PICTURE_SIDE = 2000;
@@ -424,7 +424,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		const open = article && leftOut !== article.slug ? article : null;
 		const selection = open && !selectionLeftOut && host.hasSelection() ? await host.selection() : null;
 		try {
-			const pictures = await Promise.all(said.pictures.map((picture) => keepConversationPicture(target.id, picture.blob)));
+			const pictures = [...(said.kept ?? []), ...(await Promise.all(said.pictures.map((picture) => keepConversationPicture(target.id, picture.blob))))];
 			await tellConversation(
 				target.id,
 				text,
@@ -562,6 +562,14 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 				},
 				(error: unknown) => host.toast(error instanceof Error ? error.message : t('没能改')),
 			);
+		},
+		/** What was said last, said again (it failed): with what was told and given with it. */
+		retry(): void {
+			const last = get().items.findLast((item): item is Extract<ConversationItem, { kind: 'user' }> => item.kind === 'user' && !item.steer);
+			if (!last || get().conversation?.state === 'running') return;
+			const pages = host.articles();
+			const mentions = (last.context?.mentionSlugs ?? []).flatMap((slug) => pages.filter((page) => page.slug === slug).map(({ slug: named, title }) => ({ slug: named, title })));
+			void send({ id: crypto.randomUUID(), text: last.text, mentions, pictures: [], quotes: last.quotes ?? [], kept: last.pictures ?? [] });
 		},
 		/** Pictures given with what is said next (pasted, dropped); those not pictures left out. */
 		async addPictures(files: File[]): Promise<void> {

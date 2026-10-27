@@ -51,10 +51,15 @@
 .ai-block-handle:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
 .ai-block:hover { border-radius: 4px; background: var(--surface-soft); }
 .ai-block.is-dragged { opacity: 0.5; }
-.ai-message-actions { display: flex; gap: 4px; margin-top: 2px; opacity: 0; }
-.ai-answer:hover .ai-message-actions, .ai-message-actions:focus-within { opacity: 1; }
-.ai-message-actions button { padding: 2px 6px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; cursor: pointer; }
-.ai-message-actions button:hover { background: rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+/* Under what the AI said, always there (found without a pointer); under what the author said, as the pointer rests on it. */
+.ai-message-actions { display: flex; gap: 2px; margin-top: 2px; }
+.ai-message-actions button { display: grid; place-items: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); cursor: pointer; }
+.ai-message-actions button svg { width: 14px; height: 14px; }
+.ai-message-actions button:hover { background: rgba(var(--black), 0.06); color: rgb(var(--gray-dark)); }
+.ai-user-actions { height: 20px; margin-top: 0; opacity: 0; }
+.ai-user-actions button { width: 20px; height: 20px; }
+.ai-user-actions button svg { width: 13px; height: 13px; }
+.ai-user:hover .ai-user-actions, .ai-user-actions:focus-within { opacity: 1; }
 .ai-math-display { margin: 6px 0; overflow-x: auto; overflow-y: hidden; }
 
 .ai-thought { color: rgb(var(--gray)); font-size: 12px; }
@@ -293,3 +298,24 @@
 .ai-question-actions button:disabled { opacity: 0.5; cursor: default; }
 .ai-question.is-answered { gap: 2px; background: transparent; }
 .ai-question-answer { margin: 0; color: rgb(var(--gray)); font-size: 12px; }
+
+/* Away from the end: ↓ back to it, a dot when something came meanwhile. */
+.ai-latest { position: sticky; bottom: 10px; display: grid; place-items: center; width: 30px; height: 30px; margin: 0 auto; padding: 0; border: 1px solid rgb(var(--gray-light)); border-radius: 50%; background: var(--surface); box-shadow: 0 4px 12px rgb(0 0 0 / 10%); color: rgb(var(--gray-dark)); cursor: pointer; }
+.ai-latest svg { width: 15px; height: 15px; }
+.ai-latest.is-fresh::after { content: ''; position: absolute; top: 2px; right: 2px; width: 7px; height: 7px; border-radius: 50%; background: rgb(var(--black)); }
+
+/* How full its context is: a ring and a percentage; dark when nearly full. */
+.ai-usage-ring { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 10.5px; cursor: default; }
+.ai-usage-ring.is-full { color: rgb(var(--black)); cursor: pointer; }
+.ai-usage-ring.is-full:hover { background: rgba(var(--black), 0.05); }
+
+/* What it asks leave for, to be read before it is allowed. */
+.ai-permission-detail { max-height: 280px; margin-top: 6px; overflow: auto; }
+.ai-permission-detail .ai-diff { margin: 0; }
+
+/* Its context compacted: a line across, the summary opened from it. */
+.ai-compaction { display: flex; flex-direction: column; color: rgb(var(--gray)); font-size: 11.5px; text-align: center; }
+.ai-compaction > summary, div.ai-compaction { display: flex; align-items: center; gap: 8px; cursor: default; list-style: none; }
+details.ai-compaction > summary { cursor: pointer; }
+.ai-compaction > summary::before, .ai-compaction > summary::after, div.ai-compaction::before, div.ai-compaction::after { content: ''; flex: 1; height: 1px; background: rgb(var(--gray-light)); }
+.ai-compaction-summary { margin-top: 6px; text-align: left; }

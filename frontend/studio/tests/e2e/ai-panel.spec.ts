@@ -586,3 +586,62 @@ test('what the AI said, selected (a formula in it taken whole, as written), quot
 	await expect(pane(page).locator('.ai-quote-row')).toHaveCount(0);
 	await expect(pane(page).locator('.ai-user').last().locator('.ai-user-quote .katex')).toHaveCount(1);
 });
+
+test('leave to change a file shows the change, to be read before it is allowed', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '改文件');
+	const asked = pane(page).locator('.ai-permission');
+	await expect(asked.locator('.ai-permission-detail .ai-diff-lines span')).toHaveText(['- 旧的一行\n', '+ 新的一行\n']);
+	await asked.getByRole('button', { name: '允许', exact: true }).click();
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('改好了。');
+	await expect(asked.locator('.ai-permission-detail')).toHaveCount(0);
+});
+
+test('what was said: copied, or put back to be changed; what failed, said again; what is used of its context, a ring', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '用量');
+	// Under the answer, its actions there without a pointer on it.
+	await expect(pane(page).locator('.ai-answer').last().getByRole('button', { name: '插入到文章' })).toBeVisible();
+	await pane(page).locator('.ai-user').last().getByRole('button', { name: '改一改再问' }).click();
+	await expect(input(page)).toHaveValue('用量');
+	await input(page).fill('');
+
+	// Nearly full: the ring says so, and clicked, /compact is in the input; sent, a line where it was compacted.
+	const ring = pane(page).locator('.ai-usage-ring');
+	await expect(ring).toHaveText('85%');
+	await expect(ring).toHaveClass(/is-full/u);
+	await expect(ring).toHaveAttribute('title', /\$0\.42/u);
+	await ring.click();
+	await expect(input(page)).toHaveValue('/compact');
+	await pane(page).locator('.ai-send').click();
+	const compacted = pane(page).locator('.ai-compaction');
+	await expect(compacted.locator('summary')).toHaveText('上下文已压缩');
+	await compacted.locator('summary').click();
+	await expect(compacted.locator('.ai-compaction-summary')).toHaveText('之前聊了基组的选择。');
+	await expect(ring).toHaveText('10%');
+
+	// Failed: said again with 重试.
+	await tell(page, '出错');
+	await expect(pane(page).locator('.ai-error').last()).toBeVisible();
+	await pane(page).locator('.ai-error').last().getByRole('button', { name: '重试' }).click();
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('第 2 次好了');
+});
+
+test('scrolled up, away from the end: ↓ back to it, with a dot when something came meanwhile', async ({ page }) => {
+	await openAi(page);
+	await page.setViewportSize({ width: 1400, height: 600 });
+	for (const _ of Array(8)) {
+		await tell(page, '几块');
+		await expect(pane(page).locator('.ai-send')).toHaveAttribute('aria-label', '发送');
+	}
+	const transcript = pane(page).locator('.ai-transcript');
+	await transcript.evaluate((node) => node.scrollTo({ top: 0 }));
+	const latest = pane(page).locator('.ai-latest');
+	await expect(latest).toBeVisible();
+	await expect(latest).not.toHaveClass(/is-fresh/u);
+	await tell(page, '几块');
+	await expect(latest).toHaveClass(/is-fresh/u);
+	await latest.click();
+	await expect(latest).toBeHidden();
+	await expect.poll(() => transcript.evaluate((node) => node.scrollHeight - node.scrollTop - node.clientHeight)).toBeLessThan(5);
+});

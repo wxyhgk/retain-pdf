@@ -314,6 +314,8 @@ export type ConversationItem =
 	| { kind: 'thought'; id: string; text: string }
 	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
 	| { kind: 'plan'; id: string; entries: Array<{ content: string; priority: string; status: 'pending' | 'in_progress' | 'completed' }> }
+	/** Its context compacted (what was said before made a summary). */
+	| { kind: 'compaction'; id: string; status: 'in_progress' | 'completed' | 'failed' | 'cancelled'; error: string; summary: string }
 	/** A question it asks (a form: its fields a JSON Schema's properties); `answer` once answered. */
 	| { kind: 'question'; id: string; toolCallId: string | null; message: string; schema: FormSchema; answer: { action: 'accept'; content: Record<string, unknown> } | { action: 'decline' | 'cancel' } | null }
 	| { kind: 'permission'; id: string; title: string; toolCallId: string | null; options: Array<{ optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' }>; chosen: string | null }

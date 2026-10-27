@@ -1,5 +1,7 @@
 import { createContext, memo, useContext, useEffect, useRef, useState } from 'react';
 
+import { Copy, FilePlus2, PencilLine, RotateCcw, type LucideIcon } from 'lucide-react';
+
 import { t } from '@blog/i18n/index.mjs';
 import type { Conversation, ConversationItem } from '../../api/client';
 import { STUDIO_MARKDOWN_DRAG_TYPE } from '../../files/article-files';
@@ -39,6 +41,15 @@ export function commandOf(item: ToolItem): string | null {
 export function relativeTo(conversation: Conversation | null, path: string): string {
 	const base = conversation?.cwd ? `${conversation.cwd.replace(/\/$/u, '')}/` : '';
 	return base && path.startsWith(base) ? path.slice(base.length) : path;
+}
+
+/** A quiet action under something said: its icon, named for those who cannot see it. */
+function Act({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick(): void }) {
+	return (
+		<button type="button" aria-label={label} title={label} onClick={onClick}>
+			<Icon aria-hidden />
+		</button>
+	);
 }
 
 /**
@@ -124,6 +135,11 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 				</div>
 			) : null}
 			<div className="ai-bubble">{item.text}</div>
+			{/* Copied, or put back in the input to be changed and said again. */}
+			<div className="ai-message-actions ai-user-actions">
+				<Act icon={Copy} label={t('复制')} onClick={() => actions.copy(item.text)} />
+				<Act icon={PencilLine} label={t('改一改再问')} onClick={() => actions.ask(item.text)} />
+			</div>
 			{item.steer && <div className="ai-user-context">{t('插话')}</div>}
 			{named.length > 0 && (
 				<div className="ai-user-context">
@@ -145,12 +161,8 @@ function Message({ item }: { item: Extract<ConversationItem, { kind: 'message' }
 			<Markdown className="ai-message" text={item.text} blocks />
 			{whole && (
 				<div className="ai-message-actions">
-					<button type="button" onClick={() => actions.insert(whole)}>
-						{t('插入到文章')}
-					</button>
-					<button type="button" onClick={() => actions.copy(whole)}>
-						{t('复制')}
-					</button>
+					<Act icon={FilePlus2} label={t('插入到文章')} onClick={() => actions.insert(whole)} />
+					<Act icon={Copy} label={t('复制')} onClick={() => actions.copy(whole)} />
 				</div>
 			)}
 		</div>
@@ -260,10 +272,22 @@ function Permission({ item }: { item: Extract<ConversationItem, { kind: 'permiss
 	const tool = items.find((entry): entry is ToolItem => entry.kind === 'tool' && entry.id === item.toolCallId);
 	const what = (tool && commandOf(tool)) || item.title || t('这一步');
 	const chosen = item.chosen ? item.options.find((entry) => entry.optionId === item.chosen) : undefined;
+	// What it asks leave for, there to be read before it is allowed: the change to a file, the plan, what it says of it.
+	const diffs = tool?.content.flatMap((content) => (content.type === 'diff' ? [content] : [])) ?? [];
+	const plan = (tool?.rawInput as { plan?: unknown } | null)?.plan;
+	const texts = tool?.content.flatMap((content) => (content.type === 'content' && content.content.type === 'text' && content.content.text && content.content.text !== what ? [content.content.text] : [])) ?? [];
 	return (
 		<div className={`ai-permission${item.chosen ? ' is-answered' : ''}`}>
 			<p className="ai-permission-ask">{t('要允许它这么做吗？')}</p>
 			<code className="ai-permission-what">{what}</code>
+			{!item.chosen && (diffs.length > 0 || typeof plan === 'string' || texts.length > 0) && (
+				<div className="ai-permission-detail">
+					{diffs.map((diff, at) => (
+						<Diff key={at} path={diff.path} before={diff.oldText ?? ''} after={diff.newText} />
+					))}
+					{typeof plan === 'string' ? <Markdown className="ai-tool-text" text={plan} /> : texts.map((text, at) => <Markdown key={at} className="ai-tool-text" text={text} />)}
+				</div>
+			)}
 			{item.chosen ? (
 				<p className="ai-permission-answer">{chosen ? (PERMISSION_CHOSEN[chosen.kind] ?? t('已{choice}', { choice: chosen.name })) : t('没有回答（已停止）')}</p>
 			) : (
@@ -387,6 +411,18 @@ function Question({ item }: { item: Extract<ConversationItem, { kind: 'question'
 	);
 }
 
+/** Its context compacted: a line across; the summary it keeps of what was said before, opened from it. */
+function Compaction({ item }: { item: Extract<ConversationItem, { kind: 'compaction' }> }) {
+	const said = { in_progress: t('正在压缩上下文…'), completed: t('上下文已压缩'), failed: t('压缩上下文失败：{error}', { error: item.error }), cancelled: t('压缩上下文停下了') }[item.status];
+	if (!item.summary.trim()) return <div className={`ai-compaction is-${item.status}`}>{said}</div>;
+	return (
+		<details className={`ai-compaction is-${item.status}`}>
+			<summary>{said}</summary>
+			<Markdown className="ai-tool-text ai-compaction-summary" text={item.summary} />
+		</details>
+	);
+}
+
 /** The fix for what most often fails, a login or a key: where to set them, right there. */
 export function SettingsFix() {
 	const { actions } = useItems();
@@ -437,7 +473,15 @@ export const Item = memo(function Item({ item }: { item: ConversationItem }) {
 			return (
 				<div className="ai-error">
 					{item.message} <SettingsFix />
+					{/* The last thing in the conversation: what was said, said again. */}
+					{items.at(-1)?.id === item.id && (
+						<button type="button" className="ai-status-fix" onClick={actions.retry}>
+							{t('重试')}
+						</button>
+					)}
 				</div>
 			);
+		case 'compaction':
+			return <Compaction item={item} />;
 	}
 });

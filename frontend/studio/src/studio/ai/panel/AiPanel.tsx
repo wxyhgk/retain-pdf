@@ -1,7 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import { BookOpenCheck, Calculator, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
+import { ArrowDown, BookOpenCheck, Calculator, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn, uiLayer } from '@studio/lib/utils';
@@ -181,6 +181,9 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 	const list = useRef<HTMLDivElement>(null);
 	/** Scrolled up, away from the end: not taken back down as words come. */
 	const away = useRef(false);
+	/** Away from the end by more than a screen: ↓ to it; `fresh`, something came meanwhile. */
+	const [far, setFar] = useState<{ at: number } | null>(null);
+	const fresh = far !== null && items.length > far.at;
 	const [workShown, setWorkShown] = useState<string | null>(null);
 	const [picture, setPicture] = useState<{ src: string; alt: string } | null>(null);
 	/** Something of what the AI said selected: a button over it, to quote it in what is said next. */
@@ -224,7 +227,10 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 			aria-live="polite"
 			onScroll={(event) => {
 				const node = event.currentTarget;
-				away.current = node.scrollHeight - node.scrollTop - node.clientHeight > 40;
+				const left = node.scrollHeight - node.scrollTop - node.clientHeight;
+				away.current = left > 40;
+				if (left > node.clientHeight) setFar((now) => now ?? { at: items.length });
+				else setFar(null);
 				setQuoting(null);
 			}}
 		>
@@ -245,6 +251,17 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 					'work' in row ? <WorkRow key={row.work[0]!.id} run={row.work} onOpen={() => setWorkShown(row.work[0]!.id)} /> : <Item key={row.item.id} item={row.item} />,
 				)}
 			</div>
+			{far && (
+				<button
+					type="button"
+					className={cn('ai-latest', fresh && 'is-fresh')}
+					aria-label={fresh ? t('回到最新（有新内容）') : t('回到最新')}
+					title={fresh ? t('回到最新（有新内容）') : t('回到最新')}
+					onClick={() => scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: 'smooth' })}
+				>
+					<ArrowDown aria-hidden />
+				</button>
+			)}
 			{shownRun && <WorkDialog run={shownRun} title={workSummary(shownRun, conversation, items).text} onClose={() => setWorkShown(null)} onPicture={setPicture} />}
 			{picture && <PictureDialog picture={picture} onClose={() => setPicture(null)} />}
 			{quoting &&
@@ -267,6 +284,34 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 					uiLayer() ?? document.body,
 				)}
 		</div>
+	);
+}
+
+/** How full its context is getting near: past this, it is said, with /compact (where it has it) to make room. */
+const NEARLY_FULL = 0.8;
+
+/**
+ * How much of its context is used, as a ring and a percentage; the numbers (and what it cost) said as the pointer
+ * rests on it. Nearly full, the ring dark and, clicked, /compact in the input.
+ */
+function Usage({ used, canCompact, onCompact }: { used: NonNullable<Conversation['usage']>; canCompact: boolean; onCompact(): void }) {
+	const share = Math.min(1, used.used / used.size);
+	const full = share >= NEARLY_FULL;
+	const size = (tokens: number) => (tokens >= 1_000_000 ? `${+(tokens / 1_000_000).toFixed(1)}M` : `${Math.round(tokens / 1000)}k`);
+	const detail = [
+		t('上下文用了 {used} / {size}（{share}%）', { used: size(used.used), size: size(used.size), share: Math.round(share * 100) }),
+		used.cost ? t('这次对话花了 ${amount}', { amount: used.cost.amount.toFixed(2) }) : '',
+		full ? (canCompact ? t('快满了：点一下用 /compact 压缩') : t('快满了：可以新开一个对话')) : '',
+	].filter(Boolean).join('\n');
+	const ring = 2 * Math.PI * 6;
+	return (
+		<button type="button" className={cn('ai-usage-ring', full && 'is-full')} title={detail} aria-label={detail} onClick={() => full && canCompact && onCompact()}>
+			<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden>
+				<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2" />
+				<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray={`${share * ring} ${ring}`} transform="rotate(-90 8 8)" strokeLinecap="round" />
+			</svg>
+			<span>{Math.round(share * 100)}%</span>
+		</button>
 	);
 }
 
@@ -532,9 +577,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				}}
 			/>
 			<div className="ai-composer-bar">
-				<span className="ai-usage" title={used ? t('用掉的上下文 / 上下文上限（· 这次对话花费）') : ''}>
-					{used ? `${Math.round(used.used / 1000)}k / ${used.size >= 1_000_000 ? `${used.size / 1_000_000}M` : `${Math.round(used.size / 1000)}k`}${used.cost ? ` · $${used.cost.amount.toFixed(2)}` : ''}` : ''}
-				</span>
+				<span className="ai-usage">{used && used.size > 0 && <Usage used={used} canCompact={Boolean(conversation?.commands.some((entry) => entry.name === 'compact'))} onCompact={() => actions.ask('/compact')} />}</span>
 				{effort && <EffortMenu key={`${conversation?.id}:${String(effort.currentValue)}`} option={effort} onChange={(value) => actions.setOption(effort.id, value)} />}
 				<ModelMenu state={state} actions={actions} />
 				<button type="button" className={cn('ai-send', running && 'is-stop')} title={running ? t('停下') : t('发送（Enter；换行用 Shift+Enter）')} aria-label={running ? t('停下') : t('发送')} onClick={actions.sendOrStop}>

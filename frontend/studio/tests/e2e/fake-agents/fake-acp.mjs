@@ -74,9 +74,39 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', `看到 ${pictures.length} 张图（${pictures.map((block) => block.mimeType).join('、')}）`);
 			return { stopReason: 'end_turn' };
 		}
+		// Its context compacted: in progress, its summary, done.
+		if (said.startsWith('/compact')) {
+			await update({ sessionUpdate: 'compaction_update', compactionId: 'c1', status: 'in_progress' });
+			await update({ sessionUpdate: 'compaction_summary_chunk', compactionId: 'c1', content: { type: 'text', text: '之前聊了基组的选择。' } });
+			await update({ sessionUpdate: 'compaction_update', compactionId: 'c1', status: 'completed' });
+			await update({ sessionUpdate: 'usage_update', used: 20000, size: 200000 });
+			await words('agent_message_chunk', '压缩好了。');
+			return { stopReason: 'end_turn' };
+		}
 		// A slash command, as it came (nothing added after it).
 		if (said.startsWith('/')) {
 			await words('agent_message_chunk', `命令 ${said}`);
+			return { stopReason: 'end_turn' };
+		}
+		// How much of its context is used: nearly all.
+		if (said.startsWith('用量')) {
+			await update({ sessionUpdate: 'usage_update', used: 170000, size: 200000, cost: { amount: 0.42, currency: 'USD' } });
+			await words('agent_message_chunk', '用了不少。');
+			return { stopReason: 'end_turn' };
+		}
+		// Fails the first time it is asked, answers the next.
+		if (said.startsWith('出错')) {
+			state.failures = (state.failures ?? 0) + 1;
+			if (state.failures === 1) throw new Error('服务忙');
+			await words('agent_message_chunk', `第 ${state.failures} 次好了`);
+			return { stopReason: 'end_turn' };
+		}
+		// Leave asked to change a file: the change in the asking.
+		if (said.startsWith('改文件')) {
+			const diff = { type: 'diff', path: '/tmp/note.md', oldText: '旧的一行', newText: '新的一行' };
+			await update({ sessionUpdate: 'tool_call', toolCallId: 'change', title: 'Edit note.md', kind: 'edit', status: 'pending', content: [diff] });
+			const leave = await client.request('session/request_permission', { sessionId, toolCall: { toolCallId: 'change', title: 'Edit note.md', kind: 'edit' }, options: [{ optionId: 'yes', name: 'Yes', kind: 'allow_once' }, { optionId: 'no', name: 'No', kind: 'reject_once' }] });
+			await words('agent_message_chunk', leave.outcome.optionId === 'yes' ? '改好了。' : '不改了。');
 			return { stopReason: 'end_turn' };
 		}
 		// A question, as Claude Code's AskUserQuestion is asked: a form.

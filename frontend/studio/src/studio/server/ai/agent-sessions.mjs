@@ -504,8 +504,9 @@ class AgentSession {
 		try {
 			const agent = this.#connection.agent;
 			const opening = (async () => {
-				// Questions it asks (Claude Code's AskUserQuestion) as forms in the conversation.
-				const begun = await agent.request('initialize', { protocolVersion: PROTOCOL_VERSION, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false, elicitation: { form: {} } } });
+				// Questions it asks (Claude Code's AskUserQuestion) as forms in the conversation; notices, and its context
+				// compacted, as lines of their own.
+				const begun = await agent.request('initialize', { protocolVersion: PROTOCOL_VERSION, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false, elicitation: { form: {} }, session: { notices: {}, compaction: {} } } });
 				this.#steering = begun._meta?.steering?.supported === true;
 				this.#seesPictures = begun.agentCapabilities?.promptCapabilities?.image === true;
 				const before = again ? await this.#loadAgain(agent, begun.agentCapabilities ?? {}) : null;
@@ -585,7 +586,7 @@ class AgentSession {
 		const command = /^\/\S/u.test(text) && !quoted.length;
 		// Running before what was said is added: a turn is put on the page once it is over, not as it begins.
 		this.#setState('running');
-		this.#add({ kind: 'user', id: randomUUID(), text, context: named, ...(quoted.length ? { quotes: quoted } : {}), ...(shown.length ? { pictures: shown.map((picture) => picture.path) } : {}) });
+		this.#add({ kind: 'user', id: randomUUID(), text, context: command ? { article: null, selection: null, mentions: [] } : named, ...(quoted.length ? { quotes: quoted } : {}), ...(shown.length ? { pictures: shown.map((picture) => picture.path) } : {}) });
 		const where = command ? {} : { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) };
 		if (!command) this.#forgot = false;
 		const images = shown.map(({ data, mimeType }) => ({ type: 'image', data, mimeType }));
@@ -794,6 +795,17 @@ class AgentSession {
 				return this.#put({ kind: 'plan', id: 'plan', entries: update.entries ?? [] }, true);
 			case 'notice':
 				return this.#add({ kind: 'notice', id: randomUUID(), severity: update.severity, title: update.title, description: update.description ?? '' });
+			// Its context compacted (what was said before made a summary): a line, the summary under it.
+			case 'compaction_update': {
+				const id = `compaction-${update.compactionId}`;
+				const before = this.#byId.get(id);
+				return this.#put({ kind: 'compaction', id, status: update.status ?? 'in_progress', error: update.error ?? '', summary: before?.summary ?? '' }, Boolean(before));
+			}
+			case 'compaction_summary_chunk': {
+				const id = `compaction-${update.compactionId}`;
+				const before = this.#byId.get(id) ?? { kind: 'compaction', id, status: 'in_progress', error: '', summary: '' };
+				return this.#put({ ...before, summary: before.summary + (update.content?.text ?? '') }, this.#byId.has(id));
+			}
 			case 'session_info_update':
 				if (typeof update.title === 'string') this.title = withoutContext(update.title, this.items.find((item) => item.kind === 'user')?.text ?? '');
 				break;
