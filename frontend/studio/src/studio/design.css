@@ -27,6 +27,9 @@ html:root {
 	--studio-fill-2: rgba(0, 0, 0, 0.065);
 	--studio-fill-3: rgba(0, 0, 0, 0.1);
 	--studio-hairline: rgba(0, 0, 0, 0.08);
+	/* Blocks selected, and the box dragged out to select them: a light blue, as Notion's (the one colour asked for). */
+	--studio-select: rgba(35, 131, 226, 0.14);
+	--studio-select-edge: rgba(35, 131, 226, 0.45);
 	/* The left column's ground. */
 	--studio-sidebar: #f6f6f7;
 
@@ -73,6 +76,8 @@ html:root[data-theme='dark'] {
 	--studio-fill-2: rgba(255, 255, 255, 0.1);
 	--studio-fill-3: rgba(255, 255, 255, 0.15);
 	--studio-hairline: rgba(255, 255, 255, 0.1);
+	--studio-select: rgba(55, 148, 255, 0.24);
+	--studio-select-edge: rgba(55, 148, 255, 0.55);
 	--studio-sidebar: #18181a;
 
 	--studio-shadow-sm: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 1px 3px rgba(0, 0, 0, 0.4);
