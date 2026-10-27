@@ -10,6 +10,8 @@ import {
 	piModels,
 	setConversationOption,
 	startConversation,
+	answerQuestion,
+	keepConversationPicture,
 	stopConversation,
 	switchConversation,
 	tellConversation,
@@ -82,7 +84,38 @@ export type PanelState = {
 	favorites: ModelChoice[];
 	/** Gone on with by another service or AI (switchTo), until it can be spoken to. */
 	switching: boolean;
+	/** Pictures given with what is said next (pasted, dropped), shown small by `url`. */
+	pictures: Picture[];
+	/** What was quoted of the conversation (Markdown, formulas as written), said before what is said next. */
+	quotes: string[];
+	/** Said while it worked, to one that cannot take words then: each said in turn once it is done. */
+	queued: Said[];
 };
+
+export type Picture = { id: string; blob: Blob; url: string };
+/** Something to say: the words, the articles named with @, the pictures, what was quoted. */
+export type Said = { id: string; text: string; mentions: ArticleRef[]; pictures: Picture[]; quotes: string[] };
+
+/** How big a picture given is sent at most, on its longer side (larger, it is made smaller first). */
+const PICTURE_SIDE = 2000;
+
+/** A picture as it is sent: as it is, or made smaller (a screen's screenshot is larger than an AI reads). */
+async function fitted(file: Blob): Promise<Blob> {
+	if (file.type === 'image/gif') return file;
+	try {
+		const bitmap = await createImageBitmap(file);
+		const scale = Math.min(1, PICTURE_SIDE / Math.max(bitmap.width, bitmap.height));
+		if (scale === 1 && file.size < 4 * 1024 * 1024) return file;
+		const canvas = document.createElement('canvas');
+		canvas.width = Math.round(bitmap.width * scale);
+		canvas.height = Math.round(bitmap.height * scale);
+		canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+		const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+		return await new Promise<Blob>((resolve) => canvas.toBlob((blob) => resolve(blob ?? file), type, 0.9));
+	} catch {
+		return file;
+	}
+}
 
 /**
  * A model as the model menu offers it: of which AI, run for which service (Claude Code's or pi's; null: the one the
@@ -164,6 +197,9 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		focusAsked: 0,
 		favorites: readFavorites(),
 		switching: false,
+		pictures: [],
+		quotes: [],
+		queued: [],
 	});
 	const get = store.get;
 	const set = store.set;
@@ -325,7 +361,15 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 				const before = get().conversation;
 				set({ conversation: event.session });
 				if (before?.id === event.session.id && (before.title !== event.session.title || before.updated !== event.session.updated)) host.changed?.(event.session.id);
-				if (before?.state === 'running' && event.session.state !== 'running') host.turnOver?.();
+				if (before?.state === 'running' && event.session.state !== 'running') {
+					host.turnOver?.();
+					// Its turn over: what was said meanwhile, said now.
+					const [next, ...rest] = get().queued;
+					if (next && event.session.state === 'idle') {
+						set({ queued: rest });
+						void send(next);
+					}
+				}
 				break;
 			}
 		}
@@ -346,14 +390,28 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	}
 
 	async function submit(): Promise<void> {
-		const text = get().draft.trim();
+		const { draft, mentions, pictures, quotes } = get();
+		const text = draft.trim();
 		if (!text) return;
+		const said: Said = { id: crypto.randomUUID(), text, mentions, pictures, quotes };
 		const shown = get().conversation;
 		if (shown?.state === 'running') {
-			// While it works: to one that can take it, words it reads once its step is done (插话).
-			if (shown.canSteer) await steer(shown.id, text);
+			// While it works: to one that can take it, words it reads as soon as it can (插话); else said once it is done.
+			if (shown.canSteer && !pictures.length && !quotes.length) await steer(shown.id, text);
+			else set({ queued: [...get().queued, said], draft: '', mentions: [], pictures: [], quotes: [] });
 			return;
 		}
+		set({ draft: '', mentions: [], pictures: [], quotes: [] });
+		await send(said);
+	}
+
+	/** Back where it was typed, not said (failed, or taken back from the queue). */
+	function unsay(said: Said): void {
+		set({ draft: said.text, mentions: said.mentions, pictures: said.pictures, quotes: said.quotes });
+	}
+
+	async function send(said: Said): Promise<void> {
+		const { text, mentions: named, quotes } = said;
 		// Said before the AIs were read (the tab just opened), or before the conversation chosen is followed: that first.
 		await load();
 		await showing;
@@ -362,18 +420,24 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		if (!target || ((target.state === 'closed' || target.state === 'failed') && !get().items.length)) target = await (starting ?? begin());
 		else if (starting) target = await starting;
 		if (!target) return;
-		const { article, leftOut, selectionLeftOut, mentions: named } = get();
+		const { article, leftOut, selectionLeftOut } = get();
 		const open = article && leftOut !== article.slug ? article : null;
 		const selection = open && !selectionLeftOut && host.hasSelection() ? await host.selection() : null;
-		set({ draft: '', mentions: [] });
 		try {
-			await tellConversation(target.id, text, {
-				...(open ? { article: open.slug } : {}),
-				...(selection ? { selection } : {}),
-				...(named.length ? { mentions: named.map((entry) => entry.slug) } : {}),
-			});
+			const pictures = await Promise.all(said.pictures.map((picture) => keepConversationPicture(target.id, picture.blob)));
+			await tellConversation(
+				target.id,
+				text,
+				{
+					...(open ? { article: open.slug } : {}),
+					...(selection ? { selection } : {}),
+					...(named.length ? { mentions: named.map((entry) => entry.slug) } : {}),
+				},
+				{ pictures, quotes },
+			);
+			for (const picture of said.pictures) URL.revokeObjectURL(picture.url);
 		} catch (error) {
-			set({ draft: text, mentions: named });
+			unsay(said);
 			say(error instanceof Error ? error.message : t('没发出去'), true);
 		}
 	}
@@ -498,6 +562,49 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 				},
 				(error: unknown) => host.toast(error instanceof Error ? error.message : t('没能改')),
 			);
+		},
+		/** Pictures given with what is said next (pasted, dropped); those not pictures left out. */
+		async addPictures(files: File[]): Promise<void> {
+			const shown = get().conversation;
+			const pictures = files.filter((file) => /^image\/(png|jpeg|gif|webp)$/u.test(file.type));
+			if (!pictures.length) return;
+			if (shown && shown.seesPictures === false) return host.toast(t('{name} 不收图片', { name: shown.agent.name }));
+			const added = await Promise.all(pictures.map(async (file) => {
+				const blob = await fitted(file);
+				return { id: crypto.randomUUID(), blob, url: URL.createObjectURL(blob) };
+			}));
+			set({ pictures: [...get().pictures, ...added], focusAsked: get().focusAsked + 1 });
+		},
+		removePicture(id: string): void {
+			const picture = get().pictures.find((entry) => entry.id === id);
+			if (picture) URL.revokeObjectURL(picture.url);
+			set({ pictures: get().pictures.filter((entry) => entry.id !== id) });
+		},
+		/** What was selected of the conversation (Markdown), quoted in what is said next. */
+		quote(markdown: string): void {
+			if (markdown.trim()) set({ quotes: [...get().quotes, markdown.trim()], focusAsked: get().focusAsked + 1 });
+		},
+		unquote: (at: number) => set({ quotes: get().quotes.filter((_, index) => index !== at) }),
+		/** Taken back from the queue, to be changed (or left unsaid). */
+		unqueue(id: string): void {
+			const said = get().queued.find((entry) => entry.id === id);
+			if (!said) return;
+			set({ queued: get().queued.filter((entry) => entry.id !== id) });
+			if (!get().draft.trim()) unsay(said);
+		},
+		/** Said now: what it is doing stopped, this first of the queue, said once it has stopped. */
+		sayNow(id: string): void {
+			const { queued, conversation } = get();
+			const said = queued.find((entry) => entry.id === id);
+			if (!said || !conversation) return;
+			set({ queued: [said, ...queued.filter((entry) => entry !== said)] });
+			void stopConversation(conversation.id).catch((error: unknown) => host.toast(error instanceof Error ? error.message : t('没能停下')));
+		},
+		/** A question it asked, answered. */
+		answerQuestion(item: string, answer: Parameters<typeof answerQuestion>[2]): void {
+			const shown = get().conversation;
+			if (!shown) return;
+			answerQuestion(shown.id, item, answer).catch((error: unknown) => host.toast(error instanceof Error ? error.message : t('没能回答')));
 		},
 		answer(item: string, option: string): void {
 			const shown = get().conversation;

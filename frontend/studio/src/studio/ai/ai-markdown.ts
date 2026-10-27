@@ -112,6 +112,8 @@ function drawnTree(tree: Tree): DocumentFragment {
 		const drawn = renderMathHtml(code.textContent ?? '', display);
 		const holder = document.createElement(display ? 'div' : 'span');
 		holder.className = display ? 'ai-math-display' : 'ai-math';
+		// As written, for what is quoted of it (markdownOfSelection).
+		holder.dataset.tex = code.textContent ?? '';
 		if (drawn.error) {
 			holder.textContent = code.textContent ?? '';
 			holder.title = drawn.error;
@@ -127,6 +129,7 @@ function drawnTree(tree: Tree): DocumentFragment {
 		if (!drawn) continue;
 		const holder = document.createElement('div');
 		holder.className = 'ai-preview';
+		holder.dataset.source = `\`\`\`${code.className.match(/language-([\w+-]+)/u)?.[1] ?? ''}\n${(code.textContent ?? '').replace(/\n$/u, '')}\n\`\`\``;
 		holder.append(drawn);
 		code.parentElement!.replaceWith(holder);
 	}
@@ -219,4 +222,79 @@ function wordsOf(link: HTMLElement): DocumentFragment {
 	const words = document.createDocumentFragment();
 	words.append(...link.childNodes);
 	return words;
+}
+
+/**
+ * What is selected of what the AI said (`range`, within `root`), as Markdown: each block selected whole as it was
+ * written (its `data-markdown`), a part of one from what is drawn, a formula always whole and as written ($…$).
+ */
+export function markdownOfSelection(range: Range, root: Element): string {
+	const within = range.cloneRange();
+	// A formula or a drawn block the selection starts or ends in: taken whole.
+	const whole = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest('.ai-math, .ai-math-display, .ai-preview');
+	const first = whole(within.startContainer);
+	if (first) within.setStartBefore(first);
+	const last = whole(within.endContainer);
+	if (last) within.setEndAfter(last);
+	const parts: string[] = [];
+	for (const block of root.querySelectorAll<HTMLElement>('.ai-block')) {
+		if (!within.intersectsNode(block)) continue;
+		const all = document.createRange();
+		all.selectNodeContents(block);
+		const over = within.compareBoundaryPoints(Range.START_TO_START, all) <= 0 && within.compareBoundaryPoints(Range.END_TO_END, all) >= 0;
+		if (over && block.dataset.markdown) {
+			parts.push(block.dataset.markdown);
+			continue;
+		}
+		const part = all.cloneRange();
+		if (within.compareBoundaryPoints(Range.START_TO_START, all) > 0) part.setStart(within.startContainer, within.startOffset);
+		if (within.compareBoundaryPoints(Range.END_TO_END, all) < 0) part.setEnd(within.endContainer, within.endOffset);
+		parts.push(markdownOf(part.cloneContents()).replace(/\n{3,}/gu, '\n\n'));
+	}
+	// Words not in blocks (a tool's text): drawn back as they are.
+	if (!parts.length) parts.push(markdownOf(within.cloneContents()));
+	return parts.map((part) => part.trim()).filter(Boolean).join('\n\n');
+}
+
+/** Drawn Markdown read back as Markdown: formulas and plugins' blocks as written, the rest by what it is. */
+function markdownOf(node: Node): string {
+	if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? '';
+	if (!(node instanceof Element) && !(node instanceof DocumentFragment)) return '';
+	if (node instanceof Element) {
+		if (node.matches('.ai-block-handle, button')) return '';
+		if (node.matches('.ai-math')) return `$${node.getAttribute('data-tex') ?? ''}$`;
+		if (node.matches('.ai-math-display')) return `\n\n$$\n${node.getAttribute('data-tex') ?? ''}\n$$\n\n`;
+		if (node.matches('.ai-preview')) return `\n\n${node.getAttribute('data-source') ?? ''}\n\n`;
+	}
+	const inner = [...node.childNodes].map(markdownOf).join('');
+	if (!(node instanceof Element)) return inner;
+	switch (node.tagName) {
+		case 'STRONG':
+		case 'B':
+			return inner.trim() ? `**${inner}**` : inner;
+		case 'EM':
+		case 'I':
+			return inner.trim() ? `*${inner}*` : inner;
+		case 'CODE':
+			return node.closest('pre') ? inner : `\`${inner}\``;
+		case 'PRE':
+			return `\n\n\`\`\`\n${inner.replace(/\n$/u, '')}\n\`\`\`\n\n`;
+		case 'BR':
+			return '\n';
+		case 'LI':
+			return `\n- ${inner.trim()}`;
+		case 'P':
+		case 'DIV':
+		case 'H1':
+		case 'H2':
+		case 'H3':
+		case 'H4':
+		case 'BLOCKQUOTE':
+		case 'TR':
+		case 'UL':
+		case 'OL':
+			return `\n\n${inner}\n\n`;
+		default:
+			return inner;
+	}
 }

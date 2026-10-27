@@ -6,6 +6,8 @@ import { accountsLoggedIn, PiModels } from '../ai/panel-models.mjs';
 import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
+/** How big a picture given with what is said may be. */
+const PICTURE_LIMIT = 20 * 1024 * 1024;
 /** The pictures an AI's answer may show from this machine, by extension. */
 const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 
@@ -104,11 +106,11 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		sendEvents(request, response, (send) => session.subscribe(send));
 	}, { streams: true });
 	api.post('/conversations/:id/prompt', async ({ params, json }) => {
-		const { text, context, steer } = await json();
+		const { text, context, steer, pictures, quotes } = await json();
 		const session = await awake(params.id);
-		// Said while it works (pi in this process): taken once its step is done.
+		// Said while it works (to one that takes it): taken as soon as it can be.
 		if (steer === true && session.state === 'running') session.steer(text);
-		else session.prompt(text, await contextOf(context));
+		else session.prompt(text, await contextOf(context), { pictures: Array.isArray(pictures) ? pictures : [], quotes: Array.isArray(quotes) ? quotes : [] });
 		return reply(202, { id: params.id });
 	});
 	api.post('/conversations/:id/cancel', ({ params }) => {
@@ -120,6 +122,26 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		conversations.get(params.id).answer(params.permission, typeof option === 'string' ? option : null);
 		return { id: params.id };
 	});
+	// A question it asked (a form), answered: what was chosen, or skipped.
+	api.post('/conversations/:id/questions/:question', async ({ params, json }) => {
+		const { action, content } = await json();
+		if (!['accept', 'decline', 'cancel'].includes(action)) throw refuse(400, t('回答要是 accept、decline 或 cancel'));
+		conversations.get(params.id).reply(params.question, { action, ...(action === 'accept' ? { content: content && typeof content === 'object' ? content : {} } : {}) });
+		return { id: params.id };
+	});
+	// A picture given with what is said (pasted, dropped): kept in the conversation's folder, its path to send it by.
+	api.post('/conversations/:id/pictures', async ({ params, query, request }) => {
+		if (Number(request.headers['content-length']) > PICTURE_LIMIT) throw refuse(413, t('图片超过 {limit} MB', { limit: PICTURE_LIMIT / 1024 / 1024 }));
+		const chunks = [];
+		let size = 0;
+		for await (const chunk of request) {
+			size += chunk.length;
+			if (size > PICTURE_LIMIT) throw refuse(413, t('图片超过 {limit} MB', { limit: PICTURE_LIMIT / 1024 / 1024 }));
+			chunks.push(chunk);
+		}
+		const session = await conversations.find(params.id);
+		return reply(201, { path: session.keepPicture(Buffer.concat(chunks), query.get('type') ?? '') });
+	}, { body: 'application/octet-stream' });
 	api.post('/conversations/:id/options', async ({ params, json }) => {
 		const { configId, value } = await json();
 		if (typeof configId !== 'string' || (typeof value !== 'string' && typeof value !== 'boolean')) throw refuse(400, t('要给出选项和它的值'));

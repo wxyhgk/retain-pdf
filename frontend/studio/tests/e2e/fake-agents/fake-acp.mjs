@@ -1,7 +1,8 @@
 // A stand-in for an agent's ACP adapter (the AI panel's browser tests): an agent that thinks a little, says what it
 // will do, asks leave to run a command, runs it (or not) and says how it went, with a plan; told 「慢」 it goes on
-// until it is stopped; told 「退出」 it exits; told 「环境」 it says the service it was started for. Its options: a
-// mode, a model and how hard it thinks.
+// until it is stopped (or, as Claude Code, told something in between); told 「退出」 it exits; told 「环境」 it says the
+// service it was started for; told 「问我」 it asks a question (a form); given pictures, it counts them; a slash
+// command it says back. Its options: a mode, a model and how hard it thinks; its commands: /compact, /review.
 import { Readable, Writable } from 'node:stream';
 import { createRequire } from 'node:module';
 
@@ -25,9 +26,20 @@ const app = agent({ name: 'fake' })
 	.onRequest('initialize', async () => {
 		// Each adapter started, told (the tests count them).
 		if (process.env.FAKE_ACP_LOG) (await import('node:fs')).appendFileSync(process.env.FAKE_ACP_LOG, `${process.pid}\n`);
-		return { protocolVersion: PROTOCOL_VERSION, agentCapabilities: { loadSession: true }, authMethods: [] };
+		// As Claude Code: words taken while it works (ACP's steering extension); as pi-acp, not.
+		return { protocolVersion: PROTOCOL_VERSION, agentCapabilities: { loadSession: true, promptCapabilities: { image: true } }, authMethods: [], ...(asPi ? {} : { _meta: { steering: { supported: true } } }) };
 	})
-	.onRequest('session/new', () => ({ sessionId: `fake-session-${process.pid}`, configOptions: options(), modes: { currentModeId: state.mode, availableModes: [{ id: 'default', name: 'Manual' }, { id: 'plan', name: 'Plan' }] } }))
+	.onRequest('session/new', ({ client }) => {
+		const sessionId = `fake-session-${process.pid}`;
+		// Its commands, once the session is there.
+		setTimeout(() => void client.notify('session/update', { sessionId, update: { sessionUpdate: 'available_commands_update', availableCommands: [{ name: 'compact', description: '压缩上下文' }, { name: 'review', description: '审一遍', input: { hint: '要审的内容' } }] } }), 50);
+		return { sessionId, configOptions: options(), modes: { currentModeId: state.mode, availableModes: [{ id: 'default', name: 'Manual' }, { id: 'plan', name: 'Plan' }] } };
+	})
+	// Words while it works: taken into the turn going on.
+	.onRequest('_session/steering', { parse: (params) => params }, ({ params }) => {
+		state.steered = params.prompt.map((block) => block.text ?? '').join('');
+		return { outcome: 'injected' };
+	})
 	// A session gone on with (after the Studio restarted): what was said in it told again first, as adapters do; one
 	// whose id says 「gone」 is not there any more.
 	.onRequest('session/load', async ({ params, client }) => {
@@ -46,6 +58,7 @@ const app = agent({ name: 'fake' })
 	.onRequest('session/prompt', async ({ params, client }) => {
 		const sessionId = params.sessionId;
 		const said = params.prompt.map((block) => block.text ?? '').join('');
+		const pictures = params.prompt.filter((block) => block.type === 'image');
 		const update = (value) => client.notify('session/update', { sessionId, update: value });
 		const words = async (kind, text) => {
 			for (const piece of text.match(/.{1,4}/gsu) ?? []) {
@@ -57,6 +70,26 @@ const app = agent({ name: 'fake' })
 		state.turns += 1;
 		const run = `run-${state.turns}`;
 		if (said.includes('退出')) process.exit(3);
+		if (pictures.length) {
+			await words('agent_message_chunk', `看到 ${pictures.length} 张图（${pictures.map((block) => block.mimeType).join('、')}）`);
+			return { stopReason: 'end_turn' };
+		}
+		// A slash command, as it came (nothing added after it).
+		if (said.startsWith('/')) {
+			await words('agent_message_chunk', `命令 ${said}`);
+			return { stopReason: 'end_turn' };
+		}
+		// A question, as Claude Code's AskUserQuestion is asked: a form.
+		if (said.startsWith('问我')) {
+			const asked = await client.request('elicitation/create', {
+				mode: 'form',
+				sessionId,
+				message: '用哪个基组？',
+				requestedSchema: { type: 'object', properties: { question_0: { type: 'string', title: '基组', oneOf: [{ const: 'def2-SVP', title: 'def2-SVP', description: '快' }, { const: 'def2-TZVP', title: 'def2-TZVP' }] }, question_0_custom: { type: 'string', title: 'Other' } } },
+			});
+			await words('agent_message_chunk', asked.action === 'accept' ? `就用 ${asked.content.question_0_custom || asked.content.question_0}` : `没答（${asked.action}）`);
+			return { stopReason: 'end_turn' };
+		}
 		// The AI in the editor's asks: a paragraph rewritten, or one written where the caret is.
 		if (said.includes('只输出改好的这一段')) {
 			await words('agent_message_chunk', `这是 AI 改写后的段落（第 ${state.turns} 次）。`);
@@ -130,8 +163,13 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '参见《另一篇笔记》，还有[这篇夹具](studio-fixture/index.md)和 `other-note/index.md`；《没有这篇》不是。');
 			return { stopReason: 'end_turn' };
 		}
-		// What it was told, as it came (with what the Studio adds of where the author is).
-		if (said.startsWith('上下文')) {
+		// Words with a formula in them, to quote.
+		if (said.startsWith('公式')) {
+			await words('agent_message_chunk', '质能关系 $E = mc^2$ 说明质量就是能量。\n\n第二段。');
+			return { stopReason: 'end_turn' };
+		}
+		// What it was told, as it came (with what the Studio adds of where the author is; what was quoted, before).
+		if (said.startsWith('上下文') || said.startsWith('> ')) {
 			await words('agent_message_chunk', `收到的是：\n\n~~~~~~text\n${said}\n~~~~~~`);
 			return { stopReason: 'end_turn' };
 		}
@@ -142,7 +180,13 @@ const app = agent({ name: 'fake' })
 		}
 		if (said.includes('慢')) {
 			await update({ sessionUpdate: 'tool_call', toolCallId: 'slow', title: 'sleep 100', kind: 'execute', status: 'in_progress' });
-			while (!state.cancelled) await pause(20);
+			state.steered = '';
+			while (!state.cancelled && !state.steered) await pause(20);
+			if (state.steered) {
+				await update({ sessionUpdate: 'tool_call_update', toolCallId: 'slow', status: 'completed' });
+				await words('agent_message_chunk', `插话收到：${state.steered}`);
+				return { stopReason: 'end_turn' };
+			}
 			await update({ sessionUpdate: 'tool_call_update', toolCallId: 'slow', status: 'failed' });
 			return { stopReason: 'cancelled' };
 		}

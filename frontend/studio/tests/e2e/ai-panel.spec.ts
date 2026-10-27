@@ -495,3 +495,94 @@ test('the plugins’ blocks in an answer are drawn as in the editor, and put in 
 	await expect(saveStatus(page)).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('](./img/plot.png)');
 });
+
+test('said while it works: Claude Code takes it in between; pi, once its turn is over (queued, or said now)', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '慢慢来');
+	await expect(input(page)).toHaveAttribute('placeholder', '插话：它会尽快看到（Enter）');
+	await tell(page, '换个方向');
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('插话收到：换个方向');
+	await expect(pane(page).locator('.ai-user-context', { hasText: '插话' })).toHaveCount(1);
+
+	// pi (here, an adapter that takes nothing in between): what is said waits for its turn to be over.
+	await fromModelMenu(page, 'pi', '用 Claude 运行');
+	await tell(page, '慢慢来');
+	await expect(input(page)).toHaveAttribute('placeholder', '排队：它做完这一轮就发（Enter）');
+	await tell(page, '环境');
+	const queued = pane(page).locator('.ai-queued');
+	await expect(queued.locator('.ai-queued-text')).toHaveText('环境');
+	await expect(input(page)).toHaveValue('');
+	// Said now: what it does stopped, then said.
+	await queued.getByRole('button', { name: '立刻发' }).click();
+	await expect(pane(page).locator('.ai-stop').last()).toHaveText('已停止');
+	await expect(pane(page).locator('.ai-message').last()).toContainText('pi 模型');
+	await expect(queued).toHaveCount(0);
+});
+
+test('a picture pasted into the input goes with what is said, shown small over it', async ({ page }) => {
+	await openAi(page);
+	const plot = readFileSync(new URL('./fixtures/plot.png', import.meta.url)).toString('base64');
+	await input(page).evaluate((node, data) => {
+		const bytes = Uint8Array.from(atob(data), (char) => char.charCodeAt(0));
+		const transfer = new DataTransfer();
+		transfer.items.add(new File([bytes], 'plot.png', { type: 'image/png' }));
+		node.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }));
+	}, plot);
+	await expect(pane(page).locator('.ai-picture-chip img')).toBeVisible();
+	await tell(page, '看看这张');
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('看到 1 张图（image/png）');
+	await expect(pane(page).locator('.ai-picture-chip')).toHaveCount(0);
+	await expect(pane(page).locator('.ai-user-picture')).toBeVisible();
+	await expect.poll(() => pane(page).locator('.ai-user-picture').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+});
+
+test('/ lists the commands its agent offers; one is sent as it is, nothing added after it', async ({ page }) => {
+	await openAi(page);
+	await input(page).fill('/re');
+	const menu = pane(page).locator('.ai-command');
+	await expect(menu).toHaveText([/^\/review/u]);
+	await input(page).press('Enter');
+	await expect(input(page)).toHaveValue('/review ');
+	await input(page).pressSequentially('这段');
+	await input(page).press('Enter');
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('命令 /review 这段');
+});
+
+test('a question it asks is a form in the conversation: a choice, answered, said back to it', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '问我');
+	const question = pane(page).locator('.ai-question');
+	await expect(question.locator('.ai-question-ask')).toHaveText('用哪个基组？');
+	await question.getByRole('button', { name: /def2-TZVP/u }).click();
+	await question.getByRole('button', { name: '回答' }).click();
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('就用 def2-TZVP');
+	await expect(question.locator('.ai-question-answer')).toHaveText('你答：def2-TZVP');
+});
+
+test('what the AI said, selected (a formula in it taken whole, as written), quoted in what is said next', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '公式');
+	const answer = pane(page).locator('.ai-message').last();
+	await expect(answer.locator('.katex')).toHaveCount(1);
+	// From inside the formula to just after it: the formula whole.
+	await answer.evaluate((node) => {
+		const math = node.querySelector('.ai-math')!;
+		const inside = document.createTreeWalker(math, NodeFilter.SHOW_TEXT).nextNode()!;
+		const after = math.nextSibling!;
+		const range = document.createRange();
+		range.setStart(inside, 0);
+		range.setEnd(after, 3);
+		document.getSelection()!.removeAllRanges();
+		document.getSelection()!.addRange(range);
+		node.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+	});
+	await page.locator('.ai-quote-button').click();
+	const quoted = pane(page).locator('.ai-quote-row .ai-quote');
+	await expect(quoted.locator('.katex')).toHaveCount(1);
+	await tell(page, '这是什么意思');
+	const told = pane(page).locator('.ai-message').last();
+	await expect(told).toContainText('> $E = mc^2$ 说明');
+	await expect(told).toContainText('这是什么意思');
+	await expect(pane(page).locator('.ai-quote-row')).toHaveCount(0);
+	await expect(pane(page).locator('.ai-user').last().locator('.ai-user-quote .katex')).toHaveCount(1);
+});

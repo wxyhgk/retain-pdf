@@ -46,7 +46,7 @@ export function relativeTo(conversation: Conversation | null, path: string): str
  * handle at its left to drag it into the article (or click, to put it where the caret is). Drawn by that renderer in
  * an element of its own, out of reach of the shell's reset (data-host).
  */
-function Markdown({ text, blocks = false, className }: { text: string; blocks?: boolean; className: string }) {
+export function Markdown({ text, blocks = false, className }: { text: string; blocks?: boolean; className: string }) {
 	const { actions } = useItems();
 	const node = useRef<HTMLDivElement>(null);
 	const pages = actions.articles();
@@ -113,6 +113,16 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 	];
 	return (
 		<div className="ai-user">
+			{(item.quotes ?? []).map((quote, at) => (
+				<Markdown key={at} className="ai-quote ai-user-quote" text={quote} />
+			))}
+			{item.pictures?.length ? (
+				<div className="ai-user-pictures">
+					{item.pictures.map((path) => (
+						<img key={path} className="ai-user-picture" src={pictureUrl(path)} alt="" />
+					))}
+				</div>
+			) : null}
 			<div className="ai-bubble">{item.text}</div>
 			{item.steer && <div className="ai-user-context">{t('插话')}</div>}
 			{named.length > 0 && (
@@ -279,6 +289,104 @@ function Permission({ item }: { item: Extract<ConversationItem, { kind: 'permiss
 	);
 }
 
+type Choice = { const: string; title?: string; description?: string };
+
+/**
+ * A question it asks (Claude Code's AskUserQuestion, as an ACP form): each field a row of choices (one, or several), or
+ * words; a field `…_custom` the words of one's own for the question before it. Answered, what was chosen, in a line.
+ */
+function Question({ item }: { item: Extract<ConversationItem, { kind: 'question' }> }) {
+	const { conversation, actions } = useItems();
+	const [values, setValues] = useState<Record<string, unknown>>({});
+	const [sent, setSent] = useState(false);
+	const fields = Object.entries(item.schema?.properties ?? {});
+	const own = (key: string) => /_custom$/u.test(key);
+	const set = (key: string, value: unknown) => setValues((now) => ({ ...now, [key]: value }));
+	const answer = (response: Parameters<typeof actions.answerQuestion>[1]) => {
+		setSent(true);
+		actions.answerQuestion(item.id, response);
+	};
+	if (item.answer) {
+		const content = item.answer.action === 'accept' ? item.answer.content : {};
+		const said = fields
+			.map(([key]) => content[key])
+			.flatMap((value) => (Array.isArray(value) ? value : [value]))
+			.filter((value) => value !== undefined && value !== null && value !== '')
+			.map(String);
+		return (
+			<div className="ai-question is-answered">
+				<p className="ai-question-ask">{item.message}</p>
+				<p className="ai-question-answer">
+					{item.answer.action === 'accept' && said.length ? t('你答：{answer}', { answer: said.join('；') }) : item.answer.action === 'decline' ? t('跳过了') : t('没有回答（已停止）')}
+				</p>
+			</div>
+		);
+	}
+	const waiting = conversation?.state === 'running' && !sent;
+	return (
+		<div className="ai-question" role="group" aria-label={item.message}>
+			<p className="ai-question-ask">{item.message}</p>
+			{fields.map(([key, field]) => {
+				const choices: Choice[] = field.oneOf ?? field.items?.anyOf ?? [];
+				const several = Boolean(field.items?.anyOf);
+				const value = values[key];
+				return (
+					<div key={key} className="ai-question-field">
+						{!own(key) && (field.title || (fields.filter(([other]) => !own(other)).length > 1 && field.description)) && (
+							<p className="ai-question-label">{[field.title, fields.filter(([other]) => !own(other)).length > 1 ? field.description : ''].filter(Boolean).join(' · ')}</p>
+						)}
+						{choices.length > 0 ? (
+							<div className="ai-question-choices">
+								{choices.map((choice) => {
+									const chosen = several ? Array.isArray(value) && value.includes(choice.const) : value === choice.const;
+									return (
+										<button
+											key={choice.const}
+											type="button"
+											className={chosen ? 'is-chosen' : ''}
+											aria-pressed={chosen}
+											title={choice.description}
+											disabled={!waiting}
+											onClick={() => {
+												if (!several) return set(key, chosen ? undefined : choice.const);
+												const now = Array.isArray(value) ? (value as string[]) : [];
+												set(key, chosen ? now.filter((entry) => entry !== choice.const) : [...now, choice.const]);
+											}}
+										>
+											<span className="ai-question-choice">{choice.title ?? choice.const}</span>
+											{choice.description && <span className="ai-question-note">{choice.description}</span>}
+										</button>
+									);
+								})}
+							</div>
+						) : field.type === 'boolean' ? (
+							<input type="checkbox" checked={value === true} disabled={!waiting} onChange={(event) => set(key, event.target.checked)} />
+						) : (
+							<input
+								className="ai-question-words"
+								type={field.type === 'number' || field.type === 'integer' ? 'number' : 'text'}
+								placeholder={own(key) ? t('或者自己写…') : (field.description ?? '')}
+								aria-label={own(key) ? t('自己写的回答') : (field.title ?? key)}
+								disabled={!waiting}
+								value={typeof value === 'string' || typeof value === 'number' ? value : ''}
+								onChange={(event) => set(key, field.type === 'number' || field.type === 'integer' ? Number(event.target.value) : event.target.value)}
+							/>
+						)}
+					</div>
+				);
+			})}
+			<div className="ai-question-actions">
+				<button type="button" className="is-answer" disabled={!waiting} onClick={() => answer({ action: 'accept', content: values })}>
+					{t('回答')}
+				</button>
+				<button type="button" disabled={!waiting} onClick={() => answer({ action: 'decline' })}>
+					{t('跳过')}
+				</button>
+			</div>
+		</div>
+	);
+}
+
 /** The fix for what most often fails, a login or a key: where to set them, right there. */
 export function SettingsFix() {
 	const { actions } = useItems();
@@ -305,6 +413,8 @@ export const Item = memo(function Item({ item }: { item: ConversationItem }) {
 			return <Plan item={item} />;
 		case 'permission':
 			return <Permission item={item} />;
+		case 'question':
+			return <Question item={item} />;
 		case 'notice':
 			return (
 				<div className={`ai-notice is-${item.severity}`}>

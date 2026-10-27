@@ -1,17 +1,18 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 import { BookOpenCheck, Calculator, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
-import { cn } from '@studio/lib/utils';
+import { cn, uiLayer } from '@studio/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
 import type { Conversation, ConversationItem } from '../../api/client';
 import { observePluginBlocks } from '../../plugins';
 import { useStore, type Store } from '../../shell/store';
-import { pictureUrl } from '../ai-markdown';
+import { markdownOfSelection, pictureUrl } from '../ai-markdown';
 import { EffortMenu, ModelMenu } from './ModelMenu';
 import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
-import { commandOf, Item, ItemsContext, PageChip, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
+import { commandOf, Item, ItemsContext, Markdown, PageChip, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { PagePeek } from './PagePeek';
 import { type ArticleRef, type PageInfo, type PanelActions, type PanelState } from './panel-state';
 
@@ -85,7 +86,7 @@ function workSummary(run: ConversationItem[], conversation: Conversation | null,
 
 /** A picture in what is said or in a step, clicked: whole, over everything. */
 function pictureClicked(event: MouseEvent, show: (picture: { src: string; alt: string }) => void): void {
-	const picture = (event.target as Element | null)?.closest?.<HTMLImageElement>('.ai-message img, .ai-tool-picture');
+	const picture = (event.target as Element | null)?.closest?.<HTMLImageElement>('.ai-message img, .ai-tool-picture, .ai-user-picture');
 	if (!picture) return;
 	event.preventDefault();
 	show({ src: picture.src, alt: picture.alt });
@@ -182,8 +183,33 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 	const away = useRef(false);
 	const [workShown, setWorkShown] = useState<string | null>(null);
 	const [picture, setPicture] = useState<{ src: string; alt: string } | null>(null);
+	/** Something of what the AI said selected: a button over it, to quote it in what is said next. */
+	const [quoting, setQuoting] = useState<{ top: number; left: number; markdown: string } | null>(null);
 	const rows = useMemo(() => laidOut(items), [items]);
 	usePluginBlocks(list);
+	useEffect(() => {
+		const changed = () => {
+			const selection = document.getSelection();
+			if (!selection || selection.isCollapsed) setQuoting(null);
+		};
+		document.addEventListener('selectionchange', changed);
+		return () => document.removeEventListener('selectionchange', changed);
+	}, []);
+
+	/** What is selected, if it is of what the AI said: offered to be quoted. */
+	function offerQuote(): void {
+		const selection = document.getSelection();
+		const root = list.current;
+		if (!selection || selection.isCollapsed || !selection.rangeCount || !root) return setQuoting(null);
+		const range = selection.getRangeAt(0);
+		const answer = (node: Node) => (node instanceof Element ? node : node.parentElement)?.closest('.ai-message');
+		const from = answer(range.startContainer);
+		const to = answer(range.endContainer);
+		if (!from || !to || !root.contains(from) || !root.contains(to)) return setQuoting(null);
+		const markdown = markdownOfSelection(range, root);
+		const rect = range.getBoundingClientRect();
+		setQuoting(markdown ? { top: rect.top, left: rect.left + rect.width / 2, markdown } : null);
+	}
 
 	useLayoutEffect(() => {
 		if (!away.current && scroller.current) scroller.current.scrollTop = scroller.current.scrollHeight;
@@ -199,6 +225,7 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 			onScroll={(event) => {
 				const node = event.currentTarget;
 				away.current = node.scrollHeight - node.scrollTop - node.clientHeight > 40;
+				setQuoting(null);
 			}}
 		>
 			<div className="ai-empty" hidden={items.length > 0}>
@@ -213,13 +240,32 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 					))}
 				</div>
 			</div>
-			<div ref={list} className="ai-items" onClick={(event) => pictureClicked(event, setPicture)}>
+			<div ref={list} className="ai-items" onClick={(event) => pictureClicked(event, setPicture)} onMouseUp={() => requestAnimationFrame(offerQuote)} onKeyUp={(event) => event.shiftKey && offerQuote()}>
 				{rows.map((row) =>
 					'work' in row ? <WorkRow key={row.work[0]!.id} run={row.work} onOpen={() => setWorkShown(row.work[0]!.id)} /> : <Item key={row.item.id} item={row.item} />,
 				)}
 			</div>
 			{shownRun && <WorkDialog run={shownRun} title={workSummary(shownRun, conversation, items).text} onClose={() => setWorkShown(null)} onPicture={setPicture} />}
 			{picture && <PictureDialog picture={picture} onClose={() => setPicture(null)} />}
+			{quoting &&
+				createPortal(
+					<button
+						type="button"
+						className="ai-quote-button"
+						style={{ top: Math.max(8, quoting.top - 36), left: quoting.left }}
+						// The selection kept as it is clicked.
+						onMouseDown={(event) => event.preventDefault()}
+						onClick={() => {
+							actions.quote(quoting.markdown);
+							document.getSelection()?.removeAllRanges();
+							setQuoting(null);
+						}}
+					>
+						<TextQuote aria-hidden />
+						{t('引用')}
+					</button>,
+					uiLayer() ?? document.body,
+				)}
 		</div>
 	);
 }
@@ -244,18 +290,25 @@ function Chip({ label, title, page, onRemove }: { label: string; title: string; 
 }
 
 function Composer({ state, actions }: { state: PanelState; actions: PanelActions }) {
-	const { conversation, article, leftOut, selected, selectionLeftOut, mentions, draft, status } = state;
+	const { conversation, article, leftOut, selected, selectionLeftOut, mentions, draft, status, pictures, quotes, queued } = state;
 	const input = useRef<HTMLTextAreaElement>(null);
 	const [caret, setCaret] = useState(0);
 	const [mentionAt, setMentionAt] = useState(0);
 	const [mentionsClosed, setMentionsClosed] = useState(false);
+	const [dropping, setDropping] = useState(false);
 	const running = conversation?.state === 'running';
 
-	// The input as tall as what is typed, up to 200px.
+	/** Where the caret goes once what is typed is drawn anew (an article named, a command written). */
+	const caretAfter = useRef<number | null>(null);
+	// The input as tall as what is typed, up to 200px; the caret where it was asked to go.
 	useLayoutEffect(() => {
 		const node = input.current!;
 		node.style.height = 'auto';
 		node.style.height = `${Math.min(node.scrollHeight, 200)}px`;
+		if (caretAfter.current !== null) {
+			node.setSelectionRange(caretAfter.current, caretAfter.current);
+			caretAfter.current = null;
+		}
 	}, [draft]);
 	// Asked to take the keys (focus, ask).
 	useEffect(() => {
@@ -269,6 +322,16 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	if (open) chips.push(<Chip key="article" label={open.title} page={pageOf(open.slug)} title={t('当前文章：说话时会告诉 AI 你在看这篇')} onRemove={actions.leaveOutArticle} />);
 	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label={t('选中的内容')} title={t('文章里选中的那几行会一起告诉 AI')} onRemove={actions.leaveOutSelection} />);
 	for (const entry of mentions) chips.push(<Chip key={entry.slug} label={entry.title} page={pageOf(entry.slug)} title={t('用 @ 提到的文章')} onRemove={() => actions.unmention(entry)} />);
+	for (const picture of pictures) {
+		chips.push(
+			<span key={picture.id} className="ai-chip ai-picture-chip">
+				<img src={picture.url} alt={t('图片')} />
+				<button type="button" className="ai-chip-remove" aria-label={t('不带上这张图')} onClick={() => actions.removePicture(picture.id)}>
+					×
+				</button>
+			</span>,
+		);
+	}
 
 	const asked = mentionsClosed ? null : naming(draft, caret);
 	const needle = asked?.query.toLocaleLowerCase('zh-CN') ?? '';
@@ -279,7 +342,26 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				.filter((entry) => !needle || entry.title.toLocaleLowerCase('zh-CN').includes(needle) || entry.slug.includes(needle))
 				.slice(0, 8)
 		: [];
-	const current = Math.min(mentionAt, Math.max(0, choices.length - 1));
+	// A slash command its agent offers (/compact), typed at the start: chosen from a list as an article is with @.
+	const slash = mentionsClosed ? null : /^\/(\S*)$/u.exec(draft.slice(0, caret));
+	const commands = slash ? (conversation?.commands ?? []).filter((command) => command.name.toLowerCase().startsWith(slash[1]!.toLowerCase())).slice(0, 12) : [];
+	const listed = choices.length || commands.length;
+	const current = Math.min(mentionAt, Math.max(0, (choices.length || commands.length) - 1));
+
+	/** The command `name` written at the start, what to write after it to follow. */
+	function command(name: string): void {
+		const rest = draft.slice(caret).replace(/^\S*/u, '');
+		const next = `/${name} ${rest.trimStart()}`;
+		actions.type(next);
+		setMentionAt(0);
+		setCaret(name.length + 2);
+		caretAfter.current = name.length + 2;
+	}
+
+	/** Pictures among what is pasted or dropped: given with what is said next. */
+	function picturesIn(transfer: DataTransfer): File[] {
+		return [...transfer.files].filter((file) => file.type.startsWith('image/'));
+	}
 
 	/** `entry` named: the @ and what was typed after it taken out of the input, the article a chip. */
 	function mention(entry: ArticleRef): void {
@@ -289,22 +371,24 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 		setMentionAt(0);
 		if (at) {
 			setCaret(at.from);
-			requestAnimationFrame(() => input.current?.setSelectionRange(at.from, at.from));
+			caretAfter.current = at.from;
 		}
 	}
 
 	function keyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
 		const composing = event.nativeEvent.isComposing || event.keyCode === 229;
-		// Choosing an article to name.
-		if (choices.length && !composing) {
+		// Choosing an article to name, or a command.
+		if (listed && !composing) {
+			const count = choices.length || commands.length;
 			if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 				event.preventDefault();
-				setMentionAt((current + (event.key === 'ArrowDown' ? 1 : choices.length - 1)) % choices.length);
+				setMentionAt((current + (event.key === 'ArrowDown' ? 1 : count - 1)) % count);
 				return;
 			}
 			if (event.key === 'Enter' || event.key === 'Tab') {
 				event.preventDefault();
-				mention(choices[current]!);
+				if (choices.length) mention(choices[current]!);
+				else command(commands[current]!.name);
 				return;
 			}
 			if (event.key === 'Escape') {
@@ -322,7 +406,25 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	const effort = conversation?.configOptions.find((option) => option.type === 'select' && option.category === 'thought_level');
 	const used = conversation?.usage;
 	return (
-		<div className="ai-composer">
+		<div
+			className={cn('ai-composer', dropping && 'is-dropping')}
+			onDragOver={(event) => {
+				if (![...event.dataTransfer.items].some((item) => item.kind === 'file' && item.type.startsWith('image/'))) return;
+				event.preventDefault();
+				event.dataTransfer.dropEffect = 'copy';
+				setDropping(true);
+			}}
+			onDragLeave={(event) => {
+				if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropping(false);
+			}}
+			onDrop={(event) => {
+				setDropping(false);
+				const files = picturesIn(event.dataTransfer);
+				if (!files.length) return;
+				event.preventDefault();
+				void actions.addPictures(files);
+			}}
+		>
 			<p className={cn('ai-status', status.error && 'is-error')} role="status">
 				{status.text}
 				{status.error && (
@@ -332,10 +434,57 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 					</>
 				)}
 			</p>
-			{/* What is told with what is said: the article open, what is selected in it, the articles named with @. */}
+			{/* Said while it worked, to be said once it is done: each taken back, or said now (what it does stopped). */}
+			{queued.length > 0 && (
+				<div className="ai-queue" aria-label={t('排队要说的话')}>
+					{queued.map((said) => (
+						<div key={said.id} className="ai-queued">
+							<span className="ai-queued-text" title={said.text}>
+								{said.text}
+							</span>
+							<button type="button" onClick={() => actions.sayNow(said.id)}>
+								{t('立刻发')}
+							</button>
+							<button type="button" className="ai-chip-remove" aria-label={t('取回这句')} title={t('取回这句')} onClick={() => actions.unqueue(said.id)}>
+								×
+							</button>
+						</div>
+					))}
+				</div>
+			)}
+			{/* What was quoted of the conversation, said before what is said next. */}
+			{quotes.map((quote, at) => (
+				<div key={at} className="ai-quote-row">
+					<Markdown className="ai-quote" text={quote} />
+					<button type="button" className="ai-chip-remove" aria-label={t('不引用这段')} onClick={() => actions.unquote(at)}>
+						×
+					</button>
+				</div>
+			))}
+			{/* What is told with what is said: the article open, what is selected in it, the articles named with @, pictures. */}
 			<div className="ai-context" hidden={!chips.length}>
 				{chips}
 			</div>
+			{commands.length > 0 && !choices.length && (
+				<div className="ai-mention-menu" role="listbox" aria-label={t('命令')}>
+					{commands.map((entry, index) => (
+						<button
+							key={entry.name}
+							type="button"
+							role="option"
+							aria-selected={index === current}
+							className={cn('ai-mention ai-command', index === current && 'is-current')}
+							onMouseDown={(event) => {
+								event.preventDefault();
+								command(entry.name);
+							}}
+						>
+							<span>/{entry.name}</span>
+							<span className="ai-mention-slug">{entry.description || entry.hint}</span>
+						</button>
+					))}
+				</div>
+			)}
 			{choices.length > 0 && (
 				<div className="ai-mention-menu" role="listbox">
 					{choices.map((entry, index) => (
@@ -362,8 +511,8 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				className="ai-input"
 				rows={1}
 				aria-label={t('对 AI 说')}
-				// While it works, to one that can take it: what is typed is a word in between (Enter), taken once its step is done.
-				placeholder={running && conversation?.canSteer ? t('插话：它做完手头这一步就会看到（Enter）') : t('让 AI 做点什么…（@ 提到别的文章）')}
+				// While it works: to one that can take it, a word in between (Enter); else said once it is done.
+				placeholder={running ? (conversation?.canSteer ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到文章，/ 命令，可以粘贴图片）')}
 				value={draft}
 				onChange={(event) => {
 					actions.type(event.target.value);
@@ -374,6 +523,13 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				onBlur={() => setMentionsClosed(true)}
 				onFocus={() => setMentionsClosed(false)}
 				onKeyDown={keyDown}
+				onPaste={(event) => {
+					const files = picturesIn(event.clipboardData);
+					if (!files.length) return;
+					// A picture copied with words (from a page): the words pasted too.
+					if (!event.clipboardData.getData('text/plain')) event.preventDefault();
+					void actions.addPictures(files);
+				}}
 			/>
 			<div className="ai-composer-bar">
 				<span className="ai-usage" title={used ? t('用掉的上下文 / 上下文上限（· 这次对话花费）') : ''}>

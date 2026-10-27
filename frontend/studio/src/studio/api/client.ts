@@ -290,7 +290,8 @@ export type Conversation = {
 	created: string;
 	updated: string;
 	configOptions: ConversationOption[];
-	commands: Array<{ name: string; description: string }>;
+	/** Its slash commands (/compact…), as its agent offers them; `hint`: what to write after one. */
+	commands: Array<{ name: string; description: string; hint?: string }>;
 	usage: { used: number; size: number; cost: { amount: number; currency: string } | null } | null;
 	/** The service Claude Code or pi talks to (its name, its id), when not the Claude account or pi's own setting. */
 	service: string | null;
@@ -299,18 +300,22 @@ export type Conversation = {
 	pageThrough: string | null;
 	/** Whether it has a page (opened in the editor as one): spoken to, or begun as one. */
 	onPage: boolean;
-	/** Whether it can be spoken to while it works (pi in the Studio's process). */
+	/** Whether it can be spoken to while it works (pi in the Studio's process, Claude Code, Codex). */
 	canSteer?: boolean;
+	/** Whether its agent takes pictures with what it is told. */
+	seesPictures?: boolean;
 };
 /** A tool call's content: words, a change to a file, or a terminal. */
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
 /** What a conversation is made of, in order. */
 export type ConversationItem =
-	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[] }; steer?: boolean }
+	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[] }; steer?: boolean; quotes?: string[]; pictures?: string[] }
 	| { kind: 'message'; id: string; text: string }
 	| { kind: 'thought'; id: string; text: string }
 	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
 	| { kind: 'plan'; id: string; entries: Array<{ content: string; priority: string; status: 'pending' | 'in_progress' | 'completed' }> }
+	/** A question it asks (a form: its fields a JSON Schema's properties); `answer` once answered. */
+	| { kind: 'question'; id: string; toolCallId: string | null; message: string; schema: FormSchema; answer: { action: 'accept'; content: Record<string, unknown> } | { action: 'decline' | 'cancel' } | null }
 	| { kind: 'permission'; id: string; title: string; toolCallId: string | null; options: Array<{ optionId: string; name: string; kind: 'allow_once' | 'allow_always' | 'reject_once' | 'reject_always' }>; chosen: string | null }
 	/** `resume`: a turn over with nothing said; it can be asked to go on (接着说). */
 	| { kind: 'notice'; id: string; severity: string; title: string; description: string; resume?: boolean }
@@ -345,9 +350,27 @@ export function followConversation(id: string, listener: (event: ConversationEve
 /** Where the author is, told with what they say: the article open, the lines selected in it, the articles named with @. */
 export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string }; mentions?: string[] };
 
-/** Says `text` in a conversation; `steer`: while it works (pi in the Studio's process: `canSteer`), taken once its step is done. */
-export async function tellConversation(id: string, text: string, context: ConversationContext = {}, { steer = false }: { steer?: boolean } = {}): Promise<void> {
-	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context, ...(steer ? { steer } : {}) }));
+/** The fields of a question an AI asks: a JSON Schema's, each a choice of one (`oneOf`), of several (`items.anyOf`) or words. */
+export type FormField = { type: string; title?: string; description?: string; oneOf?: Array<{ const: string; title?: string; description?: string }>; items?: { anyOf?: Array<{ const: string; title?: string; description?: string }> } };
+export type FormSchema = { type: 'object'; properties: Record<string, FormField>; required?: string[] };
+
+/**
+ * Says `text` in a conversation; `steer`: while it works (`canSteer`), taken as soon as it can be. `pictures`: paths
+ * of pictures kept for it (keepConversationPicture); `quotes`: what was quoted of it (Markdown), put before.
+ */
+export async function tellConversation(id: string, text: string, context: ConversationContext = {}, { steer = false, pictures = [], quotes = [] }: { steer?: boolean; pictures?: string[]; quotes?: string[] } = {}): Promise<void> {
+	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context, ...(steer ? { steer } : {}), ...(pictures.length ? { pictures } : {}), ...(quotes.length ? { quotes } : {}) }));
+}
+
+/** A picture given with what is said, kept in the conversation's folder: its path, to send it by. */
+export async function keepConversationPicture(id: string, picture: Blob): Promise<string> {
+	const { path } = await request<{ path: string }>(`${conversationApi(id, 'pictures')}?type=${encodeURIComponent(picture.type)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: picture });
+	return path;
+}
+
+/** A question it asked, answered: what was chosen (`accept`), skipped (`decline`). */
+export async function answerQuestion(id: string, question: string, answer: { action: 'accept'; content: Record<string, unknown> } | { action: 'decline' | 'cancel' }): Promise<void> {
+	await request(`${conversationApi(id, 'questions')}/${encodeURIComponent(question)}`, jsonOptions('POST', answer));
 }
 
 export async function stopConversation(id: string): Promise<void> {

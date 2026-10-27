@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { mkdir, readdir, readFile, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 
 import { atomicWriteText } from '../files/atomic-write.mjs';
 import { t } from '@blog/i18n/index.mjs';
@@ -146,8 +146,11 @@ export function turnMarkdown(items) {
 	const blocks = [];
 	for (const item of items) {
 		if (item.kind === 'user') {
-			const fence = '`'.repeat(Math.max(3, ...[...item.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
-			blocks.push(`${fence}ask\n${item.text.trim()}\n${fence}`);
+			// What was quoted, as quotes before the words; the pictures given, after them (from the page's folder).
+			const said = [...(item.quotes ?? []).map((quote) => quote.split('\n').map((line) => `> ${line}`.trimEnd()).join('\n')), item.text.trim()].join('\n\n');
+			const fence = '`'.repeat(Math.max(3, ...[...said.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
+			blocks.push(`${fence}ask\n${said}\n${fence}`);
+			for (const path of item.pictures ?? []) blocks.push(`![](ai/pictures/${basename(path)})`);
 		} else if (item.kind === 'message' && item.text.trim()) {
 			blocks.push(item.text.trim());
 		}

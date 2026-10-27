@@ -1,6 +1,6 @@
 import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
 import { delimiter, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,6 +41,8 @@ const KEPT_OVER = 20;
 const SAVE_AFTER = 400;
 /** States a conversation is gone on with from: its agent's session loaded again, in a new adapter. */
 const ASLEEP = new Set(['saved', 'closed', 'failed']);
+/** The pictures the author may give with what they say, by extension. */
+const PICTURE_TYPES = { png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif', webp: 'image/webp' };
 /**
  * An adapter left running takes 100–300 MB (Codex's two processes): those of conversations not spoken in for this
  * long are stopped, and of the others no more than so many are kept; each is woken (its session loaded again, about
@@ -331,8 +333,12 @@ class AgentSession {
 	#byId = new Map();
 	/** @type {Set<(event: Record<string, any>) => void>} */
 	#listeners = new Set();
-	/** Leave asked and not yet answered: the permission item's id → how to answer. */
+	/** Leave asked, or a question, not yet answered: the item's id → how to answer. */
 	#asked = new Map();
+	/** Whether its adapter takes words while it works over ACP's steering extension (Claude Code's, Codex's). */
+	#steering = false;
+	/** Whether its agent takes pictures in what it is told. */
+	#seesPictures = false;
 	configOptions = [];
 	modes = null;
 	commands = [];
@@ -391,7 +397,7 @@ class AgentSession {
 	}
 
 	summary() {
-		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, serviceId: this.models?.id ?? null, pageThrough: this.pageThrough, onPage: this.madePage || spokenTo(this), canSteer: this.#here !== null };
+		return { id: this.id, agent: this.agent, slug: this.slug, cwd: this.cwd, title: this.#title(), state: this.state, error: this.error, created: this.created, updated: this.updated, configOptions: this.#shownOptions(), modes: this.modes, commands: this.commands, usage: this.usage, service: this.models?.name ?? null, serviceId: this.models?.id ?? null, pageThrough: this.pageThrough, onPage: this.madePage || spokenTo(this), canSteer: this.#here !== null || this.#steering, seesPictures: this.#seesPictures };
 	}
 
 	/**
@@ -466,7 +472,8 @@ class AgentSession {
 		}
 		const app = client({ name: 'studio' })
 			.onNotification('session/update', ({ params }) => this.#update(params.update))
-			.onRequest('session/request_permission', ({ params, signal }) => this.#askLeave(params, signal));
+			.onRequest('session/request_permission', ({ params, signal }) => this.#askLeave(params, signal))
+			.onRequest('elicitation/create', ({ params, signal }) => this.#askForm(params, signal));
 		/** Resolves when its adapter ends (with why, if it failed); pi in this process never does. */
 		let exited;
 		if (servedHere(argv)) {
@@ -497,7 +504,10 @@ class AgentSession {
 		try {
 			const agent = this.#connection.agent;
 			const opening = (async () => {
-				const begun = await agent.request('initialize', { protocolVersion: PROTOCOL_VERSION, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false } });
+				// Questions it asks (Claude Code's AskUserQuestion) as forms in the conversation.
+				const begun = await agent.request('initialize', { protocolVersion: PROTOCOL_VERSION, clientCapabilities: { fs: { readTextFile: false, writeTextFile: false }, terminal: false, elicitation: { form: {} } } });
+				this.#steering = begun._meta?.steering?.supported === true;
+				this.#seesPictures = begun.agentCapabilities?.promptCapabilities?.image === true;
 				const before = again ? await this.#loadAgain(agent, begun.agentCapabilities ?? {}) : null;
 				if (before) return before;
 				if (again && this.items.length) this.#forgot = true;
@@ -552,8 +562,10 @@ class AgentSession {
 	 * itself. The conversation shows what the author said, and the context as what it names.
 	 * @param {string} text
 	 * @param {PromptContext} [context]
+	 * @param {{ pictures?: string[], quotes?: string[] }} [with_] pictures sent with it (keepPicture's paths), and
+	 *   what was quoted of the conversation (Markdown), put before it
 	 */
-	prompt(text, context = {}) {
+	prompt(text, context = {}, { pictures = [], quotes = [] } = {}) {
 		if (this.state !== 'idle') throw Object.assign(new Error(this.state === 'running' ? t('它还在做上一件事：等它做完，或者先停下') : t('这个对话已经结束了')), { statusCode: 409 });
 		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error(t('要说点什么')), { statusCode: 400 });
 		const named = {
@@ -564,15 +576,23 @@ class AgentSession {
 			articleSlug: context.article?.slug ?? null,
 			mentionSlugs: (context.mentions ?? []).map((mention) => mention.slug ?? ''),
 		};
+		const shown = this.#picturesOf(pictures);
+		if (shown.length && !this.#seesPictures) throw Object.assign(new Error(t('{name} 不收图片', { name: this.agent.name })), { statusCode: 400 });
+		const quoted = quotes.filter((quote) => typeof quote === 'string' && quote.trim()).map((quote) => quote.trim());
+		// What was quoted, as Markdown quotes before what was said.
+		const said = [...quoted.map((quote) => quote.split('\n').map((line) => `> ${line}`.trimEnd()).join('\n')), text].join('\n\n');
+		// A slash command (/compact) as it is: what the Studio adds after it would be taken for its arguments.
+		const command = /^\/\S/u.test(text) && !quoted.length;
 		// Running before what was said is added: a turn is put on the page once it is over, not as it begins.
 		this.#setState('running');
-		this.#add({ kind: 'user', id: randomUUID(), text, context: named });
-		const where = { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) };
-		this.#forgot = false;
+		this.#add({ kind: 'user', id: randomUUID(), text, context: named, ...(quoted.length ? { quotes: quoted } : {}), ...(shown.length ? { pictures: shown.map((picture) => picture.path) } : {}) });
+		const where = command ? {} : { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) };
+		if (!command) this.#forgot = false;
+		const images = shown.map(({ data, mimeType }) => ({ type: 'image', data, mimeType }));
 		// pi in this process takes where the author is into its system prompt for this run, what was said as it is.
 		const turn = this.#here
-			? this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text }], _meta: { studioContext: contextBlock(where) } })
-			: this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: withContext(text, where) }] });
+			? this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: said }, ...images], _meta: { studioContext: contextBlock(where) } })
+			: this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: withContext(said, where) }, ...images] });
 		void turn.then(
 			(done) => {
 				const turn = this.items.slice(this.items.findLastIndex((item) => item.kind === 'user') + 1);
@@ -593,17 +613,77 @@ class AgentSession {
 		);
 	}
 
+	/** The pictures kept for it (keepPicture), read to be sent: those not of its folder left out. */
+	#picturesOf(paths) {
+		const folder = this.page ? join(dirname(this.page), 'ai', 'pictures') : null;
+		if (!folder || !Array.isArray(paths)) return [];
+		return paths
+			.filter((path) => typeof path === 'string' && dirname(path) === folder)
+			.map((path) => ({ path, data: readFileSync(path).toString('base64'), mimeType: PICTURE_TYPES[path.split('.').pop()] ?? 'image/png' }));
+	}
+
+	/** A picture the author gives with what they say, kept in its folder (ai/pictures/): its path, to send it by. */
+	keepPicture(bytes, mimeType) {
+		const extension = Object.entries(PICTURE_TYPES).find(([, type]) => type === mimeType)?.[0];
+		if (!extension) throw Object.assign(new Error(t('只收图片（png、jpg、gif、webp）')), { statusCode: 415 });
+		if (!this.page) throw Object.assign(new Error(t('这个对话没有地方放图片')), { statusCode: 409 });
+		const path = join(dirname(this.page), 'ai', 'pictures', `${randomUUID()}.${extension}`);
+		mkdirSync(dirname(path), { recursive: true });
+		writeFileSync(path, bytes);
+		return path;
+	}
+
 	/**
-	 * Words of the author's while it works (pi in this process: `canSteer`): shown as said, taken by it once its step
-	 * is done, the turn going on.
+	 * Words of the author's while it works (`canSteer`): shown as said, taken by it as soon as it can (pi once its step
+	 * is done; Claude Code and Codex over ACP's steering extension), the turn going on.
 	 */
 	steer(text) {
-		if (this.state !== 'running' || !this.#here) throw Object.assign(new Error(t('现在不能插话：等它做完，或者先停下')), { statusCode: 409 });
+		if (this.state !== 'running' || !(this.#here || this.#steering)) throw Object.assign(new Error(t('现在不能插话：等它做完，或者先停下')), { statusCode: 409 });
 		if (typeof text !== 'string' || !text.trim()) throw Object.assign(new Error(t('要说点什么')), { statusCode: 400 });
 		this.#add({ kind: 'user', id: randomUUID(), text, context: { article: null, selection: null, mentions: [] }, steer: true });
-		void this.#connection.agent.request('_studio/steer', { sessionId: this.#acpId, text }).catch((error) => {
-			this.#add({ kind: 'error', id: randomUUID(), message: t('插话没送到：{error}', { error: this.#why(error) }) });
+		const missed = (error) => this.#add({ kind: 'error', id: randomUUID(), message: t('插话没送到：{error}', { error: this.#why(error) }) });
+		if (this.#here) {
+			void this.#connection.agent.request('_studio/steer', { sessionId: this.#acpId, text }).catch(missed);
+			return;
+		}
+		// Its turn over meanwhile: said to be sent again (as something said, not words in between).
+		void this.#connection.agent
+			.request('_session/steering', { sessionId: this.#acpId, prompt: [{ type: 'text', text }], _meta: { steering: { idleBehavior: 'promptRequired' } } })
+			.then((done) => {
+				if (done?.outcome === 'promptRequired') missed(new Error(t('它刚好做完了这一轮：再发一次')));
+				else if (done?.outcome === 'failed') missed(new Error(done.reason ?? t('它没收下')));
+			}, missed);
+	}
+
+	/**
+	 * A question it asks (ACP's form elicitation: Claude Code's AskUserQuestion), shown as a form in the conversation;
+	 * resolves with the answer (accept with what was chosen, decline: skipped) or cancel when stopped. One that asks
+	 * to open an address is declined.
+	 */
+	#askForm(params, signal) {
+		if (params.mode === 'url' || !params.requestedSchema) return Promise.resolve({ action: 'decline' });
+		const id = randomUUID();
+		const item = { kind: 'question', id, toolCallId: params.toolCallId ?? null, message: params.message ?? '', schema: params.requestedSchema, answer: null };
+		const answered = new Promise((resolve) => {
+			const answer = (response) => {
+				if (!this.#asked.has(id)) return;
+				this.#asked.delete(id);
+				const given = response?.action === 'accept' ? { action: 'accept', content: response.content ?? {} } : response?.action === 'decline' ? { action: 'decline' } : { action: 'cancel' };
+				this.#put({ ...item, answer: given }, true);
+				resolve(given);
+			};
+			this.#asked.set(id, answer);
+			signal?.addEventListener('abort', () => answer(null), { once: true });
 		});
+		this.#add(item);
+		return answered;
+	}
+
+	/** The author's answer to a question it asked (`#askForm`). */
+	reply(question, response) {
+		const answer = this.#asked.get(question);
+		if (!answer || this.#byId.get(question)?.kind !== 'question') throw Object.assign(new Error(t('这个问题已经回答过了')), { statusCode: 409 });
+		answer(response && typeof response === 'object' ? response : null);
 	}
 
 	/** Stops what it is doing: what it asked leave for is refused. */
@@ -724,7 +804,7 @@ class AgentSession {
 				if (this.modes) this.modes = { ...this.modes, currentModeId: update.currentModeId };
 				break;
 			case 'available_commands_update':
-				this.commands = (update.availableCommands ?? []).map(({ name, description }) => ({ name, description }));
+				this.commands = (update.availableCommands ?? []).map(({ name, description, input }) => ({ name, description, hint: input?.hint ?? '' }));
 				break;
 			case 'usage_update':
 				this.usage = { used: update.used, size: update.size, cost: update.cost ?? this.usage?.cost ?? null };
