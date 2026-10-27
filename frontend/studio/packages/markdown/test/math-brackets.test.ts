@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import rehypeStringify from 'rehype-stringify';
 import remarkMath from 'remark-math';
@@ -89,4 +91,47 @@ test('HTML carries the classes KaTeX rendering looks for', () => {
 	assert.match(html, /<code class="language-math math-inline">a<\/code>/);
 	assert.match(html, /<pre><code class="language-math math-display">b<\/code><\/pre>/);
 	assert.match(html, /<code class="language-math math-display">c<\/code>/);
+});
+
+test('$$ written against its formula (as answers write it) is a block formula all the same; the text after it is text', () => {
+	const answer = '设 $u = \\ln x$。\n\n$$\\begin{aligned}\n\\int \\ln x\\, dx &= x\\ln x - x + C\n\\end{aligned}$$\n\n验算一下。\n\n$$E = mc^2$$\n\n完。';
+	assert.deepEqual(blocks(answer), [
+		'paragraph["设 ", inlineMath(u = \\ln x), "。"]',
+		'math(\\begin{aligned}\n\\int \\ln x\\, dx &= x\\ln x - x + C\n\\end{aligned})',
+		'paragraph["验算一下。"]',
+		'math(E = mc^2)',
+		'paragraph["完。"]',
+	]);
+	// Opened on its own line, closed against its last.
+	assert.deepEqual(blocks('$$\na + b\n= c$$\n\n后面。'), ['math(a + b\n= c)', 'paragraph["后面。"]']);
+});
+
+test('a $$ with nothing closing it, $$…$$ within a line, and code are left as they were', () => {
+	// Never closed: as remark-math reads it (its label, then formula), as before.
+	assert.deepEqual(blocks('$$ 是两美元，没有公式。\n下一行。'), ['math(下一行。)']);
+	assert.deepEqual(blocks('行内 $$x$$ 留着。'), ['paragraph["行内 ", inlineMath(x), " 留着。"]']);
+	assert.deepEqual(blocks('$$x$$ 后面还有字。'), ['paragraph[inlineMath(x), " 后面还有字。"]']);
+	assert.deepEqual(blocks('```\n$$a$$\n```'), ['code[]']);
+	assert.deepEqual(blocks('$$\na\n$$'), ['math(a)']);
+});
+
+test('a formula with its $$ against it keeps the places of the text: what follows it is where it was', () => {
+	const answer = '前面。\n\n$$a\n= b$$\n\n后面。';
+	const after = tree(answer).at(-1) as Node & { position: { start: { offset: number } } };
+	assert.equal(answer.slice(after.position.start.offset), '后面。');
+});
+
+test('read by micromark’s development build too (the one the Studio’s pages load), which checks each token', () => {
+	const script = `
+		import remarkMath from 'remark-math';
+		import remarkParse from 'remark-parse';
+		import { unified } from 'unified';
+		import remarkMathBrackets from ${JSON.stringify(new URL('../plugins/remark-math-brackets.mjs', import.meta.url).href)};
+		const parser = unified().use(remarkParse).use(remarkMath).use(remarkMathBrackets);
+		const tree = parser.runSync(parser.parse(process.argv[1]));
+		console.log(tree.children.map((node) => node.type).join(','));
+	`;
+	const answer = '前面 \\(x\\)。\n\n$$\\begin{aligned}\na &= b \\\\\n&= c\n\\end{aligned}$$\n\n$$E = mc^2$$\n\n$$\nd\n$$\n\n$$ 两美元';
+	const said = execFileSync(process.execPath, ['--conditions=development', '--input-type=module', '-e', script, answer], { cwd: fileURLToPath(new URL('..', import.meta.url)), encoding: 'utf8' });
+	assert.equal(said.trim(), 'paragraph,math,math,math,math');
 });

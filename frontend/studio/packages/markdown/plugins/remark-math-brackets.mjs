@@ -22,18 +22,171 @@ export default function remarkMathBrackets() {
 	return splitDisplayMath;
 }
 
+
 const BACKSLASH = 92;
 const INLINE = 'mathBracketInline';
 const DISPLAY = 'mathBracketDisplay';
 const MARKER = 'mathBracketMarker';
 const DATA = 'mathBracketData';
 
-/** micromark extension: `\(` and `\[`, tried before a backslash escape. */
+/**
+ * micromark extension: `\(` and `\[`, tried before a backslash escape; and a block formula whose `$$` is written
+ * against it, tried before remark-math's.
+ */
 export function mathBracketSyntax() {
 	return {
 		text: {
 			[BACKSLASH]: [bracketConstruct(40, 41, INLINE), bracketConstruct(91, 93, DISPLAY)],
 		},
+		flow: {
+			[DOLLAR]: gluedMathFlow,
+		},
+	};
+}
+
+const DOLLAR = 36;
+
+/**
+ * A block formula with its `$$` written against it, as AI answers write it: `$$\begin{aligned}` … `\end{aligned}$$`,
+ * either of them on a line of its own or not, or `$$E = mc^2$$` alone on a line. remark-math reads a block formula
+ * only between `$$` lines of their own, and takes what follows an opening `$$` for its label: the closing one is then
+ * never found, and all the rest is formula (one between `$$` lines of their own reads the same either way).
+ * Read here as remark-math's own (its tokens, so the same `math` node), the text and its places as they are. Only
+ * when it closes, a `$$` ending a line: else (a price, an answer still coming) it is not this, and `$$…$$` within a
+ * line of text stays text's.
+ */
+const gluedMathFlow = { name: 'gluedMathFlow', tokenize: tokenizeGluedMathFlow, concrete: true };
+const closingDollars = { tokenize: tokenizeClosingDollars, partial: true };
+const nextLine = { tokenize: tokenizeNextLine, partial: true };
+
+function tokenizeGluedMathFlow(effects, ok, nok) {
+	let opened = 0;
+	/** Within a stretch of the formula's text. */
+	let inValue = false;
+	return start;
+
+	function start(code) {
+		effects.enter('mathFlow');
+		effects.enter('mathFlowFence');
+		effects.enter('mathFlowFenceSequence');
+		return opening(code);
+	}
+
+	function opening(code) {
+		if (code === DOLLAR) {
+			effects.consume(code);
+			opened += 1;
+			return opened > 2 ? nok : opening;
+		}
+		if (opened !== 2) return nok(code);
+		effects.exit('mathFlowFenceSequence');
+		effects.exit('mathFlowFence');
+		return spaceThenFormula(code);
+	}
+
+	/** After the opening `$$`: the formula, on the same line or the next. */
+	function spaceThenFormula(code) {
+		if (code === 32 || code === 9) {
+			effects.enter('whitespace');
+			return spaces(code);
+		}
+		return formula(code);
+	}
+
+	function spaces(code) {
+		if (code === 32 || code === 9) {
+			effects.consume(code);
+			return spaces;
+		}
+		effects.exit('whitespace');
+		return formula(code);
+	}
+
+	function formula(code) {
+		// Never closed: not this.
+		if (code === null) return nok(code);
+		if (markdownLineEnding(code)) {
+			if (inValue) effects.exit('mathFlowValue');
+			inValue = false;
+			return effects.attempt(nextLine, formula, nok)(code);
+		}
+		if (code === DOLLAR) return effects.check(closingDollars, close, dollar)(code);
+		if (!inValue) effects.enter('mathFlowValue');
+		inValue = true;
+		effects.consume(code);
+		return formula;
+	}
+
+	/** A `$` of the formula's own (`\$`): a `$$` that does not end its line is not this formula's end. */
+	function dollar(code) {
+		if (!inValue) effects.enter('mathFlowValue');
+		inValue = true;
+		effects.consume(code);
+		return (next) => (next === DOLLAR ? nok(next) : formula(next));
+	}
+
+	function close(code) {
+		if (inValue) effects.exit('mathFlowValue');
+		inValue = false;
+		effects.enter('mathFlowFence');
+		effects.enter('mathFlowFenceSequence');
+		effects.consume(code);
+		return (second) => {
+			effects.consume(second);
+			effects.exit('mathFlowFenceSequence');
+			return afterClose;
+		};
+	}
+
+	function afterClose(code) {
+		if (code === 32 || code === 9) {
+			effects.consume(code);
+			return afterClose;
+		}
+		effects.exit('mathFlowFence');
+		effects.exit('mathFlow');
+		return ok(code);
+	}
+}
+
+/** `$$` and nothing after it on its line. */
+function tokenizeClosingDollars(effects, ok, nok) {
+	let size = 0;
+	return (code) => {
+		// Only looked at (a check): read as a fence, as micromark reads nothing outside a token.
+		effects.enter('mathFlowFence');
+		return dollars(code);
+	};
+
+	function dollars(code) {
+		if (code === DOLLAR && size < 2) {
+			effects.consume(code);
+			size += 1;
+			return dollars;
+		}
+		if (size !== 2) return nok(code);
+		return rest(code);
+	}
+
+	function rest(code) {
+		if (code === 32 || code === 9) {
+			effects.consume(code);
+			return rest;
+		}
+		if (code !== null && !markdownLineEnding(code)) return nok(code);
+		effects.exit('mathFlowFence');
+		return ok(code);
+	}
+}
+
+/** The line ending into the formula's next line, while the container it is in goes on (not a lazy line). */
+function tokenizeNextLine(effects, ok, nok) {
+	const self = this;
+	return (code) => {
+		effects.enter('lineEnding');
+		effects.consume(code);
+		effects.exit('lineEnding');
+		return (next) => (self.parser.lazy[self.now().line] ? nok(next) : ok(next));
 	};
 }
 

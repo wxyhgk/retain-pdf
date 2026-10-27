@@ -10,9 +10,11 @@ import {
 	openStudio,
 	popup,
 	popupInput,
+	removeArticle,
 	resetFixture,
 	savedMarkdown,
 	saveStatus,
+	writeArticle,
 } from './studio.ts';
 
 test.beforeEach(async ({ page }) => {
@@ -287,4 +289,18 @@ test('formulas far down an article being opened are drawn after it is shown, wit
 	await caretAfter(page, '第 1 段。');
 	await page.keyboard.type('$a^2$ ');
 	await expect(editor(page).locator('p', { hasText: '第 1 段。' }).locator('.pm-inline-math .katex')).toHaveCount(1);
+});
+
+test('an article with a formula whose $$ is written against it (as an AI writes it) opens with that formula drawn', async ({ page }) => {
+	writeArticle('glued-formula', '---\ntitle: 贴着写的公式\npubDate: 2026-10-27\ndraft: true\n---\n\n前面。\n\n$$\\begin{aligned}\na &= b \\\\\n&= c\n\\end{aligned}$$\n\n后面 $x$ 是正文。\n');
+	try {
+		await openStudio(page);
+		await page.locator('#article-list').getByText('贴着写的公式', { exact: true }).click();
+		const body = page.locator('#crepe-editor .milkdown .ProseMirror');
+		await expect(body.locator('.pm-display-math .katex')).toHaveCount(1);
+		await expect(body.locator('p', { hasText: '后面' }).locator('.katex')).toHaveCount(1);
+		await expect(body).not.toContainText('\\end{aligned}');
+	} finally {
+		removeArticle('glued-formula');
+	}
 });

@@ -755,3 +755,13 @@ test('an article named with @ in the input goes whole with ⌫, as a mention, an
 		removeArticle('other-note');
 	}
 });
+
+test('a formula with its $$ written against it (as answers write it) is drawn, and so is what follows it', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '积分');
+	const answer = pane(page).locator('.ai-message').last();
+	await expect(answer.locator('.ai-math-display .katex')).toHaveCount(1);
+	await expect(answer.locator('.ai-math .katex')).toHaveCount(1);
+	await expect(answer.locator('p', { hasText: 'aligned' })).toHaveCount(0);
+	await expect(answer.locator('.ai-block').last()).toHaveAttribute('data-markdown', /^验算一下/u);
+});

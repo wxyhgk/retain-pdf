@@ -198,6 +198,11 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '```python\nprint(1)\n```\n\n行内 $a+b$ 和\n\n$$\nE = mc^2\n$$');
 			return { stopReason: 'end_turn' };
 		}
+		// A formula with its $$ against it, as answers write it.
+		if (said.startsWith('积分')) {
+			await words('agent_message_chunk', '分部积分。\n\n$$\\begin{aligned}\n\\int \\ln x\\, dx &= x\\ln x - \\int dx \\\\\n&= x\\ln x - x + C\n\\end{aligned}$$\n\n验算一下：$(x\\ln x - x)\' = \\ln x$，对的。');
+			return { stopReason: 'end_turn' };
+		}
 		// Words with a formula in them, to quote.
 		if (said.startsWith('公式')) {
 			await words('agent_message_chunk', '质能关系 $E = mc^2$ 说明质量就是能量。\n\n第二段。');
