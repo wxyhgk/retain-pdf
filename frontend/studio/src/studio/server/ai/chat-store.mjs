@@ -98,6 +98,31 @@ export class ChatStore {
 		await atomicWriteText(page, next(read()));
 	}
 
+	/** The order the author dragged the conversations into (`order.json`): their ids; none when never dragged. */
+	async order() {
+		try {
+			const ids = JSON.parse(await readFile(join(this.root, 'order.json'), 'utf8'));
+			return Array.isArray(ids) ? ids.filter(isId) : [];
+		} catch {
+			return [];
+		}
+	}
+
+	async setOrder(ids) {
+		await mkdir(this.root, { recursive: true });
+		await atomicWriteText(join(this.root, 'order.json'), `${JSON.stringify(ids.filter(isId), null, '\t')}\n`);
+	}
+
+	/** The page of a conversation titled anew (the author named it): its `title:`. */
+	async retitle(id, title) {
+		if (!isId(id)) throw Object.assign(new Error(t('没有这个对话')), { statusCode: 404 });
+		const page = this.page(id);
+		if (!existsSync(page)) return;
+		const before = await readFile(page, 'utf8');
+		const next = before.replace(/^(---\n(?:[^\n]*\n)*?)title: [^\n]*\n/u, `$1title: ${JSON.stringify(title)}\n`);
+		if (next !== before) await atomicWriteText(page, next);
+	}
+
 	async remove(id) {
 		if (!isId(id)) throw Object.assign(new Error(t('没有这个对话')), { statusCode: 404 });
 		await rm(join(this.root, id), { recursive: true, force: true });

@@ -166,6 +166,9 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		void request;
 		await sendFile(response, { body: createReadStream(path), contentType, size: info.size, range: null });
 	}, { streams: true });
+	// Named by the author; the order they dragged them into.
+	api.post('/conversations/:id/title', async ({ params, json }) => conversations.rename(params.id, (await json()).title));
+	api.put('/conversations/order', async ({ json }) => conversations.reorder((await json()).ids));
 	// A conversation gone: its folder of chats/ too.
 	api.post('/conversations/:id/delete', async ({ params }) => {
 		await conversations.remove(params.id);

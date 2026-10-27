@@ -53,6 +53,9 @@ export type ShellActions = {
 	newChat(): void;
 	openChat(id: string): void;
 	chatMenu(chat: Conversation, anchor: HTMLElement): void;
+	/** A conversation dragged to before another (to the end with none); one named anew (double-click). */
+	moveChat(id: string, before: string | null): void;
+	renameChat(chat: Conversation): void;
 	openTrash(): void;
 	openPlugins(): void;
 	openAiSettings(): void;
@@ -116,6 +119,8 @@ export const ActionsContext = createContext<ShellActions>({
 	newChat: nothing,
 	openChat: nothing,
 	chatMenu: nothing,
+	moveChat: nothing,
+	renameChat: nothing,
 	openTrash: nothing,
 	openPlugins: nothing,
 	openAiSettings: nothing,

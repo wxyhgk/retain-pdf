@@ -501,6 +501,16 @@ export async function deleteConversation(id: string): Promise<void> {
 	await request(conversationApi(id, 'delete'), jsonOptions('POST', {}));
 }
 
+/** A conversation named by the author (the AI's own title no longer put over it). */
+export async function renameConversation(id: string, title: string): Promise<void> {
+	await request(conversationApi(id, 'title'), jsonOptions('POST', { title }));
+}
+
+/** The conversations in the order dragged into (the left column's 对话). */
+export async function orderConversations(ids: string[]): Promise<void> {
+	await request('/api/studio/conversations/order', jsonOptions('PUT', { ids }));
+}
+
 /** A background task (server/tasks/tasks.mjs), without its log. */
 export type TaskSummary = { id: string; kind: string; title: string; slug: string | null; state: 'running' | 'done' | 'failed' | 'cancelled'; started: number; ended: number | null; error: string | null; result: unknown; logSize: number };
 export type TaskEvent = { type: 'all'; tasks: TaskSummary[] } | { type: 'task'; task: TaskSummary } | { type: 'log'; id: string; text: string };

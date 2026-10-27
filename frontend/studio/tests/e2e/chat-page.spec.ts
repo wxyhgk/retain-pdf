@@ -107,3 +107,40 @@ test('⤢ in the AI tab: the panel itself whole, in the middle; ⤡ back in the 
 	await expect(side.locator('.ai-message').last()).toHaveText('结论是这样的。');
 	await expect(page.locator('#article-title-input')).toHaveValue('Studio 测试夹具');
 });
+
+test('a conversation is renamed from its menu (its page’s title too), and dragged into place; kept so once reloaded', async ({ page }) => {
+	await openStudio(page);
+	await page.getByRole('tab', { name: 'AI 问答' }).click();
+	await expect(view(page)).toBeVisible();
+	const shown = () => new URL(page.url()).searchParams.get('chat');
+	await expect.poll(shown).toMatch(/^chat-/u);
+	await say(page, '几块 甲问题');
+	const row = (title: string) => page.locator('#chat-list .chat-row', { hasText: title });
+	await expect(row('甲问题')).toHaveCount(1);
+	const first = await row('甲问题').getAttribute('data-chat');
+	const file = join(chats(), first!, 'index.md');
+	await expect.poll(() => existsSync(file)).toBe(true);
+	await page.getByRole('button', { name: '新建对话' }).click();
+	await expect.poll(shown).not.toBe(first);
+	await page.waitForTimeout(300);
+	await say(page, '代码 乙问题');
+	await expect(row('乙问题')).toHaveCount(1);
+	const titles = () => page.locator('#chat-list .chat-row .chat-row-title').allTextContents();
+	const place = async (title: string) => (await titles()).findIndex((shown) => shown.includes(title));
+	expect(await place('乙问题')).toBeLessThan(await place('甲问题'));
+
+	// Renamed: listed so, its page titled so; the AI's own title no longer put over it.
+	page.once('dialog', (dialog) => void dialog.accept('第一个对话'));
+	await row('甲问题').click({ button: 'right' });
+	await page.getByRole('menuitem', { name: '重命名' }).click();
+	await expect(row('第一个对话')).toHaveCount(1);
+	await expect.poll(() => (existsSync(file) ? readFileSync(file, 'utf8') : '')).toContain('title: "第一个对话"');
+
+	// Dragged above 乙问题, and so once read again.
+	await row('第一个对话').dragTo(row('乙问题'), { targetPosition: { x: 20, y: 4 } });
+	await expect.poll(async () => (await place('第一个对话')) < (await place('乙问题'))).toBe(true);
+	await page.reload();
+	await page.getByRole('tab', { name: 'AI 问答' }).click();
+	await expect(row('第一个对话')).toHaveCount(1);
+	expect(await place('第一个对话')).toBeLessThan(await place('乙问题'));
+});

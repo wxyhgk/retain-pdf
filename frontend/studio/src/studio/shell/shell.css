@@ -147,3 +147,9 @@
 		box-shadow: var(--studio-shadow-modal);
 	}
 }
+
+/* A conversation dragged in the left column: a line where it would go (before a row, or after the last). */
+.chat-row.is-drop-before::before,
+.chat-row.is-drop-after::after { content: ''; position: absolute; right: 6px; left: 6px; height: 2px; border-radius: 1px; background: var(--studio-select-edge); pointer-events: none; }
+.chat-row.is-drop-before::before { top: -1px; }
+.chat-row.is-drop-after::after { bottom: -1px; }

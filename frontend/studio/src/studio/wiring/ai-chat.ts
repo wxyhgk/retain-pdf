@@ -72,6 +72,7 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		removed(id) {
 			if (aiPanel.current() === id) void openLatestChat();
 		},
+		renamed: (id, title) => aiPanel.renamed(id, title),
 		toast: (message) => showToast(message),
 	});
 	void chatList.refresh();

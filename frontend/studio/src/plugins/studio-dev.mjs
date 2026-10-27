@@ -69,12 +69,19 @@ export default function studioDev({ site } = {}) {
 			const watcher = new BlogWatcher(blogRoot);
 			// A page put under another by someone else (an AI editing its file): a page block for it there, as when it is
 			// moved in the Studio.
-			void articles.followParents().then(() =>
-				watcher.subscribe((changes) => {
+			let stopped = false;
+			let unfollow = () => {};
+			server.httpServer?.on('close', () => {
+				stopped = true;
+				unfollow();
+			});
+			void articles.followParents().then(() => {
+				if (stopped) return;
+				unfollow = watcher.subscribe((changes) => {
 					const written = changes.filter((change) => change.paths.includes('') || change.paths.includes('index.md')).map((change) => change.slug);
 					if (written.length) articles.followParents(written).catch((error) => console.warn(`[studio] ${error instanceof Error ? error.message : error}`));
-				}),
-			);
+				});
+			});
 			// The author's own folder of files (资料库), chosen once and kept outside git; the browser tests bring their own.
 			const testDriveRoot = process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null;
 			const settingsFile = studioSettingsFile(server.config.root);

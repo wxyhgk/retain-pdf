@@ -213,12 +213,52 @@ export class AgentSessions {
 		return session;
 	}
 
-	/** Those going on, then those kept in chats/ (the latest first); none begun and not spoken to that is over. */
+	/**
+	 * Those going on, then those kept in chats/ (the latest first); none begun and not spoken to that is over. Once the
+	 * author has dragged them (`order.json`), in that order, those new since (not in it) first.
+	 */
 	async list() {
 		const live = [...this.#sessions.values()].filter((session) => spokenTo(session) || !ASLEEP.has(session.state)).reverse();
 		// Kept ones never spoken to (begun as pages, left empty) are not listed.
 		const kept = this.store ? (await this.store.list()).filter((record) => !this.#sessions.has(record.id) && record.items?.some((item) => item.kind === 'user')).map(AgentSession.summaryOf) : [];
-		return [...live.map((session) => session.summary()), ...kept];
+		const all = [...live.map((session) => session.summary()), ...kept];
+		const rank = new Map(((await this.store?.order()) ?? []).map((id, index) => [id, index]));
+		if (!rank.size) return all;
+		const placed = (entry) => rank.get(entry.id) ?? -1;
+		return all
+			.map((entry, index) => ({ entry, index }))
+			.sort((a, b) => placed(a.entry) - placed(b.entry) || a.index - b.index)
+			.map(({ entry }) => entry);
+	}
+
+	/** A conversation named by the author: kept so (the agent's own title no longer put over it), its page's title too. */
+	async rename(id, title) {
+		const name = String(title ?? '').trim();
+		if (!name) throw Object.assign(new Error(t('名字不能为空')), { statusCode: 400 });
+		const session = this.#sessions.get(id);
+		if (session) {
+			session.title = name;
+			session.named = true;
+			if (this.store && spokenTo(session)) {
+				// Named, not spoken in: when it was last spoken in stays as it was.
+				const updated = session.updated;
+				const record = session.record();
+				session.updated = record.updated = updated;
+				await this.store.save(record);
+			}
+		} else if (this.store) {
+			const record = await this.store.read(id);
+			await this.store.save({ ...record, title: name, named: true });
+		}
+		await this.store?.retitle(id, name);
+		return { id, title: name };
+	}
+
+	/** The conversations in the order the author dragged them into. */
+	async reorder(ids) {
+		if (!Array.isArray(ids) || ids.some((id) => typeof id !== 'string')) throw Object.assign(new Error(t('顺序不对')), { statusCode: 400 });
+		await this.store?.setOrder(ids);
+		return { ids };
 	}
 
 	close(id) {
@@ -327,6 +367,8 @@ class AgentSession {
 	/** 'starting' | 'idle' | 'running' | 'closed' | 'failed' | 'saved' (read back from chats/, no adapter) */
 	state = 'starting';
 	title = '';
+	/** Named by the author (renamed): the agent's own title is no longer put over it. */
+	named = false;
 	error = '';
 	/** @type {Array<Record<string, any>>} */
 	items = [];
@@ -379,6 +421,7 @@ class AgentSession {
 		const session = new AgentSession({ agent: record.agent, cwd: record.cwd, slug: record.slug ?? null, id: record.id });
 		session.state = 'saved';
 		session.title = record.title ?? '';
+		session.named = record.named === true;
 		session.created = record.created;
 		session.updated = record.updated ?? record.created;
 		session.configOptions = record.configOptions ?? [];
@@ -435,7 +478,7 @@ class AgentSession {
 	record() {
 		this.updated = new Date().toISOString();
 		const items = this.items.map((item) => (item.kind === 'permission' && !item.chosen ? { ...item, chosen: 'cancelled' } : item));
-		return { id: this.id, agent: this.agent, acpSessionId: this.#acpId, cwd: this.cwd, slug: this.slug, title: this.#title(), created: this.created, updated: this.updated, service: this.models?.name ?? null, configOptions: this.configOptions, items, pageThrough: this.pageThrough };
+		return { id: this.id, agent: this.agent, acpSessionId: this.#acpId, cwd: this.cwd, slug: this.slug, title: this.#title(), ...(this.named ? { named: true } : {}), created: this.created, updated: this.updated, service: this.models?.name ?? null, configOptions: this.configOptions, items, pageThrough: this.pageThrough };
 	}
 
 	/**
@@ -808,7 +851,7 @@ class AgentSession {
 				return this.#put({ ...before, summary: before.summary + (update.content?.text ?? '') }, this.#byId.has(id));
 			}
 			case 'session_info_update':
-				if (typeof update.title === 'string') this.title = withoutContext(update.title, this.items.find((item) => item.kind === 'user')?.text ?? '');
+				if (typeof update.title === 'string' && !this.named) this.title = withoutContext(update.title, this.items.find((item) => item.kind === 'user')?.text ?? '');
 				break;
 			case 'config_option_update':
 				this.configOptions = update.configOptions ?? this.configOptions;

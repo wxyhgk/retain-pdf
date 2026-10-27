@@ -73,6 +73,8 @@ mountShell(shell, {
 	newChat: () => chat.newChat(),
 	openChat: (id) => chat.openChat(id),
 	chatMenu: (entry, row) => chat.chatList.menu(entry, row),
+	moveChat: (id, before) => void chat.chatList.move(id, before),
+	renameChat: (entry) => chat.chatList.rename(entry),
 	openTrash: () =>
 		openDialog('trash', {
 			host: {

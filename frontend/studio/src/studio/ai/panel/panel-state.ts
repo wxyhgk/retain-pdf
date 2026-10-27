@@ -711,6 +711,11 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 
 	/** What the Studio around it asks of the panel. */
 	const panel = {
+		/** The conversation `id` named anew (in the left column): its name here too. */
+		renamed(id: string, title: string): void {
+			const shown = get().conversation;
+			if (shown?.id === id) set({ conversation: { ...shown, title } });
+		},
 		/** The tab is on screen: the AIs read, and a conversation begun if none goes on (once). */
 		shown(): void {
 			void load();

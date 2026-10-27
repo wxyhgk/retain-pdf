@@ -42,6 +42,8 @@ export class BlogWatcher {
 
 	#start() {
 		this.#watcher = this.watchImpl(this.blogRoot, { recursive: true }, (_type, filename) => this.#record(filename));
+		// Watching does not keep the server's process going on its own (a test's, one stopping).
+		this.#watcher.unref?.();
 		this.#watcher.on?.('error', () => {
 			// The folder went away or the system ran out of watches; the next listener starts over.
 			this.close();
@@ -57,6 +59,7 @@ export class BlogWatcher {
 		this.#pending.get(slug).add(rest.join('/'));
 		clearTimeout(this.#timer);
 		this.#timer = setTimeout(() => this.#flush(), this.delay);
+		this.#timer.unref?.();
 	}
 
 	#flush() {
