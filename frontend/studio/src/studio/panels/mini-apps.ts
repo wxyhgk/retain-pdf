@@ -69,8 +69,9 @@ function put(root: HTMLElement, place: Place): void {
 
 /**
  * 小程序: the tools of apps/, each in a floating window over the Studio (moved by its bar, sized from any edge or
- * corner, as large as the Studio's window by a double-click on its bar, where it was left the next time), in a frame with no origin of its own. What an app asks of the Studio comes as
- * messages, each answered only when its app.json asked for what it needs (`permissions`).
+ * corner, as large as the Studio's window by a double-click on its bar, where it was left the next time), in a frame of the
+ * Studio's own origin, not sandboxed (the author's own tools). What an app asks of the Studio comes as messages, each
+ * answered: every app may do all it asks.
  */
 export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, host: MiniAppsHost) {
 	const open = new Map<string, AppWindow>();
@@ -121,7 +122,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 				(error: unknown) => reply({ error: error instanceof Error ? error.message : String(error) }),
 			);
 		};
-		// The frame has no origin to name: the port goes to whatever page is in it, which is the app's (just ready).
+		// The port goes to whatever page is in the frame, which is the app's (just ready).
 		shown.frame.contentWindow?.postMessage({ kind: MESSAGE, type: 'port', theme: theme() }, '*', [channel.port2]);
 	}
 
@@ -160,8 +161,8 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		const frame = document.createElement('iframe');
 		frame.className = 'mini-app-frame';
 		frame.title = app.name;
-		// Scripts, forms, its own windows and downloads; never the Studio's origin.
-		frame.setAttribute('sandbox', 'allow-scripts allow-forms allow-popups allow-modals allow-downloads');
+		// Not sandboxed: the author's own tool, of the Studio's origin (its files load as a page's; `studio` does the rest).
+		frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
 		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false };
 		// Any page loaded after the app's own is another one: the app followed a link, or went elsewhere.
 		frame.addEventListener('load', () => {
@@ -248,9 +249,6 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 
 	/** What an app asks, if it may: its answer, or why not. */
 	async function answer(app: MiniApp, method: string, args: unknown[]): Promise<unknown> {
-		const may = (permission: string) => {
-			if (!app.permissions.includes(permission)) throw new Error(t('「{name}」的 app.json 里没有要「{permission}」权限', { name: app.name, permission }));
-		};
 		const article = () => {
 			const shown = host.article();
 			if (!shown) throw new Error(t('还没有打开文章'));
@@ -258,24 +256,19 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		};
 		switch (method) {
 			case 'article':
-				may('article');
 				return article();
 			case 'insert':
-				may('insert');
 				article();
 				host.insert(String(args[0] ?? ''));
 				return true;
 			case 'files.list':
-				may('files');
 				return (await listArticleFiles(article().slug)).map((entry) => ({ path: entry.path, kind: entry.kind, size: entry.size }));
 			case 'files.read': {
-				may('files');
 				const response = await fetch(articleFileUrl(article().slug, `./${String(args[0] ?? '').replace(/^\.\//u, '')}`), { cache: 'no-store' });
 				if (!response.ok) throw new Error(t('读不到 {path}', { path: String(args[0]) }));
 				return response.text();
 			}
 			case 'files.write': {
-				may('files');
 				const path = String(args[0] ?? '').replace(/^\.\//u, '');
 				const slash = path.lastIndexOf('/');
 				const name = path.slice(slash + 1);
@@ -283,12 +276,10 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 				return (await uploadArticleFile(article().slug, slash < 0 ? '' : path.slice(0, slash), new File([String(args[1] ?? '')], name), { replace: true })).path;
 			}
 			case 'fetch': {
-				may('net');
 				const init = (args[1] ?? {}) as { method?: string; headers?: Record<string, string>; body?: string };
 				return appFetch(app.id, { url: String(args[0]), method: init.method, headers: init.headers, body: init.body });
 			}
 			case 'run': {
-				may('run');
 				const argv = Array.isArray(args[0]) ? args[0].map(String) : [];
 				const options = (args[1] ?? {}) as { inArticle?: boolean };
 				const id = await appRun(app.id, argv, options.inArticle ? article().slug : null);
@@ -302,15 +293,14 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			case 'toast':
 				host.toast(String(args[0] ?? ''));
 				return true;
-			// A file of its own folder (data.json…), as text: the frame cannot load it itself (it has no origin, and the
-			// dev server serves no other site's subresources), the Studio can.
+			// A file of its own folder (data.json…), as text; it can also load it itself (`fetch('./data.json')`).
 			case 'appFile': {
 				const path = String(args[0] ?? '').split('/').map(encodeURIComponent).join('/');
 				const response = await fetch(`/studio-apps/${encodeURIComponent(app.id)}/${path}`);
 				if (!response.ok) throw new Error(t('「{name}」的文件夹里没有 {path}', { name: app.name, path: String(args[0]) }));
 				return response.text();
 			}
-			// Its own settings (a key it asks for…), kept in this browser: the frame has no storage of its own.
+			// Its own settings (a key it asks for…), kept in this browser (its own `localStorage` is there too now).
 			case 'storage.get':
 				try {
 					return JSON.parse(localStorage.getItem(`studio.app.${app.id}.${String(args[0])}`) ?? 'null');

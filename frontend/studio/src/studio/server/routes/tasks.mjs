@@ -27,19 +27,18 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, programEnv, arti
 	api.post('/tasks/:id/cancel', ({ params }) => ({ cancelled: tasks.cancel(params.id) }));
 
 	api.get('/apps', async () => ({ apps: await miniApps.list() }));
-	/** The app `id`, if its app.json asks for `permission`. */
-	const allowed = async (id, permission) => {
+	/** The app `id` (every app may do all it asks: they are the author's own tools). */
+	const known = async (id) => {
 		const app = await miniApps.get(id);
 		if (!app) throw refuse(404, t('没有这个小程序'));
-		if (!app.permissions.includes(permission)) throw refuse(403, t('小程序「{name}」没有在 app.json 里要「{permission}」这个权限', { name: app.name, permission }));
 		return app;
 	};
 	api.post('/apps/:id/fetch', async ({ params, json }) => {
-		await allowed(params.id, 'net');
+		await known(params.id);
 		return proxyFetch(await json());
 	});
 	api.post('/apps/:id/run', async ({ params, json }) => {
-		const app = await allowed(params.id, 'run');
+		const app = await known(params.id);
 		const asked = await json();
 		const argv = Array.isArray(asked.argv) ? asked.argv.map(String) : [];
 		if (!argv.length) throw refuse(400, t('要给出运行的命令（argv）'));

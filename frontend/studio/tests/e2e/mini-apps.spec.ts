@@ -88,20 +88,6 @@ test('Gaussian 输入生成 takes a structure of the article and saves an input 
 	expect(saved).toMatch(/^%nprocshared=16\n%mem=32GB\n%chk=h2o\.chk\n#p B3LYP\/def2SVP opt freq em=GD3BJ\n\nh2o\n\n0 1\nO /u);
 });
 
-test('an app that did not ask for the article cannot read it', async ({ page }) => {
-	const folder = join(apps(), 'probe');
-	mkdirSync(folder, { recursive: true });
-	writeFileSync(join(folder, 'app.json'), JSON.stringify({ name: '探针', icon: '?', permissions: [] }));
-	writeFileSync(join(folder, 'app.html'), '<p id="out">…</p><script>studio.article().then((a) => { out.textContent = a.slug; }, (e) => { out.textContent = e.message; });</script>');
-	try {
-		await openStudio(page);
-		await openApp(page, '探针');
-		await expect(appFrame(page, 'probe').locator('#out')).toHaveText('「探针」的 app.json 里没有要「article」权限');
-	} finally {
-		rmSync(folder, { recursive: true, force: true });
-	}
-});
-
 /** An app of the test's own in apps/, removed after `run`. */
 async function withApp(files: Record<string, string>, run: () => Promise<void>): Promise<void> {
 	const folder = join(apps(), 'probe');
@@ -117,7 +103,7 @@ async function withApp(files: Record<string, string>, run: () => Promise<void>):
 test('a page the app’s frame goes to (a link clicked) gets nothing of the Studio; the app’s own files load', async ({ page }) => {
 	await withApp(
 		{
-			'app.json': JSON.stringify({ name: '探针', icon: '?', permissions: ['article'] }),
+			'app.json': JSON.stringify({ name: '探针', icon: '?' }),
 			'app.html': '<a id="go" href="./other.html">去别处</a><p id="out">…</p><p id="data">…</p><script>studio.article().then((a) => { out.textContent = a.slug; }); studio.appFile("data.json").then((t) => { data.textContent = JSON.parse(t).value; }, (e) => { data.textContent = e.message; });</script>',
 			'data.json': JSON.stringify({ value: '数据读到了' }),
 			// What a page out on the web could do once in the frame: say it is ready, and ask.
@@ -139,26 +125,53 @@ test('a page the app’s frame goes to (a link clicked) gets nothing of the Stud
 	);
 });
 
-test('an app may not reach this machine through studio.fetch, nor the Studio’s API opened on its own; nor may other local pages', async ({ page }) => {
+test('an app is the author’s own, not sandboxed: it loads its own files and the Studio’s, and may do all it asks', async ({ page }) => {
 	await withApp(
 		{
-			'app.json': JSON.stringify({ name: '探针', icon: '?', permissions: ['net'] }),
-			'app.html': '<p id="out">…</p><script>studio.fetch(new URL("/api/studio/agents", location.href).href, { method: "PUT", headers: { "content-type": "application/json" }, body: "{}" }).then((r) => { out.textContent = "reached " + r.status; }, (e) => { out.textContent = e.message; });</script>',
+			// No permissions asked for.
+			'app.json': JSON.stringify({ name: '探针', icon: '?' }),
+			'app.html': [
+				'<p id="article">…</p><p id="lib">…</p><p id="data">…</p><p id="module">…</p><p id="api">…</p><p id="local">…</p><p id="stored">…</p>',
+				'<script src="./lib.js"></script>',
+				'<script type="module">import { word } from "./part.mjs"; module.textContent = word;</script>',
+				'<script>',
+				'studio.article().then((a) => { article.textContent = a.slug; }, (e) => { article.textContent = e.message; });',
+				'lib.textContent = typeof fromLib === "string" ? fromLib : "no lib";',
+				'fetch("./data.json").then((r) => r.json()).then((d) => { data.textContent = d.value; }, (e) => { data.textContent = e.message; });',
+				'fetch("/api/studio/apps").then((r) => { api.textContent = String(r.status); }, (e) => { api.textContent = e.message; });',
+				'studio.fetch(new URL("/api/studio/apps", location.href).href).then((r) => { local.textContent = String(r.status); }, (e) => { local.textContent = e.message; });',
+				'localStorage.setItem("probe", "kept"); stored.textContent = localStorage.getItem("probe");',
+				'</script>',
+			].join(''),
+			'lib.js': 'var fromLib = "库读到了";',
+			'part.mjs': 'export const word = "模块读到了";',
+			'data.json': JSON.stringify({ value: '数据读到了' }),
 		},
 		async () => {
 			await openStudio(page);
-			const own = new URL(page.url()).origin;
 			await openApp(page, '探针');
-			await expect(appFrame(page, 'probe').locator('#out')).toContainText('小程序不能访问本机或局域网的地址');
-			// Opened as a page of its own, the app has no origin either: the API refuses it.
-			await page.goto(`${own}/studio-apps/probe/`);
-			expect(await page.evaluate(() => fetch('/api/studio/agents').then((r) => r.status, () => 'blocked'))).not.toBe(200);
-			// A page of another server on this machine (another port) is refused; the Studio's own is not.
-			expect((await page.request.get(`${own}/api/studio/agents`, { headers: { origin: 'http://localhost:3999' } })).status()).toBe(403);
-			expect((await page.request.get(`${own}/api/studio/agents`, { headers: { 'sec-fetch-site': 'same-site' } })).status()).toBe(403);
-			expect((await page.request.get(`${own}/api/studio/agents`, { headers: { origin: own } })).status()).toBe(200);
+			const frame = appFrame(page, 'probe');
+			await expect(frame.locator('#article')).toHaveText(slug);
+			await expect(frame.locator('#lib')).toHaveText('库读到了');
+			await expect(frame.locator('#module')).toHaveText('模块读到了');
+			await expect(frame.locator('#data')).toHaveText('数据读到了');
+			await expect(frame.locator('#api')).toHaveText('200');
+			await expect(frame.locator('#local')).toHaveText('200');
+			await expect(frame.locator('#stored')).toHaveText('kept');
 		},
 	);
+});
+
+test('the Studio’s API and its apps are still not another server’s, nor another site’s', async ({ page }) => {
+	await openStudio(page);
+	const own = new URL(page.url()).origin;
+	// A page of another server on this machine (another port) is refused; the Studio's own is not.
+	expect((await page.request.get(`${own}/api/studio/agents`, { headers: { origin: 'http://localhost:3999' } })).status()).toBe(403);
+	expect((await page.request.get(`${own}/api/studio/agents`, { headers: { 'sec-fetch-site': 'same-site' } })).status()).toBe(403);
+	expect((await page.request.get(`${own}/api/studio/agents`, { headers: { origin: own } })).status()).toBe(200);
+	// Not sandboxed, an app is not another site's to open: it would act as the Studio.
+	expect((await page.request.get(`${own}/studio-apps/energy-units/`, { headers: { 'sec-fetch-site': 'cross-site' } })).status()).toBe(403);
+	expect((await page.request.get(`${own}/studio-apps/energy-units/`, { headers: { 'sec-fetch-site': 'same-origin' } })).status()).toBe(200);
 });
 
 test('a window opens roomy, is sized from its edges and corners, made large by a double-click, and opens again as it was left', async ({ page }) => {

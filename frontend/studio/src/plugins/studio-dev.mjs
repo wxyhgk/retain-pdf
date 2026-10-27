@@ -35,6 +35,27 @@ import { t } from '@blog/i18n/index.mjs';
  * checked in src/studio/server/api.mjs).
  * @param {{ site?: string }} [options] the blog's address, so links to its articles written in full count as theirs
  */
+/**
+ * Why the server ends, said where its output goes (.astro/dev.log, for Studio.app): who called `process.exit` (its
+ * stack), the app gone (its stdin closed), an error nothing caught, its exit code. Said only: nothing is changed.
+ */
+let toldWhyItEnds = false;
+function sayWhyItEnds() {
+	if (toldWhyItEnds) return;
+	toldWhyItEnds = true;
+	const say = (what) => process.stderr.write(`[studio] ${new Date().toISOString()} 服务器要退出：${what}\n`); // i18n-ignore: developer log
+	const exit = process.exit.bind(process);
+	process.exit = (code) => {
+		say(`process.exit(${code ?? ''})，调用它的是：\n${new Error('exit').stack?.split('\n').slice(2, 12).join('\n')}`);
+		return exit(code);
+	};
+	// Listened to only where listening changes nothing: a listener for a signal, or for a rejection, would change how
+	// the process ends (Node's own way, and tasks.mjs's, which looks at how many listen).
+	process.stdin.prependListener?.('end', () => say('stdin 关了（Studio.app 退出了？）'));
+	process.on('uncaughtExceptionMonitor', (error) => say(`没接住的错误：${error?.stack ?? error}`));
+	process.once('exit', (code) => say(`退出码 ${code}`));
+}
+
 export default function studioDev({ site } = {}) {
 	return {
 		name: 'local-article-studio',
@@ -50,6 +71,7 @@ export default function studioDev({ site } = {}) {
 			return modules.filter((module) => module.importers.size > 0 || module.isSelfAccepting);
 		},
 		configureServer(server) {
+			sayWhyItEnds();
 			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
 			const testBlogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
 			const blogRoot = studioBlogRoot(server.config.root);
@@ -177,9 +199,13 @@ export default function studioDev({ site } = {}) {
 
 			server.middlewares.use(async (request, response, next) => {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];
-				// A 小程序's files, for its frame (which has no origin of its own: it asks nothing of the Studio's API but through `studio`).
+				// A 小程序's files, for its frame: the Studio's own origin, not sandboxed (the author's own tools).
 				const appFileMatch = rawPathname.match(/^\/studio-apps\/([^/]+)\/(.*)$/u);
 				if (appFileMatch && request.method === 'GET') {
+					// Only to the Studio's own pages (its frames, the app's own files) and to the author typing the address:
+					// not sandboxed, an app opened by another site would act as the Studio.
+					const site = request.headers['sec-fetch-site'];
+					if (site && site !== 'same-origin' && site !== 'none') return sendJson(response, 403, { error: t('小程序只能在 Studio 里打开') });
 					try {
 						const found = await miniApps.file(decodePathComponent(appFileMatch[1]), decodePathComponent(appFileMatch[2]));
 						if (!found) return sendJson(response, 404, { error: t('没有这个小程序文件') });
@@ -187,9 +213,6 @@ export default function studioDev({ site } = {}) {
 							'Content-Type': found.type,
 							'Cache-Control': 'no-store',
 							'X-Content-Type-Options': 'nosniff',
-							// Never the Studio's origin, in its frame or opened on its own: a site opening this address
-							// gets a page that cannot call the Studio's API.
-							'Content-Security-Policy': 'sandbox allow-scripts allow-forms allow-popups allow-modals allow-downloads',
 						});
 						return response.end(found.body);
 					} catch (error) {

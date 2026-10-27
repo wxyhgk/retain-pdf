@@ -15,9 +15,12 @@ import { t } from '@blog/i18n/index.mjs';
  *                    "width": 360, "height": 420, "permissions": ["insert"] }
  *       app.html   what it is: markup, style, script (and other files beside it)
  *
- * Each runs in a floating window of the Studio, in a frame with no origin of
- * its own (it cannot reach the Studio), and does what it may through `studio`
- * (APP_BRIDGE): what its `permissions` name, the Studio checking each call.
+ * Each runs in a floating window of the Studio, in a frame of the Studio's own
+ * origin (`/studio-apps/<id>/`): the author's own tools, not sandboxed (as the
+ * author has them). It loads the files of its folder as any page does
+ * (`./lib.js`, `fetch('./data.json')`), and `/vendor/…`; `studio` (BRIDGE) does
+ * what a page cannot: the article, its files, inserting, fetching across sites,
+ * running commands. `permissions` in app.json is no longer asked for.
  */
 
 export const APP_PERMISSIONS = Object.freeze({
@@ -29,7 +32,38 @@ export const APP_PERMISSIONS = Object.freeze({
 });
 
 const ID = /^[a-z0-9][a-z0-9-]{0,47}$/u;
-const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.txt': 'text/plain; charset=utf-8', '.csv': 'text/csv; charset=utf-8' };
+const TEXT = 'text/plain; charset=utf-8';
+const TYPES = {
+	'.html': 'text/html; charset=utf-8',
+	'.js': 'text/javascript; charset=utf-8',
+	'.mjs': 'text/javascript; charset=utf-8',
+	'.css': 'text/css; charset=utf-8',
+	'.json': 'application/json; charset=utf-8',
+	'.map': 'application/json; charset=utf-8',
+	'.wasm': 'application/wasm',
+	'.svg': 'image/svg+xml',
+	'.png': 'image/png',
+	'.jpg': 'image/jpeg',
+	'.jpeg': 'image/jpeg',
+	'.gif': 'image/gif',
+	'.webp': 'image/webp',
+	'.ico': 'image/x-icon',
+	'.woff': 'font/woff',
+	'.woff2': 'font/woff2',
+	'.ttf': 'font/ttf',
+	'.txt': TEXT,
+	'.md': TEXT,
+	'.csv': 'text/csv; charset=utf-8',
+	'.tsv': 'text/tab-separated-values; charset=utf-8',
+	// Molecules and inputs, as text.
+	'.sdf': TEXT,
+	'.mol': TEXT,
+	'.xyz': TEXT,
+	'.pdb': TEXT,
+	'.cif': TEXT,
+	'.gjf': TEXT,
+	'.inp': TEXT,
+};
 
 /** Messages between an app and the Studio carry this. */
 export const APP_MESSAGE = 'studio-app';
@@ -102,9 +136,9 @@ export class MiniApps {
 	}
 }
 
-/** What `studio.fetch` asks, fetched by the Studio: to the internet only (public-fetch.mjs). */
+/** What `studio.fetch` asks, fetched by the Studio: anywhere, this machine and its network too (an app's own server). */
 export function proxyFetch(asked) {
-	return publicFetch(asked);
+	return publicFetch(asked, { allowed: () => true });
 }
 
 const STYLE = `
