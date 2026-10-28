@@ -690,6 +690,17 @@ fn open_own_window(app: &AppHandle, url: Url) {
         .inner_size(size("w", 460.0), size("h", 760.0))
         .min_inner_size(280.0, 200.0)
         .disable_drag_drop_handler()
+        // The page's title is the window's; `studio:close` asks it shut (put back into the Studio, its 显示方式):
+        // WebKit lets a page shut only a window it opened itself.
+        .on_document_title_changed(|window, title| {
+            if title == "studio:close" {
+                thread::spawn(move || {
+                    let _ = window.close();
+                });
+            } else if !title.is_empty() {
+                let _ = window.set_title(&title);
+            }
+        })
         .on_navigation(move |url| {
             // Put back into the Studio (its 显示方式): shut. WebKit lets a page shut only a window it opened itself, so
             // the page asks by going to studio-action://close.

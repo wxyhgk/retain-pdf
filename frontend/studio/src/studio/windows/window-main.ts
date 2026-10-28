@@ -4,7 +4,7 @@ import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
 
 import { t } from '@blog/i18n/index.mjs';
-import { appServer, listMiniApps, reportAppError } from '../api/client';
+import { appServer, keepNote, listMiniApps, reportAppError } from '../api/client';
 import { createAiPanel } from '../ai/ai-panel';
 import { showContextMenu } from '../common/context-menu';
 import { showToast } from '../common/toast';
@@ -48,16 +48,42 @@ function note(text: string): HTMLElement {
  * whose window this is, the page asks Studio.app to (studio-action://close).
  */
 function shutWindow(): void {
+	tell('关窗：先 window.close()'); // i18n-ignore: developer log
+	// A popup the Studio opened (in a browser): shut at once.
 	window.close();
 	window.setTimeout(() => {
-		if (!window.closed) location.href = 'studio-action://close';
-	}, 200);
+		if (window.closed) return;
+		// The Mac app's window: Studio.app shuts it seeing this title, or going to studio-action://close.
+		tell('关窗：window.close() 没关掉，改标题请 Studio.app 关'); // i18n-ignore: developer log
+		document.title = 'studio:close';
+		window.setTimeout(() => {
+			if (window.closed) return;
+			tell('关窗：标题也没关掉，跳到 studio-action://close'); // i18n-ignore: developer log
+			location.href = 'studio-action://close';
+		}, 400);
+	}, 150);
+}
+
+/** What happened in this window, kept in the blog's .astro/studio-notes.log (to find out why something did not work). */
+function tell(what: string): void {
+	void keepNote(`[独立窗口 ${location.search}] ${what}（${navigator.userAgent}${'__TAURI_INTERNALS__' in window ? '，Tauri' : ''}）`).catch(() => {}); // i18n-ignore: developer log
 }
 
 /** 显示方式 in a window of its own: back into the Studio, shown there so (侧栏, 悬浮, 全屏); or this window, as it is. */
 function layoutMenu(anchor: HTMLElement, back: (where: 'side' | 'float' | 'full') => Promise<unknown>): void {
-	const go = (where: 'side' | 'float' | 'full') =>
-		void back(where).then(shutWindow, (error: unknown) => showToast(error instanceof Error ? error.message : String(error), true));
+	const go = (where: 'side' | 'float' | 'full') => {
+		tell(`显示方式：选了 ${where}`); // i18n-ignore: developer log
+		void back(where).then(
+			() => {
+				tell(`显示方式：Studio 已经放回 ${where}`); // i18n-ignore: developer log
+				shutWindow();
+			},
+			(error: unknown) => {
+				tell(`显示方式：Studio 没能放回：${error instanceof Error ? error.message : String(error)}`); // i18n-ignore: developer log
+				showToast(error instanceof Error ? error.message : String(error), true);
+			},
+		);
+	};
 	showContextMenu(
 		[
 			{ label: t('侧栏'), icon: PanelRight, action: () => go('side') },
