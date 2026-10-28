@@ -5,6 +5,9 @@
 //! leaves it alone. Otherwise the app runs `astro dev` itself and the server lives as long as the
 //! app does: its stdin is a pipe from the app, and when that closes (the app quits, or crashes)
 //! the server stops. Its output goes to `.astro/dev.log`, where `astro dev --background` keeps it.
+//! When that server ends with the app still open, the app writes how it ended (the signal or the
+//! exit code, and what was running then) to `.astro/dev-exits.log` and starts it again; the log of
+//! the run before is kept as `.astro/dev.previous.log`.
 //!
 //! An app opened from the Finder gets almost no PATH, so the server is started with the
 //! environment of a login shell: it finds node and cargo, and the Studio's terminal gets the
@@ -15,9 +18,10 @@
 mod dialogs;
 
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::Read;
+use std::fs::{File, OpenOptions};
+use std::io::{Read, Write};
 use std::net::{TcpStream, ToSocketAddrs};
+use std::os::unix::process::ExitStatusExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -42,6 +46,8 @@ struct State {
     status: Mutex<(String, bool)>,
     /// The server the app started; it stops with the app.
     started: Mutex<Option<Child>>,
+    /// When the server the app started ended by itself: it is started again, not over and over.
+    ended: Mutex<Vec<Instant>>,
     /// Where the last download is going (on macOS the finished event doesn't say).
     download: Mutex<Option<PathBuf>>,
 }
@@ -196,6 +202,7 @@ fn start(app: &AppHandle, repo: &Path) -> Result<DevServer, String> {
         .ok_or("找不到 node。在终端里装好 node（node --version 能用）以后再打开。")?;
     let log_path = repo.join(".astro/dev.log");
     let _ = fs::create_dir_all(repo.join(".astro"));
+    let _ = fs::rename(&log_path, repo.join(".astro/dev.previous.log"));
     let log = File::create(&log_path).map_err(|error| format!("没能写 .astro/dev.log：{error}"))?;
     let mut child = Command::new(node)
         .args([
@@ -220,6 +227,7 @@ fn start(app: &AppHandle, repo: &Path) -> Result<DevServer, String> {
     loop {
         if let Some(server) = running(repo).filter(|server| server.pid == child.id() as i32) {
             *app.state::<State>().started.lock().unwrap() = Some(child);
+            watch_started(app.clone(), repo.to_path_buf());
             return Ok(server);
         }
         let ended = child.try_wait().ok().flatten().is_some();
@@ -324,6 +332,113 @@ fn wait_for(url: &Url, patience: Duration) -> Result<(), String> {
     }
 }
 
+/// Waits for the server the app started to end. When it ends with the app still open (the app
+/// takes it when it quits), says how in `.astro/dev-exits.log` and starts it again: the page
+/// reconnects by itself (Vite's client reloads it once the server answers).
+fn watch_started(app: AppHandle, repo: PathBuf) {
+    thread::spawn(move || {
+        let state = app.state::<State>();
+        let status = loop {
+            thread::sleep(Duration::from_millis(300));
+            let mut started = state.started.lock().unwrap();
+            let Some(child) = started.as_mut() else {
+                return;
+            };
+            if let Ok(Some(status)) = child.try_wait() {
+                started.take();
+                break status;
+            }
+        };
+        let how = match status.signal() {
+            Some(signal) => format!("被信号 {signal}（{}）结束", signal_name(signal)),
+            None => format!("自己退出了，退出码 {}", status.code().unwrap_or(-1)),
+        };
+        note_exit(&repo, &how);
+        let recent = {
+            let mut ended = state.ended.lock().unwrap();
+            ended.retain(|at| at.elapsed() < Duration::from_secs(120));
+            ended.push(Instant::now());
+            ended.len()
+        };
+        if recent > 3 {
+            show(&app, &format!("服务器两分钟里停了 {recent} 次（这次{how}），不再自动重启。经过记在博客的 .astro/dev-exits.log，退出 Studio 再打开试试。"), true);
+            return;
+        }
+        match find_or_start(&app) {
+            Ok(url) => {
+                // Started on another port (the old one still taken): the window goes there.
+                if let Some(window) = app.get_webview_window("main") {
+                    let moved = window.url().map_or(true, |now| {
+                        now.port_or_known_default() != url.port_or_known_default()
+                    });
+                    if moved {
+                        let _ = window.navigate(url);
+                    }
+                }
+            }
+            Err(message) => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.navigate(Url::parse("tauri://localhost/index.html").unwrap());
+                }
+                show(&app, &message, true);
+            }
+        }
+    });
+}
+
+fn signal_name(signal: i32) -> &'static str {
+    match signal {
+        libc::SIGHUP => "SIGHUP",
+        libc::SIGINT => "SIGINT，像 Ctrl-C",
+        libc::SIGKILL => "SIGKILL，被强行杀掉",
+        libc::SIGTERM => "SIGTERM，被叫停",
+        libc::SIGABRT => "SIGABRT，node 自己崩了",
+        libc::SIGSEGV => "SIGSEGV，node 自己崩了",
+        libc::SIGBUS => "SIGBUS，node 自己崩了",
+        libc::SIGPIPE => "SIGPIPE",
+        _ => "别的信号",
+    }
+}
+
+/// Adds to `.astro/dev-exits.log`: when, how, the end of the server's log, and the node, npm and
+/// kill programs running then (who might have stopped it).
+fn note_exit(repo: &Path, how: &str) {
+    let when = Command::new("/bin/date")
+        .arg("+%F %T")
+        .output()
+        .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_owned())
+        .unwrap_or_default();
+    let log = fs::read_to_string(repo.join(".astro/dev.log")).unwrap_or_default();
+    let tail: Vec<&str> = log.lines().rev().take(15).collect();
+    let running = Command::new("/bin/ps")
+        .args(["-axww", "-o", "pid,ppid,etime,command"])
+        .output()
+        .map(|out| {
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .filter(|line| {
+                    ["node", "npm", "astro", "kill", "pi "]
+                        .iter()
+                        .any(|word| line.contains(word))
+                })
+                .map(|line| line.chars().take(240).collect::<String>())
+                .collect::<Vec<_>>()
+                .join("\n")
+        })
+        .unwrap_or_default();
+    let said = format!(
+        "==== {when} 服务器{how}\n-- 它的记录最后几行：\n{}\n-- 当时在跑的：\n{running}\n\n",
+        tail.into_iter().rev().collect::<Vec<_>>().join("\n")
+    );
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(repo.join(".astro/dev-exits.log"))
+    {
+        let _ = file.write_all(said.as_bytes());
+    }
+}
+
 /// Stops the server the app started (closing its lifeline) and waits a little for it to tidy up.
 fn stop_started(app: &AppHandle) {
     let Some(mut child) = app.state::<State>().started.lock().unwrap().take() else {
@@ -364,9 +479,12 @@ const PLAYER_SITES: &[&str] = &[
 fn is_player(url: &Url) -> bool {
     url.scheme() == "https"
         && url.host_str().is_some_and(|host| {
-            PLAYER_SITES
-                .iter()
-                .any(|site| host == *site || host.strip_suffix(site).is_some_and(|rest| rest.ends_with('.')))
+            PLAYER_SITES.iter().any(|site| {
+                host == *site
+                    || host
+                        .strip_suffix(site)
+                        .is_some_and(|rest| rest.ends_with('.'))
+            })
         })
 }
 
