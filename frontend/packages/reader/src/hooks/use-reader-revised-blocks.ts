@@ -2,7 +2,7 @@
 // 译文栏给这些块画个小标记，悬停时写「改过 N 次」。读失败（旧任务没有修订记录、接口不在）就当没有，
 // 阅读照常。
 import { useEffect, useState } from "react";
-import { API_PREFIX, readerSessionDataPort } from "../external.js";
+import { readerSessionDataPort } from "../external.js";
 
 export type RevisedBlocks = ReadonlyMap<string, number>;
 
@@ -26,13 +26,10 @@ export function useReaderRevisedBlocks(jobId: string, enabled = true): RevisedBl
     setBlocks((current) => (current.size ? new Map() : current));
     const id = `${jobId || ""}`.trim();
     if (!enabled || !id) return undefined;
+    const fetchGroups = readerSessionDataPort().fetchRevisionGroups;
+    if (!fetchGroups) return undefined;
     let disposed = false;
-    const port = readerSessionDataPort();
-    const url = port.resolveResourceUrl(
-      `${API_PREFIX}/jobs/${encodeURIComponent(id)}/data/revisions?group_by=reader_item_id&limit=1000`,
-    );
-    port.fetchProtected(url)
-      .then((response) => (response.ok ? response.json() : null))
+    fetchGroups(id)
       .then((payload) => {
         if (!disposed && payload) setBlocks(parseRevisedBlocks(payload));
       })

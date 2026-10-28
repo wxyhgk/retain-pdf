@@ -54,11 +54,10 @@ export function sessionKeyForScope(scope: TerminalScope): string {
  * 不该让终端面板整个坏掉。
  */
 export async function loadCollectionOptions(
-  fetchJson: (path: string) => Promise<unknown>,
+  listCollections: () => Promise<{ collections?: unknown } | null>,
 ): Promise<CollectionOption[]> {
   try {
-    const payload = await fetchJson("/api/v1/collections");
-    const raw = (payload as { data?: { collections?: unknown } } | null)?.data?.collections;
+    const raw = (await listCollections())?.collections;
     if (!Array.isArray(raw)) return [];
     return raw.flatMap((item) => {
       const row = item as Record<string, unknown>;
@@ -83,16 +82,11 @@ export async function loadCollectionOptions(
  * "能不能切"和"不能的话怎么说"，一个可空字符串就够，少一层解构。
  */
 export async function ensureCollectionWorkspace(
-  fetchJson: (path: string, init?: { method?: string }) => Promise<unknown>,
+  materialize: (collectionId: string) => Promise<{ books?: unknown } | null>,
   collectionId: string,
 ): Promise<string | null> {
   try {
-    // 物化会重建磁盘上的目录，所以是 POST（2026-10-19 前是 GET，旧写法后端标了旧地址）。
-    const payload = await fetchJson(
-      `/api/v1/collections/${encodeURIComponent(collectionId)}/agent-workspace`,
-      { method: "POST" },
-    );
-    const data = (payload as { data?: { books?: unknown } } | null)?.data;
+    const data = await materialize(collectionId);
     const books = Array.isArray(data?.books) ? data.books : null;
     if (!books) return "工作区清单格式不对";
     // 一本都没物化出来（全都还没翻译完）。切过去 agent 什么也看不到，

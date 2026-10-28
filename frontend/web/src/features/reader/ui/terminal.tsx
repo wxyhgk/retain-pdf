@@ -188,14 +188,10 @@ function ReaderTerminalPanel({ open, sessionKey, pendingInput, onOpenBoard, base
         tabId={activeTab.id}
         scope={activeTab.scope}
         jobId={sessionKey}
-        baseUrl={baseUrl}
-        apiKey={apiKey}
         onChange={(tabId, scope) => setTabs((state) => setTabScope(state, tabId, scope))}
       />
       <TerminalBoardStrip
         jobId={sessionKey}
-        baseUrl={baseUrl}
-        apiKey={apiKey}
         open={open}
         onOpen={onOpenBoard}
       />

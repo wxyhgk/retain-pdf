@@ -7,6 +7,7 @@ export * from "./core.js";
 export * from "./diagnostics.js";
 export * from "./durations.js";
 export * from "./elapsed-view-model.js";
+export * from "./file-paths.js";
 export * from "./formatters.js";
 export * from "./job-detail-formatters.js";
 export * from "./normalize.js";

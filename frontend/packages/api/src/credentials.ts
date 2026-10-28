@@ -25,12 +25,6 @@ export type CredentialMutationView = {
   revision: number;
 };
 
-export type CredentialDeleteView = {
-  credential_ref: string;
-  deleted: boolean;
-  revision: number;
-};
-
 export type CreateCredentialInput = {
   kind: CredentialKind;
   provider?: string;
@@ -103,16 +97,3 @@ export function updateCredential(
   );
 }
 
-export function deleteCredential(
-  apiPrefix: string | undefined,
-  credentialRef: string,
-  expectedRevision?: number,
-): Promise<CredentialDeleteView> {
-  const query = Number.isFinite(expectedRevision)
-    ? `?expected_revision=${encodeURIComponent(String(expectedRevision))}`
-    : "";
-  return credentialRequest(
-    `${buildApiEndpoint(apiPrefix, `credentials/${encodeURIComponent(credentialRef)}`)}${query}`,
-    { method: "DELETE" },
-  );
-}

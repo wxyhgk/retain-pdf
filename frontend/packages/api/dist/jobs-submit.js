@@ -1,5 +1,5 @@
 // jobs-submit — pure
-import { buildApiEndpoint, submitUploadRequest, summarizeJobRequestContext } from "./http.js";
+import { buildUploadsEndpoint, submitUploadRequest, summarizeJobRequestContext } from "./http.js";
 import * as generated from "./generated/create-job.js";
 import { submitFailure } from "./request.js";
 function isObject(value) {
@@ -38,7 +38,7 @@ async function uploadDirectFile(apiPrefix, payload) {
     const file = payload.file || payload.__file || source.file;
     if (!(file instanceof Blob))
         return "";
-    const uploaded = await submitUploadRequest(buildApiEndpoint(apiPrefix, "uploads"), collectUploadFormData(file));
+    const uploaded = await submitUploadRequest(buildUploadsEndpoint(apiPrefix), collectUploadFormData(file));
     return `${uploaded?.upload_id || ""}`.trim();
 }
 export async function submitJobRequest(apiPrefix, payload) {

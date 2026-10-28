@@ -17,6 +17,11 @@ export function buildApiEndpoint(apiPrefix: string | undefined, relativePath = "
   return buildApiUrl(apiPrefix, relativePath);
 }
 
+/** 上传 PDF 的地址（POST /uploads）。网页要上传进度，用 XHR 自己发，地址也从这里拿。 */
+export function buildUploadsEndpoint(apiPrefix: string | undefined): string {
+  return buildApiEndpoint(apiPrefix, "uploads");
+}
+
 // 所有任务（含只做 OCR 的）都在 /jobs 下：建、读、取消都不再用 /ocr/jobs。
 export function buildJobsEndpoint(apiPrefix: string | undefined): string {
   return buildApiEndpoint(apiPrefix, "jobs");

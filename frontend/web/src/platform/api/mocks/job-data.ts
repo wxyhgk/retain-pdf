@@ -32,10 +32,6 @@ const OBJECTS: Record<string, Row> = {
   style_guide: { complete: false, llm_status: "failed", register: "", audience: "", domain: { name: "编程语言理论" }, notes: "" },
 };
 
-export async function fetchJobDataCatalog(jobId: string): Promise<JobDataCatalogView> {
-  return { job_id: jobId, datasets: [] } as unknown as JobDataCatalogView;
-}
-
 export async function fetchJobData(jobId: string, _apiPrefix: string | undefined, dataset: string, query: JobDataQuery = {}): Promise<JobDataView> {
   if (dataset in OBJECTS) {
     return { job_id: jobId, dataset, kind: "object", available: true, total: 1, offset: 0, limit: 1, object: OBJECTS[dataset] } as JobDataView;

@@ -118,3 +118,27 @@ test("宿主单独提供可选产物加载（regions / metadata），供 session
     env.restore();
   }
 });
+
+test("按书编号读书、读修订分组：宿主走 API 层，阅读包不再自己拼地址", async () => {
+  const env = installReaderDom({ url: "http://localhost/reader.html?document_id=doc%2F1" });
+  const requests = [];
+  const previous = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = String(input?.url ?? input);
+    requests.push(url);
+    if (url.includes("/data/revisions")) return envelope({ dataset: "revisions", groups: [{ value: "p001-b0001", count: 2 }] });
+    return envelope({ document_id: "doc/1", active_job_id: "job-9", active_version_id: "v1" });
+  };
+  try {
+    const { sessionDataPort } = await import("../../src/features/reader/domain/host/data.ts");
+    const doc = await sessionDataPort.fetchDocument("doc/1");
+    assert.equal(doc.active_job_id, "job-9", "拆了信封交回书的记录");
+    const groups = await sessionDataPort.fetchRevisionGroups("job 9");
+    assert.deepEqual(groups.groups, [{ value: "p001-b0001", count: 2 }]);
+    assert.match(requests[0], /\/api\/v1\/documents\/doc%2F1$/);
+    assert.match(requests[1], /\/api\/v1\/jobs\/job%209\/data\/revisions\?group_by=reader_item_id&limit=1000$/);
+  } finally {
+    globalThis.fetch = previous;
+    env.restore();
+  }
+});

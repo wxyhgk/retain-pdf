@@ -1,5 +1,5 @@
 // jobs-submit — pure
-import { buildApiEndpoint, submitUploadRequest, summarizeJobRequestContext } from "./http.js";
+import { buildUploadsEndpoint, submitUploadRequest, summarizeJobRequestContext } from "./http.js";
 import * as generated from "./generated/create-job.js";
 import { submitFailure } from "./request.js";
 import type { CreateJobInput } from "@retainpdf/contracts/create-job";
@@ -41,7 +41,7 @@ async function uploadDirectFile(apiPrefix: string, payload: Record<string, unkno
   const source = (isObject(payload.source) ? payload.source : {}) as Record<string, unknown>;
   const file = (payload as any).file || (payload as any).__file || (source as any).file;
   if (!(file instanceof Blob)) return "";
-  const uploaded = await submitUploadRequest(buildApiEndpoint(apiPrefix, "uploads"), collectUploadFormData(file));
+  const uploaded = await submitUploadRequest(buildUploadsEndpoint(apiPrefix), collectUploadFormData(file));
   return `${uploaded?.upload_id || ""}`.trim();
 }
 

@@ -86,7 +86,7 @@ function createUploadHandler({ balanceStatus = "ok", balanceRejects = false } = 
       if (balanceRejects) throw new Error("balance down");
       return { status: balanceStatus };
     },
-    configPort: createUploadConfigPort({ buildEndpoint: () => "/api/uploads" }),
+    configPort: createUploadConfigPort({ buildUploadUrl: () => "/api/uploads" }),
     frontMaxBytes: 1024 * 1024,
     frontMaxPageCount: 0,
     defaultFileLabel: "选择 PDF",

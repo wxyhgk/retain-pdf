@@ -1,14 +1,10 @@
-import { buildApiUrl } from "@/platform/config/runtime.js";
+import { buildUploadsEndpoint } from "@/platform/api/index.js";
 
 export function createUploadConfigPort({
-  buildEndpoint = buildApiUrl,
-}: { buildEndpoint?: (apiPrefix?: string, relativePath?: string) => string } = {}) {
-  function buildUploadUrl(apiPrefix = "") {
-    return buildEndpoint(apiPrefix, "uploads");
-  }
-
+  buildUploadUrl = buildUploadsEndpoint,
+}: { buildUploadUrl?: (apiPrefix?: string) => string } = {}) {
   return Object.freeze({
-    buildUploadUrl,
+    buildUploadUrl: (apiPrefix = "") => buildUploadUrl(apiPrefix),
   });
 }
 

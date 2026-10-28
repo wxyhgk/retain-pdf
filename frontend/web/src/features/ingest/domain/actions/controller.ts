@@ -6,6 +6,7 @@ import {
   type OcrCredentialCheckResult,
   type SetTextFn,
 } from "./submit-flow.js";
+import { fetchProtected } from "@/platform/api/index.js";
 import { defaultAppActionsConfigPort } from "./config-port.js";
 import { createAppActionsRuntimeEnvPort } from "./runtime-env-port.js";
 import { createAppActionsJobSnapshotPort } from "./job-snapshot-port.js";
@@ -245,7 +246,8 @@ export function mountAppActionsFeature({
 
   async function checkApiConnectivity() {
     try {
-      const resp = await fetch(buildApiEndpoint("", "health"));
+      // 走 apiFetch：多用户模式下带上登录 Cookie，401 进统一处理。
+      const resp = await fetchProtected(buildApiEndpoint("", "health"));
       if (!resp.ok) {
         throw new Error(`health ${resp.status}`);
       }

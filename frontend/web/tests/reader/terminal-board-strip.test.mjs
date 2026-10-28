@@ -13,10 +13,12 @@ import assert from "node:assert/strict";
 import { wait, waitFor } from "../helpers/async.mjs";
 import { makeDom as makeDomWith, READER_PANEL_DOM_KEYS } from "../helpers/dom.mjs";
 
-const makeDom = () => makeDomWith("", {
-  url: "http://localhost/reader.html",
-  keys: READER_PANEL_DOM_KEYS,
-});
+// 产物条走 API 层（apiFetch），地址和 key 取页面的运行时配置。
+const makeDom = () => {
+  const dom = makeDomWith("", { url: "http://localhost/reader.html", keys: READER_PANEL_DOM_KEYS });
+  dom.window.__FRONT_RUNTIME_CONFIG__ = { apiBase: "http://localhost:8000", xApiKey: "k" };
+  return dom;
+};
 
 /** 端点真正返回的形状：`ApiResponse::ok(...)` 包成 {code, message, data}。 */
 const envelope = (items) => ({
@@ -49,7 +51,7 @@ test("agent 写进 board/ 的 HTML 会出现在终端上方的产物条里", asy
     ]) };
   };
   const { root, host } = await mountStrip(dom, {
-    jobId: "job 1", baseUrl: "http://localhost:8000", apiKey: "k", open: true, onOpen() {},
+    jobId: "job 1", open: true, onOpen() {},
   });
   await waitFor(() => seen.length, "去列了一次 board/");
   assert.equal(seen[0].url, "http://localhost:8000/api/v1/jobs/job%201/ai/board",
@@ -69,7 +71,7 @@ test("点产物条把文件名交给 onOpen —— 这是「在左边打开」�
   ]) });
   const opened = [];
   const { root, host } = await mountStrip(dom, {
-    jobId: "job-1", baseUrl: "http://localhost:8000", apiKey: "k", open: true,
+    jobId: "job-1", open: true,
     onOpen(name) { opened.push(name); },
   });
   await waitFor(() => items(host).length, "产物条出现");
@@ -86,7 +88,7 @@ test("面板没开时不去轮询 —— 这条 4 秒一次，关着也跑等于
   let calls = 0;
   globalThis.fetch = async () => { calls += 1; return { ok: true, json: async () => envelope([]) }; };
   const { root, host } = await mountStrip(dom, {
-    jobId: "job-1", baseUrl: "http://localhost:8000", apiKey: "k", open: false, onOpen() {},
+    jobId: "job-1", open: false, onOpen() {},
   });
   assert.equal(calls, 0, "面板关着也在列 board/");
   assert.equal(items(host).length, 0);
@@ -107,7 +109,7 @@ test("端点返回的形状不对时，产物条不清空也不报错", async ()
     return { ok: true, json: async () => ({ code: 0, message: "ok", data: {} }) };
   };
   const { root, host } = await mountStrip(dom, {
-    jobId: "job-1", baseUrl: "http://localhost:8000", apiKey: "k", open: true, onOpen() {},
+    jobId: "job-1", open: true, onOpen() {},
   });
   await waitFor(() => items(host).length, "产物条出现");
   await waitFor(() => round >= 2, () => `第二轮轮询发生（4 秒一次），实际只轮了 ${round} 次`);

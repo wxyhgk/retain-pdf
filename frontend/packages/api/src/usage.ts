@@ -19,7 +19,3 @@ export function fetchUsageSummary(apiPrefix?: string): Promise<UsageSummaryView>
   return generated.getUsageSummary(apiPrefix, {}, usageError(""));
 }
 
-/** 单个任务；任务不存在时后端返回 404。 */
-export function fetchJobUsage(jobId: string, apiPrefix?: string): Promise<UsageSummaryView> {
-  return generated.getJobUsage(apiPrefix, { job_id: jobId }, usageError("这个任务的"));
-}

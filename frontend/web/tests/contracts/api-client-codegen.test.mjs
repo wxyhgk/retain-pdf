@@ -18,7 +18,9 @@ globalThis.window = {
 };
 
 const { fetchDocumentList, fetchDocumentByJobId, patchDocument, deleteDocument } = await import("@retainpdf/api/documents");
-const { listCollections, removeDocumentFromCollection } = await import("@retainpdf/api/collections");
+const { listCollections, materializeCollectionWorkspace, removeDocumentFromCollection } = await import("@retainpdf/api/collections");
+const { jobBoardFileUrl, listJobBoard } = await import("@retainpdf/api/ai");
+const { buildUploadsEndpoint } = await import("@retainpdf/api/http");
 const { searchLibrary } = await import("@retainpdf/api/search");
 
 function respond(status, body) {
@@ -114,13 +116,36 @@ test("合集、检索：固定文案的报错，空查询不发请求", async ()
   assert.equal(none.length, 0);
 });
 
+test("契约里还没有的几条借 request() 发：物化文件夹工作区用 POST，画板列表和文件地址转义 job id", async () => {
+  const calls = await withFetch(
+    () => respond(200, { code: 0, data: { books: [{ job_id: "job-1" }] } }),
+    async () => assert.deepEqual(await materializeCollectionWorkspace("/api/v1", "col/1"), { books: [{ job_id: "job-1" }] }),
+  );
+  assert.equal(calls[0].url, "http://127.0.0.1:41000/api/v1/collections/col%2F1/agent-workspace");
+  assert.equal(calls[0].init.method, "POST", "物化会重建磁盘目录，GET 是后端标了旧地址的写法");
+  assert.equal(calls[0].init.headers["X-API-Key"], "codegen-key");
+  // 文件夹被删了是 404，终端作用域条靠 status 说「这个文件夹已经不存在了」。
+  await withFetch(
+    () => respond(404, { code: 40400, message: "not found" }),
+    () => assert.rejects(materializeCollectionWorkspace("/api/v1", "col-1"), (error) => error.status === 404),
+  );
+
+  const board = await withFetch(
+    () => respond(200, { code: 0, data: { schema: "retainpdf_ai_board_v1", items: [] } }),
+    async () => assert.deepEqual((await listJobBoard("/api/v1", "job 1")).items, []),
+  );
+  assert.equal(board[0].url, "http://127.0.0.1:41000/api/v1/jobs/job%201/ai/board");
+  assert.equal(jobBoardFileUrl("/api/v1", "job 1", "a b.html"), "http://127.0.0.1:41000/api/v1/jobs/job%201/ai/board/a%20b.html");
+  assert.equal(buildUploadsEndpoint("/api/v1"), "http://127.0.0.1:41000/api/v1/uploads");
+});
+
 // 手写发请求：apiFetch(、submitJson(、fetchImpl(、submitUploadRequest(、XHR。函数定义那一行不算；
 // 生成层走 request.ts 的 (options.fetchImpl || apiFetch)(…)，不在数里。
 const HAND_WRITTEN_REQUEST = /apiFetch\(|submitJson\(|fetchImpl\(|submitUploadRequest\(|new XMLHttpRequest/g;
 
 test("packages/api 里手写发请求的地方只减不增，新接口走生成的函数", () => {
-  // 第 0 期前 66 处，第 1 期换完 36 处（剩下的是设置类、AI、多用户和文件上传）。
-  const BASELINE = 36;
+  // 第 0 期前 66 处，第 1 期换完 36 处，第 2 期删掉没人调的封装后 34 处（剩下的是设置类、AI、多用户和文件上传）。
+  const BASELINE = 34;
   const srcRoot = resolve(apiPackage, "src");
   let count = 0;
   const walk = (dir) => {

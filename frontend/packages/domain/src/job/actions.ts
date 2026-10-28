@@ -6,8 +6,7 @@ import {
   resolveResourceUrl,
 } from "./artifacts.js";
 import { firstNonEmpty } from "./core.js";
-
-const API_PREFIX = "/api/v1";
+import { documentSourcePdfPath } from "./file-paths.js";
 
 function artifactDisplayItem(job, ...keys) {
   const items = Array.isArray(job?.artifacts_display) ? job.artifacts_display : [];
@@ -188,9 +187,7 @@ export function resolveJobSourcePdfAction(job, manifestPayload = null) {
   // 原文 PDF 存在书上：知道书编号就走 /documents/{书}/files/source.pdf；不知道就当没有原文，
   // 不再拼旧地址 /jobs/{id}/artifacts/source_pdf。
   const documentId = firstNonEmpty(job?.document_id, job?.book_summary?.document_id);
-  const fallbackUrl = documentId
-    ? `${API_PREFIX}/documents/${encodeURIComponent(documentId)}/files/source.pdf`
-    : "";
+  const fallbackUrl = documentId ? documentSourcePdfPath(documentId) : "";
   const url = resolveResourceUrl(firstNonEmpty(
     manifestUrl,
     artifacts.source_pdf?.url,

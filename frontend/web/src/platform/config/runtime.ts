@@ -122,16 +122,6 @@ export function apiBase() {
   return `${protocol}//${host}:${DEFAULT_FALLBACK_PORT}`;
 }
 
-export function buildApiUrl(apiPrefix = "", relativePath = "") {
-  const normalizedPrefix = `${apiPrefix || ""}`.trim().replace(/^\/+/, "").replace(/\/+$/, "");
-  const normalizedPath = `${relativePath || ""}`.trim().replace(/^\/+/, "");
-  const segments = [apiBase(), normalizedPrefix].filter(Boolean);
-  if (normalizedPath) {
-    segments.push(normalizedPath);
-  }
-  return segments.join("/");
-}
-
 export function mockScenario() {
   // 同文件的 apiBase() 有这道防御，这里原先没有：任何非浏览器环境（node --test、
   // SSR、构建脚本）只要走到 isMockMode() 就会 ReferenceError。

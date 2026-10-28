@@ -9,6 +9,7 @@
 // 网络语义、调用顺序、boot 文案与进度数字与拆分前逐行一致。
 
 import { useEffect, useState } from "react";
+import { documentSourcePdfPath } from "@retainpdf/domain/job";
 import type { ProtectedPdfFile } from "../../pdf/useProtectedPdfFile.js";
 import {
   isMockMode,
@@ -196,20 +197,15 @@ export function useSessionAssets(options: {
         )
         : isMockMode()
           ? MOCK_DOCUMENT_SOURCE_PDF_URL
-          : dataPort.resolveResourceUrl(`/api/v1/documents/${encodeURIComponent(routeDocumentId)}/files/source.pdf`);
+          : dataPort.resolveResourceUrl(documentSourcePdfPath(routeDocumentId));
     }
 
     async function loadSourceOnlyDocument(): Promise<void> {
       // OCR 吸怪：document_id 直开时，若文档已有 active_job_id（OCR-only 已回填），则按 job 链路加载以提供 Markdown/译文
       let link: DocumentLink = { activeJobId: "", activeVersionId: "" };
       try {
-        const docResp = await dataPort.fetchProtected(
-          dataPort.resolveResourceUrl(`/api/v1/documents/${encodeURIComponent(routeDocumentId)}`),
-        );
-        if (docResp?.ok) {
-          const docJson: unknown = await docResp.json().catch(() => null);
-          link = parseDocumentLink(docJson);
-        }
+        const doc = await dataPort.fetchDocument?.(routeDocumentId);
+        if (doc) link = parseDocumentLink(doc);
       } catch {
         /* ignore, fallback to pure source */
       }
@@ -370,7 +366,7 @@ export function useSessionAssets(options: {
           committedSource.revision,
         )
         : resolvedSourceFinal || (sourceDocumentId
-          ? dataPort.resolveResourceUrl(`/api/v1/documents/${encodeURIComponent(sourceDocumentId)}/files/source.pdf`)
+          ? dataPort.resolveResourceUrl(documentSourcePdfPath(sourceDocumentId))
           : "");
       // 文档操作产生的是新的源版本；旧 job 的译文、region 与 metadata
       // 仍对应旧页序，不能继续和新源文件并排显示。

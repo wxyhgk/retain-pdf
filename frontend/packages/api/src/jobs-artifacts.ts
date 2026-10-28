@@ -145,8 +145,3 @@ function readerMarkdown(jobId: string, apiPrefix: string, message: string): Prom
 export async function fetchJobMarkdown(jobId: string, apiPrefix = API_PREFIX): Promise<any> {
   return readerMarkdown(jobId, apiPrefix, "读取 Markdown 失败，请稍后重试。");
 }
-
-/** 和 fetchJobMarkdown 同一个接口，只是报错文案不同。 */
-export async function fetchJobMarkdownDocument(jobId: string, apiPrefix = API_PREFIX): Promise<any> {
-  return readerMarkdown(jobId, apiPrefix, "读取结构化 Markdown 失败，请稍后重试。");
-}

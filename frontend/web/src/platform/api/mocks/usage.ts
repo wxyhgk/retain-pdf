@@ -47,6 +47,3 @@ export async function fetchUsageSummary(): Promise<UsageSummaryView> {
   return summary("all", 1);
 }
 
-export async function fetchJobUsage(): Promise<UsageSummaryView> {
-  return summary("job", 0.08);
-}

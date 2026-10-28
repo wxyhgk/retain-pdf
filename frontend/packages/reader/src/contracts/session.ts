@@ -72,6 +72,12 @@ export type ReaderSessionDataPort = {
   loadReaderOptionalArtifacts?: (jobId: string) => Promise<ReaderOptionalArtifactsPayload>;
   loadJobPayload: (jobId: string) => Promise<unknown>;
   fetchDocumentByJobId: (apiPrefix: string, jobId: string) => Promise<LinkedDocumentRecord | null>;
+  /** 按书编号读这本书（GET /documents/:document_id），用来看它有没有 active_job_id。
+   * 宿主不提供时当作没有，按纯原文打开。 */
+  fetchDocument?: (documentId: string) => Promise<LinkedDocumentRecord | null>;
+  /** 这本书的修订按阅读页块编号分组（GET /jobs/:job_id/data/revisions?group_by=reader_item_id），
+   * 返回 {groups: [{value, count}]}。宿主不提供时译文栏不画「改过」标记。 */
+  fetchRevisionGroups?: (jobId: string) => Promise<unknown>;
   fetchProtected: typeof fetch;
   resolveResourceUrl: (url: string) => string;
   resolveReaderSourcePdf: (manifestPayload: unknown) => unknown;

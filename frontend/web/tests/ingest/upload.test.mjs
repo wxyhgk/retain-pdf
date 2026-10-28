@@ -7,16 +7,17 @@ import { createUploadStatePort } from "../../src/features/ingest/domain/upload/s
 import { createLegacyStateFixture } from "../helpers/legacy-state-fixture.mjs";
 
 test("upload config port owns upload endpoint url", () => {
+  // 默认地址和 packages/api 建任务时自己上传用的是同一个函数（buildUploadsEndpoint）。
+  assert.match(createUploadConfigPort().buildUploadUrl("/api/v1"), /\/api\/v1\/uploads$/);
   const calls = [];
   const port = createUploadConfigPort({
-    buildEndpoint(prefix, path) {
-      calls.push([prefix, path]);
-      return `api://${prefix}/${path}`;
+    buildUploadUrl(prefix) {
+      calls.push(prefix);
+      return `api://${prefix}/uploads`;
     },
   });
-
   assert.equal(port.buildUploadUrl("api/v1"), "api://api/v1/uploads");
-  assert.deepEqual(calls, [["api/v1", "uploads"]]);
+  assert.deepEqual(calls, ["api/v1"]);
 });
 
 test("upload controller submits to config port upload url", async () => {
@@ -53,8 +54,8 @@ test("upload controller submits to config port upload url", async () => {
     refreshSubmitControls() {},
     workflowNeedsUpload: () => true,
     configPort: createUploadConfigPort({
-      buildEndpoint(prefix, path) {
-        return `https://api.example/${prefix}/${path}`;
+      buildUploadUrl(prefix) {
+        return `https://api.example/${prefix}/uploads`;
       },
     }),
     viewPort: {
@@ -144,7 +145,7 @@ test("upload controller reads and writes upload state through upload state port"
     refreshSubmitControls: () => calls.push(["refreshSubmit"]),
     workflowNeedsUpload: () => true,
     configPort: createUploadConfigPort({
-      buildEndpoint: () => "/api/uploads",
+      buildUploadUrl: () => "/api/uploads",
     }),
     viewPort: {
       clearPageRanges: () => {

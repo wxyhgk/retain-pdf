@@ -87,14 +87,3 @@ export function fetchQualitySummary(jobId: string, apiPrefix?: string): Promise<
   return generated.getQualityReport(apiPrefix, { job_id: jobId }, { onError: serverMessageOr("读取质量摘要失败，请稍后重试。") });
 }
 
-export function fetchQualityItems(
-  jobId: string,
-  apiPrefix: string | undefined,
-  { kind, page, severity, offset = 0, limit = 200 }: { kind: QualityItemKind; page?: number; severity?: string; offset?: number; limit?: number },
-): Promise<QualityItemsView> {
-  return generated.listQualityItems(
-    apiPrefix,
-    { job_id: jobId, query: { kind, offset, limit, page: page || undefined, severity: severity || undefined } },
-    { onError: serverMessageOr("读取质量明细失败，请稍后重试。") },
-  );
-}

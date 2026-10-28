@@ -19,7 +19,7 @@ import {
   type ArtifactLinks,
   type ArtifactManifest,
 } from "../domain/artifact-center-model.js";
-import { isActiveJobStatus } from "@retainpdf/domain/job";
+import { isActiveJobStatus, jobOutputFilePath, resolveResourceUrl } from "@retainpdf/domain/job";
 import type { BookDetailCaches } from "../domain/book-detail-caches.js";
 
 export function readerCompatibleArtifactLinks(
@@ -36,6 +36,8 @@ export function readerCompatibleArtifactLinks(
   // so OCR jobs always use the job file route for the raw Markdown
   // (/jobs/{id}/files/output/ocr.md; the JSON view is /jobs/{id}/reader/markdown).
   const baseJobUrl = buildJobDetailEndpoint(jobId, API_PREFIX);
+  const translatedPdfUrl = resolveResourceUrl(jobOutputFilePath(jobId, "translated.pdf"));
+  const ocrMarkdownUrl = resolveResourceUrl(jobOutputFilePath(jobId, "ocr.md"));
   // Reader treats a succeeded render retry as a valid translated-PDF source.
   const isTranslation = ["book", "translate", "translation", "render"].includes(workflow);
   const hasMarkdownReadiness = links != null
@@ -54,18 +56,16 @@ export function readerCompatibleArtifactLinks(
     markdown_ready: markdownReady,
     pdf_ready: pdfReady,
     markdown_url: links?.markdown_url || `${baseJobUrl}/reader/markdown`,
-    pdf_url: links?.pdf_url || (isTranslation ? `${baseJobUrl}/files/output/translated.pdf` : ""),
+    pdf_url: links?.pdf_url || (isTranslation ? translatedPdfUrl : ""),
     markdown: {
       ...(links?.markdown || {}),
       ready: markdownReady,
-      raw_url: workflow === "ocr"
-        ? `${baseJobUrl}/files/output/ocr.md`
-        : links?.markdown?.raw_url || `${baseJobUrl}/files/output/ocr.md`,
+      raw_url: workflow === "ocr" ? ocrMarkdownUrl : links?.markdown?.raw_url || ocrMarkdownUrl,
     },
     pdf: isTranslation ? {
       ...(links?.pdf || {}),
       ready: pdfReady,
-      url: links?.pdf?.url || `${baseJobUrl}/files/output/translated.pdf`,
+      url: links?.pdf?.url || translatedPdfUrl,
     } : links?.pdf,
   };
 }

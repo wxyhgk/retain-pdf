@@ -34,14 +34,3 @@ export async function fetchQualitySummary(jobId: string): Promise<QualitySummary
   };
 }
 
-export async function fetchQualityItems(_jobId: string, _apiPrefix: string | undefined, { kind }: { kind: QualityItemKind }): Promise<QualityItemsView> {
-  const items = kind === "layout"
-    ? [
-        { item_id: "p012-b0004", page: 12, reason: "overflow", scale: 0.6, final_font_size: 6.2, overflow_pt: 8.5 },
-        { item_id: "p018-b0002", page: 18, reason: "small_scale", scale: 0.44, final_font_size: 4.8, overflow_pt: 0 },
-      ]
-    : kind === "escalated"
-      ? [{ item_id: "p007-b0003", page: 7, reason: "2 轮后仍未解决", categories: ["omission"] }]
-      : [];
-  return { kind, total: items.length, offset: 0, limit: 200, items };
-}

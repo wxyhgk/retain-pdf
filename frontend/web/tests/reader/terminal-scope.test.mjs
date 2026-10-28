@@ -55,13 +55,11 @@ test("空文件夹不给选", () => {
   // 切过去只会得到 books/ 为空的工作区,而 agent 无从判断这是「文件夹是空的」
   // 还是「出错了」——它会照着空目录下结论。
   return loadCollectionOptions(async () => ({
-    data: {
-      collections: [
-        { collection_id: "col-1", name: "化学", document_count: 4 },
-        { collection_id: "col-2", name: "空的", document_count: 0 },
-        { collection_id: "", name: "没 id", document_count: 3 },
-      ],
-    },
+    collections: [
+      { collection_id: "col-1", name: "化学", document_count: 4 },
+      { collection_id: "col-2", name: "空的", document_count: 0 },
+      { collection_id: "", name: "没 id", document_count: 3 },
+    ],
   })).then((options) => {
     assert.deepEqual(options.map((o) => o.collectionId), ["col-1"]);
     assert.equal(options[0].documentCount, 4);
@@ -72,7 +70,7 @@ test("取不到文件夹列表不抛 —— 这只是个可选入口", async () 
   // 抛出去会让整个终端面板坏掉,而终端本身跟文件夹没关系。
   assert.deepEqual(await loadCollectionOptions(async () => { throw new Error("boom"); }), []);
   assert.deepEqual(await loadCollectionOptions(async () => null), []);
-  assert.deepEqual(await loadCollectionOptions(async () => ({ data: {} })), []);
+  assert.deepEqual(await loadCollectionOptions(async () => ({})), []);
 });
 
 test("标签带本数 —— 「化学」看不出范围", () => {
@@ -87,16 +85,16 @@ test("标签带本数 —— 「化学」看不出范围", () => {
 
 test("物化成功返回 null，失败返回能看懂的原因", async () => {
   assert.equal(
-    await ensureCollectionWorkspace(async () => ({ data: { books: [{}, {}] } }), "col-1"),
+    await ensureCollectionWorkspace(async () => ({ books: [{}, {}] }), "col-1"),
     null,
   );
   // 一本都没物化出来 = 全都还没翻译完。切过去 agent 什么也看不到。
   assert.match(
-    await ensureCollectionWorkspace(async () => ({ data: { books: [] } }), "col-1"),
+    await ensureCollectionWorkspace(async () => ({ books: [] }), "col-1"),
     /还没有翻译好的书/,
   );
   assert.match(
-    await ensureCollectionWorkspace(async () => ({ data: {} }), "col-1"),
+    await ensureCollectionWorkspace(async () => ({}), "col-1"),
     /格式不对/,
   );
   assert.ok(await ensureCollectionWorkspace(async () => { throw new Error("HTTP 500"); }, "col-1"));
@@ -110,26 +108,19 @@ test("物化成功返回 null，失败返回能看懂的原因", async () => {
   );
 });
 
-test("物化用 POST —— 它会重建磁盘目录，GET 是后端标了旧地址的写法", async () => {
-  const calls = [];
-  await ensureCollectionWorkspace(async (path, init) => {
-    calls.push([path, init?.method]);
-    return { data: { books: [{}] } };
+test("物化交给传进来的函数，传的是原样的文件夹编号", async () => {
+  // 地址、POST、转义归 API 层的 materializeCollectionWorkspace（api-client-codegen.test.mjs 守）。
+  const seen = [];
+  await ensureCollectionWorkspace(async (collectionId) => {
+    seen.push(collectionId);
+    return { books: [{}] };
   }, "col-20261019120000-abc123");
-  assert.deepEqual(calls, [
-    ["/api/v1/collections/col-20261019120000-abc123/agent-workspace", "POST"],
-  ]);
-  // 面板里的 fetchJson 要把方法真的带给 fetch，并把状态码挂在错误上（上面的 404 提示靠它）。
-  const fetchJsonFn = CHROME.slice(CHROME.indexOf("const fetchJson = useCallback"), CHROME.indexOf("useEffect("));
-  assert.match(fetchJsonFn, /method: init\.method \|\| "GET"/);
-  assert.match(fetchJsonFn, /status: response\.status/);
-});
-
-test("collectionId 进 URL 要转义", async () => {
-  let seen = "";
-  await ensureCollectionWorkspace(async (path) => { seen = path; return { data: { books: [{}] } }; },
-    "col/../../etc");
-  assert.doesNotMatch(seen.split("/agent-workspace")[0].split("/collections/")[1] ?? "", /\//);
+  assert.deepEqual(seen, ["col-20261019120000-abc123"]);
+  // 面板里接的是 API 层的函数，不再自己拼地址、带 key。
+  const block = CHROME.slice(CHROME.indexOf("export function TerminalScopeBar"), CHROME.indexOf("if (options.length === 0)"));
+  assert.match(block, /materializeCollectionWorkspace\(API_PREFIX, collectionId\)/);
+  assert.match(block, /listCollections\(API_PREFIX\)/);
+  assert.doesNotMatch(block, /fetch\(|X-API-Key/);
 });
 
 // ---------------------------------------------------------------- 面板接线

@@ -40,10 +40,6 @@ export function jobDataSearchParams(query = {}) {
         params.set("limit", `${query.limit}`);
     return params;
 }
-/** 这个任务有哪些数据集、各有哪些字段、能不能筛。 */
-export function fetchJobDataCatalog(jobId, apiPrefix) {
-    return generated.listJobDatasets(apiPrefix, { job_id: jobId }, jobDataError);
-}
 /** 读一个数据集。文件不存在时 available=false，不报错；数据集或字段不对时抛出后端的说明。 */
 export function fetchJobData(jobId, apiPrefix, dataset, query = {}) {
     return generated.getJobDataset(apiPrefix, { job_id: jobId, dataset, query: jobDatasetQuery(query) }, jobDataError);

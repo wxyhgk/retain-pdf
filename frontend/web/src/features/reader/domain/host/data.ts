@@ -5,7 +5,7 @@ import {
   fetchJobMarkdown as fetchApiJobMarkdown,
 } from "@retainpdf/api/jobs-artifacts";
 import { fetchJobPayload as fetchApiJobPayload } from "@retainpdf/api/jobs";
-import { fetchDocumentByJobId } from "@/platform/api/index.js";
+import { fetchDocument, fetchDocumentByJobId, fetchJobData } from "@/platform/api/index.js";
 import {
   fetchReaderMetadata as fetchApiReaderMetadata,
   fetchReaderRegions as fetchApiReaderRegions,
@@ -16,6 +16,7 @@ import {
   streamLiveTranslationEvents,
 } from "@retainpdf/api/live-translation";
 import {
+  documentSourcePdfPath,
   findReadyManifestArtifact,
   resolveJobActions,
   resolveJobMarkdownContract,
@@ -217,8 +218,8 @@ export const sessionDataPort: ReaderSessionDataPort = {
     const sourceArtifact = typeof sourceItem === "string" ? sourceItem : resolveReaderArtifactUrl(sourceItem);
     const translated = resolveReaderTranslatedPdfUrl(payload.jobPayload, payload.manifestPayload);
     const sourceUrl = committed?.documentId
-      ? resolveResourceUrl(`/api/v1/documents/${encodeURIComponent(committed.documentId)}/files/source.pdf?version=${encodeURIComponent(committed.revision)}`)
-      : sourceArtifact || (documentId ? resolveResourceUrl(`/api/v1/documents/${encodeURIComponent(documentId)}/files/source.pdf`) : "");
+      ? resolveResourceUrl(documentSourcePdfPath(committed.documentId, committed.revision))
+      : sourceArtifact || (documentId ? resolveResourceUrl(documentSourcePdfPath(documentId)) : "");
     const translatedUrl = committed || restoreCommitted ? "" : translated || "";
     return {
       loadPlan: restoreCommitted
@@ -246,6 +247,9 @@ export const sessionDataPort: ReaderSessionDataPort = {
   loadReaderOptionalArtifacts: (jobId) => defaultReaderDataPort.loadReaderOptionalArtifacts(jobId),
   loadJobPayload: (jobId) => defaultReaderDataPort.loadJobPayload(jobId),
   fetchDocumentByJobId: async (apiPrefix, jobId) => fetchDocumentByJobId(apiPrefix, jobId),
+  fetchDocument: (documentId) => fetchDocument(API_PREFIX, documentId),
+  fetchRevisionGroups: (jobId) =>
+    fetchJobData(jobId, API_PREFIX, "revisions", { groupBy: "reader_item_id", limit: 1000 }),
   // 包端口的入参是 typeof fetch（RequestInfo | URL），宿主 fetchProtected 只接收字符串 URL；
   // 包内调用方也只传字符串，与 app/reader/adapters/retainpdf.ts 的既有断言口径一致。
   fetchProtected: (input, init) => fetchProtected(input as string, init),

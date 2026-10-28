@@ -5,6 +5,7 @@ import { apiFetch } from "./internal/runtime.js";
 import { API_PREFIX } from "./internal/runtime.js";
 import { buildApiHeaders, unwrapEnvelope } from "./internal/runtime.js";
 import { buildApiEndpoint } from "./http.js";
+import { encodePathParam, failWith, request } from "./request.js";
 import type { AgentConfirmationMode } from "./agent-runtime-settings.js";
 import type { AgentOperationStatus } from "./document-operations.js";
 
@@ -397,4 +398,26 @@ export async function askLibraryAi({
     onAnswerDelta,
     onCompress,
   });
+}
+
+// —— agent 画板（<job>/ai/board/）——
+// 属于 AI 那批，契约里还没有这两条；列表借生成层的 request() 发，文件是二进制出口，只给地址。
+
+/** 列出画板里的文件，返回 {schema, items: [{name, kind, ...}]}。 */
+export function listJobBoard(
+  apiPrefix: string | undefined,
+  jobId: string,
+  options: { signal?: AbortSignal } = {},
+): Promise<{ items?: unknown[] } | null> {
+  return request({
+    apiPrefix,
+    method: "GET",
+    path: `jobs/${encodePathParam(jobId)}/ai/board`,
+    options: { signal: options.signal, onError: failWith("读取画板失败") },
+  });
+}
+
+/** 画板里一个文件的地址，用 fetchProtected 取（要带 key / 登录 Cookie）。 */
+export function jobBoardFileUrl(apiPrefix: string | undefined, jobId: string, name: string): string {
+  return buildApiEndpoint(apiPrefix, `jobs/${encodePathParam(jobId)}/ai/board/${encodePathParam(name)}`);
 }
