@@ -70,6 +70,8 @@ export type StudioEditorHost = {
 	codeFile(reference: string, language: string, meta: string): Promise<HastElement>;
 	/** A file of the article opened to edit (a code file's 编辑, or a double-click on it). */
 	editFile(path: string): void;
+	/** /模板: a template chosen, its content put where the caret is in `view`. */
+	insertTemplate(view: EditorView): void;
 	/** A file of the article a link names, clicked: opened as chosen for that click (file-open.ts). */
 	openFile(path: string, click: FileClick): void;
 	/** The author edited: the whole body as Markdown. */
@@ -371,7 +373,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					},
 				}),
 			buildMenu: (builder) => {
-				buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks);
+				buildBlockSlashMenu(builder as unknown as SlashMenuBuilder, host, blocks, { pick: (view) => host.insertTemplate(view) });
 				buildCommandSlashMenu(builder as unknown as SlashMenuBuilder, commands, (command) => runCommand(command, 'slash'));
 				replaceSlashImageItem(builder, fileDrop.chooseImages);
 				addInlineFormulaItem(builder as unknown as Parameters<typeof addInlineFormulaItem>[0]);

@@ -17,12 +17,17 @@ import {
 	uploadArticleFile,
 	keepVersion,
 	listMiniApps,
+	listTemplates,
+	renderTemplate,
 	tellStarted,
 	openArticleFileInApp,
 	revealArticleFile,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
+import type { EditorView } from '@milkdown/prose/view';
+import { LayoutTemplate } from 'lucide-react';
+import { showContextMenu } from './common/context-menu';
 import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
 import { ArticleSession, type SaveState } from './state/article-session';
@@ -84,6 +89,7 @@ mountShell(shell, {
 	search: () => quickFind.open(),
 	showView: (view) => showView(view),
 	newPage: () => void pages.newPage(),
+	todayJournal: () => void pages.todayJournal(),
 	newChat: () => chat.newChat(),
 	openChat: (id) => chat.openChat(id),
 	chatMenu: (entry, row) => chat.chatList.menu(entry, row),
@@ -291,6 +297,24 @@ function editArticleFile(path: string, initial?: 'history'): void {
 	});
 }
 
+/** /模板: the templates listed where the caret is; the one chosen, filled in, put there. */
+async function insertTemplate(view: EditorView): Promise<void> {
+	const { templates } = await listTemplates().catch(() => ({ templates: [] }));
+	if (!templates.length) {
+		showToast(t('还没有模板：在页面的 ⋯ 里「存为模板…」，或在仓库的 templates/ 里放一个 .md'));
+		return;
+	}
+	const caret = view.coordsAtPos(view.state.selection.from);
+	showContextMenu(
+		templates.map((template) => ({
+			label: template.name,
+			icon: LayoutTemplate,
+			action: () => void renderTemplate(template.id, openTitle).then(({ body }) => editor.insertMarkdown(body), (error: unknown) => showToast(error instanceof Error ? error.message : String(error), true)),
+		})),
+		{ x: caret.left, y: caret.bottom + 4 },
+	);
+}
+
 /** A file's earlier versions (kept before it was written over): in its editor's 历史版本 tab, or alone for a file not edited here. */
 function showFileHistory(path: string): void {
 	const slug = session.slug;
@@ -387,6 +411,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error(t('文章尚未载入')))),
 	editFile: (path) => editArticleFile(path),
 	openFile: (path, click) => openArticleFile(path, click),
+	insertTemplate: (view) => void insertTemplate(view),
 	changed: (markdown) => session.editBody(markdown),
 	async pickArticle() {
 		const picked = await quickFind.pick();
@@ -560,12 +585,18 @@ const quickFind = createQuickFind({
 			hint: command.keys,
 			run: () => void command.run({ from: 'call' }),
 		}));
+		// 今天的日志, and a page from each template (templates/).
+		const templates = (await listTemplates().catch(() => ({ templates: [] }))).templates;
+		const fromTemplates = [
+			{ key: 'studio:today', label: t('今天的日志'), icon: '📅', run: () => void pages.todayJournal() },
+			...templates.map((template) => ({ key: `template:${template.id}`, label: t('新建：{name}', { name: template.name }), icon: '＋', hint: template.description, run: () => void pages.newFromTemplate(template.id) })),
+		];
 		const apps = (await listMiniApps().catch(() => [])).filter((app) => !app.problem);
 		const fromApps = apps.flatMap((app) => [
 			{ key: `app:${app.id}`, label: t('打开小程序「{name}」', { name: app.name }), icon: app.icon, run: () => void miniApps.open(app.id) },
 			...app.commands.map((command) => ({ key: `app:${app.id}:${command.id}`, label: `${app.name}：${command.title}`, icon: app.icon, run: () => void miniApps.open(app.id, command.entry) })),
 		]);
-		return [...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
+		return [...fromTemplates, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
 	},
 });
 

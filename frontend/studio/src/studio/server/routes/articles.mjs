@@ -10,12 +10,20 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function articleRoutes(api, { site, blogRoot, articles, history, manager, articleGit, library, codeFiles, watcher, notesIndex }) {
+export function articleRoutes(api, { site, blogRoot, articles, history, manager, articleGit, library, codeFiles, watcher, notesIndex, templates }) {
 	// What changes in blog/, as server-sent events: `data: [{"slug":"note","paths":["index.md"]}]`.
 	api.get('/events', ({ request, response }) => sendEvents(request, response, (send) => watcher.subscribe(send)), { streams: true });
 
 	api.get('/articles', async () => ({ articles: await articles.list() }));
 	api.post('/articles', async ({ json }) => reply(201, await articles.create(await json())));
+	// Page templates (templates/): the list, one filled in for a page made now, a page's body kept as one (存为模板).
+	api.get('/templates', async () => ({ templates: await templates.list() }));
+	api.post('/templates/:id/render', async ({ params, json }) => templates.render(params.id, { title: String((await json()).title ?? '') }));
+	api.post('/templates', async ({ json }) => {
+		const { name, slug } = await json();
+		const { source } = await articles.read(String(slug ?? ''));
+		return reply(201, await templates.save(name, source.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/u, '')));
+	});
 	// Articles whose title or text holds `q`.
 	api.get('/search', async ({ query }) => ({ results: await articles.search(query.get('q') ?? '') }));
 	// What is scattered in all the notes, gathered: their code (fences, scripts in their folders), their pictures.

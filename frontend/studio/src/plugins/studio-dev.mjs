@@ -3,6 +3,7 @@ import { delimiter, resolve, sep } from 'node:path';
 import { ArticleFiles } from '../studio/server/articles/article-files.mjs';
 import { ArticleGit } from '../studio/server/articles/article-git.mjs';
 import { ArticleHistory } from '../studio/server/articles/article-history.mjs';
+import { ArticleTemplates } from '../studio/server/articles/templates.mjs';
 import { ArticleLibrary } from '../studio/server/articles/article-library.mjs';
 import { ArticleRepository } from '../studio/server/articles/article-repository.mjs';
 import { NotesIndex } from '../studio/server/articles/notes-index.mjs';
@@ -95,6 +96,8 @@ export default function studioDev({ site } = {}) {
 				trashRoot: testBlogRoot ? resolve(testBlogRoot, TRASH_FOLDER) : resolve(server.config.root, TRASH_FOLDER),
 			});
 			const articleFiles = new ArticleFiles(articles, manager);
+			// Page templates: templates/ at the project's root (in git); the browser tests' beside their copy of blog/.
+			const templates = new ArticleTemplates(testBlogRoot ? resolve(testBlogRoot, '.studio-templates') : resolve(server.config.root, 'templates'));
 			const articleGit = new ArticleGit(blogRoot);
 			const library = new ArticleLibrary(blogRoot, articles);
 			const watcher = new BlogWatcher(blogRoot);
@@ -228,6 +231,7 @@ export default function studioDev({ site } = {}) {
 				programEnv,
 				articles,
 				history,
+				templates,
 				files,
 				codeFiles,
 				manager,

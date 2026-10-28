@@ -33,6 +33,7 @@ const ICONS = {
 	page: icon('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'),
 	link: icon('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
 	command: icon('<path d="M5 7l5 5-5 5"/><path d="M12 17h7"/>'),
+	template: icon('<rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="9" height="7" rx="1"/><rect x="16" y="14" width="5" height="7" rx="1"/>'),
 	inlineMath: icon('<path d="M8 21s-4-3-4-9 4-9 4-9"/><path d="M16 3s4 3 4 9-4 9-4 9"/><path d="M15 9l-6 6M9 9l6 6"/>'),
 };
 
@@ -43,7 +44,7 @@ function placed(ctx: never, how: MenuPlace): EditorView {
 }
 
 /** Notion's blocks in the slash menu: a page under the article, a callout, a toggle, columns, the plugins' blocks (a widget, a calculation…), a link to another article. */
-export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLinkHost, blocks: StudioBlock[] = []): void {
+export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLinkHost, blocks: StudioBlock[] = [], templates?: { pick(view: EditorView): void }): void {
 	const add = (into: ReturnType<SlashMenuBuilder['addGroup']>, block: StudioBlock) => {
 		for (const entry of [block.menu ?? []].flat()) {
 			into.addItem(entry.key, { label: entry.label, icon: entry.icon, keywords: entry.keywords ?? [], description: entry.description, hint: entry.hint, onRun: (ctx) => entry.insert(placed(ctx, entry.place ?? 'below')) });
@@ -65,6 +66,15 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 		keywords: ['page', 'subpage', 'new page', '子页面', '新页面', '新建页面', 'yemian', 'ziyemian'], // i18n-ignore: matched against what is typed
 		onRun: (ctx) => void insertPage(placed(ctx, 'below'), links),
 	});
+	if (templates) {
+		group.addItem('template', {
+			label: t('模板'),
+			description: t('把一个模板的内容放在这里'),
+			icon: ICONS.template,
+			keywords: ['template', '模板', 'muban', 'mb'], // i18n-ignore: matched against what is typed
+			onRun: (ctx) => templates.pick(placed(ctx, 'inline')),
+		});
+	}
 	group.addItem('callout', { label: t('提示块'), description: t('让一段话醒目'), icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(placed(ctx, 'turn'), 'tip') });
 	group.addItem('toggle', { label: t('折叠块'), description: t('把内容收起来，点开再看'), icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(placed(ctx, 'turn')) });
 	group.addItem('columns', { label: t('两栏'), description: t('左右并排两块内容'), icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', '双栏', '分栏', '并排', 'shuanglan', 'fenlan', 'bingpai'], onRun: (ctx) => void insertColumns(placed(ctx, 'below'), 2) }); // i18n-ignore: keywords matched against what is typed

@@ -50,6 +50,8 @@ export type ShellActions = {
 	search(): void;
 	showView(view: View): void;
 	newPage(): void;
+	/** 今天的日志: today's page under 日志, made from its template the first time today. */
+	todayJournal(): void;
 	newChat(): void;
 	openChat(id: string): void;
 	chatMenu(chat: Conversation, anchor: HTMLElement): void;
@@ -115,6 +117,7 @@ export const ActionsContext = createContext<ShellActions>({
 	search: nothing,
 	showView: nothing,
 	newPage: nothing,
+	todayJournal: nothing,
 	newChat: nothing,
 	openChat: nothing,
 	chatMenu: nothing,

@@ -1,8 +1,8 @@
 // The pages: made, opened, moved, published, starred; where the open one is (the bar's path, ‹ ›); its ⋯ menu.
-import { Copy, FolderSearch, History, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
+import { Copy, FolderSearch, History, LayoutTemplate, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
 import { t } from '@blog/i18n/index.mjs';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
-import { createArticle, revealArticleFile, setArticleParent, type PagePlace } from '../api/client';
+import { createArticle, renderTemplate, revealArticleFile, saveAsTemplate, setArticleParent, type PagePlace } from '../api/client';
 import { showContextMenu } from '../common/context-menu';
 import { showToast } from '../common/toast';
 import { favoriteSlugs, toggleFavorite } from '../pages/favorites';
@@ -14,6 +14,16 @@ import { shell as shellState } from '../shell/shell-state';
 import { trackWrite } from '../state/writes';
 import type { ArticleSummary } from '../types';
 import type { Studio } from './studio';
+
+/** 今天的日志: the template its pages are made from (templates/journal.md), and the page they go under. */
+const JOURNAL_TEMPLATE = 'journal';
+const JOURNAL_PAGE = '日志'; // i18n-ignore: a page's title, written into the blog
+
+/** Today, `2026-10-29` (a day's page's title, when there is no 日志 template to say). */
+function today(): string {
+	const now = new Date();
+	return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
 
 /** The page open last, kept on this machine: what the Studio opens again when it is started, not the first page. */
 const LAST_OPENED = 'studio.lastArticle';
@@ -94,6 +104,64 @@ export function createPages(studio: Studio) {
 			return;
 		}
 		await enterNewPage(slug);
+	}
+
+	/** A new page from a template (templates/), under `parent` when given; opened, its title selected. */
+	async function newFromTemplate(id: string, parent = ''): Promise<void> {
+		if (!(await session.saveBeforeLeaving())) return;
+		const slug = freeSlug(autoSlug(), slugs());
+		try {
+			const { title, body } = await renderTemplate(id);
+			await trackWrite(() => createArticle(slug, title, parent, { body }));
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('新建失败'), true);
+			return;
+		}
+		await enterNewPage(slug);
+	}
+
+	/**
+	 * 今天的日志 (as SiYuan's daily note): today's page under 日志, opened; made from the 日志 template (templates/journal.md)
+	 * the first time today, and 日志 with it the first time of all.
+	 */
+	async function todayJournal(): Promise<void> {
+		if (!(await session.saveBeforeLeaving())) return;
+		try {
+			const { title, body } = await renderTemplate(JOURNAL_TEMPLATE).catch(() => ({ title: today(), body: '' }));
+			await articleList.load();
+			const all = articleList.articles();
+			let journal = all.find((article) => !article.parent && article.title === JOURNAL_PAGE)?.slug;
+			const page = journal ? all.find((article) => article.parent === journal && article.title === title)?.slug : undefined;
+			if (page) {
+				studio.showView('editor');
+				await session.open(page);
+				return;
+			}
+			if (!journal) {
+				journal = freeSlug(autoSlug(), slugs());
+				await trackWrite(() => createArticle(journal!, JOURNAL_PAGE, ''));
+			}
+			const slug = freeSlug(autoSlug(), [...slugs(), journal]);
+			await trackWrite(() => createArticle(slug, title, journal!, { body }));
+			await articleList.load();
+			studio.showView('editor');
+			await session.open(slug);
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('没能打开今天的日志'), true);
+		}
+	}
+
+	/** 存为模板: the open page's body kept as a template (its pictures and files left out: they stay the page's). */
+	async function keepAsTemplate(article: ArticleSummary): Promise<void> {
+		const name = window.prompt(t('模板的名字'), article.untitled ? '' : article.title)?.trim();
+		if (!name) return;
+		await session.flush();
+		try {
+			await saveAsTemplate(article.slug, name);
+			showToast(t('已存为模板「{name}」：⌘K 输入 > 新建，或在正文里 /模板', { name }));
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('没能存为模板'), true);
+		}
 	}
 
 	/** Opens a page just made, its title selected to be typed over; what is open saved first. */
@@ -321,6 +389,7 @@ export function createPages(studio: Studio) {
 			},
 			{ label: /Mac/u.test(navigator.platform) ? t('在 Finder 中显示') : t('在文件管理器中显示'), icon: FolderSearch, action: () => void revealArticleFile(article.slug, '') },
 			{ label: t('历史版本…'), icon: History, action: () => openDialog('history', { slug: article.slug, host: { restore: (source) => void session.restoreVersion(source) } }) },
+			{ label: t('存为模板…'), icon: LayoutTemplate, action: () => void keepAsTemplate(article) },
 			// The plugins' (`ctx.commands`, `places: ['page-menu']`).
 			...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, icon: command.icon, action: () => runCommand(command, 'page-menu') })),
 			'separator',
@@ -329,5 +398,5 @@ export function createPages(studio: Studio) {
 		], pageMenu);
 	}
 
-	return { visited, openFromList, newPage, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
+	return { visited, openFromList, newPage, newFromTemplate, todayJournal, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
 }

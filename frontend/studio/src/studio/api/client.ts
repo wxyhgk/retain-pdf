@@ -72,6 +72,23 @@ export function createArticle(slug: string, title: string, parent = '', made: { 
 	return request('/api/studio/articles', jsonOptions('POST', { slug, title, parent, ...made }));
 }
 
+/** A page template (templates/<id>.md): its name, what it is for, the title it gives a page (`{{date}}`… not filled in). */
+export type PageTemplate = { id: string; name: string; description: string; title: string };
+
+export function listTemplates(): Promise<{ templates: PageTemplate[] }> {
+	return request('/api/studio/templates');
+}
+
+/** A template filled in for a page made now: its title (`title` when given) and its body. */
+export function renderTemplate(id: string, title = ''): Promise<{ id: string; name: string; title: string; body: string }> {
+	return request(`/api/studio/templates/${encodeURIComponent(id)}/render`, jsonOptions('POST', { title }));
+}
+
+/** 存为模板: the article's body kept as a template called `name`. */
+export function saveAsTemplate(slug: string, name: string): Promise<{ id: string; name: string }> {
+	return request('/api/studio/templates', jsonOptions('POST', { slug, name }));
+}
+
 /** 并入上级页面: the article's text into the page it is under; the article to the trash. */
 export function mergeArticle(slug: string): Promise<{ slug: string; parent: string; trashed: string }> {
 	return request(`/api/studio/articles/${encodeURIComponent(slug)}/merge`, jsonOptions('POST', {}));

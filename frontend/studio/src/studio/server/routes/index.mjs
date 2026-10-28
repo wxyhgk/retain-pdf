@@ -21,6 +21,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {(slug: string | null, driveRoot: string | null) => Record<string, string>} programEnv
  * @property {import('../articles/article-repository.mjs').ArticleRepository} articles
  * @property {import('../articles/article-history.mjs').ArticleHistory} history
+ * @property {import('../articles/templates.mjs').ArticleTemplates} templates page templates (templates/)
  * @property {import('../files/file-repository.mjs').FileRepository} files
  * @property {import('../articles/code-file-previews.mjs').CodeFilePreviews} codeFiles
  * @property {import('../files/file-manager.mjs').ArticleFileManager} manager
