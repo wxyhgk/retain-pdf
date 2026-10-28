@@ -46,14 +46,14 @@ function sayWhyItEnds() {
 	const say = (what) => process.stderr.write(`[studio] ${new Date().toISOString()} 服务器要退出：${what}\n`); // i18n-ignore: developer log
 	const exit = process.exit.bind(process);
 	process.exit = (code) => {
-		say(`process.exit(${code ?? ''})，调用它的是：\n${new Error('exit').stack?.split('\n').slice(2, 12).join('\n')}`);
+		say(`process.exit(${code ?? ''})，调用它的是：\n${new Error('exit').stack?.split('\n').slice(2, 12).join('\n')}`); // i18n-ignore: developer log
 		return exit(code);
 	};
 	// Listened to only where listening changes nothing: a listener for a signal, or for a rejection, would change how
 	// the process ends (Node's own way, and tasks.mjs's, which looks at how many listen).
-	process.stdin.prependListener?.('end', () => say('stdin 关了（Studio.app 退出了？）'));
-	process.on('uncaughtExceptionMonitor', (error) => say(`没接住的错误：${error?.stack ?? error}`));
-	process.once('exit', (code) => say(`退出码 ${code}`));
+	process.stdin.prependListener?.('end', () => say('stdin 关了（Studio.app 退出了？）')); // i18n-ignore: developer log
+	process.on('uncaughtExceptionMonitor', (error) => say(`没接住的错误：${error?.stack ?? error}`)); // i18n-ignore: developer log
+	process.once('exit', (code) => say(`退出码 ${code}`)); // i18n-ignore: developer log
 }
 
 export default function studioDev({ site } = {}) {

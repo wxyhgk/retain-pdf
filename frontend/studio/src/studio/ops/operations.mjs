@@ -147,6 +147,12 @@ export const OPERATIONS = [
 		run: (ops, args) => ops.checkPage(args),
 	},
 	{
+		name: 'preview_page',
+		description: '看一个页面显示出来是什么样（你看不到页面时用它，不要自己开浏览器、截图）：逐块说它显示成什么，第几行开始：标题、段落、页面链接（单独一行的、句子里的，各链到哪篇、那篇在不在、是不是草稿）、图（编号、文件在不在）、公式、表格、代码块、交互模块（框多高、运行哪个文件、加载哪些脚本、读哪些数据）。从头看时附上发布前检查查出的问题（issues）。交互模块的脚本运行起来对不对这里看不出，要问作者。长页面一次给 200 块，带 next（下次从第几行看，传给 from）。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { slug, from: { type: 'integer', description: '从这一行开始看（上次给的 next）' } }, required: ['slug'] }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.previewPage(args),
+	},
+	{
 		name: 'publish_page',
 		description: '发布：先做发布前检查，有 error 就不发布；草稿改成已发布；文件夹名还是自动起的就按标题改成可读的网址（链接跟着改）。推送到 GitHub 之后网站才更新。', // i18n-ignore: for the AI
 		input: { type: 'object', properties: { slug }, required: ['slug'] },

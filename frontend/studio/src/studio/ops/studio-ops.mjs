@@ -10,6 +10,7 @@ import { parseStudioDocument } from '@blog/document/parse.ts';
 import { replaceStudioDocumentBody } from '@blog/document/serialize.ts';
 import { updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
 import { checkArticle } from '../server/articles/article-check.mjs';
+import { previewArticle } from '../server/articles/article-preview.mjs';
 import { ArticleGit } from '../server/articles/article-git.mjs';
 import { ArticleHistory } from '../server/articles/article-history.mjs';
 import { ArticleRepository } from '../server/articles/article-repository.mjs';
@@ -268,6 +269,12 @@ export function createStudioOps({ root, site } = {}) {
 			const errors = issues.filter((issue) => issue.severity === 'error').length;
 			// Said in so many words: nothing found is passed, not a check that did not run.
 			return { ok: errors === 0, errors, warnings: issues.length - errors, issues };
+		},
+
+		/** How the page shows, block by block, in words (article-preview.mjs). */
+		async previewPage({ slug, from }) {
+			const { source } = await articles.read(slug);
+			return previewArticle(blogRoot, slug, source, { from: Number.isInteger(from) && from > 0 ? from : 1 });
 		},
 
 		/**

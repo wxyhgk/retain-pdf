@@ -93,6 +93,7 @@ MCP 工具名和命令一一对应（下划线换成连字符）。参数后面�
 | `list_trash` | `studio list-trash` | — | 回收站里的页面。 |
 | `restore_page` | `studio restore-page` | `trashed` | 从回收站恢复一个页面。 |
 | `check_page` | `studio check-page` | `slug` | 发布前检查：照现在的样子发布，哪些会让博客构建失败（error），哪些会在页面上显示出错（warning）。 |
+| `preview_page` | `studio preview-page` | `slug`、`from`? | 页面显示出来是什么样：逐块说它显示成什么（页面链接、图、公式、表格、代码块、交互模块的框和它运行的文件、加载的脚本），附上发布前检查的问题。给看不到页面的 AI 用。 |
 | `publish_page` | `studio publish-page` | `slug` | 发布：先做发布前检查，有 error 就不发布；草稿改成已发布；文件夹名还是自动起的就按标题改成可读的网址（链接跟着改）。推送到 GitHub 之后网站才更新。 |
 | `unpublish_page` | `studio unpublish-page` | `slug` | 撤回发布：改回草稿，下次构建后从博客上消失。 |
 | `commit_page` | `studio commit-page` | `slug`、`message` | 把这一页的文件夹提交到 git（连同已经删掉的页面的文件夹），不推送。 |
