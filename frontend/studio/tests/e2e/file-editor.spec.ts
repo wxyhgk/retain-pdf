@@ -12,18 +12,13 @@ const code = (page: Page) => blockSheet(page).locator('.file-editor .cm-content'
 
 test.beforeEach(() => resetFixture());
 
-test('a script in the article: shown as the file, 编辑 opens it, ⌘S saves it, its preview shows the change', async ({ page }) => {
+test('a script in the article is a link; a click on it opens it to read and edit, ⌘S saves it to the file', async ({ page }) => {
 	writeFixtureFile('assets/opt.py', 'def step(g):\n    return -g\n');
-	appendToFixture('\n```python\n@file ./assets/opt.py\n```\n');
+	appendToFixture('\n优化器见 [opt.py](./assets/opt.py)。\n');
 	await openStudio(page);
-	const shown = editor(page).locator('figure.code-file[data-file-path="assets/opt.py"]');
-	await expect(shown).toContainText('def step(g):');
-
-	await shown.getByRole('button', { name: '编辑' }).click();
+	await editor(page).getByRole('link', { name: 'opt.py' }).click();
 	await expect(blockSheet(page)).toContainText('assets/opt.py');
 	await expect(code(page)).toContainText('return -g');
-	// Coloured as Python.
-	await expect(code(page).locator('span').first()).toBeVisible();
 	await code(page).click();
 	await page.keyboard.press('ControlOrMeta+End');
 	await page.keyboard.type('# 改过了');
@@ -33,21 +28,27 @@ test('a script in the article: shown as the file, 编辑 opens it, ⌘S saves it
 	expect(onDisk('assets/opt.py')).toBe('def step(g):\n    return -g\n# 改过了');
 	await page.keyboard.press('Escape');
 	await expect(blockSheet(page)).toHaveCount(0);
-	await expect(editor(page).locator('figure.code-file[data-file-path="assets/opt.py"]')).toContainText('# 改过了');
+	// The article is as it was: the link, nothing put in it.
+	await expect(editor(page).getByRole('link', { name: 'opt.py' })).toBeVisible();
+	await expect(editor(page).locator('figure.code-file')).toHaveCount(0);
+	// Opened again: as saved.
+	await editor(page).getByRole('link', { name: 'opt.py' }).click();
+	await expect(code(page)).toContainText('# 改过了');
 });
 
-test('a double-click on a file’s preview opens it; closed with changes, they are kept', async ({ page }) => {
+test('closed with changes, they are kept; a link to a file that is not text stays a link', async ({ page }) => {
 	writeFixtureFile('assets/data.csv', 'x,y\n1,2\n');
-	appendToFixture('\n```csv\n@file ./assets/data.csv\n```\n');
+	appendToFixture('\n数据：[data.csv](./assets/data.csv)，论文：[paper.pdf](./assets/paper.pdf)。\n');
 	await openStudio(page);
-	await editor(page).locator('figure.code-file[data-file-path="assets/data.csv"] pre').dblclick();
+	await editor(page).getByRole('link', { name: 'data.csv' }).click();
 	await expect(code(page)).toContainText('1,2');
 	await code(page).click();
 	await page.keyboard.press('ControlOrMeta+End');
 	await page.keyboard.type('3,4\n');
 	await blockSheet(page).locator('.block-sheet-close').click();
 	await expect.poll(() => onDisk('assets/data.csv')).toBe('x,y\n1,2\n3,4\n');
-	await expect(editor(page).locator('figure.code-file[data-file-path="assets/data.csv"]')).toContainText('3,4');
+	await editor(page).getByRole('link', { name: 'paper.pdf' }).click();
+	await expect(blockSheet(page)).toHaveCount(0);
 });
 
 test('a text file in the 文件 tab opens in the Studio to edit, not in a browser tab', async ({ page }) => {

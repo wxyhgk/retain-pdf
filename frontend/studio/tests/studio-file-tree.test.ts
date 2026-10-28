@@ -86,10 +86,9 @@ test('each kind of file is pasted the way the article uses it', () => {
 	assert.equal(markdownReference('assets/run.log'), '```output\n@file ./assets/run.log\n```');
 	assert.equal(markdownReference('assets/si/INCAR'), '```incar\n@file ./assets/si/INCAR\n```');
 	assert.equal(markdownReference('assets/run.inp'), '[run.inp](./assets/run.inp)');
-	// Code and data: shown as the file, to read and edit.
-	assert.equal(markdownReference('assets/opt.py'), '```python\n@file ./assets/opt.py\n```');
-	assert.equal(markdownReference('assets/[draft].csv'), '```csv\n@file ./assets/[draft].csv\n```');
-	assert.equal(markdownReference('assets/paper.pdf'), '[paper.pdf](./assets/paper.pdf)');
+	// Code and data: a link (a click on it opens the file to read and edit).
+	assert.equal(markdownReference('assets/opt.py'), '[opt.py](./assets/opt.py)');
+	assert.equal(markdownReference('assets/[draft].csv'), '[\\[draft\\].csv](./assets/[draft].csv)');
 	assert.equal(markdownReference('ai/notes.md'), null);
 	assert.deepEqual([...referencedPaths(markdownReference('img/水分子 (1).png')!)], ['img/水分子 (1).png']);
 	setFileBlocks(() => null);

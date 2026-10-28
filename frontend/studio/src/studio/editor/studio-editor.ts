@@ -27,6 +27,7 @@ import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
 import { linkPath } from '../files/article-files';
 import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
 import { filesNamed, headingSection } from './split-section';
+import { openFileLinks } from './file-links';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePath, codeFilePreview, observeCodeFiles, redrawCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { blockwiseMarkdown } from './blockwise-markdown';
@@ -253,6 +254,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		});
 	}
 	observeCodeFiles(root);
+	// A link to a script or data of the article: a click opens the file to read and edit.
+	openFileLinks(root, (path) => host.editFile(path));
 	// A file's preview: 编辑, or a double-click on it, opens the file to edit. Before ProseMirror (it would select the block).
 	root.addEventListener(
 		'click',

@@ -60,10 +60,9 @@ test('a file dragged from the panel is inserted without uploading again', async 
 	writeFixtureFile('assets/data.csv', 'x,y\n1,2\n');
 	await openStudio(page);
 	await drop(page, '结尾段落。', [], 'assets/data.csv');
-	// Data, shown as the file it is.
-	await expect(editor(page).locator('figure.code-file[data-file-path="assets/data.csv"]')).toContainText('1,2');
+	await expect(editor(page).getByRole('link', { name: 'data.csv' })).toBeVisible();
 	const saved = await save(page);
-	expect(saved).toContain('结尾段落。\n\n```csv\n@file ./assets/data.csv\n```\n');
+	expect(saved).toContain('结尾段落。\n\n[data.csv](./assets/data.csv)\n');
 	await expect(page.locator('#file-tree .file-row[data-path="assets/data.csv"]')).not.toHaveClass(/is-unused/);
 });
 
