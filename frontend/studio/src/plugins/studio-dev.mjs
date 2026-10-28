@@ -1,3 +1,4 @@
+import { watch } from 'node:fs';
 import { delimiter, resolve, sep } from 'node:path';
 import { ArticleFiles } from '../studio/server/articles/article-files.mjs';
 import { ArticleGit } from '../studio/server/articles/article-git.mjs';
@@ -17,6 +18,8 @@ import { AgentSessions } from '../studio/server/ai/agent-sessions.mjs';
 import { ChatStore } from '../studio/server/ai/chat-store.mjs';
 import { PanelModels } from '../studio/server/ai/panel-models.mjs';
 import { MiniApps } from '../studio/server/apps/mini-apps.mjs';
+import { ProjectApps } from '../studio/server/apps/project-apps.mjs';
+import { forwardUpgrade, proxyToApp } from '../studio/server/apps/app-proxy.mjs';
 import { Tasks } from '../studio/server/tasks/tasks.mjs';
 import { markContentReloads } from '../studio/server/articles/content-reloads.mjs';
 import { studioBlogRoot } from '../studio/server/articles/page-version.mjs';
@@ -61,7 +64,9 @@ export default function studioDev({ site } = {}) {
 		name: 'local-article-studio',
 		apply: 'serve',
 		// The editor is hundreds of modules: made ready when the server starts, not when the Studio is first opened.
-		config: () => ({ server: { warmup: { clientFiles: ['./src/studio/main.ts'] } } }),
+		// apps/ is the apps' own: a page app is reloaded in its window when its files change (below), a project app by its
+		// own server; the Studio's page is not reloaded for them (an .html outside its modules would reload it all).
+		config: () => ({ server: { warmup: { clientFiles: ['./src/studio/main.ts'] }, watch: { ignored: ['**/apps/**'] } } }),
 		// A plugin's file that nothing imports any more (its plugin was removed, and now it is written
 		// again) is no dead end that would load the page again: the plugins' list (src/studio/plugin-modules.ts)
 		// takes it in, and the Studio puts the plugin in without loading the page (src/studio/plugins.ts).
@@ -123,7 +128,10 @@ export default function studioDev({ site } = {}) {
 			const aiSettings = new AiSettings(settingsFile);
 			const agentSettings = new AgentSettings(settingsFile);
 			// 小程序: the tools of apps/ at the repository's root, each in a floating window.
-			const miniApps = new MiniApps(resolve(server.config.root, 'apps'));
+			const appsFolder = resolve(server.config.root, 'apps');
+			const miniApps = new MiniApps(appsFolder);
+			// Those that are projects of their own, each run by its own development server (docs/apps-design.md).
+			const projectApps = new ProjectApps({ env: () => programEnv(null, null) });
 			const tasks = new Tasks();
 			// The AI panel's conversations, with the agents' ACP adapters of the project's dependencies.
 			// Kept in chats/ beside blog/ (out of git), each a page; the browser tests' beside their copy of blog/.
@@ -148,7 +156,36 @@ export default function studioDev({ site } = {}) {
 				files: { articleFolder: (slug) => articleBundlePaths(blogRoot, slug).directory, inside: resolveInside, writeText: atomicWriteText },
 				logger: server.config.logger,
 			}, { warn: (message) => server.config.logger.warn(`[studio] ${message}`), disabled }));
+			// A page app's file changed: its windows load it again (a project app's own server does that for it).
+			const changedApps = new Map();
+			let appsWatcher = null;
+			try {
+				appsWatcher = watch(appsFolder, { recursive: true }, (_event, name) => {
+					const id = String(name ?? '').split(sep, 1)[0];
+					if (!id || changedApps.has(id)) return;
+					changedApps.set(id, setTimeout(() => {
+						changedApps.delete(id);
+						void miniApps.get(id).then((app) => {
+							if (app?.kind !== 'page') return;
+							const hot = server.environments?.client?.hot ?? server.hot;
+							hot?.send({ type: 'custom', event: 'studio:app-changed', data: { id } });
+						});
+					}, 150));
+				});
+				appsWatcher.unref?.();
+			} catch {
+				// No apps/ yet.
+			}
+			// A project app's development server's live line (its HMR), under its address.
+			server.httpServer?.on('upgrade', (request, socket, head) => {
+				const id = (request.url ?? '').match(/^\/studio-apps\/([^/?]+)\//u)?.[1];
+				const port = id ? projectApps.port(decodePathComponent(id)) : null;
+				if (port) forwardUpgrade(request, socket, head, port);
+			});
 			server.httpServer?.on('close', () => {
+				appsWatcher?.close();
+				for (const timer of changedApps.values()) clearTimeout(timer);
+				projectApps.closeAll();
 				watcher.close();
 				terminals.close();
 				conversations.closeAll();
@@ -188,6 +225,7 @@ export default function studioDev({ site } = {}) {
 				terminals,
 				tasks,
 				miniApps,
+				projectApps,
 				pluginSettings,
 				localeSettings: new LocaleSettings(settingsFile),
 				aiSettings,
@@ -201,11 +239,17 @@ export default function studioDev({ site } = {}) {
 				const rawPathname = (request.url ?? '/').split('?', 1)[0];
 				// A 小程序's files, for its frame: the Studio's own origin, not sandboxed (the author's own tools).
 				const appFileMatch = rawPathname.match(/^\/studio-apps\/([^/]+)\/(.*)$/u);
-				if (appFileMatch && request.method === 'GET') {
+				if (appFileMatch) {
 					// Only to the Studio's own pages (its frames, the app's own files) and to the author typing the address:
 					// not sandboxed, an app opened by another site would act as the Studio.
 					const site = request.headers['sec-fetch-site'];
 					if (site && site !== 'same-origin' && site !== 'none') return sendJson(response, 403, { error: t('小程序只能在 Studio 里打开') });
+					const id = decodePathComponent(appFileMatch[1]);
+					// A project app: what its own development server answers, once it runs (its window starts it).
+					const port = projectApps.port(id);
+					if (port) return proxyToApp(request, response, port);
+					if (await miniApps.dev(id)) return sendJson(response, 503, { error: t('这个应用还没有启动：在它的窗口里点「重启」') });
+					if (request.method !== 'GET') return next();
 					try {
 						const found = await miniApps.file(decodePathComponent(appFileMatch[1]), decodePathComponent(appFileMatch[2]));
 						if (!found) return sendJson(response, 404, { error: t('没有这个小程序文件') });

@@ -1,6 +1,6 @@
 import { CircleHelp } from 'lucide-react';
 
-import { appFetch, appRun, articleFileUrl, getTask, listArticleFiles, listMiniApps, uploadArticleFile, type MiniApp } from '../api/client';
+import { appFetch, appRun, appServer, articleFileUrl, getTask, listArticleFiles, listMiniApps, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
 import { showContextMenu, type MenuItem } from '../common/context-menu';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -12,6 +12,8 @@ export type MiniAppsHost = {
 	insert(markdown: string): void;
 	toast(message: string): void;
 	openPage(slug: string): void;
+	/** Puts `prompt` in the AI panel's input (shown), for the author to send. */
+	askAI(prompt: string): void;
 };
 
 const MESSAGE = 'studio-app';
@@ -30,7 +32,27 @@ const GRIPS = ['n', 'e', 's', 'w', 'ne', 'se', 'sw', 'nw'] as const;
  * no other: a page the frame goes to afterwards (a link clicked in it) gets none, and the line is cut. `loading`:
  * the Studio has just set the frame's address and waits for the app's `ready`; `loaded`: the app's page loaded.
  */
-type AppWindow = { app: MiniApp; root: HTMLElement; frame: HTMLIFrameElement; port: MessagePort | null; loading: boolean; loaded: boolean };
+type AppWindow = {
+	app: MiniApp;
+	root: HTMLElement;
+	frame: HTMLIFrameElement;
+	port: MessagePort | null;
+	loading: boolean;
+	loaded: boolean;
+	/** What went wrong in its page, the last few (the red dot on its bar). */
+	errors: string[];
+	errorBadge: HTMLButtonElement;
+	/** A project app: how its development server is (its bar says), what it wrote, and the watch on it. */
+	state: HTMLElement | null;
+	status: AppStatus | null;
+	polling: number | null;
+	/** What is shown over its page: its errors or its server's output. */
+	sheet: HTMLElement;
+};
+
+/** Errors kept for a window; lines of its server's output given to an AI. */
+const KEPT_ERRORS = 20;
+const LOG_LINES = 50;
 
 const theme = (): 'dark' | 'light' => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
@@ -84,16 +106,145 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 	function close(id: string): void {
 		const shown = open.get(id);
 		shown?.port?.close();
+		if (shown?.polling) clearInterval(shown.polling);
 		shown?.root.remove();
 		open.delete(id);
 	}
+
+	const home = (app: MiniApp) => `/studio-apps/${encodeURIComponent(app.id)}/`;
 
 	/** Puts the app's own page in its frame (again, with `query`), to be given a line when it is ready. */
 	function load(shown: AppWindow, query = ''): void {
 		cut(shown);
 		shown.loading = true;
 		shown.loaded = false;
-		shown.frame.src = `/studio-apps/${encodeURIComponent(shown.app.id)}/${query}`;
+		shown.frame.src = `${home(shown.app)}${query}`;
+	}
+
+	/** Whether the frame shows a page of the app's own (its page loaded again, by its server or by a change saved). */
+	function ours(shown: AppWindow): boolean {
+		try {
+			return (shown.frame.contentWindow?.location.pathname ?? '').startsWith(home(shown.app));
+		} catch {
+			return false;
+		}
+	}
+
+	/** Something went wrong in the app's page: kept, and its bar says how many. */
+	function failed(shown: AppWindow, message: string): void {
+		shown.errors.push(message);
+		if (shown.errors.length > KEPT_ERRORS) shown.errors.splice(0, shown.errors.length - KEPT_ERRORS);
+		shown.errorBadge.hidden = false;
+		shown.errorBadge.textContent = `● ${shown.errors.length}`;
+		shown.errorBadge.title = t('出错了：点开看，或让 AI 修');
+		if (!shown.sheet.hidden && shown.sheet.dataset.showing === 'errors') showErrors(shown);
+	}
+
+	function clearErrors(shown: AppWindow): void {
+		shown.errors = [];
+		shown.errorBadge.hidden = true;
+	}
+
+	/** Shows `text` over the app's page, with `actions` under it. */
+	function showSheet(shown: AppWindow, showing: string, heading: string, text: string, actions: Array<[string, () => void]>): void {
+		const { sheet } = shown;
+		sheet.replaceChildren();
+		sheet.dataset.showing = showing;
+		const title = document.createElement('strong');
+		title.textContent = heading;
+		const body = document.createElement('pre');
+		body.textContent = text;
+		const row = document.createElement('div');
+		row.className = 'mini-app-sheet-actions';
+		for (const [label, action] of [...actions, [t('关闭'), () => (sheet.hidden = true)] as [string, () => void]]) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.textContent = label;
+			button.addEventListener('click', action);
+			row.append(button);
+		}
+		sheet.append(title, body, row);
+		sheet.hidden = false;
+		body.scrollTop = body.scrollHeight;
+	}
+
+	function showErrors(shown: AppWindow): void {
+		showSheet(shown, 'errors', t('「{name}」出的错', { name: shown.app.name }), shown.errors.join('\n\n'), [
+			[t('让 AI 修'), () => void askToMend(shown)],
+			[t('清除'), () => {
+				clearErrors(shown);
+				shown.sheet.hidden = true;
+			}],
+		]);
+	}
+
+	function showLog(shown: AppWindow): void {
+		showSheet(shown, 'log', t('「{name}」的开发服务器', { name: shown.app.name }), shown.status?.log || t('（还没有输出）'), [
+			[t('重启'), () => void restart(shown)],
+		]);
+	}
+
+	/** Its errors (and its server's last output) put in the AI panel's input, for the author to send. */
+	async function askToMend(shown: AppWindow): Promise<void> {
+		const { app } = shown;
+		let log = '';
+		if (app.kind === 'project') {
+			shown.status = await appServer(app.id, 'status').catch(() => shown.status);
+			log = (shown.status?.log ?? '').split('\n').slice(-LOG_LINES).join('\n').trim();
+		}
+		const where = app.kind === 'project'
+			? `apps/${app.id}/（是一个项目：在哪个文件夹见 apps/${app.id}/app.local.json 或 app.json 的 dev.cwd，没写就是 apps/${app.id}/ 本身）` // i18n-ignore: said to the AI
+			: `apps/${app.id}/`;
+		const errors = shown.errors.slice(-5).map((error) => `\`\`\`\n${error}\n\`\`\``).join('\n');
+		host.askAI([
+			`小程序「${app.name}」出错了，代码在 ${where}。`, // i18n-ignore: said to the AI
+			errors ? `出的错：\n${errors}` : '', // i18n-ignore: said to the AI
+			log ? `它的开发服务器最近的输出：\n\`\`\`\n${log}\n\`\`\`` : '', // i18n-ignore: said to the AI
+			'请找出原因并修好，照技能 studio-mini-apps 来。修了三次还不行就停下来告诉我。', // i18n-ignore: said to the AI
+		].filter(Boolean).join('\n\n'));
+		shown.sheet.hidden = true;
+	}
+
+	const STATES: Record<AppStatus['state'], string> = { stopped: t('已停止'), starting: t('启动中…'), running: t('运行中'), failed: t('出错') };
+
+	/** What a project app's bar says of its server, and whether its page can be shown. */
+	function told(shown: AppWindow, status: AppStatus): void {
+		const before = shown.status?.state;
+		shown.status = status;
+		if (shown.state) {
+			shown.state.textContent = STATES[status.state];
+			shown.state.dataset.state = status.state;
+			shown.state.title = status.error ?? '';
+		}
+		if (status.state === 'running' && before !== 'running') load(shown);
+		if ((status.state === 'failed' || status.state === 'stopped') && before !== status.state) {
+			if (status.error) showSheet(shown, 'log', status.error, status.log || t('（还没有输出）'), [[t('重启'), () => void restart(shown)], [t('让 AI 修'), () => {
+				failed(shown, status.error ?? '');
+				void askToMend(shown);
+			}]]);
+		}
+	}
+
+	/** Starts a project app's server (`restart`: again), its page shown once it answers. */
+	async function start(shown: AppWindow, action: 'start' | 'restart'): Promise<void> {
+		shown.sheet.hidden = true;
+		told(shown, { state: 'starting', port: null, error: null, log: shown.status?.log ?? '' });
+		try {
+			told(shown, await appServer(shown.app.id, action));
+		} catch (error) {
+			told(shown, { state: 'failed', port: null, error: error instanceof Error ? error.message : String(error), log: shown.status?.log ?? '' });
+		}
+		// Watched while its window is open: one that stops by itself says so.
+		shown.polling ??= window.setInterval(() => {
+			void appServer(shown.app.id, 'status').then((status) => {
+				if (open.get(shown.app.id) === shown && status.state !== shown.status?.state) told(shown, status);
+				else if (shown.status) shown.status.log = status.log;
+			}, () => {});
+		}, 3000);
+	}
+
+	function restart(shown: AppWindow): Promise<void> {
+		return start(shown, 'restart');
 	}
 
 	/** The frame shows a page the Studio did not put there: it gets nothing of the Studio. */
@@ -111,6 +262,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 
 	/** The app's page is ready: its line to the Studio, through which alone it is answered. */
 	function connect(shown: AppWindow): void {
+		cut(shown);
 		const channel = new MessageChannel();
 		shown.port = channel.port1;
 		channel.port1.onmessage = (event: MessageEvent) => {
@@ -157,31 +309,57 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		shut.textContent = '×';
 		shut.title = t('关闭');
 		shut.setAttribute('aria-label', t('关闭 {name}', { name: app.name }));
-		bar.append(title, reload, shut);
+		const errorBadge = document.createElement('button');
+		errorBadge.type = 'button';
+		errorBadge.className = 'mini-app-errors';
+		errorBadge.hidden = true;
+		bar.append(title, errorBadge);
+		let state: HTMLElement | null = null;
+		if (app.kind === 'project') {
+			state = document.createElement('span');
+			state.className = 'mini-app-state';
+			const log = document.createElement('button');
+			log.type = 'button';
+			log.className = 'mini-app-log';
+			log.textContent = '≡';
+			log.title = t('开发服务器的输出');
+			log.addEventListener('click', () => showLog(shown));
+			bar.append(state, log);
+		}
+		bar.append(reload, shut);
+		const sheet = document.createElement('div');
+		sheet.className = 'mini-app-sheet';
+		sheet.hidden = true;
 		const frame = document.createElement('iframe');
 		frame.className = 'mini-app-frame';
 		frame.title = app.name;
 		// Not sandboxed: the author's own tool, of the Studio's origin (its files load as a page's; `studio` does the rest).
 		frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
-		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false };
-		// Any page loaded after the app's own is another one: the app followed a link, or went elsewhere.
+		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false, errors: [], errorBadge, state, status: null, polling: null, sheet };
+		errorBadge.addEventListener('click', () => showErrors(shown));
+		// Any page loaded after the app's own that is not of the app's is another one: the app followed a link elsewhere.
 		frame.addEventListener('load', () => {
-			if (shown.loaded) leave(shown);
+			if (shown.loaded && !ours(shown)) leave(shown);
 			else if (!shown.loading) shown.loaded = true;
 		});
-		load(shown);
+		if (app.kind === 'project') void start(shown, 'start');
+		else load(shown);
 		const grips = GRIPS.map((edge) => {
 			const grip = document.createElement('div');
 			grip.className = 'mini-app-grip';
 			grip.dataset.edge = edge;
 			return grip;
 		});
-		root.append(bar, frame, ...grips);
+		root.append(bar, frame, sheet, ...grips);
 		layer.append(root);
 		open.set(app.id, shown);
 		focus(shown);
 		root.addEventListener('pointerdown', () => focus(shown));
-		reload.addEventListener('click', () => load(shown, `?${Date.now()}`));
+		reload.addEventListener('click', () => {
+			clearErrors(shown);
+			if (app.kind === 'project' && shown.status?.state !== 'running') void restart(shown);
+			else load(shown, `?${Date.now()}`);
+		});
 		shut.addEventListener('click', () => close(app.id));
 		const remember = () => keepPlace(app.id, placeOf(root));
 		// Double-click on the bar: as large as the Studio's window allows, and back to where it was.
@@ -318,15 +496,26 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		}
 	}
 
-	// Only `ready` comes as a message to the window: everything else goes through the app's port.
+	// Only `ready` and what went wrong come as messages to the window: everything else goes through the app's port.
 	window.addEventListener('message', (event) => {
-		const data = event.data as { kind?: unknown; type?: unknown } | null;
-		if (!data || data.kind !== MESSAGE || data.type !== 'ready') return;
+		const data = event.data as { kind?: unknown; type?: unknown; message?: unknown } | null;
+		if (!data || data.kind !== MESSAGE) return;
 		const shown = [...open.values()].find((candidate) => candidate.frame.contentWindow === event.source);
 		if (!shown) return;
-		if (!shown.loading) return leave(shown);
+		if (data.type === 'error') return failed(shown, String(data.message ?? ''));
+		if (data.type !== 'ready') return;
+		// Its own page loaded again (its server's reload, a change saved): a new line for it.
+		if (!shown.loading && !ours(shown)) return leave(shown);
 		shown.loading = false;
 		connect(shown);
+	});
+	// A page app's files changed: its window loads it again.
+	import.meta.hot?.on('studio:app-changed', (data: { id?: string }) => {
+		const shown = open.get(String(data?.id ?? ''));
+		if (shown && shown.app.kind === 'page') {
+			clearErrors(shown);
+			load(shown, `?${Date.now()}`);
+		}
 	});
 	new MutationObserver(() => {
 		for (const shown of open.values()) shown.port?.postMessage({ type: 'theme', theme: theme() });

@@ -32,6 +32,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../system/terminal-host.mjs').TerminalHost} terminals
  * @property {import('../tasks/tasks.mjs').Tasks} tasks
  * @property {import('../apps/mini-apps.mjs').MiniApps} miniApps
+ * @property {import('../apps/project-apps.mjs').ProjectApps} projectApps the project apps' development servers
  * @property {import('../plugin-settings.mjs').PluginSettings} pluginSettings
  * @property {import('../locale-settings.mjs').LocaleSettings} localeSettings the language the Studio speaks
  * @property {import('../ai/ai-settings.mjs').AiSettings} aiSettings

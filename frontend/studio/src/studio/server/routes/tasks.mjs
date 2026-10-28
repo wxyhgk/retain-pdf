@@ -10,7 +10,7 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function taskRoutes(api, { projectRoot, tasks, miniApps, programEnv, articleFolder }) {
+export function taskRoutes(api, { projectRoot, tasks, miniApps, projectApps, programEnv, articleFolder }) {
 	api.get('/tasks/events', ({ request, response }) => sendEvents(request, response, (send) => {
 		send({ type: 'all', tasks: tasks.list() });
 		return tasks.subscribe((event) => {
@@ -33,6 +33,42 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, programEnv, arti
 		if (!app) throw refuse(404, t('没有这个小程序'));
 		return app;
 	};
+	// A project app's development server (docs/apps-design.md): started (resolved once it answers), stopped, how it is.
+	const project = async (id) => {
+		await known(id);
+		const dev = await miniApps.dev(id);
+		if (!dev) throw refuse(400, t('这个小程序不是项目（app.json 里没有 dev）'));
+		return dev;
+	};
+	const statusOf = (id) => ({ ...projectApps.status(id), log: projectApps.log(id) });
+	api.post('/apps/:id/start', async ({ params }) => {
+		const dev = await project(params.id);
+		try {
+			await projectApps.start(params.id, dev);
+		} catch {
+			// Its state says why.
+		}
+		return statusOf(params.id);
+	});
+	api.post('/apps/:id/restart', async ({ params }) => {
+		const dev = await project(params.id);
+		projectApps.stop(params.id);
+		try {
+			await projectApps.start(params.id, dev);
+		} catch {
+			// Its state says why.
+		}
+		return statusOf(params.id);
+	});
+	api.post('/apps/:id/stop', async ({ params }) => {
+		await project(params.id);
+		projectApps.stop(params.id);
+		return statusOf(params.id);
+	});
+	api.get('/apps/:id/status', async ({ params }) => {
+		await known(params.id);
+		return statusOf(params.id);
+	});
 	api.post('/apps/:id/fetch', async ({ params, json }) => {
 		await known(params.id);
 		return proxyFetch(await json());

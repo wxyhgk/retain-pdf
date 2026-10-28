@@ -531,7 +531,16 @@ export async function cancelTask(id: string): Promise<void> {
 }
 
 /** A 小程序 (server/apps/mini-apps.mjs): what it is, how big its window opens, what it may do (`problem`: its app.json is wrong). */
-export type MiniApp = { id: string; name: string; icon: string; description: string; width: number; height: number; permissions: string[]; problem?: string };
+export type MiniApp = { id: string; name: string; icon: string; description: string; width: number; height: number; permissions: string[]; kind: 'page' | 'project'; problem?: string };
+
+/** A project app's development server: how it is, and what it wrote last. */
+export type AppStatus = { state: 'stopped' | 'starting' | 'running' | 'failed'; port: number | null; error: string | null; log: string };
+
+/** A project app's development server started (`start`, answered once it answers or has failed), started again, or how it is. */
+export function appServer(id: string, action: 'start' | 'restart' | 'status'): Promise<AppStatus> {
+	const path = `/api/studio/apps/${encodeURIComponent(id)}/${action}`;
+	return action === 'status' ? request(path) : request(path, jsonOptions('POST', {}));
+}
 
 export async function listMiniApps(): Promise<MiniApp[]> {
 	return (await request<{ apps: MiniApp[] }>('/api/studio/apps')).apps;

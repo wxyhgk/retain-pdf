@@ -36,6 +36,8 @@ playwright-report/
 .studio-jobs.json
 # what the Studio builds for itself (RetainMol's page)
 .studio-cache/
+# where a project app is on this machine (apps/<名字>/app.local.json): not in the public repository
+apps/*/app.local.json
 # the AI panel's conversations (chats/<chat-…>/index.md and ai/): the author's, not published
 /chats/
 

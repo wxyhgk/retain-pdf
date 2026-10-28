@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from 'node:fs/promises';
-import { extname, join } from 'node:path';
+import { extname, isAbsolute, join, resolve } from 'node:path';
 
 import { resolveInside } from '../../../articles/bundle-paths.mjs';
 import { colorDeclarations, siteColors } from '../../../styles/palette.mjs';
@@ -21,6 +21,13 @@ import { t } from '@blog/i18n/index.mjs';
  * (`./lib.js`, `fetch('./data.json')`), and `/vendor/…`; `studio` (BRIDGE) does
  * what a page cannot: the article, its files, inserting, fetching across sites,
  * running commands. `permissions` in app.json is no longer asked for.
+ *
+ * An app can also be a project of its own (React, TypeScript, npm packages, a server of its own: docs/apps-design.md):
+ * `dev` in its app.json says how its development server is started, which the Studio runs (project-apps.mjs) and puts
+ * under the same address (app-proxy.mjs). Where it is on this machine, when it is not in its folder, is said in
+ * `app.local.json` beside it (not committed: the repository is public), whose fields go over app.json's.
+ *
+ *     "dev": { "command": ["npm", "run", "dev", "--", "--port", "{port}", "--base", "{base}"], "backend": ["npm", "run", "backend"] }
  */
 
 export const APP_PERMISSIONS = Object.freeze({
@@ -69,8 +76,13 @@ const TYPES = {
 export const APP_MESSAGE = 'studio-app';
 
 /**
- * @typedef {{ id: string, name: string, icon: string, description: string, width: number, height: number, permissions: string[], problem?: string }} MiniApp
+ * How a project app is run: its commands (`{port}`, `{base}` put in), in its folder.
+ * @typedef {{ cwd: string, command: string[], backend: string[] | null }} AppDev
+ * @typedef {{ id: string, name: string, icon: string, description: string, width: number, height: number, permissions: string[], kind: 'page' | 'project', problem?: string }} MiniApp
  */
+
+/** A command as app.json writes it: a list of words, the first the program. */
+const command = (value) => (Array.isArray(value) && value.length && value.every((word) => typeof word === 'string' && word) ? value : null);
 
 export class MiniApps {
 	/** @param {string} folder the repository's apps/ */
@@ -102,22 +114,54 @@ export class MiniApps {
 	}
 
 	async #read(id) {
-		const plain = { id, name: id, icon: '◆', description: '', width: 380, height: 480, permissions: [] };
+		return (await this.#manifest(id)).app;
+	}
+
+	/** An app's app.json, with its app.local.json over it: the app as listed, and how it is run when it is a project. */
+	async #manifest(id) {
+		const plain = { id, name: id, icon: '◆', description: '', width: 380, height: 480, permissions: [], kind: 'page' };
 		let manifest;
 		try {
 			manifest = JSON.parse(await readFile(join(this.folder, id, 'app.json'), 'utf8'));
 		} catch (error) {
-			return { ...plain, problem: t('app.json 读不了：{error}', { error: error instanceof Error ? error.message : String(error) }) };
+			return { app: { ...plain, problem: t('app.json 读不了：{error}', { error: error instanceof Error ? error.message : String(error) }) }, dev: null };
+		}
+		let local = {};
+		try {
+			local = JSON.parse(await readFile(join(this.folder, id, 'app.local.json'), 'utf8'));
+		} catch (error) {
+			if (error?.code !== 'ENOENT') return { app: { ...plain, problem: t('app.local.json 读不了：{error}', { error: error instanceof Error ? error.message : String(error) }) }, dev: null };
 		}
 		const text = (value, fallback) => (typeof value === 'string' && value.trim() ? value.trim() : fallback);
 		const size = (value, fallback) => (Number.isFinite(value) ? Math.max(200, Math.min(1600, Math.round(value))) : fallback);
 		const permissions = Array.isArray(manifest.permissions) ? manifest.permissions.filter((name) => name in APP_PERMISSIONS) : [];
-		return { id, name: text(manifest.name, id), icon: text(manifest.icon, '◆'), description: text(manifest.description, ''), width: size(manifest.width, plain.width), height: size(manifest.height, plain.height), permissions };
+		const app = { id, name: text(manifest.name, id), icon: text(manifest.icon, '◆'), description: text(manifest.description, ''), width: size(manifest.width, plain.width), height: size(manifest.height, plain.height), permissions, kind: 'page' };
+		const written = manifest.dev && typeof manifest.dev === 'object' ? manifest.dev : null;
+		if (!written) return { app, dev: null };
+		app.kind = 'project';
+		// A path of this machine in what is committed: said, not run.
+		if (typeof written.cwd === 'string' && isAbsolute(written.cwd)) return { app: { ...app, problem: t('app.json 里写了本机路径（dev.cwd）：写进不提交的 app.local.json') }, dev: null };
+		const dev = { ...written, ...(local.dev && typeof local.dev === 'object' ? local.dev : {}) };
+		const run = command(dev.command);
+		if (!run) return { app: { ...app, problem: t('dev.command 要是一串词，比如 ["npm", "run", "dev", "--", "--port", "{port}", "--base", "{base}"]') }, dev: null };
+		const folder = join(this.folder, id);
+		const cwd = typeof dev.cwd === 'string' && dev.cwd.trim() ? resolve(folder, dev.cwd) : folder;
+		return { app, dev: { cwd, command: run, backend: command(dev.backend) } };
 	}
 
 	/**
-	 * A file of an app, for its frame: `app.html` (`''`) with the notes' style and the bridge put first in its head,
-	 * the others as they are. Null when there is none.
+	 * How a project app is run, or null for an app that is a page (or none, or one that cannot be read).
+	 * @returns {Promise<AppDev | null>}
+	 */
+	async dev(id) {
+		if (!ID.test(String(id))) return null;
+		const { app, dev } = await this.#manifest(id);
+		return app.problem ? null : dev;
+	}
+
+	/**
+	 * A file of an app, for its frame: its pages (`app.html` for `''`) with the notes' style and the bridge put first in
+	 * their head, the others as they are. Null when there is none.
 	 * @returns {Promise<{ type: string, body: string | Buffer } | null>}
 	 */
 	async file(id, path) {
@@ -132,7 +176,8 @@ export class MiniApps {
 		const body = await readFile(file).catch(() => null);
 		if (!body) return null;
 		const type = TYPES[extname(name).toLowerCase()] ?? 'application/octet-stream';
-		return name === 'app.html' ? { type, body: appDocument(body.toString('utf8')) } : { type, body };
+		// Its pages (app.html and any other of its folder) with `studio`; its other files as they are.
+		return extname(name).toLowerCase() === '.html' ? { type, body: appDocument(body.toString('utf8')) } : { type, body };
 	}
 }
 
@@ -152,6 +197,39 @@ input, select, textarea { padding: 4px 8px; border: 1px solid var(--line); borde
 button { padding: 3px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); cursor: pointer; }
 button:hover { background: var(--soft); }
 :focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
+`;
+
+// The notes' colors only, for a project's own page (its style is its own).
+const COLORS = `
+:root { ${colorDeclarations(siteColors('light'))} }
+:root[data-theme='dark'] { ${colorDeclarations(siteColors('dark'))} }
+`;
+
+// Runs in the app's frame first: what goes wrong in it is told to the Studio (its window shows it, for an AI to mend).
+const ERRORS = `
+(() => {
+	const KIND = ${JSON.stringify(APP_MESSAGE)};
+	const words = (value) => {
+		// WebKit's stack has only where it was, not what.
+		if (value instanceof Error) return value.stack?.includes(value.message) ? value.stack : String(value) + (value.stack ? '\\n' + value.stack : '');
+		if (typeof value === 'string') return value;
+		try { return JSON.stringify(value); } catch { return String(value); }
+	};
+	const say = (message) => {
+		try { parent.postMessage({ kind: KIND, type: 'error', message: String(message).slice(0, 4000) }, '*'); } catch {}
+	};
+	addEventListener('error', (event) => {
+		const target = event.target;
+		if (target && target !== window && (target.src || target.href)) say(${JSON.stringify(t('加载失败：'))} + (target.src || target.href));
+		else if (target === window) say(event.error ? words(event.error) : event.message + (event.filename ? ' (' + event.filename + ':' + event.lineno + ')' : ''));
+	}, true);
+	addEventListener('unhandledrejection', (event) => say(words(event.reason)));
+	const original = console.error.bind(console);
+	console.error = (...args) => {
+		say(args.map(words).join(' '));
+		original(...args);
+	};
+})();
 `;
 
 // Runs in the app's frame: `studio`, each call a message to the Studio, answered.
@@ -211,9 +289,15 @@ const BRIDGE = `
 })();
 `;
 
-/** An app's page with the notes' style and `studio` first in its head. */
-export function appDocument(source) {
-	const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>${STYLE}</style><script>${BRIDGE}</script>`;
+/** What goes first in the head of an app's page: for a page app the notes' style too, for a project its colors only. */
+function appHead(project) {
+	const style = project ? COLORS : STYLE;
+	return `${project ? '' : '<meta charset="utf-8"><meta name="viewport" content="width=device-width">'}<style>${style}</style><script>${ERRORS}</script><script>${BRIDGE}</script>`;
+}
+
+/** An app's page with the notes' style and `studio` first in its head; a project's page (`project`) keeps its own style. */
+export function appDocument(source, { project = false } = {}) {
+	const head = appHead(project);
 	const text = String(source ?? '');
 	if (/<head[\s>]/iu.test(text)) return text.replace(/<head(\s[^>]*)?>/iu, (tag) => tag + head);
 	if (/<html[\s>]/iu.test(text)) return text.replace(/<html(\s[^>]*)?>/iu, (tag) => `${tag}<head>${head}</head>`);

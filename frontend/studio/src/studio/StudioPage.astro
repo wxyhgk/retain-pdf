@@ -465,6 +465,16 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.mini-app-layer :global(.mini-app-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 	.mini-app-layer :global(.mini-app-bar button) { width: 24px; height: 24px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 14px; cursor: pointer; }
 	.mini-app-layer :global(.mini-app-bar button:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	/* What went wrong in its page (red: an error), how a project's server is, and what is shown over its page. */
+	.mini-app-layer :global(.mini-app-bar button.mini-app-errors) { width: auto; padding: 0 6px; color: var(--danger); font-size: 12px; font-variant-numeric: tabular-nums; }
+	.mini-app-layer :global(.mini-app-state) { flex: none; color: rgb(var(--gray)); font-size: 11px; }
+	.mini-app-layer :global(.mini-app-state[data-state='failed']) { color: var(--danger); }
+	.mini-app-layer :global(.mini-app-sheet) { position: absolute; inset: 32px 0 0; z-index: 1; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface); font-size: 12px; }
+	.mini-app-layer :global(.mini-app-sheet[hidden]) { display: none; }
+	.mini-app-layer :global(.mini-app-sheet pre) { flex: 1; min-height: 0; margin: 0; padding: 8px; overflow: auto; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface-soft); font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+	.mini-app-layer :global(.mini-app-sheet-actions) { display: flex; gap: 6px; justify-content: flex-end; }
+	.mini-app-layer :global(.mini-app-sheet-actions button) { padding: 3px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
+	.mini-app-layer :global(.mini-app-sheet-actions button:hover) { background: var(--surface-soft); }
 	.mini-app-layer :global(.mini-app-frame) { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
 	/* Edges and corners to size it from: thin strips over the frame; the corner below right is marked. */
 	.mini-app-layer :global(.mini-app-grip) { position: absolute; z-index: 1; touch-action: none; }

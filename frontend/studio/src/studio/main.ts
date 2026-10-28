@@ -248,6 +248,10 @@ createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.quer
 	insert: (markdown) => editor.insertMarkdown(markdown),
 	toast: (message) => showToast(message),
 	openPage: (slug) => void session.open(slug),
+	askAI: (prompt) => {
+		sidePanel.show('ai');
+		chat.aiPanel.ask(prompt);
+	},
 });
 const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files')!, {
 	source: () => session.current.source,

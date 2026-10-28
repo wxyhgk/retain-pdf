@@ -100,14 +100,15 @@ async function withApp(files: Record<string, string>, run: () => Promise<void>):
 	}
 }
 
+// What a page out on the web could do once in the frame (another origin: here a data: address): say it is ready, and ask.
+const ELSEWHERE = `data:text/html,${encodeURIComponent('<p id="out">…</p><script>let heard = false; addEventListener("message", (e) => { heard = true; out.textContent = "answered " + JSON.stringify(e.data); }); parent.postMessage({ kind: "studio-app", type: "ready" }, "*"); parent.postMessage({ kind: "studio-app", type: "call", id: 1, method: "article", args: [] }, "*"); setTimeout(() => { if (!heard) out.textContent = "silent"; }, 1500);</script>')}`;
+
 test('a page the app’s frame goes to (a link clicked) gets nothing of the Studio; the app’s own files load', async ({ page }) => {
 	await withApp(
 		{
 			'app.json': JSON.stringify({ name: '探针', icon: '?' }),
-			'app.html': '<a id="go" href="./other.html">去别处</a><p id="out">…</p><p id="data">…</p><script>studio.article().then((a) => { out.textContent = a.slug; }); studio.appFile("data.json").then((t) => { data.textContent = JSON.parse(t).value; }, (e) => { data.textContent = e.message; });</script>',
+			'app.html': `<a id="go" href="${ELSEWHERE.replaceAll('"', '&quot;')}">去别处</a><p id="out">…</p><p id="data">…</p><script>studio.article().then((a) => { out.textContent = a.slug; }); studio.appFile("data.json").then((t) => { data.textContent = JSON.parse(t).value; }, (e) => { data.textContent = e.message; });</script>`,
 			'data.json': JSON.stringify({ value: '数据读到了' }),
-			// What a page out on the web could do once in the frame: say it is ready, and ask.
-			'other.html': '<p id="out">…</p><script>let heard = false; addEventListener("message", (e) => { heard = true; out.textContent = "answered " + JSON.stringify(e.data); }); parent.postMessage({ kind: "studio-app", type: "ready" }, "*"); parent.postMessage({ kind: "studio-app", type: "call", id: 1, method: "article", args: [] }, "*"); setTimeout(() => { if (!heard) out.textContent = "silent"; }, 1500);</script>',
 		},
 		async () => {
 			await openStudio(page);
@@ -216,4 +217,100 @@ test('a window opens roomy, is sized from its edges and corners, made large by a
 	await openApp(page, '能量单位换算');
 	const again = await box();
 	expect([again.x, again.y, again.width, again.height].map(Math.round)).toEqual([left.x, left.y, left.width, left.height].map(Math.round));
+});
+
+test('another page of the app’s own folder is the app’s: it has `studio` too', async ({ page }) => {
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '探针', icon: '?' }),
+			'app.html': '<a id="go" href="./second.html">第二页</a>',
+			'second.html': '<p id="out">…</p><script>studio.article().then((a) => { out.textContent = "第二页 " + a.slug; });</script>',
+		},
+		async () => {
+			await openStudio(page);
+			await openApp(page, '探针');
+			await appFrame(page, 'probe').locator('#go').click();
+			await expect(appFrame(page, 'probe').locator('#out')).toHaveText(`第二页 ${slug}`);
+			await expect(page.locator('.studio-toast', { hasText: '打开了别的网页' })).toHaveCount(0);
+		},
+	);
+});
+
+test('a page app is loaded again in its window when its file is saved, and keeps `studio`', async ({ page }) => {
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '探针', icon: '?' }),
+			'app.html': '<p id="out">…</p><script>studio.article().then((a) => { out.textContent = "一 " + a.slug; });</script>',
+		},
+		async () => {
+			await openStudio(page);
+			await openApp(page, '探针');
+			const frame = appFrame(page, 'probe');
+			await expect(frame.locator('#out')).toHaveText(`一 ${slug}`);
+			writeFileSync(join(apps(), 'probe', 'app.html'), '<p id="out">…</p><script>studio.article().then((a) => { out.textContent = "二 " + a.slug; });</script>');
+			await expect(frame.locator('#out')).toHaveText(`二 ${slug}`);
+		},
+	);
+});
+
+test('what goes wrong in an app shows on its bar, and is put to the AI to mend', async ({ page }) => {
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '探针', icon: '?' }),
+			'app.html': '<button id="boom">炸</button><script>boom.onclick = () => { throw new Error("算不出来：除以零"); }; console.error("单位不对", { value: 3 });</script>',
+		},
+		async () => {
+			await openStudio(page);
+			await openApp(page, '探针');
+			const window = page.locator('.mini-app-window[data-app="probe"]');
+			const badge = window.locator('.mini-app-errors');
+			await expect(badge).toHaveText('● 1');
+			await appFrame(page, 'probe').locator('#boom').click();
+			await expect(badge).toHaveText('● 2');
+			await badge.click();
+			await expect(window.locator('.mini-app-sheet pre')).toContainText('单位不对 {"value":3}');
+			await expect(window.locator('.mini-app-sheet pre')).toContainText('算不出来：除以零');
+			await window.locator('.mini-app-sheet button', { hasText: '让 AI 修' }).click();
+			const input = page.locator('#side-ai .ai-input .ProseMirror');
+			await expect(input).toContainText('小程序「探针」出错了，代码在 apps/probe/');
+			await expect(input).toContainText('算不出来：除以零');
+			// Cleared when it is loaded again.
+			await window.locator('.mini-app-bar button', { hasText: '↻' }).click();
+			await expect(badge).toHaveText('● 1');
+		},
+	);
+});
+
+test('a project app runs on its own development server, under the Studio’s address: `studio` works, a change shows, its output is kept', async ({ page }) => {
+	test.setTimeout(90_000);
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '项目', icon: 'P', dev: { command: ['node', '../../node_modules/vite/bin/vite.js', '--port', '{port}', '--strictPort', '--base', '{base}'] } }),
+			'index.html': '<!doctype html><html><head><title>项目</title></head><body><p id="out">…</p><script type="module" src="./main.js"></script></body></html>',
+			'main.js': 'import { word } from "./word.js";\nstudio.article().then((a) => { document.querySelector("#out").textContent = word + " " + a.slug; });\n',
+			'word.js': 'export const word = "一";\n',
+		},
+		async () => {
+			await openStudio(page);
+			await page.locator('#open-apps').click();
+			await page.getByRole('menuitem', { name: '项目' }).click();
+			const window = page.locator('.mini-app-window[data-app="probe"]');
+			await expect(window.locator('.mini-app-state')).toHaveText('运行中', { timeout: 60_000 });
+			const frame = appFrame(page, 'probe');
+			await expect(frame.locator('#out')).toHaveText(`一 ${slug}`);
+			// Its own server sees the change, and the page (loaded again) keeps `studio`.
+			writeFileSync(join(apps(), 'probe', 'word.js'), 'export const word = "二";\n');
+			await expect(frame.locator('#out')).toHaveText(`二 ${slug}`, { timeout: 20_000 });
+			await window.locator('.mini-app-log').click();
+			await expect(window.locator('.mini-app-sheet pre')).toContainText('vite.js --port');
+			await window.locator('.mini-app-sheet button', { hasText: '关闭' }).click();
+			// Closed with its window? No: it runs on until the Studio's server stops; the window opened again finds it running.
+			await window.locator('.mini-app-bar button', { hasText: '×' }).click();
+			await page.locator('#open-apps').click();
+			await page.getByRole('menuitem', { name: '项目' }).click();
+			await expect(frame.locator('#out')).toHaveText(`二 ${slug}`);
+			const stopped = await page.evaluate(() => fetch('/api/studio/apps/probe/stop', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((r) => r.json()));
+			expect(stopped.state).toBe('stopped');
+		},
+	);
 });
