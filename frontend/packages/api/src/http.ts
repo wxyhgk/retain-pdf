@@ -129,16 +129,37 @@ export function isInsufficientStorageError(error: unknown): boolean {
   return !!error && typeof error === "object" && (error as HttpError).reason === INSUFFICIENT_STORAGE;
 }
 
+/** 排队（还没开跑）的任务已经满了：建任务、原地重跑回 429，error.details.reason 是这个。message 同样是英文。 */
+export const QUEUE_FULL = "queue_full";
+export const QUEUE_FULL_MESSAGE = "排队的任务太多了，等前面的开跑再交。";
+
+/** 错误响应是「排队满了」就做成一句中文的错误（带 status、reason），不是就返回 null。 */
+export function queueFullErrorFromPayload(status: number, payload: unknown, url?: string): HttpError | null {
+  const p = (isObject(payload) ? payload : {}) as Record<string, any>;
+  if (p.error?.details?.reason !== QUEUE_FULL) return null;
+  const error = attachErrorDetails(new Error(QUEUE_FULL_MESSAGE) as HttpError, payload);
+  error.name = "QueueFullError";
+  error.status = status;
+  if (url) error.url = url;
+  return error;
+}
+
+export function isQueueFullError(error: unknown): boolean {
+  return !!error && typeof error === "object" && (error as HttpError).reason === QUEUE_FULL;
+}
+
 /**
- * 提交被拒但不是故障：页数额度不够、磁盘空间不够。message 是能照着做的中文，界面原样显示，
- * 不加「提交失败: 状态码」前缀，也不给诊断。都不是就返回 null。
+ * 提交被拒但不是故障：页数额度不够、磁盘空间不够、排队的任务满了。message 是能照着做的中文，
+ * 界面原样显示，不加「提交失败: 状态码」前缀，也不给诊断。都不是就返回 null。
  */
 export function refusedSubmissionError(status: number, payload: unknown, url?: string): HttpError | null {
-  return pageQuotaErrorFromPayload(status, payload, url) ?? insufficientStorageErrorFromPayload(status, payload, url);
+  return pageQuotaErrorFromPayload(status, payload, url)
+    ?? insufficientStorageErrorFromPayload(status, payload, url)
+    ?? queueFullErrorFromPayload(status, payload, url);
 }
 
 export function isRefusedSubmission(error: unknown): boolean {
-  return isPageQuotaError(error) || isInsufficientStorageError(error);
+  return isPageQuotaError(error) || isInsufficientStorageError(error) || isQueueFullError(error);
 }
 
 export interface SubmitJsonOptions {

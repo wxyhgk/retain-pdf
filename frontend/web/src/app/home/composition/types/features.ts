@@ -1,6 +1,6 @@
 // features：Feature 注册表（神对象 CT：10 字段）。
 import type { mountBrowserCredentialsFeature } from "@/features/credentials/index.js";
-import type { mountUploadFeature, mountWorkflowFeature } from "@/features/ingest/index.js";
+import type { BatchSubmitItemResult, BatchSubmitResult, mountUploadFeature, mountWorkflowFeature } from "@/features/ingest/index.js";
 import type { GlossariesFeature } from "@/features/glossaries/index.js";
 
 /** 就是工作流功能挂载出来的对象（以前手抄一份结构类型，返回值对不上）。 */
@@ -22,6 +22,11 @@ export type AppActionsFeature = {
   handleOpenOutputDir: () => unknown;
   /** React SubmitEvent 与 DOM Event 均允许 */
   submitForm: (event?: { preventDefault?: () => void } | null) => unknown;
+  /** 一次上传多本：每本一个任务，按顺序交，每本的结果经 onItem 报回。 */
+  submitBatch: (
+    uploadIds: string[],
+    onItem?: (uploadId: string, result: BatchSubmitItemResult) => void,
+  ) => Promise<BatchSubmitResult>;
 };
 
 export type StartPollingOptions = {

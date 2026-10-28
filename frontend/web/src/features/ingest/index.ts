@@ -47,6 +47,8 @@ export {
   WORKFLOW_TRANSLATE,
 } from "./domain.js";
 export type {
+  BatchSubmitItemResult,
+  BatchSubmitResult,
   ConstrainPageRangesOptions,
   LoadGlossaryOptionsParams,
   MountUploadFeatureOptions,

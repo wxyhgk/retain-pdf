@@ -1,0 +1,141 @@
+/* 一次上传多本：每本一行的列表、汇总、三个按钮。（BatchUploadPanel）
+ * 按钮的尺寸、禁用态沿用外层 upload-action-group；这里只给三个按钮各自的底色。
+ *
+ * @owns batch-upload */
+
+.batch-upload {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.batch-upload-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
+.batch-upload-link {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--ink);
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+}
+
+.batch-upload-list {
+  display: grid;
+  gap: 6px;
+  max-height: 280px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.batch-upload-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 38px;
+  padding: 8px 12px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  font-size: 12.5px;
+
+  &.is-problem .batch-upload-status {
+    color: var(--danger);
+  }
+
+  &.is-done .batch-upload-status {
+    color: var(--ok);
+  }
+}
+
+.batch-upload-name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-upload-status {
+  max-width: 260px;
+  overflow: hidden;
+  color: var(--muted);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.batch-upload-progress {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--ink);
+  transition: width 0.2s ease;
+}
+
+.batch-upload-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.batch-upload-options {
+  flex: 0 0 auto;
+  min-width: 76px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.batch-upload-store {
+  flex: 1 1 0;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.batch-upload-submit {
+  flex: 1 1 0;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@media (max-width: 560px) {
+  .batch-upload-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .batch-upload-status {
+    max-width: none;
+    text-align: left;
+  }
+}

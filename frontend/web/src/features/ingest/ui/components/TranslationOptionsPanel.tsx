@@ -21,7 +21,8 @@ const ENGINE_HINTS: Record<string, string> = {
   typst: "原来的 Typst 排版，公式要先转换一遍，个别公式可能出错。",
 };
 
-export function TranslationOptionsPanel() {
+/** hidePageRange：一次上传多本时每本整本处理，不给页码范围。 */
+export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRange?: boolean } = {}) {
   const { uploadViewStore, features } = useIngestServices();
   const workflowView = useIngestWorkflowView();
   const upload = useStoreSnapshot(uploadViewStore);
@@ -54,7 +55,11 @@ export function TranslationOptionsPanel() {
             <SlidersHorizontal className="h-4 w-4" aria-hidden="true" />
             翻译选项
           </h3>
-          <p id="page-range-limit-text">按需设置页码范围、术语表和翻译质量；页码留空表示处理整份 PDF。</p>
+          <p id="page-range-limit-text">
+            {hidePageRange
+              ? "这一批每本都整本处理；术语表、翻译质量和排版引擎对每本都一样。"
+              : "按需设置页码范围、术语表和翻译质量；页码留空表示处理整份 PDF。"}
+          </p>
         </div>
         <Button
           id="page-range-close-btn"
@@ -69,7 +74,7 @@ export function TranslationOptionsPanel() {
       </div>
 
       <div className="translation-options-grid">
-        <fieldset className="translation-options-range">
+        <fieldset className={`translation-options-range${hidePageRange ? " hidden" : ""}`}>
           <legend>
             <FileText className="h-4 w-4" aria-hidden="true" />
             页码范围
@@ -174,6 +179,7 @@ export function TranslationOptionsPanel() {
           id="page-range-clear-btn"
           type="button"
           variant="outline"
+          className={hidePageRange ? "hidden" : undefined}
           onClick={() => features.uploadFeature?.clearPageRanges()}
         >
           清除页码

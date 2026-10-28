@@ -58,6 +58,7 @@ export {
 export { createTranslationWorkflowStatusAreaPort } from "./domain/dialog/status-area-port.js";
 
 export { mountAppActionsFeature } from "./domain/actions/controller.js";
+export type { BatchSubmitItemResult, BatchSubmitResult } from "./domain/actions/submit/batch.js";
 export { defaultAppActionsConfigPort } from "./domain/actions/config-port.js";
 export { createAppActionsRuntimeEnvPort } from "./domain/actions/runtime-env-port.js";
 

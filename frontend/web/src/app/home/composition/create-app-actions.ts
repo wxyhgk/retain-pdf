@@ -123,7 +123,7 @@ export function createAppActions({
         if (isOcrOnly()) return { visible: false, blocking: false, tone: "", message: "", topUpUrl: "" };
         return workflow().currentBudgetState(w);
       },
-      collectRunPayload: () => workflow().collectRunPayload(),
+      collectRunPayload: (overrides) => workflow().collectRunPayload(overrides),
       validateBeforeSubmit: () => upload().validatePageRanges() ?? true,
       ensureOcrCredentialsReady: (options) => creds().ensureOcrCredentialsReady(options),
       hasBrowserCredentials: () => {

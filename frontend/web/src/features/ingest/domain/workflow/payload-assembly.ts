@@ -130,12 +130,14 @@ export function createWorkflowPayloadAssembly({
     };
   }
 
-  function collectRunPayload(): WorkflowRunPayload {
-    const pageRanges = currentPageRanges();
+  // overrides 给一次上传多本用：每本用自己的 upload_id、整本处理（页码范围只对单本有意义）。
+  // 不给就和以前一样读当前上传和页码输入框。
+  function collectRunPayload(overrides: { uploadId?: string; pageRanges?: string } = {}): WorkflowRunPayload {
+    const pageRanges = overrides.pageRanges ?? currentPageRanges();
     const developerConfig = developerConfigWithDefaults();
     const ocrOnly = isOcrOnlyMode();
     const workflow = ocrOnly ? WORKFLOW_OCR : developerConfig.workflow;
-    const uploadState = getUploadState();
+    const uploadState = overrides.uploadId ? { uploadId: overrides.uploadId } : getUploadState();
     const submitValues = currentWorkflowSubmitValues();
     const effectiveNeedsUpload = ocrOnly ? () => true : workflowNeedsUpload;
     const payload: WorkflowRunPayload = {
