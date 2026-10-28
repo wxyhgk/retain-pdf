@@ -142,3 +142,25 @@ async fn refused_restores_do_not_push_out_the_real_safety_backups() {
     assert_eq!(kinds(&db).iter().filter(|kind| *kind == "before-restore").count(), 1, "{:?}", kinds(&db));
     std::fs::remove_dir_all(root).ok();
 }
+
+/// 恢复整段拿着「恢复中」的写锁（`Db::begin_restore`）：正在建的任务、上传（拿着 `hold_off_restore`）做完它才开始换库，
+/// 期间新来的直接被拒（409 `restore_in_progress`，见 rust_api 的 `api_tests::restore_in_progress`）。
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+async fn a_restore_waits_for_work_already_holding_off_the_restore() {
+    let (root, db, service) = setup("restore-gate");
+    let backup = service.create_manual().await.unwrap();
+    let in_progress = db.hold_off_restore().unwrap();
+    let restoring = {
+        let service = service.clone();
+        let id = backup.id.clone();
+        tokio::spawn(async move { service.restore(&id).await })
+    };
+    tokio::time::sleep(Duration::from_millis(500)).await;
+    assert!(!restoring.is_finished(), "the restore must wait for the work in progress");
+
+    drop(in_progress);
+    let outcome = tokio::time::timeout(Duration::from_secs(30), restoring).await.unwrap().unwrap().unwrap();
+    assert!(outcome.is_ok(), "{outcome:?}");
+    assert!(db.hold_off_restore().is_ok(), "the gate opens again after the restore");
+    std::fs::remove_dir_all(root).ok();
+}

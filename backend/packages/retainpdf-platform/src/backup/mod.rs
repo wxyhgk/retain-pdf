@@ -317,6 +317,8 @@ impl BackupService {
 /// 再换库(换库前 `restore_checked` 会再查一次有没有在跑的任务)。换库前又查到在跑的任务时,
 /// 刚存的恢复前备份和当前库一模一样,删掉,不挤占保留名额。
 fn restore_in_place(db: &Db, id: &str) -> RestoreAttempt {
+    // 从这里到换库完，建任务、重跑、上传落库都回 409 `restore_in_progress`（见 `Db::begin_restore`）。
+    let _restoring = db.begin_restore();
     let mut safety: Option<String> = None;
     let outcome = (|| -> Result<std::result::Result<(), RestoreRefusal>> {
         let checked = match db.check_backup(id)? {

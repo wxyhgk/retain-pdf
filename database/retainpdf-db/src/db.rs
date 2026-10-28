@@ -101,6 +101,9 @@ pub struct Db {
     /// Guards one-time (per `Db` instance) execution of the schema-creation
     /// batch; see `ensure_schema()`.
     schema_ready: Arc<Mutex<bool>>,
+    /// 恢复备份期间拿写锁，建任务、上传落库拿读锁（见 `backup.rs` 的 [`Db::hold_off_restore`]）。
+    /// 同一个 `Db` 的克隆共用；只管本进程。
+    restore_gate: Arc<std::sync::RwLock<()>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -162,6 +165,7 @@ impl Db {
             path,
             data_root,
             schema_ready: Arc::new(Mutex::new(false)),
+            restore_gate: Arc::new(std::sync::RwLock::new(())),
         }
     }
 

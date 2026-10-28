@@ -34,6 +34,14 @@
 //! 再由拥有任务运行时的进程按启动恢复的规则对账:进程内模式恢复后立即一次
 //! (`recover_jobs_after_database_restore`),jobsd 模式由 jobsd 的运行期巡检接手。
 //!
+//! # 恢复中
+//!
+//! 恢复从检查备份、存恢复前备份到换库要几秒。这期间新建的任务、重跑、上传，落库以后会被换库整个盖掉
+//! （上传的文件留在盘上没有记录，任务目录建了却没有行），所以恢复整段拿着 [`Db::begin_restore`] 的写锁，
+//! 这些入口先拿 [`Db::hold_off_restore`]：恢复中拿不到就直接拒绝（接口回 409 `restore_in_progress`），
+//! 已经在进行的那些做完恢复才开始，换库前那次复查照样挡得住它们建出来的任务（2026-10-28 起）。
+//! 只管本进程的入口；jobsd 不建任务。
+//!
 //! 同步记账按「这台设备带着旧数据重新加入」处理(见 `sync_after_restore`):恢复前的同步
 //! 设置保留;本机换一个新设备号,忘掉所有同步记账,不把恢复出来的旧内容当新改动发出去,
 //! 再从头读同步文件夹里每台设备(包括本机原来的设备号)的改动——备份之后已经同步出去的
@@ -324,6 +332,20 @@ impl Db {
     }
 
     /// 恢复前要先停下来的事(给用户看);空表示可以恢复。
+    /// 恢复备份开始：拿写锁，直到返回的守卫丢掉。正在建任务、上传落库的先做完。
+    pub fn begin_restore(&self) -> RestoreInProgressGuard<'_> {
+        RestoreInProgressGuard(self.restore_gate.write().unwrap_or_else(std::sync::PoisonError::into_inner))
+    }
+
+    /// 建任务、重跑、上传落库前调，守卫留到落库完。正在恢复备份就返回 [`RestoreInProgress`]，调用方拒绝这次请求。
+    pub fn hold_off_restore(&self) -> std::result::Result<RestoreHoldGuard<'_>, RestoreInProgress> {
+        match self.restore_gate.try_read() {
+            Ok(guard) => Ok(RestoreHoldGuard(guard)),
+            Err(std::sync::TryLockError::Poisoned(poisoned)) => Ok(RestoreHoldGuard(poisoned.into_inner())),
+            Err(std::sync::TryLockError::WouldBlock) => Err(RestoreInProgress),
+        }
+    }
+
     pub fn restore_blockers(&self) -> Result<Vec<String>> {
         blockers_on(&self.connect()?)
     }
@@ -782,5 +804,69 @@ mod tests {
         let removed = to_prune(&items);
         assert_eq!(removed.iter().filter(|id| id.starts_with("manual-")).count(), 2);
         assert_eq!(removed.iter().filter(|id| id.starts_with("before-restore-")).count(), 9);
+    }
+}
+
+/// [`Db::begin_restore`] 的守卫：丢掉就算恢复结束。
+pub struct RestoreInProgressGuard<'a>(#[allow(dead_code)] std::sync::RwLockWriteGuard<'a, ()>);
+
+/// [`Db::hold_off_restore`] 的守卫：拿着它期间恢复不会开始。
+pub struct RestoreHoldGuard<'a>(#[allow(dead_code)] std::sync::RwLockReadGuard<'a, ()>);
+
+/// 正在恢复备份，这次建任务、上传不做。
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RestoreInProgress;
+
+impl RestoreInProgress {
+    /// 接口回 409 时 `error.details.reason` 的值。
+    pub const REASON: &'static str = "restore_in_progress";
+}
+
+impl std::fmt::Display for RestoreInProgress {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a database backup is being restored; try again in a moment")
+    }
+}
+
+impl std::error::Error for RestoreInProgress {}
+
+#[cfg(test)]
+mod restore_gate_tests {
+    use std::time::{Duration, Instant};
+
+    use super::*;
+
+    fn db(name: &str) -> Db {
+        let root = std::env::temp_dir().join(format!("retainpdf-restore-gate-{name}-{}", fastrand::u64(..)));
+        Db::new(root.join("db").join("jobs.db"), root)
+    }
+
+    #[test]
+    fn work_is_refused_while_a_restore_runs_and_allowed_again_after() {
+        let db = db("refuse");
+        let clone = db.clone();
+        let restoring = db.begin_restore();
+        assert_eq!(clone.hold_off_restore().err(), Some(RestoreInProgress), "clones share the gate");
+        drop(restoring);
+        let first = clone.hold_off_restore().expect("no restore any more");
+        let second = db.hold_off_restore().expect("work does not block other work");
+        drop((first, second));
+    }
+
+    #[test]
+    fn a_restore_waits_for_work_already_in_progress() {
+        let db = db("wait");
+        let worker = db.clone();
+        let (started, wait_started) = std::sync::mpsc::channel();
+        let handle = std::thread::spawn(move || {
+            let _hold = worker.hold_off_restore().unwrap();
+            started.send(()).unwrap();
+            std::thread::sleep(Duration::from_millis(300));
+        });
+        wait_started.recv().unwrap();
+        let begun = Instant::now();
+        let _restoring = db.begin_restore();
+        assert!(begun.elapsed() >= Duration::from_millis(200), "the restore started before the work finished");
+        handle.join().unwrap();
     }
 }

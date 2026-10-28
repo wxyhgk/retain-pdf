@@ -40,6 +40,10 @@ impl From<UploadError> for AppError {
                 retainpdf_api_base::disk_space::INSUFFICIENT_STORAGE,
                 message,
             ),
+            UploadError::RestoreInProgress => Self::conflict_because(
+                retainpdf_data::db::backup::RestoreInProgress::REASON,
+                "a database backup is being restored; try again in a moment",
+            ),
             UploadError::Internal(message) => Self::internal(message),
             UploadError::Io(error) => Self::from(error),
         }
