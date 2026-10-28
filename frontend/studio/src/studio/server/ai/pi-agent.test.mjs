@@ -93,6 +93,8 @@ test('pi in this process: no process started; words and a command (in the Studio
 	assert.equal(session.items.at(-1).text, '收到：你好');
 	const system = service.asked.at(-1).find((message) => message.role === 'system' || message.role === 'developer');
 	assert.match(JSON.stringify(system), /当前打开的文章：《甲》/u);
+	// Its thinking asked for in Chinese, every run.
+	assert.match(JSON.stringify(system), /思考过程.*也一律用简体中文写/u);
 	assert.equal(JSON.stringify(service.asked.at(-1).filter((message) => message.role === 'user')).includes('当前打开的文章'), false);
 	// How much of the context is used.
 	assert.ok(session.usage?.used >= 1200, `用量：${JSON.stringify(session.usage)}`);

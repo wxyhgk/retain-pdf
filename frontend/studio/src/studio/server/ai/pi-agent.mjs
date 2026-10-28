@@ -27,7 +27,11 @@ import { t } from '@blog/i18n/index.mjs';
  *   prompt for that run, not in what the author said (so it is not carried on, turn after turn);
  * - words of the author's while it works (`_studio/steer`), taken once its step is done;
  * - how much of its context is used, after each turn.
+ * - its thinking, shown in the panel, asked for in Chinese as its words are (THINK_IN_CHINESE, in every run).
  */
+
+/** Said in its system prompt each run: models think in English unless asked, and the author reads its thinking. */
+const THINK_IN_CHINESE = '你的思考过程（thinking / reasoning）也一律用简体中文写，和回答一样；代码、命令、文件名、公式照原样。'; // i18n-ignore: prompt
 
 /** The reasoning levels, as the options show them. */
 const thinkingNames = () => ({ off: t('不思考'), minimal: t('最少'), low: t('少'), medium: t('中'), high: t('多'), xhigh: t('很多'), max: t('最多') });
@@ -140,9 +144,8 @@ function servePi(stream, env) {
 			extensionFactories: [
 				(pi) => {
 					pi.on('before_agent_start', (event) => {
-						if (!where.context) return;
 						const options = event.systemPromptOptions;
-						options.appendSystemPrompt = [options.appendSystemPrompt, where.context].filter(Boolean).join('\n\n');
+						options.appendSystemPrompt = [options.appendSystemPrompt, THINK_IN_CHINESE, where.context].filter(Boolean).join('\n\n');
 					});
 				},
 			],
