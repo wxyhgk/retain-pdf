@@ -374,8 +374,10 @@ fn running(repo: &Path) -> Option<DevServer> {
 }
 
 /// The server's lifeline: when its stdin (a pipe from the app) closes, it removes its lock file and
-/// stops. Run in the blog's folder, where the lock file is.
-const LIFELINE: &str = "data:text/javascript,import{readFileSync,rmSync}from'node:fs';process.stdin.on('end',()=>{try{if(JSON.parse(readFileSync('.astro/dev.json','utf8')).pid===process.pid)rmSync('.astro/dev.json')}catch{}process.kill(process.pid,'SIGTERM')}).resume()";
+/// stops. Run in the blog's folder, where the lock file is. `--import` runs it in each worker thread too (pi resizes
+/// a picture it reads in one), whose stdin is no pipe and ends at once: there it does nothing, or the server would
+/// stop whenever a worker starts.
+const LIFELINE: &str = "data:text/javascript,import{readFileSync,rmSync}from'node:fs';import{isMainThread}from'node:worker_threads';if(isMainThread)process.stdin.on('end',()=>{try{if(JSON.parse(readFileSync('.astro/dev.json','utf8')).pid===process.pid)rmSync('.astro/dev.json')}catch{}process.kill(process.pid,'SIGTERM')}).resume()";
 
 fn start(app: &AppHandle, repo: &Path) -> Result<DevServer, String> {
     start_in(app, repo, &[])
@@ -756,5 +758,46 @@ mod tests {
         assert_eq!(fs::read_to_string(repo.join("blog/note/index.md")).unwrap(), "# 安全启动里写的");
         assert_eq!(fs::read_to_string(repo.join("src/main.ts")).unwrap(), "broken");
         let _ = fs::remove_dir_all(&repo);
+    }
+
+    /// The lifeline: a worker thread started (as pi's for a picture) leaves the server and its lock file be; the app's
+    /// pipe closed stops it, its lock file gone.
+    #[test]
+    fn a_worker_thread_does_not_stop_the_server() {
+        let Some(node) = which("node", &env::var("PATH").unwrap_or_default()) else {
+            return eprintln!("no node: skipped");
+        };
+        let dir = env::temp_dir().join(format!("studio-lifeline-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(dir.join(".astro")).unwrap();
+        fs::write(dir.join("worker.mjs"), "setTimeout(() => {}, 100);").unwrap();
+        fs::write(
+            dir.join("server.mjs"),
+            "import { writeFileSync } from 'node:fs';\n\
+             import { Worker } from 'node:worker_threads';\n\
+             writeFileSync('.astro/dev.json', JSON.stringify({ pid: process.pid }));\n\
+             new Worker(new URL('./worker.mjs', import.meta.url)).on('exit', () => console.log('worker over'));\n",
+        )
+        .unwrap();
+        let mut server = Command::new(node)
+            .args(["--import", LIFELINE, "server.mjs"])
+            .current_dir(&dir)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .spawn()
+            .unwrap();
+        let mut said = String::new();
+        let mut out = std::io::BufReader::new(server.stdout.take().unwrap());
+        std::io::BufRead::read_line(&mut out, &mut said).unwrap();
+        assert_eq!(said.trim(), "worker over");
+        thread::sleep(Duration::from_millis(300));
+        assert!(server.try_wait().unwrap().is_none(), "the server stopped when a worker started");
+        assert!(dir.join(".astro/dev.json").exists());
+
+        drop(server.stdin.take());
+        let status = server.wait().unwrap();
+        assert_eq!(status.signal(), Some(libc::SIGTERM));
+        assert!(!dir.join(".astro/dev.json").exists());
+        let _ = fs::remove_dir_all(&dir);
     }
 }
