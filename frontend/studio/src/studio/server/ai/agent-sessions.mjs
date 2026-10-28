@@ -2,7 +2,7 @@ import { execFile, spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
-import { delimiter, dirname, join, relative } from 'node:path';
+import { basename, delimiter, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Readable, Writable } from 'node:stream';
 import { client, ndJsonStream, PROTOCOL_VERSION } from '@agentclientprotocol/sdk';
@@ -381,7 +381,8 @@ class AgentSession {
 	/** Whether its adapter takes words while it works over ACP's steering extension (Claude Code's, Codex's). */
 	#steering = false;
 	/** Whether its agent takes pictures in what it is told. */
-	#seesPictures = false;
+	/** Whether its agent takes pictures: null till it has said (as it starts), so a picture given meanwhile is not refused. */
+	#seesPictures = null;
 	configOptions = [];
 	modes = null;
 	commands = [];
@@ -607,10 +608,11 @@ class AgentSession {
 	 * itself. The conversation shows what the author said, and the context as what it names.
 	 * @param {string} text
 	 * @param {PromptContext} [context]
-	 * @param {{ pictures?: string[], quotes?: string[], pastes?: string[] }} [with_] pictures sent with it (keepPicture's
-	 *   paths), what was quoted of the conversation (Markdown), put before it, and what was pasted at length, after it
+	 * @param {{ pictures?: string[], files?: string[], quotes?: string[], pastes?: string[] }} [with_] pictures sent with it
+	 *   (keepPicture's paths), files given with it (keepFile's), what was quoted of the conversation (Markdown), put
+	 *   before it, and what was pasted at length, after it
 	 */
-	prompt(text, context = {}, { pictures = [], quotes = [], pastes = [] } = {}) {
+	prompt(text, context = {}, { pictures = [], files = [], quotes = [], pastes = [] } = {}) {
 		if (this.state !== 'idle') throw Object.assign(new Error(this.state === 'running' ? t('它还在做上一件事：等它做完，或者先停下') : t('这个对话已经结束了')), { statusCode: 409 });
 		if (typeof text !== 'string' || (!text.trim() && !pastes.some((paste) => typeof paste === 'string' && paste.trim()))) throw Object.assign(new Error(t('要说点什么')), { statusCode: 400 });
 		const named = {
@@ -621,8 +623,14 @@ class AgentSession {
 			articleSlug: context.article?.slug ?? null,
 			mentionSlugs: (context.mentions ?? []).map((mention) => mention.slug ?? ''),
 		};
-		const shown = this.#picturesOf(pictures);
-		if (shown.length && !this.#seesPictures) throw Object.assign(new Error(t('{name} 不收图片', { name: this.agent.name })), { statusCode: 400 });
+		let shown = this.#picturesOf(pictures);
+		// The agent runs on this machine and reads files: what it is given is a file it is told of, a picture too when it
+		// takes none (it can still work on it, with a program).
+		const attached = this.#filesOf(files);
+		if (shown.length && this.#seesPictures === false) {
+			attached.push(...shown.map((picture) => picture.path));
+			shown = [];
+		}
 		const quoted = quotes.filter((quote) => typeof quote === 'string' && quote.trim()).map((quote) => quote.trim());
 		const pasted = pastes.filter((paste) => typeof paste === 'string' && paste.trim());
 		const said = saidWhole({ text, quotes: quoted, pastes: pasted });
@@ -630,13 +638,15 @@ class AgentSession {
 		const command = /^\/\S/u.test(text) && !quoted.length && !pasted.length;
 		// Running before what was said is added: a turn is put on the page once it is over, not as it begins.
 		this.#setState('running');
-		this.#add({ kind: 'user', id: randomUUID(), text, context: command ? { article: null, selection: null, mentions: [] } : named, ...(quoted.length ? { quotes: quoted } : {}), ...(pasted.length ? { pastes: pasted } : {}), ...(shown.length ? { pictures: shown.map((picture) => picture.path) } : {}) });
-		const where = command ? {} : { ...context, ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) };
+		this.#add({ kind: 'user', id: randomUUID(), text, context: command ? { article: null, selection: null, mentions: [] } : named, ...(quoted.length ? { quotes: quoted } : {}), ...(pasted.length ? { pastes: pasted } : {}), ...(shown.length ? { pictures: shown.map((picture) => picture.path) } : {}), ...(attached.length ? { files: attached } : {}) });
+		const where = command ? {} : { ...context, ...(attached.length ? { files: attached } : {}), ...(this.#forgot && this.page ? { history: relative(this.cwd, this.page) } : {}) };
 		if (!command) this.#forgot = false;
 		const images = shown.map(({ data, mimeType }) => ({ type: 'image', data, mimeType }));
-		// pi in this process takes where the author is into its system prompt for this run, what was said as it is.
+		// pi in this process takes where the author is (the article open) into its system prompt for this run; what goes
+		// with what is said (the lines selected, the articles named, the files given) goes with it, as for the others:
+		// its system prompt is changed only where it differs, so the same lines selected again would be told it once.
 		const turn = this.#here
-			? this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: said }, ...images], _meta: { studioContext: contextBlock(where) } })
+			? this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: withContext(said, where, 'message') }, ...images], _meta: { studioContext: contextBlock(where, 'standing') } })
 			: this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: withContext(said, where) }, ...images] });
 		void turn.then(
 			(done) => {
@@ -665,6 +675,27 @@ class AgentSession {
 		return paths
 			.filter((path) => typeof path === 'string' && dirname(path) === folder)
 			.map((path) => ({ path, data: readFileSync(path).toString('base64'), mimeType: PICTURE_TYPES[path.split('.').pop()] ?? 'image/png' }));
+	}
+
+	/** The files kept for it (keepFile), as they are given: those not of its folder left out. */
+	#filesOf(paths) {
+		const folder = this.page ? join(dirname(this.page), 'ai', 'files') : null;
+		if (!folder || !Array.isArray(paths)) return [];
+		return paths.filter((path) => typeof path === 'string' && dirname(dirname(path)) === folder);
+	}
+
+	/**
+	 * A file the author gives with what they say (a PDF, a table, an output), kept in its folder (ai/files/<id>/, its own
+	 * name kept, for the agent to know it by): its path, to send it by.
+	 */
+	keepFile(name, bytes) {
+		const plain = basename(String(name ?? '')).replace(/[\u0000-\u001f/\\:]/gu, '_').trim();
+		if (!plain || plain === '.' || plain === '..') throw Object.assign(new Error(t('要给出文件名')), { statusCode: 400 });
+		if (!this.page) throw Object.assign(new Error(t('这个对话没有地方放文件')), { statusCode: 409 });
+		const path = join(dirname(this.page), 'ai', 'files', randomUUID().slice(0, 8), plain);
+		mkdirSync(dirname(path), { recursive: true });
+		writeFileSync(path, bytes);
+		return path;
 	}
 
 	/** A picture the author gives with what they say, kept in its folder (ai/pictures/): its path, to send it by. */
@@ -1007,9 +1038,9 @@ function briefOf({ brief }) {
 	return brief ? `；它的写作要求在 ${brief}，先读` : '（没有 ai/brief.md，不用找）'; // i18n-ignore: for the AI
 }
 
-/** What the author said, then what the Studio adds of where they are, marked as the Studio's. */
-export function withContext(text, context = {}) {
-	const block = contextBlock(context);
+/** What the author said, then what the Studio adds of where they are (`part` of it), marked as the Studio's. */
+export function withContext(text, context = {}, part = 'all') {
+	const block = contextBlock(context, part);
 	return block ? `${text}\n\n${block}` : text;
 }
 
@@ -1017,16 +1048,20 @@ export function withContext(text, context = {}) {
  * Where the author is, as the Studio tells the agent (withContext puts it after what was said; pi in this process
  * takes it into its system prompt instead): empty when there is nothing to tell.
  */
-export function contextBlock({ article, selection, mentions = [], history } = {}) {
+export function contextBlock({ article, selection, mentions = [], files = [], history } = {}, part = 'all') {
+	// `standing`: where the author is (for a system prompt); `message`: what goes with this one thing said.
+	const standing = part !== 'message';
+	const message = part !== 'standing';
 	const lines = [];
-	if (history) lines.push(`这是接着之前的对话说的，但你那边接不上之前的会话了：之前说过的话记在 ${history}，需要时去读`); // i18n-ignore: for the AI
-	if (article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}${briefOf(article)}`); // i18n-ignore: for the AI
-	if (article && selection) {
+	if (standing && history) lines.push(`这是接着之前的对话说的，但你那边接不上之前的会话了：之前说过的话记在 ${history}，需要时去读`); // i18n-ignore: for the AI
+	if (standing && article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}${briefOf(article)}`); // i18n-ignore: for the AI
+	if (message && article && selection) {
 		const fence = '`'.repeat(Math.max(3, ...[...selection.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
-		lines.push(`选中的是这篇的${promptLineRange(selection)}：`, `${fence}markdown`, selection.text, fence); // i18n-ignore: for the AI
+		lines.push(`这句话选中的是《${article.title}》（${article.path}）的${promptLineRange(selection)}：`, `${fence}markdown`, selection.text, fence); // i18n-ignore: for the AI
 	}
-	for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`); // i18n-ignore: for the AI
-	if (article || mentions.length) lines.push('回答里说到这些或别的文章时，写出标题并用《》括起来：Studio 会把它变成能点开的链接'); // i18n-ignore: for the AI
+	if (message) for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`); // i18n-ignore: for the AI
+	if (message && files.length) lines.push('随这句话附上的文件（在本机，用读文件的工具或命令去读）：', ...files.map((file) => `- ${file}`)); // i18n-ignore: for the AI
+	if ((standing && article) || (message && mentions.length)) lines.push('回答里说到这些或别的文章时，写出标题并用《》括起来：Studio 会把它变成能点开的链接'); // i18n-ignore: for the AI
 	if (!lines.length) return '';
 	return `<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`; // i18n-ignore: for the AI
 }

@@ -316,13 +316,14 @@ export type Conversation = {
 	/** Whether it can be spoken to while it works (pi in the Studio's process, Claude Code, Codex). */
 	canSteer?: boolean;
 	/** Whether its agent takes pictures with what it is told. */
-	seesPictures?: boolean;
+	/** Whether its agent takes pictures; null till it has said (as it starts). */
+	seesPictures?: boolean | null;
 };
 /** A tool call's content: words, a change to a file, or a terminal. */
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
 /** What a conversation is made of, in order. */
 export type ConversationItem =
-	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[] }; steer?: boolean; quotes?: string[]; pictures?: string[]; pastes?: string[] }
+	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[] }; steer?: boolean; quotes?: string[]; pictures?: string[]; files?: string[]; pastes?: string[] }
 	| { kind: 'message'; id: string; text: string }
 	| { kind: 'thought'; id: string; text: string }
 	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
@@ -398,13 +399,19 @@ export type FormSchema = { type: 'object'; properties: Record<string, FormField>
  * of pictures kept for it (keepConversationPicture); `quotes`: what was quoted of it (Markdown), put before;
  * `pastes`: what was pasted at length, after.
  */
-export async function tellConversation(id: string, text: string, context: ConversationContext = {}, { steer = false, pictures = [], quotes = [], pastes = [] }: { steer?: boolean; pictures?: string[]; quotes?: string[]; pastes?: string[] } = {}): Promise<void> {
-	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context, ...(steer ? { steer } : {}), ...(pictures.length ? { pictures } : {}), ...(quotes.length ? { quotes } : {}), ...(pastes.length ? { pastes } : {}) }));
+export async function tellConversation(id: string, text: string, context: ConversationContext = {}, { steer = false, pictures = [], files = [], quotes = [], pastes = [] }: { steer?: boolean; pictures?: string[]; files?: string[]; quotes?: string[]; pastes?: string[] } = {}): Promise<void> {
+	await request(conversationApi(id, 'prompt'), jsonOptions('POST', { text, context, ...(steer ? { steer } : {}), ...(pictures.length ? { pictures } : {}), ...(files.length ? { files } : {}), ...(quotes.length ? { quotes } : {}), ...(pastes.length ? { pastes } : {}) }));
 }
 
 /** A picture given with what is said, kept in the conversation's folder: its path, to send it by. */
 export async function keepConversationPicture(id: string, picture: Blob): Promise<string> {
 	const { path } = await request<{ path: string }>(`${conversationApi(id, 'pictures')}?type=${encodeURIComponent(picture.type)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: picture });
+	return path;
+}
+
+/** A file given with what is said (a PDF, a table, an output), kept in the conversation's folder: its path, told the AI. */
+export async function keepConversationFile(id: string, file: File): Promise<string> {
+	const { path } = await request<{ path: string }>(`${conversationApi(id, 'files')}?name=${encodeURIComponent(file.name)}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: file });
 	return path;
 }
 

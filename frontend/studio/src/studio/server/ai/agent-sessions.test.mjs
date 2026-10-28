@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-import { AgentSessions, withContext } from './agent-sessions.mjs';
+import { AgentSessions, contextBlock, withContext } from './agent-sessions.mjs';
 import { ChatStore } from './chat-store.mjs';
 
 const standIn = fileURLToPath(new URL('../../../../tests/e2e/fake-agents/claude-agent-acp', import.meta.url));
@@ -196,7 +196,7 @@ test('what is said is told where the author is, marked as the Studio’s; with n
 		'<studio-context>',
 		'（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）',
 		'当前打开的文章：《方法》，文件 method/index.md；它的写作要求在 method/ai/brief.md，先读',
-		'选中的是这篇的第 12–14 行：',
+		'这句话选中的是《方法》（method/index.md）的第 12–14 行：',
 		'````markdown',
 		'```py\nx = 1\n```',
 		'````',
@@ -204,6 +204,24 @@ test('what is said is told where the author is, marked as the Studio’s; with n
 		'回答里说到这些或别的文章时，写出标题并用《》括起来：Studio 会把它变成能点开的链接',
 		'</studio-context>',
 	].join('\n'));
+});
+
+test('for pi (its system prompt changed only where it differs): where the author is there, what goes with each thing said with it', () => {
+	const where = {
+		article: { title: '方法', path: 'method/index.md' },
+		selection: { start: 35, end: 35, text: 'H₂O₂ 的步数' },
+		files: ['/chats/c/ai/files/ab12cd34/opt.log'],
+	};
+	const standing = contextBlock(where, 'standing');
+	assert.match(standing, /当前打开的文章：《方法》/u);
+	assert.doesNotMatch(standing, /选中|附上的文件/u);
+	// Told with each message, the same lines selected again told again.
+	const message = withContext('这部分在图里没有', where, 'message');
+	assert.match(message, /^这部分在图里没有\n\n<studio-context>/u);
+	assert.match(message, /这句话选中的是《方法》（method\/index\.md）的第 35 行：\n```markdown\nH₂O₂ 的步数\n```/u);
+	assert.match(message, /随这句话附上的文件（在本机，用读文件的工具或命令去读）：\n- \/chats\/c\/ai\/files\/ab12cd34\/opt\.log/u);
+	assert.doesNotMatch(message, /当前打开的文章/u);
+	assert.equal(withContext('你好', { article: where.article }, 'message'), '你好');
 });
 
 test('one made ready is taken by the next begun with the same (no adapter started then); the idle beyond the latest few are put to sleep, woken when spoken to', async (t) => {

@@ -1,6 +1,6 @@
 import { createContext, memo, useContext, useEffect, useRef, useState } from 'react';
 
-import { Copy, FilePlus2, PencilLine, RotateCcw, type LucideIcon } from 'lucide-react';
+import { Copy, FilePlus2, Paperclip, PencilLine, RotateCcw, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import type { Conversation, ConversationItem } from '../../api/client';
@@ -133,6 +133,16 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 				<div className="ai-user-pictures">
 					{item.pictures.map((path) => (
 						<img key={path} className="ai-user-picture" src={pictureUrl(path)} alt="" />
+					))}
+				</div>
+			) : null}
+			{item.files?.length ? (
+				<div className="ai-user-files">
+					{item.files.map((path) => (
+						<span key={path} className="ai-chip ai-paste-chip" title={path}>
+							<Paperclip aria-hidden />
+							<span className="ai-chip-label">{path.split(/[\\/]/u).pop()}</span>
+						</span>
 					))}
 				</div>
 			) : null}

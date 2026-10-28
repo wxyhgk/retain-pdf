@@ -8,6 +8,8 @@ import { t } from '@blog/i18n/index.mjs';
 
 /** How big a picture given with what is said may be. */
 const PICTURE_LIMIT = 20 * 1024 * 1024;
+/** How big a file given with what is said may be. */
+const FILE_LIMIT = 200 * 1024 * 1024;
 /** The pictures an AI's answer may show from this machine, by extension. */
 const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 
@@ -106,11 +108,11 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		sendEvents(request, response, (send) => session.subscribe(send));
 	}, { streams: true });
 	api.post('/conversations/:id/prompt', async ({ params, json }) => {
-		const { text, context, steer, pictures, quotes, pastes } = await json();
+		const { text, context, steer, pictures, files, quotes, pastes } = await json();
 		const session = await awake(params.id);
 		// Said while it works (to one that takes it): taken as soon as it can be.
 		if (steer === true && session.state === 'running') session.steer(text);
-		else session.prompt(text, await contextOf(context), { pictures: Array.isArray(pictures) ? pictures : [], quotes: Array.isArray(quotes) ? quotes : [], pastes: Array.isArray(pastes) ? pastes : [] });
+		else session.prompt(text, await contextOf(context), { pictures: Array.isArray(pictures) ? pictures : [], files: Array.isArray(files) ? files : [], quotes: Array.isArray(quotes) ? quotes : [], pastes: Array.isArray(pastes) ? pastes : [] });
 		return reply(202, { id: params.id });
 	});
 	api.post('/conversations/:id/cancel', ({ params }) => {
@@ -141,6 +143,20 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		}
 		const session = await conversations.find(params.id);
 		return reply(201, { path: session.keepPicture(Buffer.concat(chunks), query.get('type') ?? '') });
+	}, { body: 'application/octet-stream' });
+	// A file given with what is said (a PDF, a table, an output): kept in the conversation's folder, its path told the AI.
+	api.post('/conversations/:id/files', async ({ params, query, request }) => {
+		const tooBig = () => refuse(413, t('文件超过 {limit} MB', { limit: FILE_LIMIT / 1024 / 1024 }));
+		if (Number(request.headers['content-length']) > FILE_LIMIT) throw tooBig();
+		const chunks = [];
+		let size = 0;
+		for await (const chunk of request) {
+			size += chunk.length;
+			if (size > FILE_LIMIT) throw tooBig();
+			chunks.push(chunk);
+		}
+		const session = await conversations.find(params.id);
+		return reply(201, { path: session.keepFile(query.get('name') ?? '', Buffer.concat(chunks)) });
 	}, { body: 'application/octet-stream' });
 	api.post('/conversations/:id/options', async ({ params, json }) => {
 		const { configId, value } = await json();

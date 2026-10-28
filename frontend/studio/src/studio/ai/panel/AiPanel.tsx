@@ -1,7 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
+import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, Paperclip, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
@@ -443,7 +443,7 @@ function PromptInput({ draft, placeholder, editor, handlers }: { draft: string; 
 }
 
 function Composer({ state, actions }: { state: PanelState; actions: PanelActions }) {
-	const { conversation, article, leftOut, selected, selectionLeftOut, draft, status, pictures, quotes, pastes, queued } = state;
+	const { conversation, article, leftOut, selected, selectionLeftOut, draft, status, pictures, files, quotes, pastes, queued } = state;
 	const editor = useRef<PromptEditor | null>(null);
 	const [caret, setCaret] = useState<PromptCaret>({ before: '', first: true });
 	const [mentionAt, setMentionAt] = useState(0);
@@ -467,6 +467,18 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 			<span key={picture.id} className="ai-chip ai-picture-chip">
 				<img src={picture.url} alt={t('图片')} />
 				<button type="button" className="ai-chip-remove" aria-label={t('不带上这张图')} onClick={() => actions.removePicture(picture.id)}>
+					×
+				</button>
+			</span>,
+		);
+	}
+
+	for (const attachment of files) {
+		chips.push(
+			<span key={attachment.id} className="ai-chip ai-paste-chip" title={t('随这句话交给 AI 的文件：它在本机读')}>
+				<Paperclip aria-hidden />
+				<span className="ai-chip-label">{attachment.file.name}</span>
+				<button type="button" className="ai-chip-remove" aria-label={t('不带上 {name}', { name: attachment.file.name })} onClick={() => actions.removeFile(attachment.id)}>
 					×
 				</button>
 			</span>,
@@ -510,8 +522,9 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	}
 
 	/** Pictures among what is pasted or dropped: given with what is said next. */
-	function picturesIn(transfer: DataTransfer): File[] {
-		return [...transfer.files].filter((file) => file.type.startsWith('image/'));
+	/** The files of a paste or drop: pictures, and any other (a PDF, a table, an output). */
+	function filesIn(transfer: DataTransfer): File[] {
+		return [...transfer.files];
 	}
 
 	/** `entry` named: the @ and what was typed after it, a link to it in their place (as Notion's page mentions). */
@@ -548,7 +561,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 		return true;
 	}
 
-	/** Pasted: pictures given with what is said; words at length (a log, an output) a chip, sent after it. */
+	/** Pasted: pictures and files given with what is said; words at length (a log, an output) a chip, sent after it. */
 	function pasted(event: ClipboardEvent): boolean {
 		const transfer = event.clipboardData;
 		if (!transfer) return false;
@@ -557,9 +570,9 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 			actions.paste(words);
 			return true;
 		}
-		const files = picturesIn(transfer);
-		if (!files.length) return false;
-		void actions.addPictures(files);
+		const given = filesIn(transfer);
+		if (!given.length) return false;
+		void actions.addFiles(given);
 		// A picture copied with words (from a page): the words pasted too.
 		return !words;
 	}
@@ -576,10 +589,10 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 		key: keyDown,
 		paste: pasted,
 		drop(event) {
-			const files = event.dataTransfer ? picturesIn(event.dataTransfer) : [];
-			if (!files.length) return false;
+			const given = event.dataTransfer ? filesIn(event.dataTransfer) : [];
+			if (!given.length) return false;
 			setDropping(false);
-			void actions.addPictures(files);
+			void actions.addFiles(given);
 			return true;
 		},
 		focused: (focus) => setMentionsClosed(!focus),
@@ -591,7 +604,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 		<div
 			className={cn('ai-composer', dropping && 'is-dropping')}
 			onDragOver={(event) => {
-				if (![...event.dataTransfer.items].some((item) => item.kind === 'file' && item.type.startsWith('image/'))) return;
+				if (![...event.dataTransfer.items].some((item) => item.kind === 'file')) return;
 				event.preventDefault();
 				event.dataTransfer.dropEffect = 'copy';
 				setDropping(true);
@@ -603,10 +616,10 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				setDropping(false);
 				// Taken by the input already.
 				if (event.defaultPrevented) return;
-				const files = picturesIn(event.dataTransfer);
-				if (!files.length) return;
+				const given = filesIn(event.dataTransfer);
+				if (!given.length) return;
 				event.preventDefault();
-				void actions.addPictures(files);
+				void actions.addFiles(given);
 			}}
 		>
 			<p className={cn('ai-status', status.error && 'is-error')} role="status">

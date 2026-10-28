@@ -339,7 +339,7 @@ test('what is said is told where the author is: the article open (followed as an
 		await input(page).press('Enter');
 		const answer = pane(page).locator('.ai-message').last();
 		await expect(answer).toContainText('当前打开的文章：《Studio 测试夹具》，文件 studio-fixture/index.md；它的写作要求在 studio-fixture/ai/brief.md，先读');
-		await expect(answer).toContainText('选中的是这篇的第');
+		await expect(answer).toContainText('这句话选中的是《Studio 测试夹具》（studio-fixture/index.md）的第');
 		await expect(answer).toContainText('结尾段落。');
 		await expect(answer).toContainText('用 @ 提到的文章：《另一篇笔记》，文件 other-note/index.md（没有 ai/brief.md，不用找）');
 		await expect(answer).toContainText('上下文 看看 [另一篇笔记](/blog/other-note/) 和');
@@ -592,6 +592,22 @@ test('a picture pasted into the input goes with what is said, shown small over i
 	await expect(pane(page).locator('.ai-picture-chip')).toHaveCount(0);
 	await expect(pane(page).locator('.ai-user-picture')).toBeVisible();
 	await expect.poll(() => pane(page).locator('.ai-user-picture').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+});
+
+test('any file pasted or dropped goes with what is said: kept in the conversation’s folder, the AI told where, and reads it', async ({ page }) => {
+	await openAi(page);
+	await input(page).evaluate((node) => {
+		const transfer = new DataTransfer();
+		transfer.items.add(new File(['SCF Done: E(RHF) = -76.0107\n'], 'opt.log', { type: 'text/plain' }));
+		node.dispatchEvent(new ClipboardEvent('paste', { clipboardData: transfer, bubbles: true, cancelable: true }));
+	});
+	const chip = pane(page).locator('.ai-composer .ai-chip', { hasText: 'opt.log' });
+	await expect(chip).toBeVisible();
+	await tell(page, '看看这个输出');
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('读到 opt.log：SCF Done: E(RHF) = -76.0107');
+	await expect(chip).toHaveCount(0);
+	// What was said shows the file it went with, by its name.
+	await expect(pane(page).locator('.ai-user-files .ai-chip')).toHaveText('opt.log');
 });
 
 test('/ lists the commands its agent offers; one is sent as it is, nothing added after it', async ({ page }) => {

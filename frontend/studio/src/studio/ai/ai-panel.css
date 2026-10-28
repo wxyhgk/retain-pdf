@@ -278,6 +278,8 @@
 .ai-picture-chip img { width: 40px; height: 38px; border-radius: 6px; object-fit: cover; }
 .ai-composer.is-dropping .ai-input, .ai-composer.is-dropping .ai-composer-bar { border-color: rgb(var(--gray-dark)); border-style: dashed; }
 .ai-user-pictures { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; max-width: 88%; }
+/* The files given with it, by name. */
+.ai-user-files { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; max-width: 88%; }
 .ai-user-picture { width: auto; max-width: 160px; height: 90px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; object-fit: cover; cursor: zoom-in; }
 
 /* Said while it worked, waiting for its turn to be over. */

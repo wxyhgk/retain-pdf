@@ -11,6 +11,7 @@ import {
 	setConversationOption,
 	startConversation,
 	answerQuestion,
+	keepConversationFile,
 	keepConversationPicture,
 	stopConversation,
 	switchConversation,
@@ -87,6 +88,8 @@ export type PanelState = {
 	switching: boolean;
 	/** Pictures given with what is said next (pasted, dropped), shown small by `url`. */
 	pictures: Picture[];
+	/** Files given with what is said next (pasted, dropped): kept in the conversation's folder, their paths told the AI. */
+	files: Attachment[];
 	/** What was quoted of the conversation (Markdown, formulas as written), said before what is said next. */
 	quotes: string[];
 	/** What was pasted at length (a log, an output), a chip each: said after what is said next. */
@@ -96,8 +99,12 @@ export type PanelState = {
 };
 
 export type Picture = { id: string; blob: Blob; url: string };
-/** Something to say: the words, the articles named with @, the pictures (`kept`: sent before), what was quoted and pasted. */
-export type Said = { id: string; text: string; mentions: ArticleRef[]; pictures: Picture[]; quotes: string[]; pastes: string[]; kept?: string[] };
+export type Attachment = { id: string; file: File };
+/**
+ * Something to say: the words, the articles named with @, the pictures and files (`kept`, `keptFiles`: sent before),
+ * what was quoted and pasted.
+ */
+export type Said = { id: string; text: string; mentions: ArticleRef[]; pictures: Picture[]; files: Attachment[]; quotes: string[]; pastes: string[]; kept?: string[]; keptFiles?: string[] };
 
 /** Pasted text this long (lines, or characters) is a chip, not words in the input. */
 export const PASTE_LINES = 10;
@@ -213,6 +220,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		favorites: readFavorites(),
 		switching: false,
 		pictures: [],
+		files: [],
 		quotes: [],
 		pastes: [],
 		queued: [],
@@ -414,24 +422,24 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	}
 
 	async function submit(): Promise<void> {
-		const { draft, pictures, quotes, pastes } = get();
+		const { draft, pictures, files, quotes, pastes } = get();
 		const text = draft.trim();
 		if (!text && !pastes.length) return;
-		const said: Said = { id: crypto.randomUUID(), text, mentions: mentionsIn(text, host.articles()), pictures, quotes, pastes };
+		const said: Said = { id: crypto.randomUUID(), text, mentions: mentionsIn(text, host.articles()), pictures, files, quotes, pastes };
 		const shown = get().conversation;
 		if (shown?.state === 'running') {
 			// While it works: to one that can take it, words it reads as soon as it can (插话); else said once it is done.
-			if (shown.canSteer && !pictures.length && !quotes.length && !pastes.length) await steer(shown.id, text);
-			else set({ queued: [...get().queued, said], draft: '', pictures: [], quotes: [], pastes: [] });
+			if (shown.canSteer && !pictures.length && !files.length && !quotes.length && !pastes.length) await steer(shown.id, text);
+			else set({ queued: [...get().queued, said], draft: '', pictures: [], files: [], quotes: [], pastes: [] });
 			return;
 		}
-		set({ draft: '', pictures: [], quotes: [], pastes: [] });
+		set({ draft: '', pictures: [], files: [], quotes: [], pastes: [] });
 		await send(said);
 	}
 
 	/** Back where it was typed, not said (failed, or taken back from the queue). */
 	function unsay(said: Said): void {
-		set({ draft: said.text, pictures: said.pictures, quotes: said.quotes, pastes: said.pastes });
+		set({ draft: said.text, pictures: said.pictures, files: said.files, quotes: said.quotes, pastes: said.pastes });
 	}
 
 	async function send(said: Said): Promise<void> {
@@ -449,6 +457,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		const selection = open && !selectionLeftOut && host.hasSelection() ? await host.selection() : null;
 		try {
 			const pictures = [...(said.kept ?? []), ...(await Promise.all(said.pictures.map((picture) => keepConversationPicture(target.id, picture.blob))))];
+			const files = [...(said.keptFiles ?? []), ...(await Promise.all(said.files.map((attachment) => keepConversationFile(target.id, attachment.file))))];
 			await tellConversation(
 				target.id,
 				text,
@@ -457,7 +466,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 					...(selection ? { selection } : {}),
 					...(named.length ? { mentions: named.map((entry) => entry.slug) } : {}),
 				},
-				{ pictures, quotes, pastes },
+				{ pictures, files, quotes, pastes },
 			);
 			for (const picture of said.pictures) URL.revokeObjectURL(picture.url);
 		} catch (error) {
@@ -604,19 +613,27 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			if (!last || get().conversation?.state === 'running') return;
 			const pages = host.articles();
 			const mentions = (last.context?.mentionSlugs ?? []).flatMap((slug) => pages.filter((page) => page.slug === slug).map(({ slug: named, title }) => ({ slug: named, title })));
-			void send({ id: crypto.randomUUID(), text: last.text, mentions, pictures: [], quotes: last.quotes ?? [], pastes: last.pastes ?? [], kept: last.pictures ?? [] });
+			void send({ id: crypto.randomUUID(), text: last.text, mentions, pictures: [], files: [], quotes: last.quotes ?? [], pastes: last.pastes ?? [], kept: last.pictures ?? [], keptFiles: last.files ?? [] });
 		},
-		/** Pictures given with what is said next (pasted, dropped); those not pictures left out. */
-		async addPictures(files: File[]): Promise<void> {
+		/**
+		 * Files given with what is said next (pasted, dropped): pictures shown to it, when it takes pictures (or has not
+		 * said yet); the rest, and pictures for one that takes none, files it is told of (it reads them on this machine).
+		 */
+		async addFiles(given: File[]): Promise<void> {
 			const shown = get().conversation;
-			const pictures = files.filter((file) => /^image\/(png|jpeg|gif|webp)$/u.test(file.type));
+			const seen = shown?.seesPictures !== false;
+			const pictures = seen ? given.filter((file) => /^image\/(png|jpeg|gif|webp)$/u.test(file.type)) : [];
+			const others = given.filter((file) => !pictures.includes(file));
+			if (others.length) set({ files: [...get().files, ...others.map((file) => ({ id: crypto.randomUUID(), file }))], focusAsked: get().focusAsked + 1 });
 			if (!pictures.length) return;
-			if (shown && shown.seesPictures === false) return host.toast(t('{name} 不收图片', { name: shown.agent.name }));
 			const added = await Promise.all(pictures.map(async (file) => {
 				const blob = await fitted(file);
 				return { id: crypto.randomUUID(), blob, url: URL.createObjectURL(blob) };
 			}));
 			set({ pictures: [...get().pictures, ...added], focusAsked: get().focusAsked + 1 });
+		},
+		removeFile(id: string): void {
+			set({ files: get().files.filter((entry) => entry.id !== id) });
 		},
 		removePicture(id: string): void {
 			const picture = get().pictures.find((entry) => entry.id === id);

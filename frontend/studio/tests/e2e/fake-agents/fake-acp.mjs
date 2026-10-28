@@ -70,6 +70,13 @@ const app = agent({ name: 'fake' })
 		state.turns += 1;
 		const run = `run-${state.turns}`;
 		if (said.includes('退出')) process.exit(3);
+		// Files given with it: read where the Studio says they are, on this machine.
+		const given = [...said.matchAll(/^- (\/.+)$/gmu)].map((match) => match[1]).filter(() => said.includes('随这句话附上的文件'));
+		if (given.length) {
+			const { readFileSync } = await import('node:fs');
+			await words('agent_message_chunk', given.map((path) => `读到 ${path.split('/').pop()}：${readFileSync(path, 'utf8').trim()}`).join('；'));
+			return { stopReason: 'end_turn' };
+		}
 		if (pictures.length) {
 			await words('agent_message_chunk', `看到 ${pictures.length} 张图（${pictures.map((block) => block.mimeType).join('、')}）`);
 			return { stopReason: 'end_turn' };
