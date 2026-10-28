@@ -1,15 +1,16 @@
 import { useRef, useState } from 'react';
-import { Languages, Puzzle, Search, Sparkles, type LucideIcon } from 'lucide-react';
+import { FileCode, Languages, Puzzle, Search, Sparkles, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
 import type { AiSettingsShown } from '../../api/client';
 import { AiSettings } from './AiSettings';
+import { FileOpenSettings } from './FileOpenSettings';
 import { LocaleSettings } from './LocaleSettings';
 import { PluginSettings, type PluginsHost } from './PluginSettings';
 
-export type SettingsSection = 'locale' | 'ai' | 'plugins';
+export type SettingsSection = 'locale' | 'files' | 'ai' | 'plugins';
 
 /**
  * 设置 opened at `section`. For want of an AI setting (识别图片): `why` said above it, and `done` told what was saved
@@ -24,7 +25,10 @@ function groups(): Array<{ name: string; entries: Entry[] }> {
 	return [
 		{
 			name: t('偏好'),
-			entries: [{ id: 'locale', label: t('语言'), icon: Languages, title: t('语言'), description: t('Studio 界面和提示用的语言。存在这台电脑上（.studio-settings.json，不进 git）'), words: t('language locale 界面 中文 english') }],
+			entries: [
+				{ id: 'locale', label: t('语言'), icon: Languages, title: t('语言'), description: t('Studio 界面和提示用的语言。存在这台电脑上（.studio-settings.json，不进 git）'), words: t('language locale 界面 中文 english') },
+				{ id: 'files', label: t('打开文件'), icon: FileCode, title: t('打开文件'), description: t('点文章里指向文件的链接（脚本、数据、PDF……）时怎么打开：在 Studio 里、用默认程序（比如 VS Code、预览）、在 Finder 中显示。存在这个浏览器里，改了马上生效'), words: t('file open 文件 打开 默认程序 finder vscode 附件 链接 点击') },
+			],
 		},
 		{
 			name: 'AI',
@@ -39,7 +43,7 @@ function groups(): Array<{ name: string; entries: Entry[] }> {
 
 /**
  * 设置, as Notion's: the parts in a column on the left (a search above them), the one chosen on the right — 语言, AI 模型
- * (识别图片), 插件. Opened from the workspace's menu at the foot of the left column, or by what wants an AI setting.
+ * (识别图片), 插件, 打开文件. Opened from the workspace's menu at the foot of the left column, or by what wants an AI setting.
  */
 export function SettingsDialog({ section, plugins, why = '', done, onClose }: SettingsAsk & { onClose(): void }) {
 	const [shown, setShown] = useState(section);
@@ -112,6 +116,7 @@ export function SettingsDialog({ section, plugins, why = '', done, onClose }: Se
 						</header>
 						<div className="border-t border-border pt-5">
 							{shown === 'locale' && <LocaleSettings />}
+							{shown === 'files' && <FileOpenSettings />}
 							{shown === 'ai' && (
 								<AiSettings
 									why={why}

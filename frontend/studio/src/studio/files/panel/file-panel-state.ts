@@ -1,4 +1,4 @@
-import { Copy, ExternalLink, Eye, FolderPlus, FolderSearch, FolderUp, Link2, PenLine, ScanText, Table, Trash2, Upload } from 'lucide-react';
+import { AppWindow, Copy, ExternalLink, Eye, FolderPlus, FolderSearch, FolderUp, Link2, PenLine, ScanText, Table, Trash2, Upload } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { movedPath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
@@ -11,6 +11,7 @@ import {
 	listArticleFiles,
 	moveArticleFile,
 	restoreArticleFile,
+	openArticleFileInApp,
 	revealArticleFile,
 	trashArticleFile,
 	uploadArticleFile,
@@ -46,6 +47,8 @@ export type FilePanelHost = {
 	viewOffice(url: string, name: string): void;
 	/** Opens a text file (a script, an input, data) to read and change in the page (file-editor.ts). */
 	editFile(path: string): void;
+	/** A file opened as a click on a link to it opens it (设置 › 打开文件): in the Studio, with its program, in Finder. */
+	openFile(path: string): void;
 	/** A workbook's first sheet as rows (office-viewer.ts). */
 	sheetRows(url: string): Promise<string[][]>;
 	/** A PDF of the article (its path in it) read by PaddleOCR into a page under the article. */
@@ -292,14 +295,17 @@ export function createFilePanelState(host: FilePanelHost) {
 		}
 	}
 
-	/** Opens a file: an office file in the page's viewer, a text file (code, data) in its editor, the rest in a new tab. */
+	/** Opens a file: an office file in the page's viewer; the rest as a click on a link to it opens it (a text file in its editor, say). */
 	function openFile(entry: ArticleFileEntry): void {
 		const [root] = entry.path.split('/');
 		const slug = get().slug;
 		if (!slug || entry.kind !== 'file' || !PUBLISHED_FOLDERS.includes(root)) return;
 		if (officeKind(entry.path)) host.viewOffice(studioFileUrl(slug, entry.path), fileName(entry.path));
-		else if (textFileLanguage(entry.path)) host.editFile(entry.path);
-		else window.open(studioFileUrl(slug, entry.path), '_blank', 'noopener');
+		else host.openFile(entry.path);
+	}
+
+	function openInApp(path: string): void {
+		openArticleFileInApp(get().slug!, path).catch((error) => setStatus(errorMessage(error, t('没能用默认程序打开')), 'error'));
 	}
 
 	/** A spreadsheet's first sheet, or a CSV/TSV file, put into the article as a Markdown table. */
@@ -347,10 +353,13 @@ export function createFilePanelState(host: FilePanelHost) {
 			);
 		} else {
 			const reference = markdownReference(entry.path);
-			if (published) {
-				const [label, icon] = officeKind(entry.path) ? [t('预览'), Eye] : textFileLanguage(entry.path) ? [t('编辑'), PenLine] : [t('在新标签页打开'), ExternalLink];
-				items.push({ label, icon, action: () => openFile(entry) });
+			const slug = get().slug;
+			if (published && slug) {
+				if (officeKind(entry.path)) items.push({ label: t('预览'), icon: Eye, action: () => openFile(entry) });
+				else if (textFileLanguage(entry.path)) items.push({ label: t('编辑'), icon: PenLine, action: () => host.editFile(entry.path) });
+				else items.push({ label: t('在新标签页打开'), icon: ExternalLink, action: () => window.open(studioFileUrl(slug, entry.path), '_blank', 'noopener') });
 			}
+			items.push({ label: t('用默认程序打开'), icon: AppWindow, action: () => openInApp(entry.path) });
 			if (published && tableSource(entry.path)) items.push({ label: t('插入为表格'), icon: Table, action: () => insertTable(entry) });
 			if (/\.pdf$/iu.test(entry.path)) items.push({ label: t('OCR 成子页面（PaddleOCR）'), icon: ScanText, action: () => host.ocr(entry.path) });
 			// A plugin's block may tell the file by what it says (a Gaussian output among other logs): read when copied.

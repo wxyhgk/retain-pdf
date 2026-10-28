@@ -258,6 +258,11 @@ export function trashArticleFile(slug: string, path: string): Promise<{ path: st
 	return request(articleApi(slug, 'trash'), jsonOptions('POST', { path }));
 }
 
+/** Opens the file with the system's program for it (as a double-click in Finder does). */
+export function openArticleFileInApp(slug: string, path: string): Promise<{ path: string }> {
+	return request(articleApi(slug, 'open'), jsonOptions('POST', { path }));
+}
+
 /** Shows the file in Finder (or the system's file manager); `''` is the article folder. */
 export function revealArticleFile(slug: string, path: string): Promise<{ path: string }> {
 	return request(articleApi(slug, 'reveal'), jsonOptions('POST', { path }));

@@ -27,6 +27,7 @@ import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
 import { linkPath } from '../files/article-files';
 import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
 import { filesNamed, headingSection } from './split-section';
+import type { FileClick } from '../files/file-open';
 import { openFileLinks } from './file-links';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePath, codeFilePreview, observeCodeFiles, redrawCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
@@ -69,6 +70,8 @@ export type StudioEditorHost = {
 	codeFile(reference: string, language: string, meta: string): Promise<HastElement>;
 	/** A file of the article opened to edit (a code file's 编辑, or a double-click on it). */
 	editFile(path: string): void;
+	/** A file of the article a link names, clicked: opened as chosen for that click (file-open.ts). */
+	openFile(path: string, click: FileClick): void;
 	/** The author edited: the whole body as Markdown. */
 	changed(markdown: string): void;
 	/** How many changes are left to review, or null when none is under review. */
@@ -254,8 +257,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		});
 	}
 	observeCodeFiles(root);
-	// A link to a script or data of the article: a click opens the file to read and edit.
-	openFileLinks(root, (path) => host.editFile(path));
+	// A link to a file of the article: a click opens it (in the Studio, with its program, in Finder: as chosen).
+	openFileLinks(root, (path, click) => host.openFile(path, click));
 	// A file's preview: 编辑, or a double-click on it, opens the file to edit. Before ProseMirror (it would select the block).
 	root.addEventListener(
 		'click',

@@ -8,7 +8,7 @@ import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
 import { t } from '@blog/i18n/index.mjs';
 import { openBlockSheet } from '@blog/ui/block-sheet.ts';
-import { uploadArticleFile } from '../api/client';
+import { openArticleFileInApp, uploadArticleFile } from '../api/client';
 import { codeFileLanguageDescriptions } from '../editor/code-files';
 
 /** A file larger is shown, not edited (an editor of tens of MB is no use). */
@@ -79,7 +79,11 @@ export function openFileEditor({ slug, path, saved, toast }: { slug: string; pat
 				},
 			},
 		],
-		actions: [{ label: t('保存'), title: '⌘S', primary: true, run: () => void save() }],
+		actions: [
+			// The file in its own program (VS Code, say): saved first, so that it opens as it is here.
+			{ label: t('用默认程序打开'), run: () => void save().then(() => openArticleFileInApp(slug, path)).catch((error: unknown) => toast(error instanceof Error ? error.message : String(error), true)) },
+			{ label: t('保存'), title: '⌘S', primary: true, run: () => void save() },
+		],
 	});
 
 	async function read(panel: HTMLElement, note: HTMLElement): Promise<void> {

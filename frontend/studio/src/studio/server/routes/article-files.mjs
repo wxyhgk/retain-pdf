@@ -1,7 +1,7 @@
 import { createReadStream } from 'node:fs';
 import { lstat } from 'node:fs/promises';
 import { basename, isAbsolute, resolve } from 'node:path';
-import { revealInFileManager } from '../system/reveal.mjs';
+import { openWithDefaultApp, revealInFileManager } from '../system/reveal.mjs';
 import { refuse, reply, sendFile } from '../api.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -64,6 +64,15 @@ export function articleFileRoutes(api, { files, manager, articleFiles, drive, te
 		// Browser tests must not open windows on the machine running them.
 		if (!testing.blog) await revealInFileManager(absolute, { isDirectory: (await lstat(absolute)).isDirectory() });
 		return { path: path ?? '' };
+	});
+
+	api.post('/articles/:slug/open', async ({ params, json }) => {
+		const { path } = await json();
+		const absolute = await manager.locate(params.slug, path ?? '');
+		if ((await lstat(absolute)).isDirectory()) throw refuse(400, t('{path} 是文件夹', { path }));
+		// Browser tests must not open programs on the machine running them.
+		if (!testing.blog) await openWithDefaultApp(absolute);
+		return { path };
 	});
 
 	// What is in the trash, and deleting something in it for good.

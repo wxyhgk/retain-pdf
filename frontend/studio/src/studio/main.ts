@@ -18,6 +18,8 @@ import {
 	keepVersion,
 	listMiniApps,
 	tellStarted,
+	openArticleFileInApp,
+	revealArticleFile,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -61,6 +63,7 @@ import { openDialog } from './shell/dialogs/Dialogs';
 import { confirmPublish, createQuickFind, openAgents, openSettings, providePlugins } from './shell/dialogs/ask';
 import { answerWindows } from './windows/studio-line';
 import { openFileEditor } from './files/file-editor';
+import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
@@ -283,6 +286,17 @@ function editArticleFile(path: string): void {
 	});
 }
 
+/** A file of the article opened as the author chose for this click (设置 › 打开文件): its editor here, its program, Finder. */
+function openArticleFile(path: string, click: FileClick = 'click'): void {
+	const slug = session.slug;
+	if (!slug) return;
+	const failed = (error: unknown) => showToast(error instanceof Error ? error.message : String(error), true);
+	const way = fileOpenWayFor(path, click);
+	if (way === 'studio') editArticleFile(path);
+	else if (way === 'app') openArticleFileInApp(slug, path).catch(failed);
+	else revealArticleFile(slug, path).catch(failed);
+}
+
 /** The windows of their own (显示方式 › 新窗口: a 小程序, the AI), answered: what they ask of the Studio here. */
 const windows = answerWindows(async (method, args) => {
 	if (method === 'app.call') return miniApps.answerFor(String(args[0]), String(args[1]), Array.isArray(args[2]) ? args[2] : []);
@@ -318,6 +332,7 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	insertMarkdown: (markdown) => editor.insertMarkdown(markdown),
 	viewOffice: (url, name) => void openOfficeFile(url, name),
 	editFile: (path) => editArticleFile(path),
+	openFile: (path) => openArticleFile(path),
 	sheetRows: firstSheetRows,
 	ocr: (path) => void editorAi.ocrPdf(path),
 });
@@ -349,6 +364,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
 	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error(t('文章尚未载入')))),
 	editFile: (path) => editArticleFile(path),
+	openFile: (path, click) => openArticleFile(path, click),
 	changed: (markdown) => session.editBody(markdown),
 	async pickArticle() {
 		const picked = await quickFind.pick();

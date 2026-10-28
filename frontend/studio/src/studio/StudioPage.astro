@@ -52,7 +52,7 @@ const articles = await new ArticleRepository(blogRoot).list().catch(() => []);
 // The page header as it is before an article is shown (its fields waiting); the page's script draws it from then on.
 const header = createHeaderState({ changed: () => null, mayPublish: async () => false, publish() {}, leaveTitle() {}, fileUrl: (src) => src, pictures: async () => [], upload: async () => '' });
 // The 文件 tab as it is with no article open; the page's script draws it from then on.
-const files = createFilePanelState({ source: () => '', revision: () => '', settle: async () => {}, moved: async () => {}, insertMarkdown() {}, viewOffice() {}, editFile() {}, sheetRows: async () => [], ocr() {} });
+const files = createFilePanelState({ source: () => '', revision: () => '', settle: async () => {}, moved: async () => {}, insertMarkdown() {}, viewOffice() {}, editFile() {}, openFile() {}, sheetRows: async () => [], ocr() {} });
 const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(await Promise.all(articles.map(async ({ slug }) => [slug, await pageVersion(blogRoot, slug)]))) };
 ---
 

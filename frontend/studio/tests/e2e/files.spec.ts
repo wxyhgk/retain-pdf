@@ -133,7 +133,7 @@ test('removing a file the article uses warns first, the file goes to the trash, 
 test('the article’s own files and folders cannot be renamed or removed', async ({ page }) => {
 	await openStudio(page);
 	await fileRow(page, 'index.md').click({ button: 'right' });
-	await expect(page.getByRole('menuitem')).toHaveText(['复制路径', /^在 ?(Finder|文件管理器) ?中显示$/]);
+	await expect(page.getByRole('menuitem')).toHaveText(['用默认程序打开', '复制路径', /^在 ?(Finder|文件管理器) ?中显示$/]);
 	await page.keyboard.press('Escape');
 	await fileRow(page, 'img').click({ button: 'right' });
 	await expect(page.getByRole('menuitem', { name: '重命名' })).toHaveCount(0);
