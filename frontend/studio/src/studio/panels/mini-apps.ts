@@ -248,7 +248,9 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		return root;
 	}
 
+	/** A window brought above the others. Not one shown as the page: above the page, it would cover the Studio's menus. */
 	function focus(shown: AppWindow): void {
+		if (shown.docked) return;
 		shown.root.style.zIndex = String(++top);
 	}
 

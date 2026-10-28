@@ -246,6 +246,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 const chat = createAiChat(studio, { withArticlePictures: (markdown) => drive.withArticlePictures(markdown) });
 
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && chat.aiPanel.shown() });
+chat.restoreLayout();
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void openAgents(() => terminal.refreshAgents()) });
 // 小程序: the tools of apps/, in floating windows; what they may reach of the article shown.
 const appsView = shell.querySelector<HTMLElement>('#apps-view')!;
@@ -255,7 +256,7 @@ const miniApps = createMiniApps(appsView, shell.querySelector<HTMLElement>('#min
 	toast: (message) => showToast(message),
 	openPage: (slug, find) => void pages.openAt(slug, find),
 	askAI: (prompt) => {
-		sidePanel.show('ai');
+		chat.showAi();
 		chat.aiPanel.ask(prompt);
 	},
 	showApps: () => {

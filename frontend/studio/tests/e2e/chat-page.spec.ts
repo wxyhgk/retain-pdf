@@ -89,7 +89,8 @@ test('⤢ in the AI tab: the panel itself whole, in the middle; ⤡ back in the 
 	await side.locator('.ai-input .ProseMirror').fill('几块 侧边');
 	await side.locator('.ai-input .ProseMirror').press('Enter');
 	await expect(side.locator('.ai-message .ai-block')).toHaveCount(4);
-	await side.getByRole('button', { name: '在页面中打开' }).click();
+	await side.getByRole('button', { name: '显示方式' }).click();
+	await page.getByRole('menuitem', { name: /^全屏/u }).click();
 	await expect(view(page)).toBeVisible();
 	await expect(view(page).locator('.ai-user .ai-bubble')).toHaveText('几块 侧边');
 	await expect(view(page).locator('.ai-message .ai-block')).toHaveCount(4);
@@ -99,8 +100,10 @@ test('⤢ in the AI tab: the panel itself whole, in the middle; ⤡ back in the 
 	await expect(page.locator('#side-tab-ai')).toBeHidden();
 	await say(page, '接着说');
 	await expect(side.locator('.ai-message').last()).toHaveText('结论是这样的。');
-	// ⤡: back in the side, as it was; the article in the middle.
-	await side.getByRole('button', { name: '收回到右边' }).click();
+	// 显示方式 › 侧栏: back in the side, as it was; the article in the middle.
+	await side.getByRole('button', { name: '显示方式' }).click();
+	await expect(page.getByRole('menuitem', { name: /^全屏/u })).toContainText('✓');
+	await page.getByRole('menuitem', { name: /^侧栏/u }).click();
 	await expect(view(page)).toBeHidden();
 	await expect(page.locator('#side-panel #side-ai')).toBeVisible();
 	await expect(page.locator('#side-tab-ai')).toHaveAttribute('aria-selected', 'true');
@@ -143,4 +146,65 @@ test('a conversation is renamed from its menu (its page’s title too), and drag
 	await page.getByRole('tab', { name: 'AI 问答' }).click();
 	await expect(row('第一个对话')).toHaveCount(1);
 	expect(await place('第一个对话')).toBeLessThan(await place('乙问题'));
+});
+
+test('显示方式 › 悬浮: the AI panel floats over the Studio, moved by its bar, sized from an edge, kept so after a reload; back in the side', async ({ page }) => {
+	await page.addInitScript(() => {
+		if (!sessionStorage.getItem('float-test')) {
+			sessionStorage.setItem('float-test', '1');
+			localStorage.removeItem('studio.ai.mode');
+			localStorage.removeItem('studio.ai.float');
+		}
+	});
+	await openStudio(page);
+	await page.locator('#side-tab-ai').click();
+	const side = page.locator('#side-ai');
+	await side.getByRole('button', { name: '显示方式' }).click();
+	await expect(page.getByRole('menuitem', { name: /^侧栏/u })).toContainText('✓');
+	await page.getByRole('menuitem', { name: /^悬浮/u }).click();
+
+	// The very panel, floating; its tab lent away; it works as it did.
+	const box = page.locator('#ai-float');
+	await expect(box).toBeVisible();
+	await expect(box.locator('#side-ai')).toBeVisible();
+	await expect(page.locator('#side-tab-ai')).toBeHidden();
+	await box.locator('.ai-input .ProseMirror').fill('几块 悬浮');
+	await box.locator('.ai-input .ProseMirror').press('Enter');
+	await expect(box.locator('.ai-message .ai-block')).toHaveCount(4);
+
+	// Moved by its bar; sized from its left edge.
+	const before = (await box.boundingBox())!;
+	const bar = (await box.locator('.ai-toolbar .ai-title').boundingBox())!;
+	await page.mouse.move(bar.x + 10, bar.y + bar.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(bar.x - 190, bar.y - 90, { steps: 5 });
+	await page.mouse.up();
+	const moved = (await box.boundingBox())!;
+	expect(Math.abs(moved.x - before.x + 200)).toBeLessThan(2);
+	expect(Math.abs(moved.y - before.y + 100)).toBeLessThan(2);
+	const grip = (await box.locator('.ai-float-grip[data-edge="w"]').boundingBox())!;
+	await page.mouse.move(grip.x + 3, grip.y + grip.height / 2);
+	await page.mouse.down();
+	await page.mouse.move(grip.x - 57, grip.y + grip.height / 2, { steps: 4 });
+	await page.mouse.up();
+	const sized = (await box.boundingBox())!;
+	expect(Math.abs(sized.width - moved.width - 60)).toBeLessThan(2);
+
+	// Kept: floating, where it was, after a reload.
+	await page.reload();
+	await expect(page.locator('#ai-float')).toBeVisible();
+	expect(Math.abs((await page.locator('#ai-float').boundingBox())!.x - sized.x)).toBeLessThan(2);
+	// 全屏 and back: floating again; 侧栏: in the side.
+	await page.locator('#ai-float').getByRole('button', { name: '显示方式' }).click();
+	await expect(page.getByRole('menuitem', { name: /^悬浮/u })).toContainText('✓');
+	await page.getByRole('menuitem', { name: /^全屏/u }).click();
+	await expect(view(page)).toBeVisible();
+	await expect(page.locator('#ai-float')).toBeHidden();
+	await page.locator('#sidebar-pages').click();
+	await expect(page.locator('#ai-float')).toBeVisible();
+	await page.locator('#ai-float').getByRole('button', { name: '显示方式' }).click();
+	await page.getByRole('menuitem', { name: /^侧栏/u }).click();
+	await expect(page.locator('#ai-float')).toBeHidden();
+	await expect(page.locator('#side-panel #side-ai')).toBeVisible();
+	await expect(page.locator('#side-tab-ai')).toHaveAttribute('aria-selected', 'true');
 });

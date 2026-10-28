@@ -134,6 +134,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 			<!-- The background tasks: an AI doing what a line asks, a PDF being read (task-tray.ts). -->
 			<div id="task-tray" class="task-tray" aria-live="polite" hidden></div>
 			<!-- The 小程序's floating windows (mini-apps.ts). -->
+			<!-- The AI panel floating (显示方式 › 悬浮): moved in here by ai-chat.ts, moved and sized by ai-float.ts. -->
+			<section id="ai-float" class="ai-float" aria-label="AI" hidden></section>
 			<div id="mini-app-layer" class="mini-app-layer"></div>
 		</main>
 		<script is:inline define:vars={{ pages }}>
@@ -437,6 +439,24 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.side-tabs { display: flex; flex: none; align-items: center; gap: 2px; height: 46px; padding: 0 8px 0 10px; border-bottom: 1px solid rgb(var(--gray-light)); background: var(--surface); }
 	.side-pane { display: flex; flex: 1; min-height: 0; flex-direction: column; }
 	.side-pane[hidden] { display: none; }
+	/* The AI panel floating over the Studio (Notion's floating AI chat): under the menus (z 50), moved by its bar. */
+	.ai-float { position: fixed; z-index: 45; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: var(--studio-shadow-modal); }
+	.ai-float[hidden] { display: none; }
+	.ai-float.is-moving { user-select: none; }
+	.ai-float :global(.ai-pane.is-floating .ai-toolbar) { cursor: grab; }
+	.ai-float.is-moving :global(.ai-toolbar) { cursor: grabbing; }
+	.ai-float :global(.ai-float-grip) { position: absolute; z-index: 2; touch-action: none; }
+	.ai-float :global(.ai-float-grip[data-edge='n']), .ai-float :global(.ai-float-grip[data-edge='s']) { right: 12px; left: 12px; height: 6px; cursor: ns-resize; }
+	.ai-float :global(.ai-float-grip[data-edge='e']), .ai-float :global(.ai-float-grip[data-edge='w']) { top: 12px; bottom: 12px; width: 6px; cursor: ew-resize; }
+	.ai-float :global(.ai-float-grip[data-edge='n']) { top: 0; }
+	.ai-float :global(.ai-float-grip[data-edge='s']) { bottom: 0; }
+	.ai-float :global(.ai-float-grip[data-edge='e']) { right: 0; }
+	.ai-float :global(.ai-float-grip[data-edge='w']) { left: 0; }
+	.ai-float :global(.ai-float-grip[data-edge$='e']:not([data-edge='e'])), .ai-float :global(.ai-float-grip[data-edge$='w']:not([data-edge='w'])) { width: 12px; height: 12px; }
+	.ai-float :global(.ai-float-grip[data-edge='ne']) { top: 0; right: 0; cursor: nesw-resize; }
+	.ai-float :global(.ai-float-grip[data-edge='sw']) { bottom: 0; left: 0; cursor: nesw-resize; }
+	.ai-float :global(.ai-float-grip[data-edge='nw']) { top: 0; left: 0; cursor: nwse-resize; }
+	.ai-float :global(.ai-float-grip[data-edge='se']) { right: 0; bottom: 0; cursor: nwse-resize; }
 	/* A plugin's tab (ctx.panels): its pane, made by side-panel.ts, scrolls as a whole unless it lays itself out. */
 	.side-panel :global(.plugin-pane) { display: flex; flex: 1; min-height: 0; flex-direction: column; overflow: auto; }
 	.side-panel :global(.plugin-pane[hidden]) { display: none; }

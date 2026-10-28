@@ -478,6 +478,15 @@ test('小程序 page: all of them as cards, found by a search; one opened fills 
 			await expect(frame.locator('#out')).toHaveText('第二页');
 			const loadedAt = await window.locator('iframe').evaluate((element: HTMLIFrameElement) => (element.contentWindow as Window & { loadedAt: number }).loadedAt);
 
+			// Its ⋯ menu over it, not under it (clicked in first, as one does).
+			await window.locator('.mini-app-title').click();
+			await window.locator('.mini-app-more').click();
+			const item = page.getByRole('menuitem').first();
+			await expect(item).toBeVisible();
+			const box = (await item.boundingBox())!;
+			expect(await page.evaluate(([x, y]) => Boolean(document.elementFromPoint(x!, y!)?.closest('[role="menu"], [role="menuitem"]')), [box.x + 8, box.y + box.height / 2])).toBe(true);
+			await page.keyboard.press('Escape');
+
 			// ‹ 小程序: their list, it still open.
 			await window.locator('.mini-app-back').click();
 			await expect(probe).toContainText('打开着');

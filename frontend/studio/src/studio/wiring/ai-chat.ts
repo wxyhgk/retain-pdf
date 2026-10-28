@@ -1,8 +1,12 @@
 // The AI tab (a coding agent doing what it is asked, by itself, shown as it goes) and AI 问答, as Notion's: the AI tab's
 // panel itself, moved whole into the middle, the conversations listed in the left column in place of the pages; back
 // in the side when an article is shown again. What the AI changes in the article open is held while it works.
+import { Maximize2, PanelRight, PictureInPicture2 } from 'lucide-react';
+
 import { t } from '@blog/i18n/index.mjs';
+import { floatingBox } from '../ai/ai-float';
 import { createAiPanel } from '../ai/ai-panel';
+import { showContextMenu } from '../common/context-menu';
 import { showToast } from '../common/toast';
 import { sourceLinesOf } from '@blog/document/source-lines.ts';
 import { createChatList } from '../shell/chat-list';
@@ -50,9 +54,22 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 			);
 			return true;
 		},
-		// ⤢ / ⤡: the panel whole in the middle (AI 问答), or back in the side.
+		// ⤢ / ⤡: the panel whole in the middle (AI 问答), or back where it was (in the side, or floating).
 		openWhole: () => studio.showView('chat'),
 		closeWhole: () => studio.showView('editor'),
+		// 显示方式, as Notion's: in the side, floating over the Studio, or whole (全屏, AI 问答).
+		layout(anchor, { full, whole }) {
+			const mark = (on: boolean) => (on ? '✓' : undefined);
+			showContextMenu(
+				[
+					{ label: t('侧栏'), icon: PanelRight, hint: mark(!full && mode === 'side'), action: () => setMode('side') },
+					{ label: t('悬浮'), icon: PictureInPicture2, hint: mark(!full && mode === 'float'), action: () => setMode('float') },
+					'separator',
+					{ label: t('全屏'), icon: Maximize2, hint: mark(full), action: () => !full && whole() },
+				],
+				anchor,
+			);
+		},
 		followed(id) {
 			chatList.select(id);
 			void chatList.refresh();
@@ -67,6 +84,57 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		},
 	});
 	const aiPaneHome = { parent: aiPane.parentElement!, next: aiPane.nextSibling };
+
+	/** Where the panel is when not whole in the middle: in the right column, or floating over the Studio. Kept. */
+	type Mode = 'side' | 'float';
+	const MODE = 'studio.ai.mode';
+	let mode: Mode = 'side';
+	try {
+		if (localStorage.getItem(MODE) === 'float') mode = 'float';
+	} catch {
+		// Not kept: in the side.
+	}
+	const floatBox = shell.querySelector<HTMLElement>('#ai-float')!;
+	const floating = floatingBox(floatBox, () => aiPane.querySelector<HTMLElement>('.ai-toolbar'));
+
+	/** The panel put where its mode says (not while whole in the middle): its tab lent by the right column when it floats. */
+	function home(): void {
+		if (mode === 'float') {
+			if (aiPane.parentElement !== floatBox) floatBox.prepend(aiPane);
+			aiPane.hidden = false;
+			aiPane.classList.add('is-floating');
+			aiPanel.setFloating(true);
+			floating.place();
+			floatBox.hidden = false;
+			studio.sidePanel.lend('ai', true);
+		} else {
+			floatBox.hidden = true;
+			aiPane.classList.remove('is-floating');
+			aiPanel.setFloating(false);
+			if (aiPane.parentElement !== aiPaneHome.parent) aiPaneHome.parent.insertBefore(aiPane, aiPaneHome.next);
+			studio.sidePanel.lend('ai', false);
+		}
+	}
+
+	function setMode(next: Mode): void {
+		mode = next;
+		try {
+			localStorage.setItem(MODE, next);
+		} catch {
+			// Not kept: this time only.
+		}
+		// Whole in the middle: back to the article, where it goes as asked.
+		if (shell.dataset.view === 'chat') studio.showView('editor');
+		else home();
+		if (next === 'side') studio.sidePanel.show('ai');
+		aiPanel.focus();
+	}
+
+	/** The AI panel shown where it is (asked for by a 小程序, a command): its tab, or the floating box as it is. */
+	function showAi(): void {
+		if (mode === 'side' || shell.dataset.view === 'chat') studio.sidePanel.show('ai');
+		else home();
+	}
 	const chatView = shell.querySelector<HTMLElement>('#chat-view')!;
 	const chatList = createChatList({
 		removed(id) {
@@ -106,13 +174,15 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		const there = chatView.contains(aiPane);
 		chatView.hidden = !on;
 		if (on && !there) {
+			floatBox.hidden = true;
+			aiPane.classList.remove('is-floating');
+			aiPanel.setFloating(false);
 			chatView.append(aiPane);
 			studio.sidePanel.lend('ai', true);
 			aiPanel.setFull(true);
 		} else if (!on && there) {
-			aiPaneHome.parent.insertBefore(aiPane, aiPaneHome.next);
 			aiPanel.setFull(false);
-			studio.sidePanel.lend('ai', false);
+			home();
 		}
 		const shown = on ? aiPanel.current() : null;
 		chatList.select(shown);
@@ -141,5 +211,15 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		return true;
 	}
 
-	return { aiPanel, chatList, openChat, newChat, showChat, hold };
+	return {
+		aiPanel,
+		chatList,
+		openChat,
+		newChat,
+		showChat,
+		hold,
+		showAi,
+		/** Where it was left (floating), once the right column is there to lend its tab. */
+		restoreLayout: () => mode === 'float' && shell.dataset.view !== 'chat' && home(),
+	};
 }

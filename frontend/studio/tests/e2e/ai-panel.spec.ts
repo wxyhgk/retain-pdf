@@ -387,11 +387,12 @@ test('the articles a conversation names are links to them, as Notion’s page me
 		await expect(page.locator('#article-title-input')).toHaveValue('另一篇笔记');
 
 		// What was told with what was said too: from AI 问答 whole, back in the editor.
-		await pane(page).getByRole('button', { name: '在页面中打开' }).click();
-		await expect(pane(page).getByRole('button', { name: '收回到右边' })).toBeVisible();
+		await pane(page).getByRole('button', { name: '显示方式' }).click();
+		await page.getByRole('menuitem', { name: /^全屏/u }).click();
+		await expect(page.locator('#chat-view')).toBeVisible();
 		await pane(page).locator('.ai-user-context').getByRole('button', { name: 'Studio 测试夹具' }).click();
 		await expect(chips).toHaveText(['Studio 测试夹具']);
-		await expect(pane(page).getByRole('button', { name: '在页面中打开' })).toBeVisible();
+		await expect(page.locator('#chat-view')).toBeHidden();
 	} finally {
 		removeArticle('other-note');
 	}

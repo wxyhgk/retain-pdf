@@ -1,7 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, Paperclip, History, Maximize2, Minimize2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
+import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, Paperclip, History, Maximize2, PanelRight, PictureInPicture2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
@@ -123,7 +123,7 @@ function Toolbar({ state, actions }: { state: PanelState; actions: PanelActions 
 			</span>
 			<span className="ai-where">{state.conversation?.service ?? ''}</span>
 			<div className="pane-actions">
-				{state.full ? button(t('收回到右边'), Minimize2, actions.toggleWhole) : button(t('在页面中打开'), Maximize2, actions.toggleWhole, t('在页面中打开（AI 问答）'))}
+				{button(t('显示方式'), state.full ? Maximize2 : state.floating ? PictureInPicture2 : PanelRight, (event) => actions.layout(event.currentTarget), t('显示方式：侧栏、悬浮、全屏'))}
 				{button(t('模型和账号'), Settings2, () => actions.showSheet(!state.settings), t('模型和账号：Claude 账号、DeepSeek 等 API key'))}
 				{button(t('对话记录'), History, (event) => actions.history(event.currentTarget))}
 				{button(t('新对话'), SquarePen, actions.newConversation)}

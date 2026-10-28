@@ -46,6 +46,8 @@ export type AiPanelHost = {
 	/** ⤢: the panel whole, in the middle (AI 问答); ⤡: back in the side. */
 	openWhole?(): void;
 	closeWhole?(): void;
+	/** 显示方式 (侧栏, 悬浮, 全屏) under `anchor`: whether it is whole now, and how to make it so. */
+	layout?(anchor: HTMLElement, now: { full: boolean; whole(): void }): void;
 	/** Another conversation shown (chosen, begun): the one AI 问答 lists as shown. */
 	followed?(id: string): void;
 	/** The conversation shown was given a title, or spoken in (listed anew). */
@@ -73,6 +75,8 @@ export type PanelState = {
 	settings: boolean;
 	/** Whole in the middle (AI 问答). */
 	full: boolean;
+	/** Floating over the Studio (显示方式 › 悬浮). */
+	floating: boolean;
 	/** What is told with what is said: the article open (unless left out), whether something is selected in it (and not left out); the articles named with @ are links in what is written. */
 	article: ArticleRef | null;
 	leftOut: string | null;
@@ -211,6 +215,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		status: { text: '', error: false },
 		settings: false,
 		full: false,
+		floating: false,
 		article: null,
 		leftOut: null,
 		selected: false,
@@ -696,6 +701,10 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			// Listed there once it is kept.
 			void (shown ? pageConversation(shown.id).catch(() => null) : Promise.resolve(null)).then(() => host.openWhole?.());
 		},
+		/** 显示方式: in the side, floating, or whole (as Notion's AI chat). */
+		layout(anchor: HTMLElement): void {
+			host.layout?.(anchor, { full: get().full, whole: () => actions.toggleWhole() });
+		},
 		/** 对话记录: the other conversations, to go on with; the one shown, to delete. */
 		history(anchor: HTMLElement): void {
 			void listConversations().then((known) => {
@@ -750,6 +759,10 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			followSelection();
 		},
 		/** Shown whole in the middle (AI 问答), or in the side: the same panel, its ⤢ then ⤡. */
+		/** Floating over the Studio, or not: its bar says which way it is shown. */
+		setFloating(on: boolean): void {
+			set({ floating: on });
+		},
 		setFull(on: boolean): void {
 			pane.classList.toggle('is-full', on);
 			set({ full: on });
