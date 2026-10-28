@@ -5,7 +5,7 @@
 ```text
 AGENTS.md             给 AI 的总说明：写笔记看 blog/AGENTS.md，改代码看本文
 blog/                 文章，每篇一个文件夹（见 docs/README.md）；blog/AGENTS.md 是写作约定（CLAUDE.md 只引入它）
-apps/                 小程序：每个一个文件夹（app.json + app.html），在 Studio 里以悬浮窗打开（见 .agents/skills/studio-mini-apps）
+apps/                 小程序：每个一个文件夹（app.json + app.html），在 Studio 的「小程序」页面打开，可放侧栏、悬浮、全屏、新窗口（见 .agents/skills/studio-mini-apps）
 .agents/skills/       给 AI 的技能（Claude Code、Codex、pi 都读；.claude/skills 指向这里）
 .agents/memory/       AI 记下的作者偏好，只在本机（不进 git）
 src/
@@ -16,6 +16,7 @@ src/
     shell/            外壳（左栏、顶栏、右栏的标签），React 画的（见下面「Studio 的外壳」）
       dialogs/        弹窗和 ⌘K 搜索框；ask.ts 是别处打开它们用的
     ui/ lib/          shadcn/ui 的组件和 cn()，外壳用
+    windows/          独立窗口（显示方式 › 新窗口）：页面 /studio/window 和它与 Studio 主窗口之间的 BroadcastChannel
     editor/           编辑器（Milkdown）和它的块
     pages/            页面：页面树、页面操作、全部文章、页头属性、反链、目录、审阅条、页面快照
     ai/               AI 面板、AI 回答的显示、模型选择、编辑器里的 AI
@@ -129,6 +130,35 @@ Studio 的前端通过 `/api/studio/*` 和后端说话，这些接口只接受�
 - **安全模式**：地址加 `?safe`，一个插件都不载入，顶上一条说明，按「正常启动」回去。前两次都没启动完（5 分钟内），下次自动进安全模式（`src/studio/safe-mode.ts`）。
 - **Studio 自己的代码改坏了**：Studio 每次启动完（文章显示出来）告诉服务器（`POST /api/studio/started`），服务器在代码都已提交时把当前提交记成「上次能正常启动的版本」（`.studio-cache/last-good.json`，`src/studio/server/system/last-good.mjs`）。Studio.app 打开 Studio 后等它说启动完，两分半没等到、或者服务器起不来，就在起始页给出「用上次能正常启动的版本打开」：把那个提交检出到 `.studio-cache/rescue`（git worktree），`blog`、`apps`、`chats`、设置、回收站、`node_modules` 链到真的，在那里以安全模式启动（`STUDIO_RESCUE=1`，`?safe=rescue`）。在里面写的文章就是真的文章；改坏的代码原样留着，修好后关掉 Studio 再打开。
 - 所以改 Studio 的代码时：改完跑测试再提交；没提交的改动不会被记成能用的版本。
+
+## Studio.app 里才有的问题
+
+浏览器测试（Chrome、Playwright 的 WebKit）里好好的，到 Studio.app（Tauri 外壳，WebKit 的 WKWebView）里不行的事，下面三件都是真碰到过的。
+
+**先查记录，不要猜。** 真机上的窗口看不到，猜了改、改了再猜，往返好几轮也找不到原因；有记录就一次找到：
+
+- 服务器为什么停：Studio.app 把每次退出写进 `.astro/dev-exits.log`（时间、退出码或信号、服务器最后几行输出、当时在跑的程序），上一次的完整输出在 `.astro/dev.previous.log`。
+- 页面里发生了什么：页面可以把要查的每一步用 `keepNote`（`src/studio/api/client.ts`）记进 `.astro/studio-notes.log`。文章区被撑宽（底部出横向滚动条）时，`src/studio/pages/overflow-watch.ts` 会自己记下是谁伸出去了。
+- 再拿时间去对 AI 的会话记录（`~/.pi/agent/sessions/`、`~/.claude/projects/`），常常能精确到秒。
+
+**1. 服务器隔一会儿就断（2026-10-28，`467ed4a`）**
+
+- 现象：用着用着服务器停了，`dev-exits.log` 记的是被 SIGTERM 停掉。
+- 原因：Studio.app 用 `node --import <看守>` 启动服务器，看守在 Studio.app 退出（标准输入关上）时停掉服务器。`--import` 在**每个 worker 线程**里也会跑一遍；worker 线程没有标准输入，一开始就关着，看守就以为 Studio.app 走了。pi 跑在服务器进程里，看图片时开 worker 线程缩放图片，所以每次看图就断（两次断开都和 pi 读图片在同一秒）。
+- 修法：看守只在主线程里做事（`isMainThread`）。**用 `--import`、`--require` 注入的代码都要先判断是不是主线程。** Rust 测试 `a_worker_thread_does_not_stop_the_server` 管着。
+
+**2. 拖右栏宽度非常卡（2026-10-28，`00f3691`）**
+
+- 现象：有公式的长文章里，拖一步要半秒。
+- 原因：拖动时每一步都改最外层 `.studio-shell` 上的 CSS 变量 `--panel-width`。CSS 变量会被继承，改它要把页面上每个元素的样式重算；一个公式由几十个小块组成，一篇文章几千个元素。不是 ResizeObserver，也不主要是排版（逐个隐藏代码块、表格、公式量出来的）。
+- 修法：拖动时改不会被继承的 `grid-template-columns`，松手再改一次变量；中间文章拖动时固定宽度、单独排版（`contain: strict`），松手排一次；公式等宽度停下 150 毫秒再适配。**拖动、动画的每一帧都不要改大祖先元素上的 CSS 变量。**
+- 量法：WebKit 里用 requestAnimationFrame 记每帧间隔，按下、拖动、松开分开看。
+
+**3. 独立窗口放回 Studio 后关不掉（2026-10-28，`c89b279`）**
+
+- 现象：AI 或小程序用「显示方式 › 新窗口」拿出去后，在那个窗口里选侧栏、悬浮、全屏，主窗口里已经放回去了，那个窗口却还在。
+- 原因：网页只能关掉它自己用脚本打开的窗口，独立窗口是 Studio.app 开的。更坑的是，在 Tauri 开的窗口里调 `window.close()`，WebKit 当作已经关了（`window.closed` 变成 true），窗口其实还在（wry 没处理 WebKit 的关窗回调）；代码看到「已关」，后面的办法就都没走。记录里一眼看出：「Studio 已经放回 side」之后只有「先 window.close()」，再没有下文。
+- 修法：在 Studio.app 的窗口里（`'__TAURI_INTERNALS__' in window`）不调 `window.close()`，把标题改成 `studio:close`，Studio.app 的 `on_document_title_changed` 看到就关（`tools/studio-app/src/main.rs`）；跳到 `studio-action://close` 作后备。浏览器里的弹出窗口照常 `window.close()`。**在 Studio.app 里别信 `window.close()` 和 `window.closed`。**
 
 ## 插件
 
