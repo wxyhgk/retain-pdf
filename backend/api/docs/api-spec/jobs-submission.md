@@ -28,7 +28,7 @@ Configuration is captured when `AppConfig` is built and passed explicitly into t
 | `RUST_API_UPLOAD_QUEUE_WAIT_MS` | 5000 per stage wait | 1–60000 |
 | `RUST_API_UPLOAD_BUFFER_MIB` | 512 | 1–16384 |
 
-Out-of-range numeric values are clamped; malformed values use defaults. These are conservative starting defaults, not universal throughput optima. The overall admitted-request cap is parse workers + repair workers + queue capacity, including publication work; buffer pressure can reject earlier than the queue count. Increase the input budget alongside the existing single-upload limit when accepting PDFs larger than 512 MiB. Burst/load tests should include parser RSS and other API traffic, not just upload throughput.
+Out-of-range numeric values are clamped; malformed values use defaults. These are conservative starting defaults, not universal throughput optima. The overall admitted-request cap is parse workers + repair workers + queue capacity, including publication work; buffer pressure can reject earlier than the queue count. Increase the input budget alongside the existing single-upload limit when accepting PDFs larger than 512 MiB. Each upload reserves its file size from this budget while its page count is read: the whole file is read into memory once, and stream contents (images, page content, fonts) are dropped as they are parsed, so the peak is about the file size (before 2026-10-28 every stream was kept as a second copy, roughly doubling the peak). Burst/load tests should include parser RSS and other API traffic, not just upload throughput.
 
 Multipart fields:
 
