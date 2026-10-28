@@ -28,6 +28,12 @@ export function chatsRootOf(blogRoot) {
 	return basename(root) === 'blog' ? resolve(dirname(root), 'chats') : `${root}-chats`;
 }
 
+/** The Studio's own code repositories (代码仓库): `repos/` beside blog/, out of its git as chats/ is. */
+export function reposRootOf(blogRoot) {
+	const root = resolve(blogRoot);
+	return basename(root) === 'blog' ? resolve(dirname(root), 'repos') : `${root}-repos`;
+}
+
 export function articleBundlePaths(blogRoot, slug) {
 	const safeSlug = assertArticleSlug(slug);
 	const directory = resolveInside(blogRoot, safeSlug);

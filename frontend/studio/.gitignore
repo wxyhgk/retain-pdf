@@ -40,6 +40,8 @@ playwright-report/
 apps/*/app.local.json
 # the AI panel's conversations (chats/<chat-…>/index.md and ai/): the author's, not published
 /chats/
+# the Studio's own code repositories (代码仓库), each its own git repository: the author's, not this one's
+/repos/
 
 # an article's ai/: material for the AIs (a brief, ai/work/ an AI's scripts and log, ai/history/ earlier
 # versions), never published and never committed: the repository is public. Only the folder itself is kept.

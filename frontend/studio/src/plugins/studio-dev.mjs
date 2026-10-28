@@ -6,11 +6,12 @@ import { ArticleHistory } from '../studio/server/articles/article-history.mjs';
 import { ArticleLibrary } from '../studio/server/articles/article-library.mjs';
 import { ArticleRepository } from '../studio/server/articles/article-repository.mjs';
 import { NotesIndex } from '../studio/server/articles/notes-index.mjs';
+import { Repositories } from '../studio/server/repos/repositories.mjs';
 import { BlogWatcher } from '../studio/server/articles/blog-watcher.mjs';
 import { CodeFilePreviews } from '../studio/server/articles/code-file-previews.mjs';
 import { Drive } from '../studio/server/drive/drive.mjs';
 import { DriveText, TEXT_FOLDER } from '../studio/server/drive/drive-text.mjs';
-import { articleBundlePaths, chatsRootOf, resolveInside } from '../articles/bundle-paths.mjs';
+import { articleBundlePaths, chatsRootOf, reposRootOf, resolveInside } from '../articles/bundle-paths.mjs';
 import { ArticleFileManager, TRASH_FOLDER } from '../studio/server/files/file-manager.mjs';
 import { FileRepository } from '../studio/server/files/file-repository.mjs';
 import { TerminalHost } from '../studio/server/system/terminal-host.mjs';
@@ -214,6 +215,9 @@ export default function studioDev({ site } = {}) {
 			let blockFences = [];
 			import('./markdown-pipeline.mjs').then((pipeline) => { blockFences = pipeline.blockFences; }, () => {});
 			const notesIndex = new NotesIndex(blogRoot, { fences: () => blockFences });
+			// 代码仓库: the Studio's own (repos/ beside blog/) and those of this machine added; the browser tests' own,
+			// and no home of the author's looked through for them.
+			const repositories = new Repositories({ ownRoot: reposRootOf(blogRoot), settingsFile, home: testBlogRoot ? `${blogRoot}-home` : undefined });
 
 			const api = studioApi({
 				site,
@@ -246,6 +250,7 @@ export default function studioDev({ site } = {}) {
 				panelModels: new PanelModels(settingsFile),
 				plugins,
 				notesIndex,
+				repositories,
 			});
 
 			server.middlewares.use(async (request, response, next) => {

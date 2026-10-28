@@ -585,6 +585,17 @@ export async function notesImages(): Promise<unknown[]> {
 	return (await request<{ items: unknown[] }>('/api/studio/notes/images', { cache: 'no-store' })).items;
 }
 
+/** 代码仓库 (studio.repos.*): what the 小程序 asks, as the server answers it (src/studio/server/routes/repos.mjs). */
+export const repos = {
+	list: async (): Promise<unknown[]> => (await request<{ repositories: unknown[] }>('/api/studio/repos', { cache: 'no-store' })).repositories,
+	found: async (): Promise<unknown[]> => (await request<{ found: unknown[] }>('/api/studio/repos/found', { cache: 'no-store' })).found,
+	add: (path: string): Promise<unknown> => request('/api/studio/repos', jsonOptions('POST', { path })),
+	create: (name: string, description: string): Promise<unknown> => request('/api/studio/repos', jsonOptions('POST', { name, description })),
+	remove: async (id: string): Promise<boolean> => (await request<{ removed: boolean }>(`/api/studio/repos/${encodeURIComponent(id)}`, { method: 'DELETE' })).removed,
+	tree: (id: string, dir: string): Promise<unknown> => request(`/api/studio/repos/${encodeURIComponent(id)}/tree?dir=${encodeURIComponent(dir)}`, { cache: 'no-store' }),
+	file: (id: string, path: string): Promise<unknown> => request(`/api/studio/repos/${encodeURIComponent(id)}/file?path=${encodeURIComponent(path)}`, { cache: 'no-store' }),
+};
+
 /** Something the page saw going wrong, kept in the blog's .astro/studio-notes.log for whoever looks into it. */
 export function keepNote(what: string): Promise<unknown> {
 	return request('/api/studio/notes', jsonOptions('POST', { what }));

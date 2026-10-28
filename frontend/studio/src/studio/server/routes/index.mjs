@@ -5,6 +5,7 @@ import { articleRoutes } from './articles.mjs';
 import { conversationRoutes } from './conversations.mjs';
 import { driveRoutes } from './drive.mjs';
 import { pluginRoutes } from './plugins.mjs';
+import { repoRoutes } from './repos.mjs';
 import { settingRoutes } from './settings.mjs';
 import { taskRoutes } from './tasks.mjs';
 
@@ -42,6 +43,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../ai/panel-models.mjs').PanelModels} panelModels the service the panel's Claude Code talks to
  * @property {Promise<any>} plugins the plugins' kernel on this server
  * @property {import('../articles/notes-index.mjs').NotesIndex} notesIndex the code and pictures of all the notes, gathered
+ * @property {import('../repos/repositories.mjs').Repositories} repositories 代码仓库: the git repositories the author keeps code in
  */
 
 /** The Studio's API (/api/studio/…), every route of it. */
@@ -55,5 +57,6 @@ export function studioApi(studio) {
 	conversationRoutes(api, studio);
 	pluginRoutes(api, studio);
 	settingRoutes(api, studio);
+	repoRoutes(api, studio);
 	return api;
 }

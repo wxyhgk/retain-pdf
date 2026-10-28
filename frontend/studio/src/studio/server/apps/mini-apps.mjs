@@ -85,7 +85,7 @@ export const APP_MESSAGE = 'studio-app';
  * What `studio` (BRIDGE) asks the Studio, by name: the same list as the skill studio-mini-apps and the React template's
  * studio.d.ts (the tests hold them to it).
  */
-export const STUDIO_CALLS = Object.freeze(['article', 'insert', 'files.list', 'files.read', 'files.write', 'fetch', 'run', 'toast', 'appFile', 'storage.get', 'storage.set', 'openPage', 'block.get', 'block.set', 'block.picture', 'notes.code', 'notes.images']);
+export const STUDIO_CALLS = Object.freeze(['article', 'insert', 'files.list', 'files.read', 'files.write', 'fetch', 'run', 'toast', 'appFile', 'storage.get', 'storage.set', 'openPage', 'block.get', 'block.set', 'block.picture', 'notes.code', 'notes.images', 'repos.list', 'repos.found', 'repos.add', 'repos.create', 'repos.remove', 'repos.tree', 'repos.file']);
 
 /** What a new app starts as: one page, or a Vite + React + TypeScript project (templates/). */
 export const APP_TEMPLATES = Object.freeze({ page: '一页网页', react: 'Vite + React + TypeScript 项目' }); // i18n-ignore: written into the app
@@ -367,6 +367,16 @@ const BRIDGE = `
 			code: () => call('notes.code'),
 			images: () => call('notes.images'),
 			onChange(listener) { notesListeners.push(listener); },
+		},
+		// The git repositories on this machine the Studio shows (its own in repos/, and those added).
+		repos: {
+			list: () => call('repos.list'),
+			found: () => call('repos.found'),
+			add: (path) => call('repos.add', String(path)),
+			create: (name, description = '') => call('repos.create', String(name), String(description)),
+			remove: (id) => call('repos.remove', String(id)),
+			tree: (id, dir = '') => call('repos.tree', String(id), String(dir)),
+			file: (id, path) => call('repos.file', String(id), String(path)),
 		},
 		// In a block of an article: its state (the fence's body) and options (its info string), changed by \`set\`; its
 		// picture for the blog (SVG text, or a PNG's data: address). Null in a window.

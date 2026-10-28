@@ -1,6 +1,6 @@
 import { CirclePlus } from 'lucide-react';
 
-import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, createApp, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, notesCode, notesImages, reportAppError, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
+import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, createApp, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, notesCode, notesImages, reportAppError, repos, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
 import { showContextMenu, type MenuItem } from '../common/context-menu';
 import { openDialog } from '../shell/dialogs/Dialogs';
 import { t } from '@blog/i18n/index.mjs';
@@ -685,6 +685,21 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 				return notesCode();
 			case 'notes.images':
 				return notesImages();
+			// 代码仓库 (server repos/repositories.mjs).
+			case 'repos.list':
+				return repos.list();
+			case 'repos.found':
+				return repos.found();
+			case 'repos.add':
+				return repos.add(String(args[0] ?? ''));
+			case 'repos.create':
+				return repos.create(String(args[0] ?? ''), String(args[1] ?? ''));
+			case 'repos.remove':
+				return repos.remove(String(args[0] ?? ''));
+			case 'repos.tree':
+				return repos.tree(String(args[0] ?? ''), String(args[1] ?? ''));
+			case 'repos.file':
+				return repos.file(String(args[0] ?? ''), String(args[1] ?? ''));
 			// In a block of an article: its state and options; changed; its picture kept for the blog.
 			case 'block.get':
 				return link ? { state: link.state(), meta: link.meta() } : null;
