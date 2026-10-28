@@ -58,7 +58,7 @@ import { createTopBar } from './shell/top-bar';
 import { mountShell } from './shell/mount';
 import { shell as shellState, type View } from './shell/shell-state';
 import { openDialog } from './shell/dialogs/Dialogs';
-import { confirmPublish, createQuickFind, openAgents, openAiSettings, openLocale } from './shell/dialogs/ask';
+import { confirmPublish, createQuickFind, openAgents, openSettings, providePlugins } from './shell/dialogs/ask';
 import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
@@ -69,6 +69,8 @@ import { startPlugins } from './wiring/plugins';
 import { bindPageKeys } from './wiring/keys';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
+// 设置 › 插件: how each is doing here, and turning one off or on at once.
+providePlugins({ info: studioPluginInfo, setEnabled: setStudioPluginEnabled });
 // The left column, the bar above and the right column's tabs, drawn by React (shell/), before anything looks in them.
 mountShell(shell, {
 	search: () => quickFind.open(),
@@ -88,9 +90,7 @@ mountShell(shell, {
 				},
 			},
 		}),
-	openPlugins: () => openDialog('plugins', { host: { info: studioPluginInfo, setEnabled: setStudioPluginEnabled } }),
-	openAiSettings: () => void openAiSettings(),
-	openLocale: () => void openLocale(),
+	openSettings: () => openSettings(),
 	pageMenu: (anchor) => pages.showPageMenu(anchor),
 	back: () => pages.visited.step(-1),
 	openPage: (slug) => {

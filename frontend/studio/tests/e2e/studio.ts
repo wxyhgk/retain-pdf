@@ -102,10 +102,19 @@ export async function openStudio(page: Page, { autosaveDelay = 600_000 }: { auto
 	await expect(scienceBlock(page, 'XYZ').locator('.science-block-preview canvas')).toBeVisible();
 }
 
-/** An entry of the workspace's menu at the foot of the left column (回收站, 插件, AI 设置, 语言), by its id. */
+/** An entry of the workspace's menu at the foot of the left column (回收站, 设置), by its id. */
 export async function workspaceMenu(page: Page, id: string): Promise<void> {
 	await page.locator('#workspace-menu').click();
 	await page.locator(`#${id}`).click();
+}
+
+/** 设置 opened from the workspace's menu, at a part of it (语言 `locale`, AI 模型 `ai`, 插件 `plugins`): what it shows. */
+export async function openSettings(page: Page, section: 'locale' | 'ai' | 'plugins'): Promise<Locator> {
+	await workspaceMenu(page, 'open-settings');
+	await page.locator(`#settings-dialog nav [data-section="${section}"]`).click();
+	const shown = page.locator(`#settings-${section}`);
+	await expect(shown).toBeVisible();
+	return shown;
 }
 
 export const editor = (page: Page): Locator => page.locator('#crepe-editor .milkdown .ProseMirror');

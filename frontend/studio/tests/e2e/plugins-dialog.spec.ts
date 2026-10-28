@@ -2,7 +2,7 @@ import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
-import { appendToFixture, editor, openStudio, resetFixture, workspaceMenu } from './studio.ts';
+import { appendToFixture, editor, openSettings, openStudio, resetFixture } from './studio.ts';
 
 // 插件: each plugin turned on or off in the Studio, at once, and kept so.
 
@@ -15,13 +15,12 @@ test.beforeEach(() => {
 });
 test.afterEach(() => rmSync(settingsFile(), { force: true }));
 
-const dialog = (page: Page) => page.locator('#plugins-dialog');
+const dialog = (page: Page) => page.locator('#settings-plugins');
 const row = (page: Page, id: string) => dialog(page).locator(`.plugin-row[data-plugin="${id}"]`);
 const toggle = (page: Page, id: string) => row(page, id).getByRole('switch');
 
 async function openPlugins(page: Page): Promise<void> {
-	await workspaceMenu(page, 'open-plugins');
-	await expect(dialog(page)).toBeVisible();
+	await openSettings(page, 'plugins');
 }
 
 test('the plugins are listed, with what each is and how it is doing', async ({ page }) => {

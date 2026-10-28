@@ -1,9 +1,11 @@
 import { t } from '@blog/i18n/index.mjs';
-import { aiSettings, listAgents, localeSettings, type AiSettingsShown } from '../../api/client';
+import { listAgents, type AiSettingsShown } from '../../api/client';
 import { showToast } from '../../common/toast';
 import type { ArticleIssue } from '../../types';
 import type { CiteHost } from './CiteDialog';
 import { openDialog } from './Dialogs';
+import type { PluginsHost } from './PluginSettings';
+import type { SettingsSection } from './SettingsDialog';
 import type { Picked, QuickFindHost } from './QuickFindDialog';
 
 // What the rest of the Studio asks through the dialogs: each opened with what it shows, answering when it is closed.
@@ -13,13 +15,23 @@ export function aiReady(settings: AiSettingsShown): boolean {
 	return settings.hasKey && (settings.provider === 'anthropic' || Boolean(settings.baseUrl && settings.model));
 }
 
+/** The Studio's plugins as 设置 › 插件 asks them (main.ts gives them once they are known). */
+let plugins: PluginsHost | null = null;
+export function providePlugins(host: PluginsHost): void {
+	plugins = host;
+}
+
+/** 设置 (shell/dialogs/SettingsDialog.tsx) opened at `section`: 语言 first by default. */
+export function openSettings(section: SettingsSection = 'locale'): void {
+	openDialog('settings', { section, plugins });
+}
+
 /**
- * 「AI 设置」 (shell/dialogs/AiSettingsDialog.tsx) opened as they are, saying `why` above (when it is opened for want of a
- * setting); resolves with the settings saved, or null.
+ * 设置 › AI 模型 opened for want of a setting, saying `why` above; resolves with the settings saved (it closes then, the
+ * work asked for going on), or null when it is closed without.
  */
-export async function openAiSettings(why = ''): Promise<AiSettingsShown | null> {
-	const shown = await aiSettings();
-	return new Promise((done) => openDialog('aiSettings', { shown, why, done }));
+export function openAiSettings(why = ''): Promise<AiSettingsShown | null> {
+	return new Promise((done) => openDialog('settings', { section: 'ai', plugins, why, done }));
 }
 
 /** 「AI 助手」 (shell/dialogs/AgentsDialog.tsx) opened with the AIs as they are; `saved` once the list is saved. */
@@ -114,13 +126,4 @@ export function createCitePicker(host: CiteHost) {
 			});
 		},
 	};
-}
-
-/** 语言 (shell/dialogs/LocaleDialog.tsx), opened with what is chosen and what there is. */
-export async function openLocale(): Promise<void> {
-	try {
-		openDialog('locale', { shown: await localeSettings() });
-	} catch (error) {
-		showToast(error instanceof Error ? error.message : t('读不到语言设置'), true);
-	}
 }

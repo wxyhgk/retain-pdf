@@ -5,9 +5,9 @@ import type { PluginStatus } from '@blog/kernel/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Switch } from '@studio/ui/switch';
 import { listPlugins, setPluginEnabled, type PluginEntry } from '../../api/client';
-import { errorText, Frame, Status } from './Frame';
+import { errorText, Status } from './Frame';
 
-/** What the dialog asks of the Studio's plugins (plugins.ts). */
+/** What 设置 › 插件 asks of the Studio's plugins (plugins.ts). */
 export type PluginsHost = {
 	/** How one is doing here, and what it says it is. */
 	info(id: string): { status: PluginStatus; description: string | null };
@@ -32,11 +32,11 @@ function stateOf(plugin: PluginEntry, studio: PluginStatus | null): { text: stri
 }
 
 /**
- * 插件: the project's plugins (plugins/<name>/), each turned on or off in the Studio. Off, its studio.ts and server.mjs
- * are taken out at once (all they registered undone); the blog's build and its pages use it all the same. Kept in the
- * Studio's settings, not in git.
+ * 设置 › 插件: the project's plugins (plugins/<name>/), each turned on or off in the Studio. Off, its studio.ts and
+ * server.mjs are taken out at once (all they registered undone); the blog's build and its pages use it all the same.
+ * Kept in the Studio's settings, not in git.
  */
-export function PluginsDialog({ host, onClose }: { host: PluginsHost; onClose(): void }) {
+export function PluginSettings({ host }: { host: PluginsHost }) {
 	const [plugins, setPlugins] = useState<PluginEntry[] | null>(null);
 	const [busy, setBusy] = useState<string | null>(null);
 	const [status, setStatus] = useState({ text: '', error: false });
@@ -62,8 +62,8 @@ export function PluginsDialog({ host, onClose }: { host: PluginsHost; onClose():
 	}
 
 	return (
-		<Frame id="plugins-dialog" title={t('插件')} description={t('plugins/ 里的每个文件夹。关掉只影响 Studio 和开发服务器，马上生效；博客构建和发布的页面照常用全部插件')} className="sm:max-w-[600px]" onClose={onClose}>
-			<ul id="plugins-list" className="grid max-h-[min(60vh,520px)] gap-0.5 overflow-y-auto">
+		<>
+			<ul id="plugins-list" className="grid gap-0.5">
 				{plugins?.map((plugin) => {
 					const inStudio = plugin.entries.includes('studio.ts') || plugin.entries.includes('server.mjs');
 					const info = plugin.entries.includes('studio.ts') ? host.info(plugin.id) : null;
@@ -83,6 +83,6 @@ export function PluginsDialog({ host, onClose }: { host: PluginsHost; onClose():
 				{plugins?.length === 0 && <li className="px-2 py-3.5 text-xs text-muted-foreground">{t('plugins/ 里还没有插件')}</li>}
 			</ul>
 			<Status id="plugins-status" {...status} />
-		</Frame>
+		</>
 	);
 }

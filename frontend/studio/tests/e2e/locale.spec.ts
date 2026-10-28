@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
-import { openStudio, resetFixture, workspaceMenu } from './studio.ts';
+import { openSettings, openStudio, resetFixture } from './studio.ts';
 
 // 语言: the Studio's, chosen in its settings (or the system's); the page and what the server says are in it.
 
@@ -24,19 +24,19 @@ test('语言 is chosen in the settings, kept there, and the page loads again in 
 	// Every request says the page's language, for the server to answer in it.
 	expect((await page.context().cookies()).find((cookie) => cookie.name === 'studio-locale')?.value).toBe('zh-CN');
 
-	await workspaceMenu(page, 'open-locale');
+	await openSettings(page, 'locale');
 	const select = page.locator('#studio-locale');
 	await expect(select).toHaveValue('system');
 	await expect(select.locator('option')).toHaveText(['跟随系统', '中文']);
 	await select.selectOption('zh-CN');
-	await Promise.all([page.waitForEvent('load'), page.locator('#locale-dialog').getByRole('button', { name: '保存' }).click()]);
+	await Promise.all([page.waitForEvent('load'), page.locator('#settings-locale').getByRole('button', { name: '保存' }).click()]);
 	expect(savedLocale()).toBe('zh-CN');
 	await expect(page.locator('html')).toHaveAttribute('data-studio-locale', 'zh-CN');
 
-	await workspaceMenu(page, 'open-locale');
+	await openSettings(page, 'locale');
 	await expect(page.locator('#studio-locale')).toHaveValue('zh-CN');
 	await page.locator('#studio-locale').selectOption('system');
-	await Promise.all([page.waitForEvent('load'), page.locator('#locale-dialog').getByRole('button', { name: '保存' }).click()]);
+	await Promise.all([page.waitForEvent('load'), page.locator('#settings-locale').getByRole('button', { name: '保存' }).click()]);
 	expect(savedLocale()).toBeUndefined();
 });
 

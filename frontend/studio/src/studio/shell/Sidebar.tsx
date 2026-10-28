@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Blocks, ChevronDown, FileText, Globe, House, Languages, Library, MessageCircle, Plus, Puzzle, Search, Settings2, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
+import { Blocks, ChevronDown, FileText, Globe, House, Library, MessageCircle, Plus, Search, Settings, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -122,17 +122,9 @@ function WorkspaceMenu({ siteTitle }: { siteTitle: string }) {
 					{t('回收站')}
 				</DropdownMenuItem>
 				<DropdownMenuSeparator />
-				<DropdownMenuItem id="open-plugins" className={item} onSelect={act.openPlugins}>
-					<Puzzle aria-hidden />
-					{t('插件')}
-				</DropdownMenuItem>
-				<DropdownMenuItem id="open-ai-settings" className={item} onSelect={act.openAiSettings}>
-					<Settings2 aria-hidden />
-					{t('AI 设置')}
-				</DropdownMenuItem>
-				<DropdownMenuItem id="open-locale" className={item} onSelect={act.openLocale}>
-					<Languages aria-hidden />
-					{t('语言')}
+				<DropdownMenuItem id="open-settings" className={item} onSelect={act.openSettings}>
+					<Settings aria-hidden />
+					{t('设置')}
 				</DropdownMenuItem>
 			</DropdownMenuContent>
 		</DropdownMenu>

@@ -62,7 +62,7 @@ test('a picture read as a formula: AI 设置 asked for first, the formula comes 
 
 	await recognize(page, '公式 → LaTeX');
 	// No model set: the settings come first, saying why.
-	const dialog = page.locator('#ai-settings-dialog');
+	const dialog = page.locator('#settings-dialog');
 	await expect(dialog).toBeVisible();
 	await expect(dialog.locator('#ai-settings-reason')).toContainText('识别图片要用大模型');
 	await dialog.locator('#ai-provider').selectOption('anthropic');

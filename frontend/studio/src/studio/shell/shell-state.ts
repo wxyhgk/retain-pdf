@@ -57,9 +57,8 @@ export type ShellActions = {
 	moveChat(id: string, before: string | null): void;
 	renameChat(chat: Conversation): void;
 	openTrash(): void;
-	openPlugins(): void;
-	openAiSettings(): void;
-	openLocale(): void;
+	/** 设置: 语言, AI 模型, 插件. */
+	openSettings(): void;
 	pageMenu(anchor: HTMLElement): void;
 	/** The page open before (or after) this one, as a browser's ‹ and ›. */
 	back(): void;
@@ -122,9 +121,7 @@ export const ActionsContext = createContext<ShellActions>({
 	moveChat: nothing,
 	renameChat: nothing,
 	openTrash: nothing,
-	openPlugins: nothing,
-	openAiSettings: nothing,
-	openLocale: nothing,
+	openSettings: nothing,
 	pageMenu: nothing,
 	back: nothing,
 	openPage: nothing,
