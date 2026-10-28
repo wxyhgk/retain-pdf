@@ -48,20 +48,19 @@ function note(text: string): HTMLElement {
  * whose window this is, the page asks Studio.app to (studio-action://close).
  */
 function shutWindow(): void {
-	tell('关窗：先 window.close()'); // i18n-ignore: developer log
-	// A popup the Studio opened (in a browser): shut at once.
-	window.close();
-	window.setTimeout(() => {
-		if (window.closed) return;
-		// The Mac app's window: Studio.app shuts it seeing this title, or going to studio-action://close.
-		tell('关窗：window.close() 没关掉，改标题请 Studio.app 关'); // i18n-ignore: developer log
+	// The Mac app's window (Tauri's): WebKit takes window.close() as done (window.closed turns true) without the window
+	// shutting, so it is not asked so; Studio.app shuts it seeing this title (or, failing that, going to studio-action://close).
+	if ('__TAURI_INTERNALS__' in window) {
+		tell('关窗：改标题请 Studio.app 关'); // i18n-ignore: developer log
 		document.title = 'studio:close';
 		window.setTimeout(() => {
-			if (window.closed) return;
-			tell('关窗：标题也没关掉，跳到 studio-action://close'); // i18n-ignore: developer log
+			tell('关窗：标题没关掉，跳到 studio-action://close'); // i18n-ignore: developer log
 			location.href = 'studio-action://close';
-		}, 400);
-	}, 150);
+		}, 600);
+		return;
+	}
+	// A popup the Studio opened (in a browser): shut at once.
+	window.close();
 }
 
 /** What happened in this window, kept in the blog's .astro/studio-notes.log (to find out why something did not work). */
