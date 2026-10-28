@@ -1,4 +1,5 @@
 mod bundle;
+mod intermediates;
 mod links_view;
 mod presentation;
 mod registry;
@@ -6,6 +7,10 @@ mod response;
 mod titles;
 
 pub use bundle::{build_bundle_for_job, build_markdown_bundle_for_job};
+pub use intermediates::{
+    clear_pruned_record_fields, job_dirs_referenced_by, prune_succeeded_job_intermediates,
+    IntermediatesPruned,
+};
 pub use links_view::{
     build_artifact_links, build_job_actions, ActionLinkView, ArtifactDisplayItemView, ArtifactLinksView,
     JobActionsView, MarkdownArtifactView, ResourceLinkView,

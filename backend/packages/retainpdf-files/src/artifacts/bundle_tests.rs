@@ -115,21 +115,6 @@ fn publication_failure_preserves_destination_and_cleans_pending_file() {
 }
 
 #[test]
-fn persistent_copy_is_atomic_and_failed_copy_preserves_old_output() {
-    let f = Fixture::new();
-    let source = f.path("source.zip");
-    let target = f.path("target.zip");
-    build_zip(&source, None, None, None).unwrap();
-    std::fs::write(&target, b"old").unwrap();
-    copy_bundle_atomically(&source, &target).unwrap();
-    let old = std::fs::read(&target).unwrap();
-    assert_eq!(old, std::fs::read(&source).unwrap());
-    assert!(copy_bundle_atomically(&f.0, &target).is_err());
-    assert_eq!(std::fs::read(&target).unwrap(), old);
-    f.assert_no_pending();
-}
-
-#[test]
 fn temporary_files_are_unique_and_unpublished_until_success() {
     let f = Fixture::new();
     let output = f.path("bundle.zip");

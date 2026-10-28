@@ -36,7 +36,8 @@ pub use path_ops::{
     normalize_relative_data_path, resolve_data_path, to_relative_data_path,
 };
 pub use previous_output::{
-    plan_previous_output_pdf_move, restore_previous_output_pdf, PreviousOutputPdfMove,
+    is_previous_output_pdf, plan_previous_output_pdf_move, restore_previous_output_pdf,
+    PreviousOutputPdfMove,
 };
 pub use registry::collect_job_artifact_entries;
 pub use resolvers::{

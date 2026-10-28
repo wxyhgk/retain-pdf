@@ -89,8 +89,12 @@ Docker 中 `ops/deployment/docker/delivery/docker/auth.local.json` 的 `api_keys
 - 定期清理（`RUST_API_CLEANUP_INTERVAL_SECS`，默认 `21600` 即 6 小时一轮，起服务时先跑一轮），三项各自 `0` 关掉：
   - `RUST_API_EVENTS_RETENTION_DAYS`：已结束任务的事件保留几天（默认 `30`）。
   - `RUST_API_ORPHAN_UPLOAD_RETENTION_HOURS`：没被任务、书用上的上传保留几小时（默认 `48`）。
-  - `RUST_API_DERIVED_CACHE_RETENTION_DAYS`：已结束任务和书的派生缓存（Word、对照 PDF、线性化 PDF、页预览）生成后保留几天
-    （默认 `0` 不清）。删了下次下载、翻页时重新生成，整本书的 Word 要几分钟；译文 PDF、原文、管线产物、封面和缩略图不删。
+  - `RUST_API_DERIVED_CACHE_RETENTION_DAYS`：已结束任务和书的派生缓存（Word、对照 PDF、线性化 PDF、页预览，2026-10-28 起
+    还有渲染的准备缓存 `artifacts/render_prepare/` 和预热 `artifacts/render_prewarm/`）生成后保留几天（默认 `0` 不清）。
+    删了下次下载、翻页、原地重渲染时重新生成，整本书的 Word 要几分钟；译文 PDF、原文、翻译结果、封面和缩略图不删。
+  - 不用设置、每轮都做的（2026-10-28 起）：成功任务目录里的纯重复文件（OCR 原始压缩包、MinerU 解包目录里布局以外的东西、
+    译文旁边的打包副本、重渲染成功后的上一份译文）删掉，`downloads/` 里一小时以前的打包 zip 删掉。排队、在跑的任务引用着的
+    任务目录不碰。清理间隔 `RUST_API_CLEANUP_INTERVAL_SECS`（默认 21600 秒），启动时也跑一轮。
 - `RUST_API_DB_REQUIRE_UPGRADE_BACKUP`：数据库结构升级前的备份存不成时不升级、不启动（默认关：记 `error` 照常升级）。
 - `RUST_API_MAX_RUNNING_JOBS`：最大并发任务数。排队的任务按交上来的先后开跑（2026-10-24 起）。
 - `RUST_API_MAX_QUEUED_JOBS`：排队（还没开跑）的任务最多多少个（默认 `1000`，`0` 不限）；满了建任务、原地重跑 429 `queue_full`。

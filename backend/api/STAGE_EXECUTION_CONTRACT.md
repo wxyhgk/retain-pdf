@@ -54,7 +54,8 @@
 另有一个**辅助进程**（不是 stage，不改任务状态）：`render_prepare.stage.v1`
 （`python -m retainpdf_pipeline.render.workflow.prepare_stage`，spec 为
 `specs/render-prepare.spec.json`）。翻译之后紧接着渲染时，Rust 在启动 translate 的同时拉起它，
-提前做与译文无关的渲染准备（缓存在 `artifacts/render_prepare/`），translate 成功后限时等它收尾
+提前做与译文无关的渲染准备（缓存在 `artifacts/render_prepare/`；任务结束后按 `RUST_API_DERIVED_CACHE_RETENTION_DAYS` 回收，
+缺了 render 照常现做），translate 成功后限时等它收尾
 再进 render；它起不来、失败、超时都只记日志（`logs/render-prepare.log`），render 照常现做。
 参数取自与 `render.stage.v1` 相同的字段，不带凭据。入口代码：
 [render_prepare.rs](../packages/retainpdf-runner/src/job_runner/render_prepare.rs)。

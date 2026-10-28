@@ -20,8 +20,14 @@ pub use derived_artifacts::{
     document_artifacts_dir, document_page_preview_path, job_artifacts_dir_path,
     job_page_preview_file_name, DerivedArtifactDeps,
 };
+// 成功任务目录里纯重复文件的清理（定期清理调）。
+pub use artifacts::{
+    clear_pruned_record_fields, job_dirs_referenced_by, prune_succeeded_job_intermediates,
+    IntermediatesPruned,
+};
 pub use derived_artifacts::retention::{
-    prune_document_page_previews, prune_job_derived_cache, DerivedCachePruned,
+    prune_document_page_previews, prune_job_derived_cache, prune_stale_download_bundles,
+    DerivedCachePruned,
 };
 pub use derived_artifacts::pdf::linearized_pdf_or_original;
 pub use derived_artifacts::preview::{

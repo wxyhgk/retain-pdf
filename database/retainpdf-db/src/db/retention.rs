@@ -90,6 +90,30 @@ impl Db {
         Ok(rows.collect::<rusqlite::Result<Vec<String>>>()?)
     }
 
+    /// 成功了的任务（清理任务目录里的重复中间文件用）。
+    pub fn succeeded_job_ids(&self) -> Result<Vec<String>> {
+        self.job_ids_with_status(&[JobStatusKind::Succeeded])
+    }
+
+    /// 还没结束的任务（排队、在跑）。清理前看它们引用了哪些任务目录，那些目录不碰。
+    pub fn unfinished_job_ids(&self) -> Result<Vec<String>> {
+        self.job_ids_with_status(&[JobStatusKind::Queued, JobStatusKind::Running])
+    }
+
+    fn job_ids_with_status(&self, statuses: &[JobStatusKind]) -> Result<Vec<String>> {
+        let encoded = statuses
+            .iter()
+            .map(serde_json::to_string)
+            .collect::<serde_json::Result<Vec<String>>>()?;
+        let placeholders = vec!["?"; encoded.len()].join(", ");
+        let conn = self.connect()?;
+        let mut stmt = conn.prepare(&format!(
+            "SELECT job_id FROM jobs WHERE status_json IN ({placeholders}) ORDER BY job_id"
+        ))?;
+        let rows = stmt.query_map(rusqlite::params_from_iter(encoded.iter()), |row| row.get(0))?;
+        Ok(rows.collect::<rusqlite::Result<Vec<String>>>()?)
+    }
+
     /// Deletes rows from `uploads` older than `retention_hours` that no row
     /// in `jobs` references AND that back no `documents` row. Returns the
     /// deleted records with `stored_path` resolved to an absolute path, so the

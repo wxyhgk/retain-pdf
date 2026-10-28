@@ -32,6 +32,7 @@ mod jobs_control_contract;
 mod job_categories;
 mod delete_safety;
 mod derived_cache_retention;
+mod job_intermediates_cleanup;
 mod disk_space;
 mod request_log;
 mod jobs_creation;
