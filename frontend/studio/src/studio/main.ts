@@ -272,7 +272,8 @@ const miniApps = createMiniApps(appsView, shell.querySelector<HTMLElement>('#min
 const windows = answerWindows(async (method, args) => {
 	if (method === 'app.call') return miniApps.answerFor(String(args[0]), String(args[1]), Array.isArray(args[2]) ? args[2] : []);
 	if (method === 'app.dock') {
-		await miniApps.open(String(args[0]));
+		const where = args[1] === 'side' || args[1] === 'float' ? args[1] : 'page';
+		await miniApps.openIn(String(args[0]), where, String(args[2] ?? ''));
 		return true;
 	}
 	if (method.startsWith('ai.')) return chat.answerWindow(method, args);

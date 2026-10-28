@@ -683,13 +683,27 @@ fn open_own_window(app: &AppHandle, url: Url) {
         return;
     }
     let handle = app.clone();
+    let closer = (app.clone(), label.clone());
     let title = asked.get("title").cloned().unwrap_or_else(|| "Studio".to_owned());
     let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
         .title(title)
         .inner_size(size("w", 460.0), size("h", 760.0))
         .min_inner_size(280.0, 200.0)
         .disable_drag_drop_handler()
-        .on_navigation(|url| {
+        .on_navigation(move |url| {
+            // Put back into the Studio (its 显示方式): shut. WebKit lets a page shut only a window it opened itself, so
+            // the page asks by going to studio-action://close.
+            if url.scheme() == "studio-action" {
+                if url.host_str() == Some("close") {
+                    let (app, label) = closer.clone();
+                    thread::spawn(move || {
+                        if let Some(window) = app.get_webview_window(&label) {
+                            let _ = window.close();
+                        }
+                    });
+                }
+                return false;
+            }
             let ours = is_local(url) || matches!(url.scheme(), "about" | "blob" | "data");
             if !ours {
                 open_outside(url.as_str());

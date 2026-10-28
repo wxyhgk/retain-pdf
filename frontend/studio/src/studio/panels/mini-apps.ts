@@ -290,7 +290,9 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 	/** Where its page is now (moved, a frame is loaded again: it goes back there), or its own first page. */
 	function hereOf(shown: AppWindow): string {
 		try {
-			return shown.frame.contentWindow?.location.href ?? shown.frame.src;
+			const href = shown.frame.contentWindow?.location.href;
+			// Still loading (about:blank meanwhile): where it is going.
+			return href && href !== 'about:blank' ? href : shown.frame.src;
 		} catch {
 			// Not the app's own page: it starts again at its own.
 			return shown.frame.src;
@@ -677,7 +679,7 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 	};
 
 	/** Opens `app` (at `entry`): as the 小程序 page, or `floating` in a window; one open already is shown where it is. */
-	function show(app: MiniApp, entry = '', { floating = false }: { floating?: boolean } = {}): void {
+	function show(app: MiniApp, entry = '', { floating = false, side = false }: { floating?: boolean; side?: boolean } = {}): void {
 		const already = open.get(app.id);
 		if (already) {
 			if (already.where === 'page') {
@@ -698,7 +700,9 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		const place = fitted(readPlaces()[app.id] ?? { left: innerWidth - width - 40 - open.size * 24, top: 80 + open.size * 24, width, height });
 		const root = document.createElement('section');
 		root.className = 'mini-app-window';
-		root.classList.toggle('is-docked', !floating);
+		const where: Where = floating ? 'float' : side ? 'side' : 'page';
+		root.classList.toggle('is-docked', where === 'page');
+		root.classList.toggle('is-side', where === 'side');
 		root.dataset.app = app.id;
 		root.setAttribute('aria-label', app.name);
 		if (floating) put(root, place);
@@ -759,7 +763,7 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		frame.title = app.name;
 		// Not sandboxed: the author's own tool, of the Studio's origin (its files load as a page's; `studio` does the rest).
 		frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
-		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false, errors: [], errorBadge, state, status: null, polling: null, sheet, entry, where: floating ? 'float' : 'page' };
+		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false, errors: [], errorBadge, state, status: null, polling: null, sheet, entry, where };
 		layoutButton.addEventListener('click', () => showLayoutMenu(shown, layoutButton));
 		errorBadge.addEventListener('click', () => showErrors(shown));
 		more.addEventListener('click', () => showMenu(shown, more));
@@ -779,9 +783,11 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		root.append(bar, frame, sheet, ...grips);
 		labelLayout(shown);
 		open.set(app.id, shown);
-		if (floating) {
+		if (where === 'float') {
 			layer.append(root);
 			focus(shown);
+		} else if (where === 'side') {
+			host.addSideTab({ key: sideKey(app.id), label: app.name, icon: app.icon, draw: (pane) => void pane.append(root) });
 		} else {
 			stage.append(root);
 			present(app.id);
@@ -1034,6 +1040,15 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 
 	return {
 		notesChanged,
+		/** A 小程序 put back from a window of its own: shown here as asked (侧栏, 悬浮, 全屏), at the page it was at there. */
+		async openIn(id: string, where: Where, at = ''): Promise<void> {
+			const app = (await listMiniApps()).find((candidate) => candidate.id === id);
+			if (!app || app.problem) throw new Error(t('没有小程序「{id}」', { id }));
+			const entry = at.startsWith(home(app)) ? at.slice(home(app).length) : '';
+			const shown = open.get(id);
+			if (shown) moveTo(shown, where);
+			else show(app, entry, { floating: where === 'float', side: where === 'side' });
+		},
 		/** What a 小程序 in a window of its own asks (windows/window-main.ts), answered as one here would be. */
 		async answerFor(id: string, method: string, args: unknown[]): Promise<unknown> {
 			const app = (await listMiniApps()).find((candidate) => candidate.id === id);

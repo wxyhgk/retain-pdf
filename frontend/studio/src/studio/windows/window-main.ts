@@ -1,3 +1,4 @@
+import { AppWindow, Maximize2, PanelRight, PictureInPicture2 } from 'lucide-react';
 import { createElement } from 'react';
 import { flushSync } from 'react-dom';
 import { createRoot } from 'react-dom/client';
@@ -42,6 +43,33 @@ function note(text: string): HTMLElement {
 	return element;
 }
 
+/**
+ * This window shut (put back into the Studio). WebKit lets a page shut only a window it opened itself: in the Mac app,
+ * whose window this is, the page asks Studio.app to (studio-action://close).
+ */
+function shutWindow(): void {
+	window.close();
+	window.setTimeout(() => {
+		if (!window.closed) location.href = 'studio-action://close';
+	}, 200);
+}
+
+/** 显示方式 in a window of its own: back into the Studio, shown there so (侧栏, 悬浮, 全屏); or this window, as it is. */
+function layoutMenu(anchor: HTMLElement, back: (where: 'side' | 'float' | 'full') => Promise<unknown>): void {
+	const go = (where: 'side' | 'float' | 'full') =>
+		void back(where).then(shutWindow, (error: unknown) => showToast(error instanceof Error ? error.message : String(error), true));
+	showContextMenu(
+		[
+			{ label: t('侧栏'), icon: PanelRight, action: () => go('side') },
+			{ label: t('悬浮'), icon: PictureInPicture2, action: () => go('float') },
+			{ label: t('全屏'), icon: Maximize2, action: () => go('full') },
+			'separator',
+			{ label: t('新窗口'), icon: AppWindow, hint: '✓', action: () => {} },
+		],
+		anchor,
+	);
+}
+
 function barButton(text: string, title: string, run: () => void): HTMLButtonElement {
 	const button = document.createElement('button');
 	button.type = 'button';
@@ -79,10 +107,22 @@ async function appWindow(id: string, at: string): Promise<void> {
 		badge.hidden = true;
 		frame.src = `${home}?${Date.now()}`;
 	});
-	const back = barButton(t('放回 Studio'), t('放回 Studio 的小程序页面，关掉这个窗口'), () => {
-		void line.call('app.dock', id).then(() => window.close(), (error: unknown) => showToast(error instanceof Error ? error.message : String(error), true));
-	});
-	bar.append(title, badge, reload, back);
+	// 显示方式, as in the Studio: back into it, shown there as chosen, at the page it is at here.
+	const layout = barButton('⧉', t('显示方式：放回 Studio 的侧栏、悬浮、全屏'), () =>
+		layoutMenu(layout, (where) => {
+			let here = '';
+			try {
+				const shown = frame.contentWindow?.location;
+				here = shown ? shown.pathname + shown.search + shown.hash : '';
+			} catch {
+				// Not the app's own page: back at its own.
+			}
+			return line.call('app.dock', id, where === 'full' ? 'page' : where, here);
+		}),
+	);
+	layout.className = 'window-layout';
+	layout.setAttribute('aria-label', t('显示方式'));
+	bar.append(title, badge, reload, layout);
 	body.append(bar, frame);
 
 	let port: MessagePort | null = null;
@@ -155,20 +195,17 @@ function aiWindow(): void {
 			return true;
 		},
 		// 显示方式 here: back into the Studio, as it is shown there; or this window, as it is.
-		layout(anchor) {
-			const back = (mode: string) => void line.call('ai.dock', mode, panel.current()).then(() => window.close(), said);
-			showContextMenu(
-				[
-					{ label: t('侧栏'), action: () => back('side') },
-					{ label: t('悬浮'), action: () => back('float') },
-					{ label: t('全屏'), action: () => back('full') },
-					'separator',
-					{ label: t('新窗口'), hint: '✓', action: () => {} },
-				],
-				anchor,
-			);
-		},
+		layout: (anchor) => layoutMenu(anchor, (where) => line.call('ai.dock', where, panel.current())),
+		// Its turn over: what it changed in the article open, held in the Studio meanwhile, looked over there now.
+		turnOver: () => void line.call('ai.working', false).catch(() => {}),
 	});
+	// At work: the Studio holds what it changes in the article open, as it does for the AI shown there.
+	let working = false;
+	window.setInterval(() => {
+		if (panel.working() === working) return;
+		working = panel.working();
+		void line.call('ai.working', working).catch(() => {});
+	}, 250);
 	panel.setFloating(false);
 	// On screen: the AIs read (a conversation begun if none is shown).
 	panel.shown();

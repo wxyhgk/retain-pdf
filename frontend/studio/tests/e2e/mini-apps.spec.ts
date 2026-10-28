@@ -538,11 +538,23 @@ test('小程序 page: all of them as cards, found by a search; one opened fills 
 			await expect(ownFrame.locator('#out')).toHaveText('第二页');
 			await ownFrame.locator('#ask').click();
 			await expect(ownFrame.locator('#asked')).toHaveText('当前：Studio 测试夹具');
-			// 放回 Studio: the 小程序 page again, its window shut.
-			const shut = own.waitForEvent('close');
-			await own.getByRole('button', { name: '放回 Studio' }).click();
+			// 显示方式 there › 侧栏: back in the Studio's right column, at the page it was at; its window shut.
+			let shut = own.waitForEvent('close');
+			await own.getByRole('button', { name: '显示方式' }).click();
+			await own.getByRole('menuitem', { name: /^侧栏/u }).click();
+			await shut;
+			await expect(page.locator('#side-panel .mini-app-window.is-side[data-app="probe"]')).toBeVisible();
+			await expect(frame.locator('#out')).toHaveText('第二页');
+			// Out again, and back › 全屏: the 小程序 page.
+			const again = page.waitForEvent('popup');
+			await layoutTo('新窗口');
+			const second = await again;
+			shut = second.waitForEvent('close');
+			await second.getByRole('button', { name: '显示方式' }).click();
+			await second.getByRole('menuitem', { name: /^全屏/u }).click();
 			await shut;
 			await expect(page.locator('.mini-app-window.is-docked[data-app="probe"]')).toBeVisible();
+			await expect(page.locator('#side-tab-own-app-probe')).toHaveCount(0);
 			// Closed: the list again.
 			await page.locator('.mini-app-window[data-app="probe"] .mini-app-bar button', { hasText: '×' }).click();
 			await expect(page.locator('.app-card[data-app-card="probe"]')).not.toContainText('打开着');

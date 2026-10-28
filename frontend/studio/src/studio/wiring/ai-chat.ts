@@ -86,12 +86,15 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		},
 		changed: () => void chatList.refresh(),
 		// What it changed in the article open, held while it worked: looked over now, all at once.
-		turnOver() {
-			const held = heldChanges;
-			heldChanges = null;
-			if (held && held.slug === studio.session.slug) studio.session.changedOnDisk([...held.paths]);
-		},
+		turnOver: () => lookOverHeld(),
 	});
+
+	/** What the AI changed in the article open while it worked, looked over now, all at once. */
+	function lookOverHeld(): void {
+		const held = heldChanges;
+		heldChanges = null;
+		if (held && held.slug === studio.session.slug) studio.session.changedOnDisk([...held.paths]);
+	}
 	const aiPaneHome = { parent: aiPane.parentElement!, next: aiPane.nextSibling };
 
 	/** Where the panel is when not whole in the middle: in the right column, or floating over the Studio. Kept. */
@@ -108,6 +111,8 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 
 	/** The AI is in a window of its own (新窗口): not shown here meanwhile; back where it was once that window shuts. */
 	let inWindow = false;
+	/** The AI in its window is at work: what it changes in the article open is held here, as it is for the one here. */
+	let workingInWindow = false;
 	let windows: ReturnType<typeof answerWindows> | null = null;
 	let windowOpened: (kind: string) => Promise<boolean> = async () => false;
 
@@ -185,6 +190,11 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 				return true;
 			case 'ai.runInTerminal':
 				runInTerminal(String(args[0] ?? ''));
+				return true;
+			// At work there, or its turn over: what it changed held meanwhile, then looked over all at once.
+			case 'ai.working':
+				workingInWindow = Boolean(args[0]);
+				if (!workingInWindow) lookOverHeld();
 				return true;
 			case 'ai.dock': {
 				inWindow = false;
@@ -272,7 +282,7 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 	 * its turn is over (turnOver), not at each bit. Whether it was held.
 	 */
 	function hold(change: { slug: string; paths: string[] }): boolean {
-		if (!aiPanel.working() || !studio.session.slug) return false;
+		if (!(aiPanel.working() || workingInWindow) || !studio.session.slug) return false;
 		if (!heldChanges || heldChanges.slug !== studio.session.slug) {
 			heldChanges = { slug: studio.session.slug, paths: new Set() };
 			showToast(t('AI 在改这篇文章，做完后一起给你过目'));
@@ -295,7 +305,12 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 			windows = line;
 			windowOpened = opened;
 			line.heard(({ what, kind }) => {
-				if (kind !== 'ai' || what !== 'bye' || !inWindow) return;
+				if (kind !== 'ai' || what !== 'bye') return;
+				if (workingInWindow) {
+					workingInWindow = false;
+					lookOverHeld();
+				}
+				if (!inWindow) return;
 				inWindow = false;
 				if (shell.dataset.view !== 'chat') home();
 			});

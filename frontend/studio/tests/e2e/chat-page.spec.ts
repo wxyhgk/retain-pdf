@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { openStudio, resetFixture } from './studio.ts';
+import { editFixture, editor, openStudio, resetFixture } from './studio.ts';
 
 // AI 问答, as Notion's: the AI tab's panel itself, moved whole into the middle; the left column lists the conversations
 // (chats/) in place of the pages. The AI is a stand-in (fake-agents/fake-acp.mjs).
@@ -237,4 +237,38 @@ test('显示方式 › 新窗口: the AI in a window of its own, told of the art
 	await expect(page.locator('#side-tab-ai')).toBeVisible();
 	await page.locator('#side-tab-ai').click();
 	await expect(side.locator('.ai-message').last()).toHaveText('结论是这样的。');
+});
+
+test('the AI in a window of its own at work on the article open: its changes held in the Studio, looked over once its turn is over; 显示方式 there puts it back', async ({ page }) => {
+	await openStudio(page);
+	await page.locator('#side-tab-ai').click();
+	const popup = page.waitForEvent('popup');
+	await page.locator('#side-ai').getByRole('button', { name: '显示方式' }).click();
+	await page.getByRole('menuitem', { name: /^新窗口/u }).click();
+	const own = await popup;
+	const there = own.locator('.ai-pane');
+	await expect(there.locator('.ai-context')).toContainText('Studio 测试夹具');
+	await there.locator('.ai-input .ProseMirror').fill('慢慢来');
+	await there.locator('.ai-input .ProseMirror').press('Enter');
+	await expect(there.locator('.ai-work.is-going')).toBeVisible();
+	// What it changes meanwhile: held in the Studio, as for the AI shown there.
+	editFixture((markdown) => markdown.replace('结尾段落。', '结尾段落，AI 改的。'));
+	await expect(page.locator('.studio-toast')).toContainText('AI 在改这篇文章，做完后一起给你过目');
+	editFixture((markdown) => markdown.replace('开头段落', '开头段落（AI 又改了）'));
+	await page.waitForTimeout(1500);
+	await expect(page.locator('#review-bar')).toBeHidden();
+	// Its turn over (stopped there): the changes, together.
+	await there.locator('.ai-send').click();
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(editor(page)).toContainText('AI 又改了');
+
+	// 显示方式 there › 悬浮: back in the Studio floating, its window shut.
+	const shut = own.waitForEvent('close');
+	await there.getByRole('button', { name: '显示方式' }).click();
+	await own.getByRole('menuitem', { name: /^悬浮/u }).click();
+	await shut;
+	await expect(page.locator('#ai-float #side-ai')).toBeVisible();
+	await page.locator('#ai-float').getByRole('button', { name: '显示方式' }).click();
+	await page.getByRole('menuitem', { name: /^侧栏/u }).click();
+	await expect(page.locator('#side-panel #side-ai')).toBeVisible();
 });
