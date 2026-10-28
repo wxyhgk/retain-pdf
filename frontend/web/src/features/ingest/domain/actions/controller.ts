@@ -10,6 +10,7 @@ import { defaultAppActionsConfigPort } from "./config-port.js";
 import { createAppActionsRuntimeEnvPort } from "./runtime-env-port.js";
 import { createAppActionsJobSnapshotPort } from "./job-snapshot-port.js";
 import { createAppActionsUploadStatePort } from "./upload-state-port.js";
+import { runBatchSubmit, type BatchSubmitItemResult } from "./submit/batch.js";
 
 export interface AppActionsUploadStatePort {
   getSnapshot?: () => {
@@ -51,7 +52,8 @@ export interface SubmitFlowDeps {
   workflowNeedsUpload?: (workflow?: string) => boolean | unknown;
   currentRenderSourceJobId?: () => string | unknown;
   currentBudgetState?: (workflow?: string) => BudgetStateSnapshot | null | undefined | unknown;
-  collectRunPayload?: () => unknown;
+  /** overrides 给一次上传多本用：指定上传编号、整本处理。 */
+  collectRunPayload?: (overrides?: { uploadId?: string; pageRanges?: string }) => unknown;
   validateBeforeSubmit?: () => boolean | unknown;
   ensureOcrCredentialsReady?: (options?: {
     onMissingToken?: () => void;
@@ -91,7 +93,7 @@ export interface MountAppActionsFeatureOptions {
   workflowNeedsUpload?: (workflow?: string) => boolean | unknown;
   currentRenderSourceJobId?: () => string | unknown;
   currentBudgetState?: (workflow?: string) => BudgetStateSnapshot | null | undefined | unknown;
-  collectRunPayload?: () => unknown;
+  collectRunPayload?: SubmitFlowDeps["collectRunPayload"];
   validateBeforeSubmit?: () => boolean | unknown;
   ensureOcrCredentialsReady?: SubmitFlowDeps["ensureOcrCredentialsReady"];
   hasBrowserCredentials?: () => boolean | unknown;
@@ -206,6 +208,41 @@ export function mountAppActionsFeature({
     }
   }
 
+  // 一次上传多本：每本一个任务，选项同一套（见 submit/batch.ts）。
+  async function submitBatch(
+    uploadIds: string[],
+    onItem?: (uploadId: string, result: BatchSubmitItemResult) => void,
+  ) {
+    setSubmitBusyState(true);
+    try {
+      return await runBatchSubmit({
+        uploadIds,
+        collectRunPayload: (overrides) => collectRunPayload?.(overrides),
+        onItem,
+        workflow: currentWorkflow(),
+        desktopMode: runtimeEnv.isDesktopMode(),
+        configPort,
+        apiPrefix,
+        desktopConfigured: runtimeEnv.isDesktopConfigured(),
+        openSetupDialog,
+        openBrowserCredentialsDialog,
+        setText,
+        submitJobRequest,
+        workflowNeedsUpload,
+        workflowNeedsCredentials,
+        currentRenderSourceJobId,
+        currentBudgetState,
+        ensureOcrCredentialsReady,
+        hasBrowserCredentials,
+        refreshDeepSeekBalance,
+        libraryEventPort,
+        notifyPreflightWarning,
+      });
+    } finally {
+      setSubmitBusyState(false);
+    }
+  }
+
   async function checkApiConnectivity() {
     try {
       const resp = await fetch(buildApiEndpoint("", "health"));
@@ -234,6 +271,7 @@ export function mountAppActionsFeature({
   return {
     checkApiConnectivity,
     handleOpenOutputDir,
+    submitBatch,
     submitForm,
   };
 }

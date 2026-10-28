@@ -13,6 +13,7 @@ import type { createWorkflowViewFeature } from "../domain/workflow-view-store.js
 import type { UploadViewStore } from "../domain/upload-store.js";
 import type { mountWorkflowFeature } from "../domain/workflow/controller.js";
 import type { mountUploadFeature } from "../domain/upload/controller.js";
+import type { mountAppActionsFeature } from "../domain/actions/controller.js";
 
 export type IngestWorkflowView = ReturnType<typeof createWorkflowViewFeature>;
 
@@ -33,10 +34,12 @@ export function useIngestWorkflowView(): IngestWorkflowView {
 // 以前走 ui/context 的窄口：上传视图的 store 在 app 层被抹成只读 store，到了这里又得
 // `as unknown as UploadViewStore` 转回来才能调 actions（四处）；功能对象是 any。
 
-/** 功能注册表里本功能的两样。注册表是组合根里的可变对象，组件在调用时才读。 */
+/** 功能注册表里本功能用到的几样。注册表是组合根里的可变对象，组件在调用时才读。 */
 export type IngestFeatures = {
   workflowFeature?: ReturnType<typeof mountWorkflowFeature>;
   uploadFeature?: ReturnType<typeof mountUploadFeature>;
+  /** 一次上传多本时用它的 submitBatch 交任务。 */
+  appActionsFeature?: Pick<ReturnType<typeof mountAppActionsFeature>, "submitBatch">;
 };
 
 export type IngestServices = {

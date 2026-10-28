@@ -15,6 +15,7 @@ export {
   buildJobDetailEndpoint,
   isInsufficientStorageError,
   isPageQuotaError,
+  isQueueFullError,
   isRefusedSubmission,
   PAGE_QUOTA_EXCEEDED,
   type PageQuotaError,

@@ -107,6 +107,7 @@
 @import "../../features/ingest/ui/components/upload/UploadDropzone.css";
 @import "../../features/ingest/ui/components/upload/UploadWorkflowNotices.css";
 @import "../../features/ingest/ui/components/upload/ProcessingChoicePanel.css";
+@import "../../features/ingest/ui/components/upload/BatchUploadPanel.css";
 @import "../../features/ingest/ui/UploadWorkflowResponsive.css";
 @import "../pages/home/job-dialogs.css";
 /* 原 job-dialogs.utilities.css 按组件拆分（顺序与拆分前一致）。 */

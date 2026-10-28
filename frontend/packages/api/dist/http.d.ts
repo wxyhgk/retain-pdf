@@ -40,9 +40,15 @@ export declare const INSUFFICIENT_STORAGE_MESSAGE = "\u78C1\u76D8\u7A7A\u95F4\u4
 /** 错误响应是「磁盘空间不够」就做成一句中文的错误（带 status、reason），不是就返回 null。 */
 export declare function insufficientStorageErrorFromPayload(status: number, payload: unknown, url?: string): HttpError | null;
 export declare function isInsufficientStorageError(error: unknown): boolean;
+/** 排队（还没开跑）的任务已经满了：建任务、原地重跑回 429，error.details.reason 是这个。message 同样是英文。 */
+export declare const QUEUE_FULL = "queue_full";
+export declare const QUEUE_FULL_MESSAGE = "\u6392\u961F\u7684\u4EFB\u52A1\u592A\u591A\u4E86\uFF0C\u7B49\u524D\u9762\u7684\u5F00\u8DD1\u518D\u4EA4\u3002";
+/** 错误响应是「排队满了」就做成一句中文的错误（带 status、reason），不是就返回 null。 */
+export declare function queueFullErrorFromPayload(status: number, payload: unknown, url?: string): HttpError | null;
+export declare function isQueueFullError(error: unknown): boolean;
 /**
- * 提交被拒但不是故障：页数额度不够、磁盘空间不够。message 是能照着做的中文，界面原样显示，
- * 不加「提交失败: 状态码」前缀，也不给诊断。都不是就返回 null。
+ * 提交被拒但不是故障：页数额度不够、磁盘空间不够、排队的任务满了。message 是能照着做的中文，
+ * 界面原样显示，不加「提交失败: 状态码」前缀，也不给诊断。都不是就返回 null。
  */
 export declare function refusedSubmissionError(status: number, payload: unknown, url?: string): HttpError | null;
 export declare function isRefusedSubmission(error: unknown): boolean;

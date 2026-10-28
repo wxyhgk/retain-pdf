@@ -5,6 +5,7 @@
 //   page-range-controller.ts  页码区间的编排（落 viewPort / state）
 //   session.ts                上传会话复位
 //   execution.ts              选文件后的上传执行
+//   batch-file-upload.ts      一次上传多本时传其中一本（不碰单文件的界面状态）
 //   state-access.ts           upload state 读写成对封装
 //   ports.ts                  端口/契约类型
 // 本文件只做依赖注入与对外 API 汇总，导出名与签名保持不变。
@@ -15,6 +16,7 @@ import { createUploadStateAccess } from "./state-access.js";
 import { createPageRangeController } from "./page-range-controller.js";
 import { createUploadSessionController } from "./session.js";
 import { createFileUploadHandler } from "./execution.js";
+import { createBatchFileUploader } from "./batch-file-upload.js";
 import { normalizePageRangeValue } from "./page-ranges.js";
 import type { MountUploadFeatureOptions } from "./ports.js";
 
@@ -102,12 +104,23 @@ export function mountUploadFeature({
     setUploadProgress,
   });
 
+  const batchUploader = createBatchFileUploader({
+    configPort,
+    apiPrefix,
+    frontMaxBytes,
+    frontMaxPageCount,
+    countPdfPages,
+    collectUploadFormData,
+    submitUploadRequest,
+  });
+
   return {
     applyPageRanges: pageRange.applyPageRanges,
     clearPageRanges: pageRange.clearPageRanges,
     constrainPageRanges: pageRange.constrainPageRanges,
     currentPageRanges: pageRange.currentPageRanges,
     handleFileSelected: uploader.handleFileSelected,
+    uploadFileForBatch: batchUploader.uploadFile,
     normalizePageRangeValue,
     openTranslationOptions: pageRange.openTranslationOptions,
     renderPageRangeSummary: pageRange.renderPageRangeSummary,

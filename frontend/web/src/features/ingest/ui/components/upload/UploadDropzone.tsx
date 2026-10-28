@@ -36,7 +36,8 @@ export function UploadDropzone({
         name="file"
         type="file"
         accept="application/pdf,.pdf"
-        aria-label="选择 PDF 文件"
+        multiple
+        aria-label="选择 PDF 文件（可以一次选多个）"
         ref={fileInputRef}
         disabled={!upload.tileEnabled}
         onClick={onFileInputClick}
@@ -59,7 +60,7 @@ export function UploadDropzone({
         </strong>
         <em id="upload-help" className={upload.helpVisible ? "" : "hidden"}>{upload.help}</em>
         <div className={`upload-meta upload-meta-inline${upload.tileEnabled ? "" : " hidden"}`}>
-          <span>单个 PDF</span>
+          <span>可一次选多个 PDF</span>
           <span>最大 50MB</span>
           <span>最多 999 页</span>
         </div>
