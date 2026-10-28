@@ -253,7 +253,22 @@ export function createPages(studio: Studio) {
 	function showFound(text: string): void {
 		const needle = text.toLocaleLowerCase('zh-CN');
 		const blocks = editorScroll.querySelectorAll<HTMLElement>('.ProseMirror > *, .ProseMirror li, .ProseMirror td');
-		const block = [...blocks].find((element) => element.textContent?.toLocaleLowerCase('zh-CN').includes(needle));
+		// A picture's or a file's path (the 小程序 that gather the notes' things go back by it): the block showing it.
+		const shownFile = () => {
+			const path = text.replace(/^\.\//u, '');
+			const element = [...editorScroll.querySelectorAll<HTMLElement>('.ProseMirror img[src], .ProseMirror [data-path], .ProseMirror a[href]')].find((candidate) => {
+				const named = candidate.getAttribute('src') ?? candidate.dataset.path ?? candidate.getAttribute('href') ?? '';
+				let decoded = named;
+				try {
+					decoded = decodeURIComponent(named);
+				} catch {
+					// Written as it is.
+				}
+				return decoded.split(/[?#]/u)[0].endsWith(`/${path}`) || decoded.replace(/^\.\//u, '') === path;
+			});
+			return element ? ([...blocks].reverse().find((candidate) => candidate.contains(element)) ?? element) : undefined;
+		};
+		const block = [...blocks].find((element) => element.textContent?.toLocaleLowerCase('zh-CN').includes(needle)) ?? shownFile();
 		if (!block) return;
 		block.scrollIntoView({ block: 'center' });
 		editorScroll.querySelector('.search-flash')?.remove();

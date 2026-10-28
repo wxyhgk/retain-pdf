@@ -41,6 +41,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../ai/agent-sessions.mjs').AgentSessions} conversations the AI panel's
  * @property {import('../ai/panel-models.mjs').PanelModels} panelModels the service the panel's Claude Code talks to
  * @property {Promise<any>} plugins the plugins' kernel on this server
+ * @property {import('../articles/notes-index.mjs').NotesIndex} notesIndex the code and pictures of all the notes, gathered
  */
 
 /** The Studio's API (/api/studio/…), every route of it. */

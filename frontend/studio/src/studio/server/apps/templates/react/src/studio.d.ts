@@ -5,6 +5,10 @@ type StudioArticle = { slug: string; title: string; source: string };
 type StudioFile = { path: string; kind: string; size: number };
 type StudioFetched = { status: number; ok: boolean; headers: Record<string, string>; text: string };
 type StudioRun = { state: string; log: string; error?: string };
+/** Where a thing of the notes is: the note, the heading it is under, its line (a fence), its path (a file). */
+type StudioPlace = { slug: string; title: string; heading: string; line: number | null; path: string | null; modified: number };
+type StudioCode = { id: string; kind: 'block' | 'file' | 'plugin' | 'output'; language: string; title: string; text: string; lines: number; modified: number; places: StudioPlace[] };
+type StudioPicture = { id: string; url: string; name: string; alt: string; size: number | null; remote: boolean; referenced: boolean; modified: number; places: Array<StudioPlace & { referenced: boolean }> };
 
 interface Studio {
 	/** The article open: its folder name, title, and whole index.md. */
@@ -31,8 +35,17 @@ interface Studio {
 		get<T = unknown>(key: string): Promise<T | null>;
 		set(key: string, value: unknown): Promise<boolean>;
 	};
-	/** Opens an article. */
-	openPage(slug: string): Promise<boolean>;
+	/** Opens an article, at the first block holding `find` (a line of code, a picture's path) when given. */
+	openPage(slug: string, options?: { find?: string }): Promise<boolean>;
+	/** What is scattered in all the notes, gathered by the Studio. */
+	notes: {
+		/** Their code: fences, and the scripts and inputs kept in their folders; the same code once, with each place. */
+		code(): Promise<StudioCode[]>;
+		/** Their pictures: shown in them (on the web too), or only kept in their folders; the same picture once. */
+		images(): Promise<StudioPicture[]>;
+		/** Called when a note or its files changed (once for a burst): ask again then. */
+		onChange(listener: () => void): void;
+	};
 	/** In a block of an article: its state (the fence's body) and options; null in a window. */
 	block: {
 		get(): Promise<{ state: string; meta: string } | null>;

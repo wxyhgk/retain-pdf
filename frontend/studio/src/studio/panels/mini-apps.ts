@@ -1,6 +1,6 @@
 import { CirclePlus } from 'lucide-react';
 
-import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, createApp, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, reportAppError, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
+import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, createApp, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, notesCode, notesImages, reportAppError, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
 import { showContextMenu, type MenuItem } from '../common/context-menu';
 import { openDialog } from '../shell/dialogs/Dialogs';
 import { t } from '@blog/i18n/index.mjs';
@@ -12,7 +12,8 @@ export type MiniAppsHost = {
 	/** Puts Markdown into the article where the caret is. */
 	insert(markdown: string): void;
 	toast(message: string): void;
-	openPage(slug: string): void;
+	/** Opens a page, at the first block holding `find` when given. */
+	openPage(slug: string, find?: string): void;
 	/** Puts `prompt` in the AI panel's input (shown), for the author to send. */
 	askAI(prompt: string): void;
 };
@@ -674,9 +675,16 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			case 'storage.set':
 				localStorage.setItem(`studio.app.${app.id}.${String(args[0])}`, JSON.stringify(args[1] ?? null));
 				return true;
-			case 'openPage':
-				host.openPage(String(args[0] ?? ''));
+			case 'openPage': {
+				const options = (args[1] ?? {}) as { find?: unknown };
+				host.openPage(String(args[0] ?? ''), typeof options.find === 'string' ? options.find : undefined);
 				return true;
+			}
+			// All the notes' code and pictures, gathered by the server (notes-index.mjs).
+			case 'notes.code':
+				return notesCode();
+			case 'notes.images':
+				return notesImages();
 			// In a block of an article: its state and options; changed; its picture kept for the blog.
 			case 'block.get':
 				return link ? { state: link.state(), meta: link.meta() } : null;
@@ -771,7 +779,17 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		);
 	});
 
+	/** A note or its files changed: the apps are told, once for a burst of changes. */
+	let notesTimer = 0;
+	function notesChanged(): void {
+		window.clearTimeout(notesTimer);
+		notesTimer = window.setTimeout(() => {
+			for (const shown of [...open.values(), ...liveBlockFrames()]) shown.port?.postMessage({ type: 'notes-changed' });
+		}, 400);
+	}
+
 	return {
+		notesChanged,
 		/** 新建小程序…: its name and template asked, then made. */
 		create(): void {
 			openDialog('newApp', { done: (asked) => asked && void make(asked.name, asked.template) });

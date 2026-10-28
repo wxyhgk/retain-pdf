@@ -575,6 +575,16 @@ export function tellStarted(): Promise<unknown> {
 	return request('/api/studio/started', jsonOptions('POST', {}));
 }
 
+/** All the code in the notes, gathered (fences and the scripts in their folders): for the 小程序 (`studio.notes.code`). */
+export async function notesCode(): Promise<unknown[]> {
+	return (await request<{ items: unknown[] }>('/api/studio/notes/code', { cache: 'no-store' })).items;
+}
+
+/** All the pictures of the notes, gathered (shown in them or only kept): for the 小程序 (`studio.notes.images`). */
+export async function notesImages(): Promise<unknown[]> {
+	return (await request<{ items: unknown[] }>('/api/studio/notes/images', { cache: 'no-store' })).items;
+}
+
 /** Something the page saw going wrong, kept in the blog's .astro/studio-notes.log for whoever looks into it. */
 export function keepNote(what: string): Promise<unknown> {
 	return request('/api/studio/notes', jsonOptions('POST', { what }));

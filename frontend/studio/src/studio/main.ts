@@ -252,7 +252,7 @@ const miniApps = createMiniApps(shell.querySelector<HTMLButtonElement>('#open-ap
 	article: () => (session.slug ? { slug: session.slug, title: openTitle, source: session.current.source } : null),
 	insert: (markdown) => editor.insertMarkdown(markdown),
 	toast: (message) => showToast(message),
-	openPage: (slug) => void session.open(slug),
+	openPage: (slug, find) => void pages.openAt(slug, find),
 	askAI: (prompt) => {
 		sidePanel.show('ai');
 		chat.aiPanel.ask(prompt);
@@ -424,6 +424,7 @@ startPlugins(studio, { shown: () => shownArticle, safe });
 
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
+	miniApps.notesChanged();
 	snapshot.changed();
 	backlinks.changed();
 	articleList.changedOnDisk(changes);

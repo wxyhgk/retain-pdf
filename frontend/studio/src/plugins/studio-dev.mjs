@@ -5,6 +5,7 @@ import { ArticleGit } from '../studio/server/articles/article-git.mjs';
 import { ArticleHistory } from '../studio/server/articles/article-history.mjs';
 import { ArticleLibrary } from '../studio/server/articles/article-library.mjs';
 import { ArticleRepository } from '../studio/server/articles/article-repository.mjs';
+import { NotesIndex } from '../studio/server/articles/notes-index.mjs';
 import { BlogWatcher } from '../studio/server/articles/blog-watcher.mjs';
 import { CodeFilePreviews } from '../studio/server/articles/code-file-previews.mjs';
 import { Drive } from '../studio/server/drive/drive.mjs';
@@ -208,6 +209,12 @@ export default function studioDev({ site } = {}) {
 			server.watcher?.on('add', forgetPluginFile);
 			server.watcher?.on('unlink', forgetPluginFile);
 
+			// The code and pictures scattered in the notes, gathered (studio.notes.* of the 小程序); the fences plugins claim
+			// (molecules, jobs: not code) as the blog's build has them, once that is loaded (never in the way of starting).
+			let blockFences = [];
+			import('./markdown-pipeline.mjs').then((pipeline) => { blockFences = pipeline.blockFences; }, () => {});
+			const notesIndex = new NotesIndex(blogRoot, { fences: () => blockFences });
+
 			const api = studioApi({
 				site,
 				projectRoot: server.config.root,
@@ -238,6 +245,7 @@ export default function studioDev({ site } = {}) {
 				conversations,
 				panelModels: new PanelModels(settingsFile),
 				plugins,
+				notesIndex,
 			});
 
 			server.middlewares.use(async (request, response, next) => {

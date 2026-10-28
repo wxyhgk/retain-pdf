@@ -1,6 +1,6 @@
 import { checkArticle } from '../articles/article-check.mjs';
 import { pageVersion } from '../articles/page-version.mjs';
-import { refuse, reply, sendEvents } from '../api.mjs';
+import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
@@ -10,7 +10,7 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function articleRoutes(api, { site, blogRoot, articles, history, manager, articleGit, library, codeFiles, watcher }) {
+export function articleRoutes(api, { site, blogRoot, articles, history, manager, articleGit, library, codeFiles, watcher, notesIndex }) {
 	// What changes in blog/, as server-sent events: `data: [{"slug":"note","paths":["index.md"]}]`.
 	api.get('/events', ({ request, response }) => sendEvents(request, response, (send) => watcher.subscribe(send)), { streams: true });
 
@@ -18,6 +18,10 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 	api.post('/articles', async ({ json }) => reply(201, await articles.create(await json())));
 	// Articles whose title or text holds `q`.
 	api.get('/search', async ({ query }) => ({ results: await articles.search(query.get('q') ?? '') }));
+	// What is scattered in all the notes, gathered: their code (fences, scripts in their folders), their pictures.
+	api.get('/notes/code', async () => ({ items: await notesIndex.code() }));
+	api.get('/notes/images', async () => ({ items: await notesIndex.images() }));
+	api.get('/notes/pictures/:slug/*path', async ({ params, response }) => sendFile(response, await notesIndex.picture(params.slug, params.path)), { streams: true });
 
 	api.get('/articles/:slug', ({ params }) => articles.read(params.slug));
 	// What was written kept as a version every while (as Notion keeps a page's history).

@@ -85,7 +85,7 @@ export const APP_MESSAGE = 'studio-app';
  * What `studio` (BRIDGE) asks the Studio, by name: the same list as the skill studio-mini-apps and the React template's
  * studio.d.ts (the tests hold them to it).
  */
-export const STUDIO_CALLS = Object.freeze(['article', 'insert', 'files.list', 'files.read', 'files.write', 'fetch', 'run', 'toast', 'appFile', 'storage.get', 'storage.set', 'openPage', 'block.get', 'block.set', 'block.picture']);
+export const STUDIO_CALLS = Object.freeze(['article', 'insert', 'files.list', 'files.read', 'files.write', 'fetch', 'run', 'toast', 'appFile', 'storage.get', 'storage.set', 'openPage', 'block.get', 'block.set', 'block.picture', 'notes.code', 'notes.images']);
 
 /** What a new app starts as: one page, or a Vite + React + TypeScript project (templates/). */
 export const APP_TEMPLATES = Object.freeze({ page: '一页网页', react: 'Vite + React + TypeScript 项目' }); // i18n-ignore: written into the app
@@ -321,6 +321,7 @@ const BRIDGE = `
 	const KIND = ${JSON.stringify(APP_MESSAGE)};
 	const root = document.documentElement;
 	const listeners = [];
+	const notesListeners = [];
 	let asked = 0;
 	const answers = new Map();
 	// The line to the Studio, given once this page is ready; calls made before wait for it.
@@ -342,6 +343,8 @@ const BRIDGE = `
 		} else if (data.type === 'theme' && data.theme !== studio.theme) {
 			studio.theme = root.dataset.theme = data.theme;
 			for (const listener of listeners) listener(studio.theme);
+		} else if (data.type === 'notes-changed') {
+			for (const listener of notesListeners) listener();
 		}
 	};
 	const studio = {
@@ -356,7 +359,15 @@ const BRIDGE = `
 		toast: (text) => call('toast', String(text)),
 		appFile: (path) => call('appFile', String(path)),
 		storage: { get: (key) => call('storage.get', String(key)), set: (key, value) => call('storage.set', String(key), value) },
-		openPage: (slug) => call('openPage', String(slug)),
+		// Opened at the first block holding \`find\` (a line of code, a picture's path), when given.
+		openPage: (slug, options = {}) => call('openPage', String(slug), options),
+		// What is scattered in all the notes, gathered by the Studio: their code, their pictures; \`onChange\` when a note
+		// or its files changed (asked again then).
+		notes: {
+			code: () => call('notes.code'),
+			images: () => call('notes.images'),
+			onChange(listener) { notesListeners.push(listener); },
+		},
 		// In a block of an article: its state (the fence's body) and options (its info string), changed by \`set\`; its
 		// picture for the blog (SVG text, or a PNG's data: address). Null in a window.
 		block: {
