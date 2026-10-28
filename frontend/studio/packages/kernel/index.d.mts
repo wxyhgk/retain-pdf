@@ -12,7 +12,9 @@ export type PluginModule = {
 
 export type PluginResult = { id: string; fiber?: { dispose(): Promise<void>; state: number }; state: 'active' | 'waiting' | 'failed' | 'invalid' | string; error?: string };
 
-export declare function applyPlugins(ctx: Context, plugins: Array<{ id: string; module?: unknown; error?: unknown }>): Promise<PluginResult[]>;
+/** How long a plugin's `apply` is waited for. */
+export declare const APPLY_PATIENCE: number;
+export declare function applyPlugins(ctx: Context, plugins: Array<{ id: string; module?: unknown; error?: unknown }>, options?: { patience?: number }): Promise<PluginResult[]>;
 export declare function pluginProblems(results: PluginResult[]): string[];
 
 export declare function syncPlugins(

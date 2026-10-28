@@ -570,6 +570,11 @@ export function revealApp(id: string): Promise<{ path: string }> {
 	return request(`/api/studio/apps/${encodeURIComponent(id)}/reveal`, jsonOptions('POST', {}));
 }
 
+/** The Studio has started (its article shown): Studio.app is told, and the code's commit kept as the last good one. */
+export function tellStarted(): Promise<unknown> {
+	return request('/api/studio/started', jsonOptions('POST', {}));
+}
+
 /** A new app from a template (新建小程序): as listed, and its folder. */
 export function createApp(name: string, template: 'page' | 'react'): Promise<MiniApp & { folder: string }> {
 	return request('/api/studio/apps', jsonOptions('POST', { name, template }));

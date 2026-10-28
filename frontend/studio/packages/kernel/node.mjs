@@ -5,6 +5,10 @@ import { pathToFileURL } from 'node:url';
 import { Blocks } from './blocks.mjs';
 import { applyPlugins, Context, pluginProblems, pluginStatus, syncPlugins } from './index.mjs';
 import { Routes } from './routes.mjs';
+import { t } from '@blog/i18n/index.mjs';
+
+/** How long a plugin's file is waited for as it loads. */
+const LOAD_PATIENCE = 10_000;
 
 /**
  * The plugins of this project (`<root>/plugins/<name>/`) that take part in
@@ -12,8 +16,9 @@ import { Routes } from './routes.mjs';
  * folder name. One that cannot be loaded comes with its `error`.
  * @param {string} root the project
  * @param {'build.mjs' | 'server.mjs'} entry
+ * @param {{ patience?: number }} [options] how long a file is waited for as it loads
  */
-export async function pluginModules(root, entry) {
+export async function pluginModules(root, entry, { patience = LOAD_PATIENCE } = {}) {
 	const folder = join(root, 'plugins');
 	if (!existsSync(folder)) return [];
 	const names = readdirSync(folder, { withFileTypes: true })
@@ -21,10 +26,17 @@ export async function pluginModules(root, entry) {
 		.map((item) => item.name)
 		.sort();
 	return Promise.all(names.map(async (name) => {
+		// One whose loading never ends (waiting on what does not come) is left out, not waited for.
+		let timer;
 		try {
-			return { id: name, module: await import(pathToFileURL(join(folder, name, entry)).href) };
+			const late = new Promise((_, reject) => {
+				timer = setTimeout(() => reject(new Error(t('{seconds} 秒内没有载入完', { seconds: patience / 1000 }))), patience);
+			});
+			return { id: name, module: await Promise.race([import(pathToFileURL(join(folder, name, entry)).href), late]) };
 		} catch (error) {
 			return { id: name, error };
+		} finally {
+			clearTimeout(timer);
 		}
 	}));
 }

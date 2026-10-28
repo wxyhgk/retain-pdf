@@ -7,12 +7,13 @@ import { appBlockFrame } from '../panels/mini-apps';
 import { showToast } from '../common/toast';
 import { setFileBlocks } from '../files/article-files';
 import { showPluginUi } from '../plugin-ui';
+import type { SafeMode } from '../safe-mode';
 import { blockForFile, fileHeadWanted, startStudioPlugins, studioPlugins } from '../plugins';
 import type { ArticlePayload } from '../types';
 import type { Studio } from './studio';
 
 /** `shown`: the article the editor shows, or is about to (the plugins' `ctx.studio.shown()`). */
-export function startPlugins(studio: Studio, { shown }: { shown(): ArticlePayload | null }): void {
+export function startPlugins(studio: Studio, { shown, safe }: { shown(): ArticlePayload | null; safe: SafeMode }): void {
 	const { shell, session, editor, sidePanel } = studio;
 
 	// Those turned off (插件) are left out; if the list cannot be read, all are put in.
@@ -55,7 +56,7 @@ export function startPlugins(studio: Studio, { shown }: { shown(): ArticlePayloa
 			},
 			apps: { frame: appBlockFrame },
 			api: pluginApi,
-		}, off, present))
+		}, off, present, { safe: safe.safe }))
 		.then((problems) => {
 			// Their tabs in the right column, their commands in the left one and on their keys.
 			showPluginUi({ setPanels: (panels) => sidePanel.setPanels(panels), sidebar: shell.querySelector<HTMLElement>('#plugin-commands')! });

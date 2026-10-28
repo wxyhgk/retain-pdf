@@ -7,7 +7,9 @@
   "exclude": [
     "dist",
     "vendor/yiitap",
-    "third_party"
+    "third_party",
+    ".studio-cache",
+    "src/studio/server/apps/templates"
   ],
   "compilerOptions": {
     "strictNullChecks": true,

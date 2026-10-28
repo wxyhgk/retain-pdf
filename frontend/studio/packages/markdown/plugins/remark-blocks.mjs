@@ -1,4 +1,5 @@
 import { visit } from 'unist-util-visit';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The fences plugins claim (@blog/kernel's `ctx.blocks`, filled from each
@@ -15,7 +16,14 @@ export default function remarkBlocks({ blocks = null } = {}) {
 			if (!parent || index === undefined) return;
 			const block = blocks.get(node.lang ?? '');
 			if (typeof block?.remark !== 'function') return;
-			const replaced = block.remark(node, file);
+			// A plugin that fails on a block: the block left as code, and said (the page is made all the same).
+			let replaced;
+			try {
+				replaced = block.remark(node, file);
+			} catch (error) {
+				file.message(t('插件 {name} 处理这个块时出错：{error}', { name: block.name ?? node.lang, error: error instanceof Error ? error.message : String(error) }), { place: node.position, source: 'remark-blocks', ruleId: 'block-failed' });
+				return;
+			}
 			if (replaced) parent.children[index] = replaced;
 		});
 	};

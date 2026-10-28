@@ -35,7 +35,10 @@ export const PluginState = Object.freeze({ PENDING: 0, LOADING: 1, ACTIVE: 2, FA
  * @param {import('@deepseek-ai/cordis').Context} ctx
  * @param {Array<{ id: string, module?: any, error?: unknown }>} plugins (`error`: it could not be loaded)
  */
-export async function applyPlugins(ctx, plugins) {
+/** How long a plugin's `apply` is waited for: one that never finishes is said to have failed, the rest go on. */
+export const APPLY_PATIENCE = 10_000;
+
+export async function applyPlugins(ctx, plugins, { patience = APPLY_PATIENCE } = {}) {
 	const results = [];
 	for (const { id, module, error: loading } of plugins) {
 		if (loading) {
@@ -47,10 +50,16 @@ export async function applyPlugins(ctx, plugins) {
 			results.push({ id, state: 'invalid', error: t('{id} 没有导出 apply(ctx)', { id }) });
 			continue;
 		}
+		let timer;
 		try {
-			results.push({ id, fiber: await ctx.plugin(plugin) });
+			const late = new Promise((_, reject) => {
+				timer = setTimeout(() => reject(new Error(t('{seconds} 秒内没有启动完', { seconds: patience / 1000 }))), patience);
+			});
+			results.push({ id, fiber: await Promise.race([ctx.plugin(plugin), late]) });
 		} catch (error) {
 			results.push({ id, state: 'failed', error: error instanceof Error ? error.message : String(error) });
+		} finally {
+			clearTimeout(timer);
 		}
 	}
 	// Read once all have started: one waiting for a service a later one provides has it now.

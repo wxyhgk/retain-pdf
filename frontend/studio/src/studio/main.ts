@@ -17,6 +17,7 @@ import {
 	uploadArticleFile,
 	keepVersion,
 	listMiniApps,
+	tellStarted,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -39,6 +40,7 @@ import { createFilePanel } from './files/file-panel';
 import { isImage } from './files/article-files';
 import { uploadFolderFor } from './files/file-tree';
 import { pluginCommands, setStudioPluginEnabled, studioPluginInfo, studioPlugins } from './plugins';
+import { safeModeNow, showSafeModeBar, startFinished } from './safe-mode';
 import { createOutline } from './pages/outline';
 import { keepFormulasFitted } from '@blog/science/browser/fit-formulas.ts';
 import { createPageSnapshot } from './pages/page-snapshot';
@@ -413,7 +415,10 @@ function useArticleContext(article: ArticlePayload): void {
 const pages = createPages(studio);
 const editorAi = createEditorAi(studio);
 const library = createLibrary(studio);
-startPlugins(studio, { shown: () => shownArticle });
+// 安全模式 (?safe, or after two starts that did not finish): no plugins, whatever they are; a bar says so.
+const safe = safeModeNow();
+showSafeModeBar(safe);
+startPlugins(studio, { shown: () => shownArticle, safe });
 
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
@@ -522,3 +527,9 @@ void Promise.race([opening, shown]).then(() => {
 });
 // The plugins get ready what will be wanted (RetainMol, loaded in the background), once the page has settled.
 void opening.finally(() => studioPlugins.emit('studio/ready'));
+// Started: not counted against the next start (safe-mode.ts); Studio.app, waiting for it, told (and the code that
+// started kept as the last good version).
+void opening.then(() => {
+	startFinished();
+	void tellStarted().catch(() => {});
+}, () => {});

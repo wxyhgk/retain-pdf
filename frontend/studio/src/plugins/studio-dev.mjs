@@ -67,7 +67,8 @@ export default function studioDev({ site } = {}) {
 		// The editor is hundreds of modules: made ready when the server starts, not when the Studio is first opened.
 		// apps/ is the apps' own: a page app is reloaded in its window when its files change (below), a project app by its
 		// own server; the Studio's page is not reloaded for them (an .html outside its modules would reload it all).
-		config: () => ({ server: { warmup: { clientFiles: ['./src/studio/main.ts'] }, watch: { ignored: ['**/apps/**'] } } }),
+		// .studio-cache/ is the Studio's own (the last good version's copy among it), not its source.
+		config: () => ({ server: { warmup: { clientFiles: ['./src/studio/main.ts'] }, watch: { ignored: ['**/apps/**', '**/.studio-cache/**'] } } }),
 		// A plugin's file that nothing imports any more (its plugin was removed, and now it is written
 		// again) is no dead end that would load the page again: the plugins' list (src/studio/plugin-modules.ts)
 		// takes it in, and the Studio puts the plugin in without loading the page (src/studio/plugins.ts).

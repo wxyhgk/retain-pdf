@@ -117,3 +117,41 @@ test('a plugin that needs a service a later one provides is not reported as wait
 	assert.deepEqual(results.map((result) => result.state), ['active', 'active']);
 	assert.deepEqual(pluginProblems(results), []);
 });
+
+test('a plugin whose apply never finishes, or whose file never finishes loading, is said to have failed; the rest start', async () => {
+	const ctx = await kernel();
+	const results = await applyPlugins(ctx, [
+		{ id: 'stuck', module: { name: 'stuck', apply: () => new Promise(() => {}) } },
+		{ id: 'fine', module: { name: 'fine', inject: ['blocks'], apply: (c: any) => c.blocks.register({ name: 'fine', fence: 'fine' }) } },
+	], { patience: 50 });
+	assert.deepEqual(results.map((result) => result.state), ['failed', 'active']);
+	assert.match(pluginProblems(results)[0]!, /插件 stuck 没能启动：0\.05 秒内没有启动完/u);
+	assert.equal(ctx.blocks.get('fine').name, 'fine');
+
+	const { mkdtempSync, mkdirSync, writeFileSync, rmSync } = await import('node:fs');
+	const { join } = await import('node:path');
+	const { tmpdir } = await import('node:os');
+	const { pluginModules } = await import('../node.mjs');
+	const root = mkdtempSync(join(tmpdir(), 'kernel-plugins-'));
+	try {
+		for (const [name, code] of [['hangs', 'await new Promise(() => {});\nexport function apply() {}\n'], ['broken', 'export function apply( {\n'], ['works', 'export function apply() {}\n']]) {
+			mkdirSync(join(root, 'plugins', name), { recursive: true });
+			writeFileSync(join(root, 'plugins', name, 'build.mjs'), code);
+		}
+		const loaded = await pluginModules(root, 'build.mjs', { patience: 200 });
+		assert.deepEqual(loaded.map((plugin: any) => [plugin.id, Boolean(plugin.module), Boolean(plugin.error)]), [['broken', false, true], ['hangs', false, true], ['works', true, false]]);
+		assert.match(String((loaded[1] as any).error.message), /0\.2 秒内没有载入完/u);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test('a block that claims no fence adds to the editor without owning a code block', async () => {
+	const ctx = await kernel();
+	const [result] = await applyPlugins(ctx, [{ id: 'menu-only', module: { name: 'menu-only', inject: ['blocks'], apply: (c: any) => c.blocks.register({ name: 'run-menu', fence: [] }) } }]);
+	assert.equal(result.state, 'active');
+	assert.deepEqual(ctx.blocks.list().map((block: any) => block.name), ['run-menu']);
+	assert.deepEqual(ctx.blocks.fences(), []);
+	await result.fiber!.dispose();
+	assert.deepEqual(ctx.blocks.list(), []);
+});

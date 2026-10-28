@@ -3,7 +3,8 @@ import { provideStudio, studioBlocks, studioPluginList, type StudioHost } from '
 import type { Commands, Panels, Recognizers } from '@blog/kernel/ui.ts';
 
 import type { FileBlock } from './files/article-files.ts';
-import { pluginModules } from './plugin-modules.ts';
+import { t } from '@blog/i18n/index.mjs';
+import { pluginLoaders } from './plugin-modules.ts';
 
 /**
  * The project's plugins in the Studio (plugins/*\/studio.ts, @blog/kernel):
@@ -23,11 +24,45 @@ export const studioPlugins = new Context();
 
 /** What is applied: each plugin's module and its fiber (null if it failed). */
 const loaded = new Map<string, LoadedPlugin>();
-/** The plugins as last given (the newest version of plugin-modules.ts), and those turned off. */
-let modules = pluginModules;
+/** How long a plugin's module is waited for: one that never finishes loading is left out, not waited for. */
+const PATIENCE = 8000;
+/** A module that could not be loaded: why. */
+const FAILED = Symbol('failed to load');
+
+/**
+ * The plugins' modules, each loaded on its own: one that does not load (a mistake in it, an error as it loads, a load
+ * that never ends) is that plugin failed, said why; the Studio and the others go on.
+ */
+async function loadAll(loaders: Record<string, () => Promise<unknown>>): Promise<Record<string, unknown>> {
+	const entries = await Promise.all(Object.entries(loaders).map(async ([path, load]) => {
+		let timer = 0;
+		try {
+			const late = new Promise<never>((_, reject) => {
+				timer = window.setTimeout(() => reject(new Error(t('{seconds} 秒内没有载入完', { seconds: PATIENCE / 1000 }))), PATIENCE);
+			});
+			return [path, await Promise.race([load(), late])] as const;
+		} catch (error) {
+			return [path, { [FAILED]: error instanceof Error ? error.message : String(error) }] as const;
+		} finally {
+			window.clearTimeout(timer);
+		}
+	}));
+	return Object.fromEntries(entries);
+}
+
+/** The plugins as last loaded (from the newest version of plugin-modules.ts), and those turned off. */
+let modules: Record<string, unknown> = {};
 const disabled = new Set<string>();
-const applicable = () => studioPluginList(modules).filter((plugin) => !disabled.has(plugin.id));
+const applicable = () =>
+	studioPluginList(modules)
+		.map((plugin) => {
+			const failed = (plugin.module as { [FAILED]?: string } | null)?.[FAILED];
+			return failed === undefined ? plugin : { id: plugin.id, error: new Error(t('载入失败：{error}', { error: failed })) };
+		})
+		.filter((plugin) => !disabled.has(plugin.id));
 let started: Promise<string[]> | null = null;
+/** Started in 安全模式: no plugin loaded, none put in when they change. */
+let safeMode = false;
 /** Settled once they have started (the editor waits for it, even before they begin: which are off is asked first). */
 let markStarted: () => void = () => {};
 const ready = new Promise<void>((resolve) => {
@@ -49,8 +84,8 @@ async function catchUp(present: string[]): Promise<void> {
 	const known = new Set(studioPluginList(modules).map((plugin) => plugin.id));
 	if (present.every((id) => known.has(id))) return;
 	try {
-		const next = (await import(/* @vite-ignore */ `./plugin-modules.ts?t=${Date.now()}`)) as { pluginModules: Record<string, unknown> };
-		modules = next.pluginModules;
+		const next = (await import(/* @vite-ignore */ `./plugin-modules.ts?t=${Date.now()}`)) as { pluginLoaders: Record<string, () => Promise<unknown>> };
+		modules = await loadAll(next.pluginLoaders);
 	} catch (error) {
 		console.warn('[plugins] 没能重新读取插件列表', error); // i18n-ignore: developer log
 	}
@@ -58,10 +93,17 @@ async function catchUp(present: string[]): Promise<void> {
 
 /**
  * Starts them, once, with what the Studio gives them, but those turned off;
- * `present`: the plugins with a studio.ts the server has. Resolves with what went wrong.
+ * `present`: the plugins with a studio.ts the server has. Resolves with what went wrong. `safe` (安全模式): none are
+ * loaded, so that whatever they are, the Studio opens.
  */
-export function startStudioPlugins(host: StudioHost, off: string[] = [], present: string[] = []): Promise<string[]> {
+export function startStudioPlugins(host: StudioHost, off: string[] = [], present: string[] = [], { safe = false }: { safe?: boolean } = {}): Promise<string[]> {
 	started ??= (async () => {
+		if (safe) {
+			safeMode = true;
+			await provideStudio(studioPlugins, host);
+			return [];
+		}
+		modules = await loadAll(pluginLoaders);
 		await catchUp(present);
 		for (const id of off) disabled.add(id);
 		await provideStudio(studioPlugins, host);
@@ -95,9 +137,11 @@ function reload({ announce }: { announce: boolean }): Promise<void> {
 }
 
 import.meta.hot?.accept('./plugin-modules.ts', (next) => {
-	if (!next) return;
-	modules = next.pluginModules as Record<string, unknown>;
-	void reload({ announce: true });
+	if (!next || safeMode) return;
+	void loadAll(next.pluginLoaders as Record<string, () => Promise<unknown>>).then((loadedNow) => {
+		modules = loadedNow;
+		return reload({ announce: true });
+	});
 });
 
 /** Turns a plugin on or off here (taken out, or put in, at once); its server side is the server's (setPluginEnabled). */

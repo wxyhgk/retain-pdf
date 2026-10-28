@@ -484,6 +484,9 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	.mini-app-layer :global(.mini-app-sheet-actions button:hover) { background: var(--surface-soft); }
 	.mini-app-layer :global(.mini-app-checkpoint) { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 3px 0; font-family: inherit; white-space: normal; }
 	.mini-app-layer :global(.mini-app-checkpoint button) { flex: none; padding: 1px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
+	/* 安全模式 (safe-mode.ts): said at the top, over everything, until the Studio is started as usual. */
+	:global(#safe-mode-bar) { position: fixed; z-index: 90; top: 8px; left: 50%; display: flex; gap: 12px; align-items: center; max-width: calc(100vw - 32px); padding: 6px 8px 6px 14px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); font-size: 13px; transform: translateX(-50%); }
+	:global(#safe-mode-bar button) { flex: none; padding: 2px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
 	/*
 	 * A block of an article shown by an app's page (plugins/app-blocks): its frame, under the code block's tools (a strip
 	 * of their own above it, not over the app's menus), and under it which app draws it, what opens it in a window, asks

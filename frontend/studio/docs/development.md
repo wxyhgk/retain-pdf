@@ -121,6 +121,15 @@ Studio 的前端通过 `/api/studio/*` 和后端说话，这些接口只接受�
 
 `src/plugins/studio-dev.mjs` 只负责把各个后端模块组装起来，再把请求交给这个路由。
 
+## 最小启动：怎么改都能打开
+
+不管插件、小程序、设置、甚至 Studio 自己的代码被改成什么样，Studio 都要能打开、能写文章。
+
+- **插件**：每个插件的 `studio.ts` 单独载入（`src/studio/plugins.ts`）：有语法错误、一载入就出错、8 秒没载入完的，只算它自己没启动，说明原因，Studio 和别的插件照常。服务器和构建这边（`packages/kernel`）同样：`server.mjs`、`build.mjs` 载入或 `apply` 超过 10 秒算失败；某个块在构建时出错，只把那个块留成代码，并在发布前检查里说出来。
+- **安全模式**：地址加 `?safe`，一个插件都不载入，顶上一条说明，按「正常启动」回去。前两次都没启动完（5 分钟内），下次自动进安全模式（`src/studio/safe-mode.ts`）。
+- **Studio 自己的代码改坏了**：Studio 每次启动完（文章显示出来）告诉服务器（`POST /api/studio/started`），服务器在代码都已提交时把当前提交记成「上次能正常启动的版本」（`.studio-cache/last-good.json`，`src/studio/server/system/last-good.mjs`）。Studio.app 打开 Studio 后等它说启动完，两分半没等到、或者服务器起不来，就在起始页给出「用上次能正常启动的版本打开」：把那个提交检出到 `.studio-cache/rescue`（git worktree），`blog`、`apps`、`chats`、设置、回收站、`node_modules` 链到真的，在那里以安全模式启动（`STUDIO_RESCUE=1`，`?safe=rescue`）。在里面写的文章就是真的文章；改坏的代码原样留着，修好后关掉 Studio 再打开。
+- 所以改 Studio 的代码时：改完跑测试再提交；没提交的改动不会被记成能用的版本。
+
 ## 插件
 
 计算任务、分子查看器、书签、字数统计等都是插件，放在 `plugins/` 下面。怎么写插件、插件能用哪些服务，见 [plugins/README.md](../plugins/README.md)。
