@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { editFixture, editor, fixtureHas, openStudio, removeArticle, resetFixture, saveStatus, savedMarkdown, scienceBlock, writeArticle, writeFixtureFile } from './studio.ts';
+import { appendToFixture, editFixture, editor, fixtureHas, openStudio, removeArticle, resetFixture, saveStatus, savedMarkdown, scienceBlock, writeArticle, writeFixtureFile } from './studio.ts';
 
 // The AI tab: a coding agent spoken to over the Agent Client Protocol (a stand-in here:
 // tests/e2e/fake-agents/fake-acp.mjs), which thinks, says what it will do, asks leave to run a command, runs it,
@@ -789,6 +789,24 @@ test('the input is written as articles are: a formula typed is drawn there, and 
 	await expect(placeholder(page)).toBeVisible();
 	// What was said: its formula drawn.
 	await expect(pane(page).locator('.ai-user .ai-bubble .katex')).toHaveCount(1);
+});
+
+test('typing in the input leaves the article no scrollbar along its foot: the article\u2019s caret mark stays where the article is', async ({ page }) => {
+	// The caret between bold and plain words: there its mark has a width (the one that made the scroller wider).
+	appendToFixture('\n\n**粗体**普通尾巴\n');
+	await openAi(page);
+	await editor(page).getByText('普通尾巴').click();
+	await page.keyboard.press('End');
+	for (let i = 0; i < 4; i += 1) await page.keyboard.press('ArrowLeft');
+	const scroller = page.locator('.editor-scroll');
+	const wider = () => scroller.evaluate((node) => node.scrollWidth - node.clientWidth);
+	await input(page).click();
+	await input(page).pressSequentially('你好 hello @ and some more words to carry the caret along');
+	expect(await wider()).toBe(0);
+	// Back in the article, its caret is drawn again.
+	await editor(page).getByText('普通尾巴').click();
+	await expect(page.locator('#crepe-editor .prosemirror-virtual-cursor')).toBeVisible();
+	await expect.poll(wider).toBe(0);
 });
 
 test('an article named with @ in the input goes whole with ⌫, as a mention, and is a link in what is said', async ({ page }) => {

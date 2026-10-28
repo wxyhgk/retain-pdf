@@ -303,6 +303,13 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror h2:first-child),
 	:global(.crepe-host .milkdown .ProseMirror h3:first-child),
 	:global(.crepe-host .milkdown .ProseMirror > :is(.ProseMirror-widget, .prosemirror-virtual-cursor):first-child + :is(h1, h2, h3)) { margin-top: 0.15em; }
+	/*
+	 * The caret's mark follows the document's selection (prosemirror-virtual-cursor listens to selectionchange and reads
+	 * window.getSelection()), not the editor's own: while the author types in the AI panel it is put where that caret is,
+	 * a few hundred pixels right of the article, and next to a bold or link edge (where it has a width) it makes the
+	 * article's scroller wider than itself: a scrollbar along its foot. Not focused, it has no color to be seen in anyway.
+	 */
+	:global(.crepe-host .milkdown .ProseMirror:not(.ProseMirror-focused) > .prosemirror-virtual-cursor) { display: none; }
 	:global(.crepe-host .milkdown .ProseMirror p) { margin: 0; padding: 2px 0; line-height: 1.65; }
 	/* Paragraphs, lists and quotes keep apart as on the blog; inside a list or quote they stay close. */
 	:global(.crepe-host .milkdown .ProseMirror > p),
