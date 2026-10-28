@@ -11,7 +11,3 @@ export function fetchDocumentUsage(documentId, apiPrefix) {
 export function fetchUsageSummary(apiPrefix) {
     return generated.getUsageSummary(apiPrefix, {}, usageError(""));
 }
-/** 单个任务；任务不存在时后端返回 404。 */
-export function fetchJobUsage(jobId, apiPrefix) {
-    return generated.getJobUsage(apiPrefix, { job_id: jobId }, usageError("这个任务的"));
-}

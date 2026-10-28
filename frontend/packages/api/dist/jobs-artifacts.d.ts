@@ -66,5 +66,3 @@ export declare function fetchJobFiles(jobId: string, apiPrefix?: string): Promis
 /** 任务的产物清单：读 /jobs/:id/files，换成以前 artifacts-manifest 的形状交给下游。 */
 export declare function fetchJobArtifactsManifest(jobId: string, apiPrefix?: string): Promise<any>;
 export declare function fetchJobMarkdown(jobId: string, apiPrefix?: string): Promise<any>;
-/** 和 fetchJobMarkdown 同一个接口，只是报错文案不同。 */
-export declare function fetchJobMarkdownDocument(jobId: string, apiPrefix?: string): Promise<any>;

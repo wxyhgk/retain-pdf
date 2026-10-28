@@ -100,3 +100,11 @@ export declare function askLibraryAi({ question, documentId, jobId, conversation
     confirmDocumentOperation?: boolean;
     assistantMode?: AiAssistantMode;
 }): Promise<any>;
+/** 列出画板里的文件，返回 {schema, items: [{name, kind, ...}]}。 */
+export declare function listJobBoard(apiPrefix: string | undefined, jobId: string, options?: {
+    signal?: AbortSignal;
+}): Promise<{
+    items?: unknown[];
+} | null>;
+/** 画板里一个文件的地址，用 fetchProtected 取（要带 key / 登录 Cookie）。 */
+export declare function jobBoardFileUrl(apiPrefix: string | undefined, jobId: string, name: string): string;

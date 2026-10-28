@@ -32,9 +32,3 @@ export function createCredential(apiPrefix, input) {
 export function updateCredential(apiPrefix, credentialRef, input) {
     return credentialRequest(buildApiEndpoint(apiPrefix, `credentials/${encodeURIComponent(credentialRef)}`), { method: "PUT", body: JSON.stringify(input) });
 }
-export function deleteCredential(apiPrefix, credentialRef, expectedRevision) {
-    const query = Number.isFinite(expectedRevision)
-        ? `?expected_revision=${encodeURIComponent(String(expectedRevision))}`
-        : "";
-    return credentialRequest(`${buildApiEndpoint(apiPrefix, `credentials/${encodeURIComponent(credentialRef)}`)}${query}`, { method: "DELETE" });
-}

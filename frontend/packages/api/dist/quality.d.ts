@@ -99,10 +99,3 @@ export type QualityItemsView = {
     items: QualityItem[];
 };
 export declare function fetchQualitySummary(jobId: string, apiPrefix?: string): Promise<QualitySummaryView>;
-export declare function fetchQualityItems(jobId: string, apiPrefix: string | undefined, { kind, page, severity, offset, limit }: {
-    kind: QualityItemKind;
-    page?: number;
-    severity?: string;
-    offset?: number;
-    limit?: number;
-}): Promise<QualityItemsView>;

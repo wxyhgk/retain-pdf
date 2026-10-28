@@ -5,6 +5,3 @@ import { serverMessageOr } from "./request.js";
 export function fetchQualitySummary(jobId, apiPrefix) {
     return generated.getQualityReport(apiPrefix, { job_id: jobId }, { onError: serverMessageOr("读取质量摘要失败，请稍后重试。") });
 }
-export function fetchQualityItems(jobId, apiPrefix, { kind, page, severity, offset = 0, limit = 200 }) {
-    return generated.listQualityItems(apiPrefix, { job_id: jobId, query: { kind, offset, limit, page: page || undefined, severity: severity || undefined } }, { onError: serverMessageOr("读取质量明细失败，请稍后重试。") });
-}
