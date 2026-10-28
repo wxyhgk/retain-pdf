@@ -9,7 +9,7 @@ use retainpdf_data::db::Db;
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::domain::{JobArtifactRecord, JobSnapshot};
 use retainpdf_core::storage_paths::{
-    resolve_output_pdf, resolve_registered_artifact_path, ARTIFACT_KEY_MARKDOWN_BUNDLE_ZIP,
+    resolve_registered_artifact_path, ARTIFACT_KEY_MARKDOWN_BUNDLE_ZIP,
     ARTIFACT_KEY_MARKDOWN_IMAGES_DIR, ARTIFACT_KEY_MARKDOWN_RAW, ARTIFACT_KEY_TRANSLATED_PDF,
 };
 
@@ -54,13 +54,6 @@ impl Drop for PendingOutput {
     }
 }
 
-fn copy_bundle_atomically(source: &Path, destination: &Path) -> io::Result<()> {
-    let mut source = File::open(source)?;
-    let (pending, mut file) = PendingOutput::create(destination)?;
-    io::copy(&mut source, &mut file)?;
-    pending.publish(file, destination)
-}
-
 pub fn build_bundle_for_job(
     db: &Db,
     data_root: &Path,
@@ -81,7 +74,8 @@ pub fn build_bundle_for_job(
         markdown_path.as_deref(),
         markdown_images_dir.as_deref(),
     )?;
-    persist_bundle_copy(job, &zip_path, data_root)?;
+    // 以前还复制一份到译文 PDF 旁边（`rendered/<任务>.zip`），没有任何地方读，2026-10-28 起不再写，
+    // 已经有的由清理删掉（`prune_succeeded_job_intermediates`）。
     Ok(zip_path)
 }
 
@@ -219,25 +213,6 @@ fn add_file_to_zip(
     zip.start_file(archive_name, options)?;
     io::copy(&mut file, zip)?;
     Ok(())
-}
-
-fn persist_bundle_copy(
-    job: &JobSnapshot,
-    zip_path: &Path,
-    data_root: &Path,
-) -> Result<Option<PathBuf>, AppError> {
-    let Some(pdf_path) = resolve_output_pdf(job, data_root) else {
-        return Ok(None);
-    };
-    let Some(translated_dir) = pdf_path.parent() else {
-        return Ok(None);
-    };
-    std::fs::create_dir_all(translated_dir)?;
-    let target_path = translated_dir.join(format!("{}.zip", job.job_id));
-    if target_path != zip_path {
-        copy_bundle_atomically(zip_path, &target_path)?;
-    }
-    Ok(Some(target_path))
 }
 
 #[cfg(test)]

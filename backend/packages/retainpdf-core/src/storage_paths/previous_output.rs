@@ -21,6 +21,13 @@ use super::path_ops::resolve_data_path;
 /// 不会用这个后缀。
 const PREVIOUS_OUTPUT_PDF_SUFFIX: &str = ".previous.pdf";
 
+/// 是不是挪开后的上一份译文（`<名>.previous.pdf`）。清理成功任务里用完的上一份时认它。
+pub fn is_previous_output_pdf(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.ends_with(PREVIOUS_OUTPUT_PDF_SUFFIX))
+}
+
 /// 落库成功之后要做的那一次挪动（见模块说明）。
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PreviousOutputPdfMove {

@@ -11,7 +11,7 @@
   指向已有那份的**硬链接**：两条上传记录各有各的目录，删哪个都不影响另一个，盘上只占一份；建不了硬链接（跨盘、文件系统不支持）
   就照旧另存一份。上传目录里的文件只会整份换名替换（修复坏 PDF 就是这样），不会原地改写。
 - `DATA_ROOT/jobs/{job_id}/`：任务工作目录。
-- `DATA_ROOT/downloads/`：下载缓存。
+- `DATA_ROOT/downloads/`：下载缓存（打包下载的 zip，每次请求都重新生成；一小时以前的由定期清理删掉）。
 - `DATA_ROOT/db/jobs.db`：SQLite 数据库。
 - `DATA_ROOT/db/jobs.db.runtime-owner.lock`：任务运行时的独占锁文件（进程内模式的 rust_api 或 retain-jobsd 启动时加锁，进程退出自动释放；文件本身留着无害，不要提交）。
 
@@ -31,13 +31,18 @@ jobs/{job_id}/
 
 常见产物：
 
-- `ocr/`：Provider 原始结果、解包结果、标准化输入。
+- `ocr/`：Provider 原始结果、解包结果、标准化输入。任务成功以后（下一轮定期清理，启动时和每 6 小时），原始压缩包
+  `<厂商>_bundle.zip` 删掉、记录里的 `provider_zip` 清空；MinerU 解包目录 `ocr/unpacked/` 只留记录里指着的文件（布局
+  `layout.json`），原 PDF 副本、Markdown 和图片（`md/` 里有）、中间 JSON 删掉（要 `md/full.md` 在才删）。
 - `translated/`：翻译中间产物和 `translation-manifest.json`。
-- `rendered/`：渲染输出。原地重跑（原地重渲染、精修）开跑时把上一份译文 PDF 改名成同目录的 `<名>.previous.pdf`（`artifacts.previous_output_pdf` 指向它），这一次没跑成就把 `output_pdf` 指回它。
+- `rendered/`：渲染输出。原地重跑（原地重渲染、精修）开跑时把上一份译文 PDF 改名成同目录的 `<名>.previous.pdf`（`artifacts.previous_output_pdf` 指向它），这一次没跑成就把 `output_pdf` 指回它；跑成了，下一轮定期清理删掉它、清空这两个字段。
+  2026-10-28 以前打包下载还会在这里复制一份 `<任务>.zip`（没有地方读），现在不写了，留下的由清理删掉。
 - `artifacts/`：对外发布的稳定产物、诊断文件和索引。下载时按需生成的派生缓存（`<任务>-side-by-side.pdf`、
   `<任务>-layout-*.docx`、`*.linearized.pdf`、`preview-*.jpg` 和它们的记录文件 `.<名字>.inputs.json`）也放在这里，
   书的页预览在 `documents/<文档>/pages/`；设了 `RUST_API_DERIVED_CACHE_RETENTION_DAYS` 时，任务结束后生成超过这么多天的
-  按名字删掉（只删这几种，管线写进 `artifacts/` 的东西不碰）。
+  按名字删掉（只删这几种）；渲染的准备缓存 `artifacts/render_prepare/` 和预热 `artifacts/render_prewarm/` 也按这个天数删
+  （预热清单 `render_source_prewarm_manifest.json` 留着，阅读器排版接口读它），管线写进 `artifacts/` 的别的东西不碰。
+  排队、在跑的任务引用着的任务目录（复用的 OCR、译文所在的）这一轮不清。
 - `logs/pipeline_events.jsonl`：当前事件落盘主文件。
 
 历史兼容：

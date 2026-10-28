@@ -4,6 +4,11 @@
 //! 准备阶段的中间文件……），删了就重建不回来，所以不能整个目录清。名字都从 `derived_artifacts.rs` 的
 //! 那几个函数来，生成那边改了名字，这里的测试会红。
 //!
+//! 渲染的准备缓存 `artifacts/render_prepare/` 和预热 `artifacts/render_prewarm/` 也算（2026-10-28 起，用户定的）：
+//! 管线按指纹找缓存，找不到就重新准备，下次原地重渲染多算一会儿。按里面每一项（文件或子目录，子目录看里面最新的那个
+//! 文件）的修改时间算；预热的清单 `render_source_prewarm_manifest.json` 不删，阅读器的排版接口要读它。
+//! 这两个目录可能正被别的任务读（重渲染用的是译文所在任务的目录），调用方对排队、在跑的任务引用着的目录不调。
+//!
 //! 封面、缩略图不删：每张不大，书库列表一打开就要几十张，删了是成批重渲染。
 //! 生成到一半的临时文件（`.<名字>-<随机>.<扩展名>.tmp`）不删：它们名字对不上，生成结束会自己删。
 //!
@@ -15,6 +20,12 @@ use std::time::SystemTime;
 
 /// 书的页预览放在 `documents/<文档>/pages/`，这个目录里只有页预览和它们的记录文件。
 pub(crate) const DOCUMENT_PAGES_DIR: &str = "pages";
+
+/// 渲染缓存目录（名字和管线一致：`render/prepare/store.py` 的 `PREPARE_DIR_NAME`、
+/// `render/source/prewarm_contracts.py` 的 `RENDER_PREWARM_DIR_NAME`）。
+const RENDER_CACHE_DIRS: [&str; 2] = ["render_prepare", "render_prewarm"];
+/// 预热清单（`RENDER_PREWARM_MANIFEST_NAME`），阅读器排版接口读它（`progress/live_translation/typography.rs`）。
+const RENDER_PREWARM_MANIFEST: &str = "render_source_prewarm_manifest.json";
 
 /// 记录文件：`.<产物名>.inputs.json`（见 `freshness.rs`）。
 const RECORD_PREFIX: &str = ".";
@@ -72,7 +83,89 @@ pub fn prune_job_derived_cache(
         return DerivedCachePruned::default();
     }
     let dir = data_root.join("jobs").join(job_id).join("artifacts");
-    prune_matching(&dir, older_than, |name| is_job_derived_cache(job_id, name))
+    let mut pruned = prune_matching(&dir, older_than, |name| is_job_derived_cache(job_id, name));
+    for cache_dir in RENDER_CACHE_DIRS {
+        pruned.add(prune_render_cache(&dir.join(cache_dir), older_than));
+    }
+    pruned
+}
+
+/// 渲染缓存目录里修改时间早于 `older_than` 的项（文件，或者里面最新的文件也早于它的子目录），清单除外。
+fn prune_render_cache(dir: &Path, older_than: SystemTime) -> DerivedCachePruned {
+    let mut pruned = DerivedCachePruned::default();
+    let Ok(metadata) = dir.symlink_metadata() else {
+        return pruned;
+    };
+    if !metadata.is_dir() {
+        return pruned;
+    }
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return pruned;
+    };
+    for entry in entries.flatten() {
+        if entry.file_name() == RENDER_PREWARM_MANIFEST {
+            continue;
+        }
+        let path = entry.path();
+        let Ok(metadata) = path.symlink_metadata() else {
+            continue;
+        };
+        if metadata.is_dir() {
+            let (newest, files, bytes) = newest_file_in(&path);
+            if newest.is_some_and(|modified| modified >= older_than) {
+                continue;
+            }
+            match std::fs::remove_dir_all(&path) {
+                Ok(()) => {
+                    pruned.files += files;
+                    pruned.bytes += bytes;
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(_) => pruned.failed += 1,
+            }
+        } else if metadata.modified().is_ok_and(|modified| modified < older_than) {
+            match std::fs::remove_file(&path) {
+                Ok(()) => {
+                    pruned.files += 1;
+                    pruned.bytes += metadata.len();
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+                Err(_) => pruned.failed += 1,
+            }
+        }
+    }
+    pruned
+}
+
+/// 目录里（含子目录，不跟符号链接）最新的文件修改时间、文件数、字节数。没有文件就用目录自己的修改时间
+/// （往目录里写文件会改目录的时间，所以有文件时不看它）。
+fn newest_file_in(dir: &Path) -> (Option<SystemTime>, usize, u64) {
+    let mut newest: Option<SystemTime> = None;
+    let (mut files, mut bytes) = (0, 0);
+    let mut pending = vec![dir.to_path_buf()];
+    while let Some(current) = pending.pop() {
+        let Ok(entries) = std::fs::read_dir(&current) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let Ok(metadata) = entry.path().symlink_metadata() else {
+                continue;
+            };
+            if metadata.is_dir() {
+                pending.push(entry.path());
+                continue;
+            }
+            files += 1;
+            bytes += metadata.len();
+            if let Ok(modified) = metadata.modified() {
+                newest = Some(newest.map_or(modified, |seen| seen.max(modified)));
+            }
+        }
+    }
+    if files == 0 {
+        newest = dir.symlink_metadata().and_then(|meta| meta.modified()).ok();
+    }
+    (newest, files, bytes)
 }
 
 /// 删掉所有书的 `documents/<文档>/pages/` 里修改时间早于 `older_than` 的页预览。
@@ -89,6 +182,15 @@ pub fn prune_document_page_previews(data_root: &Path, older_than: SystemTime) ->
         }
     }
     pruned
+}
+
+/// 打包下载的 zip（`downloads/<任务>.zip`）每次请求都重新生成（先写临时文件再换名），留着没人用；生成到一半进程被杀
+/// 留下的临时文件（`.retain-bundle-<随机>.tmp`）也是。修改时间早于 `older_than` 的删掉：留出余量，不删正要发出去的那个
+/// （生成完到打开发送之间有一小段）。
+pub fn prune_stale_download_bundles(downloads_dir: &Path, older_than: SystemTime) -> DerivedCachePruned {
+    prune_matching(downloads_dir, older_than, |name| {
+        name.ends_with(".zip") || (name.starts_with(".retain-bundle-") && name.ends_with(".tmp"))
+    })
 }
 
 fn prune_matching(
@@ -188,13 +290,17 @@ mod tests {
             caches.push(artifacts.join(record_of(&name)));
             caches.push(artifacts.join(name));
         }
+        // 渲染缓存：准备的指纹目录、预热的源 PDF 和页图（清单留着，见上面 kept）。
+        caches.push(artifacts.join("render_prepare").join("0123abcd").join("source_base").join("base.pdf"));
+        caches.push(artifacts.join("render_prewarm").join("source.pdf"));
+        caches.push(artifacts.join("render_prewarm").join("preview-source-p0001-w1200-d0.jpg"));
         // 管线写的、重建不回来的，和不删的封面、生成中的临时文件。
         let kept = [
             artifacts.join("pipeline_summary.json"),
             artifacts.join("cover.jpg"),
             artifacts.join("thumbnail.jpg"),
             artifacts.join(".side-by-side-0123456789abcdef.pdf.tmp"),
-            artifacts.join("render_prewarm").join("preview-source-p0001-w1200-d0.jpg"),
+            artifacts.join("render_prewarm").join(RENDER_PREWARM_MANIFEST),
             artifacts.join("other-job-side-by-side.pdf"),
         ];
         for path in caches.iter().chain(kept.iter()) {
@@ -215,6 +321,29 @@ mod tests {
     }
 
     #[test]
+    fn old_download_bundles_and_leftover_temporaries_are_removed() {
+        let root = data_root("downloads");
+        let downloads = root.join("downloads");
+        let old_zip = downloads.join(format!("{JOB}.zip"));
+        let old_tmp = downloads.join(".retain-bundle-0123456789abcdef0123456789abcdef.tmp");
+        let fresh_zip = downloads.join("20261028000000-ffffff.zip");
+        let other = downloads.join("notes.txt");
+        write_aged(&old_zip, 2 * DAY);
+        write_aged(&old_tmp, 2 * DAY);
+        write_aged(&fresh_zip, Duration::from_secs(60));
+        write_aged(&other, 2 * DAY);
+
+        let pruned = prune_stale_download_bundles(&downloads, SystemTime::now() - DAY);
+
+        assert!(!old_zip.exists());
+        assert!(!old_tmp.exists());
+        assert!(fresh_zip.exists());
+        assert!(other.exists());
+        assert_eq!(pruned.files, 2);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn caches_generated_within_the_retention_window_are_kept() {
         let root = data_root("fresh");
         let cache = root
@@ -223,10 +352,18 @@ mod tests {
             .join("artifacts")
             .join(side_by_side_file_name(JOB));
         write_aged(&cache, 29 * DAY);
+        // 准备缓存的一个指纹目录里只要有一个新文件，整个目录都留着。
+        let prepare = root.join("jobs").join(JOB).join("artifacts").join("render_prepare").join("0123abcd");
+        write_aged(&prepare.join("old.pdf"), 40 * DAY);
+        write_aged(&prepare.join("fresh.json"), DAY);
+        let prewarm = root.join("jobs").join(JOB).join("artifacts").join("render_prewarm").join("source.pdf");
+        write_aged(&prewarm, DAY);
 
         let pruned = prune_job_derived_cache(&root, JOB, SystemTime::now() - 30 * DAY);
 
         assert!(cache.exists());
+        assert!(prepare.join("old.pdf").exists());
+        assert!(prewarm.exists());
         assert_eq!(pruned, DerivedCachePruned::default());
         std::fs::remove_dir_all(root).unwrap();
     }
