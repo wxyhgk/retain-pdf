@@ -5,7 +5,7 @@ import type { Conversation } from '../api/client';
 import { createStore, useStore } from './store.ts';
 
 /** What the middle shows: the article, the drive, the table of all articles, or AI 问答. */
-export type View = 'editor' | 'drive' | 'table' | 'chat';
+export type View = 'editor' | 'drive' | 'table' | 'chat' | 'apps';
 
 /** A tab of the right column: the Studio's (`ai`, `files`…) or a plugin's. */
 /** A tab of the right column; `icon`, a plugin's (an SVG or a character): the Studio's own are drawn by key. */

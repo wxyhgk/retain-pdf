@@ -248,7 +248,8 @@ const chat = createAiChat(studio, { withArticlePictures: (markdown) => drive.wit
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && chat.aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void openAgents(() => terminal.refreshAgents()) });
 // 小程序: the tools of apps/, in floating windows; what they may reach of the article shown.
-const miniApps = createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.querySelector<HTMLElement>('#mini-app-layer')!, {
+const appsView = shell.querySelector<HTMLElement>('#apps-view')!;
+const miniApps = createMiniApps(appsView, shell.querySelector<HTMLElement>('#mini-app-layer')!, {
 	article: () => (session.slug ? { slug: session.slug, title: openTitle, source: session.current.source } : null),
 	insert: (markdown) => editor.insertMarkdown(markdown),
 	toast: (message) => showToast(message),
@@ -256,6 +257,9 @@ const miniApps = createMiniApps(shell.querySelector<HTMLButtonElement>('#open-ap
 	askAI: (prompt) => {
 		sidePanel.show('ai');
 		chat.aiPanel.ask(prompt);
+	},
+	showApps: () => {
+		if (shellState.get().view !== 'apps') showView('apps');
 	},
 });
 const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files')!, {
@@ -485,10 +489,12 @@ const articleTable = createArticleTable(tableView, {
  * left column lists the conversations for AI 问答, the pages for the others.
  */
 function showView(view: View, folder?: string): void {
+	const again = shellState.get().view === view;
 	shell.dataset.view = view;
 	shellState.set({ view });
 	drive.view.hidden = view !== 'drive';
 	tableView.hidden = view !== 'table';
+	appsView.hidden = view !== 'apps';
 	chat.showChat(view === 'chat');
 	const url = new URL(window.location.href);
 	if (view === 'drive') void drive.page.open(folder);
@@ -499,7 +505,16 @@ function showView(view: View, folder?: string): void {
 	} else {
 		url.searchParams.delete('pages');
 	}
+	if (view === 'apps') url.searchParams.set('apps', '');
+	else {
+		url.searchParams.delete('apps');
+		url.searchParams.delete('app');
+	}
 	history.replaceState(null, '', url);
+	if (view === 'apps') {
+		if (again) miniApps.list();
+		else miniApps.shown();
+	}
 }
 {
 	const address = new URL(window.location.href).searchParams;
@@ -507,6 +522,8 @@ function showView(view: View, folder?: string): void {
 	const chatId = address.get('chat');
 	if (folder !== null) showView('drive', folder);
 	else if (address.has('pages')) showView('table');
+	else if (address.get('app')) void miniApps.open(address.get('app')!);
+	else if (address.has('apps')) showView('apps');
 	else if (chatId) chat.openChat(chatId);
 }
 

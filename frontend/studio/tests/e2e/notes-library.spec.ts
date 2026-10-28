@@ -16,9 +16,10 @@ function writeFileOf(folder: string, path: string, content: Buffer): void {
 const PLOT = readFileSync(new URL('./fixtures/plot.png', import.meta.url));
 const frame = (page: Page, id: string) => page.frameLocator(`.mini-app-window[data-app="${id}"] iframe`);
 
+/** An app opened from the 小程序 page, as the page. */
 async function openApp(page: Page, name: string): Promise<void> {
 	await page.locator('#open-apps').click();
-	await page.getByRole('menuitem', { name }).click();
+	await page.locator('.app-card', { has: page.locator('.app-card-name', { hasText: new RegExp(`^${name}$`, 'u') }) }).locator('.app-card-open').click();
 }
 
 test.beforeEach(() => {
@@ -158,7 +159,9 @@ test('代码库: the code of every note, its scripts too, searched, filtered by 
 	await expect(page.locator('#article-title-input')).toHaveValue('另一篇笔记');
 	await expect(editor(page).locator('.milkdown-code-block', { hasText: 'np.linalg.solve' })).toBeVisible();
 
-	// A note changed: the list is asked again, by itself.
+	// Back on the 小程序 page, it is as it was; a note changed: the list is asked again, by itself.
+	await page.locator('#open-apps').click();
+	await expect(app.locator('.detail .code')).toContainText('step = np.linalg.solve(H, -g)');
 	writeArticle('other-note', '---\ntitle: 另一篇笔记\npubDate: 2026-10-01\ndraft: true\n---\n\n```fortran\nprogram hi\nend program\n```\n');
 	await expect(app.locator('.item', { hasText: 'program hi' })).toBeVisible();
 	await expect(app.locator('.item', { hasText: 'RFO 一步' })).not.toContainText('出现在 2 篇');

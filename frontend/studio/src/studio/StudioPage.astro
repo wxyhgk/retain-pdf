@@ -101,6 +101,8 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 				</section>
 				<section id="drive-view" class="drive-page" aria-label={t('资料库')} hidden></section>
 				<section id="table-view" class="table-page" aria-label={t('全部文章')} hidden></section>
+				<!-- 小程序: their list, or the one open as the page (mini-apps.ts draws it). -->
+				<section id="apps-view" class="apps-page" aria-label={t('小程序')} hidden></section>
 				<!-- AI 问答: the AI tab's panel, moved here whole (main.ts showChat). -->
 				<section id="chat-view" class="chat-view" aria-label={t('AI 问答')} hidden></section>
 			</section>
@@ -199,7 +201,7 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	/* The drive in the middle, the article kept open behind it; the bar keeps only the side panel's button. */
 	.drive-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; }
 	.drive-page[hidden] { display: none; }
-	.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat']) .editor-panel { display: none; }
+	.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat'], [data-view='apps']) .editor-panel { display: none; }
 	/*
 	 * Scrollbars: thin, a rounded gray thumb on no track, darker under the pointer. The system's
 	 * (WebKit's, in the Mac app) are bars of their own, light on a dark page.
@@ -466,24 +468,60 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.crepe-host .milkdown .ProseMirror .is-instructing::after) { content: var(--word-instructing); position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: 11px; pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
 	/* 小程序: floating windows (mini-apps.ts). */
 	.mini-app-layer { position: fixed; z-index: 50; inset: 0; pointer-events: none; }
-	.mini-app-layer :global(.mini-app-window) { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-modal); pointer-events: auto; }
-	.mini-app-layer :global(.mini-app-bar) { display: flex; flex: none; gap: 4px; align-items: center; height: 32px; padding: 0 6px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; cursor: grab; user-select: none; touch-action: none; }
-	.mini-app-layer :global(.mini-app-bar:active) { cursor: grabbing; }
-	.mini-app-layer :global(.mini-app-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
-	.mini-app-layer :global(.mini-app-bar button) { width: 24px; height: 24px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 14px; cursor: pointer; }
-	.mini-app-layer :global(.mini-app-bar button:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	/*
+	 * 小程序 page (mini-apps.ts): their list, cards found by a search; or one open as the page, filling it (no shadow, no
+	 * grips, its bar not for moving, ‹ back to the list).
+	 */
+	.apps-page { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+	.apps-page[hidden] { display: none; }
+	:global(.apps-gallery) { flex: 1; min-height: 0; overflow-y: auto; padding: 28px clamp(20px, 5vw, 64px) 40px; }
+	:global(.apps-gallery[hidden]), :global(.apps-stage[hidden]) { display: none; }
+	:global(.apps-head) { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; max-width: 1080px; margin: 0 auto; }
+	:global(.apps-head h1) { margin: 0; font-size: 26px; font-weight: 700; }
+	:global(.apps-count) { color: rgb(var(--gray)); font-size: 13px; }
+	:global(.apps-search) { flex: 1; min-width: 180px; max-width: 360px; height: 32px; margin-left: auto; padding: 0 12px; border: 1px solid transparent; border-radius: 8px; background: var(--surface-soft); color: inherit; font: inherit; font-size: 13px; }
+	:global(.apps-search:focus) { outline: none; border-color: rgb(var(--gray-light)); background: var(--surface); }
+	:global(.apps-new) { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: rgb(var(--black)); color: var(--surface); font: inherit; font-size: 13px; cursor: pointer; }
+	:global(.apps-hint) { max-width: 1080px; margin: 8px auto 18px; color: rgb(var(--gray)); font-size: 12px; }
+	:global(.apps-grid) { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; max-width: 1080px; margin: 0 auto; }
+	:global(.apps-empty) { grid-column: 1 / -1; margin: 40px 0; color: rgb(var(--gray)); text-align: center; }
+	:global(.app-card) { position: relative; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); transition: border-color 0.12s; }
+	:global(.app-card:hover) { border-color: rgb(var(--gray)); }
+	:global(.app-card-open) { display: grid; grid-template-rows: auto auto 1fr auto; gap: 4px; width: 100%; height: 100%; min-height: 150px; padding: 16px 16px 14px; border: 0; border-radius: inherit; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+	:global(.app-card-icon) { margin-bottom: 6px; font-size: 26px; line-height: 1; }
+	:global(.app-card-name) { padding-right: 28px; font-size: 15px; }
+	:global(.app-card-description) { display: -webkit-box; overflow: hidden; color: rgb(var(--gray)); font-size: 12.5px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+	:global(.app-card-description.is-error) { color: var(--danger); }
+	:global(.app-card-tags) { margin-top: 6px; color: rgb(var(--gray)); font-size: 11px; }
+	:global(.app-card-window) { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 15px; cursor: pointer; }
+	:global(.app-card-window:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	:global(.apps-stage) { display: flex; flex: 1; min-height: 0; }
+	:global(.mini-app-window.is-docked) { position: relative; flex: 1; min-width: 0; border: 0; border-radius: 0; box-shadow: none; }
+	:global(.mini-app-window.is-docked[hidden]) { display: none; }
+	:global(.mini-app-window.is-docked .mini-app-bar) { height: 40px; padding: 0 10px 0 6px; cursor: default; }
+	:global(.mini-app-window.is-docked .mini-app-title) { font-size: 13px; }
+	:global(.mini-app-window.is-docked .mini-app-grip) { display: none; }
+	:global(.mini-app-window.is-docked .mini-app-sheet) { inset: 40px 0 0; }
+	:global(.mini-app-window:not(.is-docked) .mini-app-back) { display: none; }
+	:global(.mini-app-bar button.mini-app-back) { width: auto; padding: 0 8px; font-size: 13px; }
+	:global(.mini-app-window) { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-modal); pointer-events: auto; }
+	:global(.mini-app-bar) { display: flex; flex: none; gap: 4px; align-items: center; height: 32px; padding: 0 6px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; cursor: grab; user-select: none; touch-action: none; }
+	:global(.mini-app-bar:active) { cursor: grabbing; }
+	:global(.mini-app-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+	:global(.mini-app-bar button) { width: 24px; height: 24px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 14px; cursor: pointer; }
+	:global(.mini-app-bar button:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 	/* What went wrong in its page (red: an error), how a project's server is, and what is shown over its page. */
-	.mini-app-layer :global(.mini-app-bar button.mini-app-errors) { width: auto; padding: 0 6px; color: var(--danger); font-size: 12px; font-variant-numeric: tabular-nums; }
-	.mini-app-layer :global(.mini-app-state) { flex: none; color: rgb(var(--gray)); font-size: 11px; }
-	.mini-app-layer :global(.mini-app-state[data-state='failed']) { color: var(--danger); }
-	.mini-app-layer :global(.mini-app-sheet) { position: absolute; inset: 32px 0 0; z-index: 1; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface); font-size: 12px; }
-	.mini-app-layer :global(.mini-app-sheet[hidden]) { display: none; }
-	.mini-app-layer :global(.mini-app-sheet pre) { flex: 1; min-height: 0; margin: 0; padding: 8px; overflow: auto; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface-soft); font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
-	.mini-app-layer :global(.mini-app-sheet-actions) { display: flex; gap: 6px; justify-content: flex-end; }
-	.mini-app-layer :global(.mini-app-sheet-actions button) { padding: 3px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
-	.mini-app-layer :global(.mini-app-sheet-actions button:hover) { background: var(--surface-soft); }
-	.mini-app-layer :global(.mini-app-checkpoint) { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 3px 0; font-family: inherit; white-space: normal; }
-	.mini-app-layer :global(.mini-app-checkpoint button) { flex: none; padding: 1px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
+	:global(.mini-app-bar button.mini-app-errors) { width: auto; padding: 0 6px; color: var(--danger); font-size: 12px; font-variant-numeric: tabular-nums; }
+	:global(.mini-app-state) { flex: none; color: rgb(var(--gray)); font-size: 11px; }
+	:global(.mini-app-state[data-state='failed']) { color: var(--danger); }
+	:global(.mini-app-sheet) { position: absolute; inset: 32px 0 0; z-index: 1; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface); font-size: 12px; }
+	:global(.mini-app-sheet[hidden]) { display: none; }
+	:global(.mini-app-sheet pre) { flex: 1; min-height: 0; margin: 0; padding: 8px; overflow: auto; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface-soft); font: 11px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+	:global(.mini-app-sheet-actions) { display: flex; gap: 6px; justify-content: flex-end; }
+	:global(.mini-app-sheet-actions button) { padding: 3px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
+	:global(.mini-app-sheet-actions button:hover) { background: var(--surface-soft); }
+	:global(.mini-app-checkpoint) { display: flex; gap: 8px; align-items: center; justify-content: space-between; padding: 3px 0; font-family: inherit; white-space: normal; }
+	:global(.mini-app-checkpoint button) { flex: none; padding: 1px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
 	/* 安全模式 (safe-mode.ts): said at the top, over everything, until the Studio is started as usual. */
 	:global(#safe-mode-bar) { position: fixed; z-index: 90; top: 8px; left: 50%; display: flex; gap: 12px; align-items: center; max-width: calc(100vw - 32px); padding: 6px 8px 6px 14px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); font-size: 13px; transform: translateX(-50%); }
 	:global(#safe-mode-bar button) { flex: none; padding: 2px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: inherit; font: inherit; cursor: pointer; }
@@ -502,22 +540,22 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.app-block-bar) { display: flex; flex: none; gap: 2px; align-items: center; box-sizing: border-box; width: 100%; height: 26px; padding: 0 6px 0 10px; border-top: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 12px; }
 	:global(.app-block-by) { flex: 1; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	:global(.app-block-bar button.app-block-errors) { color: var(--danger); }
-	.mini-app-layer :global(.mini-app-frame) { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
+	:global(.mini-app-frame) { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
 	/* Edges and corners to size it from: thin strips over the frame; the corner below right is marked. */
-	.mini-app-layer :global(.mini-app-grip) { position: absolute; z-index: 1; touch-action: none; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='n']), .mini-app-layer :global(.mini-app-grip[data-edge='s']) { right: 14px; left: 14px; height: 6px; cursor: ns-resize; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='e']), .mini-app-layer :global(.mini-app-grip[data-edge='w']) { top: 14px; bottom: 14px; width: 6px; cursor: ew-resize; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='n']) { top: 0; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='s']) { bottom: 0; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='e']) { right: 0; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='w']) { left: 0; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='ne']), .mini-app-layer :global(.mini-app-grip[data-edge='sw']) { width: 14px; height: 14px; cursor: nesw-resize; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='nw']), .mini-app-layer :global(.mini-app-grip[data-edge='se']) { width: 14px; height: 14px; cursor: nwse-resize; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='ne']) { top: 0; right: 0; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='nw']) { top: 0; left: 0; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='sw']) { bottom: 0; left: 0; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='se']) { right: 0; bottom: 0; }
-	.mini-app-layer :global(.mini-app-grip[data-edge='se']::after) { position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px; border-right: 2px solid rgb(var(--gray)); border-bottom: 2px solid rgb(var(--gray)); border-bottom-right-radius: 3px; opacity: 0.5; content: ''; }
+	:global(.mini-app-grip) { position: absolute; z-index: 1; touch-action: none; }
+	:global(.mini-app-grip[data-edge='n']), :global(.mini-app-grip[data-edge='s']) { right: 14px; left: 14px; height: 6px; cursor: ns-resize; }
+	:global(.mini-app-grip[data-edge='e']), :global(.mini-app-grip[data-edge='w']) { top: 14px; bottom: 14px; width: 6px; cursor: ew-resize; }
+	:global(.mini-app-grip[data-edge='n']) { top: 0; }
+	:global(.mini-app-grip[data-edge='s']) { bottom: 0; }
+	:global(.mini-app-grip[data-edge='e']) { right: 0; }
+	:global(.mini-app-grip[data-edge='w']) { left: 0; }
+	:global(.mini-app-grip[data-edge='ne']), :global(.mini-app-grip[data-edge='sw']) { width: 14px; height: 14px; cursor: nesw-resize; }
+	:global(.mini-app-grip[data-edge='nw']), :global(.mini-app-grip[data-edge='se']) { width: 14px; height: 14px; cursor: nwse-resize; }
+	:global(.mini-app-grip[data-edge='ne']) { top: 0; right: 0; }
+	:global(.mini-app-grip[data-edge='nw']) { top: 0; left: 0; }
+	:global(.mini-app-grip[data-edge='sw']) { bottom: 0; left: 0; }
+	:global(.mini-app-grip[data-edge='se']) { right: 0; bottom: 0; }
+	:global(.mini-app-grip[data-edge='se']::after) { position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px; border-right: 2px solid rgb(var(--gray)); border-bottom: 2px solid rgb(var(--gray)); border-bottom-right-radius: 3px; opacity: 0.5; content: ''; }
 	.terminal-agents :global(.terminal-agents-settings) { margin-left: auto; border-color: transparent; background: transparent; color: rgb(var(--gray)); }
 	:global(.context-menu) { width: auto; min-width: 190px; max-width: 280px; }
 	:global(.context-menu .block-menu-item kbd) { margin-left: auto; padding-left: 16px; color: rgb(var(--gray)); font-family: inherit; font-size: 11px; }

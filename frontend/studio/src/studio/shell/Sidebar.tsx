@@ -169,8 +169,9 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				<Item id="open-drive" icon={Library} aria-pressed={view === 'drive'} onClick={toggle('drive')}>
 					{t('资料库')}
 				</Item>
-				{/* Its menu is mini-apps.ts's. */}
-				<Item id="open-apps" icon={Blocks} aria-haspopup="menu">
+				{/* The 小程序 page: their list, or the one open there (mini-apps.ts). */}
+				{/* Not a toggle: from elsewhere to the app left open there, and there to their list. */}
+				<Item id="open-apps" icon={Blocks} aria-pressed={view === 'apps'} onClick={() => act.showView('apps')}>
 					{t('小程序')}
 				</Item>
 				{/* The plugins' commands (ctx.commands, places: ['sidebar']): plugin-ui.ts draws them. */}
