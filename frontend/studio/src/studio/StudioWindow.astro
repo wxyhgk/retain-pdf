@@ -1,0 +1,52 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import { SITE_TITLE } from '../consts';
+import { LocaleSettings, studioSettingsFile } from './server/locale-settings.mjs';
+import { setLocale, t } from '@blog/i18n/index.mjs';
+import { askedLocales } from '@blog/i18n/server.mjs';
+import '@blog/editor-kit/math/math.css';
+import '@blog/markdown/callouts/callouts.css';
+import '@blog/markdown/code-files/code-files.css';
+import './tokens.css';
+import '@fontsource-variable/inter/opsz.css';
+import './design.css';
+import './shell/shell.css';
+import './ai/ai-panel.css';
+import '@blog/ui/block-sheet.css';
+
+// A window of its own (显示方式 › 新窗口): one 小程序 (?app=…&at=…) or the AI (?ai), out of the Studio's window; what
+// only the Studio can do asked of it (windows/studio-line.ts).
+const spoken = await new LocaleSettings(studioSettingsFile(process.cwd())).spoken(askedLocales(Astro.request.headers.get('accept-language')));
+setLocale(spoken);
+---
+
+<!doctype html>
+<html lang={spoken} data-studio-locale={spoken}>
+	<head>
+		<BaseHead title={`Studio · ${SITE_TITLE}`} description={t('Studio 的窗口')} />
+		<script is:inline type="module">
+			import { injectIntoGlobalHook } from '/@react-refresh';
+			injectIntoGlobalHook(window);
+			window.$RefreshReg$ = () => {};
+			window.$RefreshSig$ = () => (type) => type;
+		</script>
+	</head>
+	<body class="studio-body studio-window">
+		<main id="window-body" class="window-body"></main>
+		<div id="ui-layer" data-ui></div>
+		<script>import './windows/window-main';</script>
+	</body>
+</html>
+
+<style>
+	:global(html), :global(body.studio-window) { height: 100%; margin: 0; overflow: hidden; background: var(--surface); }
+	.window-body { display: flex; height: 100vh; min-height: 0; flex-direction: column; }
+	.window-body :global(.window-bar) { display: flex; flex: none; gap: 4px; align-items: center; height: 34px; padding: 0 8px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; }
+	.window-body :global(.window-title) { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+	.window-body :global(.window-bar button) { height: 24px; padding: 0 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; cursor: pointer; }
+	.window-body :global(.window-bar button:hover) { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+	.window-body :global(.window-bar button.window-errors) { color: var(--danger); }
+	.window-body :global(.window-frame) { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
+	.window-body :global(.window-note) { margin: 40px auto; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
+	.window-body :global(.ai-pane) { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+</style>

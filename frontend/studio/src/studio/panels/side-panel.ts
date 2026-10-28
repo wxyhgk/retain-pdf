@@ -40,7 +40,7 @@ function writeLayout(layout: PanelLayout): void {
 }
 
 /** A tab (the shell draws it: shell/SideTabs.tsx) and its pane; a plugin's is drawn the first time it is shown. */
-type Tab = { tab: SideTab; pane: HTMLElement; panel?: StudioPanel; drawn?: boolean; undraw?: (() => void) | void; onScreen?: boolean };
+type Tab = { tab: SideTab; pane: HTMLElement; panel?: StudioPanel; drawn?: boolean; undraw?: (() => void) | void; onScreen?: boolean; kept?: boolean };
 
 /**
  * The right column: the AI, the open article's files, a terminal and the
@@ -201,6 +201,31 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 			}
 			applyLayout();
 		},
+		/**
+		 * A tab of the Studio's own put in now (a 小程序 shown in the side), whatever the plugins' tabs become; opened on.
+		 * Its pane is `draw`n as a plugin's is.
+		 */
+		addTab(added: StudioPanel): void {
+			if (!tabs.has(added.key)) {
+				const tab = { key: added.key, label: added.label, icon: added.icon, id: `side-tab-own-${added.key}`, controls: `side-own-${added.key}` };
+				const pane = document.createElement('section');
+				pane.id = tab.controls;
+				pane.className = 'side-pane own-pane';
+				pane.setAttribute('role', 'tabpanel');
+				pane.setAttribute('aria-labelledby', tab.id);
+				pane.hidden = true;
+				panel.append(pane);
+				tabs.set(added.key, { tab, pane, panel: added, kept: true });
+			}
+			update({ open: true, tab: added.key });
+		},
+		/** A tab put in by `addTab` taken out, with what it drew. */
+		removeOwnTab(key: string): void {
+			const entry = tabs.get(key);
+			if (!entry?.kept) return;
+			removeTab(key, entry);
+			applyLayout();
+		},
 		/** Opens the panel on this tab; throws when there is none by this name. */
 		show(tab: string): void {
 			if (!tabs.has(tab)) throw new Error(t('没有叫 {tab} 的面板', { tab }));
@@ -212,7 +237,7 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		 * The tab chosen stays chosen, also while its plugin is away.
 		 */
 		setPanels(panels: StudioPanel[]): void {
-			for (const [name, entry] of tabs) if (entry.panel && !panels.includes(entry.panel)) removeTab(name, entry);
+			for (const [name, entry] of tabs) if (entry.panel && !entry.kept && !panels.includes(entry.panel)) removeTab(name, entry);
 			for (const added of panels) {
 				if (tabs.has(added.key)) continue;
 				const tab = { key: added.key, label: added.label, icon: added.icon, id: `side-tab-plugin-${added.key}`, controls: `side-plugin-${added.key}` };
@@ -226,7 +251,7 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 				tabs.set(added.key, { tab, pane, panel: added });
 			}
 			// In the order given, after the Studio's own (the arrow keys go through them so too).
-			const ordered = [...tabs].filter(([, entry]) => !entry.panel).concat(panels.map((added) => [added.key, tabs.get(added.key)!]));
+			const ordered = [...tabs].filter(([, entry]) => !entry.panel || entry.kept).concat(panels.map((added) => [added.key, tabs.get(added.key)!]));
 			tabs.clear();
 			for (const [name, entry] of ordered) tabs.set(name, entry);
 			applyLayout();

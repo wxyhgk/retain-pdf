@@ -452,7 +452,7 @@ test('小程序 page: all of them as cards, found by a search; one opened fills 
 	await withApp(
 		{
 			'app.json': JSON.stringify({ name: '探针', icon: '◎', description: '测试整页打开' }),
-			'app.html': '<p id="out">首页</p><button id="go" onclick="location.hash = \'#第二页\'">去第二页</button><script>const show = () => { out.textContent = decodeURIComponent(location.hash.slice(1)) || "首页"; }; show(); addEventListener("hashchange", show); window.loadedAt = Math.random();</script>',
+			'app.html': '<p id="out">首页</p><button id="go" onclick="location.hash = \'#第二页\'">去第二页</button><button id="ask" onclick="studio.article().then((a) => { asked.textContent = \'当前：\' + a.title; })">问</button><p id="asked"></p><script>const show = () => { out.textContent = decodeURIComponent(location.hash.slice(1)) || "首页"; }; show(); addEventListener("hashchange", show); window.loadedAt = Math.random();</script>',
 		},
 		async () => {
 			await openStudio(page);
@@ -503,17 +503,48 @@ test('小程序 page: all of them as cards, found by a search; one opened fills 
 			await probe.locator('.app-card-open').click();
 			expect(await window.locator('iframe').evaluate((element: HTMLIFrameElement) => (element.contentWindow as Window & { loadedAt: number }).loadedAt)).toBe(loadedAt);
 
-			// 弹出: a window over the Studio, at the page it was at; 整页: the page again.
-			await window.locator('.mini-app-switch').click();
+			// 显示方式, as the AI panel's: each at the page it was at.
+			const layoutTo = async (name: string) => {
+				await window.locator('.mini-app-layout').click();
+				await page.getByRole('menuitem', { name: new RegExp(`^${name}`, 'u') }).click();
+			};
+			// 悬浮: a window over the Studio; the 小程序 page its list again.
+			await layoutTo('悬浮');
 			await expect(window).not.toHaveClass(/is-docked/u);
 			await expect(page.locator('#mini-app-layer .mini-app-window[data-app="probe"]')).toBeVisible();
 			await expect(frame.locator('#out')).toHaveText('第二页');
 			await expect(page.locator('.app-card[data-app-card="probe"]')).toBeVisible();
-			await window.locator('.mini-app-switch').click();
-			await expect(window).toHaveClass(/is-docked/u);
+			// 侧栏: a tab of the right column, the article beside it.
+			await layoutTo('侧栏');
+			await expect(page.locator('#side-panel .mini-app-window.is-side[data-app="probe"]')).toBeVisible();
+			await expect(page.locator('#side-tab-own-app-probe')).toHaveAttribute('aria-selected', 'true');
 			await expect(frame.locator('#out')).toHaveText('第二页');
+			await page.locator('#sidebar-pages').click();
+			await page.locator('#article-list').getByText('Studio 测试夹具').first().click();
+			await expect(page.locator('#side-panel .mini-app-window[data-app="probe"]')).toBeVisible();
+			// 全屏: the 小程序 page; the tab gone.
+			await layoutTo('全屏');
+			await expect(window).toHaveClass(/is-docked/u);
+			await expect(page.locator('#side-tab-own-app-probe')).toHaveCount(0);
+			await expect(frame.locator('#out')).toHaveText('第二页');
+
+			// 新窗口: a window of its own at the page it was at, asking the Studio as it did; gone from here.
+			const popup = page.waitForEvent('popup');
+			await layoutTo('新窗口');
+			const own = await popup;
+			await expect(page.locator('.mini-app-window[data-app="probe"]')).toHaveCount(0);
+			expect(new URL(own.url()).pathname).toBe('/studio/window');
+			const ownFrame = own.frameLocator('.window-frame');
+			await expect(ownFrame.locator('#out')).toHaveText('第二页');
+			await ownFrame.locator('#ask').click();
+			await expect(ownFrame.locator('#asked')).toHaveText('当前：Studio 测试夹具');
+			// 放回 Studio: the 小程序 page again, its window shut.
+			const shut = own.waitForEvent('close');
+			await own.getByRole('button', { name: '放回 Studio' }).click();
+			await shut;
+			await expect(page.locator('.mini-app-window.is-docked[data-app="probe"]')).toBeVisible();
 			// Closed: the list again.
-			await window.locator('.mini-app-bar button', { hasText: '×' }).click();
+			await page.locator('.mini-app-window[data-app="probe"] .mini-app-bar button', { hasText: '×' }).click();
 			await expect(page.locator('.app-card[data-app-card="probe"]')).not.toContainText('打开着');
 		},
 	);

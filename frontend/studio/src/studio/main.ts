@@ -59,6 +59,7 @@ import { mountShell } from './shell/mount';
 import { shell as shellState, type View } from './shell/shell-state';
 import { openDialog } from './shell/dialogs/Dialogs';
 import { confirmPublish, createQuickFind, openAgents, openSettings, providePlugins } from './shell/dialogs/ask';
+import { answerWindows } from './windows/studio-line';
 import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
@@ -262,7 +263,37 @@ const miniApps = createMiniApps(appsView, shell.querySelector<HTMLElement>('#min
 	showApps: () => {
 		if (shellState.get().view !== 'apps') showView('apps');
 	},
+	addSideTab: (panel) => sidePanel.addTab(panel),
+	removeSideTab: (key) => sidePanel.removeOwnTab(key),
+	opened: (kind) => windowOpened(kind),
 });
+
+/** The windows of their own (显示方式 › 新窗口: a 小程序, the AI), answered: what they ask of the Studio here. */
+const windows = answerWindows(async (method, args) => {
+	if (method === 'app.call') return miniApps.answerFor(String(args[0]), String(args[1]), Array.isArray(args[2]) ? args[2] : []);
+	if (method === 'app.dock') {
+		await miniApps.open(String(args[0]));
+		return true;
+	}
+	if (method.startsWith('ai.')) return chat.answerWindow(method, args);
+	throw new Error(t('Studio 不认识 {method}', { method }));
+});
+/** Whether a window showing `kind` says it is open within a few seconds. */
+function windowOpened(kind: string): Promise<boolean> {
+	return new Promise((resolve) => {
+		const timer = window.setTimeout(() => {
+			stop();
+			resolve(false);
+		}, 6000);
+		const stop = windows.heard(({ what, kind: shown }) => {
+			if (what !== 'hello' || shown !== kind) return;
+			clearTimeout(timer);
+			stop();
+			resolve(true);
+		});
+	});
+}
+chat.windows(windows, windowOpened);
 const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files')!, {
 	source: () => session.current.source,
 	revision: () => session.current.revision,
@@ -430,6 +461,7 @@ startPlugins(studio, { shown: () => shownArticle, safe });
 // Something changed in blog/: the terminal, Finder or another editor.
 watchDisk((changes) => {
 	miniApps.notesChanged();
+	windows.tell('notes-changed');
 	snapshot.changed();
 	backlinks.changed();
 	articleList.changedOnDisk(changes);

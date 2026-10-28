@@ -119,10 +119,19 @@ fn open_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
             }
             ours
         })
-        // `target="_blank"` and `window.open`: the blog, a file, a web page — the browser shows them.
-        .on_new_window(|url, _| {
-            open_outside(url.as_str());
-            NewWindowResponse::Deny
+        // `target="_blank"` and `window.open`: the blog, a file, a web page — the browser shows them; a 小程序 or the
+        // AI asked into a window of its own (显示方式 › 新窗口), a window of the app's.
+        .on_new_window({
+            let app = app.clone();
+            move |url, _| {
+                if is_own_window(&url) {
+                    let app = app.clone();
+                    thread::spawn(move || open_own_window(&app, url));
+                } else {
+                    open_outside(url.as_str());
+                }
+                NewWindowResponse::Deny
+            }
         })
         .on_download(|webview, event| {
             let state = webview.state::<State>();
@@ -649,6 +658,57 @@ fn stop_started(app: &AppHandle) {
 fn is_local(url: &Url) -> bool {
     matches!(url.scheme(), "http" | "https" | "ws")
         && matches!(url.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"))
+}
+
+/// The Studio's page for a 小程序 or the AI in a window of its own (StudioWindow.astro).
+fn is_own_window(url: &Url) -> bool {
+    is_local(url) && url.path() == "/studio/window"
+}
+
+/// The window a 小程序 (`?app=<id>`) or the AI (`?ai`) is asked into: one for each, brought forward when it is open
+/// already; sized as asked (`w`, `h`), named (`title`). Its links out go to the browser, as the Studio's do.
+fn open_own_window(app: &AppHandle, url: Url) {
+    let asked: HashMap<String, String> = url.query_pairs().into_owned().collect();
+    let label = match asked.get("app") {
+        Some(id) => {
+            let kept: String = id.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-' || *c == '_').collect();
+            format!("app-{kept}")
+        }
+        None => "ai".to_owned(),
+    };
+    let size = |key: &str, otherwise: f64| asked.get(key).and_then(|value| value.parse::<f64>().ok()).unwrap_or(otherwise).clamp(240.0, 3000.0);
+    if let Some(window) = app.get_webview_window(&label) {
+        let _ = window.navigate(url);
+        let _ = window.set_focus();
+        return;
+    }
+    let handle = app.clone();
+    let title = asked.get("title").cloned().unwrap_or_else(|| "Studio".to_owned());
+    let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
+        .title(title)
+        .inner_size(size("w", 460.0), size("h", 760.0))
+        .min_inner_size(280.0, 200.0)
+        .disable_drag_drop_handler()
+        .on_navigation(|url| {
+            let ours = is_local(url) || matches!(url.scheme(), "about" | "blob" | "data");
+            if !ours {
+                open_outside(url.as_str());
+            }
+            ours
+        })
+        .on_new_window(move |url, _| {
+            if is_own_window(&url) {
+                let app = handle.clone();
+                thread::spawn(move || open_own_window(&app, url));
+            } else {
+                open_outside(url.as_str());
+            }
+            NewWindowResponse::Deny
+        })
+        .build();
+    if let Err(error) = built {
+        eprintln!("[studio-app] 没能打开窗口 {label}：{error}");
+    }
 }
 
 /// The sites of the video players a ```video block shows (Bilibili's, YouTube's) and what they load in

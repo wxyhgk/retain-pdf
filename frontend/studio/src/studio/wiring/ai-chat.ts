@@ -1,7 +1,7 @@
 // The AI tab (a coding agent doing what it is asked, by itself, shown as it goes) and AI 问答, as Notion's: the AI tab's
 // panel itself, moved whole into the middle, the conversations listed in the left column in place of the pages; back
 // in the side when an article is shown again. What the AI changes in the article open is held while it works.
-import { Maximize2, PanelRight, PictureInPicture2 } from 'lucide-react';
+import { AppWindow, Maximize2, PanelRight, PictureInPicture2 } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { floatingBox } from '../ai/ai-float';
@@ -12,6 +12,7 @@ import { sourceLinesOf } from '@blog/document/source-lines.ts';
 import { createChatList } from '../shell/chat-list';
 import type { ArticleSummary } from '../types';
 import type { Studio } from './studio';
+import type { answerWindows } from '../windows/studio-line';
 
 export function createAiChat(studio: Studio, { withArticlePictures }: { withArticlePictures(markdown: string): Promise<string> }) {
 	// Made before the parts it reaches (the right column asks at once whether its tab is shown): each read when used.
@@ -22,8 +23,29 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 
 	let aiArticles: { from: ArticleSummary[] | null; named: ArticleSummary[] } = { from: null, named: [] };
 	const aiPane = shell.querySelector<HTMLElement>('#side-ai')!;
+	/** What the AI is told of the article open: here, and in a window of its own (answerWindow). */
+	const article = () => (studio.session.slug ? { slug: studio.session.slug, title: studio.title() } : null);
+	const hasSelection = () => Boolean(studio.session.slug) && studio.editor.hasSelection();
+	async function selection() {
+		const marked = studio.session.slug && studio.editor.hasSelection() ? studio.editor.markSelection() : null;
+		if (!marked || !(await studio.session.flush())) return null;
+		return sourceLinesOf(studio.session.current.source, marked);
+	}
+	function insert(markdown: string): boolean {
+		if (!studio.session.slug) return false;
+		// Its pictures copied into the article first, so that they show there.
+		withArticlePictures(markdown).then(
+			(taken) => studio.editor.insertMarkdown(taken),
+			(error: unknown) => showToast(error instanceof Error ? error.message : t('没能放进来'), true),
+		);
+		return true;
+	}
+	function runInTerminal(command: string): void {
+		studio.sidePanel.show('terminal');
+		studio.terminal.run(command);
+	}
 	const aiPanel = createAiPanel(aiPane, {
-		article: () => (studio.session.slug ? { slug: studio.session.slug, title: studio.title() } : null),
+		article,
 		articles() {
 			// The same list while the pages are (the panel's links drawn again only when they change).
 			const listed = studio.articleList.articles();
@@ -34,26 +56,11 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 			studio.showView('editor');
 			void studio.session.open(slug);
 		},
-		hasSelection: () => Boolean(studio.session.slug) && studio.editor.hasSelection(),
-		async selection() {
-			const marked = studio.session.slug && studio.editor.hasSelection() ? studio.editor.markSelection() : null;
-			if (!marked || !(await studio.session.flush())) return null;
-			return sourceLinesOf(studio.session.current.source, marked);
-		},
+		hasSelection,
+		selection,
 		toast: (message) => showToast(message),
-		runInTerminal(command) {
-			studio.sidePanel.show('terminal');
-			studio.terminal.run(command);
-		},
-		insert(markdown) {
-			if (!studio.session.slug) return false;
-			// Its pictures copied into the article first, so that they show there.
-			withArticlePictures(markdown).then(
-				(taken) => studio.editor.insertMarkdown(taken),
-				(error: unknown) => showToast(error instanceof Error ? error.message : t('没能放进来'), true),
-			);
-			return true;
-		},
+		runInTerminal,
+		insert,
 		// ⤢ / ⤡: the panel whole in the middle (AI 问答), or back where it was (in the side, or floating).
 		openWhole: () => studio.showView('chat'),
 		closeWhole: () => studio.showView('editor'),
@@ -66,6 +73,8 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 					{ label: t('悬浮'), icon: PictureInPicture2, hint: mark(!full && mode === 'float'), action: () => setMode('float') },
 					'separator',
 					{ label: t('全屏'), icon: Maximize2, hint: mark(full), action: () => !full && whole() },
+					'separator',
+					{ label: t('新窗口'), icon: AppWindow, action: () => void popOut() },
 				],
 				anchor,
 			);
@@ -97,8 +106,32 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 	const floatBox = shell.querySelector<HTMLElement>('#ai-float')!;
 	const floating = floatingBox(floatBox, () => aiPane.querySelector<HTMLElement>('.ai-toolbar'));
 
+	/** The AI is in a window of its own (新窗口): not shown here meanwhile; back where it was once that window shuts. */
+	let inWindow = false;
+	let windows: ReturnType<typeof answerWindows> | null = null;
+	let windowOpened: (kind: string) => Promise<boolean> = async () => false;
+
+	function hideHere(): void {
+		floatBox.hidden = true;
+		aiPane.classList.remove('is-floating');
+		aiPanel.setFloating(false);
+		studio.sidePanel.lend('ai', true);
+		aiPane.hidden = true;
+	}
+
+	/** 新窗口: the AI in a window of the computer's own (beside the editor, on another screen), with this conversation. */
+	async function popOut(): Promise<void> {
+		const opening = windowOpened('ai');
+		window.open('/studio/window?ai=1&w=460&h=780&title=AI', 'studio-ai', 'popup,width=460,height=780');
+		if (!(await opening)) return showToast(t('没能打开新窗口（浏览器拦下了弹出窗口？）'), true);
+		inWindow = true;
+		if (shell.dataset.view === 'chat') studio.showView('editor');
+		else hideHere();
+	}
+
 	/** The panel put where its mode says (not while whole in the middle): its tab lent by the right column when it floats. */
 	function home(): void {
+		if (inWindow) return hideHere();
 		if (mode === 'float') {
 			if (aiPane.parentElement !== floatBox) floatBox.prepend(aiPane);
 			aiPane.hidden = false;
@@ -132,8 +165,45 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 
 	/** The AI panel shown where it is (asked for by a 小程序, a command): its tab, or the floating box as it is. */
 	function showAi(): void {
+		if (inWindow) return;
 		if (mode === 'side' || shell.dataset.view === 'chat') studio.sidePanel.show('ai');
 		else home();
+	}
+
+	/** What the AI in a window of its own asks (windows/window-main.ts): what it is told here, and to come back. */
+	async function answerWindow(method: string, args: unknown[]): Promise<unknown> {
+		switch (method) {
+			case 'ai.state':
+				return { article: article(), hasSelection: hasSelection(), articles: aiPanelArticles(), conversation: aiPanel.current() };
+			case 'ai.selection':
+				return selection();
+			case 'ai.insert':
+				return insert(String(args[0] ?? ''));
+			case 'ai.openArticle':
+				studio.showView('editor');
+				await studio.session.open(String(args[0] ?? ''));
+				return true;
+			case 'ai.runInTerminal':
+				runInTerminal(String(args[0] ?? ''));
+				return true;
+			case 'ai.dock': {
+				inWindow = false;
+				const [where, conversation] = args;
+				if (typeof conversation === 'string' && conversation) await aiPanel.open(conversation);
+				if (where === 'full') studio.showView('chat');
+				else setMode(where === 'float' ? 'float' : 'side');
+				return true;
+			}
+			default:
+				throw new Error(t('Studio 不认识 {method}', { method }));
+		}
+	}
+
+	/** The articles as the AI is told them (the same list while the pages are). */
+	function aiPanelArticles() {
+		const listed = studio.articleList.articles();
+		if (aiArticles.from !== listed) aiArticles = { from: listed, named: listed.map((entry) => ({ ...entry, title: entry.title || entry.slug })) };
+		return aiArticles.named;
 	}
 	const chatView = shell.querySelector<HTMLElement>('#chat-view')!;
 	const chatList = createChatList({
@@ -219,6 +289,17 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		showChat,
 		hold,
 		showAi,
+		answerWindow,
+		/** The line to the windows of their own: the AI's window shut, the AI is back here where it was. */
+		windows(line: ReturnType<typeof answerWindows>, opened: (kind: string) => Promise<boolean>): void {
+			windows = line;
+			windowOpened = opened;
+			line.heard(({ what, kind }) => {
+				if (kind !== 'ai' || what !== 'bye' || !inWindow) return;
+				inWindow = false;
+				if (shell.dataset.view !== 'chat') home();
+			});
+		},
 		/** Where it was left (floating), once the right column is there to lend its tab. */
 		restoreLayout: () => mode === 'float' && shell.dataset.view !== 'chat' && home(),
 	};

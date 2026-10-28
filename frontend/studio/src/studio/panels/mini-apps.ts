@@ -1,3 +1,6 @@
+import { AppWindow, Maximize2, PanelRight, PictureInPicture2 } from 'lucide-react';
+
+import type { StudioPanel } from '@blog/kernel/ui.ts';
 import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, createApp, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, notesCode, notesImages, reportAppError, repos, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
 import { showContextMenu } from '../common/context-menu';
 import { openDialog } from '../shell/dialogs/Dialogs';
@@ -16,6 +19,11 @@ export type MiniAppsHost = {
 	askAI(prompt: string): void;
 	/** The 小程序 page shown in the middle (its list, or the app open there). */
 	showApps(): void;
+	/** An app shown in the right column (显示方式 › 侧栏): its tab put in and opened on; taken out. */
+	addSideTab(panel: StudioPanel): void;
+	removeSideTab(key: string): void;
+	/** Whether a window of its own showing `kind` (`app:<id>`) says it is open, soon (新窗口). */
+	opened(kind: string): Promise<boolean>;
 };
 
 const MESSAGE = 'studio-app';
@@ -79,9 +87,11 @@ type AppWindow = {
 	sheet: HTMLElement;
 	/** The page of it the window opens at (a command's), `''` for its own first one. */
 	entry: string;
-	/** Shown as a page in the middle (the 小程序 page), not floating over the Studio. */
-	docked: boolean;
+	/** Where it is shown: as the 小程序 page (全屏), floating over the Studio (悬浮), or in the right column (侧栏). */
+	where: Where;
 };
+
+type Where = 'page' | 'float' | 'side';
 
 /** Errors kept for a window; lines of its server's output given to an AI. */
 const KEPT_ERRORS = 20;
@@ -147,7 +157,7 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 	/** The page shows `id` (an app open as a page), or the list (null); the address says which. */
 	function present(id: string | null): void {
 		current = id;
-		for (const shown of open.values()) if (shown.docked) shown.root.hidden = shown.app.id !== id;
+		for (const shown of open.values()) if (shown.where === 'page') shown.root.hidden = shown.app.id !== id;
 		gallery.hidden = Boolean(id);
 		stage.hidden = !id;
 		const url = new URL(window.location.href);
@@ -250,7 +260,7 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 
 	/** A window brought above the others. Not one shown as the page: above the page, it would cover the Studio's menus. */
 	function focus(shown: AppWindow): void {
-		if (shown.docked) return;
+		if (shown.where !== 'float') return;
 		shown.root.style.zIndex = String(++top);
 	}
 
@@ -260,50 +270,98 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		if (shown?.polling) clearInterval(shown.polling);
 		shown?.root.remove();
 		open.delete(id);
+		if (shown?.where === 'side') host.removeSideTab(sideKey(id));
 		if (current === id) present(null);
 	}
 
-	/** The button that moves it: 弹出 as the page, 整页 as a window. */
-	function labelSwitch(shown: AppWindow): void {
-		const button = shown.root.querySelector<HTMLButtonElement>('.mini-app-switch');
+	/** Its tab in the right column, when it is shown there. */
+	const sideKey = (id: string) => `app-${id}`;
+
+	/** 显示方式's button: what it is shown as now. */
+	const WHERE_MARKS: Record<Where, string> = { page: '▣', float: '⧉', side: '◨' };
+	function labelLayout(shown: AppWindow): void {
+		const button = shown.root.querySelector<HTMLButtonElement>('.mini-app-layout');
 		if (!button) return;
-		button.textContent = shown.docked ? '⧉' : '⤢';
-		button.title = shown.docked ? t('弹出：在浮动窗口里用，边写文章边用') : t('整页：放到小程序页面里用');
-		button.setAttribute('aria-label', shown.docked ? t('弹出成窗口') : t('整页显示'));
+		button.textContent = WHERE_MARKS[shown.where];
+		button.title = t('显示方式：侧栏、悬浮、全屏、新窗口');
+		button.setAttribute('aria-label', t('显示方式'));
+	}
+
+	/** Where its page is now (moved, a frame is loaded again: it goes back there), or its own first page. */
+	function hereOf(shown: AppWindow): string {
+		try {
+			return shown.frame.contentWindow?.location.href ?? shown.frame.src;
+		} catch {
+			// Not the app's own page: it starts again at its own.
+			return shown.frame.src;
+		}
+	}
+
+	/** 显示方式, as the AI panel's (and Notion's): 侧栏, 悬浮, 全屏, and 新窗口 (a window of the computer's own). */
+	function showLayoutMenu(shown: AppWindow, anchor: HTMLElement): void {
+		const mark = (where: Where) => (shown.where === where ? '✓' : undefined);
+		showContextMenu(
+			[
+				{ label: t('侧栏'), icon: PanelRight, hint: mark('side'), action: () => moveTo(shown, 'side') },
+				{ label: t('悬浮'), icon: PictureInPicture2, hint: mark('float'), action: () => moveTo(shown, 'float') },
+				{ label: t('全屏'), icon: Maximize2, hint: mark('page'), action: () => moveTo(shown, 'page') },
+				'separator',
+				{ label: t('新窗口'), icon: AppWindow, action: () => void popOut(shown) },
+			],
+			anchor,
+		);
 	}
 
 	/**
-	 * 整页 ⇄ 弹出: the window made the page, or the page a floating window; its frame (moved, so loaded again) opened at
+	 * Shown elsewhere: as the 小程序 page, floating, or in the right column. Its frame (moved, so loaded again) opened at
 	 * the address it was at.
 	 */
-	function move(shown: AppWindow): void {
-		let here = shown.frame.src;
-		try {
-			here = shown.frame.contentWindow?.location.href ?? here;
-		} catch {
-			// Not the app's own page: it starts again at its own.
-		}
-		shown.docked = !shown.docked;
-		shown.root.classList.toggle('is-docked', shown.docked);
-		labelSwitch(shown);
-		if (shown.docked) {
+	function moveTo(shown: AppWindow, where: Where): void {
+		if (shown.where === where) return;
+		const here = hereOf(shown);
+		const was = shown.where;
+		shown.where = where;
+		shown.root.classList.toggle('is-docked', where === 'page');
+		shown.root.classList.toggle('is-side', where === 'side');
+		labelLayout(shown);
+		if (was === 'side') host.removeSideTab(sideKey(shown.app.id));
+		if (was === 'page' && current === shown.app.id) present(null);
+		if (where === 'page') {
 			shown.root.removeAttribute('style');
 			stage.append(shown.root);
 			present(shown.app.id);
 			host.showApps();
-		} else {
+		} else if (where === 'float') {
 			const width = Math.max(shown.app.width, ROOMY.width);
 			const height = Math.max(shown.app.height, ROOMY.height);
 			put(shown.root, fitted(readPlaces()[shown.app.id] ?? { left: innerWidth - width - 40, top: 80, width, height }));
 			shown.root.hidden = false;
 			layer.append(shown.root);
 			focus(shown);
-			if (current === shown.app.id) present(null);
+		} else {
+			shown.root.removeAttribute('style');
+			shown.root.hidden = false;
+			host.addSideTab({ key: sideKey(shown.app.id), label: shown.app.name, icon: shown.app.icon, draw: (pane) => void pane.append(shown.root) });
 		}
 		cut(shown);
 		shown.loading = true;
 		shown.loaded = false;
 		shown.frame.src = here;
+	}
+
+	/**
+	 * 新窗口: a window of the computer's own (to another screen, beside other programs), at the page it was at; gone from
+	 * here once the window says it is open (in the Mac app, Studio.app opens it; in a browser, a popup).
+	 */
+	async function popOut(shown: AppWindow): Promise<void> {
+		const width = Math.max(shown.app.width, ROOMY.width);
+		const height = Math.max(shown.app.height, ROOMY.height) + 34;
+		const here = new URL(hereOf(shown), location.href);
+		const address = `/studio/window?app=${encodeURIComponent(shown.app.id)}&at=${encodeURIComponent(here.pathname + here.search + here.hash)}&w=${width}&h=${height}&title=${encodeURIComponent(shown.app.name)}`;
+		const opening = host.opened(`app:${shown.app.id}`);
+		window.open(address, `studio-app-${shown.app.id}`, `popup,width=${width},height=${height}`);
+		if (await opening) close(shown.app.id);
+		else host.toast(t('没能打开新窗口（浏览器拦下了弹出窗口？）'));
 	}
 
 	const home = (app: MiniApp) => `/studio-apps/${encodeURIComponent(app.id)}/`;
@@ -622,10 +680,11 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 	function show(app: MiniApp, entry = '', { floating = false }: { floating?: boolean } = {}): void {
 		const already = open.get(app.id);
 		if (already) {
-			if (already.docked) {
+			if (already.where === 'page') {
 				present(app.id);
 				host.showApps();
-			} else focus(already);
+			} else if (already.where === 'side') host.addSideTab({ key: sideKey(app.id), label: app.name, icon: app.icon, draw: (pane) => void pane.append(already.root) });
+			else focus(already);
 			// A command's page: gone to (its server running, for a project).
 			if (entry && (app.kind === 'page' || already.status?.state === 'running')) {
 				already.entry = entry;
@@ -688,10 +747,10 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		more.className = 'mini-app-more';
 		more.textContent = '⋯';
 		more.title = t('看源码、让 AI 改、检查点');
-		const switcher = document.createElement('button');
-		switcher.type = 'button';
-		switcher.className = 'mini-app-switch';
-		bar.append(more, switcher, reload, shut);
+		const layoutButton = document.createElement('button');
+		layoutButton.type = 'button';
+		layoutButton.className = 'mini-app-layout';
+		bar.append(more, layoutButton, reload, shut);
 		const sheet = document.createElement('div');
 		sheet.className = 'mini-app-sheet';
 		sheet.hidden = true;
@@ -700,8 +759,8 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		frame.title = app.name;
 		// Not sandboxed: the author's own tool, of the Studio's origin (its files load as a page's; `studio` does the rest).
 		frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
-		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false, errors: [], errorBadge, state, status: null, polling: null, sheet, entry, docked: !floating };
-		switcher.addEventListener('click', () => move(shown));
+		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false, errors: [], errorBadge, state, status: null, polling: null, sheet, entry, where: floating ? 'float' : 'page' };
+		layoutButton.addEventListener('click', () => showLayoutMenu(shown, layoutButton));
 		errorBadge.addEventListener('click', () => showErrors(shown));
 		more.addEventListener('click', () => showMenu(shown, more));
 		// Any page loaded after the app's own that is not of the app's is another one: the app followed a link elsewhere.
@@ -718,7 +777,7 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 			return grip;
 		});
 		root.append(bar, frame, sheet, ...grips);
-		labelSwitch(shown);
+		labelLayout(shown);
 		open.set(app.id, shown);
 		if (floating) {
 			layer.append(root);
@@ -763,13 +822,13 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		};
 		// Moved by its bar, kept on screen.
 		bar.addEventListener('pointerdown', (event) => {
-			if (shown.docked || (event.target as Element).closest('button')) return;
+			if (shown.where !== 'float' || (event.target as Element).closest('button')) return;
 			drag(bar, event, (start, dx, dy) => fitted({ ...start, left: start.left + dx, top: start.top + dy }));
 		});
 		// Sized from any edge or corner: the opposite sides stay where they are.
 		for (const grip of grips) {
 			const edge = grip.dataset.edge ?? '';
-			grip.addEventListener('pointerdown', (event) => !shown.docked && drag(grip, event, (start, dx, dy) => {
+			grip.addEventListener('pointerdown', (event) => shown.where === 'float' && drag(grip, event, (start, dx, dy) => {
 				const right = start.left + start.width;
 				const bottom = start.top + start.height;
 				let { left, top, width, height } = start;
@@ -787,7 +846,7 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 			}));
 		}
 		bar.addEventListener('dblclick', (event) => {
-			if (shown.docked || (event.target as Element).closest('button')) return;
+			if (shown.where !== 'float' || (event.target as Element).closest('button')) return;
 			if (enlarged) {
 				put(root, fitted(enlarged));
 				enlarged = null;
@@ -975,13 +1034,19 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 
 	return {
 		notesChanged,
+		/** What a 小程序 in a window of its own asks (windows/window-main.ts), answered as one here would be. */
+		async answerFor(id: string, method: string, args: unknown[]): Promise<unknown> {
+			const app = (await listMiniApps()).find((candidate) => candidate.id === id);
+			if (!app || app.problem) throw new Error(t('没有小程序「{id}」', { id }));
+			return answer(app, method, args, null);
+		},
 		/** 新建小程序…: its name and template asked, then made. */
 		create(): void {
 			openDialog('newApp', { done: (asked) => asked && void makeApp(asked.name, asked.template) });
 		},
 		/** The 小程序 page come to: the app left open there, or their list. */
 		shown(): void {
-			present(current && open.get(current)?.docked ? current : null);
+			present(current && open.get(current)?.where === 'page' ? current : null);
 		},
 		/** Their list, on the 小程序 page (what is open there stays open). */
 		list(): void {

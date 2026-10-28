@@ -208,3 +208,33 @@ test('显示方式 › 悬浮: the AI panel floats over the Studio, moved by its
 	await expect(page.locator('#side-panel #side-ai')).toBeVisible();
 	await expect(page.locator('#side-tab-ai')).toHaveAttribute('aria-selected', 'true');
 });
+
+test('显示方式 › 新窗口: the AI in a window of its own, told of the article open, answering there; back here once it shuts', async ({ page }) => {
+	await openStudio(page);
+	await page.locator('#side-tab-ai').click();
+	const side = page.locator('#side-ai');
+	await side.locator('.ai-input .ProseMirror').fill('几块 侧边');
+	await side.locator('.ai-input .ProseMirror').press('Enter');
+	await expect(side.locator('.ai-message .ai-block')).toHaveCount(4);
+
+	const popup = page.waitForEvent('popup');
+	await side.getByRole('button', { name: '显示方式' }).click();
+	await page.getByRole('menuitem', { name: /^新窗口/u }).click();
+	const own = await popup;
+	expect(new URL(own.url()).pathname).toBe('/studio/window');
+	// Gone from the Studio meanwhile; the same conversation there, told of the article open here.
+	await expect(page.locator('#side-tab-ai')).toBeHidden();
+	await expect(side).toBeHidden();
+	const there = own.locator('.ai-pane');
+	await expect(there.locator('.ai-user .ai-bubble')).toHaveText('几块 侧边');
+	await expect(there.locator('.ai-context')).toContainText('Studio 测试夹具');
+	await there.locator('.ai-input .ProseMirror').fill('接着说');
+	await there.locator('.ai-input .ProseMirror').press('Enter');
+	await expect(there.locator('.ai-message').last()).toHaveText('结论是这样的。');
+
+	// Shut: back in the side, the conversation as it went on.
+	await own.close();
+	await expect(page.locator('#side-tab-ai')).toBeVisible();
+	await page.locator('#side-tab-ai').click();
+	await expect(side.locator('.ai-message').last()).toHaveText('结论是这样的。');
+});

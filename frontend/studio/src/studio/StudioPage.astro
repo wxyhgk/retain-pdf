@@ -523,6 +523,11 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.mini-app-window.is-docked .mini-app-grip) { display: none; }
 	:global(.mini-app-window.is-docked .mini-app-sheet) { inset: 40px 0 0; }
 	:global(.mini-app-window:not(.is-docked) .mini-app-back) { display: none; }
+	/* 显示方式 › 侧栏: filling its tab in the right column, as the page does the middle. */
+	:global(.mini-app-window.is-side) { position: relative; flex: 1; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
+	:global(.mini-app-window.is-side .mini-app-bar) { cursor: default; }
+	:global(.mini-app-window.is-side .mini-app-grip) { display: none; }
+	:global(.own-pane) { display: flex; flex-direction: column; }
 	:global(.mini-app-bar button.mini-app-back) { width: auto; padding: 0 8px; font-size: 13px; }
 	:global(.mini-app-window) { position: absolute; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-modal); pointer-events: auto; }
 	:global(.mini-app-bar) { display: flex; flex: none; gap: 4px; align-items: center; height: 32px; padding: 0 6px 0 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); font-size: 12px; cursor: grab; user-select: none; touch-action: none; }
