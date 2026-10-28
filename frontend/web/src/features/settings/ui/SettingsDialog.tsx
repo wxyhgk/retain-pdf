@@ -21,7 +21,7 @@
 // 与本组件是否挂载无关。
 
 import { useEffect, useState } from "react";
-import { IconKey, IconBook, IconSync, IconChart, IconArchive, IconPalette, IconUpdate, IconUser, IconUsers } from "./settings-icons.jsx";
+import { IconKey, IconBook, IconSync, IconChart, IconArchive, IconBell, IconPalette, IconUpdate, IconUser, IconUsers } from "./settings-icons.jsx";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import {
   Dialog,
@@ -54,6 +54,7 @@ const TABS = [
   { id: "usage", label: "总用量", Icon: IconChart },
   { id: "sync", label: "同步", Icon: IconSync },
   { id: "backup", label: "备份", Icon: IconArchive },
+  { id: "notify", label: "通知", Icon: IconBell },
   { id: "appearance", label: "外观", Icon: IconPalette },
   { id: "update", label: "更新", Icon: IconUpdate },
 ];
@@ -66,6 +67,7 @@ const PANE_HEADS = {
   usage: { title: "总用量", desc: "全部书花掉的模型 token，按月、按模型、按环节。" },
   sync: { title: "同步", desc: "通过一个网盘文件夹，在几台电脑之间同步书库、译文和阅读进度。" },
   backup: { title: "备份", desc: "书库数据库每天自动备份，出问题时可以恢复到之前的某一天。" },
+  notify: { title: "通知", desc: "翻译、识别跑完（成功或失败）时提醒你，不用一直盯着页面。只对这台电脑、这个浏览器有效。" },
   appearance: { title: "外观", desc: "选择界面配色，立即生效并记住本机选择。" },
   update: { title: "更新", desc: "查看当前版本，并从 GitHub Releases 重新检查更新。" },
 };
@@ -105,6 +107,8 @@ export type SettingsDialogProps = {
   backupPanelSlot?: React.ReactNode | null;
   /** 「总用量」分栏的内容（由 HomeApp 注入 UsageSettingsPanel）。 */
   usagePanelSlot?: React.ReactNode | null;
+  /** 「通知」分栏的内容（由 HomeApp 注入 NotifySettingsPanel；不给就不出现）。 */
+  notifyPanelSlot?: React.ReactNode | null;
   /** 多用户模式的「账户」「账号管理」分栏（不给就不出现，单机模式不给）。 */
   accountPanelSlot?: React.ReactNode | null;
   adminPanelSlot?: React.ReactNode | null;
@@ -122,6 +126,7 @@ export function SettingsDialog({
   syncPanelSlot = null,
   backupPanelSlot = null,
   usagePanelSlot = null,
+  notifyPanelSlot = null,
   accountPanelSlot = null,
   adminPanelSlot = null,
   hiddenTabs = [],
@@ -130,6 +135,7 @@ export function SettingsDialog({
     !hiddenTabs.includes(id)
     && (id !== "account" || accountPanelSlot)
     && (id !== "admin" || adminPanelSlot)
+    && (id !== "notify" || notifyPanelSlot)
   ));
   // 要打开的分栏被藏了（比如普通用户点到「接口设置」），就落到第一个能看的分栏。
   const pickTab = (requested?: string) => (
@@ -294,6 +300,13 @@ export function SettingsDialog({
                   <PaneHead tab="usage" />
                   {activeTab === "usage" ? usagePanelSlot : null}
                 </TabsPrimitive.Content>
+
+                {notifyPanelSlot ? (
+                  <TabsPrimitive.Content value="notify" forceMount hidden={activeTab !== "notify"} className={panelClass("notify")} data-settings-panel="notify">
+                    <PaneHead tab="notify" />
+                    {activeTab === "notify" ? notifyPanelSlot : null}
+                  </TabsPrimitive.Content>
+                ) : null}
 
                 <TabsPrimitive.Content
                   value="appearance"

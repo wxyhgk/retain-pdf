@@ -18,7 +18,6 @@ import {
   HomeShellProviders,
   HomeTabsProvider,
   useHomeTabs,
-  useHomeAppUpdate,
   useHomeBookDetail,
   useHomeCollections,
   useHomeCredentials,
@@ -31,30 +30,23 @@ import type { HomeServices } from "./composition/types.js";
 import { AppTopBar } from "./shell/AppTopBar.jsx";
 import { AppBottomBar, HOME_TASK_CENTER_OPEN_EVENT } from "./shell/AppBottomBar.jsx";
 import { MockModeBanner } from "./shell/MockModeBanner.jsx";
+import { SettingsDialogSlot } from "./shell/SettingsDialogSlot.jsx";
 import { IngestDialog, IngestServicesProvider, IngestWorkflowViewProvider } from "@/features/ingest/index.js";
 import {
   LibraryServicesProvider,
   RecentJobsLibrary,
   useLibraryServices,
 } from "@/features/library/index.js";
-import { AppUpdateBanner } from "@/features/app-update/index.js";
 import { GlossariesDialog } from "@/features/glossaries/index.js";
 import {
   CredentialsProvider,
-  CredentialsWorkbench,
   HiddenCredentialInputs,
 } from "@/features/credentials/index.js";
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
-import { SettingsDialog } from "@/features/settings/index.js";
-import { BackupPanel } from "@/features/backup/index.js";
-import { SyncSettingsPanel } from "@/features/sync/index.js";
-import { UsageSettingsPanel } from "@/features/usage/index.js";
-import { AdminConsoleEntry } from "@/features/admin/index.js";
-import { AccountPanel, AuthSessionProvider, hiddenSettingsTabs, isAdmin, isMultiUser, useAuthSession, useVisibleHomeTab } from "@/features/auth/index.js";
+import { JobFinishNotifier, type FinishedJob } from "@/features/notify/index.js";
+import { AuthSessionProvider, useVisibleHomeTab } from "@/features/auth/index.js";
 import type { AuthSessionView } from "@retainpdf/api/auth";
-import { useAppEvent } from "@/ui/hooks/use-app-event.js";
 import { APP_EVENTS } from "@/platform/contracts/app-contract.js";
-import { CREDENTIAL_DOM_IDS } from "@/features/credentials/ui/credentials-dom-ids.js";
 import { StatusDetailDialog } from "@/features/job-detail/index.js";
 import { ReaderNavigation, SoftReaderHost } from "@/features/reader/index.js";
 import {
@@ -134,11 +126,6 @@ function HomeTabsRoot({ children }: { children: ReactNode }) {
 // 由页面在这里把自己的服务上下文接到功能的 props 上。功能因此可以被
 // detail/reader 或测试独立复用。每迁入一个功能就在这里加一个对应的 Slot。
 
-function AppUpdateBannerSlot() {
-  const appUpdate = useHomeAppUpdate();
-  return <AppUpdateBanner view={appUpdate.view} handlersRef={appUpdate.handlersRef} />;
-}
-
 function CollectionsViewSlot() {
   const collections = useHomeCollections();
   const library = useLibraryServices();
@@ -191,40 +178,19 @@ function BookDetailDialogSlot() {
   );
 }
 
-function SettingsDialogSlot() {
-  const settingsHub = useHomeSettingsHub();
-  const glossaries = useHomeGlossaries();
-  const credentials = useHomeCredentials();
-  const session = useAuthSession();
-  const multi = isMultiUser(session);
-  const admin = isAdmin(session);
-
-  // 「打开接口设置」只有这一个落点了。首次配置门曾经另开一个独立弹窗
-  // （CredentialsDialog），于是同一件事有两个长得不一样的壳；现在两条路都是
-  // 本弹窗停在 api tab，区别只在 payload.setupMode。
-  useAppEvent(APP_EVENTS.openBrowserCredentials, (event) => {
-    const detail = event?.detail || {};
-    settingsHub?.dialogStore?.open?.({ tab: "api", setupMode: Boolean(detail.setupMode) });
-  });
-
-  return (
-    <SettingsDialog
-      dialogStore={settingsHub.dialogStore}
-      onOpenGlossaries={() => glossaries.dialogStore.open()}
-      onPrepareCredentialPanels={(options) => (multi ? undefined : credentials?.feature?.prepareCredentialsPanels?.(options))}
-      credentialsWorkbenchSlot={multi ? <AdminConsoleEntry section="platform" /> : <CredentialsWorkbench />}
-      apiPaneSetupHintSlot={
-        <p id={CREDENTIAL_DOM_IDS.browser.subtitle} className="muted">先配好接口再开始</p>
-      }
-      appUpdateBannerSlot={<AppUpdateBannerSlot />}
-      syncPanelSlot={<SyncSettingsPanel />}
-      backupPanelSlot={<BackupPanel />}
-      usagePanelSlot={<UsageSettingsPanel />}
-      accountPanelSlot={multi ? <AccountPanel /> : null}
-      adminPanelSlot={multi && admin ? <AdminConsoleEntry /> : null}
-      hiddenTabs={hiddenSettingsTabs(session)}
-    />
-  );
+// 任务跑完的提醒：点「去阅读」进阅读器，失败的点「查看」打开书籍详情（和点网格卡片同一条路）。
+function JobFinishNotifierSlot() {
+  const library = useLibraryServices();
+  const openJob = useCallback((job: FinishedJob) => {
+    if (job.status === "succeeded") {
+      globalThis.document.dispatchEvent(new globalThis.CustomEvent(APP_EVENTS.openReaderRequested, {
+        detail: { jobId: job.jobId, pageIdx: null, blockId: "" },
+      }));
+      return;
+    }
+    library.actions.openBookDetail({ job_id: job.jobId, status: "failed" });
+  }, [library]);
+  return <JobFinishNotifier onOpenJob={openJob} />;
 }
 
 function GlossariesDialogSlot() {
@@ -330,6 +296,7 @@ function HomeShell() {
           收藏等处的 toast.success/error 都经它渲染——TaskCenter 不自带 Toaster，
           挂载在 HomeApp 下即接入现有宿主，不另起第二个（sonner 双宿主会重影）。 */}
       <DownloadToastHost />
+      <JobFinishNotifierSlot />
     </>
   );
 }

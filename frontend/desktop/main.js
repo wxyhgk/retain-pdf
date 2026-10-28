@@ -143,6 +143,11 @@ const {
   showExistingDesktopWindow,
 } = desktopWindows;
 
+// Windows 上系统通知要认得出是哪个程序发的（和 package.json 的 build.appId 一致），不设就不弹。
+if (process.platform === "win32") {
+  app.setAppUserModelId("com.wxyhgk.retainpdf");
+}
+
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
   app.quit();

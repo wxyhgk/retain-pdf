@@ -55,6 +55,8 @@ export interface DesktopHost {
   openOutputDirectory(): DesktopIpcResult;
   /** 在访达 / 资源管理器里打开数据库备份所在的文件夹。 */
   openBackupDirectory(): DesktopIpcResult;
+  /** 把主窗口拿到前面来（缩在托盘、最小化、被别的窗口挡住都算）。点系统通知时用。 */
+  focusWindow(): DesktopIpcResult;
   /** 命令行工具 retainpdf：包里有没有、装到了哪里。 */
   cliStatus(): Promise<{ available: boolean; installedAt: string; supported: boolean }>;
   /** 把 retainpdf 链接到终端找得到的地方。 */
@@ -124,6 +126,9 @@ function resolveDesktopHost(): DesktopHost | null {
     },
     openBackupDirectory() {
       return invokeAdapter!.invoke("open_backup_directory");
+    },
+    focusWindow() {
+      return invokeAdapter!.invoke("focus_window");
     },
     async cliStatus() {
       const result = await invokeAdapter!.invoke("cli_status");

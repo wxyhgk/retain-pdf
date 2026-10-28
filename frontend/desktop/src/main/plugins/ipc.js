@@ -1,4 +1,4 @@
-// 渲染进程 → 主进程的 IPC：桌面配置、打开目录、命令行工具、选文件夹，以及渲染进程报错。
+// 渲染进程 → 主进程的 IPC：桌面配置、打开目录、命令行工具、选文件夹、把窗口拿到前面，以及渲染进程报错。
 // 不依赖别的服务，插件树一建好就注册；dispose 时撤掉。
 const fs = require("fs");
 const path = require("path");
@@ -23,7 +23,7 @@ function createIpcPlugin({
     }
   }
 
-  async function invoke(_event, command, args = {}) {
+  async function invoke(event, command, args = {}) {
     switch (command) {
       case "load_desktop_config": {
         const config = loadDesktopConfig();
@@ -57,6 +57,15 @@ function createIpcPlugin({
           properties: ["openDirectory", "createDirectory"],
         });
         return { path: result.canceled ? null : (result.filePaths[0] || null) };
+      }
+      case "focus_window": {
+        // 点「任务跑完」的系统通知：窗口可能缩在托盘、最小化了，或者被别的窗口挡着。
+        const win = BrowserWindow.fromWebContents(event.sender);
+        if (!win || win.isDestroyed()) return { ok: false };
+        if (win.isMinimized()) win.restore();
+        win.show();
+        win.focus();
+        return { ok: true };
       }
       default:
         throw new Error(`unsupported desktop command: ${command}`);

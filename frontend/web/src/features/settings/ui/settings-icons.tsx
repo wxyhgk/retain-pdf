@@ -81,3 +81,11 @@ export function IconUsers(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+export function IconBell(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
+      <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5l1.5-2Z" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" />
+      <path d="M10 20.5a2.2 2.2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
