@@ -124,11 +124,35 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		resizer.setPointerCapture(event.pointerId);
 		shell.classList.add('is-resizing');
 		const right = shell.getBoundingClientRect().right;
-		const move = (moveEvent: PointerEvent) => update({ width: clampWidth(right - moveEvent.clientX) }, false);
+		// While dragged, what is in the middle keeps its width (shown more or less of, not laid out again: an article's
+		// formulas laid out again at each step took half a second each); laid out once, let go.
+		const held = [...shell.querySelectorAll<HTMLElement>('.editor-scroll, .chat-view')].filter((element) => element.offsetWidth > 0);
+		for (const element of held) {
+			const width = `${element.offsetWidth}px`;
+			const height = `${element.offsetHeight}px`;
+			// Its size fixed and its layout its own: what changes around it does not reach in.
+			Object.assign(element.style, { width, minWidth: width, maxWidth: width, height, minHeight: height, maxHeight: height, contain: 'strict' });
+		}
+		// Only the width, once a frame: the panel's tabs and the shell's state once it is let go.
+		let wanted = layout.width;
+		let frame = 0;
+		const move = (moveEvent: PointerEvent) => {
+			wanted = clampWidth(right - moveEvent.clientX);
+			// The columns themselves, not --panel-width: a custom property is inherited, so changing it has the style of
+			// every element of the page worked out again (thousands, in an article with formulas: half a second a step).
+			frame ||= requestAnimationFrame(() => {
+				frame = 0;
+				layout.width = wanted;
+				shell.style.gridTemplateColumns = `var(--sidebar) minmax(0, 1fr) ${wanted}px`;
+			});
+		};
 		const end = () => {
 			resizer.removeEventListener('pointermove', move);
+			cancelAnimationFrame(frame);
+			for (const element of held) Object.assign(element.style, { width: '', minWidth: '', maxWidth: '', height: '', minHeight: '', maxHeight: '', contain: '' });
 			shell.classList.remove('is-resizing');
-			writeLayout(layout);
+			shell.style.gridTemplateColumns = '';
+			update({ width: wanted });
 		};
 		resizer.addEventListener('pointermove', move);
 		resizer.addEventListener('pointerup', end, { once: true });

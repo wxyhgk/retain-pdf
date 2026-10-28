@@ -44,6 +44,9 @@ export function fitFormula(display: HTMLElement): void {
  * laid out (content-visibility). They are found by halving their list, in page order (not watched one by one: the
  * browser would work out where each of thousands is at every frame of a scroll). Returns what stops it.
  */
+/** How long a width stays unchanged before the formulas are fitted to it, in ms. */
+const SETTLE = 150;
+
 export function keepFormulasFitted(root: HTMLElement): () => void {
 	let width = root.clientWidth;
 	/** The formulas, in page order; null when they changed and are to be listed again. */
@@ -84,10 +87,14 @@ export function keepFormulasFitted(root: HTMLElement): () => void {
 		fitted = new WeakSet();
 		soon();
 	};
+	// Fitted again once the width has settled: fitting each measures it, which lays out the page each time, so at every
+	// step of a resize (a panel dragged, the window sized) it would take half a second.
+	let settling = 0;
 	const resized = new ResizeObserver(() => {
 		if (root.clientWidth === width) return;
 		width = root.clientWidth;
-		again();
+		clearTimeout(settling);
+		settling = window.setTimeout(again, SETTLE);
 	});
 	resized.observe(root);
 	// A formula drawn (or drawn again, as it is edited); not the size this sets, which changes no nodes.
@@ -106,6 +113,7 @@ export function keepFormulasFitted(root: HTMLElement): () => void {
 	void document.fonts?.ready.then(again);
 	return () => {
 		cancelAnimationFrame(frame);
+		clearTimeout(settling);
 		resized.disconnect();
 		added.disconnect();
 		document.removeEventListener('scroll', soon, { capture: true });
