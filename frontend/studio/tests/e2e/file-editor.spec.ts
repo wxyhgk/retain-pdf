@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 
-import { appendToFixture, blockSheet, editor, openSettings, openStudio, resetFixture, slug, writeFixtureFile } from './studio.ts';
+import { appendToFixture, blockSheet, editor, openSettings, openStudio, resetFixture, sheetTab, slug, writeFixtureFile } from './studio.ts';
 
 // A text file of the article (a script, data) read and changed in the Studio (files/file-editor.ts): from its block in
 // the article (编辑, a double-click) and from the 文件 tab; saved back to the file, its preview drawn again.
@@ -95,4 +95,39 @@ test('a text file in the 文件 tab opens in the Studio to edit, not in a browse
 	const opened = asked(page, 'open');
 	await page.getByRole('menuitem', { name: '用默认程序打开' }).click();
 	expect(await opened).toBe('assets/run.sh');
+});
+
+test('a file written over keeps what it was: 历史版本 shows it, 恢复这个版本 brings it back (what was there kept too)', async ({ page }) => {
+	writeFixtureFile('assets/opt.py', 'v1\n');
+	appendToFixture('\n见 [opt.py](./assets/opt.py)。\n');
+	await openStudio(page);
+	await editor(page).getByRole('link', { name: 'opt.py' }).click();
+	await expect(code(page)).toContainText('v1');
+	await code(page).click();
+	await page.keyboard.press('ControlOrMeta+End');
+	await page.keyboard.type('v2');
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(blockSheet(page).locator('.file-editor-status')).toHaveText('已保存');
+	expect(onDisk('assets/opt.py')).toBe('v1\nv2');
+
+	await sheetTab(page, '历史版本').click();
+	const rows = blockSheet(page).locator('.file-history-row');
+	await expect(rows).toHaveCount(1);
+	await expect(rows.first()).toContainText('被覆盖前');
+	await expect(blockSheet(page).locator('.file-history-text')).toHaveText('v1\n');
+	await blockSheet(page).getByRole('button', { name: '恢复这个版本' }).click();
+	await expect.poll(() => onDisk('assets/opt.py')).toBe('v1\n');
+	// What was there before is a version now too; the editor shows the file as it is.
+	await expect(rows).toHaveCount(2);
+	await expect(rows.first()).toContainText('恢复别的版本前');
+	await sheetTab(page, '文件').click();
+	await expect(code(page)).not.toContainText('v2');
+});
+
+test('a file not edited here has its history from the 文件 tab’s menu', async ({ page }) => {
+	writeFixtureFile('assets/paper.pdf', '%PDF-1.4\n');
+	await openStudio(page);
+	await page.locator('#file-tree .file-row[data-path="assets/paper.pdf"]').click({ button: 'right' });
+	await page.getByRole('menuitem', { name: '历史版本…' }).click();
+	await expect(blockSheet(page)).toContainText('还没有历史版本');
 });

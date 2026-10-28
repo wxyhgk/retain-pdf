@@ -258,6 +258,23 @@ export function trashArticleFile(slug: string, path: string): Promise<{ path: st
 	return request(articleApi(slug, 'trash'), jsonOptions('POST', { path }));
 }
 
+/** An earlier version of a file of the article, kept before it was written over (file-history.mjs). */
+export type FileVersion = { id: string; time: number; reason: 'replaced' | 'before-restore'; size: number };
+
+export function articleFileHistory(slug: string, path: string): Promise<{ versions: FileVersion[] }> {
+	return request(`${articleApi(slug, 'file-history')}?path=${encodeURIComponent(path)}`);
+}
+
+/** One version's text (null when it is not text, or too large to show). */
+export function articleFileVersion(slug: string, id: string, path: string): Promise<{ text: string | null; size: number }> {
+	return request(`${articleApi(slug, 'file-history')}/${encodeURIComponent(id)}?path=${encodeURIComponent(path)}`);
+}
+
+/** A version brought back over the file (what is there kept first). */
+export function restoreArticleFileVersion(slug: string, id: string, path: string): Promise<{ path: string }> {
+	return request(`${articleApi(slug, 'file-history')}/restore`, jsonOptions('POST', { id, path }));
+}
+
 /** Opens the file with the system's program for it (as a double-click in Finder does). */
 export function openArticleFileInApp(slug: string, path: string): Promise<{ path: string }> {
 	return request(articleApi(slug, 'open'), jsonOptions('POST', { path }));

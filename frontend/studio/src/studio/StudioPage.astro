@@ -52,7 +52,7 @@ const articles = await new ArticleRepository(blogRoot).list().catch(() => []);
 // The page header as it is before an article is shown (its fields waiting); the page's script draws it from then on.
 const header = createHeaderState({ changed: () => null, mayPublish: async () => false, publish() {}, leaveTitle() {}, fileUrl: (src) => src, pictures: async () => [], upload: async () => '' });
 // The 文件 tab as it is with no article open; the page's script draws it from then on.
-const files = createFilePanelState({ source: () => '', revision: () => '', settle: async () => {}, moved: async () => {}, insertMarkdown() {}, viewOffice() {}, editFile() {}, openFile() {}, sheetRows: async () => [], ocr() {} });
+const files = createFilePanelState({ source: () => '', revision: () => '', settle: async () => {}, moved: async () => {}, insertMarkdown() {}, viewOffice() {}, editFile() {}, openFile() {}, fileHistory() {}, sheetRows: async () => [], ocr() {} });
 const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(await Promise.all(articles.map(async ({ slug }) => [slug, await pageVersion(blogRoot, slug)]))) };
 ---
 
@@ -446,6 +446,17 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.file-editor .cm-scroller) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.6; }
 	:global(.file-editor-note) { margin: 48px auto; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
 	:global(.file-editor-status) { align-self: center; margin-right: 6px; color: rgb(var(--gray)); font-size: 12px; }
+	/* A file's earlier versions (file-history-view.ts): the list on the left, the one chosen beside it. */
+	:global(.block-sheet-body .file-history) { display: grid; height: 100%; min-height: 0; grid-template-columns: 220px minmax(0, 1fr); }
+	:global(.file-history > .file-editor-note) { grid-column: 1 / -1; }
+	:global(.file-history-list) { margin: 0; padding: 6px; overflow-y: auto; border-right: 1px solid var(--studio-hairline); list-style: none; }
+	:global(.file-history-row) { display: grid; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+	:global(.file-history-row small) { color: rgb(var(--gray)); font-size: 11px; }
+	:global(.file-history-row:hover), :global(.file-history-row[aria-current]) { background: var(--studio-fill-2); }
+	:global(.file-history-shown) { display: flex; min-width: 0; min-height: 0; flex-direction: column; }
+	:global(.file-history-head) { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--studio-hairline); color: rgb(var(--gray)); font-size: 12px; }
+	:global(.file-history-restore) { padding: 4px 10px; border: 1px solid currentColor; border-radius: 6px; background: none; color: rgb(var(--black)); font: inherit; font-size: 12px; cursor: pointer; }
+	:global(.file-history-text) { flex: 1; margin: 0; padding: 12px 14px; overflow: auto; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; white-space: pre; }
 	/* The AI panel floating over the Studio (Notion's floating AI chat): under the menus (z 50), moved by its bar. */
 	.ai-float { position: fixed; z-index: 45; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: var(--studio-shadow-modal); }
 	.ai-float[hidden] { display: none; }

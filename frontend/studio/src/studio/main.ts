@@ -63,6 +63,8 @@ import { openDialog } from './shell/dialogs/Dialogs';
 import { confirmPublish, createQuickFind, openAgents, openSettings, providePlugins } from './shell/dialogs/ask';
 import { answerWindows } from './windows/studio-line';
 import { openFileEditor } from './files/file-editor';
+import { openFileHistory } from './files/file-history-view';
+import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
 import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
@@ -273,14 +275,31 @@ const miniApps = createMiniApps(appsView, shell.querySelector<HTMLElement>('#min
 });
 
 /** A text file of the article open (a script, an input, data) to read and change; its previews drawn again once saved. */
-function editArticleFile(path: string): void {
+function editArticleFile(path: string, initial?: 'history'): void {
 	if (!session.slug) return;
 	openFileEditor({
 		slug: session.slug,
 		path,
+		initial,
 		toast: (message, error) => showToast(message, error),
 		saved(changed) {
 			editor.redrawCodeFile(changed);
+			void filePanel.refresh();
+		},
+	});
+}
+
+/** A file's earlier versions (kept before it was written over): in its editor's 历史版本 tab, or alone for a file not edited here. */
+function showFileHistory(path: string): void {
+	const slug = session.slug;
+	if (!slug) return;
+	if (textFileLanguage(path)) return editArticleFile(path, 'history');
+	openFileHistory({
+		slug,
+		path,
+		toast: (message, error) => showToast(message, error),
+		restored() {
+			editor.redrawCodeFile(path);
 			void filePanel.refresh();
 		},
 	});
@@ -333,6 +352,7 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	viewOffice: (url, name) => void openOfficeFile(url, name),
 	editFile: (path) => editArticleFile(path),
 	openFile: (path) => openArticleFile(path),
+	fileHistory: (path) => showFileHistory(path),
 	sheetRows: firstSheetRows,
 	ocr: (path) => void editorAi.ocrPdf(path),
 });

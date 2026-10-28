@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { lstat } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
 import { basename, isAbsolute, resolve } from 'node:path';
 import { openWithDefaultApp, revealInFileManager } from '../system/reveal.mjs';
 import { refuse, reply, sendFile } from '../api.mjs';
@@ -73,6 +73,22 @@ export function articleFileRoutes(api, { files, manager, articleFiles, drive, te
 		// Browser tests must not open programs on the machine running them.
 		if (!testing.blog) await openWithDefaultApp(absolute);
 		return { path };
+	});
+
+	// A file's earlier versions (file-history.mjs): the list, one's text, one brought back (what is there kept first).
+	api.get('/articles/:slug/file-history', async ({ params, query }) => ({ versions: await manager.history.list(params.slug, query.get('path') ?? '') }));
+	api.get('/articles/:slug/file-history/:id', async ({ params, query }) => {
+		const kept = await manager.history.version(params.slug, params.id, query.get('path') ?? '');
+		const info = await lstat(kept);
+		if (info.size > 2 * 1024 * 1024) return { text: null, size: info.size };
+		const bytes = await readFile(kept);
+		return { text: bytes.includes(0) ? null : bytes.toString('utf8'), size: info.size };
+	});
+	api.post('/articles/:slug/file-history/restore', async ({ params, json }) => {
+		const { id, path } = await json();
+		const kept = await manager.history.version(params.slug, id, path);
+		const folder = String(path).split('/').slice(0, -1).join('/');
+		return manager.upload(params.slug, folder, basename(String(path)), createReadStream(kept), { replace: true, keepAs: 'before-restore' });
 	});
 
 	// What is in the trash, and deleting something in it for good.

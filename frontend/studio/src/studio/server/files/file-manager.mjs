@@ -7,6 +7,7 @@ import { Transform } from 'node:stream';
 import { articleBundlePaths, resolveInside, StudioPathError } from '../../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, isLocalOnly } from '@blog/markdown/articles/rules.mjs';
 import { articleSummary } from '../../../articles/schemas.mjs';
+import { ArticleFileHistory } from './file-history.mjs';
 import { existingDirectory, existingEntry, exists, FileConflictError, FileNotFoundError, linkUnderFreeName, replaceInto } from './safe-fs.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -32,6 +33,8 @@ export const TRASH_FOLDER = '.studio-trash';
 export class ArticleFileManager {
 	constructor(blogRoot, { trashRoot = resolve(blogRoot, '..', TRASH_FOLDER), uploadSizeLimit = DEFAULT_UPLOAD_SIZE_LIMIT } = {}) {
 		this.blogRoot = resolve(blogRoot);
+		/** What a file was before it was written over (file-history.mjs). */
+		this.history = new ArticleFileHistory(this.blogRoot);
 		this.trashRoot = resolve(trashRoot);
 		this.uploadSizeLimit = uploadSizeLimit;
 	}
@@ -71,9 +74,10 @@ export class ArticleFileManager {
 	 * name is made safe first; an existing file keeps its place and the upload
 	 * gets a numbered name, unless `replace` is set. `subfolders` are the
 	 * folders a dropped folder brought along (`['My Data', 'run 1']`); they are
-	 * made safe the same way and made inside `folder` when missing.
+	 * made safe the same way and made inside `folder` when missing. A file
+	 * written over is kept first in the article's file history, as `keepAs`.
 	 */
-	async upload(slug, folder, name, body, { replace = false, subfolders = [] } = {}) {
+	async upload(slug, folder, name, body, { replace = false, subfolders = [], keepAs = 'replaced' } = {}) {
 		const { directory } = await this.#article(slug);
 		const target = managedSegments(folder, { allowFolderRoot: true });
 		const segments = [...target, ...subfolders.map(safeFolderName)];
@@ -94,6 +98,7 @@ export class ArticleFileManager {
 				}),
 				createWriteStream(temporary, { flags: 'wx' }),
 			);
+			if (replace && ['img', 'assets'].includes(segments[0])) await this.history.keep(slug, [...segments, fileName].join('/'), join(folderPath, fileName), keepAs);
 			const target = replace
 				? await replaceInto(temporary, folderPath, fileName)
 				: await linkUnderFreeName(temporary, folderPath, fileName);

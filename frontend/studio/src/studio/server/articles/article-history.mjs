@@ -46,12 +46,12 @@ class HistoryError extends Error {
 }
 
 /** `2026-10-17T14-03-22-123` for a moment: sorts as it reads, and is a file name everywhere. */
-function stamp(date) {
+export function stamp(date) {
 	return date.toISOString().replace(/\.(\d{3})Z$/u, '-$1').replaceAll(':', '-');
 }
 
 /** The moment back from a stamp. */
-function stampTime(text) {
+export function stampTime(text) {
 	const [, date, hour, minute, second, ms] = /^(.+)T(\d{2})-(\d{2})-(\d{2})-(\d{3})$/u.exec(text) ?? [];
 	return Date.parse(`${date}T${hour}:${minute}:${second}.${ms}Z`);
 }

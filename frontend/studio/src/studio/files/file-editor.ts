@@ -9,6 +9,7 @@ import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
 import { t } from '@blog/i18n/index.mjs';
 import { openBlockSheet } from '@blog/ui/block-sheet.ts';
 import { openArticleFileInApp, uploadArticleFile } from '../api/client';
+import { drawFileHistory } from './file-history-view';
 import { codeFileLanguageDescriptions } from '../editor/code-files';
 
 /** A file larger is shown, not edited (an editor of tens of MB is no use). */
@@ -19,7 +20,7 @@ const LARGEST = 2 * 1024 * 1024;
  * language coloured; ⌘S or 保存 writes it back, and so does closing it with changes not saved (nothing is lost). Opened
  * from a code-file block (编辑, a double-click) and from the 文件 tab. `saved` is told once the file is written.
  */
-export function openFileEditor({ slug, path, saved, toast }: { slug: string; path: string; saved?(path: string): void; toast(message: string, error?: boolean): void }): void {
+export function openFileEditor({ slug, path, saved, toast, initial }: { slug: string; path: string; saved?(path: string): void; toast(message: string, error?: boolean): void; initial?: 'file' | 'history' }): void {
 	const name = path.split('/').pop() ?? path;
 	let view: EditorView | null = null;
 	/** The text as the file has it now (saved). */
@@ -60,31 +61,61 @@ export function openFileEditor({ slug, path, saved, toast }: { slug: string; pat
 					note.textContent = t('正在读 {path}…', { path });
 					panel.append(note);
 					void read(panel, note);
-					// Esc closes it, heard before anything else on the page (some of which take Esc for their own, and then the
-					// dialog would not close); the editor's own first: a completion or the search open is closed by it.
-					const escape = (event: KeyboardEvent) => {
-						if (event.key !== 'Escape' || event.isComposing) return;
-						if (view?.dom.querySelector('.cm-tooltip-autocomplete, .cm-search')) return;
-						event.preventDefault();
-						event.stopPropagation();
-						sheet.close();
-					};
-					window.addEventListener('keydown', escape, true);
 					return () => {
-						window.removeEventListener('keydown', escape, true);
 						// Closed with changes: written, not lost.
 						if (changed()) void save();
 						view?.destroy();
+						view = null;
 					};
 				},
 			},
+			{
+				key: 'history',
+				label: t('历史版本'),
+				wide: true,
+				draw: (panel) =>
+					drawFileHistory(panel, {
+						slug,
+						path,
+						toast,
+						// What is not saved yet is saved first: kept in the history too when the version comes over it.
+						before: save,
+						restored() {
+							saved?.(path);
+							void reload();
+						},
+					}),
+			},
 		],
+		initial,
+		onClose: () => window.removeEventListener('keydown', escape, true),
 		actions: [
 			// The file in its own program (VS Code, say): saved first, so that it opens as it is here.
 			{ label: t('用默认程序打开'), run: () => void save().then(() => openArticleFileInApp(slug, path)).catch((error: unknown) => toast(error instanceof Error ? error.message : String(error), true)) },
 			{ label: t('保存'), title: '⌘S', primary: true, run: () => void save() },
 		],
 	});
+
+	// Esc closes it, heard before anything else on the page (some of which take Esc for their own, and then the
+	// dialog would not close); the editor's own first: a completion or the search open is closed by it.
+	function escape(event: KeyboardEvent): void {
+		if (event.key !== 'Escape' || event.isComposing) return;
+		if (view?.dom.querySelector('.cm-tooltip-autocomplete, .cm-search')) return;
+		event.preventDefault();
+		event.stopPropagation();
+		sheet.close();
+	}
+	window.addEventListener('keydown', escape, true);
+
+	/** The file as it is on disk now (a version brought back over it), in the editor. */
+	async function reload(): Promise<void> {
+		const response = await fetch(studioFileUrl(slug, path), { cache: 'no-store' }).catch(() => null);
+		if (!response?.ok || !view) return;
+		const text = await response.text();
+		kept = text;
+		view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: text } });
+		say();
+	}
 
 	async function read(panel: HTMLElement, note: HTMLElement): Promise<void> {
 		let text: string;
