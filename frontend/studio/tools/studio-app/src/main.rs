@@ -18,6 +18,10 @@
 //! programs the author has in their own terminal.
 //!
 //! Which blog: `STUDIO_REPO` when the app runs, or the one it was built for (build.sh).
+//!
+//! Its windows open where they were left, as large as they were (`windows.json` in the app's own folder, Application
+//! Support/blog.studio.app), on a screen still there. Shutting the Studio's window hides it, as a Mac app's: the server
+//! stays, and the app's icon in the Dock shows it again at once; ⌘Q quits.
 
 mod dialogs;
 
@@ -33,9 +37,9 @@ use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use std::{env, fs, thread};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::webview::{DownloadEvent, NewWindowResponse, PageLoadEvent};
-use tauri::{AppHandle, Manager, RunEvent, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{AppHandle, Manager, RunEvent, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window, WindowEvent};
 
 /// What `astro dev` keeps in `.astro/dev.json` while it runs.
 #[derive(Deserialize)]
@@ -62,6 +66,19 @@ struct State {
     rescuing: AtomicBool,
     /// The Studio's address, to go back to (再等等).
     studio_url: Mutex<Option<Url>>,
+    /// Where each window is (by its label), as it moves; written to `windows.json` as it is shut or the app quits.
+    places: Mutex<HashMap<String, Place>>,
+}
+
+/// Where a window is and how large, in points (as the screen's settings show them); and whether it fills the screen.
+#[derive(Serialize, Deserialize, Clone, Copy)]
+struct Place {
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    #[serde(default)]
+    maximized: bool,
 }
 
 fn main() {
@@ -77,20 +94,111 @@ fn main() {
             });
             Ok(())
         })
+        .on_window_event(|window, event| match event {
+            WindowEvent::Moved(_) | WindowEvent::Resized(_) => note_place(window),
+            // The Studio's window shut: hidden, as a Mac app's (the server stays; the Dock's icon shows it again).
+            WindowEvent::CloseRequested { api, .. } if window.label() == "main" => {
+                api.prevent_close();
+                write_places(window.app_handle());
+                let _ = window.hide();
+            }
+            WindowEvent::Destroyed => write_places(window.app_handle()),
+            _ => {}
+        })
         .build(tauri::generate_context!())
         .expect("the Studio app could not start");
-    app.run(|handle, event| {
-        if let RunEvent::Exit = event {
+    app.run(|handle, event| match event {
+        RunEvent::Exit => {
+            write_places(handle);
             stop_started(handle);
         }
+        // The app's icon clicked (or the app opened again) with its window hidden: shown again.
+        RunEvent::Reopen { .. } => {
+            if let Some(window) = handle.get_webview_window("main") {
+                let _ = window.show();
+                let _ = window.unminimize();
+                let _ = window.set_focus();
+            }
+        }
+        _ => {}
     });
+}
+
+/// Where the windows' places are kept: in the app's own folder (Application Support/blog.studio.app).
+fn places_file(app: &AppHandle) -> Option<PathBuf> {
+    app.path().app_config_dir().ok().map(|folder| folder.join("windows.json"))
+}
+
+fn read_places(app: &AppHandle) -> HashMap<String, Place> {
+    places_file(app)
+        .and_then(|file| fs::read_to_string(file).ok())
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
+}
+
+/// Where `window` is now, noted (written as it is shut, or the app quits). Filling the screen, where it was before is kept.
+fn note_place(window: &Window) {
+    let (Ok(scale), Ok(position), Ok(size)) = (window.scale_factor(), window.outer_position(), window.inner_size()) else {
+        return;
+    };
+    let maximized = window.is_maximized().unwrap_or(false) || window.is_fullscreen().unwrap_or(false);
+    let state = window.state::<State>();
+    let mut places = state.places.lock().unwrap();
+    let was = places.get(window.label()).copied();
+    let place = match (maximized, was) {
+        (true, Some(was)) => Place { maximized: true, ..was },
+        _ => Place {
+            x: f64::from(position.x) / scale,
+            y: f64::from(position.y) / scale,
+            width: f64::from(size.width) / scale,
+            height: f64::from(size.height) / scale,
+            maximized,
+        },
+    };
+    // Hidden, or shrunk to the Dock: not a place.
+    if window.is_visible().unwrap_or(true) && !window.is_minimized().unwrap_or(false) {
+        places.insert(window.label().to_owned(), place);
+    }
+}
+
+/// The places noted, written over those kept (a window not opened this time keeps its own).
+fn write_places(app: &AppHandle) {
+    let Some(file) = places_file(app) else { return };
+    let mut places = read_places(app);
+    places.extend(app.state::<State>().places.lock().unwrap().iter().map(|(label, place)| (label.clone(), *place)));
+    if let Some(folder) = file.parent() {
+        let _ = fs::create_dir_all(folder);
+    }
+    if let Ok(text) = serde_json::to_string_pretty(&places) {
+        let _ = fs::write(file, text);
+    }
+}
+
+/// Where the window `label` was left, if a screen there now shows enough of it (a screen unplugged since: none).
+fn place_of(app: &AppHandle, label: &str) -> Option<Place> {
+    let place = *read_places(app).get(label)?;
+    let shown = app.available_monitors().ok()?.iter().any(|monitor| {
+        let scale = monitor.scale_factor();
+        let (left, top) = (f64::from(monitor.position().x) / scale, f64::from(monitor.position().y) / scale);
+        let (width, height) = (f64::from(monitor.size().width) / scale, f64::from(monitor.size().height) / scale);
+        // Its title bar's left, on the screen: it can be dragged from there.
+        place.x + 60.0 >= left && place.x + 60.0 <= left + width && place.y >= top && place.y + 20.0 <= top + height
+    });
+    shown.then_some(place)
+}
+
+/// A window to be made, where it was left (`place_of`), else as large as `otherwise`.
+fn placed<'a>(app: &AppHandle, label: &str, builder: WebviewWindowBuilder<'a, tauri::Wry, AppHandle>, otherwise: (f64, f64)) -> WebviewWindowBuilder<'a, tauri::Wry, AppHandle> {
+    match place_of(app, label) {
+        Some(place) => builder.position(place.x, place.y).inner_size(place.width, place.height).maximized(place.maximized),
+        None => builder.inner_size(otherwise.0, otherwise.1),
+    }
 }
 
 fn open_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
     let handle = app.clone();
-    WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
+    placed(app, "main", WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into())), (1440.0, 900.0))
         .title("Studio")
-        .inner_size(1440.0, 900.0)
         .min_inner_size(820.0, 560.0)
         // Files dropped on the page go to the page (pictures into articles, files into the file list).
         .disable_drag_drop_handler()
@@ -685,9 +793,9 @@ fn open_own_window(app: &AppHandle, url: Url) {
     let handle = app.clone();
     let closer = (app.clone(), label.clone());
     let title = asked.get("title").cloned().unwrap_or_else(|| "Studio".to_owned());
-    let built = WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
+    // Where it was left last time; the first time, as large as the page asks.
+    let built = placed(app, &label, WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url)), (size("w", 460.0), size("h", 760.0)))
         .title(title)
-        .inner_size(size("w", 460.0), size("h", 760.0))
         .min_inner_size(280.0, 200.0)
         .disable_drag_drop_handler()
         // The page's title is the window's; `studio:close` asks it shut (put back into the Studio, its 显示方式):
