@@ -2,7 +2,8 @@
 // their API; told when its file changes; put in again when one is edited.
 import { t } from '@blog/i18n/index.mjs';
 import { studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
-import { listPlugins, pluginApi, uploadArticleFile } from '../api/client';
+import { listPlugins, pluginApi, trashArticleFile, uploadArticleFile } from '../api/client';
+import { appBlockFrame } from '../panels/mini-apps';
 import { showToast } from '../common/toast';
 import { setFileBlocks } from '../files/article-files';
 import { showPluginUi } from '../plugin-ui';
@@ -41,6 +42,7 @@ export function startPlugins(studio: Studio, { shown }: { shown(): ArticlePayloa
 				},
 			},
 			upload: (slug, folder, file, options) => uploadArticleFile(slug, folder, file, options),
+			trash: async (slug, path) => void (await trashArticleFile(slug, path)),
 			toast: (message, error = false) => showToast(message, error),
 			showPanel: (key) => sidePanel.show(key),
 			shown: () => shown()?.slug ?? null,
@@ -51,6 +53,7 @@ export function startPlugins(studio: Studio, { shown }: { shown(): ArticlePayloa
 					return session.saveView(key, format, view, display);
 				},
 			},
+			apps: { frame: appBlockFrame },
 			api: pluginApi,
 		}, off, present))
 		.then((problems) => {

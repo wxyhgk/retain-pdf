@@ -21,7 +21,7 @@ test('小程序: listed from their app.json, a broken one saying what is wrong; 
 	assert.deepEqual(listed.map((app) => app.id).sort(), ['broken', 'units']);
 	const byId = Object.fromEntries(listed.map((app) => [app.id, app]));
 	assert.match(byId.broken.problem, /app\.json 读不了/u);
-	assert.deepEqual({ ...byId.units }, { id: 'units', name: '单位换算', icon: '⚡', description: '', width: 200, height: 1600, permissions: ['insert'], kind: 'page' });
+	assert.deepEqual({ ...byId.units }, { id: 'units', name: '单位换算', icon: '⚡', description: '', width: 200, height: 1600, permissions: ['insert'], kind: 'page', blocks: [] });
 
 	// Its page with `studio` first; its other files as they are; nothing outside its folder.
 	const page = await apps.file('units', '');

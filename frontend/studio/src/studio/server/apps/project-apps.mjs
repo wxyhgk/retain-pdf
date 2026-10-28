@@ -8,8 +8,9 @@ import { t } from '@blog/i18n/index.mjs';
  * The project apps' development servers (docs/apps-design.md): one started when its window is opened, on a port of
  * its own, with its own base (`/studio-apps/<id>/`), and its backend beside it if it has one. Each runs through a
  * login shell (found as the author's terminal finds it), in a process group of its own that ends with the Studio's
- * server however that ends (tasks.mjs). One that ends by itself is said to have stopped; it is started again when
- * asked, not by itself. What they write is kept, the last few hundred lines.
+ * server however that ends (tasks.mjs). One whose development server ends by itself is said to have stopped; it is
+ * started again when asked, not by itself. Its backend ending is written in its output only: the page goes on (one
+ * already running elsewhere, on the same port, answers it). What they write is kept, the last few hundred lines.
  *
  * @typedef {'stopped' | 'starting' | 'running' | 'failed'} AppState
  * @typedef {{ state: AppState, port: number | null, error: string | null }} AppStatus
@@ -91,9 +92,9 @@ export class ProjectApps {
 				app.port = await freePort();
 				const words = (argv) => argv.map((word) => word.replaceAll('{port}', String(app.port)).replaceAll('{base}', base));
 				const ended = new Promise((_, reject) => {
-					this.#run(id, app, words(dev.command), dev.cwd, (code, signal) => reject(new Error(t('开发服务器退出了（{how}）', { how: signal ?? code }))));
+					this.#run(id, app, words(dev.command), dev.cwd, (code, signal) => reject(new Error(t('开发服务器退出了（{how}）', { how: signal ?? code }))), true);
 				});
-				if (dev.backend) this.#run(id, app, words(dev.backend), dev.cwd, () => {});
+				if (dev.backend) this.#run(id, app, words(dev.backend), dev.cwd, () => {}, false);
 				await Promise.race([this.#answers(app.port, base), ended]);
 				if (app.state !== 'starting') throw new Error(app.error ?? t('开发服务器停了'));
 				app.state = 'running';
@@ -122,8 +123,11 @@ export class ProjectApps {
 		this.#listeners.clear();
 	}
 
-	/** Runs one of the app's commands through a login shell, its output kept; `ended` told when it ends by itself. */
-	#run(id, app, argv, cwd, ended) {
+	/**
+	 * Runs one of the app's commands through a login shell, its output kept; `ended` told when it ends by itself, and the
+	 * app stopped with it when it is the one the app cannot be without (`vital`: its development server).
+	 */
+	#run(id, app, argv, cwd, ended, vital) {
 		this.#write(app, `$ ${argv.join(' ')}\n`);
 		const child = spawn(loginShell(this.shell), ['-lc', 'exec "$@"', 'studio-app', ...argv], {
 			cwd,
@@ -143,13 +147,13 @@ export class ProjectApps {
 		child.on('error', (error) => {
 			this.#write(app, `${error.message}\n`);
 			ended(null, null);
-			if (this.#apps.get(id) === app && app.state !== 'stopped') this.#end(id, app, 'failed', error.message);
+			if (vital && this.#apps.get(id) === app && app.state !== 'stopped') this.#end(id, app, 'failed', error.message);
 		});
 		child.on('exit', (code, signal) => {
 			this.#write(app, `${t('（{program} 退出了：{how}）', { program: argv[0], how: signal ?? code })}\n`);
 			ended(code, signal);
-			// One of its commands ended by itself: the app has stopped (it is not started again unasked).
-			if (this.#apps.get(id) === app && (app.state === 'starting' || app.state === 'running')) {
+			// Its development server ended by itself: the app has stopped (it is not started again unasked).
+			if (vital && this.#apps.get(id) === app && (app.state === 'starting' || app.state === 'running')) {
 				this.#end(id, app, 'stopped', t('{program} 退出了（{how}）', { program: argv[0], how: signal ?? code }));
 			}
 		});

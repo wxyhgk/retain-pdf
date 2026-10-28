@@ -60,6 +60,15 @@ test('a project app is started once on a port of its own, under its base; it sto
 	await assert.rejects(get(next, '/studio-apps/demo/'));
 });
 
+test('its backend ending (its port taken by one already running) is written down; the page goes on', async (t) => {
+	const { apps, dev } = await project(t);
+	const port = await apps.start('demo', { ...dev, backend: [process.execPath, '-e', 'console.error("EADDRINUSE: 25174"); process.exit(1)'] });
+	await new Promise((resolve) => setTimeout(resolve, 500));
+	assert.equal(apps.status('demo').state, 'running');
+	assert.match(apps.log('demo'), /EADDRINUSE/u);
+	assert.match(await get(port, '/studio-apps/demo/'), /studio-apps\/demo/u);
+});
+
 test('a project app that cannot start has failed, and says why', async (t) => {
 	const { apps, dev } = await project(t);
 	await assert.rejects(apps.start('broken', { ...dev, command: [process.execPath, '-e', 'console.error("no such module"); process.exit(1)'] }), /退出了/u);

@@ -28,6 +28,11 @@ import { t } from '@blog/i18n/index.mjs';
  * `app.local.json` beside it (not committed: the repository is public), whose fields go over app.json's.
  *
  *     "dev": { "command": ["npm", "run", "dev", "--", "--port", "{port}", "--base", "{base}"], "backend": ["npm", "run", "backend"] }
+ *
+ * And an app can be a block of the articles (`blocks`): a fence of its own (```structura), its state the fence's body,
+ * shown in the article by a page of the app (`entry`, under its address) with `studio.block` to read and change it.
+ *
+ *     "blocks": [{ "fence": "structura", "entry": "block.html", "height": 420, "title": "结构式" }]
  */
 
 export const APP_PERMISSIONS = Object.freeze({
@@ -78,8 +83,25 @@ export const APP_MESSAGE = 'studio-app';
 /**
  * How a project app is run: its commands (`{port}`, `{base}` put in), in its folder.
  * @typedef {{ cwd: string, command: string[], backend: string[] | null }} AppDev
- * @typedef {{ id: string, name: string, icon: string, description: string, width: number, height: number, permissions: string[], kind: 'page' | 'project', problem?: string }} MiniApp
+ * A block an app gives the articles: its fence, the page of the app that shows it, how tall it starts.
+ * @typedef {{ fence: string, entry: string, height: number, title: string }} AppBlock
+ * @typedef {{ id: string, name: string, icon: string, description: string, width: number, height: number, permissions: string[], kind: 'page' | 'project', blocks: AppBlock[], problem?: string }} MiniApp
  */
+
+/** A fence an app's block may take: a word of its own, not a language of code. */
+const FENCE = /^[a-z][a-z0-9-]{1,31}$/u;
+
+/** The blocks app.json says the app gives, those written right. */
+function blocksOf(written, id) {
+	if (!Array.isArray(written)) return [];
+	return written.flatMap((block) => {
+		if (!block || typeof block !== 'object' || typeof block.fence !== 'string' || !FENCE.test(block.fence)) return [];
+		const entry = typeof block.entry === 'string' ? block.entry.replace(/^\.?\/+/u, '') : '';
+		if (entry.split('/').includes('..')) return [];
+		const height = Number.isFinite(block.height) ? Math.max(120, Math.min(1600, Math.round(block.height))) : 420;
+		return [{ fence: block.fence, entry, height, title: typeof block.title === 'string' && block.title.trim() ? block.title.trim() : id }];
+	});
+}
 
 /** A command as app.json writes it: a list of words, the first the program. */
 const command = (value) => (Array.isArray(value) && value.length && value.every((word) => typeof word === 'string' && word) ? value : null);
@@ -119,7 +141,7 @@ export class MiniApps {
 
 	/** An app's app.json, with its app.local.json over it: the app as listed, and how it is run when it is a project. */
 	async #manifest(id) {
-		const plain = { id, name: id, icon: '◆', description: '', width: 380, height: 480, permissions: [], kind: 'page' };
+		const plain = { id, name: id, icon: '◆', description: '', width: 380, height: 480, permissions: [], kind: 'page', blocks: [] };
 		let manifest;
 		try {
 			manifest = JSON.parse(await readFile(join(this.folder, id, 'app.json'), 'utf8'));
@@ -135,7 +157,7 @@ export class MiniApps {
 		const text = (value, fallback) => (typeof value === 'string' && value.trim() ? value.trim() : fallback);
 		const size = (value, fallback) => (Number.isFinite(value) ? Math.max(200, Math.min(1600, Math.round(value))) : fallback);
 		const permissions = Array.isArray(manifest.permissions) ? manifest.permissions.filter((name) => name in APP_PERMISSIONS) : [];
-		const app = { id, name: text(manifest.name, id), icon: text(manifest.icon, '◆'), description: text(manifest.description, ''), width: size(manifest.width, plain.width), height: size(manifest.height, plain.height), permissions, kind: 'page' };
+		const app = { id, name: text(manifest.name, id), icon: text(manifest.icon, '◆'), description: text(manifest.description, ''), width: size(manifest.width, plain.width), height: size(manifest.height, plain.height), permissions, kind: 'page', blocks: blocksOf(manifest.blocks, id) };
 		const written = manifest.dev && typeof manifest.dev === 'object' ? manifest.dev : null;
 		if (!written) return { app, dev: null };
 		app.kind = 'project';
@@ -147,6 +169,14 @@ export class MiniApps {
 		const folder = join(this.folder, id);
 		const cwd = typeof dev.cwd === 'string' && dev.cwd.trim() ? resolve(folder, dev.cwd) : folder;
 		return { app, dev: { cwd, command: run, backend: command(dev.backend) } };
+	}
+
+	/** Where an app's code is: its project's folder (`dev.cwd`), or its own; null for none. */
+	async root(id) {
+		if (!ID.test(String(id))) return null;
+		const { app, dev } = await this.#manifest(id);
+		if (app.problem && !dev) return (await this.get(id)) ? join(this.folder, id) : null;
+		return dev?.cwd ?? join(this.folder, id);
 	}
 
 	/**
@@ -274,6 +304,13 @@ const BRIDGE = `
 		appFile: (path) => call('appFile', String(path)),
 		storage: { get: (key) => call('storage.get', String(key)), set: (key, value) => call('storage.set', String(key), value) },
 		openPage: (slug) => call('openPage', String(slug)),
+		// In a block of an article: its state (the fence's body) and options (its info string), changed by \`set\`; its
+		// picture for the blog (SVG text, or a PNG's data: address). Null in a window.
+		block: {
+			get: () => call('block.get'),
+			set: (state) => call('block.set', String(state)),
+			picture: (data, type = 'image/svg+xml') => call('block.picture', String(data), String(type)),
+		},
 	};
 	root.dataset.theme = studio.theme;
 	window.studio = studio;

@@ -390,7 +390,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					// It comes later (undefined), once the file is read. The fork passes the fence's
 					// `lines=` and `title=` (meta) too, which the npm release's type does not know.
 					renderPreview: (language: string, content: string, apply: (value: HTMLElement) => void, meta = '') => {
-						// A plugin's code block (a widget's frame) previews as its plugin says.
+						// A plugin's code block (a widget's frame) previews as its plugin says; one changed by what its
+						// preview shows keeps it (undefined: what is shown stays), not drawn again (a frame would load again).
+						if (codeBlocks.some((code) => code.keep?.(language, content, meta))) return undefined;
 						for (const code of codeBlocks) {
 							const shown = code.preview?.(language, content, meta);
 							if (shown) return shown;

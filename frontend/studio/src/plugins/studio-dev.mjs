@@ -19,6 +19,7 @@ import { ChatStore } from '../studio/server/ai/chat-store.mjs';
 import { PanelModels } from '../studio/server/ai/panel-models.mjs';
 import { MiniApps } from '../studio/server/apps/mini-apps.mjs';
 import { ProjectApps } from '../studio/server/apps/project-apps.mjs';
+import { AppCheckpoints } from '../studio/server/apps/app-checkpoints.mjs';
 import { forwardUpgrade, proxyToApp } from '../studio/server/apps/app-proxy.mjs';
 import { Tasks } from '../studio/server/tasks/tasks.mjs';
 import { markContentReloads } from '../studio/server/articles/content-reloads.mjs';
@@ -132,6 +133,8 @@ export default function studioDev({ site } = {}) {
 			const miniApps = new MiniApps(appsFolder);
 			// Those that are projects of their own, each run by its own development server (docs/apps-design.md).
 			const projectApps = new ProjectApps({ env: () => programEnv(null, null) });
+			// Their code as it was before an AI changed it, in the Studio's cache (out of git).
+			const appCheckpoints = new AppCheckpoints(resolve(server.config.root, '.studio-cache', 'app-checkpoints'));
 			const tasks = new Tasks();
 			// The AI panel's conversations, with the agents' ACP adapters of the project's dependencies.
 			// Kept in chats/ beside blog/ (out of git), each a page; the browser tests' beside their copy of blog/.
@@ -226,6 +229,7 @@ export default function studioDev({ site } = {}) {
 				tasks,
 				miniApps,
 				projectApps,
+				appCheckpoints,
 				pluginSettings,
 				localeSettings: new LocaleSettings(settingsFile),
 				aiSettings,

@@ -1,10 +1,11 @@
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { editor, openStudio, resetFixture, saveStatus, savedMarkdown, slug, writeFixtureFile } from './studio.ts';
+import { appendToFixture, editor, fixtureHas, openStudio, resetFixture, saveStatus, savedMarkdown, slug, writeFixtureFile } from './studio.ts';
+import { picturePath } from '../../plugins/app-blocks/app-blocks.mjs';
 
 // 小程序: the tools of apps/ (two to begin with: energy-units, gaussian-input), each in a floating window, in a frame
 // that reaches the Studio only through `studio`, and only for what its app.json asks.
@@ -311,6 +312,86 @@ test('a project app runs on its own development server, under the Studio’s add
 			await expect(frame.locator('#out')).toHaveText(`二 ${slug}`);
 			const stopped = await page.evaluate(() => fetch('/api/studio/apps/probe/stop', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).then((r) => r.json()));
 			expect(stopped.state).toBe('stopped');
+		},
+	);
+});
+
+test('an app gives the articles a block: its page shows it, changes it in the article without loading again, and keeps its picture for the blog', async ({ page }) => {
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '探针', icon: '?', blocks: [{ fence: 'counter', entry: 'block.html', height: 200, title: '计数器' }] }),
+			'app.html': '<p>窗口</p>',
+			'block.html': [
+				'<p id="n">…</p><button id="up">+1</button><script>',
+				'let state = { n: 0 };',
+				'studio.block.get().then((block) => { state = JSON.parse(block.state || "{\\"n\\":0}"); n.textContent = String(state.n); });',
+				'up.onclick = async () => { state.n += 1; n.textContent = String(state.n); await studio.block.set(JSON.stringify(state)); await studio.block.picture(`<svg xmlns="http://www.w3.org/2000/svg"><text>${state.n}</text></svg>`); up.dataset.done = String(state.n); };',
+				'</script>',
+			].join(''),
+		},
+		async () => {
+			appendToFixture('\n```counter\n{"n":1}\n```\n');
+			await openStudio(page);
+			const holder = editor(page).locator('.app-block');
+			await holder.scrollIntoViewIfNeeded();
+			const frame = page.frameLocator('.app-block-frame');
+			await expect(frame.locator('#n')).toHaveText('1');
+			// The same page all along: marked now, the mark still there after the block is changed.
+			await frame.locator('body').evaluate(() => ((window as { mark?: string }).mark = 'same page'));
+			await frame.locator('#up').click();
+			await expect(frame.locator('#up')).toHaveAttribute('data-done', '2');
+			expect(await frame.locator('body').evaluate(() => (window as { mark?: string }).mark)).toBe('same page');
+			// Saved from the article (keys pressed in the frame are the app's).
+			await editor(page).locator('p', { hasText: '结尾段落' }).click();
+			await page.keyboard.press('ControlOrMeta+s');
+			await expect(saveStatus(page)).toHaveText('已保存');
+			expect(savedMarkdown()).toContain('```counter\n{"n":2}\n```');
+			expect(fixtureHas(picturePath('counter', '{"n":2}'))).toBe(true);
+			// Changed again: the picture of what it held before goes (to the trash), the new one is kept.
+			await frame.locator('#up').click();
+			await expect(frame.locator('#up')).toHaveAttribute('data-done', '3');
+			await expect.poll(() => fixtureHas(picturePath('counter', '{"n":2}'))).toBe(false);
+			expect(fixtureHas(picturePath('counter', '{"n":3}'))).toBe(true);
+			// Its corner: in a window, or to the AI to change.
+			await holder.hover();
+			await holder.locator('.app-block-bar button', { hasText: 'AI' }).click();
+			await expect(page.locator('#side-ai .ai-input .ProseMirror')).toContainText('改小程序「探针」（代码在 apps/probe/');
+		},
+	);
+});
+
+test('an app’s ⋯: its code to the AI (kept as it was first), a checkpoint kept by hand, and back to one', async ({ page }) => {
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '探针', icon: '?' }),
+			'app.html': '<p id="out">第一版</p>',
+		},
+		async () => {
+			await openStudio(page);
+			await openApp(page, '探针');
+			const window = page.locator('.mini-app-window[data-app="probe"]');
+			const frame = appFrame(page, 'probe');
+			await expect(frame.locator('#out')).toHaveText('第一版');
+			const menu = async (label: string) => {
+				await window.locator('.mini-app-more').click();
+				await page.getByRole('menuitem', { name: label }).click();
+			};
+			await menu('存一个检查点');
+			await expect(page.locator('.studio-toast', { hasText: '存好了：2 个文件' })).toBeVisible();
+			// The AI changes it (here, by hand): a file changed, one made.
+			writeFileSync(join(apps(), 'probe', 'app.html'), '<p id="out">第二版</p>');
+			writeFileSync(join(apps(), 'probe', 'extra.js'), '1');
+			await expect(frame.locator('#out')).toHaveText('第二版');
+			await menu('回到检查点…');
+			await window.locator('.mini-app-checkpoint', { hasText: '手动存的' }).getByRole('button', { name: '回到这里' }).click();
+			await expect(frame.locator('#out')).toHaveText('第一版');
+			expect(readFileSync(join(apps(), 'probe', 'app.html'), 'utf8')).toBe('<p id="out">第一版</p>');
+			expect(existsSync(join(apps(), 'probe', 'extra.js'))).toBe(false);
+			// Asked of the AI: its code kept first.
+			await menu('让 AI 改这个…');
+			await expect(page.locator('#side-ai .ai-input .ProseMirror')).toContainText('改小程序「探针」（代码在 apps/probe/');
+			await menu('回到检查点…');
+			await expect(window.locator('.mini-app-checkpoint').first()).toContainText('让 AI 改之前');
 		},
 	);
 });

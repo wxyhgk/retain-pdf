@@ -15,6 +15,18 @@ import { Commands, Panels, Recognizers } from './ui.ts';
  */
 
 /** What the Studio gives its plugins. */
+/** What a block of an article gives the app's page showing it (`studio.block`). */
+export type AppBlockLink = {
+	/** Its state: the fence's body. */
+	state(): string;
+	/** Its options: the fence's info string after the fence's name. */
+	meta(): string;
+	/** Its state changed (by the page): the fence's body written. */
+	set(state: string): void;
+	/** Its picture for the blog (SVG text, or a PNG's `data:` address), kept in the article: its path there. */
+	picture(data: string, type: string): Promise<string>;
+};
+
 export type StudioHost = {
 	/** The article open (its name); null before one is. */
 	slug(): string | null;
@@ -54,10 +66,20 @@ export type StudioHost = {
 	 * number (`a-1.png`) unless `replace` is set. Resolves with its path in the article (`img/a.png`).
 	 */
 	upload(slug: string, folder: string, file: File, options?: { replace?: boolean; onProgress?(loaded: number, total: number): void }): Promise<{ path: string }>;
+	/** Moves a file of an article (`assets/a.svg`) to the Studio's trash (回收站), where it can be brought back from. */
+	trash(slug: string, path: string): Promise<void>;
 	/** Says something for a moment at the bottom of the page (in red when it is an error). */
 	toast(message: string, error?: boolean): void;
 	/** Opens the right column on this tab (the Studio's own `files`, `terminal`, `drive`, or a plugin's `ctx.panels`); throws when there is none. */
 	showPanel(key: string): void;
+	/** The author's apps (apps/<id>/, the 小程序). */
+	apps: {
+		/**
+		 * A block of the article shown by the app `id`: its page `entry` in a frame `height` tall, given `studio` and the
+		 * block (`link`: its state and options, changed by the page, its picture kept for the blog).
+		 */
+		frame(id: string, entry: string, height: number, link: AppBlockLink): HTMLElement;
+	};
 	/** The plugins' API on the dev server (plugins/*\/server.mjs), as JSON; a failed request throws its error. */
 	api: {
 		get<T = unknown>(path: string): Promise<T>;
@@ -118,7 +140,11 @@ export type StudioBlock = Block & {
 	 * editor's languages for it (CodeMirror's LanguageDescription), and its preview, for its language
 	 * (null: not its own; the next is asked).
 	 */
-	codeBlock?: { languages?: unknown[]; preview?(language: string, content: string, meta: string): HTMLElement | null };
+	/**
+	 * A fence edited as code, previewed by `preview` (its placeholder, drawn by `observe`). `keep`: the block was changed
+	 * by what its preview shows (an app's page writing its state back): the preview shown is kept, not drawn again.
+	 */
+	codeBlock?: { languages?: unknown[]; preview?(language: string, content: string, meta: string): HTMLElement | null; keep?(language: string, content: string, meta: string): boolean };
 	/**
 	 * Links it shows, as Notion takes them: an address pasted alone on its line offers to become this
 	 * block (`label`; offered first when `specific`, its sites' addresses only being its own: a video,

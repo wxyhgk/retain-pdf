@@ -1,6 +1,6 @@
 import { CircleHelp } from 'lucide-react';
 
-import { appFetch, appRun, appServer, articleFileUrl, getTask, listArticleFiles, listMiniApps, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
+import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
 import { showContextMenu, type MenuItem } from '../common/context-menu';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -17,6 +17,33 @@ export type MiniAppsHost = {
 };
 
 const MESSAGE = 'studio-app';
+
+/**
+ * What a block of an article gives the app's page showing it (`studio.block`): the block's state (its fence's body) and
+ * options (its info string), changed by the page, and its picture kept for the blog.
+ */
+export type AppBlockLink = {
+	state(): string;
+	meta(): string;
+	set(state: string): void;
+	picture(data: string, type: string): Promise<string>;
+};
+
+/** A block of an article shown by an app's page, in a frame of its own. */
+type BlockFrame = { app: MiniApp; root: HTMLElement; frame: HTMLIFrameElement; port: MessagePort | null; link: AppBlockLink; errors: string[] };
+
+let makeBlockFrame: ((id: string, entry: string, height: number, link: AppBlockLink) => HTMLElement) | null = null;
+
+/**
+ * A block of an article shown by the app `id` (apps/<id>/): its page `entry`, `height` tall, with `studio` and the block
+ * (`link`). A project app not running yet is started when asked to, not by itself (an article shown starts nothing).
+ */
+export function appBlockFrame(id: string, entry: string, height: number, link: AppBlockLink): HTMLElement {
+	if (makeBlockFrame) return makeBlockFrame(id, entry, height, link);
+	const waiting = document.createElement('div');
+	waiting.className = 'app-block';
+	return waiting;
+}
 // Sizes kept before the windows could be sized from their edges (opened smaller) are let go.
 const PLACES = 'studio.mini-app-windows';
 
@@ -184,9 +211,75 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		]);
 	}
 
+	/** Its code as it is now kept, before the AI is asked to change it: one click brings it back (its window's ⋯). */
+	function keepBeforeAI(app: MiniApp): void {
+		keepAppCheckpoint(app.id, t('让 AI 改之前')).catch((error: unknown) => host.toast(error instanceof Error ? error.message : String(error)));
+	}
+
+	/** Its checkpoints, each to go back to. */
+	async function showCheckpoints(shown: AppWindow): Promise<void> {
+		const kept = await appCheckpoints(shown.app.id).catch(() => []);
+		const { sheet } = shown;
+		showSheet(shown, 'checkpoints', t('「{name}」的检查点', { name: shown.app.name }), kept.length ? '' : t('还没有检查点：让 AI 改它之前会自动存一个，也可以在 ⋯ 里手动存'), []);
+		const list = sheet.querySelector('pre')!;
+		list.replaceChildren(...kept.map((checkpoint) => {
+			const row = document.createElement('div');
+			row.className = 'mini-app-checkpoint';
+			const words = document.createElement('span');
+			words.textContent = `${new Date(checkpoint.when).toLocaleString('zh-CN', { hour12: false })}　${checkpoint.why}（${t('{count} 个文件', { count: checkpoint.files })}）`;
+			const back = document.createElement('button');
+			back.type = 'button';
+			back.textContent = t('回到这里');
+			back.addEventListener('click', async () => {
+				back.disabled = true;
+				try {
+					await restoreAppCheckpoint(shown.app.id, checkpoint.stamp);
+					host.toast(t('「{name}」回到了 {when} 的样子', { name: shown.app.name, when: words.textContent?.split('　')[0] ?? '' }));
+					sheet.hidden = true;
+					// A page app is loaded again; a project's own server sees its files change.
+					if (shown.app.kind === 'page') load(shown, `?${Date.now()}`);
+				} catch (error) {
+					host.toast(error instanceof Error ? error.message : String(error));
+					back.disabled = false;
+				}
+			});
+			row.append(words, back);
+			return row;
+		}));
+	}
+
+	/** Its menu: its code, to the AI, its checkpoints. */
+	function showMenu(shown: AppWindow, button: HTMLElement): void {
+		const { app } = shown;
+		showContextMenu([
+			{ label: t('看源码（在访达里显示）'), action: () => void revealApp(app.id).then(({ path }) => host.toast(t('代码在 {path}', { path })), (error: unknown) => host.toast(error instanceof Error ? error.message : String(error))) },
+			{ label: t('让 AI 改这个…'), action: () => askToChange(app, shown.errors) },
+			'separator',
+			{ label: t('存一个检查点'), action: () => void keepAppCheckpoint(app.id, t('手动存的')).then((kept) => host.toast(t('存好了：{count} 个文件', { count: kept.files })), (error: unknown) => host.toast(error instanceof Error ? error.message : String(error))) },
+			{ label: t('回到检查点…'), action: () => void showCheckpoints(shown) },
+		], button);
+	}
+
+	/**
+	 * The app to be changed by the AI (its block's 「AI」, its errors): where its code is, and what went wrong, put in the
+	 * AI panel's input for the author to finish.
+	 */
+	function askToChange(app: MiniApp, errors: string[]): void {
+		keepBeforeAI(app);
+		const where = app.kind === 'project'
+			? `apps/${app.id}/（是一个项目：在哪个文件夹见 apps/${app.id}/app.local.json 或 app.json 的 dev.cwd，没写就是 apps/${app.id}/ 本身）` // i18n-ignore: said to the AI
+			: `apps/${app.id}/`;
+		const said = errors.slice(-5).map((error) => `\`\`\`\n${error}\n\`\`\``).join('\n');
+		host.askAI([
+			`改小程序「${app.name}」（代码在 ${where}，照技能 studio-mini-apps 来）：`, // i18n-ignore: said to the AI
+			said ? `它在文章的块里出的错：\n${said}` : '', // i18n-ignore: said to the AI
+		].filter(Boolean).join('\n\n'));
+	}
+
 	/** Its errors (and its server's last output) put in the AI panel's input, for the author to send. */
 	async function askToMend(shown: AppWindow): Promise<void> {
 		const { app } = shown;
+		keepBeforeAI(app);
 		let log = '';
 		if (app.kind === 'project') {
 			shown.status = await appServer(app.id, 'status').catch(() => shown.status);
@@ -263,20 +356,98 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 	/** The app's page is ready: its line to the Studio, through which alone it is answered. */
 	function connect(shown: AppWindow): void {
 		cut(shown);
+		shown.port = lineTo(shown.frame, shown.app, null);
+	}
+
+	/** A line to the app's page in `frame` (just ready), through which alone it is answered; `link`: the block it shows. */
+	function lineTo(frame: HTMLIFrameElement, app: MiniApp, link: AppBlockLink | null): MessagePort {
 		const channel = new MessageChannel();
-		shown.port = channel.port1;
 		channel.port1.onmessage = (event: MessageEvent) => {
 			const data = event.data as { type?: unknown; id?: unknown; method?: unknown; args?: unknown } | null;
 			if (!data || data.type !== 'call') return;
 			const reply = (message: Record<string, unknown>) => channel.port1.postMessage({ type: 'answer', id: data.id, ...message });
-			answer(shown.app, String(data.method), Array.isArray(data.args) ? data.args : []).then(
+			answer(app, String(data.method), Array.isArray(data.args) ? data.args : [], link).then(
 				(result) => reply({ result }),
 				(error: unknown) => reply({ error: error instanceof Error ? error.message : String(error) }),
 			);
 		};
 		// The port goes to whatever page is in the frame, which is the app's (just ready).
-		shown.frame.contentWindow?.postMessage({ kind: MESSAGE, type: 'port', theme: theme() }, '*', [channel.port2]);
+		frame.contentWindow?.postMessage({ kind: MESSAGE, type: 'port', theme: theme() }, '*', [channel.port2]);
+		return channel.port1;
 	}
+
+	/** The blocks of articles shown by apps' pages; those no longer in the page let go. */
+	const blockFrames = new Set<BlockFrame>();
+	function liveBlockFrames(): BlockFrame[] {
+		for (const shown of blockFrames) {
+			if (shown.root.isConnected) continue;
+			shown.port?.close();
+			blockFrames.delete(shown);
+		}
+		return [...blockFrames];
+	}
+
+	makeBlockFrame = (id, entry, height, link) => {
+		const root = document.createElement('div');
+		root.className = 'app-block';
+		root.style.height = `${height}px`;
+		const say = (text: string) => {
+			const note = document.createElement('p');
+			note.className = 'app-block-note';
+			note.textContent = text;
+			return note;
+		};
+		void listMiniApps().then(async (apps) => {
+			const app = apps.find((candidate) => candidate.id === id);
+			if (!app || app.problem) return root.replaceChildren(say(app?.problem ?? t('没有小程序「{id}」', { id })));
+			const display = () => {
+				const frame = document.createElement('iframe');
+				frame.className = 'app-block-frame';
+				frame.title = app.name;
+				frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
+				const bar = document.createElement('div');
+				bar.className = 'app-block-bar';
+				const by = document.createElement('span');
+				by.className = 'app-block-by';
+				by.textContent = t('由小程序「{name}」画', { name: app.name });
+				const errors = document.createElement('button');
+				errors.type = 'button';
+				errors.className = 'app-block-errors';
+				errors.hidden = true;
+				const windowed = document.createElement('button');
+				windowed.type = 'button';
+				windowed.textContent = '↗';
+				windowed.title = t('在窗口里打开「{name}」', { name: app.name });
+				windowed.addEventListener('click', () => show(app));
+				const mend = document.createElement('button');
+				mend.type = 'button';
+				mend.textContent = 'AI';
+				mend.title = t('让 AI 改「{name}」', { name: app.name });
+				bar.append(by, errors, windowed, mend);
+				const shown: BlockFrame = { app, root, frame, port: null, link, errors: [] };
+				mend.addEventListener('click', () => askToChange(app, shown.errors));
+				errors.addEventListener('click', () => askToChange(app, shown.errors));
+				blockFrames.add(shown);
+				frame.src = `${home(app)}${entry}`;
+				root.replaceChildren(frame, bar);
+			};
+			if (app.kind !== 'project' || (await appServer(app.id, 'status')).state === 'running') return display();
+			const start = document.createElement('button');
+			start.type = 'button';
+			start.textContent = t('启动「{name}」', { name: app.name });
+			start.addEventListener('click', async () => {
+				start.disabled = true;
+				start.textContent = t('启动中…');
+				const status = await appServer(app.id, 'start').catch((error: unknown) => ({ state: 'failed', error: error instanceof Error ? error.message : String(error) }) as const);
+				if (status.state === 'running') display();
+				else root.replaceChildren(say(status.error ?? t('没能启动')), start);
+				start.disabled = false;
+				start.textContent = t('再试一次');
+			});
+			root.replaceChildren(say(t('这一块由小程序「{name}」画：它还没有启动', { name: app.name })), start);
+		});
+		return root;
+	};
 
 	function show(app: MiniApp): void {
 		const already = open.get(app.id);
@@ -326,7 +497,12 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			log.addEventListener('click', () => showLog(shown));
 			bar.append(state, log);
 		}
-		bar.append(reload, shut);
+		const more = document.createElement('button');
+		more.type = 'button';
+		more.className = 'mini-app-more';
+		more.textContent = '⋯';
+		more.title = t('看源码、让 AI 改、检查点');
+		bar.append(more, reload, shut);
 		const sheet = document.createElement('div');
 		sheet.className = 'mini-app-sheet';
 		sheet.hidden = true;
@@ -337,6 +513,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
 		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false, errors: [], errorBadge, state, status: null, polling: null, sheet };
 		errorBadge.addEventListener('click', () => showErrors(shown));
+		more.addEventListener('click', () => showMenu(shown, more));
 		// Any page loaded after the app's own that is not of the app's is another one: the app followed a link elsewhere.
 		frame.addEventListener('load', () => {
 			if (shown.loaded && !ours(shown)) leave(shown);
@@ -426,7 +603,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 	}
 
 	/** What an app asks, if it may: its answer, or why not. */
-	async function answer(app: MiniApp, method: string, args: unknown[]): Promise<unknown> {
+	async function answer(app: MiniApp, method: string, args: unknown[], link: AppBlockLink | null = null): Promise<unknown> {
 		const article = () => {
 			const shown = host.article();
 			if (!shown) throw new Error(t('还没有打开文章'));
@@ -491,6 +668,16 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			case 'openPage':
 				host.openPage(String(args[0] ?? ''));
 				return true;
+			// In a block of an article: its state and options; changed; its picture kept for the blog.
+			case 'block.get':
+				return link ? { state: link.state(), meta: link.meta() } : null;
+			case 'block.set':
+				if (!link) throw new Error(t('它不在文章的块里'));
+				link.set(String(args[0] ?? ''));
+				return true;
+			case 'block.picture':
+				if (!link) throw new Error(t('它不在文章的块里'));
+				return link.picture(String(args[0] ?? ''), String(args[1] ?? 'image/svg+xml'));
 			default:
 				throw new Error(t('没有 studio.{method}', { method }));
 		}
@@ -501,7 +688,31 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		const data = event.data as { kind?: unknown; type?: unknown; message?: unknown } | null;
 		if (!data || data.kind !== MESSAGE) return;
 		const shown = [...open.values()].find((candidate) => candidate.frame.contentWindow === event.source);
-		if (!shown) return;
+		if (!shown) {
+			// A block's page: given its line when ready (again, as its own page loads again); what goes wrong on its bar.
+			const block = liveBlockFrames().find((candidate) => candidate.frame.contentWindow === event.source);
+			if (!block) return;
+			if (data.type === 'error') {
+				block.errors.push(String(data.message ?? ''));
+				const badge = block.root.querySelector<HTMLButtonElement>('.app-block-errors');
+				if (badge) {
+					badge.hidden = false;
+					badge.textContent = `● ${block.errors.length}`;
+					badge.title = t('出错了：让 AI 修');
+				}
+			} else if (data.type === 'ready') {
+				let path = '';
+				try {
+					path = block.frame.contentWindow?.location.pathname ?? '';
+				} catch {
+					// Another site's page: not the app's.
+				}
+				if (!path.startsWith(home(block.app))) return;
+				block.port?.close();
+				block.port = lineTo(block.frame, block.app, block.link);
+			}
+			return;
+		}
 		if (data.type === 'error') return failed(shown, String(data.message ?? ''));
 		if (data.type !== 'ready') return;
 		// Its own page loaded again (its server's reload, a change saved): a new line for it.
@@ -518,7 +729,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		}
 	});
 	new MutationObserver(() => {
-		for (const shown of open.values()) shown.port?.postMessage({ type: 'theme', theme: theme() });
+		for (const shown of [...open.values(), ...liveBlockFrames()]) shown.port?.postMessage({ type: 'theme', theme: theme() });
 	}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
 	launcher.addEventListener('click', () => {

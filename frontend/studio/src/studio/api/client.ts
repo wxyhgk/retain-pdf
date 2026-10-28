@@ -538,10 +538,29 @@ export async function cancelTask(id: string): Promise<void> {
 }
 
 /** A 小程序 (server/apps/mini-apps.mjs): what it is, how big its window opens, what it may do (`problem`: its app.json is wrong). */
-export type MiniApp = { id: string; name: string; icon: string; description: string; width: number; height: number; permissions: string[]; kind: 'page' | 'project'; problem?: string };
+export type MiniApp = { id: string; name: string; icon: string; description: string; width: number; height: number; permissions: string[]; kind: 'page' | 'project'; blocks: AppBlock[]; problem?: string };
+
+/** A block an app gives the articles (its app.json's `blocks`): its fence, the page of the app showing it, how tall it starts. */
+export type AppBlock = { fence: string; entry: string; height: number; title: string };
 
 /** A project app's development server: how it is, and what it wrote last. */
 export type AppStatus = { state: 'stopped' | 'starting' | 'running' | 'failed'; port: number | null; error: string | null; log: string };
+
+/** An app's code as it was (before an AI changed it): kept now (`why`), listed, or brought back. */
+export type AppCheckpoint = { stamp: string; when: string; why: string; files: number };
+export function keepAppCheckpoint(id: string, why: string): Promise<AppCheckpoint> {
+	return request(`/api/studio/apps/${encodeURIComponent(id)}/checkpoints`, jsonOptions('POST', { why }));
+}
+export async function appCheckpoints(id: string): Promise<AppCheckpoint[]> {
+	return (await request<{ checkpoints: AppCheckpoint[] }>(`/api/studio/apps/${encodeURIComponent(id)}/checkpoints`)).checkpoints;
+}
+export function restoreAppCheckpoint(id: string, stamp: string): Promise<{ stamp: string; files: number }> {
+	return request(`/api/studio/apps/${encodeURIComponent(id)}/checkpoints/${encodeURIComponent(stamp)}/restore`, jsonOptions('POST', {}));
+}
+/** An app's code shown in the Finder: where it is. */
+export function revealApp(id: string): Promise<{ path: string }> {
+	return request(`/api/studio/apps/${encodeURIComponent(id)}/reveal`, jsonOptions('POST', {}));
+}
 
 /** A project app's development server started (`start`, answered once it answers or has failed), started again, or how it is. */
 export function appServer(id: string, action: 'start' | 'restart' | 'status'): Promise<AppStatus> {

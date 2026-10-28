@@ -1,3 +1,5 @@
+import { execFile } from 'node:child_process';
+
 import { proxyFetch } from '../apps/mini-apps.mjs';
 import { runProgram } from '../tasks/tasks.mjs';
 import { refuse, reply, sendEvents } from '../api.mjs';
@@ -10,7 +12,7 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function taskRoutes(api, { projectRoot, tasks, miniApps, projectApps, programEnv, articleFolder }) {
+export function taskRoutes(api, { projectRoot, tasks, miniApps, projectApps, appCheckpoints, programEnv, articleFolder, testing }) {
 	api.get('/tasks/events', ({ request, response }) => sendEvents(request, response, (send) => {
 		send({ type: 'all', tasks: tasks.list() });
 		return tasks.subscribe((event) => {
@@ -68,6 +70,28 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, projectApps, pro
 	api.get('/apps/:id/status', async ({ params }) => {
 		await known(params.id);
 		return statusOf(params.id);
+	});
+	// Its code as it was (before an AI changes it), kept and brought back.
+	const rootOf = async (id) => {
+		await known(id);
+		const root = await miniApps.root(id);
+		if (!root) throw refuse(404, t('没有这个小程序'));
+		return root;
+	};
+	api.get('/apps/:id/checkpoints', async ({ params }) => {
+		await known(params.id);
+		return { checkpoints: await appCheckpoints.list(params.id) };
+	});
+	api.post('/apps/:id/checkpoints', async ({ params, json }) => {
+		const { why } = await json();
+		return appCheckpoints.save(params.id, await rootOf(params.id), typeof why === 'string' && why.trim() ? why.trim().slice(0, 80) : t('手动存的'));
+	});
+	api.post('/apps/:id/checkpoints/:stamp/restore', async ({ params }) => appCheckpoints.restore(params.id, await rootOf(params.id), params.stamp));
+	// Its code shown in the Finder (看源码); the browser tests open nothing.
+	api.post('/apps/:id/reveal', async ({ params }) => {
+		const root = await rootOf(params.id);
+		if (!testing?.blog) execFile('open', [root], () => {});
+		return { path: root };
 	});
 	api.post('/apps/:id/fetch', async ({ params, json }) => {
 		await known(params.id);
