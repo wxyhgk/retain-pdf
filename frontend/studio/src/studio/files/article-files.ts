@@ -1,4 +1,4 @@
-import { codeFileLanguageForPath } from '@blog/markdown/code-files/languages.mjs';
+import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 
 /**
@@ -76,8 +76,8 @@ export function markdownReference(path: string, head?: string): string | null {
 	const block = fileBlock(path, head);
 	if (block?.markdown) return block.markdown(path);
 	if (block?.fence) return `\`\`\`${block.fence}\n@file ./${path}\n\`\`\``;
-	// A program's input or output shows as the file, highlighted, to read or download.
-	const codeFile = codeFileLanguageForPath(path);
+	// A program's input or output, a script, data: shown as the file, highlighted, to read, edit or download.
+	const codeFile = textFileLanguage(path);
 	if (codeFile) return `\`\`\`${codeFile}\n@file ./${path}\n\`\`\``;
 	return `[${label}](${linkPath(path)})`;
 }

@@ -303,5 +303,32 @@ export function codeFileLanguageForPath(path) {
 	return found?.name;
 }
 
+/**
+ * Text files that are code or data, by extension: the fence language they are shown in (Shiki's name), as a code
+ * file (`@file`) in the article and on the blog — a script, an input, a table of numbers.
+ */
+const TEXT_FILES = Object.freeze({
+	py: 'python', ipy: 'python', js: 'javascript', mjs: 'javascript', cjs: 'javascript', ts: 'typescript', jsx: 'jsx', tsx: 'tsx',
+	sh: 'bash', bash: 'bash', zsh: 'bash', json: 'json', jsonl: 'json', yaml: 'yaml', yml: 'yaml', toml: 'toml', ini: 'ini', cfg: 'ini',
+	csv: 'csv', tsv: 'tsv', txt: 'text', dat: 'text', md: 'markdown', tex: 'latex', bib: 'bibtex', html: 'html', css: 'css', xml: 'xml', svg: 'xml', sql: 'sql',
+	f: 'fortran-fixed-form', for: 'fortran-fixed-form', f90: 'fortran-free-form', f95: 'fortran-free-form', f03: 'fortran-free-form',
+	c: 'c', h: 'c', cpp: 'cpp', cc: 'cpp', cxx: 'cpp', hpp: 'cpp', rs: 'rust', go: 'go', java: 'java', r: 'r', jl: 'julia', m: 'matlab',
+	lua: 'lua', pl: 'perl', rb: 'ruby', php: 'php', swift: 'swift', kt: 'kotlin', diff: 'diff', patch: 'diff',
+});
+const TEXT_NAMES = Object.freeze({ makefile: 'makefile', dockerfile: 'docker', 'cmakelists.txt': 'cmake', readme: 'text', license: 'text' });
+
+/**
+ * The fence language a text file of the article is shown in: a program's input or output (codeFileLanguageForPath),
+ * else code or data by its extension; undefined for one that is not text (a picture, a PDF…).
+ */
+export function textFileLanguage(path) {
+	const chemistry = codeFileLanguageForPath(path);
+	if (chemistry) return chemistry;
+	const name = (String(path).split('/').pop() ?? '').toLowerCase();
+	if (TEXT_NAMES[name]) return TEXT_NAMES[name];
+	const extension = name.includes('.') ? name.split('.').pop() : '';
+	return extension ? TEXT_FILES[extension] : undefined;
+}
+
 /** Every fence language the code files claim: names and aliases. */
 export const codeFileFenceNames = Object.freeze(codeFileLanguages.flatMap((entry) => [entry.name, ...entry.aliases]));

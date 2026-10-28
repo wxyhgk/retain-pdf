@@ -27,7 +27,7 @@ import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
 import { linkPath } from '../files/article-files';
 import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
 import { filesNamed, headingSection } from './split-section';
-import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePreview, observeCodeFiles, saveCodeBlockAsFile } from './code-files';
+import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePath, codeFilePreview, observeCodeFiles, redrawCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { blockwiseMarkdown } from './blockwise-markdown';
 import { isLongArticle, LONG, OPENING } from '@blog/editor-kit/near-screen.ts';
@@ -66,6 +66,8 @@ export type StudioEditorHost = {
 	fileUrl(src: string): string;
 	/** A code block's `@file ./assets/opt.log`, drawn as the blog draws it. */
 	codeFile(reference: string, language: string, meta: string): Promise<HastElement>;
+	/** A file of the article opened to edit (a code file's 编辑, or a double-click on it). */
+	editFile(path: string): void;
 	/** The author edited: the whole body as Markdown. */
 	changed(markdown: string): void;
 	/** How many changes are left to review, or null when none is under review. */
@@ -123,6 +125,8 @@ export type StudioEditor = {
 	insertMarkdown(markdown: string): void;
 	/** The ProseMirror view of the article shown; null before one is. */
 	view(): EditorView | null;
+	/** The previews of the article's file `path` drawn again: it was changed (edited, saved). */
+	redrawCodeFile(path: string): void;
 	/** The blocks the selection is in shown as being worked on by an AI (Alt+Enter), as `id`, till `unmarkInstructing`. */
 	markInstructing(id: string): void;
 	unmarkInstructing(id: string): void;
@@ -249,6 +253,32 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		});
 	}
 	observeCodeFiles(root);
+	// A file's preview: 编辑, or a double-click on it, opens the file to edit. Before ProseMirror (it would select the block).
+	root.addEventListener(
+		'click',
+		(event) => {
+			const shown = (event.target as Element).closest('[data-code-action="edit"]')?.closest('figure.code-file');
+			const path = shown && codeFilePath(shown);
+			if (!path) return;
+			event.preventDefault();
+			event.stopPropagation();
+			host.editFile(path);
+		},
+		true,
+	);
+	root.addEventListener(
+		'dblclick',
+		(event) => {
+			const target = event.target as Element;
+			const shown = target.closest('figure.code-file[data-file-path]');
+			const path = shown && !target.closest('button, a') ? codeFilePath(shown) : null;
+			if (!path) return;
+			event.preventDefault();
+			event.stopPropagation();
+			host.editFile(path);
+		},
+		true,
+	);
 	/** What the plugins' blocks watch on the page (to draw what their previews left), for the article shown. */
 	let unobserve: Array<() => void> = [];
 
@@ -719,6 +749,9 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		hasSelection: () => crepe?.editor.action((ctx) => !ctx.get(editorViewCtx).state.selection.empty) ?? false,
 		insertMarkdown(markdown) {
 			crepe?.editor.action(insert(markdown));
+		},
+		redrawCodeFile(path) {
+			redrawCodeFiles(root, path, host.codeFile);
 		},
 		view() {
 			if (!crepe || mounting) return null;

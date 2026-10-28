@@ -78,11 +78,41 @@ export function codeFilePreview(
 		const path = codeFileReference(content);
 		if (!path) return null;
 		figure(path, language, meta).then(
-			(drawn) => apply(draw(drawn)),
+			(drawn) => apply(editable(draw(drawn), path, language, meta)),
 			(error: unknown) => apply(draw(codeFileProblem(language, error instanceof Error ? error.message : t('找不到文件 {path}', { path })))),
 		);
 		return undefined;
 	};
+}
+
+/** A code file's path in the article, as its preview says it (`./assets/opt.py` → `assets/opt.py`). */
+export function codeFilePath(figure: Element): string | null {
+	return (figure as HTMLElement).dataset.filePath ?? null;
+}
+
+/**
+ * The preview of a file in the Studio: which file it is (for 编辑 and a double-click: file-editor.ts, wired in
+ * studio-editor.ts), and an 编辑 among its actions. On the blog it stays as drawn.
+ */
+function editable(figure: HTMLElement, reference: string, language: string, meta: string): HTMLElement {
+	Object.assign(figure.dataset, { filePath: reference.replace(/^\.\//u, ''), fileLanguage: language, fileMeta: meta });
+	figure.title = t('双击编辑这个文件');
+	const button = document.createElement('button');
+	button.type = 'button';
+	button.className = 'code-file-edit';
+	button.dataset.codeAction = 'edit';
+	button.textContent = t('编辑');
+	figure.querySelector('.code-file-actions')?.prepend(button);
+	return figure;
+}
+
+/** The previews of `path` under `root` drawn again (the file was changed): as the server draws it now. */
+export function redrawCodeFiles(root: ParentNode, path: string, figure: (reference: string, language: string, meta: string) => Promise<HastElement>): void {
+	for (const shown of root.querySelectorAll<HTMLElement>('figure.code-file[data-file-path]')) {
+		if (shown.dataset.filePath !== path) continue;
+		const { fileLanguage = '', fileMeta = '' } = shown.dataset;
+		void figure(`./${path}`, fileLanguage, fileMeta).then((drawn) => shown.replaceWith(editable(draw(drawn), `./${path}`, fileLanguage, fileMeta)), () => {});
+	}
 }
 
 /** Whether a block can be saved as a file: code, not a formula, not already a file. */

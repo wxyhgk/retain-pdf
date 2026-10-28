@@ -4,6 +4,7 @@ import { t } from '@blog/i18n/index.mjs';
 import { movedPath, studioFileUrl } from '@blog/markdown/articles/article-references.mjs';
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { officeKind, tableSource } from '@blog/office/kinds.mjs';
+import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
 import {
 	articleFileHead,
 	createArticleFolder,
@@ -43,6 +44,8 @@ export type FilePanelHost = {
 	insertMarkdown(markdown: string): void;
 	/** Shows a Word, PowerPoint or Excel file in the page. */
 	viewOffice(url: string, name: string): void;
+	/** Opens a text file (a script, an input, data) to read and change in the page (file-editor.ts). */
+	editFile(path: string): void;
 	/** A workbook's first sheet as rows (office-viewer.ts). */
 	sheetRows(url: string): Promise<string[][]>;
 	/** A PDF of the article (its path in it) read by PaddleOCR into a page under the article. */
@@ -289,12 +292,13 @@ export function createFilePanelState(host: FilePanelHost) {
 		}
 	}
 
-	/** Opens a file: an office file in the page's viewer, the rest in a new tab. */
+	/** Opens a file: an office file in the page's viewer, a text file (code, data) in its editor, the rest in a new tab. */
 	function openFile(entry: ArticleFileEntry): void {
 		const [root] = entry.path.split('/');
 		const slug = get().slug;
 		if (!slug || entry.kind !== 'file' || !PUBLISHED_FOLDERS.includes(root)) return;
 		if (officeKind(entry.path)) host.viewOffice(studioFileUrl(slug, entry.path), fileName(entry.path));
+		else if (textFileLanguage(entry.path)) host.editFile(entry.path);
 		else window.open(studioFileUrl(slug, entry.path), '_blank', 'noopener');
 	}
 
@@ -343,7 +347,10 @@ export function createFilePanelState(host: FilePanelHost) {
 			);
 		} else {
 			const reference = markdownReference(entry.path);
-			if (published) items.push({ label: officeKind(entry.path) ? t('预览') : t('在新标签页打开'), icon: officeKind(entry.path) ? Eye : ExternalLink, action: () => openFile(entry) });
+			if (published) {
+				const [label, icon] = officeKind(entry.path) ? [t('预览'), Eye] : textFileLanguage(entry.path) ? [t('编辑'), PenLine] : [t('在新标签页打开'), ExternalLink];
+				items.push({ label, icon, action: () => openFile(entry) });
+			}
 			if (published && tableSource(entry.path)) items.push({ label: t('插入为表格'), icon: Table, action: () => insertTable(entry) });
 			if (/\.pdf$/iu.test(entry.path)) items.push({ label: t('OCR 成子页面（PaddleOCR）'), icon: ScanText, action: () => host.ocr(entry.path) });
 			// A plugin's block may tell the file by what it says (a Gaussian output among other logs): read when copied.
