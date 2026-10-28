@@ -10,6 +10,10 @@ use retainpdf_api::{run_servers_with_shutdown, stop_owned_workers_after_shutdown
 /// 调用链,所以同样需要——见 `JOB_WORKER_THREAD_STACK_BYTES`。
 fn main() -> anyhow::Result<()> {
     init_tracing();
+    // Windows：API 被强杀时管线、渲染这些孙进程跟着没（见 `kill_descendants_on_exit`）。失败只记日志，照常起。
+    if let Err(error) = retainpdf_proc::kill_descendants_on_exit() {
+        tracing::warn!("could not tie worker processes to this process's lifetime: {error}");
+    }
     let config = AppConfig::from_env()?;
     let runtime = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
