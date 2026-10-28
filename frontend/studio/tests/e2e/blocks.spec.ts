@@ -52,7 +52,7 @@ test('a toggle folds the blocks under its title; the title is typed in place and
 	expect(await save(page)).toContain('<details>\n<summary>Hartree–Fock &lt;推导&gt;</summary>\n\n第一步。\n\n第二步。然后收敛。\n\n</details>\n');
 });
 
-test('[[ links another article by its title, at its address; ⌘-click opens it', async ({ page }) => {
+test('[[ links another article by its title, at its address; it shows as a page and a click opens it', async ({ page }) => {
 	await openStudio(page);
 	await editor(page).locator('p', { hasText: '结尾段落' }).click();
 	await page.keyboard.press('End');
@@ -68,7 +68,11 @@ test('[[ links another article by its title, at its address; ⌘-click opens it'
 	await page.keyboard.type('。');
 	expect(await save(page)).toContain('结尾段落。 参见 [第二篇笔记](/wiki/second-note/)。');
 
-	await link.click({ modifiers: ['ControlOrMeta'] });
+	// In the sentence it is a page, as Notion's mention: its icon before it.
+	await expect(link.locator('.pm-article-mention-start')).toHaveCount(1);
+	expect(await link.locator('.pm-article-mention-start').evaluate((piece) => getComputedStyle(piece, '::before').content)).toBe('""');
+
+	await link.click();
 	await expect(page).toHaveURL(/article=second-note/u);
 	await expect(editor(page)).toContainText('第二篇的正文。');
 });

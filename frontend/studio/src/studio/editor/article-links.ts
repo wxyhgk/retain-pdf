@@ -10,7 +10,8 @@ import { changedRange } from '@blog/editor-kit/changed-range.ts';
 /**
  * Links to the blog's other articles, as Notion links its pages: `[[` opens
  * the article finder and the chosen one comes in as an ordinary Markdown
- * link to its address (`[标题](/blog/slug/)`); ⌘-click on such a link opens
+ * link to its address (`[标题](/blog/slug/)`). In a sentence such a link
+ * shows as a page (its icon before it, pm-article-mention) and a click opens
  * that article here.
  *
  * And pages, as Notion's: 页面 (/page) makes a page under the article and
@@ -62,12 +63,40 @@ function pageLinked(node: ProseNode): string | null {
 	return alone && href ? (ARTICLE_ADDRESS.exec(href)?.[2] ?? null) : null;
 }
 
-/** The page lines between `from` and `to` in `doc` (and in the blocks holding that stretch). */
+/** The article a link mark goes to; null for a link elsewhere (or no link). */
+function linkedArticle(node: ProseNode): { href: string; slug: string } | null {
+	const link = node.isText ? node.marks.find((mark) => mark.type.name === 'link') : undefined;
+	const href = link ? String(link.attrs.href ?? '') : '';
+	const slug = ARTICLE_ADDRESS.exec(href)?.[2];
+	return slug ? { href, slug } : null;
+}
+
+/**
+ * The links to articles in a block that is more than one (at `pos`): each shown as a page, its icon before its first
+ * piece (a link partly bold is pieces of text).
+ */
+function mentions(node: ProseNode, pos: number): Decoration[] {
+	const found: Decoration[] = [];
+	let previous: string | null = null;
+	node.forEach((child, offset) => {
+		const article = linkedArticle(child);
+		if (article) {
+			const from = pos + 1 + offset;
+			const first = article.href !== previous;
+			found.push(Decoration.inline(from, from + child.nodeSize, { class: first ? 'pm-article-mention pm-article-mention-start' : 'pm-article-mention' }));
+		}
+		previous = article?.href ?? null;
+	});
+	return found;
+}
+
+/** The page lines between `from` and `to` in `doc` (and in the blocks holding that stretch), and the pages linked in sentences. */
 function pageLines(doc: ProseNode, from: number, to: number): Decoration[] {
 	const found: Decoration[] = [];
 	doc.nodesBetween(from, to, (node, pos) => {
 		if (!node.isTextblock) return !node.isInline;
 		if (pageLinked(node)) found.push(Decoration.node(pos, pos + node.nodeSize, { class: 'pm-page-link' }));
+		else if (!node.type.spec.code) found.push(...mentions(node, pos));
 		return false;
 	});
 	return found;
@@ -118,10 +147,10 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 					},
 					handleClick(_view, _pos, event) {
 						const target = event.target as Element | null;
-						// A page's line opens it with a click, as in Notion; any link to an article with ⌘-click.
-						const page = target?.closest?.('.pm-page-link a[href]');
+						// A page, its own line or in a sentence, opens with a click, as in Notion; any link to an article with ⌘-click.
+						const page = target?.closest?.('.pm-page-link a[href], a[href]:has(.pm-article-mention), .pm-article-mention');
 						if (!(event.metaKey || event.ctrlKey) && !page) return false;
-						const link = page ?? target?.closest?.('a[href]');
+						const link = page?.closest('a[href]') ?? target?.closest?.('a[href]');
 						const slug = link ? ARTICLE_ADDRESS.exec(link.getAttribute('href') ?? '')?.[2] : undefined;
 						if (!slug) return false;
 						event.preventDefault();
