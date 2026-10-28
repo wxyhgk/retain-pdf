@@ -107,6 +107,39 @@ pub(super) fn prepare_upload(
     })
 }
 
+/// 同样内容的 PDF 已经存过（同一本书又传了一次），把刚收的这一份换成指向已有那份的硬链接：上传记录照旧各有各的
+/// 目录，删哪一个都不影响另一个（删掉的只是自己这个名字），盘上只占一份。建不了硬链接（跨盘、文件系统不支持）
+/// 或者出了别的错，就留着刚收的这一份，上传照常成功。
+///
+/// 编号是同一个所有者范围里原样字节的 sha256（多用户时各账号分开算），所以只会和自己传过的那份共用。已有的那份可能
+/// 修复过（PyMuPDF 重写，字节和原样不同）：原样字节一样，修复出来的是同一份文档，用哪份都行。上传目录里的文件
+/// 只会整份换名替换（修复就是这样），不会原地改写，所以共用一份是安全的。
+fn share_existing_copy(db: &Db, path: &Path, content_hash: &str) -> bool {
+    let Ok(Some(existing)) = db.upload_with_content_hash(content_hash) else {
+        return false;
+    };
+    let existing = PathBuf::from(existing.stored_path);
+    if existing == path || !existing.is_file() {
+        return false;
+    }
+    let Some(name) = path.file_name() else {
+        return false;
+    };
+    let mut staged_name = std::ffi::OsString::from(".");
+    staged_name.push(name);
+    staged_name.push(".link");
+    let staged = path.with_file_name(staged_name);
+    let _ = std::fs::remove_file(&staged);
+    if std::fs::hard_link(&existing, &staged).is_err() {
+        return false;
+    }
+    if std::fs::rename(&staged, path).is_err() {
+        let _ = std::fs::remove_file(&staged);
+        return false;
+    }
+    true
+}
+
 pub(super) fn publish_upload(
     db: &Db,
     mut prepared: PreparedUpload,
@@ -124,6 +157,7 @@ pub(super) fn publish_upload(
     }
     prepared.record.page_count = page_count;
     prepared.record.content_hash = owner.scoped_content_hash(&prepared.record.content_hash);
+    share_existing_copy(db, &prepared.path, &prepared.record.content_hash);
     db.save_upload_with_document_for(&prepared.record, owner.owner_id())
         .map_err(|_| UploadError::internal("Failed to publish uploaded PDF"))?;
     prepared.pending.0 = PathBuf::new();
