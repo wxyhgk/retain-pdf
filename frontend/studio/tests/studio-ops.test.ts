@@ -198,3 +198,39 @@ test('the author’s apps for an AI: listed from their folders; how one is now, 
 	assert.equal(status.log.split('\n').length, 60);
 	await assert.rejects(ops.appStatus({ id: 'nothing' }), /没有这个小程序/u);
 });
+
+test('代码仓库 for an AI: one of this machine found and added, one made, listed as the Studio lists them, one taken off', async (t) => {
+	const blog = temporaryBlog(t);
+	const { mkdirSync, writeFileSync } = await import('node:fs');
+	const home = `${blog}-home`;
+	t.after(() => {
+		rmSync(home, { recursive: true, force: true });
+		rmSync(`${blog}-repos`, { recursive: true, force: true });
+	});
+	const resume = join(home, 'Code', 'resume');
+	mkdirSync(join(resume, 'src'), { recursive: true });
+	writeFileSync(join(resume, 'README.md'), '# resume\n\n我的简历，LaTeX 写的。\n');
+	const env = { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@example.com', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@example.com' };
+	execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: resume, env });
+	execFileSync('git', ['add', '.'], { cwd: resume, env });
+	execFileSync('git', ['commit', '-q', '-m', '简历'], { cwd: resume, env });
+	const ops = createStudioOps({ root });
+
+	const { found } = (await ops.addRepo({ found: true })) as { found: Array<{ path: string; name: string }> };
+	assert.deepEqual(found.map((each) => each.name), ['resume']);
+	await assert.rejects(ops.addRepo({}), /要给出仓库的路径/u);
+	await assert.rejects(ops.addRepo({ path: home }), /不是 git 仓库/u);
+	const { added } = (await ops.addRepo({ path: join(resume, 'src') })) as { added: { id: string; name: string; description: string } };
+	assert.deepEqual({ name: added.name, description: added.description }, { name: 'resume', description: '我的简历，LaTeX 写的。' });
+
+	const { created } = (await ops.createRepo({ name: 'ts-search', description: '找过渡态' })) as { created: { id: string; own: boolean } };
+	assert.equal(created.own, true);
+	const listed = (await ops.listRepos()) as Array<{ name: string }>;
+	assert.deepEqual(listed.map((each) => each.name).sort(), ['resume', 'ts-search']);
+
+	assert.deepEqual(await ops.removeRepo({ id: added.id }), { removed: true });
+	await assert.rejects(ops.removeRepo({ id: created.id }), /不在这里删/u);
+	assert.deepEqual(((await ops.listRepos()) as Array<{ name: string }>).map((each) => each.name), ['ts-search']);
+	// The command line has them too.
+	assert.match(execFileSync('node', [join(root, 'bin/studio.mjs'), 'help'], { env: { ...process.env, STUDIO_BLOG_DIR: blog } }).toString(), /add-repo/u);
+});

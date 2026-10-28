@@ -16,6 +16,8 @@ import { ArticleGit } from '../server/articles/article-git.mjs';
 import { ArticleHistory } from '../server/articles/article-history.mjs';
 import { ArticleRepository } from '../server/articles/article-repository.mjs';
 import { MiniApps } from '../server/apps/mini-apps.mjs';
+import { Repositories } from '../server/repos/repositories.mjs';
+import { reposRootOf } from '../../articles/bundle-paths.mjs';
 import { Drive } from '../server/drive/drive.mjs';
 import { DriveText } from '../server/drive/drive-text.mjs';
 import { ArticleFileManager, TRASH_FOLDER } from '../server/files/file-manager.mjs';
@@ -51,6 +53,8 @@ export function createStudioOps({ root, site } = {}) {
 	const manager = new ArticleFileManager(blogRoot, { trashRoot: testBlog ? resolve(testBlog, TRASH_FOLDER) : resolve(projectRoot, TRASH_FOLDER) });
 	const git = new ArticleGit(blogRoot);
 	const settingsFile = testBlog ? resolve(testBlog, '.studio-settings.json') : resolve(projectRoot, '.studio-settings.json');
+	// 代码仓库: as the Studio has them (its own beside blog/; those added, in its settings); the tests' with no home of the author's looked through.
+	const repositories = new Repositories({ ownRoot: reposRootOf(blogRoot), settingsFile, home: testBlog ? `${blogRoot}-home` : undefined });
 	const drive = new Drive({ settingsFile, fixedRoot: process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null, forbidden: [projectRoot, blogRoot] });
 
 	const pages = () => articles.list();
@@ -354,6 +358,28 @@ export function createStudioOps({ root, site } = {}) {
 				blocks: app.blocks.map((block) => block.fence),
 				...(app.problem ? { problem: app.problem } : {}),
 			})));
+		},
+
+		/** 代码仓库: the repositories it shows (the Studio's own in repos/, and those of this machine added). */
+		async listRepos() {
+			return repositories.list();
+		},
+
+		/** One of this machine added to 代码仓库; or, `found`, those in the usual places not added yet. */
+		async addRepo({ path, found } = {}) {
+			if (found) return { found: await repositories.discover() };
+			if (!path) throw new StudioOpsError(t('要给出仓库的路径，或者 found: true 先找一找'));
+			return { added: await repositories.add(path) };
+		},
+
+		/** A repository of the Studio's own made: repos/<name>/, git, a README, committed. */
+		async createRepo({ name, description }) {
+			return { created: await repositories.create({ name, description }) };
+		},
+
+		/** One added taken off 代码仓库's list (its folder left as it is). */
+		async removeRepo({ id }) {
+			return { removed: await repositories.remove(id) };
 		},
 
 		/** How an app is now, asked of the Studio running (its server's state and output, its pages' errors). */

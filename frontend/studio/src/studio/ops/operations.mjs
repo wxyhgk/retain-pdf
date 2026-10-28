@@ -206,6 +206,30 @@ export const OPERATIONS = [
 		input: { type: 'object', properties: { id: text('小程序的文件夹名（apps/<文件夹名>）') }, required: ['id'] }, // i18n-ignore: for the AI
 		run: (ops, args) => ops.appStatus(args),
 	},
+	{
+		name: 'list_repos',
+		description: '列出「代码仓库」里的仓库（作者的 git 仓库：Studio 自己的在 repos/，加上作者添加的本机仓库）：id、名字、路径、说明、分支、最近一次提交、没提交的改动数、语言。要在某个仓库里干活，cd 到它的路径（路径里的 ~ 是家目录）。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: {} },
+		run: (ops) => ops.listRepos(),
+	},
+	{
+		name: 'add_repo',
+		description: '把本机已有的一个 git 仓库加进「代码仓库」（只记下它的路径，文件夹不动）。给仓库里任何一个文件夹都行，可以用 ~；不是 git 仓库会说。不知道在哪就先用 found: true 列出常见位置（~/Code 等，往下两层）还没加的仓库。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { path: text('仓库的路径，比如 ~/Code/resume'), found: { type: 'boolean', description: 'true：不加，只列出常见位置里还没加的仓库' } } }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.addRepo(args),
+	},
+	{
+		name: 'create_repo',
+		description: '在「代码仓库」里新建一个 Studio 自己的仓库：repos/<name>/，带 git、README（写上 description）和第一次提交。之后把代码写进它的路径（list_repos 给出），而不是写进笔记。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { name: text('仓库名：文字、数字和 . _ -'), description: text('一句话说明它是做什么的') }, required: ['name'] }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.createRepo(args),
+	},
+	{
+		name: 'remove_repo',
+		description: '把一个加进来的本机仓库从「代码仓库」的列表里拿掉（文件夹不动，不删任何东西）。Studio 自己的仓库不能这样删。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { id: text('list_repos 给出的 id') }, required: ['id'] }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.removeRepo(args),
+	},
 ];
 
 /** The command-line name of an operation: `list_pages` → `list-pages`. */
