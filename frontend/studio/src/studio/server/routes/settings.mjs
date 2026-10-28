@@ -1,3 +1,6 @@
+import { appendFile, mkdir } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import { keepLastGood } from '../system/last-good.mjs';
 
 /**
@@ -18,4 +21,12 @@ export function settingRoutes(api, { localeSettings, projectRoot }) {
 		return { started, kept };
 	});
 	api.get('/started', () => ({ started }));
+	// What the page saw going wrong that it cannot tell itself (overflow-watch.ts): kept for whoever looks into it.
+	api.post('/notes', async ({ json }) => {
+		const { what } = (await json()) ?? {};
+		if (typeof what !== 'string' || !what) return { kept: false };
+		await mkdir(join(projectRoot, '.astro'), { recursive: true });
+		await appendFile(join(projectRoot, '.astro/studio-notes.log'), `==== ${new Date().toISOString()}\n${what.slice(0, 8000)}\n`);
+		return { kept: true };
+	});
 }

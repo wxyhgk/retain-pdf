@@ -575,6 +575,11 @@ export function tellStarted(): Promise<unknown> {
 	return request('/api/studio/started', jsonOptions('POST', {}));
 }
 
+/** Something the page saw going wrong, kept in the blog's .astro/studio-notes.log for whoever looks into it. */
+export function keepNote(what: string): Promise<unknown> {
+	return request('/api/studio/notes', jsonOptions('POST', { what }));
+}
+
 /** A new app from a template (新建小程序): as listed, and its folder. */
 export function createApp(name: string, template: 'page' | 'react'): Promise<MiniApp & { folder: string }> {
 	return request('/api/studio/apps', jsonOptions('POST', { name, template }));

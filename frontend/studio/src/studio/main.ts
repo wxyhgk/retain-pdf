@@ -45,6 +45,7 @@ import { createOutline } from './pages/outline';
 import { keepFormulasFitted } from '@blog/science/browser/fit-formulas.ts';
 import { createPageSnapshot } from './pages/page-snapshot';
 import { anchorScroll } from './pages/scroll-anchor';
+import { watchOverflow } from './pages/overflow-watch';
 import { createBacklinks } from './pages/backlinks';
 import { createArticleTable } from './pages/article-table';
 import { createPageHeader } from './pages/page-header';
@@ -109,6 +110,7 @@ const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#e
 // Display formulas wider than the page: in lines, or smaller, not scrolled (fit-formulas.ts).
 keepFormulasFitted(editorScroll);
 anchorScroll(editorScroll);
+watchOverflow(editorScroll);
 
 /** The open article's title as typed (the plugins' `ctx.studio.article()`). */
 let openTitle = '';
