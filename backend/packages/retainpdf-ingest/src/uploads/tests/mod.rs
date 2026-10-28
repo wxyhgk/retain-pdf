@@ -4,7 +4,7 @@ use super::*;
 use retainpdf_data::db::Db;
 use crate::build_test_pdf_bytes;
 use retainpdf_core::config::UploadProcessingConfig;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -417,4 +417,64 @@ async fn cancelled_awaiter_does_not_release_a_blocking_closures_parse_permit() {
     .unwrap();
     drop(returned);
     assert_eq!(capacity.parse.available_permits(), 1);
+}
+
+fn another_test_pdf_bytes() -> Vec<u8> {
+    let mut pdf = lopdf::Document::load_mem(&build_test_pdf_bytes()).unwrap();
+    pdf.trailer.set("Info", lopdf::Object::string_literal("another"));
+    let mut bytes = Vec::new();
+    pdf.save_to(&mut bytes).unwrap();
+    bytes
+}
+
+#[cfg(unix)]
+fn link_count(path: &str) -> u64 {
+    use std::os::unix::fs::MetadataExt;
+    std::fs::metadata(path).unwrap().nlink()
+}
+
+#[tokio::test]
+async fn uploading_the_same_pdf_again_shares_one_file_and_either_can_be_deleted() {
+    let root = std::env::temp_dir().join(format!("retain-upload-dedupe-{}", fastrand::u64(..)));
+    let db = Db::new(root.join("db/jobs.db"), root.clone());
+    let service = make_service(db, root.join("uploads"), "unused", UploadProcessingConfig::default());
+    let store = |bytes: Vec<u8>| {
+        let service = service.clone();
+        async move {
+            service
+                .store(UploadedPdfInput { filename: "paper.pdf".into(), bytes, developer_mode: false })
+                .await
+                .unwrap()
+        }
+    };
+
+    let first = store(build_test_pdf_bytes()).await;
+    let second = store(build_test_pdf_bytes()).await;
+    let other = store(another_test_pdf_bytes()).await;
+
+    assert_ne!(first.upload_id, second.upload_id);
+    assert_ne!(first.stored_path, second.stored_path);
+    assert_eq!(std::fs::read(&second.stored_path).unwrap(), build_test_pdf_bytes());
+    #[cfg(unix)]
+    {
+        assert_eq!(link_count(&first.stored_path), 2, "the second upload links to the first copy");
+        assert_eq!(link_count(&other.stored_path), 1, "different content is stored on its own");
+    }
+    let leftovers: Vec<_> = std::fs::read_dir(Path::new(&second.stored_path).parent().unwrap())
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name())
+        .collect();
+    assert_eq!(leftovers.len(), 1, "no staging file is left behind: {leftovers:?}");
+
+    // 删掉先传的那个（孤儿上传清理就是整个目录删），后传的照样能读。
+    std::fs::remove_dir_all(Path::new(&first.stored_path).parent().unwrap()).unwrap();
+    assert_eq!(std::fs::read(&second.stored_path).unwrap(), build_test_pdf_bytes());
+    #[cfg(unix)]
+    assert_eq!(link_count(&second.stored_path), 1);
+
+    // 已有的那份文件不在了（记录还在）：照常另存一份。
+    std::fs::remove_dir_all(Path::new(&second.stored_path).parent().unwrap()).unwrap();
+    let third = store(build_test_pdf_bytes()).await;
+    assert_eq!(std::fs::read(&third.stored_path).unwrap(), build_test_pdf_bytes());
+    std::fs::remove_dir_all(root).unwrap();
 }
