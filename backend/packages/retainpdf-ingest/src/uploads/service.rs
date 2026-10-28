@@ -153,7 +153,7 @@ impl UploadService {
             .clone()
             .try_acquire_owned()
             .map_err(|_| busy())?;
-        // lopdf 解析时把整份 PDF 读进内存，这一份照旧按文件大小占内存预算。
+        // 数页数时整份 PDF 读进内存（流读到就扔，见 `pdf::load_page_tree`），峰值约是文件大小，按它占内存预算。
         let buffer = capacity.reserve_buffer(byte_count)?;
         let permit = capacity.acquire(&capacity.parse).await?;
         let db = self.inner.db.clone();
