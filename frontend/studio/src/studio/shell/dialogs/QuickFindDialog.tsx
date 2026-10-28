@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { searchArticles, searchDrive } from '../../api/client';
@@ -14,7 +14,12 @@ export type QuickFindHost = {
 	open(slug: string, text?: string): void;
 	/** Shows a file of the drive (资料库) that was found. */
 	openDriveFile(path: string): void;
+	/** What can be run from here (`> …`, as Emacs's M-x): the plugins', the apps', the Studio's. */
+	commands(): Promise<QuickCommand[]>;
 };
+
+/** A command ⌘K runs: what it says, its mark, its keys (if it has some). */
+export type QuickCommand = { key: string; label: string; icon?: string; hint?: string; run(): void };
 
 /** What was picked when an article was asked for: one there is, or a new page under the open one, of this title. */
 export type Picked = { slug: string } | { create: string };
@@ -30,8 +35,11 @@ export type QuickFindAsk = { round: number; host: QuickFindHost } & (
 	| { mode: 'place'; excluded: Set<string>; placeholder: string; done(parent: string | null): void }
 );
 
-/** An article, a file of the drive (`drivePath`), the row making a page (`create`), or where pages go (`place`). */
-type Row = FinderRow & { slug: string; text?: string; drivePath?: string; create?: string; place?: string };
+/** An article, a file of the drive (`drivePath`), the row making a page (`create`), where pages go (`place`), or a command. */
+type Row = FinderRow & { slug: string; text?: string; drivePath?: string; create?: string; place?: string; command?: string };
+
+/** What is typed to find commands, as in VS Code: `>` and their words. */
+const COMMANDS = '>';
 
 /** The part of a long line around what was found. */
 function around(text: string, needle: string): string {
@@ -58,8 +66,16 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 		return titles.join(' › ');
 	}
 
-	/** What is offered for `query` at once: where pages can go, or the titles (and, asked to link, the page to make). */
+	const commands = useRef<QuickCommand[]>([]);
+
+	/** What is offered for `query` at once: where pages can go, the commands, or the titles (and, asked to link, the page to make). */
 	function atOnce(query: string): Row[] {
+		if (ask.mode === 'find' && query.startsWith(COMMANDS)) {
+			const wanted = query.slice(COMMANDS.length).trim().toLocaleLowerCase('zh-CN');
+			return commands.current
+				.filter((command) => !wanted || command.label.toLocaleLowerCase('zh-CN').includes(wanted))
+				.map((command) => ({ key: `c:${command.key}`, slug: '', title: command.label, icon: command.icon ?? '›', snippet: command.hint, command: command.key }));
+		}
 		if (ask.mode === 'place') {
 			const top: Row[] = query ? [] : [{ key: 'p:', slug: '', title: t('最上层'), icon: '⇱', place: '', snippet: t('不放在任何页面下面') }];
 			const pages = filterArticles(host.articles(), query).filter((entry) => !ask.excluded.has(entry.slug));
@@ -74,6 +90,27 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 	const [rows, setRows] = useState(() => atOnce(''));
 	const [selected, setSelected] = useState(rows[0]?.key ?? '');
 
+	// The commands, asked for as ⌘K opens: offered once `>` is typed.
+	useEffect(() => {
+		if (ask.mode !== 'find') return;
+		let gone = false;
+		void host.commands().then((listed) => {
+			if (gone) return;
+			commands.current = listed;
+			setQuery((now) => {
+				if (now.trim().startsWith(COMMANDS)) {
+					const next = atOnce(now.trim());
+					setRows(next);
+					setSelected(next[0]?.key ?? '');
+				}
+				return now;
+			});
+		}, () => {});
+		return () => {
+			gone = true;
+		};
+	}, []);
+
 	function typed(value: string): void {
 		setQuery(value);
 		const next = atOnce(value.trim());
@@ -83,7 +120,7 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 
 	useEffect(() => {
 		const wanted = query.trim();
-		if (ask.mode === 'place' || !wanted) return;
+		if (ask.mode === 'place' || !wanted || wanted.startsWith(COMMANDS)) return;
 		const controller = new AbortController();
 		const timer = window.setTimeout(() => {
 			// The drive's files follow the articles; not offered when an article is asked for.
@@ -124,8 +161,9 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 
 	function choose(key: string): void {
 		const row = rows.find((entry) => entry.key === key);
-		if (!row || (!row.slug && !row.drivePath && !row.create && row.place === undefined)) return;
+		if (!row || (!row.slug && !row.drivePath && !row.create && !row.command && row.place === undefined)) return;
 		onClose();
+		if (row.command) return commands.current.find((command) => command.key === row.command)?.run();
 		if (ask.mode === 'place') ask.done(row.place ?? row.slug);
 		else if (ask.mode === 'pick') ask.done(row.create ? { create: row.create } : { slug: row.slug });
 		else if (row.drivePath) host.openDriveFile(row.drivePath);
@@ -138,7 +176,7 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 			inputId="quick-find-input"
 			title={t('搜索')}
 			icon="⌕"
-			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪篇文章…') : t('搜索文章和资料库…')}
+			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪篇文章…') : t('搜索文章和资料库…（输入 > 找命令）')}
 			query={query}
 			onQuery={typed}
 			rows={rows}

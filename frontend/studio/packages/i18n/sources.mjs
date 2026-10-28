@@ -6,8 +6,8 @@ import { translatable, untranslated } from './scan.mjs';
 /** Where the Studio's words are: its page and server, the plugins, the shared packages. */
 const ROOTS = ['src/studio', 'src/plugins', 'plugins', 'packages'];
 const CODE = /\.(?:ts|tsx|mjs|astro)$/u;
-/** Not for the author to read in the Studio: tests and their data, types, the words' own package. */
-const SKIPPED = /(?:^|\/)(?:node_modules|test|tests|test-data|fixtures)\/|\.test\.|\.d\.m?ts$|^packages\/i18n\//u;
+/** Not for the author to read in the Studio: tests and their data, types, the words' own package, the new apps' templates (the author's own words once made). */
+const SKIPPED = /(?:^|\/)(?:node_modules|test|tests|test-data|fixtures)\/|\.test\.|\.d\.m?ts$|^packages\/i18n\/|^src\/studio\/server\/apps\/templates\//u;
 
 /** The Studio's source files, relative to `projectRoot`, sorted. */
 export async function studioSources(projectRoot) {

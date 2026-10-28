@@ -194,6 +194,18 @@ export const OPERATIONS = [
 		input: { type: 'object', properties: { query: text('要找的字'), limit: { type: 'number', description: '最多几个，默认 30' } }, required: ['query'] }, // i18n-ignore: for the AI
 		run: (ops, args) => ops.searchDrive(args),
 	},
+	{
+		name: 'list_apps',
+		description: '列出作者的小程序（apps/ 下）：名字、文件夹、是一页网页还是项目（项目的代码在 app.json 或 app.local.json 的 dev.cwd）、它给文章提供的块（```块名）。改小程序照技能 studio-mini-apps。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: {} },
+		run: (ops) => ops.listApps(),
+	},
+	{
+		name: 'app_status',
+		description: '一个小程序现在怎么样：项目型的开发服务器是否在跑、它最近的输出，以及它的页面（窗口里、文章的块里）最近出的错。改完小程序用它看错误清掉没有。要 Studio 开着。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { id: text('小程序的文件夹名（apps/<文件夹名>）') }, required: ['id'] }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.appStatus(args),
+	},
 ];
 
 /** The command-line name of an operation: `list_pages` → `list-pages`. */

@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { MiniApps, appDocument } from './mini-apps.mjs';
+import { readFile } from 'node:fs/promises';
+import { MiniApps, STUDIO_CALLS, appDocument } from './mini-apps.mjs';
 
 test('小程序: listed from their app.json, a broken one saying what is wrong; what they ask for kept to what there is', async (t) => {
 	const root = await mkdtemp(join(tmpdir(), 'studio-apps-'));
@@ -21,7 +22,7 @@ test('小程序: listed from their app.json, a broken one saying what is wrong; 
 	assert.deepEqual(listed.map((app) => app.id).sort(), ['broken', 'units']);
 	const byId = Object.fromEntries(listed.map((app) => [app.id, app]));
 	assert.match(byId.broken.problem, /app\.json 读不了/u);
-	assert.deepEqual({ ...byId.units }, { id: 'units', name: '单位换算', icon: '⚡', description: '', width: 200, height: 1600, permissions: ['insert'], kind: 'page', blocks: [] });
+	assert.deepEqual({ ...byId.units }, { id: 'units', name: '单位换算', icon: '⚡', description: '', width: 200, height: 1600, permissions: ['insert'], kind: 'page', blocks: [], commands: [] });
 
 	// Its page with `studio` first; its other files as they are; nothing outside its folder.
 	const page = await apps.file('units', '');
@@ -62,4 +63,41 @@ test('a project app: how it is run from its app.json, where it is from app.local
 	assert.match(page, /window\.studio = studio/u);
 	assert.match(page, /type: 'error'/u);
 	assert.doesNotMatch(page, /font: 14px/u);
+});
+
+test('a new app from a template: a folder of its own, its name put in; a project one runs on the repository’s Vite', async (t) => {
+	const root = await mkdtemp(join(tmpdir(), 'studio-apps-'));
+	t.after(() => rm(root, { recursive: true, force: true }));
+	const apps = new MiniApps(join(root, 'apps'));
+	const page = await apps.create({ name: 'Energy Units', template: 'page' });
+	assert.equal(page.id, 'energy-units');
+	assert.equal(page.kind, 'page');
+	assert.equal(page.name, 'Energy Units');
+	assert.match(await readFile(join(root, 'apps', 'energy-units', 'app.html'), 'utf8'), /小程序「Energy Units」/u);
+	const again = await apps.create({ name: 'Energy Units', template: 'page' });
+	assert.equal(again.id, 'energy-units-2');
+	const project = await apps.create({ name: '结构式<编辑器>', template: 'react' });
+	assert.match(project.id, /^app-[0-9a-z]+$/u);
+	assert.equal(project.name, '结构式编辑器');
+	assert.equal(project.kind, 'project');
+	assert.deepEqual((await apps.dev(project.id)).command.slice(0, 2), ['node', '../../node_modules/vite/bin/vite.js']);
+	assert.match(await readFile(join(root, 'apps', project.id, 'src', 'App.tsx'), 'utf8'), /<h1 [^>]*>结构式编辑器<\/h1>/u);
+	await assert.rejects(apps.create({ name: '', template: 'page' }), /起个名字/u);
+	await assert.rejects(apps.create({ name: 'x', template: 'vue' }), /没有这个模板/u);
+});
+
+test('what `studio` asks is the list the skill and the React template’s types say', async () => {
+	const here = (path) => new URL(path, import.meta.url);
+	const bridge = await readFile(here('./mini-apps.mjs'), 'utf8');
+	const asked = [...bridge.matchAll(/call\('([\w.]+)'/gu)].map((match) => match[1]).sort();
+	assert.deepEqual(asked, [...STUDIO_CALLS].sort());
+	const skill = await readFile(here('../../../../.agents/skills/studio-mini-apps/SKILL.md'), 'utf8');
+	const types = await readFile(here('./templates/react/src/studio.d.ts'), 'utf8');
+	for (const name of STUDIO_CALLS) {
+		assert.ok(skill.includes(`studio.${name}(`), `the skill has studio.${name}`);
+		const [first, second] = name.split('.');
+		// A call of a group (files.read): in that group's lines of the type.
+		const group = second ? types.slice(types.indexOf(`\t${first}: {`), types.indexOf('\n\t};', types.indexOf(`\t${first}: {`))) : types;
+		assert.match(group, new RegExp(`\\b${second ?? first}[<(]`, 'u'), `studio.d.ts has studio.${name}`);
+	}
 });

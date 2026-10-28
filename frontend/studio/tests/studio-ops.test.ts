@@ -163,3 +163,38 @@ test('the MCP server: initialize, the tools with their schemas, a call and its r
 	assert.equal(wrong.isError, true);
 	assert.equal((await ask(5, 'no/such')).error.code, -32601);
 });
+
+test('the author’s apps for an AI: listed from their folders; how one is now, asked of the Studio running', async (t) => {
+	const project = mkdtempSync(join(tmpdir(), 'studio-ops-apps-'));
+	temporaryBlog(t);
+	t.after(() => {
+		rmSync(project, { recursive: true, force: true });
+		delete process.env.STUDIO_URL;
+	});
+	const { mkdirSync, writeFileSync } = await import('node:fs');
+	mkdirSync(join(project, 'apps', 'mol'), { recursive: true });
+	writeFileSync(join(project, 'apps', 'mol', 'app.json'), JSON.stringify({ name: '分子', dev: { command: ['npm', 'run', 'dev'] }, blocks: [{ fence: 'molblock' }] }));
+	mkdirSync(join(project, 'apps', 'units'));
+	writeFileSync(join(project, 'apps', 'units', 'app.json'), JSON.stringify({ name: '换算' }));
+	const ops = createStudioOps({ root: project });
+	assert.deepEqual(await ops.listApps(), [
+		{ id: 'mol', name: '分子', description: '', kind: 'project', folder: 'apps/mol', code: 'apps/mol', blocks: ['molblock'] },
+		{ id: 'units', name: '换算', description: '', kind: 'page', folder: 'apps/units', blocks: [] },
+	]);
+
+	// The Studio's answer (a stand-in here), the last of its output.
+	const { createServer } = await import('node:http');
+	const studio = createServer((request, response) => {
+		response.setHeader('content-type', 'application/json');
+		if (request.url !== '/api/studio/apps/mol/status') return response.writeHead(404).end(JSON.stringify({ error: '没有这个小程序' }));
+		response.end(JSON.stringify({ state: 'running', port: 5555, error: null, log: Array.from({ length: 100 }, (_, n) => `line ${n}`).join('\n'), errors: [{ when: 'now', message: 'TypeError: x is undefined' }] }));
+	});
+	await new Promise<void>((resolve) => studio.listen(0, '127.0.0.1', resolve));
+	t.after(() => studio.close());
+	process.env.STUDIO_URL = `http://127.0.0.1:${(studio.address() as { port: number }).port}`;
+	const status = (await ops.appStatus({ id: 'mol' })) as { state: string; errors: Array<{ message: string }>; log: string };
+	assert.equal(status.state, 'running');
+	assert.equal(status.errors[0]!.message, 'TypeError: x is undefined');
+	assert.equal(status.log.split('\n').length, 60);
+	await assert.rejects(ops.appStatus({ id: 'nothing' }), /没有这个小程序/u);
+});

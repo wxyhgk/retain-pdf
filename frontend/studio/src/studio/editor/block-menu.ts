@@ -165,9 +165,10 @@ function entriesFor(node: ProseNode, pos: number, host: BlockMenuHost): MenuEntr
 	if (save?.can(node)) {
 		entries.push({ key: 'save-file', label: t('另存为文件'), current: false, danger: false, turn: false, run: (view) => save.run(view, pos) });
 	}
-	// A plugin's block may hold a menu of its own, keeping what it likes of these.
-	const own = host.blocks?.find((block) => block.blockMenu?.nodes.includes(node.type.name))?.blockMenu;
-	return [...(own ? own.entries(node, pos, entries) : entries), ...askEntry(host)];
+	// The plugins' blocks may make the menu their own, each given what those before it left (a chemistry block's own
+	// menu; 运行 added to code blocks).
+	const own = (host.blocks ?? []).flatMap((block) => (block.blockMenu?.nodes.includes(node.type.name) ? [block.blockMenu] : []));
+	return [...own.reduce((held, menu) => menu.entries(node, pos, held), entries), ...askEntry(host)];
 }
 
 /**

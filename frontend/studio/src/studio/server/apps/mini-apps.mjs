@@ -1,5 +1,6 @@
-import { readdir, readFile, stat } from 'node:fs/promises';
-import { extname, isAbsolute, join, resolve } from 'node:path';
+import { cp, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
+import { extname, isAbsolute, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { resolveInside } from '../../../articles/bundle-paths.mjs';
 import { colorDeclarations, siteColors } from '../../../styles/palette.mjs';
@@ -81,12 +82,37 @@ const TYPES = {
 export const APP_MESSAGE = 'studio-app';
 
 /**
+ * What `studio` (BRIDGE) asks the Studio, by name: the same list as the skill studio-mini-apps and the React template's
+ * studio.d.ts (the tests hold them to it).
+ */
+export const STUDIO_CALLS = Object.freeze(['article', 'insert', 'files.list', 'files.read', 'files.write', 'fetch', 'run', 'toast', 'appFile', 'storage.get', 'storage.set', 'openPage', 'block.get', 'block.set', 'block.picture']);
+
+/** What a new app starts as: one page, or a Vite + React + TypeScript project (templates/). */
+export const APP_TEMPLATES = Object.freeze({ page: '一页网页', react: 'Vite + React + TypeScript 项目' }); // i18n-ignore: written into the app
+
+const TEMPLATES = fileURLToPath(new URL('./templates/', import.meta.url));
+
+/**
  * How a project app is run: its commands (`{port}`, `{base}` put in), in its folder.
  * @typedef {{ cwd: string, command: string[], backend: string[] | null }} AppDev
  * A block an app gives the articles: its fence, the page of the app that shows it, how tall it starts.
  * @typedef {{ fence: string, entry: string, height: number, title: string }} AppBlock
- * @typedef {{ id: string, name: string, icon: string, description: string, width: number, height: number, permissions: string[], kind: 'page' | 'project', blocks: AppBlock[], problem?: string }} MiniApp
+ * A command an app gives ⌘K (`> …`): its window opened at `entry` (a page of its, or `#…` it reads).
+ * @typedef {{ id: string, title: string, entry: string }} AppCommand
+ * @typedef {{ id: string, name: string, icon: string, description: string, width: number, height: number, permissions: string[], kind: 'page' | 'project', blocks: AppBlock[], commands: AppCommand[], problem?: string }} MiniApp
  */
+
+/** The commands app.json says the app gives, those written right. */
+function commandsOf(written) {
+	if (!Array.isArray(written)) return [];
+	return written.flatMap((command) => {
+		if (!command || typeof command !== 'object' || typeof command.id !== 'string' || !/^[a-z][\w-]{0,31}$/u.test(command.id)) return [];
+		if (typeof command.title !== 'string' || !command.title.trim()) return [];
+		const entry = typeof command.entry === 'string' ? command.entry.replace(/^\.?\/+/u, '') : '';
+		if (entry.split('/').includes('..')) return [];
+		return [{ id: command.id, title: command.title.trim(), entry }];
+	});
+}
 
 /** A fence an app's block may take: a word of its own, not a language of code. */
 const FENCE = /^[a-z][a-z0-9-]{1,31}$/u;
@@ -141,7 +167,7 @@ export class MiniApps {
 
 	/** An app's app.json, with its app.local.json over it: the app as listed, and how it is run when it is a project. */
 	async #manifest(id) {
-		const plain = { id, name: id, icon: '◆', description: '', width: 380, height: 480, permissions: [], kind: 'page', blocks: [] };
+		const plain = { id, name: id, icon: '◆', description: '', width: 380, height: 480, permissions: [], kind: 'page', blocks: [], commands: [] };
 		let manifest;
 		try {
 			manifest = JSON.parse(await readFile(join(this.folder, id, 'app.json'), 'utf8'));
@@ -157,7 +183,7 @@ export class MiniApps {
 		const text = (value, fallback) => (typeof value === 'string' && value.trim() ? value.trim() : fallback);
 		const size = (value, fallback) => (Number.isFinite(value) ? Math.max(200, Math.min(1600, Math.round(value))) : fallback);
 		const permissions = Array.isArray(manifest.permissions) ? manifest.permissions.filter((name) => name in APP_PERMISSIONS) : [];
-		const app = { id, name: text(manifest.name, id), icon: text(manifest.icon, '◆'), description: text(manifest.description, ''), width: size(manifest.width, plain.width), height: size(manifest.height, plain.height), permissions, kind: 'page', blocks: blocksOf(manifest.blocks, id) };
+		const app = { id, name: text(manifest.name, id), icon: text(manifest.icon, '◆'), description: text(manifest.description, ''), width: size(manifest.width, plain.width), height: size(manifest.height, plain.height), permissions, kind: 'page', blocks: blocksOf(manifest.blocks, id), commands: commandsOf(manifest.commands) };
 		const written = manifest.dev && typeof manifest.dev === 'object' ? manifest.dev : null;
 		if (!written) return { app, dev: null };
 		app.kind = 'project';
@@ -177,6 +203,33 @@ export class MiniApps {
 		const { app, dev } = await this.#manifest(id);
 		if (app.problem && !dev) return (await this.get(id)) ? join(this.folder, id) : null;
 		return dev?.cwd ?? join(this.folder, id);
+	}
+
+	/**
+	 * A new app named `name`, from a template: its folder (a name of its own, from the name's letters or the time), the
+	 * template's files with its name put in. Its manifest, as listed.
+	 * @param {{ name: string, template: keyof typeof APP_TEMPLATES }} asked
+	 */
+	async create({ name, template }) {
+		const plain = String(name ?? '').replace(/[<>{}&"'`\\]/gu, '').trim().slice(0, 40);
+		if (!plain) throw Object.assign(new Error(t('要给小程序起个名字')), { statusCode: 400 });
+		if (!Object.hasOwn(APP_TEMPLATES, template)) throw Object.assign(new Error(t('没有这个模板：{template}', { template })), { statusCode: 400 });
+		const words = plain.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-+|-+$/gu, '').slice(0, 32);
+		let id = /^[a-z]/u.test(words) && words.length > 1 ? words : `app-${Date.now().toString(36)}`;
+		for (let n = 2; await stat(join(this.folder, id)).catch(() => null); n += 1) id = `${id.replace(/-\d+$/u, '')}-${n}`;
+		const target = join(this.folder, id);
+		await mkdir(this.folder, { recursive: true });
+		await cp(join(TEMPLATES, template), target, { recursive: true });
+		// Its name where the template says {{name}}.
+		const walk = async (folder) => {
+			for (const entry of await readdir(folder, { withFileTypes: true })) {
+				const path = join(folder, entry.name);
+				if (entry.isDirectory()) await walk(path);
+				else if (/\.(json|html|tsx?|md)$/u.test(entry.name)) await writeFile(path, (await readFile(path, 'utf8')).replaceAll('{{name}}', plain));
+			}
+		};
+		await walk(target);
+		return { ...(await this.#read(id)), folder: relative(resolve(this.folder, '..'), target) };
 	}
 
 	/**

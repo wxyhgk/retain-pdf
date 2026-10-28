@@ -14,7 +14,8 @@ import { Service } from '@deepseek-ai/cordis';
  *     ctx.blocks.register({ name: 'block-job', fence: 'job', remark })
  *
  * Registering is undone when the plugin is disposed. A fence claimed twice is
- * refused, naming who has it.
+ * refused, naming who has it. A block may claim no fence (`fence: []`): it adds
+ * to what is there (a menu entry for code blocks) without owning any.
  */
 export class Blocks extends Service {
 	/** @param {import('@deepseek-ai/cordis').Context} ctx */
@@ -22,6 +23,8 @@ export class Blocks extends Service {
 		super(ctx, 'blocks');
 		/** @type {Map<string, any>} fence language → block */
 		this.byFence = new Map();
+		/** @type {any[]} those claiming no fence, in the order they came */
+		this.unfenced = [];
 	}
 
 	/**
@@ -30,7 +33,16 @@ export class Blocks extends Service {
 	 */
 	register(block) {
 		const fences = [block.fence].flat().map((fence) => String(fence).trim().toLowerCase()).filter(Boolean);
-		if (!block?.name || !fences.length) throw new TypeError(t('块要有 name 和 fence'));
+		if (!block?.name || (!fences.length && !Array.isArray(block.fence))) throw new TypeError(t('块要有 name 和 fence'));
+		if (!fences.length) {
+			return this.ctx.effect(() => {
+				this.unfenced.push(block);
+				return () => {
+					const index = this.unfenced.indexOf(block);
+					if (index >= 0) this.unfenced.splice(index, 1);
+				};
+			}, `blocks.register(${block.name})`);
+		}
 		return this.ctx.effect(() => {
 			for (const fence of fences) {
 				const owner = this.byFence.get(fence);
@@ -48,9 +60,9 @@ export class Blocks extends Service {
 		return this.byFence.get(String(fence ?? '').trim().toLowerCase()) ?? null;
 	}
 
-	/** Every block, once each, in the order they were registered. */
+	/** Every block, once each: those with fences in the order they were registered, then those with none. */
 	list() {
-		return [...new Set(this.byFence.values())];
+		return [...new Set(this.byFence.values()), ...this.unfenced];
 	}
 
 	/** Every fence language some plugin claims. */

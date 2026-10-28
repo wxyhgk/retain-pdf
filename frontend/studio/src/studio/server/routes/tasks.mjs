@@ -29,6 +29,11 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, projectApps, app
 	api.post('/tasks/:id/cancel', ({ params }) => ({ cancelled: tasks.cancel(params.id) }));
 
 	api.get('/apps', async () => ({ apps: await miniApps.list() }));
+	// A new app, from a template (新建小程序).
+	api.post('/apps', async ({ json }) => {
+		const { name, template } = await json();
+		return reply(201, await miniApps.create({ name, template }));
+	});
 	/** The app `id` (every app may do all it asks: they are the author's own tools). */
 	const known = async (id) => {
 		const app = await miniApps.get(id);
@@ -42,7 +47,17 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, projectApps, app
 		if (!dev) throw refuse(400, t('这个小程序不是项目（app.json 里没有 dev）'));
 		return dev;
 	};
-	const statusOf = (id) => ({ ...projectApps.status(id), log: projectApps.log(id) });
+	// What went wrong in an app's pages lately (its windows and blocks say), for an AI to read (app_status).
+	const errors = new Map();
+	api.post('/apps/:id/errors', async ({ params, json }) => {
+		await known(params.id);
+		const { message } = await json();
+		const kept = errors.get(params.id) ?? [];
+		kept.push({ when: new Date().toISOString(), message: String(message ?? '').slice(0, 4000) });
+		errors.set(params.id, kept.slice(-20));
+		return { kept: kept.length };
+	});
+	const statusOf = (id) => ({ ...projectApps.status(id), log: projectApps.log(id), errors: errors.get(id) ?? [] });
 	api.post('/apps/:id/start', async ({ params }) => {
 		const dev = await project(params.id);
 		try {

@@ -16,6 +16,7 @@ import {
 	StudioApiError,
 	uploadArticleFile,
 	keepVersion,
+	listMiniApps,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
@@ -37,7 +38,7 @@ import { openOfficeFile } from '@blog/office/viewer.ts';
 import { createFilePanel } from './files/file-panel';
 import { isImage } from './files/article-files';
 import { uploadFolderFor } from './files/file-tree';
-import { setStudioPluginEnabled, studioPluginInfo, studioPlugins } from './plugins';
+import { pluginCommands, setStudioPluginEnabled, studioPluginInfo, studioPlugins } from './plugins';
 import { createOutline } from './pages/outline';
 import { keepFormulasFitted } from '@blog/science/browser/fit-formulas.ts';
 import { createPageSnapshot } from './pages/page-snapshot';
@@ -243,7 +244,7 @@ const chat = createAiChat(studio, { withArticlePictures: (markdown) => drive.wit
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && chat.aiPanel.shown() });
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void openAgents(() => terminal.refreshAgents()) });
 // 小程序: the tools of apps/, in floating windows; what they may reach of the article shown.
-createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.querySelector<HTMLElement>('#mini-app-layer')!, {
+const miniApps = createMiniApps(shell.querySelector<HTMLButtonElement>('#open-apps')!, shell.querySelector<HTMLElement>('#mini-app-layer')!, {
 	article: () => (session.slug ? { slug: session.slug, title: openTitle, source: session.current.source } : null),
 	insert: (markdown) => editor.insertMarkdown(markdown),
 	toast: (message) => showToast(message),
@@ -439,6 +440,22 @@ const quickFind = createQuickFind({
 	openDriveFile(path) {
 		showView('drive');
 		void drive.page.reveal(path);
+	},
+	// `> …`: the plugins' commands, each app (opened, or at a command it gives), and making one.
+	async commands() {
+		const plugin = (pluginCommands()?.list() ?? []).map((command) => ({
+			key: `plugin:${command.id}`,
+			label: command.label,
+			icon: command.icon && [...command.icon].length <= 2 ? command.icon : '›',
+			hint: command.keys,
+			run: () => void command.run({ from: 'call' }),
+		}));
+		const apps = (await listMiniApps().catch(() => [])).filter((app) => !app.problem);
+		const fromApps = apps.flatMap((app) => [
+			{ key: `app:${app.id}`, label: t('打开小程序「{name}」', { name: app.name }), icon: app.icon, run: () => void miniApps.open(app.id) },
+			...app.commands.map((command) => ({ key: `app:${app.id}:${command.id}`, label: `${app.name}：${command.title}`, icon: app.icon, run: () => void miniApps.open(app.id, command.entry) })),
+		]);
+		return [...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
 	},
 });
 

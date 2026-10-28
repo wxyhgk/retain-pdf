@@ -1,7 +1,8 @@
-import { CircleHelp } from 'lucide-react';
+import { CirclePlus } from 'lucide-react';
 
-import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
+import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, createApp, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, reportAppError, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
 import { showContextMenu, type MenuItem } from '../common/context-menu';
+import { openDialog } from '../shell/dialogs/Dialogs';
 import { t } from '@blog/i18n/index.mjs';
 
 /** What the 小程序 may reach of the Studio around them, through their bridge (server/apps/mini-apps.mjs). */
@@ -75,6 +76,8 @@ type AppWindow = {
 	polling: number | null;
 	/** What is shown over its page: its errors or its server's output. */
 	sheet: HTMLElement;
+	/** The page of it the window opens at (a command's), `''` for its own first one. */
+	entry: string;
 };
 
 /** Errors kept for a window; lines of its server's output given to an AI. */
@@ -159,6 +162,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 
 	/** Something went wrong in the app's page: kept, and its bar says how many. */
 	function failed(shown: AppWindow, message: string): void {
+		reportAppError(shown.app.id, message);
 		shown.errors.push(message);
 		if (shown.errors.length > KEPT_ERRORS) shown.errors.splice(0, shown.errors.length - KEPT_ERRORS);
 		shown.errorBadge.hidden = false;
@@ -309,7 +313,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			shown.state.dataset.state = status.state;
 			shown.state.title = status.error ?? '';
 		}
-		if (status.state === 'running' && before !== 'running') load(shown);
+		if (status.state === 'running' && before !== 'running') load(shown, shown.entry);
 		if ((status.state === 'failed' || status.state === 'stopped') && before !== status.state) {
 			if (status.error) showSheet(shown, 'log', status.error, status.log || t('（还没有输出）'), [[t('重启'), () => void restart(shown)], [t('让 AI 修'), () => {
 				failed(shown, status.error ?? '');
@@ -449,10 +453,15 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		return root;
 	};
 
-	function show(app: MiniApp): void {
+	function show(app: MiniApp, entry = ''): void {
 		const already = open.get(app.id);
 		if (already) {
 			focus(already);
+			// A command's page: gone to (its server running, for a project).
+			if (entry && (app.kind === 'page' || already.status?.state === 'running')) {
+				already.entry = entry;
+				load(already, entry);
+			}
 			return;
 		}
 		// The size its app.json asks, but roomy enough to work in; where it was left, if it was.
@@ -511,7 +520,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		frame.title = app.name;
 		// Not sandboxed: the author's own tool, of the Studio's origin (its files load as a page's; `studio` does the rest).
 		frame.setAttribute('allow', 'clipboard-read; clipboard-write; fullscreen');
-		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false, errors: [], errorBadge, state, status: null, polling: null, sheet };
+		const shown: AppWindow = { app, root, frame, port: null, loading: false, loaded: false, errors: [], errorBadge, state, status: null, polling: null, sheet, entry };
 		errorBadge.addEventListener('click', () => showErrors(shown));
 		more.addEventListener('click', () => showMenu(shown, more));
 		// Any page loaded after the app's own that is not of the app's is another one: the app followed a link elsewhere.
@@ -520,7 +529,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			else if (!shown.loading) shown.loaded = true;
 		});
 		if (app.kind === 'project') void start(shown, 'start');
-		else load(shown);
+		else load(shown, entry);
 		const grips = GRIPS.map((edge) => {
 			const grip = document.createElement('div');
 			grip.className = 'mini-app-grip';
@@ -693,6 +702,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 			const block = liveBlockFrames().find((candidate) => candidate.frame.contentWindow === event.source);
 			if (!block) return;
 			if (data.type === 'error') {
+				reportAppError(block.app.id, String(data.message ?? ''));
 				block.errors.push(String(data.message ?? ''));
 				const badge = block.root.querySelector<HTMLButtonElement>('.app-block-errors');
 				if (badge) {
@@ -732,6 +742,18 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 		for (const shown of [...open.values(), ...liveBlockFrames()]) shown.port?.postMessage({ type: 'theme', theme: theme() });
 	}).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
+	/** 新建小程序: made from its template, opened, and the AI asked (in its panel, for the author to finish) to write it. */
+	async function make(name: string, template: 'page' | 'react'): Promise<void> {
+		try {
+			const app = await createApp(name, template);
+			show(app);
+			const kind = template === 'react' ? '一个 Vite + React + TypeScript 项目（Studio 用它自己的开发服务器跑，改了热更新）' : '一页网页（app.html，改了保存窗口自己重新加载）'; // i18n-ignore: said to the AI
+			host.askAI(`做小程序「${app.name}」：已经从模板建好了，在 ${app.folder}/，是${kind}。照技能 studio-mini-apps 写。我想要：`); // i18n-ignore: said to the AI
+		} catch (error) {
+			host.toast(error instanceof Error ? error.message : String(error));
+		}
+	}
+
 	launcher.addEventListener('click', () => {
 		void listMiniApps().then(
 			(apps) => {
@@ -742,7 +764,7 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 					action: () => (app.problem ? host.toast(`${app.name}：${app.problem}`) : show(app)),
 				}));
 				if (items.length) items.push('separator');
-				items.push({ label: t('怎么做一个小程序…'), icon: CircleHelp, action: () => host.toast(t('在终端里让 AI 做一个，比如「做一个能量单位换算的小程序」：它会照着技能 studio-mini-apps 写进 apps/。')) });
+				items.push({ label: t('新建小程序…'), icon: CirclePlus, action: () => openDialog('newApp', { done: (asked) => asked && void make(asked.name, asked.template) }) });
 				showContextMenu(items, launcher);
 			},
 			(error: unknown) => host.toast(error instanceof Error ? error.message : t('读不到小程序')),
@@ -750,10 +772,14 @@ export function createMiniApps(launcher: HTMLButtonElement, layer: HTMLElement, 
 	});
 
 	return {
-		/** Opens an app by its folder name (apps/<id>). */
-		async open(id: string): Promise<void> {
+		/** 新建小程序…: its name and template asked, then made. */
+		create(): void {
+			openDialog('newApp', { done: (asked) => asked && void make(asked.name, asked.template) });
+		},
+		/** Opens an app by its folder name (apps/<id>), at a page of its (`entry`: a command's). */
+		async open(id: string, entry = ''): Promise<void> {
 			const app = (await listMiniApps()).find((candidate) => candidate.id === id);
-			if (app && !app.problem) show(app);
+			if (app && !app.problem) show(app, entry);
 		},
 	};
 }

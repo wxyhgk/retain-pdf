@@ -395,3 +395,55 @@ test('an app’s ⋯: its code to the AI (kept as it was first), a checkpoint ke
 		},
 	);
 });
+
+test('新建小程序: from a template, opened at once, the AI asked to write it; a React one runs on the repository’s Vite', async ({ page }) => {
+	test.setTimeout(120_000);
+	const made = ['probe-tool', 'probe-editor'];
+	try {
+		await openStudio(page);
+		const create = async (name: string, template: string) => {
+			await page.locator('#open-apps').click();
+			await page.getByRole('menuitem', { name: '新建小程序…' }).click();
+			await page.locator('#new-app-name').fill(name);
+			await page.locator('#new-app-dialog').getByRole('radio', { name: new RegExp(template, 'u') }).click();
+			await page.locator('#new-app-make').click();
+		};
+		await create('Probe Tool', '一页网页');
+		await expect(appFrame(page, 'probe-tool').locator('h1')).toHaveText('Probe Tool');
+		await expect(appFrame(page, 'probe-tool').locator('#article')).toHaveText('当前文章：Studio 测试夹具');
+		await expect(page.locator('#side-ai .ai-input .ProseMirror')).toContainText('做小程序「Probe Tool」：已经从模板建好了，在 apps/probe-tool/');
+
+		await create('Probe Editor', 'React');
+		const window = page.locator('.mini-app-window[data-app="probe-editor"]');
+		await expect(window.locator('.mini-app-state')).toHaveText('运行中', { timeout: 60_000 });
+		await expect(appFrame(page, 'probe-editor').locator('h1')).toHaveText('Probe Editor');
+		await expect(appFrame(page, 'probe-editor').locator('p')).toHaveText('当前文章：Studio 测试夹具');
+	} finally {
+		await page.evaluate(() => fetch('/api/studio/apps/probe-editor/stop', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' })).catch(() => {});
+		for (const id of made) rmSync(join(apps(), id), { recursive: true, force: true });
+	}
+});
+
+test('⌘K finds commands after >: an app opened, or at a command it gives; making an app', async ({ page }) => {
+	await withApp(
+		{
+			'app.json': JSON.stringify({ name: '探针', icon: '?', commands: [{ id: 'convert', title: '换算一个数', entry: 'app.html#convert' }] }),
+			'app.html': '<p id="out">…</p><script>const show = () => { out.textContent = location.hash || "首页"; }; show(); addEventListener("hashchange", show);</script>',
+		},
+		async () => {
+			await openStudio(page);
+			await page.keyboard.press('ControlOrMeta+k');
+			await page.locator('#quick-find-input').fill('>探针');
+			const rows = page.locator('#quick-find-dialog .finder-row, #quick-find-dialog [role="option"]');
+			await expect(rows).toHaveText([/打开小程序「探针」/u, /探针：换算一个数/u]);
+			await page.keyboard.press('ArrowDown');
+			await page.keyboard.press('Enter');
+			await expect(appFrame(page, 'probe').locator('#out')).toHaveText('#convert');
+			await page.keyboard.press('ControlOrMeta+k');
+			await page.locator('#quick-find-input').fill('> 新建小程序');
+			await expect(rows).toHaveText([/新建小程序…/u]);
+			await page.keyboard.press('Enter');
+			await expect(page.locator('#new-app-dialog')).toBeVisible();
+		},
+	);
+});

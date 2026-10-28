@@ -2,7 +2,8 @@
 // (bin/studio.mjs on the command line, bin/studio-mcp.mjs as an MCP server). The same modules the
 // Studio's server uses, on the same files, so the Studio, open or not, sees each change as any other
 // made on disk (an article open in it shows the change to accept or reject).
-import { resolve } from 'node:path';
+import { readFile } from 'node:fs/promises';
+import { relative, resolve } from 'node:path';
 
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { comparePages } from '../../articles/page-order.mjs';
@@ -14,6 +15,7 @@ import { previewArticle } from '../server/articles/article-preview.mjs';
 import { ArticleGit } from '../server/articles/article-git.mjs';
 import { ArticleHistory } from '../server/articles/article-history.mjs';
 import { ArticleRepository } from '../server/articles/article-repository.mjs';
+import { MiniApps } from '../server/apps/mini-apps.mjs';
 import { Drive } from '../server/drive/drive.mjs';
 import { DriveText } from '../server/drive/drive-text.mjs';
 import { ArticleFileManager, TRASH_FOLDER } from '../server/files/file-manager.mjs';
@@ -337,6 +339,32 @@ export function createStudioOps({ root, site } = {}) {
 			if (!root) throw new StudioOpsError(t('还没有选资料库的文件夹（在 Studio 的「资料库」里选）'));
 			const found = await new DriveText(drive).search(query, { limit });
 			return { root, ...found };
+		},
+
+		/** The author's apps (apps/): what each is, where its code is, the blocks it gives. */
+		async listApps() {
+			const apps = new MiniApps(resolve(projectRoot, 'apps'));
+			return Promise.all((await apps.list()).map(async (app) => ({
+				id: app.id,
+				name: app.name,
+				description: app.description,
+				kind: app.kind,
+				folder: `apps/${app.id}`,
+				...(app.kind === 'project' ? { code: relative(projectRoot, (await apps.root(app.id)) ?? '') || '.' } : {}),
+				blocks: app.blocks.map((block) => block.fence),
+				...(app.problem ? { problem: app.problem } : {}),
+			})));
+		},
+
+		/** How an app is now, asked of the Studio running (its server's state and output, its pages' errors). */
+		async appStatus({ id }) {
+			const url = process.env.STUDIO_URL || (await readFile(resolve(projectRoot, '.astro', 'dev.json'), 'utf8').then((text) => JSON.parse(text).url, () => null));
+			if (!url) throw new StudioOpsError(t('Studio 没有开着：小程序的状态要在 Studio 开着时才看得到'));
+			const answer = await fetch(new URL(`/api/studio/apps/${encodeURIComponent(String(id ?? ''))}/status`, url)).catch(() => null);
+			if (!answer) throw new StudioOpsError(t('连不上 Studio（{url}）', { url }));
+			const status = await answer.json();
+			if (!answer.ok) throw new StudioOpsError(status.error ?? t('没有这个小程序'));
+			return { id, state: status.state, error: status.error, errors: status.errors, log: String(status.log ?? '').split('\n').slice(-60).join('\n') };
 		},
 	};
 }

@@ -538,7 +538,10 @@ export async function cancelTask(id: string): Promise<void> {
 }
 
 /** A 小程序 (server/apps/mini-apps.mjs): what it is, how big its window opens, what it may do (`problem`: its app.json is wrong). */
-export type MiniApp = { id: string; name: string; icon: string; description: string; width: number; height: number; permissions: string[]; kind: 'page' | 'project'; blocks: AppBlock[]; problem?: string };
+export type MiniApp = { id: string; name: string; icon: string; description: string; width: number; height: number; permissions: string[]; kind: 'page' | 'project'; blocks: AppBlock[]; commands: AppCommand[]; problem?: string };
+
+/** A command an app gives ⌘K: its window opened at `entry`. */
+export type AppCommand = { id: string; title: string; entry: string };
 
 /** A block an app gives the articles (its app.json's `blocks`): its fence, the page of the app showing it, how tall it starts. */
 export type AppBlock = { fence: string; entry: string; height: number; title: string };
@@ -557,9 +560,19 @@ export async function appCheckpoints(id: string): Promise<AppCheckpoint[]> {
 export function restoreAppCheckpoint(id: string, stamp: string): Promise<{ stamp: string; files: number }> {
 	return request(`/api/studio/apps/${encodeURIComponent(id)}/checkpoints/${encodeURIComponent(stamp)}/restore`, jsonOptions('POST', {}));
 }
+/** What went wrong in an app's page, told the server (an AI reads it: app_status). */
+export function reportAppError(id: string, message: string): void {
+	void request(`/api/studio/apps/${encodeURIComponent(id)}/errors`, jsonOptions('POST', { message })).catch(() => {});
+}
+
 /** An app's code shown in the Finder: where it is. */
 export function revealApp(id: string): Promise<{ path: string }> {
 	return request(`/api/studio/apps/${encodeURIComponent(id)}/reveal`, jsonOptions('POST', {}));
+}
+
+/** A new app from a template (新建小程序): as listed, and its folder. */
+export function createApp(name: string, template: 'page' | 'react'): Promise<MiniApp & { folder: string }> {
+	return request('/api/studio/apps', jsonOptions('POST', { name, template }));
 }
 
 /** A project app's development server started (`start`, answered once it answers or has failed), started again, or how it is. */
