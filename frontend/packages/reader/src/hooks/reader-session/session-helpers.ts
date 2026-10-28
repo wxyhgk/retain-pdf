@@ -7,7 +7,7 @@ import {
   defaultReaderPageConfigPort,
 } from "../../external.js";
 import type { BootState } from "./types.js";
-import { isFinishedJobStatus } from "@retainpdf/domain/job";
+import { documentSourcePdfPath, isFinishedJobStatus } from "@retainpdf/domain/job";
 
 
 export function normalizeJobStatus(jobPayload: unknown): string {
@@ -35,11 +35,7 @@ export function buildCommittedDocumentSourceUrl(
   documentId: string,
   revision: string,
 ): string {
-  const path = `/api/v1/documents/${encodeURIComponent(documentId)}/files/source.pdf`;
-  const normalizedRevision = `${revision || ""}`.trim();
-  return resolveResourceUrl(normalizedRevision
-    ? `${path}?version=${encodeURIComponent(normalizedRevision)}`
-    : path);
+  return resolveResourceUrl(documentSourcePdfPath(documentId, revision));
 }
 
 export function isJobIdLikeTitle(title: string, jobId = ""): boolean {

@@ -9,29 +9,26 @@
  * 前后端同源（都在 5173/8000 走代理），那就等于没隔离；而且那条路要带
  * X-API-Key，iframe 的导航请求加不了自定义头。
  *
- * 所以走 `fetch()`（带得上头）+ `srcdoc`（拿到唯一的不透明源）。
+ * 所以走 `fetchProtected()`（带得上 key / 登录 Cookie）+ `srcdoc`（拿到唯一的不透明源）。
  */
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import type { ReaderBoardSlotProps } from "@retainpdf/reader/adapters";
 
-import { apiBase, frontendApiKey } from "@/platform/config/runtime.js";
+import { fetchProtected, jobBoardFileUrl } from "@/platform/api/index.js";
+import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { BOARD_HTML_SANDBOX, withBoardHtmlCsp } from "../domain/board-html.js";
 
 export function renderReaderBoard(props: ReaderBoardSlotProps) {
-  const base = apiBase();
-  const apiKey = frontendApiKey();
-  if (!base || !apiKey || !props.jobId) return null;
+  if (!props.jobId) return null;
   // key 带上文件名：换一个产物要重新取，不能沿用上一个的 srcdoc。
-  return <BoardHtmlPane key={`${props.jobId}:${props.name}`} {...props} baseUrl={base} apiKey={apiKey} />;
+  return <BoardHtmlPane key={`${props.jobId}:${props.name}`} {...props} />;
 }
-
-type PaneProps = ReaderBoardSlotProps & { baseUrl: string; apiKey: string };
 
 /** 导出只为门禁能真渲染它 —— 不然「关闭按钮没被 CSS 藏掉」那条只能去读源码，
  * 而读源码的断言在 class 改名或按钮被挪走时照样绿。
  * renderToStaticMarkup 不跑 effect，所以渲染它不会发请求。 */
-export function BoardHtmlPane({ jobId, name, onClose, baseUrl, apiKey }: PaneProps) {
+export function BoardHtmlPane({ jobId, name, onClose }: ReaderBoardSlotProps) {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState("");
   const closeRef = useRef(onClose);
@@ -41,9 +38,7 @@ export function BoardHtmlPane({ jobId, name, onClose, baseUrl, apiKey }: PanePro
     const abort = new AbortController();
     (async () => {
       try {
-        const url = `${baseUrl}/api/v1/jobs/${encodeURIComponent(jobId)}/ai/board/${encodeURIComponent(name)}`;
-        const response = await fetch(url, {
-          headers: { "X-API-Key": apiKey },
+        const response = await fetchProtected(jobBoardFileUrl(API_PREFIX, jobId, name), {
           signal: abort.signal,
         });
         if (!response.ok) {
@@ -57,7 +52,7 @@ export function BoardHtmlPane({ jobId, name, onClose, baseUrl, apiKey }: PanePro
       }
     })();
     return () => abort.abort();
-  }, [apiKey, baseUrl, jobId, name]);
+  }, [jobId, name]);
 
   return (
     <div className="reader-board-pane" aria-label={`agent 产物 ${name}`}>

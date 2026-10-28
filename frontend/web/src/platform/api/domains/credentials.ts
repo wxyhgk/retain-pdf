@@ -1,6 +1,5 @@
 export {
   createCredential,
-  deleteCredential,
   listCredentials,
   updateCredential,
 } from "@retainpdf/api/credentials";

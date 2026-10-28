@@ -23,6 +23,22 @@ const { setReaderAdapters } = await import("../../../../frontend/packages/reader
 const { useReaderSession } = await import("../../../../frontend/packages/reader/src/hooks/use-reader-session.ts");
 const { isStaleDocumentJobFailure } = await import("../../../../frontend/packages/reader/src/hooks/reader-session/session-load-plan.ts");
 
+// 按书编号读书（GET /documents/:id）只在 sessionData 端口上（web 宿主走 API 层的生成函数），
+// 旧式的扁平适配器没有这一项。这里照 web 宿主的形状给一个端口，其余能力沿用扁平的那份。
+function sessionDataWith(data, fetchDocument) {
+  return {
+    loadReaderPayload: data.loadReaderPayload,
+    loadJobPayload: async () => null,
+    fetchDocumentByJobId: async () => null,
+    fetchDocument,
+    fetchProtected: data.fetchProtected,
+    resolveResourceUrl: (url) => url,
+    resolveReaderSourcePdf: () => "",
+    resolveReaderTranslatedPdfUrl: () => "",
+    resolveReaderArtifactUrl: () => "",
+  };
+}
+
 test("产物还没产出的 404（reason=not_ready）不算文档挂着的任务没了", () => {
   const base = { status: 404, jobId: "", routeDocumentId: "doc-1", documentJobId: "job-1", sessionJobId: "job-1" };
   assert.equal(isStaleDocumentJobFailure(base), true, "不带 reason 的 404：任务不存在");
@@ -33,6 +49,23 @@ test("产物还没产出的 404（reason=not_ready）不算文档挂着的任务
 test("document active_job becomes the effective reader job and keeps the document source PDF", async () => {
   const calls = [];
   const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
+  const data = {
+    fetchProtected: async (url) => {
+      calls.push(url);
+      assert.equal(url, "/api/v1/documents/doc-ocr/files/source.pdf");
+      return {
+        ok: true,
+        arrayBuffer: async () => pdfBytes.buffer.slice(0),
+      };
+    },
+    loadReaderPayload: async (jobId) => {
+      calls.push(`payload:${jobId}`);
+      return {
+        jobPayload: { title: "OCR document" },
+        manifestPayload: {},
+      };
+    },
+  };
   setReaderAdapters({
     isMockMode: () => false,
     resolveResourceUrl: (url) => url,
@@ -44,29 +77,11 @@ test("document active_job becomes the effective reader job and keeps the documen
     defaultReaderPageConfigPort: {
       messageTargetOrigin: () => "*",
     },
-    defaultReaderDataPort: {
-      fetchProtected: async (url) => {
-        calls.push(url);
-        if (url === "/api/v1/documents/doc-ocr") {
-          return {
-            ok: true,
-            json: async () => ({ data: { active_job_id: "job-ocr" } }),
-          };
-        }
-        assert.equal(url, "/api/v1/documents/doc-ocr/files/source.pdf");
-        return {
-          ok: true,
-          arrayBuffer: async () => pdfBytes.buffer.slice(0),
-        };
-      },
-      loadReaderPayload: async (jobId) => {
-        calls.push(`payload:${jobId}`);
-        return {
-          jobPayload: { title: "OCR document" },
-          manifestPayload: {},
-        };
-      },
-    },
+    defaultReaderDataPort: data,
+    sessionData: sessionDataWith(data, async (documentId) => {
+      calls.push(`/api/v1/documents/${documentId}`);
+      return { active_job_id: "job-ocr" };
+    }),
   });
 
   const sessions = [];
@@ -180,6 +195,19 @@ test("explicit in-progress translation job falls back to its document source bef
 test("stale document active_job falls back to the source PDF instead of a fatal 404", async () => {
   const pdfBytes = new Uint8Array([0x25, 0x50, 0x44, 0x46]);
   const calls = [];
+  const data = {
+    fetchProtected: async (url) => {
+      calls.push(url);
+      assert.equal(url, "/api/v1/documents/doc-ocr/files/source.pdf");
+      return {
+        ok: true,
+        arrayBuffer: async () => pdfBytes.buffer.slice(0),
+      };
+    },
+    loadReaderPayload: async () => {
+      throw Object.assign(new Error("未找到该任务，请检查 job_id 是否正确。"), { status: 404 });
+    },
+  };
   setReaderAdapters({
     isMockMode: () => false,
     resolveResourceUrl: (url) => url,
@@ -189,25 +217,11 @@ test("stale document active_job falls back to the source PDF instead of a fatal 
     resolveReaderTranslatedPdfUrl: () => "",
     resolveReaderArtifactUrl: () => "",
     defaultReaderPageConfigPort: { messageTargetOrigin: () => "*" },
-    defaultReaderDataPort: {
-      fetchProtected: async (url) => {
-        calls.push(url);
-        if (url === "/api/v1/documents/doc-ocr") {
-          return {
-            ok: true,
-            json: async () => ({ data: { active_job_id: "job-deleted" } }),
-          };
-        }
-        assert.equal(url, "/api/v1/documents/doc-ocr/files/source.pdf");
-        return {
-          ok: true,
-          arrayBuffer: async () => pdfBytes.buffer.slice(0),
-        };
-      },
-      loadReaderPayload: async () => {
-        throw Object.assign(new Error("未找到该任务，请检查 job_id 是否正确。"), { status: 404 });
-      },
-    },
+    defaultReaderDataPort: data,
+    sessionData: sessionDataWith(data, async (documentId) => {
+      calls.push(`/api/v1/documents/${documentId}`);
+      return { active_job_id: "job-deleted" };
+    }),
   });
 
   const sessions = [];

@@ -6,6 +6,8 @@
  *
  * 没有登记棘轮豁免 —— 那是把问题往后推，而这个文件本来就该拆。
  */
+import { listCollections, listJobBoard, materializeCollectionWorkspace } from "@/platform/api/index.js";
+import { API_PREFIX } from "@/platform/config/api-constants.js";
 import { isPageHidden } from "@/platform/utils/page-visibility.js";
 import { useCallback, useEffect, useState } from "react";
 import { LayoutDashboard } from "lucide-react";
@@ -103,16 +105,12 @@ export function TerminalScopeBar({
   tabId,
   scope,
   jobId,
-  baseUrl,
-  apiKey,
   onChange,
 }: {
   /** 这条作用域条当前对着的终端标签。切标签时是同一个组件换 tabId 重渲染。 */
   tabId: string;
   scope: TerminalScope;
   jobId: string;
-  baseUrl: string;
-  apiKey: string;
   onChange: (tabId: string, scope: TerminalScope) => void;
 }) {
   const [options, setOptions] = useState<CollectionOption[]>([]);
@@ -122,29 +120,15 @@ export function TerminalScopeBar({
   const [busyTabId, setBusyTabId] = useState("");
   const busy = busyTabId === tabId;
 
-  const fetchJson = useCallback(
-    async (path: string, init: { method?: string } = {}) => {
-      const response = await fetch(new URL(path, baseUrl), {
-        method: init.method || "GET",
-        headers: { "X-API-Key": apiKey },
-      });
-      if (!response.ok) {
-        throw Object.assign(new Error(`HTTP ${response.status}`), { status: response.status });
-      }
-      return await response.json();
-    },
-    [baseUrl, apiKey],
-  );
-
   useEffect(() => {
     let cancelled = false;
-    void loadCollectionOptions(fetchJson).then((list) => {
+    void loadCollectionOptions(() => listCollections(API_PREFIX)).then((list) => {
       if (!cancelled) setOptions(list);
     });
     return () => {
       cancelled = true;
     };
-  }, [fetchJson]);
+  }, []);
 
   const select = useCallback(
     async (option: CollectionOption | null) => {
@@ -157,7 +141,10 @@ export function TerminalScopeBar({
       // 必须先物化再切 —— 不然终端会落进一个过期或不存在的工作区,而那个失败
       // 是静默的（Python 侧退回私有目录,表现是 books/ 空着）。
       setBusyTabId(target);
-      const reason = await ensureCollectionWorkspace(fetchJson, option.collectionId);
+      const reason = await ensureCollectionWorkspace(
+        (collectionId) => materializeCollectionWorkspace(API_PREFIX, collectionId),
+        option.collectionId,
+      );
       setBusyTabId((current) => (current === target ? "" : current));
       if (reason) {
         setFailure({ tabId: target, text: reason });
@@ -165,7 +152,7 @@ export function TerminalScopeBar({
       }
       onChange(target, { kind: "collection", ...option });
     },
-    [fetchJson, jobId, onChange, tabId],
+    [jobId, onChange, tabId],
   );
 
   if (options.length === 0) return null;
@@ -282,14 +269,10 @@ export function TerminalSuggestions({
  */
 export function TerminalBoardStrip({
   jobId,
-  baseUrl,
-  apiKey,
   open,
   onOpen,
 }: {
   jobId: string;
-  baseUrl: string;
-  apiKey: string;
   open: boolean;
   onOpen: (name: string) => void;
 }) {
@@ -301,12 +284,7 @@ export function TerminalBoardStrip({
     const abort = new AbortController();
     const poll = async () => {
       try {
-        const response = await fetch(
-          `${baseUrl}/api/v1/jobs/${encodeURIComponent(jobId)}/ai/board`,
-          { headers: { "X-API-Key": apiKey }, signal: abort.signal },
-        );
-        if (!response.ok) return;
-        const parsed = parseBoardListing(await response.json());
+        const parsed = parseBoardListing(await listJobBoard(API_PREFIX, jobId, { signal: abort.signal }));
         // 取不到就保持原样，不清空：网络抖一下不该让列表闪没。
         if (alive && parsed) setItems(openableBoardItems(parsed));
       } catch {
@@ -323,7 +301,7 @@ export function TerminalBoardStrip({
       abort.abort();
       clearInterval(timer);
     };
-  }, [apiKey, baseUrl, jobId, open]);
+  }, [jobId, open]);
 
   if (items.length === 0) return null;
   return (

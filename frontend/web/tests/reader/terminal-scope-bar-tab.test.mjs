@@ -37,8 +37,6 @@ test("物化期间切了标签，作用域写回点击时的那条标签", async
     tabId,
     scope: { kind: "job", jobId: "job-1" },
     jobId: "job-1",
-    baseUrl: "http://localhost/",
-    apiKey: "k",
     onChange: (...args) => changes.push(args),
   }));
   try {

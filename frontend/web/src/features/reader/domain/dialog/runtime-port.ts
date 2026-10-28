@@ -1,5 +1,5 @@
-import { API_PREFIX } from "@/platform/config/api-constants.js";
 import {
+  jobOutputFilePath,
   resolveManifestArtifactUrl,
   resolveResourceUrl,
   resolveSourcePdfDownloadName,
@@ -68,14 +68,14 @@ export function createReaderDialogRuntimePort({
     const sourcePdfAction = job ? resolveSourceAction(job, manifest) : null;
     const sourcePdf = sourcePdfAction?.url || resolveManifestUrl(manifest, "source_pdf");
     const fallbackTranslatedPdf = jobCanUseTranslatedPdfRoute(job, actions) && jobId
-      ? resolveResourceUrl(`${API_PREFIX}/jobs/${encodeURIComponent(jobId)}/files/output/translated.pdf`)
+      ? resolveResourceUrl(jobOutputFilePath(jobId, "translated.pdf"))
       : "";
     const translatedPdf = actions?.pdf || resolveManifestUrl(manifest, "pdf")
       || resolveManifestUrl(manifest, "translated_pdf")
       || resolveManifestUrl(manifest, "result_pdf")
       || fallbackTranslatedPdf;
     const sideBySidePdf = sourcePdf && translatedPdf && jobId
-      ? resolveResourceUrl(`${API_PREFIX}/jobs/${encodeURIComponent(jobId)}/files/output/side-by-side.pdf?download=1`)
+      ? resolveResourceUrl(jobOutputFilePath(jobId, "side-by-side.pdf", { download: true }))
       : "";
     return { sourcePdf, translatedPdf, sideBySidePdf };
   }
