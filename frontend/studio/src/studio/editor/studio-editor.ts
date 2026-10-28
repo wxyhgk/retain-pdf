@@ -29,6 +29,7 @@ import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } f
 import { filesNamed, headingSection } from './split-section';
 import type { FileClick } from '../files/file-open';
 import { openFileLinks } from './file-links';
+import { findPlugins } from './find-in-article';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePath, codeFilePreview, observeCodeFiles, redrawCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
 import { blockwiseMarkdown } from './blockwise-markdown';
@@ -484,6 +485,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		crepe.editor.use(togglePlugins());
 		crepe.editor.use(columnsPlugins());
 		crepe.editor.use(articleLinkPlugins(host));
+		// ⌘F in the article: the places found marked (find-in-article.ts).
+		crepe.editor.use(findPlugins());
 		crepe.editor.use(smartPastePlugins({ articleTitle: (slug) => host.articleTitle(slug), links: () => links }));
 		crepe.editor.use(fileDrop.plugin);
 		// Last, so Esc and the other keys go to what is open first.

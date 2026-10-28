@@ -1,6 +1,7 @@
 import { checkArticle } from '../articles/article-check.mjs';
 import { pageVersion } from '../articles/page-version.mjs';
 import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
+import { FindReplace } from '../articles/find-replace.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
@@ -23,6 +24,17 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 		const { name, slug } = await json();
 		const { source } = await articles.read(String(slug ?? ''));
 		return reply(201, await templates.save(name, source.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/u, '')));
+	});
+	// 查找替换 in all the articles (find-replace.mjs): where the words are, then the places chosen changed.
+	const finder = new FindReplace({ articles, history, blogRoot, site });
+	const findOptions = ({ caseSensitive, skipCode }) => ({ caseSensitive: caseSensitive === true, skipCode: skipCode !== false });
+	api.post('/find', async ({ json }) => {
+		const asked = await json();
+		return { results: await finder.preview(String(asked.find ?? ''), findOptions(asked)) };
+	});
+	api.post('/replace', async ({ json }) => {
+		const asked = await json();
+		return finder.apply(String(asked.find ?? ''), asked.replacement, asked.picks, findOptions(asked));
 	});
 	// Articles whose title or text holds `q`.
 	api.get('/search', async ({ query }) => ({ results: await articles.search(query.get('q') ?? '') }));

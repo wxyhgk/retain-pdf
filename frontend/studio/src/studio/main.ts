@@ -80,6 +80,7 @@ import { createLibrary } from './wiring/library';
 import { startPlugins } from './wiring/plugins';
 import { bindPageKeys } from './wiring/keys';
 import { createReadingPlace } from './pages/reading-place';
+import { createFindBar } from './editor/find-in-article';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 // 设置 › 插件: how each is doing here, and turning one off or on at once.
@@ -120,7 +121,23 @@ mountShell(shell, {
 });
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
 const readingPlace = createReadingPlace(editorScroll);
+/** 查找替换 in all the articles (ReplaceDialog), with these words to look for. */
+let replaceRound = 0;
+function findEverywhere(words = ''): void {
+	openDialog('replace', {
+		round: ++replaceRound,
+		find: words,
+		flush: () => session.flush(),
+		changed: async (slugs) => (session.slug && slugs.includes(session.slug) ? session.reload() : undefined),
+		open(slug) {
+			showView('editor');
+			void session.open(slug);
+		},
+	});
+}
 const editorPanel = shell.querySelector<HTMLElement>('.editor-panel')!;
+// ⌘F in the article (find-in-article.ts), over the editor.
+const findBar = createFindBar({ panel: editorPanel, scroller: editorScroll, view: () => editor.view(), findEverywhere });
 const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
 // Display formulas wider than the page: in lines, or smaller, not scrolled (fit-formulas.ts).
 keepFormulasFitted(editorScroll);
@@ -434,6 +451,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	shown: () => {
 		articleShown();
 		readingPlace.show();
+		findBar.refresh();
 	},
 });
 const reviewBar = createReviewBar(shell, {
@@ -596,7 +614,8 @@ const quickFind = createQuickFind({
 			{ key: `app:${app.id}`, label: t('打开小程序「{name}」', { name: app.name }), icon: app.icon, run: () => void miniApps.open(app.id) },
 			...app.commands.map((command) => ({ key: `app:${app.id}:${command.id}`, label: `${app.name}：${command.title}`, icon: app.icon, run: () => void miniApps.open(app.id, command.entry) })),
 		]);
-		return [...fromTemplates, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
+		const finding = { key: 'studio:replace', label: t('在全部文章里查找替换…'), icon: '⌕', hint: '⌘⇧F', run: () => findEverywhere() };
+		return [...fromTemplates, finding, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
 	},
 });
 
@@ -656,7 +675,16 @@ function showView(view: View, folder?: string): void {
 	else if (chatId) chat.openChat(chatId);
 }
 
-bindPageKeys(session, { find: () => quickFind.open(), go: (by) => pages.visited.step(by) });
+bindPageKeys(session, {
+	find: () => quickFind.open(),
+	go: (by) => pages.visited.step(by),
+	findInArticle: () => (shell.dataset.view ?? 'editor') === 'editor' && findBar.open(),
+	findEverywhere: () => {
+		const view = editor.view();
+		const selected = view && !view.state.selection.empty ? view.state.doc.textBetween(view.state.selection.from, view.state.selection.to, ' ') : '';
+		findEverywhere(selected.includes('\n') ? '' : selected);
+	},
+});
 
 const opening = pages.openFromList().then(
 	() => {

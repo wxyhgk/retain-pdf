@@ -1,12 +1,23 @@
 // What the whole page does on its keys (⌘K, ⌘S, ⌫ where nothing takes it) and on leaving; Vite's reloads kept off it.
 import type { ArticleSession } from '../state/article-session';
 
-export function bindPageKeys(session: ArticleSession, { find, go }: { find(): void; go(by: -1 | 1): void }): void {
+export function bindPageKeys(session: ArticleSession, { find, go, findInArticle, findEverywhere }: { find(): void; go(by: -1 | 1): void; findInArticle(): void; findEverywhere(): void }): void {
 	// ⌘K or ⌘P (Ctrl elsewhere) finds an article, from anywhere; ⌘K on text selected in the editor links it instead.
 	document.addEventListener('keydown', (event) => {
 		if (event.defaultPrevented || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || !['k', 'p'].includes(event.key.toLowerCase())) return;
 		event.preventDefault();
 		find();
+	});
+
+	// ⌘F finds in the article open, ⌘⇧F in all of them (查找替换); where nothing took it first (a code block's own ⌘F,
+	// a dialog's).
+	document.addEventListener('keydown', (event) => {
+		if (event.defaultPrevented || !(event.metaKey || event.ctrlKey) || event.altKey || event.key.toLowerCase() !== 'f') return;
+		// A dialog showing has the keys (the hidden ones the page keeps, AI's box say, do not count).
+		if ([...document.querySelectorAll<HTMLElement>('dialog[open], [role="dialog"]')].some((element) => !element.closest('[hidden]') && element.getClientRects().length > 0)) return;
+		event.preventDefault();
+		if (event.shiftKey) findEverywhere();
+		else findInArticle();
 	});
 
 	// ⌘[ and ⌘] go back and forward among the pages opened, as ‹ › do (as in Notion), where nothing took them (in a list,

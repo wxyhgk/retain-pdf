@@ -89,6 +89,20 @@ export function saveAsTemplate(slug: string, name: string): Promise<{ id: string
 	return request('/api/studio/templates', jsonOptions('POST', { slug, name }));
 }
 
+/** 查找替换: how to look (by default, case not minded, code and formulas left out). */
+export type FindOptions = { caseSensitive?: boolean; skipCode?: boolean };
+/** An article where the words are: each place with the words round it, and the revision it was looked at in. */
+export type FoundIn = { slug: string; title: string; icon?: string; revision: string; matches: Array<{ line: number; before: string; text: string; after: string }> };
+
+export function findInArticles(find: string, options: FindOptions): Promise<{ results: FoundIn[] }> {
+	return request('/api/studio/find', jsonOptions('POST', { find, ...options }));
+}
+
+/** The places chosen (slug → its revision as found, the indexes of its places) put `replacement` in. */
+export function replaceInArticles(find: string, replacement: string, picks: Record<string, { revision: string; indexes: number[] }>, options: FindOptions): Promise<{ changed: Array<{ slug: string; count: number }>; skipped: Array<{ slug: string; title: string; why: string }> }> {
+	return request('/api/studio/replace', jsonOptions('POST', { find, replacement, picks, ...options }));
+}
+
 /** 并入上级页面: the article's text into the page it is under; the article to the trash. */
 export function mergeArticle(slug: string): Promise<{ slug: string; parent: string; trashed: string }> {
 	return request(`/api/studio/articles/${encodeURIComponent(slug)}/merge`, jsonOptions('POST', {}));

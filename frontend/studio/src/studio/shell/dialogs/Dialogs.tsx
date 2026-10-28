@@ -5,6 +5,7 @@ import { DeletePageDialog, PublishCheckDialog, type DeletePageAsk, type PublishC
 import { HistoryDialog, type HistoryHost } from './HistoryDialog';
 import { NewAppDialog, type NewAppAsk } from './NewAppDialog';
 import { QuickFindDialog, type QuickFindAsk } from './QuickFindDialog';
+import { ReplaceDialog, type ReplaceAsk } from './ReplaceDialog';
 import { SettingsDialog, type SettingsAsk } from './SettingsDialog';
 import { TrashDialog, type TrashHost } from './TrashDialog';
 
@@ -19,6 +20,7 @@ type Asks = {
 	finder: QuickFindAsk;
 	cite: CiteAsk;
 	newApp: NewAppAsk;
+	replace: ReplaceAsk;
 };
 
 /** The dialogs open: one at a time of each kind. */
@@ -47,6 +49,7 @@ export function Dialogs() {
 			{asks.finder && <QuickFindDialog key={asks.finder.round} ask={asks.finder} onClose={closer('finder')} />}
 			{asks.cite && <CiteDialog key={asks.cite.round} ask={asks.cite} onClose={closer('cite')} />}
 			{asks.newApp && <NewAppDialog {...asks.newApp} onClose={closer('newApp')} />}
+			{asks.replace && <ReplaceDialog key={asks.replace.round} ask={asks.replace} onClose={closer('replace')} />}
 		</>
 	);
 }

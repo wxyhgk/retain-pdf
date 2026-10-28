@@ -446,6 +446,19 @@ const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(a
 	:global(.file-editor .cm-scroller) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; line-height: 1.6; }
 	:global(.file-editor-note) { margin: 48px auto; color: rgb(var(--gray)); font-size: 13px; text-align: center; }
 	:global(.file-editor-status) { align-self: center; margin-right: 6px; color: rgb(var(--gray)); font-size: 12px; }
+	/* ⌘F in the article (find-in-article.ts): the bar over the editor's top right; the places found, the current one darker. */
+	:global(.find-bar) { position: absolute; top: 10px; right: 22px; z-index: 30; display: grid; gap: 6px; width: min(440px, calc(100% - 44px)); padding: 8px; border: 1px solid var(--studio-hairline); border-radius: 10px; background: var(--surface); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12); }
+	:global(.find-bar[hidden]) { display: none; }
+	:global(.find-row) { display: flex; align-items: center; gap: 4px; }
+	:global(.find-row input) { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border: 1px solid var(--studio-hairline); border-radius: 6px; background: var(--surface); color: rgb(var(--black)); font: inherit; font-size: 13px; outline: none; }
+	:global(.find-row input:focus) { border-color: rgb(var(--gray)); }
+	:global(.find-bar.is-empty #find-query) { border-color: var(--danger); }
+	:global(.find-row button) { min-width: 28px; height: 28px; padding: 0 7px; border: 0; border-radius: 6px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+	:global(.find-row button:hover), :global(.find-row button[aria-pressed]) { background: var(--studio-fill-2); color: rgb(var(--black)); }
+	:global(.find-count) { min-width: 44px; color: rgb(var(--gray)); font-size: 12px; text-align: center; font-variant-numeric: tabular-nums; }
+	:global(.pm-find-match) { border-radius: 2px; background: var(--studio-fill-3); }
+	:global(.pm-find-match.is-current) { background: rgba(0, 0, 0, 0.28); box-shadow: 0 0 0 1px rgb(var(--black)); }
+	:global([data-theme='dark'] .pm-find-match.is-current) { background: rgba(255, 255, 255, 0.32); }
 	/* A file's earlier versions (file-history-view.ts): the list on the left, the one chosen beside it. */
 	:global(.block-sheet-body .file-history) { display: grid; height: 100%; min-height: 0; grid-template-columns: 220px minmax(0, 1fr); }
 	:global(.file-history > .file-editor-note) { grid-column: 1 / -1; }
