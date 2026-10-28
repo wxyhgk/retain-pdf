@@ -74,6 +74,7 @@ import { createDrive } from './wiring/drive';
 import { createLibrary } from './wiring/library';
 import { startPlugins } from './wiring/plugins';
 import { bindPageKeys } from './wiring/keys';
+import { createReadingPlace } from './pages/reading-place';
 
 const shell = document.querySelector<HTMLElement>('.studio-shell')!;
 // 设置 › 插件: how each is doing here, and turning one off or on at once.
@@ -112,6 +113,7 @@ mountShell(shell, {
 	closePanel: () => sidePanel.close(),
 });
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
+const readingPlace = createReadingPlace(editorScroll);
 const editorPanel = shell.querySelector<HTMLElement>('.editor-panel')!;
 const outline = createOutline(editorScroll, shell.querySelector<HTMLElement>('#editor-outline')!);
 // Display formulas wider than the page: in lines, or smaller, not scrolled (fit-formulas.ts).
@@ -404,7 +406,10 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	pickCitation: () => library.pick(),
 	articleTitle: (slug) => articleList.articles().find((entry) => entry.slug === slug)?.title ?? null,
 	reviewing: (pending) => reviewBar.show(pending),
-	shown: () => articleShown(),
+	shown: () => {
+		articleShown();
+		readingPlace.show();
+	},
 });
 const reviewBar = createReviewBar(shell, {
 	acceptAll: () => editor.acceptAll(),
@@ -432,11 +437,17 @@ const session = new ArticleSession(
 		async mount(article, body, again) {
 			useArticleContext(article);
 			const scrollTop = editorScroll.scrollTop;
-			// Another article: from its top (the editor is kept from one to the next, and with it where it was scrolled to).
-			if (!again) editorScroll.scrollTop = 0;
+			// Another article: where it was read last (reading-place.ts), else from its top; where the one left was, kept.
+			if (!again) {
+				readingPlace.leave();
+				readingPlace.enter(article.slug);
+				editorScroll.scrollTop = 0;
+			}
 			// Shown again (changed on disk): all at once, to be where it was.
 			const markdown = await editor.mount(body, again);
 			if (again) editorScroll.scrollTop = scrollTop;
+			// All of it there (a long one is shown a part at a time): where it was read, if the author has not moved since.
+			else readingPlace.show(true);
 			// The files it names, once it is shown (a book's take a while to read).
 			filePanel.sourceChanged();
 			chat.aiPanel.articleShown();
@@ -614,7 +625,7 @@ function showView(view: View, folder?: string): void {
 	else if (chatId) chat.openChat(chatId);
 }
 
-bindPageKeys(session, { find: () => quickFind.open() });
+bindPageKeys(session, { find: () => quickFind.open(), go: (by) => pages.visited.step(by) });
 
 const opening = pages.openFromList().then(
 	() => {

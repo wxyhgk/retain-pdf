@@ -1,12 +1,25 @@
 // What the whole page does on its keys (⌘K, ⌘S, ⌫ where nothing takes it) and on leaving; Vite's reloads kept off it.
 import type { ArticleSession } from '../state/article-session';
 
-export function bindPageKeys(session: ArticleSession, { find }: { find(): void }): void {
+export function bindPageKeys(session: ArticleSession, { find, go }: { find(): void; go(by: -1 | 1): void }): void {
 	// ⌘K or ⌘P (Ctrl elsewhere) finds an article, from anywhere; ⌘K on text selected in the editor links it instead.
 	document.addEventListener('keydown', (event) => {
 		if (event.defaultPrevented || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || !['k', 'p'].includes(event.key.toLowerCase())) return;
 		event.preventDefault();
 		find();
+	});
+
+	// ⌘[ and ⌘] go back and forward among the pages opened, as ‹ › do (as in Notion), where nothing took them (in a list,
+	// the editor's: out and in a level); so do the mouse's side buttons.
+	document.addEventListener('keydown', (event) => {
+		if (event.defaultPrevented || !(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || (event.key !== '[' && event.key !== ']')) return;
+		event.preventDefault();
+		go(event.key === '[' ? -1 : 1);
+	});
+	window.addEventListener('mouseup', (event) => {
+		if (event.button !== 3 && event.button !== 4) return;
+		event.preventDefault();
+		go(event.button === 3 ? -1 : 1);
 	});
 
 	// Saving is automatic; ⌘S (or ⌘↩) saves at once (in a plugin's frame too, through its `ctx.studio.save`).

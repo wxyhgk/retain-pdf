@@ -98,3 +98,39 @@ test('‹ and › in the bar go back to the page open before, and forward again'
 		removeArticle('nav-other');
 	}
 });
+
+test('an article gone back to is where it was read, not at its top (kept after a reload too); ⌘[ and ⌘] go back and forward', async ({ page }) => {
+	const paragraphs = Array.from({ length: 80 }, (_, index) => `第 ${index + 1} 段。`).join('\n\n');
+	writeArticle('nav-long', `---\ntitle: 长文\npubDate: 2026-10-01\ndraft: true\n---\n\n${paragraphs}\n`);
+	writeArticle('nav-other', '---\ntitle: 另一页\npubDate: 2026-10-01\ndraft: true\n---\n\n另一页的正文。\n');
+	try {
+		await openStudio(page);
+		const title = page.locator('#breadcrumb-title');
+		const scroller = page.locator('.editor-scroll');
+		const fifty = page.locator('.ProseMirror p', { hasText: /^第 50 段。$/u });
+		/** How far the 50th paragraph is from the top of the editor. */
+		const fromTop = async () => (await fifty.boundingBox())!.y - (await scroller.boundingBox())!.y;
+		await page.locator('#article-list .page-row', { hasText: '长文' }).click();
+		await expect(title).toHaveText('长文');
+		await fifty.evaluate((element) => element.scrollIntoView({ block: 'start' }));
+		const left = await fromTop();
+		// Kept a moment after the scrolling stops.
+		await page.waitForTimeout(600);
+
+		await page.locator('#article-list .page-row', { hasText: '另一页' }).click();
+		await expect(title).toHaveText('另一页');
+		await expect.poll(() => scroller.evaluate((element) => element.scrollTop)).toBeLessThan(8);
+		await page.keyboard.press('ControlOrMeta+[');
+		await expect(title).toHaveText('长文');
+		await expect.poll(async () => Math.abs((await fromTop()) - left)).toBeLessThan(4);
+		await page.keyboard.press('ControlOrMeta+]');
+		await expect(title).toHaveText('另一页');
+
+		await page.goto('/studio?article=nav-long');
+		await expect(title).toHaveText('长文');
+		await expect.poll(async () => Math.abs((await fromTop()) - left)).toBeLessThan(4);
+	} finally {
+		removeArticle('nav-long');
+		removeArticle('nav-other');
+	}
+});
