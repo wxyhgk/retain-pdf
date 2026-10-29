@@ -25,7 +25,6 @@ import { ProjectApps } from '../studio/server/apps/project-apps.mjs';
 import { AppCheckpoints } from '../studio/server/apps/app-checkpoints.mjs';
 import { forwardUpgrade, proxyToApp } from '../studio/server/apps/app-proxy.mjs';
 import { Tasks } from '../studio/server/tasks/tasks.mjs';
-import { markContentReloads } from '../studio/server/articles/content-reloads.mjs';
 import { studioBlogRoot } from '../studio/server/articles/page-version.mjs';
 import { atomicWriteText } from '../studio/server/files/atomic-write.mjs';
 import { serverKernel } from '@blog/kernel/node.mjs';
@@ -37,9 +36,9 @@ import { studioApi } from '../studio/server/routes/index.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
- * The Studio on the dev server: its parts put together, the files of articles
- * and 小程序 served, and its API (src/studio/server/routes/, every request
- * checked in src/studio/server/api.mjs).
+ * The Studio on its server (src/studio/serve.mjs): its parts put together, the
+ * files of articles and 小程序 served, and its API (src/studio/server/routes/,
+ * every request checked in src/studio/server/api.mjs).
  * @param {{ site?: string }} [options] the blog's address, so links to its articles written in full count as theirs
  */
 /**
@@ -202,7 +201,6 @@ export default function studioDev({ site } = {}) {
 				for (const task of tasks.list()) if (task.state === 'running') tasks.cancel(task.id);
 				void plugins.then((kernel) => kernel.dispose());
 			});
-			markContentReloads(server);
 			// A plugin's file made or removed: what Vite kept of it is forgotten, so that one written again where one was is read anew.
 			const pluginsFolder = resolve(server.config.root, 'plugins') + sep;
 			const forgetPluginFile = (file) => {

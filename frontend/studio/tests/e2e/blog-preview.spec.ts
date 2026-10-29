@@ -4,7 +4,6 @@ import { resetFixture } from './studio.ts';
 
 // The Studio on its own server (serve.mjs): the blog's pages (「博客首页」, 在博客上打开) on the blog's own, started for them.
 
-test.skip(process.env.E2E_ASTRO === '1', 'only the Studio on its own server sends the blog elsewhere');
 test.beforeEach(() => resetFixture());
 
 test('the blog asked of the Studio’s server is shown by the blog’s own, started for it', async ({ page, baseURL }) => {

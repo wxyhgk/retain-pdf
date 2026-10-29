@@ -1,6 +1,6 @@
 /*
  * The Studio's page itself (page/render.tsx draws it): its columns, the editor's panel, the right column, and what is
- * drawn in them that has no stylesheet of its own. Once StudioPage.astro's own <style>.
+ * drawn in them that has no stylesheet of its own.
  */
 body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .studio-shell { --sidebar: var(--studio-sidebar-width); --panel: var(--panel-width, var(--studio-panel-width)); display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr) var(--panel); width: 100%; max-width: none; height: 100vh; margin: 0; padding: 0; transition: grid-template-columns 180ms ease; }

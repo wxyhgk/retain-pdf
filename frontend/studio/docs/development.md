@@ -111,9 +111,9 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 测试服务器和你自己的有两处不同：编辑器（Milkdown 的 fork）预先打成包（`STUDIO_MILKDOWN_BUNDLED=1`，见 `src/plugins/milkdown-source.mjs`），一页从一千多个请求降到四百个；终端的 zsh 不读你的 `~/.zshrc` 这些（`ZDOTDIR` 指向空文件夹），启动快，各台机器一样。
 - 同一组端口上同时只能跑一轮：第二轮会直接报错，不会去清空第一轮正在用的文件夹。要同时跑，用 `E2E_PORT` 换一组端口。
 
-**不要在仓库根目录上再开第二个 `astro dev`**：两个会同时写 `.astro/data-store.json`，互相弄坏。Studio 的服务器不碰 `.astro/`，和一个 `astro dev` 可以同时开。测试、预览都用上面这种独立的根目录。
+测试服务器和 Studio.app 用的是同一个服务器（`startStudio`）。
 
-测试服务器用 Studio 自己的服务器（`startStudio`），和 Studio.app 一样；`E2E_ASTRO=1` 时用 `astro dev` 里的 `/studio`（过渡期两个都留着，之后去掉后者）。
+**博客的 `astro dev` 同一个根目录上只开一个**：两个会同时写 `.astro/data-store.json`，互相弄坏。Studio 的服务器不碰 `.astro/`，和一个 `astro dev` 可以同时开（Studio 要看博客时自己就会开一个，见下面）。
 
 ## Studio 的服务器
 
@@ -124,6 +124,7 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 依赖：启动时从 `src/studio/**/*.tsx` 找出来预先打包（和 Astro 一样），样式表不算依赖。
 - 它在跑时把进程号和地址写进 `.studio-cache/server.json`；Studio.app 和 `studio` 命令从这里找到它。Studio.app 起的服务器，输出在 `.studio-cache/server.log`（上一次的在 `server.previous.log`），每次意外退出记进 `.studio-cache/server-exits.log`。
 - 默认端口 4321，被占着就用下一个空着的。
+- 博客（`astro dev`）里没有 Studio 了：`astro.config.mjs` 只有博客自己的东西；开发时文章的文件 `/article-assets/…` 由 `src/plugins/article-assets.mjs` 提供（以前是 Studio 的插件顺带提供的）。
 - 博客的页面（`/blog/…`、`/wiki/…`、`/about`……）不归它：交给博客自己的 `astro dev`，开着就用（`.astro/dev.json`），没开就在下一个端口替你开一个、跟着 Studio 的服务器停（`blogPreview`，输出在 `.studio-cache/blog.log`），请求等它起来后跳过去。
 
 ## Studio 的接口

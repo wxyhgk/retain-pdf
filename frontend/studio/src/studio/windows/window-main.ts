@@ -15,7 +15,7 @@ import { studioLine } from './studio-line';
 import { followTheme } from '../common/theme';
 
 /**
- * A window of its own (StudioWindow.astro, 显示方式 › 新窗口): a 小程序 (`?app=<id>&at=<its page>`) or the AI (`?ai`),
+ * A window of its own (page/render.tsx renderStudioWindow, 显示方式 › 新窗口): a 小程序 (`?app=<id>&at=<its page>`) or the AI (`?ai`),
  * out of the Studio's window. What only the Studio can do is asked of it (studio-line.ts); 放回 Studio puts it back.
  */
 const body = document.querySelector<HTMLElement>('#window-body')!;

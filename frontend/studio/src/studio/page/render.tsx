@@ -56,7 +56,7 @@ import katexAms from 'katex/dist/fonts/KaTeX_AMS-Regular.woff2?url';
 /**
  * The Studio's pages, drawn on its own server (serve.mjs): /studio, and /studio/window (a 小程序 or the AI in a window
  * of its own). What React draws of the shell is drawn here first (its first picture), then by the page's script
- * (mount.tsx) from then on. Once StudioPage.astro and StudioWindow.astro, on Astro's server.
+ * (mount.tsx) from then on.
  */
 
 const escape = (text: string) => text.replace(/[&<>"]/gu, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[character]!);

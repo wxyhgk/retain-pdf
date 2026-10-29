@@ -105,7 +105,6 @@ export default defineConfig({
 				STUDIO_BLOG_DIR: process.env[`STUDIO_BLOG_DIR_${slot}`] ?? '',
 				STUDIO_DRIVE_DIR: process.env[`STUDIO_DRIVE_DIR_${slot}`] ?? '',
 				E2E_ISOLATED: process.env.E2E_ISOLATED ?? '',
-				E2E_ASTRO: process.env.E2E_ASTRO ?? '',
 				E2E_ROOT_PARENT: process.env[`E2E_ROOT_PARENT_${slot}`] ?? '',
 				// RetainMol is its stand-in, below (it keeps nothing: one serves them all).
 				STUDIO_RETAINMOL_URL: `http://127.0.0.1:${retainmolPort}`,

@@ -114,7 +114,7 @@ export function useShell(): ShellState {
 }
 
 const nothing = () => {};
-/** Drawn by the server (StudioPage.astro), the buttons do nothing until the page's script draws the shell itself. */
+/** Drawn by the server (page/render.tsx), the buttons do nothing until the page's script draws the shell itself. */
 export const ActionsContext = createContext<ShellActions>({
 	search: nothing,
 	showView: nothing,

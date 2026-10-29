@@ -1,7 +1,7 @@
 import { locale } from '@blog/i18n/index.mjs';
 import { pageVersion } from '../api/client';
 
-/** Where the picture is kept; StudioPage.astro reads it before anything else loads. */
+/** Where the picture is kept; the page (page/render.tsx) reads it before anything else loads. */
 const STORAGE_KEY = 'studio.snapshot';
 /** A picture longer than this is not kept: the browser's storage is a few megabytes in all. */
 const MAX_LENGTH = 3_000_000;
@@ -16,7 +16,7 @@ export type PageSnapshotHost = {
 /**
  * The page as the author leaves it, kept in the browser, so the next visit
  * draws it at once instead of an empty page while the editor loads, as
- * Notion does. StudioPage.astro shows it over the page, untouchable, only
+ * Notion does. The page (page/render.tsx) shows it over itself, untouchable, only
  * when the server's mark of the open article (page-version.mjs) is the one
  * kept with it; `ready()` takes it away when the editor has the article.
  */

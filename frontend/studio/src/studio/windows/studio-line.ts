@@ -2,7 +2,7 @@ import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The Studio and its windows of their own (显示方式 › 新窗口: a 小程序 or the AI, out of the Studio's window, on another
- * screen, beside other programs — StudioWindow.astro), talking over a BroadcastChannel of their origin: a window asks
+ * screen, beside other programs — page/render.tsx renderStudioWindow), talking over a BroadcastChannel of their origin: a window asks
  * what only the Studio can do (the article open, its selection, putting something in it, opening a page…), the Studio
  * answers; the Studio tells the windows what changed (the notes, the article open). A window opened or shut says so.
  */

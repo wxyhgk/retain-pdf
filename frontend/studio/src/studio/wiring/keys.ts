@@ -1,4 +1,4 @@
-// What the whole page does on its keys (⌘K, ⌘S, ⌫ where nothing takes it) and on leaving; Vite's reloads kept off it.
+// What the whole page does on its keys (⌘K, ⌘S, ⌫ where nothing takes it) and on leaving.
 import type { ArticleSession } from '../state/article-session';
 
 export function bindPageKeys(session: ArticleSession, { find, go, findInArticle, findEverywhere }: { find(): void; go(by: -1 | 1): void; findInArticle(): void; findEverywhere(): void }): void {
@@ -54,13 +54,5 @@ export function bindPageKeys(session: ArticleSession, { find, go, findInArticle,
 		if (!session.hasUnsavedEdits()) return;
 		void session.flush();
 		event.preventDefault();
-	});
-
-	// Astro reloads every open page when an article's Markdown changes, which
-	// with autosave is every few seconds. The Studio follows those changes
-	// itself, so a reload marked as theirs (content-reloads.mjs) is pointed at
-	// another page, which Vite then leaves alone.
-	import.meta.hot?.on('vite:beforeFullReload', (payload: { path?: string; studioContentChange?: boolean }) => {
-		if (payload.studioContentChange) payload.path = '/studio-keeps-open.html';
 	});
 }

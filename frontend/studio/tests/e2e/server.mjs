@@ -2,14 +2,13 @@
 // fixture articles (STUDIO_BLOG_DIR), so a test can save without touching blog/.
 //
 // With E2E_ISOLATED=1 it also runs from a folder of its own (src/ and the
-// configuration copied, the rest linked), so that beside the author's own
-// dev server it keeps to its own .astro/: two servers on one root both
-// write .astro/data-store.json, and break each other's writes.
+// configuration copied, the rest linked): what the tests write there (a plugin,
+// a 小程序) stays in the copy, and the blog's own server a test asks for (its
+// pages: blog-preview.spec.ts) keeps to its own .astro/.
 import { cpSync, existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { dev } from 'astro';
 import { startStudio } from '../../src/studio/serve.mjs';
 
 const repository = fileURLToPath(new URL('../..', import.meta.url));
@@ -44,14 +43,10 @@ if (process.env.E2E_MILKDOWN_SOURCE !== '1') process.env.STUDIO_MILKDOWN_BUNDLED
 process.env.ZDOTDIR = mkdtempSync(join(tmpdir(), 'studio-e2e-zsh-'));
 // Its own Vite cache too, kept between runs so that only the first one waits for the dependencies to be bundled.
 // One per port: servers run side by side (playwright.config.ts), and two bundling into one cache would clash.
-const vite = isolated ? { cacheDir: join(repository, 'node_modules', `.vite-e2e-${port}`), server: { fs: { allow: [root, repository] } } } : {};
-// The Studio's own server (src/studio/serve.mjs), as Studio.app runs it; E2E_ASTRO=1: the /studio of astro dev, as
-// before (kept for a while, to be taken away).
-const standalone = process.env.E2E_ASTRO !== '1';
-const server = standalone
-	? await startStudio({ root, port, logLevel: 'warn', strictPort: true, vite: { ...vite, cacheDir: join(repository, 'node_modules', `.vite-e2e-studio-${port}`) } }).then((started) => ({ stop: started.close }))
-	: await dev({ root, logLevel: 'warn', server: { port }, ...(isolated ? { vite } : {}) });
-console.log(`studio e2e ${standalone ? 'standalone ' : ''}server on http://localhost:${port}, articles in ${articles}${isolated ? `, root ${root}` : ''}`);
+const vite = { cacheDir: join(repository, 'node_modules', `.vite-e2e-studio-${port}`), ...(isolated ? { server: { fs: { allow: [root, repository] } } } : {}) };
+// The Studio's own server (src/studio/serve.mjs), as Studio.app runs it.
+const server = await startStudio({ root, port, logLevel: 'warn', strictPort: true, vite }).then((started) => ({ stop: started.close }));
+console.log(`studio e2e server on http://localhost:${port}, articles in ${articles}${isolated ? `, root ${root}` : ''}`);
 
 const stop = async () => {
 	await server.stop();
