@@ -33,3 +33,4 @@
 | 2026-10-28 | [Windows 上用 Job Object 让子进程跟着走](./20261028-Windows上用JobObject让子进程跟着走.md) | L8 后一半：`retainpdf-proc` 加 `kill_descendants_on_exit`，Windows 上把本进程放进"关闭即杀"的 Job Object，rust_api、jobsd 启动时各调一次，被强杀时管线、渲染这些孙进程跟着没；Unix 什么都不做；Windows 只做了类型检查，测试要在 Windows 上手动跑 |
 | 2026-10-29 | [OCR 归一化：原生行被覆盖、选页时错位](./20261029-OCR归一化原生行被覆盖和选页错位.md) | 归一化审查的确定 bug 第 1、3 条：缩放后的行重建只给没有真实行的块（以前 MinerU 多行段落被压成 1 行）；远程 URL 任务选页时原文截成所选页，缩放时多页、有块却没尺寸改成报错；第 6 条（校验器写死通过）核实是误报 |
 | 2026-10-29 | [Paddle 图表附注归属和只对 MinerU 生效的选项](./20261029-Paddle图表附注归属和只对MinerU生效的选项.md) | 归一化审查 Paddle 两条：vision_footnote 归属改成开头标记 → 前一个块 → 整词（以前子串 table 排最前，stable 都被当成表注）；disable_formula 等对 Paddle 不生效核实是已知限制（任务日志有记），只补文档 |
+| 2026-10-29 | [归一化的最后几步在每条路径上都做](./20261029-归一化的最后几步在每条路径上都做.md) | 归一化审查：缩放到原文 PDF、重建行、刷新报告收成 `finalize_normalized_document`，normalize worker、命令型 OCR 的原始输出、MinerU 的 Python 直跑都调它（以前命令型 OCR 交回 Paddle 原始输出时坐标留在像素里、标着 pt）；远程命令交出的原文必须是真 PDF |

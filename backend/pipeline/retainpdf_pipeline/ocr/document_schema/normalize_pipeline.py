@@ -16,8 +16,9 @@ from retainpdf_pipeline.ocr.document_schema.adapters import (
 from retainpdf_pipeline.ocr.document_schema.reporting import (
     build_normalization_summary,
 )
-from retainpdf_pipeline.ocr.document_schema.validator import (
-    build_validation_report,
+from retainpdf_pipeline.ocr.document_schema.finalize import (
+    finalize_normalized_document,
+    refresh_report_for_final_document as _refresh_report_for_final_document,
 )
 from retainpdf_pipeline.ocr.document_schema.version import (
     DOCUMENT_SCHEMA_REPORT_FILE_NAME,
@@ -25,10 +26,6 @@ from retainpdf_pipeline.ocr.document_schema.version import (
 from retainpdf_pipeline.ocr.mineru_provider.artifacts import (
     materialize_mineru_page_assets,
     resolve_layout_json_path,
-)
-from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import (
-    post_rescale_rebuild_paddle_text_geometry,
-    rescale_document_geometry_to_pdf,
 )
 from retainpdf_base.io import save_json_atomic
 
@@ -89,26 +86,6 @@ def _args_from_spec(spec: NormalizeStageSpec) -> SimpleNamespace:
     )
 
 
-def _refresh_report_for_final_document(report: dict, document: dict) -> dict:
-    refreshed = dict(report)
-    pages = document.get("pages", []) or []
-    defaults_report = dict(report.get("defaults") or {})
-    defaults_report["pages_seen"] = len(pages)
-    defaults_report["blocks_seen"] = sum(
-        len(page.get("blocks", []) or []) for page in pages
-    )
-    refreshed["defaults"] = defaults_report
-    validation = build_validation_report(document)
-    validation["coordinate_space"] = "pdf_point"
-    refreshed["validation"] = validation
-    provider_signals = dict(
-        (document.get("derived") or {}).get("provider_signals") or {}
-    )
-    if provider_signals:
-        refreshed["provider_signals"] = provider_signals
-    return refreshed
-
-
 def _resolve_source_json_path(spec: NormalizeStageSpec) -> Path:
     requested = spec.inputs.source_json.resolve()
     if requested.is_file():
@@ -128,16 +105,11 @@ def build_normalized_artifacts(spec: NormalizeStageSpec) -> tuple[dict, dict]:
         provider=provider,
         provider_version=spec.inputs.provider_version,
     )
-    normalized_document = rescale_document_geometry_to_pdf(
+    return finalize_normalized_document(
         normalized_document,
+        normalization_report,
         spec.inputs.source_pdf,
     )
-    normalized_document = post_rescale_rebuild_paddle_text_geometry(normalized_document)
-    normalization_report = _refresh_report_for_final_document(
-        normalization_report,
-        normalized_document,
-    )
-    return normalized_document, normalization_report
 
 
 def normalized_artifact_paths(spec: NormalizeStageSpec) -> tuple[Path, Path]:

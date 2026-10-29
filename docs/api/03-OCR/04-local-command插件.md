@@ -225,7 +225,7 @@ generic_flat_ocr
 | --- | --- | --- |
 | `provider` | 是 | 固定为 `generic_flat_ocr`。 |
 | `pages` | 是 | 页面数组。 |
-| `pages[].width` / `height` | 是 | 页面尺寸。推荐使用 PDF point。 |
+| `pages[].width` / `height` | 是 | 页面尺寸，用 OCR 自己的单位就行（像素也可以）。2026-10-29 起后端按原文 PDF 每页的尺寸把整页坐标等比缩放到 PDF point（和内置的 MinerU、Paddle 一样）；所以这里的宽高必须和 bbox 是同一个坐标系，而且页数不能比原文 PDF 多（多了直接报错）。 |
 | `pages[].unit` | 否 | 默认 `pt`。 |
 | `blocks[].type` | 否 | 默认 `text`。非文本块不会进入翻译。 |
 | `blocks[].sub_type` | 否 | 默认 `body`。常用 `title`、`heading`、`abstract`、`body`、`footnote`、`reference_entry`。 |
@@ -371,7 +371,8 @@ RetainPDF 后续还会检查：
 - 输入 PDF 从 `RETAIN_OCR_SOURCE_PDF` 读取，不要写死路径。
 - 输出写到 `RETAIN_OCR_RAW_PAYLOAD_JSON` 或 `RETAIN_OCR_NORMALIZED_DOCUMENT_JSON`。
 - raw payload 的 `provider` 和 `RETAIN_OCR_RAW_PROVIDER` 一致。
-- bbox 坐标和页面 `width/height` 使用同一单位。
+- bbox 坐标和页面 `width/height` 使用同一单位（后端按原文 PDF 的页面尺寸缩放，见上面的字段表）。
+- 直接写 `RETAIN_OCR_NORMALIZED_DOCUMENT_JSON` 的不缩放：那份必须已经是 PDF point。
 - 页码、块顺序、bbox 不要为空或倒置。
 - 命令失败时退出非 `0`，不要静默吞错。
 

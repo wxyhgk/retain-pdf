@@ -143,6 +143,7 @@ def run_local_command_ocr_to_job_dir(args: SimpleNamespace) -> OcrProviderResult
             provider_result_json_path=provider_result_json_path,
             raw_provider=raw_provider,
             document_id=job_dirs.root.name,
+            source_pdf_path=source_pdf_path,
         )
 
     validation = validate_saved_document_path(normalized_json_path)
@@ -241,6 +242,7 @@ def _materialize_normalized_document_from_local_raw(
     provider_result_json_path: Path,
     raw_provider: str,
     document_id: str,
+    source_pdf_path: Path,
 ) -> None:
     source_json_path = raw_payload_json_path if raw_payload_json_path.exists() else provider_result_json_path
     if not source_json_path.exists():
@@ -256,6 +258,12 @@ def _materialize_normalized_document_from_local_raw(
         provider_version="local",
         allow_provider_mismatch=True,
     )
+    # 在这里才导入：`finalize` 要用 `ocr_provider.paddle_normalize`，导入 `ocr_provider` 包会一路导入到这个模块，放在文件头会循环导入。
+    from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
+
+    # 原始输出的坐标按 OCR 自己的页面尺寸给（Paddle 是像素），和正式的 normalize worker 一样缩放到原文 PDF。
+    # 命令自己写好的 document.v1.json 不动：契约要求它已经是 PDF 点。
+    document, report = finalize_normalized_document(document, report, source_pdf_path)
     save_json(normalized_json_path, document)
     save_json(normalized_report_json_path, report)
     if not provider_result_json_path.exists() and source_json_path != provider_result_json_path:

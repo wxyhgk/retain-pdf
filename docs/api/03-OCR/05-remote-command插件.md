@@ -65,4 +65,5 @@ RETAIN_OCR_CREDENTIAL
 - `RETAIN_OCR_SOURCE_PDF` 可能为空。
 - 插件必须把最终源 PDF 写入 `RETAIN_OCR_SOURCE_DIR`。
 
-如果插件没有落 source PDF，任务会失败，因为翻译和渲染后续必须使用本地 source artifact。
+如果插件没有落 source PDF，任务会失败，因为翻译和渲染后续必须使用本地 source artifact。它必须是一份能打开的真 PDF：
+交回 raw payload 时，后端按它每页的尺寸把坐标缩放到 PDF point（2026-10-29 起）。

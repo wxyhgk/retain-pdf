@@ -326,7 +326,11 @@ assert os.environ["RETAIN_OCR_CREDENTIAL"] == "remote-token"
 
 source_dir = Path(os.environ["RETAIN_OCR_SOURCE_DIR"])
 source_dir.mkdir(parents=True, exist_ok=True)
-(source_dir / "downloaded.pdf").write_bytes(b"%PDF-1.4\\n")
+# 远程命令要交出一份真的原文 PDF：归一化要按它的页面尺寸缩放坐标，渲染也要用它。
+import fitz
+with fitz.open() as pdf:
+    pdf.new_page(width=320, height=480)
+    pdf.save(str(source_dir / "downloaded.pdf"))
 
 target = Path(os.environ["RETAIN_OCR_RAW_PAYLOAD_JSON"])
 target.parent.mkdir(parents=True, exist_ok=True)
