@@ -253,6 +253,23 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 				},
 			}),
 	);
+	// What is typed at a link's end is not more of it (as Notion and Google Docs have it): the caret there, the marks to
+	// type with are those but the link. ProseMirror's input methods follow them too (a cursor of those marks, out of the
+	// <a>): Chinese typed after a link stayed in it, its spaces underlined.
+	const linkEnds = $prose(
+		() =>
+			new Plugin({
+				appendTransaction(_transactions, _old, state) {
+					const { selection } = state;
+					if (!(selection instanceof TextSelection) || !selection.$cursor || state.storedMarks) return null;
+					const $cursor = selection.$cursor;
+					const before = $cursor.nodeBefore;
+					const link = before?.isText ? before.marks.find((mark) => mark.type.name === 'link') : undefined;
+					if (!before || !link || ($cursor.nodeAfter && link.isInSet($cursor.nodeAfter.marks))) return null;
+					return state.tr.setStoredMarks(link.removeFromSet(before.marks)).setMeta('addToHistory', false);
+				},
+			}),
+	);
 	const size = (path: string) => host.fileSize?.(path) ?? null;
 	// Looked for at first in the whole article, then only round each edit (a long article has thousands of blocks).
 	const pages = $prose(
@@ -280,5 +297,5 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 				props: { decorations: (state) => pageLinesKey.getState(state) },
 			}),
 	);
-	return [plugin, pages].flat();
+	return [plugin, pages, linkEnds].flat();
 }

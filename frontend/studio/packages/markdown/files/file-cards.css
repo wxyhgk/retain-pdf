@@ -55,3 +55,15 @@
 [data-file-kind="code"] { --file-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%2022a2%202%200%200%201-2-2V4a2%202%200%200%201%202-2h8a2.4%202.4%200%200%201%201.704.706l3.588%203.588A2.4%202.4%200%200%201%2020%208v12a2%202%200%200%201-2%202z%22%2F%3E%3Cpath%20d%3D%22M14%202v5a1%201%200%200%200%201%201h5%22%2F%3E%3Cpath%20d%3D%22M10%2012.5%208%2015l2%202.5%22%2F%3E%3Cpath%20d%3D%22m14%2012.5%202%202.5-2%202.5%22%2F%3E%3C%2Fsvg%3E"); }
 [data-file-kind="archive"] { --file-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M13.659%2022H18a2%202%200%200%200%202-2V8a2.4%202.4%200%200%200-.706-1.706l-3.588-3.588A2.4%202.4%200%200%200%2014%202H6a2%202%200%200%200-2%202v11.5%22%2F%3E%3Cpath%20d%3D%22M14%202v5a1%201%200%200%200%201%201h5%22%2F%3E%3Cpath%20d%3D%22M8%2012v-1%22%2F%3E%3Cpath%20d%3D%22M8%2018v-2%22%2F%3E%3Cpath%20d%3D%22M8%207V6%22%2F%3E%3Ccircle%20cx%3D%228%22%20cy%3D%2220%22%20r%3D%222%22%2F%3E%3C%2Fsvg%3E"); }
 [data-file-kind="data"] { --file-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6%2022a2%202%200%200%201-2-2V4a2%202%200%200%201%202-2h8a2.4%202.4%200%200%201%201.704.706l3.588%203.588A2.4%202.4%200%200%201%2020%208v12a2%202%200%200%201-2%202z%22%2F%3E%3Cpath%20d%3D%22M14%202v5a1%201%200%200%200%201%201h5%22%2F%3E%3Cpath%20d%3D%22M8%2018v-1%22%2F%3E%3Cpath%20d%3D%22M12%2018v-6%22%2F%3E%3Cpath%20d%3D%22M16%2018v-3%22%2F%3E%3C%2Fsvg%3E"); }
+/* A file in a sentence: a label (its icon, its name on a light ground), not an underlined link. */
+.file-link,
+.pm-file-mention {
+	padding: 0.08em 0.32em;
+	border-radius: 4px;
+	background: rgba(var(--gray-light), 0.6);
+	color: rgb(var(--black));
+	text-decoration: none;
+}
+.file-link:hover,
+a:hover > .pm-file-mention { background: rgba(var(--gray-light), 1); }
+a:has(> .pm-file-mention) { text-decoration: none; }

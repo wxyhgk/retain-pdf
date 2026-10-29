@@ -494,3 +494,4 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .pm-file-card-more { width: 26px; height: 26px; border: 0; border-radius: 6px; background: none; color: rgb(var(--gray)); font: inherit; cursor: pointer; opacity: 0; }
 .pm-file-card:hover .pm-file-card-more, .pm-file-card-more:focus-visible { opacity: 1; }
 .pm-file-card-more:hover { background: var(--studio-fill-2); color: rgb(var(--black)); }
+.crepe-host .milkdown .ProseMirror a:has(> .pm-file-mention) { color: inherit; text-decoration: none; cursor: pointer; }
