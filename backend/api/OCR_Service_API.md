@@ -196,6 +196,10 @@ OCR-only 任务只跑 OCR provider 和 normalize，不需要 `translation`、`re
 - `ocr.disable_formula`
 - `ocr.disable_table`
 - `ocr.language`
+
+  上面这几个是 MinerU 的选项。`provider=paddle` 时 `disable_formula`、`disable_table` 不生效（Paddle 的网络接口没有对应开关，任务日志里记一句
+  `paddle provider note: ... will be ignored`），`language`、`is_ocr`、`model_version` 也不传给 Paddle；Paddle 用的模型和参数见
+  `backend/config/ocr_providers.json` 和 `retainpdf_pipeline/ocr/ocr_provider/paddle_api.py` 的 `build_optional_payload`。
 - `ocr.page_ranges`
 - `ocr.data_id`
 - `ocr.no_cache`
