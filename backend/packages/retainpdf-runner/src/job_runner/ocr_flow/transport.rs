@@ -8,7 +8,7 @@ use crate::models::domain::JobRuntimeState;
 use crate::ocr_provider::OcrProviderKind;
 
 use super::artifacts::{download_source_pdf, ensure_source_pdf_from_bundle};
-use super::page_subset::prepare_uploaded_source_pdf;
+use super::page_subset::{prepare_uploaded_source_pdf, subset_downloaded_source_pdf};
 
 pub(super) fn resolve_local_upload_path(db: &Db, job: &JobRuntimeState) -> Result<Option<PathBuf>> {
     let upload_id = job.request_payload.source.upload_id.trim();
@@ -54,18 +54,33 @@ pub(super) fn prepare_local_upload_source(
 
 pub(super) async fn recover_remote_source_pdf(
     provider_kind: &OcrProviderKind,
-    job: &JobRuntimeState,
+    job: &mut JobRuntimeState,
     source_dir: &Path,
     provider_raw_dir: &Path,
 ) -> Result<PathBuf> {
-    match provider_kind {
-        OcrProviderKind::Mineru => ensure_source_pdf_from_bundle(provider_raw_dir, source_dir),
+    let source_pdf = match provider_kind {
+        OcrProviderKind::Mineru => ensure_source_pdf_from_bundle(provider_raw_dir, source_dir)?,
         OcrProviderKind::Paddle => {
-            download_source_pdf(&job.request_payload.source.source_url, source_dir).await
+            download_source_pdf(&job.request_payload.source.source_url, source_dir).await?
         }
-        OcrProviderKind::Local => Err(anyhow!(
-            "local OCR provider requires a local source PDF handled by provider stage script"
-        )),
-        OcrProviderKind::Unknown => Err(anyhow!("unsupported OCR provider")),
+        OcrProviderKind::Local => {
+            return Err(anyhow!(
+                "local OCR provider requires a local source PDF handled by provider stage script"
+            ))
+        }
+        OcrProviderKind::Unknown => return Err(anyhow!("unsupported OCR provider")),
+    };
+    // OCR 只认了所选的页，原文要和它一页一页对上（见 `subset_downloaded_source_pdf`）。
+    if let Some(prepared) =
+        subset_downloaded_source_pdf(&source_pdf, &job.request_payload.ocr.page_ranges)?
+    {
+        job.append_log(&format!(
+            "cut remote source pdf to the selected pages: {} pages {:?}/{}",
+            prepared.path.display(),
+            prepared.selected_pages,
+            prepared.total_pages
+        ));
+        job_artifacts_mut(job).ocr_page_numbers = prepared.selected_pages;
     }
+    Ok(source_pdf)
 }
