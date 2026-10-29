@@ -20,7 +20,7 @@ type BatchUploadPanelProps = {
 function statusText(item: BatchItem): string {
   switch (item.status) {
     case "waiting":
-      return "等待上传";
+      return item.message || "等待上传";
     case "uploading":
       return `上传中 ${item.progress}%`;
     case "uploaded":

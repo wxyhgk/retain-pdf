@@ -18,6 +18,7 @@ export {
   isPageQuotaError,
   isQueueFullError,
   isRefusedSubmission,
+  isRestoreInProgressError,
   PAGE_QUOTA_EXCEEDED,
   type PageQuotaError,
 } from "@retainpdf/api/http";

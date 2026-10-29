@@ -4,8 +4,15 @@
 // - 上传本身就会把书收进书库（和单本一样），所以「只收进书库」不用再发请求。
 // - 关掉弹窗（dispose）以后不再开始传下一本；正在传的那本照样传完、留在书库里。
 // - 交任务时没交上的（后端拒收、出错）留在列表里，可以再交一次；交上的不会重复交。
+// - 正在恢复备份（只有几秒）时上传被拒：这本放回等待，过一会儿自动接着传，不算传坏。
 
+import { isRestoreInProgressError } from "@/platform/api/index.js";
 import type { BatchUploadedFile } from "./batch-file-upload.js";
+
+/** 恢复备份时隔多久再试，最多等几次（3 秒 × 40 = 2 分钟，恢复正常只要几秒）。 */
+const RESTORE_RETRY_DELAY_MS = 3000;
+const RESTORE_MAX_WAITS = 40;
+const RESTORE_WAITING_TEXT = "正在恢复备份，恢复完自动接着传";
 
 export type BatchItemStatus =
   | "waiting"
@@ -37,6 +44,8 @@ export type BatchSubmitOutcome = { ok: true; jobId: string } | { ok: false; mess
 
 export type BatchSessionDeps = {
   uploadFile: (file: File, onProgress?: (loaded: number, total: number) => void) => Promise<BatchUploadedFile>;
+  /** 等一会儿；测试换成立即返回的。 */
+  wait?: (ms: number) => Promise<void>;
   submitBatch: (
     uploadIds: string[],
     onItem: (uploadId: string, result: BatchSubmitOutcome) => void,
@@ -69,7 +78,11 @@ function errorText(err: unknown) {
   return `${(err as { message?: string } | null)?.message || err || "上传失败"}`.trim();
 }
 
-export function createBatchUploadSession({ uploadFile, submitBatch }: BatchSessionDeps) {
+function defaultWait(ms: number) {
+  return new Promise<void>((resolve) => setTimeout(resolve, ms));
+}
+
+export function createBatchUploadSession({ uploadFile, submitBatch, wait = defaultWait }: BatchSessionDeps) {
   let state: BatchState = { items: [], submitting: false };
   let files = new Map<string, File>();
   const listeners = new Set<(snapshot: BatchState) => void>();
@@ -86,6 +99,7 @@ export function createBatchUploadSession({ uploadFile, submitBatch }: BatchSessi
   }
 
   async function uploadAll() {
+    let restoreWaits = 0;
     for (;;) {
       if (disposed) return;
       const next = state.items.find((item) => item.status === "waiting");
@@ -101,6 +115,7 @@ export function createBatchUploadSession({ uploadFile, submitBatch }: BatchSessi
           if (total > 0) patchItem(next.key, { progress: Math.min(100, Math.round((loaded / total) * 100)) });
         });
         files.delete(next.key);
+        restoreWaits = 0;
         patchItem(next.key, {
           status: "uploaded",
           progress: 100,
@@ -109,6 +124,12 @@ export function createBatchUploadSession({ uploadFile, submitBatch }: BatchSessi
           name: uploaded.fileName || next.name,
         });
       } catch (err) {
+        if (isRestoreInProgressError(err) && restoreWaits < RESTORE_MAX_WAITS) {
+          restoreWaits += 1;
+          patchItem(next.key, { status: "waiting", progress: 0, message: RESTORE_WAITING_TEXT });
+          await wait(RESTORE_RETRY_DELAY_MS);
+          continue;
+        }
         files.delete(next.key);
         patchItem(next.key, { status: "upload_failed", message: errorText(err) });
       }
