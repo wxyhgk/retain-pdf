@@ -6,6 +6,9 @@ import json
 from collections import Counter
 from pathlib import Path
 
+from retainpdf_pipeline.ocr.document_schema.provider_adapters.common.continuation import (
+    assign_provider_group_continuation_hints,
+)
 from retainpdf_pipeline.ocr.document_schema.provider_adapters.mineru.cross_page import (
     restore_cross_page_spans,
 )
@@ -132,6 +135,66 @@ def build_page_record(page: dict, *, page_idx: int) -> tuple[dict, int]:
     )
 
 
+def link_cross_page_continuations(pages: list[dict]) -> int:
+    """把拆回各页的跨页段落连成一组接续提示（head → … → tail），返回连了几组。
+
+    MinerU 把跨页的一段话合进前一页那段（后半截的片段标着 `cross_page`），`restore_cross_page_spans` 把后半截拆回它
+    自己的页，在那段的元数据里记着前一页那段的原始路径（`cross_page_source_paths`）。以前拆完就什么都没留，翻译把两半
+    当成两段各翻各的（Paddle 那边一直有接续提示）。同一个原始块拆出几条记录（行跑出块框的另成一条）时只认第一条。
+    已经有服务商接续提示的块不动。
+    """
+    first_record_by_path: dict[str, dict] = {}
+    for page in pages:
+        for block in page.get("blocks", []) or []:
+            raw_path = str((block.get("source") or {}).get("raw_path", "") or "")
+            if raw_path and raw_path not in first_record_by_path:
+                first_record_by_path[raw_path] = block
+
+    next_by_id: dict[str, dict] = {}
+    has_previous: set[str] = set()
+    blocks_by_id: dict[str, dict] = {}
+    for raw_path, block in first_record_by_path.items():
+        blocks_by_id[block["block_id"]] = block
+        sources = [
+            first_record_by_path[str(path)]
+            for path in (block.get("metadata") or {}).get("cross_page_source_paths", []) or []
+            if str(path) in first_record_by_path and first_record_by_path[str(path)] is not block
+        ]
+        if not sources:
+            continue
+        # 一段被合进好几块时，按页、按顺序串起来，最后一块接这一段。
+        chain = sorted(sources, key=lambda item: (item.get("page_index", 0), item.get("order", 0))) + [block]
+        for earlier, later in zip(chain, chain[1:]):
+            blocks_by_id[earlier["block_id"]] = earlier
+            next_by_id.setdefault(earlier["block_id"], later)
+            has_previous.add(later["block_id"])
+
+    linked = 0
+    for block_id, block in blocks_by_id.items():
+        if block_id in has_previous or block_id not in next_by_id:
+            continue
+        ordered = [block]
+        seen = {block_id}
+        while ordered[-1]["block_id"] in next_by_id:
+            following = next_by_id[ordered[-1]["block_id"]]
+            if following["block_id"] in seen:
+                break
+            seen.add(following["block_id"])
+            ordered.append(following)
+        if any(
+            str((item.get("continuation_hint") or {}).get("source", "") or "") == "provider"
+            for item in ordered
+        ):
+            continue
+        assign_provider_group_continuation_hints(
+            group_id=f"mineru-cross-page-{block_id}",
+            ordered_blocks=ordered,
+            reading_order_resolver=lambda item, _index: item.get("reading_order", item.get("order")),
+        )
+        linked += 1
+    return linked
+
+
 def collect_raw_label_counts(layout_payload: dict) -> Counter[str]:
     counts: Counter[str] = Counter()
 
@@ -161,6 +224,7 @@ def build_mineru_document(
         for page_idx, page in enumerate(physical_pages)
     ]
     pages = [page for page, _skipped in page_results]
+    cross_page_linked_group_count = link_cross_page_continuations(pages)
     raw_label_counts = collect_raw_label_counts(payload)
     unknown_labels = sorted(
         label
@@ -191,6 +255,11 @@ def build_mineru_document(
                     skipped for _page, skipped in page_results
                 ),
                 **cross_page_signals,
+                **(
+                    {"cross_page_linked_group_count": cross_page_linked_group_count}
+                    if cross_page_signals
+                    else {}
+                ),
             },
         },
     }
