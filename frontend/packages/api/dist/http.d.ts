@@ -48,8 +48,14 @@ export declare const QUEUE_FULL_MESSAGE = "\u6392\u961F\u7684\u4EFB\u52A1\u592A\
 /** 错误响应是「排队满了」就做成一句中文的错误（带 status、reason），不是就返回 null。 */
 export declare function queueFullErrorFromPayload(status: number, payload: unknown, url?: string): HttpError | null;
 export declare function isQueueFullError(error: unknown): boolean;
+/** 正在恢复数据库备份（只有几秒）：上传、建任务、原地重跑回 409，error.details.reason 是这个，被拒时什么都没写。message 同样是英文。 */
+export declare const RESTORE_IN_PROGRESS = "restore_in_progress";
+export declare const RESTORE_IN_PROGRESS_MESSAGE = "\u6B63\u5728\u6062\u590D\u5907\u4EFD\uFF0C\u7A0D\u7B49\u518D\u8BD5\u3002";
+/** 错误响应是「正在恢复备份」就做成一句中文的错误（带 status、reason），不是就返回 null。 */
+export declare function restoreInProgressErrorFromPayload(status: number, payload: unknown, url?: string): HttpError | null;
+export declare function isRestoreInProgressError(error: unknown): boolean;
 /**
- * 提交被拒但不是故障：页数额度不够、磁盘空间不够、排队的任务满了。message 是能照着做的中文，
+ * 提交被拒但不是故障：页数额度不够、磁盘空间不够、排队的任务满了、正在恢复备份。message 是能照着做的中文，
  * 界面原样显示，不加「提交失败: 状态码」前缀，也不给诊断。都不是就返回 null。
  */
 export declare function refusedSubmissionError(status: number, payload: unknown, url?: string): HttpError | null;
