@@ -203,6 +203,10 @@
 - Rust 主工作流调用的 normalize worker 现在要求 `--spec <job_root/specs/normalize.spec.json>`
 - 如果只是本地手动验证 schema / adapter，应该走 `validate_document_schema.py`（script-mode，仅桌面兼容，无 console 等价物）
 
+适配器里的顺序（`adapters.py` 的 `adapt_payload_to_document_v1_with_report`）：各家 builder → 补默认值 → 补契约字段 → 把略微超出页边的块夹回页内
+（`page_bounds.py`，每条边超出不超过页面边长的 1%；块的行、片段跟着收进块里；夹过的块 `metadata.page_overflow_clamped` 记原来的框，文档
+`derived` 和报告记 `page_overflow_clamped_block_count`；超得多的不动，照样校验失败。2026-10-29 起，以前一个超出一两点的块就让整份文档校验失败）→ 校验。
+
 normalize worker 里的顺序（`normalize_pipeline.py` 的 `build_normalized_artifacts`）：adapter → 缩放到 PDF
 （`rescale_document_geometry_to_pdf`）→ 行重建（`post_rescale_rebuild_paddle_text_geometry`）→ 重新校验。
 

@@ -402,17 +402,6 @@
    "expect": "list/index aggregate bbox = union(block bbox, descendant line bboxes) -> [72.0, 80.0, 540.0, 142.0]"
   }
  ],
- "validator_rejects": [
-  {
-   "case": "2. block + line + span exceed page width by 1.5pt",
-   "raw_file": "raw_rejected.json",
-   "raw_path": "/pdf_info/0/para_blocks/2",
-   "stage": "adapt_payload_to_document_v1 (build_validation_report -> validate_document_payload); same error from validate_document_payload alone",
-   "error": "$.pages[0].blocks[12].geometry.bbox: must stay within page bounds [0, 0, 612.0, 792.0]",
-   "tolerance": "1e-3 pt; the adapter passes block bboxes through unclamped, so a MinerU box 1-2pt past the page edge can only be fixed upstream (or by rescale)",
-   "adjustment_in_raw_json": "block bbox x1 613.5 -> 612, and the line and span x1 613.5 -> 612 (identical to raw_rejected.json otherwise)"
-  }
- ],
  "tricky_points": [
   "Three display-formula aliases on three pages: interline_equation (p1), equation (p2, span type 'equation'), equation_interline (p3); the first two are MinerU pipeline/vlm naming, the third the content_list/newer naming. All project identically and none is reported as unknown.",
   "image/chart/code groups: the container label (image, chart, code) is never emitted; children are, and the caption/footnote children are linked to the first image/table/code child.",
@@ -426,5 +415,17 @@
   "Orphan-line splitting only checks that the line does not intersect the block bbox; the orphan record gets its own block_id, shifting every later id, and keeps the parent's raw_path and raw_index.",
   "raw.json deliberately omits preproc_blocks and cross_page spans (covered by the two-column fixture); middle.json always has preproc_blocks in reality but the adapter ignores it unless cross_page spans exist.",
   "Hyperlink spans carry a url and wrapper bbox in this fixture (key names invented to resemble MinerU); only the children's text/bbox survive normalization."
+ ],
+ "page_overflow_variants": [
+  {
+   "case": "2. block + line + span exceed page width by 1.5pt",
+   "raw_file": "raw_page_overflow.json",
+   "raw_path": "/pdf_info/0/para_blocks/2",
+   "stage": "adapt_payload_to_document_v1 (build_validation_report -> validate_document_payload); same error from validate_document_payload alone",
+   "tolerance": "1e-3 pt; the adapter passes block bboxes through unclamped, so a MinerU box 1-2pt past the page edge can only be fixed upstream (or by rescale)",
+   "adjustment_in_raw_json": "block bbox x1 613.5 -> 612, and the line and span x1 613.5 -> 612 (identical to raw_rejected.json otherwise)",
+   "error_before_2026_10_29": "$.pages[0].blocks[12].geometry.bbox: must stay within page bounds [0, 0, 612.0, 792.0]",
+   "now": "2026-10-29 起归一化把这个块夹回页内（document_schema/page_bounds.py），报告记 page_overflow_clamped_block_count=1，块的 metadata.page_overflow_clamped 记原来的框"
+  }
  ]
 }
