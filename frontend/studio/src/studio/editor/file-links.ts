@@ -19,10 +19,20 @@ export function linkedArticleFile(href: string): string | null {
  * page link opens its page: how, for a click, ⌘-click or ⌥-click, is the author's choice (file-open.ts). Heard before
  * the editor (its own handling of a click on a link would take it); ⇧-click is the editor's (it selects).
  */
-export function openFileLinks(root: HTMLElement, open: (path: string, click: FileClick) => void): () => void {
+export function openFileLinks(root: HTMLElement, open: (path: string, click: FileClick) => void, menu: (path: string, anchor: HTMLElement) => void = () => {}): () => void {
 	const clicked = (event: MouseEvent) => {
 		if (event.button !== 0 || event.shiftKey) return;
-		const link = (event.target as Element | null)?.closest?.('a[href]');
+		const target = event.target as Element | null;
+		// A file card's ⋯: what can be done to its file.
+		const more = target?.closest?.<HTMLElement>('[data-file-menu]');
+		if (more && root.contains(more)) {
+			event.preventDefault();
+			event.stopPropagation();
+			menu(more.dataset.fileMenu!, more);
+			return;
+		}
+		// A file card anywhere (its icon, its words after the name): as a click on its link.
+		const link = target?.closest?.('a[href]') ?? target?.closest?.('.pm-file-card')?.querySelector('a[href]');
 		if (!link || !root.contains(link)) return;
 		const path = linkedArticleFile(link.getAttribute('href') ?? '');
 		if (!path) return;

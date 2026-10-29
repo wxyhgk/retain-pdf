@@ -30,6 +30,7 @@ const CSS = {
 	codeFilesCss: '@blog/markdown/code-files/code-files.css',
 	figuresCss: '@blog/markdown/figures/figures.css',
 	referencesCss: '@blog/markdown/references/references.css',
+	fileCardsCss: '@blog/markdown/files/file-cards.css',
 	officeCss: '@blog/office/office.css',
 	xtermCss: '@xterm/xterm/css/xterm.css',
 	tokensCss: '../tokens.css',
@@ -103,7 +104,7 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 	const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(await Promise.all(articles.map(async ({ slug }: { slug: string }) => [slug, await pageVersion(blogRoot, slug)]))) };
 	const [current, dropFiles, instructing] = [t('当前'), t('拖入文件即可上传 · 右键查看更多操作'), t('AI 处理中…')].map((word) => JSON.stringify(word));
 	const words = `--word-current: ${current}; --word-drop-files: ${dropFiles}; --word-instructing: ${instructing}`;
-	const styles = [CSS.globalCss, CSS.katexCss, CSS.crepeCommonCss, CSS.crepeClassicCss, CSS.mathCss, CSS.calloutsCss, CSS.codeFilesCss, CSS.figuresCss, CSS.referencesCss, CSS.officeCss, CSS.xtermCss, CSS.tokensCss, CSS.interCss, CSS.designCss, CSS.shellCss, CSS.pageHeaderCss, CSS.filePanelCss, CSS.sidebarHostsCss, CSS.driveCss, CSS.articleTableCss, CSS.aiPanelCss, CSS.blockSheetCss, CSS.studioPageCss];
+	const styles = [CSS.globalCss, CSS.katexCss, CSS.crepeCommonCss, CSS.crepeClassicCss, CSS.mathCss, CSS.calloutsCss, CSS.codeFilesCss, CSS.figuresCss, CSS.referencesCss, CSS.fileCardsCss, CSS.officeCss, CSS.xtermCss, CSS.tokensCss, CSS.interCss, CSS.designCss, CSS.shellCss, CSS.pageHeaderCss, CSS.filePanelCss, CSS.sidebarHostsCss, CSS.driveCss, CSS.articleTableCss, CSS.aiPanelCss, CSS.blockSheetCss, CSS.studioPageCss];
 	// The page's words, in the language it speaks (escaped for the page).
 	const say = Object.fromEntries(Object.entries({
 		editor: t('文章编辑器'),

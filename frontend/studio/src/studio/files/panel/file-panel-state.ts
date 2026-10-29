@@ -421,6 +421,17 @@ export function createFilePanelState(host: FilePanelHost) {
 		},
 		/** List the folder again, after something outside the panel changed it. */
 		refresh,
+		/** The article's files as listed now (their sizes: the editor's file cards say them). */
+		entries: () => get().entries,
+		/** Told each time the files are listed anew. */
+		listed(listener: () => void): () => void {
+			let before = get().entries;
+			return store.subscribe(() => {
+				if (get().entries === before) return;
+				before = get().entries;
+				listener();
+			});
+		},
 		/** The article's text changed: which files it uses may have too. */
 		sourceChanged(): void {
 			window.clearTimeout(sourceTimer);

@@ -6,6 +6,8 @@ import { $prose } from '@milkdown/utils';
 
 import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { changedRange } from '@blog/editor-kit/changed-range.ts';
+import { fileKind, fileKindName, fileSize } from '@blog/markdown/files/file-kinds.mjs';
+import { linkedArticleFile } from './file-links';
 
 /**
  * Links to the blog's other articles, as Notion links its pages: `[[` opens
@@ -33,6 +35,8 @@ export type ArticleLinkHost = {
 	makePage(): Promise<{ slug: string; title: string; href: string } | null>;
 	/** Goes into the page just made (the article linking to it saved first), its title to be typed. */
 	enterPage(slug: string): void;
+	/** How large a file of the article is (its card says so); null while not known. */
+	fileSize?(path: string): number | null;
 };
 
 /**
@@ -71,38 +75,95 @@ function linkedArticle(node: ProseNode): { href: string; slug: string } | null {
 	return slug ? { href, slug } : null;
 }
 
+/** The file of the article a link mark goes to (`./assets/opt.py`); null for any other link (or none). */
+function linkedFile(node: ProseNode): { href: string; path: string } | null {
+	const link = node.isText ? node.marks.find((mark) => mark.type.name === 'link') : undefined;
+	const href = link ? String(link.attrs.href ?? '') : '';
+	const path = href ? linkedArticleFile(href) : null;
+	return path ? { href, path } : null;
+}
+
+/** The file a paragraph links to when it is that link and nothing else (spaces aside); null for any other block. */
+function fileLined(node: ProseNode): string | null {
+	if (node.type.name !== 'paragraph' || !node.childCount) return null;
+	let found: string | null = null;
+	let alone = true;
+	node.forEach((child) => {
+		if (child.isText && !child.marks.some((mark) => mark.type.name === 'link') && !child.text?.trim()) return;
+		const file = linkedFile(child);
+		if (!file || (found !== null && found !== file.path)) alone = false;
+		found ??= file?.path ?? null;
+	});
+	return alone ? found : null;
+}
+
+/** What a file card says after its name: what the file is, how large (once known), and its ⋯. */
+function fileCardMeta(path: string, size: number | null): HTMLElement {
+	const meta = document.createElement('span');
+	meta.className = 'pm-file-card-meta';
+	meta.contentEditable = 'false';
+	meta.textContent = [fileKindName(fileKind(path)), size === null ? '' : fileSize(size)].filter(Boolean).join(' · ');
+	const more = document.createElement('button');
+	more.type = 'button';
+	more.className = 'pm-file-card-more';
+	more.dataset.fileMenu = path;
+	more.textContent = '⋯';
+	meta.append(more);
+	return meta;
+}
+
 /**
  * The links to articles in a block that is more than one (at `pos`): each shown as a page, its icon before its first
- * piece (a link partly bold is pieces of text).
+ * piece (a link partly bold is pieces of text). The links to the article's files there: each marked by its kind's icon.
  */
 function mentions(node: ProseNode, pos: number): Decoration[] {
 	const found: Decoration[] = [];
 	let previous: string | null = null;
 	node.forEach((child, offset) => {
 		const article = linkedArticle(child);
+		const file = article ? null : linkedFile(child);
+		const from = pos + 1 + offset;
 		if (article) {
-			const from = pos + 1 + offset;
 			const first = article.href !== previous;
 			found.push(Decoration.inline(from, from + child.nodeSize, { class: first ? 'pm-article-mention pm-article-mention-start' : 'pm-article-mention' }));
+		} else if (file) {
+			const first = file.href !== previous;
+			found.push(Decoration.inline(from, from + child.nodeSize, { class: first ? 'pm-file-mention pm-file-mention-start' : 'pm-file-mention', 'data-file-kind': fileKind(file.path) }));
 		}
-		previous = article?.href ?? null;
+		previous = article?.href ?? file?.href ?? null;
 	});
 	return found;
 }
 
-/** The page lines between `from` and `to` in `doc` (and in the blocks holding that stretch), and the pages linked in sentences. */
-function pageLines(doc: ProseNode, from: number, to: number): Decoration[] {
+/**
+ * The page lines between `from` and `to` in `doc` (and in the blocks holding that stretch), and the pages linked in
+ * sentences; the file cards (a file of the article linked alone on its line, but in a list) and the files linked in
+ * sentences, `size` telling how large each is.
+ */
+function pageLines(doc: ProseNode, from: number, to: number, size: (path: string) => number | null = () => null): Decoration[] {
 	const found: Decoration[] = [];
-	doc.nodesBetween(from, to, (node, pos) => {
+	doc.nodesBetween(from, to, (node, pos, parent) => {
 		if (!node.isTextblock) return !node.isInline;
+		const file = parent?.type.name === 'list_item' ? null : fileLined(node);
 		if (pageLinked(node)) found.push(Decoration.node(pos, pos + node.nodeSize, { class: 'pm-page-link' }));
-		else if (!node.type.spec.code) found.push(...mentions(node, pos));
+		else if (file) {
+			const bytes = size(file);
+			found.push(
+				Decoration.node(pos, pos + node.nodeSize, { class: 'pm-file-card', 'data-file-kind': fileKind(file) }),
+				Decoration.widget(pos + node.nodeSize - 1, () => fileCardMeta(file, bytes), { side: 1, ignoreSelection: true, key: `file-card:${file}:${bytes ?? ''}` }),
+			);
+		} else if (!node.type.spec.code) found.push(...mentions(node, pos));
 		return false;
 	});
 	return found;
 }
 
 const pageLinesKey = new PluginKey<DecorationSet>('studio-page-lines');
+
+/** The files of the article listed anew (their sizes known): its file cards drawn again. */
+export function refreshPageLines(view: EditorView): void {
+	view.dispatch(view.state.tr.setMeta(pageLinesKey, 'refresh').setMeta('addToHistory', false));
+}
 
 /**
  * Asks for an article and links it at `at`, as its title; given up, `typed`
@@ -160,14 +221,16 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 				},
 			}),
 	);
+	const size = (path: string) => host.fileSize?.(path) ?? null;
 	// Looked for at first in the whole article, then only round each edit (a long article has thousands of blocks).
 	const pages = $prose(
 		() =>
 			new Plugin<DecorationSet>({
 				key: pageLinesKey,
 				state: {
-					init: (_, state) => DecorationSet.create(state.doc, pageLines(state.doc, 0, state.doc.content.size)),
+					init: (_, state) => DecorationSet.create(state.doc, pageLines(state.doc, 0, state.doc.content.size, size)),
 					apply(tr, lines, before, after) {
+						if (tr.getMeta(pageLinesKey) === 'refresh') return DecorationSet.create(after.doc, pageLines(after.doc, 0, after.doc.content.size, size));
 						if (!tr.docChanged) return lines;
 						const mapped = lines.map(tr.mapping, tr.doc);
 						const range = changedRange(before.doc, after.doc);
@@ -179,7 +242,7 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 						const stale = mapped.find(from, to);
 						const start = Math.min(from, ...stale.map((line) => line.from));
 						const end = Math.max(to, ...stale.map((line) => line.to));
-						return mapped.remove(stale).add(after.doc, pageLines(after.doc, start, end));
+						return mapped.remove(stale).add(after.doc, pageLines(after.doc, start, end, size));
 					},
 				},
 				props: { decorations: (state) => pageLinesKey.getState(state) },

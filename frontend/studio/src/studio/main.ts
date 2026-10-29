@@ -27,7 +27,7 @@ import {
 import { bindTitleFocus } from './editor/block-menu';
 import { createStudioEditor } from './editor/studio-editor';
 import type { EditorView } from '@milkdown/prose/view';
-import { LayoutTemplate } from 'lucide-react';
+import { AppWindow, Copy, Eye, FolderSearch, History, LayoutTemplate } from 'lucide-react';
 import { showContextMenu } from './common/context-menu';
 import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
@@ -337,6 +337,24 @@ async function insertTemplate(view: EditorView): Promise<void> {
 	);
 }
 
+/** A file card's ⋯ (article-links.ts): its file opened, shown, its history, its path. */
+function fileMenu(path: string, anchor: HTMLElement): void {
+	const slug = session.slug;
+	if (!slug) return;
+	const failed = (error: unknown) => showToast(error instanceof Error ? error.message : String(error), true);
+	showContextMenu(
+		[
+			{ label: t('打开'), icon: Eye, action: () => previewArticleFile(path) },
+			{ label: t('用默认程序打开'), icon: AppWindow, action: () => void openArticleFileInApp(slug, path).catch(failed) },
+			{ label: /Mac/u.test(navigator.platform) ? t('在 Finder 中显示') : t('在文件管理器中显示'), icon: FolderSearch, action: () => void revealArticleFile(slug, path).catch(failed) },
+			{ label: t('历史版本…'), icon: History, action: () => showFileHistory(path) },
+			'separator',
+			{ label: t('复制路径'), icon: Copy, action: () => void navigator.clipboard.writeText(`./${path}`).then(() => showToast(t('已复制路径')), failed) },
+		],
+		anchor,
+	);
+}
+
 /** A file of the article shown in the Studio as what it is (file-preview.ts): a PDF, a picture, a table, its editor… */
 function previewArticleFile(path: string): void {
 	const slug = session.slug;
@@ -421,6 +439,8 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	sheetRows: firstSheetRows,
 	ocr: (path) => void editorAi.ocrPdf(path),
 });
+// The files listed anew: the editor's file cards say their sizes.
+filePanel.listed(() => editor.filesListed());
 
 const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-editor')!, {
 	// 转成子页面: a page under the open article, made with a section of it.
@@ -450,6 +470,8 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error(t('文章尚未载入')))),
 	editFile: (path) => editArticleFile(path),
 	openFile: (path, click) => openArticleFile(path, click),
+	fileMenu: (path, anchor) => fileMenu(path, anchor),
+	fileSize: (path) => filePanel.entries().find((entry) => entry.path === path)?.size ?? null,
 	insertTemplate: (view) => void insertTemplate(view),
 	changed: (markdown) => session.editBody(markdown),
 	async pickArticle() {

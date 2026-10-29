@@ -486,3 +486,11 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .file-preview-table th, .file-preview-table td { padding: 4px 10px; border-bottom: 1px solid var(--studio-hairline); text-align: left; white-space: nowrap; }
 .file-preview-table th { position: sticky; top: 0; background: var(--surface); font-weight: 600; }
 .file-preview-table tbody tr:hover { background: var(--studio-fill); }
+/* A file of the article linked alone on its line, as a card; in a sentence, marked by its icon (article-links.ts, files/file-cards.css). */
+.crepe-host .milkdown .ProseMirror p.pm-file-card { margin: 8px 0; padding: 12px 14px; cursor: pointer; }
+.crepe-host .milkdown .ProseMirror p.pm-file-card:hover { background: var(--studio-fill); }
+.crepe-host .milkdown .ProseMirror p.pm-file-card a { color: rgb(var(--black)); font-weight: 500; text-decoration: none; }
+.pm-file-card-meta { display: flex; flex: none; align-items: center; gap: 6px; margin-left: auto; user-select: none; }
+.pm-file-card-more { width: 26px; height: 26px; border: 0; border-radius: 6px; background: none; color: rgb(var(--gray)); font: inherit; cursor: pointer; opacity: 0; }
+.pm-file-card:hover .pm-file-card-more, .pm-file-card-more:focus-visible { opacity: 1; }
+.pm-file-card-more:hover { background: var(--studio-fill-2); color: rgb(var(--black)); }

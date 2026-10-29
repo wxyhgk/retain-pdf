@@ -36,7 +36,7 @@ import { blockwiseMarkdown } from './blockwise-markdown';
 import { isLongArticle, LONG, OPENING } from '@blog/editor-kit/near-screen.ts';
 import { displayMathPlugins } from '@blog/editor-kit/math/display-math.ts';
 import { articleFileDrop, replaceSlashImageItem, type ArticleFileDropHost } from './file-drop';
-import { articleLinkPlugins, type ArticleLinkHost } from './article-links';
+import { articleLinkPlugins, refreshPageLines, type ArticleLinkHost } from './article-links';
 import { blockToLink, linkTargets, replaceBlock } from './link-embeds';
 import { smartPastePlugins } from './smart-paste';
 import { blockKeyPlugins } from './block-key-plugins';
@@ -75,6 +75,8 @@ export type StudioEditorHost = {
 	insertTemplate(view: EditorView): void;
 	/** A file of the article a link names, clicked: opened as chosen for that click (file-open.ts). */
 	openFile(path: string, click: FileClick): void;
+	/** A file card's ⋯: what can be done to its file, by `anchor`. */
+	fileMenu(path: string, anchor: HTMLElement): void;
 	/** The author edited: the whole body as Markdown. */
 	changed(markdown: string): void;
 	/** How many changes are left to review, or null when none is under review. */
@@ -132,6 +134,8 @@ export type StudioEditor = {
 	insertMarkdown(markdown: string): void;
 	/** The ProseMirror view of the article shown; null before one is. */
 	view(): EditorView | null;
+	/** The article's files listed anew (their sizes known): the file cards drawn again. */
+	filesListed(): void;
 	/** The previews of the article's file `path` drawn again: it was changed (edited, saved). */
 	redrawCodeFile(path: string): void;
 	/** The blocks the selection is in shown as being worked on by an AI (Alt+Enter), as `id`, till `unmarkInstructing`. */
@@ -261,7 +265,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	}
 	observeCodeFiles(root);
 	// A link to a file of the article: a click opens it (in the Studio, with its program, in Finder: as chosen).
-	openFileLinks(root, (path, click) => host.openFile(path, click));
+	openFileLinks(root, (path, click) => host.openFile(path, click), (path, anchor) => host.fileMenu(path, anchor));
 	// A file's preview: 编辑, or a double-click on it, opens the file to edit. Before ProseMirror (it would select the block).
 	root.addEventListener(
 		'click',
@@ -763,6 +767,14 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		},
 		redrawCodeFile(path) {
 			redrawCodeFiles(root, path, host.codeFile);
+		},
+		filesListed() {
+			if (!crepe || mounting) return;
+			try {
+				crepe.editor.action((ctx) => refreshPageLines(ctx.get(editorViewCtx)));
+			} catch {
+				// Not made yet: drawn with the sizes as it is made.
+			}
 		},
 		view() {
 			if (!crepe || mounting) return null;
