@@ -123,7 +123,8 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 后端：`src/plugins/studio-dev.mjs`（组装各个模块、接口、小程序和文章的文件）。
 - 依赖：启动时从 `src/studio/**/*.tsx` 找出来预先打包（和 Astro 一样），样式表不算依赖。
 - 它在跑时把进程号和地址写进 `.studio-cache/server.json`；Studio.app 和 `studio` 命令从这里找到它。Studio.app 起的服务器，输出在 `.studio-cache/server.log`（上一次的在 `server.previous.log`），每次意外退出记进 `.studio-cache/server-exits.log`。
-- 默认端口 4321，被占着就用下一个空着的。
+- 默认端口 4321，被占着就用下一个空着的。只听本机。
+- iPad 访问（`src/studio/server/remote/remote-access.mjs`）：一个单独的 HTTPS 入口（默认 4343，默认关着），在 `0.0.0.0` 上听；只放配对过的设备（cookie 里的钥匙，设置里存哈希），把请求原样转给只听本机的 Studio（`Host`、`Origin` 改成 Studio 自己的，WebSocket 也转），并加上 `x-studio-remote: 1`：`/api/studio/remote*` 见到它就拒绝。证书用系统的 `/usr/bin/openssl` 生成一次，App 按二维码里的指纹认它。测试服务器上它只听本机、端口由系统给。
 - 博客（`astro dev`）里没有 Studio 了：`astro.config.mjs` 只有博客自己的东西；开发时文章的文件 `/article-assets/…` 由 `src/plugins/article-assets.mjs` 提供（以前是 Studio 的插件顺带提供的）。
 - 博客的页面（`/blog/…`、`/wiki/…`、`/about`……）不归它：交给博客自己的 `astro dev`，开着就用（`.astro/dev.json`），没开就在下一个端口替你开一个、跟着 Studio 的服务器停（`blogPreview`，输出在 `.studio-cache/blog.log`），请求等它起来后跳过去。
 

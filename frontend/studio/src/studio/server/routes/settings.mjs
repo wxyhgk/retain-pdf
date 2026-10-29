@@ -2,6 +2,7 @@ import { appendFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { keepLastGood } from '../system/last-good.mjs';
+import { t } from '@blog/i18n/index.mjs';
 
 /**
  * The Studio's own settings (not the AI's, not the plugins'): the language it speaks. And whether it has started: the
@@ -10,7 +11,27 @@ import { keepLastGood } from '../system/last-good.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function settingRoutes(api, { localeSettings, projectRoot }) {
+export function settingRoutes(api, { localeSettings, projectRoot, remote }) {
+	// iPad 访问 (remote/remote-access.mjs): seen and changed on this machine only, never from a device let in by it.
+	const here = (request) => {
+		if (request.headers['x-studio-remote']) throw Object.assign(new Error(t('iPad 访问只能在这台 Mac 上设置')), { statusCode: 403 });
+	};
+	api.get('/remote', async ({ request }) => {
+		here(request);
+		return remote.shown();
+	});
+	api.put('/remote', async ({ request, json }) => {
+		here(request);
+		return remote.setEnabled((await json())?.enabled === true);
+	});
+	api.post('/remote/pairing', async ({ request }) => {
+		here(request);
+		return remote.pairingCode();
+	});
+	api.delete('/remote/devices/:id', async ({ request, params }) => {
+		here(request);
+		return remote.removeDevice(params.id);
+	});
 	api.get('/settings/locale', () => localeSettings.shown());
 	api.put('/settings/locale', async ({ json }) => localeSettings.set((await json())?.locale));
 	let started = null;

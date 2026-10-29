@@ -8,6 +8,7 @@ import { ArticleLibrary } from '../studio/server/articles/article-library.mjs';
 import { ArticleRepository } from '../studio/server/articles/article-repository.mjs';
 import { NotesIndex } from '../studio/server/articles/notes-index.mjs';
 import { Repositories } from '../studio/server/repos/repositories.mjs';
+import { RemoteAccess } from '../studio/server/remote/remote-access.mjs';
 import { BlogWatcher } from '../studio/server/articles/blog-watcher.mjs';
 import { CodeFilePreviews } from '../studio/server/articles/code-file-previews.mjs';
 import { Drive } from '../studio/server/drive/drive.mjs';
@@ -200,6 +201,7 @@ export default function studioDev({ site } = {}) {
 				// What runs in the background stops with the server (an AI left alone would go on writing).
 				for (const task of tasks.list()) if (task.state === 'running') tasks.cancel(task.id);
 				void plugins.then((kernel) => kernel.dispose());
+				void remote.stop();
 			});
 			// A plugin's file made or removed: what Vite kept of it is forgotten, so that one written again where one was is read anew.
 			const pluginsFolder = resolve(server.config.root, 'plugins') + sep;
@@ -218,6 +220,15 @@ export default function studioDev({ site } = {}) {
 			const notesIndex = new NotesIndex(blogRoot, { fences: () => blockFences });
 			// 代码仓库: the Studio's own (repos/ beside blog/) and those of this machine added; the browser tests' own,
 			// and no home of the author's looked through for them.
+			// iPad 访问: a door of its own for the author's other devices, off unless turned on (remote-access.mjs). The browser
+			// tests' on a port the system gives and on this machine only.
+			const remote = new RemoteAccess({
+				settingsFile,
+				folder: resolve(privateRoot, '.studio-cache', 'remote'),
+				target: () => server.httpServer?.address()?.port ?? null,
+				...(testBlogRoot ? { port: 0, listenHost: '127.0.0.1' } : {}),
+			});
+			server.httpServer?.once('listening', () => void remote.resume().catch((error) => server.config.logger.warn(`[studio] ${error instanceof Error ? error.message : error}`)));
 			const repositories = new Repositories({ ownRoot: reposRootOf(blogRoot), settingsFile, home: testBlogRoot ? `${blogRoot}-home` : undefined });
 
 			const api = studioApi({
@@ -253,6 +264,7 @@ export default function studioDev({ site } = {}) {
 				plugins,
 				notesIndex,
 				repositories,
+				remote,
 			});
 
 			server.middlewares.use(async (request, response, next) => {

@@ -38,6 +38,21 @@ tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/S
 - 应用记住的是生成它时的博客文件夹。博客挪了地方就重新运行一次 `build.sh`；也可以 `build.sh <博客文件夹>` 指定，或者 `STUDIO_APP_DIR=~/Applications tools/studio-app/build.sh` 换个安装的地方。
 - 服务器启动失败时，窗口里会显示它最后的输出，完整记录在 `.astro/dev.log`。
 
+### iPad 访问
+
+在 iPad 上用这台 Mac 上的 Studio：文章、AI（Claude Code、pi）、终端、计算都还在 Mac 上跑，iPad 只是用它。Mac 要开着。
+
+1. Mac 上：设置 › iPad 访问，打开「允许 iPad 访问」。下面列出 iPad 能连进来的地址：局域网（同一个 Wi-Fi）的，开着 Tailscale 时还有 Tailscale 的（出门也能连，Mac 和 iPad 登录同一个 Tailscale 账号）。
+2. 点「配对一台 iPad」，出现一个二维码和一个 8 位配对码，5 分钟内有效，只能用一次。
+3. iPad 上：用 Studio 的 iPad App 扫码（或输入配对码）。配对好以后它就记住了，以后直接打开。
+4. 配对过的设备列在同一页，不想让它再进来就「移除」。
+
+- 默认关着；关掉以后谁也连不进来。
+- 只有配对过的设备能进：每台设备有自己的钥匙（Mac 上只存它的哈希）。
+- 传的东西用 HTTPS 加密。证书是 Studio 自己生成的（`.studio-cache/remote/`），iPad App 只认二维码里那张证书的指纹，所以在局域网里也没人能看到或改掉；Safari 直接打开会说证书不受信任。
+- iPad 访问本身（开关、配对、移除）只能在 Mac 上设置。
+- 「在 Finder 中显示」「用默认程序打开」这类操作是在 Mac 上做的；博客预览（「博客首页」）在 iPad 上暂时打不开。
+
 ## 界面
 
 - **左边**：页面树，所有文章。顶部「＋」新建页面，⌘K 搜索。

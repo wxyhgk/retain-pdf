@@ -44,6 +44,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../ai/panel-models.mjs').PanelModels} panelModels the service the panel's Claude Code talks to
  * @property {Promise<any>} plugins the plugins' kernel on this server
  * @property {import('../articles/notes-index.mjs').NotesIndex} notesIndex the code and pictures of all the notes, gathered
+ * @property {import('../remote/remote-access.mjs').RemoteAccess} remote iPad 访问: the door other devices of the author's come in by
  * @property {import('../repos/repositories.mjs').Repositories} repositories 代码仓库: the git repositories the author keeps code in
  */
 
