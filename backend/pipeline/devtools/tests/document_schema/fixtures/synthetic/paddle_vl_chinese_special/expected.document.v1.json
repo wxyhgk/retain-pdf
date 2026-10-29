@@ -1,0 +1,6811 @@
+{
+ "assets": {
+  "page-2/imgs/img_in_image_box_250_730_640_950.jpg": {
+   "caption": "图1 装置示意图",
+   "caption_block_ids": [
+    "p002-b0010"
+   ],
+   "captions": [
+    "图1 装置示意图"
+   ],
+   "kind": "image",
+   "source": "markdown_image",
+   "uri": "md/images/page-2/imgs/img_in_image_box_250_730_640_950.jpg"
+  }
+ },
+ "derived": {
+  "coordinate_space": "pdf_point",
+  "notes": "Adapted from PaddleOCR layoutParsingResults payload.",
+  "provider_data_info": {
+   "numPages": 2,
+   "type": "pdf"
+  },
+  "provider_payload_meta": {
+   "dataInfoComplete": true,
+   "source": "synthetic_fixture"
+  },
+  "provider_signals": {
+   "pages": [
+    {
+     "column_layout_mode": "single",
+     "page_index": 0,
+     "peer_block_absorbed_text_block_ids": [],
+     "peer_block_absorbed_text_count": 0,
+     "suspected_block_ids": [],
+     "suspected_cross_column_merge_block_count": 0,
+     "text_missing_but_bbox_present_block_ids": [],
+     "text_missing_but_bbox_present_count": 0
+    },
+    {
+     "column_layout_mode": "single",
+     "page_index": 1,
+     "peer_block_absorbed_text_block_ids": [],
+     "peer_block_absorbed_text_count": 0,
+     "suspected_block_ids": [],
+     "suspected_cross_column_merge_block_count": 0,
+     "text_missing_but_bbox_present_block_ids": [],
+     "text_missing_but_bbox_present_count": 0
+    }
+   ],
+   "provider": "paddle",
+   "suspicious_cross_column_merge_blocks": 0,
+   "suspicious_cross_column_merge_pages": 0
+  }
+ },
+ "doc_id": "paddle_vl_chinese_special",
+ "document_id": "paddle_vl_chinese_special",
+ "markers": {},
+ "page_count": 2,
+ "pages": [
+  {
+   "blocks": [
+    {
+     "bbox": [
+      73.292,
+      40.0,
+      521.708,
+      63.334
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "《数据结构与算法》课程讲义 · 2026 年秋季学期"
+      ],
+      "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-0",
+      "reading_order": 1,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "header"
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       40.0,
+       521.708,
+       63.334
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        40.0,
+        521.708,
+        63.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          40.0,
+          521.708,
+          63.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "header",
+         "score": null,
+         "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 26,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 0,
+      "layout_det_label": "header",
+      "layout_det_matched": true,
+      "layout_det_order": 1,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "header",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 1,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 0,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "metadata",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 0,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       60.0,
+       783.0,
+       95.0
+      ],
+      "raw_label": "header",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/0",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        40.0,
+        521.708,
+        63.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "header",
+       "score": null,
+       "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       60.0,
+       783.0,
+       95.0
+      ],
+      "raw_block_id": 0,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+      "raw_type": "header",
+      "raw_unit": "px"
+     },
+     "structure_role": "metadata",
+     "sub_type": "header",
+     "tags": [
+      "skip_translation"
+     ],
+     "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      253.191,
+      86.666,
+      341.809,
+      116.667
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "目录"
+      ],
+      "text": "目录",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-1",
+      "reading_order": 2,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       253.191,
+       86.666,
+       341.809,
+       116.667
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        253.191,
+        86.666,
+        341.809,
+        116.667
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          253.191,
+          86.666,
+          341.809,
+          116.667
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph_title",
+         "score": null,
+         "text": "目录",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 2,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 1,
+      "layout_det_label": "paragraph_title",
+      "layout_det_matched": true,
+      "layout_det_order": 2,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "heading",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "目录",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 2,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 1,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "heading",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 1,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       380.0,
+       130.0,
+       513.0,
+       175.0
+      ],
+      "raw_label": "paragraph_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/1",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        253.191,
+        86.666,
+        341.809,
+        116.667
+       ],
+       "bbox_precision": "block",
+       "raw_type": "paragraph_title",
+       "score": null,
+       "text": "目录",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       380.0,
+       130.0,
+       513.0,
+       175.0
+      ],
+      "raw_block_id": 1,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "目录",
+      "raw_type": "paragraph_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "目录",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      133.333,
+      521.708,
+      333.334
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1 引言 ........ 1",
+       "2 方法 ........ 3",
+       "2.1 数据集构建 ........ 4",
+       "2.2 训练流程 ........ 5",
+       "3 实验结果 ........ 7",
+       "4 讨论 ........ 9",
+       "5 结论 ........ 11",
+       "参考文献 ........ 12"
+      ],
+      "text": "1 引言 ........ 1\n2 方法 ........ 3\n2.1 数据集构建 ........ 4\n2.2 训练流程 ........ 5\n3 实验结果 ........ 7\n4 讨论 ........ 9\n5 结论 ........ 11\n参考文献 ........ 12",
+      "text_flow": "preserve_lines",
+      "toc_entries": [
+       {
+        "bbox": [
+         73.292,
+         133.333,
+         521.708,
+         158.333
+        ],
+        "level": 1,
+        "line_index": 0,
+        "number": "1",
+        "order_index": 0,
+        "page_label": "1",
+        "title": "引言"
+       },
+       {
+        "bbox": [
+         73.292,
+         158.333,
+         521.708,
+         183.333
+        ],
+        "level": 1,
+        "line_index": 1,
+        "number": "2",
+        "order_index": 1,
+        "page_label": "3",
+        "title": "方法"
+       },
+       {
+        "bbox": [
+         73.292,
+         183.333,
+         521.708,
+         208.333
+        ],
+        "level": 2,
+        "line_index": 2,
+        "number": "2.1",
+        "order_index": 2,
+        "page_label": "4",
+        "title": "数据集构建"
+       },
+       {
+        "bbox": [
+         73.292,
+         208.333,
+         521.708,
+         233.334
+        ],
+        "level": 2,
+        "line_index": 3,
+        "number": "2.2",
+        "order_index": 3,
+        "page_label": "5",
+        "title": "训练流程"
+       },
+       {
+        "bbox": [
+         73.292,
+         233.334,
+         521.708,
+         258.334
+        ],
+        "level": 1,
+        "line_index": 4,
+        "number": "3",
+        "order_index": 4,
+        "page_label": "7",
+        "title": "实验结果"
+       },
+       {
+        "bbox": [
+         73.292,
+         258.334,
+         521.708,
+         283.334
+        ],
+        "level": 1,
+        "line_index": 5,
+        "number": "4",
+        "order_index": 5,
+        "page_label": "9",
+        "title": "讨论"
+       },
+       {
+        "bbox": [
+         73.292,
+         283.334,
+         521.708,
+         308.334
+        ],
+        "level": 1,
+        "line_index": 6,
+        "number": "5",
+        "order_index": 6,
+        "page_label": "11",
+        "title": "结论"
+       },
+       {
+        "bbox": [
+         73.292,
+         308.334,
+         521.708,
+         333.334
+        ],
+        "level": 1,
+        "line_index": 7,
+        "number": "",
+        "order_index": 7,
+        "page_label": "12",
+        "title": "参考文献"
+       }
+      ]
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-2",
+      "reading_order": 3,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       133.333,
+       521.708,
+       333.334
+      ]
+     },
+     "layout_role": "toc",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        133.333,
+        521.708,
+        158.333
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          133.333,
+          521.708,
+          158.333
+         ],
+         "bbox_precision": "line",
+         "raw_type": "content",
+         "score": null,
+         "text": "1 引言 ........ 1",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        158.333,
+        521.708,
+        183.333
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          158.333,
+          521.708,
+          183.333
+         ],
+         "bbox_precision": "line",
+         "raw_type": "content",
+         "score": null,
+         "text": "2 方法 ........ 3",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        183.333,
+        521.708,
+        208.333
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          183.333,
+          521.708,
+          208.333
+         ],
+         "bbox_precision": "line",
+         "raw_type": "content",
+         "score": null,
+         "text": "2.1 数据集构建 ........ 4",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        208.333,
+        521.708,
+        233.334
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          208.333,
+          521.708,
+          233.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "content",
+         "score": null,
+         "text": "2.2 训练流程 ........ 5",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        233.334,
+        521.708,
+        258.334
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          233.334,
+          521.708,
+          258.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "content",
+         "score": null,
+         "text": "3 实验结果 ........ 7",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        258.334,
+        521.708,
+        283.334
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          258.334,
+          521.708,
+          283.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "content",
+         "score": null,
+         "text": "4 讨论 ........ 9",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        283.334,
+        521.708,
+        308.334
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          283.334,
+          521.708,
+          308.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "content",
+         "score": null,
+         "text": "5 结论 ........ 11",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        308.334,
+        521.708,
+        333.334
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          308.334,
+          521.708,
+          333.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "content",
+         "score": null,
+         "text": "参考文献 ........ 12",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 140,
+      "content_line_count": 8,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 2,
+      "layout_det_label": "content",
+      "layout_det_matched": true,
+      "layout_det_order": 3,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "toc",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "1 引言 ........ 1 2 方法 ........ 3 2.1 数据集构建 ........ 4 2.2 训练流程 ........ 5 3 实验结果 ........ 7 4 讨论 ........ 9 5 结论 ........ 11 参考文献 ........ 12",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 3,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 2,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "table_of_contents",
+      "structure_role": "table_of_contents",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 2,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_toc_whitelist:content"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       200.0,
+       783.0,
+       500.0
+      ],
+      "raw_label": "content",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/2",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        133.333,
+        521.708,
+        333.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "content",
+       "score": null,
+       "text": "1 引言 ........ 1\n2 方法 ........ 3\n2.1 数据集构建 ........ 4\n2.2 训练流程 ........ 5\n3 实验结果 ........ 7\n4 讨论 ........ 9\n5 结论 ........ 11\n参考文献 ........ 12",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "table_of_contents",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       200.0,
+       783.0,
+       500.0
+      ],
+      "raw_block_id": 2,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1 引言 ........ 1\n2 方法 ........ 3\n2.1 数据集构建 ........ 4\n2.2 训练流程 ........ 5\n3 实验结果 ........ 7\n4 讨论 ........ 9\n5 结论 ........ 11\n参考文献 ........ 12",
+      "raw_type": "content",
+      "raw_unit": "px"
+     },
+     "structure_role": "table_of_contents",
+     "sub_type": "table_of_contents",
+     "tags": [
+      "table_of_contents",
+      "toc"
+     ],
+     "text": "1 引言 ........ 1\n2 方法 ........ 3\n2.1 数据集构建 ........ 4\n2.2 训练流程 ........ 5\n3 实验结果 ........ 7\n4 讨论 ........ 9\n5 结论 ........ 11\n参考文献 ........ 12",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      553.023,
+      133.333,
+      581.008,
+      333.334
+     ],
+     "block_class": "unknown",
+     "block_id": "p001-b0003",
+     "content": {
+      "kind": "unknown",
+      "line_texts": [
+       "本讲义仅供校内课堂教学使用"
+      ],
+      "text": "本讲义仅供校内课堂教学使用",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-3",
+      "reading_order": 4,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       553.023,
+       133.333,
+       581.008,
+       333.334
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        553.023,
+        133.333,
+        581.008,
+        333.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          553.023,
+          133.333,
+          581.008,
+          333.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "vertical_text",
+         "score": null,
+         "text": "本讲义仅供校内课堂教学使用",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "right",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 13,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 3,
+      "layout_det_label": "vertical_text",
+      "layout_det_matched": true,
+      "layout_det_order": 4,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "unknown",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "本讲义仅供校内课堂教学使用",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "right",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 4,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 3,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 3,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:unknown"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       830.0,
+       200.0,
+       872.0,
+       500.0
+      ],
+      "raw_label": "vertical_text",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/3",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        553.023,
+        133.333,
+        581.008,
+        333.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "vertical_text",
+       "score": null,
+       "text": "本讲义仅供校内课堂教学使用",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       830.0,
+       200.0,
+       872.0,
+       500.0
+      ],
+      "raw_block_id": 3,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/3",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "本讲义仅供校内课堂教学使用",
+      "raw_type": "vertical_text",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "",
+     "tags": [
+      "unknown"
+     ],
+     "text": "本讲义仅供校内课堂教学使用",
+     "type": "unknown"
+    },
+    {
+     "bbox": [
+      73.292,
+      353.333,
+      219.877,
+      376.667
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "阅读说明"
+      ],
+      "text": "阅读说明",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-4",
+      "reading_order": 5,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       353.333,
+       219.877,
+       376.667
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        353.333,
+        219.877,
+        376.667
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          353.333,
+          219.877,
+          376.667
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph_title",
+         "score": null,
+         "text": "阅读说明",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 4,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 4,
+      "layout_det_label": "paragraph_title",
+      "layout_det_matched": true,
+      "layout_det_order": 5,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "heading",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "阅读说明",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 5,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 4,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "heading",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 4,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       530.0,
+       330.0,
+       565.0
+      ],
+      "raw_label": "paragraph_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/4",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        353.333,
+        219.877,
+        376.667
+       ],
+       "bbox_precision": "block",
+       "raw_type": "paragraph_title",
+       "score": null,
+       "text": "阅读说明",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       530.0,
+       330.0,
+       565.0
+      ],
+      "raw_block_id": 4,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/4",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "阅读说明",
+      "raw_type": "paragraph_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "阅读说明",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      383.333,
+      521.708,
+      460.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0005",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "本讲义面向已经学过线性代数与概率论的同学，按周次编排。",
+       "每章开头列出学习目标，结尾给出三到五道思考题。",
+       "带星号的小节属于选读内容，期末考试不作要求。",
+       "遇到疑问请先查阅附录，再到课程论坛提问。"
+      ],
+      "text": "本讲义面向已经学过线性代数与概率论的同学，按周次编排。\n每章开头列出学习目标，结尾给出三到五道思考题。\n带星号的小节属于选读内容，期末考试不作要求。\n遇到疑问请先查阅附录，再到课程论坛提问。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-5",
+      "reading_order": 6,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       383.333,
+       521.708,
+       460.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        383.333,
+        521.708,
+        402.5
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          383.333,
+          521.708,
+          402.5
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "本讲义面向已经学过线性代数与概率论的同学，按周次编排。",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        402.5,
+        521.708,
+        421.667
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          402.5,
+          521.708,
+          421.667
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "每章开头列出学习目标，结尾给出三到五道思考题。",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        421.667,
+        521.708,
+        440.833
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          421.667,
+          521.708,
+          440.833
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "带星号的小节属于选读内容，期末考试不作要求。",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        440.833,
+        521.708,
+        460.0
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          440.833,
+          521.708,
+          460.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "遇到疑问请先查阅附录，再到课程论坛提问。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 95,
+      "content_line_count": 4,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 5,
+      "layout_det_label": "text",
+      "layout_det_matched": true,
+      "layout_det_order": 6,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "paragraph",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "本讲义面向已经学过线性代数与概率论的同学，按周次编排。 每章开头列出学习目标，结尾给出三到五道思考题。 带星号的小节属于选读内容，期末考试不作要求。 遇到疑问请先查阅附录，再到课程论坛提问。",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 6,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 5,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "body",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 5,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       575.0,
+       783.0,
+       690.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/5",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        383.333,
+        521.708,
+        460.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "本讲义面向已经学过线性代数与概率论的同学，按周次编排。\n每章开头列出学习目标，结尾给出三到五道思考题。\n带星号的小节属于选读内容，期末考试不作要求。\n遇到疑问请先查阅附录，再到课程论坛提问。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       575.0,
+       783.0,
+       690.0
+      ],
+      "raw_block_id": 5,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/5",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "本讲义面向已经学过线性代数与概率论的同学，按周次编排。\n每章开头列出学习目标，结尾给出三到五道思考题。\n带星号的小节属于选读内容，期末考试不作要求。\n遇到疑问请先查阅附录，再到课程论坛提问。",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "本讲义面向已经学过线性代数与概率论的同学，按周次编排。\n每章开头列出学习目标，结尾给出三到五道思考题。\n带星号的小节属于选读内容，期末考试不作要求。\n遇到疑问请先查阅附录，再到课程论坛提问。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      470.0,
+      521.708,
+      543.334
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0006",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。"
+      ],
+      "text": "数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-6",
+      "reading_order": 7,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       470.0,
+       521.708,
+       543.334
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        470.0,
+        521.708,
+        543.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          470.0,
+          521.708,
+          543.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 195,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 6,
+      "layout_det_label": "text",
+      "layout_det_matched": true,
+      "layout_det_order": 7,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "paragraph",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 7,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 6,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "body",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 6,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       705.0,
+       783.0,
+       815.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/6",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        470.0,
+        521.708,
+        543.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       705.0,
+       783.0,
+       815.0
+      ],
+      "raw_block_id": 6,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/6",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      553.333,
+      521.708,
+      613.334
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0007",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "（1）阅读本章全部内容，并完成课后习题；",
+       "（2）在实验平台上提交第一次上机作业；",
+       "（3）预习下一章关于哈希表的内容。"
+      ],
+      "text": "（1）阅读本章全部内容，并完成课后习题；\n（2）在实验平台上提交第一次上机作业；\n（3）预习下一章关于哈希表的内容。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-7",
+      "reading_order": 8,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       553.333,
+       521.708,
+       613.334
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        553.333,
+        521.708,
+        573.333
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          553.333,
+          521.708,
+          573.333
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "（1）阅读本章全部内容，并完成课后习题；",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        573.333,
+        521.708,
+        593.334
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          573.333,
+          521.708,
+          593.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "（2）在实验平台上提交第一次上机作业；",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        73.292,
+        593.334,
+        521.708,
+        613.334
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          593.334,
+          521.708,
+          613.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "（3）预习下一章关于哈希表的内容。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 58,
+      "content_line_count": 3,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 7,
+      "layout_det_label": "text",
+      "layout_det_matched": true,
+      "layout_det_order": 8,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "paragraph",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "（1）阅读本章全部内容，并完成课后习题； （2）在实验平台上提交第一次上机作业； （3）预习下一章关于哈希表的内容。",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 8,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 7,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "body",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 7,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       830.0,
+       783.0,
+       920.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/7",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        553.333,
+        521.708,
+        613.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "（1）阅读本章全部内容，并完成课后习题；\n（2）在实验平台上提交第一次上机作业；\n（3）预习下一章关于哈希表的内容。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       830.0,
+       783.0,
+       920.0
+      ],
+      "raw_block_id": 7,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/7",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "（1）阅读本章全部内容，并完成课后习题；\n（2）在实验平台上提交第一次上机作业；\n（3）预习下一章关于哈希表的内容。",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "（1）阅读本章全部内容，并完成课后习题；\n（2）在实验平台上提交第一次上机作业；\n（3）预习下一章关于哈希表的内容。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      616.666,
+      521.708,
+      636.667
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "（4）如有缺课，请在一周内向助教补交作业。"
+      ],
+      "text": "（4）如有缺课，请在一周内向助教补交作业。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-8",
+      "reading_order": 9,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       616.666,
+       521.708,
+       636.667
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        616.666,
+        521.708,
+        636.667
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          616.666,
+          521.708,
+          636.667
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "（4）如有缺课，请在一周内向助教补交作业。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 21,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 8,
+      "layout_det_label": "text",
+      "layout_det_matched": true,
+      "layout_det_order": 9,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "paragraph",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "（4）如有缺课，请在一周内向助教补交作业。",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 9,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 8,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "body",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 8,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       925.0,
+       783.0,
+       955.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/8",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        616.666,
+        521.708,
+        636.667
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "（4）如有缺课，请在一周内向助教补交作业。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       925.0,
+       783.0,
+       955.0
+      ],
+      "raw_block_id": 8,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/8",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "（4）如有缺课，请在一周内向助教补交作业。",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "（4）如有缺课，请在一周内向助教补交作业。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      640.0,
+      521.708,
+      660.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0009",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "（5）期中考试前两周开放答疑时间。"
+      ],
+      "text": "（5）期中考试前两周开放答疑时间。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-9",
+      "reading_order": 10,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       640.0,
+       521.708,
+       660.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        640.0,
+        521.708,
+        660.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          640.0,
+          521.708,
+          660.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "（5）期中考试前两周开放答疑时间。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 17,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 9,
+      "layout_det_label": "text",
+      "layout_det_matched": true,
+      "layout_det_order": 10,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "paragraph",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "（5）期中考试前两周开放答疑时间。",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 10,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 9,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "body",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 9,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       960.0,
+       783.0,
+       990.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/9",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        640.0,
+        521.708,
+        660.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "（5）期中考试前两周开放答疑时间。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       960.0,
+       783.0,
+       990.0
+      ],
+      "raw_block_id": 9,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/9",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "（5）期中考试前两周开放答疑时间。",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "（5）期中考试前两周开放答疑时间。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      673.333,
+      219.877,
+      693.334
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0010",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "参考文献"
+      ],
+      "text": "参考文献",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-10",
+      "reading_order": 11,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       673.333,
+       219.877,
+       693.334
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        673.333,
+        219.877,
+        693.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          673.333,
+          219.877,
+          693.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph_title",
+         "score": null,
+         "text": "参考文献",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 4,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 10,
+      "layout_det_label": "paragraph_title",
+      "layout_det_matched": true,
+      "layout_det_order": 11,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "heading",
+      "markdown_match_count": 2,
+      "markdown_match_found": true,
+      "markdown_match_text": "参考文献",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 11,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 10,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "heading",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 10,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1010.0,
+       330.0,
+       1040.0
+      ],
+      "raw_label": "paragraph_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/10",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 10,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        673.333,
+        219.877,
+        693.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "paragraph_title",
+       "score": null,
+       "text": "参考文献",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1010.0,
+       330.0,
+       1040.0
+      ],
+      "raw_block_id": 10,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/10",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "参考文献",
+      "raw_type": "paragraph_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "参考文献",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      700.0,
+      521.708,
+      723.334
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0011",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012."
+      ],
+      "text": "[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-11",
+      "reading_order": 12,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "reference_entry"
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       700.0,
+       521.708,
+       723.334
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        700.0,
+        521.708,
+        723.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          700.0,
+          521.708,
+          723.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "reference_content",
+         "score": null,
+         "text": "[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 48,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 11,
+      "layout_det_label": "reference_content",
+      "layout_det_matched": true,
+      "layout_det_order": 12,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "unknown",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 12,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 11,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "reference",
+      "structure_role": "reference_entry",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 11,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:reference_entry"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1050.0,
+       783.0,
+       1085.0
+      ],
+      "raw_label": "reference_content",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/11",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 11,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        700.0,
+        521.708,
+        723.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "reference_content",
+       "score": null,
+       "text": "[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "reference",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1050.0,
+       783.0,
+       1085.0
+      ],
+      "raw_block_id": 11,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/11",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.",
+      "raw_type": "reference_content",
+      "raw_unit": "px"
+     },
+     "structure_role": "reference_entry",
+     "sub_type": "reference_entry",
+     "tags": [
+      "reference_entry",
+      "reference_zone",
+      "skip_translation"
+     ],
+     "text": "[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      726.666,
+      521.708,
+      760.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0012",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49."
+      ],
+      "text": "[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-12",
+      "reading_order": 13,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "reference_entry"
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       726.666,
+       521.708,
+       760.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        726.666,
+        521.708,
+        760.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          726.666,
+          521.708,
+          760.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "reference_content",
+         "score": null,
+         "text": "[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 59,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 12,
+      "layout_det_label": "reference_content",
+      "layout_det_matched": true,
+      "layout_det_order": 13,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "unknown",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 13,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 12,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "reference",
+      "structure_role": "reference_entry",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 12,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:reference_entry"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1090.0,
+       783.0,
+       1140.0
+      ],
+      "raw_label": "reference_content",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/12",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 12,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        726.666,
+        521.708,
+        760.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "reference_content",
+       "score": null,
+       "text": "[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "reference",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1090.0,
+       783.0,
+       1140.0
+      ],
+      "raw_block_id": 12,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/12",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.",
+      "raw_type": "reference_content",
+      "raw_unit": "px"
+     },
+     "structure_role": "reference_entry",
+     "sub_type": "reference_entry",
+     "tags": [
+      "reference_entry",
+      "reference_zone",
+      "skip_translation"
+     ],
+     "text": "[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      790.0,
+      333.147,
+      810.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0013",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "数据结构课程组 编"
+      ],
+      "text": "数据结构课程组 编",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-13",
+      "reading_order": 14,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "footer"
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       790.0,
+       333.147,
+       810.0
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        790.0,
+        333.147,
+        810.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          790.0,
+          333.147,
+          810.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "footer",
+         "score": null,
+         "text": "数据结构课程组 编",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 9,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 13,
+      "layout_det_label": "footer",
+      "layout_det_matched": true,
+      "layout_det_order": 14,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "footer",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "数据结构课程组 编",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 14,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 13,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "metadata",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 13,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1185.0,
+       500.0,
+       1215.0
+      ],
+      "raw_label": "footer",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/13",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 13,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        790.0,
+        333.147,
+        810.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "footer",
+       "score": null,
+       "text": "数据结构课程组 编",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1185.0,
+       500.0,
+       1215.0
+      ],
+      "raw_block_id": 13,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/13",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "数据结构课程组 编",
+      "raw_type": "footer",
+      "raw_unit": "px"
+     },
+     "structure_role": "metadata",
+     "sub_type": "footer",
+     "tags": [
+      "skip_translation"
+     ],
+     "text": "数据结构课程组 编",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      479.731,
+      790.0,
+      521.708,
+      810.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0014",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1"
+      ],
+      "text": "1",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-001-group-14",
+      "reading_order": 15,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.95,
+      "role": "page_number"
+     },
+     "geometry": {
+      "bbox": [
+       479.731,
+       790.0,
+       521.708,
+       810.0
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        479.731,
+        790.0,
+        521.708,
+        810.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          479.731,
+          790.0,
+          521.708,
+          810.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "number",
+         "score": null,
+         "text": "1",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "right",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 1,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 14,
+      "layout_det_label": "number",
+      "layout_det_matched": true,
+      "layout_det_order": 15,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "page_number",
+      "markdown_match_count": 11,
+      "markdown_match_found": true,
+      "markdown_match_text": "1",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "right",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 15,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 14,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "metadata",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 14,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       720.0,
+       1185.0,
+       783.0,
+       1215.0
+      ],
+      "raw_label": "number",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/14",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 14,
+     "segments": [
+      {
+       "bbox": [
+        479.731,
+        790.0,
+        521.708,
+        810.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "number",
+       "score": null,
+       "text": "1",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       720.0,
+       1185.0,
+       783.0,
+       1215.0
+      ],
+      "raw_block_id": 14,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/14",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1",
+      "raw_type": "number",
+      "raw_unit": "px"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [
+      "skip_translation"
+     ],
+     "text": "1",
+     "type": "text"
+    }
+   ],
+   "height": 842.0,
+   "metadata": {
+    "body_repair_block_count": 0,
+    "body_repair_block_ids": [],
+    "body_repair_pair_count": 0,
+    "body_repair_pairs": [],
+    "column_layout_mode": "single",
+    "column_split_x": 446.5,
+    "geometry_precision": "",
+    "input_image": "https://example.invalid/fixture/input_1.jpg",
+    "layout_det_res": {
+     "box_count": 15,
+     "boxes": [
+      {
+       "cls_id": 0,
+       "coordinate": [
+        110.0,
+        60.0,
+        783.0,
+        95.0
+       ],
+       "label": "header",
+       "order": 1,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 1,
+       "coordinate": [
+        380.0,
+        130.0,
+        513.0,
+        175.0
+       ],
+       "label": "paragraph_title",
+       "order": 2,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 2,
+       "coordinate": [
+        110.0,
+        200.0,
+        783.0,
+        500.0
+       ],
+       "label": "content",
+       "order": 3,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 3,
+       "coordinate": [
+        830.0,
+        200.0,
+        872.0,
+        500.0
+       ],
+       "label": "vertical_text",
+       "order": 4,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 4,
+       "coordinate": [
+        110.0,
+        530.0,
+        330.0,
+        565.0
+       ],
+       "label": "paragraph_title",
+       "order": 5,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 5,
+       "coordinate": [
+        110.0,
+        575.0,
+        783.0,
+        690.0
+       ],
+       "label": "text",
+       "order": 6,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 6,
+       "coordinate": [
+        110.0,
+        705.0,
+        783.0,
+        815.0
+       ],
+       "label": "text",
+       "order": 7,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 7,
+       "coordinate": [
+        110.0,
+        830.0,
+        783.0,
+        920.0
+       ],
+       "label": "text",
+       "order": 8,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 8,
+       "coordinate": [
+        110.0,
+        925.0,
+        783.0,
+        955.0
+       ],
+       "label": "text",
+       "order": 9,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 9,
+       "coordinate": [
+        110.0,
+        960.0,
+        783.0,
+        990.0
+       ],
+       "label": "text",
+       "order": 10,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 10,
+       "coordinate": [
+        110.0,
+        1010.0,
+        330.0,
+        1040.0
+       ],
+       "label": "paragraph_title",
+       "order": 11,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 11,
+       "coordinate": [
+        110.0,
+        1050.0,
+        783.0,
+        1085.0
+       ],
+       "label": "reference_content",
+       "order": 12,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 12,
+       "coordinate": [
+        110.0,
+        1090.0,
+        783.0,
+        1140.0
+       ],
+       "label": "reference_content",
+       "order": 13,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 13,
+       "coordinate": [
+        110.0,
+        1185.0,
+        500.0,
+        1215.0
+       ],
+       "label": "footer",
+       "order": 14,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 14,
+       "coordinate": [
+        720.0,
+        1185.0,
+        783.0,
+        1215.0
+       ],
+       "label": "number",
+       "order": 15,
+       "polygon_points": [],
+       "score": 0.95
+      }
+     ]
+    },
+    "markdown": {
+     "images": {},
+     "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期\n\n目录\n\n1 引言 ........ 1\n2 方法 ........ 3\n2.1 数据集构建 ........ 4\n2.2 训练流程 ........ 5\n3 实验结果 ........ 7\n4 讨论 ........ 9\n5 结论 ........ 11\n参考文献 ........ 12\n\n本讲义仅供校内课堂教学使用\n\n阅读说明\n\n本讲义面向已经学过线性代数与概率论的同学，按周次编排。\n每章开头列出学习目标，结尾给出三到五道思考题。\n带星号的小节属于选读内容，期末考试不作要求。\n遇到疑问请先查阅附录，再到课程论坛提问。\n\n数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。\n\n（1）阅读本章全部内容，并完成课后习题；\n（2）在实验平台上提交第一次上机作业；\n（3）预习下一章关于哈希表的内容。\n\n（4）如有缺课，请在一周内向助教补交作业。\n\n（5）期中考试前两周开放答疑时间。\n\n参考文献\n\n[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.\n\n[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.\n\n数据结构课程组 编\n\n1",
+     "text_length": 720
+    },
+    "model_settings": {
+     "format_block_content": true,
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true
+    },
+    "output_images": {},
+    "peer_block_absorbed_text_block_ids": [],
+    "peer_block_absorbed_text_count": 0,
+    "preprocessed_image": "",
+    "provider_page_count": 2,
+    "provider_page_meta": {
+     "height": 1263,
+     "width": 893
+    },
+    "provider_transport": "",
+    "raw_unit": "px",
+    "suspected_block_ids": [],
+    "suspected_cross_column_merge_block_count": 0,
+    "text_missing_but_bbox_present_block_ids": [],
+    "text_missing_but_bbox_present_count": 0
+   },
+   "page": 1,
+   "page_index": 0,
+   "unit": "pt",
+   "width": 595.0
+  },
+  {
+   "blocks": [
+    {
+     "bbox": [
+      73.292,
+      40.0,
+      521.708,
+      63.334
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "《数据结构与算法》课程讲义 · 2026 年秋季学期"
+      ],
+      "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-0",
+      "reading_order": 1,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "header"
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       40.0,
+       521.708,
+       63.334
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        40.0,
+        521.708,
+        63.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          40.0,
+          521.708,
+          63.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "header",
+         "score": null,
+         "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 26,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 0,
+      "layout_det_label": "header",
+      "layout_det_matched": true,
+      "layout_det_order": 1,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "header",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 1,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 0,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "metadata",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 0,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       60.0,
+       783.0,
+       95.0
+      ],
+      "raw_label": "header",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/0",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        40.0,
+        521.708,
+        63.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "header",
+       "score": null,
+       "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       60.0,
+       783.0,
+       95.0
+      ],
+      "raw_block_id": 0,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+      "raw_type": "header",
+      "raw_unit": "px"
+     },
+     "structure_role": "metadata",
+     "sub_type": "header",
+     "tags": [
+      "skip_translation"
+     ],
+     "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      86.666,
+      219.877,
+      113.334
+     ],
+     "block_class": "title",
+     "block_id": "p002-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2 方法"
+      ],
+      "text": "2 方法",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-1",
+      "reading_order": 2,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       86.666,
+       219.877,
+       113.334
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        86.666,
+        219.877,
+        113.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          86.666,
+          219.877,
+          113.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph_title",
+         "score": null,
+         "text": "2 方法",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 4,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 1,
+      "layout_det_label": "paragraph_title",
+      "layout_det_matched": true,
+      "layout_det_order": 2,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "heading",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "2 方法",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 2,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 1,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "heading",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 1,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       130.0,
+       330.0,
+       170.0
+      ],
+      "raw_label": "paragraph_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/1",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        86.666,
+        219.877,
+        113.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "paragraph_title",
+       "score": null,
+       "text": "2 方法",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       130.0,
+       330.0,
+       170.0
+      ],
+      "raw_block_id": 1,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2 方法",
+      "raw_type": "paragraph_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "2 方法",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      126.666,
+      521.708,
+      183.334
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "在实验设计中，设学习率为 \\alpha=0.01 ，批大小为 B=32 ，每轮迭代的损失记为 L_t ，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，"
+      ],
+      "text": "在实验设计中，设学习率为 $\\alpha=0.01$，批大小为 $B=32$，每轮迭代的损失记为 $L_t$，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-99",
+      "reading_order": 3,
+      "role": "head",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       126.666,
+       521.708,
+       183.334
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        126.666,
+        521.708,
+        183.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          126.666,
+          521.708,
+          183.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "在实验设计中，设学习率为",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          73.292,
+          126.666,
+          521.708,
+          183.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "\\alpha=0.01",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          73.292,
+          126.666,
+          521.708,
+          183.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "，批大小为",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          73.292,
+          126.666,
+          521.708,
+          183.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "B=32",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          73.292,
+          126.666,
+          521.708,
+          183.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "，每轮迭代的损失记为",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          73.292,
+          126.666,
+          521.708,
+          183.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "L_t",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          73.292,
+          126.666,
+          521.708,
+          183.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 87,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 2,
+      "layout_det_label": "text",
+      "layout_det_matched": true,
+      "layout_det_order": 3,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "paragraph",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "在实验设计中，设学习率为 $\\alpha=0.01$，批大小为 $B=32$，每轮迭代的损失记为 $L_t$，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 3,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 3,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 99,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "body",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 2,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       190.0,
+       783.0,
+       275.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/2",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        126.666,
+        521.708,
+        183.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "在实验设计中，设学习率为",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        73.292,
+        126.666,
+        521.708,
+        183.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "\\alpha=0.01",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        73.292,
+        126.666,
+        521.708,
+        183.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "，批大小为",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        73.292,
+        126.666,
+        521.708,
+        183.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "B=32",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        73.292,
+        126.666,
+        521.708,
+        183.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "，每轮迭代的损失记为",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        73.292,
+        126.666,
+        521.708,
+        183.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "L_t",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        73.292,
+        126.666,
+        521.708,
+        183.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       190.0,
+       783.0,
+       275.0
+      ],
+      "raw_block_id": 2,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "在实验设计中，设学习率为 $\\alpha=0.01$，批大小为 $B=32$，每轮迭代的损失记为 $L_t$，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "在实验设计中，设学习率为 $\\alpha=0.01$，批大小为 $B=32$，每轮迭代的损失记为 $L_t$，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      219.876,
+      193.333,
+      375.124,
+      216.667
+     ],
+     "block_class": "caption",
+     "block_id": "p002-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "表1 实验参数"
+      ],
+      "related_block_ids": [
+       "p002-b0004"
+      ],
+      "text": "表1 实验参数",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-3",
+      "reading_order": 4,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.95,
+      "role": "table_caption"
+     },
+     "geometry": {
+      "bbox": [
+       219.876,
+       193.333,
+       375.124,
+       216.667
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        219.876,
+        193.333,
+        375.124,
+        216.667
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          219.876,
+          193.333,
+          375.124,
+          216.667
+         ],
+         "bbox_precision": "line",
+         "raw_type": "figure_title",
+         "score": null,
+         "text": "表1 实验参数",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_asset_ids": [],
+      "caption_relation": "adjacent",
+      "caption_target": "table",
+      "caption_target_block_id": "p002-b0004",
+      "caption_target_direction": "next",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "contains_img_tag": false,
+      "contains_table_tag": false,
+      "content_format": "plain_text",
+      "content_is_rich": true,
+      "content_length": 7,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 3,
+      "layout_det_label": "figure_title",
+      "layout_det_matched": true,
+      "layout_det_order": 4,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "caption",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "表1 实验参数",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 4,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 3,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "table_caption",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 3,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_caption_whitelist:table_caption"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       330.0,
+       290.0,
+       563.0,
+       325.0
+      ],
+      "raw_label": "figure_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/3",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        219.876,
+        193.333,
+        375.124,
+        216.667
+       ],
+       "bbox_precision": "block",
+       "raw_type": "figure_title",
+       "score": null,
+       "text": "表1 实验参数",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       330.0,
+       290.0,
+       563.0,
+       325.0
+      ],
+      "raw_block_id": 3,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/3",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "表1 实验参数",
+      "raw_type": "figure_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "table_caption",
+     "sub_type": "table_caption",
+     "tags": [
+      "caption",
+      "table_caption"
+     ],
+     "text": "表1 实验参数",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      133.258,
+      223.333,
+      461.742,
+      313.334
+     ],
+     "block_class": "table",
+     "block_id": "p002-b0004",
+     "content": {
+      "caption": "表1 实验参数",
+      "caption_block_ids": [
+       "p002-b0003"
+      ],
+      "captions": [
+       "表1 实验参数"
+      ],
+      "kind": "table",
+      "line_texts": [
+       "<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style='text-align: center; word-wrap: break-word;'>阶段二</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>学习率</td><td style='text-align: center; word-wrap: break-word;'>0.01</td><td style='text-align: center; word-wrap: break-word;'>0.001</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>批大小</td><td style='text-align: center; word-wrap: break-word;'>32</td><td style='text-align: center; word-wrap: break-word;'>32</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>训练轮数</td><td style='text-align: center; word-wrap: break-word;'>20</td><td style='text-align: center; word-wrap: break-word;'>50</td></tr></table>"
+      ],
+      "text": "<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style='text-align: center; word-wrap: break-word;'>阶段二</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>学习率</td><td style='text-align: center; word-wrap: break-word;'>0.01</td><td style='text-align: center; word-wrap: break-word;'>0.001</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>批大小</td><td style='text-align: center; word-wrap: break-word;'>32</td><td style='text-align: center; word-wrap: break-word;'>32</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>训练轮数</td><td style='text-align: center; word-wrap: break-word;'>20</td><td style='text-align: center; word-wrap: break-word;'>50</td></tr></table>",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-4",
+      "reading_order": 5,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       133.258,
+       223.333,
+       461.742,
+       313.334
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        133.258,
+        223.333,
+        461.742,
+        313.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          133.258,
+          223.333,
+          461.742,
+          313.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "table",
+         "score": null,
+         "text": "<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style='text-align: center; word-wrap: break-word;'>阶段二</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>学习率</td><td style='text-align: center; word-wrap: break-word;'>0.01</td><td style='text-align: center; word-wrap: break-word;'>0.001</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>批大小</td><td style='text-align: center; word-wrap: break-word;'>32</td><td style='text-align: center; word-wrap: break-word;'>32</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>训练轮数</td><td style='text-align: center; word-wrap: break-word;'>20</td><td style='text-align: center; word-wrap: break-word;'>50</td></tr></table>",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_block_id": "p002-b0003",
+      "caption_block_ids": [
+       "p002-b0003"
+      ],
+      "caption_relation": "adjacent",
+      "caption_text": "表1 实验参数",
+      "caption_texts": [
+       "表1 实验参数"
+      ],
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "contains_img_tag": false,
+      "contains_table_tag": true,
+      "content_format": "html_table",
+      "content_is_rich": true,
+      "content_length": 860,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "html_length": 860,
+      "layout_det_cls_id": 4,
+      "layout_det_label": "table",
+      "layout_det_matched": true,
+      "layout_det_order": 5,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "参数 阶段一 阶段二 学习率 0.01 0.001 批大小 32 32 训练轮数 20 50",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 5,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 4,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 4,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:table"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       200.0,
+       335.0,
+       693.0,
+       470.0
+      ],
+      "raw_label": "table",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/4",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        133.258,
+        223.333,
+        461.742,
+        313.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "table",
+       "score": null,
+       "text": "<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style='text-align: center; word-wrap: break-word;'>阶段二</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>学习率</td><td style='text-align: center; word-wrap: break-word;'>0.01</td><td style='text-align: center; word-wrap: break-word;'>0.001</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>批大小</td><td style='text-align: center; word-wrap: break-word;'>32</td><td style='text-align: center; word-wrap: break-word;'>32</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>训练轮数</td><td style='text-align: center; word-wrap: break-word;'>20</td><td style='text-align: center; word-wrap: break-word;'>50</td></tr></table>",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       200.0,
+       335.0,
+       693.0,
+       470.0
+      ],
+      "raw_block_id": 4,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/4",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style=",
+      "raw_type": "table",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "table_html",
+     "tags": [
+      "table"
+     ],
+     "text": "<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style='text-align: center; word-wrap: break-word;'>阶段二</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>学习率</td><td style='text-align: center; word-wrap: break-word;'>0.01</td><td style='text-align: center; word-wrap: break-word;'>0.001</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>批大小</td><td style='text-align: center; word-wrap: break-word;'>32</td><td style='text-align: center; word-wrap: break-word;'>32</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>训练轮数</td><td style='text-align: center; word-wrap: break-word;'>20</td><td style='text-align: center; word-wrap: break-word;'>50</td></tr></table>",
+     "type": "table"
+    },
+    {
+     "bbox": [
+      73.292,
+      320.0,
+      521.708,
+      343.334
+     ],
+     "block_class": "footnote",
+     "block_id": "p002-b0005",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "表注：阶段二的学习率为阶段一的十分之一。"
+      ],
+      "text": "表注：阶段二的学习率为阶段一的十分之一。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-5",
+      "reading_order": 6,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.9,
+      "role": "table_footnote"
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       320.0,
+       521.708,
+       343.334
+      ]
+     },
+     "layout_role": "footnote",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        320.0,
+        521.708,
+        343.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          320.0,
+          521.708,
+          343.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "vision_footnote",
+         "score": null,
+         "text": "表注：阶段二的学习率为阶段一的十分之一。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 20,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "footnote_target": "table",
+      "layout_det_cls_id": 5,
+      "layout_det_label": "vision_footnote",
+      "layout_det_matched": true,
+      "layout_det_order": 6,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "footnote",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "表注：阶段二的学习率为阶段一的十分之一。",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 6,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 5,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "footnote",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 5,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_footnote_whitelist:table_footnote"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       480.0,
+       783.0,
+       515.0
+      ],
+      "raw_label": "vision_footnote",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/5",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        320.0,
+        521.708,
+        343.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "vision_footnote",
+       "score": null,
+       "text": "表注：阶段二的学习率为阶段一的十分之一。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       480.0,
+       783.0,
+       515.0
+      ],
+      "raw_block_id": 5,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/5",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "表注：阶段二的学习率为阶段一的十分之一。",
+      "raw_type": "vision_footnote",
+      "raw_unit": "px"
+     },
+     "structure_role": "footnote",
+     "sub_type": "table_footnote",
+     "tags": [
+      "footnote",
+      "table_footnote"
+     ],
+     "text": "表注：阶段二的学习率为阶段一的十分之一。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      356.666,
+      521.708,
+      410.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0006",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为 \\alpha/10 ，两个阶段的训练轮数分别见表 1。"
+      ],
+      "text": "第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为 $\\alpha/10$，两个阶段的训练轮数分别见表 1。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-99",
+      "reading_order": 7,
+      "role": "tail",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       356.666,
+       521.708,
+       410.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        356.666,
+        521.708,
+        410.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          356.666,
+          521.708,
+          410.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          73.292,
+          356.666,
+          521.708,
+          410.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "\\alpha/10",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          73.292,
+          356.666,
+          521.708,
+          410.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "，两个阶段的训练轮数分别见表 1。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 62,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 6,
+      "layout_det_label": "text",
+      "layout_det_matched": true,
+      "layout_det_order": 7,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "paragraph",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为 $\\alpha/10$，两个阶段的训练轮数分别见表 1。",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 1,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 7,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 99,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "body",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 6,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       535.0,
+       783.0,
+       615.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/6",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        356.666,
+        521.708,
+        410.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        73.292,
+        356.666,
+        521.708,
+        410.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "\\alpha/10",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        73.292,
+        356.666,
+        521.708,
+        410.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "，两个阶段的训练轮数分别见表 1。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       535.0,
+       783.0,
+       615.0
+      ],
+      "raw_block_id": 6,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/6",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为 $\\alpha/10$，两个阶段的训练轮数分别见表 1。",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为 $\\alpha/10$，两个阶段的训练轮数分别见表 1。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      173.236,
+      426.666,
+      453.08,
+      466.667
+     ],
+     "block_class": "formula",
+     "block_id": "p002-b0007",
+     "content": {
+      "kind": "formula",
+      "line_texts": [
+       "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2"
+      ],
+      "text": "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-7",
+      "reading_order": 8,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       173.236,
+       426.666,
+       453.08,
+       466.667
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        173.236,
+        426.666,
+        453.08,
+        466.667
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          173.236,
+          426.666,
+          453.08,
+          466.667
+         ],
+         "bbox_precision": "line",
+         "raw_type": "display_formula",
+         "score": null,
+         "text": "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2",
+         "type": "formula"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "right",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 93,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 7,
+      "layout_det_label": "display_formula",
+      "layout_det_matched": true,
+      "layout_det_order": 8,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "unknown",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "right",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 8,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 7,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 7,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:formula"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       260.0,
+       640.0,
+       680.0,
+       700.0
+      ],
+      "raw_label": "display_formula",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/7",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        173.236,
+        426.666,
+        453.08,
+        466.667
+       ],
+       "bbox_precision": "block",
+       "raw_type": "display_formula",
+       "score": null,
+       "text": "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2",
+       "type": "formula"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       260.0,
+       640.0,
+       680.0,
+       700.0
+      ],
+      "raw_block_id": 7,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/7",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2",
+      "raw_type": "display_formula",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "display_formula",
+     "tags": [
+      "formula"
+     ],
+     "text": "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2",
+     "type": "formula"
+    },
+    {
+     "bbox": [
+      479.731,
+      438.666,
+      521.708,
+      458.667
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "(1)"
+      ],
+      "text": "(1)",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-8",
+      "reading_order": 9,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "formula_number"
+     },
+     "geometry": {
+      "bbox": [
+       479.731,
+       438.666,
+       521.708,
+       458.667
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        479.731,
+        438.666,
+        521.708,
+        458.667
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          479.731,
+          438.666,
+          521.708,
+          458.667
+         ],
+         "bbox_precision": "line",
+         "raw_type": "formula_number",
+         "score": null,
+         "text": "(1)",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "right",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 3,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 8,
+      "layout_det_label": "formula_number",
+      "layout_det_matched": true,
+      "layout_det_order": 9,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "unknown",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "(1)",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "right",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 9,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 8,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "metadata",
+      "structure_role": "formula_number",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 8,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:formula_number"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       720.0,
+       658.0,
+       783.0,
+       688.0
+      ],
+      "raw_label": "formula_number",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/8",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        479.731,
+        438.666,
+        521.708,
+        458.667
+       ],
+       "bbox_precision": "block",
+       "raw_type": "formula_number",
+       "score": null,
+       "text": "(1)",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       720.0,
+       658.0,
+       783.0,
+       688.0
+      ],
+      "raw_block_id": 8,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/8",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "(1)",
+      "raw_type": "formula_number",
+      "raw_unit": "px"
+     },
+     "structure_role": "formula_number",
+     "sub_type": "formula_number",
+     "tags": [
+      "formula_number",
+      "skip_translation"
+     ],
+     "text": "(1)",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      166.573,
+      486.666,
+      426.428,
+      633.334
+     ],
+     "block_class": "image",
+     "block_id": "p002-b0009",
+     "content": {
+      "asset_id": "page-2/imgs/img_in_image_box_250_730_640_950.jpg",
+      "asset_ids": [
+       "page-2/imgs/img_in_image_box_250_730_640_950.jpg"
+      ],
+      "caption": "图1 装置示意图",
+      "caption_block_ids": [
+       "p002-b0010"
+      ],
+      "captions": [
+       "图1 装置示意图"
+      ],
+      "kind": "image",
+      "line_texts": [
+       "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>"
+      ],
+      "text": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-9",
+      "reading_order": 10,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       166.573,
+       486.666,
+       426.428,
+       633.334
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        166.573,
+        486.666,
+        426.428,
+        633.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          166.573,
+          486.666,
+          426.428,
+          633.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "image",
+         "score": null,
+         "text": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "imgs/img_in_image_box_250_730_640_950.jpg",
+      "asset_keys": [
+       "imgs/img_in_image_box_250_730_640_950.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "imgs/img_in_image_box_250_730_640_950.jpg",
+      "asset_paths": [
+       "imgs/img_in_image_box_250_730_640_950.jpg"
+      ],
+      "asset_resolved": true,
+      "asset_resolved_count": 1,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_block_id": "p002-b0010",
+      "caption_block_ids": [
+       "p002-b0010"
+      ],
+      "caption_relation": "adjacent",
+      "caption_text": "图1 装置示意图",
+      "caption_texts": [
+       "图1 装置示意图"
+      ],
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "contains_img_tag": true,
+      "contains_table_tag": false,
+      "content_format": "html_image",
+      "content_is_rich": true,
+      "content_length": 118,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "html_length": 118,
+      "layout_det_cls_id": 9,
+      "layout_det_label": "image",
+      "layout_det_matched": true,
+      "layout_det_order": 10,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 10,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 9,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 9,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:image"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       250.0,
+       730.0,
+       640.0,
+       950.0
+      ],
+      "raw_label": "image",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/9",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        166.573,
+        486.666,
+        426.428,
+        633.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "image",
+       "score": null,
+       "text": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       250.0,
+       730.0,
+       640.0,
+       950.0
+      ],
+      "raw_block_id": 9,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/9",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>",
+      "raw_type": "image",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "image_body",
+     "tags": [
+      "image",
+      "skip_translation"
+     ],
+     "text": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>",
+     "type": "image"
+    },
+    {
+     "bbox": [
+      199.888,
+      640.0,
+      395.112,
+      663.334
+     ],
+     "block_class": "caption",
+     "block_id": "p002-b0010",
+     "content": {
+      "asset_id": "page-2/imgs/img_in_image_box_250_730_640_950.jpg",
+      "asset_ids": [
+       "page-2/imgs/img_in_image_box_250_730_640_950.jpg"
+      ],
+      "kind": "text",
+      "line_texts": [
+       "图1 装置示意图"
+      ],
+      "related_block_ids": [
+       "p002-b0009"
+      ],
+      "text": "图1 装置示意图",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-10",
+      "reading_order": 11,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.95,
+      "role": "figure_caption"
+     },
+     "geometry": {
+      "bbox": [
+       199.888,
+       640.0,
+       395.112,
+       663.334
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        199.888,
+        640.0,
+        395.112,
+        663.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          199.888,
+          640.0,
+          395.112,
+          663.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "figure_title",
+         "score": null,
+         "text": "图1 装置示意图",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "imgs/img_in_image_box_250_730_640_950.jpg",
+      "asset_keys": [
+       "imgs/img_in_image_box_250_730_640_950.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "imgs/img_in_image_box_250_730_640_950.jpg",
+      "asset_paths": [
+       "imgs/img_in_image_box_250_730_640_950.jpg"
+      ],
+      "asset_resolved": true,
+      "asset_resolved_count": 1,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_asset_ids": [
+       "page-2/imgs/img_in_image_box_250_730_640_950.jpg"
+      ],
+      "caption_relation": "adjacent",
+      "caption_target": "figure",
+      "caption_target_block_id": "p002-b0009",
+      "caption_target_direction": "previous",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "contains_img_tag": false,
+      "contains_table_tag": false,
+      "content_format": "plain_text",
+      "content_is_rich": true,
+      "content_length": 8,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 10,
+      "layout_det_label": "figure_title",
+      "layout_det_matched": true,
+      "layout_det_order": 11,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "caption",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "图1 装置示意图",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 11,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 10,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "figure_caption",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 10,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_caption_whitelist:figure_caption"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       300.0,
+       960.0,
+       593.0,
+       995.0
+      ],
+      "raw_label": "figure_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/10",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 10,
+     "segments": [
+      {
+       "bbox": [
+        199.888,
+        640.0,
+        395.112,
+        663.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "figure_title",
+       "score": null,
+       "text": "图1 装置示意图",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       300.0,
+       960.0,
+       593.0,
+       995.0
+      ],
+      "raw_block_id": 10,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/10",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "图1 装置示意图",
+      "raw_type": "figure_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "figure_caption",
+     "sub_type": "figure_caption",
+     "tags": [
+      "caption",
+      "figure_caption"
+     ],
+     "text": "图1 装置示意图",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      73.292,
+      670.0,
+      521.708,
+      693.334
+     ],
+     "block_class": "footnote",
+     "block_id": "p002-b0011",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "图注：左侧为数据采集模块，右侧为训练服务器。"
+      ],
+      "text": "图注：左侧为数据采集模块，右侧为训练服务器。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-11",
+      "reading_order": 12,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.9,
+      "role": "image_footnote"
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       670.0,
+       521.708,
+       693.334
+      ]
+     },
+     "layout_role": "footnote",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        670.0,
+        521.708,
+        693.334
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          670.0,
+          521.708,
+          693.334
+         ],
+         "bbox_precision": "line",
+         "raw_type": "vision_footnote",
+         "score": null,
+         "text": "图注：左侧为数据采集模块，右侧为训练服务器。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 22,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "footnote_target": "image",
+      "layout_det_cls_id": 11,
+      "layout_det_label": "vision_footnote",
+      "layout_det_matched": true,
+      "layout_det_order": 12,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "footnote",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "图注：左侧为数据采集模块，右侧为训练服务器。",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 12,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 11,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "footnote",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 11,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_footnote_whitelist:image_footnote"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1005.0,
+       783.0,
+       1040.0
+      ],
+      "raw_label": "vision_footnote",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/11",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 11,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        670.0,
+        521.708,
+        693.334
+       ],
+       "bbox_precision": "block",
+       "raw_type": "vision_footnote",
+       "score": null,
+       "text": "图注：左侧为数据采集模块，右侧为训练服务器。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1005.0,
+       783.0,
+       1040.0
+      ],
+      "raw_block_id": 11,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/11",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "图注：左侧为数据采集模块，右侧为训练服务器。",
+      "raw_type": "vision_footnote",
+      "raw_unit": "px"
+     },
+     "structure_role": "footnote",
+     "sub_type": "image_footnote",
+     "tags": [
+      "footnote",
+      "image_footnote"
+     ],
+     "text": "图注：左侧为数据采集模块，右侧为训练服务器。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      426.427,
+      706.666,
+      526.372,
+      780.0
+     ],
+     "block_class": "unknown",
+     "block_id": "p002-b0012",
+     "content": {
+      "kind": "unknown",
+      "line_texts": [
+       "数据结构课程组 教学专用章"
+      ],
+      "text": "数据结构课程组 教学专用章",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-12",
+      "reading_order": 13,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       426.427,
+       706.666,
+       526.372,
+       780.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        426.427,
+        706.666,
+        526.372,
+        780.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          426.427,
+          706.666,
+          526.372,
+          780.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "seal",
+         "score": null,
+         "text": "数据结构课程组 教学专用章",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "right",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 13,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 12,
+      "layout_det_label": "seal",
+      "layout_det_matched": true,
+      "layout_det_order": 13,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "unknown",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "数据结构课程组 教学专用章",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "right",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 13,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 12,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 12,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:unknown"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       640.0,
+       1060.0,
+       790.0,
+       1170.0
+      ],
+      "raw_label": "seal",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/12",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 12,
+     "segments": [
+      {
+       "bbox": [
+        426.427,
+        706.666,
+        526.372,
+        780.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "seal",
+       "score": null,
+       "text": "数据结构课程组 教学专用章",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       640.0,
+       1060.0,
+       790.0,
+       1170.0
+      ],
+      "raw_block_id": 12,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/12",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "数据结构课程组 教学专用章",
+      "raw_type": "seal",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "",
+     "tags": [
+      "unknown"
+     ],
+     "text": "数据结构课程组 教学专用章",
+     "type": "unknown"
+    },
+    {
+     "bbox": [
+      73.292,
+      790.0,
+      333.147,
+      810.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0013",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "数据结构课程组 编"
+      ],
+      "text": "数据结构课程组 编",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-13",
+      "reading_order": 14,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "footer"
+     },
+     "geometry": {
+      "bbox": [
+       73.292,
+       790.0,
+       333.147,
+       810.0
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        73.292,
+        790.0,
+        333.147,
+        810.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          73.292,
+          790.0,
+          333.147,
+          810.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "footer",
+         "score": null,
+         "text": "数据结构课程组 编",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 9,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 13,
+      "layout_det_label": "footer",
+      "layout_det_matched": true,
+      "layout_det_order": 14,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "footer",
+      "markdown_match_count": 1,
+      "markdown_match_found": true,
+      "markdown_match_text": "数据结构课程组 编",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 14,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 13,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "metadata",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 13,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1185.0,
+       500.0,
+       1215.0
+      ],
+      "raw_label": "footer",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/13",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 13,
+     "segments": [
+      {
+       "bbox": [
+        73.292,
+        790.0,
+        333.147,
+        810.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "footer",
+       "score": null,
+       "text": "数据结构课程组 编",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       110.0,
+       1185.0,
+       500.0,
+       1215.0
+      ],
+      "raw_block_id": 13,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/13",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "数据结构课程组 编",
+      "raw_type": "footer",
+      "raw_unit": "px"
+     },
+     "structure_role": "metadata",
+     "sub_type": "footer",
+     "tags": [
+      "skip_translation"
+     ],
+     "text": "数据结构课程组 编",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      479.731,
+      790.0,
+      521.708,
+      810.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0014",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2"
+      ],
+      "text": "2",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.98,
+      "group_id": "provider-paddle-page-002-group-14",
+      "reading_order": 15,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.95,
+      "role": "page_number"
+     },
+     "geometry": {
+      "bbox": [
+       479.731,
+       790.0,
+       521.708,
+       810.0
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        479.731,
+        790.0,
+        521.708,
+        810.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          479.731,
+          790.0,
+          521.708,
+          810.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "number",
+         "score": null,
+         "text": "2",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "right",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 1,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_cls_id": 14,
+      "layout_det_label": "number",
+      "layout_det_matched": true,
+      "layout_det_order": 15,
+      "layout_det_polygon": [],
+      "layout_det_score": 0.95,
+      "layout_role": "page_number",
+      "markdown_match_count": 11,
+      "markdown_match_found": true,
+      "markdown_match_text": "2",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "right",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 15,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": 14,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "metadata",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 14,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "paddle",
+      "raw_bbox": [
+       720.0,
+       1185.0,
+       783.0,
+       1215.0
+      ],
+      "raw_label": "number",
+      "raw_origin": "top_left",
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/14",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 14,
+     "segments": [
+      {
+       "bbox": [
+        479.731,
+        790.0,
+        521.708,
+        810.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "number",
+       "score": null,
+       "text": "2",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "paddle",
+      "raw_bbox": [
+       720.0,
+       1185.0,
+       783.0,
+       1215.0
+      ],
+      "raw_block_id": 14,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/14",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2",
+      "raw_type": "number",
+      "raw_unit": "px"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [
+      "skip_translation"
+     ],
+     "text": "2",
+     "type": "text"
+    }
+   ],
+   "height": 842.0,
+   "metadata": {
+    "body_repair_block_count": 0,
+    "body_repair_block_ids": [],
+    "body_repair_pair_count": 0,
+    "body_repair_pairs": [],
+    "column_layout_mode": "single",
+    "column_split_x": 446.5,
+    "geometry_precision": "",
+    "input_image": "https://example.invalid/fixture/input_2.jpg",
+    "layout_det_res": {
+     "box_count": 15,
+     "boxes": [
+      {
+       "cls_id": 0,
+       "coordinate": [
+        110.0,
+        60.0,
+        783.0,
+        95.0
+       ],
+       "label": "header",
+       "order": 1,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 1,
+       "coordinate": [
+        110.0,
+        130.0,
+        330.0,
+        170.0
+       ],
+       "label": "paragraph_title",
+       "order": 2,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 2,
+       "coordinate": [
+        110.0,
+        190.0,
+        783.0,
+        275.0
+       ],
+       "label": "text",
+       "order": 3,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 3,
+       "coordinate": [
+        330.0,
+        290.0,
+        563.0,
+        325.0
+       ],
+       "label": "figure_title",
+       "order": 4,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 4,
+       "coordinate": [
+        200.0,
+        335.0,
+        693.0,
+        470.0
+       ],
+       "label": "table",
+       "order": 5,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 5,
+       "coordinate": [
+        110.0,
+        480.0,
+        783.0,
+        515.0
+       ],
+       "label": "vision_footnote",
+       "order": 6,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 6,
+       "coordinate": [
+        110.0,
+        535.0,
+        783.0,
+        615.0
+       ],
+       "label": "text",
+       "order": 7,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 7,
+       "coordinate": [
+        260.0,
+        640.0,
+        680.0,
+        700.0
+       ],
+       "label": "display_formula",
+       "order": 8,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 8,
+       "coordinate": [
+        720.0,
+        658.0,
+        783.0,
+        688.0
+       ],
+       "label": "formula_number",
+       "order": 9,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 9,
+       "coordinate": [
+        250.0,
+        730.0,
+        640.0,
+        950.0
+       ],
+       "label": "image",
+       "order": 10,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 10,
+       "coordinate": [
+        300.0,
+        960.0,
+        593.0,
+        995.0
+       ],
+       "label": "figure_title",
+       "order": 11,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 11,
+       "coordinate": [
+        110.0,
+        1005.0,
+        783.0,
+        1040.0
+       ],
+       "label": "vision_footnote",
+       "order": 12,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 12,
+       "coordinate": [
+        640.0,
+        1060.0,
+        790.0,
+        1170.0
+       ],
+       "label": "seal",
+       "order": 13,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 13,
+       "coordinate": [
+        110.0,
+        1185.0,
+        500.0,
+        1215.0
+       ],
+       "label": "footer",
+       "order": 14,
+       "polygon_points": [],
+       "score": 0.95
+      },
+      {
+       "cls_id": 14,
+       "coordinate": [
+        720.0,
+        1185.0,
+        783.0,
+        1215.0
+       ],
+       "label": "number",
+       "order": 15,
+       "polygon_points": [],
+       "score": 0.95
+      }
+     ]
+    },
+    "markdown": {
+     "images": {
+      "imgs/img_in_image_box_250_730_640_950.jpg": "md/images/page-2/imgs/img_in_image_box_250_730_640_950.jpg"
+     },
+     "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期\n\n2 方法\n\n在实验设计中，设学习率为 $\\alpha=0.01$，批大小为 $B=32$，每轮迭代的损失记为 $L_t$，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，\n\n表1 实验参数\n\n<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style='text-align: center; word-wrap: break-word;'>阶段二</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>学习率</td><td style='text-align: center; word-wrap: break-word;'>0.01</td><td style='text-align: center; word-wrap: break-word;'>0.001</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>批大小</td><td style='text-align: center; word-wrap: break-word;'>32</td><td style='text-align: center; word-wrap: break-word;'>32</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>训练轮数</td><td style='text-align: center; word-wrap: break-word;'>20</td><td style='text-align: center; word-wrap: break-word;'>50</td></tr></table>\n\n表注：阶段二的学习率为阶段一的十分之一。\n\n第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为 $\\alpha/10$，两个阶段的训练轮数分别见表 1。\n\nL(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2\n\n(1)\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>\n\n图1 装置示意图\n\n图注：左侧为数据采集模块，右侧为训练服务器。\n\n数据结构课程组 教学专用章\n\n数据结构课程组 编\n\n2",
+     "text_length": 1361
+    },
+    "model_settings": {
+     "format_block_content": true,
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true
+    },
+    "output_images": {},
+    "peer_block_absorbed_text_block_ids": [],
+    "peer_block_absorbed_text_count": 0,
+    "preprocessed_image": "",
+    "provider_page_count": 2,
+    "provider_page_meta": {
+     "height": 1263,
+     "width": 893
+    },
+    "provider_transport": "",
+    "raw_unit": "px",
+    "suspected_block_ids": [],
+    "suspected_cross_column_merge_block_count": 0,
+    "text_missing_but_bbox_present_block_ids": [],
+    "text_missing_but_bbox_present_count": 0
+   },
+   "page": 2,
+   "page_index": 1,
+   "unit": "pt",
+   "width": 595.0
+  }
+ ],
+ "schema": "normalized_document_v1",
+ "schema_version": "1.1",
+ "source": {
+  "provider": "paddle",
+  "provider_version": "",
+  "raw_files": {
+   "source_json": "result.json"
+  }
+ }
+}

@@ -1,0 +1,483 @@
+[
+ [
+  {
+   "type": "page_header",
+   "content": {
+    "page_header_content": [
+     {
+      "type": "text",
+      "content": "Journal of Synthetic Cell Biology, Vol. 12, No. 3"
+     }
+    ]
+   },
+   "bbox": [
+    130,
+    38,
+    870,
+    58
+   ]
+  },
+  {
+   "type": "title",
+   "content": {
+    "title_content": [
+     {
+      "type": "text",
+      "content": "Mitochondrial Buffering of Calcium Transients in Cultured Hepatocytes"
+     }
+    ],
+    "level": 1
+   },
+   "bbox": [
+    110,
+    85,
+    890,
+    135
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "Intracellular calcium signalling regulates metabolism, yet the contribution of mitochondria to buffering remains debated. Here we measure the decay constant "
+     },
+     {
+      "type": "equation_inline",
+      "content": "\\tau"
+     },
+     {
+      "type": "text",
+      "content": " of cytosolic transients in hepatocytes treated with the uncoupler FCCP."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    150,
+    890,
+    235
+   ]
+  },
+  {
+   "type": "title",
+   "content": {
+    "title_content": [
+     {
+      "type": "text",
+      "content": "1. Methods"
+     }
+    ],
+    "level": 2
+   },
+   "bbox": [
+    110,
+    262,
+    520,
+    292
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "Cells were loaded with 2 "
+     },
+     {
+      "type": "equation_inline",
+      "content": "\\mu\\mathrm{M}"
+     },
+     {
+      "type": "text",
+      "content": " Fluo-4 and imaged at 37 °C. The free calcium concentration was estimated from "
+     },
+     {
+      "type": "equation_inline",
+      "content": "[\\mathrm{Ca}^{2+}] = K_d \\frac{F - F_{min}}{F_{max} - F}"
+     },
+     {
+      "type": "text",
+      "content": " with "
+     },
+     {
+      "type": "equation_inline",
+      "content": "K_d = 345\\,\\mathrm{nM}"
+     },
+     {
+      "type": "text",
+      "content": ", following standard calibration."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    305,
+    890,
+    400
+   ]
+  },
+  {
+   "type": "equation_interline",
+   "content": {
+    "math_content": "\\tau = \\frac{\\Delta [\\mathrm{Ca}^{2+}]}{J_{\\mathrm{mito}} + J_{\\mathrm{SERCA}}}",
+    "math_type": "latex",
+    "image_source": {
+     "path": "images/eq_0001.jpg"
+    }
+   },
+   "bbox": [
+    300,
+    418,
+    700,
+    478
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "where "
+     },
+     {
+      "type": "equation_inline",
+      "content": "J_{\\mathrm{mito}}"
+     },
+     {
+      "type": "text",
+      "content": " and "
+     },
+     {
+      "type": "equation_inline",
+      "content": "J_{\\mathrm{SERCA}}"
+     },
+     {
+      "type": "text",
+      "content": " denote the mitochondrial and ER uptake fluxes, respectively."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    492,
+    890,
+    560
+   ]
+  },
+  {
+   "type": "title",
+   "content": {
+    "title_content": [
+     {
+      "type": "text",
+      "content": "1.1 Reagents"
+     }
+    ],
+    "level": 2
+   },
+   "bbox": [
+    110,
+    585,
+    520,
+    615
+   ]
+  },
+  {
+   "type": "list",
+   "content": {
+    "list_type": "text_list",
+    "list_items": [
+     {
+      "item_type": "text",
+      "item_content": [
+       {
+        "type": "text",
+        "content": "Fluo-4 AM, 2 "
+       },
+       {
+        "type": "equation_inline",
+        "content": "\\mu\\mathrm{M}"
+       },
+       {
+        "type": "text",
+        "content": " in loading buffer"
+       }
+      ]
+     },
+     {
+      "item_type": "text",
+      "item_content": [
+       {
+        "type": "text",
+        "content": "FCCP, 1 "
+       },
+       {
+        "type": "equation_inline",
+        "content": "\\mu\\mathrm{M}"
+       },
+       {
+        "type": "text",
+        "content": ", added at the start of recording"
+       }
+      ]
+     },
+     {
+      "item_type": "text",
+      "item_content": [
+       {
+        "type": "text",
+        "content": "Thapsigargin to block ER calcium re-uptake"
+       }
+      ]
+     },
+     {
+      "item_type": "text",
+      "item_content": [
+       {
+        "type": "text",
+        "content": "Tyrode solution containing 1.8 mM CaCl2"
+       }
+      ]
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    628,
+    890,
+    780
+   ]
+  },
+  {
+   "type": "page_footer",
+   "content": {
+    "page_footer_content": [
+     {
+      "type": "text",
+      "content": "Received 4 March; accepted 19 May."
+     }
+    ]
+   },
+   "bbox": [
+    130,
+    925,
+    600,
+    945
+   ]
+  },
+  {
+   "type": "page_number",
+   "content": {
+    "page_number_content": [
+     {
+      "type": "text",
+      "content": "1"
+     }
+    ]
+   },
+   "bbox": [
+    470,
+    955,
+    530,
+    972
+   ]
+  }
+ ],
+ [
+  {
+   "type": "page_header",
+   "content": {
+    "page_header_content": [
+     {
+      "type": "text",
+      "content": "Mitochondrial Buffering of Calcium Transients"
+     }
+    ]
+   },
+   "bbox": [
+    130,
+    38,
+    870,
+    58
+   ]
+  },
+  {
+   "type": "title",
+   "content": {
+    "title_content": [
+     {
+      "type": "text",
+      "content": "2. Results"
+     }
+    ],
+    "level": 2
+   },
+   "bbox": [
+    110,
+    85,
+    520,
+    115
+   ]
+  },
+  {
+   "type": "table",
+   "content": {
+    "image_source": {
+     "path": "images/table_0001.jpg"
+    },
+    "table_caption": [
+     {
+      "type": "text",
+      "content": "Table 1. Decay constants of cytosolic calcium transients under each treatment."
+     }
+    ],
+    "table_footnote": [
+     {
+      "type": "text",
+      "content": "Values are mean ± s.d.; n is the number of cells."
+     }
+    ],
+    "html": "<table><thead><tr><th>Condition</th><th>n</th><th>Decay constant (s)</th></tr></thead><tbody><tr><td>Control</td><td>42</td><td>1.8 ± 0.2</td></tr><tr><td>FCCP</td><td>38</td><td>4.1 ± 0.5</td></tr><tr><td>FCCP + thapsigargin</td><td>35</td><td>6.7 ± 0.9</td></tr></tbody></table>",
+    "table_type": "simple_table",
+    "table_nest_level": 1
+   },
+   "bbox": [
+    150,
+    150,
+    850,
+    335
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "Uncoupling slowed recovery more than twofold (Table 1), and the effect was larger when ER uptake was also blocked, giving "
+     },
+     {
+      "type": "equation_inline",
+      "content": "\\tau_{\\mathrm{FCCP}} > 2\\,\\tau_{\\mathrm{ctrl}}"
+     },
+     {
+      "type": "text",
+      "content": "."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    355,
+    890,
+    440
+   ]
+  },
+  {
+   "type": "image",
+   "content": {
+    "image_source": {
+     "path": "images/fig_0001.jpg"
+    },
+    "image_caption": [
+     {
+      "type": "text",
+      "content": "Figure 1. Representative calcium traces from control and FCCP-treated hepatocytes."
+     }
+    ],
+    "image_footnote": [
+     {
+      "type": "text",
+      "content": "Scale bar, 10 μm; traces are normalised to baseline fluorescence."
+     }
+    ]
+   },
+   "bbox": [
+    200,
+    460,
+    800,
+    640
+   ]
+  },
+  {
+   "type": "code",
+   "content": {
+    "code_caption": [
+     {
+      "type": "text",
+      "content": "Listing 1. Single-exponential fit."
+     }
+    ],
+    "code_content": [
+     {
+      "type": "text",
+      "content": "def fit_tau(t, f):\n    p0 = (f.max() - f.min(), 1.0, f.min())\n    popt, _ = curve_fit(decay, t, f, p0=p0)\n    return popt[1]"
+     }
+    ],
+    "code_language": "python",
+    "code_footnote": []
+   },
+   "bbox": [
+    130,
+    660,
+    870,
+    770
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "These results indicate that mitochondria account for a substantial fraction of the buffering capacity during sustained signalling."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    790,
+    890,
+    870
+   ]
+  },
+  {
+   "type": "page_footer",
+   "content": {
+    "page_footer_content": [
+     {
+      "type": "text",
+      "content": "Received 4 March; accepted 19 May."
+     }
+    ]
+   },
+   "bbox": [
+    130,
+    925,
+    600,
+    945
+   ]
+  },
+  {
+   "type": "page_number",
+   "content": {
+    "page_number_content": [
+     {
+      "type": "text",
+      "content": "2"
+     }
+    ]
+   },
+   "bbox": [
+    470,
+    955,
+    530,
+    972
+   ]
+  }
+ ]
+]

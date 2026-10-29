@@ -1,0 +1,147 @@
+{
+ "provider": "mineru",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   595,
+   842
+  ],
+  [
+   595,
+   842
+  ],
+  [
+   595,
+   842
+  ]
+ ],
+ "description": "Synthetic MinerU middle.json (layout.json), 3 A4 pages, single-column Chinese physical-chemistry textbook chapter (quantum chemistry). Geometry is generated and self-consistent (CJK 12pt text, 16pt line pitch; lines inside blocks, spans inside lines, nothing zero-area, all inside the page). Block labels follow the MinerU vlm middle.json shape: title(level), text, list(+text children), interline_equation, code(code_caption+code_body), image(image_body x2 + image_caption), chart(chart_body+chart_caption), page_footnote, discarded header/footer/page_number/aside_text. Discarded blocks carry no index (sorted after para_blocks).",
+ "features": [
+  {
+   "feature": "chapter title (title level 1)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/0",
+   "expect": "text/heading, block_class title, translate=true, metadata.raw_title_level=1"
+  },
+  {
+   "feature": "section title level 2",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/1",
+   "expect": "text/heading, raw_title_level=2, translate=true"
+  },
+  {
+   "feature": "section title level 3",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/3",
+   "expect": "text/heading, raw_title_level=3, translate=true"
+  },
+  {
+   "feature": "section titles level 2 and 3 on other pages",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/3",
+   "expect": "heading level 2 (also /pdf_info/2/para_blocks/0 level 2 and /pdf_info/2/para_blocks/4 level 3)"
+  },
+  {
+   "feature": "one line split into three spans (text / inline_equation / text), Chinese without spaces",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/2/lines/1",
+   "expect": "segments text, inline_formula, text; observe whether a space is inserted between CJK span and formula in block text"
+  },
+  {
+   "feature": "inline formula mid-sentence (\\hat{H}) at start of a line",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/4",
+   "expect": "body paragraph with one inline_formula segment; lines joined across the line break"
+  },
+  {
+   "feature": "inline formulas inside a sentence referencing 式(2.3)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/6",
+   "expect": "two inline_formula segments (E, \\psi) between Chinese text spans"
+  },
+  {
+   "feature": "interline_equation with number via \\tag{2.3}",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/5",
+   "expect": "formula/display_formula, translate=false, number stays inside the latex text"
+  },
+  {
+   "feature": "bulleted list (list container, 3 text children, bullet glyph in text)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/7",
+   "expect": "ONE aggregated list_item block (children not emitted separately), bbox = union of descendant lines"
+  },
+  {
+   "feature": "numbered list (list container, 3 text children, '1.' prefix in text)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/2",
+   "expect": "ONE aggregated list_item block"
+  },
+  {
+   "feature": "code block group: code_caption + code_body with 4 lines, indented lines",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/5",
+   "expect": "code_body -> kind code, text_flow preserve_lines, '\\n' between 4 lines; caption linked via caption_target_block_id"
+  },
+  {
+   "feature": "image group with two image_body children and one image_caption",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/2",
+   "expect": "group not emitted; 2 image blocks + 1 caption; caption attaches to FIRST image only"
+  },
+  {
+   "feature": "chart group: chart_body + chart_caption",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/3",
+   "expect": "chart_body becomes kind image/figure; chart_caption layout caption linked to it"
+  },
+  {
+   "feature": "discarded header (left + right)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/discarded_blocks/0",
+   "expect": "structure_role metadata, translate=false; second header at discarded_blocks/1"
+  },
+  {
+   "feature": "discarded footer",
+   "page": 2,
+   "raw_path": "/pdf_info/1/discarded_blocks/2",
+   "expect": "footer, metadata, translate=false"
+  },
+  {
+   "feature": "discarded page_number",
+   "page": 1,
+   "raw_path": "/pdf_info/0/discarded_blocks/2",
+   "expect": "page_number, metadata, translate=false"
+  },
+  {
+   "feature": "rotated block (angle 90) in para_blocks: vertical side stamp, bbox tall and narrow",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/7",
+   "expect": "metadata.raw_angle=90 only; no special handling expected -> still body paragraph, translate=true"
+  },
+  {
+   "feature": "rotated aside_text (angle 90) in discarded_blocks",
+   "page": 3,
+   "raw_path": "/pdf_info/2/discarded_blocks/4",
+   "expect": "metadata, translate=false, raw_angle=90"
+  },
+  {
+   "feature": "page_footnote with an inline formula span at page bottom",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/8",
+   "expect": "text/page_footnote, layout footnote, translate=false"
+  }
+ ],
+ "tricky_points": [
+  "Segment texts are joined with ASCII space even between CJK spans and between CJK lines, so a Chinese sentence broken across lines/spans gets spaces inside words (e.g. '定态薛定谔方 程'). Snapshot pins this behaviour.",
+  "Code lines: preserve_lines strips each span, so leading indentation of code lines is lost ('    num = ...' becomes 'num = ...').",
+  "A list/index container is flattened to one block; item boundaries survive only as a space between joined line texts and in lines[].",
+  "Interline equation number lives inside latex as \\tag{2.3}; no separate formula_number block.",
+  "Image group with two image_body children: only the first image is the caption target; second image has no caption link.",
+  "chart_body is projected as kind image/figure (no chart kind); chart_caption has sub_type chart_caption.",
+  "angle is only copied to metadata.raw_angle; a rotated para_block text is still translate=true body.",
+  "aside_text with angle 90 gets layout_role paragraph (while semantic/structure metadata) -- cosmetic mismatch with NORMALIZATION.md which says unknown.",
+  "Discarded blocks carry no index here: raw_index is null and they are ordered after all para_blocks regardless of position on the page.",
+  "All three title levels get block_class title / structure_role heading; the level only survives in metadata.raw_title_level."
+ ]
+}

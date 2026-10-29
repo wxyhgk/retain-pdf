@@ -1,0 +1,5099 @@
+{
+ "assets": {
+  "fig-queue-depth": {
+   "kind": "image",
+   "source": "",
+   "uri": "assets/fig-queue-depth.png"
+  }
+ },
+ "derived": {
+  "coordinate_space": "pdf_point",
+  "notes": "Adapted from generic_flat_ocr sample payload."
+ },
+ "doc_id": "generic_flat_command",
+ "document_id": "generic_flat_command",
+ "markers": {},
+ "page_count": 2,
+ "pages": [
+  {
+   "blocks": [
+    {
+     "bbox": [
+      75.0,
+      35.0,
+      297.4,
+      48.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Technical Note TN-2026-07 | Adaptive Buffer Sizing"
+      ],
+      "text": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       35.0,
+       297.4,
+       48.0
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        35.0,
+        297.4,
+        48.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          35.0,
+          297.4,
+          48.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 0,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       70,
+       594.8,
+       96
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "header",
+      "raw_unit": ""
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        35.0,
+        297.4,
+        48.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       70,
+       594.8,
+       96
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "header",
+      "raw_text_excerpt": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+      "raw_type": "text"
+     },
+     "structure_role": "metadata",
+     "sub_type": "header",
+     "tags": [],
+     "text": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      95.0,
+      85.0,
+      407.0,
+      133.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Adaptive Buffer Sizing for Streaming",
+       "Document Pipelines"
+      ],
+      "text": "Adaptive Buffer Sizing for Streaming Document Pipelines",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       95.0,
+       85.0,
+       407.0,
+       133.0
+      ]
+     },
+     "layout_role": "title",
+     "lines": [
+      {
+       "bbox": [
+        95.0,
+        85.0,
+        407.0,
+        107.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          95.0,
+          85.0,
+          407.0,
+          107.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Adaptive Buffer Sizing for Streaming",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        95.0,
+        111.0,
+        260.2,
+        133.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          95.0,
+          111.0,
+          260.2,
+          133.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Document Pipelines",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 1,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:title"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       190,
+       170,
+       814.0,
+       266
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "title",
+      "raw_unit": ""
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        95.0,
+        85.0,
+        407.0,
+        107.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Adaptive Buffer Sizing for Streaming",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        95.0,
+        111.0,
+        260.2,
+        133.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Document Pipelines",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       190,
+       170,
+       814.0,
+       266
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "title",
+      "raw_text_excerpt": "Adaptive Buffer Sizing for Streaming Document Pipelines",
+      "raw_type": "text"
+     },
+     "structure_role": "title",
+     "sub_type": "title",
+     "tags": [],
+     "text": "Adaptive Buffer Sizing for Streaming Document Pipelines",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      165.0,
+      150.0,
+      339.7,
+      164.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Lin Mei, Tomas Ortega, Priya Nair"
+      ],
+      "text": "Lin Mei, Tomas Ortega, Priya Nair",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       165.0,
+       150.0,
+       339.7,
+       164.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        165.0,
+        150.0,
+        339.7,
+        164.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          165.0,
+          150.0,
+          339.7,
+          164.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Lin Mei, Tomas Ortega, Priya Nair",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 2,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_front_matter:title_abstract_gap"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       330,
+       300,
+       679.4,
+       328
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "body",
+      "raw_unit": ""
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        165.0,
+        150.0,
+        339.7,
+        164.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Lin Mei, Tomas Ortega, Priya Nair",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       330,
+       300,
+       679.4,
+       328
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "body",
+      "raw_text_excerpt": "Lin Mei, Tomas Ortega, Priya Nair",
+      "raw_type": "text"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Lin Mei, Tomas Ortega, Priya Nair",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      190.0,
+      125.4,
+      207.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Abstract"
+      ],
+      "text": "Abstract",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       190.0,
+       125.4,
+       207.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        190.0,
+        125.4,
+        207.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          190.0,
+          125.4,
+          207.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Abstract",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 3,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:heading"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       380,
+       250.8,
+       414
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "heading",
+      "raw_unit": ""
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        190.0,
+        125.4,
+        207.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Abstract",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       380,
+       250.8,
+       414
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "heading",
+      "raw_text_excerpt": "Abstract",
+      "raw_type": "text"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [],
+     "text": "Abstract",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      215.0,
+      520.0,
+      280.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "We study how fixed-size queues between the stages of a document",
+       "processing pipeline waste memory under bursty input. A feedback",
+       "controller that resizes each buffer from observed queue depth keeps",
+       "tail latency within 8% of the optimum while using 41% less memory."
+      ],
+      "text": "We study how fixed-size queues between the stages of a document processing pipeline waste memory under bursty input. A feedback controller that resizes each buffer from observed queue depth keeps tail latency within 8% of the optimum while using 41% less memory.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       215.0,
+       520.0,
+       280.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        215.0,
+        520.0,
+        229.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          215.0,
+          520.0,
+          229.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "We study how fixed-size queues between the stages of a document",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        232.0,
+        520.0,
+        246.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          232.0,
+          520.0,
+          246.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "processing pipeline waste memory under bursty input. A feedback",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        249.0,
+        520.0,
+        263.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          249.0,
+          520.0,
+          263.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "controller that resizes each buffer from observed queue depth keeps",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        266.0,
+        421.3,
+        280.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          266.0,
+          421.3,
+          280.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "tail latency within 8% of the optimum while using 41% less memory.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 4,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:abstract"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       430,
+       1040.0,
+       560
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "abstract",
+      "raw_unit": ""
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        215.0,
+        520.0,
+        229.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "We study how fixed-size queues between the stages of a document",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        232.0,
+        520.0,
+        246.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "processing pipeline waste memory under bursty input. A feedback",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        249.0,
+        520.0,
+        263.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "controller that resizes each buffer from observed queue depth keeps",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        266.0,
+        421.3,
+        280.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "tail latency within 8% of the optimum while using 41% less memory.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "abstract",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       430,
+       1040.0,
+       560
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "abstract",
+      "raw_text_excerpt": "We study how fixed-size queues between the stages of a document processing pipeline waste memory under bursty input. A feedback controller that resizes each buffer from observed queue depth keeps tail",
+      "raw_type": "text"
+     },
+     "structure_role": "body",
+     "sub_type": "abstract",
+     "tags": [],
+     "text": "We study how fixed-size queues between the stages of a document processing pipeline waste memory under bursty input. A feedback controller that resizes each buffer from observed queue depth keeps tail latency within 8% of the optimum while using 41% less memory.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      295.0,
+      101.6,
+      312.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0005",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "摘要"
+      ],
+      "text": "摘要",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       295.0,
+       101.6,
+       312.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        295.0,
+        101.6,
+        312.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          295.0,
+          101.6,
+          312.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "摘要",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 5,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:heading"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       590,
+       203.2,
+       624
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "heading",
+      "raw_unit": ""
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        295.0,
+        101.6,
+        312.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "摘要",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       590,
+       203.2,
+       624
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "heading",
+      "raw_text_excerpt": "摘要",
+      "raw_type": "text"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [],
+     "text": "摘要",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      320.0,
+      520.0,
+      368.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0006",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "本文研究文档处理流水线各阶段之间的固定长度队列在突发输入下浪费内存的问题，",
+       "提出一种根据观测队列深度调整缓冲区大小的反馈控制器，在尾延迟接近最优的同时",
+       "将内存占用降低了四成以上。"
+      ],
+      "text": "本文研究文档处理流水线各阶段之间的固定长度队列在突发输入下浪费内存的问题，提出一种根据观测队列深度调整缓冲区大小的反馈控制器，在尾延迟接近最优的同时将内存占用降低了四成以上。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       320.0,
+       520.0,
+       368.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        320.0,
+        520.0,
+        368.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          320.0,
+          520.0,
+          334.0
+         ],
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "本文研究文档处理流水线各阶段之间的固定长度队列在突发输入下浪费内存的问题，",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          75.0,
+          337.0,
+          520.0,
+          351.0
+         ],
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "提出一种根据观测队列深度调整缓冲区大小的反馈控制器，在尾延迟接近最优的同时",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          75.0,
+          354.0,
+          223.2,
+          368.0
+         ],
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "将内存占用降低了四成以上。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 6,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:abstract"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       640,
+       1040.0,
+       736
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "abstract",
+      "raw_unit": ""
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        320.0,
+        520.0,
+        334.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "本文研究文档处理流水线各阶段之间的固定长度队列在突发输入下浪费内存的问题，",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        337.0,
+        520.0,
+        351.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "提出一种根据观测队列深度调整缓冲区大小的反馈控制器，在尾延迟接近最优的同时",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        354.0,
+        223.2,
+        368.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "将内存占用降低了四成以上。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "abstract",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       640,
+       1040.0,
+       736
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "abstract",
+      "raw_text_excerpt": "本文研究文档处理流水线各阶段之间的固定长度队列在突发输入下浪费内存的问题，提出一种根据观测队列深度调整缓冲区大小的反馈控制器，在尾延迟接近最优的同时将内存占用降低了四成以上。",
+      "raw_type": "text"
+     },
+     "structure_role": "body",
+     "sub_type": "abstract",
+     "tags": [],
+     "text": "本文研究文档处理流水线各阶段之间的固定长度队列在突发输入下浪费内存的问题，提出一种根据观测队列深度调整缓冲区大小的反馈控制器，在尾延迟接近最优的同时将内存占用降低了四成以上。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      390.0,
+      158.7,
+      407.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0007",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1 Introduction"
+      ],
+      "text": "1 Introduction",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       390.0,
+       158.7,
+       407.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        390.0,
+        158.7,
+        407.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          390.0,
+          158.7,
+          407.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "1 Introduction",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 7,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:heading"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       780,
+       317.4,
+       814
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "heading",
+      "raw_unit": ""
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        390.0,
+        158.7,
+        407.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "1 Introduction",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       780,
+       317.4,
+       814
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "heading",
+      "raw_text_excerpt": "1 Introduction",
+      "raw_type": "text"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [],
+     "text": "1 Introduction",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      415.0,
+      520.0,
+      497.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Modern pipelines split a job into stages such as parsing, layout and",
+       "rendering, and connect them with bounded queues. When the arrival rate",
+       "exceeds the service rate $\\mu_k$ of a stage, its queue grows until the",
+       "bound is hit and upstream stages stall. Choosing a single bound for all",
+       "inputs is therefore a compromise between memory use and throughput."
+      ],
+      "text": "Modern pipelines split a job into stages such as parsing, layout and rendering, and connect them with bounded queues. When the arrival rate exceeds the service rate $\\mu_k$ of a stage, its queue grows until the bound is hit and upstream stages stall. Choosing a single bound for all inputs is therefore a compromise between memory use and throughput.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.9,
+      "group_id": "g-intro-en",
+      "reading_order": 8,
+      "role": "single",
+      "scope": "intra_page",
+      "source": "provider"
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       415.0,
+       520.0,
+       497.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        415.0,
+        520.0,
+        429.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          415.0,
+          520.0,
+          429.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Modern pipelines split a job into stages such as parsing, layout and",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        432.0,
+        520.0,
+        446.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          432.0,
+          520.0,
+          446.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "rendering, and connect them with bounded queues. When the arrival rate",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        449.0,
+        520.0,
+        463.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          449.0,
+          235.7,
+          463.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "exceeds the service rate ",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          235.7,
+          449.0,
+          290.8,
+          463.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.97,
+         "text": "$\\mu_k$",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          290.8,
+          449.0,
+          520.0,
+          463.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": " of a stage, its queue grows until the",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        466.0,
+        520.0,
+        480.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          466.0,
+          520.0,
+          480.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "bound is hit and upstream stages stall. Choosing a single bound for all",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        483.0,
+        446.05,
+        497.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          483.0,
+          446.05,
+          497.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "inputs is therefore a compromise between memory use and throughput.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 8,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       830,
+       1040.0,
+       994
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "body",
+      "raw_unit": ""
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        415.0,
+        520.0,
+        429.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Modern pipelines split a job into stages such as parsing, layout and",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        432.0,
+        520.0,
+        446.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "rendering, and connect them with bounded queues. When the arrival rate",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        449.0,
+        235.7,
+        463.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "exceeds the service rate ",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        235.7,
+        449.0,
+        290.8,
+        463.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.97,
+       "text": "$\\mu_k$",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        290.8,
+        449.0,
+        520.0,
+        463.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": " of a stage, its queue grows until the",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        466.0,
+        520.0,
+        480.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "bound is hit and upstream stages stall. Choosing a single bound for all",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        483.0,
+        446.05,
+        497.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "inputs is therefore a compromise between memory use and throughput.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       830,
+       1040.0,
+       994
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "body",
+      "raw_text_excerpt": "Modern pipelines split a job into stages such as parsing, layout and rendering, and connect them with bounded queues. When the arrival rate exceeds the service rate $\\mu_k$ of a stage, its queue grows",
+      "raw_type": "text"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Modern pipelines split a job into stages such as parsing, layout and rendering, and connect them with bounded queues. When the arrival rate exceeds the service rate $\\mu_k$ of a stage, its queue grows until the bound is hit and upstream stages stall. Choosing a single bound for all inputs is therefore a compromise between memory use and throughput.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      505.0,
+      520.0,
+      553.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0009",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "因此，缓冲区大小应当随负载变化。我们把每个阶段的队列深度 q 视为可观测量，",
+       "并用一个比例控制器在运行时调整上限 b，使其既能吸收短时突发，又不会长期占用",
+       "过多内存。第 2 节给出具体的更新规则。"
+      ],
+      "text": "因此，缓冲区大小应当随负载变化。我们把每个阶段的队列深度 q 视为可观测量，并用一个比例控制器在运行时调整上限 b，使其既能吸收短时突发，又不会长期占用过多内存。第 2 节给出具体的更新规则。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       505.0,
+       520.0,
+       553.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        505.0,
+        520.0,
+        553.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          505.0,
+          520.0,
+          519.0
+         ],
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "因此，缓冲区大小应当随负载变化。我们把每个阶段的队列深度 q 视为可观测量，",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          75.0,
+          522.0,
+          520.0,
+          536.0
+         ],
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "并用一个比例控制器在运行时调整上限 b，使其既能吸收短时突发，又不会长期占用",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          75.0,
+          539.0,
+          281.5,
+          553.0
+         ],
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "过多内存。第 2 节给出具体的更新规则。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 9,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1010,
+       1040.0,
+       1106
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "body",
+      "raw_unit": ""
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        505.0,
+        520.0,
+        519.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "因此，缓冲区大小应当随负载变化。我们把每个阶段的队列深度 q 视为可观测量，",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        522.0,
+        520.0,
+        536.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "并用一个比例控制器在运行时调整上限 b，使其既能吸收短时突发，又不会长期占用",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        539.0,
+        281.5,
+        553.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "过多内存。第 2 节给出具体的更新规则。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1010,
+       1040.0,
+       1106
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "body",
+      "raw_text_excerpt": "因此，缓冲区大小应当随负载变化。我们把每个阶段的队列深度 q 视为可观测量，并用一个比例控制器在运行时调整上限 b，使其既能吸收短时突发，又不会长期占用过多内存。第 2 节给出具体的更新规则。",
+      "raw_type": "text"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "因此，缓冲区大小应当随负载变化。我们把每个阶段的队列深度 q 视为可观测量，并用一个比例控制器在运行时调整上限 b，使其既能吸收短时突发，又不会长期占用过多内存。第 2 节给出具体的更新规则。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      175.0,
+      565.0,
+      420.0,
+      700.0
+     ],
+     "block_class": "image",
+     "block_id": "p001-b0010",
+     "content": {
+      "asset_id": "fig-queue-depth",
+      "asset_ids": [
+       "fig-queue-depth"
+      ],
+      "kind": "image",
+      "text": ""
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       175.0,
+       565.0,
+       420.0,
+       700.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [],
+     "metadata": {
+      "asset_key": "fig-queue-depth",
+      "asset_url": "assets/fig-queue-depth.png"
+     },
+     "order": 10,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:image"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       350,
+       1130,
+       840,
+       1400
+      ],
+      "raw_label": "image",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "figure",
+      "raw_unit": ""
+     },
+     "reading_order": 10,
+     "segments": [],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       350,
+       1130,
+       840,
+       1400
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "figure",
+      "raw_text_excerpt": "",
+      "raw_type": "image"
+     },
+     "structure_role": "",
+     "sub_type": "figure",
+     "tags": [],
+     "text": "",
+     "type": "image"
+    },
+    {
+     "bbox": [
+      125.0,
+      707.5,
+      429.3,
+      738.5
+     ],
+     "block_class": "caption",
+     "block_id": "p001-b0011",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Figure 1: Queue depth of the layout stage over a 60 s burst,",
+       "with a fixed bound (dashed) and the adaptive bound (solid)."
+      ],
+      "text": "Figure 1: Queue depth of the layout stage over a 60 s burst, with a fixed bound (dashed) and the adaptive bound (solid).",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       125.0,
+       707.5,
+       429.3,
+       738.5
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        125.0,
+        707.5,
+        429.3,
+        721.5
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          125.0,
+          707.5,
+          429.3,
+          721.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Figure 1: Queue depth of the layout stage over a 60 s burst,",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        125.0,
+        724.5,
+        425.0,
+        738.5
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          125.0,
+          724.5,
+          425.0,
+          738.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "with a fixed bound (dashed) and the adaptive bound (solid).",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 11,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:figure_caption"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       250,
+       1415,
+       858.6,
+       1477
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "figure_caption",
+      "raw_unit": ""
+     },
+     "reading_order": 11,
+     "segments": [
+      {
+       "bbox": [
+        125.0,
+        707.5,
+        429.3,
+        721.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Figure 1: Queue depth of the layout stage over a 60 s burst,",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        125.0,
+        724.5,
+        425.0,
+        738.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "with a fixed bound (dashed) and the adaptive bound (solid).",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       250,
+       1415,
+       858.6,
+       1477
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "figure_caption",
+      "raw_text_excerpt": "Figure 1: Queue depth of the layout stage over a 60 s burst, with a fixed bound (dashed) and the adaptive bound (solid).",
+      "raw_type": "text"
+     },
+     "structure_role": "metadata",
+     "sub_type": "figure_caption",
+     "tags": [],
+     "text": "Figure 1: Queue depth of the layout stage over a 60 s burst, with a fixed bound (dashed) and the adaptive bound (solid).",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      755.0,
+      364.4,
+      768.0
+     ],
+     "block_class": "footnote",
+     "block_id": "p001-b0012",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1 Throughput is measured in pages per second on a single worker."
+      ],
+      "text": "1 Throughput is measured in pages per second on a single worker.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       755.0,
+       364.4,
+       768.0
+      ]
+     },
+     "layout_role": "footnote",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        755.0,
+        364.4,
+        768.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          755.0,
+          364.4,
+          768.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "1 Throughput is measured in pages per second on a single worker.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 12,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footnote"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1510,
+       728.8,
+       1536
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "footnote",
+      "raw_unit": ""
+     },
+     "reading_order": 12,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        755.0,
+        364.4,
+        768.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "1 Throughput is measured in pages per second on a single worker.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1510,
+       728.8,
+       1536
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "footnote",
+      "raw_text_excerpt": "1 Throughput is measured in pages per second on a single worker.",
+      "raw_type": "text"
+     },
+     "structure_role": "footnote",
+     "sub_type": "footnote",
+     "tags": [],
+     "text": "1 Throughput is measured in pages per second on a single worker.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      800.0,
+      270.4,
+      813.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0013",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "(c) 2026 Example Systems Lab. Internal draft."
+      ],
+      "text": "(c) 2026 Example Systems Lab. Internal draft.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       800.0,
+       270.4,
+       813.0
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        800.0,
+        270.4,
+        813.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          800.0,
+          270.4,
+          813.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "(c) 2026 Example Systems Lab. Internal draft.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 13,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1600,
+       540.8,
+       1626
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "footer",
+      "raw_unit": ""
+     },
+     "reading_order": 13,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        800.0,
+        270.4,
+        813.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "(c) 2026 Example Systems Lab. Internal draft.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1600,
+       540.8,
+       1626
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "footer",
+      "raw_text_excerpt": "(c) 2026 Example Systems Lab. Internal draft.",
+      "raw_type": "text"
+     },
+     "structure_role": "metadata",
+     "sub_type": "footer",
+     "tags": [],
+     "text": "(c) 2026 Example Systems Lab. Internal draft.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      290.0,
+      800.0,
+      295.0,
+      813.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0014",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1"
+      ],
+      "text": "1",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       290.0,
+       800.0,
+       295.0,
+       813.0
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        290.0,
+        800.0,
+        295.0,
+        813.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          290.0,
+          800.0,
+          295.0,
+          813.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "1",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 14,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       580,
+       1600,
+       590.0,
+       1626
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "page_number",
+      "raw_unit": ""
+     },
+     "reading_order": 14,
+     "segments": [
+      {
+       "bbox": [
+        290.0,
+        800.0,
+        295.0,
+        813.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "1",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       580,
+       1600,
+       590.0,
+       1626
+      ],
+      "raw_page_index": 0,
+      "raw_sub_type": "page_number",
+      "raw_text_excerpt": "1",
+      "raw_type": "text"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [],
+     "text": "1",
+     "type": "text"
+    }
+   ],
+   "height": 842.0,
+   "page": 1,
+   "page_index": 0,
+   "unit": "pt",
+   "width": 595.0
+  },
+  {
+   "blocks": [
+    {
+     "bbox": [
+      75.0,
+      35.0,
+      297.4,
+      48.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Technical Note TN-2026-07 | Adaptive Buffer Sizing"
+      ],
+      "text": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       35.0,
+       297.4,
+       48.0
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        35.0,
+        297.4,
+        48.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          35.0,
+          297.4,
+          48.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 0,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       70,
+       594.8,
+       96
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "header",
+      "raw_unit": ""
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        35.0,
+        297.4,
+        48.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       70,
+       594.8,
+       96
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "header",
+      "raw_text_excerpt": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+      "raw_type": "text"
+     },
+     "structure_role": "metadata",
+     "sub_type": "header",
+     "tags": [],
+     "text": "Technical Note TN-2026-07  |  Adaptive Buffer Sizing",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      75.0,
+      129.051,
+      92.0
+     ],
+     "block_class": "title",
+     "block_id": "p002-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2 Method"
+      ],
+      "text": "2 Method",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       75.0,
+       129.051,
+       92.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        75.0,
+        129.051,
+        92.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          75.0,
+          129.051,
+          92.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "2 Method",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 1,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:heading"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       150,
+       258.1,
+       184
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "heading",
+      "raw_unit": ""
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        75.0,
+        129.051,
+        92.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "2 Method",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       150,
+       258.1,
+       184
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "heading",
+      "raw_text_excerpt": "2 Method",
+      "raw_type": "text"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [],
+     "text": "2 Method",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      100.0,
+      520.0,
+      165.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Let $q_t$ be the queue depth sampled at step t and $\\bar{q}$ the target depth.",
+       "The controller moves the bound b toward the target in proportion to",
+       "the error, then clips the result to a configured range so that a noisy",
+       "sample cannot shrink the buffer to zero or let it grow without limit:"
+      ],
+      "text": "Let $q_t$ be the queue depth sampled at step t and $\\bar{q}$ the target depth. The controller moves the bound b toward the target in proportion to the error, then clips the result to a configured range so that a noisy sample cannot shrink the buffer to zero or let it grow without limit:",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       100.0,
+       520.0,
+       165.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        100.0,
+        520.0,
+        114.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          100.0,
+          95.95,
+          114.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Let ",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          95.95,
+          100.0,
+          126.4,
+          114.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.97,
+         "text": "$q_t$",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          126.4,
+          100.0,
+          363.2,
+          114.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": " be the queue depth sampled at step t and ",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          363.2,
+          100.0,
+          422.8,
+          114.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.97,
+         "text": "$\\bar{q}$",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          422.8,
+          100.0,
+          520.0,
+          114.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": " the target depth.",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        117.0,
+        520.0,
+        131.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          117.0,
+          520.0,
+          131.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "The controller moves the bound b toward the target in proportion to",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        134.0,
+        520.0,
+        148.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          134.0,
+          520.0,
+          148.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "the error, then clips the result to a configured range so that a noisy",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        151.0,
+        425.15,
+        165.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          151.0,
+          425.15,
+          165.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "sample cannot shrink the buffer to zero or let it grow without limit:",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 2,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       200,
+       1040.0,
+       330
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "body",
+      "raw_unit": ""
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        100.0,
+        95.95,
+        114.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Let ",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        95.95,
+        100.0,
+        126.4,
+        114.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.97,
+       "text": "$q_t$",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        126.4,
+        100.0,
+        363.2,
+        114.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": " be the queue depth sampled at step t and ",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        363.2,
+        100.0,
+        422.8,
+        114.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.97,
+       "text": "$\\bar{q}$",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        422.8,
+        100.0,
+        520.0,
+        114.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": " the target depth.",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        117.0,
+        520.0,
+        131.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "The controller moves the bound b toward the target in proportion to",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        134.0,
+        520.0,
+        148.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "the error, then clips the result to a configured range so that a noisy",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        151.0,
+        425.15,
+        165.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "sample cannot shrink the buffer to zero or let it grow without limit:",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       200,
+       1040.0,
+       330
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "body",
+      "raw_text_excerpt": "Let $q_t$ be the queue depth sampled at step t and $\\bar{q}$ the target depth. The controller moves the bound b toward the target in proportion to the error, then clips the result to a configured rang",
+      "raw_type": "text"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Let $q_t$ be the queue depth sampled at step t and $\\bar{q}$ the target depth. The controller moves the bound b toward the target in proportion to the error, then clips the result to a configured range so that a noisy sample cannot shrink the buffer to zero or let it grow without limit:",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      165.0,
+      175.0,
+      430.0,
+      210.0
+     ],
+     "block_class": "formula",
+     "block_id": "p002-b0003",
+     "content": {
+      "kind": "formula",
+      "line_texts": [
+       "b_{t+1} = \\mathrm{clip}(b_t + \\eta (q_t - \\bar{q}), b_{\\min}, b_{\\max})"
+      ],
+      "text": "b_{t+1} = \\mathrm{clip}(b_t + \\eta (q_t - \\bar{q}), b_{\\min}, b_{\\max})",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       165.0,
+       175.0,
+       430.0,
+       210.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        170.0,
+        181.0,
+        425.0,
+        204.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          170.0,
+          181.0,
+          425.0,
+          204.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "display_formula",
+         "score": 0.93,
+         "text": "b_{t+1} = \\mathrm{clip}(b_t + \\eta (q_t - \\bar{q}), b_{\\min}, b_{\\max})",
+         "type": "formula"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 3,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:formula"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       330,
+       350,
+       860,
+       420
+      ],
+      "raw_label": "formula",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "display_formula",
+      "raw_unit": ""
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        170.0,
+        181.0,
+        425.0,
+        204.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "display_formula",
+       "score": 0.93,
+       "text": "b_{t+1} = \\mathrm{clip}(b_t + \\eta (q_t - \\bar{q}), b_{\\min}, b_{\\max})",
+       "type": "formula"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       330,
+       350,
+       860,
+       420
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "display_formula",
+      "raw_text_excerpt": "b_{t+1} = \\mathrm{clip}(b_t + \\eta (q_t - \\bar{q}), b_{\\min}, b_{\\max})",
+      "raw_type": "formula"
+     },
+     "structure_role": "",
+     "sub_type": "display_formula",
+     "tags": [],
+     "text": "b_{t+1} = \\mathrm{clip}(b_t + \\eta (q_t - \\bar{q}), b_{\\min}, b_{\\max})",
+     "type": "formula"
+    },
+    {
+     "bbox": [
+      75.0,
+      220.0,
+      520.0,
+      268.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "其中 eta 为步长，取值越大响应越快，但也越容易在突发结束后产生振荡。",
+       "实验中我们取 eta 为 0.25，并把上下限分别设为 64 个页面和 4096 个页面，",
+       "这一范围覆盖了所有测试负载。"
+      ],
+      "text": "其中 eta 为步长，取值越大响应越快，但也越容易在突发结束后产生振荡。实验中我们取 eta 为 0.25，并把上下限分别设为 64 个页面和 4096 个页面，这一范围覆盖了所有测试负载。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       220.0,
+       520.0,
+       268.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        220.0,
+        520.0,
+        244.0
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          220.0,
+          520.0,
+          244.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "其中 eta 为步长，取值越大响应越快，但也越容易在突发结束后产生振荡。实验中我们取 eta 为 0.25，并把上下限分别设为",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        244.0,
+        520.0,
+        268.0
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          244.0,
+          520.0,
+          268.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "64 个页面和 4096 个页面，这一范围覆盖了所有测试负载。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 4,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       440,
+       1040.0,
+       536
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "body",
+      "raw_unit": ""
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        220.0,
+        520.0,
+        234.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "其中 eta 为步长，取值越大响应越快，但也越容易在突发结束后产生振荡。",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        237.0,
+        520.0,
+        251.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "实验中我们取 eta 为 0.25，并把上下限分别设为 64 个页面和 4096 个页面，",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        254.0,
+        234.6,
+        268.0
+       ],
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "这一范围覆盖了所有测试负载。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       440,
+       1040.0,
+       536
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "body",
+      "raw_text_excerpt": "其中 eta 为步长，取值越大响应越快，但也越容易在突发结束后产生振荡。实验中我们取 eta 为 0.25，并把上下限分别设为 64 个页面和 4096 个页面，这一范围覆盖了所有测试负载。",
+      "raw_type": "text"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "其中 eta 为步长，取值越大响应越快，但也越容易在突发结束后产生振荡。实验中我们取 eta 为 0.25，并把上下限分别设为 64 个页面和 4096 个页面，这一范围覆盖了所有测试负载。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      100.0,
+      285.0,
+      429.5,
+      299.0
+     ],
+     "block_class": "caption",
+     "block_id": "p002-b0005",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Table 1: Peak memory and p99 latency for three buffer policies."
+      ],
+      "text": "Table 1: Peak memory and p99 latency for three buffer policies.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       100.0,
+       285.0,
+       429.5,
+       299.0
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        100.0,
+        285.0,
+        429.5,
+        299.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          100.0,
+          285.0,
+          429.5,
+          299.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Table 1: Peak memory and p99 latency for three buffer policies.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 5,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:table_caption"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       200,
+       570,
+       859.0,
+       598
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "table_caption",
+      "raw_unit": ""
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        100.0,
+        285.0,
+        429.5,
+        299.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Table 1: Peak memory and p99 latency for three buffer policies.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       200,
+       570,
+       859.0,
+       598
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "table_caption",
+      "raw_text_excerpt": "Table 1: Peak memory and p99 latency for three buffer policies.",
+      "raw_type": "text"
+     },
+     "structure_role": "metadata",
+     "sub_type": "table_caption",
+     "tags": [],
+     "text": "Table 1: Peak memory and p99 latency for three buffer policies.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      100.0,
+      305.0,
+      495.0,
+      430.0
+     ],
+     "block_class": "table",
+     "block_id": "p002-b0006",
+     "content": {
+      "kind": "table",
+      "line_texts": [
+       "Policy | Peak memory (MB) | p99 latency (ms)",
+       "Fixed 256 | 812 | 140",
+       "Fixed 4096 | 3190 | 118",
+       "Adaptive | 476 | 127"
+      ],
+      "text": "Policy | Peak memory (MB) | p99 latency (ms)\nFixed 256 | 812 | 140\nFixed 4096 | 3190 | 118\nAdaptive | 476 | 127",
+      "text_flow": "preserve_lines"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       100.0,
+       305.0,
+       495.0,
+       430.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        105.0,
+        312.5,
+        484.5,
+        326.5
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          105.0,
+          312.5,
+          136.2,
+          326.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "Policy",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          270.0,
+          312.5,
+          366.0,
+          326.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "Peak memory (MB)",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          400.0,
+          312.5,
+          484.5,
+          326.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "p99 latency (ms)",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        105.0,
+        338.5,
+        418.0,
+        352.5
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          105.0,
+          338.5,
+          153.95,
+          352.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "Fixed 256",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          270.0,
+          338.5,
+          288.0,
+          352.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "812",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          400.0,
+          338.5,
+          418.0,
+          352.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "140",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        105.0,
+        364.5,
+        418.0,
+        378.5
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          105.0,
+          364.5,
+          159.95,
+          378.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "Fixed 4096",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          270.0,
+          364.5,
+          294.0,
+          378.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "3190",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          400.0,
+          364.5,
+          418.0,
+          378.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "118",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        105.0,
+        390.5,
+        418.0,
+        404.5
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          105.0,
+          390.5,
+          148.2,
+          404.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "Adaptive",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          270.0,
+          390.5,
+          288.0,
+          404.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "476",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          400.0,
+          390.5,
+          418.0,
+          404.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "table_cell",
+         "score": 0.96,
+         "text": "127",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 6,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:table"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       200,
+       610,
+       990,
+       860
+      ],
+      "raw_label": "table",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "table",
+      "raw_unit": ""
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        105.0,
+        312.5,
+        136.2,
+        326.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "Policy",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        270.0,
+        312.5,
+        366.0,
+        326.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "Peak memory (MB)",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        400.0,
+        312.5,
+        484.5,
+        326.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "p99 latency (ms)",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        105.0,
+        338.5,
+        153.95,
+        352.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "Fixed 256",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        270.0,
+        338.5,
+        288.0,
+        352.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "812",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        400.0,
+        338.5,
+        418.0,
+        352.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "140",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        105.0,
+        364.5,
+        159.95,
+        378.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "Fixed 4096",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        270.0,
+        364.5,
+        294.0,
+        378.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "3190",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        400.0,
+        364.5,
+        418.0,
+        378.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "118",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        105.0,
+        390.5,
+        148.2,
+        404.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "Adaptive",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        270.0,
+        390.5,
+        288.0,
+        404.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "476",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        400.0,
+        390.5,
+        418.0,
+        404.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "table_cell",
+       "score": 0.96,
+       "text": "127",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       200,
+       610,
+       990,
+       860
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "table",
+      "raw_text_excerpt": "Policy | Peak memory (MB) | p99 latency (ms)\nFixed 256 | 812 | 140\nFixed 4096 | 3190 | 118\nAdaptive | 476 | 127",
+      "raw_type": "table"
+     },
+     "structure_role": "",
+     "sub_type": "table",
+     "tags": [],
+     "text": "Policy | Peak memory (MB) | p99 latency (ms)\nFixed 256 | 812 | 140\nFixed 4096 | 3190 | 118\nAdaptive | 476 | 127",
+     "type": "table"
+    },
+    {
+     "bbox": [
+      95.0,
+      450.0,
+      339.2,
+      498.0
+     ],
+     "block_class": "code",
+     "block_id": "p002-b0007",
+     "content": {
+      "kind": "code",
+      "line_texts": [
+       "def resize(b, q, target, eta=0.25):",
+       "b = b + eta * (q - target)",
+       "return max(64, min(4096, int(b)))"
+      ],
+      "text": "def resize(b, q, target, eta=0.25):\n    b = b + eta * (q - target)\n    return max(64, min(4096, int(b)))",
+      "text_flow": "preserve_lines"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       95.0,
+       450.0,
+       339.2,
+       498.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        95.0,
+        450.0,
+        326.0,
+        464.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          95.0,
+          450.0,
+          326.0,
+          464.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "def resize(b, q, target, eta=0.25):",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        95.0,
+        467.0,
+        293.0,
+        481.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          95.0,
+          467.0,
+          293.0,
+          481.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "    b = b + eta * (q - target)",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        95.0,
+        484.0,
+        339.2,
+        498.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          95.0,
+          484.0,
+          339.2,
+          498.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "    return max(64, min(4096, int(b)))",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 7,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:code"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       190,
+       900,
+       678.4,
+       996
+      ],
+      "raw_label": "code",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "code",
+      "raw_unit": ""
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        95.0,
+        450.0,
+        326.0,
+        464.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "def resize(b, q, target, eta=0.25):",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        95.0,
+        467.0,
+        293.0,
+        481.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "    b = b + eta * (q - target)",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        95.0,
+        484.0,
+        339.2,
+        498.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "    return max(64, min(4096, int(b)))",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       190,
+       900,
+       678.4,
+       996
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "code",
+      "raw_text_excerpt": "def resize(b, q, target, eta=0.25):\n    b = b + eta * (q - target)\n    return max(64, min(4096, int(b)))",
+      "raw_type": "code"
+     },
+     "structure_role": "",
+     "sub_type": "code",
+     "tags": [],
+     "text": "def resize(b, q, target, eta=0.25):\n    b = b + eta * (q - target)\n    return max(64, min(4096, int(b)))",
+     "type": "code"
+    },
+    {
+     "bbox": [
+      75.0,
+      535.0,
+      150.3,
+      552.0
+     ],
+     "block_class": "title",
+     "block_id": "p002-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "3 Conclusion"
+      ],
+      "text": "3 Conclusion",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       535.0,
+       150.3,
+       552.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        535.0,
+        150.3,
+        552.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          535.0,
+          150.3,
+          552.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "3 Conclusion",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 8,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:heading"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1070,
+       300.6,
+       1104
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "heading",
+      "raw_unit": ""
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        535.0,
+        150.3,
+        552.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "3 Conclusion",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1070,
+       300.6,
+       1104
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "heading",
+      "raw_text_excerpt": "3 Conclusion",
+      "raw_type": "text"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [],
+     "text": "3 Conclusion",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      560.0,
+      520.0,
+      608.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0009",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Resizing buffers from observed queue depth removes most of the memory",
+       "cost of burst tolerance at a small latency price. We plan to extend the",
+       "controller to stages that share a common memory pool."
+      ],
+      "text": "Resizing buffers from observed queue depth removes most of the memory cost of burst tolerance at a small latency price. We plan to extend the controller to stages that share a common memory pool.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       560.0,
+       520.0,
+       608.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        560.0,
+        520.0,
+        574.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          560.0,
+          520.0,
+          574.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "Resizing buffers from observed queue depth removes most of the memory",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        577.0,
+        520.0,
+        591.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          577.0,
+          520.0,
+          591.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "cost of burst tolerance at a small latency price. We plan to extend the",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        594.0,
+        363.7,
+        608.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          594.0,
+          363.7,
+          608.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "controller to stages that share a common memory pool.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 9,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1120,
+       1040.0,
+       1216
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "body",
+      "raw_unit": ""
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        560.0,
+        520.0,
+        574.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "Resizing buffers from observed queue depth removes most of the memory",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        577.0,
+        520.0,
+        591.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "cost of burst tolerance at a small latency price. We plan to extend the",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        594.0,
+        363.7,
+        608.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "controller to stages that share a common memory pool.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1120,
+       1040.0,
+       1216
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "body",
+      "raw_text_excerpt": "Resizing buffers from observed queue depth removes most of the memory cost of burst tolerance at a small latency price. We plan to extend the controller to stages that share a common memory pool.",
+      "raw_type": "text"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Resizing buffers from observed queue depth removes most of the memory cost of burst tolerance at a small latency price. We plan to extend the controller to stages that share a common memory pool.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      630.0,
+      142.2,
+      647.0
+     ],
+     "block_class": "title",
+     "block_id": "p002-b0010",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "References"
+      ],
+      "text": "References",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       630.0,
+       142.2,
+       647.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        630.0,
+        142.2,
+        647.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          630.0,
+          142.2,
+          647.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "References",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 10,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:heading"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1260,
+       284.4,
+       1294
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "heading",
+      "raw_unit": ""
+     },
+     "reading_order": 10,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        630.0,
+        142.2,
+        647.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "References",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1260,
+       284.4,
+       1294
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "heading",
+      "raw_text_excerpt": "References",
+      "raw_type": "text"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [],
+     "text": "References",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      655.0,
+      450.6,
+      686.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0011",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "[1] A. Rivera and K. Sato. Backpressure in staged event-driven servers.",
+       "Journal of Systems Practice, 12(3):201-219, 2019."
+      ],
+      "text": "[1] A. Rivera and K. Sato. Backpressure in staged event-driven servers.     Journal of Systems Practice, 12(3):201-219, 2019.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       655.0,
+       450.6,
+       686.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        655.0,
+        450.6,
+        669.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          655.0,
+          450.6,
+          669.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "[1] A. Rivera and K. Sato. Backpressure in staged event-driven servers.",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        672.0,
+        346.2,
+        686.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          672.0,
+          346.2,
+          686.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "    Journal of Systems Practice, 12(3):201-219, 2019.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 11,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:reference_entry"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1310,
+       901.2,
+       1372
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "reference_entry",
+      "raw_unit": ""
+     },
+     "reading_order": 11,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        655.0,
+        450.6,
+        669.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "[1] A. Rivera and K. Sato. Backpressure in staged event-driven servers.",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        672.0,
+        346.2,
+        686.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "    Journal of Systems Practice, 12(3):201-219, 2019.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "reference",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1310,
+       901.2,
+       1372
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "reference_entry",
+      "raw_text_excerpt": "[1] A. Rivera and K. Sato. Backpressure in staged event-driven servers.     Journal of Systems Practice, 12(3):201-219, 2019.",
+      "raw_type": "text"
+     },
+     "structure_role": "reference_entry",
+     "sub_type": "reference_entry",
+     "tags": [],
+     "text": "[1] A. Rivera and K. Sato. Backpressure in staged event-driven servers.     Journal of Systems Practice, 12(3):201-219, 2019.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      692.5,
+      475.55,
+      706.5
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0012",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "[2] H. Zhao. 面向流水线的自适应队列长度研究. 计算机工程, 45(8):77-84, 2021."
+      ],
+      "text": "[2] H. Zhao. 面向流水线的自适应队列长度研究. 计算机工程, 45(8):77-84, 2021.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       692.5,
+       475.55,
+       706.5
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        692.5,
+        475.55,
+        706.5
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          692.5,
+          475.55,
+          706.5
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "[2] H. Zhao. 面向流水线的自适应队列长度研究. 计算机工程, 45(8):77-84, 2021.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 12,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:reference_entry"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1385,
+       951.1,
+       1413
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "reference_entry",
+      "raw_unit": ""
+     },
+     "reading_order": 12,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        692.5,
+        475.55,
+        706.5
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "[2] H. Zhao. 面向流水线的自适应队列长度研究. 计算机工程, 45(8):77-84, 2021.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "reference",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1385,
+       951.1,
+       1413
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "reference_entry",
+      "raw_text_excerpt": "[2] H. Zhao. 面向流水线的自适应队列长度研究. 计算机工程, 45(8):77-84, 2021.",
+      "raw_type": "text"
+     },
+     "structure_role": "reference_entry",
+     "sub_type": "reference_entry",
+     "tags": [],
+     "text": "[2] H. Zhao. 面向流水线的自适应队列长度研究. 计算机工程, 45(8):77-84, 2021.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      720.0,
+      484.7,
+      751.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0013",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "[3] D. Okafor, M. Lindqvist, and J. Park. Control-theoretic buffer tuning for",
+       "document services. Proc. of the Workshop on Data Systems, pp. 55-63, 2023."
+      ],
+      "text": "[3] D. Okafor, M. Lindqvist, and J. Park. Control-theoretic buffer tuning for     document services. Proc. of the Workshop on Data Systems, pp. 55-63, 2023.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       720.0,
+       484.7,
+       751.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        720.0,
+        463.3,
+        734.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          720.0,
+          463.3,
+          734.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "[3] D. Okafor, M. Lindqvist, and J. Park. Control-theoretic buffer tuning for",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        75.0,
+        737.0,
+        484.7,
+        751.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          737.0,
+          484.7,
+          751.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "    document services. Proc. of the Workshop on Data Systems, pp. 55-63, 2023.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 13,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:reference_entry"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1440,
+       969.4,
+       1502
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "reference_entry",
+      "raw_unit": ""
+     },
+     "reading_order": 13,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        720.0,
+        463.3,
+        734.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "[3] D. Okafor, M. Lindqvist, and J. Park. Control-theoretic buffer tuning for",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        75.0,
+        737.0,
+        484.7,
+        751.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "    document services. Proc. of the Workshop on Data Systems, pp. 55-63, 2023.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "reference",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1440,
+       969.4,
+       1502
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "reference_entry",
+      "raw_text_excerpt": "[3] D. Okafor, M. Lindqvist, and J. Park. Control-theoretic buffer tuning for     document services. Proc. of the Workshop on Data Systems, pp. 55-63, 2023.",
+      "raw_type": "text"
+     },
+     "structure_role": "reference_entry",
+     "sub_type": "reference_entry",
+     "tags": [],
+     "text": "[3] D. Okafor, M. Lindqvist, and J. Park. Control-theoretic buffer tuning for     document services. Proc. of the Workshop on Data Systems, pp. 55-63, 2023.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      75.0,
+      800.0,
+      270.4,
+      813.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0014",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "(c) 2026 Example Systems Lab. Internal draft."
+      ],
+      "text": "(c) 2026 Example Systems Lab. Internal draft.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       75.0,
+       800.0,
+       270.4,
+       813.0
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        75.0,
+        800.0,
+        270.4,
+        813.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          75.0,
+          800.0,
+          270.4,
+          813.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "(c) 2026 Example Systems Lab. Internal draft.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 14,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1600,
+       540.8,
+       1626
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "footer",
+      "raw_unit": ""
+     },
+     "reading_order": 14,
+     "segments": [
+      {
+       "bbox": [
+        75.0,
+        800.0,
+        270.4,
+        813.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "(c) 2026 Example Systems Lab. Internal draft.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       150,
+       1600,
+       540.8,
+       1626
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "footer",
+      "raw_text_excerpt": "(c) 2026 Example Systems Lab. Internal draft.",
+      "raw_type": "text"
+     },
+     "structure_role": "metadata",
+     "sub_type": "footer",
+     "tags": [],
+     "text": "(c) 2026 Example Systems Lab. Internal draft.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      290.0,
+      800.0,
+      295.0,
+      813.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0015",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2"
+      ],
+      "text": "2",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       290.0,
+       800.0,
+       295.0,
+       813.0
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        290.0,
+        800.0,
+        295.0,
+        813.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          290.0,
+          800.0,
+          295.0,
+          813.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "2",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {},
+     "order": 15,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       580,
+       1600,
+       590.0,
+       1626
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "page_number",
+      "raw_unit": ""
+     },
+     "reading_order": 15,
+     "segments": [
+      {
+       "bbox": [
+        290.0,
+        800.0,
+        295.0,
+        813.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "2",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "generic_flat_ocr",
+      "raw_bbox": [
+       580,
+       1600,
+       590.0,
+       1626
+      ],
+      "raw_page_index": 1,
+      "raw_sub_type": "page_number",
+      "raw_text_excerpt": "2",
+      "raw_type": "text"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [],
+     "text": "2",
+     "type": "text"
+    }
+   ],
+   "height": 842.0,
+   "page": 2,
+   "page_index": 1,
+   "unit": "pt",
+   "width": 595.0
+  }
+ ],
+ "schema": "normalized_document_v1",
+ "schema_version": "1.1",
+ "source": {
+  "provider": "generic_flat_ocr",
+  "provider_version": "",
+  "raw_files": {
+   "source_json": "payload.json"
+  }
+ }
+}

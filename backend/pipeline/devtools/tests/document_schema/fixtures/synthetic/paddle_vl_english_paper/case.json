@@ -1,0 +1,267 @@
+{
+ "provider": "paddle",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   612,
+   792
+  ],
+  [
+   612,
+   792
+  ],
+  [
+   612,
+   792
+  ]
+ ],
+ "raw_pages": [
+  [
+   1224,
+   1584
+  ],
+  [
+   1224,
+   1584
+  ],
+  [
+   1224,
+   1584
+  ]
+ ],
+ "description": "Synthetic PaddleOCR-VL layoutParsingResults payload: 3-page two-column English materials-science paper, 2x pixel coordinates (1224x1584) for 612x792 pt PDF pages. Every block bbox and label is hand-designed.",
+ "features": [
+  {
+   "feature": "doc_title",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[1]",
+   "expect": "text/title, structure_role=document_title, translate=true"
+  },
+  {
+   "feature": "authors line as text between doc_title and abstract",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[2]",
+   "expect": "front-matter text -> metadata (front_matter_text), translate=false"
+  },
+  {
+   "feature": "affiliations (text with \\n)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[3]",
+   "expect": "front-matter text -> metadata, 2 explicit lines"
+  },
+  {
+   "feature": "abstract (6 explicit lines joined by \\n)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[4]",
+   "expect": "text/body, semantic_role=abstract, translate=true, line_texts has 6 entries"
+  },
+  {
+   "feature": "keywords line as text after abstract, before first heading",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[5]",
+   "expect": "text/body, translate=true: it is the first non-metadata text, so it STARTS the body flow (Keywords: is no longer a metadata cue)"
+  },
+  {
+   "feature": "paragraph_title heading '1. Introduction'",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[6]",
+   "expect": "text/heading, translate=true"
+  },
+  {
+   "feature": "left-column body with two inline $...$ formulas + 2 inline_formula layout boxes",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[7]",
+   "expect": "body; 2 inline_formula segments; provider_inline_formula_bbox_count may be 2 if boxes lie inside the (tightened) bbox"
+  },
+  {
+   "feature": "intra-page continuation head (same group_id/global_group_id, left col bottom)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[8]",
+   "expect": "continuation_hint.role=head, scope=intra_page"
+  },
+  {
+   "feature": "intra-page continuation tail (right col top, starts lowercase)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[9]",
+   "expect": "continuation_hint.role=tail, scope=intra_page"
+  },
+  {
+   "feature": "image (Figure 1) with src= link",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[10]",
+   "expect": "image/image_body, asset_key=imgs/img_in_image_box_628_950_1124_1180.jpg, asset_resolved=true"
+  },
+  {
+   "feature": "figure_title 'Figure 1.'",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[11]",
+   "expect": "text/figure_caption bound to the preceding image (adjacent relation, previous)"
+  },
+  {
+   "feature": "cross-page continuation head (right col bottom of page 1)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[12]",
+   "expect": "continuation_hint.role=head, scope=cross_page"
+  },
+  {
+   "feature": "footnote",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[13]",
+   "expect": "text/footnote, translate=false"
+  },
+  {
+   "feature": "footer",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[14]",
+   "expect": "text/footer, translate=false"
+  },
+  {
+   "feature": "number (page number)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[15]",
+   "expect": "text/page_number, translate=false"
+  },
+  {
+   "feature": "header",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[0]",
+   "expect": "text/header, translate=false"
+  },
+  {
+   "feature": "cross-page continuation tail (left col top of page 2)",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[1]",
+   "expect": "continuation_hint.role=tail, scope=cross_page; same continuation group id as pages[0] cont_cross_head"
+  },
+  {
+   "feature": "display_formula",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[2]",
+   "expect": "formula/display_formula, translate=false"
+  },
+  {
+   "feature": "formula_number '(1)'",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[3]",
+   "expect": "text/formula_number, translate=false"
+  },
+  {
+   "feature": "body with 5 inline formulas but no matching inline_formula layout boxes",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[4]",
+   "expect": "5 inline_formula segments, no provider bboxes"
+  },
+  {
+   "feature": "algorithm (pseudo-code with \\n lines)",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[7]",
+   "expect": "code/code_block, translate=false"
+  },
+  {
+   "feature": "image (Figure 2) with src= link",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[9]",
+   "expect": "image/image_body with asset_key"
+  },
+  {
+   "feature": "figure_title 'Figure 2.'",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[10]",
+   "expect": "text/figure_caption"
+  },
+  {
+   "feature": "vision_footnote containing 'stable' about the figure (substring regression)",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[11]",
+   "expect": "INTENDED footnote_target=image/image_footnote; adapter test is `'table' in lowered`, so 'stable' may wrongly yield table_footnote"
+  },
+  {
+   "feature": "figure_title 'Table 1.' above table",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[14]",
+   "expect": "text/table_caption bound to the following table (next)"
+  },
+  {
+   "feature": "table (HTML, 4 <tr>)",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[15]",
+   "expect": "table/table_html"
+  },
+  {
+   "feature": "vision_footnote 'Table note:'",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[16]",
+   "expect": "text/table_footnote, footnote_target=table"
+  },
+  {
+   "feature": "chart (no src=; resolved via _box_ filename in markdown.images)",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[3]",
+   "expect": "image/image_body, asset_key=imgs/img_in_chart_box_100_440_596_720.jpg via bbox match"
+  },
+  {
+   "feature": "figure_title 'Figure 3.' under chart",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[4]",
+   "expect": "text/figure_caption bound to chart (previous)"
+  },
+  {
+   "feature": "acknowledgement text with 'funded by' cue",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[8]",
+   "expect": "metadata_text_cue -> metadata, translate=false (short text)"
+  },
+  {
+   "feature": "'References' heading",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[9]",
+   "expect": "reference_section_heading -> metadata, translate=false"
+  },
+  {
+   "feature": "reference_content #1",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[10]",
+   "expect": "text/reference_entry, translate=false"
+  },
+  {
+   "feature": "reference_content #2",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[11]",
+   "expect": "text/reference_entry, translate=false"
+  },
+  {
+   "feature": "reference_content #3",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[12]",
+   "expect": "text/reference_entry, translate=false"
+  },
+  {
+   "feature": "reference_content #4",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[13]",
+   "expect": "text/reference_entry, translate=false"
+  },
+  {
+   "feature": "reference_content #5",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[14]",
+   "expect": "text/reference_entry, translate=false"
+  },
+  {
+   "feature": "reference_content #6",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[15]",
+   "expect": "text/reference_entry, translate=false"
+  }
+ ],
+ "tricky_points": [
+  "vision_footnote 'The SB-3 treated device remains stable ...' contains 'table' as a substring of 'stable'; resolve_vision_footnote uses `'table' in lowered`, so it is expected to be misclassified as table_footnote (intended: image_footnote).",
+  "Text blocks before the body-flow start (authors, affiliations: before the abstract) become front-matter metadata and are not translated; the Keywords line right after the abstract is classified body and translated.",
+  "Acknowledgement sentence with 'funded by' (<=40 words) is classified as metadata and not translated even though it is real prose.",
+  "Continuation pairs are tied by global_group_id; local group_id differs across pages for the cross-page pair. header/footer/number have block_order=null.",
+  "Page-1 continuation group is left-column-bottom -> right-column-top (column break within one page).",
+  "Chart has no src= in block_content; its asset is found only through the _box_x0_y0_x1_y1 filename match against markdown.images.",
+  "bbox is in px (2x); adapter heuristics (pseudo-line pitch, tighten_text_bbox) assume pt, so body bboxes may be tightened.",
+  "Two figure_title blocks neighbour one image/table each; Figure 1 caption sits between an image and a body text block (only the image is a compatible target)."
+ ]
+}

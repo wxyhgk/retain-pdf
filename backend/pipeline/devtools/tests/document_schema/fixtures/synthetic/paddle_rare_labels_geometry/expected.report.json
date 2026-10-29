@@ -1,0 +1,89 @@
+{
+ "defaults": {
+  "block_defaults": {},
+  "blocks_seen": 28,
+  "document_defaults": {},
+  "page_defaults": {},
+  "pages_seen": 3
+ },
+ "document_id": "paddle_rare_labels_geometry",
+ "provider": "paddle",
+ "provider_signals": {
+  "pages": [
+   {
+    "column_layout_mode": "single",
+    "page_index": 0,
+    "peer_block_absorbed_text_block_ids": [],
+    "peer_block_absorbed_text_count": 0,
+    "suspected_block_ids": [],
+    "suspected_cross_column_merge_block_count": 0,
+    "text_missing_but_bbox_present_block_ids": [],
+    "text_missing_but_bbox_present_count": 0
+   },
+   {
+    "column_layout_mode": "double",
+    "page_index": 1,
+    "peer_block_absorbed_text_block_ids": [],
+    "peer_block_absorbed_text_count": 0,
+    "suspected_block_ids": [],
+    "suspected_cross_column_merge_block_count": 0,
+    "text_missing_but_bbox_present_block_ids": [],
+    "text_missing_but_bbox_present_count": 0
+   },
+   {
+    "column_layout_mode": "double",
+    "page_index": 2,
+    "peer_block_absorbed_text_block_ids": [
+     "p003-b0001"
+    ],
+    "peer_block_absorbed_text_count": 1,
+    "suspected_block_ids": [
+     "p003-b0001",
+     "p003-b0002"
+    ],
+    "suspected_cross_column_merge_block_count": 2,
+    "text_missing_but_bbox_present_block_ids": [
+     "p003-b0002"
+    ],
+    "text_missing_but_bbox_present_count": 1
+   }
+  ],
+  "provider": "paddle",
+  "suspicious_cross_column_merge_blocks": 2,
+  "suspicious_cross_column_merge_pages": 1
+ },
+ "provider_version": "",
+ "source_json_path": "result.json",
+ "validation": {
+  "approximate_formula_segment_bbox_count": 2,
+  "approximate_segment_bbox_count": 32,
+  "asset_block_count": 2,
+  "asset_count": 2,
+  "block_count": 28,
+  "complete": true,
+  "coordinate_space": "pdf_point",
+  "covered_provider_markdown_image_count": 2,
+  "formula_segment_count": 5,
+  "geometry_bbox_consistent": true,
+  "line_bbox_precision_counts": {
+   "block_fallback": 17,
+   "synthetic_newline": 3,
+   "synthetic_wrap": 64
+  },
+  "linked_asset_block_count": 2,
+  "page_count": 3,
+  "provider_formula_segment_bbox_count": 3,
+  "provider_markdown_image_count": 2,
+  "provider_segment_bbox_count": 3,
+  "referenced_asset_count": 2,
+  "schema": "normalized_document_v1",
+  "schema_version": "1.1",
+  "segment_bbox_within_block": true,
+  "uncovered_provider_markdown_image_count": 0,
+  "unlinked_asset_block_count": 0,
+  "unreferenced_asset_count": 0,
+  "valid": true,
+  "warnings": [],
+  "zero_segment_bbox_count": 0
+ }
+}
