@@ -43,6 +43,9 @@ MinerU middle 的 `para_blocks` 可能把下一页文字并到上一页段落，
 
 修复不改原始 payload，归一化块保留实际页码、目标 raw_path 与恢复来源元数据；
 报告包含 `cross_page_recovered_block_count` / `cross_page_recovered_span_count`。
+拆回以后，前一页那段和后一页那段用 `continuation_hint` 连成一组（`source=provider`、`scope=cross_page`、`role` 依次是
+head → … → tail，`group_id = mineru-cross-page-<头一段的 block_id>`），报告里记 `cross_page_linked_group_count`
+（`adapter.py` 的 `link_cross_page_continuations`，2026-10-29 起；以前拆完不留任何关联，两半各翻各的）。
 已有任务可用 `backend/pipeline/devtools/repair_mineru_cross_page.py` 在新目录离线
 重建：要求文字块一一对应，复用译文并生成新的 checkpoint。验收、备份后才能发布；
 发布时还需通过持久化状态接口提交新快照，不能仅替换 PDF 或篡改旧快照哈希。

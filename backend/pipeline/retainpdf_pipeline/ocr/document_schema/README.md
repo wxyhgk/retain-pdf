@@ -685,6 +685,8 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 - translation 主线当前优先消费 `source="provider"` 且 `scope="intra_page"` 的提示
 - `cross_page` 提示只在 translation 层满足相邻页、顺序明确、layout zone 边界安全、文本长度足够等受控条件时消费；schema 层只负责定义和保存契约
 - 新 OCR provider 如果也能稳定产出连续组信息，应优先写入这个字段，而不是把私有 raw 字段直接暴露给下游
+- 现在写这个字段的：Paddle（`paddle/continuation.py`，按 `block_order` / `group_id`）；MinerU 只写跨页段落（2026-10-29 起，
+  拆回各页的两半连成一组 `scope=cross_page`，见 `mineru/NORMALIZATION.md` 1.1）
 
 ## `type / sub_type` 约定
 
