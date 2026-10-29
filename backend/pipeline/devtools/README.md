@@ -7,6 +7,11 @@
 `devtools/ocr_viewer/`：RetainPDF 自己的块分类草案、一份按分类记好标准答案的 2 页复杂论文 PDF、把它们画出来的离线查看器。
 用法见 [ocr_viewer/README.md](ocr_viewer/README.md)。
 
+## 翻译 agent 测试系统
+
+`devtools/agent_lab/`：一次送一整页给翻译 agent、逐块校验、生成离线报告（原文页上叠译文，标出放不下的块）。
+用法见 [agent_lab/README.md](agent_lab/README.md)。
+
 ## Offline translation regression
 
 From the repository root (uses the selected Python environment):

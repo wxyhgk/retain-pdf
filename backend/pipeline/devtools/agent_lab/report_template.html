@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>翻译 agent 测试报告</title>
+<style>
+:root {
+  --bg: #eef0f3; --panel: #ffffff; --ink: #1c2230; --muted: #5d6676; --rule: #d8dce3; --soft: #f3f5f8;
+  --ok: #1f8a4c; --warn: #c27c0e; --err: #c8372d; --over: #7c3aed; --accent: #2f6fe0;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #14171d; --panel: #1c2028; --ink: #e5e9f0; --muted: #9aa3b2; --rule: #2f3542; --soft: #232833;
+          --ok: #4fc27f; --warn: #f0a23a; --err: #f07167; --over: #b39bff; --accent: #7c9cff; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+       font: 13px/1.55 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
+code, .mono { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 12px; }
+header { position: sticky; top: 0; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--rule);
+         display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; padding: 10px 18px; }
+header h1 { font-size: 15px; margin: 0; }
+header .meta { color: var(--muted); font-size: 12px; }
+label.chk { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+.seg button { border: 1px solid var(--rule); background: var(--soft); color: var(--ink); padding: 3px 10px; font: inherit; cursor: pointer; }
+.seg button:first-child { border-radius: 4px 0 0 4px; } .seg button:last-child { border-radius: 0 4px 4px 0; }
+.seg button + button { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 400px; align-items: start; }
+@media (max-width: 1000px) { main { grid-template-columns: 1fr; } aside { position: static !important; height: auto !important; } }
+.pages { display: grid; gap: 26px; padding: 26px 22px; justify-items: center; min-width: 0; }
+.page { position: relative; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18); width: 100%; max-width: 860px; }
+.page img { display: block; width: 100%; height: auto; }
+.page .pno { position: absolute; top: -19px; left: 0; font-size: 11px; color: var(--muted); }
+.tb { position: absolute; overflow: hidden; background: #fff; color: #111; cursor: pointer;
+      line-height: 1.32; word-break: break-word; font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", sans-serif; }
+.tb.heading { font-weight: 700; }
+.tb.keep { white-space: pre-wrap; }
+.tb.warn { outline: 1.5px solid var(--warn); }
+.tb.error { outline: 2px solid var(--err); }
+.tb.over { outline: 2px dashed var(--over); }
+.tb.sel { box-shadow: 0 0 0 3px var(--accent); }
+.tb .f { color: #6b21a8; font-family: "Times New Roman", serif; font-style: italic; }
+.tb sup { font-size: 0.7em; }
+.hide-tr .tb { display: none; }
+aside { position: sticky; top: 49px; height: calc(100vh - 49px); overflow: auto; background: var(--panel);
+        border-left: 1px solid var(--rule); padding: 16px 18px 40px; display: grid; gap: 18px; align-content: start; }
+aside h2 { font-size: 13px; margin: 0 0 8px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--soft); border-radius: 6px; padding: 8px 10px; display: grid; }
+.stat b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 11.5px; color: var(--muted); }
+.stat.ok b { color: var(--ok); } .stat.warn b { color: var(--warn); } .stat.err b { color: var(--err); } .stat.over b { color: var(--over); }
+.kv { display: grid; grid-template-columns: 84px 1fr; gap: 3px 10px; font-size: 12.5px; }
+.kv .k { color: var(--muted); }
+.issues { display: grid; gap: 4px; }
+.iss { display: grid; grid-template-columns: auto 1fr; gap: 8px; padding: 5px 8px; border-radius: 4px; cursor: pointer; background: var(--soft); }
+.iss:hover { outline: 1px solid var(--rule); }
+.dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; }
+.dot.error { background: var(--err); } .dot.warn { background: var(--warn); } .dot.over { background: var(--over); }
+.detail { border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; display: grid; gap: 8px; background: var(--soft); }
+.txt { white-space: pre-wrap; background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 8px; max-height: 220px; overflow: auto; }
+.pill { display: inline-block; border-radius: 999px; padding: 0 8px; font-size: 11.5px; border: 1px solid currentColor; }
+.pill.ok { color: var(--ok); } .pill.warn { color: var(--warn); } .pill.error { color: var(--err); } .pill.skipped { color: var(--muted); } .pill.over { color: var(--over); }
+.empty, .hint { color: var(--muted); font-size: 12px; }
+ul.notes { margin: 0; padding-left: 18px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>翻译 agent 测试报告</h1>
+  <span class="meta" id="meta"></span>
+  <div class="seg" id="mode"><button data-v="tr" aria-pressed="true">译文</button><button data-v="src">原文</button></div>
+  <label class="chk"><input type="checkbox" id="onlyIssues"> 只显示有问题的块</label>
+</header>
+<main>
+  <div class="pages" id="pages"></div>
+  <aside>
+    <section><h2>汇总</h2><div class="stats" id="stats"></div><div class="kv" id="usage" style="margin-top:10px"></div></section>
+    <section><h2>选中的块</h2><div class="detail" id="detail"><span class="empty">点页面上的译文框看原文、译文和校验结果。</span></div></section>
+    <section><h2 id="issuesTitle">有问题的块</h2><div class="issues" id="issues"></div></section>
+    <section><h2>模型留言</h2><ul class="notes" id="notes"></ul></section>
+  </aside>
+</main>
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script>
+(function () {
+  var D = JSON.parse(document.getElementById("data").textContent);
+  var TAX = D.taxonomy, S = D.summary;
+  var state = { selected: null, onlyIssues: false, overflow: {} };
+  var byId = {}; D.blocks.forEach(function (b) { byId[b.id] = b; });
+
+  function h(tag, props, kids) {
+    var n = document.createElement(tag);
+    if (props) for (var k in props) { if (k === "text") n.textContent = props[k]; else n.setAttribute(k, props[k]); }
+    (kids || []).forEach(function (c) { if (c != null) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return n;
+  }
+  function label(b) { return (TAX.block_classes[b["class"]] || {}).label || b["class"]; }
+  // 译文里的 $公式$ 和 {{fn:1}} 显示得像排版后的样子
+  function richText(node, text) {
+    var re = /\$[^$]+\$|\{\{fn:([^}]+)\}\}/g, last = 0, m;
+    while ((m = re.exec(text))) {
+      if (m.index > last) node.appendChild(document.createTextNode(text.slice(last, m.index)));
+      if (m[1]) node.appendChild(h("sup", { text: m[1] }));
+      else node.appendChild(h("span", { "class": "f", text: m[0].slice(1, -1) }));
+      last = re.lastIndex;
+    }
+    if (last < text.length) node.appendChild(document.createTextNode(text.slice(last)));
+  }
+
+  document.getElementById("meta").textContent = S.model + " · 提示词 " + S.prompt_version + " · " + S.pages + " 页 · " + S.translated + " 块要翻";
+
+  // ---- 页面和译文框 ----
+  var host = document.getElementById("pages"), boxes = [];
+  D.pages.forEach(function (page, index) {
+    var box = h("div", { "class": "page", id: "page-" + index });
+    box.appendChild(h("span", { "class": "pno", text: "第 " + (index + 1) + " 张" }));
+    box.appendChild(h("img", { src: D.images[index], alt: "原文第 " + (index + 1) + " 张" }));
+    D.blocks.forEach(function (b) {
+      if (b.page !== index || !b.translate || !b.translation) return;
+      var bb = b.bbox, cls = b["class"];
+      var div = h("div", { "class": "tb " + b.status + (cls === "section_heading" || cls === "doc_title" ? " heading" : "") + (cls === "code_caption" || cls === "toc_entry" ? " keep" : ""), "data-id": b.id });
+      div.style.left = (bb[0] / page.width * 100) + "%";
+      div.style.top = (bb[1] / page.height * 100) + "%";
+      div.style.width = ((bb[2] - bb[0]) / page.width * 100) + "%";
+      div.style.height = ((bb[3] - bb[1]) / page.height * 100) + "%";
+      richText(div, b.translation);
+      div.addEventListener("click", function (ev) { ev.stopPropagation(); select(b.id); });
+      box.appendChild(div);
+      boxes.push({ el: div, block: b, page: page, container: box });
+    });
+    host.appendChild(box);
+  });
+
+  // 浏览器里二分找字号：最大不超过原文行高，最小 5.5pt；最小还放不下就算"放不下"
+  function fit() {
+    boxes.forEach(function (item) {
+      var el = item.el, b = item.block, scale = item.container.clientWidth / item.page.width;
+      var lineHeightPt = (b.bbox[3] - b.bbox[1]) / Math.max(1, b.lines);
+      var max = Math.max(6, Math.min(lineHeightPt * 0.86, 22)) * scale, min = 5.5 * scale;
+      function fits(px) { el.style.fontSize = px + "px"; return el.scrollHeight <= el.clientHeight + 1 && el.scrollWidth <= el.clientWidth + 1; }
+      var best = null;
+      if (fits(max)) best = max;
+      else { var lo = min, hi = max; for (var i = 0; i < 9; i++) { var mid = (lo + hi) / 2; if (fits(mid)) { best = mid; lo = mid; } else hi = mid; } }
+      var over = best === null && !fits(min);
+      el.style.fontSize = (best || min) + "px";
+      el.classList.toggle("over", over);
+      state.overflow[b.id] = over ? { ratio: el.scrollHeight / el.clientHeight } : null;
+      el.title = label(b) + " · 字号 " + ((best || min) / scale).toFixed(1) + "pt" + (over ? " · 放不下" : "");
+    });
+    renderStats(); renderIssues();
+  }
+
+  function renderStats() {
+    var overs = Object.keys(state.overflow).filter(function (k) { return state.overflow[k]; }).length;
+    var host = document.getElementById("stats"); host.innerHTML = "";
+    [["ok", S.ok, "通过"], ["warn", S.warn, "有警告"], ["err", S.error, "不合格"], ["over", overs, "放不下"], ["", S.retried, "重翻过"], ["", S.translated, "要翻的块"]].forEach(function (s) {
+      host.appendChild(h("div", { "class": "stat " + s[0] }, [h("b", { text: String(s[1]) }), h("span", { text: s[2] })]));
+    });
+    var u = document.getElementById("usage"); u.innerHTML = "";
+    [["请求", S.requests + " 次（缓存 " + S.cached_requests + "）"], ["输入 token", S.input_tokens.toLocaleString()], ["输出 token", S.output_tokens.toLocaleString()],
+     ["模型耗时", (S.model_latency_ms / 1000).toFixed(1) + " 秒"], ["总耗时", (S.wall_ms / 1000).toFixed(1) + " 秒"]].forEach(function (r) {
+      u.appendChild(h("span", { "class": "k", text: r[0] })); u.appendChild(h("span", { text: r[1] }));
+    });
+  }
+  function problems(b) {
+    var list = (b.issues || []).slice();
+    if (state.overflow[b.id]) list.push({ code: "overflow", severity: "over", message: "框里放不下（最小字号时超出 " + Math.round((state.overflow[b.id].ratio - 1) * 100) + "%）" });
+    return list;
+  }
+  function renderIssues() {
+    var host = document.getElementById("issues"); host.innerHTML = "";
+    var rows = D.blocks.filter(function (b) { return b.translate && problems(b).length; });
+    document.getElementById("issuesTitle").textContent = "有问题的块（" + rows.length + "）";
+    if (!rows.length) host.appendChild(h("span", { "class": "empty", text: "没有。" }));
+    rows.forEach(function (b) {
+      var ps = problems(b), worst = ps.some(function (p) { return p.severity === "error"; }) ? "error" : ps.some(function (p) { return p.severity === "over"; }) ? "over" : "warn";
+      var row = h("div", { "class": "iss" }, [h("span", { "class": "dot " + worst }), h("span", {}, [h("b", { text: label(b) + " " }), h("span", { "class": "mono", text: b.id }), h("br"), ps.map(function (p) { return p.message; }).join("；")])]);
+      row.addEventListener("click", function () { select(b.id, true); });
+      host.appendChild(row);
+    });
+    boxes.forEach(function (item) { item.el.style.visibility = state.onlyIssues && !problems(item.block).length ? "hidden" : ""; });
+  }
+  function select(id, scroll) {
+    state.selected = id;
+    boxes.forEach(function (item) { item.el.classList.toggle("sel", item.block.id === id); });
+    var b = byId[id], host = document.getElementById("detail"); host.innerHTML = "";
+    var st = state.overflow[id] ? "over" : b.status;
+    host.appendChild(h("div", {}, [h("b", { text: label(b) + " " }), h("span", { "class": "mono", text: b.id + " " }),
+      h("span", { "class": "pill " + st, text: { ok: "通过", warn: "有警告", error: "不合格", skipped: "不翻", over: "放不下" }[st] || st })]));
+    var kv = h("div", { "class": "kv" });
+    function row(k, v) { kv.appendChild(h("span", { "class": "k", text: k })); kv.appendChild(h("span", { text: v })); }
+    row("位置", b.where);
+    row("翻不翻", (b.translate ? "翻" : "不翻") + "（" + b.translate_reason + "）");
+    if (b.group) row("接续组", b.group.id + " 第 " + b.group.index + "/" + b.group.of + " 块");
+    if (b.attempts) row("请求次数", String(b.attempts));
+    host.appendChild(kv);
+    problems(b).forEach(function (p) { host.appendChild(h("div", { "class": "pill " + (p.severity === "error" ? "error" : p.severity === "over" ? "over" : "warn"), text: p.message })); });
+    host.appendChild(h("div", { "class": "hint", text: "原文" })); host.appendChild(h("div", { "class": "txt", text: b.source }));
+    if (b.translation != null) { host.appendChild(h("div", { "class": "hint", text: "译文" })); host.appendChild(h("div", { "class": "txt", text: b.translation })); }
+    (b.history || []).forEach(function (old, i) {
+      host.appendChild(h("div", { "class": "hint", text: "第 " + (i + 1) + " 次的译文（" + (old.issues || []).map(function (x) { return x.message; }).join("；") + "）" }));
+      host.appendChild(h("div", { "class": "txt", text: old.translation == null ? "（没交回）" : old.translation }));
+    });
+    if (scroll) {
+      var el = document.querySelector('.tb[data-id="' + id + '"]') || document.getElementById("page-" + b.page);
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }
+  var notes = document.getElementById("notes");
+  D.page_info.forEach(function (p) {
+    if (p.notes) notes.appendChild(h("li", { text: "第 " + p.label + " 页：" + p.notes }));
+    if (p.extra_ids && p.extra_ids.length) notes.appendChild(h("li", { text: "第 " + p.label + " 页多交了：" + p.extra_ids.join("、") }));
+  });
+  if (!notes.children.length) notes.appendChild(h("li", { "class": "empty", text: "没有。" }));
+
+  Array.prototype.forEach.call(document.querySelectorAll("#mode button"), function (btn) {
+    btn.addEventListener("click", function () {
+      Array.prototype.forEach.call(document.querySelectorAll("#mode button"), function (o) { o.setAttribute("aria-pressed", String(o === btn)); });
+      document.getElementById("pages").classList.toggle("hide-tr", btn.getAttribute("data-v") === "src");
+    });
+  });
+  document.getElementById("onlyIssues").addEventListener("change", function (ev) { state.onlyIssues = ev.target.checked; renderIssues(); });
+  var pending = D.images.length;
+  Array.prototype.forEach.call(document.querySelectorAll(".page img"), function (img) {
+    if (img.complete) { if (!--pending) fit(); } else img.addEventListener("load", function () { if (!--pending) fit(); });
+  });
+  var t; window.addEventListener("resize", function () { clearTimeout(t); t = setTimeout(fit, 150); });
+})();
+</script>
+</body>
+</html>

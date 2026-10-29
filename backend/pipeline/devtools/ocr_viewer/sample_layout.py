@@ -220,9 +220,18 @@ def draw_lines(page: fitz.Page, lines: list[list[Atom]], x: float, top: float, w
                 pw = pf.text_length(piece.text, psize)
                 atom_boxes.append([cx, baseline + shift - pf.ascender * psize, cx + pw, baseline + shift - pf.descender * psize])
                 cx += pw
+            char_start = len("".join(parts))
             parts.append(atom.text())
             if atom.inline:
-                record = {"class": atom.inline, "bbox": r2(union(atom_boxes)), "text": atom.text()}
+                # line：这个块的第几行（从 0 数）；start/end：在这一行文字里的字符位置，下游据此把片段换成占位。
+                record = {
+                    "class": atom.inline,
+                    "bbox": r2(union(atom_boxes)),
+                    "text": atom.text(),
+                    "line": index,
+                    "start": char_start,
+                    "end": char_start + len(atom.text()),
+                }
                 if atom.latex:
                     record["latex"] = atom.latex
                 if atom.target:
