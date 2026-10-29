@@ -11,7 +11,7 @@ from retainpdf_pipeline.ocr.document_schema.provider_adapters.paddle.content_ext
     build_segments,
     inherit_missing_segment_bboxes,
 )
-from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import rescale_document_geometry_to_pdf
+from retainpdf_pipeline.ocr.document_schema.pdf_geometry import rescale_document_geometry_to_pdf
 from devtools.tests.pdf_fixtures import write_pdf
 
 
@@ -163,7 +163,7 @@ def test_paddle_rescale_keeps_compatibility_and_contract_bbox_in_sync(tmp_path: 
 
 
 def test_scale_bbox_preserves_nesting() -> None:
-    from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import scale_bbox
+    from retainpdf_pipeline.ocr.document_schema.pdf_geometry import scale_bbox
 
     outer = [527.0, 39.0, 547.0, 51.0]
     inner = [527.244, 39.041, 546.253, 50.053]

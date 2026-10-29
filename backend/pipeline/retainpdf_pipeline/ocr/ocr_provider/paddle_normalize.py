@@ -1,23 +1,21 @@
 from __future__ import annotations
 
-import math
-
 from pathlib import Path
 from typing import Callable
 
 from retainpdf_pipeline.ocr.document_schema import DocumentSchemaValidationError
 from retainpdf_pipeline.ocr.document_schema import adapt_path_to_document_v1_with_report
 from retainpdf_pipeline.ocr.document_schema import build_validation_report
-from retainpdf_pipeline.ocr.document_schema.provider_adapters.paddle.content_extract import (
-    build_lines as build_paddle_lines,
-)
-from retainpdf_pipeline.ocr.document_schema.provider_adapters.paddle.content_extract import inherit_missing_segment_bboxes
-from retainpdf_pipeline.ocr.document_schema.provider_adapters.paddle.content_extract import (
-    tighten_text_bbox as tighten_paddle_text_bbox,
+from retainpdf_pipeline.ocr.document_schema.estimated_lines import build_lines as build_paddle_lines
+from retainpdf_pipeline.ocr.document_schema.estimated_lines import tighten_text_bbox as tighten_paddle_text_bbox
+# 缩放、补行各家通用，2026-10-29 挪到 `document_schema/pdf_geometry.py`；补行的旧名字留在这里。
+from retainpdf_pipeline.ocr.document_schema.pdf_geometry import (  # noqa: F401
+    rebuild_estimated_text_geometry as post_rescale_rebuild_paddle_text_geometry,
+    rescale_document_geometry_to_pdf,
+    scale_bbox,
 )
 from retainpdf_pipeline.ocr.document_schema.reporting import build_normalization_summary
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_PADDLE
-from retainpdf_pipeline.ocr.document_schema.toc import build_toc_entries
 from retainpdf_base.io import save_json
 
 
@@ -93,161 +91,3 @@ def save_normalized_document_for_paddle(
         f"path={normalized_report_json_path}",
         flush=True,
     )
-
-
-def rescale_document_geometry_to_pdf(document: dict, source_pdf_path: Path) -> dict:
-    import fitz
-
-    pdf = fitz.open(source_pdf_path)
-    try:
-        pages = document.get("pages", []) or []
-        # OCR 的第 n 页按位置对到原文的第 n 页（选了页的任务，原文已经截成所选的页）。OCR 比原文多页时对不上，
-        # 以前多出来的页留在原始坐标里、照样往下走；现在直接报错。比原文少（比如末尾的空白页没给）照常缩放，记下来。
-        if len(pages) > len(pdf):
-            raise RuntimeError(
-                f"OCR returned {len(pages)} pages but the source PDF has {len(pdf)}: "
-                "pages cannot be matched to the PDF"
-            )
-        if len(pages) < len(pdf):
-            document.setdefault("derived", {})["page_count_mismatch"] = {
-                "ocr_pages": len(pages),
-                "pdf_pages": len(pdf),
-            }
-            print(
-                f"normalize: OCR returned {len(pages)} pages for a {len(pdf)}-page source PDF; "
-                "matching pages by position",
-                flush=True,
-            )
-        for page_index, page in enumerate(pages):
-            pdf_page = pdf[page_index]
-            pdf_w = float(pdf_page.rect.width)
-            pdf_h = float(pdf_page.rect.height)
-            raw_w = float(page.get("width", 0) or 0)
-            raw_h = float(page.get("height", 0) or 0)
-            if raw_w <= 0 or raw_h <= 0:
-                # 没有原始页面尺寸就没法缩放：有块的页直接报错（以前换上 PDF 尺寸、块留在原始坐标里）；空页无所谓。
-                if page.get("blocks"):
-                    raise RuntimeError(
-                        f"OCR page {page_index + 1} has no usable size ({raw_w} x {raw_h}) "
-                        "but has blocks: its coordinates cannot be scaled to the PDF"
-                    )
-                page["width"] = pdf_w
-                page["height"] = pdf_h
-                page["unit"] = "pt"
-                continue
-            scale_x = pdf_w / raw_w
-            scale_y = pdf_h / raw_h
-            page["width"] = pdf_w
-            page["height"] = pdf_h
-            page["unit"] = "pt"
-            for block in page.get("blocks", []) or []:
-                block["bbox"] = scale_bbox(block.get("bbox", []), scale_x, scale_y)
-                geometry = block.get("geometry") or {}
-                if geometry:
-                    geometry["bbox"] = scale_bbox(geometry.get("bbox", []), scale_x, scale_y)
-                for line in block.get("lines", []) or []:
-                    line["bbox"] = scale_bbox(line.get("bbox", []), scale_x, scale_y)
-                    for span in line.get("spans", []) or []:
-                        span["bbox"] = scale_bbox(span.get("bbox", []), scale_x, scale_y)
-                for segment in block.get("segments", []) or []:
-                    if isinstance(segment, dict):
-                        segment["bbox"] = scale_bbox(segment.get("bbox", []), scale_x, scale_y)
-            document.setdefault("derived", {})["coordinate_space"] = "pdf_point"
-    finally:
-        pdf.close()
-    return document
-
-
-def scale_bbox(value: list[float], scale_x: float, scale_y: float) -> list[float]:
-    if not isinstance(value, list) or len(value) != 4:
-        return value
-    # Outward rounding (floor min corner, ceil max corner) preserves nesting:
-    # if inner ⊆ outer pre-scale, the scaled boxes keep that relation, so
-    # rescaling can never introduce a containment violation by itself.
-    return [
-        math.floor(float(value[0]) * scale_x * 1000) / 1000,
-        math.floor(float(value[1]) * scale_y * 1000) / 1000,
-        math.ceil(float(value[2]) * scale_x * 1000) / 1000,
-        math.ceil(float(value[3]) * scale_y * 1000) / 1000,
-    ]
-
-
-def post_rescale_rebuild_paddle_text_geometry(
-    document: dict,
-    *,
-    build_lines: BuildLinesFn = build_paddle_lines,
-    tighten_text_bbox: TightenBBoxFn = tighten_paddle_text_bbox,
-) -> dict:
-    for page in document.get("pages", []) or []:
-        for block in page.get("blocks", []) or []:
-            block_type = str(block.get("type", "") or "")
-            sub_type = str(block.get("sub_type", "") or "")
-            text = str(block.get("text", "") or "")
-            raw_label = str((block.get("source") or {}).get("raw_type", "") or "")
-            original_bbox = list(block.get("bbox", []) or [])
-            # Provider layout geometry is more precise than our text-height
-            # heuristic.  A second post-scale tightening pass must not move the
-            # canonical block edge across an already matched formula segment.
-            has_provider_segment_bbox = any(
-                isinstance(segment, dict)
-                and str(segment.get("bbox_precision", "") or "") == "provider_layout"
-                for segment in block.get("segments", []) or []
-            )
-            # 服务商给了真实的行（MinerU 的 middle.json 每行都有框）：行和块边都以它为准，不用文字高度去估。
-            # 这一步以前对所有服务商都跑，把 MinerU 的原生行换成了按字数估的行（行内公式的标记也丢了）。
-            has_provider_lines = any(
-                isinstance(line, dict)
-                and str(line.get("bbox_precision", "") or "") == "provider_layout"
-                for line in block.get("lines", []) or []
-            )
-            tightened_bbox = (
-                original_bbox
-                if has_provider_segment_bbox or has_provider_lines
-                else tighten_text_bbox(
-                    bbox=original_bbox,
-                    text=text,
-                    block_type=block_type,
-                    sub_type=sub_type,
-                )
-            )
-            if tightened_bbox != original_bbox:
-                block["bbox"] = tightened_bbox
-                geometry = block.get("geometry") or {}
-                if geometry:
-                    geometry["bbox"] = list(tightened_bbox)
-                metadata = block.get("metadata") or {}
-                metadata["provider_bbox_tightened"] = True
-                metadata["provider_bbox_original"] = original_bbox
-                block["metadata"] = metadata
-            if has_provider_lines:
-                rebuilt_lines = [line for line in block.get("lines", []) or [] if isinstance(line, dict)]
-            else:
-                rebuilt_lines = build_lines(
-                    bbox=block.get("bbox", []),
-                    segments=block.get("segments", []) or [],
-                    text=text,
-                    raw_label=raw_label,
-                    block_type=block_type,
-                    sub_type=sub_type,
-                )
-            if rebuilt_lines and not has_provider_lines:
-                inherit_missing_segment_bboxes(
-                    bbox=block.get("bbox", []),
-                    segments=block.get("segments", []) or [],
-                    lines=rebuilt_lines,
-                )
-                block["lines"] = rebuilt_lines
-            if rebuilt_lines:
-                content = block.get("content") or {}
-                if str(block.get("structure_role", "") or "").strip().lower() == "table_of_contents":
-                    line_texts = content.get("line_texts") or []
-                    if isinstance(line_texts, list):
-                        toc_entries = build_toc_entries(
-                            lines=rebuilt_lines,
-                            line_texts=[str(line) for line in line_texts],
-                        )
-                        if toc_entries:
-                            content["toc_entries"] = toc_entries
-                            content["text_flow"] = "preserve_lines"
-                            block["content"] = content
-    return document

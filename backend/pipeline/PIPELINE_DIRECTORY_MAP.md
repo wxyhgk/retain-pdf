@@ -144,6 +144,14 @@ console 别名：`retainpdf-pipeline render-only --spec <job_root>/specs/render.
 - 关键文件：
   - [`normalize_pipeline.py`](./retainpdf_pipeline/ocr/document_schema/normalize_pipeline.py)
     normalize worker 入口（`python -m retainpdf_pipeline.ocr normalize-ocr`）。
+  - [`pdf_geometry.py`](./retainpdf_pipeline/ocr/document_schema/pdf_geometry.py)
+    各家通用的几何：缩放到原文 PDF、没有真实行的块补行（2026-10-29 从 `ocr_provider/paddle_normalize.py` 挪来）。
+  - [`estimated_lines.py`](./retainpdf_pipeline/ocr/document_schema/estimated_lines.py)
+    估行、拆行内公式片段（2026-10-29 从 Paddle 适配器挪来）。
+  - [`finalize.py`](./retainpdf_pipeline/ocr/document_schema/finalize.py)
+    归一化的最后几步（缩放 → 补行 → 刷新报告），所有归一化路径都调。
+  - [`page_bounds.py`](./retainpdf_pipeline/ocr/document_schema/page_bounds.py)
+    略微超出页边的块夹回页内。
   - [`adapters.py`](./retainpdf_pipeline/ocr/document_schema/adapters.py)
     raw provider -> normalized document 总适配口。
   - [`reporting.py`](./retainpdf_pipeline/ocr/document_schema/reporting.py)
@@ -164,7 +172,7 @@ console 别名：`retainpdf-pipeline render-only --spec <job_root>/specs/render.
   - [`paddle_markdown.py`](./retainpdf_pipeline/ocr/ocr_provider/paddle_markdown.py)
     Paddle Markdown 与图片产物落盘。
   - [`paddle_normalize.py`](./retainpdf_pipeline/ocr/ocr_provider/paddle_normalize.py)
-    Paddle normalized document 几何修正等纯实现。
+    Paddle 的 normalized document 落盘；几何（缩放、补行）在 `document_schema/pdf_geometry.py`。
 
 ### `retainpdf_pipeline/ocr/mineru_provider/`
 

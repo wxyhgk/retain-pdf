@@ -1,7 +1,7 @@
 """缩放后的行重建只给没有真实行的服务商用（Paddle 只给块，行是估出来的）。
 
 MinerU 的 middle.json 每一行、每一段都带框（`bbox_precision=provider_layout`）。以前缩放以后对所有服务商都跑
-`post_rescale_rebuild_paddle_text_geometry`，MinerU 的原生行被换成按字数估的行，行内公式的标记也丢了。
+`rebuild_estimated_text_geometry`，MinerU 的原生行被换成按字数估的行，行内公式的标记也丢了。
 这里按生产的顺序走：适配 → 缩放到 PDF → 重建，看原生行留下来、坐标跟着缩放。
 """
 
@@ -14,8 +14,8 @@ import fitz
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_payload_to_document_v1
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_MINERU
 from retainpdf_pipeline.ocr.document_schema.validator import validate_document_payload
-from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import (
-    post_rescale_rebuild_paddle_text_geometry,
+from retainpdf_pipeline.ocr.document_schema.pdf_geometry import (
+    rebuild_estimated_text_geometry,
     rescale_document_geometry_to_pdf,
 )
 
@@ -70,7 +70,7 @@ def _normalize(tmp_path: Path, scale: float) -> dict:
         pdf.new_page(width=595.0 * scale, height=842.0 * scale)
         pdf.save(pdf_path)
     document = rescale_document_geometry_to_pdf(document, pdf_path)
-    document = post_rescale_rebuild_paddle_text_geometry(document)
+    document = rebuild_estimated_text_geometry(document)
     validate_document_payload(document)
     return document
 
@@ -110,7 +110,7 @@ def test_blocks_without_provider_lines_are_still_rebuilt(tmp_path):
     for line in paragraph["lines"]:
         line.pop("bbox_precision", None)
     paragraph["lines"] = []
-    rebuilt = post_rescale_rebuild_paddle_text_geometry(document)
+    rebuilt = rebuild_estimated_text_geometry(document)
     rebuilt_lines = _block_with_text(rebuilt, "first line of a paragraph")["lines"]
     assert rebuilt_lines, "a block without provider lines gets estimated lines"
     assert all(line.get("bbox_precision") != "provider_layout" for line in rebuilt_lines)

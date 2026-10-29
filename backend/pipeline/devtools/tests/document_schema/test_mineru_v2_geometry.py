@@ -7,7 +7,7 @@ import pytest
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_payload_to_document_v1
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_MINERU_CONTENT_LIST_V2
 from retainpdf_pipeline.ocr.document_schema.validator import DocumentSchemaValidationError, validate_document_payload
-from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import rescale_document_geometry_to_pdf
+from retainpdf_pipeline.ocr.document_schema.pdf_geometry import rescale_document_geometry_to_pdf
 
 
 def adapt(payload):

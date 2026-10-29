@@ -9,6 +9,7 @@ from devtools.architecture_checks.document_operations import check_document_oper
 from devtools.architecture_checks.entrypoints import check_entrypoint_stable_imports
 from devtools.architecture_checks.entrypoints import check_stage_spec_contract_checker
 from devtools.architecture_checks.entrypoints import check_top_level_shim_freeze
+from devtools.architecture_checks.ocr_layers import check_ocr_normalization_layers
 from devtools.architecture_checks.providers import check_ocr_provider_boundaries
 from devtools.architecture_checks.providers import check_pipeline_provider_leaks
 from devtools.architecture_checks.providers import check_service_provider_raw_leaks
@@ -37,6 +38,7 @@ def main() -> int:
         check_entrypoint_stable_imports(errors)
         check_top_level_shim_freeze(errors)
         check_ocr_provider_boundaries(errors)
+        check_ocr_normalization_layers(errors)
         check_translation_worker_protocol(errors)
         check_stage_spec_contract_checker(errors)
         check_translation_pipeline_facade_boundary(errors)

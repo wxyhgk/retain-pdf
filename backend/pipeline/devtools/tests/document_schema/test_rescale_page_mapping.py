@@ -7,7 +7,7 @@ from pathlib import Path
 import fitz
 import pytest
 
-from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import rescale_document_geometry_to_pdf
+from retainpdf_pipeline.ocr.document_schema.pdf_geometry import rescale_document_geometry_to_pdf
 
 
 def _pdf(tmp_path: Path, pages: int) -> Path:

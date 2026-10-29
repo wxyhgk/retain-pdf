@@ -208,7 +208,11 @@
 `derived` 和报告记 `page_overflow_clamped_block_count`；超得多的不动，照样校验失败。2026-10-29 起，以前一个超出一两点的块就让整份文档校验失败）→ 校验。
 
 normalize worker 里的顺序（`normalize_pipeline.py` 的 `build_normalized_artifacts`）：adapter → 缩放到 PDF
-（`rescale_document_geometry_to_pdf`）→ 行重建（`post_rescale_rebuild_paddle_text_geometry`）→ 重新校验。
+（`pdf_geometry.rescale_document_geometry_to_pdf`）→ 行重建（`pdf_geometry.rebuild_estimated_text_geometry`，估行在 `estimated_lines.py`）→ 重新校验；
+后三步收在 `finalize.finalize_normalized_document`，命令型 OCR、MinerU 的 Python 直跑也调它。缩放、补行、估行 2026-10-29 以前在
+`ocr_provider/paddle_normalize.py` 和 `provider_adapters/paddle/content_extract.py` 里（Paddle 专用的位置，却对所有服务商都跑），
+现在在核心包、只依赖文档模型和 `provider_adapters/common/normalize.py`（`devtools/architecture_checks/ocr_layers.py` 钉着：不许导入任何一家的
+适配器、不许导入调用服务的层）。
 
 - 缩放按位置配页：OCR 的第 n 页对原文的第 n 页（选了页的任务，原文已经截成所选的页）。OCR 比原文多页时报错；
   比原文少照常缩放，记在 `derived.page_count_mismatch`；有块的页没有原始尺寸时报错（2026-10-29 起，以前都是静默往下走）。
