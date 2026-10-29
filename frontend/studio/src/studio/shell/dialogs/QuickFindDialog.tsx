@@ -4,6 +4,7 @@ import { t } from '@blog/i18n/index.mjs';
 import { searchArticles, searchDrive } from '../../api/client';
 import type { ArticleSummary } from '../../types';
 import { filterArticles } from '../../pages/tree/page-tree';
+import { fileSize } from '@blog/markdown/files/file-kinds.mjs';
 import { Finder, type FinderRow } from './Finder';
 
 /** What the quick find needs from the Studio around it. */
@@ -24,6 +25,9 @@ export type QuickCommand = { key: string; label: string; icon?: string; hint?: s
 /** What was picked when an article was asked for: one there is, or a new page under the open one, of this title. */
 export type Picked = { slug: string } | { create: string };
 
+/** What `@` puts in (`mention`): a page, a file of the open article, a file of the drive (copied into it). */
+export type Mentioned = { slug: string } | { file: string } | { drive: string };
+
 /**
  * ⌘K, as Notion's search (`find`); or asked which article (`pick`: to link, a new one made by its title), or where pages
  * go (`place`: a page's folder name, '' for the top; not `excluded`, the pages moved and those under them). `done` hears
@@ -33,10 +37,14 @@ export type QuickFindAsk = { round: number; host: QuickFindHost } & (
 	| { mode: 'find' }
 	| { mode: 'pick'; done(picked: Picked | null): void }
 	| { mode: 'place'; excluded: Set<string>; placeholder: string; done(parent: string | null): void }
+	| { mode: 'mention'; files: Array<{ path: string; size?: number }>; done(picked: Mentioned | null): void }
 );
 
-/** An article, a file of the drive (`drivePath`), the row making a page (`create`), where pages go (`place`), or a command. */
-type Row = FinderRow & { slug: string; text?: string; drivePath?: string; create?: string; place?: string; command?: string };
+/**
+ * An article, a file of the drive (`drivePath`), a file of the open article (`file`), the row making a page (`create`),
+ * where pages go (`place`), or a command.
+ */
+type Row = FinderRow & { slug: string; text?: string; drivePath?: string; file?: string; create?: string; place?: string; command?: string };
 
 /** What is typed to find commands, as in VS Code: `>` and their words. */
 const COMMANDS = '>';
@@ -82,6 +90,14 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 			return [...top, ...pages.map((entry) => ({ ...article(entry), key: `p:${entry.slug}`, place: entry.slug, snippet: pathOf(entry.slug) || undefined }))];
 		}
 		const found = filterArticles(host.articles(), query).map(article);
+		// `@`: the open article's files first (those named so, typed), then the pages.
+		if (ask.mode === 'mention') {
+			const wanted = query.toLocaleLowerCase('zh-CN');
+			const files = ask.files
+				.filter((entry) => !wanted || entry.path.toLocaleLowerCase('zh-CN').includes(wanted))
+				.map((entry): Row => ({ key: `f:${entry.path}`, slug: '', file: entry.path, title: entry.path.split('/').pop() ?? entry.path, icon: '▢', snippet: entry.size === undefined ? t('这篇的文件') : t('这篇的文件 · {size}', { size: fileSize(entry.size) }) }));
+			return [...files, ...found];
+		}
 		if (ask.mode !== 'pick' || !query || found.some((row) => row.title === query)) return found;
 		return [...found, { key: 'c:', slug: '', title: t('新建子页面「{query}」', { query }), icon: '＋', create: query }];
 	}
@@ -161,10 +177,11 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 
 	function choose(key: string): void {
 		const row = rows.find((entry) => entry.key === key);
-		if (!row || (!row.slug && !row.drivePath && !row.create && !row.command && row.place === undefined)) return;
+		if (!row || (!row.slug && !row.drivePath && !row.file && !row.create && !row.command && row.place === undefined)) return;
 		onClose();
 		if (row.command) return commands.current.find((command) => command.key === row.command)?.run();
-		if (ask.mode === 'place') ask.done(row.place ?? row.slug);
+		if (ask.mode === 'mention') ask.done(row.file ? { file: row.file } : row.drivePath ? { drive: row.drivePath } : { slug: row.slug });
+		else if (ask.mode === 'place') ask.done(row.place ?? row.slug);
 		else if (ask.mode === 'pick') ask.done(row.create ? { create: row.create } : { slug: row.slug });
 		else if (row.drivePath) host.openDriveFile(row.drivePath);
 		else host.open(row.slug, row.text);
@@ -174,9 +191,8 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 		<Finder
 			id="quick-find-dialog"
 			inputId="quick-find-input"
-			title={t('搜索')}
 			icon="⌕"
-			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪篇文章…') : t('搜索文章和资料库…（输入 > 找命令）')}
+			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪篇文章…') : ask.mode === 'mention' ? t('插入页面或文件…（这篇的文件、页面、资料库）') : t('搜索文章和资料库…（输入 > 找命令）')}
 			query={query}
 			onQuery={typed}
 			rows={rows}
@@ -184,6 +200,7 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 			onSelected={setSelected}
 			onChoose={choose}
 			empty={query.trim() ? t('没有找到') : t('还没有文章')}
+			title={ask.mode === 'mention' ? t('插入') : t('搜索')}
 			hint={
 				<>
 					<kbd>↑</kbd>

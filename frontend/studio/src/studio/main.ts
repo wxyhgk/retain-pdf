@@ -45,7 +45,7 @@ import { officeFilesChanged } from '@blog/office/card.ts';
 import { firstSheetRows } from '@blog/office/render.ts';
 import { openOfficeFile } from '@blog/office/viewer.ts';
 import { createFilePanel } from './files/file-panel';
-import { isImage } from './files/article-files';
+import { isImage, linkPath } from './files/article-files';
 import { uploadFolderFor } from './files/file-tree';
 import { pluginCommands, setStudioPluginEnabled, studioPluginInfo, studioPlugins } from './plugins';
 import { safeModeNow, showSafeModeBar, startFinished } from './safe-mode';
@@ -479,6 +479,20 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		if (picked && 'create' in picked) return pages.makeLinkedPage(picked.create);
 		const article = articleList.articles().find((entry) => entry.slug === picked?.slug);
 		return article ? { title: article.title, href: articleAddress(article.kind, article.slug) } : null;
+	},
+	async pickMention() {
+		const slug = session.slug;
+		const files = filePanel.entries().filter((entry) => entry.kind === 'file' && /^(?:img|assets)\//u.test(entry.path)).map(({ path, size }) => ({ path, size }));
+		const picked = await quickFind.mention(files);
+		if (!picked) return null;
+		if ('slug' in picked) {
+			const article = articleList.articles().find((entry) => entry.slug === picked.slug);
+			return article ? { title: article.title, href: articleAddress(article.kind, article.slug) } : null;
+		}
+		const path = 'file' in picked ? picked.file : slug ? await drive.copyFromDrive(picked.drive).catch((error: unknown) => (showToast(error instanceof Error ? error.message : String(error), true), null)) : null;
+		if (!path) return null;
+		void filePanel.refresh();
+		return { title: path.split('/').pop() ?? path, href: linkPath(path) };
 	},
 	openArticle: (slug) => void session.open(slug),
 	// 页面 (/page): a page under the open one, linked where the caret is, and gone into.

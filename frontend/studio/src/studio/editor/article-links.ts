@@ -37,6 +37,8 @@ export type ArticleLinkHost = {
 	enterPage(slug: string): void;
 	/** How large a file of the article is (its card says so); null while not known. */
 	fileSize?(path: string): number | null;
+	/** `@`: a page, or a file (the article's, or the drive's copied into it), as a link's words and address; null when given up. */
+	pickMention?(): Promise<{ title: string; href: string } | null>;
 };
 
 /**
@@ -188,6 +190,27 @@ export async function linkArticleAt(view: EditorView, host: ArticleLinkHost, at:
 	view.focus();
 }
 
+/**
+ * `@` (as Notion's): a page, or a file (the article's own, or the drive's copied into it), linked where it was typed;
+ * given up, the `@` stays as typed.
+ */
+async function mentionAt(view: EditorView, host: ArticleLinkHost, at: number): Promise<void> {
+	const chosen = await host.pickMention!();
+	if (view.isDestroyed) return;
+	const { state } = view;
+	const pos = Math.min(at, state.doc.content.size);
+	const link = state.schema.marks.link;
+	let tr = state.tr;
+	if (chosen && link) {
+		tr = tr.insert(pos, state.schema.text(chosen.title, [link.create({ href: chosen.href, title: null })]));
+		tr = tr.setSelection(TextSelection.create(tr.doc, pos + chosen.title.length)).removeStoredMark(link);
+	} else {
+		tr = tr.insertText('@', pos).setSelection(TextSelection.create(tr.doc, pos + 1));
+	}
+	view.dispatch(tr.scrollIntoView());
+	view.focus();
+}
+
 export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 	const plugin = $prose(
 		() =>
@@ -196,6 +219,15 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 					// `[[`, or `【【` as a Chinese input method types it (one that pairs
 					// brackets types `【】` at each press: the `】`s go too).
 					handleTextInput(view, from, to, text) {
+						// `@`, where it begins a word (not in an address: a@b.com), out of code; `[@` is a citation's (citations.ts).
+						if ((text === '@' || text === '＠') && host.pickMention && from === to) {
+							const { $from } = view.state.selection;
+							const before = from > $from.start() ? view.state.doc.textBetween(from - 1, from) : '';
+							if (!$from.parent.type.spec.code && !/[\w.%+\-[]/u.test(before)) {
+								void mentionAt(view, host, from);
+								return true;
+							}
+						}
 						const open = text === '[' ? '[' : text === '【' || text === '【】' ? '【' : null;
 						if (!open || from !== to || from < 1) return false;
 						const { doc, selection } = view.state;

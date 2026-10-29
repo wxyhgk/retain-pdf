@@ -6,7 +6,7 @@ import type { CiteHost } from './CiteDialog';
 import { openDialog } from './Dialogs';
 import type { PluginsHost } from './PluginSettings';
 import type { SettingsSection } from './SettingsDialog';
-import type { Picked, QuickFindHost } from './QuickFindDialog';
+import type { Mentioned, Picked, QuickFindHost } from './QuickFindDialog';
 
 // What the rest of the Studio asks through the dialogs: each opened with what it shows, answering when it is closed.
 
@@ -58,7 +58,7 @@ let givenUp: (() => void) | null = null;
 
 /** ⌘K, and the questions asked through it (shell/dialogs/QuickFindDialog.tsx): which article to link, where pages go. */
 export function createQuickFind(host: QuickFindHost) {
-	function ask<T>(mode: 'pick' | 'place', more: { excluded?: Set<string>; placeholder?: string } = {}): Promise<T | null> {
+	function ask<T>(mode: 'pick' | 'place' | 'mention', more: { excluded?: Set<string>; placeholder?: string; files?: Array<{ path: string; size?: number }> } = {}): Promise<T | null> {
 		givenUp?.();
 		return new Promise((resolve) => {
 			let answered = false;
@@ -105,6 +105,8 @@ export function createQuickFind(host: QuickFindHost) {
 		},
 		/** Asks which article: one there is, a new one to make (its title typed), or null when given up. */
 		pick: (): Promise<Picked | null> => ask<Picked>('pick'),
+		/** `@`: which page, file of the open article (`files`) or file of the drive to put in; null when given up. */
+		mention: (files: Array<{ path: string; size?: number }>): Promise<Mentioned | null> => ask<Mentioned>('mention', { files }),
 	};
 }
 
