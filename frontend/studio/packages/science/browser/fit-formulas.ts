@@ -105,8 +105,13 @@ export function keepFormulasFitted(root: HTMLElement): () => void {
 		soon();
 	});
 	added.observe(root, { childList: true, subtree: true });
-	// Scrolls of the page or of whatever holds `root` (scroll events do not bubble; they are caught on the way down).
-	document.addEventListener('scroll', soon, { capture: true, passive: true });
+	// Scrolls of the page or of whatever holds `root` (scroll events do not bubble; they are caught on the way down); not
+	// of what is beside it (the AI panel, kept at its foot at every frame as an answer streams in, measured the page each time).
+	const scrolled = (event: Event) => {
+		const target = event.target;
+		if (!(target instanceof Node) || target === document || target.contains(root) || root.contains(target)) soon();
+	};
+	document.addEventListener('scroll', scrolled, { capture: true, passive: true });
 	window.addEventListener('resize', soon);
 	soon();
 	// Its fonts come later than its boxes: measured again once they are in.
@@ -116,7 +121,7 @@ export function keepFormulasFitted(root: HTMLElement): () => void {
 		clearTimeout(settling);
 		resized.disconnect();
 		added.disconnect();
-		document.removeEventListener('scroll', soon, { capture: true });
+		document.removeEventListener('scroll', scrolled, { capture: true });
 		window.removeEventListener('resize', soon);
 	};
 }

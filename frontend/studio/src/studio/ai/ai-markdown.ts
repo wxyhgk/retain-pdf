@@ -60,39 +60,53 @@ type TopNode = Tree['children'][number];
 /**
  * `blocks`: each block of it (a paragraph, each item of a list, a formula, a code block, a table…) in its own
  * `.ai-block`, as the editor has them, with the Markdown it was written as in `data-markdown`, to be put in an
- * article as it is.
+ * article as it is (renderAiBlocks).
  */
 export function renderAiMarkdown(markdown: string, { blocks = false, pages = [] }: { blocks?: boolean; pages?: PageRef[] } = {}): DocumentFragment {
-	const tree = articleParser.runSync(articleParser.parse(markdown)) as Tree;
-	const drawn = (shown: Tree) => {
-		const fragment = drawnTree(shown);
-		if (pages.length) linkPages(fragment, indexOf(pages));
-		return fragment;
-	};
-	if (!blocks) return drawn(tree);
+	if (!blocks) return drawnWithPages(articleParser.runSync(articleParser.parse(markdown)) as Tree, pages);
 	const fragment = document.createDocumentFragment();
+	fragment.append(...renderAiBlocks(markdown, { pages }));
+	return fragment;
+}
+
+/**
+ * Markdown as blocks (renderAiMarkdown's `blocks`). `drawnBefore`: a block drawn already, by its Markdown and class,
+ * used as it is: words streaming in draw only the blocks that changed (all of them and their formulas at every frame
+ * made a long answer crawl).
+ */
+export function renderAiBlocks(markdown: string, { pages = [], drawnBefore }: { pages?: PageRef[]; drawnBefore?: (markdown: string, className: string) => HTMLElement | null } = {}): HTMLElement[] {
+	const tree = articleParser.runSync(articleParser.parse(markdown)) as Tree;
+	const drawn: HTMLElement[] = [];
 	// Link definitions drawn with each block, as its links may need them.
 	const definitions = tree.children.filter((node) => node.type === 'definition');
 	const block = (node: TopNode, className = 'ai-block'): HTMLElement => {
+		const source = sourceOf(markdown, node);
+		const before = source ? drawnBefore?.(source, className) : null;
+		if (before) return before;
 		const holder = document.createElement('div');
 		holder.className = className;
-		const source = sourceOf(markdown, node);
 		if (source) holder.dataset.markdown = source;
-		holder.append(drawn({ ...tree, children: [node, ...definitions] }));
+		holder.append(drawnWithPages({ ...tree, children: [node, ...definitions] }, pages));
 		return holder;
 	};
 	for (const node of tree.children) {
 		if (node.type === 'definition') continue;
 		if (node.type !== 'list') {
-			fragment.append(block(node));
+			drawn.push(block(node));
 			continue;
 		}
 		// A list, an item a block: each a list of one, numbered on from where it is (2. for the second).
 		node.children.forEach((item, at) => {
 			const one = { ...node, start: node.ordered ? (node.start ?? 1) + at : node.start, children: [item], position: item.position } as TopNode;
-			fragment.append(block(one, `ai-block is-item${at === node.children.length - 1 ? ' is-last-item' : ''}`));
+			drawn.push(block(one, `ai-block is-item${at === node.children.length - 1 ? ' is-last-item' : ''}`));
 		});
 	}
+	return drawn;
+}
+
+function drawnWithPages(tree: Tree, pages: PageRef[]): DocumentFragment {
+	const fragment = drawnTree(tree);
+	if (pages.length) linkPages(fragment, indexOf(pages));
 	return fragment;
 }
 

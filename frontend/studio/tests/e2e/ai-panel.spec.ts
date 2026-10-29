@@ -53,6 +53,29 @@ async function tell(page: Page, text: string): Promise<void> {
 
 test.beforeEach(() => resetFixture());
 
+test('a long answer streams in: the blocks done are not drawn again, what is selected in them stays selected', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '长回答');
+	const blocks = pane(page).locator('.ai-message .ai-block');
+	await expect(blocks.nth(3)).toBeVisible();
+	// The first paragraph selected while the rest comes in.
+	await page.evaluate(() => {
+		const first = document.querySelector('#side-ai .ai-message .ai-block')!;
+		(first as HTMLElement).dataset.marked = '';
+		const range = document.createRange();
+		range.selectNodeContents(first);
+		getSelection()!.removeAllRanges();
+		getSelection()!.addRange(range);
+	});
+	await expect(blocks.nth(20)).toBeVisible();
+	expect(await page.evaluate(() => getSelection()!.toString())).toContain('第 1 段');
+	await expect(pane(page).locator('.ai-send')).not.toHaveAttribute('aria-label', '停下', { timeout: 30_000 });
+	await expect(blocks).toHaveCount(62);
+	// The same element all along.
+	await expect(blocks.first()).toHaveAttribute('data-marked', '');
+	expect(await page.evaluate(() => getSelection()!.toString())).toContain('第 1 段');
+});
+
 test('the agent thinks, asks leave to run a command, runs it once allowed, changes a file, keeps a plan; drawn as it goes', async ({ page }) => {
 	await openAi(page);
 	await expect(pane(page).locator('.ai-where')).toHaveText('');

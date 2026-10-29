@@ -210,6 +210,17 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '分部积分。\n\n$$\\begin{aligned}\n\\int \\ln x\\, dx &= x\\ln x - \\int dx \\\\\n&= x\\ln x - x + C\n\\end{aligned}$$\n\n验算一下：$(x\\ln x - x)\' = \\ln x$，对的。');
 			return { stopReason: 'end_turn' };
 		}
+		// A long answer, streamed slowly: paragraphs with formulas, then a list (the panel kept quick, a selection in it kept).
+		if (said.startsWith('长回答')) {
+			const paragraph = (at) => `第 ${at} 段：能量 $E_{${at}} = \\frac{1}{2} m v^2 + \\int_0^{${at}} F\\,dx$，再看 $\\sum_{i=1}^{n} x_i^2$。\n\n`;
+			const text = Array.from({ length: 60 }, (_, at) => paragraph(at + 1)).join('') + '- 要点一\n- 要点二\n';
+			for (const piece of text.match(/.{1,6}/gsu) ?? []) {
+				if (state.cancelled) return { stopReason: 'cancelled' };
+				await update({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: piece }, messageId: 'long' });
+				await pause(8);
+			}
+			return { stopReason: 'end_turn' };
+		}
 		// Words with a formula in them, to quote.
 		if (said.startsWith('公式')) {
 			await words('agent_message_chunk', '质能关系 $E = mc^2$ 说明质量就是能量。\n\n第二段。');

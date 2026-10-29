@@ -5,15 +5,20 @@ import { Copy, FilePlus2, Paperclip, PencilLine, RotateCcw, type LucideIcon } fr
 import { t } from '@blog/i18n/index.mjs';
 import type { Conversation, ConversationItem } from '../../api/client';
 import { STUDIO_MARKDOWN_DRAG_TYPE } from '../../files/article-files';
-import { isPicture, pictureUrl, renderAiMarkdown } from '../ai-markdown';
+import { isPicture, pictureUrl, renderAiBlocks, renderAiMarkdown } from '../ai-markdown';
 import { PageIcon } from './PagePeek';
 import { mentionsIn, type PageInfo, type PanelActions } from './panel-state';
 
 export type ToolItem = Extract<ConversationItem, { kind: 'tool' }>;
 
-/** What each item is drawn with: the conversation (its folder, whether it works), all its items, what the panel does. */
+/** The conversation (its folder, whether it works), all its items, what the panel does. */
 export const ItemsContext = createContext<{ conversation: Conversation | null; items: ConversationItem[]; actions: PanelActions } | null>(null);
-const useItems = () => useContext(ItemsContext)!;
+/**
+ * What each item is drawn with: the conversation and what the panel does, not its items, which change at every word
+ * streamed in (each item drawn again then, a long conversation crawled); what an item needs of them is given it (itemProps).
+ */
+export const PanelContext = createContext<{ conversation: Conversation | null; actions: PanelActions } | null>(null);
+const useItems = () => useContext(PanelContext)!;
 
 const PERMISSION_NAMES: Record<string, string> = { allow_once: t('允许'), allow_always: t('总是允许'), reject_once: t('拒绝'), reject_always: t('总是拒绝') };
 const PERMISSION_CHOSEN: Record<string, string> = { allow_once: t('已允许'), allow_always: t('已总是允许'), reject_once: t('已拒绝'), reject_always: t('已总是拒绝') };
@@ -63,19 +68,25 @@ export function Markdown({ text, blocks = false, className }: { text: string; bl
 	const pages = actions.articles();
 	useEffect(() => {
 		const words = node.current!;
-		const drawn = renderAiMarkdown(text, { blocks, pages });
 		if (!blocks) {
-			words.replaceChildren(drawn);
+			words.replaceChildren(renderAiMarkdown(text, { pages }));
 			return;
 		}
-		// As words stream in, only the blocks that changed are drawn again: those done (a molecule's 3D view…) stay as they are.
-		const before = [...words.children] as HTMLElement[];
-		const kept = ([...drawn.children] as HTMLElement[]).map((block, at) => {
-			const old = before[at];
-			return old?.dataset.markdown !== undefined && old.dataset.markdown === block.dataset.markdown && old.className === block.className ? old : block;
+		// As words stream in, only the blocks that changed are drawn again: those done (a molecule's 3D view…) stay as they
+		// are, where they are (taken out and put back, what is selected in them would be lost).
+		const unused = new Map(([...words.children] as HTMLElement[]).map((block) => [`${block.className}\n${block.dataset.markdown}`, block]));
+		const drawnBefore = (markdown: string, className: string) => {
+			const key = `${className}\n${markdown}`;
+			const old = unused.get(key) ?? null;
+			unused.delete(key);
+			return old;
+		};
+		const kept = renderAiBlocks(text, { pages, drawnBefore });
+		kept.forEach((block, at) => {
+			const there = words.children[at];
+			if (there !== block) words.insertBefore(block, there ?? null);
 		});
-		if (kept.length === before.length && kept.every((block, at) => block === before[at])) return;
-		words.replaceChildren(...kept);
+		while (words.children.length > kept.length) words.lastElementChild!.remove();
 		for (const block of kept) {
 			const markdown = block.dataset.markdown;
 			if (markdown === undefined || block.querySelector(':scope > .ai-block-handle')) continue;
@@ -189,9 +200,9 @@ function Message({ item }: { item: Extract<ConversationItem, { kind: 'message' }
 	);
 }
 
-function Thought({ item }: { item: Extract<ConversationItem, { kind: 'thought' }> }) {
-	const { conversation, items } = useItems();
-	const thinking = items.at(-1) === item && conversation?.state === 'running';
+function Thought({ item, last }: { item: Extract<ConversationItem, { kind: 'thought' }>; last: boolean }) {
+	const { conversation } = useItems();
+	const thinking = last && conversation?.state === 'running';
 	// In the dialog of its stretch: open, as it is opened to be read.
 	return (
 		<details className={`ai-thought${thinking ? ' is-going' : ''}`} open>
@@ -286,10 +297,9 @@ function Plan({ item }: { item: Extract<ConversationItem, { kind: 'plan' }> }) {
 	);
 }
 
-function Permission({ item }: { item: Extract<ConversationItem, { kind: 'permission' }> }) {
-	const { items, actions } = useItems();
+function Permission({ item, tool }: { item: Extract<ConversationItem, { kind: 'permission' }>; tool: ToolItem | undefined }) {
+	const { actions } = useItems();
 	const [answered, setAnswered] = useState(false);
-	const tool = items.find((entry): entry is ToolItem => entry.kind === 'tool' && entry.id === item.toolCallId);
 	const what = (tool && commandOf(tool)) || item.title || t('这一步');
 	const chosen = item.chosen ? item.options.find((entry) => entry.optionId === item.chosen) : undefined;
 	// What it asks leave for, there to be read before it is allowed: the change to a file, the plan, what it says of it.
@@ -453,22 +463,28 @@ export function SettingsFix() {
 	);
 }
 
+/** What an item needs of the others: whether it is the last; a leave asked, the tool call it is for. */
+export function itemProps(item: ConversationItem, items: ConversationItem[]): { item: ConversationItem; last: boolean; tool?: ToolItem } {
+	const tool = item.kind === 'permission' ? items.find((entry): entry is ToolItem => entry.kind === 'tool' && entry.id === item.toolCallId) : undefined;
+	return { item, last: items.at(-1) === item, ...(tool ? { tool } : {}) };
+}
+
 /** An item of the conversation as the panel shows it (a stretch of work is shown by its row, WorkRow). */
-export const Item = memo(function Item({ item }: { item: ConversationItem }) {
-	const { items, actions } = useItems();
+export const Item = memo(function Item({ item, last, tool }: { item: ConversationItem; last: boolean; tool?: ToolItem }) {
+	const { actions } = useItems();
 	switch (item.kind) {
 		case 'user':
 			return <User item={item} />;
 		case 'message':
 			return <Message item={item} />;
 		case 'thought':
-			return <Thought item={item} />;
+			return <Thought item={item} last={last} />;
 		case 'tool':
 			return <Tool item={item} />;
 		case 'plan':
 			return <Plan item={item} />;
 		case 'permission':
-			return <Permission item={item} />;
+			return <Permission item={item} tool={tool} />;
 		case 'question':
 			return <Question item={item} />;
 		case 'notice':
@@ -477,7 +493,7 @@ export const Item = memo(function Item({ item }: { item: ConversationItem }) {
 					<strong>{item.title}</strong>
 					<span>{item.description ? ` ${item.description}` : ''}</span>
 					{/* Nothing said: asked to say it, while it is the last thing in the conversation. */}
-					{item.resume && items.at(-1)?.id === item.id && (
+					{item.resume && last && (
 						<>
 							{' '}
 							<button type="button" className="ai-status-fix" onClick={actions.resume}>
@@ -494,7 +510,7 @@ export const Item = memo(function Item({ item }: { item: ConversationItem }) {
 				<div className="ai-error">
 					{item.message} <SettingsFix />
 					{/* The last thing in the conversation: what was said, said again. */}
-					{items.at(-1)?.id === item.id && (
+					{last && (
 						<button type="button" className="ai-status-fix" onClick={actions.retry}>
 							{t('重试')}
 						</button>

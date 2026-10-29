@@ -14,7 +14,7 @@ import { markdownOfSelection, pictureUrl } from '../ai-markdown';
 import { EffortMenu, ModelMenu } from './ModelMenu';
 import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
 import { createPromptEditor, type PromptCaret, type PromptEditor, type PromptEditorHost } from './prompt-editor';
-import { commandOf, Item, ItemsContext, Markdown, PageChip, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
+import { commandOf, Item, itemProps, ItemsContext, Markdown, PageChip, PanelContext, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { PagePeek } from './PagePeek';
 import { mentionsIn, PASTE_CHARACTERS, PASTE_LINES, type PageInfo, type PanelActions, type PanelState } from './panel-state';
 
@@ -152,6 +152,7 @@ function WorkRow({ run, onOpen }: { run: ConversationItem[]; onOpen(): void }) {
 
 /** A stretch's detail: each step as the panel draws it (thinking, a command and its output, a change). */
 function WorkDialog({ run, title, onClose, onPicture, copy }: { run: ConversationItem[]; title: string; onClose(): void; onPicture(picture: { src: string; alt: string }): void; copy: PanelActions['copy'] }) {
+	const { items } = useContext(ItemsContext)!;
 	const [body, setBody] = useState<HTMLDivElement | null>(null);
 	useEffect(() => {
 		if (body) void observePluginBlocks(body);
@@ -172,7 +173,7 @@ function WorkDialog({ run, title, onClose, onPicture, copy }: { run: Conversatio
 					}}
 				>
 					{run.map((item) => (
-						<Item key={item.id} item={item} />
+						<Item key={item.id} {...itemProps(item, items)} />
 					))}
 				</div>
 			</DialogContent>
@@ -312,7 +313,7 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 					copyClicked(event, actions.copy);
 				}} onMouseUp={() => requestAnimationFrame(offerQuote)} onKeyUp={(event) => event.shiftKey && offerQuote()}>
 				{rows.map((row) =>
-					'work' in row ? <WorkRow key={row.work[0]!.id} run={row.work} onOpen={() => setWorkShown(row.work[0]!.id)} /> : <Item key={row.item.id} item={row.item} />,
+					'work' in row ? <WorkRow key={row.work[0]!.id} run={row.work} onOpen={() => setWorkShown(row.work[0]!.id)} /> : <Item key={row.item.id} {...itemProps(row.item, state.items)} />,
 				)}
 			</div>
 			{far && (
@@ -739,13 +740,16 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 export function AiPanel({ store, actions, sheetHost, pane }: { store: Store<PanelState>; actions: PanelActions; sheetHost: ModelsSheetHost; pane: HTMLElement }) {
 	const state = useStore(store);
 	const context = useMemo(() => ({ conversation: state.conversation, items: state.items, actions }), [state.conversation, state.items]);
+	const panel = useMemo(() => ({ conversation: state.conversation, actions }), [state.conversation]);
 	return (
 		<ItemsContext value={context}>
-			<PagePeek root={pane} pages={actions.articles} open={actions.openArticle} />
-			<Toolbar state={state} actions={actions} />
-			<ModelsSheet open={state.settings} host={sheetHost} onClose={() => actions.showSheet(false)} />
-			<Transcript state={state} actions={actions} />
-			<Composer state={state} actions={actions} />
+			<PanelContext value={panel}>
+				<PagePeek root={pane} pages={actions.articles} open={actions.openArticle} />
+				<Toolbar state={state} actions={actions} />
+				<ModelsSheet open={state.settings} host={sheetHost} onClose={() => actions.showSheet(false)} />
+				<Transcript state={state} actions={actions} />
+				<Composer state={state} actions={actions} />
+			</PanelContext>
 		</ItemsContext>
 	);
 }
