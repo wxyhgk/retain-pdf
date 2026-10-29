@@ -25,7 +25,7 @@ import '@milkdown/crepe/theme/classic.css';
 import 'katex/contrib/mhchem';
 import { gfmOptions } from '@blog/markdown/plugins/markdown-gfm.mjs';
 import { linkPath } from '../files/article-files';
-import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } from './block-menu';
+import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarClear, buildToolbarTurn } from './block-menu';
 import { filesNamed, headingSection } from './split-section';
 import type { FileClick } from '../files/file-open';
 import { openFileLinks } from './file-links';
@@ -61,6 +61,7 @@ import { columnsPlugins } from './columns-block';
 import { pluginBlocks, pluginSlashCommands } from '../plugins';
 import { runCommand } from '../plugin-ui';
 import { t } from '@blog/i18n/index.mjs';
+import { showToast } from '../common/toast';
 
 /** What the editor needs from the Studio around it. */
 export type StudioEditorHost = {
@@ -145,6 +146,15 @@ export type StudioEditor = {
 };
 
 /** Each editor's writer: its blocks' Markdown, remembered (a long article is not written whole at every edit). */
+/** The link preview's: where a link goes (lucide's globe), and copy it (lucide's copy). */
+const GLOBE_ICON =
+	'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>';
+/** The fork's: a copy button of its own (the link icon then only shows); spread, the npm types not knowing it. */
+const LINK_COPY = {
+	copyButton:
+		'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>',
+};
+
 const writers = new WeakMap<Crepe, (doc: ProseNode) => string>();
 
 function writerOf(editor: Crepe): (doc: ProseNode) => string {
@@ -459,11 +469,18 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					latexLabel: t('公式'),
 					buildToolbar: (builder) => {
 						buildToolbarTurn(builder);
+						buildToolbarClear(builder);
 						buildToolbarAsk(builder, () => host.askAI());
 					},
 				},
+				// Pointed at, a link says where it goes, as Notion's: 🌐 the address, copy, 编辑 (a click opens it: article-links.ts).
 				[CrepeFeature.LinkTooltip]: {
 					inputPlaceholder: t('粘贴链接…'),
+					linkIcon: GLOBE_ICON,
+					...LINK_COPY,
+					editButton: `<span>${t('编辑')}</span>`,
+					removeButton: '',
+					onCopyLink: () => showToast(t('已复制链接')),
 				},
 				[CrepeFeature.ImageBlock]: {
 					proxyDomURL: host.fileUrl,

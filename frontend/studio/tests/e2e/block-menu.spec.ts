@@ -90,13 +90,27 @@ test('「转换成」 in the toolbar over selected text opens the block’s menu
 	await paragraph.scrollIntoViewIfNeeded();
 	await paragraph.selectText();
 	const turn = page.locator('.milkdown-toolbar [aria-label="转换成"]');
-	await expect(turn).toBeVisible();
+	// As Notion's: what the block is, in words.
+	await expect(turn).toHaveText('正文');
 	await expect(page.locator('.milkdown-toolbar [aria-label="删除线"]')).toHaveAttribute('title', /⇧⌘S|Ctrl\+Shift\+S/u);
 	await expect(page.locator('.milkdown-toolbar [aria-label="AI 改写"]')).toBeVisible();
 	await turn.click();
 	await expect(menu(page)).toBeVisible();
 	await item(page, 'turn-h3').click();
 	await expect(editor(page).locator('h3', { hasText: '结尾段落。' })).toBeVisible();
+});
+
+test('清除格式 in the toolbar takes bold, italic, strikethrough and code off what is selected, links kept', async ({ page }) => {
+	appendToFixture('\n**粗** *斜* ~~删~~ `码` [链](https://example.com)\n');
+	await reload(page);
+	const line = editor(page).locator('p', { hasText: '粗' }).last();
+	await line.scrollIntoViewIfNeeded();
+	await line.selectText();
+	await page.locator('.milkdown-toolbar [aria-label="清除格式"]').click();
+	await expect(line.locator('strong, em, del, code')).toHaveCount(0);
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('\n粗 斜 删 码 [链](https://example.com)\n');
 });
 
 test('several blocks selected turn together into one list', async ({ page }) => {

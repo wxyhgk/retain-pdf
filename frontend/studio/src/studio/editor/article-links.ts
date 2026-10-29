@@ -239,15 +239,21 @@ export function articleLinkPlugins(host: ArticleLinkHost): MilkdownPlugin[] {
 						return true;
 					},
 					handleClick(_view, _pos, event) {
-						const target = event.target as Element | null;
-						// A page, its own line or in a sentence, opens with a click, as in Notion; any link to an article with ⌘-click.
-						const page = target?.closest?.('.pm-page-link a[href], a[href]:has(.pm-article-mention), .pm-article-mention');
-						if (!(event.metaKey || event.ctrlKey) && !page) return false;
-						const link = page?.closest('a[href]') ?? target?.closest?.('a[href]');
-						const slug = link ? ARTICLE_ADDRESS.exec(link.getAttribute('href') ?? '')?.[2] : undefined;
-						if (!slug) return false;
+						// A link opens with a click, as in Notion: a page here, a web address in the browser (Studio.app gives
+						// it to the default one). Pointed at, it says where it goes, with 编辑 to change it (Crepe's link
+						// preview); ⇧-click is the editor's (it selects). Links to the article's files: file-links.ts.
+						if (event.shiftKey || event.button !== 0) return false;
+						const link = (event.target as Element | null)?.closest?.('a[href]');
+						const href = link?.getAttribute('href') ?? '';
+						const slug = ARTICLE_ADDRESS.exec(href)?.[2];
+						if (slug) {
+							event.preventDefault();
+							host.openArticle(slug);
+							return true;
+						}
+						if (!/^(?:https?:|mailto:)/iu.test(href)) return false;
 						event.preventDefault();
-						host.openArticle(slug);
+						window.open(href, '_blank', 'noopener');
 						return true;
 					},
 				},

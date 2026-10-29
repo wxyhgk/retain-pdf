@@ -199,9 +199,11 @@ export function buildBlockMenu(builder: BlockMenuBuilder, { node, pos }: { node:
 	}
 }
 
-/** Crepe's toolbar builder, as much of it as is used here. */
+/** Crepe's toolbar builder, as much of it as is used here (`text`: words after the icon, the fork's). */
+type ToolbarGroup = { addItem: (key: string, item: { icon: string; label?: string; text?: (ctx: Ctx) => string; active: (ctx: Ctx) => boolean; onRun?: (ctx: Ctx) => void }) => unknown };
 type ToolbarBuilder = {
-	addGroup: (key: string, label: string) => { addItem: (key: string, item: { icon: string; label?: string; active: (ctx: Ctx) => boolean; onRun?: (ctx: Ctx) => void }) => unknown };
+	addGroup: (key: string, label: string) => ToolbarGroup;
+	getGroup: (key: string) => ToolbarGroup;
 	build: () => unknown[];
 };
 
@@ -210,14 +212,23 @@ const TURN_MARK = 'data-studio-turn';
 const TURN_ICON =
 	`<svg ${TURN_MARK} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M4 6h10v2h-4v11H8V8H4z"/><path d="M15 12h6l-3 3.5z"/></svg>`;
 
+/** What the block the selection starts in is (正文, 标题 1, 引用…), as its menu's 转换成 marks it. */
+function kindOfSelected(ctx: Ctx): string {
+	const view = ctx.get(editorViewCtx);
+	const target = blockAt(view.state.doc, view.state.selection.from);
+	const current = target ? blockActionItems(target.node).find((item) => item.section === '转换成' && item.current) : undefined; // i18n-ignore: group key
+	return current?.label ?? t('正文');
+}
+
 /**
- * Notion's「转换成 ▾」at the front of the toolbar over selected text: the
- * block menu of the block the selection starts in, next to the button.
+ * Notion's「正文 ›」at the top of the toolbar over selected text: what the
+ * block the selection starts in is; clicked, its block menu, next to it.
  */
 export function buildToolbarTurn(builder: ToolbarBuilder): void {
 	builder.addGroup('turn', t('转换成')).addItem('turn-into', {
 		icon: TURN_ICON,
 		label: t('转换成'),
+		text: kindOfSelected,
 		active: () => false,
 		onRun: (ctx) => {
 			const view = ctx.get(editorViewCtx);
@@ -233,9 +244,33 @@ export function buildToolbarTurn(builder: ToolbarBuilder): void {
 const ASK_ICON =
 	'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M11 3l1.9 5.1L18 10l-5.1 1.9L11 17l-1.9-5.1L4 10l5.1-1.9z"/><path d="M18.5 14l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9z"/></svg>';
 
-/** 「问 AI」 at the end of the toolbar over selected text. */
+const CLEAR_ICON =
+	'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M5 20h6"/><path d="M13 4 8 20"/><path d="m15 15 5 5"/><path d="m20 15-5 5"/></svg>';
+/** The marks 清除格式 takes off: how the words are set, not where they link to. */
+const FORMATTING = ['strong', 'emphasis', 'strike_through', 'inlineCode'];
+
+/** 清除格式 after the toolbar's others (Notion's Tx): bold, italic, strikethrough and code taken off what is selected. */
+export function buildToolbarClear(builder: ToolbarBuilder): void {
+	builder.getGroup('function').addItem('clear-format', {
+		icon: CLEAR_ICON,
+		label: t('清除格式'),
+		active: () => false,
+		onRun: (ctx) => {
+			const view = ctx.get(editorViewCtx);
+			const { from, to } = view.state.selection;
+			const tr = view.state.tr;
+			for (const name of FORMATTING) {
+				const type = view.state.schema.marks[name];
+				if (type) tr.removeMark(from, to, type);
+			}
+			if (tr.docChanged) view.dispatch(tr);
+		},
+	});
+}
+
+/** 「AI 改写」 at the foot of the toolbar over selected text, in words, as Notion's 「Edit with AI」. */
 export function buildToolbarAsk(builder: ToolbarBuilder, ask: () => void): void {
-	builder.addGroup('ask', 'AI').addItem('ask-ai', { icon: ASK_ICON, label: t('AI 改写'), active: () => false, onRun: () => ask() });
+	builder.addGroup('ask', 'AI').addItem('ask-ai', { icon: ASK_ICON, label: t('AI 改写'), text: () => t('AI 改写'), active: () => false, onRun: () => ask() });
 }
 
 export const writingKeymap = $prose(() =>
