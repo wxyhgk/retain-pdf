@@ -1,0 +1,363 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/glossaries/v1",
+  "title": "术语表（Glossaries）",
+  "description": "命名术语表 `/api/v1/glossaries`：列表、新建、读一张、整份保存、删除、导出 CSV、解析 CSV。生产者：backend/packages/retainpdf-glossaries/src/views.rs（请求和返回类型）、api.rs（逻辑）、backend/api/src/routes/glossaries.rs（处理函数）；词条 GlossaryEntryInput 在 backend/packages/retainpdf-core 的 models/input/translation.rs，定义从 create-job.v1 原样抄（tests/glossaries-shared-definitions.test.mjs 锁成一致）。Rust 侧由 backend/api/src/api_tests/glossaries_contract.rs 对真实接口的返回钉键集合、对请求类型钉字段。消费者：@retainpdf/contracts/glossaries 生成 DTO 和请求函数（设置类第 2 批，2026-10-29）。成功响应包在 {code, message, data} 里，本契约描述 data 部分；导出 CSV 例外，直接是文件。不分页（一个人的术语表就几张）。请求体和查询参数 additionalProperties: false 对应 deny_unknown_fields，多一个键 400。改契约先改本文件，再重新生成 DTO 并让两端测试变绿。",
+  "base_path": "/api/v1",
+  "endpoints": [
+    {
+      "method": "GET",
+      "path": "/api/v1/glossaries",
+      "client_name": "listGlossaries",
+      "transport": "json",
+      "query": "ListGlossariesQuery",
+      "output": "GlossaryListView",
+      "rust_view": "GlossaryListView",
+      "ts_consumer": "@retainpdf/contracts/glossaries :: GlossaryListView",
+      "note": "按 updated_at 从新到旧。筛选条件都可以不写，写了几个就同时满足几个。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/glossaries",
+      "client_name": "createGlossary",
+      "transport": "json",
+      "input": "GlossaryUpsertInput",
+      "output": "GlossaryDetailView",
+      "rust_view": "GlossaryDetailView",
+      "note": "新建。`description`、`source_lang`、`target_lang` 没写是空串，`enabled` 没写是 true；`expected_updated_at` 不起作用。词条不合法（不认识的 level、match_mode，正则写错，preserve 却写了译文……）400。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/glossaries/:glossary_id",
+      "client_name": "getGlossary",
+      "transport": "json",
+      "output": "GlossaryDetailView",
+      "rust_view": "GlossaryDetailView",
+      "note": "没有这张表 404。"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/glossaries/:glossary_id",
+      "client_name": "updateGlossary",
+      "transport": "json",
+      "input": "GlossaryUpsertInput",
+      "output": "GlossaryDetailView",
+      "rust_view": "GlossaryDetailView",
+      "note": "整份保存：`name`、`entries` 整份替换；`description`、`source_lang`、`target_lang`、`enabled` 没写（或 null）时保留原值（2026-10-22 起）。带 `expected_updated_at` 且和库里的 `updated_at` 不一样时 409，`error.details.reason = \"glossary_changed\"`（表在读完之后被别处改过）。没有这张表 404。"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/glossaries/:glossary_id",
+      "client_name": "deleteGlossary",
+      "transport": "json",
+      "output": "GlossaryDetailView",
+      "rust_view": "GlossaryDetailView",
+      "note": "返回删掉的那张表。没有这张表 404。已经建好的任务里存的是词条的快照，不受影响。"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/glossaries/:glossary_id/export.csv",
+      "client_name": "exportGlossaryCsv",
+      "transport": "binary",
+      "rust_view": "text/csv 正文（GlossaryCsvExportView.csv_text），Content-Disposition: attachment; filename=<表名>.csv",
+      "note": "直接是文件，不带信封。开头有 UTF-8 BOM；列是 source,target,note,level,match_mode,context；以 = + - @、制表符、回车开头的单元格前加 '（防公式注入），parse-csv 读回时去掉。没有这张表 404。"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/glossaries/parse-csv",
+      "client_name": "parseGlossaryCsv",
+      "transport": "json",
+      "input": "GlossaryCsvParseInput",
+      "output": "GlossaryCsvParseView",
+      "rust_view": "GlossaryCsvParseView",
+      "note": "只解析不保存：导入前给用户看。认别名、宽松（不认识的 level、match_mode 换成默认值），同一条以最后一行为准。"
+    }
+  ],
+  "definitions": {
+    "GlossaryEntryInput": {
+      "type": "object",
+      "description": "models/input/translation.rs :: GlossaryEntryInput",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "target": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
+        "level": {
+          "type": "string"
+        },
+        "match_mode": {
+          "type": "string"
+        },
+        "context": {
+          "type": "string"
+        }
+      }
+    },
+    "GlossarySummaryView": {
+      "type": "object",
+      "description": "views.rs :: GlossarySummaryView。列表里的一项，不带词条。",
+      "required": [
+        "glossary_id",
+        "name",
+        "description",
+        "source_lang",
+        "target_lang",
+        "enabled",
+        "entry_count",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "glossary_id": {
+          "type": "string",
+          "description": "术语表编号（服务器生成）。"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "没写时是空串。"
+        },
+        "source_lang": {
+          "type": "string",
+          "description": "没写时是空串。"
+        },
+        "target_lang": {
+          "type": "string",
+          "description": "没写时是空串。"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "停用的表不会被建任务时选中（`GET /glossaries?enabled=true` 只列启用的）。"
+        },
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "created_at": {
+          "type": "string",
+          "description": "ISO 8601。"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "ISO 8601。整份保存（PUT）时作 `expected_updated_at` 传回去，防止盖掉别处的改动。"
+        }
+      }
+    },
+    "GlossaryListView": {
+      "type": "object",
+      "description": "views.rs :: GlossaryListView。",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GlossarySummaryView"
+          }
+        }
+      }
+    },
+    "GlossaryDetailView": {
+      "type": "object",
+      "description": "views.rs :: GlossaryDetailView。一张术语表连同全部词条。",
+      "required": [
+        "glossary_id",
+        "name",
+        "description",
+        "source_lang",
+        "target_lang",
+        "enabled",
+        "entry_count",
+        "entries",
+        "created_at",
+        "updated_at"
+      ],
+      "properties": {
+        "glossary_id": {
+          "type": "string",
+          "description": "术语表编号（服务器生成）。"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "description": "没写时是空串。"
+        },
+        "source_lang": {
+          "type": "string",
+          "description": "没写时是空串。"
+        },
+        "target_lang": {
+          "type": "string",
+          "description": "没写时是空串。"
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "停用的表不会被建任务时选中（`GET /glossaries?enabled=true` 只列启用的）。"
+        },
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GlossaryEntryInput"
+          },
+          "description": "规范化、去重以后的词条（`level`、`match_mode` 写的是规范名，别名已经换掉）。"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "ISO 8601。"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "ISO 8601。整份保存（PUT）时作 `expected_updated_at` 传回去，防止盖掉别处的改动。"
+        }
+      }
+    },
+    "ListGlossariesQuery": {
+      "type": "object",
+      "description": "views.rs :: ListGlossariesQuery（deny_unknown_fields）。不认识的参数 400。",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "只列启用（true）或停用（false）的。"
+        },
+        "source_lang": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "和表的 source_lang 一样（去掉首尾空白、不分大小写）。"
+        },
+        "target_lang": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "和表的 target_lang 一样（去掉首尾空白、不分大小写）。"
+        },
+        "q": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "名字、说明或编号里包含它（不分大小写）；空串或全是空白时不过滤。"
+        }
+      }
+    },
+    "GlossaryUpsertInput": {
+      "type": "object",
+      "description": "views.rs :: GlossaryUpsertInput（deny_unknown_fields）。新建（POST）和整份保存（PUT）共用。",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "entries"
+      ],
+      "properties": {
+        "glossary_id": {
+          "type": "string",
+          "default": "",
+          "description": "不用：以前 POST /glossaries/import 按它区分新建、覆盖（2026-10-22 删了）。留着是为了带它的老请求不 400，不要再传。"
+        },
+        "name": {
+          "type": "string",
+          "description": "去掉首尾空白后不能是空的。"
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "source_lang": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "target_lang": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "enabled": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GlossaryEntryInput"
+          },
+          "description": "整份词条。`level` 认 preserve、canonical、preferred，`match_mode` 认 exact、case_insensitive、regex（都认别名，空的取默认值 preferred、exact），不认识的 400。"
+        },
+        "expected_updated_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "只对 PUT 有用：给了就只在库里的 updated_at 还是它时才保存，否则 409 glossary_changed。"
+        }
+      }
+    },
+    "GlossaryCsvParseInput": {
+      "type": "object",
+      "description": "views.rs :: GlossaryCsvParseInput（deny_unknown_fields）。",
+      "additionalProperties": false,
+      "required": [
+        "csv_text"
+      ],
+      "properties": {
+        "csv_text": {
+          "type": "string",
+          "description": "整份 CSV 文本（可以带 BOM）。"
+        }
+      }
+    },
+    "GlossaryCsvParseView": {
+      "type": "object",
+      "description": "views.rs :: GlossaryCsvParseView。",
+      "required": [
+        "entry_count",
+        "entries",
+        "duplicate_count"
+      ],
+      "properties": {
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GlossaryEntryInput"
+          }
+        },
+        "duplicate_count": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "去重时丢掉的行数（同一条以最后一行为准）。2026-10-22 加。"
+        }
+      }
+    }
+  }
+}

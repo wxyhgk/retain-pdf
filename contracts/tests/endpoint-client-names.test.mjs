@@ -136,3 +136,19 @@ test("phase-1b job actions and reports endpoints carry the client names from the
     ["GET", "/api/v1/jobs/:job_id/reports/translation", "getTranslationReport", "json", undefined, undefined, "TranslationDiagnosticsView"],
   ]);
 });
+
+// 设置类第 2 批第 1 组：术语表（glossaries.v1，2026-10-29），前端排的第一组。导出 CSV 直接是文件（binary）。
+test("settings batch 2 glossaries endpoints carry the client names from the frontend list", () => {
+  const table = read("glossaries.v1.schema.json").endpoints.map(({ method, path, client_name, transport, input, query, output }) => [
+    method, path, client_name, transport, input, query, output,
+  ]);
+  assert.deepEqual(table, [
+    ["GET", "/api/v1/glossaries", "listGlossaries", "json", undefined, "ListGlossariesQuery", "GlossaryListView"],
+    ["POST", "/api/v1/glossaries", "createGlossary", "json", "GlossaryUpsertInput", undefined, "GlossaryDetailView"],
+    ["GET", "/api/v1/glossaries/:glossary_id", "getGlossary", "json", undefined, undefined, "GlossaryDetailView"],
+    ["PUT", "/api/v1/glossaries/:glossary_id", "updateGlossary", "json", "GlossaryUpsertInput", undefined, "GlossaryDetailView"],
+    ["DELETE", "/api/v1/glossaries/:glossary_id", "deleteGlossary", "json", undefined, undefined, "GlossaryDetailView"],
+    ["GET", "/api/v1/glossaries/:glossary_id/export.csv", "exportGlossaryCsv", "binary", undefined, undefined, undefined],
+    ["POST", "/api/v1/glossaries/parse-csv", "parseGlossaryCsv", "json", "GlossaryCsvParseInput", undefined, "GlossaryCsvParseView"],
+  ]);
+});

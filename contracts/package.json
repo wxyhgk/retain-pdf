@@ -13,6 +13,10 @@
       "types": "./dist/create-job-fields.d.ts",
       "import": "./dist/create-job-fields.js"
     },
+    "./glossaries": {
+      "types": "./dist/glossaries.d.ts",
+      "import": "./dist/glossaries.js"
+    },
     "./job-actions": {
       "types": "./dist/job-actions.d.ts",
       "import": "./dist/job-actions.js"
@@ -61,6 +65,7 @@
     "./agent-calculation.v1.schema.json": "./agent-calculation.v1.schema.json",
     "./ai-conversations.v1.schema.json": "./ai-conversations.v1.schema.json",
     "./create-job.v1.schema.json": "./create-job.v1.schema.json",
+    "./glossaries.v1.schema.json": "./glossaries.v1.schema.json",
     "./job-actions.v1.schema.json": "./job-actions.v1.schema.json",
     "./job-data.v1.schema.json": "./job-data.v1.schema.json",
     "./job-status.v1.schema.json": "./job-status.v1.schema.json",

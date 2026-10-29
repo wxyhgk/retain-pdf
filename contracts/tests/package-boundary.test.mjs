@@ -11,12 +11,14 @@ const generatedJobEvents = readFileSync(resolve("src/job-events.ts"), "utf8");
 const generatedLibraryBooks = readFileSync(resolve("src/library-books.ts"), "utf8");
 const generatedLibraryDocuments = readFileSync(resolve("src/library-documents.ts"), "utf8");
 const generatedOcrProviders = readFileSync(resolve("src/ocr-providers.ts"), "utf8");
+const generatedGlossaries = readFileSync(resolve("src/glossaries.ts"), "utf8");
 const generatedReaderData = readFileSync(resolve("src/reader-data.ts"), "utf8");
 const RAW_SCHEMA_EXPORTS = [
   "./ai-ask.v1.schema.json",
   "./agent-calculation.v1.schema.json",
   "./ai-conversations.v1.schema.json",
   "./create-job.v1.schema.json",
+  "./glossaries.v1.schema.json",
   "./job-actions.v1.schema.json",
   "./job-data.v1.schema.json",
   "./job-status.v1.schema.json",
@@ -41,6 +43,7 @@ test("package exposes only explicit DTO and raw schema subpaths", () => {
     [
       "./create-job",
       "./create-job-fields",
+      "./glossaries",
       "./job-actions",
       "./job-data",
       "./job-status",
@@ -219,4 +222,22 @@ test("generated Reader DTO entry exposes host-port read model types", () => {
   assert.doesNotMatch(generatedReaderData, /provider_raw_dir:/);
   assert.doesNotMatch(generatedReaderData, /provider_zip:/);
   assert.doesNotMatch(generatedReaderData, /provider_summary_json:/);
+});
+
+// 术语表（设置类第 2 批第 1 组，2026-10-29）。
+test("generated glossaries DTO entry exposes the glossary types", () => {
+  for (const typeName of [
+    "GlossaryListView",
+    "GlossarySummaryView",
+    "GlossaryDetailView",
+    "GlossaryEntryInput",
+    "ListGlossariesQuery",
+    "GlossaryUpsertInput",
+    "GlossaryCsvParseInput",
+    "GlossaryCsvParseView",
+  ]) {
+    assert.match(generatedGlossaries, new RegExp(`export (?:interface|type) ${typeName}\\b`));
+  }
+  assert.match(generatedGlossaries, /items: GlossarySummaryView\[\];/);
+  assert.match(generatedGlossaries, /duplicate_count: number;/);
 });

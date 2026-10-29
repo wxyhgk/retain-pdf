@@ -38,6 +38,11 @@ const TARGETS = [
     rootName: "JobStatusSchema",
   },
   {
+    input: "glossaries.v1.schema.json",
+    output: "src/glossaries.ts",
+    rootName: "GlossariesSchema",
+  },
+  {
     input: "library-books.v1.schema.json",
     output: "src/library-books.ts",
     rootName: "LibraryBooksSchema",

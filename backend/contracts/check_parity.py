@@ -13,6 +13,7 @@ CONTRACT_NAMES = (
     "agent-calculation.v1.schema.json",
     "ai-conversations.v1.schema.json",
     "create-job.v1.schema.json",
+    "glossaries.v1.schema.json",
     "job-actions.v1.schema.json",
     "job-data.v1.schema.json",
     "job-events.v2.schema.json",
