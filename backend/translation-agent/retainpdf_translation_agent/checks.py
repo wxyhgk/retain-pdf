@@ -17,6 +17,12 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 OVERLAP_CHARS = 10  # 接续组里相邻两块的译文有这么多个连续相同的汉字，算重复
 
 
+def visible_length(text: str) -> int:
+    """排出来大约占多少个字：脚注标记 `{{fn:1}}` 是一个上标字，公式按源码长度的一半估。"""
+    text = FN_RE.sub("¹", text)
+    return len(FORMULA_RE.sub(lambda m: "x" * max(1, (len(m.group(0)) - 2) // 2), text))
+
+
 def _strip_protected(text: str) -> str:
     return FN_RE.sub(" ", CITATION_RE.sub(" ", FORMULA_RE.sub(" ", text)))
 

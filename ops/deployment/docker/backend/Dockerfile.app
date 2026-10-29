@@ -84,6 +84,9 @@ COPY backend/base/pyproject.toml base/pyproject.toml
 COPY backend/math/pyproject.toml math/pyproject.toml
 COPY backend/pipeline/pyproject.toml pipeline/pyproject.toml
 COPY backend/translation/pyproject.toml translation/pyproject.toml
+# 翻译 agent 包（retainpdf-translation-agent）：工作区成员，uv export 要它的 pyproject；
+# 正式流程还没用它，所以下面的运行时镜像不装。
+COPY backend/translation-agent/pyproject.toml translation-agent/pyproject.toml
 
 RUN uv export \
     --locked \

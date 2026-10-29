@@ -1,13 +1,13 @@
-"""翻译 agent 测试系统：用假模型测输入整理、逐块校验、单块重翻、缓存和报告，不发网络请求。"""
+"""翻译 agent 测试系统（整套跑通）：用假模型测样例整理、翻译 agent 包的翻译和重翻、缓存和报告，不发网络请求。"""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
+from retainpdf_translation_agent import TranslationAgent as Agent
+
 from devtools.agent_lab.__main__ import run
-from devtools.agent_lab.agent import Agent
-from devtools.agent_lab.checks import check_block
 from devtools.agent_lab.pages import build_pages
 from devtools.ocr_viewer.complex_sample import PRINTED_PAGE
 from devtools.ocr_viewer.complex_sample import build
@@ -76,15 +76,6 @@ def test_pages_carry_class_position_formulas_and_groups(tmp_path: Path) -> None:
     assert pages[2].section_path, "page 2 should know its section"
 
 
-def test_checks_catch_lost_formulas_marks_and_untranslated() -> None:
-    source = "We use $F_1$ and cite [3]{{fn:1}} on 2 pages."
-    assert check_block(source, "我们在 2 页上使用 $F_1$ 并引用 [3]{{fn:1}}。") == []
-    codes = {i["code"] for i in check_block(source, "我们使用 F1 并引用。")}
-    assert {"formula_changed", "citation_lost", "footnote_mark_lost", "number_lost"} <= codes
-    assert {i["code"] for i in check_block(source, source)} == {"untranslated"}
-    assert check_block(source, None)[0]["code"] == "missing"
-
-
 def test_broken_blocks_are_retried_alone_and_fixed(tmp_path: Path) -> None:
     fake = FakeModel(broken={"abstract": "摘要（公式丢了）"}, drop={"fig1-cap"})
     agent = Agent(model="fake", transport=fake, cache_dir=tmp_path / "cache")
@@ -151,17 +142,18 @@ def test_duplicated_text_across_a_continuation_group_is_caught_and_the_group_ret
 
 
 def test_continuation_group_is_sent_as_one_record_with_break_markers(tmp_path: Path) -> None:
-    from devtools.agent_lab.agent import BREAK
-    from devtools.agent_lab.agent import expand_translations
-    from devtools.agent_lab.agent import request_records
+    from retainpdf_translation_agent.agent import BREAK
+    from retainpdf_translation_agent.agent import expand_translations
+    from retainpdf_translation_agent.agent import request_records
 
     page = next(p for p in build_pages(_truth(tmp_path), page_labels=PRINTED_PAGE) if p.page_label == "1")
     wanted = {b.id for b in page.to_translate()}
-    records = request_records(page.blocks, wanted)
+    records = request_records(page.to_input({}).blocks, wanted)
     group = next(r for r in records if r["id"] == "cg-method-p1")
     assert group["members"] == ["method-p1", "method-p1-cont1"] and group["text"].count(BREAK) == 1
     assert not any(r["id"] in {"method-p1", "method-p1-cont1"} for r in records)
-    per_block, issues = expand_translations({"cg-method-p1": "前半[[BREAK]]后半"}, page.blocks, wanted)
+    blocks = page.to_input({}).blocks
+    per_block, issues = expand_translations({"cg-method-p1": "前半[[BREAK]]后半"}, blocks, wanted)
     assert per_block["method-p1"] == "前半" and per_block["method-p1-cont1"] == "后半" and not issues
-    _, issues = expand_translations({"cg-method-p1": "没有断点"}, page.blocks, wanted)
+    _, issues = expand_translations({"cg-method-p1": "没有断点"}, blocks, wanted)
     assert issues["method-p1"][0]["code"] == "group_break"

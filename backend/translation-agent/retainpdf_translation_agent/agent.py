@@ -1,7 +1,8 @@
-"""翻译 agent：一次送一整页，模型通过一个固定格式的工具调用逐块交回译文。
+"""翻译 agent：一次送一整页，模型通过一个固定格式的工具调用逐块交回译文；也能按重排 agent 的改稿要求改写某几块。
 
 调用直接走 Anthropic Messages 接口（密钥从环境变量 `ANTHROPIC_API_KEY` 读，模型 `ANTHROPIC_MODEL`）。
 每个请求连同回答缓存在 `cache_dir`，同样的输入再跑不重复花钱，结果可复现。测试用 `transport` 注入假模型。
+输入输出的格式见 `contract.py`。
 """
 
 from __future__ import annotations
@@ -10,20 +11,23 @@ import hashlib
 import json
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from devtools.agent_lab.checks import check_block
-from devtools.agent_lab.checks import check_group
-from devtools.agent_lab.checks import status_of
-from devtools.agent_lab.pages import PageRequest
+from retainpdf_translation_agent.checks import check_block
+from retainpdf_translation_agent.checks import check_group
+from retainpdf_translation_agent.checks import status_of
+from retainpdf_translation_agent.checks import visible_length
+from retainpdf_translation_agent.contract import BlockResult
+from retainpdf_translation_agent.contract import PageInput
+from retainpdf_translation_agent.contract import RevisionRequest
 
 API_URL = "https://api.anthropic.com/v1/messages"
 # 接续组合成一条送给模型，原文里用它标出原来在哪里断开；译文里要在对应位置放同样数量
 BREAK = "[[BREAK]]"
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "agent-lab-4"
+PROMPT_VERSION = "translation-agent-6"
 
 SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简体中文，译文会放回原文每个块的位置显示。
 你会收到一整页的全部块（JSON），每块有类别（class）、大概位置（where）、原文（text）、要不要翻（translate）。
@@ -42,6 +46,11 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
    列表项保留 (1) 这类序号；作者、机构一般不在要翻的块里。
 7. 术语前后一致；专有名词（软件名、数据集名、人名）不翻。
 8. 译文要通顺、简练，长度和原文相当，不要加解释、注释或括号里的原文。
+9. 请求里有 revise 时（排版发现放不下等），只改 revise 列出的块，其余块只是上下文，不要交回。
+   在 current_translation 的基础上改写：current_chars 是现在的字数，max_chars 是**硬上限**，must_cut 是至少要删掉的字数
+   （字数按显示算：`{{fn:1}}` 算 1 个字，公式按一半算）。
+   先精简措辞（去掉可有可无的字、换更短的说法）；还超就删掉次要的修饰语和举例；核心意思、公式、标记、编号必须保留。
+   交卷前数一下字数，一定不能超过 max_chars。
 """
 
 TOOL = {
@@ -87,16 +96,6 @@ class Usage:
         self.latency_ms += latency_ms
 
 
-@dataclass
-class BlockResult:
-    id: str
-    translation: str | None
-    issues: list[dict]
-    attempts: int
-    status: str
-    history: list[dict] = field(default_factory=list)
-
-
 def http_transport(body: dict) -> dict:
     """用标准库发请求（开发工具不给流水线添依赖）；429、5xx 和网络错误退避重试。"""
     import urllib.error
@@ -123,7 +122,7 @@ def http_transport(body: dict) -> dict:
     raise RuntimeError(f"model API failed after retries: {last_error}")
 
 
-class Agent:
+class TranslationAgent:
     def __init__(self, *, model: str | None = None, transport: Transport | None = None, cache_dir: Path | None = None, use_cache: bool = True):
         self.model = model or os.environ.get("ANTHROPIC_MODEL") or DEFAULT_MODEL
         self.transport = transport or http_transport
@@ -178,7 +177,8 @@ class Agent:
         raise ValueError("model response has no submit_translations tool call")
 
     # ---- 一页 ----
-    def translate_page(self, page: PageRequest, *, document: dict) -> tuple[dict[str, BlockResult], dict]:
+    def translate_page(self, page: PageInput) -> tuple[dict[str, BlockResult], dict]:
+        document = page.document
         wanted = {b.id for b in page.to_translate()}
         records = request_records(page.blocks, wanted)
         payload = {
@@ -195,7 +195,7 @@ class Agent:
         extra = sorted(set(raw) - record_ids)
         results: dict[str, BlockResult] = {}
         for block in page.to_translate():
-            issues = check_block(block.source, per_block.get(block.id)) + split_issues.get(block.id, [])
+            issues = check_block(block.text, per_block.get(block.id)) + split_issues.get(block.id, [])
             if block.id in duplicates:
                 issues.append({"code": "duplicate", "severity": "warn", "message": "同一块交了不止一次，取最后一条"})
             results[block.id] = BlockResult(block.id, per_block.get(block.id), issues, 1, status_of(issues))
@@ -212,7 +212,7 @@ class Agent:
         return results, {"notes": notes, "extra_ids": extra, "duplicates": duplicates}
 
     @staticmethod
-    def _unit_of(page: PageRequest, block) -> list:
+    def _unit_of(page: PageInput, block) -> list:
         """重翻的单位：接续组整组一起，其余一块。"""
         if not block.group:
             return [block]
@@ -226,13 +226,66 @@ class Agent:
                 groups.setdefault(block.group["id"], []).append(block)
         for members in groups.values():
             members.sort(key=lambda b: b.group["index"])
-            extra = check_group([(b.id, b.source, results[b.id].translation) for b in members])
+            extra = check_group([(b.id, b.text, results[b.id].translation) for b in members])
             for block_id, issues in extra.items():
                 if issues:
                     results[block_id].issues = results[block_id].issues + issues
                     results[block_id].status = status_of(results[block_id].issues)
 
-    def _retry_unit(self, page: PageRequest, unit: list, results: dict, *, document: dict) -> dict[str, BlockResult]:
+    # ---- 按重排 agent 的要求改稿 ----
+    def revise(self, page: PageInput, requests: list[RevisionRequest]) -> dict[str, BlockResult]:
+        """只改 `requests` 列出的块（同一页的其它块作上下文）。改完还不合格（含超出 max_chars）就再改一次。"""
+        by_id = {b.id: b for b in page.blocks}
+        unknown = [r.id for r in requests if r.id not in by_id or not by_id[r.id].translate]
+        if unknown:
+            raise ValueError(f"revision requested for blocks that are not translated on this page: {unknown}")
+        results: dict[str, BlockResult] = {}
+        pending = list(requests)
+        previous: dict[str, list[dict]] = {r.id: [{"translation": r.current_translation, "issues": [_revision_issue(r)]}] for r in requests}
+        for attempt in (1, 2):
+            if not pending:
+                break
+            ids = {r.id for r in pending}
+            payload = {
+                "document": page.document,
+                "page": page.page_label,
+                "section_path": page.section_path,
+                "revise": [
+                    _revision_record(r, results.get(r.id))
+                    for r in pending
+                ],
+                "blocks": request_records(page.blocks, ids),
+                "required_ids": sorted(ids),
+            }
+            response = self._call(self._body(payload), label="revise " + ",".join(sorted(ids)))
+            try:
+                raw, _, _ = self._parse(response)
+            except ValueError:
+                raw = {}
+            per_block, _ = expand_translations(raw, page.blocks, ids)
+            next_round: list[RevisionRequest] = []
+            for request in pending:
+                text = per_block.get(request.id)
+                issues = check_block(by_id[request.id].text, text)
+                if request.max_chars and text is not None and visible_length(text) >= request.max_chars * 0.4:
+                    # 缩短是我们要的：和原文比"太短"不算错，只要别短得离谱（不到要求字数的 40%）
+                    issues = [i for i in issues if i["code"] != "too_short"]
+                if text is not None and request.max_chars and visible_length(text) > request.max_chars:
+                    issues.append(
+                        {
+                            "code": "still_too_long",
+                            "severity": "error",
+                            "message": f"改完 {visible_length(text)} 字，要求不超过 {request.max_chars} 字",
+                        }
+                    )
+                history = previous[request.id] + ([results[request.id].to_dict()] if request.id in results else [])
+                results[request.id] = BlockResult(request.id, text, issues, attempt, status_of(issues), history)
+                if results[request.id].status == "error":
+                    next_round.append(request)
+            pending = next_round
+        return results
+
+    def _retry_unit(self, page: PageInput, unit: list, results: dict, *, document: dict) -> dict[str, BlockResult]:
         """不合格的块（接续组就整组）重翻一次：同一页其它块作为上下文，并告诉模型上次哪里不对。"""
         ids = {b.id for b in unit}
         records = request_records(page.blocks, ids)
@@ -265,7 +318,7 @@ class Agent:
         fixed: dict[str, BlockResult] = {}
         for block in unit:
             first = results[block.id]
-            issues = check_block(block.source, per_block.get(block.id)) + split_issues.get(block.id, [])
+            issues = check_block(block.text, per_block.get(block.id)) + split_issues.get(block.id, [])
             history = first.history + [{"translation": first.translation, "issues": first.issues}]
             fixed[block.id] = BlockResult(block.id, per_block.get(block.id), issues, first.attempts + 1, status_of(issues), history)
         self._apply_group_checks(unit, fixed)
@@ -296,7 +349,7 @@ def request_records(blocks: list, wanted: set[str]) -> list[dict]:
                 record.update(
                     id=group_id,
                     where=" → ".join(m.where for m in members),
-                    text=f" {BREAK} ".join(m.source for m in members),
+                    text=f" {BREAK} ".join(m.text for m in members),
                     members=[m.id for m in members],
                 )
                 records.append(record)
@@ -343,3 +396,20 @@ def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> 
         for member, part in zip(members, parts):
             per_block[member.id] = part.strip()
     return per_block, issues
+
+
+def _revision_record(request: RevisionRequest, previous: BlockResult | None) -> dict:
+    """改稿请求里的一块：替模型算好现在多少字、至少要删多少（模型自己数字数不准）。"""
+    current = (previous.translation if previous and previous.translation else None) or request.current_translation
+    chars = visible_length(current)
+    record = {"id": request.id, "current_translation": current, "current_chars": chars, "reason": request.reason, "note": request.note}
+    if request.max_chars:
+        record.update(max_chars=request.max_chars, must_cut=max(0, chars - request.max_chars))
+    if previous:
+        record["problems"] = [i["message"] for i in previous.issues]
+    return record
+
+
+def _revision_issue(request: RevisionRequest) -> dict:
+    target = f"，要求不超过 {request.max_chars} 字" if request.max_chars else ""
+    return {"code": f"revision_{request.reason}", "severity": "info", "message": f"重排要求改稿：{request.reason}{target}"}
