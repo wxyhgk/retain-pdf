@@ -442,7 +442,7 @@ fn prepare_rescue(repo: &Path, commit: &str, git: &Path) -> Result<PathBuf, Stri
 /// The Studio as it was the last time it started: made ready, its server started there (safe mode), the one before
 /// stopped. Its address.
 fn rescue(app: &AppHandle) -> Result<Url, String> {
-    let repo = blog().ok_or("找不到博客的文件夹。")?;
+    let repo = blog().ok_or("找不到 Studio 的文件夹。")?;
     let commit = last_good(&repo).ok_or("还没有记下能正常启动的版本。")?;
     show(app, &format!("正在准备上次能正常启动的版本（{}）…", &commit[..7]), false);
     let env = login_env();
@@ -461,7 +461,7 @@ fn rescue(app: &AppHandle) -> Result<Url, String> {
 
 /// The Studio's address: the running server's, or one started for the blog.
 fn find_or_start(app: &AppHandle) -> Result<Url, String> {
-    let repo = blog().ok_or("找不到博客的文件夹。在博客里运行 tools/studio-app/build.sh 重新生成这个应用，或者用 STUDIO_REPO 指明文件夹。")?;
+    let repo = blog().ok_or("找不到 Studio 的文件夹。在 Studio 的仓库里运行 tools/studio-app/build.sh 重新生成这个应用，或者用 STUDIO_REPO 指明文件夹。")?;
     let server = match running(&repo) {
         Some(server) => server,
         None => {

@@ -1,15 +1,16 @@
 #!/bin/sh
 # Builds the Studio as a Mac app and puts it in /Applications (or $STUDIO_APP_DIR).
 #
-#   tools/studio-app/build.sh [blog folder]
+#   tools/studio-app/build.sh [Studio folder]
 #
-# The app opens the blog it was built for: the given folder, or the git checkout this script is in.
+# The app runs the Studio it was built for: the given folder, or the git checkout this script is in (the notes it opens
+# are the ones that folder's .studio-local.json names).
 set -eu
 
 here=$(cd "$(dirname "$0")" && pwd)
 blog=$(cd "${1:-$(git -C "$here" rev-parse --show-toplevel)}" && pwd)
 into=${STUDIO_APP_DIR:-/Applications}
-[ -f "$blog/astro.config.mjs" ] || { echo "$blog 不是博客的文件夹（没有 astro.config.mjs）" >&2; exit 1; }
+[ -f "$blog/src/studio/serve.mjs" ] || { echo "$blog 不是 Studio 的文件夹（没有 src/studio/serve.mjs）" >&2; exit 1; }
 
 STUDIO_REPO="$blog" cargo build --release --manifest-path "$here/Cargo.toml"
 
