@@ -14,6 +14,7 @@ Regenerate with:
 - `retainpdf_base`
 - `retainpdf_math`
 - `retainpdf_translation`
+- `retainpdf_translation_agent`
 - `urllib3`
 
 ## Test-only Python Packages
@@ -42,6 +43,7 @@ Regenerate with:
 | `retainpdf_base` | `retainpdf_base` | yes | yes | `retainpdf_pipeline/foundation/config/__init__.py`, `retainpdf_pipeline/foundation/shared/config.py`, `retainpdf_pipeline/foundation/shared/job_dirs.py` |
 | `retainpdf_math` | `retainpdf_math` | yes | yes | `retainpdf_pipeline/render/layout/inline_content/__init__.py`, `retainpdf_pipeline/render/layout/inline_content/core/inline_math.py`, `retainpdf_pipeline/render/layout/inline_content/core/markdown.py` |
 | `retainpdf_translation` | `retainpdf_translation` | yes | yes | `retainpdf_pipeline/entrypoints/diagnose_failure_with_ai.py`, `retainpdf_pipeline/entrypoints/revise_translation_item.py`, `retainpdf_pipeline/ocr/mineru_provider/mineru_pipeline.py` |
+| `retainpdf_translation_agent` | `retainpdf_translation_agent` | yes | yes | `devtools/agent_lab/__main__.py`, `devtools/agent_lab/pages.py` |
 | `urllib3` | `urllib3` | yes | no | `retainpdf_pipeline/ocr/retry.py` |
 
 ## Dependency Sources

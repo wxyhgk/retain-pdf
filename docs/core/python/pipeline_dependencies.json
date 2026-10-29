@@ -10,6 +10,7 @@
     "retainpdf_base",
     "retainpdf_math",
     "retainpdf_translation",
+    "retainpdf_translation_agent",
     "urllib3"
   ],
   "test_only_python_packages": [
@@ -949,6 +950,20 @@
         "devtools/tests/translation/test_validation_boundaries.py"
       ],
       "runtime_required": true,
+      "devtool_required": true
+    },
+    {
+      "import_name": "retainpdf_translation_agent",
+      "package_name": "retainpdf_translation_agent",
+      "runtime_files": [],
+      "devtool_files": [
+        "devtools/agent_lab/__main__.py",
+        "devtools/agent_lab/pages.py"
+      ],
+      "test_files": [
+        "devtools/tests/agent_lab/test_agent_lab.py"
+      ],
+      "runtime_required": false,
       "devtool_required": true
     },
     {

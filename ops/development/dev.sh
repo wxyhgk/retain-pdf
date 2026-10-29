@@ -59,7 +59,7 @@ load_env() {
   export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
   # 默认 SDK 链接不了 C 程序（arm64e.x1），得指到这个。
   export SDKROOT="${SDKROOT:-/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk}"
-  export PYTHONPATH="$REPO/backend/ai:$REPO/backend/base:$REPO/backend/math:$REPO/backend/pipeline:$REPO/backend/translation"
+  export PYTHONPATH="$REPO/backend/ai:$REPO/backend/base:$REPO/backend/math:$REPO/backend/pipeline:$REPO/backend/translation:$REPO/backend/translation-agent"
   # agent 终端：走真 shell，并把思考档位和 provider 参数透给 fx。
   export RETAIN_AI_FX_SHELL_MODE=1
   export RETAIN_AI_FX_REASONING_EFFORTS="${RETAIN_AI_FX_REASONING_EFFORTS:-low,high,max}"

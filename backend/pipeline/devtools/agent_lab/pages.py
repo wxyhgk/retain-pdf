@@ -1,4 +1,4 @@
-"""把一份文档（现在是 OCR 分类查看器的标准答案 `truth.json`）整理成按页送给翻译 agent 的输入。
+"""把一份文档（现在是 OCR 分类查看器的标准答案 `truth.json`）整理成翻译 agent 包（retainpdf-translation-agent）的输入格式。
 
 每块给：类别、大概位置（第几页、哪一栏、上中下，不给精确坐标）、原文（行内公式写成 `$…$`、脚注标记写成 `{{fn:1}}`）、
 要不要翻、接续组、图注之类的关系。跨页的接续段落整组放进前半段所在的那一页一起翻。
@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+
+from retainpdf_translation_agent import BlockInput
+from retainpdf_translation_agent import PageInput
 
 from devtools.ocr_viewer.taxonomy import BLOCK_CLASSES
 
@@ -35,24 +38,19 @@ class Block:
     group: dict | None = None
     level: int | None = None
 
-    def request_record(self) -> dict:
-        record = {
-            "id": self.id,
-            "class": self.cls,
-            "class_label": BLOCK_CLASSES[self.cls]["label"],
-            "where": self.where,
-            "text": self.source,
-            "translate": self.translate,
-        }
-        if self.group:
-            record["group"] = self.group
-        if self.relations:
-            record["relations"] = self.relations
-        if self.attributes:
-            record["attributes"] = {k: v for k, v in self.attributes.items() if k != "latex"}
-        if self.lang != "en":
-            record["source_lang"] = self.lang
-        return record
+    def to_input(self) -> BlockInput:
+        return BlockInput(
+            id=self.id,
+            cls=self.cls,
+            cls_label=BLOCK_CLASSES[self.cls]["label"],
+            where=self.where,
+            text=self.source,
+            translate=self.translate,
+            source_lang=self.lang,
+            group=self.group,
+            relations=self.relations,
+            attributes={k: v for k, v in self.attributes.items() if k != "latex"},
+        )
 
 
 @dataclass
@@ -64,6 +62,9 @@ class PageRequest:
 
     def to_translate(self) -> list[Block]:
         return [b for b in self.blocks if b.translate]
+
+    def to_input(self, document: dict) -> PageInput:
+        return PageInput(page_label=self.page_label, blocks=[b.to_input() for b in self.blocks], section_path=self.section_path, document=document)
 
 
 def agent_text(element: dict) -> str:

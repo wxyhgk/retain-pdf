@@ -6,4 +6,5 @@ requests
 retainpdf_base
 retainpdf_math
 retainpdf_translation
+retainpdf_translation_agent
 urllib3

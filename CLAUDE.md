@@ -43,6 +43,8 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
   翻译的测试在 `backend/pipeline/devtools/tests/translation`，翻译包自己的冒烟测试在 `backend/translation/tests`。
   它会连带跑 `tests/performance/pipeline/tests`；提示词快照有 sha256 守卫，改提示词只重录受影响的用例。
 - 改了 `backend/ai/`：跑 AI 服务的 pytest。
+- 改了翻译 agent 包 `backend/translation-agent/`：跑 `python -m pytest backend/translation-agent/tests`，以及测试系统的
+  `backend/pipeline/devtools/tests/agent_lab`（它调这个包）。包只许用标准库，测试里钉着。
 - 跑不了的检查，在回复和合并说明里写明没跑、为什么。
 
 ## 本地环境的坑

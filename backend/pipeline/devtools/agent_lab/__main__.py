@@ -1,4 +1,4 @@
-"""翻译 agent 测试系统：造样例 → 逐页交给 agent → 逐块校验 → 生成报告。
+"""翻译 agent 测试系统：造样例 → 逐页交给翻译 agent 包（retainpdf-translation-agent）→ 生成报告。
 
     cd backend/pipeline
     ../.venv/bin/python -m devtools.agent_lab --out /tmp/agent_lab            # 读 ~/.config/retainpdf/test.env 里的密钥
@@ -15,8 +15,9 @@ import os
 import time
 from pathlib import Path
 
-from devtools.agent_lab.agent import PROMPT_VERSION
-from devtools.agent_lab.agent import Agent
+from retainpdf_translation_agent import PROMPT_VERSION
+from retainpdf_translation_agent import TranslationAgent
+
 from devtools.agent_lab.pages import build_pages
 from devtools.agent_lab.pages import document_title
 from devtools.agent_lab.report import build_report
@@ -42,7 +43,7 @@ def load_env_file(path: Path) -> list[str]:
     return names
 
 
-def run(out_dir: Path, *, agent: Agent, pages_filter: set[str] | None = None) -> dict:
+def run(out_dir: Path, *, agent: TranslationAgent, pages_filter: set[str] | None = None) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     pdf_path, truth_path = build_sample().save(out_dir)
     truth = json.loads(truth_path.read_text(encoding="utf-8"))
@@ -54,7 +55,7 @@ def run(out_dir: Path, *, agent: Agent, pages_filter: set[str] | None = None) ->
     for page in requests:
         if pages_filter and page.page_label not in pages_filter:
             continue
-        results, info = agent.translate_page(page, document=document)
+        results, info = agent.translate_page(page.to_input(document))
         pages_out.append({"page": page.page, "label": page.page_label, "translate_blocks": len(page.to_translate()), **info})
         for block in page.blocks:
             entry = {
@@ -107,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     names = load_env_file(args.env)
     print(f"env: {args.env} ({', '.join(names) or 'not found'})")
-    agent = Agent(model=args.model, cache_dir=args.out / "cache", use_cache=not args.no_cache)
+    agent = TranslationAgent(model=args.model, cache_dir=args.out / "cache", use_cache=not args.no_cache)
     pages_filter = {p.strip() for p in args.pages.split(",") if p.strip()} or None
     results = run(args.out, agent=agent, pages_filter=pages_filter)
     print(json.dumps(results["summary"], ensure_ascii=False, indent=1))
