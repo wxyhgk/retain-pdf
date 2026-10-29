@@ -44,8 +44,109 @@ pub fn configure_child_process(command: &mut Command) {
     }
 }
 
+/// Windows 没有进程组：子进程跟着本进程走靠 [`kill_descendants_on_exit`]（启动时调一次），杀进程树靠 `taskkill /T`。
 #[cfg(windows)]
 pub fn configure_child_process(_command: &mut Command) {}
+
+/// 本进程退出（正常退出、崩溃、被强杀都算）时，系统把它起的所有子进程、孙进程一起杀掉。进程启动时调一次。
+///
+/// Windows：建一个设了 `JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE` 的 Job Object，把本进程放进去。之后起的进程默认都在里面
+/// （不带 `CREATE_BREAKAWAY_FROM_JOB` 的话），孙进程也是；句柄故意不关，进程没了系统替它关，job 里剩下的进程随之被杀。
+/// 以前 Windows 上只有 `taskkill /T`：API 被强杀时没人去调它，管线、渲染这些孙进程会留下来。本进程已经在别的 job 里
+/// （比如桌面壳把它放进了自己的 job）也行：Windows 8 起 job 可以嵌套。
+///
+/// Unix 上什么都不做：子进程自成进程组，由 [`terminate_child_process_tree`] 组杀，被监督的子进程自己看着监督者
+/// （[`wait_for_supervisor_exit`]），监督者没了就退出。
+///
+/// 后端起的都是自己的 worker（管线、渲染、AI 服务、jobsd、命令行小工具），没有替用户打开的应用，所以全部跟着走是对的。
+pub fn kill_descendants_on_exit() -> io::Result<()> {
+    #[cfg(windows)]
+    {
+        windows_job::kill_descendants_on_exit()
+    }
+    #[cfg(not(windows))]
+    {
+        Ok(())
+    }
+}
+
+#[cfg(windows)]
+mod windows_job {
+    use std::io;
+    use std::sync::OnceLock;
+
+    use windows_sys::Win32::Foundation::CloseHandle;
+    use windows_sys::Win32::System::JobObjects::{
+        AssignProcessToJobObject, CreateJobObjectW, JobObjectExtendedLimitInformation,
+        SetInformationJobObject, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    };
+    use windows_sys::Win32::System::Threading::GetCurrentProcess;
+
+    /// 只建一次：再调返回第一次的结果，不会套出第二层 job。
+    static RESULT: OnceLock<Result<(), (io::ErrorKind, String)>> = OnceLock::new();
+
+    pub(super) fn kill_descendants_on_exit() -> io::Result<()> {
+        RESULT
+            .get_or_init(|| create_and_join().map_err(|error| (error.kind(), error.to_string())))
+            .clone()
+            .map_err(|(kind, message)| io::Error::new(kind, message))
+    }
+
+    fn create_and_join() -> io::Result<()> {
+        // SAFETY：都是按文档传参的 Win32 调用；`info` 是零初始化的普通结构体，长度如实传；
+        // 失败时关掉刚建的句柄，成功时故意留着（见上层说明）。
+        unsafe {
+            let job = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+            if job.is_null() {
+                return Err(io::Error::last_os_error());
+            }
+            let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+            info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            let set = SetInformationJobObject(
+                job,
+                JobObjectExtendedLimitInformation,
+                &info as *const JOBOBJECT_EXTENDED_LIMIT_INFORMATION as *const core::ffi::c_void,
+                std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            );
+            if set == 0 {
+                let error = io::Error::last_os_error();
+                CloseHandle(job);
+                return Err(error);
+            }
+            if AssignProcessToJobObject(job, GetCurrentProcess()) == 0 {
+                let error = io::Error::last_os_error();
+                CloseHandle(job);
+                return Err(error);
+            }
+        }
+        Ok(())
+    }
+}
+
+#[cfg(all(test, windows))]
+mod windows_job_tests {
+    use std::os::windows::io::AsRawHandle;
+
+    use windows_sys::Win32::System::JobObjects::IsProcessInJob;
+
+    #[test]
+    fn children_started_afterwards_are_in_the_job_and_calling_twice_is_fine() {
+        super::kill_descendants_on_exit().unwrap();
+        super::kill_descendants_on_exit().unwrap();
+        let mut child = std::process::Command::new("cmd")
+            .args(["/C", "ping -n 3 127.0.0.1 > NUL"])
+            .spawn()
+            .unwrap();
+        let mut in_job = 0;
+        // SAFETY：句柄来自还没回收的 `Child`；第二个参数为空表示"任何 job"。
+        let ok = unsafe { IsProcessInJob(child.as_raw_handle(), std::ptr::null_mut(), &mut in_job) };
+        let _ = child.kill();
+        let _ = child.wait();
+        assert_ne!(ok, 0);
+        assert_ne!(in_job, 0, "a child started after the call belongs to the job");
+    }
+}
 
 /// Checks whether a process with the given pid is still alive.
 ///

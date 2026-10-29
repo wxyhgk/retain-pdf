@@ -231,6 +231,10 @@ async fn run() -> Result<()> {
                 .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new("info")),
         )
         .init();
+    // Windows：jobsd 被强杀时它起的 worker 跟着没（见 `retainpdf_proc::kill_descendants_on_exit`）。失败只记日志。
+    if let Err(error) = retainpdf_proc::kill_descendants_on_exit() {
+        tracing::warn!("could not tie worker processes to this process's lifetime: {error}");
+    }
 
     let config = Arc::new(AppConfig::from_env().context("load config")?);
     let port = config.jobs_service.port;
