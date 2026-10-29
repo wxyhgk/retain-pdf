@@ -153,18 +153,39 @@ export function isQueueFullError(error: unknown): boolean {
   return !!error && typeof error === "object" && (error as HttpError).reason === QUEUE_FULL;
 }
 
+/** 正在恢复数据库备份（只有几秒）：上传、建任务、原地重跑回 409，error.details.reason 是这个，被拒时什么都没写。message 同样是英文。 */
+export const RESTORE_IN_PROGRESS = "restore_in_progress";
+export const RESTORE_IN_PROGRESS_MESSAGE = "正在恢复备份，稍等再试。";
+
+/** 错误响应是「正在恢复备份」就做成一句中文的错误（带 status、reason），不是就返回 null。 */
+export function restoreInProgressErrorFromPayload(status: number, payload: unknown, url?: string): HttpError | null {
+  const p = (isObject(payload) ? payload : {}) as Record<string, any>;
+  if (p.error?.details?.reason !== RESTORE_IN_PROGRESS) return null;
+  const error = attachErrorDetails(new Error(RESTORE_IN_PROGRESS_MESSAGE) as HttpError, payload);
+  error.name = "RestoreInProgressError";
+  error.status = status;
+  if (url) error.url = url;
+  return error;
+}
+
+export function isRestoreInProgressError(error: unknown): boolean {
+  return !!error && typeof error === "object" && (error as HttpError).reason === RESTORE_IN_PROGRESS;
+}
+
 /**
- * 提交被拒但不是故障：页数额度不够、磁盘空间不够、排队的任务满了。message 是能照着做的中文，
+ * 提交被拒但不是故障：页数额度不够、磁盘空间不够、排队的任务满了、正在恢复备份。message 是能照着做的中文，
  * 界面原样显示，不加「提交失败: 状态码」前缀，也不给诊断。都不是就返回 null。
  */
 export function refusedSubmissionError(status: number, payload: unknown, url?: string): HttpError | null {
   return pageQuotaErrorFromPayload(status, payload, url)
     ?? insufficientStorageErrorFromPayload(status, payload, url)
-    ?? queueFullErrorFromPayload(status, payload, url);
+    ?? queueFullErrorFromPayload(status, payload, url)
+    ?? restoreInProgressErrorFromPayload(status, payload, url);
 }
 
 export function isRefusedSubmission(error: unknown): boolean {
-  return isPageQuotaError(error) || isInsufficientStorageError(error) || isQueueFullError(error);
+  return isPageQuotaError(error) || isInsufficientStorageError(error) || isQueueFullError(error)
+    || isRestoreInProgressError(error);
 }
 
 export interface SubmitJsonOptions {
