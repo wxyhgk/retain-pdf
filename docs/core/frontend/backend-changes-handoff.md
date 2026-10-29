@@ -1089,3 +1089,15 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
   「a database backup is being restored; try again in a moment」。被拒时什么都没写。
 - 前端可以做（可选）：按 `reason === "restore_in_progress"` 提示「正在恢复备份，稍等再试」，不要解析 `message`；批量上传遇到它可以
   等 `GET /backups` 的 `running` 变回 `false` 再接着传。现在这类 409 会走通用的报错显示。恢复本来就要求没有排队、在跑的任务，正常用很少碰到。
+
+## 术语表契约 glossaries.v1（contracts/glossaries-v1）
+
+2026-10-29。设置类第 2 批第 1 组（前端排的顺序）。决定见 [设置类第 2 批：术语表契约](../../ops/planning/api-client-codegen/20261029-设置类第2批-术语表契约.md)。接口行为没变，只是补了契约。
+
+- 新契约 `contracts/glossaries.v1.schema.json`，npm 子路径 `@retainpdf/contracts/glossaries`。7 条端点都有 `client_name`：
+  `listGlossaries`（`GET /glossaries`，查询 `ListGlossariesQuery`）、`createGlossary`、`getGlossary`、`updateGlossary`、`deleteGlossary`
+  （都回 `GlossaryDetailView`）、`exportGlossaryCsv`（`transport: binary`，直接是 CSV 文件）、`parseGlossaryCsv`（回 `GlossaryCsvParseView`）。
+- 和 `frontend/packages/api/src/glossaries.ts` 手写的那 7 个地址、方法一样；手写的返回都是 `any`，换成生成的以后有类型。名字不全一样：
+  手写的 `fetchGlossaries`、`fetchGlossary` 在契约里叫 `listGlossaries`、`getGlossary`，其余 5 个同名。`deleteGlossary` 回的是删掉的那张表
+  （`GlossaryDetailView`），`parseGlossaryCsv` 的回包有 `duplicate_count`（去重丢掉的行数）。
+- 前端可以做：重新生成 `src/generated`，换掉 `glossaries.ts` 里手写的 7 个请求（`glossaries-store.ts` 里拼地址的几处一起收）。

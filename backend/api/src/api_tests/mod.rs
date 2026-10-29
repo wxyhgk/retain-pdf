@@ -14,6 +14,7 @@ mod document_metadata;
 mod document_operations;
 mod file_responses;
 mod glossaries;
+mod glossaries_contract;
 mod backups;
 mod sync;
 mod token_usage;
