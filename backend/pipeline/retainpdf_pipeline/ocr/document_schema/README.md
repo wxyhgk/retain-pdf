@@ -203,6 +203,15 @@
 - Rust 主工作流调用的 normalize worker 现在要求 `--spec <job_root/specs/normalize.spec.json>`
 - 如果只是本地手动验证 schema / adapter，应该走 `validate_document_schema.py`（script-mode，仅桌面兼容，无 console 等价物）
 
+normalize worker 里的顺序（`normalize_pipeline.py` 的 `build_normalized_artifacts`）：adapter → 缩放到 PDF
+（`rescale_document_geometry_to_pdf`）→ 行重建（`post_rescale_rebuild_paddle_text_geometry`）→ 重新校验。
+
+- 缩放按位置配页：OCR 的第 n 页对原文的第 n 页（选了页的任务，原文已经截成所选的页）。OCR 比原文多页时报错；
+  比原文少照常缩放，记在 `derived.page_count_mismatch`；有块的页没有原始尺寸时报错（2026-10-29 起，以前都是静默往下走）。
+- 行重建只给没有真实行的块：块里有 `bbox_precision = provider_layout` 的行（MinerU 的 middle.json 每行都有框）就保留
+  原行、块边也不按文字高度收紧，只从原行生成目录条目。以前对所有服务商都重建，MinerU 的多行段落被压成一行、行内公式的
+  标记丢了（2026-10-29 修）。Paddle 只给块，照旧重建。
+
 ## Adapter 约定
 
 provider 原始 OCR 不应直接进入翻译/渲染主线。
@@ -911,7 +920,8 @@ adapter 产出的当前版 `document.v1.json` 在进入主线前，会统一补�
 约定：
 
 - `segments` 是块内扁平序列，便于翻译和公式保护
-- `lines` 保留行级结构，便于排版与局部分析
+- `lines` 保留行级结构，便于排版与局部分析；`lines[*].bbox_precision = provider_layout` 表示行框是服务商给的，
+  缩放之后的行重建不动它（见上面「当前链路」）
 - 行内公式不作为 block 主类型，保留在文本 block 的 `segments/spans` 中，新产物写为 `type = "inline_formula"`
 - `content.kind = "formula"` 只表示行间公式 block；旧产物中 segment 的 `type = "formula"` 继续兼容读取
 

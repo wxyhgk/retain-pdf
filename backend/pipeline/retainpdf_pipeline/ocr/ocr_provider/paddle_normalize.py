@@ -101,17 +101,39 @@ def rescale_document_geometry_to_pdf(document: dict, source_pdf_path: Path) -> d
     pdf = fitz.open(source_pdf_path)
     try:
         pages = document.get("pages", []) or []
+        # OCR 的第 n 页按位置对到原文的第 n 页（选了页的任务，原文已经截成所选的页）。OCR 比原文多页时对不上，
+        # 以前多出来的页留在原始坐标里、照样往下走；现在直接报错。比原文少（比如末尾的空白页没给）照常缩放，记下来。
+        if len(pages) > len(pdf):
+            raise RuntimeError(
+                f"OCR returned {len(pages)} pages but the source PDF has {len(pdf)}: "
+                "pages cannot be matched to the PDF"
+            )
+        if len(pages) < len(pdf):
+            document.setdefault("derived", {})["page_count_mismatch"] = {
+                "ocr_pages": len(pages),
+                "pdf_pages": len(pdf),
+            }
+            print(
+                f"normalize: OCR returned {len(pages)} pages for a {len(pdf)}-page source PDF; "
+                "matching pages by position",
+                flush=True,
+            )
         for page_index, page in enumerate(pages):
-            if page_index >= len(pdf):
-                break
             pdf_page = pdf[page_index]
             pdf_w = float(pdf_page.rect.width)
             pdf_h = float(pdf_page.rect.height)
             raw_w = float(page.get("width", 0) or 0)
             raw_h = float(page.get("height", 0) or 0)
             if raw_w <= 0 or raw_h <= 0:
+                # 没有原始页面尺寸就没法缩放：有块的页直接报错（以前换上 PDF 尺寸、块留在原始坐标里）；空页无所谓。
+                if page.get("blocks"):
+                    raise RuntimeError(
+                        f"OCR page {page_index + 1} has no usable size ({raw_w} x {raw_h}) "
+                        "but has blocks: its coordinates cannot be scaled to the PDF"
+                    )
                 page["width"] = pdf_w
                 page["height"] = pdf_h
+                page["unit"] = "pt"
                 continue
             scale_x = pdf_w / raw_w
             scale_y = pdf_h / raw_h
@@ -171,9 +193,16 @@ def post_rescale_rebuild_paddle_text_geometry(
                 and str(segment.get("bbox_precision", "") or "") == "provider_layout"
                 for segment in block.get("segments", []) or []
             )
+            # 服务商给了真实的行（MinerU 的 middle.json 每行都有框）：行和块边都以它为准，不用文字高度去估。
+            # 这一步以前对所有服务商都跑，把 MinerU 的原生行换成了按字数估的行（行内公式的标记也丢了）。
+            has_provider_lines = any(
+                isinstance(line, dict)
+                and str(line.get("bbox_precision", "") or "") == "provider_layout"
+                for line in block.get("lines", []) or []
+            )
             tightened_bbox = (
                 original_bbox
-                if has_provider_segment_bbox
+                if has_provider_segment_bbox or has_provider_lines
                 else tighten_text_bbox(
                     bbox=original_bbox,
                     text=text,
@@ -190,21 +219,25 @@ def post_rescale_rebuild_paddle_text_geometry(
                 metadata["provider_bbox_tightened"] = True
                 metadata["provider_bbox_original"] = original_bbox
                 block["metadata"] = metadata
-            rebuilt_lines = build_lines(
-                bbox=block.get("bbox", []),
-                segments=block.get("segments", []) or [],
-                text=text,
-                raw_label=raw_label,
-                block_type=block_type,
-                sub_type=sub_type,
-            )
-            if rebuilt_lines:
+            if has_provider_lines:
+                rebuilt_lines = [line for line in block.get("lines", []) or [] if isinstance(line, dict)]
+            else:
+                rebuilt_lines = build_lines(
+                    bbox=block.get("bbox", []),
+                    segments=block.get("segments", []) or [],
+                    text=text,
+                    raw_label=raw_label,
+                    block_type=block_type,
+                    sub_type=sub_type,
+                )
+            if rebuilt_lines and not has_provider_lines:
                 inherit_missing_segment_bboxes(
                     bbox=block.get("bbox", []),
                     segments=block.get("segments", []) or [],
                     lines=rebuilt_lines,
                 )
                 block["lines"] = rebuilt_lines
+            if rebuilt_lines:
                 content = block.get("content") or {}
                 if str(block.get("structure_role", "") or "").strip().lower() == "table_of_contents":
                     line_texts = content.get("line_texts") or []

@@ -616,6 +616,8 @@ def build_validation_report(data: dict) -> dict:
         "provider_formula_segment_bbox_count": provider_formula_segment_bbox_count,
         "approximate_formula_segment_bbox_count": approximate_formula_segment_bbox_count,
         "line_bbox_precision_counts": line_bbox_precision_counts,
+        # 这两项恒为 True 不是没查：上面的 validate_document_payload 已经强制检查过（geometry.bbox 和 block.bbox 一致、
+        # 行和片段都在块内、片段在行内），不满足就抛错，根本走不到这里。没有面积的框不算越界，另记在 zero_segment_bbox_count。
         "geometry_bbox_consistent": True,
         "segment_bbox_within_block": True,
     }

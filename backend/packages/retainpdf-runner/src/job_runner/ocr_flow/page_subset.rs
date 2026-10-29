@@ -85,6 +85,37 @@ pub(super) fn prepare_uploaded_source_pdf(
     })
 }
 
+/// 远程（URL）任务的原文拿到以后截成所选的页（上传的任务在 OCR 之前就截了，见 [`prepare_uploaded_source_pdf`]）。
+///
+/// URL 任务把页范围交给 OCR 服务，OCR 只认所选的页；原文却可能是整本（Paddle 是从 URL 下载的整本，MinerU 是它回传的
+/// `*_origin.pdf`）。后面的归一化、渲染都按位置把 OCR 的第 n 页对到原文的第 n 页，整本的原文就会从第 1 页错起。
+///
+/// 已经只有所选页的原文不再截：它的页数正好是所选的页数，按范围解析要么越界（所选页号比它的页数大），要么选出来就是
+/// 全部，两种都原样返回 `None`。没选页（空或 `all`）也是 `None`。截了返回截后的结果，文件原地改写。
+pub(super) fn subset_downloaded_source_pdf(
+    source_pdf: &Path,
+    page_ranges: &str,
+) -> Result<Option<PreparedSourcePdf>> {
+    let page_ranges = page_ranges.trim();
+    if page_ranges.is_empty() || page_ranges.eq_ignore_ascii_case("all") {
+        return Ok(None);
+    }
+    let total_pages = Document::load(source_pdf)
+        .with_context(|| format!("failed to load source pdf {}", source_pdf.display()))?
+        .get_pages()
+        .len() as u32;
+    let Ok(selected) = parse_page_ranges(page_ranges, total_pages) else {
+        return Ok(None);
+    };
+    if selected.len() == total_pages as usize {
+        return Ok(None);
+    }
+    let source_dir = source_pdf
+        .parent()
+        .ok_or_else(|| anyhow!("source pdf has no parent directory"))?;
+    prepare_uploaded_source_pdf(source_pdf, source_dir, page_ranges).map(Some)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -188,5 +219,32 @@ mod tests {
 
         assert!(!prepared.is_subset());
         assert_eq!(prepared.provider_page_ranges(), "all");
+    }
+
+    #[test]
+    fn a_downloaded_whole_book_is_cut_to_the_selected_pages_in_place() {
+        let dir = temp_dir("remote-subset");
+        let source = dir.join("source").join("book.pdf");
+        std::fs::create_dir_all(source.parent().unwrap()).unwrap();
+        build_test_pdf(&source, 6);
+
+        let prepared = subset_downloaded_source_pdf(&source, "2-3,6").expect("subset").expect("cut");
+
+        assert_eq!(prepared.path, source);
+        assert_eq!(prepared.selected_pages, vec![2, 3, 6]);
+        assert_eq!(Document::load(&source).unwrap().get_pages().len(), 3);
+    }
+
+    #[test]
+    fn a_source_that_already_holds_only_the_selected_pages_is_left_alone() {
+        let dir = temp_dir("remote-subset-done");
+        let source = dir.join("book.pdf");
+        // MinerU 回传的原文如果已经只有所选的 2 页：再按「5-6」截就越界，按「1-2」截就是全部，都不动。
+        build_test_pdf(&source, 2);
+        assert_eq!(subset_downloaded_source_pdf(&source, "5-6").unwrap(), None);
+        assert_eq!(subset_downloaded_source_pdf(&source, "1-2").unwrap(), None);
+        assert_eq!(subset_downloaded_source_pdf(&source, "").unwrap(), None);
+        assert_eq!(subset_downloaded_source_pdf(&source, "all").unwrap(), None);
+        assert_eq!(Document::load(&source).unwrap().get_pages().len(), 2);
     }
 }
