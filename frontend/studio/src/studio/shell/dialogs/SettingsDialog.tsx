@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { FileCode, Languages, Puzzle, Search, Sparkles, type LucideIcon } from 'lucide-react';
+import { FileCode, Languages, Palette, Puzzle, Search, Sparkles, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -7,10 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/u
 import type { AiSettingsShown } from '../../api/client';
 import { AiSettings } from './AiSettings';
 import { FileOpenSettings } from './FileOpenSettings';
+import { ThemeSettings } from './ThemeSettings';
 import { LocaleSettings } from './LocaleSettings';
 import { PluginSettings, type PluginsHost } from './PluginSettings';
 
-export type SettingsSection = 'locale' | 'files' | 'ai' | 'plugins';
+export type SettingsSection = 'locale' | 'theme' | 'files' | 'ai' | 'plugins';
 
 /**
  * 设置 opened at `section`. For want of an AI setting (识别图片): `why` said above it, and `done` told what was saved
@@ -27,6 +28,7 @@ function groups(): Array<{ name: string; entries: Entry[] }> {
 			name: t('偏好'),
 			entries: [
 				{ id: 'locale', label: t('语言'), icon: Languages, title: t('语言'), description: t('Studio 界面和提示用的语言。存在这台电脑上（.studio-settings.json，不进 git）'), words: t('language locale 界面 中文 english') },
+				{ id: 'theme', label: t('外观'), icon: Palette, title: t('外观'), description: t('亮色、暗色，或者跟着系统变。博客的页面也一样。存在这个浏览器里，马上生效'), words: t('theme dark light 暗色 亮色 深色 浅色 黑 白 夜间 外观 主题') },
 				{ id: 'files', label: t('打开文件'), icon: FileCode, title: t('打开文件'), description: t('点文章里指向文件的链接（脚本、数据、PDF……）时怎么打开：在 Studio 里、用默认程序（比如 VS Code、预览）、在 Finder 中显示。存在这个浏览器里，改了马上生效'), words: t('file open 文件 打开 默认程序 finder vscode 附件 链接 点击') },
 			],
 		},
@@ -116,6 +118,7 @@ export function SettingsDialog({ section, plugins, why = '', done, onClose }: Se
 						</header>
 						<div className="border-t border-border pt-5">
 							{shown === 'locale' && <LocaleSettings />}
+							{shown === 'theme' && <ThemeSettings />}
 							{shown === 'files' && <FileOpenSettings />}
 							{shown === 'ai' && (
 								<AiSettings

@@ -3,6 +3,7 @@
 // What each feature does with the parts is in wiring/: the pages, the AI in the
 // editor, AI 问答, the drive, the library, the plugins, the page's keys.
 import './locale';
+import { followTheme, toggleTheme } from './common/theme';
 import {
 	articleFileHead,
 	articleFileUrl,
@@ -120,6 +121,8 @@ mountShell(shell, {
 	closePanel: () => sidePanel.close(),
 });
 const editorScroll = shell.querySelector<HTMLElement>('.editor-scroll')!;
+// Light or dark: as chosen (设置 › 外观), or as the system is, followed as it changes.
+followTheme();
 const readingPlace = createReadingPlace(editorScroll);
 /** 查找替换 in all the articles (ReplaceDialog), with these words to look for. */
 let replaceRound = 0;
@@ -614,8 +617,9 @@ const quickFind = createQuickFind({
 			{ key: `app:${app.id}`, label: t('打开小程序「{name}」', { name: app.name }), icon: app.icon, run: () => void miniApps.open(app.id) },
 			...app.commands.map((command) => ({ key: `app:${app.id}:${command.id}`, label: `${app.name}：${command.title}`, icon: app.icon, run: () => void miniApps.open(app.id, command.entry) })),
 		]);
+		const theme = { key: 'studio:theme', label: t('切换亮色 / 暗色'), icon: '◐', run: toggleTheme };
 		const finding = { key: 'studio:replace', label: t('在全部文章里查找替换…'), icon: '⌕', hint: '⌘⇧F', run: () => findEverywhere() };
-		return [...fromTemplates, finding, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
+		return [...fromTemplates, finding, theme, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
 	},
 });
 

@@ -12,6 +12,7 @@ import { ContextMenu } from '../shell/ContextMenu';
 import { Dialogs } from '../shell/dialogs/Dialogs';
 import { Toast } from '../shell/Toast';
 import { studioLine } from './studio-line';
+import { followTheme } from '../common/theme';
 
 /**
  * A window of its own (StudioWindow.astro, 显示方式 › 新窗口): a 小程序 (`?app=<id>&at=<its page>`) or the AI (`?ai`),
@@ -25,10 +26,8 @@ flushSync(() =>
 	),
 );
 
-/** The light or dark the Studio was put in (kept by it in localStorage), followed here. */
-addEventListener('storage', (event) => {
-	if (event.key === 'theme' && event.newValue) document.documentElement.dataset.theme = event.newValue;
-});
+/** The light or dark the Studio was put in (kept by it in localStorage), or the system's, followed here. */
+followTheme();
 
 const asked = new URLSearchParams(location.search);
 const appId = asked.get('app');
