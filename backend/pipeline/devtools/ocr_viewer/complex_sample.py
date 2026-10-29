@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -101,7 +102,6 @@ class SampleDocument:
         self,
         region: Region,
         cls: str,
-        zone: str,
         content,
         ts: TextStyle,
         *,
@@ -141,7 +141,6 @@ class SampleDocument:
             element = Element(
                 id=self._new_id(current.page, element_key),
                 cls=cls,
-                zone=zone,
                 page=current.page,
                 bbox=r2(union([r["bbox"] for r in records])),
                 text=_join_lines([r["text"] for r in records], lang),
@@ -170,7 +169,7 @@ class SampleDocument:
     def rule(self, page: int, x0: float, x1: float, y: float, width: float = 0.6) -> None:
         self.pages[page].draw_line((x0, y), (x1, y), color=RULE, width=width)
 
-    def figure(self, region: Region, zone: str, height: float, *, key: str, seed: int, panels: int = 1, gap: float = 4.0) -> list[Element]:
+    def figure(self, region: Region, height: float, *, key: str, seed: int, panels: int = 1, gap: float = 4.0) -> list[Element]:
         made = []
         panel_gap = 10.0
         panel_w = (region.width - panel_gap * (panels - 1)) / panels
@@ -184,7 +183,6 @@ class SampleDocument:
                     Element(
                         id=panel_key,
                         cls="figure",
-                        zone=zone,
                         page=region.page,
                         bbox=r2(rect),
                         text="",
@@ -196,7 +194,7 @@ class SampleDocument:
         region.y += height + gap
         return made
 
-    def table(self, region: Region, zone: str, rows: list[list[str]], *, key: str, gap: float = 3.0) -> Element:
+    def table(self, region: Region, rows: list[list[str]], *, key: str, gap: float = 3.0) -> Element:
         page = self.pages[region.page]
         size, row_h = 7.4, 11.0
         widths = [0.40, 0.20, 0.20, 0.20]
@@ -228,7 +226,6 @@ class SampleDocument:
             Element(
                 id=key,
                 cls="table",
-                zone=zone,
                 page=region.page,
                 bbox=r2([region.x, top - 0.5, region.x + region.width, bottom + 0.5]),
                 text="\n".join(line["text"] for line in lines),
@@ -238,7 +235,7 @@ class SampleDocument:
         region.y = bottom + gap + 2.0
         return element
 
-    def code(self, region: Region, zone: str, source: list[str], *, key: str, gap: float = 5.0) -> Element:
+    def code(self, region: Region, source: list[str], *, key: str, gap: float = 5.0) -> Element:
         page = self.pages[region.page]
         size, lead = 7.0, 9.4
         f = font("tt")
@@ -262,12 +259,12 @@ class SampleDocument:
                 )
             baseline += lead
         element = self.add(
-            Element(id=key, cls="code_block", zone=zone, page=region.page, bbox=r2(rect), text="\n".join(source), lines=lines)
+            Element(id=key, cls="code_block", page=region.page, bbox=r2(rect), text="\n".join(source), lines=lines)
         )
         region.y += height + gap
         return element
 
-    def display_formula(self, region: Region, zone: str, pieces, number: str, *, key: str, latex: str, gap: float = 6.0) -> list[Element]:
+    def display_formula(self, region: Region, pieces, number: str, *, key: str, latex: str, gap: float = 6.0) -> list[Element]:
         page = self.pages[region.page]
         size = 10.0
         base = font("rm")
@@ -291,7 +288,6 @@ class SampleDocument:
             Element(
                 id=key,
                 cls="display_formula",
-                zone=zone,
                 page=region.page,
                 bbox=r2(formula_box),
                 text=text,
@@ -307,7 +303,6 @@ class SampleDocument:
             Element(
                 id=f"{key}-no",
                 cls="formula_number",
-                zone=zone,
                 page=region.page,
                 bbox=r2(number_box),
                 text=number,
@@ -318,7 +313,7 @@ class SampleDocument:
         region.y = max(formula_box[3], number_box[3]) + gap
         return [formula, numbered]
 
-    def algorithm(self, region: Region, zone: str, caption: str, body: list[tuple[int, list[tuple[str, str]]]], *, key: str, gap: float = 6.0) -> list[Element]:
+    def algorithm(self, region: Region, caption: str, body: list[tuple[int, list[tuple[str, str]]]], *, key: str, gap: float = 6.0) -> list[Element]:
         """算法框：上线、题注、中线、带行号的伪代码、下线（algorithm2e 的样子）。题注和算法是两个块。"""
         page = self.pages[region.page]
         x0, x1 = region.x, region.x + region.width
@@ -327,7 +322,6 @@ class SampleDocument:
         made = self.text(
             region,
             "code_caption",
-            zone,
             [{"b": caption.split(":", 1)[0] + ":"}, caption.split(":", 1)[1]],
             CAPTION,
             key=f"{key}-cap",
@@ -364,7 +358,6 @@ class SampleDocument:
                 Element(
                     id=key,
                     cls="algorithm",
-                    zone=zone,
                     page=region.page,
                     bbox=r2([x0, top - 1.0, x1, bottom]),
                     text="\n".join(line["text"] for line in lines),
@@ -375,7 +368,7 @@ class SampleDocument:
         region.y = bottom + gap
         return made
 
-    def seal(self, page: int, center: tuple[float, float], radius: float, *, key: str, zone: str) -> Element:
+    def seal(self, page: int, center: tuple[float, float], radius: float, *, key: str) -> Element:
         """红色圆章：外圈、五角星、一行字，压在前面的文字上。"""
         p = self.pages[page]
         red = (0.82, 0.12, 0.12)
@@ -396,7 +389,6 @@ class SampleDocument:
             Element(
                 id=key,
                 cls="seal",
-                zone=zone,
                 page=page,
                 bbox=r2([cx - radius - 0.8, cy - radius - 0.8, cx + radius + 0.8, cy + radius + 0.8]),
                 text=label,
@@ -405,7 +397,7 @@ class SampleDocument:
             )
         )
 
-    def vertical_note(self, page: int, x: float, y: float, text: str, *, cls: str, zone: str, key: str) -> Element:
+    def vertical_note(self, page: int, x: float, y: float, text: str, *, cls: str, key: str) -> Element:
         """左页边竖排的一行（arXiv 编号那种），从下往上读。框从 PDF 里取回来，不自己算旋转后的坐标。"""
         p = self.pages[page]
         p.insert_text((x, y), text, fontname="tiro", fontsize=9.0, rotate=90, color=(0.45, 0.45, 0.48))
@@ -423,7 +415,6 @@ class SampleDocument:
             Element(
                 id=key,
                 cls=cls,
-                zone=zone,
                 page=page,
                 bbox=box,
                 text=text,
@@ -457,20 +448,19 @@ class SampleDocument:
             Element(
                 id=key,
                 cls="toc_entry",
-                zone="front_matter",
                 page=region.page,
                 bbox=r2(union([r["bbox"] for r in records])),
                 text=_join_lines([r["text"] for r in records], "en"),
                 lines=records,
                 relations={"toc_target": target},
-                attributes={"level": level},
+                attributes=_toc_attributes(level, title, page_label),
                 lang="zh" if any("\u4e00" <= ch <= "\u9fff" for ch in title) else "en",
             )
         )
         region.y = next_top - ts.leading + block_height(1, ts) + (7.0 if level == 1 else 4.0)
         return element
 
-    def footnote_bottom(self, region: Region, zone: str, content, *, key: str, relations: dict) -> Element:
+    def footnote_bottom(self, region: Region, content, *, key: str, relations: dict) -> Element:
         """脚注排在栏底，栏的可用高度跟着缩短。"""
         atoms = tokenize(content, SMALL.style)
         lines = wrap(atoms, region.width, SMALL)
@@ -483,7 +473,6 @@ class SampleDocument:
             Element(
                 id=key,
                 cls="footnote",
-                zone=zone,
                 page=region.page,
                 bbox=r2(union([r["bbox"] for r in records])),
                 text=_join_lines([r["text"] for r in records], "en"),
@@ -509,6 +498,15 @@ class SampleDocument:
         }
         truth_path.write_text(json.dumps(truth, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         return pdf_path, truth_path
+
+
+def _toc_attributes(level: int, title: str, page_label: str) -> dict:
+    """目录条目的结构：级别、编号（"2.1"，没编号的条目不写）、页码。"""
+    attributes = {"level": level, "page_label": page_label}
+    first = title.split()[0] if title.split() else ""
+    if re.fullmatch(r"\d+(\.\d+)*", first):
+        attributes["number"] = first
+    return attributes
 
 
 def _join_lines(texts: list[str], lang: str) -> str:
@@ -558,19 +556,18 @@ def build() -> SampleDocument:
     # ---- 页眉、页脚、页码 ----
     for page in (TOC, P1, P2):
         band = full(page, 30.0)
-        left = doc.text(band, "running_header", "page_furniture", "Journal of Synthetic Document Studies 3 (2026)", SMALL, gap=0)[0]
+        left = doc.text(band, "running_header", "Journal of Synthetic Document Studies 3 (2026)", SMALL, gap=0)[0]
         band = Region(page, PAGE_W - MARGIN_X - 140, 140, 30.0, BOTTOM)
-        doc.text(band, "running_header", "page_furniture", "Mei et al.  Layout recovery", TextStyle("it", 7.4, 9.6, align="right"), gap=0)
+        doc.text(band, "running_header", "Mei et al.  Layout recovery", TextStyle("it", 7.4, 9.6, align="right"), gap=0)
         doc.rule(page, MARGIN_X, PAGE_W - MARGIN_X, left.bbox[3] + 3.0, 0.5)
-        doc.text(full(page, 800.0, 830.0), "running_footer", "page_furniture", "Preprint. Distributed for layout-analysis testing only.", TextStyle("it", 7.2, 9.4), gap=0)
-        doc.text(Region(page, PAGE_W / 2 - 20, 40, 800.0, 830.0), "page_number", "page_furniture", PRINTED_PAGE[page], TextStyle("rm", 8.0, 10.0, align="center"), gap=0)
+        doc.text(full(page, 800.0, 830.0), "running_footer", "Preprint. Distributed for layout-analysis testing only.", TextStyle("it", 7.2, 9.4), gap=0)
+        doc.text(Region(page, PAGE_W / 2 - 20, 40, 800.0, 830.0), "page_number", PRINTED_PAGE[page], TextStyle("rm", 8.0, 10.0, align="center"), gap=0)
 
     # ---- 第 1 页：通栏的前言 ----
     top = full(P1, 66.0)
     doc.text(
         Region(P1, 100, PAGE_W - 200, 66.0, BOTTOM),
         "doc_title",
-        "front_matter",
         "Measuring Layout Recovery on Dense Two-Column Papers with Mixed Scripts",
         TextStyle("bf", 15.5, 19.0, align="center"),
         key="title",
@@ -580,7 +577,6 @@ def build() -> SampleDocument:
     doc.text(
         top,
         "author",
-        "front_matter",
         ["Lin Mei", {"sup": "1"}, ",  Tomas Ortega", {"sup": "2"}, ",  Priya Natarajan", {"sup": "1,*"}],
         TextStyle("rm", 10.0, 12.5, align="center"),
         key="authors",
@@ -589,7 +585,6 @@ def build() -> SampleDocument:
     doc.text(
         top,
         "affiliation",
-        "front_matter",
         [{"sup": "1"}, "School of Information Science, Example University, Hangzhou, China"],
         TextStyle("it", 7.8, 9.8, align="center"),
         key="affil1",
@@ -598,7 +593,6 @@ def build() -> SampleDocument:
     doc.text(
         top,
         "affiliation",
-        "front_matter",
         [{"sup": "2"}, "Institute for Document Engineering, Valencia, Spain.  ", {"sup": "*"}, "Corresponding author."],
         TextStyle("it", 7.8, 9.8, align="center"),
         key="affil2",
@@ -607,18 +601,16 @@ def build() -> SampleDocument:
     doc.text(
         top,
         "publication_info",
-        "front_matter",
         "Received 3 June 2026  ·  Accepted 9 September 2026  ·  doi:10.0000/jsds.2026.0031",
         TextStyle("rm", 7.2, 9.2, align="center"),
         key="pubinfo",
         gap=8,
     )
     abstract_region = Region(P1, MARGIN_X + 24, PAGE_W - 2 * MARGIN_X - 48, top.y, BOTTOM)
-    doc.text(abstract_region, "section_heading", "front_matter", "Abstract", TextStyle("bf", 9.0, 11.6), key="h-abstract", attributes={"level": 1}, gap=2)
+    doc.text(abstract_region, "section_heading", "Abstract", TextStyle("bf", 9.0, 11.6), key="h-abstract", attributes={"level": 1}, gap=2)
     doc.text(
         abstract_region,
         "abstract",
-        "front_matter",
         [
             "OCR services return blocks, lines and labels, but each service names them differently and none of them marks what a block",
             " is for. We build a two-page synthetic paper whose every element carries a known class, and score how well block boxes,",
@@ -633,7 +625,6 @@ def build() -> SampleDocument:
     doc.text(
         abstract_region,
         "keywords",
-        "front_matter",
         "Keywords: layout analysis; reading order; bilingual documents; OCR evaluation",
         TextStyle("rm", 8.0, 10.4),
         key="keywords",
@@ -651,16 +642,14 @@ def build() -> SampleDocument:
     # ---- 第 1 页左栏 ----
     doc.footnote_bottom(
         p1_left,
-        "body",
         [{"sup": "1"}, " All coordinates in this paper are PDF points with the origin at the top-left corner of the page."],
         key="fn1",
         relations={"note_of": "intro-p1"},
     )
-    doc.text(p1_left, "section_heading", "body", "1   Introduction", H1, key="h-intro", attributes={"level": 1}, gap=4)
+    doc.text(p1_left, "section_heading", "1   Introduction", H1, key="h-intro", attributes={"level": 1}, gap=4)
     doc.text(
         p1_left,
         "paragraph",
-        "body",
         [
             "Translating a scientific paper while keeping its layout needs more than text: every block must be put back where it",
             " came from, at the right size, in the right reading order",
@@ -675,11 +664,11 @@ def build() -> SampleDocument:
         BODY_FIRST,
         key="intro-p1",
     )
-    doc.text(p1_left, "paragraph", "body", "We make three contributions:", BODY, key="intro-p2", gap=3)
+    doc.text(p1_left, "paragraph", "We make three contributions:", BODY, key="intro-p2", gap=3)
     for index, item in enumerate(
         [
             "a synthetic paper with 60 elements whose classes are known by construction;",
-            "a provider-neutral class list with zones and relations, independent of any OCR label set;",
+            "a provider-neutral class list with attributes and relations, independent of any OCR label set;",
             "a viewer that overlays predicted and reference boxes on the page.",
         ],
         start=1,
@@ -687,7 +676,6 @@ def build() -> SampleDocument:
         doc.text(
             Region(P1, p1_left.x + 8, p1_left.width - 8, p1_left.y, p1_left.bottom),
             "list_item",
-            "body",
             f"({index})  {item}",
             TextStyle("rm", 9.0, 12.2),
             key=f"intro-li{index}",
@@ -698,7 +686,6 @@ def build() -> SampleDocument:
     doc.text(
         p1_left,
         "paragraph",
-        "body",
         [
             "与英文论文不同，中文排版没有词间空格，一行可以在任意两个汉字之间断开。识别服务把中文行拼成段落时，常常在行与行之间多插一个空格，",
             "或者把行内公式",
@@ -711,11 +698,10 @@ def build() -> SampleDocument:
     )
 
     # ---- 第 1 页右栏 ----
-    doc.figure(p1_right, "body", 118.0, key="fig1", seed=1)
+    doc.figure(p1_right, 118.0, key="fig1", seed=1)
     doc.text(
         p1_right,
         "figure_caption",
-        "body",
         [
             "Figure 1: Block-level recall of three OCR services on dense two-column pages. The dashed line is the baseline that",
             " ignores column gaps.",
@@ -728,7 +714,6 @@ def build() -> SampleDocument:
     doc.text(
         p1_right,
         "paragraph",
-        "body",
         ["We score a page by the harmonic mean of block precision ", _math(("P", "it", ""), latex="P"), " and recall ", _math(("R", "it", ""), latex="R"), ":"],
         BODY_FIRST,
         key="metric-p",
@@ -736,19 +721,17 @@ def build() -> SampleDocument:
     )
     doc.display_formula(
         p1_right,
-        "body",
         [("F", "it", ""), ("1", "rm", SUB), (" = 2", "rm", ""), ("PR", "it", ""), (" / (", "rm", ""), ("P", "it", ""), (" + ", "rm", ""), ("R", "it", ""), (")", "rm", "")],
         "(1)",
         key="eq1",
         latex=r"F_1 = \frac{2PR}{P + R}",
     )
-    doc.text(p1_right, "section_heading", "body", "2   Method", H1, key="h-method", attributes={"level": 1}, gap=4)
+    doc.text(p1_right, "section_heading", "2   Method", H1, key="h-method", attributes={"level": 1}, gap=4)
     doc.text(
         p1_right,
         "paragraph",
-        "body",
         [
-            "Each reference element is rendered from a short program that records its class, its zone and its relations while",
+            "Each reference element is rendered from a short program that records its class, its attributes and its relations while",
             " it draws the glyphs, so the reference boxes are exact rather than annotated by hand. The generator places a",
             " title, authors and affiliations across the full width, then flows the body text through two columns. A paragraph",
             " that does not fit at the bottom of a column is continued at the top of the next one and the continuation records",
@@ -765,7 +748,7 @@ def build() -> SampleDocument:
             " and footnote marks, and the last page ends with references that must never be translated. A heading carries",
             " its level, which the reader needs for the outline, and the conclusion is written in Chinese so that the same",
             " page holds two scripts. Running headers, footers and page numbers repeat on every page; they belong to no",
-            " zone of the text and are never translated. Front matter, from the title to the keywords, is kept apart from",
+            " part of the running text and are never translated. Front matter, from the title to the keywords, is kept apart from",
             " the body because authors and affiliations must stay in the original language while the abstract is",
             " translated. Finally, every paragraph that is split by a column or page break keeps a pointer to the block it",
             " continues, so that a translator can join the halves into one sentence before translating it and split the",
@@ -777,11 +760,10 @@ def build() -> SampleDocument:
     )
 
     # ---- 第 2 页左栏（接着上一页的段落） ----
-    doc.text(p2_left, "section_heading", "body", "2.1   Matching rule", H2, key="h-match", attributes={"level": 2}, gap=4)
+    doc.text(p2_left, "section_heading", "2.1   Matching rule", H2, key="h-match", attributes={"level": 2}, gap=4)
     doc.text(
         p2_left,
         "paragraph",
-        "body",
         [
             "A predicted block matches a reference block when their overlap ",
             _math(("s", "it", ""), ("(", "rm", ""), ("a", "it", ""), (", ", "rm", ""), ("b", "it", ""), (")", "rm", ""), latex="s(a, b)"),
@@ -795,7 +777,6 @@ def build() -> SampleDocument:
     doc.text(
         p2_left,
         "table_caption",
-        "body",
         "Table 1: Matched, missed and spurious blocks per class on the two sample pages.",
         CAPTION,
         key="tab1-cap",
@@ -804,7 +785,6 @@ def build() -> SampleDocument:
     )
     doc.table(
         p2_left,
-        "body",
         [
             ["Class", "Matched", "Missed", "Spurious"],
             ["Paragraph", "14", "1", "2"],
@@ -817,7 +797,6 @@ def build() -> SampleDocument:
     doc.text(
         p2_left,
         "float_note",
-        "body",
         "* A caption counts as matched only if it is linked to the correct figure or table.",
         SMALL,
         key="tab1-note",
@@ -827,7 +806,6 @@ def build() -> SampleDocument:
     doc.text(
         p2_left,
         "paragraph",
-        "body",
         [
             "Headings are matched like paragraphs but must also carry the right level: a level-2 heading reported as level 1 is",
             " a role error even when its box is perfect.",
@@ -835,25 +813,23 @@ def build() -> SampleDocument:
         BODY,
         key="match-p2",
     )
-    doc.text(p2_left, "section_heading", "body", "2.2   Zones and relations", H2, key="h-zones", attributes={"level": 2}, gap=4)
+    doc.text(p2_left, "section_heading", "2.2   Classes and relations", H2, key="h-relations", attributes={"level": 2}, gap=4)
     doc.text(
         p2_left,
         "paragraph",
-        "body",
         [
-            "Classes alone do not decide what to translate. The same heading class is used for Introduction and for",
-            " References, but only the first starts a part of the text that is translated, so each block also records its",
-            " zone: front matter, body, back matter, or page furniture for the running headers. Relations record the",
+            "Each block carries exactly one class, and the class decides the default for translation. A heading such as",
+            " References is an ordinary heading; the entries below it are recognized one by one, so a book with a reference",
+            " list at the end of every chapter needs no special case. Relations record the",
             " links that layout alone cannot express. A caption points to its figure or table, a table note to its",
             " table, a footnote to the paragraph that holds its mark and a formula number to its formula:",
         ],
         BODY_FIRST,
-        key="zones-p1",
+        key="relations-p1",
         gap=4,
     )
     doc.display_formula(
         p2_left,
-        "body",
         [("z", "it", ""), ("(", "rm", ""), ("b", "it", ""), (")", "rm", ""), (" = front | body | back | page", "rm", "")],
         "(2)",
         key="eq2",
@@ -862,7 +838,6 @@ def build() -> SampleDocument:
     doc.text(
         p2_left,
         "section_heading",
-        "body",
         "2.2.1   Storing every relation once, on the block that points to its target",
         TextStyle("bf", 8.8, 11.4),
         key="h-store",
@@ -872,7 +847,6 @@ def build() -> SampleDocument:
     doc.text(
         p2_left,
         "paragraph",
-        "body",
         [
             "A relation is stored once, on the block that points, and the reverse direction is derived when the document is",
             " loaded. Storing both directions invites the two copies to disagree, which is exactly what happens today when",
@@ -891,15 +865,14 @@ def build() -> SampleDocument:
             " is why the continuation relation is allowed on those classes as well.",
         ],
         BODY,
-        key="zones-p2",
+        key="relations-p2",
         split=True,
     )
 
     # ---- 第 2 页右栏 ----
-    doc.text(p2_right, "code_caption", "body", "Listing 1: Greedy matching of predicted and reference blocks.", CAPTION, key="code1-cap", relations={"caption_of": ["code1"]}, gap=3)
+    doc.text(p2_right, "code_caption", "Listing 1: Greedy matching of predicted and reference blocks.", CAPTION, key="code1-cap", relations={"caption_of": ["code1"]}, gap=3)
     doc.code(
         p2_right,
-        "body",
         [
             "def match(pred, ref, thr=0.5):",
             "    pairs = []",
@@ -911,11 +884,10 @@ def build() -> SampleDocument:
         ],
         key="code1",
     )
-    doc.figure(p2_right, "body", 82.0, key="fig2", seed=3, panels=2)
+    doc.figure(p2_right, 82.0, key="fig2", seed=3, panels=2)
     doc.text(
         p2_right,
         "figure_caption",
-        "body",
         "Figure 2: (a) Recall by column gap. (b) Recall by line spacing. Both panels share this caption.",
         CAPTION,
         key="fig2-cap",
@@ -924,7 +896,6 @@ def build() -> SampleDocument:
     )
     doc.algorithm(
         p2_right,
-        "body",
         "Algorithm 1: Joining continued paragraphs before translation",
         [
             (0, [("Input: ", "bf"), ("blocks ", "rm"), ("B", "it"), (" in reading order", "rm")]),
@@ -938,28 +909,26 @@ def build() -> SampleDocument:
         ],
         key="algo1",
     )
-    doc.text(p2_right, "section_heading", "body", "3   结论", TextStyle("zh", 10.5, 13.5), key="h-concl", attributes={"level": 1}, lang="zh", gap=4)
+    doc.text(p2_right, "section_heading", "3   结论", TextStyle("zh", 10.5, 13.5), key="h-concl", attributes={"level": 1}, lang="zh", gap=4)
     doc.text(
         p2_right,
         "paragraph",
-        "body",
         "人造样例让每个框的类别在生成时就确定下来，比较不同识别服务的结果时不再需要人工标注。下一步把同一套类别用于真实论文。",
         ZH_BODY,
         key="concl-zh",
         lang="zh",
         gap=7,
     )
-    doc.text(p2_right, "section_heading", "back_matter", "Acknowledgements", H2, key="h-ack", attributes={"level": 1}, gap=3)
+    doc.text(p2_right, "section_heading", "Acknowledgements", H2, key="h-ack", attributes={"level": 1}, gap=3)
     doc.text(
         p2_right,
         "acknowledgement",
-        "back_matter",
         "We thank the maintainers of the open-source PDF tools used to render the sample pages.",
         TextStyle("rm", 8.4, 11.0),
         key="ack",
         gap=7,
     )
-    doc.text(p2_right, "section_heading", "back_matter", "References", H2, key="h-ref", attributes={"level": 1}, gap=3)
+    doc.text(p2_right, "section_heading", "References", H2, key="h-ref", attributes={"level": 1}, gap=3)
     for index, entry in enumerate(
         [
             "[1] Zhao, X., Li, Y.: A survey of document layout analysis. Pattern Recognition 151, 110-132 (2025)",
@@ -973,7 +942,6 @@ def build() -> SampleDocument:
         doc.text(
             p2_right,
             "reference_entry",
-            "back_matter",
             entry,
             TextStyle("zh", 7.4, 10.2) if zh else REF,
             key=f"ref{index}",
@@ -982,13 +950,13 @@ def build() -> SampleDocument:
         )
     # ---- 目录页（最后排：页码取正文里标题实际落在哪一页） ----
     toc = Region(TOC, (PAGE_W - 300.0) / 2, 300.0, 120.0, BOTTOM)
-    doc.text(toc, "section_heading", "front_matter", "Contents  目录", TextStyle("bf", 15.0, 18.0), key="h-toc", attributes={"level": 1}, gap=18)
+    doc.text(toc, "section_heading", "Contents  目录", TextStyle("bf", 15.0, 18.0), key="h-toc", attributes={"level": 1}, gap=18)
     by_key = {e.id: e for e in doc.elements}
     for level, key in [
         (1, "h-intro"),
         (1, "h-method"),
         (2, "h-match"),
-        (2, "h-zones"),
+        (2, "h-relations"),
         (3, "h-store"),
         (1, "h-concl"),
         (1, "h-ack"),
@@ -998,11 +966,10 @@ def build() -> SampleDocument:
         doc.toc_entry(toc, level, heading.text, PRINTED_PAGE[heading.page], key=f"toc-{key[2:]}", target=key)
 
     # ---- 页边：第 1 页左边竖排的 arXiv 编号，第 2 页左边的边注，第 2 页末尾的印章 ----
-    doc.vertical_note(P1, 30.0, 560.0, "arXiv:2610.01234v1  [cs.CV]  29 Oct 2026", cls="publication_info", zone="front_matter", key="arxiv-id")
+    doc.vertical_note(P1, 30.0, 560.0, "arXiv:2610.01234v1  [cs.CV]  29 Oct 2026", cls="publication_info", key="arxiv-id")
     doc.text(
         Region(P2, 8.0, 40.0, 104.0, 300.0),
         "margin_note",
-        "body",
         "Margin note: boxes are given in PDF points, never in pixels.",
         TextStyle("it", 6.2, 7.8),
         key="margin1",
@@ -1010,7 +977,7 @@ def build() -> SampleDocument:
         gap=0,
     )
     anchor = [e for e in doc.elements if e.cls == "reference_entry"][-1].bbox
-    doc.seal(P2, (anchor[2] - 46.0, anchor[3] + 22.0), 30.0, key="seal1", zone="back_matter")
+    doc.seal(P2, (anchor[2] - 46.0, anchor[3] + 22.0), 30.0, key="seal1")
     return doc
 
 

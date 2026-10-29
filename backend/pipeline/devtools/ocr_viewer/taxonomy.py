@@ -1,14 +1,18 @@
-"""RetainPDF 自己的块分类（草案 v1，2026-10-29）。
+"""RetainPDF 自己的块分类（草案 v2，2026-10-29）。
+
+v2：去掉"区"（前言区、正文区、文末区）。书的结构不固定（每章各带参考文献、附录夹在中间），区又只能靠章节标题去猜，
+一个标题认错后面一片跟着错；而区能做的事类别本身已经做了（参考文献按条认、作者摘要各有类别）。每个块只靠自己的类别，
+认错只错这一块。标题级别放宽到 1-6，目录条目的编号和页码单独记。
 
 v1：对照 PaddleOCR（PP-DocLayoutV2 的 25 类）和 MinerU 的全部标签补了 v0 漏掉的——算法块、印章、边注，
 表注扩成"图表注"，图带类型（照片、数据图、示意图），文字块可以标竖排，行内加注音。
 
-和任何一家 OCR 服务商的标签无关：先定"一个块在文档里是什么"，各家的标签以后再映射过来。
+这是我们自己的规则，和任何一家 OCR 服务商的标签无关：先定"一个块在文档里是什么"，各家服务商由自己的适配器转成这套类别，
+分类不去迁就哪一家。
 查看器的图例、颜色、点开框看到的定义都从这里读，改分类只改这个文件。
 
-每个块只有一个类别（`BLOCK_CLASSES` 的键），可以带几个属性（`ATTRIBUTES`）。另外两样和类别分开记：
-- 区（`ZONES`）：块在文档的哪一段。同一个"章节标题"，在正文里和在参考文献里，翻不翻可能不一样，所以区单独记，不做成新类别。
-- 关系（`RELATIONS`）：图注属于哪张图、脚注挂在哪个标记上、段落接到哪一段。
+每个块只有一个类别（`BLOCK_CLASSES` 的键），可以带几个属性（`ATTRIBUTES`）。和类别分开记的只有关系（`RELATIONS`）：
+图注属于哪张图、脚注挂在哪个标记上、段落接到哪一段、目录条目指向哪个标题。
 
 行内的东西（行内公式、脚注标记、引用标记）不是块，是块里的片段，见 `INLINE_CLASSES`。
 """
@@ -76,7 +80,7 @@ BLOCK_CLASSES: dict[str, dict] = {
         "kind": "text",
         "translate": True,
         "attributes": ["level"],
-        "note": "level 1 是章，2 是节，3 是小节；“摘要”“参考文献”这类标题也是它，靠区区分",
+        "note": "level 1-6，1 是章，2 是节，依次往下；认不出级别就不写。“摘要”“参考文献”这类标题也是它",
     },
     "paragraph": {
         "label": "段落",
@@ -97,9 +101,9 @@ BLOCK_CLASSES: dict[str, dict] = {
         "group": "body",
         "kind": "text",
         "translate": True,
-        "attributes": ["level"],
-        "note": "每条一个块（Paddle 的 content 是整块目录，要拆成条）；引导点和页码留在文字里，译文只换标题部分；"
-        "toc_target 指向正文里对应的章节标题。“目录”二字本身是前言区的章节标题",
+        "attributes": ["level", "number", "page_label"],
+        "note": "每条一个块（Paddle 的 content 是整块目录，要拆成条）；编号（number）和页码（page_label）另外单独记，译文只换标题部分；"
+        "toc_target 指向正文里对应的章节标题。“目录”二字本身是章节标题",
     },
     "figure": {
         "label": "图",
@@ -163,13 +167,6 @@ BLOCK_CLASSES: dict[str, dict] = {
     "unknown": {"label": "未知", "group": "unknown", "kind": "unknown", "translate": False},
 }
 
-ZONES: dict[str, dict] = {
-    "front_matter": {"label": "前言区", "note": "从文档开头到正文第一个章节标题"},
-    "body": {"label": "正文区", "note": "正文章节"},
-    "back_matter": {"label": "文末区", "note": "致谢、参考文献、附录"},
-    "page_furniture": {"label": "版面", "note": "页眉、页脚、页码，不属于任何区"},
-}
-
 # from：哪些类别能发出这条关系；to：能指向哪些类别。
 RELATIONS: dict[str, dict] = {
     "caption_of": {
@@ -206,13 +203,16 @@ INLINE_CLASSES: dict[str, dict] = {
 }
 
 ATTRIBUTES: dict[str, dict] = {
-    "level": {"label": "级别", "values": {"1": "章", "2": "节", "3": "小节"}},
+    "level": {"label": "级别", "values": {"1": "章", "2": "节", "3": "小节", "4": "4 级", "5": "5 级", "6": "6 级"}},
+    # 值不限（values 为 None）：原样记下排版上看到的文字
+    "number": {"label": "编号", "values": None},
+    "page_label": {"label": "页码", "values": None},
     "figure_type": {"label": "图类型", "values": {"photo": "照片", "chart": "数据图", "diagram": "示意图"}},
     # 任何文字块都可以带：竖排的段落（vertical_text）、arXiv 那种页边竖排的编号。
     "writing_mode": {"label": "排版方向", "values": {"horizontal": "横排", "vertical": "竖排"}},
 }
 
-TAXONOMY_VERSION = "draft-1"
+TAXONOMY_VERSION = "draft-2"
 
 
 def taxonomy_payload() -> dict:
@@ -221,7 +221,6 @@ def taxonomy_payload() -> dict:
         "version": TAXONOMY_VERSION,
         "groups": GROUPS,
         "block_classes": BLOCK_CLASSES,
-        "zones": ZONES,
         "relations": RELATIONS,
         "inline_classes": INLINE_CLASSES,
         "attributes": ATTRIBUTES,

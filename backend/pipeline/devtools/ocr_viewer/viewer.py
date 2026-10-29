@@ -31,7 +31,7 @@ def page_images(pdf_path: Path, dpi: int = 144) -> list[str]:
 
 
 def check_truth(truth: dict) -> list[str]:
-    """标准答案里的类别、区、关系都得在分类表里，关系指向的块得存在。"""
+    """标准答案里的类别、属性、关系都得在分类表里，关系指向的块得存在。"""
     taxonomy = taxonomy_payload()
     ids = {element["id"] for element in truth["elements"]}
     errors: list[str] = []
@@ -41,8 +41,6 @@ def check_truth(truth: dict) -> list[str]:
         if cls not in taxonomy["block_classes"]:
             errors.append(f"{name}: unknown class {cls}")
             continue
-        if element["zone"] not in taxonomy["zones"]:
-            errors.append(f"{name}: unknown zone {element['zone']}")
         for relation, targets in (element.get("relations") or {}).items():
             spec = taxonomy["relations"].get(relation)
             if spec is None:
@@ -59,7 +57,7 @@ def check_truth(truth: dict) -> list[str]:
                 continue
             if spec is None:
                 errors.append(f"{name}: unknown attribute {attribute}")
-            elif str(value) not in spec["values"]:
+            elif spec["values"] is not None and str(value) not in spec["values"]:
                 errors.append(f"{name}: attribute {attribute} has unknown value {value!r}")
         for part in element.get("inlines") or []:
             if part["class"] not in taxonomy["inline_classes"]:

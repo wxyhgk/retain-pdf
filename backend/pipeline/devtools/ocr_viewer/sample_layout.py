@@ -71,7 +71,6 @@ class Atom:
 class Element:
     id: str
     cls: str
-    zone: str
     page: int
     bbox: list[float]
     text: str
@@ -85,7 +84,6 @@ class Element:
         data = {
             "id": self.id,
             "class": self.cls,
-            "zone": self.zone,
             "page": self.page,
             "bbox": r2(self.bbox),
             "text": self.text,

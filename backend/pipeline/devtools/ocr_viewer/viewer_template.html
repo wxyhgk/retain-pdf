@@ -79,7 +79,7 @@ a.jump { color: inherit; text-decoration: underline dotted; cursor: pointer; }
   <span class="meta" id="meta"></span>
   <div class="ctrl"><span class="k">颜色</span>
     <div class="seg" id="colorMode">
-      <button data-v="group" aria-pressed="true">按大类</button><button data-v="zone">按区</button><button data-v="translate">按翻不翻</button>
+      <button data-v="group" aria-pressed="true">按大类</button><button data-v="translate">按翻不翻</button>
     </div>
   </div>
   <div class="ctrl">
@@ -94,7 +94,7 @@ a.jump { color: inherit; text-decoration: underline dotted; cursor: pointer; }
   <aside>
     <section>
       <h2>选中的块</h2>
-      <div id="detail" class="detail"><span class="empty">点页面上的框看它的类别、区、关系和定义。</span></div>
+      <div id="detail" class="detail"><span class="empty">点页面上的框看它的类别、属性、关系和定义。</span></div>
     </section>
     <section>
       <h2 id="legendTitle">分类</h2>
@@ -113,7 +113,6 @@ a.jump { color: inherit; text-decoration: underline dotted; cursor: pointer; }
   var DATA = JSON.parse(document.getElementById("data").textContent);
   var TAX = DATA.taxonomy, TRUTH = DATA.truth, IMAGES = DATA.images;
   var NS = "http://www.w3.org/2000/svg";
-  var ZONE_COLORS = { front_matter: "#9a5bd6", body: "#2f6fe0", back_matter: "#5f8a1e", page_furniture: "#8a93a3" };
   var state = { color: "group", tags: true, lines: false, inlines: true, rels: true, filter: null, selected: null };
   var byId = {};
   TRUTH.elements.forEach(function (e) { byId[e.id] = e; });
@@ -124,7 +123,6 @@ a.jump { color: inherit; text-decoration: underline dotted; cursor: pointer; }
     return t === true ? "yes" : t === false ? "no" : "open";
   }
   function colorOf(e) {
-    if (state.color === "zone") return ZONE_COLORS[e.zone] || "#999";
     if (state.color === "translate") return { yes: "#1f8a4c", no: "#8a93a3", open: "#d97a06" }[translateState(e)];
     return (TAX.groups[cls(e).group] || TAX.groups.unknown).color;
   }
@@ -279,7 +277,6 @@ a.jump { color: inherit; text-decoration: underline dotted; cursor: pointer; }
     row("编号", h("span", { "class": "mono", text: e.id }));
     row("大类", gspec.label);
     row("载体", spec.kind);
-    row("区", (TAX.zones[e.zone] || {}).label || e.zone);
     row("页", "第 " + (e.page + 1) + " 页");
     row("框", h("span", { "class": "mono", text: e.bbox.join(", ") }));
     row("行数", String((e.lines || []).length));
@@ -331,7 +328,7 @@ a.jump { color: inherit; text-decoration: underline dotted; cursor: pointer; }
     document.getElementById(pair[0]).addEventListener("change", function (ev) { state[pair[1]] = ev.target.checked; draw(); });
   });
   document.getElementById("pages").addEventListener("click", function () {
-    if (state.selected) { state.selected = null; document.getElementById("detail").innerHTML = '<span class="empty">点页面上的框看它的类别、区、关系和定义。</span>'; draw(); }
+    if (state.selected) { state.selected = null; document.getElementById("detail").innerHTML = '<span class="empty">点页面上的框看它的类别、属性、关系和定义。</span>'; draw(); }
   });
 
   renderLegend();
