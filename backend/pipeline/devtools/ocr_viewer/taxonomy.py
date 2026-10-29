@@ -92,7 +92,15 @@ BLOCK_CLASSES: dict[str, dict] = {
         "translate": True,
         "note": "每一项一个块，项目符号或编号留在文字里",
     },
-    "toc_entry": {"label": "目录条目", "group": "body", "kind": "text", "translate": True},
+    "toc_entry": {
+        "label": "目录条目",
+        "group": "body",
+        "kind": "text",
+        "translate": True,
+        "attributes": ["level"],
+        "note": "每条一个块（Paddle 的 content 是整块目录，要拆成条）；引导点和页码留在文字里，译文只换标题部分；"
+        "toc_target 指向正文里对应的章节标题。“目录”二字本身是前言区的章节标题",
+    },
     "figure": {
         "label": "图",
         "group": "float",
@@ -176,6 +184,12 @@ RELATIONS: dict[str, dict] = {
         "to": ["figure", "table", "code_block", "algorithm", "paragraph", "list_item", "abstract", "figure_caption"],
     },
     "number_of": {"label": "编号属于", "from": ["formula_number"], "to": ["display_formula"]},
+    "toc_target": {
+        "label": "目录指向",
+        "from": ["toc_entry"],
+        "to": ["section_heading"],
+        "note": "阅读器可以拿它做目录跳转，翻译时核对目录和标题译得一致",
+    },
     "continues": {
         "label": "接续上一块",
         "from": ["paragraph", "list_item", "reference_entry", "footnote"],

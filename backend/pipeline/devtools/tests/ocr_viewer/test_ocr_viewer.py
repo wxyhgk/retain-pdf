@@ -14,8 +14,8 @@ from devtools.ocr_viewer.viewer import PLACEHOLDER
 from devtools.ocr_viewer.viewer import build_viewer
 from devtools.ocr_viewer.viewer import check_truth
 
-# 样例里故意没有的类别：目录条目要单独造目录页，未知留给真实 OCR。
-NOT_IN_SAMPLE = {"toc_entry", "unknown"}
+# 样例里故意没有的类别：未知留给真实 OCR。
+NOT_IN_SAMPLE = {"unknown"}
 
 # 样例特意放进去的几种难认的东西（对照 Paddle、MinerU 的标签补的）。
 HARD_CASES = {"algorithm", "seal", "margin_note", "float_note"}
@@ -50,6 +50,20 @@ def test_sample_has_column_and_page_continuations(tmp_path: Path) -> None:
     assert any(head["page"] == tail["page"] and head["bbox"][0] != tail["bbox"][0] for head, tail in continued), "no cross-column continuation"
 
 
+def test_toc_entries_point_to_headings_on_the_printed_page(tmp_path: Path) -> None:
+    _, truth = _sample(tmp_path)
+    by_id = {element["id"]: element for element in truth["elements"]}
+    entries = [e for e in truth["elements"] if e["class"] == "toc_entry"]
+    assert {e["attributes"]["level"] for e in entries} == {1, 2, 3}
+    assert any(len(e["lines"]) > 1 for e in entries), "no wrapped TOC entry"
+    for entry in entries:
+        heading = by_id[entry["relations"]["toc_target"]]
+        assert heading["class"] == "section_heading"
+        assert entry["attributes"]["level"] == heading["attributes"]["level"]
+        printed = {1: "1", 2: "2"}[heading["page"]]
+        assert entry["lines"][-1]["text"].endswith(" " + printed), entry["id"]
+
+
 def test_truth_boxes_sit_on_the_rendered_text(tmp_path: Path) -> None:
     pdf_path, truth = _sample(tmp_path)
     with fitz.open(pdf_path) as pdf:
@@ -70,6 +84,10 @@ def test_sample_is_deterministic(tmp_path: Path) -> None:
     assert first == second
 
 
+def truth_pages(truth_path: Path) -> list:
+    return json.loads(truth_path.read_text(encoding="utf-8"))["pages"]
+
+
 def test_viewer_embeds_taxonomy_truth_and_pages(tmp_path: Path) -> None:
     pdf_path, truth_path = build().save(tmp_path)
     html = build_viewer(pdf_path, truth_path, tmp_path / "viewer.html", dpi=40).read_text(encoding="utf-8")
@@ -77,5 +95,5 @@ def test_viewer_embeds_taxonomy_truth_and_pages(tmp_path: Path) -> None:
     blob = html.split('<script id="data" type="application/json">', 1)[1].split("</script>", 1)[0]
     data = json.loads(blob)
     assert data["truth"]["document_id"] == "complex_paper"
-    assert len(data["images"]) == 2 and all(src.startswith("data:image/png;base64,") for src in data["images"])
+    assert len(data["images"]) == len(truth_pages(truth_path)) == 3 and all(src.startswith("data:image/png;base64,") for src in data["images"])
     assert set(data["taxonomy"]["block_classes"]) == set(BLOCK_CLASSES)

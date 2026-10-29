@@ -34,6 +34,8 @@ from devtools.ocr_viewer.taxonomy import BLOCK_CLASSES
 from devtools.ocr_viewer.taxonomy import TAXONOMY_VERSION
 
 PAGE_W, PAGE_H = 595.0, 842.0
+TOC, P1, P2 = 0, 1, 2  # 第 1 页是目录页（页码 i），正文在第 2、3 页（页码 1、2）
+PRINTED_PAGE = {TOC: "i", P1: "1", P2: "2"}
 MARGIN_X, TOP, BOTTOM = 54.0, 58.0, 784.0
 GUTTER = 16.0
 COL_W = (PAGE_W - 2 * MARGIN_X - GUTTER) / 2
@@ -73,7 +75,7 @@ class Region:
 class SampleDocument:
     def __init__(self) -> None:
         self.pdf = fitz.open()
-        for _ in range(2):
+        for _ in range(3):
             self.pdf.new_page(width=PAGE_W, height=PAGE_H)
         # 加新页会让手里旧的 Page 对象失效，每次都按页号重新取。
         self.pages = _PageAccess(self.pdf)
@@ -430,6 +432,44 @@ class SampleDocument:
             )
         )
 
+    def toc_entry(self, region: Region, level: int, title: str, page_label: str, *, key: str, target: str) -> Element:
+        """一条目录：按级别缩进，标题太长就折行，最后一行补引导点和右对齐的页码。"""
+        ts = TextStyle("bf" if level == 1 else "rm", 9.6 if level == 1 else 9.0, 12.4)
+        indent = (level - 1) * 16.0
+        number_w = font("rm").text_length("000", ts.size)
+        width = region.width - indent - number_w - 18.0
+        atoms = tokenize(title, ts.style)
+        lines = wrap(atoms, width, ts)
+        records, _, next_top = draw_lines(self.pages[region.page], lines, region.x + indent, region.y, width, ts)
+        last = records[-1]
+        baseline = region.y + font(ts.style).ascender * ts.size + ts.leading * (len(records) - 1)
+        nw = font("rm").text_length(page_label, ts.size)
+        nx = region.x + region.width - nw
+        self.pages[region.page].insert_text((nx, baseline), page_label, fontname="tiro", fontsize=ts.size)
+        dot_w = font("rm").text_length(" .", ts.size)
+        start = last["bbox"][2] + 4.0
+        dots = " ." * max(0, int((nx - 4.0 - start) // dot_w))
+        if dots:
+            self.pages[region.page].insert_text((start, baseline), dots, fontname="tiro", fontsize=ts.size, color=(0.45, 0.45, 0.5))
+        last["bbox"] = r2([last["bbox"][0], last["bbox"][1], nx + nw, last["bbox"][3]])
+        last["text"] = f"{last['text']}{dots} {page_label}"
+        element = self.add(
+            Element(
+                id=key,
+                cls="toc_entry",
+                zone="front_matter",
+                page=region.page,
+                bbox=r2(union([r["bbox"] for r in records])),
+                text=_join_lines([r["text"] for r in records], "en"),
+                lines=records,
+                relations={"toc_target": target},
+                attributes={"level": level},
+                lang="zh" if any("\u4e00" <= ch <= "\u9fff" for ch in title) else "en",
+            )
+        )
+        region.y = next_top - ts.leading + block_height(1, ts) + (7.0 if level == 1 else 4.0)
+        return element
+
     def footnote_bottom(self, region: Region, zone: str, content, *, key: str, relations: dict) -> Element:
         """脚注排在栏底，栏的可用高度跟着缩短。"""
         atoms = tokenize(content, SMALL.style)
@@ -516,19 +556,19 @@ def build() -> SampleDocument:
     full = lambda page, y, bottom=BOTTOM: Region(page, MARGIN_X, PAGE_W - 2 * MARGIN_X, y, bottom)  # noqa: E731
 
     # ---- 页眉、页脚、页码 ----
-    for page in range(2):
+    for page in (TOC, P1, P2):
         band = full(page, 30.0)
         left = doc.text(band, "running_header", "page_furniture", "Journal of Synthetic Document Studies 3 (2026)", SMALL, gap=0)[0]
         band = Region(page, PAGE_W - MARGIN_X - 140, 140, 30.0, BOTTOM)
-        doc.text(band, "running_header", "page_furniture", ["Mei ", {"cite": "et al."}][:1] + ["et al.  Layout recovery"], TextStyle("it", 7.4, 9.6, align="right"), gap=0)
+        doc.text(band, "running_header", "page_furniture", "Mei et al.  Layout recovery", TextStyle("it", 7.4, 9.6, align="right"), gap=0)
         doc.rule(page, MARGIN_X, PAGE_W - MARGIN_X, left.bbox[3] + 3.0, 0.5)
         doc.text(full(page, 800.0, 830.0), "running_footer", "page_furniture", "Preprint. Distributed for layout-analysis testing only.", TextStyle("it", 7.2, 9.4), gap=0)
-        doc.text(Region(page, PAGE_W / 2 - 20, 40, 800.0, 830.0), "page_number", "page_furniture", str(page + 1), TextStyle("rm", 8.0, 10.0, align="center"), gap=0)
+        doc.text(Region(page, PAGE_W / 2 - 20, 40, 800.0, 830.0), "page_number", "page_furniture", PRINTED_PAGE[page], TextStyle("rm", 8.0, 10.0, align="center"), gap=0)
 
     # ---- 第 1 页：通栏的前言 ----
-    top = full(0, 66.0)
+    top = full(P1, 66.0)
     doc.text(
-        Region(0, 100, PAGE_W - 200, 66.0, BOTTOM),
+        Region(P1, 100, PAGE_W - 200, 66.0, BOTTOM),
         "doc_title",
         "front_matter",
         "Measuring Layout Recovery on Dense Two-Column Papers with Mixed Scripts",
@@ -573,7 +613,7 @@ def build() -> SampleDocument:
         key="pubinfo",
         gap=8,
     )
-    abstract_region = Region(0, MARGIN_X + 24, PAGE_W - 2 * MARGIN_X - 48, top.y, BOTTOM)
+    abstract_region = Region(P1, MARGIN_X + 24, PAGE_W - 2 * MARGIN_X - 48, top.y, BOTTOM)
     doc.text(abstract_region, "section_heading", "front_matter", "Abstract", TextStyle("bf", 9.0, 11.6), key="h-abstract", attributes={"level": 1}, gap=2)
     doc.text(
         abstract_region,
@@ -600,12 +640,12 @@ def build() -> SampleDocument:
         gap=0,
     )
     columns_top = abstract_region.y + 8
-    doc.rule(0, MARGIN_X, PAGE_W - MARGIN_X, columns_top - 4, 0.5)
+    doc.rule(P1, MARGIN_X, PAGE_W - MARGIN_X, columns_top - 4, 0.5)
 
-    p1_left = Region(0, MARGIN_X, COL_W, columns_top, BOTTOM)
-    p1_right = Region(0, MARGIN_X + COL_W + GUTTER, COL_W, columns_top, BOTTOM)
-    p2_left = Region(1, MARGIN_X, COL_W, 66.0, BOTTOM)
-    p2_right = Region(1, MARGIN_X + COL_W + GUTTER, COL_W, 66.0, BOTTOM)
+    p1_left = Region(P1, MARGIN_X, COL_W, columns_top, BOTTOM)
+    p1_right = Region(P1, MARGIN_X + COL_W + GUTTER, COL_W, columns_top, BOTTOM)
+    p2_left = Region(P2, MARGIN_X, COL_W, 66.0, BOTTOM)
+    p2_right = Region(P2, MARGIN_X + COL_W + GUTTER, COL_W, 66.0, BOTTOM)
     doc.flow = [p1_left, p1_right, p2_left, p2_right]
 
     # ---- 第 1 页左栏 ----
@@ -645,7 +685,7 @@ def build() -> SampleDocument:
         start=1,
     ):
         doc.text(
-            Region(0, p1_left.x + 8, p1_left.width - 8, p1_left.y, p1_left.bottom),
+            Region(P1, p1_left.x + 8, p1_left.width - 8, p1_left.y, p1_left.bottom),
             "list_item",
             "body",
             f"({index})  {item}",
@@ -821,6 +861,16 @@ def build() -> SampleDocument:
     )
     doc.text(
         p2_left,
+        "section_heading",
+        "body",
+        "2.2.1   Storing every relation once, on the block that points to its target",
+        TextStyle("bf", 8.8, 11.4),
+        key="h-store",
+        attributes={"level": 3},
+        gap=3,
+    )
+    doc.text(
+        p2_left,
         "paragraph",
         "body",
         [
@@ -930,10 +980,27 @@ def build() -> SampleDocument:
             lang="zh" if zh else "en",
             gap=2,
         )
+    # ---- 目录页（最后排：页码取正文里标题实际落在哪一页） ----
+    toc = Region(TOC, (PAGE_W - 300.0) / 2, 300.0, 120.0, BOTTOM)
+    doc.text(toc, "section_heading", "front_matter", "Contents  目录", TextStyle("bf", 15.0, 18.0), key="h-toc", attributes={"level": 1}, gap=18)
+    by_key = {e.id: e for e in doc.elements}
+    for level, key in [
+        (1, "h-intro"),
+        (1, "h-method"),
+        (2, "h-match"),
+        (2, "h-zones"),
+        (3, "h-store"),
+        (1, "h-concl"),
+        (1, "h-ack"),
+        (1, "h-ref"),
+    ]:
+        heading = by_key[key]
+        doc.toc_entry(toc, level, heading.text, PRINTED_PAGE[heading.page], key=f"toc-{key[2:]}", target=key)
+
     # ---- 页边：第 1 页左边竖排的 arXiv 编号，第 2 页左边的边注，第 2 页末尾的印章 ----
-    doc.vertical_note(0, 30.0, 560.0, "arXiv:2610.01234v1  [cs.CV]  29 Oct 2026", cls="publication_info", zone="front_matter", key="arxiv-id")
+    doc.vertical_note(P1, 30.0, 560.0, "arXiv:2610.01234v1  [cs.CV]  29 Oct 2026", cls="publication_info", zone="front_matter", key="arxiv-id")
     doc.text(
-        Region(1, 8.0, 40.0, 104.0, 300.0),
+        Region(P2, 8.0, 40.0, 104.0, 300.0),
         "margin_note",
         "body",
         "Margin note: boxes are given in PDF points, never in pixels.",
@@ -943,7 +1010,7 @@ def build() -> SampleDocument:
         gap=0,
     )
     anchor = [e for e in doc.elements if e.cls == "reference_entry"][-1].bbox
-    doc.seal(1, (anchor[2] - 46.0, anchor[3] + 22.0), 30.0, key="seal1", zone="back_matter")
+    doc.seal(P2, (anchor[2] - 46.0, anchor[3] + 22.0), 30.0, key="seal1", zone="back_matter")
     return doc
 
 
