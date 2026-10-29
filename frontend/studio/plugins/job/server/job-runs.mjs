@@ -480,7 +480,10 @@ export class JobRuns {
 		files = (await readdir(folder, { withFileTypes: true })).filter((item) => item.isFile() && !item.name.startsWith('.') && item.name !== 'run.json').map((item) => item.name).sort();
 		const state = entry.cancel ? 'cancelled' : probe.state === 'exit' ? (probe.code === 0 ? 'done' : 'failed') : 'lost';
 		if (state === 'lost' && !error) error = probe.state === 'gone' ? '机器上找不到这次运行的文件夹' : entry.scheduler === 'slurm' ? `Slurm 任务结束了，但没有正常退出${probe.slurm ? `（${probe.slurm}）` : ''}` : '进程不在了，也没有留下退出码（机器重启过？）'; // i18n-ignore: kept in run.json
-		await this.#update(entry, { state, exitCode: probe.code, finished: this.now().toISOString(), files, error });
+		const finished = this.now().toISOString();
+		// One queued (Slurm) that ran and exited between two looks was never seen running: started by the time it ended.
+		const { started } = await this.#read(entry.slug, entry.id, entry.run);
+		await this.#update(entry, { state, exitCode: probe.code, started: started ?? (probe.state === 'exit' ? finished : null), finished, files, error });
 		this.#entries.delete(this.#key(entry));
 		this.#problems.delete(this.#key(entry));
 		await this.#save();
