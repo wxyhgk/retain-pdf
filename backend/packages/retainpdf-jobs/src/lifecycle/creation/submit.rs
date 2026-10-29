@@ -15,6 +15,7 @@
 use retainpdf_api_base::disk_space::ensure_free_space;
 use serde_json::Value;
 
+use retainpdf_data::db::backup::RestoreInProgress;
 use retainpdf_data::db::{NewRunWrite, PipelineDispatchRecord};
 use retainpdf_api_base::error::AppError;
 use retainpdf_data::job_events::{
@@ -117,6 +118,8 @@ pub fn submit_job(deps: &JobSubmitDeps<'_>, new: NewJob<'_>) -> Result<JobSnapsh
         document_id,
         ocr_recovery,
     } = new;
+    // 恢复备份期间不建：建出来的行会被换库盖掉，任务目录却留着。守卫拿到落库完（见 `Db::hold_off_restore`）。
+    let _no_restore = deps.launcher.db.hold_off_restore().map_err(restore_in_progress)?;
     // 兜底：调用方指定了编号的话，必须合法、且库里还没有（落库是 upsert，重名会整行覆盖）。
     // 放在建任务目录之前，拒绝时不留副作用；没指定的由 ResolvedJobSpec 生成合法编号。
     let requested_job_id = input.runtime.job_id.trim();
@@ -208,9 +211,15 @@ pub fn relaunch_in_place(
         ));
     }
     // 拒绝时什么都没动（见上），所以放在挪旧 PDF、落库之前。
+    let _no_restore = deps.db.hold_off_restore().map_err(restore_in_progress)?;
     ensure_free_space(deps.data_root, deps.min_free_disk_bytes, "rerun this job")?;
     ensure_queue_room(deps)?;
     persist_and_launch(deps, job, None, Some(read_as))
+}
+
+/// 正在恢复备份：409 `restore_in_progress`。
+fn restore_in_progress(refusal: RestoreInProgress) -> AppError {
+    AppError::conflict_because(RestoreInProgress::REASON, refusal.to_string())
 }
 
 /// 排队满了时 429 的 `error.details.reason`。

@@ -62,6 +62,7 @@ mod ocr_lifecycle;
 mod providers;
 mod provider_probes;
 mod queue_limit;
+mod restore_in_progress;
 mod public_document_operations;
 mod quality;
 mod route_manifest;

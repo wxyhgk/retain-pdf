@@ -156,6 +156,8 @@ pub(super) fn publish_upload(
         )));
     }
     prepared.record.page_count = page_count;
+    // 恢复备份期间不落库：记录会被换库盖掉，文件却留在上传目录里。拒绝时上传目录随 `pending` 删掉。
+    let _no_restore = db.hold_off_restore().map_err(|_| UploadError::RestoreInProgress)?;
     prepared.record.content_hash = owner.scoped_content_hash(&prepared.record.content_hash);
     share_existing_copy(db, &prepared.path, &prepared.record.content_hash);
     db.save_upload_with_document_for(&prepared.record, owner.owner_id())

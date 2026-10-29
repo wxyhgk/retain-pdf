@@ -1079,3 +1079,13 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
   `message` 是英文的「N jobs are already waiting to run (limit M); try again after some of them start」。被拒时什么都没写。
 - 前端可以做（可选）：按 `reason === "queue_full"` 提示「排队的任务太多了，等前面的开跑再交」，不要解析 `message`；
   批量提交时遇到它可以停下剩下的。现在这类 429 会走通用的报错显示。正常用（几十、几百本）碰不到。
+
+## 恢复备份期间上传、建任务回 409 `restore_in_progress`（fix/restore-in-progress-gate）
+
+2026-10-28。决定见 [恢复备份期间不建任务不收上传](../../ops/planning/backend-review/20261028-恢复备份期间不建任务不收上传.md)。只增不改。
+
+- 恢复数据库备份的那几秒里，`POST /uploads`、所有建任务的入口（`POST /jobs`、书的翻译和 OCR、重试、续跑）、原地重跑返回 `409`，
+  `error.code = "CONFLICT"`，`error.details.reason = "restore_in_progress"`，`message` 是英文的
+  「a database backup is being restored; try again in a moment」。被拒时什么都没写。
+- 前端可以做（可选）：按 `reason === "restore_in_progress"` 提示「正在恢复备份，稍等再试」，不要解析 `message`；批量上传遇到它可以
+  等 `GET /backups` 的 `running` 变回 `false` 再接着传。现在这类 409 会走通用的报错显示。恢复本来就要求没有排队、在跑的任务，正常用很少碰到。

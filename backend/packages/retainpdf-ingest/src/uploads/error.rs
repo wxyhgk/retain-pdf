@@ -17,6 +17,9 @@ pub enum UploadError {
     /// 数据目录所在磁盘剩余空间不够（见 `retainpdf_api_base::disk_space`）。
     #[error("{0}")]
     InsufficientStorage(String),
+    /// 正在恢复备份（`Db::hold_off_restore`），这次上传不落库。
+    #[error("a database backup is being restored; try again in a moment")]
+    RestoreInProgress,
     #[error("{0}")]
     Internal(&'static str),
     #[error("{0}")]
