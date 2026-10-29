@@ -1,0 +1,298 @@
+{
+ "provider": "paddle",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   612,
+   792
+  ],
+  [
+   612,
+   792
+  ],
+  [
+   792,
+   612
+  ]
+ ],
+ "raw_pages": [
+  [
+   1224,
+   1584
+  ],
+  [
+   1224,
+   1584
+  ],
+  [
+   1584,
+   1224
+  ]
+ ],
+ "description": "Synthetic PaddleOCR-VL layoutParsingResults payload (3 pages, 2x pixel coordinates) filling the gaps of the other Paddle fixtures: labels aside_text, header_image, footer_image, inline_formula (standalone block and layout_det boxes inside text blocks), reference (vs reference_content); plus geometry edge cases: overlapping blocks, a 12x10 px block, a stuffed two-column block with an empty peer (repaired on page 2, detection-only on the landscape page 3), a landscape page and a furniture-only page. Page 1 = empty body, page 2 = two-column paper page (enable_body_repair=true), page 3 = landscape. Every label and bbox is hand-designed by gen_raw.py.",
+ "features": [
+  {
+   "feature": "header_image with src= link (asset resolved via markdown.images)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[0]",
+   "expect": "image/image_body, translate=false (provider_non_text:image), layout_role/semantic_role/structure_role unknown/unknown/'' (header placement lost; same as a plain image), asset_key=imgs/img_in_header_image_box_100_40_300_100.jpg, asset_resolved=true, layout_det_label=header_image (cls 13)"
+  },
+  {
+   "feature": "header text next to header_image",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[1]",
+   "expect": "text/header, structure_role=metadata, translate=false"
+  },
+  {
+   "feature": "footer_image WITHOUT src= (asset found only through the _box_x0_y0_x1_y1 filename in markdown.images)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[2]",
+   "expect": "image/image_body, translate=false, asset_key=imgs/img_in_footer_image_box_100_1490_260_1550.jpg, asset_resolved=true via bbox match, layout_det_label=footer_image (cls 9)"
+  },
+  {
+   "feature": "footer text, x1 = 1224 (page width); the _rejected variant has x1 = 1226 (2 px outside the page)",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0].prunedResult.parsing_res_list[3]",
+   "expect": "text/footer, translate=false; raw_rejected.json -> validator rejects, see validator_rejects"
+  },
+  {
+   "feature": "page with an empty body: only header_image, header, footer_image, footer, number",
+   "page": 1,
+   "raw_path": "layoutParsingResults[0]",
+   "expect": "5 blocks (2 image, 3 text), translate=false for all, column_layout_mode=single, no signals"
+  },
+  {
+   "feature": "aside_text (vertical margin stamp, bbox 36 x 1000 px, block_order=null)",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[1]",
+   "expect": "text/metadata, translate=false (provider_non_body:metadata), derived.role=metadata; adapter metadata.layout_role=unknown but final block.layout_role=paragraph (filled in later by contract_v1), semantic_role=metadata, structure_role=metadata"
+  },
+  {
+   "feature": "STUFFED two-column block: left-column bbox holds both columns' text (651 chars, equal halves of 325 chars), right-column peer block is EMPTY; page model_settings.enable_body_repair=true",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[2]",
+   "expect": "body_repair applies strategy=column_carryover, split_index=325: this block keeps the first 325 chars (original_text_length=651, final 325), role=absorber; continuation suppressed (reason body_repair_applied); translate=true"
+  },
+  {
+   "feature": "empty peer block of the stuffed pair (bbox 496 x 500 px, content '')",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[3]",
+   "expect": "after repair receives the second 325 chars, role=peer, text_missing_but_bbox_present=false (signals are recomputed after the repair), translate=true"
+  },
+  {
+   "feature": "text with 2 $..$ inline formulas and exactly 2 inline_formula layout_det boxes inside the block (counts match)",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[4]",
+   "expect": "segments text/inline_formula/text/inline_formula/text; both formula segments get provider boxes: bbox_precision=provider_layout, provider_inline_formula_{segment,candidate,bbox}_count=2/2/2, bbox_complete=true; layout boxes at layoutParsingResults[1].prunedResult.layout_det_res.boxes[13], layoutParsingResults[1].prunedResult.layout_det_res.boxes[14]"
+  },
+  {
+   "feature": "text with 2 $..$ inline formulas but 3 inline_formula layout_det boxes inside the block (counts differ; third box is the unit string m3/m3)",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[5]",
+   "expect": "2 inline_formula segments keep the block bbox (bbox_precision=block): segment/candidate/bbox counts 2/3/0, bbox_complete=false; layout boxes at layoutParsingResults[1].prunedResult.layout_det_res.boxes[15], layoutParsingResults[1].prunedResult.layout_det_res.boxes[16], layoutParsingResults[1].prunedResult.layout_det_res.boxes[17]"
+  },
+  {
+   "feature": "two text blocks that overlap by 40 px vertically (y 1030-1230 and 1190-1390, same column)",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[6] and layoutParsingResults[1].prunedResult.parsing_res_list[7]",
+   "expect": "both text/body, translate=true, 2 synthetic lines each, bboxes kept as given (no de-overlap), no suspicion signals"
+  },
+  {
+   "feature": "standalone inline_formula block (own parsing_res_list entry, content '$\\Delta\\varepsilon_{\\mathrm{r}}$')",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[8]",
+   "expect": "content.kind=unknown (inline_formula has no legacy projection), translate=false (provider_non_text:unknown), layout/semantic/structure roles unknown/unknown/''; its single inline_formula segment gets bbox_precision=provider_layout because the block's own layout_det box (label inline_formula) lies inside the block (1 segment == 1 candidate)"
+  },
+  {
+   "feature": "very small text block, 12 x 10 px, content '(a)'",
+   "page": 2,
+   "raw_path": "layoutParsingResults[1].prunedResult.parsing_res_list[10]",
+   "expect": "text/body, translate=true, one line/segment with the 12x10 bbox, layout_det_matched=true, no signals (3 chars, so not an 'empty' block)"
+  },
+  {
+   "feature": "landscape page 1584 x 1224 px (PDF 792 x 612); stuffed left block + EMPTY right block, repair NOT enabled",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[1] and layoutParsingResults[2].prunedResult.parsing_res_list[2]",
+   "expect": "detection only: both blocks provider_cross_column_merge_suspected=true, reading_order_unreliable, structure_unreliable; left has peer_block_absorbed_text=true, right has text_missing_but_bbox_present=true; continuation_suppressed (cross_column_merge_suspected); page metadata suspected_block_ids=[p003-b0001,p003-b0002]; the empty block is still translate=true with 0 segments; column_split_x=792"
+  },
+  {
+   "feature": "full-width text on the landscape page (1384 px = 87% of page width)",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[3]",
+   "expect": "text/body, translate=true, column_index_guess=full, no signals"
+  },
+  {
+   "feature": "aside_text in the right margin of the landscape page",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[4]",
+   "expect": "text/metadata, translate=false (same as page 2 aside)"
+  },
+  {
+   "feature": "reference label (the region container, NOT reference_content), content = 3 entries joined by \\n",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[5]",
+   "expect": "content.kind=unknown (reference has no legacy projection), translate=false (provider_non_text:unknown), structure_role='', 3 explicit lines/line_texts; NOT tagged reference_entry"
+  },
+  {
+   "feature": "reference_content entries following the reference block",
+   "page": 3,
+   "raw_path": "layoutParsingResults[2].prunedResult.parsing_res_list[6] and layoutParsingResults[2].prunedResult.parsing_res_list[7]",
+   "expect": "text/reference_entry, semantic_role=reference, structure_role=reference_entry, translate=false"
+  }
+ ],
+ "geometry_cases": [
+  {
+   "case": "overlap",
+   "page": 2,
+   "blocks": [
+    "layoutParsingResults[1].prunedResult.parsing_res_list[6]",
+    "layoutParsingResults[1].prunedResult.parsing_res_list[7]"
+   ],
+   "raw_bboxes": [
+    [
+     100,
+     1030,
+     596,
+     1230
+    ],
+    [
+     100,
+     1190,
+     596,
+     1390
+    ]
+   ],
+   "intent": "two text blocks overlapping by 40 px",
+   "outcome": "kept as given; both body/translate=true; no validator error; no signals"
+  },
+  {
+   "case": "exceeds_page_by_2px",
+   "page": 1,
+   "blocks": [
+    "layoutParsingResults[0].prunedResult.parsing_res_list[3]"
+   ],
+   "raw_bboxes": {
+    "raw.json": [
+     280,
+     1500,
+     1224,
+     1540
+    ],
+    "raw_rejected.json": [
+     280,
+     1500,
+     1226,
+     1540
+    ]
+   },
+   "intent": "footer with x1 = page width + 2 px",
+   "outcome": "raw_rejected.json: adapt_payload_to_document_v1 raises DocumentSchemaValidationError (validator tolerance is 1e-3); raw.json (x1=1224) validates"
+  },
+  {
+   "case": "tiny_block",
+   "page": 2,
+   "blocks": [
+    "layoutParsingResults[1].prunedResult.parsing_res_list[10]"
+   ],
+   "raw_bboxes": [
+    [
+     1080,
+     1360,
+     1092,
+     1370
+    ]
+   ],
+   "intent": "12 x 10 px text block",
+   "outcome": "valid; text/body translate=true; single line and segment equal to the block bbox"
+  },
+  {
+   "case": "stuffed_two_column_block_repaired",
+   "page": 2,
+   "blocks": [
+    "layoutParsingResults[1].prunedResult.parsing_res_list[2]",
+    "layoutParsingResults[1].prunedResult.parsing_res_list[3]"
+   ],
+   "raw_bboxes": [
+    [
+     100,
+     140,
+     596,
+     640
+    ],
+    [
+     628,
+     140,
+     1124,
+     640
+    ]
+   ],
+   "intent": "Paddle put both columns' text into the left block and left the right block empty; body_repair enabled on this page",
+   "outcome": "repaired via column_carryover at split_index 325 (the exact column boundary): left keeps 325 chars, right gets the other 325; no suspicion flags remain; continuation hints suppressed (body_repair_applied)"
+  },
+  {
+   "case": "stuffed_two_column_block_detect_only",
+   "page": 3,
+   "blocks": [
+    "layoutParsingResults[2].prunedResult.parsing_res_list[1]",
+    "layoutParsingResults[2].prunedResult.parsing_res_list[2]"
+   ],
+   "raw_bboxes": [
+    [
+     100,
+     140,
+     780,
+     480
+    ],
+    [
+     804,
+     140,
+     1484,
+     480
+    ]
+   ],
+   "intent": "same defect on the landscape page, enable_body_repair absent",
+   "outcome": "not repaired; flagged by column signals (cross_column_merge_suspected on both, peer_block_absorbed_text on left, text_missing_but_bbox_present on right); the right block stays empty yet translate=true"
+  },
+  {
+   "case": "landscape_page",
+   "page": 3,
+   "blocks": [
+    "layoutParsingResults[2]"
+   ],
+   "raw_bboxes": "page 1584 x 1224 px",
+   "intent": "width > height page",
+   "outcome": "page record width=1584, height=1224, unit=pt (px numbers are stored unscaled); column split_x=792, full-width block classified full"
+  },
+  {
+   "case": "empty_body_page",
+   "page": 1,
+   "blocks": [
+    "layoutParsingResults[0]"
+   ],
+   "raw_bboxes": "header_image, header, footer_image, footer, number only",
+   "intent": "page with no body blocks",
+   "outcome": "valid page with 5 blocks, none translated, column_layout_mode=single"
+  }
+ ],
+ "validator_rejects": [
+  {
+   "variant": "raw_rejected.json",
+   "case": "exceeds_page_by_2px",
+   "error": "$.pages[0].blocks[3].geometry.bbox: must stay within page bounds [0, 0, 1224.0, 1584.0]",
+   "note": "raised inside adapt_payload_to_document_v1 (build_validation_report), not only by validate_document_payload; raw.json differs only in that footer's x1 (1224 instead of 1226)"
+  }
+ ],
+ "tricky_points": [
+  "Inline formula pairing is all-or-nothing per block: boxes are assigned only when the number of $..$ segments equals the number of inline_formula layout_det boxes lying entirely inside the block bbox (page 2 block 4: 2/2 assigned; block 5: 2 segments vs 3 boxes -> none assigned).",
+  "A standalone inline_formula block also exists as a layout_det box with the same coordinates, so it is its own candidate and gets a provider_layout bbox; any other text block enclosing that rectangle would count it as an extra candidate (the fixture keeps it outside every other block on purpose).",
+  "inline_formula and reference have no legacy projection: both become content.kind=unknown with translate=false (provider_non_text:unknown); reference is a region/container, reference_content is the entry label that gets reference_entry.",
+  "header_image/footer_image normalize like image: image/image_body, no header/footer layout role, so the header/footer placement is only recoverable from provenance.raw_label and layout_det_label.",
+  "footer_image content has no src=; the asset is only reachable through the _box_x0_y0_x1_y1 filename in markdown.images (bbox tolerance 2 px exact match).",
+  "Body repair only runs when pruned.model_settings.enable_body_repair is true; page 2 sets it, page 3 does not, so the same stuffed defect shows both outcomes. Equal-length halves put the split exactly on the column boundary.",
+  "Column signals are recomputed after repair, so a repaired pair loses its text_missing_but_bbox_present/peer_block_absorbed_text flags and only keeps body_repair_* metadata.",
+  "An empty peer block that is not repaired still gets translate=true (kind text/body, 0 segments, empty text).",
+  "aside_text: the adapter metadata says layout_role=unknown while the final block.layout_role is paragraph (contract_v1 fills it from block type).",
+  "Coordinates are px at 2x but the adapter stores them unscaled in a page with unit 'pt' and width/height in px (1224 x 1584); the 2 px overflow case is therefore judged against the px page size.",
+  "Aside text and header_image/footer_image labels have block_order=null in the raw payload (like header/footer/number)."
+ ]
+}

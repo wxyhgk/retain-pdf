@@ -1,0 +1,264 @@
+{
+ "provider": "mineru",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   612,
+   792
+  ],
+  [
+   612,
+   792
+  ],
+  [
+   612,
+   792
+  ]
+ ],
+ "description": "Synthetic MinerU middle.json (layout.json), 3 pages 612x792 pt, two-column physics-style paper (columns x 54-300 and 312-558). Page 1: doc_title, authors, affiliations, abstract, keywords, headings (level 1 and 2), body with inline equations, one interline equation with number, a page_footnote, and the head half of a paragraph that continues onto page 2 using MinerU's real cross-page encoding. Page 2: shell + preproc tail, image group, table group (3 columns x 4 rows incl. header), more body. Page 3: results, conclusions, acknowledgments, references as list/ref_text. Every page has header/footer/page_number in discarded_blocks. All geometry is hand-built and self-consistent (lines in blocks, spans in lines), except that the cross_page head lines carry page-2 coordinates by design. _backend=pipeline, _version_name=2.7.1; every page also carries preproc_blocks (pre-merge copies).",
+ "features": [
+  {
+   "feature": "doc_title (2 centred lines)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/0",
+   "expect": "p001-b0000: type=text, layout_role=title, structure_role=document_title, translate=true, bbox spans both title lines"
+  },
+  {
+   "feature": "author line (plain text block)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/1",
+   "expect": "p001-b0001: raw text -> body, translate=true (no author-specific role exists in the MinerU path)"
+  },
+  {
+   "feature": "affiliation lines (2 lines, plain text block)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/2",
+   "expect": "p001-b0002: raw text -> body, translate=true, 2 lines"
+  },
+  {
+   "feature": "abstract (7 lines, raw type abstract)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/3",
+   "expect": "p001-b0003: semantic_role=abstract, structure_role=body, translate=true, derived.role=abstract, 7 lines, x range 72..540"
+  },
+  {
+   "feature": "keywords line (plain text block)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/4",
+   "expect": "p001-b0004: raw text -> body, translate=true (starts with 'Keywords:')"
+  },
+  {
+   "feature": "level-1 heading '1. Introduction'",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/5",
+   "expect": "structure_role=heading, translate=true, metadata.raw_title_level=1"
+  },
+  {
+   "feature": "level-2 heading '1.1 Scope of this work'",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/8",
+   "expect": "structure_role=heading, translate=true, metadata.raw_title_level=2"
+  },
+  {
+   "feature": "level-1 heading '2. Methods' (first block of the right column)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/10",
+   "expect": "heading, raw_title_level=1; block order puts it after the whole left column"
+  },
+  {
+   "feature": "body paragraph with 1 inline_equation span",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/6",
+   "expect": "p001-b0006: segments include one inline_formula (raw_type inline_equation); text carries bare LaTeX without $ delimiters"
+  },
+  {
+   "feature": "interline_equation with formula number (\\tag{1} inside the latex)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/15",
+   "expect": "p001-b0015: content.kind=formula, sub_type=display_formula, translate=false; no separate formula_number block"
+  },
+  {
+   "feature": "paragraph head half of cross-page paragraph (2 own lines + 4 merged lines = 6 cross_page spans carrying page-2 coordinates)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/18",
+   "expect": "p001-b0018: only the 2 physical page-1 lines remain (text ends 'collected through an objective'), bbox in right column bottom, cross_page spans removed; translate=true"
+  },
+  {
+   "feature": "page_footnote under the columns",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/19",
+   "expect": "p001-b0019: layout_role=footnote, structure_role=footnote, translate=false (provider_non_body:page_footnote)"
+  },
+  {
+   "feature": "discarded: header (left)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/discarded_blocks/0",
+   "expect": "layout_role=header, structure_role=metadata, translate=false"
+  },
+  {
+   "feature": "discarded: footer",
+   "page": 1,
+   "raw_path": "/pdf_info/0/discarded_blocks/2",
+   "expect": "layout_role=footer, translate=false"
+  },
+  {
+   "feature": "discarded: page_number '1'",
+   "page": 1,
+   "raw_path": "/pdf_info/0/discarded_blocks/3",
+   "expect": "layout_role=page_number, sub_type=page_number, translate=false"
+  },
+  {
+   "feature": "cross-page shell (lines_deleted, lines=[]) that becomes the recovered tail",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/0",
+   "expect": "p002-b0000: recovered as a normal body block of 4 lines at page-2 top-left with metadata.cross_page_physical_path=/pdf_info/1/preproc_blocks/0, cross_page_source_paths=[/pdf_info/0/para_blocks/18], cross_page_recovered_span_count=6; text starts 'with a numerical aperture of 0.9.'"
+  },
+  {
+   "feature": "physical tail lines of the cross-page paragraph (evidence)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/preproc_blocks/0",
+   "expect": "preproc_blocks entry; never emitted as a block itself, only used as recovery evidence"
+  },
+  {
+   "feature": "image group (container, not emitted)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/4",
+   "expect": "container skipped (structural_containers_not_emitted counts it); provider_group_* metadata pushed to children"
+  },
+  {
+   "feature": "image_body with image_path",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/4/blocks/0",
+   "expect": "p002-b0004: content.kind=image, translate=false, asset_id page-2/9c1f...jpg, caption/footnote relations to the 2 siblings"
+  },
+  {
+   "feature": "image_caption (2 lines)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/4/blocks/1",
+   "expect": "p002-b0005: structure_role=figure_caption, translate=true, caption_target_block_id=p002-b0004"
+  },
+  {
+   "feature": "image_footnote",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/4/blocks/2",
+   "expect": "p002-b0006: structure_role=footnote, translate=true (provider_footnote_whitelist), footnote_target_block_id=p002-b0004"
+  },
+  {
+   "feature": "table group (container, not emitted)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/10",
+   "expect": "container skipped; child order is caption, body, footnote"
+  },
+  {
+   "feature": "table_caption (2 lines, above the table)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/10/blocks/0",
+   "expect": "p002-b0012: structure_role=table_caption, translate=true, attached to p002-b0013"
+  },
+  {
+   "feature": "table_body with html (header row + 3 data rows x 3 columns) and image_path",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/10/blocks/1",
+   "expect": "p002-b0013: content.kind=table, table_html equals the span html (th header cells), translate=false, asset_id page-2/3e8a...jpg"
+  },
+  {
+   "feature": "table_footnote",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/10/blocks/2",
+   "expect": "p002-b0014: structure_role=footnote, translate=true, attached to the table body"
+  },
+  {
+   "feature": "level-1 heading '3. Results and Discussion' (top of right column page 2, after table group)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/11",
+   "expect": "heading, raw_title_level=1"
+  },
+  {
+   "feature": "level-2 heading '3.1 In-plane diffusion'",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/12",
+   "expect": "heading, raw_title_level=2"
+  },
+  {
+   "feature": "discarded: header / footer / page_number on page 2 (no index)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/discarded_blocks/0",
+   "expect": "metadata blocks, translate=false; emitted after all para_blocks because discarded blocks without index sort last"
+  },
+  {
+   "feature": "discarded: footer page 2",
+   "page": 2,
+   "raw_path": "/pdf_info/1/discarded_blocks/2",
+   "expect": "metadata, translate=false"
+  },
+  {
+   "feature": "discarded: page_number page 2",
+   "page": 2,
+   "raw_path": "/pdf_info/1/discarded_blocks/3",
+   "expect": "page_number, translate=false"
+  },
+  {
+   "feature": "level-2 heading '3.2 Out-of-plane transport' (first block of page 3 left column)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/0",
+   "expect": "heading, raw_title_level=2"
+  },
+  {
+   "feature": "level-1 heading '4. Conclusions'",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/4",
+   "expect": "heading, raw_title_level=1"
+  },
+  {
+   "feature": "level-1 heading 'Acknowledgments'",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/7",
+   "expect": "heading, translate=true (no non-translatable special case)"
+  },
+  {
+   "feature": "level-1 heading 'References'",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/9",
+   "expect": "heading, raw_title_level=1, translate=true"
+  },
+  {
+   "feature": "references list (list sub_type=ref_text, 5 child text blocks, aggregated)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/10",
+   "expect": "p003-b0012: ONE block (children aggregated), structure_role=reference_entry, semantic_role=reference, translate=false, derived.role=reference_entry; 10 lines, bbox = union of children"
+  },
+  {
+   "feature": "discarded with explicit indexes (header -1, footer 98, page_number 99)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/discarded_blocks/0",
+   "expect": "unlike pages 1-2, these sort first (header index -1) / last; block order on page 3 starts with the two headers"
+  },
+  {
+   "feature": "discarded footer page 3",
+   "page": 3,
+   "raw_path": "/pdf_info/2/discarded_blocks/2",
+   "expect": "metadata, translate=false"
+  },
+  {
+   "feature": "discarded page_number page 3",
+   "page": 3,
+   "raw_path": "/pdf_info/2/discarded_blocks/3",
+   "expect": "page_number, translate=false"
+  }
+ ],
+ "tricky_points": [
+  "Cross-page head block (/pdf_info/0/para_blocks/18): its bbox only covers the 2 physical page-1 lines; the 4 merged lines (6 spans, one inline_equation) have cross_page=true with PAGE-2 coordinates (left column top), so they lie outside the block bbox in the raw file. Recovery must strip them from page 1 and give page 2 the full tail.",
+  "The recovered tail contains an inline_equation span that is part of the evidence key (type, content, bbox); the shell on page 2 has the same type/index/bbox as the preproc tail block and lines_deleted=true with lines=[].",
+  "Cross-page paragraph is split mid-sentence ('...collected through an objective' / 'with a numerical aperture...'), and the tail's page 2 position is in the LEFT column while the head sat in the RIGHT column of page 1.",
+  "image and table groups are containers (blocks[]): only their children become blocks; table caption comes before the table body in blocks[] and in reading order; index of the group equals the first child's index.",
+  "The table html uses <th> header cells inside <html><body><table> (3 columns x 4 rows); image_path values are bare 'images/<hash>.jpg'.",
+  "References are a single list/ref_text container with 5 child text blocks; the adapter aggregates them into one block (entry boundaries only survive as separate lines), and the list bbox is the union of the children.",
+  "Equation number is embedded in the latex as \\tag{1}; there is no formula_number block. The prose after it says 'Equation (1)'.",
+  "Authors, affiliations and keywords are plain 'text' blocks (as MinerU pipeline emits them): they normalize to body and are translatable. Abstract uses raw type 'abstract'.",
+  "Discarded blocks: pages 1-2 have no 'index' (sort after every para_block), page 3 uses explicit indexes -1 / 98 / 99 like the golden fixture.",
+  "Every page has 2 header blocks, 1 footer and 1 page_number in discarded_blocks (page_number right-aligned at x 548).",
+  "Inline equation spans are glued to punctuation in the source (e.g. '...meV' then ', exceeds'), but the normalized text joins segments with a space (' , ').",
+  "Justified lines span the full column width (54..300 or 312..558); first line of each paragraph is indented 9 pt so the block bbox x0 is the column edge but the first line starts at +9.",
+  "page_footnote on page 1 sits below both columns (y 745-754) with index after the last body block."
+ ]
+}

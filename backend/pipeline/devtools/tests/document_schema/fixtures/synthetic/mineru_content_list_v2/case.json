@@ -1,0 +1,112 @@
+{
+ "provider": "mineru_content_list_v2",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   612,
+   792
+  ],
+  [
+   612,
+   792
+  ]
+ ],
+ "raw_pages": [
+  [
+   1000,
+   1000
+  ],
+  [
+   1000,
+   1000
+  ]
+ ],
+ "description": "Synthetic 2-page MinerU content_list_v2 (list of pages, each a list of blocks) on the fixed 1000x1000 canvas; English biology paper. Uses real v2 field names (title_content+level, paragraph_content with equation_inline items, equation_interline math_content/math_type/image_source, table image_source/table_caption/table_footnote/html/table_type/table_nest_level, image image_source/image_caption/image_footnote, list list_type/list_items/item_content, code code_caption/code_content/code_language/code_footnote, page_header/page_footer/page_number). Margins 80-110 left/right, ~38-85 top, ~28 bottom; all bboxes positive area and inside the canvas.",
+ "features": [
+  {
+   "feature": "title level 1",
+   "page": 0,
+   "raw_path": "[0][1]",
+   "expect": "content.kind=text, structure_role=heading, translate=true; level 1 dropped"
+  },
+  {
+   "feature": "title level 2",
+   "page": 0,
+   "raw_path": "[0][3]",
+   "expect": "same normalized result as level 1 (heading); level dropped; also [0][7], [1][1]"
+  },
+  {
+   "feature": "paragraph mixing text + equation_inline",
+   "page": 0,
+   "raw_path": "[0][2]",
+   "expect": "segments text/inline_formula/text; also [0][4] (4 text + 3 formula), [0][6], [1][3]"
+  },
+  {
+   "feature": "display equation (equation_interline)",
+   "page": 0,
+   "raw_path": "[0][5]",
+   "expect": "content.kind=formula, sub_type=display_formula, text=latex math_content, translate=false"
+  },
+  {
+   "feature": "table with html, table_caption, table_footnote",
+   "page": 1,
+   "raw_path": "[1][2]",
+   "expect": "kind=table, text empty, translate=false; html/caption/footnote/image_source not present in normalized doc"
+  },
+  {
+   "feature": "image with image_source, image_caption, image_footnote",
+   "page": 1,
+   "raw_path": "[1][4]",
+   "expect": "kind=image, text empty, translate=false; path/caption/footnote not present"
+  },
+  {
+   "feature": "list (4 items, 2 with inline equations)",
+   "page": 0,
+   "raw_path": "[0][8]",
+   "expect": "kind=text, layout list_item, translate=true; items flattened into one space-joined line"
+  },
+  {
+   "feature": "code block with caption and language",
+   "page": 1,
+   "raw_path": "[1][5]",
+   "expect": "kind=code, text kept (code_content), translate=false; code_caption/code_language dropped"
+  },
+  {
+   "feature": "page_header",
+   "page": 0,
+   "raw_path": "[0][0]",
+   "expect": "structure_role=metadata, translate=false; also [1][0]"
+  },
+  {
+   "feature": "page_footer",
+   "page": 0,
+   "raw_path": "[0][9]",
+   "expect": "structure_role=metadata, translate=false; also [1][7]"
+  },
+  {
+   "feature": "page_number",
+   "page": 0,
+   "raw_path": "[0][10]",
+   "expect": "sub_type=page_number, structure_role=metadata, translate=false; also [1][8]"
+  }
+ ],
+ "tricky_points": [
+  "Captions/footnotes of table, image and code live inside the container's content, not as sibling blocks, so the adapter never sees them as caption/footnote blocks.",
+  "Inline equation items carry no $ delimiters; text and formula segments are stripped and joined with single spaces, so original spacing (e.g. 'constant \\tau of', '2 \\mu M') is not preserved.",
+  "List items are flattened: item boundaries lost, content.line_texts has a single entry.",
+  "Title level 1 and 2 normalize identically (both 'heading'; never document_title).",
+  "Display equation and inline equations coexist; inline formulas use raw LaTeX in 'text'.",
+  "Code line_texts are stripped (indentation lost) though block text keeps it.",
+  "Whole-block bbox is copied to every segment/line/span (bbox_precision block/block_fallback).",
+  "Rescale: 1000x1000 canvas mapped to 612x792 so x scale 0.612, y scale 0.792 (non-uniform)."
+ ],
+ "known_dropped_today": [
+  "title.content.level",
+  "table: image_source.path, table_caption, table_footnote, html, table_type, table_nest_level (whole table block text is empty)",
+  "image: image_source.path, image_caption, image_footnote (text empty)",
+  "equation_interline: math_type, image_source.path",
+  "list: list_type, item_type, item boundaries",
+  "code: code_caption, code_language, code_footnote",
+  "any raw block ids / sub_type absent in this payload"
+ ]
+}

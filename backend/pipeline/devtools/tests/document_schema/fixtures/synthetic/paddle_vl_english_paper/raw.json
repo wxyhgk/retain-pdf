@@ -1,0 +1,3511 @@
+{
+ "layoutParsingResults": [
+  {
+   "prunedResult": {
+    "page_count": 3,
+    "width": 1224,
+    "height": 1584,
+    "model_settings": {
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true,
+     "use_chart_recognition": true,
+     "format_block_content": false
+    },
+    "parsing_res_list": [
+     {
+      "block_label": "header",
+      "block_content": "Hartmann et al. | Zwitterionic Interface Passivation",
+      "block_bbox": [
+       100,
+       56,
+       1124,
+       92
+      ],
+      "block_id": 0,
+      "block_order": null,
+      "group_id": 0,
+      "global_block_id": 1,
+      "global_group_id": 1,
+      "block_polygon_points": [
+       [
+        100,
+        56
+       ],
+       [
+        1124,
+        56
+       ],
+       [
+        1124,
+        92
+       ],
+       [
+        100,
+        92
+       ]
+      ]
+     },
+     {
+      "block_label": "doc_title",
+      "block_content": "Zwitterionic Interface Passivation Suppresses Ion Migration and Extends the Operational Lifetime of Halide Perovskite Solar Cells",
+      "block_bbox": [
+       150,
+       130,
+       1074,
+       262
+      ],
+      "block_id": 1,
+      "block_order": 1,
+      "group_id": 1,
+      "global_block_id": 2,
+      "global_group_id": 2,
+      "block_polygon_points": [
+       [
+        150,
+        130
+       ],
+       [
+        1074,
+        130
+       ],
+       [
+        1074,
+        262
+       ],
+       [
+        150,
+        262
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Lena Hartmann,1 Tomas Okafor,2 Mei-Ling Zhou,1,* and Ravi Subramanian2",
+      "block_bbox": [
+       150,
+       276,
+       1074,
+       320
+      ],
+      "block_id": 2,
+      "block_order": 2,
+      "group_id": 2,
+      "global_block_id": 3,
+      "global_group_id": 3,
+      "block_polygon_points": [
+       [
+        150,
+        276
+       ],
+       [
+        1074,
+        276
+       ],
+       [
+        1074,
+        320
+       ],
+       [
+        150,
+        320
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "1 Department of Materials Science, Northbridge Institute of Technology, Northbridge, United Kingdom\n2 Centre for Photovoltaic Research, Eastvale University, Eastvale, Canada",
+      "block_bbox": [
+       150,
+       326,
+       1074,
+       392
+      ],
+      "block_id": 3,
+      "block_order": 3,
+      "group_id": 3,
+      "global_block_id": 4,
+      "global_group_id": 4,
+      "block_polygon_points": [
+       [
+        150,
+        326
+       ],
+       [
+        1074,
+        326
+       ],
+       [
+        1074,
+        392
+       ],
+       [
+        150,
+        392
+       ]
+      ]
+     },
+     {
+      "block_label": "abstract",
+      "block_content": "Halide perovskite solar cells lose efficiency quickly under continuous illumination, largely because mobile\nions accumulate at the interface between the perovskite and the charge transport layers. Here we introduce\na sulfobetaine zwitterion, SB-3, as an ultrathin passivating interlayer that binds to the perovskite surface\nthrough two complementary interactions. The treated devices reach a power conversion efficiency of 24.6%\nand retain more than 95% of their initial output after 1,200 hours of maximum-power-point tracking at 65 °C.\nImpedance spectroscopy shows that the activation energy for ion migration rises from 0.31 eV to 0.52 eV.",
+      "block_bbox": [
+       100,
+       410,
+       1124,
+       640
+      ],
+      "block_id": 4,
+      "block_order": 4,
+      "group_id": 4,
+      "global_block_id": 5,
+      "global_group_id": 5,
+      "block_polygon_points": [
+       [
+        100,
+        410
+       ],
+       [
+        1124,
+        410
+       ],
+       [
+        1124,
+        640
+       ],
+       [
+        100,
+        640
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Keywords: perovskite solar cells, interface passivation, zwitterion, ion migration, operational stability",
+      "block_bbox": [
+       100,
+       656,
+       1124,
+       706
+      ],
+      "block_id": 5,
+      "block_order": 5,
+      "group_id": 5,
+      "global_block_id": 6,
+      "global_group_id": 6,
+      "block_polygon_points": [
+       [
+        100,
+        656
+       ],
+       [
+        1124,
+        656
+       ],
+       [
+        1124,
+        706
+       ],
+       [
+        100,
+        706
+       ]
+      ]
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_content": "1. Introduction",
+      "block_bbox": [
+       100,
+       730,
+       596,
+       772
+      ],
+      "block_id": 6,
+      "block_order": 6,
+      "group_id": 6,
+      "global_block_id": 7,
+      "global_group_id": 7,
+      "block_polygon_points": [
+       [
+        100,
+        730
+       ],
+       [
+        596,
+        730
+       ],
+       [
+        596,
+        772
+       ],
+       [
+        100,
+        772
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Metal halide perovskites have reached certified power conversion efficiencies above 26%, yet their operational lifetime remains well below that of silicon modules. Under maximum-power-point tracking the open-circuit voltage $V_{\\mathrm{oc}}$ typically drops by 60 to 120 mV within the first hundred hours, and the time to 80% of the initial efficiency, $T_{80}$, rarely exceeds a few thousand hours at 65 °C. Mobile halide vacancies are widely held responsible for this behaviour, because they migrate toward the contacts and create interfacial recombination centres [1,2].",
+      "block_bbox": [
+       100,
+       790,
+       596,
+       1010
+      ],
+      "block_id": 7,
+      "block_order": 7,
+      "group_id": 7,
+      "global_block_id": 8,
+      "global_group_id": 8,
+      "block_polygon_points": [
+       [
+        100,
+        790
+       ],
+       [
+        596,
+        790
+       ],
+       [
+        596,
+        1010
+       ],
+       [
+        100,
+        1010
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Surface passivation with Lewis bases has been the most common route to reduce these defect densities. Small-molecule passivators, however, tend to desorb at elevated temperature, and long-chain ammonium salts form insulating barriers that impede charge extraction. We reasoned that a zwitterionic molecule carrying both a cationic and an anionic head group could anchor to the perovskite surface through two complementary interactions while forming a layer whose thickness stays below",
+      "block_bbox": [
+       100,
+       1030,
+       596,
+       1250
+      ],
+      "block_id": 8,
+      "block_order": 8,
+      "group_id": 100,
+      "global_block_id": 9,
+      "global_group_id": 9000,
+      "block_polygon_points": [
+       [
+        100,
+        1030
+       ],
+       [
+        596,
+        1030
+       ],
+       [
+        596,
+        1250
+       ],
+       [
+        100,
+        1250
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "two nanometres, so that tunnelling transport through the layer is not limiting. To test this hypothesis we synthesised a sulfobetaine derivative, denoted SB-3, and applied it by spin coating from isopropanol onto formamidinium-rich films, as shown schematically in Figure 1.",
+      "block_bbox": [
+       628,
+       730,
+       1124,
+       930
+      ],
+      "block_id": 9,
+      "block_order": 9,
+      "group_id": 100,
+      "global_block_id": 10,
+      "global_group_id": 9000,
+      "block_polygon_points": [
+       [
+        628,
+        730
+       ],
+       [
+        1124,
+        730
+       ],
+       [
+        1124,
+        930
+       ],
+       [
+        628,
+        930
+       ]
+      ]
+     },
+     {
+      "block_label": "image",
+      "block_content": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_628_950_1124_1180.jpg\" alt=\"Image\" width=\"100%\" /></div>",
+      "block_bbox": [
+       628,
+       950,
+       1124,
+       1180
+      ],
+      "block_id": 10,
+      "block_order": 10,
+      "group_id": 10,
+      "global_block_id": 11,
+      "global_group_id": 11,
+      "block_polygon_points": [
+       [
+        628,
+        950
+       ],
+       [
+        1124,
+        950
+       ],
+       [
+        1124,
+        1180
+       ],
+       [
+        628,
+        1180
+       ]
+      ]
+     },
+     {
+      "block_label": "figure_title",
+      "block_content": "Figure 1. Schematic of the n-i-p device stack with the SB-3 interlayer between the perovskite absorber and the electron transport layer.",
+      "block_bbox": [
+       628,
+       1190,
+       1124,
+       1250
+      ],
+      "block_id": 11,
+      "block_order": 11,
+      "group_id": 11,
+      "global_block_id": 12,
+      "global_group_id": 12,
+      "block_polygon_points": [
+       [
+        628,
+        1190
+       ],
+       [
+        1124,
+        1190
+       ],
+       [
+        1124,
+        1250
+       ],
+       [
+        628,
+        1250
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "The deposition was followed by a mild thermal anneal at 70 °C for five minutes. The resulting devices were characterised under simulated AM1.5G illumination, and the steady-state power output was tracked at the maximum power point for more than one thousand hours in a nitrogen atmosphere. The champion device reached a power conversion efficiency of 24.6% and retained",
+      "block_bbox": [
+       628,
+       1270,
+       1124,
+       1340
+      ],
+      "block_id": 12,
+      "block_order": 12,
+      "group_id": 50,
+      "global_block_id": 13,
+      "global_group_id": 9001,
+      "block_polygon_points": [
+       [
+        628,
+        1270
+       ],
+       [
+        1124,
+        1270
+       ],
+       [
+        1124,
+        1340
+       ],
+       [
+        628,
+        1340
+       ]
+      ]
+     },
+     {
+      "block_label": "footnote",
+      "block_content": "* Corresponding author: Mei-Ling Zhou, Department of Materials Science, Northbridge Institute of Technology.",
+      "block_bbox": [
+       100,
+       1390,
+       1124,
+       1440
+      ],
+      "block_id": 13,
+      "block_order": 13,
+      "group_id": 13,
+      "global_block_id": 14,
+      "global_group_id": 14,
+      "block_polygon_points": [
+       [
+        100,
+        1390
+       ],
+       [
+        1124,
+        1390
+       ],
+       [
+        1124,
+        1440
+       ],
+       [
+        100,
+        1440
+       ]
+      ]
+     },
+     {
+      "block_label": "footer",
+      "block_content": "© 2026 The Authors. Journal of Advanced Functional Materials, Vol. 18, pp. 1101-1109.",
+      "block_bbox": [
+       100,
+       1498,
+       760,
+       1530
+      ],
+      "block_id": 14,
+      "block_order": null,
+      "group_id": 14,
+      "global_block_id": 15,
+      "global_group_id": 15,
+      "block_polygon_points": [
+       [
+        100,
+        1498
+       ],
+       [
+        760,
+        1498
+       ],
+       [
+        760,
+        1530
+       ],
+       [
+        100,
+        1530
+       ]
+      ]
+     },
+     {
+      "block_label": "number",
+      "block_content": "1101",
+      "block_bbox": [
+       1074,
+       1498,
+       1124,
+       1530
+      ],
+      "block_id": 15,
+      "block_order": null,
+      "group_id": 15,
+      "global_block_id": 16,
+      "global_group_id": 16,
+      "block_polygon_points": [
+       [
+        1074,
+        1498
+       ],
+       [
+        1124,
+        1498
+       ],
+       [
+        1124,
+        1530
+       ],
+       [
+        1074,
+        1530
+       ]
+      ]
+     }
+    ],
+    "layout_det_res": {
+     "boxes": [
+      {
+       "cls_id": 12,
+       "label": "header",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        56.0,
+        1124.0,
+        92.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         56
+        ],
+        [
+         1124,
+         56
+        ],
+        [
+         1124,
+         92
+        ],
+        [
+         100,
+         92
+        ]
+       ]
+      },
+      {
+       "cls_id": 6,
+       "label": "doc_title",
+       "score": 0.97,
+       "coordinate": [
+        150.0,
+        130.0,
+        1074.0,
+        262.0
+       ],
+       "order": 1,
+       "polygon_points": [
+        [
+         150,
+         130
+        ],
+        [
+         1074,
+         130
+        ],
+        [
+         1074,
+         262
+        ],
+        [
+         150,
+         262
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        150.0,
+        276.0,
+        1074.0,
+        320.0
+       ],
+       "order": 2,
+       "polygon_points": [
+        [
+         150,
+         276
+        ],
+        [
+         1074,
+         276
+        ],
+        [
+         1074,
+         320
+        ],
+        [
+         150,
+         320
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        150.0,
+        326.0,
+        1074.0,
+        392.0
+       ],
+       "order": 3,
+       "polygon_points": [
+        [
+         150,
+         326
+        ],
+        [
+         1074,
+         326
+        ],
+        [
+         1074,
+         392
+        ],
+        [
+         150,
+         392
+        ]
+       ]
+      },
+      {
+       "cls_id": 0,
+       "label": "abstract",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        410.0,
+        1124.0,
+        640.0
+       ],
+       "order": 4,
+       "polygon_points": [
+        [
+         100,
+         410
+        ],
+        [
+         1124,
+         410
+        ],
+        [
+         1124,
+         640
+        ],
+        [
+         100,
+         640
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        656.0,
+        1124.0,
+        706.0
+       ],
+       "order": 5,
+       "polygon_points": [
+        [
+         100,
+         656
+        ],
+        [
+         1124,
+         656
+        ],
+        [
+         1124,
+         706
+        ],
+        [
+         100,
+         706
+        ]
+       ]
+      },
+      {
+       "cls_id": 17,
+       "label": "paragraph_title",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        730.0,
+        596.0,
+        772.0
+       ],
+       "order": 6,
+       "polygon_points": [
+        [
+         100,
+         730
+        ],
+        [
+         596,
+         730
+        ],
+        [
+         596,
+         772
+        ],
+        [
+         100,
+         772
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        790.0,
+        596.0,
+        1010.0
+       ],
+       "order": 7,
+       "polygon_points": [
+        [
+         100,
+         790
+        ],
+        [
+         596,
+         790
+        ],
+        [
+         596,
+         1010
+        ],
+        [
+         100,
+         1010
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1030.0,
+        596.0,
+        1250.0
+       ],
+       "order": 8,
+       "polygon_points": [
+        [
+         100,
+         1030
+        ],
+        [
+         596,
+         1030
+        ],
+        [
+         596,
+         1250
+        ],
+        [
+         100,
+         1250
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        730.0,
+        1124.0,
+        930.0
+       ],
+       "order": 9,
+       "polygon_points": [
+        [
+         628,
+         730
+        ],
+        [
+         1124,
+         730
+        ],
+        [
+         1124,
+         930
+        ],
+        [
+         628,
+         930
+        ]
+       ]
+      },
+      {
+       "cls_id": 14,
+       "label": "image",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        950.0,
+        1124.0,
+        1180.0
+       ],
+       "order": 10,
+       "polygon_points": [
+        [
+         628,
+         950
+        ],
+        [
+         1124,
+         950
+        ],
+        [
+         1124,
+         1180
+        ],
+        [
+         628,
+         1180
+        ]
+       ]
+      },
+      {
+       "cls_id": 7,
+       "label": "figure_title",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        1190.0,
+        1124.0,
+        1250.0
+       ],
+       "order": 11,
+       "polygon_points": [
+        [
+         628,
+         1190
+        ],
+        [
+         1124,
+         1190
+        ],
+        [
+         1124,
+         1250
+        ],
+        [
+         628,
+         1250
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        1270.0,
+        1124.0,
+        1340.0
+       ],
+       "order": 12,
+       "polygon_points": [
+        [
+         628,
+         1270
+        ],
+        [
+         1124,
+         1270
+        ],
+        [
+         1124,
+         1340
+        ],
+        [
+         628,
+         1340
+        ]
+       ]
+      },
+      {
+       "cls_id": 10,
+       "label": "footnote",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1390.0,
+        1124.0,
+        1440.0
+       ],
+       "order": 13,
+       "polygon_points": [
+        [
+         100,
+         1390
+        ],
+        [
+         1124,
+         1390
+        ],
+        [
+         1124,
+         1440
+        ],
+        [
+         100,
+         1440
+        ]
+       ]
+      },
+      {
+       "cls_id": 8,
+       "label": "footer",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1498.0,
+        760.0,
+        1530.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         1498
+        ],
+        [
+         760,
+         1498
+        ],
+        [
+         760,
+         1530
+        ],
+        [
+         100,
+         1530
+        ]
+       ]
+      },
+      {
+       "cls_id": 16,
+       "label": "number",
+       "score": 0.97,
+       "coordinate": [
+        1074.0,
+        1498.0,
+        1124.0,
+        1530.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         1074,
+         1498
+        ],
+        [
+         1124,
+         1498
+        ],
+        [
+         1124,
+         1530
+        ],
+        [
+         1074,
+         1530
+        ]
+       ]
+      },
+      {
+       "cls_id": 15,
+       "label": "inline_formula",
+       "score": 0.93,
+       "coordinate": [
+        330.0,
+        868.0,
+        372.0,
+        900.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         330,
+         868
+        ],
+        [
+         372,
+         868
+        ],
+        [
+         372,
+         900
+        ],
+        [
+         330,
+         900
+        ]
+       ]
+      },
+      {
+       "cls_id": 15,
+       "label": "inline_formula",
+       "score": 0.93,
+       "coordinate": [
+        330.0,
+        922.0,
+        372.0,
+        954.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         330,
+         922
+        ],
+        [
+         372,
+         922
+        ],
+        [
+         372,
+         954
+        ],
+        [
+         330,
+         954
+        ]
+       ]
+      }
+     ]
+    }
+   },
+   "markdown": {
+    "text": "# Zwitterionic Interface Passivation Suppresses Ion Migration and Extends the Operational Lifetime of Halide Perovskite Solar Cells\n\nLena Hartmann,1 Tomas Okafor,2 Mei-Ling Zhou,1,* and Ravi Subramanian2\n\n1 Department of Materials Science, Northbridge Institute of Technology, Northbridge, United Kingdom\n2 Centre for Photovoltaic Research, Eastvale University, Eastvale, Canada\n\nHalide perovskite solar cells lose efficiency quickly under continuous illumination, largely because mobile ions accumulate at the interface between the perovskite and the charge transport layers. Here we introduce a sulfobetaine zwitterion, SB-3, as an ultrathin passivating interlayer that binds to the perovskite surface through two complementary interactions. The treated devices reach a power conversion efficiency of 24.6% and retain more than 95% of their initial output after 1,200 hours of maximum-power-point tracking at 65 °C. Impedance spectroscopy shows that the activation energy for ion migration rises from 0.31 eV to 0.52 eV.\n\nKeywords: perovskite solar cells, interface passivation, zwitterion, ion migration, operational stability\n\n## 1. Introduction\n\nMetal halide perovskites have reached certified power conversion efficiencies above 26%, yet their operational lifetime remains well below that of silicon modules. Under maximum-power-point tracking the open-circuit voltage $V_{\\mathrm{oc}}$ typically drops by 60 to 120 mV within the first hundred hours, and the time to 80% of the initial efficiency, $T_{80}$, rarely exceeds a few thousand hours at 65 °C. Mobile halide vacancies are widely held responsible for this behaviour, because they migrate toward the contacts and create interfacial recombination centres [1,2].\n\nSurface passivation with Lewis bases has been the most common route to reduce these defect densities. Small-molecule passivators, however, tend to desorb at elevated temperature, and long-chain ammonium salts form insulating barriers that impede charge extraction. We reasoned that a zwitterionic molecule carrying both a cationic and an anionic head group could anchor to the perovskite surface through two complementary interactions while forming a layer whose thickness stays below\n\ntwo nanometres, so that tunnelling transport through the layer is not limiting. To test this hypothesis we synthesised a sulfobetaine derivative, denoted SB-3, and applied it by spin coating from isopropanol onto formamidinium-rich films, as shown schematically in Figure 1.\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_628_950_1124_1180.jpg\" alt=\"Image\" width=\"100%\" /></div>\n\nFigure 1. Schematic of the n-i-p device stack with the SB-3 interlayer between the perovskite absorber and the electron transport layer.\n\nThe deposition was followed by a mild thermal anneal at 70 °C for five minutes. The resulting devices were characterised under simulated AM1.5G illumination, and the steady-state power output was tracked at the maximum power point for more than one thousand hours in a nitrogen atmosphere. The champion device reached a power conversion efficiency of 24.6% and retained\n\n* Corresponding author: Mei-Ling Zhou, Department of Materials Science, Northbridge Institute of Technology.",
+    "images": {
+     "imgs/img_in_image_box_628_950_1124_1180.jpg": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD3sAAAAASUVORK5CYII="
+    }
+   },
+   "outputImages": {},
+   "inputImage": ""
+  },
+  {
+   "prunedResult": {
+    "page_count": 3,
+    "width": 1224,
+    "height": 1584,
+    "model_settings": {
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true,
+     "use_chart_recognition": true,
+     "format_block_content": false
+    },
+    "parsing_res_list": [
+     {
+      "block_label": "header",
+      "block_content": "Hartmann et al. | Zwitterionic Interface Passivation",
+      "block_bbox": [
+       100,
+       56,
+       1124,
+       92
+      ],
+      "block_id": 0,
+      "block_order": null,
+      "group_id": 0,
+      "global_block_id": 17,
+      "global_group_id": 17,
+      "block_polygon_points": [
+       [
+        100,
+        56
+       ],
+       [
+        1124,
+        56
+       ],
+       [
+        1124,
+        92
+       ],
+       [
+        100,
+        92
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "more than 95% of its initial value after 1,200 hours of continuous operation. The corresponding degradation follows a stretched exponential, $\\eta(t)=\\eta_0\\exp[-(t/\\tau)^{\\beta}]$, with a characteristic time $\\tau$ of 9,400 h and a stretching exponent $\\beta$ of 0.62. To separate the contribution of ion migration from that of bulk decomposition, we extracted the ionic conductivity from temperature-dependent impedance spectra using the Nernst-Einstein relation:",
+      "block_bbox": [
+       100,
+       130,
+       596,
+       330
+      ],
+      "block_id": 1,
+      "block_order": 1,
+      "group_id": 51,
+      "global_block_id": 18,
+      "global_group_id": 9001,
+      "block_polygon_points": [
+       [
+        100,
+        130
+       ],
+       [
+        596,
+        130
+       ],
+       [
+        596,
+        330
+       ],
+       [
+        100,
+        330
+       ]
+      ]
+     },
+     {
+      "block_label": "display_formula",
+      "block_content": "\\sigma_{\\mathrm{ion}} = \\frac{n q^{2} D}{k_{\\mathrm{B}} T}",
+      "block_bbox": [
+       150,
+       345,
+       520,
+       415
+      ],
+      "block_id": 2,
+      "block_order": 2,
+      "group_id": 2,
+      "global_block_id": 19,
+      "global_group_id": 19,
+      "block_polygon_points": [
+       [
+        150,
+        345
+       ],
+       [
+        520,
+        345
+       ],
+       [
+        520,
+        415
+       ],
+       [
+        150,
+        415
+       ]
+      ]
+     },
+     {
+      "block_label": "formula_number",
+      "block_content": "(1)",
+      "block_bbox": [
+       540,
+       365,
+       596,
+       395
+      ],
+      "block_id": 3,
+      "block_order": 3,
+      "group_id": 3,
+      "global_block_id": 20,
+      "global_group_id": 20,
+      "block_polygon_points": [
+       [
+        540,
+        365
+       ],
+       [
+        596,
+        365
+       ],
+       [
+        596,
+        395
+       ],
+       [
+        540,
+        395
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "where $n$ is the mobile ion density, $q$ the elementary charge, $D$ the diffusion coefficient, $k_{\\mathrm{B}}$ the Boltzmann constant and $T$ the absolute temperature. The activation energy obtained from an Arrhenius plot of $\\sigma_{\\mathrm{ion}}T$ increased from 0.31 eV for the control film to 0.52 eV for the SB-3 treated film, in agreement with a reduced vacancy concentration at the surface.",
+      "block_bbox": [
+       100,
+       430,
+       596,
+       600
+      ],
+      "block_id": 4,
+      "block_order": 4,
+      "group_id": 4,
+      "global_block_id": 21,
+      "global_group_id": 21,
+      "block_polygon_points": [
+       [
+        100,
+        430
+       ],
+       [
+        596,
+        430
+       ],
+       [
+        596,
+        600
+       ],
+       [
+        100,
+        600
+       ]
+      ]
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_content": "2. Characterisation Methods",
+      "block_bbox": [
+       100,
+       620,
+       596,
+       662
+      ],
+      "block_id": 5,
+      "block_order": 5,
+      "group_id": 5,
+      "global_block_id": 22,
+      "global_group_id": 22,
+      "block_polygon_points": [
+       [
+        100,
+        620
+       ],
+       [
+        596,
+        620
+       ],
+       [
+        596,
+        662
+       ],
+       [
+        100,
+        662
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Impedance spectra were recorded between 1 Hz and 1 MHz at 10 mV amplitude. The equivalent circuit was fitted with the routine summarised below, which iteratively updates the circuit parameters until the relative change of the residual falls below the chosen tolerance.",
+      "block_bbox": [
+       100,
+       680,
+       596,
+       830
+      ],
+      "block_id": 6,
+      "block_order": 6,
+      "group_id": 6,
+      "global_block_id": 23,
+      "global_group_id": 23,
+      "block_polygon_points": [
+       [
+        100,
+        680
+       ],
+       [
+        596,
+        680
+       ],
+       [
+        596,
+        830
+       ],
+       [
+        100,
+        830
+       ]
+      ]
+     },
+     {
+      "block_label": "algorithm",
+      "block_content": "Algorithm 1: Equivalent-circuit fitting\nInput: spectra Z(f), initial guess p0, tolerance eps\nOutput: fitted parameters p\n1: p := p0\n2: repeat\n3:     r := residual(Z, model(p))\n4:     p := p - damping * pinv(J(p)) @ r\n5: until relative change of r is below eps\n6: return p",
+      "block_bbox": [
+       100,
+       850,
+       596,
+       1130
+      ],
+      "block_id": 7,
+      "block_order": 7,
+      "group_id": 7,
+      "global_block_id": 24,
+      "global_group_id": 24,
+      "block_polygon_points": [
+       [
+        100,
+        850
+       ],
+       [
+        596,
+        850
+       ],
+       [
+        596,
+        1130
+       ],
+       [
+        100,
+        1130
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "All fits with a reduced chi-squared above 2.0 were rejected, and each condition was measured on at least eight independent devices to obtain the error bars shown in the following figures.",
+      "block_bbox": [
+       100,
+       1150,
+       596,
+       1280
+      ],
+      "block_id": 8,
+      "block_order": 8,
+      "group_id": 8,
+      "global_block_id": 25,
+      "global_group_id": 25,
+      "block_polygon_points": [
+       [
+        100,
+        1150
+       ],
+       [
+        596,
+        1150
+       ],
+       [
+        596,
+        1280
+       ],
+       [
+        100,
+        1280
+       ]
+      ]
+     },
+     {
+      "block_label": "image",
+      "block_content": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_628_130_1124_500.jpg\" alt=\"Image\" width=\"100%\" /></div>",
+      "block_bbox": [
+       628,
+       130,
+       1124,
+       500
+      ],
+      "block_id": 9,
+      "block_order": 9,
+      "group_id": 9,
+      "global_block_id": 26,
+      "global_group_id": 26,
+      "block_polygon_points": [
+       [
+        628,
+        130
+       ],
+       [
+        1124,
+        130
+       ],
+       [
+        1124,
+        500
+       ],
+       [
+        628,
+        500
+       ]
+      ]
+     },
+     {
+      "block_label": "figure_title",
+      "block_content": "Figure 2. Maximum-power-point tracking of encapsulated devices at 65 °C under 1 sun. The SB-3 treated device (blue) maintains its output while the control (grey) degrades within 400 h.",
+      "block_bbox": [
+       628,
+       515,
+       1124,
+       590
+      ],
+      "block_id": 10,
+      "block_order": 10,
+      "group_id": 10,
+      "global_block_id": 27,
+      "global_group_id": 27,
+      "block_polygon_points": [
+       [
+        628,
+        515
+       ],
+       [
+        1124,
+        515
+       ],
+       [
+        1124,
+        590
+       ],
+       [
+        628,
+        590
+       ]
+      ]
+     },
+     {
+      "block_label": "vision_footnote",
+      "block_content": "The SB-3 treated device remains stable over the whole tracking period, whereas the control curve is truncated at 600 h after failure.",
+      "block_bbox": [
+       628,
+       600,
+       1124,
+       670
+      ],
+      "block_id": 11,
+      "block_order": 11,
+      "group_id": 11,
+      "global_block_id": 28,
+      "global_group_id": 28,
+      "block_polygon_points": [
+       [
+        628,
+        600
+       ],
+       [
+        1124,
+        600
+       ],
+       [
+        1124,
+        670
+       ],
+       [
+        628,
+        670
+       ]
+      ]
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_content": "3. Results and Discussion",
+      "block_bbox": [
+       628,
+       700,
+       1124,
+       742
+      ],
+      "block_id": 12,
+      "block_order": 12,
+      "group_id": 12,
+      "global_block_id": 29,
+      "global_group_id": 29,
+      "block_polygon_points": [
+       [
+        628,
+        700
+       ],
+       [
+        1124,
+        700
+       ],
+       [
+        1124,
+        742
+       ],
+       [
+        628,
+        742
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Table 1 summarises the photovoltaic parameters of 24 devices for each condition. The SB-3 treatment raises the average $V_{\\mathrm{oc}}$ by 38 mV and the fill factor by 2.1 percentage points, while the short-circuit current density $J_{\\mathrm{sc}}$ is essentially unchanged. The improvement of $V_{\\mathrm{oc}}$ is consistent with the suppressed non-radiative recombination observed in the photoluminescence quantum yield measurements.",
+      "block_bbox": [
+       628,
+       760,
+       1124,
+       1000
+      ],
+      "block_id": 13,
+      "block_order": 13,
+      "group_id": 13,
+      "global_block_id": 30,
+      "global_group_id": 30,
+      "block_polygon_points": [
+       [
+        628,
+        760
+       ],
+       [
+        1124,
+        760
+       ],
+       [
+        1124,
+        1000
+       ],
+       [
+        628,
+        1000
+       ]
+      ]
+     },
+     {
+      "block_label": "figure_title",
+      "block_content": "Table 1. Average photovoltaic parameters of control and SB-3 treated devices (24 devices per group).",
+      "block_bbox": [
+       628,
+       1020,
+       1124,
+       1090
+      ],
+      "block_id": 14,
+      "block_order": 14,
+      "group_id": 14,
+      "global_block_id": 31,
+      "global_group_id": 31,
+      "block_polygon_points": [
+       [
+        628,
+        1020
+       ],
+       [
+        1124,
+        1020
+       ],
+       [
+        1124,
+        1090
+       ],
+       [
+        628,
+        1090
+       ]
+      ]
+     },
+     {
+      "block_label": "table",
+      "block_content": "<div style=\"text-align: center;\"><table border=1 style='margin: auto; width: max-content;'><tr><td style='text-align: center; word-wrap: break-word;'>Sample</td><td style='text-align: center; word-wrap: break-word;'>V_oc (V)</td><td style='text-align: center; word-wrap: break-word;'>FF (%)</td><td style='text-align: center; word-wrap: break-word;'>PCE (%)</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>Control</td><td style='text-align: center; word-wrap: break-word;'>1.12</td><td style='text-align: center; word-wrap: break-word;'>79.8</td><td style='text-align: center; word-wrap: break-word;'>22.9</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>SB-1</td><td style='text-align: center; word-wrap: break-word;'>1.14</td><td style='text-align: center; word-wrap: break-word;'>80.6</td><td style='text-align: center; word-wrap: break-word;'>23.5</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>SB-3</td><td style='text-align: center; word-wrap: break-word;'>1.16</td><td style='text-align: center; word-wrap: break-word;'>81.9</td><td style='text-align: center; word-wrap: break-word;'>24.6</td></tr></table></div>",
+      "block_bbox": [
+       628,
+       1105,
+       1124,
+       1280
+      ],
+      "block_id": 15,
+      "block_order": 15,
+      "group_id": 15,
+      "global_block_id": 32,
+      "global_group_id": 32,
+      "block_polygon_points": [
+       [
+        628,
+        1105
+       ],
+       [
+        1124,
+        1105
+       ],
+       [
+        1124,
+        1280
+       ],
+       [
+        628,
+        1280
+       ]
+      ]
+     },
+     {
+      "block_label": "vision_footnote",
+      "block_content": "Table note: values are the mean of 24 devices; PCE was measured by reverse scan.",
+      "block_bbox": [
+       628,
+       1290,
+       1124,
+       1350
+      ],
+      "block_id": 16,
+      "block_order": 16,
+      "group_id": 16,
+      "global_block_id": 33,
+      "global_group_id": 33,
+      "block_polygon_points": [
+       [
+        628,
+        1290
+       ],
+       [
+        1124,
+        1290
+       ],
+       [
+        1124,
+        1350
+       ],
+       [
+        628,
+        1350
+       ]
+      ]
+     },
+     {
+      "block_label": "footer",
+      "block_content": "© 2026 The Authors. Journal of Advanced Functional Materials, Vol. 18, pp. 1101-1109.",
+      "block_bbox": [
+       100,
+       1498,
+       760,
+       1530
+      ],
+      "block_id": 17,
+      "block_order": null,
+      "group_id": 17,
+      "global_block_id": 34,
+      "global_group_id": 34,
+      "block_polygon_points": [
+       [
+        100,
+        1498
+       ],
+       [
+        760,
+        1498
+       ],
+       [
+        760,
+        1530
+       ],
+       [
+        100,
+        1530
+       ]
+      ]
+     },
+     {
+      "block_label": "number",
+      "block_content": "1102",
+      "block_bbox": [
+       1074,
+       1498,
+       1124,
+       1530
+      ],
+      "block_id": 18,
+      "block_order": null,
+      "group_id": 18,
+      "global_block_id": 35,
+      "global_group_id": 35,
+      "block_polygon_points": [
+       [
+        1074,
+        1498
+       ],
+       [
+        1124,
+        1498
+       ],
+       [
+        1124,
+        1530
+       ],
+       [
+        1074,
+        1530
+       ]
+      ]
+     }
+    ],
+    "layout_det_res": {
+     "boxes": [
+      {
+       "cls_id": 12,
+       "label": "header",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        56.0,
+        1124.0,
+        92.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         56
+        ],
+        [
+         1124,
+         56
+        ],
+        [
+         1124,
+         92
+        ],
+        [
+         100,
+         92
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        130.0,
+        596.0,
+        330.0
+       ],
+       "order": 1,
+       "polygon_points": [
+        [
+         100,
+         130
+        ],
+        [
+         596,
+         130
+        ],
+        [
+         596,
+         330
+        ],
+        [
+         100,
+         330
+        ]
+       ]
+      },
+      {
+       "cls_id": 5,
+       "label": "display_formula",
+       "score": 0.97,
+       "coordinate": [
+        150.0,
+        345.0,
+        520.0,
+        415.0
+       ],
+       "order": 2,
+       "polygon_points": [
+        [
+         150,
+         345
+        ],
+        [
+         520,
+         345
+        ],
+        [
+         520,
+         415
+        ],
+        [
+         150,
+         415
+        ]
+       ]
+      },
+      {
+       "cls_id": 11,
+       "label": "formula_number",
+       "score": 0.97,
+       "coordinate": [
+        540.0,
+        365.0,
+        596.0,
+        395.0
+       ],
+       "order": 3,
+       "polygon_points": [
+        [
+         540,
+         365
+        ],
+        [
+         596,
+         365
+        ],
+        [
+         596,
+         395
+        ],
+        [
+         540,
+         395
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        430.0,
+        596.0,
+        600.0
+       ],
+       "order": 4,
+       "polygon_points": [
+        [
+         100,
+         430
+        ],
+        [
+         596,
+         430
+        ],
+        [
+         596,
+         600
+        ],
+        [
+         100,
+         600
+        ]
+       ]
+      },
+      {
+       "cls_id": 17,
+       "label": "paragraph_title",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        620.0,
+        596.0,
+        662.0
+       ],
+       "order": 5,
+       "polygon_points": [
+        [
+         100,
+         620
+        ],
+        [
+         596,
+         620
+        ],
+        [
+         596,
+         662
+        ],
+        [
+         100,
+         662
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        680.0,
+        596.0,
+        830.0
+       ],
+       "order": 6,
+       "polygon_points": [
+        [
+         100,
+         680
+        ],
+        [
+         596,
+         680
+        ],
+        [
+         596,
+         830
+        ],
+        [
+         100,
+         830
+        ]
+       ]
+      },
+      {
+       "cls_id": 1,
+       "label": "algorithm",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        850.0,
+        596.0,
+        1130.0
+       ],
+       "order": 7,
+       "polygon_points": [
+        [
+         100,
+         850
+        ],
+        [
+         596,
+         850
+        ],
+        [
+         596,
+         1130
+        ],
+        [
+         100,
+         1130
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1150.0,
+        596.0,
+        1280.0
+       ],
+       "order": 8,
+       "polygon_points": [
+        [
+         100,
+         1150
+        ],
+        [
+         596,
+         1150
+        ],
+        [
+         596,
+         1280
+        ],
+        [
+         100,
+         1280
+        ]
+       ]
+      },
+      {
+       "cls_id": 14,
+       "label": "image",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        130.0,
+        1124.0,
+        500.0
+       ],
+       "order": 9,
+       "polygon_points": [
+        [
+         628,
+         130
+        ],
+        [
+         1124,
+         130
+        ],
+        [
+         1124,
+         500
+        ],
+        [
+         628,
+         500
+        ]
+       ]
+      },
+      {
+       "cls_id": 7,
+       "label": "figure_title",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        515.0,
+        1124.0,
+        590.0
+       ],
+       "order": 10,
+       "polygon_points": [
+        [
+         628,
+         515
+        ],
+        [
+         1124,
+         515
+        ],
+        [
+         1124,
+         590
+        ],
+        [
+         628,
+         590
+        ]
+       ]
+      },
+      {
+       "cls_id": 24,
+       "label": "vision_footnote",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        600.0,
+        1124.0,
+        670.0
+       ],
+       "order": 11,
+       "polygon_points": [
+        [
+         628,
+         600
+        ],
+        [
+         1124,
+         600
+        ],
+        [
+         1124,
+         670
+        ],
+        [
+         628,
+         670
+        ]
+       ]
+      },
+      {
+       "cls_id": 17,
+       "label": "paragraph_title",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        700.0,
+        1124.0,
+        742.0
+       ],
+       "order": 12,
+       "polygon_points": [
+        [
+         628,
+         700
+        ],
+        [
+         1124,
+         700
+        ],
+        [
+         1124,
+         742
+        ],
+        [
+         628,
+         742
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        760.0,
+        1124.0,
+        1000.0
+       ],
+       "order": 13,
+       "polygon_points": [
+        [
+         628,
+         760
+        ],
+        [
+         1124,
+         760
+        ],
+        [
+         1124,
+         1000
+        ],
+        [
+         628,
+         1000
+        ]
+       ]
+      },
+      {
+       "cls_id": 7,
+       "label": "figure_title",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        1020.0,
+        1124.0,
+        1090.0
+       ],
+       "order": 14,
+       "polygon_points": [
+        [
+         628,
+         1020
+        ],
+        [
+         1124,
+         1020
+        ],
+        [
+         1124,
+         1090
+        ],
+        [
+         628,
+         1090
+        ]
+       ]
+      },
+      {
+       "cls_id": 21,
+       "label": "table",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        1105.0,
+        1124.0,
+        1280.0
+       ],
+       "order": 15,
+       "polygon_points": [
+        [
+         628,
+         1105
+        ],
+        [
+         1124,
+         1105
+        ],
+        [
+         1124,
+         1280
+        ],
+        [
+         628,
+         1280
+        ]
+       ]
+      },
+      {
+       "cls_id": 24,
+       "label": "vision_footnote",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        1290.0,
+        1124.0,
+        1350.0
+       ],
+       "order": 16,
+       "polygon_points": [
+        [
+         628,
+         1290
+        ],
+        [
+         1124,
+         1290
+        ],
+        [
+         1124,
+         1350
+        ],
+        [
+         628,
+         1350
+        ]
+       ]
+      },
+      {
+       "cls_id": 8,
+       "label": "footer",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1498.0,
+        760.0,
+        1530.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         1498
+        ],
+        [
+         760,
+         1498
+        ],
+        [
+         760,
+         1530
+        ],
+        [
+         100,
+         1530
+        ]
+       ]
+      },
+      {
+       "cls_id": 16,
+       "label": "number",
+       "score": 0.97,
+       "coordinate": [
+        1074.0,
+        1498.0,
+        1124.0,
+        1530.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         1074,
+         1498
+        ],
+        [
+         1124,
+         1498
+        ],
+        [
+         1124,
+         1530
+        ],
+        [
+         1074,
+         1530
+        ]
+       ]
+      }
+     ]
+    }
+   },
+   "markdown": {
+    "text": "more than 95% of its initial value after 1,200 hours of continuous operation. The corresponding degradation follows a stretched exponential, $\\eta(t)=\\eta_0\\exp[-(t/\\tau)^{\\beta}]$, with a characteristic time $\\tau$ of 9,400 h and a stretching exponent $\\beta$ of 0.62. To separate the contribution of ion migration from that of bulk decomposition, we extracted the ionic conductivity from temperature-dependent impedance spectra using the Nernst-Einstein relation:\n\n$$ \\sigma_{\\mathrm{ion}} = \\frac{n q^{2} D}{k_{\\mathrm{B}} T} $$\n\n(1)\n\nwhere $n$ is the mobile ion density, $q$ the elementary charge, $D$ the diffusion coefficient, $k_{\\mathrm{B}}$ the Boltzmann constant and $T$ the absolute temperature. The activation energy obtained from an Arrhenius plot of $\\sigma_{\\mathrm{ion}}T$ increased from 0.31 eV for the control film to 0.52 eV for the SB-3 treated film, in agreement with a reduced vacancy concentration at the surface.\n\n## 2. Characterisation Methods\n\nImpedance spectra were recorded between 1 Hz and 1 MHz at 10 mV amplitude. The equivalent circuit was fitted with the routine summarised below, which iteratively updates the circuit parameters until the relative change of the residual falls below the chosen tolerance.\n\nAlgorithm 1: Equivalent-circuit fitting\nInput: spectra Z(f), initial guess p0, tolerance eps\nOutput: fitted parameters p\n1: p := p0\n2: repeat\n3:     r := residual(Z, model(p))\n4:     p := p - damping * pinv(J(p)) @ r\n5: until relative change of r is below eps\n6: return p\n\nAll fits with a reduced chi-squared above 2.0 were rejected, and each condition was measured on at least eight independent devices to obtain the error bars shown in the following figures.\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_628_130_1124_500.jpg\" alt=\"Image\" width=\"100%\" /></div>\n\nFigure 2. Maximum-power-point tracking of encapsulated devices at 65 °C under 1 sun. The SB-3 treated device (blue) maintains its output while the control (grey) degrades within 400 h.\n\nThe SB-3 treated device remains stable over the whole tracking period, whereas the control curve is truncated at 600 h after failure.\n\n## 3. Results and Discussion\n\nTable 1 summarises the photovoltaic parameters of 24 devices for each condition. The SB-3 treatment raises the average $V_{\\mathrm{oc}}$ by 38 mV and the fill factor by 2.1 percentage points, while the short-circuit current density $J_{\\mathrm{sc}}$ is essentially unchanged. The improvement of $V_{\\mathrm{oc}}$ is consistent with the suppressed non-radiative recombination observed in the photoluminescence quantum yield measurements.\n\nTable 1. Average photovoltaic parameters of control and SB-3 treated devices (24 devices per group).\n\n<div style=\"text-align: center;\"><table border=1 style='margin: auto; width: max-content;'><tr><td style='text-align: center; word-wrap: break-word;'>Sample</td><td style='text-align: center; word-wrap: break-word;'>V_oc (V)</td><td style='text-align: center; word-wrap: break-word;'>FF (%)</td><td style='text-align: center; word-wrap: break-word;'>PCE (%)</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>Control</td><td style='text-align: center; word-wrap: break-word;'>1.12</td><td style='text-align: center; word-wrap: break-word;'>79.8</td><td style='text-align: center; word-wrap: break-word;'>22.9</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>SB-1</td><td style='text-align: center; word-wrap: break-word;'>1.14</td><td style='text-align: center; word-wrap: break-word;'>80.6</td><td style='text-align: center; word-wrap: break-word;'>23.5</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>SB-3</td><td style='text-align: center; word-wrap: break-word;'>1.16</td><td style='text-align: center; word-wrap: break-word;'>81.9</td><td style='text-align: center; word-wrap: break-word;'>24.6</td></tr></table></div>\n\nTable note: values are the mean of 24 devices; PCE was measured by reverse scan.",
+    "images": {
+     "imgs/img_in_image_box_628_130_1124_500.jpg": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD3sAAAAASUVORK5CYII="
+    }
+   },
+   "outputImages": {},
+   "inputImage": ""
+  },
+  {
+   "prunedResult": {
+    "page_count": 3,
+    "width": 1224,
+    "height": 1584,
+    "model_settings": {
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true,
+     "use_chart_recognition": true,
+     "format_block_content": false
+    },
+    "parsing_res_list": [
+     {
+      "block_label": "header",
+      "block_content": "Hartmann et al. | Zwitterionic Interface Passivation",
+      "block_bbox": [
+       100,
+       56,
+       1124,
+       92
+      ],
+      "block_id": 0,
+      "block_order": null,
+      "group_id": 0,
+      "global_block_id": 36,
+      "global_group_id": 36,
+      "block_polygon_points": [
+       [
+        100,
+        56
+       ],
+       [
+        1124,
+        56
+       ],
+       [
+        1124,
+        92
+       ],
+       [
+        100,
+        92
+       ]
+      ]
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_content": "3.2 Long-Term Stability",
+      "block_bbox": [
+       100,
+       130,
+       596,
+       172
+      ],
+      "block_id": 1,
+      "block_order": 1,
+      "group_id": 1,
+      "global_block_id": 37,
+      "global_group_id": 37,
+      "block_polygon_points": [
+       [
+        100,
+        130
+       ],
+       [
+        596,
+        130
+       ],
+       [
+        596,
+        172
+       ],
+       [
+        100,
+        172
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Figure 3 shows the evolution of the power conversion efficiency during accelerated ageing at 85 °C. The control devices lose almost two thirds of their initial efficiency within 1,200 hours, whereas the SB-3 devices retain 96% of it, which extrapolates to a $T_{80}$ of more than 10,000 hours under these conditions. The difference is attributed to the lower density of mobile ions at the SB-3 interface.",
+      "block_bbox": [
+       100,
+       190,
+       596,
+       420
+      ],
+      "block_id": 2,
+      "block_order": 2,
+      "group_id": 2,
+      "global_block_id": 38,
+      "global_group_id": 38,
+      "block_polygon_points": [
+       [
+        100,
+        190
+       ],
+       [
+        596,
+        190
+       ],
+       [
+        596,
+        420
+       ],
+       [
+        100,
+        420
+       ]
+      ]
+     },
+     {
+      "block_label": "chart",
+      "block_content": "| Time (h) | Control PCE (%) | SB-3 PCE (%) |\n| --- | --- | --- |\n| 0 | 22.9 | 24.6 |\n| 400 | 17.4 | 24.4 |\n| 800 | 11.2 | 24.1 |\n| 1200 | 7.8 | 23.7 |",
+      "block_bbox": [
+       100,
+       440,
+       596,
+       720
+      ],
+      "block_id": 3,
+      "block_order": 3,
+      "group_id": 3,
+      "global_block_id": 39,
+      "global_group_id": 39,
+      "block_polygon_points": [
+       [
+        100,
+        440
+       ],
+       [
+        596,
+        440
+       ],
+       [
+        596,
+        720
+       ],
+       [
+        100,
+        720
+       ]
+      ]
+     },
+     {
+      "block_label": "figure_title",
+      "block_content": "Figure 3. Efficiency of control and SB-3 devices during accelerated ageing at 85 °C, normalised to the initial value.",
+      "block_bbox": [
+       100,
+       735,
+       596,
+       805
+      ],
+      "block_id": 4,
+      "block_order": 4,
+      "group_id": 4,
+      "global_block_id": 40,
+      "global_group_id": 40,
+      "block_polygon_points": [
+       [
+        100,
+        735
+       ],
+       [
+        596,
+        735
+       ],
+       [
+        596,
+        805
+       ],
+       [
+        100,
+        805
+       ]
+      ]
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_content": "4. Conclusions",
+      "block_bbox": [
+       100,
+       830,
+       596,
+       872
+      ],
+      "block_id": 5,
+      "block_order": 5,
+      "group_id": 5,
+      "global_block_id": 41,
+      "global_group_id": 41,
+      "block_polygon_points": [
+       [
+        100,
+        830
+       ],
+       [
+        596,
+        830
+       ],
+       [
+        596,
+        872
+       ],
+       [
+        100,
+        872
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "We have demonstrated that an ultrathin zwitterionic interlayer suppresses ion migration at the perovskite surface without compromising charge extraction. The approach is compatible with scalable deposition and offers a general route toward perovskite modules with lifetimes comparable to those of established photovoltaic technologies.",
+      "block_bbox": [
+       100,
+       890,
+       596,
+       1100
+      ],
+      "block_id": 6,
+      "block_order": 6,
+      "group_id": 6,
+      "global_block_id": 42,
+      "global_group_id": 42,
+      "block_polygon_points": [
+       [
+        100,
+        890
+       ],
+       [
+        596,
+        890
+       ],
+       [
+        596,
+        1100
+       ],
+       [
+        100,
+        1100
+       ]
+      ]
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_content": "Acknowledgements",
+      "block_bbox": [
+       100,
+       1120,
+       596,
+       1162
+      ],
+      "block_id": 7,
+      "block_order": 7,
+      "group_id": 7,
+      "global_block_id": 43,
+      "global_group_id": 43,
+      "block_polygon_points": [
+       [
+        100,
+        1120
+       ],
+       [
+        596,
+        1120
+       ],
+       [
+        596,
+        1162
+       ],
+       [
+        100,
+        1162
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "This work was funded by the Northbridge Research Council (grant NRC-2025-0417). The authors thank J. Weiss for assistance with the impedance measurements.",
+      "block_bbox": [
+       100,
+       1180,
+       596,
+       1270
+      ],
+      "block_id": 8,
+      "block_order": 8,
+      "group_id": 8,
+      "global_block_id": 44,
+      "global_group_id": 44,
+      "block_polygon_points": [
+       [
+        100,
+        1180
+       ],
+       [
+        596,
+        1180
+       ],
+       [
+        596,
+        1270
+       ],
+       [
+        100,
+        1270
+       ]
+      ]
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_content": "References",
+      "block_bbox": [
+       628,
+       130,
+       1124,
+       172
+      ],
+      "block_id": 9,
+      "block_order": 9,
+      "group_id": 9,
+      "global_block_id": 45,
+      "global_group_id": 45,
+      "block_polygon_points": [
+       [
+        628,
+        130
+       ],
+       [
+        1124,
+        130
+       ],
+       [
+        1124,
+        172
+       ],
+       [
+        628,
+        172
+       ]
+      ]
+     },
+     {
+      "block_label": "reference_content",
+      "block_content": "[1] H. Lindqvist, P. Adeyemi, and S. Tanaka, Adv. Funct. Mater. 2021, 31, 2104512.",
+      "block_bbox": [
+       628,
+       190,
+       1124,
+       275
+      ],
+      "block_id": 10,
+      "block_order": 10,
+      "group_id": 10,
+      "global_block_id": 46,
+      "global_group_id": 46,
+      "block_polygon_points": [
+       [
+        628,
+        190
+       ],
+       [
+        1124,
+        190
+       ],
+       [
+        1124,
+        275
+       ],
+       [
+        628,
+        275
+       ]
+      ]
+     },
+     {
+      "block_label": "reference_content",
+      "block_content": "[2] M. Okonkwo, J. Weiss, and T. Brandt, Nat. Energy 2022, 7, 412-421.",
+      "block_bbox": [
+       628,
+       285,
+       1124,
+       370
+      ],
+      "block_id": 11,
+      "block_order": 11,
+      "group_id": 11,
+      "global_block_id": 47,
+      "global_group_id": 47,
+      "block_polygon_points": [
+       [
+        628,
+        285
+       ],
+       [
+        1124,
+        285
+       ],
+       [
+        1124,
+        370
+       ],
+       [
+        628,
+        370
+       ]
+      ]
+     },
+     {
+      "block_label": "reference_content",
+      "block_content": "[3] R. Subramanian, L. Hartmann, and K. Nakamura, J. Mater. Chem. A 2023, 11, 8830-8841.",
+      "block_bbox": [
+       628,
+       380,
+       1124,
+       465
+      ],
+      "block_id": 12,
+      "block_order": 12,
+      "group_id": 12,
+      "global_block_id": 48,
+      "global_group_id": 48,
+      "block_polygon_points": [
+       [
+        628,
+        380
+       ],
+       [
+        1124,
+        380
+       ],
+       [
+        1124,
+        465
+       ],
+       [
+        628,
+        465
+       ]
+      ]
+     },
+     {
+      "block_label": "reference_content",
+      "block_content": "[4] C. Bianchi, D. Ferreira, and Y. Kobayashi, ACS Energy Lett. 2020, 5, 3017-3025.",
+      "block_bbox": [
+       628,
+       475,
+       1124,
+       560
+      ],
+      "block_id": 13,
+      "block_order": 13,
+      "group_id": 13,
+      "global_block_id": 49,
+      "global_group_id": 49,
+      "block_polygon_points": [
+       [
+        628,
+        475
+       ],
+       [
+        1124,
+        475
+       ],
+       [
+        1124,
+        560
+       ],
+       [
+        628,
+        560
+       ]
+      ]
+     },
+     {
+      "block_label": "reference_content",
+      "block_content": "[5] A. Novak, E. Duarte, and F. Haddad, Energy Environ. Sci. 2024, 17, 1105-1118.",
+      "block_bbox": [
+       628,
+       570,
+       1124,
+       655
+      ],
+      "block_id": 14,
+      "block_order": 14,
+      "group_id": 14,
+      "global_block_id": 50,
+      "global_group_id": 50,
+      "block_polygon_points": [
+       [
+        628,
+        570
+       ],
+       [
+        1124,
+        570
+       ],
+       [
+        1124,
+        655
+       ],
+       [
+        628,
+        655
+       ]
+      ]
+     },
+     {
+      "block_label": "reference_content",
+      "block_content": "[6] S. Petrov, N. Amadi, and W. Lindgren, Adv. Mater. 2019, 31, 1902741.",
+      "block_bbox": [
+       628,
+       665,
+       1124,
+       750
+      ],
+      "block_id": 15,
+      "block_order": 15,
+      "group_id": 15,
+      "global_block_id": 51,
+      "global_group_id": 51,
+      "block_polygon_points": [
+       [
+        628,
+        665
+       ],
+       [
+        1124,
+        665
+       ],
+       [
+        1124,
+        750
+       ],
+       [
+        628,
+        750
+       ]
+      ]
+     },
+     {
+      "block_label": "footer",
+      "block_content": "© 2026 The Authors. Journal of Advanced Functional Materials, Vol. 18, pp. 1101-1109.",
+      "block_bbox": [
+       100,
+       1498,
+       760,
+       1530
+      ],
+      "block_id": 16,
+      "block_order": null,
+      "group_id": 16,
+      "global_block_id": 52,
+      "global_group_id": 52,
+      "block_polygon_points": [
+       [
+        100,
+        1498
+       ],
+       [
+        760,
+        1498
+       ],
+       [
+        760,
+        1530
+       ],
+       [
+        100,
+        1530
+       ]
+      ]
+     },
+     {
+      "block_label": "number",
+      "block_content": "1103",
+      "block_bbox": [
+       1074,
+       1498,
+       1124,
+       1530
+      ],
+      "block_id": 17,
+      "block_order": null,
+      "group_id": 17,
+      "global_block_id": 53,
+      "global_group_id": 53,
+      "block_polygon_points": [
+       [
+        1074,
+        1498
+       ],
+       [
+        1124,
+        1498
+       ],
+       [
+        1124,
+        1530
+       ],
+       [
+        1074,
+        1530
+       ]
+      ]
+     }
+    ],
+    "layout_det_res": {
+     "boxes": [
+      {
+       "cls_id": 12,
+       "label": "header",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        56.0,
+        1124.0,
+        92.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         56
+        ],
+        [
+         1124,
+         56
+        ],
+        [
+         1124,
+         92
+        ],
+        [
+         100,
+         92
+        ]
+       ]
+      },
+      {
+       "cls_id": 17,
+       "label": "paragraph_title",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        130.0,
+        596.0,
+        172.0
+       ],
+       "order": 1,
+       "polygon_points": [
+        [
+         100,
+         130
+        ],
+        [
+         596,
+         130
+        ],
+        [
+         596,
+         172
+        ],
+        [
+         100,
+         172
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        190.0,
+        596.0,
+        420.0
+       ],
+       "order": 2,
+       "polygon_points": [
+        [
+         100,
+         190
+        ],
+        [
+         596,
+         190
+        ],
+        [
+         596,
+         420
+        ],
+        [
+         100,
+         420
+        ]
+       ]
+      },
+      {
+       "cls_id": 3,
+       "label": "chart",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        440.0,
+        596.0,
+        720.0
+       ],
+       "order": 3,
+       "polygon_points": [
+        [
+         100,
+         440
+        ],
+        [
+         596,
+         440
+        ],
+        [
+         596,
+         720
+        ],
+        [
+         100,
+         720
+        ]
+       ]
+      },
+      {
+       "cls_id": 7,
+       "label": "figure_title",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        735.0,
+        596.0,
+        805.0
+       ],
+       "order": 4,
+       "polygon_points": [
+        [
+         100,
+         735
+        ],
+        [
+         596,
+         735
+        ],
+        [
+         596,
+         805
+        ],
+        [
+         100,
+         805
+        ]
+       ]
+      },
+      {
+       "cls_id": 17,
+       "label": "paragraph_title",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        830.0,
+        596.0,
+        872.0
+       ],
+       "order": 5,
+       "polygon_points": [
+        [
+         100,
+         830
+        ],
+        [
+         596,
+         830
+        ],
+        [
+         596,
+         872
+        ],
+        [
+         100,
+         872
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        890.0,
+        596.0,
+        1100.0
+       ],
+       "order": 6,
+       "polygon_points": [
+        [
+         100,
+         890
+        ],
+        [
+         596,
+         890
+        ],
+        [
+         596,
+         1100
+        ],
+        [
+         100,
+         1100
+        ]
+       ]
+      },
+      {
+       "cls_id": 17,
+       "label": "paragraph_title",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1120.0,
+        596.0,
+        1162.0
+       ],
+       "order": 7,
+       "polygon_points": [
+        [
+         100,
+         1120
+        ],
+        [
+         596,
+         1120
+        ],
+        [
+         596,
+         1162
+        ],
+        [
+         100,
+         1162
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1180.0,
+        596.0,
+        1270.0
+       ],
+       "order": 8,
+       "polygon_points": [
+        [
+         100,
+         1180
+        ],
+        [
+         596,
+         1180
+        ],
+        [
+         596,
+         1270
+        ],
+        [
+         100,
+         1270
+        ]
+       ]
+      },
+      {
+       "cls_id": 17,
+       "label": "paragraph_title",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        130.0,
+        1124.0,
+        172.0
+       ],
+       "order": 9,
+       "polygon_points": [
+        [
+         628,
+         130
+        ],
+        [
+         1124,
+         130
+        ],
+        [
+         1124,
+         172
+        ],
+        [
+         628,
+         172
+        ]
+       ]
+      },
+      {
+       "cls_id": 19,
+       "label": "reference_content",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        190.0,
+        1124.0,
+        275.0
+       ],
+       "order": 10,
+       "polygon_points": [
+        [
+         628,
+         190
+        ],
+        [
+         1124,
+         190
+        ],
+        [
+         1124,
+         275
+        ],
+        [
+         628,
+         275
+        ]
+       ]
+      },
+      {
+       "cls_id": 19,
+       "label": "reference_content",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        285.0,
+        1124.0,
+        370.0
+       ],
+       "order": 11,
+       "polygon_points": [
+        [
+         628,
+         285
+        ],
+        [
+         1124,
+         285
+        ],
+        [
+         1124,
+         370
+        ],
+        [
+         628,
+         370
+        ]
+       ]
+      },
+      {
+       "cls_id": 19,
+       "label": "reference_content",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        380.0,
+        1124.0,
+        465.0
+       ],
+       "order": 12,
+       "polygon_points": [
+        [
+         628,
+         380
+        ],
+        [
+         1124,
+         380
+        ],
+        [
+         1124,
+         465
+        ],
+        [
+         628,
+         465
+        ]
+       ]
+      },
+      {
+       "cls_id": 19,
+       "label": "reference_content",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        475.0,
+        1124.0,
+        560.0
+       ],
+       "order": 13,
+       "polygon_points": [
+        [
+         628,
+         475
+        ],
+        [
+         1124,
+         475
+        ],
+        [
+         1124,
+         560
+        ],
+        [
+         628,
+         560
+        ]
+       ]
+      },
+      {
+       "cls_id": 19,
+       "label": "reference_content",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        570.0,
+        1124.0,
+        655.0
+       ],
+       "order": 14,
+       "polygon_points": [
+        [
+         628,
+         570
+        ],
+        [
+         1124,
+         570
+        ],
+        [
+         1124,
+         655
+        ],
+        [
+         628,
+         655
+        ]
+       ]
+      },
+      {
+       "cls_id": 19,
+       "label": "reference_content",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        665.0,
+        1124.0,
+        750.0
+       ],
+       "order": 15,
+       "polygon_points": [
+        [
+         628,
+         665
+        ],
+        [
+         1124,
+         665
+        ],
+        [
+         1124,
+         750
+        ],
+        [
+         628,
+         750
+        ]
+       ]
+      },
+      {
+       "cls_id": 8,
+       "label": "footer",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1498.0,
+        760.0,
+        1530.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         1498
+        ],
+        [
+         760,
+         1498
+        ],
+        [
+         760,
+         1530
+        ],
+        [
+         100,
+         1530
+        ]
+       ]
+      },
+      {
+       "cls_id": 16,
+       "label": "number",
+       "score": 0.97,
+       "coordinate": [
+        1074.0,
+        1498.0,
+        1124.0,
+        1530.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         1074,
+         1498
+        ],
+        [
+         1124,
+         1498
+        ],
+        [
+         1124,
+         1530
+        ],
+        [
+         1074,
+         1530
+        ]
+       ]
+      }
+     ]
+    }
+   },
+   "markdown": {
+    "text": "## 3.2 Long-Term Stability\n\nFigure 3 shows the evolution of the power conversion efficiency during accelerated ageing at 85 °C. The control devices lose almost two thirds of their initial efficiency within 1,200 hours, whereas the SB-3 devices retain 96% of it, which extrapolates to a $T_{80}$ of more than 10,000 hours under these conditions. The difference is attributed to the lower density of mobile ions at the SB-3 interface.\n\n| Time (h) | Control PCE (%) | SB-3 PCE (%) |\n| --- | --- | --- |\n| 0 | 22.9 | 24.6 |\n| 400 | 17.4 | 24.4 |\n| 800 | 11.2 | 24.1 |\n| 1200 | 7.8 | 23.7 |\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_chart_box_100_440_596_720.jpg\" alt=\"Image\" width=\"100%\" /></div>\n\nFigure 3. Efficiency of control and SB-3 devices during accelerated ageing at 85 °C, normalised to the initial value.\n\n## 4. Conclusions\n\nWe have demonstrated that an ultrathin zwitterionic interlayer suppresses ion migration at the perovskite surface without compromising charge extraction. The approach is compatible with scalable deposition and offers a general route toward perovskite modules with lifetimes comparable to those of established photovoltaic technologies.\n\n## Acknowledgements\n\nThis work was funded by the Northbridge Research Council (grant NRC-2025-0417). The authors thank J. Weiss for assistance with the impedance measurements.\n\n## References\n\n[1] H. Lindqvist, P. Adeyemi, and S. Tanaka, Adv. Funct. Mater. 2021, 31, 2104512.\n\n[2] M. Okonkwo, J. Weiss, and T. Brandt, Nat. Energy 2022, 7, 412-421.\n\n[3] R. Subramanian, L. Hartmann, and K. Nakamura, J. Mater. Chem. A 2023, 11, 8830-8841.\n\n[4] C. Bianchi, D. Ferreira, and Y. Kobayashi, ACS Energy Lett. 2020, 5, 3017-3025.\n\n[5] A. Novak, E. Duarte, and F. Haddad, Energy Environ. Sci. 2024, 17, 1105-1118.\n\n[6] S. Petrov, N. Amadi, and W. Lindgren, Adv. Mater. 2019, 31, 1902741.",
+    "images": {
+     "imgs/img_in_chart_box_100_440_596_720.jpg": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD3sAAAAASUVORK5CYII="
+    }
+   },
+   "outputImages": {},
+   "inputImage": ""
+  }
+ ],
+ "dataInfo": {
+  "type": "pdf",
+  "numPages": 3,
+  "pages": [
+   {
+    "width": 1224,
+    "height": 1584
+   },
+   {
+    "width": 1224,
+    "height": 1584
+   },
+   {
+    "width": 1224,
+    "height": 1584
+   }
+  ]
+ },
+ "preprocessedImages": [
+  "",
+  "",
+  ""
+ ],
+ "_meta": {
+  "source": "synthetic_fixture",
+  "dataInfoComplete": true
+ }
+}

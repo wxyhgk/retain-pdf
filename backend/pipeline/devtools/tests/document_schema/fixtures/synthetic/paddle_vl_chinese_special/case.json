@@ -1,0 +1,181 @@
+{
+ "provider": "paddle",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   595,
+   842
+  ],
+  [
+   595,
+   842
+  ]
+ ],
+ "raw_pages": [
+  [
+   893,
+   1263
+  ],
+  [
+   893,
+   1263
+  ]
+ ],
+ "description": "合成的 PaddleOCR-VL 版面解析结果：中文课程讲义，2 页，单栏，像素坐标为 1.5 倍（893x1263 对应 A4 595x842pt）。第 1 页是目录页加前言，第 2 页是方法章节。所有 bbox 位于页内、无零面积框，layout_det_res.boxes 与 parsing_res_list 一一对应，block_id/block_order/group_id 为合成值。",
+ "features": [
+  {
+   "feature": "目录标题 paragraph_title「目录」",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/1",
+   "expect": "heading，translate=true"
+  },
+  {
+   "feature": "目录块 content，8 行 \\n 分隔，带 ........ 引导符和页码",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/2",
+   "expect": "sub_type=table_of_contents，structure_role=table_of_contents，content.toc_entries 共 8 条（含 2.1 级别 2），text_flow=preserve_lines，line_texts 8 行"
+  },
+  {
+   "feature": "正文，显式 \\n 4 行",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/5",
+   "expect": "lines=4（bbox_precision=synthetic_newline），line_texts 4 行；因不是编号/短行，text_flow=flow"
+  },
+  {
+   "feature": "长段落，无 \\n，约 200 汉字",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/6",
+   "expect": "CJK 伪行：_split_words_evenly 以空格切词，整段无空格，伪行拆不出来，lines=1、line_texts=1 行，bbox 保持 110 高"
+  },
+  {
+   "feature": "竖排文字 vertical_text（页边旁注，窄高框）",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/3",
+   "expect": "目录里没有显式映射，预期落到 content.kind=unknown，translate=false"
+  },
+  {
+   "feature": "列表：（1）（2）（3）三行在同一个 text 块里",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/7",
+   "expect": "3 行 line_texts；ORDERED_MARKER_RE 不认全角括号，text_flow=flow"
+  },
+  {
+   "feature": "列表：（4）（5）各为单独 text 块",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/8 与 /layoutParsingResults/0/prunedResult/parsing_res_list/9",
+   "expect": "各为单行 body，无任何列表语义"
+  },
+  {
+   "feature": "参考文献小标题 paragraph_title",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/10",
+   "expect": "中文标题不在 _REFERENCE_SECTION_HEADINGS，作为 heading 翻译"
+  },
+  {
+   "feature": "reference_content 条目 1",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/11",
+   "expect": "reference_entry，translate=false"
+  },
+  {
+   "feature": "reference_content 条目 2",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/12",
+   "expect": "reference_entry，translate=false"
+  },
+  {
+   "feature": "header（页眉）",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/0",
+   "expect": "header，translate=false"
+  },
+  {
+   "feature": "footer（页脚）",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/13",
+   "expect": "footer，translate=false"
+  },
+  {
+   "feature": "number（页码）",
+   "page": 1,
+   "raw_path": "/layoutParsingResults/0/prunedResult/parsing_res_list/14",
+   "expect": "page_number，translate=false"
+  },
+  {
+   "feature": "正文含 $...$ 行内公式（中文）",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/2",
+   "expect": "segments 含 3 个 inline_formula；continuation_hint role=head，group_id=...page-002-group-99"
+  },
+  {
+   "feature": "同一 group_id 的续段（被表格和脚注隔开）",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/6",
+   "expect": "continuation_hint role=tail，与 parsing_res_list/2 同组，scope=intra_page"
+  },
+  {
+   "feature": "figure_title「表1 实验参数」在表格上方",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/3",
+   "expect": "sub_type=table_caption，related_block_ids 指向表格"
+  },
+  {
+   "feature": "表格 HTML",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/4",
+   "expect": "kind=table，sub_type=table_html，caption='表1 实验参数'，translate=false"
+  },
+  {
+   "feature": "vision_footnote「表注：…」在表格下方",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/5",
+   "expect": "sub_type=table_footnote，metadata.footnote_target=table，translate=true"
+  },
+  {
+   "feature": "display_formula + formula_number",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/7",
+   "expect": "kind=formula，translate=false；formula_number 为 parsing_res_list/8，translate=false"
+  },
+  {
+   "feature": "image（img src 与 markdown.images 键中的 box 坐标一致）",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/9",
+   "expect": "kind=image，metadata.asset_key 取到 imgs/img_in_image_box_250_730_640_950.jpg"
+  },
+  {
+   "feature": "figure_title「图1 装置示意图」",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/10",
+   "expect": "sub_type=figure_caption，继承图片的 asset_ids，related_block_ids=[p002-b0009]"
+  },
+  {
+   "feature": "vision_footnote「图注：…」",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/11",
+   "expect": "sub_type=image_footnote，metadata.footnote_target=image，translate=true"
+  },
+  {
+   "feature": "seal 印章（带文字内容）",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/12",
+   "expect": "没有显式映射，预期 content.kind=unknown，translate=false，文字保留在 text"
+  },
+  {
+   "feature": "header/footer/number（第 2 页）",
+   "page": 2,
+   "raw_path": "/layoutParsingResults/1/prunedResult/parsing_res_list/0",
+   "expect": "同第 1 页；footer=13，number=14"
+  }
+ ],
+ "tricky_points": [
+  "目录行形如 '1 引言 ........ 1'，要靠 TOC_LINE_WITH_LEADER_RE 切出编号、标题、页码；'参考文献 ........ 12' 没有编号。",
+  "CJK 长段落没有空格，伪行拆分失败，只剩一个整块行。",
+  "全角编号（1）（2）不被 ORDERED_MARKER_RE 识别，三行列表不会进 preserve_lines。",
+  "vertical_text 与 seal 在 legacy_projection 里没有条目，会变成 unknown，且 unknown 块没有 structure_role。",
+  "group_id 99 的两个块被表格与表注隔开，只有 group_id 把它们连起来；其它块 group_id 取自块序号，各自独立。",
+  "两个 vision_footnote 开头为「表注：」「图注：」，靠前缀判目标；它们不与表/图建立 related 关系，只有 footnote_target 元数据。",
+  "页 1 没有 doc_title/abstract，所以 front_matter 逻辑不触发。",
+  "page width/height 以 px 值(893x1263)写入文档，unit 标成 pt；与 PDF 595x842 的 1.5 倍换算要在下游完成。"
+ ]
+}

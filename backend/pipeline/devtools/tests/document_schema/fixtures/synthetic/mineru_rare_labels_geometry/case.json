@@ -1,0 +1,430 @@
+{
+ "provider": "mineru",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   612,
+   792
+  ],
+  [
+   612,
+   792
+  ],
+  [
+   792,
+   612
+  ],
+  [
+   612,
+   792
+  ]
+ ],
+ "description": "Synthetic MinerU middle.json (layout.json), 4 pages (612x792, 612x792, 792x612 landscape, 612x792 empty), a short technical report on exciton transport. Built to cover the rare MinerU labels (caption, footnote, paragraph_title, vertical_text, formula_number, index, ref_text, algorithm, algorithm_caption, chart_footnote, code_footnote, equation, equation_interline, discarded, phonetic, header_image, footer_image) plus span types equation, inline_equation and hyperlink, and the geometry edge cases listed in geometry_cases. _backend=pipeline, _version_name=2.7.1; no preproc_blocks. Page 1: title, authors, index-less received line and margin vertical_text, overlapping body blocks, clamped-line block, interline equation + number, orphan-line block, footnote with hyperlink, discards header/header_image/page_number. Page 2: index (TOC), equation + number, image group with generic caption, indexed 'discarded' stamp, code group (algorithm_caption/algorithm/code_footnote), discards header/footer_image/page_number. Page 3: two columns + full-width chart group (chart_footnote), equation_interline + number, phonetic + Chinese text, ref_text x3, discards header/page_number. Page 4: empty (page_number only). raw_rejected.json is raw.json with block 0/para_blocks/2 pushed 1.5pt past the right page edge.",
+ "features": [
+  {
+   "feature": "caption (generic label) as child of an image container",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/7/blocks/1",
+   "expect": "p002-b0008: content.kind=text, block_class=caption, layout_role=caption, semantic_role=metadata, structure_role=caption, translate=true; attached to the image_body as caption (metadata.caption_target_block_id=p002-b0007, relation_source=provider_container); structure_role is plain 'caption' not figure_caption"
+  },
+  {
+   "feature": "footnote (generic label, bare page-bottom block)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/12",
+   "expect": "p001-b0011: content.kind=text, block_class=footnote, layout_role=footnote, semantic_role=metadata, structure_role=footnote, translate=false; NOT translated (provider_non_body:footnote); contains a hyperlink span flattened into text"
+  },
+  {
+   "feature": "paragraph_title (level 1)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/3",
+   "expect": "p001-b0002: content.kind=text, block_class=title, layout_role=heading, semantic_role=unknown, structure_role=heading, translate=true; metadata.raw_title_level=1; same projection as 'title'"
+  },
+  {
+   "feature": "vertical_text, no index, angle 270",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/5",
+   "expect": "p001-b0013: content.kind=text, block_class=body, layout_role=paragraph, semantic_role=body, structure_role=body, translate=true; projects exactly like 'text' (translate=true); sorted AFTER all indexed blocks; metadata.raw_angle=270"
+  },
+  {
+   "feature": "formula_number next to an interline_equation",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/10",
+   "expect": "p001-b0008: content.kind=text, block_class=metadata, layout_role=paragraph, semantic_role=metadata, structure_role=metadata, translate=false; metadata only, not translated, not linked to the equation"
+  },
+  {
+   "feature": "formula_number next to an 'equation' block",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/5",
+   "expect": "p002-b0005: content.kind=text, block_class=metadata, layout_role=paragraph, semantic_role=metadata, structure_role=metadata, translate=false"
+  },
+  {
+   "feature": "formula_number next to an 'equation_interline' block (landscape page)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/5",
+   "expect": "p003-b0007: content.kind=text, block_class=metadata, layout_role=paragraph, semantic_role=metadata, structure_role=metadata, translate=false"
+  },
+  {
+   "feature": "index container (table of contents, 4 child text blocks, 1 line each)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/1",
+   "expect": "p002-b0001: content.kind=text, block_class=body, layout_role=list_item, semantic_role=body, structure_role=body, translate=true; aggregated into ONE record (not split): text joined with spaces, 4 lines, bbox = union of block bbox and descendant line bboxes; TOC dotted leaders are translated as body text"
+  },
+  {
+   "feature": "ref_text x3 (bare blocks, top level)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/9",
+   "expect": "p003-b0011: content.kind=text, block_class=body, layout_role=paragraph, semantic_role=reference, structure_role=reference_entry, translate=false; also /10 and /11: all semantic_role=reference, translate=false, derived.role=reference_entry"
+  },
+  {
+   "feature": "algorithm (body of a 'code' container, sub_type=algorithm)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/8/blocks/1",
+   "expect": "p002-b0011: content.kind=code, block_class=code, layout_role=unknown, semantic_role=unknown, structure_role=(empty), translate=false; code container is not emitted (structural_containers_not_emitted); content.kind=code, text preserves newlines (text_flow=preserve_lines); gets caption + footnote linkage (content.caption_block_ids, footnote_block_ids)"
+  },
+  {
+   "feature": "algorithm_caption",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/8/blocks/0",
+   "expect": "p002-b0010: content.kind=text, block_class=caption, layout_role=caption, semantic_role=metadata, structure_role=code_caption, translate=true; structure_role=code_caption, translate=true"
+  },
+  {
+   "feature": "code_footnote",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/8/blocks/2",
+   "expect": "p002-b0012: content.kind=text, block_class=footnote, layout_role=footnote, semantic_role=metadata, structure_role=footnote, translate=true; translate=true (visual footnote), unlike plain footnote"
+  },
+  {
+   "feature": "chart_body in a 'chart' container (landscape page)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/3/blocks/0",
+   "expect": "p003-b0003: content.kind=image, block_class=image, layout_role=unknown, semantic_role=unknown, structure_role=(empty), translate=false; chart_body collapses into content.kind=image (no chart kind); caption + footnote linked"
+  },
+  {
+   "feature": "chart_caption",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/3/blocks/1",
+   "expect": "p003-b0004: content.kind=text, block_class=caption, layout_role=caption, semantic_role=metadata, structure_role=figure_caption, translate=true; structure_role=figure_caption, translate=true"
+  },
+  {
+   "feature": "chart_footnote",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/3/blocks/2",
+   "expect": "p003-b0005: content.kind=text, block_class=footnote, layout_role=footnote, semantic_role=metadata, structure_role=footnote, translate=true; translate=true (visual footnote)"
+  },
+  {
+   "feature": "equation (alias, MinerU variant A) with span type 'equation'",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/4",
+   "expect": "p002-b0004: content.kind=formula, block_class=formula, layout_role=unknown, semantic_role=unknown, structure_role=(empty), translate=false; same projection as interline_equation; span type 'equation' becomes segment type 'formula' (raw_type 'equation'); no unknown_block_types"
+  },
+  {
+   "feature": "equation_interline (alias, MinerU variant B, different page)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/4",
+   "expect": "p003-b0006: content.kind=formula, block_class=formula, layout_role=unknown, semantic_role=unknown, structure_role=(empty), translate=false; same projection; span here is the classic 'interline_equation'"
+  },
+  {
+   "feature": "interline_equation (classic alias, baseline)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/9",
+   "expect": "p001-b0007: content.kind=formula, block_class=formula, layout_role=unknown, semantic_role=unknown, structure_role=(empty), translate=false; formula, translate=false"
+  },
+  {
+   "feature": "discarded (label) inside discarded_blocks WITH an index (8)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/discarded_blocks/1",
+   "expect": "p002-b0009: content.kind=text, block_class=metadata, layout_role=paragraph, semantic_role=metadata, structure_role=metadata, translate=false; metadata-like text, not translated; because it has index 8 it sorts BETWEEN para block index 7 (image group) and 9 (code group), i.e. before the header and page_number discards"
+  },
+  {
+   "feature": "phonetic (pinyin line above Chinese text, landscape page)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/6",
+   "expect": "p003-b0008: content.kind=text, block_class=metadata, layout_role=paragraph, semantic_role=metadata, structure_role=metadata, translate=false; metadata, translate=false"
+  },
+  {
+   "feature": "header_image (logo, discarded_blocks)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/discarded_blocks/1",
+   "expect": "p001-b0015: content.kind=image, block_class=image, layout_role=unknown, semantic_role=unknown, structure_role=(empty), translate=false; content.kind=image, structure_role empty, no text, no lines (image spans have no content), translate=false"
+  },
+  {
+   "feature": "footer_image (discarded_blocks, page 2)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/discarded_blocks/2",
+   "expect": "p002-b0014: content.kind=image, block_class=image, layout_role=unknown, semantic_role=unknown, structure_role=(empty), translate=false; same as header_image"
+  },
+  {
+   "feature": "span type 'equation' (inside block 'equation')",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/4/lines/0/spans/0",
+   "expect": "in p002-b0004 (equation): segment type=formula, raw_type=equation, text is the raw LaTeX"
+  },
+  {
+   "feature": "span type 'inline_equation' inside a text line",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/4/lines/1/spans/1",
+   "expect": "in p001-b0003 (text): segment type=inline_formula, raw_type=inline_equation, text 'D_{\\parallel}'"
+  },
+  {
+   "feature": "span type 'hyperlink' with children (URL in body text)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/4/lines/2/spans/1",
+   "expect": "in p001-b0003 (text): flattened by iter_spans: the child text span becomes an ordinary text segment (the hyperlink url and wrapper bbox are dropped)"
+  },
+  {
+   "feature": "span type 'hyperlink' (mailto in the footnote)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/12/lines/0/spans/1",
+   "expect": "in p001-b0011 (footnote): flattened by iter_spans: the child text span becomes an ordinary text segment (the hyperlink url and wrapper bbox are dropped)"
+  },
+  {
+   "feature": "span type 'hyperlink' (DOI at end of a ref_text)",
+   "page": 3,
+   "raw_path": "/pdf_info/2/para_blocks/9/lines/0/spans/1",
+   "expect": "in p003-b0011 (ref_text): flattened by iter_spans: the child text span becomes an ordinary text segment (the hyperlink url and wrapper bbox are dropped)"
+  },
+  {
+   "feature": "image container (image_body + generic caption)",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/7",
+   "expect": "(container, no record of its own); container not emitted; metadata.provider_group_type=image, provider_group_bbox=[150,338,462,517]"
+  },
+  {
+   "feature": "doc_title with angle 0",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/0",
+   "expect": "p001-b0000: content.kind=text, block_class=title, layout_role=title, semantic_role=unknown, structure_role=document_title, translate=true; metadata.raw_angle=0 (contrast with absent angle -> None)"
+  }
+ ],
+ "geometry_cases": [
+  {
+   "case": "1. two body blocks overlapping ~10pt vertically",
+   "page": 1,
+   "raw_path": [
+    "/pdf_info/0/para_blocks/6",
+    "/pdf_info/0/para_blocks/7"
+   ],
+   "coords": {
+    "block_B": [
+     72,
+     236,
+     540,
+     328
+    ],
+    "block_C": [
+     72,
+     318,
+     540,
+     390
+    ],
+    "overlap_y": [
+     318,
+     328
+    ],
+    "note": "B's own lines end at y=318; the overlap is block-box padding only"
+   },
+   "expect": "both pass through untouched and both translate=true: p001-b0004 bbox [72.0, 236.0, 540.0, 328.0], p001-b0005 bbox [72.0, 318.0, 540.0, 390.0]; no dedup/merge"
+  },
+  {
+   "case": "2. block bbox exceeds the page by 1.5pt on the right edge (rounding)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/2",
+   "coords": {
+    "page": [
+     612,
+     792
+    ],
+    "raw_json_bbox_ADJUSTED": [
+     383,
+     118,
+     612,
+     130
+    ],
+    "raw_rejected_json_bbox": [
+     383,
+     118,
+     613.5,
+     130
+    ],
+    "line_and_span_x1_in_rejected": 613.5
+   },
+   "expect": "raw.json keeps the block flush at x1=612 (valid). raw_rejected.json has x1=613.5 on block, line and span and fails document validation; see validator_rejects. The adapter does NOT clamp to the page"
+  },
+  {
+   "case": "3. line (and its span) 1pt below the block bbox (MinerU rounding) -> clamped",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/8/lines/4",
+   "coords": {
+    "raw_block_bbox": [
+     72,
+     400,
+     540,
+     468
+    ],
+    "raw_last_line_bbox": [
+     72,
+     457,
+     540,
+     469
+    ],
+    "raw_last_span_bbox": [
+     72,
+     457,
+     540,
+     469
+    ]
+   },
+   "expect": "p001-b0006: block bbox unchanged [72.0, 400.0, 540.0, 468.0]; last line bbox clamped to [72.0, 457.0, 540.0, 468.0] and its span to [72.0, 457.0, 540.0, 468.0] (y1 469 -> 468); line count stays 5, no orphan"
+  },
+  {
+   "case": "4. one line far outside its block -> split into an orphan record",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/11/lines/3",
+   "coords": {
+    "raw_block_bbox": [
+     72,
+     524,
+     540,
+     566
+    ],
+    "orphan_line_bbox": [
+     72,
+     672,
+     400,
+     684
+    ],
+    "in_block_lines": 3
+   },
+   "expect": "main p001-b0009 bbox [72.0, 524.0, 540.0, 566.0] keeps 3 lines; orphan p001-b0010 bbox [72.0, 672.0, 400.0, 684.0] (union of the orphan lines) with 1 line, same raw_path /pdf_info/0/para_blocks/11, same projection (text/body, translate=true), raw_bbox still the original block bbox; every later block id shifts by one (footnote becomes p001-b0011, order contiguous)"
+  },
+  {
+   "case": "5. block with angle 270 (vertical_text in the left margin)",
+   "page": 1,
+   "raw_path": "/pdf_info/0/para_blocks/5",
+   "coords": {
+    "bbox": [
+     26,
+     230,
+     44,
+     560
+    ],
+    "angle": 270,
+    "line_bbox": [
+     26,
+     230,
+     44,
+     560
+    ]
+   },
+   "expect": "only recorded as metadata.raw_angle=270; geometry untouched (tall 18x330 box, one line); projected as body text, translate=true"
+  },
+  {
+   "case": "6. landscape page 3 (792x612) with content up to x=738",
+   "page": 3,
+   "raw_path": "/pdf_info/2",
+   "coords": {
+    "page_size": [
+     792,
+     612
+    ],
+    "max_block_x1": 738,
+    "max_block_y1": 590,
+    "full_width_chart_group": [
+     54,
+     150,
+     738,
+     372
+    ]
+   },
+   "expect": "pages[2].width=792, height=612; all 16 blocks valid. Verified: forcing page_size to [612,792] makes validation fail ('must stay within page bounds [0, 0, 612.0, 792.0]') because x1=738 > 612, so the per-page size is really honoured"
+  },
+  {
+   "case": "7. empty page 4",
+   "page": 4,
+   "raw_path": "/pdf_info/3",
+   "coords": {
+    "para_blocks": [],
+    "discarded_blocks": 1,
+    "page_size": [
+     612,
+     792
+    ]
+   },
+   "expect": "page record still emitted (page_count=4) with exactly one block: p004-b0000 page_number (discarded_blocks/0); no para blocks"
+  },
+  {
+   "case": "8. blocks with and without `index` mixed on one page",
+   "page": 1,
+   "raw_path": [
+    "/pdf_info/0/para_blocks/2",
+    "/pdf_info/0/para_blocks/5"
+   ],
+   "coords": {
+    "index_less_para_array_positions": [
+     2,
+     5
+    ],
+    "indexed_para_blocks": "0,1,3,4,6,7,8,9,10,11,12 hold index 0..10",
+    "discarded_blocks": "none has an index"
+   },
+   "expect": "ordered_page_roots sorts by (index, ordinal) with index-less = 1_000_000+ordinal: p001-b0000..b0011 are the indexed blocks (incl. orphan at b0010), then the index-less 'received' line (b0012, para_blocks/2) and vertical_text (b0013, para_blocks/5) in array order, then the index-less discarded blocks header, header_image, page_number (b0014..b0016). Reading order therefore puts 'Received ...' and the margin stamp AFTER the footnote"
+  },
+  {
+   "case": "9. (extra) discarded block WITH an index interleaves with para blocks",
+   "page": 2,
+   "raw_path": "/pdf_info/1/discarded_blocks/1",
+   "coords": [
+    470,
+    338,
+    540,
+    350
+   ],
+   "expect": "p002-b0009 sits between the image group (b0007, b0008) and the code group (b0010..b0012); the other 3 discards (no index) trail at b0013..b0015"
+  },
+  {
+   "case": "10. (extra) aggregate container bbox shorter than its lines",
+   "page": 2,
+   "raw_path": "/pdf_info/1/para_blocks/1",
+   "coords": {
+    "raw_index_bbox": [
+     72,
+     80,
+     540,
+     139
+    ],
+    "last_child_line_bbox": [
+     72,
+     130,
+     378.8,
+     142
+    ]
+   },
+   "expect": "list/index aggregate bbox = union(block bbox, descendant line bboxes) -> [72.0, 80.0, 540.0, 142.0]"
+  }
+ ],
+ "validator_rejects": [
+  {
+   "case": "2. block + line + span exceed page width by 1.5pt",
+   "raw_file": "raw_rejected.json",
+   "raw_path": "/pdf_info/0/para_blocks/2",
+   "stage": "adapt_payload_to_document_v1 (build_validation_report -> validate_document_payload); same error from validate_document_payload alone",
+   "error": "$.pages[0].blocks[12].geometry.bbox: must stay within page bounds [0, 0, 612.0, 792.0]",
+   "tolerance": "1e-3 pt; the adapter passes block bboxes through unclamped, so a MinerU box 1-2pt past the page edge can only be fixed upstream (or by rescale)",
+   "adjustment_in_raw_json": "block bbox x1 613.5 -> 612, and the line and span x1 613.5 -> 612 (identical to raw_rejected.json otherwise)"
+  }
+ ],
+ "tricky_points": [
+  "Three display-formula aliases on three pages: interline_equation (p1), equation (p2, span type 'equation'), equation_interline (p3); the first two are MinerU pipeline/vlm naming, the third the content_list/newer naming. All project identically and none is reported as unknown.",
+  "image/chart/code groups: the container label (image, chart, code) is never emitted; children are, and the caption/footnote children are linked to the first image/table/code child.",
+  "chart_body, header_image, footer_image, image_body all collapse to content.kind=image with empty structure_role and empty text; formula and code blocks also have empty structure_role.",
+  "footnote (plain) is not translated but chart_footnote and code_footnote are; algorithm_caption -> structure_role code_caption, chart_caption -> figure_caption, generic caption -> caption.",
+  "index is catalogued as a container but aggregated into a single translated body record (table-of-contents dot leaders included).",
+  "vertical_text projects as ordinary body text; angle 270 is only metadata.",
+  "Index-less blocks sort after all indexed blocks even if they come earlier in para_blocks, and a discarded block with an index interleaves with para blocks.",
+  "Chinese lines are joined with a single ASCII space, so the Chinese paragraph text contains a space at the line break.",
+  "tags are not de-duplicated: footnote has ['footnote','footnote','skip_translation'], caption has ['caption','caption'].",
+  "Orphan-line splitting only checks that the line does not intersect the block bbox; the orphan record gets its own block_id, shifting every later id, and keeps the parent's raw_path and raw_index.",
+  "raw.json deliberately omits preproc_blocks and cross_page spans (covered by the two-column fixture); middle.json always has preproc_blocks in reality but the adapter ignores it unless cross_page spans exist.",
+  "Hyperlink spans carry a url and wrapper bbox in this fixture (key names invented to resemble MinerU); only the children's text/bbox survive normalization."
+ ]
+}

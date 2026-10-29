@@ -1,0 +1,183 @@
+[
+ [
+  {
+   "type": "page_header",
+   "content": {
+    "page_header_content": [
+     {
+      "type": "text",
+      "content": "Journal of Synthetic Cell Biology, Vol. 12, No. 3"
+     }
+    ]
+   },
+   "bbox": [
+    130,
+    38,
+    870,
+    58
+   ]
+  },
+  {
+   "type": "page_aside_text",
+   "content": {
+    "page_aside_text_content": [
+     {
+      "type": "text",
+      "content": "Accepted manuscript, posted 2 June 2026"
+     }
+    ]
+   },
+   "bbox": [
+    18,
+    180,
+    46,
+    820
+   ]
+  },
+  {
+   "type": "title",
+   "content": {
+    "title_content": [
+     {
+      "type": "text",
+      "content": "Calcium Handling in Cultured Hepatocytes"
+     }
+    ],
+    "level": 1
+   },
+   "bbox": [
+    110,
+    85,
+    890,
+    135
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "Intracellular calcium signalling regulates hepatic metabolism, and its dynamics depend on the balance between uptake into the endoplasmic reticulum and extrusion across the plasma membrane. We measured the decay of cytosolic transients after a single agonist pulse."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    150,
+    890,
+    235
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "Transients were recorded at 10 Hz for 120 s per cell, and cells with a baseline drift larger than 5% were excluded. The remaining traces were aligned to the agonist onset and averaged across three independent cultures"
+     },
+     {
+      "type": "equation_inline",
+      "content": "n = 3"
+     },
+     {
+      "type": "text",
+      "content": "to give the decay constants reported below."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    420,
+    1000,
+    500
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "Cells were maintained at 37 °C in 5% CO2 and passaged twice a week; no cell line used here was older than passage 20."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    540,
+    890,
+    600
+   ]
+  },
+  {
+   "type": "paragraph",
+   "content": {
+    "paragraph_content": [
+     {
+      "type": "text",
+      "content": "(b)"
+     }
+    ]
+   },
+   "bbox": [
+    940,
+    610,
+    952,
+    620
+   ]
+  },
+  {
+   "type": "page_footnote",
+   "content": {
+    "page_footnote_content": [
+     {
+      "type": "text",
+      "content": "1 Hepatocytes were isolated from three adult donors under the protocol approved by the local ethics board."
+     }
+    ]
+   },
+   "bbox": [
+    110,
+    880,
+    890,
+    925
+   ]
+  },
+  {
+   "type": "page_footer",
+   "content": {
+    "page_footer_content": [
+     {
+      "type": "text",
+      "content": "Received 4 March; accepted 19 May."
+     }
+    ]
+   },
+   "bbox": [
+    130,
+    940,
+    600,
+    960
+   ]
+  },
+  {
+   "type": "page_number",
+   "content": {
+    "page_number_content": [
+     {
+      "type": "text",
+      "content": "1"
+     }
+    ]
+   },
+   "bbox": [
+    470,
+    965,
+    530,
+    982
+   ]
+  }
+ ]
+]

@@ -1,0 +1,49 @@
+{
+ "defaults": {
+  "block_defaults": {
+   "provenance": 20
+  },
+  "blocks_seen": 20,
+  "document_defaults": {},
+  "page_defaults": {},
+  "pages_seen": 2
+ },
+ "document_id": "mineru_content_list_v2",
+ "provider": "mineru_content_list_v2",
+ "provider_version": "",
+ "source_json_path": "content_list_v2.json",
+ "validation": {
+  "approximate_formula_segment_bbox_count": 10,
+  "approximate_segment_bbox_count": 39,
+  "asset_block_count": 1,
+  "asset_count": 0,
+  "block_count": 20,
+  "complete": false,
+  "coordinate_space": "pdf_point",
+  "covered_provider_markdown_image_count": 0,
+  "formula_segment_count": 10,
+  "geometry_bbox_consistent": true,
+  "line_bbox_precision_counts": {
+   "block_fallback": 11,
+   "synthetic_newline": 4,
+   "synthetic_wrap": 18
+  },
+  "linked_asset_block_count": 0,
+  "page_count": 2,
+  "provider_formula_segment_bbox_count": 0,
+  "provider_markdown_image_count": 0,
+  "provider_segment_bbox_count": 0,
+  "referenced_asset_count": 0,
+  "schema": "normalized_document_v1",
+  "schema_version": "1.1",
+  "segment_bbox_within_block": true,
+  "uncovered_provider_markdown_image_count": 0,
+  "unlinked_asset_block_count": 1,
+  "unreferenced_asset_count": 0,
+  "valid": true,
+  "warnings": [
+   "1 image/chart blocks have no asset_id"
+  ],
+  "zero_segment_bbox_count": 0
+ }
+}

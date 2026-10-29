@@ -1,0 +1,3490 @@
+{
+ "assets": {},
+ "derived": {
+  "coordinate_space": "pdf_point",
+  "notes": "Adapted from MinerU content_list_v2 experimental payload."
+ },
+ "doc_id": "mineru_content_list_v2",
+ "document_id": "mineru_content_list_v2",
+ "markers": {},
+ "page_count": 2,
+ "pages": [
+  {
+   "blocks": [
+    {
+     "bbox": [
+      79.56,
+      30.096,
+      532.44,
+      45.936
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Journal of Synthetic Cell Biology, Vol. 12, No. 3"
+      ],
+      "text": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       79.56,
+       30.096,
+       532.44,
+       45.936
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        79.56,
+        30.096,
+        532.44,
+        45.936
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          30.096,
+          532.44,
+          45.936
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 0,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       38.0,
+       870.0,
+       58.0
+      ],
+      "raw_label": "page_header",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        79.56,
+        30.096,
+        532.44,
+        45.936
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       38.0,
+       870.0,
+       58.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+      "raw_type": "page_header",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      67.32,
+      544.68,
+      106.92
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Mitochondrial Buffering of Calcium Transients in Cultured Hepatocytes"
+      ],
+      "text": "Mitochondrial Buffering of Calcium Transients in Cultured Hepatocytes",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       67.32,
+       544.68,
+       106.92
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        67.32,
+        544.68,
+        106.92
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          67.32,
+          544.68,
+          106.92
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Mitochondrial Buffering of Calcium Transients in Cultured Hepatocytes",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 1,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       85.0,
+       890.0,
+       135.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        67.32,
+        544.68,
+        106.92
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Mitochondrial Buffering of Calcium Transients in Cultured Hepatocytes",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       85.0,
+       890.0,
+       135.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Mitochondrial Buffering of Calcium Transients in Cultured Hepatocytes",
+      "raw_type": "title",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "Mitochondrial Buffering of Calcium Transients in Cultured Hepatocytes",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      118.8,
+      544.68,
+      186.12
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Intracellular calcium signalling regulates metabolism, yet the contribution of mitochondria to buffering remains debated. Here we measure the decay constant \\tau of cytosolic transients in hepatocytes treated with the uncoupler FCCP."
+      ],
+      "text": "Intracellular calcium signalling regulates metabolism, yet the contribution of mitochondria to buffering remains debated. Here we measure the decay constant \\tau of cytosolic transients in hepatocytes treated with the uncoupler FCCP.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       118.8,
+       544.68,
+       186.12
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        118.8,
+        544.68,
+        135.63
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          118.8,
+          544.68,
+          135.63
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "Intracellular calcium signalling regulates metabolism,",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        135.63,
+        544.68,
+        152.46
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          135.63,
+          544.68,
+          152.46
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "yet the contribution of mitochondria to buffering remains",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        152.46,
+        544.68,
+        169.29
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          152.46,
+          544.68,
+          169.29
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "debated. Here we measure the decay constant",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          152.46,
+          544.68,
+          169.29
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "\\tau of cytosolic",
+         "type": "inline_formula"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        169.29,
+        544.68,
+        186.12
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          169.29,
+          544.68,
+          186.12
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "transients in hepatocytes treated with the uncoupler FCCP.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 2,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       150.0,
+       890.0,
+       235.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        118.8,
+        544.68,
+        186.12
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Intracellular calcium signalling regulates metabolism, yet the contribution of mitochondria to buffering remains debated. Here we measure the decay constant",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        118.8,
+        544.68,
+        186.12
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "\\tau",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        118.8,
+        544.68,
+        186.12
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "of cytosolic transients in hepatocytes treated with the uncoupler FCCP.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       150.0,
+       890.0,
+       235.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Intracellular calcium signalling regulates metabolism, yet the contribution of mitochondria to buffering remains debated. Here we measure the decay constant \\tau of cytosolic transients in hepatocytes",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Intracellular calcium signalling regulates metabolism, yet the contribution of mitochondria to buffering remains debated. Here we measure the decay constant \\tau of cytosolic transients in hepatocytes treated with the uncoupler FCCP.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      207.504,
+      318.24,
+      231.264
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1. Methods"
+      ],
+      "text": "1. Methods",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       207.504,
+       318.24,
+       231.264
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        207.504,
+        318.24,
+        231.264
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          207.504,
+          318.24,
+          231.264
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "1. Methods",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 3,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       262.0,
+       520.0,
+       292.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        207.504,
+        318.24,
+        231.264
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "1. Methods",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       262.0,
+       520.0,
+       292.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1. Methods",
+      "raw_type": "title",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "1. Methods",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      241.56,
+      544.68,
+      316.8
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Cells were loaded with 2 \\mu\\mathrm{M} Fluo-4 and imaged at 37 °C. The free calcium concentration was estimated from [\\mathrm{Ca}^{2+}] = K_d \\frac{F - F_{min}}{F_{max} - F} with K_d = 345\\,\\mathrm{nM} , following standard calibration."
+      ],
+      "text": "Cells were loaded with 2 \\mu\\mathrm{M} Fluo-4 and imaged at 37 °C. The free calcium concentration was estimated from [\\mathrm{Ca}^{2+}] = K_d \\frac{F - F_{min}}{F_{max} - F} with K_d = 345\\,\\mathrm{nM} , following standard calibration.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       241.56,
+       544.68,
+       316.8
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        241.56,
+        544.68,
+        260.37
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          241.56,
+          544.68,
+          260.37
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "Cells were loaded with 2",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          241.56,
+          544.68,
+          260.37
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "\\mu\\mathrm",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          241.56,
+          544.68,
+          260.37
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "{M} Fluo-4 and imaged",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        260.37,
+        544.68,
+        279.18
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          260.37,
+          544.68,
+          279.18
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "at 37 °C. The free calcium concentration was estimated",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        279.18,
+        544.68,
+        297.99
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          279.18,
+          544.68,
+          297.99
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "from [\\mathrm{Ca}^{2+}] = K_d \\frac",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          279.18,
+          544.68,
+          297.99
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "{",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          279.18,
+          544.68,
+          297.99
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "F - F_{min}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          279.18,
+          544.68,
+          297.99
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "}{",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          279.18,
+          544.68,
+          297.99
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "F_{max}",
+         "type": "inline_formula"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        297.99,
+        544.68,
+        316.8
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          297.99,
+          544.68,
+          316.8
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "- F}",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          297.99,
+          544.68,
+          316.8
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "with K_d = 345",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          297.99,
+          544.68,
+          316.8
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "\\,",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          297.99,
+          544.68,
+          316.8
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "\\mathrm{nM} , following standard calibration.",
+         "type": "inline_formula"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 4,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       305.0,
+       890.0,
+       400.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        241.56,
+        544.68,
+        316.8
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Cells were loaded with 2",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        241.56,
+        544.68,
+        316.8
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "\\mu\\mathrm{M}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        241.56,
+        544.68,
+        316.8
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Fluo-4 and imaged at 37 °C. The free calcium concentration was estimated from",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        241.56,
+        544.68,
+        316.8
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "[\\mathrm{Ca}^{2+}] = K_d \\frac{F - F_{min}}{F_{max} - F}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        241.56,
+        544.68,
+        316.8
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "with",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        241.56,
+        544.68,
+        316.8
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "K_d = 345\\,\\mathrm{nM}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        241.56,
+        544.68,
+        316.8
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": ", following standard calibration.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       305.0,
+       890.0,
+       400.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Cells were loaded with 2 \\mu\\mathrm{M} Fluo-4 and imaged at 37 °C. The free calcium concentration was estimated from [\\mathrm{Ca}^{2+}] = K_d \\frac{F - F_{min}}{F_{max} - F} with K_d = 345\\,\\mathrm{nM",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Cells were loaded with 2 \\mu\\mathrm{M} Fluo-4 and imaged at 37 °C. The free calcium concentration was estimated from [\\mathrm{Ca}^{2+}] = K_d \\frac{F - F_{min}}{F_{max} - F} with K_d = 345\\,\\mathrm{nM} , following standard calibration.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      183.6,
+      331.056,
+      428.4,
+      378.576
+     ],
+     "block_class": "formula",
+     "block_id": "p001-b0005",
+     "content": {
+      "kind": "formula",
+      "line_texts": [
+       "\\tau = \\frac{\\Delta [\\mathrm{Ca}^{2+}]}{J_{\\mathrm{mito}} + J_{\\mathrm{SERCA}}}"
+      ],
+      "text": "\\tau = \\frac{\\Delta [\\mathrm{Ca}^{2+}]}{J_{\\mathrm{mito}} + J_{\\mathrm{SERCA}}}",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       183.6,
+       331.056,
+       428.4,
+       378.576
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        183.6,
+        331.056,
+        428.4,
+        378.576
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          183.6,
+          331.056,
+          428.4,
+          378.576
+         ],
+         "bbox_precision": "line",
+         "raw_type": "equation_interline",
+         "score": null,
+         "text": "\\tau = \\frac{\\Delta [\\mathrm{Ca}^{2+}]}{J_{\\mathrm{mito}} + J_{\\mathrm{SERCA}}}",
+         "type": "formula"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 5,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:formula"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       300.0,
+       418.0,
+       700.0,
+       478.0
+      ],
+      "raw_label": "equation_interline",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        183.6,
+        331.056,
+        428.4,
+        378.576
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_interline",
+       "score": null,
+       "text": "\\tau = \\frac{\\Delta [\\mathrm{Ca}^{2+}]}{J_{\\mathrm{mito}} + J_{\\mathrm{SERCA}}}",
+       "type": "formula"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       300.0,
+       418.0,
+       700.0,
+       478.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "\\tau = \\frac{\\Delta [\\mathrm{Ca}^{2+}]}{J_{\\mathrm{mito}} + J_{\\mathrm{SERCA}}}",
+      "raw_type": "equation_interline",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "",
+     "sub_type": "display_formula",
+     "tags": [
+      "formula"
+     ],
+     "text": "\\tau = \\frac{\\Delta [\\mathrm{Ca}^{2+}]}{J_{\\mathrm{mito}} + J_{\\mathrm{SERCA}}}",
+     "type": "formula"
+    },
+    {
+     "bbox": [
+      67.32,
+      389.664,
+      544.68,
+      441.504
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0006",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "where J_{\\mathrm{mito}} and J_{\\mathrm{SERCA}} denote the mitochondrial and ER uptake fluxes, respectively."
+      ],
+      "text": "where J_{\\mathrm{mito}} and J_{\\mathrm{SERCA}} denote the mitochondrial and ER uptake fluxes, respectively.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       389.664,
+       544.68,
+       441.504
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        389.664,
+        544.68,
+        415.584
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          389.664,
+          544.68,
+          415.584
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "where J_{",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          389.664,
+          544.68,
+          415.584
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "\\mathrm{mito}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          389.664,
+          544.68,
+          415.584
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "} and J_{",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          389.664,
+          544.68,
+          415.584
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "\\mathrm{SERCA}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          389.664,
+          544.68,
+          415.584
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "} denote",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        415.584,
+        544.68,
+        441.504
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          415.584,
+          544.68,
+          441.504
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "the mitochondrial and ER uptake fluxes, respectively.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "provider_bbox_original": [
+       67.32,
+       389.664,
+       544.68,
+       443.521
+      ],
+      "provider_bbox_tightened": true,
+      "raw_sub_type": ""
+     },
+     "order": 6,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       492.0,
+       890.0,
+       560.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        389.664,
+        544.68,
+        441.504
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "where",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        389.664,
+        544.68,
+        441.504
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "J_{\\mathrm{mito}}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        389.664,
+        544.68,
+        441.504
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "and",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        389.664,
+        544.68,
+        441.504
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "J_{\\mathrm{SERCA}}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        389.664,
+        544.68,
+        441.504
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "denote the mitochondrial and ER uptake fluxes, respectively.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       492.0,
+       890.0,
+       560.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "where J_{\\mathrm{mito}} and J_{\\mathrm{SERCA}} denote the mitochondrial and ER uptake fluxes, respectively.",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "where J_{\\mathrm{mito}} and J_{\\mathrm{SERCA}} denote the mitochondrial and ER uptake fluxes, respectively.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      463.32,
+      318.24,
+      487.081
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0007",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1.1 Reagents"
+      ],
+      "text": "1.1 Reagents",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       463.32,
+       318.24,
+       487.081
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        463.32,
+        318.24,
+        487.081
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          463.32,
+          318.24,
+          487.081
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "1.1 Reagents",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 7,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       585.0,
+       520.0,
+       615.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        463.32,
+        318.24,
+        487.081
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "1.1 Reagents",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       585.0,
+       520.0,
+       615.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1.1 Reagents",
+      "raw_type": "title",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "1.1 Reagents",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      497.376,
+      544.68,
+      617.76
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Fluo-4 AM, 2 \\mu\\mathrm{M} in loading buffer FCCP, 1 \\mu\\mathrm{M} , added at the start of recording Thapsigargin to block ER calcium re-uptake Tyrode solution containing 1.8 mM CaCl2"
+      ],
+      "text": "Fluo-4 AM, 2 \\mu\\mathrm{M} in loading buffer FCCP, 1 \\mu\\mathrm{M} , added at the start of recording Thapsigargin to block ER calcium re-uptake Tyrode solution containing 1.8 mM CaCl2",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       497.376,
+       544.68,
+       617.76
+      ]
+     },
+     "layout_role": "list_item",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        537.504
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          497.376,
+          544.68,
+          537.504
+         ],
+         "bbox_precision": "line",
+         "raw_type": "list",
+         "score": null,
+         "text": "Fluo-4 AM, 2",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          497.376,
+          544.68,
+          537.504
+         ],
+         "bbox_precision": "line",
+         "raw_type": "list",
+         "score": null,
+         "text": "\\mu\\mathrm",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          497.376,
+          544.68,
+          537.504
+         ],
+         "bbox_precision": "line",
+         "raw_type": "list",
+         "score": null,
+         "text": "{M} in loading buffer FCCP, 1",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        537.504,
+        544.68,
+        577.632
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          537.504,
+          544.68,
+          577.632
+         ],
+         "bbox_precision": "line",
+         "raw_type": "list",
+         "score": null,
+         "text": "\\mu\\mathrm",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          537.504,
+          544.68,
+          577.632
+         ],
+         "bbox_precision": "line",
+         "raw_type": "list",
+         "score": null,
+         "text": "{M} , added at the start of recording Thapsigargin",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        577.632,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          577.632,
+          544.68,
+          617.76
+         ],
+         "bbox_precision": "line",
+         "raw_type": "list",
+         "score": null,
+         "text": "to block ER calcium re-uptake Tyrode solution containing 1.8 mM CaCl2",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 8,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:list"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       628.0,
+       890.0,
+       780.0
+      ],
+      "raw_label": "list",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Fluo-4 AM, 2",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "\\mu\\mathrm{M}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "in loading buffer",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "FCCP, 1",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "\\mu\\mathrm{M}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": ", added at the start of recording",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Thapsigargin to block ER calcium re-uptake",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        497.376,
+        544.68,
+        617.76
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Tyrode solution containing 1.8 mM CaCl2",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       628.0,
+       890.0,
+       780.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Fluo-4 AM, 2 \\mu\\mathrm{M} in loading buffer FCCP, 1 \\mu\\mathrm{M} , added at the start of recording Thapsigargin to block ER calcium re-uptake Tyrode solution containing 1.8 mM CaCl2",
+      "raw_type": "list",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [
+      "list"
+     ],
+     "text": "Fluo-4 AM, 2 \\mu\\mathrm{M} in loading buffer FCCP, 1 \\mu\\mathrm{M} , added at the start of recording Thapsigargin to block ER calcium re-uptake Tyrode solution containing 1.8 mM CaCl2",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      79.56,
+      732.6,
+      367.2,
+      748.44
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0009",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Received 4 March; accepted 19 May."
+      ],
+      "text": "Received 4 March; accepted 19 May.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       79.56,
+       732.6,
+       367.2,
+       748.44
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        79.56,
+        732.6,
+        367.2,
+        748.44
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          732.6,
+          367.2,
+          748.44
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Received 4 March; accepted 19 May.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 9,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       925.0,
+       600.0,
+       945.0
+      ],
+      "raw_label": "page_footer",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        79.56,
+        732.6,
+        367.2,
+        748.44
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Received 4 March; accepted 19 May.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       925.0,
+       600.0,
+       945.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Received 4 March; accepted 19 May.",
+      "raw_type": "page_footer",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "Received 4 March; accepted 19 May.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      287.64,
+      756.36,
+      324.36,
+      769.825
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0010",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1"
+      ],
+      "text": "1",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       287.64,
+       756.36,
+       324.36,
+       769.825
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        287.64,
+        756.36,
+        324.36,
+        769.825
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          287.64,
+          756.36,
+          324.36,
+          769.825
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "1",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 10,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       470.0,
+       955.0,
+       530.0,
+       972.0
+      ],
+      "raw_label": "page_number",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 10,
+     "segments": [
+      {
+       "bbox": [
+        287.64,
+        756.36,
+        324.36,
+        769.825
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "1",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       470.0,
+       955.0,
+       530.0,
+       972.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1",
+      "raw_type": "page_number",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "1",
+     "type": "text"
+    }
+   ],
+   "height": 792.0,
+   "metadata": {},
+   "page": 1,
+   "page_index": 0,
+   "unit": "pt",
+   "width": 612.0
+  },
+  {
+   "blocks": [
+    {
+     "bbox": [
+      79.56,
+      30.096,
+      532.44,
+      45.936
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Mitochondrial Buffering of Calcium Transients"
+      ],
+      "text": "Mitochondrial Buffering of Calcium Transients",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       79.56,
+       30.096,
+       532.44,
+       45.936
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        79.56,
+        30.096,
+        532.44,
+        45.936
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          30.096,
+          532.44,
+          45.936
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Mitochondrial Buffering of Calcium Transients",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 0,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       38.0,
+       870.0,
+       58.0
+      ],
+      "raw_label": "page_header",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        79.56,
+        30.096,
+        532.44,
+        45.936
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Mitochondrial Buffering of Calcium Transients",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       38.0,
+       870.0,
+       58.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Mitochondrial Buffering of Calcium Transients",
+      "raw_type": "page_header",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "Mitochondrial Buffering of Calcium Transients",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      67.32,
+      318.24,
+      91.08
+     ],
+     "block_class": "title",
+     "block_id": "p002-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2. Results"
+      ],
+      "text": "2. Results",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       67.32,
+       318.24,
+       91.08
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        67.32,
+        318.24,
+        91.08
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          67.32,
+          318.24,
+          91.08
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "2. Results",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 1,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       85.0,
+       520.0,
+       115.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        67.32,
+        318.24,
+        91.08
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "2. Results",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       85.0,
+       520.0,
+       115.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2. Results",
+      "raw_type": "title",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "2. Results",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      91.8,
+      118.8,
+      520.201,
+      265.32
+     ],
+     "block_class": "table",
+     "block_id": "p002-b0002",
+     "content": {
+      "kind": "table",
+      "text": ""
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       91.8,
+       118.8,
+       520.201,
+       265.32
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 2,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:table"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       150.0,
+       150.0,
+       850.0,
+       335.0
+      ],
+      "raw_label": "table",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 2,
+     "segments": [],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       150.0,
+       150.0,
+       850.0,
+       335.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "",
+      "raw_type": "table",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "",
+     "sub_type": "table_body",
+     "tags": [
+      "table",
+      "skip_translation"
+     ],
+     "text": "",
+     "type": "table"
+    },
+    {
+     "bbox": [
+      67.32,
+      281.16,
+      544.68,
+      348.48
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Uncoupling slowed recovery more than twofold (Table 1), and the effect was larger when ER uptake was also blocked, giving \\tau_{\\mathrm{FCCP}} > 2\\,\\tau_{\\mathrm{ctrl}} ."
+      ],
+      "text": "Uncoupling slowed recovery more than twofold (Table 1), and the effect was larger when ER uptake was also blocked, giving \\tau_{\\mathrm{FCCP}} > 2\\,\\tau_{\\mathrm{ctrl}} .",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       281.16,
+       544.68,
+       348.48
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        281.16,
+        544.68,
+        303.6
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          281.16,
+          544.68,
+          303.6
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "Uncoupling slowed recovery more than twofold (Table 1),",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        303.6,
+        544.68,
+        326.04
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          303.6,
+          544.68,
+          326.04
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "and the effect was larger when ER uptake was also blocked,",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        326.04,
+        544.68,
+        348.48
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          326.04,
+          544.68,
+          348.48
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "giving \\tau",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          326.04,
+          544.68,
+          348.48
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "_{",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          326.04,
+          544.68,
+          348.48
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "\\mathrm{FCCP}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          326.04,
+          544.68,
+          348.48
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "} > 2\\,\\tau_{",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          67.32,
+          326.04,
+          544.68,
+          348.48
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "\\mathrm{ctrl}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          67.32,
+          326.04,
+          544.68,
+          348.48
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "} .",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 3,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       355.0,
+       890.0,
+       440.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        281.16,
+        544.68,
+        348.48
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Uncoupling slowed recovery more than twofold (Table 1), and the effect was larger when ER uptake was also blocked, giving",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        281.16,
+        544.68,
+        348.48
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "\\tau_{\\mathrm{FCCP}} > 2\\,\\tau_{\\mathrm{ctrl}}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        281.16,
+        544.68,
+        348.48
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": ".",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       355.0,
+       890.0,
+       440.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Uncoupling slowed recovery more than twofold (Table 1), and the effect was larger when ER uptake was also blocked, giving \\tau_{\\mathrm{FCCP}} > 2\\,\\tau_{\\mathrm{ctrl}} .",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Uncoupling slowed recovery more than twofold (Table 1), and the effect was larger when ER uptake was also blocked, giving \\tau_{\\mathrm{FCCP}} > 2\\,\\tau_{\\mathrm{ctrl}} .",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      122.399,
+      364.32,
+      489.6,
+      506.88
+     ],
+     "block_class": "image",
+     "block_id": "p002-b0004",
+     "content": {
+      "kind": "image",
+      "text": ""
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       122.399,
+       364.32,
+       489.6,
+       506.88
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 4,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:image"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       200.0,
+       460.0,
+       800.0,
+       640.0
+      ],
+      "raw_label": "image",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 4,
+     "segments": [],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       200.0,
+       460.0,
+       800.0,
+       640.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "",
+      "raw_type": "image",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "",
+     "sub_type": "figure",
+     "tags": [
+      "image",
+      "skip_translation"
+     ],
+     "text": "",
+     "type": "image"
+    },
+    {
+     "bbox": [
+      79.56,
+      522.72,
+      532.44,
+      609.84
+     ],
+     "block_class": "code",
+     "block_id": "p002-b0005",
+     "content": {
+      "kind": "code",
+      "line_texts": [
+       "def fit_tau(t, f):",
+       "p0 = (f.max() - f.min(), 1.0, f.min())",
+       "popt, _ = curve_fit(decay, t, f, p0=p0)",
+       "return popt[1]"
+      ],
+      "text": "def fit_tau(t, f):\n    p0 = (f.max() - f.min(), 1.0, f.min())\n    popt, _ = curve_fit(decay, t, f, p0=p0)\n    return popt[1]",
+      "text_flow": "preserve_lines"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       79.56,
+       522.72,
+       532.44,
+       609.84
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        79.56,
+        522.72,
+        532.44,
+        544.5
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          522.72,
+          532.44,
+          544.5
+         ],
+         "bbox_precision": "line",
+         "raw_type": "code",
+         "score": null,
+         "text": "def fit_tau(t, f)",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          79.56,
+          522.72,
+          532.44,
+          544.5
+         ],
+         "bbox_precision": "line",
+         "raw_type": "code",
+         "score": null,
+         "text": ":",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        79.56,
+        544.5,
+        532.44,
+        566.28
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          544.5,
+          532.44,
+          566.28
+         ],
+         "bbox_precision": "line",
+         "raw_type": "code",
+         "score": null,
+         "text": "p0 = (f.max() - f.min(), 1.0, f.min())",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        79.56,
+        566.28,
+        532.44,
+        588.06
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          566.28,
+          532.44,
+          588.06
+         ],
+         "bbox_precision": "line",
+         "raw_type": "code",
+         "score": null,
+         "text": "popt, _ =",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          79.56,
+          566.28,
+          532.44,
+          588.06
+         ],
+         "bbox_precision": "line",
+         "raw_type": "code",
+         "score": null,
+         "text": "curve_fit(decay, t, f, p0=p0)",
+         "type": "inline_formula"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        79.56,
+        588.06,
+        532.44,
+        609.84
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          588.06,
+          532.44,
+          609.84
+         ],
+         "bbox_precision": "line",
+         "raw_type": "code",
+         "score": null,
+         "text": "return popt[1]",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 5,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:code"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       660.0,
+       870.0,
+       770.0
+      ],
+      "raw_label": "code",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        79.56,
+        522.72,
+        532.44,
+        609.84
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "def fit_tau(t, f):\n    p0 = (f.max() - f.min(), 1.0, f.min())\n    popt, _ = curve_fit(decay, t, f, p0=p0)\n    return popt[1]",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       660.0,
+       870.0,
+       770.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "def fit_tau(t, f):\n    p0 = (f.max() - f.min(), 1.0, f.min())\n    popt, _ = curve_fit(decay, t, f, p0=p0)\n    return popt[1]",
+      "raw_type": "code",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "",
+     "sub_type": "code_block",
+     "tags": [
+      "code",
+      "skip_translation"
+     ],
+     "text": "def fit_tau(t, f):\n    p0 = (f.max() - f.min(), 1.0, f.min())\n    popt, _ = curve_fit(decay, t, f, p0=p0)\n    return popt[1]",
+     "type": "code"
+    },
+    {
+     "bbox": [
+      67.32,
+      625.68,
+      544.68,
+      689.041
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0006",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "These results indicate that mitochondria account for a substantial fraction of the buffering capacity during sustained signalling."
+      ],
+      "text": "These results indicate that mitochondria account for a substantial fraction of the buffering capacity during sustained signalling.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       625.68,
+       544.68,
+       689.041
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        625.68,
+        544.68,
+        657.361
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          625.68,
+          544.68,
+          657.361
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "These results indicate that mitochondria account for",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        657.361,
+        544.68,
+        689.041
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          657.361,
+          544.68,
+          689.041
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "a substantial fraction of the buffering capacity during sustained signalling.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 6,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       790.0,
+       890.0,
+       870.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        625.68,
+        544.68,
+        689.041
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "These results indicate that mitochondria account for a substantial fraction of the buffering capacity during sustained signalling.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       790.0,
+       890.0,
+       870.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "These results indicate that mitochondria account for a substantial fraction of the buffering capacity during sustained signalling.",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "These results indicate that mitochondria account for a substantial fraction of the buffering capacity during sustained signalling.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      79.56,
+      732.6,
+      367.2,
+      748.44
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0007",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Received 4 March; accepted 19 May."
+      ],
+      "text": "Received 4 March; accepted 19 May.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       79.56,
+       732.6,
+       367.2,
+       748.44
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        79.56,
+        732.6,
+        367.2,
+        748.44
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          732.6,
+          367.2,
+          748.44
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Received 4 March; accepted 19 May.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 7,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       925.0,
+       600.0,
+       945.0
+      ],
+      "raw_label": "page_footer",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        79.56,
+        732.6,
+        367.2,
+        748.44
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Received 4 March; accepted 19 May.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       925.0,
+       600.0,
+       945.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Received 4 March; accepted 19 May.",
+      "raw_type": "page_footer",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "Received 4 March; accepted 19 May.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      287.64,
+      756.36,
+      324.36,
+      769.825
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2"
+      ],
+      "text": "2",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       287.64,
+       756.36,
+       324.36,
+       769.825
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        287.64,
+        756.36,
+        324.36,
+        769.825
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          287.64,
+          756.36,
+          324.36,
+          769.825
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "2",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 8,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       470.0,
+       955.0,
+       530.0,
+       972.0
+      ],
+      "raw_label": "page_number",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        287.64,
+        756.36,
+        324.36,
+        769.825
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "2",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       470.0,
+       955.0,
+       530.0,
+       972.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2",
+      "raw_type": "page_number",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "2",
+     "type": "text"
+    }
+   ],
+   "height": 792.0,
+   "metadata": {},
+   "page": 2,
+   "page_index": 1,
+   "unit": "pt",
+   "width": 612.0
+  }
+ ],
+ "schema": "normalized_document_v1",
+ "schema_version": "1.1",
+ "source": {
+  "provider": "mineru_content_list_v2",
+  "provider_version": "",
+  "raw_files": {
+   "content_list_v2": "content_list_v2.json"
+  }
+ }
+}

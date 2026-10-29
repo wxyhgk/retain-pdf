@@ -1,0 +1,2024 @@
+{
+ "layoutParsingResults": [
+  {
+   "prunedResult": {
+    "page_count": 3,
+    "width": 1224,
+    "height": 1584,
+    "model_settings": {
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true,
+     "use_chart_recognition": true,
+     "format_block_content": false
+    },
+    "parsing_res_list": [
+     {
+      "block_label": "header_image",
+      "block_content": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_header_image_box_100_40_300_100.jpg\" alt=\"Image\" width=\"100%\" /></div>",
+      "block_bbox": [
+       100,
+       40,
+       300,
+       100
+      ],
+      "block_id": 0,
+      "block_order": null,
+      "group_id": 0,
+      "global_block_id": 1,
+      "global_group_id": 1001,
+      "block_polygon_points": [
+       [
+        100,
+        40
+       ],
+       [
+        300,
+        40
+       ],
+       [
+        300,
+        100
+       ],
+       [
+        100,
+        100
+       ]
+      ]
+     },
+     {
+      "block_label": "header",
+      "block_content": "Soil Moisture Sensing Letters | Vol. 9 | Supplementary Material",
+      "block_bbox": [
+       320,
+       56,
+       1124,
+       92
+      ],
+      "block_id": 1,
+      "block_order": null,
+      "group_id": 1,
+      "global_block_id": 2,
+      "global_group_id": 1002,
+      "block_polygon_points": [
+       [
+        320,
+        56
+       ],
+       [
+        1124,
+        56
+       ],
+       [
+        1124,
+        92
+       ],
+       [
+        320,
+        92
+       ]
+      ]
+     },
+     {
+      "block_label": "footer_image",
+      "block_content": "<div style=\"text-align: center;\"><img alt=\"Image\" width=\"100%\" /></div>",
+      "block_bbox": [
+       100,
+       1490,
+       260,
+       1550
+      ],
+      "block_id": 2,
+      "block_order": null,
+      "group_id": 2,
+      "global_block_id": 3,
+      "global_group_id": 1003,
+      "block_polygon_points": [
+       [
+        100,
+        1490
+       ],
+       [
+        260,
+        1490
+       ],
+       [
+        260,
+        1550
+       ],
+       [
+        100,
+        1550
+       ]
+      ]
+     },
+     {
+      "block_label": "footer",
+      "block_content": "Northbridge Geosensing Group | Technical report series",
+      "block_bbox": [
+       280,
+       1500,
+       1224,
+       1540
+      ],
+      "block_id": 3,
+      "block_order": null,
+      "group_id": 3,
+      "global_block_id": 4,
+      "global_group_id": 1004,
+      "block_polygon_points": [
+       [
+        280,
+        1500
+       ],
+       [
+        1224,
+        1500
+       ],
+       [
+        1224,
+        1540
+       ],
+       [
+        280,
+        1540
+       ]
+      ]
+     },
+     {
+      "block_label": "number",
+      "block_content": "1",
+      "block_bbox": [
+       1060,
+       1544,
+       1124,
+       1572
+      ],
+      "block_id": 4,
+      "block_order": null,
+      "group_id": 4,
+      "global_block_id": 5,
+      "global_group_id": 1005,
+      "block_polygon_points": [
+       [
+        1060,
+        1544
+       ],
+       [
+        1124,
+        1544
+       ],
+       [
+        1124,
+        1572
+       ],
+       [
+        1060,
+        1572
+       ]
+      ]
+     }
+    ],
+    "layout_det_res": {
+     "boxes": [
+      {
+       "cls_id": 13,
+       "label": "header_image",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        40.0,
+        300.0,
+        100.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         40
+        ],
+        [
+         300,
+         40
+        ],
+        [
+         300,
+         100
+        ],
+        [
+         100,
+         100
+        ]
+       ]
+      },
+      {
+       "cls_id": 12,
+       "label": "header",
+       "score": 0.97,
+       "coordinate": [
+        320.0,
+        56.0,
+        1124.0,
+        92.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         320,
+         56
+        ],
+        [
+         1124,
+         56
+        ],
+        [
+         1124,
+         92
+        ],
+        [
+         320,
+         92
+        ]
+       ]
+      },
+      {
+       "cls_id": 9,
+       "label": "footer_image",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1490.0,
+        260.0,
+        1550.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         1490
+        ],
+        [
+         260,
+         1490
+        ],
+        [
+         260,
+         1550
+        ],
+        [
+         100,
+         1550
+        ]
+       ]
+      },
+      {
+       "cls_id": 8,
+       "label": "footer",
+       "score": 0.97,
+       "coordinate": [
+        280.0,
+        1500.0,
+        1224.0,
+        1540.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         280,
+         1500
+        ],
+        [
+         1224,
+         1500
+        ],
+        [
+         1224,
+         1540
+        ],
+        [
+         280,
+         1540
+        ]
+       ]
+      },
+      {
+       "cls_id": 16,
+       "label": "number",
+       "score": 0.97,
+       "coordinate": [
+        1060.0,
+        1544.0,
+        1124.0,
+        1572.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         1060,
+         1544
+        ],
+        [
+         1124,
+         1544
+        ],
+        [
+         1124,
+         1572
+        ],
+        [
+         1060,
+         1572
+        ]
+       ]
+      }
+     ]
+    }
+   },
+   "markdown": {
+    "text": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_header_image_box_100_40_300_100.jpg\" alt=\"Image\" width=\"100%\" /></div>\n\nSoil Moisture Sensing Letters | Vol. 9 | Supplementary Material\n\n<div style=\"text-align: center;\"><img alt=\"Image\" width=\"100%\" /></div>\n\nNorthbridge Geosensing Group | Technical report series\n\n1",
+    "images": {
+     "imgs/img_in_header_image_box_100_40_300_100.jpg": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD3sAAAAASUVORK5CYII=",
+     "imgs/img_in_footer_image_box_100_1490_260_1550.jpg": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD3sAAAAASUVORK5CYII="
+    }
+   },
+   "outputImages": {},
+   "inputImage": ""
+  },
+  {
+   "prunedResult": {
+    "page_count": 3,
+    "width": 1224,
+    "height": 1584,
+    "model_settings": {
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true,
+     "use_chart_recognition": true,
+     "format_block_content": false,
+     "enable_body_repair": true
+    },
+    "parsing_res_list": [
+     {
+      "block_label": "header",
+      "block_content": "Distributed Fibre Sensing of Soil Moisture",
+      "block_bbox": [
+       100,
+       56,
+       1124,
+       92
+      ],
+      "block_id": 0,
+      "block_order": null,
+      "group_id": 0,
+      "global_block_id": 6,
+      "global_group_id": 1006,
+      "block_polygon_points": [
+       [
+        100,
+        56
+       ],
+       [
+        1124,
+        56
+       ],
+       [
+        1124,
+        92
+       ],
+       [
+        100,
+        92
+       ]
+      ]
+     },
+     {
+      "block_label": "aside_text",
+      "block_content": "Preprint submitted to Soil Moisture Sensing Letters 12 May 2026",
+      "block_bbox": [
+       28,
+       300,
+       64,
+       1300
+      ],
+      "block_id": 1,
+      "block_order": null,
+      "group_id": 1,
+      "global_block_id": 7,
+      "global_group_id": 1007,
+      "block_polygon_points": [
+       [
+        28,
+        300
+       ],
+       [
+        64,
+        300
+       ],
+       [
+        64,
+        1300
+       ],
+       [
+        28,
+        1300
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "The sensing fibre was buried at a depth of 0.4 m along a 120 m transect and interrogated every ten minutes for fourteen months. Temperature-corrected strain readings were converted to volumetric water content with a site-specific calibration curve, and the root-mean-square error against ten reference probes was 0.021 m3/m3. Rainfall events produced a sharp rise in apparent water content within thirty minutes at all depths, followed by a slow recession lasting several days. The recession rate differed between the sandy and clayey sections of the transect, which supports a spatially varying drainage coefficient in the site model for forecasting.",
+      "block_bbox": [
+       100,
+       140,
+       596,
+       640
+      ],
+      "block_id": 2,
+      "block_order": 1,
+      "group_id": 2,
+      "global_block_id": 8,
+      "global_group_id": 1008,
+      "block_polygon_points": [
+       [
+        100,
+        140
+       ],
+       [
+        596,
+        140
+       ],
+       [
+        596,
+        640
+       ],
+       [
+        100,
+        640
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "",
+      "block_bbox": [
+       628,
+       140,
+       1124,
+       640
+      ],
+      "block_id": 3,
+      "block_order": 2,
+      "group_id": 3,
+      "global_block_id": 9,
+      "global_group_id": 1009,
+      "block_polygon_points": [
+       [
+        628,
+        140
+       ],
+       [
+        1124,
+        140
+       ],
+       [
+        1124,
+        640
+       ],
+       [
+        628,
+        640
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "The effective permittivity $\\varepsilon_{\\mathrm{eff}}$ of the soil follows a power-law mixing rule, and the calibrated exponent $\\beta$ was close to 0.5 at every site. This agrees with the refractive model that is commonly used for dielectric mixtures, although the fit degrades above 40% saturation.",
+      "block_bbox": [
+       100,
+       700,
+       596,
+       980
+      ],
+      "block_id": 4,
+      "block_order": 3,
+      "group_id": 4,
+      "global_block_id": 10,
+      "global_group_id": 1010,
+      "block_polygon_points": [
+       [
+        100,
+        700
+       ],
+       [
+        596,
+        700
+       ],
+       [
+        596,
+        980
+       ],
+       [
+        100,
+        980
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Writing $\\theta_{v}$ for the volumetric content and $\\theta_{s}$ for the saturated value, the relative saturation is their ratio. All values are expressed in m3/m3 throughout, and the detector also marked that unit string as a formula, so three boxes lie inside this block for only two formulas in the recognised text.",
+      "block_bbox": [
+       628,
+       700,
+       1124,
+       980
+      ],
+      "block_id": 5,
+      "block_order": 4,
+      "group_id": 5,
+      "global_block_id": 11,
+      "global_group_id": 1011,
+      "block_polygon_points": [
+       [
+        628,
+        700
+       ],
+       [
+        1124,
+        700
+       ],
+       [
+        1124,
+        980
+       ],
+       [
+        628,
+        980
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Temperature compensation was applied with a second, strain-free fibre laid next to the sensing fibre, so that thermal drift and strain could be separated without assuming a fixed thermal coefficient.",
+      "block_bbox": [
+       100,
+       1030,
+       596,
+       1230
+      ],
+      "block_id": 6,
+      "block_order": 5,
+      "group_id": 6,
+      "global_block_id": 12,
+      "global_group_id": 1012,
+      "block_polygon_points": [
+       [
+        100,
+        1030
+       ],
+       [
+        596,
+        1030
+       ],
+       [
+        596,
+        1230
+       ],
+       [
+        100,
+        1230
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "Drift in the interrogator itself was below 0.8 microstrain over the whole campaign, which is negligible compared with the signal produced by a typical rainfall event.",
+      "block_bbox": [
+       100,
+       1190,
+       596,
+       1390
+      ],
+      "block_id": 7,
+      "block_order": 6,
+      "group_id": 7,
+      "global_block_id": 13,
+      "global_group_id": 1013,
+      "block_polygon_points": [
+       [
+        100,
+        1190
+       ],
+       [
+        596,
+        1190
+       ],
+       [
+        596,
+        1390
+       ],
+       [
+        100,
+        1390
+       ]
+      ]
+     },
+     {
+      "block_label": "inline_formula",
+      "block_content": "$\\Delta\\varepsilon_{\\mathrm{r}}$",
+      "block_bbox": [
+       628,
+       1030,
+       830,
+       1078
+      ],
+      "block_id": 8,
+      "block_order": 7,
+      "group_id": 8,
+      "global_block_id": 14,
+      "global_group_id": 1014,
+      "block_polygon_points": [
+       [
+        628,
+        1030
+       ],
+       [
+        830,
+        1030
+       ],
+       [
+        830,
+        1078
+       ],
+       [
+        628,
+        1078
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "A change of this size in the relative permittivity corresponds to roughly two percent in water content, which is the smallest step that the calibration can resolve reliably in the clayey section.",
+      "block_bbox": [
+       628,
+       1100,
+       1124,
+       1330
+      ],
+      "block_id": 9,
+      "block_order": 8,
+      "group_id": 9,
+      "global_block_id": 15,
+      "global_group_id": 1015,
+      "block_polygon_points": [
+       [
+        628,
+        1100
+       ],
+       [
+        1124,
+        1100
+       ],
+       [
+        1124,
+        1330
+       ],
+       [
+        628,
+        1330
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "(a)",
+      "block_bbox": [
+       1080,
+       1360,
+       1092,
+       1370
+      ],
+      "block_id": 10,
+      "block_order": 9,
+      "group_id": 10,
+      "global_block_id": 16,
+      "global_group_id": 1016,
+      "block_polygon_points": [
+       [
+        1080,
+        1360
+       ],
+       [
+        1092,
+        1360
+       ],
+       [
+        1092,
+        1370
+       ],
+       [
+        1080,
+        1370
+       ]
+      ]
+     },
+     {
+      "block_label": "footer",
+      "block_content": "Northbridge Geosensing Group | Technical report series",
+      "block_bbox": [
+       100,
+       1500,
+       1124,
+       1540
+      ],
+      "block_id": 11,
+      "block_order": null,
+      "group_id": 11,
+      "global_block_id": 17,
+      "global_group_id": 1017,
+      "block_polygon_points": [
+       [
+        100,
+        1500
+       ],
+       [
+        1124,
+        1500
+       ],
+       [
+        1124,
+        1540
+       ],
+       [
+        100,
+        1540
+       ]
+      ]
+     },
+     {
+      "block_label": "number",
+      "block_content": "2",
+      "block_bbox": [
+       590,
+       1544,
+       634,
+       1572
+      ],
+      "block_id": 12,
+      "block_order": null,
+      "group_id": 12,
+      "global_block_id": 18,
+      "global_group_id": 1018,
+      "block_polygon_points": [
+       [
+        590,
+        1544
+       ],
+       [
+        634,
+        1544
+       ],
+       [
+        634,
+        1572
+       ],
+       [
+        590,
+        1572
+       ]
+      ]
+     }
+    ],
+    "layout_det_res": {
+     "boxes": [
+      {
+       "cls_id": 12,
+       "label": "header",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        56.0,
+        1124.0,
+        92.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         56
+        ],
+        [
+         1124,
+         56
+        ],
+        [
+         1124,
+         92
+        ],
+        [
+         100,
+         92
+        ]
+       ]
+      },
+      {
+       "cls_id": 2,
+       "label": "aside_text",
+       "score": 0.97,
+       "coordinate": [
+        28.0,
+        300.0,
+        64.0,
+        1300.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         28,
+         300
+        ],
+        [
+         64,
+         300
+        ],
+        [
+         64,
+         1300
+        ],
+        [
+         28,
+         1300
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        140.0,
+        596.0,
+        640.0
+       ],
+       "order": 1,
+       "polygon_points": [
+        [
+         100,
+         140
+        ],
+        [
+         596,
+         140
+        ],
+        [
+         596,
+         640
+        ],
+        [
+         100,
+         640
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        140.0,
+        1124.0,
+        640.0
+       ],
+       "order": 2,
+       "polygon_points": [
+        [
+         628,
+         140
+        ],
+        [
+         1124,
+         140
+        ],
+        [
+         1124,
+         640
+        ],
+        [
+         628,
+         640
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        700.0,
+        596.0,
+        980.0
+       ],
+       "order": 3,
+       "polygon_points": [
+        [
+         100,
+         700
+        ],
+        [
+         596,
+         700
+        ],
+        [
+         596,
+         980
+        ],
+        [
+         100,
+         980
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        700.0,
+        1124.0,
+        980.0
+       ],
+       "order": 4,
+       "polygon_points": [
+        [
+         628,
+         700
+        ],
+        [
+         1124,
+         700
+        ],
+        [
+         1124,
+         980
+        ],
+        [
+         628,
+         980
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1030.0,
+        596.0,
+        1230.0
+       ],
+       "order": 5,
+       "polygon_points": [
+        [
+         100,
+         1030
+        ],
+        [
+         596,
+         1030
+        ],
+        [
+         596,
+         1230
+        ],
+        [
+         100,
+         1230
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1190.0,
+        596.0,
+        1390.0
+       ],
+       "order": 6,
+       "polygon_points": [
+        [
+         100,
+         1190
+        ],
+        [
+         596,
+         1190
+        ],
+        [
+         596,
+         1390
+        ],
+        [
+         100,
+         1390
+        ]
+       ]
+      },
+      {
+       "cls_id": 15,
+       "label": "inline_formula",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        1030.0,
+        830.0,
+        1078.0
+       ],
+       "order": 7,
+       "polygon_points": [
+        [
+         628,
+         1030
+        ],
+        [
+         830,
+         1030
+        ],
+        [
+         830,
+         1078
+        ],
+        [
+         628,
+         1078
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        628.0,
+        1100.0,
+        1124.0,
+        1330.0
+       ],
+       "order": 8,
+       "polygon_points": [
+        [
+         628,
+         1100
+        ],
+        [
+         1124,
+         1100
+        ],
+        [
+         1124,
+         1330
+        ],
+        [
+         628,
+         1330
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        1080.0,
+        1360.0,
+        1092.0,
+        1370.0
+       ],
+       "order": 9,
+       "polygon_points": [
+        [
+         1080,
+         1360
+        ],
+        [
+         1092,
+         1360
+        ],
+        [
+         1092,
+         1370
+        ],
+        [
+         1080,
+         1370
+        ]
+       ]
+      },
+      {
+       "cls_id": 8,
+       "label": "footer",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1500.0,
+        1124.0,
+        1540.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         1500
+        ],
+        [
+         1124,
+         1500
+        ],
+        [
+         1124,
+         1540
+        ],
+        [
+         100,
+         1540
+        ]
+       ]
+      },
+      {
+       "cls_id": 16,
+       "label": "number",
+       "score": 0.97,
+       "coordinate": [
+        590.0,
+        1544.0,
+        634.0,
+        1572.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         590,
+         1544
+        ],
+        [
+         634,
+         1544
+        ],
+        [
+         634,
+         1572
+        ],
+        [
+         590,
+         1572
+        ]
+       ]
+      },
+      {
+       "cls_id": 15,
+       "label": "inline_formula",
+       "score": 0.93,
+       "coordinate": [
+        258.0,
+        716.0,
+        330.0,
+        748.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         258,
+         716
+        ],
+        [
+         330,
+         716
+        ],
+        [
+         330,
+         748
+        ],
+        [
+         258,
+         748
+        ]
+       ]
+      },
+      {
+       "cls_id": 15,
+       "label": "inline_formula",
+       "score": 0.93,
+       "coordinate": [
+        470.0,
+        780.0,
+        490.0,
+        812.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         470,
+         780
+        ],
+        [
+         490,
+         780
+        ],
+        [
+         490,
+         812
+        ],
+        [
+         470,
+         812
+        ]
+       ]
+      },
+      {
+       "cls_id": 15,
+       "label": "inline_formula",
+       "score": 0.93,
+       "coordinate": [
+        700.0,
+        716.0,
+        740.0,
+        748.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         700,
+         716
+        ],
+        [
+         740,
+         716
+        ],
+        [
+         740,
+         748
+        ],
+        [
+         700,
+         748
+        ]
+       ]
+      },
+      {
+       "cls_id": 15,
+       "label": "inline_formula",
+       "score": 0.93,
+       "coordinate": [
+        900.0,
+        716.0,
+        940.0,
+        748.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         900,
+         716
+        ],
+        [
+         940,
+         716
+        ],
+        [
+         940,
+         748
+        ],
+        [
+         900,
+         748
+        ]
+       ]
+      },
+      {
+       "cls_id": 15,
+       "label": "inline_formula",
+       "score": 0.93,
+       "coordinate": [
+        800.0,
+        812.0,
+        860.0,
+        840.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         800,
+         812
+        ],
+        [
+         860,
+         812
+        ],
+        [
+         860,
+         840
+        ],
+        [
+         800,
+         840
+        ]
+       ]
+      }
+     ]
+    }
+   },
+   "markdown": {
+    "text": "Distributed Fibre Sensing of Soil Moisture\n\nPreprint submitted to Soil Moisture Sensing Letters 12 May 2026\n\nThe sensing fibre was buried at a depth of 0.4 m along a 120 m transect and interrogated every ten minutes for fourteen months. Temperature-corrected strain readings were converted to volumetric water content with a site-specific calibration curve, and the root-mean-square error against ten reference probes was 0.021 m3/m3. Rainfall events produced a sharp rise in apparent water content within thirty minutes at all depths, followed by a slow recession lasting several days. The recession rate differed between the sandy and clayey sections of the transect, which supports a spatially varying drainage coefficient in the site model for forecasting.\n\nThe effective permittivity $\\varepsilon_{\\mathrm{eff}}$ of the soil follows a power-law mixing rule, and the calibrated exponent $\\beta$ was close to 0.5 at every site. This agrees with the refractive model that is commonly used for dielectric mixtures, although the fit degrades above 40% saturation.\n\nWriting $\\theta_{v}$ for the volumetric content and $\\theta_{s}$ for the saturated value, the relative saturation is their ratio. All values are expressed in m3/m3 throughout, and the detector also marked that unit string as a formula, so three boxes lie inside this block for only two formulas in the recognised text.\n\nTemperature compensation was applied with a second, strain-free fibre laid next to the sensing fibre, so that thermal drift and strain could be separated without assuming a fixed thermal coefficient.\n\nDrift in the interrogator itself was below 0.8 microstrain over the whole campaign, which is negligible compared with the signal produced by a typical rainfall event.\n\n$\\Delta\\varepsilon_{\\mathrm{r}}$\n\nA change of this size in the relative permittivity corresponds to roughly two percent in water content, which is the smallest step that the calibration can resolve reliably in the clayey section.\n\n(a)\n\nNorthbridge Geosensing Group | Technical report series\n\n2",
+    "images": {}
+   },
+   "outputImages": {},
+   "inputImage": ""
+  },
+  {
+   "prunedResult": {
+    "page_count": 3,
+    "width": 1584,
+    "height": 1224,
+    "model_settings": {
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true,
+     "use_chart_recognition": true,
+     "format_block_content": false
+    },
+    "parsing_res_list": [
+     {
+      "block_label": "header",
+      "block_content": "Distributed Fibre Sensing of Soil Moisture",
+      "block_bbox": [
+       100,
+       56,
+       1484,
+       92
+      ],
+      "block_id": 0,
+      "block_order": null,
+      "group_id": 0,
+      "global_block_id": 19,
+      "global_group_id": 1019,
+      "block_polygon_points": [
+       [
+        100,
+        56
+       ],
+       [
+        1484,
+        56
+       ],
+       [
+        1484,
+        92
+       ],
+       [
+        100,
+        92
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "The transect map in the appendix is printed in landscape orientation so that the whole 120 m section fits on one page at a legible scale. Each marker on the map shows the position of a reference probe, and the shading gives the mean water content of the surrounding five metres of fibre during the dry season. Probe readings and fibre readings agree well on the sandy section, while the clayey section shows a systematic offset of about two percent in water content.",
+      "block_bbox": [
+       100,
+       140,
+       780,
+       480
+      ],
+      "block_id": 1,
+      "block_order": 1,
+      "group_id": 1,
+      "global_block_id": 20,
+      "global_group_id": 1020,
+      "block_polygon_points": [
+       [
+        100,
+        140
+       ],
+       [
+        780,
+        140
+       ],
+       [
+        780,
+        480
+       ],
+       [
+        100,
+        480
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "",
+      "block_bbox": [
+       804,
+       140,
+       1484,
+       480
+      ],
+      "block_id": 2,
+      "block_order": 2,
+      "group_id": 2,
+      "global_block_id": 21,
+      "global_group_id": 1021,
+      "block_polygon_points": [
+       [
+        804,
+        140
+       ],
+       [
+        1484,
+        140
+       ],
+       [
+        1484,
+        480
+       ],
+       [
+        804,
+        480
+       ]
+      ]
+     },
+     {
+      "block_label": "text",
+      "block_content": "We attribute the offset to the slower dielectric response of bound water in the clay, which the present calibration does not treat separately; a two-phase correction is left for future work.",
+      "block_bbox": [
+       100,
+       500,
+       1484,
+       590
+      ],
+      "block_id": 3,
+      "block_order": 3,
+      "group_id": 3,
+      "global_block_id": 22,
+      "global_group_id": 1022,
+      "block_polygon_points": [
+       [
+        100,
+        500
+       ],
+       [
+        1484,
+        500
+       ],
+       [
+        1484,
+        590
+       ],
+       [
+        100,
+        590
+       ]
+      ]
+     },
+     {
+      "block_label": "aside_text",
+      "block_content": "Data and analysis scripts are archived in the project repository",
+      "block_bbox": [
+       1520,
+       200,
+       1560,
+       1000
+      ],
+      "block_id": 4,
+      "block_order": null,
+      "group_id": 4,
+      "global_block_id": 23,
+      "global_group_id": 1023,
+      "block_polygon_points": [
+       [
+        1520,
+        200
+       ],
+       [
+        1560,
+        200
+       ],
+       [
+        1560,
+        1000
+       ],
+       [
+        1520,
+        1000
+       ]
+      ]
+     },
+     {
+      "block_label": "reference",
+      "block_content": "[1] A. Novak and L. Petrov, Distributed strain sensing in unsaturated soils, J. Geotech. Sens. 14 (2021) 233-248.\n[2] M. Ibarra, Temperature compensation in fibre interrogators, Meas. Sci. Eng. 7 (2019) 55-61.\n[3] S. Lindqvist et al., Dielectric mixing models for field soils, Soil Phys. Rev. 31 (2020) 1-19.",
+      "block_bbox": [
+       100,
+       620,
+       1484,
+       900
+      ],
+      "block_id": 5,
+      "block_order": 4,
+      "group_id": 5,
+      "global_block_id": 24,
+      "global_group_id": 1024,
+      "block_polygon_points": [
+       [
+        100,
+        620
+       ],
+       [
+        1484,
+        620
+       ],
+       [
+        1484,
+        900
+       ],
+       [
+        100,
+        900
+       ]
+      ]
+     },
+     {
+      "block_label": "reference_content",
+      "block_content": "[4] T. Okoro, Calibration of buried optical sensors, Proc. Sensor Syst. Conf. (2022) 402-409.",
+      "block_bbox": [
+       100,
+       920,
+       1484,
+       980
+      ],
+      "block_id": 6,
+      "block_order": 5,
+      "group_id": 6,
+      "global_block_id": 25,
+      "global_group_id": 1025,
+      "block_polygon_points": [
+       [
+        100,
+        920
+       ],
+       [
+        1484,
+        920
+       ],
+       [
+        1484,
+        980
+       ],
+       [
+        100,
+        980
+       ]
+      ]
+     },
+     {
+      "block_label": "reference_content",
+      "block_content": "[5] R. Haas, Long-term drift of fibre interrogators, Appl. Opt. Sens. 5 (2018) 90-97.",
+      "block_bbox": [
+       100,
+       990,
+       1484,
+       1050
+      ],
+      "block_id": 7,
+      "block_order": 6,
+      "group_id": 7,
+      "global_block_id": 26,
+      "global_group_id": 1026,
+      "block_polygon_points": [
+       [
+        100,
+        990
+       ],
+       [
+        1484,
+        990
+       ],
+       [
+        1484,
+        1050
+       ],
+       [
+        100,
+        1050
+       ]
+      ]
+     },
+     {
+      "block_label": "footer",
+      "block_content": "Northbridge Geosensing Group | Technical report series",
+      "block_bbox": [
+       100,
+       1140,
+       1484,
+       1176
+      ],
+      "block_id": 8,
+      "block_order": null,
+      "group_id": 8,
+      "global_block_id": 27,
+      "global_group_id": 1027,
+      "block_polygon_points": [
+       [
+        100,
+        1140
+       ],
+       [
+        1484,
+        1140
+       ],
+       [
+        1484,
+        1176
+       ],
+       [
+        100,
+        1176
+       ]
+      ]
+     },
+     {
+      "block_label": "number",
+      "block_content": "3",
+      "block_bbox": [
+       770,
+       1180,
+       814,
+       1208
+      ],
+      "block_id": 9,
+      "block_order": null,
+      "group_id": 9,
+      "global_block_id": 28,
+      "global_group_id": 1028,
+      "block_polygon_points": [
+       [
+        770,
+        1180
+       ],
+       [
+        814,
+        1180
+       ],
+       [
+        814,
+        1208
+       ],
+       [
+        770,
+        1208
+       ]
+      ]
+     }
+    ],
+    "layout_det_res": {
+     "boxes": [
+      {
+       "cls_id": 12,
+       "label": "header",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        56.0,
+        1484.0,
+        92.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         56
+        ],
+        [
+         1484,
+         56
+        ],
+        [
+         1484,
+         92
+        ],
+        [
+         100,
+         92
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        140.0,
+        780.0,
+        480.0
+       ],
+       "order": 1,
+       "polygon_points": [
+        [
+         100,
+         140
+        ],
+        [
+         780,
+         140
+        ],
+        [
+         780,
+         480
+        ],
+        [
+         100,
+         480
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        804.0,
+        140.0,
+        1484.0,
+        480.0
+       ],
+       "order": 2,
+       "polygon_points": [
+        [
+         804,
+         140
+        ],
+        [
+         1484,
+         140
+        ],
+        [
+         1484,
+         480
+        ],
+        [
+         804,
+         480
+        ]
+       ]
+      },
+      {
+       "cls_id": 22,
+       "label": "text",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        500.0,
+        1484.0,
+        590.0
+       ],
+       "order": 3,
+       "polygon_points": [
+        [
+         100,
+         500
+        ],
+        [
+         1484,
+         500
+        ],
+        [
+         1484,
+         590
+        ],
+        [
+         100,
+         590
+        ]
+       ]
+      },
+      {
+       "cls_id": 2,
+       "label": "aside_text",
+       "score": 0.97,
+       "coordinate": [
+        1520.0,
+        200.0,
+        1560.0,
+        1000.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         1520,
+         200
+        ],
+        [
+         1560,
+         200
+        ],
+        [
+         1560,
+         1000
+        ],
+        [
+         1520,
+         1000
+        ]
+       ]
+      },
+      {
+       "cls_id": 18,
+       "label": "reference",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        620.0,
+        1484.0,
+        900.0
+       ],
+       "order": 4,
+       "polygon_points": [
+        [
+         100,
+         620
+        ],
+        [
+         1484,
+         620
+        ],
+        [
+         1484,
+         900
+        ],
+        [
+         100,
+         900
+        ]
+       ]
+      },
+      {
+       "cls_id": 19,
+       "label": "reference_content",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        920.0,
+        1484.0,
+        980.0
+       ],
+       "order": 5,
+       "polygon_points": [
+        [
+         100,
+         920
+        ],
+        [
+         1484,
+         920
+        ],
+        [
+         1484,
+         980
+        ],
+        [
+         100,
+         980
+        ]
+       ]
+      },
+      {
+       "cls_id": 19,
+       "label": "reference_content",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        990.0,
+        1484.0,
+        1050.0
+       ],
+       "order": 6,
+       "polygon_points": [
+        [
+         100,
+         990
+        ],
+        [
+         1484,
+         990
+        ],
+        [
+         1484,
+         1050
+        ],
+        [
+         100,
+         1050
+        ]
+       ]
+      },
+      {
+       "cls_id": 8,
+       "label": "footer",
+       "score": 0.97,
+       "coordinate": [
+        100.0,
+        1140.0,
+        1484.0,
+        1176.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         100,
+         1140
+        ],
+        [
+         1484,
+         1140
+        ],
+        [
+         1484,
+         1176
+        ],
+        [
+         100,
+         1176
+        ]
+       ]
+      },
+      {
+       "cls_id": 16,
+       "label": "number",
+       "score": 0.97,
+       "coordinate": [
+        770.0,
+        1180.0,
+        814.0,
+        1208.0
+       ],
+       "order": null,
+       "polygon_points": [
+        [
+         770,
+         1180
+        ],
+        [
+         814,
+         1180
+        ],
+        [
+         814,
+         1208
+        ],
+        [
+         770,
+         1208
+        ]
+       ]
+      }
+     ]
+    }
+   },
+   "markdown": {
+    "text": "Distributed Fibre Sensing of Soil Moisture\n\nThe transect map in the appendix is printed in landscape orientation so that the whole 120 m section fits on one page at a legible scale. Each marker on the map shows the position of a reference probe, and the shading gives the mean water content of the surrounding five metres of fibre during the dry season. Probe readings and fibre readings agree well on the sandy section, while the clayey section shows a systematic offset of about two percent in water content.\n\nWe attribute the offset to the slower dielectric response of bound water in the clay, which the present calibration does not treat separately; a two-phase correction is left for future work.\n\nData and analysis scripts are archived in the project repository\n\n[1] A. Novak and L. Petrov, Distributed strain sensing in unsaturated soils, J. Geotech. Sens. 14 (2021) 233-248.\n[2] M. Ibarra, Temperature compensation in fibre interrogators, Meas. Sci. Eng. 7 (2019) 55-61.\n[3] S. Lindqvist et al., Dielectric mixing models for field soils, Soil Phys. Rev. 31 (2020) 1-19.\n\n[4] T. Okoro, Calibration of buried optical sensors, Proc. Sensor Syst. Conf. (2022) 402-409.\n\n[5] R. Haas, Long-term drift of fibre interrogators, Appl. Opt. Sens. 5 (2018) 90-97.\n\nNorthbridge Geosensing Group | Technical report series\n\n3",
+    "images": {}
+   },
+   "outputImages": {},
+   "inputImage": ""
+  }
+ ],
+ "dataInfo": {
+  "type": "pdf",
+  "numPages": 3,
+  "pages": [
+   {
+    "width": 1224,
+    "height": 1584
+   },
+   {
+    "width": 1224,
+    "height": 1584
+   },
+   {
+    "width": 1584,
+    "height": 1224
+   }
+  ]
+ },
+ "preprocessedImages": [
+  "",
+  "",
+  ""
+ ],
+ "_meta": {
+  "source": "synthetic_fixture",
+  "dataInfoComplete": true
+ }
+}

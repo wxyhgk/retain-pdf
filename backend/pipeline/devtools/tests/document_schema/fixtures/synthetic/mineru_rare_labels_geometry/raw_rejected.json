@@ -1,0 +1,2914 @@
+{
+ "pdf_info": [
+  {
+   "page_idx": 0,
+   "page_size": [
+    612,
+    792
+   ],
+   "discarded_blocks": [
+    {
+     "type": "header",
+     "bbox": [
+      72,
+      28,
+      330,
+      39
+     ],
+     "lines": [
+      {
+       "bbox": [
+        72,
+        28,
+        280,
+        39
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "TR-2026-17  |  Northgate Materials Group",
+         "bbox": [
+          72,
+          28,
+          280,
+          39
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "header_image",
+     "bbox": [
+      480,
+      20,
+      540,
+      48
+     ],
+     "lines": [
+      {
+       "bbox": [
+        480,
+        20,
+        540,
+        48
+       ],
+       "spans": [
+        {
+         "type": "image",
+         "image_path": "images/e2706b9d1c4a8f35e2706b9d1c4a8f35e2706b9d1c4a8f35e2706b9d1c4a8f35",
+         "bbox": [
+          480,
+          20,
+          540,
+          48
+         ],
+         "score": 0.97
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "page_number",
+     "bbox": [
+      300,
+      762,
+      312,
+      772
+     ],
+     "lines": [
+      {
+       "bbox": [
+        300,
+        762,
+        305.2,
+        772
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "1",
+         "bbox": [
+          300,
+          762,
+          305.2,
+          772
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "para_blocks": [
+    {
+     "type": "doc_title",
+     "bbox": [
+      126,
+      64,
+      486,
+      107
+     ],
+     "angle": 0,
+     "index": 0,
+     "lines": [
+      {
+       "bbox": [
+        204.6,
+        64,
+        407.4,
+        84
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Exciton Transport in Layered Perovskite",
+         "bbox": [
+          204.6,
+          64,
+          407.4,
+          84
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        228,
+        87,
+        384,
+        107
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Quantum Wells: Technical Notes",
+         "bbox": [
+          228,
+          87,
+          384,
+          107
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      72,
+      118,
+      330,
+      130
+     ],
+     "index": 1,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        118,
+        300.8,
+        130
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Maria L. Okafor, Jun-ho Park, Elena V. Rossi",
+         "bbox": [
+          72,
+          118,
+          300.8,
+          130
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      383,
+      118,
+      613.5,
+      130
+     ],
+     "lines": [
+      {
+       "bbox": [
+        383,
+        118,
+        613.5,
+        130
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Received 12 March 2026; accepted 2 June 2026",
+         "bbox": [
+          383,
+          118,
+          613.5,
+          130
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "paragraph_title",
+     "bbox": [
+      72,
+      150,
+      200,
+      162
+     ],
+     "level": 1,
+     "index": 2,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        150,
+        150,
+        162
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "1  Introduction",
+         "bbox": [
+          72,
+          150,
+          150,
+          162
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      72,
+      170,
+      540,
+      224
+     ],
+     "index": 3,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        170,
+        540,
+        182
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Layered hybrid perovskites combine strong excitonic binding with a tunable organic spacer. In-plane",
+         "bbox": [
+          72,
+          170,
+          540,
+          182
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        184,
+        540,
+        196
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "transport is described by a diffusion coefficient ",
+         "bbox": [
+          72,
+          184,
+          337.9,
+          196
+         ],
+         "score": 0.98
+        },
+        {
+         "type": "inline_equation",
+         "content": "D_{\\parallel}",
+         "bbox": [
+          337.9,
+          184,
+          407,
+          196
+         ],
+         "score": 0.95
+        },
+        {
+         "type": "text",
+         "content": " , whereas hopping across",
+         "bbox": [
+          407,
+          184,
+          540,
+          196
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        198,
+        540,
+        210
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "the spacer layers is orders of magnitude slower. Scripts and raw traces are available at ",
+         "bbox": [
+          72,
+          198,
+          440.6,
+          210
+         ],
+         "score": 0.98
+        },
+        {
+         "type": "hyperlink",
+         "url": "https://example.org/tr-2026-17",
+         "bbox": [
+          440.6,
+          198,
+          531.7,
+          210
+         ],
+         "children": [
+          {
+           "type": "text",
+           "content": "example.org/tr-2026-17",
+           "bbox": [
+            440.6,
+            198,
+            531.7,
+            210
+           ],
+           "score": 0.97
+          }
+         ]
+        },
+        {
+         "type": "text",
+         "content": " .",
+         "bbox": [
+          531.7,
+          198,
+          540,
+          210
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        212,
+        488,
+        224
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Here we summarise the measurements and the model used to extract the anisotropy.",
+         "bbox": [
+          72,
+          212,
+          488,
+          224
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "vertical_text",
+     "bbox": [
+      26,
+      230,
+      44,
+      560
+     ],
+     "angle": 270,
+     "lines": [
+      {
+       "bbox": [
+        26,
+        230,
+        44,
+        560
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "arXiv:2610.04417v1 [cond-mat.mtrl-sci] 21 Oct 2026",
+         "bbox": [
+          26,
+          230,
+          44,
+          560
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      72,
+      236,
+      540,
+      328
+     ],
+     "index": 4,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        236,
+        540,
+        248
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Samples were prepared by spin coating from a precursor solution and annealed at 100 degrees for ten",
+         "bbox": [
+          72,
+          236,
+          540,
+          248
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        250,
+        540,
+        262
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "minutes. Time-resolved photoluminescence was recorded with a streak camera at several excitation",
+         "bbox": [
+          72,
+          250,
+          540,
+          262
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        264,
+        540,
+        276
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "fluences between 0.1 and 20 microjoules per square centimetre. The exciton density follows a",
+         "bbox": [
+          72,
+          264,
+          540,
+          276
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        278,
+        540,
+        290
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "rate equation with linear decay and bimolecular annihilation, solved here in the low-density limit.",
+         "bbox": [
+          72,
+          278,
+          540,
+          290
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        292,
+        540,
+        304
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Fits were repeated for three samples of each spacer length and the scatter between samples is",
+         "bbox": [
+          72,
+          292,
+          540,
+          304
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        306,
+        508.8,
+        318
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "reported as the uncertainty on every extracted parameter in the tables of Section 3.",
+         "bbox": [
+          72,
+          306,
+          508.8,
+          318
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      72,
+      318,
+      540,
+      390
+     ],
+     "index": 5,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        320,
+        540,
+        332
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "The low-density limit is justified because the annihilation rate is below ten percent of the linear",
+         "bbox": [
+          72,
+          320,
+          540,
+          332
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        334,
+        540,
+        346
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "decay rate for all fluences used in the diffusion measurements. Spatial profiles were obtained by",
+         "bbox": [
+          72,
+          334,
+          540,
+          346
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        348,
+        540,
+        360
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "imaging the emission through a slit and fitting Gaussian widths versus time delay.",
+         "bbox": [
+          72,
+          348,
+          540,
+          360
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        362,
+        540,
+        374
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "The extracted widths grow linearly in time, as expected for ordinary diffusion in two dimensions.",
+         "bbox": [
+          72,
+          362,
+          540,
+          374
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        376,
+        524.4,
+        388
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Deviations at short delay are attributed to the finite resolution of the optical setup.",
+         "bbox": [
+          72,
+          376,
+          524.4,
+          388
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      72,
+      400,
+      540,
+      468
+     ],
+     "index": 6,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        400,
+        540,
+        412
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Out-of-plane transport is probed by exciting through the substrate and detecting from the top surface.",
+         "bbox": [
+          72,
+          400,
+          540,
+          412
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        414,
+        540,
+        426
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "The arrival time of the front gives the effective perpendicular diffusion constant directly.",
+         "bbox": [
+          72,
+          414,
+          540,
+          426
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        428,
+        540,
+        440
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Because the barrier layers are thin, tunnelling between neighbouring wells dominates the process.",
+         "bbox": [
+          72,
+          428,
+          540,
+          440
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        442,
+        540,
+        454
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "The anisotropy ratio is therefore very large and depends strongly on the length of the spacer.",
+         "bbox": [
+          72,
+          442,
+          540,
+          454
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        457,
+        540,
+        469
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "The smallest spacer yields the fastest perpendicular transport and the weakest confinement.",
+         "bbox": [
+          72,
+          457,
+          540,
+          469
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "interline_equation",
+     "bbox": [
+      150,
+      480,
+      470,
+      512
+     ],
+     "index": 7,
+     "lines": [
+      {
+       "bbox": [
+        150,
+        480,
+        243.6,
+        512
+       ],
+       "spans": [
+        {
+         "type": "interline_equation",
+         "content": "\\frac{\\partial n}{\\partial t}=D_{\\parallel}\\nabla_{\\parallel}^{2}n+D_{\\perp}\\frac{\\partial^{2}n}{\\partial z^{2}}-\\gamma n",
+         "bbox": [
+          150,
+          480,
+          243.6,
+          512
+         ],
+         "score": 0.94
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "formula_number",
+     "bbox": [
+      500,
+      490,
+      540,
+      504
+     ],
+     "index": 8,
+     "lines": [
+      {
+       "bbox": [
+        500,
+        490,
+        515.6,
+        504
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "(1)",
+         "bbox": [
+          500,
+          490,
+          515.6,
+          504
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      72,
+      524,
+      540,
+      566
+     ],
+     "index": 9,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        524,
+        540,
+        536
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Equation (1) is solved numerically with a finite-difference scheme on a grid with periodic",
+         "bbox": [
+          72,
+          524,
+          540,
+          536
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        538,
+        540,
+        550
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "boundaries along the layers and reflecting boundaries across them. The time step is chosen",
+         "bbox": [
+          72,
+          538,
+          540,
+          550
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        552,
+        534.8,
+        564
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "so that the diffusion number stays well below the stability limit of the explicit scheme.",
+         "bbox": [
+          72,
+          552,
+          534.8,
+          564
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        672,
+        400,
+        684
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Convergence was checked by halving both the grid spacing and the time step.",
+         "bbox": [
+          72,
+          672,
+          400,
+          684
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "footnote",
+     "bbox": [
+      72,
+      708,
+      540,
+      734
+     ],
+     "index": 10,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        708,
+        540,
+        720
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "* Corresponding author. E-mail: ",
+         "bbox": [
+          72,
+          708,
+          321.6,
+          720
+         ],
+         "score": 0.98
+        },
+        {
+         "type": "hyperlink",
+         "url": "mailto:m.okafor@northgate.example",
+         "bbox": [
+          321.6,
+          708,
+          524.4,
+          720
+         ],
+         "children": [
+          {
+           "type": "text",
+           "content": "m.okafor@northgate.example",
+           "bbox": [
+            321.6,
+            708,
+            524.4,
+            720
+           ],
+           "score": 0.97
+          }
+         ]
+        },
+        {
+         "type": "text",
+         "content": " .",
+         "bbox": [
+          524.4,
+          708,
+          540,
+          720
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        722,
+        488,
+        734
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "This work was supported by the Northgate Materials Group internal research fund.",
+         "bbox": [
+          72,
+          722,
+          488,
+          734
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "page_idx": 1,
+   "page_size": [
+    612,
+    792
+   ],
+   "discarded_blocks": [
+    {
+     "type": "header",
+     "bbox": [
+      72,
+      28,
+      330,
+      39
+     ],
+     "lines": [
+      {
+       "bbox": [
+        72,
+        28,
+        280,
+        39
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "TR-2026-17  |  Northgate Materials Group",
+         "bbox": [
+          72,
+          28,
+          280,
+          39
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "discarded",
+     "bbox": [
+      470,
+      338,
+      540,
+      350
+     ],
+     "index": 8,
+     "lines": [
+      {
+       "bbox": [
+        470,
+        338,
+        506.4,
+        350
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "DRAFT 2",
+         "bbox": [
+          470,
+          338,
+          506.4,
+          350
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "footer_image",
+     "bbox": [
+      480,
+      738,
+      540,
+      764
+     ],
+     "lines": [
+      {
+       "bbox": [
+        480,
+        738,
+        540,
+        764
+       ],
+       "spans": [
+        {
+         "type": "image",
+         "image_path": "images/1d93a6f0c78b2e541d93a6f0c78b2e541d93a6f0c78b2e541d93a6f0c78b2e54",
+         "bbox": [
+          480,
+          738,
+          540,
+          764
+         ],
+         "score": 0.97
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "page_number",
+     "bbox": [
+      300,
+      750,
+      312,
+      760
+     ],
+     "lines": [
+      {
+       "bbox": [
+        300,
+        750,
+        305.2,
+        760
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "2",
+         "bbox": [
+          300,
+          750,
+          305.2,
+          760
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "para_blocks": [
+    {
+     "type": "paragraph_title",
+     "bbox": [
+      72,
+      60,
+      160,
+      72
+     ],
+     "level": 1,
+     "index": 0,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        60,
+        113.6,
+        72
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Contents",
+         "bbox": [
+          72,
+          60,
+          113.6,
+          72
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "index",
+     "bbox": [
+      72,
+      80,
+      540,
+      139
+     ],
+     "sub_type": "text",
+     "index": 1,
+     "blocks": [
+      {
+       "type": "text",
+       "bbox": [
+        72,
+        82,
+        540,
+        94
+       ],
+       "sub_type": "text",
+       "lines": [
+        {
+         "bbox": [
+          72,
+          82,
+          384,
+          94
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "1  Introduction .......................................... 1",
+           "bbox": [
+            72,
+            82,
+            384,
+            94
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "bbox": [
+        72,
+        98,
+        540,
+        110
+       ],
+       "sub_type": "text",
+       "lines": [
+        {
+         "bbox": [
+          72,
+          98,
+          378.8,
+          110
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "2  Methods .............................................. 2",
+           "bbox": [
+            72,
+            98,
+            378.8,
+            110
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "bbox": [
+        72,
+        114,
+        540,
+        126
+       ],
+       "sub_type": "text",
+       "lines": [
+        {
+         "bbox": [
+          72,
+          114,
+          378.8,
+          126
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "3  Results .............................................. 3",
+           "bbox": [
+            72,
+            114,
+            378.8,
+            126
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "bbox": [
+        72,
+        130,
+        540,
+        142
+       ],
+       "sub_type": "text",
+       "lines": [
+        {
+         "bbox": [
+          72,
+          130,
+          378.8,
+          142
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "References .............................................. 3",
+           "bbox": [
+            72,
+            130,
+            378.8,
+            142
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "paragraph_title",
+     "bbox": [
+      72,
+      160,
+      170,
+      172
+     ],
+     "level": 1,
+     "index": 2,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        160,
+        124,
+        172
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "2  Methods",
+         "bbox": [
+          72,
+          160,
+          124,
+          172
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      72,
+      180,
+      540,
+      234
+     ],
+     "index": 3,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        180,
+        540,
+        192
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "The pump pulse has a duration of 120 femtoseconds and a photon energy of ",
+         "bbox": [
+          72,
+          180,
+          447.4,
+          192
+         ],
+         "score": 0.98
+        },
+        {
+         "type": "inline_equation",
+         "content": "3.1\\,\\mathrm{eV}",
+         "bbox": [
+          447.4,
+          180,
+          529.7,
+          192
+         ],
+         "score": 0.95
+        },
+        {
+         "type": "text",
+         "content": " ,",
+         "bbox": [
+          529.7,
+          180,
+          540,
+          192
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        194,
+        540,
+        206
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "well above the exciton resonance, so that carriers relax to the band edge within a picosecond.",
+         "bbox": [
+          72,
+          194,
+          540,
+          206
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        208,
+        540,
+        220
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "The detected emission is dispersed in a spectrometer and the transient is integrated over the",
+         "bbox": [
+          72,
+          208,
+          540,
+          220
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        222,
+        519.2,
+        234
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "exciton line, with a width determined by the binding energy ",
+         "bbox": [
+          72,
+          222,
+          384,
+          234
+         ],
+         "score": 0.98
+        },
+        {
+         "type": "inline_equation",
+         "content": "E_{b}",
+         "bbox": [
+          384,
+          222,
+          410,
+          234
+         ],
+         "score": 0.95
+        },
+        {
+         "type": "text",
+         "content": " of the quantum well.",
+         "bbox": [
+          410,
+          222,
+          519.2,
+          234
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "equation",
+     "bbox": [
+      160,
+      244,
+      452,
+      274
+     ],
+     "index": 4,
+     "lines": [
+      {
+       "bbox": [
+        160,
+        244,
+        201.6,
+        274
+       ],
+       "spans": [
+        {
+         "type": "equation",
+         "content": "\\sigma^{2}(t)=\\sigma_{0}^{2}+2Dt",
+         "bbox": [
+          160,
+          244,
+          201.6,
+          274
+         ],
+         "score": 0.94
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "formula_number",
+     "bbox": [
+      500,
+      252,
+      540,
+      266
+     ],
+     "index": 5,
+     "lines": [
+      {
+       "bbox": [
+        500,
+        252,
+        515.6,
+        266
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "(2)",
+         "bbox": [
+          500,
+          252,
+          515.6,
+          266
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      72,
+      284,
+      540,
+      324
+     ],
+     "index": 6,
+     "lines": [
+      {
+       "bbox": [
+        72,
+        284,
+        540,
+        296
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Equation (2) links the squared Gaussian width to the diffusion coefficient. Figure 1 shows the",
+         "bbox": [
+          72,
+          284,
+          540,
+          296
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        298,
+        540,
+        310
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "measured widths for the thinnest and the thickest barrier, together with linear fits to the",
+         "bbox": [
+          72,
+          298,
+          540,
+          310
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72,
+        312,
+        441.2,
+        324
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "growth of the variance over the first two nanoseconds after excitation.",
+         "bbox": [
+          72,
+          312,
+          441.2,
+          324
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "image",
+     "bbox": [
+      150,
+      338,
+      462,
+      517
+     ],
+     "index": 7,
+     "blocks": [
+      {
+       "type": "image_body",
+       "bbox": [
+        150,
+        338,
+        462,
+        490
+       ],
+       "index": 7,
+       "lines": [
+        {
+         "bbox": [
+          150,
+          338,
+          462,
+          490
+         ],
+         "spans": [
+          {
+           "type": "image",
+           "image_path": "images/a41f9c07d3e85b26a41f9c07d3e85b26a41f9c07d3e85b26a41f9c07d3e85b26",
+           "bbox": [
+            150,
+            338,
+            462,
+            490
+           ],
+           "score": 0.97
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "caption",
+       "bbox": [
+        150,
+        494,
+        462,
+        517
+       ],
+       "index": 8,
+       "lines": [
+        {
+         "bbox": [
+          150,
+          494,
+          462,
+          505
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "Figure 1. Squared Gaussian width of the emission profile versus",
+           "bbox": [
+            150,
+            494,
+            462,
+            505
+           ],
+           "score": 0.98
+          }
+         ]
+        },
+        {
+         "bbox": [
+          150,
+          506,
+          451.6,
+          517
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "delay for two spacer lengths; solid lines are linear fits.",
+           "bbox": [
+            150,
+            506,
+            451.6,
+            517
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "code",
+     "bbox": [
+      72,
+      540,
+      540,
+      666
+     ],
+     "sub_type": "algorithm",
+     "index": 9,
+     "blocks": [
+      {
+       "type": "algorithm_caption",
+       "bbox": [
+        72,
+        540,
+        540,
+        552
+       ],
+       "index": 9,
+       "lines": [
+        {
+         "bbox": [
+          72,
+          540,
+          446.4,
+          552
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "Algorithm 1. Random-walk estimate of the in-plane diffusion coefficient.",
+           "bbox": [
+            72,
+            540,
+            446.4,
+            552
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "algorithm",
+       "bbox": [
+        72,
+        558,
+        540,
+        648
+       ],
+       "index": 10,
+       "lines": [
+        {
+         "bbox": [
+          72,
+          558,
+          540,
+          570
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "1:  for each trial k = 1 to K do",
+           "bbox": [
+            72,
+            558,
+            540,
+            570
+           ],
+           "score": 0.98
+          }
+         ]
+        },
+        {
+         "bbox": [
+          72,
+          571,
+          540,
+          583
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "2:      x <- 0",
+           "bbox": [
+            72,
+            571,
+            540,
+            583
+           ],
+           "score": 0.98
+          }
+         ]
+        },
+        {
+         "bbox": [
+          72,
+          584,
+          540,
+          596
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "3:      for each step i = 1 to N do",
+           "bbox": [
+            72,
+            584,
+            540,
+            596
+           ],
+           "score": 0.98
+          }
+         ]
+        },
+        {
+         "bbox": [
+          72,
+          597,
+          540,
+          609
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "4:          draw dx from Normal(0, 2 * D * dt)",
+           "bbox": [
+            72,
+            597,
+            540,
+            609
+           ],
+           "score": 0.98
+          }
+         ]
+        },
+        {
+         "bbox": [
+          72,
+          610,
+          540,
+          622
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "5:          x <- x + dx",
+           "bbox": [
+            72,
+            610,
+            540,
+            622
+           ],
+           "score": 0.98
+          }
+         ]
+        },
+        {
+         "bbox": [
+          72,
+          623,
+          540,
+          635
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "6:      store x^2 in s[k]",
+           "bbox": [
+            72,
+            623,
+            540,
+            635
+           ],
+           "score": 0.98
+          }
+         ]
+        },
+        {
+         "bbox": [
+          72,
+          636,
+          243.6,
+          648
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "7:  return mean(s) / (2 * N * dt)",
+           "bbox": [
+            72,
+            636,
+            243.6,
+            648
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "code_footnote",
+       "bbox": [
+        72,
+        654,
+        540,
+        666
+       ],
+       "index": 11,
+       "lines": [
+        {
+         "bbox": [
+          72,
+          654,
+          358,
+          666
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "K = 4000 trials and N = 500 steps were used throughout.",
+           "bbox": [
+            72,
+            654,
+            358,
+            666
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "page_idx": 2,
+   "page_size": [
+    792,
+    612
+   ],
+   "discarded_blocks": [
+    {
+     "type": "header",
+     "bbox": [
+      54,
+      24,
+      300,
+      35
+     ],
+     "lines": [
+      {
+       "bbox": [
+        54,
+        24,
+        262,
+        35
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "TR-2026-17  |  Northgate Materials Group",
+         "bbox": [
+          54,
+          24,
+          262,
+          35
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "page_number",
+     "bbox": [
+      384,
+      580,
+      396,
+      590
+     ],
+     "lines": [
+      {
+       "bbox": [
+        384,
+        580,
+        389.2,
+        590
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "3",
+         "bbox": [
+          384,
+          580,
+          389.2,
+          590
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "para_blocks": [
+    {
+     "type": "paragraph_title",
+     "bbox": [
+      54,
+      48,
+      160,
+      60
+     ],
+     "level": 1,
+     "index": 0,
+     "lines": [
+      {
+       "bbox": [
+        54,
+        48,
+        106,
+        60
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "3  Results",
+         "bbox": [
+          54,
+          48,
+          106,
+          60
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      54,
+      70,
+      390,
+      138
+     ],
+     "index": 1,
+     "lines": [
+      {
+       "bbox": [
+        54,
+        70,
+        390,
+        82
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "The in-plane diffusion coefficient decreases with the length of the",
+         "bbox": [
+          54,
+          70,
+          390,
+          82
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        54,
+        84,
+        390,
+        96
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "organic spacer, from ",
+         "bbox": [
+          54,
+          84,
+          145.6,
+          96
+         ],
+         "score": 0.98
+        },
+        {
+         "type": "inline_equation",
+         "content": "0.57\\,\\mathrm{cm^{2}\\,s^{-1}}",
+         "bbox": [
+          145.6,
+          84,
+          272.2,
+          96
+         ],
+         "score": 0.95
+        },
+        {
+         "type": "text",
+         "content": " for the shortest spacer to",
+         "bbox": [
+          272.2,
+          84,
+          390,
+          96
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        54,
+        98,
+        390,
+        110
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "about one half of that value for the longest one. The perpendicular",
+         "bbox": [
+          54,
+          98,
+          390,
+          110
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        54,
+        112,
+        390,
+        124
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "coefficient falls much faster, by almost two orders of magnitude,",
+         "bbox": [
+          54,
+          112,
+          390,
+          124
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        54,
+        126,
+        376.4,
+        138
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "so the anisotropy ratio grows strongly with the spacer length.",
+         "bbox": [
+          54,
+          126,
+          376.4,
+          138
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      402,
+      70,
+      738,
+      138
+     ],
+     "index": 2,
+     "lines": [
+      {
+       "bbox": [
+        402,
+        70,
+        738,
+        82
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "These trends are summarised in Figure 2. The statistical scatter between",
+         "bbox": [
+          402,
+          70,
+          738,
+          82
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        402,
+        84,
+        738,
+        96
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "samples is smaller than the symbols for the in-plane coefficient and about",
+         "bbox": [
+          402,
+          84,
+          738,
+          96
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        402,
+        98,
+        738,
+        110
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "fifteen percent for the perpendicular one, which is limited by the",
+         "bbox": [
+          402,
+          98,
+          738,
+          110
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        402,
+        112,
+        738,
+        124
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "timing resolution of the detector and by the thickness of the substrate.",
+         "bbox": [
+          402,
+          112,
+          738,
+          124
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        402,
+        126,
+        738,
+        138
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Error bars in the figure show one standard deviation over three samples.",
+         "bbox": [
+          402,
+          126,
+          738,
+          138
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "chart",
+     "bbox": [
+      54,
+      150,
+      738,
+      372
+     ],
+     "index": 3,
+     "blocks": [
+      {
+       "type": "chart_body",
+       "bbox": [
+        54,
+        150,
+        738,
+        330
+       ],
+       "index": 3,
+       "lines": [
+        {
+         "bbox": [
+          54,
+          150,
+          738,
+          330
+         ],
+         "spans": [
+          {
+           "type": "image",
+           "image_path": "images/5c8e1b7a40d9f3625c8e1b7a40d9f3625c8e1b7a40d9f3625c8e1b7a40d9f362",
+           "bbox": [
+            54,
+            150,
+            738,
+            330
+           ],
+           "score": 0.97
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "chart_caption",
+       "bbox": [
+        54,
+        334,
+        738,
+        357
+       ],
+       "index": 4,
+       "lines": [
+        {
+         "bbox": [
+          54,
+          334,
+          738,
+          345
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "Figure 2. Diffusion coefficients parallel and perpendicular to the layers as a function of the spacer length, with the",
+           "bbox": [
+            54,
+            334,
+            738,
+            345
+           ],
+           "score": 0.98
+          }
+         ]
+        },
+        {
+         "bbox": [
+          54,
+          346,
+          288,
+          357
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "resulting anisotropy ratio on the right axis.",
+           "bbox": [
+            54,
+            346,
+            288,
+            357
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "chart_footnote",
+       "bbox": [
+        54,
+        360,
+        738,
+        372
+       ],
+       "index": 5,
+       "lines": [
+        {
+         "bbox": [
+          54,
+          360,
+          428.4,
+          372
+         ],
+         "spans": [
+          {
+           "type": "text",
+           "content": "Markers are sample means; error bars are one standard deviation (n = 3).",
+           "bbox": [
+            54,
+            360,
+            428.4,
+            372
+           ],
+           "score": 0.98
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "equation_interline",
+     "bbox": [
+      220,
+      384,
+      572,
+      414
+     ],
+     "index": 6,
+     "lines": [
+      {
+       "bbox": [
+        220,
+        384,
+        313.6,
+        414
+       ],
+       "spans": [
+        {
+         "type": "interline_equation",
+         "content": "\\mathcal{A}=\\frac{D_{\\parallel}}{D_{\\perp}}\\propto\\exp\\left(\\frac{2L}{\\lambda}\\right)",
+         "bbox": [
+          220,
+          384,
+          313.6,
+          414
+         ],
+         "score": 0.94
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "formula_number",
+     "bbox": [
+      690,
+      392,
+      738,
+      406
+     ],
+     "index": 7,
+     "lines": [
+      {
+       "bbox": [
+        690,
+        392,
+        705.6,
+        406
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "(3)",
+         "bbox": [
+          690,
+          392,
+          705.6,
+          406
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "phonetic",
+     "bbox": [
+      54,
+      424,
+      390,
+      434
+     ],
+     "index": 8,
+     "lines": [
+      {
+       "bbox": [
+        54,
+        424,
+        390,
+        434
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "céng zhuàng gài tài kuàng liàng zǐ jǐng zhōng de jī zǐ yán miàn nèi kuò sàn gèng kuài",
+         "bbox": [
+          54,
+          424,
+          390,
+          434
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "text",
+     "bbox": [
+      54,
+      436,
+      390,
+      463
+     ],
+     "index": 9,
+     "lines": [
+      {
+       "bbox": [
+        54,
+        436,
+        390,
+        449
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "层状钙钛矿量子阱中的激子沿面内方向扩散更快，而垂直于层的方向上扩散",
+         "bbox": [
+          54,
+          436,
+          390,
+          449
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        54,
+        450,
+        189.2,
+        463
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "受到有机间隔层的强烈限制。",
+         "bbox": [
+          54,
+          450,
+          189.2,
+          463
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "paragraph_title",
+     "bbox": [
+      402,
+      424,
+      500,
+      436
+     ],
+     "level": 1,
+     "index": 10,
+     "lines": [
+      {
+       "bbox": [
+        402,
+        424,
+        454,
+        436
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "References",
+         "bbox": [
+          402,
+          424,
+          454,
+          436
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "ref_text",
+     "bbox": [
+      402,
+      444,
+      738,
+      456
+     ],
+     "index": 11,
+     "lines": [
+      {
+       "bbox": [
+        402,
+        444,
+        738,
+        456
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "[1] A. Rao and S. Lindqvist, Exciton diffusion in two-dimensional perovskites, Nat. Mater. 22, 311 (2023). ",
+         "bbox": [
+          402,
+          444,
+          678.6,
+          456
+         ],
+         "score": 0.98
+        },
+        {
+         "type": "hyperlink",
+         "url": "https://doi.org/10.0000/nm.2023.311",
+         "bbox": [
+          678.6,
+          444,
+          738,
+          456
+         ],
+         "children": [
+          {
+           "type": "text",
+           "content": "doi:10.0000/nm.2023.311",
+           "bbox": [
+            678.6,
+            444,
+            738,
+            456
+           ],
+           "score": 0.97
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "ref_text",
+     "bbox": [
+      402,
+      472,
+      738,
+      496
+     ],
+     "index": 12,
+     "lines": [
+      {
+       "bbox": [
+        402,
+        472,
+        738,
+        484
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "[2] H. Nakamura, T. Abel, and P. Duarte, Streak-camera imaging of anisotropic transport, J. Lumin. 251, 119 (2024).",
+         "bbox": [
+          402,
+          472,
+          738,
+          484
+         ],
+         "score": 0.98
+        }
+       ]
+      },
+      {
+       "bbox": [
+        402,
+        484,
+        641.2,
+        496
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "Corrected version of the original figure data.",
+         "bbox": [
+          402,
+          484,
+          641.2,
+          496
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "ref_text",
+     "bbox": [
+      402,
+      504,
+      738,
+      516
+     ],
+     "index": 13,
+     "lines": [
+      {
+       "bbox": [
+        402,
+        504,
+        738,
+        516
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "[3] E. Rossi, Rate-equation modelling of bimolecular annihilation, Phys. Rev. B 108, 045301 (2023).",
+         "bbox": [
+          402,
+          504,
+          738,
+          516
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "page_idx": 3,
+   "page_size": [
+    612,
+    792
+   ],
+   "discarded_blocks": [
+    {
+     "type": "page_number",
+     "bbox": [
+      300,
+      762,
+      312,
+      772
+     ],
+     "lines": [
+      {
+       "bbox": [
+        300,
+        762,
+        305.2,
+        772
+       ],
+       "spans": [
+        {
+         "type": "text",
+         "content": "4",
+         "bbox": [
+          300,
+          762,
+          305.2,
+          772
+         ],
+         "score": 0.98
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "para_blocks": []
+  }
+ ],
+ "_backend": "pipeline",
+ "_version_name": "2.7.1"
+}

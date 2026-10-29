@@ -35,3 +35,4 @@
 | 2026-10-29 | [Paddle 图表附注归属和只对 MinerU 生效的选项](./20261029-Paddle图表附注归属和只对MinerU生效的选项.md) | 归一化审查 Paddle 两条：vision_footnote 归属改成开头标记 → 前一个块 → 整词（以前子串 table 排最前，stable 都被当成表注）；disable_formula 等对 Paddle 不生效核实是已知限制（任务日志有记），只补文档 |
 | 2026-10-29 | [归一化的最后几步在每条路径上都做](./20261029-归一化的最后几步在每条路径上都做.md) | 归一化审查：缩放到原文 PDF、重建行、刷新报告收成 `finalize_normalized_document`，normalize worker、命令型 OCR 的原始输出、MinerU 的 Python 直跑都调它（以前命令型 OCR 交回 Paddle 原始输出时坐标留在像素里、标着 pt）；远程命令交出的原文必须是真 PDF |
 | 2026-10-29 | [MinerU 跨页段落连成接续组](./20261029-MinerU跨页段落连成接续组.md) | 归一化审查确定 bug 第 2 条：MinerU 跨页段落拆回各页后两半用 `continuation_hint` 连成 head→tail（`scope=cross_page`），以前不留关联、两半各翻各的；翻译那边对跨页提示原有把关不变 |
+| 2026-10-29 | [OCR 归一化的快照守卫](./20261029-OCR归一化快照守卫.md) | 拆分方案第 0 步：9 份人造原始输出（8 个 Sonnet 造、逐份审过；MinerU 42/42、Paddle 25/25、v2 8/8 种框类型和各种几何边界），走完整归一化把整份 document.v1 和报告钉成快照；旧 bug 放回去 4 份红；样例顺带查出 10 个问题（最要紧的是框超出页边一两点整份文档校验失败） |

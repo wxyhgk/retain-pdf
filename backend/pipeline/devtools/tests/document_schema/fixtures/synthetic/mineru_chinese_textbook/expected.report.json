@@ -1,0 +1,78 @@
+{
+ "defaults": {
+  "block_defaults": {
+   "content": 33,
+   "continuation_hint": 39,
+   "geometry": 39,
+   "provenance": 39,
+   "reading_order": 39
+  },
+  "blocks_seen": 39,
+  "document_defaults": {
+   "markers": 1
+  },
+  "page_defaults": {},
+  "pages_seen": 3
+ },
+ "document_id": "mineru_chinese_textbook",
+ "provider": "mineru",
+ "provider_signals": {
+  "backend": "vlm",
+  "mineru_version": "2.6.4",
+  "raw_block_type_counts": {
+   "aside_text": 1,
+   "chart": 1,
+   "chart_body": 1,
+   "chart_caption": 1,
+   "code": 1,
+   "code_body": 1,
+   "code_caption": 1,
+   "footer": 2,
+   "header": 6,
+   "image": 1,
+   "image_body": 2,
+   "image_caption": 1,
+   "interline_equation": 1,
+   "list": 2,
+   "page_footnote": 1,
+   "page_number": 3,
+   "text": 16,
+   "title": 6
+  },
+  "structural_containers_not_emitted": 3,
+  "taxonomy_profile": "mineru.middle.current",
+  "unknown_block_types": []
+ },
+ "provider_version": "",
+ "source_json_path": "layout.json",
+ "validation": {
+  "approximate_formula_segment_bbox_count": 0,
+  "approximate_segment_bbox_count": 0,
+  "asset_block_count": 3,
+  "asset_count": 3,
+  "block_count": 39,
+  "complete": true,
+  "coordinate_space": "pdf_point",
+  "covered_provider_markdown_image_count": 3,
+  "formula_segment_count": 11,
+  "geometry_bbox_consistent": true,
+  "line_bbox_precision_counts": {
+   "provider_layout": 62
+  },
+  "linked_asset_block_count": 3,
+  "page_count": 3,
+  "provider_formula_segment_bbox_count": 11,
+  "provider_markdown_image_count": 3,
+  "provider_segment_bbox_count": 82,
+  "referenced_asset_count": 3,
+  "schema": "normalized_document_v1",
+  "schema_version": "1.1",
+  "segment_bbox_within_block": true,
+  "uncovered_provider_markdown_image_count": 0,
+  "unlinked_asset_block_count": 0,
+  "unreferenced_asset_count": 0,
+  "valid": true,
+  "warnings": [],
+  "zero_segment_bbox_count": 0
+ }
+}

@@ -1,0 +1,48 @@
+{
+ "defaults": {
+  "block_defaults": {
+   "provenance": 31,
+   "reading_order": 31
+  },
+  "blocks_seen": 31,
+  "document_defaults": {},
+  "page_defaults": {},
+  "pages_seen": 2
+ },
+ "document_id": "generic_flat_command",
+ "provider": "generic_flat_ocr",
+ "provider_version": "",
+ "source_json_path": "payload.json",
+ "validation": {
+  "approximate_formula_segment_bbox_count": 0,
+  "approximate_segment_bbox_count": 0,
+  "asset_block_count": 1,
+  "asset_count": 1,
+  "block_count": 31,
+  "complete": true,
+  "coordinate_space": "pdf_point",
+  "covered_provider_markdown_image_count": 0,
+  "formula_segment_count": 4,
+  "geometry_bbox_consistent": true,
+  "line_bbox_precision_counts": {
+   "block_fallback": 2,
+   "provider_layout": 48,
+   "synthetic_wrap": 2
+  },
+  "linked_asset_block_count": 1,
+  "page_count": 2,
+  "provider_formula_segment_bbox_count": 4,
+  "provider_markdown_image_count": 0,
+  "provider_segment_bbox_count": 62,
+  "referenced_asset_count": 1,
+  "schema": "normalized_document_v1",
+  "schema_version": "1.1",
+  "segment_bbox_within_block": true,
+  "uncovered_provider_markdown_image_count": 0,
+  "unlinked_asset_block_count": 0,
+  "unreferenced_asset_count": 0,
+  "valid": true,
+  "warnings": [],
+  "zero_segment_bbox_count": 0
+ }
+}

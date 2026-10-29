@@ -1,0 +1,825 @@
+{
+ "layoutParsingResults": [
+  {
+   "prunedResult": {
+    "page_count": 2,
+    "width": 893,
+    "height": 1263,
+    "model_settings": {
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true,
+     "format_block_content": true
+    },
+    "parsing_res_list": [
+     {
+      "block_label": "header",
+      "block_bbox": [
+       110,
+       60,
+       783,
+       95
+      ],
+      "block_content": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+      "block_id": 0,
+      "block_order": 1,
+      "group_id": 0
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_bbox": [
+       380,
+       130,
+       513,
+       175
+      ],
+      "block_content": "目录",
+      "block_id": 1,
+      "block_order": 2,
+      "group_id": 1
+     },
+     {
+      "block_label": "content",
+      "block_bbox": [
+       110,
+       200,
+       783,
+       500
+      ],
+      "block_content": "1 引言 ........ 1\n2 方法 ........ 3\n2.1 数据集构建 ........ 4\n2.2 训练流程 ........ 5\n3 实验结果 ........ 7\n4 讨论 ........ 9\n5 结论 ........ 11\n参考文献 ........ 12",
+      "block_id": 2,
+      "block_order": 3,
+      "group_id": 2
+     },
+     {
+      "block_label": "vertical_text",
+      "block_bbox": [
+       830,
+       200,
+       872,
+       500
+      ],
+      "block_content": "本讲义仅供校内课堂教学使用",
+      "block_id": 3,
+      "block_order": 4,
+      "group_id": 3
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_bbox": [
+       110,
+       530,
+       330,
+       565
+      ],
+      "block_content": "阅读说明",
+      "block_id": 4,
+      "block_order": 5,
+      "group_id": 4
+     },
+     {
+      "block_label": "text",
+      "block_bbox": [
+       110,
+       575,
+       783,
+       690
+      ],
+      "block_content": "本讲义面向已经学过线性代数与概率论的同学，按周次编排。\n每章开头列出学习目标，结尾给出三到五道思考题。\n带星号的小节属于选读内容，期末考试不作要求。\n遇到疑问请先查阅附录，再到课程论坛提问。",
+      "block_id": 5,
+      "block_order": 6,
+      "group_id": 5
+     },
+     {
+      "block_label": "text",
+      "block_bbox": [
+       110,
+       705,
+       783,
+       815
+      ],
+      "block_content": "数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。",
+      "block_id": 6,
+      "block_order": 7,
+      "group_id": 6
+     },
+     {
+      "block_label": "text",
+      "block_bbox": [
+       110,
+       830,
+       783,
+       920
+      ],
+      "block_content": "（1）阅读本章全部内容，并完成课后习题；\n（2）在实验平台上提交第一次上机作业；\n（3）预习下一章关于哈希表的内容。",
+      "block_id": 7,
+      "block_order": 8,
+      "group_id": 7
+     },
+     {
+      "block_label": "text",
+      "block_bbox": [
+       110,
+       925,
+       783,
+       955
+      ],
+      "block_content": "（4）如有缺课，请在一周内向助教补交作业。",
+      "block_id": 8,
+      "block_order": 9,
+      "group_id": 8
+     },
+     {
+      "block_label": "text",
+      "block_bbox": [
+       110,
+       960,
+       783,
+       990
+      ],
+      "block_content": "（5）期中考试前两周开放答疑时间。",
+      "block_id": 9,
+      "block_order": 10,
+      "group_id": 9
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_bbox": [
+       110,
+       1010,
+       330,
+       1040
+      ],
+      "block_content": "参考文献",
+      "block_id": 10,
+      "block_order": 11,
+      "group_id": 10
+     },
+     {
+      "block_label": "reference_content",
+      "block_bbox": [
+       110,
+       1050,
+       783,
+       1085
+      ],
+      "block_content": "[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.",
+      "block_id": 11,
+      "block_order": 12,
+      "group_id": 11
+     },
+     {
+      "block_label": "reference_content",
+      "block_bbox": [
+       110,
+       1090,
+       783,
+       1140
+      ],
+      "block_content": "[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.",
+      "block_id": 12,
+      "block_order": 13,
+      "group_id": 12
+     },
+     {
+      "block_label": "footer",
+      "block_bbox": [
+       110,
+       1185,
+       500,
+       1215
+      ],
+      "block_content": "数据结构课程组 编",
+      "block_id": 13,
+      "block_order": 14,
+      "group_id": 13
+     },
+     {
+      "block_label": "number",
+      "block_bbox": [
+       720,
+       1185,
+       783,
+       1215
+      ],
+      "block_content": "1",
+      "block_id": 14,
+      "block_order": 15,
+      "group_id": 14
+     }
+    ],
+    "layout_det_res": {
+     "boxes": [
+      {
+       "cls_id": 0,
+       "label": "header",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        60.0,
+        783.0,
+        95.0
+       ],
+       "order": 1
+      },
+      {
+       "cls_id": 1,
+       "label": "paragraph_title",
+       "score": 0.95,
+       "coordinate": [
+        380.0,
+        130.0,
+        513.0,
+        175.0
+       ],
+       "order": 2
+      },
+      {
+       "cls_id": 2,
+       "label": "content",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        200.0,
+        783.0,
+        500.0
+       ],
+       "order": 3
+      },
+      {
+       "cls_id": 3,
+       "label": "vertical_text",
+       "score": 0.95,
+       "coordinate": [
+        830.0,
+        200.0,
+        872.0,
+        500.0
+       ],
+       "order": 4
+      },
+      {
+       "cls_id": 4,
+       "label": "paragraph_title",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        530.0,
+        330.0,
+        565.0
+       ],
+       "order": 5
+      },
+      {
+       "cls_id": 5,
+       "label": "text",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        575.0,
+        783.0,
+        690.0
+       ],
+       "order": 6
+      },
+      {
+       "cls_id": 6,
+       "label": "text",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        705.0,
+        783.0,
+        815.0
+       ],
+       "order": 7
+      },
+      {
+       "cls_id": 7,
+       "label": "text",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        830.0,
+        783.0,
+        920.0
+       ],
+       "order": 8
+      },
+      {
+       "cls_id": 8,
+       "label": "text",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        925.0,
+        783.0,
+        955.0
+       ],
+       "order": 9
+      },
+      {
+       "cls_id": 9,
+       "label": "text",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        960.0,
+        783.0,
+        990.0
+       ],
+       "order": 10
+      },
+      {
+       "cls_id": 10,
+       "label": "paragraph_title",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        1010.0,
+        330.0,
+        1040.0
+       ],
+       "order": 11
+      },
+      {
+       "cls_id": 11,
+       "label": "reference_content",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        1050.0,
+        783.0,
+        1085.0
+       ],
+       "order": 12
+      },
+      {
+       "cls_id": 12,
+       "label": "reference_content",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        1090.0,
+        783.0,
+        1140.0
+       ],
+       "order": 13
+      },
+      {
+       "cls_id": 13,
+       "label": "footer",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        1185.0,
+        500.0,
+        1215.0
+       ],
+       "order": 14
+      },
+      {
+       "cls_id": 14,
+       "label": "number",
+       "score": 0.95,
+       "coordinate": [
+        720.0,
+        1185.0,
+        783.0,
+        1215.0
+       ],
+       "order": 15
+      }
+     ]
+    }
+   },
+   "markdown": {
+    "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期\n\n目录\n\n1 引言 ........ 1\n2 方法 ........ 3\n2.1 数据集构建 ........ 4\n2.2 训练流程 ........ 5\n3 实验结果 ........ 7\n4 讨论 ........ 9\n5 结论 ........ 11\n参考文献 ........ 12\n\n本讲义仅供校内课堂教学使用\n\n阅读说明\n\n本讲义面向已经学过线性代数与概率论的同学，按周次编排。\n每章开头列出学习目标，结尾给出三到五道思考题。\n带星号的小节属于选读内容，期末考试不作要求。\n遇到疑问请先查阅附录，再到课程论坛提问。\n\n数据结构与算法是计算机专业最重要的基础课程之一，它研究如何在有限的存储空间和计算时间内组织、访问与修改数据。课程不仅要求同学们掌握数组、链表、栈、队列、树和图等基本结构的实现方式，还强调对时间复杂度与空间复杂度的定量分析能力，能够根据具体问题的规模和访问模式选择合适的数据结构，并在此基础上设计出正确且高效的算法。在后续章节中，我们将通过大量的例题与上机练习帮助大家逐步建立起这种工程直觉。\n\n（1）阅读本章全部内容，并完成课后习题；\n（2）在实验平台上提交第一次上机作业；\n（3）预习下一章关于哈希表的内容。\n\n（4）如有缺课，请在一周内向助教补交作业。\n\n（5）期中考试前两周开放答疑时间。\n\n参考文献\n\n[1] 严蔚敏, 吴伟民. 数据结构（C 语言版）[M]. 北京: 清华大学出版社, 2012.\n\n[2] 王晓明, 李华. 面向工程实践的算法教学改革探索[J]. 计算机教育, 2021, 33(4): 45-49.\n\n数据结构课程组 编\n\n1",
+    "images": {},
+    "isEnd": true
+   },
+   "outputImages": {},
+   "inputImage": "https://example.invalid/fixture/input_1.jpg"
+  },
+  {
+   "prunedResult": {
+    "page_count": 2,
+    "width": 893,
+    "height": 1263,
+    "model_settings": {
+     "use_doc_preprocessor": false,
+     "use_layout_detection": true,
+     "format_block_content": true
+    },
+    "parsing_res_list": [
+     {
+      "block_label": "header",
+      "block_bbox": [
+       110,
+       60,
+       783,
+       95
+      ],
+      "block_content": "《数据结构与算法》课程讲义 · 2026 年秋季学期",
+      "block_id": 0,
+      "block_order": 1,
+      "group_id": 0
+     },
+     {
+      "block_label": "paragraph_title",
+      "block_bbox": [
+       110,
+       130,
+       330,
+       170
+      ],
+      "block_content": "2 方法",
+      "block_id": 1,
+      "block_order": 2,
+      "group_id": 1
+     },
+     {
+      "block_label": "text",
+      "block_bbox": [
+       110,
+       190,
+       783,
+       275
+      ],
+      "block_content": "在实验设计中，设学习率为 $\\alpha=0.01$，批大小为 $B=32$，每轮迭代的损失记为 $L_t$，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，",
+      "block_id": 2,
+      "block_order": 3,
+      "group_id": 99
+     },
+     {
+      "block_label": "figure_title",
+      "block_bbox": [
+       330,
+       290,
+       563,
+       325
+      ],
+      "block_content": "表1 实验参数",
+      "block_id": 3,
+      "block_order": 4,
+      "group_id": 3
+     },
+     {
+      "block_label": "table",
+      "block_bbox": [
+       200,
+       335,
+       693,
+       470
+      ],
+      "block_content": "<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style='text-align: center; word-wrap: break-word;'>阶段二</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>学习率</td><td style='text-align: center; word-wrap: break-word;'>0.01</td><td style='text-align: center; word-wrap: break-word;'>0.001</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>批大小</td><td style='text-align: center; word-wrap: break-word;'>32</td><td style='text-align: center; word-wrap: break-word;'>32</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>训练轮数</td><td style='text-align: center; word-wrap: break-word;'>20</td><td style='text-align: center; word-wrap: break-word;'>50</td></tr></table>",
+      "block_id": 4,
+      "block_order": 5,
+      "group_id": 4
+     },
+     {
+      "block_label": "vision_footnote",
+      "block_bbox": [
+       110,
+       480,
+       783,
+       515
+      ],
+      "block_content": "表注：阶段二的学习率为阶段一的十分之一。",
+      "block_id": 5,
+      "block_order": 6,
+      "group_id": 5
+     },
+     {
+      "block_label": "text",
+      "block_bbox": [
+       110,
+       535,
+       783,
+       615
+      ],
+      "block_content": "第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为 $\\alpha/10$，两个阶段的训练轮数分别见表 1。",
+      "block_id": 6,
+      "block_order": 7,
+      "group_id": 99
+     },
+     {
+      "block_label": "display_formula",
+      "block_bbox": [
+       260,
+       640,
+       680,
+       700
+      ],
+      "block_content": "L(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2",
+      "block_id": 7,
+      "block_order": 8,
+      "group_id": 7
+     },
+     {
+      "block_label": "formula_number",
+      "block_bbox": [
+       720,
+       658,
+       783,
+       688
+      ],
+      "block_content": "(1)",
+      "block_id": 8,
+      "block_order": 9,
+      "group_id": 8
+     },
+     {
+      "block_label": "image",
+      "block_bbox": [
+       250,
+       730,
+       640,
+       950
+      ],
+      "block_content": "<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>",
+      "block_id": 9,
+      "block_order": 10,
+      "group_id": 9
+     },
+     {
+      "block_label": "figure_title",
+      "block_bbox": [
+       300,
+       960,
+       593,
+       995
+      ],
+      "block_content": "图1 装置示意图",
+      "block_id": 10,
+      "block_order": 11,
+      "group_id": 10
+     },
+     {
+      "block_label": "vision_footnote",
+      "block_bbox": [
+       110,
+       1005,
+       783,
+       1040
+      ],
+      "block_content": "图注：左侧为数据采集模块，右侧为训练服务器。",
+      "block_id": 11,
+      "block_order": 12,
+      "group_id": 11
+     },
+     {
+      "block_label": "seal",
+      "block_bbox": [
+       640,
+       1060,
+       790,
+       1170
+      ],
+      "block_content": "数据结构课程组 教学专用章",
+      "block_id": 12,
+      "block_order": 13,
+      "group_id": 12
+     },
+     {
+      "block_label": "footer",
+      "block_bbox": [
+       110,
+       1185,
+       500,
+       1215
+      ],
+      "block_content": "数据结构课程组 编",
+      "block_id": 13,
+      "block_order": 14,
+      "group_id": 13
+     },
+     {
+      "block_label": "number",
+      "block_bbox": [
+       720,
+       1185,
+       783,
+       1215
+      ],
+      "block_content": "2",
+      "block_id": 14,
+      "block_order": 15,
+      "group_id": 14
+     }
+    ],
+    "layout_det_res": {
+     "boxes": [
+      {
+       "cls_id": 0,
+       "label": "header",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        60.0,
+        783.0,
+        95.0
+       ],
+       "order": 1
+      },
+      {
+       "cls_id": 1,
+       "label": "paragraph_title",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        130.0,
+        330.0,
+        170.0
+       ],
+       "order": 2
+      },
+      {
+       "cls_id": 2,
+       "label": "text",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        190.0,
+        783.0,
+        275.0
+       ],
+       "order": 3
+      },
+      {
+       "cls_id": 3,
+       "label": "figure_title",
+       "score": 0.95,
+       "coordinate": [
+        330.0,
+        290.0,
+        563.0,
+        325.0
+       ],
+       "order": 4
+      },
+      {
+       "cls_id": 4,
+       "label": "table",
+       "score": 0.95,
+       "coordinate": [
+        200.0,
+        335.0,
+        693.0,
+        470.0
+       ],
+       "order": 5
+      },
+      {
+       "cls_id": 5,
+       "label": "vision_footnote",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        480.0,
+        783.0,
+        515.0
+       ],
+       "order": 6
+      },
+      {
+       "cls_id": 6,
+       "label": "text",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        535.0,
+        783.0,
+        615.0
+       ],
+       "order": 7
+      },
+      {
+       "cls_id": 7,
+       "label": "display_formula",
+       "score": 0.95,
+       "coordinate": [
+        260.0,
+        640.0,
+        680.0,
+        700.0
+       ],
+       "order": 8
+      },
+      {
+       "cls_id": 8,
+       "label": "formula_number",
+       "score": 0.95,
+       "coordinate": [
+        720.0,
+        658.0,
+        783.0,
+        688.0
+       ],
+       "order": 9
+      },
+      {
+       "cls_id": 9,
+       "label": "image",
+       "score": 0.95,
+       "coordinate": [
+        250.0,
+        730.0,
+        640.0,
+        950.0
+       ],
+       "order": 10
+      },
+      {
+       "cls_id": 10,
+       "label": "figure_title",
+       "score": 0.95,
+       "coordinate": [
+        300.0,
+        960.0,
+        593.0,
+        995.0
+       ],
+       "order": 11
+      },
+      {
+       "cls_id": 11,
+       "label": "vision_footnote",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        1005.0,
+        783.0,
+        1040.0
+       ],
+       "order": 12
+      },
+      {
+       "cls_id": 12,
+       "label": "seal",
+       "score": 0.95,
+       "coordinate": [
+        640.0,
+        1060.0,
+        790.0,
+        1170.0
+       ],
+       "order": 13
+      },
+      {
+       "cls_id": 13,
+       "label": "footer",
+       "score": 0.95,
+       "coordinate": [
+        110.0,
+        1185.0,
+        500.0,
+        1215.0
+       ],
+       "order": 14
+      },
+      {
+       "cls_id": 14,
+       "label": "number",
+       "score": 0.95,
+       "coordinate": [
+        720.0,
+        1185.0,
+        783.0,
+        1215.0
+       ],
+       "order": 15
+      }
+     ]
+    }
+   },
+   "markdown": {
+    "text": "《数据结构与算法》课程讲义 · 2026 年秋季学期\n\n2 方法\n\n在实验设计中，设学习率为 $\\alpha=0.01$，批大小为 $B=32$，每轮迭代的损失记为 $L_t$，为了使结果具有可比性，我们固定随机种子并将全部实验分成两个阶段，\n\n表1 实验参数\n\n<table border=1 style='margin: auto; word-wrap: break-word;'><tr><td style='text-align: center; word-wrap: break-word;'>参数</td><td style='text-align: center; word-wrap: break-word;'>阶段一</td><td style='text-align: center; word-wrap: break-word;'>阶段二</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>学习率</td><td style='text-align: center; word-wrap: break-word;'>0.01</td><td style='text-align: center; word-wrap: break-word;'>0.001</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>批大小</td><td style='text-align: center; word-wrap: break-word;'>32</td><td style='text-align: center; word-wrap: break-word;'>32</td></tr><tr><td style='text-align: center; word-wrap: break-word;'>训练轮数</td><td style='text-align: center; word-wrap: break-word;'>20</td><td style='text-align: center; word-wrap: break-word;'>50</td></tr></table>\n\n表注：阶段二的学习率为阶段一的十分之一。\n\n第一阶段只更新线性层的参数，第二阶段再解冻全部参数并将学习率衰减为 $\\alpha/10$，两个阶段的训练轮数分别见表 1。\n\nL(\\theta)=\\frac{1}{N}\\sum_{i=1}^{N}\\ell\\left(f_{\\theta}(x_i),y_i\\right)+\\lambda\\|\\theta\\|_2^2\n\n(1)\n\n<div style=\"text-align: center;\"><img src=\"imgs/img_in_image_box_250_730_640_950.jpg\" alt=\"Image\" width=\"390\" /></div>\n\n图1 装置示意图\n\n图注：左侧为数据采集模块，右侧为训练服务器。\n\n数据结构课程组 教学专用章\n\n数据结构课程组 编\n\n2",
+    "images": {
+     "imgs/img_in_image_box_250_730_640_950.jpg": "https://example.invalid/fixture/figure1.jpg"
+    },
+    "isEnd": true
+   },
+   "outputImages": {},
+   "inputImage": "https://example.invalid/fixture/input_2.jpg"
+  }
+ ],
+ "dataInfo": {
+  "type": "pdf",
+  "numPages": 2,
+  "pages": [
+   {
+    "width": 893,
+    "height": 1263
+   },
+   {
+    "width": 893,
+    "height": 1263
+   }
+  ]
+ },
+ "preprocessedImages": [],
+ "_meta": {
+  "source": "synthetic_fixture",
+  "dataInfoComplete": true
+ }
+}

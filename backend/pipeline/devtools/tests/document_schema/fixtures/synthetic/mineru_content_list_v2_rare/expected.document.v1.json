@@ -1,0 +1,1562 @@
+{
+ "assets": {},
+ "derived": {
+  "coordinate_space": "pdf_point",
+  "notes": "Adapted from MinerU content_list_v2 experimental payload."
+ },
+ "doc_id": "mineru_content_list_v2_rare",
+ "document_id": "mineru_content_list_v2_rare",
+ "markers": {},
+ "page_count": 1,
+ "pages": [
+  {
+   "blocks": [
+    {
+     "bbox": [
+      79.56,
+      30.096,
+      532.44,
+      45.936
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Journal of Synthetic Cell Biology, Vol. 12, No. 3"
+      ],
+      "text": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       79.56,
+       30.096,
+       532.44,
+       45.936
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        79.56,
+        30.096,
+        532.44,
+        45.936
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          30.096,
+          532.44,
+          45.936
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 0,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       38.0,
+       870.0,
+       58.0
+      ],
+      "raw_label": "page_header",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        79.56,
+        30.096,
+        532.44,
+        45.936
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       38.0,
+       870.0,
+       58.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+      "raw_type": "page_header",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "Journal of Synthetic Cell Biology, Vol. 12, No. 3",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      11.016,
+      142.56,
+      28.152,
+      649.44
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Accepted manuscript, posted 2 June 2026"
+      ],
+      "text": "Accepted manuscript, posted 2 June 2026",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       11.016,
+       142.56,
+       28.152,
+       649.44
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        11.016,
+        142.56,
+        28.152,
+        649.44
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          11.016,
+          142.56,
+          28.152,
+          649.44
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Accepted manuscript, posted 2 June 2026",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 1,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:aside_text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       18.0,
+       180.0,
+       46.0,
+       820.0
+      ],
+      "raw_label": "page_aside_text",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        11.016,
+        142.56,
+        28.152,
+        649.44
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Accepted manuscript, posted 2 June 2026",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       18.0,
+       180.0,
+       46.0,
+       820.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Accepted manuscript, posted 2 June 2026",
+      "raw_type": "page_aside_text",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "Accepted manuscript, posted 2 June 2026",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      67.32,
+      544.68,
+      106.92
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Calcium Handling in Cultured Hepatocytes"
+      ],
+      "text": "Calcium Handling in Cultured Hepatocytes",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       67.32,
+       544.68,
+       106.92
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        67.32,
+        544.68,
+        106.92
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          67.32,
+          544.68,
+          106.92
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Calcium Handling in Cultured Hepatocytes",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 2,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       85.0,
+       890.0,
+       135.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        67.32,
+        544.68,
+        106.92
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Calcium Handling in Cultured Hepatocytes",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       85.0,
+       890.0,
+       135.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Calcium Handling in Cultured Hepatocytes",
+      "raw_type": "title",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "Calcium Handling in Cultured Hepatocytes",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      118.8,
+      544.68,
+      186.12
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Intracellular calcium signalling regulates hepatic metabolism, and its dynamics depend on the balance between uptake into the endoplasmic reticulum and extrusion across the plasma membrane. We measured the decay of cytosolic transients after a single agonist pulse."
+      ],
+      "text": "Intracellular calcium signalling regulates hepatic metabolism, and its dynamics depend on the balance between uptake into the endoplasmic reticulum and extrusion across the plasma membrane. We measured the decay of cytosolic transients after a single agonist pulse.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       118.8,
+       544.68,
+       186.12
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        118.8,
+        544.68,
+        132.264
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          118.8,
+          544.68,
+          132.264
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "Intracellular calcium signalling regulates hepatic metabolism,",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        132.264,
+        544.68,
+        145.728
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          132.264,
+          544.68,
+          145.728
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "and its dynamics depend on the balance between uptake",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        145.728,
+        544.68,
+        159.192
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          145.728,
+          544.68,
+          159.192
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "into the endoplasmic reticulum and extrusion across the",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        159.192,
+        544.68,
+        172.656
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          159.192,
+          544.68,
+          172.656
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "plasma membrane. We measured the decay of cytosolic transients",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        172.656,
+        544.68,
+        186.12
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          172.656,
+          544.68,
+          186.12
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "after a single agonist pulse.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 3,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       150.0,
+       890.0,
+       235.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        118.8,
+        544.68,
+        186.12
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Intracellular calcium signalling regulates hepatic metabolism, and its dynamics depend on the balance between uptake into the endoplasmic reticulum and extrusion across the plasma membrane. We measured the decay of cytosolic transients after a single agonist pulse.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       150.0,
+       890.0,
+       235.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Intracellular calcium signalling regulates hepatic metabolism, and its dynamics depend on the balance between uptake into the endoplasmic reticulum and extrusion across the plasma membrane. We measure",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Intracellular calcium signalling regulates hepatic metabolism, and its dynamics depend on the balance between uptake into the endoplasmic reticulum and extrusion across the plasma membrane. We measured the decay of cytosolic transients after a single agonist pulse.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      332.64,
+      612.0,
+      396.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Transients were recorded at 10 Hz for 120 s per cell, and cells with a baseline drift larger than 5% were excluded. The remaining traces were aligned to the agonist onset and averaged across three independent cultures n = 3 to give the decay constants reported below."
+      ],
+      "text": "Transients were recorded at 10 Hz for 120 s per cell, and cells with a baseline drift larger than 5% were excluded. The remaining traces were aligned to the agonist onset and averaged across three independent cultures n = 3 to give the decay constants reported below.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       332.64,
+       612.0,
+       396.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        332.64,
+        612.0,
+        345.312
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          332.64,
+          612.0,
+          345.312
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "Transients were recorded at 10 Hz for 120 s per cell, and cells",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        345.312,
+        612.0,
+        357.984
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          345.312,
+          612.0,
+          357.984
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "with a baseline drift larger than 5% were excluded. The remaining",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        357.984,
+        612.0,
+        370.656
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          357.984,
+          612.0,
+          370.656
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "traces were aligned to the agonist onset and averaged across",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        370.656,
+        612.0,
+        383.328
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          370.656,
+          612.0,
+          383.328
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "three independent cultures n = 3 to give the decay constants",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        383.328,
+        612.0,
+        396.0
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          383.328,
+          612.0,
+          396.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "reported below.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 4,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       420.0,
+       1000.0,
+       500.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        332.64,
+        612.0,
+        396.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Transients were recorded at 10 Hz for 120 s per cell, and cells with a baseline drift larger than 5% were excluded. The remaining traces were aligned to the agonist onset and averaged across three independent cultures",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        67.32,
+        332.64,
+        612.0,
+        396.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "equation_inline",
+       "score": null,
+       "text": "n = 3",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        67.32,
+        332.64,
+        612.0,
+        396.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "to give the decay constants reported below.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       420.0,
+       1000.0,
+       500.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Transients were recorded at 10 Hz for 120 s per cell, and cells with a baseline drift larger than 5% were excluded. The remaining traces were aligned to the agonist onset and averaged across three ind",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Transients were recorded at 10 Hz for 120 s per cell, and cells with a baseline drift larger than 5% were excluded. The remaining traces were aligned to the agonist onset and averaged across three independent cultures n = 3 to give the decay constants reported below.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      427.68,
+      544.68,
+      475.201
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0005",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Cells were maintained at 37 °C in 5% CO2 and passaged twice a week; no cell line used here was older than passage 20."
+      ],
+      "text": "Cells were maintained at 37 °C in 5% CO2 and passaged twice a week; no cell line used here was older than passage 20.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       427.68,
+       544.68,
+       475.201
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        427.68,
+        544.68,
+        451.441
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          427.68,
+          544.68,
+          451.441
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "Cells were maintained at 37 °C in 5% CO2 and passaged",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        67.32,
+        451.441,
+        544.68,
+        475.201
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          451.441,
+          544.68,
+          475.201
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph",
+         "score": null,
+         "text": "twice a week; no cell line used here was older than passage 20.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 5,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       540.0,
+       890.0,
+       600.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        427.68,
+        544.68,
+        475.201
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Cells were maintained at 37 °C in 5% CO2 and passaged twice a week; no cell line used here was older than passage 20.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       540.0,
+       890.0,
+       600.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Cells were maintained at 37 °C in 5% CO2 and passaged twice a week; no cell line used here was older than passage 20.",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "Cells were maintained at 37 °C in 5% CO2 and passaged twice a week; no cell line used here was older than passage 20.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      575.28,
+      483.12,
+      582.624,
+      491.04
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0006",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "(b)"
+      ],
+      "text": "(b)",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       575.28,
+       483.12,
+       582.624,
+       491.04
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        575.28,
+        483.12,
+        582.624,
+        491.04
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          575.28,
+          483.12,
+          582.624,
+          491.04
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "(b)",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 6,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       940.0,
+       610.0,
+       952.0,
+       620.0
+      ],
+      "raw_label": "paragraph",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        575.28,
+        483.12,
+        582.624,
+        491.04
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "(b)",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       940.0,
+       610.0,
+       952.0,
+       620.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "(b)",
+      "raw_type": "paragraph",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "(b)",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      67.32,
+      696.96,
+      544.68,
+      732.6
+     ],
+     "block_class": "footnote",
+     "block_id": "p001-b0007",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1 Hepatocytes were isolated from three adult donors under the protocol approved by the local ethics board."
+      ],
+      "text": "1 Hepatocytes were isolated from three adult donors under the protocol approved by the local ethics board.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       67.32,
+       696.96,
+       544.68,
+       732.6
+      ]
+     },
+     "layout_role": "footnote",
+     "lines": [
+      {
+       "bbox": [
+        67.32,
+        696.96,
+        544.68,
+        732.6
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          67.32,
+          696.96,
+          544.68,
+          732.6
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "1 Hepatocytes were isolated from three adult donors under the protocol approved by the local ethics board.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 7,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_footnote"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       880.0,
+       890.0,
+       925.0
+      ],
+      "raw_label": "page_footnote",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        67.32,
+        696.96,
+        544.68,
+        732.6
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "1 Hepatocytes were isolated from three adult donors under the protocol approved by the local ethics board.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       110.0,
+       880.0,
+       890.0,
+       925.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1 Hepatocytes were isolated from three adult donors under the protocol approved by the local ethics board.",
+      "raw_type": "page_footnote",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "footnote",
+     "sub_type": "page_footnote",
+     "tags": [
+      "footnote",
+      "page_footnote",
+      "skip_translation"
+     ],
+     "text": "1 Hepatocytes were isolated from three adult donors under the protocol approved by the local ethics board.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      79.56,
+      744.48,
+      367.2,
+      760.32
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Received 4 March; accepted 19 May."
+      ],
+      "text": "Received 4 March; accepted 19 May.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       79.56,
+       744.48,
+       367.2,
+       760.32
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        79.56,
+        744.48,
+        367.2,
+        760.32
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          79.56,
+          744.48,
+          367.2,
+          760.32
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Received 4 March; accepted 19 May.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 8,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       940.0,
+       600.0,
+       960.0
+      ],
+      "raw_label": "page_footer",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        79.56,
+        744.48,
+        367.2,
+        760.32
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Received 4 March; accepted 19 May.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       130.0,
+       940.0,
+       600.0,
+       960.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Received 4 March; accepted 19 May.",
+      "raw_type": "page_footer",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "Received 4 March; accepted 19 May.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      287.64,
+      764.28,
+      324.36,
+      777.744
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0009",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1"
+      ],
+      "text": "1",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       287.64,
+       764.28,
+       324.36,
+       777.744
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        287.64,
+        764.28,
+        324.36,
+        777.744
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          287.64,
+          764.28,
+          324.36,
+          777.744
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "1",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_sub_type": ""
+     },
+     "order": 9,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       470.0,
+       965.0,
+       530.0,
+       982.0
+      ],
+      "raw_label": "page_number",
+      "raw_origin": "",
+      "raw_path": "",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        287.64,
+        764.28,
+        324.36,
+        777.744
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "1",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru_content_list_v2",
+      "raw_bbox": [
+       470.0,
+       965.0,
+       530.0,
+       982.0
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1",
+      "raw_type": "page_number",
+      "raw_unit": "normalized_1000"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "1",
+     "type": "text"
+    }
+   ],
+   "height": 792.0,
+   "metadata": {},
+   "page": 1,
+   "page_index": 0,
+   "unit": "pt",
+   "width": 612.0
+  }
+ ],
+ "schema": "normalized_document_v1",
+ "schema_version": "1.1",
+ "source": {
+  "provider": "mineru_content_list_v2",
+  "provider_version": "",
+  "raw_files": {
+   "content_list_v2": "content_list_v2.json"
+  }
+ }
+}

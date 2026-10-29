@@ -1,0 +1,225 @@
+{
+ "provider": "generic_flat_ocr",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   595,
+   842
+  ],
+  [
+   595,
+   842
+  ]
+ ],
+ "raw_pages": [
+  [
+   1190,
+   1684
+  ],
+  [
+   1190,
+   1684
+  ]
+ ],
+ "description": "Synthetic generic_flat_ocr payload as written by a local_command OCR provider (RETAIN_OCR_RAW_PAYLOAD_JSON). Two bilingual (English/Chinese) technical-note pages in 2x pixel coordinates (1190x1684) for A4 595x842 pt pages. Covers title, headings, abstracts, multi-line body with explicit lines/spans, inline formula, figure/table with captions, footnote, display formula, code, references, header/footer/page number. All bboxes are positive-area and nested (span in line in block in page).",
+ "tricky_points": [
+  "The payload is in pixels (2x) but page.unit must be 'pt' (or omitted): the validator rejects 'px' ('expected pt'). Page 1 omits unit, page 2 sets 'pt'; both are pixel coordinates in reality, so the scale 0.5 must come from the normalize step using the PDF page size, not from unit.",
+  "The adapter has NO reading-order support: block order = array index, and a raw block-level 'reading_order' is ignored (the adapter does not copy it). continuation_hint.reading_order is only normalised and carried through (block 8 on page 1 has role=single, scope=intra_page, reading_order=8). Therefore page 2 is NOT shuffled: array order = reading order.",
+  "Titles, captions, footnotes, references, headers/footers/page numbers are all translate=false; only body, abstract and heading sub_types are translated. Table captions and figure captions are plain type=text blocks with sub_type table_caption/figure_caption (layout_role=caption); structure_role is not set by the adapter (_structure_role returns '') and is later filled in by classification (observed 'metadata').",
+  "Front-matter author line is sub_type body sitting between a title and a heading; the adapter downgrades it to metadata with translate=false.",
+  "lines/segments are passed through verbatim: top-level segments duplicate the line spans (same bboxes) and are scaled independently; lines on the Chinese blocks omit bbox_precision on purpose to check nothing defaults it, other lines carry provider_layout.",
+  "Only the image block (via metadata.asset_key/asset_url) gets an asset; the table block has none even though it is a non-text block.",
+  "Inline formula spans use type inline_formula with raw_type inline_equation; the display formula uses type formula with raw_type display_formula; their text is LaTeX in $...$ inline and bare LaTeX for display.",
+  "Table lines are one per row with one span per cell (raw_type table_cell); block text is rows joined by newline with ' | ' between cells.",
+  "Block text of CJK paragraphs is the line texts joined with '' while English lines are joined with a single space.",
+  "Unit-less fields: top-level fields like page 'page' are optional; 'score' on spans is 0.93-0.97."
+ ],
+ "features": [
+  {
+   "feature": "page header (sub_type header)",
+   "page": 1,
+   "raw_path": "pages[0].blocks[0]",
+   "expect": "layout_role=header, semantic_role=metadata, structure_role=metadata, translate=false (provider_non_body:header)"
+  },
+  {
+   "feature": "title block, 2 lines, English",
+   "page": 1,
+   "raw_path": "pages[0].blocks[1]",
+   "expect": "layout_role=title, structure_role=title, translate=false (provider_non_body:title; titles are NOT translated by this adapter)"
+  },
+  {
+   "feature": "front-matter author line typed as body between title and heading",
+   "page": 1,
+   "raw_path": "pages[0].blocks[2]",
+   "expect": "adapter rewrites to semantic_role=metadata, translate=false (provider_front_matter:title_abstract_gap) despite sub_type body"
+  },
+  {
+   "feature": "English heading 'Abstract'",
+   "page": 1,
+   "raw_path": "pages[0].blocks[3]",
+   "expect": "layout_role=heading, structure_role=heading, translate=true"
+  },
+  {
+   "feature": "English abstract, 4 lines",
+   "page": 1,
+   "raw_path": "pages[0].blocks[4]",
+   "expect": "semantic_role=abstract, structure_role=body, translate=true, 4 lines keep bbox_precision=provider_layout"
+  },
+  {
+   "feature": "Chinese heading",
+   "page": 1,
+   "raw_path": "pages[0].blocks[5]",
+   "expect": "heading, translate=true"
+  },
+  {
+   "feature": "Chinese abstract, 3 lines, lines WITHOUT bbox_precision",
+   "page": 1,
+   "raw_path": "pages[0].blocks[6]",
+   "expect": "translate=true; lines/spans keep no bbox_precision key (observed: not defaulted)"
+  },
+  {
+   "feature": "English heading '1 Introduction'",
+   "page": 1,
+   "raw_path": "pages[0].blocks[7]",
+   "expect": "heading, translate=true"
+  },
+  {
+   "feature": "English body, 5 lines, with inline_formula segment",
+   "page": 1,
+   "raw_path": "pages[0].blocks[8]",
+   "expect": "translate=true; segments contain 1 inline_formula ($\\mu_k$) in line 3; continuation_hint role=single scope=intra_page carried through"
+  },
+  {
+   "feature": "Chinese body, 3 lines, lines without bbox_precision",
+   "page": 1,
+   "raw_path": "pages[0].blocks[9]",
+   "expect": "translate=true; CJK joined without spaces"
+  },
+  {
+   "feature": "image block with metadata.asset_key/asset_url",
+   "page": 1,
+   "raw_path": "pages[0].blocks[10]",
+   "expect": "content.kind=image, translate=false (provider_non_text:image), content.asset_id=fig-queue-depth, doc.assets gets entry fig-queue-depth with uri assets/fig-queue-depth.png"
+  },
+  {
+   "feature": "figure caption (type text, sub_type figure_caption), 2 lines",
+   "page": 1,
+   "raw_path": "pages[0].blocks[11]",
+   "expect": "layout_role=caption; structure_role is rewritten by later classification (observed 'metadata'); translate=false (provider_non_body:figure_caption) -- captions are NOT translated"
+  },
+  {
+   "feature": "footnote",
+   "page": 1,
+   "raw_path": "pages[0].blocks[12]",
+   "expect": "layout_role=footnote, structure_role=footnote, translate=false"
+  },
+  {
+   "feature": "page footer",
+   "page": 1,
+   "raw_path": "pages[0].blocks[13]",
+   "expect": "layout_role=footer, translate=false"
+  },
+  {
+   "feature": "page number",
+   "page": 1,
+   "raw_path": "pages[0].blocks[14]",
+   "expect": "layout_role=page_number, translate=false"
+  },
+  {
+   "feature": "page header repeated",
+   "page": 2,
+   "raw_path": "pages[1].blocks[0]",
+   "expect": "header, translate=false"
+  },
+  {
+   "feature": "heading '2 Method' (unit explicit pt on this page)",
+   "page": 2,
+   "raw_path": "pages[1].blocks[1]",
+   "expect": "heading, translate=true"
+  },
+  {
+   "feature": "English body, 4 lines, two inline_formula segments",
+   "page": 2,
+   "raw_path": "pages[1].blocks[2]",
+   "expect": "translate=true; 2 inline_formula segments ($q_t$, $\\bar{q}$)"
+  },
+  {
+   "feature": "display formula block (type formula)",
+   "page": 2,
+   "raw_path": "pages[1].blocks[3]",
+   "expect": "content.kind=formula, translate=false (provider_non_text:formula), segment type formula"
+  },
+  {
+   "feature": "Chinese body, 3 lines",
+   "page": 2,
+   "raw_path": "pages[1].blocks[4]",
+   "expect": "translate=true"
+  },
+  {
+   "feature": "table caption (sub_type table_caption)",
+   "page": 2,
+   "raw_path": "pages[1].blocks[5]",
+   "expect": "layout_role=caption, translate=false"
+  },
+  {
+   "feature": "table block with 4 row-lines, 3 cell spans each",
+   "page": 2,
+   "raw_path": "pages[1].blocks[6]",
+   "expect": "content.kind=table, translate=false, text_flow=preserve_lines, NO asset (no metadata.asset_key given)"
+  },
+  {
+   "feature": "code block, 3 lines",
+   "page": 2,
+   "raw_path": "pages[1].blocks[7]",
+   "expect": "content.kind=code, translate=false, text_flow=preserve_lines, leading indentation preserved in span text"
+  },
+  {
+   "feature": "heading '3 Conclusion'",
+   "page": 2,
+   "raw_path": "pages[1].blocks[8]",
+   "expect": "heading, translate=true"
+  },
+  {
+   "feature": "English body, 3 lines",
+   "page": 2,
+   "raw_path": "pages[1].blocks[9]",
+   "expect": "translate=true"
+  },
+  {
+   "feature": "heading 'References'",
+   "page": 2,
+   "raw_path": "pages[1].blocks[10]",
+   "expect": "heading, translate=true (adapter does not treat it as reference_heading)"
+  },
+  {
+   "feature": "reference_entry, 2 lines",
+   "page": 2,
+   "raw_path": "pages[1].blocks[11]",
+   "expect": "semantic_role=reference, structure_role=reference_entry, translate=false"
+  },
+  {
+   "feature": "reference_entry, 1 line, Chinese with Latin punctuation",
+   "page": 2,
+   "raw_path": "pages[1].blocks[12]",
+   "expect": "reference, translate=false"
+  },
+  {
+   "feature": "reference_entry, 2 lines",
+   "page": 2,
+   "raw_path": "pages[1].blocks[13]",
+   "expect": "reference, translate=false"
+  },
+  {
+   "feature": "page footer",
+   "page": 2,
+   "raw_path": "pages[1].blocks[14]",
+   "expect": "footer, translate=false"
+  },
+  {
+   "feature": "page number",
+   "page": 2,
+   "raw_path": "pages[1].blocks[15]",
+   "expect": "page_number, translate=false"
+  }
+ ]
+}

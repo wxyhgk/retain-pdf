@@ -1,0 +1,6838 @@
+{
+ "assets": {
+  "page-3/65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg": {
+   "caption": "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间 密集；（b）反键轨道，两核之间出现节面。",
+   "caption_block_ids": [
+    "p003-b0004"
+   ],
+   "captions": [
+    "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间 密集；（b）反键轨道，两核之间出现节面。"
+   ],
+   "kind": "image",
+   "source": "markdown_image",
+   "uri": "md/images/page-3/65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg"
+  },
+  "page-3/6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg": {
+   "kind": "image",
+   "source": "markdown_image",
+   "uri": "md/images/page-3/6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg"
+  },
+  "page-3/93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg": {
+   "caption": "图 2.2 氢分子离子势能曲线随核间距的变化",
+   "caption_block_ids": [
+    "p003-b0006"
+   ],
+   "captions": [
+    "图 2.2 氢分子离子势能曲线随核间距的变化"
+   ],
+   "kind": "image",
+   "source": "markdown_image",
+   "uri": "md/images/page-3/93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+  }
+ },
+ "derived": {
+  "coordinate_space": "pdf_point",
+  "notes": "MinerU middle.json adapted through RetainPDF canonical roles.",
+  "provider_signals": {
+   "backend": "vlm",
+   "mineru_version": "2.6.4",
+   "raw_block_type_counts": {
+    "aside_text": 1,
+    "chart": 1,
+    "chart_body": 1,
+    "chart_caption": 1,
+    "code": 1,
+    "code_body": 1,
+    "code_caption": 1,
+    "footer": 2,
+    "header": 6,
+    "image": 1,
+    "image_body": 2,
+    "image_caption": 1,
+    "interline_equation": 1,
+    "list": 2,
+    "page_footnote": 1,
+    "page_number": 3,
+    "text": 16,
+    "title": 6
+   },
+   "structural_containers_not_emitted": 3,
+   "taxonomy_profile": "mineru.middle.current",
+   "unknown_block_types": []
+  }
+ },
+ "doc_id": "mineru_chinese_textbook",
+ "document_id": "mineru_chinese_textbook",
+ "markers": {},
+ "page_count": 3,
+ "pages": [
+  {
+   "blocks": [
+    {
+     "bbox": [
+      60.0,
+      80.0,
+      412.0,
+      110.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "第2章 量子力学基础与分子轨道理论"
+      ],
+      "text": "第2章 量子力学基础与分子轨道理论",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       80.0,
+       412.0,
+       110.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        80.0,
+        412.0,
+        110.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          80.0,
+          412.0,
+          110.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "第2章 量子力学基础与分子轨道理论",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 0,
+      "raw_sub_type": "",
+      "raw_title_level": 1
+     },
+     "order": 0,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       80.0,
+       412.0,
+       110.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        80.0,
+        412.0,
+        110.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "第2章 量子力学基础与分子轨道理论",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       80,
+       412.0,
+       110
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "第2章 量子力学基础与分子轨道理论",
+      "raw_type": "title",
+      "raw_unit": "pt"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "第2章 量子力学基础与分子轨道理论",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      128.0,
+      236.0,
+      150.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2.1 薛定谔方程与波函数"
+      ],
+      "text": "2.1 薛定谔方程与波函数",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       128.0,
+       236.0,
+       150.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        128.0,
+        236.0,
+        150.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          128.0,
+          236.0,
+          150.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "2.1 薛定谔方程与波函数",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 1,
+      "raw_sub_type": "",
+      "raw_title_level": 2
+     },
+     "order": 1,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       128.0,
+       236.0,
+       150.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/1",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        128.0,
+        236.0,
+        150.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "2.1 薛定谔方程与波函数",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       128,
+       236.0,
+       150
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2.1 薛定谔方程与波函数",
+      "raw_type": "title",
+      "raw_unit": "pt"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "2.1 薛定谔方程与波函数",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      160.0,
+      412.0,
+      208.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "量子力学的核心是描述微观粒子运动状态的波函数，该函数的",
+       "模平方 |\\psi(\\mathbf{r},t)|^{2} 给出粒子在空间某点出现的概率密度，所以必须",
+       "满足归一化条件，并且在全空间内单值、连续、有限。"
+      ],
+      "text": "量子力学的核心是描述微观粒子运动状态的波函数，该函数的 模平方 |\\psi(\\mathbf{r},t)|^{2} 给出粒子在空间某点出现的概率密度，所以必须 满足归一化条件，并且在全空间内单值、连续、有限。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       160.0,
+       412.0,
+       208.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        160.0,
+        408.0,
+        176.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          160.0,
+          408.0,
+          176.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "量子力学的核心是描述微观粒子运动状态的波函数，该函数的",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        176.0,
+        412.0,
+        192.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          176.0,
+          96.0,
+          192.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "模平方",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          97.0,
+          176.0,
+          159.0,
+          192.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.96,
+         "text": "|\\psi(\\mathbf{r},t)|^{2}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          160.0,
+          176.0,
+          412.0,
+          192.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "给出粒子在空间某点出现的概率密度，所以必须",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        192.0,
+        348.0,
+        208.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          192.0,
+          348.0,
+          208.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "满足归一化条件，并且在全空间内单值、连续、有限。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 2,
+      "raw_sub_type": ""
+     },
+     "order": 2,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       160.0,
+       412.0,
+       208.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/2",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        160.0,
+        408.0,
+        176.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "量子力学的核心是描述微观粒子运动状态的波函数，该函数的",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        176.0,
+        96.0,
+        192.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "模平方",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        97.0,
+        176.0,
+        159.0,
+        192.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.96,
+       "text": "|\\psi(\\mathbf{r},t)|^{2}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        160.0,
+        176.0,
+        412.0,
+        192.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "给出粒子在空间某点出现的概率密度，所以必须",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        192.0,
+        348.0,
+        208.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "满足归一化条件，并且在全空间内单值、连续、有限。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       160,
+       412,
+       208
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "量子力学的核心是描述微观粒子运动状态的波函数，该函数的 模平方 |\\psi(\\mathbf{r},t)|^{2} 给出粒子在空间某点出现的概率密度，所以必须 满足归一化条件，并且在全空间内单值、连续、有限。",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "量子力学的核心是描述微观粒子运动状态的波函数，该函数的 模平方 |\\psi(\\mathbf{r},t)|^{2} 给出粒子在空间某点出现的概率密度，所以必须 满足归一化条件，并且在全空间内单值、连续、有限。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      226.0,
+      200.0,
+      246.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2.1.1 定态薛定谔方程"
+      ],
+      "text": "2.1.1 定态薛定谔方程",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       226.0,
+       200.0,
+       246.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        226.0,
+        200.0,
+        246.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          226.0,
+          200.0,
+          246.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "2.1.1 定态薛定谔方程",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 3,
+      "raw_sub_type": "",
+      "raw_title_level": 3
+     },
+     "order": 3,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       226.0,
+       200.0,
+       246.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/3",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        226.0,
+        200.0,
+        246.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "2.1.1 定态薛定谔方程",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       226,
+       200.0,
+       246
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/3",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2.1.1 定态薛定谔方程",
+      "raw_type": "title",
+      "raw_unit": "pt"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "2.1.1 定态薛定谔方程",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      256.0,
+      438.0,
+      288.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "当体系的哈密顿算符 \\hat{H} 不显含时间时，波函数可以分离变量，由此",
+       "得到只含空间坐标的本征值方程，即定态薛定谔方程："
+      ],
+      "text": "当体系的哈密顿算符 \\hat{H} 不显含时间时，波函数可以分离变量，由此 得到只含空间坐标的本征值方程，即定态薛定谔方程：",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       256.0,
+       438.0,
+       288.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        256.0,
+        438.0,
+        272.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          256.0,
+          192.0,
+          272.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "当体系的哈密顿算符",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          193.0,
+          256.0,
+          209.0,
+          272.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.99,
+         "text": "\\hat{H}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          210.0,
+          256.0,
+          438.0,
+          272.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "不显含时间时，波函数可以分离变量，由此",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        272.0,
+        348.0,
+        288.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          272.0,
+          348.0,
+          288.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "得到只含空间坐标的本征值方程，即定态薛定谔方程：",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 4,
+      "raw_sub_type": ""
+     },
+     "order": 4,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       256.0,
+       438.0,
+       288.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/4",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        256.0,
+        192.0,
+        272.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "当体系的哈密顿算符",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        193.0,
+        256.0,
+        209.0,
+        272.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.99,
+       "text": "\\hat{H}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        210.0,
+        256.0,
+        438.0,
+        272.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "不显含时间时，波函数可以分离变量，由此",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        272.0,
+        348.0,
+        288.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "得到只含空间坐标的本征值方程，即定态薛定谔方程：",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       256,
+       438,
+       288
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/4",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "当体系的哈密顿算符 \\hat{H} 不显含时间时，波函数可以分离变量，由此 得到只含空间坐标的本征值方程，即定态薛定谔方程：",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "当体系的哈密顿算符 \\hat{H} 不显含时间时，波函数可以分离变量，由此 得到只含空间坐标的本征值方程，即定态薛定谔方程：",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      200.0,
+      302.0,
+      395.0,
+      332.0
+     ],
+     "block_class": "formula",
+     "block_id": "p001-b0005",
+     "content": {
+      "kind": "formula",
+      "line_texts": [
+       "\\hat{H}\\psi=E\\psi\\tag{2.3}"
+      ],
+      "text": "\\hat{H}\\psi=E\\psi\\tag{2.3}",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       200.0,
+       302.0,
+       395.0,
+       332.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        200.0,
+        302.0,
+        395.0,
+        332.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          200.0,
+          302.0,
+          395.0,
+          332.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "interline_equation",
+         "score": 0.97,
+         "text": "\\hat{H}\\psi=E\\psi\\tag{2.3}",
+         "type": "formula"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 5,
+      "raw_sub_type": ""
+     },
+     "order": 5,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:formula"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       200.0,
+       302.0,
+       395.0,
+       332.0
+      ],
+      "raw_label": "interline_equation",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/5",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        200.0,
+        302.0,
+        395.0,
+        332.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "interline_equation",
+       "score": 0.97,
+       "text": "\\hat{H}\\psi=E\\psi\\tag{2.3}",
+       "type": "formula"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       200,
+       302,
+       395,
+       332
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/5",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "\\hat{H}\\psi=E\\psi\\tag{2.3}",
+      "raw_type": "interline_equation",
+      "raw_unit": "pt"
+     },
+     "structure_role": "",
+     "sub_type": "display_formula",
+     "tags": [
+      "formula"
+     ],
+     "text": "\\hat{H}\\psi=E\\psi\\tag{2.3}",
+     "type": "formula"
+    },
+    {
+     "bbox": [
+      60.0,
+      346.0,
+      461.0,
+      378.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0006",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "式(2.3)中， E 为体系的总能量， \\psi 为对应的定态波函数。求解该方程是",
+       "量子化学计算的出发点。对于多电子体系，常用的近似包括："
+      ],
+      "text": "式(2.3)中， E 为体系的总能量， \\psi 为对应的定态波函数。求解该方程是 量子化学计算的出发点。对于多电子体系，常用的近似包括：",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       346.0,
+       461.0,
+       378.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        346.0,
+        461.0,
+        362.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          346.0,
+          150.0,
+          362.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "式(2.3)中，",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          151.0,
+          346.0,
+          160.0,
+          362.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.98,
+         "text": "E",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          161.0,
+          346.0,
+          257.0,
+          362.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "为体系的总能量，",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          258.0,
+          346.0,
+          268.0,
+          362.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.99,
+         "text": "\\psi",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          269.0,
+          346.0,
+          461.0,
+          362.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "为对应的定态波函数。求解该方程是",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        362.0,
+        384.0,
+        378.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          362.0,
+          384.0,
+          378.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "量子化学计算的出发点。对于多电子体系，常用的近似包括：",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 6,
+      "raw_sub_type": ""
+     },
+     "order": 6,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       346.0,
+       461.0,
+       378.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/6",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        346.0,
+        150.0,
+        362.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "式(2.3)中，",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        151.0,
+        346.0,
+        160.0,
+        362.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.98,
+       "text": "E",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        161.0,
+        346.0,
+        257.0,
+        362.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "为体系的总能量，",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        258.0,
+        346.0,
+        268.0,
+        362.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.99,
+       "text": "\\psi",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        269.0,
+        346.0,
+        461.0,
+        362.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "为对应的定态波函数。求解该方程是",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        362.0,
+        384.0,
+        378.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "量子化学计算的出发点。对于多电子体系，常用的近似包括：",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       346,
+       461.0,
+       378
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/6",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "式(2.3)中， E 为体系的总能量， \\psi 为对应的定态波函数。求解该方程是 量子化学计算的出发点。对于多电子体系，常用的近似包括：",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "式(2.3)中， E 为体系的总能量， \\psi 为对应的定态波函数。求解该方程是 量子化学计算的出发点。对于多电子体系，常用的近似包括：",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      72.0,
+      392.0,
+      390.0,
+      464.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0007",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "• 玻恩—奥本海默近似：将原子核视为固定不动，",
+       "只求解电子在核场中的运动；",
+       "• 单电子近似：每个电子在其余电子的平均场中独立运动；",
+       "• 线性变分法：以原子轨道的线性组合构造分子轨道。"
+      ],
+      "text": "• 玻恩—奥本海默近似：将原子核视为固定不动， 只求解电子在核场中的运动； • 单电子近似：每个电子在其余电子的平均场中独立运动； • 线性变分法：以原子轨道的线性组合构造分子轨道。",
+      "text_flow": "preserve_lines"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       72.0,
+       392.0,
+       390.0,
+       464.0
+      ]
+     },
+     "layout_role": "list_item",
+     "lines": [
+      {
+       "bbox": [
+        72.0,
+        392.0,
+        342.0,
+        408.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          72.0,
+          392.0,
+          342.0,
+          408.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "• 玻恩—奥本海默近似：将原子核视为固定不动，",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72.0,
+        408.0,
+        228.0,
+        424.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          72.0,
+          408.0,
+          228.0,
+          424.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "只求解电子在核场中的运动；",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72.0,
+        428.0,
+        390.0,
+        444.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          72.0,
+          428.0,
+          390.0,
+          444.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "• 单电子近似：每个电子在其余电子的平均场中独立运动；",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72.0,
+        448.0,
+        366.0,
+        464.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          72.0,
+          448.0,
+          366.0,
+          464.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "• 线性变分法：以原子轨道的线性组合构造分子轨道。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": null,
+      "raw_index": 7,
+      "raw_sub_type": "text"
+     },
+     "order": 7,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:list"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       72.0,
+       392.0,
+       390.0,
+       464.0
+      ],
+      "raw_label": "list",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/7",
+      "raw_sub_type": "text",
+      "raw_unit": ""
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        72.0,
+        392.0,
+        342.0,
+        408.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "• 玻恩—奥本海默近似：将原子核视为固定不动，",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        72.0,
+        408.0,
+        228.0,
+        424.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "只求解电子在核场中的运动；",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        72.0,
+        428.0,
+        390.0,
+        444.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "• 单电子近似：每个电子在其余电子的平均场中独立运动；",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        72.0,
+        448.0,
+        366.0,
+        464.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "• 线性变分法：以原子轨道的线性组合构造分子轨道。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       72,
+       392,
+       390.0,
+       464
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/7",
+      "raw_sub_type": "text",
+      "raw_text_excerpt": "• 玻恩—奥本海默近似：将原子核视为固定不动， 只求解电子在核场中的运动； • 单电子近似：每个电子在其余电子的平均场中独立运动； • 线性变分法：以原子轨道的线性组合构造分子轨道。",
+      "raw_type": "list",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [
+      "list"
+     ],
+     "text": "• 玻恩—奥本海默近似：将原子核视为固定不动， 只求解电子在核场中的运动； • 单电子近似：每个电子在其余电子的平均场中独立运动； • 线性变分法：以原子轨道的线性组合构造分子轨道。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      772.0,
+      300.0,
+      786.0
+     ],
+     "block_class": "footnote",
+     "block_id": "p001-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "① 本章公式一律采用原子单位制，即 \\hbar=m_e=e=1 。"
+      ],
+      "text": "① 本章公式一律采用原子单位制，即 \\hbar=m_e=e=1 。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       772.0,
+       300.0,
+       786.0
+      ]
+     },
+     "layout_role": "footnote",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        772.0,
+        300.0,
+        786.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          772.0,
+          230.0,
+          786.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "① 本章公式一律采用原子单位制，即",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          231.0,
+          772.0,
+          289.0,
+          786.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.98,
+         "text": "\\hbar=m_e=e=1",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          290.0,
+          772.0,
+          300.0,
+          786.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 11,
+      "raw_sub_type": ""
+     },
+     "order": 8,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_footnote"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       772.0,
+       300.0,
+       786.0
+      ],
+      "raw_label": "page_footnote",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/para_blocks/8",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        772.0,
+        230.0,
+        786.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "① 本章公式一律采用原子单位制，即",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        231.0,
+        772.0,
+        289.0,
+        786.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.98,
+       "text": "\\hbar=m_e=e=1",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        290.0,
+        772.0,
+        300.0,
+        786.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       772,
+       300.0,
+       786
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/para_blocks/8",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "① 本章公式一律采用原子单位制，即 \\hbar=m_e=e=1 。",
+      "raw_type": "page_footnote",
+      "raw_unit": "pt"
+     },
+     "structure_role": "footnote",
+     "sub_type": "page_footnote",
+     "tags": [
+      "footnote",
+      "page_footnote",
+      "skip_translation"
+     ],
+     "text": "① 本章公式一律采用原子单位制，即 \\hbar=m_e=e=1 。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      30.0,
+      220.0,
+      44.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0009",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "第2章 量子力学基础与分子轨道理论"
+      ],
+      "text": "第2章 量子力学基础与分子轨道理论",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       30.0,
+       220.0,
+       44.0
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        30.0,
+        220.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          30.0,
+          220.0,
+          44.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "第2章 量子力学基础与分子轨道理论",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 9,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       30.0,
+       220.0,
+       44.0
+      ],
+      "raw_label": "header",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/discarded_blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        30.0,
+        220.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "第2章 量子力学基础与分子轨道理论",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       30,
+       220.0,
+       44
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/discarded_blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "第2章 量子力学基础与分子轨道理论",
+      "raw_type": "header",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "第2章 量子力学基础与分子轨道理论",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      435.0,
+      30.0,
+      525.0,
+      44.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0010",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "物理化学（第三版）"
+      ],
+      "text": "物理化学（第三版）",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       435.0,
+       30.0,
+       525.0,
+       44.0
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        435.0,
+        30.0,
+        525.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          435.0,
+          30.0,
+          525.0,
+          44.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "物理化学（第三版）",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 10,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       435.0,
+       30.0,
+       525.0,
+       44.0
+      ],
+      "raw_label": "header",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/discarded_blocks/1",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 10,
+     "segments": [
+      {
+       "bbox": [
+        435.0,
+        30.0,
+        525.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "物理化学（第三版）",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       435,
+       30,
+       525,
+       44
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/discarded_blocks/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "物理化学（第三版）",
+      "raw_type": "header",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "物理化学（第三版）",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      293.0,
+      810.0,
+      298.0,
+      824.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0011",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1"
+      ],
+      "text": "1",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       293.0,
+       810.0,
+       298.0,
+       824.0
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        293.0,
+        810.0,
+        298.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          293.0,
+          810.0,
+          298.0,
+          824.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "1",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 11,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       293.0,
+       810.0,
+       298.0,
+       824.0
+      ],
+      "raw_label": "page_number",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/0/discarded_blocks/2",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 11,
+     "segments": [
+      {
+       "bbox": [
+        293.0,
+        810.0,
+        298.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "1",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       293,
+       810,
+       298.0,
+       824
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/pdf_info/0/discarded_blocks/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1",
+      "raw_type": "page_number",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "1",
+     "type": "text"
+    }
+   ],
+   "height": 842.0,
+   "page": 1,
+   "page_index": 0,
+   "unit": "pt",
+   "width": 595.0
+  },
+  {
+   "blocks": [
+    {
+     "bbox": [
+      60.0,
+      70.0,
+      432.0,
+      150.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "对于只含一个电子的体系，如氢原子和氢分子离子，定态薛定谔方",
+       "程可以精确求解；而对于一般的多电子体系，则需要借助变分原理。",
+       "变分原理指出：用任意满足边界条件的试探函数计算得到的能量期",
+       "望值，总不会低于体系真实的基态能量，因此可以通过调节试探函",
+       "数中的参数使能量期望值取极小，以逼近真实的基态。"
+      ],
+      "text": "对于只含一个电子的体系，如氢原子和氢分子离子，定态薛定谔方 程可以精确求解；而对于一般的多电子体系，则需要借助变分原理。 变分原理指出：用任意满足边界条件的试探函数计算得到的能量期 望值，总不会低于体系真实的基态能量，因此可以通过调节试探函 数中的参数使能量期望值取极小，以逼近真实的基态。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       70.0,
+       432.0,
+       150.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        70.0,
+        432.0,
+        86.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          70.0,
+          432.0,
+          86.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "对于只含一个电子的体系，如氢原子和氢分子离子，定态薛定谔方",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        86.0,
+        420.0,
+        102.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          86.0,
+          420.0,
+          102.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "程可以精确求解；而对于一般的多电子体系，则需要借助变分原理。",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        102.0,
+        408.0,
+        118.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          102.0,
+          408.0,
+          118.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "变分原理指出：用任意满足边界条件的试探函数计算得到的能量期",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        118.0,
+        408.0,
+        134.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          118.0,
+          408.0,
+          134.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "望值，总不会低于体系真实的基态能量，因此可以通过调节试探函",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        134.0,
+        348.0,
+        150.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          134.0,
+          348.0,
+          150.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "数中的参数使能量期望值取极小，以逼近真实的基态。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 0,
+      "raw_sub_type": ""
+     },
+     "order": 0,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       70.0,
+       432.0,
+       150.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        70.0,
+        432.0,
+        86.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "对于只含一个电子的体系，如氢原子和氢分子离子，定态薛定谔方",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        86.0,
+        420.0,
+        102.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "程可以精确求解；而对于一般的多电子体系，则需要借助变分原理。",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        102.0,
+        408.0,
+        118.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "变分原理指出：用任意满足边界条件的试探函数计算得到的能量期",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        118.0,
+        408.0,
+        134.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "望值，总不会低于体系真实的基态能量，因此可以通过调节试探函",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        134.0,
+        348.0,
+        150.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "数中的参数使能量期望值取极小，以逼近真实的基态。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       70,
+       432,
+       150
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "对于只含一个电子的体系，如氢原子和氢分子离子，定态薛定谔方 程可以精确求解；而对于一般的多电子体系，则需要借助变分原理。 变分原理指出：用任意满足边界条件的试探函数计算得到的能量期 望值，总不会低于体系真实的基态能量，因此可以通过调节试探函 数中的参数使能量期望值取极小，以逼近真实的基态。",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "对于只含一个电子的体系，如氢原子和氢分子离子，定态薛定谔方 程可以精确求解；而对于一般的多电子体系，则需要借助变分原理。 变分原理指出：用任意满足边界条件的试探函数计算得到的能量期 望值，总不会低于体系真实的基态能量，因此可以通过调节试探函 数中的参数使能量期望值取极小，以逼近真实的基态。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      84.0,
+      160.0,
+      348.0,
+      176.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "采用线性变分法求解氢分子离子的基本步骤如下："
+      ],
+      "text": "采用线性变分法求解氢分子离子的基本步骤如下：",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       84.0,
+       160.0,
+       348.0,
+       176.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        160.0,
+        348.0,
+        176.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          160.0,
+          348.0,
+          176.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "采用线性变分法求解氢分子离子的基本步骤如下：",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 1,
+      "raw_sub_type": ""
+     },
+     "order": 1,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       84.0,
+       160.0,
+       348.0,
+       176.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/1",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        160.0,
+        348.0,
+        176.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "采用线性变分法求解氢分子离子的基本步骤如下：",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       84,
+       160,
+       348,
+       176
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "采用线性变分法求解氢分子离子的基本步骤如下：",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "采用线性变分法求解氢分子离子的基本步骤如下：",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      72.0,
+      184.0,
+      390.0,
+      256.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1. 选取两个氢原子的1s轨道作为基函数，写出分子轨道",
+       "的线性组合形式；",
+       "2. 计算重叠积分、库仑积分和交换积分，构造久期行列式；",
+       "3. 令久期行列式为零，解出能量本征值并回代求出系数。"
+      ],
+      "text": "1. 选取两个氢原子的1s轨道作为基函数，写出分子轨道 的线性组合形式； 2. 计算重叠积分、库仑积分和交换积分，构造久期行列式； 3. 令久期行列式为零，解出能量本征值并回代求出系数。",
+      "text_flow": "preserve_lines"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       72.0,
+       184.0,
+       390.0,
+       256.0
+      ]
+     },
+     "layout_role": "list_item",
+     "lines": [
+      {
+       "bbox": [
+        72.0,
+        184.0,
+        366.0,
+        200.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          72.0,
+          184.0,
+          366.0,
+          200.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "1. 选取两个氢原子的1s轨道作为基函数，写出分子轨道",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72.0,
+        200.0,
+        168.0,
+        216.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          72.0,
+          200.0,
+          168.0,
+          216.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "的线性组合形式；",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72.0,
+        220.0,
+        390.0,
+        236.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          72.0,
+          220.0,
+          390.0,
+          236.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "2. 计算重叠积分、库仑积分和交换积分，构造久期行列式；",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        72.0,
+        240.0,
+        378.0,
+        256.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          72.0,
+          240.0,
+          378.0,
+          256.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "3. 令久期行列式为零，解出能量本征值并回代求出系数。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": null,
+      "raw_index": 2,
+      "raw_sub_type": "text"
+     },
+     "order": 2,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:list"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       72.0,
+       184.0,
+       390.0,
+       256.0
+      ],
+      "raw_label": "list",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/2",
+      "raw_sub_type": "text",
+      "raw_unit": ""
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        72.0,
+        184.0,
+        366.0,
+        200.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "1. 选取两个氢原子的1s轨道作为基函数，写出分子轨道",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        72.0,
+        200.0,
+        168.0,
+        216.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "的线性组合形式；",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        72.0,
+        220.0,
+        390.0,
+        236.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "2. 计算重叠积分、库仑积分和交换积分，构造久期行列式；",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        72.0,
+        240.0,
+        378.0,
+        256.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "3. 令久期行列式为零，解出能量本征值并回代求出系数。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       72,
+       184,
+       390.0,
+       256
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/2",
+      "raw_sub_type": "text",
+      "raw_text_excerpt": "1. 选取两个氢原子的1s轨道作为基函数，写出分子轨道 的线性组合形式； 2. 计算重叠积分、库仑积分和交换积分，构造久期行列式； 3. 令久期行列式为零，解出能量本征值并回代求出系数。",
+      "raw_type": "list",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [
+      "list"
+     ],
+     "text": "1. 选取两个氢原子的1s轨道作为基函数，写出分子轨道 的线性组合形式； 2. 计算重叠积分、库仑积分和交换积分，构造久期行列式； 3. 令久期行列式为零，解出能量本征值并回代求出系数。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      292.0,
+      236.0,
+      314.0
+     ],
+     "block_class": "title",
+     "block_id": "p002-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2.2 变分法与氢分子离子"
+      ],
+      "text": "2.2 变分法与氢分子离子",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       292.0,
+       236.0,
+       314.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        292.0,
+        236.0,
+        314.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          292.0,
+          236.0,
+          314.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "2.2 变分法与氢分子离子",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 5,
+      "raw_sub_type": "",
+      "raw_title_level": 2
+     },
+     "order": 3,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       292.0,
+       236.0,
+       314.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/3",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        292.0,
+        236.0,
+        314.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "2.2 变分法与氢分子离子",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       292,
+       236.0,
+       314
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/3",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2.2 变分法与氢分子离子",
+      "raw_type": "title",
+      "raw_unit": "pt"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "2.2 变分法与氢分子离子",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      328.0,
+      420.0,
+      392.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "取试探函数为两个原子轨道的线性组合 \\psi=c_{1}\\phi_{1}+c_{2}\\phi_{2} ，",
+       "再把它代入能量期望值的表达式，对系数求偏导并令其为零，",
+       "即可得到关于 c_{1} 和 c_{2} 的齐次线性方程组，它有非零解的条件是",
+       "系数行列式等于零。"
+      ],
+      "text": "取试探函数为两个原子轨道的线性组合 \\psi=c_{1}\\phi_{1}+c_{2}\\phi_{2} ， 再把它代入能量期望值的表达式，对系数求偏导并令其为零， 即可得到关于 c_{1} 和 c_{2} 的齐次线性方程组，它有非零解的条件是 系数行列式等于零。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       328.0,
+       420.0,
+       392.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        328.0,
+        420.0,
+        344.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          328.0,
+          288.0,
+          344.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "取试探函数为两个原子轨道的线性组合",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          289.0,
+          328.0,
+          407.0,
+          344.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.96,
+         "text": "\\psi=c_{1}\\phi_{1}+c_{2}\\phi_{2}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          408.0,
+          328.0,
+          420.0,
+          344.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "，",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        344.0,
+        384.0,
+        360.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          344.0,
+          384.0,
+          360.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "再把它代入能量期望值的表达式，对系数求偏导并令其为零，",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        360.0,
+        396.0,
+        376.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          360.0,
+          132.0,
+          376.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "即可得到关于",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          133.0,
+          360.0,
+          149.0,
+          376.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.97,
+         "text": "c_{1}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          150.0,
+          360.0,
+          162.0,
+          376.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "和",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          163.0,
+          360.0,
+          179.0,
+          376.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.96,
+         "text": "c_{2}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          180.0,
+          360.0,
+          396.0,
+          376.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "的齐次线性方程组，它有非零解的条件是",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        376.0,
+        168.0,
+        392.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          376.0,
+          168.0,
+          392.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "系数行列式等于零。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 6,
+      "raw_sub_type": ""
+     },
+     "order": 4,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       328.0,
+       420.0,
+       392.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/4",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        328.0,
+        288.0,
+        344.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "取试探函数为两个原子轨道的线性组合",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        289.0,
+        328.0,
+        407.0,
+        344.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.96,
+       "text": "\\psi=c_{1}\\phi_{1}+c_{2}\\phi_{2}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        408.0,
+        328.0,
+        420.0,
+        344.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "，",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        344.0,
+        384.0,
+        360.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "再把它代入能量期望值的表达式，对系数求偏导并令其为零，",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        360.0,
+        132.0,
+        376.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "即可得到关于",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        133.0,
+        360.0,
+        149.0,
+        376.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.97,
+       "text": "c_{1}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        150.0,
+        360.0,
+        162.0,
+        376.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "和",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        163.0,
+        360.0,
+        179.0,
+        376.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.96,
+       "text": "c_{2}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        180.0,
+        360.0,
+        396.0,
+        376.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "的齐次线性方程组，它有非零解的条件是",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        376.0,
+        168.0,
+        392.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "系数行列式等于零。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       328,
+       420,
+       392
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/4",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "取试探函数为两个原子轨道的线性组合 \\psi=c_{1}\\phi_{1}+c_{2}\\phi_{2} ， 再把它代入能量期望值的表达式，对系数求偏导并令其为零， 即可得到关于 c_{1} 和 c_{2} 的齐次线性方程组，它有非零解的条件是 系数行列式等于零。",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "取试探函数为两个原子轨道的线性组合 \\psi=c_{1}\\phi_{1}+c_{2}\\phi_{2} ， 再把它代入能量期望值的表达式，对系数求偏导并令其为零， 即可得到关于 c_{1} 和 c_{2} 的齐次线性方程组，它有非零解的条件是 系数行列式等于零。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      410.0,
+      219.5,
+      425.0
+     ],
+     "block_class": "caption",
+     "block_id": "p002-b0005",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "代码 2.1 用瑞利商估算基态能量"
+      ],
+      "related_block_ids": [
+       "p002-b0006"
+      ],
+      "text": "代码 2.1 用瑞利商估算基态能量",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "caption"
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       410.0,
+       219.5,
+       425.0
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        410.0,
+        219.5,
+        425.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          410.0,
+          219.5,
+          425.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "代码 2.1 用瑞利商估算基态能量",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "caption_relation": "provider_container",
+      "caption_target_block_id": "p002-b0006",
+      "parent_block_id": "",
+      "provider_group_bbox": [
+       60,
+       410,
+       232.0,
+       488
+      ],
+      "provider_group_raw_path": "/pdf_info/1/para_blocks/5",
+      "provider_group_type": "code",
+      "raw_angle": 0,
+      "raw_index": 7,
+      "raw_sub_type": "",
+      "relation_group_type": "code",
+      "relation_source": "provider_container"
+     },
+     "order": 5,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_caption_whitelist:code_caption"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       410.0,
+       219.5,
+       425.0
+      ],
+      "raw_label": "code_caption",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/5/blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        410.0,
+        219.5,
+        425.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "代码 2.1 用瑞利商估算基态能量",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       410,
+       219.5,
+       425
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/5/blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "代码 2.1 用瑞利商估算基态能量",
+      "raw_type": "code_caption",
+      "raw_unit": "pt"
+     },
+     "structure_role": "code_caption",
+     "sub_type": "code_caption",
+     "tags": [
+      "caption",
+      "code_caption"
+     ],
+     "text": "代码 2.1 用瑞利商估算基态能量",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      70.0,
+      432.0,
+      232.0,
+      488.0
+     ],
+     "block_class": "code",
+     "block_id": "p002-b0006",
+     "content": {
+      "caption": "代码 2.1 用瑞利商估算基态能量",
+      "caption_block_ids": [
+       "p002-b0005"
+      ],
+      "captions": [
+       "代码 2.1 用瑞利商估算基态能量"
+      ],
+      "kind": "code",
+      "line_texts": [
+       "def rayleigh(psi, H):",
+       "num = psi @ H @ psi",
+       "return num / (psi @ psi)",
+       "E0 = rayleigh(psi, H)  # 瑞利商"
+      ],
+      "text": "def rayleigh(psi, H):\nnum = psi @ H @ psi\nreturn num / (psi @ psi)\nE0 = rayleigh(psi, H)  # 瑞利商",
+      "text_flow": "preserve_lines"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       70.0,
+       432.0,
+       232.0,
+       488.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        70.0,
+        432.0,
+        183.4,
+        446.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          70.0,
+          432.0,
+          183.4,
+          446.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "def rayleigh(psi, H):",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        70.0,
+        446.0,
+        194.2,
+        460.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          70.0,
+          446.0,
+          194.2,
+          460.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "num = psi @ H @ psi",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        70.0,
+        460.0,
+        221.2,
+        474.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          70.0,
+          460.0,
+          221.2,
+          474.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "return num / (psi @ psi)",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        70.0,
+        474.0,
+        232.0,
+        488.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          70.0,
+          474.0,
+          232.0,
+          488.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "E0 = rayleigh(psi, H)  # 瑞利商",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "caption_block_ids": [
+       "p002-b0005"
+      ],
+      "parent_block_id": "",
+      "provider_group_bbox": [
+       60,
+       410,
+       232.0,
+       488
+      ],
+      "provider_group_raw_path": "/pdf_info/1/para_blocks/5",
+      "provider_group_type": "code",
+      "raw_angle": 0,
+      "raw_index": 8,
+      "raw_sub_type": "code"
+     },
+     "order": 6,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:code"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       70.0,
+       432.0,
+       232.0,
+       488.0
+      ],
+      "raw_label": "code_body",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/5/blocks/1",
+      "raw_sub_type": "code",
+      "raw_unit": ""
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        70.0,
+        432.0,
+        183.4,
+        446.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "def rayleigh(psi, H):",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        70.0,
+        446.0,
+        194.2,
+        460.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "num = psi @ H @ psi",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        70.0,
+        460.0,
+        221.2,
+        474.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "return num / (psi @ psi)",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        70.0,
+        474.0,
+        232.0,
+        488.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "E0 = rayleigh(psi, H)  # 瑞利商",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       70,
+       432,
+       232.0,
+       488
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/5/blocks/1",
+      "raw_sub_type": "code",
+      "raw_text_excerpt": "def rayleigh(psi, H):\nnum = psi @ H @ psi\nreturn num / (psi @ psi)\nE0 = rayleigh(psi, H)  # 瑞利商",
+      "raw_type": "code_body",
+      "raw_unit": "pt"
+     },
+     "structure_role": "",
+     "sub_type": "code_block",
+     "tags": [
+      "code",
+      "skip_translation"
+     ],
+     "text": "def rayleigh(psi, H):\nnum = psi @ H @ psi\nreturn num / (psi @ psi)\nE0 = rayleigh(psi, H)  # 瑞利商",
+     "type": "code"
+    },
+    {
+     "bbox": [
+      60.0,
+      500.0,
+      420.0,
+      548.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0007",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "取极小的过程可以由计算机自动完成，上面的代码给出了瑞利商",
+       "的最简实现。在实际的量子化学软件中，通常还会引入收敛判据",
+       "与迭代加速技术，以保证自洽场迭代稳定收敛。"
+      ],
+      "text": "取极小的过程可以由计算机自动完成，上面的代码给出了瑞利商 的最简实现。在实际的量子化学软件中，通常还会引入收敛判据 与迭代加速技术，以保证自洽场迭代稳定收敛。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       500.0,
+       420.0,
+       548.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        500.0,
+        420.0,
+        516.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          500.0,
+          420.0,
+          516.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "取极小的过程可以由计算机自动完成，上面的代码给出了瑞利商",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        516.0,
+        396.0,
+        532.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          516.0,
+          396.0,
+          532.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "的最简实现。在实际的量子化学软件中，通常还会引入收敛判据",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        532.0,
+        312.0,
+        548.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          532.0,
+          312.0,
+          548.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "与迭代加速技术，以保证自洽场迭代稳定收敛。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 9,
+      "raw_sub_type": ""
+     },
+     "order": 7,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       500.0,
+       420.0,
+       548.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/6",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        500.0,
+        420.0,
+        516.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "取极小的过程可以由计算机自动完成，上面的代码给出了瑞利商",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        516.0,
+        396.0,
+        532.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "的最简实现。在实际的量子化学软件中，通常还会引入收敛判据",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        532.0,
+        312.0,
+        548.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "与迭代加速技术，以保证自洽场迭代稳定收敛。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       500,
+       420,
+       548
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/6",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "取极小的过程可以由计算机自动完成，上面的代码给出了瑞利商 的最简实现。在实际的量子化学软件中，通常还会引入收敛判据 与迭代加速技术，以保证自洽场迭代稳定收敛。",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "取极小的过程可以由计算机自动完成，上面的代码给出了瑞利商 的最简实现。在实际的量子化学软件中，通常还会引入收敛判据 与迭代加速技术，以保证自洽场迭代稳定收敛。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      552.0,
+      300.0,
+      570.0,
+      520.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "物理化学讲义·第二章·校对稿，仅供课堂使用"
+      ],
+      "text": "物理化学讲义·第二章·校对稿，仅供课堂使用",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       552.0,
+       300.0,
+       570.0,
+       520.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        552.0,
+        300.0,
+        570.0,
+        520.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          552.0,
+          300.0,
+          570.0,
+          520.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.91,
+         "text": "物理化学讲义·第二章·校对稿，仅供课堂使用",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 90,
+      "raw_index": 10,
+      "raw_sub_type": ""
+     },
+     "order": 8,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       552.0,
+       300.0,
+       570.0,
+       520.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/para_blocks/7",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        552.0,
+        300.0,
+        570.0,
+        520.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.91,
+       "text": "物理化学讲义·第二章·校对稿，仅供课堂使用",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       552,
+       300,
+       570,
+       520
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/para_blocks/7",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "物理化学讲义·第二章·校对稿，仅供课堂使用",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "物理化学讲义·第二章·校对稿，仅供课堂使用",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      30.0,
+      220.0,
+      44.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0009",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "第2章 量子力学基础与分子轨道理论"
+      ],
+      "text": "第2章 量子力学基础与分子轨道理论",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       30.0,
+       220.0,
+       44.0
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        30.0,
+        220.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          30.0,
+          220.0,
+          44.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "第2章 量子力学基础与分子轨道理论",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 9,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       30.0,
+       220.0,
+       44.0
+      ],
+      "raw_label": "header",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/discarded_blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        30.0,
+        220.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "第2章 量子力学基础与分子轨道理论",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       30,
+       220.0,
+       44
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/discarded_blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "第2章 量子力学基础与分子轨道理论",
+      "raw_type": "header",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "第2章 量子力学基础与分子轨道理论",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      435.0,
+      30.0,
+      525.0,
+      44.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0010",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "物理化学（第三版）"
+      ],
+      "text": "物理化学（第三版）",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       435.0,
+       30.0,
+       525.0,
+       44.0
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        435.0,
+        30.0,
+        525.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          435.0,
+          30.0,
+          525.0,
+          44.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "物理化学（第三版）",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 10,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       435.0,
+       30.0,
+       525.0,
+       44.0
+      ],
+      "raw_label": "header",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/discarded_blocks/1",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 10,
+     "segments": [
+      {
+       "bbox": [
+        435.0,
+        30.0,
+        525.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "物理化学（第三版）",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       435,
+       30,
+       525,
+       44
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/discarded_blocks/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "物理化学（第三版）",
+      "raw_type": "header",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "物理化学（第三版）",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      810.0,
+      145.0,
+      824.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0011",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "校内讲义 请勿外传"
+      ],
+      "text": "校内讲义 请勿外传",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       810.0,
+       145.0,
+       824.0
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        810.0,
+        145.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          810.0,
+          145.0,
+          824.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "校内讲义 请勿外传",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 11,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       810.0,
+       145.0,
+       824.0
+      ],
+      "raw_label": "footer",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/discarded_blocks/2",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 11,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        810.0,
+        145.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "校内讲义 请勿外传",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       810,
+       145.0,
+       824
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/discarded_blocks/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "校内讲义 请勿外传",
+      "raw_type": "footer",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "校内讲义 请勿外传",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      293.0,
+      810.0,
+      298.0,
+      824.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0012",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2"
+      ],
+      "text": "2",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       293.0,
+       810.0,
+       298.0,
+       824.0
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        293.0,
+        810.0,
+        298.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          293.0,
+          810.0,
+          298.0,
+          824.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "2",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 12,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       293.0,
+       810.0,
+       298.0,
+       824.0
+      ],
+      "raw_label": "page_number",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/1/discarded_blocks/3",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 12,
+     "segments": [
+      {
+       "bbox": [
+        293.0,
+        810.0,
+        298.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "2",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       293,
+       810,
+       298.0,
+       824
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/pdf_info/1/discarded_blocks/3",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2",
+      "raw_type": "page_number",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "2",
+     "type": "text"
+    }
+   ],
+   "height": 842.0,
+   "page": 2,
+   "page_index": 1,
+   "unit": "pt",
+   "width": 595.0
+  },
+  {
+   "blocks": [
+    {
+     "bbox": [
+      60.0,
+      70.0,
+      204.0,
+      92.0
+     ],
+     "block_class": "title",
+     "block_id": "p003-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2.3 分子轨道的图示"
+      ],
+      "text": "2.3 分子轨道的图示",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       70.0,
+       204.0,
+       92.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        70.0,
+        204.0,
+        92.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          70.0,
+          204.0,
+          92.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "2.3 分子轨道的图示",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 0,
+      "raw_sub_type": "",
+      "raw_title_level": 2
+     },
+     "order": 0,
+     "page_index": 2,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       70.0,
+       204.0,
+       92.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        70.0,
+        204.0,
+        92.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "2.3 分子轨道的图示",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       70,
+       204.0,
+       92
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2.3 分子轨道的图示",
+      "raw_type": "title",
+      "raw_unit": "pt"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "2.3 分子轨道的图示",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      106.0,
+      420.0,
+      138.0
+     ],
+     "block_class": "body",
+     "block_id": "p003-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "两个原子轨道线性组合可以得到能量较低的成键轨道和能量较高",
+       "的反键轨道，二者的节面特征与能量高低比较见图2.1。"
+      ],
+      "text": "两个原子轨道线性组合可以得到能量较低的成键轨道和能量较高 的反键轨道，二者的节面特征与能量高低比较见图2.1。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       106.0,
+       420.0,
+       138.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        106.0,
+        420.0,
+        122.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          106.0,
+          420.0,
+          122.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "两个原子轨道线性组合可以得到能量较低的成键轨道和能量较高",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        122.0,
+        354.0,
+        138.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          122.0,
+          354.0,
+          138.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "的反键轨道，二者的节面特征与能量高低比较见图2.1。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 1,
+      "raw_sub_type": ""
+     },
+     "order": 1,
+     "page_index": 2,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       106.0,
+       420.0,
+       138.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/1",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        106.0,
+        420.0,
+        122.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "两个原子轨道线性组合可以得到能量较低的成键轨道和能量较高",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        122.0,
+        354.0,
+        138.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "的反键轨道，二者的节面特征与能量高低比较见图2.1。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       106,
+       420,
+       138
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "两个原子轨道线性组合可以得到能量较低的成键轨道和能量较高 的反键轨道，二者的节面特征与能量高低比较见图2.1。",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "两个原子轨道线性组合可以得到能量较低的成键轨道和能量较高 的反键轨道，二者的节面特征与能量高低比较见图2.1。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      70.0,
+      150.0,
+      290.0,
+      310.0
+     ],
+     "block_class": "image",
+     "block_id": "p003-b0002",
+     "content": {
+      "asset_id": "page-3/65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg",
+      "asset_ids": [
+       "page-3/65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg"
+      ],
+      "caption": "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间 密集；（b）反键轨道，两核之间出现节面。",
+      "caption_block_ids": [
+       "p003-b0004"
+      ],
+      "captions": [
+       "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间 密集；（b）反键轨道，两核之间出现节面。"
+      ],
+      "kind": "image"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       70.0,
+       150.0,
+       290.0,
+       310.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [],
+     "metadata": {
+      "asset_key": "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg",
+      "asset_keys": [
+       "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg",
+      "asset_paths": [
+       "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg"
+      ],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "caption_block_ids": [
+       "p003-b0004"
+      ],
+      "parent_block_id": "",
+      "provider_group_bbox": [
+       70,
+       150,
+       525,
+       346
+      ],
+      "provider_group_raw_path": "/pdf_info/2/para_blocks/2",
+      "provider_group_type": "image",
+      "provider_image_paths": [
+       "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg"
+      ],
+      "raw_angle": 0,
+      "raw_index": 2,
+      "raw_sub_type": ""
+     },
+     "order": 2,
+     "page_index": 2,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:image"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       70.0,
+       150.0,
+       290.0,
+       310.0
+      ],
+      "raw_label": "image_body",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/2/blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 2,
+     "segments": [],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       70,
+       150,
+       290,
+       310
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/2/blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "",
+      "raw_type": "image_body",
+      "raw_unit": "pt"
+     },
+     "structure_role": "",
+     "sub_type": "figure",
+     "tags": [
+      "image",
+      "skip_translation"
+     ],
+     "text": "",
+     "type": "image"
+    },
+    {
+     "bbox": [
+      305.0,
+      150.0,
+      525.0,
+      310.0
+     ],
+     "block_class": "image",
+     "block_id": "p003-b0003",
+     "content": {
+      "asset_id": "page-3/6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg",
+      "asset_ids": [
+       "page-3/6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg"
+      ],
+      "kind": "image",
+      "text": ""
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       305.0,
+       150.0,
+       525.0,
+       310.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [],
+     "metadata": {
+      "asset_key": "6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg",
+      "asset_keys": [
+       "6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg",
+      "asset_paths": [
+       "6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg"
+      ],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "parent_block_id": "",
+      "provider_group_bbox": [
+       70,
+       150,
+       525,
+       346
+      ],
+      "provider_group_raw_path": "/pdf_info/2/para_blocks/2",
+      "provider_group_type": "image",
+      "provider_image_paths": [
+       "6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg"
+      ],
+      "raw_angle": 0,
+      "raw_index": 3,
+      "raw_sub_type": ""
+     },
+     "order": 3,
+     "page_index": 2,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:image"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       305.0,
+       150.0,
+       525.0,
+       310.0
+      ],
+      "raw_label": "image_body",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/2/blocks/1",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 3,
+     "segments": [],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       305,
+       150,
+       525,
+       310
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/2/blocks/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "",
+      "raw_type": "image_body",
+      "raw_unit": "pt"
+     },
+     "structure_role": "",
+     "sub_type": "figure",
+     "tags": [
+      "image",
+      "skip_translation"
+     ],
+     "text": "",
+     "type": "image"
+    },
+    {
+     "bbox": [
+      70.0,
+      318.0,
+      390.0,
+      346.0
+     ],
+     "block_class": "caption",
+     "block_id": "p003-b0004",
+     "content": {
+      "asset_id": "page-3/65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg",
+      "asset_ids": [
+       "page-3/65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg"
+      ],
+      "kind": "text",
+      "line_texts": [
+       "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间",
+       "密集；（b）反键轨道，两核之间出现节面。"
+      ],
+      "related_block_ids": [
+       "p003-b0002"
+      ],
+      "text": "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间 密集；（b）反键轨道，两核之间出现节面。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "caption"
+     },
+     "geometry": {
+      "bbox": [
+       70.0,
+       318.0,
+       390.0,
+       346.0
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        70.0,
+        318.0,
+        390.0,
+        332.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          70.0,
+          318.0,
+          390.0,
+          332.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        70.0,
+        332.0,
+        265.0,
+        346.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          70.0,
+          332.0,
+          265.0,
+          346.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "密集；（b）反键轨道，两核之间出现节面。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg",
+      "asset_keys": [
+       "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg",
+      "asset_paths": [
+       "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg"
+      ],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "caption_relation": "provider_container",
+      "caption_target_block_id": "p003-b0002",
+      "parent_block_id": "",
+      "provider_group_bbox": [
+       70,
+       150,
+       525,
+       346
+      ],
+      "provider_group_raw_path": "/pdf_info/2/para_blocks/2",
+      "provider_group_type": "image",
+      "raw_angle": 0,
+      "raw_index": 4,
+      "raw_sub_type": "",
+      "relation_group_type": "image",
+      "relation_source": "provider_container"
+     },
+     "order": 4,
+     "page_index": 2,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_caption_whitelist:image_caption"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       70.0,
+       318.0,
+       390.0,
+       346.0
+      ],
+      "raw_label": "image_caption",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/2/blocks/2",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        70.0,
+        318.0,
+        390.0,
+        332.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        70.0,
+        332.0,
+        265.0,
+        346.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "密集；（b）反键轨道，两核之间出现节面。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       70,
+       318,
+       390.0,
+       346
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/2/blocks/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间 密集；（b）反键轨道，两核之间出现节面。",
+      "raw_type": "image_caption",
+      "raw_unit": "pt"
+     },
+     "structure_role": "figure_caption",
+     "sub_type": "image_caption",
+     "tags": [
+      "caption",
+      "image_caption"
+     ],
+     "text": "图 2.1 氢分子离子的轨道能量比较：（a）成键轨道，电子云在两核之间 密集；（b）反键轨道，两核之间出现节面。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      110.0,
+      372.0,
+      485.0,
+      552.0
+     ],
+     "block_class": "image",
+     "block_id": "p003-b0005",
+     "content": {
+      "asset_id": "page-3/93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg",
+      "asset_ids": [
+       "page-3/93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+      ],
+      "caption": "图 2.2 氢分子离子势能曲线随核间距的变化",
+      "caption_block_ids": [
+       "p003-b0006"
+      ],
+      "captions": [
+       "图 2.2 氢分子离子势能曲线随核间距的变化"
+      ],
+      "kind": "image"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       110.0,
+       372.0,
+       485.0,
+       552.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [],
+     "metadata": {
+      "asset_key": "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg",
+      "asset_keys": [
+       "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg",
+      "asset_paths": [
+       "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+      ],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "caption_block_ids": [
+       "p003-b0006"
+      ],
+      "parent_block_id": "",
+      "provider_group_bbox": [
+       110,
+       372,
+       485,
+       575
+      ],
+      "provider_group_raw_path": "/pdf_info/2/para_blocks/3",
+      "provider_group_type": "chart",
+      "provider_image_paths": [
+       "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+      ],
+      "raw_angle": 0,
+      "raw_index": 5,
+      "raw_sub_type": ""
+     },
+     "order": 5,
+     "page_index": 2,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:image"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       110.0,
+       372.0,
+       485.0,
+       552.0
+      ],
+      "raw_label": "chart_body",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/3/blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 5,
+     "segments": [],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       110,
+       372,
+       485,
+       552
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/3/blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "",
+      "raw_type": "chart_body",
+      "raw_unit": "pt"
+     },
+     "structure_role": "",
+     "sub_type": "figure",
+     "tags": [
+      "image",
+      "skip_translation"
+     ],
+     "text": "",
+     "type": "image"
+    },
+    {
+     "bbox": [
+      190.2,
+      560.0,
+      404.8,
+      575.0
+     ],
+     "block_class": "caption",
+     "block_id": "p003-b0006",
+     "content": {
+      "asset_id": "page-3/93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg",
+      "asset_ids": [
+       "page-3/93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+      ],
+      "kind": "text",
+      "line_texts": [
+       "图 2.2 氢分子离子势能曲线随核间距的变化"
+      ],
+      "related_block_ids": [
+       "p003-b0005"
+      ],
+      "text": "图 2.2 氢分子离子势能曲线随核间距的变化",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "caption"
+     },
+     "geometry": {
+      "bbox": [
+       190.2,
+       560.0,
+       404.8,
+       575.0
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        190.2,
+        560.0,
+        404.8,
+        575.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          190.2,
+          560.0,
+          404.8,
+          575.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "图 2.2 氢分子离子势能曲线随核间距的变化",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg",
+      "asset_keys": [
+       "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg",
+      "asset_paths": [
+       "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+      ],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "caption_relation": "provider_container",
+      "caption_target_block_id": "p003-b0005",
+      "parent_block_id": "",
+      "provider_group_bbox": [
+       110,
+       372,
+       485,
+       575
+      ],
+      "provider_group_raw_path": "/pdf_info/2/para_blocks/3",
+      "provider_group_type": "chart",
+      "raw_angle": 0,
+      "raw_index": 6,
+      "raw_sub_type": "",
+      "relation_group_type": "chart",
+      "relation_source": "provider_container"
+     },
+     "order": 6,
+     "page_index": 2,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_caption_whitelist:chart_caption"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       190.2,
+       560.0,
+       404.8,
+       575.0
+      ],
+      "raw_label": "chart_caption",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/3/blocks/1",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        190.2,
+        560.0,
+        404.8,
+        575.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "图 2.2 氢分子离子势能曲线随核间距的变化",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       190.2,
+       560,
+       404.8,
+       575
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/3/blocks/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "图 2.2 氢分子离子势能曲线随核间距的变化",
+      "raw_type": "chart_caption",
+      "raw_unit": "pt"
+     },
+     "structure_role": "figure_caption",
+     "sub_type": "chart_caption",
+     "tags": [
+      "caption",
+      "chart_caption"
+     ],
+     "text": "图 2.2 氢分子离子势能曲线随核间距的变化",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      610.0,
+      228.0,
+      630.0
+     ],
+     "block_class": "title",
+     "block_id": "p003-b0007",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "2.3.1 成键轨道与反键轨道"
+      ],
+      "text": "2.3.1 成键轨道与反键轨道",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       610.0,
+       228.0,
+       630.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        610.0,
+        228.0,
+        630.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          610.0,
+          228.0,
+          630.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "2.3.1 成键轨道与反键轨道",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 7,
+      "raw_sub_type": "",
+      "raw_title_level": 3
+     },
+     "order": 7,
+     "page_index": 2,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       610.0,
+       228.0,
+       630.0
+      ],
+      "raw_label": "title",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/4",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 7,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        610.0,
+        228.0,
+        630.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "2.3.1 成键轨道与反键轨道",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       610,
+       228.0,
+       630
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/4",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "2.3.1 成键轨道与反键轨道",
+      "raw_type": "title",
+      "raw_unit": "pt"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "2.3.1 成键轨道与反键轨道",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      642.0,
+      442.0,
+      690.0
+     ],
+     "block_class": "body",
+     "block_id": "p003-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "由图2.2可知，成键轨道的能量 E_{+} 在核间距约为2.5个玻尔半径处出",
+       "现极小值，对应分子的平衡键长；反键轨道的能量 E_{-} 则随核",
+       "间距的减小而单调升高，不能形成稳定的化学键。"
+      ],
+      "text": "由图2.2可知，成键轨道的能量 E_{+} 在核间距约为2.5个玻尔半径处出 现极小值，对应分子的平衡键长；反键轨道的能量 E_{-} 则随核 间距的减小而单调升高，不能形成稳定的化学键。",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       642.0,
+       442.0,
+       690.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        84.0,
+        642.0,
+        442.0,
+        658.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          84.0,
+          642.0,
+          246.0,
+          658.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "由图2.2可知，成键轨道的能量",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          247.0,
+          642.0,
+          267.0,
+          658.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.99,
+         "text": "E_{+}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          268.0,
+          642.0,
+          442.0,
+          658.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "在核间距约为2.5个玻尔半径处出",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        658.0,
+        382.0,
+        674.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          658.0,
+          324.0,
+          674.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "现极小值，对应分子的平衡键长；反键轨道的能量",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          325.0,
+          658.0,
+          345.0,
+          674.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "inline_equation",
+         "score": 0.99,
+         "text": "E_{-}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          346.0,
+          658.0,
+          382.0,
+          674.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.96,
+         "text": "则随核",
+         "type": "text"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        60.0,
+        674.0,
+        324.0,
+        690.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          674.0,
+          324.0,
+          690.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "间距的减小而单调升高，不能形成稳定的化学键。",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": 8,
+      "raw_sub_type": ""
+     },
+     "order": 8,
+     "page_index": 2,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       642.0,
+       442.0,
+       690.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/para_blocks/5",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        84.0,
+        642.0,
+        246.0,
+        658.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "由图2.2可知，成键轨道的能量",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        247.0,
+        642.0,
+        267.0,
+        658.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.99,
+       "text": "E_{+}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        268.0,
+        642.0,
+        442.0,
+        658.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "在核间距约为2.5个玻尔半径处出",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        658.0,
+        324.0,
+        674.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "现极小值，对应分子的平衡键长；反键轨道的能量",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        325.0,
+        658.0,
+        345.0,
+        674.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "inline_equation",
+       "score": 0.99,
+       "text": "E_{-}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        346.0,
+        658.0,
+        382.0,
+        674.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.96,
+       "text": "则随核",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        60.0,
+        674.0,
+        324.0,
+        690.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "间距的减小而单调升高，不能形成稳定的化学键。",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       642,
+       442.0,
+       690
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/para_blocks/5",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "由图2.2可知，成键轨道的能量 E_{+} 在核间距约为2.5个玻尔半径处出 现极小值，对应分子的平衡键长；反键轨道的能量 E_{-} 则随核 间距的减小而单调升高，不能形成稳定的化学键。",
+      "raw_type": "text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "由图2.2可知，成键轨道的能量 E_{+} 在核间距约为2.5个玻尔半径处出 现极小值，对应分子的平衡键长；反键轨道的能量 E_{-} 则随核 间距的减小而单调升高，不能形成稳定的化学键。",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      30.0,
+      220.0,
+      44.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p003-b0009",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "第2章 量子力学基础与分子轨道理论"
+      ],
+      "text": "第2章 量子力学基础与分子轨道理论",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       30.0,
+       220.0,
+       44.0
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        30.0,
+        220.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          30.0,
+          220.0,
+          44.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "第2章 量子力学基础与分子轨道理论",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 9,
+     "page_index": 2,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       30.0,
+       220.0,
+       44.0
+      ],
+      "raw_label": "header",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/discarded_blocks/0",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 9,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        30.0,
+        220.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "第2章 量子力学基础与分子轨道理论",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       30,
+       220.0,
+       44
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/discarded_blocks/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "第2章 量子力学基础与分子轨道理论",
+      "raw_type": "header",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "第2章 量子力学基础与分子轨道理论",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      435.0,
+      30.0,
+      525.0,
+      44.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p003-b0010",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "物理化学（第三版）"
+      ],
+      "text": "物理化学（第三版）",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       435.0,
+       30.0,
+       525.0,
+       44.0
+      ]
+     },
+     "layout_role": "header",
+     "lines": [
+      {
+       "bbox": [
+        435.0,
+        30.0,
+        525.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          435.0,
+          30.0,
+          525.0,
+          44.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.98,
+         "text": "物理化学（第三版）",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 10,
+     "page_index": 2,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:header"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       435.0,
+       30.0,
+       525.0,
+       44.0
+      ],
+      "raw_label": "header",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/discarded_blocks/1",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 10,
+     "segments": [
+      {
+       "bbox": [
+        435.0,
+        30.0,
+        525.0,
+        44.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.98,
+       "text": "物理化学（第三版）",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       435,
+       30,
+       525,
+       44
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/discarded_blocks/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "物理化学（第三版）",
+      "raw_type": "header",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "物理化学（第三版）",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      60.0,
+      810.0,
+      145.0,
+      824.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p003-b0011",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "校内讲义 请勿外传"
+      ],
+      "text": "校内讲义 请勿外传",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       60.0,
+       810.0,
+       145.0,
+       824.0
+      ]
+     },
+     "layout_role": "footer",
+     "lines": [
+      {
+       "bbox": [
+        60.0,
+        810.0,
+        145.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          60.0,
+          810.0,
+          145.0,
+          824.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.97,
+         "text": "校内讲义 请勿外传",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 11,
+     "page_index": 2,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:footer"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60.0,
+       810.0,
+       145.0,
+       824.0
+      ],
+      "raw_label": "footer",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/discarded_blocks/2",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 11,
+     "segments": [
+      {
+       "bbox": [
+        60.0,
+        810.0,
+        145.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.97,
+       "text": "校内讲义 请勿外传",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       60,
+       810,
+       145.0,
+       824
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/discarded_blocks/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "校内讲义 请勿外传",
+      "raw_type": "footer",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "校内讲义 请勿外传",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      293.0,
+      810.0,
+      298.0,
+      824.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p003-b0012",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "3"
+      ],
+      "text": "3",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       293.0,
+       810.0,
+       298.0,
+       824.0
+      ]
+     },
+     "layout_role": "page_number",
+     "lines": [
+      {
+       "bbox": [
+        293.0,
+        810.0,
+        298.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          293.0,
+          810.0,
+          298.0,
+          824.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.99,
+         "text": "3",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 0,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 12,
+     "page_index": 2,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:page_number"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       293.0,
+       810.0,
+       298.0,
+       824.0
+      ],
+      "raw_label": "page_number",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/discarded_blocks/3",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 12,
+     "segments": [
+      {
+       "bbox": [
+        293.0,
+        810.0,
+        298.0,
+        824.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.99,
+       "text": "3",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       293,
+       810,
+       298.0,
+       824
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/discarded_blocks/3",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "3",
+      "raw_type": "page_number",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "page_number",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "3",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      18.0,
+      250.0,
+      36.0,
+      590.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p003-b0013",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "物理化学讲义 第二章 初稿 2026年10月"
+      ],
+      "text": "物理化学讲义 第二章 初稿 2026年10月",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       18.0,
+       250.0,
+       36.0,
+       590.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        18.0,
+        250.0,
+        36.0,
+        590.0
+       ],
+       "bbox_precision": "provider_layout",
+       "spans": [
+        {
+         "bbox": [
+          18.0,
+          250.0,
+          36.0,
+          590.0
+         ],
+         "bbox_precision": "provider_layout",
+         "raw_type": "text",
+         "score": 0.9,
+         "text": "物理化学讲义 第二章 初稿 2026年10月",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "parent_block_id": "",
+      "raw_angle": 90,
+      "raw_index": null,
+      "raw_sub_type": ""
+     },
+     "order": 13,
+     "page_index": 2,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:aside_text"
+     },
+     "provenance": {
+      "provider": "mineru",
+      "raw_bbox": [
+       18.0,
+       250.0,
+       36.0,
+       590.0
+      ],
+      "raw_label": "aside_text",
+      "raw_origin": "",
+      "raw_path": "/pdf_info/2/discarded_blocks/4",
+      "raw_sub_type": "",
+      "raw_unit": ""
+     },
+     "reading_order": 13,
+     "segments": [
+      {
+       "bbox": [
+        18.0,
+        250.0,
+        36.0,
+        590.0
+       ],
+       "bbox_precision": "provider_layout",
+       "raw_type": "text",
+       "score": 0.9,
+       "text": "物理化学讲义 第二章 初稿 2026年10月",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "mineru",
+      "raw_bbox": [
+       18,
+       250,
+       36,
+       590
+      ],
+      "raw_origin": "top_left",
+      "raw_page_index": 2,
+      "raw_path": "/pdf_info/2/discarded_blocks/4",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "物理化学讲义 第二章 初稿 2026年10月",
+      "raw_type": "aside_text",
+      "raw_unit": "pt"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "物理化学讲义 第二章 初稿 2026年10月",
+     "type": "text"
+    }
+   ],
+   "height": 842.0,
+   "metadata": {
+    "markdown": {
+     "images": {
+      "65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg": "md/images/page-3/65d3b99a157bac936288758f19d7c5901bbf48278390a668873fc6ffb62097b1.jpg",
+      "6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg": "md/images/page-3/6c396b3bd81fd77f133e4ddc518a4d20639445f1a2847193e0b113a7d25dfb69.jpg",
+      "93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg": "md/images/page-3/93b91176a313b47379242abe6e1472c084a3b11149effdfab25bfa00956d8904.jpg"
+     }
+    }
+   },
+   "page": 3,
+   "page_index": 2,
+   "unit": "pt",
+   "width": 595.0
+  }
+ ],
+ "schema": "normalized_document_v1",
+ "schema_version": "1.1",
+ "source": {
+  "provider": "mineru",
+  "provider_version": "2.6.4",
+  "raw_files": {
+   "layout_json": "layout.json"
+  }
+ }
+}
