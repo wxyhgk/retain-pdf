@@ -3,6 +3,7 @@ import { pageVersion } from '../articles/page-version.mjs';
 import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
 import { ArticleExport } from '../articles/article-export.mjs';
 import { ArticleImport } from '../articles/article-import.mjs';
+import { Databases } from '../articles/databases.mjs';
 import { FindReplace } from '../articles/find-replace.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -39,17 +40,35 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 		response.end(out.body);
 	}, { streams: true });
 	// 导入 Markdown (article-import.mjs): a zip of .md files and what they show, made pages (under `parent`).
-	const importer = new ArticleImport({
-		articles,
-		manager,
-		slugs(taken) {
-			const two = (value) => String(value).padStart(2, '0');
-			const now = new Date();
-			const wanted = `note-${now.getFullYear()}${two(now.getMonth() + 1)}${two(now.getDate())}-${two(now.getHours())}${two(now.getMinutes())}${two(now.getSeconds())}`;
-			let slug = wanted;
-			for (let number = 2; taken.has(slug); number += 1) slug = `${wanted}-${number}`;
-			return slug;
-		},
+	/** A folder name for a new page (`note-<date>-<time>`, numbered when taken), as the Studio makes them. */
+	const freeSlug = (taken) => {
+		const two = (value) => String(value).padStart(2, '0');
+		const now = new Date();
+		const wanted = `note-${now.getFullYear()}${two(now.getMonth() + 1)}${two(now.getDate())}-${two(now.getHours())}${two(now.getMinutes())}${two(now.getSeconds())}`;
+		let slug = wanted;
+		for (let number = 2; taken.has(slug); number += 1) slug = `${wanted}-${number}`;
+		return slug;
+	};
+	const importer = new ArticleImport({ articles, manager, slugs: freeSlug });
+
+	// 数据库 (databases.mjs): a page's rows (the pages under it, with their values), one value or title set, a row made,
+	// columns renamed or taken away in every row.
+	const databases = new Databases({ articles, history, site });
+	api.get('/databases/:slug', async ({ params }) => ({ rows: await databases.rows(params.slug) }));
+	api.put('/databases/rows/:slug', async ({ params, json }) => {
+		const asked = await json();
+		if (typeof asked.title === 'string') return databases.setTitle(params.slug, asked.title);
+		return databases.setValue(params.slug, asked.column, asked.type, asked.value);
+	});
+	api.post('/databases/:slug/rows', async ({ params, json }) => {
+		const asked = await json();
+		const slug = freeSlug(new Set((await articles.list()).map((article) => article.slug)));
+		const made = asked.template ? await templates.render(String(asked.template), { title: String(asked.title ?? '') }) : null;
+		return reply(201, await databases.addRow(params.slug, { slug, title: made?.title ?? String(asked.title ?? ''), props: asked.props ?? {}, body: made?.body ?? '' }));
+	});
+	api.post('/databases/:slug/columns', async ({ params, json }) => {
+		const asked = await json();
+		return databases.changeColumns(params.slug, { renames: asked.renames ?? {}, removed: asked.removed ?? [] });
 	});
 	api.post('/import', async ({ query, request }) => {
 		const chunks = [];

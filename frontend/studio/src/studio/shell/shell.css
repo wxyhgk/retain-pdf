@@ -12,6 +12,8 @@
 
 @source './';
 @source '../ui';
+/* The database's view, drawn in the editor (a [data-ui] of its own). */
+@source '../editor/database';
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 

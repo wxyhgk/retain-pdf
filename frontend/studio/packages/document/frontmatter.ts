@@ -56,8 +56,10 @@ function inlineComment(line: string): string {
 	return '';
 }
 
-function encodedValue(key: string, value: string | string[] | boolean): string {
+function encodedValue(key: string, value: unknown): string {
 	if (key === 'draft') return value ? 'true' : 'false';
+	// A map (a database row's values): JSON on one line, spaced, which YAML reads as it is.
+	if (key === 'props') return JSON.stringify(value, null, 1).replace(/\n\s*/gu, ' ');
 	if (key === 'order') return String(value);
 	if (key === 'tags') return `[${(value as string[]).map((tag) => JSON.stringify(tag)).join(', ')}]`;
 	return JSON.stringify(value);
@@ -84,7 +86,7 @@ function removeYamlField(yaml: string, key: string): string {
 	return `${yaml.slice(0, lines[fieldIndex]!.start)}${yaml.slice(fieldEnd(lines, fieldIndex, yaml.length))}`;
 }
 
-function replaceYamlField(yaml: string, key: string, value: string | string[] | boolean, defaultEol: string): string {
+function replaceYamlField(yaml: string, key: string, value: unknown, defaultEol: string): string {
 	const lines = readLines(yaml);
 	const fieldIndex = lines.findIndex((line) => topLevelKey(line) === key);
 	const replacementValue = encodedValue(key, value);
@@ -118,6 +120,18 @@ export function setFrontmatterField(source: string, key: 'parent' | 'order', val
 	const yaml = value === null || value === ''
 		? removeYamlField(document.frontmatter.yamlRaw, key)
 		: replaceYamlField(document.frontmatter.yamlRaw, key, typeof value === 'number' ? String(value) : value, defaultEol);
+	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
+}
+
+/**
+ * A database row's values (`props:`, database.mjs) set, or taken out when there are none; the rest of the text byte
+ * for byte as it was.
+ */
+export function setFrontmatterProps(source: string, props: Record<string, unknown> | null): string {
+	const document = parseStudioDocument(source);
+	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
+	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
+	const yaml = !props || Object.keys(props).length === 0 ? removeYamlField(document.frontmatter.yamlRaw, 'props') : replaceYamlField(document.frontmatter.yamlRaw, 'props', props, defaultEol);
 	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
 }
 

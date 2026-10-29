@@ -29,6 +29,7 @@ import { blockFeelPlugins, buildBlockMenu, buildToolbarAsk, buildToolbarTurn } f
 import { filesNamed, headingSection } from './split-section';
 import type { FileClick } from '../files/file-open';
 import { openFileLinks } from './file-links';
+import { DATABASE_TYPE, databasePlugins } from './database/database-block';
 import { findPlugins } from './find-in-article';
 import { canSaveAsFile, codeFileLanguageDescriptions, codeFilePath, codeFilePreview, observeCodeFiles, redrawCodeFiles, saveCodeBlockAsFile } from './code-files';
 import type { HastElement } from '@blog/markdown/code-files/render.mjs';
@@ -489,6 +490,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		crepe.editor.use(togglePlugins());
 		crepe.editor.use(columnsPlugins());
 		crepe.editor.use(articleLinkPlugins(host));
+		// ```database: the pages under this one as a table or a board (database/).
+		crepe.editor.use(databasePlugins);
 		// ⌘F in the article: the places found marked (find-in-article.ts).
 		crepe.editor.use(findPlugins());
 		crepe.editor.use(smartPastePlugins({ articleTitle: (slug) => host.articleTitle(slug), links: () => links }));
@@ -518,7 +521,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 					acceptLabel: t('接受'),
 					rejectLabel: t('拒绝'),
 					// Blocks drawn by their own views: a change inside one replaces it whole.
-					customBlockTypes: ['table', 'image-block', FIGURE_TYPE, 'code_block', ...blocks.flatMap((block) => block.drawnWhole ?? [])],
+					customBlockTypes: ['table', 'image-block', FIGURE_TYPE, DATABASE_TYPE, 'code_block', ...blocks.flatMap((block) => block.drawnWhole ?? [])],
 				}));
 			})
 			.use(diff)

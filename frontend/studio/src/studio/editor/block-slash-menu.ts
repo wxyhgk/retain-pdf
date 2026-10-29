@@ -8,6 +8,7 @@ import { insertPage, linkArticleAt, type ArticleLinkHost } from './article-links
 import { wrapInCallout } from './callout-block.ts';
 import { insertColumns } from './columns-block.ts';
 import { wrapInToggle } from './toggle-block.ts';
+import { insertDatabase } from './database/database-block.ts';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 import type { StudioCommand } from '@blog/kernel/ui.ts';
 import { t } from '@blog/i18n/index.mjs';
@@ -33,6 +34,7 @@ const ICONS = {
 	page: icon('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'),
 	link: icon('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>'),
 	command: icon('<path d="M5 7l5 5-5 5"/><path d="M12 17h7"/>'),
+	database: icon('<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'),
 	template: icon('<rect x="3" y="3" width="18" height="7" rx="1"/><rect x="3" y="14" width="9" height="7" rx="1"/><rect x="16" y="14" width="5" height="7" rx="1"/>'),
 	inlineMath: icon('<path d="M8 21s-4-3-4-9 4-9 4-9"/><path d="M16 3s4 3 4 9-4 9-4 9"/><path d="M15 9l-6 6M9 9l6 6"/>'),
 };
@@ -75,6 +77,13 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 			onRun: (ctx) => templates.pick(placed(ctx, 'inline')),
 		});
 	}
+	group.addItem('database', {
+		label: t('数据库'),
+		description: t('这一页下面的页面显示成表格或看板'),
+		icon: ICONS.database,
+		keywords: ['database', 'table', 'board', 'kanban', '数据库', '表格', '看板', 'shujuku', 'sjk'], // i18n-ignore: matched against what is typed
+		onRun: (ctx) => insertDatabase(placed(ctx, 'below')),
+	});
 	group.addItem('callout', { label: t('提示块'), description: t('让一段话醒目'), icon: ICONS.callout, keywords: ['callout', 'note', 'tip', 'admonition'], onRun: (ctx) => void wrapInCallout(placed(ctx, 'turn'), 'tip') });
 	group.addItem('toggle', { label: t('折叠块'), description: t('把内容收起来，点开再看'), icon: ICONS.toggle, keywords: ['toggle', 'details', 'fold', 'collapse'], onRun: (ctx) => void wrapInToggle(placed(ctx, 'turn')) });
 	group.addItem('columns', { label: t('两栏'), description: t('左右并排两块内容'), icon: ICONS.columns, keywords: ['columns', 'column', 'split', 'side by side', '双栏', '分栏', '并排', 'shuanglan', 'fenlan', 'bingpai'], onRun: (ctx) => void insertColumns(placed(ctx, 'below'), 2) }); // i18n-ignore: keywords matched against what is typed

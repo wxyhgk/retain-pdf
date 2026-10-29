@@ -103,6 +103,30 @@ export function replaceInArticles(find: string, replacement: string, picks: Reco
 	return request('/api/studio/replace', jsonOptions('POST', { find, replacement, picks, ...options }));
 }
 
+/** 数据库 (server/articles/databases.mjs): a page's rows, the pages under it with their values. */
+export function databaseRows(slug: string): Promise<{ rows: Array<{ slug: string; title: string; icon: string; props: Record<string, unknown> }> }> {
+	return request(`/api/studio/databases/${encodeURIComponent(slug)}`);
+}
+
+/** One value of a row set (empty: taken out); what the column's kind kept of it. */
+export function setDatabaseValue(row: string, column: string, type: string, value: unknown): Promise<{ value: unknown }> {
+	return request(`/api/studio/databases/rows/${encodeURIComponent(row)}`, jsonOptions('PUT', { column, type, value }));
+}
+
+export function setDatabaseTitle(row: string, title: string): Promise<{ title: string }> {
+	return request(`/api/studio/databases/rows/${encodeURIComponent(row)}`, jsonOptions('PUT', { title }));
+}
+
+/** A row made under the database: a page, of this title and these values, from a template when given. */
+export function addDatabaseRow(database: string, row: { title?: string; props?: Record<string, unknown>; template?: string | null }): Promise<{ slug: string }> {
+	return request(`/api/studio/databases/${encodeURIComponent(database)}/rows`, jsonOptions('POST', row));
+}
+
+/** Columns renamed (old → new) or taken away, in every row. */
+export function changeDatabaseColumns(database: string, change: { renames?: Record<string, string>; removed?: string[] }): Promise<{ changed: string[] }> {
+	return request(`/api/studio/databases/${encodeURIComponent(database)}/columns`, jsonOptions('POST', change));
+}
+
 /** 导入 Markdown: a zip of .md files (and what they show), made pages under `parent` ('' for none). */
 export function importMarkdown(zip: Blob, parent = ''): Promise<{ pages: Array<{ slug: string; title: string }>; files: number; missing: string[] }> {
 	return request(`/api/studio/import${parent ? `?parent=${encodeURIComponent(parent)}` : ''}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: zip });

@@ -1,4 +1,4 @@
-import { visit } from 'unist-util-visit';
+import { SKIP, visit } from 'unist-util-visit';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
@@ -11,9 +11,15 @@ import { t } from '@blog/i18n/index.mjs';
  */
 export default function remarkBlocks({ blocks = null } = {}) {
 	return (tree, file) => {
-		if (!blocks) return;
 		visit(tree, 'code', (node, index, parent) => {
 			if (!parent || index === undefined) return;
+			// A ```database (the Studio's: the pages under the page as a table) is not on the blog yet: left out, not
+			// shown as its settings.
+			if (node.lang === 'database') {
+				parent.children.splice(index, 1);
+				return [SKIP, index];
+			}
+			if (!blocks) return;
 			const block = blocks.get(node.lang ?? '');
 			if (typeof block?.remark !== 'function') return;
 			// A plugin that fails on a block: the block left as code, and said (the page is made all the same).

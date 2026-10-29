@@ -19,6 +19,11 @@ import {
 	keepVersion,
 	listMiniApps,
 	listTemplates,
+	databaseRows,
+	setDatabaseValue,
+	setDatabaseTitle,
+	addDatabaseRow,
+	changeDatabaseColumns,
 	renderTemplate,
 	tellStarted,
 	openArticleFileInApp,
@@ -71,6 +76,8 @@ import { answerWindows } from './windows/studio-line';
 import { openFileEditor } from './files/file-editor';
 import { openFileHistory } from './files/file-history-view';
 import { openFilePreview } from './files/file-preview';
+import { setDatabaseHost } from './editor/database/database-block';
+import { trackWrite } from './state/writes';
 import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
 import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
@@ -439,6 +446,32 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	sheetRows: firstSheetRows,
 	ocr: (path) => void editorAi.ocrPdf(path),
 });
+// 数据库: the blocks' rows are the pages under the article shown (server/articles/databases.mjs).
+setDatabaseHost(() => {
+	const slug = session.slug;
+	if (!slug) return null;
+	return {
+		rows: async () => (await databaseRows(slug)).rows,
+		setValue: async (row, column, value) => (await trackWrite(() => setDatabaseValue(row, column.name, column.type, value))).value,
+		setTitle: async (row, title) => {
+			await trackWrite(() => setDatabaseTitle(row, title));
+			void articleList.load();
+		},
+		async addRow(row) {
+			const made = await trackWrite(() => addDatabaseRow(slug, row));
+			void articleList.load();
+			return made.slug;
+		},
+		changeColumns: async (change) => void (await trackWrite(() => changeDatabaseColumns(slug, change))),
+		open(row) {
+			showView('editor');
+			void session.open(row);
+		},
+		templates: async () => (await listTemplates()).templates,
+		toast: (message, error) => showToast(message, error),
+	};
+});
+
 // The files listed anew: the editor's file cards say their sizes.
 filePanel.listed(() => editor.filesListed());
 

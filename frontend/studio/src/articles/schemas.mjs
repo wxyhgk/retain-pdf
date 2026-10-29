@@ -26,6 +26,8 @@ export function createArticleFrontmatterSchema(image = null) {
 		order: z.number().optional(),
 		// Formula macros of this article, over the site's (src/katex-macros.json): `\\Ha: \\hat{H}`.
 		macros: z.record(z.string(), z.string()).optional(),
+		// Its values as a row of the database it is under (the Studio's ```database): `{ "方法": "B3LYP", "能量": -76.4 }`.
+		props: z.record(z.string(), z.unknown()).optional(),
 	});
 }
 
@@ -116,6 +118,7 @@ const PROPERTY_PROBLEMS = Object.freeze({
 	wide: 'wide 只能是 true 或 false',
 	parent: '上级页面（parent）应是一篇文章的文件夹名',
 	order: '顺序（order）应是一个数',
+	props: '属性（props）应是「列名: 值」，如 { "方法": "B3LYP" }',
 });
 
 /**
