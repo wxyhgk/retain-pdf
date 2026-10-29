@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Blocks, CalendarDays, ChevronDown, FileText, Globe, House, Library, MessageCircle, Plus, Search, Settings, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
+import { Blocks, CalendarDays, ChevronDown, FolderUp, Upload, FileText, Globe, House, Library, MessageCircle, Plus, Search, Settings, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -116,6 +116,14 @@ function WorkspaceMenu({ siteTitle }: { siteTitle: string }) {
 						<Globe aria-hidden />
 						{t('博客首页')}
 					</a>
+				</DropdownMenuItem>
+				<DropdownMenuItem id="import-markdown-files" className={item} onSelect={() => act.importMarkdown('files')}>
+					<Upload aria-hidden />
+					{t('导入 Markdown 文件…')}
+				</DropdownMenuItem>
+				<DropdownMenuItem id="import-markdown-folder" className={item} onSelect={() => act.importMarkdown('folder')}>
+					<FolderUp aria-hidden />
+					{t('导入 Markdown 文件夹…')}
 				</DropdownMenuItem>
 				<DropdownMenuItem id="open-trash" className={item} onSelect={act.openTrash}>
 					<Trash2 aria-hidden />

@@ -1,6 +1,8 @@
 import { checkArticle } from '../articles/article-check.mjs';
 import { pageVersion } from '../articles/page-version.mjs';
 import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
+import { ArticleExport } from '../articles/article-export.mjs';
+import { ArticleImport } from '../articles/article-import.mjs';
 import { FindReplace } from '../articles/find-replace.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -25,6 +27,40 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 		const { source } = await articles.read(String(slug ?? ''));
 		return reply(201, await templates.save(name, source.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/u, '')));
 	});
+	// 导出 Markdown (article-export.mjs): the page's .md, or a .zip with its files (and the pages under it, asked).
+	const exporter = new ArticleExport({ articles, manager, blogRoot, site });
+	api.get('/articles/:slug/export', async ({ params, query, response }) => {
+		const out = await exporter.export(params.slug, { children: query.get('children') === '1' });
+		response.statusCode = 200;
+		response.setHeader('Content-Type', out.type);
+		response.setHeader('Content-Length', out.body.length);
+		// The title as the file's name; where that cannot be read (filename*), the folder's.
+		response.setHeader('Content-Disposition', `attachment; filename="${params.slug}${out.name.slice(out.name.lastIndexOf('.'))}"; filename*=UTF-8''${encodeURIComponent(out.name)}`);
+		response.end(out.body);
+	}, { streams: true });
+	// 导入 Markdown (article-import.mjs): a zip of .md files and what they show, made pages (under `parent`).
+	const importer = new ArticleImport({
+		articles,
+		manager,
+		slugs(taken) {
+			const two = (value) => String(value).padStart(2, '0');
+			const now = new Date();
+			const wanted = `note-${now.getFullYear()}${two(now.getMonth() + 1)}${two(now.getDate())}-${two(now.getHours())}${two(now.getMinutes())}${two(now.getSeconds())}`;
+			let slug = wanted;
+			for (let number = 2; taken.has(slug); number += 1) slug = `${wanted}-${number}`;
+			return slug;
+		},
+	});
+	api.post('/import', async ({ query, request }) => {
+		const chunks = [];
+		let size = 0;
+		for await (const chunk of request) {
+			size += chunk.length;
+			if (size > 512 * 1024 * 1024) throw refuse(413, t('太大了（超过 512 MB）'));
+			chunks.push(chunk);
+		}
+		return reply(201, await importer.import(Buffer.concat(chunks), { parent: query.get('parent') ?? '' }));
+	}, { body: 'application/octet-stream' });
 	// 查找替换 in all the articles (find-replace.mjs): where the words are, then the places chosen changed.
 	const finder = new FindReplace({ articles, history, blogRoot, site });
 	const findOptions = ({ caseSensitive, skipCode }) => ({ caseSensitive: caseSensitive === true, skipCode: skipCode !== false });

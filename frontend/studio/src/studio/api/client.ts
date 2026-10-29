@@ -103,6 +103,11 @@ export function replaceInArticles(find: string, replacement: string, picks: Reco
 	return request('/api/studio/replace', jsonOptions('POST', { find, replacement, picks, ...options }));
 }
 
+/** 导入 Markdown: a zip of .md files (and what they show), made pages under `parent` ('' for none). */
+export function importMarkdown(zip: Blob, parent = ''): Promise<{ pages: Array<{ slug: string; title: string }>; files: number; missing: string[] }> {
+	return request(`/api/studio/import${parent ? `?parent=${encodeURIComponent(parent)}` : ''}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: zip });
+}
+
 /** 并入上级页面: the article's text into the page it is under; the article to the trash. */
 export function mergeArticle(slug: string): Promise<{ slug: string; parent: string; trashed: string }> {
 	return request(`/api/studio/articles/${encodeURIComponent(slug)}/merge`, jsonOptions('POST', {}));

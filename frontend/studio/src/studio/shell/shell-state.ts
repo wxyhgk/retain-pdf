@@ -52,6 +52,8 @@ export type ShellActions = {
 	newPage(): void;
 	/** 今天的日志: today's page under 日志, made from its template the first time today. */
 	todayJournal(): void;
+	/** 导入 Markdown: files (.md, .zip) or a folder, chosen in the system's dialog. */
+	importMarkdown(kind: 'files' | 'folder'): void;
 	newChat(): void;
 	openChat(id: string): void;
 	chatMenu(chat: Conversation, anchor: HTMLElement): void;
@@ -118,6 +120,7 @@ export const ActionsContext = createContext<ShellActions>({
 	showView: nothing,
 	newPage: nothing,
 	todayJournal: nothing,
+	importMarkdown: nothing,
 	newChat: nothing,
 	openChat: nothing,
 	chatMenu: nothing,

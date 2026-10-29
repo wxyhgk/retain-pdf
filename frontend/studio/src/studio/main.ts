@@ -92,6 +92,7 @@ mountShell(shell, {
 	showView: (view) => showView(view),
 	newPage: () => void pages.newPage(),
 	todayJournal: () => void pages.todayJournal(),
+	importMarkdown: (kind) => void pages.importMarkdown(kind),
 	newChat: () => chat.newChat(),
 	openChat: (id) => chat.openChat(id),
 	chatMenu: (entry, row) => chat.chatList.menu(entry, row),
@@ -617,9 +618,13 @@ const quickFind = createQuickFind({
 			{ key: `app:${app.id}`, label: t('打开小程序「{name}」', { name: app.name }), icon: app.icon, run: () => void miniApps.open(app.id) },
 			...app.commands.map((command) => ({ key: `app:${app.id}:${command.id}`, label: `${app.name}：${command.title}`, icon: app.icon, run: () => void miniApps.open(app.id, command.entry) })),
 		]);
+		const imports = [
+			{ key: 'studio:import-files', label: t('导入 Markdown 文件…'), icon: '⇪', hint: '.md .zip', run: () => void pages.importMarkdown('files') },
+			{ key: 'studio:import-folder', label: t('导入 Markdown 文件夹…'), icon: '⇪', run: () => void pages.importMarkdown('folder') },
+		];
 		const theme = { key: 'studio:theme', label: t('切换亮色 / 暗色'), icon: '◐', run: toggleTheme };
 		const finding = { key: 'studio:replace', label: t('在全部文章里查找替换…'), icon: '⌕', hint: '⌘⇧F', run: () => findEverywhere() };
-		return [...fromTemplates, finding, theme, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
+		return [...fromTemplates, finding, theme, ...imports, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
 	},
 });
 

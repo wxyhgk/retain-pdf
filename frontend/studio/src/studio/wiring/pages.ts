@@ -1,11 +1,12 @@
 // The pages: made, opened, moved, published, starred; where the open one is (the bar's path, ‹ ›); its ⋯ menu.
-import { Copy, FolderSearch, History, LayoutTemplate, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
+import { Copy, Download, FolderSearch, Upload, History, LayoutTemplate, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
 import { t } from '@blog/i18n/index.mjs';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
-import { createArticle, renderTemplate, revealArticleFile, saveAsTemplate, setArticleParent, type PagePlace } from '../api/client';
+import { createArticle, importMarkdown as importPages, renderTemplate, revealArticleFile, saveAsTemplate, setArticleParent, type PagePlace } from '../api/client';
 import { showContextMenu } from '../common/context-menu';
 import { showToast } from '../common/toast';
 import { favoriteSlugs, toggleFavorite } from '../pages/favorites';
+import { chooseMarkdown, packForImport } from '../pages/import-markdown';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from '../pages/page-names';
 import { runCommand } from '../plugin-ui';
 import { pluginCommands } from '../plugins';
@@ -149,6 +150,42 @@ export function createPages(studio: Studio) {
 		} catch (error) {
 			showToast(error instanceof Error ? error.message : t('没能打开今天的日志'), true);
 		}
+	}
+
+	/**
+	 * 导入 Markdown: `.md` files, a zip (Notion's export, an Obsidian vault's) or a folder of them, made pages (under
+	 * `parent` when given); the first of them opened, what could not be found told.
+	 */
+	async function importMarkdown(kind: 'files' | 'folder', parent = ''): Promise<void> {
+		const files = await chooseMarkdown(kind);
+		if (!files.length) return;
+		if (!(await session.saveBeforeLeaving())) return;
+		showToast(t('正在导入 {count} 个文件…', { count: files.length }));
+		try {
+			const done = await trackWrite(async () => importPages(await packForImport(files), parent));
+			await articleList.load();
+			const first = done.pages[0];
+			if (first) {
+				studio.showView('editor');
+				await session.open(first.slug);
+			}
+			const said = t('导入了 {pages} 个页面、{files} 个文件', { pages: done.pages.length, files: done.files });
+			showToast(done.missing.length ? `${said}；${t('有 {count} 处引用的文件没找到：{first}', { count: done.missing.length, first: done.missing[0] })}` : said, done.missing.length > 0);
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('没能导入'), true);
+		}
+	}
+
+	/** 导出 Markdown: the page's .md (or a .zip with its files, and the pages under it when asked), downloaded. */
+	async function exportPage(slug: string, children: boolean): Promise<void> {
+		await session.flush();
+		const link = document.createElement('a');
+		link.href = `/api/studio/articles/${encodeURIComponent(slug)}/export${children ? '?children=1' : ''}`;
+		link.download = '';
+		document.body.append(link);
+		link.click();
+		link.remove();
+		showToast(t('正在导出，放在「下载」文件夹里'));
 	}
 
 	/** 存为模板: the open page's body kept as a template (its pictures and files left out: they stay the page's). */
@@ -390,6 +427,9 @@ export function createPages(studio: Studio) {
 			{ label: /Mac/u.test(navigator.platform) ? t('在 Finder 中显示') : t('在文件管理器中显示'), icon: FolderSearch, action: () => void revealArticleFile(article.slug, '') },
 			{ label: t('历史版本…'), icon: History, action: () => openDialog('history', { slug: article.slug, host: { restore: (source) => void session.restoreVersion(source) } }) },
 			{ label: t('存为模板…'), icon: LayoutTemplate, action: () => void keepAsTemplate(article) },
+			{ label: t('导入 Markdown 到这页下面…'), icon: Upload, action: () => void importMarkdown('files', article.slug) },
+			{ label: t('导出 Markdown'), icon: Download, action: () => void exportPage(article.slug, false) },
+			...(articleList.articles().some((page) => page.parent === article.slug) ? [{ label: t('导出 Markdown（连同子页面）'), icon: Download, action: () => void exportPage(article.slug, true) }] : []),
 			// The plugins' (`ctx.commands`, `places: ['page-menu']`).
 			...(pluginCommands()?.list('page-menu') ?? []).map((command) => ({ label: command.label, icon: command.icon, action: () => runCommand(command, 'page-menu') })),
 			'separator',
@@ -398,5 +438,5 @@ export function createPages(studio: Studio) {
 		], pageMenu);
 	}
 
-	return { visited, openFromList, newPage, newFromTemplate, todayJournal, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
+	return { visited, importMarkdown, openFromList, newPage, newFromTemplate, todayJournal, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
 }
