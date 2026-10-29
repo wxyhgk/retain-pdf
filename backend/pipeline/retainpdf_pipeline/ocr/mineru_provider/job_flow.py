@@ -39,6 +39,7 @@ def _materialize_normalized_document(
     normalized_report_json_path: Path,
     document_id: str,
     provider_version: str,
+    source_pdf_path: Path,
 ) -> dict:
     # Job flow only orchestrates persistence.
     # Provider-specific raw -> normalized logic lives behind the adapter interface.
@@ -47,6 +48,16 @@ def _materialize_normalized_document(
         document_id=document_id,
         provider=PROVIDER_MINERU,
         provider_version=provider_version,
+    )
+    # 在这里才导入：`finalize` 要用 `ocr_provider.paddle_normalize`，导入 `ocr_provider` 包会一路导入到这个模块，放在文件头会循环导入。
+    from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
+
+    # 和正式的 normalize worker 同一套：缩放到原文 PDF、重建行、按最终文档刷新报告（以前这条路都不做，同样的输入出来的
+    # 文档和 Rust 那条路不一样）。
+    normalized_document, normalization_report = finalize_normalized_document(
+        normalized_document,
+        normalization_report,
+        source_pdf_path,
     )
     save_json(normalized_json_path, normalized_document, compact=True)
     save_json(normalized_report_json_path, normalization_report)
@@ -157,6 +168,7 @@ def run_mineru_to_job_dir(args: Namespace) -> tuple[JobDirs, Path, Path, Path]:
         normalized_report_json_path=artifact_paths.normalized_report_json_path,
         document_id=job_dirs.root.name,
         provider_version=str(args.model_version or ""),
+        source_pdf_path=source_pdf_path,
     )
 
     print(f"source: {job_dirs.source_dir}")

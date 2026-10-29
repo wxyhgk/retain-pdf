@@ -297,7 +297,11 @@ target = Path(os.environ["RETAIN_OCR_RAW_PAYLOAD_JSON"])
 target.parent.mkdir(parents=True, exist_ok=True)
 source_dir = Path(os.environ["RETAIN_OCR_SOURCE_DIR"])
 source_dir.mkdir(parents=True, exist_ok=True)
-(source_dir / "remote-source.pdf").write_bytes(b"%PDF-1.4\\n")
+# 远程命令要交出一份真的原文 PDF：归一化要按它的页面尺寸缩放坐标，渲染也要用它。
+import fitz
+with fitz.open() as pdf:
+    pdf.new_page(width=320, height=480)
+    pdf.save(str(source_dir / "remote-source.pdf"))
 target.write_text(json.dumps({
     "provider": "generic_flat_ocr",
     "pages": [{
@@ -340,3 +344,62 @@ target.write_text(json.dumps({
     normalized_payload = json.loads(result.normalized_json_path.read_text(encoding="utf-8"))
     assert normalized_payload["source"]["provider"] == "generic_flat_ocr"
     assert normalized_payload["pages"][0]["blocks"][0]["text"] == "remote command ocr smoke"
+
+
+def test_raw_payload_from_a_command_is_scaled_to_the_source_pdf(tmp_path: Path, monkeypatch) -> None:
+    """命令交回原始输出时，和正式的 normalize worker 一样缩放到原文 PDF（以前坐标留在 OCR 自己的单位里，却标着 pt）。"""
+    job_root = tmp_path / "20261029-local-ocr-raw-scaled"
+    job_dirs = resolve_job_dirs(job_root)
+    ensure_job_dirs(job_dirs)
+    source_pdf = job_dirs.source_dir / "book.pdf"
+    _write_source_pdf(source_pdf)  # 320 x 480 pt
+    script_path = tmp_path / "fake_local_raw_pixels_ocr.py"
+    script_path.write_text(
+        """
+import json
+import os
+from pathlib import Path
+
+target = Path(os.environ["RETAIN_OCR_RAW_PAYLOAD_JSON"])
+target.parent.mkdir(parents=True, exist_ok=True)
+target.write_text(json.dumps({
+    "provider": "generic_flat_ocr",
+    "pages": [{
+        "width": 640,
+        "height": 960,
+        "unit": "pt",
+        "blocks": [{
+            "type": "text",
+            "sub_type": "body",
+            "bbox": [144.0, 120.0, 440.0, 180.0],
+            "text": "rendered at twice the PDF size",
+            "lines": [],
+            "segments": []
+        }]
+    }]
+}, ensure_ascii=False), encoding="utf-8")
+""".strip(),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv(LOCAL_OCR_COMMAND_ENV, f"{sys.executable} {script_path}")
+    monkeypatch.setenv(LOCAL_OCR_RAW_PROVIDER_ENV, "generic_flat_ocr")
+
+    result = run_local_command_ocr_to_job_dir(
+        SimpleNamespace(
+            file_path=str(source_pdf),
+            job_root=str(job_dirs.root),
+            source_dir=str(job_dirs.source_dir),
+            ocr_dir=str(job_dirs.ocr_dir),
+            translated_dir=str(job_dirs.translated_dir),
+            rendered_dir=str(job_dirs.rendered_dir),
+            artifacts_dir=str(job_dirs.artifacts_dir),
+            logs_dir=str(job_dirs.logs_dir),
+        )
+    )
+
+    normalized = json.loads(result.normalized_json_path.read_text(encoding="utf-8"))
+    page = normalized["pages"][0]
+    assert (page["width"], page["height"]) == (320.0, 480.0)
+    assert page["blocks"][0]["geometry"]["bbox"] == [72.0, 60.0, 220.0, 90.0]
+    report = json.loads(result.normalized_report_json_path.read_text(encoding="utf-8"))
+    assert report["validation"]["coordinate_space"] == "pdf_point"
