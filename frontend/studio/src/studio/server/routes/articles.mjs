@@ -52,7 +52,7 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 	const importer = new ArticleImport({ articles, manager, slugs: freeSlug });
 
 	// 数据库 (databases.mjs): a page's rows (the pages under it, with their values), one value or title set, a row made,
-	// columns renamed or taken away in every row.
+	// columns renamed, taken away, of another kind, a choice renamed or taken away, in every row.
 	const databases = new Databases({ articles, history, site });
 	api.get('/databases/:slug', async ({ params }) => ({ rows: await databases.rows(params.slug) }));
 	api.put('/databases/rows/:slug', async ({ params, json }) => {
@@ -68,7 +68,7 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 	});
 	api.post('/databases/:slug/columns', async ({ params, json }) => {
 		const asked = await json();
-		return databases.changeColumns(params.slug, { renames: asked.renames ?? {}, removed: asked.removed ?? [] });
+		return databases.changeColumns(params.slug, { renames: asked.renames ?? {}, removed: asked.removed ?? [], types: asked.types ?? {}, values: Array.isArray(asked.values) ? asked.values : [] });
 	});
 	api.post('/import', async ({ query, request }) => {
 		const chunks = [];

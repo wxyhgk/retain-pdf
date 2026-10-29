@@ -20,6 +20,7 @@ import {
 	listMiniApps,
 	listTemplates,
 	databaseRows,
+	setArticleParent,
 	setDatabaseValue,
 	setDatabaseTitle,
 	addDatabaseRow,
@@ -463,6 +464,14 @@ setDatabaseHost(() => {
 			return made.slug;
 		},
 		changeColumns: async (change) => void (await trackWrite(() => changeDatabaseColumns(slug, change))),
+		async removeRow(row) {
+			const article = articleList.articles().find((entry) => entry.slug === row);
+			if (article) await articleActions.remove(article);
+		},
+		async moveRow(row, place) {
+			await trackWrite(() => setArticleParent(row, slug, place));
+			void articleList.load();
+		},
 		open(row) {
 			showView('editor');
 			void session.open(row);

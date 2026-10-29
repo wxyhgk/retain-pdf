@@ -9,6 +9,7 @@ import { createRoot } from 'react-dom/client';
 
 import { readConfig, writeConfig, type DatabaseConfig } from './database-config';
 import { DatabaseView, type DatabaseHost } from './DatabaseView';
+import './database.css';
 
 /**
  * A ```database block (数据库, as Notion's): the pages under the page holding it as rows (their values theirs:
@@ -50,6 +51,11 @@ export const databaseView = $view(databaseSchema.schema.node, () => (initial: Pr
 	dom.contentEditable = 'false';
 	// The shell's look (Tailwind, shadcn) is theirs inside [data-ui].
 	dom.dataset.ui = '';
+	// Its presses its own (a card or a row dragged, a column's edge), not the editor's selecting of blocks.
+	dom.dataset.ownsPointer = '';
+	// Focus taken by it, not the editor: a press on a card or a cell would else focus the editor, which then scrolls back
+	// to its caret (wherever it was), the press's drag lost.
+	dom.tabIndex = -1;
 	const root = createRoot(dom);
 
 	/** The settings changed in the view: the block's text written anew. */

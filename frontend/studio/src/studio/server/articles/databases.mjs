@@ -71,12 +71,22 @@ export class Databases {
 		return rows.sort((left, right) => (left.order ?? Infinity) - (right.order ?? Infinity) || left.title.localeCompare(right.title, 'zh-CN', { numeric: true }));
 	}
 
+	/** The writes to each row's page, one after another (two cells of a row changed at once: both kept). */
+	#queues = new Map();
+
 	/** A row's text written anew by `change` (its source in, its source out), the text before it kept as a version. */
-	async #rewrite(slug, change) {
-		const { source, revision } = await this.articles.read(slug);
-		const next = change(source);
-		if (next === source) return { revision };
-		return this.articles.save(slug, { source: next, expectedRevision: revision }, { site: this.site, before: (current) => this.history.keep(slug, current, 'before-change') });
+	#rewrite(slug, change) {
+		const write = async () => {
+			const { source, revision } = await this.articles.read(slug);
+			const next = change(source);
+			if (next === source) return { revision };
+			return this.articles.save(slug, { source: next, expectedRevision: revision }, { site: this.site, before: (current) => this.history.keep(slug, current, 'before-change') });
+		};
+		const done = (this.#queues.get(slug) ?? Promise.resolve()).then(write, write);
+		const settled = done.catch(() => {});
+		this.#queues.set(slug, settled);
+		void settled.then(() => this.#queues.get(slug) === settled && this.#queues.delete(slug));
+		return done;
 	}
 
 	/** One value of a row set (`column` its column's name, of `type`), or taken out (empty). */
@@ -112,24 +122,46 @@ export class Databases {
 	}
 
 	/**
-	 * The columns changed in every row: one renamed (`renames`: old name → new), its values with it; one taken away
-	 * (`removed`), its values with it (each row's text kept as a version first).
+	 * The columns changed in every row (each row's text kept as a version first): one renamed (`renames`: old name →
+	 * new), its values with it; one taken away (`removed`), its values with it; one of another kind now (`types`: name
+	 * → kind), its values as that kind keeps them (those it cannot, gone); a choice renamed or taken away (`values`:
+	 * `{ column, from, to }`, `to` null), in the rows that had it.
 	 */
-	async changeColumns(database, { renames = {}, removed = [] }) {
+	async changeColumns(database, { renames = {}, removed = [], types = {}, values = [] }) {
+		for (const type of Object.values(types)) if (!COLUMN_TYPES.includes(type)) throw new DatabaseError(t('没有这种列：{type}', { type }));
+		const change = (before) => {
+			const props = { ...before };
+			for (const [from, to] of Object.entries(renames)) {
+				if (!(from in props) || from === to) continue;
+				props[to] = props[from];
+				delete props[from];
+			}
+			for (const name of removed) delete props[name];
+			for (const [name, type] of Object.entries(types)) {
+				if (!(name in props)) continue;
+				const had = props[name];
+				// A list made one (多选 → 单选, words): its first; one made a list: itself.
+				const kept = coerceValue(type, type === 'multi' ? had : Array.isArray(had) ? (type === 'text' ? had.join(', ') : had[0]) : had);
+				if (kept === null || kept === false) delete props[name];
+				else props[name] = kept;
+			}
+			for (const { column, from, to = null } of values) {
+				const had = props[column];
+				if (Array.isArray(had)) {
+					const next = [...new Set(had.map((each) => (each === from ? to : each)).filter((each) => each !== null))];
+					if (next.length) props[column] = next;
+					else delete props[column];
+				} else if (had === from) {
+					if (to === null) delete props[column];
+					else props[column] = to;
+				}
+			}
+			return props;
+		};
 		const changed = [];
 		for (const row of await this.rows(database)) {
-			const touched = Object.keys(renames).some((name) => name in row.props) || removed.some((name) => name in row.props);
-			if (!touched) continue;
-			await this.#rewrite(row.slug, (source) => {
-				const props = { ...(parseArticleSource(source).frontmatter?.props ?? {}) };
-				for (const [from, to] of Object.entries(renames)) {
-					if (!(from in props) || from === to) continue;
-					props[to] = props[from];
-					delete props[from];
-				}
-				for (const name of removed) delete props[name];
-				return setFrontmatterProps(source, props);
-			});
+			if (JSON.stringify(change(row.props)) === JSON.stringify(row.props)) continue;
+			await this.#rewrite(row.slug, (source) => setFrontmatterProps(source, change(parseArticleSource(source).frontmatter?.props ?? {})));
 			changed.push(row.slug);
 		}
 		return { changed };

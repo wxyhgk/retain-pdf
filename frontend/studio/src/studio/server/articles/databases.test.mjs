@@ -60,3 +60,24 @@ test('a column renamed or taken away in every row, the other rows let be', async
 	assert.deepEqual(rows, { a: { 'E/Hartree': -1 }, b: { 'E/Hartree': -2 }, c: {} });
 	await assert.rejects(databases.rows('none'), /不存在/u);
 });
+
+test('a column of another kind: its values as that kind keeps them; a choice renamed or taken away in the rows', async (t) => {
+	const { databases } = await fixture(t);
+	await databases.addRow('runs', { slug: 'a', title: 'A', props: { 能量: '-1.5', 方法: 'PBE0', 标签: ['opt', 'ts'] } });
+	await databases.addRow('runs', { slug: 'b', title: 'B', props: { 能量: '很低', 方法: 'B3LYP', 标签: ['ts'] } });
+	await databases.changeColumns('runs', { types: { 能量: 'number' }, values: [{ column: '方法', from: 'PBE0', to: 'PBE0-D3' }, { column: '标签', from: 'ts', to: null }] });
+	const rows = Object.fromEntries((await databases.rows('runs')).map((row) => [row.slug, row.props]));
+	assert.deepEqual(rows, { a: { 能量: -1.5, 方法: 'PBE0-D3', 标签: ['opt'] }, b: { 方法: 'B3LYP' } });
+	await databases.changeColumns('runs', { types: { 标签: 'select' } });
+	assert.deepEqual((await databases.rows('runs')).find((row) => row.slug === 'a').props.标签, 'opt');
+	await assert.rejects(databases.changeColumns('runs', { types: { 能量: 'formula' } }), /没有这种列/u);
+});
+
+test('two values of a row set at once: both kept (the writes to a page one after the other)', async (t) => {
+	const { databases } = await fixture(t);
+	await databases.addRow('runs', { slug: 'a', title: 'A' });
+	await Promise.all([databases.setValue('a', '方法', 'select', 'PBE0'), databases.setValue('a', '能量', 'number', '-1'), databases.setTitle('a', 'A2')]);
+	const [row] = await databases.rows('runs');
+	assert.deepEqual(row.props, { 方法: 'PBE0', 能量: -1 });
+	assert.equal(row.title, 'A2');
+});

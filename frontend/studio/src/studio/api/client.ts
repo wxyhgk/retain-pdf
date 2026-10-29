@@ -122,8 +122,15 @@ export function addDatabaseRow(database: string, row: { title?: string; props?: 
 	return request(`/api/studio/databases/${encodeURIComponent(database)}/rows`, jsonOptions('POST', row));
 }
 
-/** Columns renamed (old → new) or taken away, in every row. */
-export function changeDatabaseColumns(database: string, change: { renames?: Record<string, string>; removed?: string[] }): Promise<{ changed: string[] }> {
+/** What changes in every row of a database: columns renamed (old → new), taken away, of another kind; a choice renamed or taken away (`to` null). */
+export type DatabaseColumnsChange = {
+	renames?: Record<string, string>;
+	removed?: string[];
+	types?: Record<string, string>;
+	values?: Array<{ column: string; from: string; to: string | null }>;
+};
+
+export function changeDatabaseColumns(database: string, change: DatabaseColumnsChange): Promise<{ changed: string[] }> {
 	return request(`/api/studio/databases/${encodeURIComponent(database)}/columns`, jsonOptions('POST', change));
 }
 
