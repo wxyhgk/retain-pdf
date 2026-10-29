@@ -214,7 +214,8 @@ export class RemoteAccess {
 		}
 		const port = this.target();
 		if (!port) return send(response, 503, { error: t('Studio 还没有启动完') });
-		const upstream = httpRequest({ host: '127.0.0.1', port, method: request.method, path: request.url, headers: passedOn(request.headers, port) }, (answer) => {
+		// `localhost`, not 127.0.0.1: the Studio's server listens on `localhost`, which may be ::1 only (as on macOS); Node tries both.
+		const upstream = httpRequest({ host: 'localhost', port, autoSelectFamily: true, method: request.method, path: request.url, headers: passedOn(request.headers, port) }, (answer) => {
 			const headers = { ...answer.headers };
 			// What the Studio sends to itself (its own address in full): to this door's.
 			if (typeof headers.location === 'string') headers.location = headers.location.replace(new RegExp(`^https?://(?:localhost|127\\.0\\.0\\.1):${port}`, 'u'), `https://${request.headers.host}`);
@@ -235,7 +236,7 @@ export class RemoteAccess {
 			socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
 			return;
 		}
-		const upstream = connect(port, '127.0.0.1', () => {
+		const upstream = connect({ port, host: 'localhost', autoSelectFamily: true }, () => {
 			const headers = passedOn(request.headers, port);
 			const lines = [`${request.method} ${request.url} HTTP/1.1`, ...Object.entries(headers).flatMap(([name, value]) => [value].flat().map((each) => `${name}: ${each}`))];
 			upstream.write(`${lines.join('\r\n')}\r\n\r\n`);

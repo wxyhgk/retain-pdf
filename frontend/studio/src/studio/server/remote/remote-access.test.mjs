@@ -25,7 +25,8 @@ async function studioStandIn(t) {
 		if (head.length) socket.write(head);
 		socket.on('data', (data) => socket.write(data));
 	});
-	await new Promise((done) => server.listen(0, '127.0.0.1', done));
+	// On ::1 only, as the Studio's own server is on macOS (`localhost`): the door must find it there.
+	await new Promise((done) => server.listen(0, '::1', done));
 	t.after(() => {
 		server.closeAllConnections();
 		server.close();

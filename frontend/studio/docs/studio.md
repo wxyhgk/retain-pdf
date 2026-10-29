@@ -44,7 +44,7 @@ tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/S
 
 1. Mac 上：设置 › iPad 访问，打开「允许 iPad 访问」。下面列出 iPad 能连进来的地址：局域网（同一个 Wi-Fi）的，开着 Tailscale 时还有 Tailscale 的（出门也能连，Mac 和 iPad 登录同一个 Tailscale 账号）。
 2. 点「配对一台 iPad」，出现一个二维码和一个 8 位配对码，5 分钟内有效，只能用一次。
-3. iPad 上：用 Studio 的 iPad App 扫码（或输入配对码）。配对好以后它就记住了，以后直接打开。
+3. iPad 上：用 Studio 的 iPad App 扫码。配对好以后它就记住了，以后直接打开。App 用 Xcode 装到 iPad 上，步骤见 `tools/studio-ipad/README.md`。
 4. 配对过的设备列在同一页，不想让它再进来就「移除」。
 
 - 默认关着；关掉以后谁也连不进来。
