@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OCR 分类查看器</title>
+<style>
+:root {
+  --bg: #eef0f3; --panel: #ffffff; --ink: #1c2230; --muted: #5d6676; --rule: #d8dce3; --soft: #f3f5f8;
+  --sel: #111827; --yes: #1f8a4c; --no: #8a93a3; --open: #d97a06;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #14171d; --panel: #1c2028; --ink: #e5e9f0; --muted: #9aa3b2; --rule: #2f3542; --soft: #232833;
+          --sel: #f8fafc; --yes: #4fc27f; --no: #7c8595; --open: #f0a23a; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+       font: 13px/1.55 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif; }
+code, .mono { font-family: "SFMono-Regular", Menlo, Consolas, monospace; font-size: 12px; }
+header { position: sticky; top: 0; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--rule);
+         display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; padding: 10px 18px; }
+header h1 { font-size: 15px; margin: 0; }
+header .meta { color: var(--muted); font-size: 12px; }
+.ctrl { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ctrl span.k { color: var(--muted); font-size: 12px; }
+.seg button { border: 1px solid var(--rule); background: var(--soft); color: var(--ink); padding: 3px 10px; font: inherit; cursor: pointer; }
+.seg button:first-child { border-radius: 4px 0 0 4px; }
+.seg button:last-child { border-radius: 0 4px 4px 0; }
+.seg button + button { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+label.chk { display: inline-flex; gap: 4px; align-items: center; cursor: pointer; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 0; align-items: start; }
+@media (max-width: 980px) { main { grid-template-columns: 1fr; } aside { position: static !important; height: auto !important; } }
+.pages { display: grid; gap: 22px; padding: 22px; justify-items: center; min-width: 0; }
+.page { position: relative; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.18); width: 100%; max-width: 860px; }
+.page img { display: block; width: 100%; height: auto; }
+.page svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.page .pno { position: absolute; top: -18px; left: 0; font-size: 11px; color: var(--muted); }
+svg .blk { fill-opacity: 0.10; stroke-width: 1.1; cursor: pointer; }
+svg .blk:hover { fill-opacity: 0.22; }
+svg .blk.sel { stroke-width: 2.4; fill-opacity: 0.25; }
+svg .blk.dim { opacity: 0.12; }
+svg .tag { font: 600 7px -apple-system, "PingFang SC", sans-serif; pointer-events: none; }
+svg .tagbg { pointer-events: none; }
+svg .ln { fill: none; stroke: #3b82f6; stroke-width: 0.5; stroke-dasharray: 1.5 1; }
+svg .inl { fill: #f59e0b; fill-opacity: 0.25; stroke: #d97706; stroke-width: 0.6; }
+svg .rel { fill: none; stroke-width: 1.2; marker-end: url(#arrow); opacity: 0.9; }
+aside { position: sticky; top: 49px; height: calc(100vh - 49px); overflow: auto; background: var(--panel);
+        border-left: 1px solid var(--rule); padding: 16px 18px 40px; display: grid; gap: 18px; align-content: start; }
+aside h2 { font-size: 13px; margin: 0 0 8px; }
+.legend { display: grid; gap: 10px; }
+.grp .gh { display: flex; gap: 8px; align-items: center; font-weight: 600; }
+.sw { width: 11px; height: 11px; border-radius: 2px; flex: none; }
+.cls { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 2px 6px 2px 19px; border-radius: 4px; cursor: pointer; }
+.cls:hover { background: var(--soft); }
+.cls.on { background: var(--soft); outline: 1px solid var(--rule); }
+.cls .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cls .id { color: var(--muted); font-size: 11px; margin-left: 4px; }
+.cls.zero { opacity: 0.45; }
+.detail { border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; display: grid; gap: 8px; background: var(--soft); }
+.detail .title { font-size: 15px; font-weight: 700; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.kv { display: grid; grid-template-columns: 70px 1fr; gap: 3px 10px; }
+.kv .k { color: var(--muted); }
+.pill { display: inline-block; border-radius: 999px; padding: 0 8px; font-size: 11.5px; border: 1px solid currentColor; }
+.yes { color: var(--yes); } .no { color: var(--no); } .open { color: var(--open); }
+.txt { white-space: pre-wrap; background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; padding: 8px; max-height: 180px; overflow: auto; }
+.q { color: var(--open); }
+a.jump { color: inherit; text-decoration: underline dotted; cursor: pointer; }
+.empty { color: var(--muted); }
+.qs li { margin-bottom: 4px; }
+.qs { margin: 0; padding-left: 18px; }
+.hint { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>OCR 分类查看器</h1>
+  <span class="meta" id="meta"></span>
+  <div class="ctrl"><span class="k">颜色</span>
+    <div class="seg" id="colorMode">
+      <button data-v="group" aria-pressed="true">按大类</button><button data-v="translate">按翻不翻</button>
+    </div>
+  </div>
+  <div class="ctrl">
+    <label class="chk"><input type="checkbox" id="showTags" checked> 标签</label>
+    <label class="chk"><input type="checkbox" id="showLines"> 行框</label>
+    <label class="chk"><input type="checkbox" id="showInlines" checked> 行内片段</label>
+    <label class="chk"><input type="checkbox" id="showRels" checked> 关系</label>
+  </div>
+</header>
+<main>
+  <div class="pages" id="pages"></div>
+  <aside>
+    <section>
+      <h2>选中的块</h2>
+      <div id="detail" class="detail"><span class="empty">点页面上的框看它的类别、属性、关系和定义。</span></div>
+    </section>
+    <section>
+      <h2 id="legendTitle">分类</h2>
+      <div class="legend" id="legend"></div>
+      <p class="hint">点一个类别只看这一类，再点一次取消。灰掉的类别在这份文档里没有出现。</p>
+    </section>
+    <section>
+      <h2>还没定的</h2>
+      <ul class="qs" id="questions"></ul>
+    </section>
+  </aside>
+</main>
+<script id="data" type="application/json">/*__DATA__*/</script>
+<script>
+(function () {
+  var DATA = JSON.parse(document.getElementById("data").textContent);
+  var TAX = DATA.taxonomy, TRUTH = DATA.truth, IMAGES = DATA.images;
+  var NS = "http://www.w3.org/2000/svg";
+  var state = { color: "group", tags: true, lines: false, inlines: true, rels: true, filter: null, selected: null };
+  var byId = {};
+  TRUTH.elements.forEach(function (e) { byId[e.id] = e; });
+
+  function cls(e) { return TAX.block_classes[e["class"]] || TAX.block_classes.unknown; }
+  function translateState(e) {
+    var t = cls(e).translate;
+    return t === true ? "yes" : t === false ? "no" : "open";
+  }
+  function colorOf(e) {
+    if (state.color === "translate") return { yes: "#1f8a4c", no: "#8a93a3", open: "#d97a06" }[translateState(e)];
+    return (TAX.groups[cls(e).group] || TAX.groups.unknown).color;
+  }
+  function el(tag, attrs, parent) {
+    var node = document.createElementNS(NS, tag);
+    for (var k in attrs) node.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(node);
+    return node;
+  }
+  function h(tag, props, children) {
+    var node = document.createElement(tag);
+    if (props) for (var k in props) { if (k === "text") node.textContent = props[k]; else node.setAttribute(k, props[k]); }
+    (children || []).forEach(function (c) { if (c) node.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
+    return node;
+  }
+
+  document.getElementById("meta").textContent =
+    TRUTH.document_id + " · " + TRUTH.pages.length + " 页 · " + TRUTH.elements.length + " 个块 · 分类 " + TAX.version;
+
+  // ---- 页面 ----
+  var pagesHost = document.getElementById("pages");
+  var svgs = [];
+  TRUTH.pages.forEach(function (page, index) {
+    var box = h("div", { "class": "page", id: "page-" + (index + 1) });
+    box.appendChild(h("span", { "class": "pno", text: "第 " + (index + 1) + " 页 · " + page.width + " × " + page.height + " pt" }));
+    var img = h("img", { src: IMAGES[index], alt: "第 " + (index + 1) + " 页原文" });
+    box.appendChild(img);
+    var svg = el("svg", { viewBox: "0 0 " + page.width + " " + page.height, preserveAspectRatio: "none" }, box);
+    var defs = el("defs", {}, svg);
+    var marker = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: "9", refY: "5", markerWidth: "5", markerHeight: "5", orient: "auto-start-reverse" }, defs);
+    el("path", { d: "M0 0 L10 5 L0 10 z", fill: "context-stroke" }, marker);
+    pagesHost.appendChild(box);
+    svgs.push(svg);
+  });
+
+  function center(b) { return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; }
+
+  function draw() {
+    svgs.forEach(function (svg, pageIndex) {
+      Array.prototype.slice.call(svg.querySelectorAll("g.layer")).forEach(function (g) { g.remove(); });
+      var g = el("g", { "class": "layer" }, svg);
+      var elements = TRUTH.elements.filter(function (e) { return e.page === pageIndex; });
+      elements.forEach(function (e) {
+        var b = e.bbox, color = colorOf(e);
+        var dim = state.filter && e["class"] !== state.filter;
+        var rect = el("rect", {
+          x: b[0] - 1, y: b[1] - 1, width: b[2] - b[0] + 2, height: b[3] - b[1] + 2,
+          fill: color, stroke: color, "class": "blk" + (dim ? " dim" : "") + (state.selected === e.id ? " sel" : ""), "data-id": e.id
+        }, g);
+        rect.addEventListener("click", function (ev) { ev.stopPropagation(); select(e.id); });
+        if (!dim && state.lines) (e.lines || []).forEach(function (line) {
+          var l = line.bbox;
+          el("rect", { x: l[0], y: l[1], width: l[2] - l[0], height: l[3] - l[1], "class": "ln" }, g);
+        });
+        if (!dim && state.inlines) (e.inlines || []).forEach(function (part) {
+          var p = part.bbox;
+          el("rect", { x: p[0], y: p[1], width: p[2] - p[0], height: p[3] - p[1], "class": "inl" }, g);
+        });
+      });
+      if (state.tags) elements.forEach(function (e) {
+        if (state.filter && e["class"] !== state.filter) return;
+        var b = e.bbox, label = cls(e).label + (e.attributes && e.attributes.level ? " " + e.attributes.level : "");
+        var w = label.length * 7.2 + 6, pageW = TRUTH.pages[pageIndex].width;
+        // 标签放进页边，不压正文：左半边的块放左页边，右栏的块放右页边。
+        var x = (b[0] + b[2]) / 2 < pageW / 2 || b[2] - b[0] > pageW * 0.6 ? Math.max(0, b[0] - w - 3) : Math.min(pageW - w, b[2] + 3);
+        var y = Math.max(0, b[1]);
+        el("rect", { x: x, y: y, width: w, height: 8.5, rx: 1.5, fill: colorOf(e), "class": "tagbg" }, g);
+        var t = el("text", { x: x + 3, y: y + 6.6, fill: "#fff", "class": "tag" }, g);
+        t.textContent = label;
+      });
+      if (state.rels) elements.forEach(function (e) {
+        var rel = e.relations || {};
+        Object.keys(rel).forEach(function (name) {
+          [].concat(rel[name]).forEach(function (target) {
+            var other = byId[target];
+            if (!other) return;
+            if (state.filter && e["class"] !== state.filter && other["class"] !== state.filter) return;
+            var color = { caption_of: "#14918a", note_of: "#b5562f", number_of: "#c7781a", continues: "#d6457a" }[name] || "#555";
+            var a = center(e.bbox);
+            if (other.page !== pageIndex) {
+              // 跨页的关系：画到页边，旁边写去哪一页
+              var edgeY = other.page < pageIndex ? 2 : TRUTH.pages[pageIndex].height - 2;
+              el("path", { d: "M" + a[0] + " " + a[1] + " L" + a[0] + " " + edgeY, "class": "rel", stroke: color, "stroke-dasharray": "3 2" }, g);
+              var note = el("text", { x: a[0] + 4, y: other.page < pageIndex ? 12 : edgeY - 4, fill: color, "class": "tag" }, g);
+              note.textContent = TAX.relations[name].label + " 第 " + (other.page + 1) + " 页 " + target;
+              return;
+            }
+            var bb = center(other.bbox);
+            var mx = (a[0] + bb[0]) / 2 + (a[1] - bb[1]) * 0.18, my = (a[1] + bb[1]) / 2 + (bb[0] - a[0]) * 0.18;
+            el("path", { d: "M" + a[0] + " " + a[1] + " Q" + mx + " " + my + " " + bb[0] + " " + bb[1], "class": "rel", stroke: color }, g);
+          });
+        });
+      });
+    });
+  }
+
+  // ---- 右栏 ----
+  function counts() {
+    var c = {};
+    TRUTH.elements.forEach(function (e) { c[e["class"]] = (c[e["class"]] || 0) + 1; });
+    return c;
+  }
+  function renderLegend() {
+    var host = document.getElementById("legend"), n = counts();
+    host.innerHTML = "";
+    var used = Object.keys(n).length, total = Object.keys(TAX.block_classes).length;
+    document.getElementById("legendTitle").textContent = "分类（这份文档用到 " + used + " / " + total + " 类）";
+    Object.keys(TAX.groups).forEach(function (gid) {
+      var gspec = TAX.groups[gid];
+      var members = Object.keys(TAX.block_classes).filter(function (k) { return TAX.block_classes[k].group === gid; });
+      if (!members.length) return;
+      var grp = h("div", { "class": "grp" });
+      var sw = h("span", { "class": "sw" }); sw.style.background = gspec.color;
+      grp.appendChild(h("div", { "class": "gh", title: gspec.note }, [sw, gspec.label]));
+      members.forEach(function (k) {
+        var spec = TAX.block_classes[k];
+        var row = h("div", { "class": "cls" + (state.filter === k ? " on" : "") + (n[k] ? "" : " zero"), title: spec.note || "" }, [
+          h("span", {}, [spec.label, h("span", { "class": "id mono", text: k })]),
+          h("span", { "class": "n", text: String(n[k] || 0) })
+        ]);
+        row.addEventListener("click", function () { state.filter = state.filter === k ? null : k; renderLegend(); draw(); });
+        grp.appendChild(row);
+      });
+      host.appendChild(grp);
+    });
+  }
+  function renderQuestions() {
+    var host = document.getElementById("questions");
+    Object.keys(TAX.block_classes).forEach(function (k) {
+      var spec = TAX.block_classes[k];
+      if (spec.question) host.appendChild(h("li", {}, [h("b", { text: spec.label + "：" }), spec.question]));
+    });
+  }
+  function jump(id) {
+    var e = byId[id];
+    if (!e) return null;
+    var a = h("a", { "class": "jump", text: id + "（" + cls(e).label + "）" });
+    a.addEventListener("click", function () { select(id, true); });
+    return a;
+  }
+  function select(id, scroll) {
+    state.selected = id;
+    var e = byId[id], spec = cls(e), gspec = TAX.groups[spec.group];
+    var host = document.getElementById("detail");
+    host.innerHTML = "";
+    var ts = translateState(e);
+    var sw = h("span", { "class": "sw" }); sw.style.background = gspec.color;
+    host.appendChild(h("div", { "class": "title" }, [sw, spec.label, h("span", { "class": "mono", text: e["class"] }),
+      h("span", { "class": "pill " + ts, text: ts === "yes" ? "默认翻" : ts === "no" ? "默认不翻" : "翻不翻待定" })]));
+    var kv = h("div", { "class": "kv" });
+    function row(k, v) { kv.appendChild(h("span", { "class": "k", text: k })); kv.appendChild(typeof v === "string" ? h("span", { text: v }) : v); }
+    row("编号", h("span", { "class": "mono", text: e.id }));
+    row("大类", gspec.label);
+    row("载体", spec.kind);
+    row("页", "第 " + (e.page + 1) + " 页");
+    row("框", h("span", { "class": "mono", text: e.bbox.join(", ") }));
+    row("行数", String((e.lines || []).length));
+    if (e.attributes) Object.keys(e.attributes).forEach(function (k) {
+      var spec = TAX.attributes[k], v = String(e.attributes[k]);
+      row(spec ? spec.label : k, h("span", { "class": spec ? "" : "mono", text: spec && spec.values[v] ? spec.values[v] + "（" + v + "）" : v }));
+    });
+    var rel = e.relations || {};
+    Object.keys(rel).forEach(function (name) {
+      var span = h("span", {});
+      [].concat(rel[name]).forEach(function (t, i) { if (i) span.appendChild(document.createTextNode("、")); span.appendChild(jump(t) || document.createTextNode(t)); });
+      row((TAX.relations[name] || {}).label || name, span);
+    });
+    var incoming = TRUTH.elements.filter(function (o) {
+      var r = o.relations || {};
+      return Object.keys(r).some(function (k) { return [].concat(r[k]).indexOf(id) >= 0; });
+    });
+    if (incoming.length) {
+      var span = h("span", {});
+      incoming.forEach(function (o, i) { if (i) span.appendChild(document.createTextNode("、")); span.appendChild(jump(o.id)); });
+      row("被指向", span);
+    }
+    host.appendChild(kv);
+    if (spec.note) host.appendChild(h("div", { "class": "hint", text: "定义：" + spec.note }));
+    if (spec.question) host.appendChild(h("div", { "class": "q", text: "待定：" + spec.question }));
+    if ((e.inlines || []).length) {
+      host.appendChild(h("div", { "class": "hint", text: "行内片段：" + e.inlines.map(function (p) {
+        return ((TAX.inline_classes[p["class"]] || {}).label || p["class"]) + " " + (p.latex || p.text);
+      }).join("；") }));
+    }
+    if (e.text) host.appendChild(h("div", { "class": "txt", text: e.text }));
+    draw();
+    if (scroll) {
+      var page = document.getElementById("page-" + (e.page + 1));
+      var top = page.offsetTop + (e.bbox[1] / TRUTH.pages[e.page].height) * page.offsetHeight - 120;
+      window.scrollTo({ top: top, behavior: "smooth" });
+    }
+  }
+
+  // ---- 控件 ----
+  Array.prototype.forEach.call(document.querySelectorAll("#colorMode button"), function (b) {
+    b.addEventListener("click", function () {
+      state.color = b.getAttribute("data-v");
+      Array.prototype.forEach.call(document.querySelectorAll("#colorMode button"), function (o) { o.setAttribute("aria-pressed", String(o === b)); });
+      draw();
+    });
+  });
+  [["showTags", "tags"], ["showLines", "lines"], ["showInlines", "inlines"], ["showRels", "rels"]].forEach(function (pair) {
+    document.getElementById(pair[0]).addEventListener("change", function (ev) { state[pair[1]] = ev.target.checked; draw(); });
+  });
+  document.getElementById("pages").addEventListener("click", function () {
+    if (state.selected) { state.selected = null; document.getElementById("detail").innerHTML = '<span class="empty">点页面上的框看它的类别、属性、关系和定义。</span>'; draw(); }
+  });
+
+  renderLegend();
+  renderQuestions();
+  draw();
+})();
+</script>
+</body>
+</html>
