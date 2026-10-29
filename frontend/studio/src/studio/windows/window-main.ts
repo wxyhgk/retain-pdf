@@ -62,7 +62,7 @@ function shutWindow(): void {
 	window.close();
 }
 
-/** What happened in this window, kept in the blog's .astro/studio-notes.log (to find out why something did not work). */
+/** What happened in this window, kept in the blog's .studio-cache/studio-notes.log (to find out why something did not work). */
 function tell(what: string): void {
 	void keepNote(`[独立窗口 ${location.search}] ${what}（${navigator.userAgent}${'__TAURI_INTERNALS__' in window ? '，Tauri' : ''}）`).catch(() => {}); // i18n-ignore: developer log
 }

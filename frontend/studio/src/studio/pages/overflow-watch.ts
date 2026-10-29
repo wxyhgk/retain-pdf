@@ -25,7 +25,7 @@ function where(): string {
 /**
  * The article's scroller made wider than itself (a scrollbar along its foot, seen now and then while the author types
  * in the AI panel, not reproduced in tests): what reaches past its right side, where the focus and the selection were,
- * kept in .astro/studio-notes.log (once for each different cause). Only looks: changes nothing.
+ * kept in .studio-cache/studio-notes.log (once for each different cause). Only looks: changes nothing.
  */
 export function watchOverflow(article: HTMLElement): void {
 	const told = new Set<string>();

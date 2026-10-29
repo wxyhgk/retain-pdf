@@ -1,6 +1,6 @@
 # Studio 使用说明
 
-Studio 是本机的写作工具，像 Notion 和思源笔记，写出来的是普通 Markdown。它只在 `npm run dev` 时存在，博客上线后没有它。
+Studio 是本机的写作工具，像 Notion 和思源笔记，写出来的是普通 Markdown。它有自己的服务器（`npm run studio:serve`，或 Mac 应用），博客上线后没有它。
 
 ## 打开
 
@@ -14,10 +14,12 @@ npm run milkdown:setup   # 拉取编辑器（Milkdown 的 fork）并安装依赖
 以后每次：
 
 ```sh
-npm run dev
+npm run studio:serve
 ```
 
-然后打开 <http://localhost:4321/studio>。Studio 只接受本机访问，而且只认它自己的页面：本机别的网站（别的端口）、小程序都调不了它的接口。
+然后打开 <http://localhost:4321/studio>（4321 被占着就用下一个空着的端口，终端里会写出地址）。Studio 只接受本机访问，而且只认它自己的页面：本机别的网站（别的端口）、小程序都调不了它的接口。
+
+这是 Studio 自己的服务器，不是博客的：写作不需要 `npm run dev`（Astro），博客那边出错也不会把 Studio 拖下去。要看博客本身（「博客首页」、在博客上打开一篇），Studio 会把你带到博客自己的服务器：已经开着 `npm run dev` 就用它；没开就替你开一个（端口在 Studio 的下一个，比如 4322，第一次要等几秒），Studio 关掉时它也跟着关。它的输出在 `.studio-cache/blog.log`。
 
 ### Mac 应用
 
@@ -27,7 +29,7 @@ npm run dev
 tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/Studio.app
 ```
 
-- 打开时，如果博客的服务器已经在跑（比如 `npx astro dev --background` 起的），就直接用它，退出时也不动它。
+- 打开时，如果 Studio 的服务器已经在跑（比如终端里 `npm run studio:serve` 起的），就直接用它，退出时也不动它。
 - 没有就由应用自己启动一个，它跟着应用走：退出应用（⌘Q），哪怕应用崩溃，它都会停掉。
 - 关掉窗口（红色按钮或 ⌘W）只是把窗口藏起来，像别的 Mac 应用一样：服务器还在，点程序坞里的图标马上回来，不用重新启动。真要退出用 ⌘Q。
 - 窗口记得上次的大小和位置（AI、小程序的独立窗口也是），下次在原处打开；那块屏幕不在了就用默认大小。记在 `~/Library/Application Support/blog.studio.app/windows.json`。

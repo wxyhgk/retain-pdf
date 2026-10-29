@@ -384,7 +384,9 @@ export function createStudioOps({ root, site } = {}) {
 
 		/** How an app is now, asked of the Studio running (its server's state and output, its pages' errors). */
 		async appStatus({ id }) {
-			const url = process.env.STUDIO_URL || (await readFile(resolve(projectRoot, '.astro', 'dev.json'), 'utf8').then((text) => JSON.parse(text).url, () => null));
+			// Where the Studio says it runs: its own server's file, or (one run by astro dev, as before) Astro's.
+			const said = (file) => readFile(resolve(projectRoot, file), 'utf8').then((text) => JSON.parse(text).url, () => null);
+			const url = process.env.STUDIO_URL || (await said('.studio-cache/server.json')) || (await said('.astro/dev.json'));
 			if (!url) throw new StudioOpsError(t('Studio 没有开着：小程序的状态要在 Studio 开着时才看得到'));
 			const answer = await fetch(new URL(`/api/studio/apps/${encodeURIComponent(String(id ?? ''))}/status`, url)).catch(() => null);
 			if (!answer) throw new StudioOpsError(t('连不上 Studio（{url}）', { url }));

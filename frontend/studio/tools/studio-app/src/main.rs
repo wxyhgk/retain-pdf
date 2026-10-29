@@ -1,13 +1,14 @@
 //! The Studio as a Mac app.
 //!
-//! It shows the blog's dev server's `/studio` in a window. While `astro dev` runs it writes
-//! `.astro/dev.json` (its pid and address); when that names a live server the app uses it and
-//! leaves it alone. Otherwise the app runs `astro dev` itself and the server lives as long as the
-//! app does: its stdin is a pipe from the app, and when that closes (the app quits, or crashes)
-//! the server stops. Its output goes to `.astro/dev.log`, where `astro dev --background` keeps it.
-//! When that server ends with the app still open, the app writes how it ended (the signal or the
-//! exit code, and what was running then) to `.astro/dev-exits.log` and starts it again; the log of
-//! the run before is kept as `.astro/dev.previous.log`.
+//! It shows the Studio's server's `/studio` in a window: the Studio's own (`src/studio/serve.mjs`, not the blog's
+//! `astro dev`). While it runs it writes `.studio-cache/server.json` (its pid and address); when that names a live
+//! server the app uses it and leaves it alone. Otherwise the app runs it itself and the server lives as long as the
+//! app does: its stdin is a pipe from the app, and when that closes (the app quits, or crashes) the server stops. Its
+//! output goes to `.studio-cache/server.log`. When that server ends with the app still open, the app writes how it
+//! ended (the signal or the exit code, and what was running then) to `.studio-cache/server-exits.log` and starts it
+//! again; the log of the run before is kept as `.studio-cache/server.previous.log`. A version of the blog from before
+//! the Studio had a server of its own (the last good version may be one) is run as it was: `astro dev`, its files in
+//! `.astro/` (`ServerFiles`).
 //!
 //! A Studio that does not finish starting (its own code broken by an edit: the server does not start, or its page never
 //! says it has started) is offered as it was last time it started (`.studio-cache/last-good.json`, kept by the server):
@@ -41,7 +42,7 @@ use serde::{Deserialize, Serialize};
 use tauri::webview::{DownloadEvent, NewWindowResponse, PageLoadEvent};
 use tauri::{AppHandle, Manager, RunEvent, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder, Window, WindowEvent};
 
-/// What `astro dev` keeps in `.astro/dev.json` while it runs.
+/// What a running server keeps in its lock file (`ServerFiles::lock`).
 #[derive(Deserialize)]
 struct DevServer {
     pid: i32,
@@ -327,7 +328,7 @@ fn watch_start(app: AppHandle, url: Url) {
             app.state::<State>().studio_open.store(false, Ordering::Relaxed);
             let _ = window.navigate(Url::parse("tauri://localhost/index.html").unwrap());
         }
-        offer_rescue(&app, "Studio 打开了，但两分多钟还没有启动完：可能是它自己的代码被改坏了（看 .astro/dev.log 和页面上的错误）。");
+        offer_rescue(&app, "Studio 打开了，但两分多钟还没有启动完：可能是它自己的代码被改坏了（看 .studio-cache/server.log 和页面上的错误）。");
     });
 }
 
@@ -483,18 +484,48 @@ fn blog() -> Option<PathBuf> {
         .filter(|repo| repo.join("astro.config.mjs").is_file())
 }
 
-/// The blog's dev server, if one is running.
+/// Where a server of a blog says it runs (its lock), and keeps what it said (its log, the one before, how it ended).
+struct ServerFiles {
+    /// The Studio's own server (`src/studio/serve.mjs`), or (a version from before it had one) Astro's.
+    own: bool,
+    lock: &'static str,
+    log: &'static str,
+    previous: &'static str,
+    exits: &'static str,
+}
+
+fn server_files(repo: &Path) -> ServerFiles {
+    if repo.join("src/studio/serve.mjs").is_file() {
+        ServerFiles {
+            own: true,
+            lock: ".studio-cache/server.json",
+            log: ".studio-cache/server.log",
+            previous: ".studio-cache/server.previous.log",
+            exits: ".studio-cache/server-exits.log",
+        }
+    } else {
+        ServerFiles {
+            own: false,
+            lock: ".astro/dev.json",
+            log: ".astro/dev.log",
+            previous: ".astro/dev.previous.log",
+            exits: ".astro/dev-exits.log",
+        }
+    }
+}
+
+/// The blog's Studio server, if one is running.
 fn running(repo: &Path) -> Option<DevServer> {
     let server: DevServer =
-        serde_json::from_str(&fs::read_to_string(repo.join(".astro/dev.json")).ok()?).ok()?;
+        serde_json::from_str(&fs::read_to_string(repo.join(server_files(repo).lock)).ok()?).ok()?;
     (unsafe { libc::kill(server.pid, 0) } == 0).then_some(server)
 }
 
-/// The server's lifeline: when its stdin (a pipe from the app) closes, it removes its lock file and
-/// stops. Run in the blog's folder, where the lock file is. `--import` runs it in each worker thread too (pi resizes
-/// a picture it reads in one), whose stdin is no pipe and ends at once: there it does nothing, or the server would
-/// stop whenever a worker starts.
-const LIFELINE: &str = "data:text/javascript,import{readFileSync,rmSync}from'node:fs';import{isMainThread}from'node:worker_threads';if(isMainThread)process.stdin.on('end',()=>{try{if(JSON.parse(readFileSync('.astro/dev.json','utf8')).pid===process.pid)rmSync('.astro/dev.json')}catch{}process.kill(process.pid,'SIGTERM')}).resume()";
+/// The server's lifeline: when its stdin (a pipe from the app) closes, it removes its lock file (either kind's, the one
+/// naming it) and stops. Run in the blog's folder, where the lock file is. `--import` runs it in each worker thread
+/// too (pi resizes a picture it reads in one), whose stdin is no pipe and ends at once: there it does nothing, or the
+/// server would stop whenever a worker starts.
+const LIFELINE: &str = "data:text/javascript,import{readFileSync,rmSync}from'node:fs';import{isMainThread}from'node:worker_threads';if(isMainThread)process.stdin.on('end',()=>{for(const f of['.studio-cache/server.json','.astro/dev.json'])try{if(JSON.parse(readFileSync(f,'utf8')).pid===process.pid)rmSync(f)}catch{}process.kill(process.pid,'SIGTERM')}).resume()";
 
 fn start(app: &AppHandle, repo: &Path) -> Result<DevServer, String> {
     start_in(app, repo, &[])
@@ -505,17 +536,22 @@ fn start_in(app: &AppHandle, repo: &Path, extra: &[(&str, &str)]) -> Result<DevS
     let env = login_env();
     let node = which("node", env.get("PATH").map_or("", String::as_str))
         .ok_or("找不到 node。在终端里装好 node（node --version 能用）以后再打开。")?;
-    let log_path = repo.join(".astro/dev.log");
-    let _ = fs::create_dir_all(repo.join(".astro"));
-    let _ = fs::rename(&log_path, repo.join(".astro/dev.previous.log"));
-    let log = File::create(&log_path).map_err(|error| format!("没能写 .astro/dev.log：{error}"))?;
+    let files = server_files(repo);
+    let log_path = repo.join(files.log);
+    if let Some(folder) = log_path.parent() {
+        let _ = fs::create_dir_all(folder);
+    }
+    let _ = fs::rename(&log_path, repo.join(files.previous));
+    let log = File::create(&log_path).map_err(|error| format!("没能写 {}：{error}", files.log))?;
+    // The Studio's own server, announcing itself (its lock file); a version without one, `astro dev`.
+    let program: &[&str] = if files.own {
+        &["src/studio/serve.mjs"]
+    } else {
+        &["node_modules/astro/bin/astro.mjs", "dev"]
+    };
     let mut child = Command::new(node)
-        .args([
-            "--import",
-            LIFELINE,
-            "node_modules/astro/bin/astro.mjs",
-            "dev",
-        ])
+        .args(["--import", LIFELINE])
+        .args(program)
         .current_dir(repo)
         .env_clear()
         .envs(&env)
@@ -542,8 +578,9 @@ fn start_in(app: &AppHandle, repo: &Path, extra: &[(&str, &str)]) -> Result<DevS
             let said = fs::read_to_string(&log_path).unwrap_or_default();
             let tail: Vec<&str> = said.lines().rev().take(12).collect();
             return Err(format!(
-                "服务器没能启动。它最后说：\n{}\n\n完整记录在博客的 .astro/dev.log。",
-                tail.into_iter().rev().collect::<Vec<_>>().join("\n")
+                "服务器没能启动。它最后说：\n{}\n\n完整记录在博客的 {}。",
+                tail.into_iter().rev().collect::<Vec<_>>().join("\n"),
+                files.log
             ));
         }
         thread::sleep(Duration::from_millis(200));
@@ -639,7 +676,7 @@ fn wait_for(url: &Url, patience: Duration) -> Result<(), String> {
 }
 
 /// Waits for the server the app started to end. When it ends with the app still open (the app
-/// takes it when it quits), says how in `.astro/dev-exits.log` and starts it again: the page
+/// takes it when it quits), says how in its exits log (`ServerFiles::exits`) and starts it again: the page
 /// reconnects by itself (Vite's client reloads it once the server answers).
 fn watch_started(app: AppHandle, repo: PathBuf) {
     thread::spawn(move || {
@@ -667,7 +704,7 @@ fn watch_started(app: AppHandle, repo: PathBuf) {
             ended.len()
         };
         if recent > 3 {
-            show(&app, &format!("服务器两分钟里停了 {recent} 次（这次{how}），不再自动重启。经过记在博客的 .astro/dev-exits.log，退出 Studio 再打开试试。"), true);
+            show(&app, &format!("服务器两分钟里停了 {recent} 次（这次{how}），不再自动重启。经过记在博客的 {}，退出 Studio 再打开试试。", server_files(&repo).exits), true);
             return;
         }
         // The last good version running: started again as it is, not the broken one.
@@ -708,7 +745,7 @@ fn signal_name(signal: i32) -> &'static str {
     }
 }
 
-/// Adds to `.astro/dev-exits.log`: when, how, the end of the server's log, and the node, npm and
+/// Adds to the exits log (`ServerFiles::exits`): when, how, the end of the server's log, and the node, npm and
 /// kill programs running then (who might have stopped it).
 fn note_exit(repo: &Path, how: &str) {
     let when = Command::new("/bin/date")
@@ -716,7 +753,8 @@ fn note_exit(repo: &Path, how: &str) {
         .output()
         .map(|out| String::from_utf8_lossy(&out.stdout).trim().to_owned())
         .unwrap_or_default();
-    let log = fs::read_to_string(repo.join(".astro/dev.log")).unwrap_or_default();
+    let files = server_files(repo);
+    let log = fs::read_to_string(repo.join(files.log)).unwrap_or_default();
     let tail: Vec<&str> = log.lines().rev().take(15).collect();
     let running = Command::new("/bin/ps")
         .args(["-axww", "-o", "pid,ppid,etime,command"])
@@ -741,7 +779,7 @@ fn note_exit(repo: &Path, how: &str) {
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
-        .open(repo.join(".astro/dev-exits.log"))
+        .open(repo.join(files.exits))
     {
         let _ = file.write_all(said.as_bytes());
     }
@@ -962,13 +1000,13 @@ mod tests {
         };
         let dir = env::temp_dir().join(format!("studio-lifeline-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
-        fs::create_dir_all(dir.join(".astro")).unwrap();
+        fs::create_dir_all(dir.join(".studio-cache")).unwrap();
         fs::write(dir.join("worker.mjs"), "setTimeout(() => {}, 100);").unwrap();
         fs::write(
             dir.join("server.mjs"),
             "import { writeFileSync } from 'node:fs';\n\
              import { Worker } from 'node:worker_threads';\n\
-             writeFileSync('.astro/dev.json', JSON.stringify({ pid: process.pid }));\n\
+             writeFileSync('.studio-cache/server.json', JSON.stringify({ pid: process.pid }));\n\
              new Worker(new URL('./worker.mjs', import.meta.url)).on('exit', () => console.log('worker over'));\n",
         )
         .unwrap();
@@ -985,12 +1023,12 @@ mod tests {
         assert_eq!(said.trim(), "worker over");
         thread::sleep(Duration::from_millis(300));
         assert!(server.try_wait().unwrap().is_none(), "the server stopped when a worker started");
-        assert!(dir.join(".astro/dev.json").exists());
+        assert!(dir.join(".studio-cache/server.json").exists());
 
         drop(server.stdin.take());
         let status = server.wait().unwrap();
         assert_eq!(status.signal(), Some(libc::SIGTERM));
-        assert!(!dir.join(".astro/dev.json").exists());
+        assert!(!dir.join(".studio-cache/server.json").exists());
         let _ = fs::remove_dir_all(&dir);
     }
 }

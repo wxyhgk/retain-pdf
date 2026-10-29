@@ -25,8 +25,8 @@ export function settingRoutes(api, { localeSettings, projectRoot }) {
 	api.post('/notes', async ({ json }) => {
 		const { what } = (await json()) ?? {};
 		if (typeof what !== 'string' || !what) return { kept: false };
-		await mkdir(join(projectRoot, '.astro'), { recursive: true });
-		await appendFile(join(projectRoot, '.astro/studio-notes.log'), `==== ${new Date().toISOString()}\n${what.slice(0, 8000)}\n`);
+		await mkdir(join(projectRoot, '.studio-cache'), { recursive: true });
+		await appendFile(join(projectRoot, '.studio-cache', 'studio-notes.log'), `==== ${new Date().toISOString()}\n${what.slice(0, 8000)}\n`);
 		return { kept: true };
 	});
 }

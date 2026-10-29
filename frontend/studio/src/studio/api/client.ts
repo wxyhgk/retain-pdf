@@ -654,7 +654,7 @@ export const repos = {
 	file: (id: string, path: string): Promise<unknown> => request(`/api/studio/repos/${encodeURIComponent(id)}/file?path=${encodeURIComponent(path)}`, { cache: 'no-store' }),
 };
 
-/** Something the page saw going wrong, kept in the blog's .astro/studio-notes.log for whoever looks into it. */
+/** Something the page saw going wrong, kept in the blog's .studio-cache/studio-notes.log for whoever looks into it. */
 export function keepNote(what: string): Promise<unknown> {
 	return request('/api/studio/notes', jsonOptions('POST', { what }));
 }

@@ -32,7 +32,8 @@ src/
       tasks/ apps/    后台任务和 PDF 识别；小程序
       system/         终端、在 Finder 中显示、选文件夹
     ops/              给大模型用的页面操作（见 docs/ai-tools.md）
-  plugins/studio-dev.mjs   把 Studio 挂到 astro dev 上：组装后端，接口在 studio/server/routes/
+  studio/serve.mjs         Studio 自己的服务器（Vite）：页面在 studio/page/（render.tsx 画出 /studio、/studio/window）
+  plugins/studio-dev.mjs   组装后端（一个 Vite 插件），接口在 studio/server/routes/
 packages/             博客和 Studio 共用的包（各有 README）
   markdown/           一篇笔记怎么写：构建、发布前检查、编辑器共用的规则
   science/            化学结构和公式
@@ -63,7 +64,7 @@ Studio 用到了只有 fork 里才有的扩展，`src/studio/editor/milkdown-for
 
 ## Studio 的外壳
 
-左栏、顶栏和右栏的标签是 React 19 画的，用 Tailwind 4 和 [shadcn/ui](https://ui.shadcn.com) 的组件，代码在 `src/studio/shell/`；弹窗、右键菜单、AI 面板、页头、页面树、文件面板和资料库也是。编辑器和终端还是原来的写法，直接操作 DOM。这三样只在 `astro dev` 里加载（`astro.config.mjs` 的 `studioPage`），构建的博客里没有。
+左栏、顶栏和右栏的标签是 React 19 画的，用 Tailwind 4 和 [shadcn/ui](https://ui.shadcn.com) 的组件，代码在 `src/studio/shell/`；弹窗、右键菜单、AI 面板、页头、页面树、文件面板和资料库也是。编辑器和终端还是原来的写法，直接操作 DOM。这三样只在 Studio 的服务器里加载（`src/studio/serve.mjs`），构建的博客里没有。
 
 - **两边怎么说话**：外壳显示什么，看 `shell/shell-state.ts` 里的状态，别的部分用 `shell.set({...})` 改它（比如 `shell/top-bar.ts` 设保存状态）。外壳上的按钮调用 `main.ts` 交给 `mountShell` 的那些函数。
 - **外壳里的「宿主」元素**：React 画出元素，内容由原来的代码填，比如页面树 `#article-list`、插件命令 `#plugin-commands`。这种元素要加 `data-host`，React 从不往里面画。元素的 id 不变，原来的代码和测试照样能找到。
@@ -84,7 +85,8 @@ Studio 的界面、提示和服务器返回给界面的话，都已经交给 `t(
 
 | 命令 | 作用 |
 |---|---|
-| `npm run dev` | 本机开发服务器，博客在 <http://localhost:4321>，Studio 在 `/studio` |
+| `npm run studio:serve` | Studio 的服务器，<http://localhost:4321/studio>（被占着就用下一个端口） |
+| `npm run dev` | 博客的开发服务器（Astro），Studio 占着 4321 时用下一个端口 |
 | `npm run build` | 构建博客到 `dist/` |
 | `npm test` | 单元测试和后端测试 |
 | `npm run test:unit` | 单元测试（`tests/`、`packages/*/test/`、`plugins/*/test/`） |
@@ -109,7 +111,20 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 测试服务器和你自己的有两处不同：编辑器（Milkdown 的 fork）预先打成包（`STUDIO_MILKDOWN_BUNDLED=1`，见 `src/plugins/milkdown-source.mjs`），一页从一千多个请求降到四百个；终端的 zsh 不读你的 `~/.zshrc` 这些（`ZDOTDIR` 指向空文件夹），启动快，各台机器一样。
 - 同一组端口上同时只能跑一轮：第二轮会直接报错，不会去清空第一轮正在用的文件夹。要同时跑，用 `E2E_PORT` 换一组端口。
 
-**不要在仓库根目录上再开第二个 `astro dev`**：两个服务器会同时写 `.astro/data-store.json`，互相弄坏。测试、预览都用上面这种独立的根目录。
+**不要在仓库根目录上再开第二个 `astro dev`**：两个会同时写 `.astro/data-store.json`，互相弄坏。Studio 的服务器不碰 `.astro/`，和一个 `astro dev` 可以同时开。测试、预览都用上面这种独立的根目录。
+
+测试服务器用 Studio 自己的服务器（`startStudio`），和 Studio.app 一样；`E2E_ASTRO=1` 时用 `astro dev` 里的 `/studio`（过渡期两个都留着，之后去掉后者）。
+
+## Studio 的服务器
+
+`src/studio/serve.mjs`：一个 Vite 开发服务器，只有 Studio 的东西。
+
+- 页面：`/studio` 和 `/studio/window` 由 `src/studio/page/render.tsx` 在服务器上画（外壳先画一遍，页面的脚本接着画）；样式按它列的顺序放进页面，每个都是 `<style data-vite-dev-id>` 加它的模块（和 Astro 开发时一样）：脚本里再引入同一个样式表（编辑器引入 Crepe 的）时改的是原来那个，顺序不乱，改了样式马上生效。
+- 后端：`src/plugins/studio-dev.mjs`（组装各个模块、接口、小程序和文章的文件）。
+- 依赖：启动时从 `src/studio/**/*.tsx` 找出来预先打包（和 Astro 一样），样式表不算依赖。
+- 它在跑时把进程号和地址写进 `.studio-cache/server.json`；Studio.app 和 `studio` 命令从这里找到它。Studio.app 起的服务器，输出在 `.studio-cache/server.log`（上一次的在 `server.previous.log`），每次意外退出记进 `.studio-cache/server-exits.log`。
+- 默认端口 4321，被占着就用下一个空着的。
+- 博客的页面（`/blog/…`、`/wiki/…`、`/about`……）不归它：交给博客自己的 `astro dev`，开着就用（`.astro/dev.json`），没开就在下一个端口替你开一个、跟着 Studio 的服务器停（`blogPreview`，输出在 `.studio-cache/blog.log`），请求等它起来后跳过去。
 
 ## Studio 的接口
 
@@ -137,13 +152,13 @@ Studio 的前端通过 `/api/studio/*` 和后端说话，这些接口只接受�
 
 **先查记录，不要猜。** 真机上的窗口看不到，猜了改、改了再猜，往返好几轮也找不到原因；有记录就一次找到：
 
-- 服务器为什么停：Studio.app 把每次退出写进 `.astro/dev-exits.log`（时间、退出码或信号、服务器最后几行输出、当时在跑的程序），上一次的完整输出在 `.astro/dev.previous.log`。
-- 页面里发生了什么：页面可以把要查的每一步用 `keepNote`（`src/studio/api/client.ts`）记进 `.astro/studio-notes.log`。文章区被撑宽（底部出横向滚动条）时，`src/studio/pages/overflow-watch.ts` 会自己记下是谁伸出去了。
+- 服务器为什么停：Studio.app 把每次退出写进 `.studio-cache/server-exits.log`（时间、退出码或信号、服务器最后几行输出、当时在跑的程序），上一次的完整输出在 `.studio-cache/server.previous.log`。（旧版本用 `astro dev` 时记在 `.astro/dev-exits.log`、`.astro/dev.previous.log`。）
+- 页面里发生了什么：页面可以把要查的每一步用 `keepNote`（`src/studio/api/client.ts`）记进 `.studio-cache/studio-notes.log`。文章区被撑宽（底部出横向滚动条）时，`src/studio/pages/overflow-watch.ts` 会自己记下是谁伸出去了。
 - 再拿时间去对 AI 的会话记录（`~/.pi/agent/sessions/`、`~/.claude/projects/`），常常能精确到秒。
 
 **1. 服务器隔一会儿就断（2026-10-28，`467ed4a`）**
 
-- 现象：用着用着服务器停了，`dev-exits.log` 记的是被 SIGTERM 停掉。
+- 现象：用着用着服务器停了，退出记录（当时是 `.astro/dev-exits.log`）记的是被 SIGTERM 停掉。
 - 原因：Studio.app 用 `node --import <看守>` 启动服务器，看守在 Studio.app 退出（标准输入关上）时停掉服务器。`--import` 在**每个 worker 线程**里也会跑一遍；worker 线程没有标准输入，一开始就关着，看守就以为 Studio.app 走了。pi 跑在服务器进程里，看图片时开 worker 线程缩放图片，所以每次看图就断（两次断开都和 pi 读图片在同一秒）。
 - 修法：看守只在主线程里做事（`isMainThread`）。**用 `--import`、`--require` 注入的代码都要先判断是不是主线程。** Rust 测试 `a_worker_thread_does_not_stop_the_server` 管着。
 

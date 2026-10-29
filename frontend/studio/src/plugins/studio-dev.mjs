@@ -43,7 +43,7 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {{ site?: string }} [options] the blog's address, so links to its articles written in full count as theirs
  */
 /**
- * Why the server ends, said where its output goes (.astro/dev.log, for Studio.app): who called `process.exit` (its
+ * Why the server ends, said where its output goes (.studio-cache/server.log, for Studio.app): who called `process.exit` (its
  * stack), the app gone (its stdin closed), an error nothing caught, its exit code. Said only: nothing is changed.
  */
 let toldWhyItEnds = false;
