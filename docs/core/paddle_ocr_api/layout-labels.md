@@ -68,7 +68,7 @@ PaddleX 或官方 API 时，必须重新比对实际模型配置和真实返回�
 | `table` | 表格 | `table/table_html` | 已映射；当前保留 HTML，未拆成单元格 schema |
 | `text` | 普通正文 | `text/body` | 已映射 |
 | `vertical_text` | 竖排文字 | `unknown` | **未映射** |
-| `vision_footnote` | 图、表或图表附近的视觉附注 | `text/footnote` | 已映射；目标对象需由关系层判断 |
+| `vision_footnote` | 图、表或图表附近的视觉附注 | `text/footnote` | 已映射；归到表还是图（`paddle/relations.py` 的 `resolve_vision_footnote`）：开头写「表注 / Table / Tab.」或「图注 / Figure / Fig.」→ 紧挨着的前一个块是表还是图 → 正文里的整词 table(s) / figure(s) / fig.（2026-10-29 起；以前子串 `"table" in 文本` 排最前，stable、suitable 都被当成表注） |
 
 `formula` 是 RetainPDF 当前额外接受的兼容别名，会映射到
 `formula/display_formula`；它不属于上面的官方 25 类。

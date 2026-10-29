@@ -101,17 +101,26 @@ def resolve_vision_footnote(
     text: str,
     previous_anchor: tuple[str, int] | None,
 ) -> tuple[str, str, list[str], dict]:
-    lowered = text.lower()
-    if lowered.startswith("表注") or "table" in lowered:
-        return "text", "table_footnote", ["footnote", "table_footnote"], {"footnote_target": "table"}
-    if lowered.startswith("图注") or "figure" in lowered:
-        return "text", "image_footnote", ["footnote", "image_footnote"], {"footnote_target": "image"}
+    # 先看开头的标记，再看紧挨着的前一个块，最后才看正文里有没有整词 table / figure。以前用子串 `"table" in 文本`
+    # 排在最前：stable、suitable、notable 都会把图注当成表注；图注里写「见 Table 2」也会被算到表格名下（2026-10-29 改）。
+    plain_text = " ".join(unescape(re.sub(r"<[^>]+>", " ", text or "")).split())
+    lowered = plain_text.lower()
+    table_footnote = ("text", "table_footnote", ["footnote", "table_footnote"], {"footnote_target": "table"})
+    image_footnote = ("text", "image_footnote", ["footnote", "image_footnote"], {"footnote_target": "image"})
+    if lowered.startswith("表注") or re.match(r"^(?:table|tab\.)(?![a-z])", lowered):
+        return table_footnote
+    if lowered.startswith("图注") or re.match(r"^(?:figure|fig\.)(?![a-z])", lowered):
+        return image_footnote
     if previous_anchor:
         target = previous_anchor[0]
         if target in {"table_html", "table"}:
-            return "text", "table_footnote", ["footnote", "table_footnote"], {"footnote_target": "table"}
+            return table_footnote
         if target in {"image_body", "image"}:
-            return "text", "image_footnote", ["footnote", "image_footnote"], {"footnote_target": "image"}
+            return image_footnote
+    if re.search(r"\btables?\b", lowered):
+        return table_footnote
+    if re.search(r"\b(?:figures?|fig\.)(?![a-z])", lowered):
+        return image_footnote
     return "text", "footnote", ["footnote"], {"footnote_target": "unknown"}
 
 
