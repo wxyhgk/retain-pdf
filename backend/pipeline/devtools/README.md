@@ -2,6 +2,11 @@
 
 `devtools/` holds local diagnostics, migration helpers, probes, and other scripts that are useful while developing RetainPDF but are not part of the production pipeline.
 
+## OCR 分类查看器
+
+`devtools/ocr_viewer/`：RetainPDF 自己的块分类草案、一份按分类记好标准答案的 2 页复杂论文 PDF、把它们画出来的离线查看器。
+用法见 [ocr_viewer/README.md](ocr_viewer/README.md)。
+
 ## Offline translation regression
 
 From the repository root (uses the selected Python environment):
