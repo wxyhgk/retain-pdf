@@ -227,3 +227,28 @@ test('a press in the database leaves the page where it is (the editor not focuse
 	expect(await scroll.evaluate((element) => element.scrollTop)).toBe(before);
 	await p.mouse.up();
 });
+
+test('a row’s own page: the database’s columns under its title, a value changed there saved with the page, a choice added to the database', async ({ page: p }) => {
+	row('db-row-a', 'TS1 优化', '{ "方法": "B3LYP", "能量": -76.4, "收敛": true }');
+	database({ columns: [{ name: '方法', type: 'select', options: ['B3LYP'] }, { name: '能量', type: 'number' }, { name: '收敛', type: 'checkbox' }, { name: '藏起来', type: 'text', hidden: true }], view: 'table' });
+	await openStudio(p);
+	await block(p).locator('[data-row="db-row-a"]').hover();
+	await block(p).locator('[data-row="db-row-a"] [data-database-open]').click();
+	await expect(p.locator('#article-title-input')).toHaveValue('TS1 优化');
+	const properties = p.locator('[data-database-properties]');
+	await expect(properties.locator('[data-row-property]')).toHaveText(['方法', '能量', '收敛']);
+	await expect(properties.locator('[data-row-value="能量"]')).toHaveValue('-76.4');
+	await expect(properties.locator('[data-row-value="收敛"] [role="checkbox"]')).toHaveAttribute('aria-checked', 'true');
+
+	await properties.locator('[data-row-value="能量"]').fill('-76.41');
+	await p.keyboard.press('Enter');
+	await properties.locator('[data-row-value="收敛"] [role="checkbox"]').click();
+	await properties.locator('[data-row-value="方法"]').click();
+	await p.keyboard.type('PBE0');
+	await p.keyboard.press('Enter');
+	await expect(properties.locator('[data-row-value="方法"] .db-pill')).toHaveText('PBE0');
+	await p.keyboard.press('ControlOrMeta+s');
+	await expect.poll(() => page('db-row-a')).toContain('props: { "方法": "PBE0", "能量": -76.41 }');
+	// The new choice is the database's: in its block, in the page it is in.
+	await expect.poll(savedMarkdown).toMatch(/"options": \[\n\s+"B3LYP",\n\s+"PBE0"\n\s+\]/u);
+});

@@ -245,3 +245,39 @@ export function freeColumnName(config: DatabaseConfig, base: string): string {
 	if (!taken.has(base)) return base;
 	for (let n = 2; ; n += 1) if (!taken.has(`${base} ${n}`)) return `${base} ${n}`;
 }
+
+/** `value` as a column of `type` keeps it: a number a number, a date `2026-10-29`, several choices a list; nothing, null. */
+export function coerceValue(type: string, value: unknown): unknown {
+	if (value === null || value === undefined || value === '') return null;
+	switch (type) {
+		case 'number': {
+			const number = typeof value === 'number' ? value : Number(String(value).trim().replace(/,/gu, ''));
+			return Number.isFinite(number) ? number : null;
+		}
+		case 'checkbox':
+			return value === true || value === 'true' || value === 1;
+		case 'multi': {
+			const list = Array.isArray(value) ? value : String(value).split(/[,，]/u);
+			const kept = [...new Set(list.map((each) => String(each).trim()).filter(Boolean))];
+			return kept.length ? kept : null;
+		}
+		case 'date': {
+			const text = String(value).trim();
+			return /^\d{4}-\d{2}-\d{2}$/u.test(text) ? text : null;
+		}
+		default:
+			return String(value);
+	}
+}
+
+const FENCE = /^(```+|~~~+)[ \t]*database[ \t]*\r?\n([\s\S]*?)\r?\n\1[ \t]*$/mu;
+
+/** The text of a page's (first) ```database block; none: null. */
+export function databaseFence(source: string): string | null {
+	return FENCE.exec(source)?.[2] ?? null;
+}
+
+/** The page with its ```database block's text written anew (as it was when it has none). */
+export function withDatabaseFence(source: string, text: string): string {
+	return source.replace(FENCE, (_whole, fence: string) => `${fence}database\n${text}\n${fence}`);
+}

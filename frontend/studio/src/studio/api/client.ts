@@ -3,6 +3,7 @@ import { articlePath, studioFileUrl } from '@blog/markdown/articles/article-refe
 import { PUBLISHED_FOLDERS } from '@blog/markdown/articles/rules.mjs';
 import { t } from '@blog/i18n/index.mjs';
 import type { ArticleFileEntry, ArticleIssue, ArticlePayload, ArticleSummary, Backlink, GitStatus, HistoryEntry, HistoryReason, SearchResult, TrashEntry } from '../types.ts';
+import type { DatabaseConfig } from '../editor/database/database-config.ts';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
 	let response: Response;
@@ -115,6 +116,16 @@ export function setDatabaseValue(row: string, column: string, type: string, valu
 
 export function setDatabaseTitle(row: string, title: string): Promise<{ title: string }> {
 	return request(`/api/studio/databases/rows/${encodeURIComponent(row)}`, jsonOptions('PUT', { title }));
+}
+
+/** The settings of the database in a page (its ```database block); null: it has none. */
+export async function databaseConfig(slug: string): Promise<DatabaseConfig | null> {
+	return (await request<{ config: DatabaseConfig | null }>(`/api/studio/databases/${encodeURIComponent(slug)}/config`)).config;
+}
+
+/** A choice more for a column of the database in a page; its settings now. */
+export async function addDatabaseOption(slug: string, column: string, option: string): Promise<DatabaseConfig> {
+	return (await request<{ config: DatabaseConfig }>(`/api/studio/databases/${encodeURIComponent(slug)}/options`, jsonOptions('POST', { column, option }))).config;
 }
 
 /** A row made under the database: a page, of this title and these values, from a template when given. */

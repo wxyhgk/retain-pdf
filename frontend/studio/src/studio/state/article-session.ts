@@ -89,12 +89,14 @@ const PROPERTY_NAMES: Record<keyof ArticleProperties, string> = {
 	kind: t('类型'),
 	wide: t('全宽'),
 	parent: t('上级页面'),
+	props: t('数据库里的值'),
 };
 
 /** A property as it counts: left out, empty and (for `wide`) off are all none. */
 function propertyValue(properties: ArticleProperties, key: keyof ArticleProperties): string {
 	const value = properties[key];
-	return JSON.stringify(value === undefined || value === '' || (key === 'wide' && value === false) ? null : value);
+	const none = value === undefined || value === '' || (key === 'wide' && value === false) || (key === 'props' && Object.keys(value as object).length === 0);
+	return JSON.stringify(none ? null : value);
 }
 
 /** Which properties differ, by their names on the page: 「标题」「标签」. */

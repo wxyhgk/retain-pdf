@@ -151,5 +151,9 @@ export function updateStudioFrontmatter(source: string, properties: ArticlePrope
 		const empty = !value || (property === 'kind' && value === 'post' && !present);
 		yaml = empty ? removeYamlField(yaml, key) : replaceYamlField(yaml, key, value, defaultEol);
 	}
+	if (properties.props !== undefined) {
+		const kept = Object.fromEntries(Object.entries(properties.props).filter(([, value]) => value !== null && value !== undefined && value !== '' && value !== false && !(Array.isArray(value) && !value.length)));
+		yaml = Object.keys(kept).length ? replaceYamlField(yaml, 'props', kept, defaultEol) : removeYamlField(yaml, 'props');
+	}
 	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
 }

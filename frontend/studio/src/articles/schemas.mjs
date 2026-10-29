@@ -87,6 +87,8 @@ export function articleProperties(source, fallbackSlug = '') {
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 		wide: frontmatter.wide === true,
 		parent: articleParent(frontmatter),
+		// Its values as a row of the database it is under.
+		props: frontmatter.props && typeof frontmatter.props === 'object' && !Array.isArray(frontmatter.props) ? frontmatter.props : {},
 	};
 }
 

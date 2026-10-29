@@ -45,4 +45,6 @@ export type ArticleProperties = {
 	wide?: boolean;
 	/** The folder name of the page it is under; empty for none. Left out: not changed. */
 	parent?: string;
+	/** Its values as a row of the database it is under (`props:`); none: {}. Left out: not changed. */
+	props?: Record<string, unknown>;
 };

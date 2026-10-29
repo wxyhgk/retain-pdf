@@ -1,4 +1,5 @@
 import { setFrontmatterProps } from '@blog/document/frontmatter.ts';
+import { coerceValue, COLUMN_TYPES, databaseFence, readConfig, withDatabaseFence, writeConfig } from '../../editor/database/database-config.ts';
 import { parseArticleSource } from '../../../articles/schemas.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -9,8 +10,7 @@ import { t } from '@blog/i18n/index.mjs';
  * the rows, read and written.
  */
 
-/** The kinds of column (no formulas yet), and how a value of each is kept. */
-export const COLUMN_TYPES = Object.freeze(['text', 'number', 'select', 'multi', 'date', 'checkbox', 'url']);
+export { coerceValue, COLUMN_TYPES };
 
 class DatabaseError extends Error {
 	constructor(message, statusCode = 400) {
@@ -19,35 +19,36 @@ class DatabaseError extends Error {
 	}
 }
 
-/** `value` as a column of `type` keeps it: a number a number, a date `2026-10-29`, several choices a list; nothing, null. */
-export function coerceValue(type, value) {
-	if (value === null || value === undefined || value === '') return null;
-	switch (type) {
-		case 'number': {
-			const number = typeof value === 'number' ? value : Number(String(value).trim().replace(/,/gu, ''));
-			return Number.isFinite(number) ? number : null;
-		}
-		case 'checkbox':
-			return value === true || value === 'true' || value === 1;
-		case 'multi': {
-			const list = Array.isArray(value) ? value : String(value).split(/[,，]/u);
-			const kept = [...new Set(list.map((each) => String(each).trim()).filter(Boolean))];
-			return kept.length ? kept : null;
-		}
-		case 'date': {
-			const text = String(value).trim();
-			return /^\d{4}-\d{2}-\d{2}$/u.test(text) ? text : null;
-		}
-		default:
-			return String(value);
-	}
-}
-
 export class Databases {
 	constructor({ articles, history, site }) {
 		this.articles = articles;
 		this.history = history;
 		this.site = site;
+	}
+
+	/** The settings of the database in the page `slug` (its ```database block), or null: the page has none. */
+	async config(slug) {
+		const { source } = await this.articles.read(slug);
+		const text = databaseFence(source);
+		return text === null ? null : readConfig(text);
+	}
+
+	/** A choice more for a column of the database in the page `slug` (a row's page chose one not among them). */
+	async addOption(slug, column, option) {
+		const name = String(option ?? '').trim();
+		if (!name) throw new DatabaseError(t('选项不能为空'));
+		let config = null;
+		await this.#rewrite(slug, (source) => {
+			const text = databaseFence(source);
+			if (text === null) throw new DatabaseError(t('这一页没有数据库'), 404);
+			const before = readConfig(text);
+			const at = before.columns.findIndex((each) => each.name === column && (each.type === 'select' || each.type === 'multi'));
+			if (at < 0) throw new DatabaseError(t('数据库里没有这个选项列：{column}', { column }));
+			const options = before.columns[at].options ?? [];
+			config = options.includes(name) ? before : { ...before, columns: before.columns.map((each, index) => (index === at ? { ...each, options: [...options, name] } : each)) };
+			return config === before ? source : withDatabaseFence(source, writeConfig(config));
+		});
+		return { config };
 	}
 
 	/** The rows of the database `slug`: the pages under it, in the tree's order, each with its values. */

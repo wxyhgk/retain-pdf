@@ -55,6 +55,11 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 	// columns renamed, taken away, of another kind, a choice renamed or taken away, in every row.
 	const databases = new Databases({ articles, history, site });
 	api.get('/databases/:slug', async ({ params }) => ({ rows: await databases.rows(params.slug) }));
+	api.get('/databases/:slug/config', async ({ params }) => ({ config: await databases.config(params.slug) }));
+	api.post('/databases/:slug/options', async ({ params, json }) => {
+		const asked = await json();
+		return databases.addOption(params.slug, String(asked.column ?? ''), asked.option);
+	});
 	api.put('/databases/rows/:slug', async ({ params, json }) => {
 		const asked = await json();
 		if (typeof asked.title === 'string') return databases.setTitle(params.slug, asked.title);

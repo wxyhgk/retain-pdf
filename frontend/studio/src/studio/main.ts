@@ -20,6 +20,8 @@ import {
 	listMiniApps,
 	listTemplates,
 	databaseRows,
+	databaseConfig,
+	addDatabaseOption,
 	setArticleParent,
 	setDatabaseValue,
 	setDatabaseTitle,
@@ -273,6 +275,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 	publish: () => void pages.publishAndName(),
 	leaveTitle: (newBlock, text) => (newBlock ? editor.startNewBlock(text) : editor.focusStart()),
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
+	addDatabaseOption: (database, column, option) => trackWrite(() => addDatabaseOption(database, column, option)),
 	async pictures() {
 		const slug = session.slug;
 		if (!slug) return [];
@@ -608,6 +611,11 @@ const session = new ArticleSession(
 			openTitle = shown.title || t('无标题');
 			studioPlugins.emit('studio/article-opened', article.slug);
 			properties.show(shown, article.problems ?? []);
+			// A row of a database (the page it is under has one): the database's columns among its properties.
+			if (shown.parent) {
+				const [opening, parent] = [article.slug, shown.parent];
+				void databaseConfig(parent).then((config) => session.slug === opening && properties.showDatabase(config ? { slug: parent, config } : null), () => {});
+			}
 			topBar.showArticle(article.slug, shown.title || t('无标题'), shown.kind);
 			topBar.edited(article.modified ?? null);
 			editorPanel.classList.toggle('is-wide', Boolean(shown.wide));

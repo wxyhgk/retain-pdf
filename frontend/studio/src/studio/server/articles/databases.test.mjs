@@ -81,3 +81,16 @@ test('two values of a row set at once: both kept (the writes to a page one after
 	assert.deepEqual(row.props, { 方法: 'PBE0', 能量: -1 });
 	assert.equal(row.title, 'A2');
 });
+
+test('a page’s database settings read from its ```database block; a choice added there, the rest of the page as it was', async (t) => {
+	const { blogRoot, articles, databases } = await fixture(t);
+	assert.equal(await databases.config('runs'), null);
+	const { source, revision } = await articles.read('runs');
+	await articles.save('runs', { source: `${source}\n前面。\n\n\`\`\`database\n{ "columns": [{ "name": "方法", "type": "select", "options": ["B3LYP"] }], "view": "table" }\n\`\`\`\n\n后面。\n`, expectedRevision: revision });
+	assert.deepEqual((await databases.config('runs')).columns, [{ name: '方法', type: 'select', options: ['B3LYP'] }]);
+	const { config } = await databases.addOption('runs', '方法', 'PBE0');
+	assert.deepEqual(config.columns[0].options, ['B3LYP', 'PBE0']);
+	const after = await readFile(join(blogRoot, 'runs', 'index.md'), 'utf8');
+	assert.match(after, /前面。\n\n```database\n\{\n {2}"columns": \[[\s\S]*"PBE0"[\s\S]*\n```\n\n后面。\n$/u);
+	await assert.rejects(databases.addOption('runs', '没有', 'x'), /没有这个选项列/u);
+});

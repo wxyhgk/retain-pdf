@@ -1,5 +1,6 @@
 import { createStore, type Store } from '../../shell/store.ts';
 import type { ArticleProperties } from '../../types.ts';
+import type { Column, DatabaseConfig } from '../../editor/database/database-config.ts';
 
 /** What the page header needs from the Studio around it. */
 export type PageHeaderHost = {
@@ -20,6 +21,8 @@ export type PageHeaderHost = {
 	pictures(): Promise<string[]>;
 	/** Puts a picture into the article's img/; how the article names it. */
 	upload(file: File): Promise<string>;
+	/** A choice more for a column of the database in the page `database`; its settings now. */
+	addDatabaseOption?(database: string, column: string, option: string): Promise<DatabaseConfig>;
 };
 
 /** What the page header shows (PageHeader.tsx draws it). */
@@ -35,9 +38,11 @@ export type HeaderState = {
 	/** Counted each time an article is shown: what was added for the one before (an empty property) is let go. */
 	shownAt: number;
 	publishing: boolean;
+	/** The database the article is a row of (the page it is under has one): its columns shown among its properties. */
+	database: { slug: string; config: DatabaseConfig } | null;
 };
 
-const initial: HeaderState = { properties: null, problems: [], typedError: null, knownTags: [], shownAt: 0, publishing: false };
+const initial: HeaderState = { properties: null, problems: [], typedError: null, knownTags: [], shownAt: 0, publishing: false, database: null };
 
 /** The page header's state, and what changes it: each change handed to the Studio (`host.changed`) as it is made. */
 export function createHeaderState(host: PageHeaderHost) {
@@ -62,6 +67,15 @@ export function createHeaderState(host: PageHeaderHost) {
 	const actions = {
 		edit: (change: Partial<ArticleProperties>) => void edit(change),
 		host,
+		/** A choice typed in a row's page not among its column's: one of them, in the database's page. */
+		addOption(column: Column, option: string): void {
+			const database = get().database;
+			if (!database || !host.addDatabaseOption) return;
+			void host.addDatabaseOption(database.slug, column.name, option).then(
+				(config) => get().database?.slug === database.slug && store.set({ database: { slug: database.slug, config } }),
+				() => {},
+			);
+		},
 		/** 发布 or 撤回; to publish, the check before it first. */
 		async togglePublished(): Promise<void> {
 			const now = get().properties;
@@ -83,11 +97,17 @@ export function createHeaderState(host: PageHeaderHost) {
 		/** An article's properties, ready to edit, and what is wrong with them as saved. */
 		show(properties: ArticleProperties, saved: string[] = []): void {
 			store.set({
-				properties: { title: properties.title, description: properties.description, pubDate: properties.pubDate, tags: [...properties.tags], draft: properties.draft, icon: properties.icon ?? '', cover: properties.cover ?? '', kind: properties.kind ?? 'post', wide: properties.wide ?? false },
+				properties: { title: properties.title, description: properties.description, pubDate: properties.pubDate, tags: [...properties.tags], draft: properties.draft, icon: properties.icon ?? '', cover: properties.cover ?? '', kind: properties.kind ?? 'post', wide: properties.wide ?? false, props: { ...(properties.props ?? {}) } },
 				problems: saved,
+				// Which database it is a row of: told next (showDatabase), once read.
+				database: null,
 				typedError: null,
 				shownAt: get().shownAt + 1,
 			});
+		},
+		/** The database the article shown is a row of, or none. */
+		showDatabase(database: { slug: string; config: DatabaseConfig } | null): void {
+			store.set({ database });
 		},
 		/** What is wrong with the properties now saved; an empty list when nothing is. */
 		showProblems(saved: string[]): void {

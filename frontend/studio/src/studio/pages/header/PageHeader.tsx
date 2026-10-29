@@ -8,6 +8,7 @@ import { showContextMenu } from '../../common/context-menu';
 import { useStore, type Store } from '../../shell/store';
 import type { HeaderActions, HeaderState } from './header-state';
 import { ICONS, parseTags } from './tags';
+import { RowProperties } from './RowProperties';
 
 /**
  * A picker floating under `anchor` (the icon's or the cover's button): Escape or a click elsewhere closes it, the keys
@@ -285,6 +286,8 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 					}}
 				/>
 				<div className="page-properties" role="group" aria-label={t('属性')}>
+					{/* A database's row: its columns first, as Notion has them. */}
+					{state.database && shown && <RowProperties config={state.database.config} props={shown.props} disabled={disabled} edit={(props) => actions.edit({ props })} addOption={actions.addOption} />}
 					<span className="property-name">
 						<Calendar aria-hidden />
 						{t('发布日期')}

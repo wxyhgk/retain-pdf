@@ -198,8 +198,9 @@ export function OptionPicker({
 	chosen: string[];
 	set(next: string[]): void;
 	addOption(option: string): void;
-	renameOption(from: string, to: string): void;
-	removeOption(option: string): void;
+	/** Where the choices may be changed (the table, not a row's page): their ⋯. */
+	renameOption?(from: string, to: string): void;
+	removeOption?(option: string): void;
 }) {
 	const [typed, setTyped] = useState('');
 	const [at, setAt] = useState(0);
@@ -257,7 +258,7 @@ export function OptionPicker({
 							<GripVertical aria-hidden className="db-option-grip" />
 							<Pill>{option}</Pill>
 						</button>
-						<OptionMenu option={option} rename={(to) => renameOption(option, to)} remove={() => removeOption(option)} taken={options} />
+						{renameOption && removeOption && <OptionMenu option={option} rename={(to) => renameOption(option, to)} remove={() => removeOption(option)} taken={options} />}
 					</div>
 				))}
 				{creating && (

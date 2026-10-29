@@ -209,3 +209,9 @@
 .db .db-empty-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .db .db-note { margin: 0; padding: 14px 4px; color: rgb(var(--gray)); font-size: 13px; }
 .db .db-note.is-error { color: var(--danger); }
+
+/* A row's own page: the database's columns among its properties (pages/header/RowProperties.tsx). */
+.db.db-row-props { display: contents; }
+.db-row-props .db-row-pills { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 32px; padding: 5px 8px; text-align: left; cursor: pointer; }
+.db-row-props .property-value.is-number { font-variant-numeric: tabular-nums; }
+.db-row-props .db-check { margin: 2px 0; }
