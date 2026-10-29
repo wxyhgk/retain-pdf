@@ -468,3 +468,21 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 	#roundtrip-status { display: none; }
 	.crepe-host .milkdown .ProseMirror { padding: 8px 24px 140px; }
 }
+/* A file of the article seen in the Studio (files/file-preview.ts): a PDF in the page's reader, a picture, a player, a table. */
+.block-sheet-body .file-preview { display: flex; height: 100%; min-height: 0; flex-direction: column; }
+.file-preview-frame { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
+.file-preview-player { max-width: 100%; max-height: 100%; margin: auto; background: #000; }
+.file-preview.is-audio .file-preview-player { width: min(560px, calc(100% - 48px)); background: none; }
+.file-preview-stage { display: flex; flex: 1; min-height: 0; overflow: auto; background: var(--surface-soft); }
+.file-preview-stage img { margin: auto; flex: none; }
+.file-preview-stage.is-fit img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.file-preview-bar { display: flex; flex: none; align-items: center; justify-content: center; gap: 4px; padding: 6px; border-top: 1px solid var(--studio-hairline); color: rgb(var(--gray)); font-size: 12px; }
+.file-preview-bar span { min-width: 64px; text-align: center; font-variant-numeric: tabular-nums; }
+.file-preview-bar .file-preview-size { margin-left: 12px; }
+.file-preview-bar button { min-width: 28px; height: 26px; padding: 0 8px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; cursor: pointer; }
+.file-preview-bar button:hover { background: var(--studio-fill-2); color: rgb(var(--black)); }
+.file-preview-scroll { flex: 1; min-height: 0; overflow: auto; }
+.file-preview-table { border-collapse: collapse; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.file-preview-table th, .file-preview-table td { padding: 4px 10px; border-bottom: 1px solid var(--studio-hairline); text-align: left; white-space: nowrap; }
+.file-preview-table th { position: sticky; top: 0; background: var(--surface); font-weight: 600; }
+.file-preview-table tbody tr:hover { background: var(--studio-fill); }

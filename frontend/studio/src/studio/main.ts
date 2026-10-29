@@ -70,6 +70,7 @@ import { confirmPublish, createQuickFind, openAgents, openSettings, providePlugi
 import { answerWindows } from './windows/studio-line';
 import { openFileEditor } from './files/file-editor';
 import { openFileHistory } from './files/file-history-view';
+import { openFilePreview } from './files/file-preview';
 import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
 import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
@@ -336,6 +337,23 @@ async function insertTemplate(view: EditorView): Promise<void> {
 	);
 }
 
+/** A file of the article shown in the Studio as what it is (file-preview.ts): a PDF, a picture, a table, its editor… */
+function previewArticleFile(path: string): void {
+	const slug = session.slug;
+	if (!slug) return;
+	openFilePreview({
+		slug,
+		path,
+		toast: (message, error) => showToast(message, error),
+		edit: (file) => editArticleFile(file),
+		viewOffice: (url, name) => void openOfficeFile(url, name),
+		restored() {
+			editor.redrawCodeFile(path);
+			void filePanel.refresh();
+		},
+	});
+}
+
 /** A file's earlier versions (kept before it was written over): in its editor's 历史版本 tab, or alone for a file not edited here. */
 function showFileHistory(path: string): void {
 	const slug = session.slug;
@@ -358,7 +376,7 @@ function openArticleFile(path: string, click: FileClick = 'click'): void {
 	if (!slug) return;
 	const failed = (error: unknown) => showToast(error instanceof Error ? error.message : String(error), true);
 	const way = fileOpenWayFor(path, click);
-	if (way === 'studio') editArticleFile(path);
+	if (way === 'studio') previewArticleFile(path);
 	else if (way === 'app') openArticleFileInApp(slug, path).catch(failed);
 	else revealArticleFile(slug, path).catch(failed);
 }

@@ -1,5 +1,5 @@
 import { t } from '@blog/i18n/index.mjs';
-import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
+import { previewKind } from './file-preview';
 
 /**
  * How a file of the article opens from a link to it, for each way of clicking (设置 › 打开文件), as in SiYuan: in the
@@ -45,8 +45,8 @@ export function fileClickLabel(click: FileClick): string {
 	return mac ? t('⌥ 单击') : t('Alt 单击');
 }
 
-/** What a click on a link to `path` does: the way chosen for it; a file the Studio has no editor for opens with its program. */
+/** What a click on a link to `path` does: the way chosen for it; a file the Studio cannot show (a zip) opens with its program. */
 export function fileOpenWayFor(path: string, click: FileClick): FileOpenWay {
 	const way = fileOpenWays()[click];
-	return way === 'studio' && !textFileLanguage(path) ? 'app' : way;
+	return way === 'studio' && !previewKind(path) ? 'app' : way;
 }

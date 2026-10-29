@@ -54,10 +54,10 @@ test('how a link to a file opens is chosen for each click: ⌘ with its program,
 	const shown = asked(page, 'reveal');
 	await script.click({ modifiers: ['Alt'] });
 	expect(await shown).toBe('assets/opt.py');
-	// A PDF, which the Studio has no editor for: its program.
-	opened = asked(page, 'open');
+	// A PDF: seen in the Studio too (file-preview.ts).
 	await editor(page).getByRole('link', { name: 'paper.pdf' }).click();
-	expect(await opened).toBe('assets/paper.pdf');
+	await expect(blockSheet(page).locator('iframe.file-preview-frame')).toHaveAttribute('src', /assets\/paper\.pdf/u);
+	await page.keyboard.press('Escape');
 	await expect(blockSheet(page)).toHaveCount(0);
 
 	// A click chosen to open with the program: so it does, at once.
@@ -75,6 +75,8 @@ test('closed with changes, they are kept', async ({ page }) => {
 	appendToFixture('\n数据：[data.csv](./assets/data.csv)。\n');
 	await openStudio(page);
 	await editor(page).getByRole('link', { name: 'data.csv' }).click();
+	// A table seen as one first (file-preview.ts); its text a button away.
+	await blockSheet(page).getByRole('button', { name: '编辑文本' }).click();
 	await expect(code(page)).toContainText('1,2');
 	await code(page).click();
 	await page.keyboard.press('ControlOrMeta+End');

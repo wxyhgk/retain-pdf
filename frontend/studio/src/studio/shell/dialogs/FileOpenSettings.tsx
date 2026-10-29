@@ -33,7 +33,7 @@ export function FileOpenSettings() {
 				</Field>
 			))}
 			<p className="text-xs leading-normal text-muted-foreground">
-				{t('「在 Studio 里打开」只对脚本、数据这类文本文件：弹出窗口看和改。PDF 这类 Studio 打不开的，用默认程序打开。⇧ 单击照旧是选中文字。')}
+				{t('「在 Studio 里打开」：脚本、数据这类文本在弹窗里看和改，PDF、图片、音视频、表格、Office 文件在弹窗里预览；压缩包这类 Studio 看不了的，用默认程序打开。⇧ 单击照旧是选中文字。')}
 			</p>
 		</div>
 	);
