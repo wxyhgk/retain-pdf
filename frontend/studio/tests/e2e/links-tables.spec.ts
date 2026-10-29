@@ -18,7 +18,8 @@ test('a link opens with a click: a web address in a new window (the browser), an
 	const web = editor(page).locator('a', { hasText: '示例网站' });
 	await web.scrollIntoViewIfNeeded();
 
-	// Pointed at: where it goes, copy, 编辑.
+	// Pointed at: the hand, and where it goes, copy, 编辑.
+	await expect(web).toHaveCSS('cursor', 'pointer');
 	await web.hover();
 	await expect(preview(page).locator('.link-display')).toHaveText('https://example.com/page');
 	await expect(preview(page).locator('.link-copy-button')).toBeVisible();
