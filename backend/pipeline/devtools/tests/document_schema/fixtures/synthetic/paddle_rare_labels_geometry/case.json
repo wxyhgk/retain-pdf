@@ -274,14 +274,6 @@
    "outcome": "valid page with 5 blocks, none translated, column_layout_mode=single"
   }
  ],
- "validator_rejects": [
-  {
-   "variant": "raw_rejected.json",
-   "case": "exceeds_page_by_2px",
-   "error": "$.pages[0].blocks[3].geometry.bbox: must stay within page bounds [0, 0, 1224.0, 1584.0]",
-   "note": "raised inside adapt_payload_to_document_v1 (build_validation_report), not only by validate_document_payload; raw.json differs only in that footer's x1 (1224 instead of 1226)"
-  }
- ],
  "tricky_points": [
   "Inline formula pairing is all-or-nothing per block: boxes are assigned only when the number of $..$ segments equals the number of inline_formula layout_det boxes lying entirely inside the block bbox (page 2 block 4: 2/2 assigned; block 5: 2 segments vs 3 boxes -> none assigned).",
   "A standalone inline_formula block also exists as a layout_det box with the same coordinates, so it is its own candidate and gets a provider_layout bbox; any other text block enclosing that rectangle would count it as an extra candidate (the fixture keeps it outside every other block on purpose).",
@@ -294,5 +286,14 @@
   "aside_text: the adapter metadata says layout_role=unknown while the final block.layout_role is paragraph (contract_v1 fills it from block type).",
   "Coordinates are px at 2x but the adapter stores them unscaled in a page with unit 'pt' and width/height in px (1224 x 1584); the 2 px overflow case is therefore judged against the px page size.",
   "Aside text and header_image/footer_image labels have block_order=null in the raw payload (like header/footer/number)."
+ ],
+ "page_overflow_variants": [
+  {
+   "case": "exceeds_page_by_2px",
+   "note": "raised inside adapt_payload_to_document_v1 (build_validation_report), not only by validate_document_payload; raw.json differs only in that footer's x1 (1224 instead of 1226)",
+   "raw_file": "raw_page_overflow.json",
+   "error_before_2026_10_29": "$.pages[0].blocks[3].geometry.bbox: must stay within page bounds [0, 0, 1224.0, 1584.0]",
+   "now": "2026-10-29 起归一化把这个块夹回页内（document_schema/page_bounds.py），报告记 page_overflow_clamped_block_count=1，块的 metadata.page_overflow_clamped 记原来的框"
+  }
  ]
 }

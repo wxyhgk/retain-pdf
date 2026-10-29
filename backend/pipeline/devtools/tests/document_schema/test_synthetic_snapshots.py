@@ -92,13 +92,28 @@ def test_every_case_declares_its_pdf_pages_for_every_ocr_page(tmp_path: Path) ->
         assert len(document["pages"]) == len(_case(name)["pdf_pages"]), name
 
 
-REJECTED = [name for name in CASES if (SYNTHETIC / name / "raw_rejected.json").is_file()]
+OVERFLOW = [name for name in CASES if (SYNTHETIC / name / "raw_page_overflow.json").is_file()]
 
 
-@pytest.mark.parametrize("name", REJECTED)
-def test_rejected_variants_are_still_rejected_for_the_recorded_reason(name: str, tmp_path: Path) -> None:
-    # 故意越界的版本：钉住现在被哪条规则拒。修了（比如缩放时把框夹回页内）这里会红，到时候改成期望通过。
-    reasons = [str(item.get("error", "")) for item in _case(name).get("validator_rejects", [])]
-    with pytest.raises((DocumentSchemaValidationError, RuntimeError)) as caught:
-        _normalize(name, "raw_rejected.json", tmp_path)
-    assert any(reason and reason in str(caught.value) for reason in reasons), str(caught.value)
+@pytest.mark.parametrize("name", OVERFLOW)
+def test_a_block_slightly_past_the_page_edge_is_clamped_instead_of_failing(name: str, tmp_path: Path) -> None:
+    # 以前这一个块就让整份文档校验失败（`case.json` 的 `page_overflow_variants` 记着当时的报错）；现在夹回页内、记下来。
+    document, report = _normalize(name, "raw_page_overflow.json", tmp_path)
+    assert report["page_overflow_clamped_block_count"] == 1
+    assert document["derived"]["page_overflow_clamped_block_count"] == 1
+    clamped = [
+        (page, block)
+        for page in document["pages"]
+        for block in page["blocks"]
+        if "page_overflow_clamped" in block.get("metadata", {})
+    ]
+    assert len(clamped) == 1
+    page, block = clamped[0]
+    original = block["metadata"]["page_overflow_clamped"]["original_bbox"]
+    assert block["bbox"] != original
+    assert 0 <= block["bbox"][0] and block["bbox"][2] <= page["width"] + 1e-3
+    assert 0 <= block["bbox"][1] and block["bbox"][3] <= page["height"] + 1e-3
+    # 其余的块和不越界的那份一样：只动了这一个块。
+    (tmp_path / "plain").mkdir()
+    plain, _ = _normalize(name, _case(name)["raw_file"], tmp_path / "plain")
+    assert sum(len(p["blocks"]) for p in plain["pages"]) == sum(len(p["blocks"]) for p in document["pages"])

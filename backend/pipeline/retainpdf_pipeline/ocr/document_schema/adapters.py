@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Callable
 
+from retainpdf_pipeline.ocr.document_schema.page_bounds import clamp_page_overflow
 from retainpdf_pipeline.ocr.document_schema.contract_v1 import enrich_document_contract_v1
 from retainpdf_pipeline.ocr.document_schema.defaults import apply_document_defaults_with_report
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GENERIC_FLAT_OCR
@@ -164,6 +165,8 @@ def adapt_payload_to_document_v1_with_report(
     # Builder output is freshly constructed and never reused, so defaults may mutate in place.
     upgraded, defaults_report = apply_document_defaults_with_report(document, in_place=True)
     upgraded = enrich_document_contract_v1(upgraded)
+    # 取整误差让块超出页边一两个单位：夹回页内，不让一个块的误差让整份文档校验失败（超得多的照样报错）。
+    page_overflow_clamped = clamp_page_overflow(upgraded)
     report = {
         "source_json_path": str(source_json_path),
         "document_id": document_id,
@@ -172,6 +175,8 @@ def adapt_payload_to_document_v1_with_report(
         "defaults": defaults_report,
         "validation": build_validation_report(upgraded),
     }
+    if page_overflow_clamped:
+        report["page_overflow_clamped_block_count"] = page_overflow_clamped
     provider_signals = dict((upgraded.get("derived") or {}).get("provider_signals") or {})
     if provider_signals:
         report["provider_signals"] = provider_signals

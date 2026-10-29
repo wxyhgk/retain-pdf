@@ -8,7 +8,7 @@
 |---|---|
 | `raw.json` | 原始输出（MinerU middle.json、MinerU content_list_v2、Paddle VL、命令型 OCR 的通用格式） |
 | `case.json` | 服务商、原文 PDF 每页的尺寸（`pdf_pages`，点）、原始坐标的页面尺寸（`raw_pages`）、每个要点在哪（`features`：页、原始路径、期望）、几何边界情况、难点 |
-| `raw_rejected.json` | 故意越界、现在会被校验器拒绝的版本（`case.json` 的 `validator_rejects` 记着是哪条规则拒的） |
+| `raw_page_overflow.json` | 故意让一个块超出页边一两个单位的版本（`case.json` 的 `page_overflow_variants` 记着是哪个块）。2026-10-29 以前整份文档会校验失败，现在归一化把它夹回页内 |
 | `expected.document.v1.json` | 走完整归一化（适配 → 缩放到 `pdf_pages` 大小的 PDF → 补行 → 校验）以后的整份文档 |
 | `expected.report.json` | 同一次归一化的报告 |
 
