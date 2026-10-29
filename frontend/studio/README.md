@@ -1,113 +1,59 @@
-# 计算化学手记
+# Notes Studio
 
-使用说明在 [docs/](docs/README.md)：[Studio 怎么用](docs/studio.md)、[给大模型用的接口](docs/ai-tools.md)、[开发和测试](docs/development.md)。
+一个在本机写计算化学笔记的工具，像 Notion：文章是普通的 Markdown 文件夹，Studio 用来写、整理、算、让 AI 帮忙。公式、分子结构、计算任务（xtb、CREST）、Gaussian/ORCA 输出、数据库、小程序都能放进笔记里。
 
-# Astro Starter Kit: Blog
+代码在这个仓库，**笔记在另一个文件夹**（你自己的，比如一个 git 仓库）：Studio 打开那个文件夹，读写里面的 `blog/`。
+
+## 准备
+
+- Node.js 22.12 或更新（npm 自带）
+- [pnpm](https://pnpm.io)：编辑器（Milkdown 的 fork）要用
+- Rust（`cargo`）：Studio 的终端，以及 Mac 应用（`tools/studio-app`）
+- 浏览器测试：`npx playwright install chromium webkit`
+- 可选：Xcode（iPad 应用，`tools/studio-ipad`）；AI 功能要装 Claude Code、Codex 或 pi，或者在 Studio 里填 API key
+
+## 第一次
 
 ```sh
-npm create astro@latest -- --template blog
+git clone --recurse-submodules <这个仓库>
+cd notes-studio
+npm ci
+npm run milkdown:setup        # 编辑器：拉取 submodule、安装、生成它的样式
+npm run terminal:build        # 终端的后台程序（Rust）
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+告诉 Studio 笔记在哪里：在仓库根目录建 `.studio-local.json`（只在本机，不进 git）：
 
-Features:
+```json
+{ "notes": "../my-notes" }
+```
 
-- ✅ Minimal styling (make it your own!)
-- ✅ 100/100 Lighthouse performance
-- ✅ SEO-friendly with canonical URLs and Open Graph data
-- ✅ Sitemap support
-- ✅ RSS Feed support
-- ✅ Markdown & MDX support
-
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
+路径可以是相对这个仓库的，也可以是完整路径；也可以用环境变量 `STUDIO_NOTES_DIR`。笔记文件夹里放：
 
 ```text
-├── public/
-├── src/
-│   ├── assets/
-│   ├── components/
-│   ├── content/
-│   ├── layouts/
-│   └── pages/
-├── astro.config.mjs
-├── README.md
-├── package.json
-└── tsconfig.json
+my-notes/
+├── blog/          文章，每篇一个文件夹（index.md、img/、assets/）
+├── apps/          你自己的小程序（Studio 自带的在这个仓库的 apps/）
+├── templates/     页面模板
+├── AGENTS.md …    给 AI 的写作约定、技能（.agents/skills/），AI 在这里干活时读
+└── chats/ repos/ .studio-settings.json …   Studio 自己生成，别提交
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+没写 `.studio-local.json` 时，笔记就在这个仓库自己的文件夹里（`blog/` 等已在 `.gitignore`）。
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+## 运行和测试
 
-The `src/content/` directory contains "collections" of related Markdown and MDX documents. Use `getCollection()` to retrieve posts from `src/content/blog/`, and type-check your frontmatter using an optional schema. See [Astro's Content Collections docs](https://docs.astro.build/en/guides/content-collections/) to learn more.
-
-Any static assets, like images, can be placed in the `public/` directory.
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-| `npm run milkdown:setup`  | 拉取 Milkdown 源码（Studio 的编辑器）并安装依赖  |
-
-Studio 的编辑器在 dev 时直接用 `third_party/milkdown`（git submodule，来自 fork `wxyhgk/milkdown` 的 `studio` 分支，基于 v7.22.0；`upstream` 指向官方仓库）的源码，改了保存即生效，不用构建。Studio 用到了 fork 里才有的扩展（`src/studio/editor/milkdown-fork.d.ts` 列出了它们），所以写作前要先拉取；发布的博客不含编辑器，CI 不需要它。
-
-## 公式
-
-博客和 Studio 用同一套规则画公式（`src/science/rendering/`），两边显示一致。
-
-- **宏**：全站的宏写在 `src/katex-macros.json`（已有 `\dd`、`\expval`、`\Tr` 等），单篇文章可以在属性里补充或覆盖：
-
-  ```yaml
-  macros:
-    Ha: \hat{H}
-  ```
-
-- **编号**：公式不会自动编号，只显示原文里写的 `\tag{…}`：`$$ E = mc^2 \tag{3} $$` 显示为 (3)。这样作者看到的号就是 Markdown 里写的号，AI 读原文也能对上。`align`、`gather`、`equation` 等环境里每行各写各的 `\tag`。
-- **引用**：`\label{eq:energy}` 给编号起名，正文里 `$\eqref{eq:energy}$` 显示为它的号（如 (3)）、`$\ref{eq:energy}$` 显示为 3，点击跳到公式；找不到名字、或那个公式没写 `\tag` 时显示 (??)，发布前检查会提示。
-
-## 图片
-
-单独成段的图片是一张「图」，博客和 Studio 显示一致（`src/figures/`）：
-
-```markdown
-![水分子的势能面](./img/pes.png){width=60%}
+```sh
+npm run studio:serve          # http://localhost:4321/studio
+npm test                      # 单元测试和后端测试
+E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts   # 浏览器测试（自己起服务器，不碰你的笔记）
+npx tsc --noEmit -p .         # 类型检查
 ```
 
-- **图注**：方括号里的文字就是图注，按顺序编号「图 1」「图 2」…。只写文件名（Studio 插入图片时默认这样写）或 `image` 的不算图注，也不编号。
-- **宽度**：图片后面紧跟 `{width=60%}`（也可以写 `300px`，或只写数字表示像素）。写在句子中间的图片也认宽度。
-- **Studio**：图片下方直接输入图注；拖动图片右边缘调宽度，以 5% 为一档，拖满即去掉宽度。
+## 文档
 
-## 计算的输入和输出文件
-
-这些代码块按程序的格式着色，博客上带标题栏，可以复制和下载。博客和 Studio 用同一份规则（`src/code-files/`）：
-
-| 代码块 | 内容 |
-|---|---|
-| ```` ```gaussian ```` | Gaussian 输入（`g16`、`g09` 也行）；```` ```gjf ```` 仍然画分子 |
-| ```` ```orca ```` | ORCA 输入 |
-| ```` ```incar ````、```` ```poscar ````、```` ```kpoints ```` | VASP 输入 |
-| ```` ```cp2k ```` | CP2K 输入 |
-| ```` ```output ```` | 程序输出（`out` 也行）：报错、警告、正常结束和能量会突出显示 |
-
-- **文件名**：```` ```orca title="opt.inp" ```` 给标题栏一个名字，也是下载时的文件名。任何语言的代码块都可以加 `title`。
-- **引用文章里的文件**：代码块里只写一行 `@file ./assets/opt.log`，构建时读入这个文件显示，带原文件的行号，「下载」拿到完整文件。超过 400 行时只显示前 200 行和后 100 行；`lines=1200-1260` 只显示这几行，`lines=1200-` 显示到结尾。
-- **折叠**：超过 30 行的代码块先显示前 15 行，点「展开」看全部；写 `open` 不折叠，写 `fold` 短的也折叠。
-- **Studio**：块菜单里的「另存为文件」把代码块存成 `assets/` 里的文件（名字取标题，没有就用 `INCAR`、`input.inp` 这类常用名），代码块改成 `@file`。拖进编辑器的 `.log`、`.out`、`INCAR`、`POSCAR`、`KPOINTS`、`OUTCAR` 直接变成这样的代码块。
-
-## 👀 Want to learn more?
-
-Check out [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
-
-## Credit
-
-This theme is based off of the lovely [Bear Blog](https://github.com/HermanMartinus/bearblog/).
+- [Studio 怎么用](docs/studio.md)
+- [开发和测试](docs/development.md)：目录结构、怎么跑测试、各部分怎么接起来
+- [给大模型用的接口](docs/ai-tools.md)：`studio` 命令和 MCP 服务
+- [插件](plugins/README.md)
+- [超长文章](docs/long-articles.md)：改编辑器时要守的性能规矩

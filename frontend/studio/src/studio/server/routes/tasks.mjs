@@ -12,7 +12,7 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function taskRoutes(api, { projectRoot, tasks, miniApps, projectApps, appCheckpoints, programEnv, articleFolder, testing }) {
+export function taskRoutes(api, { notesRoot, tasks, miniApps, projectApps, appCheckpoints, programEnv, articleFolder, testing }) {
 	api.get('/tasks/events', ({ request, response }) => sendEvents(request, response, (send) => {
 		send({ type: 'all', tasks: tasks.list() });
 		return tasks.subscribe((event) => {
@@ -118,7 +118,7 @@ export function taskRoutes(api, { projectRoot, tasks, miniApps, projectApps, app
 		const argv = Array.isArray(asked.argv) ? asked.argv.map(String) : [];
 		if (!argv.length) throw refuse(400, t('要给出运行的命令（argv）'));
 		const slug = typeof asked.slug === 'string' && asked.slug ? asked.slug : null;
-		const cwd = slug ? articleFolder(slug) : projectRoot;
+		const cwd = slug ? articleFolder(slug) : notesRoot;
 		const task = tasks.start({ kind: 'app', title: `${app.name}：${argv.join(' ').slice(0, 60)}`, slug }, ({ log, signal }) => runProgram(argv, { cwd, env: programEnv(slug, null), log, signal }));
 		return reply(202, { id: task.id });
 	});

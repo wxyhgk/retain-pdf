@@ -394,7 +394,7 @@ fn last_good(repo: &Path) -> Option<String> {
 }
 
 /// What a rescue links to the real ones: the author's things, and what the code needs that git does not hold.
-const LINKED: &[&str] = &["blog", "apps", "chats", ".studio-settings.json", ".studio-trash", "node_modules", "third_party/milkdown"];
+const LINKED: &[&str] = &["blog", "apps", "chats", ".studio-settings.json", ".studio-trash", ".studio-local.json", "node_modules", "third_party/milkdown"];
 
 /// The last good version made ready in `.studio-cache/rescue` (checked out, the author's things linked in): its folder.
 fn prepare_rescue(repo: &Path, commit: &str, git: &Path) -> Result<PathBuf, String> {

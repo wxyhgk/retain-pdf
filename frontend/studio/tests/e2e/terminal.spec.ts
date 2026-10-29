@@ -67,12 +67,13 @@ test('⌘J, 在终端里问 AI: a question about the block’s lines typed into 
 	await expect.poll(savedMarkdown).toContain('结尾段落。，刚改的');
 	const line = savedMarkdown().split('\n').findIndex((text) => text.includes('结尾段落。，刚改的')) + 1;
 	await expect(page.locator('#side-terminal')).toBeVisible();
-	// One line, however the terminal wraps it on the screen.
-	const typed = async () => (await screen(page).innerText()).replace(/\n/gu, '');
-	await expect.poll(typed).toContain(`blog/studio-fixture/index.md 第 ${line} 行（从「结尾段落。，刚改的」开始）。要求：`);
+	// One line, however the terminal wraps it on the screen (a wide character that does not fit leaves a space at the
+	// end of the row: where depends on how long the prompt is, the folder's name).
+	const typed = async () => (await screen(page).innerText()).replace(/\s+/gu, '');
+	await expect.poll(typed).toContain(`blog/studio-fixture/index.md第${line}行（从「结尾段落。，刚改的」开始）。要求：`);
 	// Typed, not run: nothing came back from the shell, and nothing was made.
 	await page.waitForTimeout(500);
-	expect(await typed()).not.toContain('command not found');
+	expect(await typed()).not.toContain('commandnotfound');
 	await expect(page.locator('#terminal-screen')).toHaveAttribute('data-state', 'running');
 });
 

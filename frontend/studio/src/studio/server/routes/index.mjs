@@ -14,7 +14,8 @@ import { taskRoutes } from './tasks.mjs';
  * src/plugins/studio-dev.mjs).
  * @typedef {object} Studio
  * @property {string | undefined} site the blog's address, so links to its articles written in full count as theirs
- * @property {string} projectRoot
+ * @property {string} projectRoot the Studio's code
+ * @property {string} notesRoot the author's notes: blog/, apps/, chats/, templates/, settings (notes-root.mjs)
  * @property {string} blogRoot
  * @property {{ blog: boolean, drive: boolean }} testing browser tests' own blog/ and drive: no windows opened
  * @property {(slug: string) => string} articleFolder

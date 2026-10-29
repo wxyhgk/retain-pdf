@@ -2,10 +2,11 @@ import { resolve } from 'node:path';
 
 import { availableLocales, matchLocale, t } from '@blog/i18n/index.mjs';
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
+import { notesRoot } from './notes-root.mjs';
 
-/** The Studio's settings (out of git): beside blog/, or beside the browser tests' copy of it. */
+/** The Studio's settings (out of git): in the notes' folder beside blog/ (notes-root.mjs), or beside the browser tests' copy of it. */
 export function studioSettingsFile(projectRoot) {
-	return process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR, '.studio-settings.json') : resolve(projectRoot, '.studio-settings.json');
+	return process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR, '.studio-settings.json') : resolve(notesRoot(projectRoot), '.studio-settings.json');
 }
 
 /**

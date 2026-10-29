@@ -30,6 +30,7 @@ import { studioBlogRoot } from '../studio/server/articles/page-version.mjs';
 import { atomicWriteText } from '../studio/server/files/atomic-write.mjs';
 import { serverKernel } from '@blog/kernel/node.mjs';
 import { LocaleSettings, studioSettingsFile } from '../studio/server/locale-settings.mjs';
+import { notesRoot } from '../studio/server/notes-root.mjs';
 import { PluginSettings } from '../studio/server/plugin-settings.mjs';
 import { AiSettings } from '../studio/server/ai/ai-settings.mjs';
 import { decodePathComponent, sendFile, sendJson } from '../studio/server/api.mjs';
@@ -84,6 +85,8 @@ export default function studioDev({ site } = {}) {
 			sayWhyItEnds();
 			// Browser tests point the Studio at a copy of their fixtures instead of blog/.
 			const testBlogRoot = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
+			// The author's notes (blog/, apps/, chats/, templates/, settings…), the code being here (notes-root.mjs).
+			const notes = notesRoot(server.config.root);
 			const blogRoot = studioBlogRoot(server.config.root);
 			const history = new ArticleHistory(blogRoot);
 			// What the Studio rewrites in other pages (links that follow a page) is kept as a version first; links
@@ -93,11 +96,11 @@ export default function studioDev({ site } = {}) {
 			const codeFiles = new CodeFilePreviews(files);
 			// Removed files wait here, outside blog/ and ignored by git, until someone empties it.
 			const manager = new ArticleFileManager(blogRoot, {
-				trashRoot: testBlogRoot ? resolve(testBlogRoot, TRASH_FOLDER) : resolve(server.config.root, TRASH_FOLDER),
+				trashRoot: testBlogRoot ? resolve(testBlogRoot, TRASH_FOLDER) : resolve(notes, TRASH_FOLDER),
 			});
 			const articleFiles = new ArticleFiles(articles, manager);
-			// Page templates: templates/ at the project's root (in git); the browser tests' beside their copy of blog/.
-			const templates = new ArticleTemplates(testBlogRoot ? resolve(testBlogRoot, '.studio-templates') : resolve(server.config.root, 'templates'));
+			// Page templates: the notes' templates/; the browser tests' beside their copy of blog/.
+			const templates = new ArticleTemplates(testBlogRoot ? resolve(testBlogRoot, '.studio-templates') : resolve(notes, 'templates'));
 			const articleGit = new ArticleGit(blogRoot);
 			const library = new ArticleLibrary(blogRoot, articles);
 			const watcher = new BlogWatcher(blogRoot);
@@ -122,21 +125,22 @@ export default function studioDev({ site } = {}) {
 			const drive = new Drive({
 				settingsFile,
 				fixedRoot: testDriveRoot,
-				forbidden: [server.config.root, blogRoot],
+				forbidden: [server.config.root, notes, blogRoot],
 			});
 			// The drive's words, for search and for an AI to read: `.studio-text/` in the drive.
 			const driveText = new DriveText(drive);
 			const terminals = new TerminalHost(resolve(server.config.root, 'tools', 'studio-terminal'));
 			// What the project's plugins do on this server (plugins/*/server.mjs): their API, under /api/studio/plugins/.
-			const privateRoot = testBlogRoot ?? server.config.root;
+			const privateRoot = testBlogRoot ?? notes;
 			// Those turned off in the Studio (插件) are not applied.
 			const pluginSettings = new PluginSettings(settingsFile);
 			// Which large model the Studio asks (AI 设置); its key stays on this machine.
 			const aiSettings = new AiSettings(settingsFile);
 			const agentSettings = new AgentSettings(settingsFile);
-			// 小程序: the tools of apps/ at the repository's root, each in a floating window.
-			const appsFolder = resolve(server.config.root, 'apps');
-			const miniApps = new MiniApps(appsFolder);
+			// 小程序: the tools of the notes' apps/ and the Studio's own (代码库, 图片库…), each in a floating window.
+			const appsFolder = resolve(notes, 'apps');
+			const builtInApps = resolve(server.config.root, 'apps');
+			const miniApps = new MiniApps(appsFolder, { builtIn: builtInApps });
 			// Those that are projects of their own, each run by its own development server (docs/apps-design.md).
 			const projectApps = new ProjectApps({ env: () => programEnv(null, null) });
 			// Their code as it was before an AI changed it, in the Studio's cache (out of git).
@@ -153,6 +157,7 @@ export default function studioDev({ site } = {}) {
 			 */
 			const programEnv = (slug, driveRoot) => ({
 				PATH: `${resolve(server.config.root, 'bin')}${delimiter}${process.env.PATH ?? ''}`,
+				STUDIO_NOTES_DIR: notes,
 				...(slug ? { STUDIO_ARTICLE: slug, STUDIO_ARTICLE_DIR: articleBundlePaths(blogRoot, slug).directory, STUDIO_ARTICLE_FILE: articleBundlePaths(blogRoot, slug).markdown } : {}),
 				...(driveRoot ? { STUDIO_DRIVE_DIR: driveRoot, STUDIO_DRIVE_TEXT: resolve(driveRoot, TEXT_FOLDER) } : {}),
 			});
@@ -167,23 +172,26 @@ export default function studioDev({ site } = {}) {
 			}, { warn: (message) => server.config.logger.warn(`[studio] ${message}`), disabled }));
 			// A page app's file changed: its windows load it again (a project app's own server does that for it).
 			const changedApps = new Map();
-			let appsWatcher = null;
-			try {
-				appsWatcher = watch(appsFolder, { recursive: true }, (_event, name) => {
-					const id = String(name ?? '').split(sep, 1)[0];
-					if (!id || changedApps.has(id)) return;
-					changedApps.set(id, setTimeout(() => {
-						changedApps.delete(id);
-						void miniApps.get(id).then((app) => {
-							if (app?.kind !== 'page') return;
-							const hot = server.environments?.client?.hot ?? server.hot;
-							hot?.send({ type: 'custom', event: 'studio:app-changed', data: { id } });
-						});
-					}, 150));
-				});
-				appsWatcher.unref?.();
-			} catch {
-				// No apps/ yet.
+			const appsWatchers = [];
+			for (const folder of new Set([appsFolder, builtInApps])) {
+				try {
+					const appsWatcher = watch(folder, { recursive: true }, (_event, name) => {
+						const id = String(name ?? '').split(sep, 1)[0];
+						if (!id || changedApps.has(id)) return;
+						changedApps.set(id, setTimeout(() => {
+							changedApps.delete(id);
+							void miniApps.get(id).then((app) => {
+								if (app?.kind !== 'page') return;
+								const hot = server.environments?.client?.hot ?? server.hot;
+								hot?.send({ type: 'custom', event: 'studio:app-changed', data: { id } });
+							});
+						}, 150));
+					});
+					appsWatcher.unref?.();
+					appsWatchers.push(appsWatcher);
+				} catch {
+					// No apps/ there yet.
+				}
 			}
 			// A project app's development server's live line (its HMR), under its address.
 			server.httpServer?.on('upgrade', (request, socket, head) => {
@@ -192,7 +200,7 @@ export default function studioDev({ site } = {}) {
 				if (port) forwardUpgrade(request, socket, head, port);
 			});
 			server.httpServer?.on('close', () => {
-				appsWatcher?.close();
+				for (const appsWatcher of appsWatchers) appsWatcher.close();
 				for (const timer of changedApps.values()) clearTimeout(timer);
 				projectApps.closeAll();
 				watcher.close();
@@ -234,6 +242,7 @@ export default function studioDev({ site } = {}) {
 			const api = studioApi({
 				site,
 				projectRoot: server.config.root,
+				notesRoot: notes,
 				blogRoot,
 				testing: { blog: Boolean(testBlogRoot), drive: Boolean(testDriveRoot) },
 				articleFolder: (slug) => articleBundlePaths(blogRoot, slug).directory,

@@ -2,16 +2,13 @@ import { expect, test } from '@playwright/test';
 
 import { resetFixture } from './studio.ts';
 
-// The Studio on its own server (serve.mjs): the blog's pages (「博客首页」, 在博客上打开) on the blog's own, started for them.
+// The blog's pages (「博客首页」, 在博客上打开) are the notes' own blog's, on its own server (serve.mjs, blogPreview): notes
+// without one (as the tests' are: no astro.config.mjs) are told so, not left waiting.
 
 test.beforeEach(() => resetFixture());
 
-test('the blog asked of the Studio’s server is shown by the blog’s own, started for it', async ({ page, baseURL }) => {
-	test.setTimeout(150_000);
-	await page.goto('/blog/', { timeout: 120_000 });
-	const shown = new URL(page.url());
-	expect(shown.port).not.toBe(new URL(baseURL!).port);
-	expect(shown.pathname).toBe('/blog/');
-	// The blog's own page (its articles are blog/'s, here the test root's: none).
-	await expect(page.locator('body')).toContainText('按时间记下的推导、计算和实验');
+test('the blog asked of notes that have none says so', async ({ page }) => {
+	const answer = await page.goto('/blog/');
+	expect(answer?.status()).toBe(503);
+	await expect(page.locator('body')).toHaveText('笔记文件夹里没有博客（astro.config.mjs）');
 });

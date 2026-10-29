@@ -4,13 +4,14 @@ import { join, resolve } from 'node:path';
 
 import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { articleBundlePaths } from '../../../articles/bundle-paths.mjs';
+import { notesRoot } from '../notes-root.mjs';
 
 /** Files looked at in one article's folder; past this, only how many there are. */
 const MAX_FILES = 5000;
 
-/** Where the Studio's articles are: `blog/`, or the browser tests' copy of their fixtures. */
+/** Where the Studio's articles are: the notes' `blog/` (notes-root.mjs), or the browser tests' copy of their fixtures. */
 export function studioBlogRoot(projectRoot) {
-	return process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : resolve(projectRoot, 'blog');
+	return process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : resolve(notesRoot(projectRoot), 'blog');
 }
 
 /**

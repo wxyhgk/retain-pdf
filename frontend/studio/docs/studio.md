@@ -499,6 +499,6 @@ props: { "方法": "B3LYP", "能量": -76.4, "状态": "完成" }
 
 **规则、技能、偏好**：用哪个 AI 都读同一份，换着用不会忘：
 
-- **写作约定**：[blog/AGENTS.md](../blog/AGENTS.md)。Codex、pi 直接读它，Claude Code 经由同一文件夹里只有一行 `@AGENTS.md` 的 `CLAUDE.md` 读它。在文章文件夹里打开时，它们都会往上找到它。
+- **写作约定**：笔记文件夹里的 `blog/AGENTS.md`。Codex、pi 直接读它，Claude Code 经由同一文件夹里只有一行 `@AGENTS.md` 的 `CLAUDE.md` 读它。在文章文件夹里打开时，它们都会往上找到它。
 - **技能**：写法细节和做事的步骤（分子、计算输出和能量图、交互模块、引用文献、资料库），在仓库根目录的 [.agents/skills/](../.agents/skills/)。用到时才读，不占地方；Claude Code 从指向同一处的 `.claude/skills/` 读。AI 做完一件以后还会再做的事，会问你要不要存成新技能。
 - **你的偏好**：你纠正 AI 的写法、或者说「以后都……」，它会记进仓库根目录的 `.agents/memory/preferences.md`，下次不管用哪个 AI 都先读它。这个文件只在本机，不进 git，可以直接打开改。

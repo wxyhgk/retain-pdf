@@ -3,14 +3,12 @@
 ## 目录
 
 ```text
-AGENTS.md             给 AI 的总说明：写笔记看 blog/AGENTS.md，改代码看本文
-blog/                 文章，每篇一个文件夹（见 docs/README.md）；blog/AGENTS.md 是写作约定（CLAUDE.md 只引入它）
-apps/                 小程序：每个一个文件夹（app.json + app.html），在 Studio 的「小程序」页面打开，可放侧栏、悬浮、全屏、新窗口（见 .agents/skills/studio-mini-apps）
-.agents/skills/       给 AI 的技能（Claude Code、Codex、pi 都读；.claude/skills 指向这里）
-.agents/memory/       AI 记下的作者偏好，只在本机（不进 git）
+AGENTS.md             给 AI 的总说明（改代码的规矩）
+apps/                 Studio 自带的小程序（代码库、图片库、能量单位换算、Gaussian 输入生成）：每个一个文件夹（app.json + app.html）；
+                      作者自己的在笔记文件夹的 apps/，同名的用作者的（见 .agents/skills/studio-mini-apps）
+.agents/skills/studio-mini-apps/   小程序怎么写（给 AI 的技能；笔记文件夹里也放一份，AI 在那里干活时读）
 src/
-  pages/ layouts/ components/   博客的页面
-  articles/           文章的属性规则、页面树（parent、order）等，博客和 Studio 共用
+  articles/           文章的属性规则、页面树（parent、order）等
   studio/             Studio 的前端；main.ts 造出各部分，plugins.ts、plugin-ui.ts 接插件
     wiring/           各项功能怎么用这些部分：页面操作、编辑器里的 AI、AI 问答、资料库、文献库、插件、全局快捷键
     shell/            外壳（左栏、顶栏、右栏的标签），React 画的（见下面「Studio 的外壳」）
@@ -48,8 +46,16 @@ tools/studio-terminal/    Studio 终端的后台程序（Rust）
 tools/studio-app/         Studio 的 Mac 应用（Rust、Tauri）：起服务器、开窗口；网页里的 alert/confirm/prompt 由它显示成系统对话框
 tools/studio-ipad/        Studio 的 iPad App（SwiftUI，Xcode 打开 Studio.swiftpm）：扫码配对，打开 Mac 上的 Studio（见它的 README）
 third_party/milkdown/     编辑器 Milkdown 的 fork（git submodule）
-tests/                单元测试；tests/e2e/ 浏览器测试
+tests/                单元测试（tests/fixtures/articles 是它们用的示例文章）；tests/e2e/ 浏览器测试
 ```
+
+## 代码和笔记分开
+
+这个仓库只有代码。笔记（文章 `blog/`、作者的小程序 `apps/`、`chats/`、`repos/`、页面模板 `templates/`、回收站、`.studio-settings.json`、`.studio-jobs.json`、给 AI 的写作约定和技能）在笔记文件夹里，位置由 `src/studio/server/notes-root.mjs` 决定：环境变量 `STUDIO_NOTES_DIR`，否则代码根目录的 `.studio-local.json`（`{ "notes": "../my-notes" }`，只在本机），都没有就是代码根目录自己。
+
+- 服务器里分两个根：`projectRoot` 是代码（`node_modules`、`bin`、`tools`、`plugins`、`.studio-cache`），`notesRoot` 是笔记。新功能要放作者的东西，放在 `notesRoot` 下面。
+- Studio 替 AI 起的程序（终端、Alt+Enter、AI 面板的 agent）环境里有 `STUDIO_NOTES_DIR`，PATH 里有这个仓库的 `bin/`（`studio` 命令）。终端的「仓库」和没开文章时跑的小程序，都在笔记文件夹里。
+- 「博客首页」「在博客上打开」：笔记文件夹自己有 Astro 博客（`astro.config.mjs`）时在那里起它的 `astro dev`，没有就说没有。
 
 ## 编辑器
 
@@ -87,8 +93,6 @@ Studio 的界面、提示和服务器返回给界面的话，都已经交给 `t(
 | 命令 | 作用 |
 |---|---|
 | `npm run studio:serve` | Studio 的服务器，<http://localhost:4321/studio>（被占着就用下一个端口） |
-| `npm run dev` | 博客的开发服务器（Astro），Studio 占着 4321 时用下一个端口 |
-| `npm run build` | 构建博客到 `dist/` |
 | `npm test` | 单元测试和后端测试 |
 | `npm run test:unit` | 单元测试（`tests/`、`packages/*/test/`、`plugins/*/test/`） |
 | `npm run test:server` | Studio 后端的测试 |
@@ -126,8 +130,7 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 它在跑时把进程号和地址写进 `.studio-cache/server.json`；Studio.app 和 `studio` 命令从这里找到它。Studio.app 起的服务器，输出在 `.studio-cache/server.log`（上一次的在 `server.previous.log`），每次意外退出记进 `.studio-cache/server-exits.log`。
 - 默认端口 4321，被占着就用下一个空着的。只听本机。
 - iPad 访问（`src/studio/server/remote/remote-access.mjs`）：一个单独的 HTTPS 入口（默认 4343，默认关着），在 `0.0.0.0` 上听；只放配对过的设备（cookie 里的钥匙，设置里存哈希），把请求原样转给只听本机的 Studio（`Host`、`Origin` 改成 Studio 自己的，WebSocket 也转），并加上 `x-studio-remote: 1`：`/api/studio/remote*` 见到它就拒绝。证书用系统的 `/usr/bin/openssl` 生成一次，App 按二维码里的指纹认它。测试服务器上它只听本机、端口由系统给。
-- 博客（`astro dev`）里没有 Studio 了：`astro.config.mjs` 只有博客自己的东西；开发时文章的文件 `/article-assets/…` 由 `src/plugins/article-assets.mjs` 提供（以前是 Studio 的插件顺带提供的）。
-- 博客的页面（`/blog/…`、`/wiki/…`、`/about`……）不归它：交给博客自己的 `astro dev`，开着就用（`.astro/dev.json`），没开就在下一个端口替你开一个、跟着 Studio 的服务器停（`blogPreview`，输出在 `.studio-cache/blog.log`），请求等它起来后跳过去。
+- 博客的页面（`/blog/…`、`/wiki/…`、`/about`……）不归它：交给笔记文件夹里博客自己的 `astro dev`，开着就用（`.astro/dev.json`），没开就在下一个端口替你开一个、跟着 Studio 的服务器停（`blogPreview`，输出在笔记文件夹的 `.studio-cache/blog.log`），请求等它起来后跳过去；笔记文件夹里没有博客就说没有。
 
 ## Studio 的接口
 

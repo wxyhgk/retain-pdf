@@ -6,13 +6,14 @@ import { parseMarkdownBodyBlocks, parseStudioDocument } from '@blog/document/ind
 import { bodyParts, reparseBodyBlocks } from '@blog/document/parse.ts';
 
 // A body's blocks cut again only round an edit (what the Studio does at every edit of a long article)
-// are the blocks of the whole cut again, whatever the edit: tried on every article, at many places.
+// are the blocks of the whole cut again, whatever the edit: tried on every article of tests/fixtures/articles (the
+// demo articles: formulas, molecules, widgets, code files, tables), at many places.
 
-const articles = readdirSync(new URL('../blog', import.meta.url), { withFileTypes: true })
+const articles = readdirSync(new URL('./fixtures/articles', import.meta.url), { withFileTypes: true })
 	.filter((entry) => entry.isDirectory())
 	.flatMap((entry) => {
 		try {
-			return [parseStudioDocument(readFileSync(new URL(`../blog/${entry.name}/index.md`, import.meta.url), 'utf8')).body.raw];
+			return [parseStudioDocument(readFileSync(new URL(`./fixtures/articles/${entry.name}/index.md`, import.meta.url), 'utf8')).body.raw];
 		} catch {
 			return [];
 		}

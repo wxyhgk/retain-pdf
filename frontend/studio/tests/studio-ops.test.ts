@@ -21,10 +21,15 @@ const readPage = (ops: Ops, args: Parameters<Ops['readPage']>[0]) => ops.readPag
 
 function temporaryBlog(t: { after: (fn: () => void) => void }): string {
 	const blog = mkdtempSync(join(tmpdir(), 'studio-ops-'));
+	// Notes of their own too (apps/, settings…): never the author's, which this folder's .studio-local.json may name.
+	const notes = mkdtempSync(join(tmpdir(), 'studio-ops-notes-'));
 	process.env.STUDIO_BLOG_DIR = blog;
+	process.env.STUDIO_NOTES_DIR = notes;
 	t.after(() => {
 		rmSync(blog, { recursive: true, force: true });
+		rmSync(notes, { recursive: true, force: true });
 		delete process.env.STUDIO_BLOG_DIR;
+		delete process.env.STUDIO_NOTES_DIR;
 	});
 	return blog;
 }
@@ -166,9 +171,13 @@ test('the MCP server: initialize, the tools with their schemas, a call and its r
 
 test('the author’s apps for an AI: listed from their folders; how one is now, asked of the Studio running', async (t) => {
 	const project = mkdtempSync(join(tmpdir(), 'studio-ops-apps-'));
+	const code = mkdtempSync(join(tmpdir(), 'studio-ops-code-'));
 	temporaryBlog(t);
+	// The author's apps in their notes; the Studio's own in its code.
+	process.env.STUDIO_NOTES_DIR = project;
 	t.after(() => {
 		rmSync(project, { recursive: true, force: true });
+		rmSync(code, { recursive: true, force: true });
 		delete process.env.STUDIO_URL;
 	});
 	const { mkdirSync, writeFileSync } = await import('node:fs');
@@ -176,8 +185,12 @@ test('the author’s apps for an AI: listed from their folders; how one is now, 
 	writeFileSync(join(project, 'apps', 'mol', 'app.json'), JSON.stringify({ name: '分子', dev: { command: ['npm', 'run', 'dev'] }, blocks: [{ fence: 'molblock' }] }));
 	mkdirSync(join(project, 'apps', 'units'));
 	writeFileSync(join(project, 'apps', 'units', 'app.json'), JSON.stringify({ name: '换算' }));
-	const ops = createStudioOps({ root: project });
+	mkdirSync(join(code, 'apps', 'library'), { recursive: true });
+	writeFileSync(join(code, 'apps', 'library', 'app.json'), JSON.stringify({ name: '代码库' }));
+	const ops = createStudioOps({ root: code });
+	// By name, as the Studio lists them.
 	assert.deepEqual(await ops.listApps(), [
+		{ id: 'library', name: '代码库', description: '', kind: 'page', folder: join(code, 'apps', 'library'), blocks: [] },
 		{ id: 'mol', name: '分子', description: '', kind: 'project', folder: 'apps/mol', code: 'apps/mol', blocks: ['molblock'] },
 		{ id: 'units', name: '换算', description: '', kind: 'page', folder: 'apps/units', blocks: [] },
 	]);

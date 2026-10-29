@@ -22,6 +22,7 @@ import { Drive } from '../server/drive/drive.mjs';
 import { DriveText } from '../server/drive/drive-text.mjs';
 import { ArticleFileManager, TRASH_FOLDER } from '../server/files/file-manager.mjs';
 import { studioBlogRoot } from '../server/articles/page-version.mjs';
+import { notesRoot } from '../server/notes-root.mjs';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from '../pages/page-names.ts';
 import { filesNamed } from '../editor/split-section.ts';
 import { markdownOutline, markdownSection } from './markdown-section.mjs';
@@ -45,17 +46,19 @@ export class StudioOpsError extends Error {
  */
 export function createStudioOps({ root, site } = {}) {
 	const projectRoot = resolve(root ?? process.cwd());
+	// The author's notes (blog/, apps/, settings…), where the code is not (notes-root.mjs).
+	const notes = notesRoot(projectRoot);
 	const testBlog = process.env.STUDIO_BLOG_DIR ? resolve(process.env.STUDIO_BLOG_DIR) : null;
 	const blogRoot = testBlog ?? studioBlogRoot(projectRoot);
 	const history = new ArticleHistory(blogRoot);
 	// One command and done: links follow a new title at once.
 	const articles = new ArticleRepository(blogRoot, { keep: (slug, source) => history.keep(slug, source, 'before-change') });
-	const manager = new ArticleFileManager(blogRoot, { trashRoot: testBlog ? resolve(testBlog, TRASH_FOLDER) : resolve(projectRoot, TRASH_FOLDER) });
+	const manager = new ArticleFileManager(blogRoot, { trashRoot: testBlog ? resolve(testBlog, TRASH_FOLDER) : resolve(notes, TRASH_FOLDER) });
 	const git = new ArticleGit(blogRoot);
-	const settingsFile = testBlog ? resolve(testBlog, '.studio-settings.json') : resolve(projectRoot, '.studio-settings.json');
+	const settingsFile = testBlog ? resolve(testBlog, '.studio-settings.json') : resolve(notes, '.studio-settings.json');
 	// 代码仓库: as the Studio has them (its own beside blog/; those added, in its settings); the tests' with no home of the author's looked through.
 	const repositories = new Repositories({ ownRoot: reposRootOf(blogRoot), settingsFile, home: testBlog ? `${blogRoot}-home` : undefined });
-	const drive = new Drive({ settingsFile, fixedRoot: process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null, forbidden: [projectRoot, blogRoot] });
+	const drive = new Drive({ settingsFile, fixedRoot: process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null, forbidden: [projectRoot, notes, blogRoot] });
 
 	const pages = () => articles.list();
 	const find = async (slug) => {
@@ -347,14 +350,16 @@ export function createStudioOps({ root, site } = {}) {
 
 		/** The author's apps (apps/): what each is, where its code is, the blocks it gives. */
 		async listApps() {
-			const apps = new MiniApps(resolve(projectRoot, 'apps'));
+			const apps = new MiniApps(resolve(notes, 'apps'), { builtIn: resolve(projectRoot, 'apps') });
+			// The author's from their notes' folder (where an AI works), the Studio's own (代码库…) whole.
+			const said = (path) => (path && !relative(notes, path).startsWith('..') ? relative(notes, path) || '.' : path);
 			return Promise.all((await apps.list()).map(async (app) => ({
 				id: app.id,
 				name: app.name,
 				description: app.description,
 				kind: app.kind,
-				folder: `apps/${app.id}`,
-				...(app.kind === 'project' ? { code: relative(projectRoot, (await apps.root(app.id)) ?? '') || '.' } : {}),
+				folder: said(await apps.folderOf(app.id)),
+				...(app.kind === 'project' ? { code: said(await apps.root(app.id)) } : {}),
 				blocks: app.blocks.map((block) => block.fence),
 				...(app.problem ? { problem: app.problem } : {}),
 			})));

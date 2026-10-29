@@ -1,0 +1,75 @@
+/* 代码仓库 › 仓库: the list of repositories, one repository's home (files and README), a file. As GitHub lays them out, in the Studio's black and white. */
+.r-page { max-width: 980px; margin: 0 auto; padding: 16px 20px 40px; }
+.r-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+.r-bar h2 { margin: 0 8px 0 0; font-size: 16px; }
+.r-bar .grow { flex: 1; }
+.r-search { min-width: 200px; flex: 1; max-width: 360px; height: 30px; box-sizing: border-box; border-radius: 8px; background: var(--soft); border-color: transparent; }
+.r-search:focus { outline: none; border-color: var(--line); background: var(--surface); }
+.r-primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.r-muted { color: var(--muted); }
+.r-small { font-size: 12px; }
+.r-error { color: var(--danger); }
+
+.r-repos { display: grid; border-top: 1px solid var(--line); }
+.r-repo { display: grid; gap: 4px; padding: 14px 4px; border-bottom: 1px solid var(--line); }
+.r-repo-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.r-name { padding: 0; border: 0; background: none; font-size: 15px; font-weight: 600; cursor: pointer; }
+.r-name:hover { text-decoration: underline; }
+.r-tag { padding: 0 7px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 11px; line-height: 18px; }
+.r-description { margin: 0; color: var(--muted); }
+.r-meta { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--muted); font-size: 12px; }
+.r-meta strong { color: var(--ink); font-weight: 500; }
+.r-path { color: var(--muted); font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+.r-panel { display: grid; gap: 10px; margin-bottom: 16px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; }
+.r-panel h3 { margin: 0; font-size: 14px; }
+.r-panel form { display: grid; gap: 8px; }
+.r-panel input[type='text'] { width: 100%; box-sizing: border-box; }
+.r-row { display: flex; align-items: center; gap: 8px; }
+.r-row .grow { flex: 1; min-width: 0; }
+.r-found { display: grid; max-height: 260px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; }
+.r-found > div { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-bottom: 1px solid var(--line); }
+.r-found > div:last-child { border-bottom: 0; }
+.r-found .grow { display: grid; flex: 1; min-width: 0; }
+.r-found .r-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.r-crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 12px; font-size: 15px; }
+.r-crumbs button { padding: 0 2px; border: 0; background: none; color: var(--ink); cursor: pointer; }
+.r-crumbs button:hover { text-decoration: underline; }
+.r-crumbs .here { font-weight: 600; }
+.r-crumbs .sep { color: var(--muted); }
+.r-about { display: grid; gap: 6px; margin-bottom: 14px; }
+.r-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.r-box { overflow: hidden; border: 1px solid var(--line); border-radius: 10px; }
+.r-box-head { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-bottom: 1px solid var(--line); background: var(--soft); font-size: 12px; }
+.r-box-head .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r-files { width: 100%; border-collapse: collapse; }
+.r-files td { padding: 6px 14px; border-bottom: 1px solid var(--line); }
+.r-files tr:last-child td { border-bottom: 0; }
+.r-files tr:hover td { background: var(--soft); }
+.r-files .icon { width: 18px; padding-right: 0; color: var(--muted); }
+.r-files .size { width: 90px; color: var(--muted); font-size: 12px; text-align: right; }
+.r-files button { padding: 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.r-files button:hover { text-decoration: underline; }
+.r-readme { margin-top: 16px; }
+.r-markdown { padding: 4px 24px 18px; line-height: 1.7; }
+.r-markdown img { max-width: 100%; }
+.r-markdown pre { overflow-x: auto; padding: 10px 12px; border-radius: 6px; background: var(--soft); font: 12px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.r-markdown code { font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+.r-markdown :not(pre) > code { padding: 1px 4px; border-radius: 4px; background: var(--soft); }
+.r-markdown table { border-collapse: collapse; }
+.r-markdown th, .r-markdown td { padding: 4px 10px; border: 1px solid var(--line); }
+.r-markdown a { color: var(--ink); }
+.r-markdown h1, .r-markdown h2 { padding-bottom: 4px; border-bottom: 1px solid var(--line); }
+
+.r-code { margin: 0; overflow-x: auto; padding: 10px 0; font: 12px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; counter-reset: line; }
+.r-code > span { display: block; padding-right: 16px; white-space: pre; }
+.r-code > span::before { counter-increment: line; content: counter(line); display: inline-block; width: 3.4em; margin-right: 16px; color: var(--muted); opacity: 0.6; text-align: right; user-select: none; }
+.r-code .k { font-weight: 650; }
+.r-code .c { color: var(--muted); font-style: italic; }
+.r-code .s { color: color-mix(in srgb, var(--ink) 72%, var(--surface)); }
+.r-code .f { font-weight: 600; }
+.r-picture { display: grid; place-items: center; padding: 20px; background: var(--soft); }
+.r-picture img { max-width: 100%; max-height: 70vh; background: #fff; }
+.r-empty { padding: 40px 20px; color: var(--muted); text-align: center; }

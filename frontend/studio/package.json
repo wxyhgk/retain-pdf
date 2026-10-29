@@ -1,22 +1,18 @@
 {
-  "name": "notion2gitub_blog",
+  "name": "notes-studio",
   "type": "module",
   "version": "0.0.1",
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "dev": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview",
-    "astro": "astro",
     "test": "npm run test:unit && npm run test:server",
     "test:unit": "node --experimental-strip-types --test tests/*.test.ts packages/*/test/*.test.ts plugins/*/test/*.test.ts",
     "test:server": "node --test 'src/studio/server/**/*.test.mjs' src/articles/*.test.mjs plugins/*/test/*.test.mjs",
     "test:terminal": "cargo test --release --manifest-path tools/studio-terminal/Cargo.toml",
     "terminal:build": "cargo build --release --manifest-path tools/studio-terminal/Cargo.toml",
     "test:e2e": "playwright test -c tests/e2e/playwright.config.ts",
-    "milkdown:setup": "git submodule update --init third_party/milkdown && pnpm --dir third_party/milkdown install --frozen-lockfile",
+    "milkdown:setup": "git submodule update --init third_party/milkdown && pnpm --dir third_party/milkdown install --frozen-lockfile && pnpm --dir third_party/milkdown --filter @milkdown/prose build",
     "studio": "node bin/studio.mjs",
     "studio:serve": "node src/studio/serve.mjs",
     "i18n:strings": "node packages/i18n/strings.mjs"

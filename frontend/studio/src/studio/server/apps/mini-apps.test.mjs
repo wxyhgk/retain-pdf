@@ -35,6 +35,27 @@ test('小程序: listed from their app.json, a broken one saying what is wrong; 
 	assert.match(appDocument('<html><head><title>x</title></head></html>'), /^<html><head><meta charset="utf-8">/u);
 });
 
+test('the Studio’s own apps are listed with the author’s; the author’s one of the same name is the one; new ones are the author’s', async (t) => {
+	const root = await mkdtemp(join(tmpdir(), 'studio-apps-'));
+	t.after(() => rm(root, { recursive: true, force: true }));
+	const own = join(root, 'notes', 'apps');
+	const builtIn = join(root, 'code', 'apps');
+	for (const [folder, id, name] of [[builtIn, 'units', '内置换算'], [builtIn, 'library', '代码库'], [own, 'units', '我的换算']]) {
+		await mkdir(join(folder, id), { recursive: true });
+		await writeFile(join(folder, id, 'app.json'), JSON.stringify({ name }));
+		await writeFile(join(folder, id, 'app.html'), `<p>${name}</p>`);
+	}
+	const apps = new MiniApps(own, { builtIn });
+	assert.deepEqual((await apps.list()).map((app) => [app.id, app.name]), [['library', '代码库'], ['units', '我的换算']]);
+	assert.match(String((await apps.file('library', '')).body), /<p>代码库<\/p>/u);
+	assert.match(String((await apps.file('units', '')).body), /<p>我的换算<\/p>/u);
+	assert.equal(await apps.root('library'), join(builtIn, 'library'));
+	// Made in the author's apps/, under a name no app has.
+	const made = await apps.create({ name: 'library', template: Object.keys((await import('./mini-apps.mjs')).APP_TEMPLATES)[0] });
+	assert.equal(made.id, 'library-2');
+	assert.equal(await apps.root('library-2'), join(own, 'library-2'));
+});
+
 test('a project app: how it is run from its app.json, where it is from app.local.json; a path of this machine committed is said, not run', async (t) => {
 	const root = await mkdtemp(join(tmpdir(), 'studio-apps-'));
 	t.after(() => rm(root, { recursive: true, force: true }));

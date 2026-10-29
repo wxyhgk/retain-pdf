@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
-import { mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,6 +9,7 @@ import tailwindcss from '@tailwindcss/vite';
 import { createServer, mergeConfig } from 'vite';
 
 import milkdownSource from '../plugins/milkdown-source.mjs';
+import { notesRoot } from './server/notes-root.mjs';
 import studioDev from '../plugins/studio-dev.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -56,7 +57,7 @@ async function styleTags(server, root, imports) {
 const BLOG_PAGE = /^\/(?:blog|wiki|about|tags|rss\.xml|sitemap[^/]*\.xml)(?:\/|$)/u;
 
 /**
- * The blog itself (「博客首页」, 在博客上打开): on its own server, Astro's, not this one. One running already (`astro dev`
+ * The blog itself (「博客首页」, 在博客上打开): the notes' own (notes-root.mjs), on its own server, Astro's, not this one. One running already (`astro dev`
  * in a terminal: `.astro/dev.json`) is used; none, one is started for as long as this one runs (its output in
  * `.studio-cache/blog.log`), on the port after this one's (or the next free). The page asked for waits for it, then goes there.
  */
@@ -72,6 +73,8 @@ function blogPreview(root) {
 		}
 	};
 	const start = (port) => {
+		// Notes without a blog of their own (an Astro site beside blog/): nothing to show.
+		if (!existsSync(resolve(root, 'astro.config.mjs'))) return Promise.reject(new Error(t('笔记文件夹里没有博客（astro.config.mjs）')));
 		starting ??= new Promise((done, failed) => {
 			mkdirSync(resolve(root, '.studio-cache'), { recursive: true });
 			const log = openSync(resolve(root, '.studio-cache', 'blog.log'), 'w');
@@ -181,7 +184,7 @@ export async function startStudio({ root = process.cwd(), port = 4321, host = 'l
 			// read as one, and the scan given up.
 			rolldownOptions: { plugins: [{ name: 'studio-stylesheets-aside', resolveId: (id) => (/\.css(?:$|\?)/u.test(id) ? { id, external: true } : null) }] },
 		},
-		plugins: [react({ include: /\/src\/studio\/.*\.tsx$/u }), tailwindcss(), milkdownSource({ root }), studioDev({ site }), studioPages(root), blogPreview(root)],
+		plugins: [react({ include: /\/src\/studio\/.*\.tsx$/u }), tailwindcss(), milkdownSource({ root }), studioDev({ site }), studioPages(root), blogPreview(notesRoot(root))],
 	}, vite));
 	await server.listen();
 	const url = server.resolvedUrls?.local[0] ?? `http://${host}:${port}/`;

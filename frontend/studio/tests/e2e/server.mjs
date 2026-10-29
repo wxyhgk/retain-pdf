@@ -26,7 +26,7 @@ function isolatedRoot() {
 	const root = join(realpathSync(parent), basename(repository));
 	mkdirSync(root);
 	// Copied: what the server reads and the tests may write in (a 小程序 of apps/ made by a test stays in the copy).
-	for (const name of ['src', 'plugins', 'apps', 'astro.config.mjs', 'package.json', 'tsconfig.json']) if (existsSync(join(repository, name))) cpSync(join(repository, name), join(root, name), { recursive: true });
+	for (const name of ['src', 'plugins', 'apps', 'package.json', 'tsconfig.json']) if (existsSync(join(repository, name))) cpSync(join(repository, name), join(root, name), { recursive: true });
 	for (const name of ['bin', 'node_modules', 'packages', 'public', 'third_party', 'tools', 'vendor']) symlinkSync(join(repository, name), join(root, name));
 	mkdirSync(join(root, 'blog'));
 	return root;

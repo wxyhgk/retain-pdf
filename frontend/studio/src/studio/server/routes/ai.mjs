@@ -14,19 +14,19 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function aiRoutes(api, { projectRoot, blogRoot, articles, files, history, manager, drive, driveText, terminals, tasks, aiSettings, agentSettings, programEnv, articleFolder }) {
+export function aiRoutes(api, { notesRoot, blogRoot, articles, files, history, manager, drive, driveText, terminals, tasks, aiSettings, agentSettings, programEnv, articleFolder }) {
 	api.get('/agents', () => agentSettings.shown());
 	api.put('/agents', async ({ json }) => agentSettings.set(await json()));
 	// AI 设置: the page sees no key, only whether there is one.
 	api.get('/ai/settings', () => aiSettings.shown());
 	api.put('/ai/settings', async ({ json }) => aiSettings.set(await json()));
 
-	// A shell for the 终端 tab: in the repository, the open article's folder, or the drive.
+	// A shell for the 终端 tab: in the notes' folder, the open article's folder, or the drive.
 	api.post('/terminal', async ({ json }) => {
 		const { cwd, slug } = await json();
 		const driveRoot = await drive.root();
 		if (cwd === 'drive' && !driveRoot) throw refuse(409, t('还没有选择资料库文件夹'));
-		const folder = cwd === 'article' ? articleFolder(slug) : cwd === 'drive' ? driveRoot : projectRoot;
+		const folder = cwd === 'article' ? articleFolder(slug) : cwd === 'drive' ? driveRoot : notesRoot;
 		if (cwd === 'article') await manager.locate(slug, '');
 		const env = programEnv(cwd === 'article' ? slug : null, driveRoot);
 		// The drive's text brought up to date for what the AI may read.

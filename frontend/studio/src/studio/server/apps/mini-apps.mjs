@@ -133,32 +133,50 @@ function blocksOf(written, id) {
 const command = (value) => (Array.isArray(value) && value.length && value.every((word) => typeof word === 'string' && word) ? value : null);
 
 export class MiniApps {
-	/** @param {string} folder the repository's apps/ */
-	constructor(folder) {
+	/**
+	 * @param {string} folder the author's apps/ (in their notes), where new ones are made
+	 * @param {{ builtIn?: string | null }} [options] the Studio's own apps/ (代码库, 图片库…): there too, unless the author has
+	 *   one of the same name
+	 */
+	constructor(folder, { builtIn = null } = {}) {
 		this.folder = folder;
+		this.builtIn = builtIn && resolve(builtIn) !== resolve(folder) ? builtIn : null;
+	}
+
+	/** The folders apps are in, the author's first. */
+	#folders() {
+		return this.builtIn ? [this.folder, this.builtIn] : [this.folder];
+	}
+
+	/** An app's folder: the author's, else the Studio's own; null for none. */
+	folderOf(id) {
+		return ID.test(String(id)) ? this.#where(id) : Promise.resolve(null);
+	}
+
+	async #where(id) {
+		for (const folder of this.#folders()) {
+			if ((await stat(join(folder, id)).catch(() => null))?.isDirectory()) return join(folder, id);
+		}
+		return null;
 	}
 
 	/** Every app, by name; one whose app.json cannot be read is listed with what is wrong (`problem`). */
 	async list() {
-		let names;
-		try {
-			names = await readdir(this.folder, { withFileTypes: true });
-		} catch {
-			return [];
+		const ids = new Set();
+		for (const folder of this.#folders()) {
+			for (const entry of await readdir(folder, { withFileTypes: true }).catch(() => [])) {
+				if (entry.isDirectory() && ID.test(entry.name)) ids.add(entry.name);
+			}
 		}
 		const apps = [];
-		for (const entry of names) {
-			if (!entry.isDirectory() || !ID.test(entry.name)) continue;
-			apps.push(await this.#read(entry.name));
-		}
+		for (const id of ids) apps.push(await this.#read(id));
 		return apps.sort((a, b) => a.name.localeCompare(b.name, 'zh-CN'));
 	}
 
 	/** @returns {Promise<MiniApp | null>} */
 	async get(id) {
 		if (!ID.test(String(id))) return null;
-		const found = (await stat(join(this.folder, id)).catch(() => null))?.isDirectory();
-		return found ? this.#read(id) : null;
+		return (await this.#where(id)) ? this.#read(id) : null;
 	}
 
 	async #read(id) {
@@ -168,15 +186,16 @@ export class MiniApps {
 	/** An app's app.json, with its app.local.json over it: the app as listed, and how it is run when it is a project. */
 	async #manifest(id) {
 		const plain = { id, name: id, icon: '◆', description: '', width: 380, height: 480, permissions: [], kind: 'page', blocks: [], commands: [] };
+		const folder = (await this.#where(id)) ?? join(this.folder, id);
 		let manifest;
 		try {
-			manifest = JSON.parse(await readFile(join(this.folder, id, 'app.json'), 'utf8'));
+			manifest = JSON.parse(await readFile(join(folder, 'app.json'), 'utf8'));
 		} catch (error) {
 			return { app: { ...plain, problem: t('app.json 读不了：{error}', { error: error instanceof Error ? error.message : String(error) }) }, dev: null };
 		}
 		let local = {};
 		try {
-			local = JSON.parse(await readFile(join(this.folder, id, 'app.local.json'), 'utf8'));
+			local = JSON.parse(await readFile(join(folder, 'app.local.json'), 'utf8'));
 		} catch (error) {
 			if (error?.code !== 'ENOENT') return { app: { ...plain, problem: t('app.local.json 读不了：{error}', { error: error instanceof Error ? error.message : String(error) }) }, dev: null };
 		}
@@ -192,7 +211,6 @@ export class MiniApps {
 		const dev = { ...written, ...(local.dev && typeof local.dev === 'object' ? local.dev : {}) };
 		const run = command(dev.command);
 		if (!run) return { app: { ...app, problem: t('dev.command 要是一串词，比如 ["npm", "run", "dev", "--", "--port", "{port}", "--base", "{base}"]') }, dev: null };
-		const folder = join(this.folder, id);
 		const cwd = typeof dev.cwd === 'string' && dev.cwd.trim() ? resolve(folder, dev.cwd) : folder;
 		return { app, dev: { cwd, command: run, backend: command(dev.backend) } };
 	}
@@ -201,8 +219,9 @@ export class MiniApps {
 	async root(id) {
 		if (!ID.test(String(id))) return null;
 		const { app, dev } = await this.#manifest(id);
-		if (app.problem && !dev) return (await this.get(id)) ? join(this.folder, id) : null;
-		return dev?.cwd ?? join(this.folder, id);
+		const folder = await this.#where(id);
+		if (app.problem && !dev) return folder;
+		return dev?.cwd ?? folder;
 	}
 
 	/**
@@ -216,7 +235,7 @@ export class MiniApps {
 		if (!Object.hasOwn(APP_TEMPLATES, template)) throw Object.assign(new Error(t('没有这个模板：{template}', { template })), { statusCode: 400 });
 		const words = plain.toLowerCase().replace(/[^a-z0-9]+/gu, '-').replace(/^-+|-+$/gu, '').slice(0, 32);
 		let id = /^[a-z]/u.test(words) && words.length > 1 ? words : `app-${Date.now().toString(36)}`;
-		for (let n = 2; await stat(join(this.folder, id)).catch(() => null); n += 1) id = `${id.replace(/-\d+$/u, '')}-${n}`;
+		for (let n = 2; await this.#where(id); n += 1) id = `${id.replace(/-\d+$/u, '')}-${n}`;
 		const target = join(this.folder, id);
 		await mkdir(this.folder, { recursive: true });
 		await cp(join(TEMPLATES, template), target, { recursive: true });
@@ -252,7 +271,9 @@ export class MiniApps {
 		const name = path || 'app.html';
 		let file;
 		try {
-			file = resolveInside(join(this.folder, id), name);
+			const folder = await this.#where(id);
+			if (!folder) return null;
+			file = resolveInside(folder, name);
 		} catch {
 			return null;
 		}
