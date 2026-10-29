@@ -283,7 +283,10 @@ a.jump { color: inherit; text-decoration: underline dotted; cursor: pointer; }
     row("页", "第 " + (e.page + 1) + " 页");
     row("框", h("span", { "class": "mono", text: e.bbox.join(", ") }));
     row("行数", String((e.lines || []).length));
-    if (e.attributes) Object.keys(e.attributes).forEach(function (k) { row(k === "level" ? "级别" : k, h("span", { "class": "mono", text: String(e.attributes[k]) })); });
+    if (e.attributes) Object.keys(e.attributes).forEach(function (k) {
+      var spec = TAX.attributes[k], v = String(e.attributes[k]);
+      row(spec ? spec.label : k, h("span", { "class": spec ? "" : "mono", text: spec && spec.values[v] ? spec.values[v] + "（" + v + "）" : v }));
+    });
     var rel = e.relations || {};
     Object.keys(rel).forEach(function (name) {
       var span = h("span", {});

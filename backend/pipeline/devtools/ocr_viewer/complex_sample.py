@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -178,7 +179,16 @@ class SampleDocument:
             panel_key = key if panels == 1 else f"{key}{chr(97 + index)}"
             made.append(
                 self.add(
-                    Element(id=panel_key, cls="figure", zone=zone, page=region.page, bbox=r2(rect), text="", lines=[])
+                    Element(
+                        id=panel_key,
+                        cls="figure",
+                        zone=zone,
+                        page=region.page,
+                        bbox=r2(rect),
+                        text="",
+                        lines=[],
+                        attributes={"figure_type": "chart"},
+                    )
                 )
             )
         region.y += height + gap
@@ -305,6 +315,120 @@ class SampleDocument:
         )
         region.y = max(formula_box[3], number_box[3]) + gap
         return [formula, numbered]
+
+    def algorithm(self, region: Region, zone: str, caption: str, body: list[tuple[int, list[tuple[str, str]]]], *, key: str, gap: float = 6.0) -> list[Element]:
+        """算法框：上线、题注、中线、带行号的伪代码、下线（algorithm2e 的样子）。题注和算法是两个块。"""
+        page = self.pages[region.page]
+        x0, x1 = region.x, region.x + region.width
+        self.rule(region.page, x0, x1, region.y, 0.9)
+        region.y += 2.5
+        made = self.text(
+            region,
+            "code_caption",
+            zone,
+            [{"b": caption.split(":", 1)[0] + ":"}, caption.split(":", 1)[1]],
+            CAPTION,
+            key=f"{key}-cap",
+            relations={"caption_of": [key]},
+            gap=2.0,
+        )
+        self.rule(region.page, x0, x1, region.y, 0.5)
+        size, lead = 8.0, 10.6
+        f = font("rm")
+        top = region.y + 2.0
+        baseline = top + f.ascender * size
+        lines = []
+        for number, (indent, pieces) in enumerate(body, start=0):
+            label = f"{number}:" if number else ""
+            x = x0 + 2.0
+            boxes = []
+            if label:
+                page.insert_text((x, baseline), label, fontname="tiro", fontsize=size * 0.85)
+            x = x0 + 16.0 + indent * 10.0
+            text = ""
+            for piece, style in pieces:
+                pf = font(style)
+                page.insert_text((x, baseline), piece, fontname={"rm": "tiro", "bf": "tibo", "it": "tiit"}[style], fontsize=size)
+                w = pf.text_length(piece, size)
+                boxes.append([x, baseline - pf.ascender * size, x + w, baseline - pf.descender * size])
+                x += w
+                text += piece
+            lines.append({"bbox": r2(union(boxes)), "text": (label + " " if label else "") + text})
+            baseline += lead
+        bottom = top + (len(body) - 1) * lead + (f.ascender - f.descender) * size + 2.0
+        self.rule(region.page, x0, x1, bottom, 0.9)
+        made.append(
+            self.add(
+                Element(
+                    id=key,
+                    cls="algorithm",
+                    zone=zone,
+                    page=region.page,
+                    bbox=r2([x0, top - 1.0, x1, bottom]),
+                    text="\n".join(line["text"] for line in lines),
+                    lines=lines,
+                )
+            )
+        )
+        region.y = bottom + gap
+        return made
+
+    def seal(self, page: int, center: tuple[float, float], radius: float, *, key: str, zone: str) -> Element:
+        """红色圆章：外圈、五角星、一行字，压在前面的文字上。"""
+        p = self.pages[page]
+        red = (0.82, 0.12, 0.12)
+        cx, cy = center
+        p.draw_circle(center, radius, color=red, width=1.6)
+        p.draw_circle(center, radius - 3.0, color=red, width=0.5)
+        star = []
+        for i in range(10):
+            angle = -math.pi / 2 + i * math.pi / 5
+            r = (radius * 0.28) if i % 2 == 0 else (radius * 0.11)
+            star.append(fitz.Point(cx + r * math.cos(angle), cy - radius * 0.18 + r * math.sin(angle)))
+        p.draw_polyline(star + [star[0]], color=red, fill=red, width=0.3)
+        label = "样例专用章"
+        size = radius * 0.3
+        w = font("zh").text_length(label, size)
+        p.insert_text((cx - w / 2, cy + radius * 0.45), label, fontname="china-s", fontsize=size, color=red)
+        return self.add(
+            Element(
+                id=key,
+                cls="seal",
+                zone=zone,
+                page=page,
+                bbox=r2([cx - radius - 0.8, cy - radius - 0.8, cx + radius + 0.8, cy + radius + 0.8]),
+                text=label,
+                lines=[],
+                lang="zh",
+            )
+        )
+
+    def vertical_note(self, page: int, x: float, y: float, text: str, *, cls: str, zone: str, key: str) -> Element:
+        """左页边竖排的一行（arXiv 编号那种），从下往上读。框从 PDF 里取回来，不自己算旋转后的坐标。"""
+        p = self.pages[page]
+        p.insert_text((x, y), text, fontname="tiro", fontsize=9.0, rotate=90, color=(0.45, 0.45, 0.48))
+        spans = [
+            span["bbox"]
+            for block in p.get_text("dict")["blocks"]
+            for line in block.get("lines", [])
+            for span in line["spans"]
+            if span["text"].strip() == text.strip()
+        ]
+        if len(spans) != 1:
+            raise RuntimeError(f"vertical text {text!r} not found exactly once")
+        box = r2(spans[0])
+        return self.add(
+            Element(
+                id=key,
+                cls=cls,
+                zone=zone,
+                page=page,
+                bbox=box,
+                text=text,
+                lines=[{"bbox": box, "text": text}],
+                attributes={"writing_mode": "vertical"},
+            )
+        )
 
     def footnote_bottom(self, region: Region, zone: str, content, *, key: str, relations: dict) -> Element:
         """脚注排在栏底，栏的可用高度跟着缩短。"""
@@ -652,7 +776,7 @@ def build() -> SampleDocument:
     )
     doc.text(
         p2_left,
-        "table_note",
+        "float_note",
         "body",
         "* A caption counts as matched only if it is linked to the correct figure or table.",
         SMALL,
@@ -748,6 +872,22 @@ def build() -> SampleDocument:
         relations={"caption_of": ["fig2a", "fig2b"]},
         gap=8,
     )
+    doc.algorithm(
+        p2_right,
+        "body",
+        "Algorithm 1: Joining continued paragraphs before translation",
+        [
+            (0, [("Input: ", "bf"), ("blocks ", "rm"), ("B", "it"), (" in reading order", "rm")]),
+            (0, [("P", "it"), (" := []", "rm")]),
+            (0, [("for each ", "bf"), ("b", "it"), (" in ", "rm"), ("B", "it"), (" do", "bf")]),
+            (1, [("if ", "bf"), ("b", "it"), (" continues the last block of ", "rm"), ("P", "it"), (" then", "bf")]),
+            (2, [("append the text of ", "rm"), ("b", "it"), (" to that block", "rm")]),
+            (1, [("else", "bf")]),
+            (2, [("add ", "rm"), ("b", "it"), (" to ", "rm"), ("P", "it")]),
+            (0, [("return ", "bf"), ("P", "it")]),
+        ],
+        key="algo1",
+    )
     doc.text(p2_right, "section_heading", "body", "3   结论", TextStyle("zh", 10.5, 13.5), key="h-concl", attributes={"level": 1}, lang="zh", gap=4)
     doc.text(
         p2_right,
@@ -790,6 +930,20 @@ def build() -> SampleDocument:
             lang="zh" if zh else "en",
             gap=2,
         )
+    # ---- 页边：第 1 页左边竖排的 arXiv 编号，第 2 页左边的边注，第 2 页末尾的印章 ----
+    doc.vertical_note(0, 30.0, 560.0, "arXiv:2610.01234v1  [cs.CV]  29 Oct 2026", cls="publication_info", zone="front_matter", key="arxiv-id")
+    doc.text(
+        Region(1, 8.0, 40.0, 104.0, 300.0),
+        "margin_note",
+        "body",
+        "Margin note: boxes are given in PDF points, never in pixels.",
+        TextStyle("it", 6.2, 7.8),
+        key="margin1",
+        relations={"note_of": "match-p1"},
+        gap=0,
+    )
+    anchor = [e for e in doc.elements if e.cls == "reference_entry"][-1].bbox
+    doc.seal(1, (anchor[2] - 46.0, anchor[3] + 22.0), 30.0, key="seal1", zone="back_matter")
     return doc
 
 

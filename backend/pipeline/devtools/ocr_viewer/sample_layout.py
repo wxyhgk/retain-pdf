@@ -125,6 +125,12 @@ def tokenize(content, base_style: str) -> list[Atom]:
             atoms.append(Atom(pieces, pending_space, inline="inline_formula", latex=item.get("latex", "")))
         elif "fn" in item:
             atoms.append(Atom([Piece(item["fn"], "rm", SUP)], False, inline="footnote_mark", target=item.get("target", "")))
+        elif "b" in item:
+            for index, word in enumerate(item["b"].split()):
+                atoms.append(Atom([Piece(word, "bf")], space_before=pending_space or index > 0))
+                pending_space = False
+            pending_space = False
+            continue
         elif "sup" in item:
             atoms.append(Atom([Piece(item["sup"], "rm", SUP)], False))
         elif "cite" in item:

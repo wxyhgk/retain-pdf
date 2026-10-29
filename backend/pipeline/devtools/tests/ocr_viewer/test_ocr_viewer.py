@@ -17,6 +17,9 @@ from devtools.ocr_viewer.viewer import check_truth
 # 样例里故意没有的类别：目录条目要单独造目录页，未知留给真实 OCR。
 NOT_IN_SAMPLE = {"toc_entry", "unknown"}
 
+# 样例特意放进去的几种难认的东西（对照 Paddle、MinerU 的标签补的）。
+HARD_CASES = {"algorithm", "seal", "margin_note", "float_note"}
+
 
 def _sample(tmp_path: Path) -> tuple[Path, dict]:
     pdf_path, truth_path = build().save(tmp_path)
@@ -33,6 +36,10 @@ def test_sample_uses_every_class_and_passes_truth_check(tmp_path: Path) -> None:
     used = {element["class"] for element in truth["elements"]}
     assert used == set(BLOCK_CLASSES) - NOT_IN_SAMPLE
     assert len({element["id"] for element in truth["elements"]}) == len(truth["elements"])
+    assert HARD_CASES <= used
+    assert any((e.get("attributes") or {}).get("writing_mode") == "vertical" for e in truth["elements"])
+    algorithm_captions = [e for e in truth["elements"] if e["class"] == "code_caption" and e["relations"]["caption_of"] == ["algo1"]]
+    assert len(algorithm_captions) == 1
 
 
 def test_sample_has_column_and_page_continuations(tmp_path: Path) -> None:

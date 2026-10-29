@@ -53,6 +53,14 @@ def check_truth(truth: dict) -> list[str]:
             for target in targets if isinstance(targets, list) else [targets]:
                 if target not in ids:
                     errors.append(f"{name}: {relation} points to missing block {target}")
+        for attribute, value in (element.get("attributes") or {}).items():
+            spec = taxonomy["attributes"].get(attribute)
+            if attribute == "latex":
+                continue
+            if spec is None:
+                errors.append(f"{name}: unknown attribute {attribute}")
+            elif str(value) not in spec["values"]:
+                errors.append(f"{name}: attribute {attribute} has unknown value {value!r}")
         for part in element.get("inlines") or []:
             if part["class"] not in taxonomy["inline_classes"]:
                 errors.append(f"{name}: unknown inline class {part['class']}")

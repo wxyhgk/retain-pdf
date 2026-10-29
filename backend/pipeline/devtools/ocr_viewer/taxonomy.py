@@ -1,9 +1,12 @@
-"""RetainPDF 自己的块分类（草案 v0，2026-10-29）。
+"""RetainPDF 自己的块分类（草案 v1，2026-10-29）。
+
+v1：对照 PaddleOCR（PP-DocLayoutV2 的 25 类）和 MinerU 的全部标签补了 v0 漏掉的——算法块、印章、边注，
+表注扩成"图表注"，图带类型（照片、数据图、示意图），文字块可以标竖排，行内加注音。
 
 和任何一家 OCR 服务商的标签无关：先定"一个块在文档里是什么"，各家的标签以后再映射过来。
 查看器的图例、颜色、点开框看到的定义都从这里读，改分类只改这个文件。
 
-每个块只有一个类别（`BLOCK_CLASSES` 的键）。另外两样和类别分开记：
+每个块只有一个类别（`BLOCK_CLASSES` 的键），可以带几个属性（`ATTRIBUTES`）。另外两样和类别分开记：
 - 区（`ZONES`）：块在文档的哪一段。同一个"章节标题"，在正文里和在参考文献里，翻不翻可能不一样，所以区单独记，不做成新类别。
 - 关系（`RELATIONS`）：图注属于哪张图、脚注挂在哪个标记上、段落接到哪一段。
 
@@ -20,7 +23,7 @@ GROUPS: dict[str, dict] = {
     "body": {"label": "正文", "color": "#2f6fe0", "note": "段落、列表、目录条目"},
     "float": {"label": "图表", "color": "#14918a", "note": "图、表、代码块和它们的题注、表注"},
     "math": {"label": "公式", "color": "#c7781a", "note": "行间公式和公式编号"},
-    "note": {"label": "注释", "color": "#b5562f", "note": "页脚的脚注"},
+    "note": {"label": "注释", "color": "#b5562f", "note": "脚注、边注这些不在正文流里的文字"},
     "back": {"label": "文末", "color": "#5f8a1e", "note": "致谢、参考文献条目"},
     "unknown": {"label": "未知", "color": "#a0a0a0", "note": "认不出来的块，留着给人看"},
 }
@@ -28,8 +31,20 @@ GROUPS: dict[str, dict] = {
 # kind：内容载体（文字、图片、表格、公式、代码），决定能不能抽文字。
 # translate：默认翻不翻；None 表示还没定，`question` 里写着要定什么。
 BLOCK_CLASSES: dict[str, dict] = {
-    "running_header": {"label": "页眉", "group": "page", "kind": "text", "translate": False},
-    "running_footer": {"label": "页脚", "group": "page", "kind": "text", "translate": False},
+    "running_header": {
+        "label": "页眉",
+        "group": "page",
+        "kind": "text / image",
+        "translate": False,
+        "note": "页眉里的 logo 图片也算页眉（Paddle、MinerU 的 header_image），载体是图片",
+    },
+    "running_footer": {
+        "label": "页脚",
+        "group": "page",
+        "kind": "text / image",
+        "translate": False,
+        "note": "页脚里的图片也算页脚（footer_image）",
+    },
     "page_number": {"label": "页码", "group": "page", "kind": "text", "translate": False},
     "doc_title": {
         "label": "文档标题",
@@ -63,7 +78,13 @@ BLOCK_CLASSES: dict[str, dict] = {
         "attributes": ["level"],
         "note": "level 1 是章，2 是节，3 是小节；“摘要”“参考文献”这类标题也是它，靠区区分",
     },
-    "paragraph": {"label": "段落", "group": "body", "kind": "text", "translate": True},
+    "paragraph": {
+        "label": "段落",
+        "group": "body",
+        "kind": "text",
+        "translate": True,
+        "note": "竖排的段落（vertical_text）也是段落，writing_mode = vertical",
+    },
     "list_item": {
         "label": "列表项",
         "group": "body",
@@ -72,22 +93,57 @@ BLOCK_CLASSES: dict[str, dict] = {
         "note": "每一项一个块，项目符号或编号留在文字里",
     },
     "toc_entry": {"label": "目录条目", "group": "body", "kind": "text", "translate": True},
-    "figure": {"label": "图", "group": "float", "kind": "image", "translate": False},
+    "figure": {
+        "label": "图",
+        "group": "float",
+        "kind": "image",
+        "translate": False,
+        "attributes": ["figure_type"],
+        "note": "figure_type：photo 照片 / chart 数据图（Paddle、MinerU 的 chart）/ diagram 示意图；图里的坐标轴文字算图的一部分",
+    },
     "figure_caption": {"label": "图注", "group": "float", "kind": "text", "translate": True},
     "table": {"label": "表", "group": "float", "kind": "table", "translate": False},
     "table_caption": {"label": "表题", "group": "float", "kind": "text", "translate": True},
-    "table_note": {
-        "label": "表注",
+    "float_note": {
+        "label": "图表注",
         "group": "float",
         "kind": "text",
         "translate": True,
-        "note": "表格下方对表格的说明，带 † * a 之类的标记",
+        "note": "图、表、代码、算法下方对它的说明，带 * † a 之类的标记（Paddle vision_footnote，MinerU image/table/chart/code_footnote）",
     },
     "code_block": {"label": "代码块", "group": "float", "kind": "code", "translate": False},
-    "code_caption": {"label": "代码题注", "group": "float", "kind": "text", "translate": True},
+    "algorithm": {
+        "label": "算法块",
+        "group": "float",
+        "kind": "code",
+        "translate": None,
+        "question": "伪代码里的自然语言（Input:、for each block do……）翻不翻？关键字、变量名、符号一律不翻",
+        "note": "论文里 Algorithm 1 那种伪代码框（Paddle、MinerU 的 algorithm），按行保留排版",
+    },
+    "code_caption": {
+        "label": "代码题注",
+        "group": "float",
+        "kind": "text",
+        "translate": True,
+        "note": "代码块和算法块的题注都是它（MinerU 的 algorithm_caption 也归这里），属于哪个看 caption_of",
+    },
+    "seal": {
+        "label": "印章",
+        "group": "float",
+        "kind": "image",
+        "translate": False,
+        "note": "公文、合同上的红章（Paddle 的 seal），常压在文字上",
+    },
     "display_formula": {"label": "行间公式", "group": "math", "kind": "formula", "translate": False},
     "formula_number": {"label": "公式编号", "group": "math", "kind": "text", "translate": False},
     "footnote": {"label": "脚注", "group": "note", "kind": "text", "translate": True},
+    "margin_note": {
+        "label": "边注",
+        "group": "note",
+        "kind": "text",
+        "translate": True,
+        "note": "页边、侧栏里的文字（aside_text），不在正文的阅读顺序里",
+    },
     "acknowledgement": {"label": "致谢", "group": "back", "kind": "text", "translate": True},
     "reference_entry": {
         "label": "参考文献条目",
@@ -111,10 +167,14 @@ RELATIONS: dict[str, dict] = {
     "caption_of": {
         "label": "题注属于",
         "from": ["figure_caption", "table_caption", "code_caption"],
-        "to": ["figure", "table", "code_block"],
+        "to": ["figure", "table", "code_block", "algorithm"],
         "note": "一个题注可以属于多张子图",
     },
-    "note_of": {"label": "注释属于", "from": ["table_note", "footnote"], "to": ["table", "paragraph", "list_item", "abstract", "figure_caption"]},
+    "note_of": {
+        "label": "注释属于",
+        "from": ["float_note", "footnote", "margin_note"],
+        "to": ["figure", "table", "code_block", "algorithm", "paragraph", "list_item", "abstract", "figure_caption"],
+    },
     "number_of": {"label": "编号属于", "from": ["formula_number"], "to": ["display_formula"]},
     "continues": {
         "label": "接续上一块",
@@ -126,11 +186,19 @@ RELATIONS: dict[str, dict] = {
 
 INLINE_CLASSES: dict[str, dict] = {
     "inline_formula": {"label": "行内公式", "translate": False, "note": "原样保留，译文里放回原位"},
+    "ruby": {"label": "注音", "translate": False, "note": "汉字、日文上方的拼音或假名（MinerU 的 phonetic）"},
     "footnote_mark": {"label": "脚注标记", "translate": False, "note": "正文里的上标数字或符号，指向脚注"},
     "citation": {"label": "引用标记", "translate": False, "note": "[1]、(Smith, 2020) 这类"},
 }
 
-TAXONOMY_VERSION = "draft-0"
+ATTRIBUTES: dict[str, dict] = {
+    "level": {"label": "级别", "values": {"1": "章", "2": "节", "3": "小节"}},
+    "figure_type": {"label": "图类型", "values": {"photo": "照片", "chart": "数据图", "diagram": "示意图"}},
+    # 任何文字块都可以带：竖排的段落（vertical_text）、arXiv 那种页边竖排的编号。
+    "writing_mode": {"label": "排版方向", "values": {"horizontal": "横排", "vertical": "竖排"}},
+}
+
+TAXONOMY_VERSION = "draft-1"
 
 
 def taxonomy_payload() -> dict:
@@ -142,6 +210,7 @@ def taxonomy_payload() -> dict:
         "zones": ZONES,
         "relations": RELATIONS,
         "inline_classes": INLINE_CLASSES,
+        "attributes": ATTRIBUTES,
     }
 
 
