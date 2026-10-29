@@ -124,7 +124,7 @@ RetainPDF 策略在 `projection.py:project_mineru_block`。
    `provenance`（`raw_label` 取 `raw_type`）；`_build_content` 从
    `metadata.asset_keys` 派生 `content.asset_id/asset_ids`（markdown 图加 `page-{n}/` 前缀）。
 4. **重缩放到 PDF 点（`normalize_pipeline.build_normalized_artifacts` →
-   `ocr_provider/paddle_normalize.rescale_document_geometry_to_pdf`）**：
+   `document_schema/pdf_geometry.rescale_document_geometry_to_pdf`，2026-10-29 以前在 `ocr_provider/paddle_normalize.py`）**：
    逐页用 fitz 真实页矩形求 `scale_x/scale_y`（独立双轴，3 位小数），重写
    page 宽高（`unit="pt"`）与 block/geometry/line/span/segment 五级 bbox；
    零尺寸页只纠正页尺寸不缩放子块。随后 `derived.coordinate_space="pdf_point"`，
@@ -218,6 +218,6 @@ RetainPDF 策略在 `projection.py:project_mineru_block`。
   `defaults.apply_document_defaults_with_report`，
   `contract_v1.enrich_document_contract_v1`，
   `normalize_pipeline.build_normalized_artifacts/_refresh_report_for_final_document`，
-  `ocr_provider/paddle_normalize.rescale_document_geometry_to_pdf`，
+  `pdf_geometry.rescale_document_geometry_to_pdf`，
   `validator.build_validation_report/validate_document_payload`，
   `reporting.build_normalization_summary/load_normalization_report`。

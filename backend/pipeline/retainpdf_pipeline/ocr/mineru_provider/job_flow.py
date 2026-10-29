@@ -7,6 +7,7 @@ from retainpdf_pipeline.foundation.shared.job_dirs import JobDirs
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
 from retainpdf_base.local_env import get_secret
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_path_to_document_v1_with_report
+from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_MINERU
 from retainpdf_pipeline.ocr.document_schema.reporting import build_normalization_summary
 from retainpdf_pipeline.ocr.mineru_provider.artifacts import build_mineru_artifact_paths
@@ -49,9 +50,6 @@ def _materialize_normalized_document(
         provider=PROVIDER_MINERU,
         provider_version=provider_version,
     )
-    # 在这里才导入：`finalize` 要用 `ocr_provider.paddle_normalize`，导入 `ocr_provider` 包会一路导入到这个模块，放在文件头会循环导入。
-    from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
-
     # 和正式的 normalize worker 同一套：缩放到原文 PDF、重建行、按最终文档刷新报告（以前这条路都不做，同样的输入出来的
     # 文档和 Rust 那条路不一样）。
     normalized_document, normalization_report = finalize_normalized_document(

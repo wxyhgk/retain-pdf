@@ -34,7 +34,7 @@ Regenerate with:
 | --- | --- | --- | --- | --- |
 | `PIL` | `Pillow` | yes | yes | `retainpdf_pipeline/render/layout/inline_content/fallback/png_renderer.py`, `retainpdf_pipeline/render/source/background/extract.py`, `retainpdf_pipeline/render/source/background/patch.py` |
 | `docx` | `docx` | no | yes | `devtools/tests/rendering/test_word_export.py` |
-| `fitz` | `PyMuPDF` | yes | yes | `retainpdf_pipeline/document_operations/visual_validation.py`, `retainpdf_pipeline/ocr/ocr_provider/paddle_normalize.py`, `retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py` |
+| `fitz` | `PyMuPDF` | yes | yes | `retainpdf_pipeline/document_operations/visual_validation.py`, `retainpdf_pipeline/ocr/document_schema/pdf_geometry.py`, `retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py` |
 | `fontTools` | `fontTools` | yes | no | `retainpdf_pipeline/foundation/config/fonts.py` |
 | `pikepdf` | `pikepdf` | yes | yes | `retainpdf_pipeline/document_operations/page_program.py`, `retainpdf_pipeline/render/document/pikepdf_overlay.py`, `retainpdf_pipeline/render/document/pikepdf_pages.py` |
 | `pytest` | `pytest` | no | yes | `devtools/tests/conftest.py`, `devtools/tests/document_operations/test_document_operation_cli.py`, `devtools/tests/document_operations/test_page_program.py` |

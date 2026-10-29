@@ -285,7 +285,7 @@
       "package_name": "PyMuPDF",
       "runtime_files": [
         "retainpdf_pipeline/document_operations/visual_validation.py",
-        "retainpdf_pipeline/ocr/ocr_provider/paddle_normalize.py",
+        "retainpdf_pipeline/ocr/document_schema/pdf_geometry.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py",
         "retainpdf_pipeline/render/analysis/classifier.py",
         "retainpdf_pipeline/render/analysis/document/builder.py",
