@@ -5,3 +5,7 @@ import { encodePathParam, request } from "../request.js";
 export function listJobEvents(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/progress/events`, query: args.query, options });
 }
+/** GET /api/v1/jobs/:job_id/progress/editorial */
+export function listEditorialEvents(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/progress/editorial`, query: args.query, options });
+}
