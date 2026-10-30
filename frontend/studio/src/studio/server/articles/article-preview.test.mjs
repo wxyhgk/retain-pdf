@@ -57,7 +57,7 @@ $$
 	assert.deepEqual(blocks[5].has.slice(1), ['加载的脚本：https://cdn.jsdelivr.net/npm/jsxgraph@1.14.2/distrib/jsxgraphcore.js', '脚本读的数据：assets/e.txt']);
 	assert.match(blocks[6].has[0], /missing\.html 不在/u);
 	assert.ok(issues.some((issue) => issue.message.includes('/blog/gone/')));
-	assert.match(note, /问作者/u);
+	assert.match(note, /用 check_widgets 在后台浏览器里运行它/u);
 });
 
 test('a long page is said in parts, figures numbered from its top', async (t) => {
