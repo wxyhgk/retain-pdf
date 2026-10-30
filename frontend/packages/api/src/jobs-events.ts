@@ -1,5 +1,10 @@
 // Cursor feed v2. Translation live-events SSE keeps its separate protocol.
-import type { JobEventListView, ListJobEventsQuery } from "@retainpdf/contracts/job-events";
+import type {
+  EditorialEventListView,
+  EditorialEventsQuery,
+  JobEventListView,
+  ListJobEventsQuery,
+} from "@retainpdf/contracts/job-events";
 import * as generated from "./generated/job-events.js";
 
 export type JobEventsQuery = ListJobEventsQuery & { signal?: AbortSignal };
@@ -90,4 +95,29 @@ export async function fetchJobEventPages({
     }
     nextQuery = { limit: query.limit ?? 500, cursor: page.next_cursor, signal: query.signal };
   }
+}
+
+/**
+ * 翻译 agent 的编辑部事件（editorial.v1）按条数续读：after 带上次的 next_after，不带从头取。
+ * 事件原样返回，解析在 web 的 editorial-room/domain/events.ts（不认识的 type 在那里跳过）。
+ */
+export async function fetchEditorialEvents(
+  jobId: string,
+  apiPrefix?: string,
+  query: EditorialEventsQuery & { signal?: AbortSignal } = {},
+): Promise<EditorialEventListView> {
+  const { signal, ...rest } = query;
+  const page = await generated.listEditorialEvents(apiPrefix, { job_id: jobId, query: rest }, {
+    signal,
+    onError: (status, payload) => new JobEventsError(
+      payload?.message || `读取编辑部事件失败，请稍后重试。(${status})`,
+      status,
+      payload?.error?.code || "EDITORIAL_EVENTS_FAILED",
+    ),
+  });
+  if (!page || !Array.isArray(page.events) || !Number.isSafeInteger(page.next_after) || page.next_after < 0
+    || typeof page.has_more !== "boolean") {
+    throw new JobEventsError("编辑部事件协议不匹配，请更新客户端与后端。", 0, "EVENT_PROTOCOL_MISMATCH");
+  }
+  return page;
 }

@@ -9,7 +9,7 @@ import { TranslationStoppedCard } from "../panels/processing/TranslationStoppedC
 import { loadJobFailureDetail } from "../../domain/job-failure-detail.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
 import { ProcessingSummary } from "../panels/processing/ProcessingSummary.jsx";
-import { processingFacts } from "../../domain/translation-coverage.js";
+import { hasEditorialRoom, processingFacts } from "../../domain/translation-coverage.js";
 import { TranslationCoveragePanel } from "../panels/processing/TranslationCoveragePanel.js";
 import { btn } from "../panels/ui.jsx";
 import { documentJobPresentation, isDocumentJobActive } from "../use-document-jobs.js";
@@ -27,6 +27,7 @@ import { ChevronDown, LoaderCircle, Square } from "lucide-react";
 import { TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
 import { EditorialFlowPanel } from "../panels/processing/EditorialFlowPanel.jsx";
 import { useEditorialFlow } from "../use-editorial-flow.js";
+import { EditorialLivePanel, useEditorialLive } from "@/features/editorial-room/index.js";
 
 function ScanIcon() {
   return (
@@ -79,6 +80,11 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     poll: Boolean(translation?.isActive) && liveStageKey(translationItem) === "render",
     jobActive: Boolean(translation?.isActive),
     cache: editorialFlowCache,
+  });
+  // 翻译 agent 的编辑部画面：覆盖接口说这次是 agent 跑的才去读；任务在跑时轮询，跑完读一次。
+  const editorialLive = useEditorialLive(translationJobId, {
+    enabled: hasTranslationJob && translation?.tabActive !== false && hasEditorialRoom(coverage, translationJobId),
+    poll: Boolean(translation?.isActive),
   });
 
   // 「还不知道」不等于「确定没有」。这一段以前只让 loading 控制一行提示文案，
@@ -292,6 +298,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           translateWarning={!liveSource && facts.keptOriginBlocks > 0 ? `${facts.keptOriginBlocks} 块未能翻译` : ""}
           loading={bootstrapping}
         />}
+        <EditorialLivePanel live={editorialLive} active={Boolean(translation?.isActive)} />
         <EditorialFlowPanel flow={editorialFlow} />
 
         {/* OCR 段只剩契约占位和错误：进度在顶部，实时说明在流水线的 OCR 站下面。 */}

@@ -113,19 +113,8 @@ export function reduceEditorialEvent(state: RoomState, event: EditorialEvent): R
 
 function applyEvent(state: RoomState, event: EditorialEvent): RoomState {
   switch (event.type) {
-    case "run_started": {
-      const fresh = initialRoomState();
-      const pages = Array.from({ length: Math.max(0, event.pages) }, (_, i) => blankPage(i + 1, 0));
-      return {
-        ...fresh,
-        seq: state.seq,
-        status: "running",
-        docTitle: event.doc_title,
-        model: event.model,
-        pageCount: event.pages,
-        pages,
-      };
-    }
+    case "run_started":
+      return startRun(state, event);
     case "reading_started":
       return { ...state, status: "reading", readerDone: false };
     case "reading_done":
@@ -232,6 +221,31 @@ function applyEvent(state: RoomState, event: EditorialEvent): RoomState {
     default:
       return state;
   }
+}
+
+/**
+ * 开工。同一串事件里第二条 run_started 是续跑（前面一般是 run_stopped）：术语表、歧义单、待人看筐、
+ * 通读结果和已定稿的页都留着；第 1..resumed 页已经做完（这一轮不会再发它们的事件），没定稿的标上；
+ * 上一轮停在半路的页这一轮从头再来，回到「还没派」。
+ */
+function startRun(state: RoomState, event: Extract<EditorialEvent, { type: "run_started" }>): RoomState {
+  const resuming = state.pages.length > 0;
+  const base = resuming ? state : { ...initialRoomState(), seq: state.seq };
+  const byPage = new Map(base.pages.map((card) => [card.page, card]));
+  const pages = Array.from({ length: Math.max(0, event.pages, base.pages.length) }, (_, i) => {
+    const card = byPage.get(i + 1) ?? blankPage(i + 1, 0);
+    if (card.stage === "done") return card;
+    return i + 1 <= event.resumed ? { ...card, stage: "done" as const } : blankPage(i + 1, 0);
+  });
+  return {
+    ...base,
+    status: "running",
+    stopReason: "",
+    docTitle: event.doc_title || base.docTitle,
+    model: event.model || base.model,
+    pageCount: Math.max(event.pages, pages.length),
+    pages,
+  };
 }
 
 /** 从头叠到第 count 条（回放拖进度条用）。 */

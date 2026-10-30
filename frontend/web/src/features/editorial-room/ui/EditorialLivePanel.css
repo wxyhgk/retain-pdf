@@ -1,0 +1,14 @@
+/* 书详情「进度」面板里的编辑部（EditorialLivePanel）：画面下面一行回放按钮。
+ *
+ * @owns editorial-room */
+
+.editorial-room-live {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.editorial-room-live-actions {
+  display: flex;
+  justify-content: flex-end;
+}

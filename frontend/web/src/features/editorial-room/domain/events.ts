@@ -1,4 +1,6 @@
 /** 翻译编辑部的事件格式 editorial.v1：后端翻译 agent 按这个推进度，前端只认这些事件。
+ * 接口：GET /jobs/:job_id/progress/editorial（docs/api/02-进度事件/03-编辑部事件.md）。
+ * page 是全书里的第几页（1 起），通读阶段的 translate_call(role=reader) 是 0；label 是页码标签，可能不是数字。
  *
  * 每条都有 { v: "editorial.v1", ts: 秒, type }，再加各自的字段。后端约定只加不改：
  * 不认识的 type、多出来的字段都忽略，不报错；版本号不是 editorial.v1 的整条忽略。
@@ -12,7 +14,8 @@ export type GlossaryAction = "add" | "promote" | "revise" | "widen" | "candidate
 type Base = { ts: number };
 
 export type EditorialEvent =
-  | (Base & { type: "run_started"; pages: number; model: string; doc_title: string })
+  // pages 是全书页数；resumed 是续跑时已经做完的页数（就是第 1..resumed 页），续跑会再来一条 run_started。
+  | (Base & { type: "run_started"; pages: number; model: string; doc_title: string; resumed: number })
   | (Base & { type: "reading_started" })
   | (Base & { type: "reading_done"; genre: string; name_policy: string; terms: number; headings: number })
   | (Base & { type: "page_started"; page: number; label: string; blocks: number })
@@ -58,7 +61,7 @@ const counts = (value: unknown): Record<string, number> => {
 
 // 每种事件怎么从原始 JSON 取字段。缺的字段给 0 / 空串，不整条丢掉。
 const READERS: Record<EditorialEventType, (raw: Rec) => Rec> = {
-  run_started: (r) => ({ pages: num(r.pages), model: str(r.model), doc_title: str(r.doc_title) }),
+  run_started: (r) => ({ pages: num(r.pages), model: str(r.model), doc_title: str(r.doc_title), resumed: num(r.resumed) }),
   reading_started: () => ({}),
   reading_done: (r) => ({
     genre: str(r.genre),

@@ -169,6 +169,17 @@ function latestSucceeded(view: TranslationCoverageView, matches: (job: Translati
   return view.jobs.find((job) => job.status === "succeeded" && matches(job)) || null;
 }
 
+/** 模型名；翻译 agent 跑的在前面写明（老后端没有 engine 字段，按现有流程算）。 */
+function modelText(job: TranslationCoverageJob): string {
+  return job.engine === "agent" ? ["翻译 agent", job.model].filter(Boolean).join(" · ") : job.model;
+}
+
+/** 这个任务有没有编辑部画面可看：翻译 agent 跑的（开翻前事件还没有，也要准备好轮询），或者已经有事件。 */
+export function hasEditorialRoom(view: TranslationCoverageView | null | undefined, jobId: string): boolean {
+  const job = jobId ? view?.jobs.find((item) => item.job_id === jobId) : undefined;
+  return Boolean(job && (job.engine === "agent" || job.has_editorial_events));
+}
+
 export type ProcessingFacts = {
   /** 摘要那一行的几项：「已翻译 12 / 12 页」「由 2 次翻译拼成」「最近 9月21日 09:25」「用时 4 分 57 秒」「deepseek-v4-flash」。 */
   facts: string[];
@@ -204,7 +215,8 @@ export function processingFacts(view: TranslationCoverageView | null | undefined
     facts.push(`最近 ${formatTime(translation.created_at, now)}`);
     const duration = formatDuration(translation.created_at, translation.finished_at);
     if (duration) facts.push(`用时 ${duration}`);
-    if (translation.model) facts.push(translation.model);
+    const model = modelText(translation);
+    if (model) facts.push(model);
   }
 
   const stageMeta: ProcessingFacts["stageMeta"] = {};
@@ -217,7 +229,7 @@ export function processingFacts(view: TranslationCoverageView | null | undefined
   // 翻译站不写用时：整本任务（workflow=book）的起止时间包含 OCR 和渲染，算成翻译用时会虚高。
   // 总用时放在顶部摘要里，写明是整次任务的。
   if (translation) {
-    stageMeta.translate = [pagesText(translation, view.page_count), translation.model].filter(Boolean).join(" · ");
+    stageMeta.translate = [pagesText(translation, view.page_count), modelText(translation)].filter(Boolean).join(" · ");
   }
   return { facts, keptOriginBlocks, stageMeta };
 }
