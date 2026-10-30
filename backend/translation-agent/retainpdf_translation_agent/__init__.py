@@ -24,6 +24,7 @@ from retainpdf_translation_agent.contract import RevisionRequest
 from retainpdf_translation_agent.memory import Glossary
 from retainpdf_translation_agent.memory import Term
 from retainpdf_translation_agent.memory import extract_abbreviations
+from retainpdf_translation_agent.memory import glossary_from_csv
 from retainpdf_translation_agent.reader import Reading
 from retainpdf_translation_agent.reader import read_document
 from retainpdf_translation_agent.review import review_page
@@ -57,6 +58,7 @@ __all__ = [
     "check_group",
     "check_terms",
     "extract_abbreviations",
+    "glossary_from_csv",
     "http_transport",
     "read_document",
     "review_page",

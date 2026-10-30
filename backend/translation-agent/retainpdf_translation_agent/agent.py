@@ -22,6 +22,7 @@ from retainpdf_translation_agent.breaks import split_by_ratio
 from retainpdf_translation_agent.checks import check_block
 from retainpdf_translation_agent.checks import check_group
 from retainpdf_translation_agent.checks import check_terms
+from retainpdf_translation_agent.checks import restore_formulas
 from retainpdf_translation_agent.checks import status_of
 from retainpdf_translation_agent.checks import style_signals
 from retainpdf_translation_agent.checks import visible_length
@@ -210,6 +211,7 @@ def retry_wait(attempt: int, retry_after: str | None) -> float:
 
 def http_transport(body: dict, *, sleep: Callable[[float], None] = time.sleep) -> dict:
     """用标准库发请求（开发工具不给流水线添依赖）。429、5xx 和网络错误退避重试；额度、密钥问题抛 `StopRun`。"""
+    import http.client
     import urllib.error
     import urllib.request
 
@@ -236,8 +238,9 @@ def http_transport(body: dict, *, sleep: Callable[[float], None] = time.sleep) -
                 raise RuntimeError(f"model API HTTP {error.code}: {text}") from None
             retry_after = error.headers.get("retry-after") if error.headers else None
             last_error = f"HTTP {error.code}"
-        except (urllib.error.URLError, TimeoutError) as error:
-            last_error = str(error)
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException) as error:
+            # 网络层的错（对方没回应就断开、连接被重置……）也退避重试：真实文档实测碰到过 RemoteDisconnected
+            last_error = f"{type(error).__name__}: {error}"
         sleep(retry_wait(attempt, retry_after))
     raise RateLimited(f"model API still failing after {MAX_ATTEMPTS} attempts: {last_error}")
 
@@ -260,6 +263,7 @@ class TranslationAgent:
         self.use_cache = use_cache
         self.usage = Usage()
         self.calls: list[dict] = []
+        self._restored: dict[str, list[dict]] = {}  # 这一轮被换回原文写法的公式（块 id → 警告）
 
     def model_for(self, role: str) -> str:
         return self.models.get(role) or self.model
@@ -349,7 +353,7 @@ class TranslationAgent:
         }
 
     def _check(self, page: PageInput, block, text: str | None, exceptions: dict[str, set[str]]) -> list[dict]:
-        issues = check_block(block.text, text)
+        issues = check_block(block.text, text) + self._restored.pop(block.id, [])
         number = re.match(r"\s*(\d+)\b", block.text) if block.cls == "footnote" else None
         if number and text and not re.match(rf"\s*(?:注\s*)?{number.group(1)}(?!\d)", text):
             issues.append({"code": "footnote_number_changed", "severity": "error", "message": f"脚注开头的编号 {number.group(1)} 要原样保留在最前面"})
@@ -389,6 +393,7 @@ class TranslationAgent:
         raw, duplicates = parsed["translations"], parsed["duplicates"]
         exceptions = _exceptions_by_block(parsed["term_exceptions"])
         per_block, split_issues = expand_translations(raw, page.blocks, wanted)
+        self._restore_formulas(page, per_block)
         record_ids = {r["id"] for r in records if r["translate"]}
         extra = sorted(set(raw) - record_ids)
         results: dict[str, BlockResult] = {}
@@ -427,6 +432,17 @@ class TranslationAgent:
             "term_exceptions": parsed["term_exceptions"] + retry_exceptions,
         }
         return results, info
+
+    def _restore_formulas(self, page: PageInput, per_block: dict[str, str]) -> None:
+        """模型顺手改了一点点的公式换回原文写法，换了的记一条警告（检查时并进 issues）。"""
+        sources = {b.id: b.text for b in page.blocks}
+        for block_id, text in list(per_block.items()):
+            fixed, restored = restore_formulas(sources.get(block_id, ""), text)
+            if restored:
+                per_block[block_id] = fixed
+                self._restored[block_id] = [
+                    {"code": "formula_restored", "severity": "warn", "message": f"模型改动了公式，已换回原文写法：{restored}"}
+                ]
 
     def _fixed_results(self, page: PageInput, results: dict[str, BlockResult]) -> dict[str, BlockResult]:
         """已定好的译文（通读定的标题、目录）原样交回。"""
@@ -487,6 +503,7 @@ class TranslationAgent:
             except ValueError:
                 parsed = {"translations": {}, "term_exceptions": []}
             per_block, _ = expand_translations(parsed["translations"], page.blocks, ids)
+            self._restore_formulas(page, per_block)
             exceptions = _exceptions_by_block(parsed["term_exceptions"])
             next_round: list[RevisionRequest] = []
             for request in pending:
@@ -542,6 +559,7 @@ class TranslationAgent:
         except ValueError:
             parsed = {"translations": {}, "terms": [], "term_exceptions": []}
         per_block, split_issues = expand_translations(parsed["translations"], page.blocks, ids)
+        self._restore_formulas(page, per_block)
         exceptions = _exceptions_by_block(parsed["term_exceptions"])
         fixed: dict[str, BlockResult] = {}
         for block in unit:
