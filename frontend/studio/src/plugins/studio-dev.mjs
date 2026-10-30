@@ -228,7 +228,7 @@ export default function studioDev({ site } = {}) {
 			const notesIndex = new NotesIndex(blogRoot, { fences: () => blockFences });
 			// 代码仓库: the Studio's own (repos/ beside blog/) and those of this machine added; the browser tests' own,
 			// and no home of the author's looked through for them.
-			// iPad 访问: a door of its own for the author's other devices, off unless turned on (remote-access.mjs). The browser
+			// 其他设备访问: a door of its own for the author's other devices, off unless turned on (remote-access.mjs). The browser
 			// tests' on a port the system gives and on this machine only.
 			const remote = new RemoteAccess({
 				settingsFile,

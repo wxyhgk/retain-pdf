@@ -126,8 +126,8 @@ struct PairView: View {
             Image(systemName: "ipad.and.arrow.forward").font(.system(size: 52)).foregroundStyle(.secondary)
             Text("连接 Mac 上的 Studio").font(.title2.weight(.semibold))
             VStack(alignment: .leading, spacing: 8) {
-                Text("1. Mac 上打开 Studio：设置 › iPad 访问，打开「允许 iPad 访问」。")
-                Text("2. 点「配对一台 iPad」，出现一个二维码。")
+                Text("1. Mac 上打开 Studio：设置 › 其他设备访问，打开「允许别的设备访问」。")
+                Text("2. 点「配对一台设备」，出现一个二维码。")
                 Text("3. 在这里扫它。同一个 Wi-Fi，或者 Mac 和 iPad 都开着 Tailscale。")
             }
             .foregroundStyle(.secondary)

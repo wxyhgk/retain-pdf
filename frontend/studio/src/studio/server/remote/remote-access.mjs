@@ -10,16 +10,19 @@ import { join } from 'node:path';
 
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 import { t } from '@blog/i18n/index.mjs';
+import { pairingPage } from './pairing-page.mjs';
 
 /**
- * iPad 访问: the Studio opened from another device of the author's (the Studio's iPad app), over the Wi-Fi or
- * Tailscale. The Studio's own server listens on this machine only; this is a door of its own, off unless turned on
- * (设置 › iPad 访问), in front of it:
+ * 其他设备访问: the Studio opened from another device of the author's (the Studio's iPad app, or a browser on another
+ * computer), over the Wi-Fi or Tailscale. The Studio's own server listens on this machine only; this is a door of its own, off unless turned on
+ * (设置 › 其他设备访问), in front of it:
  *
  * - HTTPS, with a certificate of its own (made once, `.studio-cache/remote/`); the app trusts that one only, by the
- *   fingerprint the pairing code gave it, so no one on the network reads or changes what goes through.
- * - Only a device paired lets in: paired by a code shown on this machine (a QR code, 5 minutes, once), it is given
- *   a key of its own (kept as its hash in the settings), sent with each request (a cookie); removed, it is out.
+ *   fingerprint the pairing code gave it, so no one on the network reads or changes what goes through. A browser
+ *   warns of it (no authority signed it): the author checks its fingerprint against the one the Mac shows.
+ * - Only a device paired lets in: paired by a code shown on this machine (a QR code, 5 minutes, once; a browser not
+ *   paired is shown a page to type it in, pairing-page.mjs), it is given a key of its own (kept as its hash in the
+ *   settings), sent with each request (a cookie); removed, it is out.
  * - What it asks is passed on to the Studio as this machine's own page asks it (its address, its origin), marked as
  *   from another device (`x-studio-remote`): what only this machine may do (this door's own settings) refuses it.
  */
@@ -84,7 +87,7 @@ export class RemoteAccess {
 		if (!existsSync(key) || !existsSync(cert)) {
 			await mkdir(this.folder, { recursive: true });
 			await new Promise((done, failed) => {
-				execFile('/usr/bin/openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-sha256', '-days', '3650', '-subj', '/CN=Studio', '-keyout', key, '-out', cert], { timeout: 30_000 }, (error) => (error ? failed(new Error(t('没能生成 iPad 访问的证书：{message}', { message: error.message }))) : done()));
+				execFile('/usr/bin/openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-sha256', '-days', '3650', '-subj', '/CN=Studio', '-keyout', key, '-out', cert], { timeout: 30_000 }, (error) => (error ? failed(new Error(t('没能生成其他设备访问的证书：{message}', { message: error.message }))) : done()));
 			});
 		}
 		const [keyText, certText] = await Promise.all([readFile(key, 'utf8'), readFile(cert, 'utf8')]);
@@ -101,7 +104,7 @@ export class RemoteAccess {
 			port,
 			addresses: port ? reachableAddresses() : [],
 			fingerprint: this.server ? this.fingerprint : null,
-			devices: devices.map(({ id, name, added, seen }) => ({ id, name, added, seen: this.seen.get(id) ?? seen ?? null })),
+			devices: devices.map(({ id, name, kind, added, seen }) => ({ id, name, kind: kind === 'browser' ? 'browser' : 'app', added, seen: this.seen.get(id) ?? seen ?? null })),
 		};
 	}
 
@@ -149,7 +152,7 @@ export class RemoteAccess {
 	 * machine and trust it (its addresses, the port, the certificate's fingerprint).
 	 */
 	async pairingCode() {
-		if (!this.server) throw Object.assign(new Error(t('先打开 iPad 访问')), { statusCode: 409 });
+		if (!this.server) throw Object.assign(new Error(t('先打开其他设备访问')), { statusCode: 409 });
 		const code = Array.from(randomBytes(8), (byte) => CODE_LETTERS[byte % CODE_LETTERS.length]).join('');
 		this.code = { code, expires: Date.now() + CODE_LIFE, tries: 0 };
 		const { port, addresses, fingerprint } = await this.shown();
@@ -173,7 +176,7 @@ export class RemoteAccess {
 		return device ?? null;
 	}
 
-	/** `POST /pair {code, name}`: the code shown here, still good, makes a device and gives it its key. */
+	/** `POST /pair {code, name, kind}`: the code shown here, still good, makes a device (the app's, or a browser) and gives it its key. */
 	async #pair(request, response) {
 		const chunks = [];
 		for await (const chunk of request) {
@@ -199,7 +202,7 @@ export class RemoteAccess {
 		}
 		this.code = null;
 		const key = randomBytes(32).toString('base64url');
-		const device = { id: randomBytes(8).toString('hex'), name: String(asked?.name ?? '').trim().slice(0, 60) || t('一台设备'), keyHash: hash(key).toString('hex'), added: Date.now() };
+		const device = { id: randomBytes(8).toString('hex'), name: String(asked?.name ?? '').trim().slice(0, 60) || t('一台设备'), kind: asked?.kind === 'browser' ? 'browser' : 'app', keyHash: hash(key).toString('hex'), added: Date.now() };
 		await this.#save((remote) => ({ ...remote, devices: [...(remote.devices ?? []), device] }));
 		response.setHeader('Set-Cookie', `${COOKIE}=${key}; Path=/; Max-Age=315360000; HttpOnly; Secure; SameSite=Strict`);
 		return send(response, 200, { id: device.id, key });
@@ -209,8 +212,13 @@ export class RemoteAccess {
 		const path = (request.url ?? '/').split('?', 1)[0];
 		if (request.method === 'POST' && path === '/pair') return this.#pair(request, response);
 		if (!(await this.#device(request))) {
-			response.writeHead(401, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
-			return response.end(`<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Studio</title><p style="font:16px -apple-system;margin:40px;color:#555">${t('这台设备还没有配对：在 Mac 上的 Studio 里打开「设置 › iPad 访问」，用 Studio 的 iPad App 扫码配对。')}</p>`);
+			// A browser's page: where it is paired. What else is asked (its scripts, the app's calls): refused.
+			if (request.method === 'GET' && /text\/html/u.test(request.headers.accept ?? '')) {
+				const { html, headers } = pairingPage({ mac: hostname().replace(/\.local$/u, '') });
+				response.writeHead(401, headers);
+				return response.end(html);
+			}
+			return send(response, 401, { error: t('这台设备还没有配对') });
 		}
 		const port = this.target();
 		if (!port) return send(response, 503, { error: t('Studio 还没有启动完') });

@@ -89,7 +89,7 @@ test('a device not paired is let in to nothing; paired by the code shown, once, 
 	// The code is gone once used.
 	assert.equal((await pair(remote, code)).status, 403);
 	const devices = (await remote.shown()).devices;
-	assert.deepEqual(devices.map((device) => device.name), ['我的 iPad']);
+	assert.deepEqual(devices.map((device) => [device.name, device.kind]), [['我的 iPad', 'app']]);
 	assert.equal(Object.hasOwn(devices[0], 'keyHash'), false);
 
 	// Its key, as a cookie: what it asks is the Studio's to answer, as asked by the Studio's own page, from another device.
@@ -108,6 +108,29 @@ test('a device not paired is let in to nothing; paired by the code shown, once, 
 	// Removed: out.
 	await remote.removeDevice(devices[0].id);
 	assert.equal((await ask(remote, { path: '/studio', headers: { Cookie: `studio_device=${key}` } })).status, 401);
+});
+
+test('a browser not paired is shown a page to type the code into; paired, it is a browser among the devices', async (t) => {
+	const { remote } = await fixture(t);
+	await remote.setEnabled(true);
+	const page = await ask(remote, { path: '/studio?article=a', headers: { Accept: 'text/html,application/xhtml+xml' } });
+	assert.equal(page.status, 401);
+	assert.match(page.headers['content-type'], /^text\/html/u);
+	assert.match(page.text, /<input id="code"/u);
+	// Its script by its nonce only; no other site frames it.
+	const nonce = /<script nonce="([^"]+)">/u.exec(page.text)?.[1];
+	assert.ok(nonce);
+	assert.ok(page.headers['content-security-policy'].includes(`script-src 'nonce-${nonce}'`));
+	assert.match(page.headers['content-security-policy'], /frame-ancestors 'none'/u);
+	// What is not a page (a script, a call): refused, no page.
+	const call = await ask(remote, { path: '/api/studio/articles', headers: { Accept: '*/*' } });
+	assert.equal(call.status, 401);
+	assert.match(JSON.parse(call.text).error, /还没有配对/u);
+
+	const { code } = await remote.pairingCode();
+	const paired = await ask(remote, { method: 'POST', path: '/pair', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, name: 'Chrome（Windows）', kind: 'browser' }) });
+	assert.equal(paired.status, 200);
+	assert.deepEqual((await remote.shown()).devices.map((device) => [device.name, device.kind]), [['Chrome（Windows）', 'browser']]);
 });
 
 test('a code tried too often is gone; one waited too long for is no good', async (t) => {

@@ -10,8 +10,10 @@ import { errorText, Status } from './Frame';
 const when = (time: number) => new Date(time).toLocaleString(undefined, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 
 /**
- * 设置 › iPad 访问: the door for the author's iPad (server/remote/remote-access.mjs), on or off; a QR code the Studio's
- * iPad app scans to pair (5 minutes, once); the devices paired, each to remove.
+ * 设置 › 其他设备访问: the door for the author's other devices (server/remote/remote-access.mjs), on or off; where they
+ * come in by (a browser: its https address; the certificate's fingerprint to check its warning against); a code to pair
+ * with (5 minutes, once), a QR code for the Studio's iPad app, typed into a browser's page; the devices paired, each to
+ * remove.
  */
 export function RemoteSettings() {
 	const [shown, setShown] = useState<RemoteShown | null>(null);
@@ -27,7 +29,7 @@ export function RemoteSettings() {
 				return next;
 			},
 			(error: unknown) => {
-				say(errorText(error, t('读不到 iPad 访问的设置')), true);
+				say(errorText(error, t('读不到其他设备访问的设置')), true);
 				return null;
 			},
 		);
@@ -79,7 +81,7 @@ export function RemoteSettings() {
 		<div className="grid gap-5">
 			<label className="flex items-center justify-between gap-4">
 				<span className="grid gap-0.5">
-					<span className="text-[13px] text-foreground">{t('允许 iPad 访问这台 Mac 上的 Studio')}</span>
+					<span className="text-[13px] text-foreground">{t('允许别的设备访问这台 Mac 上的 Studio')}</span>
 					<span className="text-[11px] text-muted-foreground">{t('经局域网或 Tailscale；只有配对过的设备能进，传的东西都加密')}</span>
 				</span>
 				<Switch id="remote-enabled" checked={shown.enabled && shown.running} onCheckedChange={(on) => void turn(on)} />
@@ -87,24 +89,31 @@ export function RemoteSettings() {
 			{shown.running && (
 				<>
 					<div className="grid gap-1 text-[12px]">
-						<span className="text-[11px] text-muted-foreground">{t('iPad 能从这些地址连进来')}</span>
+						<span className="text-[11px] text-muted-foreground">{t('别的电脑在浏览器里打开这些地址，iPad 用 Studio 的 App 扫码')}</span>
 						{shown.addresses.map((address) => (
-							<span key={address.host} className="remote-address font-mono">
-								{address.kind === 'tailscale' ? 'Tailscale' : t('局域网')} · {address.host}:{shown.port}
+							<span key={address.host} className="remote-address flex items-baseline gap-2">
+								<span className="w-16 shrink-0 text-[11px] text-muted-foreground">{address.kind === 'tailscale' ? 'Tailscale' : t('局域网')}</span>
+								<span className="font-mono select-all">https://{address.host}:{shown.port}</span>
 							</span>
 						))}
-						{!shown.addresses.some((address) => address.kind === 'tailscale') && <span className="text-[11px] text-muted-foreground">{t('打开 Tailscale（Mac 和 iPad 登录同一个账号）后出门也能连')}</span>}
+						{!shown.addresses.some((address) => address.kind === 'tailscale') && <span className="text-[11px] text-muted-foreground">{t('打开 Tailscale（两边登录同一个账号）后出门也能连')}</span>}
 					</div>
+					{shown.fingerprint && (
+						<div className="grid gap-1">
+							<span className="text-[11px] text-muted-foreground">{t('浏览器会提示证书不受信任（证书是 Studio 自己生成的）：点开它的证书，SHA-256 指纹和下面一样再继续；不一样就别继续')}</span>
+							<span id="remote-fingerprint" className="font-mono text-[11px] leading-relaxed break-all text-foreground select-all">{shown.fingerprint}</span>
+						</div>
+					)}
 					{pairing ? (
 						<div id="remote-pairing" className="grid justify-items-center gap-2 rounded-lg border border-border p-4">
 							<div className="remote-qr size-[208px] rounded bg-white p-1 [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: pairing.svg }} />
-							<span className="text-[12px] text-muted-foreground">{t('用 Studio 的 iPad App 扫这个码；扫不了就输入：')}</span>
+							<span className="text-[12px] text-muted-foreground">{t('iPad 用 Studio 的 App 扫这个码；浏览器里输入：')}</span>
 							<span id="remote-code" className="font-mono text-[18px] tracking-[0.2em] text-foreground">{pairing.code}</span>
 							<span className="text-[11px] text-muted-foreground">{t('{seconds} 秒后失效，只能用一次', { seconds: left })}</span>
 						</div>
 					) : (
 						<Button id="remote-pair" type="button" size="sm" variant="outline" className="justify-self-start" onClick={() => void pair()}>
-							{t('配对一台 iPad')}
+							{t('配对一台设备')}
 						</Button>
 					)}
 					<div className="grid gap-1">
@@ -113,7 +122,7 @@ export function RemoteSettings() {
 						{shown.devices.map((device) => (
 							<div key={device.id} className="remote-device flex items-center justify-between gap-3 rounded-md px-2 py-1.5 hover:bg-[var(--studio-fill)]">
 								<span className="grid gap-px">
-									<span className="text-[13px] text-foreground">{device.name}</span>
+									<span className="text-[13px] text-foreground">{device.name}<span className="ml-1.5 text-[11px] text-muted-foreground">{device.kind === 'browser' ? t('浏览器') : 'App'}</span></span>
 									<span className="text-[11px] text-muted-foreground">{t('{added} 配对', { added: when(device.added) })}{device.seen ? ` · ${t('{seen} 用过', { seen: when(device.seen) })}` : ''}</span>
 								</span>
 								<Button type="button" size="xs" variant="outline" onClick={() => void removeRemoteDevice(device.id).then(setShown, (error: unknown) => say(errorText(error, t('没能移除')), true))}>

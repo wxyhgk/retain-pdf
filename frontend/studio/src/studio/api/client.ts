@@ -893,14 +893,14 @@ export function putBelowImage(slug: string, image: string, markdown: string): Pr
 /** The language the Studio speaks: chosen (`system`: the browser's), and the languages there are. */
 export type LocalesShown = { chosen: string; locales: Array<{ id: string; name: string }> };
 
-/** iPad 访问 (server/remote/remote-access.mjs): on or off, where another device may reach this Mac, the devices paired. */
+/** 其他设备访问 (server/remote/remote-access.mjs): on or off, where another device may reach this Mac, the devices paired. */
 export type RemoteShown = {
 	enabled: boolean;
 	running: boolean;
 	port: number | null;
 	addresses: Array<{ kind: 'lan' | 'tailscale'; host: string }>;
 	fingerprint: string | null;
-	devices: Array<{ id: string; name: string; added: number; seen: number | null }>;
+	devices: Array<{ id: string; name: string; kind: 'browser' | 'app'; added: number; seen: number | null }>;
 };
 
 export function remoteAccess(): Promise<RemoteShown> {

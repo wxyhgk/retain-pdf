@@ -24,7 +24,7 @@ test('one 设置 in the workspace menu: its parts in a column, found by a search
 
 	const dialog = page.locator('#settings-dialog');
 	const nav = dialog.locator('nav [data-section]');
-	await expect(nav).toHaveText(['语言', '外观', '打开文件', 'iPad 访问', 'AI 模型', '插件']);
+	await expect(nav).toHaveText(['语言', '外观', '打开文件', '其他设备访问', 'AI 模型', '插件']);
 	// 语言 first, the search with the keys.
 	await expect(dialog.locator('#settings-locale #studio-locale')).toBeVisible();
 	await expect(dialog.locator('nav [aria-current="page"]')).toHaveText('语言');

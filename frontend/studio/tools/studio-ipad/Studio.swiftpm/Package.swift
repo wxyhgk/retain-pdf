@@ -1,7 +1,7 @@
 // swift-tools-version: 5.9
 
 // The Studio on an iPad (or an iPhone): the Studio running on the author's Mac, opened through its door for other
-// devices (设置 › iPad 访问), paired by its QR code. Open this folder in Xcode, choose a team (Signing), and run it on
+// devices (设置 › 其他设备访问), paired by its QR code. Open this folder in Xcode, choose a team (Signing), and run it on
 // the iPad. See README.md.
 
 import AppleProductTypes

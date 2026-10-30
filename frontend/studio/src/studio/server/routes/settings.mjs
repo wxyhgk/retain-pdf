@@ -12,9 +12,9 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('./index.mjs').Studio} studio
  */
 export function settingRoutes(api, { localeSettings, projectRoot, remote }) {
-	// iPad 访问 (remote/remote-access.mjs): seen and changed on this machine only, never from a device let in by it.
+	// 其他设备访问 (remote/remote-access.mjs): seen and changed on this machine only, never from a device let in by it.
 	const here = (request) => {
-		if (request.headers['x-studio-remote']) throw Object.assign(new Error(t('iPad 访问只能在这台 Mac 上设置')), { statusCode: 403 });
+		if (request.headers['x-studio-remote']) throw Object.assign(new Error(t('其他设备访问只能在这台 Mac 上设置')), { statusCode: 403 });
 	};
 	api.get('/remote', async ({ request }) => {
 		here(request);

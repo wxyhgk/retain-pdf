@@ -2,7 +2,7 @@ import CryptoKit
 import Foundation
 import Security
 
-/// What the QR code on the Mac says (设置 › iPad 访问, remote-access.mjs `pairingCode`): where the Mac can be
+/// What the QR code on the Mac says (设置 › 其他设备访问, remote-access.mjs `pairingCode`): where the Mac can be
 /// reached, the port of its door, its certificate's fingerprint, and the code to pair with (5 minutes, once).
 struct PairingCode: Decodable {
     let v: Int
@@ -111,7 +111,7 @@ enum MacError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .unreachable: "连不上那台 Mac：它开着吗？Studio 开着、「iPad 访问」打开了吗？在同一个 Wi-Fi 里，或者两边都开着 Tailscale？"
+        case .unreachable: "连不上那台 Mac：它开着吗？Studio 开着、「其他设备访问」打开了吗？在同一个 Wi-Fi 里，或者两边都开着 Tailscale？"
         case .refused(let why): why
         case .notPaired: "这台设备不再是配对过的了（在 Mac 上被移除了？）：重新扫码配对。"
         }

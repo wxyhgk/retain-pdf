@@ -38,20 +38,22 @@ tools/studio-app/build.sh      # 需要 Rust（cargo）；生成 /Applications/S
 - 应用记住的是生成它时的博客文件夹。博客挪了地方就重新运行一次 `build.sh`；也可以 `build.sh <博客文件夹>` 指定，或者 `STUDIO_APP_DIR=~/Applications tools/studio-app/build.sh` 换个安装的地方。
 - 服务器启动失败时，窗口里会显示它最后的输出，完整记录在 `.astro/dev.log`。
 
-### iPad 访问
+### 其他设备访问（别的电脑的浏览器、iPad）
 
-在 iPad 上用这台 Mac 上的 Studio：文章、AI（Claude Code、pi）、终端、计算都还在 Mac 上跑，iPad 只是用它。Mac 要开着。
+在别的电脑（浏览器）或 iPad 上用这台 Mac 上的 Studio：文章、AI（Claude Code、pi）、终端、计算都还在 Mac 上跑，别的设备只是用它。Mac 要开着，Studio 要开着。
 
-1. Mac 上：设置 › iPad 访问，打开「允许 iPad 访问」。下面列出 iPad 能连进来的地址：局域网（同一个 Wi-Fi）的，开着 Tailscale 时还有 Tailscale 的（出门也能连，Mac 和 iPad 登录同一个 Tailscale 账号）。
-2. 点「配对一台 iPad」，出现一个二维码和一个 8 位配对码，5 分钟内有效，只能用一次。
-3. iPad 上：用 Studio 的 iPad App 扫码。配对好以后它就记住了，以后直接打开。App 用 Xcode 装到 iPad 上，步骤见 `tools/studio-ipad/README.md`。
-4. 配对过的设备列在同一页，不想让它再进来就「移除」。
+1. Mac 上：设置 › 其他设备访问，打开「允许别的设备访问这台 Mac 上的 Studio」。下面列出能连进来的地址（`https://…:4343`）：局域网（同一个 Wi-Fi）的，开着 Tailscale 时还有 Tailscale 的（出门也能连，两边登录同一个 Tailscale 账号）。
+2. 点「配对一台设备」，出现一个二维码和一个 8 位配对码，5 分钟内有效，只能用一次。
+3. 别的电脑：浏览器打开上面的地址。浏览器会提示证书不受信任（证书是 Studio 自己生成的）：点开证书看它的 SHA-256 指纹，和 Mac 上显示的一样再继续（Chrome 里「高级 › 继续前往」，Safari 里「显示详细信息 › 访问此网站」）。然后输入配对码，就进到 Studio 了；这个浏览器以后直接打开。
+4. iPad：用 Studio 的 iPad App 扫码。配对好以后它就记住了，以后直接打开。App 用 Xcode 装到 iPad 上，步骤见 `tools/studio-ipad/README.md`。
+5. 配对过的设备（浏览器还是 App）列在同一页，不想让它再进来就「移除」。
 
 - 默认关着；关掉以后谁也连不进来。
-- 只有配对过的设备能进：每台设备有自己的钥匙（Mac 上只存它的哈希）。
-- 传的东西用 HTTPS 加密。证书是 Studio 自己生成的（`.studio-cache/remote/`），iPad App 只认二维码里那张证书的指纹，所以在局域网里也没人能看到或改掉；Safari 直接打开会说证书不受信任。
-- iPad 访问本身（开关、配对、移除）只能在 Mac 上设置。
-- 「在 Finder 中显示」「用默认程序打开」这类操作是在 Mac 上做的；博客预览（「博客首页」）在 iPad 上暂时打不开。
+- 只有配对过的设备能进：每台设备有自己的钥匙（浏览器里是一个只能在这个地址用的 cookie；Mac 上只存它的哈希）。没配对的浏览器只看到输配对码的页面。
+- 传的东西用 HTTPS 加密。iPad App 只认二维码里那张证书的指纹，所以在局域网里也没人能看到或改掉。浏览器做不到这样：第一次打开时核对一下指纹，或者走 Tailscale（只有你自己的设备在里面）。在咖啡馆、会场这类别人也连着的 Wi-Fi 上，指纹对不上就别继续。
+- 进来的设备能做 Mac 上能做的事，包括终端：只配对自己的设备，不用的及时移除。
+- 其他设备访问本身（开关、配对、移除）只能在 Mac 上设置。
+- 「在 Finder 中显示」「用默认程序打开」这类操作是在 Mac 上做的；博客预览（「博客首页」）在别的设备上暂时打不开。
 
 ## 界面
 

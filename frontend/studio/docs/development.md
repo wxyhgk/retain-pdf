@@ -129,7 +129,7 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 依赖：启动时从 `src/studio/**/*.tsx` 找出来预先打包（和 Astro 一样），样式表不算依赖。
 - 它在跑时把进程号和地址写进 `.studio-cache/server.json`；Studio.app 和 `studio` 命令从这里找到它。Studio.app 起的服务器，输出在 `.studio-cache/server.log`（上一次的在 `server.previous.log`），每次意外退出记进 `.studio-cache/server-exits.log`。
 - 默认端口 4321，被占着就用下一个空着的。只听本机。
-- iPad 访问（`src/studio/server/remote/remote-access.mjs`）：一个单独的 HTTPS 入口（默认 4343，默认关着），在 `0.0.0.0` 上听；只放配对过的设备（cookie 里的钥匙，设置里存哈希），把请求原样转给只听本机的 Studio（`Host`、`Origin` 改成 Studio 自己的，WebSocket 也转），并加上 `x-studio-remote: 1`：`/api/studio/remote*` 见到它就拒绝。证书用系统的 `/usr/bin/openssl` 生成一次，App 按二维码里的指纹认它。测试服务器上它只听本机、端口由系统给。
+- 其他设备访问（`src/studio/server/remote/remote-access.mjs`）：一个单独的 HTTPS 入口（默认 4343，默认关着），在 `0.0.0.0` 上听；只放配对过的设备（cookie 里的钥匙，设置里存哈希），把请求原样转给只听本机的 Studio（`Host`、`Origin` 改成 Studio 自己的，WebSocket 也转），并加上 `x-studio-remote: 1`：`/api/studio/remote*` 见到它就拒绝。没配对的浏览器要页面时给它输配对码的页面（`pairing-page.mjs`，脚本只按 nonce 跑、不许别的网站嵌），别的请求一律 401。证书用系统的 `/usr/bin/openssl` 生成一次，App 按二维码里的指纹认它，浏览器靠作者核对设置里显示的指纹。测试服务器上它只听本机、端口由系统给。
 - 博客的页面（`/blog/…`、`/wiki/…`、`/about`……）不归它：交给笔记文件夹里博客自己的 `astro dev`，开着就用（`.astro/dev.json`），没开就在下一个端口替你开一个、跟着 Studio 的服务器停（`blogPreview`，输出在笔记文件夹的 `.studio-cache/blog.log`），请求等它起来后跳过去；笔记文件夹里没有博客就说没有。
 
 ## Studio 的接口
