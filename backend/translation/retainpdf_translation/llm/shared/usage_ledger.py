@@ -42,6 +42,11 @@ _STAGE_PREFIXES: tuple[tuple[str, str], ...] = (
     ("typst-llm-repair", "typst_repair"),
     ("typst-repair", "typst_repair"),
     ("failure-ai-diagnosis", "failure_diagnosis"),
+    # 翻译引擎 agent（workflow/agent_flow.py）：译者、改稿算翻译；通读、审校单独记
+    ("agent-translate", "translation"),
+    ("agent-revise", "translation"),
+    ("agent-read", "agent_reader"),
+    ("agent-review", "agent_review"),
 )
 
 

@@ -9,6 +9,7 @@ from retainpdf_translation_agent.agent import RateLimited
 from retainpdf_translation_agent.agent import StopRun
 from retainpdf_translation_agent.agent import TranslationAgent
 from retainpdf_translation_agent.agent import http_transport
+from retainpdf_translation_agent.agent import make_http_transport
 from retainpdf_translation_agent.checks import check_block
 from retainpdf_translation_agent.checks import check_group
 from retainpdf_translation_agent.checks import check_terms
@@ -25,6 +26,7 @@ from retainpdf_translation_agent.memory import Glossary
 from retainpdf_translation_agent.memory import Term
 from retainpdf_translation_agent.memory import extract_abbreviations
 from retainpdf_translation_agent.memory import glossary_from_csv
+from retainpdf_translation_agent.memory import glossary_from_entries
 from retainpdf_translation_agent.reader import Reading
 from retainpdf_translation_agent.reader import read_document
 from retainpdf_translation_agent.review import review_page
@@ -59,7 +61,9 @@ __all__ = [
     "check_terms",
     "extract_abbreviations",
     "glossary_from_csv",
+    "glossary_from_entries",
     "http_transport",
+    "make_http_transport",
     "read_document",
     "review_page",
     "style_signals",

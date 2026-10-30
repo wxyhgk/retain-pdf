@@ -57,12 +57,18 @@ def run_translation_execution_plan(
     with checkpoint_session as checkpoint:
         checkpoint.on_pages_committed = _record_committed_pages
         with translation_run_diagnostics_scope(plan.run_diagnostics):
-            translated_pages_map, summaries = translate_book_with_global_continuations(
+            translate_book = translate_book_with_global_continuations
+            engine_kwargs = {"batch_size": request.batch_size, "domain_guidance": plan.policy_config.domain_guidance}
+            if request.engine == "agent":
+                from retainpdf_translation.workflow.agent_flow import translate_book_with_agent
+
+                translate_book = translate_book_with_agent
+                engine_kwargs = {"glossary_entries": glossary_entries}
+            translated_pages_map, summaries = translate_book(
                 data=plan.data,
                 output_dir=request.output_dir,
                 page_indices=plan.page_indices,
                 api_key=request.api_key,
-                batch_size=request.batch_size,
                 workers=max(1, request.workers),
                 model=request.model,
                 base_url=request.base_url,
@@ -72,10 +78,10 @@ def run_translation_execution_plan(
                 sci_cutoff_page_idx=plan.policy_config.sci_cutoff_page_idx,
                 sci_cutoff_block_idx=plan.policy_config.sci_cutoff_block_idx,
                 policy_config=plan.policy_config,
-                domain_guidance=plan.policy_config.domain_guidance,
                 translation_context=plan.translation_context,
                 run_diagnostics=plan.run_diagnostics,
                 checkpoint=checkpoint,
+                **engine_kwargs,
             )
         raise_if_executor_failed()
         total_items = sum(item["total_items"] for item in summaries)
@@ -118,6 +124,7 @@ def run_translation_execution_plan(
             glossary=glossary_summary,
             summary={
                 "math_mode": request.math_mode,
+                **({"engine": request.engine} if request.engine != "legacy" else {}),
                 **diagnostics_summary,
                 "review_issue_count": review_summary.get("issue_count", 0),
                 "review_has_errors": review_summary.get("has_errors", False),

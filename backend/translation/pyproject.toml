@@ -13,6 +13,8 @@ dependencies = [
   "requests==2.32.5",
   "retainpdf-base",
   "retainpdf-math",
+  # 翻译引擎 agent（translation.engine=agent，workflow/agent_flow.py）；它只用标准库
+  "retainpdf-translation-agent",
   "urllib3==2.5.0",
 ]
 
@@ -24,6 +26,7 @@ test = [
 [tool.uv.sources]
 retainpdf-base = { workspace = true }
 retainpdf-math = { workspace = true }
+retainpdf-translation-agent = { workspace = true }
 
 [tool.setuptools.packages.find]
 where = ["."]

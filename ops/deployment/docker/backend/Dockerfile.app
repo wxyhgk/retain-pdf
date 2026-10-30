@@ -85,7 +85,7 @@ COPY backend/math/pyproject.toml math/pyproject.toml
 COPY backend/pipeline/pyproject.toml pipeline/pyproject.toml
 COPY backend/translation/pyproject.toml translation/pyproject.toml
 # 翻译 agent 包（retainpdf-translation-agent）：工作区成员，uv export 要它的 pyproject；
-# 正式流程还没用它，所以下面的运行时镜像不装。
+# 运行时镜像也装（翻译引擎 translation.engine=agent 用它，只依赖标准库）。
 COPY backend/translation-agent/pyproject.toml translation-agent/pyproject.toml
 
 RUN uv export \
@@ -301,7 +301,9 @@ COPY backend/base /app/services/base
 COPY backend/math /app/services/math
 # 翻译包（retainpdf-translation）：pipeline 的翻译 worker 外壳调它；提示词随包数据装进去。
 COPY backend/translation /app/services/translation
-RUN pip install --no-cache-dir --no-deps /app/services/base /app/services/math /app/services/translation /app/services/pipeline /app/services/ai
+# 翻译 agent 包：翻译包的 agent 引擎（workflow/agent_flow.py）调它，只用标准库。
+COPY backend/translation-agent /app/services/translation-agent
+RUN pip install --no-cache-dir --no-deps /app/services/base /app/services/math /app/services/translation-agent /app/services/translation /app/services/pipeline /app/services/ai
 COPY backend/api/auth.local.example.json /app/services/api/auth.local.example.json
 COPY ops/deployment/docker/backend/entrypoint-app.sh /entrypoint.sh
 COPY ops/deployment/docker/backend/api-key.sh /usr/local/lib/retainpdf/api-key.sh

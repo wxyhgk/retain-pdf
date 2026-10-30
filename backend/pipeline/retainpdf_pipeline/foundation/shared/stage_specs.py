@@ -177,7 +177,7 @@ def _optional_path(value: Any) -> Path | None:
 
 
 def _preparation_and_reviewer_fields(payload: dict[str, Any]) -> dict[str, str]:
-    """三种 spec（translate / provider / book）共用的译前准备、reviewer、接口协议与思考深度字段。
+    """三种 spec（translate / provider / book）共用的译前准备、reviewer、接口协议、思考深度与翻译引擎字段。
 
     preparation 在这里只做 strip/lower，取值归一化（未知值 -> off）由
     translate 层的 normalize_preparation_mode 负责，与 context_mode 等字段一致。
@@ -192,6 +192,7 @@ def _preparation_and_reviewer_fields(payload: dict[str, Any]) -> dict[str, str]:
         "thinking": str(payload.get("thinking", "auto") or "auto").strip().lower(),
         "reviewer_api_protocol": str(payload.get("reviewer_api_protocol", "") or "").strip().lower(),
         "reviewer_thinking": str(payload.get("reviewer_thinking", "") or "").strip().lower(),
+        "engine": str(payload.get("engine", "legacy") or "legacy").strip().lower(),
     }
 
 
@@ -235,6 +236,8 @@ class TranslateStageParams:
     thinking: str
     reviewer_api_protocol: str
     reviewer_thinking: str
+    # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
+    engine: str = "legacy"
 
 
 @dataclass(frozen=True)
@@ -699,6 +702,8 @@ class ProviderStageTranslationParams:
     thinking: str
     reviewer_api_protocol: str
     reviewer_thinking: str
+    # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
+    engine: str = "legacy"
 
 
 @dataclass(frozen=True)
@@ -944,6 +949,8 @@ class BookStageTranslationParams:
     thinking: str
     reviewer_api_protocol: str
     reviewer_thinking: str
+    # 翻译引擎：legacy（现有流程，默认）/ agent（retainpdf-translation-agent）。旧 spec 没有这个 key，按 legacy 读
+    engine: str = "legacy"
 
 
 @dataclass(frozen=True)

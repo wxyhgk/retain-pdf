@@ -2,6 +2,7 @@
 
     run = DocumentRun(agent, Path("state"), glossary=user_glossary, style="……")
     outcome = run.run(pages)          # pages: list[PageInput]，按阅读顺序
+    run.run(pages, on_page=写回)       # 每页做完（含续跑时读回的页）调一次 写回(页序号, PageInput, {块 id: BlockResult})
 
 状态目录里：
 - `progress.json`：做完了哪些页、状态（running / done / stopped）和停下的原因。缓存不算进度，进度只看这个文件。
@@ -21,6 +22,7 @@ import time
 from dataclasses import dataclass
 from dataclasses import replace
 from pathlib import Path
+from typing import Callable
 
 from retainpdf_translation_agent.agent import PROMPT_VERSION
 from retainpdf_translation_agent.agent import StopRun
@@ -120,7 +122,8 @@ class DocumentRun:
         self._write_json(self._path("progress.json"), {"status": status, "stop_reason": reason, "pages_done": done, "pages_total": total})
 
     # ---- 跑 ----
-    def run(self, pages: list[PageInput]) -> RunOutcome:
+    def run(self, pages: list[PageInput], *, on_page: Callable[[int, PageInput, dict[str, BlockResult]], None] | None = None) -> RunOutcome:
+        """`on_page`：每页做完调一次（续跑时读回的页也调），正式流程在这里把译文写回、提交断点。"""
         progress_path = self._path("progress.json")
         progress = json.loads(progress_path.read_text(encoding="utf-8")) if progress_path.exists() else {}
         done: list[str] = list(progress.get("pages_done") or [])
@@ -219,6 +222,8 @@ class DocumentRun:
                 done.append(key)
                 self._progress(done, RUNNING, total=len(pages))
             results.update(page_results)
+            if on_page is not None:
+                on_page(index, page, page_results)
             text = " ".join(b.text for b in page.to_translate())
             seen_abbreviations |= {a for a in abbreviations if term_pattern(a, ABBR).search(text)}
             previous = [

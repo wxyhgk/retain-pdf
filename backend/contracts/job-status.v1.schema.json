@@ -459,6 +459,10 @@
           "type": "string",
           "description": "留空沿用 thinking。"
         },
+        "engine": {
+          "type": "string",
+          "description": "TRANSLATION_ENGINES：legacy（现有流程）/ agent（翻译 agent）。"
+        },
         "start_page": {
           "type": "integer"
         },

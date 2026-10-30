@@ -130,6 +130,10 @@ fn apply_platform_models_to(
         platform.translation_thinking.clone()
     };
     translation.reviewer_thinking.clear();
+    // 翻译 agent 只走 Anthropic 接口：平台模型不是 Anthropic 时退回现有流程
+    if translation.api_protocol != "anthropic" {
+        translation.engine = retainpdf_core::models::request::TranslationInput::default().engine;
+    }
     if platform.translation_max_workers > 0
         && (translation.workers <= 0 || translation.workers > platform.translation_max_workers)
     {

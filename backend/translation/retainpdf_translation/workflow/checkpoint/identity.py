@@ -64,7 +64,7 @@ def build_translation_identity(
         "context_mode": request.context_mode,
         "glossary_mode": request.glossary_mode,
         "memory_mode": request.memory_mode,
-        "translation_engine": translation_engine_identity(mode=request.mode),
+        "translation_engine": _engine_identity(request),
         "glossary": [
             {
                 "source": entry.source,
@@ -86,3 +86,14 @@ def build_translation_identity(
         normalized_document_path=request.source_json_path,
         parameters_sha256=_sha256_json(parameters),
     )
+
+
+def _engine_identity(request) -> dict:
+    """换引擎不能沿用另一个引擎的 checkpoint。legacy 的身份保持原样（不加键），正在跑的旧任务续跑不受影响。"""
+    identity = translation_engine_identity(mode=request.mode)
+    engine = getattr(request, "engine", "legacy") or "legacy"
+    if engine != "legacy":
+        from retainpdf_translation.core.engine_identity import agent_engine_identity
+
+        identity = {**identity, "engine": engine, **agent_engine_identity()}
+    return identity

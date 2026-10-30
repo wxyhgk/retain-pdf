@@ -41,6 +41,7 @@ def translate_book_pipeline(
     reviewer_model: str = "",
     reviewer_base_url: str = "",
     reviewer_api_key: str = "",
+    engine: str = "legacy",
 ) -> dict:
     return execute_translation_request(
         TranslationExecutionRequest(
@@ -74,5 +75,6 @@ def translate_book_pipeline(
             reviewer_model=reviewer_model,
             reviewer_base_url=reviewer_base_url,
             reviewer_api_key=reviewer_api_key,
+            engine=engine,
         )
     )

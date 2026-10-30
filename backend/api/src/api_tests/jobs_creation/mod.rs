@@ -512,6 +512,43 @@ fn build_translation_job_snapshot_keeps_rpr_engine_and_rejects_unknown_engine() 
 }
 
 #[test]
+fn build_translation_job_snapshot_accepts_agent_engine_only_with_anthropic_protocol() {
+    let state = test_state("translation-engine");
+    let upload = seed_upload(&state, "upload-translation-engine");
+    let mut input = base_translation_input(WorkflowKind::Book);
+    input.source.upload_id = upload.upload_id.clone();
+    let job = build_translation_job_snapshot(&snapshot_context(&state), &input)
+        .expect("default engine is accepted");
+    assert_eq!(job.request_payload.translation.engine, "legacy", "translation.engine 缺省 = legacy");
+
+    input.translation.engine = "agent".to_string();
+    input.translation.api_protocol = "anthropic".to_string();
+    let job = build_translation_job_snapshot(&snapshot_context(&state), &input)
+        .expect("agent engine with anthropic protocol is accepted");
+    assert_eq!(job.request_payload.translation.engine, "agent");
+
+    input.translation.api_protocol = "openai".to_string();
+    match build_translation_job_snapshot(&snapshot_context(&state), &input)
+        .expect_err("agent engine needs the anthropic protocol")
+    {
+        AppError::BadRequest(message) => {
+            assert!(message.contains("requires translation.api_protocol=anthropic"), "{message}")
+        }
+        other => panic!("expected 400 BadRequest, got {other:?}"),
+    }
+
+    input.translation.engine = "bogus".to_string();
+    match build_translation_job_snapshot(&snapshot_context(&state), &input)
+        .expect_err("unknown translation.engine must be rejected")
+    {
+        AppError::BadRequest(message) => {
+            assert!(message.contains("translation.engine must be one of"), "{message}")
+        }
+        other => panic!("expected 400 BadRequest, got {other:?}"),
+    }
+}
+
+#[test]
 fn build_translation_job_snapshot_for_book_succeeds_with_existing_ocr_artifact_job() {
     let state = test_state("book-artifact-source");
     seed_ocr_checkpoint_source_job(&state, "ocr-source-job");

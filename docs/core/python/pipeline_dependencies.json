@@ -599,6 +599,7 @@
         "devtools/tests/test_translation_layer_gate.py",
         "devtools/tests/test_translation_recovery_boundary.py",
         "devtools/tests/test_translation_source_reader_gate.py",
+        "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_batch_dispatch_plan.py",
         "devtools/tests/translation/test_batch_reply_duplicates.py",
         "devtools/tests/translation/test_book_flow_prewarm.py",
@@ -820,6 +821,7 @@
         "devtools/tests/rendering/test_rpr_engine_route.py",
         "devtools/tests/rendering/test_rpr_fit_route.py",
         "devtools/tests/test_translation_recovery_boundary.py",
+        "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_author_line_residue_exemption.py",
         "devtools/tests/translation/test_auto_preserve_terms.py",
         "devtools/tests/translation/test_batch_dispatch_plan.py",
@@ -970,7 +972,8 @@
         "devtools/agent_lab/pages.py"
       ],
       "test_files": [
-        "devtools/tests/agent_lab/test_agent_lab.py"
+        "devtools/tests/agent_lab/test_agent_lab.py",
+        "devtools/tests/translation/test_agent_flow.py"
       ],
       "runtime_required": false,
       "devtool_required": true

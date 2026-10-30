@@ -358,14 +358,22 @@ def glossary_from_csv(text: str, *, reason: str = "用户术语表") -> Glossary
         position = index.get(name)
         return row[position].strip() if position is not None and position < len(row) else ""
 
-    for row in rows:
-        source, target = cell(row, "source"), cell(row, "target")
+    entries = [{name: cell(row, name) for name in ("source", "target", "note", "level")} for row in rows]
+    return glossary_from_entries(entries, reason=reason)
+
+
+def glossary_from_entries(entries, *, reason: str = "用户术语表") -> Glossary:
+    """产品术语表的条目（`{"source", "target", "note", "level"}`，正式流程任务里的术语表快照就是这个形状）→ 术语表。"""
+    glossary = Glossary()
+    for entry in entries:
+        get = entry.get if isinstance(entry, dict) else (lambda name, default="", _e=entry: getattr(_e, name, default))
+        source, target = str(get("source", "") or "").strip(), str(get("target", "") or "").strip()
         if not source:
             continue
-        category, status = LEVEL_TO_TERM.get(cell(row, "level").lower(), (TERM, APPROVED))
+        category, status = LEVEL_TO_TERM.get(str(get("level", "") or "").strip().lower(), (TERM, APPROVED))
         if category == KEEP:
             target = source
         if not target:
             continue
-        glossary.add(source, target, category=category, status=status, reason=reason, note=cell(row, "note"))
+        glossary.add(source, target, category=category, status=status, reason=reason, note=str(get("note", "") or "").strip())
     return glossary

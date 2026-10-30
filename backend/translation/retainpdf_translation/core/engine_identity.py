@@ -42,6 +42,14 @@ def translation_engine_identity(*, mode: str = "fast") -> dict[str, str]:
     return identity
 
 
+def agent_engine_identity() -> dict[str, str]:
+    """翻译引擎 agent（workflow/agent_flow.py）的身份：交接格式或提示词换了，旧断点、旧状态不再沿用。"""
+    from retainpdf_translation_agent import CONTRACT_VERSION
+    from retainpdf_translation_agent import PROMPT_VERSION
+
+    return {"agent_contract_version": CONTRACT_VERSION, "agent_prompt_version": PROMPT_VERSION}
+
+
 def _prompt_hash(mode: str = "fast") -> str:
     cache_key = mode.strip() or "fast"
     cached = _PROMPT_HASHES.get(cache_key)

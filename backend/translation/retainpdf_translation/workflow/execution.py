@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import replace
 from pathlib import Path
 import sys
 from typing import Any
@@ -50,6 +51,11 @@ class TranslationExecutionRequest:
     reviewer_model: str = ""
     reviewer_base_url: str = ""
     reviewer_api_key: str = ""
+    # 翻译引擎：legacy（现有流程）/ agent（retainpdf-translation-agent，见 workflow/agent_flow.py）
+    engine: str = "legacy"
+
+
+TRANSLATION_ENGINES = ("legacy", "agent")
 
 
 @dataclass(frozen=True)
@@ -86,6 +92,11 @@ def resolve_reviewer_connection(request: TranslationExecutionRequest) -> Reviewe
 def execute_translation_request(request: TranslationExecutionRequest) -> dict:
     from retainpdf_translation.llm.shared.executor_context import raise_if_executor_failed
     raise_if_executor_failed()
+    if request.engine not in TRANSLATION_ENGINES:
+        raise ValueError(f"unknown translation engine {request.engine!r} (expected one of {', '.join(TRANSLATION_ENGINES)})")
+    if request.engine == "agent" and request.math_mode != "direct_typst":
+        # agent 收的原文是 "$…$" 直写公式，不认占位符
+        request = replace(request, math_mode="direct_typst")
     # Own output before opening its journal or performing domain inference.
     store = CheckpointStore(translation_checkpoint_path(request.output_dir))
     store.acquire()

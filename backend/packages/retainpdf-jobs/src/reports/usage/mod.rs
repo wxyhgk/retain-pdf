@@ -283,6 +283,9 @@ pub fn stage_label(stage: &str) -> (&'static str, &'static str) {
         "continuation_review" => ("跨页续段检查", "translation"),
         "domain_context" => ("领域判断", "translation"),
         "typst_repair" => ("排版修复", "translation"),
+        // 翻译引擎 agent 的通读、审校（译者、改稿记在 translation 里）
+        "agent_reader" => ("通读", "translation"),
+        "agent_review" => ("审校", "translation"),
         "term_prescan" => ("术语预扫", "preparation"),
         "term_review" => ("术语审定", "preparation"),
         "style_guide" => ("风格指南", "preparation"),

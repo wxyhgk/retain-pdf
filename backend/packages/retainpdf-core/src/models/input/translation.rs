@@ -32,6 +32,10 @@ pub const TRANSLATION_REFINE_MODES: &[&str] = &["off", "review_only", "review_an
 pub const TRANSLATION_API_PROTOCOLS: &[&str] = &["openai", "openai_responses", "anthropic"];
 /// 思考深度。权威来源是 Python 的 `model_wire.THINKING_LEVELS`。`auto` 保持以前的行为。
 pub const TRANSLATION_THINKING_LEVELS: &[&str] = &["auto", "off", "low", "medium", "high", "max"];
+/// 翻译引擎。权威来源是 Python 的 `workflow/execution.py` 的 `TRANSLATION_ENGINES`。
+/// `legacy`：现有流程（默认）；`agent`：翻译 agent（retainpdf-translation-agent，先通读、逐页翻、每页审校），
+/// 要求 `api_protocol=anthropic`，公式按 `direct_typst` 处理。
+pub const TRANSLATION_ENGINES: &[&str] = &["legacy", "agent"];
 /// 精修的成本上限默认值（0 = 不限）。Python 侧读 render.spec.json 的 `params.refine`。
 ///
 /// 默认审全书、不设上限：选了「精翻」就该整本精修，只审开头几百块等于没说清楚就打了折。
@@ -175,6 +179,9 @@ pub struct TranslationInput {
     /// 审校模型的思考深度；空 = 沿用 `thinking`。
     #[serde(default)]
     pub reviewer_thinking: String,
+    /// 翻译引擎，见 [`TRANSLATION_ENGINES`]。
+    #[serde(default = "default_translation_engine")]
+    pub engine: String,
     #[serde(default)]
     pub start_page: i64,
     #[serde(default = "default_end_page")]
@@ -227,6 +234,7 @@ impl Default for TranslationInput {
             thinking: default_translation_thinking(),
             reviewer_api_protocol: String::new(),
             reviewer_thinking: String::new(),
+            engine: default_translation_engine(),
             start_page: 0,
             end_page: default_end_page(),
             page_ranges: Vec::new(),
@@ -259,6 +267,10 @@ pub fn default_translation_api_protocol() -> String {
 
 pub fn default_translation_thinking() -> String {
     "auto".to_string()
+}
+
+pub fn default_translation_engine() -> String {
+    "legacy".to_string()
 }
 
 pub fn default_translation_refine_mode() -> String {
@@ -354,6 +366,23 @@ mod allowed_value_tests {
         assert_eq!(rust_set(TRANSLATION_THINKING_LEVELS), python_tuple("THINKING_LEVELS"));
     }
 
+    const EXECUTION_PY: &str =
+        include_str!("../../../../../translation/retainpdf_translation/workflow/execution.py");
+
+    #[test]
+    fn engines_match_python_execution() {
+        let start = EXECUTION_PY
+            .find("\nTRANSLATION_ENGINES = (")
+            .expect("execution.py 里找不到 TRANSLATION_ENGINES = (...) —— 写法变了");
+        let body = &EXECUTION_PY[start + "\nTRANSLATION_ENGINES = (".len()..];
+        let python: BTreeSet<String> = body[..body.find(')').expect("元组没闭合")]
+            .split(',')
+            .map(|item| item.trim().trim_matches('"').to_string())
+            .filter(|item| !item.is_empty())
+            .collect();
+        assert_eq!(rust_set(TRANSLATION_ENGINES), python);
+    }
+
     /// 每个字段的默认值必须在自己的允许值里,否则「什么都不填」会被自己的校验拒掉。
     #[test]
     fn every_default_is_an_allowed_value() {
@@ -371,6 +400,7 @@ mod allowed_value_tests {
             (&input.refine, TRANSLATION_REFINE_MODES, "refine"),
             (&input.api_protocol, TRANSLATION_API_PROTOCOLS, "api_protocol"),
             (&input.thinking, TRANSLATION_THINKING_LEVELS, "thinking"),
+            (&input.engine, TRANSLATION_ENGINES, "engine"),
         ] {
             assert!(
                 allowed.contains(&value.as_str()),

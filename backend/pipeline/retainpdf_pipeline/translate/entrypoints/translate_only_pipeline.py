@@ -98,6 +98,7 @@ def _args_from_spec(spec: TranslateStageSpec) -> SimpleNamespace:
         reviewer_model=spec.params.reviewer_model,
         reviewer_base_url=spec.params.reviewer_base_url,
         reviewer_api_key=resolve_credential_ref(spec.params.reviewer_credential_ref),
+        engine=spec.params.engine,
     )
 
 
@@ -174,6 +175,7 @@ def main() -> None:
             reviewer_model=args.reviewer_model,
             reviewer_base_url=args.reviewer_base_url,
             reviewer_api_key=args.reviewer_api_key,
+            engine=getattr(args, "engine", "legacy"),
             invocation=build_stage_invocation_metadata(
                 stage="translate",
                 stage_spec_schema_version=stage_spec_schema_version,
