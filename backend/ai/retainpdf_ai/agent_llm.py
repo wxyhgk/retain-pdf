@@ -168,7 +168,7 @@ class _StreamOptionsRejected(Exception):
     """上游不认 stream_options（400）。"""
 
 
-def build_deepseek_chat_fn(
+def build_chat_fn(
     settings: Settings,
     client: httpx.Client | None = None,
     *,
@@ -331,3 +331,7 @@ def build_deepseek_chat_fn(
 
 # Original private helper name remains available to compatibility facades.
 _friendly_llm_error = friendly_llm_error
+
+
+# 旧名：这个函数一直是通用的 OpenAI 兼容对话（任何兼容端点都能用），不只给 DeepSeek；2026-10-30 改名，旧名留着兼容
+build_deepseek_chat_fn = build_chat_fn

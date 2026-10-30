@@ -322,7 +322,7 @@ def _load_translated_pages(
 
 def _load_translations_dir(translations_dir: Path, *, max_pages: int) -> dict[int, list[dict]]:
     pages: dict[int, list[dict]] = {}
-    page_files = sorted(translations_dir.glob("page-*-deepseek.json"))
+    page_files = sorted(translations_dir.glob("page-*.json"))
     for path in page_files:
         page_idx = _page_idx_from_translation_path(path)
         if page_idx is None:
@@ -337,7 +337,8 @@ def _load_translations_dir(translations_dir: Path, *, max_pages: int) -> dict[in
 
 
 def _page_idx_from_translation_path(path: Path) -> int | None:
-    match = re.fullmatch(r"page-(\d+)-deepseek", path.stem)
+    # 新任务 page-001.json，旧任务 page-001-deepseek.json
+    match = re.fullmatch(r"page-(\d+)(?:-[A-Za-z0-9_-]+)?", path.stem)
     if match is None:
         return None
     return max(0, int(match.group(1)) - 1)

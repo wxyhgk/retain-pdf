@@ -46,7 +46,7 @@ def _load_payload_paths(*, job_root: Path | None, translated_dir: Path | None) -
     manifest_path = translated_dir / "translation-manifest.json"
     if manifest_path.exists():
         return load_translation_manifest_file(manifest_path, translations_dir=translated_dir)
-    paths = sorted(translated_dir.glob("page-*-deepseek.json"))
+    paths = sorted(translated_dir.glob("page-*.json"))  # 新任务 page-001.json，旧任务 page-001-deepseek.json
     return {index: path for index, path in enumerate(paths)}
 
 

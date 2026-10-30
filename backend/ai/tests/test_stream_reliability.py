@@ -7,7 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from retainpdf_ai.agent_llm import assemble_streaming_message, friendly_llm_error, build_deepseek_chat_fn
+from retainpdf_ai.agent_llm import assemble_streaming_message, friendly_llm_error, build_chat_fn
 from retainpdf_ai.api_contracts import AskInput
 from retainpdf_ai.ask_orchestration import AskOrchestrator, PreparedAsk
 from retainpdf_ai.config import Settings
@@ -83,8 +83,8 @@ def test_cancel_only_closes_its_request_owned_transport(monkeypatch):
     monkeypatch.setattr('retainpdf_ai.agent_llm.httpx.Client', Client)
     first, second = RequestControl(5), RequestControl(5)
     settings = Settings(llm_api_key='synthetic')
-    build_deepseek_chat_fn(settings, request_control=first)
-    build_deepseek_chat_fn(settings, request_control=second)
+    build_chat_fn(settings, request_control=first)
+    build_chat_fn(settings, request_control=second)
     first.cancel()
     first.finish()
     assert [client.closed for client in clients] == [1, 0]

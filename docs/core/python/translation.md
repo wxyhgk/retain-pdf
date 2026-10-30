@@ -104,13 +104,16 @@ policy.translate == true
 ```text
 translated/
   translation-manifest.json
-  page-0001.json
-  page-0002.json
+  page-001.json
+  page-002.json
   ...
 artifacts/
   translation_diagnostics.json
   translation_debug_index.json
 ```
+
+每页文件名不带模型名（`workflow/legacy/page_translation.py` 的 `default_page_translation_name`）。2026-10-30 以前叫 `page-001-deepseek.json`；
+旧任务的目录照旧能读（读的一侧只认 `translation-manifest.json` 里登记的路径），升级前开始、升级后续跑的任务，已有旧名字文件的那一页沿用旧名字（`page_translation_path`），不会出现同一页两份。
 
 逐页 payload 的正式字段优先放在顶层，例如：
 

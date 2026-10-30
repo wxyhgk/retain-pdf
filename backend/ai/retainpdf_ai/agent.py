@@ -21,6 +21,7 @@ from .agent_evidence import (
 )
 from .agent_llm import (
     assemble_streaming_message,
+    build_chat_fn,
     build_deepseek_chat_fn,
     friendly_llm_error,
 )
@@ -52,6 +53,7 @@ __all__ = [
     "_public_anchor",
     "assemble_streaming_message",
     "assign_refs",
+    "build_chat_fn",
     "build_deepseek_chat_fn",
     "friendly_llm_error",
     "public_tool_payload",

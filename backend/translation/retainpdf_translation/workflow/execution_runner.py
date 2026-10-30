@@ -11,7 +11,7 @@ from retainpdf_translation.services.agents.review_artifact import build_translat
 from retainpdf_translation.services.quality.qa import write_translation_qa_for_run
 from retainpdf_translation.core.payload import write_translation_manifest
 from retainpdf_translation.services.terms import summarize_glossary_usage
-from retainpdf_translation.workflow.translation_workflow import default_page_translation_name
+from retainpdf_translation.workflow.translation_workflow import page_translation_path
 from retainpdf_translation.workflow.checkpoint import TranslationCheckpointSession
 from retainpdf_translation.workflow.checkpoint import ResumeCandidateFingerprintMismatch
 from retainpdf_translation.workflow.checkpoint import discard_copied_resume_candidate
@@ -112,7 +112,7 @@ def run_translation_execution_plan(
         manifest_path = write_translation_manifest(
             request.output_dir,
             {
-                page_idx: request.output_dir / default_page_translation_name(page_idx)
+                page_idx: page_translation_path(request.output_dir, page_idx)
                 for page_idx in translated_pages_map
             },
             glossary=glossary_summary,

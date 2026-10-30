@@ -1,6 +1,7 @@
 """The offline entrypoint must not select live tools or hide pytest failures."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -39,7 +40,9 @@ def test_default_suites_and_failure_propagation(monkeypatch):
     assert command[6:8] == list(map(str, runner.ARCHITECTURE_TESTS))
     assert options["timeout"] == 300
     assert "RETAIN_TRANSLATION_CAPTURE_DIR" not in options["env"]
-    assert options["env"]["PYTHONPATH"] == str(runner.SERVICES / "pipeline")
+    paths = options["env"]["PYTHONPATH"].split(os.pathsep)
+    # 本仓库自己的包都在、pipeline 排第一：worktree 里测的是这份检出的代码
+    assert paths[0] == str(runner.SERVICES / "pipeline") and str(runner.SERVICES / "translation") in paths
     assert not Path(options["env"]["OUTPUT_ROOT"]).exists()
 
 
