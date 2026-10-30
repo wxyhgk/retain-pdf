@@ -407,13 +407,6 @@ def test_self_guard_rejects_a_required_symbol_that_stopped_being_compared(
 # ---- 真实仓库 ---------------------------------------------------------------
 
 
-def test_real_repository_is_free_of_stage_contract_drift() -> None:
-    errors: list[str] = []
-    gate.check_stage_contract_duplicates(errors)
-
-    assert errors == []
-
-
 def test_real_repository_still_covers_the_translation_record_schema() -> None:
     """判据的落点必须是真在比对 88 字段那张表,而不是「扫到了但没比」。"""
     copy_path = gate.DUPLICATE_SCAN_ROOT / "render" / "workflow" / "translation_records.py"

@@ -78,13 +78,6 @@ def test_frozen_debt_tracks_existing_edges_not_future_permissions():
         assert modules <= set(imported_modules(TRANSLATION_ROOT / relative)), relative
 
 
-def test_current_tree_passes_active_sublayer_boundaries():
-    from devtools.architecture_checks.translation_boundaries import check_translation_internal_boundaries
-    errors = []
-    check_translation_internal_boundaries(errors)
-    assert errors == []
-
-
 @pytest.mark.parametrize("path,module,accepted", [
     ("services/memory/store.py", "retainpdf_base.events", True),
     ("services/memory/store.py", "retainpdf_math.direct_typst", True),

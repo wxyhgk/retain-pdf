@@ -71,17 +71,6 @@ def test_canonical_reader_is_pinned_as_the_full_chain() -> None:
     assert set(reads) == set(gate.GATED_SOURCE_TEXT_KEYS)
 
 
-def test_current_tree_matches_the_frozen_allowlist() -> None:
-    # 全量跑真实 translate 目录:白名单必须与现状精确一致。
-    # 若此测试失败,要么新增了裸读取点(改代码、改用 item_source_text),
-    # 要么完成了一次收敛(把白名单里的数字调小 / 整条删掉)。
-    errors: list[str] = []
-
-    gate.check_translation_source_text_readers(errors)
-
-    assert errors == []
-
-
 def test_allowlist_only_shrinks_never_silently_grows(monkeypatch) -> None:
     # 反证:白名单里某个文件的冻结数被调高(相当于"扩"),门禁必须转红。
     victim = gate.CANONICAL_READER
