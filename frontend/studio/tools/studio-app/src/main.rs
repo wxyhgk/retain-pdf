@@ -18,7 +18,8 @@
 //! environment of a login shell: it finds node and cargo, and the Studio's terminal gets the
 //! programs the author has in their own terminal.
 //!
-//! Which blog: `STUDIO_REPO` when the app runs, or the one it was built for (build.sh).
+//! Which Studio: `STUDIO_REPO` when the app runs, or the one it was built for (build.sh); the notes are the ones its
+//! `.studio-local.json` names.
 //!
 //! Its windows open where they were left, as large as they were (`windows.json` in the app's own folder, Application
 //! Support/blog.studio.app), on a screen still there. Shutting the Studio's window hides it, as a Mac app's: the server
@@ -481,7 +482,7 @@ fn blog() -> Option<PathBuf> {
     env::var_os("STUDIO_REPO")
         .map(PathBuf::from)
         .or_else(|| option_env!("STUDIO_REPO").map(PathBuf::from))
-        .filter(|repo| repo.join("astro.config.mjs").is_file())
+        .filter(|repo| repo.join("src/studio/serve.mjs").is_file())
 }
 
 /// Where a server of a blog says it runs (its lock), and keeps what it said (its log, the one before, how it ended).
