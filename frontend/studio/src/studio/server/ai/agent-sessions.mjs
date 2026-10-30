@@ -52,6 +52,8 @@ const PICTURE_TYPES = { png: 'image/png', jpg: 'image/jpeg', gif: 'image/gif', w
 const IDLE_SLEEP = 10 * 60_000;
 const AWAKE_MAX = 3;
 const TIDY_EVERY = 60_000;
+/** How long one told to stop may take to, before it is stopped by force (AgentSession #forceStop). */
+const STOP_WAIT = 10_000;
 
 export class AgentSessions {
 	/** @type {Map<string, AgentSession>} */
@@ -378,6 +380,8 @@ class AgentSession {
 	#listeners = new Set();
 	/** Leave asked, or a question, not yet answered: the item's id → how to answer. */
 	#asked = new Map();
+	/** Its turns, counted: one ended by force is not ended again when its answer comes after all. */
+	#turns = 0;
 	/** Whether its adapter takes words while it works over ACP's steering extension (Claude Code's, Codex's). */
 	#steering = false;
 	/** Whether its agent takes pictures in what it is told. */
@@ -415,6 +419,8 @@ class AgentSession {
 		this.pageThrough = null;
 		/** Begun as a page (AgentSessions.makePage), before anything was said. */
 		this.madePage = false;
+		/** How long it may take to stop when told to, before it is stopped by force. */
+		this.stopWait = STOP_WAIT;
 	}
 
 	/** A conversation of chats/, as it was left: shown, not going on until it is woken (AgentSessions.wake). */
@@ -426,7 +432,8 @@ class AgentSession {
 		session.created = record.created;
 		session.updated = record.updated ?? record.created;
 		session.configOptions = record.configOptions ?? [];
-		session.items = record.items ?? [];
+		// What was going when it was left (the Studio closed or gone mid-turn) is not going now.
+		session.items = (record.items ?? []).map((item) => cutOff(item) ?? item);
 		for (const item of session.items) session.#byId.set(item.id, item);
 		session.#acpId = record.acpSessionId ?? null;
 		session.page = page;
@@ -649,8 +656,12 @@ class AgentSession {
 		const turn = this.#here
 			? this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: withContext(said, where, 'message') }, ...images], _meta: { studioContext: contextBlock(where, 'standing') } })
 			: this.#connection.agent.request('session/prompt', { sessionId: this.#acpId, prompt: [{ type: 'text', text: withContext(said, where) }, ...images] });
+		const turnNumber = ++this.#turns;
 		void turn.then(
 			(done) => {
+				// Stopped by force meanwhile (#forceStop): over already.
+				if (this.#turns !== turnNumber) return;
+				this.#settle();
 				const turn = this.items.slice(this.items.findLastIndex((item) => item.kind === 'user') + 1);
 				if (done.stopReason !== 'end_turn') this.#add({ kind: 'stop', id: randomUUID(), reason: done.stopReason });
 				// A turn over with nothing said or done: its service refused it (pi-acp says no more than that).
@@ -662,7 +673,8 @@ class AgentSession {
 				if (this.state === 'running') this.#setState('idle');
 			},
 			(error) => {
-				if (this.state === 'closed' || this.state === 'failed') return;
+				if (this.#turns !== turnNumber || this.state === 'closed' || this.state === 'failed') return;
+				this.#settle();
 				this.#add({ kind: 'error', id: randomUUID(), message: this.#why(error) });
 				this.#setState('idle');
 			},
@@ -763,11 +775,36 @@ class AgentSession {
 		answer(response && typeof response === 'object' ? response : null);
 	}
 
-	/** Stops what it is doing: what it asked leave for is refused. */
+	/**
+	 * Stops what it is doing: what it asked leave for is refused. One that does not stop (an adapter stuck, a service
+	 * not answering) is stopped by force a while later (#forceStop).
+	 */
 	cancel() {
 		if (this.state !== 'running') return;
 		for (const answer of this.#asked.values()) answer(null);
 		void this.#connection.agent.notify('session/cancel', { sessionId: this.#acpId }).catch(() => {});
+		const turn = this.#turns;
+		const timer = setTimeout(() => {
+			if (this.state === 'running' && this.#turns === turn) this.#forceStop();
+		}, this.stopWait);
+		timer.unref?.();
+	}
+
+	/** Its agent let go, still working: what was going cut off, said so; woken again when spoken to, as one asleep. */
+	#forceStop() {
+		this.#turns += 1;
+		this.#settle();
+		this.#add({ kind: 'notice', id: randomUUID(), severity: 'warning', title: t('{name} 停不下来，已经强制停下', { name: this.agent.name }), description: t('再说话时会重新接上这个对话。') });
+		this.#setState('idle');
+		this.sleep('SIGKILL');
+	}
+
+	/** What was going when its turn ended: cut off (status `interrupted`), not left turning. */
+	#settle() {
+		for (const item of [...this.items]) {
+			const cut = cutOff(item);
+			if (cut) this.#put(cut, true);
+		}
 	}
 
 	/** The author's answer to leave asked (`optionId`), or no (`null`). */
@@ -795,7 +832,7 @@ class AgentSession {
 	 * Its agent stopped for now, idle (an adapter takes memory): kept as it is (state `saved`), woken when spoken to
 	 * (AgentSessions.wake), its session loaded again.
 	 */
-	sleep() {
+	sleep(signal = 'SIGTERM') {
 		if (this.state !== 'idle') return;
 		const child = this.#child;
 		// Its end not taken for a failure.
@@ -805,7 +842,7 @@ class AgentSession {
 		this.#forget();
 		if (child?.pid && child.exitCode === null) {
 			try {
-				process.kill(-child.pid, 'SIGTERM');
+				process.kill(-child.pid, signal);
 			} catch {
 				// Over already.
 			}
@@ -842,6 +879,7 @@ class AgentSession {
 		this.#forget();
 		for (const answer of this.#asked.values()) answer(null);
 		if (this.state === 'closed' || this.state === 'failed') return;
+		this.#settle();
 		this.error = this.#why(error ?? new Error(t('它结束了')));
 		this.#add({ kind: 'error', id: randomUUID(), message: t('{name} 停了：{error}', { name: this.agent.name, error: this.error }) });
 		this.#setState('failed');
@@ -1042,6 +1080,19 @@ const promptLineRange = ({ start, end }) => (start === end ? `第 ${start} 行` 
 function briefOf({ brief }) {
 	if (brief === undefined) return '';
 	return brief ? `；它的写作要求在 ${brief}，先读` : '（没有 ai/brief.md，不用找）'; // i18n-ignore: for the AI
+}
+
+/**
+ * An item still going when its turn is over (stopped, failed, the Studio gone): cut off (`interrupted`; a subagent
+ * still going too), not left turning; null for one that is not.
+ */
+function cutOff(item) {
+	if (item.kind === 'tool' && (item.status === 'pending' || item.status === 'in_progress')) {
+		const subagents = item.subagents?.map((agent) => (agent.status === 'running' || agent.status === 'waiting' ? { ...agent, status: 'interrupted', doing: '' } : agent));
+		return { ...item, status: 'interrupted', ...(subagents ? { subagents } : {}) };
+	}
+	if (item.kind === 'compaction' && item.status === 'in_progress') return { ...item, status: 'cancelled' };
+	return null;
 }
 
 /** What the author said, then what the Studio adds of where they are (`part` of it), marked as the Studio's. */

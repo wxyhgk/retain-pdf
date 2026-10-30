@@ -292,6 +292,8 @@ function servePi(stream, env) {
 	return () => {
 		for (const entry of sessions.values()) {
 			entry.stop();
+			// One still working (stopped by force, AgentSession #forceStop): not left running on its own.
+			void entry.session.abort().catch(() => {});
 			entry.session.dispose();
 		}
 		sessions.clear();
@@ -377,7 +379,10 @@ function translator(cwd, send, session) {
 				return;
 			}
 			case 'auto_retry_start':
-				send({ sessionUpdate: 'notice', severity: 'info', title: t('pi 在重试'), description: event.errorMessage ?? '' });
+				send({ sessionUpdate: 'notice', severity: 'info', title: t('模型没回应，{seconds} 秒后再试（第 {attempt}/{max} 次）', { seconds: Math.round((event.delayMs ?? 0) / 1000), attempt: event.attempt, max: event.maxAttempts }), description: event.errorMessage ?? '' });
+				return;
+			case 'auto_retry_end':
+				if (!event.success) send({ sessionUpdate: 'notice', severity: 'warning', title: t('试了 {attempt} 次，模型还是没回应', { attempt: event.attempt }), description: event.finalError ?? '' });
 				return;
 			case 'auto_compaction_start':
 				send({ sessionUpdate: 'notice', severity: 'info', title: t('上下文快满了，pi 在压缩之前的内容'), description: '' });

@@ -261,8 +261,8 @@ function Tool({ item }: { item: ToolItem }) {
 				<span className={`ai-tool-title${command ? ' is-command' : ''}`} title={label}>
 					{label}
 				</span>
-				<span className="ai-tool-state" aria-label={{ pending: t('等待'), in_progress: t('进行中'), completed: t('完成'), failed: t('失败') }[item.status]}>
-					{item.status === 'completed' ? '✓' : item.status === 'failed' ? '✗' : item.status === 'pending' ? t('等待') : ''}
+				<span className="ai-tool-state" aria-label={{ pending: t('等待'), in_progress: t('进行中'), completed: t('完成'), failed: t('失败'), interrupted: t('已中断') }[item.status]}>
+					{item.status === 'completed' ? '✓' : item.status === 'failed' ? '✗' : item.status === 'pending' ? t('等待') : item.status === 'interrupted' ? t('已中断') : ''}
 				</span>
 			</button>
 			<div className="ai-tool-detail">
@@ -309,7 +309,7 @@ function tokensOf(count: number): string {
 	return `${(count / 1_000_000).toFixed(1)}M`;
 }
 
-const SUBAGENT_MARKS: Record<Subagent['status'], string> = { waiting: '○', running: '', completed: '✓', failed: '✗' };
+const SUBAGENT_MARKS: Record<Subagent['status'], string> = { waiting: '○', running: '', completed: '✓', failed: '✗', interrupted: '–' };
 
 /**
  * The subagents a tool call runs (pi's subagent extension), as Claude Code, opencode and Cline show theirs: a row each,
@@ -321,7 +321,8 @@ function Subagents({ item }: { item: ToolItem }) {
 	const now = useNow(agents.some((agent) => agent.status === 'running' || agent.status === 'waiting'));
 	const done = agents.filter((agent) => agent.status === 'completed').length;
 	const failed = agents.filter((agent) => agent.status === 'failed').length;
-	const counts = [agents.length > 1 ? t('{done}/{total} 完成', { done, total: agents.length }) : '', failed ? t('{count} 个失败', { count: failed }) : ''].filter(Boolean).join(' · ');
+	const cut = agents.filter((agent) => agent.status === 'interrupted').length;
+	const counts = [agents.length > 1 ? t('{done}/{total} 完成', { done, total: agents.length }) : '', failed ? t('{count} 个失败', { count: failed }) : '', cut ? t('{count} 个中断', { count: cut }) : ''].filter(Boolean).join(' · ');
 	return (
 		<div className="ai-subagents" data-status={item.status}>
 			<p className="ai-subagents-title">
@@ -345,7 +346,7 @@ function SubagentRow({ agent, now }: { agent: Subagent; now: number }) {
 		<div className={`ai-subagent${open ? ' is-open' : ''}`} data-status={agent.status}>
 			<button type="button" className="ai-subagent-row" aria-expanded={open} onClick={() => setOpen(!open)}>
 				<span className="ai-subagent-line">
-					<span className="ai-subagent-mark" aria-label={{ waiting: t('准备中'), running: t('进行中'), completed: t('完成'), failed: t('失败') }[agent.status]}>
+					<span className="ai-subagent-mark" aria-label={{ waiting: t('准备中'), running: t('进行中'), completed: t('完成'), failed: t('失败'), interrupted: t('已中断') }[agent.status]}>
 						{SUBAGENT_MARKS[agent.status]}
 					</span>
 					<span className="ai-subagent-name">{agent.step ? `${agent.step}. ${agent.name}` : agent.name}</span>

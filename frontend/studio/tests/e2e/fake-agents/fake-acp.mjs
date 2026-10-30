@@ -274,6 +274,17 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', asPi ? `pi 模型 ${state.model} DeepSeek key ${process.env.DEEPSEEK_API_KEY ?? '无'}` : `地址 ${process.env.ANTHROPIC_BASE_URL ?? '无'} 模型 ${process.env.ANTHROPIC_MODEL ?? '无'} key ${process.env.ANTHROPIC_AUTH_TOKEN ? '有' : '无'}`);
 			return { stopReason: 'end_turn' };
 		}
+		// A step whose end is never told (an update lost): the turn over all the same.
+		if (said.startsWith('漏掉')) {
+			await update({ sessionUpdate: 'tool_call', toolCallId: 'lost', title: 'ls', kind: 'execute', status: 'in_progress' });
+			await words('agent_message_chunk', '做完了。');
+			return { stopReason: 'end_turn' };
+		}
+		// Stuck: told to stop, does not.
+		if (said.startsWith('卡住')) {
+			await update({ sessionUpdate: 'tool_call', toolCallId: 'stuck', title: 'sleep 1000', kind: 'execute', status: 'in_progress' });
+			await new Promise(() => {});
+		}
 		if (said.includes('慢')) {
 			await update({ sessionUpdate: 'tool_call', toolCallId: 'slow', title: 'sleep 100', kind: 'execute', status: 'in_progress' });
 			state.steered = '';

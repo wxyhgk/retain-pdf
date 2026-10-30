@@ -49,3 +49,19 @@ test('subagents at work: a row each, what it is doing, how much, how long; done 
 	await expect(scout.locator('.ai-subagent-output strong')).toHaveText('src/auth.ts');
 	await expect(scout.locator('.ai-subagent-model')).toHaveText('fake/m1');
 });
+
+test('a step still going when its turn is over (its end never told) says it was cut off, not turning', async ({ page }) => {
+	await openStudio(page);
+	await page.locator('#side-tab-ai').click();
+	await expect(pane(page).locator('.ai-effort')).toBeVisible();
+	await input(page).fill('漏掉');
+	await input(page).press('Enter');
+	await expect(pane(page).locator('.ai-message').last()).toHaveText('做完了。');
+	await pane(page).locator('.ai-work').last().click();
+	const step = page.locator('.ai-work-dialog .ai-tool');
+	await expect(step).toHaveAttribute('data-status', 'interrupted');
+	await expect(step.locator('.ai-tool-state')).toHaveText('已中断');
+	// Gray, not the red of a failure, and not turning.
+	expect(await step.locator('.ai-tool-state').evaluate((node) => getComputedStyle(node).color)).not.toMatch(/rgb\(2\d\d, \d{1,2}, \d{1,2}\)/u);
+	expect(await step.locator('.ai-tool-state').evaluate((node) => getComputedStyle(node, '::after').animationName)).toBe('none');
+});

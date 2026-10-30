@@ -276,3 +276,39 @@ test('one made ready is taken by the next begun with the same (no adapter starte
 	assert.match(first.items.at(-1).text, /^接上了 fake-session-\d+$/u);
 	assert.equal(first.items.some((item) => item.kind === 'error'), false, 'put to sleep is not a failure');
 });
+
+test('a step still going when its turn is over is cut off, not left turning: its end not told, a turn stopped by force, the Studio gone', async (t) => {
+	const { session, until } = await conversation(t);
+	session.prompt('漏掉');
+	await until((s) => s.state === 'idle');
+	assert.equal(session.items.find((item) => item.id === 'lost').status, 'interrupted');
+
+	// Told to stop, it does not: stopped by force a while later, said so; spoken to again, it goes on.
+	session.stopWait = 200;
+	session.prompt('卡住');
+	await until((s) => s.items.some((item) => item.id === 'stuck'));
+	session.cancel();
+	await until((s) => s.state === 'saved');
+	assert.equal(session.items.find((item) => item.id === 'stuck').status, 'interrupted');
+	assert.match(session.items.at(-1).title, /停不下来，已经强制停下/u);
+});
+
+test('read back after the Studio went mid-turn: what was going is cut off, a subagent too', async (t) => {
+	const cwd = await realpath(await mkdtemp(join(tmpdir(), 'agent-sessions-')));
+	t.after(() => rm(cwd, { recursive: true, force: true }));
+	const store = new ChatStore(join(cwd, 'chats'));
+	const sessions = new AgentSessions({ binFolder: join(cwd, 'none'), env: process.env, store });
+	t.after(() => sessions.closeAll());
+	const session = await sessions.start({ agent, cwd, env: { PATH: process.env.PATH } });
+	session.prompt('子代理');
+	await new Promise((resolve) => {
+		const stop = session.subscribe(() => session.items.some((item) => item.subagents?.some((agent) => agent.status === 'running')) && (stop(), resolve()));
+	});
+	// Gone as it worked: what it was is what was last written.
+	await store.save(session.record());
+	const back = await new AgentSessions({ binFolder: join(cwd, 'none'), env: process.env, store }).find(session.id);
+	const call = back.items.find((item) => item.subagents);
+	assert.equal(call.status, 'interrupted');
+	assert.ok(call.subagents.every((agent) => agent.status !== 'running' && agent.status !== 'waiting'));
+	assert.ok(call.subagents.some((agent) => agent.status === 'interrupted'));
+});
