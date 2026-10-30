@@ -41,7 +41,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 # 接续组合成一条送给模型，原文里用它标出原来在哪里断开；译文里要在对应位置放同样数量
 BREAK = "[[BREAK]]"
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-12"
+PROMPT_VERSION = "translation-agent-13"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -291,7 +291,7 @@ class TranslationAgent:
             "model": self.model_for(role),
             "max_tokens": 16000,
             "system": system,
-            "tools": [tool],
+            "tools": [strict_tool(tool)],
             "tool_choice": {"type": "tool", "name": tool["name"]},
             "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}],
         }
@@ -301,7 +301,7 @@ class TranslationAgent:
         response = self._call(self._body(payload, role, system=system, tool=tool), label=label, role=role)
         for part in response.get("content") or []:
             if part.get("type") == "tool_use" and part.get("name") == tool["name"]:
-                return part.get("input") or {}
+                return _tool_input(part)
         raise ValueError(f"model response has no {tool['name']} tool call")
 
     def _call(self, body: dict, *, label: str, role: str = ROLE_TRANSLATOR) -> dict:
@@ -328,10 +328,12 @@ class TranslationAgent:
         """取出工具调用里的译文、报上的术语、声明的例外；同一个 id 交了多次的记下来。"""
         for part in response.get("content") or []:
             if part.get("type") == "tool_use" and part.get("name") == TOOL["name"]:
-                data = part.get("input") or {}
+                data = _tool_input(part)
                 out: dict[str, str] = {}
                 duplicates: list[str] = []
                 for item in data.get("translations") or []:
+                    if not isinstance(item, dict):
+                        continue  # 坏掉的一项当没交，走漏交重翻
                     block_id = str(item.get("id", ""))
                     if block_id in out:
                         duplicates.append(block_id)
@@ -609,6 +611,42 @@ def _forgive_moved_marks(members: list, results: dict[str, BlockResult]) -> None
             for i in result.issues
         ]
         result.status = status_of(result.issues)
+
+
+def strict_tool(tool: dict) -> dict:
+    """工具定义加上 `strict: true`（每层对象 `additionalProperties: false`）：接口保证交回的参数符合 schema。
+    没加以前论文实跑碰到模型把 translations 数组写成一段坏掉的 JSON 字符串，同一页重翻又坏一次，7 块退回原文。"""
+    schema = json.loads(json.dumps(tool["input_schema"]))
+
+    def close(node) -> None:
+        if isinstance(node, dict):
+            if node.get("type") == "object":
+                node.setdefault("additionalProperties", False)
+            for value in node.values():
+                close(value)
+        elif isinstance(node, list):
+            for value in node:
+                close(value)
+
+    close(schema)
+    return {**tool, "strict": True, "input_schema": schema}
+
+
+def _tool_input(part: dict) -> dict:
+    """工具调用的输入。模型偶尔把数组字段写成一段 JSON 字符串（真实文档实测碰到过，那段 JSON 本身还是坏的）：
+    能解析就换回数组，解析不了就当空——对应的块算没交，由漏交重翻补上，不让整页崩掉。"""
+    data = part.get("input")
+    if not isinstance(data, dict):
+        return {}
+    fixed = dict(data)
+    for key, value in data.items():
+        if isinstance(value, str) and value.lstrip().startswith("["):
+            try:
+                decoded = json.loads(value)
+            except ValueError:
+                decoded = []
+            fixed[key] = decoded if isinstance(decoded, list) else []
+    return fixed
 
 
 def _first_uses(page: PageInput) -> dict[str, list[dict]]:

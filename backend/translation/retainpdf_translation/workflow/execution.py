@@ -94,9 +94,10 @@ def execute_translation_request(request: TranslationExecutionRequest) -> dict:
     raise_if_executor_failed()
     if request.engine not in TRANSLATION_ENGINES:
         raise ValueError(f"unknown translation engine {request.engine!r} (expected one of {', '.join(TRANSLATION_ENGINES)})")
-    if request.engine == "agent" and request.math_mode != "direct_typst":
-        # agent 收的原文是 "$…$" 直写公式，不认占位符
-        request = replace(request, math_mode="direct_typst")
+    if request.engine == "agent":
+        # agent 收的原文是 "$…$" 直写公式，不认占位符；它自带通读（体裁、术语、人名、标题），
+        # 译前准备（术语预扫、术语审定）的结果用不上，跑了只是白花钱
+        request = replace(request, math_mode="direct_typst", preparation="off")
     # Own output before opening its journal or performing domain inference.
     store = CheckpointStore(translation_checkpoint_path(request.output_dir))
     store.acquire()

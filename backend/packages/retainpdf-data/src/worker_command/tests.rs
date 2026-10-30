@@ -986,6 +986,30 @@ fn render_spec_refine_is_off_for_plain_render_even_if_job_enables_it() {
     assert_eq!(refine["reviewer_credential_ref"], "");
 }
 
+/// 翻译 agent 自带每页审校：翻译之后不再自动精修；用户手动精修照旧。
+#[test]
+fn render_spec_skips_auto_refine_for_agent_engine_but_keeps_manual_refine() {
+    let mut request = build_request(WorkflowKind::Book);
+    request.translation.engine = "agent".to_string();
+    request.translation.refine = "editorial".to_string();
+    let payload = render_spec_with_refine(&request, super::RenderRefine::AfterTranslation);
+    assert_eq!(payload["params"]["refine"]["mode"], "off");
+
+    let payload = render_spec_with_refine(
+        &request,
+        super::RenderRefine::Manual(crate::models::domain::RefineOverride {
+            mode: "review_and_fix".to_string(),
+            start_page: None,
+            end_page: None,
+            max_items: None,
+            max_tokens: None,
+            requested_at: "2026-10-30T00:00:00Z".to_string(),
+        }),
+    );
+    assert_eq!(payload["params"]["refine"]["mode"], "review_and_fix");
+    assert_eq!(payload["params"]["refine"]["trigger"], "manual");
+}
+
 /// 紧跟翻译的那次渲染：用任务的 translation.refine，trigger=auto；默认 off。
 #[test]
 fn render_spec_refine_after_translation_follows_job_setting() {

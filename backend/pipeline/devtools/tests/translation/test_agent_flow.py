@@ -205,6 +205,15 @@ def test_a_stopped_run_fails_the_stage_and_resumes_without_paying_again(tmp_path
     assert tools == ["submit_translations", "submit_review"], "only page 2 is requested again"
 
 
+def test_agent_engine_skips_translation_preparation(tmp_path: Path, fake_transport) -> None:
+    """agent 自带通读：请求里带了 preparation 也不跑术语预扫、术语审定（不重复花钱）。"""
+    model = fake_transport(FakeModel())
+    execute_translation_request(_request(tmp_path, preparation="editorial"))
+    assert not (tmp_path / "translated" / "term-base.v1.json").exists()
+    assert not (tmp_path / "translated" / "style-guide.v1.json").exists()
+    assert all(b["tools"][0]["name"].startswith("submit_") for b in model.bodies)
+
+
 def test_engine_is_part_of_the_checkpoint_identity(tmp_path: Path) -> None:
     from retainpdf_translation.workflow.checkpoint.identity import _engine_identity
 
