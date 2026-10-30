@@ -63,6 +63,27 @@ test('a widget that is a file of the article reads the article’s data, and sta
 	await expect(widget.locator('#out')).toHaveText('新版本');
 });
 
+test('while the AI is at work, a widget it changes is drawn again at once; the article’s text waits to be looked over', async ({ page }) => {
+	writeFixtureFile('assets/plot.html', '<p id="out">第一版</p>');
+	appendToFixture('\n```widget title="AI 写的"\n@file ./assets/plot.html\n```\n');
+	await openStudio(page);
+	const widget = page.frameLocator('iframe.note-widget-frame[data-widget-file="assets/plot.html"]');
+	await editor(page).locator('iframe.note-widget-frame[data-widget-file="assets/plot.html"]').scrollIntoViewIfNeeded();
+	await expect(widget.locator('#out')).toHaveText('第一版');
+	// The AI at work (the stand-in's long command).
+	await page.locator('#side-tab-ai').click();
+	const pane = page.locator('#side-ai');
+	await expect(pane.locator('.ai-effort')).toBeVisible();
+	await pane.locator('.ai-input .ProseMirror').fill('慢慢来');
+	await pane.locator('.ai-input .ProseMirror').press('Enter');
+	await expect(pane.locator('.ai-work.is-going')).toContainText('正在运行 sleep 100');
+	// It rewrites the widget: drawn again now, not once it is done (the author switching away and back).
+	writeFixtureFile('assets/plot.html', '<p id="out">第二版</p>');
+	await expect(widget.locator('#out')).toHaveText('第二版');
+	await expect(page.locator('#review-bar')).toBeHidden();
+	await pane.locator('.ai-send').click();
+});
+
 test('a widget reads only what is published with the article', async ({ page }) => {
 	appendToFixture(
 		'\n```widget\n<p id="out">…</p><script>note.file("ai/notes.md").then(() => { out.textContent = "读到了"; }, (error) => { out.textContent = error.message; });</script>\n```\n',

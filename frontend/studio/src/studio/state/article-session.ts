@@ -76,7 +76,8 @@ export type SessionHost = {
 	saved(slug: string, properties: ArticleProperties, problems: string[]): void;
 };
 
-const ARTICLE_TEXT_FILES = ['index.md', 'article.views.json'];
+/** An article's own text (its words, its views), as against its other files. */
+export const ARTICLE_TEXT_FILES = ['index.md', 'article.views.json'];
 
 const PROPERTY_NAMES: Record<keyof ArticleProperties, string> = {
 	title: t('标题'),

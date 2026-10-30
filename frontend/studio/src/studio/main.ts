@@ -41,7 +41,7 @@ import { showContextMenu } from './common/context-menu';
 import { WIDGET_ASK, WIDGET_START, type WidgetAsk, type WidgetStart } from '@blog/kernel/widget-events.ts';
 import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
-import { ArticleSession, type SaveState } from './state/article-session';
+import { ARTICLE_TEXT_FILES, ArticleSession, type SaveState } from './state/article-session';
 import type { ArticlePayload } from './types';
 import { createArticleActions } from './pages/article-actions';
 import { favoriteSlugs } from './pages/favorites';
@@ -698,9 +698,10 @@ watchDisk((changes) => {
 	const change = changes.find((entry) => entry.slug === session.slug);
 	if (!change) return;
 	void filePanel.refresh();
-	// The AI at work, writing the article bit by bit: looked over once its turn is over, not at each bit.
-	if (chat.hold(change)) return;
-	session.changedOnDisk(change.paths);
+	// The AI at work, writing the article bit by bit: its text looked over once its turn is over, not at each bit; its
+	// other files (a widget's page, the data one reads, an output) shown as they are now, as it works on them.
+	const text = change.paths.some((path) => ARTICLE_TEXT_FILES.includes(path));
+	if (!text || !chat.hold(change)) session.changedOnDisk(change.paths);
 	studioPlugins.emit('studio/files-changed', change.slug, change.paths);
 	officeFilesChanged(change.paths.map((path) => studioFileUrl(change.slug, path)));
 	if (change.paths.includes(BIBLIOGRAPHY_PATH)) void library.load(change.slug);

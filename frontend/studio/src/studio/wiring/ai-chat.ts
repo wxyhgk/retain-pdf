@@ -10,6 +10,7 @@ import { showContextMenu } from '../common/context-menu';
 import { showToast } from '../common/toast';
 import { sourceLinesOf } from '@blog/document/source-lines.ts';
 import { createChatList } from '../shell/chat-list';
+import { wroteJustNow } from '../state/writes';
 import type { ArticleSummary } from '../types';
 import type { Studio } from './studio';
 import type { answerWindows } from '../windows/studio-line';
@@ -283,6 +284,8 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 	 */
 	function hold(change: { slug: string; paths: string[] }): boolean {
 		if (!(aiPanel.working() || workingInWindow) || !studio.session.slug) return false;
+		// The author's own save, the AI at work meanwhile: not the AI's (the session sees it is what it saved).
+		if (wroteJustNow()) return false;
 		if (!heldChanges || heldChanges.slug !== studio.session.slug) {
 			heldChanges = { slug: studio.session.slug, paths: new Set() };
 			showToast(t('AI 在改这篇文章，做完后一起给你过目'));
