@@ -55,6 +55,8 @@ export type DatabaseConfig = {
 	template: string | null;
 	/** The titles in the table on as many lines as they take. */
 	titleWrap: boolean;
+	/** The column the table's rows are grouped by (a single choice, a box), as the board's lists; none: not grouped. */
+	tableGroup: string | null;
 	/** What is worked out of each column under the table (by its name; 标题's count unless said otherwise). */
 	calcs: Record<string, CalcKind>;
 };
@@ -149,6 +151,7 @@ export function readConfig(text: string): DatabaseConfig {
 		group: typeof raw.group === 'string' && unique.some((column) => column.name === raw.group && (column.type === 'select' || column.type === 'checkbox')) ? raw.group : null,
 		template: typeof raw.template === 'string' && raw.template ? raw.template : null,
 		titleWrap: raw.titleWrap === true,
+		tableGroup: typeof raw.tableGroup === 'string' && unique.some((column) => column.name === raw.tableGroup && (column.type === 'select' || column.type === 'checkbox')) ? raw.tableGroup : null,
 		calcs: Object.fromEntries(
 			Object.entries(raw.calcs && typeof raw.calcs === 'object' && !Array.isArray(raw.calcs) ? (raw.calcs as Record<string, unknown>) : {}).filter(
 				([name, kind]) => named.has(name) && CALC_KINDS.includes(kind as CalcKind) && calcKinds(name === TITLE ? 'title' : unique.find((column) => column.name === name)!.type).includes(kind as CalcKind),
@@ -169,6 +172,7 @@ export function writeConfig(config: DatabaseConfig): string {
 	if (config.group) kept.group = config.group;
 	if (config.template) kept.template = config.template;
 	if (config.titleWrap) kept.titleWrap = true;
+	if (config.tableGroup) kept.tableGroup = config.tableGroup;
 	if (Object.keys(config.calcs).length) kept.calcs = config.calcs;
 	return JSON.stringify(kept, null, 2);
 }

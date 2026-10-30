@@ -262,6 +262,7 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 					sorts: config.sorts.map((each) => (each.column === column.name ? { ...each, column: to } : each)),
 					filter: config.filter.map((each) => (each.column === column.name ? { ...each, column: to } : each)),
 					group: config.group === column.name ? to : config.group,
+					tableGroup: config.tableGroup === column.name ? to : config.tableGroup,
 					calcs: Object.fromEntries(Object.entries(config.calcs).map(([name, kind]) => [name === column.name ? to : name, kind])),
 				},
 			);
@@ -289,6 +290,7 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 			replaceColumn(column.name, next, {
 				filter: config.filter.filter((each) => each.column !== column.name),
 				group: grouped ? null : config.group,
+				tableGroup: config.tableGroup === column.name && type !== 'select' && type !== 'checkbox' ? null : config.tableGroup,
 				// What was worked out of it, kept if its new kind offers it too.
 				calcs: config.calcs[column.name] && !calcKinds(type).includes(config.calcs[column.name]!) ? Object.fromEntries(Object.entries(config.calcs).filter(([name]) => name !== column.name)) : config.calcs,
 			});
@@ -302,6 +304,7 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 				sorts: config.sorts.filter((each) => each.column !== column.name),
 				filter: config.filter.filter((each) => each.column !== column.name),
 				group: config.group === column.name ? null : config.group,
+				tableGroup: config.tableGroup === column.name ? null : config.tableGroup,
 				calcs: Object.fromEntries(Object.entries(config.calcs).filter(([name]) => name !== column.name)),
 			});
 			setMenuFor(null);
@@ -598,6 +601,22 @@ function Settings({ config, change, host }: { config: DatabaseConfig; change(nex
 							{groups.length === 0 && <DropdownMenuItem disabled>{t('先加一个单选或勾选属性')}</DropdownMenuItem>}
 							{groups.map((column) => (
 								<DropdownMenuCheckboxItem key={column.name} checked={config.group === column.name} onCheckedChange={() => change({ ...config, group: column.name })}>
+									{column.name}
+								</DropdownMenuCheckboxItem>
+							))}
+						</DropdownMenuSubContent>
+					</DropdownMenuSub>
+				)}
+				{config.view === 'table' && (
+					<DropdownMenuSub>
+						<DropdownMenuSubTrigger data-database-table-group-menu>{config.tableGroup ? t('分组：{column}', { column: config.tableGroup }) : t('分组…')}</DropdownMenuSubTrigger>
+						<DropdownMenuSubContent className="db-dropdown">
+							<DropdownMenuCheckboxItem checked={config.tableGroup === null} onCheckedChange={() => change({ ...config, tableGroup: null })}>
+								{t('不分组')}
+							</DropdownMenuCheckboxItem>
+							{groups.length === 0 && <DropdownMenuItem disabled>{t('先加一个单选或勾选属性')}</DropdownMenuItem>}
+							{groups.map((column) => (
+								<DropdownMenuCheckboxItem key={column.name} checked={config.tableGroup === column.name} data-database-table-group={column.name} onCheckedChange={() => change({ ...config, tableGroup: column.name })}>
 									{column.name}
 								</DropdownMenuCheckboxItem>
 							))}

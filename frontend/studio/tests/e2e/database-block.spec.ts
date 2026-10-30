@@ -399,3 +399,28 @@ test('rows chosen by their boxes (⇧, a run of them): a value set in all, delet
 	await expect(block(p).locator('.database-row.is-chosen')).toHaveCount(1);
 	await p.keyboard.press('Escape');
 });
+
+test('the table grouped by a choice: each group its rows, folded, its 新建 with its choice', async ({ page: p }) => {
+	row('db-row-a', 'A', '{ "状态": "完成" }', 10);
+	row('db-row-b', 'B', '{ "状态": "进行中" }', 20);
+	row('db-row-c', 'C', '{ "状态": "完成" }', 30);
+	database({ columns: [{ name: '状态', type: 'select', options: ['进行中', '完成'] }], view: 'table' });
+	await openStudio(p);
+	await block(p).locator('[data-database-settings]').click();
+	await p.locator('[data-database-table-group-menu]').click();
+	await p.locator('[data-database-table-group="状态"]').click();
+	await p.keyboard.press('Escape');
+	const group = (value: string) => block(p).locator(`[data-database-group="${value}"]`);
+	await expect(group('进行中').locator('.database-row')).toHaveCount(1);
+	await expect(group('完成').locator('.database-row')).toHaveCount(2);
+	await expect(group('完成').locator('.db-group-count')).toHaveText('2');
+	await group('完成').locator('[data-database-group-toggle="完成"]').click();
+	await expect(group('完成').locator('.database-row')).toHaveCount(0);
+	await group('进行中').locator('[data-database-group-add="进行中"]').click();
+	await expect(p.locator('[data-database-input]')).toBeFocused();
+	await p.keyboard.type('D');
+	await p.keyboard.press('Enter');
+	await expect(group('进行中').locator('.database-row')).toHaveCount(2);
+	await p.keyboard.press('ControlOrMeta+s');
+	await expect.poll(savedMarkdown).toContain('"tableGroup": "状态"');
+});

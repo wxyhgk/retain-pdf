@@ -3,7 +3,7 @@ import { ArrowDown, ArrowLeftToLine, ArrowRightToLine, ArrowUp, ArrowUpRight, Ch
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
-import { calcKinds, calcName, calculate, DEFAULT_WIDTH, filterOps, shown, TITLE, TITLE_WIDTH, type Column, type Row } from './database-config';
+import { boardLists, calcKinds, calcName, calculate, DEFAULT_WIDTH, filterOps, shown, TITLE, TITLE_WIDTH, type Column, type Row } from './database-config';
 import { CellField, DatePicker, DateText, MenuLine, MenuRow, OptionPicker, Pill, Pop, TYPE_ICONS, TypeList, typeName } from './database-parts';
 import type { Database, Spot } from './DatabaseView';
 import { cellsOf, copiedText, pastedValue, tableText } from './table-clipboard';
@@ -26,7 +26,14 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 	const width = TITLE_WIDTH + columns.reduce((sum, column) => sum + widthOf(column), 0) + ADD_WIDTH;
 	const [drop, setDrop] = useState<{ slug: string; after: boolean } | null>(null);
 	const [dragged, setDragged] = useState<string | null>(null);
-	const keys = useTableKeys(database, rows, columns);
+	// Grouped by a choice or a box (as the board's lists): each group's rows under its head, folded or not.
+	const [folded, setFolded] = useState<ReadonlySet<string>>(new Set());
+	const groupColumn = config.tableGroup ? (config.columns.find((column) => column.name === config.tableGroup) ?? null) : null;
+	const groups = groupColumn ? boardLists(rows, { ...config, group: groupColumn.name }).filter((group) => group.value !== null || group.rows.length) : null;
+	const keyOf = (value: string | null) => value ?? '';
+	/** The rows as they are shown, in order (those of folded groups left out): what the keys go through. */
+	const shownRows = groups ? groups.flatMap((group) => (folded.has(keyOf(group.value)) ? [] : group.rows)) : rows;
+	const keys = useTableKeys(database, shownRows, columns);
 
 	const over = (row: Row) => (event: DragEvent) => {
 		if (!event.dataTransfer.types.includes(ROW_DRAG)) return;
@@ -44,13 +51,37 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 		void database.moveRow(slug, after ? { after: row.slug } : { before: row.slug });
 	};
 
+	/** A row of the table: its title (box and ⋮⋮ in the margin), its cells. */
+	const drawRow = (row: Row) => (
+		<div
+			key={row.slug}
+			role="row"
+			className={cn('db-tr database-row', drop?.slug === row.slug && (drop.after ? 'is-drop-after' : 'is-drop-before'), dragged === row.slug && 'is-dragged', database.chosenRows.has(row.slug) && 'is-chosen')}
+			data-row={row.slug}
+			onDragOver={over(row)}
+			onDragLeave={(event) => !event.currentTarget.contains(event.relatedTarget as Node) && setDrop((now) => (now?.slug === row.slug ? null : now))}
+			onDrop={dropped(row)}
+		>
+			<div className={cn('db-td db-td-title', config.titleWrap && 'is-wrap', keys.marks(row.slug, TITLE))} role="cell" data-column={TITLE} style={{ width: TITLE_WIDTH }} onMouseDown={keys.press(row.slug, TITLE)}>
+				<RowHandle row={row} rows={shownRows} database={database} dragging={(on) => setDragged(on ? row.slug : null)} />
+				<TitleCell row={row} database={database} />
+			</div>
+			{columns.map((column) => (
+				<div key={column.name} className={cn('db-td', column.wrap && 'is-wrap', keys.marks(row.slug, column.name))} role="cell" data-column={column.name} style={{ width: widthOf(column) }} onMouseDown={keys.press(row.slug, column.name)}>
+					<Cell row={row} column={column} database={database} />
+				</div>
+			))}
+			<div className="db-td db-td-add" style={{ width: ADD_WIDTH }} />
+		</div>
+	);
+
 	return (
 		<div className="db-scroll">
 			{/* Rows of cells as wide as their columns (divs, as Notion's: the editor's table look is not theirs); the keys its
 			    own while no cell is typed in (useTableKeys). */}
 			<div className="db-table" role="table" style={{ width }} tabIndex={-1} ref={database.table} onKeyDown={keys.down} onCopy={keys.copy} onPaste={keys.paste}>
 				<div className="db-tr db-head" role="row">
-					<TitleHead database={database} rows={rows} />
+					<TitleHead database={database} rows={shownRows} />
 					{columns.map((column) => (
 						<ColumnHead
 							key={column.name}
@@ -64,34 +95,51 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 						<AddColumn database={database} />
 					</div>
 				</div>
-				{rows.map((row) => (
-					<div
-						key={row.slug}
-						role="row"
-						className={cn('db-tr database-row', drop?.slug === row.slug && (drop.after ? 'is-drop-after' : 'is-drop-before'), dragged === row.slug && 'is-dragged', database.chosenRows.has(row.slug) && 'is-chosen')}
-						data-row={row.slug}
-						onDragOver={over(row)}
-						onDragLeave={(event) => !event.currentTarget.contains(event.relatedTarget as Node) && setDrop((now) => (now?.slug === row.slug ? null : now))}
-						onDrop={dropped(row)}
-					>
-						<div className={cn('db-td db-td-title', config.titleWrap && 'is-wrap', keys.marks(row.slug, TITLE))} role="cell" data-column={TITLE} style={{ width: TITLE_WIDTH }} onMouseDown={keys.press(row.slug, TITLE)}>
-							<RowHandle row={row} rows={rows} database={database} dragging={(on) => setDragged(on ? row.slug : null)} />
-							<TitleCell row={row} database={database} />
-						</div>
-						{columns.map((column) => (
-							<div key={column.name} className={cn('db-td', column.wrap && 'is-wrap', keys.marks(row.slug, column.name))} role="cell" data-column={column.name} style={{ width: widthOf(column) }} onMouseDown={keys.press(row.slug, column.name)}>
-								<Cell row={row} column={column} database={database} />
-							</div>
-						))}
-						<div className="db-td db-td-add" style={{ width: ADD_WIDTH }} />
+				{groups
+					? groups.map((group) => {
+							const key = keyOf(group.value);
+							const shut = folded.has(key);
+							return (
+								<div key={key} className="db-group" data-database-group={key}>
+									<div className="db-tr db-group-head" role="row" style={{ width }}>
+										<button
+											type="button"
+											className="db-group-toggle"
+											aria-expanded={!shut}
+											data-database-group-toggle={key}
+											onClick={() => setFolded((before) => {
+												const next = new Set(before);
+												if (next.has(key)) next.delete(key);
+												else next.add(key);
+												return next;
+											})}
+										>
+											<ChevronRight aria-hidden />
+										</button>
+										<GroupName column={groupColumn!} value={group.value} />
+										<span className="db-group-count">{group.rows.length}</span>
+									</div>
+									{!shut && group.rows.map((row) => drawRow(row))}
+									{!shut && (
+										<div className="db-tr db-foot" style={{ width }}>
+											<button type="button" className="db-add-row" data-database-group-add={key} onClick={() => void database.addRow(group.value === null ? {} : { [groupColumn!.name]: groupColumn!.type === 'checkbox' ? group.value === 'true' : group.value })}>
+												<Plus aria-hidden />
+												{t('新建')}
+											</button>
+										</div>
+									)}
+								</div>
+							);
+						})
+					: rows.map((row) => drawRow(row))}
+				{!groups && (
+					<div className="db-tr db-foot" style={{ width }}>
+						<button type="button" className="db-add-row" data-database-add-row onClick={() => void database.addRow()}>
+							<Plus aria-hidden />
+							{t('新建')}
+						</button>
 					</div>
-				))}
-				<div className="db-tr db-foot" style={{ width }}>
-					<button type="button" className="db-add-row" data-database-add-row onClick={() => void database.addRow()}>
-						<Plus aria-hidden />
-						{t('新建')}
-					</button>
-				</div>
+				)}
 				{/* What is worked out of each column, under it (as Notion's 计算). */}
 				<div className="db-tr db-calc-row" role="row">
 					<div className="db-td db-td-title db-calc" style={{ width: TITLE_WIDTH }}>
@@ -836,4 +884,17 @@ function Calc({ name, column, rows, database }: { name: string; column: Column |
 			</div>
 		</Pop>
 	);
+}
+
+/** A group's name at its head: its choice as a chip, a box ticked or not, or none (无「列名」). */
+function GroupName({ column, value }: { column: Column; value: string | null }) {
+	if (value === null) return <span className="db-group-none">{t('无「{column}」', { column: column.name })}</span>;
+	if (column.type === 'checkbox')
+		return (
+			<span className="db-group-box">
+				<span className={cn('db-check is-small', value === 'true' && 'is-checked')}>{value === 'true' && <Check aria-hidden />}</span>
+				{value === 'true' ? t('已勾选') : t('未勾选')}
+			</span>
+		);
+	return <Pill>{value}</Pill>;
 }

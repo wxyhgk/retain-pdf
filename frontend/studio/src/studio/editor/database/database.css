@@ -135,6 +135,16 @@
 .db .db-add-row { display: flex; flex: 1; align-items: center; gap: 6px; height: 34px; padding: 0 8px; color: rgb(var(--gray)); font-size: 14px; text-align: left; transition: background var(--studio-dur-fast); }
 .db .db-add-row svg { width: 16px; height: 16px; }
 .db .db-add-row:hover { background: var(--studio-fill); }
+/* The table grouped: each group's head (▸, its choice, how many), its rows, its 新建. */
+.db .db-group-head { display: flex; align-items: center; gap: 6px; height: 40px; margin-top: 6px; padding: 0 4px; border-bottom: 1px solid var(--studio-hairline); }
+.db .db-group:first-of-type .db-group-head { margin-top: 0; }
+.db .db-group-toggle { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; color: rgb(var(--gray)); }
+.db .db-group-toggle:hover { background: var(--studio-fill-2); }
+.db .db-group-toggle svg { width: 14px; height: 14px; transition: transform var(--studio-dur-fast); }
+.db .db-group-toggle[aria-expanded='true'] svg { transform: rotate(90deg); }
+.db .db-group-none { color: rgb(var(--gray)); font-size: 13px; font-weight: 500; }
+.db .db-group-box { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
+.db .db-group-count { color: rgb(var(--gray)); font-size: 13px; font-variant-numeric: tabular-nums; }
 /* What is worked out of each column, under it (as Notion's 计算): quiet until chosen; on hover, 计算 to choose one. */
 .db .db-calc-row > .db-td { min-height: 32px; border-bottom: 0; }
 .db .db-calc-button { display: flex; align-items: center; justify-content: flex-end; gap: 6px; width: 100%; height: 32px; padding: 0 8px; color: rgb(var(--gray)); font-size: 12px; white-space: nowrap; transition: background var(--studio-dur-fast), opacity var(--studio-dur-fast); }
