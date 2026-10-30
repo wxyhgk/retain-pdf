@@ -1,0 +1,252 @@
+/* 「进度」页的流水线画面（AssemblyLineScene + ProcessingPipelineRail）：传送带、五台机器、稿纸走动，
+ * 宽的时候各站说明挂在机器上方，窄的时候沿用 pipeline-rail.css 的竖排列表；下面一块「最近活动」。
+ * 立体感靠同一底色的三档深浅（顶面亮、正面中、侧面暗），全部由皮肤变量 color-mix 出来。 */
+
+.book-detail-pipeline {
+  display: grid;
+  gap: 12px;
+  container-type: inline-size;
+}
+
+.book-detail-line {
+  position: relative;
+  min-width: 0;
+}
+
+.book-detail-line-scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* —— 地面、方块 —— */
+
+.book-detail-line-floor {
+  fill: color-mix(in srgb, var(--bg) 70%, var(--paper));
+}
+
+.book-detail-line-box polygon {
+  stroke: color-mix(in srgb, var(--ink) 20%, var(--line));
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.book-detail-line-face-top {
+  fill: var(--paper);
+}
+
+.book-detail-line-face-front {
+  fill: color-mix(in srgb, var(--line) 45%, var(--paper));
+}
+
+.book-detail-line-face-side {
+  fill: color-mix(in srgb, var(--line) 80%, var(--ink) 6%);
+}
+
+.book-detail-line-box.is-dark .book-detail-line-face-top {
+  fill: color-mix(in srgb, var(--ink) 34%, var(--line));
+}
+
+.book-detail-line-box.is-dark .book-detail-line-face-front {
+  fill: color-mix(in srgb, var(--ink) 52%, var(--line));
+}
+
+.book-detail-line-box.is-dark .book-detail-line-face-side {
+  fill: color-mix(in srgb, var(--ink) 62%, var(--line));
+}
+
+.book-detail-line-box.is-paper .book-detail-line-face-top,
+.book-detail-line-box.is-paper .book-detail-line-face-front {
+  fill: var(--paper);
+}
+
+.book-detail-line-box.is-paper .book-detail-line-face-side {
+  fill: color-mix(in srgb, var(--line) 35%, var(--paper));
+}
+
+.book-detail-line-box.is-accent .book-detail-line-face-top {
+  fill: color-mix(in srgb, var(--accent) 30%, var(--paper));
+}
+
+.book-detail-line-box.is-accent .book-detail-line-face-front,
+.book-detail-line-box.is-accent .book-detail-line-face-side {
+  fill: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+
+.book-detail-line-machine.is-pending {
+  opacity: 0.82;
+}
+
+.book-detail-line-window {
+  fill: color-mix(in srgb, var(--ink) 10%, var(--paper));
+  stroke: color-mix(in srgb, var(--ink) 25%, var(--line));
+}
+
+/* —— 传送带 —— */
+
+.book-detail-line-belt-run {
+  fill: none;
+  stroke: color-mix(in srgb, var(--paper) 30%, var(--ink) 40%);
+  stroke-width: 7;
+  stroke-dasharray: 2 9;
+  stroke-linecap: round;
+}
+
+.book-detail-line-scene.is-running .book-detail-line-belt-run {
+  animation: book-detail-line-belt 900ms linear infinite;
+}
+
+/* —— 稿纸 —— */
+
+.book-detail-line-sheet polygon {
+  fill: var(--paper);
+  stroke: color-mix(in srgb, var(--ink) 35%, var(--line));
+  stroke-width: 1;
+}
+
+.book-detail-line-sheet polyline {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 28%, var(--line));
+  stroke-width: 1.2;
+  stroke-linecap: round;
+}
+
+.book-detail-line-sheet.is-moving {
+  animation: book-detail-line-travel 2600ms linear infinite;
+}
+
+.book-detail-line-sheet.is-late {
+  animation-delay: -1300ms;
+}
+
+/* —— 指示灯和各台机器的动作 —— */
+
+.book-detail-line-lamp circle {
+  fill: var(--line);
+  stroke: color-mix(in srgb, var(--ink) 30%, var(--line));
+}
+
+.book-detail-line-lamp-glow {
+  fill: transparent;
+}
+
+.book-detail-line-lamp.is-active circle {
+  fill: var(--accent);
+}
+
+.book-detail-line-lamp.is-active .book-detail-line-lamp-glow {
+  fill: color-mix(in srgb, var(--accent) 22%, transparent);
+  animation: book-detail-line-breathe 1400ms ease-in-out infinite;
+}
+
+.book-detail-line-lamp.is-done circle {
+  fill: var(--ink);
+}
+
+.book-detail-line-lamp.is-failed circle {
+  fill: var(--danger);
+}
+
+.book-detail-line-lamp.is-failed .book-detail-line-lamp-glow {
+  fill: var(--danger-weak);
+}
+
+.book-detail-line-scan polygon {
+  fill: color-mix(in srgb, var(--accent) 45%, transparent);
+  opacity: 0;
+}
+
+.book-detail-line-scan.is-running polygon {
+  opacity: 1;
+  animation: book-detail-line-scan 1600ms ease-in-out infinite alternate;
+}
+
+.book-detail-line-trays polyline {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 35%, var(--line));
+  stroke-width: 1.4;
+}
+
+.book-detail-line-trays.is-running polyline {
+  animation: book-detail-line-breathe 1200ms ease-in-out infinite;
+}
+
+.book-detail-line-trays.is-running polyline:nth-child(2) {
+  animation-delay: 300ms;
+}
+
+.book-detail-line-trays.is-running polyline:nth-child(3) {
+  animation-delay: 600ms;
+}
+
+.book-detail-line-head.is-running {
+  animation: book-detail-line-head 1800ms ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .book-detail-line-scene *,
+  .book-detail-pipeline-spin,
+  .book-detail-line-activity-dot {
+    animation: none !important;
+  }
+
+  .book-detail-line-sheet.is-late {
+    display: none;
+  }
+}
+
+@keyframes book-detail-line-belt {
+  to {
+    stroke-dashoffset: -11;
+  }
+}
+
+@keyframes book-detail-line-travel {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  12%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--line-dx), var(--line-dy));
+    opacity: 0;
+  }
+}
+
+@keyframes book-detail-line-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes book-detail-line-scan {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(40px, 8px);
+  }
+}
+
+@keyframes book-detail-line-head {
+  from {
+    transform: translate(10px, -6px);
+  }
+  to {
+    transform: translate(-10px, 6px);
+  }
+}
+
+@keyframes book-detail-line-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

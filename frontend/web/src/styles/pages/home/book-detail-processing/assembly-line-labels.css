@@ -1,0 +1,163 @@
+/* 「进度」页流水线的文字部分（ProcessingPipelineRail）：各站说明宽的时候挂在机器上方
+ * （窄的时候沿用 pipeline-rail.css 的竖排列表），下面一块「最近活动」。画面本身在 assembly-line.css。 */
+
+/* —— 各站说明：宽的时候挂在机器上方 —— */
+
+.book-detail-pipeline-spin {
+  animation: book-detail-line-spin 1s linear infinite;
+}
+
+.book-detail-pipeline-percent,
+.book-detail-pipeline-time {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.book-detail-pipeline-percent {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+@container (min-width: 520px) {
+  .book-detail-line .book-detail-pipeline-track {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  .book-detail-line .book-detail-pipeline-stage {
+    position: absolute;
+    top: var(--line-top);
+    left: var(--line-left);
+    display: flex;
+    width: max-content;
+    max-width: 118px;
+    gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    transform: translate(-50%, calc(-100% - 10px));
+    pointer-events: auto;
+  }
+
+  .book-detail-line .book-detail-pipeline-stage::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 1px;
+    height: 10px;
+    background: var(--line);
+  }
+
+  .book-detail-line .book-detail-pipeline-stage.is-active {
+    border-color: var(--line);
+    background: var(--paper);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--shadow-color) 10%, transparent);
+  }
+
+  .book-detail-line .book-detail-pipeline-rail::after {
+    display: none;
+  }
+
+  .book-detail-line .book-detail-pipeline-dot {
+    width: 20px;
+    height: 20px;
+  }
+
+  .book-detail-line .book-detail-pipeline-dot svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .book-detail-line .book-detail-pipeline-copy {
+    gap: 2px;
+    padding-bottom: 0;
+  }
+
+  .book-detail-line .book-detail-pipeline-head {
+    min-height: 20px;
+    gap: 4px 6px;
+  }
+
+  .book-detail-line .book-detail-pipeline-desc {
+    overflow: hidden;
+    max-width: 96px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* 窄的时候说明在画面下面，画面顶上给说明留的空白裁掉。 */
+@container (max-width: 519px) {
+  .book-detail-line-scene {
+    margin-top: -12%;
+  }
+}
+
+/* —— 最近活动 —— */
+
+.book-detail-line-activity {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.book-detail-line-activity-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.book-detail-line-activity-head > span:first-child {
+  color: var(--ink);
+  font-weight: 620;
+}
+
+.book-detail-line-activity ol {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.book-detail-line-activity li {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 11.5px;
+}
+
+.book-detail-line-activity-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 30%, var(--line));
+}
+
+.book-detail-line-activity li.is-latest .book-detail-line-activity-dot {
+  background: var(--ink);
+  animation: book-detail-line-breathe 1400ms ease-in-out infinite;
+}
+
+.book-detail-line-activity-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.book-detail-line-activity time {
+  color: var(--muted);
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+}
