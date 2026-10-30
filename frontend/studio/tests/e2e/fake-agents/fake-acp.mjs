@@ -226,6 +226,22 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '质能关系 $E = mc^2$ 说明质量就是能量。\n\n第二段。');
 			return { stopReason: 'end_turn' };
 		}
+		// Subagents at work, as the Studio's pi reports them (pi-agent.mjs subagentsOf): one calling a command while the
+		// other waits; then one done, one failed.
+		if (said.startsWith('子代理')) {
+			const begun = Date.now() - 65_000;
+			const agent = (over) => ({ id: 'sub/0', name: 'scout', task: '找认证代码', status: 'running', model: 'fake/m1', step: null, steps: [], toolUses: 0, turns: 0, tokens: 0, cost: 0, doing: '', output: '', error: '', startedAt: begun, endedAt: null, ...over });
+			const scoutGoing = agent({ steps: [{ title: 'grep -rn auth src', kind: 'execute', failed: false }], toolUses: 1, turns: 1, tokens: 1800, doing: 'grep -rn auth src' });
+			const plannerWaiting = agent({ id: 'sub/1', name: 'planner', task: '定计划', status: 'waiting' });
+			await update({ sessionUpdate: 'tool_call', toolCallId: 'sub', title: '2 个子代理并行', kind: 'other', status: 'in_progress' });
+			await update({ sessionUpdate: 'tool_call_update', toolCallId: 'sub', status: 'in_progress', _meta: { studio: { subagents: [scoutGoing, plannerWaiting] } } });
+			await pause(2500);
+			const scoutDone = agent({ ...scoutGoing, status: 'completed', doing: '', turns: 2, tokens: 3500, cost: 0.004, output: '认证代码在 **src/auth.ts**。', endedAt: begun + 72_000 });
+			const plannerFailed = agent({ id: 'sub/1', name: 'planner', task: '定计划', status: 'failed', error: '模型拒绝了请求', endedAt: begun + 66_000 });
+			await update({ sessionUpdate: 'tool_call_update', toolCallId: 'sub', status: 'completed', content: [{ type: 'content', content: { type: 'text', text: 'Parallel: 1/2 succeeded' } }], _meta: { studio: { subagents: [scoutDone, plannerFailed] } } });
+			await words('agent_message_chunk', '分头做完了。');
+			return { stopReason: 'end_turn' };
+		}
 		// A widget that speaks to it (note.ask, note.tell), written slowly: the panel waits for it whole.
 		if (said.startsWith('小模块')) {
 			const widget = [

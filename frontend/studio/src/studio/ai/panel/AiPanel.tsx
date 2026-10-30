@@ -52,7 +52,8 @@ function laidOut(items: ConversationItem[]): Array<{ work: ConversationItem[] } 
 	const rows: Array<{ work: ConversationItem[] } | { item: ConversationItem }> = [];
 	for (const item of items) {
 		const last = rows.at(-1);
-		if (!WORK_KINDS.has(item.kind)) rows.push({ item });
+		// Subagents at work: in the conversation, not folded in with the steps.
+		if (!WORK_KINDS.has(item.kind) || (item.kind === 'tool' && item.subagents)) rows.push({ item });
 		else if (last && 'work' in last) last.work.push(item);
 		else rows.push({ work: [item] });
 	}

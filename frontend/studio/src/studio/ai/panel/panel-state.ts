@@ -422,7 +422,11 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			// Said by begin().
 		} else if (conversation?.state === 'failed') say(conversation.error || t('它停了'), true, items.some((item) => item.kind === 'user') ? 'last' : 'start');
 		else if (conversation?.state === 'closed') say(t('这个对话停下了；再说话会接着聊'));
-		else if (running) say(t('正在做…'));
+		else if (running) {
+			// Subagents at work, counted: what is waited for.
+			const agents = items.flatMap((item) => (item.kind === 'tool' && item.subagents ? item.subagents : [])).filter((agent) => agent.status === 'running' || agent.status === 'waiting').length;
+			say(agents ? t('正在做… · {count} 个子代理在跑', { count: agents }) : t('正在做…'));
+		}
 		else say('');
 	}
 

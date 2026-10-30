@@ -948,6 +948,9 @@ class AgentSession {
 		if (typeof printed === 'string') item.output += printed;
 		const exit = update._meta?.terminal_exit;
 		if (exit) item.exitCode = exit.exit_code ?? null;
+		// Subagents it runs (pi-agent.mjs subagentsOf), each as it is now: shown apart, not folded in with the steps.
+		const subagents = update._meta?.studio?.subagents;
+		if (Array.isArray(subagents)) item.subagents = subagents;
 		this.#put(item, Boolean(known));
 	}
 

@@ -277,6 +277,8 @@ function servePi(stream, env) {
 function translator(cwd, send, session) {
 	/** Files as they were before a tool changed them, by the tool call. */
 	const before = new Map();
+	/** When each subagent of a tool call was first seen, and seen done (`<call>/<n>`). */
+	const timing = new Map();
 	const where = (args) => {
 		const path = typeof args?.path === 'string' ? args.path : typeof args?.file_path === 'string' ? args.file_path : null;
 		return path ? [{ path: isAbsolute(path) ? path : resolve(cwd, path) }] : undefined;
@@ -302,11 +304,17 @@ function translator(cwd, send, session) {
 					before.set(toolCallId, { path: locations[0].path, old });
 				}
 				const named = operationNames()[toolName];
-				const title = toolName === 'bash' && typeof args?.command === 'string' ? args.command : named ? [named, args?.slug ?? args?.query ?? args?.title ?? ''].filter(Boolean).join(' ') : toolName;
+				const title = toolName === 'bash' && typeof args?.command === 'string' ? args.command : named ? [named, args?.slug ?? args?.query ?? args?.title ?? ''].filter(Boolean).join(' ') : toolName === 'subagent' ? subagentTitle(args) : toolName;
 				send({ sessionUpdate: 'tool_call', toolCallId, title, kind: KINDS[toolName] ?? 'other', status: 'in_progress', locations, rawInput: args });
 				return;
 			}
 			case 'tool_execution_update': {
+				// Subagents at work (pi's subagent extension): each as it is now, for the panel to show apart.
+				const agents = subagentsOf(event.partialResult?.details, event.toolCallId, timing, null);
+				if (agents) {
+					send({ sessionUpdate: 'tool_call_update', toolCallId: event.toolCallId, status: 'in_progress', _meta: { studio: { subagents: agents } } });
+					return;
+				}
 				const text = resultText(event.partialResult);
 				if (text && !before.has(event.toolCallId)) send({ sessionUpdate: 'tool_call_update', toolCallId: event.toolCallId, status: 'in_progress', content: [{ type: 'content', content: { type: 'text', text } }] });
 				return;
@@ -326,7 +334,8 @@ function translator(cwd, send, session) {
 				}
 				const text = resultText(result);
 				if (!content && text) content = [{ type: 'content', content: { type: 'text', text } }];
-				send({ sessionUpdate: 'tool_call_update', toolCallId, status: isError ? 'failed' : 'completed', ...(content ? { content } : {}) });
+				const agents = subagentsOf(result?.details, toolCallId, timing, isError);
+				send({ sessionUpdate: 'tool_call_update', toolCallId, status: isError ? 'failed' : 'completed', ...(content ? { content } : {}), ...(agents ? { _meta: { studio: { subagents: agents } } } : {}) });
 				// A picture shown to the author: in its words, where the panel draws it.
 				if (event.toolName === 'show_picture' && !isError && result?.details?.path) {
 					send({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: `\n\n![${String(result.details.caption ?? '').replace(/[[\]]/gu, '')}](${result.details.path})\n\n` } });
@@ -348,6 +357,80 @@ function translator(cwd, send, session) {
 			default:
 		}
 	};
+}
+
+/** How much of a subagent's work is kept to be shown: its last steps, the end of what it said. */
+const SUBAGENT_STEPS = 40;
+const SUBAGENT_OUTPUT = 6000;
+
+/** A call of pi's subagent extension, as the panel names it: one agent, several side by side, or one after another. */
+function subagentTitle(args) {
+	if (Array.isArray(args?.tasks) && args.tasks.length) return t('{count} 个子代理并行', { count: args.tasks.length });
+	if (Array.isArray(args?.chain) && args.chain.length) return t('{count} 个子代理接力', { count: args.chain.length });
+	return typeof args?.agent === 'string' ? t('子代理 {name}', { name: args.agent }) : t('子代理');
+}
+
+/** One of a subagent's tool calls, as a line: the command, the file, what is searched for. */
+function stepTitle(name, args) {
+	if (name === 'bash' && typeof args?.command === 'string') return args.command.split('\n')[0].slice(0, 200);
+	const value = args?.command ?? args?.path ?? args?.file_path ?? args?.pattern ?? args?.query ?? args?.slug ?? '';
+	return [operationNames()[name] ?? name, typeof value === 'string' ? value.split('\n')[0].slice(0, 200) : ''].filter(Boolean).join(' ');
+}
+
+/**
+ * The subagents of a call of pi's subagent extension (its `details`: `results`, one for each agent, with its messages
+ * and usage), each as the panel shows it: what it is doing, its steps so far, how long, how much; null for any other
+ * tool. `ended`: whether the call is over (failed: true), null while it runs.
+ * @returns {Array<{ id: string, name: string, task: string, status: 'waiting' | 'running' | 'completed' | 'failed', model: string, step: number | null, steps: Array<{ title: string, kind: string, failed: boolean }>, toolUses: number, turns: number, tokens: number, cost: number, doing: string, output: string, error: string, startedAt: number, endedAt: number | null }> | null}
+ */
+export function subagentsOf(details, callId, timing, ended, now = Date.now()) {
+	if (!details || !Array.isArray(details.results) || typeof details.mode !== 'string') return null;
+	const results = details.results;
+	return results.map((result, index) => {
+		const key = `${callId}/${index}`;
+		const messages = Array.isArray(result?.messages) ? result.messages : [];
+		const calls = [];
+		const failedCalls = new Set();
+		let said = '';
+		for (const message of messages) {
+			if (message?.role === 'assistant' && Array.isArray(message.content)) {
+				for (const part of message.content) {
+					if (part?.type === 'toolCall') calls.push({ id: part.id, name: String(part.name ?? ''), args: part.arguments ?? {} });
+					else if (part?.type === 'text' && part.text?.trim()) said = part.text;
+				}
+			} else if (message?.role === 'toolResult' && message.isError) failedCalls.add(message.toolCallId);
+		}
+		const answered = new Set(messages.filter((message) => message?.role === 'toolResult').map((message) => message.toolCallId));
+		const broke = result?.exitCode > 0 || result?.stopReason === 'error' || result?.stopReason === 'aborted' || Boolean(result?.errorMessage);
+		// Parallel ones not done say so (-1); one after another, the last is the one at work; a single one, while the call is.
+		const running = ended === null && (details.mode === 'parallel' ? result?.exitCode === -1 : index === results.length - 1);
+		// The call failed as a whole: the one at work then (not those before it in a chain) with it.
+		const failed = broke || (ended === true && details.mode !== 'parallel' && index === results.length - 1);
+		const status = running ? (messages.length ? 'running' : 'waiting') : failed ? 'failed' : 'completed';
+		const seen = timing.get(key) ?? { startedAt: now, endedAt: null };
+		if (!running && seen.endedAt === null) seen.endedAt = now;
+		timing.set(key, seen);
+		const pending = [...calls].reverse().find((call) => !answered.has(call.id));
+		const usage = result?.usage ?? {};
+		return {
+			id: key,
+			name: String(result?.agent ?? ''),
+			task: String(result?.task ?? ''),
+			status,
+			model: String(result?.model ?? ''),
+			step: Number.isInteger(result?.step) ? result.step : null,
+			steps: calls.slice(-SUBAGENT_STEPS).map((call) => ({ title: stepTitle(call.name, call.args), kind: KINDS[call.name] ?? 'other', failed: failedCalls.has(call.id) })),
+			toolUses: calls.length,
+			turns: Number(usage.turns) || 0,
+			tokens: (Number(usage.input) || 0) + (Number(usage.output) || 0),
+			cost: Number(usage.cost) || 0,
+			doing: running ? (pending ? stepTitle(pending.name, pending.args) : said.trim().split('\n').at(-1)?.slice(0, 200) ?? '') : '',
+			output: said.length > SUBAGENT_OUTPUT ? `…${said.slice(-SUBAGENT_OUTPUT)}` : said,
+			error: broke ? String(result?.errorMessage || result?.stderr || '').trim().slice(-2000) : '',
+			startedAt: seen.startedAt,
+			endedAt: running ? null : seen.endedAt,
+		};
+	});
 }
 
 /** An error the Studio is told the words of (ACP's own, as a thrown Error reaches it only as 「Internal error」). */

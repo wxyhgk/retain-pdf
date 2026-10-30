@@ -3,7 +3,7 @@ import { createContext, memo, useContext, useEffect, useRef, useState } from 're
 import { Copy, FilePlus2, Paperclip, PencilLine, RotateCcw, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
-import type { Conversation, ConversationItem } from '../../api/client';
+import type { Conversation, ConversationItem, Subagent } from '../../api/client';
 import { STUDIO_MARKDOWN_DRAG_TYPE } from '../../files/article-files';
 import { isPicture, pictureUrl, renderAiBlocks, renderAiMarkdown } from '../ai-markdown';
 import { PageIcon } from './PagePeek';
@@ -284,6 +284,106 @@ function Tool({ item }: { item: ToolItem }) {
 	);
 }
 
+/** The time now, again every second while `going` (a subagent's time counting up). */
+function useNow(going: boolean): number {
+	const [now, setNow] = useState(() => Date.now());
+	useEffect(() => {
+		if (!going) return;
+		setNow(Date.now());
+		const timer = setInterval(() => setNow(Date.now()), 1000);
+		return () => clearInterval(timer);
+	}, [going]);
+	return now;
+}
+
+/** How long, as a person says it: 42 秒, 3 分 05 秒. */
+function lasted(ms: number): string {
+	const seconds = Math.max(0, Math.round(ms / 1000));
+	return seconds < 60 ? t('{seconds} 秒', { seconds }) : t('{minutes} 分 {seconds} 秒', { minutes: Math.floor(seconds / 60), seconds: String(seconds % 60).padStart(2, '0') });
+}
+
+/** Tokens, as few figures as tell them: 820, 8.1k, 1.2M. */
+function tokensOf(count: number): string {
+	if (count < 1000) return String(count);
+	if (count < 1_000_000) return `${(count / 1000).toFixed(count < 10_000 ? 1 : 0)}k`;
+	return `${(count / 1_000_000).toFixed(1)}M`;
+}
+
+const SUBAGENT_MARKS: Record<Subagent['status'], string> = { waiting: '○', running: '', completed: '✓', failed: '✗' };
+
+/**
+ * The subagents a tool call runs (pi's subagent extension), as Claude Code, opencode and Cline show theirs: a row each,
+ * its name and task, what it is doing now, how many tools it called, how many tokens, how long; opened, its steps and
+ * what it said. Shown in the conversation, not folded in with the steps: what it does takes long, and is what is waited for.
+ */
+function Subagents({ item }: { item: ToolItem }) {
+	const agents = item.subagents ?? [];
+	const now = useNow(agents.some((agent) => agent.status === 'running' || agent.status === 'waiting'));
+	const done = agents.filter((agent) => agent.status === 'completed').length;
+	const failed = agents.filter((agent) => agent.status === 'failed').length;
+	const counts = [agents.length > 1 ? t('{done}/{total} 完成', { done, total: agents.length }) : '', failed ? t('{count} 个失败', { count: failed }) : ''].filter(Boolean).join(' · ');
+	return (
+		<div className="ai-subagents" data-status={item.status}>
+			<p className="ai-subagents-title">
+				<span>{item.title || t('子代理')}</span>
+				{counts && <span className="ai-subagents-count">{counts}</span>}
+			</p>
+			{agents.map((agent) => (
+				<SubagentRow key={agent.id} agent={agent} now={now} />
+			))}
+		</div>
+	);
+}
+
+function SubagentRow({ agent, now }: { agent: Subagent; now: number }) {
+	const [open, setOpen] = useState(false);
+	const counts = [agent.toolUses ? t('{count} 次工具', { count: agent.toolUses }) : '', agent.tokens ? t('{count} tokens', { count: tokensOf(agent.tokens) }) : '', agent.cost ? `$${agent.cost.toFixed(agent.cost < 0.1 ? 3 : 2)}` : ''].filter(Boolean).join(' · ');
+	const going = agent.status === 'running' || agent.status === 'waiting';
+	// Under its name: what it is doing now, or what went wrong; how much, beside it.
+	const under = going ? (agent.status === 'waiting' ? t('准备中…') : agent.doing || t('思考中…')) : agent.status === 'failed' && !open ? agent.error.split('\n').at(-1) ?? '' : '';
+	return (
+		<div className={`ai-subagent${open ? ' is-open' : ''}`} data-status={agent.status}>
+			<button type="button" className="ai-subagent-row" aria-expanded={open} onClick={() => setOpen(!open)}>
+				<span className="ai-subagent-line">
+					<span className="ai-subagent-mark" aria-label={{ waiting: t('准备中'), running: t('进行中'), completed: t('完成'), failed: t('失败') }[agent.status]}>
+						{SUBAGENT_MARKS[agent.status]}
+					</span>
+					<span className="ai-subagent-name">{agent.step ? `${agent.step}. ${agent.name}` : agent.name}</span>
+					<span className="ai-subagent-task" title={agent.task}>
+						{agent.task}
+					</span>
+					<span className="ai-subagent-time">{lasted((agent.endedAt ?? now) - agent.startedAt)}</span>
+				</span>
+				{(under || counts) && (
+					<span className="ai-subagent-sub">
+						<span className={going ? 'ai-subagent-doing' : 'ai-subagent-error'}>{under}</span>
+						<span className="ai-subagent-facts">{counts}</span>
+					</span>
+				)}
+			</button>
+			{open && (
+				<div className="ai-subagent-detail">
+					<p className="ai-subagent-given">{agent.task}</p>
+					{agent.model && <p className="ai-subagent-model">{agent.model}</p>}
+					{agent.toolUses > agent.steps.length && <p className="ai-subagent-more">{t('前面还有 {count} 步', { count: agent.toolUses - agent.steps.length })}</p>}
+					{agent.steps.length > 0 && (
+						<ol className="ai-subagent-steps">
+							{agent.steps.map((step, at) => (
+								<li key={at} className={step.failed ? 'is-failed' : undefined}>
+									<span className="ai-tool-icon">{TOOL_ICONS[step.kind] ?? TOOL_ICONS.other}</span>
+									<span className="ai-subagent-step">{step.title}</span>
+								</li>
+							))}
+						</ol>
+					)}
+					{agent.output && <Markdown className="ai-subagent-output" text={agent.output} />}
+					{agent.error && <pre className="ai-subagent-error">{agent.error}</pre>}
+				</div>
+			)}
+		</div>
+	);
+}
+
 function Plan({ item }: { item: Extract<ConversationItem, { kind: 'plan' }> }) {
 	return (
 		<div className="ai-plan">
@@ -483,7 +583,7 @@ export const Item = memo(function Item({ item, last, tool }: { item: Conversatio
 		case 'thought':
 			return <Thought item={item} last={last} />;
 		case 'tool':
-			return <Tool item={item} />;
+			return item.subagents ? <Subagents item={item} /> : <Tool item={item} />;
 		case 'plan':
 			return <Plan item={item} />;
 		case 'permission':

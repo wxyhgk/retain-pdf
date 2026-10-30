@@ -98,6 +98,36 @@
 .ai-diff-lines .is-added { color: rgb(var(--black)); font-weight: 500; }
 
 .ai-plan { padding: 8px 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; }
+/* Subagents a tool call runs (Items.tsx Subagents): a card, a row each; what it is doing under it; opened, its steps. */
+.ai-subagents { padding: 6px 4px 4px; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; }
+.ai-subagents-title { display: flex; align-items: baseline; gap: 8px; margin: 0 6px 4px; color: rgb(var(--gray-dark)); font-size: 12px; font-weight: 600; }
+.ai-subagents-count { margin-left: auto; color: rgb(var(--gray)); font-weight: 400; }
+.ai-subagent { border-radius: 6px; }
+.ai-subagent-row { display: grid; gap: 1px; width: 100%; padding: 3px 6px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.ai-subagent-line { display: flex; align-items: center; gap: 7px; min-width: 0; min-height: 20px; }
+.ai-subagent-time { flex: none; margin-left: auto; color: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ai-subagent-sub { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding-left: 21px; }
+.ai-subagent-row:hover { background: var(--surface-soft); }
+.ai-subagent-mark { display: grid; flex: none; place-items: center; width: 14px; color: rgb(var(--gray)); font-size: 11px; }
+.ai-subagent[data-status='completed'] .ai-subagent-mark { color: rgb(var(--gray-dark)); }
+.ai-subagent[data-status='failed'] .ai-subagent-mark { color: var(--danger); }
+.ai-subagent[data-status='running'] .ai-subagent-mark::after { display: inline-block; width: 8px; height: 8px; border: 1.5px solid rgb(var(--gray-light)); border-top-color: rgb(var(--gray-dark)); border-radius: 50%; animation: ai-spin 0.8s linear infinite; content: ''; }
+.ai-subagent-name { flex: none; max-width: 40%; overflow: hidden; color: rgb(var(--black)); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.ai-subagent-task { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray-dark)); text-overflow: ellipsis; white-space: nowrap; }
+.ai-subagent-facts { flex: none; margin-left: auto; color: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ai-subagent-doing { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; animation: ai-breathe 1.4s ease-in-out infinite; }
+.ai-subagent-error { flex: 1; min-width: 0; overflow: hidden; color: var(--danger); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.ai-subagent-output > :first-child { margin-top: 0; }
+.ai-subagent-output > :last-child { margin-bottom: 0; }
+pre.ai-subagent-error { max-height: 160px; overflow: auto; white-space: pre-wrap; }
+.ai-subagent-detail { display: grid; gap: 6px; margin: 2px 6px 8px 27px; font-size: 12px; }
+.ai-subagent-given { margin: 0; color: rgb(var(--gray-dark)); white-space: pre-wrap; }
+.ai-subagent-model, .ai-subagent-more { margin: 0; color: rgb(var(--gray)); font-size: 11px; }
+.ai-subagent-steps { display: grid; gap: 1px; max-height: 240px; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.ai-subagent-steps li { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.ai-subagent-steps li.is-failed .ai-subagent-step { color: var(--danger); }
+.ai-subagent-step { min-width: 0; overflow: hidden; color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.ai-subagent-output { padding: 6px 8px; border-radius: 6px; background: var(--surface-soft); font-size: 12px; }
 .ai-plan-title { margin: 0 0 4px; color: rgb(var(--gray)); font-size: 11px; font-weight: 600; }
 .ai-plan ul { margin: 0; padding: 0; list-style: none; }
 .ai-plan li { display: flex; gap: 6px; padding: 1px 0; font-size: 12px; }
@@ -154,7 +184,7 @@
 @keyframes ai-spin { to { transform: rotate(360deg); } }
 @keyframes ai-breathe { 50% { opacity: 0.45; } }
 @media (prefers-reduced-motion: reduce) {
-	.ai-thought.is-going summary, .ai-tool[data-status='in_progress'] .ai-tool-state::after { animation: none; }
+	.ai-thought.is-going summary, .ai-tool[data-status='in_progress'] .ai-tool-state::after, .ai-subagent-doing, .ai-subagent[data-status='running'] .ai-subagent-mark::after { animation: none; }
 }
 
 /* 模型和账号 (panel/ModelsSheet.tsx), in place of the conversation while open. */

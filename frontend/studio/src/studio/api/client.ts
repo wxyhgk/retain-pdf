@@ -421,12 +421,17 @@ export type Conversation = {
 };
 /** A tool call's content: words, a change to a file, or a terminal. */
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
+/**
+ * A subagent a tool call runs (pi's subagent extension), as it is now: what it was given, what it is doing, its steps
+ * so far (the last few), how long (`startedAt`, `endedAt`: ms), how much (tokens, cost), what it said in the end.
+ */
+export type Subagent = { id: string; name: string; task: string; status: 'waiting' | 'running' | 'completed' | 'failed'; model: string; step: number | null; steps: Array<{ title: string; kind: string; failed: boolean }>; toolUses: number; turns: number; tokens: number; cost: number; doing: string; output: string; error: string; startedAt: number; endedAt: number | null };
 /** What a conversation is made of, in order. */
 export type ConversationItem =
 	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[]; widgets?: string[] }; steer?: boolean; quotes?: string[]; pictures?: string[]; files?: string[]; pastes?: string[] }
 	| { kind: 'message'; id: string; text: string }
 	| { kind: 'thought'; id: string; text: string }
-	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
+	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null; subagents?: Subagent[] }
 	| { kind: 'plan'; id: string; entries: Array<{ content: string; priority: string; status: 'pending' | 'in_progress' | 'completed' }> }
 	/** Its context compacted (what was said before made a summary). */
 	| { kind: 'compaction'; id: string; status: 'in_progress' | 'completed' | 'failed' | 'cancelled'; error: string; summary: string }

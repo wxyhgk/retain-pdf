@@ -36,6 +36,7 @@ async function fakeService(t, picturePath = '') {
 		if (last.role === 'user' && said.includes('运行')) call('bash', { command: 'echo "mark=$STUDIO_MARK"' });
 		else if (last.role === 'user' && said.includes('读页面')) call('read_page', { slug: 'note-a' });
 		else if (last.role === 'user' && said.includes('看图')) call('show_picture', { path: picturePath, caption: '一张图' });
+		else if (last.role === 'user' && said.includes('分头')) call('subagent', { tasks: [{ agent: 'scout', task: '找认证代码' }, { agent: 'planner', task: '定计划' }] });
 		else {
 			// Slow, to be spoken to meanwhile.
 			if (said.includes('慢慢说')) await new Promise((done) => setTimeout(done, 1500));
@@ -148,4 +149,77 @@ test('pi in this process: no process started; words and a command (in the Studio
 	wrong.prompt('你好');
 	await until(wrong, (s) => s.state === 'idle');
 	assert.match(wrong.items.at(-1).message ?? '', /401|invalid api key/u);
+});
+
+/**
+ * pi's subagent extension, as it reports (its `details`: each agent's messages and usage, as they come), without the
+ * agents: two side by side, one calling a command, then done; the other failing.
+ */
+const FAKE_SUBAGENT = `
+const usage = (input, output, turns, cost) => ({ input, output, cacheRead: 0, cacheWrite: 0, cost, contextTokens: input, turns });
+const wait = (ms) => new Promise((done) => setTimeout(done, ms));
+export default function (pi) {
+	pi.registerTool({
+		name: 'subagent',
+		label: 'Subagent',
+		description: 'Delegate tasks to subagents.',
+		parameters: { type: 'object', properties: { tasks: { type: 'array', items: { type: 'object', properties: { agent: { type: 'string' }, task: { type: 'string' } } } } } },
+		async execute(_id, params, _signal, onUpdate) {
+			const results = params.tasks.map(({ agent, task }) => ({ agent, agentSource: 'user', task, exitCode: -1, messages: [], stderr: '', usage: usage(0, 0, 0, 0) }));
+			const report = (text) => onUpdate?.({ content: [{ type: 'text', text }], details: { mode: 'parallel', agentScope: 'user', projectAgentsDir: null, results: structuredClone(results) } });
+			report('Parallel: 0/2 done, 2 running...');
+			await wait(150);
+			results[0].messages = [{ role: 'assistant', content: [{ type: 'text', text: '先搜一下。' }, { type: 'toolCall', id: 'c1', name: 'bash', arguments: { command: 'grep -rn auth src' } }] }];
+			results[0].usage = usage(1500, 300, 1, 0.002);
+			report('Parallel: 0/2 done, 2 running...');
+			await wait(150);
+			results[0].messages.push({ role: 'toolResult', toolCallId: 'c1', toolName: 'bash', content: [{ type: 'text', text: 'src/auth.ts:1' }], isError: false }, { role: 'assistant', content: [{ type: 'text', text: '认证代码在 src/auth.ts。' }] });
+			results[0].usage = usage(3000, 500, 2, 0.004);
+			results[0].exitCode = 0;
+			results[1].messages = [{ role: 'assistant', content: [{ type: 'text', text: '' }] }];
+			results[1].exitCode = 1;
+			results[1].errorMessage = '模型拒绝了请求';
+			report('Parallel: 1/2 done, 0 running...');
+			return { content: [{ type: 'text', text: 'Parallel: 1/2 succeeded' }], details: { mode: 'parallel', agentScope: 'user', projectAgentsDir: null, results } };
+		},
+	});
+}
+`;
+
+test('pi’s subagents (its subagent extension): each shown apart as it goes, what it is doing, its steps, how much; done or failed', async (t) => {
+	process.env.PI_OFFLINE = '1';
+	const cwd = await realpath(await mkdtemp(join(tmpdir(), 'pi-subagents-')));
+	t.after(() => rm(cwd, { recursive: true, force: true }));
+	const service = await fakeService(t);
+	const folder = await piFolder(cwd, service.url, 'good');
+	await mkdir(join(folder, 'extensions'), { recursive: true });
+	await writeFile(join(folder, 'extensions', 'fake-subagent.js'), FAKE_SUBAGENT);
+	const sessions = new AgentSessions({ binFolder: join(cwd, 'none'), env: process.env, store: new ChatStore(join(cwd, 'chats')) });
+	t.after(() => sessions.closeAll());
+	const session = await sessions.start({ agent: { id: 'pi', name: 'pi', acp: 'pi-acp' }, cwd, env: { PATH: process.env.PATH, PI_CODING_AGENT_DIR: folder } });
+	const seen = [];
+	const stop = session.subscribe(() => {
+		const call = session.items.find((item) => item.kind === 'tool' && item.subagents);
+		if (call) seen.push(structuredClone(call));
+	});
+	t.after(() => stop());
+	session.prompt('分头去做');
+	await until(session, (s) => s.state === 'idle');
+	const call = session.items.find((item) => item.kind === 'tool' && item.subagents);
+	assert.equal(call.title, '2 个子代理并行');
+	// As it went: the scout calling its command, the planner not begun.
+	const going = seen.find((item) => item.subagents[0].steps.length === 1 && item.subagents[0].status === 'running');
+	assert.ok(going, JSON.stringify(seen.map((item) => item.subagents.map((agent) => agent.status))));
+	assert.equal(going.subagents[0].doing, 'grep -rn auth src');
+	assert.equal(going.subagents[0].tokens, 1800);
+	assert.equal(going.subagents[1].status, 'waiting');
+	assert.ok(seen.some((item) => item.subagents[0].status === 'waiting'));
+	// Done: the scout's steps, what it said, how much; the planner failed, saying why.
+	const [scout, planner] = call.subagents;
+	assert.deepEqual({ name: scout.name, task: scout.task, status: scout.status, toolUses: scout.toolUses, turns: scout.turns, tokens: scout.tokens, cost: scout.cost, output: scout.output, doing: scout.doing }, { name: 'scout', task: '找认证代码', status: 'completed', toolUses: 1, turns: 2, tokens: 3500, cost: 0.004, output: '认证代码在 src/auth.ts。', doing: '' });
+	assert.deepEqual(scout.steps, [{ title: 'grep -rn auth src', kind: 'execute', failed: false }]);
+	assert.ok(scout.endedAt >= scout.startedAt);
+	assert.equal(planner.status, 'failed');
+	assert.equal(planner.error, '模型拒绝了请求');
+	assert.equal(call.status, 'completed');
 });
