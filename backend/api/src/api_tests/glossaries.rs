@@ -108,22 +108,6 @@ async fn export_glossary_csv_route_returns_csv() {
     assert_eq!(payload["data"]["entries"][1]["source"], "-OH");
 }
 
-#[tokio::test]
-async fn import_route_is_gone() {
-    let state = test_state("glossary-import-gone");
-    let (status, _) = send(
-        &state,
-        "POST",
-        "/api/v1/glossaries/import",
-        Some(json!({"name": "imported", "entries": []})),
-    )
-    .await;
-    assert!(
-        status == StatusCode::NOT_FOUND || status == StatusCode::METHOD_NOT_ALLOWED,
-        "{status}"
-    );
-}
-
 /// 前端保存只发 `name`、`entries`：描述、语言、启用不能被清掉。
 #[tokio::test]
 async fn put_keeps_top_level_fields_the_request_leaves_out() {

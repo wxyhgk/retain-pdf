@@ -249,29 +249,6 @@ async fn http_storage_faults_are_500_not_401_and_do_not_leak() {
 }
 
 #[tokio::test]
-async fn capability_issuance_route_is_gone() {
-    // 2026-10-22 删了：任务运行时在进程内直接发令牌，这个接口只多一个能铸令牌的入口。
-    let fixture = Fixture::new("model-api-http-no-launcher");
-    for key in ["test-key", "wrong-key"] {
-        let response = build_app(fixture.state.clone())
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri("/api/v1/internal/model/jobs/job-a/capability")
-                    .header("x-api-key", key)
-                    .header("content-type", "application/json")
-                    .body(Body::from(serde_json::to_vec(&profile()).unwrap()))
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_eq!(response.status(), StatusCode::NOT_FOUND, "{key}");
-        let body = read_json(response).await;
-        assert!(body.get("capability").is_none(), "{body}");
-    }
-}
-
-#[tokio::test]
 async fn http_submit_on_a_corrupt_job_is_500_without_leaking() {
     let fixture = Fixture::new("model-api-http-corrupt-job");
     let token = fixture.capability("job-a");

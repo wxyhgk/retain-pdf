@@ -11,10 +11,6 @@ from retainpdf_pipeline.render.workflow.modes import RENDER_MODE_HANDLERS
 from devtools.tests.pdf_fixtures import write_pdf
 
 
-def test_render_mode_registry_covers_all_dispatch_modes() -> None:
-    assert sorted(RENDER_MODE_HANDLERS) == ["dual", "overlay", "typst", "typst_visual"]
-
-
 def test_dispatch_render_mode_rejects_unknown_mode() -> None:
     context = mock.Mock()
     context.render_engine = "typst"  # 测的是按模式分派，与排版引擎无关

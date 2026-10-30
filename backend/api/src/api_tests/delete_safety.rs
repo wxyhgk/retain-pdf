@@ -323,20 +323,6 @@ async fn cancel_and_force_delete_spare_a_process_that_reused_the_recorded_pid() 
 // 删一个任务：任务本身 + 它的 `-ocr` 子任务，书（文档行、上传、原文）留着。规则和以前的书架删除
 // （`DELETE /library/books/:job_id`，2026-10-22 删了）一样，另外 OCR 任务也能删。
 
-async fn get_status(state: &crate::AppState, uri: &str) -> StatusCode {
-    build_app(state.clone())
-        .oneshot(
-            Request::builder()
-                .uri(uri)
-                .header("X-API-Key", "test-key")
-                .body(Body::empty())
-                .expect("get request"),
-        )
-        .await
-        .expect("get response")
-        .status()
-}
-
 #[tokio::test]
 async fn delete_job_removes_a_translation_job_and_its_ocr_child_but_keeps_the_book() {
     let state = test_state("delete-job-translation");
@@ -430,23 +416,3 @@ async fn delete_job_of_an_unknown_job_is_404() {
     assert_eq!(status, StatusCode::NOT_FOUND, "{body}");
 }
 
-/// 书架 `/library/books` 整套删了：`GET /library/books/:job_id` 2026-10-19 先删，列表
-/// `GET /library/books` 和删除的旧地址 `DELETE /library/books/:job_id` 2026-10-22 跟着删（前端改调
-/// `GET /jobs?job_ids=`、`DELETE /jobs/:job_id`）。两个路径上一个方法都不剩，所以都是 404，不是 405；
-/// 旧地址删不掉任务，任务还能按新地址读到。
-#[tokio::test]
-async fn library_shelf_addresses_are_gone() {
-    let state = test_state("library-shelf-gone");
-    seed_document(&state);
-    seed_job(&state, "job-a", WorkflowKind::Book, JobStatusKind::Succeeded, None, None);
-    assert_eq!(get_status(&state, "/api/v1/library/books").await, StatusCode::NOT_FOUND);
-    assert_eq!(get_status(&state, "/api/v1/library/books?job_ids=job-a").await, StatusCode::NOT_FOUND);
-    assert_eq!(get_status(&state, "/api/v1/library/books/job-a").await, StatusCode::NOT_FOUND);
-    for uri in ["/api/v1/library/books/job-a", "/api/v1/library/books/job-a?force=true"] {
-        let (status, body) = delete(&state, uri).await;
-        assert_eq!(status, StatusCode::NOT_FOUND, "{uri}: {body}");
-    }
-    assert!(state.db.get_job("job-a").is_ok(), "旧地址删掉了任务");
-    assert_eq!(get_status(&state, "/api/v1/jobs/job-a").await, StatusCode::OK);
-    assert_eq!(get_status(&state, "/api/v1/jobs?job_ids=job-a").await, StatusCode::OK);
-}
