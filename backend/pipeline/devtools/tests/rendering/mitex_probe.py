@@ -76,6 +76,14 @@ def compile_pipeline(latex: str) -> tuple[bool, str]:
     return ok, message
 
 
+def compile_pipeline_together(latexes: list[str]) -> bool:
+    """一批公式放进同一个文档走完整链路编译一次，全过才算过。用来省掉逐个起 Typst 的开销：
+    整批失败时调用方再逐个编译，报出是哪一个坏了。"""
+    markdown = "\n\n".join(build_direct_typst_passthrough_markdown(f"${latex}$") for latex in latexes)
+    ok, _, _ = _compile(markdown)
+    return ok
+
+
 def compile_native(latex: str) -> tuple[bool, str]:
     """跳过我们的清洗器，看 mitex 原生支不支持。
 

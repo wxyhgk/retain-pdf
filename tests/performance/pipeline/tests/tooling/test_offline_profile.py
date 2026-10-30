@@ -29,7 +29,8 @@ def test_summary_keeps_unobserved_stages_unknown():
     assert summary["median_inclusive_ms"]["page_write"] is None
 
 
-@pytest.mark.parametrize("workers", [1, 8])
+# 只要证明能离线计时：8 个 worker 同时覆盖并发那条路（以前 1、8 各跑一遍）
+@pytest.mark.parametrize("workers", [8])
 def test_profile_runs_real_io_contract_without_network(tmp_path, workers):
     result = measure(tmp_path / "run", workers)
     assert result["status_counts"] == {"translated": 6, "kept_origin": 1}

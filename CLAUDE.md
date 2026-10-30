@@ -39,7 +39,9 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
 ```
 
 - 改了翻译包 `backend/translation/`（或它的 worker 外壳 `backend/pipeline/retainpdf_pipeline/translate/`）：再跑
-  `backend/.venv/bin/python backend/pipeline/devtools/run_translation_tests.py`，以及加 `--reverse` 再跑一次。
+  `backend/.venv/bin/python backend/pipeline/devtools/run_translation_tests.py`，再用 `--suite translation --reverse`
+  倒序跑一遍翻译单测（查模块之间互相污染）。`tests/performance` 的集成测试每个用例都在新进程里跑，顺序影响不到，
+  不用倒着再跑（2026-10-30 定，以前整套倒序再跑一遍）。
   翻译的测试在 `backend/pipeline/devtools/tests/translation`，翻译包自己的冒烟测试在 `backend/translation/tests`。
   它会连带跑 `tests/performance/pipeline/tests`；提示词快照有 sha256 守卫，改提示词只重录受影响的用例。
 - 改了 `backend/ai/`：跑 AI 服务的 pytest。

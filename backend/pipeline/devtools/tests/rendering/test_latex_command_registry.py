@@ -26,6 +26,7 @@ import pytest
 from devtools.tests.rendering.mitex_probe import TYPST_BIN  # noqa: E402
 from devtools.tests.rendering.mitex_probe import compile_native  # noqa: E402
 from devtools.tests.rendering.mitex_probe import compile_pipeline  # noqa: E402
+from devtools.tests.rendering.mitex_probe import compile_pipeline_together  # noqa: E402
 from devtools.tests.rendering.mitex_probe import png_digest  # noqa: E402
 from retainpdf_math.registry import command_by_name  # noqa: E402
 from retainpdf_math.registry import latex_commands  # noqa: E402
@@ -132,9 +133,18 @@ def test_fold_targets_exist_and_render() -> None:
 
 # ---------------------------------------------------------------- 真编译闸
 
+@pytest.fixture(scope="module")
+def supported_samples_compile_together() -> bool:
+    """52 个能渲染的样本合在一个文档里编译一次（以前每个各起一次 Typst）。整批过了，每条就不用再单独编译。"""
+    return compile_pipeline_together([command.sample for command in supported_commands()])
+
+
 @needs_typst
 @pytest.mark.parametrize("command", supported_commands(), ids=lambda c: c.name)
-def test_supported_commands_really_compile(command) -> None:
+def test_supported_commands_really_compile(command, supported_samples_compile_together) -> None:
+    if supported_samples_compile_together:
+        return
+    # 整批失败：逐个编译，报出是哪一个
     ok, error = compile_pipeline(command.sample)
     assert ok, (
         f"登记表说 \\{command.name} 能渲染，实际失败了：\n{command.sample}\n{error}\n\n"
