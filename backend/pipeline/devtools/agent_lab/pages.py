@@ -15,7 +15,7 @@ from retainpdf_translation_agent import PageInput
 from devtools.ocr_viewer.taxonomy import BLOCK_CLASSES
 
 # 分类表里"翻不翻"还没定的类别，测试时先这样定（结果里标明是测试默认值）。
-UNDECIDED_TRANSLATE = {"doc_title": True, "keywords": True, "algorithm": False}
+UNDECIDED_TRANSLATE = {"doc_title": True}
 
 FN_TOKEN = "{{fn:%s}}"
 # 目录条目末尾的引导点和页码（". . . . 2"）不交给 agent：页码另存在属性里，排版时再补

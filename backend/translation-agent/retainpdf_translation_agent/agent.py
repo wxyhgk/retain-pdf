@@ -27,14 +27,14 @@ API_URL = "https://api.anthropic.com/v1/messages"
 # 接续组合成一条送给模型，原文里用它标出原来在哪里断开；译文里要在对应位置放同样数量
 BREAK = "[[BREAK]]"
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-6"
+PROMPT_VERSION = "translation-agent-7"
 
 SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简体中文，译文会放回原文每个块的位置显示。
 你会收到一整页的全部块（JSON），每块有类别（class）、大概位置（where）、原文（text）、要不要翻（translate）。
 像人一样先通读整页，弄清每块在版面上的作用和上下文，再逐块翻译。
 
 规则：
-1. 只翻 translate=true 的块；translate=false 的块（页眉页脚、参考文献、公式、已经是中文的段落……）只是上下文，不要交回。
+1. 只翻 translate=true 的块；translate=false 的块（页眉页脚、关键词、参考文献、行间公式、代码块、算法块、已经是中文的段落……）只是上下文，不要交回。
 2. 每个要翻的块交回且只交回一条，id 原样照抄，不要合并、拆分或增删块。
    请求里的 required_ids 列出了这一页必须交回的全部 id，交卷前逐个核对，一个都不能少（图注、短标题最容易漏）。
 3. `$…$` 里的公式一个字符都不改，原样放在译文对应位置；`{{fn:1}}` 这类脚注标记、`[1, 2]` 这类引用标记原样保留。
@@ -46,11 +46,14 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
    列表项保留 (1) 这类序号；作者、机构一般不在要翻的块里。
 7. 术语前后一致；专有名词（软件名、数据集名、人名）不翻。
 8. 译文要通顺、简练，长度和原文相当，不要加解释、注释或括号里的原文。
+   贴着作者的写法和语气：作者用"we"就译"我们"；作者说得有保留（may、might、suggest、appear to）就保留这份保留，
+   不要译得更肯定或更含糊；作者口语就口语、严谨就严谨，不要统一改成教科书腔，也不要自己加强调或删掉强调。
 9. 请求里有 revise 时（排版发现放不下等），只改 revise 列出的块，其余块只是上下文，不要交回。
    在 current_translation 的基础上改写：current_chars 是现在的字数，max_chars 是**硬上限**，must_cut 是至少要删掉的字数
    （字数按显示算：`{{fn:1}}` 算 1 个字，公式按一半算）。
-   先精简措辞（去掉可有可无的字、换更短的说法）；还超就删掉次要的修饰语和举例；核心意思、公式、标记、编号必须保留。
-   交卷前数一下字数，一定不能超过 max_chars。
+   只许精简措辞（去掉可有可无的虚字、换更短的同义说法、把句子改紧凑）；**意思一点都不能少**：修饰语、举例、限定词、
+   表示保留的词（可能、或许）都不许删，公式、标记、编号必须保留，作者的语气不变。
+   交卷前数一下字数，尽量不超过 max_chars；不删内容就做不到时，交回能做到的最短版本（程序会标出还超，交给排版缩字号或给人看）。
 """
 
 TOOL = {
@@ -234,7 +237,11 @@ class TranslationAgent:
 
     # ---- 按重排 agent 的要求改稿 ----
     def revise(self, page: PageInput, requests: list[RevisionRequest]) -> dict[str, BlockResult]:
-        """只改 `requests` 列出的块（同一页的其它块作上下文）。改完还不合格（含超出 max_chars）就再改一次。"""
+        """只改 `requests` 列出的块（同一页的其它块作上下文）。改完还不合格（含超出 max_chars）就再改一次。
+
+        改稿不许删内容，所以两次都缩不到 max_chars 是正常结果：交回改过的版本里最短的、没有别的错的那版，
+        `still_too_long` 降成警告，由排版缩字号或给人看。
+        """
         by_id = {b.id: b for b in page.blocks}
         unknown = [r.id for r in requests if r.id not in by_id or not by_id[r.id].translate]
         if unknown:
@@ -283,6 +290,8 @@ class TranslationAgent:
                 if results[request.id].status == "error":
                     next_round.append(request)
             pending = next_round
+        for request in pending:
+            results[request.id] = _shortest_over_limit(results[request.id])
         return results
 
     def _retry_unit(self, page: PageInput, unit: list, results: dict, *, document: dict) -> dict[str, BlockResult]:
@@ -413,3 +422,23 @@ def _revision_record(request: RevisionRequest, previous: BlockResult | None) -> 
 def _revision_issue(request: RevisionRequest) -> dict:
     target = f"，要求不超过 {request.max_chars} 字" if request.max_chars else ""
     return {"code": f"revision_{request.reason}", "severity": "info", "message": f"重排要求改稿：{request.reason}{target}"}
+
+
+def _shortest_over_limit(result: BlockResult) -> BlockResult:
+    """两次改稿都超长：在除了超长没有别的错的版本里取最短的，超长降成警告；有别的错就原样留着（状态仍是错误）。"""
+
+    def only_too_long(issues: list[dict]) -> bool:
+        return all(i["code"] == "still_too_long" or i["severity"] != "error" for i in issues)
+
+    tries = [(result.translation, result.issues)] + [(h["translation"], h["issues"]) for h in result.history if "attempts" in h]
+    usable = [(text, issues) for text, issues in tries if text and only_too_long(issues)]
+    if not usable:
+        return result
+    text, issues = min(usable, key=lambda t: visible_length(t[0]))
+    issues = [
+        dict(i, severity="warn", message=i["message"] + "；不删内容缩不到，交回最短的一版，请排版缩字号")
+        if i["code"] == "still_too_long"
+        else i
+        for i in issues
+    ]
+    return BlockResult(result.id, text, issues, result.attempts, status_of(issues), result.history)

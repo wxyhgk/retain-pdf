@@ -71,8 +71,8 @@ BLOCK_CLASSES: dict[str, dict] = {
         "label": "关键词",
         "group": "front",
         "kind": "text",
-        "translate": None,
-        "question": "关键词翻不翻？翻的话按词翻，不按句子",
+        "translate": False,
+        "note": "2026-10-30 定：不翻，原样保留",
     },
     "section_heading": {
         "label": "章节标题",
@@ -128,9 +128,8 @@ BLOCK_CLASSES: dict[str, dict] = {
         "label": "算法块",
         "group": "float",
         "kind": "code",
-        "translate": None,
-        "question": "伪代码里的自然语言（Input:、for each block do……）翻不翻？关键字、变量名、符号一律不翻",
-        "note": "论文里 Algorithm 1 那种伪代码框（Paddle、MinerU 的 algorithm），按行保留排版",
+        "translate": False,
+        "note": "论文里 Algorithm 1 那种伪代码框（Paddle、MinerU 的 algorithm），按行保留排版；2026-10-30 定：整块不翻",
     },
     "code_caption": {
         "label": "代码题注",
