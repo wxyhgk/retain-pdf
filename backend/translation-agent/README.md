@@ -38,7 +38,7 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
   文风说明、全文统一的术语和人名、标题和目录的译法；`DocumentRun(read_first=True)` 用它。
 - `review.py`：审校。每页正文类块交给审校只开问题单（错译、漏译添加、数字术语、不通顺、语气偏离），逐字引用原文译文，
   程序核对后只替换被指出的那段，错误和警告只许减少；`DocumentRun(review=True)` 用它。
-- `breaks.py`：接续组断点放少了时按原文长度比例在中文标点处切开。
+- `breaks.py`：接续组断点放少了、或者放的位置让某块占比和原文差超过 20 个百分点时，按原文长度比例在中文标点处切开。
 - 重翻后还不合格的块状态是 `fallback_source`：不交没过校验的译文，显示原文、待人看。每块 `meta` 记模型、提示词版本、
   角色、术语表版本、`used_terms`、上下文包哈希。`TranslationAgent(models={"reviser": ...})` 按角色另指定模型。
 

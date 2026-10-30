@@ -20,6 +20,8 @@ from typing import Callable
 
 from retainpdf_translation_agent.breaks import move_leading_punctuation
 from retainpdf_translation_agent.breaks import split_by_ratio
+from retainpdf_translation_agent.checks import SHARE_DRIFT_MIN_CHARS
+from retainpdf_translation_agent.checks import SHARE_TOLERANCE
 from retainpdf_translation_agent.checks import check_block
 from retainpdf_translation_agent.checks import check_group
 from retainpdf_translation_agent.checks import check_terms
@@ -817,6 +819,9 @@ def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> 
     """把模型交回的（块 id 或接续组 id → 译文）拆回各块。
 
     组的 BREAK 放少了（含一个没放）：程序按原文长度比例在附近的中文标点切开，记警告，不重翻；放多了才整组记不合格。
+    放的个数对、但切出来某块占全组的比例和原文差太远（`SHARE_TOLERANCE`）：也由程序按比例重切。框是按原文大小定的，
+    模型常把断点放在整句译完以后（原文的断点在句子中间，中文语序断不开），2026-10-30 论文第 1 页右栏最底下一行高的框
+    因此被塞进 120 多个字；反过来另一组前一栏只剩四分之一，空出一大块。
     后面一块以标点开头的，标点挪回前一块末尾。
     """
     per_block: dict[str, str] = {}
@@ -850,15 +855,33 @@ def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> 
                 issues.setdefault(member.id, []).append({"code": "group_break", "severity": "error", "message": message})
                 per_block[member.id] = text
             continue
+        message = ""
         if len(parts) < len(members) or (len(parts) == len(members) and any(not p.strip() for p in parts)):
             # 少放了断点，或者断点放在整段最前、最后（切出来有空块）：程序按比例重切
-            parts = split_by_ratio(text.replace(BREAK, ""), [len(m.text) for m in members])
             message = f"断点标记应有 {len(members) - 1} 个，交回了 {text.count(BREAK)} 个，程序按原文长度比例在标点处切开"
+        else:
+            drift = _share_drift(members, parts)
+            if drift is not None:
+                message = f"断点放的位置和原文比例差太远（{drift}），程序按原文长度比例在标点处重新切开"
+        if message:
+            parts = split_by_ratio(text.replace(BREAK, ""), [len(m.text) for m in members])
             for member in members:
                 issues.setdefault(member.id, []).append({"code": "group_split_by_program", "severity": "warn", "message": message})
         for member, part in zip(members, move_leading_punctuation([p.strip() for p in parts])):
             per_block[member.id] = part
     return per_block, issues
+
+
+def _share_drift(members: list, parts: list[str]) -> str | None:
+    """按模型的断点切开后，哪一块占全组的比例和原文占比差超过 `SHARE_TOLERANCE`、字数也差 `SHARE_DRIFT_MIN_CHARS` 以上；
+    都没超是 None。"""
+    src_total = sum(len(m.text) for m in members) or 1
+    out_total = sum(len(p.replace(BREAK, "").strip()) for p in parts) or 1
+    for member, part in zip(members, parts):
+        src_share, out_share = len(member.text) / src_total, len(part.strip()) / out_total
+        if abs(src_share - out_share) > SHARE_TOLERANCE and abs(len(part.strip()) - src_share * out_total) >= SHARE_DRIFT_MIN_CHARS:
+            return f"{member.id} 原文占全组 {src_share:.0%}，译文占 {out_share:.0%}"
+    return None
 
 
 def _revision_record(request: RevisionRequest, previous: BlockResult | None) -> dict:

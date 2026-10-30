@@ -39,6 +39,8 @@ OUTPUT_DIR = _path_from_env("OUTPUT_ROOT", "RUST_API_OUTPUT_ROOT", default=ROOT_
 TRANSLATIONS_DIR = OUTPUT_DIR / "translations"
 TRANSLATION_UNIT_CACHE_DIR = OUTPUT_DIR / "_translation_unit_cache"
 DOMAIN_CONTEXT_CACHE_DIR = OUTPUT_DIR / "_domain_context_cache"
+# 翻译 agent 的请求缓存（键是整个请求体的哈希）：各任务共用，重试翻译新建的任务也用得上
+AGENT_REQUEST_CACHE_DIR = OUTPUT_DIR / "_agent_request_cache"
 RENDER_TYPOGRAPHY_MEMORY_DIR = OUTPUT_DIR / "_render_typography_memory"
 
 SOURCE_PDF = DATA_DIR / "std2_manual.pdf"

@@ -50,6 +50,7 @@ _OUTPUT_DIR_DERIVED = {
     "TRANSLATIONS_DIR": "translations",
     "TRANSLATION_UNIT_CACHE_DIR": "_translation_unit_cache",
     "DOMAIN_CONTEXT_CACHE_DIR": "_domain_context_cache",
+    "AGENT_REQUEST_CACHE_DIR": "_agent_request_cache",
     "RENDER_TYPOGRAPHY_MEMORY_DIR": "_render_typography_memory",
 }
 

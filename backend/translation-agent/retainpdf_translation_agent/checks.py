@@ -28,9 +28,14 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 OVERLAP_CHARS = 10  # 接续组里相邻两块的译文有这么多个连续相同的汉字，算重复
 # 相邻两块的原文本身就有这么多个连续相同的词：原文就重复了一段话，译文跟着重复是对的，不算重复
 SOURCE_OVERLAP_WORDS = 6
+# 接续组里一块译文占全组的比例和原文占比差这么多：断点放错了地方（框按原文大小定，译文多了就溢出、少了就空一大块）
+SHARE_TOLERANCE = 0.2
+# 而且和按比例该分到的字数差这么多个字才算：几个字的短段，比例差得再多也装得下
+SHARE_DRIFT_MIN_CHARS = 12
 # 检查规则的版本：判对判错的规则改了就升，正式流程据此不再沿用旧的进度和断点（请求缓存照用）。
 # 1：2026-10-30 原文本来就重复的话不算接续组重复；接续组一块"太短"而整组不短只记警告
-CHECKS_VERSION = "translation-agent-checks-1"
+# 2：2026-10-30 接续组模型放的断点和原文比例差太远，程序按比例重切
+CHECKS_VERSION = "translation-agent-checks-2"
 
 
 def visible_length(text: str) -> int:
@@ -208,7 +213,7 @@ def check_group(members: list[tuple[str, str, str | None]]) -> dict[str, list[di
     out_total = sum(len(t) for _, _, t in members) or 1
     for block_id, source, translation in members:
         src_share, out_share = len(source) / src_total, len(translation) / out_total
-        if abs(src_share - out_share) > 0.2:
+        if abs(src_share - out_share) > SHARE_TOLERANCE:
             issues[block_id].append(
                 _issue("group_share", "warn", f"这块原文占全组 {src_share:.0%}，译文却占 {out_share:.0%}，断点可能挪了")
             )
