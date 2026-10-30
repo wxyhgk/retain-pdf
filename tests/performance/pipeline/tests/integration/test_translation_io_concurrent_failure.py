@@ -1,6 +1,7 @@
 """Real concurrent failure, durable in-flight success, and fresh-process resume."""
 import hashlib
 import json
+import os
 from collections import Counter
 
 import pytest
@@ -8,8 +9,11 @@ import pytest
 from support.translation_io_support import TRANSLATIONS, prepare, run
 from support.translation_io_assertions import assert_complete_artifacts, assert_unpublished
 
+# 并发、中途崩溃的时机每次不一样：平时跑 1 遍，查偶发问题时设 RETAINPDF_RACE_REPEATS 多跑（以前固定 3 遍，每遍起两个子进程）
+RACE_REPEATS = max(1, int(os.environ.get("RETAINPDF_RACE_REPEATS", "1")))
 
-@pytest.mark.parametrize("attempt", range(3))
+
+@pytest.mark.parametrize("attempt", range(RACE_REPEATS))
 def test_inflight_success_commits_after_failure_and_is_not_requested_on_resume(tmp_path, attempt):
     root = prepare(tmp_path / str(attempt), workers=2, outcome="concurrent_failure")
     result = run(root)
