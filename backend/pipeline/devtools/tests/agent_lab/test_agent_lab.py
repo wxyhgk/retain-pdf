@@ -2,20 +2,34 @@
 
 from __future__ import annotations
 
+import functools
 import json
 import re
 from pathlib import Path
 
+import pytest
+
 from retainpdf_translation_agent import TranslationAgent as Agent
 
+from devtools.agent_lab import __main__ as lab
 from devtools.agent_lab.__main__ import run
 from devtools.agent_lab.pages import build_pages
 from devtools.ocr_viewer.complex_sample import PRINTED_PAGE
-from devtools.ocr_viewer.complex_sample import build
+
+
+@pytest.fixture(autouse=True, scope="module")
+def _build_each_sample_once():
+    """排样例要几秒，run() 每次都重新排：这个文件里每种样例只排一次（样例对象只读，save 只写文件）。"""
+    original = dict(lab.SAMPLES)
+    lab.SAMPLES.update({name: functools.cache(builder) for name, builder in original.items()})
+    yield
+    lab.SAMPLES.clear()
+    lab.SAMPLES.update(original)
 
 
 def _truth(tmp_path: Path) -> dict:
-    _, truth_path = build().save(tmp_path)
+    doc, _labels = lab.SAMPLES["complex"]()
+    _, truth_path = doc.save(tmp_path)
     return json.loads(truth_path.read_text(encoding="utf-8"))
 
 

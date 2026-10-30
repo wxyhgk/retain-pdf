@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 import fitz
+import pytest
 
 from devtools.agent_lab import sample_textbook
 from devtools.agent_lab.pages import build_pages
@@ -19,12 +20,18 @@ def _build(tmp_path: Path):
     return doc, pdf_path, json.loads(truth_path.read_text(encoding="utf-8"))
 
 
+@pytest.fixture(scope="module")
+def built(tmp_path_factory):
+    """样例排一次要几秒：同一个文件里的测试共用一份（都只读）。"""
+    return _build(tmp_path_factory.mktemp("textbook"))
+
+
 def _by_id(truth: dict) -> dict[str, dict]:
     return {e["id"]: e for e in truth["elements"]}
 
 
-def test_builds_and_feeds_the_page_builder(tmp_path: Path) -> None:
-    doc, pdf_path, truth = _build(tmp_path)
+def test_builds_and_feeds_the_page_builder(built) -> None:
+    doc, pdf_path, truth = built
     assert truth["document_id"] == "sample_textbook"
     assert len(truth["pages"]) >= 5
     assert len(fitz.open(pdf_path)) == len(truth["pages"])
@@ -36,8 +43,8 @@ def test_builds_and_feeds_the_page_builder(tmp_path: Path) -> None:
     assert all(p.to_translate() for p in pages)
 
 
-def test_classes_ids_and_page_boxes_are_sane(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_classes_ids_and_page_boxes_are_sane(built) -> None:
+    _, _, truth = built
     ids = [e["id"] for e in truth["elements"]]
     assert len(ids) == len(set(ids))
     assert all(e["class"] in BLOCK_CLASSES for e in truth["elements"])
@@ -59,8 +66,8 @@ def test_classes_ids_and_page_boxes_are_sane(tmp_path: Path) -> None:
             assert not re.match(r"[,.;:)%]", line["text"]), (e["id"], line["text"][:20])
 
 
-def test_has_continuation_groups_including_an_example_and_an_exercise(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_has_continuation_groups_including_an_example_and_an_exercise(built) -> None:
+    _, _, truth = built
     by_id = _by_id(truth)
     continued = {e["id"]: e["relations"]["continues"] for e in truth["elements"] if "continues" in (e.get("relations") or {})}
     assert continued
@@ -71,15 +78,15 @@ def test_has_continuation_groups_including_an_example_and_an_exercise(tmp_path: 
         assert by_id[tail]["page"] > by_id[head]["page"]
 
 
-def test_exercises_are_list_items_numbered_3_1_to_3_12_across_pages(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_exercises_are_list_items_numbered_3_1_to_3_12_across_pages(built) -> None:
+    _, _, truth = built
     items = [e for e in truth["elements"] if e["class"] == "list_item" and e["id"].startswith("ex-3.")]
     assert [e["text"].split()[0] for e in items if "continues" not in (e.get("relations") or {})] == [f"3.{i}" for i in range(1, 13)]
     assert len({e["page"] for e in items}) >= 2  # 习题列表跨页
 
 
-def test_definitions_theorems_and_examples_are_paragraphs_with_numbers_in_the_text(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_definitions_theorems_and_examples_are_paragraphs_with_numbers_in_the_text(built) -> None:
+    _, _, truth = built
     paragraphs = [e["text"] for e in truth["elements"] if e["class"] == "paragraph"]
     for label in ("Definition 3.1", "Definition 3.2", "Example 3.3", "Example 3.4", "Theorem 3.5", "Definition 3.6", "Theorem 3.7", "Example 3.8"):
         assert any(text.startswith(label) for text in paragraphs), label
@@ -88,8 +95,8 @@ def test_definitions_theorems_and_examples_are_paragraphs_with_numbers_in_the_te
     assert any("Exercise 3.3" in text for text in (e["text"] for e in truth["elements"]))
 
 
-def test_margin_notes_hang_on_paragraphs_and_mirror_on_odd_even_pages(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_margin_notes_hang_on_paragraphs_and_mirror_on_odd_even_pages(built) -> None:
+    _, _, truth = built
     by_id = _by_id(truth)
     width = truth["pages"][0]["width"]
     notes = [e for e in truth["elements"] if e["class"] == "margin_note"]
@@ -112,8 +119,8 @@ def test_margin_notes_hang_on_paragraphs_and_mirror_on_odd_even_pages(tmp_path: 
     assert any(inline["class"] == "inline_formula" for note in notes for inline in note.get("inlines", []))
 
 
-def test_display_formulas_have_numbers_and_inline_formulas_carry_latex(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_display_formulas_have_numbers_and_inline_formulas_carry_latex(built) -> None:
+    _, _, truth = built
     by_id = _by_id(truth)
     formulas = [e for e in truth["elements"] if e["class"] == "display_formula"]
     assert len(formulas) >= 5
@@ -130,8 +137,8 @@ def test_display_formulas_have_numbers_and_inline_formulas_carry_latex(tmp_path:
     assert any("$\\mu$" in text for text in texts)
 
 
-def test_figure_with_shared_caption_table_with_caption_and_note_and_code(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_figure_with_shared_caption_table_with_caption_and_note_and_code(built) -> None:
+    _, _, truth = built
     by_id = _by_id(truth)
     caption = by_id["fig-31-cap"]
     assert caption["class"] == "figure_caption" and len(caption["relations"]["caption_of"]) == 3
@@ -142,8 +149,8 @@ def test_figure_with_shared_caption_table_with_caption_and_note_and_code(tmp_pat
     assert by_id["code-31-cap"]["class"] == "code_caption" and by_id["code-31"]["class"] == "code_block"
 
 
-def test_footnotes_sit_on_the_same_page_as_their_marks(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_footnotes_sit_on_the_same_page_as_their_marks(built) -> None:
+    _, _, truth = built
     by_id = _by_id(truth)
     marks = [(e, i) for e in truth["elements"] for i in e.get("inlines", []) if i["class"] == "footnote_mark"]
     notes = [e for e in truth["elements"] if e["class"] == "footnote"]
@@ -155,8 +162,8 @@ def test_footnotes_sit_on_the_same_page_as_their_marks(tmp_path: Path) -> None:
     assert any(i["class"] == "citation" for e in truth["elements"] for i in e.get("inlines", []))
 
 
-def test_headers_differ_on_odd_and_even_pages_and_the_opener_has_none(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_headers_differ_on_odd_and_even_pages_and_the_opener_has_none(built) -> None:
+    _, _, truth = built
     headers = {e["page"]: e["text"] for e in truth["elements"] if e["class"] == "running_header"}
     assert 0 not in headers  # 章首页没有页眉
     verso = {text for page, text in headers.items() if page % 2 == 1}
@@ -171,8 +178,8 @@ def test_headers_differ_on_odd_and_even_pages_and_the_opener_has_none(tmp_path: 
             assert (e["bbox"][2] > 300) == (e["page"] % 2 == 0)
 
 
-def test_chapter_structure_has_levels_objectives_and_summary(tmp_path: Path) -> None:
-    _, _, truth = _build(tmp_path)
+def test_chapter_structure_has_levels_objectives_and_summary(built) -> None:
+    _, _, truth = built
     headings = {e["text"]: e["attributes"]["level"] for e in truth["elements"] if e["class"] == "section_heading"}
     assert headings["3 Sampling Distributions and the Central Limit Theorem"] == 1
     assert headings["Learning objectives"] == 2 and headings["Chapter summary"] == 2 and headings["Exercises"] == 2
@@ -183,8 +190,8 @@ def test_chapter_structure_has_levels_objectives_and_summary(tmp_path: Path) -> 
     assert all(e["class"] == "list_item" for e in objectives + summary)
 
 
-def test_terms_are_bold_where_they_are_defined_and_not_before(tmp_path: Path) -> None:
-    doc, pdf_path, truth = _build(tmp_path)
+def test_terms_are_bold_where_they_are_defined_and_not_before(built) -> None:
+    doc, pdf_path, truth = built
     by_id = _by_id(truth)
     terms = doc.bold_terms
     assert {"population", "sample", "sampling variability", "parameter", "statistic", "sampling distribution", "standard error", "Central Limit Theorem"} <= set(terms)

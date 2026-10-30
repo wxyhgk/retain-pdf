@@ -535,7 +535,10 @@
       "runtime_files": [],
       "devtool_files": [],
       "test_files": [
+        "devtools/tests/agent_lab/test_agent_lab.py",
         "devtools/tests/agent_lab/test_sample_conference.py",
+        "devtools/tests/agent_lab/test_sample_essay.py",
+        "devtools/tests/agent_lab/test_sample_textbook.py",
         "devtools/tests/conftest.py",
         "devtools/tests/document_operations/test_document_operation_cli.py",
         "devtools/tests/document_operations/test_page_program.py",
@@ -562,6 +565,7 @@
         "devtools/tests/entrypoints/test_console.py",
         "devtools/tests/entrypoints/test_repository_paths.py",
         "devtools/tests/entrypoints/test_translation_test_runner.py",
+        "devtools/tests/ocr_viewer/test_ocr_viewer.py",
         "devtools/tests/rendering/test_angstrom_sanitize.py",
         "devtools/tests/rendering/test_bbox_text_strip_executor.py",
         "devtools/tests/rendering/test_bbox_text_strip_form_xobject.py",

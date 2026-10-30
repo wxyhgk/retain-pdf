@@ -8,6 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 import fitz
+import pytest
 
 from devtools.agent_lab.pages import build_pages
 from devtools.agent_lab.sample_essay import build
@@ -21,8 +22,14 @@ def _build(tmp_path: Path):
     return doc, pdf_path, truth
 
 
-def test_builds_pages_with_printed_labels_and_valid_classes(tmp_path: Path) -> None:
-    doc, pdf_path, truth = _build(tmp_path)
+@pytest.fixture(scope="module")
+def built(tmp_path_factory):
+    """样例排一次要几秒：同一个文件里的测试共用一份（都只读）。"""
+    return _build(tmp_path_factory.mktemp("essay"))
+
+
+def test_builds_pages_with_printed_labels_and_valid_classes(built) -> None:
+    doc, pdf_path, truth = built
     assert truth["document_id"] == "sample_essay"
     assert len(truth["pages"]) >= 5
     assert fitz.open(pdf_path).page_count == len(truth["pages"])
@@ -38,8 +45,8 @@ def test_builds_pages_with_printed_labels_and_valid_classes(tmp_path: Path) -> N
     assert [p.page_label for p in pages] == [str(211 + i) for i in range(len(truth["pages"]))]
 
 
-def test_essay_specific_pieces_are_present(tmp_path: Path) -> None:
-    doc, _, truth = _build(tmp_path)
+def test_essay_specific_pieces_are_present(built) -> None:
+    doc, _, truth = built
     elements = {e["id"]: e for e in truth["elements"]}
     by_class = Counter(e["class"] for e in truth["elements"])
     for cls in ("doc_title", "author", "affiliation", "publication_info", "abstract", "keywords", "running_header",
@@ -74,8 +81,8 @@ def test_essay_specific_pieces_are_present(tmp_path: Path) -> None:
     assert {e["page"] for e in truth["elements"] if e["class"] == "running_header"} == set(range(1, len(truth["pages"])))
 
 
-def test_footnotes_are_many_stay_on_their_page_and_some_continue(tmp_path: Path) -> None:
-    doc, _, truth = _build(tmp_path)
+def test_footnotes_are_many_stay_on_their_page_and_some_continue(built) -> None:
+    doc, _, truth = built
     elements = {e["id"]: e for e in truth["elements"]}
     notes = [e for e in truth["elements"] if e["class"] == "footnote"]
     assert len(notes) >= 20
@@ -111,8 +118,8 @@ def test_footnotes_are_many_stay_on_their_page_and_some_continue(tmp_path: Path)
         assert len(first["lines"]) >= 2 and len(part["lines"]) >= 2
 
 
-def test_long_paragraphs_continue_across_pages_and_reach_the_agent_as_groups(tmp_path: Path) -> None:
-    doc, _, truth = _build(tmp_path)
+def test_long_paragraphs_continue_across_pages_and_reach_the_agent_as_groups(built) -> None:
+    doc, _, truth = built
     elements = {e["id"]: e for e in truth["elements"]}
     paragraph_parts = [e for e in truth["elements"] if e["class"] == "paragraph" and "continues" in (e.get("relations") or {})]
     assert len(paragraph_parts) >= 2
@@ -129,8 +136,8 @@ def test_long_paragraphs_continue_across_pages_and_reach_the_agent_as_groups(tmp
     assert part["id"] in [b.id for b in request.blocks]
 
 
-def test_foreign_quotes_and_references_are_marked_for_the_agent(tmp_path: Path) -> None:
-    doc, _, truth = _build(tmp_path)
+def test_foreign_quotes_and_references_are_marked_for_the_agent(built) -> None:
+    doc, _, truth = built
     pages = build_pages(truth, page_labels=doc.page_labels)
     blocks = {b.id: b for p in pages for b in p.blocks}
     quotes = [b for b in blocks.values() if b.attributes.get("role") == "block_quote"]
@@ -147,8 +154,8 @@ def test_foreign_quotes_and_references_are_marked_for_the_agent(tmp_path: Path) 
     assert "Adam Bede" in blocks["s1-p2-cont1"].source
 
 
-def test_nothing_overlaps_or_leaves_the_page(tmp_path: Path) -> None:
-    doc, _, truth = _build(tmp_path)
+def test_nothing_overlaps_or_leaves_the_page(built) -> None:
+    doc, pdf_path, truth = built
     size = {p["index"]: (p["width"], p["height"]) for p in truth["pages"]}
     by_page: dict[int, list[dict]] = defaultdict(list)
     for e in truth["elements"]:
@@ -163,7 +170,7 @@ def test_nothing_overlaps_or_leaves_the_page(tmp_path: Path) -> None:
                 overlap_h = min(a["bbox"][3], b["bbox"][3]) - max(a["bbox"][1], b["bbox"][1])
                 assert not (overlap_w > 0.5 and overlap_h > 0.5), (page, a["id"], b["id"])
     # 画上去的字和标准答案对得上：每个块的第一行文字能在 PDF 那一页的对应位置读出来
-    pdf = fitz.open(tmp_path / "sample_essay.pdf")
+    pdf = fitz.open(pdf_path)
     for e in truth["elements"]:
         if e["class"] in ("paragraph", "footnote", "section_heading") and e["lines"]:
             line = e["lines"][0]

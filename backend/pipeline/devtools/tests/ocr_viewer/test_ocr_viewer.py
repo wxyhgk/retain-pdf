@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 import fitz
+import pytest
 
 from devtools.ocr_viewer.complex_sample import build
 from devtools.ocr_viewer.taxonomy import BLOCK_CLASSES
@@ -26,12 +27,18 @@ def _sample(tmp_path: Path) -> tuple[Path, dict]:
     return pdf_path, json.loads(truth_path.read_text(encoding="utf-8"))
 
 
+@pytest.fixture(scope="module")
+def built(tmp_path_factory):
+    """样例排一次要几秒：同一个文件里的测试共用一份（都只读）。"""
+    return _sample(tmp_path_factory.mktemp("complex"))
+
+
 def test_taxonomy_is_consistent() -> None:
     assert check_taxonomy() == []
 
 
-def test_sample_uses_every_class_and_passes_truth_check(tmp_path: Path) -> None:
-    _, truth = _sample(tmp_path)
+def test_sample_uses_every_class_and_passes_truth_check(built) -> None:
+    _, truth = built
     assert check_truth(truth) == []
     used = {element["class"] for element in truth["elements"]}
     assert used == set(BLOCK_CLASSES) - NOT_IN_SAMPLE
@@ -42,16 +49,16 @@ def test_sample_uses_every_class_and_passes_truth_check(tmp_path: Path) -> None:
     assert len(algorithm_captions) == 1
 
 
-def test_sample_has_column_and_page_continuations(tmp_path: Path) -> None:
-    _, truth = _sample(tmp_path)
+def test_sample_has_column_and_page_continuations(built) -> None:
+    _, truth = built
     by_id = {element["id"]: element for element in truth["elements"]}
     continued = [(by_id[e["relations"]["continues"]], e) for e in truth["elements"] if "continues" in e.get("relations", {})]
     assert any(head["page"] != tail["page"] for head, tail in continued), "no cross-page continuation"
     assert any(head["page"] == tail["page"] and head["bbox"][0] != tail["bbox"][0] for head, tail in continued), "no cross-column continuation"
 
 
-def test_toc_entries_point_to_headings_on_the_printed_page(tmp_path: Path) -> None:
-    _, truth = _sample(tmp_path)
+def test_toc_entries_point_to_headings_on_the_printed_page(built) -> None:
+    _, truth = built
     by_id = {element["id"]: element for element in truth["elements"]}
     entries = [e for e in truth["elements"] if e["class"] == "toc_entry"]
     assert {e["attributes"]["level"] for e in entries} == {1, 2, 3}
@@ -64,8 +71,8 @@ def test_toc_entries_point_to_headings_on_the_printed_page(tmp_path: Path) -> No
         assert entry["lines"][-1]["text"].endswith(" " + printed), entry["id"]
 
 
-def test_truth_boxes_sit_on_the_rendered_text(tmp_path: Path) -> None:
-    pdf_path, truth = _sample(tmp_path)
+def test_truth_boxes_sit_on_the_rendered_text(built) -> None:
+    pdf_path, truth = built
     with fitz.open(pdf_path) as pdf:
         assert pdf.page_count == len(truth["pages"])
         for element in truth["elements"]:
