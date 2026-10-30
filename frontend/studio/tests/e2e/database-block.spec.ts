@@ -280,3 +280,19 @@ test('a row’s own page: the database’s columns under its title, a value chan
 	// The new choice is the database's: in its block, in the page it is in.
 	await expect.poll(savedMarkdown).toMatch(/"options": \[\n\s+"B3LYP",\n\s+"PBE0"\n\s+\]/u);
 });
+
+test('a column on as many lines as its values take, from its menu; the titles too', async ({ page: p }) => {
+	row('db-row-a', '一个很长很长的标题，长到一行放不下，看它是不是换行显示出来', '{ "备注": "也很长的一段备注文字，一行放不下，要换行才能看全" }');
+	database({ columns: [{ name: '备注', type: 'text' }], view: 'table' });
+	await openStudio(p);
+	const cell = block(p).locator('[data-row="db-row-a"] [data-column="备注"]');
+	const before = (await cell.boundingBox())!.height;
+	await block(p).locator('[data-column-head="备注"]').click();
+	await p.locator('[data-database-wrap="备注"]').click();
+	await p.keyboard.press('Escape');
+	await expect.poll(async () => (await cell.boundingBox())!.height).toBeGreaterThan(before + 10);
+	await block(p).locator('[data-column-head="标题"]').click();
+	await p.locator('[data-database-wrap="标题"]').click();
+	await p.keyboard.press('ControlOrMeta+s');
+	await expect.poll(savedMarkdown).toMatch(/"name": "备注",\n\s+"type": "text",\n\s+"wrap": true[\s\S]*"titleWrap": true/u);
+});

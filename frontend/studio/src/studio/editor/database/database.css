@@ -50,8 +50,15 @@
 .db .db-chip-caret { width: 12px !important; height: 12px !important; opacity: 0.6; }
 .db .db-chips-line { width: 1px; height: 18px; background: var(--studio-hairline); }
 
-/* The table: room at its left for each row's ⋮⋮, as Notion keeps it in the page's margin. */
-.db .db-scroll { margin-left: -36px; padding-left: 36px; padding-bottom: 6px; overflow-x: auto; overflow-y: hidden; }
+/* The table: room at its left for each row's ⋮⋮, as Notion keeps it in the page's margin; out to the right of the
+ * editor (--db-out, database-block.ts), scrolled sideways there. */
+.db .db-scroll { margin-right: calc(-1 * var(--db-out, 0px)); margin-left: -36px; padding-left: 36px; padding-bottom: 6px; overflow-x: auto; overflow-y: hidden; }
+/* The titles stay at the left as the table is scrolled sideways (past the room for the ⋮⋮, which they cover). */
+.db .db-tr > .db-th:first-child, .db .db-tr > .db-td-title { position: sticky; left: 0; z-index: 3; background: var(--surface); box-shadow: -36px 0 0 var(--surface); }
+/* A column on as many lines as its values take. */
+.db .db-td.is-wrap .db-cell-text, .db .db-td.is-wrap .db-title-text { white-space: normal; overflow-wrap: anywhere; }
+.db .db-td.is-wrap .db-cell-pills { flex-wrap: wrap; }
+.db .db-td.is-wrap .db-cell { align-items: flex-start; }
 .db .db-table { font-size: 14px; }
 .db .db-tr { display: flex; }
 .db .db-head { border-top: 1px solid var(--studio-hairline); border-bottom: 1px solid var(--studio-hairline); color: rgb(var(--gray)); }

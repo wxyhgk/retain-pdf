@@ -15,7 +15,7 @@ test('settings read as far as they are right; written back without what a new on
 	assert.equal(config.view, 'board');
 	assert.deepEqual(config.sorts, []);
 	assert.equal(config.group, null);
-	assert.deepEqual(readConfig('not json'), { id: null, title: '', columns: [], view: 'table', sorts: [], filter: [], group: null, template: null });
+	assert.deepEqual(readConfig('not json'), { id: null, title: '', columns: [], view: 'table', sorts: [], filter: [], group: null, template: null, titleWrap: false });
 	assert.deepEqual(JSON.parse(writeConfig(readConfig(''))), { columns: [], view: 'table' });
 	// Its id kept, first; one not an id (a path, too short) not.
 	assert.deepEqual(Object.keys(JSON.parse(writeConfig(readConfig('{"title": "计算", "id": "k3f9x2ab"}')))), ['id', 'title', 'columns', 'view']);

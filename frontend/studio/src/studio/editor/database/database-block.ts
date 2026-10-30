@@ -58,6 +58,21 @@ export const databaseView = $view(databaseSchema.schema.node, () => (initial: Pr
 	// to its caret (wherever it was), the press's drag lost.
 	dom.tabIndex = -1;
 	const root = createRoot(dom);
+	// As Notion's: the table out to the right of the editor (the text column's width is too narrow for many columns),
+	// how far told it as --db-out; its title and tools stay over the text.
+	const reach = () => {
+		const scroller = dom.closest<HTMLElement>('.editor-scroll');
+		if (!scroller || !dom.isConnected) return;
+		const out = Math.max(0, Math.floor(scroller.getBoundingClientRect().right - dom.getBoundingClientRect().right - (scroller.offsetWidth - scroller.clientWidth) - 24));
+		if (dom.style.getPropertyValue('--db-out') !== `${out}px`) dom.style.setProperty('--db-out', `${out}px`);
+	};
+	const sizes = new ResizeObserver(reach);
+	sizes.observe(dom);
+	requestAnimationFrame(() => {
+		const scroller = dom.closest('.editor-scroll');
+		if (scroller) sizes.observe(scroller);
+		reach();
+	});
 
 	/** The settings changed in the view: the block's text written anew. */
 	const change = (next: DatabaseConfig) => {
@@ -115,7 +130,10 @@ export const databaseView = $view(databaseSchema.schema.node, () => (initial: Pr
 		ignoreMutation: () => true,
 		selectNode: () => dom.classList.add('is-selected'),
 		deselectNode: () => dom.classList.remove('is-selected'),
-		destroy: () => queueMicrotask(() => root.unmount()),
+		destroy: () => {
+			sizes.disconnect();
+			queueMicrotask(() => root.unmount());
+		},
 	};
 });
 

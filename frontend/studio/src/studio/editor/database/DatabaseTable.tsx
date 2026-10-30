@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { ArrowDown, ArrowLeftToLine, ArrowRightToLine, ArrowUp, ArrowUpRight, Check, ChevronRight, EyeOff, FileText, GripVertical, ListFilter, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowLeftToLine, ArrowRightToLine, ArrowUp, ArrowUpRight, Check, ChevronRight, EyeOff, FileText, GripVertical, ListFilter, Plus, Trash2, WrapText } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -71,12 +71,12 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 						onDragLeave={(event) => !event.currentTarget.contains(event.relatedTarget as Node) && setDrop((now) => (now?.slug === row.slug ? null : now))}
 						onDrop={dropped(row)}
 					>
-						<div className="db-td db-td-title" role="cell" style={{ width: TITLE_WIDTH }}>
+						<div className={cn('db-td db-td-title', config.titleWrap && 'is-wrap')} role="cell" style={{ width: TITLE_WIDTH }}>
 							<RowHandle row={row} database={database} dragging={(on) => setDragged(on ? row.slug : null)} />
 							<TitleCell row={row} database={database} />
 						</div>
 						{columns.map((column) => (
-							<div key={column.name} className="db-td" role="cell" data-column={column.name} style={{ width: widthOf(column) }}>
+							<div key={column.name} className={cn('db-td', column.wrap && 'is-wrap')} role="cell" data-column={column.name} style={{ width: widthOf(column) }}>
 								<Cell row={row} column={column} database={database} />
 							</div>
 						))}
@@ -116,6 +116,9 @@ function TitleHead({ database }: { database: Database }) {
 			>
 				<div className="db-menu">
 					<SortAndFilter database={database} name={TITLE} close={() => setOpen(false)} />
+					<MenuRow icon={WrapText} onClick={() => change({ ...config, titleWrap: !config.titleWrap })} note={config.titleWrap ? <Check aria-hidden /> : null} data-database-wrap={TITLE}>
+						{t('换行显示')}
+					</MenuRow>
 					{config.filter.length === 0 && config.sorts.length === 0 ? null : (
 						<>
 							<MenuLine />
@@ -307,6 +310,9 @@ function ColumnMenu({ column, database, close }: { column: Column; database: Dat
 			</MenuRow>
 			<MenuLine />
 			<SortAndFilter database={database} name={column.name} close={close} />
+			<MenuRow icon={WrapText} onClick={() => database.wrapColumn(column, !column.wrap)} note={column.wrap ? <Check aria-hidden /> : null} data-database-wrap={column.name}>
+				{t('换行显示')}
+			</MenuRow>
 			<MenuRow
 				icon={EyeOff}
 				onClick={() => {

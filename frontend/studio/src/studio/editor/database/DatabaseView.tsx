@@ -232,6 +232,11 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 			const { hidden: _, ...rest } = current(column);
 			replaceColumn(column.name, hidden ? { ...rest, hidden: true } : rest);
 		},
+		/** Its values on as many lines as they take, or on one. */
+		wrapColumn(column: Column, wrap: boolean): void {
+			const { wrap: _, ...rest } = current(column);
+			replaceColumn(column.name, wrap ? { ...rest, wrap: true } : rest);
+		},
 		resizeColumn(column: Column, width: number): void {
 			replaceColumn(column.name, {
 				...current(column),

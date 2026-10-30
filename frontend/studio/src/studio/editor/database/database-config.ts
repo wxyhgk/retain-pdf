@@ -29,6 +29,8 @@ export type Column = {
 	width?: number;
 	/** Not in the table nor on the cards (still the rows'). */
 	hidden?: boolean;
+	/** Its values in the table on as many lines as they take (else one, cut short). */
+	wrap?: boolean;
 };
 export type Sort = { column: string; dir: 'asc' | 'desc' };
 /**
@@ -51,6 +53,8 @@ export type DatabaseConfig = {
 	group: string | null;
 	/** The template a new row is made from (templates/), or none. */
 	template: string | null;
+	/** The titles in the table on as many lines as they take. */
+	titleWrap: boolean;
 };
 export type Row = { slug: string; title: string; icon: string; props: Record<string, unknown> };
 
@@ -100,6 +104,7 @@ export function readConfig(text: string): DatabaseConfig {
 					...(hasOptions(column.type) ? { options: Array.isArray(column.options) ? [...new Set(column.options.filter((option) => typeof option === 'string' && option.trim()))] : [] } : {}),
 					...(typeof column.width === 'number' && column.width >= 60 ? { width: Math.round(Math.min(column.width, 1200)) } : {}),
 					...(column.hidden === true ? { hidden: true } : {}),
+					...(column.wrap === true ? { wrap: true } : {}),
 				}))
 		: [];
 	const unique = columns.filter((column, index) => columns.findIndex((other) => other.name === column.name) === index);
@@ -118,6 +123,7 @@ export function readConfig(text: string): DatabaseConfig {
 			.map((each) => ({ column: each.column!, op: OPS.includes(each.op as FilterOp) ? (each.op as FilterOp) : 'contains', value: Array.isArray(each.value) ? each.value.map(String) : typeof each.value === 'string' ? each.value : '' })),
 		group: typeof raw.group === 'string' && unique.some((column) => column.name === raw.group && (column.type === 'select' || column.type === 'checkbox')) ? raw.group : null,
 		template: typeof raw.template === 'string' && raw.template ? raw.template : null,
+		titleWrap: raw.titleWrap === true,
 	};
 }
 
@@ -132,6 +138,7 @@ export function writeConfig(config: DatabaseConfig): string {
 	if (config.filter.length) kept.filter = config.filter;
 	if (config.group) kept.group = config.group;
 	if (config.template) kept.template = config.template;
+	if (config.titleWrap) kept.titleWrap = true;
 	return JSON.stringify(kept, null, 2);
 }
 
