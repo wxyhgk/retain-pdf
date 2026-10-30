@@ -4,6 +4,7 @@
 .note-widget > figcaption { margin-top: 6px; color: rgb(var(--gray, 120, 119, 116)); font-size: 0.875em; text-align: center; }
 /* Shown large (widget-host.ts expandWidget): a button over it where it is narrow, and the widget over everything. */
 .note-widget-expand { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 1px solid rgb(var(--gray-light, 225, 224, 221)); border-radius: 6px; background: var(--surface, #fff); color: rgb(var(--gray, 120, 119, 116)); cursor: pointer; opacity: 0; transition: opacity 120ms ease; }
+.note-widget-error { margin: 4px 0 0; color: var(--danger, #c4321c); font-size: 12px; line-height: 1.5; overflow-wrap: anywhere; }
 .note-widget:hover > .note-widget-expand, .note-widget-expand:focus-visible { opacity: 1; }
 .note-widget-expand:hover { color: rgb(var(--gray-dark, 55, 53, 47)); }
 .note-widget-dialog { display: flex; flex-direction: column; box-sizing: border-box; width: min(1200px, 94vw); height: 90vh; max-width: none; max-height: none; padding: 0; border: 1px solid rgb(var(--gray-light, 225, 224, 221)); border-radius: 10px; background: var(--surface, #fff); color: rgb(var(--gray-dark, 55, 53, 47)); box-shadow: 0 18px 50px rgb(0 0 0 / 0.18); }

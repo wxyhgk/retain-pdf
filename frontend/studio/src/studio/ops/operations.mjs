@@ -148,9 +148,15 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'preview_page',
-		description: '看一个页面显示出来是什么样（你看不到页面时用它，不要自己开浏览器、截图）：逐块说它显示成什么，第几行开始：标题、段落、页面链接（单独一行的、句子里的，各链到哪篇、那篇在不在、是不是草稿）、图（编号、文件在不在）、公式、表格、代码块、交互模块（框多高、运行哪个文件、加载哪些脚本、读哪些数据）。从头看时附上发布前检查查出的问题（issues）。交互模块的脚本运行起来对不对这里看不出，要问作者。长页面一次给 200 块，带 next（下次从第几行看，传给 from）。', // i18n-ignore: for the AI
+		description: '看一个页面显示出来是什么样（你看不到页面时用它，不要自己开浏览器、截图）：逐块说它显示成什么，第几行开始：标题、段落、页面链接（单独一行的、句子里的，各链到哪篇、那篇在不在、是不是草稿）、图（编号、文件在不在）、公式、表格、代码块、交互模块（框多高、运行哪个文件、加载哪些脚本、读哪些数据）。从头看时附上发布前检查查出的问题（issues）。交互模块的脚本运行起来对不对这里看不出，用 check_widgets。长页面一次给 200 块，带 next（下次从第几行看，传给 from）。', // i18n-ignore: for the AI
 		input: { type: 'object', properties: { slug, from: { type: 'integer', description: '从这一行开始看（上次给的 next）' } }, required: ['slug'] }, // i18n-ignore: for the AI
 		run: (ops, args) => ops.previewPage(args),
+	},
+	{
+		name: 'check_widgets',
+		description: '把页面里的交互模块（```widget）在后台的浏览器里真的运行一遍，和 Studio、博客里一样（读文章里的数据文件）：每个模块的报错（errors，line 是模块自己源码的第几行，@file 的就是那个文件的第几行）、控制台里别的错（console）、画出来多高（height）、显示的字（shows.text）、画布几个、其中几个是空的（shows.blankCanvases：一笔没画，多半是脚本在画之前就出错了）、一张截图（picture，png 文件的路径，用读图片的办法看它）。写完或改完交互模块就用它验，不要自己开浏览器、截图、写桩测试；作者说模块空白、不对时也先用它。widget 是第几个（从 1 数），不填就全部。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { slug, widget: { type: 'integer', description: '第几个交互模块（从 1 数），不填就全部' } }, required: ['slug'] }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.checkWidgets(args),
 	},
 	{
 		name: 'publish_page',

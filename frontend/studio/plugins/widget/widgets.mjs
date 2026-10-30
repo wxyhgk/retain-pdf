@@ -75,6 +75,7 @@ button:hover { background: var(--soft); }
 const BRIDGE = `
 (() => {
 	const KIND = ${JSON.stringify(WIDGET_MESSAGE)};
+	const LINES = 0;
 	const root = document.documentElement;
 	const listeners = [];
 	const given = window.__noteGiven || {};
@@ -146,6 +147,14 @@ const BRIDGE = `
 		}
 		tell();
 	});
+	// What goes wrong in it (a script's error, a promise not caught, a script or picture not loaded): told the page, the
+	// line as the widget's own source counts it (the head put before it taken off).
+	const failed = (message, line, missing) => parent.postMessage({ kind: KIND, type: 'error', message: String(message ?? '').slice(0, 500), line: line > LINES ? line - LINES : null, ...(missing ? { missing } : {}) }, '*');
+	addEventListener('error', (event) => {
+		if (event.target !== window && event.target?.src) failed('', 0, String(event.target.src));
+		else failed(event.error?.message ?? event.message, event.filename && !event.filename.startsWith('about:') ? 0 : event.lineno);
+	}, true);
+	addEventListener('unhandledrejection', (event) => failed(event.reason?.message ?? event.reason, 0));
 	// Escape not used by the widget: the page's (a widget shown large is closed by it).
 	addEventListener('keydown', (event) => {
 		if (event.key === 'Escape' && !event.defaultPrevented) parent.postMessage({ kind: KIND, type: 'escape' }, '*');
@@ -164,7 +173,9 @@ const BRIDGE = `
 export function widgetDocument(source, colors = {}, given = {}) {
 	const tokens = Object.entries(colors).map(([name, value]) => `--${name}: ${value};`).join(' ');
 	const told = given.canAsk || given.state !== undefined ? `<script>window.__noteGiven = ${JSON.stringify({ canAsk: given.canAsk === true, state: given.state ?? null }).replace(/</gu, '\\u003c')};</script>` : '';
-	const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>:root { ${tokens} }${STYLE}</style>${told}<script>${BRIDGE}</script>`;
+	const made = `<meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>:root { ${tokens} }${STYLE}</style>${told}<script>${BRIDGE}</script>`;
+	// How many lines the head adds before the widget's own (its errors' lines said as its source counts them).
+	const head = made.replace('LINES = 0', `LINES = ${made.split('\n').length - 1}`);
 	const text = String(source ?? '');
 	// A whole page of its own: ours goes first in its head.
 	if (/<head[\s>]/i.test(text)) return text.replace(/<head(\s[^>]*)?>/i, (tag) => tag + head);

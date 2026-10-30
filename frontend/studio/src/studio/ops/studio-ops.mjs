@@ -12,12 +12,13 @@ import { replaceStudioDocumentBody } from '@blog/document/serialize.ts';
 import { updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
 import { checkArticle } from '../server/articles/article-check.mjs';
 import { previewArticle } from '../server/articles/article-preview.mjs';
+import { checkWidgets } from '../server/articles/widget-check.mjs';
 import { ArticleGit } from '../server/articles/article-git.mjs';
 import { ArticleHistory } from '../server/articles/article-history.mjs';
 import { ArticleRepository } from '../server/articles/article-repository.mjs';
 import { MiniApps } from '../server/apps/mini-apps.mjs';
 import { Repositories } from '../server/repos/repositories.mjs';
-import { reposRootOf } from '../../articles/bundle-paths.mjs';
+import { articleBundlePaths, reposRootOf } from '../../articles/bundle-paths.mjs';
 import { Drive } from '../server/drive/drive.mjs';
 import { DriveText } from '../server/drive/drive-text.mjs';
 import { ArticleFileManager, TRASH_FOLDER } from '../server/files/file-manager.mjs';
@@ -278,6 +279,12 @@ export function createStudioOps({ root, site } = {}) {
 			const errors = issues.filter((issue) => issue.severity === 'error').length;
 			// Said in so many words: nothing found is passed, not a check that did not run.
 			return { ok: errors === 0, errors, warnings: issues.length - errors, issues };
+		},
+
+		/** Its widgets run in a headless browser: what went wrong, what they drew, a picture of each (widget-check.mjs). */
+		async checkWidgets({ slug, widget }) {
+			const { source } = await articles.read(slug);
+			return checkWidgets(articleBundlePaths(blogRoot, slug).directory, source, { only: Number.isInteger(widget) ? widget : null });
 		},
 
 		/** How the page shows, block by block, in words (article-preview.mjs). */

@@ -79,6 +79,32 @@ async function answerFile(frame: HTMLIFrameElement, id: unknown, written: unknow
 	}
 }
 
+/** Whether what goes wrong in a widget is said under it (the Studio's, for the author; not the blog's readers). */
+let showingErrors = false;
+
+/** Says what goes wrong in widgets under them, or not. */
+export function showWidgetErrors(shown: boolean): void {
+	showingErrors = shown;
+}
+
+/** What went wrong in a widget, said under it: the first, and how many more. */
+function sayError(frame: HTMLIFrameElement, message: unknown, line: unknown): void {
+	const figure = figureOf(frame);
+	if (!showingErrors || !figure) return;
+	let said = figure.querySelector<HTMLElement>(':scope > .note-widget-error');
+	if (!said) {
+		said = document.createElement('p');
+		said.className = 'note-widget-error';
+		said.setAttribute('role', 'status');
+		figure.append(said);
+	}
+	const count = Number(said.dataset.count ?? 0) + 1;
+	said.dataset.count = String(count);
+	const text = String(message ?? '').slice(0, 300) || t('不知道什么错');
+	if (count === 1) said.dataset.first = typeof line === 'number' ? t('第 {line} 行：{text}', { line, text }) : text;
+	said.textContent = t('交互模块出错了：{first}', { first: said.dataset.first ?? text }) + (count > 1 ? t('（还有 {more} 处）', { more: count - 1 }) : '');
+}
+
 let connected = false;
 
 /** Listens to the page's widgets: once is enough, wherever they are or come later. */
@@ -86,11 +112,15 @@ export function connectWidgets(): void {
 	if (connected) return;
 	connected = true;
 	window.addEventListener('message', (event) => {
-		const data = event.data as { kind?: unknown; type?: unknown; height?: unknown; id?: unknown; path?: unknown; text?: unknown } | null;
+		const data = event.data as { kind?: unknown; type?: unknown; height?: unknown; id?: unknown; path?: unknown; text?: unknown; message?: unknown; line?: unknown; missing?: unknown } | null;
 		if (!data || data.kind !== WIDGET_MESSAGE) return;
 		const frame = [...document.querySelectorAll<HTMLIFrameElement>(FRAMES)].find((candidate) => candidate.contentWindow === event.source);
 		if (!frame) return;
-		if (data.type === 'ready') tellTheme(frame);
+		if (data.type === 'ready') {
+			// Started (again): what went wrong before is not known of this one.
+			figureOf(frame)?.querySelector(':scope > .note-widget-error')?.remove();
+			tellTheme(frame);
+		} else if (data.type === 'error') sayError(frame, typeof data.missing === 'string' ? t('没加载到 {src}', { src: data.missing }) : data.message, data.line);
 		else if (data.type === 'height' && typeof data.height === 'number' && Number.isFinite(data.height)) {
 			// Made larger, it fills its room.
 			if (!frame.dataset.fills) frame.style.height = `${Math.max(24, Math.min(4000, Math.ceil(data.height)))}px`;

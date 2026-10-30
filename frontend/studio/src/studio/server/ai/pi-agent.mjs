@@ -39,7 +39,7 @@ const thinkingNames = () => ({ off: t('不思考'), minimal: t('最少'), low: t
 /** What each of pi's tools does, as ACP says it; the Studio's operations too. */
 const KINDS = {
 	read: 'read', ls: 'read', write: 'edit', edit: 'edit', bash: 'execute', grep: 'search', find: 'search',
-	list_pages: 'read', page_tree: 'read', read_page: 'read', list_trash: 'read', list_history: 'read', read_history: 'read', git_status: 'read', check_page: 'read', preview_page: 'read', list_apps: 'read', app_status: 'read', list_repos: 'read', show_picture: 'read',
+	list_pages: 'read', page_tree: 'read', read_page: 'read', list_trash: 'read', list_history: 'read', read_history: 'read', git_status: 'read', check_page: 'read', preview_page: 'read', check_widgets: 'read', list_apps: 'read', app_status: 'read', list_repos: 'read', show_picture: 'read',
 	search_pages: 'search', backlinks: 'search', search_drive: 'search',
 	create_page: 'edit', add_repo: 'edit', create_repo: 'edit', remove_repo: 'edit', update_page: 'edit', move_page: 'edit', rename_page: 'edit', split_page: 'edit', merge_page: 'edit', restore_page: 'edit',
 };
@@ -47,7 +47,7 @@ const KINDS = {
 const operationNames = () => ({
 	list_pages: t('列出页面'), page_tree: t('看页面树'), read_page: t('读页面'), search_pages: t('搜页面'), backlinks: t('看反向链接'), create_page: t('新建页面'),
 	update_page: t('改页面'), move_page: t('移动页面'), rename_page: t('改页面的文件夹名'), split_page: t('拆出子页面'), merge_page: t('并入上级页面'), delete_page: t('删页面'),
-	list_trash: t('看回收站'), restore_page: t('恢复页面'), check_page: t('检查页面'), preview_page: t('看页面怎么显示'), list_apps: t('列出小程序'), app_status: t('看小程序的状态'), list_repos: t('列出代码仓库'), add_repo: t('添加代码仓库'), create_repo: t('新建代码仓库'), remove_repo: t('从代码仓库移除'), publish_page: t('发布页面'), unpublish_page: t('取消发布'), commit_page: t('提交页面'),
+	list_trash: t('看回收站'), restore_page: t('恢复页面'), check_page: t('检查页面'), preview_page: t('看页面怎么显示'), check_widgets: t('运行交互模块看看'), list_apps: t('列出小程序'), app_status: t('看小程序的状态'), list_repos: t('列出代码仓库'), add_repo: t('添加代码仓库'), create_repo: t('新建代码仓库'), remove_repo: t('从代码仓库移除'), publish_page: t('发布页面'), unpublish_page: t('取消发布'), commit_page: t('提交页面'),
 	git_status: t('看 git 状态'), list_history: t('看历史版本'), read_history: t('读历史版本'), search_drive: t('搜资料库'), show_picture: t('给作者看图'),
 });
 /** What an operation's result says, at most so long (the rest left out, said so). */

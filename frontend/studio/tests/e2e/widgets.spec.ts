@@ -84,6 +84,19 @@ test('while the AI is at work, a widget it changes is drawn again at once; the a
 	await pane.locator('.ai-send').click();
 });
 
+test('what goes wrong in a widget is said under it, with its line; started again right, it goes', async ({ page }) => {
+	writeFixtureFile('assets/broken.html', '<canvas id="c"></canvas>\n<script>\nconst T = 10;\nT(1);\n</script>');
+	appendToFixture('\n```widget title="坏的"\n@file ./assets/broken.html\n```\n');
+	await openStudio(page);
+	const frame = editor(page).locator('iframe.note-widget-frame[data-widget-file="assets/broken.html"]');
+	await frame.scrollIntoViewIfNeeded();
+	const said = editor(page).locator('.note-widget-error');
+	await expect(said).toHaveText(/^交互模块出错了：第 4 行：.*T is not a function/u);
+	writeFixtureFile('assets/broken.html', '<p id="out">好了</p>');
+	await expect(page.frameLocator('iframe.note-widget-frame[data-widget-file="assets/broken.html"]').locator('#out')).toHaveText('好了');
+	await expect(said).toHaveCount(0);
+});
+
 test('a widget reads only what is published with the article', async ({ page }) => {
 	appendToFixture(
 		'\n```widget\n<p id="out">…</p><script>note.file("ai/notes.md").then(() => { out.textContent = "读到了"; }, (error) => { out.textContent = error.message; });</script>\n```\n',

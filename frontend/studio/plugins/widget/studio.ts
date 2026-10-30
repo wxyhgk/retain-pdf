@@ -3,7 +3,7 @@ import type { Context } from '@blog/kernel/index.mjs';
 import type { StudioBlock } from '@blog/kernel/studio.ts';
 
 import { WIDGET_LANGUAGE } from './widgets.mjs';
-import { setWidgetFiles, widgetFilesChanged } from './widget-host.ts';
+import { setWidgetFiles, showWidgetErrors, widgetFilesChanged } from './widget-host.ts';
 import { insertWidget, observeWidgets, widgetLanguageDescription, widgetPreview } from './widget-block.ts';
 import widgetCss from './widgets.css?raw';
 
@@ -29,6 +29,11 @@ export function apply(ctx: Context): void {
 		});
 		return () => setWidgetFiles(null);
 	}, 'widget files');
+	// What goes wrong in a widget said under it, for the author to see (and tell the AI of).
+	ctx.effect(() => {
+		showWidgetErrors(true);
+		return () => showWidgetErrors(false);
+	}, 'widget errors');
 	ctx.on('studio/files-changed', (_slug, paths) => widgetFilesChanged(paths));
 	ctx.blocks.register({
 		name,

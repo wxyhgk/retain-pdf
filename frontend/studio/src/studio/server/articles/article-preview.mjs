@@ -11,7 +11,7 @@ import { checkArticle } from './article-check.mjs';
  * How an article shows, said in words for an AI that cannot look at it: block by block, what each is drawn as (a
  * page link with its icon, a widget's frame and the file it runs, a figure and its number…), with the publishing
  * check's findings. Read off the Markdown as the blog reads it, no browser: what a widget's script does when it
- * runs is not known here.
+ * runs is not known here (widget-check.mjs runs it).
  */
 
 /** A ```widget block's fence (plugins/widget): its options, and `@file` when it is a file of the article. */
@@ -59,7 +59,7 @@ const SAY = {
 	html: (text) => `HTML：${text}`, // i18n-ignore: for the AI
 	rule: '分隔线', // i18n-ignore: for the AI
 	other: (type) => `${type}`, // i18n-ignore: for the AI
-	scriptsRun: '交互模块里的脚本在作者的浏览器里运行，这里看不出它运行时有没有出错、画出来对不对；要知道就问作者看到了什么。', // i18n-ignore: for the AI
+	scriptsRun: '交互模块里的脚本这里不运行，看不出它运行时有没有出错、画出来对不对；要知道就用 check_widgets 在后台浏览器里运行它（报错、画了什么、截图）。', // i18n-ignore: for the AI
 };
 
 const shortened = (text) => {

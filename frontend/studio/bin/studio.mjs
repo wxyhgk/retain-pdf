@@ -27,7 +27,7 @@ function parseArguments(words, operation) {
 		if (value === undefined) throw new Error(`--${key} 后面缺少值`);
 		if (value === '-') value = readFileSync(0, 'utf8');
 		else if (value.startsWith('@')) value = readFileSync(value.slice(1), 'utf8');
-		if (schema.type === 'number') args[key] = Number(value);
+		if (schema.type === 'number' || schema.type === 'integer') args[key] = Number(value);
 		else if (schema.type === 'array') args[key] = [...(args[key] ?? []), ...value.split(/[,，]/u).map((item) => item.trim()).filter(Boolean)];
 		else args[key] = value;
 	}

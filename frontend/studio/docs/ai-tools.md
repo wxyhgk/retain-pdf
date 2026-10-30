@@ -100,6 +100,7 @@ MCP 工具名和命令一一对应（下划线换成连字符）。参数后面�
 | `create_repo` | `studio create-repo` | `name`、`description` | 在 `repos/` 里新建一个仓库（git、README、第一次提交）；代码写进仓库，不写进笔记。 |
 | `remove_repo` | `studio remove-repo` | `id` | 把加进来的本机仓库从列表拿掉，文件夹不动。 |
 | `preview_page` | `studio preview-page` | `slug`、`from`? | 页面显示出来是什么样：逐块说它显示成什么（页面链接、图、公式、表格、代码块、交互模块的框和它运行的文件、加载的脚本），附上发布前检查的问题。给看不到页面的 AI 用。 |
+| `check_widgets` | `studio check-widgets` | `slug`、`widget`? | 把页面里的交互模块在后台浏览器（Playwright 的 Chromium，没有就用本机的 Chrome）里真的运行一遍：每个的报错（模块源码的第几行）、控制台的错、画出来多高、显示的字、画布有几个是空的、一张截图（存在文章的 `ai/shots/`）。给看不到页面的 AI 验自己写的模块。 |
 | `publish_page` | `studio publish-page` | `slug` | 发布：先做发布前检查，有 error 就不发布；草稿改成已发布；文件夹名还是自动起的就按标题改成可读的网址（链接跟着改）。推送到 GitHub 之后网站才更新。 |
 | `unpublish_page` | `studio unpublish-page` | `slug` | 撤回发布：改回草稿，下次构建后从博客上消失。 |
 | `commit_page` | `studio commit-page` | `slug`、`message` | 把这一页的文件夹提交到 git（连同已经删掉的页面的文件夹），不推送。 |
