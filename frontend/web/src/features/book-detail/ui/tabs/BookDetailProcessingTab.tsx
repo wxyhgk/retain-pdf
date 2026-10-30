@@ -27,6 +27,7 @@ import { ChevronDown, LoaderCircle, Square } from "lucide-react";
 import { TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
 import { EditorialFlowPanel } from "../panels/processing/EditorialFlowPanel.jsx";
 import { useEditorialFlow } from "../use-editorial-flow.js";
+import { useJobTimeline } from "../use-job-timeline.js";
 import { EditorialLivePanel, useEditorialLive } from "@/features/editorial-room/index.js";
 
 function ScanIcon() {
@@ -86,6 +87,8 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     enabled: hasTranslationJob && translation?.tabActive !== false && hasEditorialRoom(coverage, translationJobId),
     poll: Boolean(translation?.isActive),
   });
+  // 流水线各站的运行时间（任务详情的分段计时）：在跑时轮询，跑完读一次。
+  const jobTimeline = useJobTimeline(translationJobId, { enabled: hasTranslationJob && translation?.tabActive !== false, poll: Boolean(translation?.isActive) });
 
   // 「还不知道」不等于「确定没有」。这一段以前只让 loading 控制一行提示文案，
   // 下面整张流水线照旧渲染，于是 GET /documents/:id/jobs 还在路上的那几百毫秒，
@@ -297,6 +300,8 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           // 有任务在跑时各站只说现在的事：上一次的「N 块保留原文」不挂（顶部提醒同理）。
           translateWarning={!liveSource && facts.keptOriginBlocks > 0 ? `${facts.keptOriginBlocks} 块未能翻译` : ""}
           loading={bootstrapping}
+          timeline={jobTimeline.timeline}
+          now={jobTimeline.now}
         />}
         <EditorialLivePanel live={editorialLive} active={Boolean(translation?.isActive)} />
         <EditorialFlowPanel flow={editorialFlow} />

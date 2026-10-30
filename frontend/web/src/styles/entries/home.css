@@ -154,6 +154,8 @@
 @import "../pages/home/book-detail-processing/layout.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-card.css" layer(pages);
 @import "../pages/home/book-detail-processing/pipeline-rail.css" layer(pages);
+@import "../pages/home/book-detail-processing/assembly-line.css" layer(pages);
+@import "../pages/home/book-detail-processing/assembly-line-labels.css" layer(pages);
 @import "../pages/home/book-detail-processing/editorial-flow.css" layer(pages);
 /* 翻译 agent 的编辑部画面（只引用户视图 EditorialStage 用到的几份，调试视图不进主页）。 */
 @import "../../features/editorial-room/ui/EditorialMotion.css" layer(pages);
