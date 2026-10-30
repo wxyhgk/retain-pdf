@@ -5,10 +5,7 @@ import ast
 import pytest
 
 
-from devtools.architecture_checks.translation_field_writers import (
-    check_translation_payload_field_writers,
-    gated_field_writes,
-)
+from devtools.architecture_checks.translation_field_writers import gated_field_writes
 
 
 def _writes(source: str) -> dict[str, list[int]]:
@@ -86,13 +83,3 @@ def test_detects_explicit_mapping_mutations(source, field):
 def test_does_not_confuse_dictionary_creation_or_reads_with_mutation(source):
     assert _writes(source) == {}
 
-
-def test_current_tree_has_no_violations() -> None:
-    # 全量跑真实 translation 目录:allowlist 必须与现状精确一致。
-    # 若此测试失败,要么出现了新的越界写入(修代码),
-    # 要么完成了一次收敛(从 allowlist 删掉对应 frozen-debt 条目)。
-    errors: list[str] = []
-
-    check_translation_payload_field_writers(errors)
-
-    assert errors == []

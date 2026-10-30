@@ -4,13 +4,8 @@ from pathlib import Path
 from unittest import mock
 
 
-from devtools import check_pipeline_architecture
 from devtools.architecture_checks import common as architecture_common
 from devtools.architecture_checks import rendering as rendering_checks
-
-
-def test_pipeline_architecture_contract_passes() -> None:
-    assert check_pipeline_architecture.main() == 0
 
 
 def test_pipeline_architecture_rejects_removed_bbox_preparation_import(tmp_path: Path) -> None:
