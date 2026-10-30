@@ -3,6 +3,8 @@
 // line (bin/studio.mjs) and the MCP server (bin/studio-mcp.mjs) are both read off this.
 
 const slug = { type: 'string', description: '页面的文件夹名（blog/<文件夹名>/），也是它网址的最后一段' }; // i18n-ignore: for the AI
+/** A row's values, when the page above holds a ```database block. */
+const props = { type: 'object', description: '数据库里这一行的值（上级页面有 ```database 块时，子页面就是表的各行）：键是块里的列名；数字写成数，勾选写 true/false，日期写 YYYY-MM-DD，多选写列表' }; // i18n-ignore: for the AI
 const text = (description) => ({ type: 'string', description });
 
 /**
@@ -64,7 +66,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'create_page',
-		description: '新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。', // i18n-ignore: for the AI
+		description: '新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）；上级是数据库时用 props 写这一行的值。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。', // i18n-ignore: for the AI
 		input: {
 			type: 'object',
 			properties: {
@@ -72,6 +74,7 @@ export const OPERATIONS = [
 				parent: text('上级页面的文件夹名；不给就放在最上层'), // i18n-ignore: for the AI
 				body: text('正文 Markdown（属性之后的全部内容）'), // i18n-ignore: for the AI
 				slug: text('指定文件夹名（小写字母、数字、连字符）；一般不用给'), // i18n-ignore: for the AI
+				props, // i18n-ignore: for the AI
 			},
 			required: ['title'],
 		},
@@ -79,7 +82,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'update_page',
-		description: '改一个页面：body 换掉整个正文；title、description、tags、icon 改属性。改之前的版本存进它的历史版本；Studio 里开着这篇时，作者会看到改动并逐处接受或拒绝。', // i18n-ignore: for the AI
+		description: '改一个页面：body 换掉整个正文；title、description、tags、icon 改属性；props 改它在数据库里那一行的值。改之前的版本存进它的历史版本；Studio 里开着这篇时，作者会看到改动并逐处接受或拒绝。', // i18n-ignore: for the AI
 		input: {
 			type: 'object',
 			properties: {
@@ -89,6 +92,7 @@ export const OPERATIONS = [
 				description: text('简介'), // i18n-ignore: for the AI
 				tags: { type: 'array', items: { type: 'string' }, description: '标签' }, // i18n-ignore: for the AI
 				icon: text('图标，一个 emoji；空字符串去掉'), // i18n-ignore: for the AI
+				props: { ...props, description: `${props.description}；只改给出的列，值写 null 去掉这一列的值` }, // i18n-ignore: for the AI
 			},
 			required: ['slug'],
 		},

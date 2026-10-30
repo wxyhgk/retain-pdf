@@ -247,3 +247,21 @@ test('代码仓库 for an AI: one of this machine found and added, one made, lis
 	// The command line has them too.
 	assert.match(execFileSync('node', [join(root, 'bin/studio.mjs'), 'help'], { env: { ...process.env, STUDIO_BLOG_DIR: blog } }).toString(), /add-repo/u);
 });
+
+test('a database’s rows made and changed through the operations: create_page and update_page with props', async (t) => {
+	const blog = temporaryBlog(t);
+	const ops = createStudioOps(root);
+	const { slug: table } = await ops.createPage({ title: '计算记录', body: '```database\n{"columns": [{"name": "方法", "type": "select"}, {"name": "能量", "type": "number"}, {"name": "收敛", "type": "checkbox"}]}\n```\n' });
+	const { slug: row } = await ops.createPage({ title: 'H2O', parent: table, props: { 方法: 'B3LYP', 能量: -76.41, 收敛: true, 备注: '' } });
+	const written = () => readFileSync(join(blog, row, 'index.md'), 'utf8');
+	assert.match(written(), /^props: \{ "方法": "B3LYP", "能量": -76\.41, "收敛": true \}$/mu);
+	// Only those given changed; null takes one away; the rest of the page as it was.
+	await ops.updatePage({ slug: row, props: { 能量: -76.42, 收敛: null } });
+	assert.match(written(), /^props: \{ "方法": "B3LYP", "能量": -76\.42 \}$/mu);
+	await ops.updatePage({ slug: row, props: { 方法: null, 能量: null } });
+	assert.doesNotMatch(written(), /props:/u);
+	await assert.rejects(ops.updatePage({ slug: row, props: ['B3LYP'] as unknown as Record<string, unknown> }), /props 要写成/u);
+	// On the command line, as JSON.
+	execFileSync(process.execPath, [join(root, 'bin', 'studio.mjs'), 'update-page', '--slug', row, '--props', '{"方法": "PBE0"}'], { env: process.env, encoding: 'utf8' });
+	assert.match(written(), /^props: \{ "方法": "PBE0" \}$/mu);
+});

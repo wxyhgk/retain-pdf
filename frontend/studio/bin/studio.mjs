@@ -28,6 +28,13 @@ function parseArguments(words, operation) {
 		if (value === '-') value = readFileSync(0, 'utf8');
 		else if (value.startsWith('@')) value = readFileSync(value.slice(1), 'utf8');
 		if (schema.type === 'number' || schema.type === 'integer') args[key] = Number(value);
+		else if (schema.type === 'object') {
+			try {
+				args[key] = JSON.parse(value);
+			} catch {
+				throw new Error(`--${key} 要写成 JSON，比如 '{"方法": "B3LYP", "能量": -76.41}'`);
+			}
+		}
 		else if (schema.type === 'array') args[key] = [...(args[key] ?? []), ...value.split(/[,，]/u).map((item) => item.trim()).filter(Boolean)];
 		else args[key] = value;
 	}

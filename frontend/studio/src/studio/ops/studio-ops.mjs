@@ -7,9 +7,10 @@ import { relative, resolve } from 'node:path';
 
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { comparePages } from '../../articles/page-order.mjs';
+import { parseArticleSource } from '../../articles/schemas.mjs';
 import { parseStudioDocument } from '@blog/document/parse.ts';
 import { replaceStudioDocumentBody } from '@blog/document/serialize.ts';
-import { updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
+import { setFrontmatterProps, updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
 import { checkArticle } from '../server/articles/article-check.mjs';
 import { previewArticle } from '../server/articles/article-preview.mjs';
 import { checkWidgets } from '../server/articles/widget-check.mjs';
@@ -45,6 +46,18 @@ export class StudioOpsError extends Error {
  * as the Studio's server takes it). `site`: the blog's address, so links to
  * its pages written in full count as theirs.
  */
+/** A database row's values, `given` put over `kept` (null, '' or nothing takes one away); a value not a record given is an error. */
+function rowValues(kept, given) {
+	if (given === undefined || given === null) return { ...kept };
+	if (typeof given !== 'object' || Array.isArray(given)) throw new StudioOpsError(t('props 要写成 {"列名": 值}'));
+	const values = { ...kept };
+	for (const [column, value] of Object.entries(given)) {
+		if (value === null || value === undefined || value === '') delete values[column];
+		else values[column] = value;
+	}
+	return values;
+}
+
 export function createStudioOps({ root, site } = {}) {
 	const projectRoot = resolve(root ?? process.cwd());
 	// The author's notes (blog/, apps/, settings…), where the code is not (notes-root.mjs).
@@ -169,13 +182,19 @@ export function createStudioOps({ root, site } = {}) {
 		 * (`note-…`) unless `slug` is given; it gets one read from its title when
 		 * it is published. Files of the parent its body names (`./img/…`) are copied in.
 		 */
-		/** @param {{ title: string, parent?: string, body?: string, slug?: string }} args */
-		async createPage({ title, parent = '', body = '', slug }) {
+		/** @param {{ title: string, parent?: string, body?: string, slug?: string, props?: Record<string, unknown> }} args */
+		async createPage({ title, parent = '', body = '', slug, props }) {
 			if (!title?.trim()) throw new StudioOpsError(t('标题不能为空'));
 			const all = await pages();
 			if (parent && !all.some((page) => page.slug === parent)) throw new StudioOpsError(t('上级页面 {parent} 不存在', { parent }));
 			const folder = slug || freeSlug(autoSlug(), all.map((page) => page.slug));
 			await articles.create({ slug: folder, title: title.trim(), parent, body, files: parent ? filesNamed(body) : [] });
+			// A row of the database above: its values (those with nothing in them not written).
+			const values = rowValues({}, props);
+			if (Object.keys(values).length) {
+				const { source, revision } = await articles.read(folder);
+				await articles.save(folder, { source: setFrontmatterProps(source, values), expectedRevision: revision });
+			}
 			return { slug: folder, address: `/blog/${folder}/`, parent };
 		},
 
@@ -184,8 +203,8 @@ export function createStudioOps({ root, site } = {}) {
 		 * after the properties), and any of `title`, `description`, `tags`,
 		 * `icon`. The text before is kept in its history.
 		 */
-		/** @param {{ slug: string, body?: string, title?: string, description?: string, tags?: string[], icon?: string }} args */
-		async updatePage({ slug, body, title, description, tags, icon }) {
+		/** @param {{ slug: string, body?: string, title?: string, description?: string, tags?: string[], icon?: string, props?: Record<string, unknown> }} args */
+		async updatePage({ slug, body, title, description, tags, icon, props }) {
 			const { source, properties } = await articles.read(slug);
 			let next = source;
 			if (title !== undefined || description !== undefined || tags !== undefined || icon !== undefined) {
@@ -198,6 +217,10 @@ export function createStudioOps({ root, site } = {}) {
 				});
 			}
 			if (body !== undefined) next = replaceStudioDocumentBody(parseStudioDocument(next), `${body.replace(/\s*$/u, '')}\n`);
+			if (props !== undefined) {
+				const values = rowValues(parseArticleSource(source).frontmatter?.props ?? {}, props);
+				next = setFrontmatterProps(next, Object.keys(values).length ? values : null);
+			}
 			await write(slug, next);
 			return { slug, problems: (await articles.read(slug)).problems };
 		},

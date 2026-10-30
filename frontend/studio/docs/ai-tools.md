@@ -83,8 +83,8 @@ MCP 工具名和命令一一对应（下划线换成连字符）。参数后面�
 | `read_page` | `studio read-page` | `slug` | 读一个页面：完整的 Markdown（含开头的属性）、属性、属性里的问题。 |
 | `search_pages` | `studio search-pages` | `query`、`limit`? | 找标题或正文里有这些字的页面，每篇带上出现的几行。 |
 | `backlinks` | `studio backlinks` | `slug` | 哪些页面链接到这一页，每处带上前后的话。 |
-| `create_page` | `studio create-page` | `title`、`parent`?、`body`?、`slug`? | 新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。 |
-| `update_page` | `studio update-page` | `slug`、`body`?、`title`?、`description`?、`tags`?、`icon`? | 改一个页面：body 换掉整个正文；title、description、tags、icon 改属性（改了 title，别的文章里文字是旧标题、指向它的链接跟着改成新标题）。改之前的版本存进它的历史版本；Studio 里开着这篇时，作者会看到改动并逐处接受或拒绝。 |
+| `create_page` | `studio create-page` | `title`、`parent`?、`body`?、`slug`?、`props`? | 新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）；上级是数据库时，`props` 是这一行的值（命令行写 JSON）。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。 |
+| `update_page` | `studio update-page` | `slug`、`body`?、`title`?、`description`?、`tags`?、`icon`?、`props`? | 改一个页面：body 换掉整个正文；title、description、tags、icon 改属性；`props` 改它在数据库里那一行的值（只改给出的列，`null` 去掉）（改了 title，别的文章里文字是旧标题、指向它的链接跟着改成新标题）。改之前的版本存进它的历史版本；Studio 里开着这篇时，作者会看到改动并逐处接受或拒绝。 |
 | `move_page` | `studio move-page` | `slug`、`parent`?、`before`?、`after`? | 把页面放到另一个页面下面（parent），或放到最上层（parent 为空）；给了 before 或 after（同一个上级下面的页面）就排在它前面或后面。不能放到它自己或它下面的页面下面。 |
 | `rename_page` | `studio rename-page` | `slug`、`to` | 改页面的文件夹名（也就是网址）；别的页面里指向它的链接跟着改。已经发布的页面改名后旧网址会失效。 |
 | `split_page` | `studio split-page` | `slug`、`heading` | 转成子页面：把某个标题开始的一节（到下一个同级或更高级的标题为止）变成这一页下面的新页面，标题作新页面的标题，用到的图片数据一起复制，原处留一条指向它的链接。 |
