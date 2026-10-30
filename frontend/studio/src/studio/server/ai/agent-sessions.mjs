@@ -1061,9 +1061,13 @@ export function contextBlock({ article, selection, mentions = [], files = [], hi
 	const lines = [];
 	if (standing && history) lines.push(`这是接着之前的对话说的，但你那边接不上之前的会话了：之前说过的话记在 ${history}，需要时去读`); // i18n-ignore: for the AI
 	if (standing && article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}${briefOf(article)}`); // i18n-ignore: for the AI
+	// pi has the article in its system prompt too, but told there once: after a long run a model lost it (10-30), so a
+	// line of it goes with each thing said.
+	if (message && !standing && article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}`); // i18n-ignore: for the AI
 	if (message && article && selection) {
 		const fence = '`'.repeat(Math.max(3, ...[...selection.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
 		lines.push(`这句话选中的是《${article.title}》（${article.path}）的${promptLineRange(selection)}：`, `${fence}markdown`, selection.text, fence); // i18n-ignore: for the AI
+		if (selection.cut) lines.push(`选中的太长，上面只有开头 ${selection.text.length} 个字；其余的在文件的这几行里，要用就去读`); // i18n-ignore: for the AI
 	}
 	if (message) for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`); // i18n-ignore: for the AI
 	if (message && files.length) lines.push('随这句话附上的文件（在本机，用读文件的工具或命令去读）：', ...files.map((file) => `- ${file}`)); // i18n-ignore: for the AI

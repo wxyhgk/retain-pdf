@@ -437,8 +437,9 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		const said: Said = { id: crypto.randomUUID(), text, mentions: mentionsIn(text, host.articles()), pictures, files, quotes, pastes };
 		const shown = get().conversation;
 		if (shown?.state === 'running') {
-			// While it works: to one that can take it, words it reads as soon as it can (插话); else said once it is done.
-			if (shown.canSteer && !pictures.length && !files.length && !quotes.length && !pastes.length) await steer(shown.id, text);
+			// While it works: to one that can take it, words it reads as soon as it can (插话); else said once it is done (with
+			// what it takes: the pictures, the files, the articles named, whose files words in between do not tell).
+			if (shown.canSteer && !pictures.length && !files.length && !quotes.length && !pastes.length && !said.mentions.length) await steer(shown.id, text);
 			else set({ queued: [...get().queued, said], draft: '', pictures: [], files: [], quotes: [], pastes: [] });
 			return;
 		}
@@ -463,7 +464,10 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		if (!target) return;
 		const { article, leftOut, selectionLeftOut } = get();
 		const open = article && leftOut !== article.slug ? article : null;
-		const selection = open && !selectionLeftOut && host.hasSelection() ? await host.selection() : null;
+		const selecting = Boolean(open && !selectionLeftOut && host.hasSelection());
+		const selection = selecting ? await host.selection() : null;
+		// The lines not found (the article not saved, the selection not in its text): said, not sent as if they were.
+		if (selecting && !selection) host.toast(t('选中的内容没能附上（文章没保存好），这句话只带了文章'));
 		const widgets = toldSince(target.id);
 		try {
 			const pictures = [...(said.kept ?? []), ...(await Promise.all(said.pictures.map((picture) => keepConversationPicture(target.id, picture.blob))))];

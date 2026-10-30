@@ -220,8 +220,13 @@ test('for pi (its system prompt changed only where it differs): where the author
 	assert.match(message, /^这部分在图里没有\n\n<studio-context>/u);
 	assert.match(message, /这句话选中的是《方法》（method\/index\.md）的第 35 行：\n```markdown\nH₂O₂ 的步数\n```/u);
 	assert.match(message, /随这句话附上的文件（在本机，用读文件的工具或命令去读）：\n- \/chats\/c\/ai\/files\/ab12cd34\/opt\.log/u);
-	assert.doesNotMatch(message, /当前打开的文章/u);
-	assert.equal(withContext('你好', { article: where.article }, 'message'), '你好');
+	// The article too, a line (its brief in the system prompt): told once there, a model lost it after a long run.
+	assert.match(message, /<studio-context>\n.*\n当前打开的文章：《方法》，文件 method\/index\.md\n/u);
+	assert.match(withContext('你好', { article: where.article }, 'message'), /^你好\n\n<studio-context>[\s\S]*当前打开的文章：《方法》/u);
+	assert.equal(withContext('你好', {}, 'message'), '你好');
+	// Selected lines cut short: said so, and where the rest is.
+	const cut = withContext('总结', { ...where, selection: { start: 1, end: 900, text: '很长', cut: true } }, 'message');
+	assert.match(cut, /选中的太长，上面只有开头 2 个字；其余的在文件的这几行里/u);
 });
 
 test('what the widgets in the answers told of themselves (note.tell) goes with what is said next, each by its title', () => {
