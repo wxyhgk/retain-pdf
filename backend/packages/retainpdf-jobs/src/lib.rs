@@ -80,6 +80,7 @@ pub use runtime_gateway::{JobDriverRegistry, JobRuntime, JobRuntimeLauncher};
 pub use summary_loaders::SummaryCache;
 pub use views::{
     ActionBlockReason, AmbiguousRequestPolicy, BookSummaryView, DeleteJobQuery, DocumentJobListView,
+    EditorialEventListView, EditorialEventsQuery,
     EscalatedItemView, GlossaryUsageSummaryView, InvocationSummaryView, JobContractsView, JobDetailView, JobDiagnosticsView, JobEventFeedItem,
     JobEventListView, JobFailureBriefView,
     JobDeleteResultView, JobFailureDiagnosticView, JobFilesQuery, JobLinksView, JobListInvocationSummaryView,

@@ -14,11 +14,12 @@ use futures_util::stream;
 use crate::app::build_jobs_facade_from_state;
 use crate::error::AppError;
 use crate::models::api::{
-    ApiResponse, JobEventListView, ListJobEventsQuery, LiveTranslationCommitEventView,
+    ApiResponse, EditorialEventListView, EditorialEventsQuery, JobEventListView, ListJobEventsQuery, LiveTranslationCommitEventView,
     LiveTranslationEventsQuery, LiveTranslationLayoutView, LiveTranslationPageView,
 };
 use crate::routes::common::{
-    build_jobs_query_route_deps, ok_json, run_job_query, run_state_blocking, ApiPath, ApiQuery,
+    build_jobs_query_route_deps, ok_json, run_job_query, run_job_query_once, run_state_blocking,
+    ApiPath, ApiQuery,
 };
 use crate::AppState;
 
@@ -63,6 +64,17 @@ pub async fn get_live_translation_page(
         ))
     })
     .await
+}
+
+pub async fn get_editorial_events(
+    State(state): State<AppState>,
+    ApiPath(job_id): ApiPath<String>,
+    ApiQuery(query): ApiQuery<EditorialEventsQuery>,
+) -> Result<Json<ApiResponse<EditorialEventListView>>, AppError> {
+    let key = format!("jobs:editorial:{job_id}:{}:{:?}", query.after, query.limit);
+    Ok(ok_json(
+        run_job_query_once(&state, key, move |jobs| jobs.editorial_events(&job_id, &query)).await?,
+    ))
 }
 
 pub async fn get_live_translation_events(

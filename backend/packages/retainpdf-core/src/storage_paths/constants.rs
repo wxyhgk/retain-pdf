@@ -55,3 +55,6 @@ pub const ARTIFACT_KEY_EVENTS_JSONL: &str = "events_jsonl";
 pub const TRANSLATION_MANIFEST_FILE_NAME: &str = "translation-manifest.json";
 pub const TRANSLATION_CHECKPOINT_FILE_NAME: &str = "translation-checkpoint.v1.json";
 pub const TRANSLATION_REQUEST_JOURNAL_FILE_NAME: &str = "translation-request-journal.v1.jsonl";
+/// 翻译 agent 的编辑部事件（editorial.v1），相对翻译目录。Python 那边是
+/// `retainpdf_translation.workflow.agent_flow.EDITORIAL_EVENTS_RELATIVE_PATH`，改了两边一起改（Python 测试钉着这一行）。
+pub const AGENT_EDITORIAL_EVENTS_RELATIVE_PATH: &str = "agent/run/events.jsonl";

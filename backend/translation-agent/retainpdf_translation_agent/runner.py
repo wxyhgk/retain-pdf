@@ -9,6 +9,8 @@
 - `pages/NNNN.json`：每页的结果（`BlockResult.to_dict()`）和 agent 交卷时附带的东西（术语、例外、备注）。
 - `glossary.json`：术语表现在的样子；`glossary/vN.json`：每个版本的快照，写了就不改。
 - `ledger.jsonl`：台账，只追加。每次请求一行、术语表每次变动一行、每页做完一行、停下一行。
+- `events.jsonl`：编辑部事件（`editorial.v1`，格式见 docs/ops/planning/translation-agent/20261030-编辑部可视化和事件格式.md），
+  只追加，给前端画"编辑部"。和台账同时写；续跑接着往后写（会再有一条 run_started）。`page` 是这次跑的第几页（1 起），通读是 0。
 
 开始前程序先扫一遍全文抓"全称 (缩写)"，所以缩写先用后定义也认得。每页翻完，把译者报上的术语交给术语表：
 块要过了校验、原文里确实有这个词（找不到出处的丢掉）才算数。额度用完、密钥不对、一直限流（`StopRun`）就保存进度停下。
@@ -48,8 +50,12 @@ from retainpdf_translation_agent.reader import Reading
 from retainpdf_translation_agent.reader import apply_reading
 from retainpdf_translation_agent.reader import read_document
 from retainpdf_translation_agent.review import review_page
+from retainpdf_translation_agent.review import reviewable
 
 TRAILING_PARENS_RE = re.compile(r"\s*[（(][^（）()]*[)）]\s*$")
+
+EDITORIAL_EVENT_VERSION = "editorial.v1"
+EVENTS_FILE = "events.jsonl"
 
 DONE = "done"
 STOPPED = "stopped"
@@ -93,6 +99,8 @@ class DocumentRun:
         self.read_first = read_first and memory
         self.reading: Reading | None = None
         self.review = review
+        self._event_page = 0  # 编辑部事件里的页号：正在做第几页（1 起），通读是 0
+        self._tickets_seen = 0
 
     # ---- 状态文件 ----
     def _path(self, *parts: str) -> Path:
@@ -110,9 +118,27 @@ class DocumentRun:
         with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps({"ts": round(time.time(), 3), "event": event, **fields}, ensure_ascii=False) + "\n")
 
+    def _event(self, event_type: str, **fields) -> None:
+        path = self._path(EVENTS_FILE)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({"v": EDITORIAL_EVENT_VERSION, "ts": round(time.time(), 3), "type": event_type, **fields}, ensure_ascii=False) + "\n")
+
+    def _agent_event(self, event_type: str, fields: dict) -> None:
+        self._event(event_type, page=self._event_page, **fields)
+
+    def _stopped(self, page: PageInput, key: str, stop: StopRun, done: list[str], total: int) -> None:
+        self._ledger("stop", page=page.page_label, page_key=key, reason=stop.reason, message=str(stop)[:300])
+        self._event("run_stopped", reason=stop.reason)
+        self._progress(done, STOPPED, stop.reason, total)
+
     def _save_glossary(self, glossary: Glossary, since: int) -> None:
         for change in glossary.changes[since:]:
             self._ledger("glossary", **change)
+            self._event("glossary_changed", version=change["version"], action=change["action"], source=change["source"], target=change["target"])
+        for ticket in glossary.tickets[self._tickets_seen :]:
+            self._event("ticket_opened", term=ticket["source"], current=ticket["current"], proposed=ticket["proposed"], page=self._event_page)
+        self._tickets_seen = len(glossary.tickets)
         self._write_json(self._path("glossary.json"), glossary.to_dict())
         snapshot = self._path("glossary", f"v{glossary.version}.json")
         if not snapshot.exists():
@@ -124,28 +150,41 @@ class DocumentRun:
     # ---- 跑 ----
     def run(self, pages: list[PageInput], *, on_page: Callable[[int, PageInput, dict[str, BlockResult]], None] | None = None) -> RunOutcome:
         """`on_page`：每页做完调一次（续跑时读回的页也调），正式流程在这里把译文写回、提交断点。"""
+        self.agent.on_event = self._agent_event
+        try:
+            return self._run(pages, on_page)
+        finally:
+            self.agent.on_event = None
+
+    def _run(self, pages: list[PageInput], on_page: Callable[[int, PageInput, dict[str, BlockResult]], None] | None) -> RunOutcome:
         progress_path = self._path("progress.json")
         progress = json.loads(progress_path.read_text(encoding="utf-8")) if progress_path.exists() else {}
         done: list[str] = list(progress.get("pages_done") or [])
+        self._event_page = 0
+        title = str((pages[0].document or {}).get("title") or "") if pages else ""
+        self._event("run_started", pages=len(pages), model=self.agent.model, doc_title=title, resumed=len(done))
         if self._path("glossary.json").exists():
             glossary = Glossary.from_dict(json.loads(self._path("glossary.json").read_text(encoding="utf-8")))
+            self._tickets_seen = len(glossary.tickets)
             if self._path("reading.json").exists():
                 self.reading = Reading.from_dict(json.loads(self._path("reading.json").read_text(encoding="utf-8")))
         else:
             glossary = Glossary.from_dict(self.initial_glossary.to_dict()) if self.initial_glossary else Glossary()
+            self._tickets_seen = 0
             if self.memory:
                 self._prescan(glossary, pages)
             if self.read_first:
                 calls_before = len(self.agent.calls)
+                self._event("reading_started")
                 try:
                     self.reading = read_document(self.agent, pages)
                 except StopRun as stop:
-                    self._ledger("stop", page="", page_key="read", reason=stop.reason, message=str(stop)[:300])
-                    self._progress(done, STOPPED, stop.reason, len(pages))
+                    self._stopped(PageInput(page_label="", blocks=[]), "read", stop, done, len(pages))
                     return RunOutcome(STOPPED, stop.reason, {}, glossary, 0, len(pages))
                 self._log_calls(PageInput(page_label="", blocks=[]), "read", {}, calls_before)
                 self._write_json(self._path("reading.json"), self.reading.to_dict())
                 self._ledger("read", genre=self.reading.genre, name_policy=self.reading.name_policy, terms=len(self.reading.terms), headings=len(self.reading.headings), candidates=self.reading.candidates)
+                self._event("reading_done", genre=self.reading.genre, name_policy=self.reading.name_policy, terms=len(self.reading.terms), headings=len(self.reading.headings))
             self._save_glossary(glossary, 0)
         if self.reading is not None:
             if not self._path("glossary", "read.done").exists():
@@ -188,23 +227,31 @@ class DocumentRun:
                 page_input = replace(page, context=context)
                 calls_before = len(self.agent.calls)
                 changes_before = len(glossary.changes)
+                self._event_page = index + 1
+                self._event("page_started", page=self._event_page, label=page.page_label, blocks=len(page.to_translate()))
                 try:
                     page_results, info = self.agent.translate_page(page_input)
                 except StopRun as stop:
                     self._log_calls(page, key, context, calls_before)
-                    self._ledger("stop", page=page.page_label, page_key=key, reason=stop.reason, message=str(stop)[:300])
-                    self._progress(done, STOPPED, stop.reason, len(pages))
+                    self._stopped(page, key, stop, done, len(pages))
                     return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
                 review_report = None
                 if self.review:
+                    self._event("review_started", page=self._event_page, blocks=len(reviewable(page_input, page_results)))
                     try:
                         review_report = review_page(self.agent, page_input, page_results)
                     except StopRun as stop:
                         self._log_calls(page, key, context, calls_before)
-                        self._ledger("stop", page=page.page_label, page_key=key, reason=stop.reason, message=str(stop)[:300])
-                        self._progress(done, STOPPED, stop.reason, len(pages))
+                        self._stopped(page, key, stop, done, len(pages))
                         return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
                     info["review"] = review_report
+                    self._event(
+                        "review_done",
+                        page=self._event_page,
+                        tickets=review_report["tickets"],
+                        applied=len(review_report["applied"]),
+                        rejected=len(review_report["rejected"]),
+                    )
                 self._log_calls(page, key, context, calls_before)
                 if review_report is not None:
                     self._ledger("review", page=page.page_label, page_key=key, reviewed=review_report["reviewed"], tickets=review_report["tickets"], applied=len(review_report["applied"]))
@@ -219,6 +266,7 @@ class DocumentRun:
                 for result in page_results.values():
                     statuses[result.status] = statuses.get(result.status, 0) + 1
                 self._ledger("page", page=page.page_label, page_key=key, statuses=statuses, glossary_version=glossary.version)
+                self._event("page_done", page=self._event_page, statuses={"ok": 0, "warn": 0, "error": 0, "fallback_source": 0, **statuses})
                 done.append(key)
                 self._progress(done, RUNNING, total=len(pages))
             results.update(page_results)
@@ -233,6 +281,7 @@ class DocumentRun:
             ]
         self._progress(done, DONE, total=len(pages))
         self._ledger("done", pages=len(pages), glossary_version=glossary.version, tickets=len(glossary.tickets))
+        self._event("run_done", pages=len(pages), glossary_version=glossary.version, tickets=len(glossary.tickets))
         return RunOutcome(DONE, "", results, glossary, len(done), len(pages))
 
     def _log_calls(self, page: PageInput, key: str, context: dict, since: int) -> None:

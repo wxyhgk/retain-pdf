@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 use retainpdf_core::models::domain::JobSnapshot;
 use retainpdf_core::storage_paths::{
-    resolve_markdown_images_dir, resolve_markdown_path, resolve_normalization_report,
+    resolve_agent_editorial_events, resolve_markdown_images_dir, resolve_markdown_path, resolve_normalization_report,
     resolve_normalized_document, resolve_output_pdf, resolve_source_pdf,
     resolve_translation_debug_index, resolve_translation_manifest,
     resolve_translation_request_journal,
@@ -37,6 +37,8 @@ pub enum StoredFile {
     TranslationDebugIndex,
     /// 翻译请求日志（jsonl）。
     TranslationRequestJournal,
+    /// 翻译 agent 的编辑部事件（editorial.v1，jsonl）；legacy 引擎的任务没有。
+    AgentEditorialEvents,
 }
 
 /// 这个任务的这份产物存放的位置；任务里没有登记就是 `None`。
@@ -51,5 +53,6 @@ pub fn stored_path(job: &JobSnapshot, data_root: &Path, file: StoredFile) -> Opt
         StoredFile::TranslationManifest => resolve_translation_manifest(job, data_root),
         StoredFile::TranslationDebugIndex => resolve_translation_debug_index(job, data_root),
         StoredFile::TranslationRequestJournal => resolve_translation_request_journal(job, data_root),
+        StoredFile::AgentEditorialEvents => resolve_agent_editorial_events(job, data_root),
     }
 }

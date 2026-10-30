@@ -113,7 +113,7 @@ def review_page(agent, page: PageInput, results: dict[str, BlockResult]) -> dict
         "blocks": [{"id": b.id, "class": b.cls, "source": b.text, "translation": results[b.id].translation} for b in blocks],
     }
     try:
-        data = agent.call_tool(payload, system=REVIEW_PROMPT, tool=REVIEW_TOOL, role=ROLE_REVIEWER, label=f"review {page.page_label}")
+        data = agent.call_tool(payload, system=REVIEW_PROMPT, tool=REVIEW_TOOL, role=ROLE_REVIEWER, label=f"review {page.page_label}", blocks=[b.id for b in blocks])
     except ValueError:
         report["error"] = "no submit_review tool call"
         return report

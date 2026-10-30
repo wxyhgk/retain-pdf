@@ -992,6 +992,14 @@ export interface CoverageJobView {
      */
     model: string;
     /**
+     * 翻译引擎：legacy 现有流程、agent 翻译 agent；老任务、纯 OCR 任务是 legacy。
+     */
+    engine: "legacy" | "agent";
+    /**
+     * 有翻译 agent 的编辑部事件可看（GET /api/v1/jobs/:job_id/progress/editorial）；agent 任务开翻以后才有，legacy 任务总是 false。
+     */
+    has_editorial_events: boolean;
+    /**
      * 这个任务处理的文档页（1 起、升序）。成功的翻译任务按实际执行算，没完成的按请求算；老任务算不出来是空数组。
      */
     pages: number[];

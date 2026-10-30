@@ -66,6 +66,11 @@ impl JobRecord {
         &self.request_payload.translation.model
     }
 
+    /// 翻译引擎：`legacy`（现有流程）或 `agent`（翻译 agent）。有这个字段以前的老任务读出来是 `legacy`。
+    pub fn translation_engine(&self) -> &str {
+        non_empty(&self.request_payload.translation.engine).unwrap_or("legacy")
+    }
+
     /// 翻译的本地页码窗口 `(start_page, end_page)`，`end_page` 为 -1 表示到最后。
     pub fn translation_page_window(&self) -> (i64, i64) {
         let translation = &self.request_payload.translation;

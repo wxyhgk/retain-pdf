@@ -9,6 +9,25 @@
 
 ---
 
+## 翻译 agent 的编辑部事件、翻译覆盖带引擎（feat/agent-editorial-events）
+
+2026-10-30。都是新加的，旧字段、旧地址不变。做法见 [编辑部事件接口](../../ops/planning/translation-agent/20261030-编辑部事件接口.md)，
+接口说明见 [编辑部事件](../../api/02-进度事件/03-编辑部事件.md)。
+
+| 地方 | 加了什么 | 前端用法 |
+|---|---|---|
+| `GET /api/v1/documents/{document_id}/translation-coverage` 的 `jobs[]`（`CoverageJobView`） | `engine`：`"legacy"` / `"agent"`（老任务、纯 OCR 任务是 `legacy`）；`has_editorial_events`：有编辑部事件可看 | 翻译站写「翻译 agent · 模型名」；`has_editorial_events` 为真才显示编辑部 |
+| `GET /api/v1/jobs/{job_id}/progress/editorial?after=&limit=` | 新接口：`{ events, next_after, has_more }`，事件是 editorial.v1 原样；legacy 任务是空列表 | 进行中每隔几秒带上次的 `next_after` 轮询，`has_more` 为真马上再取；翻完从 `after=0` 取全量回放；`next_after` 比带去的 `after` 小就从 0 重取 |
+
+契约：`contracts/library-documents.v1.schema.json`（`CoverageJobView` 两个新键）、`contracts/job-events.v2.schema.json`
+（端点 `listEditorialEvents`，类型 `EditorialEventsQuery`、`EditorialEventListView`、`EditorialEvent`）。
+
+事件和前端解析器 `frontend/web/src/features/editorial-room/domain/events.ts` 的格式一致，另外几处：`page` 是这次跑的第几页（1 起），
+通读的请求 `page` 是 0；`run_started` 多一个 `resumed`（续跑时已经做完的页数），续跑会再来一条 `run_started`；`page_done.statuses`
+四个键总在。
+
+---
+
 ## 删书架旧地址：书架列表、书架删除、合集工作区的 GET 删了（refactor/drop-library-shelf-old-routes）
 
 2026-10-22。前端 `refactor/library-shelf-to-jobs`、`fix/collection-workspace-post` 等分支进了 main（16d13071）以后删的，

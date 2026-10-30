@@ -181,6 +181,19 @@ def test_agent_engine_translates_every_page_and_finishes_the_stage(tmp_path: Pat
     assert len(rows) == len(model.bodies) and {row["stage"] for row in rows} >= {"translation", "agent_reader", "agent_review"}
 
 
+def test_editorial_events_are_written_where_the_api_reads_them(tmp_path: Path, fake_transport) -> None:
+    fake_transport(FakeModel())
+    execute_translation_request(_request(tmp_path))
+    path = tmp_path / "translated" / agent_flow.EDITORIAL_EVENTS_RELATIVE_PATH
+    events = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    assert events[0]["type"] == "run_started" and events[0]["pages"] == 2 and events[0]["model"] == "claude-haiku-5-5"
+    assert events[-1]["type"] == "run_done"
+    assert {e["v"] for e in events} == {"editorial.v1"}
+    # rust_api 按同一个相对路径找（retainpdf-core 的 storage_paths 常量）
+    constants = Path(__file__).resolve().parents[4] / "packages/retainpdf-core/src/storage_paths/constants.rs"
+    assert f'"{agent_flow.EDITORIAL_EVENTS_RELATIVE_PATH}"' in constants.read_text(encoding="utf-8")
+
+
 def test_blocks_the_agent_gives_back_as_source_become_dead_letters(tmp_path: Path, fake_transport) -> None:
     fake_transport(FakeModel(fail={"p001-b002"}))
     execute_translation_request(_request(tmp_path))

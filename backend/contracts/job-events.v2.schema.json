@@ -12,6 +12,14 @@
       "transport": "json",
       "query": "ListJobEventsQuery",
       "output": "JobEventListView"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/jobs/:job_id/progress/editorial",
+      "client_name": "listEditorialEvents",
+      "transport": "json",
+      "query": "EditorialEventsQuery",
+      "output": "EditorialEventListView"
     }
   ],
   "definitions": {
@@ -279,6 +287,77 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 500
+        }
+      }
+    },
+    "EditorialEventsQuery": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "翻译 agent 编辑部事件按条数续读：after 是上次返回的 next_after，不带从头取。limit 默认 500，夹到 1..2000。",
+      "properties": {
+        "after": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4294967295,
+          "default": 500
+        }
+      }
+    },
+    "EditorialEvent": {
+      "type": "object",
+      "description": "一条编辑部事件（editorial.v1），翻译 agent 的调度原样写出。各 type 的字段和取值全集见 docs/ops/planning/translation-agent/20261030-编辑部可视化和事件格式.md，只加不改：不认识的 type、多出来的字段忽略。page 是这次跑的第几页（1 起），通读是 0。",
+      "required": [
+        "v",
+        "ts",
+        "type"
+      ],
+      "properties": {
+        "v": {
+          "const": "editorial.v1"
+        },
+        "ts": {
+          "type": "number",
+          "description": "写下这条的时间（Unix 秒，带小数）。"
+        },
+        "type": {
+          "type": "string",
+          "description": "run_started、reading_started、reading_done、page_started、translate_call、check_result、retry、fallback、review_started、review_done、glossary_changed、ticket_opened、page_done、run_stopped、run_done。"
+        }
+      },
+      "additionalProperties": {
+        "$ref": "#/definitions/JsonValue"
+      }
+    },
+    "EditorialEventListView": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "GET /api/v1/jobs/:job_id/progress/editorial 的返回。legacy 任务、还没开翻的 agent 任务是空列表（next_after 为 0）。",
+      "required": [
+        "events",
+        "next_after",
+        "has_more"
+      ],
+      "properties": {
+        "events": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EditorialEvent"
+          },
+          "description": "按写入顺序。"
+        },
+        "next_after": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "下次带 after=这个数接着取，就是到这一段为止读过的条数。比请求的 after 还小说明事件文件重开了（换了文档或引擎版本重跑），从 0 重新取。"
+        },
+        "has_more": {
+          "type": "boolean",
+          "description": "这次只给到 limit 条，后面还有。"
         }
       }
     }

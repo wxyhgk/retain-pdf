@@ -7,6 +7,7 @@ use super::constants::{
     OUTPUT_ARTIFACTS_DIR_NAME, OUTPUT_LOGS_DIR_NAME, OUTPUT_MARKDOWN_DIR_NAME,
     OUTPUT_RENDERED_DIR_NAME, OUTPUT_TRANSLATED_DIR_NAME, OUTPUT_TYPST_BOOK_OVERLAYS_DIR_NAME,
     OUTPUT_TYPST_DIR_NAME, TRANSLATION_MANIFEST_FILE_NAME, TRANSLATION_REQUEST_JOURNAL_FILE_NAME,
+    AGENT_EDITORIAL_EVENTS_RELATIVE_PATH,
 };
 use super::path_ops::resolve_data_path;
 
@@ -171,6 +172,15 @@ pub fn resolve_translation_request_journal(job: &JobSnapshot, data_root: &Path) 
     let path = root
         .join(OUTPUT_TRANSLATED_DIR_NAME)
         .join(TRANSLATION_REQUEST_JOURNAL_FILE_NAME);
+    path.is_file().then_some(path)
+}
+
+/// 翻译 agent 的编辑部事件文件；legacy 引擎的任务、还没开始翻的任务没有。
+pub fn resolve_agent_editorial_events(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
+    let root = resolve_job_root(job, data_root)?;
+    let path = root
+        .join(OUTPUT_TRANSLATED_DIR_NAME)
+        .join(AGENT_EDITORIAL_EVENTS_RELATIVE_PATH);
     path.is_file().then_some(path)
 }
 

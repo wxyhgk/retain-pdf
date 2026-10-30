@@ -32,6 +32,7 @@ from retainpdf_translation_agent.contract import CONTRACT_VERSION
 from retainpdf_translation_agent.contract import STATUS_ERROR
 from retainpdf_translation_agent.contract import STATUS_FALLBACK_SOURCE
 from retainpdf_translation_agent.contract import STATUS_OK
+from retainpdf_translation_agent.contract import STATUS_WARN
 from retainpdf_translation_agent.contract import BlockResult
 from retainpdf_translation_agent.contract import PageInput
 from retainpdf_translation_agent.contract import RevisionRequest
@@ -280,10 +281,28 @@ class TranslationAgent:
         self.use_cache = use_cache
         self.usage = Usage()
         self.calls: list[dict] = []
+        # 编辑部事件（editorial.v1）的出口：调度（`DocumentRun`）接上，补上页号写进 events.jsonl；没接就不产出
+        self.on_event: Callable[[str, dict], None] | None = None
         self._restored: dict[str, list[dict]] = {}  # 这一轮被换回原文写法的公式（块 id → 警告）
 
     def model_for(self, role: str) -> str:
         return self.models.get(role) or self.model
+
+    def _emit(self, event_type: str, **fields) -> None:
+        if self.on_event is not None:
+            self.on_event(event_type, fields)
+
+    def _emit_check(self, attempt: int, results) -> None:
+        """一次质检的结果：这一页每块现在的状态（ok / warn / error 各几块）和问题代码各出现几次。"""
+        counts = {STATUS_OK: 0, STATUS_WARN: 0, STATUS_ERROR: 0}
+        codes: dict[str, int] = {}
+        for result in results:
+            if result.status in counts:
+                counts[result.status] += 1
+            for issue in result.issues:
+                code = str(issue.get("code", ""))
+                codes[code] = codes.get(code, 0) + 1
+        self._emit("check_result", attempt=attempt, ok=counts[STATUS_OK], warn=counts[STATUS_WARN], error=counts[STATUS_ERROR], codes=codes)
 
     # ---- 请求 ----
     def _body(self, payload: dict, role: str = ROLE_TRANSLATOR, *, system: str = SYSTEM_PROMPT, tool: dict = TOOL) -> dict:
@@ -296,15 +315,19 @@ class TranslationAgent:
             "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}],
         }
 
-    def call_tool(self, payload: dict, *, system: str, tool: dict, role: str, label: str) -> dict:
-        """别的角色（通读、审校）用：发一次请求，强制用 `tool` 交回，返回工具的输入；没交回就抛 ValueError。"""
-        response = self._call(self._body(payload, role, system=system, tool=tool), label=label, role=role)
+    def call_tool(self, payload: dict, *, system: str, tool: dict, role: str, label: str, blocks: list[str] | None = None) -> dict:
+        """别的角色（通读、审校）用：发一次请求，强制用 `tool` 交回，返回工具的输入；没交回就抛 ValueError。
+        `blocks`：这次请求处理的块，只用于编辑部事件。"""
+        response = self._call(self._body(payload, role, system=system, tool=tool), label=label, role=role, event={"attempt": 1, "blocks": list(blocks or [])})
         for part in response.get("content") or []:
             if part.get("type") == "tool_use" and part.get("name") == tool["name"]:
                 return _tool_input(part)
         raise ValueError(f"model response has no {tool['name']} tool call")
 
-    def _call(self, body: dict, *, label: str, role: str = ROLE_TRANSLATOR) -> dict:
+    def _call(self, body: dict, *, label: str, role: str = ROLE_TRANSLATOR, event: dict | None = None) -> dict:
+        """`event`（attempt、blocks）：发一条 translate_call 编辑部事件；缓存命中的也发，回放和实跑看到的一样。"""
+        if event is not None:
+            self._emit("translate_call", role=role, **event)
         key = hashlib.sha256(json.dumps(body, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:24]
         path = self.cache_dir / f"{key}.json" if self.cache_dir else None
         call = {"label": label, "key": key, "role": role, "model": body["model"]}
@@ -407,7 +430,7 @@ class TranslationAgent:
             return self._fixed_results(page, {}), {"notes": "", "extra_ids": [], "duplicates": [], "terms": [], "term_exceptions": []}
         records = request_records(page.blocks, wanted)
         payload = self._payload(page, records, required_ids=[r["id"] for r in records if r["translate"]])
-        response = self._call(self._body(payload), label=f"page {page.page_label}")
+        response = self._call(self._body(payload), label=f"page {page.page_label}", event={"attempt": 1, "blocks": [b.id for b in page.to_translate()]})
         parsed = self._parse(response)
         raw, duplicates = parsed["translations"], parsed["duplicates"]
         exceptions = _exceptions_by_block(parsed["term_exceptions"])
@@ -423,8 +446,11 @@ class TranslationAgent:
             meta = self._meta(page, block, role=ROLE_TRANSLATOR, attempt=1)
             results[block.id] = BlockResult(block.id, per_block.get(block.id), issues, 1, status_of(issues), meta=meta)
         self._apply_group_checks(page.to_translate(), results)
+        self._emit_check(1, results.values())
         # 不合格的：单块的合成一次请求一起重翻，接续组各自整组重翻
         failed = [b for b in page.to_translate() if results[b.id].status == STATUS_ERROR]
+        if failed:
+            self._emit("retry", blocks=[b.id for b in failed])
         singles = [b for b in failed if not b.group]
         groups: dict[str, list] = {}
         for block in failed:
@@ -437,12 +463,16 @@ class TranslationAgent:
             results.update(fixed)
             retry_terms += retry_parsed.get("terms", [])
             retry_exceptions += retry_parsed.get("term_exceptions", [])
+        if failed:
+            self._emit_check(2, [results[b.id] for b in page.to_translate()])
         # 重翻以后还不合格：先看能不能保住译文（只是术语没照用、只是接续组断点没放对），保不住才退回原文、待人看
         _salvage(page, results)
         self._fixed_results(page, results)
         for block_id, result in list(results.items()):
             if result.status == STATUS_ERROR:
                 results[block_id] = _fallback_to_source(result)
+                reason = next((str(i.get("code", "")) for i in result.issues if i.get("severity") == "error"), "")
+                self._emit("fallback", block=block_id, reason=reason)
         info = {
             "notes": parsed["notes"],
             "extra_ids": extra,
@@ -516,7 +546,9 @@ class TranslationAgent:
                 revise=[_revision_record(r, results.get(r.id)) for r in pending],
                 required_ids=sorted(ids),
             )
-            response = self._call(self._body(payload, ROLE_REVISER), label="revise " + ",".join(sorted(ids)), role=ROLE_REVISER)
+            response = self._call(
+                self._body(payload, ROLE_REVISER), label="revise " + ",".join(sorted(ids)), role=ROLE_REVISER, event={"attempt": attempt, "blocks": sorted(ids)}
+            )
             try:
                 parsed = self._parse(response)
             except ValueError:
@@ -572,7 +604,11 @@ class TranslationAgent:
             for b in unit:
                 retry.append({"id": b.id, "previous_translation": results[b.id].translation, "problems": problems([b.id])})
         payload = self._payload(page, records, retry=retry, required_ids=[r["id"] for r in retry])
-        response = self._call(self._body(payload), label="retry " + ",".join(r["id"] for r in retry))
+        response = self._call(
+            self._body(payload),
+            label="retry " + ",".join(r["id"] for r in retry),
+            event={"attempt": max(results[b.id].attempts for b in unit) + 1, "blocks": [b.id for b in unit]},
+        )
         try:
             parsed = self._parse(response)
         except ValueError:

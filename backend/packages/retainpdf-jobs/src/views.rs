@@ -3,6 +3,8 @@
 
 #[path = "views/common.rs"]
 mod common;
+#[path = "views/editorial.rs"]
+mod editorial;
 #[path = "views/job.rs"]
 mod job;
 #[path = "views/live_translation.rs"]
@@ -17,6 +19,7 @@ mod tests;
 mod translation;
 
 pub use common::*;
+pub use editorial::*;
 pub use job::*;
 pub use live_translation::*;
 pub use translation::*;

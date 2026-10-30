@@ -27,6 +27,7 @@ pub use constants::{
     ARTIFACT_KEY_TYPST_SOURCE, ARTIFACT_KIND_DIR, ARTIFACT_KIND_FILE,
     LEGACY_JOB_UNSUPPORTED_MESSAGE, TRANSLATION_CHECKPOINT_FILE_NAME,
     TRANSLATION_MANIFEST_FILE_NAME, TRANSLATION_REQUEST_JOURNAL_FILE_NAME,
+    AGENT_EDITORIAL_EVENTS_RELATIVE_PATH,
 };
 pub use job_paths::{attach_job_paths, build_job_paths, JobPaths};
 pub use merged_job::{is_merged_job_id, MergedJobId};
@@ -41,7 +42,7 @@ pub use previous_output::{
 };
 pub use registry::collect_job_artifact_entries;
 pub use resolvers::{
-    resolve_ai_board_dir, resolve_ai_dir,
+    resolve_agent_editorial_events, resolve_ai_board_dir, resolve_ai_dir,
     resolve_events_jsonl, resolve_fit_report, resolve_job_root, resolve_markdown_bundle_zip,
     resolve_markdown_images_dir, resolve_markdown_path, resolve_normalization_report,
     resolve_normalized_document, resolve_ocr_markdown_images_dir, resolve_output_pdf,

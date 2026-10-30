@@ -15,7 +15,7 @@ use retainpdf_data::db::Db;
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::domain::{JobSnapshot, JobStatusKind, WorkflowKind};
 use retainpdf_core::document_pages::translated_document_pages;
-use retainpdf_jobs::terminal_completion_note;
+use retainpdf_jobs::{stored_path, terminal_completion_note, StoredFile};
 
 use super::plan::{merge_plan, PageSource};
 use super::reading::document_merge_sources;
@@ -37,6 +37,10 @@ pub struct CoverageJobView {
     pub finished_at: Option<String>,
     /// 翻译模型；纯 OCR 任务为空。
     pub model: String,
+    /// 翻译引擎：`legacy`（现有流程）或 `agent`（翻译 agent）；老任务、纯 OCR 任务是 `legacy`。
+    pub engine: String,
+    /// 有翻译 agent 的编辑部事件可看（`GET /jobs/:job_id/progress/editorial`）。agent 任务开翻以后才有。
+    pub has_editorial_events: bool,
     /// 这个任务处理的文档页（1 起、升序）。成功的翻译任务按实际执行算；没完成的按请求算；
     /// 算不出来（老任务没记录）就是空。
     pub pages: Vec<u32>,
@@ -255,6 +259,8 @@ pub(crate) fn translation_coverage(
             } else {
                 job.translation_model().to_string()
             },
+            engine: job.translation_engine().to_string(),
+            has_editorial_events: stored_path(job, data_root, StoredFile::AgentEditorialEvents).is_some(),
             pages: job_pages(job, document_page_count),
             supplied_pages: supplied.get(job.job_id.as_str()).copied().unwrap_or(0),
             ocr_reused: job.source_job_id().is_some(),
