@@ -154,6 +154,7 @@ const SECRET_SYNC_KEYS: &[&str] = &["webdav_password"];
 
 /// 在 `VACUUM INTO` 出的副本上删掉密码。`secure_delete` 把删掉的内容清零,文件里不留原文。
 fn strip_secrets(snapshot: &Path) -> Result<()> {
+    super::configure_sqlite_process();
     let conn = Connection::open_with_flags(snapshot, OpenFlags::SQLITE_OPEN_READ_WRITE)?;
     conn.execute_batch("PRAGMA journal_mode=DELETE; PRAGMA secure_delete=ON;")?;
     let has_sync_state: bool = conn.query_row(
@@ -375,6 +376,7 @@ impl Db {
             return Ok(Err(RestoreRefusal::Damaged(error.to_string())));
         }
         // 解开的是临时副本:可写打开(全文索引的完整性检查要写)。
+        super::configure_sqlite_process();
         let source = match Connection::open_with_flags(&checked.unpacked, OpenFlags::SQLITE_OPEN_READ_WRITE) {
             Ok(conn) => conn,
             Err(error) => return Ok(Err(RestoreRefusal::Damaged(error.to_string()))),
