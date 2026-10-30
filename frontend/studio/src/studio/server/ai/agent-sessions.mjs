@@ -433,7 +433,11 @@ class AgentSession {
 		session.updated = record.updated ?? record.created;
 		session.configOptions = record.configOptions ?? [];
 		// What was going when it was left (the Studio closed or gone mid-turn) is not going now.
-		session.items = (record.items ?? []).map((item) => cutOff(item) ?? item);
+		session.items = (record.items ?? []).map((item) => {
+			const kept = cutOff(item) ?? item;
+			// Kept before diffs were cut to the change: cut now (written so when it is saved next).
+			return kept.kind === 'tool' && Array.isArray(kept.content) ? { ...kept, content: kept.content.map(trimmedDiff) } : kept;
+		});
 		for (const item of session.items) session.#byId.set(item.id, item);
 		session.#acpId = record.acpSessionId ?? null;
 		session.page = page;
@@ -981,6 +985,8 @@ class AgentSession {
 		for (const [field, key] of [['title', 'title'], ['toolKind', 'kind'], ['status', 'status'], ['content', 'content'], ['locations', 'locations'], ['rawInput', 'rawInput'], ['rawOutput', 'rawOutput']]) {
 			if (update[key] !== undefined && update[key] !== null) item[field] = update[key];
 		}
+		// A change kept as the change, not the whole file twice (a long article's every edit was its text, before and after).
+		if (Array.isArray(update.content)) item.content = item.content.map(trimmedDiff);
 		// Codex streams what a command prints beside the update, the client having no terminal of its own.
 		const printed = update._meta?.terminal_output_delta?.data;
 		if (typeof printed === 'string') item.output += printed;
@@ -1080,6 +1086,33 @@ const promptLineRange = ({ start, end }) => (start === end ? `第 ${start} 行` 
 function briefOf({ brief }) {
 	if (brief === undefined) return '';
 	return brief ? `；它的写作要求在 ${brief}，先读` : '（没有 ai/brief.md，不用找）'; // i18n-ignore: for the AI
+}
+
+/** Lines kept around a change in a diff kept, and of the change itself at most (the panel shows the change). */
+const DIFF_AROUND = 3;
+const DIFF_LINES = 400;
+
+/**
+ * A file's change (ACP's diff: its text before and after) as kept: the lines changed and a few around them, not the
+ * whole file twice; a change longer than DIFF_LINES, its start and how many more. Anything else as it is.
+ */
+export function trimmedDiff(content) {
+	if (content?.type !== 'diff' || typeof content.newText !== 'string') return content;
+	const old = typeof content.oldText === 'string' ? content.oldText.split('\n') : null;
+	const next = content.newText.split('\n');
+	const before = old ?? [];
+	let head = 0;
+	while (head < before.length && head < next.length && before[head] === next[head]) head += 1;
+	let tail = 0;
+	while (tail < before.length - head && tail < next.length - head && before[before.length - 1 - tail] === next[next.length - 1 - tail]) tail += 1;
+	const from = Math.max(0, head - DIFF_AROUND);
+	const part = (lines) => {
+		const kept = lines.slice(from, Math.min(lines.length, lines.length - tail + DIFF_AROUND));
+		return kept.length > DIFF_LINES + 2 * DIFF_AROUND ? [...kept.slice(0, DIFF_LINES), t('…（还有 {count} 行）', { count: kept.length - DIFF_LINES })] : kept;
+	};
+	const cutNew = part(next);
+	if (from === 0 && cutNew.length === next.length && (!old || part(old).length === old.length)) return content;
+	return { ...content, oldText: old ? part(old).join('\n') : content.oldText, newText: cutNew.join('\n'), ...(from ? { line: from + 1 } : {}) };
 }
 
 /**

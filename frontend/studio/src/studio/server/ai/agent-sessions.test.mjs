@@ -312,3 +312,22 @@ test('read back after the Studio went mid-turn: what was going is cut off, a sub
 	assert.ok(call.subagents.every((agent) => agent.status !== 'running' && agent.status !== 'waiting'));
 	assert.ok(call.subagents.some((agent) => agent.status === 'interrupted'));
 });
+
+test('a file’s change kept as the change and a few lines around it, not the whole file twice', async () => {
+	const { trimmedDiff } = await import('./agent-sessions.mjs');
+	const lines = Array.from({ length: 1000 }, (_, at) => `第 ${at + 1} 行`);
+	const changed = lines.map((line, at) => (at === 499 ? '改过的第 500 行' : line));
+	const kept = trimmedDiff({ type: 'diff', path: '/a/index.md', oldText: lines.join('\n'), newText: changed.join('\n') });
+	assert.equal(kept.oldText, '第 497 行\n第 498 行\n第 499 行\n第 500 行\n第 501 行\n第 502 行\n第 503 行');
+	assert.equal(kept.newText, '第 497 行\n第 498 行\n第 499 行\n改过的第 500 行\n第 501 行\n第 502 行\n第 503 行');
+	assert.equal(kept.line, 497);
+	// A small one, a new file, what is not a diff: as they are.
+	const small = { type: 'diff', path: '/a/b.md', oldText: 'a\nb', newText: 'a\nc' };
+	assert.equal(trimmedDiff(small), small);
+	const made = trimmedDiff({ type: 'diff', path: '/a/new.py', oldText: null, newText: lines.join('\n') });
+	assert.equal(made.oldText, null);
+	assert.equal(made.newText.split('\n').length, 401);
+	assert.match(made.newText, /…（还有 600 行）$/u);
+	const text = { type: 'content', content: { type: 'text', text: 'x' } };
+	assert.equal(trimmedDiff(text), text);
+});
