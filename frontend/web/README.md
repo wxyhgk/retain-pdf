@@ -7,6 +7,7 @@
 | 主页 | `index.html` | `src/app/home/entry.tsx` | `dist/app.bundle.js` |
 | 任务详情 | `detail.html` | `src/app/detail/entry.tsx` | `dist/detail.bundle.js` |
 | PDF 阅读器 | `reader.html` | `src/app/reader/entry.tsx` | `dist/reader.bundle.js` |
+| 翻译编辑部演示 | `editorial.html` | `src/app/editorial/entry.tsx` | `dist/editorial.bundle.js` |
 
 CSS 按页面分别构建到 `dist/css/{home,detail,reader}.css`。HTML 引用的查询参数由构建脚本按内容哈希更新。
 

@@ -1,0 +1,115 @@
+/* 编辑部用户视图（EditorialStage）的外框：书名、进度条、底下一行「正在……」和轻提示。
+ * 中间的 2.5D 全景在 office/EditorialOffice.css。
+ *
+ * @owns editorial-room */
+
+.editorial-room-stage {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-sans);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--shadow-color) 6%, transparent);
+}
+
+.editorial-room-stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.editorial-room-stage-title {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorial-room-stage-count {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.editorial-room-stage-progress {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.editorial-room-stage-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ok);
+  transition: width 600ms var(--ease-out);
+}
+
+.editorial-room-stage.is-stopped .editorial-room-stage-progress > span {
+  background: var(--warn);
+}
+
+/* —— 底下一行：正在做什么 + 轻提示 —— */
+
+.editorial-room-stage-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+}
+
+.editorial-room-stage-now {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.editorial-room-stage-now.is-stopped {
+  color: var(--danger);
+}
+
+.editorial-room-stage-now.is-done {
+  color: var(--ok);
+}
+
+.editorial-room-stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--gold-weak);
+  font-size: 12px;
+  animation: editorial-room-slide-down 320ms var(--ease-out);
+}
+
+.editorial-room-stage-chip svg {
+  width: 13px;
+  height: 13px;
+}
+
+.editorial-room-stage-chip.is-attention {
+  color: var(--danger);
+  background: var(--danger-weak);
+}
+
+/* —— 窄屏 —— */
+
+@media (max-width: 640px) {
+  .editorial-room-stage {
+    padding: 14px 12px 12px;
+  }
+}

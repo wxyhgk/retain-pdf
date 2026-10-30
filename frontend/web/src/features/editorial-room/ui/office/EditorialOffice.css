@@ -1,0 +1,305 @@
+/* 2.5D 编辑部全景（EditorialOffice）：地面、墙、方块的三个面、传送带、闸门灯、白板、稿纸流动。
+ * 立体感靠同一个底色的三档深浅（顶面亮、左面中、右面暗），全部由皮肤变量 color-mix 出来。
+ *
+ * @owns editorial-room */
+
+.editorial-room-office {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font-family: var(--font-sans);
+}
+
+/* 小人和机器人在场景里统一按 64 × 68 的画布摆放（缩放在 Sprite 的 transform 上）。 */
+.editorial-room-office .editorial-room-fig,
+.editorial-room-office .editorial-room-robot {
+  width: 64px;
+  height: 68px;
+}
+
+/* 小人画布里自带的那道桌沿线在场景里多余（场景有真的桌子）。 */
+.editorial-room-office .editorial-room-fig-desk {
+  display: none;
+}
+
+/* —— 房间 —— */
+
+.editorial-room-office-floor {
+  fill: color-mix(in srgb, var(--bg) 55%, var(--paper));
+  stroke: var(--line);
+}
+
+.editorial-room-office-grid {
+  fill: none;
+  stroke: color-mix(in srgb, var(--line) 70%, transparent);
+  stroke-width: 1;
+}
+
+.editorial-room-office-wall.is-left {
+  fill: color-mix(in srgb, var(--paper) 82%, var(--line));
+}
+
+.editorial-room-office-wall.is-right {
+  fill: color-mix(in srgb, var(--paper) 64%, var(--line));
+}
+
+.editorial-room-office-skirting {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 18%, var(--line));
+  stroke-width: 2;
+}
+
+/* —— 方块：顶面亮、左面中、右面暗 —— */
+
+.editorial-room-iso polygon {
+  stroke: color-mix(in srgb, var(--ink) 22%, var(--line));
+  stroke-width: 1;
+  stroke-linejoin: round;
+}
+
+.editorial-room-iso-top {
+  fill: var(--paper);
+}
+
+.editorial-room-iso-left {
+  fill: color-mix(in srgb, var(--line) 75%, var(--paper));
+}
+
+.editorial-room-iso-right {
+  fill: color-mix(in srgb, var(--line) 82%, var(--ink) 8%);
+}
+
+.editorial-room-iso.is-wood .editorial-room-iso-top {
+  fill: color-mix(in srgb, var(--gold) 16%, var(--paper));
+}
+
+.editorial-room-iso.is-wood .editorial-room-iso-left {
+  fill: color-mix(in srgb, var(--gold) 30%, var(--paper));
+}
+
+.editorial-room-iso.is-wood .editorial-room-iso-right {
+  fill: color-mix(in srgb, var(--gold) 42%, var(--line));
+}
+
+.editorial-room-iso.is-metal .editorial-room-iso-top {
+  fill: color-mix(in srgb, var(--accent) 10%, var(--paper));
+}
+
+.editorial-room-iso.is-metal .editorial-room-iso-left {
+  fill: color-mix(in srgb, var(--accent) 18%, var(--line));
+}
+
+.editorial-room-iso.is-metal .editorial-room-iso-right {
+  fill: color-mix(in srgb, var(--accent) 24%, color-mix(in srgb, var(--line) 80%, var(--ink)));
+}
+
+.editorial-room-iso.is-planned {
+  opacity: 0.45;
+}
+
+.editorial-room-iso.is-planned polygon {
+  stroke-dasharray: 3 3;
+}
+
+/* —— 传送带 —— */
+
+.editorial-room-office-belt polyline {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.editorial-room-office-belt-edge {
+  stroke: color-mix(in srgb, var(--ink) 22%, var(--line));
+  stroke-width: 16;
+}
+
+.editorial-room-office-belt-surface {
+  stroke: color-mix(in srgb, var(--line) 70%, var(--paper));
+  stroke-width: 12;
+}
+
+.editorial-room-office-belt-flow {
+  stroke: color-mix(in srgb, var(--ink) 16%, var(--line));
+  stroke-width: 12;
+  stroke-dasharray: 2 10;
+}
+
+.editorial-room-office-belt.is-moving .editorial-room-office-belt-flow {
+  animation: editorial-room-office-belt-run 900ms linear infinite;
+}
+
+/* —— 质检闸门的灯 —— */
+
+.editorial-room-office-lamp {
+  fill: var(--line);
+  stroke: color-mix(in srgb, var(--ink) 30%, var(--line));
+  transition: fill 200ms var(--ease-out);
+}
+
+.editorial-room-office-lamp-glow {
+  fill: transparent;
+  transition: fill 200ms var(--ease-out);
+}
+
+.editorial-room-office-gate.is-on .editorial-room-office-lamp {
+  fill: var(--accent);
+}
+
+.editorial-room-office-gate.is-ok .editorial-room-office-lamp {
+  fill: var(--ok);
+}
+
+.editorial-room-office-gate.is-ok .editorial-room-office-lamp-glow {
+  fill: var(--ok-weak);
+}
+
+.editorial-room-office-gate.is-warn .editorial-room-office-lamp {
+  fill: var(--warn);
+}
+
+.editorial-room-office-gate.is-warn .editorial-room-office-lamp-glow {
+  fill: var(--warn-weak);
+}
+
+.editorial-room-office-gate.is-error .editorial-room-office-lamp {
+  fill: var(--danger);
+}
+
+.editorial-room-office-gate.is-error .editorial-room-office-lamp-glow {
+  fill: var(--danger-weak);
+  animation: editorial-room-breathe 700ms var(--ease-in-out) 3;
+}
+
+/* —— 墙上的板子 —— */
+
+.editorial-room-office-board {
+  fill: var(--paper);
+  stroke: color-mix(in srgb, var(--ink) 22%, var(--line));
+  stroke-width: 1.2;
+}
+
+.editorial-room-office-card {
+  fill: color-mix(in srgb, var(--accent) 16%, var(--paper));
+  stroke: var(--line);
+}
+
+.editorial-room-office-ink {
+  fill: none;
+  stroke: color-mix(in srgb, var(--ink) 45%, var(--line));
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.editorial-room-office-whiteboard.is-fresh .editorial-room-office-ink {
+  stroke: var(--gold);
+  animation: editorial-room-breathe 800ms var(--ease-in-out) 2;
+}
+
+.editorial-room-office-sticky {
+  fill: var(--warn-weak);
+  stroke: var(--warn);
+  animation: editorial-room-pop 360ms var(--ease-out);
+}
+
+.editorial-room-office-version {
+  fill: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+/* —— 稿纸 —— */
+
+.editorial-room-office-paper {
+  fill: var(--paper);
+  stroke: color-mix(in srgb, var(--ink) 35%, var(--line));
+  stroke-width: 1;
+}
+
+.editorial-room-office-paper.is-filed {
+  fill: color-mix(in srgb, var(--ok) 22%, var(--paper));
+  stroke: color-mix(in srgb, var(--ok) 60%, var(--line));
+  animation: editorial-room-office-file 460ms var(--ease-out);
+}
+
+.editorial-room-office-paper.is-flagged {
+  fill: var(--danger-weak);
+  stroke: var(--danger);
+}
+
+.editorial-room-office-sheet {
+  animation: editorial-room-office-slide 900ms var(--ease-in-out);
+}
+
+.editorial-room-office-sheet.is-still {
+  animation: editorial-room-pop 320ms var(--ease-out);
+}
+
+.editorial-room-office-sheet.is-retrying .editorial-room-office-paper {
+  stroke: var(--warn);
+}
+
+.editorial-room-office-page-no {
+  fill: var(--ink);
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+/* —— 头顶的一个词 —— */
+
+.editorial-room-office-tag rect {
+  fill: var(--ink);
+  opacity: 0.88;
+}
+
+.editorial-room-office-tag text {
+  fill: var(--paper);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.editorial-room-office-tag {
+  animation: editorial-room-office-tag-in 280ms var(--ease-out);
+}
+
+.editorial-room-office-note {
+  fill: var(--muted);
+  font-size: 11px;
+}
+
+@keyframes editorial-room-office-belt-run {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+@keyframes editorial-room-office-slide {
+  from {
+    transform: translate(var(--from-x), var(--from-y));
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes editorial-room-office-file {
+  from {
+    transform: translateY(-18px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes editorial-room-office-tag-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,129 @@
+/* 稿纸（EditorialPageSheet）：工位手上的那一页。左边一道色条表示阶段，下面是质检的绿黄红条。
+ *
+ * @owns editorial-room */
+
+.editorial-room-sheet {
+  display: grid;
+  flex: 1;
+  gap: 5px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--muted);
+  border-radius: 8px;
+  background: var(--paper);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--shadow-color) 8%, transparent);
+  animation: editorial-room-slide-in 380ms var(--ease-out);
+}
+
+.editorial-room-sheet.is-translating,
+.editorial-room-sheet.is-revising {
+  border-left-color: var(--accent);
+}
+
+.editorial-room-sheet.is-checking {
+  border-left-color: var(--ink);
+}
+
+.editorial-room-sheet.is-retrying {
+  border-left-color: var(--warn);
+  animation: editorial-room-bounce-back 460ms var(--ease-out);
+}
+
+.editorial-room-sheet.is-reviewing {
+  border-left-color: var(--gold);
+}
+
+.editorial-room-sheet.is-done {
+  border-left-color: var(--ok);
+}
+
+.editorial-room-sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 4px;
+  font-size: 12px;
+}
+
+.editorial-room-sheet-head strong {
+  white-space: nowrap;
+}
+
+.editorial-room-sheet-attempt {
+  padding: 0 5px;
+  border-radius: 999px;
+  color: var(--warn);
+  background: var(--warn-weak);
+  font-size: 10px;
+}
+
+.editorial-room-sheet-stage {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* 还没质检时：稿纸上几行字，翻译中一行行写出来 */
+.editorial-room-sheet-lines {
+  display: block;
+  height: 10px;
+  background: repeating-linear-gradient(to bottom, var(--line) 0 2px, transparent 2px 5px);
+  border-radius: 1px;
+}
+
+.editorial-room-sheet.is-translating .editorial-room-sheet-lines {
+  animation: editorial-room-write 1.6s var(--ease-in-out) infinite;
+}
+
+.editorial-room-sheet-bar {
+  display: flex;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.editorial-room-sheet-bar > span {
+  transition: width 320ms var(--ease-out);
+}
+
+.editorial-room-sheet-bar-ok {
+  background: var(--ok);
+}
+
+.editorial-room-sheet-bar-warn {
+  background: var(--warn);
+}
+
+.editorial-room-sheet-bar-error {
+  background: var(--danger);
+}
+
+.editorial-room-sheet-bar-source {
+  background: var(--muted);
+}
+
+@keyframes editorial-room-write {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  70%,
+  100% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes editorial-room-bounce-back {
+  0% {
+    transform: translateX(22px);
+    opacity: 0;
+  }
+  60% {
+    transform: translateX(-4px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+  }
+}

@@ -12,6 +12,7 @@
 | `book-detail/` | 书籍详情弹窗：进度 Tab、失败卡、产物中心、选页翻译 |
 | `contracts/` | JSON Schema、API DTO、事件名及跨包数据契约 |
 | `credentials/` | 凭据域逻辑：校验流程、state port、翻译配置、桌面首启门禁 |
+| `editorial-room/` | 翻译编辑部：editorial.v1 事件解析、叠成状态、回放和画面 |
 | `fx-terminal/` | 终端主题与 WebSocket 会话 |
 | `home/` | 首页外壳、首页问答、设置中心与凭据对话框、术语表、任务中心、更新提示 |
 | `ingest/` | 上传与翻译工作流：上传对话框、工作流 payload、提交就绪与提交流程 |

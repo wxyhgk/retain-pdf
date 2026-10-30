@@ -1,0 +1,220 @@
+/* 车间旁边：术语表白板（版本号、最近改动、歧义单便签）、「待人看」筐、筹备中的工位。
+ *
+ * @owns editorial-room */
+
+.editorial-room-board,
+.editorial-room-basket,
+.editorial-room-planned {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--editorial-room-radius);
+  background: var(--editorial-room-card);
+}
+
+.editorial-room-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.editorial-room-panel-head svg {
+  width: 15px;
+  height: 15px;
+  color: var(--muted);
+}
+
+.editorial-room-panel-head strong {
+  font-weight: 650;
+}
+
+.editorial-room-panel-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* —— 术语表白板 —— */
+
+.editorial-room-board {
+  background: var(--paper);
+}
+
+.editorial-room-board-version {
+  margin-left: auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--accent-weak);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  animation: editorial-room-pop 420ms var(--ease-out);
+}
+
+.editorial-room-board-terms {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-room-board-terms li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 5px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  font-size: 11px;
+}
+
+.editorial-room-board-terms li.is-fresh {
+  animation: editorial-room-highlight 1.6s var(--ease-out);
+}
+
+.editorial-room-board-source {
+  overflow: hidden;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorial-room-board-arrow {
+  color: var(--muted);
+}
+
+.editorial-room-board-target {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorial-room-board-action {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* 歧义单：贴在白板上的黄色便签 */
+.editorial-room-tickets {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-room-ticket {
+  display: grid;
+  gap: 1px;
+  padding: 6px 8px;
+  border-left: 3px solid var(--warn);
+  border-radius: 4px 8px 8px 4px;
+  background: var(--warn-weak);
+  font-size: 11px;
+  transform: rotate(-0.8deg);
+  animation: editorial-room-stick 420ms var(--ease-out);
+}
+
+.editorial-room-ticket:nth-child(2n) {
+  transform: rotate(0.6deg);
+}
+
+.editorial-room-ticket-page {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+/* —— 待人看 —— */
+
+.editorial-room-basket-count {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--bg);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.editorial-room-basket[data-editorial-basket]:not([data-editorial-basket="0"]) .editorial-room-basket-count {
+  color: var(--danger);
+  background: var(--danger-weak);
+}
+
+.editorial-room-basket-items {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11px;
+}
+
+.editorial-room-basket-items li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 6px;
+  color: var(--muted);
+  animation: editorial-room-slide-down 320ms var(--ease-out);
+}
+
+.editorial-room-basket-block {
+  color: var(--danger);
+  font-family: var(--font-mono);
+}
+
+/* —— 筹备中的工位 —— */
+
+.editorial-room-planned ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-room-planned-item {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.editorial-room-planned-item strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+@keyframes editorial-room-highlight {
+  0% {
+    background: var(--gold-weak);
+  }
+  100% {
+    background: transparent;
+  }
+}
+
+@keyframes editorial-room-stick {
+  0% {
+    transform: translateY(-8px) rotate(-4deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) rotate(-0.8deg);
+    opacity: 1;
+  }
+}
