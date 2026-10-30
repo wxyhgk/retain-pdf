@@ -94,7 +94,7 @@ test("调试视图的回放：不自动播时停在开头；单步一条条叠�
   }
 });
 
-test("用户视图：只有三个小人、一条进度、一行「正在」；没有数字卡片和按钮", async () => {
+test("用户视图（2.5D 编辑部）：三个人、两个机器人、闸门和档案柜；忙的人头上一个词；没有数字卡片和按钮", async () => {
   makeDom();
   const React = await import("react");
   const room = await import("../../src/features/editorial-room/index.ts");
@@ -102,45 +102,79 @@ test("用户视图：只有三个小人、一条进度、一行「正在」；�
   const index = events.findIndex((event) => event.type === "translate_call" && event.page === 2) + 1;
   const { host, unmount } = await mount(React.createElement(room.EditorialStage, { state: room.roomStateAt(events, index) }));
   try {
-    await waitFor(() => host.querySelector("[data-editorial-stage]"));
-    const seats = [...host.querySelectorAll("[data-editorial-seat]")];
-    assert.deepEqual(seats.map((seat) => seat.dataset.editorialSeat), ["reader", "translator", "reviewer"]);
-    const word = (role) => host.querySelector(`[data-editorial-seat="${role}"] .editorial-room-stage-word`).textContent;
-    assert.equal(word("translator"), "翻译第 2 页");
-    assert.equal(word("reviewer"), "审第 1 页");
-    assert.equal(word("reader"), "通读");
+    await waitFor(() => host.querySelector("[data-editorial-office]"));
+    const seats = [...host.querySelectorAll("[data-editorial-seat]")].map((seat) => seat.dataset.editorialSeat).sort();
+    assert.deepEqual(seats, ["reader", "reviewer", "translator"]);
+    const stations = [...host.querySelectorAll("[data-editorial-station]")].map((node) => node.dataset.editorialStation).sort();
+    assert.deepEqual(stations, ["archive", "checker", "dispatcher", "reviser"]);
+    assert.equal(host.querySelectorAll("[data-editorial-planned]").length, 5, "筹备中的工位画成灰色空桌");
+    const tags = [...host.querySelectorAll(".editorial-room-office-tag text")].map((node) => node.textContent).sort();
+    assert.deepEqual(tags, ["审第 1 页", "翻译第 2 页"]);
+    const sheets = [...host.querySelectorAll(".editorial-room-office-sheet")].map((node) => `${node.dataset.editorialPage}:${node.dataset.editorialStage}`).sort();
+    assert.deepEqual(sheets, ["1:reviewing", "2:translating"], "稿纸停在各自工位前的传送带上");
+    assert.equal(host.querySelector('[data-editorial-seat="reader"]').dataset.busy, "false");
+    assert.equal(host.querySelector('[data-editorial-station="dispatcher"]').dataset.busy, "true", "还有页没派");
     assert.equal(host.querySelector("[data-editorial-progress]").textContent.replace(/\s+/g, ""), "第1/6页");
     assert.equal(host.querySelector("[data-editorial-now]").textContent, "译者翻译第 2 页，审校审第 1 页");
-    assert.equal(host.querySelectorAll("[data-editorial-stat], button, [data-editorial-planned]").length, 0);
+    assert.equal(host.querySelectorAll("[data-editorial-stat], button").length, 0);
     assert.equal(host.querySelector("[data-editorial-attention]"), null, "没有要人看的就不出现");
-    assert.match(host.querySelector('[data-editorial-seat="translator"]').title, /第 2 页，第 1 次 · 8 块/, "细节在悬停提示里");
+    assert.match(host.querySelector('[data-editorial-seat="translator"] title').textContent, /第 2 页，第 1 次 · 8 块/, "细节在悬停提示里");
   } finally {
     unmount();
   }
 });
 
-test("用户视图：术语表改了给一句轻提示；跑完显示几页、需要人看几处", async () => {
+test("用户视图：退回重翻时稿纸回到译者、闸门亮红；术语表改了白板闪、出轻提示；跑完都进档案柜", async () => {
   makeDom();
   const React = await import("react");
   const room = await import("../../src/features/editorial-room/index.ts");
   const events = room.buildDemoEditorialRun();
-  const afterGlossary = events.findIndex((event) => event.type === "glossary_changed") + 1;
-  const first = await mount(React.createElement(room.EditorialStage, { state: room.roomStateAt(events, afterGlossary) }));
+  const render = (n) => mount(React.createElement(room.EditorialStage, { state: room.roomStateAt(events, n) }));
+
+  const failed = await render(events.findIndex((event) => event.type === "check_result" && event.error > 0) + 1);
   try {
-    await waitFor(() => first.host.querySelector("[data-editorial-glossary-hint]"));
-    assert.equal(first.host.querySelector("[data-editorial-now]").textContent, "通读员在读全书");
-    assert.equal(first.host.querySelector('[data-editorial-seat="reader"]').dataset.busy, "true");
+    await waitFor(() => failed.host.querySelector("[data-editorial-office]"));
+    assert.equal(failed.host.querySelector('[data-editorial-station="checker"]').dataset.tone, "error");
   } finally {
-    first.unmount();
+    failed.unmount();
   }
-  const end = await mount(React.createElement(room.EditorialStage, { state: room.roomStateAt(events, events.length) }));
+  const paperAt = (host, stage) =>
+    host.querySelector(`.editorial-room-office-sheet[data-editorial-stage="${stage}"] polygon`).getAttribute("points");
+  const translating = await render(events.findIndex((event) => event.type === "translate_call") + 1);
+  let translatorSpot = "";
   try {
-    await waitFor(() => end.host.querySelector("[data-editorial-stage]"));
+    await waitFor(() => translating.host.querySelector("[data-editorial-office]"));
+    translatorSpot = paperAt(translating.host, "translating");
+  } finally {
+    translating.unmount();
+  }
+  const retry = await render(events.findIndex((event) => event.type === "retry") + 1);
+  try {
+    await waitFor(() => retry.host.querySelector("[data-editorial-office]"));
+    assert.equal(paperAt(retry.host, "retrying"), translatorSpot, "退回的稿纸回到译者桌前");
+    assert.match(retry.host.querySelector(".editorial-room-office-tag text").textContent, /重翻第 1 页/);
+  } finally {
+    retry.unmount();
+  }
+  const glossary = await render(events.findIndex((event) => event.type === "glossary_changed") + 1);
+  try {
+    await waitFor(() => glossary.host.querySelector("[data-editorial-glossary-hint]"));
+    assert.ok(glossary.host.querySelector(".editorial-room-office-whiteboard.is-fresh"));
+    assert.equal(glossary.host.querySelector("[data-editorial-now]").textContent, "通读员在读全书");
+    assert.equal(glossary.host.querySelector(".editorial-room-office-tag text").textContent, "读书中");
+  } finally {
+    glossary.unmount();
+  }
+  const end = await render(events.length);
+  try {
+    await waitFor(() => end.host.querySelector("[data-editorial-office]"));
     assert.equal(end.host.querySelector("[data-editorial-progress]").dataset.editorialProgress, "6/6");
+    assert.equal(end.host.querySelector('[data-editorial-station="archive"]').dataset.done, "6");
+    assert.equal(end.host.querySelectorAll(".editorial-room-office-paper.is-filed.is-flagged").length, 1, "退回原文的那页标红");
     assert.equal(end.host.querySelector("[data-editorial-attention]").textContent, "需要人看 1 处");
     assert.equal(end.host.querySelector("[data-editorial-now]").textContent, "全部翻完了");
     assert.equal(end.host.querySelector("[data-editorial-glossary-hint]"), null, "提示过几条事件就收起");
-    assert.equal(end.host.querySelectorAll(".editorial-room-stage-pile-page").length, 6);
+    assert.equal(end.host.querySelectorAll(".editorial-room-office-sheet, .editorial-room-office-tag").length, 0, "跑完了传送带上没有稿子、没人忙");
   } finally {
     end.unmount();
   }

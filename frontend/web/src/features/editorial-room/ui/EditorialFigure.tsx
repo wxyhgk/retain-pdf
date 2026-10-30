@@ -53,6 +53,8 @@ export function EditorialFigure({ role, busy }: { role: FigureRole; busy: boolea
     <svg
       className={`editorial-room-fig is-${role}${busy ? " is-busy" : ""}`}
       viewBox="0 0 64 68"
+      width={64}
+      height={68}
       aria-hidden="true"
       focusable="false"
     >

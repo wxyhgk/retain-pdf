@@ -22,8 +22,10 @@
 
 @import "../../features/editorial-room/ui/EditorialRoom.css";
 @import "../../features/editorial-room/ui/EditorialStage.css";
+@import "../../features/editorial-room/ui/office/EditorialOffice.css";
 @import "../../features/editorial-room/ui/EditorialFloor.css";
 @import "../../features/editorial-room/ui/EditorialPageSheet.css";
 @import "../../features/editorial-room/ui/EditorialFigure.css";
+@import "../../features/editorial-room/ui/EditorialRobot.css";
 @import "../../features/editorial-room/ui/EditorialSidePanels.css";
 @import "../../features/editorial-room/ui/EditorialRoomReplay.css";

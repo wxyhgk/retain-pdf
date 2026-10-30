@@ -1,0 +1,79 @@
+/* 编辑部的小机器人（EditorialRobot）：线描沿用小人的 editorial-room-fig-line，壳子取强调色的弱色。
+ *
+ * @owns editorial-room */
+
+.editorial-room-robot {
+  overflow: visible;
+  opacity: 0.6;
+  transition: opacity 260ms var(--ease-out);
+}
+
+.editorial-room-robot.is-busy {
+  opacity: 1;
+}
+
+.editorial-room-robot-shell.editorial-room-fig-line,
+.editorial-room-robot-chest.editorial-room-fig-line {
+  fill: color-mix(in srgb, var(--accent) 14%, var(--paper));
+}
+
+.editorial-room-robot-base.editorial-room-fig-line {
+  fill: color-mix(in srgb, var(--ink) 18%, var(--paper));
+}
+
+.editorial-room-robot-eye {
+  fill: var(--ink);
+}
+
+.editorial-room-robot-bulb {
+  fill: var(--line);
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.editorial-room-robot.is-busy .editorial-room-robot-bulb {
+  fill: var(--ok);
+  animation: editorial-room-breathe 900ms var(--ease-in-out) infinite;
+}
+
+.editorial-room-robot-arm,
+.editorial-room-robot-eyes {
+  transform-box: fill-box;
+}
+
+.editorial-room-robot-arm {
+  transform-origin: 0% 0%;
+}
+
+.editorial-room-robot-eyes {
+  transform-origin: 50% 50%;
+}
+
+.editorial-room-robot.is-busy .editorial-room-robot-arm {
+  animation: editorial-room-robot-wave 700ms var(--ease-in-out) infinite;
+}
+
+.editorial-room-robot.is-busy .editorial-room-robot-eyes {
+  animation: editorial-room-robot-blink 3.2s var(--ease-in-out) infinite;
+}
+
+@keyframes editorial-room-robot-wave {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(-14deg);
+  }
+}
+
+@keyframes editorial-room-robot-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.15);
+  }
+}
