@@ -23,7 +23,7 @@ type PageScript = {
 };
 
 const PAGES: PageScript[] = [
-  { blocks: 6, checks: [[5, 0, 1, { number_lost: 1 }], [6, 0, 0, {}]], review: [4, 2, 1, 1] },
+  { blocks: 6, checks: [[5, 0, 1, { untranslated: 1 }], [6, 0, 0, {}]], review: [4, 2, 1, 1] },
   {
     blocks: 8,
     checks: [[7, 1, 0, { term_mismatch: 1 }]],
@@ -45,7 +45,7 @@ const PAGES: PageScript[] = [
       { type: "glossary_changed", version: 4, action: "candidate", source: "reading order", target: "阅读顺序" },
     ],
   },
-  { blocks: 9, checks: [[7, 2, 0, { footnote_lost: 2 }]], review: [7, 1, 1, 0] },
+  { blocks: 9, checks: [[7, 2, 0, { english_residue: 1, name_first_use: 1, hedge_lost: 1 }]], review: [7, 1, 1, 0] },
   {
     blocks: 4,
     checks: [[4, 0, 0, {}]],
@@ -91,7 +91,7 @@ export function buildDemoEditorialRun(options: { stopAfterPage?: number } = {}):
   push(1, { type: "reading_started" });
   push(3, { type: "glossary_changed", version: 1, action: "add", source: "bounding box", target: "边界框" });
   push(2, { type: "glossary_changed", version: 2, action: "add", source: "layout analysis", target: "版面分析" });
-  push(3, { type: "reading_done", genre: "science_paper", name_policy: "keep", terms: 22, headings: 43 });
+  push(3, { type: "reading_done", genre: "science_paper", name_policy: "transliterate", terms: 22, headings: 43 });
 
   head(1);
   tail(1);

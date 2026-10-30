@@ -122,3 +122,31 @@ test("回放节奏：按 ts 差算，压在最短、最长之间，倍速按比�
   assert.equal(replayDelayMs(a, { ...b, ts: 3600 }, 4), REPLAY_MAX_GAP_MS / 4);
   assert.equal(replayDelayMs(a, { ...b, ts: 3600 }, 0), REPLAY_MAX_GAP_MS, "倍速给 0 当 1 倍");
 });
+
+test("模型调用按 role 记到工位：审校的请求算审校中；缺省 role 当译者", () => {
+  const events = parseEditorialEvents([
+    { v, ts: 0, type: "run_started", pages: 1, model: "m", doc_title: "t" },
+    { v, ts: 1, type: "page_started", page: 1, label: "1", blocks: 3 },
+    { v, ts: 2, type: "translate_call", page: 1, attempt: 1, blocks: [] },
+    { v, ts: 3, type: "check_result", page: 1, attempt: 1, ok: 3, warn: 0, error: 0, codes: {} },
+    { v, ts: 4, type: "translate_call", page: 1, attempt: 1, blocks: [], role: "reviewer" },
+  ]);
+  assert.equal(events[2].role, "translator");
+  assert.equal(stationPages(roomStateAt(events, 3)).translator.page, 1);
+  const reviewing = roomStateAt(events, 5);
+  assert.equal(stationPages(reviewing).reviewer.page, 1);
+  assert.equal(stationPages(reviewing).translator, null);
+  assert.match(narrate(events[4]).text, /审校/);
+});
+
+test("广播只念不合格和警告的代码，info（只算指标）不念；不认识的代码照原样", () => {
+  const [event] = parseEditorialEvents([
+    { v, ts: 0, type: "check_result", page: 2, attempt: 1, ok: 4, warn: 1, error: 1,
+      codes: { footnote_mark_lost: 1, term_mismatch: 1, hedge_lost: 2, review_fluency: 1, brand_new_code: 1 } },
+  ]);
+  const text = narrate(event).text;
+  assert.match(text, /脚注标记丢了 1/);
+  assert.match(text, /术语没照用 1/);
+  assert.match(text, /brand_new_code 1/);
+  assert.doesNotMatch(text, /hedge_lost|review_fluency/);
+});

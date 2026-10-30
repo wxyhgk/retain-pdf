@@ -11,18 +11,19 @@ export const STOP_REASON_TEXT: Record<string, string> = {
   rate_limited: "请求太快被限流，稍后接着跑",
 };
 
+// 取值以后端 docs/ops/planning/translation-agent/20261030-编辑部可视化和事件格式.md 为准（只加不改）。
 export const GENRE_TEXT: Record<string, string> = {
-  science_paper: "科研论文",
+  science_paper: "理工论文",
   textbook: "教科书",
-  manual: "技术手册",
-  humanities: "人文文章",
-  fiction: "小说",
+  technical_manual: "技术手册",
+  humanities: "人文社科",
+  popular_book: "通俗读物",
+  other: "其他",
 };
 
 export const NAME_POLICY_TEXT: Record<string, string> = {
   keep: "人名保留原文",
-  translate: "人名译成中文",
-  mixed: "人名首次出现附原文",
+  transliterate: "人名用中文译名（首次括注原文）",
 };
 
 const GLOSSARY_ACTION_TEXT: Record<string, string> = {
@@ -33,15 +34,44 @@ const GLOSSARY_ACTION_TEXT: Record<string, string> = {
   candidate: "记为候选",
 };
 
-// 质检代码：后端以后可能加新的，不认识的照原样显示。
+// 质检代码：error 记不合格、warn 记警告，info 只算指标、不进广播。后端以后可能加新的，不认识的照原样显示。
 export const CHECK_CODE_TEXT: Record<string, string> = {
-  number_lost: "数字丢了",
+  // error
+  missing: "漏交",
+  empty: "译文为空",
+  formula_unbalanced: "公式符号不成对",
   formula_changed: "公式变了",
-  numbering_changed: "编号变了",
-  footnote_lost: "脚注标记丢了",
-  untranslated: "漏翻",
-  term_mismatch: "术语不一致",
+  code_changed: "行内代码变了",
+  citation_lost: "引用标记丢了",
+  footnote_mark_lost: "脚注标记丢了",
+  footnote_number_changed: "脚注编号变了",
+  untranslated: "没翻",
+  no_chinese: "译文里没有中文",
+  stray_english: "夹着没翻的英文",
+  too_short: "译文太短可能截断",
+  group_break: "跨栏段落断点放错",
+  group_overlap: "跨栏段落前后重复",
+  keep_original_lost: "该保留原文的专名被翻了",
+  name_mismatch: "人名译法不一致",
+  abbr_first_use: "缩写首次没写全称",
+  still_too_long: "改稿后仍超长",
+  fallback_source: "退回原文待人看",
+  // warn
+  number_lost: "数字可能丢了",
+  english_residue: "英文残留较多",
+  too_long: "译文偏长",
+  group_share: "断点位置可能挪了",
+  group_split_by_program: "断点由程序切开",
+  group_merged: "整段放进了第一块",
+  mark_moved: "标记挪到了同段另一块",
+  duplicate: "同一块交了两次",
+  term_mismatch: "术语没照用",
+  abbr_lost: "缩写没保留",
+  name_first_use: "人名首次没括注原文",
 };
+
+/** 只算指标的代码（info），不进广播。 */
+const isInfoCode = (code: string) => code === "hedge_lost" || code === "person_lost" || code.startsWith("review_");
 
 export const stopReasonText = (reason: string) => STOP_REASON_TEXT[reason] || `停下了（${reason || "原因未知"}）`;
 export const genreText = (genre: string) => GENRE_TEXT[genre] || genre || "未定";
@@ -51,7 +81,7 @@ export const checkCodeText = (code: string) => CHECK_CODE_TEXT[code] || code;
 
 function codesText(codes: Record<string, number>): string {
   const parts = Object.entries(codes)
-    .filter(([, n]) => n > 0)
+    .filter(([code, n]) => n > 0 && !isInfoCode(code))
     .map(([code, n]) => `${checkCodeText(code)} ${n}`);
   return parts.length ? `（${parts.join("、")}）` : "";
 }
@@ -70,6 +100,9 @@ export function narrate(event: EditorialEvent): Narration {
     case "page_started":
       return { text: `调度把第 ${event.label || event.page} 页（${event.blocks} 块）派给译者`, tone: "neutral" };
     case "translate_call":
+      if (event.role === "reviewer") return { text: `审校在审第 ${event.page} 页`, tone: "neutral" };
+      if (event.role === "reviser") return { text: `修订在改第 ${event.page} 页`, tone: "neutral" };
+      if (event.role === "reader") return { text: "通读员在读全书", tone: "neutral" };
       return event.attempt > 1
         ? { text: `译者重翻第 ${event.page} 页的 ${event.blocks.length || "几"} 块（第 ${event.attempt} 次）`, tone: "warn" }
         : { text: `译者开始翻第 ${event.page} 页`, tone: "neutral" };

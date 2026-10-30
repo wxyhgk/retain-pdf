@@ -16,7 +16,8 @@ export type EditorialEvent =
   | (Base & { type: "reading_started" })
   | (Base & { type: "reading_done"; genre: string; name_policy: string; terms: number; headings: number })
   | (Base & { type: "page_started"; page: number; label: string; blocks: number })
-  | (Base & { type: "translate_call"; page: number; attempt: number; blocks: string[] })
+  // role：translator 译者（缺省）、reviewer 审校、reviser 改稿、reader 通读。现在每个角色只有一个。
+  | (Base & { type: "translate_call"; page: number; attempt: number; blocks: string[]; role: string })
   | (Base & {
       type: "check_result";
       page: number;
@@ -66,7 +67,12 @@ const READERS: Record<EditorialEventType, (raw: Rec) => Rec> = {
     headings: num(r.headings),
   }),
   page_started: (r) => ({ page: num(r.page), label: str(r.label ?? r.page), blocks: num(r.blocks) }),
-  translate_call: (r) => ({ page: num(r.page), attempt: num(r.attempt) || 1, blocks: strList(r.blocks) }),
+  translate_call: (r) => ({
+    page: num(r.page),
+    attempt: num(r.attempt) || 1,
+    blocks: strList(r.blocks),
+    role: str(r.role) || "translator",
+  }),
   check_result: (r) => ({
     page: num(r.page),
     attempt: num(r.attempt) || 1,

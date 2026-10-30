@@ -23,12 +23,14 @@
 
 ## 事件和状态
 
-后端事件格式（`editorial.v1`）以后端文档为准，前端的类型在 `domain/events.ts`。前端怎么处理：
+后端事件格式（`editorial.v1`）和各字段的取值全集以后端文档为准（`docs/ops/planning/translation-agent/` 下的「编辑部可视化和事件格式」），前端的类型在 `domain/events.ts`，中文文案在 `domain/narration.ts`。前端怎么处理：
 
 - `parseEditorialEvent`：版本不是 `editorial.v1`、`type` 不认识的整条跳过；缺的字段给 0 或空串；多的字段不管。后端约定只加不改，新加的事件类型前端没跟上时只是不显示。
 - `reduceEditorialEvent`：一条事件叠到状态上，纯函数。每页有一个阶段（待派、已派、翻译中、质检、退回重翻、审校中、修订中、定稿）。工位手上是哪一页不单独记，由阶段推出来；同一工位有几页时显示最近动过的那页。
 - 质检数按每页最近一次算，重翻的块不重复计；定稿后按 `page_done` 的终态算。
 - `run_stopped` 只改状态和原因，各页停在原地，接着跑时后端再推事件即可。
+- `translate_call` 按 `role` 记到工位：缺省和 `translator` 是译者，`reviewer` 算审校中，`reviser` 算修订中，`reader` 不动页。
+- 质检代码分 error、warn、info 三级；广播只念 error 和 warn，info（`hedge_lost`、`person_lost`、`review_*`）只算指标不念。不认识的代码照原样显示。
 
 ## 以后接真实进度
 

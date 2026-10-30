@@ -151,6 +151,10 @@ function applyEvent(state: RoomState, event: EditorialEvent): RoomState {
         })),
       };
     case "translate_call":
+      // 不是译者的模型调用记到各自的工位上：审校的请求算审校中，改稿的算修订中，通读的不动页。
+      if (event.role === "reviewer") return { ...state, pages: withPage(state, event.page, () => ({ stage: "reviewing" })) };
+      if (event.role === "reviser") return { ...state, pages: withPage(state, event.page, () => ({ stage: "revising" })) };
+      if (event.role === "reader") return state;
       return {
         ...state,
         pages: withPage(state, event.page, () => ({ stage: "translating", attempt: event.attempt })),
