@@ -8,6 +8,7 @@
 - [统一 React SPA 目标架构](./spa-architecture.md)
 - [主题皮肤系统](./theme-system/THEME_SYSTEM.md)
 - [主页与阅读器软导航](./reader-home-navigation/soft-reader-no-refresh.md)
+- [翻译编辑部可视化组件](./editorial-room.md) —— 翻译 agent 各角色分工的动画，editorial.v1 事件回放
 - [历史前端优化记录](../../ops/reports/frontend-optimization-notes.md)
 - [React 迁移计划与审计](../../ops/planning/frontend-migration/)
 - [前端状态 Smoke 最新报告](../../ops/reports/frontend-status-smoke-latest.json)

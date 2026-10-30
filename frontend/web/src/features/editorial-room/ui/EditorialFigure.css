@@ -1,0 +1,153 @@
+/* 编辑部的小人（EditorialFigure）：线描用墨色，衣服按角色取皮肤的弱色；闲着半透明不动，忙起来头和手会动。
+ *
+ * @owns editorial-room */
+
+.editorial-room-fig {
+  width: 66px;
+  height: 70px;
+  overflow: visible;
+  opacity: 0.55;
+  transition: opacity 260ms var(--ease-out);
+}
+
+.editorial-room-fig.is-busy {
+  opacity: 1;
+}
+
+.editorial-room-fig-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.editorial-room-fig-skin.editorial-room-fig-line {
+  fill: var(--paper);
+}
+
+.editorial-room-fig-hair {
+  fill: var(--ink);
+  opacity: 0.82;
+}
+
+.editorial-room-fig-cloth.editorial-room-fig-line {
+  fill: var(--accent-weak);
+}
+
+.editorial-room-fig.is-reader .editorial-room-fig-cloth.editorial-room-fig-line {
+  fill: var(--gold-weak);
+}
+
+.editorial-room-fig.is-reviewer .editorial-room-fig-cloth.editorial-room-fig-line {
+  fill: var(--ok-weak);
+}
+
+.editorial-room-fig-paper {
+  fill: var(--paper);
+  stroke: var(--ink);
+  stroke-width: 1.4;
+  stroke-linejoin: round;
+}
+
+.editorial-room-fig-glass.editorial-room-fig-line {
+  fill: color-mix(in srgb, var(--paper) 70%, transparent);
+}
+
+.editorial-room-fig-desk {
+  stroke: var(--line);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+/* 动的部件都以自己的包围盒为基准转。 */
+.editorial-room-fig-head,
+.editorial-room-fig-arms,
+.editorial-room-fig-prop,
+.editorial-room-fig-pen {
+  transform-box: fill-box;
+}
+
+.editorial-room-fig-head {
+  transform-origin: 50% 100%;
+}
+
+.editorial-room-fig-pen {
+  transform-origin: 0% 100%;
+}
+
+.editorial-room-fig.is-busy .editorial-room-fig-head {
+  animation: editorial-room-nod 1.8s var(--ease-in-out) infinite;
+}
+
+/* 通读员：捧着书一页页看，书微微起伏。 */
+.editorial-room-fig.is-reader.is-busy .editorial-room-fig-prop {
+  animation: editorial-room-book 2.4s var(--ease-in-out) infinite;
+}
+
+/* 译者：低头写，笔来回划。 */
+.editorial-room-fig.is-translator.is-busy .editorial-room-fig-pen {
+  animation: editorial-room-pen 520ms var(--ease-in-out) infinite;
+}
+
+.editorial-room-fig.is-translator.is-busy .editorial-room-fig-arms {
+  animation: editorial-room-arms 520ms var(--ease-in-out) infinite;
+}
+
+/* 审校：放大镜左右扫。 */
+.editorial-room-fig.is-reviewer.is-busy .editorial-room-fig-lens {
+  animation: editorial-room-scan 1.6s var(--ease-in-out) infinite;
+}
+
+@keyframes editorial-room-nod {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  40% {
+    transform: rotate(-4deg) translateY(1px);
+  }
+  70% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes editorial-room-book {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  50% {
+    transform: translateY(-2px) rotate(-3deg);
+  }
+}
+
+@keyframes editorial-room-pen {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  50% {
+    transform: translate(-3px, 2px) rotate(-10deg);
+  }
+}
+
+@keyframes editorial-room-arms {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(1px);
+  }
+}
+
+@keyframes editorial-room-scan {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(-12px) translateY(4px);
+  }
+}

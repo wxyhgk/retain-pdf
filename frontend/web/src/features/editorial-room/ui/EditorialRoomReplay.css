@@ -1,0 +1,140 @@
+/* 编辑部回放的按钮条，和演示页（editorial.html）的外框。
+ *
+ * @owns editorial-room */
+
+.editorial-room-replay {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.editorial-room-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+}
+
+.editorial-room-control {
+  display: inline-flex;
+  height: 30px;
+  min-width: 30px;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--btn-radius);
+  color: var(--ink);
+  background: var(--paper);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 160ms var(--ease-out), transform 120ms var(--ease-out);
+}
+
+.editorial-room-control:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.editorial-room-control:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.editorial-room-control:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.editorial-room-control.is-primary {
+  border-color: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+  background: var(--btn-primary-bg);
+}
+
+.editorial-room-control.is-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--btn-primary-bg) 88%, var(--paper));
+}
+
+.editorial-room-control svg {
+  width: 14px;
+  height: 14px;
+}
+
+.editorial-room-scrubber {
+  flex: 1;
+  min-width: 120px;
+  accent-color: var(--accent);
+}
+
+.editorial-room-count {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.editorial-room-speeds {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.editorial-room-speed {
+  height: 26px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 160ms var(--ease-out), color 160ms var(--ease-out);
+}
+
+.editorial-room-speed.is-active {
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--shadow-color) 12%, transparent);
+}
+
+/* —— 演示页 —— */
+
+.editorial-room-demo {
+  display: grid;
+  gap: 16px;
+  max-width: 1240px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 28px 16px 40px;
+}
+
+.editorial-room-demo-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.editorial-room-demo-head h1 {
+  font-size: 22px;
+}
+
+.editorial-room-demo-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 640px) {
+  .editorial-room-controls {
+    border-radius: 16px;
+  }
+}

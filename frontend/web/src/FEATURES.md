@@ -67,6 +67,7 @@ app  ──►  features  ──►  platform
 | `app-update` | 应用更新 |
 | `admin` | 管理后台 `admin.html`（多用户模式、管理员）：账号、用量、页数、任务 |
 | `notify` | 任务跑完的提醒：页面提示、系统通知、标签页标题记号，设置里的「通知」分栏 |
+| `editorial-room` | 翻译编辑部：翻译 agent 各角色分工、一页稿子怎么流转的动画（`editorial.html` 演示页，见 `docs/core/frontend/editorial-room.md`） |
 
 每个功能内部固定两层，`index.ts` 是唯一出口：
 

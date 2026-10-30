@@ -1,0 +1,303 @@
+/* 编辑部车间：七个工位排成一条流水线，工位之间有箭头；工位上的稿纸、质检灯、调度看板、归档架。
+ *
+ * @owns editorial-room */
+
+.editorial-room-floor {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-room-station {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 78px minmax(62px, auto) auto;
+  gap: 6px;
+  min-width: 0;
+  padding: 10px 9px;
+  border: 1px solid var(--line);
+  border-radius: var(--editorial-room-radius);
+  background: var(--editorial-room-card);
+  transition:
+    border-color 260ms var(--ease-out),
+    box-shadow 260ms var(--ease-out),
+    background 260ms var(--ease-out);
+}
+
+/* 工位之间的箭头（最后一个没有）。 */
+.editorial-room-station:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 58px;
+  right: -9px;
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  border-top: 1.5px solid var(--muted);
+  border-right: 1.5px solid var(--muted);
+  opacity: 0.5;
+  transform: rotate(45deg);
+}
+
+.editorial-room-station.is-busy {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: var(--paper);
+  box-shadow: 0 0 0 3px var(--accent-weak);
+}
+
+.editorial-room-station-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  min-width: 0;
+}
+
+.editorial-room-station-head strong {
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorial-room-station-kind {
+  flex: none;
+  padding: 0 6px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--bg);
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.editorial-room-station.is-ai .editorial-room-station-kind {
+  color: var(--ink);
+  background: var(--accent-weak);
+}
+
+.editorial-room-station-visual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+
+.editorial-room-station-desk {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.editorial-room-station-empty {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.editorial-room-station-empty:empty {
+  border-color: transparent;
+}
+
+.editorial-room-station-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.editorial-room-station.is-busy .editorial-room-station-note {
+  color: var(--ink);
+}
+
+/* —— 程序工位画成机器 —— */
+
+.editorial-room-machine {
+  display: inline-flex;
+  width: 52px;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--muted);
+  background: var(--paper);
+}
+
+.editorial-room-machine svg {
+  width: 22px;
+  height: 22px;
+}
+
+.editorial-room-machine.is-busy {
+  color: var(--ink);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+
+.editorial-room-machine.is-busy svg {
+  animation: editorial-room-scribble 900ms var(--ease-in-out) infinite;
+}
+
+/* 质检三盏灯 */
+.editorial-room-lamps {
+  display: inline-flex;
+  gap: 7px;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper);
+}
+
+.editorial-room-lamp {
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  transition: background 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
+}
+
+.editorial-room-lamp.is-ok.is-lit {
+  border-color: var(--ok);
+  background: var(--ok);
+  box-shadow: 0 0 0 4px var(--ok-weak);
+}
+
+.editorial-room-lamp.is-warn.is-lit {
+  border-color: var(--warn);
+  background: var(--warn);
+  box-shadow: 0 0 0 4px var(--warn-weak);
+}
+
+.editorial-room-lamp.is-error.is-lit {
+  border-color: var(--danger);
+  background: var(--danger);
+  box-shadow: 0 0 0 4px var(--danger-weak);
+  animation: editorial-room-breathe 900ms var(--ease-in-out) 3;
+}
+
+/* 调度看板：还没派的页 */
+.editorial-room-kanban {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.editorial-room-kanban > svg {
+  width: 20px;
+  height: 20px;
+}
+
+.editorial-room-kanban-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3px;
+  max-width: 84px;
+}
+
+.editorial-room-kanban-tile,
+.editorial-room-kanban-more {
+  display: inline-flex;
+  min-width: 16px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 3px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.editorial-room-kanban-more {
+  border-style: dashed;
+  color: var(--muted);
+}
+
+/* 归档架：定稿的页一本本立着 */
+.editorial-room-shelf {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.editorial-room-shelf > svg {
+  width: 20px;
+  height: 20px;
+}
+
+.editorial-room-shelf-pages {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  min-height: 24px;
+  padding-bottom: 2px;
+  border-bottom: 2px solid var(--line);
+}
+
+.editorial-room-shelf-page {
+  width: 7px;
+  height: 22px;
+  border-radius: 2px 2px 0 0;
+  background: color-mix(in srgb, var(--ok) 55%, var(--paper));
+  animation: editorial-room-pop 360ms var(--ease-out);
+  transform-origin: bottom;
+}
+
+.editorial-room-shelf-page.has-fallback {
+  background: linear-gradient(to bottom, var(--danger) 0 5px, color-mix(in srgb, var(--ok) 55%, var(--paper)) 5px);
+}
+
+/* —— 窄屏：一行放不下七个工位 —— */
+
+@media (max-width: 1080px) {
+  .editorial-room-floor {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .editorial-room-station:nth-child(4n)::after {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .editorial-room-floor {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editorial-room-station:nth-child(4n)::after {
+    display: block;
+  }
+
+  .editorial-room-station:nth-child(2n)::after {
+    display: none;
+  }
+}
+
+@keyframes editorial-room-scribble {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0);
+  }
+  25% {
+    transform: translate(2px, -1px) rotate(-6deg);
+  }
+  75% {
+    transform: translate(-2px, 1px) rotate(5deg);
+  }
+}
+

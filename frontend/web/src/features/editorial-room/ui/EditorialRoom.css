@@ -1,0 +1,355 @@
+/* 翻译编辑部的外壳：标题和状态、累计数字、车间 + 侧栏的布局、每页进度条、广播、筹备中的工位。
+ * 颜色只用皮肤的语义变量（--ink / --paper / --ok / --warn / --danger …），换肤跟着变。
+ *
+ * @owns editorial-room */
+
+.editorial-room {
+  --editorial-room-radius: 14px;
+  --editorial-room-gap: 12px;
+  --editorial-room-card: color-mix(in srgb, var(--paper) 72%, var(--bg));
+
+  display: grid;
+  gap: var(--editorial-room-gap);
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-sans);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--shadow-color) 6%, transparent);
+}
+
+/* 停下了：稿纸上不再写字（小人和机器停不停由 busy 决定，见 EditorialFloor）。
+   不能对所有元素暂停动画——一次性的出场动画会被定在第一帧，数字和条目半透明。 */
+.editorial-room.is-stopped .editorial-room-sheet-lines {
+  animation: none;
+}
+
+.editorial-room-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+}
+
+.editorial-room-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  min-width: 0;
+}
+
+.editorial-room-title strong {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.editorial-room-doc {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.editorial-room-model {
+  padding: 1px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.editorial-room-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.editorial-room-status::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.editorial-room-status.is-reading {
+  color: var(--gold);
+  background: var(--gold-weak);
+}
+
+.editorial-room-status.is-running {
+  color: var(--ink);
+  background: var(--accent-weak);
+}
+
+.editorial-room-status.is-reading::before,
+.editorial-room-status.is-running::before {
+  animation: editorial-room-breathe 1.4s var(--ease-in-out) infinite;
+}
+
+.editorial-room-status.is-stopped {
+  color: var(--danger);
+  background: var(--danger-weak);
+}
+
+.editorial-room-status.is-done {
+  color: var(--ok);
+  background: var(--ok-weak);
+}
+
+/* —— 累计数字 —— */
+
+.editorial-room-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(88px, 1fr));
+  gap: 6px;
+  margin: 0;
+}
+
+.editorial-room-stat {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--editorial-room-card);
+}
+
+.editorial-room-stat dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.editorial-room-stat dd {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  animation: editorial-room-pop 360ms var(--ease-out);
+}
+
+.editorial-room-stat.is-ok dd {
+  color: var(--ok);
+}
+
+.editorial-room-stat.is-warn dd {
+  color: var(--warn);
+}
+
+.editorial-room-stat.is-danger dd {
+  color: var(--danger);
+}
+
+.editorial-room-stat.is-accent dd {
+  color: var(--accent);
+}
+
+/* —— 车间 + 侧栏 —— */
+
+.editorial-room-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 248px;
+  gap: var(--editorial-room-gap);
+  align-items: start;
+}
+
+.editorial-room-side {
+  display: grid;
+  gap: var(--editorial-room-gap);
+  min-width: 0;
+}
+
+/* —— 每页走到哪了 —— */
+
+.editorial-room-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-room-rail-page {
+  position: relative;
+  display: grid;
+  min-width: 58px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--paper);
+  transition: background 240ms var(--ease-out), border-color 240ms var(--ease-out);
+}
+
+.editorial-room-rail-label {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.editorial-room-rail-stage {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.editorial-room-rail-page.is-waiting {
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.editorial-room-rail-page.is-queued,
+.editorial-room-rail-page.is-translating,
+.editorial-room-rail-page.is-checking,
+.editorial-room-rail-page.is-reviewing,
+.editorial-room-rail-page.is-revising {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: var(--accent-weak);
+}
+
+.editorial-room-rail-page.is-retrying {
+  border-color: color-mix(in srgb, var(--warn) 55%, var(--line));
+  background: var(--warn-weak);
+}
+
+.editorial-room-rail-page.is-done {
+  border-color: color-mix(in srgb, var(--ok) 40%, var(--line));
+  background: var(--ok-weak);
+}
+
+.editorial-room-rail-page.has-fallback::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--danger);
+}
+
+/* —— 广播 —— */
+
+.editorial-room-log {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--editorial-room-card);
+  list-style: none;
+  font-size: 12px;
+}
+
+.editorial-room-log-line {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.editorial-room-log-line::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  transform: translateY(-1px);
+}
+
+.editorial-room-log-line.is-latest {
+  color: var(--ink);
+  font-weight: 600;
+  animation: editorial-room-slide-down 320ms var(--ease-out);
+}
+
+.editorial-room-log-line.is-ok::before {
+  background: var(--ok);
+}
+
+.editorial-room-log-line.is-warn::before {
+  background: var(--warn);
+}
+
+.editorial-room-log-line.is-danger::before {
+  background: var(--danger);
+}
+
+.editorial-room-log-line.is-neutral::before {
+  background: var(--muted);
+}
+
+/* —— 窄屏 —— */
+
+@media (max-width: 1080px) {
+  .editorial-room-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .editorial-room-side {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .editorial-room {
+    padding: 12px;
+    border-radius: 16px;
+  }
+}
+
+/* —— 共用动效 —— */
+
+@keyframes editorial-room-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes editorial-room-pop {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes editorial-room-slide-down {
+  from {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes editorial-room-slide-in {
+  from {
+    transform: translateX(-18px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
