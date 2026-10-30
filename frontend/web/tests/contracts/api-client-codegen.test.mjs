@@ -21,6 +21,7 @@ const { fetchDocumentList, fetchDocumentByJobId, patchDocument, deleteDocument }
 const { listCollections, materializeCollectionWorkspace, removeDocumentFromCollection } = await import("@retainpdf/api/collections");
 const { jobBoardFileUrl, listJobBoard } = await import("@retainpdf/api/ai");
 const { buildUploadsEndpoint } = await import("@retainpdf/api/http");
+const glossaries = await import("@retainpdf/api/glossaries");
 const { searchLibrary } = await import("@retainpdf/api/search");
 
 function respond(status, body) {
@@ -139,13 +140,51 @@ test("契约里还没有的几条借 request() 发：物化文件夹工作区用
   assert.equal(buildUploadsEndpoint("/api/v1"), "http://127.0.0.1:41000/api/v1/uploads");
 });
 
+test("术语表走生成的函数：地址、方法、请求体，报错文案和以前一样", async () => {
+  const list = await withFetch(
+    () => respond(200, { code: 0, data: { items: [{ glossary_id: "g-1", name: "术语" }] } }),
+    async () => assert.equal((await glossaries.fetchGlossaries("/api/v1")).items[0].glossary_id, "g-1"),
+  );
+  assert.equal(list[0].url, "http://127.0.0.1:41000/api/v1/glossaries");
+  assert.equal(list[0].init.method, undefined);
+
+  const put = await withFetch(
+    () => respond(200, { code: 0, data: { glossary_id: "g/1" } }),
+    () => glossaries.updateGlossary("/api/v1", " g/1 ", { name: "新", entries: [] }),
+  );
+  assert.equal(put[0].url, "http://127.0.0.1:41000/api/v1/glossaries/g%2F1");
+  assert.equal(put[0].init.method, "PUT");
+  assert.deepEqual(JSON.parse(put[0].init.body), { name: "新", entries: [] });
+
+  const csv = await withFetch(
+    () => respond(200, { code: 0, data: { entries: [] } }),
+    () => glossaries.parseGlossaryCsv("/api/v1", "source,target"),
+  );
+  assert.equal(csv[0].url, "http://127.0.0.1:41000/api/v1/glossaries/parse-csv");
+  assert.equal(csv[0].init.method, "POST");
+  assert.deepEqual(JSON.parse(csv[0].init.body), { csv_text: "source,target" });
+
+  await withFetch(
+    () => respond(400, { code: 40000, message: "entries[0].target 不能为空" }),
+    async () => {
+      await assert.rejects(glossaries.updateGlossary("/api/v1", "g-1", {}), { message: "保存术语表失败: 400 entries[0].target 不能为空" });
+      await assert.rejects(glossaries.deleteGlossary("/api/v1", "g-1"), { message: "删除术语表失败: 400 entries[0].target 不能为空" });
+      await assert.rejects(glossaries.createGlossary("/api/v1", {}), { message: "提交失败: 400 entries[0].target 不能为空" });
+      await assert.rejects(glossaries.fetchGlossaries("/api/v1"), { message: "读取术语表失败，请稍后重试。(400)" });
+    },
+  );
+  const none = await withFetch(() => respond(200, {}), () => assert.rejects(glossaries.fetchGlossary("  "), { message: "读取术语表失败: 缺少 glossary_id" }));
+  assert.equal(none.length, 0, "没有编号不发请求");
+});
+
 // 手写发请求：apiFetch(、submitJson(、fetchImpl(、submitUploadRequest(、XHR。函数定义那一行不算；
 // 生成层走 request.ts 的 (options.fetchImpl || apiFetch)(…)，不在数里。
 const HAND_WRITTEN_REQUEST = /apiFetch\(|submitJson\(|fetchImpl\(|submitUploadRequest\(|new XMLHttpRequest/g;
 
 test("packages/api 里手写发请求的地方只减不增，新接口走生成的函数", () => {
-  // 第 0 期前 66 处，第 1 期换完 36 处，第 2 期删掉没人调的封装后 34 处（剩下的是设置类、AI、多用户和文件上传）。
-  const BASELINE = 34;
+  // 第 0 期前 66 处，第 1 期换完 36 处，第 2 期删掉没人调的封装后 34 处，术语表换完 28 处
+  // （剩下的是设置类其余几组、AI、多用户和文件上传、下载）。
+  const BASELINE = 28;
   const srcRoot = resolve(apiPackage, "src");
   let count = 0;
   const walk = (dir) => {
