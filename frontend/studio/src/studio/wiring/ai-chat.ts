@@ -88,7 +88,39 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		changed: () => void chatList.refresh(),
 		// What it changed in the article open, held while it worked: looked over now, all at once.
 		turnOver: () => lookOverHeld(),
+		attention: (what) => wanted(what),
 	});
+
+	/**
+	 * The AI wants the author (it waits for leave, or is done) while its panel is out of sight (another tab, the panel
+	 * shut, the window behind another): a dot on its tab and in the window's title, and for what waits a message
+	 * to go to it; all gone once the panel is in sight.
+	 */
+	let calledFor = '';
+	const aiTab = () => document.getElementById('side-tab-ai');
+	function inSight(): boolean {
+		return !aiPane.hidden && aiPane.getClientRects().length > 0 && document.visibilityState === 'visible' && document.hasFocus();
+	}
+	function wanted(what: { kind: 'asking' | 'done'; title: string } | null): void {
+		if (!what || inSight()) return;
+		const said = `${what.kind}:${what.title}`;
+		if (said === calledFor) return;
+		calledFor = said;
+		aiTab()?.setAttribute('data-attention', what.kind);
+		if (!document.title.startsWith('● ')) document.title = `● ${document.title}`;
+		const title = what.title.split('\n')[0].slice(0, 60);
+		if (what.kind === 'asking') showToast(t('AI 在等你：{title}', { title }), { action: { label: t('去看看'), run: showAi } });
+		else showToast(t('AI 做完了：{title}', { title }), { action: { label: t('去看看'), run: showAi } });
+	}
+	function seen(): void {
+		if (!inSight() || !calledFor) return;
+		calledFor = '';
+		aiTab()?.removeAttribute('data-attention');
+		if (document.title.startsWith('● ')) document.title = document.title.slice(2);
+	}
+	new IntersectionObserver(seen).observe(aiPane);
+	window.addEventListener('focus', seen);
+	document.addEventListener('visibilitychange', seen);
 
 	/** What the AI changed in the article open while it worked, looked over now, all at once. */
 	function lookOverHeld(): void {

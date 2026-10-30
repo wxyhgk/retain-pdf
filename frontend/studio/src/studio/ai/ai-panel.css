@@ -414,3 +414,7 @@ details.ai-compaction > summary { cursor: pointer; }
 .ai-input.math-editor .milkdown .ProseMirror .pm-math-preview-body { top: auto; bottom: 1.25em; }
 .ai-input.math-editor .milkdown .ProseMirror .pm-math-preview-body::before { top: auto; bottom: -6px; border-width: 6px 6px 0; border-color: #1c1c1c transparent transparent; }
 html[data-theme='dark'] .ai-input.math-editor .milkdown .ProseMirror .pm-math-preview-body::before { border-color: #f3f3f3 transparent transparent; }
+
+/* The AI wants the author (it waits for leave, or is done) while its panel is out of sight: a dot on its tab (ai-chat.ts). */
+#side-tab-ai[data-attention] { position: relative; }
+#side-tab-ai[data-attention]::after { position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; border-radius: 50%; background: rgb(var(--gray-dark)); content: ''; }

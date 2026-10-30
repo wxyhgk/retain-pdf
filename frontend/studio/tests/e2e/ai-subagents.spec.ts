@@ -65,3 +65,35 @@ test('a step still going when its turn is over (its end never told) says it was 
 	expect(await step.locator('.ai-tool-state').evaluate((node) => getComputedStyle(node).color)).not.toMatch(/rgb\(2\d\d, \d{1,2}, \d{1,2}\)/u);
 	expect(await step.locator('.ai-tool-state').evaluate((node) => getComputedStyle(node, '::after').animationName)).toBe('none');
 });
+
+test('done while its panel is out of sight: a dot on its tab and in the window’s title, a message to go to it; gone once it is seen', async ({ page }) => {
+	await openStudio(page);
+	await page.locator('#side-tab-ai').click();
+	await expect(pane(page).locator('.ai-effort')).toBeVisible();
+	await input(page).fill('长回答');
+	await input(page).press('Enter');
+	const tab = page.locator('#side-tab-ai');
+	// Away to the files while it writes.
+	await page.locator('#side-tab-files').click();
+	await expect(tab).toHaveAttribute('data-attention', 'done', { timeout: 20_000 });
+	await expect.poll(() => page.title()).toMatch(/^● /u);
+	const message = page.getByRole('button', { name: '去看看' });
+	await expect(message).toBeVisible();
+	await message.click();
+	await expect(pane(page)).toBeVisible();
+	await expect(tab).not.toHaveAttribute('data-attention');
+	await expect.poll(() => page.title()).not.toMatch(/^● /u);
+});
+
+test('at work a while, the status says for how long', async ({ page }) => {
+	await openStudio(page);
+	await page.locator('#side-tab-ai').click();
+	await expect(pane(page).locator('.ai-effort')).toBeVisible();
+	await input(page).fill('慢慢来');
+	await input(page).press('Enter');
+	const status = pane(page).locator('.ai-status');
+	await expect(status).toHaveText('正在做…');
+	await expect(status).toHaveText(/^正在做… · 1\d 秒$/u, { timeout: 15_000 });
+	await pane(page).locator('.ai-send').click();
+	await expect(status).toHaveText('');
+});

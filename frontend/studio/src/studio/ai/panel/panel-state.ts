@@ -54,6 +54,11 @@ export type AiPanelHost = {
 	changed?(id: string): void;
 	/** Its turn is over (done, stopped, failed): what it changed on disk meanwhile can be looked over now. */
 	turnOver?(): void;
+	/**
+	 * What the author is wanted for, in the conversation shown: it waits for them (leave asked, a question), or its turn
+	 * is over; null when nothing. Said to them where they are when the panel is not in sight (ai-chat.ts).
+	 */
+	attention?(what: { kind: 'asking' | 'done'; title: string } | null): void;
 };
 
 export type ArticleRef = { slug: string; title: string };
@@ -397,8 +402,12 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 				const before = get().conversation;
 				set({ conversation: event.session });
 				if (before?.id === event.session.id && (before.title !== event.session.title || before.updated !== event.session.updated)) host.changed?.(event.session.id);
+				if (before?.state === 'running' && event.session.state === 'running') runningSince ??= Date.now();
+				if (before?.state !== 'running' && event.session.state === 'running') runningSince = Date.now();
 				if (before?.state === 'running' && event.session.state !== 'running') {
+					runningSince = null;
 					host.turnOver?.();
+					if (event.session.state === 'idle' || event.session.state === 'saved') host.attention?.({ kind: 'done', title: event.session.title || t('AI 做完了') });
 					// Its turn over: what was said meanwhile, said now.
 					const [next, ...rest] = get().queued;
 					if (next && event.session.state === 'idle') {
@@ -413,9 +422,26 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	}
 
 	/** The status line, as the conversation is. */
+	/** Since when its turn has gone on (said in the status, and ticked); null when it is not at work. */
+	let runningSince: number | null = null;
+	let ticking = 0;
+
 	function sessionSaid(): void {
 		const { conversation, items } = get();
 		const running = conversation?.state === 'running';
+		// What waits for the author, said to them if the panel is not in sight.
+		const waiting = items.find(
+			(item): item is Extract<ConversationItem, { kind: 'permission' | 'question' }> => (item.kind === 'permission' && !item.chosen) || (item.kind === 'question' && !item.answer),
+		);
+		if (waiting) host.attention?.({ kind: 'asking', title: waiting.kind === 'permission' ? waiting.title : waiting.message });
+		// How long it has been at work: said each second, after the first few.
+		if (running) {
+			runningSince ??= Date.now();
+			ticking ||= window.setInterval(sessionSaid, 1000);
+		} else if (ticking) {
+			clearInterval(ticking);
+			ticking = 0;
+		}
 		if (lost) return say(t('和 Studio 服务器断开了，正在重新连上…'), true);
 		if (conversation?.state === 'starting' && items.length) say(t('正在接上之前的对话（启动 {name}）…', { name: conversation.agent.name }));
 		else if (conversation?.state === 'starting' || (!conversation && starting)) {
@@ -425,7 +451,10 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		else if (running) {
 			// Subagents at work, counted: what is waited for.
 			const agents = items.flatMap((item) => (item.kind === 'tool' && item.subagents ? item.subagents : [])).filter((agent) => agent.status === 'running' || agent.status === 'waiting').length;
-			say(agents ? t('正在做… · {count} 个子代理在跑', { count: agents }) : t('正在做…'));
+			const seconds = Math.floor((Date.now() - (runningSince ?? Date.now())) / 1000);
+			const lasted = seconds < 10 ? '' : seconds < 60 ? t('{seconds} 秒', { seconds }) : t('{minutes} 分 {seconds} 秒', { minutes: Math.floor(seconds / 60), seconds: String(seconds % 60).padStart(2, '0') });
+			const said = agents ? t('正在做… · {count} 个子代理在跑', { count: agents }) : t('正在做…');
+			if (get().status.text !== (lasted ? `${said} · ${lasted}` : said)) say(lasted ? `${said} · ${lasted}` : said);
 		}
 		else say('');
 	}
