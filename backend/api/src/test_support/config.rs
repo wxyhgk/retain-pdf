@@ -26,10 +26,28 @@ pub(crate) struct TestDirs {
     pub(crate) scripts_dir: PathBuf,
 }
 
+/// 这个测试进程的目录。目录不随测试结束删除（见上），以前全堆在系统临时目录里，
+/// 2026-10-30 数过有 5.6 万个 `rust-api-*`。现在每个进程一个目录，进程第一次建目录时
+/// 删掉已经不在运行的进程留下的（还在跑的不动：几个 worktree 可能同时在测）。
+fn run_dir() -> PathBuf {
+    static CLEANED: std::sync::Once = std::sync::Once::new();
+    let parent = std::env::temp_dir().join("retainpdf-api-tests");
+    CLEANED.call_once(|| {
+        let Ok(entries) = fs::read_dir(&parent) else { return };
+        for entry in entries.flatten() {
+            let Some(pid) = entry.file_name().to_str().and_then(|name| name.parse::<u32>().ok()) else { continue };
+            if pid != std::process::id() && !retainpdf_proc::worker_process_exists(pid) {
+                let _ = fs::remove_dir_all(entry.path());
+            }
+        }
+    });
+    parent.join(std::process::id().to_string())
+}
+
 impl TestDirs {
-    /// 在系统临时目录下建 `<name>`；调用方负责让 `name` 唯一（带随机数或 pid）。
+    /// 在 `<系统临时目录>/retainpdf-api-tests/<pid>/` 下建 `<name>`；调用方负责让 `name` 唯一（带随机数或 pid）。
     pub(crate) fn create(name: &str) -> Self {
-        let root = std::env::temp_dir().join(name);
+        let root = run_dir().join(name);
         let data_root = root.join("data");
         let dirs = Self {
             output_root: data_root.join("jobs"),

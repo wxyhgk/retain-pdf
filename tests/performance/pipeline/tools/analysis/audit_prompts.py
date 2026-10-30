@@ -61,6 +61,9 @@ def reconstruct(items, unit_id, content, *, mode="fast", target_language_name="�
     return None
 
 
+PAGE_FILE_RE = re.compile(r"page-\d+(?:-[^/]+)?\.json")
+
+
 def audit(report_path, *, mode="fast", target_language_name="简体中文"):
     report_path = Path(report_path).resolve()
     report = json.loads(report_path.read_text())
@@ -68,7 +71,11 @@ def audit(report_path, *, mode="fast", target_language_name="简体中文"):
     if not isinstance(job_id, str) or job_id in {"", ".", ".."} or Path(job_id).name != job_id:
         raise ValueError("invalid job ID")
     root = report_path.parent
-    pages = sorted((root / "data/jobs" / job_id / "translated").glob("page-*-deepseek.json"))
+    # 每页译文：新任务是 page-001.json，2026-10-30 以前的任务是 page-001-deepseek.json（带模型名）
+    pages = sorted(
+        path for path in (root / "data/jobs" / job_id / "translated").glob("page-*.json")
+        if PAGE_FILE_RE.fullmatch(path.name)
+    )
     if not pages:
         raise ValueError("missing page artifacts")
     items = {}

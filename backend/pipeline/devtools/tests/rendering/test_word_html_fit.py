@@ -31,20 +31,6 @@ from retainpdf_pipeline.render.output.word.html_fit import (  # noqa: E402
 )
 
 
-JOBS_ROOT = PIPELINE_ROOT.parents[1] / "data" / "jobs"
-
-
-def _find_translated_job() -> Path | None:
-    if not JOBS_ROOT.is_dir():
-        return None
-    for job in sorted(JOBS_ROOT.iterdir(), reverse=True):
-        if not (job / "translated" / "translation-manifest.json").is_file():
-            continue
-        if list((job / "source").glob("*.pdf")):
-            return job
-    return None
-
-
 @dataclass
 class FakeBlock:
     plain_text: str
@@ -96,39 +82,17 @@ def test_a_block_without_a_configured_floor_falls_back_to_its_own_size():
 def test_blocks_the_layout_never_fits_are_left_alone():
     """`fit_to_box` 为假的块不参与收敛——Typst 对它们直接按上界排、允许溢出。
 
-    这一支在**今天的真实数据上**是冗余的:全仓 1475 个块查过，fit_to_box 为假时
-    fit_min 一定是 0，下界因此等于字号，二分本来就空转（下一条测试核这个不变量）。
-    所以这里用的是构造数据——fit_to_box 假 + 有下界，正是守卫防的那种块，今天的排版层
-    不产出它。拿真实块写的话这条会恒成立，去掉守卫也不变红。
+    排版层现在会产出这种块：按纯文本排的标题，标题定版给了下界，`payload/emit.py` 又因为不是
+    markdown 把 fit_to_box 置假，下界留着（2026-10-30 在真实任务里看到 "NEWTON 方法与拟 NEWTON
+    方法"：不缩、下界 12.41 比字号 11 还大）。这条守卫因此是唯一防线。用构造数据测：不依赖本机有哪些任务。
+    以前另有一条测试读本机 data/jobs 里最新的任务核"排版层不产出这种块"，不封闭、CI 上永远跳过，
+    而那条不变量已经不成立，删了。
     """
     never_fits = dict(plain_text="很长的中文段落" * 20, content_rect=[0, 0, 100, 12],
                       font_size_pt=10.0, fit_min_font_size_pt=6.0)
     assert fitted_typography(FakeBlock(**never_fits, fit_to_box=False))[0] == 10.0
     assert fitted_typography(FakeBlock(**never_fits, fit_to_box=True))[0] < 10.0
 
-
-def test_the_layout_never_pairs_a_floor_with_a_non_fitting_block():
-    """上面那条守卫依赖的不变量，在真实数据上核一遍。
-
-    它一旦不成立，守卫就从冗余变成唯一防线——而那时没有任何测试会告诉我们。
-    """
-    from retainpdf_pipeline.render.output.word.job_io import single_pdf, translated_pages
-    from retainpdf_pipeline.render.layout.page_specs import build_render_page_specs
-
-    job = _find_translated_job()
-    if job is None:
-        pytest.skip("本机没有已翻译的 job")
-    specs = build_render_page_specs(
-        source_pdf_path=single_pdf(job / "source"), translated_pages=translated_pages(job),
-    )
-    offenders = [
-        b.block_id for spec in specs for b in spec.blocks
-        if b.plain_text.strip() and not b.fit_to_box and (b.fit_min_font_size_pt or 0) > 0
-    ]
-    assert not offenders, (
-        f"排版层开始给不收敛的块配下界了（{offenders[:3]}）——"
-        "html_fit 里那条 fit_to_box 守卫从此是唯一防线，去掉会把正常字号砸到下界"
-    )
 
 
 def test_formula_source_is_not_measured_as_body_text():

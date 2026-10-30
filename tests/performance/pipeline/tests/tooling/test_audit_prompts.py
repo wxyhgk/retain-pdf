@@ -40,13 +40,14 @@ def test_group_reconstruction_checks_saved_membership():
     assert reconstruct(items, expected_hash, content) is None
 
 
-def test_audit_is_offline_private_and_filters_job(tmp_path, monkeypatch):
+@pytest.mark.parametrize("page_name", ["page-001.json", "page-001-deepseek.json"])
+def test_audit_is_offline_private_and_filters_job(tmp_path, monkeypatch, page_name):
     def forbid_network(*args, **kwargs):
         raise AssertionError("offline audit must not access network")
     monkeypatch.setattr(socket, "socket", forbid_network)
     pages = tmp_path / "data/jobs/j/translated"
     pages.mkdir(parents=True)
-    page = pages / "page-001-deepseek.json"
+    page = pages / page_name
     value = item("a")
     page.write_text(json.dumps([value]))
     report = tmp_path / "report.json"
