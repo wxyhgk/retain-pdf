@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 import retainpdf_ai.fx_openai_bridge as bridge_module
-from retainpdf_ai.agent import build_deepseek_chat_fn
+from retainpdf_ai.agent import build_chat_fn
 from retainpdf_ai.config import Settings
 from retainpdf_ai.fx_openai_bridge import FxOpenAIChatBridge
 from retainpdf_ai.usage_ledger import ASSISTANT_LEDGER_RELATIVE_PATH
@@ -39,7 +39,7 @@ def test_non_streaming_answer_is_recorded_with_its_book(tmp_path):
                 "usage": {"prompt_tokens": 900, "completion_tokens": 40, "prompt_cache_hit_tokens": 512},
             })
 
-    chat = build_deepseek_chat_fn(_settings(tmp_path), client=Client(), usage_document_id="doc-1")
+    chat = build_chat_fn(_settings(tmp_path), client=Client(), usage_document_id="doc-1")
     assert chat([{"role": "user", "content": "q"}], [])["content"] == "答"
 
     (row,) = _rows(tmp_path)
@@ -82,7 +82,7 @@ def test_streaming_answer_asks_for_usage_and_records_it(tmp_path):
             bodies.append(json)
             yield _StreamResponse(200, STREAM)
 
-    chat = build_deepseek_chat_fn(_settings(tmp_path), client=Client(), on_delta=lambda _: None)
+    chat = build_chat_fn(_settings(tmp_path), client=Client(), on_delta=lambda _: None)
     message = chat([{"role": "user", "content": "q"}], [])
 
     assert message == {"role": "assistant", "content": "答"}, "用量不混进回传给上游的消息"
@@ -103,7 +103,7 @@ def test_a_relay_that_rejects_stream_options_still_answers(tmp_path):
             else:
                 yield _StreamResponse(200, [line for line in STREAM if '"usage"' not in line])
 
-    chat = build_deepseek_chat_fn(_settings(tmp_path), client=Client(), on_delta=lambda _: None)
+    chat = build_chat_fn(_settings(tmp_path), client=Client(), on_delta=lambda _: None)
     assert chat([{"role": "user", "content": "q"}], [])["content"] == "答"
     assert chat([{"role": "user", "content": "q"}], [])["content"] == "答"
 
@@ -122,7 +122,7 @@ def test_settings_built_directly_do_not_write_a_ledger(tmp_path, monkeypatch):
 
     settings = Settings(llm_api_key="synthetic-key")
     assert settings.usage_ledger_root is None
-    build_deepseek_chat_fn(settings, client=Client())([{"role": "user", "content": "q"}], [])
+    build_chat_fn(settings, client=Client())([{"role": "user", "content": "q"}], [])
     assert not list(tmp_path.rglob("assistant.v1.jsonl"))
 
 

@@ -13,7 +13,7 @@ from .stream_response import ControlledStreamingResponse
 from .request_control import RequestControl
 
 from . import __version__
-from .agent import RetrievalAgent, build_deepseek_chat_fn
+from .agent import RetrievalAgent, build_chat_fn
 from .agent_confirmations import confirmation_requests
 from .api_contracts import AskInput, RuntimeConfigUpdate
 from .ask_orchestration import AskOrchestrator
@@ -53,7 +53,7 @@ def build_app(
         rust = rust or RustApiClient(settings)
         agent = RetrievalAgent(
             build_default_registry(settings, rust),
-            build_deepseek_chat_fn(settings),
+            build_chat_fn(settings),
             max_tool_rounds=settings.max_tool_rounds,
             computation_round_bonus=settings.computation_round_bonus,
         )
@@ -123,7 +123,7 @@ def build_app(
         reading_runtime=reading_runtime,
         conversation_state=ConversationState(settings, rust),
         # Keep the app-level symbols injectable for existing consumers/tests.
-        chat_fn_builder=build_deepseek_chat_fn,
+        chat_fn_builder=build_chat_fn,
         confirmation_projector=_confirmation_requests,
     )
 

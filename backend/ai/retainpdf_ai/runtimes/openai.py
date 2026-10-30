@@ -15,7 +15,7 @@ from typing import Any
 
 from ..agent import (
     assign_refs,
-    build_deepseek_chat_fn,
+    build_chat_fn,
     public_tool_payload,
     referenced_citations,
     sanitize_answer_text,
@@ -60,7 +60,7 @@ class OpenAICompatibleAgentRuntime:
         self._settings = settings
         self._rust = rust
         self._reading_registry = reading_registry
-        self._chat = build_deepseek_chat_fn(settings)
+        self._chat = build_chat_fn(settings)
         registered_names = (
             {
                 str((spec.get("function") or {}).get("name") or "")

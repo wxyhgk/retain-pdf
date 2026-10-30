@@ -8,7 +8,7 @@
   不给行和行内片段（`pages.agent_text` 没有行时用整块文本）。
 - 标题级别：章标题（title）1 级，带编号的"14.1 …"2 级（"14.1.2 …"3 级），不带编号的 3 级。
 - 印的页码：取这一页页码块的文字，没有就用页序号。
-- 正式流程的译文（`translated/page-NNN-*.json`）可以一起读进来当基线，按页号和块号对上。
+- 正式流程的译文（`translated/page-NNN.json`，旧任务是 `page-NNN-deepseek.json`）可以一起读进来当基线，按页号和块号对上。
 """
 
 from __future__ import annotations
@@ -101,7 +101,7 @@ def truth_from_document(document: dict) -> tuple[dict, dict[int, str]]:
 def baseline_translations(translated_dir: Path) -> dict[str, str]:
     """正式流程的译文：块 id（规范化文档的写法 pNNN-bNNNN）→ 译文。"""
     out: dict[str, str] = {}
-    for path in sorted(Path(translated_dir).glob("page-*-*.json")):
+    for path in sorted(Path(translated_dir).glob("page-*.json")):
         try:
             items = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):

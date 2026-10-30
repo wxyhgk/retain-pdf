@@ -50,12 +50,12 @@ description: 精修这本书的译文。用户说「这段太生硬」「这句�
 ## 流程（一定按这个顺序）
 
 1. **定位**。用户指了页就按页查问题；指了某句话就在那一页的译文里找出它的 `item_id`
-   （页文件名带模型后缀，先 `ls ../translated/` 看清楚）：
+   （页文件名新任务是 `page-003.json`，旧任务是 `page-003-deepseek.json`，先 `ls ../translated/` 看清楚）：
 
        retainpdf-agent translation issues --pages 3
        retainpdf-agent translation issues --severity major
        ls ../translated/
-       jq -c '.[] | {item_id, translated_text}' ../translated/page-003-deepseek.json
+       jq -c '.[] | {item_id, translated_text}' ../translated/page-003.json
 
 2. **看原文和现译**（每块改之前都要看，别凭 issues 里的片段就动手）：
 

@@ -368,6 +368,8 @@ fn find_committed_page_snapshot(
     if let Some(preferred) = preferred_generation {
         generations.sort_by_key(|(generation, _)| *generation != preferred);
     }
+    // 每页译文的快照沿用页文件名：2026-10-30 起是 page-001.json，以前是 page-001-deepseek.json，两种都认
+    let exact = format!("page-{:03}.json", page_idx + 1);
     let prefix = format!("page-{:03}-", page_idx + 1);
     for (_, generation_dir) in generations {
         let Ok(entries) = fs::read_dir(generation_dir) else {
@@ -377,7 +379,7 @@ fn find_committed_page_snapshot(
             let Some(name) = entry.file_name().to_str().map(str::to_string) else {
                 continue;
             };
-            if !name.starts_with(&prefix) || !name.ends_with(".json") {
+            if name != exact && !(name.starts_with(&prefix) && name.ends_with(".json")) {
                 continue;
             }
             let Ok(bytes) = fs::read(entry.path()) else {

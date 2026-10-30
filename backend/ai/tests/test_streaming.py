@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 from retainpdf_ai.agent import (
     RetrievalAgent,
     assemble_streaming_message,
-    build_deepseek_chat_fn,
+    build_chat_fn,
 )
 from retainpdf_ai.app import build_app
 from retainpdf_ai.config import Settings
@@ -92,7 +92,7 @@ def test_provider_timeout_uses_stable_public_timeout_error():
         def post(self, *_args, **_kwargs):
             raise httpx.ReadTimeout("provider stalled")
 
-    chat = build_deepseek_chat_fn(
+    chat = build_chat_fn(
         Settings(llm_api_key="test-key"),
         client=TimeoutClient(),  # type: ignore[arg-type]
     )
@@ -124,7 +124,7 @@ def test_stream_timeouts_have_the_same_public_code(stage):
                 raise httpx.ReadTimeout("private provider detail")
             yield Response()
 
-    chat = build_deepseek_chat_fn(
+    chat = build_chat_fn(
         Settings(llm_api_key="synthetic-key"),
         client=Client(),
         on_delta=lambda _: None,
@@ -149,7 +149,7 @@ def test_ask_endpoint_streams_answer_deltas(monkeypatch):
 
         return chat
 
-    monkeypatch.setattr(app_module, "build_deepseek_chat_fn", fake_build)
+    monkeypatch.setattr(app_module, "build_chat_fn", fake_build)
 
     agent = RetrievalAgent(ToolRegistry([]), lambda m, t: {"content": "", "tool_calls": []})
     settings = api_settings(llm_api_key="env-llm-key")

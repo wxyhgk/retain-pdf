@@ -22,6 +22,15 @@ fn sha256_hex(bytes: &[u8]) -> String {
 }
 
 fn seed_live_translation_job(state: &crate::AppState, test_name: &str) -> (JobSnapshot, Vec<u8>) {
+    seed_live_translation_job_with_page_file(state, test_name, "page-001-deepseek.json")
+}
+
+/// `page_file`：每页译文的文件名，2026-10-30 起是 page-001.json，以前的任务是 page-001-deepseek.json。
+fn seed_live_translation_job_with_page_file(
+    state: &crate::AppState,
+    test_name: &str,
+    page_file: &str,
+) -> (JobSnapshot, Vec<u8>) {
     let mut job = JobSnapshot::new(
         format!("job-live-translation-{test_name}"),
         CreateJobInput::default(),
@@ -105,12 +114,12 @@ fn seed_live_translation_job(state: &crate::AppState, test_name: &str) -> (JobSn
         translated_dir
             .join(".translation-checkpoints")
             .join("generation-1")
-            .join("page-001-deepseek.json"),
+            .join(page_file),
         &snapshot,
     )
     .expect("write committed snapshot");
     fs::write(
-        translated_dir.join("page-001-deepseek.json"),
+        translated_dir.join(page_file),
         br#"[{"item_id":"p001-b3","translated_text":"not committed"}]"#,
     )
     .expect("write uncommitted working page");
@@ -220,6 +229,27 @@ async fn live_translation_reads_layout_and_only_hash_matched_checkpoint_page() {
         page["data"]["items"][0]["item_id"],
         layout["data"]["pages"][0]["blocks"][0]["item_id"]
     );
+}
+
+#[tokio::test]
+async fn live_translation_reads_pages_named_without_a_model() {
+    let state = test_state("live-translation-neutral-name");
+    let (job, snapshot) = seed_live_translation_job_with_page_file(&state, "neutral-name", "page-001.json");
+    let app = build_app(state);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri(format!("/api/v1/jobs/{}/progress/pages/0", job.job_id))
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("page request"),
+        )
+        .await
+        .expect("page response");
+    assert_eq!(response.status(), StatusCode::OK);
+    let page = read_json(response).await;
+    assert_eq!(page["data"]["page_hash"], sha256_hex(&snapshot));
+    assert_eq!(page["data"]["items"].as_array().expect("items").len(), 1);
 }
 
 #[tokio::test]

@@ -11,7 +11,7 @@ from retainpdf_translation.core.payload import write_translation_manifest
 from retainpdf_translation.core.orchestration.units import refresh_translation_units_by_page
 from retainpdf_translation.core.orchestration.units import refresh_translation_units_and_collect_changed_pages
 from retainpdf_translation.services.results.page_io import save_pages
-from retainpdf_translation.workflow.translation_workflow import default_page_translation_name
+from retainpdf_translation.workflow.translation_workflow import page_translation_path
 from retainpdf_translation.workflow.translation_workflow import translate_items_to_path
 
 
@@ -40,7 +40,7 @@ def translate_book_pages(
     output_dir.mkdir(parents=True, exist_ok=True)
     for page_idx in page_indices:
         items = extract_text_items(data, page_idx=page_idx)
-        translation_path = output_dir / default_page_translation_name(page_idx)
+        translation_path = page_translation_path(output_dir, page_idx)
         summary = translate_items_to_path(
             items=items,
             translation_path=translation_path,
@@ -62,7 +62,7 @@ def translate_book_pages(
         translated_pages_map[page_idx] = load_translations(translation_path)
     write_translation_manifest(
         output_dir,
-        {page_idx: output_dir / default_page_translation_name(page_idx) for page_idx in translated_pages_map},
+        {page_idx: page_translation_path(output_dir, page_idx) for page_idx in translated_pages_map},
     )
     return translated_pages_map, summaries
 
@@ -79,7 +79,7 @@ def load_page_payloads(
     output_dir.mkdir(parents=True, exist_ok=True)
     for page_idx in page_indices:
         items = extract_text_items(data, page_idx=page_idx)
-        translation_path = output_dir / default_page_translation_name(page_idx)
+        translation_path = page_translation_path(output_dir, page_idx)
         ensure_translation_template(items, translation_path, page_idx=page_idx, math_mode=math_mode)
         translation_paths[page_idx] = translation_path
         page_payloads[page_idx] = load_translations(translation_path)

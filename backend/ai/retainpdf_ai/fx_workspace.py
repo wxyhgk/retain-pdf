@@ -311,8 +311,8 @@ def build_job_workspace_instructions(job_dir: Path, *, translation_cli: bool = F
     source_text / translated_text / final_status / translation_diagnostics
 
     ls ../translated/
-    jq '.[0]' ../translated/page-001-deepseek.json
-    jq -r '.[] | select(.final_status != "translated") | .item_id' ../translated/page-001-deepseek.json
+    jq '.[0]' ../translated/page-001.json            # 旧任务的文件名是 page-001-deepseek.json
+    jq -r '.[] | select(.final_status != "translated") | .item_id' ../translated/page-001.json
 
 ### `../artifacts/` — 诊断
 

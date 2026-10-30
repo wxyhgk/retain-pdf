@@ -28,7 +28,19 @@ def chunked(seq: list[dict], size: int) -> list[list[dict]]:
 
 
 def default_page_translation_name(page_idx: int) -> str:
+    """每页译文的文件名，不带模型名（2026-10-30 前叫 page-NNN-deepseek.json，见 legacy_page_translation_name）。"""
+    return f"page-{page_idx + 1:03d}.json"
+
+
+def legacy_page_translation_name(page_idx: int) -> str:
+    """旧任务的每页译文文件名；读的一侧照常认，写的一侧只在这一页已经有旧文件时沿用。"""
     return f"page-{page_idx + 1:03d}-deepseek.json"
+
+
+def page_translation_path(output_dir: Path, page_idx: int) -> Path:
+    """这一页译文写到哪：目录里已经有旧名字的文件（升级前开始、升级后续跑的任务）就沿用旧名字，免得同一页出现两份；否则用新名字。"""
+    legacy = output_dir / legacy_page_translation_name(page_idx)
+    return legacy if legacy.exists() else output_dir / default_page_translation_name(page_idx)
 
 
 def translate_items_to_path(
@@ -202,5 +214,7 @@ def translate_items_to_path(
 __all__ = [
     "chunked",
     "default_page_translation_name",
+    "legacy_page_translation_name",
+    "page_translation_path",
     "translate_items_to_path",
 ]

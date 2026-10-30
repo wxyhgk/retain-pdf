@@ -95,8 +95,11 @@ def test_environment(output_root: str) -> dict[str, str]:
         "LANG", "LC_ALL", "TYPST_BIN",
     }
     environment = {key: value for key, value in os.environ.items() if key.upper() in allowed}
+    # 本仓库自己的包排在最前：在 worktree 里跑时测的是这份检出的代码，不是 venv 里以可编辑方式装的主检出那份
+    # （以前只放 pipeline，worktree 里改了 backend/translation 测的却是主检出）
+    own_packages = [SERVICES / "pipeline"] + sorted({init.parent.parent for init in SERVICES.glob("*/retainpdf_*/__init__.py")})
     environment.update(
-        PYTHONPATH=str(SERVICES / "pipeline"),
+        PYTHONPATH=os.pathsep.join(dict.fromkeys(str(path) for path in own_packages)),
         PYTHONNOUSERSITE="1",
         OUTPUT_ROOT=output_root,
     )
