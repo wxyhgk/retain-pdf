@@ -275,11 +275,12 @@ def test_domain_context_raw_response_round_trip() -> None:
 def test_domain_context_deadline_interrupts_slow_call() -> None:
     started = time.perf_counter()
     try:
-        with domain_context._domain_context_deadline(1):
+        # setitimer 认小数秒：0.2 秒就够证明会被打断（以前等满 1 秒）
+        with domain_context._domain_context_deadline(0.2):
             time.sleep(5)
     except domain_context.DomainContextTimeoutError:
         elapsed = time.perf_counter() - started
-        assert elapsed < 2.5
+        assert elapsed < 1.5
     else:
         raise AssertionError("domain context deadline did not interrupt slow call")
 

@@ -54,6 +54,9 @@ pub struct WebDavBackend {
     made: Mutex<HashSet<String>>,
     /// 没拿到回复时重试几次(正式同步 3 次;连通性测试 0 次)。
     retries: u64,
+    /// 重试前等多久的单位:请求没拿到回复第 n 次重试等 n 个单位,上传、下载失败第 n 次重试等 4n 个单位。
+    /// 正式同步 500 毫秒;测试里设 0(以前测重试、续传的几条测试真睡十几秒)。
+    retry_unit: Duration,
 }
 
 fn percent_decode(text: &str) -> String {
@@ -148,7 +151,15 @@ impl WebDavBackend {
             failed: Mutex::new(HashSet::new()),
             made: Mutex::new(HashSet::new()),
             retries,
+            retry_unit: Duration::from_millis(500),
         })
+    }
+
+    /// 测试用:重试照样重试,只是不等。
+    #[cfg(test)]
+    pub(crate) fn without_retry_pauses(mut self) -> Self {
+        self.retry_unit = Duration::ZERO;
+        self
     }
 
     fn url(&self, path: &str) -> Result<Url> {
@@ -176,7 +187,7 @@ impl WebDavBackend {
                 Err(error) => match retry {
                     Some(next) if attempt < self.retries => {
                         attempt += 1;
-                        std::thread::sleep(Duration::from_millis(500 * attempt));
+                        std::thread::sleep(self.retry_unit * attempt as u32);
                         builder = next;
                     }
                     _ => return Err(error).with_context(|| format!("连不上 WebDAV 服务({action} {url})")),
@@ -343,7 +354,7 @@ impl Backend for WebDavBackend {
         let mut last = None;
         for attempt in 0..3 {
             if attempt > 0 {
-                std::thread::sleep(Duration::from_secs(2 * attempt));
+                std::thread::sleep(self.retry_unit * 4 * attempt as u32);
             }
             let file = File::open(source).with_context(|| format!("failed to open {}", source.display()))?;
             let length = file.metadata()?.len();
@@ -403,7 +414,7 @@ impl Backend for WebDavBackend {
         let mut last_error = None;
         for attempt in 0..4 {
             if attempt > 0 {
-                std::thread::sleep(Duration::from_secs(2 * attempt));
+                std::thread::sleep(self.retry_unit * 4 * attempt as u32);
             }
             match self.download_resuming(&url, &partial) {
                 Ok(Download::Complete) => {

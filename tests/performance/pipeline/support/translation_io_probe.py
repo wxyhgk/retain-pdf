@@ -1,5 +1,6 @@
 """Only external model transports are replaced; all business stages remain real."""
 from contextlib import ExitStack
+from importlib import import_module
 import json
 import os
 import re
@@ -179,6 +180,14 @@ def main():
         stack.enter_context(patch.object(client, "get_session", return_value=SimpleNamespace(post=post)))
         stack.enter_context(patch.object(client, "_prewarm_dns"))
         stack.enter_context(patch.object(client, "should_use_stream_responses", return_value=False))
+        # 和 production_translation_probe 一样只换各模块自己的时钟：截止时间照旧按真时间算，
+        # 现有流程的重试退避（direct_typst 的 min(8, 2*attempt)）只记下、不真睡（以前每个探针白睡几秒）
+        clock = SimpleNamespace(sleep=lambda _seconds: None, monotonic=time.monotonic,
+                                perf_counter=time.perf_counter, time=time.time)
+        for name in ("plain_text_retry", "segment_windows", "segment_executor", "sentence_level", "direct_typst"):
+            module = import_module("retainpdf_translation.llm.shared.orchestration." + name)
+            stack.enter_context(patch.object(module, "time", clock))
+        stack.enter_context(patch.object(client, "time", clock))
         result = {"ok": False}
         try:
             translate_book_pipeline(source_json_path=Path(spec["source"]), output_dir=Path(spec["output"]),

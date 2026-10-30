@@ -165,7 +165,7 @@ fn webdav_backend(root: &Path, dav: &super::test_dav::TestDav, password: &str) -
         username: "nas-user".into(),
         password: password.into(),
     };
-    Box::new(super::WebDavBackend::new(&config, &root.join("sync-work")).unwrap())
+    Box::new(super::WebDavBackend::new(&config, &root.join("sync-work")).unwrap().without_retry_pauses())
 }
 
 fn setup(devices: &[&str]) -> (PathBuf, PathBuf, Vec<Device>) {
@@ -550,7 +550,9 @@ fn library_snapshot(device: &Device) -> Vec<String> {
 
 #[test]
 fn three_devices_converge_whatever_the_order_of_edits_and_syncs() {
-    for seed in 1..=6u64 {
+    // 每个种子随机走 40 步，一个要几秒：平时跑 2 个，要多跑设 RETAINPDF_SYNC_CONVERGENCE_SEEDS（以前固定 6 个）
+    let seeds = std::env::var("RETAINPDF_SYNC_CONVERGENCE_SEEDS").ok().and_then(|v| v.parse::<u64>().ok()).unwrap_or(2).max(1);
+    for seed in 1..=seeds {
         let (base, _folder, devices) = setup(&["a", "b", "c"]);
         let mut rng = fastrand::Rng::with_seed(seed);
         devices[0].add_book(DOC, JOB, UPLOAD, "succeeded");

@@ -415,7 +415,11 @@ mod tests {
         // 等的这一边在子进程跑到一半时被丢弃(客户端断开)。
         let _ = tokio::time::timeout(Duration::from_millis(200), waiting).await;
         assert!(!marker.exists());
-        tokio::time::sleep(Duration::from_millis(2500)).await;
+        // 子进程睡 1 秒后写标记：轮询到它出现就行，最多等 5 秒（以前固定睡 2.5 秒）
+        let deadline = std::time::Instant::now() + Duration::from_secs(5);
+        while !marker.exists() && std::time::Instant::now() < deadline {
+            tokio::time::sleep(Duration::from_millis(50)).await;
+        }
         assert!(marker.exists(), "child was killed together with the dropped future");
     }
 
