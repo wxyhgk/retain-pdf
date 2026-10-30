@@ -1,10 +1,11 @@
-"""把一次测试的结果画成离线 HTML：原文页面上叠译文（浏览器里按框缩字号，缩到最小还放不下的标出来），右栏是汇总和每块的校验。"""
+"""把一次测试的结果画成离线 HTML：原文页面上叠译文（浏览器里按框缩字号，缩到最小还放不下的标出来），右栏是汇总、指标、术语表和每块的校验。"""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
+from devtools.agent_lab.metrics import headline
 from devtools.ocr_viewer.taxonomy import taxonomy_payload
 from devtools.ocr_viewer.viewer import page_images
 
@@ -25,6 +26,8 @@ def build_report(pdf_path: Path, truth: dict, results: dict, out_path: Path, *, 
         "summary": results["summary"],
         "page_info": results["pages"],
         "blocks": blocks,
+        "metrics": headline(results["metrics"]) if results.get("metrics") else [],
+        "glossary": results.get("glossary") or {},
     }
     blob = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
     html = TEMPLATE.read_text(encoding="utf-8").replace(PLACEHOLDER, blob, 1)

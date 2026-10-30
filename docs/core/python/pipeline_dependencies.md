@@ -38,12 +38,12 @@ Regenerate with:
 | `fitz` | `PyMuPDF` | yes | yes | `retainpdf_pipeline/document_operations/visual_validation.py`, `retainpdf_pipeline/ocr/document_schema/pdf_geometry.py`, `retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py` |
 | `fontTools` | `fontTools` | yes | no | `retainpdf_pipeline/foundation/config/fonts.py` |
 | `pikepdf` | `pikepdf` | yes | yes | `retainpdf_pipeline/document_operations/page_program.py`, `retainpdf_pipeline/render/document/pikepdf_overlay.py`, `retainpdf_pipeline/render/document/pikepdf_pages.py` |
-| `pytest` | `pytest` | no | yes | `devtools/tests/conftest.py`, `devtools/tests/document_operations/test_document_operation_cli.py`, `devtools/tests/document_operations/test_page_program.py` |
+| `pytest` | `pytest` | no | yes | `devtools/tests/agent_lab/test_sample_conference.py`, `devtools/tests/conftest.py`, `devtools/tests/document_operations/test_document_operation_cli.py` |
 | `requests` | `requests` | yes | yes | `retainpdf_pipeline/ocr/mineru_provider/mineru_api.py`, `retainpdf_pipeline/ocr/ocr_provider/paddle_api.py`, `retainpdf_pipeline/ocr/retry.py` |
 | `retainpdf_base` | `retainpdf_base` | yes | yes | `retainpdf_pipeline/foundation/config/__init__.py`, `retainpdf_pipeline/foundation/shared/config.py`, `retainpdf_pipeline/foundation/shared/job_dirs.py` |
 | `retainpdf_math` | `retainpdf_math` | yes | yes | `retainpdf_pipeline/render/layout/inline_content/__init__.py`, `retainpdf_pipeline/render/layout/inline_content/core/inline_math.py`, `retainpdf_pipeline/render/layout/inline_content/core/markdown.py` |
 | `retainpdf_translation` | `retainpdf_translation` | yes | yes | `retainpdf_pipeline/entrypoints/diagnose_failure_with_ai.py`, `retainpdf_pipeline/entrypoints/revise_translation_item.py`, `retainpdf_pipeline/ocr/mineru_provider/mineru_pipeline.py` |
-| `retainpdf_translation_agent` | `retainpdf_translation_agent` | yes | yes | `devtools/agent_lab/__main__.py`, `devtools/agent_lab/pages.py` |
+| `retainpdf_translation_agent` | `retainpdf_translation_agent` | yes | yes | `devtools/agent_lab/__main__.py`, `devtools/agent_lab/metrics.py`, `devtools/agent_lab/pages.py` |
 | `urllib3` | `urllib3` | yes | no | `retainpdf_pipeline/ocr/retry.py` |
 
 ## Dependency Sources

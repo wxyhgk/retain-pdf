@@ -14,7 +14,7 @@ v1：对照 PaddleOCR（PP-DocLayoutV2 的 25 类）和 MinerU 的全部标签�
 每个块只有一个类别（`BLOCK_CLASSES` 的键），可以带几个属性（`ATTRIBUTES`）。和类别分开记的只有关系（`RELATIONS`）：
 图注属于哪张图、脚注挂在哪个标记上、段落接到哪一段、目录条目指向哪个标题。
 
-行内的东西（行内公式、脚注标记、引用标记）不是块，是块里的片段，见 `INLINE_CLASSES`。
+行内的东西（行内公式、脚注标记、引用标记、行内代码）不是块，是块里的片段，见 `INLINE_CLASSES`。
 """
 
 from __future__ import annotations
@@ -199,6 +199,7 @@ INLINE_CLASSES: dict[str, dict] = {
     "ruby": {"label": "注音", "translate": False, "note": "汉字、日文上方的拼音或假名（MinerU 的 phonetic）"},
     "footnote_mark": {"label": "脚注标记", "translate": False, "note": "正文里的上标数字或符号，指向脚注"},
     "citation": {"label": "引用标记", "translate": False, "note": "[1]、(Smith, 2020) 这类"},
+    "inline_code": {"label": "行内代码", "translate": False, "note": "正文里的命令、路径、参数名、配置键（等宽字体），原样保留"},
 }
 
 ATTRIBUTES: dict[str, dict] = {

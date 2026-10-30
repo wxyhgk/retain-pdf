@@ -74,10 +74,13 @@ class Region:
 
 
 class SampleDocument:
-    def __init__(self) -> None:
+    def __init__(self, *, pages: int = 3, size: tuple[float, float] = (PAGE_W, PAGE_H), document_id: str = "complex_paper", title: str = "Synthetic complex paper") -> None:
+        self.width, self.height = size
+        self.document_id = document_id
+        self.title = title
         self.pdf = fitz.open()
-        for _ in range(3):
-            self.pdf.new_page(width=PAGE_W, height=PAGE_H)
+        for _ in range(pages):
+            self.pdf.new_page(width=self.width, height=self.height)
         # 加新页会让手里旧的 Page 对象失效，每次都按页号重新取。
         self.pages = _PageAccess(self.pdf)
         self.elements: list[Element] = []
@@ -484,16 +487,16 @@ class SampleDocument:
 
     def save(self, out_dir: Path) -> tuple[Path, Path]:
         out_dir.mkdir(parents=True, exist_ok=True)
-        pdf_path = out_dir / "complex_paper.pdf"
+        pdf_path = out_dir / f"{self.document_id}.pdf"
         truth_path = out_dir / "truth.json"
-        self.pdf.set_metadata({"title": "Synthetic complex paper", "producer": "RetainPDF devtools", "creationDate": "", "modDate": ""})
+        self.pdf.set_metadata({"title": self.title, "producer": "RetainPDF devtools", "creationDate": "", "modDate": ""})
         self.pdf.save(pdf_path, garbage=3, deflate=True, no_new_id=True)
         truth = {
             "schema": "retainpdf_ocr_truth_v1",
             "taxonomy_version": TAXONOMY_VERSION,
-            "document_id": "complex_paper",
+            "document_id": self.document_id,
             "coordinate_space": "pdf_point",
-            "pages": [{"index": i, "width": PAGE_W, "height": PAGE_H} for i in range(len(self.pages))],
+            "pages": [{"index": i, "width": self.width, "height": self.height} for i in range(len(self.pages))],
             "elements": [element.payload() for element in self.elements],
         }
         truth_path.write_text(json.dumps(truth, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")

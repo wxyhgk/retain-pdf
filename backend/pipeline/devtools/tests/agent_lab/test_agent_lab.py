@@ -157,3 +157,53 @@ def test_continuation_group_is_sent_as_one_record_with_break_markers(tmp_path: P
     assert per_block["method-p1"] == "前半" and per_block["method-p1-cont1"] == "后半" and not issues
     _, issues = expand_translations({"cg-method-p1": "没有断点"}, blocks, wanted)
     assert issues["method-p1"][0]["code"] == "group_break"
+
+
+# ---- 长样例 ----
+def test_long_book_has_chapters_footnotes_groups_and_front_matter(tmp_path: Path) -> None:
+    from devtools.agent_lab import long_sample
+
+    doc = long_sample.build()
+    _, truth_path = doc.save(tmp_path)
+    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    pages = build_pages(truth, page_labels=doc.page_labels)
+    assert len(pages) >= 20 and [p.page_label for p in pages[:3]] == ["i", "ii", "1"]
+    chapters = [p.chapter for p in pages]
+    assert chapters[2] == "h-preface" and "h-ch2" in chapters and "h-ch3" in chapters and chapters[-1] == "h-ch7"
+    blocks = {b.id: b for p in pages for b in p.blocks}
+    assert blocks["ch1-ref1"].translate is False and blocks["toc-ch2"].source == "2 Learning Layout"
+    assert "{{fn:1}}" in blocks["ch1-05"].source and blocks["fn-order"].relations == {"note_of": "ch1-05"}
+    assert "$k \\times k$" in blocks["ch2-03"].source
+    assert any(b.group for b in blocks.values()), "at least one paragraph continues on the next page"
+
+
+def test_long_sample_runs_with_and_without_memory(tmp_path: Path) -> None:
+    on = run(tmp_path / "on", agent=Agent(model="fake", transport=FakeModel(), cache_dir=tmp_path / "cache"), sample="long", pages_filter={"1", "2", "3"})
+    assert on["summary"]["memory"] is True and on["summary"]["run_status"] == "done" and on["summary"]["pages"] == 3
+    assert "term_consistency" in on["summary"]["metrics"]
+    fake = FakeModel()
+    off = run(tmp_path / "off", agent=Agent(model="fake", transport=fake, cache_dir=tmp_path / "cache2"), sample="long", pages_filter={"1"}, memory=False)
+    assert off["summary"]["memory"] is False and all("context" not in json.loads(b["messages"][0]["content"]) for b in fake.bodies)
+    assert (tmp_path / "on" / "state" / "ledger.jsonl").is_file()
+
+
+def test_metrics_count_consistency_polysemy_names_abbreviations_and_tone() -> None:
+    from devtools.agent_lab.metrics import compute
+
+    def block(i, chapter, source, translation):
+        return {"id": i, "chapter": chapter, "source": source, "translation": translation, "translate": True}
+
+    metrics = compute(
+        [
+            block("a", "h-ch1", "Optical character recognition (OCR) draws a bounding box.", "光学字符识别（OCR）会画出边界框。"),
+            block("b", "h-ch1", "Each bounding box may be wrong.", "每个边界框都可能出错。"),
+            block("c", "h-ch2", "A bounding box and a kernel.", "一个包围盒和一个卷积核。"),
+            block("d", "h-ch3", "The kernel killed the worker; OCR failed.", "卷积核杀死了工作进程；OCR 失败了。"),
+            block("e", "h-ch4", "Ruiz suggests that Figure 2.1 may hide it.", "鲁伊斯认为图 2.1 隐藏了它。"),
+        ]
+    )
+    assert metrics["terms"]["bounding box"]["consistency"] == round(2 / 3, 3) and metrics["terms"]["bounding box"]["main"] == "边界框"
+    assert metrics["polysemy"]["kernel@ch2"]["correct"] == 1 and metrics["polysemy"]["kernel@ch3"]["wrong"] == ["d"]
+    assert metrics["keep_missed"] == ["Ruiz@e"] and metrics["abbreviations"]["OCR"]["first_use_bracketed"] is True
+    assert metrics["abbreviations"]["OCR"]["later_kept"] == 1.0
+    assert metrics["hedge_lost"] == ["e"] and metrics["cross_refs"] == 1.0

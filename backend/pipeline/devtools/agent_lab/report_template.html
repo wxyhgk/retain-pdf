@@ -78,6 +78,8 @@ ul.notes { margin: 0; padding-left: 18px; font-size: 12.5px; }
   <div class="pages" id="pages"></div>
   <aside>
     <section><h2>汇总</h2><div class="stats" id="stats"></div><div class="kv" id="usage" style="margin-top:10px"></div></section>
+    <section id="metricsBox" hidden><h2>指标</h2><div class="kv" id="metrics"></div></section>
+    <section id="glossaryBox" hidden><h2 id="glossaryTitle">术语表</h2><div class="kv" id="glossary"></div><div id="tickets"></div></section>
     <section><h2>选中的块</h2><div class="detail" id="detail"><span class="empty">点页面上的译文框看原文、译文和校验结果。</span></div></section>
     <section><h2 id="issuesTitle">有问题的块</h2><div class="issues" id="issues"></div></section>
     <section><h2>模型留言</h2><ul class="notes" id="notes"></ul></section>
@@ -110,7 +112,7 @@ ul.notes { margin: 0; padding-left: 18px; font-size: 12.5px; }
     if (last < text.length) node.appendChild(document.createTextNode(text.slice(last)));
   }
 
-  document.getElementById("meta").textContent = S.model + " · 提示词 " + S.prompt_version + " · " + S.pages + " 页 · " + S.translated + " 块要翻";
+  document.getElementById("meta").textContent = S.model + " · 提示词 " + S.prompt_version + " · " + S.pages + " 页 · " + S.translated + " 块要翻" + (S.memory === false ? " · 不带记忆" : "") + (S.run_status === "stopped" ? " · 中途停下：" + S.stop_reason : "");
 
   // ---- 页面和译文框 ----
   var host = document.getElementById("pages"), boxes = [];
@@ -156,7 +158,7 @@ ul.notes { margin: 0; padding-left: 18px; font-size: 12.5px; }
   function renderStats() {
     var overs = Object.keys(state.overflow).filter(function (k) { return state.overflow[k]; }).length;
     var host = document.getElementById("stats"); host.innerHTML = "";
-    [["ok", S.ok, "通过"], ["warn", S.warn, "有警告"], ["err", S.error, "不合格"], ["over", overs, "放不下"], ["", S.retried, "重翻过"], ["", S.translated, "要翻的块"]].forEach(function (s) {
+    [["ok", S.ok, "通过"], ["warn", S.warn, "有警告"], ["err", S.error + (S.fallback || 0), "不合格（退回原文 " + (S.fallback || 0) + "）"], ["over", overs, "放不下"], ["", S.retried, "重翻过"], ["", S.translated, "要翻的块"]].forEach(function (s) {
       host.appendChild(h("div", { "class": "stat " + s[0] }, [h("b", { text: String(s[1]) }), h("span", { text: s[2] })]));
     });
     var u = document.getElementById("usage"); u.innerHTML = "";
@@ -166,7 +168,8 @@ ul.notes { margin: 0; padding-left: 18px; font-size: 12.5px; }
     });
   }
   function problems(b) {
-    var list = (b.issues || []).slice();
+    // info 只用来算指标（语气词、人称），不算问题
+    var list = (b.issues || []).filter(function (p) { return p.severity !== "info"; });
     if (state.overflow[b.id]) list.push({ code: "overflow", severity: "over", message: "框里放不下（最小字号时超出 " + Math.round((state.overflow[b.id].ratio - 1) * 100) + "%）" });
     return list;
   }
@@ -189,7 +192,7 @@ ul.notes { margin: 0; padding-left: 18px; font-size: 12.5px; }
     var b = byId[id], host = document.getElementById("detail"); host.innerHTML = "";
     var st = state.overflow[id] ? "over" : b.status;
     host.appendChild(h("div", {}, [h("b", { text: label(b) + " " }), h("span", { "class": "mono", text: b.id + " " }),
-      h("span", { "class": "pill " + st, text: { ok: "通过", warn: "有警告", error: "不合格", skipped: "不翻", over: "放不下" }[st] || st })]));
+      h("span", { "class": "pill " + (st === "fallback_source" ? "error" : st), text: { ok: "通过", warn: "有警告", error: "不合格", fallback_source: "退回原文", skipped: "不翻", over: "放不下" }[st] || st })]));
     var kv = h("div", { "class": "kv" });
     function row(k, v) { kv.appendChild(h("span", { "class": "k", text: k })); kv.appendChild(h("span", { text: v })); }
     row("位置", b.where);
@@ -209,6 +212,30 @@ ul.notes { margin: 0; padding-left: 18px; font-size: 12.5px; }
       el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }
+  // ---- 指标、术语表、歧义单 ----
+  if (D.metrics.length) {
+    document.getElementById("metricsBox").hidden = false;
+    var mk = document.getElementById("metrics");
+    D.metrics.forEach(function (m) {
+      mk.appendChild(h("span", { "class": "k", text: m.label }));
+      mk.appendChild(h("span", { text: m.value == null ? "—" : Math.round(m.value * 1000) / 10 + "%" }));
+    });
+  }
+  var G = D.glossary || {}, terms = (G.terms || []).filter(function (t) { return t.category !== "abbr"; });
+  if (terms.length || (G.tickets || []).length) {
+    document.getElementById("glossaryBox").hidden = false;
+    document.getElementById("glossaryTitle").textContent = "术语表（第 " + G.version + " 版，" + terms.length + " 条）";
+    var gk = document.getElementById("glossary"), statusText = { candidate: "候选", approved: "审定", locked: "锁定" };
+    terms.forEach(function (t) {
+      gk.appendChild(h("span", { "class": "k", text: t.source }));
+      gk.appendChild(h("span", { text: t.target + " · " + (statusText[t.status] || t.status) + (t.scope && t.scope.length ? " · 只管 " + t.scope.join("、") : "") }));
+    });
+    var tk = document.getElementById("tickets");
+    (G.tickets || []).forEach(function (t) {
+      tk.appendChild(h("div", { "class": "hint", text: "歧义单：" + t.source + " 现为“" + t.current + "”，第 " + t.page + " 页 " + t.block + " 用“" + t.proposed + "”（" + t.why + "）" }));
+    });
+  }
+
   var notes = document.getElementById("notes");
   D.page_info.forEach(function (p) {
     if (p.notes) notes.appendChild(h("li", { text: "第 " + p.label + " 页：" + p.notes }));
