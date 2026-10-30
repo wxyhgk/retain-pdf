@@ -81,7 +81,9 @@ impl TestDirs {
             max_running_jobs: 1,
             provider_limits: crate::config::ProviderLimitsConfig::default(),
             provider_runtime: crate::config::ProviderRuntimeConfig::default(),
-            job_runner: crate::config::JobRunnerConfig::default(),
+            // 结束 worker 的宽限：默认 3 秒。测试起的假 worker 退出后没人回收（成了僵尸，kill(pid, 0) 仍算在），
+            // 每次都等满宽限；1 秒走的是同一条路（先 SIGTERM、到点 SIGKILL）
+            job_runner: crate::config::JobRunnerConfig { worker_terminate_grace_secs: 1, ..Default::default() },
             ai_service: crate::config::AiServiceConfig::default(),
             jobs_service: crate::config::JobsServiceConfig::default(),
             cleanup: crate::config::CleanupConfig::default(),
