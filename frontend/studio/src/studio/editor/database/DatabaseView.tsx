@@ -28,6 +28,8 @@ export type DatabaseHost = {
 	setValue(row: string, column: Column, value: unknown): Promise<unknown>;
 	setTitle(row: string, title: string): Promise<void>;
 	addRow(row: { title?: string; props?: Record<string, unknown>; template: string | null }): Promise<string>;
+	/** A database from before ids given one (`id`): the pages that were its rows say it now. */
+	adopt(id: string): Promise<void>;
 	/** A row's page to the trash (after asking, as the tree's 删除). */
 	removeRow(row: string): Promise<void>;
 	/** A row put just before or after another (its page among those under the database). */

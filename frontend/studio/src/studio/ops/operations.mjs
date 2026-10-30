@@ -66,7 +66,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'create_page',
-		description: '新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）；上级是数据库时用 props 写这一行的值。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。', // i18n-ignore: for the AI
+		description: '新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）；上级页面有数据库时，用 props 写这一行的值（它就成了那个数据库的一行；有几个数据库时用 database 说是哪个）。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。', // i18n-ignore: for the AI
 		input: {
 			type: 'object',
 			properties: {
@@ -75,6 +75,7 @@ export const OPERATIONS = [
 				body: text('正文 Markdown（属性之后的全部内容）'), // i18n-ignore: for the AI
 				slug: text('指定文件夹名（小写字母、数字、连字符）；一般不用给'), // i18n-ignore: for the AI
 				props, // i18n-ignore: for the AI
+				database: text('它是上级页面里哪个数据库的行（数据库块 JSON 里的 id）；上级只有一个数据库时给了 props 就是它，不用写'), // i18n-ignore: for the AI
 			},
 			required: ['title'],
 		},

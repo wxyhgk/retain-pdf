@@ -7,6 +7,7 @@ import { $view } from '@milkdown/utils';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
+import { newDatabaseId } from '../../../articles/database-blocks.mjs';
 import { readConfig, writeConfig, type DatabaseConfig } from './database-config';
 import { DatabaseView, type DatabaseHost } from './DatabaseView';
 import './database.css';
@@ -27,8 +28,8 @@ export const databaseSchema = $fencedBlock(DATABASE_TYPE, (language) => language
 	selectable: true,
 }));
 
-let host: ((view: EditorView) => DatabaseHost | null) | null = null;
-/** What the blocks ask the Studio (the rows of the page shown, a value written…), given the editor they are in. */
+let host: ((id: string | null) => DatabaseHost | null) | null = null;
+/** What a block asks the Studio (its rows in the page shown, a value written…), given which database it is. */
 export function setDatabaseHost(next: typeof host): void {
 	host = next;
 }
@@ -39,7 +40,7 @@ export function insertDatabase(view: EditorView): void {
 	const type = state.schema.nodes[DATABASE_TYPE];
 	if (!type) return;
 	const { $from } = state.selection;
-	const block = type.create({ language: DATABASE_LANGUAGE }, state.schema.text(writeConfig(readConfig(''))));
+	const block = type.create({ language: DATABASE_LANGUAGE }, state.schema.text(writeConfig({ ...readConfig(''), id: newDatabaseId() })));
 	const tr = state.tr.replaceWith($from.before(), $from.after(), block);
 	view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, $from.before())).scrollIntoView());
 }
@@ -67,13 +68,36 @@ export const databaseView = $view(databaseSchema.schema.node, () => (initial: Pr
 		const block = current.type.create(current.attrs, view.state.schema.text(writeConfig(next)));
 		view.dispatch(view.state.tr.replaceWith(pos, pos + current.nodeSize, block));
 	};
+	/** A block from before ids being given one: drawn once its rows say it (or as it was, when that failed). */
+	let adopting = false;
+	let adoptFailed = false;
 	const draw = () => {
-		const asked = host?.(view);
+		const config = readConfig(node.textContent);
+		const asked = host?.(config.id);
 		if (!asked) {
 			dom.textContent = '';
 			return;
 		}
-		root.render(createElement(DatabaseView, { config: readConfig(node.textContent), change, host: asked }));
+		if (!config.id && view.editable && !adoptFailed) {
+			// From before ids: an id for it, and its rows (the pages under the page naming no database) told it; then the
+			// block's text with it (an edit of the article).
+			if (adopting) return;
+			adopting = true;
+			const id = newDatabaseId();
+			void asked.adopt(id).then(
+				() => change({ ...readConfig(node.textContent), id }),
+				(error: unknown) => {
+					adoptFailed = true;
+					asked.toast(error instanceof Error ? error.message : String(error), true);
+				},
+			).finally(() => {
+				adopting = false;
+				draw();
+			});
+			return;
+		}
+		if (config.id) dom.dataset.databaseId = config.id;
+		root.render(createElement(DatabaseView, { key: config.id ?? '', config, change, host: asked }));
 	};
 	draw();
 

@@ -17,6 +17,7 @@
  */
 
 import { t } from '@blog/i18n/index.mjs';
+import { DATABASE_ID, databaseText, withDatabaseText } from '../../../articles/database-blocks.mjs';
 
 export type ColumnType = 'text' | 'number' | 'select' | 'multi' | 'date' | 'checkbox' | 'url';
 export type Column = {
@@ -37,6 +38,8 @@ export type Sort = { column: string; dir: 'asc' | 'desc' };
 export type FilterOp = 'contains' | 'not-contains' | 'is' | 'is-not' | 'gt' | 'lt' | 'ge' | 'le' | 'before' | 'after' | 'any' | 'none' | 'checked' | 'empty' | 'not-empty';
 export type Filter = { column: string; op: FilterOp; value: string | string[] };
 export type DatabaseConfig = {
+	/** Which database it is (its rows say it: `database: <id>`); null for one written before ids, given one when shown. */
+	id: string | null;
 	/** Its name, above it (empty: 无标题). */
 	title: string;
 	columns: Column[];
@@ -105,6 +108,7 @@ export function readConfig(text: string): DatabaseConfig {
 	const sorts = (Array.isArray(raw.sorts) ? raw.sorts : raw.sort ? [raw.sort] : []) as Sort[];
 	const filters = (Array.isArray(raw.filter) ? raw.filter : []) as Array<Partial<Filter>>;
 	return {
+		id: typeof raw.id === 'string' && DATABASE_ID.test(raw.id) ? raw.id : null,
 		title: typeof raw.title === 'string' ? raw.title : '',
 		columns: unique,
 		view: raw.view === 'board' ? 'board' : 'table',
@@ -120,6 +124,7 @@ export function readConfig(text: string): DatabaseConfig {
 /** The settings as the block keeps them: what is as a new one has it left out. */
 export function writeConfig(config: DatabaseConfig): string {
 	const kept: Record<string, unknown> = {};
+	if (config.id) kept.id = config.id;
 	if (config.title) kept.title = config.title;
 	kept.columns = config.columns;
 	kept.view = config.view;
@@ -270,14 +275,12 @@ export function coerceValue(type: string, value: unknown): unknown {
 	}
 }
 
-const FENCE = /^(```+|~~~+)[ \t]*database[ \t]*\r?\n([\s\S]*?)\r?\n\1[ \t]*$/mu;
-
-/** The text of a page's (first) ```database block; none: null. */
-export function databaseFence(source: string): string | null {
-	return FENCE.exec(source)?.[2] ?? null;
+/** The text of a page's ```database block whose id is `id` (none: its first from before ids); none there: null. */
+export function databaseFence(source: string, id: string | null = null): string | null {
+	return databaseText(source, id);
 }
 
-/** The page with its ```database block's text written anew (as it was when it has none). */
-export function withDatabaseFence(source: string, text: string): string {
-	return source.replace(FENCE, (_whole, fence: string) => `${fence}database\n${text}\n${fence}`);
+/** The page with that ```database block's text written anew (as it was when it has none). */
+export function withDatabaseFence(source: string, text: string, id: string | null = null): string {
+	return withDatabaseText(source, id, text);
 }

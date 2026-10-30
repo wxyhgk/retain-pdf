@@ -56,29 +56,32 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 	};
 	const importer = new ArticleImport({ articles, manager, slugs: freeSlug });
 
-	// 数据库 (databases.mjs): a page's rows (the pages under it, with their values), one value or title set, a row made,
-	// columns renamed, taken away, of another kind, a choice renamed or taken away, in every row.
+	// 数据库 (databases.mjs): a database's rows (the pages under its page that say it, with their values), one value or
+	// title set, a row made, columns renamed, taken away, of another kind, a choice renamed or taken away, in every row;
+	// one from before ids given one. Which database of the page: `?db=<id>` (none: one from before ids).
 	const databases = new Databases({ articles, history, site });
-	api.get('/databases/:slug', async ({ params }) => ({ rows: await databases.rows(params.slug) }));
-	api.get('/databases/:slug/config', async ({ params }) => ({ config: await databases.config(params.slug) }));
-	api.post('/databases/:slug/options', async ({ params, json }) => {
+	const dbOf = (query) => query.get('db') || null;
+	api.get('/databases/:slug', async ({ params, query }) => ({ rows: await databases.rows(params.slug, dbOf(query)) }));
+	api.get('/databases/:slug/config', async ({ params, query }) => ({ config: await databases.config(params.slug, dbOf(query)) }));
+	api.post('/databases/:slug/options', async ({ params, query, json }) => {
 		const asked = await json();
-		return databases.addOption(params.slug, String(asked.column ?? ''), asked.option);
+		return databases.addOption(params.slug, dbOf(query), String(asked.column ?? ''), asked.option);
 	});
+	api.post('/databases/:slug/adopt', async ({ params, json }) => databases.adopt(params.slug, (await json()).id));
 	api.put('/databases/rows/:slug', async ({ params, json }) => {
 		const asked = await json();
 		if (typeof asked.title === 'string') return databases.setTitle(params.slug, asked.title);
 		return databases.setValue(params.slug, asked.column, asked.type, asked.value);
 	});
-	api.post('/databases/:slug/rows', async ({ params, json }) => {
+	api.post('/databases/:slug/rows', async ({ params, query, json }) => {
 		const asked = await json();
 		const slug = freeSlug(new Set((await articles.list()).map((article) => article.slug)));
 		const made = asked.template ? await templates.render(String(asked.template), { title: String(asked.title ?? '') }) : null;
-		return reply(201, await databases.addRow(params.slug, { slug, title: made?.title ?? String(asked.title ?? ''), props: asked.props ?? {}, body: made?.body ?? '' }));
+		return reply(201, await databases.addRow(params.slug, dbOf(query), { slug, title: made?.title ?? String(asked.title ?? ''), props: asked.props ?? {}, body: made?.body ?? '' }));
 	});
-	api.post('/databases/:slug/columns', async ({ params, json }) => {
+	api.post('/databases/:slug/columns', async ({ params, query, json }) => {
 		const asked = await json();
-		return databases.changeColumns(params.slug, { renames: asked.renames ?? {}, removed: asked.removed ?? [], types: asked.types ?? {}, values: Array.isArray(asked.values) ? asked.values : [] });
+		return databases.changeColumns(params.slug, dbOf(query), { renames: asked.renames ?? {}, removed: asked.removed ?? [], types: asked.types ?? {}, values: Array.isArray(asked.values) ? asked.values : [] });
 	});
 	api.post('/import', async ({ query, request }) => {
 		const chunks = [];

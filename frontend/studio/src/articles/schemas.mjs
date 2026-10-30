@@ -1,6 +1,8 @@
 import { parseFrontmatter } from '@astrojs/markdown-remark';
 import { z } from 'astro/zod';
 
+import { databaseBlocks } from './database-blocks.mjs';
+
 /** @param {any} image */
 export function createArticleFrontmatterSchema(image = null) {
 	const heroImage = image ? image() : z.string();
@@ -28,6 +30,8 @@ export function createArticleFrontmatterSchema(image = null) {
 		macros: z.record(z.string(), z.string()).optional(),
 		// Its values as a row of the database it is under (the Studio's ```database): `{ "方法": "B3LYP", "能量": -76.4 }`.
 		props: z.record(z.string(), z.unknown()).optional(),
+		// The database it is a row of: the id of a ```database block in the page it is under (database-blocks.mjs).
+		database: z.string().trim().min(1).optional(),
 	});
 }
 
@@ -64,7 +68,17 @@ export function articleSummary(source, fallbackSlug) {
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 		parent: articleParent(frontmatter),
 		...(typeof frontmatter.order === 'number' && Number.isFinite(frontmatter.order) ? { order: frontmatter.order } : {}),
+		// A row of a database (of the page it is under), and the databases it holds: the tree shows its rows under them.
+		...(typeof frontmatter.database === 'string' && frontmatter.database.trim() ? { database: frontmatter.database.trim() } : {}),
+		...databasesOf(source),
 	};
+}
+
+/** The databases a page holds, as the tree lists them (`{ databases: [{ id, title }] }`); none, nothing. */
+function databasesOf(source) {
+	if (!/^(?:```+|~~~+)[ \t]*database[ \t]*$/mu.test(source)) return {};
+	const databases = databaseBlocks(source).map(({ id, title }) => ({ id, title }));
+	return databases.length ? { databases } : {};
 }
 
 /** The folder name of the page the article is under (`parent:`); empty for none. */
@@ -87,8 +101,9 @@ export function articleProperties(source, fallbackSlug = '') {
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 		wide: frontmatter.wide === true,
 		parent: articleParent(frontmatter),
-		// Its values as a row of the database it is under.
+		// Its values as a row of the database it is under, and which database that is (its id).
 		props: frontmatter.props && typeof frontmatter.props === 'object' && !Array.isArray(frontmatter.props) ? frontmatter.props : {},
+		...(typeof frontmatter.database === 'string' && frontmatter.database.trim() ? { database: frontmatter.database.trim() } : {}),
 	};
 }
 

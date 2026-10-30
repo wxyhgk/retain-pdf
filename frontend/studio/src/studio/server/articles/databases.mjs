@@ -1,13 +1,15 @@
-import { setFrontmatterProps } from '@blog/document/frontmatter.ts';
+import { setFrontmatterDatabase, setFrontmatterProps } from '@blog/document/frontmatter.ts';
 import { coerceValue, COLUMN_TYPES, databaseFence, readConfig, withDatabaseFence, writeConfig } from '../../editor/database/database-config.ts';
 import { parseArticleSource } from '../../../articles/schemas.mjs';
+import { DATABASE_ID } from '../../../articles/database-blocks.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
- * A page as a database (数据库, as Notion's): its rows are the pages under it, each row's values that page's own
- * (`props:` at its top, `{"方法": "B3LYP", "能量": -76.4}`), its title the row's title. What columns there are, of what
- * kind, and how the rows are shown are the ```database block's (database-block.ts), in the page holding it: this is
- * the rows, read and written.
+ * A database in a page (数据库, as Notion's): a ```database block with an id (database-blocks.mjs), its rows the pages
+ * under the page that say that id (`database: <id>`), each row's values that page's own (`props:` at its top,
+ * `{"方法": "B3LYP", "能量": -76.4}`), its title the row's title. What columns there are, of what kind, and how the rows
+ * are shown are the block's (database-block.ts): this is the rows, read and written. A database is asked for by its
+ * page and its id; `id` null is a block from before ids, whose rows are the pages under the page that name none.
  */
 
 export { coerceValue, COLUMN_TYPES };
@@ -27,35 +29,35 @@ export class Databases {
 	}
 
 	/** The settings of the database in the page `slug` (its ```database block), or null: the page has none. */
-	async config(slug) {
+	async config(slug, id = null) {
 		const { source } = await this.articles.read(slug);
-		const text = databaseFence(source);
+		const text = databaseFence(source, id);
 		return text === null ? null : readConfig(text);
 	}
 
-	/** A choice more for a column of the database in the page `slug` (a row's page chose one not among them). */
-	async addOption(slug, column, option) {
+	/** A choice more for a column of the database `id` in the page `slug` (a row's page chose one not among them). */
+	async addOption(slug, id, column, option) {
 		const name = String(option ?? '').trim();
 		if (!name) throw new DatabaseError(t('选项不能为空'));
 		let config = null;
 		await this.#rewrite(slug, (source) => {
-			const text = databaseFence(source);
+			const text = databaseFence(source, id);
 			if (text === null) throw new DatabaseError(t('这一页没有数据库'), 404);
 			const before = readConfig(text);
 			const at = before.columns.findIndex((each) => each.name === column && (each.type === 'select' || each.type === 'multi'));
 			if (at < 0) throw new DatabaseError(t('数据库里没有这个选项列：{column}', { column }));
 			const options = before.columns[at].options ?? [];
 			config = options.includes(name) ? before : { ...before, columns: before.columns.map((each, index) => (index === at ? { ...each, options: [...options, name] } : each)) };
-			return config === before ? source : withDatabaseFence(source, writeConfig(config));
+			return config === before ? source : withDatabaseFence(source, writeConfig(config), id);
 		});
 		return { config };
 	}
 
-	/** The rows of the database `slug`: the pages under it, in the tree's order, each with its values. */
-	async rows(slug) {
+	/** The rows of the database `id` in the page `slug`: the pages under it that say it, in the tree's order, with their values. */
+	async rows(slug, id = null) {
 		const all = await this.articles.list();
 		if (!all.some((article) => article.slug === slug)) throw new DatabaseError(t('文章不存在'), 404);
-		const under = all.filter((article) => article.parent === slug);
+		const under = all.filter((article) => article.parent === slug && (id ? article.database === id : !article.database));
 		const rows = [];
 		for (const article of under) {
 			const { source } = await this.articles.read(article.slug);
@@ -111,15 +113,30 @@ export class Databases {
 		return { title: String(title ?? '').trim() };
 	}
 
-	/** A row made: a page under the database, of this title and these values, its text the template's (when given). */
-	async addRow(database, { slug, title = '', props = {}, body = '' }) {
+	/** A row made: a page under the database's page, saying it, of this title and these values, its text the template's (when given). */
+	async addRow(database, id, { slug, title = '', props = {}, body = '' }) {
 		await this.articles.create({ slug, title, parent: database, body });
 		const kept = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== null && value !== undefined && value !== ''));
-		if (Object.keys(kept).length) {
+		if (id || Object.keys(kept).length) {
 			const { source, revision } = await this.articles.read(slug);
-			await this.articles.save(slug, { source: setFrontmatterProps(source, kept), expectedRevision: revision }, { site: this.site });
+			const next = setFrontmatterProps(id ? setFrontmatterDatabase(source, id) : source, Object.keys(kept).length ? kept : null);
+			await this.articles.save(slug, { source: next, expectedRevision: revision }, { site: this.site });
 		}
 		return { slug };
+	}
+
+	/**
+	 * A block from before ids given one (`id`): the pages that were its rows (those under the page naming no database)
+	 * say it now, each page's text kept as a version first. The pages it made rows of.
+	 */
+	async adopt(slug, id) {
+		if (typeof id !== 'string' || !DATABASE_ID.test(id)) throw new DatabaseError(t('数据库的 id 无效'));
+		const adopted = [];
+		for (const row of await this.rows(slug, null)) {
+			await this.#rewrite(row.slug, (source) => setFrontmatterDatabase(source, id));
+			adopted.push(row.slug);
+		}
+		return { adopted };
 	}
 
 	/**
@@ -128,7 +145,7 @@ export class Databases {
 	 * → kind), its values as that kind keeps them (those it cannot, gone); a choice renamed or taken away (`values`:
 	 * `{ column, from, to }`, `to` null), in the rows that had it.
 	 */
-	async changeColumns(database, { renames = {}, removed = [], types = {}, values = [] }) {
+	async changeColumns(database, id, { renames = {}, removed = [], types = {}, values = [] }) {
 		for (const type of Object.values(types)) if (!COLUMN_TYPES.includes(type)) throw new DatabaseError(t('没有这种列：{type}', { type }));
 		const change = (before) => {
 			const props = { ...before };
@@ -160,7 +177,7 @@ export class Databases {
 			return props;
 		};
 		const changed = [];
-		for (const row of await this.rows(database)) {
+		for (const row of await this.rows(database, id)) {
 			if (JSON.stringify(change(row.props)) === JSON.stringify(row.props)) continue;
 			await this.#rewrite(row.slug, (source) => setFrontmatterProps(source, change(parseArticleSource(source).frontmatter?.props ?? {})));
 			changed.push(row.slug);

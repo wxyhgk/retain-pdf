@@ -10,7 +10,7 @@ import { comparePages } from '../../articles/page-order.mjs';
 import { parseArticleSource } from '../../articles/schemas.mjs';
 import { parseStudioDocument } from '@blog/document/parse.ts';
 import { replaceStudioDocumentBody } from '@blog/document/serialize.ts';
-import { setFrontmatterProps, updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
+import { setFrontmatterDatabase, setFrontmatterProps, updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
 import { checkArticle } from '../server/articles/article-check.mjs';
 import { previewArticle } from '../server/articles/article-preview.mjs';
 import { checkWidgets } from '../server/articles/widget-check.mjs';
@@ -182,20 +182,27 @@ export function createStudioOps({ root, site } = {}) {
 		 * (`note-…`) unless `slug` is given; it gets one read from its title when
 		 * it is published. Files of the parent its body names (`./img/…`) are copied in.
 		 */
-		/** @param {{ title: string, parent?: string, body?: string, slug?: string, props?: Record<string, unknown> }} args */
-		async createPage({ title, parent = '', body = '', slug, props }) {
+		/** @param {{ title: string, parent?: string, body?: string, slug?: string, props?: Record<string, unknown>, database?: string }} args */
+		async createPage({ title, parent = '', body = '', slug, props, database }) {
 			if (!title?.trim()) throw new StudioOpsError(t('标题不能为空'));
 			const all = await pages();
-			if (parent && !all.some((page) => page.slug === parent)) throw new StudioOpsError(t('上级页面 {parent} 不存在', { parent }));
+			const above = parent ? all.find((page) => page.slug === parent) : null;
+			if (parent && !above) throw new StudioOpsError(t('上级页面 {parent} 不存在', { parent }));
+			// A row of a database of the page above: the one named, or its only one when values are given.
+			const ids = (above?.databases ?? []).map((each) => each.id).filter(Boolean);
+			if (database && !ids.includes(database)) throw new StudioOpsError(t('上级页面里没有 id 为 {database} 的数据库', { database }));
+			const of = database || (props !== undefined && ids.length === 1 ? ids[0] : null);
+			if (!of && props !== undefined && ids.length > 1) throw new StudioOpsError(t('上级页面有 {count} 个数据库，用 database 说是哪一个（{ids}）', { count: ids.length, ids: ids.join('、') }));
 			const folder = slug || freeSlug(autoSlug(), all.map((page) => page.slug));
 			await articles.create({ slug: folder, title: title.trim(), parent, body, files: parent ? filesNamed(body) : [] });
-			// A row of the database above: its values (those with nothing in them not written).
+			// Its values (those with nothing in them not written), and which database it is a row of.
 			const values = rowValues({}, props);
-			if (Object.keys(values).length) {
+			if (of || Object.keys(values).length) {
 				const { source, revision } = await articles.read(folder);
-				await articles.save(folder, { source: setFrontmatterProps(source, values), expectedRevision: revision });
+				const next = setFrontmatterProps(of ? setFrontmatterDatabase(source, of) : source, Object.keys(values).length ? values : null);
+				await articles.save(folder, { source: next, expectedRevision: revision });
 			}
-			return { slug: folder, address: `/blog/${folder}/`, parent };
+			return { slug: folder, address: `/blog/${folder}/`, parent, ...(of ? { database: of } : {}) };
 		},
 
 		/**

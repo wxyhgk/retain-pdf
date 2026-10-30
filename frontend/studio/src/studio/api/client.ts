@@ -104,9 +104,12 @@ export function replaceInArticles(find: string, replacement: string, picks: Reco
 	return request('/api/studio/replace', jsonOptions('POST', { find, replacement, picks, ...options }));
 }
 
-/** 数据库 (server/articles/databases.mjs): a page's rows, the pages under it with their values. */
-export function databaseRows(slug: string): Promise<{ rows: Array<{ slug: string; title: string; icon: string; props: Record<string, unknown> }> }> {
-	return request(`/api/studio/databases/${encodeURIComponent(slug)}`);
+/** 数据库 (server/articles/databases.mjs): which of a page's databases (`?db=<id>`; none: one from before ids). */
+const databaseUrl = (slug: string, id: string | null, rest = '') => `/api/studio/databases/${encodeURIComponent(slug)}${rest}${id ? `?db=${encodeURIComponent(id)}` : ''}`;
+
+/** A database's rows: the pages under its page that say it, with their values. */
+export function databaseRows(slug: string, id: string | null): Promise<{ rows: Array<{ slug: string; title: string; icon: string; props: Record<string, unknown> }> }> {
+	return request(databaseUrl(slug, id));
 }
 
 /** One value of a row set (empty: taken out); what the column's kind kept of it. */
@@ -118,19 +121,24 @@ export function setDatabaseTitle(row: string, title: string): Promise<{ title: s
 	return request(`/api/studio/databases/rows/${encodeURIComponent(row)}`, jsonOptions('PUT', { title }));
 }
 
-/** The settings of the database in a page (its ```database block); null: it has none. */
-export async function databaseConfig(slug: string): Promise<DatabaseConfig | null> {
-	return (await request<{ config: DatabaseConfig | null }>(`/api/studio/databases/${encodeURIComponent(slug)}/config`)).config;
+/** The settings of a database in a page (its ```database block); null: it has none. */
+export async function databaseConfig(slug: string, id: string | null): Promise<DatabaseConfig | null> {
+	return (await request<{ config: DatabaseConfig | null }>(databaseUrl(slug, id, '/config'))).config;
 }
 
-/** A choice more for a column of the database in a page; its settings now. */
-export async function addDatabaseOption(slug: string, column: string, option: string): Promise<DatabaseConfig> {
-	return (await request<{ config: DatabaseConfig }>(`/api/studio/databases/${encodeURIComponent(slug)}/options`, jsonOptions('POST', { column, option }))).config;
+/** A choice more for a column of a database; its settings now. */
+export async function addDatabaseOption(slug: string, id: string | null, column: string, option: string): Promise<DatabaseConfig> {
+	return (await request<{ config: DatabaseConfig }>(databaseUrl(slug, id, '/options'), jsonOptions('POST', { column, option }))).config;
 }
 
-/** A row made under the database: a page, of this title and these values, from a template when given. */
-export function addDatabaseRow(database: string, row: { title?: string; props?: Record<string, unknown>; template?: string | null }): Promise<{ slug: string }> {
-	return request(`/api/studio/databases/${encodeURIComponent(database)}/rows`, jsonOptions('POST', row));
+/** A database from before ids given one: the pages that were its rows say it now. */
+export function adoptDatabaseRows(slug: string, id: string): Promise<{ adopted: string[] }> {
+	return request(databaseUrl(slug, null, '/adopt'), jsonOptions('POST', { id }));
+}
+
+/** A row made in a database: a page under its page, of this title and these values, from a template when given. */
+export function addDatabaseRow(database: string, id: string | null, row: { title?: string; props?: Record<string, unknown>; template?: string | null }): Promise<{ slug: string }> {
+	return request(databaseUrl(database, id, '/rows'), jsonOptions('POST', row));
 }
 
 /** What changes in every row of a database: columns renamed (old → new), taken away, of another kind; a choice renamed or taken away (`to` null). */
@@ -141,8 +149,8 @@ export type DatabaseColumnsChange = {
 	values?: Array<{ column: string; from: string; to: string | null }>;
 };
 
-export function changeDatabaseColumns(database: string, change: DatabaseColumnsChange): Promise<{ changed: string[] }> {
-	return request(`/api/studio/databases/${encodeURIComponent(database)}/columns`, jsonOptions('POST', change));
+export function changeDatabaseColumns(database: string, id: string | null, change: DatabaseColumnsChange): Promise<{ changed: string[] }> {
+	return request(databaseUrl(database, id, '/columns'), jsonOptions('POST', change));
 }
 
 /** 导入 Markdown: a zip of .md files (and what they show), made pages under `parent` ('' for none). */

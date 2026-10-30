@@ -14,6 +14,8 @@ export type ArticleListHost = {
 	commit(article: ArticleSummary): void;
 	/** The articles, each time they are read. */
 	listed?(articles: ArticleSummary[]): void;
+	/** A database of a page (in the tree, its rows under it): the page opened, the database in sight. */
+	openDatabase?(slug: string, id: string): void;
 	/** A new page under this one. */
 	createChild(article: ArticleSummary): void;
 	/** 并入上级页面: its text into the page it is under, as a section. */
@@ -46,6 +48,8 @@ export type TreeState = {
 	chosenFrom: string | null;
 	/** The pages whose pages under them are hidden, kept for the next visit. */
 	folded: ReadonlySet<string>;
+	/** The databases whose rows are shown (folded until opened, as Notion's sidebar has them), kept for the next visit. */
+	opened: ReadonlySet<string>;
 	git: GitStatus | null;
 	/** A row to take the keys once drawn (after folding, going up or in), counted so each ask is one. */
 	focus: { slug: string; asked: number } | null;
@@ -53,19 +57,20 @@ export type TreeState = {
 
 const REFRESH_DELAY_MS = 300;
 const FOLDED_KEY = 'studio.page-tree.folded';
+const OPENED_KEY = 'studio.page-tree.databases';
 
-function readFolded(): Set<string> {
+function readFolded(key = FOLDED_KEY): Set<string> {
 	try {
-		const kept = JSON.parse(localStorage.getItem(FOLDED_KEY) ?? '[]');
+		const kept = JSON.parse(localStorage.getItem(key) ?? '[]');
 		return new Set(Array.isArray(kept) ? kept.filter((slug) => typeof slug === 'string') : []);
 	} catch {
 		return new Set();
 	}
 }
 
-function keepFolded(folded: ReadonlySet<string>): void {
+function keepFolded(folded: ReadonlySet<string>, key = FOLDED_KEY): void {
 	try {
-		localStorage.setItem(FOLDED_KEY, JSON.stringify([...folded]));
+		localStorage.setItem(key, JSON.stringify([...folded]));
 	} catch {
 		// Not kept: folded for this visit only.
 	}
@@ -78,7 +83,7 @@ function titled(title: string): Pick<ArticleSummary, 'title' | 'untitled'> {
 }
 
 export function createTreeState(host: ArticleListHost) {
-	const store: Store<TreeState> = createStore<TreeState>({ articles: [], read: false, tree: pageTree([]), selected: null, chosen: new Set(), chosenFrom: null, folded: readFolded(), git: null, focus: null });
+	const store: Store<TreeState> = createStore<TreeState>({ articles: [], read: false, tree: pageTree([]), selected: null, chosen: new Set(), chosenFrom: null, folded: readFolded(), opened: readFolded(OPENED_KEY), git: null, focus: null });
 	const get = store.get;
 	let refreshTimer = 0;
 	let asked = 0;
@@ -88,22 +93,32 @@ export function createTreeState(host: ArticleListHost) {
 
 	/** Of these pages, those not under another of them (moving or deleting that one takes them along), in the list's order. */
 	function topmost(slugs: Iterable<string>): string[] {
-		const { articles, tree, folded } = get();
+		const { articles, tree, folded, opened } = get();
 		const all = [...new Set(slugs)];
-		const order = visibleOrder(tree, folded);
+		const order = visibleOrder(tree, folded, opened);
 		const rank = (slug: string) => (order.includes(slug) ? order.indexOf(slug) : order.length);
 		return all.filter((slug) => !all.some((other) => other !== slug && within(articles, slug, other))).sort((a, b) => rank(a) - rank(b));
 	}
 
-	/** The pages it is under unfolded, so that it shows. */
+	/** The pages it is under unfolded, and the databases it (or one of them) is a row of opened, so that it shows. */
 	function unfoldTo(slug: string): void {
-		const { articles, folded } = get();
+		const { articles, folded, opened, tree } = get();
 		const bySlug = new Map(articles.map((article) => [article.slug, article]));
 		const next = new Set(folded);
-		for (let at = bySlug.get(slug)?.parent, steps = 0; at && steps <= articles.length; at = bySlug.get(at)?.parent, steps += 1) next.delete(at);
-		if (next.size === folded.size) return;
-		keepFolded(next);
-		store.set({ folded: next });
+		const open = new Set(opened);
+		for (let page = bySlug.get(slug), steps = 0; page?.parent && steps <= articles.length; page = bySlug.get(page.parent), steps += 1) {
+			next.delete(page.parent);
+			const table = page.database ? tree.tables.get(page.parent)?.find((each) => each.id === page!.database) : undefined;
+			if (table) open.add(table.key);
+		}
+		if (next.size !== folded.size) {
+			keepFolded(next);
+			store.set({ folded: next });
+		}
+		if (open.size !== opened.size) {
+			keepFolded(open, OPENED_KEY);
+			store.set({ opened: open });
+		}
 	}
 
 	/** Reads the articles again; one read sooner that comes back later is not shown over it. */
@@ -124,7 +139,7 @@ export function createTreeState(host: ArticleListHost) {
 		topmost,
 		/** ⌘-click: chosen or let go of; ⇧-click: the run from the last one clicked. False: a plain click. */
 		choose(slug: string, event: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): boolean {
-			const { chosen, chosenFrom, selected, tree, folded } = get();
+			const { chosen, chosenFrom, selected, tree, folded, opened } = get();
 			if (event.metaKey || event.ctrlKey) {
 				const next = new Set(chosen);
 				if (!next.size && selected && selected !== slug) next.add(selected);
@@ -134,7 +149,7 @@ export function createTreeState(host: ArticleListHost) {
 				return true;
 			}
 			if (event.shiftKey) {
-				const order = visibleOrder(tree, folded);
+				const order = visibleOrder(tree, folded, opened);
 				const from = order.indexOf(chosenFrom ?? selected ?? slug);
 				const to = order.indexOf(slug);
 				if (from < 0 || to < 0) return false;
@@ -159,6 +174,14 @@ export function createTreeState(host: ArticleListHost) {
 			keepFolded(next);
 			store.set({ folded: next });
 			actions.focusRow(slug);
+		},
+		/** A database's rows shown under it, or not. */
+		setOpened(key: string, open: boolean): void {
+			const next = new Set(get().opened);
+			if (open) next.add(key);
+			else next.delete(key);
+			keepFolded(next, OPENED_KEY);
+			store.set({ opened: next });
 		},
 		focusRow(slug: string): void {
 			store.set({ focus: { slug, asked: (get().focus?.asked ?? 0) + 1 } });

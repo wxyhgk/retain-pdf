@@ -9,9 +9,11 @@ import { appendToFixture, editor, openStudio, removeArticle, resetFixture, saved
 // kind, hidden, taken away (the rows with them); a board by a choice; rows dragged, deleted.
 
 const page = (folder: string) => readFileSync(join(process.env.STUDIO_BLOG_DIR!, folder, 'index.md'), 'utf8');
-const row = (slug: string, title: string, props = '', order = 0) =>
-	writeArticle(slug, `---\ntitle: ${title}\npubDate: 2026-10-01\ndraft: true\nparent: studio-fixture\n${order ? `order: ${order}\n` : ''}${props ? `props: ${props}\n` : ''}---\n\n正文。\n`);
-const database = (config: object) => appendToFixture('\n```database\n' + JSON.stringify(config, null, 2) + '\n```\n');
+/** The database the tests' rows are of (its id); `null`: a page under the fixture saying none (a row of one from before ids, or a page). */
+const DB = 'dbtest01';
+const row = (slug: string, title: string, props = '', order = 0, database: string | null = DB) =>
+	writeArticle(slug, `---\ntitle: ${title}\npubDate: 2026-10-01\ndraft: true\nparent: studio-fixture\n${order ? `order: ${order}\n` : ''}${database ? `database: ${database}\n` : ''}${props ? `props: ${props}\n` : ''}---\n\n正文。\n`);
+const database = (config: object, id: string | null = DB) => appendToFixture('\n```database\n' + JSON.stringify(id ? { id, ...config } : config, null, 2) + '\n```\n');
 const ROWS = ['db-row-a', 'db-row-b', 'db-row-c'];
 
 test.beforeEach(() => resetFixture());
@@ -42,51 +44,77 @@ async function addColumn(p: Page, name: string, type: string): Promise<void> {
 	await expect(block(p).locator(`[data-column-head="${name}"]`)).toBeVisible();
 }
 
-test('/数据库: the pages under this one as rows; columns added and named; values set in their pages; sorted; a row made', async ({ page: p }) => {
-	row('db-row-a', 'TS1 优化', '{ "能量": -76.4 }');
-	row('db-row-b', 'IM1 优化');
+test('/数据库: a new one, empty (the pages under this one stay pages); columns added and named; rows made, their values in their pages; sorted', async ({ page: p }) => {
+	row('db-row-a', '一个子页面', '', 0, null);
 	await openStudio(p);
 	await insertDatabase(p);
-	await expect(block(p).locator('.database-row')).toHaveCount(2);
+	await expect(block(p).locator('.database-row')).toHaveCount(0);
 	await addColumn(p, '能量', 'number');
 	await addColumn(p, '方法', 'select');
-	// The value already in the row's page shows.
-	await expect(block(p).locator('[data-row="db-row-a"] [data-column="能量"]')).toHaveText('-76.4');
 
-	await block(p).locator('[data-row="db-row-b"] [data-column="能量"] [data-database-cell]').click();
+	// Rows made: pages under this one that say the database, their titles typed in the table.
+	for (const title of ['TS1 优化', 'IM1 优化']) {
+		await block(p).locator('[data-database-add-row]').click();
+		await expect(block(p).locator('[data-database-input]')).toBeFocused();
+		await p.keyboard.type(title);
+		await p.keyboard.press('Enter');
+		await expect(block(p).locator('.database-title', { hasText: title })).toBeVisible();
+	}
+	await expect(block(p).locator('.database-row')).toHaveCount(2);
+	const second = (await block(p).locator('.database-row').nth(1).getAttribute('data-row'))!;
+	const id = /^database: "?([a-z0-9]+)"?$/mu.exec(page(second))?.[1];
+	expect(id).toMatch(/^[a-z0-9]{8}$/u);
+
+	await block(p).locator(`[data-row="${second}"] [data-column="能量"] [data-database-cell]`).click();
 	await expect(p.locator('[data-database-input]')).toBeFocused();
 	await p.keyboard.type('-76.52');
 	await p.keyboard.press('Enter');
-	await expect.poll(() => page('db-row-b')).toContain('props: { "能量": -76.52 }');
+	await expect.poll(() => page(second)).toContain('props: { "能量": -76.52 }');
 
 	// A choice typed: made, chosen, the picker gone (one choice).
-	await block(p).locator('[data-row="db-row-b"] [data-column="方法"] [data-database-choices]').click();
+	await block(p).locator(`[data-row="${second}"] [data-column="方法"] [data-database-choices]`).click();
 	await p.keyboard.type('PBE0');
 	await expect(p.locator('[data-database-create-option]')).toBeVisible();
 	await p.keyboard.press('Enter');
-	await expect.poll(() => page('db-row-b')).toContain('"方法": "PBE0"');
+	await expect.poll(() => page(second)).toContain('"方法": "PBE0"');
 	await expect(p.locator('[data-database-new-option]')).toHaveCount(0);
-	await expect(block(p).locator('[data-row="db-row-b"] [data-column="方法"] .db-pill')).toHaveText('PBE0');
+	await expect(block(p).locator(`[data-row="${second}"] [data-column="方法"] .db-pill`)).toHaveText('PBE0');
 
-	// Sorted by 能量, low first, from its menu; the order a chip under the toolbar.
+	// Sorted by 能量 from its menu: the row with none last; the order a chip under the toolbar.
 	await block(p).locator('[data-column-head="能量"]').click();
 	await p.locator('[data-database-sort-asc]').click();
-	await expect(block(p).locator('.database-row').first()).toHaveAttribute('data-row', 'db-row-b');
+	await expect(block(p).locator('.database-row').first()).toHaveAttribute('data-row', second);
 	await expect(block(p).locator('[data-database-sort-chip]')).toContainText('能量');
 
-	// A row made: a page under this one, its title typed in the table.
-	await block(p).locator('[data-database-add-row]').click();
-	await expect(block(p).locator('.database-row')).toHaveCount(3);
-	await expect(block(p).locator('[data-database-input]')).toBeFocused();
-	await p.keyboard.type('TS2 频率');
-	await p.keyboard.press('Enter');
-	await expect(block(p).locator('.database-title', { hasText: 'TS2 频率' })).toBeVisible();
-
-	// Its name typed above it; the settings the block's, in the article.
+	// Its name typed above it; the settings the block's, in the article, its id first.
 	await block(p).locator('[data-database-title]').fill('计算记录');
 	await p.keyboard.press('Enter');
 	await p.keyboard.press('ControlOrMeta+s');
-	await expect.poll(savedMarkdown).toMatch(/```database\n\{\n {2}"title": "计算记录",\n {2}"columns": \[[\s\S]*"name": "能量",[\s\S]*"sorts": \[\n {4}\{\n {6}"column": "能量",\n {6}"dir": "asc"/u);
+	await expect.poll(savedMarkdown).toMatch(new RegExp(`\`\`\`database\\n\\{\\n {2}"id": "${id}",\\n {2}"title": "计算记录",\\n {2}"columns": \\[[\\s\\S]*"name": "能量",[\\s\\S]*"sorts": \\[\\n {4}\\{\\n {6}"column": "能量",\\n {6}"dir": "asc"`, 'u'));
+	// The page under it that is no row: a page in the tree still; the rows under the database there, folded.
+	await expect(p.locator('#article-list .page-item[data-slug="db-row-a"]')).toBeVisible();
+	await expect(p.locator(`#article-list .page-item[data-slug="${second}"]`)).toHaveCount(0);
+	const node = p.locator(`#article-list .page-item.is-database[data-database="studio-fixture#${id}"]`);
+	await expect(node).toContainText('计算记录');
+	await expect(node.locator('.page-count')).toHaveText('2');
+	await node.hover();
+	await node.locator('.page-toggle').click();
+	await expect(p.locator(`#article-list .page-item[data-slug="${second}"]`)).toBeVisible();
+});
+
+test('a database from before ids: given one as it is shown, its rows (the pages under the page) saying it', async ({ page: p }) => {
+	row('db-row-a', 'A', '{ "能量": -1 }', 10, null);
+	row('db-row-b', 'B', '', 20, null);
+	database({ title: '旧的', columns: [{ name: '能量', type: 'number' }], view: 'table' }, null);
+	await openStudio(p, { settled: false });
+	await expect(block(p).locator('.database-row')).toHaveCount(2);
+	await expect(block(p).locator('[data-row="db-row-a"] [data-column="能量"]')).toHaveText('-1');
+	await expect.poll(() => page('db-row-a')).toMatch(/^database: "?[a-z0-9]{8}"?$/mu);
+	const id = /^database: "?([a-z0-9]+)"?$/mu.exec(page('db-row-b'))?.[1];
+	await p.keyboard.press('ControlOrMeta+s');
+	await expect.poll(savedMarkdown).toContain(`"id": "${id}"`);
+	await expect(p.locator('#article-list .page-item[data-slug="db-row-a"]')).toHaveCount(0);
+	await expect(p.locator('#article-list .page-item.is-database')).toContainText('旧的');
 });
 
 test('a column renamed, of another kind, a choice renamed, hidden, taken away: the rows’ pages with it', async ({ page: p }) => {

@@ -307,19 +307,21 @@ export class ArticleRepository {
 			const siblings = pages.filter((page) => page.parent === parent && page.slug !== slug).sort(comparePages);
 			const moved = bySlug.get(slug);
 			const was = { from: moved.parent ?? '', title: moved.title || slug };
+			// Under another page now: no longer a row of a database of the one it left.
+			const left = (moved.parent ?? '') !== parent && moved.database ? { database: null } : {};
 			if (next) {
 				const index = siblings.indexOf(next) + (after ? 1 : 0);
 				const placed = [...siblings.slice(0, index), moved, ...siblings.slice(index)];
 				const renumbered = [];
 				for (const [index, page] of placed.entries()) {
-					if (page === moved) await this.#writeFields(slug, { parent, order: (index + 1) * 10 });
+					if (page === moved) await this.#writeFields(slug, { parent, order: (index + 1) * 10, ...left });
 					else if (page.order !== (index + 1) * 10) renumbered.push([page.slug, (index + 1) * 10]);
 				}
 				return { ...was, renumbered };
 			}
 			const ordered = siblings.filter((page) => typeof page.order === 'number');
 			const last = ordered.length ? Math.max(...ordered.map((page) => page.order)) : null;
-			await this.#writeFields(slug, { parent, order: last === null ? null : last + 10 });
+			await this.#writeFields(slug, { parent, order: last === null ? null : last + 10, ...left });
 			return { ...was, renumbered: [] };
 		});
 		for (const [page, order] of others.renumbered) await this.#rewrite(page, (source) => withFields(source, { order }));

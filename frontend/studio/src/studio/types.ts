@@ -23,6 +23,10 @@ export type ArticleSummary = {
 	parent?: string;
 	/** Where it goes among the pages under the same one (`order:`, smaller first); none, after them by title. */
 	order?: number;
+	/** The database it is a row of (`database:`, the id of one in the page it is under). */
+	database?: string;
+	/** The databases it holds (its ```database blocks): the tree shows their rows under them. */
+	databases?: Array<{ id: string | null; title: string }>;
 };
 
 /** An article that links to the open one, with each link: its line, its words, the words around it. */

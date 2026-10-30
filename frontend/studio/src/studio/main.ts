@@ -26,6 +26,7 @@ import {
 	setDatabaseValue,
 	setDatabaseTitle,
 	addDatabaseRow,
+	adoptDatabaseRows,
 	changeDatabaseColumns,
 	renderTemplate,
 	tellStarted,
@@ -229,6 +230,15 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 			if (session.slug && session.slug !== slug) articleList.select(session.slug);
 		});
 	},
+	// A database in the tree: its page opened, the database brought into sight.
+	openDatabase: (slug, id) => {
+		showView('editor');
+		articleList.select(slug);
+		void session.open(slug).then(() => {
+			if (session.slug !== slug) return;
+			requestAnimationFrame(() => editorPanel.querySelector(`.database-block[data-database-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+		});
+	},
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
@@ -277,7 +287,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 	publish: () => void pages.publishAndName(),
 	leaveTitle: (newBlock, text) => (newBlock ? editor.startNewBlock(text) : editor.focusStart()),
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
-	addDatabaseOption: (database, column, option) => trackWrite(() => addDatabaseOption(database, column, option)),
+	addDatabaseOption: (database, id, column, option) => trackWrite(() => addDatabaseOption(database, id, column, option)),
 	async pictures() {
 		const slug = session.slug;
 		if (!slug) return [];
@@ -462,23 +472,27 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	sheetRows: firstSheetRows,
 	ocr: (path) => void editorAi.ocrPdf(path),
 });
-// 数据库: the blocks' rows are the pages under the article shown (server/articles/databases.mjs).
-setDatabaseHost(() => {
+// 数据库: a block's rows are the pages under the article shown that say its id (server/articles/databases.mjs).
+setDatabaseHost((id) => {
 	const slug = session.slug;
 	if (!slug) return null;
 	return {
-		rows: async () => (await databaseRows(slug)).rows,
+		rows: async () => (await databaseRows(slug, id)).rows,
 		setValue: async (row, column, value) => (await trackWrite(() => setDatabaseValue(row, column.name, column.type, value))).value,
 		setTitle: async (row, title) => {
 			await trackWrite(() => setDatabaseTitle(row, title));
 			void articleList.load();
 		},
 		async addRow(row) {
-			const made = await trackWrite(() => addDatabaseRow(slug, row));
+			const made = await trackWrite(() => addDatabaseRow(slug, id, row));
 			void articleList.load();
 			return made.slug;
 		},
-		changeColumns: async (change) => void (await trackWrite(() => changeDatabaseColumns(slug, change))),
+		async adopt(given) {
+			await trackWrite(() => adoptDatabaseRows(slug, given));
+			void articleList.load();
+		},
+		changeColumns: async (change) => void (await trackWrite(() => changeDatabaseColumns(slug, id, change))),
 		async removeRow(row) {
 			const article = articleList.articles().find((entry) => entry.slug === row);
 			if (article) await articleActions.remove(article);
@@ -623,10 +637,10 @@ const session = new ArticleSession(
 			openTitle = shown.title || t('无标题');
 			studioPlugins.emit('studio/article-opened', article.slug);
 			properties.show(shown, article.problems ?? []);
-			// A row of a database (the page it is under has one): the database's columns among its properties.
+			// A row of a database (of the page it is under: the one it says, or one from before ids): its columns among its properties.
 			if (shown.parent) {
 				const [opening, parent] = [article.slug, shown.parent];
-				void databaseConfig(parent).then((config) => session.slug === opening && properties.showDatabase(config ? { slug: parent, config } : null), () => {});
+				void databaseConfig(parent, shown.database || null).then((config) => session.slug === opening && properties.showDatabase(config ? { slug: parent, config } : null), () => {});
 			}
 			topBar.showArticle(article.slug, shown.title || t('无标题'), shown.kind);
 			topBar.edited(article.modified ?? null);

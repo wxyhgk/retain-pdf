@@ -90,13 +90,14 @@ export function savedMarkdown(): string {
  * are drawn. Edits stay unsaved until ⌘S, unless `autosaveDelay` says when
  * the Studio saves them by itself.
  */
-export async function openStudio(page: Page, { autosaveDelay = 600_000 }: { autosaveDelay?: number } = {}): Promise<void> {
+/** `settled` false: the article may change as it is shown (a database from before ids given one), not 已载入 then. */
+export async function openStudio(page: Page, { autosaveDelay = 600_000, settled = true }: { autosaveDelay?: number; settled?: boolean } = {}): Promise<void> {
 	await page.addInitScript((delay) => {
 		(window as { STUDIO_AUTOSAVE_DELAY?: number }).STUDIO_AUTOSAVE_DELAY = delay;
 	}, autosaveDelay);
 	await page.goto(`/studio?article=${slug}`);
 	await expect(page.locator('#crepe-editor .milkdown .ProseMirror')).toBeVisible();
-	await expect(page.locator('#save-status')).toHaveText('已载入');
+	if (settled) await expect(page.locator('#save-status')).toHaveText('已载入');
 	await expect(scienceBlock(page, 'SMILES').locator('.science-block-preview svg')).toBeVisible();
 	await expect(scienceBlock(page, 'SDF').locator('.science-block-preview svg')).toBeVisible();
 	await expect(scienceBlock(page, 'XYZ').locator('.science-block-preview canvas')).toBeVisible();
