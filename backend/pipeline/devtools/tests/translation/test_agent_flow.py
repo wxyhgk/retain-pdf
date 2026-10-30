@@ -236,16 +236,31 @@ def test_engine_is_part_of_the_checkpoint_identity(tmp_path: Path) -> None:
     assert agent["engine"] == "agent" and agent["agent_prompt_version"]
 
 
-def test_new_check_rules_reset_the_state_but_keep_the_request_cache(tmp_path: Path, monkeypatch) -> None:
-    """检查规则改了（CHECKS_VERSION 升了）：旧进度不再沿用，整篇按新规则重判；请求缓存按请求内容寻址，留着，
-    同样的请求重翻不再花钱。（重试翻译阶段会新建任务，旧断点按别的尝试处理、从头来，见 checkpoint/session.py。）"""
+def test_a_retried_job_answers_old_requests_from_the_shared_cache(tmp_path: Path, fake_transport) -> None:
+    """重试翻译会新建任务（新的任务目录）：请求缓存在各任务共用的目录里，问过的一模一样的请求不再发。
+    以前缓存在任务自己的目录下，2026-10-30 用户重试一次论文翻译，44 次请求全部重新付费。"""
+    from retainpdf_base import paths
+
+    fake_transport(FakeModel())
+    execute_translation_request(_request(tmp_path))
+    assert any(paths.AGENT_REQUEST_CACHE_DIR.glob("*.json")), "answers are cached in the shared directory"
+    assert not (tmp_path / "translated" / "agent" / "cache").exists()
+
+    retried = tmp_path / "retry-job"
+    retried.mkdir()
+    model = fake_transport(FakeModel())
+    execute_translation_request(_request(tmp_path, output_dir=retried / "translated"))
+    assert model.bodies == [], "every request of the retried job is answered from the shared cache"
+    assert _pages(retried / "translated")["p001-b001"]["translated_text"].startswith("译文：")
+
+
+def test_new_check_rules_reset_the_state(tmp_path: Path, monkeypatch) -> None:
+    """检查规则改了（CHECKS_VERSION 升了）：旧进度不再沿用，整篇按新规则重判。"""
     import retainpdf_translation_agent
 
     pages = [agent_flow.PageInput(page_label="1", blocks=[agent_flow.BlockInput("b1", "paragraph", "Text.", True)])]
     state = tmp_path / "agent"
     agent_flow._prepare_state_dir(state, pages, "claude-haiku-5-5")
-    (state / "cache").mkdir()
-    (state / "cache" / "abc.json").write_text("{}", encoding="utf-8")
     (state / "run").mkdir()
     (state / "run" / "progress.json").write_text("{}", encoding="utf-8")
 
@@ -255,7 +270,6 @@ def test_new_check_rules_reset_the_state_but_keep_the_request_cache(tmp_path: Pa
     monkeypatch.setattr(retainpdf_translation_agent, "CHECKS_VERSION", "translation-agent-checks-test")
     agent_flow._prepare_state_dir(state, pages, "claude-haiku-5-5")
     assert not (state / "run").exists(), "new check rules: the old progress is dropped"
-    assert (state / "cache" / "abc.json").exists(), "the request cache is kept"
     assert json.loads((state / agent_flow.STATE_FINGERPRINT).read_text(encoding="utf-8"))["agent_checks_version"] == "translation-agent-checks-test"
 
 

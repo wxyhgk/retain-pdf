@@ -104,6 +104,42 @@ def test_a_phrase_the_source_repeats_on_both_sides_of_the_break_is_not_an_overla
     assert not any(i["code"] == "group_overlap" for k in ("a", "b") for i in issues[k]), issues
 
 
+def test_a_break_put_after_the_whole_sentence_is_moved_back_to_the_source_ratio() -> None:
+    # 原文的断点在句子中间，模型把整句都放在断点前面：前一块的框只有一行，按原文比例重切
+    group = lambda i: {"id": "cg-r", "index": i, "of": 2}  # noqa: E731
+    head = "One reason why such a method matters is that"
+    tail = (
+        "it can walk from a known minimum to nearby saddle points without guessing where the path ends, as a famous surface "
+        "study showed when it found that atoms swap places instead of hopping between sites. Many reactions still have unknown "
+        "mechanisms. A fair comparison of these methods is what this paper offers."
+    )
+    page = PageInput(page_label="1", blocks=[BlockInput("r1", "paragraph", head, True, group=group(1)), BlockInput("r2", "paragraph", tail, True, group=group(2))])
+    whole_first = "这类方法之所以重要，一个原因是它能从已知的极小点走到附近的鞍点、不必猜测路径的终点，一项著名的表面研究正是这样发现原子是互换位置而不是在位点间跳跃的。"
+    rest = "许多反应的机理仍不清楚。本文给出的正是这些方法的公平比较。"
+    model = Scripted({"cg-r": f"{whole_first}{BREAK}{rest}"})
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
+    first, second = results["r1"].translation, results["r2"].translation
+    assert first + second == whole_first + rest, "nothing is lost or duplicated"
+    assert len(first) < len(whole_first) / 2, f"the one-line box no longer gets the whole sentence: {first}"
+    assert "group_split_by_program" in [i["code"] for i in results["r1"].issues]
+    assert len(model.payloads) == 1, "re-split by the program, not asked again"
+
+
+def test_a_break_close_to_the_source_ratio_is_kept() -> None:
+    group = lambda i: {"id": "cg-k", "index": i, "of": 2}  # noqa: E731
+    page = PageInput(
+        page_label="1",
+        blocks=[
+            BlockInput("k1", "paragraph", "The first half of the paragraph explains the setup of the experiment in", True, group=group(1)),
+            BlockInput("k2", "paragraph", "some detail, and the second half reports what was measured afterwards.", True, group=group(2)),
+        ],
+    )
+    model = Scripted({"cg-k": f"前半段较详细地说明了实验的设置，{BREAK}后半段报告了之后测得的结果。"})
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
+    assert results["k1"].translation == "前半段较详细地说明了实验的设置，"
+    assert "group_split_by_program" not in [i["code"] for i in results["k1"].issues]
+
+
 def test_a_short_half_whose_words_moved_across_the_break_is_only_a_warning() -> None:
     # 中文语序把 "there is little difference" 挪到句末：前一块只剩"对于小体系，"，按块查太短，整组不短
     group = lambda i: {"id": "cg-s", "index": i, "of": 2}  # noqa: E731

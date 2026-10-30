@@ -68,13 +68,14 @@ def test_child_default_caches_use_isolated_output_root(tmp_path):
         [runner.sys.executable, "-c",
          "import json; from retainpdf_base import paths; "
          "print(json.dumps([str(paths.TRANSLATION_UNIT_CACHE_DIR), "
-         "str(paths.DOMAIN_CONTEXT_CACHE_DIR), str(paths.RENDER_TYPOGRAPHY_MEMORY_DIR)]))"],
+         "str(paths.DOMAIN_CONTEXT_CACHE_DIR), str(paths.RENDER_TYPOGRAPHY_MEMORY_DIR), "
+         "str(paths.AGENT_REQUEST_CACHE_DIR)]))"],
         env=runner.test_environment(str(tmp_path)), capture_output=True, text=True,
         check=True, timeout=20,
     )
     assert json.loads(child.stdout) == [
         str(tmp_path / name) for name in
-        ("_translation_unit_cache", "_domain_context_cache", "_render_typography_memory")
+        ("_translation_unit_cache", "_domain_context_cache", "_render_typography_memory", "_agent_request_cache")
     ]
 
 

@@ -750,6 +750,7 @@
         "devtools/tests/rendering/test_render_failure_integration.py",
         "devtools/tests/rendering/test_render_prewarm.py",
         "devtools/tests/test_output_root_isolation.py",
+        "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_pipeline_events_protocol.py",
         "devtools/tests/translation/test_translation_cache.py",
         "devtools/tests/translation/test_translation_editorial.py",
