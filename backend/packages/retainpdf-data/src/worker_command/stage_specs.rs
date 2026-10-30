@@ -181,7 +181,7 @@ pub(crate) fn write_translate_stage_spec(
 /// render.spec.json 的 `params.refine`。mode=off 时也写全字段，Python 侧不用猜默认值。
 ///
 /// mode 的决定规则：retry refine 的一次性覆盖 → 覆盖值 + trigger=manual；紧跟翻译的
-/// 那次渲染 → 任务的 `translation.refine` + trigger=auto；其余（普通重渲染等）→ off。
+/// 那次渲染 → 任务的 `translation.refine` + trigger=auto（翻译引擎是 agent 时 off）；其余（普通重渲染等）→ off。
 /// 翻译模型沿用 params 里的 model/base_url/credential_ref；reviewer_* 留空时由 Python
 /// 回退到翻译模型。key 只经 env 注入，这里只写 env 引用。
 fn render_refine_params(request: &ResolvedJobSpec, refine: &RenderRefine) -> serde_json::Value {
@@ -190,6 +190,10 @@ fn render_refine_params(request: &ResolvedJobSpec, refine: &RenderRefine) -> ser
     let job_limits = (request.translation.refine_max_items, request.translation.refine_max_tokens);
     let (mode, trigger, start_page, end_page, (max_items, max_tokens)) = match refine {
         RenderRefine::Off => ("off", "auto", None, None, job_limits),
+        // 翻译 agent 自带每页审校，翻译之后不再自动精修（不重复花钱）；手动精修照旧
+        RenderRefine::AfterTranslation if request.translation.engine == "agent" => {
+            ("off", "auto", None, None, job_limits)
+        }
         RenderRefine::AfterTranslation => (
             normalize_translation_refine_mode(&request.translation.refine),
             "auto",

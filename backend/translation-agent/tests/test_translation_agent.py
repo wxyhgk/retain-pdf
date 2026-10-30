@@ -79,6 +79,15 @@ def test_check_block_protects_formulas_marks_and_numbers() -> None:
     assert check_block("a level-2 heading reported as level 1 is a role error", "二级标题被报告为一级，算作角色错误") == []
 
 
+def test_words_in_a_script_the_source_does_not_have_are_errors() -> None:
+    """论文实跑：译文里冒出一个俄文词。原文本来就有的（希腊字母、引用的俄文）不算；公式里的不算。"""
+    codes = lambda src, out: {i["code"] for i in check_block(src, out)}  # noqa: E731
+    assert "foreign_script" in codes("The step should be parallel to the path.", "优化步长 должна 大致平行于路径。")
+    assert "foreign_script" not in codes("The alpha helix and the beta sheet.", "α 螺旋和 β 折叠。")
+    assert "foreign_script" not in codes("The energy $\\alpha$ is low.", "能量 $\\alpha$ 很低。")
+    assert "foreign_script" not in codes("As Landau wrote, «Теория поля».", "正如朗道所写，«Теория поля»。")
+
+
 def test_check_group_flags_text_repeated_across_the_break() -> None:
     dup = "最后凡被栏或页分隔的段落都保留指针"
     issues = check_group([("a", "x" * 100, "前半段……" + dup), ("b", "y" * 30, dup)])
@@ -109,6 +118,53 @@ def test_missing_blocks_are_retried_together_in_one_request() -> None:
     retry = model.payloads[1]
     assert sorted(r["id"] for r in retry["retry"]) == ["cap", "t"] and sorted(retry["required_ids"]) == ["cap", "t"]
     assert results["t"].attempts == 2 and results["t"].status == "ok" and results["t"].history[0]["issues"][0]["code"] == "missing"
+
+
+def test_every_role_sends_a_strict_tool_with_closed_objects() -> None:
+    """strict 工具：接口保证参数符合 schema（论文实跑碰到过数组被写成坏掉的 JSON 字符串）。"""
+    bodies: list[dict] = []
+
+    def model(body: dict) -> dict:
+        bodies.append(body)
+        return _response({"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"})
+
+    TranslationAgent(model="fake", transport=model).translate_page(_page())
+    tool = bodies[0]["tools"][0]
+    assert tool["strict"] is True
+
+    def objects(node):
+        if isinstance(node, dict):
+            if node.get("type") == "object":
+                yield node
+            for value in node.values():
+                yield from objects(value)
+        elif isinstance(node, list):
+            for value in node:
+                yield from objects(value)
+
+    found = list(objects(tool["input_schema"]))
+    assert found and all(o["additionalProperties"] is False for o in found)
+
+
+def test_translations_written_as_a_json_string_are_decoded_or_retried() -> None:
+    """真实文档实测：模型把 translations 写成一段 JSON 字符串，而且那段 JSON 是坏的。能解析就照用，解析不了就当没交、重翻。"""
+    good = json.dumps([{"id": k, "translation": v} for k, v in {"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"}.items()], ensure_ascii=False)
+    answers = [
+        {"content": [{"type": "tool_use", "name": "submit_translations", "input": {"translations": good}}], "usage": {}},
+    ]
+    results, _ = TranslationAgent(model="fake", transport=lambda body: answers.pop(0)).translate_page(_page())
+    assert results["t"].translation == "1 引言" and results["t"].attempts == 1
+
+    broken = '[{"id":"t","translation":"1 引言":"},{"id":"cap"'
+    answers = [
+        {"content": [{"type": "tool_use", "name": "submit_translations", "input": {"translations": broken}}], "usage": {}},
+        # 重翻：单块一个请求，接续组一个请求
+        _response({"t": "1 引言", "cap": "图 1：召回率 [3]。"}),
+        _response({"cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"}),
+    ]
+    results, _ = TranslationAgent(model="fake", transport=lambda body: answers.pop(0)).translate_page(_page())
+    assert results["t"].translation == "1 引言" and results["t"].attempts == 2, "the broken answer counts as missing and is retried"
+    assert results["a1"].status != "fallback_source"
 
 
 def test_a_footnote_mark_moved_across_the_break_is_only_a_warning() -> None:

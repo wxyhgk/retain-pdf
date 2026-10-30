@@ -18,6 +18,10 @@ QUOTED_RE = re.compile(r"《[^》]*》|“[^”]*”|「[^」]*」|（[^）]*）
 NUMBER_RE = re.compile(r"(?<![A-Za-z0-9_.])\d+(?:\.\d+)*(?![A-Za-z0-9_])")
 LATIN_WORD_RE = re.compile(r"[A-Za-z]{3,}")
 CJK_RE = re.compile(r"[一-鿿]")
+# 中文译文里不该凭空出现的文字：西里尔、韩文、日文假名、阿拉伯、希伯来、泰文……原文里有的不算。
+# 希腊字母不算：理工文献里 "alpha helix" 译成 "α 螺旋" 是正常写法。
+# 论文实跑碰到过 "…优化 должна 大致平行于…"（模型冒出一个俄文词），之前的检查都没拦住。
+FOREIGN_SCRIPT_RE = re.compile(r"[\u0400-\u04ff\u0590-\u05ff\u0600-\u06ff\u0e00-\u0e7f\u3040-\u30ff\uac00-\ud7af]+")
 # 原文里的小数字，译文写成中文数字也算保留（"level-2 heading" → "二级标题"）
 CN_DIGITS = {"1": "一", "2": "二两", "3": "三", "4": "四", "5": "五", "6": "六", "7": "七", "8": "八", "9": "九", "10": "十"}
 SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太短"：短标题翻成中文本来就短
@@ -140,6 +144,9 @@ def check_block(source: str, translation: str | None) -> list[dict]:
         issues.append(_issue("number_lost", "warn", f"数字可能丢了：{sorted(lost_numbers.elements())}"))
     plain_source = _strip_protected(source)
     plain_out = _strip_protected(translation)
+    foreign = sorted({w for w in FOREIGN_SCRIPT_RE.findall(plain_out) if w not in plain_source})
+    if foreign:
+        issues.append(_issue("foreign_script", "error", f"译文里冒出原文没有的外文：{foreign[:5]}"))
     stray = STRAY_EN_RE.findall(QUOTED_RE.sub(" ", plain_out))
     if stray and CJK_RE.search(plain_out):
         issues.append(_issue("stray_english", "error", f"中文句子里夹着英文词：{stray[:5]}"))
