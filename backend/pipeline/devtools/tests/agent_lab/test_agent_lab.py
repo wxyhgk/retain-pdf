@@ -46,9 +46,17 @@ def _requested_blocks(body: dict) -> list[dict]:
 
 
 def _fake_translation(text: str) -> str:
-    """假译文：每一段（接续组按 [[BREAK]] 分段）前面加"译文："，公式、引用、数字原样留着。"""
+    """假译文：前面加"译文："，公式、引用、数字原样留着（接续组交的是接起来的整段，由程序切回各块）。"""
     # 脚注开头的编号留在最前面（"1 译文：…"），和真模型一样
-    return "[[BREAK]]".join(re.sub(r"^(\d+\s+)?", lambda m: (m.group(1) or "") + "译文：", part.strip(), count=1) for part in text.split("[[BREAK]]"))
+    return re.sub(r"^(\d+\s+)?", lambda m: (m.group(1) or "") + "译文：", text.strip(), count=1)
+
+
+def _fake_answer(block: dict) -> str:
+    text = _fake_translation(block["text"])
+    if block.get("members"):
+        # 接续组交的是整段，程序切回各块：每句开头都标上"译文："，切在哪句后面，后一块都不是原样的英文
+        text = re.sub(r"\.\s+(?=[A-Z])", "。译文：", text)
+    return text
 
 
 class FakeModel:
@@ -70,7 +78,7 @@ class FakeModel:
         for block in blocks:
             if not retry and block["id"] in self.drop:
                 continue
-            text = _fake_translation(block["text"])
+            text = _fake_answer(block)
             if not retry and block["id"] in self.broken:
                 text = self.broken[block["id"]]
             out.append({"id": block["id"], "translation": text})
@@ -140,11 +148,11 @@ class DuplicatingModel(FakeModel):
         blocks, payload = _requested_blocks(body)
         out = []
         for block in blocks:
-            text = _fake_translation(block["text"])
+            text = _fake_answer(block)
             if "retry" not in payload and block["id"] == "cg-method-p1":
+                # 同一句话在整段开头和结尾各写一遍：切回两块后一边一句
                 dup = "最后凡被栏或页分隔的段落都保留指向其所接续块的指针"
-                head, tail = block["text"].split("[[BREAK]]")
-                text = f"译文：{dup}{head}[[BREAK]]译文：{dup}{tail}"
+                text = f"译文：{dup}{block['text']}{dup}"
             out.append({"id": block["id"], "translation": text})
         return _tool_response(out)
 
@@ -162,25 +170,25 @@ def test_duplicated_text_across_a_continuation_group_is_caught_and_the_group_ret
     assert [b["id"] for b in retries[0]["blocks"] if b["translate"]] == ["cg-method-p1"]
 
 
-def test_continuation_group_is_sent_as_one_record_with_break_markers(tmp_path: Path) -> None:
+def test_continuation_group_is_sent_as_one_paragraph_and_split_by_the_program(tmp_path: Path) -> None:
     from retainpdf_translation_agent.agent import BREAK
     from retainpdf_translation_agent.agent import expand_translations
     from retainpdf_translation_agent.agent import request_records
 
     page = next(p for p in build_pages(_truth(tmp_path), page_labels=PRINTED_PAGE) if p.page_label == "1")
     wanted = {b.id for b in page.to_translate()}
-    records = request_records(page.to_input({}).blocks, wanted)
-    group = next(r for r in records if r["id"] == "cg-method-p1")
-    assert group["members"] == ["method-p1", "method-p1-cont1"] and group["text"].count(BREAK) == 1
-    assert not any(r["id"] in {"method-p1", "method-p1-cont1"} for r in records)
     blocks = page.to_input({}).blocks
-    per_block, issues = expand_translations({"cg-method-p1": "前半[[BREAK]]后半"}, blocks, wanted)
-    assert per_block["method-p1"] == "前半" and per_block["method-p1-cont1"] == "后半" and not issues
-    # 没放断点：程序按原文长度比例切开，只记警告；放多了才算错
-    per_block, issues = expand_translations({"cg-method-p1": "没有断点，程序切开"}, blocks, wanted)
-    assert issues["method-p1"][0]["code"] == "group_split_by_program" and per_block["method-p1-cont1"]
-    _, issues = expand_translations({"cg-method-p1": "多[[BREAK]]了[[BREAK]]断点"}, blocks, wanted)
-    assert issues["method-p1"][0]["code"] == "group_break"
+    records = request_records(blocks, wanted)
+    group = next(r for r in records if r["id"] == "cg-method-p1")
+    members = {b.id: b for b in blocks}
+    assert group["members"] == ["method-p1", "method-p1-cont1"]
+    assert group["text"] == members["method-p1"].text + " " + members["method-p1-cont1"].text and BREAK not in group["text"]
+    assert not any(r["id"] in {"method-p1", "method-p1-cont1"} for r in records)
+    # 模型只交整段：程序按原文比例在标点处切回两块，不记问题；模型照老习惯写的 [[BREAK]] 删掉
+    for answer in ("前一半的译文，后一半的译文。", "前一半的译文，[[BREAK]]后一半的译文。"):
+        per_block, issues = expand_translations({"cg-method-p1": answer}, blocks, wanted)
+        assert per_block["method-p1"] and per_block["method-p1-cont1"] and not issues
+        assert per_block["method-p1"] + per_block["method-p1-cont1"] == answer.replace(BREAK, "")
 
 
 # ---- 长样例 ----

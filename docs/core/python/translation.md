@@ -166,7 +166,7 @@ load document.v1
 
 - 每页模板记录换成翻译 agent 包（`backend/translation-agent`）的 `PageInput`：sub_type 换成 agent 的块分类，原文用 `$…$` 直写公式
   （`math_mode` 强制 `direct_typst`），参考文献角标 `$ ^{40} $` 换成脚注标记 `{{fn:40}}`、写回时换回原写法；
-  `__cg__:` 接续组整组放进组头那一页，跨页的后半段也在那一页翻。
+  `__cg__:` 接续组整组放进组头那一页，跨页的后半段也在那一页翻；模型只翻接起来的整段，程序按原文比例切回各块。
 - `DocumentRun` 整篇按页顺序翻：先通读、每页审校（`read_first=True`、`review=True`）。状态和请求缓存在翻译目录的 `agent/` 下，
   块 id、原文、模型、agent 版本有一样变了就清掉重来；断点指纹（`checkpoint/identity.py`）里也加了引擎和 agent 版本，`legacy` 的指纹不变。
 - 每页做完（`on_page` 回调）：单块用 `apply_revised_member_text` 写回，接续组再用 `apply_revised_unit_text` 重建整组字段（和改译文一样）；

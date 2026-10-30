@@ -67,7 +67,7 @@ SOURCE_TEXT_READER_ALLOWLIST: dict[str, int] = {
     # 确定性 QA 要按「这一块自己的」原文核对续接组成员,范围本来就比完整链窄:
     # 走完整链会把整组原文算到单个成员头上(正是 truncated_translation 误报的成因)。
     "translation/retainpdf_translation/services/quality/qa/units.py": 2,  # 例外:块内原文
-    # 翻译引擎 agent 按块交原文：接续组由 agent 自己按 [[BREAK]] 合起来翻、再分回各块,
+    # 翻译引擎 agent 按块交原文：接续组由 agent 自己合起来翻、再按比例分回各块,
     # 走完整链会把整组原文塞给每个成员,同一段话翻好几遍。收在 _block_source 一个函数里。
     "translation/retainpdf_translation/workflow/agent_flow.py": 2,  # 例外:块内原文
     # ---- frozen-debt:逐处判断后再收敛,不能无脑替换 ----

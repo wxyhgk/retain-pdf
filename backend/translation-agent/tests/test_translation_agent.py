@@ -104,8 +104,8 @@ def test_a_phrase_the_source_repeats_on_both_sides_of_the_break_is_not_an_overla
     assert not any(i["code"] == "group_overlap" for k in ("a", "b") for i in issues[k]), issues
 
 
-def test_a_break_put_after_the_whole_sentence_is_moved_back_to_the_source_ratio() -> None:
-    # 原文的断点在句子中间，模型把整句都放在断点前面：前一块的框只有一行，按原文比例重切
+def test_a_group_is_split_back_by_the_source_ratio_not_by_the_model() -> None:
+    # 原文的断点在句子中间：前一块的框只有一行。模型只交一整段，程序按原文比例切，前一块只分到一行的量
     group = lambda i: {"id": "cg-r", "index": i, "of": 2}  # noqa: E731
     head = "One reason why such a method matters is that"
     tail = (
@@ -114,66 +114,104 @@ def test_a_break_put_after_the_whole_sentence_is_moved_back_to_the_source_ratio(
         "mechanisms. A fair comparison of these methods is what this paper offers."
     )
     page = PageInput(page_label="1", blocks=[BlockInput("r1", "paragraph", head, True, group=group(1)), BlockInput("r2", "paragraph", tail, True, group=group(2))])
-    whole_first = "这类方法之所以重要，一个原因是它能从已知的极小点走到附近的鞍点、不必猜测路径的终点，一项著名的表面研究正是这样发现原子是互换位置而不是在位点间跳跃的。"
-    rest = "许多反应的机理仍不清楚。本文给出的正是这些方法的公平比较。"
-    model = Scripted({"cg-r": f"{whole_first}{BREAK}{rest}"})
+    whole = (
+        "这类方法之所以重要，一个原因是它能从已知的极小点走到附近的鞍点、不必猜测路径的终点，一项著名的表面研究正是这样发现原子是互换位置而不是在位点间跳跃的。"
+        "许多反应的机理仍不清楚。本文给出的正是这些方法的公平比较。"
+    )
+    model = Scripted({"cg-r": whole})
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
     first, second = results["r1"].translation, results["r2"].translation
-    assert first + second == whole_first + rest, "nothing is lost or duplicated"
-    assert len(first) < len(whole_first) / 2, f"the one-line box no longer gets the whole sentence: {first}"
-    assert "group_split_by_program" in [i["code"] for i in results["r1"].issues]
-    assert len(model.payloads) == 1, "re-split by the program, not asked again"
+    assert first + second == whole, "nothing is lost or duplicated"
+    assert len(first) < len(whole) / 4, f"the one-line box gets about its share: {first}"
+    assert results["r1"].status == results["r2"].status == "ok", {k: r.issues for k, r in results.items()}
+    assert len(model.payloads) == 1
 
 
-def test_a_break_close_to_the_source_ratio_is_kept() -> None:
-    group = lambda i: {"id": "cg-k", "index": i, "of": 2}  # noqa: E731
+def test_the_program_never_cuts_inside_a_long_formula() -> None:
+    from retainpdf_translation_agent.breaks import split_by_ratio
+
+    formula = r"$ \Delta\mathbf{g}_{l+1}=\mathbf{g}(\mathbf{x}_{l+1})-\mathbf{g}(\mathbf{x}_{l}) $"
+    text = f"一种由甲提出，另一种由乙提出。甲的更新为其中 {formula}，乙的更新为"
+    for weights in ([50, 50], [30, 70], [70, 30]):
+        first, second = split_by_ratio(text, weights)
+        assert (first + second).replace(" ", "") == text.replace(" ", ""), "nothing is lost"
+        assert first.count("$") % 2 == 0 and second.count("$") % 2 == 0, (weights, first, second)
+
+
+def test_a_long_formula_near_the_split_point_stays_whole() -> None:
+    # 后一块带一个长公式：按总字数算比例，切点会落进公式里；按正文算，公式整个留在一块
+    group = lambda i: {"id": "cg-f", "index": i, "of": 2}  # noqa: E731
+    formula = r"$ \Delta\mathbf{g}_{l+1}=\mathbf{g}(\mathbf{x}_{l+1})-\mathbf{g}(\mathbf{x}_{l}) $"
     page = PageInput(
-        page_label="1",
+        page_label="5",
         blocks=[
-            BlockInput("k1", "paragraph", "The first half of the paragraph explains the setup of the experiment in", True, group=group(1)),
-            BlockInput("k2", "paragraph", "some detail, and the second half reports what was measured afterwards.", True, group=group(2)),
+            BlockInput("f1", "paragraph", "one update is due to Smith and the other to Jones. The Smith update is given by", True, group=group(1)),
+            BlockInput("f2", "paragraph", f"with {formula}, and the Jones update by", True, group=group(2)),
         ],
     )
-    model = Scripted({"cg-k": f"前半段较详细地说明了实验的设置，{BREAK}后半段报告了之后测得的结果。"})
+    model = Scripted({"cg-f": f"一种更新由 Smith 提出，另一种由 Jones 提出。Smith 更新为其中 {formula}，Jones 更新为"})
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
-    assert results["k1"].translation == "前半段较详细地说明了实验的设置，"
-    assert "group_split_by_program" not in [i["code"] for i in results["k1"].issues]
+    assert sum(formula in (results[k].translation or "") for k in ("f1", "f2")) == 1, {k: r.translation for k, r in results.items()}
+    assert results["f1"].status != "fallback_source" and results["f2"].status != "fallback_source", {k: r.issues for k, r in results.items()}
 
 
-def test_a_short_half_whose_words_moved_across_the_break_is_only_a_warning() -> None:
-    # 中文语序把 "there is little difference" 挪到句末：前一块只剩"对于小体系，"，按块查太短，整组不短
+def test_a_group_the_model_skipped_gets_one_more_retry() -> None:
+    # 页末的组第一次被整个漏掉，重翻时又漏了一句（脚注标记跟着丢了）：第一次没交不算一次，再翻一次
+    group = lambda i: {"id": "cg-m", "index": i, "of": 2}  # noqa: E731
+    page = PageInput(
+        page_label="5",
+        blocks=[
+            BlockInput("p", "paragraph", "A paragraph before the group that is answered.", True),
+            BlockInput("m1", "paragraph", "one due to Smith{{fn:46}} and the other to Jones. The Smith update is", True, group=group(1)),
+            BlockInput("m2", "paragraph", "given below, and so is the Jones update.", True, group=group(2)),
+        ],
+    )
+    model = Scripted(
+        {"p": "组前面的一段，交了。"},
+        {"cg-m": "Smith 更新为如下所示，Jones 更新也是。"},
+        {"cg-m": "一种由 Smith 提出{{fn:46}}，另一种由 Jones 提出。Smith 更新如下所示，Jones 更新也是。"},
+    )
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
+    assert len(model.payloads) == 3
+    assert model.payloads[1]["retry"][0]["previous_translation"] is None, "nothing was answered, so there is no previous translation"
+    assert results["m1"].status != "fallback_source" and "{{fn:46}}" in results["m1"].translation
+    assert results["m1"].attempts == 3
+
+
+def test_a_short_half_is_not_called_truncated_when_the_group_is_whole() -> None:
+    # 前一块原文只有半句：切出来很短，按块查"太短"，整组合起来不短，只记警告、不退回原文
     group = lambda i: {"id": "cg-s", "index": i, "of": 2}  # noqa: E731
     page = PageInput(
         page_label="1",
         blocks=[
             BlockInput("s1", "paragraph", "For the small system there is little difference", True, group=group(1)),
-            BlockInput("s2", "paragraph", "between the two update schemes, but larger systems clearly favour the first one.", True, group=group(2)),
+            BlockInput("s2", "paragraph", "between the two update schemes, but larger systems clearly favour the first one by a wide margin in every test we ran.", True, group=group(2)),
         ],
     )
-    model = Scripted({"cg-s": f"对于小体系，{BREAK}两种更新格式之间差别不大，但体系越大，第一种的优势越明显。"})
+    model = Scripted({"cg-s": "对于小体系，两种更新格式之间差别不大，但体系越大，第一种的优势越明显，在我们做的每一项测试里都大幅领先。"})
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
-    assert len(model.payloads) == 1, "no retry when the group as a whole is not short"
-    assert results["s1"].status == "warn" and results["s1"].translation == "对于小体系，"
-    assert [i["code"] for i in results["s1"].issues] == ["group_share"] and "中文语序" in results["s1"].issues[0]["message"]
+    assert len(model.payloads) == 1
+    assert results["s1"].status != "fallback_source" and results["s1"].translation
 
 
 def test_page_goes_out_once_with_groups_merged_and_comes_back_split() -> None:
-    model = Scripted({"t": "1 引言", "cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。", "cap": "图 1：召回率 [3]。"})
+    model = Scripted({"t": "1 引言", "cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。", "cap": "图 1：召回率 [3]。"})
     results, info = TranslationAgent(model="fake", transport=model).translate_page(_page())
     assert len(model.payloads) == 1
     sent = model.payloads[0]
     assert sent["required_ids"] == ["t", "cg-a", "cap"]
     merged = next(b for b in sent["blocks"] if b["id"] == "cg-a")
-    assert merged["members"] == ["a1", "a2"] and merged["text"].count(BREAK) == 1
+    assert merged["members"] == ["a1", "a2"] and merged["text"] == "We score boxes with $F_1$ and the recall of every page."
+    assert BREAK not in json.dumps(sent, ensure_ascii=False), "the model is not asked to place breaks"
     assert next(b for b in sent["blocks"] if b["id"] == "h")["translate"] is False
-    assert results["a1"].translation == "我们用 $F_1$ 和" and results["a2"].translation == "每一页的召回率给框打分。"
-    assert all(r.status == "ok" for r in results.values()), {k: r.issues for k, r in results.items()}
+    assert results["a1"].translation + results["a2"].translation == "我们用 $F_1$ 和每一页的召回率给框打分。"
+    assert results["a1"].translation and results["a2"].translation
     assert "h" not in results and info["extra_ids"] == []
 
 
 def test_missing_blocks_are_retried_together_in_one_request() -> None:
     model = Scripted(
-        {"cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"},
+        {"cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"},
         {"t": "1 引言", "cap": "图 1：召回率 [3]。"},
     )
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
@@ -189,7 +227,7 @@ def test_every_role_sends_a_strict_tool_with_closed_objects() -> None:
 
     def model(body: dict) -> dict:
         bodies.append(body)
-        return _response({"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"})
+        return _response({"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"})
 
     TranslationAgent(model="fake", transport=model).translate_page(_page())
     tool = bodies[0]["tools"][0]
@@ -211,7 +249,7 @@ def test_every_role_sends_a_strict_tool_with_closed_objects() -> None:
 
 def test_translations_written_as_a_json_string_are_decoded_or_retried() -> None:
     """真实文档实测：模型把 translations 写成一段 JSON 字符串，而且那段 JSON 是坏的。能解析就照用，解析不了就当没交、重翻。"""
-    good = json.dumps([{"id": k, "translation": v} for k, v in {"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"}.items()], ensure_ascii=False)
+    good = json.dumps([{"id": k, "translation": v} for k, v in {"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"}.items()], ensure_ascii=False)
     answers = [
         {"content": [{"type": "tool_use", "name": "submit_translations", "input": {"translations": good}}], "usage": {}},
     ]
@@ -223,7 +261,7 @@ def test_translations_written_as_a_json_string_are_decoded_or_retried() -> None:
         {"content": [{"type": "tool_use", "name": "submit_translations", "input": {"translations": broken}}], "usage": {}},
         # 重翻：单块一个请求，接续组一个请求
         _response({"t": "1 引言", "cap": "图 1：召回率 [3]。"}),
-        _response({"cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"}),
+        _response({"cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"}),
     ]
     results, _ = TranslationAgent(model="fake", transport=lambda body: answers.pop(0)).translate_page(_page())
     assert results["t"].translation == "1 引言" and results["t"].attempts == 2, "the broken answer counts as missing and is retried"
@@ -239,36 +277,26 @@ def test_a_footnote_mark_moved_across_the_break_is_only_a_warning() -> None:
             BlockInput("m2", "paragraph", "Middlemarch{{fn:25}} had begun to appear that month.", True, group=group(2)),
         ],
     )
-    model = Scripted({"cg-m": f"她借了《米德尔马契》{{{{fn:25}}}}当月开始分册出版的{BREAK}八册中的第一册。"})
+    model = Scripted({"cg-m": "她借了《米德尔马契》{{fn:25}}当月开始分册出版的八册中的第一册。"})
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
     assert len(model.payloads) == 1, "no retry for a mark that is still in the group"
     assert results["m2"].status == "warn" and "mark_moved" in [i["code"] for i in results["m2"].issues]
 
 
-def test_too_many_breaks_retry_the_whole_group_with_anchors() -> None:
-    model = Scripted(
-        {"t": "1 引言", "cg-a": f"我们用{BREAK} $F_1$ 给{BREAK}每一页的框打分。", "cap": "图 1：召回率 [3]。"},
-        {"cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"},
-    )
+def test_breaks_the_model_still_writes_are_ignored() -> None:
+    # 模型照老习惯写了 [[BREAK]]（还写多了）：删掉，按比例切，不重翻
+    model = Scripted({"t": "1 引言", "cg-a": f"我们用{BREAK} $F_1$ 给{BREAK}每一页的框打分。", "cap": "图 1：召回率 [3]。"})
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
-    retry = model.payloads[1]["retry"][0]
-    assert retry["id"] == "cg-a" and retry["breaks"] == [{"after": "score boxes with $F_1$ and the", "before": "recall of every page."}]
-    assert results["a1"].status == "ok" and results["a2"].status == "ok" and results["a1"].attempts == 2
+    assert len(model.payloads) == 1
+    assert BREAK not in results["a1"].translation + results["a2"].translation
+    assert results["a1"].translation and results["a2"].translation
 
 
-def test_a_missing_break_is_placed_by_the_program_at_punctuation_without_a_retry() -> None:
+def test_the_program_splits_at_punctuation() -> None:
     model = Scripted({"t": "1 引言", "cg-a": "我们用 $F_1$ 给框打分，并统计每一页的召回率。", "cap": "图 1：召回率 [3]。"})
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
     assert len(model.payloads) == 1
     assert results["a1"].translation == "我们用 $F_1$ 给框打分，" and results["a2"].translation == "并统计每一页的召回率。"
-    assert results["a1"].status == "warn" and results["a1"].issues[0]["code"] == "group_split_by_program"
-
-
-def test_a_break_at_the_very_end_leaves_no_empty_block() -> None:
-    model = Scripted({"t": "1 引言", "cg-a": f"我们用 $F_1$ 给框打分，并统计每一页的召回率。{BREAK}", "cap": "图 1：召回率 [3]。"})
-    results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
-    assert len(model.payloads) == 1 and results["a1"].translation and results["a2"].translation
-    assert results["a2"].issues[0]["code"] == "group_split_by_program"
 
 
 def test_a_slightly_changed_formula_is_restored_to_the_source() -> None:
@@ -329,7 +357,7 @@ def test_revision_of_a_block_that_is_not_translated_is_rejected() -> None:
 
 
 def test_identical_requests_are_served_from_cache(tmp_path: Path) -> None:
-    answer = {"t": "1 引言", "cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。", "cap": "图 1：召回率 [3]。"}
+    answer = {"t": "1 引言", "cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。", "cap": "图 1：召回率 [3]。"}
     first = Scripted(answer)
     TranslationAgent(model="fake", transport=first, cache_dir=tmp_path).translate_page(_page())
     second = Scripted()

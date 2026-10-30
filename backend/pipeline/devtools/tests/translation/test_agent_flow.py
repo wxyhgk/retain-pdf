@@ -80,7 +80,7 @@ def _document(tmp_path: Path) -> Path:
 
 
 def _fake_translation(text: str) -> str:
-    return "[[BREAK]]".join("译文：" + part.strip() for part in text.split("[[BREAK]]"))
+    return "译文：" + text.strip()
 
 
 class FakeModel:

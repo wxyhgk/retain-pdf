@@ -28,14 +28,15 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 OVERLAP_CHARS = 10  # 接续组里相邻两块的译文有这么多个连续相同的汉字，算重复
 # 相邻两块的原文本身就有这么多个连续相同的词：原文就重复了一段话，译文跟着重复是对的，不算重复
 SOURCE_OVERLAP_WORDS = 6
-# 接续组里一块译文占全组的比例和原文占比差这么多：断点放错了地方（框按原文大小定，译文多了就溢出、少了就空一大块）
+# 接续组里一块译文占全组的比例和原文占比差这么多（只算正文），而且字数也差这么多，记 group_share 警告。
+# 程序按比例切开以后一般不会；切点附近没有能切的地方（长公式）、只好偏开时才会
 SHARE_TOLERANCE = 0.2
-# 而且和按比例该分到的字数差这么多个字才算：几个字的短段，比例差得再多也装得下
 SHARE_DRIFT_MIN_CHARS = 12
 # 检查规则的版本：判对判错的规则改了就升，正式流程据此不再沿用旧的进度和断点（请求缓存照用）。
 # 1：2026-10-30 原文本来就重复的话不算接续组重复；接续组一块"太短"而整组不短只记警告
 # 2：2026-10-30 接续组模型放的断点和原文比例差太远，程序按比例重切
-CHECKS_VERSION = "translation-agent-checks-2"
+# 3：2026-10-30 接续组不再让模型放断点，一律由程序按正文比例切开（不落在公式里）；没交的块重翻后还不合格再翻一次
+CHECKS_VERSION = "translation-agent-checks-3"
 
 
 def visible_length(text: str) -> int:
@@ -96,6 +97,12 @@ def restore_formulas(source: str, translation: str | None) -> tuple[str | None, 
 
 def _strip_protected(text: str) -> str:
     return FN_RE.sub(" ", CITATION_RE.sub(" ", FORMULA_RE.sub(" ", CODE_RE.sub(" ", text))))
+
+
+def prose_length(text: str) -> int:
+    """正文有多长：去掉公式、脚注和引用标记、行内代码，空白压成一个。接续组算各块占比用它——公式在原文和译文里一样长，
+    中文正文却比英文短，按总字数算，带长公式的那块占比会被抬得很高（2026-10-30 论文第 5 页因此被误判断点放错）。"""
+    return len(" ".join(_strip_protected(text or "").split()))
 
 
 def _issue(code: str, severity: str, message: str) -> dict:
@@ -209,11 +216,11 @@ def check_group(members: list[tuple[str, str, str | None]]) -> dict[str, list[di
             message = f"和接续组里相邻的块译文重复：“{common[:24]}…”"
             issues[a_id].append(_issue("group_overlap", "error", message))
             issues[b_id].append(_issue("group_overlap", "error", message))
-    src_total = sum(len(s) for _, s, _ in members) or 1
-    out_total = sum(len(t) for _, _, t in members) or 1
+    src_total = sum(prose_length(s) for _, s, _ in members) or 1
+    out_total = sum(prose_length(t) for _, _, t in members) or 1
     for block_id, source, translation in members:
-        src_share, out_share = len(source) / src_total, len(translation) / out_total
-        if abs(src_share - out_share) > SHARE_TOLERANCE:
+        src_share, out_share = prose_length(source) / src_total, prose_length(translation) / out_total
+        if abs(src_share - out_share) > SHARE_TOLERANCE and abs(prose_length(translation) - src_share * out_total) >= SHARE_DRIFT_MIN_CHARS:
             issues[block_id].append(
                 _issue("group_share", "warn", f"这块原文占全组 {src_share:.0%}，译文却占 {out_share:.0%}，断点可能挪了")
             )

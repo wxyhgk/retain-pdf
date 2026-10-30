@@ -4,7 +4,7 @@
 
 - `pages.py`：把文档整理成按页送给 agent 的输入。每块给类别、大概位置（第几页、哪一栏、上中下）、原文（行内公式 `$…$`、脚注标记 `{{fn:1}}`）、
   要不要翻、接续组、关系。跨页接续的后半段放进前半段那一页。现在的输入是 OCR 分类查看器的样例（`devtools/ocr_viewer/`）。
-- 翻译 agent 本身（提示词、调用模型、校验、重翻、接续组断点、改稿）在独立的包 `retainpdf-translation-agent`
+- 翻译 agent 本身（提示词、调用模型、校验、重翻、接续组切回各块、改稿）在独立的包 `retainpdf-translation-agent`
   （`backend/translation-agent/`），这里只负责造样例、整理成包的输入格式、跑、出报告。
 - `long_book.py` + `long_sample.py`：长样例，一本约 20 页的 A5 小书（前言 + 7 章，文风各不相同），埋了跨章术语、
   同词异义（kernel、token）、缩写先用后定义、同一人和工具多种写法、期刊名和工具名、跨章引用、每章各自编号的参考文献。

@@ -117,7 +117,7 @@ def messages_url(base_url: str) -> str:
 
 def _block_source(item: dict) -> str:
     """这一块自己的原文（直写公式下就是带 `$…$` 的原文）。不走 item_source_text 的完整链：那条链给接续组成员的是整组原文，
-    agent 要的是每块各自的原文，接续组由它自己按 [[BREAK]] 合起来翻、再分回各块。"""
+    agent 要的是每块各自的原文，接续组由它自己合起来翻、再按比例分回各块。"""
     return str(item.get("protected_source_text") or item.get("source_text") or "").strip()
 
 
