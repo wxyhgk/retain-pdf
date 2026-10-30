@@ -80,3 +80,25 @@ def test_with_the_real_engine():
         assert "brace" in results[0].error.lower()
     finally:
         checker.close()
+
+
+def test_double_scripts_from_ocr_render_after_preparation():
+    """真实任务（2026-10-30 论文第 4 页）：OCR 写出 `\\mathbf{F}_1_*`，MathJax 报 "Double subscripts"，
+    整个公式退成源码印在译文里。渲染前补了空底数，排得出来。"""
+    from retainpdf_math.render_prep import prepare_formula_for_render
+
+    try:
+        command, env = render_check.default_command()
+    except render_check.RenderCheckUnavailable as exc:
+        pytest.skip(f"排版引擎不可用：{exc}")
+    checker = FormulaRenderChecker(command, env)
+    raw = ["\\mathbf{F}_1_* = -\\mathbf{g}(\\mathbf{x}_l^{1*})", "(\\mathbf{F}_1_* - \\mathbf{F}_2_*) / \\delta x_D", "x^2^3", "x_1^2_3"]
+    try:
+        before = checker.check([(tex, False) for tex in raw])
+        if before is None:
+            pytest.skip(f"排版引擎不可用：{checker.disabled_reason}")
+        assert not any(r.ok for r in before), "these are broken as OCR wrote them"
+        after = checker.check([(prepare_formula_for_render(tex, display=False)[0], False) for tex in raw])
+        assert [r.ok for r in after] == [True] * len(raw), [r.error for r in after]
+    finally:
+        checker.close()

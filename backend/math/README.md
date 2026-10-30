@@ -9,6 +9,7 @@ RetainPDF 的公式处理包。翻译流水线、AI 服务都从这里拿关于�
 | `checks` | 不用渲染器就能判断的问题：花括号不配对、翻译时丢了 LaTeX 命令 |
 | `direct_typst` | direct_typst 译文的机械格式规整（公式和中文之间的空格、相邻公式、双反斜杠）、`$` 是否成对、提示词里「渲染不了的命令换成什么」的替换表 |
 | `render_check` | 交给排版引擎同一套 MathJax 试渲染，「ok」就等于能排进 PDF |
+| `render_prep`、`source_repair` | 单个公式交给渲染器之前的改写；`source_repair` 只修 OCR 把原文写坏的地方（写重的 `\\mu`、同一个底数连写两个下标或上标 `F_1_*` → `F_1{}_*`），翻译阶段的公式渲染检查用同一份改写 |
 
 ## render_check 怎么找到引擎
 

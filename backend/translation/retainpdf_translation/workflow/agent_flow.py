@@ -7,7 +7,8 @@
   （agent 引擎强制 math_mode=direct_typst），参考文献角标 "$ ^{40} $" 换成脚注标记 `{{fn:40}}`、写回时换回去；
   接续组（`__cg__:` 单元）整组放进组头那一页。
 - `DocumentRun` 整篇顺序翻：先通读（体裁、术语、人名、标题），每页翻完审校。状态（续跑用）和请求缓存在
-  翻译目录的 `agent/` 下，换了文档或引擎版本就清掉重来。调度同时写编辑部事件 `agent/run/events.jsonl`（editorial.v1），
+  翻译目录的 `agent/` 下，换了文档或引擎版本（提示词、交接格式、检查规则）就清掉状态重来；请求缓存按请求内容
+  寻址、留着，同样的请求重翻不再花钱。调度同时写编辑部事件 `agent/run/events.jsonl`（editorial.v1），
   前端「进度」面板的编辑部画面从 `GET /api/v1/jobs/:job_id/progress/editorial` 读它。
 - 每页做完：译文写回模板记录（单块和 `revision.py` 一样用 `apply_revised_member_text`，接续组再重建整组字段），
   落盘、提交断点（实时译文照常），发 `translation_batches` 进度，记用量台账。
@@ -62,6 +63,7 @@ if TYPE_CHECKING:
 
 AGENT_STATE_DIR = "agent"
 RUN_DIR = "run"
+CACHE_DIR = "cache"
 # 编辑部事件相对翻译目录的位置。rust_api 读事件的接口按同一个路径找（retainpdf-core 的
 # storage_paths::AGENT_EDITORIAL_EVENTS_RELATIVE_PATH），改了两边一起改，test_agent_flow 钉着。
 EDITORIAL_EVENTS_RELATIVE_PATH = f"{AGENT_STATE_DIR}/{RUN_DIR}/{EVENTS_FILE}"
@@ -340,7 +342,10 @@ def _mark_unanswered(page_payloads: dict[int, list[dict]]) -> set[int]:
 
 
 def _prepare_state_dir(state_dir: Path, pages: list[PageInput], model: str) -> None:
-    """状态目录对应这份文档和这个引擎版本：块 id、原文、模型、版本有一样变了就清掉重来（不沿用别的输入的进度）。"""
+    """状态目录对应这份文档和这个引擎版本：块 id、原文、模型、版本有一样变了就清掉重来（不沿用别的输入的进度）。
+
+    请求缓存（`cache/`）不清：键是整个请求体的哈希，输入变了键也变，留着不会用错；只改了检查规则时，
+    重翻的请求和上次一模一样，不用再付一遍钱。"""
     digest = hashlib.sha256()
     for page in pages:
         for block in page.blocks:
@@ -352,7 +357,13 @@ def _prepare_state_dir(state_dir: Path, pages: list[PageInput], model: str) -> N
     except (OSError, ValueError):
         current = None
     if current != fingerprint and state_dir.exists():
-        shutil.rmtree(state_dir)
+        for child in state_dir.iterdir():
+            if child.name == CACHE_DIR:
+                continue
+            if child.is_dir():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
     state_dir.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(fingerprint, ensure_ascii=False) + "\n", encoding="utf-8")
 
@@ -434,7 +445,7 @@ def translate_book_with_agent(
     agent = TranslationAgent(
         model=model,
         transport=transport or make_http_transport(api_key, url=messages_url(base_url)),
-        cache_dir=state_dir / "cache",
+        cache_dir=state_dir / CACHE_DIR,
     )
     usage = _UsageRecorder(agent, base_url=base_url)
     run = DocumentRun(agent, state_dir / RUN_DIR, glossary=glossary_from_entries(glossary_entries or []), read_first=True, review=True)

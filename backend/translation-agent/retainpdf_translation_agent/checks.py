@@ -26,6 +26,11 @@ FOREIGN_SCRIPT_RE = re.compile(r"[\u0400-\u04ff\u0590-\u05ff\u0600-\u06ff\u0e00-
 CN_DIGITS = {"1": "一", "2": "二两", "3": "三", "4": "四", "5": "五", "6": "六", "7": "七", "8": "八", "9": "九", "10": "十"}
 SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太短"：短标题翻成中文本来就短
 OVERLAP_CHARS = 10  # 接续组里相邻两块的译文有这么多个连续相同的汉字，算重复
+# 相邻两块的原文本身就有这么多个连续相同的词：原文就重复了一段话，译文跟着重复是对的，不算重复
+SOURCE_OVERLAP_WORDS = 6
+# 检查规则的版本：判对判错的规则改了就升，正式流程据此不再沿用旧的进度和断点（请求缓存照用）。
+# 1：2026-10-30 原文本来就重复的话不算接续组重复；接续组一块"太短"而整组不短只记警告
+CHECKS_VERSION = "translation-agent-checks-1"
 
 
 def visible_length(text: str) -> int:
@@ -169,8 +174,8 @@ def check_block(source: str, translation: str | None) -> list[dict]:
     return issues
 
 
-def _longest_common(a: str, b: str) -> str:
-    """两段文字最长的相同片段（动态规划，段落长度在几百字以内）。"""
+def _longest_common(a, b):
+    """两段文字（或两串词）最长的相同片段（动态规划，段落长度在几百字以内）。"""
     best, best_end = 0, 0
     previous = [0] * (len(b) + 1)
     for i in range(1, len(a) + 1):
@@ -189,10 +194,13 @@ def check_group(members: list[tuple[str, str, str | None]]) -> dict[str, list[di
     issues: dict[str, list[dict]] = {block_id: [] for block_id, _, _ in members}
     if len(members) < 2 or any(t is None for _, _, t in members):
         return issues
-    for (a_id, _, a_text), (b_id, _, b_text) in zip(members, members[1:]):
+    for (a_id, a_source, a_text), (b_id, b_source, b_text) in zip(members, members[1:]):
         # 只比汉字：两块里都出现的英文专名、公式不算重复
         common = _longest_common("".join(CJK_RE.findall(a_text)), "".join(CJK_RE.findall(b_text)))
-        if len(common) >= OVERLAP_CHARS:
+        # 2026-10-30 论文第 11 页：两块原文里有同一句十来个词的话，译文跟着重复，以前判成重复、重翻还是"重复"，
+        # 整组退回原文没翻
+        source_common = _longest_common(LATIN_WORD_RE.findall(a_source.lower()), LATIN_WORD_RE.findall(b_source.lower()))
+        if len(common) >= OVERLAP_CHARS and len(source_common) < SOURCE_OVERLAP_WORDS:
             message = f"和接续组里相邻的块译文重复：“{common[:24]}…”"
             issues[a_id].append(_issue("group_overlap", "error", message))
             issues[b_id].append(_issue("group_overlap", "error", message))

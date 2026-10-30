@@ -631,21 +631,34 @@ class TranslationAgent:
 MOVABLE = {"formula_changed", "citation_lost", "footnote_mark_lost", "code_changed"}
 
 
+# 中文语序把内容挪过断点：一块按自己查"太短"，整组合起来不短，是断点位置挪了，不是截断。
+# 2026-10-30 论文第 13 页：跨页那半句只有 8 个词，"差别不大"按中文语序放到了下一页那块的句末，这半只剩"对于低维体系，"；
+# 以前判截断、重翻还一样，这半句退回原文没翻
+SHIFTED = {"too_short": ("group_share", "（整组合起来不短，中文语序把内容挪到了接续组的另一块，断点位置可能挪了）")}
+
+
 def _forgive_moved_marks(members: list, results: dict[str, BlockResult]) -> None:
     if len(members) < 2 or any(results[b.id].translation is None for b in members):
         return
     whole = check_block(" ".join(b.text for b in members), "".join(results[b.id].translation or "" for b in members))
     still_lost = {i["code"] for i in whole}
+
+    def forgiven(issue: dict) -> dict | None:
+        code = issue["code"]
+        if code in still_lost:
+            return None
+        if code in MOVABLE:
+            return dict(issue, code="mark_moved", severity="warn", message=issue["message"] + "（整组里还在，挪到了接续组的另一块）")
+        if code in SHIFTED:
+            new_code, note = SHIFTED[code]
+            return dict(issue, code=new_code, severity="warn", message=issue["message"] + note)
+        return None
+
     for block in members:
         result = results[block.id]
-        if not any(i["code"] in MOVABLE and i["code"] not in still_lost for i in result.issues):
+        if not any(forgiven(i) for i in result.issues):
             continue
-        result.issues = [
-            dict(i, code="mark_moved", severity="warn", message=i["message"] + "（整组里还在，挪到了接续组的另一块）")
-            if i["code"] in MOVABLE and i["code"] not in still_lost
-            else i
-            for i in result.issues
-        ]
+        result.issues = [forgiven(i) or i for i in result.issues]
         result.status = status_of(result.issues)
 
 
