@@ -25,7 +25,8 @@ async function openAndLeave(page: Page): Promise<void> {
 async function openHeld(page: Page): Promise<() => void> {
 	let release!: () => void;
 	const held = new Promise<void>((resolve) => { release = resolve; });
-	await page.route(/\/src\/studio\/main\.ts/u, async (route) => {
+	// Its script as this machine's Studio has it, or built (client-build.mjs, as another device's has it).
+	await page.route(/\/src\/studio\/main\.ts|\/studio-client\/assets\/studio-[\w-]+\.js/u, async (route) => {
 		await held;
 		await route.continue();
 	});

@@ -216,7 +216,8 @@ export async function sendFile(response, resource) {
 export function sendEvents(request, response, subscribe) {
 	response.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive' });
 	response.write('retry: 2000\n\n');
-	const stop = subscribe((data) => response.write(`data: ${JSON.stringify(data)}\n\n`));
+	// Named (`event: …`), or the page's plain messages.
+	const stop = subscribe((data, event) => response.write(`${event ? `event: ${event}\n` : ''}data: ${JSON.stringify(data)}\n\n`));
 	// A comment now and then keeps the connection from looking idle.
 	const keepAlive = setInterval(() => response.write(': keep-alive\n\n'), 25_000);
 	request.on('close', () => {

@@ -64,7 +64,7 @@ function sayWhyItEnds() {
 	process.once('exit', (code) => say(`退出码 ${code}`)); // i18n-ignore: developer log
 }
 
-export default function studioDev({ site } = {}) {
+export default function studioDev({ site, builds } = {}) {
 	return {
 		name: 'local-article-studio',
 		apply: 'serve',
@@ -172,6 +172,8 @@ export default function studioDev({ site } = {}) {
 			}, { warn: (message) => server.config.logger.warn(`[studio] ${message}`), disabled }));
 			// A page app's file changed: its windows load it again (a project app's own server does that for it).
 			const changedApps = new Map();
+			const appListeners = new Set();
+			const appChanges = { subscribe: (listener) => (appListeners.add(listener), () => appListeners.delete(listener)) };
 			const appsWatchers = [];
 			for (const folder of new Set([appsFolder, builtInApps])) {
 				try {
@@ -181,9 +183,7 @@ export default function studioDev({ site } = {}) {
 						changedApps.set(id, setTimeout(() => {
 							changedApps.delete(id);
 							void miniApps.get(id).then((app) => {
-								if (app?.kind !== 'page') return;
-								const hot = server.environments?.client?.hot ?? server.hot;
-								hot?.send({ type: 'custom', event: 'studio:app-changed', data: { id } });
+								if (app?.kind === 'page') for (const listener of appListeners) listener(id);
 							});
 						}, 150));
 					});
@@ -234,6 +234,8 @@ export default function studioDev({ site } = {}) {
 				settingsFile,
 				folder: resolve(privateRoot, '.studio-cache', 'remote'),
 				target: () => server.httpServer?.address()?.port ?? null,
+				// Open: the Studio built for the devices to come (client-build.mjs), before the first one asks.
+				opened: () => builds?.want(),
 				...(testBlogRoot ? { port: 0, listenHost: '127.0.0.1' } : {}),
 			});
 			server.httpServer?.once('listening', () => void remote.resume().catch((error) => server.config.logger.warn(`[studio] ${error instanceof Error ? error.message : error}`)));
@@ -257,6 +259,7 @@ export default function studioDev({ site } = {}) {
 				articleGit,
 				library,
 				watcher,
+				appChanges,
 				drive,
 				driveText,
 				terminals,

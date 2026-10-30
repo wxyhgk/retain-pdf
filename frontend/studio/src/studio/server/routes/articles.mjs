@@ -14,9 +14,14 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function articleRoutes(api, { site, blogRoot, articles, history, manager, articleGit, library, codeFiles, watcher, notesIndex, templates }) {
-	// What changes in blog/, as server-sent events: `data: [{"slug":"note","paths":["index.md"]}]`.
-	api.get('/events', ({ request, response }) => sendEvents(request, response, (send) => watcher.subscribe(send)), { streams: true });
+export function articleRoutes(api, { site, blogRoot, articles, history, manager, articleGit, library, codeFiles, watcher, appChanges, notesIndex, templates }) {
+	// What changes in blog/, as server-sent events: `data: [{"slug":"note","paths":["index.md"]}]`; and a page app's
+	// files changed, `event: app-changed` (`data: {"id":"…"}`): one line for the page, which may keep only a few open.
+	api.get('/events', ({ request, response }) =>
+		sendEvents(request, response, (send) => {
+			const stops = [watcher.subscribe(send), appChanges.subscribe((id) => send({ id }, 'app-changed'))];
+			return () => stops.forEach((stop) => stop());
+		}), { streams: true });
 
 	api.get('/articles', async () => ({ articles: await articles.list() }));
 	api.post('/articles', async ({ json }) => reply(201, await articles.create(await json())));

@@ -3,6 +3,7 @@ import { RotateCw } from 'lucide-react';
 import type { ReactElement } from 'react';
 
 import { SITE_TITLE } from '../../consts';
+import { PAGES } from './page-styles.mjs';
 import { ArticleRepository } from '../server/articles/article-repository.mjs';
 import { pageVersion, studioBlogRoot } from '../server/articles/page-version.mjs';
 import { LocaleSettings, studioSettingsFile } from '../server/locale-settings.mjs';
@@ -15,38 +16,6 @@ import { createHeaderState } from '../pages/header/header-state';
 import { PageHeader } from '../pages/header/PageHeader';
 import { createFilePanelState } from '../files/panel/file-panel-state';
 import { FilePanel } from '../files/panel/FilePanel';
-/**
- * The page's stylesheets, by how they are imported (found as the page's scripts find them: Milkdown's from its source),
- * each in its head (not added by its scripts later): the first picture is drawn as the editor draws it. In this order:
- * the blog's own, the editor's, the Studio's, the page's last.
- */
-const CSS = {
-	globalCss: '../../styles/global.css',
-	katexCss: 'katex/dist/katex.min.css',
-	crepeCommonCss: '@milkdown/crepe/theme/common/style.css',
-	crepeClassicCss: '@milkdown/crepe/theme/classic.css',
-	mathCss: '@blog/editor-kit/math/math.css',
-	calloutsCss: '@blog/markdown/callouts/callouts.css',
-	codeFilesCss: '@blog/markdown/code-files/code-files.css',
-	figuresCss: '@blog/markdown/figures/figures.css',
-	referencesCss: '@blog/markdown/references/references.css',
-	fileCardsCss: '@blog/markdown/files/file-cards.css',
-	officeCss: '@blog/office/office.css',
-	xtermCss: '@xterm/xterm/css/xterm.css',
-	tokensCss: '../tokens.css',
-	interCss: '@fontsource-variable/inter/opsz.css',
-	designCss: '../design.css',
-	shellCss: '../shell/shell.css',
-	pageHeaderCss: '../pages/page-header.css',
-	filePanelCss: '../files/file-panel.css',
-	sidebarHostsCss: '../shell/sidebar-hosts.css',
-	driveCss: '../files/drive.css',
-	articleTableCss: '../pages/article-table.css',
-	aiPanelCss: '../ai/ai-panel.css',
-	blockSheetCss: '@blog/ui/block-sheet.css',
-	studioPageCss: './studio-page.css',
-	windowPageCss: './window-page.css',
-};
 // KaTeX draws nothing until its fonts are in: the ones most formulas use, asked for with the page.
 import katexMain from 'katex/dist/fonts/KaTeX_Main-Regular.woff2?url';
 import katexMath from 'katex/dist/fonts/KaTeX_Math-Italic.woff2?url';
@@ -104,7 +73,7 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 	const pages = { first: articles[0]?.slug ?? null, versions: Object.fromEntries(await Promise.all(articles.map(async ({ slug }: { slug: string }) => [slug, await pageVersion(blogRoot, slug)]))) };
 	const [current, dropFiles, instructing] = [t('当前'), t('拖入文件即可上传 · 右键查看更多操作'), t('AI 处理中…')].map((word) => JSON.stringify(word));
 	const words = `--word-current: ${current}; --word-drop-files: ${dropFiles}; --word-instructing: ${instructing}`;
-	const styles = [CSS.globalCss, CSS.katexCss, CSS.crepeCommonCss, CSS.crepeClassicCss, CSS.mathCss, CSS.calloutsCss, CSS.codeFilesCss, CSS.figuresCss, CSS.referencesCss, CSS.fileCardsCss, CSS.officeCss, CSS.xtermCss, CSS.tokensCss, CSS.interCss, CSS.designCss, CSS.shellCss, CSS.pageHeaderCss, CSS.filePanelCss, CSS.sidebarHostsCss, CSS.driveCss, CSS.articleTableCss, CSS.aiPanelCss, CSS.blockSheetCss, CSS.studioPageCss];
+	const { styles } = PAGES.studio;
 	// The page's words, in the language it speaks (escaped for the page).
 	const say = Object.fromEntries(Object.entries({
 		editor: t('文章编辑器'),
@@ -243,7 +212,7 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 		<!-- What the shell opens over the page: dialogs, menus, the message at the bottom (mount.tsx). -->
 		<div id="ui-layer" data-ui></div>
 
-		<script type="module" src="/src/studio/main.ts"></script>
+		<script type="module" src="${PAGES.studio.entry}"></script>
 	</body>
 </html>
 `;
@@ -253,7 +222,7 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 export async function renderStudioWindow({ root, acceptLanguage }: { root: string; acceptLanguage: string | null }): Promise<DrawnPage> {
 	const spoken = await speak(root, acceptLanguage);
 	const title = t('Studio 的窗口');
-	const styles = [CSS.globalCss, CSS.katexCss, CSS.mathCss, CSS.calloutsCss, CSS.codeFilesCss, CSS.tokensCss, CSS.interCss, CSS.designCss, CSS.shellCss, CSS.aiPanelCss, CSS.blockSheetCss, CSS.windowPageCss];
+	const { styles } = PAGES.window;
 	const page = `<!doctype html>
 <html lang="${escape(spoken)}" data-studio-locale="${escape(spoken)}">
 	<head>
@@ -263,7 +232,7 @@ export async function renderStudioWindow({ root, acceptLanguage }: { root: strin
 	<body class="studio-body studio-window">
 		<main id="window-body" class="window-body"></main>
 		<div id="ui-layer" data-ui></div>
-		<script type="module" src="/src/studio/windows/window-main.ts"></script>
+		<script type="module" src="${PAGES.window.entry}"></script>
 	</body>
 </html>
 `;

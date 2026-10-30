@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { createReadStream, existsSync, mkdirSync, openSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { dirname, extname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { createServer, mergeConfig } from 'vite';
 
+import { builtPage, CLIENT_BASE, CLIENT_TYPES, ClientBuilds, sharedConfig, SITE } from './client-build.mjs';
 import milkdownSource from '../plugins/milkdown-source.mjs';
+import { PAGES } from './page/page-styles.mjs';
 import { notesRoot } from './server/notes-root.mjs';
 import studioDev from '../plugins/studio-dev.mjs';
 import { t } from '@blog/i18n/index.mjs';
@@ -27,9 +29,6 @@ import { t } from '@blog/i18n/index.mjs';
 
 /** Where a running Studio says where it is. */
 export const SERVER_FILE = join('.studio-cache', 'server.json');
-
-/** The blog's address (astro.config.mjs's `site`): links to its articles written in full count as theirs. */
-const SITE = 'https://wxyhgk.github.io';
 
 /**
  * A page's stylesheets in it as Vite keeps them while it serves (as Astro's dev server put them): each in a <style>
@@ -116,10 +115,27 @@ function blogPreview(root) {
 }
 
 /** The Studio's pages, drawn on the server; `/` is the Studio. */
-function studioPages(root) {
+function studioPages(root, builds) {
 	return {
 		name: 'studio-pages',
 		configureServer(server) {
+			// The Studio's code changed: the built one (for other devices) is out of date.
+			server.watcher.on('all', (_event, file) => builds.changed(file));
+			// The built Studio's files: each named by what it holds, kept by a device for good.
+			server.middlewares.use(CLIENT_BASE, (request, response, next) => {
+				const file = resolve(builds.folder, `.${decodeURIComponent((request.url ?? '/').split('?', 1)[0])}`);
+				let stats = null;
+				try {
+					stats = file.startsWith(builds.folder + sep) ? statSync(file) : null;
+				} catch {
+					// Not there.
+				}
+				if (!stats?.isFile()) return next();
+				const kept = file.startsWith(join(builds.folder, 'assets') + sep);
+				response.writeHead(200, { 'Content-Type': CLIENT_TYPES[extname(file)] ?? 'application/octet-stream', 'Content-Length': stats.size, 'Cache-Control': kept ? 'public, max-age=31536000, immutable' : 'no-cache' });
+				if (request.method === 'HEAD') return response.end();
+				createReadStream(file).pipe(response);
+			});
 			server.middlewares.use(async (request, response, next) => {
 				const path = (request.url ?? '/').split('?', 1)[0];
 				if (request.method !== 'GET' && request.method !== 'HEAD') return next();
@@ -132,7 +148,12 @@ function studioPages(root) {
 				try {
 					const render = await server.ssrLoadModule('/src/studio/page/render.tsx');
 					const drawn = await render[page]({ root, acceptLanguage: request.headers['accept-language'] ?? null });
-					const html = await server.transformIndexHtml(request.url ?? path, drawn.html.replace(render.STYLES, await styleTags(server, root, drawn.styles)));
+					// Another device (其他设备访问) is given the Studio built (client-build.mjs), once it is of the code as it is.
+					const built = request.headers['x-studio-remote'] || process.env.STUDIO_CLIENT === 'built' ? builds.current() : null;
+					const name = page === 'renderStudioPage' ? 'studio' : 'window';
+					const html = built
+						? builtPage(drawn.html, built.pages[name], { stylesMark: render.STYLES, entry: PAGES[name].entry, assets: builds.assetNames() })
+						: await server.transformIndexHtml(request.url ?? path, drawn.html.replace(render.STYLES, await styleTags(server, root, drawn.styles)));
 					// Its length told: then the door other devices come in by (remote-access.mjs) sends it compressed.
 					response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': Buffer.byteLength(html), 'Cache-Control': 'no-store' });
 					response.end(html);
@@ -151,21 +172,15 @@ function studioPages(root) {
  * @returns {Promise<{ server: import('vite').ViteDevServer, url: string, close(): Promise<void> }>}
  */
 export async function startStudio({ root = process.cwd(), port = 4321, host = 'localhost', logLevel = 'info', site = SITE, strictPort = false, announce = false, vite = {} } = {}) {
+	// The Studio built for other devices; the browser tests' built once before they start (STUDIO_CLIENT_DIR).
+	const builds = new ClientBuilds({ root, ...(process.env.STUDIO_CLIENT_DIR ? { folder: resolve(process.env.STUDIO_CLIENT_DIR), fixed: true } : {}) });
 	const server = await createServer(mergeConfig({
 		root,
 		configFile: false,
 		appType: 'custom',
 		logLevel,
 		publicDir: resolve(root, 'public'),
-		// What the Studio's code reads of its build (the blog's address, as Astro gave it).
-		define: {
-			'import.meta.env.SITE': JSON.stringify(site),
-			// The editor's menus are Vue's (Crepe): its build's switches, as its own build sets them.
-			__VUE_OPTIONS_API__: 'true',
-			__VUE_PROD_DEVTOOLS__: 'false',
-			__VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'false',
-		},
-		resolve: { alias: [{ find: /^@studio\//u, replacement: `${resolve(root, 'src', 'studio')}/` }] },
+		...sharedConfig({ root, site }),
 		server: {
 			port,
 			host,
@@ -185,7 +200,7 @@ export async function startStudio({ root = process.cwd(), port = 4321, host = 'l
 			// read as one, and the scan given up.
 			rolldownOptions: { plugins: [{ name: 'studio-stylesheets-aside', resolveId: (id) => (/\.css(?:$|\?)/u.test(id) ? { id, external: true } : null) }] },
 		},
-		plugins: [react({ include: /\/src\/studio\/.*\.tsx$/u }), tailwindcss(), milkdownSource({ root }), studioDev({ site }), studioPages(root), blogPreview(notesRoot(root))],
+		plugins: [react({ include: /\/src\/studio\/.*\.tsx$/u }), tailwindcss(), milkdownSource({ root }), studioDev({ site, builds }), studioPages(root, builds), blogPreview(notesRoot(root))],
 	}, vite));
 	await server.listen();
 	const url = server.resolvedUrls?.local[0] ?? `http://${host}:${port}/`;

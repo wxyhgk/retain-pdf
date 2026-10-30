@@ -30,6 +30,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../articles/article-git.mjs').ArticleGit} articleGit
  * @property {import('../articles/article-library.mjs').ArticleLibrary} library
  * @property {import('../articles/blog-watcher.mjs').BlogWatcher} watcher
+ * @property {{ subscribe(listener: (id: string) => void): () => void }} appChanges a page app's files changed (its windows load it again)
  * @property {import('../drive/drive.mjs').Drive} drive
  * @property {import('../drive/drive-text.mjs').DriveText} driveText
  * @property {import('../system/terminal-host.mjs').TerminalHost} terminals

@@ -3,6 +3,7 @@ import { AppWindow, Maximize2, PanelRight, PictureInPicture2 } from 'lucide-reac
 import type { StudioPanel } from '@blog/kernel/ui.ts';
 import { appCheckpoints, appFetch, appRun, appServer, articleFileUrl, createApp, getTask, keepAppCheckpoint, listArticleFiles, listMiniApps, notesCode, notesImages, reportAppError, repos, restoreAppCheckpoint, revealApp, uploadArticleFile, type AppStatus, type MiniApp } from '../api/client';
 import { showContextMenu } from '../common/context-menu';
+import { watchApps } from '../common/disk-events';
 import { openDialog } from '../shell/dialogs/Dialogs';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -1006,8 +1007,8 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		connect(shown);
 	});
 	// A page app's files changed: its window loads it again.
-	import.meta.hot?.on('studio:app-changed', (data: { id?: string }) => {
-		const shown = open.get(String(data?.id ?? ''));
+	watchApps((id) => {
+		const shown = open.get(id);
 		if (shown && shown.app.kind === 'page') {
 			clearErrors(shown);
 			load(shown, `?${Date.now()}`);

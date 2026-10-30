@@ -45,10 +45,11 @@ const ENTRIES = [
  * workspace resolves it. Anything else the source imports comes from this
  * project's node_modules when it is there, so the editor and the Studio share
  * one ProseMirror, one Vue, one KaTeX.
- * @param {{ root?: string, bundled?: boolean }} [options]
+ * The Studio built for other devices (client-build.mjs) is built from the same source: `build`.
+ * @param {{ root?: string, bundled?: boolean, build?: boolean }} [options]
  * @returns {import('vite').Plugin}
  */
-export default function milkdownSource({ root = process.cwd(), bundled = process.env.STUDIO_MILKDOWN_BUNDLED === '1' } = {}) {
+export default function milkdownSource({ root = process.cwd(), bundled = process.env.STUDIO_MILKDOWN_BUNDLED === '1', build = false } = {}) {
 	// By its real name: Vite names the files it loads so, and third_party/ may be a link (a test server's own root).
 	const folder = resolve(root, 'third_party', 'milkdown');
 	const milkdown = existsSync(folder) ? realpathSync(folder) : folder;
@@ -58,7 +59,7 @@ export default function milkdownSource({ root = process.cwd(), bundled = process
 
 	return {
 		name: 'milkdown-source',
-		apply: 'serve',
+		apply: build ? 'build' : 'serve',
 		enforce: 'pre',
 		config() {
 			if (!packages.size) return;

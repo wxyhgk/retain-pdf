@@ -56,13 +56,15 @@ export function reachableAddresses(interfaces = networkInterfaces()) {
 
 export class RemoteAccess {
 	/**
-	 * @param {{ settingsFile: string, folder: string, target(): number | null, port?: number, listenHost?: string }} options
-	 *   `folder` keeps the certificate; `target` is the Studio's own server's port (null before it listens).
+	 * @param {{ settingsFile: string, folder: string, target(): number | null, opened?: () => void, port?: number, listenHost?: string }} options
+	 *   `folder` keeps the certificate; `target` is the Studio's own server's port (null before it listens); `opened`
+	 *   is told when the door opens.
 	 */
-	constructor({ settingsFile, folder, target, port, listenHost = '0.0.0.0' }) {
+	constructor({ settingsFile, folder, target, opened = () => {}, port, listenHost = '0.0.0.0' }) {
 		this.settingsFile = settingsFile;
 		this.folder = folder;
 		this.target = target;
+		this.opened = opened;
 		this.wanted = port;
 		this.listenHost = listenHost;
 		this.server = null;
@@ -141,6 +143,7 @@ export class RemoteAccess {
 			});
 		});
 		this.server = server;
+		this.opened();
 	}
 
 	async stop() {
