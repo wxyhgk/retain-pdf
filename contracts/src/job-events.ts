@@ -7,13 +7,53 @@
 /**
  * Endpoint input, query, and output DTOs published by job-events.v2.schema.json.
  */
-export type JobEventsSchema = JobEventListView | ListJobEventsQuery;
+export type JobEventsSchema =
+  EditorialEventListView | EditorialEventsQuery | JobEventListView | ListJobEventsQuery;
 /**
  * 可安全跨线传输的任意 JSON 值；用于 provider 扩展 options 与事件 payload。
  */
 export type JsonValue =
   null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
+/**
+ * GET /api/v1/jobs/:job_id/progress/editorial 的返回。legacy 任务、还没开翻的 agent 任务是空列表（next_after 为 0）。
+ */
+export interface EditorialEventListView {
+  /**
+   * 按写入顺序。
+   */
+  events: EditorialEvent[];
+  /**
+   * 下次带 after=这个数接着取，就是到这一段为止读过的条数。比请求的 after 还小说明事件文件重开了（换了文档或引擎版本重跑），从 0 重新取。
+   */
+  next_after: number;
+  /**
+   * 这次只给到 limit 条，后面还有。
+   */
+  has_more: boolean;
+}
+/**
+ * 一条编辑部事件（editorial.v1），翻译 agent 的调度原样写出。各 type 的字段和取值全集见 docs/ops/planning/translation-agent/20261030-编辑部可视化和事件格式.md，只加不改：不认识的 type、多出来的字段忽略。page 是这次跑的第几页（1 起），通读是 0。
+ */
+export interface EditorialEvent {
+  v: "editorial.v1";
+  /**
+   * 写下这条的时间（Unix 秒，带小数）。
+   */
+  ts: number;
+  /**
+   * run_started、reading_started、reading_done、page_started、translate_call、check_result、retry、fallback、review_started、review_done、glossary_changed、ticket_opened、page_done、run_stopped、run_done。
+   */
+  type: string;
+  [k: string]: JsonValue;
+}
+/**
+ * 翻译 agent 编辑部事件按条数续读：after 是上次返回的 next_after，不带从头取。limit 默认 500，夹到 1..2000。
+ */
+export interface EditorialEventsQuery {
+  after?: number;
+  limit?: number;
+}
 export interface JobEventListView {
   protocol_version: 2;
   /**

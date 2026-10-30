@@ -292,6 +292,7 @@ async fn reading_and_coverage_of_a_translated_book_match_published_schema() {
     // CoverageJobView 的键总在，空值是 null，不省略。
     assert_exact_object_keys(&jobs[0], &contract, "CoverageJobView", "coverage.jobs[0]");
     assert!(jobs[0]["failure_summary"].is_null() && jobs[0]["error_head"].is_null(), "{}", jobs[0]);
+    assert!(jobs[0]["engine"] == "legacy" && jobs[0]["has_editorial_events"] == false, "{}", jobs[0]);
 }
 
 /// 第 1b 期（2026-10-22）：书的任务列表、翻译这本书、给这本书做 OCR。

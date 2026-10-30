@@ -12,6 +12,7 @@ mod conversations_contract;
 mod credentials;
 mod document_metadata;
 mod document_operations;
+mod editorial_events;
 mod file_responses;
 mod glossaries;
 mod glossaries_contract;

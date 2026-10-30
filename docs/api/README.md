@@ -24,6 +24,7 @@
 - [删除任务](01-任务/05-删除任务.md)：`DELETE /jobs/{job_id}`，删一个任务和它的 OCR 子任务，书留着
 - [事件总览](02-进度事件/01-事件总览.md)
 - [display_stage 与 lane](02-进度事件/02-display-stage与lane.md)
+- [编辑部事件（翻译 agent）](02-进度事件/03-编辑部事件.md)
 - [OCR Provider 列表](03-OCR/01-provider列表.md)
 - [OCR-only 任务](03-OCR/02-OCR-only任务.md)
 - [local_command 插件](03-OCR/04-local-command插件.md)

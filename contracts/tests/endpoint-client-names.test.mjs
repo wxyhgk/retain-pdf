@@ -43,11 +43,14 @@ const PHASE_1A_CONTRACTS = new Set([
   "token-usage.v1.schema.json",
 ]);
 
+// 第 1a 期以后加进这几份契约的端点，名字由各自的 test 钉（编辑部事件：job-events-v2.test.mjs）。
+const LATER_NAMES = new Set(["listEditorialEvents"]);
+
 test("phase-1a endpoints carry the client names from the frontend list over the json transport", () => {
   const named = [];
   for (const fileName of readdirSync(resolve(".")).filter((name) => PHASE_1A_CONTRACTS.has(name))) {
     for (const { method, path, client_name, transport } of read(fileName).endpoints || []) {
-      if (client_name !== undefined) named.push([fileName, method, path, client_name, transport]);
+      if (client_name !== undefined && !LATER_NAMES.has(client_name)) named.push([fileName, method, path, client_name, transport]);
     }
   }
   named.sort((left, right) => left[3].localeCompare(right[3]));

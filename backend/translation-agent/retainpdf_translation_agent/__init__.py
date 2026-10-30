@@ -30,6 +30,8 @@ from retainpdf_translation_agent.memory import glossary_from_entries
 from retainpdf_translation_agent.reader import Reading
 from retainpdf_translation_agent.reader import read_document
 from retainpdf_translation_agent.review import review_page
+from retainpdf_translation_agent.runner import EDITORIAL_EVENT_VERSION
+from retainpdf_translation_agent.runner import EVENTS_FILE
 from retainpdf_translation_agent.runner import DocumentRun
 from retainpdf_translation_agent.runner import RunOutcome
 from retainpdf_translation_agent.runner import blocks_using
@@ -38,6 +40,8 @@ __all__ = [
     "BREAK",
     "CONTRACT_VERSION",
     "DEFAULT_MODEL",
+    "EDITORIAL_EVENT_VERSION",
+    "EVENTS_FILE",
     "PROMPT_VERSION",
     "STATUS_FALLBACK_SOURCE",
     "AuthFailed",

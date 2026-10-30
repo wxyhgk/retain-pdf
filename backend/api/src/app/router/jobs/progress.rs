@@ -13,4 +13,6 @@ crate::endpoints! {
     GET "/api/v1/jobs/:job_id/progress/layout" => progress::get_live_translation_layout, signed;
     /// 边翻边看：一页已经出来的译文
     GET "/api/v1/jobs/:job_id/progress/pages/:page" => progress::get_live_translation_page, signed;
+    /// 翻译 agent 的编辑部事件（editorial.v1），按条数续读；legacy 任务是空列表
+    GET "/api/v1/jobs/:job_id/progress/editorial" => progress::get_editorial_events, signed;
 }

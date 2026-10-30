@@ -7,7 +7,8 @@
   （agent 引擎强制 math_mode=direct_typst），参考文献角标 "$ ^{40} $" 换成脚注标记 `{{fn:40}}`、写回时换回去；
   接续组（`__cg__:` 单元）整组放进组头那一页。
 - `DocumentRun` 整篇顺序翻：先通读（体裁、术语、人名、标题），每页翻完审校。状态（续跑用）和请求缓存在
-  翻译目录的 `agent/` 下，换了文档或引擎版本就清掉重来。
+  翻译目录的 `agent/` 下，换了文档或引擎版本就清掉重来。调度同时写编辑部事件 `agent/run/events.jsonl`（editorial.v1），
+  前端「进度」面板的编辑部画面从 `GET /api/v1/jobs/:job_id/progress/editorial` 读它。
 - 每页做完：译文写回模板记录（单块和 `revision.py` 一样用 `apply_revised_member_text`，接续组再重建整组字段），
   落盘、提交断点（实时译文照常），发 `translation_batches` 进度，记用量台账。
 - agent 交回 `fallback_source`（重翻还不合格）的块：标成死信（保留原文，不卡发布，任务完成时提示有几块没翻）。
@@ -46,6 +47,7 @@ from retainpdf_translation.workflow.book_flow import prepare_book_payloads
 from retainpdf_translation.workflow.page_policies import build_page_summaries
 from retainpdf_translation.workflow.pages import save_pages
 from retainpdf_translation_agent import DEFAULT_MODEL
+from retainpdf_translation_agent import EVENTS_FILE
 from retainpdf_translation_agent import STATUS_FALLBACK_SOURCE
 from retainpdf_translation_agent import BlockInput
 from retainpdf_translation_agent import BlockResult
@@ -59,6 +61,10 @@ if TYPE_CHECKING:
     from retainpdf_translation.workflow.checkpoint import TranslationCheckpointSession
 
 AGENT_STATE_DIR = "agent"
+RUN_DIR = "run"
+# 编辑部事件相对翻译目录的位置。rust_api 读事件的接口按同一个路径找（retainpdf-core 的
+# storage_paths::AGENT_EDITORIAL_EVENTS_RELATIVE_PATH），改了两边一起改，test_agent_flow 钉着。
+EDITORIAL_EVENTS_RELATIVE_PATH = f"{AGENT_STATE_DIR}/{RUN_DIR}/{EVENTS_FILE}"
 STATE_FINGERPRINT = "fingerprint.json"
 SUBSTAGE = "translation_batches"
 
@@ -431,7 +437,7 @@ def translate_book_with_agent(
         cache_dir=state_dir / "cache",
     )
     usage = _UsageRecorder(agent, base_url=base_url)
-    run = DocumentRun(agent, state_dir / "run", glossary=glossary_from_entries(glossary_entries or []), read_first=True, review=True)
+    run = DocumentRun(agent, state_dir / RUN_DIR, glossary=glossary_from_entries(glossary_entries or []), read_first=True, review=True)
 
     total_blocks = sum(len(page.to_translate()) for page in pages)
     progress = {"blocks": 0, "pages": 0}
@@ -491,6 +497,7 @@ def translate_book_with_agent(
 
 
 __all__ = [
+    "EDITORIAL_EVENTS_RELATIVE_PATH",
     "AgentRunStopped",
     "agent_engine_identity",
     "apply_agent_results",

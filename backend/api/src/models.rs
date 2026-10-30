@@ -21,6 +21,7 @@ pub mod api {
     pub use retainpdf_ingest::{UploadView, upload_to_response};
     pub use retainpdf_jobs::{
         AmbiguousRequestPolicy, BookSummaryView, DeleteJobQuery, DocumentJobListView,
+        EditorialEventListView, EditorialEventsQuery,
         EscalatedItemView, GlossaryUsageSummaryView, InvocationSummaryView, JobContractsView, JobDetailView, JobDiagnosticsView, JobEventFeedItem,
         JobEventListView, JobFailureBriefView,
         JobDeleteResultView, JobFailureDiagnosticView, JobFilesQuery, JobLinksView, JobListInvocationSummaryView,

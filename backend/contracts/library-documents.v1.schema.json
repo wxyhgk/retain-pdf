@@ -564,6 +564,8 @@
         "created_at",
         "finished_at",
         "model",
+        "engine",
+        "has_editorial_events",
         "pages",
         "supplied_pages",
         "ocr_reused",
@@ -595,6 +597,18 @@
         "model": {
           "type": "string",
           "description": "翻译模型；纯 OCR 任务是空字符串。"
+        },
+        "engine": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "agent"
+          ],
+          "description": "翻译引擎：legacy 现有流程、agent 翻译 agent；老任务、纯 OCR 任务是 legacy。"
+        },
+        "has_editorial_events": {
+          "type": "boolean",
+          "description": "有翻译 agent 的编辑部事件可看（GET /api/v1/jobs/:job_id/progress/editorial）；agent 任务开翻以后才有，legacy 任务总是 false。"
         },
         "pages": {
           "type": "array",
