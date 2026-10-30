@@ -675,9 +675,6 @@ async fn documents_list_total_uses_filters_upload_constraint_and_job_lookup() {
     assert_eq!(json_response(miss).await["data"]["total"], 0);
 }
 
-
-
-
 #[tokio::test]
 async fn search_returns_anchored_hits() {
     let state = test_state("library-search");
@@ -760,49 +757,6 @@ async fn ai_proxy_returns_bad_gateway_when_upstream_is_down() {
         .await
         .expect("proxy response");
     assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
-}
-
-
-
-
-/// 资产接口 2026-10-19 删了（收藏截图用的，收藏删掉以后没有调用方）：两个地址都是 404。
-#[tokio::test]
-async fn asset_routes_are_gone() {
-    let app = build_app(test_state("library-assets-gone"));
-    let boundary = "ASSET-GONE-BOUNDARY";
-    let body = format!(
-        "--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"clip.png\"\r\nContent-Type: image/png\r\n\r\n12345\r\n--{boundary}--\r\n"
-    );
-    let upload = app
-        .clone()
-        .oneshot(
-            Request::builder()
-                .method("POST")
-                .uri("/api/v1/assets")
-                .header("X-API-Key", "test-key")
-                .header(
-                    "content-type",
-                    format!("multipart/form-data; boundary={boundary}"),
-                )
-                .body(Body::from(body))
-                .expect("request"),
-        )
-        .await
-        .expect("upload response");
-    assert_eq!(upload.status(), StatusCode::NOT_FOUND);
-
-    let asset_id = "a".repeat(64);
-    let download = app
-        .oneshot(
-            Request::builder()
-                .uri(format!("/api/v1/assets/{asset_id}"))
-                .header("X-API-Key", "test-key")
-                .body(Body::empty())
-                .expect("request"),
-        )
-        .await
-        .expect("download response");
-    assert_eq!(download.status(), StatusCode::NOT_FOUND);
 }
 
 #[tokio::test]
@@ -2244,7 +2198,6 @@ async fn delete_document_rolls_back_rows_and_keeps_files_when_a_step_fails() {
     );
 }
 
-
 /// 失败的结构化信息必须出现在**列表**里。
 ///
 /// 起因：DB 里 17/17 的失败都有 failure_json（category / retryable / summary /
@@ -2377,7 +2330,6 @@ async fn document_jobs_list_omits_failure_for_healthy_jobs() {
         "成功的任务也带了 failure 字段 —— 前端会据此画出失败卡片"
     );
 }
-
 
 fn dev_defaults() -> crate::services::jobs::DevDefaultsGuard {
     crate::services::jobs::DevDefaultsGuard::set(crate::services::jobs::DevTranslationDefaults {

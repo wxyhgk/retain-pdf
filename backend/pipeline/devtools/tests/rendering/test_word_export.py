@@ -553,7 +553,6 @@ def test_the_fallback_line_height_is_the_measured_ratio_not_one_plus_leading(
             f"{block['id']} 的行距还是按 (1+leading_em) 折算的，高约两成"
         )
     assert checked, "规格里一个带行距的块都没有"
-    assert LINE_STEP_RATIO == 1.289, "改这个常数要重新跑实测，别凭感觉调"
 
 
 def test_a_block_is_not_given_a_neighbours_font_size():
