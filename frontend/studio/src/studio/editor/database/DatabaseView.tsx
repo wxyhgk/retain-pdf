@@ -17,6 +17,7 @@ import {
 	DropdownMenuTrigger,
 } from '@studio/ui/dropdown-menu';
 import { DatabaseBoard } from './DatabaseBoard';
+import { DatabasePeek } from './DatabasePeek';
 import { DatabaseTable } from './DatabaseTable';
 import { FilterButton, FilterChips, SortButton } from './database-filters';
 import { calcKinds, freeColumnName, hasOptions, TITLE, visibleRows, type CalcKind, type Column, type ColumnType, type DatabaseConfig, type Row } from './database-config';
@@ -41,6 +42,10 @@ export type DatabaseHost = {
 	moveRow(row: string, place: { before?: string; after?: string }): Promise<void>;
 	changeColumns(change: DatabaseColumnsChange): Promise<void>;
 	open(slug: string): void;
+	/** A row's page's text (after its properties), to be shown beside the table. */
+	rowBody(slug: string): Promise<string>;
+	/** Where a file a row's text names (`./img/a.png`) is fetched from. */
+	fileUrl(slug: string, src: string): string;
 	templates(): Promise<Array<{ id: string; name: string }>>;
 	toast(message: string, error?: boolean): void;
 };
@@ -62,6 +67,8 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 	} | null>(null);
 	/** The cells chosen in the table, as a spreadsheet's: from `anchor` to `head` (where the keys are). */
 	const [cursor, setCursor] = useState<{ anchor: Spot; head: Spot } | null>(null);
+	/** The row shown beside the table (its side peek), or none. */
+	const [peek, setPeek] = useState<string | null>(null);
 	/** The rows chosen by their boxes (as Notion's), to change or delete together; the last one clicked, where a run starts. */
 	const [chosenRows, setChosenRows] = useState<ReadonlySet<string>>(new Set());
 	const lastChosen = useRef<string | null>(null);
@@ -117,6 +124,15 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 		setEditing,
 		cursor,
 		setCursor,
+		peek,
+		/** A row opened as the database says: beside the table (as Notion's side peek), or its whole page. */
+		openRow(slug: string): void {
+			if (now.current.openAs === 'page') host.open(slug);
+			else setPeek(slug);
+		},
+		closePeek(): void {
+			setPeek(null);
+		},
 		chosenRows,
 		/** A row's box clicked: chosen or let go; ⇧, the run from the last one clicked (in `shown`, the rows as they are shown). */
 		chooseRow(slug: string, shown: Row[], run = false): void {
@@ -463,6 +479,7 @@ export function DatabaseView({ config, change, host }: { config: DatabaseConfig;
 			) : (
 				<FilterChips config={config} change={change} openFilter={database.openFilter} setOpenFilter={database.setOpenFilter} />
 			)}
+			{database.peek && rows && <DatabasePeek database={database} rows={visible} slug={database.peek} />}
 			{problem ? (
 				<p className="db-note is-error">{problem}</p>
 			) : !rows ? (
@@ -607,6 +624,17 @@ function Settings({ config, change, host }: { config: DatabaseConfig; change(nex
 						</DropdownMenuSubContent>
 					</DropdownMenuSub>
 				)}
+				<DropdownMenuSub>
+					<DropdownMenuSubTrigger data-database-open-as-menu>{config.openAs === 'page' ? t('打开方式：整页') : t('打开方式：侧边预览')}</DropdownMenuSubTrigger>
+					<DropdownMenuSubContent className="db-dropdown">
+						<DropdownMenuCheckboxItem checked={config.openAs === 'peek'} data-database-open-as="peek" onCheckedChange={() => change({ ...config, openAs: 'peek' })}>
+							{t('侧边预览')}
+						</DropdownMenuCheckboxItem>
+						<DropdownMenuCheckboxItem checked={config.openAs === 'page'} data-database-open-as="page" onCheckedChange={() => change({ ...config, openAs: 'page' })}>
+							{t('整页')}
+						</DropdownMenuCheckboxItem>
+					</DropdownMenuSubContent>
+				</DropdownMenuSub>
 				{config.view === 'table' && (
 					<DropdownMenuSub>
 						<DropdownMenuSubTrigger data-database-table-group-menu>{config.tableGroup ? t('分组：{column}', { column: config.tableGroup }) : t('分组…')}</DropdownMenuSubTrigger>

@@ -255,3 +255,45 @@
 .db-row-props .db-row-pills { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 32px; padding: 5px 8px; text-align: left; cursor: pointer; }
 .db-row-props .property-value.is-number { font-variant-numeric: tabular-nums; }
 .db-row-props .db-check { margin: 2px 0; }
+
+/* A row opened beside the table (DatabasePeek.tsx), as Notion's side peek: over the right of the window, its title,
+ * its values (changed as in the table), its text as the page shows it. */
+.db.db-peek { position: fixed; top: 48px; right: 0; bottom: 0; z-index: 60; display: flex; flex-direction: column; width: min(560px, 50vw); border-left: 1px solid var(--studio-hairline); background: var(--surface); box-shadow: var(--studio-shadow-pop); animation: db-peek-in 160ms ease-out; }
+@keyframes db-peek-in { from { transform: translateX(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .db.db-peek { animation: none; } }
+.db-peek .db-peek-bar { display: flex; flex: none; align-items: center; gap: 2px; height: 44px; padding: 0 10px; }
+.db-peek .db-icon-button.is-wide { display: inline-flex; gap: 4px; width: auto; padding: 0 8px; font-size: 13px; }
+.db-peek .db-icon-button:disabled { opacity: 0.35; cursor: default; }
+.db-peek .db-peek-scroll { flex: 1; min-height: 0; padding: 12px 40px 48px; overflow-y: auto; }
+.db-peek .db-peek-icon { display: grid; place-items: start; height: 44px; color: rgb(var(--gray)); font-size: 34px; line-height: 1; }
+.db-peek .db-peek-icon svg { width: 34px; height: 34px; stroke-width: 1.5; }
+.db-peek .db-peek-title { display: block; width: 100%; margin: 6px 0 14px; padding: 0; border: 0; background: transparent; outline: none; font-size: 28px; font-weight: 700; line-height: 1.25; }
+.db-peek .db-peek-title::placeholder { color: rgba(var(--gray), 0.5); }
+.db-peek .db-peek-props { display: grid; gap: 2px; padding-bottom: 14px; border-bottom: 1px solid var(--studio-hairline); }
+.db-peek .db-peek-prop { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: start; min-height: 34px; }
+.db-peek .db-peek-name { display: flex; align-items: center; gap: 6px; height: 34px; color: rgb(var(--gray)); font-size: 14px; }
+.db-peek .db-peek-name svg { width: 16px; height: 16px; }
+.db-peek .db-peek-value { position: relative; min-width: 0; border-radius: 6px; }
+.db-peek .db-peek-value:hover { background: var(--studio-fill); }
+.db-peek .db-peek-value .db-cell { min-height: 34px; }
+.db-peek .db-peek-text-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 6px; color: rgb(var(--gray)); font-size: 13px; }
+.db-peek .db-peek-edit { padding: 2px 8px; border-radius: 6px; color: rgb(var(--gray)); font-size: 13px; }
+.db-peek .db-peek-edit:hover { background: var(--studio-fill-2); color: rgb(var(--black)); }
+.db-peek .db-peek-text { font-size: 15px; line-height: 1.7; overflow-wrap: anywhere; }
+.db-peek .db-peek-text img { max-width: 100%; height: auto; }
+.db-peek .db-peek-text :is(p, ul, ol, pre, table, blockquote) { margin: 0 0 10px; }
+.db-peek .db-peek-text :is(ul, ol) { padding-left: 22px; }
+.db-peek .db-peek-text ul { list-style: disc; }
+.db-peek .db-peek-text ol { list-style: decimal; }
+.db-peek .db-peek-text :is(h1, h2, h3, h4) { margin: 18px 0 8px; font-weight: 650; line-height: 1.35; }
+.db-peek .db-peek-text h1 { font-size: 22px; }
+.db-peek .db-peek-text h2 { font-size: 19px; }
+.db-peek .db-peek-text :is(h3, h4) { font-size: 16px; }
+.db-peek .db-peek-text blockquote { padding-left: 12px; border-left: 3px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
+.db-peek .db-peek-text code { padding: 1px 4px; border-radius: 4px; background: var(--studio-fill); font-size: 0.9em; }
+.db-peek .db-peek-text pre { padding: 10px 12px; overflow-x: auto; border-radius: 6px; background: var(--studio-fill); }
+.db-peek .db-peek-text pre code { padding: 0; background: none; }
+.db-peek .db-peek-text table { border-collapse: collapse; font-size: 14px; }
+.db-peek .db-peek-text :is(th, td) { padding: 4px 8px; border: 1px solid var(--studio-hairline); }
+/* A number beside its name, not at the far end. */
+.db-peek .db-cell.is-number { justify-content: flex-start; }

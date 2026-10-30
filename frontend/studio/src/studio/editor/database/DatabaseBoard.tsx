@@ -87,7 +87,7 @@ export function DatabaseBoard({ database, rows }: { database: Database; rows: Ro
 									event.dataTransfer.setData(ROW_DRAG, row.slug);
 									event.dataTransfer.effectAllowed = 'move';
 								}}
-								onClick={() => database.host.open(row.slug)}
+								onClick={() => database.openRow(row.slug)}
 							>
 								<div className="db-card-title">
 									<span className="db-row-icon" aria-hidden>

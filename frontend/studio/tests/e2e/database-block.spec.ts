@@ -262,6 +262,8 @@ test('a row’s own page: the database’s columns under its title, a value chan
 	await openStudio(p);
 	await block(p).locator('[data-row="db-row-a"]').hover();
 	await block(p).locator('[data-row="db-row-a"] [data-database-open]').click();
+	// Beside the table first (its side peek); its whole page from there.
+	await p.locator('[data-database-peek-page]').click();
 	await expect(p.locator('#article-title-input')).toHaveValue('TS1 优化');
 	const properties = p.locator('[data-database-properties]');
 	await expect(properties.locator('[data-row-property]')).toHaveText(['方法', '能量', '收敛']);
@@ -423,4 +425,38 @@ test('the table grouped by a choice: each group its rows, folded, its 新建 wit
 	await expect(group('进行中').locator('.database-row')).toHaveCount(2);
 	await p.keyboard.press('ControlOrMeta+s');
 	await expect.poll(savedMarkdown).toContain('"tableGroup": "状态"');
+});
+
+test('a row opened beside the table: its title, its values changed as in the table, its text; the next row; closed; its whole page instead, as set', async ({ page: p }) => {
+	writeArticle('db-row-a', '---\ntitle: TS1 优化\npubDate: 2026-10-01\ndraft: true\nparent: studio-fixture\norder: 10\ndatabase: dbtest01\nprops: { "能量": -76.4 }\n---\n\n用 **B3LYP** 优化，$E = -76.4$。\n');
+	row('db-row-b', 'IM1 优化', '', 20);
+	database({ columns: [{ name: '能量', type: 'number' }, { name: '收敛', type: 'checkbox' }], view: 'table' });
+	await openStudio(p);
+	await block(p).locator('[data-row="db-row-a"]').hover();
+	await block(p).locator('[data-row="db-row-a"] [data-database-open]').click();
+	const peek = p.locator('[data-database-peek="db-row-a"]');
+	await expect(peek.locator('[data-database-peek-title]')).toHaveValue('TS1 优化');
+	await expect(peek.locator('[data-database-peek-text] strong')).toHaveText('B3LYP');
+	await expect(peek.locator('[data-database-peek-text] .katex')).toBeVisible();
+	// A value changed there: in its page, and in the table.
+	await peek.locator('[data-column="收敛"] [data-database-checkbox]').click();
+	await expect.poll(() => page('db-row-a')).toContain('"收敛": true');
+	await expect(block(p).locator('[data-row="db-row-a"] [data-column="收敛"] [data-database-checkbox]')).toHaveAttribute('aria-checked', 'true');
+	await peek.locator('[data-database-peek-title]').fill('TS1 再优化');
+	await peek.locator('[data-database-peek-title]').press('Enter');
+	await expect.poll(() => page('db-row-a')).toContain("title: 'TS1 再优化'");
+	// ↓: the next row; Esc: closed, the article still open.
+	await peek.locator('[data-database-peek-next]').click();
+	await expect(p.locator('[data-database-peek="db-row-b"] [data-database-peek-title]')).toHaveValue('IM1 优化');
+	await p.keyboard.press('Escape');
+	await expect(p.locator('[data-database-peek]')).toHaveCount(0);
+	await expect(p.locator('#article-title-input')).toHaveValue('Studio 测试夹具');
+	// Set to open as a whole page.
+	await block(p).locator('[data-database-settings]').click();
+	await p.locator('[data-database-open-as-menu]').click();
+	await p.locator('[data-database-open-as="page"]').click();
+	await p.keyboard.press('Escape');
+	await block(p).locator('[data-row="db-row-b"]').hover();
+	await block(p).locator('[data-row="db-row-b"] [data-database-open]').click();
+	await expect(p.locator('#article-title-input')).toHaveValue('IM1 优化');
 });

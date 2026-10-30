@@ -479,7 +479,7 @@ function RowHandle({ row, rows, database, dragging }: { row: Row; rows: Row[]; d
 						icon={ArrowUpRight}
 						onClick={() => {
 							setOpen(false);
-							database.host.open(row.slug);
+							database.openRow(row.slug);
 						}}
 					>
 						{t('打开')}
@@ -527,7 +527,7 @@ function TitleCell({ row, database }: { row: Row; database: Database }) {
 			<button type="button" className="db-title-text database-title" onClick={() => database.setEditing({ slug: row.slug, column: TITLE })}>
 				{row.title || <span className="db-faint">{t('无标题')}</span>}
 			</button>
-			<button type="button" className="db-open" data-database-open onClick={() => database.host.open(row.slug)}>
+			<button type="button" className="db-open" data-database-open onClick={() => database.openRow(row.slug)}>
 				<ArrowUpRight aria-hidden />
 				{t('打开')}
 			</button>
@@ -544,7 +544,7 @@ function afterTyping(database: Database, how?: string): void {
 }
 
 /** A cell: its value as its kind shows it; clicked, edited so (a box ticked at once). */
-function Cell({ row, column, database }: { row: Row; column: Column; database: Database }) {
+export function Cell({ row, column, database }: { row: Row; column: Column; database: Database }) {
 	const value = row.props[column.name];
 	const [open, setPickerOpen] = useState(false);
 	// Its picker asked for from the keyboard (Enter on it); closed, the keys back to the table.

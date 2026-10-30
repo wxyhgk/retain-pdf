@@ -85,6 +85,7 @@ import { openFileHistory } from './files/file-history-view';
 import { openFilePreview } from './files/file-preview';
 import { setDatabaseHost } from './editor/database/database-block';
 import { trackWrite } from './state/writes';
+import { parseStudioDocument } from '@blog/document/parse.ts';
 import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
 import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
@@ -513,6 +514,8 @@ setDatabaseHost((id) => {
 		},
 		templates: async () => (await listTemplates()).templates,
 		toast: (message, error) => showToast(message, error),
+		rowBody: async (row) => parseStudioDocument((await getArticle(row)).source).body.raw,
+		fileUrl: (row, src) => articleFileUrl(row, src),
 	};
 });
 
