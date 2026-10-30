@@ -83,7 +83,7 @@ const DONE_TRANSLATION = {
   canTranslate: false,
 };
 
-test("完成且有保留原文：标题是状态、摘要有数字、给出提醒；没有满格进度条、没有「完成」站", async () => {
+test("完成且有保留原文：标题是状态、摘要有数字、给出提醒；没有满格进度条，流水线五站全勾", async () => {
   const dom = makeDom();
   const coverage = { ...COVERAGE, jobs: [{ ...COVERAGE.jobs[0], kept_origin_blocks: 16 }, COVERAGE.jobs[1]] };
   const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage });
@@ -93,8 +93,9 @@ test("完成且有保留原文：标题是状态、摘要有数字、给出提�
   assert.doesNotMatch(host.querySelector("[data-processing-facts]")?.textContent || "", /保留原文/, "提醒条已经说了，摘要行不重复");
   assert.match(host.querySelector(".book-detail-processing-warning")?.textContent || "", /16 个内容块没能翻译出来/);
   assert.equal(host.querySelector(".book-detail-processing-progress"), null, "完成后不画进度条");
-  assert.equal(host.querySelector("[data-stage-key='done']"), null);
-  assert.equal(host.querySelector("[data-translation-process='true']"), null, "完成后三步进度收起，只留一行摘要");
+  assert.ok(host.querySelector("[data-translation-process='true']"), "完成后流水线照样画，每站写用时");
+  assert.equal(host.querySelector("[data-stage-key='done']")?.getAttribute("data-state"), "done");
+  assert.equal(host.querySelector("#book-detail-reprocess-toggle"), null, "卡片头不再有「重新处理」，动作挂在各站上");
   assert.equal(host.textContent.includes("左侧可直接对照阅读"), false, "这句填充文案去掉了");
   root.unmount(); host.remove();
 });
@@ -172,7 +173,7 @@ test("翻译任务跑在 OCR 阶段：进度只出现一次；OCR 站写实时�
   root.unmount(); host.remove();
 });
 
-test("翻译完成：动作收进「重新处理」，点开是按代价排序的清单；任务记录不在这一页", async () => {
+test("翻译完成：重做的动作挂在流水线各站上，点哪站列哪站的；任务记录不在这一页", async () => {
   const dom = makeDom();
   const stageActions = [
     { stage: "translation", label: "重新翻译", can_retry: true },
@@ -186,25 +187,34 @@ test("翻译完成：动作收进「重新处理」，点开是按代价排序�
     coverage: COVERAGE,
   });
   const doc = dom.window.document;
-  const toggle = doc.getElementById("book-detail-reprocess-toggle");
-  assert.ok(toggle, "卡片头有「重新处理」");
-  assert.equal(toggle.getAttribute("aria-expanded"), "false");
+  const station = (key) => host.querySelector(`[data-station-action='${key}']`);
+  assert.deepEqual([...host.querySelectorAll("[data-station-action]")].map((node) => node.dataset.stationAction), ["ocr", "translate", "render"]);
   for (const id of ["book-detail-retry-render-btn", "book-detail-start-ocr-btn", "book-detail-render-engine"]) {
     assert.equal(doc.getElementById(id), null, `${id} 默认收起`);
   }
   assert.equal(host.querySelector(".book-detail-ocr-range"), null, "OCR 页码选项也收起");
+  const rows = () => [...host.querySelectorAll("#book-detail-station-panel [data-reprocess-stage]")].map((row) => row.getAttribute("data-reprocess-stage"));
+  const open = async (key) => {
+    station(key).dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+    await waitFor(() => host.querySelector(`[data-station-panel='${key}']`), `点开${key}站`);
+  };
 
-  toggle.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
-  await waitFor(() => host.querySelector(".book-detail-reprocess-list"), "清单展开");
-  assert.equal(toggle.getAttribute("aria-expanded"), "true");
-  const order = [...host.querySelectorAll("[data-reprocess-stage]")].map((row) => row.getAttribute("data-reprocess-stage"));
-  assert.deepEqual(order, ["render", "refine", "translation", "ocr"], "按代价从小到大");
+  await open("translate");
+  assert.equal(station("translate").getAttribute("aria-expanded"), "true");
+  assert.deepEqual(rows(), ["refine", "translation"], "翻译站：精修和重新翻译，按代价从小到大");
+  await open("render");
+  assert.equal(station("translate").getAttribute("aria-expanded"), "false", "一次只开一站");
+  assert.deepEqual(rows(), ["render"]);
   const renderRow = host.querySelector("[data-reprocess-stage='render']");
   assert.ok(renderRow.querySelector("#book-detail-render-engine"), "引擎选择挨着重新渲染");
   assert.match(renderRow.textContent, /不产生费用/);
+  await open("ocr");
+  assert.deepEqual(rows(), ["ocr"]);
   const ocrRow = host.querySelector("[data-reprocess-stage='ocr']");
   assert.ok(ocrRow.querySelector("#book-detail-start-ocr-btn"));
   assert.ok(ocrRow.querySelector(".book-detail-ocr-range"), "OCR 页码挨着重新 OCR");
+  station("ocr").dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+  await waitFor(() => !host.querySelector("#book-detail-station-panel"), "再点一下收起");
 
   assert.equal(host.querySelector(".book-detail-job-history"), null, "任务记录在「历史」页签，不占「进度」页");
   root.unmount(); host.remove();

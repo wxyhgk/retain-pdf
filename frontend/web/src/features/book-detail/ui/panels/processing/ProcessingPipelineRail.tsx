@@ -2,6 +2,9 @@
 // 下面一块「最近活动」。宽的时候说明挂在机器上方；窄的时候（手机）说明排成一列放在画面下面。
 // 不做预计剩余时间，只写已经跑了多久。
 //
+// 「重新处理」也挂在流水线上：没有任务在跑时，能重做的站说明里有个按钮（OCR 站「重新 OCR」、翻译站「重译 / 精修」、
+// 版面站「重新渲染」，任务停下时文档准备站「从头翻译」），点开在画面下面列出这一站能做的事。内容由调用方给（stationActions）。
+//
 // 承接原有 DOM 契约（测试与门禁依赖）：
 // - 根节点 data-translation-process="true"，各站带 data-stage-key（以前三站，现在多了 prepare、done）；
 // - OCR 站带 data-processing-capability="ocr"，翻译站带 ="translation"；
@@ -10,13 +13,14 @@
 // loading（首帧未知）：任务数据还没回来时只占位不下结论 —— 各站「读取中…」，data-state="loading"，
 // 根节点带 data-loading="true"。曾经首帧一律按 pending 渲染成「未执行 / 尚未翻译」，而那份文档的 OCR 其实正在跑。
 
-import type { CSSProperties } from "react";
-import { Check, Clock3, LoaderCircle, TriangleAlert, X } from "lucide-react";
+import { useState, type CSSProperties, type ReactNode } from "react";
+import { Check, ChevronDown, Clock3, LoaderCircle, TriangleAlert, X } from "lucide-react";
 
 import type { LibraryCardItem } from "@/features/library/domain.js";
 import {
   assemblyStations,
   formatElapsed,
+  STATIONS,
   recentActivity,
   stationTimes,
   totalElapsedMs,
@@ -59,6 +63,9 @@ function StepMark({ state }: { state: string }) {
 
 const CAPABILITY: Partial<Record<StationKey, string>> = { ocr: "ocr", translate: "translation" };
 
+/** 一站能做的事：说明里的按钮文字，和点开后列出来的内容。 */
+export type StationAction = { label: string; content: ReactNode };
+
 export type ProcessingPipelineRailProps = {
   item?: LibraryCardItem;
   hasTranslationJob?: boolean;
@@ -76,6 +83,8 @@ export type ProcessingPipelineRailProps = {
   timeline?: JobTimeline | null;
   /** 现在（毫秒），正在跑的那站按它算时间。 */
   now?: number;
+  /** 各站能做的事（重新 OCR、重新翻译……）；没有任务在跑时才给。 */
+  stationActions?: Partial<Record<StationKey, StationAction>>;
 };
 
 export function ProcessingPipelineRail({
@@ -89,7 +98,10 @@ export function ProcessingPipelineRail({
   loading = false,
   timeline = null,
   now = Date.now(),
+  stationActions = {},
 }: ProcessingPipelineRailProps) {
+  const [openKey, setOpenKey] = useState<StationKey | "">("");
+  const opened = openKey && stationActions[openKey] ? openKey : "";
   const model = assemblyStations(item, { hasTranslationJob, ocrState: ocrStateOf(ocrStatus), loading });
   const states = Object.fromEntries(model.stations.map((station) => [station.key, station.state])) as Record<StationKey, StationState>;
   // 每站的状态字只看这一站自己。任务在跑：没轮到的站写「等待中」；任务已失败 / 取消：没轮到的站写「未开始」。
@@ -149,7 +161,7 @@ export function ProcessingPipelineRail({
             return (
               <li
                 key={station.key}
-                className={`book-detail-pipeline-stage is-${station.state}`}
+                className={`book-detail-pipeline-stage is-${station.state}${opened === station.key ? " is-open" : ""}`}
                 style={position}
                 data-stage-key={station.key}
                 data-state={loading ? "loading" : station.state}
@@ -180,12 +192,37 @@ export function ProcessingPipelineRail({
                       {translateWarning}
                     </span>
                   ) : null}
+                  {stationActions[station.key] ? (
+                    <button
+                      type="button"
+                      id={`book-detail-station-${station.key}-btn`}
+                      className="book-detail-pipeline-action"
+                      aria-expanded={opened === station.key}
+                      aria-controls="book-detail-station-panel"
+                      data-station-action={station.key}
+                      onClick={() => setOpenKey((key) => (key === station.key ? "" : station.key))}
+                    >
+                      {stationActions[station.key]?.label}
+                      <ChevronDown aria-hidden="true" />
+                    </button>
+                  ) : null}
                 </span>
               </li>
             );
           })}
         </ol>
       </div>
+      {opened ? (
+        <div id="book-detail-station-panel" className="book-detail-station-panel" data-station-panel={opened}>
+          <div className="book-detail-station-panel-head">
+            <strong>{STATIONS.find((station) => station.key === opened)?.label}</strong>
+            <button type="button" aria-label="收起" onClick={() => setOpenKey("")}>
+              <X aria-hidden="true" />
+            </button>
+          </div>
+          {stationActions[opened]?.content}
+        </div>
+      ) : null}
       {activity.length ? (
         <div className="book-detail-line-activity" data-line-activity="true">
           <div className="book-detail-line-activity-head">
