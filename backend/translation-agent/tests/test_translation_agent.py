@@ -118,6 +118,15 @@ def test_revision_shortens_and_tries_again_when_still_too_long() -> None:
     assert result.history[0]["translation"] == request.current_translation
 
 
+def test_revision_that_cannot_reach_the_limit_returns_the_shortest_try_as_a_warning() -> None:
+    """改稿不许删内容，缩不到是正常结果：取两次里最短的那版，超长只算警告，交给排版缩字号。"""
+    model = Scripted({"cap": "图 1：三种服务在密集页面上的召回率 [3]。"}, {"cap": "图 1：三种服务在所有密集双栏页面上的召回率 [3]。"})
+    request = RevisionRequest("cap", "图 1：三种 OCR 服务在密集双栏页面上的块级召回率 [3]。", max_chars=12)
+    result = TranslationAgent(model="fake", transport=model).revise(_page(), [request])["cap"]
+    assert result.translation == "图 1：三种服务在密集页面上的召回率 [3]。", "the shorter of the two tries wins"
+    assert result.status == "warn" and [i["code"] for i in result.issues if i["severity"] == "warn"] == ["still_too_long"]
+
+
 def test_revision_of_a_block_that_is_not_translated_is_rejected() -> None:
     with pytest.raises(ValueError):
         TranslationAgent(model="fake", transport=Scripted()).revise(_page(), [RevisionRequest("h", "x")])
