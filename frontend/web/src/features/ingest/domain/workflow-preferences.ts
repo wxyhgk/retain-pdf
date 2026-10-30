@@ -32,9 +32,21 @@ export function normalizeRenderEngine(value: unknown): RenderEngine {
   return value === "rpr_fit" || value === "typst" ? value : "auto";
 }
 
+/**
+ * 翻译引擎（translation.engine）。legacy 不发字段，和以前逐字相同；agent = 翻译 agent
+ * （先通读全文，再逐页翻译并审校），后端要求接口协议是 anthropic，协议不对时 payload 里也不发，
+ * 见 workflow/payload.ts 的 translationEngineFields。
+ */
+export type TranslationEngine = "legacy" | "agent";
+
+export function normalizeTranslationEngine(value: unknown): TranslationEngine {
+  return value === "agent" ? "agent" : "legacy";
+}
+
 const WORKFLOW_PREFERENCE_SPECS = {
   translationQuality: { storageKey: "retainpdf.translationQuality", normalize: normalizeTranslationQuality },
   renderEngine: { storageKey: "retainpdf.renderEngine", normalize: normalizeRenderEngine },
+  translationEngine: { storageKey: "retainpdf.translationEngine", normalize: normalizeTranslationEngine },
 } as const satisfies Record<string, { storageKey: string; normalize: (value: unknown) => string }>;
 
 type Specs = typeof WORKFLOW_PREFERENCE_SPECS;

@@ -132,8 +132,10 @@ export function buildTranslationPayload({
   preferences,
   constants,
 }: BuildTranslationPayloadOptions): TranslationInput {
+  const engine = translationEngineFields(preferences?.translationEngine, developerConfig.apiProtocol);
   return {
-    ...translationQualityFields(preferences?.translationQuality),
+    // agent 自带通读和审校，再发 preparation / refine 后端会照跑一遍，重复花钱。
+    ...(engine.engine === "agent" ? engine : translationQualityFields(preferences?.translationQuality)),
     mode: constants.DEFAULT_MODE,
     math_mode: developerConfig.mathMode,
     model: developerConfig.model,
@@ -174,6 +176,15 @@ export function translationQualityFields(quality: unknown): Pick<TranslationInpu
   // 精翻 = 编辑部：术语专员审定术语表，翻完由审校挑错、主编分派局部改或整块重写，最多两轮。
   if (quality === "refined") return { preparation: "editorial", refine: "editorial" };
   return {};
+}
+
+/** agent 只在 anthropic 协议下发（否则后端 400）；legacy 不发字段，跟着后端默认走。 */
+export function agentEngineAvailable(apiProtocol: unknown): boolean {
+  return apiProtocol === "anthropic";
+}
+
+export function translationEngineFields(engine: unknown, apiProtocol: unknown): Pick<TranslationInput, "engine"> {
+  return engine === "agent" && agentEngineAvailable(apiProtocol) ? { engine: "agent" } : {};
 }
 
 function resolveStoredFontFamily(fallback: unknown): string {

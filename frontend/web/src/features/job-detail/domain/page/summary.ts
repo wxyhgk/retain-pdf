@@ -41,6 +41,14 @@ export function renderJobDetailRuntimeSummary({
   setText("detail-runtime-input-protocol", summarizeInvocationProtocol(job));
   setText("detail-runtime-stage-spec-version", summarizeInvocationSchemaVersion(job));
   setText("detail-runtime-math-mode", renderMathMode({ request_payload_math_mode: job.request_payload_math_mode }));
+  setText("detail-runtime-translation-engine", summarizeTranslationEngine(job));
+}
+
+/** request_payload.translation.engine：旧任务没有这个字段，按现有流程算；不翻译的任务显示 -。 */
+export function summarizeTranslationEngine(job: JobLike | JobPayload): string {
+  const translation = asRecord(asRecord(job.request_payload).translation);
+  if (!Object.keys(translation).length) return "-";
+  return translation.engine === "agent" ? "翻译 agent" : "现有流程";
 }
 
 export function renderJobDetailFailureSummary({

@@ -323,6 +323,7 @@ export function DetailApp({
             <MetaRow label="输入协议" id="detail-runtime-input-protocol" value={t("detail-runtime-input-protocol")} />
             <MetaRow label="阶段协议" id="detail-runtime-stage-spec-version" value={t("detail-runtime-stage-spec-version")} />
             <MetaRow label="公式模式" id="detail-runtime-math-mode" value={t("detail-runtime-math-mode")} />
+            <MetaRow label="翻译引擎" id="detail-runtime-translation-engine" value={t("detail-runtime-translation-engine")} />
           </JobSummaryCard>
           <JobSummaryCard title="失败诊断">
             <MetaRow label="摘要" id="detail-failure-summary" value={t("detail-failure-summary")} />
