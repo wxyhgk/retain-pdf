@@ -76,7 +76,7 @@ class PageRequest:
 
 
 def agent_text(element: dict) -> str:
-    """块的原文：行内公式换成 `$latex$`，脚注标记换成 `{{fn:n}}`，其余照原样。"""
+    """块的原文：行内公式换成 `$latex$`，脚注标记换成 `{{fn:n}}`，行内代码用反引号包起来，其余照原样。"""
     sep = "" if element.get("lang") == "zh" else " "
     lines = [line["text"] for line in element.get("lines") or []]
     if not lines:
@@ -88,6 +88,8 @@ def agent_text(element: dict) -> str:
             token = f"${part['latex']}$"
         elif part["class"] == "footnote_mark":
             token = FN_TOKEN % part["text"]
+        elif part["class"] == "inline_code":
+            token = "`" + lines[part["line"]][part["start"] : part["end"]] + "`"
         else:
             continue
         text = lines[part["line"]]

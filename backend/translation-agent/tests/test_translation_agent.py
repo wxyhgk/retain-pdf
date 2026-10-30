@@ -57,6 +57,9 @@ def test_check_block_protects_formulas_marks_and_numbers() -> None:
     assert check_block(source, None)[0]["code"] == "missing"
     # 短标题、写成中文数字都不算错
     assert check_block("Acknowledgements", "致谢") == []
+    # 行内代码原样保留
+    assert check_block("Run `tw backup --json` to start.", "运行 `tw backup --json` 开始备份。") == []
+    assert [i["code"] for i in check_block("Run `tw backup --json` to start.", "运行 tw backup 开始备份。")] == ["code_changed"]
     assert check_block("a level-2 heading reported as level 1 is a role error", "二级标题被报告为一级，算作角色错误") == []
 
 

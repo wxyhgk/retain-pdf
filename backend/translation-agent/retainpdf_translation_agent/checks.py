@@ -10,6 +10,7 @@ from retainpdf_translation_agent.memory import find_terms
 FORMULA_RE = re.compile(r"\$[^$]+\$")
 CITATION_RE = re.compile(r"\[\d+(?:\s*[,–-]\s*\d+)*\]")
 FN_RE = re.compile(r"\{\{fn:[^}]+\}\}")
+CODE_RE = re.compile(r"`[^`\n]+`")
 NUMBER_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)*(?![\w])")
 LATIN_WORD_RE = re.compile(r"[A-Za-z]{3,}")
 CJK_RE = re.compile(r"[一-鿿]")
@@ -26,7 +27,7 @@ def visible_length(text: str) -> int:
 
 
 def _strip_protected(text: str) -> str:
-    return FN_RE.sub(" ", CITATION_RE.sub(" ", FORMULA_RE.sub(" ", text)))
+    return CODE_RE.sub(" ", FN_RE.sub(" ", CITATION_RE.sub(" ", FORMULA_RE.sub(" ", text))))
 
 
 def _issue(code: str, severity: str, message: str) -> dict:
@@ -47,6 +48,9 @@ def check_block(source: str, translation: str | None) -> list[dict]:
         lost = sorted((src_formulas - out_formulas).elements())
         added = sorted((out_formulas - src_formulas).elements())
         issues.append(_issue("formula_changed", "error", f"公式和原文不一致：丢了 {lost}，多了 {added}"))
+    lost_code = Counter(CODE_RE.findall(source)) - Counter(CODE_RE.findall(translation))
+    if lost_code:
+        issues.append(_issue("code_changed", "error", f"行内代码要原样保留：{sorted(lost_code.elements())}"))
     for name, pattern in (("citation", CITATION_RE), ("footnote_mark", FN_RE)):
         lost = Counter(pattern.findall(source)) - Counter(pattern.findall(translation))
         if lost:
