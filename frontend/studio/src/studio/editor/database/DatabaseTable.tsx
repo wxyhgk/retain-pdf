@@ -50,7 +50,7 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 			    own while no cell is typed in (useTableKeys). */}
 			<div className="db-table" role="table" style={{ width }} tabIndex={-1} ref={database.table} onKeyDown={keys.down} onCopy={keys.copy} onPaste={keys.paste}>
 				<div className="db-tr db-head" role="row">
-					<TitleHead database={database} />
+					<TitleHead database={database} rows={rows} />
 					{columns.map((column) => (
 						<ColumnHead
 							key={column.name}
@@ -68,14 +68,14 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 					<div
 						key={row.slug}
 						role="row"
-						className={cn('db-tr database-row', drop?.slug === row.slug && (drop.after ? 'is-drop-after' : 'is-drop-before'), dragged === row.slug && 'is-dragged')}
+						className={cn('db-tr database-row', drop?.slug === row.slug && (drop.after ? 'is-drop-after' : 'is-drop-before'), dragged === row.slug && 'is-dragged', database.chosenRows.has(row.slug) && 'is-chosen')}
 						data-row={row.slug}
 						onDragOver={over(row)}
 						onDragLeave={(event) => !event.currentTarget.contains(event.relatedTarget as Node) && setDrop((now) => (now?.slug === row.slug ? null : now))}
 						onDrop={dropped(row)}
 					>
 						<div className={cn('db-td db-td-title', config.titleWrap && 'is-wrap', keys.marks(row.slug, TITLE))} role="cell" data-column={TITLE} style={{ width: TITLE_WIDTH }} onMouseDown={keys.press(row.slug, TITLE)}>
-							<RowHandle row={row} database={database} dragging={(on) => setDragged(on ? row.slug : null)} />
+							<RowHandle row={row} rows={rows} database={database} dragging={(on) => setDragged(on ? row.slug : null)} />
 							<TitleCell row={row} database={database} />
 						</div>
 						{columns.map((column) => (
@@ -109,12 +109,18 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 	);
 }
 
-/** 标题's head: its menu (filter, order) only; it is every row's, not renamed nor taken away. */
-function TitleHead({ database }: { database: Database }) {
+/** 标题's head: its menu (filter, order) only; it is every row's, not renamed nor taken away. At its left, a box for all the rows. */
+function TitleHead({ database, rows }: { database: Database; rows: Row[] }) {
 	const { config, change } = database;
 	const [open, setOpen] = useState(false);
+	const all = rows.length > 0 && rows.every((row) => database.chosenRows.has(row.slug));
 	return (
 		<div className="db-th" role="columnheader" style={{ width: TITLE_WIDTH }}>
+			<div className={cn('db-row-gutter', database.chosenRows.size > 0 && 'is-choosing')}>
+				<button type="button" role="checkbox" aria-checked={all} aria-label={t('选中所有行')} data-database-choose-all className={cn('db-check is-small db-row-box', all && 'is-checked')} onClick={() => database.chooseAll(rows)}>
+					{all && <Check aria-hidden />}
+				</button>
+			</div>
 			<Pop
 				open={open}
 				onOpenChange={setOpen}
@@ -375,11 +381,26 @@ function AddColumn({ database }: { database: Database }) {
 	);
 }
 
-/** ⋮⋮ at a row's left (shown on hover): dragged, the row moved; clicked, its menu (open it, delete it). */
-function RowHandle({ row, database, dragging }: { row: Row; database: Database; dragging(on: boolean): void }) {
+/**
+ * At a row's left (shown on hover, as Notion's): its box, to choose it with others (⇧, a run of them); ⋮⋮, dragged, the
+ * row moved, clicked, its menu (open it, delete it).
+ */
+function RowHandle({ row, rows, database, dragging }: { row: Row; rows: Row[]; database: Database; dragging(on: boolean): void }) {
 	const [open, setOpen] = useState(false);
+	const chosen = database.chosenRows.has(row.slug);
 	return (
-		<div className="db-row-gutter">
+		<div className={cn('db-row-gutter', database.chosenRows.size > 0 && 'is-choosing')}>
+			<button
+				type="button"
+				role="checkbox"
+				aria-checked={chosen}
+				aria-label={t('选中这一行')}
+				data-database-choose-row={row.slug}
+				className={cn('db-check is-small db-row-box', chosen && 'is-checked')}
+				onClick={(event) => database.chooseRow(row.slug, rows, event.shiftKey)}
+			>
+				{chosen && <Check aria-hidden />}
+			</button>
 			<Pop
 				open={open}
 				onOpenChange={setOpen}
@@ -693,7 +714,8 @@ function useTableKeys(database: Database, rows: Row[], columns: Column[]) {
 		},
 		/** A press on a cell: chosen (⇧: the block to it), the keys the table's. */
 		press: (slug: string, column: string) => (event: ReactMouseEvent) => {
-			if (!ours(event.target)) return;
+			// A row's box or ⋮⋮ in its margin: the row's, not the cell's.
+			if (!ours(event.target) || (event.target as HTMLElement).closest('.db-row-gutter')) return;
 			if (event.shiftKey && cursor) {
 				event.preventDefault();
 				setCursor({ anchor: cursor.anchor, head: { slug, column } });
@@ -743,6 +765,7 @@ function useTableKeys(database: Database, rows: Row[], columns: Column[]) {
 			} else if (event.key === 'Escape') {
 				event.preventDefault();
 				setCursor(null);
+				database.letRowsGo();
 			} else if (event.key.length === 1) {
 				// A key typed on a cell of words: typed in, beginning with it.
 				const column = columnNamed(spot.column);

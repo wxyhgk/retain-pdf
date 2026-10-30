@@ -369,3 +369,33 @@ test('under each column, what is worked out of it: chosen from its kind’s, kep
 	await p.keyboard.press('ControlOrMeta+s');
 	await expect.poll(savedMarkdown).toMatch(/"calcs": \{\n\s+"能量": "sum"\n\s+\}/u);
 });
+
+test('rows chosen by their boxes (⇧, a run of them): a value set in all, deleted together', async ({ page: p }) => {
+	row('db-row-a', 'A', '', 10);
+	row('db-row-b', 'B', '', 20);
+	row('db-row-c', 'C', '', 30);
+	database({ columns: [{ name: '方法', type: 'select', options: ['PBE0', 'B3LYP'] }, { name: '备注', type: 'text' }], view: 'table' });
+	await openStudio(p);
+	await block(p).locator('[data-row="db-row-a"]').hover();
+	await block(p).locator('[data-database-choose-row="db-row-a"]').click();
+	await block(p).locator('[data-database-choose-row="db-row-c"]').click({ modifiers: ['Shift'] });
+	await expect(block(p).locator('.database-row.is-chosen')).toHaveCount(3);
+	await block(p).locator('[data-database-choose-row="db-row-b"]').click();
+	await expect(block(p).locator('[data-database-chosen]')).toContainText('已选 2 行');
+
+	await block(p).locator('[data-database-chosen-edit]').click();
+	await p.locator('[data-database-chosen-column="方法"]').click();
+	await p.locator('[data-database-chosen-value="B3LYP"]').click();
+	await expect.poll(() => page('db-row-a')).toContain('"方法": "B3LYP"');
+	await expect.poll(() => page('db-row-c')).toContain('"方法": "B3LYP"');
+	expect(page('db-row-b')).not.toContain('方法');
+
+	await block(p).locator('[data-database-chosen-delete]').click();
+	await p.locator('#delete-page-all').click();
+	await expect(block(p).locator('.database-row')).toHaveCount(1);
+	await expect(block(p).locator('[data-database-chosen]')).toHaveCount(0);
+	// The box at the head: all the rows.
+	await block(p).locator('[data-database-choose-all]').click();
+	await expect(block(p).locator('.database-row.is-chosen')).toHaveCount(1);
+	await p.keyboard.press('Escape');
+});

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Ellipsis, Plus, Search, SquareKanban, Table2, X } from 'lucide-react';
+import { ChevronDown, Copy, Ellipsis, PencilLine, Plus, Search, SquareKanban, Table2, Trash2, X } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import type { DatabaseColumnsChange } from '@studio/api/client';
@@ -21,6 +21,7 @@ import { DatabaseTable } from './DatabaseTable';
 import { FilterButton, FilterChips, SortButton } from './database-filters';
 import { calcKinds, freeColumnName, hasOptions, TITLE, visibleRows, type CalcKind, type Column, type ColumnType, type DatabaseConfig, type Row } from './database-config';
 import { keepFocus, said, typeName } from './database-parts';
+import { copiedText, tableText } from './table-clipboard';
 
 /** What the database's view needs from the Studio around the editor. */
 export type DatabaseHost = {
@@ -34,6 +35,8 @@ export type DatabaseHost = {
 	adopt(id: string): Promise<void>;
 	/** A row's page to the trash (after asking, as the tree's 删除). */
 	removeRow(row: string): Promise<void>;
+	/** Several rows' pages to the trash (asked once). */
+	removeRows(rows: string[]): Promise<void>;
 	/** A row put just before or after another (its page among those under the database). */
 	moveRow(row: string, place: { before?: string; after?: string }): Promise<void>;
 	changeColumns(change: DatabaseColumnsChange): Promise<void>;
@@ -59,6 +62,9 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 	} | null>(null);
 	/** The cells chosen in the table, as a spreadsheet's: from `anchor` to `head` (where the keys are). */
 	const [cursor, setCursor] = useState<{ anchor: Spot; head: Spot } | null>(null);
+	/** The rows chosen by their boxes (as Notion's), to change or delete together; the last one clicked, where a run starts. */
+	const [chosenRows, setChosenRows] = useState<ReadonlySet<string>>(new Set());
+	const lastChosen = useRef<string | null>(null);
 	/** A cell whose picker (choices, a day) is to open, asked from the keyboard. */
 	const [picking, setPicking] = useState<Spot | null>(null);
 	/** The table, which takes the keys while no cell is typed in. */
@@ -111,6 +117,37 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 		setEditing,
 		cursor,
 		setCursor,
+		chosenRows,
+		/** A row's box clicked: chosen or let go; ⇧, the run from the last one clicked (in `shown`, the rows as they are shown). */
+		chooseRow(slug: string, shown: Row[], run = false): void {
+			const next = new Set(chosenRows);
+			const from = shown.findIndex((row) => row.slug === lastChosen.current);
+			const to = shown.findIndex((row) => row.slug === slug);
+			if (run && from >= 0 && to >= 0) for (const row of shown.slice(Math.min(from, to), Math.max(from, to) + 1)) next.add(row.slug);
+			else if (next.has(slug)) next.delete(slug);
+			else next.add(slug);
+			lastChosen.current = slug;
+			setChosenRows(next);
+		},
+		/** All the rows shown chosen, or (all are) none. */
+		chooseAll(shown: Row[]): void {
+			setChosenRows(shown.length && shown.every((row) => chosenRows.has(row.slug)) ? new Set() : new Set(shown.map((row) => row.slug)));
+		},
+		letRowsGo(): void {
+			if (chosenRows.size) setChosenRows(new Set());
+		},
+		/** The rows chosen to the trash (asked first, as the tree's 删除); let go of. */
+		async removeChosen(): Promise<void> {
+			const slugs = [...chosenRows];
+			await host.removeRows(slugs).catch(failed);
+			setChosenRows(new Set());
+			await load();
+		},
+		/** One value set in every row chosen (null: emptied). */
+		async setChosen(column: Column, value: unknown): Promise<void> {
+			const chosen = (rows ?? []).filter((row) => chosenRows.has(row.slug));
+			await Promise.all(chosen.map((row) => this.setValues(row, [{ column, value }])));
+		},
 		picking,
 		setPicking,
 		table,
@@ -418,7 +455,11 @@ export function DatabaseView({ config, change, host }: { config: DatabaseConfig;
 					<NewButton config={config} change={change} host={host} add={() => void database.addRow()} />
 				</div>
 			</div>
-			<FilterChips config={config} change={change} openFilter={database.openFilter} setOpenFilter={database.setOpenFilter} />
+			{database.chosenRows.size > 0 && config.view === 'table' ? (
+				<ChosenBar database={database} rows={visible} />
+			) : (
+				<FilterChips config={config} change={change} openFilter={database.openFilter} setOpenFilter={database.setOpenFilter} />
+			)}
 			{problem ? (
 				<p className="db-note is-error">{problem}</p>
 			) : !rows ? (
@@ -598,6 +639,80 @@ function NewButton({ config, change, host, add }: { config: DatabaseConfig; chan
 					</DropdownMenuItem>
 				</DropdownMenuContent>
 			</DropdownMenu>
+		</div>
+	);
+}
+
+/**
+ * The rows chosen by their boxes (as Notion's): how many; a value set in all of them (a choice, a box, today, or
+ * emptied); copied as a spreadsheet's rows; deleted (asked once); let go of.
+ */
+function ChosenBar({ database, rows }: { database: Database; rows: Row[] }) {
+	const { config, chosenRows, host } = database;
+	const chosen = rows.filter((row) => chosenRows.has(row.slug));
+	const columns = config.columns.filter((column) => !column.hidden);
+	const today = new Date();
+	const day = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+	const copy = () => {
+		const text = tableText([[TITLE, ...columns.map((column) => column.name)], ...chosen.map((row) => [copiedText(row, TITLE), ...columns.map((column) => copiedText(row, column))])]);
+		void navigator.clipboard.writeText(text).then(
+			() => host.toast(t('已复制 {count} 行', { count: chosen.length })),
+			() => host.toast(t('没能复制'), true),
+		);
+	};
+	return (
+		<div className="db-chosen" data-database-chosen>
+			<span className="db-chosen-count">{t('已选 {count} 行', { count: chosen.length })}</span>
+			<DropdownMenu>
+				<DropdownMenuTrigger asChild>
+					<button type="button" className="db-icon-button is-wide" data-database-chosen-edit>
+						<PencilLine aria-hidden />
+						{t('编辑属性')}
+					</button>
+				</DropdownMenuTrigger>
+				<DropdownMenuContent align="start" className="db-dropdown w-56" onCloseAutoFocus={keepFocus}>
+					{columns.length === 0 && <DropdownMenuItem disabled>{t('还没有属性')}</DropdownMenuItem>}
+					{columns.map((column) => (
+						<DropdownMenuSub key={column.name}>
+							<DropdownMenuSubTrigger data-database-chosen-column={column.name}>{column.name}</DropdownMenuSubTrigger>
+							<DropdownMenuSubContent className="db-dropdown">
+								{(column.type === 'select' || column.type === 'multi') &&
+									(column.options ?? []).map((option) => (
+										<DropdownMenuItem key={option} data-database-chosen-value={option} onSelect={() => void database.setChosen(column, column.type === 'multi' ? [option] : option)}>
+											{option}
+										</DropdownMenuItem>
+									))}
+								{column.type === 'checkbox' && (
+									<>
+										<DropdownMenuItem onSelect={() => void database.setChosen(column, true)}>{t('勾上')}</DropdownMenuItem>
+										<DropdownMenuItem onSelect={() => void database.setChosen(column, false)}>{t('取消勾选')}</DropdownMenuItem>
+									</>
+								)}
+								{column.type === 'date' && <DropdownMenuItem onSelect={() => void database.setChosen(column, day)}>{t('今天')}</DropdownMenuItem>}
+								{column.type !== 'checkbox' && (
+									<>
+										{(((column.type === 'select' || column.type === 'multi') && (column.options ?? []).length > 0) || column.type === 'date') && <DropdownMenuSeparator />}
+										<DropdownMenuItem data-database-chosen-empty={column.name} onSelect={() => void database.setChosen(column, null)}>
+											{t('清空')}
+										</DropdownMenuItem>
+									</>
+								)}
+							</DropdownMenuSubContent>
+						</DropdownMenuSub>
+					))}
+				</DropdownMenuContent>
+			</DropdownMenu>
+			<button type="button" className="db-icon-button is-wide" onClick={copy} data-database-chosen-copy>
+				<Copy aria-hidden />
+				{t('复制')}
+			</button>
+			<button type="button" className="db-icon-button is-wide is-danger" onClick={() => void database.removeChosen()} data-database-chosen-delete>
+				<Trash2 aria-hidden />
+				{t('删除')}
+			</button>
+			<button type="button" className="db-icon-button" aria-label={t('取消选择')} onClick={() => database.letRowsGo()} data-database-chosen-close>
+				<X aria-hidden />
+			</button>
 		</div>
 	);
 }

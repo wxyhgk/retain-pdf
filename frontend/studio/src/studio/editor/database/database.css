@@ -40,6 +40,11 @@
 .db .db-new-more svg { width: 14px; height: 14px; }
 .db .db-new button:hover { background: color-mix(in srgb, var(--on-accent) 12%, transparent); }
 
+/* The rows chosen by their boxes: how many, what can be done to them all. */
+.db .db-chosen { display: flex; align-items: center; gap: 4px; padding: 6px 0; }
+.db .db-chosen-count { margin-right: 6px; color: rgb(var(--black)); font-size: 13px; font-weight: 500; }
+.db .db-chosen .db-icon-button.is-wide { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 0 8px; font-size: 13px; }
+.db .db-chosen .db-icon-button.is-danger:hover { color: var(--danger); }
 /* The filters and order in force, as chips. */
 .db .db-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0 6px; }
 :is(.db, .db-pop) .db-chip { display: inline-flex; align-items: center; gap: 4px; max-width: 280px; height: 26px; padding: 0 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 13px; color: rgb(var(--gray)); font-size: 13px; white-space: nowrap; }
@@ -52,9 +57,9 @@
 
 /* The table: room at its left for each row's ⋮⋮, as Notion keeps it in the page's margin; out to the right of the
  * editor (--db-out, database-block.ts), scrolled sideways there. */
-.db .db-scroll { margin-right: calc(-1 * var(--db-out, 0px)); margin-left: -36px; padding-left: 36px; padding-bottom: 6px; overflow-x: auto; overflow-y: hidden; }
+.db .db-scroll { margin-right: calc(-1 * var(--db-out, 0px)); margin-left: -56px; padding-left: 56px; padding-bottom: 6px; overflow-x: auto; overflow-y: hidden; }
 /* The titles stay at the left as the table is scrolled sideways (past the room for the ⋮⋮, which they cover). */
-.db .db-tr > .db-th:first-child, .db .db-tr > .db-td-title { position: sticky; left: 0; z-index: 3; background: var(--surface); box-shadow: -36px 0 0 var(--surface); }
+.db .db-tr > .db-th:first-child, .db .db-tr > .db-td-title { position: sticky; left: 0; z-index: 3; background: var(--surface); box-shadow: -56px 0 0 var(--surface); }
 /* A column on as many lines as its values take. */
 .db .db-td.is-wrap .db-cell-text, .db .db-td.is-wrap .db-title-text { white-space: normal; overflow-wrap: anywhere; }
 .db .db-td.is-wrap .db-cell-pills { flex-wrap: wrap; }
@@ -83,8 +88,12 @@
 .db .db-tr > .db-td.is-in-range { background: var(--studio-select); }
 .db .db-table:focus-within .db-td.is-cursor::after { content: ''; position: absolute; inset: -1px; z-index: 4; border: 2px solid var(--studio-select-edge); border-radius: 3px; pointer-events: none; }
 
-/* A row's ⋮⋮, in the margin. */
-.db .db-row-gutter { position: absolute; top: 0; left: -34px; display: flex; align-items: center; justify-content: flex-end; width: 30px; height: 34px; }
+/* A row's box and ⋮⋮, in the margin: on hover; the boxes all while some are chosen. */
+.db .db-row-gutter { position: absolute; top: 0; left: -54px; display: flex; align-items: center; justify-content: flex-end; gap: 2px; width: 50px; height: 34px; }
+.db .db-head .db-row-gutter { height: 33px; padding-right: 20px; }
+.db .db-row-box { opacity: 0; transition: opacity var(--studio-dur-fast); }
+.db .db-tr:hover .db-row-box, .db .db-row-gutter.is-choosing .db-row-box, .db .db-row-box:focus-visible { opacity: 1; }
+.db .db-tr.is-chosen > .db-td { background: var(--studio-select); }
 .db .db-row-handle { display: grid; place-items: center; width: 18px; height: 24px; border-radius: 4px; color: rgba(var(--gray), 0.8); cursor: grab; opacity: 0; transition: opacity var(--studio-dur-fast); }
 .db .db-row-handle svg { width: 15px; height: 15px; }
 .db .db-row-handle:hover { background: var(--studio-fill-2); }

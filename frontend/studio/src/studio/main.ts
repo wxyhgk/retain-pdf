@@ -499,6 +499,10 @@ setDatabaseHost((id) => {
 			const article = articleList.articles().find((entry) => entry.slug === row);
 			if (article) await articleActions.remove(article);
 		},
+		async removeRows(slugs) {
+			const pages = articleList.articles().filter((entry) => slugs.includes(entry.slug));
+			if (pages.length) await articleActions.removeMany(pages);
+		},
 		async moveRow(row, place) {
 			await trackWrite(() => setArticleParent(row, slug, place));
 			void articleList.load();
