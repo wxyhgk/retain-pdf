@@ -55,6 +55,7 @@ export const CHECK_CODE_TEXT: Record<string, string> = {
   name_mismatch: "人名译法不一致",
   abbr_first_use: "缩写首次没写全称",
   still_too_long: "改稿后仍超长",
+  foreign_script: "冒出原文没有的外文",
   fallback_source: "退回原文待人看",
   // warn
   number_lost: "数字可能丢了",
