@@ -1,7 +1,7 @@
 # 翻译编辑部（可视化组件）
 
-把翻译 agent 里各个角色怎么分工、一页稿子怎么在他们之间流转画出来。现在用模拟数据回放；后端以后按
-`editorial.v1` 事件推真实进度，前端把事件叠成状态传给同一个组件就能显示。
+把翻译 agent 里各个角色怎么分工、一页稿子怎么在他们之间流转画出来。书详情「进度」面板里，翻译 agent
+跑的任务接真实事件（见下面「真实进度」）；演示页用模拟数据回放。
 
 - 代码：`frontend/web/src/features/editorial-room/`
 - 演示页：`frontend/web/editorial.html`，默认就是用户会看到的样子；`?debug=1` 是调试视图，`?scenario=quota` 打开「额度用完停下」的场景
@@ -41,15 +41,19 @@
 - `parseEditorialEvent`：版本不是 `editorial.v1`、`type` 不认识的整条跳过；缺的字段给 0 或空串；多的字段不管。后端约定只加不改，新加的事件类型前端没跟上时只是不显示。
 - `reduceEditorialEvent`：一条事件叠到状态上，纯函数。每页有一个阶段（待派、已派、翻译中、质检、退回重翻、审校中、修订中、定稿）。工位手上是哪一页不单独记，由阶段推出来；同一工位有几页时显示最近动过的那页。
 - 质检数按每页最近一次算，重翻的块不重复计；定稿后按 `page_done` 的终态算。
-- `run_stopped` 只改状态和原因，各页停在原地，接着跑时后端再推事件即可。
+- `run_stopped` 只改状态和原因，各页停在原地。
+- 续跑：同一串事件里第二条 `run_started` 不清空。术语表、歧义单、待人看筐、通读结果和已定稿的页都留着；第 1..`resumed` 页标定稿（这一轮不再发它们的事件），上一轮停在半路的页回到「待派」。`page` 是全书里的第几页，续跑接着编号。
 - `translate_call` 按 `role` 记到工位：缺省和 `translator` 是译者，`reviewer` 算审校中，`reviser` 算修订中，`reader` 不动页。
 - 质检代码分 error、warn、info 三级；广播只念 error 和 warn，info（`hedge_lost`、`person_lost`、`review_*`）只算指标不念。不认识的代码照原样显示。
 
-## 以后接真实进度
+## 真实进度
 
-1. 在要显示的页面里拿到事件：推送、轮询都行，原始 JSON 交给 `parseEditorialEvents`。
-2. 用 `reduceEditorialEvent` 叠成 `RoomState`，最近几条事件留着给广播用。
-3. 给用户看渲染 `<EditorialStage state={state} />`；调试时渲染 `<EditorialRoom state={state} recent={recent} />`。
-4. 那一页的 CSS 入口照 `src/styles/entries/editorial.css` 的顺序引 `features/editorial-room/ui/` 下的样式文件。
+接口 `GET /api/v1/jobs/:job_id/progress/editorial?after=<n>`（说明在 `docs/api/02-进度事件/03-编辑部事件.md`），请求函数是 `@retainpdf/api/jobs-events` 的 `fetchEditorialEvents`。
+
+- 哪些任务有：翻译覆盖接口的 `jobs[].engine === "agent"` 或 `has_editorial_events`（`book-detail/domain/translation-coverage.ts` 的 `hasEditorialRoom`）。legacy 任务不去读。
+- 怎么读（`domain/live-feed.ts`）：`after` 带上次的 `next_after`，`has_more` 就接着取；`next_after` 比带去的 `after` 小说明事件文件重开了，从 0 重取，之前叠的状态作废。
+- `ui/useEditorialLive.ts`：任务在跑时每 3 秒取一次新的，收到 `run_done` 就停；不在跑时只读一次。读失败保留上一次的画面。
+- `ui/EditorialLivePanel.tsx`：没有事件时什么都不画；在跑时是用户视图跟着动；跑完 / 停下后停在最后的样子，可以点「回放这次翻译」。
+- 样式：主页入口 `src/styles/entries/home.css` 只引用户视图用到的几份（`EditorialMotion`、`EditorialStage`、`office/EditorialOffice`、`EditorialFigure`、`EditorialRobot`、`EditorialLivePanel`），调试视图不进主页。共用的动效在 `EditorialMotion.css`，两个入口都引。
 
 回放用 `<EditorialRoomReplay events={events} />`：默认是用户视图、循环播放、没有按钮；加 `debug` 换成调试视图和回放按钮。按事件 `ts` 的间隔播放，每两条之间压在 0.52–1.8 秒，再按倍速（0.5×–4×）缩短。可以暂停、单步、拖进度条、从头播。

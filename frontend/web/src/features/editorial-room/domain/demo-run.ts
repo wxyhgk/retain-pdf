@@ -87,7 +87,7 @@ export function buildDemoEditorialRun(options: { stopAfterPage?: number } = {}):
     if (script.fallback) push(1, { type: "fallback", page, ...script.fallback });
   };
 
-  push(0, { type: "run_started", pages: total, model: DEMO_MODEL, doc_title: DEMO_DOC_TITLE });
+  push(0, { type: "run_started", pages: total, model: DEMO_MODEL, doc_title: DEMO_DOC_TITLE, resumed: 0 });
   push(1, { type: "reading_started" });
   push(3, { type: "glossary_changed", version: 1, action: "add", source: "bounding box", target: "边界框" });
   push(2, { type: "glossary_changed", version: 2, action: "add", source: "layout analysis", target: "版面分析" });

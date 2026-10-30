@@ -1,0 +1,46 @@
+/* 编辑部各视图共用的动效（调试视图 EditorialRoom、用户视图 EditorialStage 和 2.5D 全景都用）。
+ * 单独一份，书详情「进度」面板只引用户视图那几份样式时也带得上。
+ *
+ * @owns editorial-room */
+@keyframes editorial-room-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes editorial-room-pop {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes editorial-room-slide-down {
+  from {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes editorial-room-slide-in {
+  from {
+    transform: translateX(-18px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

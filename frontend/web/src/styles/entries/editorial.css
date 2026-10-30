@@ -20,6 +20,7 @@
 @import "../components.css";
 @import "../components.utilities.css";
 
+@import "../../features/editorial-room/ui/EditorialMotion.css";
 @import "../../features/editorial-room/ui/EditorialRoom.css";
 @import "../../features/editorial-room/ui/EditorialStage.css";
 @import "../../features/editorial-room/ui/office/EditorialOffice.css";
