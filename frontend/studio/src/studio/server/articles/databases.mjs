@@ -106,6 +106,25 @@ export class Databases {
 		return { value: kept };
 	}
 
+	/** Several values of a row set at once (a block pasted): `[{ column, type, value }]`, one write; what each kept. */
+	async setValues(slug, values) {
+		if (!Array.isArray(values) || !values.length) throw new DatabaseError(t('没有要改的值'));
+		const kept = values.map(({ column, type, value }) => {
+			if (typeof column !== 'string' || !column.trim()) throw new DatabaseError(t('列名不能为空'));
+			if (!COLUMN_TYPES.includes(type)) throw new DatabaseError(t('没有这种列：{type}', { type }));
+			return { column, value: coerceValue(type, value) };
+		});
+		await this.#rewrite(slug, (source) => {
+			const props = { ...(parseArticleSource(source).frontmatter?.props ?? {}) };
+			for (const { column, value } of kept) {
+				if (value === null || value === false) delete props[column];
+				else props[column] = value;
+			}
+			return setFrontmatterProps(source, props);
+		});
+		return { values: kept.map(({ value }) => value) };
+	}
+
 	/** A row's title set: the page's own (the links to it follow, as when it is retitled in the Studio). */
 	async setTitle(slug, title) {
 		const escaped = String(title ?? '').trim().replaceAll("'", "''");

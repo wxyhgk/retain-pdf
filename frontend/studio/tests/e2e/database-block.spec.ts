@@ -296,3 +296,62 @@ test('a column on as many lines as its values take, from its menu; the titles to
 	await p.keyboard.press('ControlOrMeta+s');
 	await expect.poll(savedMarkdown).toMatch(/"name": "备注",\n\s+"type": "text",\n\s+"wrap": true[\s\S]*"titleWrap": true/u);
 });
+
+test('the table from the keys, as a spreadsheet: moved through, typed in, a box ticked, a block copied, a block pasted (rows made)', async ({ page: p }) => {
+	row('db-row-a', 'A', '{ "能量": -1 }', 10);
+	row('db-row-b', 'B', '', 20);
+	database({ columns: [{ name: '能量', type: 'number' }, { name: '收敛', type: 'checkbox' }, { name: '方法', type: 'select', options: ['PBE0'] }], view: 'table' });
+	await openStudio(p);
+	const cell = (slug: string, column: string) => block(p).locator(`[data-row="${slug}"] > [data-column="${column}"]`);
+	// A cell clicked: typed in; Esc: chosen, the keys the table's.
+	await cell('db-row-a', '能量').locator('[data-database-cell]').click();
+	await expect(p.locator('[data-database-input]')).toBeFocused();
+	await p.keyboard.press('Escape');
+	await expect(cell('db-row-a', '能量')).toHaveClass(/is-cursor/u);
+	await expect(block(p).locator('.db-table')).toBeFocused();
+	// ↓ and a digit: the cell below typed in, beginning with it.
+	await p.keyboard.press('ArrowDown');
+	await expect(cell('db-row-b', '能量')).toHaveClass(/is-cursor/u);
+	await p.keyboard.type('7');
+	await expect(p.locator('[data-database-input]')).toHaveValue('7');
+	await p.keyboard.type('.5');
+	await p.keyboard.press('Enter');
+	await expect.poll(() => page('db-row-b')).toContain('"能量": 7.5');
+	await expect(block(p).locator('.db-table')).toBeFocused();
+	// → and Space: the box ticked.
+	await p.keyboard.press('ArrowRight');
+	await p.keyboard.press(' ');
+	await expect.poll(() => page('db-row-b')).toContain('"收敛": true');
+	// Enter on a choice: its picker.
+	await p.keyboard.press('ArrowRight');
+	await p.keyboard.press('Enter');
+	await expect(p.locator('[data-database-option="PBE0"]')).toBeVisible();
+	await p.keyboard.press('Escape');
+	await expect(p.locator('[data-database-option="PBE0"]')).toBeHidden();
+
+	// A block chosen (a click, ⇧ and a click), copied as a spreadsheet's cells.
+	await cell('db-row-a', '标题').click({ position: { x: 4, y: 10 } });
+	await cell('db-row-b', '能量').click({ modifiers: ['Shift'] });
+	await expect(block(p).locator('.is-in-range')).toHaveCount(4);
+	const copied = await block(p).locator('.db-table').evaluate((table) => {
+		const data = new DataTransfer();
+		table.dispatchEvent(new ClipboardEvent('copy', { clipboardData: data, bubbles: true, cancelable: true }));
+		return data.getData('text/plain');
+	});
+	expect(copied).toBe('A\t-1\nB\t7.5');
+
+	// A spreadsheet's block pasted from the cell chosen: the rows there changed, one more made; a choice new, added.
+	await cell('db-row-a', '能量').click({ position: { x: 4, y: 10 } });
+	await p.keyboard.press('Escape');
+	await block(p).locator('.db-table').evaluate((table) => {
+		const data = new DataTransfer();
+		data.setData('text/plain', '-76.41\tyes\tB3LYP\r\n-76.52\tno\tPBE0\r\n-1.5\t✓\tB3LYP\r\n');
+		table.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+	});
+	await expect.poll(() => page('db-row-a')).toContain('props: { "能量": -76.41, "收敛": true, "方法": "B3LYP" }');
+	await expect.poll(() => page('db-row-b')).toContain('props: { "能量": -76.52, "方法": "PBE0" }');
+	await expect(block(p).locator('.database-row')).toHaveCount(3);
+	await expect(block(p).locator('.database-row').nth(2).locator('[data-column="能量"]')).toHaveText('-1.5');
+	await p.keyboard.press('ControlOrMeta+s');
+	await expect.poll(savedMarkdown).toMatch(/"options": \[\n\s+"PBE0",\n\s+"B3LYP"\n\s+\]/u);
+});

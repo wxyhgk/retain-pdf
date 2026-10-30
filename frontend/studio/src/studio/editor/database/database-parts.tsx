@@ -136,13 +136,17 @@ export function TypeList({ pick, chosen }: { pick(type: ColumnType): void; chose
 }
 
 /** A field over a cell (words, a number, an address), as wide as the cell or wider: ↩ or leaving keeps it, Esc gives it up. */
-export function CellField({ value, numeric, done }: { value: string; numeric?: boolean; done(value: string | null): void }) {
+/**
+ * A cell's text being typed: Enter keeps it (⇧Enter a new line), Esc lets it go, Tab keeps it and goes on (`how`).
+ * `initial`: what it starts with instead of its value (a key typed on the cell chosen, as in a spreadsheet).
+ */
+export function CellField({ value, numeric, initial, done }: { value: string; numeric?: boolean; initial?: string; done(value: string | null, how?: 'enter' | 'tab' | 'back-tab' | 'escape' | 'blur'): void }) {
 	const field = useRef<HTMLTextAreaElement>(null);
 	const finished = useRef(false);
-	const finish = (next: string | null) => {
+	const finish = (next: string | null, how: 'enter' | 'tab' | 'back-tab' | 'escape' | 'blur') => {
 		if (finished.current) return;
 		finished.current = true;
-		done(next);
+		done(next, how);
 	};
 	const fit = () => {
 		const area = field.current;
@@ -164,17 +168,20 @@ export function CellField({ value, numeric, done }: { value: string; numeric?: b
 			rows={1}
 			inputMode={numeric ? 'decimal' : undefined}
 			className={cn('db-cell-field', numeric && 'is-number')}
-			defaultValue={value}
+			defaultValue={initial ?? value}
 			onInput={fit}
-			onBlur={(event) => finish(event.target.value)}
+			onBlur={(event) => finish(event.target.value, 'blur')}
 			onKeyDown={(event) => {
 				if (event.nativeEvent.isComposing) return;
 				if (event.key === 'Enter' && !event.shiftKey) {
 					event.preventDefault();
-					finish(event.currentTarget.value);
+					finish(event.currentTarget.value, 'enter');
+				} else if (event.key === 'Tab') {
+					event.preventDefault();
+					finish(event.currentTarget.value, event.shiftKey ? 'back-tab' : 'tab');
 				} else if (event.key === 'Escape') {
 					event.preventDefault();
-					finish(null);
+					finish(null, 'escape');
 				}
 			}}
 		/>

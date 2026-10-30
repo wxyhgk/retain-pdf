@@ -78,6 +78,10 @@
 .db .db-tr.is-drop-before > .db-td { box-shadow: inset 0 3px 0 -1px var(--studio-select-edge); }
 .db .db-tr.is-drop-after > .db-td { box-shadow: inset 0 -3px 0 -1px var(--studio-select-edge); }
 .db .db-tr.is-dragged { opacity: 0.4; }
+/* The cells chosen (useTableKeys): a block of them light blue, the one the keys are at ringed, while the table has the keys. */
+.db .db-table:focus { outline: none; }
+.db .db-tr > .db-td.is-in-range { background: var(--studio-select); }
+.db .db-table:focus-within .db-td.is-cursor::after { content: ''; position: absolute; inset: -1px; z-index: 4; border: 2px solid var(--studio-select-edge); border-radius: 3px; pointer-events: none; }
 
 /* A row's ⋮⋮, in the margin. */
 .db .db-row-gutter { position: absolute; top: 0; left: -34px; display: flex; align-items: center; justify-content: flex-end; width: 30px; height: 34px; }

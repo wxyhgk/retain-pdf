@@ -117,6 +117,11 @@ export function setDatabaseValue(row: string, column: string, type: string, valu
 	return request(`/api/studio/databases/rows/${encodeURIComponent(row)}`, jsonOptions('PUT', { column, type, value }));
 }
 
+/** Several values of a row set at once (a block pasted), one write; what each kept. */
+export function setDatabaseValues(row: string, values: Array<{ column: string; type: string; value: unknown }>): Promise<{ values: unknown[] }> {
+	return request(`/api/studio/databases/rows/${encodeURIComponent(row)}`, jsonOptions('PUT', { values }));
+}
+
 export function setDatabaseTitle(row: string, title: string): Promise<{ title: string }> {
 	return request(`/api/studio/databases/rows/${encodeURIComponent(row)}`, jsonOptions('PUT', { title }));
 }

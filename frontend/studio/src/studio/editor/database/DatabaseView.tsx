@@ -26,6 +26,8 @@ import { keepFocus, said, typeName } from './database-parts';
 export type DatabaseHost = {
 	rows(): Promise<Row[]>;
 	setValue(row: string, column: Column, value: unknown): Promise<unknown>;
+	/** Several values of a row set at once; what each kept. */
+	setValues(row: string, entries: Array<{ column: Column; value: unknown }>): Promise<unknown[]>;
 	setTitle(row: string, title: string): Promise<void>;
 	addRow(row: { title?: string; props?: Record<string, unknown>; template: string | null }): Promise<string>;
 	/** A database from before ids given one (`id`): the pages that were its rows say it now. */
@@ -40,16 +42,27 @@ export type DatabaseHost = {
 	toast(message: string, error?: boolean): void;
 };
 
+/** A cell of the table: its row, its column's name (标题 for the title). */
+export type Spot = { slug: string; column: string };
+
 /** The rows, and all that is done to them and to the columns, for the table and the board alike. */
 export type Database = ReturnType<typeof useDatabase>;
 
 function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => void, host: DatabaseHost) {
 	const [rows, setRows] = useState<Row[] | null>(null);
 	const [problem, setProblem] = useState('');
+	/** The cell whose text is being typed (`initial`: begun by a key, what it starts with). */
 	const [editing, setEditing] = useState<{
 		slug: string;
 		column: string;
+		initial?: string;
 	} | null>(null);
+	/** The cells chosen in the table, as a spreadsheet's: from `anchor` to `head` (where the keys are). */
+	const [cursor, setCursor] = useState<{ anchor: Spot; head: Spot } | null>(null);
+	/** A cell whose picker (choices, a day) is to open, asked from the keyboard. */
+	const [picking, setPicking] = useState<Spot | null>(null);
+	/** The table, which takes the keys while no cell is typed in. */
+	const table = useRef<HTMLDivElement | null>(null);
 	/** The column whose menu is open (one just added: to be named). */
 	const [menuFor, setMenuFor] = useState<string | null>(null);
 	/** The filter whose chip is open (one just added: to be filled in). */
@@ -96,6 +109,21 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 		load,
 		editing,
 		setEditing,
+		cursor,
+		setCursor,
+		picking,
+		setPicking,
+		table,
+		/** The keys back to the table (a cell typed in, a picker closed); not from what is typed in or open meanwhile. */
+		focusTable(): void {
+			requestAnimationFrame(() => {
+				const there = table.current;
+				const active = document.activeElement;
+				// Something being typed in (a cell, a picker's field) or a picker open has them.
+				if (!there || (active instanceof HTMLElement && (active.matches('input, textarea') || active.closest('[data-radix-popper-content-wrapper]')))) return;
+				there.focus({ preventScroll: true });
+			});
+		},
 		menuFor,
 		setMenuFor,
 		openFilter,
@@ -113,6 +141,16 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 					...each,
 					props: { ...each.props, [column.name]: kept },
 				}));
+			} catch (error) {
+				failed(error);
+			}
+		},
+		/** Several values of a row at once (a block pasted): shown at once, written in one go; on failure, the rows as they are. */
+		async setValues(row: Row, entries: Array<{ column: Column; value: unknown }>): Promise<void> {
+			patch(row.slug, (each) => ({ ...each, props: { ...each.props, ...Object.fromEntries(entries.map(({ column, value }) => [column.name, value])) } }));
+			try {
+				const kept = await host.setValues(row.slug, entries);
+				patch(row.slug, (each) => ({ ...each, props: { ...each.props, ...Object.fromEntries(entries.map(({ column }, at) => [column.name, kept[at]])) } }));
 			} catch (error) {
 				failed(error);
 			}

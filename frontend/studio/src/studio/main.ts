@@ -24,6 +24,7 @@ import {
 	addDatabaseOption,
 	setArticleParent,
 	setDatabaseValue,
+	setDatabaseValues,
 	setDatabaseTitle,
 	addDatabaseRow,
 	adoptDatabaseRows,
@@ -479,6 +480,7 @@ setDatabaseHost((id) => {
 	return {
 		rows: async () => (await databaseRows(slug, id)).rows,
 		setValue: async (row, column, value) => (await trackWrite(() => setDatabaseValue(row, column.name, column.type, value))).value,
+		setValues: async (row, entries) => (await trackWrite(() => setDatabaseValues(row, entries.map(({ column, value }) => ({ column: column.name, type: column.type, value }))))).values,
 		setTitle: async (row, title) => {
 			await trackWrite(() => setDatabaseTitle(row, title));
 			void articleList.load();

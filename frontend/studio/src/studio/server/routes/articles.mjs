@@ -71,6 +71,7 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 	api.put('/databases/rows/:slug', async ({ params, json }) => {
 		const asked = await json();
 		if (typeof asked.title === 'string') return databases.setTitle(params.slug, asked.title);
+		if (Array.isArray(asked.values)) return databases.setValues(params.slug, asked.values);
 		return databases.setValue(params.slug, asked.column, asked.type, asked.value);
 	});
 	api.post('/databases/:slug/rows', async ({ params, query, json }) => {

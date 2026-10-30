@@ -1,11 +1,12 @@
-import { useEffect, useRef, useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { ArrowDown, ArrowLeftToLine, ArrowRightToLine, ArrowUp, ArrowUpRight, Check, ChevronRight, EyeOff, FileText, GripVertical, ListFilter, Plus, Trash2, WrapText } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { DEFAULT_WIDTH, filterOps, shown, TITLE, TITLE_WIDTH, type Column, type Row } from './database-config';
 import { CellField, DatePicker, DateText, MenuLine, MenuRow, OptionPicker, Pill, Pop, TYPE_ICONS, TypeList, typeName } from './database-parts';
-import type { Database } from './DatabaseView';
+import type { Database, Spot } from './DatabaseView';
+import { cellsOf, copiedText, pastedValue, tableText } from './table-clipboard';
 
 /** What a row or a column being dragged carries (its folder name, its name). */
 export const ROW_DRAG = 'text/x-studio-row';
@@ -25,6 +26,7 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 	const width = TITLE_WIDTH + columns.reduce((sum, column) => sum + widthOf(column), 0) + ADD_WIDTH;
 	const [drop, setDrop] = useState<{ slug: string; after: boolean } | null>(null);
 	const [dragged, setDragged] = useState<string | null>(null);
+	const keys = useTableKeys(database, rows, columns);
 
 	const over = (row: Row) => (event: DragEvent) => {
 		if (!event.dataTransfer.types.includes(ROW_DRAG)) return;
@@ -44,8 +46,9 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 
 	return (
 		<div className="db-scroll">
-			{/* Rows of cells as wide as their columns (divs, as Notion's: the editor's table look is not theirs). */}
-			<div className="db-table" role="table" style={{ width }}>
+			{/* Rows of cells as wide as their columns (divs, as Notion's: the editor's table look is not theirs); the keys its
+			    own while no cell is typed in (useTableKeys). */}
+			<div className="db-table" role="table" style={{ width }} tabIndex={-1} ref={database.table} onKeyDown={keys.down} onCopy={keys.copy} onPaste={keys.paste}>
 				<div className="db-tr db-head" role="row">
 					<TitleHead database={database} />
 					{columns.map((column) => (
@@ -71,12 +74,12 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 						onDragLeave={(event) => !event.currentTarget.contains(event.relatedTarget as Node) && setDrop((now) => (now?.slug === row.slug ? null : now))}
 						onDrop={dropped(row)}
 					>
-						<div className={cn('db-td db-td-title', config.titleWrap && 'is-wrap')} role="cell" style={{ width: TITLE_WIDTH }}>
+						<div className={cn('db-td db-td-title', config.titleWrap && 'is-wrap', keys.marks(row.slug, TITLE))} role="cell" data-column={TITLE} style={{ width: TITLE_WIDTH }} onMouseDown={keys.press(row.slug, TITLE)}>
 							<RowHandle row={row} database={database} dragging={(on) => setDragged(on ? row.slug : null)} />
 							<TitleCell row={row} database={database} />
 						</div>
 						{columns.map((column) => (
-							<div key={column.name} className={cn('db-td', column.wrap && 'is-wrap')} role="cell" data-column={column.name} style={{ width: widthOf(column) }}>
+							<div key={column.name} className={cn('db-td', column.wrap && 'is-wrap', keys.marks(row.slug, column.name))} role="cell" data-column={column.name} style={{ width: widthOf(column) }} onMouseDown={keys.press(row.slug, column.name)}>
 								<Cell row={row} column={column} database={database} />
 							</div>
 						))}
@@ -428,9 +431,11 @@ function TitleCell({ row, database }: { row: Row; database: Database }) {
 			<div className="db-cell-edit">
 				<CellField
 					value={row.title}
-					done={(title) => {
+					initial={database.editing?.initial}
+					done={(title, how) => {
 						database.setEditing(null);
 						if (title !== null && title.trim() !== row.title) void database.setTitle(row, title.trim());
+						afterTyping(database, how);
 					}}
 				/>
 			</div>
@@ -452,10 +457,29 @@ function TitleCell({ row, database }: { row: Row; database: Database }) {
 	);
 }
 
+/** A cell typed in, done: the keys back to the table; by Tab, the next cell (⇧Tab, the one before) chosen. */
+function afterTyping(database: Database, how?: string): void {
+	if (how === 'blur') return;
+	database.focusTable();
+	if (how !== 'tab' && how !== 'back-tab') return;
+	requestAnimationFrame(() => database.table.current?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', shiftKey: how === 'back-tab', bubbles: true })));
+}
+
 /** A cell: its value as its kind shows it; clicked, edited so (a box ticked at once). */
 function Cell({ row, column, database }: { row: Row; column: Column; database: Database }) {
 	const value = row.props[column.name];
-	const [open, setOpen] = useState(false);
+	const [open, setPickerOpen] = useState(false);
+	// Its picker asked for from the keyboard (Enter on it); closed, the keys back to the table.
+	const asked = database.picking?.slug === row.slug && database.picking.column === column.name;
+	useEffect(() => {
+		if (!asked) return;
+		setPickerOpen(true);
+		database.setPicking(null);
+	}, [asked]);
+	const setOpen = (next: boolean) => {
+		setPickerOpen(next);
+		if (!next) database.focusTable();
+	};
 	const set = (next: unknown) => void database.setValue(row, column, next);
 	if (column.type === 'checkbox') {
 		return (
@@ -528,9 +552,11 @@ function Cell({ row, column, database }: { row: Row; column: Column; database: D
 				<CellField
 					value={shown(value)}
 					numeric={column.type === 'number'}
-					done={(next) => {
+					initial={database.editing?.initial}
+					done={(next, how) => {
 						database.setEditing(null);
 						if (next !== null && next.trim() !== shown(value)) set(next.trim() || null);
+						afterTyping(database, how);
 					}}
 				/>
 			</div>
@@ -550,4 +576,184 @@ function Cell({ row, column, database }: { row: Row; column: Column; database: D
 			)}
 		</div>
 	);
+}
+
+/**
+ * The table's keys, as a spreadsheet's (and Notion's): the cells chosen (a click; ⇧ and a click or the arrows, a block
+ * of them), ↑↓←→ and Tab to move, Enter (or a key typed) to type in one, a picker opened for a choice or a day, Space a
+ * box ticked, ⌫ the chosen emptied, ⌘C them copied as a spreadsheet's cells, ⌘V a spreadsheet's cells put in from the
+ * one chosen (rows more than there are made), Esc let go.
+ */
+function useTableKeys(database: Database, rows: Row[], columns: Column[]) {
+	const { cursor, setCursor } = database;
+	const names = [TITLE, ...columns.map((column) => column.name)];
+	const columnNamed = (name: string) => columns.find((column) => column.name === name) ?? null;
+	const place = (spot: Spot) => ({ r: rows.findIndex((row) => row.slug === spot.slug), c: names.indexOf(spot.column) });
+	const spotAt = (r: number, c: number): Spot | null => (rows[r] && names[c] ? { slug: rows[r]!.slug, column: names[c]! } : null);
+	/** The block chosen, by rows and columns (both ends in); none when what was chosen is gone. */
+	const block = () => {
+		if (!cursor) return null;
+		const [a, b] = [place(cursor.anchor), place(cursor.head)];
+		if (a.r < 0 || b.r < 0 || a.c < 0 || b.c < 0) return null;
+		return { r0: Math.min(a.r, b.r), r1: Math.max(a.r, b.r), c0: Math.min(a.c, b.c), c1: Math.max(a.c, b.c) };
+	};
+	const chosen = block();
+	const reveal = (spot: Spot) =>
+		requestAnimationFrame(() =>
+			database.table.current?.querySelector(`[data-row="${CSS.escape(spot.slug)}"] > [data-column="${CSS.escape(spot.column)}"]`)?.scrollIntoView({ block: 'nearest', inline: 'nearest' }),
+		);
+	const go = (head: Spot, extend = false) => {
+		setCursor({ anchor: extend && cursor ? cursor.anchor : head, head });
+		reveal(head);
+	};
+	/** Typed in, or its picker opened, or (a box) ticked. */
+	const begin = (spot: Spot, initial?: string) => {
+		const column = columnNamed(spot.column);
+		const row = rows.find((each) => each.slug === spot.slug);
+		if (!row) return;
+		if (!column || column.type === 'text' || column.type === 'number' || column.type === 'url') database.setEditing({ ...spot, ...(initial !== undefined ? { initial } : {}) });
+		else if (column.type === 'checkbox') {
+			if (initial === undefined || initial === ' ') void database.setValue(row, column, row.props[column.name] !== true);
+		} else if (initial === undefined) database.setPicking(spot);
+	};
+	/** The chosen cells emptied (the titles left: a page has one). */
+	const empty = () => {
+		if (!chosen) return;
+		for (let r = chosen.r0; r <= chosen.r1; r += 1) {
+			const entries = names
+				.slice(Math.max(1, chosen.c0), chosen.c1 + 1)
+				.map(columnNamed)
+				.filter((column): column is Column => Boolean(column) && rows[r]!.props[column!.name] !== undefined)
+				.map((column) => ({ column, value: null }));
+			if (entries.length) void database.setValues(rows[r]!, entries);
+		}
+	};
+	/** A spreadsheet's cells put in from the top left of what is chosen; one value, into every chosen cell. */
+	const put = async (grid: string[][]) => {
+		if (!chosen || !grid.length) return;
+		const one = grid.length === 1 && grid[0]!.length === 1;
+		const height = one ? chosen.r1 - chosen.r0 + 1 : grid.length;
+		const widthOf = one ? chosen.c1 - chosen.c0 + 1 : Math.max(...grid.map((line) => line.length));
+		const made: Array<{ title: string; props: Record<string, unknown> }> = [];
+		for (let i = 0; i < height; i += 1) {
+			const line = one ? Array.from({ length: widthOf }, () => grid[0]![0]!) : grid[i]!;
+			const row = rows[chosen.r0 + i];
+			const entries: Array<{ column: Column; value: unknown }> = [];
+			let title: string | null = null;
+			line.forEach((text, j) => {
+				const name = names[chosen.c0 + j];
+				if (!name) return;
+				if (name === TITLE) title = text.trim();
+				else {
+					const column = columnNamed(name)!;
+					const value = pastedValue(column, text);
+					entries.push({ column, value });
+					// A choice not among the column's: one of them now.
+					for (const option of Array.isArray(value) ? value : column.type === 'select' && value ? [value] : []) database.addOption(column, String(option));
+				}
+			});
+			if (row) {
+				if (entries.length) void database.setValues(row, entries);
+				if (title !== null && title !== row.title) void database.setTitle(row, title);
+			} else made.push({ title: title ?? '', props: Object.fromEntries(entries.filter(({ value }) => value !== null && value !== false).map(({ column, value }) => [column.name, value])) });
+		}
+		for (const row of made) await database.host.addRow({ ...row, template: database.config.template }).catch((error: unknown) => database.host.toast(error instanceof Error ? error.message : String(error), true));
+		if (made.length) await database.load();
+		const end = spotAt(Math.min(rows.length + made.length, chosen.r0 + height) - 1, Math.min(names.length, chosen.c0 + widthOf) - 1);
+		if (end) setCursor({ anchor: spotAt(chosen.r0, chosen.c0)!, head: end });
+	};
+	/**
+	 * Whether a key is the table's: pressed in it (not in a picker it opened, which React tells it of too), and not while
+	 * a cell is typed in (the editor around it, which is typed in too, not counted).
+	 */
+	const ours = (target: EventTarget) => {
+		const table = database.table.current;
+		if (!(target instanceof HTMLElement) || !table?.contains(target)) return false;
+		const typing = target.closest('input, textarea, [contenteditable="true"]');
+		return !typing || !table.contains(typing);
+	};
+
+	return {
+		/** The marks of a cell: in the block chosen, where the keys are. */
+		marks(slug: string, column: string): string | false {
+			if (!chosen || !cursor) return false;
+			const { r, c } = place({ slug, column });
+			const inside = r >= chosen.r0 && r <= chosen.r1 && c >= chosen.c0 && c <= chosen.c1;
+			const head = cursor.head.slug === slug && cursor.head.column === column;
+			return cn(inside && (chosen.r0 !== chosen.r1 || chosen.c0 !== chosen.c1) && 'is-in-range', head && 'is-cursor');
+		},
+		/** A press on a cell: chosen (⇧: the block to it), the keys the table's. */
+		press: (slug: string, column: string) => (event: ReactMouseEvent) => {
+			if (!ours(event.target)) return;
+			if (event.shiftKey && cursor) {
+				event.preventDefault();
+				setCursor({ anchor: cursor.anchor, head: { slug, column } });
+				database.focusTable();
+				return;
+			}
+			setCursor({ anchor: { slug, column }, head: { slug, column } });
+			database.focusTable();
+		},
+		down(event: KeyboardEvent) {
+			if (!ours(event.target) || event.nativeEvent.isComposing) return;
+			const mod = event.metaKey || event.ctrlKey;
+			if (mod && event.key.toLowerCase() === 'a') {
+				const last = spotAt(rows.length - 1, names.length - 1);
+				if (!last) return;
+				event.preventDefault();
+				setCursor({ anchor: spotAt(0, 0)!, head: last });
+				return;
+			}
+			if (mod || event.altKey) return;
+			const head = cursor ? place(cursor.head) : null;
+			const moves: Record<string, [number, number]> = { ArrowUp: [-1, 0], ArrowDown: [1, 0], ArrowLeft: [0, -1], ArrowRight: [0, 1] };
+			if (event.key in moves) {
+				event.preventDefault();
+				if (!head || head.r < 0) return go(spotAt(0, 0) ?? { slug: '', column: TITLE });
+				const [dr, dc] = moves[event.key]!;
+				const next = spotAt(Math.max(0, Math.min(rows.length - 1, head.r + dr)), Math.max(0, Math.min(names.length - 1, head.c + dc)));
+				if (next) go(next, event.shiftKey);
+				return;
+			}
+			if (!head || head.r < 0) return;
+			const spot = cursor!.head;
+			if (event.key === 'Tab') {
+				event.preventDefault();
+				const at = head.r * names.length + head.c + (event.shiftKey ? -1 : 1);
+				const next = spotAt(Math.floor(at / names.length), ((at % names.length) + names.length) % names.length);
+				if (next && at >= 0) go(next);
+			} else if (event.key === 'Enter' || event.key === 'F2') {
+				event.preventDefault();
+				begin(spot);
+			} else if (event.key === ' ' && columnNamed(spot.column)?.type === 'checkbox') {
+				event.preventDefault();
+				begin(spot, ' ');
+			} else if (event.key === 'Backspace' || event.key === 'Delete') {
+				event.preventDefault();
+				empty();
+			} else if (event.key === 'Escape') {
+				event.preventDefault();
+				setCursor(null);
+			} else if (event.key.length === 1) {
+				// A key typed on a cell of words: typed in, beginning with it.
+				const column = columnNamed(spot.column);
+				if (column && column.type !== 'text' && column.type !== 'number' && column.type !== 'url') return;
+				event.preventDefault();
+				begin(spot, event.key);
+			}
+		},
+		copy(event: ClipboardEvent) {
+			if (!ours(event.target) || !chosen) return;
+			const grid = rows.slice(chosen.r0, chosen.r1 + 1).map((row) => names.slice(chosen.c0, chosen.c1 + 1).map((name) => copiedText(row, name === TITLE ? TITLE : columnNamed(name)!)));
+			event.clipboardData.setData('text/plain', tableText(grid));
+			event.preventDefault();
+		},
+		paste(event: ClipboardEvent) {
+			if (!ours(event.target) || !chosen) return;
+			const text = event.clipboardData.getData('text/plain');
+			if (!text) return;
+			event.preventDefault();
+			void put(cellsOf(text));
+		},
+	};
 }

@@ -128,3 +128,13 @@ test('a database from before ids given one: the pages that were its rows say it 
 	assert.match(await readFile(join(blogRoot, 'c', 'index.md'), 'utf8'), /^database: "otherxxx"$/mu);
 	await assert.rejects(databases.adopt('runs', '../x'), /id 无效/u);
 });
+
+test('several values of a row at once: one write, one version kept, each as its column keeps it', async (t) => {
+	const { blogRoot, history, databases } = await fixture(t);
+	await databases.addRow('runs', null, { slug: 'a', title: 'A', props: { 备注: 'x' } });
+	const kept = await databases.setValues('a', [{ column: '能量', type: 'number', value: '-76.41' }, { column: '收敛', type: 'checkbox', value: 'true' }, { column: '备注', type: 'text', value: '' }]);
+	assert.deepEqual(kept.values, [-76.41, true, null]);
+	assert.match(await readFile(join(blogRoot, 'a', 'index.md'), 'utf8'), /^props: \{ "能量": -76\.41, "收敛": true \}$/mu);
+	assert.equal((await history.list('a')).length, 1);
+	await assert.rejects(databases.setValues('a', [{ column: '能量', type: 'formula', value: 1 }]), /没有这种列/u);
+});
