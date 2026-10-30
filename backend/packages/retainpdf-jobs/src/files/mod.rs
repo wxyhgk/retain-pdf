@@ -3,6 +3,8 @@
 pub(crate) mod downloads;
 mod queries;
 mod readiness;
+#[cfg(all(unix, any(test, feature = "test-fixtures")))]
+pub(crate) mod test_scripts;
 
 pub use downloads::{
     Disposition, FileDownload, FileGroup, JobDownloads, JobFile, JobFilesView,
