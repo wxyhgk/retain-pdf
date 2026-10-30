@@ -17,6 +17,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
+from retainpdf_translation_agent.breaks import move_leading_punctuation
+from retainpdf_translation_agent.breaks import split_by_ratio
 from retainpdf_translation_agent.checks import check_block
 from retainpdf_translation_agent.checks import check_group
 from retainpdf_translation_agent.checks import check_terms
@@ -27,6 +29,7 @@ from retainpdf_translation_agent.context import context_terms
 from retainpdf_translation_agent.contract import CONTRACT_VERSION
 from retainpdf_translation_agent.contract import STATUS_ERROR
 from retainpdf_translation_agent.contract import STATUS_FALLBACK_SOURCE
+from retainpdf_translation_agent.contract import STATUS_OK
 from retainpdf_translation_agent.contract import BlockResult
 from retainpdf_translation_agent.contract import PageInput
 from retainpdf_translation_agent.contract import RevisionRequest
@@ -36,10 +39,12 @@ API_URL = "https://api.anthropic.com/v1/messages"
 # 接续组合成一条送给模型，原文里用它标出原来在哪里断开；译文里要在对应位置放同样数量
 BREAK = "[[BREAK]]"
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-10"
+PROMPT_VERSION = "translation-agent-11"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
+ROLE_READER = "reader"  # 翻译前通读（reader.py）
+ROLE_REVIEWER = "reviewer"  # 审校（review.py）
 
 SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简体中文，译文会放回原文每个块的位置显示。
 你会收到一整页的全部块（JSON），每块有类别（class）、大概位置（where）、原文（text）、要不要翻（translate）。
@@ -57,9 +62,10 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
    不要删掉或多加 [[BREAK]]，[[BREAK]] 前后的内容不要重复。
    中文语序和英文不同、断点没法放在完全对应的位置时，放在最接近的分句或词组边界，但一定要放。
 6. 按类别把握语气：标题简洁；图注、表题保留"图 1""表 1"这样的编号；目录条目只翻标题，编号和页码不动；
-   列表项保留 (1) 这类序号；作者、机构一般不在要翻的块里。
-7. 术语前后一致；专有名词（软件名、数据集名、人名、机构名、期刊名）不翻，原样保留。
-8. 译文要通顺、简练，长度和原文相当，不要加解释、注释或括号里的原文。
+   列表项保留 (1) 这类序号；作者、机构一般不在要翻的块里。有 translation 字段的块是已经定好的译文（标题、目录），只作参考，不要交回。
+7. 术语前后一致。专名：context 的 names 给了中文译名的照用（first_use=true 时写"中文译名（原文）"），keep 里的原样保留；
+   都没登记的：软件、数据集、期刊、机构名保留原文，人名按 style 里的人名规则（没有规则就保留原文）。
+8. 译文要通顺、简练，长度和原文相当，不要加解释、注释或括号里的原文（第一次出现的缩写、人名按第 10 条括注原文）。
    贴着作者的写法和语气：作者用"we"就译"我们"；作者说得有保留（may、might、suggest、appear to）就保留这份保留，
    不要译得更肯定或更含糊；作者口语就口语、严谨就严谨，不要统一改成教科书腔，也不要自己加强调或删掉强调。
 9. 请求里有 revise 时（排版发现放不下等），只改 revise 列出的块，其余块只是上下文，不要交回。
@@ -73,6 +79,7 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
      意思相同就沿用，意思不同（同一个词在这里是另一个意思）就按这里的意思译；有 scope 的只管那几章。
    - keep：要原样保留的专名（人名、机构、期刊、软件）。
    - abbreviations：缩写和全称。first_use=true 表示全书第一次用到，译成"中文全称（缩写）"；之后直接写缩写。
+   - names：人名等专名的中文译名，必须照用；first_use=true 时写"中文译名（原文）"，之后只写中文译名。
    - previous / next：上一页结尾、下一页开头（previous 带已定的译文），用来接上文、对齐译法。
    - style：作者文风和编号格式；summary：本章摘要，只作参考，数字和术语以原文和术语表为准。
 11. 交卷时在 terms 里报上这一页你定下的译法：专业术语（报原文和译法）、要保留原文的专名（category=keep）。
@@ -80,6 +87,10 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
    context 里已有、你也照用了的不用再报。
    context 给了译法、但这一处意思确实不同（同一个词在这里是另一个意思）而没照用的，在 term_exceptions 里写明块、原词、
    你用的译法和理由。没理由不要声明例外。
+12. 中文体例：引用公式写"式 (3)"，子图写"图 3.1(a)"（Fig. 也译"图"）；pt / points 表示长度时译"磅"，percentage points 译"百分点"；
+   "N times as much / as many" 译"是……的 N 倍"，不要写"多 N 倍"；suggest、indicate 译"提示、意味着"，不要加强成"表明、证明"；
+   编号体例沿用原文并全文统一（原文 IV. 就写 IV.，不要一会儿"四"一会儿 IV.）；双关、俏皮话用中文里等效的说法，不加英文括注；
+   称呼读者用"你"还是"您"按 style，没写就用"你"；不要在中文句子里夹没翻的英文单词。
 """
 
 TOOL = {
@@ -254,15 +265,23 @@ class TranslationAgent:
         return self.models.get(role) or self.model
 
     # ---- 请求 ----
-    def _body(self, payload: dict, role: str = ROLE_TRANSLATOR) -> dict:
+    def _body(self, payload: dict, role: str = ROLE_TRANSLATOR, *, system: str = SYSTEM_PROMPT, tool: dict = TOOL) -> dict:
         return {
             "model": self.model_for(role),
             "max_tokens": 16000,
-            "system": SYSTEM_PROMPT,
-            "tools": [TOOL],
-            "tool_choice": {"type": "tool", "name": TOOL["name"]},
+            "system": system,
+            "tools": [tool],
+            "tool_choice": {"type": "tool", "name": tool["name"]},
             "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}],
         }
+
+    def call_tool(self, payload: dict, *, system: str, tool: dict, role: str, label: str) -> dict:
+        """别的角色（通读、审校）用：发一次请求，强制用 `tool` 交回，返回工具的输入；没交回就抛 ValueError。"""
+        response = self._call(self._body(payload, role, system=system, tool=tool), label=label, role=role)
+        for part in response.get("content") or []:
+            if part.get("type") == "tool_use" and part.get("name") == tool["name"]:
+                return part.get("input") or {}
+        raise ValueError(f"model response has no {tool['name']} tool call")
 
     def _call(self, body: dict, *, label: str, role: str = ROLE_TRANSLATOR) -> dict:
         key = hashlib.sha256(json.dumps(body, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()[:24]
@@ -333,16 +352,25 @@ class TranslationAgent:
         issues = check_block(block.text, text)
         if page.context:
             issues += check_terms(block.text, text, context_terms(page.context), exceptions.get(block.id))
-            for abbr in _first_uses(page).get(block.id, []):
-                if text and not re.search(rf"[\u4e00-\u9fff]\s*[（(][^（()）]*{re.escape(abbr)}[^（()）]*[)）]", text):
+            for item in _first_uses(page).get(block.id, []):
+                if not text:
+                    continue
+                if item["kind"] == "abbr" and not re.search(rf"[\u4e00-\u9fff]\s*[（(][^（()）]*{re.escape(item['source'])}[^（()）]*[)）]", text):
                     issues.append(
-                        {"code": "abbr_first_use", "severity": "error", "message": f"全书第一次用到缩写 {abbr}，要写成“中文全称（{abbr}）”"}
+                        {"code": "abbr_first_use", "severity": "error", "message": f"全书第一次用到缩写 {item['source']}，要写成“中文全称（{item['source']}）”"}
+                    )
+                elif item["kind"] == "name" and not re.search(rf"{re.escape(item['target'])}\s*[（(]\s*{re.escape(item['source'])}", text):
+                    issues.append(
+                        {"code": "name_first_use", "severity": "error", "message": f"全书第一次出现 {item['source']}，要写成“{item['target']}（{item['source']}）”"}
                     )
         return issues + style_signals(block.text, text)
 
     # ---- 一页 ----
     def translate_page(self, page: PageInput) -> tuple[dict[str, BlockResult], dict]:
         wanted = {b.id for b in page.to_translate()}
+        if not wanted:
+            # 这一页没有要翻的（都不翻，或者都是已定好的译文）：不发请求
+            return self._fixed_results(page, {}), {"notes": "", "extra_ids": [], "duplicates": [], "terms": [], "term_exceptions": []}
         records = request_records(page.blocks, wanted)
         payload = self._payload(page, records, required_ids=[r["id"] for r in records if r["translate"]])
         response = self._call(self._body(payload), label=f"page {page.page_label}")
@@ -376,6 +404,7 @@ class TranslationAgent:
             retry_exceptions += retry_parsed.get("term_exceptions", [])
         # 重翻以后还不合格：先看能不能保住译文（只是术语没照用、只是接续组断点没放对），保不住才退回原文、待人看
         _salvage(page, results)
+        self._fixed_results(page, results)
         for block_id, result in list(results.items()):
             if result.status == STATUS_ERROR:
                 results[block_id] = _fallback_to_source(result)
@@ -387,6 +416,13 @@ class TranslationAgent:
             "term_exceptions": parsed["term_exceptions"] + retry_exceptions,
         }
         return results, info
+
+    def _fixed_results(self, page: PageInput, results: dict[str, BlockResult]) -> dict[str, BlockResult]:
+        """已定好的译文（通读定的标题、目录）原样交回。"""
+        for block in page.fixed():
+            meta = dict(self._meta(page, block, role=ROLE_READER, attempt=0), model=None)
+            results[block.id] = BlockResult(block.id, block.fixed_translation, [], 0, STATUS_OK, meta=meta)
+        return results
 
     @staticmethod
     def _unit_of(page: PageInput, block) -> list:
@@ -481,6 +517,8 @@ class TranslationAgent:
                     "id": unit[0].group["id"],
                     "previous_translation": BREAK.join(results[b.id].translation or "" for b in unit),
                     "problems": problems([b.id for b in unit]),
+                    # 每个断点前后的原文几个词，帮模型找到断点在译文里的位置
+                    "breaks": [{"after": " ".join(a.text.split()[-6:]), "before": " ".join(b.text.split()[:6])} for a, b in zip(unit, unit[1:])],
                 }
             )
         else:
@@ -527,16 +565,18 @@ def _forgive_moved_marks(members: list, results: dict[str, BlockResult]) -> None
         result.status = status_of(result.issues)
 
 
-def _first_uses(page: PageInput) -> dict[str, list[str]]:
-    """上下文包里标了 first_use 的缩写，落在这一页第一个用到它的块上：{块 id: [缩写, …]}。"""
-    out: dict[str, list[str]] = {}
-    for item in (page.context or {}).get("abbreviations") or []:
+def _first_uses(page: PageInput) -> dict[str, list[dict]]:
+    """上下文包里标了 first_use 的缩写和人名，落在这一页第一个用到它的块上：{块 id: [条目, …]}。"""
+    out: dict[str, list[dict]] = {}
+    items = [dict(i, kind="abbr", source=i["abbr"]) for i in (page.context or {}).get("abbreviations") or []]
+    items += [dict(i, kind="name") for i in (page.context or {}).get("names") or []]
+    for item in items:
         if not item.get("first_use"):
             continue
-        pattern = re.compile(rf"(?<![\w-]){re.escape(item['abbr'])}(?![\w-])")
+        pattern = re.compile(rf"(?<![\w-]){re.escape(item['source'])}(?![\w-])")
         block = next((b for b in page.to_translate() if pattern.search(b.text)), None)
         if block is not None:
-            out.setdefault(block.id, []).append(item["abbr"])
+            out.setdefault(block.id, []).append(item)
     return out
 
 
@@ -548,7 +588,7 @@ def _exceptions_by_block(exceptions: list[dict]) -> dict[str, set[str]]:
 
 
 # 重翻后只剩这些错，译文本身没坏：降成警告保留译文（术语交给术语专员或人，断点交给排版）
-TERM_ONLY = {"term_mismatch", "keep_original_lost", "abbr_first_use"}
+TERM_ONLY = {"term_mismatch", "keep_original_lost", "abbr_first_use", "name_mismatch", "name_first_use"}
 BREAK_ONLY = {"group_break", "group_overlap"}
 
 
@@ -577,8 +617,8 @@ def _salvage(page: PageInput, results: dict[str, BlockResult]) -> None:
             continue
         if not any(i["code"] == "group_break" for i in member_results[0].issues):
             continue
-        # 断点两次都没放对：整段译文放进第一块，其余块留空（内容一点不丢，排版时第一块可能要缩字号）
-        whole = member_results[0].translation or ""
+        # 断点两次都放多了：整段译文放进第一块，其余块留空（内容一点不丢，排版时第一块可能要缩字号）
+        whole = re.sub(r"\s*\[\[BREAK\]\]\s*", "", member_results[0].translation or "").strip()
         if not whole.strip():
             continue
         for index, (block, result) in enumerate(zip(members, member_results)):
@@ -637,7 +677,11 @@ def request_records(blocks: list, wanted: set[str]) -> list[dict]:
 
 
 def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> tuple[dict[str, str], dict[str, list[dict]]]:
-    """把模型交回的（块 id 或接续组 id → 译文）拆回各块；组的 BREAK 数量不对就整组记不合格。"""
+    """把模型交回的（块 id 或接续组 id → 译文）拆回各块。
+
+    组的 BREAK 放少了（含一个没放）：程序按原文长度比例在附近的中文标点切开，记警告，不重翻；放多了才整组记不合格。
+    后面一块以标点开头的，标点挪回前一块末尾。
+    """
     per_block: dict[str, str] = {}
     issues: dict[str, list[dict]] = {}
     seen: set[str] = set()
@@ -662,14 +706,19 @@ def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> 
         if text is None:
             continue
         parts = text.split(BREAK)
-        if len(parts) != len(members):
+        if len(parts) > len(members):
             message = f"接续组的断点标记应有 {len(members) - 1} 个，交回了 {len(parts) - 1} 个"
             for member in members:
                 issues.setdefault(member.id, []).append({"code": "group_break", "severity": "error", "message": message})
                 per_block[member.id] = text
             continue
-        for member, part in zip(members, parts):
-            per_block[member.id] = part.strip()
+        if len(parts) < len(members):
+            parts = split_by_ratio(text.replace(BREAK, ""), [len(m.text) for m in members])
+            message = f"断点标记应有 {len(members) - 1} 个，交回了 {text.count(BREAK)} 个，程序按原文长度比例在标点处切开"
+            for member in members:
+                issues.setdefault(member.id, []).append({"code": "group_split_by_program", "severity": "warn", "message": message})
+        for member, part in zip(members, move_leading_punctuation([p.strip() for p in parts])):
+            per_block[member.id] = part
     return per_block, issues
 
 

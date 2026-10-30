@@ -114,14 +114,37 @@ def test_a_footnote_mark_moved_across_the_break_is_only_a_warning() -> None:
     assert results["m2"].status == "warn" and "mark_moved" in [i["code"] for i in results["m2"].issues]
 
 
-def test_wrong_number_of_breaks_retries_the_whole_group() -> None:
+def test_too_many_breaks_retry_the_whole_group_with_anchors() -> None:
     model = Scripted(
-        {"t": "1 引言", "cg-a": "我们用 $F_1$ 给每一页的框打分。", "cap": "图 1：召回率 [3]。"},
+        {"t": "1 引言", "cg-a": f"我们用{BREAK} $F_1$ 给{BREAK}每一页的框打分。", "cap": "图 1：召回率 [3]。"},
         {"cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。"},
     )
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
-    assert model.payloads[1]["retry"][0]["id"] == "cg-a"
+    retry = model.payloads[1]["retry"][0]
+    assert retry["id"] == "cg-a" and retry["breaks"] == [{"after": "score boxes with $F_1$ and the", "before": "recall of every page."}]
     assert results["a1"].status == "ok" and results["a2"].status == "ok" and results["a1"].attempts == 2
+
+
+def test_a_missing_break_is_placed_by_the_program_at_punctuation_without_a_retry() -> None:
+    model = Scripted({"t": "1 引言", "cg-a": "我们用 $F_1$ 给框打分，并统计每一页的召回率。", "cap": "图 1：召回率 [3]。"})
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
+    assert len(model.payloads) == 1
+    assert results["a1"].translation == "我们用 $F_1$ 给框打分，" and results["a2"].translation == "并统计每一页的召回率。"
+    assert results["a1"].status == "warn" and results["a1"].issues[0]["code"] == "group_split_by_program"
+
+
+def test_split_by_ratio_never_cuts_formulas_marks_or_words() -> None:
+    from retainpdf_translation_agent.breaks import move_leading_punctuation
+    from retainpdf_translation_agent.breaks import split_by_ratio
+
+    text = "设预算 $b_{max} = 0.01$ 与 Tidewater 一起使用{{fn:2}}即可"
+    for ratio in ([10, 10], [3, 10], [12, 3], [1, 1, 1]):
+        parts = split_by_ratio(text, ratio)
+        assert len(parts) == len(ratio) and "".join(parts).replace(" ", "") == text.replace(" ", "")
+        for part in parts:
+            assert part.count("$") % 2 == 0 and part.count("{{") == part.count("}}"), parts
+            assert not part.startswith(("{{fn", "idewater", "ater", "max")), parts
+    assert move_leading_punctuation(["第一段", "。第二段", "，第三段"]) == ["第一段。", "第二段，", "第三段"]
 
 
 def test_revision_shortens_and_tries_again_when_still_too_long() -> None:

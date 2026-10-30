@@ -36,11 +36,15 @@ from retainpdf_translation_agent.contract import PageInput
 from retainpdf_translation_agent.memory import ABBR
 from retainpdf_translation_agent.memory import APPROVED
 from retainpdf_translation_agent.memory import KEEP
+from retainpdf_translation_agent.memory import NAME
 from retainpdf_translation_agent.memory import TERM
 from retainpdf_translation_agent.memory import Glossary
 from retainpdf_translation_agent.memory import extract_abbreviations
 from retainpdf_translation_agent.memory import quote_around
 from retainpdf_translation_agent.memory import term_pattern
+from retainpdf_translation_agent.reader import Reading
+from retainpdf_translation_agent.reader import apply_reading
+from retainpdf_translation_agent.reader import read_document
 
 TRAILING_PARENS_RE = re.compile(r"\s*[（(][^（）()]*[)）]\s*$")
 
@@ -70,8 +74,10 @@ class DocumentRun:
         summaries: dict[str, str] | None = None,
         budget: int = DEFAULT_BUDGET,
         memory: bool = True,
+        read_first: bool = False,
     ) -> None:
-        """`memory=False` 时不带上下文包、不记术语（和第 1 版以前一样），用来做对比。"""
+        """`memory=False` 时不带上下文包、不记术语（和第 1 版以前一样），用来做对比。
+        `read_first=True` 时先通读整篇（`reader.py`）：定体裁、文风、全文统一的术语和人名、全部标题的译法，再逐页翻。"""
         self.agent = agent
         self.state_dir = Path(state_dir)
         self.initial_glossary = glossary
@@ -79,6 +85,8 @@ class DocumentRun:
         self.summaries = dict(summaries or {})
         self.budget = budget
         self.memory = memory
+        self.read_first = read_first and memory
+        self.reading: Reading | None = None
 
     # ---- 状态文件 ----
     def _path(self, *parts: str) -> Path:
@@ -114,17 +122,41 @@ class DocumentRun:
         done: list[str] = list(progress.get("pages_done") or [])
         if self._path("glossary.json").exists():
             glossary = Glossary.from_dict(json.loads(self._path("glossary.json").read_text(encoding="utf-8")))
+            if self._path("reading.json").exists():
+                self.reading = Reading.from_dict(json.loads(self._path("reading.json").read_text(encoding="utf-8")))
         else:
             glossary = Glossary.from_dict(self.initial_glossary.to_dict()) if self.initial_glossary else Glossary()
             if self.memory:
                 self._prescan(glossary, pages)
+            if self.read_first:
+                calls_before = len(self.agent.calls)
+                try:
+                    self.reading = read_document(self.agent, pages)
+                except StopRun as stop:
+                    self._ledger("stop", page="", page_key="read", reason=stop.reason, message=str(stop)[:300])
+                    self._progress(done, STOPPED, stop.reason, len(pages))
+                    return RunOutcome(STOPPED, stop.reason, {}, glossary, 0, len(pages))
+                self._log_calls(PageInput(page_label="", blocks=[]), "read", {}, calls_before)
+                self._write_json(self._path("reading.json"), self.reading.to_dict())
+                self._ledger("read", genre=self.reading.genre, name_policy=self.reading.name_policy, terms=len(self.reading.terms), headings=len(self.reading.headings), candidates=self.reading.candidates)
             self._save_glossary(glossary, 0)
+        if self.reading is not None:
+            if not self._path("glossary", "read.done").exists():
+                before = len(glossary.changes)
+                pages = apply_reading(self.reading, glossary, pages)
+                self._save_glossary(glossary, before)
+                self._write_json(self._path("glossary", "read.done"), {"version": glossary.version})
+            else:
+                pages = apply_reading(self.reading, Glossary(), pages)  # 术语已经登记过，只要标题的已定译文
+            if not self.style:
+                self.style = self.reading.style_text()
         self._ledger("start", pages=len(pages), resumed=len(done), prompt_version=PROMPT_VERSION, contract_version=CONTRACT_VERSION, memory=self.memory)
 
         results: dict[str, BlockResult] = {}
         previous: list[dict] = []
         seen_abbreviations: set[str] = set()
-        abbreviations = [t.source for t in glossary.terms.values() if t.category == ABBR]
+        # 缩写和人名：全书第一次用到要写全称、"中文译名（原文）"，之后不用
+        abbreviations = [t.source for t in glossary.terms.values() if t.category in (ABBR, NAME)]
         for index, page in enumerate(pages):
             key = f"{index:04d}"
             if key in done:

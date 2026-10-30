@@ -155,6 +155,9 @@ def build_pages(truth: dict, *, page_labels: dict[int, str] | None = None) -> li
         if translate and element.get("lang") == "zh":
             # 原文已经是中文：只当上下文，不交给 agent 改写
             translate, reason = False, "source_is_target_language"
+        elif translate and element.get("lang") not in (None, "", "en", "zh"):
+            # 英文文档里的法文、德文等外文引文块：保留原文不翻（用户 10-30 定；作者通常紧跟着给了译文）
+            translate, reason = False, "foreign_language_kept"
         block = Block(
             id=element["id"],
             cls=element["class"],

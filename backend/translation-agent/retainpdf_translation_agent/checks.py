@@ -11,6 +11,8 @@ FORMULA_RE = re.compile(r"\$[^$]+\$")
 CITATION_RE = re.compile(r"\[\d+(?:\s*[,–-]\s*\d+)*\]")
 FN_RE = re.compile(r"\{\{fn:[^}]+\}\}")
 CODE_RE = re.compile(r"`[^`\n]+`")
+# 中文中间紧贴着的小写英文词（"实际上those崩溃"）：模型漏翻的残片
+STRAY_EN_RE = re.compile(r"(?<=[\u4e00-\u9fff])([a-z]{2,})(?=[\u4e00-\u9fff])")
 QUOTED_RE = re.compile(r"《[^》]*》|“[^”]*”|「[^」]*」|（[^）]*）|\([^)]*\)")
 NUMBER_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)*(?![\w])")
 LATIN_WORD_RE = re.compile(r"[A-Za-z]{3,}")
@@ -69,6 +71,9 @@ def check_block(source: str, translation: str | None) -> list[dict]:
         issues.append(_issue("number_lost", "warn", f"数字可能丢了：{sorted(lost_numbers.elements())}"))
     plain_source = _strip_protected(source)
     plain_out = _strip_protected(translation)
+    stray = STRAY_EN_RE.findall(QUOTED_RE.sub(" ", plain_out))
+    if stray and CJK_RE.search(plain_out):
+        issues.append(_issue("stray_english", "error", f"中文句子里夹着英文词：{stray[:5]}"))
     if not CJK_RE.search(plain_source):
         if translation.strip() == source.strip() and LATIN_WORD_RE.search(plain_source):
             issues.append(_issue("untranslated", "error", "译文和原文一模一样"))
@@ -145,6 +150,8 @@ def check_terms(source: str, translation: str | None, terms: list[dict], excepti
             issues.append(_issue("keep_original_lost", "error", f"“{term['source']}”要原样保留，不要翻译"))
         elif term["category"] == "abbr" and term["source"] not in translation:
             issues.append(_issue("abbr_lost", "warn", f"缩写“{term['source']}”在译文里没有了"))
+        elif term["category"] == "name" and term["target"] not in translation:
+            issues.append(_issue("name_mismatch", "error", f"人名“{term['source']}”统一译作“{term['target']}”（术语表 {term['id']}）"))
         elif term["category"] == "term" and term["target"] not in translation:
             issues.append(
                 _issue(

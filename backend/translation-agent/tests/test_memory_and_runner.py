@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from retainpdf_translation_agent import BREAK
 from retainpdf_translation_agent import BlockInput
 from retainpdf_translation_agent import DocumentRun
 from retainpdf_translation_agent import Glossary
@@ -213,7 +214,7 @@ def test_a_block_that_still_breaks_a_formula_falls_back_to_the_source() -> None:
     assert result.history[-1]["translation"] == "我们在 3 页上报告 F1。"
 
 
-def test_a_group_whose_break_is_never_placed_is_kept_whole_in_its_first_block() -> None:
+def test_a_group_whose_breaks_stay_wrong_is_kept_whole_in_its_first_block() -> None:
     group = lambda i: {"id": "cg-x", "index": i, "of": 2}  # noqa: E731
     page = PageInput(
         page_label="1",
@@ -221,7 +222,8 @@ def test_a_group_whose_break_is_never_placed_is_kept_whole_in_its_first_block() 
         blocks=[BlockInput("x1", "paragraph", "Chapter 3 is the one I", True, group=group(1)), BlockInput("x2", "paragraph", "wish someone had handed me.", True, group=group(2))],
     )
     whole = "第 3 章是我希望当年有人交给我的那一章。"
-    model = Model(_answer({"cg-x": whole}), _answer({"cg-x": whole}))
+    wrong = f"第 3 章{BREAK}是我希望{BREAK}当年有人交给我的那一章。"  # 放多了断点：重翻，还多就整段并进第一块
+    model = Model(_answer({"cg-x": wrong}), _answer({"cg-x": wrong}))
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
     assert results["x1"].translation == whole and results["x2"].translation == ""
     assert results["x1"].status == results["x2"].status == "warn"
