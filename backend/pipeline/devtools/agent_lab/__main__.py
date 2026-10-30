@@ -30,6 +30,8 @@ from devtools.agent_lab import sample_manual
 from devtools.agent_lab import sample_textbook
 from devtools.agent_lab import metrics as long_metrics
 from devtools.agent_lab.pages import build_pages
+from devtools.agent_lab.real_doc import baseline_translations
+from devtools.agent_lab.real_doc import truth_from_document
 from devtools.agent_lab.pages import document_title
 from devtools.agent_lab.report import build_report
 from devtools.ocr_viewer.complex_sample import PRINTED_PAGE
@@ -78,11 +80,23 @@ def run(
     memory: bool = True,
     read_first: bool = True,
     review: bool = False,
+    document_path: Path | None = None,
+    pdf: Path | None = None,
+    baseline_dir: Path | None = None,
 ) -> dict:
+    """`document_path` + `pdf`：跑真实文档（OCR 规范化后的 document.v1.json 和原 PDF），不用样例；
+    `baseline_dir`：正式流程的 translated/ 目录，译文并排放进结果当基线。"""
     out_dir.mkdir(parents=True, exist_ok=True)
-    doc, labels = SAMPLES[sample]()
-    pdf_path, truth_path = doc.save(out_dir)
-    truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    if document_path is not None:
+        truth, labels = truth_from_document(json.loads(Path(document_path).read_text(encoding="utf-8")))
+        (out_dir / "truth.json").write_text(json.dumps(truth, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        pdf_path = Path(pdf)
+        sample = "document"
+    else:
+        doc, labels = SAMPLES[sample]()
+        pdf_path, truth_path = doc.save(out_dir)
+        truth = json.loads(truth_path.read_text(encoding="utf-8"))
+    baseline = baseline_translations(baseline_dir) if baseline_dir else {}
     requests = [p for p in build_pages(truth, page_labels=labels) if not pages_filter or p.page_label in pages_filter]
     document = {"title": document_title(truth), "source_lang": "en", "target_lang": "zh-CN"}
     started = time.monotonic()
@@ -107,6 +121,7 @@ def run(
                 "translate": block.translate,
                 "translate_reason": block.translate_reason,
                 "group": block.group,
+                "baseline": baseline.get(block.id),
                 "chapter": page.chapter,
             }
             result = outcome.results.get(block.id)
@@ -177,12 +192,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--no-memory", action="store_true", help="translate page by page without glossary or context pack")
     parser.add_argument("--no-read", action="store_true", help="skip the read-through before translating (genre, style, glossary, headings)")
     parser.add_argument("--review", action="store_true", help="review every page after translating and apply the accepted tickets")
+    parser.add_argument("--document", type=Path, default=None, help="a real normalized document (ocr/normalized/document.v1.json) instead of a sample")
+    parser.add_argument("--pdf", type=Path, default=None, help="the source PDF of --document (for the report)")
+    parser.add_argument("--baseline", type=Path, default=None, help="translated/ directory of a production job, shown next to the agent's translations")
     args = parser.parse_args(argv)
     names = load_env_file(args.env)
     print(f"env: {args.env} ({', '.join(names) or 'not found'})")
     agent = TranslationAgent(model=args.model, cache_dir=args.out / "cache", use_cache=not args.no_cache)
     pages_filter = {p.strip() for p in args.pages.split(",") if p.strip()} or None
-    results = run(args.out, agent=agent, pages_filter=pages_filter, sample=args.sample, memory=not args.no_memory, read_first=not args.no_read, review=args.review)
+    results = run(
+        args.out, agent=agent, pages_filter=pages_filter, sample=args.sample, memory=not args.no_memory, read_first=not args.no_read, review=args.review,
+        document_path=args.document, pdf=args.pdf, baseline_dir=args.baseline,
+    )
     print(json.dumps(results["summary"], ensure_ascii=False, indent=1))
     print(args.out / "report.html")
     return 0

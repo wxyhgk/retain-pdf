@@ -57,6 +57,14 @@ def test_check_block_protects_formulas_marks_and_numbers() -> None:
     assert check_block(source, None)[0]["code"] == "missing"
     # 短标题、写成中文数字都不算错
     assert check_block("Acknowledgements", "致谢") == []
+    # 真实文档的公式写法：空格不同是同一个公式；正文的 z、n/2 被套上公式符号不算错；两个公式合成一个只记警告
+    assert check_block("where $ \\hat{F} $ acts on $ \\phi_i $.", "其中 $\\hat{F}$ 作用于 $\\phi_i$。") == []
+    assert check_block("the z coordinate over the n/2 occupied orbitals", "对 $n/2$ 个占据轨道的 $ z $ 坐标") == []
+    merged = check_block("The operator $ \\hat{H}' $ is $ \\hat{H}' = -E $ here.", "算符 $\\hat{H}' = -E$ 在此。")
+    assert [i["code"] for i in merged] == ["formula_merged"]
+    assert [i["code"] for i in check_block("The value $ a $ here.", "值 $ b $ 在此。")] == ["formula_changed"]
+    assert check_block("the coordinates x, y, z here", "坐标 $x, y, z$ 在此") == []
+    assert "formula_merged" in [i["code"] for i in check_block("for $ H_2 $ and $(14.135)$", "对于 H₂ 和 (14.135)")]
     # 中文里夹着没翻的英文词
     assert [i["code"] for i in check_block("It was originally above a shop.", "它最初设在商铺楼上，originally设于南街。")] == ["stray_english"]
     # 中文紧挨着的数字也认得（"图1.1""第4章"）
@@ -142,6 +150,19 @@ def test_a_break_at_the_very_end_leaves_no_empty_block() -> None:
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
     assert len(model.payloads) == 1 and results["a1"].translation and results["a2"].translation
     assert results["a2"].issues[0]["code"] == "group_split_by_program"
+
+
+def test_a_slightly_changed_formula_is_restored_to_the_source() -> None:
+    """模型顺手"修"了 OCR 认错的公式符号：程序换回原文写法，记警告，不退回原文。"""
+    from retainpdf_translation_agent.checks import restore_formulas
+
+    fixed, restored = restore_formulas("so $ S'_{rs}'=\\delta_{rs} $ holds", "所以 $S'_{rs}=\\delta_{rs}$ 成立")
+    assert fixed == "所以 $ S'_{rs}'=\\delta_{rs} $ 成立" and restored == ["$ S'_{rs}'=\\delta_{rs} $"]
+    assert restore_formulas("value $ a+b $", "值 $x^2$")[1] == [], "a really different formula is not swapped"
+    page = PageInput(page_label="1", blocks=[BlockInput("f", "paragraph", "so $ S'_{rs}'=\\delta_{rs} $ holds for every pair of orbitals here", True)])
+    results, _ = TranslationAgent(model="fake", transport=Scripted({"f": "所以对这里的每一对轨道 $S'_{rs}=\\delta_{rs}$ 都成立"})).translate_page(page)
+    assert results["f"].status == "warn" and results["f"].issues[0]["code"] == "formula_restored"
+    assert "$ S'_{rs}'=\\delta_{rs} $" in results["f"].translation
 
 
 def test_split_by_ratio_never_cuts_formulas_marks_or_words() -> None:
