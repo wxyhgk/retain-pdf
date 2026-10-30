@@ -59,12 +59,20 @@ class PageRequest:
     page_label: str
     blocks: list[Block]  # 这一页的全部块（含不翻的、含拉进来的下一页接续）
     section_path: list[str]
+    # 这一页属于哪一章：一级标题的块 id（这一页上有一级标题就算新的一章）；术语的作用域按它算
+    chapter: str = ""
 
     def to_translate(self) -> list[Block]:
         return [b for b in self.blocks if b.translate]
 
     def to_input(self, document: dict) -> PageInput:
-        return PageInput(page_label=self.page_label, blocks=[b.to_input() for b in self.blocks], section_path=self.section_path, document=document)
+        return PageInput(
+            page_label=self.page_label,
+            blocks=[b.to_input() for b in self.blocks],
+            section_path=self.section_path,
+            document=document,
+            chapter=self.chapter,
+        )
 
 
 def agent_text(element: dict) -> str:
@@ -174,17 +182,25 @@ def build_pages(truth: dict, *, page_labels: dict[int, str] | None = None) -> li
             home[block.id] = block.page
     requests: list[PageRequest] = []
     section: list[str] = []
+    chapter = ""
     toc_pages = {e["page"] for e in elements if e["class"] == "toc_entry"}
     for index in sorted(pages):
         page_blocks = [blocks[e["id"]] for e in elements if home[e["id"]] == index]
+        # 目录页上的"目录"标题不算正文的章节
+        headings = [e for e in elements if e["page"] == index and e["class"] == "section_heading" and index not in toc_pages]
+        chapter = next((e["id"] for e in headings if ((e.get("attributes") or {}).get("level") or 1) == 1), chapter)
         requests.append(
-            PageRequest(page=index, page_label=labels.get(index, str(index + 1)), blocks=page_blocks, section_path=list(section))
+            PageRequest(
+                page=index,
+                page_label=labels.get(index, str(index + 1)),
+                blocks=page_blocks,
+                section_path=list(section),
+                chapter=chapter,
+            )
         )
-        for e in elements:
-            # 目录页上的"目录"标题不算正文的章节
-            if e["page"] == index and e["class"] == "section_heading" and index not in toc_pages:
-                level = (e.get("attributes") or {}).get("level") or 1
-                section = section[: level - 1] + [e["text"]]
+        for e in headings:
+            level = (e.get("attributes") or {}).get("level") or 1
+            section = section[: level - 1] + [e["text"]]
     return requests
 
 

@@ -958,6 +958,7 @@
       "runtime_files": [],
       "devtool_files": [
         "devtools/agent_lab/__main__.py",
+        "devtools/agent_lab/metrics.py",
         "devtools/agent_lab/pages.py"
       ],
       "test_files": [
