@@ -94,6 +94,33 @@ def test_check_group_flags_text_repeated_across_the_break() -> None:
     assert all("group_overlap" in [i["code"] for i in issues[k]] for k in ("a", "b"))
 
 
+def test_a_phrase_the_source_repeats_on_both_sides_of_the_break_is_not_an_overlap() -> None:
+    # 原文前后两块都说了 "number of steps needed per path that ends in the first basin"，译文跟着说两遍是对的
+    a_src = "A looser tolerance strongly reduces the number of steps needed per path that ends in the first"
+    b_src = "basin. With the other method the lowest number of steps needed per path that ends in the first basin is reached early."
+    a_out = "较宽松的容差使每条终止于第一个盆地的路径所需的步数大幅下降"
+    b_out = "。用另一种方法，每条终止于第一个盆地的路径所需的步数最早达到最低。"
+    issues = check_group([("a", a_src, a_out), ("b", b_src, b_out)])
+    assert not any(i["code"] == "group_overlap" for k in ("a", "b") for i in issues[k]), issues
+
+
+def test_a_short_half_whose_words_moved_across_the_break_is_only_a_warning() -> None:
+    # 中文语序把 "there is little difference" 挪到句末：前一块只剩"对于小体系，"，按块查太短，整组不短
+    group = lambda i: {"id": "cg-s", "index": i, "of": 2}  # noqa: E731
+    page = PageInput(
+        page_label="1",
+        blocks=[
+            BlockInput("s1", "paragraph", "For the small system there is little difference", True, group=group(1)),
+            BlockInput("s2", "paragraph", "between the two update schemes, but larger systems clearly favour the first one.", True, group=group(2)),
+        ],
+    )
+    model = Scripted({"cg-s": f"对于小体系，{BREAK}两种更新格式之间差别不大，但体系越大，第一种的优势越明显。"})
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
+    assert len(model.payloads) == 1, "no retry when the group as a whole is not short"
+    assert results["s1"].status == "warn" and results["s1"].translation == "对于小体系，"
+    assert [i["code"] for i in results["s1"].issues] == ["group_share"] and "中文语序" in results["s1"].issues[0]["message"]
+
+
 def test_page_goes_out_once_with_groups_merged_and_comes_back_split() -> None:
     model = Scripted({"t": "1 引言", "cg-a": f"我们用 $F_1$ 和{BREAK}每一页的召回率给框打分。", "cap": "图 1：召回率 [3]。"})
     results, info = TranslationAgent(model="fake", transport=model).translate_page(_page())

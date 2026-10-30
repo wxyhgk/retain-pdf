@@ -43,11 +43,12 @@ def translation_engine_identity(*, mode: str = "fast") -> dict[str, str]:
 
 
 def agent_engine_identity() -> dict[str, str]:
-    """翻译引擎 agent（workflow/agent_flow.py）的身份：交接格式或提示词换了，旧断点、旧状态不再沿用。"""
+    """翻译引擎 agent（workflow/agent_flow.py）的身份：交接格式、提示词或检查规则换了，旧断点、旧状态不再沿用。"""
+    from retainpdf_translation_agent import CHECKS_VERSION
     from retainpdf_translation_agent import CONTRACT_VERSION
     from retainpdf_translation_agent import PROMPT_VERSION
 
-    return {"agent_contract_version": CONTRACT_VERSION, "agent_prompt_version": PROMPT_VERSION}
+    return {"agent_contract_version": CONTRACT_VERSION, "agent_prompt_version": PROMPT_VERSION, "agent_checks_version": CHECKS_VERSION}
 
 
 def _prompt_hash(mode: str = "fast") -> str:

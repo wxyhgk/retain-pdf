@@ -10,6 +10,7 @@ from retainpdf_translation_agent.agent import StopRun
 from retainpdf_translation_agent.agent import TranslationAgent
 from retainpdf_translation_agent.agent import http_transport
 from retainpdf_translation_agent.agent import make_http_transport
+from retainpdf_translation_agent.checks import CHECKS_VERSION
 from retainpdf_translation_agent.checks import check_block
 from retainpdf_translation_agent.checks import check_group
 from retainpdf_translation_agent.checks import check_terms
@@ -38,6 +39,7 @@ from retainpdf_translation_agent.runner import blocks_using
 
 __all__ = [
     "BREAK",
+    "CHECKS_VERSION",
     "CONTRACT_VERSION",
     "DEFAULT_MODEL",
     "EDITORIAL_EVENT_VERSION",

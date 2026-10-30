@@ -12,6 +12,7 @@ import re
 
 from retainpdf_math.normalize import normalize_formula_for_latex_math
 from retainpdf_math.source_repair import collapse_doubled_command_backslashes
+from retainpdf_math.source_repair import separate_double_scripts
 
 
 # 埃符号。mitex 0.2.7 在文本组里把 `\AA` / `\aa` / `\r{A}` / `\mathring{A}` 翻成
@@ -90,10 +91,11 @@ def prepare_formula_for_render(expr: str, *, display: bool) -> tuple[str, bool]:
     spreadsheet_cell = re.fullmatch(r"\\([A-Za-z]{1,3})\\([0-9]{1,7})", expr)
     if spreadsheet_cell:
         return f"{spreadsheet_cell.group(1)}{spreadsheet_cell.group(2)}", False
-    # 这三条修的是 OCR / 模型产物，不是 mitex 的能力缺口，所以留着。
+    # 这几条修的是 OCR / 模型产物，不是 mitex 的能力缺口，所以留着。
     # 第一条曾经是无条件的，把矩阵/cases 的换行符 `\\` 也合并掉，自己制造了
     # `unknown command: \b`——约束和缘由都在 source_repair 里。
     expr = collapse_doubled_command_backslashes(expr)
+    expr = separate_double_scripts(expr)
     expr = re.sub(r"\\langlen\b", r"\\langle n", expr)
     expr = re.sub(r"\\angle(?=[A-Za-z])", r"\\angle ", expr)
     # Do not rewrite prefix scripts (e.g. ⟨^{N} → ⟨{}^{N}).

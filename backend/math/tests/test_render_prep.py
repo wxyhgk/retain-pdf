@@ -19,6 +19,11 @@ from retainpdf_math.render_prep import prepare_formula_for_render
         (r"\A\12", False, ("A12", False)),  # 表格单元格名
         (r"\langlen|", False, (r"\langle n|", True)),
         (r"\angleABC", False, (r"\angle ABC", True)),
+        # OCR 拍平的上下标：同一个底数两个下标 / 两个上标，MathJax 整个公式报错，补一个空底数
+        (r"\mathbf{F}_1_* = -\mathbf{g}(\mathbf{x}_l^{1*})", False, (r"\mathbf{F}_1{}_* = -\mathbf{g}(\mathbf{x}_l^{1*})", True)),
+        (r"x^2^3", False, (r"x^2{}^3", True)),
+        (r"x_{a}_{b}", False, (r"x_{a}{}_{b}", True)),
+        (r"x_1^2_3", False, (r"x_1^2{}_3", True)),
     ],
 )
 def test_formula_rewrites(tex, display, expected):
@@ -32,3 +37,19 @@ def test_matrix_line_breaks_survive():
 
 def test_angstrom_in_prose_only_touches_the_command():
     assert normalize_angstrom_in_text(r"1 \AA thick, path \r\n") == r"1 Å thick, path \r\n"
+
+
+@pytest.mark.parametrize(
+    "tex",
+    [
+        r"x_1^2",
+        r"\sum_{i=1}^{n} a_i b_i",
+        r"\sum\limits_{i}^{n} x",
+        r"\mathbf{F}_1^* - \mathbf{F}_2^*",
+        r"{x_a}_b",
+        r"e^{x^2}",
+        r"\begin{cases} a_1 & b_2 \\ c_3 & d_4 \end{cases}",
+    ],
+)
+def test_single_scripts_are_left_alone(tex):
+    assert prepare_formula_for_render(tex, display=False) == (tex, True)

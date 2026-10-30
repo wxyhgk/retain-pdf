@@ -45,4 +45,87 @@ def collapse_doubled_command_backslashes(expr: str) -> str:
     return _DOUBLED_COMMAND_RE.sub(r"\\", text)
 
 
-__all__ = ["collapse_doubled_command_backslashes"]
+# 不换底数的命令：`\\sum\\limits_a^b` 的上下标还是 `\sum` 的
+_SCRIPT_KEEPING_COMMANDS = {"limits", "nolimits", "displaylimits"}
+
+
+def _script_argument_end(text: str, start: int) -> int:
+    """`_` / `^` 后面那一个参数在哪结束：`{…}` 整组、`\\命令`、或者一个字符（前面的空格跳过）。"""
+    i = start
+    while i < len(text) and text[i] == " ":
+        i += 1
+    if i >= len(text):
+        return i
+    if text[i] == "{":
+        depth = 0
+        while i < len(text):
+            if text[i] == "\\":
+                i += 2
+                continue
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    return i + 1
+            i += 1
+        return i
+    if text[i] == "\\":
+        j = i + 1
+        while j < len(text) and text[j].isalpha():
+            j += 1
+        return max(j, i + 2)
+    return i + 1
+
+
+def separate_double_scripts(expr: str) -> str:
+    """同一个底数连写两个下标（`\\mathbf{F}_1_*`）或两个上标（`x^2^3`）：中间补一个空底数 `{}`。
+
+    OCR 把上标认成下标、或者把两层上下标拍平，就会写出这种 LaTeX；MathJax 整个公式报错
+    （"Double subscripts: use braces to clarify"），渲染时退回成源码原样印出来。补上 `{}` 以后排成
+    F₁ 后面再跟一个下标 *，和原文看起来一样，意思也没改。`x_1^2_3` 这种下标、上标、又下标的同理。
+    """
+    text = str(expr or "")
+    if "_" not in text and "^" not in text:
+        return text
+    out: list[str] = []
+    seen: set[str] = set()  # 当前底数已经有的上下标
+    i = 0
+    while i < len(text):
+        char = text[i]
+        if char in "_^":
+            if char in seen:
+                out.append("{}")
+                seen = set()
+            end = _script_argument_end(text, i + 1)
+            out.append(text[i:end])
+            seen.add(char)
+            i = end
+            continue
+        if char == " ":
+            out.append(char)
+            i += 1
+            continue
+        if char == "\\":
+            j = i + 1
+            while j < len(text) and text[j].isalpha():
+                j += 1
+            j = max(j, i + 2)
+            if text[i + 1 : j] not in _SCRIPT_KEEPING_COMMANDS:
+                seen = set()
+            out.append(text[i:j])
+            i = j
+            continue
+        if char == "{":
+            end = _script_argument_end(text, i)
+            out.append(text[i:end])
+            seen = set()
+            i = end
+            continue
+        out.append(char)
+        seen = set()
+        i += 1
+    return "".join(out)
+
+
+__all__ = ["collapse_doubled_command_backslashes", "separate_double_scripts"]
