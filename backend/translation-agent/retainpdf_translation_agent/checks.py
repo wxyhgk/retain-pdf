@@ -11,6 +11,7 @@ FORMULA_RE = re.compile(r"\$[^$]+\$")
 CITATION_RE = re.compile(r"\[\d+(?:\s*[,–-]\s*\d+)*\]")
 FN_RE = re.compile(r"\{\{fn:[^}]+\}\}")
 CODE_RE = re.compile(r"`[^`\n]+`")
+QUOTED_RE = re.compile(r"《[^》]*》|“[^”]*”|「[^」]*」|（[^）]*）|\([^)]*\)")
 NUMBER_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)*(?![\w])")
 LATIN_WORD_RE = re.compile(r"[A-Za-z]{3,}")
 CJK_RE = re.compile(r"[一-鿿]")
@@ -27,7 +28,7 @@ def visible_length(text: str) -> int:
 
 
 def _strip_protected(text: str) -> str:
-    return CODE_RE.sub(" ", FN_RE.sub(" ", CITATION_RE.sub(" ", FORMULA_RE.sub(" ", text))))
+    return FN_RE.sub(" ", CITATION_RE.sub(" ", FORMULA_RE.sub(" ", CODE_RE.sub(" ", text))))
 
 
 def _issue(code: str, severity: str, message: str) -> dict:
@@ -40,13 +41,16 @@ def check_block(source: str, translation: str | None) -> list[dict]:
     if not translation.strip():
         return [_issue("empty", "error", "译文是空的")]
     issues: list[dict] = []
-    src_formulas = Counter(f.strip() for f in FORMULA_RE.findall(source))
-    out_formulas = Counter(f.strip() for f in FORMULA_RE.findall(translation))
-    if translation.count("$") % 2:
+    # 行内代码先拿掉再查公式：`$` 提示符不是公式
+    src_math, out_math = CODE_RE.sub(" ", source), CODE_RE.sub(" ", translation)
+    src_formulas = Counter(f.strip() for f in FORMULA_RE.findall(src_math))
+    out_formulas = Counter(f.strip() for f in FORMULA_RE.findall(out_math))
+    if out_math.count("$") % 2:
         issues.append(_issue("formula_unbalanced", "error", "`$` 不成对"))
-    if src_formulas != out_formulas:
-        lost = sorted((src_formulas - out_formulas).elements())
-        added = sorted((out_formulas - src_formulas).elements())
+    lost = sorted((src_formulas - out_formulas).elements())
+    # 中文句子有时要把原文已有的公式多提一次（"当 $b$ 为 0.002 时"），不算改了公式；原文没有的公式才算
+    added = sorted(f for f in (out_formulas - src_formulas).elements() if f not in src_formulas)
+    if lost or added:
         issues.append(_issue("formula_changed", "error", f"公式和原文不一致：丢了 {lost}，多了 {added}"))
     lost_code = Counter(CODE_RE.findall(source)) - Counter(CODE_RE.findall(translation))
     if lost_code:
@@ -71,7 +75,9 @@ def check_block(source: str, translation: str | None) -> list[dict]:
         elif not CJK_RE.search(plain_out) and len(LATIN_WORD_RE.findall(plain_source)) >= 3:
             issues.append(_issue("no_chinese", "error", "译文里没有中文"))
         else:
-            residue = [w for w in LATIN_WORD_RE.findall(plain_out) if w.lower() not in {"ocr", "pdf", "html", "iou", "doi", "arxiv"}]
+            # 书名号、引号、括号里的（保留原文的书名、外文引语）和大写开头的专名不算残留
+            quoted = QUOTED_RE.sub(" ", plain_out)
+            residue = [w for w in LATIN_WORD_RE.findall(quoted) if w.islower() and w not in {"ocr", "pdf", "html", "iou", "doi", "arxiv"}]
             if len(residue) >= 6:
                 issues.append(_issue("english_residue", "warn", f"译文里还有不少英文词：{residue[:6]}…"))
     ratio = len(plain_out.strip()) / max(1, len(plain_source.strip()))

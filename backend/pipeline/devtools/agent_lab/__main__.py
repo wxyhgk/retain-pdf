@@ -24,6 +24,10 @@ from retainpdf_translation_agent import DocumentRun
 from retainpdf_translation_agent import TranslationAgent
 
 from devtools.agent_lab import long_sample
+from devtools.agent_lab import sample_conference
+from devtools.agent_lab import sample_essay
+from devtools.agent_lab import sample_manual
+from devtools.agent_lab import sample_textbook
 from devtools.agent_lab import metrics as long_metrics
 from devtools.agent_lab.pages import build_pages
 from devtools.agent_lab.pages import document_title
@@ -31,10 +35,19 @@ from devtools.agent_lab.report import build_report
 from devtools.ocr_viewer.complex_sample import PRINTED_PAGE
 from devtools.ocr_viewer.complex_sample import build as build_complex
 
+def _with_labels(doc):
+    return doc, doc.page_labels
+
+
 # 样例登记表：名字 → 造文档的函数，返回 (SampleDocument, 页号 → 印的页码)。加新样例在这里登记一行。
 SAMPLES = {
     "complex": lambda: (build_complex(), PRINTED_PAGE),
-    "long": lambda: (lambda doc: (doc, doc.page_labels))(long_sample.build()),
+    "long": lambda: _with_labels(long_sample.build()),
+    # Sonnet 造的 5 页以上样例（2026-10-30）
+    "conference": lambda: _with_labels(sample_conference.build()),
+    "textbook": lambda: _with_labels(sample_textbook.build()),
+    "manual": lambda: _with_labels(sample_manual.build()),
+    "essay": lambda: _with_labels(sample_essay.build()),
 }
 
 DEFAULT_ENV = Path.home() / ".config" / "retainpdf" / "test.env"
@@ -144,7 +157,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--model", default=None)
     parser.add_argument("--pages", default="", help="comma-separated printed page labels, e.g. i,1")
     parser.add_argument("--no-cache", action="store_true")
-    parser.add_argument("--sample", choices=sorted(SAMPLES), default="complex", help="complex: 3-page paper; long: ~20-page book with metrics")
+    parser.add_argument("--sample", choices=sorted(SAMPLES), default="complex", help="complex: 3-page paper; long: 21-page book with metrics; conference/textbook/manual/essay: 7-8 pages")
     parser.add_argument("--no-memory", action="store_true", help="translate page by page without glossary or context pack")
     args = parser.parse_args(argv)
     names = load_env_file(args.env)

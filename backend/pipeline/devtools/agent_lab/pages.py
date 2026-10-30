@@ -104,7 +104,7 @@ def describe_where(element: dict, page_width: float, page_height: float, page_la
     x0, y0, x1, y1 = element["bbox"]
     width = x1 - x0
     cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
-    if x1 < page_width * 0.1 or x0 > page_width * 0.9:
+    if element.get("class") == "margin_note" or x1 < page_width * 0.1 or x0 > page_width * 0.9:
         column = "页边"
     elif width > page_width * 0.55:
         column = "通栏"

@@ -408,6 +408,7 @@ class TranslationAgent:
                 if issues:
                     results[block_id].issues = results[block_id].issues + issues
                     results[block_id].status = status_of(results[block_id].issues)
+            _forgive_moved_marks(members, results)
 
     # ---- 按重排 agent 的要求改稿 ----
     def revise(self, page: PageInput, requests: list[RevisionRequest]) -> dict[str, BlockResult]:
@@ -502,6 +503,28 @@ class TranslationAgent:
             fixed[block.id] = BlockResult(block.id, per_block.get(block.id), issues, first.attempts + 1, status_of(issues), history, meta)
         self._apply_group_checks(unit, fixed)
         return fixed, parsed
+
+
+# 中文语序会把公式、引用、脚注标记挪过接续组的断点：按块查是"丢了"，按整组查还在，就只记警告
+MOVABLE = {"formula_changed", "citation_lost", "footnote_mark_lost", "code_changed"}
+
+
+def _forgive_moved_marks(members: list, results: dict[str, BlockResult]) -> None:
+    if len(members) < 2 or any(results[b.id].translation is None for b in members):
+        return
+    whole = check_block(" ".join(b.text for b in members), "".join(results[b.id].translation or "" for b in members))
+    still_lost = {i["code"] for i in whole}
+    for block in members:
+        result = results[block.id]
+        if not any(i["code"] in MOVABLE and i["code"] not in still_lost for i in result.issues):
+            continue
+        result.issues = [
+            dict(i, code="mark_moved", severity="warn", message=i["message"] + "（整组里还在，挪到了接续组的另一块）")
+            if i["code"] in MOVABLE and i["code"] not in still_lost
+            else i
+            for i in result.issues
+        ]
+        result.status = status_of(result.issues)
 
 
 def _first_uses(page: PageInput) -> dict[str, list[str]]:

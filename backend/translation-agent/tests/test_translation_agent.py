@@ -57,6 +57,10 @@ def test_check_block_protects_formulas_marks_and_numbers() -> None:
     assert check_block(source, None)[0]["code"] == "missing"
     # 短标题、写成中文数字都不算错
     assert check_block("Acknowledgements", "致谢") == []
+    # 原文已有的公式多提一次不算错；`$` 提示符在行内代码里不算公式
+    assert check_block("A budget $b$ of 0.002 is small.", "当 $b$ 为 0.002 时，预算 $b$ 很小。") == []
+    assert [i["code"] for i in check_block("A budget $b$ of 0.002.", "预算 $b$ 和 $c$ 为 0.002。")] == ["formula_changed"]
+    assert check_block("Commands start with a `$` prompt here.", "命令以 `$` 提示符开头。") == []
     # 行内代码原样保留
     assert check_block("Run `tw backup --json` to start.", "运行 `tw backup --json` 开始备份。") == []
     assert [i["code"] for i in check_block("Run `tw backup --json` to start.", "运行 tw backup 开始备份。")] == ["code_changed"]
@@ -93,6 +97,21 @@ def test_missing_blocks_are_retried_together_in_one_request() -> None:
     retry = model.payloads[1]
     assert sorted(r["id"] for r in retry["retry"]) == ["cap", "t"] and sorted(retry["required_ids"]) == ["cap", "t"]
     assert results["t"].attempts == 2 and results["t"].status == "ok" and results["t"].history[0]["issues"][0]["code"] == "missing"
+
+
+def test_a_footnote_mark_moved_across_the_break_is_only_a_warning() -> None:
+    group = lambda i: {"id": "cg-m", "index": i, "of": 2}  # noqa: E731
+    page = PageInput(
+        page_label="1",
+        blocks=[
+            BlockInput("m1", "paragraph", "She borrowed the first of the eight parts in which", True, group=group(1)),
+            BlockInput("m2", "paragraph", "Middlemarch{{fn:25}} had begun to appear that month.", True, group=group(2)),
+        ],
+    )
+    model = Scripted({"cg-m": f"她借了《米德尔马契》{{{{fn:25}}}}当月开始分册出版的{BREAK}八册中的第一册。"})
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
+    assert len(model.payloads) == 1, "no retry for a mark that is still in the group"
+    assert results["m2"].status == "warn" and "mark_moved" in [i["code"] for i in results["m2"].issues]
 
 
 def test_wrong_number_of_breaks_retries_the_whole_group() -> None:

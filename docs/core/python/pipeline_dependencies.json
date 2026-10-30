@@ -410,6 +410,10 @@
         "retainpdf_pipeline/render/workflow/modes.py"
       ],
       "devtool_files": [
+        "devtools/agent_lab/sample_conference.py",
+        "devtools/agent_lab/sample_essay.py",
+        "devtools/agent_lab/sample_manual.py",
+        "devtools/agent_lab/sample_textbook.py",
         "devtools/analyze_render_item_composition.py",
         "devtools/backfill_typography_memory.py",
         "devtools/benchmark_source_cleanup.py",
@@ -424,6 +428,8 @@
         "devtools/verify_bbox_text_strip_parallel.py"
       ],
       "test_files": [
+        "devtools/tests/agent_lab/test_sample_essay.py",
+        "devtools/tests/agent_lab/test_sample_textbook.py",
         "devtools/tests/document_operations/test_document_operation_cli.py",
         "devtools/tests/document_operations/test_page_program.py",
         "devtools/tests/document_schema/test_mineru_v2_geometry.py",
@@ -529,6 +535,7 @@
       "runtime_files": [],
       "devtool_files": [],
       "test_files": [
+        "devtools/tests/agent_lab/test_sample_conference.py",
         "devtools/tests/conftest.py",
         "devtools/tests/document_operations/test_document_operation_cli.py",
         "devtools/tests/document_operations/test_page_program.py",
