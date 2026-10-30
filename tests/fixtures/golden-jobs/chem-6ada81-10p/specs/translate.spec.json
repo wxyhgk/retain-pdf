@@ -18,6 +18,7 @@
     "credential_ref": "env:RETAIN_TRANSLATION_API_KEY",
     "custom_rules_text": "",
     "end_page": -1,
+    "engine": "legacy",
     "glossary_entries": [],
     "glossary_id": "",
     "glossary_inline_entry_count": 0,

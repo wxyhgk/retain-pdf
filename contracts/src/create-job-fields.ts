@@ -85,6 +85,7 @@ export const CREATE_JOB_SECTION_FIELDS: Readonly<
     "credential_ref",
     "custom_rules_text",
     "end_page",
+    "engine",
     "execution_connection",
     "glossary_entries",
     "glossary_id",

@@ -1557,6 +1557,15 @@
           "default": "",
           "description": "审校模型的思考深度；留空沿用 thinking。"
         },
+        "engine": {
+          "type": "string",
+          "enum": [
+            "legacy",
+            "agent"
+          ],
+          "default": "legacy",
+          "description": "TRANSLATION_ENGINES。翻译引擎。legacy：现有流程；agent：翻译 agent（先通读全文，再逐页翻译并审校），要求 api_protocol=anthropic，公式按 direct_typst 处理。"
+        },
         "start_page": {
           "type": "integer"
         },

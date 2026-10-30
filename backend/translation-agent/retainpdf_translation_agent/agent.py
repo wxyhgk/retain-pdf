@@ -1,6 +1,7 @@
 """翻译 agent：一次送一整页，模型通过一个固定格式的工具调用逐块交回译文；也能按重排 agent 的改稿要求改写某几块。
 
-调用直接走 Anthropic Messages 接口（密钥从环境变量 `ANTHROPIC_API_KEY` 读，模型 `ANTHROPIC_MODEL`）。
+调用直接走 Anthropic Messages 接口：开发和测试用 `http_transport`（密钥从环境变量 `ANTHROPIC_API_KEY` 读，模型 `ANTHROPIC_MODEL`），
+正式流程用 `make_http_transport(密钥, url=…)`，密钥和地址由任务给，不读服务器的环境变量。
 每个请求连同回答缓存在 `cache_dir`，同样的输入再跑不重复花钱，结果可复现。测试用 `transport` 注入假模型。
 输入输出的格式见 `contract.py`；整篇按页顺序翻、带术语记忆和上下文包的调度在 `runner.py`。
 """
@@ -210,19 +211,35 @@ def retry_wait(attempt: int, retry_after: str | None) -> float:
 
 
 def http_transport(body: dict, *, sleep: Callable[[float], None] = time.sleep) -> dict:
-    """用标准库发请求（开发工具不给流水线添依赖）。429、5xx 和网络错误退避重试；额度、密钥问题抛 `StopRun`。"""
+    """开发和测试用：密钥从环境变量 `ANTHROPIC_API_KEY` 读。"""
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if not key:
+        raise AuthFailed("ANTHROPIC_API_KEY is not set (load ~/.config/retainpdf/test.env)")
+    return _post(body, key=key, url=API_URL, sleep=sleep)
+
+
+def make_http_transport(api_key: str, *, url: str = API_URL, sleep: Callable[[float], None] = time.sleep) -> Transport:
+    """正式流程用：密钥和地址由调用方给（任务的凭据和 base_url），不读环境变量。"""
+    if not api_key:
+        raise AuthFailed("model API key is empty")
+
+    def transport(body: dict) -> dict:
+        return _post(body, key=api_key, url=url or API_URL, sleep=sleep)
+
+    return transport
+
+
+def _post(body: dict, *, key: str, url: str, sleep: Callable[[float], None]) -> dict:
+    """用标准库发请求（不给流水线添依赖）。429、5xx 和网络错误退避重试；额度、密钥问题抛 `StopRun`。"""
     import http.client
     import urllib.error
     import urllib.request
 
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
-        raise AuthFailed("ANTHROPIC_API_KEY is not set (load ~/.config/retainpdf/test.env)")
     headers = {"x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json"}
     data = json.dumps(body, ensure_ascii=False).encode("utf-8")
     last_error = ""
     for attempt in range(MAX_ATTEMPTS):
-        request = urllib.request.Request(API_URL, data=data, headers=headers, method="POST")
+        request = urllib.request.Request(url, data=data, headers=headers, method="POST")
         retry_after = None
         try:
             with urllib.request.urlopen(request, timeout=300) as response:

@@ -265,6 +265,21 @@ def apply_revised_member_text(item: dict, protected_text: str, *, single_unit: b
     set_final_status(item, TRANSLATED_STATUS)
 
 
+_CJK_RE = re.compile(r"[⺀-鿿　-〿＀-￯]")
+
+
+def join_unit_text(texts: list[str]) -> str:
+    """分组单元各成员的译文拼成整组译文：两边都是中文时直接接上，否则中间加一个空格。"""
+    joined = ""
+    for text in (str(value or "").strip() for value in texts):
+        if not text:
+            continue
+        if joined and not (_CJK_RE.match(joined[-1]) and _CJK_RE.match(text[0])):
+            joined += " "
+        joined += text
+    return joined
+
+
 def apply_revised_unit_text(items: list[dict], unit_protected_text: str) -> None:
     # 分组单元里某个成员被修订后,整组的 translation_unit_* / group_* 要跟着
     # 重建(调用方用各成员当前译文拼出 unit_protected_text),否则渲染、

@@ -164,6 +164,10 @@ export interface PublicTranslationInput {
      * 留空沿用 thinking。
      */
     reviewer_thinking?: string;
+    /**
+     * TRANSLATION_ENGINES：legacy（现有流程）/ agent（翻译 agent）。
+     */
+    engine?: string;
     start_page: number;
     end_page: number;
     page_ranges: number[];

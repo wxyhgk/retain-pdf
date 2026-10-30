@@ -8,7 +8,7 @@ use retainpdf_core::models::domain::{
     OcrProviderKind, UploadRecord, RENDER_ENGINES, SOURCE_CLEANUP_STRATEGIES, TRANSLATION_CONTEXT_MODES,
     TRANSLATION_GLOSSARY_MODES, TRANSLATION_MATH_MODES, TRANSLATION_MEMORY_MODES,
     TRANSLATION_PREPARATION_MODES, TRANSLATION_REFINE_MODES, TRANSLATION_API_PROTOCOLS,
-    TRANSLATION_THINKING_LEVELS,
+    TRANSLATION_THINKING_LEVELS, TRANSLATION_ENGINES,
 };
 use retainpdf_core::models::request::{CreateJobInput, OcrInput};
 use retainpdf_data::ocr_provider::{
@@ -238,6 +238,18 @@ pub fn validate_translation_modes(input: &CreateJobInput) -> Result<(), AppError
         &input.translation.thinking,
         TRANSLATION_THINKING_LEVELS,
     )?;
+    validate_allowed_value(
+        "translation.engine",
+        &input.translation.engine,
+        TRANSLATION_ENGINES,
+    )?;
+    // 翻译 agent 直接走 Anthropic Messages 接口
+    if input.translation.engine == "agent" && input.translation.api_protocol != "anthropic" {
+        return Err(AppError::bad_request(format!(
+            "translation.engine=agent requires translation.api_protocol=anthropic (got {:?})",
+            input.translation.api_protocol
+        )));
+    }
     // 审校的两项留空表示沿用翻译模型的设置。
     if !input.translation.reviewer_api_protocol.is_empty() {
         validate_allowed_value(

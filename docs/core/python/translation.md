@@ -156,6 +156,28 @@ load document.v1
 - `workflow/batch_runner.py` 执行串行或并行 batch。
 - `results/` 负责回填和刷盘。
 
+### 翻译引擎 agent（`translation.engine=agent`）
+
+2026-10-30 接进正式流程，任务可以选，默认仍是上面的流程（`legacy`）。分支在 `workflow/execution_runner.py`：
+`legacy` 走 `book_flow.translate_book_with_global_continuations`，`agent` 走 `workflow/agent_flow.py` 的 `translate_book_with_agent`。
+两者共用前半段 `book_flow.prepare_book_payloads`（到 "annotate context windows" 为止，提交 `policy_ready` 断点）和后面的清单、质检、断点收尾。
+
+`agent_flow.py` 做的事：
+
+- 每页模板记录换成翻译 agent 包（`backend/translation-agent`）的 `PageInput`：sub_type 换成 agent 的块分类，原文用 `$…$` 直写公式
+  （`math_mode` 强制 `direct_typst`），参考文献角标 `$ ^{40} $` 换成脚注标记 `{{fn:40}}`、写回时换回原写法；
+  `__cg__:` 接续组整组放进组头那一页，跨页的后半段也在那一页翻。
+- `DocumentRun` 整篇按页顺序翻：先通读、每页审校（`read_first=True`、`review=True`）。状态和请求缓存在翻译目录的 `agent/` 下，
+  块 id、原文、模型、agent 版本有一样变了就清掉重来；断点指纹（`checkpoint/identity.py`）里也加了引擎和 agent 版本，`legacy` 的指纹不变。
+- 每页做完（`on_page` 回调）：单块用 `apply_revised_member_text` 写回，接续组再用 `apply_revised_unit_text` 重建整组字段（和改译文一样）；
+  落盘、`checkpoint.update("translating", …)`（实时译文照常）、`translation_batches` 进度（按块计），每次真发出去的请求记一行用量台账。
+- agent 交回 `fallback_source` 的块：`mark_translation_failed_policy_state` + 死信诊断（`fallback_to=dead_letter_queue`，
+  `degradation_reason=agent_fallback_source`），不卡发布门槛。
+- 额度用完、密钥不对、一直限流（agent 的 `StopRun`）：抛 `AgentRunStopped`，阶段失败，进度留着，重试时从断点接着翻、已缓存的请求不再花钱。
+- 模型请求用 `make_http_transport(任务的密钥, url=base_url + "/messages")`，不读服务器的 `ANTHROPIC_API_KEY`。
+
+测试：`backend/pipeline/devtools/tests/translation/test_agent_flow.py`（假模型整条跑通、死信、停下后续跑、接续组写回）。
+
 ### 一段话占好几个框：模型翻整段，程序切回各框
 
 跨栏、跨页的续接组（`cg-*`）和摘要组（`abstract:*`）都是一个翻译单元（`__cg__:…`）：

@@ -54,6 +54,8 @@ TRANSLATION_WORKFLOW_ALLOWED_DIRS = {
 TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "__init__.py",
     "README.md",
+    # 翻译引擎 agent 的整书流程（translation.engine=agent），和 book_flow.py 同一层
+    "agent_flow.py",
     "batch_plan.py",
     "batch_runner.py",
     "book_flow.py",

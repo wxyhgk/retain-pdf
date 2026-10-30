@@ -39,7 +39,6 @@ import copy
 import hashlib
 import json
 import os
-import re
 import shutil
 import signal
 import tempfile
@@ -53,6 +52,7 @@ from retainpdf_translation.core.item_reader import item_source_text
 from retainpdf_translation.core.payload.manifest import load_translation_manifest
 from retainpdf_translation.core.payload.parts.apply import apply_revised_member_text
 from retainpdf_translation.core.payload.parts.apply import apply_revised_unit_text
+from retainpdf_translation.core.payload.parts.apply import join_unit_text
 from retainpdf_translation.core.payload.parts.common import is_group_unit_id
 from retainpdf_translation.core.payload.parts.common import translation_unit_member_ids
 from retainpdf_translation.core.payload.parts.diagnostics import record_translation_diagnostics
@@ -76,7 +76,6 @@ REVISION_SOURCES = ("user", "agent", "refine")
 MAX_REVISION_TEXT_CHARS = 20000
 MAX_REVISION_REASON_CHARS = 2000
 
-_CJK_RE = re.compile(r"[⺀-鿿　-〿＀-￯]")
 
 
 class RevisionTerminated(SystemExit):
@@ -201,17 +200,6 @@ def _load_glossary_entries(job_root: Path) -> list[dict]:
         return []
     entries = ((spec.get("params") or {}) if isinstance(spec, dict) else {}).get("glossary_entries")
     return list(entries) if isinstance(entries, list) else []
-
-
-def _join_unit_text(texts: list[str]) -> str:
-    joined = ""
-    for text in (str(value or "").strip() for value in texts):
-        if not text:
-            continue
-        if joined and not (_CJK_RE.match(joined[-1]) and _CJK_RE.match(text[0])):
-            joined += " "
-        joined += text
-    return joined
 
 
 def _normalize_request(request: RevisionRequest) -> RevisionRequest:
@@ -505,7 +493,7 @@ def _prepare_revision(
     apply_revised_member_text(revised_item, new_text, single_unit=not members)
     if members:
         revised_members = [_find_item(revised, str(member.get("item_id")))[1] for _idx, member in members]
-        unit_text = _join_unit_text(
+        unit_text = join_unit_text(
             [str(member.get("protected_translated_text") or "") for member in revised_members]
         )
         apply_revised_unit_text(revised_members, unit_text)

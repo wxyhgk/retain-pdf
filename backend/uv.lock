@@ -542,6 +542,7 @@ dependencies = [
     { name = "requests" },
     { name = "retainpdf-base" },
     { name = "retainpdf-math" },
+    { name = "retainpdf-translation-agent" },
     { name = "urllib3" },
 ]
 
@@ -557,6 +558,7 @@ requires-dist = [
     { name = "requests", specifier = "==2.32.5" },
     { name = "retainpdf-base", editable = "base" },
     { name = "retainpdf-math", editable = "math" },
+    { name = "retainpdf-translation-agent", editable = "translation-agent" },
     { name = "urllib3", specifier = "==2.5.0" },
 ]
 provides-extras = ["test"]

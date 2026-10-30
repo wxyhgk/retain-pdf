@@ -30,6 +30,7 @@
 Rust 的 AI 包 `retainpdf_ai` 和 Python AI 服务的模块同名（用户 2026-10-17 定的），看报错、搜代码时看清是哪边的。
 Python 的翻译 agent 包 `retainpdf-translation-agent`（`backend/translation-agent`，2026-10-29 新建）：一次翻一整页、逐块校验、
 按重排 agent 的要求改稿，只用标准库；测试系统在 `backend/pipeline/devtools/agent_lab/`。以后的重排 agent 另建 `retainpdf-layout-agent`。
+2026-10-30 起翻译包依赖它：任务选 `translation.engine=agent` 时由 `retainpdf_translation/workflow/agent_flow.py` 调（见 [翻译层说明](../python/translation.md)），运行时镜像也装它。
 Rust 的底座包 `retainpdf-api-base` 和 Python 的底座包 `retainpdf-base`（`backend/base`，翻译拆包时新建）是两个东西。`retainpdf-api-base`（2026-10-16 新建）是 API 各领域包共用的底座：
 错误类型 `AppError` 和按编号读出任务 `job_loading`，在 `services` 下面一层。
 
