@@ -123,14 +123,14 @@ export function createHeaderState(host: PageHeaderHost) {
 		setWide: (value: boolean): boolean => edit({ wide: value }, false),
 		/** The caret at the end of the title, from the start of the body. */
 		focusTitle(): void {
-			const title = document.querySelector<HTMLInputElement>('#article-title-input');
+			const title = document.querySelector<HTMLTextAreaElement>('#article-title-input');
 			if (!title) return;
 			title.focus();
 			title.setSelectionRange(title.value.length, title.value.length);
 		},
 		/** The title selected, for a page just made: what is typed is its title. */
 		selectTitle(): void {
-			const title = document.querySelector<HTMLInputElement>('#article-title-input');
+			const title = document.querySelector<HTMLTextAreaElement>('#article-title-input');
 			title?.focus();
 			title?.select();
 		},

@@ -23,8 +23,8 @@
 .page-head-actions button:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 .page-head-actions button[hidden] { display: none; }
 /* Icon and cover both there: nothing to add, no row for it. */
-:global(.page-head-actions:not(:has(button:not([hidden])))) { display: none; }
-.article-title-input { box-sizing: border-box; width: 100%; padding: 0; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-text); font-size: var(--studio-title-size); font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; outline: none; }
+.page-head-actions:not(:has(button:not([hidden]))) { display: none; }
+.article-title-input { display: block; box-sizing: border-box; width: 100%; margin: 0; padding: 0; overflow: hidden; overflow-wrap: anywhere; resize: none; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-text); font-size: var(--studio-title-size); font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; outline: none; }
 .article-title-input::placeholder { color: rgb(var(--gray)); opacity: 0.48; }
 .article-title-input:disabled { opacity: 0.55; }
 /* Properties as rows: a name, and its value changed where it is. */

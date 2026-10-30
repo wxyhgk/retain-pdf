@@ -113,6 +113,32 @@ function CoverPicker({ actions, onPick }: { actions: HeaderActions; onPick(cover
 	);
 }
 
+/** A field as tall as what is in it. */
+function fitHeight(node: HTMLTextAreaElement | null): void {
+	if (!node) return;
+	node.style.height = 'auto';
+	node.style.height = `${node.scrollHeight}px`;
+}
+
+/**
+ * Whether the caret is on a field's last line, as it wraps: what is after the caret, set the same way in a copy of the
+ * field (out of sight), is on one line only there.
+ */
+function onLastLine(area: HTMLTextAreaElement): boolean {
+	if (area.selectionEnd === area.value.length) return true;
+	const style = getComputedStyle(area);
+	const copy = document.createElement('div');
+	for (const name of ['font-family', 'font-size', 'font-weight', 'font-style', 'letter-spacing', 'line-height', 'word-break', 'overflow-wrap']) copy.style.setProperty(name, style.getPropertyValue(name));
+	Object.assign(copy.style, { position: 'absolute', top: '0', left: '-10000px', width: `${area.clientWidth}px`, visibility: 'hidden', whiteSpace: 'pre-wrap' });
+	copy.textContent = area.value.slice(0, area.selectionEnd);
+	const after = copy.appendChild(document.createElement('span'));
+	after.textContent = area.value.slice(area.selectionEnd);
+	document.body.append(copy);
+	const last = after.getClientRects().length === 1;
+	copy.remove();
+	return last;
+}
+
 /** Tags as chips: Enter or a comma adds what is typed, Backspace in the empty field takes the last off. */
 function TagField({ tags, known, disabled, onChange }: { tags: string[]; known: string[]; disabled: boolean; onChange(tags: string[]): void }) {
 	const [typed, setTyped] = useState('');
@@ -188,6 +214,7 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 	const addIcon = useRef<HTMLButtonElement>(null);
 	const coverButton = useRef<HTMLButtonElement>(null);
 	const addCover = useRef<HTMLButtonElement>(null);
+	const title = useRef<HTMLTextAreaElement>(null);
 	const description = useRef<HTMLTextAreaElement>(null);
 	const icon = shown?.icon ?? '';
 	const cover = shown?.cover ?? '';
@@ -197,13 +224,9 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 		root?.classList.toggle('has-cover', Boolean(cover));
 		root?.classList.toggle('has-icon', Boolean(icon));
 	}, [cover, icon]);
-	// The description as tall as what it says.
-	useLayoutEffect(() => {
-		const node = description.current;
-		if (!node) return;
-		node.style.height = 'auto';
-		node.style.height = `${node.scrollHeight}px`;
-	}, [shown?.description]);
+	// The title and the description as tall as what they say: a long title on as many lines as it takes, not cut off.
+	useLayoutEffect(() => fitHeight(description.current), [shown?.description]);
+	useLayoutEffect(() => fitHeight(title.current), [shown?.title]);
 
 	// 标签 and 简介 left empty are shown once added (for this article: let go when another is shown).
 	const [added, setAdded] = useState<{ fields: ReadonlySet<'tags' | 'description'>; focus: 'tags' | 'description' | null }>({ fields: new Set(), focus: null });
@@ -211,6 +234,19 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 	const showTags = Boolean(shown?.tags.length) || added.fields.has('tags');
 	const showDescription = Boolean(shown?.description) || added.fields.has('description');
 	const add = (field: 'tags' | 'description') => setAdded({ fields: new Set([...added.fields, field]), focus: field });
+	// And again as the column's width changes (the window, a panel beside it): a title wraps where the width ends.
+	useEffect(() => {
+		const widths = new WeakMap<Element, number>();
+		const observer = new ResizeObserver((entries) => {
+			for (const { target, contentRect } of entries) {
+				if (widths.get(target) === contentRect.width) continue;
+				widths.set(target, contentRect.width);
+				fitHeight(target as HTMLTextAreaElement);
+			}
+		});
+		for (const node of [title.current, description.current]) if (node) observer.observe(node);
+		return () => observer.disconnect();
+	}, [showDescription]);
 	useEffect(() => {
 		if (added.focus === 'tags') document.querySelector<HTMLInputElement>('#article-tag-input')?.focus();
 		if (added.focus === 'description') description.current?.focus();
@@ -260,19 +296,23 @@ export function PageHeader({ store, actions, root }: { store: Store<HeaderState>
 						{t('▨ 添加封面')}
 					</button>
 				</div>
-				<input
+				<textarea
+					ref={title}
 					id="article-title-input"
 					className="article-title-input"
-					type="text"
+					rows={1}
 					aria-label={t('文章标题')}
 					placeholder={t('无标题')}
 					disabled={disabled}
 					value={shown?.title ?? ''}
-					onChange={(event) => actions.edit({ title: event.target.value })}
+					// One line, as the title is: what is pasted on several is joined.
+					onChange={(event) => actions.edit({ title: event.target.value.replace(/\s*[\r\n]+\s*/gu, ' ') })}
 					onKeyDown={(event) => {
 						if (event.nativeEvent.isComposing || disabled) return;
 						if (event.key !== 'Enter' && event.key !== 'ArrowDown') return;
 						if (event.shiftKey || event.metaKey || event.altKey || event.ctrlKey) return;
+						// ArrowDown: to the next line of a long title, out of it from its last.
+						if (event.key === 'ArrowDown' && !onLastLine(event.currentTarget)) return;
 						event.preventDefault();
 						if (event.key === 'ArrowDown') {
 							actions.host.leaveTitle();

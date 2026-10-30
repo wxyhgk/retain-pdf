@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
-import { editor, openStudio, removeArticle, resetFixture, saveStatus, writeArticle } from './studio.ts';
+import { editFixture, editor, openStudio, removeArticle, resetFixture, saveStatus, writeArticle } from './studio.ts';
 
 // A page as Notion has it: it need not be named (无标题, in grey); Enter in its title starts a new block at the top of
 // it; the Studio opens again on the page open last.
@@ -68,4 +68,46 @@ test('Enter in the title starts a new block at the top; what was after the caret
 	await expect(editor(page).locator('> p').first()).toHaveText('测试夹具');
 	await page.keyboard.type('在');
 	await expect(editor(page).locator('> p').first()).toHaveText('在测试夹具');
+});
+
+test('a long title wraps onto as many lines as it takes, none of it cut off; ↓ goes down its lines, then into the page', async ({ page }) => {
+	const long = '一个很长很长的标题，长到一行放不下，要换到第二行甚至第三行才能看全，不能在右边被挡住或者被裁掉一截看不见';
+	editFixture((markdown) => markdown.replace(/^title:.*$/mu, `title: ${long}`));
+	await page.setViewportSize({ width: 1000, height: 800 });
+	await openStudio(page);
+	const field = title(page);
+	await expect(field).toHaveValue(long);
+	const lineHeight = await field.evaluate((node) => parseFloat(getComputedStyle(node).lineHeight));
+	const box = (await field.boundingBox())!;
+	expect(box.height).toBeGreaterThan(lineHeight * 1.5);
+	expect(await field.evaluate((node) => node.scrollHeight <= node.clientHeight + 1 && node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+	// The page below it is pushed down, not covered.
+	const firstBlock = (await page.locator('.page-properties').boundingBox())!;
+	expect(firstBlock.y).toBeGreaterThanOrEqual(box.y + box.height);
+
+	// ↓ from its first line: its next line, still in the title.
+	await field.click({ position: { x: 20, y: lineHeight / 2 } });
+	await page.keyboard.press('ArrowDown');
+	await expect(field).toBeFocused();
+	// From its last: into the page.
+	await page.keyboard.press('ControlOrMeta+ArrowDown');
+	await page.keyboard.press('ArrowUp');
+	await page.keyboard.press('ArrowDown');
+	await page.keyboard.press('ArrowDown');
+	await expect(field).not.toBeFocused();
+	await expect(editor(page)).toBeFocused();
+
+	// Narrower (a panel beside it): more lines, still all of it.
+	const before = box.height;
+	await page.setViewportSize({ width: 760, height: 800 });
+	await expect.poll(async () => (await field.boundingBox())!.height).toBeGreaterThan(before);
+	expect(await field.evaluate((node) => node.scrollHeight <= node.clientHeight + 1)).toBe(true);
+});
+
+test('a title pasted on several lines is one line', async ({ page }) => {
+	await openStudio(page);
+	await title(page).click();
+	await page.keyboard.press('ControlOrMeta+a');
+	await page.keyboard.insertText('第一行\n第二行\r\n  第三行');
+	await expect(title(page)).toHaveValue('第一行 第二行 第三行');
 });

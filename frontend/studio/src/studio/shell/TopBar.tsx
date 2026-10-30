@@ -75,7 +75,7 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				{article && (
 					<span className="flex min-w-0 items-center gap-1.5 px-1">
 						<PageIcon icon={icon} />
-						<strong id="breadcrumb-title" className="max-w-[340px] truncate font-semibold max-[720px]:max-w-[150px]">
+						<strong id="breadcrumb-title" className="max-w-[340px] truncate font-semibold max-[720px]:max-w-[150px]" title={title}>
 							{title}
 						</strong>
 					</span>
