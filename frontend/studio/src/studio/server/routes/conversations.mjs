@@ -3,6 +3,7 @@ import { access, stat } from 'node:fs/promises';
 import { extname, isAbsolute, join, relative, resolve } from 'node:path';
 import { InlineAi } from '../ai/inline-ai.mjs';
 import { accountsLoggedIn, PiModels } from '../ai/panel-models.mjs';
+import { noPushEnv } from '../ai/risky-commands.mjs';
 import { refuse, reply, sendEvents, sendFile } from '../api.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -47,7 +48,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const agent = (await agents()).find((candidate) => candidate.id === wanted);
 		if (!agent) throw refuse(404, t('没有能在面板里用的 AI「{id}」', { id: wanted }));
 		const service = await serviceOf(agent);
-		const begun = { agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models };
+		const begun = { agent, cwd: blogRoot, env: { ...programEnv(null, await drive.root()), ...noPushEnv(), ...service.env }, models: service.models };
 		const session = await conversations.start(begun);
 		if (page === true) await conversations.makePage(session);
 		// The next one begun with this AI made ready meanwhile (its agent takes seconds to start).
@@ -61,7 +62,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		const agent = (await agents()).find((candidate) => candidate.id === session.agent.id);
 		if (!agent) throw refuse(404, t('「{name}」不能在面板里用了：新开一个对话', { name: session.agent.name }));
 		const service = await serviceOf(agent);
-		return conversations.wake(session, { agent, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models });
+		return conversations.wake(session, { agent, env: { ...programEnv(null, await drive.root()), ...noPushEnv(), ...service.env }, models: service.models });
 	};
 	// Gone on with by another service (Claude Code's, pi's) or another agent: its agent started again for it, what
 	// was said kept (told to another agent where it is).
@@ -215,7 +216,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 			const agent = (await agents()).find((candidate) => candidate.id === agentId);
 			if (!agent) throw refuse(404, t('没有能用的 AI「{id}」', { id: agentId }));
 			const service = await serviceOf(agent);
-			return { agent, env: { ...programEnv(null, await drive.root()), ...service.env }, models: service.models };
+			return { agent, env: { ...programEnv(null, await drive.root()), ...noPushEnv(), ...service.env }, models: service.models };
 		},
 	});
 	api.post('/inline/warm', async ({ json }) => {

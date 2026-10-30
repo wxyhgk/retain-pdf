@@ -7,6 +7,7 @@ import { createAgentSession, createBashToolDefinition, DefaultResourceLoader, ge
 import { OPERATIONS } from '../../ops/operations.mjs';
 import { createStudioOps } from '../../ops/studio-ops.mjs';
 import { PI_PROVIDERS } from './panel-models.mjs';
+import { riskOf } from './risky-commands.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
@@ -137,6 +138,8 @@ function servePi(stream, env) {
 		const bash = createBashToolDefinition(cwd, { spawnHook: (context) => ({ ...context, env: { ...context.env, ...env } }) });
 		/** Where the author is, for the next run (its prompt's `_meta.studioContext`). */
 		const where = { context: '' };
+		/** Its session's id, once it has one (asked of the author with it). */
+		const opened = { sessionId: '' };
 		const resourceLoader = new DefaultResourceLoader({
 			cwd,
 			// pi's own folder, as pi would take it, unless another is named.
@@ -146,6 +149,30 @@ function servePi(stream, env) {
 					pi.on('before_agent_start', (event) => {
 						const options = event.systemPromptOptions;
 						options.appendSystemPrompt = [options.appendSystemPrompt, THINK_IN_CHINESE, where.context].filter(Boolean).join('\n\n');
+					});
+					// pi asks no one before it runs a command: what may not be done refused, what loses work or stops the
+					// Studio asked of the author first, as an adapter asks (the panel's 允许/拒绝).
+					pi.on('tool_call', async (event, context) => {
+						if (event.toolName !== 'bash' || typeof event.input?.command !== 'string') return undefined;
+						const risk = riskOf(event.input.command, cwd);
+						if (!risk) return undefined;
+						if (risk.refuse) return { block: true, reason: risk.why };
+						const answer = await client
+							.request(
+								'session/request_permission',
+								{
+									sessionId: opened.sessionId,
+									toolCall: { toolCallId: event.toolCallId, title: `${event.input.command.split('\n')[0].slice(0, 200)}（${risk.why}）`, kind: 'execute', status: 'pending', rawInput: event.input },
+									options: [
+										{ optionId: 'allow', name: t('允许这一次'), kind: 'allow_once' },
+										{ optionId: 'reject', name: t('不要'), kind: 'reject_once' },
+									],
+								},
+								{ signal: context.signal },
+							)
+							.catch(() => null);
+						if (answer?.outcome?.outcome === 'selected' && answer.outcome.optionId === 'allow') return undefined;
+						return { block: true, reason: t('作者没有同意运行这条命令（{why}）：换个做法，或者问作者', { why: risk.why }) };
 					});
 				},
 			],
@@ -157,6 +184,7 @@ function servePi(stream, env) {
 				throw said(error instanceof Error ? error.message : String(error));
 			});
 		const { session } = made;
+		opened.sessionId = session.sessionId;
 		const entry = { session, cwd, where, cancelled: false, stopping: Promise.resolve(), stop: () => {} };
 		const send = (update) => void client.notify('session/update', { sessionId: session.sessionId, update }).catch(() => {});
 		entry.stop = session.subscribe(translator(cwd, send, session));

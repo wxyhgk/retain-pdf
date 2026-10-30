@@ -1,6 +1,7 @@
 import { askAboutImage } from '../ai/ai-vision.mjs';
 import { insertBelowImage } from '../articles/image-insert.mjs';
 import { startInstruction } from '../ai/instructions.mjs';
+import { noPushEnv } from '../ai/risky-commands.mjs';
 import { OCR_COMMAND, startPdfOcr } from '../tasks/pdf-ocr.mjs';
 import { commandWords } from '../tasks/tasks.mjs';
 import { refuse, reply } from '../api.mjs';
@@ -38,7 +39,7 @@ export function aiRoutes(api, { notesRoot, blogRoot, articles, files, history, m
 	api.post('/articles/:slug/instruct', async ({ params: { slug }, json }) => {
 		const { line, fresh, agent } = await json();
 		await manager.locate(slug, '');
-		const task = await startInstruction({ tasks, agents: agentSettings, slug, folder: articleFolder(slug), env: programEnv(slug, await drive.root()), line, fresh: Boolean(fresh), agentId: agent });
+		const task = await startInstruction({ tasks, agents: agentSettings, slug, folder: articleFolder(slug), env: { ...programEnv(slug, await drive.root()), ...noPushEnv() }, line, fresh: Boolean(fresh), agentId: agent });
 		return reply(202, { id: task.id });
 	});
 

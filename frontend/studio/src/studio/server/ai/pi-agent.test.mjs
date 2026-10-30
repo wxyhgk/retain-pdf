@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -36,6 +37,8 @@ async function fakeService(t, picturePath = '') {
 		if (last.role === 'user' && said.includes('运行')) call('bash', { command: 'echo "mark=$STUDIO_MARK"' });
 		else if (last.role === 'user' && said.includes('读页面')) call('read_page', { slug: 'note-a' });
 		else if (last.role === 'user' && said.includes('看图')) call('show_picture', { path: picturePath, caption: '一张图' });
+		else if (last.role === 'user' && said.includes('推上去')) call('bash', { command: 'git -C . push origin main' });
+		else if (last.role === 'user' && said.includes('删掉旧的')) call('bash', { command: 'cd . && rm -rf old-notes' });
 		else if (last.role === 'user' && said.includes('分头')) call('subagent', { tasks: [{ agent: 'scout', task: '找认证代码' }, { agent: 'planner', task: '定计划' }] });
 		else {
 			// Slow, to be spoken to meanwhile.
@@ -222,4 +225,43 @@ test('pi’s subagents (its subagent extension): each shown apart as it goes, wh
 	assert.equal(planner.status, 'failed');
 	assert.equal(planner.error, '模型拒绝了请求');
 	assert.equal(call.status, 'completed');
+});
+
+test('pi asks no one before a command, so the Studio does: a push refused, deleting a folder asked of the author first', async (t) => {
+	process.env.PI_OFFLINE = '1';
+	const cwd = await realpath(await mkdtemp(join(tmpdir(), 'pi-risky-')));
+	t.after(() => rm(cwd, { recursive: true, force: true }));
+	await mkdir(join(cwd, 'old-notes'));
+	const service = await fakeService(t);
+	const folder = await piFolder(cwd, service.url, 'good');
+	const sessions = new AgentSessions({ binFolder: join(cwd, 'none'), env: process.env, store: new ChatStore(join(cwd, 'chats')) });
+	t.after(() => sessions.closeAll());
+	const session = await sessions.start({ agent: { id: 'pi', name: 'pi', acp: 'pi-acp' }, cwd, env: { PATH: process.env.PATH, PI_CODING_AGENT_DIR: folder } });
+
+	// A push: not done, nothing asked, the model told why.
+	session.prompt('推上去');
+	await until(session, (s) => s.state === 'idle');
+	const pushed = session.items.find((item) => item.kind === 'tool' && item.rawInput?.command?.includes('push'));
+	assert.equal(pushed.status, 'failed');
+	assert.equal(session.items.some((item) => item.kind === 'permission'), false);
+	assert.match(JSON.stringify(service.asked.at(-1).at(-1)), /推送由作者自己做/u);
+
+	// A folder deleted: asked; said no, not done.
+	session.prompt('删掉旧的');
+	await until(session, (s) => s.items.some((item) => item.kind === 'permission' && !item.chosen));
+	const asked = session.items.find((item) => item.kind === 'permission');
+	assert.match(asked.title, /rm -rf old-notes.*会删掉文件夹/u);
+	assert.deepEqual(asked.options.map((option) => option.optionId), ['allow', 'reject']);
+	session.answer(asked.id, 'reject');
+	await until(session, (s) => s.state === 'idle');
+	assert.ok(existsSync(join(cwd, 'old-notes')));
+	assert.equal(session.items.find((item) => item.kind === 'tool' && item.id === asked.toolCallId)?.status, 'failed');
+	assert.match(JSON.stringify(service.asked.at(-1).at(-1)), /作者没有同意运行这条命令/u);
+
+	// Asked again, allowed: done.
+	session.prompt('删掉旧的');
+	await until(session, (s) => s.items.some((item) => item.kind === 'permission' && !item.chosen));
+	session.answer(session.items.findLast((item) => item.kind === 'permission').id, 'allow');
+	await until(session, (s) => s.state === 'idle');
+	assert.equal(existsSync(join(cwd, 'old-notes')), false);
 });
