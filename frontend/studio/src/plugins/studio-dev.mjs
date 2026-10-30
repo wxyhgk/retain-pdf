@@ -10,6 +10,7 @@ import { NotesIndex } from '../studio/server/articles/notes-index.mjs';
 import { Repositories } from '../studio/server/repos/repositories.mjs';
 import { RemoteAccess } from '../studio/server/remote/remote-access.mjs';
 import { BlogWatcher } from '../studio/server/articles/blog-watcher.mjs';
+import { DiskBackups } from '../studio/server/articles/disk-backups.mjs';
 import { CodeFilePreviews } from '../studio/server/articles/code-file-previews.mjs';
 import { Drive } from '../studio/server/drive/drive.mjs';
 import { DriveText, TEXT_FOLDER } from '../studio/server/drive/drive-text.mjs';
@@ -108,9 +109,14 @@ export default function studioDev({ site, builds } = {}) {
 			// moved in the Studio.
 			let stopped = false;
 			let unfollow = () => {};
+			// What an article was before an AI (or anything else) changed it on disk, kept whether it is open or not. Not for
+			// the browser tests: each puts its article back from outside, and would find the last test's text kept.
+			const backups = new DiskBackups(blogRoot, history, watcher);
+			if (!testBlogRoot) void backups.start();
 			server.httpServer?.on('close', () => {
 				stopped = true;
 				unfollow();
+				backups.stop();
 			});
 			void articles.followParents().then(() => {
 				if (stopped) return;
