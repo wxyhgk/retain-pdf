@@ -1,0 +1,204 @@
+source,target,note,level,match_mode
+wave function,波函数,,canonical,case_insensitive
+wavefunction,波函数,,canonical,case_insensitive
+Schrödinger equation,薛定谔方程,,canonical,case_insensitive
+time-independent Schrödinger equation,定态薛定谔方程,,canonical,case_insensitive
+Hamiltonian,哈密顿量,作算符时也可写“哈密顿算符”,canonical,case_insensitive
+Hamiltonian operator,哈密顿算符,,canonical,case_insensitive
+eigenvalue,本征值,,canonical,case_insensitive
+eigenfunction,本征函数,,canonical,case_insensitive
+eigenvector,本征矢量,数学语境也作“特征向量”,preferred,case_insensitive
+operator,算符,,canonical,case_insensitive
+Hermitian operator,厄米算符,,canonical,case_insensitive
+expectation value,期望值,,canonical,case_insensitive
+probability density,概率密度,,canonical,case_insensitive
+electron probability density,电子概率密度,,canonical,case_insensitive
+electron density,电子密度,,canonical,case_insensitive
+normalization,归一化,,canonical,case_insensitive
+orthonormal,正交归一,,canonical,case_insensitive
+orthogonal,正交,,canonical,case_insensitive
+spin,自旋,,canonical,case_insensitive
+spin-orbital,自旋轨道,,canonical,case_insensitive
+spatial orbital,空间轨道,,canonical,case_insensitive
+antisymmetric,反对称,,canonical,case_insensitive
+antisymmetry principle,反对称原理,,canonical,case_insensitive
+Pauli principle,泡利原理,,canonical,case_insensitive
+indistinguishability,不可区分性,,canonical,case_insensitive
+Slater determinant,Slater 行列式,,preferred,case_insensitive
+atomic units,原子单位,,canonical,case_insensitive
+bohr,bohr,长度的原子单位，保留原文,preserve,exact
+hartree,hartree,能量的原子单位，保留原文,preserve,exact
+Born–Oppenheimer approximation,玻恩-奥本海默近似,,canonical,case_insensitive
+Born-Oppenheimer approximation,玻恩-奥本海默近似,,canonical,case_insensitive
+adiabatic approximation,绝热近似,,canonical,case_insensitive
+nuclear repulsion,核间排斥,,preferred,case_insensitive
+internuclear repulsion,核间排斥,,preferred,case_insensitive
+electronic energy,电子能量,,canonical,case_insensitive
+purely electronic Hamiltonian,纯电子哈密顿量,,preferred,case_insensitive
+potential energy,势能,,canonical,case_insensitive
+kinetic energy,动能,,canonical,case_insensitive
+potential energy surface,势能面,,canonical,case_insensitive
+potential-energy surface,势能面,,canonical,case_insensitive
+PES,PES,势能面的缩写,preserve,exact
+equilibrium geometry,平衡几何构型,,canonical,case_insensitive
+equilibrium bond length,平衡键长,,canonical,case_insensitive
+molecular geometry,分子几何构型,,canonical,case_insensitive
+geometry optimization,几何优化,,canonical,case_insensitive
+geometry,几何构型,指分子结构时；“geometry optimization”另有条目,preferred,case_insensitive
+stationary point,驻点,,canonical,case_insensitive
+local minimum,局部极小点,,canonical,case_insensitive
+global minimum,全局极小点,,canonical,case_insensitive
+saddle point,鞍点,,canonical,case_insensitive
+first-order saddle point,一阶鞍点,,canonical,case_insensitive
+transition state,过渡态,,canonical,case_insensitive
+transition structure,过渡结构,,canonical,case_insensitive
+reaction path,反应路径,,canonical,case_insensitive
+minimum energy path,最低能量路径,,canonical,case_insensitive
+intrinsic reaction coordinate,内禀反应坐标,,canonical,case_insensitive
+IRC,IRC,内禀反应坐标的缩写,preserve,exact
+reaction coordinate,反应坐标,,canonical,case_insensitive
+nudged elastic band,微动弹性带,,preferred,case_insensitive
+NEB,NEB,微动弹性带方法的缩写,preserve,exact
+gradient,梯度,,canonical,case_insensitive
+energy gradient,能量梯度,,canonical,case_insensitive
+analytic gradient,解析梯度,,canonical,case_insensitive
+numerical gradient,数值梯度,,canonical,case_insensitive
+force constant,力常数,,canonical,case_insensitive
+force-constant matrix,力常数矩阵,,canonical,case_insensitive
+Hessian,Hessian,常写“Hessian 矩阵”；也有“黑塞矩阵”的译法，本表保留 Hessian,preferred,case_insensitive
+Hessian matrix,Hessian 矩阵,,preferred,case_insensitive
+second derivative,二阶导数,,canonical,case_insensitive
+Newton–Raphson,牛顿-拉弗森,“牛顿-拉弗森法”“牛顿-拉弗森步”,canonical,case_insensitive
+Newton-Raphson,牛顿-拉弗森,,canonical,case_insensitive
+quasi-Newton,拟牛顿,“拟牛顿法”“拟牛顿更新”,canonical,case_insensitive
+BFGS,BFGS,Broyden–Fletcher–Goldfarb–Shanno 更新，保留原文,preserve,exact
+steepest descent,最速下降,“最速下降法”“最速下降方向”,canonical,case_insensitive
+conjugate gradient,共轭梯度,,canonical,case_insensitive
+line search,线搜索,,canonical,case_insensitive
+trust region,信赖域,,canonical,case_insensitive
+step size,步长,,canonical,case_insensitive
+convergence criterion,收敛判据,,canonical,case_insensitive
+convergence criteria,收敛判据,,canonical,case_insensitive
+convergence threshold,收敛阈值,,canonical,case_insensitive
+Cartesian coordinates,笛卡儿坐标,,canonical,case_insensitive
+internal coordinates,内坐标,,canonical,case_insensitive
+redundant internal coordinates,冗余内坐标,,canonical,case_insensitive
+Z-matrix,Z 矩阵,,canonical,case_insensitive
+bond length,键长,,canonical,case_insensitive
+bond angle,键角,,canonical,case_insensitive
+dihedral angle,二面角,,canonical,case_insensitive
+torsion angle,扭转角,,canonical,case_insensitive
+normal mode,简正模,,canonical,case_insensitive
+normal coordinates,简正坐标,,canonical,case_insensitive
+vibrational frequency,振动频率,,canonical,case_insensitive
+harmonic frequency,谐振频率,,canonical,case_insensitive
+imaginary frequency,虚频,,canonical,case_insensitive
+zero-point energy,零点能,,canonical,case_insensitive
+zero-point vibrational energy,零点振动能,,canonical,case_insensitive
+harmonic oscillator,谐振子,,canonical,case_insensitive
+Hartree–Fock,Hartree–Fock,方法名保留原文（“Hartree–Fock 方法”“Hartree–Fock 能量”）,preserve,exact
+Hartree-Fock,Hartree-Fock,方法名保留原文,preserve,exact
+HF,HF,Hartree–Fock 的缩写,preserve,exact
+self-consistent field,自洽场,,canonical,case_insensitive
+SCF,SCF,自洽场的缩写,preserve,exact
+Fock operator,Fock 算符,,preferred,case_insensitive
+Fock matrix,Fock 矩阵,,preferred,case_insensitive
+Coulomb operator,库仑算符,,canonical,case_insensitive
+exchange operator,交换算符,,canonical,case_insensitive
+Coulomb integral,库仑积分,,canonical,case_insensitive
+exchange integral,交换积分,,canonical,case_insensitive
+overlap integral,重叠积分,,canonical,case_insensitive
+overlap matrix,重叠矩阵,,canonical,case_insensitive
+electron repulsion integral,电子排斥积分,,canonical,case_insensitive
+two-electron integral,双电子积分,,canonical,case_insensitive
+one-electron integral,单电子积分,,canonical,case_insensitive
+core Hamiltonian,核哈密顿量,单电子部分（core）,preferred,case_insensitive
+orbital energy,轨道能,,canonical,case_insensitive
+orbital energies,轨道能,,canonical,case_insensitive
+occupied orbital,占据轨道,,canonical,case_insensitive
+virtual orbital,虚轨道,,canonical,case_insensitive
+unoccupied orbital,空轨道,,canonical,case_insensitive
+HOMO,HOMO,最高占据分子轨道，保留缩写,preserve,exact
+LUMO,LUMO,最低空分子轨道，保留缩写,preserve,exact
+Koopmans' theorem,Koopmans 定理,,preferred,case_insensitive
+ionization energy,电离能,,canonical,case_insensitive
+electron affinity,电子亲和能,,canonical,case_insensitive
+closed-shell,闭壳层,,canonical,case_insensitive
+open-shell,开壳层,,canonical,case_insensitive
+restricted Hartree–Fock,限制性 Hartree–Fock,,preferred,case_insensitive
+unrestricted Hartree–Fock,非限制性 Hartree–Fock,,preferred,case_insensitive
+RHF,RHF,限制性 Hartree–Fock 的缩写,preserve,exact
+UHF,UHF,非限制性 Hartree–Fock 的缩写,preserve,exact
+ROHF,ROHF,限制性开壳层 Hartree–Fock 的缩写,preserve,exact
+Roothaan equations,Roothaan 方程,,preferred,case_insensitive
+Hartree–Fock–Roothaan equations,Hartree–Fock–Roothaan 方程,,preferred,case_insensitive
+secular equation,久期方程,,canonical,case_insensitive
+secular determinant,久期行列式,,canonical,case_insensitive
+variation theorem,变分定理,,canonical,case_insensitive
+variational principle,变分原理,,canonical,case_insensitive
+variation function,变分函数,,canonical,case_insensitive
+trial function,试探函数,,canonical,case_insensitive
+perturbation theory,微扰理论,,canonical,case_insensitive
+perturbation,微扰,,canonical,case_insensitive
+zeroth-order,零级,,canonical,case_insensitive
+first-order correction,一级修正,,canonical,case_insensitive
+virial theorem,维里定理,,canonical,case_insensitive
+Hellmann–Feynman theorem,Hellmann–Feynman 定理,,preferred,case_insensitive
+Hellmann-Feynman theorem,Hellmann–Feynman 定理,,preferred,case_insensitive
+scale factor,标度因子,,canonical,case_insensitive
+orbital exponent,轨道指数,,canonical,case_insensitive
+basis set,基组,,canonical,case_insensitive
+basis function,基函数,,canonical,case_insensitive
+minimal basis set,最小基组,,canonical,case_insensitive
+split-valence basis set,劈裂价基组,,canonical,case_insensitive
+polarization function,极化函数,,canonical,case_insensitive
+diffuse function,弥散函数,,canonical,case_insensitive
+contracted Gaussian,收缩高斯函数,,canonical,case_insensitive
+primitive Gaussian,原始高斯函数,,canonical,case_insensitive
+Gaussian-type orbital,高斯型轨道,,canonical,case_insensitive
+Slater-type orbital,Slater 型轨道,,preferred,case_insensitive
+STO,STO,Slater 型轨道的缩写,preserve,exact
+GTO,GTO,高斯型轨道的缩写,preserve,exact
+basis set superposition error,基组重叠误差,,canonical,case_insensitive
+BSSE,BSSE,基组重叠误差的缩写,preserve,exact
+linear combination of atomic orbitals,原子轨道线性组合,,canonical,case_insensitive
+LCAO,LCAO,原子轨道线性组合的缩写,preserve,exact
+molecular orbital,分子轨道,,canonical,case_insensitive
+atomic orbital,原子轨道,,canonical,case_insensitive
+electron correlation,电子相关,,canonical,case_insensitive
+correlation energy,相关能,,canonical,case_insensitive
+configuration interaction,组态相互作用,,canonical,case_insensitive
+CI,CI,组态相互作用的缩写,preserve,exact
+configuration state function,组态函数,,canonical,case_insensitive
+Møller–Plesset perturbation theory,Møller–Plesset 微扰理论,,preferred,case_insensitive
+MP2,MP2,,preserve,exact
+coupled cluster,耦合簇,,canonical,case_insensitive
+CCSD(T),CCSD(T),,preserve,exact
+multiconfiguration self-consistent field,多组态自洽场,,canonical,case_insensitive
+MCSCF,MCSCF,,preserve,exact
+CASSCF,CASSCF,,preserve,exact
+density functional theory,密度泛函理论,,canonical,case_insensitive
+DFT,DFT,密度泛函理论的缩写,preserve,exact
+exchange-correlation functional,交换相关泛函,,canonical,case_insensitive
+exchange–correlation functional,交换相关泛函,,canonical,case_insensitive
+Kohn–Sham,Kohn–Sham,方法名保留原文（“Kohn–Sham 方程”）,preserve,exact
+hybrid functional,杂化泛函,,canonical,case_insensitive
+B3LYP,B3LYP,,preserve,exact
+semiempirical method,半经验方法,,canonical,case_insensitive
+ab initio,从头算,,canonical,case_insensitive
+molecular mechanics,分子力学,,canonical,case_insensitive
+force field,力场,,canonical,case_insensitive
+dipole moment,偶极矩,,canonical,case_insensitive
+electric dipole moment,电偶极矩,,canonical,case_insensitive
+permanent dipole moment,永久偶极矩,,canonical,case_insensitive
+polarizability,极化率,,canonical,case_insensitive
+center of symmetry,对称中心,,canonical,case_insensitive
+parity,宇称,,canonical,case_insensitive
+point group,点群,,canonical,case_insensitive
+homonuclear diatomic molecule,同核双原子分子,,canonical,case_insensitive
+heteronuclear diatomic molecule,异核双原子分子,,canonical,case_insensitive
+van der Waals force,范德华力,,canonical,case_insensitive
+dissociation energy,解离能,,canonical,case_insensitive
+population analysis,布居分析,,canonical,case_insensitive
+Mulliken population analysis,Mulliken 布居分析,,preferred,case_insensitive
+electrostatic potential,静电势,,canonical,case_insensitive

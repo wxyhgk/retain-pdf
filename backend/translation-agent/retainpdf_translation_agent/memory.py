@@ -324,3 +324,48 @@ def extract_abbreviations(text: str) -> list[tuple[str, str]]:
                 found.append((abbr, " ".join(candidate)))
                 break
     return found
+
+
+# ---- 产品术语表（CSV 导入导出的格式）----
+# 列：source / target / note / level / match_mode（表头也认中文：原文、译文、备注、级别、匹配）。
+# level：preserve（保留原文）→ 保留原文、锁定；canonical（必须用）→ 术语、锁定；preferred（推荐）→ 术语、审定。
+LEVEL_TO_TERM = {"preserve": (KEEP, LOCKED), "canonical": (TERM, LOCKED), "preferred": (TERM, APPROVED)}
+CSV_HEADERS = {
+    "source": ("source", "src", "term", "original", "原词", "原文", "术语"),
+    "target": ("target", "dst", "translation", "translated", "译文", "翻译", "目标译文"),
+    "note": ("note", "notes", "comment", "comments", "备注", "说明"),
+    "level": ("level", "glossary_level", "mode", "action", "类型", "模式", "动作"),
+}
+
+
+def glossary_from_csv(text: str, *, reason: str = "用户术语表") -> Glossary:
+    """读产品术语表的 CSV（和网页导入的格式一样），每条加进术语表。没有表头时按 原文、译文、备注、级别 的顺序读。"""
+    import csv
+    import io
+
+    rows = [row for row in csv.reader(io.StringIO(text.lstrip("﻿"))) if any(cell.strip() for cell in row)]
+    glossary = Glossary()
+    if not rows:
+        return glossary
+    header = [cell.strip().lower() for cell in rows[0]]
+    index = {name: next((i for i, cell in enumerate(header) if cell in aliases), None) for name, aliases in CSV_HEADERS.items()}
+    if index["source"] is None or index["target"] is None:
+        index = {"source": 0, "target": 1, "note": 2, "level": 3}
+    else:
+        rows = rows[1:]
+
+    def cell(row: list[str], name: str) -> str:
+        position = index.get(name)
+        return row[position].strip() if position is not None and position < len(row) else ""
+
+    for row in rows:
+        source, target = cell(row, "source"), cell(row, "target")
+        if not source:
+            continue
+        category, status = LEVEL_TO_TERM.get(cell(row, "level").lower(), (TERM, APPROVED))
+        if category == KEEP:
+            target = source
+        if not target:
+            continue
+        glossary.add(source, target, category=category, status=status, reason=reason, note=cell(row, "note"))
+    return glossary

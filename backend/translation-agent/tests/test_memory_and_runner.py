@@ -333,3 +333,14 @@ def test_binding_terms_only_include_approved_entries() -> None:
         "keep": [{"id": "k1", "source": "Mei", "target": "Mei", "status": "candidate"}],
     }
     assert [t["id"] for t in binding_terms(context)] == ["t2"]
+
+
+def test_a_product_glossary_csv_becomes_locked_and_kept_terms() -> None:
+    from retainpdf_translation_agent import glossary_from_csv
+
+    text = "﻿原文,译文,备注,level\nbasis set,基组,,canonical\nBFGS,BFGS,算法名,preserve\nHessian,Hessian 矩阵,,preferred\n,空的,,canonical\n"
+    glossary = glossary_from_csv(text)
+    assert glossary.find("basis sets", "").target == "基组" and glossary.find("basis set", "").status == "locked"
+    assert glossary.find("BFGS", "", category="keep").status == "locked"
+    assert glossary.find("Hessian", "").status == "approved" and len(glossary.terms) == 3
+    assert glossary_from_csv("basis set,基组\n").find("basis set", "").target == "基组", "no header: source, target, …"

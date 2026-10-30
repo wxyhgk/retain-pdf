@@ -44,7 +44,8 @@ def _plain_variants(key: str) -> list[str]:
     bare = key.replace("{", "").replace("}", "")
     unicode = re.sub(r"_(\w)", lambda m: m.group(1).translate(SUBSCRIPTS), bare)
     unicode = re.sub(r"\^(\w)", lambda m: m.group(1).translate(SUPERSCRIPTS), unicode)
-    return [v for v in {key, bare, unicode} if v]
+    # 还带着 LaTeX 记号的不算"写成普通文字"（"^{53-68}" 露在中文里是坏的）
+    return [v for v in {key, bare, unicode} if v and not re.search(r"[\\^_{}]", v)]
 
 
 def _spaced(key: str) -> str:

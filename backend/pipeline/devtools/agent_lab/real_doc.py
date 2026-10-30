@@ -4,7 +4,8 @@
 用户 10-30："你看看我最新的 pdf 的翻译任务，用这个做测试就行了"。
 
 - 块类别：OCR 服务的叫法换成我们自己的分类（`taxonomy.py`），对不上的记成 unknown（不翻）。
-- 文本：规范化文档里行内公式已经写成 `$…$`，直接用；不给行和行内片段（`pages.agent_text` 没有行时用整块文本）。
+- 文本：规范化文档里行内公式已经写成 `$…$`，直接用；纯数字的上标公式（参考文献角标 "$^{48-50}$"）换成脚注标记 `{{fn:48-50}}`；
+  不给行和行内片段（`pages.agent_text` 没有行时用整块文本）。
 - 标题级别：章标题（title）1 级，带编号的"14.1 …"2 级（"14.1.2 …"3 级），不带编号的 3 级。
 - 印的页码：取这一页页码块的文字，没有就用页序号。
 - 正式流程的译文（`translated/page-NNN-*.json`）可以一起读进来当基线，按页号和块号对上。
@@ -41,6 +42,9 @@ SUB_TYPE_CLASS = {
     "algorithm": "algorithm",
 }
 NUMBER_RE = re.compile(r"^\s*(\d+(?:\.\d+)*)\s+\S")
+# OCR 把参考文献的上标角标写成公式 "$ ^{48-50} $"：其实是引用角标，换成脚注标记 {{fn:48-50}}（受保护、丢了查得出）。
+# 实测模型常把这种公式的 $ 丢掉，中文里露出 "^{53-68}"，或者干脆漏掉角标。
+CITATION_SUPERSCRIPT_RE = re.compile(r"\$\s*\^\s*\{\s*([\d\s,\u2013\-]+?)\s*\}\s*\$")
 
 
 def _heading_level(block: dict) -> int:
@@ -63,6 +67,8 @@ def truth_from_document(document: dict) -> tuple[dict, dict[int, str]]:
             if block.get("sub_type") == "title":
                 cls = "section_heading"
             text = (block.get("text") or "").strip()
+            if cls not in ("display_formula", "formula_number"):
+                text = CITATION_SUPERSCRIPT_RE.sub(lambda m: "{{fn:" + re.sub(r"\s+", "", m.group(1)) + "}}", text)
             if cls == "page_number" and text:
                 labels[index] = text
             element = {
