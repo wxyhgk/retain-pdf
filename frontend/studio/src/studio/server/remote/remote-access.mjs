@@ -7,6 +7,8 @@ import { createServer } from 'node:https';
 import { connect } from 'node:net';
 import { hostname, networkInterfaces } from 'node:os';
 import { join } from 'node:path';
+import { pipeline } from 'node:stream';
+import { constants as zlib, createBrotliCompress, createGzip } from 'node:zlib';
 
 import { readSettings, updateSettings } from '@blog/kernel/settings-file.mjs';
 import { t } from '@blog/i18n/index.mjs';
@@ -25,6 +27,9 @@ import { pairingPage } from './pairing-page.mjs';
  *   settings), sent with each request (a cookie); removed, it is out.
  * - What it asks is passed on to the Studio as this machine's own page asks it (its address, its origin), marked as
  *   from another device (`x-studio-remote`): what only this machine may do (this door's own settings) refuses it.
+ * - What comes back is compressed on the way (`compressionFor`): the Studio's server sends its page as its sources
+ *   are, hundreds of modules, tens of megabytes, which this machine reads from itself but another device over a
+ *   network, maybe a phone's.
  */
 
 export const REMOTE_PORT = 4343;
@@ -227,8 +232,21 @@ export class RemoteAccess {
 			const headers = { ...answer.headers };
 			// What the Studio sends to itself (its own address in full): to this door's.
 			if (typeof headers.location === 'string') headers.location = headers.location.replace(new RegExp(`^https?://(?:localhost|127\\.0\\.0\\.1):${port}`, 'u'), `https://${request.headers.host}`);
-			response.writeHead(answer.statusCode ?? 502, headers);
-			answer.pipe(response);
+			const encoding = compressionFor(request, answer);
+			if (!encoding) {
+				response.writeHead(answer.statusCode ?? 502, headers);
+				answer.pipe(response);
+				return;
+			}
+			const length = Number(headers['content-length']);
+			delete headers['content-length'];
+			headers['content-encoding'] = encoding;
+			headers.vary = headers.vary ? `${headers.vary}, Accept-Encoding` : 'Accept-Encoding';
+			// Not the same bytes as the Studio's any more: its tag only weakly theirs.
+			if (typeof headers.etag === 'string' && !headers.etag.startsWith('W/')) headers.etag = `W/${headers.etag}`;
+			response.writeHead(answer.statusCode ?? 200, headers);
+			const squeeze = encoding === 'br' ? createBrotliCompress({ params: { [zlib.BROTLI_PARAM_QUALITY]: 5, [zlib.BROTLI_PARAM_SIZE_HINT]: length } }) : createGzip({ level: 6 });
+			pipeline(answer, squeeze, response, () => {});
 		});
 		upstream.on('error', () => {
 			if (!response.headersSent) send(response, 502, { error: t('连不上 Studio') });
@@ -262,6 +280,21 @@ export class RemoteAccess {
 			side.on('close', end);
 		}
 	}
+}
+
+/** What compresses well (scripts, styles, pages, data, WebAssembly); pictures, videos and archives are already. */
+const COMPRESSIBLE = /^(?:text\/|application\/(?:javascript|json|wasm|xml|manifest\+json)|image\/svg\+xml)/u;
+
+/**
+ * How what the Studio answers goes on compressed: brotli, else gzip, as the device takes them; or not at all. Only
+ * what has a length: an answer that streams (the AI's, a command's output) goes as it comes, nothing held back.
+ */
+export function compressionFor(request, answer) {
+	if (request.method === 'HEAD' || answer.statusCode !== 200) return null;
+	if (answer.headers['content-encoding'] || !COMPRESSIBLE.test(answer.headers['content-type'] ?? '')) return null;
+	if (!(Number(answer.headers['content-length']) > 1024)) return null;
+	const accepted = String(request.headers['accept-encoding'] ?? '');
+	return /\bbr\b/u.test(accepted) ? 'br' : /\bgzip\b/u.test(accepted) ? 'gzip' : null;
 }
 
 /** A request's headers as the Studio is to see them: asked of itself (its address, its origin), from another device. */

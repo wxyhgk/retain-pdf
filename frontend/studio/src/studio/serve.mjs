@@ -133,7 +133,8 @@ function studioPages(root) {
 					const render = await server.ssrLoadModule('/src/studio/page/render.tsx');
 					const drawn = await render[page]({ root, acceptLanguage: request.headers['accept-language'] ?? null });
 					const html = await server.transformIndexHtml(request.url ?? path, drawn.html.replace(render.STYLES, await styleTags(server, root, drawn.styles)));
-					response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' });
+					// Its length told: then the door other devices come in by (remote-access.mjs) sends it compressed.
+					response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Content-Length': Buffer.byteLength(html), 'Cache-Control': 'no-store' });
 					response.end(html);
 				} catch (error) {
 					server.ssrFixStacktrace?.(error);

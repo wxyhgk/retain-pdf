@@ -6,12 +6,24 @@ import { connect as tlsConnect } from 'node:tls';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { brotliDecompressSync, gunzipSync } from 'node:zlib';
 
 import { reachableAddresses, RemoteAccess } from './remote-access.mjs';
 
 /** The Studio stand-in: says what it was asked (its headers), and answers a WebSocket's opening by echoing. */
 async function studioStandIn(t) {
 	const server = createServer((request, response) => {
+		if (request.url === '/big.js') {
+			const code = 'export const x = 1;\n'.repeat(5000);
+			response.writeHead(200, { 'Content-Type': 'text/javascript', 'Content-Length': Buffer.byteLength(code), ETag: '"abc"' });
+			return response.end(code);
+		}
+		if (request.url === '/stream') {
+			// Sent as it comes (no length), as the AI's answers are.
+			response.writeHead(200, { 'Content-Type': 'text/plain' });
+			response.write('x'.repeat(4000));
+			return setTimeout(() => response.end('end'), 50);
+		}
 		if (request.url === '/go') {
 			response.writeHead(302, { Location: `http://localhost:${server.address().port}/studio` });
 			return response.end();
@@ -41,6 +53,19 @@ async function fixture(t) {
 	const remote = new RemoteAccess({ settingsFile: join(folder, 'settings.json'), folder: join(folder, 'remote'), target: () => studio, port: 0, listenHost: '127.0.0.1' });
 	t.after(() => remote.stop());
 	return { remote, studio };
+}
+
+/** A request to the door, its answer's bytes as they came. */
+function askRaw(remote, { path, headers }) {
+	return new Promise((done, failed) => {
+		const request = httpsRequest({ host: '127.0.0.1', port: remote.server.address().port, path, headers, rejectUnauthorized: false }, (response) => {
+			const chunks = [];
+			response.on('data', (chunk) => chunks.push(chunk));
+			response.on('end', () => done({ headers: response.headers, body: Buffer.concat(chunks) }));
+		});
+		request.on('error', failed);
+		request.end();
+	});
 }
 
 /** A request to the door (its certificate its own: not checked here, the app checks it by its fingerprint). */
@@ -131,6 +156,33 @@ test('a browser not paired is shown a page to type the code into; paired, it is 
 	const paired = await ask(remote, { method: 'POST', path: '/pair', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, name: 'Chrome（Windows）', kind: 'browser' }) });
 	assert.equal(paired.status, 200);
 	assert.deepEqual((await remote.shown()).devices.map((device) => [device.name, device.kind]), [['Chrome（Windows）', 'browser']]);
+});
+
+test('what the Studio sends goes on compressed, as the device takes it; what streams goes as it comes', async (t) => {
+	const { remote } = await fixture(t);
+	await remote.setEnabled(true);
+	const { code } = await remote.pairingCode();
+	const { key } = JSON.parse((await pair(remote, code)).text);
+	const cookie = `studio_device=${key}`;
+	const code5000 = 'export const x = 1;\n'.repeat(5000);
+
+	const br = await askRaw(remote, { path: '/big.js', headers: { Cookie: cookie, 'Accept-Encoding': 'gzip, deflate, br' } });
+	assert.equal(br.headers['content-encoding'], 'br');
+	assert.equal(br.headers.vary, 'Accept-Encoding');
+	assert.equal(br.headers.etag, 'W/"abc"');
+	assert.equal(br.headers['content-length'], undefined);
+	assert.ok(br.body.length < code5000.length / 10);
+	assert.equal(brotliDecompressSync(br.body).toString(), code5000);
+	const gzip = await askRaw(remote, { path: '/big.js', headers: { Cookie: cookie, 'Accept-Encoding': 'gzip' } });
+	assert.equal(gzip.headers['content-encoding'], 'gzip');
+	assert.equal(gunzipSync(gzip.body).toString(), code5000);
+	const plain = await askRaw(remote, { path: '/big.js', headers: { Cookie: cookie } });
+	assert.equal(plain.headers['content-encoding'], undefined);
+	assert.equal(plain.body.toString(), code5000);
+
+	const streamed = await askRaw(remote, { path: '/stream', headers: { Cookie: cookie, 'Accept-Encoding': 'br' } });
+	assert.equal(streamed.headers['content-encoding'], undefined);
+	assert.equal(streamed.body.toString(), `${'x'.repeat(4000)}end`);
 });
 
 test('a code tried too often is gone; one waited too long for is no good', async (t) => {
