@@ -14,7 +14,6 @@ def probe(transport, route, outcome, cache_dir):
     from importlib import import_module
     from types import SimpleNamespace
     from unittest.mock import Mock, patch
-    import socket
     import time
     import requests
     from retainpdf_base import paths

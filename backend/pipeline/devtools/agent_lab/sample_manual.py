@@ -473,7 +473,7 @@ def write_body(m: Manual) -> None:
     )
     m.heading(2, "1.3   How the agent works", "h-how")
     m.para(
-        f"Figure 1 shows the main parts. The agent runs as a background service named `tidewater-agent`. Each time a job starts, it scans the source directories, compares the result with its local index and uploads only the files that have changed. Uploaded data is split into chunks, compressed, encrypted with your key and sent to the storage target. A small catalog that describes the snapshot is uploaded last, so an interrupted job never leaves a snapshot that looks complete.",
+        "Figure 1 shows the main parts. The agent runs as a background service named `tidewater-agent`. Each time a job starts, it scans the source directories, compares the result with its local index and uploads only the files that have changed. Uploaded data is split into chunks, compressed, encrypted with your key and sent to the storage target. A small catalog that describes the snapshot is uploaded last, so an interrupted job never leaves a snapshot that looks complete.",
         "how-1",
     )
     figure(m, "architecture", "fig-arch", "Figure 1: Main components of the agent and the direction of the data flow.", width=410.0, height=108.0, figure_type="diagram")

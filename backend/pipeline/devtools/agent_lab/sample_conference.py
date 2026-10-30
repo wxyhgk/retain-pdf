@@ -348,7 +348,7 @@ class Writer:
             self.ensure(3 * BODY.leading + 6)
             r = self.region
             sub = Region(r.page, r.x + 10, r.width - 10, r.y, r.bottom)
-            made = self.doc.text(sub, "list_item", rich(f"({n})  {entry}"), BODY_FIRST, key=f"{key}-{n}", gap=2)
+            self.doc.text(sub, "list_item", rich(f"({n})  {entry}"), BODY_FIRST, key=f"{key}-{n}", gap=2)
             r.y = sub.y
         self.region.y += 2.0
         self.flush_left = True

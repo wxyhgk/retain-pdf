@@ -19,7 +19,7 @@ pipeline/
     └── integration/                 # 假传输下的翻译入口/出口集成
 ```
 
-四个常用入口保持原路径；原根目录分析/实验脚本是兼容入口，新调用优先使用 `tools/analysis/` 或 `tools/experiments/`。共享实现只放在 `support/`，不从测试文件导入。
+根目录只放四个常用入口；分析、实验脚本在 `tools/analysis/`、`tools/experiments/`（原根目录的同名转发入口 2026-10-30 删了）。共享实现只放在 `support/`，不从测试文件导入。
 
 - **纯离线**：回归测试、`offline_profile.py`、`checkpoint_benchmark.py` 使用合成输入，不调用模型。分析工具只读指定的已有证据，捕获文件可能含文档正文。
 - **真实配置预检**：`run.py`、`live_smoke.py` 和手动实验未带 `--run` 时仍可能读取真实数据库、PDF 或凭据库；不能把预检当作完全隔离的离线测试。
@@ -28,7 +28,7 @@ pipeline/
 推荐从统一隔离入口执行回归（清理供应商环境变量、使用临时输出目录）：
 
 ```bash
-# 最小范围：CLI、指标、兼容与测试边界
+# 最小范围：CLI、指标与测试边界
 backend/.venv/bin/python backend/pipeline/devtools/run_translation_tests.py --suite tooling
 # 外围契约：tooling + contracts + integration
 backend/.venv/bin/python backend/pipeline/devtools/run_translation_tests.py --suite benchmarks
@@ -45,7 +45,7 @@ backend/.venv/bin/python backend/pipeline/devtools/run_translation_tests.py --ch
 
 `--check-discovery` 对照实际正反序 nodeid、分类并集和每个预期模块；普通运行也会检查整个本目录有无放错位置的 `test_*.py`，三类测试目录均须非空。不锁死用例数量；删除业务断言仍需代码审查。整模块跳过导致零收集会报错，需要显式审阅。
 
-旧 CLI 兼容测试覆盖失败退出码、参数传递和合成报告等价，不能仅凭 `--help` 通过判定兼容。修改目录时仍应对照迁移前后的完整 nodeid（允许路径映射），固定基线内容、CLI 参数和报告字段保持不变。
+修改目录时仍应对照迁移前后的完整 nodeid（允许路径映射），固定基线内容、CLI 参数和报告字段保持不变。
 
 注意：`--help`、离线测试、真实配置预检、`--run` 是不同保证。预检不提交计费任务，但可能查询 DNS 或读取数据库/凭据库。本轮不改变人工预检语义。
 

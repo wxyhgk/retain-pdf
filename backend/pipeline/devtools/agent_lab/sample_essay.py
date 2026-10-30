@@ -364,7 +364,7 @@ def draw_engraving(page: fitz.Page, rect: fitz.Rect) -> None:
     wall_bottom = y0 + h * 0.60
     page.draw_rect(fitz.Rect(inner.x0, inner.y0, inner.x1, wall_bottom), color=None, fill=(0.86, 0.79, 0.65))
     # 地板：斜线汇向远处
-    vx, vy = x0 + w * 0.5, wall_bottom - 10
+    vx = x0 + w * 0.5
     page.draw_rect(fitz.Rect(inner.x0, wall_bottom, inner.x1, inner.y1), color=None, fill=(0.76, 0.67, 0.52))
     for i in range(-8, 9):
         bottom_x = vx + i * (inner.width / 16.0)

@@ -181,16 +181,3 @@ fn reader_regions_link_cross_page_continuations() {
     assert!(wire.get("translated_block_text").is_none());
     fs::remove_dir_all(data_root).ok();
 }
-
-/// Prints the regions of a real job for manual inspection:
-/// `READER_REGIONS_JOB=<data_root>/jobs/<job_id> cargo test ... -- --ignored --nocapture`
-#[test]
-#[ignore]
-fn dump_reader_regions_for_real_job() {
-    let job_dir = PathBuf::from(std::env::var("READER_REGIONS_JOB").expect("READER_REGIONS_JOB"));
-    let data_root = job_dir.parent().unwrap().parent().unwrap();
-    let job_id = job_dir.file_name().unwrap().to_string_lossy().to_string();
-    let job = job_at(&job_id, &format!("jobs/{job_id}"));
-    let view = load_reader_regions_view(data_root, &job).expect("regions");
-    println!("{}", serde_json::to_string(&view).expect("json"));
-}

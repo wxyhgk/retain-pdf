@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -12,14 +10,6 @@ pub struct MineruApiEnvelope<T> {
     #[serde(default)]
     pub trace_id: String,
     pub data: Option<T>,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone, Default)]
-pub struct MineruBatchFileUrl {
-    #[serde(default)]
-    pub name: String,
-    #[serde(default)]
-    pub url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]

@@ -1,9 +1,7 @@
 from copy import deepcopy
 import json
-from pathlib import Path
 import socket
 import sqlite3
-import sys
 
 import pytest
 

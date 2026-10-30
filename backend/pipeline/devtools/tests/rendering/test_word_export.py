@@ -30,8 +30,6 @@ fitz = pytest.importorskip("fitz", reason="PyMuPDF 未安装")
 
 from docx.oxml.ns import qn  # noqa: E402
 
-MATH_NS = "{http://schemas.openxmlformats.org/officeDocument/2006/math}"
-
 
 def test_every_module_imports():
     """整包 import 一遍。

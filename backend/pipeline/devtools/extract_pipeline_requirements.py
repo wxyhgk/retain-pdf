@@ -124,8 +124,8 @@ def _sys_path_roots(tree: ast.AST, importer: Path, repo_root: Path) -> list[Path
 
     devtools/tests/translation/test_request_capture.py 靠
     `sys.path.insert(0, ... / "tests/performance/pipeline")` 才能 import
-    inspect_capture —— 那是仓库里的文件，不是 PyPI 包。不解析这一步的话
-    inspect_capture 会被当成第三方依赖写进 pipeline_test_requirements.in，
+    tools.analysis.inspect_capture —— 那是仓库里的文件，不是 PyPI 包。不解析这一步的话
+    tools 会被当成第三方依赖写进 pipeline_test_requirements.in，
     而那个名字根本装不上。
     """
     literals: list[str] = []

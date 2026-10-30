@@ -13,7 +13,7 @@ import sys
 import tempfile
 import time
 
-from support.paths import HERE, PIPELINE, ROOT
+from support.paths import PIPELINE, ROOT
 
 sys.path.insert(0, str(PIPELINE))
 from support.translation_io_support import PROBE, SOURCES, document, environment, prepare, read_artifacts

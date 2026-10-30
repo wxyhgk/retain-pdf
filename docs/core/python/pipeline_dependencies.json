@@ -417,7 +417,6 @@
         "devtools/analyze_render_item_composition.py",
         "devtools/backfill_typography_memory.py",
         "devtools/benchmark_source_cleanup.py",
-        "devtools/experiments/source_cleanup_next/tests/test_source_cleanup_pdf_structure_profile.py",
         "devtools/golden_harness.py",
         "devtools/ocr_viewer/complex_sample.py",
         "devtools/ocr_viewer/sample_layout.py",

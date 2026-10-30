@@ -1,8 +1,6 @@
 """Production entry contracts run independently of parent-process imports."""
 import json
 import hashlib
-import os
-from pathlib import Path
 import subprocess
 import sys
 

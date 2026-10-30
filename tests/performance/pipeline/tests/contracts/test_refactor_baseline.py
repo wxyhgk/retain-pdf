@@ -1,7 +1,6 @@
 from support.paths import HERE
 """Byte-level synthetic prompt/identity oracle frozen before refactoring."""
 import json
-from pathlib import Path
 
 import pytest
 

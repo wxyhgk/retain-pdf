@@ -1,11 +1,9 @@
 """Synthetic document and process boundary for translation IO contracts."""
 from pathlib import Path
 import json
-import os
 import subprocess
 import sys
 
-from support.paths import HERE, PIPELINE
 from support.offline import child_environment
 PROBE = Path(__file__).with_name("translation_io_probe.py")
 SOURCES = {
