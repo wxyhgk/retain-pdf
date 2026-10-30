@@ -102,7 +102,7 @@ class Element:
 def tokenize(content, base_style: str) -> list[Atom]:
     """content：字符串和行内对象混排的列表。
 
-    行内对象：{"math": [(文字, 字体, 上下标), ...], "latex": ...}、{"fn": "1", "target": key}、{"cite": "[3]"}。
+    行内对象：{"math": [(文字, 字体, 上下标), ...], "latex": ...}、{"fn": "1", "target": key}、{"cite": "[3]"}、{"i": "斜体的词"}。
     """
     atoms: list[Atom] = []
     pending_space = False
@@ -126,6 +126,13 @@ def tokenize(content, base_style: str) -> list[Atom]:
         elif "b" in item:
             for index, word in enumerate(item["b"].split()):
                 atoms.append(Atom([Piece(word, "bf")], space_before=pending_space or index > 0))
+                pending_space = False
+            pending_space = False
+            continue
+        elif "i" in item:
+            # 行内斜体（书名、外文词）：和 "b" 一样按词拆开，前后的标点和正文贴在一起
+            for index, word in enumerate(item["i"].split()):
+                atoms.append(Atom([Piece(word, "it")], space_before=pending_space or index > 0))
                 pending_space = False
             pending_space = False
             continue
