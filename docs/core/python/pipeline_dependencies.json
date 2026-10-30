@@ -926,6 +926,7 @@
         "devtools/tests/translation/test_translation_ocr_text_extractor.py",
         "devtools/tests/translation/test_translation_ocr_text_extractor_metadata.py",
         "devtools/tests/translation/test_translation_offline_recovery.py",
+        "devtools/tests/translation/test_translation_page_names.py",
         "devtools/tests/translation/test_translation_page_persistence.py",
         "devtools/tests/translation/test_translation_payload_apply.py",
         "devtools/tests/translation/test_translation_policy_config.py",
