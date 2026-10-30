@@ -11,6 +11,7 @@ import hashlib
 import json
 import os
 import random
+import re
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -331,6 +332,11 @@ class TranslationAgent:
         issues = check_block(block.text, text)
         if page.context:
             issues += check_terms(block.text, text, context_terms(page.context), exceptions.get(block.id))
+            for abbr in _first_uses(page).get(block.id, []):
+                if text and not re.search(rf"[\u4e00-\u9fff]\s*[（(][^（()）]*{re.escape(abbr)}[^（()）]*[)）]", text):
+                    issues.append(
+                        {"code": "abbr_first_use", "severity": "error", "message": f"全书第一次用到缩写 {abbr}，要写成“中文全称（{abbr}）”"}
+                    )
         return issues + style_signals(block.text, text)
 
     # ---- 一页 ----
@@ -497,6 +503,19 @@ class TranslationAgent:
         return fixed, parsed
 
 
+def _first_uses(page: PageInput) -> dict[str, list[str]]:
+    """上下文包里标了 first_use 的缩写，落在这一页第一个用到它的块上：{块 id: [缩写, …]}。"""
+    out: dict[str, list[str]] = {}
+    for item in (page.context or {}).get("abbreviations") or []:
+        if not item.get("first_use"):
+            continue
+        pattern = re.compile(rf"(?<![\w-]){re.escape(item['abbr'])}(?![\w-])")
+        block = next((b for b in page.to_translate() if pattern.search(b.text)), None)
+        if block is not None:
+            out.setdefault(block.id, []).append(item["abbr"])
+    return out
+
+
 def _exceptions_by_block(exceptions: list[dict]) -> dict[str, set[str]]:
     out: dict[str, set[str]] = {}
     for item in exceptions:
@@ -505,7 +524,7 @@ def _exceptions_by_block(exceptions: list[dict]) -> dict[str, set[str]]:
 
 
 # 重翻后只剩这些错，译文本身没坏：降成警告保留译文（术语交给术语专员或人，断点交给排版）
-TERM_ONLY = {"term_mismatch", "keep_original_lost"}
+TERM_ONLY = {"term_mismatch", "keep_original_lost", "abbr_first_use"}
 BREAK_ONLY = {"group_break", "group_overlap"}
 
 

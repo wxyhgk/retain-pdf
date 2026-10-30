@@ -228,6 +228,17 @@ def test_a_group_whose_break_is_never_placed_is_kept_whole_in_its_first_block() 
     assert [i["code"] for i in results["x2"].issues] == ["group_merged"]
 
 
+def test_the_first_use_of_an_abbreviation_must_spell_it_out() -> None:
+    glossary = Glossary()
+    glossary.add("OCR", "OCR", category="abbr", status="approved", reason="scan", page="3", note="optical character recognition")
+    page = _p("1", "", ("b1", "OCR reads letters."), ("b2", "OCR also fails."))
+    page.context = build_context(page, glossary)
+    model = Model(_answer({"b1": "OCR 能读出字母。", "b2": "OCR 也会出错。"}), _answer({"b1": "光学字符识别（OCR）能读出字母。"}))
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
+    assert [i["code"] for i in results["b1"].history[0]["issues"] if i["severity"] == "error"] == ["abbr_first_use"]
+    assert results["b1"].translation.startswith("光学字符识别（OCR）") and results["b2"].status == "ok", "only the first block on the page needs it"
+
+
 def test_roles_can_use_their_own_model() -> None:
     model = Model(_answer({"b1": "一个要缩短的长句。"}))
     agent = TranslationAgent(model="cheap", models={"reviser": "strong"}, transport=model)
@@ -249,7 +260,7 @@ def _book() -> list[PageInput]:
 def test_document_run_learns_terms_and_writes_ledger_and_progress(tmp_path: Path) -> None:
     terms = [{"block_id": "a1", "source": "bounding box", "target": "边界框", "category": "term"}, {"block_id": "a2", "source": "bounding box", "target": "边界框", "category": "term"}]
     model = Model(
-        _answer({"a1": "每个边界框来自 OCR。", "a2": "边界框可能会重叠。"}, terms),
+        _answer({"a1": "每个边界框来自光学字符识别（OCR）。", "a2": "边界框可能会重叠。"}, terms),
         _answer({"b1": "我们先做光学字符识别（OCR）。"}),
         _answer({"c1": "图的边界框。"}),
     )
@@ -279,13 +290,13 @@ def test_terms_without_evidence_or_from_failed_blocks_are_ignored(tmp_path: Path
         {"block_id": "a1", "source": "neural network", "target": "神经网络", "category": "term"},  # 原文里没有
         {"block_id": "zz", "source": "bounding box", "target": "边界框", "category": "term"},  # 没有这一块
     ]
-    model = Model(_answer({"a1": "每个边界框来自 OCR。", "a2": "边界框可能会重叠。"}, bogus))
+    model = Model(_answer({"a1": "每个边界框来自光学字符识别（OCR）。", "a2": "边界框可能会重叠。"}, bogus))
     outcome = DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path).run(_book()[:1])
     assert [t.source for t in outcome.glossary.terms.values() if t.category == "term"] == []
 
 
 def test_a_stopped_run_keeps_its_progress_and_resumes_where_it_stopped(tmp_path: Path) -> None:
-    first = Model(_answer({"a1": "每个边界框来自 OCR。", "a2": "边界框可能会重叠。"}), QuotaExhausted("credit balance too low"))
+    first = Model(_answer({"a1": "每个边界框来自光学字符识别（OCR）。", "a2": "边界框可能会重叠。"}), QuotaExhausted("credit balance too low"))
     stopped = DocumentRun(TranslationAgent(model="fake", transport=first), tmp_path).run(_book())
     assert stopped.status == "stopped" and stopped.stop_reason == "quota_exhausted" and stopped.pages_done == 1
     assert json.loads((tmp_path / "progress.json").read_text(encoding="utf-8"))["pages_done"] == ["0000"]
@@ -293,12 +304,12 @@ def test_a_stopped_run_keeps_its_progress_and_resumes_where_it_stopped(tmp_path:
     second = Model(_answer({"b1": "我们先做光学字符识别（OCR）。"}), _answer({"c1": "图的边界框。"}))
     resumed = DocumentRun(TranslationAgent(model="fake", transport=second), tmp_path).run(_book())
     assert resumed.status == "done" and len(second.bodies) == 2, "finished pages are not requested again"
-    assert resumed.results["a1"].translation == "每个边界框来自 OCR。"
+    assert resumed.results["a1"].translation == "每个边界框来自光学字符识别（OCR）。"
     assert second.payloads[0]["context"]["previous"][-1]["id"] == "a2"
 
 
 def test_without_memory_pages_go_out_without_a_context(tmp_path: Path) -> None:
-    model = Model(_answer({"a1": "每个边界框来自 OCR。", "a2": "边界框可能会重叠。"}))
+    model = Model(_answer({"a1": "每个边界框来自光学字符识别（OCR）。", "a2": "边界框可能会重叠。"}))
     DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, memory=False).run(_book()[:1])
     assert "context" not in model.payloads[0]
 
