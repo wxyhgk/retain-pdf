@@ -21,7 +21,7 @@ cd backend/pipeline
 open /tmp/agent_lab/report.html
 ```
 
-样例用 `--sample` 选（`complex`、`long`、`conference`、`textbook`、`manual`、`essay`，登记在 `__main__.py` 的 `SAMPLES`）；`--no-memory` 不带术语记忆和上下文包，用来对比。调度的状态（进度、术语表各版本、台账）在 `<out>/state/`。
+样例用 `--sample` 选（`complex`、`long`、`conference`、`textbook`、`manual`、`essay`，登记在 `__main__.py` 的 `SAMPLES`）；`--no-memory` 不带术语记忆和上下文包，用来对比。调度的状态（进度、术语表各版本、台账、通读结果 `reading.json`）在 `<out>/state/`。带记忆时默认先通读，`--no-read` 关掉；`--review` 每页翻完审校一遍。
 
 同样的输入第二次跑走缓存；改了提示词（`PROMPT_VERSION`）或样例会自动重新请求；`--no-cache` 强制重跑，`--pages i,1` 只跑某几页。
 离线测试（假模型，不发请求）在 `devtools/tests/agent_lab/`。

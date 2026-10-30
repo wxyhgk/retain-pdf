@@ -24,6 +24,9 @@ from retainpdf_translation_agent.contract import RevisionRequest
 from retainpdf_translation_agent.memory import Glossary
 from retainpdf_translation_agent.memory import Term
 from retainpdf_translation_agent.memory import extract_abbreviations
+from retainpdf_translation_agent.reader import Reading
+from retainpdf_translation_agent.reader import read_document
+from retainpdf_translation_agent.review import review_page
 from retainpdf_translation_agent.runner import DocumentRun
 from retainpdf_translation_agent.runner import RunOutcome
 from retainpdf_translation_agent.runner import blocks_using
@@ -42,6 +45,7 @@ __all__ = [
     "PageInput",
     "QuotaExhausted",
     "RateLimited",
+    "Reading",
     "RevisionRequest",
     "RunOutcome",
     "StopRun",
@@ -54,6 +58,8 @@ __all__ = [
     "check_terms",
     "extract_abbreviations",
     "http_transport",
+    "read_document",
+    "review_page",
     "style_signals",
     "visible_length",
 ]

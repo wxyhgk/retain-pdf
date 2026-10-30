@@ -32,6 +32,11 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
 - `context.py`：每页固定大小的上下文包（默认约 7000 token）：风格、术语、保留原文、缩写、相邻页、摘要，超了按顺序砍。
 - `runner.py`：调度。逐页建上下文包、翻、把译者报的术语交给术语表（块要过校验、原文要有这个词），写 `pages/`、
   `glossary/vN.json`、`ledger.jsonl`、`progress.json`；`StopRun`（额度用完、密钥不对、一直限流）时保存进度停下。
+- `reader.py`：翻译前通读。程序挑候选（反复出现的词组、专名）加全部标题和样张，一次请求定体裁、人名规则（理工保留原文、人文"中文译名（原文）"）、
+  文风说明、全文统一的术语和人名、标题和目录的译法；`DocumentRun(read_first=True)` 用它。
+- `review.py`：审校。每页正文类块交给审校只开问题单（错译、漏译添加、数字术语、不通顺、语气偏离），逐字引用原文译文，
+  程序核对后只替换被指出的那段，错误和警告只许减少；`DocumentRun(review=True)` 用它。
+- `breaks.py`：接续组断点放少了时按原文长度比例在中文标点处切开。
 - 重翻后还不合格的块状态是 `fallback_source`：不交没过校验的译文，显示原文、待人看。每块 `meta` 记模型、提示词版本、
   角色、术语表版本、`used_terms`、上下文包哈希。`TranslationAgent(models={"reviser": ...})` 按角色另指定模型。
 

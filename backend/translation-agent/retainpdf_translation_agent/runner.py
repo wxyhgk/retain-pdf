@@ -45,6 +45,7 @@ from retainpdf_translation_agent.memory import term_pattern
 from retainpdf_translation_agent.reader import Reading
 from retainpdf_translation_agent.reader import apply_reading
 from retainpdf_translation_agent.reader import read_document
+from retainpdf_translation_agent.review import review_page
 
 TRAILING_PARENS_RE = re.compile(r"\s*[（(][^（）()]*[)）]\s*$")
 
@@ -75,9 +76,11 @@ class DocumentRun:
         budget: int = DEFAULT_BUDGET,
         memory: bool = True,
         read_first: bool = False,
+        review: bool = False,
     ) -> None:
         """`memory=False` 时不带上下文包、不记术语（和第 1 版以前一样），用来做对比。
-        `read_first=True` 时先通读整篇（`reader.py`）：定体裁、文风、全文统一的术语和人名、全部标题的译法，再逐页翻。"""
+        `read_first=True` 时先通读整篇（`reader.py`）：定体裁、文风、全文统一的术语和人名、全部标题的译法，再逐页翻。
+        `review=True` 时每页翻完审校一遍（`review.py`），按问题单改被指出的片段。"""
         self.agent = agent
         self.state_dir = Path(state_dir)
         self.initial_glossary = glossary
@@ -87,6 +90,7 @@ class DocumentRun:
         self.memory = memory
         self.read_first = read_first and memory
         self.reading: Reading | None = None
+        self.review = review
 
     # ---- 状态文件 ----
     def _path(self, *parts: str) -> Path:
@@ -188,7 +192,19 @@ class DocumentRun:
                     self._ledger("stop", page=page.page_label, page_key=key, reason=stop.reason, message=str(stop)[:300])
                     self._progress(done, STOPPED, stop.reason, len(pages))
                     return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
+                review_report = None
+                if self.review:
+                    try:
+                        review_report = review_page(self.agent, page_input, page_results)
+                    except StopRun as stop:
+                        self._log_calls(page, key, context, calls_before)
+                        self._ledger("stop", page=page.page_label, page_key=key, reason=stop.reason, message=str(stop)[:300])
+                        self._progress(done, STOPPED, stop.reason, len(pages))
+                        return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
+                    info["review"] = review_report
                 self._log_calls(page, key, context, calls_before)
+                if review_report is not None:
+                    self._ledger("review", page=page.page_label, page_key=key, reviewed=review_report["reviewed"], tickets=review_report["tickets"], applied=len(review_report["applied"]))
                 if self.memory:
                     self._learn(glossary, page_input, page_results, info)
                 self._save_glossary(glossary, changes_before)

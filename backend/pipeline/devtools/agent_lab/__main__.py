@@ -77,6 +77,7 @@ def run(
     sample: str = "complex",
     memory: bool = True,
     read_first: bool = True,
+    review: bool = False,
 ) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
     doc, labels = SAMPLES[sample]()
@@ -87,7 +88,7 @@ def run(
     started = time.monotonic()
     state_dir = out_dir / "state"
     shutil.rmtree(state_dir, ignore_errors=True)
-    outcome = DocumentRun(agent, state_dir, memory=memory, read_first=read_first).run([page.to_input(document) for page in requests])
+    outcome = DocumentRun(agent, state_dir, memory=memory, read_first=read_first, review=review).run([page.to_input(document) for page in requests])
     blocks: dict[str, dict] = {}
     pages_out = []
     for key, page in enumerate(requests):
@@ -127,6 +128,7 @@ def run(
         "sample": sample,
         "memory": memory,
         "read_first": read_first and memory,
+        "review": review,
         "run_status": outcome.status,
         "stop_reason": outcome.stop_reason,
         "model": agent.model,
@@ -174,12 +176,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sample", choices=sorted(SAMPLES), default="complex", help="complex: 3-page paper; long: 21-page book with metrics; conference/textbook/manual/essay: 7-8 pages")
     parser.add_argument("--no-memory", action="store_true", help="translate page by page without glossary or context pack")
     parser.add_argument("--no-read", action="store_true", help="skip the read-through before translating (genre, style, glossary, headings)")
+    parser.add_argument("--review", action="store_true", help="review every page after translating and apply the accepted tickets")
     args = parser.parse_args(argv)
     names = load_env_file(args.env)
     print(f"env: {args.env} ({', '.join(names) or 'not found'})")
     agent = TranslationAgent(model=args.model, cache_dir=args.out / "cache", use_cache=not args.no_cache)
     pages_filter = {p.strip() for p in args.pages.split(",") if p.strip()} or None
-    results = run(args.out, agent=agent, pages_filter=pages_filter, sample=args.sample, memory=not args.no_memory, read_first=not args.no_read)
+    results = run(args.out, agent=agent, pages_filter=pages_filter, sample=args.sample, memory=not args.no_memory, read_first=not args.no_read, review=args.review)
     print(json.dumps(results["summary"], ensure_ascii=False, indent=1))
     print(args.out / "report.html")
     return 0

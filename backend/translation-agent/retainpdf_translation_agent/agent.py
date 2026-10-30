@@ -705,7 +705,8 @@ def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> 
             continue
         if not block.group:
             if block.id in raw:
-                per_block[block.id] = raw[block.id]
+                # 不是接续组的块里也可能被模型写进 [[BREAK]]（实测教科书两处漏进了成品）：直接删掉
+                per_block[block.id] = re.sub(r"\s*\[\[BREAK\]\]\s*", "", raw[block.id]).strip()
             continue
         group_id = block.group["id"]
         if group_id in seen:
