@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from retainpdf_translation_agent import TranslationAgent as Agent
@@ -32,7 +33,8 @@ def _requested_blocks(body: dict) -> list[dict]:
 
 def _fake_translation(text: str) -> str:
     """假译文：每一段（接续组按 [[BREAK]] 分段）前面加"译文："，公式、引用、数字原样留着。"""
-    return "[[BREAK]]".join("译文：" + part.strip() for part in text.split("[[BREAK]]"))
+    # 脚注开头的编号留在最前面（"1 译文：…"），和真模型一样
+    return "[[BREAK]]".join(re.sub(r"^(\d+\s+)?", lambda m: (m.group(1) or "") + "译文：", part.strip(), count=1) for part in text.split("[[BREAK]]"))
 
 
 class FakeModel:
@@ -110,7 +112,7 @@ def test_report_embeds_translations(tmp_path: Path) -> None:
     blob = html.split('<script id="data" type="application/json">', 1)[1].split("</script>", 1)[0]
     data = json.loads(blob)
     translated = [b for b in data["blocks"] if b.get("translation")]
-    assert translated and all(b["translation"].startswith("译文：") for b in translated)
+    assert translated and all("译文：" in b["translation"] for b in translated)
     assert len(data["images"]) == 3
 
 
