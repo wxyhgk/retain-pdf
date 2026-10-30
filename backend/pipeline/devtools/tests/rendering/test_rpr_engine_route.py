@@ -14,7 +14,6 @@ from unittest import mock
 import fitz
 import pytest
 
-from devtools.tests.pdf_fixtures import write_pdf
 from devtools.tests.rendering_support.fake_rpr_engine import FAKE_ENGINE_VERSION
 from devtools.tests.rendering_support.fake_rpr_engine import install_fake_rpr_engine
 from retainpdf_pipeline.foundation.shared.stage_specs import normalize_render_engine

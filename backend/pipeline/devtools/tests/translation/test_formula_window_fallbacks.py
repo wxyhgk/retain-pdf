@@ -95,7 +95,7 @@ def make_formula_dense_prose_item() -> dict:
 
 class FormulaWindowFallbacksTests(unittest.TestCase):
     def test_single_segmented_failure_falls_back_to_plain_text(self):
-        module = load_retrying_translator()
+        load_retrying_translator()
         import retainpdf_translation.llm.shared.orchestration.fallbacks as fallbacks
         from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 

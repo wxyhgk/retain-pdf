@@ -273,6 +273,11 @@ jobs:
       - name: Test ops tooling
         run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest ops/development/tests ops/release/tests -q
 
+      # 架构检查脚本、筛选核对、查询验收工具和 agent 端到端脚本自己的单测，纯 Python、
+      # 不连网。以前没接进任何门禁，只有架构检查那份写在 CLAUDE.md 里靠手跑。
+      - name: Test API scripts and agent e2e tooling
+        run: uv run --project "$RETAIN_PDF_SERVICES_ROOT" python -m pytest "$RETAIN_PDF_SERVICES_ROOT/api/scripts" tests/e2e/agent/tests -q
+
       - name: Check backend contract mirror parity
         run: |
           python3 "$RETAIN_PDF_SERVICES_ROOT/contracts/check_parity.py"

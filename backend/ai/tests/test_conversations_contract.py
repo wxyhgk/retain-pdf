@@ -20,8 +20,6 @@ SCHEMA_PATH = BACKEND_ROOT / "contracts" / "ai-conversations.v1.schema.json"
 SCHEMA = json.loads(SCHEMA_PATH.read_text(encoding="utf-8"))
 CLIENT_SOURCE = (AI_SERVICE_ROOT / "retainpdf_ai" / "rust_client.py").read_text(encoding="utf-8")
 
-BASE_PATH = SCHEMA["base_path"]
-
 
 def _contract_path_patterns() -> list[re.Pattern[str]]:
     patterns = []

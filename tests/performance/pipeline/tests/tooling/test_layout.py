@@ -1,9 +1,6 @@
 """Executable paths remain usable without repository cwd or inherited secrets."""
 import hashlib
-import os
-from pathlib import Path
 import subprocess
-import sys
 
 import pytest
 
@@ -14,8 +11,6 @@ from support.offline import child_command, child_environment
 
 ENTRYPOINTS = (
     "run.py", "live_smoke.py", "offline_profile.py", "checkpoint_benchmark.py",
-    "audit_prompts.py", "compare.py", "compare_optimization.py", "inspect_capture.py",
-    "replay_capture.py", "probe_thinking.py",
     "tools/analysis/audit_prompts.py", "tools/analysis/compare.py",
     "tools/analysis/compare_optimization.py", "tools/analysis/inspect_capture.py",
     "tools/analysis/replay_capture.py", "tools/experiments/probe_thinking.py",

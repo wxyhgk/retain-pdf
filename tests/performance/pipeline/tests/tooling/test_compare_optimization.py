@@ -1,10 +1,7 @@
 from support.paths import HERE
 import json
 import hashlib
-import os
 import subprocess
-import sys
-from pathlib import Path
 
 import pytest
 

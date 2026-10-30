@@ -2,7 +2,6 @@ import sys
 import json
 import copy
 import hashlib
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest

@@ -524,7 +524,7 @@ def _install_tracer(monkeypatch, tracer: _Tracer, *, killed: bool) -> None:
 
 
 def _trace_clean_run(tmp_path, monkeypatch) -> list[str]:
-    translated = _build_job(tmp_path / "trace")
+    _build_job(tmp_path / "trace")
     tracer = _Tracer()
     with monkeypatch.context() as patch:
         _install_tracer(patch, tracer, killed=True)

@@ -199,7 +199,7 @@ def test_special_long_numbered_affiliation_list_fast_paths_keep_origin() -> None
 
 def test_special_long_author_name_list_fast_paths_keep_origin() -> None:
     authors = ", ".join(
-        f"Firstname Lastname"
+        "Firstname Lastname"
         for index in range(1, 160)
     )
     item = {

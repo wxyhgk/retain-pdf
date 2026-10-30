@@ -176,7 +176,7 @@ class RetryingTranslatorFallbacksTests(unittest.TestCase):
         self.assertEqual(result[item["item_id"]]["final_status"], "partially_translated")
 
     def test_sentence_fallback_rejects_merged_partial_output_with_long_english_residue(self):
-        module = load_retrying_translator()
+        load_retrying_translator()
         import retainpdf_translation.llm.shared.orchestration.fallbacks as fallbacks
         from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 

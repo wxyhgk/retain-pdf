@@ -10,7 +10,6 @@ use anyhow::{bail, Result};
 pub const PADDLE_OFFICIAL_HTTP_TRANSPORT: &str = "official_http";
 pub const PADDLE_OFFICIAL_CLI_TRANSPORT: &str = "official_cli";
 
-#[allow(unused_imports)]
 pub use catalog::{
     ensure_provider_diagnostics, is_server_owned_ocr_option, is_supported_provider,
     provider_artifact_layout, provider_capabilities, provider_client_definitions,

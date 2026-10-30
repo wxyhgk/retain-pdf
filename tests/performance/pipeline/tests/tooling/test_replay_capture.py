@@ -1,8 +1,6 @@
 from copy import deepcopy
 import json
-from pathlib import Path
 import socket
-import sys
 
 import pytest
 

@@ -91,7 +91,7 @@ def make_formula_dense_prose_item() -> dict:
 
 class RetryingTranslatorFormulaRoutesTests(unittest.TestCase):
     def test_plain_text_retry_for_large_formula_block_uses_plain_route(self):
-        module = load_retrying_translator()
+        load_retrying_translator()
         import retainpdf_translation.llm.shared.orchestration.fallbacks as fallbacks
         from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 
@@ -122,7 +122,7 @@ class RetryingTranslatorFormulaRoutesTests(unittest.TestCase):
         self.assertEqual(result[item["item_id"]]["decision"], "translate")
 
     def test_small_formula_inline_uses_plain_text_directly(self):
-        module = load_retrying_translator()
+        load_retrying_translator()
         import retainpdf_translation.llm.shared.orchestration.fallbacks as fallbacks
         from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 
@@ -171,7 +171,7 @@ class RetryingTranslatorFormulaRoutesTests(unittest.TestCase):
         )
 
     def test_formula_dense_prose_uses_plain_text_before_segmented(self):
-        module = load_retrying_translator()
+        load_retrying_translator()
         import retainpdf_translation.llm.shared.orchestration.fallbacks as fallbacks
         from retainpdf_translation.llm.shared.control_context import build_translation_control_context
 

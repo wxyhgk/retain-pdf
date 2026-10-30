@@ -357,7 +357,6 @@ pub fn get_or_create_managed_credential(
 /// Manual credentials and managed credentials still in use are left intact.
 /// The check and removal share the same cross-process vault write lock used by
 /// job credential usage guards.
-#[allow(dead_code)] // wired by job/document deletion in the lifecycle integration phase
 pub fn delete_unreferenced_managed_credential(
     db: &Db,
     data_root: &Path,

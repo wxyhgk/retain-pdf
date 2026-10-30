@@ -30,7 +30,7 @@ CI 的 Tests、Rust API Architecture、Publish Current Web Image 都卡在这些
 
 ```bash
 python3 backend/api/scripts/check_architecture.py
-python3 -m unittest backend/api/scripts/test_check_architecture.py
+backend/.venv/bin/python -m pytest -q backend/api/scripts tests/e2e/agent/tests   # 架构检查等脚本和 agent 端到端工具自己的单测
 python3 backend/pipeline/devtools/check_pipeline_architecture.py
 backend/.venv/bin/python backend/pipeline/devtools/extract_pipeline_requirements.py --services-root backend --check
 python3 .github/scripts/sync_backend_python_requirements.py --repo-root . --services-root backend --check

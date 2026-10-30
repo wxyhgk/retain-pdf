@@ -4,7 +4,6 @@ This does not update the frozen pre-refactor JSON oracle.
 """
 from copy import deepcopy
 import json
-from pathlib import Path
 import sys
 from unittest.mock import patch
 

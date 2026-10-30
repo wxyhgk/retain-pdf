@@ -17,7 +17,6 @@ import pytest
 
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_payload_to_document_v1_with_report
 from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
-from retainpdf_pipeline.ocr.document_schema.validator import DocumentSchemaValidationError
 
 SYNTHETIC = Path(__file__).parent / "fixtures" / "synthetic"
 UPDATE = os.environ.get("UPDATE_OCR_SNAPSHOTS") == "1"

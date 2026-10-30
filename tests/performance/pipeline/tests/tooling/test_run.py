@@ -2,7 +2,6 @@ from support.paths import HERE
 import importlib.util
 import json
 import socket
-from pathlib import Path
 import sqlite3
 from types import SimpleNamespace
 from unittest import mock
