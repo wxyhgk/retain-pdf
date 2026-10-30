@@ -167,13 +167,20 @@ export async function pluginBlocks() {
  * A code block in `language` drawn as the plugin that knows it draws it in the editor (an energy diagram, a molecule,
  * a widget's frame); null when none does, or before they have started.
  */
-export function codeBlockPreview(language: string, content: string): HTMLElement | null {
+export function codeBlockPreview(language: string, content: string, meta = ''): HTMLElement | null {
 	if (!started || !studioPlugins.get('blocks')) return null;
 	for (const block of studioBlocks(studioPlugins)) {
-		const shown = block.codeBlock?.preview?.(language, content, '');
+		const shown = block.codeBlock?.preview?.(language, content, meta);
 		if (shown) return shown;
 	}
 	return null;
+}
+
+/** Whether a plugin draws code blocks in `language` (its fence: ```widget, ```energy); false before they have started. */
+export function drawsLanguage(language: string): boolean {
+	if (!started || !studioPlugins.get('blocks')) return false;
+	const wanted = language.toLowerCase();
+	return studioBlocks(studioPlugins).some((block) => Boolean(block.codeBlock?.preview) && [block.fence].flat().some((fence) => String(fence).toLowerCase() === wanted));
 }
 
 /**

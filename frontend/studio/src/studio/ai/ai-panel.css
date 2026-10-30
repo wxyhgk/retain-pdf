@@ -243,6 +243,8 @@
 .ai-picture-dialog img { display: block; max-width: 94vw; max-height: 94vh; object-fit: contain; }
 /* A plugin's block in what is said: at a size to read beside the words; a molecule's view not saved into any article. */
 .ai-preview { max-width: 560px; margin: 6px 0; }
+/* A plugin's block still being written (ai-markdown.ts beingWritten): its place, till it is whole. */
+.ai-preview-pending { display: flex; align-items: center; justify-content: center; box-sizing: border-box; min-height: 64px; padding: 12px; border: 1px dashed var(--studio-hairline, rgb(var(--gray-light))); border-radius: 8px; color: rgb(var(--gray)); font-size: 13px; }
 .ai-preview figure svg { max-height: 280px; }
 .ai-preview .chem-view-buttons .primary, .ai-preview .chem-view-controls > span { display: none; }
 

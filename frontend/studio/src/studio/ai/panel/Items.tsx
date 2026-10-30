@@ -62,7 +62,7 @@ function Act({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; 
  * handle at its left to drag it into the article (or click, to put it where the caret is). Drawn by that renderer in
  * an element of its own, out of reach of the shell's reset (data-host).
  */
-export function Markdown({ text, blocks = false, className }: { text: string; blocks?: boolean; className: string }) {
+export function Markdown({ text, blocks = false, className, streaming = false }: { text: string; blocks?: boolean; className: string; streaming?: boolean }) {
 	const { actions } = useItems();
 	const node = useRef<HTMLDivElement>(null);
 	const pages = actions.articles();
@@ -81,7 +81,7 @@ export function Markdown({ text, blocks = false, className }: { text: string; bl
 			unused.delete(key);
 			return old;
 		};
-		const kept = renderAiBlocks(text, { pages, drawnBefore });
+		const kept = renderAiBlocks(text, { pages, drawnBefore, streaming });
 		kept.forEach((block, at) => {
 			const there = words.children[at];
 			if (there !== block) words.insertBefore(block, there ?? null);
@@ -108,7 +108,7 @@ export function Markdown({ text, blocks = false, className }: { text: string; bl
 			handle.addEventListener('click', () => actions.insert(markdown));
 			block.prepend(handle);
 		}
-	}, [text, blocks, pages]);
+	}, [text, blocks, pages, streaming]);
 	return <div ref={node} className={className} data-host />;
 }
 
@@ -134,6 +134,8 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 	const named = [
 		...(told?.article ? [{ label: `${told.article}${told.selection ? ` · ${told.selection}` : ''}`, page: find(told.article, told.articleSlug) }] : []),
 		...(told?.mentions ?? []).map((title, at) => ({ label: title, page: find(title, told?.mentionSlugs?.[at]) })).filter(({ page }) => !page || !inText.has(page.slug)),
+		// What the widgets in the conversation told of themselves (note.tell), told with it.
+		...(told?.widgets ?? []).map((title) => ({ label: t('交互模块：{title}', { title: title || t('交互模块') }), page: undefined })),
 	];
 	return (
 		<div className="ai-user">
@@ -184,12 +186,13 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 }
 
 /** What the AI said, block by block as in an article; under it, all of it put in, or copied as Markdown. */
-function Message({ item }: { item: Extract<ConversationItem, { kind: 'message' }> }) {
-	const { actions } = useItems();
+function Message({ item, last }: { item: Extract<ConversationItem, { kind: 'message' }>; last: boolean }) {
+	const { actions, conversation } = useItems();
 	const whole = item.text.trim();
+	// Its widgets known by it (data-item), what they told of themselves kept for them (AiPanel's useWidgets).
 	return (
-		<div className="ai-answer">
-			<Markdown className="ai-message" text={item.text} blocks />
+		<div className="ai-answer" data-item={item.id}>
+			<Markdown className="ai-message" text={item.text} blocks streaming={last && conversation?.state === 'running'} />
 			{whole && (
 				<div className="ai-message-actions">
 					<Act icon={FilePlus2} label={t('插入到文章')} onClick={() => actions.insert(whole)} />
@@ -476,7 +479,7 @@ export const Item = memo(function Item({ item, last, tool }: { item: Conversatio
 		case 'user':
 			return <User item={item} />;
 		case 'message':
-			return <Message item={item} />;
+			return <Message item={item} last={last} />;
 		case 'thought':
 			return <Thought item={item} last={last} />;
 		case 'tool':

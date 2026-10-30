@@ -622,6 +622,7 @@ class AgentSession {
 			// Which articles they are, for the panel to open them.
 			articleSlug: context.article?.slug ?? null,
 			mentionSlugs: (context.mentions ?? []).map((mention) => mention.slug ?? ''),
+			...(context.widgets?.length ? { widgets: context.widgets.map((widget) => widget.title) } : {}),
 		};
 		let shown = this.#picturesOf(pictures);
 		// The agent runs on this machine and reads files: what it is given is a file it is told of, a picture too when it
@@ -1027,6 +1028,8 @@ function modelChoices(option) {
  * @property {{ start: number, end: number, text: string }} [selection] the lines of it selected
  * @property {Array<{ slug?: string, title: string, path: string, brief?: string | null }>} [mentions] the articles named with @
  * @property {string} [history] where what was said before is kept (chats/…/index.md), for an agent that cannot remember it
+ * @property {Array<{ title: string, state: string }>} [widgets] what the widgets in the answers told of themselves since
+ *   (note.tell): each its title, and its value as JSON
  */
 
 const lineRange = ({ start, end }) => (start === end ? t('第 {start} 行', { start }) : t('第 {start}–{end} 行', { start, end }));
@@ -1048,7 +1051,7 @@ export function withContext(text, context = {}, part = 'all') {
  * Where the author is, as the Studio tells the agent (withContext puts it after what was said; pi in this process
  * takes it into its system prompt instead): empty when there is nothing to tell.
  */
-export function contextBlock({ article, selection, mentions = [], files = [], history } = {}, part = 'all') {
+export function contextBlock({ article, selection, mentions = [], files = [], history, widgets = [] } = {}, part = 'all') {
 	// `standing`: where the author is (for a system prompt); `message`: what goes with this one thing said.
 	const standing = part !== 'message';
 	const message = part !== 'standing';
@@ -1061,6 +1064,10 @@ export function contextBlock({ article, selection, mentions = [], files = [], hi
 	}
 	if (message) for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`); // i18n-ignore: for the AI
 	if (message && files.length) lines.push('随这句话附上的文件（在本机，用读文件的工具或命令去读）：', ...files.map((file) => `- ${file}`)); // i18n-ignore: for the AI
+	if (message && widgets.length) {
+		lines.push('对话里的交互模块（你写的 ```widget）现在的状态，是用户在模块里操作后模块用 note.tell 交给你的：'); // i18n-ignore: for the AI
+		for (const widget of widgets) lines.push(`- 「${widget.title || '交互模块'}」：${widget.state}`); // i18n-ignore: for the AI
+	}
 	if ((standing && article) || (message && mentions.length)) lines.push('回答里说到这些或别的文章时，写出标题并用《》括起来：Studio 会把它变成能点开的链接'); // i18n-ignore: for the AI
 	if (!lines.length) return '';
 	return `<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`; // i18n-ignore: for the AI

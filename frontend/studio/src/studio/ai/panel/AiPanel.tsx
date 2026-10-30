@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, Paperclip, History, Maximize2, PanelRight, PictureInPicture2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
+import { WIDGET_ASK, WIDGET_START, WIDGET_STATE, type WidgetAsk, type WidgetStart, type WidgetTold } from '@blog/kernel/widget-events.ts';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { cn, uiLayer } from '@studio/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
@@ -107,6 +108,48 @@ function usePluginBlocks(node: React.RefObject<HTMLElement | null>, ready = true
 	useEffect(() => {
 		if (ready && node.current) void observePluginBlocks(node.current);
 	}, [ready]);
+}
+
+/**
+ * The widgets in the answers, as ChatGPT's and Claude's apps in a conversation: what one asks (a button in it) is said
+ * in the conversation; what it tells of itself is kept for it, and told the AI with what is said next; it may be shown
+ * large. Each known by its conversation, its answer and its place in it.
+ */
+function useWidgets(node: React.RefObject<HTMLElement | null>, actions: PanelActions, conversation: string): void {
+	useEffect(() => {
+		const root = node.current;
+		if (!root || !conversation) return;
+		const keyOf = (target: EventTarget | null): string | null => {
+			const figure = target instanceof HTMLElement ? target.closest('figure.note-widget') : null;
+			const answer = figure?.closest<HTMLElement>('[data-item]');
+			if (!figure || !answer) return null;
+			return `${conversation}/${answer.dataset.item}/${[...answer.querySelectorAll('figure.note-widget')].indexOf(figure)}`;
+		};
+		const started = (event: Event) => {
+			const detail = (event as CustomEvent<WidgetStart>).detail;
+			const key = keyOf(event.target);
+			if (!key) return;
+			Object.assign(detail, { canAsk: true, expand: true, state: actions.widgetState(key) });
+		};
+		const told = (event: Event) => {
+			const { title, state } = (event as CustomEvent<WidgetTold>).detail;
+			const key = keyOf(event.target);
+			if (key) actions.widgetTold(key, title, state);
+		};
+		const asked = (event: Event) => {
+			if (keyOf(event.target) && actions.widgetAsked((event as CustomEvent<WidgetAsk>).detail.text)) event.preventDefault();
+			// Taken here or not, not the article's to take.
+			event.stopPropagation();
+		};
+		root.addEventListener(WIDGET_START, started);
+		root.addEventListener(WIDGET_STATE, told);
+		root.addEventListener(WIDGET_ASK, asked);
+		return () => {
+			root.removeEventListener(WIDGET_START, started);
+			root.removeEventListener(WIDGET_STATE, told);
+			root.removeEventListener(WIDGET_ASK, asked);
+		};
+	}, [conversation]);
 }
 
 function Toolbar({ state, actions }: { state: PanelState; actions: PanelActions }) {
@@ -223,6 +266,7 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 	const [quoting, setQuoting] = useState<{ top: number; left: number; markdown: string } | null>(null);
 	const rows = useMemo(() => laidOut(items), [items]);
 	usePluginBlocks(list);
+	useWidgets(list, actions, conversation?.id ?? '');
 	useEffect(() => {
 		const changed = () => {
 			const selection = document.getSelection();

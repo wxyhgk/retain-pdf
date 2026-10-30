@@ -38,6 +38,7 @@ import { createStudioEditor } from './editor/studio-editor';
 import type { EditorView } from '@milkdown/prose/view';
 import { AppWindow, Copy, Eye, FolderSearch, History, LayoutTemplate } from 'lucide-react';
 import { showContextMenu } from './common/context-menu';
+import { WIDGET_ASK, WIDGET_START, type WidgetAsk, type WidgetStart } from '@blog/kernel/widget-events.ts';
 import { useMacros } from '@blog/science/rendering/math.ts';
 import { macrosFor } from '../math-macros.mjs';
 import { ArticleSession, type SaveState } from './state/article-session';
@@ -297,6 +298,16 @@ const chat = createAiChat(studio, { withArticlePictures: (markdown) => drive.wit
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && chat.aiPanel.shown() });
 chat.restoreLayout();
 const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void openAgents(() => terminal.refreshAgents()) });
+// A widget in the article asking the AI (note.ask, a button in it clicked): put in the AI's input, for the author to
+// send (one in an answer is said in its conversation: the panel takes it first).
+document.addEventListener(WIDGET_START, (event) => {
+	(event as CustomEvent<WidgetStart>).detail.canAsk = true;
+});
+document.addEventListener(WIDGET_ASK, (event) => {
+	event.preventDefault();
+	chat.showAi();
+	chat.aiPanel.ask((event as CustomEvent<WidgetAsk>).detail.text);
+});
 // 小程序: the tools of apps/, in floating windows; what they may reach of the article shown.
 const appsView = shell.querySelector<HTMLElement>('#apps-view')!;
 const miniApps = createMiniApps(appsView, shell.querySelector<HTMLElement>('#mini-app-layer')!, {

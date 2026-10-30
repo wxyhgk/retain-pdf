@@ -423,7 +423,7 @@ export type Conversation = {
 export type ToolContent = { type: 'content'; content: { type: string; text?: string } } | { type: 'diff'; path: string; oldText?: string | null; newText: string } | { type: 'terminal'; terminalId: string };
 /** What a conversation is made of, in order. */
 export type ConversationItem =
-	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[] }; steer?: boolean; quotes?: string[]; pictures?: string[]; files?: string[]; pastes?: string[] }
+	| { kind: 'user'; id: string; text: string; context?: { article: string | null; selection: string | null; mentions: string[]; articleSlug?: string | null; mentionSlugs?: string[]; widgets?: string[] }; steer?: boolean; quotes?: string[]; pictures?: string[]; files?: string[]; pastes?: string[] }
 	| { kind: 'message'; id: string; text: string }
 	| { kind: 'thought'; id: string; text: string }
 	| { kind: 'tool'; id: string; title: string; toolKind: string; status: 'pending' | 'in_progress' | 'completed' | 'failed'; content: ToolContent[]; locations: Array<{ path: string; line?: number | null }>; rawInput: unknown; output: string; exitCode: number | null }
@@ -488,7 +488,8 @@ export function followConversation(id: string, listener: (event: ConversationEve
 }
 
 /** Where the author is, told with what they say: the article open, the lines selected in it, the articles named with @. */
-export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string }; mentions?: string[] };
+/** `widgets`: what the widgets in the conversation told of themselves since it was last spoken to (note.tell). */
+export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string }; mentions?: string[]; widgets?: Array<{ title: string; state: unknown }> };
 
 /** The fields of a question an AI asks: a JSON Schema's, each a choice of one (`oneOf`), of several (`items.anyOf`) or words. */
 export type FormField = { type: string; title?: string; description?: string; oneOf?: Array<{ const: string; title?: string; description?: string }>; items?: { anyOf?: Array<{ const: string; title?: string; description?: string }> } };

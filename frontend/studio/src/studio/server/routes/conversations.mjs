@@ -100,7 +100,12 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 			? { start: asked.selection.start, end: asked.selection.end, text: asked.selection.text.slice(0, 20_000) }
 			: null;
 		const mentions = (await Promise.all((Array.isArray(asked.mentions) ? asked.mentions : []).map(article))).filter(Boolean).filter((entry) => entry.path !== open?.path);
-		return { ...(open ? { article: open } : {}), ...(selection ? { selection } : {}), ...(mentions.length ? { mentions } : {}) };
+		// What the widgets in the answers told of themselves (note.tell): a few, each its title and its value as JSON, not long.
+		const widgets = (Array.isArray(asked.widgets) ? asked.widgets : [])
+			.slice(-8)
+			.map((widget) => ({ title: typeof widget?.title === 'string' ? widget.title.slice(0, 100) : '', state: JSON.stringify(widget?.state ?? null) ?? 'null' }))
+			.filter((widget) => widget.state.length <= 8000);
+		return { ...(open ? { article: open } : {}), ...(selection ? { selection } : {}), ...(mentions.length ? { mentions } : {}), ...(widgets.length ? { widgets } : {}) };
 	};
 	api.get('/conversations/:id/events', async ({ params, request, response }) => {
 		// One kept in chats/ is read back, shown as it was left.

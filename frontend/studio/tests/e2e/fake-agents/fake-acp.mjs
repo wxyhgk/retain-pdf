@@ -226,6 +226,28 @@ const app = agent({ name: 'fake' })
 			await words('agent_message_chunk', '质能关系 $E = mc^2$ 说明质量就是能量。\n\n第二段。');
 			return { stopReason: 'end_turn' };
 		}
+		// A widget that speaks to it (note.ask, note.tell), written slowly: the panel waits for it whole.
+		if (said.startsWith('小模块')) {
+			const widget = [
+				'```widget title="参数" height=140',
+				'<input id="a" type="range" min="1" max="10" value="3"> <button id="go">重算</button> <span id="shown"></span> <span id="self"></span>',
+				'<script>',
+				'const a = document.querySelector("#a");',
+				'if (note.state) a.value = note.state.a;',
+				'const show = () => { document.querySelector("#shown").textContent = (note.canAsk ? "能问" : "不能问") + " a=" + a.value; };',
+				'a.addEventListener("input", () => { note.tell({ a: Number(a.value) }); show(); });',
+				'document.querySelector("#go").addEventListener("click", () => note.ask("上下文：用 a=" + a.value + " 重算"));',
+				'show();',
+				'note.ask("上下文：自己问的").then((said) => { document.querySelector("#self").textContent = said ? "自己问了" : "自己问不了"; });',
+				'</script>',
+				'```',
+			].join('\n');
+			for (const piece of `调一调：\n\n${widget}`.match(/.{1,8}/gsu) ?? []) {
+				await update({ sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: piece }, messageId: 'widget' });
+				await pause(25);
+			}
+			return { stopReason: 'end_turn' };
+		}
 		// What it was told, as it came (with what the Studio adds of where the author is; what was quoted, before).
 		if (said.startsWith('上下文') || said.startsWith('> ')) {
 			await words('agent_message_chunk', `收到的是：\n\n~~~~~~text\n${said}\n~~~~~~`);

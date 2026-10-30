@@ -224,6 +224,14 @@ test('for pi (its system prompt changed only where it differs): where the author
 	assert.equal(withContext('你好', { article: where.article }, 'message'), '你好');
 });
 
+test('what the widgets in the answers told of themselves (note.tell) goes with what is said next, each by its title', () => {
+	const widgets = [{ title: '参数', state: '{"a":7}' }, { title: '', state: 'null' }];
+	const told = withContext('用 a=7 重算', { widgets }, 'message');
+	assert.match(told, /对话里的交互模块（你写的 ```widget）现在的状态，是用户在模块里操作后模块用 note\.tell 交给你的：\n- 「参数」：\{"a":7\}\n- 「交互模块」：null/u);
+	// Not where the author is: not in pi's system prompt.
+	assert.equal(contextBlock({ widgets }, 'standing'), '');
+});
+
 test('one made ready is taken by the next begun with the same (no adapter started then); the idle beyond the latest few are put to sleep, woken when spoken to', async (t) => {
 	const cwd = await realpath(await mkdtemp(join(tmpdir(), 'agent-sessions-')));
 	t.after(() => rm(cwd, { recursive: true, force: true }));

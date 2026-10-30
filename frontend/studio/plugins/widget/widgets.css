@@ -1,4 +1,16 @@
 /* Interactive widgets (```widget): a frame as wide as the text, as tall as what it holds. */
-.note-widget { margin: 1.4em 0; }
+.note-widget { position: relative; margin: 1.4em 0; }
 .note-widget-frame { display: block; width: 100%; border: 0; background: transparent; }
 .note-widget > figcaption { margin-top: 6px; color: rgb(var(--gray, 120, 119, 116)); font-size: 0.875em; text-align: center; }
+/* Shown large (widget-host.ts expandWidget): a button over it where it is narrow, and the widget over everything. */
+.note-widget-expand { position: absolute; top: 4px; right: 4px; display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 1px solid rgb(var(--gray-light, 225, 224, 221)); border-radius: 6px; background: var(--surface, #fff); color: rgb(var(--gray, 120, 119, 116)); cursor: pointer; opacity: 0; transition: opacity 120ms ease; }
+.note-widget:hover > .note-widget-expand, .note-widget-expand:focus-visible { opacity: 1; }
+.note-widget-expand:hover { color: rgb(var(--gray-dark, 55, 53, 47)); }
+.note-widget-dialog { display: flex; flex-direction: column; box-sizing: border-box; width: min(1200px, 94vw); height: 90vh; max-width: none; max-height: none; padding: 0; border: 1px solid rgb(var(--gray-light, 225, 224, 221)); border-radius: 10px; background: var(--surface, #fff); color: rgb(var(--gray-dark, 55, 53, 47)); box-shadow: 0 18px 50px rgb(0 0 0 / 0.18); }
+.note-widget-dialog:not([open]) { display: none; }
+.note-widget-dialog::backdrop { background: rgb(0 0 0 / 0.3); }
+.note-widget-dialog-bar { display: flex; flex: none; align-items: center; gap: 8px; padding: 8px 10px 8px 16px; border-bottom: 1px solid rgb(var(--gray-light, 225, 224, 221)); font-size: 14px; font-weight: 600; }
+.note-widget-dialog-bar > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.note-widget-dialog-close { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray, 120, 119, 116)); font-size: 20px; line-height: 1; cursor: pointer; }
+.note-widget-dialog-close:hover { background: var(--surface-soft, rgb(0 0 0 / 0.05)); color: rgb(var(--gray-dark, 55, 53, 47)); }
+.note-widget-dialog > .note-widget-frame { flex: 1; height: auto; min-height: 0; padding: 16px; box-sizing: border-box; }

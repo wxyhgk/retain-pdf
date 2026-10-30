@@ -60,6 +60,14 @@ test('the frame’s page holds the tokens, the bridge and the source; a whole pa
 	assert.equal(whole.match(/<head/gu)?.length, 1);
 });
 
+test('what the frame is given: whether there is an AI to ask, what it told before; none on the blog', () => {
+	assert.doesNotMatch(widgetDocument('<p>hi</p>'), /__noteGiven = /u);
+	const given = widgetDocument('<p>hi</p>', {}, { canAsk: true, state: { a: 7, note: '</script><b>' } });
+	assert.match(given, /window\.__noteGiven = \{"canAsk":true,"state":\{"a":7,"note":"\\u003c\/script>\\u003cb>"\}\};<\/script><script>/u);
+	// Given before the bridge reads it.
+	assert.ok(given.indexOf('__noteGiven =') < given.indexOf('window.note = note'));
+});
+
 test('fence options', () => {
 	assert.deepEqual(widgetOptions('title="势能 面" height=420'), { title: '势能 面', height: 420 });
 	assert.deepEqual(widgetOptions(''), { title: '', height: 240 });

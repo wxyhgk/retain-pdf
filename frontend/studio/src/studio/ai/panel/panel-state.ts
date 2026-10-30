@@ -460,6 +460,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		const { article, leftOut, selectionLeftOut } = get();
 		const open = article && leftOut !== article.slug ? article : null;
 		const selection = open && !selectionLeftOut && host.hasSelection() ? await host.selection() : null;
+		const widgets = toldSince(target.id);
 		try {
 			const pictures = [...(said.kept ?? []), ...(await Promise.all(said.pictures.map((picture) => keepConversationPicture(target.id, picture.blob))))];
 			const files = [...(said.keptFiles ?? []), ...(await Promise.all(said.files.map((attachment) => keepConversationFile(target.id, attachment.file))))];
@@ -470,6 +471,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 					...(open ? { article: open.slug } : {}),
 					...(selection ? { selection } : {}),
 					...(named.length ? { mentions: named.map((entry) => entry.slug) } : {}),
+					...(widgets.length ? { widgets } : {}),
 				},
 				{ pictures, files, quotes, pastes },
 			);
@@ -525,6 +527,19 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			set({ draft: text });
 			say(error instanceof Error ? error.message : t('没发出去'), true);
 		}
+	}
+
+	/**
+	 * What the widgets in the answers told of themselves (note.tell), as ChatGPT's and Claude's apps do: kept by widget
+	 * (`<conversation>/<answer>/<n>`), given back when one is drawn again (note.state); what changed since the AI was
+	 * last spoken to, told it with what is said next.
+	 */
+	const widgetStates = new Map<string, unknown>();
+	const toldWidgets = new Map<string, { conversation: string; title: string; state: unknown }>();
+	function toldSince(conversation: string): Array<{ title: string; state: unknown }> {
+		const told = [...toldWidgets.entries()].filter(([, entry]) => entry.conversation === conversation);
+		for (const [key] of told) toldWidgets.delete(key);
+		return told.map(([, { title, state }]) => ({ title, state }));
 	}
 
 	// The selection in the article, followed: a chip while there is one.
@@ -732,6 +747,23 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 				}
 				showContextMenu(menu, anchor);
 			});
+		},
+		/** What a widget in an answer told of itself before (`key`: its conversation's, its answer's, its place in it). */
+		widgetState: (key: string): unknown => widgetStates.get(key),
+		/** What a widget in an answer is at now: kept for it, and told the AI with what is said next. */
+		widgetTold(key: string, title: string, state: unknown): void {
+			widgetStates.set(key, state);
+			const conversation = key.split('/')[0];
+			toldWidgets.set(key, { conversation, title, state });
+		},
+		/** What a widget in an answer asks, for the reader (a button in it clicked): said, after what is being done. */
+		widgetAsked(text: string): boolean {
+			const shown = get().conversation;
+			if (!shown) return false;
+			const said: Said = { id: crypto.randomUUID(), text, mentions: [], pictures: [], files: [], quotes: [], pastes: [] };
+			if (shown.state === 'running') set({ queued: [...get().queued, said] });
+			else void send(said);
+			return true;
 		},
 	};
 

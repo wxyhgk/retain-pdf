@@ -1,4 +1,5 @@
 import { t } from '@blog/i18n/index.mjs';
+import { WIDGET_ASK, WIDGET_START, WIDGET_STATE, type WidgetAsk, type WidgetStart, type WidgetTold } from '@blog/kernel/widget-events.ts';
 import { WIDGET_MESSAGE, publicArticlePath, widgetDocument, widgetOptions } from './widgets.mjs';
 
 /**
@@ -7,9 +8,22 @@ import { WIDGET_MESSAGE, publicArticlePath, widgetDocument, widgetOptions } from
  * for a file of the article (`note.file()`) is sent its text. The blog and
  * the Studio both use it; the Studio also makes its frames here, and tells
  * it when the article's files change, so the widgets that use them start over.
+ *
+ * What a widget asks of the AI (`note.ask`) and tells it (`note.tell`) is an
+ * event on its figure, for what it is in to take (@blog/kernel/widget-events.ts).
  */
 
 const FRAMES = 'iframe.note-widget-frame';
+
+/** How long a widget waits between two things it asks. */
+const ASK_GAP = 2000;
+/** How much a widget may tell of itself (its JSON). */
+const STATE_LENGTH = 20_000;
+
+/** By frame: the figure it speaks for (the frame's own, or, made larger, the one it was made from). */
+const speaksFor = new WeakMap<HTMLIFrameElement, HTMLElement>();
+/** By frame: when it last asked. */
+const lastAsked = new WeakMap<HTMLIFrameElement, number>();
 
 const theme = (): 'dark' | 'light' => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
@@ -72,14 +86,26 @@ export function connectWidgets(): void {
 	if (connected) return;
 	connected = true;
 	window.addEventListener('message', (event) => {
-		const data = event.data as { kind?: unknown; type?: unknown; height?: unknown; id?: unknown; path?: unknown } | null;
+		const data = event.data as { kind?: unknown; type?: unknown; height?: unknown; id?: unknown; path?: unknown; text?: unknown } | null;
 		if (!data || data.kind !== WIDGET_MESSAGE) return;
 		const frame = [...document.querySelectorAll<HTMLIFrameElement>(FRAMES)].find((candidate) => candidate.contentWindow === event.source);
 		if (!frame) return;
 		if (data.type === 'ready') tellTheme(frame);
 		else if (data.type === 'height' && typeof data.height === 'number' && Number.isFinite(data.height)) {
-			frame.style.height = `${Math.max(24, Math.min(4000, Math.ceil(data.height)))}px`;
+			// Made larger, it fills its room.
+			if (!frame.dataset.fills) frame.style.height = `${Math.max(24, Math.min(4000, Math.ceil(data.height)))}px`;
 		} else if (data.type === 'file') void answerFile(frame, data.id, data.path);
+		else if (data.type === 'ask') post(frame, { type: 'asked', id: data.id, said: asked(frame, data.text) });
+		else if (data.type === 'escape') frame.closest<HTMLDialogElement>('dialog.note-widget-dialog')?.close();
+		else if (data.type === 'state' && typeof data.text === 'string' && data.text.length <= STATE_LENGTH) {
+			let state: unknown;
+			try {
+				state = JSON.parse(data.text);
+			} catch {
+				return;
+			}
+			figureOf(frame)?.dispatchEvent(new CustomEvent<WidgetTold>(WIDGET_STATE, { bubbles: true, detail: { state, title: frame.title } }));
+		}
 	});
 	const tellAll = () => document.querySelectorAll<HTMLIFrameElement>(FRAMES).forEach(tellTheme);
 	new MutationObserver(tellAll).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
@@ -94,10 +120,31 @@ export function connectWidgets(): void {
 	);
 }
 
+function figureOf(frame: HTMLIFrameElement): HTMLElement | null {
+	return speaksFor.get(frame) ?? frame.parentElement;
+}
+
+/** What a widget asks, said if what it is in takes it: not more than once in ASK_GAP. */
+function asked(frame: HTMLIFrameElement, text: unknown): boolean {
+	const said = typeof text === 'string' ? text.trim().slice(0, 4000) : '';
+	const now = Date.now();
+	if (!said || now - (lastAsked.get(frame) ?? 0) < ASK_GAP) return false;
+	lastAsked.set(frame, now);
+	const figure = figureOf(frame);
+	return Boolean(figure && !figure.dispatchEvent(new CustomEvent<WidgetAsk>(WIDGET_ASK, { bubbles: true, cancelable: true, detail: { text: said, title: frame.title } })));
+}
+
+/** What a widget starting is given by what it is in (WIDGET_START): none, out of the page. */
+function startOf(figure: HTMLElement, title: string): WidgetStart {
+	const detail: WidgetStart = { title, canAsk: false };
+	if (figure.isConnected) figure.dispatchEvent(new CustomEvent<WidgetStart>(WIDGET_START, { bubbles: true, detail }));
+	return detail;
+}
+
 /** Shows a widget that is a file of the article, as it is now. */
-async function loadFile(frame: HTMLIFrameElement, path: string): Promise<void> {
+async function loadFile(frame: HTMLIFrameElement, path: string, given: WidgetStart = { title: '', canAsk: false }): Promise<void> {
 	try {
-		frame.srcdoc = widgetDocument(await fetchText(path), colors());
+		frame.srcdoc = widgetDocument(await fetchText(path), colors(), given);
 	} catch (error) {
 		const message = (error instanceof Error ? error.message : String(error)).replace(/[<&]/gu, '');
 		frame.srcdoc = widgetDocument(`<p style="color: var(--muted)">${message}</p>`, colors());
@@ -106,6 +153,8 @@ async function loadFile(frame: HTMLIFrameElement, path: string): Promise<void> {
 
 /** By widget (its figure): what starts it, made `later`. */
 const starts = new WeakMap<Element, () => void>();
+/** By widget (its figure): what starts it again, as it is now (what it told of itself). */
+const restarts = new WeakMap<Element, () => void>();
 
 /**
  * The article's files changed (`assets/opt.log`, …): the widgets that are
@@ -151,9 +200,12 @@ export function createWidget(widget: { source: string } | { file: string }, meta
 	frame.style.height = `${height}px`;
 	if ('file' in widget) frame.dataset.widgetFile = widget.file;
 	const start = () => {
-		if ('file' in widget) void loadFile(frame, widget.file);
-		else frame.srcdoc = widgetDocument(widget.source, colors());
+		const given = startOf(figure, frame.title);
+		if (given.expand) addExpand(figure, widget, frame.title);
+		if ('file' in widget) void loadFile(frame, widget.file, given);
+		else frame.srcdoc = widgetDocument(widget.source, colors(), given);
 	};
+	restarts.set(figure, start);
 	if (later) starts.set(figure, start);
 	else start();
 	figure.append(frame);
@@ -164,4 +216,61 @@ export function createWidget(widget: { source: string } | { file: string }, meta
 	}
 	connectWidgets();
 	return figure;
+}
+
+const EXPAND_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>';
+
+/** A button over a widget that shows it large (where it is narrow: the AI panel), once. */
+function addExpand(figure: HTMLElement, widget: { source: string } | { file: string }, title: string): void {
+	if (figure.querySelector(':scope > .note-widget-expand')) return;
+	const button = document.createElement('button');
+	button.type = 'button';
+	button.className = 'note-widget-expand';
+	button.title = t('放大');
+	button.setAttribute('aria-label', t('放大'));
+	button.innerHTML = EXPAND_ICON;
+	button.addEventListener('click', () => expandWidget(figure, widget, title));
+	figure.append(button);
+}
+
+/**
+ * A widget shown large, over everything (as ChatGPT's full screen): the same widget, started as it is now (what it
+ * told of itself), speaking for the one it was made from; closed, that one starts again as the large one left it.
+ */
+export function expandWidget(figure: HTMLElement, widget: { source: string } | { file: string }, title: string): HTMLDialogElement {
+	const dialog = document.createElement('dialog');
+	dialog.className = 'note-widget-dialog';
+	const bar = document.createElement('div');
+	bar.className = 'note-widget-dialog-bar';
+	const name = document.createElement('span');
+	name.textContent = title || t('交互模块');
+	const close = document.createElement('button');
+	close.type = 'button';
+	close.className = 'note-widget-dialog-close';
+	close.textContent = '×';
+	close.title = t('关闭');
+	close.setAttribute('aria-label', t('关闭'));
+	close.addEventListener('click', () => dialog.close());
+	bar.append(name, close);
+	const frame = document.createElement('iframe');
+	frame.className = 'note-widget-frame';
+	frame.setAttribute('sandbox', 'allow-scripts');
+	frame.title = title || t('交互模块');
+	frame.dataset.fills = '';
+	speaksFor.set(frame, figure);
+	dialog.append(bar, frame);
+	document.body.append(dialog);
+	const given = startOf(figure, frame.title);
+	if ('file' in widget) void loadFile(frame, widget.file, given);
+	else frame.srcdoc = widgetDocument(widget.source, colors(), given);
+	dialog.addEventListener('close', () => {
+		dialog.remove();
+		restarts.get(figure)?.();
+	});
+	dialog.addEventListener('click', (event) => {
+		if (event.target === dialog) dialog.close();
+	});
+	connectWidgets();
+	dialog.showModal();
+	return dialog;
 }

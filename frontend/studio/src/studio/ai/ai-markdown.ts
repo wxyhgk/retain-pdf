@@ -7,7 +7,7 @@ import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { articleParser } from '@blog/markdown/syntax.mjs';
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
 
-import { codeBlockPreview } from '../plugins';
+import { codeBlockPreview, drawsLanguage } from '../plugins';
 
 /**
  * What an AI says in the AI panel, drawn: its Markdown read as articles are (GFM, formulas), formulas drawn with
@@ -74,11 +74,12 @@ export function renderAiMarkdown(markdown: string, { blocks = false, pages = [] 
  * used as it is: words streaming in draw only the blocks that changed (all of them and their formulas at every frame
  * made a long answer crawl).
  */
-export function renderAiBlocks(markdown: string, { pages = [], drawnBefore }: { pages?: PageRef[]; drawnBefore?: (markdown: string, className: string) => HTMLElement | null } = {}): HTMLElement[] {
+export function renderAiBlocks(markdown: string, { pages = [], drawnBefore, streaming = false }: { pages?: PageRef[]; drawnBefore?: (markdown: string, className: string) => HTMLElement | null; streaming?: boolean } = {}): HTMLElement[] {
 	const tree = articleParser.runSync(articleParser.parse(markdown)) as Tree;
 	const drawn: HTMLElement[] = [];
 	// Link definitions drawn with each block, as its links may need them.
 	const definitions = tree.children.filter((node) => node.type === 'definition');
+	const last = tree.children.at(-1);
 	const block = (node: TopNode, className = 'ai-block'): HTMLElement => {
 		const source = sourceOf(markdown, node);
 		const before = source ? drawnBefore?.(source, className) : null;
@@ -86,7 +87,10 @@ export function renderAiBlocks(markdown: string, { pages = [], drawnBefore }: { 
 		const holder = document.createElement('div');
 		holder.className = className;
 		if (source) holder.dataset.markdown = source;
-		holder.append(drawnWithPages({ ...tree, children: [node, ...definitions] }, pages));
+		// A plugin's block still being written (its fence not closed yet): not drawn from half of it (a widget's script
+		// run at every word), a place kept for it till it is whole, as ChatGPT's and Claude's apps wait for their input.
+		if (streaming && node === last && node.type === 'code' && node.lang && drawsLanguage(node.lang) && !closedFence(source)) holder.append(beingWritten(node.lang, node.meta ?? ''));
+		else holder.append(drawnWithPages({ ...tree, children: [node, ...definitions] }, pages));
 		return holder;
 	};
 	for (const node of tree.children) {
@@ -104,6 +108,25 @@ export function renderAiBlocks(markdown: string, { pages = [], drawnBefore }: { 
 	return drawn;
 }
 
+/** Whether a fenced code block's Markdown ends with its closing fence. */
+function closedFence(source: string): boolean {
+	const lines = source.split('\n');
+	const fence = /^\s{0,3}(`{3,}|~{3,})/u.exec(lines[0] ?? '')?.[1];
+	if (!fence || lines.length < 2) return false;
+	const end = lines.at(-1)!.trim();
+	return end.length >= fence.length && [...end].every((character) => character === fence[0]);
+}
+
+/** The place kept for a plugin's block being written: as tall as it says it will be (`height=`), saying what it is. */
+function beingWritten(language: string, meta: string): HTMLElement {
+	const holder = document.createElement('div');
+	holder.className = 'ai-preview ai-preview-pending';
+	const height = /(?:^|\s)height=["']?(\d+)/u.exec(meta)?.[1];
+	if (height) holder.style.minHeight = `${Math.min(Number(height), 600)}px`;
+	holder.textContent = language.toLowerCase() === 'widget' ? t('正在写交互模块…') : t('正在写 {language}…', { language });
+	return holder;
+}
+
 function drawnWithPages(tree: Tree, pages: PageRef[]): DocumentFragment {
 	const fragment = drawnTree(tree);
 	if (pages.length) linkPages(fragment, indexOf(pages));
@@ -116,6 +139,10 @@ function sourceOf(markdown: string, node: TopNode): string {
 }
 
 function drawnTree(tree: Tree): DocumentFragment {
+	// A fence's options (after its language) kept on its code, for the plugins' blocks.
+	for (const node of tree.children) {
+		if (node.type === 'code' && node.meta) node.data = { ...node.data, hProperties: { ...(node.data?.hProperties as object | undefined), dataMeta: node.meta } };
+	}
 	const template = document.createElement('template');
 	template.innerHTML = toHtml.stringify(toHtml.runSync(tree as never) as never);
 	const fragment = template.content;
@@ -152,14 +179,16 @@ function drawnTree(tree: Tree): DocumentFragment {
 		}
 		(display && code.parentElement?.tagName === 'PRE' ? code.parentElement : code).replaceWith(holder);
 	}
-	// A plugin's block (```energy, ```smiles, ```widget…) drawn as the editor draws it.
-	for (const code of fragment.querySelectorAll('pre > code[class*="language-"]')) {
+	// A plugin's block (```energy, ```smiles, ```widget…) drawn as the editor draws it, with its fence's options
+	// (```widget title="…" height=…).
+	for (const code of fragment.querySelectorAll<HTMLElement>('pre > code[class*="language-"]')) {
 		const language = /language-([\w+-]+)/u.exec(code.className)?.[1];
-		const drawn = language ? codeBlockPreview(language, (code.textContent ?? '').replace(/\n$/u, '')) : null;
+		const meta = code.dataset.meta ?? '';
+		const drawn = language ? codeBlockPreview(language, (code.textContent ?? '').replace(/\n$/u, ''), meta) : null;
 		if (!drawn) continue;
 		const holder = document.createElement('div');
 		holder.className = 'ai-preview';
-		holder.dataset.source = `\`\`\`${code.className.match(/language-([\w+-]+)/u)?.[1] ?? ''}\n${(code.textContent ?? '').replace(/\n$/u, '')}\n\`\`\``;
+		holder.dataset.source = `\`\`\`${code.className.match(/language-([\w+-]+)/u)?.[1] ?? ''}${meta ? ` ${meta}` : ''}\n${(code.textContent ?? '').replace(/\n$/u, '')}\n\`\`\``;
 		holder.append(drawn);
 		code.parentElement!.replaceWith(holder);
 	}

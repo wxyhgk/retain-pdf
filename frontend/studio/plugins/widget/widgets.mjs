@@ -21,6 +21,14 @@
  * `note.theme`, `note.onTheme(fn)`, `note.color('ink')`, and
  * `note.file('assets/opt.log')`, the text of a published file of the
  * article (in img/ or assets/), which the page fetches for it.
+ *
+ * In the Studio, as ChatGPT's and Claude's apps in a conversation, a widget
+ * also speaks to the AI: `note.ask('…')` says something to it for the reader
+ * (on a click: in a conversation it is said, in an article put in the AI's
+ * input); `note.tell(value)` hands it what the widget is at now (the values
+ * chosen), told it with what is said next; `note.state` is that value again
+ * when the widget is drawn anew. `note.canAsk` (and `data-can-ask` on <html>)
+ * says whether there is an AI to ask: on the blog there is none.
  */
 
 import { articlePath } from '@blog/markdown/articles/article-references.mjs';
@@ -63,19 +71,40 @@ button:hover { background: var(--soft); }
 :focus-visible { outline: 2px solid var(--muted); outline-offset: 2px; }
 `;
 
-// Runs in the frame: tells the page its height, takes the theme from it.
+// Runs in the frame: tells the page its height, takes the theme from it; what is asked of the AI, and told it.
 const BRIDGE = `
 (() => {
 	const KIND = ${JSON.stringify(WIDGET_MESSAGE)};
 	const root = document.documentElement;
 	const listeners = [];
+	const given = window.__noteGiven || {};
+	delete window.__noteGiven;
 	const note = {
 		theme: matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
 		onTheme(listener) { listeners.push(listener); },
 		color(name) { return getComputedStyle(root).getPropertyValue('--' + name).trim(); },
+		canAsk: given.canAsk === true,
+		state: given.state ?? null,
 	};
 	root.dataset.theme = note.theme;
+	if (note.canAsk) root.dataset.canAsk = '';
 	window.note = note;
+	// Said for the reader, on what they did (a click, a key): not by a widget on its own, nor over and over.
+	let questions = 0;
+	const asking = new Map();
+	note.ask = (text) => new Promise((resolve) => {
+		const said = String(text ?? '').trim();
+		const activation = navigator.userActivation;
+		if (!note.canAsk || !said || (activation && !activation.isActive)) return resolve(false);
+		questions += 1;
+		asking.set(questions, resolve);
+		parent.postMessage({ kind: KIND, type: 'ask', id: questions, text: said }, '*');
+	});
+	note.tell = (value) => {
+		const text = JSON.stringify(value ?? null);
+		note.state = JSON.parse(text);
+		parent.postMessage({ kind: KIND, type: 'state', text }, '*');
+	};
 	let asked = 0;
 	const answers = new Map();
 	const ask = (id, path) => parent.postMessage({ kind: KIND, type: 'file', id, path }, '*');
@@ -94,6 +123,11 @@ const BRIDGE = `
 	addEventListener('message', (event) => {
 		const data = event.data;
 		if (event.source !== parent || !data || data.kind !== KIND) return;
+		if (data.type === 'asked') {
+			asking.get(data.id)?.(data.said === true);
+			asking.delete(data.id);
+			return;
+		}
 		if (data.type === 'file') {
 			const answer = answers.get(data.id);
 			answers.delete(data.id);
@@ -112,6 +146,10 @@ const BRIDGE = `
 		}
 		tell();
 	});
+	// Escape not used by the widget: the page's (a widget shown large is closed by it).
+	addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && !event.defaultPrevented) parent.postMessage({ kind: KIND, type: 'escape' }, '*');
+	});
 	new ResizeObserver(tell).observe(root);
 	addEventListener('load', tell);
 	parent.postMessage({ kind: KIND, type: 'ready' }, '*');
@@ -120,11 +158,13 @@ const BRIDGE = `
 
 /**
  * The page a widget's frame shows: its source, with the bridge and the page's colors (`colors`: --ink, --muted…, as
- * widget-host.ts reads them from the page, which the frame cannot) put in its head.
+ * widget-host.ts reads them from the page, which the frame cannot) put in its head. `given`: whether there is an AI to
+ * ask, and what the widget told of itself before (`note.canAsk`, `note.state`).
  */
-export function widgetDocument(source, colors = {}) {
+export function widgetDocument(source, colors = {}, given = {}) {
 	const tokens = Object.entries(colors).map(([name, value]) => `--${name}: ${value};`).join(' ');
-	const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>:root { ${tokens} }${STYLE}</style><script>${BRIDGE}</script>`;
+	const told = given.canAsk || given.state !== undefined ? `<script>window.__noteGiven = ${JSON.stringify({ canAsk: given.canAsk === true, state: given.state ?? null }).replace(/</gu, '\\u003c')};</script>` : '';
+	const head = `<meta charset="utf-8"><meta name="viewport" content="width=device-width"><style>:root { ${tokens} }${STYLE}</style>${told}<script>${BRIDGE}</script>`;
 	const text = String(source ?? '');
 	// A whole page of its own: ours goes first in its head.
 	if (/<head[\s>]/i.test(text)) return text.replace(/<head(\s[^>]*)?>/i, (tag) => tag + head);
