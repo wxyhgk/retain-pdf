@@ -3,7 +3,8 @@ import { languages } from '@codemirror/language-data';
 import type { EditorView } from '@milkdown/prose/view';
 
 import { t } from '@blog/i18n/index.mjs';
-import { createWidget } from './widget-host.ts';
+import { loadWhenNear } from '@blog/editor-kit/near-screen.ts';
+import { createWidget, startWidget } from './widget-host.ts';
 import { WIDGET_LANGUAGE, publicArticlePath, widgetFile, widgetOptions } from './widgets.mjs';
 
 /**
@@ -61,7 +62,13 @@ export function observeWidgets(root: HTMLElement): () => void {
 	const draw = () => {
 		for (const placeholder of root.querySelectorAll<HTMLElement>('figure.note-widget[data-widget]')) {
 			const widget = waiting.get(placeholder.dataset.widget ?? '');
-			if (widget) placeholder.replaceWith(createWidget(widget.widget, widget.meta));
+			if (!widget) continue;
+			// Started as it comes near the screen (its page, the files it reads, fetched then), in the article it is in.
+			const figure = createWidget(widget.widget, widget.meta, { later: true });
+			placeholder.replaceWith(figure);
+			const article = figure.closest<HTMLElement>('.ProseMirror');
+			if (article) loadWhenNear(article, figure, () => startWidget(figure));
+			else startWidget(figure);
 		}
 	};
 	const observer = new MutationObserver(draw);

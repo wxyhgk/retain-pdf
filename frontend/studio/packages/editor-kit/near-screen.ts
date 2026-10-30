@@ -17,6 +17,10 @@ import type { EditorView } from '@milkdown/prose/view';
  * (KaTeX and laying out an article of formulas took a quarter of a second
  * after each click on it in the list). Formulas made once it is shown (typed,
  * pasted) are drawn at once.
+ *
+ * What is fetched (an article's pictures, its 交互模块) is loaded only when it comes near the screen, in an article of
+ * any length, and never the rest after (`loadWhenNear`): what is not scrolled to is not downloaded (another device's
+ * Studio, over a phone's network).
  */
 
 /** How many top-level blocks make an article long (a long article in this blog has about 200). */
@@ -40,6 +44,9 @@ export const drawsLater = (view: EditorView): boolean => view.dom.classList.cont
 const SPELL = 8;
 
 const WAITING = 'is-waiting';
+/** What waits to be loaded when it comes near, and only then. */
+const NEAR_ONLY = 'is-waiting-near';
+const ANY_WAITING = `.${WAITING}, .${NEAR_ONLY}`;
 
 /** By element: what draws it. */
 const waiting = new WeakMap<Element, () => void>();
@@ -47,6 +54,8 @@ const waiting = new WeakMap<Element, () => void>();
 const roots = new Set<HTMLElement>();
 let frame = 0;
 let listening = false;
+/** An article shown (laid out after it was hidden, as one being opened is) or resized: what is near it looked for again. */
+let sized: ResizeObserver | null = null;
 
 /** Draws `element` with `draw` once it is near the screen, in the article `root`. */
 export function drawWhenNear(root: HTMLElement, element: HTMLElement, draw: () => void): void {
@@ -58,8 +67,15 @@ export function drawWhenNear(root: HTMLElement, element: HTMLElement, draw: () =
 	}
 	element.classList.add(WAITING);
 	waiting.set(element, draw);
+	if (!roots.has(root)) (sized ??= new ResizeObserver(soon)).observe(root);
 	roots.add(root);
 	soon();
+}
+
+/** Loads `element` with `load` once it is near the screen, in the article `root`; not before, however long it waits. */
+export function loadWhenNear(root: HTMLElement, element: HTMLElement, load: () => void): void {
+	drawWhenNear(root, element, load);
+	element.classList.replace(WAITING, NEAR_ONLY);
 }
 
 /** Whether `element` is still to be drawn. */
@@ -73,7 +89,7 @@ export function drawNow(element: Element): void {
 	const draw = waiting.get(element);
 	if (!draw) return;
 	waiting.delete(element);
-	element.classList.remove(WAITING);
+	element.classList.remove(WAITING, NEAR_ONLY);
 	draw();
 }
 
@@ -99,7 +115,7 @@ function blocksWithin(root: HTMLElement, above: number, below: number): Element[
 	return found;
 }
 
-const waits = (block: Element) => isWaiting(block) || block.querySelector(`.${WAITING}`) !== null;
+const waits = (block: Element) => isWaiting(block) || block.querySelector(ANY_WAITING) !== null;
 
 /**
  * Draws what waits near the screen. Each drawing lays the article out again (in WebKit, all of a book), so not a
@@ -109,13 +125,16 @@ function drawNear(): void {
 	frame = 0;
 	const screen = window.innerHeight;
 	for (const root of roots) {
-		if (!root.isConnected || !anyWaiting(root)) {
+		if (!root.isConnected || root.querySelector(ANY_WAITING) === null) {
 			roots.delete(root);
+			sized?.unobserve(root);
 			continue;
 		}
+		// Not laid out (hidden): where anything is cannot be told, and nothing is fetched for it.
+		const shown = root.getClientRects().length > 0;
 		if (blocksWithin(root, -screen, 2 * screen).some(waits)) {
 			for (const block of blocksWithin(root, -3 * screen, 4 * screen)) {
-				for (const element of [block, ...block.querySelectorAll(`.${WAITING}`)]) drawNow(element);
+				for (const element of [block, ...block.querySelectorAll(ANY_WAITING)]) if (shown || !element.classList.contains(NEAR_ONLY)) drawNow(element);
 			}
 		}
 		// Not a long article: the rest too, down the article, a few at a frame.

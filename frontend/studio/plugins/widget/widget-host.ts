@@ -104,6 +104,9 @@ async function loadFile(frame: HTMLIFrameElement, path: string): Promise<void> {
 	}
 }
 
+/** By widget (its figure): what starts it, made `later`. */
+const starts = new WeakMap<Element, () => void>();
+
 /**
  * The article's files changed (`assets/opt.log`, …): the widgets that are
  * one of them, or read one, start over with them as they are now.
@@ -111,6 +114,8 @@ async function loadFile(frame: HTMLIFrameElement, path: string): Promise<void> {
 export function widgetFilesChanged(paths: string[]): void {
 	const changed = new Set(paths);
 	for (const frame of document.querySelectorAll<HTMLIFrameElement>(FRAMES)) {
+		// Not started yet (not near the screen): it reads them as they are when it starts.
+		if (frame.parentElement && starts.has(frame.parentElement)) continue;
 		const file = frame.dataset.widgetFile;
 		if (file && changed.has(file)) {
 			reads.delete(frame);
@@ -123,11 +128,19 @@ export function widgetFilesChanged(paths: string[]): void {
 	}
 }
 
+/** Starts a widget made `later` (its page loaded, its files read); one started already, nothing. */
+export function startWidget(figure: Element): void {
+	const start = starts.get(figure);
+	starts.delete(figure);
+	start?.();
+}
+
 /**
  * A widget drawn as the blog draws it, from its source (or the file of the
- * article it is) and its fence's `title=`/`height=`.
+ * article it is) and its fence's `title=`/`height=`. `later`: its room only, till `startWidget` (as it comes near the
+ * screen: what it fetches, not before).
  */
-export function createWidget(widget: { source: string } | { file: string }, meta = ''): HTMLElement {
+export function createWidget(widget: { source: string } | { file: string }, meta = '', { later = false } = {}): HTMLElement {
 	const { title, height } = widgetOptions(meta);
 	const figure = document.createElement('figure');
 	figure.className = 'note-widget';
@@ -136,10 +149,13 @@ export function createWidget(widget: { source: string } | { file: string }, meta
 	frame.setAttribute('sandbox', 'allow-scripts');
 	frame.title = title || t('交互模块');
 	frame.style.height = `${height}px`;
-	if ('file' in widget) {
-		frame.dataset.widgetFile = widget.file;
-		void loadFile(frame, widget.file);
-	} else frame.srcdoc = widgetDocument(widget.source, colors());
+	if ('file' in widget) frame.dataset.widgetFile = widget.file;
+	const start = () => {
+		if ('file' in widget) void loadFile(frame, widget.file);
+		else frame.srcdoc = widgetDocument(widget.source, colors());
+	};
+	if (later) starts.set(figure, start);
+	else start();
 	figure.append(frame);
 	if (title) {
 		const caption = document.createElement('figcaption');

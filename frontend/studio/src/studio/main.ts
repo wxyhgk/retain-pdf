@@ -33,6 +33,7 @@ import {
 	revealArticleFile,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
+import { usePictureSizes } from './editor/figure-block';
 import { createStudioEditor } from './editor/studio-editor';
 import type { EditorView } from '@milkdown/prose/view';
 import { AppWindow, Copy, Eye, FolderSearch, History, LayoutTemplate } from 'lucide-react';
@@ -661,6 +662,7 @@ let shownArticle: ArticlePayload | null = null;
 function useArticleContext(article: ArticlePayload): void {
 	shownArticle = article;
 	useMacros(macrosFor(article.macros));
+	usePictureSizes(article.pictures);
 	// Before its blocks are drawn: what they draw with is this article's.
 	studioPlugins.emit('studio/article-showing', article.slug);
 }

@@ -3,6 +3,7 @@ import { basename, dirname, extname, join, resolve, sep } from 'node:path';
 import { setFrontmatterField, updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
 import { comparePages } from '../../../articles/page-order.mjs';
 import { atomicWriteText, contentRevision } from '../files/atomic-write.mjs';
+import { pictureSizes } from './picture-sizes.mjs';
 import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../../../articles/article-views.mjs';
 import { articleBundlePaths, assertArticleSlug, resolveInside, StudioPathError } from '../../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
@@ -504,6 +505,8 @@ export class ArticleRepository {
 			problems: articleProblems(source),
 			macros: articleMacros(source),
 			chemistryViews: readMoleculeViews(viewsSource),
+			// How large its pictures are: the editor keeps their room till it loads them (picture-sizes.mjs).
+			pictures: await pictureSizes(paths.directory, source),
 		};
 	}
 

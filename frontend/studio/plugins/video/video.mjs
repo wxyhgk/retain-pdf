@@ -185,7 +185,8 @@ export function videoFigure(video, { fileUrl, play = false }) {
 		inside = element('video', {
 			src: fileUrl(local),
 			controls: true,
-			preload: 'metadata',
+			// With its cover, nothing of it fetched till it is played; without, enough for its first picture.
+			preload: cover ? 'none' : 'metadata',
 			playsInline: true,
 			...(cover ? { poster: fileUrl(cover) } : {}),
 		});

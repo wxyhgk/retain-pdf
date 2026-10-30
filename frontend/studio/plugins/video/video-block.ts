@@ -297,9 +297,20 @@ export const videoView = $view(videoSchema.schema.node, () => (initial: ProseNod
 		drawn = video;
 		if (player) {
 			const shown = player;
+			const missing = () => {
+				if (frame.querySelector('.video-block-missing')) return;
+				frame.append(Object.assign(document.createElement('div'), { className: 'video-block-missing', textContent: t('放不了 ./{path}：文件不在，或这种视频这里放不了', { path: local }) }));
+			};
 			shown.addEventListener('error', () => {
-				if (shown.error) frame.append(Object.assign(document.createElement('div'), { className: 'video-block-missing', textContent: t('放不了 ./{path}：文件不在，或这种视频这里放不了', { path: local }) }));
+				if (shown.error) missing();
 			});
+			// Nothing of it fetched till it is played (it has its cover): whether it is there, asked by a byte of it.
+			if (shown.preload === 'none') {
+				void fetch(shown.src, { headers: { Range: 'bytes=0-0' } }).then((answer) => {
+					void answer.body?.cancel();
+					if (!answer.ok && shown === player) missing();
+				}, () => {});
+			}
 			if (!articleFile(video.cover) && !coverAsked) {
 				// Told its length (WebKit loads no frame of a video not played before it is sought): to a frame, and that one.
 				shown.addEventListener('loadedmetadata', () => {

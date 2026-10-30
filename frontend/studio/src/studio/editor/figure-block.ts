@@ -8,6 +8,7 @@ import { $nodeSchema, $prose, $remark } from '@milkdown/utils';
 import { figureCaption, figureLabel, figureWidth, standaloneImage, withWidth } from '@blog/markdown/figures/figures.mjs';
 import '@blog/markdown/figures/figures.css';
 import { t } from '@blog/i18n/index.mjs';
+import { loadWhenNear } from '@blog/editor-kit/near-screen.ts';
 
 /**
  * Pictures as the blog shows them (`src/figures/`): an image alone in its
@@ -141,6 +142,14 @@ const NARROWEST = 10;
 
 const figureViews = new WeakMap<Node, FigureView>();
 
+/** How large the shown article's pictures are, by their `src` as written (the article's `pictures`, picture-sizes.mjs). */
+let pictureSizes: Record<string, [number, number]> = {};
+
+/** The article about to be shown: its pictures' sizes, for their room to be kept till they are loaded. */
+export function usePictureSizes(sizes: Record<string, [number, number]> | undefined): void {
+	pictureSizes = sizes ?? {};
+}
+
 class FigureView implements NodeView {
 	readonly dom: HTMLElement;
 	private node: ProseNode;
@@ -151,6 +160,8 @@ class FigureView implements NodeView {
 	private readonly label: HTMLElement;
 	private readonly caption: HTMLInputElement;
 	private readonly badge: HTMLElement;
+	/** Its picture asked for (it came near the screen): from then on, as it changes. */
+	private loaded = false;
 	/** Where its number comes from (`figureNumbers`). */
 	private decorations: readonly Decoration[] = [];
 
@@ -167,6 +178,7 @@ class FigureView implements NodeView {
 		frame.className = 'pm-figure-frame';
 		this.image = document.createElement('img');
 		this.image.draggable = false;
+		this.image.decoding = 'async';
 		const handle = document.createElement('span');
 		handle.className = 'pm-figure-handle';
 		handle.title = t('拖动调整宽度');
@@ -188,6 +200,11 @@ class FigureView implements NodeView {
 
 		this.dom.append(frame, caption);
 		this.draw(decorations);
+		// Its picture fetched as it comes near the screen, not before: a long article's, another device's over a phone.
+		loadWhenNear(view.dom, this.image, () => {
+			this.loaded = true;
+			this.draw();
+		});
 		figureViews.set(this.dom, this);
 	}
 
@@ -231,9 +248,21 @@ class FigureView implements NodeView {
 	private draw(decorations: readonly Decoration[] = this.decorations): void {
 		this.decorations = decorations;
 		const { src, alt, attributes } = this.node.attrs as { src: string; alt: string; attributes: string };
-		const url = this.fileUrl(src);
-		if (this.image.getAttribute('src') !== url) this.image.src = url;
-		this.image.alt = alt;
+		// Its path as written, there before it is loaded (what goes back to a picture in its note finds it by).
+		this.image.dataset.path = src;
+		// Its room kept, as large as the picture (when its size is known), till it is loaded.
+		const size = pictureSizes[src];
+		if (size) [this.image.width, this.image.height] = size;
+		else for (const name of ['width', 'height']) this.image.removeAttribute(name);
+		// As wide as the picture is, when no width is written (its frame is as wide as what it holds, nothing yet).
+		if (size) this.dom.style.setProperty('--figure-natural', `${size[0]}px`);
+		else this.dom.style.removeProperty('--figure-natural');
+		if (this.loaded) {
+			const url = this.fileUrl(src);
+			if (this.image.getAttribute('src') !== url) this.image.src = url;
+			// Not before: a picture without one shows its words in its place.
+			this.image.alt = alt;
+		}
 		const width = figureWidth(attributes);
 		if (width) this.dom.style.setProperty('--figure-width', width);
 		else this.dom.style.removeProperty('--figure-width');
