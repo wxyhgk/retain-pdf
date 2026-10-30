@@ -39,7 +39,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 # 接续组合成一条送给模型，原文里用它标出原来在哪里断开；译文里要在对应位置放同样数量
 BREAK = "[[BREAK]]"
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-11"
+PROMPT_VERSION = "translation-agent-12"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -62,7 +62,7 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
    不要删掉或多加 [[BREAK]]，[[BREAK]] 前后的内容不要重复。
    中文语序和英文不同、断点没法放在完全对应的位置时，放在最接近的分句或词组边界，但一定要放。
 6. 按类别把握语气：标题简洁；图注、表题保留"图 1""表 1"这样的编号；目录条目只翻标题，编号和页码不动；
-   列表项保留 (1) 这类序号；作者、机构一般不在要翻的块里。有 translation 字段的块是已经定好的译文（标题、目录），只作参考，不要交回。
+   列表项保留 (1) 这类序号；脚注开头的编号原样保留（原文 "11 On the …" 就写 "11 关于……"，不要写成"注1"）；作者、机构一般不在要翻的块里。有 translation 字段的块是已经定好的译文（标题、目录），只作参考，不要交回。
 7. 术语前后一致。专名：context 的 names 给了中文译名的照用（first_use=true 时写"中文译名（原文）"），keep 里的原样保留；
    都没登记的：软件、数据集、期刊、机构名保留原文，人名按 style 里的人名规则（没有规则就保留原文）。
 8. 译文要通顺、简练，长度和原文相当，不要加解释、注释或括号里的原文（第一次出现的缩写、人名按第 10 条括注原文）。
@@ -350,7 +350,14 @@ class TranslationAgent:
 
     def _check(self, page: PageInput, block, text: str | None, exceptions: dict[str, set[str]]) -> list[dict]:
         issues = check_block(block.text, text)
+        number = re.match(r"\s*(\d+)\b", block.text) if block.cls == "footnote" else None
+        if number and text and not re.match(rf"\s*(?:注\s*)?{number.group(1)}(?!\d)", text):
+            issues.append({"code": "footnote_number_changed", "severity": "error", "message": f"脚注开头的编号 {number.group(1)} 要原样保留在最前面"})
         if page.context:
+            keep = {t["source"] for t in context_terms(page.context) if t["category"] in ("keep", "abbr")}
+            if block.text.strip() in keep:
+                # 原文整个就是要保留原文的专名（封面上的产品名）：原样交回是对的
+                issues = [i for i in issues if i["code"] != "untranslated"]
             issues += check_terms(block.text, text, context_terms(page.context), exceptions.get(block.id))
             for item in _first_uses(page).get(block.id, []):
                 if not text:
@@ -360,9 +367,13 @@ class TranslationAgent:
                         {"code": "abbr_first_use", "severity": "error", "message": f"全书第一次用到缩写 {item['source']}，要写成“中文全称（{item['source']}）”"}
                     )
                 elif item["kind"] == "name" and not re.search(rf"{re.escape(item['target'])}\s*[（(]\s*{re.escape(item['source'])}", text):
+                    # 只记警告：译名用对了就行，第一次没括注原文不值得重翻（实测地名、书名都要求括注，重翻太多）
                     issues.append(
-                        {"code": "name_first_use", "severity": "error", "message": f"全书第一次出现 {item['source']}，要写成“{item['target']}（{item['source']}）”"}
+                        {"code": "name_first_use", "severity": "warn", "message": f"全书第一次出现 {item['source']}，最好写成“{item['target']}（{item['source']}）”"}
                     )
+        if block.cls == "footnote":
+            # 书目性质的脚注（"Ashby, Daughters of the Parsonage, 40-61"）按惯例保留原文：人名没用中文译名、整条没翻只记警告
+            issues = [dict(i, severity="warn") if i["code"] in ("name_mismatch", "untranslated") else i for i in issues]
         return issues + style_signals(block.text, text)
 
     # ---- 一页 ----
@@ -627,7 +638,11 @@ def _salvage(page: PageInput, results: dict[str, BlockResult]) -> None:
                 "severity": "warn",
                 "message": "接续组的断点没放对，整段译文放在第一块" if index == 0 else "整段译文已放在接续组第一块，这块留空",
             }
-            kept = [i for i in result.issues if i["code"] not in BREAK_ONLY | {"group_share", "too_long", "too_short"}]
+            kept = [
+                dict(i, severity="warn") if i["code"] in TERM_ONLY else i
+                for i in result.issues
+                if i["code"] not in BREAK_ONLY | {"group_share", "too_long", "too_short"}
+            ]
             history = result.history + [{"translation": result.translation, "issues": result.issues}]
             results[block.id] = BlockResult(block.id, whole if index == 0 else "", kept + [issue], result.attempts, "", history, result.meta)
             results[block.id].status = status_of(results[block.id].issues)
@@ -712,7 +727,8 @@ def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> 
                 issues.setdefault(member.id, []).append({"code": "group_break", "severity": "error", "message": message})
                 per_block[member.id] = text
             continue
-        if len(parts) < len(members):
+        if len(parts) < len(members) or (len(parts) == len(members) and any(not p.strip() for p in parts)):
+            # 少放了断点，或者断点放在整段最前、最后（切出来有空块）：程序按比例重切
             parts = split_by_ratio(text.replace(BREAK, ""), [len(m.text) for m in members])
             message = f"断点标记应有 {len(members) - 1} 个，交回了 {text.count(BREAK)} 个，程序按原文长度比例在标点处切开"
             for member in members:

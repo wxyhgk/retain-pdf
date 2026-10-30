@@ -38,15 +38,21 @@ READER_PROMPT = """你是学术翻译团队的通读员兼术语专员。正式�
    domain：领域，一句话。
 2. name_policy：人名怎么处理。理工论文、技术手册用 keep（保留原文）；人文社科、通俗读物用 transliterate
    （全书第一次写"中文译名（原文）"，之后只写中文译名）。教科书看内容：历史人物、学者名字常见的用 transliterate。
-3. style：给译者的文风说明，300 字以内：人称（作者用 we / I 怎么译）、正式程度、语气（口语、严谨、幽默、措辞保留的程度）、
+3. style：给译者的文风说明，用中文写，300 字以内：人称（作者用 we / I 怎么译）、正式程度、语气（口语、严谨、幽默、措辞保留的程度）、
    称呼读者用"你"还是"您"、编号体例（章节、图表、公式的写法），再给 1–2 句最能代表作者口吻的原文和你的示范译文。
-4. terms：候选里**全文需要统一译法的**：
-   - 概念词（即使是普通单词，只要在本文里是反复出现、有特定含义的概念，比如论文里的 fitting、budget，人文里的 ledger）；
-   - 专名：人名（按 name_policy：keep 就 category=keep；transliterate 就 category=name，target 写中文译名，用通行译名）、
-     软件、产品、数据集、期刊、机构（一般 category=keep）。
-   不要收：普通词、只出现一两次的、整句引文、标题本身。
+   提到原文的词时要写清楚**中文怎么译**（例如"probably、it seems 这类保留语气要译出来：大概、看起来"），不要让译者保留英文原词；
+   示范译文必须是通顺的中文，写完自己读一遍。
+4. terms：候选里**全文需要统一译法的**，宁少勿滥（一般 10–40 条），定下的译法逐页翻时必须照用：
+   - 概念词：在本文里反复出现、有特定含义、而且容易译得前后不一的（论文里的 budget、rewrite、overflow，人文里的 ledger）；
+     译法要地道准确（例如排版里的 fitting 是"排入、适配"不是"拟合"）。
+   - 专名：
+     · 软件、产品、数据集、期刊、编程接口：category=keep（原样保留）；
+     · 人名、书名、机构、地名：按 name_policy——keep 就 category=keep；transliterate 就 category=name，target 写通行中文译名
+       （书名写在《》里），全书第一次会自动写成"中文译名（原文）"。
+   不要收：语言名和国名（German、Chinese）、普通词（block、box、point、reference、search、table……除非本文给它下了特定定义）、
+   只出现一两次的、整句引文、标题本身。
    同一个词在不同章意思不同（例句能看出来），分开给，每条写 chapters（只管哪几章）。
-   target 只写译法本身，不带括号和原文。
+   target 只写译法本身，**不带括号、不带原文、不带说明**；拿不准的不要收。
 5. headings：每个标题、目录条目（按 id）的译文。同一个标题在目录和正文里要一字不差；编号原样保留；
    简洁、像中文书的标题；术语用你在 terms 里定的译法。
 """
@@ -271,7 +277,11 @@ def apply_reading(reading: Reading, glossary, pages: list[PageInput]) -> list[Pa
 
     chapters = {p.chapter for p in pages if p.chapter}
     for item in reading.terms:
-        source, target = str(item["source"]).strip(), str(item["target"]).strip()
+        source = str(item["source"]).strip()
+        # 译法里不许带括号说明："参考（标注）" → "参考"
+        target = re.sub(r"\s*[（(][^（）()]*[)）]", "", str(item["target"])).strip()
+        if not source or not target:
+            continue
         category = {"keep": KEEP, "name": NAME}.get(item.get("category"), TERM)
         if category == NAME and reading.name_policy != "transliterate":
             category = KEEP

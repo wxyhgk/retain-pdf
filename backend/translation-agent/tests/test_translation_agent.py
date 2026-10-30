@@ -57,6 +57,10 @@ def test_check_block_protects_formulas_marks_and_numbers() -> None:
     assert check_block(source, None)[0]["code"] == "missing"
     # 短标题、写成中文数字都不算错
     assert check_block("Acknowledgements", "致谢") == []
+    # 中文里夹着没翻的英文词
+    assert [i["code"] for i in check_block("It was originally above a shop.", "它最初设在商铺楼上，originally设于南街。")] == ["stray_english"]
+    # 中文紧挨着的数字也认得（"图1.1""第4章"）
+    assert check_block("See Figure 1.1 and Chapter 4 for details.", "详见图1.1和第4章。") == []
     # 原文已有的公式多提一次不算错；`$` 提示符在行内代码里不算公式
     assert check_block("A budget $b$ of 0.002 is small.", "当 $b$ 为 0.002 时，预算 $b$ 很小。") == []
     assert [i["code"] for i in check_block("A budget $b$ of 0.002.", "预算 $b$ 和 $c$ 为 0.002。")] == ["formula_changed"]
@@ -131,6 +135,13 @@ def test_a_missing_break_is_placed_by_the_program_at_punctuation_without_a_retry
     assert len(model.payloads) == 1
     assert results["a1"].translation == "我们用 $F_1$ 给框打分，" and results["a2"].translation == "并统计每一页的召回率。"
     assert results["a1"].status == "warn" and results["a1"].issues[0]["code"] == "group_split_by_program"
+
+
+def test_a_break_at_the_very_end_leaves_no_empty_block() -> None:
+    model = Scripted({"t": "1 引言", "cg-a": f"我们用 $F_1$ 给框打分，并统计每一页的召回率。{BREAK}", "cap": "图 1：召回率 [3]。"})
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
+    assert len(model.payloads) == 1 and results["a1"].translation and results["a2"].translation
+    assert results["a2"].issues[0]["code"] == "group_split_by_program"
 
 
 def test_split_by_ratio_never_cuts_formulas_marks_or_words() -> None:

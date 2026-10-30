@@ -115,12 +115,22 @@ def test_document_run_reads_first_then_translates_without_resending_headings(tmp
     assert json.loads((tmp_path / "reading.json").read_text(encoding="utf-8"))["genre"] == "humanities"
 
 
-def test_the_first_mention_of_a_transliterated_name_must_carry_the_original(tmp_path: Path) -> None:
+def test_the_first_mention_of_a_name_without_the_original_is_only_a_warning(tmp_path: Path) -> None:
     model = Model(
         _tool("submit_reading", READING),
         _tool("submit_translations", {"translations": [{"id": "p-1", "translation": "阿格尼丝·佩卢记了一本账簿。账簿记下每一次借阅，账簿也记着罚金。"}, {"id": "p-2", "translation": "后来阿格尼丝·佩卢用账簿里的钱付了账簿上的罚金。"}]}),
-        _tool("submit_translations", {"translations": [{"id": "p-1", "translation": "阿格尼丝·佩卢（Agnes Pellew）记了一本账簿。账簿记下每一次借阅，账簿也记着罚金。"}]}),
     )
     outcome = DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, read_first=True).run(_book())
     first = outcome.results["p-1"]
-    assert first.attempts == 2 and first.history[0]["issues"][0]["code"] == "name_first_use"
+    assert first.attempts == 1 and first.status == "warn" and first.issues[0]["code"] == "name_first_use"
+
+
+def test_a_name_translated_differently_is_retried(tmp_path: Path) -> None:
+    model = Model(
+        _tool("submit_reading", READING),
+        _tool("submit_translations", {"translations": [{"id": "p-1", "translation": "阿格尼丝·佩卢（Agnes Pellew）记了一本账簿。账簿记下每一次借阅，账簿也记着罚金。"}, {"id": "p-2", "translation": "后来艾格尼丝·佩勒用账簿里的钱付了账簿上的罚金。"}]}),
+        _tool("submit_translations", {"translations": [{"id": "p-2", "translation": "后来阿格尼丝·佩卢用账簿里的钱付了账簿上的罚金。"}]}),
+    )
+    outcome = DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, read_first=True).run(_book())
+    second = outcome.results["p-2"]
+    assert second.attempts == 2 and second.status == "ok" and second.history[0]["issues"][0]["code"] == "name_mismatch"
