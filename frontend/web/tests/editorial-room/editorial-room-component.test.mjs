@@ -63,12 +63,12 @@ test("停下了：状态写清原因，停在哪页还看得出来", async () =>
   }
 });
 
-test("回放：不自动播时停在开头；单步一条条叠，拖进度条直接到最后", async () => {
+test("调试视图的回放：不自动播时停在开头；单步一条条叠，拖进度条直接到最后", async () => {
   const dom = makeDom();
   const React = await import("react");
   const room = await import("../../src/features/editorial-room/index.ts");
   const events = room.buildDemoEditorialRun();
-  const { host, unmount } = await mount(React.createElement(room.EditorialRoomReplay, { events, autoplay: false }));
+  const { host, unmount } = await mount(React.createElement(room.EditorialRoomReplay, { events, autoplay: false, debug: true }));
   try {
     await waitFor(() => host.querySelector("[data-editorial-replay]"));
     const count = () => host.querySelector(".editorial-room-count").textContent.replace(/\s+/g, "");
@@ -89,6 +89,73 @@ test("回放：不自动播时停在开头；单步一条条叠，拖进度条�
 
     click(dom, host.querySelector('[data-editorial-speed="4"]'));
     await waitFor(() => host.querySelector('[data-editorial-speed="4"]').getAttribute("aria-checked") === "true");
+  } finally {
+    unmount();
+  }
+});
+
+test("用户视图：只有三个小人、一条进度、一行「正在」；没有数字卡片和按钮", async () => {
+  makeDom();
+  const React = await import("react");
+  const room = await import("../../src/features/editorial-room/index.ts");
+  const events = room.buildDemoEditorialRun();
+  const index = events.findIndex((event) => event.type === "translate_call" && event.page === 2) + 1;
+  const { host, unmount } = await mount(React.createElement(room.EditorialStage, { state: room.roomStateAt(events, index) }));
+  try {
+    await waitFor(() => host.querySelector("[data-editorial-stage]"));
+    const seats = [...host.querySelectorAll("[data-editorial-seat]")];
+    assert.deepEqual(seats.map((seat) => seat.dataset.editorialSeat), ["reader", "translator", "reviewer"]);
+    const word = (role) => host.querySelector(`[data-editorial-seat="${role}"] .editorial-room-stage-word`).textContent;
+    assert.equal(word("translator"), "翻译第 2 页");
+    assert.equal(word("reviewer"), "审第 1 页");
+    assert.equal(word("reader"), "通读");
+    assert.equal(host.querySelector("[data-editorial-progress]").textContent.replace(/\s+/g, ""), "第1/6页");
+    assert.equal(host.querySelector("[data-editorial-now]").textContent, "译者翻译第 2 页，审校审第 1 页");
+    assert.equal(host.querySelectorAll("[data-editorial-stat], button, [data-editorial-planned]").length, 0);
+    assert.equal(host.querySelector("[data-editorial-attention]"), null, "没有要人看的就不出现");
+    assert.match(host.querySelector('[data-editorial-seat="translator"]').title, /第 2 页，第 1 次 · 8 块/, "细节在悬停提示里");
+  } finally {
+    unmount();
+  }
+});
+
+test("用户视图：术语表改了给一句轻提示；跑完显示几页、需要人看几处", async () => {
+  makeDom();
+  const React = await import("react");
+  const room = await import("../../src/features/editorial-room/index.ts");
+  const events = room.buildDemoEditorialRun();
+  const afterGlossary = events.findIndex((event) => event.type === "glossary_changed") + 1;
+  const first = await mount(React.createElement(room.EditorialStage, { state: room.roomStateAt(events, afterGlossary) }));
+  try {
+    await waitFor(() => first.host.querySelector("[data-editorial-glossary-hint]"));
+    assert.equal(first.host.querySelector("[data-editorial-now]").textContent, "通读员在读全书");
+    assert.equal(first.host.querySelector('[data-editorial-seat="reader"]').dataset.busy, "true");
+  } finally {
+    first.unmount();
+  }
+  const end = await mount(React.createElement(room.EditorialStage, { state: room.roomStateAt(events, events.length) }));
+  try {
+    await waitFor(() => end.host.querySelector("[data-editorial-stage]"));
+    assert.equal(end.host.querySelector("[data-editorial-progress]").dataset.editorialProgress, "6/6");
+    assert.equal(end.host.querySelector("[data-editorial-attention]").textContent, "需要人看 1 处");
+    assert.equal(end.host.querySelector("[data-editorial-now]").textContent, "全部翻完了");
+    assert.equal(end.host.querySelector("[data-editorial-glossary-hint]"), null, "提示过几条事件就收起");
+    assert.equal(end.host.querySelectorAll(".editorial-room-stage-pile-page").length, 6);
+  } finally {
+    end.unmount();
+  }
+});
+
+test("默认回放是用户视图：没有按钮，不显示调试信息", async () => {
+  makeDom();
+  const React = await import("react");
+  const room = await import("../../src/features/editorial-room/index.ts");
+  const events = room.buildDemoEditorialRun();
+  const { host, unmount } = await mount(React.createElement(room.EditorialRoomReplay, { events, autoplay: false }));
+  try {
+    await waitFor(() => host.querySelector("[data-editorial-stage]"));
+    assert.equal(host.querySelector("[data-editorial-room]"), null);
+    assert.equal(host.querySelectorAll("button").length, 0);
   } finally {
     unmount();
   }

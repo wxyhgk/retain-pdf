@@ -21,6 +21,7 @@
 @import "../components.utilities.css";
 
 @import "../../features/editorial-room/ui/EditorialRoom.css";
+@import "../../features/editorial-room/ui/EditorialStage.css";
 @import "../../features/editorial-room/ui/EditorialFloor.css";
 @import "../../features/editorial-room/ui/EditorialPageSheet.css";
 @import "../../features/editorial-room/ui/EditorialFigure.css";

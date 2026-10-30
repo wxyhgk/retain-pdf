@@ -1,22 +1,33 @@
-// 编辑部回放：编辑部画面 + 一排回放按钮（播放/暂停、单步、重来、倍速、进度条）。
-// 演示页和测试都用它；以后接真实进度时直接用 EditorialRoom，不需要这排按钮。
+// 编辑部回放：喂一串事件按时间播放。默认是给用户看的简洁画面（EditorialStage），循环播放、没有按钮；
+// debug 时换成完整信息的调试视图（EditorialRoom），带一排回放按钮（播放/暂停、单步、重来、拖进度条、倍速）。
+// 以后接真实进度时直接用 EditorialStage / EditorialRoom，不需要回放。
 
 import { Pause, Play, RotateCcw, StepForward } from "lucide-react";
 
 import type { EditorialEvent } from "../domain/events.js";
 import { REPLAY_SPEEDS } from "../domain/replay.js";
 import { EditorialRoom } from "./EditorialRoom.jsx";
+import { EditorialStage } from "./EditorialStage.jsx";
 import { useEditorialReplay } from "./useEditorialReplay.js";
 
 export type EditorialRoomReplayProps = {
   events: readonly EditorialEvent[];
   autoplay?: boolean;
   speed?: number;
+  /** 调试视图：完整信息 + 回放按钮。 */
+  debug?: boolean;
 };
 
-export function EditorialRoomReplay({ events, autoplay = true, speed = 1 }: EditorialRoomReplayProps) {
-  const replay = useEditorialReplay(events, { autoplay, speed });
+export function EditorialRoomReplay({ events, autoplay = true, speed = 1, debug = false }: EditorialRoomReplayProps) {
+  const replay = useEditorialReplay(events, { autoplay, speed, loop: !debug });
   const finished = replay.count >= replay.total;
+  if (!debug) {
+    return (
+      <div className="editorial-room-replay" data-editorial-replay="true">
+        <EditorialStage state={replay.state} />
+      </div>
+    );
+  }
   return (
     <div className="editorial-room-replay" data-editorial-replay="true">
       <EditorialRoom state={replay.state} recent={replay.recent} />

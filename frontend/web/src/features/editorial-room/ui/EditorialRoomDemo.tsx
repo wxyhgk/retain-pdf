@@ -1,5 +1,6 @@
 // 编辑部演示页（editorial.html）：用模拟事件回放。两个场景：6 页跑完、第 4 页后额度用完停下。
-// 后端推真实进度之前，演示和看效果都在这里。
+// 默认就是用户会看到的样子（简洁画面、循环播放、没有说明文字和按钮）；
+// debug 时显示说明、场景切换、完整信息和回放按钮。
 
 import { useMemo, useState } from "react";
 
@@ -13,17 +14,30 @@ const SCENARIOS = [
 
 type ScenarioId = (typeof SCENARIOS)[number]["id"];
 
-export function EditorialRoomDemo({ initialScenario = "full" }: { initialScenario?: ScenarioId }) {
+export function EditorialRoomDemo({
+  initialScenario = "full",
+  debug = false,
+}: {
+  initialScenario?: ScenarioId;
+  debug?: boolean;
+}) {
   const [scenario, setScenario] = useState<ScenarioId>(initialScenario);
   const events = useMemo(() => {
     const picked = SCENARIOS.find((item) => item.id === scenario) ?? SCENARIOS[0];
     return buildDemoEditorialRun({ stopAfterPage: picked.stopAfterPage });
   }, [scenario]);
+  if (!debug) {
+    return (
+      <main className="editorial-room-demo is-plain">
+        <EditorialRoomReplay events={events} />
+      </main>
+    );
+  }
   return (
     <main className="editorial-room-demo">
       <header className="editorial-room-demo-head">
         <div>
-          <h1>翻译编辑部 · 演示</h1>
+          <h1>翻译编辑部 · 调试视图</h1>
           <p>模拟数据回放（editorial.v1 事件）。接上后端进度后，同一套画面显示真实的翻译过程。</p>
         </div>
         <span className="editorial-room-speeds" role="radiogroup" aria-label="演示场景">
@@ -42,7 +56,7 @@ export function EditorialRoomDemo({ initialScenario = "full" }: { initialScenari
           ))}
         </span>
       </header>
-      <EditorialRoomReplay events={events} />
+      <EditorialRoomReplay events={events} debug />
     </main>
   );
 }

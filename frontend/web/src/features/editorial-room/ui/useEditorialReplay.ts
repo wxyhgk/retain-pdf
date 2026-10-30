@@ -8,6 +8,8 @@ import { replayDelayMs } from "../domain/replay.js";
 import { roomStateAt, type RoomState } from "../domain/room-state.js";
 
 const RECENT_LINES = 6;
+/** 循环播放时，放完停多久再从头来。 */
+export const REPLAY_LOOP_PAUSE_MS = 4000;
 
 export type EditorialReplay = {
   state: RoomState;
@@ -27,7 +29,7 @@ export type EditorialReplay = {
 
 export function useEditorialReplay(
   events: readonly EditorialEvent[],
-  options: { autoplay?: boolean; speed?: number } = {},
+  options: { autoplay?: boolean; speed?: number; loop?: boolean } = {},
 ): EditorialReplay {
   const total = events.length;
   const [count, setCount] = useState(0);
@@ -46,12 +48,16 @@ export function useEditorialReplay(
   useEffect(() => {
     if (!playing) return undefined;
     if (count >= total) {
-      setPlaying(false);
-      return undefined;
+      if (!options.loop || !total) {
+        setPlaying(false);
+        return undefined;
+      }
+      const again = setTimeout(() => setCount(0), REPLAY_LOOP_PAUSE_MS);
+      return () => clearTimeout(again);
     }
     const timer = setTimeout(() => setCount((n) => Math.min(total, n + 1)), replayDelayMs(events[count - 1], events[count], speed));
     return () => clearTimeout(timer);
-  }, [playing, count, total, events, speed]);
+  }, [playing, count, total, events, speed, options.loop]);
 
   const state = useMemo(() => roomStateAt(events, count), [events, count]);
   const recent = useMemo(() => events.slice(Math.max(0, count - RECENT_LINES), count).reverse(), [events, count]);

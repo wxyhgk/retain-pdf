@@ -4,10 +4,20 @@
 `editorial.v1` 事件推真实进度，前端把事件叠成状态传给同一个组件就能显示。
 
 - 代码：`frontend/web/src/features/editorial-room/`
-- 演示页：`frontend/web/editorial.html`（`?scenario=quota` 打开「额度用完停下」的场景）
+- 演示页：`frontend/web/editorial.html`，默认就是用户会看到的样子；`?debug=1` 是调试视图，`?scenario=quota` 打开「额度用完停下」的场景
 - 测试：`frontend/web/tests/editorial-room/`
 
-## 画面
+## 两个视图
+
+给用户看的是 `EditorialStage`：一眼看懂「几个人在接力翻这本书，翻到第几页了」，不需要读字。
+
+- 书名、一条进度条和「第 3 / 6 页」。
+- 三个小人排成一行接力：通读 → 译者 → 审校。手上有活的会动，手边有一张带页码的稿纸，换人时从左边滑进来，退回重翻时从右边弹回来。每个小人底下最多一个词（「读书中」「翻译第 3 页」「审第 2 页」），细节在悬停提示里。
+- 调度、质检、修订、归档是程序，不画工位：质检是译者和审校之间路上的一个检查点（亮绿、黄、红），修订是审校之后的一个对勾，定稿的页在最后叠成一摞。
+- 底下一行「正在……」；术语表改了出一句「术语表已更新」，过几条事件收起；有块退回原文时出「需要人看 N 处」。
+- 没有数字卡片、模型名、事件列表、按钮。
+
+调试视图是 `EditorialRoom`，信息全：
 
 | 区域 | 内容 |
 |---|---|
@@ -36,7 +46,7 @@
 
 1. 在要显示的页面里拿到事件：推送、轮询都行，原始 JSON 交给 `parseEditorialEvents`。
 2. 用 `reduceEditorialEvent` 叠成 `RoomState`，最近几条事件留着给广播用。
-3. 渲染 `<EditorialRoom state={state} recent={recent} />`（不需要回放按钮）。
+3. 给用户看渲染 `<EditorialStage state={state} />`；调试时渲染 `<EditorialRoom state={state} recent={recent} />`。
 4. 那一页的 CSS 入口照 `src/styles/entries/editorial.css` 的顺序引 `features/editorial-room/ui/` 下的样式文件。
 
-回放用 `<EditorialRoomReplay events={events} />`：按事件 `ts` 的间隔播放，每两条之间压在 0.52–1.8 秒，再按倍速（0.5×–4×）缩短。可以暂停、单步、拖进度条、从头播。
+回放用 `<EditorialRoomReplay events={events} />`：默认是用户视图、循环播放、没有按钮；加 `debug` 换成调试视图和回放按钮。按事件 `ts` 的间隔播放，每两条之间压在 0.52–1.8 秒，再按倍速（0.5×–4×）缩短。可以暂停、单步、拖进度条、从头播。

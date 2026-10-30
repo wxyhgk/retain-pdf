@@ -1,0 +1,350 @@
+/* 编辑部用户视图（EditorialStage）：三个小人排成一行接力，中间的路上有检查点，最后一摞定稿的页。
+ * 小人的线描和动作在 EditorialFigure.css；这里只管排布、放大、路线和稿子流动。
+ *
+ * @owns editorial-room */
+
+.editorial-room-stage {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-sans);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--shadow-color) 6%, transparent);
+}
+
+.editorial-room-stage-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.editorial-room-stage-title {
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorial-room-stage-count {
+  flex: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.editorial-room-stage-progress {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.editorial-room-stage-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ok);
+  transition: width 600ms var(--ease-out);
+}
+
+.editorial-room-stage.is-stopped .editorial-room-stage-progress > span {
+  background: var(--warn);
+}
+
+/* —— 一行接力 —— */
+
+.editorial-room-stage-line {
+  display: flex;
+  align-items: flex-start;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorial-room-stage-seat {
+  display: grid;
+  flex: none;
+  justify-items: center;
+  gap: 6px;
+  width: 128px;
+}
+
+.editorial-room-stage-figure {
+  position: relative;
+  display: inline-flex;
+}
+
+.editorial-room-stage-figure .editorial-room-fig {
+  width: 104px;
+  height: 110px;
+}
+
+.editorial-room-stage-word {
+  min-height: 18px;
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+  transition: color 240ms var(--ease-out);
+}
+
+.editorial-room-stage-seat.is-busy .editorial-room-stage-word {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* 小人手边那页稿子：带页码，换人时从左边滑进来，退回重翻从右边弹回来。 */
+.editorial-room-stage-sheet {
+  position: absolute;
+  right: -8px;
+  bottom: 6px;
+  display: inline-flex;
+  min-width: 26px;
+  height: 32px;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 4px;
+  border: 1px solid var(--line);
+  border-radius: 3px 8px 3px 3px;
+  color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--shadow-color) 12%, transparent);
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  animation: editorial-room-stage-arrive 520ms var(--ease-out);
+}
+
+.editorial-room-stage-sheet.is-retrying {
+  border-color: var(--warn);
+  animation: editorial-room-bounce-back 520ms var(--ease-out);
+}
+
+/* 路：虚线，中间可能有检查点 */
+.editorial-room-stage-path {
+  position: relative;
+  display: flex;
+  flex: 1;
+  min-width: 18px;
+  height: 110px;
+  align-items: center;
+  justify-content: center;
+}
+
+.editorial-room-stage-path::before {
+  content: "";
+  position: absolute;
+  right: 4px;
+  left: 4px;
+  top: 50%;
+  border-top: 2px dashed var(--line);
+}
+
+.editorial-room-stage-dot {
+  position: relative;
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--paper);
+  transition:
+    color 220ms var(--ease-out),
+    background 220ms var(--ease-out),
+    border-color 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out);
+}
+
+.editorial-room-stage-dot svg {
+  width: 15px;
+  height: 15px;
+}
+
+.editorial-room-stage-path.is-on .editorial-room-stage-dot {
+  border-color: var(--accent);
+  color: var(--ink);
+  box-shadow: 0 0 0 5px var(--accent-weak);
+  animation: editorial-room-pop 360ms var(--ease-out);
+}
+
+.editorial-room-stage-path.is-ok .editorial-room-stage-dot {
+  border-color: var(--ok);
+  color: var(--paper);
+  background: var(--ok);
+  box-shadow: 0 0 0 5px var(--ok-weak);
+  animation: editorial-room-pop 360ms var(--ease-out);
+}
+
+.editorial-room-stage-path.is-warn .editorial-room-stage-dot {
+  border-color: var(--warn);
+  color: var(--paper);
+  background: var(--warn);
+  box-shadow: 0 0 0 5px var(--warn-weak);
+  animation: editorial-room-pop 360ms var(--ease-out);
+}
+
+.editorial-room-stage-path.is-error .editorial-room-stage-dot {
+  border-color: var(--danger);
+  color: var(--paper);
+  background: var(--danger);
+  box-shadow: 0 0 0 5px var(--danger-weak);
+  animation: editorial-room-pop 360ms var(--ease-out);
+}
+
+/* 定稿的一摞：每定稿一页叠一张 */
+.editorial-room-stage-pile {
+  display: flex;
+  flex: none;
+  flex-direction: column-reverse;
+  align-items: center;
+  justify-content: flex-start;
+  width: 44px;
+  height: 110px;
+  padding-bottom: 26px;
+}
+
+.editorial-room-stage-pile-page {
+  width: 30px;
+  height: 5px;
+  margin-top: 2px;
+  border: 1px solid color-mix(in srgb, var(--ok) 55%, var(--line));
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ok) 22%, var(--paper));
+  animation: editorial-room-stage-drop 420ms var(--ease-out);
+}
+
+.editorial-room-stage-pile-page:nth-child(2n) {
+  transform: translateX(2px);
+}
+
+/* —— 底下一行：正在做什么 + 轻提示 —— */
+
+.editorial-room-stage-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 26px;
+}
+
+.editorial-room-stage-now {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.editorial-room-stage-now.is-stopped {
+  color: var(--danger);
+}
+
+.editorial-room-stage-now.is-done {
+  color: var(--ok);
+}
+
+.editorial-room-stage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--gold-weak);
+  font-size: 12px;
+  animation: editorial-room-slide-down 320ms var(--ease-out);
+}
+
+.editorial-room-stage-chip svg {
+  width: 13px;
+  height: 13px;
+}
+
+.editorial-room-stage-chip.is-attention {
+  color: var(--danger);
+  background: var(--danger-weak);
+}
+
+/* —— 窄屏：小人缩小，路变短 —— */
+
+@media (max-width: 640px) {
+  .editorial-room-stage {
+    padding: 14px 12px 12px;
+  }
+
+  .editorial-room-stage-seat {
+    width: 78px;
+  }
+
+  .editorial-room-stage-figure .editorial-room-fig {
+    width: 66px;
+    height: 70px;
+  }
+
+  .editorial-room-stage-path,
+  .editorial-room-stage-pile {
+    height: 70px;
+  }
+
+  .editorial-room-stage-path {
+    min-width: 10px;
+  }
+
+  .editorial-room-stage-dot {
+    width: 24px;
+    height: 24px;
+  }
+
+  .editorial-room-stage-pile {
+    width: 24px;
+    padding-bottom: 14px;
+  }
+
+  .editorial-room-stage-pile-page {
+    width: 18px;
+  }
+
+  .editorial-room-stage-word {
+    font-size: 11px;
+  }
+
+  .editorial-room-stage-sheet {
+    right: -2px;
+    bottom: 2px;
+    min-width: 20px;
+    height: 24px;
+    padding-top: 2px;
+    font-size: 10px;
+  }
+}
+
+@keyframes editorial-room-stage-arrive {
+  from {
+    transform: translateX(-70px) rotate(-8deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) rotate(0);
+    opacity: 1;
+  }
+}
+
+@keyframes editorial-room-stage-drop {
+  from {
+    transform: translateY(-14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
