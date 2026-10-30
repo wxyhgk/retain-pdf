@@ -19,7 +19,7 @@ import {
 import { DatabaseBoard } from './DatabaseBoard';
 import { DatabaseTable } from './DatabaseTable';
 import { FilterButton, FilterChips, SortButton } from './database-filters';
-import { freeColumnName, hasOptions, TITLE, visibleRows, type Column, type ColumnType, type DatabaseConfig, type Row } from './database-config';
+import { calcKinds, freeColumnName, hasOptions, TITLE, visibleRows, type CalcKind, type Column, type ColumnType, type DatabaseConfig, type Row } from './database-config';
 import { keepFocus, said, typeName } from './database-parts';
 
 /** What the database's view needs from the Studio around the editor. */
@@ -225,6 +225,7 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 					sorts: config.sorts.map((each) => (each.column === column.name ? { ...each, column: to } : each)),
 					filter: config.filter.map((each) => (each.column === column.name ? { ...each, column: to } : each)),
 					group: config.group === column.name ? to : config.group,
+					calcs: Object.fromEntries(Object.entries(config.calcs).map(([name, kind]) => [name === column.name ? to : name, kind])),
 				},
 			);
 			setMenuFor((open) => (open === column.name ? to : open));
@@ -251,6 +252,8 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 			replaceColumn(column.name, next, {
 				filter: config.filter.filter((each) => each.column !== column.name),
 				group: grouped ? null : config.group,
+				// What was worked out of it, kept if its new kind offers it too.
+				calcs: config.calcs[column.name] && !calcKinds(type).includes(config.calcs[column.name]!) ? Object.fromEntries(Object.entries(config.calcs).filter(([name]) => name !== column.name)) : config.calcs,
 			});
 			void columnsChanged({ types: { [column.name]: type } });
 		},
@@ -262,6 +265,7 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 				sorts: config.sorts.filter((each) => each.column !== column.name),
 				filter: config.filter.filter((each) => each.column !== column.name),
 				group: config.group === column.name ? null : config.group,
+				calcs: Object.fromEntries(Object.entries(config.calcs).filter(([name]) => name !== column.name)),
 			});
 			setMenuFor(null);
 			void columnsChanged({ removed: [column.name] });
@@ -269,6 +273,11 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 		hideColumn(column: Column, hidden: boolean): void {
 			const { hidden: _, ...rest } = current(column);
 			replaceColumn(column.name, hidden ? { ...rest, hidden: true } : rest);
+		},
+		/** What is worked out of a column (or the titles) under the table. */
+		setCalc(name: string, kind: CalcKind): void {
+			const { [name]: _, ...rest } = now.current.calcs;
+			change({ ...now.current, calcs: kind === 'none' && name !== TITLE ? rest : { ...rest, [name]: kind } });
 		},
 		/** Its values on as many lines as they take, or on one. */
 		wrapColumn(column: Column, wrap: boolean): void {

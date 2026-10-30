@@ -15,7 +15,7 @@ test('settings read as far as they are right; written back without what a new on
 	assert.equal(config.view, 'board');
 	assert.deepEqual(config.sorts, []);
 	assert.equal(config.group, null);
-	assert.deepEqual(readConfig('not json'), { id: null, title: '', columns: [], view: 'table', sorts: [], filter: [], group: null, template: null, titleWrap: false });
+	assert.deepEqual(readConfig('not json'), { id: null, title: '', columns: [], view: 'table', sorts: [], filter: [], group: null, template: null, titleWrap: false, calcs: {} });
 	assert.deepEqual(JSON.parse(writeConfig(readConfig(''))), { columns: [], view: 'table' });
 	// Its id kept, first; one not an id (a path, too short) not.
 	assert.deepEqual(Object.keys(JSON.parse(writeConfig(readConfig('{"title": "计算", "id": "k3f9x2ab"}')))), ['id', 'title', 'columns', 'view']);
@@ -65,4 +65,31 @@ test('dates as they are shown; a column name not taken', () => {
 	const config = readConfig(JSON.stringify({ columns: [{ name: '数字', type: 'number' }, { name: '数字 2', type: 'number' }] }));
 	assert.equal(freeColumnName(config, '数字'), '数字 3');
 	assert.equal(freeColumnName(config, '日期'), '日期');
+});
+
+test('what is worked out of a column under the table, by its kind', async () => {
+	const { calculate, calcKinds } = await import('../src/studio/editor/database/database-config.ts');
+	const rows = [
+		{ slug: 'a', title: 'A', icon: '', props: { 能量: -76.4, 日期: '2026-10-01', 收敛: true, 标签: ['opt', 'ts'] } },
+		{ slug: 'b', title: 'B', icon: '', props: { 能量: -76.6, 日期: '2026-10-11', 标签: ['ts'] } },
+		{ slug: 'c', title: 'C', icon: '', props: { 能量: 0.1 } },
+		{ slug: 'd', title: 'D', icon: '', props: {} },
+	];
+	const number = { name: '能量', type: 'number' as const };
+	assert.equal(calculate('sum', rows, number), '-152.9');
+	assert.equal(calculate('average', rows, number), '-50.966667');
+	assert.equal(calculate('median', rows, number), '-76.4');
+	assert.equal(calculate('range', rows, number), '76.7');
+	assert.equal(calculate('empty', rows, number), '1');
+	assert.equal(calculate('filled-percent', rows, number), '75%');
+	assert.equal(calculate('span', rows, { name: '日期', type: 'date' }), '10 天');
+	assert.equal(calculate('earliest', rows, { name: '日期', type: 'date' }), '2026年10月1日');
+	assert.equal(calculate('checked', rows, { name: '收敛', type: 'checkbox' }), '1');
+	assert.equal(calculate('unique', rows, { name: '标签', type: 'multi' }), '2');
+	assert.equal(calculate('count', rows, null), '4');
+	assert.equal(calculate('sum', [], number), '');
+	assert.ok(!calcKinds('text').includes('sum'));
+	// Kept in the block only as its column offers it.
+	const { readConfig } = await import('../src/studio/editor/database/database-config.ts');
+	assert.deepEqual(readConfig(JSON.stringify({ columns: [{ name: '能量', type: 'number' }, { name: '备注', type: 'text' }], calcs: { 能量: 'sum', 备注: 'sum', 标题: 'none', 没有: 'count' } })).calcs, { 能量: 'sum', 标题: 'none' });
 });

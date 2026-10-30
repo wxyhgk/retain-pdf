@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ClipboardEvent, type DragEvent, type KeyboardEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent } from 'react';
-import { ArrowDown, ArrowLeftToLine, ArrowRightToLine, ArrowUp, ArrowUpRight, Check, ChevronRight, EyeOff, FileText, GripVertical, ListFilter, Plus, Trash2, WrapText } from 'lucide-react';
+import { ArrowDown, ArrowLeftToLine, ArrowRightToLine, ArrowUp, ArrowUpRight, Check, ChevronDown, ChevronRight, EyeOff, FileText, GripVertical, ListFilter, Plus, Trash2, WrapText } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
-import { DEFAULT_WIDTH, filterOps, shown, TITLE, TITLE_WIDTH, type Column, type Row } from './database-config';
+import { calcKinds, calcName, calculate, DEFAULT_WIDTH, filterOps, shown, TITLE, TITLE_WIDTH, type Column, type Row } from './database-config';
 import { CellField, DatePicker, DateText, MenuLine, MenuRow, OptionPicker, Pill, Pop, TYPE_ICONS, TypeList, typeName } from './database-parts';
 import type { Database, Spot } from './DatabaseView';
 import { cellsOf, copiedText, pastedValue, tableText } from './table-clipboard';
@@ -86,15 +86,24 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 						<div className="db-td db-td-add" style={{ width: ADD_WIDTH }} />
 					</div>
 				))}
-			</div>
-			<div className="db-foot" style={{ width }}>
-				<button type="button" className="db-add-row" data-database-add-row onClick={() => void database.addRow()}>
-					<Plus aria-hidden />
-					{t('新建')}
-				</button>
-				<span className="db-count" data-database-count>
-					{t('计数 {count}', { count: rows.length })}
-				</span>
+				<div className="db-tr db-foot" style={{ width }}>
+					<button type="button" className="db-add-row" data-database-add-row onClick={() => void database.addRow()}>
+						<Plus aria-hidden />
+						{t('新建')}
+					</button>
+				</div>
+				{/* What is worked out of each column, under it (as Notion's 计算). */}
+				<div className="db-tr db-calc-row" role="row">
+					<div className="db-td db-td-title db-calc" style={{ width: TITLE_WIDTH }}>
+						<Calc name={TITLE} column={null} rows={rows} database={database} />
+					</div>
+					{columns.map((column) => (
+						<div key={column.name} className="db-td db-calc" style={{ width: widthOf(column) }}>
+							<Calc name={column.name} column={column} rows={rows} database={database} />
+						</div>
+					))}
+					<div className="db-td db-td-add" style={{ width: ADD_WIDTH }} />
+				</div>
 			</div>
 		</div>
 	);
@@ -756,4 +765,52 @@ function useTableKeys(database: Database, rows: Row[], columns: Column[]) {
 			void put(cellsOf(text));
 		},
 	};
+}
+
+/**
+ * What is worked out of a column under the table (its count, sum, earliest day…, as Notion's 计算): shown with its
+ * name; none (on hover, 计算 to choose one); clicked, the workings its kind offers.
+ */
+function Calc({ name, column, rows, database }: { name: string; column: Column | null; rows: Row[]; database: Database }) {
+	const [open, setOpen] = useState(false);
+	const kind = database.config.calcs[name] ?? (column ? 'none' : 'count');
+	const value = calculate(kind, rows, column);
+	return (
+		<Pop
+			open={open}
+			onOpenChange={setOpen}
+			width={200}
+			trigger={
+				<button type="button" className={cn('db-calc-button', kind === 'none' && 'is-none', column?.type === 'number' && 'is-number')} data-database-calc={name} {...(name === TITLE && kind === 'count' ? { 'data-database-count': '' } : {})}>
+					{kind === 'none' ? (
+						<span className="db-calc-hint">
+							{t('计算')}
+							<ChevronDown aria-hidden />
+						</span>
+					) : (
+						<>
+							<span className="db-calc-name">{calcName(kind)}</span>
+							<span className="db-calc-value">{value}</span>
+						</>
+					)}
+				</button>
+			}
+		>
+			<div className="db-menu">
+				{calcKinds(column ? column.type : 'title').map((each) => (
+					<MenuRow
+						key={each}
+						onClick={() => {
+							setOpen(false);
+							database.setCalc(name, each);
+						}}
+						note={each === kind ? <Check aria-hidden /> : null}
+						data-database-calc-kind={each}
+					>
+						{calcName(each)}
+					</MenuRow>
+				))}
+			</div>
+		</Pop>
+	);
 }

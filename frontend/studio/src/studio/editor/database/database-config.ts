@@ -55,7 +55,32 @@ export type DatabaseConfig = {
 	template: string | null;
 	/** The titles in the table on as many lines as they take. */
 	titleWrap: boolean;
+	/** What is worked out of each column under the table (by its name; 标题's count unless said otherwise). */
+	calcs: Record<string, CalcKind>;
 };
+
+/** What is worked out of a column's values under the table, as Notion's 计算. */
+export type CalcKind =
+	| 'none'
+	| 'count'
+	| 'filled'
+	| 'empty'
+	| 'unique'
+	| 'filled-percent'
+	| 'empty-percent'
+	| 'sum'
+	| 'average'
+	| 'median'
+	| 'min'
+	| 'max'
+	| 'range'
+	| 'earliest'
+	| 'latest'
+	| 'span'
+	| 'checked'
+	| 'unchecked'
+	| 'checked-percent';
+const CALC_KINDS: CalcKind[] = ['none', 'count', 'filled', 'empty', 'unique', 'filled-percent', 'empty-percent', 'sum', 'average', 'median', 'min', 'max', 'range', 'earliest', 'latest', 'span', 'checked', 'unchecked', 'checked-percent'];
 export type Row = { slug: string; title: string; icon: string; props: Record<string, unknown> };
 
 /** The title column: every row's own, not among `columns`. */
@@ -124,6 +149,11 @@ export function readConfig(text: string): DatabaseConfig {
 		group: typeof raw.group === 'string' && unique.some((column) => column.name === raw.group && (column.type === 'select' || column.type === 'checkbox')) ? raw.group : null,
 		template: typeof raw.template === 'string' && raw.template ? raw.template : null,
 		titleWrap: raw.titleWrap === true,
+		calcs: Object.fromEntries(
+			Object.entries(raw.calcs && typeof raw.calcs === 'object' && !Array.isArray(raw.calcs) ? (raw.calcs as Record<string, unknown>) : {}).filter(
+				([name, kind]) => named.has(name) && CALC_KINDS.includes(kind as CalcKind) && calcKinds(name === TITLE ? 'title' : unique.find((column) => column.name === name)!.type).includes(kind as CalcKind),
+			),
+		) as Record<string, CalcKind>,
 	};
 }
 
@@ -139,6 +169,7 @@ export function writeConfig(config: DatabaseConfig): string {
 	if (config.group) kept.group = config.group;
 	if (config.template) kept.template = config.template;
 	if (config.titleWrap) kept.titleWrap = true;
+	if (Object.keys(config.calcs).length) kept.calcs = config.calcs;
 	return JSON.stringify(kept, null, 2);
 }
 
@@ -290,4 +321,98 @@ export function databaseFence(source: string, id: string | null = null): string 
 /** The page with that ```database block's text written anew (as it was when it has none). */
 export function withDatabaseFence(source: string, text: string, id: string | null = null): string {
 	return withDatabaseText(source, id, text);
+}
+
+/** The workings a column offers under the table, by its kind (none first: 不计算). */
+export function calcKinds(type: ColumnType | 'title'): CalcKind[] {
+	const common: CalcKind[] = ['none', 'count', 'filled', 'empty', 'unique', 'filled-percent', 'empty-percent'];
+	if (type === 'number') return [...common, 'sum', 'average', 'median', 'min', 'max', 'range'];
+	if (type === 'date') return [...common, 'earliest', 'latest', 'span'];
+	if (type === 'checkbox') return ['none', 'count', 'checked', 'unchecked', 'checked-percent'];
+	if (type === 'title') return ['none', 'count', 'unique'];
+	return common;
+}
+
+/** A working's name, as the menu and the foot of the table say it. */
+export function calcName(kind: CalcKind): string {
+	return {
+		none: t('不计算'),
+		count: t('计数'),
+		filled: t('已填'),
+		empty: t('为空'),
+		unique: t('不重复'),
+		'filled-percent': t('已填占比'),
+		'empty-percent': t('为空占比'),
+		sum: t('求和'),
+		average: t('平均'),
+		median: t('中位数'),
+		min: t('最小'),
+		max: t('最大'),
+		range: t('范围'),
+		earliest: t('最早'),
+		latest: t('最晚'),
+		span: t('跨度'),
+		checked: t('已勾选'),
+		unchecked: t('未勾选'),
+		'checked-percent': t('勾选占比'),
+	}[kind];
+}
+
+/** A number as the foot shows it: as it is, at most 6 places after the point, no 0.30000000000000004. */
+function figure(value: number): string {
+	return String(Number(value.toFixed(6)));
+}
+
+/** What `kind` works out of the rows' values in `column` (null: their titles), as the foot of the table shows it. */
+export function calculate(kind: CalcKind, rows: Row[], column: Column | null): string {
+	const values = rows.map((row) => (column ? row.props[column.name] : row.title));
+	const filled = values.filter((value) => !nothing(value));
+	const percent = (part: number) => (rows.length ? `${figure((part / rows.length) * 100).replace(/(\.\d)\d*$/u, '$1')}%` : '0%');
+	switch (kind) {
+		case 'none':
+			return '';
+		case 'count':
+			return String(rows.length);
+		case 'filled':
+			return String(filled.length);
+		case 'empty':
+			return String(rows.length - filled.length);
+		case 'unique':
+			return String(new Set(filled.flatMap((value) => (Array.isArray(value) ? value.map(String) : [shown(value)]))).size);
+		case 'filled-percent':
+			return percent(filled.length);
+		case 'empty-percent':
+			return percent(rows.length - filled.length);
+		case 'checked':
+			return String(values.filter((value) => value === true).length);
+		case 'unchecked':
+			return String(values.filter((value) => value !== true).length);
+		case 'checked-percent':
+			return percent(values.filter((value) => value === true).length);
+	}
+	if (kind === 'earliest' || kind === 'latest' || kind === 'span') {
+		const days = filled.map(String).filter((day) => /^\d{4}-\d{2}-\d{2}$/u.test(day)).sort();
+		if (!days.length) return '';
+		if (kind === 'earliest') return shownDate(days[0]);
+		if (kind === 'latest') return shownDate(days.at(-1));
+		return t('{count} 天', { count: Math.round((Date.parse(days.at(-1)!) - Date.parse(days[0]!)) / 86_400_000) });
+	}
+	const numbers = filled.map(Number).filter(Number.isFinite).sort((a, b) => a - b);
+	if (!numbers.length) return '';
+	const sum = numbers.reduce((total, value) => total + value, 0);
+	const middle = Math.floor(numbers.length / 2);
+	switch (kind) {
+		case 'sum':
+			return figure(sum);
+		case 'average':
+			return figure(sum / numbers.length);
+		case 'median':
+			return figure(numbers.length % 2 ? numbers[middle]! : (numbers[middle - 1]! + numbers[middle]!) / 2);
+		case 'min':
+			return figure(numbers[0]!);
+		case 'max':
+			return figure(numbers.at(-1)!);
+		default:
+			return figure(numbers.at(-1)! - numbers[0]!);
+	}
 }

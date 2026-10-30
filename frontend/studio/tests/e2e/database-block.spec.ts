@@ -192,7 +192,7 @@ test('filtered by a chip (a choice, a number), searched', async ({ page: p }) =>
 	await block(p).locator('[data-database-search]').click();
 	await p.keyboard.type('pbe');
 	await expect(block(p).locator('.database-row')).toHaveCount(1);
-	await expect(block(p).locator('[data-database-count]')).toHaveText('计数 1');
+	await expect(block(p).locator('[data-database-count]')).toHaveText(/^计数\s*1$/u);
 });
 
 test('the board: lists by a choice; a card dragged to another list takes its choice; a list added', async ({ page: p }) => {
@@ -354,4 +354,18 @@ test('the table from the keys, as a spreadsheet: moved through, typed in, a box 
 	await expect(block(p).locator('.database-row').nth(2).locator('[data-column="能量"]')).toHaveText('-1.5');
 	await p.keyboard.press('ControlOrMeta+s');
 	await expect.poll(savedMarkdown).toMatch(/"options": \[\n\s+"PBE0",\n\s+"B3LYP"\n\s+\]/u);
+});
+
+test('under each column, what is worked out of it: chosen from its kind’s, kept in the block, as the rows filtered', async ({ page: p }) => {
+	row('db-row-a', 'A', '{ "能量": -76.4, "方法": "PBE0" }', 10);
+	row('db-row-b', 'B', '{ "能量": -76.6, "方法": "B3LYP" }', 20);
+	database({ columns: [{ name: '能量', type: 'number' }, { name: '方法', type: 'select', options: ['PBE0', 'B3LYP'] }], view: 'table' });
+	await openStudio(p);
+	await expect(block(p).locator('[data-database-count]')).toHaveText(/^计数\s*2$/u);
+	await block(p).locator('[data-database-calc="能量"]').click();
+	await expect(p.locator('[data-database-calc-kind]')).toHaveText(['不计算', '计数', '已填', '为空', '不重复', '已填占比', '为空占比', '求和', '平均', '中位数', '最小', '最大', '范围']);
+	await p.locator('[data-database-calc-kind="sum"]').click();
+	await expect(block(p).locator('[data-database-calc="能量"]')).toHaveText(/^求和\s*-153$/u);
+	await p.keyboard.press('ControlOrMeta+s');
+	await expect.poll(savedMarkdown).toMatch(/"calcs": \{\n\s+"能量": "sum"\n\s+\}/u);
 });
