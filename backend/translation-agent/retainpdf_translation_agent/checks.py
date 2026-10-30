@@ -11,8 +11,11 @@ FORMULA_RE = re.compile(r"\$[^$]+\$")
 CITATION_RE = re.compile(r"\[\d+(?:\s*[,–-]\s*\d+)*\]")
 FN_RE = re.compile(r"\{\{fn:[^}]+\}\}")
 CODE_RE = re.compile(r"`[^`\n]+`")
+# 中文中间紧贴着的小写英文词（"实际上those崩溃"）：模型漏翻的残片
+STRAY_EN_RE = re.compile(r"(?<=[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef])([a-z]{2,})(?=[\u4e00-\u9fff])")
 QUOTED_RE = re.compile(r"《[^》]*》|“[^”]*”|「[^」]*」|（[^）]*）|\([^)]*\)")
-NUMBER_RE = re.compile(r"(?<![\w.])\d+(?:\.\d+)*(?![\w])")
+# 只拿 ASCII 字母数字当边界：中文紧挨着数字（"图1.1""第4章"）照样认得
+NUMBER_RE = re.compile(r"(?<![A-Za-z0-9_.])\d+(?:\.\d+)*(?![A-Za-z0-9_])")
 LATIN_WORD_RE = re.compile(r"[A-Za-z]{3,}")
 CJK_RE = re.compile(r"[一-鿿]")
 # 原文里的小数字，译文写成中文数字也算保留（"level-2 heading" → "二级标题"）
@@ -69,6 +72,9 @@ def check_block(source: str, translation: str | None) -> list[dict]:
         issues.append(_issue("number_lost", "warn", f"数字可能丢了：{sorted(lost_numbers.elements())}"))
     plain_source = _strip_protected(source)
     plain_out = _strip_protected(translation)
+    stray = STRAY_EN_RE.findall(QUOTED_RE.sub(" ", plain_out))
+    if stray and CJK_RE.search(plain_out):
+        issues.append(_issue("stray_english", "error", f"中文句子里夹着英文词：{stray[:5]}"))
     if not CJK_RE.search(plain_source):
         if translation.strip() == source.strip() and LATIN_WORD_RE.search(plain_source):
             issues.append(_issue("untranslated", "error", "译文和原文一模一样"))
@@ -145,11 +151,14 @@ def check_terms(source: str, translation: str | None, terms: list[dict], excepti
             issues.append(_issue("keep_original_lost", "error", f"“{term['source']}”要原样保留，不要翻译"))
         elif term["category"] == "abbr" and term["source"] not in translation:
             issues.append(_issue("abbr_lost", "warn", f"缩写“{term['source']}”在译文里没有了"))
+        elif term["category"] == "name" and term["target"] not in translation:
+            issues.append(_issue("name_mismatch", "error", f"人名“{term['source']}”统一译作“{term['target']}”（术语表 {term['id']}）"))
         elif term["category"] == "term" and term["target"] not in translation:
+            # 只记警告不重翻：实测重翻代价大，而且定错的译法会被逼着照抄；交给一致性检查和审校
             issues.append(
                 _issue(
                     "term_mismatch",
-                    "error",
+                    "warn",
                     f"术语“{term['source']}”应译作“{term['target']}”（术语表 {term['id']}）；这里意思确实不同的话，在 term_exceptions 里声明并写理由",
                 )
             )
@@ -158,7 +167,7 @@ def check_terms(source: str, translation: str | None, terms: list[dict], excepti
 
 # 表示保留的词：原文有，译文里就该有"可能""或许"之类（只记提示，算指标用，不影响状态）
 HEDGE_RE = re.compile(r"\b(may|might|perhaps|possibly|likely|unlikely|suggests?|suggested|appears? to|appeared to|seems?|seemed|presumably|arguably)\b", re.IGNORECASE)
-HEDGE_ZH = ("可能", "或许", "也许", "似乎", "看来", "大概", "大约", "未必", "不一定", "表明", "暗示", "提示", "说明", "推测", "显得", "好像", "恐怕", "估计", "或可", "有望", "应该", "大致", "倾向")
+HEDGE_ZH = ("可能", "或许", "也许", "似乎", "看来", "看起来", "大概", "大约", "未必", "不一定", "表明", "暗示", "提示", "说明", "推测", "显得", "好像", "恐怕", "估计", "或可", "有望", "应该", "大致", "倾向")
 WE_RE = re.compile(r"\b(we|our|us)\b", re.IGNORECASE)
 WE_ZH = ("我们", "本文", "本书", "本章", "笔者", "作者", "本研究", "咱们")
 

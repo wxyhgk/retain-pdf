@@ -1,6 +1,6 @@
 """每页的上下文包：大小固定（默认约 7000 token），不随文章变长而变大。
 
-包里有：风格说明、本页出现的术语、保留原文的专名、缩写、上一页结尾和下一页开头、本章摘要。每部分有预算；
+包里有：风格说明、本页出现的术语、保留原文的专名、人名译名、缩写、上一页结尾和下一页开头、本章摘要。每部分有预算；
 总数超了按 摘要 → 相邻页 → 保留原文 → 缩写 → 候选术语 → 审定术语 的顺序往下砍（越靠后越重要）。
 token 按"ASCII 四个字符一个、其余一个字符一个"粗估，够用来卡预算。
 """
@@ -13,6 +13,7 @@ import json
 from retainpdf_translation_agent.contract import PageInput
 from retainpdf_translation_agent.memory import ABBR
 from retainpdf_translation_agent.memory import KEEP
+from retainpdf_translation_agent.memory import NAME
 from retainpdf_translation_agent.memory import TERM
 from retainpdf_translation_agent.memory import Glossary
 
@@ -58,7 +59,7 @@ def build_context(
     next_blocks: list[dict] | None = None,
     style: str = "",
     summary: str = "",
-    used_abbreviations: set[str] | None = None,
+    used_abbreviations: set[str] | None = None,  # 前面几页已经用过的缩写和人名（原文写法）：不再算第一次
     budget: int = DEFAULT_BUDGET,
 ) -> dict:
     """`previous`：上一页已经定下的块 [{"id", "source", "translation"}]；`next_blocks`：下一页要翻的块 [{"id", "source"}]。"""
@@ -71,6 +72,7 @@ def build_context(
     terms = sorted((t for t in found if t.category == TERM), key=lambda t: (not t.binds(page.chapter), t.source.lower()))
     keep = [t for t in found if t.category == KEEP]
     abbreviations = [t for t in found if t.category == ABBR]
+    people = [t for t in found if t.category == NAME]
 
     truncated: dict[str, int] = {}
     term_items, cut = _fit([t.for_context(page.chapter) for t in terms], limits["terms"])
@@ -86,7 +88,11 @@ def build_context(
         }
         for t in abbreviations
     ]
-    names, cut = _fit(abbr_items + [t.for_context(page.chapter) for t in keep], limits["names"])
+    name_items = [
+        {"id": t.id, "source": t.source, "target": t.target, "category": NAME, "status": t.status, "first_use": t.source not in used_abbreviations}
+        for t in people
+    ]
+    names, cut = _fit(abbr_items + name_items + [t.for_context(page.chapter) for t in keep], limits["names"])
     if cut:
         truncated["names"] = cut
     neighbor_items = [
@@ -104,13 +110,14 @@ def build_context(
         "style": style_text,
         "terms": term_items,
         "abbreviations": [n for n in names if "abbr" in n],
-        "keep": [n for n in names if "abbr" not in n],
+        "names": [n for n in names if n.get("category") == NAME],
+        "keep": [n for n in names if "abbr" not in n and n.get("category") != NAME],
         "previous": [n for n in neighbors if n["page"] == "previous"],
         "next": [n for n in neighbors if n["page"] == "next"],
         "summary": summary_text,
     }
     # 总数还超（各部分预算之和可能比总预算大）：按顺序砍，越靠后越重要
-    for name in ("summary", "previous", "next", "keep", "abbreviations", "terms"):
+    for name in ("summary", "previous", "next", "keep", "abbreviations", "names", "terms"):
         while estimate_tokens(context) > budget and context[name]:
             if isinstance(context[name], str):
                 context[name] = ""
@@ -135,6 +142,7 @@ def context_terms(context: dict) -> list[dict]:
     """包里的全部术语、保留原文、缩写（带上类别）。"""
     out = [dict(t) for t in context.get("terms") or []]
     out += [dict(t, category=KEEP) for t in context.get("keep") or []]
+    out += [dict(t) for t in context.get("names") or []]
     out += [{"id": a["id"], "source": a["abbr"], "target": a["abbr"], "category": ABBR, "status": "approved"} for a in context.get("abbreviations") or []]
     return out
 

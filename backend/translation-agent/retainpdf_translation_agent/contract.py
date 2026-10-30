@@ -6,6 +6,7 @@
 - `BlockResult`：agent 交回的一块：译文、校验问题、请求了几次、最终状态。
 - `RevisionRequest`：重排 agent 发来的改稿要求（例如"这块放不下，缩到 N 字以内"）。
 
+修译文质量时（2026-10-30）加了 `BlockInput.fixed_translation`（已定好的译文，agent 不再翻）。
 第 1 版（2026-10-30）只加了字段：`PageInput.chapter`、`PageInput.context`（上下文包，见 `context.py`）、
 `BlockResult.meta`（谁、用哪个版本翻的）、状态 `fallback_source`。
 """
@@ -38,9 +39,14 @@ class BlockInput:
     group: dict | None = None
     relations: dict = field(default_factory=dict)
     attributes: dict = field(default_factory=dict)
+    # 已经定好的译文（翻译前通读定的标题、照搬标题的目录条目）：agent 不再翻，只作上下文，结果里原样交回
+    fixed_translation: str | None = None
 
     def request_record(self) -> dict:
         record = {"id": self.id, "class": self.cls, "where": self.where, "text": self.text, "translate": self.translate}
+        if self.fixed_translation is not None:
+            record["translate"] = False
+            record["translation"] = self.fixed_translation
         if self.cls_label:
             record["class_label"] = self.cls_label
         if self.group:
@@ -66,7 +72,10 @@ class PageInput:
     context: dict = field(default_factory=dict)
 
     def to_translate(self) -> list[BlockInput]:
-        return [b for b in self.blocks if b.translate]
+        return [b for b in self.blocks if b.translate and b.fixed_translation is None]
+
+    def fixed(self) -> list[BlockInput]:
+        return [b for b in self.blocks if b.translate and b.fixed_translation is not None]
 
 
 @dataclass

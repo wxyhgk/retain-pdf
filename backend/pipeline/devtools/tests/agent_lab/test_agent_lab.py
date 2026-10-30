@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from retainpdf_translation_agent import TranslationAgent as Agent
@@ -32,7 +33,8 @@ def _requested_blocks(body: dict) -> list[dict]:
 
 def _fake_translation(text: str) -> str:
     """假译文：每一段（接续组按 [[BREAK]] 分段）前面加"译文："，公式、引用、数字原样留着。"""
-    return "[[BREAK]]".join("译文：" + part.strip() for part in text.split("[[BREAK]]"))
+    # 脚注开头的编号留在最前面（"1 译文：…"），和真模型一样
+    return "[[BREAK]]".join(re.sub(r"^(\d+\s+)?", lambda m: (m.group(1) or "") + "译文：", part.strip(), count=1) for part in text.split("[[BREAK]]"))
 
 
 class FakeModel:
@@ -45,6 +47,9 @@ class FakeModel:
 
     def __call__(self, body: dict) -> dict:
         self.bodies.append(body)
+        if body["tools"][0]["name"] == "submit_reading":
+            # 翻译前通读：什么都不定（体裁 other、没有术语和标题），后面的逐页翻译和以前一样
+            return {"content": [{"type": "tool_use", "name": "submit_reading", "input": {"genre": "other", "name_policy": "keep", "style": "", "terms": [], "headings": []}}], "usage": {"input_tokens": 100, "output_tokens": 20}}
         blocks, payload = _requested_blocks(body)
         retry = "retry" in payload
         out = []
@@ -88,7 +93,7 @@ def test_broken_blocks_are_retried_alone_and_fixed(tmp_path: Path) -> None:
     assert len(retry_bodies) == 1, "both failed blocks are on page 1 and go back in one request"
     assert sorted(b["id"] for b in _requested_blocks(retry_bodies[0])[0]) == ["abstract", "fig1-cap"]
     summary = results["summary"]
-    assert summary["error"] == 0 and summary["retried"] == 2 and summary["requests"] == 3 + 1
+    assert summary["error"] == 0 and summary["retried"] == 2 and summary["requests"] == 1 + 3 + 1, "read-through + 3 pages + 1 retry"
     assert (tmp_path / "out" / "report.html").is_file()
 
 
@@ -98,7 +103,7 @@ def test_second_run_is_served_from_cache(tmp_path: Path) -> None:
     calls = len(fake.bodies)
     second = run(tmp_path / "out", agent=Agent(model="fake", transport=fake, cache_dir=tmp_path / "cache"))
     assert len(fake.bodies) == calls
-    assert second["summary"]["cached_requests"] == second["summary"]["requests"] == 3
+    assert second["summary"]["cached_requests"] == second["summary"]["requests"] == 1 + 3, "read-through + 3 pages"
 
 
 def test_report_embeds_translations(tmp_path: Path) -> None:
@@ -107,7 +112,7 @@ def test_report_embeds_translations(tmp_path: Path) -> None:
     blob = html.split('<script id="data" type="application/json">', 1)[1].split("</script>", 1)[0]
     data = json.loads(blob)
     translated = [b for b in data["blocks"] if b.get("translation")]
-    assert translated and all(b["translation"].startswith("译文：") for b in translated)
+    assert translated and all("译文：" in b["translation"] for b in translated)
     assert len(data["images"]) == 3
 
 
@@ -115,6 +120,8 @@ class DuplicatingModel(FakeModel):
     """第一次把跨页段落两半都译成同一句（实测 Haiku 出过这种错），重翻时分对。"""
 
     def __call__(self, body: dict) -> dict:
+        if body["tools"][0]["name"] == "submit_reading":
+            return FakeModel.__call__(self, body)
         self.bodies.append(body)
         blocks, payload = _requested_blocks(body)
         out = []
@@ -155,7 +162,10 @@ def test_continuation_group_is_sent_as_one_record_with_break_markers(tmp_path: P
     blocks = page.to_input({}).blocks
     per_block, issues = expand_translations({"cg-method-p1": "前半[[BREAK]]后半"}, blocks, wanted)
     assert per_block["method-p1"] == "前半" and per_block["method-p1-cont1"] == "后半" and not issues
-    _, issues = expand_translations({"cg-method-p1": "没有断点"}, blocks, wanted)
+    # 没放断点：程序按原文长度比例切开，只记警告；放多了才算错
+    per_block, issues = expand_translations({"cg-method-p1": "没有断点，程序切开"}, blocks, wanted)
+    assert issues["method-p1"][0]["code"] == "group_split_by_program" and per_block["method-p1-cont1"]
+    _, issues = expand_translations({"cg-method-p1": "多[[BREAK]]了[[BREAK]]断点"}, blocks, wanted)
     assert issues["method-p1"][0]["code"] == "group_break"
 
 

@@ -19,7 +19,8 @@ from dataclasses import field
 TERM = "term"  # 专业术语：有译法
 KEEP = "keep"  # 保留原文：人名、机构、期刊、软件，译文里原样出现
 ABBR = "abbr"  # 缩写：译文里保留缩写本身，全称见 note
-CATEGORIES = (TERM, KEEP, ABBR)
+NAME = "name"  # 人名等专名的中文译名：全书第一次写"中文译名（原文）"，之后只写中文译名（人文类书，见翻译前通读）
+CATEGORIES = (TERM, KEEP, ABBR, NAME)
 
 CANDIDATE = "candidate"
 APPROVED = "approved"
@@ -126,7 +127,8 @@ def quote_around(text: str, phrase: str) -> str:
     match = term_pattern(phrase, TERM).search(text)
     if not match:
         return ""
-    start = max(text.rfind(". ", 0, match.start()) + 2, 0)
+    previous_stop = text.rfind(". ", 0, match.start())
+    start = previous_stop + 2 if previous_stop >= 0 else 0
     end = text.find(". ", match.end())
     end = len(text) if end < 0 else end + 1
     sentence = text[start:end].strip()

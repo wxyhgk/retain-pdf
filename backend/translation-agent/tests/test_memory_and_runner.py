@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from retainpdf_translation_agent import BREAK
 from retainpdf_translation_agent import BlockInput
 from retainpdf_translation_agent import DocumentRun
 from retainpdf_translation_agent import Glossary
@@ -183,26 +184,22 @@ def test_style_signals_are_info_and_do_not_change_the_status() -> None:
 
 
 # ---- 一页 ----
-def test_term_mismatch_is_retried_and_kept_as_a_warning_when_it_persists() -> None:
-    """术语没照用先重翻；重翻还不照用，译文本身没坏，保留译文标警告（交给术语专员），不退回原文。"""
+def test_a_term_that_is_not_used_is_a_warning_without_a_retry() -> None:
+    """术语没照用只记警告、不重翻（实测重翻代价大，定错的译法还会被逼着照抄），交给一致性检查和审校。"""
     glossary = Glossary()
     glossary.add("bounding box", "边界框", reason="用户给的")
     page = _p("1", "", ("b1", "Each bounding box has four numbers."), ("b2", "Boxes overlap."))
     context = build_context(page, glossary)
     page.context = context
-    model = Model(
-        _answer({"b1": "每个包围盒有四个数。", "b2": "框会重叠。"}),
-        _answer({"b1": "每个包围盒有四个数。"}),
-    )
+    model = Model(_answer({"b1": "每个包围盒有四个数。", "b2": "框会重叠。"}))
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
-    first, retry = model.payloads
-    assert first["context"]["terms"][0]["target"] == "边界框" and "hash" not in first["context"]
-    assert retry["required_ids"] == ["b1"] and "边界框" in retry["retry"][0]["problems"][0]
-    assert results["b1"].status == "warn" and results["b1"].translation == "每个包围盒有四个数。"
-    assert results["b2"].status == "ok"
+    assert len(model.payloads) == 1
+    assert model.payloads[0]["context"]["terms"][0]["target"] == "边界框" and "hash" not in model.payloads[0]["context"]
+    assert results["b1"].status == "warn" and results["b1"].issues[0]["code"] == "term_mismatch"
+    assert results["b1"].translation == "每个包围盒有四个数。" and results["b2"].status == "ok"
     meta = results["b1"].meta
     assert meta["used_terms"] == [[context["terms"][0]["id"], glossary.version]] and meta["context_hash"] == context["hash"]
-    assert meta["role"] == "translator" and meta["model"] == "fake" and meta["attempt"] == 2
+    assert meta["role"] == "translator" and meta["model"] == "fake" and meta["attempt"] == 1
 
 
 def test_a_block_that_still_breaks_a_formula_falls_back_to_the_source() -> None:
@@ -213,7 +210,7 @@ def test_a_block_that_still_breaks_a_formula_falls_back_to_the_source() -> None:
     assert result.history[-1]["translation"] == "我们在 3 页上报告 F1。"
 
 
-def test_a_group_whose_break_is_never_placed_is_kept_whole_in_its_first_block() -> None:
+def test_a_group_whose_breaks_stay_wrong_is_kept_whole_in_its_first_block() -> None:
     group = lambda i: {"id": "cg-x", "index": i, "of": 2}  # noqa: E731
     page = PageInput(
         page_label="1",
@@ -221,7 +218,8 @@ def test_a_group_whose_break_is_never_placed_is_kept_whole_in_its_first_block() 
         blocks=[BlockInput("x1", "paragraph", "Chapter 3 is the one I", True, group=group(1)), BlockInput("x2", "paragraph", "wish someone had handed me.", True, group=group(2))],
     )
     whole = "第 3 章是我希望当年有人交给我的那一章。"
-    model = Model(_answer({"cg-x": whole}), _answer({"cg-x": whole}))
+    wrong = f"第 3 章{BREAK}是我希望{BREAK}当年有人交给我的那一章。"  # 放多了断点：重翻，还多就整段并进第一块
+    model = Model(_answer({"cg-x": wrong}), _answer({"cg-x": wrong}))
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
     assert results["x1"].translation == whole and results["x2"].translation == ""
     assert results["x1"].status == results["x2"].status == "warn"
@@ -237,6 +235,13 @@ def test_the_first_use_of_an_abbreviation_must_spell_it_out() -> None:
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
     assert [i["code"] for i in results["b1"].history[0]["issues"] if i["severity"] == "error"] == ["abbr_first_use"]
     assert results["b1"].translation.startswith("光学字符识别（OCR）") and results["b2"].status == "ok", "only the first block on the page needs it"
+
+
+def test_a_footnote_must_keep_its_leading_number() -> None:
+    page = PageInput(page_label="1", document=DOC, blocks=[BlockInput("fn11", "footnote", "11 On the French reading rooms see Lyons.", True)])
+    model = Model(_answer({"fn11": "注1 关于法国的阅览室，参见 Lyons。"}), _answer({"fn11": "11 关于法国的阅览室，参见 Lyons。"}))
+    result = TranslationAgent(model="fake", transport=model).translate_page(page)[0]["fn11"]
+    assert "footnote_number_changed" in [i["code"] for i in result.history[0]["issues"]] and result.translation.startswith("11 ")
 
 
 def test_roles_can_use_their_own_model() -> None:
