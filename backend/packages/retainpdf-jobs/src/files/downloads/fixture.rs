@@ -47,6 +47,7 @@ impl DownloadFixture {
         fs::write(
             &renderer,
             r#"#!/bin/sh
+[ -n "$RENDER_WARMUP" ] && exit 0
 printf 'render\n' >> "$0.calls"
 remaining=250
 while [ ! -f "$0.release" ]; do
@@ -59,6 +60,8 @@ printf 'offline preview bytes' > "$4"
         )
         .unwrap();
         fs::set_permissions(&renderer, fs::Permissions::from_mode(0o755)).unwrap();
+        // 先空跑一次（不记调用），见 files::test_scripts（2026-10-30 在全量测试里碰到 "renderer starts: Elapsed"）
+        crate::files::test_scripts::warm_up_fresh_script(&renderer, "RENDER_WARMUP");
         Self {
             root,
             db,

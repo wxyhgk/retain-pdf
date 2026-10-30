@@ -340,8 +340,11 @@ mod tests {
     fn fake_revise(dir: &Path, name: &str, script_body: &str) -> ReviseProcess {
         use std::os::unix::fs::PermissionsExt;
         let program = dir.join(name);
-        std::fs::write(&program, format!("#!/bin/sh\n{script_body}\n")).expect("write script");
+        std::fs::write(&program, format!("#!/bin/sh\n[ -n \"$REVISE_WARMUP\" ] && exit 0\n{script_body}\n"))
+            .expect("write script");
         std::fs::set_permissions(&program, std::fs::Permissions::from_mode(0o755)).expect("chmod");
+        // 先空跑一次，见 files::test_scripts：不然脚本还没装上 trap 就收到 SIGTERM，超时、宽限的几条测试时红时绿
+        crate::files::test_scripts::warm_up_fresh_script(&program, "REVISE_WARMUP");
         ReviseProcess {
             program: program.to_string_lossy().into_owned(),
             project_root: dir.to_path_buf(),
