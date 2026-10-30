@@ -85,6 +85,23 @@ use schema::{
 /// finish its transaction.
 /// Tunable via `RUST_API_DB_BUSY_TIMEOUT_MS` (default 5000), also exposed
 /// via `retainpdf_core::config::DbConfig`.
+/// 进程里第一次打开 SQLite 之前关掉它的内存统计（`SQLITE_CONFIG_MEMSTATUS`）。
+///
+/// 自带编译的 SQLite 默认开着这项统计，每次分配内存都要拿一把全进程共享的锁；我们每次库操作都新开连接、
+/// 重新解析表结构，分配很多，并行时全在这把锁上排队（2026-10-30 实测：rust_api 的 557 个测试并行和串行
+/// 一样慢，关掉后 109 s → 27 s）。代码里没有用到内存统计（`sqlite3_memory_used`、`soft_heap_limit`）。
+/// 这个设置只在 SQLite 初始化之前有效，所以每个打开连接的地方先调它；之后再调什么都不做。
+pub fn configure_sqlite_process() {
+    static ONCE: std::sync::Once = std::sync::Once::new();
+    ONCE.call_once(|| {
+        // SAFETY: sqlite3_config 只能在 sqlite3_initialize 之前、没有别的线程用 SQLite 时调用；
+        // Once 保证只调一次，而且这里在本进程第一次打开连接之前。已经初始化过时它返回 SQLITE_MISUSE，不改任何东西。
+        unsafe {
+            rusqlite::ffi::sqlite3_config(rusqlite::ffi::SQLITE_CONFIG_MEMSTATUS, 0 as std::os::raw::c_int);
+        }
+    });
+}
+
 fn db_busy_timeout() -> Duration {
     // Single source: retainpdf_core::config::env_vars::env_u64 (handles trimming/0-filter)
     // Fallback keeps Db usable even without AppConfig (unit tests / jobsd standalone).
@@ -187,6 +204,7 @@ impl Db {
             std::fs::create_dir_all(parent)
                 .with_context(|| format!("failed to create db directory: {}", parent.display()))?;
         }
+        configure_sqlite_process();
         let conn = Connection::open(&self.path)?;
         conn.busy_timeout(db_busy_timeout())?;
         // `journal_mode=WAL` is persisted in the database file header, so it
@@ -344,6 +362,12 @@ impl Db {
 
 #[cfg(test)]
 mod tests {
+    /// 测试里直接开的连接也先关内存统计：有的测试先于 `Db` 开连接，不然 SQLite 按默认初始化。
+    fn open_raw(path: impl AsRef<std::path::Path>) -> rusqlite::Result<Connection> {
+        super::configure_sqlite_process();
+        Connection::open(path)
+    }
+
     use std::fs;
     use std::path::Path;
 
@@ -440,7 +464,7 @@ mod tests {
         let job = sample_job("job-split", &fs.data_root);
         db.save_job(&job).expect("save job");
 
-        let conn = Connection::open(&fs.db_path).expect("open sqlite");
+        let conn = open_raw(&fs.db_path).expect("open sqlite");
         let split_artifacts_json: String = conn
             .query_row(
                 "SELECT artifacts_json FROM artifacts WHERE job_id = ?1",
@@ -537,7 +561,7 @@ mod tests {
     /// 要是 WAL：真实的库从第一次连上就是（`apply_schema` 头一句），这个模式记在文件里。造成默认的回滚日志模式的话，
     /// 几个连接同时把它切成 WAL 会直接 `database is locked`（切日志模式不等忙），测的就不是补列的竞争了。
     fn create_pre_library_tables(db_path: &Path) {
-        let conn = Connection::open(db_path).expect("open sqlite");
+        let conn = open_raw(db_path).expect("open sqlite");
         conn.execute_batch(
             r#"
             PRAGMA journal_mode=WAL;
@@ -568,7 +592,7 @@ mod tests {
     }
 
     fn columns_of(db_path: &Path, table: &str) -> Vec<String> {
-        let conn = Connection::open(db_path).expect("open sqlite");
+        let conn = open_raw(db_path).expect("open sqlite");
         let mut stmt = conn.prepare(&format!("PRAGMA table_info({table})")).unwrap();
         let rows = stmt.query_map([], |row| row.get::<_, String>(1)).unwrap();
         rows.map(Result::unwrap).collect()
@@ -599,7 +623,7 @@ mod tests {
                 assert!(columns.iter().any(|c| c == column), "{table}.{column} 没补上：{columns:?}");
             }
         }
-        let version: i64 = Connection::open(&fs.db_path)
+        let version: i64 = open_raw(&fs.db_path)
             .unwrap()
             .query_row("PRAGMA user_version", [], |row| row.get(0))
             .unwrap();
@@ -637,7 +661,7 @@ mod tests {
         let job = sample_job("job-legacy", &fs.data_root);
         let artifacts_json = serde_json::to_string(&job.artifacts).expect("serialize artifacts");
 
-        let conn = Connection::open(&fs.db_path).expect("open sqlite");
+        let conn = open_raw(&fs.db_path).expect("open sqlite");
         conn.execute_batch(
             r#"
             PRAGMA journal_mode=WAL;
@@ -714,7 +738,7 @@ mod tests {
 
     /// 插一条读不出来的任务行（request_json 对不上当前的类型），可选地挂到一本书上。
     fn insert_malformed_job(db_path: &Path, job_id: &str, document_id: Option<&str>) {
-        let conn = Connection::open(db_path).expect("open sqlite");
+        let conn = open_raw(db_path).expect("open sqlite");
         conn.execute(
             r#"
             INSERT INTO jobs (
@@ -778,7 +802,7 @@ mod tests {
         db.init().expect("init db");
 
         db.save_job(&sample_job("job-valid", &fs.data_root)).expect("save valid job");
-        let conn = Connection::open(&fs.db_path).expect("open sqlite");
+        let conn = open_raw(&fs.db_path).expect("open sqlite");
         conn.execute("UPDATE jobs SET document_id = 'doc-1' WHERE job_id = 'job-valid'", [])
             .expect("attach valid job");
         drop(conn);

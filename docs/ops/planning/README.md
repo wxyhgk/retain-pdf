@@ -13,6 +13,7 @@
 - [前端请求函数生成（2026-10 起）](./api-client-codegen/README.md)
 - [桌面壳主进程用 Cordis 试点（2026-10）](./desktop-cordis-pilot/README.md)
 - [笔记、知识库、翻译一体化设想（2026-10，未开工）](./studio-workbench/README.md)
+- [测试提速（2026-10 起）](./test-speed/README.md)
 - [OCR 归一化拆分（2026-10 起）](./ocr-normalization/README.md)
 - [翻译 agent（2026-10 起）](./translation-agent/README.md)
 - [架构与 API 契约任务台账](./architecture_tasks.csv)
