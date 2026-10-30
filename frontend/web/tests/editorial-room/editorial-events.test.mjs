@@ -142,11 +142,12 @@ test("模型调用按 role 记到工位：审校的请求算审校中；缺省 r
 test("广播只念不合格和警告的代码，info（只算指标）不念；不认识的代码照原样", () => {
   const [event] = parseEditorialEvents([
     { v, ts: 0, type: "check_result", page: 2, attempt: 1, ok: 4, warn: 1, error: 1,
-      codes: { footnote_mark_lost: 1, term_mismatch: 1, hedge_lost: 2, review_fluency: 1, brand_new_code: 1 } },
+      codes: { footnote_mark_lost: 1, term_mismatch: 1, foreign_script: 1, hedge_lost: 2, review_fluency: 1, brand_new_code: 1 } },
   ]);
   const text = narrate(event).text;
   assert.match(text, /脚注标记丢了 1/);
   assert.match(text, /术语没照用 1/);
+  assert.match(text, /冒出原文没有的外文 1/);
   assert.match(text, /brand_new_code 1/);
   assert.doesNotMatch(text, /hedge_lost|review_fluency/);
 });
