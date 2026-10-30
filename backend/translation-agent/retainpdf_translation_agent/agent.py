@@ -20,11 +20,10 @@ from typing import Callable
 
 from retainpdf_translation_agent.breaks import move_leading_punctuation
 from retainpdf_translation_agent.breaks import split_by_ratio
-from retainpdf_translation_agent.checks import SHARE_DRIFT_MIN_CHARS
-from retainpdf_translation_agent.checks import SHARE_TOLERANCE
 from retainpdf_translation_agent.checks import check_block
 from retainpdf_translation_agent.checks import check_group
 from retainpdf_translation_agent.checks import check_terms
+from retainpdf_translation_agent.checks import prose_length
 from retainpdf_translation_agent.checks import restore_formulas
 from retainpdf_translation_agent.checks import status_of
 from retainpdf_translation_agent.checks import style_signals
@@ -41,10 +40,12 @@ from retainpdf_translation_agent.contract import RevisionRequest
 from retainpdf_translation_agent.memory import find_terms
 
 API_URL = "https://api.anthropic.com/v1/messages"
-# 接续组合成一条送给模型，原文里用它标出原来在哪里断开；译文里要在对应位置放同样数量
+# 以前接续组的原文里用它标出原来在哪里断开、要模型在译文里照放；2026-10-30 起模型只翻整段，不再放。
+# 留着这个记号只为删掉模型照老习惯写进来的（审校改稿里也不许出现）
 BREAK = "[[BREAK]]"
+BREAK_RE = re.compile(r"\s*\[\[BREAK\]\]\s*")
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-13"
+PROMPT_VERSION = "translation-agent-14"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -62,10 +63,8 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
 3. `$…$` 里的公式一个字符都不改，原样放在译文对应位置；`{{fn:1}}` 这类脚注标记、`[1, 2]` 这类引用标记原样保留；
    反引号包着的行内代码（命令、路径、参数名，如 `--json`）连同反引号原样保留。
 4. 数字、章节编号（如 2.1）、变量名、代码、URL、DOI 原样保留。
-5. 被分栏或分页拆开的同一段话已经合成一条记录（有 members 字段），原文里用 [[BREAK]] 标出原来在哪里断开。
-   把整段翻通顺，并在译文里**放同样数量的 [[BREAK]]**，放在和原文断点意思对应的位置（可以在句子中间）。
-   不要删掉或多加 [[BREAK]]，[[BREAK]] 前后的内容不要重复。
-   中文语序和英文不同、断点没法放在完全对应的位置时，放在最接近的分句或词组边界，但一定要放。
+5. 被分栏或分页拆开的同一段话已经合成一条记录（有 members 字段），text 是接起来的整段原文。当成一段话翻通顺，
+   用这条记录的 id 交回一整段译文；不要按 members 分开交，也不用管原来在哪里断开——分回各块由程序做。
 6. 按类别把握语气：标题简洁；图注、表题保留"图 1""表 1"这样的编号；目录条目只翻标题，编号和页码不动；
    列表项保留 (1) 这类序号；脚注开头的编号原样保留（原文 "11 On the …" 就写 "11 关于……"，不要写成"注1"）；作者、机构一般不在要翻的块里。有 translation 字段的块是已经定好的译文（标题、目录），只作参考，不要交回。
 7. 术语前后一致。专名：context 的 names 给了中文译名的照用（first_use=true 时写"中文译名（原文）"），keep 里的原样保留；
@@ -449,25 +448,16 @@ class TranslationAgent:
             results[block.id] = BlockResult(block.id, per_block.get(block.id), issues, 1, status_of(issues), meta=meta)
         self._apply_group_checks(page.to_translate(), results)
         self._emit_check(1, results.values())
-        # 不合格的：单块的合成一次请求一起重翻，接续组各自整组重翻
-        failed = [b for b in page.to_translate() if results[b.id].status == STATUS_ERROR]
-        if failed:
-            self._emit("retry", blocks=[b.id for b in failed])
-        singles = [b for b in failed if not b.group]
-        groups: dict[str, list] = {}
-        for block in failed:
-            if block.group:
-                groups[block.group["id"]] = self._unit_of(page, block)
-        retry_terms: list[dict] = []
-        retry_exceptions: list[dict] = []
-        for unit in ([singles] if singles else []) + list(groups.values()):
-            fixed, retry_parsed = self._retry_unit(page, unit, results)
-            results.update(fixed)
-            retry_terms += retry_parsed.get("terms", [])
-            retry_exceptions += retry_parsed.get("term_exceptions", [])
-        if failed:
-            self._emit_check(2, [results[b.id] for b in page.to_translate()])
-        # 重翻以后还不合格：先看能不能保住译文（只是术语没照用、只是接续组断点没放对），保不住才退回原文、待人看
+        missing_first = {b.id for b in page.to_translate() if any(i["code"] == "missing" for i in results[b.id].issues)}
+        retry_terms, retry_exceptions = self._retry_failed(page, results, page.to_translate(), attempt=2)
+        # 第一次根本没交的块，那次不算一次尝试：重翻后还不合格的再翻一次。2026-10-30 论文第 5 页：页末的跨页组
+        # 第一次被整个漏掉，重翻时又漏了前一句，直接退回原文；第 1 页右栏最底下那组也是第一次被漏掉
+        again = [b for b in page.to_translate() if b.id in missing_first and results[b.id].status == STATUS_ERROR]
+        if again:
+            terms, exceptions_ = self._retry_failed(page, results, again, attempt=3)
+            retry_terms += terms
+            retry_exceptions += exceptions_
+        # 重翻以后还不合格：先看能不能保住译文（只是术语没照用），保不住才退回原文、待人看
         _salvage(page, results)
         self._fixed_results(page, results)
         for block_id, result in list(results.items()):
@@ -483,6 +473,27 @@ class TranslationAgent:
             "term_exceptions": parsed["term_exceptions"] + retry_exceptions,
         }
         return results, info
+
+    def _retry_failed(self, page: PageInput, results: dict[str, BlockResult], candidates: list, *, attempt: int) -> tuple[list[dict], list[dict]]:
+        """`candidates` 里不合格的：单块的合成一次请求一起重翻，接续组各自整组重翻。返回重翻时报上的术语和例外。"""
+        failed = [b for b in candidates if results[b.id].status == STATUS_ERROR]
+        if not failed:
+            return [], []
+        self._emit("retry", blocks=[b.id for b in failed])
+        singles = [b for b in failed if not b.group]
+        groups: dict[str, list] = {}
+        for block in failed:
+            if block.group:
+                groups[block.group["id"]] = self._unit_of(page, block)
+        terms: list[dict] = []
+        exceptions: list[dict] = []
+        for unit in ([singles] if singles else []) + list(groups.values()):
+            fixed, parsed = self._retry_unit(page, unit, results)
+            results.update(fixed)
+            terms += parsed.get("terms", [])
+            exceptions += parsed.get("term_exceptions", [])
+        self._emit_check(attempt, [results[b.id] for b in page.to_translate()])
+        return terms, exceptions
 
     def _restore_formulas(self, page: PageInput, per_block: dict[str, str]) -> None:
         """模型顺手改了一点点的公式换回原文写法，换了的记一条警告（检查时并进 issues）。"""
@@ -596,10 +607,9 @@ class TranslationAgent:
             retry.append(
                 {
                     "id": unit[0].group["id"],
-                    "previous_translation": BREAK.join(results[b.id].translation or "" for b in unit),
+                    # 上次整组没交时不填
+                    "previous_translation": "".join(results[b.id].translation or "" for b in unit) if any(results[b.id].translation for b in unit) else None,
                     "problems": problems([b.id for b in unit]),
-                    # 每个断点前后的原文几个词，帮模型找到断点在译文里的位置
-                    "breaks": [{"after": " ".join(a.text.split()[-6:]), "before": " ".join(b.text.split()[:6])} for a, b in zip(unit, unit[1:])],
                 }
             )
         else:
@@ -722,9 +732,8 @@ def _exceptions_by_block(exceptions: list[dict]) -> dict[str, set[str]]:
     return out
 
 
-# 重翻后只剩这些错，译文本身没坏：降成警告保留译文（术语交给术语专员或人，断点交给排版）
+# 重翻后只剩这些错，译文本身没坏：降成警告保留译文（术语交给术语专员或人）
 TERM_ONLY = {"term_mismatch", "keep_original_lost", "abbr_first_use", "name_mismatch", "name_first_use"}
-BREAK_ONLY = {"group_break", "group_overlap"}
 
 
 def _salvage(page: PageInput, results: dict[str, BlockResult]) -> None:
@@ -739,37 +748,6 @@ def _salvage(page: PageInput, results: dict[str, BlockResult]) -> None:
                 for i in result.issues
             ]
             result.status = status_of(result.issues)
-    groups: dict[str, list] = {}
-    for block in page.to_translate():
-        if block.group and block.id in results:
-            groups.setdefault(block.group["id"], []).append(block)
-    for members in groups.values():
-        members.sort(key=lambda b: b.group["index"])
-        member_results = [results[b.id] for b in members]
-        if not all(r.status == STATUS_ERROR for r in member_results):
-            continue
-        if not all({i["code"] for i in r.issues if i["severity"] == "error"} <= BREAK_ONLY | TERM_ONLY for r in member_results):
-            continue
-        if not any(i["code"] == "group_break" for i in member_results[0].issues):
-            continue
-        # 断点两次都放多了：整段译文放进第一块，其余块留空（内容一点不丢，排版时第一块可能要缩字号）
-        whole = re.sub(r"\s*\[\[BREAK\]\]\s*", "", member_results[0].translation or "").strip()
-        if not whole.strip():
-            continue
-        for index, (block, result) in enumerate(zip(members, member_results)):
-            issue = {
-                "code": "group_merged",
-                "severity": "warn",
-                "message": "接续组的断点没放对，整段译文放在第一块" if index == 0 else "整段译文已放在接续组第一块，这块留空",
-            }
-            kept = [
-                dict(i, severity="warn") if i["code"] in TERM_ONLY else i
-                for i in result.issues
-                if i["code"] not in BREAK_ONLY | {"group_share", "too_long", "too_short"}
-            ]
-            history = result.history + [{"translation": result.translation, "issues": result.issues}]
-            results[block.id] = BlockResult(block.id, whole if index == 0 else "", kept + [issue], result.attempts, "", history, result.meta)
-            results[block.id].status = status_of(results[block.id].issues)
 
 
 def _fallback_to_source(result: BlockResult) -> BlockResult:
@@ -787,7 +765,7 @@ def _group_members(blocks: list, block, wanted: set[str]) -> list:
 
 
 def request_records(blocks: list, wanted: set[str]) -> list[dict]:
-    """一页的请求记录：要翻的接续组合成一条（原文用 BREAK 连起来，放在组头的位置），不在 wanted 里的只作上下文。"""
+    """一页的请求记录：要翻的接续组合成一条（原文接成一整段，放在组头的位置），不在 wanted 里的只作上下文。"""
     records: list[dict] = []
     emitted: set[str] = set()
     for block in blocks:
@@ -803,7 +781,7 @@ def request_records(blocks: list, wanted: set[str]) -> list[dict]:
                 record.update(
                     id=group_id,
                     where=" → ".join(m.where for m in members),
-                    text=f" {BREAK} ".join(m.text for m in members),
+                    text=" ".join(m.text for m in members),
                     members=[m.id for m in members],
                 )
                 records.append(record)
@@ -818,11 +796,12 @@ def request_records(blocks: list, wanted: set[str]) -> list[dict]:
 def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> tuple[dict[str, str], dict[str, list[dict]]]:
     """把模型交回的（块 id 或接续组 id → 译文）拆回各块。
 
-    组的 BREAK 放少了（含一个没放）：程序按原文长度比例在附近的中文标点切开，记警告，不重翻；放多了才整组记不合格。
-    放的个数对、但切出来某块占全组的比例和原文差太远（`SHARE_TOLERANCE`）：也由程序按比例重切。框是按原文大小定的，
-    模型常把断点放在整句译完以后（原文的断点在句子中间，中文语序断不开），2026-10-30 论文第 1 页右栏最底下一行高的框
-    因此被塞进 120 多个字；反过来另一组前一栏只剩四分之一，空出一大块。
-    后面一块以标点开头的，标点挪回前一块末尾。
+    接续组模型只翻整段，不管原来在哪里断开：程序按原文各块的正文长度比例，在附近的中文标点处切回各块
+    （`breaks.split_by_ratio`，不切开公式和标记），后面一块以标点开头的，标点挪回前一块末尾。
+    以前让模型在译文里放 [[BREAK]]：模型常把它放到整句之后（原文断点在句子中间，中文语序断不开），2026-10-30 论文第 1 页
+    右栏一行高的框被塞进 120 多个字；放错个数还要整组重翻。用户定：模型只管翻译，切分和回填归程序。
+
+    第二个返回值是拆的时候发现的问题（现在没有），留着给调用方合并。
     """
     per_block: dict[str, str] = {}
     issues: dict[str, list[dict]] = {}
@@ -832,8 +811,7 @@ def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> 
             continue
         if not block.group:
             if block.id in raw:
-                # 不是接续组的块里也可能被模型写进 [[BREAK]]（实测教科书两处漏进了成品）：直接删掉
-                per_block[block.id] = re.sub(r"\s*\[\[BREAK\]\]\s*", "", raw[block.id]).strip()
+                per_block[block.id] = BREAK_RE.sub("", raw[block.id]).strip()
             continue
         group_id = block.group["id"]
         if group_id in seen:
@@ -843,45 +821,15 @@ def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> 
         if len(members) == 1:
             text = raw.get(group_id, raw.get(block.id))
             if text is not None:
-                per_block[block.id] = text.replace(BREAK, "")
+                per_block[block.id] = BREAK_RE.sub("", text).strip()
             continue
         text = raw.get(group_id)
         if text is None:
             continue
-        parts = text.split(BREAK)
-        if len(parts) > len(members):
-            message = f"接续组的断点标记应有 {len(members) - 1} 个，交回了 {len(parts) - 1} 个"
-            for member in members:
-                issues.setdefault(member.id, []).append({"code": "group_break", "severity": "error", "message": message})
-                per_block[member.id] = text
-            continue
-        message = ""
-        if len(parts) < len(members) or (len(parts) == len(members) and any(not p.strip() for p in parts)):
-            # 少放了断点，或者断点放在整段最前、最后（切出来有空块）：程序按比例重切
-            message = f"断点标记应有 {len(members) - 1} 个，交回了 {text.count(BREAK)} 个，程序按原文长度比例在标点处切开"
-        else:
-            drift = _share_drift(members, parts)
-            if drift is not None:
-                message = f"断点放的位置和原文比例差太远（{drift}），程序按原文长度比例在标点处重新切开"
-        if message:
-            parts = split_by_ratio(text.replace(BREAK, ""), [len(m.text) for m in members])
-            for member in members:
-                issues.setdefault(member.id, []).append({"code": "group_split_by_program", "severity": "warn", "message": message})
+        parts = split_by_ratio(BREAK_RE.sub("", text).strip(), [max(1, prose_length(m.text)) for m in members])
         for member, part in zip(members, move_leading_punctuation([p.strip() for p in parts])):
             per_block[member.id] = part
     return per_block, issues
-
-
-def _share_drift(members: list, parts: list[str]) -> str | None:
-    """按模型的断点切开后，哪一块占全组的比例和原文占比差超过 `SHARE_TOLERANCE`、字数也差 `SHARE_DRIFT_MIN_CHARS` 以上；
-    都没超是 None。"""
-    src_total = sum(len(m.text) for m in members) or 1
-    out_total = sum(len(p.replace(BREAK, "").strip()) for p in parts) or 1
-    for member, part in zip(members, parts):
-        src_share, out_share = len(member.text) / src_total, len(part.strip()) / out_total
-        if abs(src_share - out_share) > SHARE_TOLERANCE and abs(len(part.strip()) - src_share * out_total) >= SHARE_DRIFT_MIN_CHARS:
-            return f"{member.id} 原文占全组 {src_share:.0%}，译文占 {out_share:.0%}"
-    return None
 
 
 def _revision_record(request: RevisionRequest, previous: BlockResult | None) -> dict:

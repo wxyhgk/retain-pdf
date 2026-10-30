@@ -1,7 +1,7 @@
 """接续组（分栏、分页拆开的同一段）译文怎么切回各块。
 
-模型按要求在译文里放 `[[BREAK]]`；放少了（常见：断点落在英文词组中间，中文语序倒过来，模型就不放了）不再原样重问——
-实测重问一遍常常逐字相同——而是程序按原文各段的长度比例，在附近找最近的中文标点切开。
+模型只翻整段（2026-10-30 起不再让它放 `[[BREAK]]`：它常把断点放到整句之后，按原文大小定的小框被塞进整句），
+程序按原文各段的正文长度比例，在附近找最近的中文标点切开，不切开公式、脚注标记、行内代码。
 后半块不许以标点开头：开头的标点挪回前一块末尾。
 """
 
@@ -33,20 +33,34 @@ def _safe(position: int, text: str, spans: list[tuple[int, int]]) -> bool:
     return not (before.isascii() and before.isalnum() and after.isascii() and after.isalnum())
 
 
+def _prose_positions(text: str, spans: list[tuple[int, int]]) -> list[int]:
+    """译文里每个正文字符（不在公式、脚注标记、行内代码里）的位置。"""
+    inside = set()
+    for start, end in spans:
+        inside.update(range(start, end))
+    return [i for i in range(len(text)) if i not in inside and not text[i].isspace()]
+
+
 def split_by_ratio(text: str, source_lengths: list[int]) -> list[str]:
-    """把一整段译文按原文各段长度的比例切成 len(source_lengths) 段，切点尽量落在标点后面。"""
+    """把一整段译文按原文各段长度的比例切成 len(source_lengths) 段，切点尽量落在标点后面。
+
+    比例按正文算（`source_lengths` 是各段原文的正文长度，译文这边也只数正文）：公式两边一样长，算进去会把切点推偏。"""
     count = len(source_lengths)
     if count <= 1:
         return [text.strip()]
     total = sum(source_lengths) or 1
     spans = _protected(text)
     length = len(text)
+    prose = _prose_positions(text, spans)
     window = max(4, int(length / count * WINDOW))
     cuts: list[int] = []
     cumulative = 0
     for size in source_lengths[:-1]:
         cumulative += size
-        target = round(length * cumulative / total)
+        if prose:
+            target = prose[min(len(prose) - 1, max(0, round(len(prose) * cumulative / total) - 1))] + 1
+        else:
+            target = round(length * cumulative / total)
         low = max((cuts[-1] + 1) if cuts else 1, target - window)
         high = min(length - 1, target + window)
         best = None
@@ -57,7 +71,13 @@ def split_by_ratio(text: str, source_lengths: list[int]) -> list[str]:
                 break
         if best is None:
             near = sorted(range(low, high + 1), key=lambda c: abs(c - target))
-            best = next((c for c in near if _safe(c, text, spans)), max(low, min(target, high)))
+            best = next((c for c in near if _safe(c, text, spans)), None)
+        if best is None:
+            # 比例位置落在一个长公式中间，附近一个能切的地方都没有：往两边找最近的能切处，宁可偏一点，
+            # 也不把公式切成两半（2026-10-30 论文第 5 页：前块以 `$ \Delta\mathbf{g}_{l+1}=\mathbf` 结尾，两块都判 `$` 不成对）
+            first = (cuts[-1] + 1) if cuts else 1
+            anywhere = sorted(range(first, length), key=lambda c: abs(c - target))
+            best = next((c for c in anywhere if _safe(c, text, spans)), max(low, min(target, high)))
         cuts.append(best)
     parts, start = [], 0
     for cut in cuts + [length]:
