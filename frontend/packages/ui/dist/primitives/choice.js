@@ -9,7 +9,7 @@ export function Checkbox({ label, className, ...props }) {
         return _jsx("input", { type: "checkbox", className: cn("ui-checkbox-box", className), ...props });
     return (_jsxs("label", { className: cn("ui-checkbox", className), children: [_jsx("input", { type: "checkbox", className: "ui-checkbox-box", ...props }), _jsx("span", { className: "ui-checkbox-label", children: label })] }));
 }
-export function SegmentedControl({ value, options, onChange, label, size = "md", disabled = false, className, }) {
+export function SegmentedControl({ value, options, onChange, label, size = "md", columns, disabled = false, className, }) {
     const group = useRef(null);
     const enabled = options.filter((option) => !option.disabled);
     function onKeyDown(event) {
@@ -23,7 +23,7 @@ export function SegmentedControl({ value, options, onChange, label, size = "md",
         const buttons = group.current?.querySelectorAll("[data-segment-value]") || [];
         Array.from(buttons).find((button) => button.dataset.segmentValue === next.value)?.focus();
     }
-    return (_jsx("div", { ref: group, className: cn("ui-segmented", className), role: "radiogroup", "aria-label": label, "data-size": size, children: options.map((option) => {
+    return (_jsx("div", { ref: group, className: cn("ui-segmented", className), role: "radiogroup", "aria-label": label, "data-size": size, "data-layout": columns ? "grid" : undefined, style: columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined, children: options.map((option) => {
             const checked = option.value === value;
             return (_jsx("button", { type: "button", role: "radio", "aria-checked": checked, tabIndex: checked ? 0 : -1, className: "ui-segmented-option", "data-segment-value": option.value, disabled: disabled || option.disabled, onClick: () => onChange(option.value), onKeyDown: onKeyDown, ...option.props, children: option.label }, option.value));
         }) }));
