@@ -13,6 +13,9 @@
 - 图片：GLM 不回传图片，按块的框从原文裁（`md/images/page-<N>/imgs/img_in_<标签>_box_….jpg`，和 Paddle 的图片放一处，
   阅读页、AI 工具照原样找得到），裁好的路径填进原始结果的 `_images` 给适配器挂到块上。
 - `md/full.md`：GLM 的整份 markdown，图片占位 `![](page=<片内页>,bbox=[…])` 换成本地裁好的图。
+- 流式公布（`retainpdf_base/ocr_stream.py`）：每做完一片（续跑时先把已有的片一起），把前面连着做完的页归一化成文档写到
+  `ocr/stream/`，后面的跨栏跨页拼接和翻译不用等整个 OCR 阶段（2026-10-31，OCR 和翻译并行）。前缀页和最后整份文档的同一页逐字节一致
+  （试过 50 页前缀对 100 页整份）；100 页归一化 0.4 秒，所以每片都把前缀整个重做，不拼接。图片只裁新到的页。
 """
 
 from __future__ import annotations
@@ -24,12 +27,14 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Callable
 
 import fitz
 
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.io import save_json
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
+from retainpdf_base.ocr_stream import OcrStreamWriter
 from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_payload_to_document_v1_with_report
 from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
@@ -154,8 +159,19 @@ def _chunk_bytes(source: fitz.Document, start: int, end: int) -> bytes:
         return subset.tobytes()
 
 
-def request_chunks(source_pdf: Path, raw_dir: Path, *, api_key: str, chunk_pages: int, workers: int, parse=None) -> list[dict]:
-    """逐片请求（命中断点的片不请求），返回按页序排好的各片原始结果。`parse` 只给测试注入假接口。"""
+def request_chunks(
+    source_pdf: Path,
+    raw_dir: Path,
+    *,
+    api_key: str,
+    chunk_pages: int,
+    workers: int,
+    parse=None,
+    on_prefix: Callable[[list[dict]], None] | None = None,
+) -> list[dict]:
+    """逐片请求（命中断点的片不请求），返回按页序排好的各片原始结果。`parse` 只给测试注入假接口。
+
+    `on_prefix`：前面连着做完的片变多了就调一次，传这些片（续跑时先传断点里连着的那些）。"""
     parse = parse or glm_ocr_api.parse_pdf
     raw_dir.mkdir(parents=True, exist_ok=True)
     source_hash = _sha256(source_pdf)
@@ -176,6 +192,18 @@ def request_chunks(source_pdf: Path, raw_dir: Path, *, api_key: str, chunk_pages
     done_pages = sum(ranges[index][1] - ranges[index][0] for index in results)
     print(f"glm-ocr: pages={page_count} chunks={len(ranges)} cached={len(results)} todo={len(todo)} workers={workers}", flush=True)
     _emit_progress(done_pages, page_count, f"GLM-OCR 识别中：{done_pages}/{page_count} 页")
+    published = 0
+
+    def publish_prefix() -> None:
+        nonlocal published
+        prefix = 0
+        while prefix in results:
+            prefix += 1
+        if on_prefix is not None and prefix > published:
+            published = prefix
+            on_prefix([results[index] for index in range(prefix)])
+
+    publish_prefix()
 
     def one(task: tuple[int, int, int, bytes]) -> tuple[int, dict]:
         index, start, end, pdf_bytes = task
@@ -193,6 +221,7 @@ def request_chunks(source_pdf: Path, raw_dir: Path, *, api_key: str, chunk_pages
             tokens = (payload.get("usage") or {}).get("total_tokens")
             print(f"glm-ocr: chunk {start + 1}-{end} done tokens={tokens}", flush=True)
             _emit_progress(done_pages, page_count, f"GLM-OCR 识别中：{done_pages}/{page_count} 页")
+            publish_prefix()
     return [results[index] for index in range(len(ranges))]
 
 
@@ -251,14 +280,18 @@ def _clamp(bbox: list, width: float, height: float) -> tuple[float, float, float
     return (x1, y1, x2, y2) if x2 > x1 and y2 > y1 else None
 
 
-def crop_images(payload: dict, source_pdf: Path, job_root: Path) -> dict[str, str]:
-    """按图片块的框从原文裁图。返回 {`page-<N>/<键>`: 相对 `md/` 的路径}；裁不出来的（框是空的、越界）跳过并记日志。"""
+def crop_images(payload: dict, source_pdf: Path, job_root: Path, *, first_page: int = 0) -> dict[str, str]:
+    """按图片块的框从原文裁图。返回 {`page-<N>/<键>`: 相对 `md/` 的路径}；裁不出来的（框是空的、越界）跳过并记日志。
+
+    `first_page`：从这一页（0 起）裁起，前面的页流式公布时已经裁过。"""
     images_root = job_markdown_images_dir(job_root)
     pages_meta = (payload.get("data_info") or {}).get("pages") or []
     cropped: dict[str, str] = {}
     skipped = 0
     with fitz.open(source_pdf) as source:
         for page_index, blocks in enumerate(payload.get("layout_details") or []):
+            if page_index < first_page:
+                continue
             if page_index >= source.page_count or page_index >= len(pages_meta):
                 break
             meta = pages_meta[page_index] or {}
@@ -314,6 +347,17 @@ def write_full_markdown(payload: dict, cropped: dict[str, str], job_root: Path) 
     return full_md_path
 
 
+def _normalize(payload: dict, *, document_id: str, source_json_path: Path, source_pdf: Path) -> tuple[dict, dict]:
+    document, report = adapt_payload_to_document_v1_with_report(
+        payload=payload,
+        provider=PROVIDER_GLM_OCR,
+        document_id=document_id,
+        source_json_path=source_json_path,
+        provider_version=str(payload.get("model") or ""),
+    )
+    return finalize_normalized_document(document, report, source_pdf)
+
+
 def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderResult:
     job_dirs = job_dirs_from_explicit_args(args)
     job_dirs.source_dir.mkdir(parents=True, exist_ok=True)
@@ -321,34 +365,50 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
     raw_dir = job_dirs.ocr_dir / RAW_DIR_NAME
     chunk_pages = _env_int(CHUNK_PAGES_ENV, DEFAULT_CHUNK_PAGES, low=1, high=glm_ocr_api.GLM_OCR_MAX_PAGES_PER_REQUEST)
     workers = _env_int(WORKERS_ENV, DEFAULT_WORKERS, low=1, high=MAX_WORKERS)
-    chunks = request_chunks(
-        source_pdf,
-        raw_dir,
-        api_key=str(getattr(args, "ocr_credential", "") or "").strip(),
-        chunk_pages=chunk_pages,
-        workers=workers,
-        parse=parse,
-    )
-    payload = merge_chunks(chunks, chunk_pages=chunk_pages)
-    cropped = crop_images(payload, source_pdf, job_dirs.root)
-    payload["_images"] = cropped
-    markdown_path = write_full_markdown(payload, cropped, job_dirs.root)
     provider_result_json_path = job_dirs.ocr_dir / RESULT_FILE_NAME
-    save_json(provider_result_json_path, payload)
+    document_id = job_dirs.root.name
+    with fitz.open(source_pdf) as source:
+        total_pages = source.page_count
+    stream = OcrStreamWriter(job_dirs.ocr_dir, provider=PROVIDER_GLM_OCR, total_pages=total_pages)
+    cropped: dict[str, str] = {}
+    cropped_pages = 0
 
-    normalized_json_path = job_dirs.ocr_dir / "normalized" / "document.v1.json"
-    normalized_report_json_path = normalized_json_path.with_name(DOCUMENT_SCHEMA_REPORT_FILE_NAME)
-    normalized_json_path.parent.mkdir(parents=True, exist_ok=True)
-    document, report = adapt_payload_to_document_v1_with_report(
-        payload=payload,
-        provider=PROVIDER_GLM_OCR,
-        document_id=job_dirs.root.name,
-        source_json_path=provider_result_json_path,
-        provider_version=str(payload.get("model") or ""),
-    )
-    document, report = finalize_normalized_document(document, report, source_pdf)
-    save_json(normalized_json_path, document)
-    save_json(normalized_report_json_path, report)
+    def publish(prefix_chunks: list[dict]) -> None:
+        nonlocal cropped_pages
+        prefix = merge_chunks(prefix_chunks, chunk_pages=chunk_pages)
+        cropped.update(crop_images(prefix, source_pdf, job_dirs.root, first_page=cropped_pages))
+        cropped_pages = len(prefix["layout_details"])
+        prefix["_images"] = dict(cropped)
+        document, _report = _normalize(prefix, document_id=document_id, source_json_path=provider_result_json_path, source_pdf=source_pdf)
+        stream.publish(document)  # done 只在最后整份文档、full.md 都写好以后标
+
+    try:
+        chunks = request_chunks(
+            source_pdf,
+            raw_dir,
+            api_key=str(getattr(args, "ocr_credential", "") or "").strip(),
+            chunk_pages=chunk_pages,
+            workers=workers,
+            parse=parse,
+            on_prefix=publish,
+        )
+        payload = merge_chunks(chunks, chunk_pages=chunk_pages)
+        cropped.update(crop_images(payload, source_pdf, job_dirs.root, first_page=cropped_pages))
+        payload["_images"] = dict(cropped)
+        markdown_path = write_full_markdown(payload, cropped, job_dirs.root)
+        save_json(provider_result_json_path, payload)
+
+        normalized_json_path = job_dirs.ocr_dir / "normalized" / "document.v1.json"
+        normalized_report_json_path = normalized_json_path.with_name(DOCUMENT_SCHEMA_REPORT_FILE_NAME)
+        normalized_json_path.parent.mkdir(parents=True, exist_ok=True)
+        document, report = _normalize(payload, document_id=document_id, source_json_path=provider_result_json_path, source_pdf=source_pdf)
+        save_json(normalized_json_path, document)
+        save_json(normalized_report_json_path, report)
+        stream.publish(document, done=True)
+    except BaseException as error:
+        # 读流的一方（翻译）别再等：标成失败，原因只写类型和第一行（不带 key，parse_pdf 的报错本来就不带）
+        stream.fail(f"{type(error).__name__}: {str(error).splitlines()[0] if str(error) else ''}")
+        raise
     usage = payload.get("usage") or {}
     print(f"glm-ocr: done pages={len(payload['layout_details'])} images={len(cropped)} total_tokens={usage.get('total_tokens')}", flush=True)
     return OcrProviderResult(

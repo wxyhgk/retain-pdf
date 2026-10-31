@@ -114,6 +114,7 @@ pub(crate) fn write_translate_stage_spec(
     source_json_path: &Path,
     source_pdf_path: &Path,
     layout_json_path: Option<&Path>,
+    ocr_stream_dir: Option<&Path>,
 ) -> Result<PathBuf> {
     ensure_specs_dir(job_paths)?;
     let spec_path = translate_stage_spec_path(job_paths);
@@ -136,6 +137,7 @@ pub(crate) fn write_translate_stage_spec(
             "source_json": source_json_path,
             "source_pdf": source_pdf_path,
             "layout_json": layout_json_path,
+            "ocr_stream_dir": ocr_stream_dir,
         },
         "params": {
             "start_page": request.translation.start_page,

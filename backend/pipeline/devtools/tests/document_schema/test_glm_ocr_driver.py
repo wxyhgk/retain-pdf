@@ -177,3 +177,59 @@ def test_rejected_request_explains_why_without_leaking_the_key(monkeypatch) -> N
     assert "secret-key-123" not in str(error.value)
     with pytest.raises(glm_ocr_api.GlmOcrRequestRejected, match="缺少 API key"):
         glm_ocr_api.parse_pdf(b"%PDF", api_key="")
+
+
+# ---- 流式公布（OCR 和翻译并行，2026-10-31）----
+
+from retainpdf_base.ocr_stream import read_ocr_stream
+
+
+def _record_publishes(monkeypatch) -> list[list]:
+    """记下每次公布时的整份前缀页（公布在主线程里做，下一片的请求同时在跑，不互相等）。"""
+    from retainpdf_base import ocr_stream
+
+    published: list[list] = []
+    original = ocr_stream.OcrStreamWriter.publish
+
+    def recording(self, document: dict, *, done: bool = False) -> None:
+        published.append(json.loads(json.dumps(document["pages"])))
+        original(self, document, done=done)
+
+    monkeypatch.setattr(ocr_stream.OcrStreamWriter, "publish", recording)
+    return published
+
+
+def test_each_chunk_is_published_as_soon_as_it_arrives(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
+    published = _record_publishes(monkeypatch)
+    job = _job(tmp_path, _pdf(tmp_path / "book.pdf", 5))
+    result = run_glm_ocr_to_job_dir(job, parse=FakeGlm())
+    # 每片一次（2、4、5 页），最后整份再标一次 done
+    assert [len(pages) for pages in published] == [2, 4, 5, 5]
+    state = read_ocr_stream(Path(job.ocr_dir))
+    assert (state.ready_pages, state.total_pages, state.done, state.failed) == (5, 5, True, False)
+    final = _document(result)["pages"]
+    assert json.loads(state.document_path.read_text(encoding="utf-8"))["pages"] == final
+    for pages in published:
+        assert pages == final[: len(pages)], "翻译按前缀页先做，前缀里的页必须和最后整份的同一页一模一样"
+    # 前缀里的图片已经裁好挂上
+    images = [b for page in published[0] for b in page["blocks"] if b["sub_type"] == "image_body"]
+    assert images and all(b["metadata"]["asset_resolved"] for b in images)
+
+
+def test_resumed_chunks_are_published_at_once_and_failure_is_announced(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
+    job = _job(tmp_path, _pdf(tmp_path / "book.pdf", 5))
+    run_glm_ocr_to_job_dir(job, parse=FakeGlm())
+    (Path(job.ocr_dir) / "glm_ocr_raw" / "chunk-002-5-5.json").unlink()
+
+    def broken(pdf_bytes: bytes, *, api_key: str) -> dict:
+        # 续跑时断点里的前 4 页在请求之前就公布了
+        assert read_ocr_stream(Path(job.ocr_dir)).ready_pages == 4
+        raise glm_ocr_api.GlmOcrRequestRejected("GLM-OCR 请求被拒绝 status=401")
+
+    with pytest.raises(glm_ocr_api.GlmOcrRequestRejected):
+        run_glm_ocr_to_job_dir(job, parse=broken)
+    state = read_ocr_stream(Path(job.ocr_dir))
+    assert state.failed and not state.done and state.ready_pages == 4
+    assert "status=401" in state.error

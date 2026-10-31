@@ -248,9 +248,17 @@ def advance_checkpoint(
         if isinstance(page, dict)
         for item_id in page.get("pending_item_ids", [])
     }
+    # 只看断点里已经有的页：跟着 OCR 翻时每轮会多出新到的页，新页上的块本来就待翻，不算"已完成又变回待翻"
+    # （workflow/streaming_flow.py）。整本翻时第一次记断点就有全部页，这里不影响。
+    previous_page_indexes = {
+        int(page.get("page_index", -1))
+        for page in payload.get("pages", [])
+        if isinstance(page, dict)
+    }
     current_pending = {
         str(item_id)
         for page in pages
+        if int(page.get("page_index", -1)) in previous_page_indexes
         for item_id in page.get("pending_item_ids", [])
     }
     if payload.get("pages"):

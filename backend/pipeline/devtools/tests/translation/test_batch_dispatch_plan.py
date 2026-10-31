@@ -231,7 +231,8 @@ def test_caller_prepares_once_and_shares_captured_plan_with_execution(monkeypatc
     items = _sample("mixed")
     observed = {}
 
-    def prepare(flat):
+    def prepare(flat, *, deferred_item_ids=frozenset()):
+        assert not deferred_item_ids
         assert "prepared" not in observed
         observed["prepared"] = flat
         return flat

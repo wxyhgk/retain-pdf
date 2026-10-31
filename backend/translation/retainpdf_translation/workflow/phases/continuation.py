@@ -41,6 +41,7 @@ def run_continuation_review(
     base_url: str,
     workers: int,
     run_diagnostics: TranslationRunDiagnostics | None,
+    review_memo: dict[tuple[str, str], bool] | None = None,
 ) -> None:
     review_started = time.perf_counter()
     emit_stage_transition(
@@ -60,6 +61,7 @@ def run_continuation_review(
         base_url=base_url,
         workers=workers,
         request_chat_content_fn=request_chat_content,
+        review_memo=review_memo,
         progress_callback=throttle_progress_callback(
             lambda current, total: emit_stage_progress(
                 stage="continuation_review",

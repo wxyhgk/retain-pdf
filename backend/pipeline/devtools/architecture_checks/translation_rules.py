@@ -60,6 +60,8 @@ TRANSLATION_WORKFLOW_ALLOWED_FILES = {
     "batch_runner.py",
     "book_flow.py",
     "editorial.py",
+    # 跟着 OCR 流式翻译的整书流程（OCR 和翻译并行，2026-10-31），和 book_flow.py 同一层
+    "streaming_flow.py",
     "execution.py",
     "execution_plan.py",
     "execution_runner.py",

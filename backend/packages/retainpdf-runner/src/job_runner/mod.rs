@@ -9,6 +9,7 @@ mod driverless_sweep;
 mod execution_queue;
 mod lifecycle;
 mod ocr_flow;
+mod ocr_stream;
 mod pipeline_plan;
 mod process_contract;
 mod process_runner;

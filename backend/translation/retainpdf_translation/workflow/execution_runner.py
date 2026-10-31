@@ -64,6 +64,15 @@ def run_translation_execution_plan(
 
                 translate_book = translate_book_with_agent
                 engine_kwargs = {"glossary_entries": glossary_entries}
+            elif getattr(plan, "ocr_stream", None) is not None:
+                from retainpdf_translation.workflow.streaming_flow import translate_book_streaming
+
+                translate_book = translate_book_streaming
+                engine_kwargs = {
+                    **engine_kwargs,
+                    "stream": plan.ocr_stream,
+                    "ocr_dir": request.ocr_stream_dir,
+                }
             translated_pages_map, summaries = translate_book(
                 data=plan.data,
                 output_dir=request.output_dir,

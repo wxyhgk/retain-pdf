@@ -354,13 +354,27 @@ def _unit_formulas_before(payload: list[dict], items: list[dict]) -> list[str]:
     return formulas_between(payload, items)
 
 
-def pending_translation_items(payload: list[dict]) -> list[dict]:
+def pending_translation_items(payload: list[dict], *, deferred_item_ids: frozenset[str] = frozenset()) -> list[dict]:
+    """待翻的单元（单块，或一组接续段拼成的一个单元）。
+
+    `deferred_item_ids`：这一轮先不翻的块（OCR 和翻译并行时，最新一页最后一段还不知道接不接下一页，
+    见 `workflow/streaming_flow.py`）。组里只要有一块先不翻，整组都不翻，等拼接定下来再整组翻。"""
     refresh_payload_translation_units(payload)
     units: list[dict] = []
     groups: dict[str, list[dict]] = {}
+    deferred_units = {
+        effective_translation_unit_id(item)
+        for item in payload
+        if deferred_item_ids and str(item.get("item_id", "") or "") in deferred_item_ids
+    }
 
     for item in payload:
         if not item.get("should_translate", True):
+            continue
+        if deferred_units and (
+            str(item.get("item_id", "") or "") in deferred_item_ids
+            or effective_translation_unit_id(item) in deferred_units
+        ):
             continue
         unit_id = effective_translation_unit_id(item)
         if is_group_unit_id(unit_id):

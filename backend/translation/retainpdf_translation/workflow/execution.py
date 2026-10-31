@@ -6,6 +6,7 @@ from pathlib import Path
 import sys
 from typing import Any
 
+from retainpdf_translation.llm.shared.control_context import normalize_preparation_mode
 from retainpdf_translation.llm.shared.provider_runtime import DEFAULT_BASE_URL
 from retainpdf_translation.llm.shared.provider_runtime import DEFAULT_MODEL
 from retainpdf_translation.llm.shared.provider_runtime import normalize_base_url
@@ -53,6 +54,9 @@ class TranslationExecutionRequest:
     reviewer_api_key: str = ""
     # 翻译引擎：legacy（现有流程）/ agent（retainpdf-translation-agent，见 workflow/agent_flow.py）
     engine: str = "legacy"
+    # OCR 流式公布的目录（任务的 ocr/，见 retainpdf_base.ocr_stream）。给了就跟着 OCR 翻（workflow/streaming_flow.py），
+    # 不用等 OCR 做完；source_json_path 是 OCR 最后写的整份文档，这时可能还不存在。
+    ocr_stream_dir: Path | None = None
 
 
 TRANSLATION_ENGINES = ("legacy", "agent")
@@ -89,6 +93,21 @@ def resolve_reviewer_connection(request: TranslationExecutionRequest) -> Reviewe
     return ReviewerConnection(model=model, base_url=base_url, api_key=api_key, inherited=inherited)
 
 
+def _wait_for_whole_document_if_needed(request: TranslationExecutionRequest) -> TranslationExecutionRequest:
+    """跟着 OCR 翻只支持 legacy、不做译前准备：agent 要先通读全书，译前准备要扫全书的术语。这两种等 OCR 做完，按整本翻。"""
+    if request.ocr_stream_dir is None:
+        return request
+    if request.engine == "legacy" and normalize_preparation_mode(request.preparation) == "off":
+        return request
+    from retainpdf_base.ocr_stream import wait_for_ocr_stream
+
+    print(f"book: engine={request.engine} preparation={request.preparation} needs the whole document; waiting for OCR", flush=True)
+    state = wait_for_ocr_stream(request.ocr_stream_dir)
+    while not state.done:
+        state = wait_for_ocr_stream(request.ocr_stream_dir, after_seq=state.seq)
+    return replace(request, source_json_path=state.document_path, ocr_stream_dir=None)
+
+
 def execute_translation_request(request: TranslationExecutionRequest) -> dict:
     from retainpdf_translation.llm.shared.executor_context import raise_if_executor_failed
     raise_if_executor_failed()
@@ -98,6 +117,7 @@ def execute_translation_request(request: TranslationExecutionRequest) -> dict:
         # agent 收的原文是 "$…$" 直写公式，不认占位符；它自带通读（体裁、术语、人名、标题），
         # 译前准备（术语预扫、术语审定）的结果用不上，跑了只是白花钱
         request = replace(request, math_mode="direct_typst", preparation="off")
+    request = _wait_for_whole_document_if_needed(request)
     # Own output before opening its journal or performing domain inference.
     store = CheckpointStore(translation_checkpoint_path(request.output_dir))
     store.acquire()

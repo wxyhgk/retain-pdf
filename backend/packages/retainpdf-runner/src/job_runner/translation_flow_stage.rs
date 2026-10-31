@@ -22,6 +22,16 @@ use crate::job_runner::stage_contract::{
     ensure_translations_dir_ready, ocr_ready_inputs_for_translation,
 };
 
+/// 跟着 OCR 翻（OCR 和翻译并行）时翻译阶段的输入：OCR 还在跑，整份文档还没有，路径是事先知道的。
+pub(super) struct StreamingTranslationInputs {
+    /// OCR 最后会写的整份归一化文档（`ocr/normalized/document.v1.json`），翻译收尾时用。
+    pub(super) normalized_path: PathBuf,
+    /// 上传的原文（OCR 子任务从它复制一份到任务目录；领域识别、断点指纹读它）。
+    pub(super) source_pdf_path: PathBuf,
+    /// OCR 流式公布的目录（任务的 `ocr/`，清单在 `ocr/stream/`）。
+    pub(super) ocr_stream_dir: PathBuf,
+}
+
 pub(super) struct TranslationStageResult {
     pub(super) job: JobRuntimeState,
     pub(super) source_pdf_path: PathBuf,
@@ -54,16 +64,26 @@ pub(super) fn record_ocr_child_finished(
 
 /// `render_follows`：翻译之后紧接着渲染（整本流程、要求翻译后渲染的流程）。为真时与翻译并行
 /// 拉起渲染准备进程（见 `render_prepare`），翻译结束后限时等它收尾。
+///
+/// `streaming`：跟着 OCR 翻（见 `StreamingTranslationInputs`）。这时不等 OCR 的产物，也不拉起渲染准备（它要整份文档）。
 pub(super) async fn run_translation_stage(
     deps: &ProcessRuntimeDeps,
     mut parent_job: JobRuntimeState,
     parent_job_paths: &JobPaths,
     render_follows: bool,
+    streaming: Option<&StreamingTranslationInputs>,
 ) -> Result<TranslationStageResult> {
-    let translate_inputs = ocr_ready_inputs_for_translation(&parent_job, &deps.persist.data_root)?;
-    let normalized_path = translate_inputs.normalized_path;
-    let source_pdf_path = translate_inputs.source_pdf_path;
-    let layout_json_path = translate_inputs.layout_json_path;
+    let (normalized_path, source_pdf_path, layout_json_path) = match streaming {
+        Some(inputs) => (inputs.normalized_path.clone(), inputs.source_pdf_path.clone(), None),
+        None => {
+            let translate_inputs = ocr_ready_inputs_for_translation(&parent_job, &deps.persist.data_root)?;
+            (
+                translate_inputs.normalized_path,
+                translate_inputs.source_pdf_path,
+                translate_inputs.layout_json_path,
+            )
+        }
+    };
     if !prepare_translation_stage(
         deps,
         &mut parent_job,
@@ -71,6 +91,7 @@ pub(super) async fn run_translation_stage(
         &normalized_path,
         &source_pdf_path,
         layout_json_path.as_deref(),
+        streaming.map(|inputs| inputs.ocr_stream_dir.as_path()),
     )? {
         // 这一行已经被另一个写入者推进到终态了(绝大多数情况是用户点了取消)。
         // 必须在这里就停住:再往下就是 spawn worker,而那会让一个已取消的任务
@@ -87,7 +108,7 @@ pub(super) async fn run_translation_stage(
     // 翻译跑完后面一定还有渲染——四个调用方(book / translate / 两条 artifacts
     // 复用路径)无一例外。所以这一步成功时不能落终态,否则 stage_history 会多出
     // 一条 finished/succeeded 夹在 translating 与 rendering 之间。
-    let render_prepare = if render_follows {
+    let render_prepare = if render_follows && streaming.is_none() {
         start_render_prepare(
             deps,
             &parent_job,
@@ -125,6 +146,7 @@ fn prepare_translation_stage(
     normalized_path: &Path,
     source_pdf_path: &Path,
     layout_json_path: Option<&Path>,
+    ocr_stream_dir: Option<&Path>,
 ) -> Result<bool> {
     let checkpoint_path = parent_job_paths
         .translated_dir
@@ -143,6 +165,7 @@ fn prepare_translation_stage(
             source_json_path: normalized_path,
             source_pdf_path,
             layout_json_path,
+            ocr_stream_dir,
         },
     )?;
     parent_job.stage = Some(job_stage_str(JobStage::Translating).to_string());

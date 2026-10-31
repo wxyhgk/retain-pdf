@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
@@ -24,11 +24,13 @@ use self::translation_flow_child::{
 };
 use self::translation_flow_stage::{
     record_ocr_child_finished, run_render_stage_after_translation, run_translation_stage,
+    StreamingTranslationInputs,
 };
 use self::translation_flow_support::finalize_parent_after_ocr;
 use super::attach_job_paths;
 use super::domain_prewarm::{start_domain_prewarm, DOMAIN_PREWARM_FINISH_TIMEOUT};
 use super::ocr_flow::{execute_ocr_job, sync_parent_with_ocr_child};
+use super::ocr_stream::mark_ocr_stream_failed;
 use super::pipeline_plan::{PipelinePlan, PipelineStage};
 use super::ProcessRuntimeDeps;
 use translation_flow_executor::run_after_translation_stage;
@@ -40,7 +42,7 @@ pub(super) async fn resume_translation_stage_from_durable_state(
 ) -> Result<JobRuntimeState> {
     let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
     let translation_stage =
-        run_translation_stage(&deps, job, &job_paths, render_after_translation).await?;
+        run_translation_stage(&deps, job, &job_paths, render_after_translation, None).await?;
     let translated_job = translation_stage.job;
     if !matches!(translated_job.status, JobStatusKind::Succeeded) || !render_after_translation {
         return Ok(translated_job);
@@ -123,7 +125,7 @@ async fn run_translate_only_job_from_artifacts(
     .await?;
     let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
     let translation_stage =
-        run_translation_stage(&deps, job, &job_paths, render_after_translation).await?;
+        run_translation_stage(&deps, job, &job_paths, render_after_translation, None).await?;
     let translated_job = translation_stage.job;
     if !render_after_translation || !matches!(translated_job.status, JobStatusKind::Succeeded) {
         return Ok(translated_job);
@@ -155,7 +157,7 @@ async fn run_book_job_from_artifacts(
     )
     .await?;
     let job_paths = build_job_paths(&deps.persist.output_root, &job.job_id)?;
-    let translation_stage = run_translation_stage(&deps, job, &job_paths, true).await?;
+    let translation_stage = run_translation_stage(&deps, job, &job_paths, true, None).await?;
     let translated_job = translation_stage.job;
     let source_pdf_path = translation_stage.source_pdf_path;
     if !matches!(translated_job.status, JobStatusKind::Succeeded) {
@@ -184,6 +186,21 @@ async fn run_job_with_ocr(
             start_domain_prewarm(&deps, &parent_job, &parent_job_paths, Path::new(&upload.stored_path))
         });
 
+    if parent_job.ocr_streams_pages() && plan.next_after(PipelineStage::Ocr) == Some(PipelineStage::Translate) {
+        let upload_path = deps.db.get_upload(&source.upload_id)?.stored_path;
+        // 装箱：两条流程的 future 合在一起很大，直接内联进这个 future 会把 job worker 线程的栈撑爆（测试线程先爆，2026-10-31）
+        return Box::pin(run_ocr_and_translation_together(
+            deps,
+            parent_job,
+            plan,
+            parent_job_paths,
+            ocr_child,
+            domain_prewarm,
+            PathBuf::from(upload_path),
+        ))
+        .await;
+    }
+
     let ocr_finished = match execute_ocr_job(
         deps.clone(),
         ocr_child,
@@ -198,26 +215,7 @@ async fn run_job_with_ocr(
             return Err(err);
         }
     };
-    // 子任务收尾也要走 CAS,否则会把 `save_ocr_job` 刚挡下的复活又放回去。
-    //
-    // `ocr_finished` 是 `execute_ocr_job` 返回的**内存**结果。取消若落在子任务
-    // 自查之后,`save_ocr_job` 的 CAS 会拒绝写入、DB 保持 canceled——而这里若是
-    // 无条件写,就会把内存里的 Succeeded 原样盖回去,等于绕过那道保护。
-    let ocr_finished = {
-        let updated = cas_persist_job_with_resources(
-            deps.db.as_ref(),
-            &deps.persist.data_root,
-            &deps.persist.output_root,
-            &ocr_finished.snapshot(),
-            &["queued", "running"],
-        )?;
-        if updated {
-            ocr_finished
-        } else {
-            // 别人已经给子任务落了终态,以 DB 为准往下走。
-            deps.db.get_job(&ocr_finished.job_id)?.into_runtime()
-        }
-    };
+    let ocr_finished = persist_ocr_child_result(&deps, ocr_finished)?;
     // 子任务的 attempt 没有顶层 driver 收尾，这里跟着它的终态一起落。
     translation_flow_child::finish_ocr_child_attempt(&deps, &ocr_child_id);
     sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);
@@ -236,7 +234,7 @@ async fn run_job_with_ocr(
     }
     let render_follows = plan.next_after(PipelineStage::Translate) == Some(PipelineStage::Render);
     let translation_stage =
-        run_translation_stage(&deps, parent_job, &parent_job_paths, render_follows).await?;
+        run_translation_stage(&deps, parent_job, &parent_job_paths, render_follows, None).await?;
     let translated_job = translation_stage.job;
     let source_pdf_path = translation_stage.source_pdf_path;
 
@@ -253,6 +251,129 @@ async fn run_job_with_ocr(
     .await
 }
 
+/// 子任务收尾也要走 CAS,否则会把 `save_ocr_job` 刚挡下的复活又放回去。
+///
+/// `ocr_finished` 是 `execute_ocr_job` 返回的**内存**结果。取消若落在子任务
+/// 自查之后,`save_ocr_job` 的 CAS 会拒绝写入、DB 保持 canceled——而这里若是
+/// 无条件写,就会把内存里的 Succeeded 原样盖回去,等于绕过那道保护。
+fn persist_ocr_child_result(deps: &ProcessRuntimeDeps, ocr_finished: JobRuntimeState) -> Result<JobRuntimeState> {
+    let updated = cas_persist_job_with_resources(
+        deps.db.as_ref(),
+        &deps.persist.data_root,
+        &deps.persist.output_root,
+        &ocr_finished.snapshot(),
+        &["queued", "running"],
+    )?;
+    if updated {
+        Ok(ocr_finished)
+    } else {
+        // 别人已经给子任务落了终态,以 DB 为准往下走。
+        Ok(deps.db.get_job(&ocr_finished.job_id)?.into_runtime())
+    }
+}
+
+/// OCR 和翻译并行（2026-10-31）：OCR 能一片片公布页（`ocr_streams_pages`，现在只有 GLM-OCR）时，OCR 子任务和翻译阶段
+/// 同时拉起。翻译 worker 跟着 `ocr/stream/` 的清单一轮轮翻（Python `workflow/streaming_flow.py`），OCR 做完它也就快翻完了。
+///
+/// - OCR 子任务照旧一行自己的记录、一个自己的进程；翻译跑在父任务上。两边写的不是同一行：OCR worker 跑起来以后
+///   只写子任务的行（`save_ocr_job` 的父任务镜像只在 driver 推进阶段时写，那几次都在进程拉起之前）。
+/// - OCR 没做成（失败、取消、进程被杀）时，补标清单失败（`mark_ocr_stream_failed`），等着的翻译马上退出；父任务按 OCR
+///   的结果收尾。用户取消父任务时两个进程各自被停（翻译是父任务的进程，OCR 认父任务的取消）。
+/// - 两边都成了，把 OCR 的产物并回父任务，照旧渲染。渲染准备要整份文档，不和翻译并行拉起。
+async fn run_ocr_and_translation_together(
+    deps: ProcessRuntimeDeps,
+    parent_job: JobRuntimeState,
+    plan: PipelinePlan,
+    parent_job_paths: crate::storage_paths::JobPaths,
+    ocr_child: JobRuntimeState,
+    domain_prewarm: Option<super::domain_prewarm::DomainPrewarmProcess>,
+    upload_path: PathBuf,
+) -> Result<JobRuntimeState> {
+    let ocr_child_id = ocr_child.job_id.clone();
+    let parent_job_id = parent_job.job_id.clone();
+    let streaming = StreamingTranslationInputs {
+        normalized_path: parent_job_paths.ocr_dir.join("normalized").join("document.v1.json"),
+        source_pdf_path: upload_path,
+        ocr_stream_dir: parent_job_paths.ocr_dir.clone(),
+    };
+    let render_follows = plan.next_after(PipelineStage::Translate) == Some(PipelineStage::Render);
+    let ocr = Box::pin(async {
+        let result = execute_ocr_job(
+            deps.clone(),
+            ocr_child,
+            Some(parent_job_id.clone()),
+            Some(parent_job_id.clone()),
+        )
+        .await;
+        let failure = match &result {
+            Ok(job) if matches!(job.status, JobStatusKind::Succeeded) => None,
+            Ok(job) => Some(format!(
+                "OCR child {:?}: {}",
+                job.status,
+                job.error.clone().or(job.stage_detail.clone()).unwrap_or_default()
+            )),
+            Err(err) => Some(format!("OCR child error: {err:#}")),
+        };
+        if let Some(reason) = failure {
+            if let Err(err) = mark_ocr_stream_failed(&parent_job_paths.ocr_dir, &reason) {
+                tracing::warn!(job_id = %parent_job_id, error = %format!("{err:#}"), "failed to mark ocr stream failed");
+            }
+        }
+        result
+    });
+    let translation = Box::pin(run_translation_stage(
+        &deps,
+        parent_job.clone(),
+        &parent_job_paths,
+        render_follows,
+        Some(&streaming),
+    ));
+    let (ocr_result, translation_result) = tokio::join!(ocr, translation);
+
+    let ocr_finished = match ocr_result {
+        Ok(job) => job,
+        Err(err) => {
+            translation_flow_child::settle_ocr_child_after_error(&deps, &ocr_child_id, &err);
+            return Err(err);
+        }
+    };
+    let ocr_finished = persist_ocr_child_result(&deps, ocr_finished)?;
+    translation_flow_child::finish_ocr_child_attempt(&deps, &ocr_child_id);
+    record_ocr_child_finished(&deps, &parent_job, &ocr_finished);
+    if let Some(prewarm) = domain_prewarm {
+        prewarm.finish(DOMAIN_PREWARM_FINISH_TIMEOUT).await;
+    }
+    let translation_stage = translation_result?;
+
+    if !matches!(ocr_finished.status, JobStatusKind::Succeeded) {
+        // OCR 没做成：翻译读到失败的清单已经退出了，父任务按 OCR 的结果收尾（和串行时一样的说法）。
+        let mut parent = deps.db.get_job(&parent_job.job_id)?.into_runtime();
+        sync_parent_with_ocr_child(&mut parent, &ocr_finished);
+        finalize_parent_after_ocr(&mut parent, &ocr_finished, now_iso())?;
+        return Ok(parent);
+    }
+    let mut translated_job = translation_stage.job;
+    if !matches!(translated_job.status, JobStatusKind::Succeeded) {
+        return Ok(translated_job);
+    }
+    sync_parent_with_ocr_child(&mut translated_job, &ocr_finished);
+    cas_persist_job_with_resources(
+        deps.db.as_ref(),
+        &deps.persist.data_root,
+        &deps.persist.output_root,
+        &translated_job.snapshot(),
+        &["queued", "running"],
+    )?;
+    // 渲染用 OCR 子任务落在任务目录里的那份原文（选页时是切出来的子 PDF），和串行时一样
+    let source_pdf_path = translated_job
+        .artifacts
+        .as_ref()
+        .and_then(|artifacts| artifacts.source_pdf.clone())
+        .map(PathBuf::from)
+        .unwrap_or(streaming.source_pdf_path);
+    Box::pin(run_after_translation_stage(deps, &plan, translated_job, &parent_job_paths, &source_pdf_path)).await
+}
+
 #[cfg(test)]
 mod ocr_child_persist_contract {
     /// OCR 子任务收尾的那次写必须走 CAS。
@@ -265,21 +386,25 @@ mod ocr_child_persist_contract {
     #[test]
     fn ocr_child_result_is_persisted_with_cas() {
         let source = include_str!("translation_flow.rs");
-        let anchor = source
-            .find("sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);")
-            .expect("OCR 收尾必须调用 sync_parent_with_ocr_child");
-        let prev = source[..anchor]
-            .rfind("let ocr_finished = match execute_ocr_job(")
-            .expect("这段之前必须是 execute_ocr_job");
-        let window = &source[prev..anchor];
+        // 串行和并行（OCR 和翻译同时跑）两条路都在拿到 OCR 结果后、并回父任务前走这一个函数
+        for (start, end) in [
+            ("let ocr_finished = match execute_ocr_job(", "sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);"),
+            ("let (ocr_result, translation_result) = tokio::join!", "sync_parent_with_ocr_child(&mut translated_job, &ocr_finished);"),
+        ] {
+            let from = source.find(start).expect("找不到 OCR 收尾那一段");
+            let to = from + source[from..].find(end).expect("OCR 收尾必须调用 sync_parent_with_ocr_child");
+            assert!(
+                source[from..to].contains("persist_ocr_child_result(&deps, ocr_finished)"),
+                "子任务收尾必须走 persist_ocr_child_result：{start}"
+            );
+        }
+        let body_start = source.find("fn persist_ocr_child_result(").expect("persist_ocr_child_result");
+        let body = &source[body_start..body_start + source[body_start..].find("\n}\n").expect("函数结尾")];
         assert!(
-            window.contains("cas_persist_job_with_resources("),
+            body.contains("cas_persist_job_with_resources("),
             "子任务收尾必须走 CAS：无条件写会把 save_ocr_job 挡下的复活放回去"
         );
-        assert!(
-            !window.contains("persist_runtime_job_with_resources("),
-            "这一段不该再有无条件覆盖写"
-        );
+        assert!(!body.contains("persist_runtime_job_with_resources("), "这里不该有无条件覆盖写");
     }
 }
 

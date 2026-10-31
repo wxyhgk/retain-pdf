@@ -72,6 +72,7 @@ def _args_from_spec(spec: TranslateStageSpec) -> SimpleNamespace:
         source_json=str(spec.inputs.source_json),
         source_pdf=str(spec.inputs.source_pdf),
         layout_json=str(spec.inputs.layout_json or ""),
+        ocr_stream_dir=str(spec.inputs.ocr_stream_dir or ""),
         start_page=spec.params.start_page,
         end_page=spec.params.end_page,
         batch_size=spec.params.batch_size,
@@ -176,6 +177,7 @@ def main() -> None:
             reviewer_base_url=args.reviewer_base_url,
             reviewer_api_key=args.reviewer_api_key,
             engine=getattr(args, "engine", "legacy"),
+            ocr_stream_dir=Path(args.ocr_stream_dir) if args.ocr_stream_dir else None,
             invocation=build_stage_invocation_metadata(
                 stage="translate",
                 stage_spec_schema_version=stage_spec_schema_version,

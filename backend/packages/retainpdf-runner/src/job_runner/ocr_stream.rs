@@ -1,0 +1,106 @@
+//! OCR 流式公布的清单（`ocr/stream/manifest.json`），Rust 这边只做一件事：OCR 没做成时标失败。
+//!
+//! 契约在 Python 的 `retainpdf_base/ocr_stream.py`：OCR provider（GLM-OCR）每做完一片写一版清单，跟着 OCR 翻的翻译
+//! worker 读它；OCR 在 Python 里失败时自己会标 `failed`。但 OCR 进程被杀（超时、空闲超时、崩了）就来不及写，翻译会一直等
+//! 下一版清单，直到它自己的"多久没有进展"超时（默认半小时）。所以 OCR 子任务一结束、又不是成功，driver 就补标一次失败，
+//! 翻译 worker 读到就退出。
+
+use std::path::Path;
+
+use anyhow::{Context, Result};
+use serde_json::{json, Value};
+
+const OCR_STREAM_SCHEMA: &str = "ocr_stream_v1";
+const MANIFEST_RELATIVE_PATH: &str = "stream/manifest.json";
+
+/// 把清单标成失败（`seq` 加 1，保留已公布的页数）。已经是 `done` 或 `failed` 的不动。
+pub(super) fn mark_ocr_stream_failed(ocr_dir: &Path, reason: &str) -> Result<()> {
+    let path = ocr_dir.join(MANIFEST_RELATIVE_PATH);
+    let previous: Value = std::fs::read(&path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or(Value::Null);
+    if previous.get("done").and_then(Value::as_bool) == Some(true)
+        || previous.get("failed").and_then(Value::as_bool) == Some(true)
+    {
+        return Ok(());
+    }
+    let seq = previous.get("seq").and_then(Value::as_i64).unwrap_or(0) + 1;
+    let manifest = json!({
+        "schema": OCR_STREAM_SCHEMA,
+        "seq": seq,
+        "provider": previous.get("provider").cloned().unwrap_or(Value::Null),
+        "ready_pages": previous.get("ready_pages").and_then(Value::as_i64).unwrap_or(0),
+        "total_pages": previous.get("total_pages").and_then(Value::as_i64).unwrap_or(0),
+        "done": false,
+        "failed": true,
+        "error": reason.chars().take(500).collect::<String>(),
+        "document": previous.get("document").cloned().unwrap_or_else(|| json!("stream/document.v1.json")),
+        "updated_at": chrono_like_now(),
+    });
+    let parent = path.parent().context("ocr stream manifest has no parent")?;
+    std::fs::create_dir_all(parent)?;
+    // 和 Python 一样原子写：读的一方任何时候读到的都是完整的一版
+    let tmp = parent.join(".manifest.json.tmp");
+    std::fs::write(&tmp, serde_json::to_vec_pretty(&manifest)?)?;
+    std::fs::rename(&tmp, &path).with_context(|| format!("replace {}", path.display()))?;
+    Ok(())
+}
+
+fn chrono_like_now() -> f64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|elapsed| elapsed.as_secs_f64())
+        .unwrap_or(0.0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn temp_dir(name: &str) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "retainpdf-ocr-stream-{name}-{}-{:?}",
+            std::process::id(),
+            std::time::SystemTime::now()
+        ));
+        std::fs::create_dir_all(dir.join("stream")).unwrap();
+        dir
+    }
+
+    fn read(dir: &Path) -> Value {
+        serde_json::from_slice(&std::fs::read(dir.join(MANIFEST_RELATIVE_PATH)).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn a_killed_ocr_is_announced_so_the_waiting_translation_stops() {
+        let dir = temp_dir("killed");
+        std::fs::write(
+            dir.as_path().join(MANIFEST_RELATIVE_PATH),
+            r#"{"schema":"ocr_stream_v1","seq":3,"provider":"glm_ocr","ready_pages":20,"total_pages":120,"done":false,"failed":false,"error":"","document":"stream/document.v1.json"}"#,
+        )
+        .unwrap();
+        mark_ocr_stream_failed(dir.as_path(), "OCR child failed: no progress for 1800s").unwrap();
+        let manifest = read(dir.as_path());
+        assert_eq!(manifest["seq"], 4, "翻译只认比上一版新的清单");
+        assert_eq!(manifest["failed"], true);
+        assert_eq!(manifest["ready_pages"], 20);
+        assert_eq!(manifest["total_pages"], 120);
+        assert_eq!(manifest["error"], "OCR child failed: no progress for 1800s");
+    }
+
+    #[test]
+    fn a_finished_stream_is_left_alone_and_a_missing_one_is_created() {
+        let done = temp_dir("done");
+        let finished = r#"{"schema":"ocr_stream_v1","seq":5,"ready_pages":9,"total_pages":9,"done":true,"failed":false}"#;
+        std::fs::write(done.as_path().join(MANIFEST_RELATIVE_PATH), finished).unwrap();
+        mark_ocr_stream_failed(done.as_path(), "late").unwrap();
+        assert_eq!(read(done.as_path())["done"], true);
+
+        // OCR 还没公布第一版就挂了：也要有一版失败的清单，翻译建计划时在等第一版
+        let empty = temp_dir("empty");
+        mark_ocr_stream_failed(empty.as_path(), "spawn failed").unwrap();
+        let manifest = read(empty.as_path());
+        assert_eq!((manifest["seq"].clone(), manifest["failed"].clone()), (json!(1), json!(true)));
+    }
+}
