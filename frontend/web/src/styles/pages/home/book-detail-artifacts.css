@@ -51,7 +51,7 @@
 .book-detail-artifact-group-copy h3 {
   margin: 0;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 650;
   letter-spacing: -0.015em;
 }
@@ -153,7 +153,7 @@
 .book-detail-artifact-item-copy strong {
   overflow: hidden;
   color: var(--ink);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -162,7 +162,7 @@
 .book-detail-artifact-item-copy > div > span {
   flex: 0 0 auto;
   padding: 1px 4px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--muted);
   background: color-mix(in srgb, var(--bg) 85%, var(--paper));
   font-size: 7.5px;
@@ -189,7 +189,7 @@
   margin: 12px 0 0;
   padding: 9px 11px;
   border: 1px dashed color-mix(in srgb, var(--line) 65%, transparent);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
   color: var(--muted);
   background: var(--paper);
   font-size: 9.5px;
@@ -210,7 +210,7 @@
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 600;
   list-style: none;
   cursor: pointer;
@@ -242,7 +242,7 @@
 .book-detail-artifact-debug > summary small {
   min-width: 0;
   overflow: hidden;
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   font-weight: 450;
   text-overflow: ellipsis;
   white-space: nowrap;

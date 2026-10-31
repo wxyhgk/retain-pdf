@@ -1,6 +1,7 @@
 // 文档进度 Tab：一张「进度」卡，内含 OCR / 翻译两个卡内分段。
 // 所有 id、disabled 语义、onX 回调原样透传；数字只读传入的 ocr/translation。
 
+import { Button, Checkbox } from "@retainpdf/ui";
 import { BookTranslationWorkflowPanel } from "../panels/translate/WorkflowPanel.jsx";
 import { ProcessingPipelineRail } from "../panels/processing/ProcessingPipelineRail.jsx";
 import { PageSpecInput } from "../panels/PageSpecInput.js";
@@ -12,7 +13,6 @@ import type { JobRetryStage } from "@/platform/api/index.js";
 import { ProcessingSummary } from "../panels/processing/ProcessingSummary.jsx";
 import { hasEditorialRoom, processingFacts } from "../../domain/translation-coverage.js";
 import { TranslationCoveragePanel } from "../panels/processing/TranslationCoveragePanel.js";
-import { btn } from "../panels/ui.jsx";
 import { documentJobPresentation, isDocumentJobActive } from "../use-document-jobs.js";
 import { stageDetailWithoutPageCount } from "../../domain/progress-value.js";
 import {
@@ -135,28 +135,26 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   // 摆一个点不了的「重新 OCR」只是干扰。
   const ocrAction = ocrBlockedByTranslation ? null : (
     <>
-      <button
+      <Button
         id="book-detail-start-ocr-btn"
-        type="button"
-        className={btn("outline")}
+        variant="secondary" size="sm"
         disabled={bootstrapping || Boolean(ocr?.pending) || ocrActive || ocrBlockedByTranslation || Boolean(translation?.busy)}
         title={ocrBlockedByTranslation ? "翻译进行中，暂不能单独执行 OCR" : undefined}
         onClick={ocr?.onOcr}
       >
         <ScanIcon />
-        <span className="ml-1.5">{bootstrapping ? "读取中…" : ocr?.pending ? "提交中…" : ocrActive ? "OCR 处理中" : ocrJob ? "重新 OCR" : "开始 OCR"}</span>
-      </button>
+        <span>{bootstrapping ? "读取中…" : ocr?.pending ? "提交中…" : ocrActive ? "OCR 处理中" : ocrJob ? "重新 OCR" : "开始 OCR"}</span>
+      </Button>
       {ocrCancelable ? (
-        <button
+        <Button
           id="book-detail-cancel-ocr-btn"
-          type="button"
-          className={btn("outline")}
+          variant="secondary" size="sm"
           disabled={Boolean(ocr?.cancelling)}
           onClick={() => ocr?.onCancel?.(ocrJobId)}
         >
           {ocr?.cancelling ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" /> : <Square className="size-3.5" aria-hidden="true" />}
-          <span className="ml-1.5">{ocr?.cancelling ? "取消中…" : "取消任务"}</span>
-        </button>
+          <span>{ocr?.cancelling ? "取消中…" : "取消任务"}</span>
+        </Button>
       ) : null}
     </>
   );
@@ -164,14 +162,12 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   // OCR 指定页码：和翻译的「指定页码」放在同一个选项行里（动作区），不再单独占一张卡。
   const ocrOptions = ocrConfigurable ? (
     <div className="book-detail-ocr-range">
-      <label className="book-detail-ocr-range-toggle">
-        <input
-          type="checkbox"
-          checked={Boolean(ocr?.rangeOn)}
-          onChange={(event) => ocr?.onRangeOnChange?.(event.target.checked)}
-        />
-        OCR 指定页码
-      </label>
+      <Checkbox
+        className="book-detail-ocr-range-toggle"
+        label="OCR 指定页码"
+        checked={Boolean(ocr?.rangeOn)}
+        onChange={(event) => ocr?.onRangeOnChange?.(event.target.checked)}
+      />
       {ocr?.rangeOn ? (
         <div className="book-detail-ocr-range-inputs">
           <PageSpecInput
@@ -203,16 +199,15 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
         {ocrOptions}
       </div>
       <div className="book-detail-reprocess-controls">
-        <button
+        <Button
           id="book-detail-start-ocr-btn"
-          type="button"
-          className={btn("outline")}
+          variant="secondary" size="md"
           disabled={Boolean(ocr?.pending) || Boolean(translation?.busy)}
           onClick={ocr?.onOcr}
         >
           <ScanIcon />
-          <span className="ml-1.5">{ocr?.pending ? "提交中…" : "开始"}</span>
-        </button>
+          <span>{ocr?.pending ? "提交中…" : "开始"}</span>
+        </Button>
       </div>
     </li>
   );
@@ -224,15 +219,14 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
         <span>重新执行 OCR、翻译和排版，费用重新计算。</span>
       </div>
       <div className="book-detail-reprocess-controls">
-        <button
+        <Button
           id="book-detail-restart-translation-btn"
-          type="button"
-          className={btn("outline")}
+          variant="secondary" size="md"
           disabled={Boolean(translation?.busy) || Boolean(ocr?.pending)}
           onClick={translation?.onTranslate}
         >
           <span>{translation?.busy === "translate" ? "提交中…" : "开始"}</span>
-        </button>
+        </Button>
       </div>
     </li>
   ) : null;

@@ -1,9 +1,9 @@
 // 书架筛选(照搬 PDF_MD_lib 的 LibraryFilterModal,做成轻量 popover 而非 Radix
 // 弹窗——满载测试下少一个重型 modal 更稳):按状态筛选,客户端过滤已加载项。
+// 状态是几个里选一个，用 SegmentedControl（radiogroup），六个选项排成三列两行。
 
 import { useEffect, useRef, useState } from "react";
-import type { ReactNode } from "react";
-import { cn } from "@retainpdf/ui/lib/utils";
+import { Button, SegmentedControl } from "@retainpdf/ui";
 import { isOcrOnlyItem } from "../../domain/card/library-card-semantics.js";
 import type { LibraryCardItem } from "../../domain/types.js";
 
@@ -82,36 +82,20 @@ export function LibraryFilterMenu({
     };
   }, [open]);
 
-  function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-    return (
-      <button
-        type="button"
-        onClick={onClick}
-        className={cn(
-          "inline-flex items-center rounded-full border px-3 py-1 text-xs transition active:scale-95",
-          active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-paper text-muted-foreground hover:bg-accent",
-        )}
-      >{children}</button>
-    );
-  }
-
   return (
     <div className="relative" ref={ref}>
-      <button
+      <Button
         id="library-filter-trigger"
-        type="button"
+        variant="secondary"
+        size="sm"
         aria-controls="library-filter-surface"
         aria-expanded={open}
         aria-haspopup="dialog"
         onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "inline-flex h-8 items-center gap-1 rounded-full px-3 text-xs transition active:scale-95",
-          activeCount > 0 ? "bg-secondary text-secondary-foreground" : "border border-border text-foreground hover:bg-muted/30",
-        )}
       >
         筛选
-        {activeCount > 0 ? <span className="tabular-nums text-[11px] text-muted-foreground/70">{activeCount}</span> : null}
-      </button>
+        {activeCount > 0 ? <span className="tabular-nums text-muted-foreground/70">{activeCount}</span> : null}
+      </Button>
 
       {open ? (
         // 非 Radix 的轻量 popover(满载测试下比重型 modal 稳),没有 Presence 卸载延迟,
@@ -124,20 +108,20 @@ export function LibraryFilterMenu({
           aria-label="筛选书库"
         >
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">处理状态</p>
-          <div className="flex flex-wrap gap-2">
-            {STATUS_FILTERS.map((s) => (
-              <Pill key={s.value} active={statusFilter === s.value} onClick={() => setStatusFilter(s.value)}>
-                {s.label}{s.value !== "all" && statusCounts[s.value] ? ` ${statusCounts[s.value]}` : ""}
-              </Pill>
-            ))}
-          </div>
+          <SegmentedControl
+            size="sm"
+            label="处理状态"
+            columns={3}
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_FILTERS.map((s) => ({
+              value: s.value,
+              label: `${s.label}${s.value !== "all" && statusCounts[s.value] ? ` ${statusCounts[s.value]}` : ""}`,
+            }))}
+          />
 
           {activeCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setStatusFilter("all")}
-              className="mt-4 text-xs text-muted-foreground hover:text-foreground hover:underline"
-            >清空筛选</button>
+            <Button variant="ghost" size="sm" className="mt-3 -ml-2.5 text-muted-foreground" onClick={() => setStatusFilter("all")}>清空筛选</Button>
           ) : null}
         </div>
       ) : null}

@@ -10,7 +10,7 @@ import {
   SquareM,
 } from "lucide-react";
 
-import { LegacyButton } from "@retainpdf/ui";
+import { Button, IconButton } from "@retainpdf/ui";
 import {
   Dialog,
   DialogBody,
@@ -90,15 +90,15 @@ export function ArtifactQuickDownloads({
         <PackageOpen aria-hidden="true" />
         <span>文件下载</span>
         {loading ? <LoaderCircle className="book-detail-quick-downloads-loader" aria-label="正在读取产物" /> : null}
-        <button
+        <IconButton
           id="book-detail-download-settings-btn"
-          type="button"
+          size="sm"
+          label="导出设置"
           className="book-detail-quick-downloads-settings"
-          aria-label="导出设置"
           onClick={() => setSettingsOpen(true)}
         >
           <Settings2 aria-hidden="true" />
-        </button>
+        </IconButton>
       </header>
       <TooltipProvider delayDuration={220}>
         <div className="book-detail-quick-download-grid">
@@ -177,7 +177,7 @@ export function ArtifactQuickDownloads({
             </DialogBody>
             <DialogFooter>
               <DialogClose asChild>
-                <LegacyButton type="button">完成</LegacyButton>
+                <Button variant="primary">完成</Button>
               </DialogClose>
             </DialogFooter>
           </DialogShell>

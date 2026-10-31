@@ -9,6 +9,7 @@
 // 的危险操作区，不和日常的阅读状态挨在一起。
 
 import type { ReactNode } from "react";
+import { Button } from "@retainpdf/ui";
 import { ChevronRight, Pencil, TriangleAlert } from "lucide-react";
 import { TitleMetaPanel } from "../panels/overview/TitleMetaPanel.jsx";
 import { formatZhDate } from "@/platform/utils/datetime.js";
@@ -102,14 +103,15 @@ export function BookDetailOverviewTab({
         <div className="book-detail-overview-card-heading">
           <h3>文档信息</h3>
           {!editing ? (
-            <button
+            <Button
               id="book-detail-edit-btn"
-              type="button"
+              variant="ghost"
+              size="sm"
               className="book-detail-overview-text-btn"
               onClick={onStartEdit}
             >
               <Pencil aria-hidden="true" />编辑信息
-            </button>
+            </Button>
           ) : null}
         </div>
 

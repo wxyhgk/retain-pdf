@@ -13,6 +13,7 @@
  * 列表每 2 秒轮询一次，不能驮着 traceback（一条就是好几 KB）。所以卡片默认只用
  * 列表里那份简报；点「展开」时才去打一次 job 详情端点拿完整错误。
  */
+import { Button } from "@retainpdf/ui";
 import { useCallback, useState } from "react";
 import { ChevronDown, Copy, FileText, LoaderCircle, RotateCcw, TriangleAlert } from "lucide-react";
 
@@ -23,7 +24,6 @@ import {
   failureDiagnosticText,
   failureSubtitle,
 } from "../../../domain/job-failure-model.js";
-import { btn } from "../../panels/ui.js";
 
 /** 卡片上的主动作：翻译任务是「从断点继续」，单独的 OCR 任务是「重新 OCR」。 */
 export type JobFailurePrimaryAction = {
@@ -107,44 +107,42 @@ export function JobFailureCard({
 
       <div className="book-detail-failure-actions">
         {primary ? (
-          <button
-            type="button"
+          <Button
             id="book-detail-retry-failed-btn"
-            className={btn(advice.retryLikelyHelps ? "default" : "outline")}
+            variant={advice.retryLikelyHelps ? "primary" : "secondary"} size="sm"
             disabled={Boolean(primary.pending)}
             onClick={() => void primary.onClick()}
           >
             {primary.pending
               ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
               : <RotateCcw className="size-3.5" aria-hidden="true" />}
-            <span className="ml-1.5">{primary.pending ? primary.pendingLabel || "提交中…" : primary.label}</span>
-          </button>
+            <span>{primary.pending ? primary.pendingLabel || "提交中…" : primary.label}</span>
+          </Button>
         ) : null}
 
-        <button type="button" className={btn("outline")} onClick={() => void copy()}>
+        <Button variant="secondary" size="sm" onClick={() => void copy()}>
           <Copy className="size-3.5" aria-hidden="true" />
-          <span className="ml-1.5">{copied ? "已复制" : "复制诊断信息"}</span>
-        </button>
+          <span>{copied ? "已复制" : "复制诊断信息"}</span>
+        </Button>
 
         {onOpenLog ? (
-          <button type="button" className={btn("outline")} onClick={onOpenLog}>
+          <Button variant="secondary" size="sm" onClick={onOpenLog}>
             <FileText className="size-3.5" aria-hidden="true" />
-            <span className="ml-1.5">查看日志</span>
-          </button>
+            <span>查看日志</span>
+          </Button>
         ) : null}
 
         {loadDetail && jobId && !expanded ? (
-          <button
-            type="button"
-            className={btn("ghost")}
+          <Button
+            variant="ghost" size="sm"
             disabled={loadingDetail}
             onClick={() => void expand()}
           >
             {loadingDetail
               ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
               : <ChevronDown className="size-3.5" aria-hidden="true" />}
-            <span className="ml-1.5">{loadingDetail ? "读取中…" : "展开完整错误"}</span>
-          </button>
+            <span>{loadingDetail ? "读取中…" : "展开完整错误"}</span>
+          </Button>
         ) : null}
       </div>
 

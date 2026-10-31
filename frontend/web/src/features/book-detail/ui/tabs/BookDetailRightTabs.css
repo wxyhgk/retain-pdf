@@ -47,7 +47,7 @@
   border-radius: 8px;
   white-space: nowrap;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 600;
   line-height: 1.2;
   color: var(--muted) !important;

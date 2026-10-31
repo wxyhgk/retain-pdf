@@ -30,7 +30,7 @@
   padding: 16px 56px 12px 22px;
   overflow: hidden;
   color: var(--ink);
-  font-size: 16px;
+  font-size: var(--ui-text-lg);
   font-weight: 700;
   letter-spacing: -0.01em;
   text-overflow: ellipsis;
@@ -82,7 +82,7 @@
   gap: 6px;
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 .book-detail-cover-identity p span {
@@ -103,6 +103,6 @@
   gap: 10px;
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
   background: color-mix(in srgb, var(--paper) 76%, transparent);
 }

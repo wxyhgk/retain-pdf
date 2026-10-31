@@ -208,7 +208,7 @@ test("RecentJobsLibrary：同一 document_id 刷新 job 时网格与列表复用
   );
 
   click(dom, dom.window.document.querySelector('button[aria-label="列表视图"]'));
-  await waitFor(() => dom.window.document.querySelector('button[aria-label="列表视图"]')?.getAttribute("aria-pressed") === "true", "切换列表视图");
+  await waitFor(() => dom.window.document.querySelector('button[aria-label="列表视图"]')?.getAttribute("aria-checked") === "true", "切换列表视图");
   const listRowBefore = byId(dom, "recent-jobs-list").querySelector('[data-document-id="doc-stable"]');
 
   services.library.recentJobsStore.actions.setItems([

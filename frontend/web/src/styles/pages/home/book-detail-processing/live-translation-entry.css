@@ -50,13 +50,13 @@
 }
 
 .home-book-live-translation-entry strong {
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 680;
 }
 
 .home-book-live-translation-entry small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: var(--ui-text-2xs);
 }
 
 .home-book-live-translation-entry > svg {

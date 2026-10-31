@@ -10,7 +10,7 @@
 .book-detail-right-panel::-webkit-scrollbar-thumb,
 .book-detail-shell-left::-webkit-scrollbar-thumb {
   border: 2px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: color-mix(in srgb, var(--ink) 18%, transparent);
   background-clip: padding-box;
 }
@@ -61,7 +61,7 @@
     width: 64px;
     height: 86px;
     aspect-ratio: auto;
-    border-radius: 10px;
+    border-radius: var(--ui-radius-md);
   }
 
   /* 封面 | 书名身份占第一行，按钮组横跨两列单独一行（否则落进 64px 的封面列）。 */

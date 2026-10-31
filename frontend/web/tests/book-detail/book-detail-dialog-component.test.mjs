@@ -87,10 +87,10 @@ test("馆藏卡打开书籍详情:元数据 + 阅读状态切换 + 翻译/读原
   // 阅读状态切换 → patchDocument(mock),按钮变激活
   assert.ok(dlg.querySelector('[data-book-detail-section="management"]'), "简介内展示阅读与归档区");
   const { getMockDocument } = await import("@/platform/mock/documents.js");
-  const readBtns = dlg.querySelectorAll(".book-detail-reading-btn");
-  const doneBtn = Array.from(readBtns).find((b) => b.textContent === "读完");
+  const doneBtn = dlg.querySelector('[data-reading-status="done"]');
+  assert.equal(doneBtn?.textContent, "读完");
   click(dom, doneBtn);
-  await waitFor(() => doneBtn.classList.contains("is-active"), "读完变激活");
+  await waitFor(() => doneBtn.getAttribute("aria-checked") === "true", "读完变选中");
   await waitFor(() => getMockDocument(documentId).reading_status === "done", "patchDocument 落库 reading_status=done");
 
   root.unmount();

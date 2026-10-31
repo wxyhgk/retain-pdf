@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from "react";
 import { Languages, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
-import { ConfirmDialog } from "@retainpdf/ui";
+import { Button, ConfirmDialog, Select } from "@retainpdf/ui";
 import type {
   JobRetryStage,
   JobStageRetryActionView,
 } from "@/platform/api/index.js";
-import { btn } from "../ui.jsx";
 import { stageDisabledReasonText } from "../../../domain/stage-disabled-reason.js";
 import { describeLastRefine, refineContinuePage, refineEscalations } from "../../../domain/last-refine.js";
 
@@ -154,11 +153,10 @@ export function TranslationStageActions({
     const rawReason = `${action.disabled_reason || action.reason || ""}`.trim();
     const reason = stageDisabledReasonText(rawReason);
     return (
-      <button
+      <Button
         key={action.stage}
         id={`book-detail-retry-${action.stage}-btn`}
-        type="button"
-        className={btn("outline")}
+        variant="secondary" size={sheet ? "md" : "sm"}
         disabled={disabled}
         title={!action.can_retry && rawReason ? (reason === rawReason ? reason : `${reason}（${rawReason}）`) : undefined}
         onClick={() => {
@@ -171,17 +169,18 @@ export function TranslationStageActions({
         {checking
           ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
           : <StageIcon stage={action.stage} />}
-        <span className="ml-1.5">{pending ? "提交中…" : sheet ? "开始" : labelOf(action)}</span>
-      </button>
+        <span>{pending ? "提交中…" : sheet ? "开始" : labelOf(action)}</span>
+      </Button>
     );
   }
 
   const engineSelect = (
-    <select
+    <Select
       id="book-detail-render-engine"
+      size={variant === "sheet" ? "md" : "sm"}
       aria-label="重新渲染用的排版引擎"
       title="重新渲染用的排版引擎"
-      className="book-detail-render-engine h-9 w-auto rounded-md border border-input bg-background px-2 py-0 text-sm"
+      className="book-detail-render-engine"
       value={renderEngine}
       disabled={Boolean(pendingStage)}
       onChange={(event) => setRenderEngine(event.target.value)}
@@ -189,7 +188,7 @@ export function TranslationStageActions({
       <option value="">引擎：沿用原来的</option>
       <option value="rpr_fit">引擎：新引擎</option>
       <option value="typst">引擎：Typst（旧）</option>
-    </select>
+    </Select>
   );
 
   const sheet = variant === "sheet";
@@ -237,9 +236,8 @@ export function TranslationStageActions({
                 <div className="book-detail-reprocess-controls">
                   {action.stage === "render" && !checking ? engineSelect : null}
                   {resumeAt && action.can_retry ? (
-                    <button
-                      type="button"
-                      className={btn("outline")}
+                    <Button
+                      variant="secondary"
                       disabled={checking || Boolean(pendingStage)}
                       data-refine-continue={resumeAt}
                       onClick={() => {
@@ -248,7 +246,7 @@ export function TranslationStageActions({
                       }}
                     >
                       {`从第 ${resumeAt} 页继续`}
-                    </button>
+                    </Button>
                   ) : null}
                   {actionButton(action, true)}
                 </div>

@@ -1,13 +1,6 @@
-// 详情弹窗 panel 共用小工具（样式 / 图标），无业务。
+// 详情弹窗 panel 共用的图标，无业务。按钮用 @retainpdf/ui 的 Button（以前这里的 btn() 包着 shadcn 旧按钮，已删）。
 
 import type { SVGProps } from "react";
-import { cn } from "@retainpdf/ui/lib/utils";
-import { legacyButtonVariants } from "@retainpdf/ui";
-
-type ButtonVariant = NonNullable<Parameters<typeof legacyButtonVariants>[0]>["variant"];
-
-export const btn = (variant: ButtonVariant, extra = "") =>
-  cn(legacyButtonVariants({ variant, size: "sm" }), "h-8 text-xs rounded-md", extra);
 
 export function IconLanguages(props: SVGProps<SVGSVGElement>) {
   return (

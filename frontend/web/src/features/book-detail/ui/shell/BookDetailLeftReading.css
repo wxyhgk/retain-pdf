@@ -14,12 +14,12 @@
   align-items: center;
   gap: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 .book-detail-left-reading-head strong {
   color: var(--ink);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   font-weight: 650;
 }
 
@@ -31,7 +31,7 @@
 
 .book-detail-left-reading-track span {
   height: 3px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--line);
 }
 

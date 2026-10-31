@@ -168,3 +168,16 @@ test("SegmentedControl：radiogroup，只有选中的能 Tab 到；点选、左�
   }
 });
 
+test("SegmentedControl：给 columns 排成网格，不给就是一条", () => {
+  const html = renderToStaticMarkup(h(SegmentedControl, {
+    label: "处理状态", value: "a", columns: 3, onChange() {},
+    options: ["a", "b", "c", "d"].map((value) => ({ value, label: value })),
+  }));
+  assert.match(html, /data-layout="grid"/);
+  assert.match(html, /grid-template-columns:repeat\(3, minmax\(0, 1fr\)\)/);
+  const plain = renderToStaticMarkup(h(SegmentedControl, {
+    label: "视图", value: "a", onChange() {}, options: [{ value: "a", label: "a" }],
+  }));
+  assert.doesNotMatch(plain, /data-layout|style=/);
+});
+

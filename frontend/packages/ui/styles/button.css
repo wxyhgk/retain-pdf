@@ -68,6 +68,7 @@
   flex-shrink: 0;
 }
 
+.ui-button[data-size="sm"] svg,
 .ui-icon-button[data-size="sm"] svg {
   width: 14px;
   height: 14px;
@@ -124,6 +125,15 @@
 }
 
 /* —— 状态 —— */
+
+/* 开关按钮（aria-pressed）按下时：淡墨底，和悬停区分开。 */
+.ui-button[data-variant="secondary"][aria-pressed="true"],
+.ui-button[data-variant="ghost"][aria-pressed="true"],
+.ui-icon-button[data-variant="secondary"][aria-pressed="true"],
+.ui-icon-button[data-variant="ghost"][aria-pressed="true"] {
+  background: color-mix(in srgb, var(--ink) 9%, var(--paper));
+  color: var(--ink);
+}
 
 .ui-button:focus-visible,
 .ui-icon-button:focus-visible {

@@ -2,7 +2,8 @@
 // 元信息摘要（页数/大小/入库/合集）在右栏概览的信息区（BookDetailOverviewTab）；
 // 书名 / 作者只在这里展示一次，概览不再重复。
 
-import { btn, IconCompare, IconEye } from "./ui.jsx";
+import { Button } from "@retainpdf/ui";
+import { IconCompare, IconEye } from "./ui.jsx";
 import { BookCardProcessingOverlay } from "@/features/library/index.js";
 import { Check, Copy, Hash, UserRound } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -116,31 +117,29 @@ export function CoverActionsPanel({
       </div>
       <div className="book-detail-cover-buttons flex flex-col gap-2.5 pt-1">
         {readerAvailable ? (
-          <button
+          <Button
             id={compareReading ? "book-detail-compare-btn" : "book-detail-ocr-btn"}
-            className={btn("default", "w-full gap-1.5 py-2.5 text-sm")}
+            variant="primary" className="w-full"
             disabled={Boolean(busy)}
             onClick={onCompare}
             aria-label={readerActionLabel}
           >
             {compareReading
-              ? <IconCompare className="mr-0.5 h-4 w-4" />
-              : <IconEye className="mr-0.5 h-4 w-4" />}
+              ? <IconCompare />
+              : <IconEye />}
             {readerActionLabel}
-          </button>
+          </Button>
         ) : null}
-        <button
+        <Button
           id="book-detail-read-source-btn"
-          className={btn(
-            readerAvailable ? "outline" : "default",
-            `w-full gap-1.5 py-2.5 text-sm${readerAvailable ? " bg-paper" : ""}`,
-          )}
+          variant={readerAvailable ? "secondary" : "primary"}
+          className="w-full"
           disabled={Boolean(busy) || !documentId}
           onClick={onReadSource}
         >
-          <IconEye className="mr-0.5 h-4 w-4" />
+          <IconEye />
           查看原版
-        </button>
+        </Button>
       </div>
       {quickDownloadsSlot}
     </div>

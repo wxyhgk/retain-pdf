@@ -108,45 +108,6 @@
   }
 }
 
-@utility recent-job-hover-btn {
-  @apply inline-flex h-10 min-h-10 w-10 min-w-10 items-center justify-center rounded-full border border-white/80 bg-white/95 p-0 text-[var(--ink)];
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--shadow-color) 18%, transparent);
-  transition:
-    transform 0.16s ease,
-    background 0.16s ease,
-    color 0.16s ease;
-
-  &:hover {
-    transform: scale(1.04);
-    background: var(--ink);
-    color: var(--paper);
-    filter: none;
-  }
-
-  &:focus-visible {
-    transform: scale(1.04);
-    background: var(--ink);
-    color: var(--paper);
-    filter: none;
-  }
-
-  & svg {
-    @apply h-[18px] w-[18px];
-  }
-
-  &.is-disabled {
-    cursor: not-allowed;
-    opacity: 0.45;
-
-    &:hover,
-    &:focus-visible {
-      transform: none;
-      background: color-mix(in srgb, var(--paper) 95%, transparent);
-      color: var(--ink);
-    }
-  }
-}
-
 @utility has-image {
   &.recent-job-cover .recent-job-cover-fallback {
     opacity: 0;

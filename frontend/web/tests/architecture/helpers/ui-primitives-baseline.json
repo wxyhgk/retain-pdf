@@ -132,67 +132,19 @@
       "input": 6
     },
     "src/features/book-detail/ui/panels/ArtifactQuickDownloads.tsx": {
-      "button": 3,
-      "legacyButton": 3
+      "button": 2
     },
     "src/features/book-detail/ui/panels/CoverActionsPanel.tsx": {
-      "button": 3
-    },
-    "src/features/book-detail/ui/panels/more/CollectionsPanel.tsx": {
-      "button": 1
-    },
-    "src/features/book-detail/ui/panels/more/DeleteFooterPanel.tsx": {
-      "button": 1
-    },
-    "src/features/book-detail/ui/panels/more/ReadingStatusPanel.tsx": {
       "button": 1
     },
     "src/features/book-detail/ui/panels/overview/QualityPanel.tsx": {
       "button": 2
     },
-    "src/features/book-detail/ui/panels/overview/TitleMetaPanel.tsx": {
-      "button": 2,
-      "input": 2
-    },
-    "src/features/book-detail/ui/panels/PageSpecInput.tsx": {
-      "input": 1
-    },
-    "src/features/book-detail/ui/panels/processing/JobCanceledCard.tsx": {
-      "button": 2
-    },
-    "src/features/book-detail/ui/panels/processing/JobFailureCard.tsx": {
-      "button": 4
-    },
-    "src/features/book-detail/ui/panels/processing/ProcessingPipelineRail.tsx": {
-      "button": 2
-    },
-    "src/features/book-detail/ui/panels/translate/TranslateForm.tsx": {
-      "button": 1,
-      "input": 1
-    },
     "src/features/book-detail/ui/panels/translate/TranslateProgress.tsx": {
       "button": 1
     },
-    "src/features/book-detail/ui/panels/translate/TranslationStageActions.tsx": {
-      "button": 2,
-      "select": 1
-    },
-    "src/features/book-detail/ui/panels/ui.tsx": {
-      "legacyButton": 3
-    },
-    "src/features/book-detail/ui/tabs/artifact-center/ArtifactCenterView.tsx": {
-      "button": 3
-    },
     "src/features/book-detail/ui/tabs/BookDetailOverviewTab.tsx": {
-      "button": 2
-    },
-    "src/features/book-detail/ui/tabs/BookDetailProcessingTab.tsx": {
-      "button": 4,
-      "input": 1
-    },
-    "src/features/book-detail/ui/tabs/BookDetailTermsTab.tsx": {
-      "button": 1,
-      "input": 1
+      "button": 1
     },
     "src/features/collections/ui/CollectionDialog.tsx": {
       "input": 2
@@ -201,7 +153,7 @@
       "button": 2
     },
     "src/features/collections/ui/CollectionsGridView.tsx": {
-      "button": 5
+      "button": 4
     },
     "src/features/credentials/ui/AgentRuntimeConfirmationField.tsx": {
       "button": 2
@@ -316,29 +268,7 @@
       "button": 3
     },
     "src/features/library/ui/island/library-search-app.tsx": {
-      "button": 5
-    },
-    "src/features/library/ui/page/LibraryBatchToolbar.tsx": {
-      "button": 5
-    },
-    "src/features/library/ui/page/LibraryFilterMenu.tsx": {
       "button": 3
-    },
-    "src/features/library/ui/page/LibraryToolbar.tsx": {
-      "button": 3,
-      "select": 1
-    },
-    "src/features/library/ui/page/RecentJobsLibrary.tsx": {
-      "button": 1
-    },
-    "src/features/library/ui/page/RecentJobsLibraryEmpty.tsx": {
-      "button": 1
-    },
-    "src/features/library/ui/shell/book-card/BookCardActionButton.tsx": {
-      "button": 1
-    },
-    "src/features/library/ui/shell/BookListRow.tsx": {
-      "button": 1
     },
     "src/features/reader/ui/board-html.tsx": {
       "button": 1
@@ -513,50 +443,28 @@
       "borderRadius": 6
     },
     "src/features/book-detail/ui/panels/ArtifactQuickDownloads.css": {
-      "fontSize": 4,
-      "borderRadius": 4
-    },
-    "src/features/book-detail/ui/shell/BookDetailLeftReading.css": {
-      "fontSize": 2,
       "borderRadius": 1
     },
     "src/features/book-detail/ui/shell/BookDetailShell.css": {
-      "fontSize": 3,
-      "borderRadius": 1
-    },
-    "src/features/book-detail/ui/shell/BookDetailShellResponsive.css": {
-      "borderRadius": 2
-    },
-    "src/features/book-detail/ui/tabs/BookDetailRightTabs.css": {
-      "fontSize": 1,
-      "borderRadius": 2
-    },
-    "src/features/book-detail/ui/tabs/history.css": {
       "fontSize": 1
     },
+    "src/features/book-detail/ui/tabs/BookDetailRightTabs.css": {
+      "borderRadius": 2
+    },
     "src/features/book-detail/ui/tabs/overview/activity.css": {
-      "fontSize": 2,
       "borderRadius": 1
     },
     "src/features/book-detail/ui/tabs/overview/danger.css": {
-      "fontSize": 3,
-      "borderRadius": 2
-    },
-    "src/features/book-detail/ui/tabs/overview/info.css": {
-      "fontSize": 5,
       "borderRadius": 1
     },
     "src/features/book-detail/ui/tabs/overview/layout.css": {
-      "fontSize": 3,
-      "borderRadius": 2
+      "borderRadius": 1
     },
     "src/features/book-detail/ui/tabs/overview/quality.css": {
-      "fontSize": 9,
-      "borderRadius": 3
+      "borderRadius": 1
     },
     "src/features/book-detail/ui/tabs/terms.css": {
-      "fontSize": 8,
-      "borderRadius": 3
+      "borderRadius": 1
     },
     "src/features/collections/ui/CollectionsView.css": {
       "fontSize": 5,
@@ -708,13 +616,6 @@
     "src/features/jobs/ui/StatusCardAnimation.css": {
       "fontSize": 1
     },
-    "src/features/library/ui/page/LibraryBatchToolbar.css": {
-      "fontSize": 2,
-      "borderRadius": 2
-    },
-    "src/features/library/ui/RecentJobsDialog.css": {
-      "borderRadius": 1
-    },
     "src/features/reader/ui/board-html.css": {
       "fontSize": 3,
       "borderRadius": 1
@@ -770,53 +671,29 @@
       "borderRadius": 7
     },
     "src/styles/pages/home/book-detail-artifacts.css": {
-      "fontSize": 9,
-      "borderRadius": 8
-    },
-    "src/styles/pages/home/book-detail-processing/assembly-line-labels.css": {
-      "fontSize": 6,
+      "fontSize": 5,
       "borderRadius": 6
     },
+    "src/styles/pages/home/book-detail-processing/assembly-line-labels.css": {
+      "borderRadius": 1
+    },
     "src/styles/pages/home/book-detail-processing/coverage.css": {
-      "fontSize": 1,
       "borderRadius": 2
     },
     "src/styles/pages/home/book-detail-processing/editorial-flow.css": {
-      "fontSize": 7,
-      "borderRadius": 5
-    },
-    "src/styles/pages/home/book-detail-processing/failure-card.css": {
-      "fontSize": 7,
-      "borderRadius": 3
+      "borderRadius": 1
     },
     "src/styles/pages/home/book-detail-processing/job-history.css": {
-      "fontSize": 7,
-      "borderRadius": 4
-    },
-    "src/styles/pages/home/book-detail-processing/job-status-card.css": {
-      "fontSize": 10,
-      "borderRadius": 5
-    },
-    "src/styles/pages/home/book-detail-processing/layout.css": {
-      "fontSize": 2
-    },
-    "src/styles/pages/home/book-detail-processing/live-translation-entry.css": {
-      "fontSize": 2,
       "borderRadius": 2
     },
-    "src/styles/pages/home/book-detail-processing/ocr-range.css": {
-      "fontSize": 1
+    "src/styles/pages/home/book-detail-processing/job-status-card.css": {
+      "fontSize": 1,
+      "borderRadius": 1
     },
-    "src/styles/pages/home/book-detail-processing/pipeline-rail.css": {
-      "fontSize": 4,
-      "borderRadius": 4
+    "src/styles/pages/home/book-detail-processing/live-translation-entry.css": {
+      "borderRadius": 2
     },
     "src/styles/pages/home/book-detail-processing/processing-card.css": {
-      "fontSize": 9,
-      "borderRadius": 5
-    },
-    "src/styles/pages/home/book-detail-processing/translation-controls.css": {
-      "fontSize": 3,
       "borderRadius": 1
     },
     "src/styles/pages/home/collections.utilities.css": {
@@ -839,8 +716,7 @@
       "borderRadius": 1
     },
     "src/styles/pages/home/library-search-island.css": {
-      "fontSize": 10,
-      "borderRadius": 6
+      "borderRadius": 4
     },
     "src/styles/pages/home/settings-dialogs.css": {
       "fontSize": 10,
@@ -900,7 +776,6 @@
     "detail_rerun_btn",
     "detail_trigger_btn",
     "developer_btn",
-    "favorites_retry_btn",
     "file_selector_button",
     "glossary_btn",
     "home_action_btn",
@@ -926,7 +801,6 @@
     "reader_react_hud_page_btn",
     "reader_react_shortcuts_btn",
     "reader_sel_pop_btn",
-    "recent_job_hover_btn",
     "status_action_btn",
     "status_button",
     "status_footer_btn",

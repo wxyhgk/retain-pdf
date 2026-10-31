@@ -71,7 +71,7 @@
   &::-webkit-scrollbar-thumb {
     background: color-mix(in srgb, var(--ink) 18%, transparent);
     border: 3px solid transparent;
-    border-radius: 999px;
+    border-radius: var(--ui-radius-pill);
     background-clip: padding-box;
   }
 

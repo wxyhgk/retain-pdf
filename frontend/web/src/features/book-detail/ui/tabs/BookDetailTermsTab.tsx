@@ -1,6 +1,7 @@
 // Tab「术语」：这本书翻译时用的术语表、术语冲突、风格规则和领域判断。只读；改术语表、导出成用户术语表
 // 等后端接口好了再加。数据全部来自通用取数接口（第一次点开这个页签才读）。
 import { useEffect, useState } from "react";
+import { Input, SegmentedControl } from "@retainpdf/ui";
 
 import { fetchJobData } from "@/platform/api/index.js";
 import type { JobDataView } from "@/platform/api/index.js";
@@ -105,23 +106,22 @@ export function BookDetailTermsTab({ jobId, load = defaultLoad }: { jobId: strin
           <h3>术语表</h3>
           <span className="book-detail-terms-sub">{counts.all} 个 · 冲突 {data.conflicts.length} 处</span>
         </div>
-        <div className="book-detail-terms-filters" role="tablist" aria-label="按处理方式">
-          {FILTERS.map((key) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={treatment === key}
-              className={`book-detail-terms-chip${treatment === key ? " is-active" : ""}`}
-              data-terms-filter={key}
-              onClick={() => setTreatment(key)}
-            >
-              {key === "all" ? "全部" : TREATMENT_LABELS[key]} {counts[key]}
-            </button>
-          ))}
-        </div>
-        <input
+        <SegmentedControl<TreatmentFilter>
+          size="sm"
+          label="按处理方式"
+          columns={3}
+          className="book-detail-terms-filters"
+          value={treatment}
+          onChange={setTreatment}
+          options={FILTERS.map((key) => ({
+            value: key,
+            label: `${key === "all" ? "全部" : TREATMENT_LABELS[key]} ${counts[key]}`,
+            props: { "data-terms-filter": key },
+          }))}
+        />
+        <Input
           type="search"
+          size="sm"
           className="book-detail-terms-search"
           placeholder="搜原文或译文"
           aria-label="搜索术语"

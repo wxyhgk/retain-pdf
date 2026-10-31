@@ -27,7 +27,7 @@
   gap: 8px 12px;
 
   & strong {
-    font-size: 14px;
+    font-size: var(--ui-text-base);
     color: var(--ink);
   }
 }
@@ -35,36 +35,7 @@
 @utility lib-search-status {
   flex: 1 1 auto;
   color: var(--muted);
-  font-size: 12px;
-}
-
-@utility lib-search-filters {
-  display: inline-flex;
-  gap: 4px;
-
-  & button {
-    min-height: 26px;
-    padding: 0 10px;
-    border: 1px solid transparent;
-    border-radius: 999px;
-    background: transparent;
-    box-shadow: none;
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 600;
-  }
-
-  & button.is-active {
-    background: var(--ink);
-    color: var(--paper);
-  }
-}
-
-@utility is-active {
-  .lib-search-filters &button {
-    background: var(--ink);
-    color: var(--paper);
-  }
+  font-size: var(--ui-text-sm);
 }
 
 @utility lib-search-section {
@@ -73,7 +44,7 @@
 
   & h4 {
     margin: 0;
-    font-size: 12px;
+    font-size: var(--ui-text-sm);
     font-weight: 700;
     color: var(--muted);
     letter-spacing: 0.02em;
@@ -108,7 +79,7 @@
 
 @utility lib-search-snippet {
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--ui-text-sm);
   line-height: 1.55;
   color: var(--muted);
   word-break: break-word;
@@ -124,7 +95,7 @@
 
 @utility lib-search-hit-meta {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 @utility lib-search-doc {
@@ -152,7 +123,7 @@
 }
 
 @utility lib-search-doc-title {
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -161,7 +132,7 @@
 
 @utility lib-search-doc-meta {
   color: var(--muted);
-  font-size: 11.5px;
+  font-size: var(--ui-text-xs);
 }
 
 @utility lib-search-doc-status {
@@ -169,11 +140,11 @@
   min-height: 28px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--bg);
   box-shadow: none;
   color: var(--ink);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 600;
 
   &.is-reading {
@@ -208,7 +179,7 @@
 @utility lib-search-empty {
   margin: 0;
   color: var(--muted);
-  font-size: 12.5px;
+  font-size: var(--ui-text-sm);
 }
 
 @layer components {

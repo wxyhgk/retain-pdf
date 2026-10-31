@@ -41,7 +41,21 @@
   border-radius: var(--btn-radius);
 }
 
+/* 排成网格时（columns）：外框换成中等圆角，不然两行的胶囊是一团。 */
+.ui-segmented[data-layout="grid"] {
+  display: grid;
+  border-radius: var(--ui-radius-md);
+}
+
+.ui-segmented[data-layout="grid"] .ui-segmented-option {
+  border-radius: var(--ui-radius-sm);
+}
+
 .ui-segmented-option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   min-height: 28px;
   padding: 0 14px;
   border: 0;
@@ -55,10 +69,17 @@
   cursor: pointer;
 }
 
+/* sm 连外框一共 28px，和 Button 的 sm 一样高。 */
 .ui-segmented[data-size="sm"] .ui-segmented-option {
-  min-height: 24px;
+  min-height: 22px;
   padding: 0 10px;
   font-size: var(--ui-text-sm);
+}
+
+.ui-segmented-option svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .ui-segmented-option:hover:not(:disabled):not([aria-checked="true"]) {

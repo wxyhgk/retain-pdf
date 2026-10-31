@@ -1,7 +1,7 @@
 /* 书架主体：滚动区、摘要、卡片网格、「加载更多」。（RecentJobsLibrary / RecentJobsLibraryGrid）
  *
  * @owns library-scroll-body, library-summary, library-grid, recent-jobs
- * @uses load-more-jobs-btn */
+ * 「加载更多」是 @retainpdf/ui 的 Button（secondary）。 */
 
 @utility library-scroll-body {
   height: 100%;
@@ -54,24 +54,3 @@
   }
 }
 
-@utility recent-jobs-more-row {
-  & #load-more-jobs-btn {
-    @apply rounded-full border border-[var(--line)] bg-[var(--paper)] text-[13px] font-semibold leading-none text-[var(--ink)] shadow-none;
-    appearance: auto;
-    min-height: 38px;
-    padding: 0 16px;
-    filter: none;
-  }
-
-  & #load-more-jobs-btn:hover {
-    border-color: var(--ink);
-    background: var(--bg);
-    color: var(--ink);
-    filter: none;
-  }
-
-  & #load-more-jobs-btn:focus-visible {
-    outline: 2px solid color-mix(in srgb, var(--accent) 40%, transparent);
-    outline-offset: 3px;
-  }
-}

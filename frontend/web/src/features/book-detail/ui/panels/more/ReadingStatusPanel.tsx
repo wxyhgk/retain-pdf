@@ -1,6 +1,6 @@
 // 概览信息区「阅读状态」一行：未读 / 在读 / 读完。标签文字由概览的行标题提供。
 
-import { cn } from "@/ui/lib/utils";
+import { SegmentedControl } from "@retainpdf/ui";
 import type { DocumentReadingStatus } from "@/platform/api/index.js";
 
 export const READING_STATUSES: ReadonlyArray<{ value: DocumentReadingStatus; label: string }> = [
@@ -8,6 +8,8 @@ export const READING_STATUSES: ReadonlyArray<{ value: DocumentReadingStatus; lab
   { value: "reading", label: "在读" },
   { value: "done", label: "读完" },
 ];
+
+const READING_OPTIONS = READING_STATUSES.map((s) => ({ ...s, props: { "data-reading-status": s.value } }));
 
 type ReadingStatusPanelProps = {
   value: string;
@@ -18,25 +20,14 @@ type ReadingStatusPanelProps = {
 export function ReadingStatusPanel({ value, busy, onChange }: ReadingStatusPanelProps) {
   return (
     <div className="book-detail-reading-status-panel">
-      <div className="inline-flex overflow-hidden rounded-md border border-border" role="group" aria-label="阅读状态">
-        {READING_STATUSES.map((s) => (
-          <button
-            key={s.value}
-            type="button"
-            aria-pressed={value === s.value}
-            disabled={busy === "reading"}
-            onClick={() => onChange(s.value)}
-            className={cn(
-              "book-detail-reading-btn border-r border-border px-3 py-1 text-xs last:border-r-0 disabled:opacity-60",
-              value === s.value
-                ? "is-active bg-primary text-primary-foreground"
-                : "bg-paper text-muted-foreground hover:bg-accent",
-            )}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        size="sm"
+        label="阅读状态"
+        value={value as DocumentReadingStatus}
+        options={READING_OPTIONS}
+        disabled={busy === "reading"}
+        onChange={onChange}
+      />
     </div>
   );
 }

@@ -36,6 +36,8 @@ export type SegmentedControlProps<T extends string> = {
   /** 给读屏的组名。 */
   label: string;
   size?: "sm" | "md";
+  /** 给了就排成这么多列的网格（选项多、一行放不下时用），不给就是一条。 */
+  columns?: number;
   disabled?: boolean;
   className?: string;
 };
@@ -46,6 +48,7 @@ export function SegmentedControl<T extends string>({
   onChange,
   label,
   size = "md",
+  columns,
   disabled = false,
   className,
 }: SegmentedControlProps<T>) {
@@ -64,7 +67,15 @@ export function SegmentedControl<T extends string>({
   }
 
   return (
-    <div ref={group} className={cn("ui-segmented", className)} role="radiogroup" aria-label={label} data-size={size}>
+    <div
+      ref={group}
+      className={cn("ui-segmented", className)}
+      role="radiogroup"
+      aria-label={label}
+      data-size={size}
+      data-layout={columns ? "grid" : undefined}
+      style={columns ? { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` } : undefined}
+    >
       {options.map((option) => {
         const checked = option.value === value;
         return (
