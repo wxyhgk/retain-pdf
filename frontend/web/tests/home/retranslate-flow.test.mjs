@@ -96,8 +96,9 @@ test("详情翻译提交接进度:静默 attach + 状态区占位,不弹上传�
   // 用到的那几个域（TranslateProgress 要 library.actions / statusCard.store /
   // statusDetail.controller），其余域缺席即可——没被调用的 hook 不会取上下文。
   const { withHomeProviders } = await import("../helpers/home-providers.mjs");
-  const { BookTranslationWorkflowPanel } = await import(
-    "../../src/features/book-detail/ui/panels/translate/WorkflowPanel.jsx"
+  // 进度页改版后，任务进度（#book-detail-status-section）挂在状态行的按钮组里。
+  const { ProcessingHeadTools } = await import(
+    "../../src/features/book-detail/ui/panels/processing/ProcessingHeadTools.jsx"
   );
 
   const fakeServices = {
@@ -108,6 +109,18 @@ test("详情翻译提交接进度:静默 attach + 状态区占位,不弹上传�
     statusDetail: { controller: { openStatusDetailDialog: () => {} } },
   };
   const noop = () => {};
+  const toolsProps = (translation) => ({
+    ocr: { job: null, pending: false, cancelling: false, error: "", rangeOn: false, pageSpec: "", onRangeOnChange: noop, onPageSpecChange: noop, onOcr: noop, onCancel: noop },
+    translation,
+    bootstrapping: false,
+    stationMode: false,
+    ocrActive: false,
+    ocrCancelable: false,
+    ocrJobId: "",
+    translationStopped: false,
+    translationCancelled: false,
+    primary: null,
+  });
   const baseProps = {
     item: {},
     status: { label: "未翻译", tone: "muted" },
@@ -131,7 +144,7 @@ test("详情翻译提交接进度:静默 attach + 状态区占位,不弹上传�
   const host = dom.window.document.createElement("div");
   dom.window.document.body.appendChild(host);
   const root = createRoot(host);
-  root.render(await withHomeProviders(React, fakeServices, React.createElement(BookTranslationWorkflowPanel, baseProps)));
+  root.render(await withHomeProviders(React, fakeServices, React.createElement(ProcessingHeadTools, toolsProps(baseProps))));
   await waitFor(
     () => dom.window.document.getElementById("book-detail-status-section"),
     "提交中详情状态区占位",
@@ -151,7 +164,7 @@ test("详情翻译提交接进度:静默 attach + 状态区占位,不弹上传�
   idleRoot.render(await withHomeProviders(
     React,
     fakeServices,
-    React.createElement(BookTranslationWorkflowPanel, { ...baseProps, busy: "" }),
+    React.createElement(ProcessingHeadTools, toolsProps({ ...baseProps, busy: "" })),
   ));
   await wait(50);
   assert.equal(

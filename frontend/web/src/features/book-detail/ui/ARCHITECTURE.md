@@ -68,7 +68,10 @@ GET  /api/v1/documents/:document_id/jobs
 - `useBookDetailOcr`：只管理 OCR 页码、提交状态和错误。
 - `useDocumentJobs`：首次读取文档任务历史，打开期间每 2 秒对账 document-scoped 列表，
   并订阅共享 `currentJobStore` 获取当前任务的即时状态。
-- `ProcessingSummary`：「进度」页顶部摘要（状态、真实数字、没翻全的提醒），纯展示。
+- 「进度」页四层：状态行 `ProcessingHeader`（标题、带图标的小字、进度条）+ 右边的按钮 `ProcessingHeadTools`
+  （这一页的按钮只在这里和流水线各站的 ↻ 上：实时译文 / 详情 / 取消、从断点继续、翻译整本 / 只做 OCR / 指定页码）；
+  流水线 `ProcessingPipelineRail`；细节区 `ProcessingDetails`（错误 `JobFailureCard`、编辑部、活动 `ProcessingActivity`）；
+  结果操作行。停下的翻译任务的主按钮在 `stopped-translation.tsx` 按续跑计划定。
 
 OCR/翻译提交响应必须立即 `upsert` 到 optimistic map，避免首次文档任务查询尚未看到
 新任务时丢失状态；服务端列表出现同一 `job_id` 后立即删除临时项。最新任务严格按

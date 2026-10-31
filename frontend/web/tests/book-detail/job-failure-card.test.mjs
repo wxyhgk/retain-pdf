@@ -115,18 +115,23 @@ test("卡片把根因和建议都画出来了", () => {
   assert.match(body.textContent, /MinerU batch task failed/, "没画后端给的根因");
 });
 
-test("没给主动作就不画主按钮 —— 点了没反应的按钮比没有更糟", () => {
-  const without = render({ failure: mineru, jobId: "job-1" });
-  assert.equal(without.querySelector("#book-detail-retry-failed-btn"), null);
-  const withPrimary = render({
-    failure: mineru,
-    jobId: "job-1",
-    primary: { label: "从渲染继续", hint: "沿用已有译文，只重新排版。", onClick() {} },
-  });
-  const button = withPrimary.querySelector("#book-detail-retry-failed-btn");
-  assert.ok(button, "给了主动作却没有按钮");
-  assert.match(button.textContent, /从渲染继续/, "按钮要说清从哪一步开始，不是笼统的「重试」");
-  assert.match(withPrimary.textContent, /沿用已有译文/, "按钮下面要说沿用什么、花不花钱");
+test("主按钮在状态行上，这一块只说它沿用什么、花不花钱；重试有没有用画成小标签", () => {
+  const body = render({ failure: mineru, jobId: "job-1", hint: "沿用已有译文，只重新排版。" });
+  assert.equal(body.querySelector("#book-detail-retry-failed-btn"), null, "主按钮挪到状态行了，这里不该再有一个");
+  assert.match(body.querySelector("[data-failure-hint]")?.textContent || "", /沿用已有译文/, "要说沿用什么、花不花钱");
+  assert.equal(body.querySelector("[data-failure-chip='retry']")?.dataset.retryHelps, "true");
+  assert.match(body.querySelector("[data-failure-chip='source']")?.textContent || "", /OCR · mineru/);
+});
+
+test("重试解决不了的失败：小标签变成「重试解决不了」，并写出该做什么", () => {
+  const body = render({ failure: { ...mineru, category: "auth", retryable: false }, jobId: "job-1" });
+  assert.equal(body.querySelector("[data-failure-chip='retry']")?.dataset.retryHelps, "false");
+  assert.match(body.textContent, /重试解决不了/);
+});
+
+test("两段都失败时，不在状态行上的那段带自己的按钮", () => {
+  const body = render({ failure: mineru, jobId: "job-1", action: createElement("button", { id: "own" }, "重新 OCR") });
+  assert.ok(body.querySelector(".book-detail-failure-tools #own"));
 });
 
 test("没有主动作时显示原因；主动作提交失败的原因就地显示", () => {
@@ -136,11 +141,11 @@ test("没有主动作时显示原因；主动作提交失败的原因就地显�
   assert.match(body.querySelector('[role="alert"]')?.textContent || "", /网络断了/);
 });
 
-test("没给 loadDetail 就不画「展开完整错误」", () => {
+test("没给 loadDetail 就不画「完整错误」", () => {
   const body = render({ failure: mineru, jobId: "job-1" });
-  assert.doesNotMatch(body.textContent, /展开完整错误/);
+  assert.doesNotMatch(body.textContent, /完整错误/);
   const withLoad = render({ failure: mineru, jobId: "job-1", loadDetail: async () => "x" });
-  assert.match(withLoad.textContent, /展开完整错误/);
+  assert.match(withLoad.textContent, /完整错误/);
 });
 
 test("卡片不把后端那句无信息量的 summary 摆给用户", () => {
@@ -158,5 +163,5 @@ test("卡片不把后端那句无信息量的 summary 摆给用户", () => {
 test("复制按钮永远在 —— 它不依赖任何回调", () => {
   // 排查信息是用户唯一能带走的东西，不该因为缺哪个 prop 就消失。
   const body = render({ failure: mineru });
-  assert.match(body.textContent, /复制诊断信息/);
+  assert.ok(body.querySelector('button[aria-label="复制诊断信息"]'), "复制是一个图标按钮，读屏名字是「复制诊断信息」");
 });

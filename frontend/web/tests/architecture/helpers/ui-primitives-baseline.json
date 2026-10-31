@@ -140,9 +140,6 @@
     "src/features/book-detail/ui/panels/overview/QualityPanel.tsx": {
       "button": 2
     },
-    "src/features/book-detail/ui/panels/translate/TranslateProgress.tsx": {
-      "button": 1
-    },
     "src/features/book-detail/ui/tabs/BookDetailOverviewTab.tsx": {
       "button": 1
     },
@@ -265,7 +262,7 @@
       "button": 1
     },
     "src/features/jobs/ui/StatusCardEmbedded.tsx": {
-      "button": 3
+      "button": 1
     },
     "src/features/library/ui/island/library-search-app.tsx": {
       "button": 3
@@ -684,13 +681,6 @@
       "borderRadius": 1
     },
     "src/styles/pages/home/book-detail-processing/job-history.css": {
-      "borderRadius": 2
-    },
-    "src/styles/pages/home/book-detail-processing/job-status-card.css": {
-      "fontSize": 1,
-      "borderRadius": 1
-    },
-    "src/styles/pages/home/book-detail-processing/live-translation-entry.css": {
       "borderRadius": 2
     },
     "src/styles/pages/home/book-detail-processing/processing-card.css": {
