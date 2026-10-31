@@ -6,6 +6,7 @@ from retainpdf_translation.core.item_reader import item_block_class
 from retainpdf_translation.core.item_reader import item_block_kind
 from retainpdf_translation.core.item_reader import item_source_text
 
+from .formula_gaps import formulas_between
 from .common import (
     effective_translation_unit_id,
     GROUP_ITEM_PREFIX,
@@ -106,6 +107,7 @@ def _reset_group_item_to_single(item: dict, *, reason: str) -> None:
     item["group_protected_source_text"] = ""
     item["group_formula_map"] = []
     item["group_protected_map"] = []
+    item["translation_unit_formula_before"] = ""
     item["group_split_reason"] = reason
 
 
@@ -132,19 +134,24 @@ def _drop_duplicated_word_tail(prev: str, nxt: str) -> tuple[str, str]:
     return prev[: word.end(1)], nxt[fragment.end(1) :].lstrip()
 
 
-def join_member_sources(chunks: list[str]) -> str:
+def join_member_sources(chunks: list[str], formulas_before: list[str] | None = None) -> str:
     """把一组成员的原文拼成一段话：断词处修好再拼。
 
     - 前一块以连字符收尾（"SF-EOM-" / "calcula-"）：直接接上，不加空格。
     - 后一块开头是前一块最后一个词的后半截：删掉残片和 OCR 多补的句号。
+    - 两块之间夹着独立公式（`formulas_before`，见 `formula_gaps`）：公式原文放在两块中间，各占一行。
     """
     joined = ""
-    for chunk in chunks:
+    for index, chunk in enumerate(chunks):
         chunk = chunk.strip()
+        formula = (formulas_before[index] if formulas_before and index < len(formulas_before) else "").strip()
         if not chunk:
             continue
         if not joined:
             joined = chunk
+            continue
+        if formula:
+            joined = f"{joined}\n{formula}\n{chunk}"
             continue
         joined, chunk = _drop_duplicated_word_tail(joined, chunk)
         if not chunk:
@@ -180,7 +187,7 @@ def _is_heavy_group(combined_source: str, items: list[dict]) -> tuple[bool, str]
     return False, ""
 
 
-def _build_group_translation_unit(unit_id: str, items: list[dict]) -> dict | None:
+def _build_group_translation_unit(unit_id: str, items: list[dict], formulas_before: list[str] | None = None) -> dict | None:
     formula_map: list[dict] = []
     protected_map: list[dict] = []
     protected_chunks: list[str] = []
@@ -235,7 +242,8 @@ def _build_group_translation_unit(unit_id: str, items: list[dict]) -> dict | Non
         protected_map.extend(remapped_tokens)
         protected_chunks.append(remapped_source.strip())
 
-    combined_source = join_member_sources(protected_chunks)
+    formulas_before = formulas_before or [""] * len(items)
+    combined_source = join_member_sources(protected_chunks, formulas_before)
     if not combined_source:
         for item in items:
             _reset_group_item_to_single(item, reason="empty_continuation_group")
@@ -247,7 +255,8 @@ def _build_group_translation_unit(unit_id: str, items: list[dict]) -> dict | Non
         return None
 
     member_ids = [member.get("item_id", "") for member in items]
-    for item in items:
+    for item, formula in zip(items, formulas_before):
+        item["translation_unit_formula_before"] = formula
         seed_group_translation_unit(
             item,
             unit_id=unit_id,
@@ -266,8 +275,9 @@ def _build_group_translation_unit(unit_id: str, items: list[dict]) -> dict | Non
             {
                 "item_id": str(member_id or ""),
                 "protected_source_text": protected_chunk,
+                **({"formula_before": formula} if formula else {}),
             }
-            for member_id, protected_chunk in zip(member_ids, protected_chunks)
+            for member_id, protected_chunk, formula in zip(member_ids, protected_chunks, formulas_before)
         ],
         "block_type": item_block_kind(first_item) or "text",
         "block_kind": str(first_item.get("block_kind", "") or item_block_kind(first_item) or "text"),
@@ -337,6 +347,13 @@ def _group_translation_complete(items: list[dict]) -> bool:
     return all(bool(_member_translation_text(item)) for item in items)
 
 
+def _unit_formulas_before(payload: list[dict], items: list[dict]) -> list[str]:
+    """公式直写时，组里两块之间夹着的独立公式（`formula_gaps`）；占位符模式不放。"""
+    if not any(str(item.get("math_mode", "") or "").strip() == "direct_typst" for item in items):
+        return [""] * len(items)
+    return formulas_between(payload, items)
+
+
 def pending_translation_items(payload: list[dict]) -> list[dict]:
     refresh_payload_translation_units(payload)
     units: list[dict] = []
@@ -358,7 +375,7 @@ def pending_translation_items(payload: list[dict]) -> list[dict]:
             continue
         if _group_translation_complete(items):
             continue
-        unit = _build_group_translation_unit(unit_id, items)
+        unit = _build_group_translation_unit(unit_id, items, _unit_formulas_before(payload, items))
         if unit is None:
             for item in items:
                 if not has_item_translation(item):

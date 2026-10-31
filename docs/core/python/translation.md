@@ -186,10 +186,16 @@ load document.v1
 
 1. **拼原文**：成员原文按阅读顺序拼成一段（`core/payload/parts/units.py::join_member_sources`）。
    栏尾连字符直接接上；OCR 把前一块末尾的半个词补全、后一块开头仍留着后半截时（"calculations." + "tions in…"），删掉残片和多补的句号。
+   两块之间夹着独立公式块（教材里"…的 x 分量为 [公式] 其余分量类似…"）时，公式原文 `$$ … $$` 单独一行放在两块中间
+   （`core/payload/parts/formula_gaps.py`，只在 direct_typst 下；成员上记 `translation_unit_formula_before`）。
+   请求里原文有 `$$` 时多一句提示：原样留在原位，不改写、不挪动、不改成行内公式。
 2. **翻译**：模型只翻这一整段，不知道、也不负责框的分界。
-3. **切回各框**：`core/payload/parts/group_split.py::split_group_protected_translation` 按各成员原文的长度比例找切点，
-   优先切在句末、分句标点之后，下一块不以标点开头。公式（`$…$`、`<f1-abc/>`、`[[FORMULA_n]]`）不可拆；
-   direct_typst 下 `$` 不成对时整段放进第一个框，不切。
+3. **切回各框**：`core/payload/parts/group_split.py::split_group_protected_translation` 先在夹着的公式处切开、公式删掉
+   （它在版面上是单独一块；按内容认，空白不算，内容改过但独立公式个数对得上也认；认不出就删掉独立公式按比例切），
+   公式后面那段开头的标点删掉。其余按各成员原文的长度比例找切点，
+   优先切在句末、分句标点之后，下一块不以标点开头；句末标点后面紧跟的引用角标（`。$^{55}$`）跟着前一句。
+   公式（`$…$`、`$$…$$`、`<f1-abc/>`、`[[FORMULA_n]]`）不可拆；原文各块没有 `$$`、译文却写成独立公式的改回行内 `$…$`；
+   direct_typst 下 `$` 不成对时整段放进第一个框，不切。agent 引擎一样（`translation-agent` 的 `units.py`、`breaks.py`）。
 
 不要让模型按原来的分界逐框返回译文：英文在句中断栏，中文语序对不上（目的状语前置、复合词被切开），
 模型会把跨分界的半句挪进前一块翻完，再把后一块原样交回英文，而整段检查看不出来。

@@ -43,7 +43,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 BREAK = "[[BREAK]]"
 BREAK_RE = re.compile(r"\s*\[\[BREAK\]\]\s*")
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-15"
+PROMPT_VERSION = "translation-agent-16"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -66,6 +66,8 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
 4. 数字、章节编号（如 2.1）、代码和代码里的变量名、URL、DOI 原样保留。
 5. 被分栏或分页拆开的同一段话已经合成一条记录（有 members 字段），text 是接起来的整段原文。当成一段话翻通顺，
    用这条记录的 id 交回一整段译文；不要按 members 分开交，也不用管原来在哪里断开——分回各块由程序做。
+   text 里单独成行的 `$$ … $$` 是这段话中间的独立公式（版面上单独排）：译文里在对应位置原样保留，不要改写、挪动、删掉，
+   也不要改成行内公式；公式前后的文字照原文顺序译。
 6. 按类别把握语气：标题简洁；图注、表题保留"图 1""表 1"这样的编号；目录条目只翻标题，编号和页码不动；
    列表项保留 (1) 这类序号；脚注开头的编号原样保留（原文 "11 On the …" 就写 "11 关于……"，不要写成"注1"）；作者、机构一般不在要翻的块里。有 translation 字段的块是已经定好的译文（标题、目录），只作参考，不要交回。
 7. 术语前后一致。专名：context 的 names 给了中文译名的照用（first_use=true 时写"中文译名（原文）"），keep 里的原样保留；

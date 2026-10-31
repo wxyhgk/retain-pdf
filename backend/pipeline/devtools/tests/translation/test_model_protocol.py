@@ -74,6 +74,8 @@ def test_anthropic_protocol_uses_messages_api():
 
 
 # claude-opus-5-5 原话（真实请求拿到的）：思考深度为「默认 / 关闭」时会带 temperature，被拒 400。
+# 文档写明不收 temperature 的模型（opus-5-5 也在内）现在一开始就不带；"挨一次 400 再记住"用一个没登记的模型名测。
+LEARNING_MODEL = "claude-next-unlisted"
 ANTHROPIC_TEMPERATURE_REJECTED = (
     '{"type":"error","error":{"type":"invalid_request_error",'
     '"message":"`temperature` is deprecated for this model."}}'
@@ -85,7 +87,7 @@ def _anthropic_call(responses, *, thinking="auto", base_url="https://api.anthrop
         responses,
         messages=[{"role": "user", "content": "Translate A"}],
         api_key="k",
-        model="claude-opus-5-5",
+        model=LEARNING_MODEL,
         base_url=base_url,
         protocol="anthropic",
         thinking=thinking,
@@ -112,7 +114,7 @@ def test_a_400_that_merely_mentions_temperature_is_not_a_rejection():
     other = _response(400, text='{"error":{"message":"max_tokens too large; allowed: temperature, top_p, max_tokens"}}')
     with pytest.raises(requests.HTTPError):
         _anthropic_call([other], thinking="off")
-    assert not model_wire.temperature_rejected(base_url="https://api.anthropic.com/v1", model="claude-opus-5-5")
+    assert not model_wire.temperature_rejected(base_url="https://api.anthropic.com/v1", model=LEARNING_MODEL)
 
 
 def test_temperature_is_remembered_only_after_the_retry_succeeds():
@@ -120,7 +122,7 @@ def test_temperature_is_remembered_only_after_the_retry_succeeds():
     still_bad = _response(400, text='{"error":{"message":"messages: at least one message is required"}}')
     with pytest.raises(requests.HTTPError):
         _anthropic_call([rejected, still_bad], thinking="off")
-    assert not model_wire.temperature_rejected(base_url="https://api.anthropic.com/v1", model="claude-opus-5-5")
+    assert not model_wire.temperature_rejected(base_url="https://api.anthropic.com/v1", model=LEARNING_MODEL)
 
 
 def test_temperature_memo_is_per_model():
@@ -135,6 +137,22 @@ def test_temperature_memo_is_per_model():
         thinking="off",
     )
     assert session.post.call_args.kwargs["json"]["temperature"] == 0.2
+
+
+@pytest.mark.parametrize("model", ["claude-haiku-5-5", "claude-opus-5-5", "claude-opus-5", "claude-fable-5-1", "claude-opus-4-7"])
+def test_documented_no_temperature_models_never_get_it_even_on_the_first_request(model):
+    # 2026-10-30：一本书开头几路请求同时发，每个任务都有 4—9 个请求先挨 400 再重发
+    _, session = _call(
+        [_response(payload=ANTHROPIC_OK)],
+        messages=[{"role": "user", "content": "Translate A"}],
+        api_key="k",
+        model=model,
+        base_url="https://api.anthropic.com/v1",
+        protocol="anthropic",
+        thinking="off",
+    )
+    assert session.post.call_count == 1
+    assert "temperature" not in session.post.call_args.kwargs["json"]
 
 
 @pytest.mark.parametrize("thinking", ["low", "high"])

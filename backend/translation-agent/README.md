@@ -40,6 +40,8 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
 - `units.py`：接续组（分栏、分页拆开的同一段）当一块翻：`merge_groups` 把各块合成一块（原文接成一整段、id 用组号），校验、重翻、审校、
   退回原文都按整段算，`split_units` 交回前才切回各块，切开以后不再逐块查；一组要么整段是译文，要么整段退回原文。
 - `breaks.py`：接续组译文按原文各块的正文长度比例，在附近的中文标点处切回各块；不切开公式、脚注标记、行内代码。
+  两块之间夹着独立公式的（`BlockInput.formula_before`，调用方填），合组时公式原文 `$$ … $$` 单独一行放在中间，
+  切回时先在这个公式处切开、公式删掉（`split_at_formulas`），再按比例切。
 - 重翻后还不合格的块状态是 `fallback_source`：不交没过校验的译文，显示原文、待人看。每块 `meta` 记模型、提示词版本、
   角色、术语表版本、`used_terms`、上下文包哈希。`TranslationAgent(models={"reviser": ...})` 按角色另指定模型。
 
