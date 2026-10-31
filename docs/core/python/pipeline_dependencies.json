@@ -696,6 +696,7 @@
         "retainpdf_pipeline/foundation/config/__init__.py",
         "retainpdf_pipeline/foundation/shared/config.py",
         "retainpdf_pipeline/foundation/shared/job_dirs.py",
+        "retainpdf_pipeline/foundation/shared/ocr_stream.py",
         "retainpdf_pipeline/ocr/document_schema/normalize_pipeline.py",
         "retainpdf_pipeline/ocr/llm_config.py",
         "retainpdf_pipeline/ocr/mineru_provider/artifacts.py",
