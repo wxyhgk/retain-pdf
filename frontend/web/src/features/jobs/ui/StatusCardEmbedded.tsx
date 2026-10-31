@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { StageFlow } from "./StageFlow.jsx";
 import { LoaderCircle, Square } from "lucide-react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import { buildProgressRenderModel, type ProgressRenderModelInput } from "../domain/progress-model.js";
 import { StatusCardIdsContext } from "./status-card-ids-context.js";
 import {

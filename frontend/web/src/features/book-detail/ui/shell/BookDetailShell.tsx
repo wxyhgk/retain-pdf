@@ -19,7 +19,7 @@ import {
   DialogContent,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
+} from "@retainpdf/ui";
 
 type BookDetailShellProps = {
   open: boolean;

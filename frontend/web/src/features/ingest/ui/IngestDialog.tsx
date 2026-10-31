@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
+} from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import {
   useHomeBridge,

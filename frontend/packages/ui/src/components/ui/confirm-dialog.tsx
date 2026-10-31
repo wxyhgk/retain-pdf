@@ -3,7 +3,7 @@
 import { AlertTriangle, Info } from "lucide-react"
 import type { ReactNode } from "react"
 
-import { Button } from "@/ui/components/button.js"
+import { LegacyButton } from "./button.js"
 import {
   Dialog,
   DialogBody,
@@ -15,7 +15,7 @@ import {
   DialogTitle,
   type DialogLevel,
   type DialogSize,
-} from "@/ui/components/dialog.js"
+} from "./dialog.js"
 
 type ConfirmDialogProps = {
   cancelLabel?: string
@@ -66,15 +66,15 @@ function ConfirmDialog({
             <div className="app-confirm-description">{description}</div>
           </DialogBody>
           <DialogFooter>
-            <Button
+            <LegacyButton
               type="button"
               variant="outline"
               disabled={pending}
               onClick={() => onOpenChange(false)}
             >
               {cancelLabel}
-            </Button>
-            <Button
+            </LegacyButton>
+            <LegacyButton
               id={`${id}-confirm`}
               type="button"
               variant={tone === "danger" ? "destructive" : "default"}
@@ -82,7 +82,7 @@ function ConfirmDialog({
               onClick={onConfirm}
             >
               {pending ? "处理中…" : confirmLabel}
-            </Button>
+            </LegacyButton>
           </DialogFooter>
         </DialogShell>
       </DialogContent>

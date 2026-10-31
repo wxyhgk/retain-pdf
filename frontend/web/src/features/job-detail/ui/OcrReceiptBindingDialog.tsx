@@ -1,7 +1,7 @@
 import { Link2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Button } from "@/ui/components/button.js";
+import { LegacyButton } from "@retainpdf/ui";
 import {
   Dialog,
   DialogBody,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
+} from "@retainpdf/ui";
 import type { OcrAmbiguityView } from "@/platform/api/index.js";
 import type {
   OcrReceiptValues,
@@ -108,12 +108,12 @@ export function OcrReceiptBindingDialog({
             </div>
           </DialogBody>
           <DialogFooter>
-            <Button type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
+            <LegacyButton type="button" variant="outline" disabled={pending} onClick={() => onOpenChange(false)}>
               取消
-            </Button>
-            <Button id={`${id}-submit`} type="button" disabled={pending} onClick={submit}>
+            </LegacyButton>
+            <LegacyButton id={`${id}-submit`} type="button" disabled={pending} onClick={submit}>
               {pending ? "绑定中…" : "绑定并恢复"}
-            </Button>
+            </LegacyButton>
           </DialogFooter>
         </DialogShell>
       </DialogContent>

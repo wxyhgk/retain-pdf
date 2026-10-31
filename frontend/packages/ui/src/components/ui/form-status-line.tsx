@@ -4,7 +4,7 @@
 // 各域 base 类名不同（upload-status / credential-agent-runtime-message…），
 // 但 hidden/is-valid/is-error/is-pending 四态映射唯一，避免手拼分叉。
 
-import { cn } from "@/ui/lib/utils"
+import { cn } from "../../lib/utils.js"
 
 export type FormStatusTone = "valid" | "error" | "pending" | ""
 

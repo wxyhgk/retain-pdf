@@ -6,7 +6,7 @@
 
 import { RefreshCw } from "lucide-react";
 import { useState } from "react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import type { FailureRecoveryStage } from "../../domain/dialog/failure-recovery.js";
 import { STATUS_DETAIL_DIALOG_IDS } from "../../domain/status-detail-dom-ids.js";
 

@@ -223,14 +223,11 @@ test("shared dialog shell styles stay in dialog-shell css", () => {
 });
 
 test("application dialogs use the shared dialog component boundary", () => {
-  const sharedDialog = join(PROJECT_ROOT, "src/ui/components/dialog.tsx");
-  // 唯一允许直连 Radix Dialog 的文件。路径写错就等于把豁免发给了一个不存在的文件，
-  // 门禁会反过来把真正的共享组件判成违规——先断言它在，失败信息才指得准。
+  // 共享 dialog 在 @retainpdf/ui 包里（2026-10-31 从 src/ui/components 搬过去），应用里没有文件能直连 Radix Dialog。
+  // 先断言它在：路径写错，失败信息才指得准。
+  const sharedDialog = join(PROJECT_ROOT, "../packages/ui/src/components/ui/dialog.tsx");
   assert.ok(existsSync(sharedDialog), `共享 dialog 组件不存在，门禁已失效: ${relativeToProject(sharedDialog)}`);
-  const offenders = findMatchingSources(
-    walkFiles(join(PROJECT_ROOT, "src")).filter((filePath) => filePath !== sharedDialog),
-    RAW_RADIX_DIALOG_IMPORT_PATTERN,
-  );
+  const offenders = findMatchingSources(walkFiles(join(PROJECT_ROOT, "src")), RAW_RADIX_DIALOG_IMPORT_PATTERN);
 
   assert.deepEqual(offenders, []);
 });

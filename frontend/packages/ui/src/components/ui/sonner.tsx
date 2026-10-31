@@ -13,7 +13,7 @@ import { Toaster as Sonner } from "sonner";
 // 这里去掉这层间接,固定传 "light",行为等价且不引入多余依赖。
 const Toaster = ({
   ...props
-}: React.ComponentProps<typeof Sonner>) => {
+}) => {
   const theme = "light"
 
   return (

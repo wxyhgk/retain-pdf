@@ -1,0 +1,13 @@
+/* @retainpdf/ui 基础组件的样式入口：web 的每个页面入口（src/styles/entries/*.css）都引这一份。
+ *
+ * 刻度变量进 tokens 层，组件样式进 Tailwind 的 components 层：同一元素上的 Tailwind 工具类（排版）
+ * 能盖过它，功能自己的 CSS（不分层）也能盖过它。
+ */
+
+@import "./scale.css" layer(tokens);
+@import "./button.css" layer(components);
+@import "./field.css" layer(components);
+@import "./badge.css" layer(components);
+@import "./menu.css" layer(components);
+@import "./panel.css" layer(components);
+@import "./sheet.css" layer(components);

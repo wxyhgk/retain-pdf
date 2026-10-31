@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Bot, ChevronDown, ChevronUp } from "lucide-react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import { operationStatusLabel } from "../../domain/operations/operation-controller.js";
 import { AgentCandidatePreview } from "./AgentCandidatePreview.js";
 import { AgentOperationActions, type AgentOperationActionItem } from "./AgentOperationActions.js";

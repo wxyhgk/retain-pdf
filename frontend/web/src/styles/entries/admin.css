@@ -12,10 +12,12 @@
 @source "../../features/admin/**/*.{ts,tsx}";
 @source "../../features/auth/**/*.{ts,tsx}";
 @source "../../ui/**/*.{ts,tsx}";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
 @layer tokens, base, pages;
 
 @import "../tokens.css" layer(tokens);
+@import "@retainpdf/ui/primitives.css";
 @import "../shadcn-theme.css" layer(tokens);
 @import "../base.css" layer(base);
 

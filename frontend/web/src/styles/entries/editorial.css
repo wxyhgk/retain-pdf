@@ -10,10 +10,12 @@
 @source "../../../editorial.html";
 @source "../../app/editorial/**/*.{ts,tsx}";
 @source "../../features/editorial-room/**/*.{ts,tsx}";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
 @layer tokens, base, pages;
 
 @import "../tokens.css" layer(tokens);
+@import "@retainpdf/ui/primitives.css";
 @import "../shadcn-theme.css" layer(tokens);
 @import "../base.css" layer(base);
 

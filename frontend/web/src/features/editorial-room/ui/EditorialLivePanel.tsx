@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { History, Square } from "lucide-react";
 
-import { Button } from "@/ui/components/button.js";
+import { LegacyButton } from "@retainpdf/ui";
 
 import type { EditorialLive } from "../domain/live-feed.js";
 import { EditorialRoomReplay } from "./EditorialRoomReplay.jsx";
@@ -19,7 +19,7 @@ export function EditorialLivePanel({ live, active }: { live: EditorialLive | nul
       {showReplay ? <EditorialRoomReplay events={live.events} /> : <EditorialStage state={live.state} />}
       {canReplay ? (
         <div className="editorial-room-live-actions">
-          <Button
+          <LegacyButton
             type="button"
             variant="ghost"
             size="sm"
@@ -28,7 +28,7 @@ export function EditorialLivePanel({ live, active }: { live: EditorialLive | nul
           >
             {showReplay ? <Square aria-hidden="true" /> : <History aria-hidden="true" />}
             {showReplay ? "停止回放" : "回放这次翻译"}
-          </Button>
+          </LegacyButton>
         </div>
       ) : null}
     </section>

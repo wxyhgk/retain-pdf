@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 // 生命周期,forceMount 会让它在对话框从未打开时就永久生效,制造新的无障碍
 // 缺陷。术语表列表/编辑器的字段都受控于 glossariesStore(非本组件本地状态),
 // 对话框关闭时 Content 卸载不会丢数据——controller.js 的 open() 在重新打开时
@@ -19,8 +19,8 @@ import {
   DialogHeader,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
-import { FormStatusLine } from "@/ui/components/form-status-line.js";
+} from "@retainpdf/ui";
+import { FormStatusLine } from "@retainpdf/ui";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { GLOSSARY_DOM_IDS } from "./glossaries-dom-ids.js";
 import { useGlossariesController } from "./useGlossariesController.js";
@@ -29,7 +29,7 @@ import type { GlossariesDialogStorePort } from "../domain/glossaries-store.js";
 import { GlossaryList } from "./GlossaryList.jsx";
 import { GlossaryEditor } from "./GlossaryEditor.jsx";
 import { GlossaryImportPanel } from "./GlossaryImportPanel.jsx";
-import { Button } from "@/ui/Button.jsx";
+import { Button } from "@retainpdf/ui";
 
 
 /**

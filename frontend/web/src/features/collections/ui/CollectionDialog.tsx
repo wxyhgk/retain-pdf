@@ -11,7 +11,7 @@
 // 这里 bump 一次,CollectionsView 订阅到变化就重新拉取列表。
 
 import { useEffect, useState } from "react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import {
   Dialog,
   DialogBody,
@@ -20,8 +20,8 @@ import {
   DialogHeader,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
-import { Button } from "@/ui/Button.jsx";
+} from "@retainpdf/ui";
+import { Button } from "@retainpdf/ui";
 
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import type { DocumentRecord } from "@/platform/api/index.js";

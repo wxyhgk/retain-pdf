@@ -1,6 +1,6 @@
 import { Clock3, Copy, FileText, Link2, RefreshCw, Settings2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import {
   useHomeSettingsHub,
   useHomeStatusDetail,

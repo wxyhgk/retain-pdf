@@ -6,8 +6,8 @@ import {
   type AgentRuntimeMode,
 } from "@/platform/api/index.js";
 import { Bot, FlaskConical, Save } from "lucide-react";
-import { DialogFooter } from "@/ui/components/dialog.js";
-import { FormStatusLine } from "@/ui/components/form-status-line.js";
+import { DialogFooter } from "@retainpdf/ui";
+import { FormStatusLine } from "@retainpdf/ui";
 import {
   activeMode,
   announceRuntimeConfigChanged,

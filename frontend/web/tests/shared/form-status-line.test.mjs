@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { statusToneOf } from "../../src/ui/components/form-status-line.js";
+import { statusToneOf } from "@retainpdf/ui";
 
 test("statusToneOf：空态 hidden，无 tone 有文案判 pending", () => {
   assert.deepEqual(statusToneOf(null), { text: "", tone: "", pending: false });
