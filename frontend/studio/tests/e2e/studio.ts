@@ -90,7 +90,7 @@ export function savedMarkdown(): string {
  * are drawn. Edits stay unsaved until ⌘S, unless `autosaveDelay` says when
  * the Studio saves them by itself.
  */
-/** `settled` false: the article may change as it is shown (a database from before ids given one), not 已载入 then. */
+/** `settled` false: the article may change as it is shown (a database block from before made a database of its own), not 已载入 then. */
 export async function openStudio(page: Page, { autosaveDelay = 600_000, settled = true }: { autosaveDelay?: number; settled?: boolean } = {}): Promise<void> {
 	await page.addInitScript((delay) => {
 		(window as { STUDIO_AUTOSAVE_DELAY?: number }).STUDIO_AUTOSAVE_DELAY = delay;

@@ -2,7 +2,7 @@
 import { Copy, Download, FolderSearch, Upload, History, LayoutTemplate, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
 import { t } from '@blog/i18n/index.mjs';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
-import { createArticle, importMarkdown as importPages, renderTemplate, revealArticleFile, saveAsTemplate, setArticleParent, type PagePlace } from '../api/client';
+import { createArticle, createDatabase, importMarkdown as importPages, renderTemplate, revealArticleFile, saveAsTemplate, setArticleParent, type PagePlace } from '../api/client';
 import { showContextMenu } from '../common/context-menu';
 import { showToast } from '../common/toast';
 import { favoriteSlugs, toggleFavorite } from '../pages/favorites';
@@ -100,6 +100,22 @@ export function createPages(studio: Studio) {
 		try {
 			// Not named: its title to type, or not (a note may have none, as in Notion).
 			await createArticle(slug, '', parent);
+		} catch (error) {
+			showToast(error instanceof Error ? error.message : t('新建失败'), true);
+			return;
+		}
+		await enterNewPage(slug);
+	}
+
+	/**
+	 * A new database (as Notion's full-page one): a page of its own, its rows the pages to be made under it; under
+	 * `parent` when given; opened, its title selected.
+	 */
+	async function newDatabase(parent = ''): Promise<void> {
+		if (!(await session.saveBeforeLeaving())) return;
+		let slug: string;
+		try {
+			slug = (await trackWrite(() => createDatabase('', parent))).slug;
 		} catch (error) {
 			showToast(error instanceof Error ? error.message : t('新建失败'), true);
 			return;
@@ -438,5 +454,5 @@ export function createPages(studio: Studio) {
 		], pageMenu);
 	}
 
-	return { visited, importMarkdown, openFromList, newPage, newFromTemplate, todayJournal, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
+	return { visited, importMarkdown, openFromList, newPage, newDatabase, newFromTemplate, todayJournal, enterNewPage, makeLinkedPage, makePage, subPage, movePages, showPath, starPage, publishAndName, openAt, showPageMenu };
 }

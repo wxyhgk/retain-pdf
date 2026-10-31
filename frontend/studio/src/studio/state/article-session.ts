@@ -91,7 +91,7 @@ const PROPERTY_NAMES: Record<keyof ArticleProperties, string> = {
 	wide: t('全宽'),
 	parent: t('上级页面'),
 	props: t('数据库里的值'),
-	database: t('所属数据库'),
+	type: t('数据库'),
 };
 
 /** A property as it counts: left out, empty and (for `wide`) off are all none. */

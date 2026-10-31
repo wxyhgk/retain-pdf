@@ -1,9 +1,9 @@
 /**
- * A ```database block's settings (as Notion's database: its name, columns and view), kept in the block as JSON:
+ * A database's settings (as Notion's: its columns and view), kept as JSON in a ```database block in its own page (a
+ * page `type: database`, its rows the pages under it; database-blocks.mjs):
  *
  *     ```database
  *     {
- *       "title": "计算记录",
  *       "columns": [{ "name": "方法", "type": "select", "options": ["B3LYP", "PBE0"] }, { "name": "能量", "type": "number", "width": 140 }],
  *       "view": "table",
  *       "sorts": [{ "column": "能量", "dir": "asc" }],
@@ -13,11 +13,12 @@
  *     }
  *     ```
  *
- * The rows are the pages under the page holding it (server/articles/databases.mjs), each row's values its own.
+ * Its name is its page's title. The rows are the pages under its page (server/articles/databases.mjs), each row's
+ * values its own.
  */
 
 import { t } from '@blog/i18n/index.mjs';
-import { DATABASE_ID, databaseText, withDatabaseText } from '../../../articles/database-blocks.mjs';
+import { DATABASE_ID } from '../../../articles/database-blocks.mjs';
 
 export type ColumnType = 'text' | 'number' | 'select' | 'multi' | 'date' | 'checkbox' | 'url';
 export type Column = {
@@ -40,9 +41,9 @@ export type Sort = { column: string; dir: 'asc' | 'desc' };
 export type FilterOp = 'contains' | 'not-contains' | 'is' | 'is-not' | 'gt' | 'lt' | 'ge' | 'le' | 'before' | 'after' | 'any' | 'none' | 'checked' | 'empty' | 'not-empty';
 export type Filter = { column: string; op: FilterOp; value: string | string[] };
 export type DatabaseConfig = {
-	/** Which database it is (its rows say it: `database: <id>`); null for one written before ids, given one when shown. */
+	/** The id of a block from before databases were pages (its rows said it): kept, to find the page made of it. */
 	id: string | null;
-	/** Its name, above it (empty: 无标题). */
+	/** The name of a block from before (now its page's title). */
 	title: string;
 	columns: Column[];
 	view: 'table' | 'board';
@@ -319,16 +320,6 @@ export function coerceValue(type: string, value: unknown): unknown {
 		default:
 			return String(value);
 	}
-}
-
-/** The text of a page's ```database block whose id is `id` (none: its first from before ids); none there: null. */
-export function databaseFence(source: string, id: string | null = null): string | null {
-	return databaseText(source, id);
-}
-
-/** The page with that ```database block's text written anew (as it was when it has none). */
-export function withDatabaseFence(source: string, text: string, id: string | null = null): string {
-	return withDatabaseText(source, id, text);
 }
 
 /** The workings a column offers under the table, by its kind (none first: 不计算). */

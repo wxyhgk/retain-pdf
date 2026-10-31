@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react';
 
 import { ArrowUpToLine, ChevronRight, Copy, Ellipsis, FileText, FolderInput, GitCommitHorizontal, Merge, Plus, Star, Table2, Trash2 } from 'lucide-react';
 
@@ -6,7 +6,7 @@ import { t } from '@blog/i18n/index.mjs';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
 import { useStore, type Store } from '../../shell/store';
 import type { ArticleSummary } from '../../types';
-import { within, type TreeTable } from './page-tree';
+import { isFolded as foldedIn, within } from './page-tree';
 import type { TreeActions, TreeState } from './tree-state';
 
 /** Where on a page what is dragged is let go of: just above it, under it, just below it. */
@@ -17,10 +17,9 @@ const DRAGGED_TYPE = 'application/x-studio-page';
 /** A page being dragged, and the pages that go with it (the pages chosen, when it is one of them). */
 type Drag = { slug: string; group: string[] };
 
-/** How many pages are under `slug`, all the way down (the rows of its databases too). */
+/** How many pages are under `slug`, all the way down (a database's rows too). */
 function countUnder(state: TreeState, slug: string): number {
-	const pages = [...(state.tree.children.get(slug) ?? []), ...(state.tree.tables.get(slug) ?? []).flatMap((table) => table.rows)];
-	return pages.reduce((total, child) => total + 1 + countUnder(state, child.slug), 0);
+	return (state.tree.children.get(slug) ?? []).reduce((total, child) => total + 1 + countUnder(state, child.slug), 0);
 }
 
 type RowProps = {
@@ -38,11 +37,12 @@ type RowProps = {
 
 function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, overPage }: RowProps) {
 	const { host } = actions;
-	const { tree, folded, chosen, git, articles } = state;
+	const { tree, folded, opened, chosen, git, articles } = state;
 	const active = article.slug === state.selected;
 	const under = tree.children.get(article.slug) ?? [];
-	const tables = tree.tables.get(article.slug) ?? [];
-	const isFolded = folded.has(article.slug);
+	// A database's rows folded till unfolded.
+	const isFolded = foldedIn(article, folded, opened);
+	const isDatabase = article.type === 'database';
 	const uncommitted = git?.changed[article.slug];
 	const committable = Boolean(git?.available && (uncommitted || git.vanished.length));
 
@@ -61,7 +61,8 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 		}
 		const items: MenuItem[] = [
 			...(committable ? [{ label: t('提交到 git…'), icon: GitCommitHorizontal, action: () => host.commit(article) }, 'separator' as const] : []),
-			{ label: t('在下面新建页面'), icon: Plus, action: () => host.createChild(article) },
+			{ label: isDatabase ? t('新建一行') : t('在下面新建页面'), icon: Plus, action: () => host.createChild(article) },
+			...(host.createDatabase && !isDatabase ? [{ label: t('在下面新建数据库'), icon: Table2, action: () => host.createDatabase!(article) }] : []),
 			...(host.toggleFavorite ? [{ label: host.isFavorite?.(article.slug) ? t('移出常用') : t('加入常用'), icon: Star, action: () => host.toggleFavorite!(article.slug) }] : []),
 			{ label: t('移到…'), icon: FolderInput, action: () => host.moveTo([article.slug]) },
 			...(article.parent ? [{ label: t('移到最上层'), icon: ArrowUpToLine, action: () => host.move([article.slug], '') }, { label: t('并入上级页面…'), icon: Merge, action: () => host.merge(article) }] : []),
@@ -86,12 +87,12 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 			const rows = [...document.querySelectorAll<HTMLElement>('#article-list .page-row')];
 			rows[rows.indexOf(event.currentTarget) + (event.key === 'ArrowDown' ? 1 : -1)]?.focus();
 		} else if (event.key === 'ArrowRight') {
-			if (!under.length && !tables.length) return;
+			if (!under.length) return;
 			if (isFolded) actions.setFolded(article.slug, false);
 			else if (under.length) actions.focusRow(under[0]!.slug);
 		} else if (event.key === 'ArrowLeft') {
 			const up = tree.placedUnder(article);
-			if ((under.length || tables.length) && !isFolded) actions.setFolded(article.slug, true);
+			if (under.length && !isFolded) actions.setFolded(article.slug, true);
 			else if (up) actions.focusRow(up);
 			else return;
 		} else if (event.key === 'Backspace' || event.key === 'Delete') {
@@ -120,7 +121,7 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 	return (
 		<div className="page-branch">
 			<div
-				className={`page-item${active ? ' active' : ''}${chosen.has(article.slug) ? ' is-chosen' : ''}${under.length || tables.length ? ' has-children' : ''}${marked}`}
+				className={`page-item${active ? ' active' : ''}${chosen.has(article.slug) ? ' is-chosen' : ''}${under.length ? ' has-children' : ''}${isDatabase ? ' is-database' : ''}${marked}`}
 				data-slug={article.slug}
 				data-draft={article.draft !== false ? '' : undefined}
 				style={{ '--depth': String(depth) } as CSSProperties}
@@ -161,11 +162,19 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 				}}
 			>
 				{/* The pages under it: shown or folded by the triangle beside it. */}
-				{under.length || tables.length ? (
+				{under.length ? (
 					<button
 						type="button"
 						className="page-toggle"
-						aria-label={isFolded ? t('展开「{title}」下面的页面', { title: article.title }) : t('收起「{title}」下面的页面', { title: article.title })}
+						aria-label={
+							isDatabase
+								? isFolded
+									? t('展开「{title}」的行', { title: article.title })
+									: t('收起「{title}」的行', { title: article.title })
+								: isFolded
+									? t('展开「{title}」下面的页面', { title: article.title })
+									: t('收起「{title}」下面的页面', { title: article.title })
+						}
 						aria-expanded={!isFolded}
 						onClick={() => actions.setFolded(article.slug, !isFolded)}
 					>
@@ -188,13 +197,13 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 					}}
 					onKeyDown={keyDown}
 				>
-					<span className={`page-icon${article.icon ? ' is-emoji' : ''}`}>{article.icon || <FileText aria-hidden />}</span>
+					<span className={`page-icon${article.icon ? ' is-emoji' : ''}`}>{article.icon || (isDatabase ? <Table2 aria-hidden /> : <FileText aria-hidden />)}</span>
 					<span className="page-title" title={article.draft !== false ? t('{title}（草稿，尚未发布）', { title: article.title }) : article.title}>
 						{article.title}
 					</span>
 					{/* Folded: how many pages are under it, beside its title. */}
-					{(under.length > 0 || tables.length > 0) && isFolded && (
-						<span className="page-count" title={t('下面有 {count} 个页面', { count: countUnder(state, article.slug) })}>
+					{under.length > 0 && isFolded && (
+						<span className="page-count" title={isDatabase ? t('{count} 行', { count: under.length }) : t('下面有 {count} 个页面', { count: countUnder(state, article.slug) })}>
 							{countUnder(state, article.slug)}
 						</span>
 					)}
@@ -213,70 +222,6 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 				</button>
 			</div>
 			{!isFolded && under.map((child) => <Row key={child.slug} article={child} depth={depth + 1} state={state} actions={actions} drag={drag} setDrag={setDrag} drop={drop} setDrop={setDrop} overPage={overPage} />)}
-			{!isFolded &&
-				tables.map((table) => (
-					<Table key={table.key} table={table} depth={depth + 1} state={state} actions={actions}>
-						{table.rows.map((child) => <Row key={child.slug} article={child} depth={depth + 2} state={state} actions={actions} drag={drag} setDrag={setDrag} drop={drop} setDrop={setDrop} overPage={overPage} />)}
-					</Table>
-				))}
-		</div>
-	);
-}
-
-/**
- * A database of a page in the tree, as Notion's sidebar has one: its name with a table's icon, its rows under it
- * (folded until opened, how many beside it then); clicked, its page opened at it.
- */
-function Table({ table, depth, state, actions, children }: { table: TreeTable; depth: number; state: TreeState; actions: TreeActions; children: ReactNode }) {
-	const open = state.opened.has(table.key);
-	const title = table.title || t('无标题数据库');
-	return (
-		<div className="page-branch">
-			<div className={`page-item is-database${table.rows.length ? ' has-children' : ''}`} data-database={table.key} style={{ '--depth': String(depth) } as CSSProperties}>
-				{table.rows.length ? (
-					<button
-						type="button"
-						className="page-toggle"
-						aria-label={open ? t('收起「{title}」的行', { title }) : t('展开「{title}」的行', { title })}
-						aria-expanded={open}
-						onClick={() => actions.setOpened(table.key, !open)}
-					>
-						<ChevronRight aria-hidden />
-					</button>
-				) : (
-					<button type="button" className="page-toggle" tabIndex={-1} aria-hidden disabled />
-				)}
-				<button
-					type="button"
-					className="page-row"
-					onClick={() => {
-						if (actions.host.openDatabase) actions.host.openDatabase(table.page, table.id);
-						else actions.open(table.page);
-					}}
-					onKeyDown={(event) => {
-						if (event.altKey || event.metaKey || event.ctrlKey || event.shiftKey) return;
-						// As a page's: ↑↓ from row to row, → shows its rows, ← hides them.
-						if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-							const rows = [...document.querySelectorAll<HTMLElement>('#article-list .page-row')];
-							rows[rows.indexOf(event.currentTarget) + (event.key === 'ArrowDown' ? 1 : -1)]?.focus();
-						} else if (event.key === 'ArrowRight' && table.rows.length && !open) actions.setOpened(table.key, true);
-						else if (event.key === 'ArrowLeft' && open) actions.setOpened(table.key, false);
-						else return;
-						event.preventDefault();
-					}}
-				>
-					<span className="page-icon">
-						<Table2 aria-hidden />
-					</span>
-					<span className="page-title">{title}</span>
-					{table.rows.length > 0 && !open && (
-						<span className="page-count" title={t('{count} 行', { count: table.rows.length })}>
-							{table.rows.length}
-						</span>
-					)}
-				</button>
-			</div>
-			{open && children}
 		</div>
 	);
 }

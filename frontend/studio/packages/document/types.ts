@@ -47,6 +47,6 @@ export type ArticleProperties = {
 	parent?: string;
 	/** Its values as a row of the database it is under (`props:`); none: {}. Left out: not changed. */
 	props?: Record<string, unknown>;
-	/** The database it is a row of (`database:`, its id); empty for none. Read only: written by the database's own. */
-	database?: string;
+	/** A database (`type: database`): the pages under it are its rows. Read only: written by the database's own. */
+	type?: 'database';
 };

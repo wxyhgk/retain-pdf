@@ -23,7 +23,11 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 			return () => stops.forEach((stop) => stop());
 		}), { streams: true });
 
-	api.get('/articles', async () => ({ articles: await articles.list() }));
+	api.get('/articles', async () => {
+		// The databases from before made pages first, the tree showing them as they now are.
+		await migrated;
+		return { articles: await articles.list() };
+	});
 	api.post('/articles', async ({ json }) => reply(201, await articles.create(await json())));
 	// Page templates (templates/): the list, one filled in for a page made now, a page's body kept as one (存为模板).
 	api.get('/templates', async () => ({ templates: await templates.list() }));
@@ -56,33 +60,45 @@ export function articleRoutes(api, { site, blogRoot, articles, history, manager,
 	};
 	const importer = new ArticleImport({ articles, manager, slugs: freeSlug });
 
-	// 数据库 (databases.mjs): a database's rows (the pages under its page that say it, with their values), one value or
-	// title set, a row made, columns renamed, taken away, of another kind, a choice renamed or taken away, in every row;
-	// one from before ids given one. Which database of the page: `?db=<id>` (none: one from before ids).
+	// 数据库 (databases.mjs): a database is a page (`type: database`), its rows the pages under it. A database made; its
+	// settings, title and icon (asked by a block showing it in another page), its settings changed there; its rows, one
+	// value or title set, a row made, columns renamed, taken away, of another kind, a choice renamed or taken away, in
+	// every row; a block from before databases were pages made one (`detach`), all of them as the server starts.
 	const databases = new Databases({ articles, history, site });
-	const dbOf = (query) => query.get('db') || null;
-	api.get('/databases/:slug', async ({ params, query }) => ({ rows: await databases.rows(params.slug, dbOf(query)) }));
-	api.get('/databases/:slug/config', async ({ params, query }) => ({ config: await databases.config(params.slug, dbOf(query)) }));
-	api.post('/databases/:slug/options', async ({ params, query, json }) => {
+	const migrated = databases.migrate().catch((error) => console.error(t('没能把旧的数据库块改成数据库页面：{error}', { error: error instanceof Error ? error.message : String(error) })));
+	api.post('/databases', async ({ json }) => {
 		const asked = await json();
-		return databases.addOption(params.slug, dbOf(query), String(asked.column ?? ''), asked.option);
+		return reply(201, await databases.create({ title: String(asked.title ?? ''), parent: typeof asked.parent === 'string' ? asked.parent : '', config: asked.config ?? {} }));
 	});
-	api.post('/databases/:slug/adopt', async ({ params, json }) => databases.adopt(params.slug, (await json()).id));
+	api.get('/databases/:slug', async ({ params }) => {
+		await migrated;
+		return { rows: await databases.rows(params.slug) };
+	});
+	api.get('/databases/:slug/config', async ({ params }) => {
+		await migrated;
+		return (await databases.info(params.slug)) ?? { config: null };
+	});
+	api.put('/databases/:slug/config', async ({ params, json }) => databases.setConfig(params.slug, (await json()).config));
+	api.post('/databases/:slug/options', async ({ params, json }) => {
+		const asked = await json();
+		return databases.addOption(params.slug, String(asked.column ?? ''), asked.option);
+	});
+	api.post('/databases/:slug/detach', async ({ params, json }) => databases.detach(params.slug, String((await json()).text ?? '')));
 	api.put('/databases/rows/:slug', async ({ params, json }) => {
 		const asked = await json();
 		if (typeof asked.title === 'string') return databases.setTitle(params.slug, asked.title);
 		if (Array.isArray(asked.values)) return databases.setValues(params.slug, asked.values);
 		return databases.setValue(params.slug, asked.column, asked.type, asked.value);
 	});
-	api.post('/databases/:slug/rows', async ({ params, query, json }) => {
+	api.post('/databases/:slug/rows', async ({ params, json }) => {
 		const asked = await json();
 		const slug = freeSlug(new Set((await articles.list()).map((article) => article.slug)));
 		const made = asked.template ? await templates.render(String(asked.template), { title: String(asked.title ?? '') }) : null;
-		return reply(201, await databases.addRow(params.slug, dbOf(query), { slug, title: made?.title ?? String(asked.title ?? ''), props: asked.props ?? {}, body: made?.body ?? '' }));
+		return reply(201, await databases.addRow(params.slug, { slug, title: made?.title ?? String(asked.title ?? ''), props: asked.props ?? {}, body: made?.body ?? '' }));
 	});
-	api.post('/databases/:slug/columns', async ({ params, query, json }) => {
+	api.post('/databases/:slug/columns', async ({ params, json }) => {
 		const asked = await json();
-		return databases.changeColumns(params.slug, dbOf(query), { renames: asked.renames ?? {}, removed: asked.removed ?? [], types: asked.types ?? {}, values: Array.isArray(asked.values) ? asked.values : [] });
+		return databases.changeColumns(params.slug, { renames: asked.renames ?? {}, removed: asked.removed ?? [], types: asked.types ?? {}, values: Array.isArray(asked.values) ? asked.values : [] });
 	});
 	api.post('/import', async ({ query, request }) => {
 		const chunks = [];

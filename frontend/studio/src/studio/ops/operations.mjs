@@ -3,8 +3,8 @@
 // line (bin/studio.mjs) and the MCP server (bin/studio-mcp.mjs) are both read off this.
 
 const slug = { type: 'string', description: '页面的文件夹名（blog/<文件夹名>/），也是它网址的最后一段' }; // i18n-ignore: for the AI
-/** A row's values, when the page above holds a ```database block. */
-const props = { type: 'object', description: '数据库里这一行的值（上级页面有 ```database 块时，子页面就是表的各行）：键是块里的列名；数字写成数，勾选写 true/false，日期写 YYYY-MM-DD，多选写列表' }; // i18n-ignore: for the AI
+/** A row's values, when the page above is a database. */
+const props = { type: 'object', description: '数据库里这一行的值（数据库是一个 type: database 的页面，它下面的页面就是各行）：键是数据库的列名；数字写成数，勾选写 true/false，日期写 YYYY-MM-DD，多选写列表' }; // i18n-ignore: for the AI
 const text = (description) => ({ type: 'string', description });
 
 /**
@@ -66,7 +66,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'create_page',
-		description: '新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）；上级页面有数据库时，用 props 写这一行的值（它就成了那个数据库的一行；有几个数据库时用 database 说是哪个）。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。', // i18n-ignore: for the AI
+		description: '新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）。parent 是数据库（type: database）时，新页面就是它的一行，用 props 写这一行的值。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。', // i18n-ignore: for the AI
 		input: {
 			type: 'object',
 			properties: {
@@ -75,11 +75,25 @@ export const OPERATIONS = [
 				body: text('正文 Markdown（属性之后的全部内容）'), // i18n-ignore: for the AI
 				slug: text('指定文件夹名（小写字母、数字、连字符）；一般不用给'), // i18n-ignore: for the AI
 				props, // i18n-ignore: for the AI
-				database: text('它是上级页面里哪个数据库的行（数据库块 JSON 里的 id）；上级只有一个数据库时给了 props 就是它，不用写'), // i18n-ignore: for the AI
 			},
 			required: ['title'],
 		},
 		run: (ops, args) => ops.createPage(args),
+	},
+	{
+		name: 'create_database',
+		description: '新建一个数据库（像 Notion 的）：它自己是一个页面（type: database），它下面的页面就是各行，再用 create_page（parent 给这个数据库）加行。给了 parent 就放在那个页面下面，并在那一页末尾放一个显示它的块（show: false 就不放，成了一个整页的数据库）。columns 是列：每列 {"name": 列名, "type": text|number|select|multi|date|checkbox|url, "options": [单选/多选的选项]}。', // i18n-ignore: for the AI
+		input: {
+			type: 'object',
+			properties: {
+				title: text('数据库的名字'), // i18n-ignore: for the AI
+				parent: text('放在哪个页面下面（文件夹名）；不给就放在最上层'), // i18n-ignore: for the AI
+				columns: { type: 'array', items: { type: 'object' }, description: '列，按顺序；标题列不用写（每行的标题就是页面标题）' }, // i18n-ignore: for the AI
+				show: { type: 'boolean', description: '在 parent 那一页末尾放一个显示它的块；默认 true' }, // i18n-ignore: for the AI
+			},
+			required: ['title'],
+		},
+		run: (ops, args) => ops.createDatabase(args),
 	},
 	{
 		name: 'update_page',

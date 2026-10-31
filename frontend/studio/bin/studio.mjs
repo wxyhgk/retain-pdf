@@ -35,7 +35,14 @@ function parseArguments(words, operation) {
 				throw new Error(`--${key} 要写成 JSON，比如 '{"方法": "B3LYP", "能量": -76.41}'`);
 			}
 		}
-		else if (schema.type === 'array') args[key] = [...(args[key] ?? []), ...value.split(/[,，]/u).map((item) => item.trim()).filter(Boolean)];
+		else if (schema.type === 'array' && schema.items?.type === 'object') {
+			try {
+				args[key] = JSON.parse(value);
+			} catch {
+				throw new Error(`--${key} 要写成 JSON 列表，比如 '[{"name": "方法", "type": "select"}]'`);
+			}
+		} else if (schema.type === 'array') args[key] = [...(args[key] ?? []), ...value.split(/[,，]/u).map((item) => item.trim()).filter(Boolean)];
+		else if (schema.type === 'boolean') args[key] = !/^(?:false|0|no|否)$/iu.test(value.trim());
 		else args[key] = value;
 	}
 	for (const required of operation.input.required ?? []) {

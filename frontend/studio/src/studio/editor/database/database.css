@@ -6,6 +6,8 @@
  */
 .database-block { margin: 10px 0 14px; outline: none; }
 .database-block.is-selected { border-radius: 6px; box-shadow: 0 0 0 2px var(--studio-select-edge); }
+/* A database's own page: the database is the page, not a block chosen in it. */
+.database-block.is-own.is-selected { box-shadow: none; }
 
 .db { color: rgb(var(--black)); font-size: 14px; line-height: 1.5; white-space: normal; }
 :is(.db, .db-pop) :is(button, input, textarea, select) { box-sizing: border-box; margin: 0; font: inherit; letter-spacing: inherit; color: inherit; }
@@ -13,7 +15,13 @@
 :is(.db, .db-pop) svg { flex: none; }
 
 /* Its name, then its tabs and tools. */
-.db .db-title { display: block; width: 100%; padding: 4px 2px; border: 0; background: transparent; outline: none; font-size: 20px; font-weight: 700; line-height: 1.3; }
+.db .db-heading { display: flex; align-items: center; gap: 4px; }
+.db .db-heading-icon { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 6px; font-size: 20px; line-height: 1; color: rgb(var(--gray)); }
+.db .db-heading-icon svg { width: 20px; height: 20px; }
+.db .db-heading-icon:hover { background: var(--studio-fill-2); }
+.db .db-heading-open { opacity: 0; transition: opacity var(--studio-dur-fast); }
+.db .db-heading:hover .db-heading-open, .db .db-heading-open:focus-visible { opacity: 1; }
+.db .db-title { display: block; flex: 1; min-width: 0; width: 100%; padding: 4px 2px; border: 0; background: transparent; outline: none; font-size: 20px; font-weight: 700; line-height: 1.3; }
 .db .db-title::placeholder { color: rgba(var(--gray), 0.55); }
 .db .db-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 40px; border-bottom: 1px solid var(--studio-hairline); }
 .db .db-tabs { display: flex; align-self: stretch; gap: 4px; }
@@ -43,7 +51,7 @@
 /* The rows chosen by their boxes: how many, what can be done to them all. */
 .db .db-chosen { display: flex; align-items: center; gap: 4px; padding: 6px 0; }
 .db .db-chosen-count { margin-right: 6px; color: rgb(var(--black)); font-size: 13px; font-weight: 500; }
-.db .db-chosen .db-icon-button.is-wide { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 0 8px; font-size: 13px; }
+.db :is(.db-chosen, .db-heading) .db-icon-button.is-wide { display: inline-flex; align-items: center; gap: 4px; width: auto; padding: 0 8px; font-size: 13px; }
 .db .db-chosen .db-icon-button.is-danger:hover { color: var(--danger); }
 /* The filters and order in force, as chips. */
 .db .db-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0 6px; }

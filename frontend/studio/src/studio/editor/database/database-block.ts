@@ -7,16 +7,21 @@ import { $view } from '@milkdown/utils';
 import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
-import { newDatabaseId } from '../../../articles/database-blocks.mjs';
+import { t } from '@blog/i18n/index.mjs';
+import { referenceText, sourceOf } from '../../../articles/database-blocks.mjs';
 import { readConfig, writeConfig, type DatabaseConfig } from './database-config';
-import { DatabaseView, type DatabaseHost } from './DatabaseView';
+import { LinkedDatabase, type DatabaseSpace } from './DatabaseLinked';
+import { said } from './database-parts';
+import { DatabaseView } from './DatabaseView';
 import './database.css';
 
 /**
- * A ```database block (数据库, as Notion's): the pages under the page holding it as rows (their values theirs:
- * server/articles/databases.mjs), drawn by DatabaseView as a table or a board. Its text is its settings
- * (database-config.ts): its columns, view, filters, order, the template a new row is made from; changed in the view,
- * the text is written anew (an edit of the article, undone as one).
+ * A ```database block (数据库, as Notion's). A database is a page of its own (`type: database`), its rows the pages under
+ * it (server/articles/databases.mjs); in that page its block is its settings (database-config.ts: its columns, view,
+ * filters, order, the template a new row is made from), changed in the view as an edit of the page (undone as one), the
+ * database the whole page. In any other page a block names it (`{"source": "<its folder>"}`) and shows it there, its
+ * settings read from its page and written back there (DatabaseLinked.tsx). A block from before databases were pages
+ * (its settings in an ordinary page) is made a database of its own when it is shown, and then names it.
  */
 
 export const DATABASE_LANGUAGE = 'database';
@@ -28,21 +33,28 @@ export const databaseSchema = $fencedBlock(DATABASE_TYPE, (language) => language
 	selectable: true,
 }));
 
-let host: ((id: string | null) => DatabaseHost | null) | null = null;
-/** What a block asks the Studio (its rows in the page shown, a value written…), given which database it is. */
-export function setDatabaseHost(next: typeof host): void {
-	host = next;
+let space: DatabaseSpace | null = null;
+/** What a block asks the Studio (the page shown, a database's rows and settings, one made…). */
+export function setDatabaseSpace(next: DatabaseSpace | null): void {
+	space = next;
 }
 
-/** A new database where the caret's (empty) block is: no columns yet, its rows the pages under this one. */
+/** A new database (a page under this one, no columns yet) shown where the caret's (empty) block is, as Notion's inline database. */
 export function insertDatabase(view: EditorView): void {
-	const { state } = view;
-	const type = state.schema.nodes[DATABASE_TYPE];
-	if (!type) return;
-	const { $from } = state.selection;
-	const block = type.create({ language: DATABASE_LANGUAGE }, state.schema.text(writeConfig({ ...readConfig(''), id: newDatabaseId() })));
-	const tr = state.tr.replaceWith($from.before(), $from.after(), block);
-	view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, $from.before())).scrollIntoView());
+	const type = view.state.schema.nodes[DATABASE_TYPE];
+	if (!type || !space) return;
+	const asked = { doc: view.state.doc, from: view.state.selection.$from.before(), to: view.state.selection.$from.after() };
+	void space.create().then(
+		(slug) => {
+			const { state } = view;
+			const block = type.create({ language: DATABASE_LANGUAGE }, state.schema.text(referenceText(slug)));
+			// Where it was asked, the page as it was then; else (typed on meanwhile) where the caret is now.
+			const [from, to] = state.doc.eq(asked.doc) ? [asked.from, asked.to] : [state.selection.from, state.selection.from];
+			const tr = from === to ? state.tr.insert(from, block) : state.tr.replaceWith(from, to, block);
+			view.dispatch(tr.setSelection(NodeSelection.create(tr.doc, from)).scrollIntoView());
+		},
+		(error: unknown) => space?.toast(said(error), true),
+	);
 }
 
 export const databaseView = $view(databaseSchema.schema.node, () => (initial: ProseNode, view: EditorView, getPos: () => number | undefined): NodeView => {
@@ -74,45 +86,56 @@ export const databaseView = $view(databaseSchema.schema.node, () => (initial: Pr
 		reach();
 	});
 
-	/** The settings changed in the view: the block's text written anew. */
-	const change = (next: DatabaseConfig) => {
+	/** The block's text written anew (an edit of the page). */
+	const write = (text: string) => {
 		const pos = getPos();
 		if (pos == null) return;
 		const current = view.state.doc.nodeAt(pos);
 		if (!current) return;
-		const block = current.type.create(current.attrs, view.state.schema.text(writeConfig(next)));
+		const block = current.type.create(current.attrs, view.state.schema.text(text));
 		view.dispatch(view.state.tr.replaceWith(pos, pos + current.nodeSize, block));
 	};
-	/** A block from before ids being given one: drawn once its rows say it (or as it was, when that failed). */
-	let adopting = false;
-	let adoptFailed = false;
+	/** The settings changed in the view, in the database's own page: the block's text written anew. */
+	const change = (next: DatabaseConfig) => write(writeConfig(next));
+	const note = (text: string, error = false) => root.render(createElement('div', { className: 'db' }, createElement('p', { className: error ? 'db-note is-error' : 'db-note' }, text)));
+	/** A block from before being made a database of its own; once failed, not asked again. */
+	let detaching = false;
+	let detachFailed = false;
 	const draw = () => {
-		const config = readConfig(node.textContent);
-		const asked = host?.(config.id);
-		if (!asked) {
+		const text = node.textContent;
+		const page = space?.page();
+		if (!space || !page) {
 			dom.textContent = '';
 			return;
 		}
-		if (!config.id && view.editable && !adoptFailed) {
-			// From before ids: an id for it, and its rows (the pages under the page naming no database) told it; then the
-			// block's text with it (an edit of the article).
-			if (adopting) return;
-			adopting = true;
-			const id = newDatabaseId();
-			void asked.adopt(id).then(
-				() => change({ ...readConfig(node.textContent), id }),
+		const source = sourceOf(text);
+		dom.classList.toggle('is-own', !source && page.database);
+		if (source) {
+			dom.dataset.database = source;
+			root.render(createElement(LinkedDatabase, { key: source, slug: source, space }));
+		} else if (page.database) {
+			dom.dataset.database = page.slug;
+			root.render(createElement(DatabaseView, { key: page.slug, config: readConfig(text), change, host: space.host(page.slug) }));
+		} else if (!view.editable || detachFailed) {
+			delete dom.dataset.database;
+			note(t('这是旧的数据库块，还没改成数据库页面'), detachFailed);
+		} else if (!detaching) {
+			// From before databases were pages: made one (a page under this one, the rows that were its under it), then
+			// the block names it (an edit of this page).
+			detaching = true;
+			note(t('正在把它改成数据库页面…'));
+			const asked = space;
+			void asked.detach(text).then(
+				(slug) => write(referenceText(slug)),
 				(error: unknown) => {
-					adoptFailed = true;
-					asked.toast(error instanceof Error ? error.message : String(error), true);
+					detachFailed = true;
+					asked.toast(said(error), true);
 				},
 			).finally(() => {
-				adopting = false;
+				detaching = false;
 				draw();
 			});
-			return;
 		}
-		if (config.id) dom.dataset.databaseId = config.id;
-		root.render(createElement(DatabaseView, { key: config.id ?? '', config, change, host: asked }));
 	};
 	draw();
 

@@ -21,14 +21,14 @@ export type PageHeaderHost = {
 	pictures(): Promise<string[]>;
 	/** Puts a picture into the article's img/; how the article names it. */
 	upload(file: File): Promise<string>;
-	/** A choice more for a column of the database in the page `database`; its settings now. */
-	addDatabaseOption?(database: string, id: string | null, column: string, option: string): Promise<DatabaseConfig>;
+	/** A choice more for a column of the database `database` (its page); its settings now. */
+	addDatabaseOption?(database: string, column: string, option: string): Promise<DatabaseConfig>;
 };
 
 /** What the page header shows (PageHeader.tsx draws it). */
 export type HeaderState = {
 	/** An article's properties to edit; none yet: the fields wait, disabled. */
-	properties: Required<Omit<ArticleProperties, 'parent'>> | null;
+	properties: (Required<Omit<ArticleProperties, 'parent' | 'type'>> & Pick<ArticleProperties, 'type'>) | null;
 	/** Why the blog could not build the properties as saved, from the server. */
 	problems: string[];
 	/** Why the properties as typed cannot be saved. */
@@ -71,7 +71,7 @@ export function createHeaderState(host: PageHeaderHost) {
 		addOption(column: Column, option: string): void {
 			const database = get().database;
 			if (!database || !host.addDatabaseOption) return;
-			void host.addDatabaseOption(database.slug, database.config.id, column.name, option).then(
+			void host.addDatabaseOption(database.slug, column.name, option).then(
 				(config) => get().database?.slug === database.slug && store.set({ database: { slug: database.slug, config } }),
 				() => {},
 			);
@@ -97,7 +97,7 @@ export function createHeaderState(host: PageHeaderHost) {
 		/** An article's properties, ready to edit, and what is wrong with them as saved. */
 		show(properties: ArticleProperties, saved: string[] = []): void {
 			store.set({
-				properties: { title: properties.title, description: properties.description, pubDate: properties.pubDate, tags: [...properties.tags], draft: properties.draft, icon: properties.icon ?? '', cover: properties.cover ?? '', kind: properties.kind ?? 'post', wide: properties.wide ?? false, props: { ...(properties.props ?? {}) }, database: properties.database ?? '' },
+				properties: { title: properties.title, description: properties.description, pubDate: properties.pubDate, tags: [...properties.tags], draft: properties.draft, icon: properties.icon ?? '', cover: properties.cover ?? '', kind: properties.kind ?? 'post', wide: properties.wide ?? false, props: { ...(properties.props ?? {}) }, ...(properties.type ? { type: properties.type } : {}) },
 				problems: saved,
 				// Which database it is a row of: told next (showDatabase), once read.
 				database: null,

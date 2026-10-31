@@ -1,8 +1,6 @@
 import { parseFrontmatter } from '@astrojs/markdown-remark';
 import { z } from 'astro/zod';
 
-import { databaseBlocks } from './database-blocks.mjs';
-
 /** @param {any} image */
 export function createArticleFrontmatterSchema(image = null) {
 	const heroImage = image ? image() : z.string();
@@ -28,9 +26,12 @@ export function createArticleFrontmatterSchema(image = null) {
 		order: z.number().optional(),
 		// Formula macros of this article, over the site's (src/katex-macros.json): `\\Ha: \\hat{H}`.
 		macros: z.record(z.string(), z.string()).optional(),
-		// Its values as a row of the database it is under (the Studio's ```database): `{ "方法": "B3LYP", "能量": -76.4 }`.
+		// A database (the Studio's 数据库, as Notion's): the pages under it its rows, its columns a ```database block in
+		// it (database-blocks.mjs).
+		type: z.enum(['database']).optional(),
+		// Its values as a row of the database it is under: `{ "方法": "B3LYP", "能量": -76.4 }`.
 		props: z.record(z.string(), z.unknown()).optional(),
-		// The database it is a row of: the id of a ```database block in the page it is under (database-blocks.mjs).
+		// From before databases were pages: the id of the ```database block in the page it was under whose row it was.
 		database: z.string().trim().min(1).optional(),
 	});
 }
@@ -68,17 +69,11 @@ export function articleSummary(source, fallbackSlug) {
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 		parent: articleParent(frontmatter),
 		...(typeof frontmatter.order === 'number' && Number.isFinite(frontmatter.order) ? { order: frontmatter.order } : {}),
-		// A row of a database (of the page it is under), and the databases it holds: the tree shows its rows under them.
+		// A database: the pages under it its rows.
+		...(frontmatter.type === 'database' ? { type: 'database' } : {}),
+		// From before databases were pages: the block whose row it was (its id), till it is made a row of a database page.
 		...(typeof frontmatter.database === 'string' && frontmatter.database.trim() ? { database: frontmatter.database.trim() } : {}),
-		...databasesOf(source),
 	};
-}
-
-/** The databases a page holds, as the tree lists them (`{ databases: [{ id, title }] }`); none, nothing. */
-function databasesOf(source) {
-	if (!/^(?:```+|~~~+)[ \t]*database[ \t]*$/mu.test(source)) return {};
-	const databases = databaseBlocks(source).map(({ id, title }) => ({ id, title }));
-	return databases.length ? { databases } : {};
 }
 
 /** The folder name of the page the article is under (`parent:`); empty for none. */
@@ -101,9 +96,9 @@ export function articleProperties(source, fallbackSlug = '') {
 		kind: frontmatter.kind === 'wiki' ? 'wiki' : 'post',
 		wide: frontmatter.wide === true,
 		parent: articleParent(frontmatter),
-		// Its values as a row of the database it is under, and which database that is (its id).
+		// A database (its rows the pages under it); its values as a row of the database it is under.
+		...(frontmatter.type === 'database' ? { type: 'database' } : {}),
 		props: frontmatter.props && typeof frontmatter.props === 'object' && !Array.isArray(frontmatter.props) ? frontmatter.props : {},
-		...(typeof frontmatter.database === 'string' && frontmatter.database.trim() ? { database: frontmatter.database.trim() } : {}),
 	};
 }
 
@@ -136,6 +131,7 @@ const PROPERTY_PROBLEMS = Object.freeze({
 	parent: '上级页面（parent）应是一篇文章的文件夹名',
 	order: '顺序（order）应是一个数',
 	props: '属性（props）应是「列名: 值」，如 { "方法": "B3LYP" }',
+	type: 'type 只能是 database（这一页是数据库）',
 });
 
 /**
@@ -161,15 +157,17 @@ export function isPublishedArticle(entry) {
 }
 
 /** A new article's file; with no title (empty), a page not named yet. */
-export function createArticleSource({ title = '', parent = '', body = '', date = new Date() }) {
+export function createArticleSource({ title = '', parent = '', body = '', type = '', date = new Date() }) {
 	if (typeof title !== 'string') throw new ArticleValidationError('文章标题应是文字');
 	const escapedTitle = title.trim().replaceAll("'", "''");
 	const publicationDate = date.toISOString().slice(0, 10);
 	// Under another page: its folder name (checked as one by the caller).
 	const under = parent ? `parent: ${parent}\n` : '';
+	// A database (its rows the pages under it).
+	const kind = type === 'database' ? 'type: database\n' : '';
 	// What it starts with: the text given (a section of its parent, 转成子页面), or a line to write over.
 	const text = body.trim() ? `${body.trim()}\n` : '从这里开始写作。\n';
-	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n${under}---\n\n${text}`;
+	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n${kind}${under}---\n\n${text}`;
 }
 
 export class ArticleValidationError extends Error {

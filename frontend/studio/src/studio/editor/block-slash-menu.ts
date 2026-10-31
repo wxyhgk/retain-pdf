@@ -79,7 +79,7 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 	}
 	group.addItem('database', {
 		label: t('数据库'),
-		description: t('这一页下面的页面显示成表格或看板'),
+		description: t('在这里放一个新数据库（它自己是一页，在这一页下面）'),
 		icon: ICONS.database,
 		keywords: ['database', 'table', 'board', 'kanban', '数据库', '表格', '看板', 'shujuku', 'sjk'], // i18n-ignore: matched against what is typed
 		onRun: (ctx) => insertDatabase(placed(ctx, 'below')),

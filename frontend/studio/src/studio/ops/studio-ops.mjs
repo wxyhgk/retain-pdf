@@ -10,13 +10,15 @@ import { comparePages } from '../../articles/page-order.mjs';
 import { parseArticleSource } from '../../articles/schemas.mjs';
 import { parseStudioDocument } from '@blog/document/parse.ts';
 import { replaceStudioDocumentBody } from '@blog/document/serialize.ts';
-import { setFrontmatterDatabase, setFrontmatterProps, updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
+import { setFrontmatterProps, updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
+import { referenceText } from '../../articles/database-blocks.mjs';
 import { checkArticle } from '../server/articles/article-check.mjs';
 import { previewArticle } from '../server/articles/article-preview.mjs';
 import { checkWidgets } from '../server/articles/widget-check.mjs';
 import { ArticleGit } from '../server/articles/article-git.mjs';
 import { ArticleHistory } from '../server/articles/article-history.mjs';
 import { ArticleRepository } from '../server/articles/article-repository.mjs';
+import { Databases } from '../server/articles/databases.mjs';
 import { MiniApps } from '../server/apps/mini-apps.mjs';
 import { Repositories } from '../server/repos/repositories.mjs';
 import { articleBundlePaths, reposRootOf } from '../../articles/bundle-paths.mjs';
@@ -74,6 +76,7 @@ export function createStudioOps({ root, site } = {}) {
 	const repositories = new Repositories({ ownRoot: reposRootOf(blogRoot), settingsFile, home: testBlog ? `${blogRoot}-home` : undefined });
 	const drive = new Drive({ settingsFile, fixedRoot: process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null, forbidden: [projectRoot, notes, blogRoot] });
 
+	const databases = new Databases({ articles, history, site });
 	const pages = () => articles.list();
 	const find = async (slug) => {
 		const page = (await pages()).find((entry) => entry.slug === slug);
@@ -118,7 +121,7 @@ export function createStudioOps({ root, site } = {}) {
 		async pageTree() {
 			const all = await pages();
 			const known = new Set(all.map((page) => page.slug));
-			const node = (page) => ({ slug: page.slug, title: page.title, draft: page.draft, address: address(page), children: childrenOf(page.slug) });
+			const node = (page) => ({ slug: page.slug, title: page.title, draft: page.draft, ...(page.type ? { type: page.type } : {}), address: address(page), children: childrenOf(page.slug) });
 			const childrenOf = (slug) => all.filter((page) => page.parent === slug && page.slug !== slug).sort(comparePages).map(node);
 			return all.filter((page) => !page.parent || !known.has(page.parent)).sort(comparePages).map(node);
 		},
@@ -182,27 +185,41 @@ export function createStudioOps({ root, site } = {}) {
 		 * (`note-…`) unless `slug` is given; it gets one read from its title when
 		 * it is published. Files of the parent its body names (`./img/…`) are copied in.
 		 */
-		/** @param {{ title: string, parent?: string, body?: string, slug?: string, props?: Record<string, unknown>, database?: string }} args */
-		async createPage({ title, parent = '', body = '', slug, props, database }) {
+		/** @param {{ title: string, parent?: string, body?: string, slug?: string, props?: Record<string, unknown> }} args */
+		async createPage({ title, parent = '', body = '', slug, props }) {
 			if (!title?.trim()) throw new StudioOpsError(t('标题不能为空'));
 			const all = await pages();
 			const above = parent ? all.find((page) => page.slug === parent) : null;
 			if (parent && !above) throw new StudioOpsError(t('上级页面 {parent} 不存在', { parent }));
-			// A row of a database of the page above: the one named, or its only one when values are given.
-			const ids = (above?.databases ?? []).map((each) => each.id).filter(Boolean);
-			if (database && !ids.includes(database)) throw new StudioOpsError(t('上级页面里没有 id 为 {database} 的数据库', { database }));
-			const of = database || (props !== undefined && ids.length === 1 ? ids[0] : null);
-			if (!of && props !== undefined && ids.length > 1) throw new StudioOpsError(t('上级页面有 {count} 个数据库，用 database 说是哪一个（{ids}）', { count: ids.length, ids: ids.join('、') }));
+			// Values are a row's: under a database.
+			if (props !== undefined && above?.type !== 'database') throw new StudioOpsError(t('只有数据库的行有 props：parent 要给数据库页面（type: database）'));
 			const folder = slug || freeSlug(autoSlug(), all.map((page) => page.slug));
 			await articles.create({ slug: folder, title: title.trim(), parent, body, files: parent ? filesNamed(body) : [] });
-			// Its values (those with nothing in them not written), and which database it is a row of.
+			// Its values (those with nothing in them not written).
 			const values = rowValues({}, props);
-			if (of || Object.keys(values).length) {
+			if (Object.keys(values).length) {
 				const { source, revision } = await articles.read(folder);
-				const next = setFrontmatterProps(of ? setFrontmatterDatabase(source, of) : source, Object.keys(values).length ? values : null);
-				await articles.save(folder, { source: next, expectedRevision: revision });
+				await articles.save(folder, { source: setFrontmatterProps(source, values), expectedRevision: revision });
 			}
-			return { slug: folder, address: `/blog/${folder}/`, parent, ...(of ? { database: of } : {}) };
+			return { slug: folder, address: `/blog/${folder}/`, parent };
+		},
+
+		/**
+		 * A database (数据库): a page of its own, its rows the pages made under it; its columns (`columns`: name, type,
+		 * options), shown as a table. Under `parent` when given, and shown in that page (a block at its end naming it)
+		 * unless `show` is false (then a page under it, as a full-page database).
+		 */
+		/** @param {{ title: string, parent?: string, columns?: unknown[], show?: boolean }} args */
+		async createDatabase({ title, parent = '', columns = [], show = true }) {
+			if (!title?.trim()) throw new StudioOpsError(t('标题不能为空'));
+			if (parent) await find(parent);
+			if (!Array.isArray(columns)) throw new StudioOpsError(t('columns 要写成列表：[{"name": "方法", "type": "select", "options": ["B3LYP"]}]'));
+			const { slug } = await databases.create({ title: title.trim(), parent, config: { columns } });
+			if (parent && show) {
+				const { source } = await articles.read(parent);
+				await write(parent, `${source.replace(/\s*$/u, '')}\n\n\`\`\`database\n${referenceText(slug)}\n\`\`\`\n`);
+			}
+			return { slug, address: `/blog/${slug}/`, parent, columns: (await databases.config(slug))?.columns ?? [] };
 		},
 
 		/**

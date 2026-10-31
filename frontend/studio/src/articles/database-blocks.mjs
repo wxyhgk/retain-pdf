@@ -1,22 +1,24 @@
 /**
- * A page's ```database blocks (the Studio's 数据库), as text: each has an `id` in its JSON, and the pages that are its
- * rows say it (`database: <id>` among their properties), so a page may hold several, and pages under it that are not
- * rows of one stay pages. A block from before ids (none in its JSON) is the page's first; its rows the pages under the
- * page that name no database (the Studio gives it an id, and them, when it is shown: Databases.adopt).
+ * The Studio's 数据库, as Notion's: a database is a page of its own (`type: database` among its properties), the pages
+ * under it its rows. What columns it has and how it is shown are a ```database block in it, its definition (its
+ * columns in its JSON). Any other page shows it with a ```database block that only names it — `{"source": "<its
+ * folder>"}` — as many pages as like, the rows the same everywhere. A block from before databases were pages (its
+ * columns in it, in an ordinary page, its rows the pages under that page saying its `id`) is made one when it is met
+ * (Databases.detach), the block then naming it.
  */
 
 const FENCES = /^(```+|~~~+)[ \t]*database[ \t]*\r?\n([\s\S]*?)\r?\n\1[ \t]*$/gmu;
 
-/** What an id may be: a few letters and digits. */
+/** What the id of a block from before may be: a few letters and digits (a database made from one keeps it). */
 export const DATABASE_ID = /^[a-z0-9]{4,16}$/u;
 
-/** A new id for a database: 8 letters and digits. */
+/** A new id: 8 letters and digits. */
 export function newDatabaseId() {
 	return Array.from(crypto.getRandomValues(new Uint8Array(8)), (byte) => 'abcdefghijklmnopqrstuvwxyz0123456789'[byte % 36]).join('');
 }
 
 /** A block's JSON as far as it reads (`{}` when it does not). */
-function settingsOf(text) {
+export function settingsOf(text) {
 	try {
 		const parsed = JSON.parse(text || '{}');
 		return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
@@ -25,44 +27,67 @@ function settingsOf(text) {
 	}
 }
 
+/** The database a block's text names (its folder), or null: the block is a definition. */
+export function sourceOf(text) {
+	const { source } = settingsOf(text);
+	return typeof source === 'string' && source.trim() ? source.trim() : null;
+}
+
+/** A block's text that shows the database `slug`. */
+export function referenceText(slug) {
+	return JSON.stringify({ source: slug });
+}
+
 /**
- * The page's database blocks, in order: each its id (null for one from before ids), its title, its text.
+ * The page's database blocks, in order: the database each names (null: a definition), its id (one from before), its
+ * title (one from before), its text.
  * @param {string} source
- * @returns {Array<{ id: string | null, title: string, text: string }>}
+ * @returns {Array<{ source: string | null, id: string | null, title: string, text: string }>}
  */
 export function databaseBlocks(source) {
 	return [...String(source ?? '').matchAll(FENCES)].map((match) => {
 		const settings = settingsOf(match[2]);
-		return { id: typeof settings.id === 'string' && DATABASE_ID.test(settings.id) ? settings.id : null, title: typeof settings.title === 'string' ? settings.title : '', text: match[2] };
+		return {
+			source: sourceOf(match[2]),
+			id: typeof settings.id === 'string' && DATABASE_ID.test(settings.id) ? settings.id : null,
+			title: typeof settings.title === 'string' ? settings.title : '',
+			text: match[2],
+		};
 	});
 }
 
-/**
- * The block whose id is `id` (null: the first, of one from before ids); its text, or null when there is none.
- * @param {string} source
- * @param {string | null} [id]
- * @returns {string | null}
- */
-export function databaseText(source, id = null) {
-	const blocks = databaseBlocks(source);
-	const block = id ? blocks.find((each) => each.id === id) : blocks.find((each) => !each.id);
-	return block?.text ?? null;
+/** A database page's definition (its first block naming none), or null. */
+export function definitionText(source) {
+	return databaseBlocks(source).find((block) => !block.source)?.text ?? null;
 }
 
 /**
- * The page with that block's text written anew (as it was when there is none).
+ * The page with each database block's text as `change` gives it (its text, its place among the page's blocks;
+ * undefined: as it is).
  * @param {string} source
- * @param {string | null} id
- * @param {string} text
+ * @param {(text: string, at: number) => string | undefined} change
  */
-export function withDatabaseText(source, id, text) {
-	let found = false;
+export function mapDatabaseBlocks(source, change) {
+	let at = -1;
 	return String(source).replace(FENCES, (whole, fence, inner) => {
-		if (found) return whole;
-		const ownId = settingsOf(inner).id;
-		const mine = id ? ownId === id : !(typeof ownId === 'string' && DATABASE_ID.test(ownId));
-		if (!mine) return whole;
-		found = true;
-		return `${fence}database\n${text}\n${fence}`;
+		at += 1;
+		const next = change(inner, at);
+		return next === undefined ? whole : `${fence}database\n${next}\n${fence}`;
 	});
+}
+
+/** A database page with its definition written anew (put at the end of its text when it has none). */
+export function withDefinitionText(source, text) {
+	let found = false;
+	const next = mapDatabaseBlocks(source, (inner) => {
+		if (found || sourceOf(inner)) return undefined;
+		found = true;
+		return text;
+	});
+	return found ? next : `${next.replace(/\s*$/u, '')}\n\n\`\`\`database\n${text}\n\`\`\`\n`;
+}
+
+/** The page with its blocks that name the database `from` naming `to` (its folder renamed). */
+export function relinkDatabases(source, from, to) {
+	return mapDatabaseBlocks(source, (inner) => (sourceOf(inner) === from ? JSON.stringify({ ...settingsOf(inner), source: to }) : undefined));
 }

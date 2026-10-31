@@ -248,20 +248,27 @@ test('代码仓库 for an AI: one of this machine found and added, one made, lis
 	assert.match(execFileSync('node', [join(root, 'bin/studio.mjs'), 'help'], { env: { ...process.env, STUDIO_BLOG_DIR: blog } }).toString(), /add-repo/u);
 });
 
-test('a database’s rows made and changed through the operations: create_page and update_page with props', async (t) => {
+test('a database made and its rows changed through the operations: create_database, create_page and update_page with props', async (t) => {
 	const blog = temporaryBlog(t);
 	const ops = createStudioOps(root);
-	const { slug: table } = await ops.createPage({ title: '计算记录', body: '```database\n{"id": "calc0001", "columns": [{"name": "方法", "type": "select"}, {"name": "能量", "type": "number"}, {"name": "收敛", "type": "checkbox"}]}\n```\n' });
+	const { slug: project } = await ops.createPage({ title: '项目' });
+	// A database of its own, shown at the end of the page it is under.
+	const { slug: table, columns } = await ops.createDatabase({ title: '计算记录', parent: project, columns: [{ name: '方法', type: 'select' }, { name: '能量', type: 'number' }, { name: '收敛', type: 'checkbox' }] });
+	assert.deepEqual(columns.map((column: { name: string }) => column.name), ['方法', '能量', '收敛']);
+	assert.match(readFileSync(join(blog, table, 'index.md'), 'utf8'), /^type: database$/mu);
+	assert.ok(readFileSync(join(blog, project, 'index.md'), 'utf8').includes(`\`\`\`database\n{"source":"${table}"}\n\`\`\``));
+	assert.equal(((await ops.listPages({ parent: project })) as Array<{ slug: string; type?: string }>).find((page) => page.slug === table)?.type, 'database');
 	const made = await ops.createPage({ title: 'H2O', parent: table, props: { 方法: 'B3LYP', 能量: -76.41, 收敛: true, 备注: '' } });
 	const row = made.slug;
-	// A row of the page's only database: it says so.
-	assert.equal(made.database, 'calc0001');
 	const written = () => readFileSync(join(blog, row, 'index.md'), 'utf8');
-	assert.match(written(), /^database: "calc0001"$/mu);
+	assert.doesNotMatch(written(), /^database:/mu);
 	assert.match(written(), /^props: \{ "方法": "B3LYP", "能量": -76\.41, "收敛": true \}$/mu);
-	// A page under it, no values: a page, not a row.
-	assert.equal((await ops.createPage({ title: '笔记', parent: table })).database, undefined);
-	await assert.rejects(ops.createPage({ title: 'x', parent: table, database: 'nothere1' }), /没有 id 为 nothere1 的数据库/u);
+	// Values only for a row: the page above a database.
+	await assert.rejects(ops.createPage({ title: 'x', parent: project, props: { 方法: 'PBE0' } }), /只有数据库的行有 props/u);
+	// Not shown anywhere: a full-page database, from the command line too.
+	const quiet = JSON.parse(execFileSync(process.execPath, [join(root, 'bin', 'studio.mjs'), 'create-database', '--title', '文献', '--parent', project, '--show', 'false', '--columns', '[{"name": "年份", "type": "number"}]'], { env: process.env, encoding: 'utf8' }));
+	assert.doesNotMatch(readFileSync(join(blog, project, 'index.md'), 'utf8'), new RegExp(quiet.slug, 'u'));
+	assert.deepEqual(quiet.columns, [{ name: '年份', type: 'number' }]);
 	// Only those given changed; null takes one away; the rest of the page as it was.
 	await ops.updatePage({ slug: row, props: { 能量: -76.42, 收敛: null } });
 	assert.match(written(), /^props: \{ "方法": "B3LYP", "能量": -76\.42 \}$/mu);

@@ -21,13 +21,16 @@ import {
 	listTemplates,
 	databaseRows,
 	databaseConfig,
+	databaseInfo,
+	setDatabaseConfig,
+	createDatabase,
+	detachDatabase,
 	addDatabaseOption,
 	setArticleParent,
 	setDatabaseValue,
 	setDatabaseValues,
 	setDatabaseTitle,
 	addDatabaseRow,
-	adoptDatabaseRows,
 	changeDatabaseColumns,
 	renderTemplate,
 	tellStarted,
@@ -83,7 +86,7 @@ import { answerWindows } from './windows/studio-line';
 import { openFileEditor } from './files/file-editor';
 import { openFileHistory } from './files/file-history-view';
 import { openFilePreview } from './files/file-preview';
-import { setDatabaseHost } from './editor/database/database-block';
+import { setDatabaseSpace } from './editor/database/database-block';
 import { trackWrite } from './state/writes';
 import { parseStudioDocument } from '@blog/document/parse.ts';
 import { textFileLanguage } from '@blog/markdown/code-files/languages.mjs';
@@ -232,19 +235,11 @@ const articleList = createArticleList(shell.querySelector<HTMLElement>('.article
 			if (session.slug && session.slug !== slug) articleList.select(session.slug);
 		});
 	},
-	// A database in the tree: its page opened, the database brought into sight.
-	openDatabase: (slug, id) => {
-		showView('editor');
-		articleList.select(slug);
-		void session.open(slug).then(() => {
-			if (session.slug !== slug) return;
-			requestAnimationFrame(() => editorPanel.querySelector(`.database-block[data-database-id="${CSS.escape(id)}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
-		});
-	},
 	duplicate: (article) => void articleActions.duplicate(article),
 	remove: (article) => void articleActions.remove(article),
 	commit: (article) => void articleActions.commit(article),
 	createChild: (article) => void pages.newPage(article.slug),
+	createDatabase: (article) => void pages.newDatabase(article.slug),
 	merge: (article) => void articleActions.merge(article),
 	// On disk, the open article too (saved first): what changes is its properties alone, which it takes in quietly.
 	move: (slugs, parent, place) => void pages.movePages(slugs, parent, place),
@@ -289,7 +284,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 	publish: () => void pages.publishAndName(),
 	leaveTitle: (newBlock, text) => (newBlock ? editor.startNewBlock(text) : editor.focusStart()),
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
-	addDatabaseOption: (database, id, column, option) => trackWrite(() => addDatabaseOption(database, id, column, option)),
+	addDatabaseOption: (database, column, option) => trackWrite(() => addDatabaseOption(database, column, option)),
 	async pictures() {
 		const slug = session.slug;
 		if (!slug) return [];
@@ -474,12 +469,15 @@ const filePanel = createFilePanel(shell.querySelector<HTMLElement>('#side-files'
 	sheetRows: firstSheetRows,
 	ocr: (path) => void editorAi.ocrPdf(path),
 });
-// 数据库: a block's rows are the pages under the article shown that say its id (server/articles/databases.mjs).
-setDatabaseHost((id) => {
-	const slug = session.slug;
-	if (!slug) return null;
-	return {
-		rows: async () => (await databaseRows(slug, id)).rows,
+// 数据库: a database is a page (`type: database`), its rows the pages under it (server/articles/databases.mjs); its
+// block in its own page is it, a block in another page shows it.
+setDatabaseSpace({
+	page() {
+		const article = session.current.article;
+		return article ? { slug: article.slug, database: article.properties?.type === 'database' } : null;
+	},
+	host: (slug) => ({
+		rows: async () => (await databaseRows(slug)).rows,
 		setValue: async (row, column, value) => (await trackWrite(() => setDatabaseValue(row, column.name, column.type, value))).value,
 		setValues: async (row, entries) => (await trackWrite(() => setDatabaseValues(row, entries.map(({ column, value }) => ({ column: column.name, type: column.type, value }))))).values,
 		setTitle: async (row, title) => {
@@ -487,15 +485,11 @@ setDatabaseHost((id) => {
 			void articleList.load();
 		},
 		async addRow(row) {
-			const made = await trackWrite(() => addDatabaseRow(slug, id, row));
+			const made = await trackWrite(() => addDatabaseRow(slug, row));
 			void articleList.load();
 			return made.slug;
 		},
-		async adopt(given) {
-			await trackWrite(() => adoptDatabaseRows(slug, given));
-			void articleList.load();
-		},
-		changeColumns: async (change) => void (await trackWrite(() => changeDatabaseColumns(slug, id, change))),
+		changeColumns: async (change) => void (await trackWrite(() => changeDatabaseColumns(slug, change))),
 		async removeRow(row) {
 			const article = articleList.articles().find((entry) => entry.slug === row);
 			if (article) await articleActions.remove(article);
@@ -516,7 +510,30 @@ setDatabaseHost((id) => {
 		toast: (message, error) => showToast(message, error),
 		rowBody: async (row) => parseStudioDocument((await getArticle(row)).source).body.raw,
 		fileUrl: (row, src) => articleFileUrl(row, src),
-	};
+	}),
+	info: (slug) => databaseInfo(slug),
+	saveConfig: async (slug, config) => void (await trackWrite(() => setDatabaseConfig(slug, config))),
+	async rename(slug, title) {
+		await trackWrite(() => setDatabaseTitle(slug, title));
+		void articleList.load();
+	},
+	async create() {
+		const made = await trackWrite(() => createDatabase('', session.slug ?? ''));
+		void articleList.load();
+		return made.slug;
+	},
+	async detach(text) {
+		const page = session.slug;
+		if (!page) throw new Error(t('没有打开文章'));
+		const made = await trackWrite(() => detachDatabase(page, text));
+		void articleList.load();
+		return made.slug;
+	},
+	open(slug) {
+		showView('editor');
+		void session.open(slug);
+	},
+	toast: (message, error) => showToast(message, error),
 });
 
 // The files listed anew: the editor's file cards say their sizes.
@@ -646,10 +663,10 @@ const session = new ArticleSession(
 			openTitle = shown.title || t('无标题');
 			studioPlugins.emit('studio/article-opened', article.slug);
 			properties.show(shown, article.problems ?? []);
-			// A row of a database (of the page it is under: the one it says, or one from before ids): its columns among its properties.
+			// A row of a database (the page it is under is one): its columns among its properties.
 			if (shown.parent) {
 				const [opening, parent] = [article.slug, shown.parent];
-				void databaseConfig(parent, shown.database || null).then((config) => session.slug === opening && properties.showDatabase(config ? { slug: parent, config } : null), () => {});
+				void databaseConfig(parent).then((config) => session.slug === opening && properties.showDatabase(config ? { slug: parent, config } : null), () => {});
 			}
 			topBar.showArticle(article.slug, shown.title || t('无标题'), shown.kind);
 			topBar.edited(article.modified ?? null);
@@ -752,6 +769,7 @@ const quickFind = createQuickFind({
 		const templates = (await listTemplates().catch(() => ({ templates: [] }))).templates;
 		const fromTemplates = [
 			{ key: 'studio:today', label: t('今天的日志'), icon: '📅', run: () => void pages.todayJournal() },
+			{ key: 'studio:new-database', label: t('新建数据库'), icon: '▦', hint: t('一个整页的数据库，它下面的页面就是各行'), run: () => void pages.newDatabase() },
 			...templates.map((template) => ({ key: `template:${template.id}`, label: t('新建：{name}', { name: template.name }), icon: '＋', hint: template.description, run: () => void pages.newFromTemplate(template.id) })),
 		];
 		const apps = (await listMiniApps().catch(() => [])).filter((app) => !app.problem);

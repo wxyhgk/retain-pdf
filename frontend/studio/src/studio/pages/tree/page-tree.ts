@@ -1,15 +1,10 @@
 import { comparePages } from '../../../articles/page-order.mjs';
 import type { ArticleSummary } from '../../types.ts';
 
-/** A database in a page, as the tree shows it (as Notion's sidebar): its rows under it, not among the page's pages. */
-export type TreeTable = { key: string; page: string; id: string; title: string; rows: ArticleSummary[] };
-
 export type PageTree = {
 	roots: ArticleSummary[];
-	/** The pages under each page, those that are rows of a database of it left out. */
+	/** The pages under each page (a database's: its rows). */
 	children: Map<string, ArticleSummary[]>;
-	/** The databases of each page, with their rows. */
-	tables: Map<string, TreeTable[]>;
 	placedUnder: (article: ArticleSummary) => string;
 };
 
@@ -31,19 +26,20 @@ export function pageTree(articles: ArticleSummary[]): PageTree {
 	};
 	const roots: ArticleSummary[] = [];
 	const children = new Map<string, ArticleSummary[]>();
-	const tables = new Map<string, TreeTable[]>();
-	for (const article of articles) {
-		const found = (article.databases ?? []).flatMap(({ id, title }) => (id ? [{ key: `${article.slug}#${id}`, page: article.slug, id, title, rows: [] }] : []));
-		if (found.length) tables.set(article.slug, found);
-	}
 	for (const article of [...articles].sort(comparePages)) {
 		const parent = placedUnder(article);
-		const table = parent && article.database ? tables.get(parent)?.find((each) => each.id === article.database) : undefined;
-		if (table) table.rows.push(article);
-		else if (!parent) roots.push(article);
+		if (!parent) roots.push(article);
 		else children.set(parent, [...(children.get(parent) ?? []), article]);
 	}
-	return { roots, children, tables, placedUnder };
+	return { roots, children, placedUnder };
+}
+
+/**
+ * Whether the pages under a page are hidden: a page's when it was folded; a database's (its rows, maybe many) until it
+ * was unfolded, as Notion's sidebar has them.
+ */
+export function isFolded(page: ArticleSummary, folded: ReadonlySet<string>, opened: ReadonlySet<string>): boolean {
+	return page.type === 'database' ? !opened.has(page.slug) : folded.has(page.slug);
 }
 
 /** Articles whose title or folder holds the query, ignoring case. */
@@ -59,9 +55,7 @@ export function visibleOrder(tree: PageTree, folded: ReadonlySet<string>, opened
 	const walk = (pages: ArticleSummary[]) => {
 		for (const page of pages) {
 			order.push(page.slug);
-			if (folded.has(page.slug)) continue;
-			walk(tree.children.get(page.slug) ?? []);
-			for (const table of tree.tables.get(page.slug) ?? []) if (opened.has(table.key)) walk(table.rows);
+			if (!isFolded(page, folded, opened)) walk(tree.children.get(page.slug) ?? []);
 		}
 	};
 	walk(tree.roots);

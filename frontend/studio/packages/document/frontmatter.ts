@@ -113,7 +113,7 @@ function validateProperties(properties: ArticleProperties): void {
  * taken out when empty; the rest of the text byte for byte as it was (the
  * tree's moves change nothing else).
  */
-export function setFrontmatterField(source: string, key: 'parent' | 'order' | 'database', value: string | number | null): string {
+export function setFrontmatterField(source: string, key: 'parent' | 'order' | 'database' | 'type', value: string | number | null): string {
 	const document = parseStudioDocument(source);
 	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
@@ -136,8 +136,8 @@ export function setFrontmatterProps(source: string, props: Record<string, unknow
 }
 
 /**
- * The database a page is a row of (`database:`, its id) set, or taken out (null); the rest of the text byte for byte
- * as it was.
+ * The block from before databases were pages whose row a page is (`database:`, its id) set, or taken out (null); the
+ * rest of the text byte for byte as it was.
  */
 export function setFrontmatterDatabase(source: string, id: string | null): string {
 	return setFrontmatterField(source, 'database', id);

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, Copy, Ellipsis, PencilLine, Plus, Search, SquareKanban, Table2, Trash2, X } from 'lucide-react';
+import { ChevronDown, Copy, Ellipsis, Maximize2, PencilLine, Plus, Search, SquareKanban, Table2, Trash2, X } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import type { DatabaseColumnsChange } from '@studio/api/client';
@@ -32,8 +32,6 @@ export type DatabaseHost = {
 	setValues(row: string, entries: Array<{ column: Column; value: unknown }>): Promise<unknown[]>;
 	setTitle(row: string, title: string): Promise<void>;
 	addRow(row: { title?: string; props?: Record<string, unknown>; template: string | null }): Promise<string>;
-	/** A database from before ids given one (`id`): the pages that were its rows say it now. */
-	adopt(id: string): Promise<void>;
 	/** A row's page to the trash (after asking, as the tree's 删除). */
 	removeRow(row: string): Promise<void>;
 	/** Several rows' pages to the trash (asked once). */
@@ -266,6 +264,8 @@ function useDatabase(config: DatabaseConfig, change: (next: DatabaseConfig) => v
 		renameColumn(column: Column, name: string): boolean {
 			const to = name.trim();
 			if (!to || to === column.name) return false;
+			// Renamed already (its menu closing after Enter kept the name): nothing more.
+			if (!now.current.columns.some((each) => each.name === column.name)) return false;
 			if (to === TITLE || now.current.columns.some((each) => each.name === to)) {
 				host.toast(t('已经有一列叫「{name}」', { name: to }), true);
 				return false;
@@ -442,19 +442,23 @@ function renamedIn(value: unknown, from: string, to: string | null): unknown {
 	return value === from ? (to ?? undefined) : value;
 }
 
+/** A database shown in another page than its own: its name (its page's title, typed in place) and icon, its page opened. */
+export type DatabaseHeading = { title: string; icon: string; rename(title: string): void; open(): void };
+
 /**
- * A database (database-block.ts), as Notion's: its name; its views (表格, 看板) and, at their right, filters, order,
- * searching, its settings, 新建; the filters and order in force as chips under them; then the rows as the view has
- * them. Its columns and view are the block's (`config`, `change`); the rows' values are the pages' own (`host`).
+ * A database (database-block.ts), as Notion's: its name (shown in another page; its own page's title is it there); its
+ * views (表格, 看板) and, at their right, filters, order, searching, its settings, 新建; the filters and order in force
+ * as chips under them; then the rows as the view has them. Its columns and view are its settings (`config`, `change`);
+ * the rows' values are the pages' own (`host`).
  */
-export function DatabaseView({ config, change, host }: { config: DatabaseConfig; change(next: DatabaseConfig): void; host: DatabaseHost }) {
+export function DatabaseView({ config, change, host, heading = null }: { config: DatabaseConfig; change(next: DatabaseConfig): void; host: DatabaseHost; heading?: DatabaseHeading | null }) {
 	const database = useDatabase(config, change, host);
 	const [search, setSearch] = useState<string | null>(null);
 	const { rows, problem } = database;
 	const visible = rows ? visibleRows(rows, config, search ?? '') : [];
 	return (
 		<div className="db">
-			<Title config={config} change={change} />
+			{heading && <Heading heading={heading} />}
 			<div className="db-bar">
 				<div className="db-tabs" role="tablist">
 					<Tab view="table" config={config} change={change} />
@@ -493,28 +497,37 @@ export function DatabaseView({ config, change, host }: { config: DatabaseConfig;
 	);
 }
 
-/** Its name, typed in place; none: 无标题. */
-function Title({ config, change }: { config: DatabaseConfig; change(next: DatabaseConfig): void }) {
-	const [typed, setTyped] = useState(config.title);
-	useEffect(() => setTyped(config.title), [config.title]);
-	const commit = () => typed.trim() !== config.title && change({ ...config, title: typed.trim() });
+/** Its name, typed in place (none: 无标题), its icon before it; beside them, its own page opened (整页打开). */
+function Heading({ heading }: { heading: DatabaseHeading }) {
+	const [typed, setTyped] = useState(heading.title);
+	useEffect(() => setTyped(heading.title), [heading.title]);
+	const commit = () => typed.trim() !== heading.title && heading.rename(typed.trim());
 	return (
-		<input
-			className="db-title"
-			data-database-title
-			value={typed}
-			placeholder={t('无标题')}
-			onChange={(event) => setTyped(event.target.value)}
-			onBlur={commit}
-			onKeyDown={(event) => {
-				if (event.nativeEvent.isComposing) return;
-				if (event.key === 'Enter') event.currentTarget.blur();
-				else if (event.key === 'Escape') {
-					setTyped(config.title);
-					event.currentTarget.blur();
-				}
-			}}
-		/>
+		<div className="db-heading">
+			<button type="button" className="db-heading-icon" aria-label={t('整页打开')} onClick={heading.open}>
+				{heading.icon || <Table2 aria-hidden />}
+			</button>
+			<input
+				className="db-title"
+				data-database-title
+				value={typed}
+				placeholder={t('无标题')}
+				onChange={(event) => setTyped(event.target.value)}
+				onBlur={commit}
+				onKeyDown={(event) => {
+					if (event.nativeEvent.isComposing) return;
+					if (event.key === 'Enter') event.currentTarget.blur();
+					else if (event.key === 'Escape') {
+						setTyped(heading.title);
+						event.currentTarget.blur();
+					}
+				}}
+			/>
+			<button type="button" className="db-icon-button is-wide db-heading-open" onClick={heading.open} data-database-open-page>
+				<Maximize2 aria-hidden />
+				{t('整页打开')}
+			</button>
+		</div>
 	);
 }
 

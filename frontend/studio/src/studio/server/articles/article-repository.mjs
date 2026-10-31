@@ -8,6 +8,7 @@ import { DEFAULT_ARTICLE_VIEWS, readMoleculeViews, writeMoleculeView } from '../
 import { articleBundlePaths, assertArticleSlug, resolveInside, StudioPathError } from '../../../articles/bundle-paths.mjs';
 import { ARTICLE_FOLDERS, SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
 import { findArticleLinks, relinkArticle, retitleArticleLinks } from '@blog/markdown/articles/article-links.mjs';
+import { relinkDatabases } from '../../../articles/database-blocks.mjs';
 import { parseBibtex } from '@blog/markdown/references/bibtex.mjs';
 import { ArticleValidationError, articleMacros, articleProblems, articleProperties, articleSummary, createArticleSource } from '../../../articles/schemas.mjs';
 import { t } from '@blog/i18n/index.mjs';
@@ -29,8 +30,12 @@ async function readViewsSource(path) {
 /** A line that is only a link to the page `slug`: the page block the editor shows for it. */
 const pageBlockLine = (slug) => new RegExp(`^[ \\t]*\\[(?:\\\\.|[^\\]\\\\\\n])*\\]\\((?:https?://[^)\\s]*)?/(?:blog|wiki)/${slug}/?\\)[ \\t]*$`, 'u');
 
-/** The page `slug` as a page block at the end of `source`, unless one is there already. */
+/**
+ * The page `slug` as a page block at the end of `source`, unless one is there already, or `source` is a database's (the
+ * pages under it are its rows, not links in it).
+ */
 export function withPageBlock(source, slug, title) {
+	if (articleSummary(source, '').type === 'database') return source;
 	if (source.split('\n').some((line) => pageBlockLine(slug).test(line))) return source;
 	return `${source.replace(/\s*$/u, '')}\n\n[${title.replace(/[[\]\\]/gu, '\\$&')}](/blog/${slug}/)\n`;
 }
@@ -203,12 +208,12 @@ export class ArticleRepository {
 	 * parent's files it names (`files`: `img/…`, `assets/…`) are copied into
 	 * its own folder, where its `./img/…` links then find them.
 	 */
-	async create({ slug, title, parent = '', body = '', files = [] }) {
+	async create({ slug, title, parent = '', body = '', files = [], type = '' }) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
 		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError(t('新文章的内容无效'));
 		const paths = articleBundlePaths(this.blogRoot, slug);
-		const source = createArticleSource({ title, parent, body });
+		const source = createArticleSource({ title, parent, body, type });
 		// Making the folder is taking the name: two made at once, one of them is refused.
 		try {
 			await mkdir(paths.directory);
@@ -276,7 +281,8 @@ export class ArticleRepository {
 		let relinked = 0;
 		for (const { slug: page, source } of await this.#sources()) {
 			if (!source.includes(slug)) continue;
-			if (await this.#rewrite(page, (text) => relinkArticle(text, slug, to, { site }).source, { keep: true })) relinked += 1;
+			// A database's blocks in other pages name it by its folder.
+			if (await this.#rewrite(page, (text) => relinkDatabases(relinkArticle(text, slug, to, { site }).source, slug, to), { keep: true })) relinked += 1;
 		}
 		return { slug: to, relinked };
 	}

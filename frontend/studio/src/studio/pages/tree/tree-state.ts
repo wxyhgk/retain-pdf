@@ -14,10 +14,10 @@ export type ArticleListHost = {
 	commit(article: ArticleSummary): void;
 	/** The articles, each time they are read. */
 	listed?(articles: ArticleSummary[]): void;
-	/** A database of a page (in the tree, its rows under it): the page opened, the database in sight. */
-	openDatabase?(slug: string, id: string): void;
-	/** A new page under this one. */
+	/** A new page under this one (a database's: a row). */
 	createChild(article: ArticleSummary): void;
+	/** A new database under this one. */
+	createDatabase?(article: ArticleSummary): void;
 	/** 并入上级页面: its text into the page it is under, as a section. */
 	merge(article: ArticleSummary): void;
 	/**
@@ -48,7 +48,7 @@ export type TreeState = {
 	chosenFrom: string | null;
 	/** The pages whose pages under them are hidden, kept for the next visit. */
 	folded: ReadonlySet<string>;
-	/** The databases whose rows are shown (folded until opened, as Notion's sidebar has them), kept for the next visit. */
+	/** The databases whose rows are shown (folded until unfolded, as Notion's sidebar has them), kept for the next visit. */
 	opened: ReadonlySet<string>;
 	git: GitStatus | null;
 	/** A row to take the keys once drawn (after folding, going up or in), counted so each ask is one. */
@@ -100,16 +100,15 @@ export function createTreeState(host: ArticleListHost) {
 		return all.filter((slug) => !all.some((other) => other !== slug && within(articles, slug, other))).sort((a, b) => rank(a) - rank(b));
 	}
 
-	/** The pages it is under unfolded, and the databases it (or one of them) is a row of opened, so that it shows. */
+	/** The pages it is under unfolded (databases among them too), so that it shows. */
 	function unfoldTo(slug: string): void {
-		const { articles, folded, opened, tree } = get();
+		const { articles, folded, opened } = get();
 		const bySlug = new Map(articles.map((article) => [article.slug, article]));
 		const next = new Set(folded);
 		const open = new Set(opened);
 		for (let page = bySlug.get(slug), steps = 0; page?.parent && steps <= articles.length; page = bySlug.get(page.parent), steps += 1) {
-			next.delete(page.parent);
-			const table = page.database ? tree.tables.get(page.parent)?.find((each) => each.id === page!.database) : undefined;
-			if (table) open.add(table.key);
+			if (bySlug.get(page.parent)?.type === 'database') open.add(page.parent);
+			else next.delete(page.parent);
 		}
 		if (next.size !== folded.size) {
 			keepFolded(next);
@@ -168,6 +167,12 @@ export function createTreeState(host: ArticleListHost) {
 			host.open(slug);
 		},
 		setFolded(slug: string, fold: boolean): void {
+			// A database's rows: shown when unfolded (folded till then).
+			if (get().articles.find((page) => page.slug === slug)?.type === 'database') {
+				actions.setOpened(slug, !fold);
+				actions.focusRow(slug);
+				return;
+			}
 			const next = new Set(get().folded);
 			if (fold) next.add(slug);
 			else next.delete(slug);
@@ -176,10 +181,10 @@ export function createTreeState(host: ArticleListHost) {
 			actions.focusRow(slug);
 		},
 		/** A database's rows shown under it, or not. */
-		setOpened(key: string, open: boolean): void {
+		setOpened(slug: string, open: boolean): void {
 			const next = new Set(get().opened);
-			if (open) next.add(key);
-			else next.delete(key);
+			if (open) next.add(slug);
+			else next.delete(slug);
 			keepFolded(next, OPENED_KEY);
 			store.set({ opened: next });
 		},
