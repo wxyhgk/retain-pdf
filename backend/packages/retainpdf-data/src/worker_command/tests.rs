@@ -110,6 +110,7 @@ fn stage_command_returns_error_when_spec_cannot_be_written() {
             source_json_path: Path::new("/tmp/document.v1.json"),
             source_pdf_path: Path::new("/tmp/source.pdf"),
             layout_json_path: None,
+            ocr_stream_dir: None,
         },
     );
 
@@ -161,6 +162,7 @@ fn translate_command(
             source_json_path,
             source_pdf_path,
             layout_json_path,
+            ocr_stream_dir: None,
         },
     )
     .expect("build translate command")
@@ -1233,6 +1235,7 @@ fn domain_prewarm_command_writes_a_spec_with_the_translation_model_and_no_key() 
                 source_json_path: Path::new("/tmp/document.v1.json"),
                 source_pdf_path: Path::new("/tmp/source.pdf"),
                 layout_json_path: None,
+                ocr_stream_dir: None,
             },
         )
         .expect("build translate command"),

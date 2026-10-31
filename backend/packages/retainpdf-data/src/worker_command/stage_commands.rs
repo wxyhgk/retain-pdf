@@ -41,6 +41,9 @@ pub enum WorkerStageCommand<'a> {
         source_json_path: &'a Path,
         source_pdf_path: &'a Path,
         layout_json_path: Option<&'a Path>,
+        /// 跟着 OCR 翻（OCR 和翻译并行）：OCR 流式公布的目录（任务的 `ocr/`）。给了，`source_json_path`
+        /// 是 OCR 最后才写的整份文档，翻译开始时可以还不存在；翻译 worker 跟着 `ocr/stream/` 的清单翻。
+        ocr_stream_dir: Option<&'a Path>,
     },
     Render {
         source_pdf_path: &'a Path,
@@ -86,6 +89,7 @@ pub fn build_worker_stage_command(
             source_json_path,
             source_pdf_path,
             layout_json_path,
+            ocr_stream_dir,
         } => build_translate_only_command(
             config,
             request,
@@ -93,6 +97,7 @@ pub fn build_worker_stage_command(
             source_json_path,
             source_pdf_path,
             layout_json_path,
+            ocr_stream_dir,
         ),
         WorkerStageCommand::Render {
             source_pdf_path,
@@ -136,6 +141,7 @@ fn build_translate_only_command(
     source_json_path: &Path,
     source_pdf_path: &Path,
     layout_json_path: Option<&Path>,
+    ocr_stream_dir: Option<&Path>,
 ) -> Result<Vec<String>> {
     let spec_path = write_translate_stage_spec(
         request,
@@ -143,6 +149,7 @@ fn build_translate_only_command(
         source_json_path,
         source_pdf_path,
         layout_json_path,
+        ocr_stream_dir,
     )?;
     Ok(build_translate_only_entrypoint(config, &spec_path))
 }

@@ -59,6 +59,12 @@ impl JobRecord {
         &self.request_payload.ocr
     }
 
+    /// OCR 会不会一片片公布已做完的页（`ocr/stream/`，契约在 Python 的 `retainpdf_base/ocr_stream.py`）。
+    /// 会的话整本任务的翻译不用等 OCR 做完，跟着它翻（2026-10-31，OCR 和翻译并行）。现在只有 GLM-OCR。
+    pub fn ocr_streams_pages(&self) -> bool {
+        self.request_payload.ocr.provider.trim().eq_ignore_ascii_case("glm_ocr")
+    }
+
     // --- 翻译 ---
 
     /// 翻译用的模型名（原样）。

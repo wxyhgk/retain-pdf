@@ -50,6 +50,20 @@
 | `RETAIN_GLM_OCR_TIMEOUT_SECONDS` | `900` | 单片请求超时 |
 | `RETAIN_GLM_OCR_API_URL` | 智谱官方地址 | 换接口地址（代理、测试） |
 
+## 和翻译并行（2026-10-31）
+
+整本任务（`workflow: "book"`）选 `glm_ocr` 时，OCR 子任务和翻译阶段**同时**开始：OCR 每做完一片就公布已做完的页
+（`ocr/stream/manifest.json`、`ocr/stream/document.v1.json`），翻译跟着一轮轮翻；跨栏、跨页拼接在翻之前就定好，不会先翻半句再重翻。
+OCR 做完时翻译也基本翻完，接着渲染。
+
+对接口的影响（只增不改）：
+
+- 父任务在 OCR 还在跑时就进入 `translating` 阶段；OCR 子任务（`{父任务}-ocr`）照旧有自己的记录和进度。
+- 翻译阶段多了 `substage: "ocr_stream"` 的进度事件：`progress_current` / `progress_total` 是 OCR 已公布的页数 / 全书页数，
+  `payload.round` 是第几轮，`payload.held_back_items` 是这一轮先扣住、等下一页的块数。之后照常有 `translation_batches` 的进度。
+- OCR 失败、被取消时翻译跟着停，父任务按 OCR 的结果收尾（和以前串行时一样的失败说法）。
+- 翻译引擎 agent、开了译前准备（`translation.preparation`）的任务：翻译阶段照样早早启动，但要等 OCR 做完再按整本翻。
+
 ## 产物
 
 | 路径（任务目录下） | 内容 |

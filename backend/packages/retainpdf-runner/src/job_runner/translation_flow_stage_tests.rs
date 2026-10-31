@@ -52,7 +52,7 @@ fn prepare_translation_stage_refuses_to_revive_a_canceled_row() {
     let normalized = paths.ocr_dir.join("normalized.json");
     let source_pdf = paths.source_dir.join("source.pdf");
     let advanced =
-        prepare_translation_stage(&deps, &mut stale, &paths, &normalized, &source_pdf, None)
+        prepare_translation_stage(&deps, &mut stale, &paths, &normalized, &source_pdf, None, None)
             .expect("prepare translation stage");
 
     assert!(
@@ -89,7 +89,7 @@ fn prepare_translation_stage_still_advances_a_running_row() {
     let normalized = paths.ocr_dir.join("normalized.json");
     let source_pdf = paths.source_dir.join("source.pdf");
     let advanced =
-        prepare_translation_stage(&deps, &mut job, &paths, &normalized, &source_pdf, None)
+        prepare_translation_stage(&deps, &mut job, &paths, &normalized, &source_pdf, None, None)
             .expect("prepare translation stage");
 
     assert!(advanced, "running 的行必须能被推进，否则翻译永远起不来");
