@@ -53,8 +53,12 @@ pub(super) async fn spawn_started_process(
     }
 
     let executor_url = std::env::var("RETAIN_MODEL_EXECUTOR_URL").ok();
-    let model_binding =
-        prepare_model_worker_binding(persist.db.as_ref(), &job, executor_url.as_deref())?;
+    let model_binding = prepare_model_worker_binding(
+        persist.db.as_ref(),
+        &job,
+        executor_url.as_deref(),
+        worker_runtime.worker_max_runtime_secs,
+    )?;
     let (mut child, runtime_secrets) =
         spawn_worker_process(worker_runtime, &job, model_binding.as_ref())?;
     job.pid = child.id();

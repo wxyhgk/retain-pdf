@@ -315,14 +315,18 @@ Python worker 通过 stdout 回传运行线索。
 
 语义：
 
-- timeout 秒数来自 `request_payload.runtime.timeout_seconds`
+- `request_payload.runtime.timeout_seconds`：多久没有进展就判卡住（从最近一次新的阶段/进度、检查点、产物算起，
+  见 `process_runner/io_support.rs` 的 `ProgressMark`）；2026-10-31 以前从进程启动算整段时长
+- 绝对上限 `RUST_API_WORKER_MAX_RUNTIME_SECS`（默认 24 小时，`0` 不限；`timeout_seconds` 更大时取它）
+- `request_payload.runtime.no_output_timeout_seconds`：多久没有任何 stdout（默认 `0` 关闭）
 - 超时后 runner 负责 kill worker
 - 然后把 job 标为 `failed`
 
 当前 detail：
 
-- `normalizing` -> `normalization timeout`
-- 其他 provider transport 阶段 -> `provider timeout`
+- 没有进展 -> `no progress for {N}s`（以前是 `normalization timeout` / `provider timeout`）
+- 跑满绝对上限 -> `max runtime {N}s exceeded`
+- 没有输出 -> `no output for {N}s`
 
 ## 8. 成功与失败的判定
 

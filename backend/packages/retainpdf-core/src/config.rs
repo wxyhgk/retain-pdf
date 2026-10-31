@@ -29,7 +29,7 @@ use auth::AuthRuntimeConfig;
 pub use auth::api_key_matches;
 pub use cleanup::CleanupConfig;
 pub use db::DbConfig;
-pub use job_runner::{JobRunnerConfig, JOB_WORKER_THREAD_STACK_BYTES};
+pub use job_runner::{JobRunnerConfig, DEFAULT_WORKER_MAX_RUNTIME_SECS, JOB_WORKER_THREAD_STACK_BYTES};
 pub use jobs_service::{JobsRuntimeMode, JobsServiceConfig};
 pub use origin_policy::{bind_host_is_loopback, OriginPolicyConfig};
 use paths::{create_runtime_dirs, RuntimePathsConfig};
@@ -159,6 +159,7 @@ pub struct WorkerProcessRuntimeConfig<'a> {
     pub worker_terminate_grace_secs: u64,
     pub worker_terminate_poll_ms: u64,
     pub worker_output_drain_secs: u64,
+    pub worker_max_runtime_secs: u64,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -209,6 +210,7 @@ impl AppConfig {
             worker_terminate_grace_secs: self.job_runner.worker_terminate_grace_secs,
             worker_terminate_poll_ms: self.job_runner.worker_terminate_poll_ms,
             worker_output_drain_secs: self.job_runner.worker_output_drain_secs,
+            worker_max_runtime_secs: self.job_runner.worker_max_runtime_secs,
         }
     }
 

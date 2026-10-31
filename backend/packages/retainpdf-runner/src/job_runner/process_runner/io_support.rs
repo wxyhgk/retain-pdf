@@ -113,6 +113,30 @@ impl PersistGate {
     }
 }
 
+/// 什么算"有进展"(`timeout_seconds` 从最近一次进展算起,见 `execution::TimeoutKind`):阶段事件的
+/// (阶段, 子阶段, 进度, 总数) 和上一条不同,或者提交了检查点、发布了产物。只换说明文字、反复报同一个进度
+/// 的行不算,否则一个原地打转、不停打印的 worker 永远不会被判卡住。
+#[derive(Default)]
+struct ProgressMark {
+    last: Option<(String, String, Option<i64>, Option<i64>)>,
+}
+
+impl ProgressMark {
+    fn advanced_by(&mut self, observation: &PipelineStageObservationLine) -> bool {
+        let mark = (
+            observation.stage.clone(),
+            observation.substage.clone(),
+            observation.progress_current,
+            observation.progress_total,
+        );
+        if self.last.as_ref() == Some(&mark) {
+            return false;
+        }
+        self.last = Some(mark);
+        true
+    }
+}
+
 pub(super) async fn read_stdout(
     persist: JobPersistDeps,
     canceled_jobs: Arc<RwLock<HashSet<String>>>,
@@ -121,6 +145,7 @@ pub(super) async fn read_stdout(
     runtime_secrets: Vec<String>,
     extra_cancel_job_ids: Vec<String>,
     last_output_at: Arc<Mutex<Instant>>,
+    last_progress_at: Arc<Mutex<Instant>>,
     row_gone: Arc<AtomicBool>,
 ) -> Result<(String, JobRuntimeState)> {
     let mut out = String::new();
@@ -143,6 +168,7 @@ pub(super) async fn read_stdout(
         durable_stage_order(stage_key),
     )?;
     let mut gate = PersistGate::new(&job, Instant::now());
+    let mut progress = ProgressMark::default();
     // 读过、但还没写进库的行（被合并掉了，或者刚读到还没走到落库）。
     let mut pending = false;
     // 被取消、别人落了终态、行没了：不再写这个任务。
@@ -190,6 +216,9 @@ pub(super) async fn read_stdout(
             apply_job_stdout_line(&mut job, &line);
             pending = true;
             if let Some(observation) = parse_pipeline_stage_observation_line(&line) {
+                if progress.advanced_by(&observation) {
+                    *last_progress_at.lock().await = Instant::now();
+                }
                 apply_durable_stage_observation(
                     persist.db.as_ref(),
                     &mut pipeline_cursor,
@@ -197,9 +226,11 @@ pub(super) async fn read_stdout(
                 )?;
             }
             if let Some(observation) = parse_pipeline_checkpoint_line(&line) {
+                *last_progress_at.lock().await = Instant::now();
                 apply_durable_checkpoint(persist.db.as_ref(), &mut pipeline_cursor, observation)?;
             }
             if let Some(artifact) = parse_artifact_published_line(&line) {
+                *last_progress_at.lock().await = Instant::now();
                 apply_durable_artifact_commit(persist.db.as_ref(), &mut pipeline_cursor, artifact)?;
             }
             if is_cancel_requested_any(&canceled_jobs, &job.job_id, &extra_cancel_job_ids).await {

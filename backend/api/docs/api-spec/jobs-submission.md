@@ -158,12 +158,17 @@ The lower bounds are unchanged.
 
 Timeout note:
 
-`timeout_seconds` and `no_output_timeout_seconds` are two independent limits and
-are meant to sit orders of magnitude apart.
+`timeout_seconds` and `no_output_timeout_seconds` are two independent limits.
 
-- `timeout_seconds` caps the whole run and must be sized for the worst case — a
-  long book translation legitimately takes hours, so the threshold has to be
-  hours. It must be a positive integer; there is no "unlimited".
+- `timeout_seconds` is how long a stage worker may go **without progress**
+  (since 2026-10-31; it used to cap the whole run from process start, and the
+  web client's default of 1800 s killed agent translations of 100+ page books
+  half way). Progress means the worker reports a new stage or progress value
+  (a page or batch done), commits a checkpoint, or publishes an artifact;
+  changing only the message or repeating the same progress does not count.
+  A worker that keeps making progress runs until the absolute cap
+  `RUST_API_WORKER_MAX_RUNTIME_SECS` (server env, default 24 h, `0` = no cap;
+  a larger `timeout_seconds` wins). It must be a positive integer.
 - `no_output_timeout_seconds` watches whether the worker is still moving: the
   clock resets on every stdout line and expires only if the worker goes silent.
   A job that wedges after page one no longer waits out the multi-hour total.
@@ -171,11 +176,12 @@ are meant to sit orders of magnitude apart.
   waiting on a provider response, OCRing a single page — so there is no safe
   universal default; set it per workflow.
 
-Both end the job as `failed` with `return_code: -1` and failure code
+All three end the job as `failed` with `return_code: -1` and failure code
 `process_timeout`, since the handling is the same either way. They differ in
-`stage_detail`, because the thing to investigate is not: the total timeout reads
-`provider timeout` (or `normalization timeout`), the idle timeout reads
-`no output for {N}s`. Output collected before the job wedged is preserved in
+`stage_detail`, because the thing to investigate is not: no progress reads
+`no progress for {N}s` (it used to read `provider timeout` or
+`normalization timeout`), the absolute cap reads `max runtime {N}s exceeded`,
+the idle timeout reads `no output for {N}s`. Output collected before the job wedged is preserved in
 either case.
 
 Security note:

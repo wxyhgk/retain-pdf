@@ -11,6 +11,7 @@ use tokio::time::{timeout, Duration};
 use crate::config::WorkerProcessRuntimeConfig;
 use crate::models::domain::JobRuntimeState;
 
+use super::super::worker_process::max_runtime_secs;
 use super::super::{terminate_child_process_tree, JobPersistDeps};
 use super::io_support::{read_stdout, read_stream};
 use super::timeout_support::persist_timeout_failure;
@@ -39,16 +40,50 @@ pub(super) enum ProcessExecution {
     TimedOut(JobRuntimeState),
 }
 
-/// 两条互相独立的超时。
+/// 三条互相独立的超时。
 ///
-/// `Total` 是 `timeout_seconds`,整段执行的上限,必须按最坏情况给——一本大
-/// 部头翻译几个小时是正常的。`NoOutput` 是 `no_output_timeout_seconds`,盯的
-/// 是"还在不在动":卡在第一页之后没有任何 stdout,不该等满那几个小时才被
-/// 发现。两者阈值差一两个数量级是常态,所以不能合并成一个。
+/// `NoProgress` 是 `timeout_seconds`:多久没有进展(完成一页、一批,进了一个新阶段,提交了检查点,
+/// 见 `io_support::read_stdout`)。以前它从进程启动算整段时长,前端默认发 1800 秒,翻译 agent 按页顺序翻、
+/// 每页十几秒,一百二三十页的书就在半路被杀(2026-10-31)。现在一直出页就一直跑,半小时一页都没出来才算卡住。
+/// `MaxRuntime` 是绝对上限(`RUST_API_WORKER_MAX_RUNTIME_SECS`,默认 24 小时;请求的 `timeout_seconds`
+/// 更大时以请求为准),防死循环一直烧钱。`NoOutput` 是 `no_output_timeout_seconds`,盯的是"有没有任何输出"。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum TimeoutKind {
-    Total,
+    NoProgress,
+    MaxRuntime,
     NoOutput,
+}
+
+/// 三条超时的阈值(秒,`0` 是不查)。
+#[derive(Clone, Copy, Debug)]
+pub(super) struct TimeoutLimits {
+    pub(super) no_progress_secs: i64,
+    pub(super) max_runtime_secs: i64,
+    pub(super) no_output_secs: i64,
+}
+
+impl TimeoutLimits {
+    fn for_job(job: &JobRuntimeState, worker_max_runtime_secs: u64) -> Self {
+        Self {
+            no_progress_secs: job.request_payload.runtime.timeout_seconds,
+            max_runtime_secs: i64::try_from(max_runtime_secs(job, worker_max_runtime_secs))
+                .unwrap_or(i64::MAX),
+            no_output_secs: job.request_payload.runtime.no_output_timeout_seconds,
+        }
+    }
+
+    /// 给用户看的那句话:三种超时的排查方向不同,要分开说。
+    pub(super) fn detail(&self, kind: TimeoutKind) -> String {
+        match kind {
+            TimeoutKind::NoProgress => format!("no progress for {}s", self.no_progress_secs),
+            TimeoutKind::MaxRuntime => format!("max runtime {}s exceeded", self.max_runtime_secs),
+            TimeoutKind::NoOutput => format!("no output for {}s", self.no_output_secs),
+        }
+    }
+}
+
+fn elapsed_at_least(since: Instant, secs: i64) -> bool {
+    secs > 0 && since.elapsed() >= Duration::from_secs(secs as u64)
 }
 
 enum WaitOutcome {
@@ -61,15 +96,15 @@ enum WaitOutcome {
     ReaderFailed,
 }
 
-/// 同时盯总时长与空闲时长。轮询而不是 select,因为空闲的截止时刻会随每一行
-/// 输出往后推,没法预先算出一个固定的 sleep。
+/// 同时盯进展、总时长与空闲时长。轮询而不是 select,因为进展和空闲的截止时刻会随输出往后推,
+/// 没法预先算出一个固定的 sleep。
 ///
 /// `child.wait()` 是 cancel-safe 的(tokio 文档明写),所以每轮重建它是安全的。
 async fn wait_with_limits(
     child: &mut tokio::process::Child,
-    total_secs: i64,
-    no_output_secs: i64,
+    limits: TimeoutLimits,
     last_output_at: &Mutex<Instant>,
+    last_progress_at: &Mutex<Instant>,
     started: Instant,
     row_gone: &AtomicBool,
     reader_failed: &AtomicBool,
@@ -85,14 +120,14 @@ async fn wait_with_limits(
         if reader_failed.load(Ordering::SeqCst) {
             return Ok(WaitOutcome::ReaderFailed);
         }
-        if total_secs > 0 && started.elapsed() >= Duration::from_secs(total_secs as u64) {
-            return Ok(WaitOutcome::TimedOut(TimeoutKind::Total));
+        if elapsed_at_least(started, limits.max_runtime_secs) {
+            return Ok(WaitOutcome::TimedOut(TimeoutKind::MaxRuntime));
         }
-        if no_output_secs > 0 {
-            let idle = last_output_at.lock().await.elapsed();
-            if idle >= Duration::from_secs(no_output_secs as u64) {
-                return Ok(WaitOutcome::TimedOut(TimeoutKind::NoOutput));
-            }
+        if elapsed_at_least(*last_progress_at.lock().await, limits.no_progress_secs) {
+            return Ok(WaitOutcome::TimedOut(TimeoutKind::NoProgress));
+        }
+        if elapsed_at_least(*last_output_at.lock().await, limits.no_output_secs) {
+            return Ok(WaitOutcome::TimedOut(TimeoutKind::NoOutput));
         }
     }
 }
@@ -110,10 +145,10 @@ pub(super) async fn collect_process_execution(
     let drain_secs = worker_runtime.worker_output_drain_secs;
     let stdout = child.stdout.take().context("missing stdout pipe")?;
     let stderr = child.stderr.take().context("missing stderr pipe")?;
-    let timeout_secs = job.request_payload.runtime.timeout_seconds;
-    let no_output_secs = job.request_payload.runtime.no_output_timeout_seconds;
+    let limits = TimeoutLimits::for_job(&job, worker_runtime.worker_max_runtime_secs);
     let started = Instant::now();
     let last_output_at = Arc::new(Mutex::new(started));
+    let last_progress_at = Arc::new(Mutex::new(started));
     let row_gone = Arc::new(AtomicBool::new(false));
     let reader_failed = Arc::new(AtomicBool::new(false));
     let reader = read_stdout(
@@ -124,6 +159,7 @@ pub(super) async fn collect_process_execution(
         runtime_secrets.clone(),
         extra_cancel_job_ids.to_vec(),
         last_output_at.clone(),
+        last_progress_at.clone(),
         row_gone.clone(),
     );
     let stdout_handle = tokio::spawn({
@@ -141,9 +177,9 @@ pub(super) async fn collect_process_execution(
     let status = {
         match wait_with_limits(
             &mut child,
-            timeout_secs,
-            no_output_secs,
+            limits,
             &last_output_at,
+            &last_progress_at,
             started,
             &row_gone,
             &reader_failed,
@@ -190,8 +226,7 @@ pub(super) async fn collect_process_execution(
                     started,
                     stdout_text,
                     stderr_text,
-                    kind,
-                    no_output_secs,
+                    limits.detail(kind),
                 )?));
             }
         }

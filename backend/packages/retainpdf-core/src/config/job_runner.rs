@@ -3,6 +3,9 @@ use super::env_vars::{env_u64, env_u64_allow_zero};
 /// 排队任务最多多少个（`RUST_API_MAX_QUEUED_JOBS` 的默认值）。批量交几百本书够用；再多就是脚本跑飞了。
 pub const DEFAULT_MAX_QUEUED_JOBS: u64 = 1000;
 
+/// 阶段进程的绝对时长上限默认值（`RUST_API_WORKER_MAX_RUNTIME_SECS`）：24 小时。
+pub const DEFAULT_WORKER_MAX_RUNTIME_SECS: u64 = 24 * 3600;
+
 /// 跑 job 的 tokio worker 线程栈大小。
 ///
 /// tokio 默认沿用 std 的 2 MiB，而 book 工作流在 2 MiB 下**必然**栈溢出:
@@ -44,6 +47,11 @@ pub struct JobRunnerConfig {
     /// 继承管道写端后把 runner 永久挂住。详见
     /// `job_runner::process_runner::execution` 里的说明。
     pub worker_output_drain_secs: u64,
+    /// 一个阶段进程最多跑多久(秒),不管有没有进展(`RUST_API_WORKER_MAX_RUNTIME_SECS`,默认 24 小时)。
+    ///
+    /// `timeout_seconds` 从 2026-10-31 起按"多久没有进展"算,一直出页就一直不停;这道是防死循环一直
+    /// 烧钱的绝对上限。请求里的 `timeout_seconds` 比它还大时以请求为准。
+    pub worker_max_runtime_secs: u64,
     pub failure_ai_diagnosis_timeout_secs: u64,
     pub sync_bundle_wait_interval_ms: u64,
 }
@@ -56,6 +64,10 @@ impl JobRunnerConfig {
             worker_terminate_grace_secs: env_u64("RUST_API_WORKER_TERMINATE_GRACE_SECS", 3),
             worker_terminate_poll_ms: env_u64("RUST_API_WORKER_TERMINATE_POLL_MS", 100),
             worker_output_drain_secs: env_u64("RUST_API_WORKER_OUTPUT_DRAIN_SECS", 30),
+            worker_max_runtime_secs: env_u64(
+                "RUST_API_WORKER_MAX_RUNTIME_SECS",
+                DEFAULT_WORKER_MAX_RUNTIME_SECS,
+            ),
             failure_ai_diagnosis_timeout_secs: env_u64(
                 "RUST_API_FAILURE_AI_DIAGNOSIS_TIMEOUT_SECS",
                 60,

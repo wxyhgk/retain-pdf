@@ -7,29 +7,9 @@ use crate::models::domain::{now_iso, JobRuntimeState, JobSnapshot, JobStatusKind
 
 use super::super::JobPersistDeps;
 
-pub(super) fn timeout_detail_for_stage(stage: Option<&str>) -> &'static str {
-    match stage {
-        Some("normalizing") => "normalization timeout",
-        _ => "provider timeout",
-    }
-}
-
-/// 空闲超时要说清楚它跟总超时不是一回事。
-///
-/// 两者最后都落成 `return_code == -1`,`classify_job_failure` 也都归到
-/// `process_timeout`——那没问题,处置方式确实一样。但给用户看的那句话必须
-/// 分开:总超时说"跑太久了",空闲超时说"卡住不动了",对应的排查方向完全不同
-/// (前者调 timeout_seconds 或降并发,后者查上游是不是不回包了)。
-pub(super) fn no_output_timeout_detail(no_output_secs: i64) -> String {
-    format!("no output for {no_output_secs}s")
-}
-
-#[cfg(test)]
-pub(super) fn apply_timeout_failure(job: &mut JobSnapshot, timestamp: String) {
-    let detail = timeout_detail_for_stage(job.stage.as_deref()).to_string();
-    apply_timeout_failure_with_detail(job, timestamp, detail);
-}
-
+/// 三种超时最后都落成 `return_code == -1`,`classify_job_failure` 也都归到 `process_timeout`——处置方式
+/// 确实一样。给用户看的那句话(`detail`,见 `execution::TimeoutLimits::detail`)分开说:没有进展、跑满了
+/// 绝对上限、没有任何输出,排查方向不同。
 pub(super) fn apply_timeout_failure_with_detail(
     job: &mut JobSnapshot,
     timestamp: String,
@@ -86,8 +66,7 @@ pub(super) fn persist_timeout_failure(
     started: Instant,
     stdout_text: String,
     stderr_text: String,
-    kind: super::execution::TimeoutKind,
-    no_output_secs: i64,
+    detail: String,
 ) -> Result<JobRuntimeState> {
     let mut timed_out_job = persist.db.get_job(&stdout_job.job_id)?;
     // If already canceled, do not overwrite with timeout failure
@@ -105,12 +84,6 @@ pub(super) fn persist_timeout_failure(
         stderr_text,
         project_root,
     );
-    let detail = match kind {
-        super::execution::TimeoutKind::Total => {
-            timeout_detail_for_stage(timed_out_job.stage.as_deref()).to_string()
-        }
-        super::execution::TimeoutKind::NoOutput => no_output_timeout_detail(no_output_secs),
-    };
     apply_timeout_failure_with_detail(&mut timed_out_job, now_iso(), detail);
     let updated = cas_persist_job_with_resources(
         persist.db.as_ref(),
