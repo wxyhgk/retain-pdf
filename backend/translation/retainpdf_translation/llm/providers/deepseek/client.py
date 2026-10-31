@@ -389,10 +389,11 @@ def request_chat_content(
         started = time.perf_counter()
         diagnostics_request_id: int | None = None
         slot_acquired = False
+        slot_epoch: int | None = None
         response_received = False
         try:
             if diagnostics is not None:
-                diagnostics.acquire_request_slot()
+                slot_epoch = diagnostics.acquire_request_slot()
                 slot_acquired = True
                 diagnostics_request_id = diagnostics.record_request_start(
                     stage=request_stage,
@@ -411,6 +412,7 @@ def request_chat_content(
                     elapsed_ms = int(round((time.perf_counter() - started) * 1000))
                     if slot_acquired:
                         diagnostics.release_request_slot(
+                            slot_epoch=slot_epoch,
                             success=False,
                             elapsed_ms=elapsed_ms,
                             error_class="RequestJournalError",
@@ -470,6 +472,7 @@ def request_chat_content(
                 print(f"{request_label}: http ok in {elapsed:.2f}s", flush=True)
             if diagnostics is not None and slot_acquired:
                 diagnostics.release_request_slot(
+                    slot_epoch=slot_epoch,
                     success=True,
                     elapsed_ms=int(round((time.perf_counter() - started) * 1000)),
                 )
@@ -488,6 +491,7 @@ def request_chat_content(
             status_code = exc.response.status_code if isinstance(exc, requests.HTTPError) and exc.response is not None else None
             if diagnostics is not None and slot_acquired:
                 diagnostics.release_request_slot(
+                    slot_epoch=slot_epoch,
                     success=False,
                     elapsed_ms=int(round(elapsed * 1000)),
                     status_code=status_code,
@@ -601,6 +605,7 @@ def request_chat_content(
             elapsed_ms = int(round((time.perf_counter() - started) * 1000))
             if diagnostics is not None and slot_acquired:
                 diagnostics.release_request_slot(
+                    slot_epoch=slot_epoch,
                     success=False,
                     elapsed_ms=elapsed_ms,
                     error_class=type(exc).__name__,

@@ -13,12 +13,13 @@ def test_legacy_pool_labels_counts_and_batch_identity():
         batched_fast_batches=[first, second], single_fast_batches=[], single_slow_batches=[slow],
         queue_workers={"batched_fast": 2, "single_slow": 3}, use_shared_queue=False,
     )
+    # 两条快队列合成一个池（2026-10-31，原文长的先发）；慢队列照旧单独一个池
     assert specs == [
-        ("batched_fast", [("batched_fast", 1, 2, first), ("batched_fast", 2, 2, second)], 2),
-        ("single_fast", [], 0), ("slow", [("single_slow", 1, 1, slow)], 3),
+        ("fast", [("batched_fast", 1, 2, first), ("batched_fast", 2, 2, second)], 2),
+        ("slow", [("single_slow", 1, 1, slow)], 3),
     ]
     assert specs[0][1][0][3] is first
-    assert specs[2][1][0][3] is slow
+    assert specs[1][1][0][3] is slow
 
 
 def test_shared_pool_stable_ties_preserve_labels_and_group_references():
@@ -46,7 +47,8 @@ def test_empty_shared_pool_keeps_minimum_worker_spec():
     ) == [("shared_page_order", [], 1)]
 
 
-@pytest.mark.parametrize("explicit,environment,expected", [(True, False, 1), (False, True, 2), (None, True, 1), (None, False, 2)])
+# 共享队列按页序（b 在第 0 页先发）；Python 这条路两条快队列合成一个池、按原文长度排，一样长的保持原来的顺序（a 先发）
+@pytest.mark.parametrize("explicit,environment,expected", [(True, False, "b"), (False, True, "a"), (None, True, "b"), (None, False, "a")])
 def test_runner_uses_explicit_layout_or_compatibility_default(monkeypatch, explicit, environment, expected):
     monkeypatch.setattr(runner, "execution_enabled", lambda: environment)
     monkeypatch.setattr(runner, "raise_if_executor_failed", lambda: None)
@@ -74,4 +76,5 @@ def test_runner_uses_explicit_layout_or_compatibility_default(monkeypatch, expli
         translation_context=None, memory_store=None, result_applier=applier,
         flush_state=Mock(), use_shared_queue=explicit,
     )
-    assert len(pools) == expected
+    assert len(pools) == 1
+    assert pools[0][0][3][0]["item_id"] == expected
