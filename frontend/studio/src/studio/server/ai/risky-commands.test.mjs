@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
 
-import { noPushEnv, riskOf } from './risky-commands.mjs';
+import { articleWriteOf, noPushEnv, riskOf } from './risky-commands.mjs';
 
 const cwd = '/notes/blog';
 
@@ -41,3 +41,14 @@ test('in an AI’s environment git pushes nowhere, and still fetches', (t) => {
 	assert.equal(noPushEnv({ GIT_CONFIG_COUNT: '2' }).GIT_CONFIG_KEY_2, 'url.studio-ai-may-not-push::.pushInsteadOf');
 	git(['push', '-q', 'origin', 'HEAD:main']);
 });
+
+test('an article’s text written by an AI’s file tools is refused (through studio edit-page instead); other files, other tools let be', () => {
+	assert.match(articleWriteOf('edit', { path: 'hf-start/index.md' }, cwd), /studio edit-page --slug hf-start/u);
+	assert.match(articleWriteOf('write', { path: '/notes/blog/new-page/index.md' }, '/elsewhere'), /studio create-page/u);
+	assert.match(articleWriteOf('edit', { file_path: '/notes/blog/hf-start/index.md' }, '/notes/blog/hf-start'), /edit-page/u);
+	assert.equal(articleWriteOf('edit', { path: 'hf-start/img/plot.py' }, cwd), null);
+	assert.equal(articleWriteOf('write', { path: 'hf-start/ai/work/log.md' }, cwd), null);
+	assert.equal(articleWriteOf('read', { path: 'hf-start/index.md' }, cwd), null);
+	assert.equal(articleWriteOf('edit', { path: '/somewhere/else/x/index.md' }, cwd), null);
+});
+

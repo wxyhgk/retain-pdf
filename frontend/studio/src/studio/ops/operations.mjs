@@ -66,7 +66,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'create_page',
-		description: '新建一个草稿页面。给了 parent 就放在那个页面下面；给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）。parent 是数据库（type: database）时，新页面就是它的一行，用 props 写这一行的值。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。', // i18n-ignore: for the AI
+		description: '新建一个草稿页面。给了 parent 就放在那个页面下面，并在上级页面里放一行链到它的页面链接（像 Notion 的子页面块）：默认放在上级正文末尾，link_after 写上级里的一个标题或一句话，就放在那一节末尾或那一段后面；link: false 不放。给了 body 就以它为正文（正文里用到的上级的 ./img/、./assets/ 文件会复制过来）。parent 是数据库（type: database）时，新页面就是它的一行（不放链接），用 props 写这一行的值。文件夹名自动起，发布时按标题改成可读的网址；也可以用 slug 指定。', // i18n-ignore: for the AI
 		input: {
 			type: 'object',
 			properties: {
@@ -75,10 +75,27 @@ export const OPERATIONS = [
 				body: text('正文 Markdown（属性之后的全部内容）'), // i18n-ignore: for the AI
 				slug: text('指定文件夹名（小写字母、数字、连字符）；一般不用给'), // i18n-ignore: for the AI
 				props, // i18n-ignore: for the AI
+				link: { type: 'boolean', description: '在上级页面里放链到新页面的链接；默认 true' }, // i18n-ignore: for the AI
+				link_after: text('链接放在上级页面的哪里：一个标题（放在那一节末尾）或一句话里的几个字（放在那一段后面）；不给就放在末尾'), // i18n-ignore: for the AI
 			},
 			required: ['title'],
 		},
 		run: (ops, args) => ops.createPage(args),
+	},
+	{
+		name: 'edit_page',
+		description: '改一篇正文里的一段：old 是正文里的原文（一字不差，要只出现一次，不够就多带几句前后文），new 是改成的样子（空字符串就是删掉）；all: true 把每一处都改。只改属性之后的正文，属性用 update_page 改。改之前的版本存进历史；Studio 里开着这篇时作者会逐处接受或拒绝。返回改在第几行和改完后页面的问题。改正文都用它（或 update_page 换整篇），不要直接编辑 index.md。', // i18n-ignore: for the AI
+		input: {
+			type: 'object',
+			properties: {
+				slug,
+				old: text('正文里要改的原文'), // i18n-ignore: for the AI
+				new: text('改成的文字；空字符串是删掉'), // i18n-ignore: for the AI
+				all: { type: 'boolean', description: '每一处都改（默认只许有一处）' }, // i18n-ignore: for the AI
+			},
+			required: ['slug', 'old', 'new'],
+		},
+		run: (ops, args) => ops.editPage(args),
 	},
 	{
 		name: 'create_database',

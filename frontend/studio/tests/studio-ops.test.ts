@@ -7,6 +7,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { markdownSection } from '../src/studio/ops/markdown-section.mjs';
+import { withLinkAt } from '../src/studio/ops/page-link.mjs';
 import { createStudioOps } from '../src/studio/ops/studio-ops.mjs';
 
 // The pages' operations for an AI: the core (studio-ops.mjs), the command line (bin/studio.mjs) and the
@@ -58,7 +59,8 @@ test('pages made, moved, split, merged, published, deleted and brought back thro
 	const projectSource = (await readPage(ops, { slug: project.slug })).source;
 	assert.match(projectSource, new RegExp(`\\[计算方法\\]\\(/blog/${split.slug}/\\)\\n\\n## 结果`, 'u'));
 	assert.match((await readPage(ops, { slug: split.slug })).source, /先算一遍。\n$/u);
-	assert.equal((await ops.listHistory({ slug: project.slug })).length, 1, 'the text before kept');
+	// Kept before each change: the link to 杂记 put in it, then the section split off.
+	assert.equal((await ops.listHistory({ slug: project.slug })).length, 2, 'the text before kept');
 
 	await ops.movePage({ slug: split.slug, parent: project.slug, before: notes.slug });
 	assert.deepEqual((await ops.pageTree())[0].children.map((child: { title: string }) => child.title), ['计算方法', '杂记']);
@@ -279,3 +281,55 @@ test('a database made and its rows changed through the operations: create_databa
 	execFileSync(process.execPath, [join(root, 'bin', 'studio.mjs'), 'update-page', '--slug', row, '--props', '{"方法": "PBE0"}'], { env: process.env, encoding: 'utf8' });
 	assert.match(written(), /^props: \{ "方法": "PBE0" \}$/mu);
 });
+
+test('a page’s link put in the page above: at its end, at the end of a heading’s section, after a sentence’s paragraph', () => {
+	const body = '\n开头一段。\n\n## 计算方法\n\n用 B3LYP。\n\n### 基组\n\ndef2-SVP。\n\n```md\n## 不是标题\n```\n\n## 结果\n\n能量 -76.4。\n';
+	const link = '[基组的选择](/blog/basis/)';
+	assert.equal(withLinkAt(body, link), `${body}\n${link}\n`);
+	// The section's end: past its subsections and a fenced "##" (no heading), before the next heading of its level.
+	assert.equal(withLinkAt(body, link, '## 计算方法'), '\n开头一段。\n\n## 计算方法\n\n用 B3LYP。\n\n### 基组\n\ndef2-SVP。\n\n```md\n## 不是标题\n```\n\n[基组的选择](/blog/basis/)\n\n## 结果\n\n能量 -76.4。\n');
+	assert.equal(withLinkAt(body, link, '基组'), '\n开头一段。\n\n## 计算方法\n\n用 B3LYP。\n\n### 基组\n\ndef2-SVP。\n\n```md\n## 不是标题\n```\n\n[基组的选择](/blog/basis/)\n\n## 结果\n\n能量 -76.4。\n');
+	// After a sentence: the end of its paragraph.
+	assert.equal(withLinkAt(body, link, '用 B3LYP'), '\n开头一段。\n\n## 计算方法\n\n用 B3LYP。\n\n[基组的选择](/blog/basis/)\n\n### 基组\n\ndef2-SVP。\n\n```md\n## 不是标题\n```\n\n## 结果\n\n能量 -76.4。\n');
+	assert.throws(() => withLinkAt(body, link, '没有这句'), /没有「没有这句」/u);
+	assert.equal(withLinkAt('\n', link), `\n${link}\n`);
+});
+
+test('a page made under another is linked from it (where asked); a database’s row is not; edit_page changes a passage of the text only', async (t) => {
+	const blog = temporaryBlog(t);
+	const ops = createStudioOps(root);
+	const page = (slug: string) => readFileSync(join(blog, slug, 'index.md'), 'utf8');
+	const { slug: project } = await ops.createPage({ title: '项目', body: '## 方法\n\n用 B3LYP。\n\n## 结果\n\n能量 -76.4。' });
+	const { slug: basis, linked } = await ops.createPage({ title: '基组的选择', parent: project, link_after: '方法' });
+	assert.equal(linked, true);
+	assert.match(page(project), new RegExp(`用 B3LYP。\\n\\n\\[基组的选择\\]\\(/blog/${basis}/\\)\\n\\n## 结果`, 'u'));
+	const { slug: end } = await ops.createPage({ title: '附录', parent: project });
+	assert.ok(page(project).trimEnd().endsWith(`[附录](/blog/${end}/)`));
+	await ops.createPage({ title: '不链', parent: project, link: false });
+	assert.doesNotMatch(page(project), /不链/u);
+	// Words not in the page above: nothing made.
+	const before = (await ops.listPages({ parent: project })).length;
+	await assert.rejects(ops.createPage({ title: 'x', parent: project, link_after: '没有这句' }), /link_after/u);
+	assert.equal((await ops.listPages({ parent: project })).length, before);
+	const { slug: table } = await ops.createDatabase({ title: '记录', parent: project, show: false });
+	await ops.createPage({ title: '一行', parent: table, props: {} });
+	assert.doesNotMatch(page(table), /一行/u);
+
+	// A passage changed, once; the properties as they were; what was there kept.
+	const properties = page(project).split('---')[1];
+	const edited = await ops.editPage({ slug: project, old: '能量 -76.4。', new: '能量 -76.41 Hartree。' });
+	assert.equal(edited.changed, 1);
+	assert.ok(edited.line > 1);
+	assert.match(page(project), /能量 -76\.41 Hartree。/u);
+	assert.equal(page(project).split('---')[1], properties);
+	assert.ok(((await ops.listHistory({ slug: project })) as unknown[]).length >= 1);
+	await assert.rejects(ops.editPage({ slug: project, old: '没有这段', new: 'x' }), /正文里没有这段/u);
+	await assert.rejects(ops.editPage({ slug: project, old: '## ', new: '### ' }), /有 2 处/u);
+	assert.equal((await ops.editPage({ slug: project, old: '## ', new: '### ', all: true })).changed, 2);
+	// Its properties are not its text: not found there.
+	await assert.rejects(ops.editPage({ slug: project, old: 'title:', new: 'x' }), /正文里没有这段/u);
+	// From the command line, the new text empty: taken away.
+	execFileSync(process.execPath, [join(root, 'bin', 'studio.mjs'), 'edit-page', '--slug', project, '--old', '用 B3LYP。', '--new', ''], { env: process.env, encoding: 'utf8' });
+	assert.doesNotMatch(page(project), /用 B3LYP/u);
+});
+

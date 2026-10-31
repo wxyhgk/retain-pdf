@@ -35,6 +35,8 @@ test('a subagent’s shell commands: what may not be done, and what the author w
 	const asked = run('rm -r ~/Documents/notes');
 	assert.equal(asked.block, true);
 	assert.match(asked.reason, /子代理不能问作者/u);
+	// An article's text: through the `studio` command, not its file tools.
+	assert.match(hook({ toolName: 'edit', input: { path: '/notes/blog/hf/index.md' } }, { cwd: tmpdir() }).reason, /studio edit-page/u);
 });
 
 test('the Studio’s server started with pi’s options is pi, never a second Studio', async (t) => {

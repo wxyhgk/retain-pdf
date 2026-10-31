@@ -12,6 +12,7 @@ import { parseStudioDocument } from '@blog/document/parse.ts';
 import { replaceStudioDocumentBody } from '@blog/document/serialize.ts';
 import { setFrontmatterProps, updateStudioFrontmatter } from '@blog/document/frontmatter.ts';
 import { referenceText } from '../../articles/database-blocks.mjs';
+import { pageLinkLine, withLinkAt } from './page-link.mjs';
 import { checkArticle } from '../server/articles/article-check.mjs';
 import { previewArticle } from '../server/articles/article-preview.mjs';
 import { checkWidgets } from '../server/articles/widget-check.mjs';
@@ -48,6 +49,21 @@ export class StudioOpsError extends Error {
  * as the Studio's server takes it). `site`: the blog's address, so links to
  * its pages written in full count as theirs.
  */
+/**
+ * The page above (`page`, as read) with a link to the page `slug` (titled `title`) where it belongs (`after`: words of a
+ * line or a heading of it; none: its end); null when it links to it already.
+ */
+function linkedFrom(page, slug, title, after) {
+	const document = parseStudioDocument(page.source);
+	const line = pageLinkLine(slug, title || '无标题'); // i18n-ignore: the words of the link to it
+	if (document.body.raw.includes(`](/blog/${slug}/)`)) return null;
+	try {
+		return replaceStudioDocumentBody(document, withLinkAt(document.body.raw, line, after));
+	} catch (error) {
+		throw new StudioOpsError(error instanceof Error ? error.message : String(error));
+	}
+}
+
 /** A database row's values, `given` put over `kept` (null, '' or nothing takes one away); a value not a record given is an error. */
 function rowValues(kept, given) {
 	if (given === undefined || given === null) return { ...kept };
@@ -185,8 +201,8 @@ export function createStudioOps({ root, site } = {}) {
 		 * (`note-…`) unless `slug` is given; it gets one read from its title when
 		 * it is published. Files of the parent its body names (`./img/…`) are copied in.
 		 */
-		/** @param {{ title: string, parent?: string, body?: string, slug?: string, props?: Record<string, unknown> }} args */
-		async createPage({ title, parent = '', body = '', slug, props }) {
+		/** @param {{ title: string, parent?: string, body?: string, slug?: string, props?: Record<string, unknown>, link?: boolean, link_after?: string }} args */
+		async createPage({ title, parent = '', body = '', slug, props, link = true, link_after: after = '' }) {
 			if (!title?.trim()) throw new StudioOpsError(t('标题不能为空'));
 			const all = await pages();
 			const above = parent ? all.find((page) => page.slug === parent) : null;
@@ -194,14 +210,40 @@ export function createStudioOps({ root, site } = {}) {
 			// Values are a row's: under a database.
 			if (props !== undefined && above?.type !== 'database') throw new StudioOpsError(t('只有数据库的行有 props：parent 要给数据库页面（type: database）'));
 			const folder = slug || freeSlug(autoSlug(), all.map((page) => page.slug));
+			// Where the page above links to it, found before it is made (words of it not there: nothing made).
+			const linked = parent && link !== false && above?.type !== 'database' ? linkedFrom(await articles.read(parent), folder, title.trim(), after) : null;
 			await articles.create({ slug: folder, title: title.trim(), parent, body, files: parent ? filesNamed(body) : [] });
+			// Linked from the page above, as Notion's page block (a database's rows are not: its table lists them).
+			if (linked) await write(parent, linked);
 			// Its values (those with nothing in them not written).
 			const values = rowValues({}, props);
 			if (Object.keys(values).length) {
 				const { source, revision } = await articles.read(folder);
 				await articles.save(folder, { source: setFrontmatterProps(source, values), expectedRevision: revision });
 			}
-			return { slug: folder, address: `/blog/${folder}/`, parent };
+			return { slug: folder, address: `/blog/${folder}/`, parent, ...(linked ? { linked: true } : {}) };
+		},
+
+		/**
+		 * A passage of a page's text changed (only the text after its properties): `old`, as it is in it, put as `new`;
+		 * once (it is to be there once: more words around it make it so), or everywhere with `all`. What was there kept in
+		 * the page's history first; the Studio, the page open in it, shows the change to be accepted or rejected. Where it
+		 * was (its line), and what is wrong with the page now (its properties as the blog reads them).
+		 */
+		/** @param {{ slug: string, old: string, new: string, all?: boolean }} args */
+		async editPage({ slug, old, new: replacement = '', all = false }) {
+			if (typeof old !== 'string' || !old) throw new StudioOpsError(t('old 不能为空：写正文里要改的那段原文'));
+			if (typeof replacement !== 'string') throw new StudioOpsError(t('new 要是文字'));
+			const { source } = await articles.read(slug);
+			const document = parseStudioDocument(source);
+			const body = document.body.raw;
+			const count = body.split(old).length - 1;
+			if (!count) throw new StudioOpsError(t('正文里没有这段（要和正文一字不差，属性里的不算）：{old}', { old: old.slice(0, 120) }));
+			if (count > 1 && !all) throw new StudioOpsError(t('正文里有 {count} 处这段：多带几句前后文让它只有一处，或者给 all 全部改', { count }));
+			const next = all ? body.split(old).join(replacement) : body.replace(old, () => replacement);
+			await write(slug, replaceStudioDocumentBody(document, next));
+			const line = source.slice(0, source.length - body.length + body.indexOf(old)).split('\n').length;
+			return { slug, changed: all ? count : 1, line, problems: (await articles.read(slug)).problems };
 		},
 
 		/**
