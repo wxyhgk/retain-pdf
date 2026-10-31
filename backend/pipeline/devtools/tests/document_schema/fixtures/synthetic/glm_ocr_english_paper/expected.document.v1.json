@@ -1,0 +1,3558 @@
+{
+ "assets": {
+  "page-1/imgs/img_in_chart_box_1050_1760_1700_2380.jpg": {
+   "caption": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+   "caption_block_ids": [
+    "p001-b0010"
+   ],
+   "captions": [
+    "Fig. 2 Arrhenius plot of the measured diffusion coefficients."
+   ],
+   "kind": "image",
+   "source": "markdown_image",
+   "uri": "md/images/page-1/imgs/img_in_chart_box_1050_1760_1700_2380.jpg"
+  },
+  "page-1/imgs/img_in_image_box_300_1760_1000_2380.jpg": {
+   "kind": "image",
+   "source": "markdown_image",
+   "uri": "md/images/page-1/imgs/img_in_image_box_300_1760_1000_2380.jpg"
+  }
+ },
+ "derived": {
+  "coordinate_space": "pdf_point",
+  "notes": "Adapted from GLM-OCR layout_parsing layout_details (via the PaddleOCR-VL block reader).",
+  "provider_data_info": {
+   "num_pages": 2
+  },
+  "provider_payload_meta": {
+   "chunks": [
+    {
+     "end_page": 2,
+     "request_id": "synthetic-glm-ocr",
+     "start_page": 1
+    }
+   ]
+  },
+  "provider_signals": {
+   "pages": [
+    {
+     "column_layout_mode": "double",
+     "page_index": 0,
+     "peer_block_absorbed_text_block_ids": [],
+     "peer_block_absorbed_text_count": 0,
+     "suspected_block_ids": [],
+     "suspected_cross_column_merge_block_count": 0,
+     "text_missing_but_bbox_present_block_ids": [],
+     "text_missing_but_bbox_present_count": 0
+    },
+    {
+     "column_layout_mode": "single",
+     "page_index": 1,
+     "peer_block_absorbed_text_block_ids": [],
+     "peer_block_absorbed_text_count": 0,
+     "suspected_block_ids": [],
+     "suspected_cross_column_merge_block_count": 0,
+     "text_missing_but_bbox_present_block_ids": [],
+     "text_missing_but_bbox_present_count": 0
+    }
+   ],
+   "provider": "glm_ocr",
+   "suspicious_cross_column_merge_blocks": 0,
+   "suspicious_cross_column_merge_pages": 0
+  }
+ },
+ "doc_id": "glm_ocr_english_paper",
+ "document_id": "glm_ocr_english_paper",
+ "markers": {},
+ "page_count": 2,
+ "pages": [
+  {
+   "blocks": [
+    {
+     "bbox": [
+      99.0,
+      77.999,
+      495.001,
+      126.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Ion Transport in Layered Oxide Cathodes"
+      ],
+      "text": "Ion Transport in Layered Oxide Cathodes",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "title"
+     },
+     "geometry": {
+      "bbox": [
+       99.0,
+       77.999,
+       495.001,
+       126.0
+      ]
+     },
+     "layout_role": "title",
+     "lines": [
+      {
+       "bbox": [
+        99.0,
+        77.999,
+        495.001,
+        126.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          99.0,
+          77.999,
+          495.001,
+          126.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "doc_title",
+         "score": null,
+         "text": "Ion Transport in Layered Oxide Cathodes",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "double",
+      "content_is_rich": false,
+      "content_length": 39,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "title",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "Ion Transport in Layered Oxide Cathodes",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 1,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "document_title",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 0,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_title_candidate"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       330.0,
+       260.0,
+       1650.0,
+       420.0
+      ],
+      "raw_label": "doc_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/0",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        99.0,
+        77.999,
+        495.001,
+        126.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "doc_title",
+       "score": null,
+       "text": "Ion Transport in Layered Oxide Cathodes",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       330.0,
+       260.0,
+       1650.0,
+       420.0
+      ],
+      "raw_block_id": 0,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Ion Transport in Layered Oxide Cathodes",
+      "raw_type": "doc_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "document_title",
+     "sub_type": "title",
+     "tags": [
+      "title"
+     ],
+     "text": "Ion Transport in Layered Oxide Cathodes",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      180.0,
+      140.999,
+      414.001,
+      156.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p001-b0001",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Ada Lin ^{1,*} , Ben Ortiz ^{2}"
+      ],
+      "text": "Ada Lin $ ^{1,*} $ , Ben Ortiz $ ^{2} $",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       180.0,
+       140.999,
+       414.001,
+       156.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        180.0,
+        140.999,
+        414.001,
+        156.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          180.0,
+          140.999,
+          414.001,
+          156.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "Ada Lin",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          180.0,
+          140.999,
+          414.001,
+          156.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "^{1,*}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          180.0,
+          140.999,
+          414.001,
+          156.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": ", Ben Ortiz",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          180.0,
+          140.999,
+          414.001,
+          156.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "^{2}",
+         "type": "inline_formula"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "double",
+      "content_is_rich": false,
+      "content_length": 39,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "front_matter_text": true,
+      "layout_det_matched": false,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "Ada Lin $ ^{1,*} $ , Ben Ortiz $ ^{2} $",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 2,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 2,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "metadata",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 1,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:metadata"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       600.0,
+       470.0,
+       1380.0,
+       520.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/1",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        180.0,
+        140.999,
+        414.001,
+        156.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "Ada Lin",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        180.0,
+        140.999,
+        414.001,
+        156.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "^{1,*}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        180.0,
+        140.999,
+        414.001,
+        156.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": ", Ben Ortiz",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        180.0,
+        140.999,
+        414.001,
+        156.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "^{2}",
+       "type": "inline_formula"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       600.0,
+       470.0,
+       1380.0,
+       520.0
+      ],
+      "raw_block_id": 1,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Ada Lin $ ^{1,*} $ , Ben Ortiz $ ^{2} $",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "Ada Lin $ ^{1,*} $ , Ben Ortiz $ ^{2} $",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      87.0,
+      179.999,
+      141.001,
+      195.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Abstract"
+      ],
+      "text": "Abstract",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       179.999,
+       141.001,
+       195.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        179.999,
+        141.001,
+        195.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          179.999,
+          141.001,
+          195.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph_title",
+         "score": null,
+         "text": "Abstract",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "double",
+      "content_is_rich": false,
+      "content_length": 8,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "heading",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "Abstract",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 3,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "heading",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 2,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       600.0,
+       470.0,
+       650.0
+      ],
+      "raw_label": "paragraph_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/2",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        179.999,
+        141.001,
+        195.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "paragraph_title",
+       "score": null,
+       "text": "Abstract",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       600.0,
+       470.0,
+       650.0
+      ],
+      "raw_block_id": 2,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Abstract",
+      "raw_type": "paragraph_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "Abstract",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      87.0,
+      203.999,
+      510.001,
+      300.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "We measure lithium diffusion in \\mathrm{LiCoO_2} thin films and find an activation energy of 0.42 eV."
+      ],
+      "text": "We measure lithium diffusion in $ \\mathrm{LiCoO_2} $ thin films and find an activation energy of $ 0.42 $ eV.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "abstract"
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       203.999,
+       510.001,
+       300.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        203.999,
+        510.001,
+        252.0
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          203.999,
+          510.001,
+          252.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "abstract",
+         "score": null,
+         "text": "We measure lithium diffusion in $",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          87.0,
+          203.999,
+          510.001,
+          252.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "abstract",
+         "score": null,
+         "text": "\\mathrm{LiCoO_2}",
+         "type": "inline_formula"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        87.0,
+        252.0,
+        510.001,
+        300.0
+       ],
+       "bbox_precision": "synthetic_wrap",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          252.0,
+          510.001,
+          300.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "abstract",
+         "score": null,
+         "text": "thin films and find an activation energy of",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          87.0,
+          252.0,
+          510.001,
+          300.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "abstract",
+         "score": null,
+         "text": "0.42 $ eV.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "double",
+      "content_is_rich": false,
+      "content_length": 109,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "paragraph",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "We measure lithium diffusion in $ \\mathrm{LiCoO_2} $ thin films and find an activation energy of $ 0.42 $ eV.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 2,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 4,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "abstract",
+      "source_text_role": "abstract",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 3,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:abstract"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       680.0,
+       1700.0,
+       1000.0
+      ],
+      "raw_label": "abstract",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/3",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        203.999,
+        510.001,
+        300.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "abstract",
+       "score": null,
+       "text": "We measure lithium diffusion in",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        87.0,
+        203.999,
+        510.001,
+        300.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "abstract",
+       "score": null,
+       "text": "\\mathrm{LiCoO_2}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        87.0,
+        203.999,
+        510.001,
+        300.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "abstract",
+       "score": null,
+       "text": "thin films and find an activation energy of",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        87.0,
+        203.999,
+        510.001,
+        300.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "abstract",
+       "score": null,
+       "text": "0.42",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        87.0,
+        203.999,
+        510.001,
+        300.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "abstract",
+       "score": null,
+       "text": "eV.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "abstract",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       680.0,
+       1700.0,
+       1000.0
+      ],
+      "raw_block_id": 3,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/3",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "We measure lithium diffusion in $ \\mathrm{LiCoO_2} $ thin films and find an activation energy of $ 0.42 $ eV.",
+      "raw_type": "abstract",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [
+      "abstract"
+     ],
+     "text": "We measure lithium diffusion in $ \\mathrm{LiCoO_2} $ thin films and find an activation energy of $ 0.42 $ eV.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      87.0,
+      353.999,
+      210.001,
+      369.0
+     ],
+     "block_class": "title",
+     "block_id": "p001-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "1. Introduction"
+      ],
+      "text": "1. Introduction",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       353.999,
+       210.001,
+       369.0
+      ]
+     },
+     "layout_role": "heading",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        353.999,
+        210.001,
+        369.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          353.999,
+          210.001,
+          369.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph_title",
+         "score": null,
+         "text": "1. Introduction",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "double",
+      "content_is_rich": false,
+      "content_length": 15,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "heading",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "1. Introduction",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 5,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "heading",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 4,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_heading_candidate"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       1180.0,
+       700.0,
+       1230.0
+      ],
+      "raw_label": "paragraph_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/5",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        353.999,
+        210.001,
+        369.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "paragraph_title",
+       "score": null,
+       "text": "1. Introduction",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       1180.0,
+       700.0,
+       1230.0
+      ],
+      "raw_block_id": 4,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/5",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "1. Introduction",
+      "raw_type": "paragraph_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "heading",
+     "sub_type": "heading",
+     "tags": [
+      "heading"
+     ],
+     "text": "1. Introduction",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      87.0,
+      377.999,
+      510.001,
+      468.0
+     ],
+     "block_class": "body",
+     "block_id": "p001-b0005",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "The diffusion coefficient follows an Arrhenius law, as shown in Eq. (1)."
+      ],
+      "text": "The diffusion coefficient follows an Arrhenius law, as shown in Eq. (1).",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       377.999,
+       510.001,
+       468.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        377.999,
+        510.001,
+        468.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          377.999,
+          510.001,
+          468.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "text",
+         "score": null,
+         "text": "The diffusion coefficient follows an Arrhenius law, as shown in Eq. (1).",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "double",
+      "content_is_rich": false,
+      "content_length": 72,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "paragraph",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "The diffusion coefficient follows an Arrhenius law, as shown in Eq. (1).",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 6,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "body",
+      "structure_role": "body",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 5,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_body_whitelist:body"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       1260.0,
+       1700.0,
+       1560.0
+      ],
+      "raw_label": "text",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/4",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        377.999,
+        510.001,
+        468.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "text",
+       "score": null,
+       "text": "The diffusion coefficient follows an Arrhenius law, as shown in Eq. (1).",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "body",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       1260.0,
+       1700.0,
+       1560.0
+      ],
+      "raw_block_id": 5,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/4",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "The diffusion coefficient follows an Arrhenius law, as shown in Eq. (1).",
+      "raw_type": "text",
+      "raw_unit": "px"
+     },
+     "structure_role": "body",
+     "sub_type": "body",
+     "tags": [],
+     "text": "The diffusion coefficient follows an Arrhenius law, as shown in Eq. (1).",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      120.0,
+      479.999,
+      474.001,
+      510.0
+     ],
+     "block_class": "formula",
+     "block_id": "p001-b0006",
+     "content": {
+      "kind": "formula",
+      "line_texts": [
+       "$$",
+       "D = D_{0} \\exp\\left(-\\frac{E_{a}}{k_{B} T}\\right)",
+       "$$"
+      ],
+      "text": "$$\nD = D_{0} \\exp\\left(-\\frac{E_{a}}{k_{B} T}\\right)\n$$",
+      "text_flow": "preserve_lines"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       120.0,
+       479.999,
+       474.001,
+       510.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        120.0,
+        479.999,
+        474.001,
+        489.999
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          120.0,
+          479.999,
+          474.001,
+          489.999
+         ],
+         "bbox_precision": "line",
+         "raw_type": "display_formula",
+         "score": null,
+         "text": "$$",
+         "type": "formula"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        120.0,
+        489.999,
+        474.001,
+        500.0
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          120.0,
+          489.999,
+          474.001,
+          500.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "display_formula",
+         "score": null,
+         "text": "D = D_{0} \\exp\\left(-\\frac{E_{a}}{k_{B} T}\\right)",
+         "type": "formula"
+        }
+       ]
+      },
+      {
+       "bbox": [
+        120.0,
+        500.0,
+        474.001,
+        510.0
+       ],
+       "bbox_precision": "synthetic_newline",
+       "spans": [
+        {
+         "bbox": [
+          120.0,
+          500.0,
+          474.001,
+          510.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "display_formula",
+         "score": null,
+         "text": "$$",
+         "type": "formula"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "double",
+      "content_is_rich": false,
+      "content_length": 55,
+      "content_line_count": 3,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "$$ D = D_{0} \\exp\\left(-\\frac{E_{a}}{k_{B} T}\\right) $$",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 7,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 6,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:formula"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       400.0,
+       1600.0,
+       1580.0,
+       1700.0
+      ],
+      "raw_label": "display_formula",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/6",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 6,
+     "segments": [
+      {
+       "bbox": [
+        120.0,
+        479.999,
+        474.001,
+        510.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "display_formula",
+       "score": null,
+       "text": "$$\nD = D_{0} \\exp\\left(-\\frac{E_{a}}{k_{B} T}\\right)\n$$",
+       "type": "formula"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       400.0,
+       1600.0,
+       1580.0,
+       1700.0
+      ],
+      "raw_block_id": 6,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/6",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "$$\nD = D_{0} \\exp\\left(-\\frac{E_{a}}{k_{B} T}\\right)\n$$",
+      "raw_type": "display_formula",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "display_formula",
+     "tags": [
+      "formula"
+     ],
+     "text": "$$\nD = D_{0} \\exp\\left(-\\frac{E_{a}}{k_{B} T}\\right)\n$$",
+     "type": "formula"
+    },
+    {
+     "bbox": [
+      90.0,
+      527.999,
+      300.001,
+      714.0
+     ],
+     "block_class": "image",
+     "block_id": "p001-b0007",
+     "content": {
+      "asset_id": "page-1/imgs/img_in_image_box_300_1760_1000_2380.jpg",
+      "asset_ids": [
+       "page-1/imgs/img_in_image_box_300_1760_1000_2380.jpg"
+      ],
+      "kind": "image",
+      "text": ""
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       90.0,
+       527.999,
+       300.001,
+       714.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [],
+     "metadata": {
+      "asset_key": "imgs/img_in_image_box_300_1760_1000_2380.jpg",
+      "asset_keys": [
+       "imgs/img_in_image_box_300_1760_1000_2380.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "imgs/img_in_image_box_300_1760_1000_2380.jpg",
+      "asset_paths": [
+       "imgs/img_in_image_box_300_1760_1000_2380.jpg"
+      ],
+      "asset_resolved": true,
+      "asset_resolved_count": 1,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "double",
+      "contains_img_tag": false,
+      "contains_table_tag": false,
+      "content_format": "plain_text",
+      "content_is_rich": true,
+      "content_length": 0,
+      "content_line_count": 0,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "html_length": 0,
+      "layout_det_matched": false,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 8,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 7,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:image"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       300.0,
+       1760.0,
+       1000.0,
+       2380.0
+      ],
+      "raw_label": "image",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/7",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 7,
+     "segments": [],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       300.0,
+       1760.0,
+       1000.0,
+       2380.0
+      ],
+      "raw_block_id": 7,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/7",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "",
+      "raw_type": "image",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "image_body",
+     "tags": [
+      "image",
+      "skip_translation"
+     ],
+     "text": "",
+     "type": "image"
+    },
+    {
+     "bbox": [
+      90.0,
+      719.999,
+      300.001,
+      741.0
+     ],
+     "block_class": "caption",
+     "block_id": "p001-b0008",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Fig. 1 Cross-section of the thin-film cell."
+      ],
+      "text": "Fig. 1 Cross-section of the thin-film cell.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.95,
+      "role": "figure_caption"
+     },
+     "geometry": {
+      "bbox": [
+       90.0,
+       719.999,
+       300.001,
+       741.0
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        90.0,
+        719.999,
+        300.001,
+        741.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          90.0,
+          719.999,
+          300.001,
+          741.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "figure_title",
+         "score": null,
+         "text": "Fig. 1 Cross-section of the thin-film cell.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_target": "figure",
+      "column_index_guess": "left",
+      "column_layout_mode": "double",
+      "contains_img_tag": false,
+      "contains_table_tag": false,
+      "content_format": "plain_text",
+      "content_is_rich": true,
+      "content_length": 43,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "caption",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "Fig. 1 Cross-section of the thin-film cell.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 9,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "figure_caption",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 8,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_caption_whitelist:figure_caption"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       300.0,
+       2400.0,
+       1000.0,
+       2470.0
+      ],
+      "raw_label": "figure_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/8",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 8,
+     "segments": [
+      {
+       "bbox": [
+        90.0,
+        719.999,
+        300.001,
+        741.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "figure_title",
+       "score": null,
+       "text": "Fig. 1 Cross-section of the thin-film cell.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       300.0,
+       2400.0,
+       1000.0,
+       2470.0
+      ],
+      "raw_block_id": 8,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/8",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Fig. 1 Cross-section of the thin-film cell.",
+      "raw_type": "figure_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "figure_caption",
+     "sub_type": "figure_caption",
+     "tags": [
+      "caption",
+      "figure_caption"
+     ],
+     "text": "Fig. 1 Cross-section of the thin-film cell.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      315.0,
+      527.999,
+      510.001,
+      714.0
+     ],
+     "block_class": "image",
+     "block_id": "p001-b0009",
+     "content": {
+      "asset_id": "page-1/imgs/img_in_chart_box_1050_1760_1700_2380.jpg",
+      "asset_ids": [
+       "page-1/imgs/img_in_chart_box_1050_1760_1700_2380.jpg"
+      ],
+      "caption": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+      "caption_block_ids": [
+       "p001-b0010"
+      ],
+      "captions": [
+       "Fig. 2 Arrhenius plot of the measured diffusion coefficients."
+      ],
+      "kind": "image",
+      "text": ""
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       315.0,
+       527.999,
+       510.001,
+       714.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [],
+     "metadata": {
+      "asset_key": "imgs/img_in_chart_box_1050_1760_1700_2380.jpg",
+      "asset_keys": [
+       "imgs/img_in_chart_box_1050_1760_1700_2380.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "imgs/img_in_chart_box_1050_1760_1700_2380.jpg",
+      "asset_paths": [
+       "imgs/img_in_chart_box_1050_1760_1700_2380.jpg"
+      ],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_block_id": "p001-b0010",
+      "caption_block_ids": [
+       "p001-b0010"
+      ],
+      "caption_relation": "adjacent",
+      "caption_text": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+      "caption_texts": [
+       "Fig. 2 Arrhenius plot of the measured diffusion coefficients."
+      ],
+      "column_index_guess": "right",
+      "column_layout_mode": "double",
+      "content_is_rich": false,
+      "content_length": 0,
+      "content_line_count": 0,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "right",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 10,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 9,
+     "page_index": 0,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:image"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       1050.0,
+       1760.0,
+       1700.0,
+       2380.0
+      ],
+      "raw_label": "chart",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/9",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 9,
+     "segments": [],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       1050.0,
+       1760.0,
+       1700.0,
+       2380.0
+      ],
+      "raw_block_id": 9,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/9",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "",
+      "raw_type": "chart",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "image_body",
+     "tags": [
+      "image",
+      "skip_translation"
+     ],
+     "text": "",
+     "type": "image"
+    },
+    {
+     "bbox": [
+      315.0,
+      719.999,
+      510.001,
+      741.0
+     ],
+     "block_class": "caption",
+     "block_id": "p001-b0010",
+     "content": {
+      "asset_id": "page-1/imgs/img_in_chart_box_1050_1760_1700_2380.jpg",
+      "asset_ids": [
+       "page-1/imgs/img_in_chart_box_1050_1760_1700_2380.jpg"
+      ],
+      "kind": "text",
+      "line_texts": [
+       "Fig. 2 Arrhenius plot of the measured diffusion coefficients."
+      ],
+      "related_block_ids": [
+       "p001-b0009"
+      ],
+      "text": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.95,
+      "role": "figure_caption"
+     },
+     "geometry": {
+      "bbox": [
+       315.0,
+       719.999,
+       510.001,
+       741.0
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        315.0,
+        719.999,
+        510.001,
+        741.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          315.0,
+          719.999,
+          510.001,
+          741.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "figure_title",
+         "score": null,
+         "text": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "imgs/img_in_chart_box_1050_1760_1700_2380.jpg",
+      "asset_keys": [
+       "imgs/img_in_chart_box_1050_1760_1700_2380.jpg"
+      ],
+      "asset_kind": "markdown_image",
+      "asset_path": "imgs/img_in_chart_box_1050_1760_1700_2380.jpg",
+      "asset_paths": [
+       "imgs/img_in_chart_box_1050_1760_1700_2380.jpg"
+      ],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_asset_ids": [
+       "page-1/imgs/img_in_chart_box_1050_1760_1700_2380.jpg"
+      ],
+      "caption_relation": "adjacent",
+      "caption_target": "figure",
+      "caption_target_block_id": "p001-b0009",
+      "caption_target_direction": "previous",
+      "column_index_guess": "right",
+      "column_layout_mode": "double",
+      "contains_img_tag": false,
+      "contains_table_tag": false,
+      "content_format": "plain_text",
+      "content_is_rich": true,
+      "content_length": 61,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "caption",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "right",
+      "provider_column_layout_mode": "double",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 11,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "figure_caption",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 10,
+     "page_index": 0,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_caption_whitelist:figure_caption"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       1050.0,
+       2400.0,
+       1700.0,
+       2470.0
+      ],
+      "raw_label": "figure_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/0/10",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 10,
+     "segments": [
+      {
+       "bbox": [
+        315.0,
+        719.999,
+        510.001,
+        741.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "figure_title",
+       "score": null,
+       "text": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       1050.0,
+       2400.0,
+       1700.0,
+       2470.0
+      ],
+      "raw_block_id": 10,
+      "raw_origin": "top_left",
+      "raw_page_index": 0,
+      "raw_path": "/layout_details/0/10",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+      "raw_type": "figure_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "figure_caption",
+     "sub_type": "figure_caption",
+     "tags": [
+      "caption",
+      "figure_caption"
+     ],
+     "text": "Fig. 2 Arrhenius plot of the measured diffusion coefficients.",
+     "type": "text"
+    }
+   ],
+   "height": 841.7999877929688,
+   "metadata": {
+    "body_repair_block_count": 0,
+    "body_repair_block_ids": [],
+    "body_repair_pair_count": 0,
+    "body_repair_pairs": [],
+    "column_layout_mode": "double",
+    "column_split_x": 1012.5,
+    "geometry_precision": "",
+    "input_image": "",
+    "layout_det_res": {
+     "box_count": 0,
+     "boxes": []
+    },
+    "markdown": {
+     "images": {
+      "imgs/img_in_chart_box_1050_1760_1700_2380.jpg": "md/images/page-1/imgs/img_in_chart_box_1050_1760_1700_2380.jpg",
+      "imgs/img_in_image_box_300_1760_1000_2380.jpg": "md/images/page-1/imgs/img_in_image_box_300_1760_1000_2380.jpg"
+     },
+     "text": "",
+     "text_length": 0
+    },
+    "model_settings": {},
+    "output_images": {},
+    "peer_block_absorbed_text_block_ids": [],
+    "peer_block_absorbed_text_count": 0,
+    "preprocessed_image": "",
+    "provider_page_count": 0,
+    "provider_page_meta": {
+     "height": 2806,
+     "width": 1984
+    },
+    "provider_transport": "",
+    "raw_unit": "px",
+    "suspected_block_ids": [],
+    "suspected_cross_column_merge_block_count": 0,
+    "text_missing_but_bbox_present_block_ids": [],
+    "text_missing_but_bbox_present_count": 0
+   },
+   "page": 1,
+   "page_index": 0,
+   "unit": "pt",
+   "width": 595.2000122070312
+  },
+  {
+   "blocks": [
+    {
+     "bbox": [
+      87.0,
+      74.999,
+      510.001,
+      96.0
+     ],
+     "block_class": "caption",
+     "block_id": "p002-b0000",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "Table 1. Fitted parameters."
+      ],
+      "related_block_ids": [
+       "p002-b0001"
+      ],
+      "text": "Table 1. Fitted parameters.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.95,
+      "role": "table_caption"
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       74.999,
+       510.001,
+       96.0
+      ]
+     },
+     "layout_role": "caption",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        74.999,
+        510.001,
+        96.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          74.999,
+          510.001,
+          96.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "figure_title",
+         "score": null,
+         "text": "Table 1. Fitted parameters.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_asset_ids": [],
+      "caption_relation": "adjacent",
+      "caption_target": "table",
+      "caption_target_block_id": "p002-b0001",
+      "caption_target_direction": "next",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "contains_img_tag": false,
+      "contains_table_tag": false,
+      "content_format": "plain_text",
+      "content_is_rich": true,
+      "content_length": 27,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "caption",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "Table 1. Fitted parameters.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 1,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "table_caption",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 0,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_caption_whitelist:table_caption"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       250.0,
+       1700.0,
+       320.0
+      ],
+      "raw_label": "figure_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/1/0",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 0,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        74.999,
+        510.001,
+        96.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "figure_title",
+       "score": null,
+       "text": "Table 1. Fitted parameters.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       250.0,
+       1700.0,
+       320.0
+      ],
+      "raw_block_id": 0,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layout_details/1/0",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "Table 1. Fitted parameters.",
+      "raw_type": "figure_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "table_caption",
+     "sub_type": "table_caption",
+     "tags": [
+      "caption",
+      "table_caption"
+     ],
+     "text": "Table 1. Fitted parameters.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      87.0,
+      101.999,
+      510.001,
+      210.0
+     ],
+     "block_class": "table",
+     "block_id": "p002-b0001",
+     "content": {
+      "caption": "Table 1. Fitted parameters.",
+      "caption_block_ids": [
+       "p002-b0000"
+      ],
+      "captions": [
+       "Table 1. Fitted parameters."
+      ],
+      "kind": "table",
+      "line_texts": [
+       "<table><tr><td>Film</td><td> E_{a} (eV)</td></tr><tr><td>A</td><td>0.42</td></tr></table>"
+      ],
+      "text": "<table><tr><td>Film</td><td>$ E_{a} $ (eV)</td></tr><tr><td>A</td><td>0.42</td></tr></table>",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       101.999,
+       510.001,
+       210.0
+      ]
+     },
+     "layout_role": "unknown",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        101.999,
+        510.001,
+        210.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          101.999,
+          510.001,
+          210.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "table",
+         "score": null,
+         "text": "<table><tr><td>Film</td><td>",
+         "type": "text"
+        },
+        {
+         "bbox": [
+          87.0,
+          101.999,
+          510.001,
+          210.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "table",
+         "score": null,
+         "text": "E_{a}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          87.0,
+          101.999,
+          510.001,
+          210.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "table",
+         "score": null,
+         "text": "(eV)</td></tr><tr><td>A</td><td>0.42</td></tr></table>",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "caption_block_id": "p002-b0000",
+      "caption_block_ids": [
+       "p002-b0000"
+      ],
+      "caption_relation": "adjacent",
+      "caption_text": "Table 1. Fitted parameters.",
+      "caption_texts": [
+       "Table 1. Fitted parameters."
+      ],
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "contains_img_tag": false,
+      "contains_table_tag": true,
+      "content_format": "html_table",
+      "content_is_rich": true,
+      "content_length": 92,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "html_length": 92,
+      "layout_det_matched": false,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "Film $ E_{a} $ (eV) A 0.42",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 1,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 2,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 1,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_text:table"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       340.0,
+       1700.0,
+       700.0
+      ],
+      "raw_label": "table",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/1/1",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 1,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        101.999,
+        510.001,
+        210.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "table",
+       "score": null,
+       "text": "<table><tr><td>Film</td><td>",
+       "type": "text"
+      },
+      {
+       "bbox": [
+        87.0,
+        101.999,
+        510.001,
+        210.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "table",
+       "score": null,
+       "text": "E_{a}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        87.0,
+        101.999,
+        510.001,
+        210.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "table",
+       "score": null,
+       "text": "(eV)</td></tr><tr><td>A</td><td>0.42</td></tr></table>",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "unknown",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       340.0,
+       1700.0,
+       700.0
+      ],
+      "raw_block_id": 1,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layout_details/1/1",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "<table><tr><td>Film</td><td>$ E_{a} $ (eV)</td></tr><tr><td>A</td><td>0.42</td></tr></table>",
+      "raw_type": "table",
+      "raw_unit": "px"
+     },
+     "structure_role": "",
+     "sub_type": "table_html",
+     "tags": [
+      "table"
+     ],
+     "text": "<table><tr><td>Film</td><td>$ E_{a} $ (eV)</td></tr><tr><td>A</td><td>0.42</td></tr></table>",
+     "type": "table"
+    },
+    {
+     "bbox": [
+      87.0,
+      215.999,
+      510.001,
+      231.0
+     ],
+     "block_class": "footnote",
+     "block_id": "p002-b0002",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "^{a} Measured at 300 K."
+      ],
+      "text": "$ ^{a} $ Measured at 300 K.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.9,
+      "role": "table_footnote"
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       215.999,
+       510.001,
+       231.0
+      ]
+     },
+     "layout_role": "footnote",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        215.999,
+        510.001,
+        231.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          215.999,
+          510.001,
+          231.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "vision_footnote",
+         "score": null,
+         "text": "^{a}",
+         "type": "inline_formula"
+        },
+        {
+         "bbox": [
+          87.0,
+          215.999,
+          510.001,
+          231.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "vision_footnote",
+         "score": null,
+         "text": "Measured at 300 K.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 27,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "footnote_target": "table",
+      "layout_det_matched": false,
+      "layout_role": "footnote",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "$ ^{a} $ Measured at 300 K.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": true,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 1,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 3,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "unknown",
+      "structure_role": "footnote",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 2,
+     "page_index": 1,
+     "policy": {
+      "translate": true,
+      "translate_reason": "provider_footnote_whitelist:table_footnote"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       720.0,
+       1700.0,
+       770.0
+      ],
+      "raw_label": "vision_footnote",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/1/2",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 2,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        215.999,
+        510.001,
+        231.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "vision_footnote",
+       "score": null,
+       "text": "^{a}",
+       "type": "inline_formula"
+      },
+      {
+       "bbox": [
+        87.0,
+        215.999,
+        510.001,
+        231.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "vision_footnote",
+       "score": null,
+       "text": "Measured at 300 K.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       720.0,
+       1700.0,
+       770.0
+      ],
+      "raw_block_id": 2,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layout_details/1/2",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "$ ^{a} $ Measured at 300 K.",
+      "raw_type": "vision_footnote",
+      "raw_unit": "px"
+     },
+     "structure_role": "footnote",
+     "sub_type": "table_footnote",
+     "tags": [
+      "footnote",
+      "table_footnote"
+     ],
+     "text": "$ ^{a} $ Measured at 300 K.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      87.0,
+      251.999,
+      180.001,
+      267.0
+     ],
+     "block_class": "metadata",
+     "block_id": "p002-b0003",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "References"
+      ],
+      "text": "References",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "",
+      "confidence": 0.0,
+      "role": ""
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       251.999,
+       180.001,
+       267.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        251.999,
+        180.001,
+        267.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          251.999,
+          180.001,
+          267.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "paragraph_title",
+         "score": null,
+         "text": "References",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "left",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 10,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "References",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "left",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 4,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "reference_section_heading": true,
+      "semantic_role": "metadata",
+      "structure_role": "",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 3,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:metadata"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       840.0,
+       600.0,
+       890.0
+      ],
+      "raw_label": "paragraph_title",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/1/3",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 3,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        251.999,
+        180.001,
+        267.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "paragraph_title",
+       "score": null,
+       "text": "References",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "metadata",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       840.0,
+       600.0,
+       890.0
+      ],
+      "raw_block_id": 3,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layout_details/1/3",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "References",
+      "raw_type": "paragraph_title",
+      "raw_unit": "px"
+     },
+     "structure_role": "metadata",
+     "sub_type": "metadata",
+     "tags": [
+      "metadata",
+      "skip_translation"
+     ],
+     "text": "References",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      87.0,
+      275.999,
+      510.001,
+      297.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0004",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "(1) Lin, A.; Ortiz, B. Thin-film diffusion. J. Mater. Chem. 2024, 12, 100-110."
+      ],
+      "text": "(1) Lin, A.; Ortiz, B. Thin-film diffusion. J. Mater. Chem. 2024, 12, 100-110.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "reference_entry"
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       275.999,
+       510.001,
+       297.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        275.999,
+        510.001,
+        297.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          275.999,
+          510.001,
+          297.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "reference_content",
+         "score": null,
+         "text": "(1) Lin, A.; Ortiz, B. Thin-film diffusion. J. Mater. Chem. 2024, 12, 100-110.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 78,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "(1) Lin, A.; Ortiz, B. Thin-film diffusion. J. Mater. Chem. 2024, 12, 100-110.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 5,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "reference",
+      "structure_role": "reference_entry",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 4,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:reference_entry"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       920.0,
+       1700.0,
+       990.0
+      ],
+      "raw_label": "reference_content",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/1/4",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 4,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        275.999,
+        510.001,
+        297.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "reference_content",
+       "score": null,
+       "text": "(1) Lin, A.; Ortiz, B. Thin-film diffusion. J. Mater. Chem. 2024, 12, 100-110.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "reference",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       920.0,
+       1700.0,
+       990.0
+      ],
+      "raw_block_id": 4,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layout_details/1/4",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "(1) Lin, A.; Ortiz, B. Thin-film diffusion. J. Mater. Chem. 2024, 12, 100-110.",
+      "raw_type": "reference_content",
+      "raw_unit": "px"
+     },
+     "structure_role": "reference_entry",
+     "sub_type": "reference_entry",
+     "tags": [
+      "reference_entry",
+      "reference_zone",
+      "skip_translation"
+     ],
+     "text": "(1) Lin, A.; Ortiz, B. Thin-film diffusion. J. Mater. Chem. 2024, 12, 100-110.",
+     "type": "text"
+    },
+    {
+     "bbox": [
+      87.0,
+      299.999,
+      510.001,
+      321.0
+     ],
+     "block_class": "body",
+     "block_id": "p002-b0005",
+     "content": {
+      "kind": "text",
+      "line_texts": [
+       "(2) Ortiz, B. Layered oxides revisited. Chem. Rev. 2025, 125, 1-40."
+      ],
+      "text": "(2) Ortiz, B. Layered oxides revisited. Chem. Rev. 2025, 125, 1-40.",
+      "text_flow": "flow"
+     },
+     "continuation_hint": {
+      "confidence": 0.0,
+      "group_id": "",
+      "reading_order": -1,
+      "role": "",
+      "scope": "",
+      "source": ""
+     },
+     "derived": {
+      "by": "provider_rule",
+      "confidence": 0.98,
+      "role": "reference_entry"
+     },
+     "geometry": {
+      "bbox": [
+       87.0,
+       299.999,
+       510.001,
+       321.0
+      ]
+     },
+     "layout_role": "paragraph",
+     "lines": [
+      {
+       "bbox": [
+        87.0,
+        299.999,
+        510.001,
+        321.0
+       ],
+       "bbox_precision": "block_fallback",
+       "spans": [
+        {
+         "bbox": [
+          87.0,
+          299.999,
+          510.001,
+          321.0
+         ],
+         "bbox_precision": "line",
+         "raw_type": "reference_content",
+         "score": null,
+         "text": "(2) Ortiz, B. Layered oxides revisited. Chem. Rev. 2025, 125, 1-40.",
+         "type": "text"
+        }
+       ]
+      }
+     ],
+     "metadata": {
+      "asset_key": "",
+      "asset_keys": [],
+      "asset_kind": "",
+      "asset_path": "",
+      "asset_paths": [],
+      "asset_resolved": false,
+      "asset_resolved_count": 0,
+      "body_repair_applied": false,
+      "body_repair_attempted": false,
+      "body_repair_peer_block_id": "",
+      "body_repair_role": "",
+      "body_repair_strategy": "",
+      "column_index_guess": "full",
+      "column_layout_mode": "single",
+      "content_is_rich": false,
+      "content_length": 67,
+      "content_line_count": 1,
+      "continuation_suppressed": false,
+      "continuation_suppressed_reason": "",
+      "cross_column_merge_suspected": false,
+      "layout_det_matched": false,
+      "layout_role": "unknown",
+      "markdown_match_count": 0,
+      "markdown_match_found": false,
+      "markdown_match_text": "(2) Ortiz, B. Layered oxides revisited. Chem. Rev. 2025, 125, 1-40.",
+      "peer_block_absorbed_text": false,
+      "policy_translate": false,
+      "provider_column_index_guess": "full",
+      "provider_column_layout_mode": "single",
+      "provider_cross_column_merge_suspected": false,
+      "provider_geometry_precision": "",
+      "provider_inline_formula_bbox_complete": false,
+      "provider_inline_formula_bbox_count": 0,
+      "provider_inline_formula_candidate_count": 0,
+      "provider_inline_formula_segment_count": 0,
+      "provider_peer_block_absorbed_text": false,
+      "provider_reading_order_unreliable": false,
+      "provider_structure_unreliable": false,
+      "provider_suspected_peer_block_id": "",
+      "provider_suspected_peer_order": null,
+      "provider_text_missing_but_bbox_present": false,
+      "raw_block_order": 6,
+      "raw_global_block_id": null,
+      "raw_global_group_id": null,
+      "raw_group_id": null,
+      "raw_polygon": [],
+      "reading_order_unreliable": false,
+      "semantic_role": "reference",
+      "structure_role": "reference_entry",
+      "structure_unreliable": false,
+      "text_missing_but_bbox_present": false
+     },
+     "order": 5,
+     "page_index": 1,
+     "policy": {
+      "translate": false,
+      "translate_reason": "provider_non_body:reference_entry"
+     },
+     "provenance": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       1000.0,
+       1700.0,
+       1070.0
+      ],
+      "raw_label": "reference_content",
+      "raw_origin": "top_left",
+      "raw_path": "/layout_details/1/5",
+      "raw_sub_type": "",
+      "raw_unit": "px"
+     },
+     "reading_order": 5,
+     "segments": [
+      {
+       "bbox": [
+        87.0,
+        299.999,
+        510.001,
+        321.0
+       ],
+       "bbox_precision": "block",
+       "raw_type": "reference_content",
+       "score": null,
+       "text": "(2) Ortiz, B. Layered oxides revisited. Chem. Rev. 2025, 125, 1-40.",
+       "type": "text"
+      }
+     ],
+     "semantic_role": "reference",
+     "source": {
+      "provider": "glm_ocr",
+      "raw_bbox": [
+       290.0,
+       1000.0,
+       1700.0,
+       1070.0
+      ],
+      "raw_block_id": 5,
+      "raw_origin": "top_left",
+      "raw_page_index": 1,
+      "raw_path": "/layout_details/1/5",
+      "raw_sub_type": "",
+      "raw_text_excerpt": "(2) Ortiz, B. Layered oxides revisited. Chem. Rev. 2025, 125, 1-40.",
+      "raw_type": "reference_content",
+      "raw_unit": "px"
+     },
+     "structure_role": "reference_entry",
+     "sub_type": "reference_entry",
+     "tags": [
+      "reference_entry",
+      "reference_zone",
+      "skip_translation"
+     ],
+     "text": "(2) Ortiz, B. Layered oxides revisited. Chem. Rev. 2025, 125, 1-40.",
+     "type": "text"
+    }
+   ],
+   "height": 841.7999877929688,
+   "metadata": {
+    "body_repair_block_count": 0,
+    "body_repair_block_ids": [],
+    "body_repair_pair_count": 0,
+    "body_repair_pairs": [],
+    "column_layout_mode": "single",
+    "column_split_x": 992.0,
+    "geometry_precision": "",
+    "input_image": "",
+    "layout_det_res": {
+     "box_count": 0,
+     "boxes": []
+    },
+    "markdown": {
+     "images": {},
+     "text": "",
+     "text_length": 0
+    },
+    "model_settings": {},
+    "output_images": {},
+    "peer_block_absorbed_text_block_ids": [],
+    "peer_block_absorbed_text_count": 0,
+    "preprocessed_image": "",
+    "provider_page_count": 0,
+    "provider_page_meta": {
+     "height": 2806,
+     "width": 1984
+    },
+    "provider_transport": "",
+    "raw_unit": "px",
+    "suspected_block_ids": [],
+    "suspected_cross_column_merge_block_count": 0,
+    "text_missing_but_bbox_present_block_ids": [],
+    "text_missing_but_bbox_present_count": 0
+   },
+   "page": 2,
+   "page_index": 1,
+   "unit": "pt",
+   "width": 595.2000122070312
+  }
+ ],
+ "schema": "normalized_document_v1",
+ "schema_version": "1.1",
+ "source": {
+  "provider": "glm_ocr",
+  "provider_version": "glm-ocr",
+  "raw_files": {
+   "source_json": "glm_ocr_result.json"
+  }
+ }
+}

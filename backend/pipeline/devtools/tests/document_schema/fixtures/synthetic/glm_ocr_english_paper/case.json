@@ -1,0 +1,85 @@
+{
+ "provider": "glm_ocr",
+ "raw_file": "raw.json",
+ "pdf_pages": [
+  [
+   595.2,
+   841.8
+  ],
+  [
+   595.2,
+   841.8
+  ]
+ ],
+ "raw_pages": [
+  [
+   1984,
+   2806
+  ],
+  [
+   1984,
+   2806
+  ]
+ ],
+ "description": "人造的 GLM-OCR layout_parsing 结果：2 页英文论文，单栏，像素坐标为 10/3 倍（1984x2806 对应 A4 595.2x841.8pt）。内容照 GLM 的写法：标题带 #、标题和图注包在 <div align=\"center\"> 里、表格 <table border=\"1\">、图片块没有 content。第 1 页 index 4、5 两块在数组里故意倒着放。",
+ "features": [
+  {
+   "feature": "doc_title 带 <div> 和 #",
+   "page": 1,
+   "raw_path": "/layout_details/0/0",
+   "expect": "text/title，文字里没有 <div>、#，translate=true"
+  },
+  {
+   "feature": "paragraph_title「## Abstract」",
+   "page": 1,
+   "raw_path": "/layout_details/0/2",
+   "expect": "heading，文字是 Abstract"
+  },
+  {
+   "feature": "数组顺序和 index 不一致",
+   "page": 1,
+   "raw_path": "/layout_details/0/4",
+   "expect": "按 index 排：1. Introduction 在正文前；raw_path 指回数组里的原位置"
+  },
+  {
+   "feature": "display_formula「$$\\n…\\n$$」",
+   "page": 1,
+   "raw_path": "/layout_details/0/6",
+   "expect": "formula，不翻"
+  },
+  {
+   "feature": "image 没有 content、已裁图",
+   "page": 1,
+   "raw_path": "/layout_details/0/7",
+   "expect": "image_body，文字为空，asset_key=imgs/img_in_image_box_300_1760_1000_2380.jpg，图片就绪"
+  },
+  {
+   "feature": "chart 没有 content、没裁图",
+   "page": 1,
+   "raw_path": "/layout_details/0/9",
+   "expect": "image_body，图片未就绪"
+  },
+  {
+   "feature": "figure_title 包在 <div> 里",
+   "page": 1,
+   "raw_path": "/layout_details/0/8",
+   "expect": "figure_caption，挂到上面的图"
+  },
+  {
+   "feature": "表题 + <table border=\"1\">",
+   "page": 2,
+   "raw_path": "/layout_details/1/1",
+   "expect": "table_caption；表格是 <table>，不带属性"
+  },
+  {
+   "feature": "参考文献标题和条目",
+   "page": 2,
+   "raw_path": "/layout_details/1/3",
+   "expect": "References 是 metadata（不翻），条目 reference_entry 不翻"
+  }
+ ],
+ "tricky_points": [
+  "GLM 没有分组号：不出服务商接续提示",
+  "坐标是模型像素，靠 finalize 缩放到 PDF 点"
+ ]
+}

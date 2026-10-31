@@ -1,0 +1,280 @@
+{
+ "created": 0,
+ "id": "synthetic-glm-ocr",
+ "model": "glm-ocr",
+ "request_id": "synthetic-glm-ocr",
+ "data_info": {
+  "num_pages": 2,
+  "pages": [
+   {
+    "width": 1984,
+    "height": 2806
+   },
+   {
+    "width": 1984,
+    "height": 2806
+   }
+  ]
+ },
+ "layout_details": [
+  [
+   {
+    "index": 0,
+    "label": "text",
+    "native_label": "doc_title",
+    "bbox_2d": [
+     330,
+     260,
+     1650,
+     420
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "<div align=\"center\">\n\n# Ion Transport in Layered Oxide Cathodes\n\n</div>"
+   },
+   {
+    "index": 1,
+    "label": "text",
+    "native_label": "text",
+    "bbox_2d": [
+     600,
+     470,
+     1380,
+     520
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "Ada Lin $ ^{1,*} $ , Ben Ortiz $ ^{2} $"
+   },
+   {
+    "index": 2,
+    "label": "text",
+    "native_label": "paragraph_title",
+    "bbox_2d": [
+     290,
+     600,
+     470,
+     650
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "## Abstract"
+   },
+   {
+    "index": 3,
+    "label": "text",
+    "native_label": "abstract",
+    "bbox_2d": [
+     290,
+     680,
+     1700,
+     1000
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "We measure lithium diffusion in $ \\mathrm{LiCoO_2} $ thin films and find an activation energy of $ 0.42 $ eV."
+   },
+   {
+    "index": 5,
+    "label": "text",
+    "native_label": "text",
+    "bbox_2d": [
+     290,
+     1260,
+     1700,
+     1560
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "The diffusion coefficient follows an Arrhenius law, as shown in Eq. (1)."
+   },
+   {
+    "index": 4,
+    "label": "text",
+    "native_label": "paragraph_title",
+    "bbox_2d": [
+     290,
+     1180,
+     700,
+     1230
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "## 1. Introduction"
+   },
+   {
+    "index": 6,
+    "label": "formula",
+    "native_label": "display_formula",
+    "bbox_2d": [
+     400,
+     1600,
+     1580,
+     1700
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "$$\nD = D_{0} \\exp\\left(-\\frac{E_{a}}{k_{B} T}\\right)\n$$"
+   },
+   {
+    "index": 7,
+    "label": "image",
+    "native_label": "image",
+    "bbox_2d": [
+     300,
+     1760,
+     1000,
+     2380
+    ],
+    "width": 1984,
+    "height": 2806
+   },
+   {
+    "index": 8,
+    "label": "text",
+    "native_label": "figure_title",
+    "bbox_2d": [
+     300,
+     2400,
+     1000,
+     2470
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "<div align=\"center\">\n\nFig. 1 Cross-section of the thin-film cell.\n\n</div>"
+   },
+   {
+    "index": 9,
+    "label": "image",
+    "native_label": "chart",
+    "bbox_2d": [
+     1050,
+     1760,
+     1700,
+     2380
+    ],
+    "width": 1984,
+    "height": 2806
+   },
+   {
+    "index": 10,
+    "label": "text",
+    "native_label": "figure_title",
+    "bbox_2d": [
+     1050,
+     2400,
+     1700,
+     2470
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "<div align=\"center\">\n\nFig. 2 Arrhenius plot of the measured diffusion coefficients.\n\n</div>"
+   }
+  ],
+  [
+   {
+    "index": 0,
+    "label": "text",
+    "native_label": "figure_title",
+    "bbox_2d": [
+     290,
+     250,
+     1700,
+     320
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "<div align=\"center\">\n\nTable 1. Fitted parameters.\n\n</div>"
+   },
+   {
+    "index": 1,
+    "label": "table",
+    "native_label": "table",
+    "bbox_2d": [
+     290,
+     340,
+     1700,
+     700
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "<table border=\"1\"><tr><td>Film</td><td>$ E_{a} $ (eV)</td></tr><tr><td>A</td><td>0.42</td></tr></table>"
+   },
+   {
+    "index": 2,
+    "label": "text",
+    "native_label": "vision_footnote",
+    "bbox_2d": [
+     290,
+     720,
+     1700,
+     770
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "$ ^{a} $ Measured at 300 K."
+   },
+   {
+    "index": 3,
+    "label": "text",
+    "native_label": "paragraph_title",
+    "bbox_2d": [
+     290,
+     840,
+     600,
+     890
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "## References"
+   },
+   {
+    "index": 4,
+    "label": "text",
+    "native_label": "reference_content",
+    "bbox_2d": [
+     290,
+     920,
+     1700,
+     990
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "(1) Lin, A.; Ortiz, B. Thin-film diffusion. J. Mater. Chem. 2024, 12, 100-110."
+   },
+   {
+    "index": 5,
+    "label": "text",
+    "native_label": "reference_content",
+    "bbox_2d": [
+     290,
+     1000,
+     1700,
+     1070
+    ],
+    "width": 1984,
+    "height": 2806,
+    "content": "(2) Ortiz, B. Layered oxides revisited. Chem. Rev. 2025, 125, 1-40."
+   }
+  ]
+ ],
+ "layout_visualization": [],
+ "md_results": "",
+ "usage": {
+  "completion_tokens": 0,
+  "prompt_tokens": 0,
+  "total_tokens": 0
+ },
+ "_images": {
+  "imgs/img_in_image_box_300_1760_1000_2380.jpg": "images/page-001/img_in_image_box_300_1760_1000_2380.jpg"
+ },
+ "_meta": {
+  "chunks": [
+   {
+    "start_page": 1,
+    "end_page": 2,
+    "request_id": "synthetic-glm-ocr"
+   }
+  ]
+ }
+}

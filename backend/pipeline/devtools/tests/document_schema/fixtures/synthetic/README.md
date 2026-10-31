@@ -6,7 +6,7 @@
 
 | 文件 | 内容 |
 |---|---|
-| `raw.json` | 原始输出（MinerU middle.json、MinerU content_list_v2、Paddle VL、命令型 OCR 的通用格式） |
+| `raw.json` | 原始输出（MinerU middle.json、MinerU content_list_v2、Paddle VL、GLM-OCR、命令型 OCR 的通用格式） |
 | `case.json` | 服务商、原文 PDF 每页的尺寸（`pdf_pages`，点）、原始坐标的页面尺寸（`raw_pages`）、每个要点在哪（`features`：页、原始路径、期望）、几何边界情况、难点 |
 | `raw_page_overflow.json` | 故意让一个块超出页边一两个单位的版本（`case.json` 的 `page_overflow_variants` 记着是哪个块）。2026-10-29 以前整份文档会校验失败，现在归一化把它夹回页内 |
 | `expected.document.v1.json` | 走完整归一化（适配 → 缩放到 `pdf_pages` 大小的 PDF → 补行 → 校验）以后的整份文档 |
@@ -22,6 +22,8 @@ UPDATE_OCR_SNAPSHOTS=1 backend/.venv/bin/python -m pytest backend/pipeline/devto
 ```
 
 然后看 `git diff` 里只有预期的改动。
+
+`glm_ocr_english_paper`（2026-10-31 加）照 GLM-OCR 真实结果的写法造：标题带 `#`、标题和图注包在 `<div align="center">` 里、`<table border="1">`、图片块没有 content、数组顺序和 `index` 不一致。
 
 真实服务商的原始输出以后补（`docs/ops/planning/ocr-normalization/20261029-归一化拆分方案.md`「用户的决定」第 1 条）。
 注意 `mineru_content_list_v2*` 的表格、图片、列表、代码字段名是按 MinerU 官方格式写的，仓库里的文档只列了类型名，没有字段定义，要拿真实输出核一次。

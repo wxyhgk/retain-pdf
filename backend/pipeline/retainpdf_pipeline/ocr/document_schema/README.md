@@ -252,6 +252,7 @@ provider 原始 OCR 不应直接进入翻译/渲染主线。
 - `mineru_content_list_v2 -> document.v1`
 - `generic_flat_ocr -> document.v1`
 - `paddle -> document.v1`
+- `glm_ocr -> document.v1`（智谱 GLM-OCR，2026-10-31）
 
 ## Provider Adapter 分层
 
@@ -295,6 +296,10 @@ provider 装配层位于：
   采用目录化拆分，负责把 Paddle 原始 `layoutParsingResults` 解析成通用 spec
   当前又细分为 reader、relations、page trace、rich-content trace。
   现在 reader 层内部再通过 page/block context 收敛接口，不再散传 markdown/layout trace 参数。
+- `glm_ocr/`
+  智谱 GLM-OCR 的 `layout_details`。版面检测和 PaddleOCR-VL 是同一套（标签相同），所以只把每页改成 Paddle `parsing_res_list`
+  的样子、把 GLM 的 markdown 排版（标题的 `#`、`<div align="center">`、`<table border="1">`）洗成和我们请求 Paddle 时一样，
+  走 Paddle 的页、块解析，再把来源改回 GLM。没有分组号，不出服务商接续提示；图片块按框挂进图片表，文件由调用层从原文裁。
 - `mineru_content_list_v2_adapter.py`
   已经接入通用 builder，但还没有像 Paddle 一样完全目录化
 - `generic_flat_ocr_adapter.py`
