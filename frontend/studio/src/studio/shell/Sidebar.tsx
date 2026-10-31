@@ -160,7 +160,7 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				>
 					<Search aria-hidden className="size-4" />
 					<span className="flex-1 truncate text-left">{t('搜索')}</span>
-					<Kbd className="h-[18px] rounded-[5px] bg-[var(--surface)] px-1.5 text-[11px] text-muted-foreground shadow-xs">⌘K</Kbd>
+					<Kbd className="h-[18px] rounded-[5px] bg-[var(--surface)] px-1.5 text-xs text-muted-foreground shadow-xs">⌘K</Kbd>
 				</button>
 				<Button id="new-article-secondary" type="button" variant="ghost" size="icon-sm" className="size-7 text-muted-foreground hover:text-foreground" title={t('新建文章')} aria-label={t('新建文章')} onClick={act.newPage}>
 					<SquarePen aria-hidden className="size-4" />

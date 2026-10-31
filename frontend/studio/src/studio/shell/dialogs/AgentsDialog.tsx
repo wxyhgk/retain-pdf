@@ -23,7 +23,7 @@ const lines = (agents: Agent[]): Line[] => agents.map((agent) => ({ ...agent, ro
 
 function TextField({ label, name, value, hint, onChange }: { label: string; name: string; value: string; hint?: string; onChange(value: string): void }) {
 	return (
-		<label className="agent-field flex min-w-0 flex-col gap-[3px] text-[11px] text-muted-foreground">
+		<label className="agent-field flex min-w-0 flex-col gap-[3px] text-xs text-muted-foreground">
 			<span>{label}</span>
 			<Input name={name} className="h-[30px] px-2 font-mono text-xs text-foreground" autoComplete="off" spellCheck={false} value={value} placeholder={hint} onChange={(event) => onChange(event.target.value)} />
 		</label>
@@ -90,7 +90,7 @@ export function AgentsDialog({ shown, saved, onClose }: AgentsAsk & { onClose():
 										<input type="radio" name="agents-default" className="accent-primary" checked={chosen === agent.row} onChange={() => setChosen(agent.row)} />
 										{t('Alt+Enter 用它')}
 									</label>
-									<small className="truncate text-[11px] leading-[30px] text-muted-foreground">{known === undefined ? '' : known ? t('已安装') : t('这台电脑上没找到')}</small>
+									<small className="truncate text-xs leading-[30px] text-muted-foreground">{known === undefined ? '' : known ? t('已安装') : t('这台电脑上没找到')}</small>
 									<Button type="button" variant="outline" size="xs" className="text-destructive hover:text-destructive" onClick={() => remove(agent.row)}>
 										{t('删除')}
 									</Button>

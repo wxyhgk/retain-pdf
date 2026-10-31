@@ -13,7 +13,7 @@
 #article-list .page-row.active { background: var(--studio-fill-2); }
 /* Folded, the page open under it (a database's row opened from its table). */
 #article-list .page-item.holds-open > .page-row { background: var(--studio-fill); }
-#article-list .page-item.holds-open > .page-row .page-title { color: rgb(var(--black)); font-weight: 550; }
+#article-list .page-item.holds-open > .page-row .page-title { color: rgb(var(--black)); font-weight: 500; }
 #article-list .page-item.is-chosen .page-row { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 #article-list .page-item { position: relative; --indent: calc(var(--depth, 0) * 14px); }
 #article-list .page-item .page-row { padding-left: calc(8px + var(--indent)); }
@@ -49,9 +49,9 @@
 #article-list .page-git.is-modified { color: rgb(var(--gray)); }
 #article-list .page-git.is-new { color: rgb(var(--gray)); }
 #article-list .page-icon.is-emoji { font-size: 15px; line-height: 1; text-align: center; }
-#article-list .page-count { color: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; }
-#article-list .page-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--studio-fs-body); font-weight: 450; color: rgb(var(--gray-dark)); }
-#article-list .page-row.active .page-title { font-weight: 550; }
+#article-list .page-count { color: rgb(var(--gray)); font-size: var(--studio-fs-caption); font-variant-numeric: tabular-nums; }
+#article-list .page-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--studio-fs-body); font-weight: 400; color: rgb(var(--gray-dark)); }
+#article-list .page-row.active .page-title { font-weight: 500; }
 #article-list .page-row.active .page-title { color: rgb(var(--black)); font-weight: 600; }
 #article-list .article-list-empty { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
 /* Until the editor has the article (page-snapshot.ts), as the editor's: no empty list. */

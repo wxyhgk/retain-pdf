@@ -91,7 +91,7 @@ export function SettingsDialog({ section, plugins, why = '', done, onClose }: Se
 					</label>
 					{found.map((group) => (
 						<div key={group.name} className="grid gap-0.5">
-							<span className="px-2 pb-0.5 text-[11px] text-muted-foreground">{group.name}</span>
+							<span className="px-2 pb-0.5 text-xs text-muted-foreground">{group.name}</span>
 							{group.entries.map((each) => (
 								<button
 									key={each.id}

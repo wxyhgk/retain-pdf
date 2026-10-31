@@ -8,11 +8,11 @@
 .file-tree .file-row:focus-visible { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
 .file-tree .file-row.is-selected { background: var(--studio-fill-2); }
 .file-tree .file-row.is-drop-target { background: color-mix(in srgb, var(--accent) 24%, transparent); box-shadow: inset 0 0 0 1px var(--accent); }
-.file-tree .file-row.is-folder { font-weight: 550; }
+.file-tree .file-row.is-folder { font-weight: 500; }
 .file-tree .file-row.is-locked:not(.is-folder .file-name) { color: rgb(var(--gray)); }
 .file-tree .file-row.is-unused .file-name, .file-tree .file-row.is-unused .file-icon { opacity: 0.45; }
 .file-tree .file-row.is-unused .file-name { text-decoration: line-through dotted rgb(var(--gray)); }
-.file-tree .file-icon { display: grid; place-items: center; color: rgb(var(--gray)); font-size: 11px; }
+.file-tree .file-icon { display: grid; place-items: center; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); }
 .file-tree .file-icon svg { width: 16px; height: 16px; stroke-width: 1.75; }
 .file-tree .file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .file-tree .file-meta { color: rgb(var(--gray)); font-size: var(--studio-fs-caption); font-weight: 400; font-variant-numeric: tabular-nums; }
@@ -22,11 +22,11 @@
 .file-tree .file-row:hover .file-row-actions button, .file-tree .file-row.is-selected .file-row-actions button { opacity: 1; }
 .file-tree .file-row-actions button:hover { background: color-mix(in srgb, rgb(var(--gray-dark)) 10%, transparent); color: rgb(var(--gray-dark)); }
 .file-tree .file-row-empty { padding: 2px 8px 4px calc(8px + var(--depth, 0) * 16px); list-style: none; }
-.file-tree .file-empty-upload { width: 100%; padding: 7px 8px; border: 1px dashed rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; text-align: left; cursor: pointer; }
+.file-tree .file-empty-upload { width: 100%; padding: 7px 8px; border: 1px dashed rgb(var(--gray-light)); border-radius: 6px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: var(--studio-fs-caption); text-align: left; cursor: pointer; }
 .file-tree .file-empty-upload:hover { border-color: color-mix(in srgb, var(--accent) 55%, transparent); color: rgb(var(--gray-dark)); }
 .file-tree .file-name-input { grid-column: 2 / -1; min-width: 0; height: 22px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 4px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-weight: 400; outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
 .file-tree .file-tree-empty { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
-.files-status { flex: none; min-height: 16px; margin: 0; padding: 8px 12px; overflow: hidden; border-top: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.files-status { flex: none; min-height: 16px; margin: 0; padding: 8px 12px; overflow: hidden; border-top: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: var(--studio-fs-caption); text-overflow: ellipsis; white-space: nowrap; }
 .files-status:empty::before { content: var(--word-drop-files); opacity: 0.7; }
 .files-status[data-state='busy'] { color: rgb(var(--gray-dark)); }
 .files-status[data-state='error'] { color: var(--danger); white-space: normal; }

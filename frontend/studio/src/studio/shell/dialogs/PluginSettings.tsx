@@ -73,8 +73,8 @@ export function PluginSettings({ host }: { host: PluginsHost }) {
 							<div className="grid min-w-0 gap-0.5">
 								<strong className="font-mono text-[13px] font-semibold text-accent-foreground">{plugin.id}</strong>
 								{info?.description && <span className="text-xs leading-normal">{info.description}</span>}
-								<span className="text-[11px] text-muted-foreground">{plugin.entries.map((entry) => ENVIRONMENTS[entry]).join(' · ')}</span>
-								<span className={cn('plugin-state text-[11px] text-muted-foreground', state.error && 'is-error text-destructive')}>{inStudio ? state.text : t('只用于博客的构建和页面，这里没有可关的')}</span>
+								<span className="text-xs text-muted-foreground">{plugin.entries.map((entry) => ENVIRONMENTS[entry]).join(' · ')}</span>
+								<span className={cn('plugin-state text-xs text-muted-foreground', state.error && 'is-error text-destructive')}>{inStudio ? state.text : t('只用于博客的构建和页面，这里没有可关的')}</span>
 							</div>
 							{inStudio && <Switch checked={plugin.enabled} disabled={busy === plugin.id} aria-label={t('启用插件 {id}', { id: plugin.id })} onCheckedChange={(on) => void turn(plugin, on)} />}
 						</li>

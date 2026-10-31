@@ -22,7 +22,7 @@ export function Frame({ id, title, description, className, onClose, focus, child
 			>
 				<DialogHeader className="gap-1 pr-8 text-left">
 					<DialogTitle className="text-[17px] text-accent-foreground">{title}</DialogTitle>
-					<DialogDescription className="text-[11px] leading-normal">{description}</DialogDescription>
+					<DialogDescription className="text-xs leading-normal">{description}</DialogDescription>
 				</DialogHeader>
 				{children}
 			</DialogContent>

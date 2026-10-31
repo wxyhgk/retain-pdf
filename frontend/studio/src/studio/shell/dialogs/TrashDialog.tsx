@@ -23,7 +23,7 @@ export function Row({ icon, name, where, children }: { icon: string; name: strin
 			<span className="trash-icon text-center text-[15px] text-muted-foreground">{icon}</span>
 			<span className="grid min-w-0 gap-px">
 				<span className="trash-name truncate text-[13px]">{name}</span>
-				<span className="trash-where truncate text-[11px] text-muted-foreground">{where}</span>
+				<span className="trash-where truncate text-xs text-muted-foreground">{where}</span>
 			</span>
 			{children}
 		</li>

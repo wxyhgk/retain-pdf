@@ -13,11 +13,11 @@ html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-source { co
 /* While a formula is typed (formula-typing.ts): the last good drawing faded, and what is wrong only once the typing stops. */
 .math-editor .milkdown .ProseMirror .pm-math-preview-body.is-empty { display: none; }
 .math-editor .milkdown .ProseMirror .pm-math-preview-body.is-stale > :not(.pm-math-preview-error) { opacity: 0.45; }
-.math-editor .milkdown .ProseMirror .pm-math-preview-error { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: var(--font-mono); font-size: 11px; line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
+.math-editor .milkdown .ProseMirror .pm-math-preview-error { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: var(--font-mono); font-size: var(--studio-fs-caption, 12px); line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
 html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-preview-error { color: var(--danger); }
 .math-editor .pm-display-math-formula.is-stale { opacity: 0.45; }
 .pm-source-popup-error.is-late { animation: pm-error-after-typing 0s 1s both; }
-@keyframes pm-error-after-typing { from { margin: 0; font-size: 0; line-height: 0; } to { font-size: 11px; } }
+@keyframes pm-error-after-typing { from { margin: 0; font-size: 0; line-height: 0; } to { font-size: var(--studio-fs-caption, 12px); } }
 html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-cmd { color: rgb(var(--gray-dark)); }
 html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-preview-body { background: #f3f3f3; color: #191919; }
 html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-preview-body::before { border-color: transparent transparent #f3f3f3; }
@@ -61,7 +61,7 @@ html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-preview-bod
 .math-editor .milkdown .ProseMirror.is-completing-latex .pm-math-preview { visibility: hidden; }
 .pm-source-popup.is-formula .pm-source-popup-preview { margin: 0 0 6px; padding: 0; background: none; text-align: left; }
 .pm-source-popup.is-formula .pm-source-popup-error { margin: 0; }
-.pm-source-popup-error { margin: 6px 0 0; color: var(--danger); font-family: var(--font-mono); font-size: 11px; line-height: 1.4; text-align: left; }
+.pm-source-popup-error { margin: 6px 0 0; color: var(--danger); font-family: var(--font-mono); font-size: var(--studio-fs-caption, 12px); line-height: 1.4; text-align: left; }
 .pm-source-popup-input { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin: 0; padding: 8px 10px; border: 0; border-radius: 8px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; resize: none; outline: none; }
 
 /* A formula being typed, drawn as MathLive shows one (formula-marks.ts): the caret in the drawing, blinking; the part

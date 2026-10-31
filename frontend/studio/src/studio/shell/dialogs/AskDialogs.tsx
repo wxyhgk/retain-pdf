@@ -42,7 +42,7 @@ export function PublishCheckDialog({ issues, done, onClose }: PublishCheckAsk & 
 			<Notes id="publish-check-list">
 				{issues.map((issue, at) => (
 					<li key={at} className={cn(noteLook, `is-${issue.severity}`, 'grid-cols-[52px_minmax(0,1fr)]', issue.severity === 'error' && 'border-l-destructive')}>
-						<span className="pt-px text-[11px] text-muted-foreground tabular-nums">{issue.line ? t('第 {line} 行', { line: issue.line }) : t('属性')}</span>
+						<span className="pt-px text-xs text-muted-foreground tabular-nums">{issue.line ? t('第 {line} 行', { line: issue.line }) : t('属性')}</span>
 						{issue.message}
 					</li>
 				))}

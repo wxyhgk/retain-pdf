@@ -162,7 +162,7 @@
 .db .db-calc-row:hover .db-calc-button.is-none, .db .db-calc-button.is-none[data-state='open'], .db .db-calc-button.is-none:focus-visible { opacity: 1; }
 .db .db-calc-hint { display: inline-flex; align-items: center; gap: 2px; }
 .db .db-calc-hint svg { width: 12px; height: 12px; }
-.db .db-calc-name { color: rgba(var(--gray), 0.85); font-size: 11px; letter-spacing: 0.02em; }
+.db .db-calc-name { color: rgba(var(--gray), 0.85); font-size: var(--studio-fs-caption); letter-spacing: 0.02em; }
 .db .db-calc-value { min-width: 0; overflow: hidden; color: rgb(var(--black)); font-size: 13px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; }
 
 /* A choice: a gray chip. */
@@ -296,7 +296,7 @@
 .db-peek .db-peek-text :is(ul, ol) { padding-left: 22px; }
 .db-peek .db-peek-text ul { list-style: disc; }
 .db-peek .db-peek-text ol { list-style: decimal; }
-.db-peek .db-peek-text :is(h1, h2, h3, h4) { margin: 18px 0 8px; font-weight: 650; line-height: 1.35; }
+.db-peek .db-peek-text :is(h1, h2, h3, h4) { margin: 18px 0 8px; font-weight: 600; line-height: 1.35; }
 .db-peek .db-peek-text h1 { font-size: 22px; }
 .db-peek .db-peek-text h2 { font-size: 19px; }
 .db-peek .db-peek-text :is(h3, h4) { font-size: 16px; }

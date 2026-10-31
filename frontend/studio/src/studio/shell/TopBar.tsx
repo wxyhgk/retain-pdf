@@ -83,13 +83,13 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				{!article && <strong className="truncate font-semibold">{viewName(view)}</strong>}
 			</div>
 			<div className="flex min-w-0 items-center gap-[7px]">
-				<span id="edited-at" className="text-[11px] whitespace-nowrap text-muted-foreground opacity-85" title={edited === null ? '' : new Date(edited).toLocaleString(locale())} hidden={!article}>
+				<span id="edited-at" className="text-xs whitespace-nowrap text-muted-foreground opacity-85" title={edited === null ? '' : new Date(edited).toLocaleString(locale())} hidden={!article}>
 					{edited === null ? '' : t('编辑于{time}', { time: timeAgo(edited) })}
 				</span>
 				{/* Saved, nothing is said (as in Notion): only what is waiting, under way or wrong. */}
 				<span
 					id="save-status"
-					className="max-w-[230px] truncate text-[11px] text-muted-foreground data-[state=error]:text-destructive data-[state=saved]:sr-only max-[720px]:hidden"
+					className="max-w-[230px] truncate text-xs text-muted-foreground data-[state=error]:text-destructive data-[state=saved]:sr-only max-[720px]:hidden"
 					data-state={status.tone}
 					title={t('改动会自动保存，⌘S 立即保存')}
 					aria-live="polite"

@@ -24,7 +24,7 @@
 .page-head-actions button[hidden] { display: none; }
 /* Icon and cover both there: nothing to add, no row for it. */
 .page-head-actions:not(:has(button:not([hidden]))) { display: none; }
-.article-title-input { display: block; box-sizing: border-box; width: 100%; margin: 0; padding: 0; overflow: hidden; overflow-wrap: anywhere; resize: none; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-text); font-size: var(--studio-title-size); font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; outline: none; }
+.article-title-input { display: block; box-sizing: border-box; width: 100%; margin: 0; padding: 0; overflow: hidden; overflow-wrap: anywhere; resize: none; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-text); font-size: var(--studio-title-size); font-weight: 700; line-height: 1.25; outline: none; }
 .article-title-input::placeholder { color: rgb(var(--gray)); opacity: 0.48; }
 .article-title-input:disabled { opacity: 0.55; }
 /* Properties as rows: a name, and its value changed where it is. */
@@ -69,7 +69,7 @@ input[type='date'].property-value:hover::-webkit-calendar-picker-indicator, inpu
 .page-backlinks .backlinks-context { margin-left: 22px; color: rgb(var(--gray)); font-size: 13px; line-height: 1.5; }
 .page-backlinks .backlinks-title:hover, .page-backlinks .backlinks-context:hover { background: var(--surface-soft); }
 .page-backlinks .backlinks-icon { width: 16px; text-align: center; }
-.page-backlinks .backlinks-draft { padding: 0 5px; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; font-weight: 400; }
+.page-backlinks .backlinks-draft { padding: 0 5px; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: var(--studio-fs-caption); font-weight: 400; }
 #property-error[hidden] { display: none; }
 /* The pickers float over the page (a popover: shell/ui). */
 .icon-picker { width: 336px; }

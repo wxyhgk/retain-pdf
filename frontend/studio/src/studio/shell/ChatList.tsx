@@ -24,7 +24,7 @@ export function ChatList({ chats, chosen }: { chats: Conversation[] | null; chos
 	/** Where it would go: before this one, or after the last (null). */
 	const [target, setTarget] = useState<{ before: string | null } | null>(null);
 	if (!chats) return null;
-	if (!chats.length) return <p className="chat-list-empty mx-2 mt-0.5 mb-1.5 text-[11px] leading-normal text-muted-foreground">{t('还没有对话。＋ 开一个，或在右边的 AI 面板里说话')}</p>;
+	if (!chats.length) return <p className="chat-list-empty mx-2 mt-0.5 mb-1.5 text-xs leading-normal text-muted-foreground">{t('还没有对话。＋ 开一个，或在右边的 AI 面板里说话')}</p>;
 	const end = () => {
 		setDragged(null);
 		setTarget(null);
@@ -68,7 +68,7 @@ export function ChatList({ chats, chosen }: { chats: Conversation[] | null; chos
 			onDragEnd={end}
 		>
 			<span className="chat-row-title min-w-0 flex-1 truncate">{entry.title || t('新对话')}</span>
-			<span className="chat-row-when flex-none text-[11px] text-muted-foreground">{entry.state === 'running' ? t('进行中') : when(entry.updated)}</span>
+			<span className="chat-row-when flex-none text-xs text-muted-foreground">{entry.state === 'running' ? t('进行中') : when(entry.updated)}</span>
 		</button>
 	));
 }

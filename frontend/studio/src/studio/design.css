@@ -44,11 +44,18 @@ html:root {
 	--studio-radius-lg: 12px;
 	--studio-radius-xl: 16px;
 
-	/* Type: notes, small print, the interface, its body (the left column, menus, dialogs). */
-	--studio-fs-caption: 11px;
+	/*
+	 * Type: notes, small print, the interface, its body (the left column, menus, dialogs). Set for Chinese, not only
+	 * Latin: nothing under 12px (PingFang's strokes run together below it); weights only 400, 500, 600 (PingFang's
+	 * Regular, Medium, Semibold: Inter's in-betweens left the Latin of a line heavier or lighter than its Chinese); no
+	 * negative tracking (Inter's display tightening squeezes Chinese); text of several lines at --studio-lh-text.
+	 */
+	--studio-fs-caption: 12px;
 	--studio-fs-footnote: 12px;
 	--studio-fs-ui: 13px;
 	--studio-fs-body: 14px;
+	/* Lines of text that run on (a message, a description, a note): Chinese wants more room between them than Latin. */
+	--studio-lh-text: 1.6;
 	/* Controls: inline, small, regular (a row of a list or a menu). */
 	--studio-h-xs: 24px;
 	--studio-h-sm: 28px;
@@ -91,4 +98,14 @@ html:root body {
 	font-optical-sizing: auto;
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
+	/* A little room between Chinese and Latin or digits (用 B3LYP 算), as Chinese typesetting has it: WebKit's from Safari
+	   18.4 (macOS 15.4); before it, as written. */
+	text-autospace: normal;
 }
+
+/* Headings with no tightening (the blog's -0.035em, for Latin display type, squeezes Chinese). */
+html:root :is(h1, h2, h3, h4, h5, h6) { letter-spacing: 0; }
+
+/* Running text (an article, an AI's answer, a row's page beside its table): 。，at a line's end hang past it, the
+   right edge even (WebKit only, which the Studio is). */
+.crepe-host .milkdown .ProseMirror :is(p, li), .ai-message :is(p, li), .db-peek-text :is(p, li) { hanging-punctuation: allow-end; }

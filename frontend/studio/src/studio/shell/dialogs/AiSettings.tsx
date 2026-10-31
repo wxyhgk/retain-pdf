@@ -11,7 +11,7 @@ import { Actions, errorText, Status } from './Frame';
 export function Field({ label, id, hidden, children }: { label: string; id?: string; hidden?: boolean; children: ReactNode }) {
 	return (
 		<label id={id} className="grid gap-1.5" hidden={hidden}>
-			<span className="text-[11px] text-muted-foreground">{label}</span>
+			<span className="text-xs text-muted-foreground">{label}</span>
 			{children}
 		</label>
 	);
@@ -104,7 +104,7 @@ function AiForm({ shown, why, onSaved }: { shown: AiSettingsShown; why: string; 
 			<Field label="Key">
 				<Input id="ai-key" ref={fields.key} type="password" autoComplete="off" value={key} placeholder={saved ? t('已保存（不改就空着）') : openai ? t('空着就用环境变量 OPENAI_API_KEY') : t('空着就用环境变量 ANTHROPIC_API_KEY')} onChange={(event) => setKey(event.target.value)} />
 			</Field>
-			{saved && <small className="-mt-2 text-[10px] leading-normal text-muted-foreground">{t('要换 key 就填新的；要删掉保存的 key，填一个空格再保存。')}</small>}
+			{saved && <small className="-mt-2 text-xs leading-normal text-muted-foreground">{t('要换 key 就填新的；要删掉保存的 key，填一个空格再保存。')}</small>}
 			{/* Only Claude's keys may belong to a whole organization rather than one workspace. */}
 			<Field label={t('工作区 ID')} id="ai-workspace-field" hidden={openai}>
 				<Input id="ai-workspace" autoComplete="off" spellCheck={false} value={workspace} placeholder={t('一般空着；key 属于整个组织时填 wrkspc_…')} onChange={(event) => setWorkspace(event.target.value)} />

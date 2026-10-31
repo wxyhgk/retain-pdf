@@ -139,12 +139,12 @@ export function ReplaceDialog({ ask, onClose }: { ask: ReplaceAsk; onClose(): vo
 									{article.icon ? `${article.icon} ` : ''}
 									{article.title}
 								</button>
-								<span className="text-[11px] text-muted-foreground">{t('{count} 处', { count: article.matches.length })}</span>
+								<span className="text-xs text-muted-foreground">{t('{count} 处', { count: article.matches.length })}</span>
 							</div>
 							{article.matches.map((match, index) => (
 								<label key={index} className="replace-place grid grid-cols-[16px_auto_minmax(0,1fr)] items-baseline gap-2 rounded-md px-2 py-0.5 pl-6 text-xs hover:bg-muted">
 									<input type="checkbox" checked={chosen.has(key(article.slug, index))} onChange={(event) => toggle([key(article.slug, index)], event.target.checked)} />
-									<span className="text-[11px] text-muted-foreground tabular-nums">{t('第 {line} 行', { line: match.line })}</span>
+									<span className="text-xs text-muted-foreground tabular-nums">{t('第 {line} 行', { line: match.line })}</span>
 									<span className="truncate">
 										{match.before}
 										<del className="bg-[var(--studio-fill-3)] text-muted-foreground">{match.text}</del>

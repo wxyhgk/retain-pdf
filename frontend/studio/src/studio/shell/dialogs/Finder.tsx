@@ -114,7 +114,7 @@ export function Finder({
 						{!rows.length && <CommandPrimitive.Empty className="quick-find-empty px-2.5 py-[18px] text-center text-[13px] text-muted-foreground">{empty}</CommandPrimitive.Empty>}
 					</CommandList>
 				</Command>
-				<p className="border-t px-4 py-2 text-[11px] text-muted-foreground [&_kbd]:mr-0.5 [&_kbd]:rounded-sm [&_kbd]:border [&_kbd]:px-1 [&_kbd]:font-sans">{hint}</p>
+				<p className="border-t px-4 py-2 text-xs text-muted-foreground [&_kbd]:mr-0.5 [&_kbd]:rounded-sm [&_kbd]:border [&_kbd]:px-1 [&_kbd]:font-sans">{hint}</p>
 			</DialogContent>
 		</Dialog>
 	);

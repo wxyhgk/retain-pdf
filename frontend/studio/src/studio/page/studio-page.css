@@ -125,9 +125,9 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 	min-height: 100%;
 }
 .crepe-host .milkdown .ProseMirror { box-sizing: border-box; width: min(100%, var(--studio-editor-width)); min-height: 100%; margin: 0 auto; padding: 10px var(--studio-editor-padding) 180px; color: rgb(var(--gray-dark)); font-size: var(--studio-editor-font-size); line-height: var(--studio-editor-line-height); }
-.crepe-host .milkdown .ProseMirror h1 { font-size: 1.7em; font-weight: 700; letter-spacing: -0.02em; line-height: 1.25; margin: 1.5em 0 0.35em; }
+.crepe-host .milkdown .ProseMirror h1 { font-size: 1.7em; font-weight: 700; line-height: 1.3; margin: 1.5em 0 0.35em; }
 .crepe-host .milkdown .ProseMirror h2 { font-size: 1.35em; font-weight: 700; line-height: 1.3; margin: 1.5em 0 0.3em; }
-.crepe-host .milkdown .ProseMirror h3 { font-size: 1.12em; font-weight: 650; line-height: 1.35; margin: 1.2em 0 0.25em; }
+.crepe-host .milkdown .ProseMirror h3 { font-size: 1.12em; font-weight: 600; line-height: 1.35; margin: 1.2em 0 0.25em; }
 /* The caret's own mark (prosemirror-virtual-cursor) is put first in the article while there is a caret, and taken
    away while a block is selected: the heading after it is still the first, or the article jumps at every click. */
 .crepe-host .milkdown .ProseMirror h1:first-child,
@@ -255,12 +255,12 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .crepe-host .milkdown-code-block:has(.codemirror-host.hidden) .language-button { margin-bottom: 0; }
 .block-menu { position: fixed; z-index: 40; width: 200px; padding: 6px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
 .block-menu[hidden] { display: none; }
-.block-menu-section { padding: 8px 8px 2px; color: rgb(var(--gray)); font-size: 11px; }
+.block-menu-section { padding: 8px 8px 2px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); }
 .block-menu-item { display: flex; width: 100%; align-items: center; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
 .block-menu-item:hover,
 .block-menu-item:focus { background: var(--surface-soft); outline: none; }
 .link-paste-menu .block-menu-item.is-active { background: var(--surface-soft); }
-.block-menu-item.is-current::after { content: var(--word-current); margin-left: auto; color: rgb(var(--gray)); font-size: 11px; }
+.block-menu-item.is-current::after { content: var(--word-current); margin-left: auto; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); }
 .block-menu-item.is-danger { color: var(--danger); }
 /* The toolbar over selected text, as Notion's: a card; on top what the block is (正文 ›, its menu), under it the marks a
    grid, at its foot 「AI 改写」 in words. */
@@ -312,7 +312,7 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .file-history > .file-editor-note { grid-column: 1 / -1; }
 .file-history-list { margin: 0; padding: 6px; overflow-y: auto; border-right: 1px solid var(--studio-hairline); list-style: none; }
 .file-history-row { display: grid; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none; color: inherit; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
-.file-history-row small { color: rgb(var(--gray)); font-size: 11px; }
+.file-history-row small { color: rgb(var(--gray)); font-size: var(--studio-fs-caption); }
 .file-history-row:hover, .file-history-row[aria-current] { background: var(--studio-fill-2); }
 .file-history-shown { display: flex; min-width: 0; min-height: 0; flex-direction: column; }
 .file-history-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid var(--studio-hairline); color: rgb(var(--gray)); font-size: 12px; }
@@ -341,7 +341,7 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .side-panel .plugin-pane[hidden] { display: none; }
 .side-panel .side-pane-error { margin: 16px 12px; color: var(--danger); font-size: 12px; line-height: 1.5; }
 .pane-toolbar { display: flex; flex: none; align-items: center; gap: 8px; min-height: 40px; padding: 0 8px 0 12px; border-bottom: 1px solid var(--studio-hairline); }
-.pane-path { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.pane-path { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: var(--studio-fs-caption); text-overflow: ellipsis; white-space: nowrap; }
 .pane-actions { display: flex; gap: 2px; }
 .pane-actions button { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 14px; cursor: pointer; }
 .pane-actions button svg { width: 15px; height: 15px; }
@@ -360,11 +360,11 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .task-tray .task-item[data-state='running'] .task-state::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 6px; border-radius: 50%; background: currentColor; vertical-align: 1px; animation: task-pulse 1.2s ease-in-out infinite; }
 .task-tray .task-item[data-state='failed'] .task-state { color: var(--danger); }
 .task-tray .task-foot button { flex: none; height: 22px; padding: 0 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: transparent; color: inherit; font: inherit; cursor: pointer; }
-.task-tray .task-log { max-height: 220px; margin: 8px 0 0; padding: 7px 8px; overflow: auto; border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: 11px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.task-tray .task-log { max-height: 220px; margin: 8px 0 0; padding: 7px 8px; overflow: auto; border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: var(--studio-fs-caption); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 @keyframes task-pulse { 50% { opacity: 0.25; } }
 /* Blocks an AI is working on (Alt+Enter). */
 .crepe-host .milkdown .ProseMirror .is-instructing { position: relative; border-radius: 6px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); box-shadow: inset 2px 0 0 rgb(var(--gray)); }
-.crepe-host .milkdown .ProseMirror .is-instructing::after { content: var(--word-instructing); position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: 11px; pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
+.crepe-host .milkdown .ProseMirror .is-instructing::after { content: var(--word-instructing); position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
 /* 小程序: floating windows (mini-apps.ts). */
 .mini-app-layer { position: fixed; z-index: 50; inset: 0; pointer-events: none; }
 /*
@@ -391,7 +391,7 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .app-card-name { padding-right: 28px; font-size: 15px; }
 .app-card-description { display: -webkit-box; overflow: hidden; color: rgb(var(--gray)); font-size: 12.5px; line-height: 1.55; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .app-card-description.is-error { color: var(--danger); }
-.app-card-tags { margin-top: 6px; color: rgb(var(--gray)); font-size: 11px; }
+.app-card-tags { margin-top: 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); }
 .app-card-window { position: absolute; top: 10px; right: 10px; width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 15px; cursor: pointer; }
 .app-card-window:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 .apps-stage { display: flex; flex: 1; min-height: 0; }
@@ -416,7 +416,7 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .mini-app-bar button:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
 /* What went wrong in its page (red: an error), how a project's server is, and what is shown over its page. */
 .mini-app-bar button.mini-app-errors { width: auto; padding: 0 6px; color: var(--danger); font-size: 12px; font-variant-numeric: tabular-nums; }
-.mini-app-state { flex: none; color: rgb(var(--gray)); font-size: 11px; }
+.mini-app-state { flex: none; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); }
 .mini-app-state[data-state='failed'] { color: var(--danger); }
 .mini-app-sheet { position: absolute; inset: 32px 0 0; z-index: 1; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--surface); font-size: 12px; }
 .mini-app-sheet[hidden] { display: none; }
@@ -462,14 +462,14 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .mini-app-grip[data-edge='se']::after { position: absolute; right: 3px; bottom: 3px; width: 6px; height: 6px; border-right: 2px solid rgb(var(--gray)); border-bottom: 2px solid rgb(var(--gray)); border-bottom-right-radius: 3px; opacity: 0.5; content: ''; }
 .terminal-agents .terminal-agents-settings { margin-left: auto; border-color: transparent; background: transparent; color: rgb(var(--gray)); }
 .context-menu { width: auto; min-width: 190px; max-width: 280px; }
-.context-menu .block-menu-item kbd { margin-left: auto; padding-left: 16px; color: rgb(var(--gray)); font-family: inherit; font-size: 11px; }
+.context-menu .block-menu-item kbd { margin-left: auto; padding-left: 16px; color: rgb(var(--gray)); font-family: inherit; font-size: var(--studio-fs-caption); }
 .context-menu-separator { height: 1px; margin: 4px 6px; background: rgb(var(--gray-light)); }
 .cwd-switch { display: flex; padding: 2px; border-radius: 7px; background: rgb(var(--gray-light)); }
-.cwd-switch button { height: 24px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 11px; cursor: pointer; }
+.cwd-switch button { height: 24px; padding: 0 10px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: var(--studio-fs-caption); cursor: pointer; }
 .cwd-switch button[aria-checked='true'] { background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: var(--studio-shadow-sm); }
 .cwd-switch button:disabled { opacity: 0.45; cursor: default; }
 /* The AIs started with a click (terminal.ts): one row under the toolbar. */
-.terminal-agents { display: flex; flex: none; align-items: center; gap: 4px; padding: 5px 8px 5px 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 11px; }
+.terminal-agents { display: flex; flex: none; align-items: center; gap: 4px; padding: 5px 8px 5px 12px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: var(--studio-fs-caption); }
 .terminal-agents button { height: 22px; padding: 0 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; cursor: pointer; }
 .terminal-agents button:hover:not(:disabled) { background: var(--surface-soft); }
 .terminal-agents button:disabled { opacity: 0.45; cursor: default; }
