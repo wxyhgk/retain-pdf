@@ -28,7 +28,7 @@ REVIEW_CLASSES = {"paragraph", "abstract", "footnote", "list_item", "figure_capt
 MIN_WORDS = 8
 MAX_EDITS_PER_BLOCK = 2
 BLOCK_CHECK_CODES = {
-    "missing", "empty", "formula_unbalanced", "formula_changed", "code_changed", "citation_lost", "footnote_mark_lost",
+    "missing", "empty", "formula_unbalanced", "code_changed", "citation_lost", "footnote_mark_lost",
     "number_lost", "untranslated", "no_chinese", "english_residue", "stray_english", "too_short", "too_long", "hedge_lost", "person_lost",
 }  # fmt: skip
 CATEGORIES = {"mistranslation": "错译", "omission": "漏译或添加", "number_term": "数字或术语", "fluency": "不通顺", "tone": "语气偏离"}

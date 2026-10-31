@@ -48,35 +48,37 @@ class Scripted:
         return _response(self.answers.pop(0))
 
 
-def test_check_block_protects_formulas_marks_and_numbers() -> None:
+def test_check_block_protects_marks_and_numbers() -> None:
     source = "We use $F_1$ and cite [3]{{fn:1}} on 2 pages."
     assert check_block(source, "我们在 2 页上使用 $F_1$ 并引用 [3]{{fn:1}}。") == []
     codes = {i["code"] for i in check_block(source, "我们使用 F1 并引用。")}
-    assert {"formula_changed", "citation_lost", "footnote_mark_lost", "number_lost"} <= codes
+    assert codes == {"citation_lost", "footnote_mark_lost", "number_lost"}
     assert {i["code"] for i in check_block(source, source)} == {"untranslated"}
     assert check_block(source, None)[0]["code"] == "missing"
     # 短标题、写成中文数字都不算错
     assert check_block("Acknowledgements", "致谢") == []
-    # 真实文档的公式写法：空格不同是同一个公式；正文的 z、n/2 被套上公式符号不算错；两个公式合成一个只记警告
-    assert check_block("where $ \\hat{F} $ acts on $ \\phi_i $.", "其中 $\\hat{F}$ 作用于 $\\phi_i$。") == []
+    # 正文的 z、n/2 被套上公式符号，数数字时按普通文字算
     assert check_block("the z coordinate over the n/2 occupied orbitals", "对 $n/2$ 个占据轨道的 $ z $ 坐标") == []
-    merged = check_block("The operator $ \\hat{H}' $ is $ \\hat{H}' = -E $ here.", "算符 $\\hat{H}' = -E$ 在此。")
-    assert [i["code"] for i in merged] == ["formula_merged"]
-    assert [i["code"] for i in check_block("The value $ a $ here.", "值 $ b $ 在此。")] == ["formula_changed"]
-    assert check_block("the coordinates x, y, z here", "坐标 $x, y, z$ 在此") == []
-    assert "formula_merged" in [i["code"] for i in check_block("for $ H_2 $ and $(14.135)$", "对于 H₂ 和 (14.135)")]
     # 中文里夹着没翻的英文词
     assert [i["code"] for i in check_block("It was originally above a shop.", "它最初设在商铺楼上，originally设于南街。")] == ["stray_english"]
     # 中文紧挨着的数字也认得（"图1.1""第4章"）
     assert check_block("See Figure 1.1 and Chapter 4 for details.", "详见图1.1和第4章。") == []
-    # 原文已有的公式多提一次不算错；`$` 提示符在行内代码里不算公式
-    assert check_block("A budget $b$ of 0.002 is small.", "当 $b$ 为 0.002 时，预算 $b$ 很小。") == []
-    assert [i["code"] for i in check_block("A budget $b$ of 0.002.", "预算 $b$ 和 $c$ 为 0.002。")] == ["formula_changed"]
+    # `$` 提示符在行内代码里不算公式
     assert check_block("Commands start with a `$` prompt here.", "命令以 `$` 提示符开头。") == []
     # 行内代码原样保留
     assert check_block("Run `tw backup --json` to start.", "运行 `tw backup --json` 开始备份。") == []
     assert [i["code"] for i in check_block("Run `tw backup --json` to start.", "运行 tw backup 开始备份。")] == ["code_changed"]
     assert check_block("a level-2 heading reported as level 1 is a role error", "二级标题被报告为一级，算作角色错误") == []
+
+
+def test_formulas_are_not_compared_with_the_source() -> None:
+    """2026-10-31 用户定：公式不判对错。论文第 12、13 页跨页那段，模型两次都把 "$ n_{\\mathrm{L}}^{\\mathrm{max}} $" 写成 "n_L^max"，
+    以前判 formula_changed、两半都退回原文没翻。现在公式写成普通文字、改了、多了、少了都不算错，只查 `$` 成对。"""
+    source = "Varying $ n_{\\mathrm{L}}^{\\mathrm{max}} $ and $ \\delta F_{\\mathrm{D}} $ may enhance the efficiency."
+    assert check_block(source, "改变 n_L^max 和 δF_D 或许可以提高效率。") == []
+    assert check_block("The value $ a $ here.", "值 $ b $ 在此。") == []
+    assert check_block("A budget $b$ of 0.002.", "预算 $b$ 和 $c$ 为 0.002。") == []
+    assert [i["code"] for i in check_block("The value $ a $ here.", "值 $ a 在此。")] == ["formula_unbalanced"]
 
 
 def test_words_in_a_script_the_source_does_not_have_are_errors() -> None:
@@ -300,7 +302,7 @@ def test_the_program_splits_at_punctuation() -> None:
 
 
 def test_a_slightly_changed_formula_is_restored_to_the_source() -> None:
-    """模型顺手"修"了 OCR 认错的公式符号：程序换回原文写法，记警告，不退回原文。"""
+    """模型顺手"修"了 OCR 认错的公式符号：程序换回原文写法，记一笔 info（公式不判对错，不算警告）。"""
     from retainpdf_translation_agent.checks import restore_formulas
 
     fixed, restored = restore_formulas("so $ S'_{rs}'=\\delta_{rs} $ holds", "所以 $S'_{rs}=\\delta_{rs}$ 成立")
@@ -308,7 +310,7 @@ def test_a_slightly_changed_formula_is_restored_to_the_source() -> None:
     assert restore_formulas("value $ a+b $", "值 $x^2$")[1] == [], "a really different formula is not swapped"
     page = PageInput(page_label="1", blocks=[BlockInput("f", "paragraph", "so $ S'_{rs}'=\\delta_{rs} $ holds for every pair of orbitals here", True)])
     results, _ = TranslationAgent(model="fake", transport=Scripted({"f": "所以对这里的每一对轨道 $S'_{rs}=\\delta_{rs}$ 都成立"})).translate_page(page)
-    assert results["f"].status == "warn" and results["f"].issues[0]["code"] == "formula_restored"
+    assert results["f"].status == "ok" and results["f"].issues[0] == dict(results["f"].issues[0], code="formula_restored", severity="info")
     assert "$ S'_{rs}'=\\delta_{rs} $" in results["f"].translation
 
 

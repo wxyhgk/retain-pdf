@@ -496,14 +496,14 @@ class TranslationAgent:
         return terms, exceptions
 
     def _restore_formulas(self, page: PageInput, per_block: dict[str, str]) -> None:
-        """模型顺手改了一点点的公式换回原文写法，换了的记一条警告（检查时并进 issues）。"""
+        """模型顺手改了一点点的公式换回原文写法，换了的记一条 info（检查时并进 issues，不算警告：公式不判对错）。"""
         sources = {b.id: b.text for b in page.blocks}
         for block_id, text in list(per_block.items()):
             fixed, restored = restore_formulas(sources.get(block_id, ""), text)
             if restored:
                 per_block[block_id] = fixed
                 self._restored[block_id] = [
-                    {"code": "formula_restored", "severity": "warn", "message": f"模型改动了公式，已换回原文写法：{restored}"}
+                    {"code": "formula_restored", "severity": "info", "message": f"模型改动了公式，已换回原文写法：{restored}"}
                 ]
 
     def _fixed_results(self, page: PageInput, results: dict[str, BlockResult]) -> dict[str, BlockResult]:
@@ -639,8 +639,8 @@ class TranslationAgent:
         return fixed, parsed
 
 
-# 中文语序会把公式、引用、脚注标记挪过接续组的断点：按块查是"丢了"，按整组查还在，就只记警告
-MOVABLE = {"formula_changed", "citation_lost", "footnote_mark_lost", "code_changed"}
+# 中文语序会把引用、脚注标记、行内代码挪过接续组的断点：按块查是"丢了"，按整组查还在，就只记警告
+MOVABLE = {"citation_lost", "footnote_mark_lost", "code_changed"}
 
 
 # 中文语序把内容挪过断点：一块按自己查"太短"，整组合起来不短，是断点位置挪了，不是截断。
