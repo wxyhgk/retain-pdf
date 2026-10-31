@@ -1,7 +1,7 @@
 // 2.5D 编辑部全景：斜 45° 俯视的一间办公室。
 //
 // 后排：调度机器人（墙上看板挂着还没派的页）→ 通读员 → 译者；拐角是质检闸门；
-// 前排：审校 ← 修订机器人 ← 档案柜（定稿的页一张张叠上去）。一条传送带把它们串起来，
+// 前排：审校 ← 修订机器人 ← 档案柜（定稿的页叠上去，最多叠 10 张高）。一条传送带把它们串起来，
 // 稿纸沿着带子从一个工位滑到下一个。墙上是术语表白板（版本号、歧义单便签），地上一只「待人看」筐，
 // 最前面一排灰色空桌是筹备中的工位。忙的角色头上一个词，细节在悬停提示里。
 
@@ -38,6 +38,19 @@ const DROP = {
 const BELT: Spot[] = [[1.0, 2.9], [8.45, 2.9], [8.45, 6.2], [1.0, 6.2]];
 const PLANNED_GX = [0.6, 2.2, 3.8, 5.4, 7.0];
 const PLANNED_GY = 7.5;
+
+// 档案柜上的纸堆最多画这么多张，每张高 3px；页数再多，一张代表一叠，免得几百页的书把纸堆顶出画面。
+const PILE_MAX_SHEETS = 10;
+const PILE_STEP = 3;
+
+/** 定稿的页分成至多 PILE_MAX_SHEETS 叠；一叠里有退回原文的页就标红。 */
+function filedPile(done: PageCard[]): { flagged: boolean }[] {
+  const count = Math.min(done.length, PILE_MAX_SHEETS);
+  return Array.from({ length: count }, (_, i) => {
+    const slice = done.slice(Math.floor((i * done.length) / count), Math.floor(((i + 1) * done.length) / count));
+    return { flagged: slice.some((card) => card.fallback) };
+  });
+}
 
 // 每个阶段的稿纸停在哪、从哪滑过来。
 const SHEET_ROUTE: Partial<Record<PageStage, { to: Spot; from: Spot }>> = {
@@ -205,11 +218,11 @@ export function EditorialOffice({ state, glossaryFresh }: { state: RoomState; gl
       <g data-editorial-station="archive" data-done={done.length}>
         <title>{`归档：定稿 ${done.length} / ${state.pages.length} 页`}</title>
         <IsoBox at={[cx, cy]} size={[1.0, 0.8, 44]} tone="metal" />
-        {done.map((card, i) => (
+        {filedPile(done).map((sheet, i) => (
           <polygon
-            key={card.page}
-            className={`editorial-room-office-paper is-filed${card.fallback ? " is-flagged" : ""}`}
-            points={flatRect(cx + 0.18, cy + 0.14, 0.62, 0.5, 45 + i * 3)}
+            key={i}
+            className={`editorial-room-office-paper is-filed${sheet.flagged ? " is-flagged" : ""}`}
+            points={flatRect(cx + 0.18, cy + 0.14, 0.62, 0.5, 45 + i * PILE_STEP)}
           />
         ))}
       </g>
