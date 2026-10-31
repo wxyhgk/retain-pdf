@@ -16,6 +16,7 @@ from retainpdf_translation.llm.shared.orchestration.batched_plain_single import 
 from retainpdf_translation.llm.shared.orchestration.batched_plain_single import enqueue_deferred_tail_items
 from retainpdf_translation.llm.shared.orchestration.batched_plain_single import retry_deferred_transport_items
 from retainpdf_translation.llm.shared.orchestration.batched_plain_single import translate_uncached_items_single
+from retainpdf_translation.llm.shared.orchestration.identical_copy import worth_retrying_identical_copy
 from retainpdf_translation.llm.shared.orchestration.metadata import should_store_translation_result
 from retainpdf_translation.llm.shared.provider_runtime import is_transport_error
 from retainpdf_translation.llm.shared.provider_runtime import translate_batch_once
@@ -52,8 +53,14 @@ def _try_direct_batched_plain(
             http_retry_attempts=max(1, int(context.fallback_policy.main_http_retry_attempts)),
         )
         result = attach_batched_plain_metadata(uncached_batch, result, context=context)
+        # 原样交回、原文里却有要翻的英文的块：不收、不进缓存，走单块路径带提示重翻（identical_copy）
+        copied = [item for item in uncached_batch if worth_retrying_identical_copy(item, result)]
+        if copied and request_label:
+            print(f"{request_label}: batched plain returned {len(copied)} item(s) unchanged, retrying them one by one", flush=True)
+        kept = [item for item in uncached_batch if item not in copied]
+        result = {item_id: payload for item_id, payload in result.items() if item_id not in {item["item_id"] for item in copied}}
         store_cacheable_batch_result(
-            uncached_batch,
+            kept,
             result,
             model=model,
             base_url=base_url,
@@ -61,7 +68,7 @@ def _try_direct_batched_plain(
             store_cached_batch_fn=store_cached_batch_fn,
             should_store_translation_result_fn=should_store_translation_result,
         )
-        return result, [], True, True
+        return result, copied, not copied, True
     except Exception as exc:
         if is_transport_error(exc):
             emit_batch_transport_single_retry(uncached_batch, diagnostics=diagnostics, exc=exc)

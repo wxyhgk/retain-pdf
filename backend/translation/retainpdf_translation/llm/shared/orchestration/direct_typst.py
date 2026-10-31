@@ -12,6 +12,8 @@ from retainpdf_translation.llm.shared.orchestration.direct_typst_long_text impor
 from retainpdf_translation.llm.shared.orchestration.direct_typst_long_text import translate_direct_typst_long_text_chunks
 from retainpdf_translation.llm.shared.orchestration.direct_typst_repair import try_repair_direct_typst_math_delimiters
 from retainpdf_translation.llm.shared.orchestration.direct_typst_salvage import try_salvage_direct_typst_protocol_shell_error
+from retainpdf_translation.llm.shared.orchestration.identical_copy import with_translate_hint
+from retainpdf_translation.llm.shared.orchestration.identical_copy import worth_retrying_identical_copy
 import retainpdf_translation.llm.shared.orchestration.terminal_payloads as terminal_payloads
 from retainpdf_translation.llm.shared.orchestration.metadata import attach_result_metadata
 from retainpdf_translation.llm.shared.orchestration.metadata import restore_runtime_term_tokens
@@ -86,6 +88,8 @@ def translate_direct_typst_plain_text_with_retries(
     )
     route_prefix = ["block_level", "direct_typst"]
     last_error: Exception | None = None
+    # 发给模型的条目：模型把有英文的原文原样交回时，下一次带上"这是要翻的英文"的提示（identical_copy）
+    request_item = item
 
     for attempt in range(1, plain_attempts + 1):
         started = time.perf_counter()
@@ -96,7 +100,7 @@ def translate_direct_typst_plain_text_with_retries(
                     flush=True,
                 )
             result = translate_plain(
-                item,
+                request_item,
                 api_key=api_key,
                 model=model,
                 base_url=base_url,
@@ -112,12 +116,17 @@ def translate_direct_typst_plain_text_with_retries(
                     transport_tail_retry=False,
                 ),
             )
+            if attempt < plain_attempts and request_item is item and worth_retrying_identical_copy(item, result):
+                if request_label:
+                    print(f"{request_label}: direct_typst plain-text returned the source unchanged, retrying with a hint", flush=True)
+                request_item = with_translate_hint(item, target_language_name=context.target_language_name)
+                continue
             result = restore_runtime_term_tokens(result, item=item)
             result = attach_result_metadata(
                 result,
                 item=item,
                 context=context,
-                route_path=route_prefix,
+                route_path=route_prefix + (["identical_copy_retry"] if request_item is not item else []),
                 output_mode_path=["plain_text"],
             )
             if request_label:
