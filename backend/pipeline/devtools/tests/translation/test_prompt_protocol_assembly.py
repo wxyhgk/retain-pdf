@@ -34,8 +34,9 @@ def test_single_protocol_system_bytes_and_decision_compatibility(math_mode, mode
         domain_guidance=" domain ", target_language_name="English",
     )
     structured = mode == "sci" and decision
+    # 系统提示分两条：全书不变的规则（打提示词缓存），文档指导单独一条放后面（2026-10-31）
     expected = build_translation_system_prompt(
-        domain_guidance=" domain ", mode=mode,
+        mode=mode,
         response_style="json" if style == "json" else "tagged" if structured else "plain_text",
         include_sci_decision=structured, target_language_name="English",
     )
@@ -47,10 +48,11 @@ def test_single_protocol_system_bytes_and_decision_compatibility(math_mode, mode
         if math_mode == "direct_typst":
             expected += "\n" + direct_math_guidance(target_language_name="English")
     assert messages[0] == {"role": "system", "content": expected}
-    assert [message["role"] for message in messages] == ["system", "user"]
+    assert messages[1] == {"role": "system", "content": "Document-specific translation guidance:\ndomain"}
+    assert [message["role"] for message in messages] == ["system", "system", "user"]
     assert item == before
     if math_mode == "placeholder" and (structured or style == "json"):
-        payload = json.loads(messages[1]["content"])
+        payload = json.loads(messages[2]["content"])
         assert list(payload) == ["task", "items" if structured else "item"]
         source = payload["items"][0] if structured else payload["item"]
         assert list(source) == (["item_id", "source_text", "style_hint"] if structured else ["item_id", "source_text"])

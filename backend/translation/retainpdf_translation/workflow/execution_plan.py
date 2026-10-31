@@ -20,6 +20,7 @@ from retainpdf_translation.services.preparation import prepare_translation
 from retainpdf_translation.services.terms import GlossaryEntry
 from retainpdf_translation.services.terms import normalize_glossary_entries
 from retainpdf_translation.workflow.scheduling.allocation import adaptive_floor_limit
+from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.workflow.scheduling.allocation import prefix_cache_warmup_enabled
 from retainpdf_translation.workflow.scheduling.allocation import provider_adaptive_initial_limit
 from retainpdf_translation.workflow.page_range import resolve_page_range
@@ -56,6 +57,16 @@ def build_translation_execution_plan(request: TranslationExecutionRequest) -> Tr
             except Exception:
                 pass  # Preserve the plan-construction failure.
         raise
+
+
+ANTHROPIC_CACHE_WARMUP_MAX_WAIT_S = 2.5
+
+
+def _anthropic_prompt_cache_warmup(request) -> bool:
+    """Anthropic 协议开了提示词缓存时，先只放 1 个请求、它回来再放开全并发：缓存条目要等第一个响应开始后才能用，
+    开局 32 路同时发会全部没命中（``model_wire.anthropic_system_blocks``）。"""
+    profile = model_wire.resolve_profile(base_url=request.base_url, model=request.model)
+    return profile.protocol == model_wire.PROTOCOL_ANTHROPIC and model_wire.prompt_cache_enabled()
 
 
 def _build_translation_execution_plan(request, journals) -> TranslationExecutionPlan:
@@ -130,7 +141,8 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
     run_diagnostics.configure_adaptive_concurrency(
         initial_limit=initial_concurrency_limit,
         floor_limit=adaptive_floor_limit(effective_workers),
-        warmup=prefix_cache_warmup_enabled(provider_family),
+        warmup=prefix_cache_warmup_enabled(provider_family) or _anthropic_prompt_cache_warmup(request),
+        warmup_max_wait_s=None if prefix_cache_warmup_enabled(provider_family) else ANTHROPIC_CACHE_WARMUP_MAX_WAIT_S,
     )
     run_diagnostics.set_effective_settings(
         translation_workers=effective_workers,

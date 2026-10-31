@@ -24,6 +24,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import threading
 from dataclasses import dataclass
@@ -116,6 +117,7 @@ def clear_registered_connections() -> None:
     with _PROFILES_LOCK:
         _PROFILES.clear()
         _TEMPERATURE_REJECTED.clear()
+        _THINKING_REJECTED.clear()
 
 
 # 文档写明不收 temperature 的 Claude 模型（发了就 400）：一开始就不带。以前全靠第一次挨 400 后记下来，可一本书开头
@@ -133,6 +135,29 @@ def temperature_rejected(*, base_url: str, model: str) -> bool:
 def remember_temperature_rejected(*, base_url: str, model: str) -> None:
     with _PROFILES_LOCK:
         _TEMPERATURE_REJECTED.add(_profile_key(base_url, model))
+
+
+# 服务商拒过的思考字段组合（(base_url, model) → 那组字段的 JSON）：后面的请求不再先试它，免得每个请求先挨一次 400
+_THINKING_REJECTED: set[tuple[tuple[str, str], str]] = set()
+
+
+def _thinking_key(fields: dict[str, Any]) -> str:
+    return json.dumps(fields, sort_keys=True, ensure_ascii=False)
+
+
+def remember_thinking_rejected(*, base_url: str, model: str, fields: dict[str, Any]) -> None:
+    if not fields:
+        return
+    with _PROFILES_LOCK:
+        _THINKING_REJECTED.add((_profile_key(base_url, model), _thinking_key(fields)))
+
+
+def without_rejected_thinking(candidates: list[dict[str, Any]], *, base_url: str, model: str) -> list[dict[str, Any]]:
+    """去掉这个模型拒过的思考字段组合；最后一组（什么都不加）总留着。"""
+    key = _profile_key(base_url, model)
+    with _PROFILES_LOCK:
+        kept = [c for c in candidates if not c or (key, _thinking_key(c)) not in _THINKING_REJECTED]
+    return kept or [{}]
 
 
 def resolve_profile(*, base_url: str, model: str, protocol: Any = None, thinking: Any = None) -> ConnectionProfile:
@@ -406,11 +431,24 @@ def anthropic_headers(api_key: str) -> dict[str, str]:
     return headers
 
 
-def anthropic_thinking_candidates(thinking: str) -> list[dict[str, Any]]:
-    """新模型用自适应思考 + effort；旧模型只认 budget_tokens；都不认就不开。"""
+# 「自动」档实测过的 Anthropic 模型：claude-haiku-5-5 不发思考字段就按 medium 思考，low 质量一样、输出少三成（2026-10-31，
+# 量子化学-14 输出 8.6 万 → 5.9 万 token）
+_AUTO_LOW_EFFORT_ANTHROPIC_MODELS = ("claude-haiku-5-5",)
+
+
+def anthropic_thinking_candidates(thinking: str, *, model: str = "") -> list[dict[str, Any]]:
+    """新模型用自适应思考 + effort；旧模型只认 budget_tokens；都不认就不开。
+
+    ``off`` 发 effort 最低档的自适应思考：以前什么都不发，可 Claude Haiku 5.5 这些新模型不发就按默认 effort（medium）思考——
+    2026-10-31 Jensen 第 12 章 6.4 万输出 token 里约一半是思考，"关了思考"其实没关。试过 ``thinking: {type: disabled}``：
+    量子化学-14 有 5 个短标题（"EXAMPLE"、"We have"）被原样交回不翻；low 档质量和 medium 一样（还少了一处句首漏译的
+    "where"），输出少三成，模型遇到简单的块自己就不想。官方迁移指南也说用 effort 调、不要用 disabled。
+    不认自适应思考的旧模型（本来就不默认思考）挨一次 400 后退到什么都不加，并记住（``remember_thinking_rejected``）。"""
     level = normalize_thinking(thinking)
-    if level in {"auto", "off"}:
+    if level == "auto" and not any(name in str(model or "").lower() for name in _AUTO_LOW_EFFORT_ANTHROPIC_MODELS):
         return [{}]
+    if level in {"auto", "off"}:
+        return [{"thinking": {"type": "adaptive"}, "output_config": {"effort": "low"}}, {}]
     return [
         {"thinking": {"type": "adaptive"}, "output_config": {"effort": level}},
         {"thinking": {"type": "enabled", "budget_tokens": THINKING_BUDGET_TOKENS[level]}},
@@ -448,7 +486,7 @@ def anthropic_body(
     - system 消息合并到顶层 ``system``；结构化输出改成 system 里的一句要求（返回的 JSON 由
       调用方照常解析，和 OpenAI 协议下 json_object 模式一样）。
     - 相邻同角色消息合并（Messages API 要求 user / assistant 交替、且以 user 开头）。
-    - 开思考时不传 temperature（Anthropic 要求思考时用默认温度）。``temperature=None`` 表示调用方
+    - 开思考时不传 temperature（Anthropic 要求思考时用默认温度）；``thinking: disabled`` 照常传。``temperature=None`` 表示调用方
       因为服务商拒绝而去掉了它（新模型如 claude-opus-5-5 已不再接受 temperature）。
     """
     system_parts: list[str] = []
@@ -478,12 +516,54 @@ def anthropic_body(
         max_tokens += budget
     body: dict[str, Any] = {"model": model, "max_tokens": max_tokens, "messages": turns}
     if system_parts:
-        body["system"] = "\n\n".join(system_parts)
+        body["system"] = anthropic_system_blocks(system_parts)
     if thinking_fields:
         body.update(thinking_fields)
-    elif temperature is not None:
+    thinking_on = bool(thinking_fields) and (thinking_fields.get("thinking") or {}).get("type") != "disabled"
+    if temperature is not None and not thinking_on:
+        # 关思考（``disabled``）时和不发思考字段一样可以带 temperature
         body["temperature"] = max(0.0, min(1.0, float(temperature)))
     return body
+
+
+# 提示词缓存：第一段 system 够长就打缓存断点。翻译请求的第一段是全书不变的规则（规则、中文体例、输出格式、公式规则，
+# 见 prompt_protocols.protocol_system_parts），第二段才是领域指导和按批检索的记忆。一本书一百多个请求共用第一段：
+# 缓存读按一折计费、不计入每分钟输入 token 限额。Claude Haiku 5.5 等新模型最短 512 token 才缓存，短了不报错、只是不缓存；
+# 按字数粗估（中文一字约一个 token），太短的不打标记，省得白付写入的 1.25 倍。RETAIN_TRANSLATION_PROMPT_CACHE=off 关掉。
+PROMPT_CACHE_MIN_CHARS = 800  # 单块请求的规则段 1138 字（约 880 token），以前设 1200 字一个都没缓存上
+PROMPT_CACHE_ENV = "RETAIN_TRANSLATION_PROMPT_CACHE"
+
+
+def prompt_cache_enabled() -> bool:
+    return str(os.environ.get(PROMPT_CACHE_ENV, "") or "").strip().lower() not in {"0", "off", "false", "no"}
+
+
+def merge_system_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """相邻的几条 system 消息并成一条（用空行连），给 OpenAI 兼容协议：有的服务商只收一条 system。
+    不变的规则在前，服务商按前缀的隐式缓存（如 DashScope）照样能命中。"""
+    merged: list[dict[str, Any]] = []
+    for message in messages:
+        if (
+            merged
+            and isinstance(message, dict)
+            and message.get("role") == "system"
+            and merged[-1].get("role") == "system"
+            and isinstance(message.get("content"), str)
+            and isinstance(merged[-1].get("content"), str)
+        ):
+            merged[-1] = {**merged[-1], "content": f"{merged[-1]['content']}\n\n{message['content']}"}
+        else:
+            merged.append(message)
+    return merged
+
+
+def anthropic_system_blocks(system_parts: list[str]) -> list[dict[str, Any]] | str:
+    """system 各段 → Messages API 的 text 块，第一段打 ``cache_control``。关了缓存、或第一段太短不值得缓存时，照旧拼成一个字符串。"""
+    if not prompt_cache_enabled() or len(system_parts[0]) < PROMPT_CACHE_MIN_CHARS:
+        return "\n\n".join(system_parts)
+    blocks: list[dict[str, Any]] = [{"type": "text", "text": part} for part in system_parts]
+    blocks[0]["cache_control"] = {"type": "ephemeral"}
+    return blocks
 
 
 def anthropic_content(data: dict[str, Any]) -> str:
@@ -546,6 +626,11 @@ __all__ = [
     "anthropic_usage",
     "clear_registered_connections",
     "looks_like_temperature_rejection",
+    "anthropic_system_blocks",
+    "merge_system_messages",
+    "prompt_cache_enabled",
+    "remember_thinking_rejected",
+    "without_rejected_thinking",
     "looks_like_thinking_rejection",
     "normalize_protocol",
     "normalize_thinking",

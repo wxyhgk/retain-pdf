@@ -74,19 +74,52 @@ def protocol_system_prompt(
     structured_decision: bool = False,
 ) -> str:
     """Select and assemble protocol rules without changing source/context rendering."""
+    return "\n\n".join(
+        part
+        for part in protocol_system_parts(
+            kind,
+            domain_guidance=domain_guidance,
+            mode=mode,
+            response_style=response_style,
+            target_language_name=target_language_name,
+            direct_typst=direct_typst,
+            structured_decision=structured_decision,
+        )
+        if part
+    )
+
+
+DOCUMENT_GUIDANCE_HEADER = "Document-specific translation guidance:"
+
+
+def protocol_system_parts(
+    kind: str,
+    *,
+    domain_guidance: str,
+    mode: str,
+    response_style: str,
+    target_language_name: str,
+    direct_typst: bool,
+    structured_decision: bool = False,
+) -> tuple[str, str]:
+    """系统提示分两段：（全书不变的规则, 这一批的文档指导）。
+
+    第一段是规则、中文体例、输出格式、公式规则，一本书所有同类请求逐字相同，Anthropic 协议下打提示词缓存断点
+    （``model_wire.anthropic_system_blocks``）；第二段是领域指导加按批检索的记忆，每批可能不同，放在后面。
+    2026-10-31 以前领域指导夹在规则中间、后面还跟着输出格式和公式规则，整段每批都不一样，缓存不住。"""
     protocol = _output_protocol(kind, response_style, sci_decision=mode == "sci" and structured_decision)
-    prompt = build_translation_system_prompt(
-        domain_guidance=domain_guidance,
+    stable = build_translation_system_prompt(
         mode=mode,
         response_style=protocol.system_style,
         include_sci_decision=protocol.include_sci_decision,
         target_language_name=target_language_name,
     )
     if protocol.instruction:
-        prompt += protocol.instruction_separator + protocol.instruction
+        stable += protocol.instruction_separator + protocol.instruction
     if direct_typst and protocol.include_math_guidance:
-        prompt += protocol.math_separator + direct_math_guidance(target_language_name=target_language_name)
-    return prompt
+        stable += protocol.math_separator + direct_math_guidance(target_language_name=target_language_name)
+    guidance = f"{DOCUMENT_GUIDANCE_HEADER}\n{domain_guidance.strip()}" if domain_guidance.strip() else ""
+    return stable, guidance
 
 
 def single_user_prompt(
@@ -270,7 +303,7 @@ def build_translation_system_prompt(
     if "中文" in _target_language_name(target_language_name):
         system_prompt = f"{system_prompt}\n{load_prompt('translation_zh_conventions.txt')}".rstrip()
     if domain_guidance.strip():
-        system_prompt = f"{system_prompt}\n\nDocument-specific translation guidance:\n{domain_guidance.strip()}"
+        system_prompt = f"{system_prompt}\n\n{DOCUMENT_GUIDANCE_HEADER}\n{domain_guidance.strip()}"
     if mode == "sci" and include_sci_decision:
         system_prompt = f"{system_prompt}\n\n{load_prompt('translation_sci_decision.txt')}"
     return system_prompt
@@ -409,6 +442,7 @@ __all__ = [
     "HALF_SENTENCE_NO_BORROW_GUARD",
     "batch_json_user_prompt",
     "build_translation_system_prompt",
+    "protocol_system_parts",
     "direct_math_guidance",
     "direct_typst_batch_user_prompt",
     "direct_typst_single_user_prompt",
