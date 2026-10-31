@@ -290,6 +290,7 @@
         "retainpdf_pipeline/document_operations/visual_validation.py",
         "retainpdf_pipeline/ocr/document_schema/pdf_geometry.py",
         "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py",
+        "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_repair.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py",
         "retainpdf_pipeline/render/analysis/classifier.py",
         "retainpdf_pipeline/render/analysis/document/builder.py",

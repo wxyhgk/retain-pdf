@@ -1,0 +1,2 @@
+"date","branch","commits","area","type","summary","reason","validation","status","follow_up","doc"
+"2026-11-01","fix/glm-cross-column","","pipeline; docs","fix","GLM-OCR 把两栏框成一块时用原文文字层拆回左右两块（有栏缝、右栏开头能在 GLM 文字里找到才拆，右块排进右栏阅读顺序）；适配器去掉正文开头和上面标题重复的那段","用户报（前端转）：GEDIIS 第 1 页「I. 引言」出现两次，左右两段排成通栏大块压住右栏、正文挤到页脚上；原因是 GLM 原始框本身横跨两栏","该任务原始结果离线重放拆对、标题一遍；533 页教材全书零误拆；新单测 3 个；document_schema 329 过；完整检查见合并说明","merged","已跑完的任务要重跑 OCR 才生效","ops/planning/ocr-normalization/20261101-GLM两栏被框成一块.md"

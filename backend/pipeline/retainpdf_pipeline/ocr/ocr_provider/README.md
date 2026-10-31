@@ -264,6 +264,9 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
 5. 拼成一份 `ocr/glm_ocr_result.json`（和单次请求同样形状，`_meta.chunks` 记各片页范围、用量），按图片块的框从原文裁图到
    `md/images/page-<N>/imgs/img_in_<标签>_box_….jpg`（和 Paddle 的图片放一处），`md_results` 的图片占位换成本地图写 `md/full.md`。
 6. 走 `document_schema` 的 `glm_ocr` 适配器归一化、缩放到原文 PDF。
+8. 两栏被框成一块（2026-11-01，`glm_ocr_repair.py`）：本页左右两栏都有正常宽度的正文块、这一块宽过页宽 70%，而且原文文字层在块中间有一条
+   没有词跨过的竖缝时，按右栏开头几个词在 GLM 文字里的位置拆成左右两块，右块排进右栏的阅读顺序。没有文字层（扫描件）、找不到缝或找不到词就不拆。
+   适配器另外去掉正文开头和压在它上面的标题重复的那段。
 7. 流式公布（2026-10-31）：每做完一片，把前面连着做完的页归一化写到 `ocr/stream/document.v1.json`，就绪清单 `ocr/stream/manifest.json`
    （`ocr_stream_v1`：`ready_pages`、`total_pages`、`done`、`failed`，契约在 `retainpdf_base/ocr_stream.py`），后面的拼接和翻译不用等 OCR 做完。
 

@@ -233,3 +233,68 @@ def test_resumed_chunks_are_published_at_once_and_failure_is_announced(tmp_path:
     state = read_ocr_stream(Path(job.ocr_dir))
     assert state.failed and not state.done and state.ready_pages == 4
     assert "status=401" in state.error
+
+
+# ---- 两栏被框成一块（2026-11-01 GEDIIS 第 1 页）----
+
+from retainpdf_pipeline.ocr.document_schema.provider_adapters.glm_ocr.adapter import paddle_page_payload
+from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_repair import split_cross_column_blocks
+
+LEFT_LINES = [f"left column sentence number {n} keeps going here" for n in range(1, 9)]
+RIGHT_LINES = [f"right column words appear {n} in this place" for n in range(1, 9)]
+
+
+def _two_column_pdf(path: Path, *, text_layer: bool = True) -> Path:
+    with fitz.open() as document:
+        page = document.new_page(width=612, height=792)
+        if text_layer:
+            for n, (left, right) in enumerate(zip(LEFT_LINES, RIGHT_LINES)):
+                page.insert_text((54, 420 + 12 * n), left, fontsize=9)
+                page.insert_text((318, 420 + 12 * n), right, fontsize=9)
+            page.insert_text((54, 300), "A full width note that runs across the whole page from the left margin to the right", fontsize=9)
+        document.save(path)
+    return path
+
+
+def _spanning_payload() -> dict:
+    # 模型像素 = 点 × 2；左右两栏各有一个正常宽度的正文块，中间一块把两栏框在了一起
+    page = [
+        {"index": 0, "label": "text", "native_label": "text", "bbox_2d": [108, 580, 1170, 610], "content": "A full width note that runs across the whole page from the left margin to the right"},
+        {"index": 1, "label": "text", "native_label": "paragraph_title", "bbox_2d": [108, 800, 300, 826], "content": "## I. Introduction"},
+        {"index": 2, "label": "text", "native_label": "text", "bbox_2d": [108, 806, 1170, 1030], "content": "I. Introduction " + " ".join(LEFT_LINES) + " " + " ".join(RIGHT_LINES)},
+        {"index": 3, "label": "text", "native_label": "text", "bbox_2d": [108, 1100, 590, 1300], "content": "Second left paragraph."},
+        {"index": 4, "label": "text", "native_label": "text", "bbox_2d": [636, 1100, 1170, 1300], "content": "Second right paragraph."},
+    ]
+    return {"layout_details": [page], "data_info": {"pages": [{"width": 1224, "height": 1584}]}}
+
+
+def test_a_block_spanning_both_columns_is_split_back_using_the_text_layer(tmp_path: Path) -> None:
+    payload = _spanning_payload()
+    splits = split_cross_column_blocks(payload, _two_column_pdf(tmp_path / "two.pdf"))
+    assert len(splits) == 1, "只拆那一块：通栏的那行注释中间没有栏缝，不拆"
+    blocks = payload["layout_details"][0]
+    texts = [b["content"] for b in blocks]
+    left = next(b for b in blocks if b["content"].startswith("I. Introduction left column"))
+    right = next(b for b in blocks if b["content"].startswith("right column words appear 1"))
+    assert left["content"].endswith("sentence number 8 keeps going here")
+    assert right["content"].endswith("appear 8 in this place")
+    assert left["bbox_2d"][2] < 612 < right["bbox_2d"][0], "左块收到栏缝左边、右块从栏缝右边开始"
+    # 阅读顺序：左栏（标题、左块、左栏第二段）→ 右栏（右块、右栏第二段）
+    assert texts.index(right["content"]) == texts.index("Second left paragraph.") + 1
+    assert texts.index("Second right paragraph.") == texts.index(right["content"]) + 1
+    assert [b["index"] for b in blocks] == list(range(len(blocks)))
+    assert payload["_meta"]["cross_column_splits"][0]["page"] == 1
+
+
+def test_nothing_is_split_without_a_text_layer(tmp_path: Path) -> None:
+    payload = _spanning_payload()
+    assert split_cross_column_blocks(payload, _two_column_pdf(tmp_path / "scan.pdf", text_layer=False)) == []
+    assert len(payload["layout_details"][0]) == 5
+
+
+def test_a_heading_repeated_at_the_start_of_the_body_below_it_is_dropped() -> None:
+    blocks = _spanning_payload()["layout_details"][0]
+    parsing = paddle_page_payload(blocks, {"width": 1224, "height": 1584}, {})["prunedResult"]["parsing_res_list"]
+    body = parsing[2]  # 标题下面那块正文（index 2）
+    assert body["block_content"].startswith("left column sentence number 1"), "标题单独一块，正文开头不该再有它"
+    assert parsing[1]["block_content"] == "I. Introduction"

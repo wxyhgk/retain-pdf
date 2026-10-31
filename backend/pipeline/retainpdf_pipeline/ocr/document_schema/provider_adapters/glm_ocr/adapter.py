@@ -90,6 +90,27 @@ def _parsing_block(block: dict, position: int) -> dict:
     }
 
 
+def _overlaps(a: list, b: list) -> bool:
+    return min(a[2], b[2]) > max(a[0], b[0]) and min(a[3], b[3]) > max(a[1], b[1])
+
+
+def _drop_repeated_headings(parsing: list[dict]) -> None:
+    """正文块的框压着一个标题块、文字又以这个标题开头时，去掉正文里重复的标题（GLM 偶尔把标题既单独出一块、又算进下面的正文：
+    2026-11-01 GEDIIS 第 1 页 "## I. Introduction" 单独一块，下面正文又以 "I. Introduction Geometry optimization…" 开头，译文里标题出现两次）。"""
+    headings = [block for block in parsing if block["block_label"] in HEADING_LABELS and block["block_content"]]
+    for block in parsing:
+        if block["block_label"] not in {"text", "abstract"}:
+            continue
+        for heading in headings:
+            title = " ".join(heading["block_content"].split())
+            text = block["block_content"]
+            if title and _overlaps(heading["block_bbox"], block["block_bbox"]) and " ".join(text.split()).startswith(title):
+                # 按词数切，原文里标题和正文之间的空白可能是换行
+                words = len(title.split())
+                block["block_content"] = text.split(None, words)[-1] if len(text.split()) > words else text
+                break
+
+
 def paddle_page_payload(page_blocks: list, page_meta: dict, images: dict, *, page_index: int = 0) -> dict:
     """一页 GLM 块 → Paddle 的一页（`layoutParsingResults[i]`）。块按 GLM 给的阅读顺序（`index`）排。"""
     blocks = [block for block in page_blocks if isinstance(block, dict)]
@@ -98,12 +119,14 @@ def paddle_page_payload(page_blocks: list, page_meta: dict, images: dict, *, pag
         key: str(images.get(f"page-{page_index + 1}/{key}") or "")
         for key in (image_asset_key(_label(block), _bbox(block)) for block in blocks if _label(block) in IMAGE_LABELS)
     }
+    parsing = [_parsing_block(block, position) for position, block in enumerate(blocks)]
+    _drop_repeated_headings(parsing)
     return {
         "prunedResult": {
             "width": page_meta.get("width", 0),
             "height": page_meta.get("height", 0),
             "model_settings": {},
-            "parsing_res_list": [_parsing_block(block, position) for position, block in enumerate(blocks)],
+            "parsing_res_list": parsing,
         },
         "markdown": {"text": "", "images": page_images},
     }
