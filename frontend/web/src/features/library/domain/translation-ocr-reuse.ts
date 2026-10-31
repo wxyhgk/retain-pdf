@@ -87,12 +87,19 @@ export function selectReusableOcrJob(
 /**
  * Processing 页面展示的是“当前文档是否已有 OCR 能力”，不局限于 OCR-only job。
  * 整本翻译成功、翻译复用 OCR，或流水线已经越过 OCR 阶段，都能作为完成证据。
+ *
+ * 翻译任务有自己的 OCR 子任务（`{翻译任务}-ocr`）时用子任务本身，不从翻译任务推：列表按更新时间排，
+ * 翻译任务通常排在子任务前面。OCR 和翻译并行时（GLM-OCR）翻译任务一开始就进 translating，从它推出来是
+ * 「OCR 已完成」，OCR 站其实还在跑；跑完以后推出来的也没有子任务自己的计时。
  */
 export function selectDocumentOcrStatusJob(
   jobs: DocumentJobSummary[] = [],
 ): DocumentJobSummary | null {
+  const byId = new Map(jobs.map((job) => [text(job.job_id || job.id), job]));
   for (const job of jobs) {
     if (workflowOf(job) === "ocr") return job;
+    const child = byId.get(`${text(job.job_id || job.id)}-ocr`);
+    if (child && workflowOf(child) === "ocr") return child;
     const status = translationOcrStatus(job);
     if (!status) continue;
     return {

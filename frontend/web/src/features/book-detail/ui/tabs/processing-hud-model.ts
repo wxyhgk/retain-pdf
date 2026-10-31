@@ -104,7 +104,14 @@ export function processingHudModel({
   // 各站小标签。用量按环节分组：翻译和译前准备归翻译站，精修与编辑部跑在渲染阶段、归版面站；助手不归哪一站。
   const stationChips: Partial<Record<StationKey, StationChip[]>> = {};
   const push = (key: StationKey, chip: StationChip) => { (stationChips[key] ||= []).push(chip); };
-  if (pages && !jobActive) push("ocr", { key: "pages", kind: "pages", text: `${pages}`, title: `共 ${pages} 页` });
+  // OCR 站的页数：这次只做了几页（指定了页码）时写「2/10」，不然写全书页数。
+  const currentJob = coverage?.jobs.find((item) => item.job_id === translationJobId);
+  const ocrPages = currentJob?.pages?.length || 0;
+  if (pages && !jobActive) {
+    push("ocr", ocrPages && ocrPages < pages
+      ? { key: "pages", kind: "pages", text: `${ocrPages}/${pages}`, title: `这次识别了 ${ocrPages} / ${pages} 页` }
+      : { key: "pages", kind: "pages", text: `${pages}`, title: `共 ${pages} 页` });
+  }
   if (model) push("translate", { key: "model", kind: "model", text: model.name, title: model.title, logo: model.logo });
   const groupTokens = (keys: string[]) => (usage?.stageGroups || []).filter((group) => keys.includes(group.key));
   if (!jobActive) {
