@@ -29,6 +29,7 @@ import {
   totalElapsedMs,
   type JobTimeline,
   type StationKey,
+  type StationTime,
   type StationState,
 } from "../../../domain/assembly-line-model.js";
 import { AssemblyLineScene, STATION_ANCHORS } from "./AssemblyLineScene.jsx";
@@ -102,6 +103,10 @@ export type ProcessingPipelineRailProps = {
   stationActions?: Partial<Record<StationKey, StationAction>>;
   /** 各站下面除了用时以外的小标签（OCR 站页数、翻译站模型和 token……）。 */
   stationChips?: Partial<Record<StationKey, StationChipView[]>>;
+  /** OCR 子任务自己的分段计时：OCR 和翻译并行时翻译任务的计时里没有 OCR 那段，OCR 站的用时看它。 */
+  ocrTimeline?: JobTimeline | null;
+  /** 某几站在跑时的百分比（OCR 站看 OCR 任务、并行时翻译站看 ocr_stream）；没给的站用翻译任务自己的进度。 */
+  stationPercent?: Partial<Record<StationKey, number | null>>;
 };
 
 export function ProcessingPipelineRail({
@@ -117,6 +122,8 @@ export function ProcessingPipelineRail({
   now = Date.now(),
   stationActions = {},
   stationChips = {},
+  ocrTimeline = null,
+  stationPercent = {},
 }: ProcessingPipelineRailProps) {
   const [openKey, setOpenKey] = useState<StationKey | "">("");
   const opened = openKey && stationActions[openKey] ? openKey : "";
@@ -144,7 +151,10 @@ export function ProcessingPipelineRail({
     return stageMeta[key] || "";
   };
   const jobActive = anyActive;
-  const times = loading ? {} : stationTimes(timeline, { now, jobActive });
+  const times: Partial<Record<StationKey, StationTime>> = loading ? {} : stationTimes(timeline, { now, jobActive });
+  // OCR 子任务有自己的计时就用它（并行时翻译任务那边只有一秒的「提交 OCR」）；两站的时间可以重叠。
+  const ocrTime = loading || !ocrTimeline ? null : stationTimes(ocrTimeline, { now, jobActive: states.ocr === "active" }).ocr;
+  if (ocrTime) times.ocr = ocrTime;
   const total = loading ? null : totalElapsedMs(timeline, { now, jobActive });
   // 时间画成钟表 + 「1:28」；「已运行」「用时」「共」和「1 分 28 秒」的写法放在悬停和读屏里。
   const timeOf = (key: StationKey): { text: string; title: string } | null => {
@@ -181,6 +191,7 @@ export function ProcessingPipelineRail({
             const chips = loading ? [] : stationChips[station.key] || [];
             const hover = [label, status, time?.title, meta, ...chips.map((chip) => chip.title)].filter(Boolean).join(" · ");
             const Glyph = STATION_GLYPH[station.key];
+            const stationPct = station.key in stationPercent ? stationPercent[station.key] : percent;
             return (
               <li
                 key={station.key}
@@ -219,8 +230,8 @@ export function ProcessingPipelineRail({
                   {meta ? (
                     <span className="book-detail-pipeline-desc sr-only" data-stage-meta={station.key}>{meta}</span>
                   ) : null}
-                  {station.state === "active" && station.key !== "prepare" && percent !== null ? (
-                    <span className="book-detail-pipeline-chip is-percent" data-stage-percent={station.key}>{`${Math.round(percent)}%`}</span>
+                  {station.state === "active" && station.key !== "prepare" && stationPct !== null && stationPct !== undefined ? (
+                    <span className="book-detail-pipeline-chip is-percent" data-stage-percent={station.key}>{`${Math.round(stationPct)}%`}</span>
                   ) : null}
                   {time ? (
                     <span className="book-detail-pipeline-chip book-detail-pipeline-time" data-stage-time={station.key} title={time.title}>

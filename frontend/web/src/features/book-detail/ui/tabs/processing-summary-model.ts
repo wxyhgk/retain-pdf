@@ -29,6 +29,8 @@ export function processingHeadOf(
   translation: BookDetailTranslationPanelProps,
   { ocrTone, keptOriginBlocks, translationStatus }: { ocrTone: string; keptOriginBlocks: number; translationStatus: string },
 ): { headline: string; tone: ProcessingHeaderTone } {
+  // OCR 和翻译并行（翻译跟着 OCR 一片片翻）：两件事同时在做。
+  if (ocr && isDocumentJobActive(ocr.job) && translation?.isActive) return { headline: "识别和翻译中", tone: "active" };
   if (ocr && isDocumentJobActive(ocr.job)) {
     return { headline: documentJobPresentation(ocr.job, "OCR 识别中").tone === "active" ? "OCR 识别中" : "OCR 排队中", tone: "active" };
   }
