@@ -280,3 +280,40 @@ test("用量并进「进度」页：HUD 一块 token（合计、输入 / 输出�
   assert.equal(empty.host.querySelector("[data-processing-details]"), null, "没记录不占地方");
   empty.root.unmount(); empty.host.remove();
 });
+
+test("并行：标题「识别和翻译中」；OCR 站跟 OCR 子任务（20/34 页）、翻译站跟 ocr_stream，两站都亮、各写各的百分比", async () => {
+  const dom = makeDom();
+  const parallel = {
+    ...idleTranslation,
+    canTranslate: false,
+    isActive: true,
+    item: {
+      job_id: "job-par", workflow: "book", status: "running", created_at: "2026-10-31T07:34:20Z",
+      stage_snapshot: {
+        stage: "translating", display_stage: "translate", substage: "ocr_stream", stage_detail: "跟着 OCR 翻译：已到 10/34 页",
+        progress: { current: 10, total: 34, unit: "page" },
+      },
+    },
+    status: { label: "处理中", tone: "active" },
+  };
+  const ocr = {
+    ...idleOcr,
+    job: {
+      job_id: "job-par-ocr", workflow: "ocr", status: "running",
+      stage_snapshot: { stage: "ocr_processing", substage: "glm_ocr", stage_detail: "GLM-OCR 已识别 20/34 页", progress: { current: 20, total: 34, unit: "page" } },
+    },
+  };
+  const { root, host } = await mountTab(dom, { loading: false, ocr, translation: parallel, coverage: null });
+  assert.equal(host.querySelector("[data-processing-unified-status]")?.textContent, "识别和翻译中");
+  const stage = (key) => host.querySelector(`[data-translation-process] [data-stage-key='${key}']`);
+  assert.equal(stage("ocr").getAttribute("data-state"), "active");
+  assert.equal(stage("translate").getAttribute("data-state"), "active");
+  assert.equal(host.querySelector("[data-stage-percent='ocr']")?.textContent, "59%", "OCR 站：20/34 页");
+  assert.equal(host.querySelector("[data-stage-percent='translate']")?.textContent, "29%", "翻译站：能翻到 10/34 页");
+  assert.match(host.querySelector("[data-stage-meta='ocr']")?.textContent || "", /GLM-OCR 已识别/);
+  assert.match(host.querySelector("[data-stage-meta='translate']")?.textContent || "", /跟着 OCR 翻译/);
+  assert.match(host.querySelector("[data-hud='gauge']")?.textContent || "", /10 \/ 34 页/, "整体进度看翻译跟到哪了");
+  assert.equal(host.querySelector("#book-detail-cancel-ocr-btn"), null, "并行时不单独取消 OCR，取消翻译任务就够了");
+  root.unmount(); host.remove();
+});
+

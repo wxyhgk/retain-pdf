@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 
 import {
   assemblyStations,
+  streamProgressOf,
   formatElapsed,
   recentActivity,
   stationOfStage,
@@ -203,3 +204,27 @@ test("活动（细节区）：在跑的那一条是后端的实时说明；首�
   assert.match(html, /正在翻译第 2 \/ 10 页/);
   assert.equal(renderToStaticMarkup(React.createElement(ProcessingActivity, { item, timeline, jobActive: true, loading: true })), "");
 });
+
+// OCR 和翻译并行（GLM-OCR，翻译跟着 OCR 一片片翻）：翻译任务一开始就进 translating，自己的阶段里没有 ocr_processing。
+// 照实测任务 20261031153420-a032a5 的形状（34 页）。
+test("并行：OCR 子任务在跑时 OCR 站亮，翻译站也亮；不会把 OCR 站画成已完成", () => {
+  const item = { job_id: "job-p", status: "running", stage: "translating", stage_snapshot: { stage: "translating", display_stage: "translate", substage: "ocr_stream" } };
+  const states = Object.fromEntries(
+    assemblyStations(item, { hasTranslationJob: true, ocrState: "active", loading: false }).stations.map((s) => [s.key, s.state]),
+  );
+  assert.equal(states.ocr, "active");
+  assert.equal(states.translate, "active");
+  const serial = Object.fromEntries(
+    assemblyStations(item, { hasTranslationJob: true, ocrState: "done", loading: false }).stations.map((s) => [s.key, s.state]),
+  );
+  assert.equal(serial.ocr, "done", "OCR 做完了就照翻译任务自己的说法");
+});
+
+test("并行：翻译站的全书进度只认 ocr_stream 那条（已能翻的页 / 全书页数），每轮从 0 数的批次不算", () => {
+  const stream = { stage_snapshot: { stage: "translating", substage: "ocr_stream", progress: { current: 20, total: 34, unit: "page" } } };
+  assert.deepEqual(streamProgressOf(stream), { current: 20, total: 34 });
+  const batches = { stage_snapshot: { stage: "translating", substage: "translation_batches", progress: { current: 2, total: 6 } } };
+  assert.equal(streamProgressOf(batches), null);
+  assert.equal(streamProgressOf(null), null);
+});
+

@@ -8,6 +8,7 @@
 
 import type { LibraryCardItem } from "@/features/library/domain.js";
 import { translationProcessModel } from "./translation-process-model.js";
+import { countFromProgress } from "./progress-value.js";
 
 export const STATIONS = [
   { key: "prepare", label: "文档准备" },
@@ -163,7 +164,10 @@ export function assemblyStations(
     if (!hasTranslationJob) return key === "ocr" ? ocrState : "pending";
     return (model.steps.find((step) => step.key === key)?.state || "pending") as StationState;
   };
-  const ocr = stateOf("ocr");
+  // OCR 任务（{翻译任务}-ocr 子任务，或单独的 OCR 任务）在跑，OCR 站就亮——不管翻译任务自己走到哪了。
+  // OCR 和翻译并行时（GLM-OCR，翻译跟着 OCR 一片片翻），翻译任务一开始就进 translating，自己的阶段里不再有
+  // ocr_processing，只看它的话 OCR 站会被画成「已完成」，两站其实同时在跑。
+  const ocr = hasTranslationJob && !loading && ocrState === "active" ? "active" : stateOf("ocr");
   const translate = stateOf("translate");
   const render = stateOf("render");
   const started = [ocr, translate, render].some((state) => state !== "pending");
@@ -180,3 +184,14 @@ export function assemblyStations(
     ocrReused: hasTranslationJob && model.ocrReused,
   };
 }
+
+/** 翻译跟着 OCR 流式翻时（OCR 和翻译并行），翻译这一站的全书进度：substage 为 ocr_stream 的那条进度，
+ *  progress_current / total 是「OCR 已交出、能翻的页 / 全书页数」。别的 substage（translation_batches 每轮从 0 数）不算。 */
+export function streamProgressOf(item: LibraryCardItem | null | undefined): { current: number; total: number } | null {
+  const snapshot = (item?.stage_snapshot || {}) as { substage?: unknown; progress?: unknown };
+  const substage = text(snapshot.substage || (item as { substage?: unknown } | null | undefined)?.substage);
+  if (substage !== "ocr_stream") return null;
+  const count = countFromProgress(snapshot.progress || item?.progress);
+  return count && count.total ? { current: count.current, total: count.total } : null;
+}
+

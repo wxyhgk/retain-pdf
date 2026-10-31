@@ -38,6 +38,7 @@ import { stationActionsOf } from "./processing-station-actions.jsx";
 import { EditorialFlowPanel } from "../panels/processing/EditorialFlowPanel.jsx";
 import { useEditorialFlow } from "../use-editorial-flow.js";
 import { useJobTimeline } from "../use-job-timeline.js";
+import { useStreamProgress } from "../use-stream-progress.js";
 import { EditorialLivePanel, useEditorialLive } from "@/features/editorial-room/index.js";
 
 // resultActionsSlot：结果操作行（下载 / 对照阅读）由调用方注入。本组件保持纯展示——只读传入的
@@ -65,15 +66,19 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   const facts = processingFacts(coverage);
   // 有任务在跑时，流水线每站只写「现在」的事：当前站写后端的实时说明（stage_detail），
   // 其它站不写 —— 覆盖接口给的是上一次跑完的结果，跑新任务时摆出来会让人以为是这次的。
+  // OCR 和翻译并行时（GLM-OCR，翻译跟着 OCR 一片片翻）两站同时在跑，各写各的。
   const liveSource = ocrActive ? ocrJob : translation?.isActive ? translation?.item : null;
-  const liveDetail = liveSource
+  const detailOf = (source: typeof liveSource) => (source
     ? stageDetailWithoutPageCount(
-      `${liveSource?.stage_snapshot?.stage_detail || liveSource?.stage_detail || ""}`,
-      Boolean(progressOf(liveSource).total),
+      `${source?.stage_snapshot?.stage_detail || source?.stage_detail || ""}`,
+      Boolean(progressOf(source).total),
     )
-    : "";
+    : "");
   const stageMeta = liveSource
-    ? (ocrActive ? { ocr: liveDetail } : { [liveStageKey(translation?.item)]: liveDetail })
+    ? {
+      ...(translation?.isActive ? { [liveStageKey(translation?.item)]: detailOf(translation?.item) } : {}),
+      ...(ocrActive ? { ocr: detailOf(ocrJob) } : {}),
+    }
     : facts.stageMeta;
 
   const translationItem = translation?.item || {};
@@ -96,6 +101,13 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   });
   // 流水线各站的运行时间（任务详情的分段计时）：在跑时轮询，跑完读一次。
   const jobTimeline = useJobTimeline(translationJobId, { enabled: hasTranslationJob && tabVisible, poll: translationActive });
+  // 这次翻译的 OCR 子任务（{翻译任务}-ocr）自己的计时：并行时翻译任务那边没有 OCR 那段，OCR 站的用时看它。
+  const ocrChildId = `${ocr?.job?.job_id || ""}`.trim();
+  const ocrChildOfTranslation = hasTranslationJob && ocrChildId === `${translationJobId}-ocr`;
+  const ocrTimeline = useJobTimeline(ocrChildId, { enabled: ocrChildOfTranslation && tabVisible, poll: ocrActive });
+  // 并行时翻译站的全书进度（ocr_stream：已能翻的页 / 全书页数）；快照换到别的 substage 时用上一条。
+  const streamProgress = useStreamProgress(translationItem, translationJobId);
+  const parallel = translationActive && ocrActive;
 
   // 「还不知道」不等于「确定没有」：GET /documents/:id/jobs 还在路上的那几百毫秒，一份正在跑 OCR 的文档
   // 不能被画成「OCR 未执行」、「只做 OCR」还可点（点下去就并发出第二个任务）。判据是「有没有已知数据」，
@@ -154,13 +166,15 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     ].map(resumeStageLabel).find(Boolean) || ""
     : "";
   // HUD：进度环、耗时（按站分段）、模型、token。
-  const runningPercent = unifiedPercentOf(ocr, translation);
+  // 并行时整体进度看翻译跟到哪了（已能翻的页 / 全书页数）；还没收到 ocr_stream 时先看 OCR。
+  const streamPercent = streamProgress ? (streamProgress.current / streamProgress.total) * 100 : null;
+  const runningPercent = parallel && streamPercent !== null ? streamPercent : unifiedPercentOf(ocr, translation);
   const stations = assemblyStations(translationItem, { hasTranslationJob, ocrState: ocrStationState(ocrStatus.tone), loading: bootstrapping });
   const hud = processingHudModel({
     tone,
     jobActive,
     runningPercent,
-    liveCount: liveCountOf(ocr, translation),
+    liveCount: parallel && streamProgress ? `${streamProgress.current} / ${streamProgress.total} 页` : liveCountOf(ocr, translation),
     stoppedAt,
     stationsDone: stations.stations.filter((station) => station.key !== "done" && station.state === "done").length,
     coverage,
@@ -314,6 +328,11 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           now={jobTimeline.now}
           stationActions={stationActions}
           stationChips={hud.stationChips}
+          ocrTimeline={ocrChildOfTranslation ? ocrTimeline.timeline : null}
+          stationPercent={{
+            ...(ocrActive ? { ocr: progressOf(ocrJob).percent } : {}),
+            ...(parallel ? { translate: streamPercent } : {}),
+          }}
         />
 
         {/* 契约占位：OCR 段的任务状态（测试和门禁按它找）。 */}
