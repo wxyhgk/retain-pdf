@@ -65,7 +65,9 @@ function overlayExport(base, exported) {
   const tokens = exported?.ocr?.tokens || {};
   return {
     ...base,
-    ocrProvider: exported?.ocr?.provider === "mineru" ? "mineru" : "paddle",
+    // 命令行的 OCR 设置只认 paddle、mineru；选了智谱 GLM-OCR 时这个选择和它的 key（glmOcrToken）留在
+    // desktop-config.json（见 stripMapped），这里不拿命令行的值盖掉它。
+    ocrProvider: base?.ocrProvider === "glm_ocr" ? "glm_ocr" : exported?.ocr?.provider === "mineru" ? "mineru" : "paddle",
     paddleToken: typeof tokens.paddle === "string" ? tokens.paddle : "",
     mineruToken: typeof tokens.mineru === "string" ? tokens.mineru : "",
     modelApiKey: typeof translation.api_key === "string" ? translation.api_key : "",
@@ -130,6 +132,8 @@ function changesFromDesktop(config, known) {
 function stripMapped(config) {
   const kept = { ...config };
   for (const key of MAPPED_TOP_LEVEL) delete kept[key];
+  // 命令行存不了 glm_ocr（它的 OCR 设置只认 paddle、mineru），这个选择留在桌面配置里。
+  if (config.ocrProvider === "glm_ocr") kept.ocrProvider = "glm_ocr";
   const developer = { ...(config.developerConfig || {}) };
   for (const key of MAPPED_DEVELOPER) delete developer[key];
   kept.developerConfig = developer;

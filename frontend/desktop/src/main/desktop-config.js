@@ -31,6 +31,7 @@ function createDesktopConfigStore(app, options = {}) {
       ocrCredentialRef: "",
       translationCredentialRef: "",
       mineruToken: "",
+      glmOcrToken: "",
       paddleToken: "",
       modelApiKey: "",
       model: DEFAULT_MODEL,
@@ -115,7 +116,7 @@ function createDesktopConfigStore(app, options = {}) {
 
   function buildResolvedBrowserConfig(config) {
     const browserConfig = buildBrowserConfig(config);
-    const ocrTokenField = browserConfig.ocrProvider === "mineru" ? "mineruToken" : "paddleToken";
+    const ocrTokenField = OCR_TOKEN_FIELDS[browserConfig.ocrProvider] || "paddleToken";
     if (!browserConfig[ocrTokenField] && browserConfig.ocrCredentialRef) {
       browserConfig[ocrTokenField] = resolveCredentialSecret(
         browserConfig.ocrCredentialRef,
@@ -166,6 +167,7 @@ function buildBrowserConfig(config) {
     ocrCredentialRef: config.ocrCredentialRef || "",
     translationCredentialRef: config.translationCredentialRef || "",
     mineruToken: config.mineruToken || "",
+    glmOcrToken: config.glmOcrToken || "",
     paddleToken: config.paddleToken || "",
     modelApiKey: config.modelApiKey || "",
   };
@@ -175,8 +177,11 @@ function hasOwn(target, key) {
   return Object.prototype.hasOwnProperty.call(target, key);
 }
 
+// 每家 OCR 的 key 存在哪个字段。GLM-OCR（智谱）没有任务级的专用字段，网页端提交时放进 ocr.options.credential。
+const OCR_TOKEN_FIELDS = { paddle: "paddleToken", mineru: "mineruToken", glm_ocr: "glmOcrToken" };
+
 function normalizeOcrProvider(value) {
-  return value === "mineru" ? "mineru" : DEFAULT_OCR_PROVIDER;
+  return Object.hasOwn(OCR_TOKEN_FIELDS, value) ? value : DEFAULT_OCR_PROVIDER;
 }
 
 function normalizeTrimmedString(value, fallback = "") {
@@ -186,6 +191,7 @@ function normalizeTrimmedString(value, fallback = "") {
 function normalizeDesktopConfig(raw = {}) {
   const defaults = {
     mineruToken: "",
+    glmOcrToken: "",
     ocrCredentialRef: "",
     translationCredentialRef: "",
     paddleToken: "",
@@ -202,6 +208,7 @@ function normalizeDesktopConfig(raw = {}) {
       defaults.translationCredentialRef,
     ),
     mineruToken: normalizeTrimmedString(raw.mineruToken, defaults.mineruToken),
+    glmOcrToken: normalizeTrimmedString(raw.glmOcrToken, defaults.glmOcrToken),
     paddleToken: normalizeTrimmedString(raw.paddleToken, defaults.paddleToken),
     modelApiKey: normalizeTrimmedString(raw.modelApiKey, defaults.modelApiKey),
     model: normalizeTrimmedString(raw.model, defaults.model),
@@ -223,6 +230,7 @@ function mergeDesktopConfig(currentConfig, payload = {}) {
     "ocrCredentialRef",
     "translationCredentialRef",
     "mineruToken",
+    "glmOcrToken",
     "paddleToken",
     "modelApiKey",
     "model",

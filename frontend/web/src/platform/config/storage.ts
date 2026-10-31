@@ -10,6 +10,7 @@ export interface BrowserStoredConfig {
   ocrCredentialRef: string;
   paddleToken: string;
   mineruToken: string;
+  glmOcrToken: string;
   translationCredentialRef: string;
   /** Browser-local value. Desktop persists the same field in desktop-config.json. */
   modelApiKey: string;
@@ -32,6 +33,7 @@ export interface RuntimeConfig {
   ocrCredentialRef?: string;
   paddleToken?: string;
   mineruToken?: string;
+  glmOcrToken?: string;
   translationCredentialRef?: string;
   modelApiKey?: string;
   model?: string;
@@ -90,6 +92,7 @@ export function normalizeBrowserStoredConfig(
       : "",
     paddleToken: typeof source.paddleToken === "string" ? source.paddleToken : "",
     mineruToken: typeof source.mineruToken === "string" ? source.mineruToken.trim() : "",
+    glmOcrToken: typeof source.glmOcrToken === "string" ? source.glmOcrToken.trim() : "",
     translationCredentialRef: typeof source.translationCredentialRef === "string"
       ? source.translationCredentialRef.trim()
       : "",
@@ -112,6 +115,7 @@ export function desktopRuntimeToBrowserConfig(
     ocrCredentialRef: source.ocrCredentialRef as string | undefined,
     paddleToken: source.paddleToken as string | undefined,
     mineruToken: source.mineruToken as string | undefined,
+    glmOcrToken: source.glmOcrToken as string | undefined,
     translationCredentialRef: source.translationCredentialRef as string | undefined,
     modelApiKey: source.modelApiKey as string | undefined,
   });
@@ -130,6 +134,7 @@ export function buildRuntimeConfig(
     ocrCredentialRef: nextBrowserConfig.ocrCredentialRef,
     paddleToken: nextBrowserConfig.paddleToken,
     mineruToken: nextBrowserConfig.mineruToken,
+    glmOcrToken: nextBrowserConfig.glmOcrToken,
     translationCredentialRef: nextBrowserConfig.translationCredentialRef,
     modelApiKey: nextBrowserConfig.modelApiKey,
     developerConfig: nextDeveloperConfig,

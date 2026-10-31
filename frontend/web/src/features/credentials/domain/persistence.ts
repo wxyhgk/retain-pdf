@@ -38,6 +38,7 @@ export async function persistDesktopCredentialsFromDialog({
       ocrCredentialRef,
       paddleToken,
       mineruToken: `${values.mineruToken || ""}`.trim(),
+      glmOcrToken: `${values.glmOcrToken || ""}`.trim(),
       translationCredentialRef,
       modelApiKey,
       markConfigured: setupModePort.currentSetupMode(),

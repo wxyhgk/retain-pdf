@@ -8,6 +8,7 @@ import {
   getOcrProviderDefinition,
   inferTranslationProvider,
   TRANSLATION_PROVIDER_DEFINITION,
+  isZhipuBaseUrl,
 } from "@/platform/config/providers.js";
 import { savePersistedBrowserStoredConfig } from "@/platform/config/persisted-config.js";
 import { notifyCredentialsChanged } from "@/platform/contracts/credentials-contract.js";
@@ -110,6 +111,7 @@ export function createBrowserCredentialSaveFlow({
       ...raw,
       paddleToken: `${raw.paddleToken || ""}`.trim() || `${existing.paddleToken || ""}`.trim(),
       mineruToken: `${raw.mineruToken || ""}`.trim() || `${existing.mineruToken || ""}`.trim(),
+      glmOcrToken: `${raw.glmOcrToken || ""}`.trim() || `${existing.glmOcrToken || ""}`.trim(),
       modelApiKey: `${raw.modelApiKey || ""}`.trim() || (sameTranslationProvider ? `${existing.modelApiKey || ""}`.trim() : ""),
       modelBaseUrl: `${raw.modelBaseUrl || ""}`.trim()
         || `${existingTaskOptions.baseUrl || ""}`.trim()
@@ -125,11 +127,14 @@ export function createBrowserCredentialSaveFlow({
     const existingTranslationCredentialRef = sameTranslationProvider ? `${existing.translationCredentialRef || ""}`.trim() : "";
     const translationError = translationConfigError(values.modelBaseUrl, values.modelName);
     const workersError = translationWorkersError(values.translationWorkers, translation.getCurrentProvider());
-    if ((!ocrToken && !existingOcrCredentialRef)
+    // GLM-OCR 不填自己的 key 时借翻译的 key，前提是翻译接口就是智谱（别家的 key 不会发给智谱）。
+    const ocrKeyBorrowed = definition.id === "glm_ocr" && isZhipuBaseUrl(values.modelBaseUrl);
+    const ocrMissing = !ocrToken && !existingOcrCredentialRef && !ocrKeyBorrowed;
+    if (ocrMissing
       || (!modelApiKey && !existingTranslationCredentialRef)
       || translationError
       || workersError) {
-      if (!ocrToken && !existingOcrCredentialRef) {
+      if (ocrMissing) {
         viewPort.setOcrValidationMessage(definition.validationMissingMessage, "error", definition.id);
       }
       if (!modelApiKey && !existingTranslationCredentialRef) {
@@ -172,6 +177,7 @@ export function createBrowserCredentialSaveFlow({
         ocrCredentialRef,
         paddleToken: definition.id === "paddle" ? ocrToken : existing.paddleToken || "",
         mineruToken: definition.id === "mineru" ? ocrToken : existing.mineruToken || "",
+        glmOcrToken: definition.id === "glm_ocr" ? ocrToken : existing.glmOcrToken || "",
         translationCredentialRef,
         modelApiKey,
       };
@@ -198,6 +204,7 @@ export function createBrowserCredentialSaveFlow({
             ocrCredentialRef,
             paddleToken: nextCredentials.paddleToken,
             mineruToken: nextCredentials.mineruToken,
+            glmOcrToken: nextCredentials.glmOcrToken,
             modelApiKey,
             translationCredentialRef,
           },

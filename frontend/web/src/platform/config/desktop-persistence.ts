@@ -120,6 +120,7 @@ async function saveDesktopPersistedConfig(partial: DesktopPersistedConfigPatch =
     ocrCredentialRef: merged.browserConfig.ocrCredentialRef,
     paddleToken: merged.browserConfig.paddleToken,
     mineruToken: merged.browserConfig.mineruToken,
+    glmOcrToken: merged.browserConfig.glmOcrToken,
     translationCredentialRef: merged.browserConfig.translationCredentialRef,
     modelApiKey: merged.browserConfig.modelApiKey,
     developerConfig: merged.developerConfig,

@@ -143,7 +143,7 @@ function controllerHarness(overrides = {}) {
   let handlers;
   const messages = [];
   const elements = {
-    paddleInput: { value: "paddle-legacy" }, mineruInput: { value: "" },
+    paddleInput: { value: "paddle-legacy" }, mineruInput: { value: "" }, glmOcrInput: { value: "" },
     apiKeyInput: { value: "" }, modelNameInput: { value: "deepseek-chat" },
     modelBaseUrlInput: { value: "https://api.deepseek.com/v1" }, translationWorkersInput: { value: "5" },
   };
@@ -251,3 +251,33 @@ test("upload and existing-document OCR/translation payloads use MinerU reference
     }
   }
 });
+
+// GLM-OCR（智谱）：不填自己的 key 也能保存，前提是翻译接口就是智谱——后端借翻译的 key；
+// 翻译是别家时照样要求填，别家的 key 不会发给智谱。
+test("GLM-OCR：翻译是智谱时可以不填 key；翻译是别家时要填", async () => {
+  const deepseek = controllerHarness();
+  await deepseek.feature.ready();
+  await deepseek.handlers.changeProvider({ currentTarget: { value: "glm_ocr" } });
+  deepseek.elements.apiKeyInput.value = "deepseek-key";
+  await deepseek.handlers.save();
+  assert.ok(
+    deepseek.messages.some(([message, tone, provider]) => provider === "glm_ocr" && tone === "error" && /智谱 API Key/.test(message)),
+    "翻译不是智谱时没提示要填 GLM 的 key",
+  );
+
+  const zhipu = controllerHarness();
+  await zhipu.feature.ready();
+  await zhipu.handlers.changeProvider({ currentTarget: { value: "glm_ocr" } });
+  zhipu.elements.apiKeyInput.value = "zhipu-key";
+  zhipu.elements.modelBaseUrlInput.value = "https://open.bigmodel.cn/api/paas/v4";
+  zhipu.elements.modelNameInput.value = "glm-5.3-flash";
+  await zhipu.handlers.save();
+  assert.equal(zhipu.messages.some(([, tone, provider]) => provider === "glm_ocr" && tone === "error"), false);
+  assert.equal(zhipu.port.getCredentials().ocrProvider, "glm_ocr");
+  assert.equal(zhipu.port.getCredentials().glmOcrToken, "");
+
+  zhipu.elements.glmOcrInput.value = "own-glm-key";
+  await zhipu.handlers.save();
+  assert.equal(zhipu.port.getCredentials().glmOcrToken, "own-glm-key", "填了就存自己的 key");
+});
+

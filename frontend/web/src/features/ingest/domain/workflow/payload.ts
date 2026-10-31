@@ -113,7 +113,12 @@ export function buildOcrPayload({
     page_ranges: pageRanges,
   };
   if (!payload.credential_ref) {
-    payload[definition.tokenField] = ocrToken || "";
+    if (definition.tokenField) {
+      payload[definition.tokenField] = ocrToken || "";
+    } else if ("inlineOption" in definition && definition.inlineOption && ocrToken) {
+      // GLM-OCR 没有专用字段，内联 key 放进 options；不填时后端借智谱翻译的 key。
+      payload.options = { [definition.inlineOption]: ocrToken };
+    }
   }
   if (definition.id === "paddle") {
     payload.paddle_api_url = defaultPaddleApiUrl() || "https://paddleocr.aistudio-app.com";
