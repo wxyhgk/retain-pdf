@@ -169,7 +169,12 @@ fn prepare_translation_stage(
         },
     )?;
     parent_job.stage = Some(job_stage_str(JobStage::Translating).to_string());
-    parent_job.stage_detail = Some(job_stage_detail(JobStage::Translating).to_string());
+    parent_job.stage_detail = Some(if ocr_stream_dir.is_some() {
+        // 跟着 OCR 翻：这时 OCR 还在跑，默认那句"OCR 完成，开始翻译"不对
+        "OCR 进行中，翻译跟着 OCR 开始".to_string()
+    } else {
+        job_stage_detail(JobStage::Translating).to_string()
+    });
     parent_job.progress_current = None;
     parent_job.progress_total = None;
     parent_job.updated_at = now_iso();

@@ -31,6 +31,7 @@ use super::attach_job_paths;
 use super::domain_prewarm::{start_domain_prewarm, DOMAIN_PREWARM_FINISH_TIMEOUT};
 use super::ocr_flow::{execute_ocr_job, sync_parent_with_ocr_child};
 use super::ocr_stream::mark_ocr_stream_failed;
+use super::render_prepare::{start_render_prepare, RENDER_PREPARE_FINISH_TIMEOUT};
 use super::pipeline_plan::{PipelinePlan, PipelineStage};
 use super::ProcessRuntimeDeps;
 use translation_flow_executor::run_after_translation_stage;
@@ -279,7 +280,8 @@ fn persist_ocr_child_result(deps: &ProcessRuntimeDeps, ocr_finished: JobRuntimeS
 ///   只写子任务的行（`save_ocr_job` 的父任务镜像只在 driver 推进阶段时写，那几次都在进程拉起之前）。
 /// - OCR 没做成（失败、取消、进程被杀）时，补标清单失败（`mark_ocr_stream_failed`），等着的翻译马上退出；父任务按 OCR
 ///   的结果收尾。用户取消父任务时两个进程各自被停（翻译是父任务的进程，OCR 认父任务的取消）。
-/// - 两边都成了，把 OCR 的产物并回父任务，照旧渲染。渲染准备要整份文档，不和翻译并行拉起。
+/// - 两边都成了，把 OCR 的产物并回父任务，照旧渲染。渲染准备要整份文档：OCR 一做完就拉起，和翻译最后一轮重叠
+///   （串行时它和整个翻译阶段重叠；并行时以前直接不拉起，渲染从 9 秒变成 16 秒，2026-11-01 实测）。
 async fn run_ocr_and_translation_together(
     deps: ProcessRuntimeDeps,
     parent_job: JobRuntimeState,
@@ -305,6 +307,19 @@ async fn run_ocr_and_translation_together(
             Some(parent_job_id.clone()),
         )
         .await;
+        // OCR 做完、后面还要渲染：马上拉起渲染准备，翻译这时多半只剩最后一轮
+        let render_prepare = match &result {
+            Ok(job) if render_follows && matches!(job.status, JobStatusKind::Succeeded) => {
+                let source_pdf = job
+                    .artifacts
+                    .as_ref()
+                    .and_then(|artifacts| artifacts.source_pdf.clone())
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| streaming.source_pdf_path.clone());
+                start_render_prepare(&deps, &parent_job, &parent_job_paths, &streaming.normalized_path, &source_pdf)
+            }
+            _ => None,
+        };
         let failure = match &result {
             Ok(job) if matches!(job.status, JobStatusKind::Succeeded) => None,
             Ok(job) => Some(format!(
@@ -319,7 +334,7 @@ async fn run_ocr_and_translation_together(
                 tracing::warn!(job_id = %parent_job_id, error = %format!("{err:#}"), "failed to mark ocr stream failed");
             }
         }
-        result
+        (result, render_prepare)
     });
     let translation = Box::pin(run_translation_stage(
         &deps,
@@ -328,7 +343,7 @@ async fn run_ocr_and_translation_together(
         render_follows,
         Some(&streaming),
     ));
-    let (ocr_result, translation_result) = tokio::join!(ocr, translation);
+    let ((ocr_result, render_prepare), translation_result) = tokio::join!(ocr, translation);
 
     let ocr_finished = match ocr_result {
         Ok(job) => job,
@@ -354,7 +369,11 @@ async fn run_ocr_and_translation_together(
     }
     let mut translated_job = translation_stage.job;
     if !matches!(translated_job.status, JobStatusKind::Succeeded) {
+        // 翻译失败 / 被取消：渲染准备的句柄在这里丢弃，kill_on_drop 结束进程。
         return Ok(translated_job);
+    }
+    if let Some(process) = render_prepare {
+        process.finish(RENDER_PREPARE_FINISH_TIMEOUT).await;
     }
     // OCR 产物只并进内存里的任务，不在这里写库：翻译是中间阶段，内存里的 status 已经是 Succeeded（给调用方判成没成），
     // 写下去就是把父任务落成终态，渲染阶段启动时的 CAS 会被拒、渲染不跑（2026-10-31 开发栈实测，任务直接"成功"、没有译文 PDF）。
@@ -385,7 +404,7 @@ mod ocr_child_persist_contract {
         // 串行和并行（OCR 和翻译同时跑）两条路都在拿到 OCR 结果后、并回父任务前走这一个函数
         for (start, end) in [
             ("let ocr_finished = match execute_ocr_job(", "sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);"),
-            ("let (ocr_result, translation_result) = tokio::join!", "sync_parent_with_ocr_child(&mut translated_job, &ocr_finished);"),
+            ("tokio::join!(ocr, translation)", "sync_parent_with_ocr_child(&mut translated_job, &ocr_finished);"),
         ] {
             let from = source.find(start).expect("找不到 OCR 收尾那一段");
             let to = from + source[from..].find(end).expect("OCR 收尾必须调用 sync_parent_with_ocr_child");

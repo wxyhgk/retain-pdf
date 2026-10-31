@@ -58,7 +58,7 @@ OCR 做完时翻译也基本翻完，接着渲染。
 
 对接口的影响（只增不改）：
 
-- 父任务在 OCR 还在跑时就进入 `translating` 阶段；OCR 子任务（`{父任务}-ocr`）照旧有自己的记录和进度。
+- 父任务在 OCR 还在跑时就进入 `translating` 阶段（`stage_detail` 是"OCR 进行中，翻译跟着 OCR 开始"）；OCR 子任务（`{父任务}-ocr`）照旧有自己的记录和进度。
 - 翻译阶段多了 `substage: "ocr_stream"` 的进度事件：`progress_current` / `progress_total` 是 OCR 已公布的页数 / 全书页数，
   `payload.round` 是第几轮，`payload.held_back_items` 是这一轮先扣住、等下一页的块数。之后照常有 `translation_batches` 的进度。
 - OCR 失败、被取消时翻译跟着停，父任务按 OCR 的结果收尾（和以前串行时一样的失败说法）。

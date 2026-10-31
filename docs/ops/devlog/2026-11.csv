@@ -1,0 +1,2 @@
+"date","branch","commits","area","type","summary","reason","validation","status","follow_up","doc"
+"2026-11-01","perf/render-prepare-after-ocr","","jobs; docs","perf","OCR 和翻译并行时，OCR 一做完就拉起渲染准备，和翻译最后一轮重叠，翻译成了再限时等它收尾；父任务进 translating 时的说明改成「OCR 进行中，翻译跟着 OCR 开始」","修好并行渲染后实测 34 页 55 秒，其中渲染 16 秒（串行时 9 秒：渲染准备和翻译重叠，并行时没拉起）；用户：可以，接着做渲染准备提前","runner 单测 236 过、rust_api 553 过（无栈溢出）；完整检查见合并说明；开发栈端到端见合并说明","merged","","ops/planning/translation-package/20261031-OCR和翻译并行.md"
