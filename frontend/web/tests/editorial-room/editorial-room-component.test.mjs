@@ -180,6 +180,31 @@ test("用户视图：退回重翻时稿纸回到译者、闸门亮红；术语�
   }
 });
 
+test("长书翻完：档案柜上的纸堆封顶，不顶出画面；退回原文的页所在那叠标红", async () => {
+  makeDom();
+  const React = await import("react");
+  const room = await import("../../src/features/editorial-room/index.ts");
+  const events = room.buildDemoEditorialRun();
+  const end = room.roomStateAt(events, events.length);
+  const template = end.pages.find((card) => !card.fallback);
+  const pages = Array.from({ length: 106 }, (_, i) => ({
+    ...template,
+    page: i + 1,
+    label: String(i + 1),
+    fallback: i === 99 ? 1 : 0,
+  }));
+  const { host, unmount } = await mount(React.createElement(room.EditorialStage, { state: { ...end, pages } }));
+  try {
+    await waitFor(() => host.querySelector("[data-editorial-office]"));
+    assert.equal(host.querySelector('[data-editorial-station="archive"]').dataset.done, "106");
+    assert.equal(host.querySelectorAll(".editorial-room-office-paper.is-filed").length, 10, "106 页也只叠 10 张高");
+    assert.equal(host.querySelectorAll(".editorial-room-office-paper.is-filed.is-flagged").length, 1);
+    assert.match(host.querySelector('[data-editorial-station="archive"] title').textContent, /定稿 106 \/ 106 页/);
+  } finally {
+    unmount();
+  }
+});
+
 test("默认回放是用户视图：没有按钮，不显示调试信息", async () => {
   makeDom();
   const React = await import("react");
