@@ -1,0 +1,169 @@
+/* Button、IconButton（src/primitives/button.tsx）。
+ *
+ * 只用皮肤变量：主按钮 --btn-primary-bg/fg、圆角 --btn-radius（皮肤可以换按钮气质），其余是语义色和刻度。
+ * 选择器都挂在 .ui-button / .ui-icon-button 上：shadcn 旧按钮（LegacyButton）也写 data-variant，不能用裸属性选择器。
+ *
+ * @owns ui-button, ui-icon-button
+ */
+
+.ui-button,
+.ui-icon-button {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--btn-radius);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, filter 120ms ease;
+}
+
+.ui-button[data-size="sm"] {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: var(--ui-text-sm);
+}
+
+.ui-button[data-size="md"] {
+  min-height: 34px;
+  padding: 0 14px;
+  font-size: var(--ui-text-md);
+}
+
+.ui-button[data-size="lg"] {
+  min-height: 48px;
+  padding: 0 20px;
+  font-size: var(--ui-text-base);
+}
+
+.ui-icon-button {
+  padding: 0;
+}
+
+.ui-icon-button[data-size="sm"] {
+  width: 28px;
+  height: 28px;
+}
+
+.ui-icon-button[data-size="md"] {
+  width: 34px;
+  height: 34px;
+}
+
+.ui-icon-button[data-size="lg"] {
+  width: 40px;
+  height: 40px;
+}
+
+.ui-button svg,
+.ui-icon-button svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.ui-icon-button[data-size="sm"] svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* —— 变体 —— */
+
+.ui-button[data-variant="primary"],
+.ui-icon-button[data-variant="primary"] {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-fg);
+}
+
+.ui-button[data-variant="primary"]:hover:not(:disabled),
+.ui-icon-button[data-variant="primary"]:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.ui-button[data-variant="secondary"],
+.ui-icon-button[data-variant="secondary"] {
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.ui-button[data-variant="secondary"]:hover:not(:disabled),
+.ui-icon-button[data-variant="secondary"]:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+  color: var(--accent);
+}
+
+.ui-button[data-variant="ghost"],
+.ui-icon-button[data-variant="ghost"] {
+  background: transparent;
+  color: inherit;
+}
+
+.ui-button[data-variant="ghost"]:hover:not(:disabled),
+.ui-icon-button[data-variant="ghost"]:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+/* 红色只用于删除和出错：淡红底、红字，深色皮肤下也看得清。 */
+.ui-button[data-variant="danger"],
+.ui-icon-button[data-variant="danger"] {
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--line));
+  background: var(--danger-weak);
+  color: var(--danger);
+}
+
+.ui-button[data-variant="danger"]:hover:not(:disabled),
+.ui-icon-button[data-variant="danger"]:hover:not(:disabled) {
+  border-color: var(--danger);
+}
+
+/* —— 状态 —— */
+
+.ui-button:focus-visible,
+.ui-icon-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 2px;
+}
+
+.ui-button:disabled,
+.ui-icon-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ui-button[aria-busy="true"],
+.ui-icon-button[aria-busy="true"] {
+  cursor: progress;
+}
+
+.ui-button-spinner {
+  width: 12px;
+  height: 12px;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: var(--ui-radius-pill);
+  animation: ui-button-spin 700ms linear infinite;
+}
+
+@keyframes ui-button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-button,
+  .ui-icon-button {
+    transition: none;
+  }
+
+  .ui-button-spinner {
+    animation-duration: 2s;
+  }
+}

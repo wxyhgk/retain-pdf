@@ -10,7 +10,7 @@ import {
   SquareM,
 } from "lucide-react";
 
-import { Button } from "@/ui/components/button.js";
+import { LegacyButton } from "@retainpdf/ui";
 import {
   Dialog,
   DialogBody,
@@ -22,13 +22,13 @@ import {
   DialogHeader,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
+} from "@retainpdf/ui";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/ui/components/tooltip.js";
+} from "@retainpdf/ui";
 import {
   selectArtifactQuickDownloads,
   type ArtifactCenterItem,
@@ -177,7 +177,7 @@ export function ArtifactQuickDownloads({
             </DialogBody>
             <DialogFooter>
               <DialogClose asChild>
-                <Button type="button">完成</Button>
+                <LegacyButton type="button">完成</LegacyButton>
               </DialogClose>
             </DialogFooter>
           </DialogShell>

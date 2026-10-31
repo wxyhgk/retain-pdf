@@ -2,7 +2,7 @@
 // 错误提示由概览信息区统一展示（阅读状态 / 合集 / 删除共用一个 error）。
 
 import { useState } from "react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import { Trash2 } from "lucide-react";
 
 type DeleteFooterPanelProps = {

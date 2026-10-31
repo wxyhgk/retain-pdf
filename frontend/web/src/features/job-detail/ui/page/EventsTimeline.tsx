@@ -35,7 +35,7 @@ import {
   DialogHeader,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
+} from "@retainpdf/ui";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import {
   formatEventTimestamp,

@@ -2,7 +2,7 @@
   "name": "@retainpdf/ui",
   "version": "0.1.0",
   "private": false,
-  "description": "RetainPDF shared UI primitives — cn, button, dialog, etc. (extracted from frontend/web)",
+  "description": "RetainPDF shared UI primitives — Button, Field, Menu, Dialog, Sheet… (docs/ops/planning/frontend-migration/20261031-基础组件与刻度.md)",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -28,21 +28,20 @@
       "types": "./dist/components/ui/sonner.d.ts",
       "import": "./dist/components/ui/sonner.js"
     },
-    "./components/ui/tabs": {
-      "types": "./dist/components/ui/tabs.d.ts",
-      "import": "./dist/components/ui/tabs.js"
-    },
     "./components/ui/tooltip": {
       "types": "./dist/components/ui/tooltip.d.ts",
       "import": "./dist/components/ui/tooltip.js"
     },
-    "./styles.css": "./dist/styles.css"
+    "./styles.css": "./dist/styles.css",
+    "./primitives.css": "./styles/primitives.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "styles"
   ],
   "sideEffects": [
-    "./dist/styles.css"
+    "./dist/styles.css",
+    "./styles/*.css"
   ],
   "scripts": {
     "clean": "node ./scripts/clean-dist.mjs",

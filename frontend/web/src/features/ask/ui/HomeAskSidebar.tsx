@@ -10,7 +10,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import type { HomeAskSession } from "./use-home-ask-runtime.js";
 
 function startOfDay(d: Date) {

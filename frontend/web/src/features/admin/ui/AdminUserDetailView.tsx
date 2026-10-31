@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { AdminUserDetail, AdminUserJob, AuthRole, PageAccountView } from "@retainpdf/api/auth";
 import { PageLedger, authErrorText, pageAdjustProblem } from "@/features/auth/index.js";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import {
   ADMIN_JOBS_PAGE_SIZE,
   JOB_STATUS_ORDER,

@@ -1,6 +1,6 @@
 import { ClipboardCheck, Copy, FileWarning } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Button } from "@/ui/components/button.js";
+import { LegacyButton } from "@retainpdf/ui";
 import {
   Dialog,
   DialogBody,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
+} from "@retainpdf/ui";
 import {
   copyText,
 } from "@/platform/utils/clipboard.js";
@@ -77,10 +77,10 @@ export function FailureLogDialog({
             <span id={ids.copyLogStatus} className="status-panel-note" role="status">
               {copyState === "copied" ? "已复制，可直接粘贴给开发人员。" : copyState === "failed" ? "复制失败，请手动选择日志。" : "日志已自动隐藏可能的密钥。"}
             </span>
-            <Button id={ids.copyLogButton} type="button" onClick={handleCopy}>
+            <LegacyButton id={ids.copyLogButton} type="button" onClick={handleCopy}>
               {copyState === "copied" ? <ClipboardCheck /> : <Copy />}
               {copyState === "copied" ? "已复制" : "复制日志"}
-            </Button>
+            </LegacyButton>
           </DialogFooter>
         </DialogShell>
       </DialogContent>

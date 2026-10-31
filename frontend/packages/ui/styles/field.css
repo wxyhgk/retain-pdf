@@ -1,0 +1,120 @@
+/* Field、Input、Textarea、Select（src/primitives/field.tsx）。
+ *
+ * @owns ui-field, ui-input, ui-textarea, ui-select
+ */
+
+.ui-field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ui-field-label {
+  color: var(--ink);
+  font-size: var(--ui-text-sm);
+  font-weight: 600;
+}
+
+.ui-field-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-xs);
+  line-height: 1.5;
+}
+
+.ui-field-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: var(--ui-text-xs);
+  line-height: 1.5;
+}
+
+.ui-input,
+.ui-textarea,
+.ui-select select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-sm);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--ui-text-md);
+  transition: border-color 120ms ease;
+}
+
+.ui-input,
+.ui-select select {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+.ui-input[data-size="sm"],
+.ui-select[data-size="sm"] select {
+  min-height: 28px;
+  padding: 0 8px;
+  font-size: var(--ui-text-sm);
+}
+
+.ui-textarea {
+  padding: 8px 10px;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.ui-input::placeholder,
+.ui-textarea::placeholder {
+  color: var(--muted);
+}
+
+.ui-input:hover:not(:disabled),
+.ui-textarea:hover:not(:disabled),
+.ui-select select:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ink) 24%, var(--line));
+}
+
+.ui-input:focus-visible,
+.ui-textarea:focus-visible,
+.ui-select select:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  outline-offset: 0;
+}
+
+.ui-input[aria-invalid="true"],
+.ui-textarea[aria-invalid="true"],
+.ui-select select[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+.ui-input:disabled,
+.ui-textarea:disabled,
+.ui-select select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* —— Select：原生下拉，去掉系统箭头换成自己的 —— */
+
+.ui-select {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.ui-select select {
+  padding-right: 28px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.ui-select-arrow {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  width: 14px;
+  height: 14px;
+  color: var(--muted);
+  transform: translateY(-50%);
+  pointer-events: none;
+}

@@ -103,14 +103,14 @@ features/<功能>/
 
 ## `ui/` —— 共享 UI
 
-`components/`（shadcn 生成物）、`Button.tsx`、`lib/utils.ts`、`hooks/`、
-`icons/`、`theme/`、`decor/`、`download-toast/`。
+基础组件（Button、IconButton、Field、Input、Textarea、Select、Badge、Menu、Panel、Sheet、Dialog、
+ConfirmDialog、FormStatusLine）**不在这里**，在 `frontend/packages/ui`，一律从 `@retainpdf/ui` 的根引；
+样子在包的 `styles/*.css`，各页面入口经 `@retainpdf/ui/primitives.css` 引入。做法和迁移顺序见
+`docs/ops/planning/frontend-migration/20261031-基础组件与刻度.md`。
 
-`components.json` 的别名指向 `@/ui` 系列，`npx shadcn add` 会生成到
-`ui/components/`。
-
-⚠️ `ui/Button.tsx` 与 `ui/components/button.tsx` **必须保持两级**——
-macOS 文件系统大小写不敏感，压平会冲突。
+这里留下应用自己的：`lib/utils.ts`（转出包里的 `cn`）、`hooks/`、`icons/`（含 EmptyState）、`theme/`、
+`decor/`、`download-toast/`、`context/`。`ui/components/` 已删除，门禁（`ui-primitives-ratchet`）不许它再出现；
+`components.json` 还指着它，`npx shadcn add` 生成的东西要搬进包里再用。
 
 ## 门禁清单
 
@@ -120,6 +120,7 @@ macOS 文件系统大小写不敏感，压平会冲突。
 | `tests/architecture/architecture-boundaries.test.mjs` | 防回弹（不得 import 已删除的旧世界）、DI 容器消费方清单、旧目录不得复活、共享 dialog 边界 |
 | `tests/architecture/page-dom-references.test.mjs` | 三页的 DOM id/class 引用必须有归属，防运行时静默失效 |
 | `tests/architecture/tsx-color-literals.test.mjs` | 主题盲颜色只减不增 |
+| `tests/architecture/ui-primitives-ratchet.test.mjs` | 手写控件、写死的字号圆角、新造按钮类名只减不增；基础组件只有 `@retainpdf/ui` 一份 |
 | `tests/architecture/shell-smoke.test.mjs` | 三页挂载顺序与入口链路 |
 
 改动这些门禁时，**必须注入一个已知违规确认它仍能报错，再移除**。

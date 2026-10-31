@@ -29,7 +29,7 @@ import {
   DialogContent,
   DialogShell,
   DialogTitle,
-} from "@/ui/components/dialog.js";
+} from "@retainpdf/ui";
 import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 // TODO(feature-layout 批次 5): dialog-store 是通用状态工具，随批次 5 迁入 platform 后改指。
 import type { DialogStore } from "@/platform/store/dialog-store.js";
@@ -37,7 +37,7 @@ import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { APP_SETTINGS_DIALOG_IDS } from "./settings-dialog-ids.js";
 import { CommandLinePanel } from "./CommandLinePanel.jsx";
 import { ThemeAppearancePanel } from "./ThemeAppearancePanel.jsx";
-import { Button } from "@/ui/Button.jsx";
+import { Button } from "@retainpdf/ui";
 
 // Decoupled: settings → credentials / app-update 横向依赖改为经 HomeApp 注入(slot)。
 // - credentialsWorkbenchSlot: 由 HomeApp 传入 <CredentialsWorkbench />

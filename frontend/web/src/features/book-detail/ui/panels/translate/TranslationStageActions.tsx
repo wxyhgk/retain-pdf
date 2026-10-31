@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Languages, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import type {
   JobRetryStage,
   JobStageRetryActionView,

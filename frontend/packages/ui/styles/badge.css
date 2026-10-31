@@ -1,0 +1,47 @@
+/* Badge（src/primitives/badge.tsx）。界面是黑白的：「完成」是墨色，红色只给出错。
+ *
+ * @owns ui-badge
+ */
+
+.ui-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: var(--ui-radius-pill);
+  font-size: var(--ui-text-xs);
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ui-badge svg {
+  width: 12px;
+  height: 12px;
+}
+
+.ui-badge[data-tone="muted"] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--muted);
+}
+
+.ui-badge[data-tone="active"] {
+  background: var(--accent-weak);
+  color: var(--accent);
+}
+
+.ui-badge[data-tone="done"] {
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+  color: var(--ink);
+}
+
+.ui-badge[data-tone="warn"] {
+  background: var(--warn-weak);
+  color: var(--warn);
+}
+
+.ui-badge[data-tone="danger"] {
+  background: var(--danger-weak);
+  color: var(--danger);
+}

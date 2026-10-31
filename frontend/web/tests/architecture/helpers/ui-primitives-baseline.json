@@ -1,0 +1,984 @@
+{
+  "controls": {
+    "../packages/reader/src/components/ai/AnswerCodeBlock.tsx": {
+      "button": 1
+    },
+    "../packages/reader/src/components/ai/CitationRef.tsx": {
+      "button": 1
+    },
+    "../packages/reader/src/components/ai/RetainMarkstream.tsx": {
+      "button": 1
+    },
+    "../packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx": {
+      "button": 3
+    },
+    "../packages/reader/src/components/react-pdf/ReaderBlockMarkdownPanel.tsx": {
+      "button": 5,
+      "input": 1
+    },
+    "../packages/reader/src/components/react-pdf/ReaderBookmarkControl.tsx": {
+      "button": 4
+    },
+    "../packages/reader/src/components/react-pdf/ReaderCloseHome.tsx": {
+      "button": 1
+    },
+    "../packages/reader/src/components/react-pdf/ReaderDownloadActions.tsx": {
+      "button": 1
+    },
+    "../packages/reader/src/components/react-pdf/ReaderErrorNotice.tsx": {
+      "button": 1
+    },
+    "../packages/reader/src/components/react-pdf/ReaderMarkdownPanel.tsx": {
+      "button": 5,
+      "input": 1
+    },
+    "../packages/reader/src/components/react-pdf/ReaderShortcutsHelp.tsx": {
+      "button": 2
+    },
+    "../packages/reader/src/components/react-pdf/ReaderWorkspaceTabs.tsx": {
+      "button": 2
+    },
+    "../packages/reader/src/components/react-pdf/ReaderZoomHud.tsx": {
+      "button": 4,
+      "input": 1
+    },
+    "../packages/reader/src/pdf/ReaderTextHoverLayer.tsx": {
+      "button": 2
+    },
+    "../packages/reader/src/ReaderAppReactPdf.tsx": {
+      "button": 1
+    },
+    "src/app/home/HomeApp.tsx": {
+      "button": 2
+    },
+    "src/app/home/shell/AppBottomBar.tsx": {
+      "button": 4,
+      "input": 1
+    },
+    "src/app/home/shell/AppTopBar.tsx": {
+      "button": 2
+    },
+    "src/features/admin/ui/admin-shared.tsx": {
+      "button": 2
+    },
+    "src/features/admin/ui/AdminApp.tsx": {
+      "button": 4
+    },
+    "src/features/admin/ui/AdminInvitesView.tsx": {
+      "button": 6,
+      "input": 4
+    },
+    "src/features/admin/ui/AdminPlatformView.tsx": {
+      "button": 5,
+      "select": 4,
+      "input": 5
+    },
+    "src/features/admin/ui/AdminUserDetailView.tsx": {
+      "button": 12,
+      "input": 2
+    },
+    "src/features/admin/ui/AdminUsersView.tsx": {
+      "button": 9,
+      "select": 3,
+      "input": 6
+    },
+    "src/features/ask/ui/HomeAskComposerBanner.tsx": {
+      "button": 1
+    },
+    "src/features/ask/ui/HomeAskComposerChips.tsx": {
+      "button": 1
+    },
+    "src/features/ask/ui/HomeAskComposerInput.tsx": {
+      "textarea": 1
+    },
+    "src/features/ask/ui/HomeAskComposerPicker.tsx": {
+      "button": 1
+    },
+    "src/features/ask/ui/HomeAskComposerToolbar.tsx": {
+      "button": 2
+    },
+    "src/features/ask/ui/HomeAskMessageControls.tsx": {
+      "button": 7,
+      "textarea": 1
+    },
+    "src/features/ask/ui/HomeAskSidebar.tsx": {
+      "button": 9,
+      "input": 1
+    },
+    "src/features/ask/ui/HomeAskThread.tsx": {
+      "button": 1
+    },
+    "src/features/ask/ui/HomeAskView.tsx": {
+      "button": 2
+    },
+    "src/features/ask/ui/operations/AgentCandidatePreview.tsx": {
+      "button": 2
+    },
+    "src/features/ask/ui/operations/AgentOperationActions.tsx": {
+      "button": 1
+    },
+    "src/features/ask/ui/operations/AgentOperationCard.tsx": {
+      "button": 1
+    },
+    "src/features/auth/ui/AccountPanel.tsx": {
+      "button": 1
+    },
+    "src/features/auth/ui/ChangePasswordForm.tsx": {
+      "button": 1,
+      "input": 3
+    },
+    "src/features/auth/ui/LoginScreen.tsx": {
+      "button": 6,
+      "input": 6
+    },
+    "src/features/backup/ui/BackupPanel.tsx": {
+      "button": 6
+    },
+    "src/features/book-detail/ui/panels/ArtifactQuickDownloads.tsx": {
+      "button": 3,
+      "legacyButton": 3
+    },
+    "src/features/book-detail/ui/panels/CoverActionsPanel.tsx": {
+      "button": 3
+    },
+    "src/features/book-detail/ui/panels/more/CollectionsPanel.tsx": {
+      "button": 1
+    },
+    "src/features/book-detail/ui/panels/more/DeleteFooterPanel.tsx": {
+      "button": 1
+    },
+    "src/features/book-detail/ui/panels/more/ReadingStatusPanel.tsx": {
+      "button": 1
+    },
+    "src/features/book-detail/ui/panels/overview/QualityPanel.tsx": {
+      "button": 2
+    },
+    "src/features/book-detail/ui/panels/overview/TitleMetaPanel.tsx": {
+      "button": 2,
+      "input": 2
+    },
+    "src/features/book-detail/ui/panels/PageSpecInput.tsx": {
+      "input": 1
+    },
+    "src/features/book-detail/ui/panels/processing/JobCanceledCard.tsx": {
+      "button": 2
+    },
+    "src/features/book-detail/ui/panels/processing/JobFailureCard.tsx": {
+      "button": 4
+    },
+    "src/features/book-detail/ui/panels/processing/ProcessingPipelineRail.tsx": {
+      "button": 2
+    },
+    "src/features/book-detail/ui/panels/translate/TranslateForm.tsx": {
+      "button": 1,
+      "input": 1
+    },
+    "src/features/book-detail/ui/panels/translate/TranslateProgress.tsx": {
+      "button": 1
+    },
+    "src/features/book-detail/ui/panels/translate/TranslationStageActions.tsx": {
+      "button": 2,
+      "select": 1
+    },
+    "src/features/book-detail/ui/panels/ui.tsx": {
+      "legacyButton": 3
+    },
+    "src/features/book-detail/ui/tabs/artifact-center/ArtifactCenterView.tsx": {
+      "button": 3
+    },
+    "src/features/book-detail/ui/tabs/BookDetailOverviewTab.tsx": {
+      "button": 2
+    },
+    "src/features/book-detail/ui/tabs/BookDetailProcessingTab.tsx": {
+      "button": 4,
+      "input": 1
+    },
+    "src/features/book-detail/ui/tabs/BookDetailTermsTab.tsx": {
+      "button": 1,
+      "input": 1
+    },
+    "src/features/collections/ui/CollectionDialog.tsx": {
+      "input": 2
+    },
+    "src/features/collections/ui/CollectionsFolderView.tsx": {
+      "button": 2
+    },
+    "src/features/collections/ui/CollectionsGridView.tsx": {
+      "button": 5
+    },
+    "src/features/credentials/ui/AgentRuntimeConfirmationField.tsx": {
+      "button": 2
+    },
+    "src/features/credentials/ui/AgentRuntimeFields.tsx": {
+      "select": 1,
+      "input": 4
+    },
+    "src/features/credentials/ui/AgentRuntimeSettingsCard.tsx": {
+      "button": 1
+    },
+    "src/features/credentials/ui/CredentialsWorkbench.tsx": {
+      "select": 1
+    },
+    "src/features/credentials/ui/HiddenCredentialInputs.tsx": {
+      "input": 2
+    },
+    "src/features/credentials/ui/OcrPanels.tsx": {
+      "button": 1
+    },
+    "src/features/credentials/ui/SecretInput.tsx": {
+      "button": 1,
+      "input": 1
+    },
+    "src/features/credentials/ui/TranslationPanel.tsx": {
+      "button": 1,
+      "select": 2,
+      "input": 3
+    },
+    "src/features/editorial-room/ui/EditorialLivePanel.tsx": {
+      "legacyButton": 3
+    },
+    "src/features/editorial-room/ui/EditorialRoomDemo.tsx": {
+      "button": 1
+    },
+    "src/features/editorial-room/ui/EditorialRoomReplay.tsx": {
+      "button": 4,
+      "input": 1
+    },
+    "src/features/glossaries/ui/GlossariesDialog.tsx": {
+      "input": 1
+    },
+    "src/features/glossaries/ui/GlossaryEditor.tsx": {
+      "button": 1,
+      "select": 2,
+      "input": 3
+    },
+    "src/features/glossaries/ui/GlossaryImportPanel.tsx": {
+      "button": 2,
+      "textarea": 1
+    },
+    "src/features/glossaries/ui/GlossaryList.tsx": {
+      "button": 2
+    },
+    "src/features/ingest/ui/components/TranslationOptionsPanel.tsx": {
+      "select": 4,
+      "input": 2,
+      "legacyButton": 7
+    },
+    "src/features/ingest/ui/components/upload/BatchUploadPanel.tsx": {
+      "button": 4
+    },
+    "src/features/ingest/ui/components/upload/ProcessingChoicePanel.tsx": {
+      "button": 4
+    },
+    "src/features/ingest/ui/components/upload/UploadDropzone.tsx": {
+      "input": 1
+    },
+    "src/features/ingest/ui/components/upload/UploadWorkflowNotices.tsx": {
+      "button": 1
+    },
+    "src/features/ingest/ui/InlineErrorBox.tsx": {
+      "button": 1
+    },
+    "src/features/job-detail/ui/FailureLogDialog.tsx": {
+      "legacyButton": 3
+    },
+    "src/features/job-detail/ui/OcrReceiptBindingDialog.tsx": {
+      "input": 1,
+      "legacyButton": 5
+    },
+    "src/features/job-detail/ui/page/DetailHeader.tsx": {
+      "button": 1
+    },
+    "src/features/job-detail/ui/page/EventsTimeline.tsx": {
+      "button": 2
+    },
+    "src/features/job-detail/ui/panels/FailurePanel.tsx": {
+      "button": 8
+    },
+    "src/features/job-detail/ui/panels/FailureStageActions.tsx": {
+      "button": 1
+    },
+    "src/features/job-detail/ui/TranslationFilterPanel.tsx": {
+      "button": 1,
+      "select": 1,
+      "input": 1
+    },
+    "src/features/job-detail/ui/TranslationItemDetailPanel.tsx": {
+      "button": 1
+    },
+    "src/features/job-detail/ui/TranslationItemsPanel.tsx": {
+      "button": 3
+    },
+    "src/features/jobs/ui/StageFlow.tsx": {
+      "button": 1
+    },
+    "src/features/jobs/ui/StageRetry.tsx": {
+      "button": 1
+    },
+    "src/features/jobs/ui/StatusCardEmbedded.tsx": {
+      "button": 3
+    },
+    "src/features/library/ui/island/library-search-app.tsx": {
+      "button": 5
+    },
+    "src/features/library/ui/page/LibraryBatchToolbar.tsx": {
+      "button": 5
+    },
+    "src/features/library/ui/page/LibraryFilterMenu.tsx": {
+      "button": 3
+    },
+    "src/features/library/ui/page/LibraryToolbar.tsx": {
+      "button": 3,
+      "select": 1
+    },
+    "src/features/library/ui/page/RecentJobsLibrary.tsx": {
+      "button": 1
+    },
+    "src/features/library/ui/page/RecentJobsLibraryEmpty.tsx": {
+      "button": 1
+    },
+    "src/features/library/ui/shell/book-card/BookCardActionButton.tsx": {
+      "button": 1
+    },
+    "src/features/library/ui/shell/BookListRow.tsx": {
+      "button": 1
+    },
+    "src/features/notify/ui/NotifySettingsPanel.tsx": {
+      "button": 2,
+      "input": 1
+    },
+    "src/features/reader/ui/board-html.tsx": {
+      "button": 1
+    },
+    "src/features/reader/ui/terminal-chrome.tsx": {
+      "button": 8
+    },
+    "src/features/settings/ui/CommandLinePanel.tsx": {
+      "button": 1
+    },
+    "src/features/settings/ui/ThemeAppearancePanel.tsx": {
+      "button": 1,
+      "select": 1
+    },
+    "src/features/sync/ui/SyncSettingsPanel.tsx": {
+      "button": 6,
+      "input": 5
+    },
+    "src/features/task-center/ui/TaskCenter.tsx": {
+      "button": 3
+    },
+    "src/features/task-center/ui/TaskRow.tsx": {
+      "button": 3
+    },
+    "src/features/usage/ui/BookUsageCard.tsx": {
+      "button": 1
+    },
+    "src/features/usage/ui/UsageSettingsPanel.tsx": {
+      "button": 1
+    },
+    "src/ui/decor/DecorStage.tsx": {
+      "button": 1
+    }
+  },
+  "cssLiterals": {
+    "../packages/reader/styles/ai-citation-hover.css": {
+      "fontSize": 3,
+      "borderRadius": 2
+    },
+    "../packages/reader/styles/ai-citations.css": {
+      "fontSize": 3,
+      "borderRadius": 2
+    },
+    "../packages/reader/styles/ai-selection-toolbar.css": {
+      "fontSize": 1,
+      "borderRadius": 2
+    },
+    "../packages/reader/styles/answer-chart.css": {
+      "fontSize": 5,
+      "borderRadius": 2
+    },
+    "../packages/reader/styles/assistant-dock.css": {
+      "fontSize": 3,
+      "borderRadius": 5
+    },
+    "../packages/reader/styles/chrome.css": {
+      "fontSize": 7,
+      "borderRadius": 8
+    },
+    "../packages/reader/styles/core/ambient-surface-home.css": {
+      "borderRadius": 1
+    },
+    "../packages/reader/styles/core/download-toast.css": {
+      "fontSize": 3,
+      "borderRadius": 1
+    },
+    "../packages/reader/styles/dialog-shell.css": {
+      "borderRadius": 2
+    },
+    "../packages/reader/styles/float-ai-citations.css": {
+      "fontSize": 5,
+      "borderRadius": 5
+    },
+    "../packages/reader/styles/float-ai-md.css": {
+      "fontSize": 13,
+      "borderRadius": 7
+    },
+    "../packages/reader/styles/float-markdown.css": {
+      "fontSize": 2,
+      "borderRadius": 4
+    },
+    "../packages/reader/styles/hud.css": {
+      "fontSize": 16,
+      "borderRadius": 9
+    },
+    "../packages/reader/styles/layout.css": {
+      "fontSize": 1
+    },
+    "../packages/reader/styles/live-translation.css": {
+      "fontSize": 1,
+      "borderRadius": 3
+    },
+    "../packages/reader/styles/markdown-blocks.css": {
+      "fontSize": 4,
+      "borderRadius": 3
+    },
+    "../packages/reader/styles/markdown.css": {
+      "fontSize": 11,
+      "borderRadius": 11
+    },
+    "../packages/reader/styles/panel-shell.css": {
+      "fontSize": 2
+    },
+    "../packages/reader/styles/react-pdf.css": {
+      "fontSize": 13,
+      "borderRadius": 16
+    },
+    "../packages/reader/styles/reader.utilities.css": {
+      "fontSize": 15,
+      "borderRadius": 12
+    },
+    "../packages/reader/styles/selection-pop.css": {
+      "fontSize": 5,
+      "borderRadius": 4
+    },
+    "src/app/home/shell/AppBottomBar.css": {
+      "fontSize": 4,
+      "borderRadius": 3
+    },
+    "src/app/home/shell/AppTopBar.css": {
+      "fontSize": 8,
+      "borderRadius": 3
+    },
+    "src/app/home/shell/MockModeBanner.css": {
+      "fontSize": 3,
+      "borderRadius": 2
+    },
+    "src/features/admin/ui/admin-detail.css": {
+      "fontSize": 6,
+      "borderRadius": 3
+    },
+    "src/features/admin/ui/admin-invites.css": {
+      "fontSize": 1
+    },
+    "src/features/admin/ui/admin-platform.css": {
+      "fontSize": 5,
+      "borderRadius": 2
+    },
+    "src/features/admin/ui/admin-table.css": {
+      "fontSize": 7,
+      "borderRadius": 4
+    },
+    "src/features/admin/ui/admin.css": {
+      "fontSize": 5,
+      "borderRadius": 2
+    },
+    "src/features/ask/ui/HomeAskComposer.css": {
+      "fontSize": 9,
+      "borderRadius": 7
+    },
+    "src/features/ask/ui/HomeAskMain.css": {
+      "fontSize": 3,
+      "borderRadius": 2
+    },
+    "src/features/ask/ui/HomeAskMarkdown.css": {
+      "fontSize": 8,
+      "borderRadius": 2
+    },
+    "src/features/ask/ui/HomeAskMessageControls.css": {
+      "fontSize": 3,
+      "borderRadius": 4
+    },
+    "src/features/ask/ui/HomeAskResponsive.css": {
+      "fontSize": 1
+    },
+    "src/features/ask/ui/HomeAskSidebar.css": {
+      "fontSize": 6,
+      "borderRadius": 8
+    },
+    "src/features/ask/ui/HomeAskThread.css": {
+      "fontSize": 4,
+      "borderRadius": 3
+    },
+    "src/features/ask/ui/operations/AgentOperationCard.css": {
+      "fontSize": 9,
+      "borderRadius": 6
+    },
+    "src/features/auth/ui/auth.css": {
+      "fontSize": 15,
+      "borderRadius": 6
+    },
+    "src/features/backup/ui/BackupPanel.css": {
+      "fontSize": 7,
+      "borderRadius": 1
+    },
+    "src/features/book-detail/ui/panels/ArtifactQuickDownloads.css": {
+      "fontSize": 4,
+      "borderRadius": 4
+    },
+    "src/features/book-detail/ui/shell/BookDetailLeftReading.css": {
+      "fontSize": 2,
+      "borderRadius": 1
+    },
+    "src/features/book-detail/ui/shell/BookDetailShell.css": {
+      "fontSize": 3,
+      "borderRadius": 1
+    },
+    "src/features/book-detail/ui/shell/BookDetailShellResponsive.css": {
+      "borderRadius": 2
+    },
+    "src/features/book-detail/ui/tabs/BookDetailRightTabs.css": {
+      "fontSize": 1,
+      "borderRadius": 2
+    },
+    "src/features/book-detail/ui/tabs/history.css": {
+      "fontSize": 1
+    },
+    "src/features/book-detail/ui/tabs/overview/activity.css": {
+      "fontSize": 2,
+      "borderRadius": 1
+    },
+    "src/features/book-detail/ui/tabs/overview/danger.css": {
+      "fontSize": 3,
+      "borderRadius": 2
+    },
+    "src/features/book-detail/ui/tabs/overview/info.css": {
+      "fontSize": 5,
+      "borderRadius": 1
+    },
+    "src/features/book-detail/ui/tabs/overview/layout.css": {
+      "fontSize": 3,
+      "borderRadius": 2
+    },
+    "src/features/book-detail/ui/tabs/overview/quality.css": {
+      "fontSize": 9,
+      "borderRadius": 3
+    },
+    "src/features/book-detail/ui/tabs/terms.css": {
+      "fontSize": 8,
+      "borderRadius": 3
+    },
+    "src/features/collections/ui/CollectionsView.css": {
+      "fontSize": 5,
+      "borderRadius": 3
+    },
+    "src/features/credentials/ui/AgentRuntimeSettingsCard.css": {
+      "fontSize": 11,
+      "borderRadius": 9
+    },
+    "src/features/credentials/ui/CredentialCard.css": {
+      "fontSize": 13,
+      "borderRadius": 5
+    },
+    "src/features/credentials/ui/CredentialFormFields.css": {
+      "fontSize": 4,
+      "borderRadius": 2
+    },
+    "src/features/credentials/ui/CredentialsWorkbench.css": {
+      "fontSize": 6,
+      "borderRadius": 1
+    },
+    "src/features/credentials/ui/CredentialsWorkbenchInSettings.css": {
+      "borderRadius": 4
+    },
+    "src/features/credentials/ui/SecretInput.css": {
+      "borderRadius": 1
+    },
+    "src/features/credentials/ui/TranslationPanel.css": {
+      "fontSize": 4,
+      "borderRadius": 6
+    },
+    "src/features/editorial-room/ui/EditorialFloor.css": {
+      "fontSize": 5,
+      "borderRadius": 7
+    },
+    "src/features/editorial-room/ui/EditorialPageSheet.css": {
+      "fontSize": 3,
+      "borderRadius": 4
+    },
+    "src/features/editorial-room/ui/EditorialRoom.css": {
+      "fontSize": 9,
+      "borderRadius": 10
+    },
+    "src/features/editorial-room/ui/EditorialRoomReplay.css": {
+      "fontSize": 5,
+      "borderRadius": 4
+    },
+    "src/features/editorial-room/ui/EditorialSidePanels.css": {
+      "fontSize": 11,
+      "borderRadius": 5
+    },
+    "src/features/editorial-room/ui/EditorialStage.css": {
+      "fontSize": 4,
+      "borderRadius": 3
+    },
+    "src/features/editorial-room/ui/office/EditorialOffice.css": {
+      "fontSize": 4
+    },
+    "src/features/glossaries/ui/GlossariesDialog.css": {
+      "fontSize": 8,
+      "borderRadius": 6
+    },
+    "src/features/glossaries/ui/GlossaryEditor.css": {
+      "fontSize": 7,
+      "borderRadius": 8
+    },
+    "src/features/ingest/ui/components/upload/BatchUploadPanel.css": {
+      "fontSize": 4,
+      "borderRadius": 1
+    },
+    "src/features/ingest/ui/components/upload/ProcessingChoicePanel.css": {
+      "fontSize": 8,
+      "borderRadius": 5
+    },
+    "src/features/ingest/ui/components/upload/UploadDropzone.css": {
+      "fontSize": 5,
+      "borderRadius": 7
+    },
+    "src/features/ingest/ui/components/upload/UploadWorkflowNotices.css": {
+      "fontSize": 2,
+      "borderRadius": 4
+    },
+    "src/features/ingest/ui/InlineErrorBox.css": {
+      "borderRadius": 1
+    },
+    "src/features/ingest/ui/WorkflowPanel.css": {
+      "fontSize": 4,
+      "borderRadius": 3
+    },
+    "src/features/job-detail/ui/EventsList.css": {
+      "fontSize": 1
+    },
+    "src/features/job-detail/ui/FailureLogDialog.css": {
+      "fontSize": 1,
+      "borderRadius": 1
+    },
+    "src/features/job-detail/ui/panels/FailurePanel.css": {
+      "fontSize": 9
+    },
+    "src/features/job-detail/ui/panels/OverviewPanel.css": {
+      "fontSize": 7
+    },
+    "src/features/job-detail/ui/status-detail-shared.css": {
+      "fontSize": 9
+    },
+    "src/features/job-detail/ui/StatusDetailDialog.css": {
+      "fontSize": 2
+    },
+    "src/features/job-detail/ui/StatusDetailTabs.css": {
+      "fontSize": 2,
+      "borderRadius": 1
+    },
+    "src/features/job-detail/ui/StatusPanel.css": {
+      "fontSize": 1,
+      "borderRadius": 2
+    },
+    "src/features/job-detail/ui/TranslationDebugTab.css": {
+      "fontSize": 3,
+      "borderRadius": 1
+    },
+    "src/features/job-detail/ui/TranslationFilterPanel.css": {
+      "fontSize": 2,
+      "borderRadius": 2
+    },
+    "src/features/job-detail/ui/TranslationItemDetailPanel.css": {
+      "fontSize": 2,
+      "borderRadius": 1
+    },
+    "src/features/job-detail/ui/TranslationItemsPanel.css": {
+      "fontSize": 5,
+      "borderRadius": 2
+    },
+    "src/features/job-detail/ui/TranslationSummary.css": {
+      "fontSize": 2
+    },
+    "src/features/jobs/ui/ProgressBlock.css": {
+      "fontSize": 1,
+      "borderRadius": 1
+    },
+    "src/features/jobs/ui/StageFlow.css": {
+      "fontSize": 1
+    },
+    "src/features/jobs/ui/StageRetry.css": {
+      "borderRadius": 1
+    },
+    "src/features/jobs/ui/StatusCard.css": {
+      "borderRadius": 1
+    },
+    "src/features/jobs/ui/StatusCardAnimation.css": {
+      "fontSize": 1
+    },
+    "src/features/library/ui/page/LibraryBatchToolbar.css": {
+      "fontSize": 2,
+      "borderRadius": 2
+    },
+    "src/features/library/ui/RecentJobsDialog.css": {
+      "borderRadius": 1
+    },
+    "src/features/notify/ui/NotifySettingsPanel.css": {
+      "fontSize": 3
+    },
+    "src/features/reader/ui/board-html.css": {
+      "fontSize": 3,
+      "borderRadius": 1
+    },
+    "src/features/reader/ui/terminal-board-list.css": {
+      "fontSize": 1,
+      "borderRadius": 1
+    },
+    "src/features/reader/ui/terminal-chrome.css": {
+      "fontSize": 12,
+      "borderRadius": 8
+    },
+    "src/features/settings/ui/CommandLinePanel.css": {
+      "fontSize": 4
+    },
+    "src/features/sync/ui/SyncSettingsPanel.css": {
+      "fontSize": 9,
+      "borderRadius": 4
+    },
+    "src/features/usage/ui/usage.css": {
+      "fontSize": 11,
+      "borderRadius": 2
+    },
+    "src/styles/components.utilities.css": {
+      "fontSize": 4
+    },
+    "src/styles/core/ambient-surface.css": {
+      "borderRadius": 1
+    },
+    "src/styles/core/decor-stage.css": {
+      "fontSize": 2,
+      "borderRadius": 2
+    },
+    "src/styles/core/download-toast.css": {
+      "fontSize": 3,
+      "borderRadius": 1
+    },
+    "src/styles/dialog-shell.css": {
+      "fontSize": 1,
+      "borderRadius": 1
+    },
+    "src/styles/pages.css": {
+      "fontSize": 9,
+      "borderRadius": 5
+    },
+    "src/styles/pages/detail/artifacts.css": {
+      "fontSize": 2,
+      "borderRadius": 4
+    },
+    "src/styles/pages/detail/events.css": {
+      "fontSize": 3,
+      "borderRadius": 2
+    },
+    "src/styles/pages/detail/modal.css": {
+      "fontSize": 5,
+      "borderRadius": 2
+    },
+    "src/styles/pages/home/ai-assistant.css": {
+      "fontSize": 8,
+      "borderRadius": 7
+    },
+    "src/styles/pages/home/app-settings.css": {
+      "fontSize": 10,
+      "borderRadius": 10
+    },
+    "src/styles/pages/home/app-update.css": {
+      "fontSize": 6,
+      "borderRadius": 4
+    },
+    "src/styles/pages/home/book-detail-artifacts.css": {
+      "fontSize": 9,
+      "borderRadius": 8
+    },
+    "src/styles/pages/home/book-detail-processing/assembly-line-labels.css": {
+      "fontSize": 6,
+      "borderRadius": 6
+    },
+    "src/styles/pages/home/book-detail-processing/coverage.css": {
+      "fontSize": 1,
+      "borderRadius": 2
+    },
+    "src/styles/pages/home/book-detail-processing/editorial-flow.css": {
+      "fontSize": 7,
+      "borderRadius": 5
+    },
+    "src/styles/pages/home/book-detail-processing/failure-card.css": {
+      "fontSize": 7,
+      "borderRadius": 3
+    },
+    "src/styles/pages/home/book-detail-processing/job-history.css": {
+      "fontSize": 7,
+      "borderRadius": 4
+    },
+    "src/styles/pages/home/book-detail-processing/job-status-card.css": {
+      "fontSize": 10,
+      "borderRadius": 5
+    },
+    "src/styles/pages/home/book-detail-processing/layout.css": {
+      "fontSize": 2
+    },
+    "src/styles/pages/home/book-detail-processing/live-translation-entry.css": {
+      "fontSize": 2,
+      "borderRadius": 2
+    },
+    "src/styles/pages/home/book-detail-processing/ocr-range.css": {
+      "fontSize": 1
+    },
+    "src/styles/pages/home/book-detail-processing/pipeline-rail.css": {
+      "fontSize": 4,
+      "borderRadius": 4
+    },
+    "src/styles/pages/home/book-detail-processing/processing-card.css": {
+      "fontSize": 9,
+      "borderRadius": 5
+    },
+    "src/styles/pages/home/book-detail-processing/translation-controls.css": {
+      "fontSize": 3,
+      "borderRadius": 1
+    },
+    "src/styles/pages/home/collections.utilities.css": {
+      "fontSize": 5,
+      "borderRadius": 4
+    },
+    "src/styles/pages/home/components.utilities.css": {
+      "fontSize": 1,
+      "borderRadius": 2
+    },
+    "src/styles/pages/home/credential-ocr.css": {
+      "fontSize": 2,
+      "borderRadius": 1
+    },
+    "src/styles/pages/home/favorites.css": {
+      "fontSize": 8,
+      "borderRadius": 3
+    },
+    "src/styles/pages/home/job-ui-shared.css": {
+      "borderRadius": 1
+    },
+    "src/styles/pages/home/library-search-island.css": {
+      "fontSize": 10,
+      "borderRadius": 6
+    },
+    "src/styles/pages/home/settings-dialogs.css": {
+      "fontSize": 10,
+      "borderRadius": 4
+    },
+    "src/styles/pages/home/translation-workflow.utilities.css": {
+      "fontSize": 19,
+      "borderRadius": 3
+    },
+    "src/ui/icons/EmptyState.css": {
+      "fontSize": 2,
+      "borderRadius": 1
+    }
+  },
+  "buttonClassNames": [
+    "app_button",
+    "app_settings_btn",
+    "app_settings_close_btn",
+    "app_update_btn",
+    "backup_settings_button",
+    "bd_job_status_btn",
+    "book_card_action_btn",
+    "book_detail_cancel_ocr_btn",
+    "book_detail_close_btn",
+    "book_detail_compare_btn",
+    "book_detail_delete_btn",
+    "book_detail_download_settings_btn",
+    "book_detail_edit_btn",
+    "book_detail_ocr_btn",
+    "book_detail_open_ocr_file_btn",
+    "book_detail_open_source_file_btn",
+    "book_detail_overview_process_btn",
+    "book_detail_overview_text_btn",
+    "book_detail_quick_download_btn",
+    "book_detail_read_source_btn",
+    "book_detail_reading_btn",
+    "book_detail_restart_translation_btn",
+    "book_detail_resume_cancelled_btn",
+    "book_detail_retry_failed_btn",
+    "book_detail_save_btn",
+    "book_detail_start_ocr_btn",
+    "book_detail_translate_btn",
+    "categories_back_btn",
+    "categories_create_btn",
+    "cli_install_button",
+    "collection_delete_btn",
+    "collection_manage_close_btn",
+    "collection_save_btn",
+    "credential_agent_save_button",
+    "credentials_btn",
+    "detail_close_events_btn",
+    "detail_close_stage_history_btn",
+    "detail_markdown_json_btn",
+    "detail_markdown_raw_btn",
+    "detail_open_events_btn",
+    "detail_open_stage_history_btn",
+    "detail_pdf_btn",
+    "detail_reader_btn",
+    "detail_rerun_btn",
+    "detail_trigger_btn",
+    "developer_btn",
+    "favorites_retry_btn",
+    "file_selector_button",
+    "glossary_btn",
+    "home_action_btn",
+    "home_ask_key_banner_btn",
+    "home_ask_sidebar_icon_btn",
+    "home_task_center_btn",
+    "icon_button",
+    "inline_error_copy_btn",
+    "library_add_pdf_btn",
+    "library_bottom_icon_btn",
+    "library_search_clear_btn",
+    "load_more_jobs_btn",
+    "notify_settings_button",
+    "open_output_btn",
+    "open_query_btn",
+    "page_range_apply_btn",
+    "page_range_btn",
+    "page_range_clear_btn",
+    "page_range_close_btn",
+    "reader_assistant_rail_button",
+    "reader_bookmark_list_btn",
+    "reader_close_home_btn",
+    "reader_react_hud_btn",
+    "reader_react_hud_page_btn",
+    "reader_react_shortcuts_btn",
+    "reader_sel_pop_btn",
+    "recent_job_hover_btn",
+    "status_action_btn",
+    "status_button",
+    "status_footer_btn",
+    "status_head_btn",
+    "status_retry_btn",
+    "status_stage_retry_btn",
+    "store_only_btn",
+    "submit_btn",
+    "sync_settings_button",
+    "task_center_back_btn",
+    "task_center_refresh_btn",
+    "task_toolbar_btn",
+    "webkit_search_cancel_button"
+  ]
+}

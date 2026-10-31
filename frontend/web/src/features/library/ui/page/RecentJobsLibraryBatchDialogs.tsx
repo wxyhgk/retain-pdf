@@ -1,4 +1,4 @@
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 
 type RecentJobsLibraryBatchDialogsProps = {
   pendingDeleteIds: string[] | null;

@@ -1,0 +1,50 @@
+/* Panel（src/primitives/panel.tsx）。
+ *
+ * @owns ui-panel
+ */
+
+.ui-panel {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--paper);
+}
+
+.ui-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ui-panel-heading {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.ui-panel-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--ui-text-base);
+  font-weight: 650;
+}
+
+.ui-panel-description {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-sm);
+  line-height: 1.5;
+}
+
+.ui-panel-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}

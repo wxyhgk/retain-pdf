@@ -2,12 +2,12 @@
 
 import type { SVGProps } from "react";
 import { cn } from "@retainpdf/ui/lib/utils";
-import { buttonVariants } from "@retainpdf/ui/components/ui/button";
+import { legacyButtonVariants } from "@retainpdf/ui";
 
-type ButtonVariant = NonNullable<Parameters<typeof buttonVariants>[0]>["variant"];
+type ButtonVariant = NonNullable<Parameters<typeof legacyButtonVariants>[0]>["variant"];
 
 export const btn = (variant: ButtonVariant, extra = "") =>
-  cn(buttonVariants({ variant, size: "sm" }), "h-8 text-xs rounded-md", extra);
+  cn(legacyButtonVariants({ variant, size: "sm" }), "h-8 text-xs rounded-md", extra);
 
 export function IconLanguages(props: SVGProps<SVGSVGElement>) {
   return (

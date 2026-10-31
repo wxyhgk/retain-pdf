@@ -1,0 +1,60 @@
+/* Menu（src/primitives/menu.tsx）。菜单挂在 body 上（Portal），层级压在弹窗上面：弹窗里的菜单也要看得见。
+ *
+ * @owns ui-menu
+ */
+
+.ui-menu {
+  z-index: calc(var(--z-dialog, 95) + 1);
+  min-width: 160px;
+  max-height: min(360px, var(--radix-dropdown-menu-content-available-height, 360px));
+  overflow-y: auto;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-md);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--shadow-color) 16%, transparent);
+}
+
+.ui-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: var(--ui-radius-sm);
+  font-size: var(--ui-text-md);
+  cursor: pointer;
+  outline: none;
+  user-select: none;
+}
+
+.ui-menu-item[data-highlighted] {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.ui-menu-item[data-danger="true"] {
+  color: var(--danger);
+}
+
+.ui-menu-item[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.ui-menu-icon {
+  display: inline-flex;
+  color: var(--muted);
+}
+
+.ui-menu-icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.ui-menu-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

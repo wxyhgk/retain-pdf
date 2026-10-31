@@ -12,7 +12,7 @@ import {
   type InviteView,
 } from "@retainpdf/api/auth";
 import { authErrorText, buildInviteLink } from "@/features/auth/index.js";
-import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
+import { ConfirmDialog } from "@retainpdf/ui";
 import {
   EMPTY_INVITE_FORM,
   canRevokeInvite,

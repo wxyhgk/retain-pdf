@@ -13,10 +13,12 @@
 @source "../../ui/**/*.{ts,tsx}";
 @source "../../platform/**/*.{ts,tsx}";
 @source inline("detail-item detail-tab detail-tab-panel progress-bar mono button-link");
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
 @layer tokens, base, pages;
 
 @import "../tokens.css" layer(tokens);
+@import "@retainpdf/ui/primitives.css";
 @import "../shadcn-theme.css" layer(tokens);
 @import "../base.css" layer(base);
 @import "../core/ambient-surface.css";

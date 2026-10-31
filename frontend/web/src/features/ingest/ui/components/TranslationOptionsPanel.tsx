@@ -5,7 +5,7 @@
 import type { FormEvent } from "react";
 import { BookOpen, Bot, FileText, LayoutTemplate, Sparkles, SlidersHorizontal, X } from "lucide-react";
 
-import { Button } from "@/ui/components/button.js";
+import { LegacyButton } from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import { agentEngineAvailable } from "../../domain/workflow/payload.js";
 import { useIngestServices, useIngestWorkflowView } from "../workflow-view-context.js";
@@ -72,7 +72,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
               : "按需设置页码范围、术语表和翻译质量；页码留空表示处理整份 PDF。"}
           </p>
         </div>
-        <Button
+        <LegacyButton
           id="page-range-close-btn"
           type="button"
           variant="ghost"
@@ -81,7 +81,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
           onClick={() => uploadViewStore.actions.closeTranslationOptions()}
         >
           <X aria-hidden="true" />
-        </Button>
+        </LegacyButton>
       </div>
 
       <div className="translation-options-grid">
@@ -207,7 +207,7 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
       </div>
 
       <div className="translation-options-actions">
-        <Button
+        <LegacyButton
           id="page-range-clear-btn"
           type="button"
           variant="outline"
@@ -215,14 +215,14 @@ export function TranslationOptionsPanel({ hidePageRange = false }: { hidePageRan
           onClick={() => features.uploadFeature?.clearPageRanges()}
         >
           清除页码
-        </Button>
-        <Button
+        </LegacyButton>
+        <LegacyButton
           id="page-range-apply-btn"
           type="button"
           onClick={() => features.uploadFeature?.applyPageRanges()}
         >
           完成
-        </Button>
+        </LegacyButton>
       </div>
     </section>
   );
