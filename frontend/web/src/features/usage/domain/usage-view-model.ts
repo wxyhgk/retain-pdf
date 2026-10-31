@@ -32,6 +32,8 @@ export type UsageGroup = {
 
 export type UsageViewModel = {
   empty: boolean;
+  /** 输入、输出各多少 token（画比例条用）；合计在 metrics 里。 */
+  split: { input: number; output: number };
   metrics: UsageMetric[];
   notes: string[];
   stageGroups: UsageGroup[];
@@ -111,7 +113,7 @@ function monthLabel(month: string): string {
 export function usageViewModel(view: UsageSummaryView | null | undefined): UsageViewModel {
   const totals = view?.totals;
   if (!view || !totals || (!n(totals.total_tokens) && !n(view.jobs_counted))) {
-    return { empty: true, metrics: [], notes: [], stageGroups: [], models: [], months: [], summaryLine: "" };
+    return { empty: true, split: { input: 0, output: 0 }, metrics: [], notes: [], stageGroups: [], models: [], months: [], summaryLine: "" };
   }
   const notes: string[] = [];
   if (n(totals.requests_without_usage)) notes.push(`有 ${formatTokenCountExact(totals.requests_without_usage)} 次请求服务商没报用量，没算进来。`);
@@ -147,6 +149,7 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
 
   return {
     empty: false,
+    split: { input: n(totals.input_tokens), output: n(totals.output_tokens) },
     metrics: usageMetrics(totals),
     notes,
     stageGroups: groups,

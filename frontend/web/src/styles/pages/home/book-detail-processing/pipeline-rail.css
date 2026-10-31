@@ -1,4 +1,4 @@
-/* 处理流水线轨道：OCR / 翻译 / 渲染 / 完成。（ProcessingPipelineRail） */
+/* 处理流水线各站的徽标：OCR / 翻译 / 渲染 / 完成。（ProcessingPipelineRail）挂在画面上的位置见 assembly-line-labels.css。 */
 
 .book-detail-pipeline {
   min-width: 0;
@@ -87,78 +87,4 @@
   background: color-mix(in srgb, var(--danger) 10%, var(--paper));
 }
 
-.book-detail-pipeline-copy {
-  display: grid;
-  min-width: 0;
-  gap: 3px;
-  padding-bottom: 14px;
-}
-
-.book-detail-pipeline-head {
-  display: flex;
-  min-width: 0;
-  min-height: 26px;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.book-detail-pipeline-label {
-  color: var(--ink);
-  font-size: var(--ui-text-sm);
-  font-weight: 620;
-}
-
-.book-detail-pipeline-stage.is-pending .book-detail-pipeline-label {
-  color: var(--muted);
-}
-
-.book-detail-pipeline-status {
-  padding: 2px 8px;
-  border-radius: var(--ui-radius-pill);
-  color: var(--muted);
-  background: color-mix(in srgb, var(--ink) 5%, transparent);
-  font-size: var(--ui-text-2xs);
-  font-weight: 600;
-}
-
-.book-detail-pipeline-status.is-done {
-  color: var(--ink);
-  background: color-mix(in srgb, var(--ink) 9%, transparent);
-}
-
-.book-detail-pipeline-status.is-active {
-  color: var(--paper);
-  background: var(--ink);
-}
-
-.book-detail-pipeline-status.is-failed {
-  color: var(--danger);
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-}
-
-.book-detail-pipeline-desc {
-  color: var(--muted);
-  font-size: var(--ui-text-2xs);
-  line-height: 1.45;
-}
-
-/* 翻译站的提醒：「16 块保留原文」。 */
-.book-detail-pipeline-warning {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  gap: 4px;
-  margin-top: 2px;
-  padding: 2px 8px;
-  border-radius: var(--ui-radius-pill);
-  color: var(--ink);
-  background: var(--warn-weak);
-  font-size: var(--ui-text-2xs);
-}
-
-.book-detail-pipeline-warning svg {
-  width: 12px;
-  height: 12px;
-  color: var(--warn);
-}
+/* 徽标旁边那组（百分比、↻、提醒）的排布在 assembly-line-labels.css；站名、状态、用时、说明都是 sr-only，画面上不画。 */

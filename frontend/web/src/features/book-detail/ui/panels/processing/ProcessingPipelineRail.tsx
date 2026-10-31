@@ -1,8 +1,8 @@
-// 处理流水线：一条传送带穿过五台机器（AssemblyLineScene），每台机器上方挂这一站的名字和用时。
-// 宽的时候说明挂在机器上方；窄的时候（手机）说明排成一列放在画面下面。不做预计剩余时间，只写已经跑了多久。
+// 处理流水线：一条传送带穿过五台机器（AssemblyLineScene），每台机器上方只挂一个状态徽标（勾、转圈、红色感叹号、虚线圈），
+// 在跑的那站旁边一个百分比，能重做的站旁边一个 ↻。宽屏、手机都一样挂在画面上。
 //
-// 标签只用图标说状态（勾、转圈、钟）：「已完成」「等待中」这类字留给读屏（.book-detail-status 是 sr-only），
-// 只有失败、取消、排队这种要人注意的才画成小标签。「最近活动」在细节区（ProcessingActivity）。
+// 画面上没有字：站名、状态、用时、实时说明都在悬停（li 的 title）和读屏里（sr-only）。各站用时在上面 HUD 的耗时条上，
+// 「最近活动」在细节区（ProcessingActivity）。以前每站三四行字：名字、状态小标签、用时、「全部 134 页 · 模型」。
 //
 // 「重新处理」也挂在流水线上：没有任务在跑时，能重做的站名字旁边有个 ↻ 图标（OCR 站「重新 OCR」、翻译站「重译 / 精修」、
 // 版面站「重新渲染」，任务停下时文档准备站「从头翻译」），点开在画面下面列出这一站能做的事。内容由调用方给（stationActions）。
@@ -16,7 +16,7 @@
 // 根节点带 data-loading="true"。曾经首帧一律按 pending 渲染成「未执行 / 尚未翻译」，而那份文档的 OCR 其实正在跑。
 
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { Check, Clock3, LoaderCircle, RotateCcw, TriangleAlert, X } from "lucide-react";
+import { Check, LoaderCircle, RotateCcw, TriangleAlert, X } from "lucide-react";
 import { IconButton } from "@retainpdf/ui";
 
 import type { LibraryCardItem } from "@/features/library/domain.js";
@@ -60,7 +60,7 @@ function StepMark({ state }: { state: string }) {
   if (state === "active") return <LoaderCircle className="book-detail-pipeline-spin" aria-hidden="true" />;
   if (state === "failed") return <TriangleAlert aria-hidden="true" />;
   if (state === "cancelled") return <X aria-hidden="true" />;
-  return <Clock3 aria-hidden="true" />;
+  return null;
 }
 
 const CAPABILITY: Partial<Record<StationKey, string>> = { ocr: "ocr", translate: "translation" };
@@ -141,8 +141,6 @@ export function ProcessingPipelineRail({
     return { text, title: time.running ? `已运行 ${text}` : `用时 ${text}` };
   };
   const percent = model.progress;
-  // 状态字画成小标签的只有这几种：失败、取消、排队要人注意；其余交给图标，字留给读屏。
-  const chipStates = new Set(["failed", "cancelled"]);
 
   return (
     <section
@@ -164,11 +162,13 @@ export function ProcessingPipelineRail({
             const time = loading ? null : timeOf(station.key);
             const meta = metaOf(station.key);
             const capability = CAPABILITY[station.key];
+            const hover = [label, status, time?.title, meta].filter(Boolean).join(" · ");
             return (
               <li
                 key={station.key}
                 className={`book-detail-pipeline-stage is-${station.state}${opened === station.key ? " is-open" : ""}`}
                 style={position}
+                title={hover}
                 data-stage-key={station.key}
                 data-state={loading ? "loading" : station.state}
                 {...(capability ? { "data-processing-capability": capability } : {})}
@@ -180,32 +180,24 @@ export function ProcessingPipelineRail({
                 </span>
                 <span className="book-detail-pipeline-copy">
                   <span className="book-detail-pipeline-head">
-                    <span className="book-detail-pipeline-label">{label}</span>
+                    <span className="book-detail-pipeline-label sr-only">{label}</span>
                     {status ? (
-                      <span
-                        className={`book-detail-status book-detail-pipeline-status is-${toneOf(station.state)}${
-                          chipStates.has(station.state) || (station.key === "prepare" && station.state === "active") ? "" : " sr-only"
-                        }`}
-                      >{status}</span>
+                      <span className={`book-detail-status book-detail-pipeline-status is-${toneOf(station.state)} sr-only`}>{status}</span>
                     ) : null}
                     {station.state === "active" && station.key !== "prepare" && percent !== null ? (
                       <span className="book-detail-pipeline-percent" data-stage-percent={station.key}>{`${Math.round(percent)}%`}</span>
                     ) : null}
                   </span>
                   {time ? (
-                    <span className="book-detail-pipeline-time" data-stage-time={station.key} title={time.title}>
-                      <Clock3 aria-hidden="true" />
-                      <span className="sr-only">{time.title}</span>
-                      <span aria-hidden="true">{time.text}</span>
-                    </span>
+                    <span className="book-detail-pipeline-time sr-only" data-stage-time={station.key} title={time.title}>{time.title}</span>
                   ) : null}
                   {meta ? (
-                    <span className="book-detail-pipeline-desc" data-stage-meta={station.key} title={meta}>{meta}</span>
+                    <span className="book-detail-pipeline-desc sr-only" data-stage-meta={station.key}>{meta}</span>
                   ) : null}
                   {station.key === "translate" && translateWarning && !loading ? (
-                    <span className="book-detail-pipeline-warning" data-stage-warning="translate">
+                    <span className="book-detail-pipeline-warning" data-stage-warning="translate" title={translateWarning}>
                       <TriangleAlert aria-hidden="true" />
-                      {translateWarning}
+                      <span className="sr-only">{translateWarning}</span>
                     </span>
                   ) : null}
                   {stationActions[station.key] ? (

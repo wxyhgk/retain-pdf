@@ -1,6 +1,6 @@
 // 文档「进度」页：一张卡，四层。
 //
-//   1. 状态行（ProcessingHeader）：状态图标、一句标题、一行带图标的小字，右边是这一刻能做的事
+//   1. 状态行（ProcessingHeader）：一句标题，右边是这一刻能做的事；下面 HUD（ProcessingHud：进度环、耗时、模型、token）
 //      （ProcessingHeadTools）；下面一条进度条。这一页的按钮只在这里和流水线各站的 ↻ 上。
 //   2. 流水线（ProcessingPipelineRail）：2.5D 的传送带和五台机器，各站写用时；失败的那台亮红灯。
 //   3. 细节区（ProcessingDetails）：错误 / 编辑部 / 活动，只摆有内容的那几页。
@@ -17,7 +17,9 @@ import { ProcessingPipelineRail } from "../panels/processing/ProcessingPipelineR
 import { PageSpecInput } from "../panels/PageSpecInput.js";
 import { JobFailureCard } from "../panels/processing/JobFailureCard.js";
 import { PrimaryActionButton, stoppedTranslationAction } from "../panels/processing/stopped-translation.jsx";
-import { ProcessingHeader, coverageFact, type ProcessingHeaderFact } from "../panels/processing/ProcessingHeader.jsx";
+import { ProcessingHeader } from "../panels/processing/ProcessingHeader.jsx";
+import { ProcessingHud } from "../panels/processing/ProcessingHud.jsx";
+import { processingHudModel } from "./processing-hud-model.js";
 import { ProcessingActivity, activityLinesOf } from "../panels/processing/ProcessingActivity.jsx";
 import { ProcessingDetails, type ProcessingDetailSection } from "../panels/processing/ProcessingDetails.jsx";
 import { loadJobFailureDetail } from "../../domain/job-failure-detail.js";
@@ -26,7 +28,7 @@ import { hasEditorialRoom, processingFacts } from "../../domain/translation-cove
 import { TranslationCoveragePanel } from "../panels/processing/TranslationCoveragePanel.js";
 import { documentJobPresentation, isDocumentJobActive } from "../use-document-jobs.js";
 import { stageDetailWithoutPageCount } from "../../domain/progress-value.js";
-import { formatElapsed, totalElapsedMs } from "../../domain/assembly-line-model.js";
+import { assemblyStations, type StationState } from "../../domain/assembly-line-model.js";
 import { resumeStageLabel } from "../../domain/job-resume-model.js";
 import { translationProcessModel } from "../../domain/translation-process-model.js";
 import { liveCountOf, liveStageKey, processingHeadOf, progressOf, unifiedPercentOf } from "./processing-summary-model.js";
@@ -42,6 +44,13 @@ import { EditorialLivePanel, useEditorialLive } from "@/features/editorial-room/
 // ocr/translation，不自己去取全局服务；那几个按钮要读 statusCard store（useStatusCardModel），一旦直接
 // 写在这里，孤立挂载本组件的组件级测试就会因为缺少 HomeShellProviders 而崩。
 // 真正的注入点在 BookDetailDialog（它本来就在 providers 里）。
+function ocrStationState(tone: string): StationState {
+  if (tone === "active") return "active";
+  if (tone === "done") return "done";
+  if (tone === "failed") return "failed";
+  return "pending";
+}
+
 export function BookDetailProcessingTab({ ocr, translation, loading = false, error = "", resultActionsSlot = null, coverage = null, editorialFlowCache, usage = null }: BookDetailProcessingTabProps) {
   const ocrJob = ocr?.job ?? null;
   const ocrActive = isDocumentJobActive(ocrJob);
@@ -135,7 +144,6 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     translationStatus: hasTranslationJob ? translationStatusKey : "",
   });
   const jobActive = translationActive || ocrActive;
-  const totalMs = bootstrapping ? null : totalElapsedMs(jobTimeline.timeline, { now: jobTimeline.now, jobActive: translationActive });
   // 停在哪一站：任务记录认得出就用它；认不出（阶段字段常被清掉）再看任务的 stage、失败简报、续跑计划从哪站接着跑。
   const stoppedAt = translationStopped
     ? [
@@ -145,30 +153,23 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
       translation?.resume?.plan?.from_stage,
     ].map(resumeStageLabel).find(Boolean) || ""
     : "";
-  const headFacts: ProcessingHeaderFact[] = [];
-  // 小字只留图标和数，整句在悬停里。
-  if (jobActive || translationStopped) {
-    if (stoppedAt) headFacts.push({ key: "stopped", kind: "stopped", text: stoppedAt, title: `停在${stoppedAt}` });
-    const count = liveCountOf(ocr, translation);
-    if (count) headFacts.push({ key: "count", kind: "count", text: count, title: `进度 ${count}` });
-    if (totalMs) {
-      const elapsed = formatElapsed(totalMs);
-      headFacts.push({ key: "time", kind: "time", text: elapsed, title: `${jobActive ? "已运行" : "用时"} ${elapsed}` });
-    }
-  } else {
-    if (translation?.ocrReuse && !hasTranslationJob) headFacts.push({ key: "reuse", kind: "reuse", text: "复用 OCR", title: "复用已有 OCR" });
-    facts.facts.forEach((text) => headFacts.push(coverageFact(text)));
-    if (!facts.facts.length && ocr?.pageCount) headFacts.push({ key: "pages", kind: "pages", text: `${ocr.pageCount} 页`, title: `共 ${ocr.pageCount} 页` });
-  }
-  // 这本书一共用了多少 token（含问这本书时助手花的）；任务在跑时数还在涨，不摆。
-  const usageTotal = usage && !usage.model.empty ? usage.model.metrics.find((metric) => metric.key === "total") : null;
-  if (usageTotal && !jobActive) {
-    headFacts.push({ key: "tokens", kind: "tokens", text: usageTotal.value, title: `模型用量合计 ${usageTotal.exact} token · ${usageTotal.note}` });
-  }
-  // 进度条只在跑的时候画。停下的任务不画：任务记录里的进度常常是最后一个阶段自己的（渲染 100%），
-  // 画出来像跑完了；停在哪一站由流水线说（那台机器亮红灯）。
+  // HUD：进度环、耗时（按站分段）、模型、token。
   const runningPercent = unifiedPercentOf(ocr, translation);
-  const bar = jobActive ? runningPercent : null;
+  const stations = assemblyStations(translationItem, { hasTranslationJob, ocrState: ocrStationState(ocrStatus.tone), loading: bootstrapping });
+  const hud = processingHudModel({
+    tone,
+    jobActive,
+    runningPercent,
+    liveCount: liveCountOf(ocr, translation),
+    stoppedAt,
+    stationsDone: stations.stations.filter((station) => station.key !== "done" && station.state === "done").length,
+    coverage,
+    translationJobId,
+    pageCount: ocr?.pageCount,
+    timeline: jobTimeline.timeline,
+    now: jobTimeline.now,
+    usage: usage?.model || null,
+  });
 
   // 细节区：错误、编辑部、活动，按要紧程度排；只摆有内容的。错误按段标 data-processing-region（ocr / translation）。
   const failureBlocks = [
@@ -264,10 +265,8 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
         <ProcessingHeader
           headline={headline}
           tone={tone}
-          percent={jobActive ? runningPercent : null}
-          bar={bar}
           bootstrapping={bootstrapping}
-          facts={headFacts}
+          hud={<ProcessingHud model={hud} bootstrapping={bootstrapping} ocrReuse={Boolean(translation?.ocrReuse) && !hasTranslationJob} />}
           keptOriginBlocks={facts.keptOriginBlocks}
           tools={(
             <ProcessingHeadTools

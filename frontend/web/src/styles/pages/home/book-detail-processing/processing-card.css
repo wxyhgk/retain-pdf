@@ -1,6 +1,7 @@
 /* 「进度」卡片外壳，和流水线各站点开后的「重新处理」清单。（BookDetailProcessingTab） */
 
 .book-detail-processing-card {
+  container-type: inline-size;
   display: grid;
   gap: 12px;
   padding: 15px;
