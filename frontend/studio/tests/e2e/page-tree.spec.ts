@@ -77,6 +77,9 @@ test('the ＋ beside a page makes a page under it at once: no dialog, no folder 
 	expect(made[0]).toMatch(/^note-\d{8}-\d{6}$/u);
 	PAGES.push(made[0]!);
 	expect(source(made[0]!)).toMatch(new RegExp(`\\nparent: ${slug}\\n`, 'u'));
+	// The page above links to it at its end (as Notion's page block), its words its title once typed (and saved).
+	await tab.keyboard.press('ControlOrMeta+s');
+	await expect.poll(() => source(slug), { timeout: 10_000 }).toMatch(new RegExp(`\\n\\[新的子页面\\]\\(/blog/${made[0]}/\\)\\n$`, 'u'));
 	// In the bar, the page it is under; a click opens that one.
 	await tab.locator('.page-path-link', { hasText: TITLE }).click();
 	await expect(tab).toHaveURL(new RegExp(`article=${slug}`, 'u'));

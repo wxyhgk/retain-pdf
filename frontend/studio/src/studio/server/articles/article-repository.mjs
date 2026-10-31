@@ -206,9 +206,11 @@ export class ArticleRepository {
 	 * A new article: a draft titled `title`, under `parent` when given. With
 	 * `body`, that is its text (a section of its parent, 转成子页面), and the
 	 * parent's files it names (`files`: `img/…`, `assets/…`) are copied into
-	 * its own folder, where its `./img/…` links then find them.
+	 * its own folder, where its `./img/…` links then find them. With `link`, the
+	 * page it is under links to it at its end (as Notion's page block; a
+	 * database's rows not: its table lists them), what that page was kept first.
 	 */
-	async create({ slug, title, parent = '', body = '', files = [], type = '' }) {
+	async create({ slug, title, parent = '', body = '', files = [], type = '', link = false }) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
 		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError(t('新文章的内容无效'));
@@ -233,6 +235,8 @@ export class ArticleRepository {
 			await rm(paths.directory, { recursive: true, force: true }).catch(() => {});
 			throw error;
 		}
+		// Its link's words its title, or 无标题 till it has one (they follow it as it is typed: #titleChanged).
+		if (link && parent) await this.#rewrite(parent, (source) => withPageBlock(source, slug, String(title ?? '').trim() || '无标题'), { keep: true }); // i18n-ignore: the words of the link to it
 		return { slug };
 	}
 

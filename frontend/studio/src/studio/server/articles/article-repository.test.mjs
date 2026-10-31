@@ -548,3 +548,20 @@ test('a page put under another by someone editing its file gets a page block the
 	await repository.followParents(['page-e']);
 	assert.equal(await readFile(markdown('page-c'), 'utf8'), before);
 });
+
+test('a page made under another with `link`: linked from it at its end (无标题 till named, then its title); under a database, not', async (t) => {
+	const root = await temporaryBlog(t);
+	const repo = new ArticleRepository(root);
+	await repo.create({ slug: 'project', title: '项目', body: '正文。' });
+	await repo.create({ slug: 'child', title: '', parent: 'project', link: true });
+	assert.match((await repo.read('project')).source, /正文。\n\n\[无标题\]\(\/blog\/child\/\)\n$/u);
+	const { source, revision } = await repo.read('child');
+	await repo.save('child', { source: source.replace(/^title: .*$/mu, "title: '基组'"), expectedRevision: revision });
+	assert.match((await repo.read('project')).source, /\[基组\]\(\/blog\/child\/\)\n$/u);
+	// Not asked: not linked (a [[ or /page link written where the caret is, by the editor).
+	await repo.create({ slug: 'quiet', title: '安静', parent: 'project' });
+	assert.doesNotMatch((await repo.read('project')).source, /quiet/u);
+	await repo.create({ slug: 'table', title: '表', parent: 'project', type: 'database', body: '```database\n{}\n```' });
+	await repo.create({ slug: 'row', title: '一行', parent: 'table', link: true });
+	assert.doesNotMatch((await repo.read('table')).source, /row/u);
+});

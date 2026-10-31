@@ -69,7 +69,8 @@ export function getArticle(slug: string): Promise<ArticlePayload> {
 	}));
 }
 
-export function createArticle(slug: string, title: string, parent = '', made: { body?: string; files?: string[] } = {}): Promise<{ slug: string }> {
+/** A new page; `link`: the page it is under links to it at its end (as Notion's page block). */
+export function createArticle(slug: string, title: string, parent = '', made: { body?: string; files?: string[]; link?: boolean } = {}): Promise<{ slug: string }> {
 	return request('/api/studio/articles', jsonOptions('POST', { slug, title, parent, ...made }));
 }
 

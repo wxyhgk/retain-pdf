@@ -98,8 +98,8 @@ export function createPages(studio: Studio) {
 		if (!(await session.saveBeforeLeaving())) return;
 		const slug = freeSlug(autoSlug(), slugs());
 		try {
-			// Not named: its title to type, or not (a note may have none, as in Notion).
-			await createArticle(slug, '', parent);
+			// Not named: its title to type, or not (a note may have none, as in Notion); the page above links to it.
+			await createArticle(slug, '', parent, { link: true });
 		} catch (error) {
 			showToast(error instanceof Error ? error.message : t('新建失败'), true);
 			return;
@@ -129,7 +129,7 @@ export function createPages(studio: Studio) {
 		const slug = freeSlug(autoSlug(), slugs());
 		try {
 			const { title, body } = await renderTemplate(id);
-			await trackWrite(() => createArticle(slug, title, parent, { body }));
+			await trackWrite(() => createArticle(slug, title, parent, { body, link: true }));
 		} catch (error) {
 			showToast(error instanceof Error ? error.message : t('新建失败'), true);
 			return;
