@@ -13,7 +13,6 @@ import { useDialogState } from "@/ui/hooks/use-dialog-state.js";
 import { useDialogReturnFocus } from "@/ui/hooks/use-dialog-return-focus.js";
 import { useRecentJobCover, useLibraryServices } from "@/features/library/index.js";
 import type { LibraryCardItem } from "@/features/library/index.js";
-import { BookUsageCard } from "@/features/usage/index.js";
 import { QualityPanel } from "./panels/overview/QualityPanel.jsx";
 import { BookDetailShell } from "./shell/BookDetailShell.jsx";
 import { CoverActionsPanel } from "./panels/CoverActionsPanel.jsx";
@@ -22,9 +21,9 @@ import { ProcessingResultActions } from "./panels/processing/ProcessingResultAct
 import {
   BookDetailRightTabs,
   BookDetailOverviewTab,
-  BookDetailProcessingTab,
   BookDetailArtifactsTab,
 } from "./tabs/index.js";
+import { ProcessingTabWithUsage } from "./ProcessingTabWithUsage.jsx";
 import { BookDetailHistoryTab } from "./tabs/BookDetailHistoryTab.jsx";
 import { BookDetailTermsTab } from "./tabs/BookDetailTermsTab.jsx";
 import { ReadingStatusPanel } from "./panels/more/ReadingStatusPanel.jsx";
@@ -295,7 +294,9 @@ export function BookDetailDialog() {
             />
           )}
           processingTab={({ activeTab }) => (
-            <BookDetailProcessingTab
+            <ProcessingTabWithUsage
+              documentId={documentId}
+              visible={open && activeTab === "processing"}
               loading={documentJobs.loading}
               error={documentJobs.error}
               // 结果操作行读全局 statusCard store，注入点放在这里（对话框本身
@@ -335,7 +336,6 @@ export function BookDetailDialog() {
           qualityTab={jobId ? <QualityPanel jobId={jobId} documentId={documentId} /> : null}
           termsTab={jobId ? <BookDetailTermsTab jobId={jobId} /> : null}
           historyTab={<BookDetailHistoryTab coverage={coverage} addedAt={docState.doc?.added_at} />}
-          usageTab={documentId ? <BookUsageCard documentId={documentId} /> : null}
         />
       )}
     />

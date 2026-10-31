@@ -245,3 +245,34 @@ test("全部翻完时不画覆盖条（100% 一排满格什么也没说）", asy
   assert.ok(history.host.querySelector(".book-detail-job-history"), "任务记录照常（在「历史」页签）");
   history.root.unmount(); history.host.remove();
 });
+
+test("用量并进「进度」页：状态行一个金币图标写合计（精确值在悬停），细节区多一页「用量」；没记录就都不出", async () => {
+  const { usageViewModel } = await import("../../src/features/usage/domain/usage-view-model.ts");
+  const bucket = (total) => ({
+    input_tokens: total, output_tokens: 0, total_tokens: total, requests: 3, requests_without_usage: 0,
+    cache_hit_tokens: 0, cache_reported_input_tokens: 0, cache_write_tokens: 0, reasoning_tokens: 0,
+  });
+  const view = {
+    schema: "token-usage.v1", scope: "document", totals: bucket(875_000),
+    by_stage: [{ stage: "translate", group: "translation", label: "翻译", ...bucket(875_000) }],
+    by_model: [], by_month: [], jobs_counted: 1, jobs_estimated_from_reports: 0, first_at: null, last_at: null,
+  };
+  const usage = { model: usageViewModel(view), loading: false, error: "", reload() {} };
+  const dom = makeDom();
+  const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage: COVERAGE, usage });
+  const fact = host.querySelector("[data-fact='tokens']");
+  assert.match(fact?.textContent || "", /87\.5 万/);
+  assert.match(fact.getAttribute("title"), /875,000 token/);
+  // 这里只有「用量」一页，细节区不画切换，直接是内容。
+  assert.equal(host.querySelector("[data-processing-details]")?.dataset.processingDetails, "usage", "细节区有「用量」");
+  assert.ok(host.querySelector("[data-usage-metric='total']"));
+  root.unmount(); host.remove();
+
+  const empty = await mountTab(makeDom(), {
+    loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage: COVERAGE,
+    usage: { model: usageViewModel(null), loading: false, error: "", reload() {} },
+  });
+  assert.equal(empty.host.querySelector("[data-fact='tokens']"), null);
+  assert.equal(empty.host.querySelector("[data-processing-details]"), null, "没记录不占地方");
+  empty.root.unmount(); empty.host.remove();
+});

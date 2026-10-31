@@ -20,7 +20,15 @@ export type UsageMetric = {
 
 export type UsageRow = { key: string; label: string; hint: string; value: string; exact: string; share: number };
 
-export type UsageGroup = { key: string; label: string; value: string; exact: string; rows: UsageRow[] };
+export type UsageGroup = {
+  key: string;
+  label: string;
+  value: string;
+  exact: string;
+  /** 占最大一组的比例（0–1），画条形用。 */
+  share: number;
+  rows: UsageRow[];
+};
 
 export type UsageViewModel = {
   empty: boolean;
@@ -120,12 +128,15 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
       return { group, items, total: items.reduce((sum, stage) => sum + n(stage.total_tokens), 0) };
     })
     .filter(({ items }) => items.length)
-    .sort((a, b) => b.total - a.total)
+    .sort((a, b) => b.total - a.total);
+  const groupMax = Math.max(0, ...stageGroups.map(({ total }) => total));
+  const groups = stageGroups
     .map(({ group, items, total }): UsageGroup => ({
       key: group,
       label: GROUP_LABELS[group],
       value: formatTokenCount(total),
       exact: formatTokenCountExact(total),
+      share: groupMax ? total / groupMax : 0,
       rows: items.map((stage) => row(stage.stage, stage.label || stage.stage, "", stage, stageMax)),
     }));
 
@@ -138,7 +149,7 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
     empty: false,
     metrics: usageMetrics(totals),
     notes,
-    stageGroups,
+    stageGroups: groups,
     models: models.map((model) => row(`${model.model}@${model.host}`, model.model || "未知模型", model.host || "", model, modelMax)),
     months: months.map((month) => row(month.month, monthLabel(month.month), "", month, monthMax)),
     summaryLine: view.scope === "job" ? "" : `计入 ${view.jobs_counted} 个任务`,

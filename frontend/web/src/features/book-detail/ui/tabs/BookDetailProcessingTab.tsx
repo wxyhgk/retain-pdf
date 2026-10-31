@@ -10,13 +10,14 @@
 // 一行说明，失败时再加一张自带四个按钮的失败卡；用时写三遍，按钮散在三处。
 // 所有契约 id 和 onX 回调原样透传；数字只读传入的 ocr / translation，不编数。
 
-import { Activity, PenLine, TriangleAlert } from "lucide-react";
+import { Activity, Coins, PenLine, TriangleAlert } from "lucide-react";
+import { UsageCompact } from "@/features/usage/index.js";
 
 import { ProcessingPipelineRail } from "../panels/processing/ProcessingPipelineRail.jsx";
 import { PageSpecInput } from "../panels/PageSpecInput.js";
 import { JobFailureCard } from "../panels/processing/JobFailureCard.js";
 import { PrimaryActionButton, stoppedTranslationAction } from "../panels/processing/stopped-translation.jsx";
-import { ProcessingHeader, coverageFactKind, type ProcessingHeaderFact } from "../panels/processing/ProcessingHeader.jsx";
+import { ProcessingHeader, coverageFact, type ProcessingHeaderFact } from "../panels/processing/ProcessingHeader.jsx";
 import { ProcessingActivity, activityLinesOf } from "../panels/processing/ProcessingActivity.jsx";
 import { ProcessingDetails, type ProcessingDetailSection } from "../panels/processing/ProcessingDetails.jsx";
 import { loadJobFailureDetail } from "../../domain/job-failure-detail.js";
@@ -41,7 +42,7 @@ import { EditorialLivePanel, useEditorialLive } from "@/features/editorial-room/
 // ocr/translation，不自己去取全局服务；那几个按钮要读 statusCard store（useStatusCardModel），一旦直接
 // 写在这里，孤立挂载本组件的组件级测试就会因为缺少 HomeShellProviders 而崩。
 // 真正的注入点在 BookDetailDialog（它本来就在 providers 里）。
-export function BookDetailProcessingTab({ ocr, translation, loading = false, error = "", resultActionsSlot = null, coverage = null, editorialFlowCache }: BookDetailProcessingTabProps) {
+export function BookDetailProcessingTab({ ocr, translation, loading = false, error = "", resultActionsSlot = null, coverage = null, editorialFlowCache, usage = null }: BookDetailProcessingTabProps) {
   const ocrJob = ocr?.job ?? null;
   const ocrActive = isDocumentJobActive(ocrJob);
   const ocrStatus = documentJobPresentation(ocrJob, "尚未执行");
@@ -145,15 +146,24 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     ].map(resumeStageLabel).find(Boolean) || ""
     : "";
   const headFacts: ProcessingHeaderFact[] = [];
+  // 小字只留图标和数，整句在悬停里。
   if (jobActive || translationStopped) {
-    if (stoppedAt) headFacts.push({ key: "stopped", kind: "stopped", text: `停在${stoppedAt}` });
+    if (stoppedAt) headFacts.push({ key: "stopped", kind: "stopped", text: stoppedAt, title: `停在${stoppedAt}` });
     const count = liveCountOf(ocr, translation);
-    if (count) headFacts.push({ key: "count", kind: "count", text: count });
-    if (totalMs) headFacts.push({ key: "time", kind: "time", text: `${jobActive ? "已运行" : "用时"} ${formatElapsed(totalMs)}` });
+    if (count) headFacts.push({ key: "count", kind: "count", text: count, title: `进度 ${count}` });
+    if (totalMs) {
+      const elapsed = formatElapsed(totalMs);
+      headFacts.push({ key: "time", kind: "time", text: elapsed, title: `${jobActive ? "已运行" : "用时"} ${elapsed}` });
+    }
   } else {
-    if (translation?.ocrReuse && !hasTranslationJob) headFacts.push({ key: "reuse", kind: "reuse", text: "复用已有 OCR" });
-    facts.facts.forEach((text) => headFacts.push({ key: text, kind: coverageFactKind(text), text }));
-    if (!facts.facts.length && ocr?.pageCount) headFacts.push({ key: "pages", kind: "pages", text: `${ocr.pageCount} 页` });
+    if (translation?.ocrReuse && !hasTranslationJob) headFacts.push({ key: "reuse", kind: "reuse", text: "复用 OCR", title: "复用已有 OCR" });
+    facts.facts.forEach((text) => headFacts.push(coverageFact(text)));
+    if (!facts.facts.length && ocr?.pageCount) headFacts.push({ key: "pages", kind: "pages", text: `${ocr.pageCount} 页`, title: `共 ${ocr.pageCount} 页` });
+  }
+  // 这本书一共用了多少 token（含问这本书时助手花的）；任务在跑时数还在涨，不摆。
+  const usageTotal = usage && !usage.model.empty ? usage.model.metrics.find((metric) => metric.key === "total") : null;
+  if (usageTotal && !jobActive) {
+    headFacts.push({ key: "tokens", kind: "tokens", text: usageTotal.value, title: `模型用量合计 ${usageTotal.exact} token · ${usageTotal.note}` });
   }
   // 进度条只在跑的时候画。停下的任务不画：任务记录里的进度常常是最后一个阶段自己的（渲染 100%），
   // 画出来像跑完了；停在哪一站由流水线说（那台机器亮红灯）。
@@ -210,6 +220,15 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   }
   if (activityLinesOf(activityProps).length) {
     sections.push({ key: "activity", label: "活动", icon: <Activity aria-hidden="true" />, content: <ProcessingActivity {...activityProps} /> });
+  }
+  // 用量：以前是右栏单独一个页签。读到了、有记录（或读失败要给重试）才摆。
+  if (usage && (!usage.model.empty || usage.error)) {
+    sections.push({
+      key: "usage",
+      label: "用量",
+      icon: <Coins aria-hidden="true" />,
+      content: <UsageCompact model={usage.model} loading={usage.loading} error={usage.error} onRetry={usage.reload} />,
+    });
   }
 
   // 「指定页码」打开时，状态行下面一行页码输入；翻译和只做 OCR 共用这一份页码。

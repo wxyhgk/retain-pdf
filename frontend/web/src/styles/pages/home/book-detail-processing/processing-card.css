@@ -40,10 +40,45 @@
   gap: 3px;
 }
 
+.book-detail-reprocess-copy {
+  justify-items: start;
+}
+
 .book-detail-reprocess-copy strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--ink);
   font-size: var(--ui-text-sm);
   font-weight: 650;
+}
+
+.book-detail-reprocess-copy strong svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+/* 费用小标签：不产生费用是淡底，产生费用是淡黄底，一眼分得开。说明整句在这一行的悬停里。 */
+.book-detail-reprocess-cost {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-radius: var(--ui-radius-pill);
+  color: var(--ink);
+  background: var(--book-detail-shade-0);
+  font-size: var(--ui-text-2xs);
+}
+
+.book-detail-reprocess-cost[data-cost="paid"] {
+  background: var(--warn-weak);
+}
+
+.book-detail-reprocess-cost svg {
+  width: 11px;
+  height: 11px;
 }
 
 .book-detail-reprocess-copy > span {

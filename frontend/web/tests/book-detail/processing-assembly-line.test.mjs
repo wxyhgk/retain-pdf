@@ -118,8 +118,11 @@ test("画面：传送带和五台机器；在跑的站写百分比和已运行�
     assert.ok(host.querySelector("[data-line-travel='translate']"), "稿纸从 OCR 往翻译走");
     assert.deepEqual([...host.querySelectorAll("[data-stage-key]")].map((node) => node.dataset.stageKey), ["prepare", "ocr", "translate", "render", "done"]);
     assert.equal(host.querySelector("[data-stage-percent='translate']").textContent, "20%");
-    assert.equal(host.querySelector("[data-stage-time='translate']").textContent, "已运行 1 分 12 秒");
-    assert.equal(host.querySelector("[data-stage-time='ocr']").textContent, "用时 45 秒");
+    // 画面上只留钟表图标和数，「已运行 / 用时」在悬停和读屏里。
+    const time = (key) => host.querySelector(`[data-stage-time='${key}']`);
+    assert.equal(time("translate").getAttribute("title"), "已运行 1 分 12 秒");
+    assert.equal(time("translate").querySelector("[aria-hidden='true']:not(svg)").textContent, "1 分 12 秒");
+    assert.equal(time("ocr").getAttribute("title"), "用时 45 秒");
     // 「等待中」这类状态字留给读屏，画面上只用图标说。
     const renderStatus = host.querySelector("[data-stage-key='render'] .book-detail-status");
     assert.equal(renderStatus.textContent, "等待中");

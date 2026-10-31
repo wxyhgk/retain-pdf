@@ -130,11 +130,15 @@ export function ProcessingPipelineRail({
   const jobActive = anyActive;
   const times = loading ? {} : stationTimes(timeline, { now, jobActive });
   const total = loading ? null : totalElapsedMs(timeline, { now, jobActive });
-  const timeOf = (key: StationKey): string => {
-    if (key === "done") return states.done === "done" && total !== null ? `共 ${formatElapsed(total)}` : "";
+  // 时间只写数，前面一个钟表图标；「已运行」「用时」「共」放在悬停里。
+  const timeOf = (key: StationKey): { text: string; title: string } | null => {
+    if (key === "done") {
+      return states.done === "done" && total !== null ? { text: formatElapsed(total), title: `共用时 ${formatElapsed(total)}` } : null;
+    }
     const time = times[key];
-    if (!time) return "";
-    return time.running ? `已运行 ${formatElapsed(time.ms)}` : `用时 ${formatElapsed(time.ms)}`;
+    if (!time) return null;
+    const text = formatElapsed(time.ms);
+    return { text, title: time.running ? `已运行 ${text}` : `用时 ${text}` };
   };
   const percent = model.progress;
   // 状态字画成小标签的只有这几种：失败、取消、排队要人注意；其余交给图标，字留给读屏。
@@ -157,7 +161,7 @@ export function ProcessingPipelineRail({
             const status = labelOf(station.key, station.state);
             const anchor = STATION_ANCHORS[station.key];
             const position = { "--line-left": `${anchor.left.toFixed(2)}%`, "--line-top": `${anchor.top.toFixed(2)}%` } as CSSProperties;
-            const time = loading ? "" : timeOf(station.key);
+            const time = loading ? null : timeOf(station.key);
             const meta = metaOf(station.key);
             const capability = CAPABILITY[station.key];
             return (
@@ -188,7 +192,13 @@ export function ProcessingPipelineRail({
                       <span className="book-detail-pipeline-percent" data-stage-percent={station.key}>{`${Math.round(percent)}%`}</span>
                     ) : null}
                   </span>
-                  {time ? <span className="book-detail-pipeline-time" data-stage-time={station.key}>{time}</span> : null}
+                  {time ? (
+                    <span className="book-detail-pipeline-time" data-stage-time={station.key} title={time.title}>
+                      <Clock3 aria-hidden="true" />
+                      <span className="sr-only">{time.title}</span>
+                      <span aria-hidden="true">{time.text}</span>
+                    </span>
+                  ) : null}
                   {meta ? (
                     <span className="book-detail-pipeline-desc" data-stage-meta={station.key} title={meta}>{meta}</span>
                   ) : null}
