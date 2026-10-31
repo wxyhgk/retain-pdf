@@ -19,6 +19,7 @@ from retainpdf_translation_agent import check_terms
 from retainpdf_translation_agent import extract_abbreviations
 from retainpdf_translation_agent import style_signals
 from retainpdf_translation_agent.agent import classify_http_error
+from retainpdf_translation_agent.agent import format_answer
 from retainpdf_translation_agent.agent import retry_wait
 from retainpdf_translation_agent.checks import status_of
 from retainpdf_translation_agent.context import binding_terms
@@ -28,12 +29,7 @@ DOC = {"title": "T", "source_lang": "en", "target_lang": "zh-CN"}
 
 
 def _answer(translations: dict[str, str], terms: list[dict] | None = None, exceptions: list[dict] | None = None) -> dict:
-    data = {"translations": [{"id": k, "translation": v} for k, v in translations.items()]}
-    if terms:
-        data["terms"] = terms
-    if exceptions:
-        data["term_exceptions"] = exceptions
-    return {"content": [{"type": "tool_use", "name": "submit_translations", "input": data}], "usage": {"input_tokens": 100, "output_tokens": 20}}
+    return {"content": [{"type": "text", "text": format_answer(translations, terms=terms, exceptions=exceptions)}], "usage": {"input_tokens": 100, "output_tokens": 20}}
 
 
 class Model:

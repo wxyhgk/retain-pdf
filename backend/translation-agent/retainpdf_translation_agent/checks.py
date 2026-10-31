@@ -61,6 +61,10 @@ def restore_formulas(source: str, translation: str | None) -> tuple[str | None, 
         return translation, []
     from difflib import SequenceMatcher
 
+    if "\\\\" not in source:
+        # 模型照请求 JSON 里的写法交回了两个反斜杠（\\delta）：原文公式里没有连着的两个反斜杠，就并成一个
+        translation = FORMULA_RE.sub(lambda m: re.sub(r"\\\\(?=[A-Za-z{}|,;! ])", lambda _: "\\", m.group(0)), translation)
+
     src = [f for f in FORMULA_RE.findall(CODE_RE.sub(" ", source))]
     out = [f for f in FORMULA_RE.findall(CODE_RE.sub(" ", translation))]
     src_keys = Counter(_formula_key(f) for f in src)
@@ -215,7 +219,7 @@ def check_terms(source: str, translation: str | None, terms: list[dict], excepti
                 _issue(
                     "term_mismatch",
                     "warn",
-                    f"术语“{term['source']}”应译作“{term['target']}”（术语表 {term['id']}）；这里意思确实不同的话，在 term_exceptions 里声明并写理由",
+                    f"术语“{term['source']}”应译作“{term['target']}”（术语表 {term['id']}）；这里意思确实不同的话，声明为例外并写理由",
                 )
             )
     return issues

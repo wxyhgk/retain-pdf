@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 
 from retainpdf_translation_agent import TranslationAgent as Agent
+from retainpdf_translation_agent import format_answer
 
 from devtools.agent_lab import __main__ as lab
 from devtools.agent_lab.__main__ import run
@@ -33,9 +34,10 @@ def _truth(tmp_path: Path) -> dict:
     return json.loads(truth_path.read_text(encoding="utf-8"))
 
 
-def _tool_response(translations: list[dict]) -> dict:
+def _text_response(translations: list[dict]) -> dict:
+    """初译交回纯文本（交卷格式）。"""
     return {
-        "content": [{"type": "tool_use", "name": "submit_translations", "input": {"translations": translations}}],
+        "content": [{"type": "text", "text": format_answer({t["id"]: t["translation"] for t in translations})}],
         "usage": {"input_tokens": 100, "output_tokens": 50},
     }
 
@@ -69,7 +71,7 @@ class FakeModel:
 
     def __call__(self, body: dict) -> dict:
         self.bodies.append(body)
-        if body["tools"][0]["name"] == "submit_reading":
+        if "tools" in body and body["tools"][0]["name"] == "submit_reading":
             # 翻译前通读：什么都不定（体裁 other、没有术语和标题），后面的逐页翻译和以前一样
             return {"content": [{"type": "tool_use", "name": "submit_reading", "input": {"genre": "other", "name_policy": "keep", "style": "", "terms": [], "headings": []}}], "usage": {"input_tokens": 100, "output_tokens": 20}}
         blocks, payload = _requested_blocks(body)
@@ -82,7 +84,7 @@ class FakeModel:
             if not retry and block["id"] in self.broken:
                 text = self.broken[block["id"]]
             out.append({"id": block["id"], "translation": text})
-        return _tool_response(out)
+        return _text_response(out)
 
 
 def test_pages_carry_class_position_formulas_and_groups(tmp_path: Path) -> None:
@@ -142,7 +144,7 @@ class DuplicatingModel(FakeModel):
     """第一次把跨页段落两半都译成同一句（实测 Haiku 出过这种错），重翻时分对。"""
 
     def __call__(self, body: dict) -> dict:
-        if body["tools"][0]["name"] == "submit_reading":
+        if "tools" in body and body["tools"][0]["name"] == "submit_reading":
             return FakeModel.__call__(self, body)
         self.bodies.append(body)
         blocks, payload = _requested_blocks(body)
@@ -154,7 +156,7 @@ class DuplicatingModel(FakeModel):
                 dup = "最后凡被栏或页分隔的段落都保留指向其所接续块的指针"
                 text = f"译文：{dup}{block['text']}{dup}"
             out.append({"id": block["id"], "translation": text})
-        return _tool_response(out)
+        return _text_response(out)
 
 
 def test_duplicated_text_across_a_continuation_group_is_caught_and_the_group_retried(tmp_path: Path) -> None:

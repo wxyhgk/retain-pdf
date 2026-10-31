@@ -1,4 +1,4 @@
-"""翻译 agent：一次送一整页，模型通过一个固定格式的工具调用逐块交回译文；也能按重排 agent 的改稿要求改写某几块。
+"""翻译 agent：一次送一整页，模型用纯文本逐块交回译文（每块 `@@ 块号` 开头，不用 JSON）；也能按重排 agent 的改稿要求改写某几块。
 
 调用直接走 Anthropic Messages 接口：开发和测试用 `http_transport`（密钥从环境变量 `ANTHROPIC_API_KEY` 读，模型 `ANTHROPIC_MODEL`），
 正式流程用 `make_http_transport(密钥, url=…)`，密钥和地址由任务给，不读服务器的环境变量。
@@ -45,7 +45,7 @@ API_URL = "https://api.anthropic.com/v1/messages"
 BREAK = "[[BREAK]]"
 BREAK_RE = re.compile(r"\s*\[\[BREAK\]\]\s*")
 DEFAULT_MODEL = "claude-haiku-5-5"
-PROMPT_VERSION = "translation-agent-14"
+PROMPT_VERSION = "translation-agent-15"
 # 角色：现在有译者（初译、重翻）和修订（按改稿要求改写）；没在 `models` 里指定的角色用默认模型
 ROLE_TRANSLATOR = "translator"
 ROLE_REVISER = "reviser"
@@ -60,9 +60,12 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
 1. 只翻 translate=true 的块；translate=false 的块（页眉页脚、关键词、参考文献、行间公式、代码块、算法块、已经是中文的段落……）只是上下文，不要交回。
 2. 每个要翻的块交回且只交回一条，id 原样照抄，不要合并、拆分或增删块。
    请求里的 required_ids 列出了这一页必须交回的全部 id，交卷前逐个核对，一个都不能少（图注、短标题最容易漏）。
-3. `$…$` 里的公式一个字符都不改，原样放在译文对应位置；`{{fn:1}}` 这类脚注标记、`[1, 2]` 这类引用标记原样保留；
-   反引号包着的行内代码（命令、路径、参数名，如 `--json`）连同反引号原样保留。
-4. 数字、章节编号（如 2.1）、变量名、代码、URL、DOI 原样保留。
+3. 公式一律用 LaTeX 写在 `$…$` 里（排版靠 `$` 认公式，去掉了就排不成公式）：原文 `$…$` 里的内容照抄，放在译文对应位置；
+   LaTeX 命令用一个反斜杠，不要换成 Unicode 字符或近似命令（`\\delta` 不写成 δ，`\\mathrm{max}` 不写成 `\\max`，`\\hbar` 不写成 ℏ），
+   也不要写成普通文字（`$ n_{\\mathrm{L}}^{\\mathrm{max}} $` 不写成 n_L^max）；只有 OCR 明显弄坏了公式本身（括号缺失、上下标脱落、命令截断）才做最小修复。
+   单个字母的变量、带上下标的符号、单位里的公式写法也要带 `$`；不要把裸露的 LaTeX 片段留在正文里，普通正文不要放进 `$…$`。
+   `{{fn:1}}` 这类脚注标记、`[1, 2]` 这类引用标记原样保留；反引号包着的行内代码（命令、路径、参数名，如 `--json`）连同反引号原样保留。
+4. 数字、章节编号（如 2.1）、代码和代码里的变量名、URL、DOI 原样保留。
 5. 被分栏或分页拆开的同一段话已经合成一条记录（有 members 字段），text 是接起来的整段原文。当成一段话翻通顺，
    用这条记录的 id 交回一整段译文；不要按 members 分开交，也不用管原来在哪里断开——分回各块由程序做。
 6. 按类别把握语气：标题简洁；图注、表题保留"图 1""表 1"这样的编号；目录条目只翻标题，编号和页码不动；
@@ -86,67 +89,41 @@ SYSTEM_PROMPT = """你是学术文档的翻译 agent，把英文 PDF 翻成简�
    - names：人名等专名的中文译名，必须照用；first_use=true 时写"中文译名（原文）"，之后只写中文译名。
    - previous / next：上一页结尾、下一页开头（previous 带已定的译文），用来接上文、对齐译法。
    - style：作者文风和编号格式；summary：本章摘要，只作参考，数字和术语以原文和术语表为准。
-11. 交卷时在 terms 里报上这一页你定下的译法：专业术语（报原文和译法）、要保留原文的专名（category=keep）。
+11. 交卷时在「@@ 术语」里报上这一页你定下的译法：专业术语（报原文和译法）、要保留原文的专名（行末写"保留"）。
    只报真正的术语和专名，不报普通词、标题、书名、缩写；source 写词的原形（单数、不带括号里的缩写），target 只写译法本身；
    context 里已有、你也照用了的不用再报。
-   context 给了译法、但这一处意思确实不同（同一个词在这里是另一个意思）而没照用的，在 term_exceptions 里写明块、原词、
+   context 给了译法、但这一处意思确实不同（同一个词在这里是另一个意思）而没照用的，在「@@ 例外」里写明块、原词、
    你用的译法和理由。没理由不要声明例外。
 12. 中文体例：引用公式写"式 (3)"，子图写"图 3.1(a)"（Fig. 也译"图"）；pt / points 表示长度时译"磅"，percentage points 译"百分点"；
    "N times as much / as many" 译"是……的 N 倍"，不要写"多 N 倍"；suggest、indicate 译"提示、意味着"，不要加强成"表明、证明"；
    编号体例沿用原文并全文统一（原文 IV. 就写 IV.，不要一会儿"四"一会儿 IV.）；双关、俏皮话用中文里等效的说法，不加英文括注；
    称呼读者用"你"还是"您"按 style，没写就用"你"；不要在中文句子里夹没翻的英文单词。
+
+交卷格式：纯文本，不要 JSON，不要代码块，不要别的说明。每块一节：第一行是 "@@ " 加块的 id（原样照抄），下面是这一块的译文。
+译文就是要显示的样子，按第 3 条写公式，反斜杠写一个、不要转义（请求是 JSON，原文的 `\\delta` 在里面写成 `\\\\delta`，交回时写 `\\delta`）。
+后面可以跟三节：术语（每行"原文 | 译法 | 块的 id"，要保留原文的专名行末再加"| 保留"）、例外（每行"块的 id | 原词 | 这里用的译法 | 理由"）、
+备注（拿不准的地方）；没有就不写。尖括号的地方换成实际内容：
+
+@@ <块的 id>
+<这一块的译文>
+
+@@ <接续组的 id，如 __cg__:…>
+<这一组的一整段译文>
+
+@@ 术语
+<原文> | <译法> | <块的 id>
+
+@@ 例外
+<块的 id> | <原词> | <这里用的译法> | <理由>
+
+@@ 备注
+<拿不准的地方>
 """
 
-TOOL = {
-    "name": "submit_translations",
-    "description": "提交这一页所有 translate=true 的块的译文，以及这一页定下的术语。",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "translations": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "id": {"type": "string", "description": "块的 id，原样照抄"},
-                        "translation": {"type": "string", "description": "这一块的中文译文"},
-                    },
-                    "required": ["id", "translation"],
-                },
-            },
-            "terms": {
-                "type": "array",
-                "description": "这一页定下的术语译法和要保留原文的专名",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "block_id": {"type": "string", "description": "出现在哪一块"},
-                        "source": {"type": "string", "description": "原文里的写法，照抄"},
-                        "target": {"type": "string", "description": "译法；保留原文的专名照抄原文"},
-                        "category": {"type": "string", "enum": ["term", "keep"]},
-                    },
-                    "required": ["block_id", "source", "target", "category"],
-                },
-            },
-            "term_exceptions": {
-                "type": "array",
-                "description": "context 给了译法、这里意思不同而没照用的地方",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "block_id": {"type": "string"},
-                        "source": {"type": "string", "description": "原词"},
-                        "used": {"type": "string", "description": "这里用的译法"},
-                        "reason": {"type": "string", "description": "为什么这里意思不同"},
-                    },
-                    "required": ["block_id", "source", "used", "reason"],
-                },
-            },
-            "notes": {"type": "string", "description": "可选：这一页翻译时拿不准的地方"},
-        },
-        "required": ["translations"],
-    },
-}
+# 交卷格式（2026-10-31 起不用 JSON 工具调用：用户定。公式里的反斜杠在 JSON 里要写两个，交回纯文本照抄原文就行）
+ANSWER_HEADER_RE = re.compile(r"^@@[ \t]*(.+?)[ \t@]*$", re.M)
+TERMS_SECTION, EXCEPTIONS_SECTION, NOTES_SECTION = "术语", "例外", "备注"
+KEEP_MARK = "保留"
 
 Transport = Callable[[dict], dict]
 
@@ -306,15 +283,16 @@ class TranslationAgent:
         self._emit("check_result", attempt=attempt, ok=counts[STATUS_OK], warn=counts[STATUS_WARN], error=counts[STATUS_ERROR], codes=codes)
 
     # ---- 请求 ----
-    def _body(self, payload: dict, role: str = ROLE_TRANSLATOR, *, system: str = SYSTEM_PROMPT, tool: dict = TOOL) -> dict:
-        return {
-            "model": self.model_for(role),
-            "max_tokens": 16000,
-            "system": system,
-            "tools": [strict_tool(tool)],
-            "tool_choice": {"type": "tool", "name": tool["name"]},
-            "messages": [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}],
-        }
+    def _body(self, payload: dict, role: str = ROLE_TRANSLATOR, *, system: str = SYSTEM_PROMPT, tool: dict | None = None) -> dict:
+        """不给 `tool`（初译、重翻、改稿）：模型按交卷格式交回纯文本；给了（通读、审校）：强制用这个工具交回。
+
+        不传 `thinking`：不强制用工具时 Haiku 5.5 默认会思考，强制用工具时不会。2026-10-31 论文 16 页各两遍实测，公式原样保住
+        纯文本 + 思考 97.1%、纯文本关掉思考 88.1%、JSON 工具 90.4%——帮上忙的是思考，不要传 `{"type": "disabled"}` 关掉。"""
+        body = {"model": self.model_for(role), "max_tokens": 16000, "system": system}
+        if tool is not None:
+            body.update(tools=[strict_tool(tool)], tool_choice={"type": "tool", "name": tool["name"]})
+        body["messages"] = [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}]
+        return body
 
     def call_tool(self, payload: dict, *, system: str, tool: dict, role: str, label: str, blocks: list[str] | None = None) -> dict:
         """别的角色（通读、审校）用：发一次请求，强制用 `tool` 交回，返回工具的输入；没交回就抛 ValueError。
@@ -349,27 +327,12 @@ class TranslationAgent:
 
     @staticmethod
     def _parse(response: dict) -> dict:
-        """取出工具调用里的译文、报上的术语、声明的例外；同一个 id 交了多次的记下来。"""
-        for part in response.get("content") or []:
-            if part.get("type") == "tool_use" and part.get("name") == TOOL["name"]:
-                data = _tool_input(part)
-                out: dict[str, str] = {}
-                duplicates: list[str] = []
-                for item in data.get("translations") or []:
-                    if not isinstance(item, dict):
-                        continue  # 坏掉的一项当没交，走漏交重翻
-                    block_id = str(item.get("id", ""))
-                    if block_id in out:
-                        duplicates.append(block_id)
-                    out[block_id] = str(item.get("translation", ""))
-                return {
-                    "translations": out,
-                    "notes": str(data.get("notes") or ""),
-                    "duplicates": duplicates,
-                    "terms": [t for t in data.get("terms") or [] if isinstance(t, dict)],
-                    "term_exceptions": [e for e in data.get("term_exceptions") or [] if isinstance(e, dict)],
-                }
-        raise ValueError("model response has no submit_translations tool call")
+        """按交卷格式取出译文、报上的术语、声明的例外；同一个 id 交了多次的记下来。
+        回答被 max_tokens 截断时，最后一块可能只写了一半，当没交（走漏交重翻）。"""
+        return parse_answer(
+            "".join(part.get("text") or "" for part in response.get("content") or [] if part.get("type") == "text"),
+            truncated=response.get("stop_reason") == "max_tokens",
+        )
 
     def _payload(self, page: PageInput, records: list[dict], **extra) -> dict:
         payload = {"document": page.document, "page": page.page_label, "section_path": page.section_path}
@@ -500,8 +463,8 @@ class TranslationAgent:
         sources = {b.id: b.text for b in page.blocks}
         for block_id, text in list(per_block.items()):
             fixed, restored = restore_formulas(sources.get(block_id, ""), text)
+            per_block[block_id] = fixed  # 并掉的双反斜杠不记，换回的公式记一笔
             if restored:
-                per_block[block_id] = fixed
                 self._restored[block_id] = [
                     {"code": "formula_restored", "severity": "info", "message": f"模型改动了公式，已换回原文写法：{restored}"}
                 ]
@@ -867,3 +830,53 @@ def _shortest_over_limit(result: BlockResult) -> BlockResult:
         for i in issues
     ]
     return BlockResult(result.id, text, issues, result.attempts, status_of(issues), result.history)
+
+
+def parse_answer(text: str, *, truncated: bool = False) -> dict:
+    """交卷格式（见 SYSTEM_PROMPT 末尾）→ {translations, notes, duplicates, terms, term_exceptions}。
+    第一个 `@@` 之前的话（模型偶尔先说一句）不要；整段包在代码块里的，去掉 ``` 那几行。"""
+    text = re.sub(r"^\s*```[A-Za-z]*\s*$", "", text, flags=re.M)
+    heads = list(ANSWER_HEADER_RE.finditer(text))
+    sections = [(m.group(1).strip(), text[m.end() : heads[i + 1].start() if i + 1 < len(heads) else len(text)].strip()) for i, m in enumerate(heads)]
+    if truncated and sections and sections[-1][0] not in (TERMS_SECTION, EXCEPTIONS_SECTION, NOTES_SECTION):
+        sections.pop()
+    out: dict[str, str] = {}
+    duplicates: list[str] = []
+    terms: list[dict] = []
+    exceptions: list[dict] = []
+    notes = ""
+    for name, body in sections:
+        if name == TERMS_SECTION:
+            for cells in _rows(body):
+                if len(cells) >= 3:
+                    keep = len(cells) >= 4 and cells[3] == KEEP_MARK
+                    terms.append({"block_id": cells[2], "source": cells[0], "target": cells[1], "category": "keep" if keep else "term"})
+        elif name == EXCEPTIONS_SECTION:
+            for cells in _rows(body):
+                if len(cells) >= 4:
+                    exceptions.append({"block_id": cells[0], "source": cells[1], "used": cells[2], "reason": " | ".join(cells[3:])})
+        elif name == NOTES_SECTION:
+            notes = body
+        else:
+            if name in out:
+                duplicates.append(name)
+            out[name] = body
+    return {"translations": out, "notes": notes, "duplicates": duplicates, "terms": terms, "term_exceptions": exceptions}
+
+
+def _rows(body: str) -> list[list[str]]:
+    return [[c.strip() for c in line.strip().strip("|").split("|")] for line in body.splitlines() if "|" in line]
+
+
+def format_answer(translations: dict[str, str], *, terms: list[dict] | None = None, exceptions: list[dict] | None = None, notes: str = "") -> str:
+    """`parse_answer` 反过来：按交卷格式写出一份回答。测试里的假模型和测试系统用。"""
+    parts = [f"@@ {block_id}\n{text}" for block_id, text in translations.items()]
+    if terms:
+        rows = [" | ".join([t["source"], t["target"], t["block_id"]] + ([KEEP_MARK] if t.get("category") == "keep" else [])) for t in terms]
+        parts.append(f"@@ {TERMS_SECTION}\n" + "\n".join(rows))
+    if exceptions:
+        rows = [" | ".join([e["block_id"], e["source"], e["used"], e["reason"]]) for e in exceptions]
+        parts.append(f"@@ {EXCEPTIONS_SECTION}\n" + "\n".join(rows))
+    if notes:
+        parts.append(f"@@ {NOTES_SECTION}\n{notes}")
+    return "\n\n".join(parts) + "\n"

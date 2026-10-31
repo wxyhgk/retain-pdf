@@ -25,6 +25,7 @@ from retainpdf_translation.workflow.execution import TranslationExecutionRequest
 from retainpdf_translation.workflow.execution import execute_translation_request
 from retainpdf_translation_agent import BlockResult
 from retainpdf_translation_agent import QuotaExhausted
+from retainpdf_translation_agent import format_answer
 
 
 def _block(page: int, order: int, sub_type: str, text: str, bbox: list[float]) -> dict:
@@ -95,7 +96,7 @@ class FakeModel:
         self.bodies.append(body)
         if self.stop_after is not None and len(self.bodies) > self.stop_after:
             raise QuotaExhausted("model API HTTP 400: credit balance too low")
-        tool = body["tools"][0]["name"]
+        tool = body["tools"][0]["name"] if "tools" in body else "plain_text"
         usage = {"input_tokens": 100, "output_tokens": 20}
         if tool == "submit_reading":
             data = {"genre": "science_paper", "name_policy": "keep", "style": "", "terms": [], "headings": []}
@@ -104,11 +105,9 @@ class FakeModel:
         else:
             payload = json.loads(body["messages"][0]["content"])
             wanted = [b for b in payload["blocks"] if b.get("translate")]
-            data = {
-                "translations": [
-                    {"id": b["id"], "translation": "坏了" if b["id"] in self.fail else _fake_translation(b["text"])} for b in wanted
-                ]
-            }
+            # 初译交回纯文本（交卷格式）
+            text = format_answer({b["id"]: "坏了" if b["id"] in self.fail else _fake_translation(b["text"]) for b in wanted})
+            return {"content": [{"type": "text", "text": text}], "usage": usage}
         return {"content": [{"type": "tool_use", "name": tool, "input": data}], "usage": usage}
 
 
@@ -159,14 +158,14 @@ def test_agent_engine_translates_every_page_and_finishes_the_stage(tmp_path: Pat
 
     assert fake_transport.holder["api_key"] == "sk-job-key", "the job's credential is used, never the server environment"
     assert fake_transport.holder["url"] == "https://api.anthropic.com/v1/messages"
-    tools = [b["tools"][0]["name"] for b in model.bodies]
+    tools = [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]
     assert tools[0] == "submit_reading" and tools.count("submit_review") == 2, tools
     assert {b["model"] for b in model.bodies} == {"claude-haiku-5-5"}
 
     items = _pages(tmp_path / "translated")
     body = items["p001-b001"]
     # 角标交给 agent 时是脚注标记，写回后是原来的公式写法
-    sent = [b for body_ in model.bodies if body_["tools"][0]["name"] == "submit_translations" for b in json.loads(body_["messages"][0]["content"])["blocks"]]
+    sent = [b for body_ in model.bodies if "tools" not in body_ for b in json.loads(body_["messages"][0]["content"])["blocks"]]
     assert any("{{fn:12}}" in b["text"] for b in sent if b["id"] == "p001-b001")
     assert body["translated_text"].startswith("译文：") and "$ ^{12} $" in body["translated_text"] and "{{fn:" not in body["translated_text"]
     assert "$E(x)$" in body["translated_text"]
@@ -214,8 +213,8 @@ def test_a_stopped_run_fails_the_stage_and_resumes_without_paying_again(tmp_path
 
     model = fake_transport(FakeModel())
     execute_translation_request(_request(tmp_path))
-    tools = [b["tools"][0]["name"] for b in model.bodies]
-    assert tools == ["submit_translations", "submit_review"], "only page 2 is requested again"
+    tools = [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies]
+    assert tools == ["plain_text", "submit_review"], "only page 2 is requested again"
 
 
 def test_agent_engine_skips_translation_preparation(tmp_path: Path, fake_transport) -> None:
@@ -224,7 +223,8 @@ def test_agent_engine_skips_translation_preparation(tmp_path: Path, fake_transpo
     execute_translation_request(_request(tmp_path, preparation="editorial"))
     assert not (tmp_path / "translated" / "term-base.v1.json").exists()
     assert not (tmp_path / "translated" / "style-guide.v1.json").exists()
-    assert all(b["tools"][0]["name"].startswith("submit_") for b in model.bodies)
+    # 都是 agent 的请求：通读、审校用 submit_ 工具，初译按交卷格式交纯文本
+    assert all(b["tools"][0]["name"].startswith("submit_") if "tools" in b else "@@" in b["system"] for b in model.bodies)
 
 
 def test_engine_is_part_of_the_checkpoint_identity(tmp_path: Path) -> None:
