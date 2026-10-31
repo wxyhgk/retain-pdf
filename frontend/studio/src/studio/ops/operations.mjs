@@ -84,7 +84,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'edit_page',
-		description: '改一篇正文里的一段：old 是正文里的原文（一字不差，要只出现一次，不够就多带几句前后文），new 是改成的样子（空字符串就是删掉）；all: true 把每一处都改。只改属性之后的正文，属性用 update_page 改。改之前的版本存进历史；Studio 里开着这篇时作者会逐处接受或拒绝。返回改在第几行和改完后页面的问题。改正文都用它（或 update_page 换整篇），不要直接编辑 index.md。', // i18n-ignore: for the AI
+		description: '改一篇正文里的一段：old 是正文里的原文（一字不差，要只出现一次，不够就多带几句前后文），new 是改成的样子（空字符串就是删掉）；all: true 把每一处都改。只改属性之后的正文，属性用 update_page 改。改之前的版本存进历史；Studio 里开着这篇时作者会逐处接受或拒绝。返回改在第几行和改完后页面的问题。在命令行里、或手边没有编辑工具时改正文用它；有编辑工具的，直接编辑 index.md 的正文也行（属性不能这样改）。', // i18n-ignore: for the AI
 		input: {
 			type: 'object',
 			properties: {

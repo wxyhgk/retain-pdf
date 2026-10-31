@@ -27,7 +27,7 @@ test('pi in the Studio’s server: pi started again by its extensions is pi-chil
 
 test('a subagent’s shell commands: what may not be done, and what the author would be asked first, refused; the rest let be', () => {
 	let hook = null;
-	studioGuard({ on: (name, listener) => name === 'tool_call' && (hook = listener) });
+	studioGuard({ on: (name, listener) => void (name === 'tool_call' && (hook = listener)) });
 	const run = (command) => hook({ toolName: 'bash', input: { command } }, { cwd: tmpdir() });
 	assert.equal(run('ls -la'), undefined);
 	assert.equal(hook({ toolName: 'read', input: { path: 'a' } }, {}), undefined);
@@ -35,8 +35,8 @@ test('a subagent’s shell commands: what may not be done, and what the author w
 	const asked = run('rm -r ~/Documents/notes');
 	assert.equal(asked.block, true);
 	assert.match(asked.reason, /子代理不能问作者/u);
-	// An article's text: through the `studio` command, not its file tools.
-	assert.match(hook({ toolName: 'edit', input: { path: '/notes/blog/hf/index.md' } }, { cwd: tmpdir() }).reason, /studio edit-page/u);
+	// An article written over: refused (its text edited is the article guard's, article-guard.test.mjs).
+	assert.match(hook({ toolName: 'write', input: { path: '/notes/blog/hf/index.md' } }, { cwd: tmpdir() }).reason, /studio create-page/u);
 });
 
 test('the Studio’s server started with pi’s options is pi, never a second Studio', async (t) => {

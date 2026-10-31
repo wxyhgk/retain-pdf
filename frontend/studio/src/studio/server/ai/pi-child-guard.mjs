@@ -1,15 +1,18 @@
-import { articleWriteOf, riskOf } from './risky-commands.mjs';
+import { articleGuard } from './article-guard.mjs';
+import { riskOf } from './risky-commands.mjs';
 
 /**
  * A pi extension for the pi a subagent is (pi-child.mjs): its shell commands held to what the Studio's AIs may do
- * (risky-commands.mjs), an article's text written through the `studio` command, not its file tools. The Studio's own
- * pi asks the author before what loses work or stops the Studio; a subagent runs with no one to ask, so that is
- * refused too, its reason said, for the conversation that started it to ask.
+ * (risky-commands.mjs), an article's properties and the whole of it kept from its file tools (article-guard.mjs).
+ * The Studio's own pi asks the author before what loses work or stops the Studio; a subagent runs with no one to ask,
+ * so that is refused too, its reason said, for the conversation that started it to ask.
  */
 export default function studioGuard(pi) {
+	const articles = articleGuard();
+	pi.on('tool_result', (event) => articles.after(event));
 	pi.on('tool_call', (event, context) => {
-		const article = articleWriteOf(event.toolName, event.input, context?.cwd ?? process.cwd());
-		if (article) return { block: true, reason: article };
+		const article = articles.before(event, context?.cwd ?? process.cwd());
+		if (article) return article;
 		if (event.toolName !== 'bash' || typeof event.input?.command !== 'string') return undefined;
 		const risk = riskOf(event.input.command, context?.cwd ?? process.cwd());
 		if (!risk) return undefined;

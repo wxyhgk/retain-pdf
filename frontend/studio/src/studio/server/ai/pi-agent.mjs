@@ -8,7 +8,8 @@ import { createAgentSession, createBashToolDefinition, DefaultResourceLoader, ge
 import { OPERATIONS } from '../../ops/operations.mjs';
 import { createStudioOps } from '../../ops/studio-ops.mjs';
 import { PI_PROVIDERS } from './panel-models.mjs';
-import { articleWriteOf, riskOf } from './risky-commands.mjs';
+import { articleGuard } from './article-guard.mjs';
+import { riskOf } from './risky-commands.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
@@ -190,10 +191,12 @@ function servePi(stream, env) {
 					});
 					// pi asks no one before it runs a command: what may not be done refused, what loses work or stops the
 					// Studio asked of the author first, as an adapter asks (the panel's 允许/拒绝).
+					// An article's text edited as any file, but not its properties, not written over (article-guard.mjs).
+					const articles = articleGuard();
+					pi.on('tool_result', (event) => articles.after(event));
 					pi.on('tool_call', async (event, context) => {
-						// An article's text through the `studio` command, not pi's own file tools.
-						const article = articleWriteOf(event.toolName, event.input, cwd);
-						if (article) return { block: true, reason: article };
+						const article = articles.before(event, cwd);
+						if (article) return article;
 						if (event.toolName !== 'bash' || typeof event.input?.command !== 'string') return undefined;
 						const risk = riskOf(event.input.command, cwd);
 						if (!risk) return undefined;

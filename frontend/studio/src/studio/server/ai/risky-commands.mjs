@@ -1,5 +1,5 @@
 import { tmpdir } from 'node:os';
-import { basename, dirname, isAbsolute, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 import { t } from '@blog/i18n/index.mjs';
 
@@ -108,20 +108,4 @@ export function riskOf(command, cwd) {
 		}
 	}
 	return null;
-}
-
-/**
- * An article's text (blog/<folder>/index.md) written by an AI's own file tools (pi's edit and write): not so, but
- * through the `studio` command (edit-page, update-page, create-page), which leaves its properties whole, keeps what was
- * there in its history and says what is wrong with it after; a slip of the tools (its properties' YAML broken, the
- * file cut short) is a page that no longer opens. Why, or null (another file, a tool that writes none).
- */
-export function articleWriteOf(toolName, input, cwd) {
-	if (toolName !== 'edit' && toolName !== 'write') return null;
-	const path = typeof input?.path === 'string' ? input.path : typeof input?.file_path === 'string' ? input.file_path : '';
-	if (!path) return null;
-	const file = isAbsolute(path) ? path : resolve(cwd, path.replace(/^~(?=\/)/u, process.env.HOME ?? '~'));
-	const above = dirname(dirname(file));
-	if (basename(file) !== 'index.md' || (basename(above) !== 'blog' && above !== resolve(cwd))) return null;
-	return t('文章的正文不要用编辑工具直接改：改一段用 studio edit-page --slug {slug} --old … --new …，换整篇用 studio update-page --body @文件，新建用 studio create-page（这样属性不会弄坏，改之前的版本也会存下来）', { slug: basename(dirname(file)) });
 }
