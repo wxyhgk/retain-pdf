@@ -327,6 +327,9 @@ test('a row’s own page: the database’s columns under its title, a value chan
 	// Beside the table first (its side peek); its whole page from there.
 	await p.locator('[data-database-peek-page]').click();
 	await expect(p.locator('#article-title-input')).toHaveValue('TS1 优化');
+	// In the tree: its database left folded (as Notion's sidebar), marked as holding the page open.
+	await expect(p.locator(`#article-list .page-item.is-database[data-slug="${DB}"]`)).toHaveClass(/holds-open/u);
+	await expect(p.locator('#article-list .page-item[data-slug="db-row-a"]')).toHaveCount(0);
 	const properties = p.locator('[data-database-properties]');
 	await expect(properties.locator('[data-row-property]')).toHaveText(['方法', '能量', '收敛']);
 	await expect(properties.locator('[data-row-value="能量"]')).toHaveValue('-76.4');

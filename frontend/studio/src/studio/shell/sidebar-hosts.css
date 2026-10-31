@@ -11,6 +11,9 @@
 #article-list .page-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; width: 100%; min-height: var(--studio-h-md); padding: 0 8px; border: 0; border-radius: var(--studio-radius-sm); background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
 #article-list .page-row:hover { background: var(--studio-fill); }
 #article-list .page-row.active { background: var(--studio-fill-2); }
+/* Folded, the page open under it (a database's row opened from its table). */
+#article-list .page-item.holds-open > .page-row { background: var(--studio-fill); }
+#article-list .page-item.holds-open > .page-row .page-title { color: rgb(var(--black)); font-weight: 550; }
 #article-list .page-item.is-chosen .page-row { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
 #article-list .page-item { position: relative; --indent: calc(var(--depth, 0) * 14px); }
 #article-list .page-item .page-row { padding-left: calc(8px + var(--indent)); }

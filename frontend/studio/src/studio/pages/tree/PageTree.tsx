@@ -43,6 +43,8 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 	// A database's rows folded till unfolded.
 	const isFolded = foldedIn(article, folded, opened);
 	const isDatabase = article.type === 'database';
+	// Folded with the page open somewhere under it: marked so, the open page being where it is.
+	const holdsOpen = isFolded && under.length > 0 && Boolean(state.selected) && state.selected !== article.slug && within(articles, state.selected!, article.slug);
 	const uncommitted = git?.changed[article.slug];
 	const committable = Boolean(git?.available && (uncommitted || git.vanished.length));
 
@@ -121,7 +123,7 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 	return (
 		<div className="page-branch">
 			<div
-				className={`page-item${active ? ' active' : ''}${chosen.has(article.slug) ? ' is-chosen' : ''}${under.length ? ' has-children' : ''}${isDatabase ? ' is-database' : ''}${marked}`}
+				className={`page-item${active ? ' active' : ''}${chosen.has(article.slug) ? ' is-chosen' : ''}${under.length ? ' has-children' : ''}${isDatabase ? ' is-database' : ''}${holdsOpen ? ' holds-open' : ''}${marked}`}
 				data-slug={article.slug}
 				data-draft={article.draft !== false ? '' : undefined}
 				style={{ '--depth': String(depth) } as CSSProperties}

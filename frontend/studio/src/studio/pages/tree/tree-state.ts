@@ -100,15 +100,17 @@ export function createTreeState(host: ArticleListHost) {
 		return all.filter((slug) => !all.some((other) => other !== slug && within(articles, slug, other))).sort((a, b) => rank(a) - rank(b));
 	}
 
-	/** The pages it is under unfolded (databases among them too), so that it shows. */
+	/**
+	 * The pages it is under unfolded, so that it shows; not a database's rows (as Notion's sidebar: a row opened from its
+	 * table leaves the database folded, marked as holding the page open).
+	 */
 	function unfoldTo(slug: string): void {
 		const { articles, folded, opened } = get();
 		const bySlug = new Map(articles.map((article) => [article.slug, article]));
 		const next = new Set(folded);
 		const open = new Set(opened);
 		for (let page = bySlug.get(slug), steps = 0; page?.parent && steps <= articles.length; page = bySlug.get(page.parent), steps += 1) {
-			if (bySlug.get(page.parent)?.type === 'database') open.add(page.parent);
-			else next.delete(page.parent);
+			if (bySlug.get(page.parent)?.type !== 'database') next.delete(page.parent);
 		}
 		if (next.size !== folded.size) {
 			keepFolded(next);
