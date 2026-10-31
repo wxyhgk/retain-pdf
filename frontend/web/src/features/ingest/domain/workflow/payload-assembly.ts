@@ -11,6 +11,7 @@ import {
   type WorkflowDeveloperConfig,
 } from "./payload.js";
 import type { WorkflowConstants, WorkflowRunPayload, WorkflowSubmitValues } from "./contracts.js";
+import { isZhipuBaseUrl, normalizeOcrProvider } from "@/platform/config/providers.js";
 
 export interface CreateWorkflowPayloadAssemblyOptions {
   constants: WorkflowConstants;
@@ -56,6 +57,15 @@ export function createWorkflowPayloadAssembly({
     }) || {};
   }
 
+  // GLM-OCR 没填自己的 key、翻译又是智谱时，用翻译的 key（同一个智谱 key）。后端整本任务也会借，
+  // 但只做 OCR 的任务建任务时清掉了翻译凭据、借不到，所以这里显式带上。别家的翻译 key 不带。
+  function glmOcrTokenOrBorrowed(submitValues: WorkflowSubmitValues): string | undefined {
+    const own = submitValues.ocrToken;
+    if (own || normalizeOcrProvider(submitValues.ocrProvider) !== "glm_ocr" || submitValues.ocrCredentialRef) return own;
+    const translationKey = `${submitValues.modelApiKey || ""}`.trim();
+    return translationKey && isZhipuBaseUrl(developerConfigWithDefaults().baseUrl) ? translationKey : own;
+  }
+
   function buildOcrPayload(
     pageRanges: string | undefined,
     submitValues: WorkflowSubmitValues = currentWorkflowSubmitValues(),
@@ -64,7 +74,7 @@ export function createWorkflowPayloadAssembly({
       pageRanges,
       ocrProvider: submitValues.ocrProvider,
       ocrCredentialRef: submitValues.ocrCredentialRef,
-      ocrToken: submitValues.ocrToken,
+      ocrToken: glmOcrTokenOrBorrowed(submitValues),
       defaultPaddleApiUrl,
       constants,
     });

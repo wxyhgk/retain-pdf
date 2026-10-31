@@ -8,6 +8,7 @@ export interface CredentialsFields {
   ocrCredentialRef: string;
   paddleToken: string;
   mineruToken?: string;
+  glmOcrToken?: string;
   translationCredentialRef: string;
   modelApiKey: string;
 }

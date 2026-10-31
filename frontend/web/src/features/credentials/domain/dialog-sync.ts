@@ -23,6 +23,7 @@ export function syncCredentialDialogFields({
   const {
     paddleInput,
     mineruInput,
+    glmOcrInput,
     apiKeyInput,
     modelBaseUrlInput,
     modelNameInput,
@@ -37,6 +38,9 @@ export function syncCredentialDialogFields({
   }
   if (mineruInput) {
     mineruInput.value = credentials.mineruToken || "";
+  }
+  if (glmOcrInput) {
+    glmOcrInput.value = credentials.glmOcrToken || "";
   }
   if (apiKeyInput) {
     apiKeyInput.value = `${credentials.modelApiKey || defaultModelApiKey?.() || ""}`;

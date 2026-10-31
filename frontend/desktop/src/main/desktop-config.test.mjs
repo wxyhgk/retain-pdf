@@ -36,6 +36,7 @@ test("builds the complete runtime config for the active backend port", () => {
     ocrCredentialRef: "cred_ocr",
     translationCredentialRef: "cred_translation",
     mineruToken: "mineru-token",
+    glmOcrToken: "",
     paddleToken: "paddle-token",
     modelApiKey: "model-key",
     model: "model-name",
@@ -290,3 +291,18 @@ test("without the command line the desktop keeps storing everything itself", (t)
   store.saveDesktopConfig({ modelApiKey: "sk-local", firstRunCompleted: true });
   assert.equal(store.loadDesktopConfig().modelApiKey, "sk-local");
 });
+
+test("GLM-OCR: the choice and its key stay in desktop-config.json, since ~/.retainpdf only knows paddle and mineru", () => {
+  const exported = { ocr: { provider: "paddle", tokens: { paddle: "p" } }, translation: {}, providers: {} };
+  const config = { ocrProvider: "glm_ocr", glmOcrToken: "zhipu-key", paddleToken: "p" };
+  assert.equal(overlayExport(config, exported).ocrProvider, "glm_ocr", "the command line's paddle must not overwrite the GLM choice");
+  assert.equal(overlayExport({ ocrProvider: "paddle" }, exported).ocrProvider, "paddle");
+  const changes = changesFromDesktop(config, []);
+  assert.equal(changes["ocr.provider"], undefined, "glm_ocr is not written to the command line");
+  const { stripMapped } = require("./retainpdf-home.js");
+  const kept = stripMapped(config);
+  assert.equal(kept.ocrProvider, "glm_ocr");
+  assert.equal(kept.glmOcrToken, "zhipu-key");
+  assert.equal(kept.paddleToken, undefined, "keys the command line holds still leave desktop-config.json");
+});
+

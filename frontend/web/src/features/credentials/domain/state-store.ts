@@ -18,6 +18,7 @@ function normalizeCredentials(payload: Partial<CredentialsFields> = {}): Credent
     ocrCredentialRef: payload.ocrCredentialRef,
     paddleToken: payload.paddleToken,
     mineruToken: payload.mineruToken,
+    glmOcrToken: payload.glmOcrToken,
     translationCredentialRef: payload.translationCredentialRef,
     modelApiKey: payload.modelApiKey,
   }) as CredentialsFields;

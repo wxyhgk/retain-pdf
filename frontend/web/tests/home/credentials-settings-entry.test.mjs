@@ -75,7 +75,7 @@ test("MinerU：Token 本机保存、明文回填，切回 Paddle 保留各自 To
     dom.window.document.dispatchEvent(new dom.window.CustomEvent(APP_EVENTS.openBrowserCredentials));
     await waitFor(() => byId(dom, "browser-ocr-provider-select"), "OCR 提供商选择器");
     const select = byId(dom, "browser-ocr-provider-select");
-    assert.deepEqual([...select.options].map((option) => option.value), ["paddle", "mineru"]);
+    assert.deepEqual([...select.options].map((option) => option.value), ["paddle", "mineru", "glm_ocr"]);
     await waitForDialogReady();
     typeInput(dom, byId(dom, "browser-paddle-token"), "paddle-ui-fixture");
     typeInput(dom, byId(dom, "browser-api-key"), "translation-ui-fixture");

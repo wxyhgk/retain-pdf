@@ -32,6 +32,7 @@ export interface CredentialDialogElements {
   dialog?: HTMLDialogElement | HTMLElement | boolean | null;
   paddleInput?: HTMLInputElement | null;
   mineruInput?: HTMLInputElement | null;
+  glmOcrInput?: HTMLInputElement | null;
   apiKeyInput?: HTMLInputElement | null;
   modelBaseUrlInput?: HTMLInputElement | null;
   modelNameInput?: HTMLInputElement | null;
@@ -312,6 +313,7 @@ export function mountBrowserCredentialsFeature({
     for (const [input, value] of [
       [elements.paddleInput, current.paddleToken],
       [elements.mineruInput, current.mineruToken],
+      [elements.glmOcrInput, current.glmOcrToken],
       [elements.apiKeyInput, current.modelApiKey],
     ] as const) {
       if (input && !input.value) input.value = value || "";

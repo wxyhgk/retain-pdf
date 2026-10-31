@@ -8,6 +8,7 @@ import {
 export interface CredentialDialogValues {
   paddleToken: string;
   mineruToken?: string;
+  glmOcrToken?: string;
   modelApiKey: string;
   modelBaseUrl: string;
   modelName: string;
@@ -22,6 +23,7 @@ export interface CredentialDialogValues {
 export interface CredentialDialogElementsLike {
   paddleInput?: { value?: string } | null;
   mineruInput?: { value?: string } | null;
+  glmOcrInput?: { value?: string } | null;
   apiKeyInput?: { value?: string } | null;
   modelBaseUrlInput?: { value?: string } | null;
   modelNameInput?: { value?: string } | null;
@@ -38,7 +40,7 @@ export interface ReadCredentialDialogValuesOptions {
 }
 
 export interface BuildBrowserCredentialConfigOptions {
-  values: Pick<CredentialDialogValues, "paddleToken" | "mineruToken" | "modelApiKey" | "ocrCredentialRef" | "translationCredentialRef">;
+  values: Pick<CredentialDialogValues, "paddleToken" | "mineruToken" | "glmOcrToken" | "modelApiKey" | "ocrCredentialRef" | "translationCredentialRef">;
   currentOcrProvider: () => string;
   defaultModelApiKey?: () => string;
 }
@@ -54,6 +56,7 @@ export function readCredentialDialogValues({
   const {
     paddleInput,
     mineruInput,
+    glmOcrInput,
     apiKeyInput,
     modelBaseUrlInput,
     modelNameInput,
@@ -65,6 +68,7 @@ export function readCredentialDialogValues({
   return {
     paddleToken: paddleInput?.value?.trim() || "",
     mineruToken: mineruInput?.value?.trim() || "",
+    glmOcrToken: glmOcrInput?.value?.trim() || "",
     modelApiKey: apiKeyInput?.value?.trim() || "",
     modelBaseUrl: modelBaseUrlInput?.value?.trim() || "",
     modelName: modelNameInput?.value?.trim() || "",
@@ -85,6 +89,7 @@ export function buildBrowserCredentialConfig({
     ocrCredentialRef: `${values.ocrCredentialRef || ""}`.trim(),
     paddleToken: values.paddleToken,
     mineruToken: values.mineruToken || "",
+    glmOcrToken: values.glmOcrToken || "",
     translationCredentialRef: `${values.translationCredentialRef || ""}`.trim(),
     modelApiKey: `${values.modelApiKey || defaultModelApiKey?.() || ""}`.trim(),
   };
@@ -106,8 +111,10 @@ export function buildTaskOptionsFromDialogValues({
 }
 
 export function ocrTokenFromDialogValues(
-  values: Partial<Pick<CredentialDialogValues, "paddleToken" | "mineruToken">> = {},
+  values: Partial<Pick<CredentialDialogValues, "paddleToken" | "mineruToken" | "glmOcrToken">> = {},
   providerId = "paddle",
 ) {
-  return (providerId === "mineru" ? values.mineruToken : values.paddleToken) || "";
+  if (providerId === "mineru") return values.mineruToken || "";
+  if (providerId === "glm_ocr") return values.glmOcrToken || "";
+  return values.paddleToken || "";
 }

@@ -1,4 +1,4 @@
-import { getOcrProviderDefinition, normalizeOcrProvider } from "@/platform/config/providers.js";
+import { getOcrProviderDefinition, normalizeOcrProvider, ocrKeyBorrowable } from "@/platform/config/providers.js";
 
 /** desktop-config.json 里与凭据有关的那几个字段（见 desktop-persistence 的 savePayload）。 */
 export interface DesktopCredentialSnapshot {
@@ -7,6 +7,7 @@ export interface DesktopCredentialSnapshot {
   translationCredentialRef?: string;
   paddleToken?: string;
   mineruToken?: string;
+  glmOcrToken?: string;
   modelApiKey?: string;
 }
 
@@ -24,13 +25,14 @@ function filled(value: unknown): boolean {
  * 判据沿用 credential-vault 已有的那条（OCR + 翻译两边都要有凭据），只是同时接受
  * 明文 token：早于凭据库的快照里只有 token 没有 ref，它们同样是配好了的。
  *
- * 两个 OCR provider 都是在线服务、都需要 token（见 OCR_PROVIDER_DEFINITIONS），
- * 所以这里不区分"某些 provider 免 token"。
+ * OCR provider 都是在线服务、都需要 token（见 OCR_PROVIDER_DEFINITIONS）；只有 GLM-OCR 可以不填自己的，
+ * 借智谱翻译的 key（保存设置时已经核过翻译是智谱）。
  */
 export function hasDesktopCredentials(snapshot?: DesktopCredentialSnapshot | null): boolean {
   const config = (snapshot && typeof snapshot === "object" ? snapshot : {}) as Record<string, unknown>;
   const definition = getOcrProviderDefinition(normalizeOcrProvider(config.ocrProvider));
-  const ocrReady = filled(config.ocrCredentialRef) || filled(config[definition.runtimeConfigKey]);
   const translationReady = filled(config.translationCredentialRef) || filled(config.modelApiKey);
+  const ocrReady = filled(config.ocrCredentialRef) || filled(config[definition.runtimeConfigKey])
+    || (ocrKeyBorrowable(definition.id) && translationReady);
   return ocrReady && translationReady;
 }

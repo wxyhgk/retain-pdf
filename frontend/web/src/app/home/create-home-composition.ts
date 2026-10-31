@@ -92,6 +92,7 @@ export function createHomeComposition({
     ocrCredentialRef: "",
     paddleToken: "",
     mineruToken: "",
+    glmOcrToken: "",
     translationCredentialRef: "",
     modelApiKey: "",
   }),

@@ -45,6 +45,7 @@ export function loadBrowserStoredConfig() {
     ),
     paddleToken: preferNonEmpty(fromSnap.paddleToken, fromStorage.paddleToken),
     mineruToken: preferNonEmpty(fromSnap.mineruToken, fromStorage.mineruToken),
+    glmOcrToken: preferNonEmpty(fromSnap.glmOcrToken, fromStorage.glmOcrToken),
     translationCredentialRef: preferNonEmpty(
       fromSnap.translationCredentialRef,
       fromStorage.translationCredentialRef,
