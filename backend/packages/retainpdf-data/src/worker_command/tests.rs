@@ -1197,3 +1197,49 @@ fn render_prepare_command_writes_spec_shared_with_the_render_stage() {
     let raw = serde_json::to_string(&spec).expect("spec json");
     assert!(!raw.contains("credential"), "render prepare spec must carry no credentials");
 }
+
+#[test]
+fn domain_prewarm_command_writes_a_spec_with_the_translation_model_and_no_key() {
+    let config = test_config();
+    let request = build_request(WorkflowKind::Book);
+    let job_paths = build_paths(config.as_ref());
+    let cmd = build_worker_stage_command(
+        &config.worker_command_runtime(),
+        &request,
+        &job_paths,
+        WorkerStageCommand::DomainPrewarm {
+            source_pdf_path: Path::new("/tmp/upload.pdf"),
+        },
+    )
+    .expect("build domain prewarm command");
+
+    assert_eq!(
+        cmd.get(2).map(String::as_str),
+        Some("retainpdf_pipeline.translate.entrypoints.domain_prewarm")
+    );
+    assert!(arg_value(&cmd, "--spec")
+        .expect("spec flag")
+        .ends_with("domain-prewarm.spec.json"));
+    let spec = read_spec_from_command(&cmd);
+    assert_eq!(spec["schema_version"], "domain_prewarm.stage.v1");
+    assert_eq!(spec["inputs"]["source_pdf"], "/tmp/upload.pdf");
+    // 共享缓存按（模型, 预览文本）取：模型参数必须和翻译阶段的 spec 同源，否则预热的结果翻译阶段命中不了
+    let translate = read_spec_from_command(
+        &build_worker_stage_command(
+            &config.worker_command_runtime(),
+            &request,
+            &job_paths,
+            WorkerStageCommand::Translate {
+                source_json_path: Path::new("/tmp/document.v1.json"),
+                source_pdf_path: Path::new("/tmp/source.pdf"),
+                layout_json_path: None,
+            },
+        )
+        .expect("build translate command"),
+    );
+    for key in ["mode", "model", "base_url", "api_protocol", "thinking"] {
+        assert_eq!(spec["params"][key], translate["params"][key], "param {key}");
+    }
+    assert_eq!(spec["params"]["credential_ref"], "env:RETAIN_TRANSLATION_API_KEY");
+    assert!(!serde_json::to_string(&spec).unwrap().contains("sk-"));
+}

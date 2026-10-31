@@ -477,7 +477,8 @@
         "devtools/tests/rendering/test_typst_runtime_failure_policy.py",
         "devtools/tests/rendering/test_vector_text_cleanup.py",
         "devtools/tests/rendering/test_visual_profile.py",
-        "devtools/tests/rendering_support/prewarm_fixtures.py"
+        "devtools/tests/rendering_support/prewarm_fixtures.py",
+        "devtools/tests/translation/test_domain_prewarm.py"
       ],
       "runtime_required": true,
       "devtool_required": true
@@ -613,6 +614,7 @@
         "devtools/tests/translation/test_compact_prompts.py",
         "devtools/tests/translation/test_direct_typst_normalize.py",
         "devtools/tests/translation/test_direct_typst_protocol_shell.py",
+        "devtools/tests/translation/test_domain_prewarm.py",
         "devtools/tests/translation/test_execution_boundaries.py",
         "devtools/tests/translation/test_execution_ownership.py",
         "devtools/tests/translation/test_executor_context.py",
@@ -731,6 +733,7 @@
         "retainpdf_pipeline/runtime/pipeline/book_pipeline.py",
         "retainpdf_pipeline/runtime/pipeline/render_only_pipeline.py",
         "retainpdf_pipeline/services/pipeline_shared/summary.py",
+        "retainpdf_pipeline/translate/entrypoints/domain_prewarm.py",
         "retainpdf_pipeline/translate/entrypoints/from_ocr_pipeline.py",
         "retainpdf_pipeline/translate/entrypoints/translate_only_pipeline.py"
       ],
@@ -752,6 +755,7 @@
         "devtools/tests/rendering/test_render_prewarm.py",
         "devtools/tests/test_output_root_isolation.py",
         "devtools/tests/translation/test_agent_flow.py",
+        "devtools/tests/translation/test_domain_prewarm.py",
         "devtools/tests/translation/test_pipeline_events_protocol.py",
         "devtools/tests/translation/test_translation_cache.py",
         "devtools/tests/translation/test_translation_editorial.py",
@@ -797,6 +801,7 @@
         "retainpdf_pipeline/ocr/ocr_provider/provider_pipeline.py",
         "retainpdf_pipeline/runtime/pipeline/book_pipeline.py",
         "retainpdf_pipeline/runtime/pipeline/render_only_pipeline.py",
+        "retainpdf_pipeline/translate/entrypoints/domain_prewarm.py",
         "retainpdf_pipeline/translate/entrypoints/from_ocr_pipeline.py",
         "retainpdf_pipeline/translate/entrypoints/translate_only_pipeline.py",
         "retainpdf_pipeline/translate/translation_stage.py"
@@ -848,6 +853,7 @@
         "devtools/tests/translation/test_continuation_whole_paragraph.py",
         "devtools/tests/translation/test_direct_typst_normalize.py",
         "devtools/tests/translation/test_direct_typst_protocol_shell.py",
+        "devtools/tests/translation/test_domain_prewarm.py",
         "devtools/tests/translation/test_execution_boundaries.py",
         "devtools/tests/translation/test_execution_ownership.py",
         "devtools/tests/translation/test_executor_context.py",

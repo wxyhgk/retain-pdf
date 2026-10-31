@@ -22,6 +22,7 @@ const NORMALIZE_STAGE_SCHEMA_VERSION: &str = "normalize.stage.v1";
 const TRANSLATE_STAGE_SCHEMA_VERSION: &str = "translate.stage.v1";
 const RENDER_STAGE_SCHEMA_VERSION: &str = "render.stage.v1";
 const RENDER_PREPARE_STAGE_SCHEMA_VERSION: &str = "render_prepare.stage.v1";
+const DOMAIN_PREWARM_STAGE_SCHEMA_VERSION: &str = "domain_prewarm.stage.v1";
 const PROVIDER_STAGE_SCHEMA_VERSION: &str = "provider.stage.v1";
 pub(crate) const TRANSLATION_API_KEY_ENV_NAME: &str = "RETAIN_TRANSLATION_API_KEY";
 /// 审校 key 的 env 名。worker_process 解析出 key 后经它注入；spec 里只写 env 引用。
@@ -42,6 +43,10 @@ fn render_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
 
 fn render_prepare_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
     job_paths.specs_dir.join("render-prepare.spec.json")
+}
+
+fn domain_prewarm_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
+    job_paths.specs_dir.join("domain-prewarm.spec.json")
 }
 
 fn provider_stage_spec_path(job_paths: &JobPaths) -> PathBuf {
@@ -329,6 +334,41 @@ pub(crate) fn write_render_prepare_stage_spec(
     let content = serde_json::to_string_pretty(&payload)?;
     fs::write(&spec_path, content)
         .with_context(|| format!("write render prepare stage spec: {}", spec_path.display()))?;
+    Ok(spec_path)
+}
+
+/// OCR 期间先做识别领域的辅助进程（`retainpdf_pipeline.translate.entrypoints.domain_prewarm`）的 spec：只要源 PDF 和翻译模型参数。
+/// 翻译阶段的 spec 要等 OCR 结果出来才写得了。key 只经 env 注入，这里只写 env 引用。
+pub(crate) fn write_domain_prewarm_stage_spec(
+    request: &ResolvedJobSpec,
+    job_paths: &JobPaths,
+    source_pdf_path: &Path,
+) -> Result<PathBuf> {
+    ensure_specs_dir(job_paths)?;
+    let spec_path = domain_prewarm_stage_spec_path(job_paths);
+    let payload = json!({
+        "schema_version": DOMAIN_PREWARM_STAGE_SCHEMA_VERSION,
+        "stage": "domain_prewarm",
+        "job": {
+            "job_id": request.job_id,
+            "job_root": job_paths.root,
+            "workflow": request.workflow,
+        },
+        "inputs": {
+            "source_pdf": source_pdf_path,
+        },
+        "params": {
+            "mode": request.translation.mode,
+            "model": request.translation.model,
+            "base_url": request.translation.base_url,
+            "api_protocol": request.translation.api_protocol,
+            "thinking": request.translation.thinking,
+            "credential_ref": format!("env:{TRANSLATION_API_KEY_ENV_NAME}"),
+        },
+    });
+    let content = serde_json::to_string_pretty(&payload)?;
+    fs::write(&spec_path, content)
+        .with_context(|| format!("write domain prewarm spec: {}", spec_path.display()))?;
     Ok(spec_path)
 }
 

@@ -7,13 +7,14 @@ use crate::models::domain::{RefineOverride, ResolvedJobSpec};
 use crate::storage_paths::JobPaths;
 
 use super::entrypoints::{
+    domain_prewarm_command as build_domain_prewarm_entrypoint,
     normalize_ocr_command as build_normalize_entrypoint,
     render_only_command as build_render_only_entrypoint,
     render_prepare_command as build_render_prepare_entrypoint,
     translate_only_command as build_translate_only_entrypoint,
 };
 use super::stage_specs::{
-    write_normalize_stage_spec, write_render_prepare_stage_spec, write_render_stage_spec,
+    write_domain_prewarm_stage_spec, write_normalize_stage_spec, write_render_prepare_stage_spec, write_render_stage_spec,
     write_translate_stage_spec,
 };
 
@@ -54,6 +55,8 @@ pub enum WorkerStageCommand<'a> {
         source_pdf_path: &'a Path,
         translations_dir: &'a Path,
     },
+    /// OCR 期间先做识别领域（辅助进程，同上；它要调翻译模型，由调用方注入翻译 key）。
+    DomainPrewarm { source_pdf_path: &'a Path },
 }
 
 pub fn build_worker_stage_command(
@@ -118,6 +121,10 @@ pub fn build_worker_stage_command(
                 translations_dir,
             )?;
             Ok(build_render_prepare_entrypoint(config, &spec_path))
+        }
+        WorkerStageCommand::DomainPrewarm { source_pdf_path } => {
+            let spec_path = write_domain_prewarm_stage_spec(request, job_paths, source_pdf_path)?;
+            Ok(build_domain_prewarm_entrypoint(config, &spec_path))
         }
     }
 }
