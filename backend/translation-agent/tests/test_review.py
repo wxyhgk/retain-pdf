@@ -10,6 +10,7 @@ from retainpdf_translation_agent import BlockResult
 from retainpdf_translation_agent import DocumentRun
 from retainpdf_translation_agent import PageInput
 from retainpdf_translation_agent import TranslationAgent
+from retainpdf_translation_agent.agent import format_answer
 from retainpdf_translation_agent.review import review_page
 
 SOURCE = "Adding the font size to each token reduces column merges by about a third, and costs a hundred times as much data."
@@ -31,8 +32,11 @@ class Model:
 
     def __call__(self, body: dict) -> dict:
         self.bodies.append(body)
-        name = body["tools"][0]["name"]
-        return {"content": [{"type": "tool_use", "name": name, "input": self.answers.pop(0)}], "usage": {"input_tokens": 40, "output_tokens": 10}}
+        data = self.answers.pop(0)
+        if "tools" not in body:  # 初译交回纯文本
+            text = format_answer({t["id"]: t["translation"] for t in data["translations"]})
+            return {"content": [{"type": "text", "text": text}], "usage": {"input_tokens": 40, "output_tokens": 10}}
+        return {"content": [{"type": "tool_use", "name": body["tools"][0]["name"], "input": data}], "usage": {"input_tokens": 40, "output_tokens": 10}}
 
 
 def _ticket(**overrides) -> dict:
@@ -88,7 +92,7 @@ def test_a_block_gets_at_most_two_edits() -> None:
 def test_document_run_reviews_every_page_once(tmp_path: Path) -> None:
     model = Model({"translations": [{"id": "p1", "translation": TRANSLATION}, {"id": "h", "translation": "2.5 失败案例"}]}, {"issues": [_ticket()]})
     outcome = DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, review=True).run([_page()])
-    assert [b["tools"][0]["name"] for b in model.bodies] == ["submit_translations", "submit_review"]
+    assert [b["tools"][0]["name"] if "tools" in b else "plain_text" for b in model.bodies] == ["plain_text", "submit_review"]
     assert outcome.results["p1"].translation.endswith("所需数据是原来的一百倍。")
     ledger = [json.loads(line) for line in (tmp_path / "ledger.jsonl").read_text(encoding="utf-8").splitlines()]
     review = next(e for e in ledger if e["event"] == "review")

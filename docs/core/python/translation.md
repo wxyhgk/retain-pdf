@@ -176,7 +176,7 @@ load document.v1
 - 额度用完、密钥不对、一直限流（agent 的 `StopRun`）：抛 `AgentRunStopped`，阶段失败，进度留着，重试时从断点接着翻、已缓存的请求不再花钱。
 - 模型请求用 `make_http_transport(任务的密钥, url=base_url + "/messages")`，不读服务器的 `ANTHROPIC_API_KEY`。
 - `execute_translation_request` 对 agent 强制 `math_mode=direct_typst`、`preparation=off`；Rust 写渲染 spec 时，agent 任务翻译之后那次渲染的精修是 off（手动精修照旧）。
-- 模型偶尔把工具调用里的数组字段写成一段 JSON 字符串（实测碰到过，而且是坏的）：agent 包能解析就照用，解析不了就当那几块没交、重翻。
+- 初译、重翻、改稿交回纯文本（每块 `@@ 块号` 开头，2026-10-31 起，不再用 JSON 工具调用）：没按格式交的、被 max_tokens 截断的最后一块当没交、重翻。通读、审校照旧用工具调用，数组字段被写成一段 JSON 字符串的能解析就照用，解析不了当空。
 
 测试：`backend/pipeline/devtools/tests/translation/test_agent_flow.py`（假模型整条跑通、死信、停下后续跑、接续组写回）。
 

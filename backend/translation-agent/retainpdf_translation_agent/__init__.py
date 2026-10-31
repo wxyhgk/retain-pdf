@@ -8,6 +8,7 @@ from retainpdf_translation_agent.agent import QuotaExhausted
 from retainpdf_translation_agent.agent import RateLimited
 from retainpdf_translation_agent.agent import StopRun
 from retainpdf_translation_agent.agent import TranslationAgent
+from retainpdf_translation_agent.agent import format_answer
 from retainpdf_translation_agent.agent import http_transport
 from retainpdf_translation_agent.agent import make_http_transport
 from retainpdf_translation_agent.checks import CHECKS_VERSION
@@ -60,6 +61,7 @@ __all__ = [
     "StopRun",
     "Term",
     "TranslationAgent",
+    "format_answer",
     "blocks_using",
     "build_context",
     "check_block",

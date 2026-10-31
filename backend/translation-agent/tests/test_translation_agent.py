@@ -13,6 +13,11 @@ from retainpdf_translation_agent import PageInput
 from retainpdf_translation_agent import RevisionRequest
 from retainpdf_translation_agent import TranslationAgent
 from retainpdf_translation_agent import check_block
+from retainpdf_translation_agent.agent import format_answer
+from retainpdf_translation_agent.agent import parse_answer
+from retainpdf_translation_agent.agent import strict_tool
+from retainpdf_translation_agent.reader import READER_TOOL
+from retainpdf_translation_agent.review import REVIEW_TOOL
 from retainpdf_translation_agent import check_group
 
 
@@ -32,8 +37,7 @@ def _page() -> PageInput:
 
 
 def _response(translations: dict[str, str]) -> dict:
-    items = [{"id": k, "translation": v} for k, v in translations.items()]
-    return {"content": [{"type": "tool_use", "name": "submit_translations", "input": {"translations": items}}], "usage": {"input_tokens": 10, "output_tokens": 5}}
+    return {"content": [{"type": "text", "text": format_answer(translations)}], "usage": {"input_tokens": 10, "output_tokens": 5}}
 
 
 class Scripted:
@@ -223,17 +227,17 @@ def test_missing_blocks_are_retried_together_in_one_request() -> None:
     assert results["t"].attempts == 2 and results["t"].status == "ok" and results["t"].history[0]["issues"][0]["code"] == "missing"
 
 
-def test_every_role_sends_a_strict_tool_with_closed_objects() -> None:
-    """strict 工具：接口保证参数符合 schema（论文实跑碰到过数组被写成坏掉的 JSON 字符串）。"""
+def test_the_translator_answers_in_plain_text_and_other_roles_use_strict_tools() -> None:
+    """初译不用工具、交回纯文本（2026-10-31 用户定：公式里的反斜杠在 JSON 里要写两个）；通读、审校照旧用 strict 工具。"""
     bodies: list[dict] = []
 
     def model(body: dict) -> dict:
         bodies.append(body)
         return _response({"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"})
 
-    TranslationAgent(model="fake", transport=model).translate_page(_page())
-    tool = bodies[0]["tools"][0]
-    assert tool["strict"] is True
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
+    assert "tools" not in bodies[0] and "tool_choice" not in bodies[0] and "@@" in bodies[0]["system"]
+    assert results["t"].translation == "1 引言" and results["cap"].status == "ok"
 
     def objects(node):
         if isinstance(node, dict):
@@ -245,28 +249,41 @@ def test_every_role_sends_a_strict_tool_with_closed_objects() -> None:
             for value in node:
                 yield from objects(value)
 
-    found = list(objects(tool["input_schema"]))
-    assert found and all(o["additionalProperties"] is False for o in found)
+    for tool in (REVIEW_TOOL, READER_TOOL):
+        found = list(objects(strict_tool(tool)["input_schema"]))
+        assert found and all(o["additionalProperties"] is False for o in found)
 
 
-def test_translations_written_as_a_json_string_are_decoded_or_retried() -> None:
-    """真实文档实测：模型把 translations 写成一段 JSON 字符串，而且那段 JSON 是坏的。能解析就照用，解析不了就当没交、重翻。"""
-    good = json.dumps([{"id": k, "translation": v} for k, v in {"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"}.items()], ensure_ascii=False)
+def test_the_plain_text_answer_format_round_trips_and_tolerates_noise() -> None:
+    """交卷格式：`@@ 块号` 一节一块；术语、例外、备注各一节。模型先说一句话、包上代码块、标题行尾多写 @@ 都照样认。"""
+    terms = [{"block_id": "b1", "source": "finite difference", "target": "有限差分", "category": "term"}, {"block_id": "b1", "source": "Lanczos", "target": "Lanczos", "category": "keep"}]
+    exceptions = [{"block_id": "b2", "source": "force", "used": "力量", "reason": "这里是比喻"}]
+    text = format_answer({"b1": "公式 $ \\delta F_{\\mathrm{D}} $ 照抄。\n第二行。", "__cg__:g1": "一整段。"}, terms=terms, exceptions=exceptions, notes="拿不准")
+    parsed = parse_answer(text)
+    assert parsed["translations"] == {"b1": "公式 $ \\delta F_{\\mathrm{D}} $ 照抄。\n第二行。", "__cg__:g1": "一整段。"}
+    assert parsed["terms"] == terms and parsed["term_exceptions"] == exceptions and parsed["notes"] == "拿不准"
+    noisy = parse_answer("好的，译文如下：\n```\n@@ b1 @@\n一。\n\n@@ b1\n二。\n```\n")
+    assert noisy["translations"] == {"b1": "二。"} and noisy["duplicates"] == ["b1"]
+    assert parse_answer("@@ b1\n一。\n\n@@ b2\n写到一半", truncated=True)["translations"] == {"b1": "一。"}, "a cut-off last block counts as missing"
+
+
+def test_doubled_backslashes_copied_from_the_json_request_are_collapsed() -> None:
+    """请求是 JSON，原文的 "\\delta" 在里面写成 "\\\\delta"；模型照抄成两个反斜杠的，程序并成一个（原文没有连着两个反斜杠时）。"""
+    page = PageInput(page_label="1", blocks=[BlockInput("f", "paragraph", "the force $ \\delta F_{\\mathrm{D}} $ is small for every dimer here", True)])
+    answer = {"f": "对这里的每个二聚体，力 $ \\\\delta F_{\\\\mathrm{D}} $ 都很小"}
+    results, _ = TranslationAgent(model="fake", transport=Scripted(answer)).translate_page(page)
+    assert results["f"].translation == "对这里的每个二聚体，力 $ \\delta F_{\\mathrm{D}} $ 都很小" and results["f"].status == "ok"
+
+
+def test_an_answer_in_the_wrong_format_counts_as_missing_and_is_retried() -> None:
+    """模型没按格式交（一个 `@@` 都没有）：整页当没交，单块合成一次、接续组一次重翻。"""
     answers = [
-        {"content": [{"type": "tool_use", "name": "submit_translations", "input": {"translations": good}}], "usage": {}},
-    ]
-    results, _ = TranslationAgent(model="fake", transport=lambda body: answers.pop(0)).translate_page(_page())
-    assert results["t"].translation == "1 引言" and results["t"].attempts == 1
-
-    broken = '[{"id":"t","translation":"1 引言":"},{"id":"cap"'
-    answers = [
-        {"content": [{"type": "tool_use", "name": "submit_translations", "input": {"translations": broken}}], "usage": {}},
-        # 重翻：单块一个请求，接续组一个请求
+        {"content": [{"type": "text", "text": "1 引言\n图 1：召回率 [3]。"}], "usage": {}},
         _response({"t": "1 引言", "cap": "图 1：召回率 [3]。"}),
         _response({"cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"}),
     ]
     results, _ = TranslationAgent(model="fake", transport=lambda body: answers.pop(0)).translate_page(_page())
-    assert results["t"].translation == "1 引言" and results["t"].attempts == 2, "the broken answer counts as missing and is retried"
+    assert results["t"].translation == "1 引言" and results["t"].attempts == 2
     assert results["a1"].status != "fallback_source"
 
 

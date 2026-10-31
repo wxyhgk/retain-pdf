@@ -10,6 +10,7 @@ from retainpdf_translation_agent import DocumentRun
 from retainpdf_translation_agent import Glossary
 from retainpdf_translation_agent import PageInput
 from retainpdf_translation_agent import TranslationAgent
+from retainpdf_translation_agent.agent import format_answer
 from retainpdf_translation_agent.reader import Reading
 from retainpdf_translation_agent.reader import apply_reading
 from retainpdf_translation_agent.reader import candidate_phrases
@@ -36,6 +37,10 @@ def _book() -> list[PageInput]:
 
 
 def _tool(name: str, data: dict) -> dict:
+    """通读、审校交回工具调用；初译（submit_translations）交回纯文本。"""
+    if name == "submit_translations":
+        text = format_answer({t["id"]: t["translation"] for t in data["translations"]}, terms=data.get("terms"), exceptions=data.get("term_exceptions"))
+        return {"content": [{"type": "text", "text": text}], "usage": {"input_tokens": 50, "output_tokens": 10}}
     return {"content": [{"type": "tool_use", "name": name, "input": data}], "usage": {"input_tokens": 50, "output_tokens": 10}}
 
 
