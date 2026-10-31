@@ -41,15 +41,18 @@ test("HUD 上的时间写成 m:ss / h:mm:ss；按模型名认出服务商标志"
   assert.equal(modelLogo("my-own-model"), "");
 });
 
-test("完成：环写翻了几页，耗时按站分段，模型、token 都在", () => {
+test("完成：环写翻了几页，总耗时、模型、token 都在", () => {
   const hud = processingHudModel(base);
   assert.deepEqual([hud.gauge.value, hud.gauge.text, hud.gauge.title], [1, "134/134", "已翻译 134 / 134 页"]);
   assert.equal(hud.time.text, "2:51");
-  assert.deepEqual(hud.time.segments.map((s) => [s.key, s.text]), [["ocr", "1:28"], ["translate", "1:07"], ["render", "0:16"]], "0 秒的段不占位");
+  assert.equal(hud.time.title, "共用时 2 分 51 秒");
   assert.equal(hud.model.name, "claude-haiku-5-5");
   assert.match(hud.model.logo, /anthropic/);
   assert.equal(hud.tokens.text, "128.7 万");
-  assert.ok(Math.abs(hud.tokens.input.share - 980 / 1287) < 0.001);
+  // 各站小标签：OCR 站页数，翻译站模型标志（这里没有按环节的用量，就没有 token）。
+  assert.deepEqual(hud.stationChips.ocr.map((chip) => [chip.kind, chip.text]), [["pages", "134"]]);
+  assert.deepEqual(hud.stationChips.translate.map((chip) => chip.kind), ["model"]);
+  assert.match(hud.stationChips.translate[0].logo, /anthropic/);
 });
 
 test("在跑：环跟进度、写第几批；token 还在涨不摆", () => {
@@ -73,3 +76,23 @@ test("算不出来的块不出：没有计时、没有模型、没有用量", ()
   assert.equal(hud.tokens, null);
   assert.equal(hud.gauge.text, "134 页");
 });
+
+test("各站 token：翻译和译前准备加在一起挂翻译站，精修挂版面站，助手不挂；在跑时都不挂", () => {
+  const usage = usageViewModel({
+    schema: "token-usage.v1", scope: "document", totals: bucket(980_000, 307_000),
+    by_stage: [
+      { stage: "translate", group: "translation", label: "翻译", ...bucket(600_000, 27_000) },
+      { stage: "glossary", group: "preparation", label: "术语", ...bucket(70_000, 10_000) },
+      { stage: "review", group: "refine", label: "审校", ...bucket(130_000, 11_000) },
+      { stage: "ask", group: "assistant", label: "问答", ...bucket(20_000, 7_000) },
+    ],
+    by_model: [], by_month: [], jobs_counted: 1, jobs_estimated_from_reports: 0, first_at: null, last_at: null,
+  });
+  const hud = processingHudModel({ ...base, usage });
+  assert.equal(hud.stationChips.translate.find((chip) => chip.kind === "tokens").text, "70.7 万");
+  assert.equal(hud.stationChips.render.find((chip) => chip.kind === "tokens").text, "14.1 万");
+  assert.equal(Object.values(hud.stationChips).flat().filter((chip) => chip.kind === "tokens").length, 2, "助手的用量不挂在哪一站");
+  const running = processingHudModel({ ...base, usage, tone: "active", jobActive: true, runningPercent: 10 });
+  assert.equal(Object.values(running.stationChips).flat().some((chip) => chip.kind === "tokens"), false);
+});
+

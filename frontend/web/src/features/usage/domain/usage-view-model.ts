@@ -27,13 +27,13 @@ export type UsageGroup = {
   exact: string;
   /** 占最大一组的比例（0–1），画条形用。 */
   share: number;
+  /** 这一组的 token 数（几组相加时用）。 */
+  total: number;
   rows: UsageRow[];
 };
 
 export type UsageViewModel = {
   empty: boolean;
-  /** 输入、输出各多少 token（画比例条用）；合计在 metrics 里。 */
-  split: { input: number; output: number };
   metrics: UsageMetric[];
   notes: string[];
   stageGroups: UsageGroup[];
@@ -113,7 +113,7 @@ function monthLabel(month: string): string {
 export function usageViewModel(view: UsageSummaryView | null | undefined): UsageViewModel {
   const totals = view?.totals;
   if (!view || !totals || (!n(totals.total_tokens) && !n(view.jobs_counted))) {
-    return { empty: true, split: { input: 0, output: 0 }, metrics: [], notes: [], stageGroups: [], models: [], months: [], summaryLine: "" };
+    return { empty: true, metrics: [], notes: [], stageGroups: [], models: [], months: [], summaryLine: "" };
   }
   const notes: string[] = [];
   if (n(totals.requests_without_usage)) notes.push(`有 ${formatTokenCountExact(totals.requests_without_usage)} 次请求服务商没报用量，没算进来。`);
@@ -139,6 +139,7 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
       value: formatTokenCount(total),
       exact: formatTokenCountExact(total),
       share: groupMax ? total / groupMax : 0,
+      total,
       rows: items.map((stage) => row(stage.stage, stage.label || stage.stage, "", stage, stageMax)),
     }));
 
@@ -149,7 +150,6 @@ export function usageViewModel(view: UsageSummaryView | null | undefined): Usage
 
   return {
     empty: false,
-    split: { input: n(totals.input_tokens), output: n(totals.output_tokens) },
     metrics: usageMetrics(totals),
     notes,
     stageGroups: groups,
