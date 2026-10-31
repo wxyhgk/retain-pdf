@@ -9,6 +9,7 @@
 
 .book-detail-pipeline-percent,
 .book-detail-pipeline-time {
+  white-space: nowrap;
   color: var(--muted);
   font-size: 10.5px;
   font-variant-numeric: tabular-nums;
@@ -32,7 +33,7 @@
     left: var(--line-left);
     display: flex;
     width: max-content;
-    max-width: 118px;
+    max-width: 128px;
     gap: 6px;
     padding: 6px 8px;
     border: 1px solid transparent;
@@ -51,6 +52,7 @@
     background: var(--line);
   }
 
+  .book-detail-line .book-detail-pipeline-stage.is-open,
   .book-detail-line .book-detail-pipeline-stage.is-active {
     border-color: var(--line);
     background: var(--paper);
@@ -94,6 +96,72 @@
   .book-detail-line-scene {
     margin-top: -12%;
   }
+}
+
+/* —— 各站能做的事：说明里一个小按钮，点开在画面下面列出来 —— */
+
+.book-detail-pipeline-action {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 2px;
+  margin-top: 3px;
+  padding: 2px 6px 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--paper);
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.book-detail-pipeline-action:hover,
+.book-detail-pipeline-action[aria-expanded="true"] {
+  border-color: var(--ink);
+}
+
+.book-detail-pipeline-action svg {
+  width: 12px;
+  height: 12px;
+  transition: transform 160ms ease;
+}
+
+.book-detail-pipeline-action[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.book-detail-station-panel {
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+}
+
+.book-detail-station-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.book-detail-station-panel-head button {
+  display: inline-flex;
+  padding: 4px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+
+.book-detail-station-panel-head svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* —— 最近活动 —— */

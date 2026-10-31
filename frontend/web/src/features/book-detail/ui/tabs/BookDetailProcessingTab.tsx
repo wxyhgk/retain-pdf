@@ -8,6 +8,7 @@ import { JobFailureCard } from "../panels/processing/JobFailureCard.js";
 import { TranslationStoppedCard } from "../panels/processing/TranslationStoppedCard.js";
 import { loadJobFailureDetail } from "../../domain/job-failure-detail.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
+import type { JobRetryStage } from "@/platform/api/index.js";
 import { ProcessingSummary } from "../panels/processing/ProcessingSummary.jsx";
 import { hasEditorialRoom, processingFacts } from "../../domain/translation-coverage.js";
 import { TranslationCoveragePanel } from "../panels/processing/TranslationCoveragePanel.js";
@@ -21,9 +22,9 @@ import {
   unifiedHeadline,
   unifiedPercentOf,
 } from "./processing-summary-model.js";
-import { useState } from "react";
+import type { ReactNode } from "react";
 import type { BookDetailProcessingTabProps } from "./processing-tab-types.js";
-import { ChevronDown, LoaderCircle, Square } from "lucide-react";
+import { LoaderCircle, Square } from "lucide-react";
 import { TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
 import { EditorialFlowPanel } from "../panels/processing/EditorialFlowPanel.jsx";
 import { useEditorialFlow } from "../use-editorial-flow.js";
@@ -185,33 +186,15 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
     </div>
   ) : null;
 
-  // 书已经翻译完、此刻没有任务在跑：所有「再来一次」的动作收进卡片头的「重新处理」，
-  // 点开才是一张清单（每项一行，自己的设置挨着自己的按钮）。三步进度这时也收起来 ——
-  // 全是勾，只占地方。以前这些平铺在页面上：三步进度、四个按钮、OCR 页码勾选框、引擎下拉。
+  // 书已经翻译完（或任务停下）、此刻没有任务在跑：「再来一次」的动作挂在流水线各站上（重新 OCR 在 OCR 站、
+  // 重新翻译和精修在翻译站、重新渲染在版面站，停下时「从头翻译」在文档准备站），点哪站列哪站的。
+  // 流水线这时也照样画出来：五站全勾，每站写用时。以前动作收在卡片头的「重新处理」里，流水线收起。
   const reprocessMode = hasTranslationJob
     && (!translation?.canTranslate || translationStopped)
     && !translationActive
     && !ocrActive
     && !bootstrapping
     && !ocr?.pending;
-  const [reprocessOpen, setReprocessOpen] = useState(false);
-  const reprocessToggle = reprocessMode ? (
-    <button
-      id="book-detail-reprocess-toggle"
-      type="button"
-      className={btn("outline")}
-      aria-expanded={reprocessOpen}
-      aria-controls="book-detail-reprocess-sheet"
-      onClick={() => setReprocessOpen((open) => !open)}
-    >
-      <span>重新处理</span>
-      <ChevronDown
-        className="ml-1 size-4 transition-transform"
-        style={reprocessOpen ? { transform: "rotate(180deg)" } : undefined}
-        aria-hidden="true"
-      />
-    </button>
-  ) : null;
   const ocrRow = (
     <li className="book-detail-reprocess-row" data-reprocess-stage="ocr">
       <div className="book-detail-reprocess-copy">
@@ -253,19 +236,24 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
       </div>
     </li>
   ) : null;
-  const reprocessSheet = reprocessMode && reprocessOpen ? (
-    <div id="book-detail-reprocess-sheet">
-      <TranslationStageActions
-        variant="sheet"
-        actions={translation?.stageActions}
-        loading={translation?.stageActionsLoading}
-        pendingStage={translation?.stageActionPending}
-        error={translation?.stageActionError}
-        onRetry={translation?.onRetryStage}
-        extraRows={<>{ocrRow}{restartRow}</>}
-      />
-    </div>
-  ) : null;
+  const stageSheet = (stages: JobRetryStage[], extraRows: ReactNode = null) => (
+    <TranslationStageActions
+      variant="sheet"
+      stages={stages}
+      actions={translation?.stageActions}
+      loading={translation?.stageActionsLoading}
+      pendingStage={translation?.stageActionPending}
+      error={translation?.stageActionError}
+      onRetry={translation?.onRetryStage}
+      extraRows={extraRows}
+    />
+  );
+  const stationActions = reprocessMode ? {
+    ocr: { label: "重新 OCR", content: stageSheet([], ocrRow) },
+    translate: { label: "重译 / 精修", content: stageSheet(["translation", "refine"]) },
+    render: { label: "重新渲染", content: stageSheet(["render"]) },
+    ...(restartRow ? { prepare: { label: "从头翻译", content: stageSheet([], restartRow) } } : {}),
+  } : {};
   // 翻全了就不画覆盖条：100% 的一排满格什么也没说。没翻全时它说明缺哪几页。
   const coverageIncomplete = Boolean(coverage?.page_count) && (coverage?.translated_pages ?? 0) < (coverage?.page_count ?? 0);
 
@@ -285,12 +273,10 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           bootstrapping={bootstrapping}
           facts={facts.facts}
           keptOriginBlocks={facts.keptOriginBlocks}
-          action={reprocessToggle}
         />
-        {reprocessSheet}
 
-        {/* 唯一轨道：OCR 是流水线第一站，不再是与翻译并列的能力标题。翻译完成后收起。 */}
-        {reprocessMode && !translationStopped ? null : <ProcessingPipelineRail
+        {/* 唯一轨道：OCR 是流水线第一站，不再是与翻译并列的能力标题。翻译完成后照样画，重做的动作挂在各站上。 */}
+        <ProcessingPipelineRail
           item={translationItem}
           hasTranslationJob={hasTranslationJob}
           ocrStatus={{ ...ocrStatus, label: ocrStatusLabel }}
@@ -302,7 +288,8 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           loading={bootstrapping}
           timeline={jobTimeline.timeline}
           now={jobTimeline.now}
-        />}
+          stationActions={stationActions}
+        />
         <EditorialLivePanel live={editorialLive} active={Boolean(translation?.isActive)} />
         <EditorialFlowPanel flow={editorialFlow} />
 

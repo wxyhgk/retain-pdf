@@ -122,20 +122,20 @@ test("已翻译卡打开书籍详情:有对照阅读,无翻译按钮", async () 
     false,
     "打开书籍详情不得自动打开工作流弹窗",
   );
-  // 已完成：一行摘要 +「重新处理」，三步进度和历史流程大卡都不占位置。
+  // 已完成：一行摘要 + 流水线（五站全勾，重做的动作挂在各站上），历史流程大卡不占位置。
   await waitFor(
     () => dlg.querySelector("[data-processing-unified-status]")?.textContent?.includes("已完成"),
     "显示已完成",
   );
   assert.equal(byId("book-detail-job-status-card"), null, "完成态不展示历史流程大卡");
   assert.equal(byId("book-detail-translate-progress"), null, "完成态不占用进度区域");
-  assert.equal(dlg.querySelector('[data-translation-process="true"]'), null, "完成态收起三步进度");
-  // 「重新处理」清单（stage-actions）第一次打开「进度」页才请求。
+  // 各站的动作（stage-actions）第一次打开「进度」页才请求。
   click(dom, byId("book-detail-tab-processing"));
   await waitFor(() => byId("book-detail-tab-processing").getAttribute("data-state") === "active", "切到进度");
-  const reprocessToggle = await waitFor(() => byId("book-detail-reprocess-toggle"), "「重新处理」开关");
-  assert.equal(byId("book-detail-retry-render-btn"), null, "清单默认收起");
-  click(dom, reprocessToggle);
+  const translateStation = await waitFor(() => byId("book-detail-station-translate-btn"), "翻译站「重译 / 精修」");
+  assert.ok(dlg.querySelector('[data-translation-process="true"]'), "完成态照样画流水线");
+  assert.equal(byId("book-detail-retry-render-btn"), null, "各站的动作默认收起");
+  click(dom, translateStation);
   // 仍然不得弹工作流
   assert.equal(
     services.stores.dialog.getSnapshot().open,
@@ -148,6 +148,7 @@ test("已翻译卡打开书籍详情:有对照阅读,无翻译按钮", async () 
     () => byId("book-detail-retry-translation-btn"),
     "后端阶段动作加载重新翻译按钮",
   );
+  click(dom, byId("book-detail-station-render-btn"));
   const retryRenderButton = await waitFor(
     () => {
       const button = byId("book-detail-retry-render-btn");

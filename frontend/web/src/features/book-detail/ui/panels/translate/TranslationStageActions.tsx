@@ -75,6 +75,7 @@ export function TranslationStageActions({
   error = "",
   variant = "inline",
   extraRows = null,
+  stages,
   onRetry,
 }: {
   actions?: JobStageRetryActionView[];
@@ -82,6 +83,8 @@ export function TranslationStageActions({
   variant?: "inline" | "sheet";
   /** sheet 末尾追加的行（「重新 OCR」，它不属于翻译任务的阶段动作）。 */
   extraRows?: ReactNode;
+  /** 只列这几个阶段的动作（流水线上点哪一站就列哪一站的）；不传列全部。 */
+  stages?: JobRetryStage[];
   loading?: boolean;
   pendingStage?: JobRetryStage | "";
   error?: string;
@@ -99,12 +102,13 @@ export function TranslationStageActions({
   // 但父级未落 error 的场景（如 mock/装配差异），保证错误仍落到 UI。
   const [localError, setLocalError] = useState("");
   const checking = loading && !actions.length;
-  const visibleActions = checking ? LOADING_ACTIONS : actions;
+  const visibleActions = (checking ? LOADING_ACTIONS : actions)
+    .filter((action) => !stages || stages.includes(action.stage));
   const shownError = error || localError;
   const confirmCopy = confirmAction?.stage === "refine"
     ? CONFIRM_COPY[continuePage ? "refineContinue" : "refine"]
     : CONFIRM_COPY.translation;
-  if (!visibleActions.length && !shownError) return null;
+  if (!visibleActions.length && !extraRows && !shownError) return null;
 
   function describeRetryError(cause: unknown): string {
     const message = `${(cause as Error)?.message || cause || ""}`.trim();
