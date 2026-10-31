@@ -1,8 +1,8 @@
 // BookCard 封面 hover 区的圆形操作钮与图标解析。
-// 从 BookCard.tsx 机械拆出，行为不变。
+// 从 BookCard.tsx 机械拆出，行为不变。按钮本身是 @retainpdf/ui 的 IconButton（secondary、lg），只加一层阴影。
 
 import type * as React from "react";
-import { cn } from "@retainpdf/ui/lib/utils";
+import { IconButton, cn } from "@retainpdf/ui";
 import type { BookCardAction, LibraryCardItem } from "../../../domain/types.js";
 
 function IconEye(props: React.SVGProps<SVGSVGElement>) {
@@ -58,16 +58,12 @@ export function BookCardActionButton({
 }) {
   const label = `${action?.label || action?.id || "操作"}`.trim();
   return (
-    <button
-      type="button"
+    <IconButton
+      variant="secondary"
+      size="lg"
+      label={label}
       data-book-card-action={action?.id || ""}
-      className={cn(
-        "book-card-action-btn pointer-events-auto flex h-10 w-10 items-center justify-center rounded-[var(--btn-radius)] bg-paper/95 text-foreground shadow-md transition hover:bg-paper active:scale-90 disabled:opacity-50",
-        action?.className,
-        className,
-      )}
-      title={label}
-      aria-label={label}
+      className={cn("book-card-action-btn pointer-events-auto shadow-md", action?.className, className)}
       disabled={Boolean(action?.disabled)}
       onClick={(event) => {
         event.preventDefault();
@@ -77,6 +73,6 @@ export function BookCardActionButton({
       }}
     >
       {resolveActionIcon(action?.icon)}
-    </button>
+    </IconButton>
   );
 }

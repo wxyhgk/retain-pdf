@@ -2,7 +2,7 @@
 // 错误提示由概览信息区统一展示（阅读状态 / 合集 / 删除共用一个 error）。
 
 import { useState } from "react";
-import { ConfirmDialog } from "@retainpdf/ui";
+import { Button, ConfirmDialog } from "@retainpdf/ui";
 import { Trash2 } from "lucide-react";
 
 type DeleteFooterPanelProps = {
@@ -22,16 +22,16 @@ export function DeleteFooterPanel({
   return (
     <>
       <div className="book-detail-delete-panel">
-        <button
+        <Button
           id="book-detail-delete-btn"
-          type="button"
+          variant="danger"
+          size="sm"
           disabled={Boolean(busy)}
           onClick={() => setConfirmOpen(true)}
-          className="book-detail-delete-btn"
         >
           <Trash2 aria-hidden="true" />
           删除这本书
-        </button>
+        </Button>
         <ConfirmDialog
           id="book-detail-delete-confirm"
           title="删除书籍"

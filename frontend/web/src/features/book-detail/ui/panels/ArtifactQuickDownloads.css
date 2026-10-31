@@ -7,7 +7,7 @@
   gap: 7px;
   padding: 9px 10px 10px;
   border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
   background: color-mix(in srgb, var(--paper) 76%, transparent);
 }
 
@@ -16,7 +16,7 @@
   align-items: center;
   gap: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   font-weight: 600;
 }
 
@@ -30,38 +30,14 @@
   animation: spin 900ms linear infinite;
 }
 
+/* 「导出设置」是 @retainpdf/ui 的 IconButton（ghost、sm）；负的上下外边距让标题行不被它撑高。 */
 .book-detail-quick-downloads-settings {
-  display: flex;
-  margin-left: auto;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
+  margin: -4px 0 -4px auto;
   color: var(--muted);
-  background: transparent;
-  transition:
-    color 150ms var(--ease-out),
-    background-color 150ms var(--ease-out);
 }
 
-/* 加载指示器也占着 margin-left:auto。两个都在时靠右排，齿轮在最外侧。 */
 .book-detail-quick-downloads-loader + .book-detail-quick-downloads-settings {
   margin-left: 6px;
-}
-
-.book-detail-quick-downloads-settings > svg {
-  width: 13px;
-  height: 13px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .book-detail-quick-downloads-settings:hover {
-    color: var(--ink);
-    background: color-mix(in srgb, var(--ink) 6%, transparent);
-  }
 }
 
 .book-detail-quick-download-grid {
@@ -81,7 +57,7 @@
   gap: 2px;
   padding: 9px 11px;
   border: 1px solid color-mix(in srgb, var(--line) 75%, transparent);
-  border-radius: 10px;
+  border-radius: var(--ui-radius-md);
   color: var(--ink);
   text-align: left;
   background: var(--paper);
@@ -91,13 +67,13 @@
 }
 
 .book-detail-export-settings-option > strong {
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 600;
 }
 
 .book-detail-export-settings-option > span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 .book-detail-export-settings-option[aria-checked="true"] {
@@ -163,7 +139,7 @@
 }
 
 .book-detail-quick-download-label {
-  font-size: 10px;
+  font-size: var(--ui-text-2xs);
   font-weight: 550;
   line-height: 1;
   white-space: nowrap;

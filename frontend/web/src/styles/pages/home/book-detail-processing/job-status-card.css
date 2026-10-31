@@ -38,7 +38,7 @@
 
 .bd-job-status-title {
   overflow: hidden;
-  font-size: 14px;
+  font-size: var(--ui-text-base);
   font-weight: 700;
   line-height: 1.25;
   text-overflow: ellipsis;
@@ -48,7 +48,7 @@
 .bd-job-status-elapsed {
   margin-top: 2px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   font-variant-numeric: tabular-nums;
 }
 
@@ -61,11 +61,11 @@
   padding: 0 12px;
   appearance: none;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--ink);
   background: var(--bg);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 600;
 }
 
@@ -114,7 +114,7 @@
   padding: 12px 14px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
   background: linear-gradient(180deg, var(--paper) 0%, var(--bg) 100%);
 }
 
@@ -153,12 +153,12 @@
   padding: 0 12px;
   appearance: none;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--ink);
   background: var(--paper);
   box-shadow: 0 1px 2px color-mix(in srgb, var(--shadow-color) 5%, transparent);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 650;
   line-height: 26px;
   white-space: nowrap;
@@ -177,7 +177,7 @@
   max-height: 32px;
   overflow: hidden;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   line-height: 16px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
@@ -195,7 +195,7 @@
   height: 10px;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--bg);
 }
 
@@ -217,7 +217,7 @@
 .bd-job-status-percent {
   min-width: 2.75rem;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 750;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -227,7 +227,7 @@
   min-height: 14px;
   overflow: hidden;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -252,7 +252,7 @@
   flex: 0 0 18px;
   overflow: hidden;
   color: var(--danger);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   line-height: 18px;
 }
 
@@ -319,6 +319,6 @@
 .bd-job-status-cancel-error {
   margin: 0;
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   line-height: 1.5;
 }

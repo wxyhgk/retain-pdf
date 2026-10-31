@@ -95,7 +95,7 @@
 .book-detail-job-history-kind {
   flex: 0 0 auto;
   color: var(--ink);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 600;
 }
 
@@ -103,7 +103,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--ink);
-  font-size: 11.5px;
+  font-size: var(--ui-text-xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -111,7 +111,7 @@
 .book-detail-job-history-meta,
 .book-detail-job-history-supplied {
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   line-height: 1.45;
 }
 
@@ -119,10 +119,10 @@
 .book-detail-job-history-warning {
   width: fit-content;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--ink);
   background: var(--warn-weak);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   line-height: 1.5;
 }
 
@@ -131,7 +131,7 @@
   display: grid;
   gap: 3px;
   color: var(--ink);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   line-height: 1.45;
 }
 
@@ -149,7 +149,7 @@
   border-radius: 8px;
   color: var(--muted);
   background: var(--book-detail-shade-0);
-  font-size: 10px;
+  font-size: var(--ui-text-2xs);
   white-space: pre-wrap;
 }
 
@@ -172,9 +172,9 @@
 .book-detail-job-history-status {
   flex: 0 0 auto;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   line-height: 1.5;
   background: color-mix(in srgb, var(--ink) 6%, transparent);
   white-space: nowrap;

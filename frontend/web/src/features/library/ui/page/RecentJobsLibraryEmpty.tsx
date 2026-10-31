@@ -1,3 +1,4 @@
+import { Button } from "@retainpdf/ui";
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
 
 type RecentJobsLibraryEmptyProps = {
@@ -21,13 +22,9 @@ export function RecentJobsLibraryEmpty({ mode, errorMessage, emptyMessage, onUpl
           title={emptyMessage || "暂无最近任务"}
           hint="上传 PDF 后会出现在这里，处理完成即可阅读。"
         >
-          <button
-            type="button"
-            className="app-button empty-state-action"
-            onClick={onUpload}
-          >
+          <Button variant="primary" size="lg" className="empty-state-action" onClick={onUpload}>
             上传 PDF
-          </button>
+          </Button>
         </EmptyState>
       )}
     </div>

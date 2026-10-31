@@ -32,7 +32,7 @@
   gap: 7px;
   margin: 0;
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 640;
   letter-spacing: -0.015em;
 }
@@ -44,33 +44,17 @@
   stroke-width: 1.7;
 }
 
+/* 「编辑信息」是 @retainpdf/ui 的 Button（ghost、sm），平时淡一点，悬停变墨色。 */
 .book-detail-overview-text-btn {
-  display: inline-flex;
-  min-height: 28px;
-  align-items: center;
-  gap: 5px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: 999px;
   color: var(--muted);
-  background: transparent;
-  font-size: 12px;
-  font-weight: 560;
-  transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out);
 }
 
 .book-detail-overview-text-btn:hover {
   color: var(--ink);
-  background: var(--paper);
-}
-
-.book-detail-overview-text-btn svg {
-  width: 13px;
-  height: 13px;
 }
 
 .book-detail-overview-error {
   margin: 0;
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
 }

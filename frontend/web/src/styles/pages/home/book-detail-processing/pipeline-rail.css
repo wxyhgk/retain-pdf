@@ -50,7 +50,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--muted);
   background: var(--bg);
 }
@@ -63,7 +63,7 @@
 .book-detail-pipeline-mark-idle {
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: currentColor;
   opacity: 0.4;
 }
@@ -105,7 +105,7 @@
 
 .book-detail-pipeline-label {
   color: var(--ink);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 620;
 }
 
@@ -115,10 +115,10 @@
 
 .book-detail-pipeline-status {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--muted);
   background: color-mix(in srgb, var(--ink) 5%, transparent);
-  font-size: 10px;
+  font-size: var(--ui-text-2xs);
   font-weight: 600;
 }
 
@@ -139,7 +139,7 @@
 
 .book-detail-pipeline-desc {
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   line-height: 1.45;
 }
 
@@ -151,10 +151,10 @@
   gap: 4px;
   margin-top: 2px;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--ink);
   background: var(--warn-weak);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
 }
 
 .book-detail-pipeline-warning svg {

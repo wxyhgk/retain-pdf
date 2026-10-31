@@ -2,6 +2,7 @@
 // 怎么拆由 domain/artifact-visibility 决定，这里只管摆。
 // 下载 / 查看按钮的 id、aria-label 和 li 上的 data-artifact-id 是对外契约，调试区里的行也原样沿用。
 
+import { Button } from "@retainpdf/ui";
 import {
   Archive,
   Bot,
@@ -19,7 +20,6 @@ import {
   TriangleAlert,
 } from "lucide-react";
 
-import { btn } from "../../panels/ui.jsx";
 import {
   formatArtifactBytes,
   formatArtifactTime,
@@ -113,26 +113,24 @@ function ArtifactRow({
       </div>
       <div className="book-detail-artifact-actions">
         {item.previewable ? (
-          <button
+          <Button
             id={item.group === "source" ? "book-detail-open-source-file-btn" : undefined}
-            type="button"
-            className={btn("ghost", "book-detail-artifact-action")}
+            variant="ghost" size="sm" className="book-detail-artifact-action"
             onClick={() => onPreview(item)}
           >
             <ExternalLink aria-hidden="true" />
             <small>查看</small>
-          </button>
+          </Button>
         ) : null}
-        <button
-          type="button"
-          className={btn("outline", "book-detail-artifact-action")}
+        <Button
+          variant="secondary" size="sm" className="book-detail-artifact-action"
           disabled={downloading}
           aria-label={`下载${item.label}`}
           onClick={() => onDownload(item)}
         >
           <Download aria-hidden="true" />
           <small>{downloading ? "下载中" : "下载"}</small>
-        </button>
+        </Button>
       </div>
     </li>
   );
@@ -180,15 +178,14 @@ export function ArtifactCenterView({
                 {sectionJobMeta ? <small>{sectionJobMeta}</small> : null}
               </div>
               {previewJob ? (
-                <button
+                <Button
                   id={section.id === "ocr" ? "book-detail-open-ocr-file-btn" : undefined}
-                  type="button"
-                  className={btn("ghost", "book-detail-artifact-group-open")}
+                  variant="ghost" size="sm" className="book-detail-artifact-group-open"
                   onClick={() => onOpenJob(previewJob.jobId)}
                 >
                   <ExternalLink aria-hidden="true" />
                   <small>查看</small>
-                </button>
+                </Button>
               ) : null}
             </header>
             {section.items.length ? (

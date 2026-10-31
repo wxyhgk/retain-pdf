@@ -3,7 +3,7 @@
 
 import { memo } from "react";
 import type { KeyboardEvent, MouseEvent, SVGProps } from "react";
-import { cn } from "@/ui/lib/utils";
+import { IconButton, cn } from "@retainpdf/ui";
 import { formatZhDateCompact } from "@/platform/utils/datetime.js";
 import { cardSignatureOf } from "./BookCard.jsx";
 import { isLibraryCardProcessing, libraryCardBadge } from "../../domain/card/library-card-badge.js";
@@ -181,15 +181,9 @@ function BookListRowImpl({
 
       {batchMode ? null : (
         <div className="flex shrink-0 items-center self-center">
-          <button
-            type="button"
-            className="recent-job-reader flex h-9 w-9 items-center justify-center rounded-xl bg-muted/50 text-foreground transition hover:bg-muted active:scale-90"
-            title={readPresentation.label}
-            aria-label={readPresentation.label}
-            onClick={handleEye}
-          >
+          <IconButton variant="secondary" className="recent-job-reader" label={readPresentation.label} onClick={handleEye}>
             <IconEye />
-          </button>
+          </IconButton>
         </div>
       )}
     </div>

@@ -4,10 +4,10 @@
 
 .book-detail-quality-attention {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--warn);
   background: color-mix(in srgb, var(--warn) 12%, transparent);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   font-weight: 600;
 }
 
@@ -27,7 +27,7 @@
   border-radius: 8px;
   color: var(--ink);
   background: color-mix(in srgb, var(--warn) 10%, transparent);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   line-height: 1.5;
 }
 
@@ -59,7 +59,7 @@
 
 .book-detail-quality-row dt {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
 }
 
 .book-detail-quality-row dd {
@@ -71,7 +71,7 @@
 
 .book-detail-quality-row strong {
   color: var(--ink);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 620;
 }
 
@@ -82,7 +82,7 @@
 .book-detail-quality-row-detail,
 .book-detail-quality-row-breakdown {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   line-height: 1.5;
 }
 
@@ -103,7 +103,7 @@
   background: none;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
@@ -135,11 +135,11 @@
   gap: 8px;
   padding: 6px 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   background: transparent;
   color: var(--ink);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   text-align: left;
   cursor: pointer;
 }
@@ -169,7 +169,7 @@
 
 .book-detail-quality-list-detail {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   line-height: 1.5;
   white-space: pre-line;
   overflow-wrap: anywhere;
@@ -178,5 +178,5 @@
 .book-detail-quality-list-note {
   margin: 4px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }

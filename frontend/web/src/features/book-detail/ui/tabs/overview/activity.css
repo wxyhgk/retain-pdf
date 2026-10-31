@@ -57,7 +57,7 @@
 
 .book-detail-overview-activity li strong {
   color: var(--ink);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 600;
 }
 
@@ -65,7 +65,7 @@
 .book-detail-overview-activity time,
 .book-detail-overview-empty-activity {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 .book-detail-overview-activity time {

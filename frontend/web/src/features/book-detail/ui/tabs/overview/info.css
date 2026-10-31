@@ -7,7 +7,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: 0;
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
   background: var(--paper);
 }
 
@@ -25,7 +25,7 @@
 
 .book-detail-overview-facts dt {
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 .book-detail-overview-facts dd {
@@ -35,7 +35,7 @@
   margin: 0;
   overflow: hidden;
   color: var(--ink);
-  font-size: 14px;
+  font-size: var(--ui-text-base);
   font-weight: 620;
   letter-spacing: -0.02em;
   text-overflow: ellipsis;
@@ -45,7 +45,7 @@
 .book-detail-overview-facts dd small {
   overflow: hidden;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   font-weight: 500;
   letter-spacing: 0;
   text-overflow: ellipsis;
@@ -106,7 +106,7 @@
 
 .book-detail-overview-row-label {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
 }
 
 .book-detail-overview-row-value {
@@ -115,7 +115,7 @@
 
 .book-detail-collections-empty {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
 }
 
 .book-detail-reading-btn {

@@ -12,7 +12,7 @@
 .book-detail-coverage-percent {
   margin-left: auto;
   color: var(--ink);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-variant-numeric: tabular-nums;
   font-weight: 600;
 }

@@ -31,7 +31,7 @@
 .book-detail-processing-section-title {
   flex: 0 0 auto;
   color: var(--ink);
-  font-size: 12.5px;
+  font-size: var(--ui-text-sm);
   font-weight: 650;
   letter-spacing: -0.01em;
 }
@@ -40,7 +40,7 @@
   min-width: 0;
   overflow: hidden;
   color: var(--muted);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   text-overflow: ellipsis;
   white-space: nowrap;
 }

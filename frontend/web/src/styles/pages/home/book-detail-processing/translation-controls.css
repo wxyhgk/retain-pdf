@@ -28,10 +28,10 @@
   align-items: center;
   gap: 4px;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   color: var(--ink);
   background: var(--book-detail-shade-0);
-  font-size: 10.5px;
+  font-size: var(--ui-text-2xs);
   font-weight: 500;
 }
 
@@ -42,14 +42,11 @@
   gap: 8px;
 }
 
+/* 勾选框是 @retainpdf/ui 的 Checkbox，这里只定颜色和字号。 */
 .book-detail-translate-range-toggle {
-  display: flex;
-  cursor: pointer;
   user-select: none;
-  align-items: center;
-  gap: 8px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 .book-detail-processing-actions {
@@ -63,7 +60,7 @@
 
 .book-detail-processing-actions button {
   min-height: 34px;
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 /* 阶段重试按钮直接并进动作行；出错提示独占一行。 */

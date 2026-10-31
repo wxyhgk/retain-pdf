@@ -3,9 +3,9 @@
  * 以前取消之后「进度」页什么都不说：没有「已取消」，也不知道还能不能接着跑，只剩一个
  * 「重新翻译整本」——取消前已经翻好的部分全部作废、重新付费。后端的续跑计划会沿用
  * 已完成的阶段（以及翻译断点），这里把它摆出来。 */
+import { Button } from "@retainpdf/ui";
 import { CircleSlash, FileText, LoaderCircle, RotateCcw } from "lucide-react";
 
-import { btn } from "../ui.js";
 import type { JobFailurePrimaryAction } from "./JobFailureCard.js";
 
 export type JobCanceledCardProps = {
@@ -31,24 +31,23 @@ export function JobCanceledCard({ stoppedAt = "", primary = null, notice = "", a
       {primary || onOpenLog ? (
         <div className="book-detail-failure-actions">
           {primary ? (
-            <button
-              type="button"
+            <Button
               id="book-detail-resume-cancelled-btn"
-              className={btn("default")}
+              variant="primary" size="sm"
               disabled={Boolean(primary.pending)}
               onClick={() => void primary.onClick()}
             >
               {primary.pending
                 ? <LoaderCircle className="size-3.5 animate-spin" aria-hidden="true" />
                 : <RotateCcw className="size-3.5" aria-hidden="true" />}
-              <span className="ml-1.5">{primary.pending ? primary.pendingLabel || "提交中…" : primary.label}</span>
-            </button>
+              <span>{primary.pending ? primary.pendingLabel || "提交中…" : primary.label}</span>
+            </Button>
           ) : null}
           {onOpenLog ? (
-            <button type="button" className={btn("outline")} onClick={onOpenLog}>
+            <Button variant="secondary" size="sm" onClick={onOpenLog}>
               <FileText className="size-3.5" aria-hidden="true" />
-              <span className="ml-1.5">查看日志</span>
-            </button>
+              <span>查看日志</span>
+            </Button>
           ) : null}
         </div>
       ) : null}

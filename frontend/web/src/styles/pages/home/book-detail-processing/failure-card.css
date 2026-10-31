@@ -9,7 +9,7 @@
   margin-top: 12px;
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--destructive) 28%, var(--border));
-  border-radius: 10px;
+  border-radius: var(--ui-radius-md);
   background: color-mix(in srgb, var(--destructive) 5%, var(--card));
 }
 
@@ -33,20 +33,20 @@
 
 .book-detail-failure-copy h4 {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 650;
   color: var(--foreground);
 }
 
 .book-detail-failure-subtitle {
   margin: 2px 0 0;
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   color: var(--muted-foreground);
 }
 
 .book-detail-failure-action {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   line-height: 1.6;
   color: var(--foreground);
 }
@@ -56,9 +56,9 @@
 .book-detail-failure-cause {
   margin: 0;
   padding: 6px 8px;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   background: color-mix(in srgb, var(--foreground) 5%, transparent);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   line-height: 1.5;
   color: var(--muted-foreground);
   word-break: break-word;
@@ -76,9 +76,9 @@
   padding: 10px;
   max-height: 260px;
   overflow: auto;
-  border-radius: 6px;
+  border-radius: var(--ui-radius-sm);
   background: color-mix(in srgb, var(--foreground) 6%, transparent);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
@@ -86,14 +86,14 @@
 
 .book-detail-failure-detail-error {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   color: var(--destructive);
 }
 
 /* 主按钮下面那句：沿用什么、重跑什么、花不花钱。点之前就该知道。 */
 .book-detail-failure-hint {
   margin: 0;
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   line-height: 1.5;
   color: var(--muted-foreground);
 }

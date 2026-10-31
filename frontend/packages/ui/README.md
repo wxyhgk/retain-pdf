@@ -21,13 +21,13 @@ import { Button, Field, Input, Menu, Panel } from "@retainpdf/ui";
 
 | 组件 | 用在哪 | 要点 |
 |---|---|---|
-| `Button` | 带字的按钮 | `variant`：`primary` / `secondary` / `ghost` / `danger`；`size`：`sm` / `md` / `lg`；`pending` 转圈并禁用；默认 `type="button"`。**不给 `variant` 时原样渲染**，样子由调用方的类名决定（迁移期给还没迁的地方用） |
+| `Button` | 带字的按钮 | `variant`：`primary` / `secondary` / `ghost` / `danger`；`size`：`sm` / `md` / `lg`；`pending` 转圈并禁用；默认 `type="button"`；开关按钮写 `aria-pressed`，按下是淡墨底。**不给 `variant` 时原样渲染**，样子由调用方的类名决定（迁移期给还没迁的地方用） |
 | `IconButton` | 只有图标的按钮 | `label` 必填，变成 `aria-label` 和悬停提示；默认 `ghost` |
 | `Field` | 带标题的输入 | 包住一个控件，自动接好 `id`、`aria-describedby`、`aria-invalid` |
-| `Input` / `Textarea` | 输入框 | `size`：`sm` / `md`（30 / 36px，圆角 `--ui-radius-md`，和设置页现有的输入框一致）。web 的 `components.css` 有一组全局 `input[type=…]`、`textarea`、`select` 样式，`field.css` 的选择器带 `[type]` 压过它们 |
+| `Input` / `Textarea` | 输入框 | `size`：`sm` / `md`（28 / 36px，sm 和按钮的 sm 一样高，圆角 `--ui-radius-md`，和设置页现有的输入框一致）。web 的 `components.css` 有一组全局 `input[type=…]`、`textarea`、`select` 样式，`field.css` 的选择器带 `[type]` 压过它们 |
 | `Select` | 原生下拉加箭头 | `className` 给外层，其余属性落在 `<select>` 上 |
 | `Checkbox` | 勾选框 | 给 `label` 就包成 `<label>`，点字也能勾；其余属性落在 `<input>` 上 |
-| `SegmentedControl` | 几个里选一个的一排按钮 | radiogroup：只有选中的能 Tab 到，左右方向键换选项；`options[].props` 给单个选项加 `data-*` |
+| `SegmentedControl` | 几个里选一个的一排按钮 | radiogroup：只有选中的能 Tab 到，左右方向键换选项；`options[].props` 给单个选项加 `data-*`、`aria-label`（只有图标时）；选项多就给 `columns` 排成网格 |
 | `Badge` | 状态小标签 | `tone`：`muted` / `active` / `done` / `warn` / `danger`；「完成」是墨色，不用绿色 |
 | `Menu` | 点开的选项列表 | radix DropdownMenu：键盘上下选、Esc 关、焦点回到按钮；`items` 里 `danger` 用红字 |
 | `Panel` | 一块卡片 | `title`、`description`、`actions` 三个槽，`titleAs` 定标题级别 |

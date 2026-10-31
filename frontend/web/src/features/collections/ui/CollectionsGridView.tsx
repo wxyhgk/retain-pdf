@@ -1,4 +1,5 @@
 // 合集网格视图:新建按钮 + loading/error/empty/文件夹卡片网格。
+import { Button } from "@retainpdf/ui";
 import { EmptyState } from "@/ui/icons/EmptyState.jsx";
 import type { LibraryCardItem } from "@/features/library/index.js";
 import { FolderCoverStack } from "./FolderCoverStack.jsx";
@@ -58,13 +59,9 @@ export function CollectionsGridView({
             title="暂无合集"
           hint="把 PDF 按主题分组成书架，之后更好找。"
         >
-          <button
-            type="button"
-            className="app-button empty-state-action"
-            onClick={onCreate}
-          >
+          <Button variant="primary" size="lg" className="empty-state-action" onClick={onCreate}>
             新建合集
-          </button>
+          </Button>
         </EmptyState>
       ) : (
         <div id="categories-grid" className="categories-grid collections-grid" data-collections-grid="true">

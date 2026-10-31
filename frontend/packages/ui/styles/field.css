@@ -59,9 +59,10 @@
   padding: 0 12px;
 }
 
+/* sm 和 Button 的 sm 一样高（28px），能排在一条工具栏里。 */
 .ui-input[data-size="sm"],
 .ui-select[data-size="sm"] select {
-  min-height: 30px;
+  min-height: 28px;
   padding: 0 10px;
   font-size: var(--ui-text-sm);
 }
@@ -116,7 +117,8 @@
   min-width: 0;
 }
 
-.ui-select select {
+.ui-select select,
+.ui-select[data-size="sm"] select {
   padding-right: 28px;
   appearance: none;
   cursor: pointer;

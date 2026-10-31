@@ -1,10 +1,10 @@
 // 详情「翻译」Tab：发起 / 重新翻译表单。
 // 从原 TranslateWorkspacePanel 抽出；书已在馆，无需 WorkflowPanel 上传瓦片。
 
+import { Button, Checkbox } from "@retainpdf/ui";
 import { PageSpecInput } from "../PageSpecInput.js";
 import type { ReactNode } from "react";
 import { Check, Languages } from "lucide-react";
-import { btn } from "../ui.jsx";
 
 export type BookTranslateLaunchFormProps = {
   canTranslate: boolean;
@@ -71,14 +71,12 @@ export function BookTranslateLaunchForm({
           ) : null}
           {canTranslate ? (
             <div className="book-detail-translate-range">
-              <label className="book-detail-translate-range-toggle">
-                <input
-                  type="checkbox"
-                  checked={rangeOn}
-                  onChange={(e) => onRangeOnChange(e.target.checked)}
-                />
-                指定页码
-              </label>
+              <Checkbox
+                className="book-detail-translate-range-toggle"
+                label="指定页码"
+                checked={rangeOn}
+                onChange={(e) => onRangeOnChange(e.target.checked)}
+              />
               {rangeOn ? (
                 <PageSpecInput
                   id="book-detail-translate-pages"
@@ -99,10 +97,9 @@ export function BookTranslateLaunchForm({
           {leadingActions}
           {extraActions}
           {canTranslate ? (
-            <button
+            <Button
               id="book-detail-translate-btn"
-              type="button"
-              className={btn("default")}
+              variant="primary" size="sm"
               disabled={Boolean(busy)}
               onClick={onTranslate}
             >
@@ -114,7 +111,7 @@ export function BookTranslateLaunchForm({
                   : statusTone === "failed"
                     ? "重新翻译整本"
                     : "翻译整本"}
-            </button>
+            </Button>
           ) : null}
         </div>
       ) : null}

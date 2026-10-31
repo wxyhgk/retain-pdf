@@ -11,6 +11,7 @@
 // (loading/empty/error 三态由 renderLoading()/actions.js 的边缘路径驱动)。
 
 import { useRef, useState } from "react";
+import { Button } from "@retainpdf/ui";
 import { useStoreSnapshot } from "@/ui/hooks/use-store.js";
 import {
   useHomeCollections,
@@ -148,15 +149,15 @@ export function RecentJobsLibrary({ onBatchModeChange }: { onBatchModeChange?: (
           toggleSelect={toggleSelect}
         />
         <div className="recent-jobs-more-row">
-          <button
+          <Button
             id="load-more-jobs-btn"
-            className={`secondary${recentJobs.hasMore ? "" : " hidden"}`}
-            type="button"
-            disabled={loadMoreLoading}
+            variant="secondary"
+            className={recentJobs.hasMore ? undefined : "hidden"}
+            pending={loadMoreLoading}
             onClick={handleLoadMoreClick}
           >
             {loadMoreLoading ? VIEW_TEXT.loadMoreLoading : VIEW_TEXT.loadMore}
-          </button>
+          </Button>
         </div>
       </div>
       {batchMode ? (

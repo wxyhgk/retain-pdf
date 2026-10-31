@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { SegmentedControl } from "@retainpdf/ui";
 import {
   READING_STATUS_META,
   filterDocuments,
@@ -70,6 +71,11 @@ function DocumentRow({ doc, onOpenReader, onCycleStatus }: {
     </div>
   );
 }
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "", label: "全部" },
+  ...Object.entries(READING_STATUS_META).map(([value, meta]) => ({ value, label: meta.label })),
+];
 
 function LibrarySearchPanel({ ports }: { ports: LibrarySearchPorts }) {
   const [query, setQuery] = useState("");
@@ -166,19 +172,13 @@ function LibrarySearchPanel({ ports }: { ports: LibrarySearchPorts }) {
       <div className="lib-search-head">
         <strong>库检索</strong>
         <span className="lib-search-status">{busy ? "检索中…" : error || `${hits.length} 条全文命中 · ${matchedDocuments.length} 篇文档`}</span>
-        <div className="lib-search-filters" role="group" aria-label="按阅读状态过滤">
-          <button type="button" className={statusFilter === "" ? "is-active" : ""} onClick={() => setStatusFilter("")}>全部</button>
-          {Object.entries(READING_STATUS_META).map(([value, meta]) => (
-            <button
-              key={value}
-              type="button"
-              className={statusFilter === value ? "is-active" : ""}
-              onClick={() => setStatusFilter(value)}
-            >
-              {meta.label}
-            </button>
-          ))}
-        </div>
+        <SegmentedControl
+          size="sm"
+          label="按阅读状态过滤"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={STATUS_FILTER_OPTIONS}
+        />
       </div>
       {hits.length > 0 && (
         <section className="lib-search-section">

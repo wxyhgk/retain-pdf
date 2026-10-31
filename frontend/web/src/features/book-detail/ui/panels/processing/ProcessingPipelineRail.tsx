@@ -15,6 +15,7 @@
 
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { Check, ChevronDown, Clock3, LoaderCircle, TriangleAlert, X } from "lucide-react";
+import { Button, IconButton } from "@retainpdf/ui";
 
 import type { LibraryCardItem } from "@/features/library/domain.js";
 import {
@@ -193,8 +194,9 @@ export function ProcessingPipelineRail({
                     </span>
                   ) : null}
                   {stationActions[station.key] ? (
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       id={`book-detail-station-${station.key}-btn`}
                       className="book-detail-pipeline-action"
                       aria-expanded={opened === station.key}
@@ -204,7 +206,7 @@ export function ProcessingPipelineRail({
                     >
                       {stationActions[station.key]?.label}
                       <ChevronDown aria-hidden="true" />
-                    </button>
+                    </Button>
                   ) : null}
                 </span>
               </li>
@@ -216,9 +218,9 @@ export function ProcessingPipelineRail({
         <div id="book-detail-station-panel" className="book-detail-station-panel" data-station-panel={opened}>
           <div className="book-detail-station-panel-head">
             <strong>{STATIONS.find((station) => station.key === opened)?.label}</strong>
-            <button type="button" aria-label="收起" onClick={() => setOpenKey("")}>
+            <IconButton size="sm" label="收起" className="book-detail-station-panel-close" onClick={() => setOpenKey("")}>
               <X aria-hidden="true" />
-            </button>
+            </IconButton>
           </div>
           {stationActions[opened]?.content}
         </div>

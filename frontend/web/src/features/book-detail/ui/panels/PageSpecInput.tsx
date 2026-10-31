@@ -8,6 +8,7 @@
  * 解析和提交用的是同一个 `parsePageSelection`，所以预览说的就是会提交的。
  */
 import { useMemo } from "react";
+import { Input } from "@retainpdf/ui";
 
 import { parsePageSelection } from "@/features/library/domain.js";
 
@@ -28,8 +29,9 @@ export function PageSpecInput({ value, pageCount, onChange, label = "页码", id
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <input
+        <Input
           id={id}
+          size="sm"
           type="text"
           inputMode="numeric"
           value={value}
@@ -37,7 +39,7 @@ export function PageSpecInput({ value, pageCount, onChange, label = "页码", id
           aria-invalid={preview ? !preview.ok : undefined}
           placeholder="如 1-5, 8, 12-14"
           onChange={(event) => onChange(event.target.value)}
-          className="h-8 w-44 rounded-md border border-input bg-background px-2 py-0 text-sm"
+          className="w-44"
           data-page-spec-input="true"
         />
         <span className="text-[11px] text-muted-foreground/70">/ {pageCount || "?"} 页</span>

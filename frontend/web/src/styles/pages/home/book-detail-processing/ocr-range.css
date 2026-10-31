@@ -7,13 +7,10 @@
   gap: 8px;
 }
 
+/* 勾选框是 @retainpdf/ui 的 Checkbox，这里只定颜色和字号。 */
 .book-detail-ocr-range-toggle {
-  display: flex;
-  cursor: pointer;
-  align-items: center;
-  gap: 8px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
 }
 
 .book-detail-ocr-range-inputs {

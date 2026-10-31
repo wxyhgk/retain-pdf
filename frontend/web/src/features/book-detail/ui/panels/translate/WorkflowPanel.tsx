@@ -88,7 +88,7 @@ export function BookTranslationWorkflowPanel({
   // 状态区先行占位，进度一到即在区内展开，不闪现、不另弹工作流窗。
   const submitting = busy === "translate" || Boolean(stageActionPending);
   const showStatus = isActive || status.tone === "failed" || submitting;
-  // 黑主按钮只留进度区内的「查看实时译文」，此处两颗均为 btn("outline")。
+  // 黑主按钮只留进度区内的「查看实时译文」，此处两颗都是 Button 的 secondary。
   const stageActionsNode =
     hasRealJob && !isActive && !hideStageActions ? (
       <TranslationStageActions
