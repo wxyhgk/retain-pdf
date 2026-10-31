@@ -15,6 +15,10 @@ WEAK = "，、：）」』”"
 LEADING_PUNCT = "，。；：、！？）」』”"
 PROTECTED_RE = re.compile(r"\$[^$]+\$|\{\{fn:[^}]+\}\}|`[^`\n]+`")
 WINDOW = 0.35  # 在比例位置前后各找这一段（占一段平均长度的比例）
+# 句末标点后面紧跟的引用角标（"。{{fn:28-32}}"，模型有时写成 "。$ ^{26,27} $"）跟着前一句：切点挪到角标后面。
+# 2026-10-31 ACS 论文第 2 页：引用都在句号后面，以前句号后面紧跟角标就不能切，切点被推到下一个后面没有角标的句号，
+# 前一块多拿了一整句（原文占 35%，译文分到 45%）
+TRAILING_MARKS_RE = re.compile(r"(?:\s*(?:\{\{fn:[^}]+\}\}|\$\s*\^\s*\{[^{}$]*\}\s*\$))+")
 
 
 def _protected(text: str) -> list[tuple[int, int]]:
@@ -31,6 +35,11 @@ def _safe(position: int, text: str, spans: list[tuple[int, int]]) -> bool:
         return False  # 脚注标记跟着前面的词；左括号、左引号不放在段尾
     before, after = text[position - 1], text[position]
     return not (before.isascii() and before.isalnum() and after.isascii() and after.isalnum())
+
+
+def _past_marks(text: str, position: int) -> int:
+    match = TRAILING_MARKS_RE.match(text, position)
+    return match.end() if match else position
 
 
 def _prose_positions(text: str, spans: list[tuple[int, int]]) -> list[int]:
@@ -65,7 +74,8 @@ def split_by_ratio(text: str, source_lengths: list[int]) -> list[str]:
         high = min(length - 1, target + window)
         best = None
         for marks, weight in ((STRONG, 0), (WEAK, 1)):
-            candidates = [i + 1 for i in range(low - 1, high) if 0 <= i < length and text[i] in marks and _safe(i + 1, text, spans)]
+            ends = [_past_marks(text, i + 1) for i in range(low - 1, high) if 0 <= i < length and text[i] in marks]
+            candidates = [c for c in ends if _safe(c, text, spans)]
             if candidates:
                 best = min(candidates, key=lambda c: (abs(c - target), weight))
                 break

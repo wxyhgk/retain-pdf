@@ -17,6 +17,9 @@ QUOTED_RE = re.compile(r"《[^》]*》|“[^”]*”|「[^」]*」|（[^）]*）
 # 只拿 ASCII 字母数字当边界：中文紧挨着数字（"图1.1""第4章"）照样认得
 NUMBER_RE = re.compile(r"(?<![A-Za-z0-9_.])\d+(?:\.\d+)*(?![A-Za-z0-9_])")
 LATIN_WORD_RE = re.compile(r"[A-Za-z]{3,}")
+# 要翻的英文词：小写或首字母大写、三个字母以上。原文一个都没有（样品名 "BMS@C-M1 EV"、缩写、网址）就没什么可翻，原样交回不算没翻
+PROSE_WORD_RE = re.compile(r"\b[A-Za-z][a-z]{2,}\b")
+URL_RE = re.compile(r"(?:https?://|www\.)\S+|\S+@\S+\.\w+")
 CJK_RE = re.compile(r"[一-鿿]")
 # 中文译文里不该凭空出现的文字：西里尔、韩文、日文假名、阿拉伯、希伯来、泰文……原文里有的不算。
 # 希腊字母不算：理工文献里 "alpha helix" 译成 "α 螺旋" 是正常写法。
@@ -31,7 +34,8 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 # 3：2026-10-30 接续组不再让模型放断点，一律由程序按正文比例切开（不落在公式里）；没交的块重翻后还不合格再翻一次
 # 4：2026-10-31 不再拿公式和原文逐个比（formula_changed、formula_merged 去掉），只查 `$` 成对
 # 5：2026-10-31 接续组当一块校验、重翻、退回原文（units.py），切开以后不再逐块查：group_overlap、group_share、mark_moved 去掉
-CHECKS_VERSION = "translation-agent-checks-5"
+# 6：2026-10-31 原文没有要翻的英文词（样品名、缩写、网址）时原样交回不算 untranslated / no_chinese
+CHECKS_VERSION = "translation-agent-checks-6"
 
 
 def visible_length(text: str) -> int:
@@ -126,8 +130,8 @@ def check_block(source: str, translation: str | None) -> list[dict]:
     stray = STRAY_EN_RE.findall(QUOTED_RE.sub(" ", plain_out))
     if stray and CJK_RE.search(plain_out):
         issues.append(_issue("stray_english", "error", f"中文句子里夹着英文词：{stray[:5]}"))
-    if not CJK_RE.search(plain_source):
-        if translation.strip() == source.strip() and LATIN_WORD_RE.search(plain_source):
+    if not CJK_RE.search(plain_source) and PROSE_WORD_RE.search(URL_RE.sub(" ", plain_source)):
+        if translation.strip() == source.strip():
             issues.append(_issue("untranslated", "error", "译文和原文一模一样"))
         elif not CJK_RE.search(plain_out) and len(LATIN_WORD_RE.findall(plain_source)) >= 3:
             issues.append(_issue("no_chinese", "error", "译文里没有中文"))

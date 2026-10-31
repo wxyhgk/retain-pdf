@@ -74,6 +74,14 @@ def test_check_block_protects_marks_and_numbers() -> None:
     assert check_block("a level-2 heading reported as level 1 is a role error", "二级标题被报告为一级，算作角色错误") == []
 
 
+def test_names_codes_and_urls_returned_as_is_are_not_untranslated() -> None:
+    """原文没有要翻的英文词（图里的样品名、网址）：原样交回是对的。2026-10-31 ACS 论文这两块被判"没翻"、标成失败。"""
+    labels = "PBS\nBMS202\nM1 EV\nBMS@M1 EV\nC-M1 EV\nBMS@C-M1 EV"
+    assert check_block(labels, labels) == []
+    assert check_block("https://pubs.acs.org/10.1021/acsnano.5c12218", "https://pubs.acs.org/10.1021/acsnano.5c12218") == []
+    assert [i["code"] for i in check_block("Results and discussion", "Results and discussion")] == ["untranslated"]
+
+
 def test_formulas_are_not_compared_with_the_source() -> None:
     """2026-10-31 用户定：公式不判对错。论文第 12、13 页跨页那段，模型两次都把 "$ n_{\\mathrm{L}}^{\\mathrm{max}} $" 写成 "n_L^max"，
     以前判 formula_changed、两半都退回原文没翻。现在公式写成普通文字、改了、多了、少了都不算错，只查 `$` 成对。"""
@@ -331,6 +339,15 @@ def test_a_slightly_changed_formula_is_restored_to_the_source() -> None:
     results, _ = TranslationAgent(model="fake", transport=Scripted({"f": "所以对这里的每一对轨道 $S'_{rs}=\\delta_{rs}$ 都成立"})).translate_page(page)
     assert results["f"].status == "ok" and results["f"].issues[0] == dict(results["f"].issues[0], code="formula_restored", severity="info")
     assert "$ S'_{rs}'=\\delta_{rs} $" in results["f"].translation
+
+
+def test_a_citation_after_a_full_stop_stays_with_its_sentence() -> None:
+    """引用角标在句号后面（ACS 体例）：切在角标后面，不因为句号后面紧跟角标就跳到下一个句号。"""
+    from retainpdf_translation_agent.breaks import split_by_ratio
+
+    text = "甲乙丙丁戊己庚辛壬癸。{{fn:28-32}} 子丑寅卯辰巳午未申酉。$ ^{26,27} $ 天地玄黄宇宙洪荒日月盈昃。"
+    assert split_by_ratio(text, [10, 23]) == ["甲乙丙丁戊己庚辛壬癸。{{fn:28-32}}", "子丑寅卯辰巳午未申酉。$ ^{26,27} $ 天地玄黄宇宙洪荒日月盈昃。"]
+    assert split_by_ratio(text, [20, 13])[0].endswith("。$ ^{26,27} $")
 
 
 def test_split_by_ratio_never_cuts_formulas_marks_or_words() -> None:
