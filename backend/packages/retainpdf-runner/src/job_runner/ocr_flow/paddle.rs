@@ -19,7 +19,9 @@ use super::dispatch_journal::{
 use super::paddle_errors::attach_paddle_runtime_error;
 use super::paddle_markdown::{materialize_paddle_markdown_artifacts, ImageProgress};
 use super::paddle_payload::build_paddle_optional_payload;
-use super::polling::{should_stop_polling, wait_next_poll_or_timeout};
+use super::polling::{
+    near_done_poll_interval, should_stop_polling, wait_next_poll_or_timeout_for,
+};
 use super::status::{record_provider_trace, update_ocr_job_from_status};
 use super::transfer_watch::{
     format_megabytes, upload_detail, watch_transfer, with_elapsed, Watched,
@@ -339,7 +341,16 @@ async fn run_paddle_poll_loop(
             ));
             return Err(attach_paddle_runtime_error(job, err, "poll"));
         }
-        wait_next_poll_or_timeout(started, timeout_secs, poll_interval, || {
+        let interval = near_done_poll_interval(
+            poll_interval,
+            item.extract_progress
+                .as_ref()
+                .and_then(|progress| progress.extracted_pages),
+            item.extract_progress
+                .as_ref()
+                .and_then(|progress| progress.total_pages),
+        );
+        wait_next_poll_or_timeout_for(started, timeout_secs, interval, || {
             format!("Timed out waiting for Paddle task {}", job_id)
         })
         .await

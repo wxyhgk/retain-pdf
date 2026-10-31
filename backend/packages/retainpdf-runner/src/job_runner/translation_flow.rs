@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use anyhow::Result;
 
 use crate::job_events::cas_persist_job_with_resources;
@@ -25,6 +27,7 @@ use self::translation_flow_stage::{
 };
 use self::translation_flow_support::finalize_parent_after_ocr;
 use super::attach_job_paths;
+use super::domain_prewarm::{start_domain_prewarm, DOMAIN_PREWARM_FINISH_TIMEOUT};
 use super::ocr_flow::{execute_ocr_job, sync_parent_with_ocr_child};
 use super::pipeline_plan::{PipelinePlan, PipelineStage};
 use super::ProcessRuntimeDeps;
@@ -172,6 +175,14 @@ async fn run_job_with_ocr(
     mark_parent_ocr_submitting(&deps, &mut parent_job)?;
     let ocr_child = create_ocr_child_job(&deps, &mut parent_job, &parent_job_paths, &source)?;
     let ocr_child_id = ocr_child.job_id.clone();
+    // 识别领域只读源 PDF 的文本层，OCR 的这半分钟里先做掉（domain_prewarm）；失败、没等到都只是翻译阶段自己问
+    let domain_prewarm = deps
+        .db
+        .get_upload(&source.upload_id)
+        .ok()
+        .and_then(|upload| {
+            start_domain_prewarm(&deps, &parent_job, &parent_job_paths, Path::new(&upload.stored_path))
+        });
 
     let ocr_finished = match execute_ocr_job(
         deps.clone(),
@@ -220,6 +231,9 @@ async fn run_job_with_ocr(
     // `prepare_translation_stage` 的 CAS 写:那一步只在 DB 里还是 queued/running
     // 时才落库,否则原样返回 DB 的真实状态,整条链在 spawn 之前收口。
     // 重读是 check-then-act,两步之间仍有窗口;CAS 是一步,严格更强,所以不再叠一层。
+    if let Some(prewarm) = domain_prewarm {
+        prewarm.finish(DOMAIN_PREWARM_FINISH_TIMEOUT).await;
+    }
     let render_follows = plan.next_after(PipelineStage::Translate) == Some(PipelineStage::Render);
     let translation_stage =
         run_translation_stage(&deps, parent_job, &parent_job_paths, render_follows).await?;

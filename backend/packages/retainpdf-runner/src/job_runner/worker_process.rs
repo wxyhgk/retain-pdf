@@ -329,7 +329,7 @@ fn resolve_reviewer_api_key(
     Ok(Some(resolved.secret))
 }
 
-fn resolve_translation_api_key(
+pub(super) fn resolve_translation_api_key(
     data_root: &std::path::Path,
     job: &JobRuntimeState,
 ) -> Result<Option<String>> {

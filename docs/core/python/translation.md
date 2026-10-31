@@ -38,6 +38,10 @@ document.v1.json
 
 - `python -m retainpdf_pipeline.translate --spec <job_root>/specs/translate.spec.json`
   `translate.stage.v1` worker，要求 `--spec <job_root>/specs/translate.spec.json`。
+- `python -m retainpdf_pipeline.translate.entrypoints.domain_prewarm --spec <job_root>/specs/domain-prewarm.spec.json`
+  OCR 期间先做识别领域的辅助进程（`domain_prewarm.stage.v1`，不是任务阶段）：提交 OCR 后由 Rust 拉起（只在学术模式、
+  走 Python 请求的任务），只读源 PDF 前两页的文本层，结果存进各任务共用的领域缓存，翻译阶段到时"shared cache hit"。
+  不改任务状态、不写事件流，失败或没等到都只是翻译阶段自己问；日志在 `logs/domain-prewarm.log`。
 - `retainpdf-pipeline translate-from-ocr --spec <job_root>/specs/book.spec.json`
   provider/normalize 后继续翻译和渲染的入口之一（顶层垫片已删除，只有包内入口 `backend/pipeline/retainpdf_pipeline/translate/entrypoints/from_ocr_pipeline.py` 和 console 子命令，仅桌面兼容注脚）。
 - `backend/translation/retainpdf_translation/public`
