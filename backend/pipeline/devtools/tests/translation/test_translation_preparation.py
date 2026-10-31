@@ -460,7 +460,9 @@ def _key(context, item) -> str:
 
 def _system_prompt(context, item) -> str:
     scoped = context.scoped_to_item(item)
-    return build_single_item_fallback_messages(item, domain_guidance=scoped.prompt_system_guidance, mode="sci")[0]["content"]
+    # 系统提示分两条（不变的规则 + 文档指导），风格指导在第二条里
+    messages = build_single_item_fallback_messages(item, domain_guidance=scoped.prompt_system_guidance, mode="sci")
+    return "\n\n".join(m["content"] for m in messages if m["role"] == "system")
 
 
 def test_default_context_guidance_is_byte_identical_to_the_pre_preparation_formula() -> None:

@@ -54,5 +54,8 @@ def test_shared_layout_resolves_probes_and_unchanged_baseline():
     # 批量格式里的「译文」占位换成「（这一段的译文正文，开头不加任何标签）」。逐例审阅:17 个用例只变 user 消息——
     # 15 个逐段/续接组用例删了开头两行说明、前后文挪到原文前面用起止标记括起来、末尾加一行作答要求,
     # 2 个 */batch 只变那一行占位;system 消息、engine_identity 与成员不变,其余 11 个一字未动。
+    # 2026-10-31:system 拆成两条(全书不变的规则在前、打提示词缓存断点;文档指导单独一条放后面)。28 个用例都变,
+    # 脚本逐例核对:旧 system 去掉「Document-specific translation guidance」那一段后与新的第一条逐字相同,第二条就是
+    # 那一段,user 消息、engine_identity 与成员一字未动。
     baseline = HERE / "fixtures/refactor_baseline.json"
-    assert hashlib.sha256(baseline.read_bytes()).hexdigest() == "3c6e248d779bf048ae6464344fd007dd1e0c7116d939f5dfe1c590ef688a28d4"
+    assert hashlib.sha256(baseline.read_bytes()).hexdigest() == "7d414318e01875b1f18242f361270cc0ba4bad83ecf4abbbae5ff3c1666c9d09"

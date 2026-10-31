@@ -69,8 +69,9 @@ def test_anthropic_protocol_uses_messages_api():
     # 相邻的 user 消息合并成一条，Messages API 要求角色交替。
     assert body["messages"] == [{"role": "user", "content": "Translate A\n\nTranslate B"}]
     assert body["max_tokens"] == model_wire.ANTHROPIC_DEFAULT_MAX_TOKENS
-    assert body["temperature"] == 0.2
-    assert "thinking" not in body
+    # "关思考"发最低档：新模型（Haiku 5.5 等）不发思考字段会按默认 effort（medium）思考；disabled 会让短标题不翻（2026-10-31）
+    assert body["thinking"] == {"type": "adaptive"} and body["output_config"] == {"effort": "low"}
+    assert "temperature" not in body
 
 
 # claude-opus-5-5 原话（真实请求拿到的）：思考深度为「默认 / 关闭」时会带 temperature，被拒 400。
@@ -94,7 +95,7 @@ def _anthropic_call(responses, *, thinking="auto", base_url="https://api.anthrop
     )
 
 
-@pytest.mark.parametrize("thinking", ["auto", "off"])
+@pytest.mark.parametrize("thinking", ["auto"])
 def test_anthropic_temperature_rejection_retries_without_it_and_remembers(thinking):
     rejected = _response(400, text=ANTHROPIC_TEMPERATURE_REJECTED)
     content, session = _anthropic_call([rejected, _response(payload=ANTHROPIC_OK)], thinking=thinking)
@@ -113,7 +114,7 @@ def test_a_400_that_merely_mentions_temperature_is_not_a_rejection():
     # 比如网关把支持的参数列一遍：不是在拒 temperature，不重试、也不能记住——否则这个模型就永远不带了。
     other = _response(400, text='{"error":{"message":"max_tokens too large; allowed: temperature, top_p, max_tokens"}}')
     with pytest.raises(requests.HTTPError):
-        _anthropic_call([other], thinking="off")
+        _anthropic_call([other], thinking="auto")
     assert not model_wire.temperature_rejected(base_url="https://api.anthropic.com/v1", model=LEARNING_MODEL)
 
 
@@ -121,7 +122,7 @@ def test_temperature_is_remembered_only_after_the_retry_succeeds():
     rejected = _response(400, text=ANTHROPIC_TEMPERATURE_REJECTED)
     still_bad = _response(400, text='{"error":{"message":"messages: at least one message is required"}}')
     with pytest.raises(requests.HTTPError):
-        _anthropic_call([rejected, still_bad], thinking="off")
+        _anthropic_call([rejected, still_bad], thinking="auto")
     assert not model_wire.temperature_rejected(base_url="https://api.anthropic.com/v1", model=LEARNING_MODEL)
 
 
@@ -134,7 +135,7 @@ def test_temperature_memo_is_per_model():
         model="claude-sonnet-5",
         base_url="https://api.anthropic.com/v1",
         protocol="anthropic",
-        thinking="off",
+        thinking="auto",
     )
     assert session.post.call_args.kwargs["json"]["temperature"] == 0.2
 
@@ -531,3 +532,90 @@ def test_translate_entrypoint_registers_the_spec_connection(tmp_path):
         pass  # 只关心登记发生在组装参数之前
     profile = model_wire.resolve_profile(base_url="https://api.anthropic.com/v1", model="claude-x")
     assert (profile.protocol, profile.thinking) == ("anthropic", "low")
+
+
+# ---- 提示词缓存与真关思考（2026-10-31）----
+
+LONG_RULES = "规则。" * 700  # 第一段 system：全书不变的规则，够长才打缓存断点
+
+
+def _anthropic_with_system(parts, *, thinking="off", model="claude-haiku-5-5", responses=None):
+    messages = [{"role": "system", "content": part} for part in parts] + [{"role": "user", "content": "Translate A"}]
+    return _call(
+        responses or [_response(payload=ANTHROPIC_OK)],
+        messages=messages,
+        api_key="k",
+        model=model,
+        base_url="https://api.anthropic.com/v1",
+        protocol="anthropic",
+        thinking=thinking,
+    )
+
+
+def test_the_stable_system_part_gets_a_cache_breakpoint_and_the_guidance_follows_uncached():
+    _, session = _anthropic_with_system([LONG_RULES, "Document-specific translation guidance:\n计算化学"])
+    system = session.post.call_args.kwargs["json"]["system"]
+    assert system == [
+        {"type": "text", "text": LONG_RULES, "cache_control": {"type": "ephemeral"}},
+        {"type": "text", "text": "Document-specific translation guidance:\n计算化学"},
+    ]
+
+
+def test_a_short_system_prompt_is_not_worth_caching_and_stays_a_string():
+    _, session = _anthropic_with_system(["你是译者。", "指导"])
+    assert session.post.call_args.kwargs["json"]["system"] == "你是译者。\n\n指导"
+
+
+def test_prompt_cache_can_be_turned_off(monkeypatch):
+    monkeypatch.setenv(model_wire.PROMPT_CACHE_ENV, "off")
+    _, session = _anthropic_with_system([LONG_RULES, "指导"])
+    assert session.post.call_args.kwargs["json"]["system"] == f"{LONG_RULES}\n\n指导"
+
+
+def test_openai_style_protocols_get_one_system_message_with_the_stable_part_first():
+    _, session = _call(
+        [_response(payload={"choices": [{"message": {"content": "译文"}}]})],
+        messages=[{"role": "system", "content": "规则"}, {"role": "system", "content": "指导"}, {"role": "user", "content": "A"}],
+        api_key="k",
+        model="qwen3.8-flash",
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        thinking="off",
+    )
+    body = session.post.call_args.kwargs["json"]
+    assert body["messages"] == [{"role": "system", "content": "规则\n\n指导"}, {"role": "user", "content": "A"}]
+    assert body["enable_thinking"] is False
+
+
+ADAPTIVE_REJECTED = (
+    '{"type":"error","error":{"type":"invalid_request_error","message":"adaptive thinking is not supported on this model"}}'
+)
+LOW = {"thinking": {"type": "adaptive"}, "output_config": {"effort": "low"}}
+
+
+def test_off_asks_new_models_for_the_lowest_effort():
+    _, session = _anthropic_with_system(["你是译者。"])
+    body = session.post.call_args.kwargs["json"]
+    assert {k: body[k] for k in LOW} == LOW
+
+
+def test_an_old_model_that_rejects_adaptive_thinking_is_remembered_after_one_400():
+    rejected = _response(400, text=ADAPTIVE_REJECTED)
+    content, session = _anthropic_with_system(["你是译者。"], model="claude-sonnet-4", responses=[rejected, _response(payload=ANTHROPIC_OK)])
+    assert content == "译文"
+    first, second = (call.kwargs["json"] for call in session.post.call_args_list)
+    assert first["thinking"] == {"type": "adaptive"} and "thinking" not in second and "output_config" not in second
+    _, session = _anthropic_with_system(["你是译者。"], model="claude-sonnet-4")
+    assert session.post.call_count == 1 and "thinking" not in session.post.call_args.kwargs["json"]
+
+
+def test_an_unrelated_400_does_not_stop_us_asking_for_low_effort_later():
+    other = _response(400, text='{"error":{"message":"messages: text content blocks must be non-empty"}}')
+    with pytest.raises(requests.HTTPError):
+        _anthropic_with_system(["你是译者。"], responses=[other, other])
+    _, session = _anthropic_with_system(["你是译者。"])
+    assert session.post.call_args.kwargs["json"]["thinking"] == {"type": "adaptive"}
+
+
+def test_auto_gives_haiku_5_5_the_low_effort_it_was_tested_with_and_leaves_others_alone():
+    assert model_wire.anthropic_thinking_candidates("auto", model="claude-haiku-5-5")[0] == LOW
+    assert model_wire.anthropic_thinking_candidates("auto", model="claude-sonnet-5") == [{}]

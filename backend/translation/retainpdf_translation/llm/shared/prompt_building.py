@@ -4,7 +4,7 @@ from retainpdf_translation.core.context import TranslationItemContext
 from retainpdf_translation.core.context import build_item_context
 from retainpdf_translation.llm.shared.prompt_protocols import batch_json_user_prompt
 from retainpdf_translation.llm.shared.prompt_protocols import direct_typst_batch_user_prompt as _direct_typst_batch_user_prompt
-from retainpdf_translation.llm.shared.prompt_protocols import protocol_system_prompt
+from retainpdf_translation.llm.shared.prompt_protocols import protocol_system_parts
 from retainpdf_translation.llm.shared.prompt_protocols import single_user_prompt
 
 
@@ -18,8 +18,11 @@ def _item_math_mode(item: dict | TranslationItemContext) -> str:
     return _item_context(item).math_mode
 
 
-def _messages(system: str, user: str) -> list[dict[str, str]]:
-    return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+def _messages(system: tuple[str, str], user: str) -> list[dict[str, str]]:
+    """（不变的规则, 文档指导）各一条 system 消息：Anthropic 协议按段发、第一段打缓存断点；OpenAI 协议发送前并成一条
+    （``model_wire.merge_system_messages``）。"""
+    stable, guidance = system
+    return [{"role": "system", "content": part} for part in (stable, guidance) if part] + [{"role": "user", "content": user}]
 
 
 def build_messages(
@@ -31,7 +34,7 @@ def build_messages(
 ) -> list[dict[str, str]]:
     item_contexts = [_item_context(item) for item in batch]
     direct_typst_mode = any(item.math_mode == "direct_typst" for item in item_contexts)
-    system_prompt = protocol_system_prompt(
+    system_prompt = protocol_system_parts(
         "batch",
         domain_guidance=domain_guidance,
         mode=mode,
@@ -56,7 +59,7 @@ def build_single_item_fallback_messages(
     target_language_name: str = "简体中文",
 ) -> list[dict[str, str]]:
     item_context = _item_context(item)
-    system_prompt = protocol_system_prompt(
+    system_prompt = protocol_system_parts(
         "single",
         domain_guidance=domain_guidance,
         mode=mode,

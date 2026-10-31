@@ -150,6 +150,10 @@ class TranslationRunDiagnostics:
     _adaptive_ceiling: int = field(default=0, init=False, repr=False)
     _warmup_pending: bool = field(default=False, init=False, repr=False)
     _warmup_restore_limit: int = field(default=0, init=False, repr=False)
+    # 预热最多等多久（秒）：None 是等首条请求结束（DeepSeek 一直这样）；Anthropic 提示词缓存的条目在首条响应开始后就能用，
+    # 而首条往往是最长的单元（长的先发，12—17 秒），等它结束太久，2.5 秒后就放开
+    _warmup_max_wait_s: float | None = field(default=None, init=False, repr=False)
+    _warmup_started_at: float | None = field(default=None, init=False, repr=False)
     _result_stats: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
     _queue_split: dict[str, int] = field(default_factory=dict, init=False, repr=False)
     _flush_stats: dict[str, int | float] = field(default_factory=dict, init=False, repr=False)
@@ -325,6 +329,7 @@ class TranslationRunDiagnostics:
         initial_limit: int,
         floor_limit: int | None = None,
         warmup: bool = False,
+        warmup_max_wait_s: float | None = None,
     ) -> None:
         limit = max(1, min(max(1, self.configured_workers), int(initial_limit or 1)))
         floor = max(1, min(limit, int(floor_limit if floor_limit is not None else min(8, limit))))
@@ -334,6 +339,8 @@ class TranslationRunDiagnostics:
             # 同时避免全并发冷启动惊群。
             self._warmup_pending = bool(warmup) and limit > 1
             self._warmup_restore_limit = limit
+            self._warmup_max_wait_s = warmup_max_wait_s
+            self._warmup_started_at = None
             self._adaptive_limit = 1 if self._warmup_pending else limit
             self._adaptive_initial_limit = limit
             self._adaptive_peak_limit = max(self._adaptive_peak_limit, limit)
@@ -427,9 +434,25 @@ class TranslationRunDiagnostics:
         """等到有空槽位再放行；返回当前的降速次数，还槽位时原样带回（`release_request_slot(slot_epoch=…)`）。"""
         with self._adaptive_condition:
             while self._adaptive_inflight >= self._adaptive_limit:
+                self._end_warmup_if_waited_long_enough()
+                if self._adaptive_inflight < self._adaptive_limit:
+                    break
                 self._adaptive_condition.wait(timeout=0.25)
+            if self._warmup_pending and self._warmup_started_at is None:
+                self._warmup_started_at = time.monotonic()
             self._adaptive_inflight += 1
             return self._adaptive_cut_epoch
+
+    def _end_warmup_if_waited_long_enough(self) -> None:
+        if (
+            self._warmup_pending
+            and self._warmup_max_wait_s is not None
+            and self._warmup_started_at is not None
+            and time.monotonic() - self._warmup_started_at >= self._warmup_max_wait_s
+        ):
+            self._warmup_pending = False
+            self._adaptive_limit = max(self._adaptive_limit, self._warmup_restore_limit)
+            self._adaptive_condition.notify_all()
 
     def release_request_slot(
         self,

@@ -290,7 +290,8 @@ def request_chat_content(
     if execution_enabled():
         # Rust owns provider policy, deadlines, concurrency and network retries.
         # No Python slot, HTTP request, API key lookup or direct fallback here.
-        return runtime().request(messages, temperature=temperature, response_format=response_format)
+        # 系统提示现在分两条（不变的规则 + 文档指导）；Rust 执行器照旧收一条
+        return runtime().request(model_wire.merge_system_messages(messages), temperature=temperature, response_format=response_format)
     last_error: Exception | None = None
     request_stage = infer_stage_from_request_label(request_label)
     diagnostics = get_active_translation_run_diagnostics()
@@ -308,7 +309,7 @@ def request_chat_content(
     if anthropic:
         endpoint = model_wire.anthropic_messages_url(base_url)
         headers = model_wire.anthropic_headers(api_key)
-        thinking_candidates = model_wire.anthropic_thinking_candidates(profile.thinking)
+        thinking_candidates = model_wire.anthropic_thinking_candidates(profile.thinking, model=model)
         use_stream = False
     elif responses:
         endpoint = model_wire.responses_url(base_url)
@@ -324,6 +325,7 @@ def request_chat_content(
             model=model, base_url=base_url, thinking=profile.thinking
         )
         use_stream = should_use_stream_responses()
+    thinking_candidates = model_wire.without_rejected_thinking(thinking_candidates, base_url=base_url, model=model)
     thinking_index = 0
 
     def _record_usage(usage: Any) -> None:
@@ -343,7 +345,7 @@ def request_chat_content(
         if responses:
             return model_wire.responses_body(
                 model=model,
-                messages=messages,
+                messages=model_wire.merge_system_messages(messages),
                 temperature=temperature if send_temperature else None,
                 response_format=active_response_format,
                 thinking_fields=thinking_fields,
@@ -356,7 +358,7 @@ def request_chat_content(
                 response_format=response_format,
                 thinking_fields=thinking_fields,
             )
-        built: dict[str, Any] = {"model": model, "temperature": temperature, "messages": messages}
+        built: dict[str, Any] = {"model": model, "temperature": temperature, "messages": model_wire.merge_system_messages(messages)}
         built.update(thinking_fields)
         if use_stream:
             built["stream"] = True
@@ -540,7 +542,10 @@ def request_chat_content(
                 and thinking_index + 1 < len(thinking_candidates)
                 and (model_wire.looks_like_thinking_rejection(str(exc)) or not schema_fallback_possible)
             ):
-                # 服务商不认这组思考字段：退到下一组（最后一组是什么都不加）。
+                # 服务商不认这组思考字段：退到下一组（最后一组是什么都不加），并记住，后面的请求不再先试它。
+                if model_wire.looks_like_thinking_rejection(str(exc)):
+                    # 只在报错确实在说思考字段时记住；无关的 400 也会退一档重试，但不能让这个进程从此不再关思考
+                    model_wire.remember_thinking_rejected(base_url=base_url, model=model, fields=thinking_candidates[thinking_index])
                 thinking_index += 1
                 body = build_body()
                 if request_label:

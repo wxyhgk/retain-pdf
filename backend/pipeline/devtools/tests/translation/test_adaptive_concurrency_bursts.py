@@ -106,3 +106,19 @@ def test_fast_queues_share_one_pool_and_long_units_go_first() -> None:
     assert [t[0] for t in fast][:4] == ["single_fast", "single_fast", "batched_fast", "batched_fast"], "tasks keep their queue name"
     assert [t[3][0]["item_id"] for t in slow] == ["p009-b002", "p009-b001"]
 
+
+
+def test_prompt_cache_warmup_lets_everyone_go_after_a_short_wait_even_if_the_first_request_is_long() -> None:
+    """Anthropic 提示词缓存预热：先放 1 个请求，缓存条目在它开始返回后就能用；长的先发时首条要跑十几秒，不等它结束。"""
+    import threading
+    import time
+
+    run = _run()
+    run.configure_adaptive_concurrency(initial_limit=32, floor_limit=8, warmup=True, warmup_max_wait_s=0.3)
+    run.acquire_request_slot()  # 首条（最长的单元），一直不还
+    started = time.monotonic()
+    done = threading.Event()
+    threading.Thread(target=lambda: (run.acquire_request_slot(), done.set()), daemon=True).start()
+    assert done.wait(3), "the second request must not wait for the first to finish"
+    assert 0.25 <= time.monotonic() - started < 2
+    assert _limit(run) == 32
