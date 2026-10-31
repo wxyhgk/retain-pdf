@@ -1,8 +1,8 @@
-// 详情右栏 Tab 切换壳：概览 / 进度 / 文件 / 质量 / 术语 / 历史 / 用量。
+// 详情右栏 Tab 切换壳：概览 / 进度 / 文件 / 质量 / 术语 / 历史。用量在「进度」页里。
 // 页签样式见同目录 BookDetailRightTabs.css（.book-detail-right-tab.is-active）。
 
 import { useEffect, useState, type ComponentType, type ReactNode, type SVGProps } from "react";
-import { Clock3, Coins, Languages, ShieldCheck } from "lucide-react";
+import { Clock3, Languages, ShieldCheck } from "lucide-react";
 import { Tabs as TabsPrimitive } from "radix-ui";
 import { cn } from "@/ui/lib/utils";
 
@@ -51,7 +51,6 @@ export const BOOK_DETAIL_TABS: readonly TabMeta[] = Object.freeze([
   { id: "quality", label: "质量", title: "译文质量", Icon: ShieldCheck, lazy: true },
   { id: "terms", label: "术语", title: "术语与风格", Icon: Languages, lazy: true },
   { id: "history", label: "历史", title: "任务记录", Icon: Clock3, lazy: true },
-  { id: "usage", label: "用量", title: "模型 token 用量", Icon: Coins, lazy: true },
 ]);
 
 type TabContext = { activeTab: string; selectTab: (tab: string) => void };
@@ -70,7 +69,6 @@ export type BookDetailRightTabsProps = {
   qualityTab?: TabSlot;
   termsTab?: TabSlot;
   historyTab?: TabSlot;
-  usageTab?: TabSlot;
   onTabChange?: (tab: string) => void;
 };
 
@@ -84,7 +82,6 @@ export function BookDetailRightTabs({
   qualityTab = null,
   termsTab = null,
   historyTab = null,
-  usageTab = null,
   onTabChange,
 }: BookDetailRightTabsProps) {
   const [activeTab, setActiveTab] = useState(defaultTab || "overview");
@@ -113,7 +110,6 @@ export function BookDetailRightTabs({
     quality: qualityTab,
     terms: termsTab,
     history: historyTab,
-    usage: usageTab,
   };
   const tabs = BOOK_DETAIL_TABS.filter((tab) => slots[tab.id] !== null && slots[tab.id] !== undefined);
 

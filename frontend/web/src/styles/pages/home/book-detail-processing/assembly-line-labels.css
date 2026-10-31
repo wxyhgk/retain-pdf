@@ -21,6 +21,18 @@
   font-weight: 600;
 }
 
+.book-detail-pipeline-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.book-detail-pipeline-time svg {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+}
+
 @container (min-width: 520px) {
   .book-detail-line .book-detail-pipeline-track {
     position: absolute;

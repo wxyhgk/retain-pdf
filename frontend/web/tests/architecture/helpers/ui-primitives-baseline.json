@@ -282,9 +282,6 @@
     "src/features/task-center/ui/TaskRow.tsx": {
       "button": 3
     },
-    "src/features/usage/ui/BookUsageCard.tsx": {
-      "button": 1
-    },
     "src/features/usage/ui/UsageSettingsPanel.tsx": {
       "button": 1
     },

@@ -1,4 +1,4 @@
-// 书籍详情的「用量」卡、设置的「总用量」：显示、失败重试、说明。
+// 书籍详情「进度」页的用量（UsageCompact）、设置的「总用量」：显示、失败重试、说明。
 import test from "node:test";
 import assert from "node:assert/strict";
 import { waitFor } from "../helpers/async.mjs";
@@ -22,32 +22,39 @@ const summary = (scope) => ({
   jobs_counted: 29, jobs_estimated_from_reports: 29, first_at: null, last_at: null,
 });
 
-test("书籍「用量」卡：读失败给中文和重试，重试后显示合计与说明", async () => {
+test("书籍「进度」页的用量：读失败给中文和重试，重试后一排图标数字、按环节条形和说明", async () => {
   const dom = makeDom();
   const React = await import("react");
   const { createRoot } = await import("react-dom/client");
-  const { BookUsageCard } = await import("../../src/features/usage/ui/BookUsageCard.jsx");
+  const { UsageCompact } = await import("../../src/features/usage/ui/UsageCompact.jsx");
+  const { useUsage } = await import("../../src/features/usage/ui/use-usage.js");
+  const { usageViewModel } = await import("../../src/features/usage/domain/usage-view-model.js");
   let calls = 0;
-  const load = async (documentId) => {
+  const load = async () => {
     calls += 1;
-    assert.equal(documentId, "doc-1");
     if (calls === 1) throw new Error("连不上后端");
     return summary("document");
   };
+  function Harness() {
+    const state = useUsage("doc-1", load);
+    return React.createElement(UsageCompact, {
+      model: usageViewModel(state.data), loading: state.loading, error: state.error, onRetry: state.reload,
+    });
+  }
   const root = createRoot(dom.window.document.getElementById("root"));
-  root.render(React.createElement(BookUsageCard, { documentId: "doc-1", load }));
+  root.render(React.createElement(Harness));
   const doc = dom.window.document;
 
-  const retry = await waitFor(() => doc.querySelector(".usage-retry"), "失败后有重试");
+  const retry = await waitFor(() => [...doc.querySelectorAll("button")].find((b) => b.textContent === "重试"), "失败后有重试");
   assert.match(doc.querySelector("[role=alert]").textContent, /连不上后端/);
   clickWithMouseDown(dom, retry);
-  const total = await waitFor(() => doc.querySelector('[data-usage-metric="total"] dd'), "合计");
-  assert.equal(total.textContent, "547.0 万");
-  assert.equal(total.getAttribute("title"), "5,470,000 token");
-  assert.equal(doc.querySelector('[data-usage-metric="cache"] dd').textContent, "未报");
-  assert.match(doc.querySelector(".usage-notes").textContent, /按当时的报告折算/);
-  assert.ok(doc.querySelector('[data-usage-section="stages"]'), "书籍卡显示按环节");
-  assert.equal(doc.querySelector('[data-usage-section="months"]'), null, "书籍卡不显示按月");
+  const total = await waitFor(() => doc.querySelector('[data-usage-metric="total"]'), "合计");
+  assert.match(total.textContent, /547\.0 万/);
+  assert.match(total.getAttribute("title"), /合计 · 5,470,000 token/, "精确值在悬停里");
+  assert.match(doc.querySelector('[data-usage-metric="cache"]').textContent, /未报/);
+  assert.equal(doc.querySelector('[data-usage-metric="reasoning"]'), null, "思考为 0 不摆");
+  assert.match(doc.querySelector(".usage-compact-note").textContent, /按当时的报告折算/);
+  assert.ok(doc.querySelector('[data-usage-section="stages"] [data-usage-group]'), "按环节一行一条");
   root.unmount();
 });
 

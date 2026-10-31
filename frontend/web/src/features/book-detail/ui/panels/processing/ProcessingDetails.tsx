@@ -1,4 +1,4 @@
-// 「进度」页流水线下面的细节区：活动、错误、编辑部三页，只摆有内容的那几页，用一排带图标的小切换选。
+// 「进度」页流水线下面的细节区：错误、编辑部、活动、用量，只摆有内容的那几页，用一排带图标的小切换选。
 // 只有一页时不画切换，直接是内容。默认停在最要紧的一页：有错误先看错误，其次编辑部（翻译 agent 在跑时），再次活动。
 //
 // 以前这三样各是一块，从上到下排着：最近活动、编辑部画面、失败卡、取消卡，一屏放不下。
@@ -6,7 +6,7 @@
 import { useState, type ReactNode } from "react";
 import { SegmentedControl } from "@retainpdf/ui";
 
-export type ProcessingDetailKey = "errors" | "editorial" | "activity";
+export type ProcessingDetailKey = "errors" | "editorial" | "activity" | "usage";
 
 export type ProcessingDetailSection = {
   key: ProcessingDetailKey;

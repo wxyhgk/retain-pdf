@@ -1,5 +1,5 @@
 // 用量的共用展示：主要数字一排，下面按需显示按阶段 / 按模型 / 按月的条形列表和说明。
-// 书籍详情的「用量」卡和设置里的「总用量」都用它。
+// 设置里的「总用量」用它；书籍详情「进度」页的用量是紧凑版 UsageCompact。
 import type { UsageGroup, UsageRow, UsageViewModel } from "../domain/usage-view-model.js";
 
 function Bars({ rows, label }: { rows: UsageRow[]; label: string }) {

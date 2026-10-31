@@ -6,11 +6,11 @@
 
 import type { ReactNode } from "react";
 import { Button, Checkbox } from "@retainpdf/ui";
-import { ScanText } from "lucide-react";
+import { Languages, ScanText } from "lucide-react";
 
 import type { JobRetryStage } from "@/platform/api/index.js";
 import { PageSpecInput } from "../panels/PageSpecInput.js";
-import { TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
+import { ReprocessCost, TranslationStageActions } from "../panels/translate/TranslationStageActions.jsx";
 import type { StationAction } from "../panels/processing/ProcessingPipelineRail.jsx";
 import type { StationKey } from "../../domain/assembly-line-model.js";
 import type { BookDetailOcrPanelProps, BookDetailTranslationPanelProps } from "./processing-tab-types.js";
@@ -48,9 +48,9 @@ export function stationActionsOf({
   );
   const ocrRow = (
     <li className="book-detail-reprocess-row" data-reprocess-stage="ocr">
-      <div className="book-detail-reprocess-copy">
-        <strong>重新 OCR</strong>
-        <span>重新识别版面和文字。之后要重新翻译，新结果才会用上。</span>
+      <div className="book-detail-reprocess-copy" title="重新识别版面和文字。之后要重新翻译，新结果才会用上。">
+        <strong><ScanText aria-hidden="true" />重新 OCR</strong>
+        <ReprocessCost free={false} label="之后要重新翻译" />
         {ocrOptions}
       </div>
       <div className="book-detail-reprocess-controls">
@@ -69,9 +69,9 @@ export function stationActionsOf({
   // 停下的任务多一行「从头再来」：OCR 都没成功时，阶段动作全不可用，只剩这条路。
   const restartRow = translationStopped ? (
     <li className="book-detail-reprocess-row" data-reprocess-stage="restart">
-      <div className="book-detail-reprocess-copy">
-        <strong>从头翻译整本</strong>
-        <span>重新执行 OCR、翻译和排版，费用重新计算。</span>
+      <div className="book-detail-reprocess-copy" title="重新执行 OCR、翻译和排版，费用重新计算。">
+        <strong><Languages aria-hidden="true" />从头翻译整本</strong>
+        <ReprocessCost free={false} label="费用重新计算" />
       </div>
       <div className="book-detail-reprocess-controls">
         <Button

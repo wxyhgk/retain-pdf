@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { Languages, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
+import { Coins, Languages, LoaderCircle, RefreshCw, Sparkles } from "lucide-react";
 import { Button, ConfirmDialog, Select } from "@retainpdf/ui";
 import type {
   JobRetryStage,
@@ -15,13 +15,23 @@ function labelOf(action: JobStageRetryActionView) {
   return action.label;
 }
 
-// 清单形态（sheet）里每一项下面的一句话：做什么、花不花钱。顺序按代价从小到大。
+// 清单形态（sheet）里每一项的说明：做什么、花不花钱。画面上只摆一个费用小标签，整句在悬停里。顺序按代价从小到大。
 const SHEET_HINTS: Record<string, string> = {
   render: "用现有译文重新排版，不调用模型、不产生费用。",
   refine: "模型挑错后分派局部修改或整段重写，最多两轮，改不好的保留原译并列出来给你确认；改完自动重新排版。会产生费用。",
   translation: "复用已有 OCR 重新翻译整本，再排版。会产生翻译费用。",
 };
 const SHEET_ORDER: Record<string, number> = { render: 0, refine: 1, translation: 2 };
+
+/** 清单一行的费用小标签：不产生费用 / 产生费用。流水线 OCR 站、文档准备站的行也用它。 */
+export function ReprocessCost({ free, label }: { free: boolean; label?: string }) {
+  return (
+    <span className="book-detail-reprocess-cost" data-cost={free ? "free" : "paid"}>
+      <Coins aria-hidden="true" />
+      {label || (free ? "不产生费用" : "产生费用")}
+    </span>
+  );
+}
 
 // 需要先确认再执行的动作：重新翻译（后端标 danger）和精修（会调模型、产生费用）。
 function needsConfirm(action: JobStageRetryActionView) {
@@ -212,9 +222,11 @@ export function TranslationStageActions({
             const escalatedCount = Number(action.last_refine?.escalated_count) || escalated.length;
             return (
               <li key={action.stage} className="book-detail-reprocess-row" data-reprocess-stage={action.stage}>
-                <div className="book-detail-reprocess-copy">
-                  <strong>{labelOf(action)}</strong>
-                  <span>{!action.can_retry && reason && !checking ? reason : SHEET_HINTS[action.stage] || ""}</span>
+                <div className="book-detail-reprocess-copy" title={SHEET_HINTS[action.stage] || undefined}>
+                  <strong><StageIcon stage={action.stage} />{labelOf(action)}</strong>
+                  {!action.can_retry && reason && !checking
+                    ? <span>{reason}</span>
+                    : <ReprocessCost free={action.stage === "render"} />}
                   {lastRefine ? <span data-last-refine="true">{lastRefine}</span> : null}
                   {escalated.length ? (
                     <details className="book-detail-refine-escalated" data-refine-escalated={escalatedCount}>

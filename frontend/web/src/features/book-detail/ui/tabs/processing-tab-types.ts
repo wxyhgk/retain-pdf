@@ -7,6 +7,7 @@ import type { TranslationCoverageView } from "@/platform/api/index.js";
 import type { LibraryCardItem } from "@/features/library/domain.js";
 import type { JobRetryStage, JobStageRetryActionView } from "@/platform/api/index.js";
 import type { BookDetailResumeState } from "../use-book-detail-resume.js";
+import type { UsageViewModel } from "@/features/usage/index.js";
 
 /** 读进度时只看这几个字段；任务摘要和实时快照都长这样。 */
 export type ProgressSource = {
@@ -81,4 +82,6 @@ export type BookDetailProcessingTabProps = {
   coverage?: TranslationCoverageView | null;
   /** 编辑部流程图的会话缓存（BookDetailDialog 创建），跑完的任务读一次就记住。 */
   editorialFlowCache?: BookDetailCaches["settledFlows"];
+  /** 这本书的模型用量（ProcessingTabWithUsage 读好给）；没有就不出「用量」。 */
+  usage?: { model: UsageViewModel; loading: boolean; error: string; reload: () => void } | null;
 };

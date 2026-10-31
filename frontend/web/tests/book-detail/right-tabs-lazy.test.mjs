@@ -25,7 +25,6 @@ test("新页签点开才挂载，之后保留；没给内容的页签不出现",
     artifactsTab: React.createElement("p", null, "文件"),
     qualityTab: React.createElement(Quality),
     historyTab: React.createElement("p", { id: "history-body" }, "历史"),
-    usageTab: null,
   }));
   const doc = dom.window.document;
   await waitFor(() => doc.getElementById("book-detail-tab-overview"), "页签栏");

@@ -1,4 +1,5 @@
-/* 用量（features/usage）：书籍详情的「用量」卡和设置里的「总用量」共用。配色只用主题变量。
+/* 用量（features/usage）：设置里的「总用量」（UsageSummary），书籍详情「进度」页细节区的「用量」（UsageCompact）。
+ * 配色只用主题变量。
  *
  * @owns usage */
 
@@ -158,7 +159,6 @@
   cursor: pointer;
 }
 
-.usage-card-sub,
 .usage-settings-sub {
   color: var(--muted);
   font-size: 11px;
@@ -178,3 +178,116 @@
   color: var(--muted);
   font-size: 11px;
 }
+
+/* —— 书籍详情「进度」页的「用量」（UsageCompact）：一排图标 + 数，按环节一行一条 —— */
+
+.usage-compact {
+  display: grid;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--ui-radius-lg);
+  background: var(--paper);
+}
+
+.usage-compact-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.usage-compact-metric {
+  display: inline-flex;
+  min-height: 26px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 10px;
+  border-radius: var(--ui-radius-pill);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 5%, var(--paper));
+  font-size: var(--ui-text-sm);
+  font-variant-numeric: tabular-nums;
+  cursor: default;
+}
+
+.usage-compact-metric svg {
+  width: 13px;
+  height: 13px;
+  color: var(--muted);
+}
+
+.usage-compact-metric.is-emphasis {
+  margin-left: auto;
+  color: var(--paper);
+  background: var(--ink);
+  font-weight: 650;
+}
+
+.usage-compact-metric.is-emphasis svg {
+  color: currentColor;
+}
+
+.usage-compact-bars {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.usage-compact-bar {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 10px;
+  font-size: var(--ui-text-xs);
+}
+
+.usage-compact-bar-label {
+  overflow: hidden;
+  color: var(--ink);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.usage-compact-bar-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--ui-radius-pill);
+  background: color-mix(in srgb, var(--ink) 6%, var(--paper));
+}
+
+.usage-compact-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--ink) 70%, var(--paper));
+}
+
+.usage-compact-bar-value {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.usage-compact-note,
+.usage-compact-empty {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-xs);
+  line-height: 1.5;
+}
+
+.usage-compact-note svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+

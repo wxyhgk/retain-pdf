@@ -12,6 +12,7 @@ import {
   Check,
   CircleAlert,
   Clock3,
+  Coins,
   Cpu,
   FileText,
   History,
@@ -25,11 +26,12 @@ import {
 
 export type ProcessingHeaderTone = "active" | "done" | "warn" | "failed" | "stopped" | "idle";
 
-/** 小字一项：图标按 kind 选，文字原样。 */
+/** 小字一项：图标按 kind 选，画面上只留短字（「12 分」「4 / 6 页」），整句放在悬停里（title）。 */
 export type ProcessingHeaderFact = {
   key: string;
   text: string;
-  kind?: "time" | "count" | "stopped" | "pages" | "merged" | "when" | "model" | "reuse";
+  title?: string;
+  kind?: "time" | "count" | "stopped" | "pages" | "merged" | "when" | "model" | "reuse" | "tokens";
 };
 
 export type ProcessingHeaderProps = {
@@ -66,15 +68,20 @@ const FACT_ICON = {
   when: History,
   model: Cpu,
   reuse: Recycle,
+  tokens: Coins,
 } as const;
 
-/** 覆盖接口给的是成句的字（「已翻译 4 / 6 页」「最近 10/31 11:52」），按开头认出是哪一类。 */
-export function coverageFactKind(text: string): ProcessingHeaderFact["kind"] {
-  if (text.startsWith("已翻译")) return "pages";
-  if (text.includes("拼成")) return "merged";
-  if (text.startsWith("最近")) return "when";
-  if (text.startsWith("用时")) return "time";
-  return "model";
+/** 覆盖接口给的是成句的字（「已翻译 4 / 6 页」「最近 10/31 11:52」）：认出是哪一类，画面上去掉图标已经说了的那几个字，
+ *  整句留在悬停里。 */
+export function coverageFact(text: string): ProcessingHeaderFact {
+  const all = /^已翻译全部\s*(\d+)\s*页$/.exec(text);
+  if (all) return { key: text, kind: "pages", text: `${all[1]} / ${all[1]} 页`, title: text };
+  if (text.startsWith("已翻译")) return { key: text, kind: "pages", text: text.replace(/^已翻译\s*/, ""), title: text };
+  const merged = /^由\s*(\d+)\s*次翻译拼成$/.exec(text);
+  if (merged) return { key: text, kind: "merged", text: `${merged[1]} 次`, title: text };
+  if (text.startsWith("最近")) return { key: text, kind: "when", text: text.replace(/^最近\s*/, ""), title: `最近一次翻译 ${text.replace(/^最近\s*/, "")}` };
+  if (text.startsWith("用时")) return { key: text, kind: "time", text: text.replace(/^用时\s*/, ""), title: text };
+  return { key: text, kind: "model", text, title: `模型 ${text}` };
 }
 
 export function ProcessingHeader({
@@ -114,10 +121,12 @@ export function ProcessingHeader({
                     key={fact.key}
                     className="book-detail-processing-fact"
                     data-fact={fact.kind || "model"}
+                    title={fact.title || undefined}
                     {...(fact.kind === "reuse" ? { "data-ocr-reuse": "true" } : {})}
                   >
                     <Icon aria-hidden="true" />
-                    {fact.text}
+                    {fact.title ? <span className="sr-only">{fact.title}</span> : null}
+                    <span aria-hidden={fact.title ? true : undefined}>{fact.text}</span>
                   </span>
                 );
               })}
