@@ -72,7 +72,8 @@ test("馆藏卡打开书籍详情:元数据 + 阅读状态切换 + 翻译/读原
   assert.ok(byId("book-detail-translate-btn"), "馆藏有翻译按钮");
   assert.ok(byId("book-detail-start-ocr-btn"), "馆藏有独立 OCR 按钮");
   assert.ok(byId("book-detail-ocr-progress"), "OCR 使用独立任务状态区");
-  assert.ok(dlg.querySelector(".book-detail-ocr-range"), "OCR 指定页码以内联一行提供，不再折叠进选项");
+  const rangeToggle = byId("book-detail-page-range-toggle");
+  assert.equal(rangeToggle?.getAttribute("aria-pressed"), "false", "「指定页码」是状态行上的一个开关图标");
   assert.ok(byId("book-detail-read-source-btn"), "有读原文");
   assert.equal(byId("book-detail-compare-btn"), null, "馆藏没有对照阅读");
   click(dom, byId("book-detail-tab-artifacts"));

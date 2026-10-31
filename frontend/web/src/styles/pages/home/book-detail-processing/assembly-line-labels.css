@@ -84,6 +84,11 @@
     gap: 4px 6px;
   }
 
+  .book-detail-line .book-detail-pipeline-action {
+    position: static;
+    margin-top: 3px;
+  }
+
   .book-detail-line .book-detail-pipeline-desc {
     overflow: hidden;
     max-width: 96px;
@@ -99,25 +104,23 @@
   }
 }
 
-/* —— 各站能做的事：说明里一个小按钮（@retainpdf/ui 的 Button，secondary、sm），点开在画面下面列出来 —— */
+/* —— 各站能做的事：名字旁边一个 ↻（@retainpdf/ui 的 IconButton，secondary、sm），点开在画面下面列出来 —— */
+
+/* 窄的时候（竖排列表）↻ 靠右挂在站名那一行，不单独占一行；宽的时候挂在说明下面（见上面 @container 里那条）。 */
+.book-detail-pipeline-stage {
+  position: relative;
+}
 
 .book-detail-pipeline-action {
-  width: fit-content;
-  gap: 2px;
-  margin-top: 3px;
-  padding-right: 6px;
+  position: absolute;
+  top: 0;
+  right: 0;
 }
 
 .book-detail-pipeline-action[aria-expanded="true"] {
   border-color: var(--ink);
-}
-
-.book-detail-pipeline-action svg {
-  transition: transform 160ms ease;
-}
-
-.book-detail-pipeline-action[aria-expanded="true"] svg {
-  transform: rotate(180deg);
+  color: var(--paper);
+  background: var(--ink);
 }
 
 .book-detail-station-panel {
@@ -141,7 +144,7 @@
   color: var(--muted);
 }
 
-/* —— 最近活动 —— */
+/* —— 活动（细节区的一页，ProcessingActivity） —— */
 
 .book-detail-line-activity {
   display: grid;
@@ -150,20 +153,6 @@
   border: 1px solid var(--line);
   border-radius: var(--ui-radius-lg);
   background: var(--paper);
-}
-
-.book-detail-line-activity-head {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--muted);
-  font-size: var(--ui-text-xs);
-  font-variant-numeric: tabular-nums;
-}
-
-.book-detail-line-activity-head > span:first-child {
-  color: var(--ink);
-  font-weight: 620;
 }
 
 .book-detail-line-activity ol {

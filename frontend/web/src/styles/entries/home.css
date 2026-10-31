@@ -155,6 +155,8 @@
 /* 「进度」分区按组件拆分；layout 定义共享变量，必须在最前。 */
 @import "../pages/home/book-detail-processing/layout.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-card.css" layer(pages);
+@import "../pages/home/book-detail-processing/processing-head.css" layer(pages);
+@import "../pages/home/book-detail-processing/processing-details.css" layer(pages);
 @import "../pages/home/book-detail-processing/pipeline-rail.css" layer(pages);
 @import "../pages/home/book-detail-processing/assembly-line.css" layer(pages);
 @import "../pages/home/book-detail-processing/assembly-line-labels.css" layer(pages);
@@ -167,9 +169,6 @@
 @import "../../features/editorial-room/ui/EditorialRobot.css" layer(pages);
 @import "../../features/editorial-room/ui/EditorialLivePanel.css" layer(pages);
 @import "../pages/home/book-detail-processing/ocr-range.css" layer(pages);
-@import "../pages/home/book-detail-processing/translation-controls.css" layer(pages);
-@import "../pages/home/book-detail-processing/live-translation-entry.css" layer(pages);
-@import "../pages/home/book-detail-processing/job-status-card.css" layer(pages);
 @import "../pages/home/book-detail-processing/failure-card.css" layer(pages);
 @import "../pages/home/book-detail-processing/coverage.css" layer(pages);
 @import "../pages/home/book-detail-processing/job-history.css" layer(pages);

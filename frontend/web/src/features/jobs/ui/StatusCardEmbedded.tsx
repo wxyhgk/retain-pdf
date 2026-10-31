@@ -1,12 +1,12 @@
-// 书籍详情「翻译」Tab 进度：
-// - StageFlow：纯阶段导航
-// - 进度文案行右侧：仅当前选中阶段的「重新 OCR / 翻译 / 渲染」
-//   （动作与导航分离，不挤 pill、不顶乱布局）
-
+// 书籍详情「进度」页状态行右边的两个图标按钮：任务详情、取消任务（先确认）。
+//
+// 以前这是一张卡：取消 | 阶段名 + 已运行 | 详情，下面还有阶段导航、进度文案、阶段重试。进度页改版后，
+// 阶段名、用时、进度都由状态行和流水线说，这里只剩两个动作。阶段导航、文案、重试这些节点照旧渲染在
+// 一个隐藏的容器里：store 往这些 id 写字（setText），状态卡组件测试也按它们检查轮询和阶段选择。
 import { useState } from "react";
 import { StageFlow } from "./StageFlow.jsx";
-import { LoaderCircle, Square } from "lucide-react";
-import { ConfirmDialog } from "@retainpdf/ui";
+import { Info, LoaderCircle, Square } from "lucide-react";
+import { ConfirmDialog, IconButton } from "@retainpdf/ui";
 import { buildProgressRenderModel, type ProgressRenderModelInput } from "../domain/progress-model.js";
 import { StatusCardIdsContext } from "./status-card-ids-context.js";
 import {
@@ -136,7 +136,6 @@ export function StatusCardEmbedded({
 
   const rootClass = [
     "bd-job-status-card",
-    "bd-job-status-card--bar",
     !visible ? "hidden" : "",
     className,
   ].filter(Boolean).join(" ");
@@ -149,44 +148,31 @@ export function StatusCardEmbedded({
         data-status={`${snapshot.status || ""}`.trim()}
         data-visual-stage-key={lottie.visualStageKey || visualStageKey}
         data-embedded="true"
-        data-layout="bar-action"
+        data-layout="toolbar"
         data-selected-stage={selectedFlow}
       >
-        <div className="bd-job-status-inner">
-          <div className="bd-job-status-head">
-            <button
-              id={ids.cancelButton}
-              type="button"
-              className="bd-job-status-btn bd-job-status-btn-cancel"
-              aria-label="取消任务"
-              title={cancel.title}
-              disabled={!cancelEnabled || cancelDisabled}
-              onClick={() => setConfirmCancel(true)}
-            >
-              {cancel.busy ? (
-                <LoaderCircle className="animate-spin" aria-hidden="true" />
-              ) : (
-                <Square aria-hidden="true" />
-              )}
-              <span>{cancel.label}</span>
-            </button>
-            <div className="bd-job-status-head-center">
-              <div id={ids.ringLabel} className="bd-job-status-title">{ringLabel}</div>
-              <div id={ids.ringElapsed} className="bd-job-status-elapsed">
-                {elapsed.totalElapsedText}
-              </div>
-            </div>
-            <button
-              id={ids.detailButton}
-              type="button"
-              className="bd-job-status-btn bd-job-status-btn-primary"
-              aria-label="任务详情"
-              onClick={openDetail}
-            >
-              详情
-            </button>
-          </div>
+        <IconButton
+          id={ids.detailButton}
+          label="任务详情"
+          className="bd-job-status-btn bd-job-status-btn-primary"
+          onClick={openDetail}
+        >
+          <Info aria-hidden="true" />
+        </IconButton>
+        <IconButton
+          id={ids.cancelButton}
+          label="取消任务"
+          className="bd-job-status-btn bd-job-status-btn-cancel"
+          title={cancel.title}
+          disabled={!cancelEnabled || cancelDisabled}
+          onClick={() => setConfirmCancel(true)}
+        >
+          {cancel.busy ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : <Square aria-hidden="true" />}
+        </IconButton>
 
+        <div className="hidden" aria-hidden="true">
+          <div id={ids.ringLabel}>{ringLabel}</div>
+          <div id={ids.ringElapsed}>{elapsed.totalElapsedText}</div>
           <div className="bd-job-status-flow">
             <StageFlow
               currentStageKey={stageKeyForFlow}
@@ -194,66 +180,34 @@ export function StatusCardEmbedded({
               onSelectStage={selection.selectStage}
             />
           </div>
-
-          <div className="bd-job-status-main">
-            <div className="bd-job-status-copy">
-              {/* 标题行：左侧状态文案，右侧「重新 xxx」（仅当前阶段） */}
-              <div className="bd-job-status-value-row">
-                <div id={ids.ringValue} className="bd-job-status-value">
-                  {valueText}
-                </div>
-                {retry ? (
-                  <button
-                    type="button"
-                    id={ids.stageRetry}
-                    className="bd-job-status-retry-action"
-                    data-retry-stage={retry.dispatchStage}
-                    title={retry.title}
-                    onClick={() => dispatchStatusCardRetryStage(retry.dispatchStage, jobId)}
-                  >
-                    {retry.label}
-                  </button>
-                ) : (
-                  <div id={ids.stageRetry} className="hidden" aria-hidden="true" />
-                )}
-              </div>
-              <div
-                id={ids.stageDetail}
-                className={`bd-job-status-detail${detailText ? "" : " is-empty"}`}
-                title={detailText || undefined}
-              >
-                {detailText || "\u00a0"}
-              </div>
-              {/* 进度条归 ProcessingPipelineRail 独有。这里曾经也画一条,于是同一个
-                  百分比在「进度」Tab 里出现两次(上面轨道 289/344 84%,下面这张卡
-                  第 289/344 批 84%),看上去像两个任务。
-                  契约 id 保留成隐藏节点:progressBar/progressPercent 没有任何代码
-                  从 DOM 读,但 setText 仍可能写,留着比删了安全。 */}
-              <div id={ids.progressBar} className="hidden" aria-hidden="true" data-value={rounded} />
-              <div id={ids.progressPercent} className="hidden" aria-hidden="true" />
-              <div id={ids.progressRing} className="hidden" aria-hidden="true" />
-              <div
-                id={ids.progressText}
-                className={`bd-job-status-bar-meta${progressText ? "" : " is-empty"}`}
-              >
-                {progressText || "\u00a0"}
-              </div>
-            </div>
-          </div>
-
-          {cancelError ? (
-            <p className="bd-job-status-cancel-error" role="alert" data-cancel-error="true">
-              {`取消没有成功：${cancelError}`}
-            </p>
-          ) : null}
-
-          <div
-            id={ids.stageErrorSummary}
-            className={`bd-job-status-error${showError ? "" : " is-empty"}`}
-          >
-            {showError ? display.errorState.errorText : "\u00a0"}
-          </div>
+          <div id={ids.ringValue}>{valueText}</div>
+          {retry ? (
+            <button
+              type="button"
+              id={ids.stageRetry}
+              className="bd-job-status-retry-action"
+              data-retry-stage={retry.dispatchStage}
+              title={retry.title}
+              onClick={() => dispatchStatusCardRetryStage(retry.dispatchStage, jobId)}
+            >
+              {retry.label}
+            </button>
+          ) : (
+            <div id={ids.stageRetry} />
+          )}
+          <div id={ids.stageDetail}>{detailText}</div>
+          <div id={ids.progressBar} data-value={rounded} />
+          <div id={ids.progressPercent} />
+          <div id={ids.progressRing} />
+          <div id={ids.progressText}>{progressText}</div>
+          <div id={ids.stageErrorSummary}>{showError ? display.errorState.errorText : ""}</div>
         </div>
+
+        {cancelError ? (
+          <p className="bd-job-status-cancel-error" role="alert" data-cancel-error="true">
+            {`取消没有成功：${cancelError}`}
+          </p>
+        ) : null}
       </div>
       <ConfirmDialog
         id={`${idPrefix}cancel-confirm`}

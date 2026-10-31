@@ -100,10 +100,11 @@ test("StatusCard：真实轮询(mock=translate)驱动 ring/进度/阶段流(首�
   // 现在卡只负责「取消 / 详情 / 耗时 / 选阶段 / 重试」，进度只有轨道一处。
   //
   // 契约 id 仍在（保留成隐藏节点，setText 可能写），但必须是隐藏的——它要是又
-  // 显示出来，就是重复回来了。
+  // 显示出来，就是重复回来了。进度页改版后这张卡只剩详情、取消两个图标，其余契约节点
+  // 都收在一个隐藏容器里。
   const progressBar = byId(dom, `${BD}status-progress-bar`);
   assert.ok(progressBar, "契约 id 应保留");
-  assert.equal(progressBar.classList.contains("hidden"), true, "卡内不得再画进度条，进度归流水线轨道");
+  assert.ok(progressBar.closest(".hidden"), "卡内不得再画进度条，进度归状态行和流水线");
 
   // 旧断言等的是隐藏区 #job-status 摘要更新（那批隐藏 id 无 DOM 读者，已随主卡
   // 下线）。同一份真值在嵌入卡根节点上就有：data-status 直接写 snapshot.status。
@@ -169,7 +170,7 @@ test("StatusCard：阶段选择语义 + 重试 + 取消", async () => {
     assert.equal(cancelButton.disabled, false, "还没确认就已经在取消了");
     click(dom, confirmButton);
     await waitFor(() => cancelButton.disabled === true, "确认取消后按钮立即禁用");
-    assert.match(cancelButton.textContent, /取消中/, "取消请求中必须反馈状态");
+    assert.equal(cancelButton.getAttribute("title"), "正在取消任务", "取消请求中必须反馈状态（悬停说明，图标换成转圈）");
   }
 
   root.unmount();

@@ -1,8 +1,10 @@
-// 处理流水线：一条传送带穿过五台机器（AssemblyLineScene），每台机器上方挂这一站的状态和运行时间，
-// 下面一块「最近活动」。宽的时候说明挂在机器上方；窄的时候（手机）说明排成一列放在画面下面。
-// 不做预计剩余时间，只写已经跑了多久。
+// 处理流水线：一条传送带穿过五台机器（AssemblyLineScene），每台机器上方挂这一站的名字和用时。
+// 宽的时候说明挂在机器上方；窄的时候（手机）说明排成一列放在画面下面。不做预计剩余时间，只写已经跑了多久。
 //
-// 「重新处理」也挂在流水线上：没有任务在跑时，能重做的站说明里有个按钮（OCR 站「重新 OCR」、翻译站「重译 / 精修」、
+// 标签只用图标说状态（勾、转圈、钟）：「已完成」「等待中」这类字留给读屏（.book-detail-status 是 sr-only），
+// 只有失败、取消、排队这种要人注意的才画成小标签。「最近活动」在细节区（ProcessingActivity）。
+//
+// 「重新处理」也挂在流水线上：没有任务在跑时，能重做的站名字旁边有个 ↻ 图标（OCR 站「重新 OCR」、翻译站「重译 / 精修」、
 // 版面站「重新渲染」，任务停下时文档准备站「从头翻译」），点开在画面下面列出这一站能做的事。内容由调用方给（stationActions）。
 //
 // 承接原有 DOM 契约（测试与门禁依赖）：
@@ -14,15 +16,14 @@
 // 根节点带 data-loading="true"。曾经首帧一律按 pending 渲染成「未执行 / 尚未翻译」，而那份文档的 OCR 其实正在跑。
 
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { Check, ChevronDown, Clock3, LoaderCircle, TriangleAlert, X } from "lucide-react";
-import { Button, IconButton } from "@retainpdf/ui";
+import { Check, Clock3, LoaderCircle, RotateCcw, TriangleAlert, X } from "lucide-react";
+import { IconButton } from "@retainpdf/ui";
 
 import type { LibraryCardItem } from "@/features/library/domain.js";
 import {
   assemblyStations,
   formatElapsed,
   STATIONS,
-  recentActivity,
   stationTimes,
   totalElapsedMs,
   type JobTimeline,
@@ -64,7 +65,7 @@ function StepMark({ state }: { state: string }) {
 
 const CAPABILITY: Partial<Record<StationKey, string>> = { ocr: "ocr", translate: "translation" };
 
-/** 一站能做的事：说明里的按钮文字，和点开后列出来的内容。 */
+/** 一站能做的事：↻ 图标的名字（悬停和读屏），和点开后列出来的内容。 */
 export type StationAction = { label: string; content: ReactNode };
 
 export type ProcessingPipelineRailProps = {
@@ -136,8 +137,8 @@ export function ProcessingPipelineRail({
     return time.running ? `已运行 ${formatElapsed(time.ms)}` : `用时 ${formatElapsed(time.ms)}`;
   };
   const percent = model.progress;
-  const liveDetail = jobActive ? `${item.stage_snapshot?.stage_detail || item.stage_detail || ""}` : "";
-  const activity = loading ? [] : recentActivity(timeline, { liveDetail });
+  // 状态字画成小标签的只有这几种：失败、取消、排队要人注意；其余交给图标，字留给读屏。
+  const chipStates = new Set(["failed", "cancelled"]);
 
   return (
     <section
@@ -177,7 +178,11 @@ export function ProcessingPipelineRail({
                   <span className="book-detail-pipeline-head">
                     <span className="book-detail-pipeline-label">{label}</span>
                     {status ? (
-                      <span className={`book-detail-status book-detail-pipeline-status is-${toneOf(station.state)}`}>{status}</span>
+                      <span
+                        className={`book-detail-status book-detail-pipeline-status is-${toneOf(station.state)}${
+                          chipStates.has(station.state) || (station.key === "prepare" && station.state === "active") ? "" : " sr-only"
+                        }`}
+                      >{status}</span>
                     ) : null}
                     {station.state === "active" && station.key !== "prepare" && percent !== null ? (
                       <span className="book-detail-pipeline-percent" data-stage-percent={station.key}>{`${Math.round(percent)}%`}</span>
@@ -194,9 +199,10 @@ export function ProcessingPipelineRail({
                     </span>
                   ) : null}
                   {stationActions[station.key] ? (
-                    <Button
-                      variant="secondary"
+                    <IconButton
                       size="sm"
+                      variant="secondary"
+                      label={`${stationActions[station.key]?.label}`}
                       id={`book-detail-station-${station.key}-btn`}
                       className="book-detail-pipeline-action"
                       aria-expanded={opened === station.key}
@@ -204,9 +210,8 @@ export function ProcessingPipelineRail({
                       data-station-action={station.key}
                       onClick={() => setOpenKey((key) => (key === station.key ? "" : station.key))}
                     >
-                      {stationActions[station.key]?.label}
-                      <ChevronDown aria-hidden="true" />
-                    </Button>
+                      <RotateCcw aria-hidden="true" />
+                    </IconButton>
                   ) : null}
                 </span>
               </li>
@@ -223,23 +228,6 @@ export function ProcessingPipelineRail({
             </IconButton>
           </div>
           {stationActions[opened]?.content}
-        </div>
-      ) : null}
-      {activity.length ? (
-        <div className="book-detail-line-activity" data-line-activity="true">
-          <div className="book-detail-line-activity-head">
-            <span>最近活动</span>
-            {total !== null ? <span data-line-total="true">{`${jobActive ? "已运行" : "共用时"} ${formatElapsed(total)}`}</span> : null}
-          </div>
-          <ol>
-            {activity.map((line, index) => (
-              <li key={line.key} className={index === 0 && jobActive ? "is-latest" : undefined}>
-                <span className="book-detail-line-activity-dot" aria-hidden="true" />
-                <span className="book-detail-line-activity-text">{line.text}</span>
-                {line.at ? <time>{line.at}</time> : null}
-              </li>
-            ))}
-          </ol>
         </div>
       ) : null}
     </section>

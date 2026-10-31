@@ -103,7 +103,7 @@ async function mountRail(props) {
   return { dom, host, unmount: () => root.unmount() };
 }
 
-test("画面：传送带和五台机器；在跑的站写百分比和已运行时间，做完的写用时；最近活动", async () => {
+test("画面：传送带和五台机器；在跑的站写百分比和已运行时间，做完的写用时", async () => {
   const item = {
     job_id: "job-a", status: "running",
     stage_snapshot: { display_stage: "translate", stage_detail: "正在翻译第 2 / 10 页", progress: { current: 2, total: 10 } },
@@ -120,10 +120,12 @@ test("画面：传送带和五台机器；在跑的站写百分比和已运行�
     assert.equal(host.querySelector("[data-stage-percent='translate']").textContent, "20%");
     assert.equal(host.querySelector("[data-stage-time='translate']").textContent, "已运行 1 分 12 秒");
     assert.equal(host.querySelector("[data-stage-time='ocr']").textContent, "用时 45 秒");
-    assert.equal(host.querySelector("[data-stage-key='render'] .book-detail-status").textContent, "等待中");
+    // 「等待中」这类状态字留给读屏，画面上只用图标说。
+    const renderStatus = host.querySelector("[data-stage-key='render'] .book-detail-status");
+    assert.equal(renderStatus.textContent, "等待中");
+    assert.ok(renderStatus.classList.contains("sr-only"), "等待中不画成小标签");
     assert.equal(host.querySelector("[data-stage-time='render']"), null);
-    assert.equal(host.querySelector("[data-line-total]").textContent, "已运行 2 分");
-    assert.equal(host.querySelector("[data-line-activity] li").textContent.includes("正在翻译第 2 / 10 页"), true);
+    assert.equal(host.querySelector("[data-line-activity]"), null, "最近活动挪到细节区，不在流水线里");
     assert.doesNotMatch(host.textContent, /预计|剩余/);
   } finally {
     unmount();
@@ -139,7 +141,6 @@ test("画面：首帧未知时只占位，不写时间，不画走动的稿纸",
     assert.equal(host.querySelector("[data-translation-process]").dataset.loading, "true");
     assert.equal(host.querySelector("[data-stage-time]"), null);
     assert.equal(host.querySelector("[data-line-travel]"), null);
-    assert.equal(host.querySelector("[data-line-activity]"), null);
   } finally {
     unmount();
   }
@@ -182,4 +183,17 @@ test("读计时：在跑时轮询，跑完读一次；读失败保留上一次",
   } finally {
     root.unmount();
   }
+});
+
+test("活动（细节区）：在跑的那一条是后端的实时说明；首帧未知时什么都不列", async () => {
+  makeDom();
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { ProcessingActivity } = await import("../../src/features/book-detail/ui/panels/processing/ProcessingActivity.tsx");
+  const item = { job_id: "job-a", status: "running", stage_snapshot: { stage_detail: "正在翻译第 2 / 10 页" } };
+  const timeline = timelineFromJobPayload(RUNNING, T0);
+  const html = renderToStaticMarkup(React.createElement(ProcessingActivity, { item, timeline, jobActive: true }));
+  assert.match(html, /data-line-activity/);
+  assert.match(html, /正在翻译第 2 \/ 10 页/);
+  assert.equal(renderToStaticMarkup(React.createElement(ProcessingActivity, { item, timeline, jobActive: true, loading: true })), "");
 });

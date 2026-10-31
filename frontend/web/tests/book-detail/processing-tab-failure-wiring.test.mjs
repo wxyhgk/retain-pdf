@@ -62,7 +62,8 @@ test("OCR 任务失败时，OCR 段真的出现失败卡片", async () => {
   assert.ok(!translationRegion(host)?.contains(all[0]), "OCR 的失败卡片画到翻译段里去了");
   assert.match(host.textContent, /上游服务没能处理这份文件/, "分类建议没画出来 —— failure 没接上");
   assert.match(host.textContent, /MinerU batch task failed/, "后端给的根因没画出来");
-  assert.match(host.textContent, /展开完整错误/, "loadDetail 没接上，traceback 永远取不回来");
+  assert.match(host.textContent, /完整错误/, "loadDetail 没接上，traceback 永远取不回来");
+  assert.equal(host.querySelector("[data-processing-details]")?.dataset.processingDetails, "errors", "有错误时细节区先停在「错误」页");
   root.unmount(); host.remove();
 });
 
@@ -192,10 +193,10 @@ test("取消的翻译任务：说明已取消、停在哪一步，给「从断�
       }),
     },
   });
-  const card = host.querySelector("[data-job-cancelled]");
-  assert.ok(card, "取消之后什么都不说");
-  assert.match(card.textContent, /任务已取消/);
-  assert.match(card.textContent, /已经翻好的部分/, "要说清续跑会沿用已翻好的部分");
+  assert.equal(host.querySelector("[data-processing-unified-status]")?.textContent, "已停止", "取消之后什么都不说");
+  assert.match(host.querySelector("[data-processing-facts]")?.textContent || "", /停在翻译/, "要说停在哪一步");
+  const note = host.querySelector("[data-job-cancelled]");
+  assert.match(note?.textContent || "", /已经翻好的部分/, "要说清续跑会沿用已翻好的部分");
   click(dom, host.querySelector("#book-detail-resume-cancelled-btn"));
   await wait(50);
   assert.equal(resumed, 1);

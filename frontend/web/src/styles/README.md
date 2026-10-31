@@ -48,14 +48,13 @@ Reader 样式只改 `frontend/packages/reader/styles/*`。`src/styles/reader/` �
 | 文件 | 负责范围 |
 |------|----------|
 | `layout.css` | 分区根布局；**共享变量**（卡片底色 / 圆角、墨色深浅色阶）与小节标题。必须最先引入 |
-| `processing-card.css` | 「处理」卡片：标题、总状态、总进度条、细化区 |
+| `processing-card.css` | 「进度」卡片外壳，流水线各站点开后的「重新处理」清单 |
+| `processing-head.css` | 状态行：状态图标、标题、带图标的小字、右边的按钮（含实时译文、详情、取消）、进度条、页码行、提醒和报错 |
+| `processing-details.css` | 细节区：错误 / 编辑部 / 活动的切换 |
 | `pipeline-rail.css` | OCR / 翻译 / 渲染 / 完成 流水线轨道 |
 | `editorial-flow.css` | 编辑部精修流程图（第几轮、这一步第几批） |
 | `ocr-range.css` | OCR 指定页码 |
-| `translation-controls.css` | 翻译段的摘要、动作行、提示、阶段动作、状态卡容器 |
-| `live-translation-entry.css` | 「实时译文」入口 |
-| `job-status-card.css` | 内嵌任务状态卡（`bd-job-status-*`） |
-| `failure-card.css` | 失败诊断卡片 |
+| `failure-card.css` | 「错误」页里的一块失败 |
 | `coverage.css` | 翻译覆盖条 |
 | `job-history.css` | 任务记录 |
 

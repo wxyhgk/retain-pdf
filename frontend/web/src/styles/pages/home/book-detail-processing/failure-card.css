@@ -1,109 +1,128 @@
-/* 失败诊断卡片。
- *
- * 用警示色但**不用红底**：失败在这个产品里是常态（真实数据 17/61），整块红会让
- * 书籍详情页看起来像出了大事；而真正要让人注意的是「该怎么办」那一行。 */
+/* 「错误」页里的一块失败（JobFailureCard）：标题一行（右边复制诊断），图标小标签说谁的问题、重试有没有用，
+ * 后端给的根因，主按钮沿用什么、花不花钱，点开才有的完整错误。主按钮在状态行上，不在这里。 */
+
 .book-detail-failure-card {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: 8px;
-  margin-top: 12px;
   padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--destructive) 28%, var(--border));
-  border-radius: var(--ui-radius-md);
-  background: color-mix(in srgb, var(--destructive) 5%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--danger) 22%, var(--line));
+  border-radius: var(--ui-radius-lg);
+  background: var(--paper);
 }
 
 .book-detail-failure-head {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
 }
 
 .book-detail-failure-icon {
-  display: inline-flex;
-  flex: none;
-  margin-top: 1px;
-  color: var(--destructive);
-}
-
-.book-detail-failure-icon > svg {
   width: 16px;
   height: 16px;
+  flex: 0 0 auto;
+  color: var(--danger);
 }
 
-.book-detail-failure-copy h4 {
+.book-detail-failure-head h4 {
+  flex: 1 1 auto;
+  min-width: 0;
   margin: 0;
+  color: var(--ink);
   font-size: var(--ui-text-md);
   font-weight: 650;
-  color: var(--foreground);
 }
 
-.book-detail-failure-subtitle {
-  margin: 2px 0 0;
-  font-size: var(--ui-text-xs);
-  color: var(--muted-foreground);
+.book-detail-failure-tools {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  margin: -4px -4px -4px 0;
 }
 
-.book-detail-failure-action {
-  margin: 0;
-  font-size: var(--ui-text-sm);
-  line-height: 1.6;
-  color: var(--foreground);
-}
-
-/* 上游原样抛回来的那句。常常比我们的分类更具体，但也常常是英文，
-   所以压一级字重、不抢「该怎么办」那一行。 */
-.book-detail-failure-cause {
-  margin: 0;
-  padding: 6px 8px;
-  border-radius: var(--ui-radius-sm);
-  background: color-mix(in srgb, var(--foreground) 5%, transparent);
-  font-size: var(--ui-text-xs);
-  line-height: 1.5;
-  color: var(--muted-foreground);
-  word-break: break-word;
-}
-
-.book-detail-failure-actions {
+.book-detail-failure-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 2px;
+  gap: 6px;
+  margin: 0;
+}
+
+.book-detail-failure-chip {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  border-radius: var(--ui-radius-pill);
+  color: var(--ink);
+  background: var(--book-detail-shade-0);
+  font-size: var(--ui-text-xs);
+}
+
+.book-detail-failure-chip[data-retry-helps="false"] {
+  color: var(--danger);
+  background: var(--danger-weak);
+}
+
+.book-detail-failure-chip svg,
+.book-detail-failure-hint svg {
+  width: 12px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+
+.book-detail-failure-action,
+.book-detail-failure-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-xs);
+  line-height: 1.55;
+}
+
+.book-detail-failure-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.book-detail-failure-hint svg {
+  margin-top: 3px;
+}
+
+.book-detail-failure-cause {
+  margin: 0;
+  padding: 7px 10px;
+  border-radius: var(--ui-radius-sm);
+  color: var(--ink);
+  background: var(--book-detail-shade-0);
+  font-family: var(--font-mono, ui-monospace, Menlo, monospace);
+  font-size: var(--ui-text-xs);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.book-detail-failure-expand {
+  justify-self: start;
+  margin-left: -10px;
+  color: var(--muted);
 }
 
 .book-detail-failure-detail {
+  max-height: 260px;
   margin: 0;
   padding: 10px;
-  max-height: 260px;
   overflow: auto;
   border-radius: var(--ui-radius-sm);
-  background: color-mix(in srgb, var(--foreground) 6%, transparent);
-  font-size: var(--ui-text-xs);
+  color: var(--ink);
+  background: var(--book-detail-shade-0);
+  font-size: var(--ui-text-2xs);
   line-height: 1.5;
   white-space: pre-wrap;
-  word-break: break-word;
 }
 
 .book-detail-failure-detail-error {
   margin: 0;
+  color: var(--danger);
   font-size: var(--ui-text-xs);
-  color: var(--destructive);
-}
-
-/* 主按钮下面那句：沿用什么、重跑什么、花不花钱。点之前就该知道。 */
-.book-detail-failure-hint {
-  margin: 0;
-  font-size: var(--ui-text-xs);
-  line-height: 1.5;
-  color: var(--muted-foreground);
-}
-
-/* 已取消：不是出错，用中性色。 */
-.book-detail-failure-card[data-tone="cancelled"] {
-  border-color: var(--border);
-  background: color-mix(in srgb, var(--foreground) 3%, var(--card));
-}
-
-.book-detail-failure-card[data-tone="cancelled"] .book-detail-failure-icon {
-  color: var(--muted-foreground);
 }

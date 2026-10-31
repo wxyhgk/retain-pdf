@@ -1,0 +1,35 @@
+/* 「进度」页流水线下面的细节区：错误 / 编辑部 / 活动，一排带图标的小切换（@retainpdf/ui 的 SegmentedControl）。
+ * （ProcessingDetails） */
+
+.book-detail-processing-details {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.book-detail-processing-details-switch .ui-segmented-option {
+  position: relative;
+}
+
+/* 错误页的红点：选中时底是墨色，点换成浅一点的红，照样看得见。 */
+.book-detail-processing-details-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--ui-radius-pill);
+  background: var(--danger);
+}
+
+.book-detail-processing-details-switch [aria-checked="true"] .book-detail-processing-details-dot {
+  background: color-mix(in srgb, var(--danger) 55%, var(--paper));
+}
+
+.book-detail-processing-details-body {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.book-detail-processing-errors {
+  display: grid;
+  gap: 10px;
+}

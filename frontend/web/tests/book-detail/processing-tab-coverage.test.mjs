@@ -108,17 +108,30 @@ test("完成且全部翻出来：没有提醒，图标是完成色", async () =>
   root.unmount(); host.remove();
 });
 
-test("OCR 指定页码和翻译的指定页码在同一个选项行；按钮都在同一个动作行", async () => {
+test("还没开始：按钮都在状态行上；「指定页码」一个开关，翻译和只做 OCR 共用一份页码", async () => {
   const dom = makeDom();
-  const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: idleTranslation, coverage: null });
-  const options = host.querySelector(".book-detail-processing-options");
-  assert.ok(options?.querySelector(".book-detail-ocr-range"), "OCR 指定页码在选项行里");
-  assert.ok(options?.querySelector(".book-detail-translate-range"), "翻译指定页码在选项行里");
-  const actions = host.querySelectorAll("[data-processing-actions]");
-  assert.equal(actions.length, 1, "只有一个动作行");
-  assert.ok(actions[0].querySelector("#book-detail-start-ocr-btn"));
-  assert.ok(actions[0].querySelector("#book-detail-translate-btn"));
+  const calls = [];
+  const ocr = { ...idleOcr, onRangeOnChange: (v) => calls.push(["ocr-on", v]), onPageSpecChange: (v) => calls.push(["ocr-spec", v]) };
+  const translation = {
+    ...idleTranslation, pageSpec: "1-3",
+    onRangeOnChange: (v) => calls.push(["tr-on", v]), onPageSpecChange: (v) => calls.push(["tr-spec", v]),
+  };
+  const { root, host } = await mountTab(dom, { loading: false, ocr, translation, coverage: null });
+  const tools = host.querySelector(".book-detail-processing-tools");
+  assert.ok(tools?.querySelector("#book-detail-translate-btn"), "翻译整本在状态行上");
+  assert.ok(tools?.querySelector("#book-detail-start-ocr-btn"), "只做 OCR 在状态行上");
+  assert.equal(tools.querySelector("#book-detail-start-ocr-btn").getAttribute("aria-label"), "只做 OCR");
+  const toggle = tools.querySelector("#book-detail-page-range-toggle");
+  assert.equal(toggle?.getAttribute("aria-pressed"), "false");
+  assert.equal(host.querySelector("#book-detail-translate-pages"), null, "没打开时不占一行");
+  toggle.dispatchEvent(new dom.window.MouseEvent("click", { bubbles: true }));
+  assert.deepEqual(calls, [["tr-on", true], ["ocr-on", true], ["ocr-spec", "1-3"]], "一个开关同时打开翻译和 OCR 的指定页码");
   root.unmount(); host.remove();
+
+  const opened = await mountTab(makeDom(), { loading: false, ocr, translation: { ...translation, rangeOn: true }, coverage: null });
+  assert.ok(opened.host.querySelector(".book-detail-processing-range #book-detail-translate-pages"), "打开后状态行下面一行页码");
+  assert.match(opened.host.querySelector("#book-detail-translate-btn").textContent, /翻译选定页码/);
+  opened.root.unmount(); opened.host.remove();
 });
 
 test("失败任务在任务记录里写原因，原始错误收在展开里", async () => {
@@ -159,7 +172,9 @@ test("翻译任务跑在 OCR 阶段：进度只出现一次；OCR 站写实时�
     loading: false, ocr: idleOcr, translation: running,
     coverage: { ...COVERAGE, jobs: [{ ...COVERAGE.jobs[0], kept_origin_blocks: 16 }, COVERAGE.jobs[1]] },
   });
-  assert.equal(host.querySelector("[data-processing-unified-status]")?.textContent, "翻译中 · 32/48 页 · 67%");
+  assert.equal(host.querySelector("[data-processing-unified-status]")?.textContent, "翻译中");
+  assert.equal(host.querySelector(".book-detail-processing-head-percent")?.textContent, "67%");
+  assert.match(host.querySelector("[data-processing-facts]")?.textContent || "", /32 \/ 48 页/);
   assert.equal(host.querySelectorAll(".book-detail-processing-progress").length, 1, "进度条只有顶部一条");
   assert.equal(
     host.querySelector("[data-stage-meta='ocr']")?.textContent,
@@ -167,7 +182,7 @@ test("翻译任务跑在 OCR 阶段：进度只出现一次；OCR 站写实时�
   );
   assert.equal(host.querySelector("[data-stage-meta='translate']"), null, "跑新任务时不摆上一次的翻译结果");
   assert.equal(host.querySelector("[data-stage-warning='translate']"), null, "跑新任务时也不挂上一次的「N 块保留原文」");
-  const translateStage = host.querySelector("[data-stage-key='translate']");
+  const translateStage = host.querySelector("[data-translation-process] [data-stage-key='translate']");
   assert.equal(translateStage?.getAttribute("data-state"), "pending");
   assert.equal(translateStage?.querySelector(".book-detail-status")?.textContent, "等待中");
   root.unmount(); host.remove();

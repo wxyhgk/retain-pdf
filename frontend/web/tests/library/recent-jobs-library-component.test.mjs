@@ -383,24 +383,16 @@ test("书籍详情弹窗:馆藏点翻译 → 立刻接进度 + 网格静默更�
     return jobId && !jobId.startsWith("doc:") && payload?.library_only === false;
   }, "详情 payload 立刻有真实 job_id");
 
-  // 进度卡应出现在详情内 bd-job-status-inner（不需等整页重载）
-  await waitFor(() => byId(dom, "book-detail-job-status-card"), "进度 Tab 立刻出现 StatusCard");
+  // 任务动作立刻出现在「进度」页的状态行上（不需等整页重载）：详情、取消两个图标。
+  await waitFor(() => byId(dom, "book-detail-job-status-card"), "进度 Tab 立刻出现任务动作");
   const statusCard = byId(dom, "book-detail-job-status-card");
-  assert.ok(
-    statusCard.querySelector(".bd-job-status-inner"),
-    "进度落在 bd-job-status-inner（详情内嵌，非工作流弹窗）",
-  );
-  // 进度条已归 ProcessingPipelineRail 独有：卡内那条和轨道画同一个百分比，
-  // 同屏出现两条进度像两个任务。这里改成断言卡确实在承担它剩下的职责——
-  // 取消/详情那一行——而不是断言它还画着进度。
-  assert.ok(
-    statusCard.querySelector(".bd-job-status-head"),
-    "内嵌卡应有取消/详情操作行",
-  );
+  assert.ok(statusCard.closest(".book-detail-processing-tools"), "任务动作在状态行的按钮组里（详情内嵌，非工作流弹窗）");
+  assert.ok(statusCard.querySelector('button[aria-label="任务详情"]'), "有任务详情");
+  assert.ok(statusCard.querySelector('button[aria-label="取消任务"]'), "有取消任务");
   assert.equal(
     statusCard.querySelector(".bd-job-status-bar"),
     null,
-    "卡内不得再画进度条，否则与流水线轨道重复",
+    "卡内不得再画进度条，否则与状态行的进度重复",
   );
   assert.ok(
     statusCard.querySelector(".status-stage-flow"),

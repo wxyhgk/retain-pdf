@@ -42,7 +42,7 @@ async function mountCard(dom, props) {
 const buttonWith = (host, label) =>
   [...host.querySelectorAll("button")].find((b) => b.textContent.includes(label));
 
-test("点「展开完整错误」才去打详情端点，拿回的 traceback 真的画出来", async () => {
+test("点「完整错误」才去打详情端点，拿回的 traceback 真的画出来", async () => {
   const dom = makeDom();
   const asked = [];
   const { root, host } = await mountCard(dom, {
@@ -53,11 +53,11 @@ test("点「展开完整错误」才去打详情端点，拿回的 traceback 真
     },
   });
   assert.equal(asked.length, 0, "还没点就打了详情端点 —— 2 秒一次的轮询会把它一起驮上");
-  click(dom, buttonWith(host, "展开完整错误"));
+  click(dom, buttonWith(host, "完整错误"));
   await waitFor(() => host.querySelector("[data-failure-detail]"), "完整错误展开");
   assert.deepEqual(asked, ["job-1"], "展开时没拿当前任务的 id 去取详情");
   assert.match(host.querySelector("[data-failure-detail]").textContent, /^Traceback/, "取回来的完整错误没画出来");
-  assert.equal(buttonWith(host, "展开完整错误"), undefined, "展开之后按钮还在，再点一次又发一次请求");
+  assert.equal(buttonWith(host, "完整错误"), undefined, "展开之后按钮还在，再点一次又发一次请求");
   root.unmount(); host.remove();
 });
 
@@ -67,7 +67,7 @@ test("详情端点挂了，卡片不能跟着垮 —— 上面那份简报本身
     failure: FAILURE, jobId: "job-1",
     loadDetail: async () => { throw new Error("读取完整错误失败：500"); },
   });
-  click(dom, buttonWith(host, "展开完整错误"));
+  click(dom, buttonWith(host, "完整错误"));
   await waitFor(() => host.querySelector(".book-detail-failure-detail-error"), "展开失败的提示");
   assert.match(host.querySelector(".book-detail-failure-detail-error").textContent, /500/, "没把取详情失败的原因说出来");
   assert.ok(host.querySelector("[data-job-failure]"), "取不到完整错误把整张卡片带崩了");
@@ -80,7 +80,7 @@ test("服务端什么都没给时也要有话说，不能展开出一片空白",
   const { root, host } = await mountCard(dom, {
     failure: FAILURE, jobId: "job-1", loadDetail: async () => "",
   });
-  click(dom, buttonWith(host, "展开完整错误"));
+  click(dom, buttonWith(host, "完整错误"));
   await waitFor(() => host.querySelector("[data-failure-detail]"), "展开");
   assert.match(host.querySelector("[data-failure-detail]").textContent, /\S/, "展开出来是一片空白");
   root.unmount(); host.remove();
