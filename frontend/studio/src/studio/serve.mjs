@@ -227,7 +227,15 @@ export async function startStudio({ root = process.cwd(), port = 4321, host = 'l
 	};
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+/**
+ * Started with pi's options (`--mode json -p …`): pi started again by an extension of the pi in a Studio's server that
+ * took this file for pi's program (process.argv[1]). Never a second Studio for that: pi, as pi-child.mjs makes it.
+ */
+const PI_OPTIONS = /^(?:--mode|--print|-p|--no-session|--append-system-prompt|--tools)$/u;
+
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url) && process.argv.slice(2).some((word) => PI_OPTIONS.test(word))) {
+	await import('./server/ai/pi-child.mjs');
+} else if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
 	const asked = (name) => {
 		const at = process.argv.indexOf(`--${name}`);
 		return at > 0 ? process.argv[at + 1] : undefined;

@@ -1,6 +1,7 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { agent as acpAgent, ndJsonStream, PROTOCOL_VERSION, RequestError } from '@agentclientprotocol/sdk';
 import { createAgentSession, createBashToolDefinition, DefaultResourceLoader, getAgentDir, ModelRuntime, SessionManager } from '@earendil-works/pi-coding-agent';
 
@@ -33,6 +34,26 @@ import { t } from '@blog/i18n/index.mjs';
 
 /** Said in its system prompt each run: models think in English unless asked, and the author reads its thinking. */
 const THINK_IN_CHINESE = '你的思考过程（thinking / reasoning）也一律用简体中文写，和回答一样；代码、命令、文件名、公式照原样。'; // i18n-ignore: prompt
+
+/**
+ * The subagents there are (pi's subagent extension: `<pi's folder>/agents/*.md`, each its name and what it is for), as
+ * said to pi: its tool names none, and pi guessed one there is not (general-purpose, Claude Code's). Empty: none.
+ */
+export function subagentsSaid(agentDir) {
+	let names = [];
+	try {
+		names = readdirSync(join(agentDir, 'agents')).filter((file) => file.endsWith('.md'));
+	} catch {
+		return '';
+	}
+	const agents = names.flatMap((file) => {
+		const head = /^---\r?\n([\s\S]*?)\r?\n---/u.exec(readFileSync(join(agentDir, 'agents', file), 'utf8'))?.[1] ?? '';
+		const name = /^name:\s*(.+)$/mu.exec(head)?.[1]?.trim();
+		const about = /^description:\s*(.+)$/mu.exec(head)?.[1]?.trim();
+		return name ? [about ? `${name}（${about}）` : name] : [];
+	});
+	return agents.length ? `subagent 工具能用的 agent 只有这些：${agents.join('、')}。不要用别的名字（比如 general-purpose）。` : ''; // i18n-ignore: prompt
+}
 
 /** The reasoning levels, as the options show them. */
 const thinkingNames = () => ({ off: t('不思考'), minimal: t('最少'), low: t('少'), medium: t('中'), high: t('多'), xhigh: t('很多'), max: t('最多') });
@@ -109,8 +130,25 @@ export function piInProcess(env) {
 	return { stream: ndJsonStream(toAgent.writable, toClient.readable), stop };
 }
 
+/** The program pi's extensions start pi again with (its subagent extension: `process.argv[1]`): pi, as this one is. */
+const PI_CHILD = fileURLToPath(new URL('./pi-child.mjs', import.meta.url));
+
+/**
+ * What pi started again by pi's extensions is (pi-child.mjs), not the Studio: its subagent extension runs
+ * `process.argv[1]`, taken for pi's program, which in this process is the Studio's server (serve.mjs: each subagent
+ * started a second Studio). Read only by that extension after the server started (serve.mjs and client-build.mjs read
+ * it as they load). The environment of the Studio's AIs handed over with it, the keys left out (pi-child.mjs reads them
+ * from the settings, not from an environment every program the Studio starts would see).
+ */
+export function childPi(env) {
+	process.argv[1] = PI_CHILD;
+	const keys = new Set(PI_PROVIDERS.map((provider) => provider.env).filter(Boolean));
+	process.env.STUDIO_PI_CHILD_ENV = JSON.stringify(Object.fromEntries(Object.entries(env).filter(([name, value]) => !keys.has(name) && typeof value === 'string' && process.env[name] !== value)));
+}
+
 /** Serves pi's sessions as ACP on `stream`; returns how to stop. */
 function servePi(stream, env) {
+	childPi(env);
 	const agentDir = env.PI_CODING_AGENT_DIR || undefined;
 	const sessionDir = agentDir ? join(agentDir, 'sessions') : undefined;
 	/** @type {Promise<ModelRuntime> | null} */
@@ -148,7 +186,7 @@ function servePi(stream, env) {
 				(pi) => {
 					pi.on('before_agent_start', (event) => {
 						const options = event.systemPromptOptions;
-						options.appendSystemPrompt = [options.appendSystemPrompt, THINK_IN_CHINESE, where.context].filter(Boolean).join('\n\n');
+						options.appendSystemPrompt = [options.appendSystemPrompt, THINK_IN_CHINESE, subagentsSaid(agentDir ?? getAgentDir()), where.context].filter(Boolean).join('\n\n');
 					});
 					// pi asks no one before it runs a command: what may not be done refused, what loses work or stops the
 					// Studio asked of the author first, as an adapter asks (the panel's 允许/拒绝).
