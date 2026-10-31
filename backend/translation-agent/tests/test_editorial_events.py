@@ -11,7 +11,9 @@ from pathlib import Path
 
 from retainpdf_translation_agent import EDITORIAL_EVENT_VERSION
 from retainpdf_translation_agent import EVENTS_FILE
+from retainpdf_translation_agent import BlockInput
 from retainpdf_translation_agent import DocumentRun
+from retainpdf_translation_agent import PageInput
 from retainpdf_translation_agent import QuotaExhausted
 from retainpdf_translation_agent import TranslationAgent
 
@@ -93,6 +95,26 @@ def test_a_failed_block_is_retried_then_falls_back_to_the_source(tmp_path: Path)
     fallback = next(e for e in events if e["type"] == "fallback")
     assert fallback == dict(fallback, page=1, block="b1", reason="citation_lost")
     assert events[-2]["statuses"]["fallback_source"] == 1
+
+
+def test_a_continuation_group_is_reported_with_its_member_blocks(tmp_path: Path) -> None:
+    """接续组在 agent 里合成一块翻：事件里照旧报原来各块的 id、按块数算，整组退回原文时每块一条 fallback。"""
+    group = lambda i: {"id": "cg-e", "index": i, "of": 2}  # noqa: E731
+    page = PageInput(
+        page_label="3",
+        blocks=[
+            BlockInput("g1", "paragraph", "The ledger recorded every loan made by the library in that year and", True, group=group(1)),
+            BlockInput("g2", "paragraph", "every fine that was paid for a late return [4].", True, group=group(2)),
+        ],
+    )
+    model = Model(_answer({"cg-e": "账簿记下了每一笔借阅和每一笔罚金。"}), _answer({"cg-e": "账簿记下了每一笔借阅和罚金。"}))
+    DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, memory=False).run([page])
+    events = _events(tmp_path)
+    assert next(e for e in events if e["type"] == "translate_call")["blocks"] == ["g1", "g2"]
+    assert next(e for e in events if e["type"] == "retry")["blocks"] == ["g1", "g2"]
+    assert next(e for e in events if e["type"] == "check_result")["error"] == 2
+    assert [e["block"] for e in events if e["type"] == "fallback"] == ["g1", "g2"]
+    assert next(e for e in events if e["type"] == "page_done")["statuses"]["fallback_source"] == 2
 
 
 def test_a_stop_is_reported_and_the_resumed_run_appends_after_it(tmp_path: Path) -> None:

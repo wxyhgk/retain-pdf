@@ -51,6 +51,8 @@ from retainpdf_translation_agent.reader import apply_reading
 from retainpdf_translation_agent.reader import read_document
 from retainpdf_translation_agent.review import review_page
 from retainpdf_translation_agent.review import reviewable
+from retainpdf_translation_agent.units import merge_groups
+from retainpdf_translation_agent.units import split_units
 
 TRAILING_PARENS_RE = re.compile(r"\s*[（(][^（）()]*[)）]\s*$")
 
@@ -229,17 +231,20 @@ class DocumentRun:
                 changes_before = len(glossary.changes)
                 self._event_page = index + 1
                 self._event("page_started", page=self._event_page, label=page.page_label, blocks=len(page.to_translate()))
+                # 接续组合成一块翻、审校，审完才切回各块（`units.py`）
+                units, groups = merge_groups(page_input)
                 try:
-                    page_results, info = self.agent.translate_page(page_input)
+                    unit_results, info = self.agent.translate_units(units)
                 except StopRun as stop:
                     self._log_calls(page, key, context, calls_before)
                     self._stopped(page, key, stop, done, len(pages))
                     return RunOutcome(STOPPED, stop.reason, results, glossary, len(done), len(pages))
                 review_report = None
                 if self.review:
-                    self._event("review_started", page=self._event_page, blocks=len(reviewable(page_input, page_results)))
+                    reviewed = reviewable(units, unit_results)
+                    self._event("review_started", page=self._event_page, blocks=sum(len(b.members) or 1 for b in reviewed))
                     try:
-                        review_report = review_page(self.agent, page_input, page_results)
+                        review_report = review_page(self.agent, units, unit_results)
                     except StopRun as stop:
                         self._log_calls(page, key, context, calls_before)
                         self._stopped(page, key, stop, done, len(pages))
@@ -252,6 +257,7 @@ class DocumentRun:
                         applied=len(review_report["applied"]),
                         rejected=len(review_report["rejected"]),
                     )
+                page_results = split_units(unit_results, groups)
                 self._log_calls(page, key, context, calls_before)
                 if review_report is not None:
                     self._ledger("review", page=page.page_label, page_key=key, reviewed=review_report["reviewed"], tickets=review_report["tickets"], applied=len(review_report["applied"]))

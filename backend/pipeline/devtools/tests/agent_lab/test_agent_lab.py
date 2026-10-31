@@ -140,32 +140,14 @@ def test_report_embeds_translations(tmp_path: Path) -> None:
     assert len(data["images"]) == 3
 
 
-class DuplicatingModel(FakeModel):
-    """第一次把跨页段落两半都译成同一句（实测 Haiku 出过这种错），重翻时分对。"""
-
-    def __call__(self, body: dict) -> dict:
-        if "tools" in body and body["tools"][0]["name"] == "submit_reading":
-            return FakeModel.__call__(self, body)
-        self.bodies.append(body)
-        blocks, payload = _requested_blocks(body)
-        out = []
-        for block in blocks:
-            text = _fake_answer(block)
-            if "retry" not in payload and block["id"] == "cg-method-p1":
-                # 同一句话在整段开头和结尾各写一遍：切回两块后一边一句
-                dup = "最后凡被栏或页分隔的段落都保留指向其所接续块的指针"
-                text = f"译文：{dup}{block['text']}{dup}"
-            out.append({"id": block["id"], "translation": text})
-        return _text_response(out)
-
-
-def test_duplicated_text_across_a_continuation_group_is_caught_and_the_group_retried(tmp_path: Path) -> None:
-    fake = DuplicatingModel()
+def test_a_broken_continuation_group_is_retried_as_one_paragraph(tmp_path: Path) -> None:
+    """接续组合成一块翻：第一次交坏了，重翻时整段一条记录，两半的尝试次数、状态一样。"""
+    fake = FakeModel(broken={"cg-method-p1": "坏了"})
     results = run(tmp_path / "out", agent=Agent(model="fake", transport=fake, cache_dir=tmp_path / "cache"))
     head, tail = results["blocks"]["method-p1"], results["blocks"]["method-p1-cont1"]
     for block in (head, tail):
-        assert block["attempts"] == 2 and block["status"] != "error", block
-        assert any(i["code"] == "group_overlap" for i in block["history"][0]["issues"])
+        assert block["attempts"] == 2 and block["status"] in ("ok", "warn"), block
+    assert head["status"] == tail["status"]
     retries = [json.loads(b["messages"][0]["content"]) for b in fake.bodies]
     retries = [p for p in retries if "retry" in p]
     assert len(retries) == 1 and [r["id"] for r in retries[0]["retry"]] == ["cg-method-p1"]
@@ -174,23 +156,26 @@ def test_duplicated_text_across_a_continuation_group_is_caught_and_the_group_ret
 
 def test_continuation_group_is_sent_as_one_paragraph_and_split_by_the_program(tmp_path: Path) -> None:
     from retainpdf_translation_agent.agent import BREAK
-    from retainpdf_translation_agent.agent import expand_translations
+    from retainpdf_translation_agent.agent import clean_translations
     from retainpdf_translation_agent.agent import request_records
+    from retainpdf_translation_agent.contract import BlockResult
+    from retainpdf_translation_agent.units import merge_groups
+    from retainpdf_translation_agent.units import split_units
 
-    page = next(p for p in build_pages(_truth(tmp_path), page_labels=PRINTED_PAGE) if p.page_label == "1")
-    wanted = {b.id for b in page.to_translate()}
-    blocks = page.to_input({}).blocks
-    records = request_records(blocks, wanted)
+    page = next(p for p in build_pages(_truth(tmp_path), page_labels=PRINTED_PAGE) if p.page_label == "1").to_input({})
+    members = {b.id: b for b in page.blocks}
+    units, groups = merge_groups(page)
+    records = request_records(units.blocks, {b.id for b in units.to_translate()})
     group = next(r for r in records if r["id"] == "cg-method-p1")
-    members = {b.id: b for b in blocks}
     assert group["members"] == ["method-p1", "method-p1-cont1"]
     assert group["text"] == members["method-p1"].text + " " + members["method-p1-cont1"].text and BREAK not in group["text"]
     assert not any(r["id"] in {"method-p1", "method-p1-cont1"} for r in records)
-    # 模型只交整段：程序按原文比例在标点处切回两块，不记问题；模型照老习惯写的 [[BREAK]] 删掉
+    # 模型只交整段：程序按原文比例在标点处切回两块；模型照老习惯写的 [[BREAK]] 删掉
     for answer in ("前一半的译文，后一半的译文。", "前一半的译文，[[BREAK]]后一半的译文。"):
-        per_block, issues = expand_translations({"cg-method-p1": answer}, blocks, wanted)
-        assert per_block["method-p1"] and per_block["method-p1-cont1"] and not issues
-        assert per_block["method-p1"] + per_block["method-p1-cont1"] == answer.replace(BREAK, "")
+        text = clean_translations({"cg-method-p1": answer})["cg-method-p1"]
+        per_block = split_units({"cg-method-p1": BlockResult("cg-method-p1", text, [], 1, "ok")}, groups)
+        head, tail = per_block["method-p1"].translation, per_block["method-p1-cont1"].translation
+        assert head and tail and head + tail == answer.replace(BREAK, "")
 
 
 # ---- 长样例 ----

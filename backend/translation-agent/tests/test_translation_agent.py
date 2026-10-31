@@ -18,7 +18,6 @@ from retainpdf_translation_agent.agent import parse_answer
 from retainpdf_translation_agent.agent import strict_tool
 from retainpdf_translation_agent.reader import READER_TOOL
 from retainpdf_translation_agent.review import REVIEW_TOOL
-from retainpdf_translation_agent import check_group
 
 
 def _page() -> PageInput:
@@ -94,20 +93,22 @@ def test_words_in_a_script_the_source_does_not_have_are_errors() -> None:
     assert "foreign_script" not in codes("As Landau wrote, «Теория поля».", "正如朗道所写，«Теория поля»。")
 
 
-def test_check_group_flags_text_repeated_across_the_break() -> None:
-    dup = "最后凡被栏或页分隔的段落都保留指针"
-    issues = check_group([("a", "x" * 100, "前半段……" + dup), ("b", "y" * 30, dup)])
-    assert all("group_overlap" in [i["code"] for i in issues[k]] for k in ("a", "b"))
-
-
-def test_a_phrase_the_source_repeats_on_both_sides_of_the_break_is_not_an_overlap() -> None:
-    # 原文前后两块都说了 "number of steps needed per path that ends in the first basin"，译文跟着说两遍是对的
-    a_src = "A looser tolerance strongly reduces the number of steps needed per path that ends in the first"
-    b_src = "basin. With the other method the lowest number of steps needed per path that ends in the first basin is reached early."
-    a_out = "较宽松的容差使每条终止于第一个盆地的路径所需的步数大幅下降"
-    b_out = "。用另一种方法，每条终止于第一个盆地的路径所需的步数最早达到最低。"
-    issues = check_group([("a", a_src, a_out), ("b", b_src, b_out)])
-    assert not any(i["code"] == "group_overlap" for k in ("a", "b") for i in issues[k]), issues
+def test_a_group_is_checked_retried_and_falls_back_as_one_block() -> None:
+    """接续组合成一块：按整段查，重翻时整段一条，还不合格就整组退回原文——不会一段话前半中文、后半英文。"""
+    group = lambda i: {"id": "cg-c", "index": i, "of": 2}  # noqa: E731
+    page = PageInput(
+        page_label="1",
+        blocks=[
+            BlockInput("c1", "paragraph", "The ledger recorded every loan made by the library in that year and", True, group=group(1)),
+            BlockInput("c2", "paragraph", "every fine that was paid for a late return [4].", True, group=group(2)),
+        ],
+    )
+    model = Scripted({"cg-c": "账簿记下了图书馆那一年的每一笔借阅，以及每一笔逾期归还的罚金。"}, {"cg-c": "账簿记下了那一年的每一笔借阅和每一笔逾期罚金。"})
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
+    assert [r["id"] for r in model.payloads[1]["retry"]] == ["cg-c"], "the retry asks for the whole paragraph again"
+    assert results["c1"].status == results["c2"].status == "fallback_source"
+    assert results["c1"].translation is None and results["c2"].translation is None
+    assert results["c1"].meta["unit_id"] == "cg-c" and "citation_lost" in [i["code"] for i in results["c1"].issues]
 
 
 def test_a_group_is_split_back_by_the_source_ratio_not_by_the_model() -> None:
@@ -185,7 +186,7 @@ def test_a_group_the_model_skipped_gets_one_more_retry() -> None:
 
 
 def test_a_short_half_is_not_called_truncated_when_the_group_is_whole() -> None:
-    # 前一块原文只有半句：切出来很短，按块查"太短"，整组合起来不短，只记警告、不退回原文
+    # 前一块原文只有半句：切出来很短。整段查不短，切开以后不再逐块查"太短"（以前要靠补丁降成警告）
     group = lambda i: {"id": "cg-s", "index": i, "of": 2}  # noqa: E731
     page = PageInput(
         page_label="1",
@@ -197,7 +198,7 @@ def test_a_short_half_is_not_called_truncated_when_the_group_is_whole() -> None:
     model = Scripted({"cg-s": "对于小体系，两种更新格式之间差别不大，但体系越大，第一种的优势越明显，在我们做的每一项测试里都大幅领先。"})
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
     assert len(model.payloads) == 1
-    assert results["s1"].status != "fallback_source" and results["s1"].translation
+    assert results["s1"].status == "ok" and results["s1"].translation
 
 
 def test_page_goes_out_once_with_groups_merged_and_comes_back_split() -> None:
@@ -287,7 +288,8 @@ def test_an_answer_in_the_wrong_format_counts_as_missing_and_is_retried() -> Non
     assert results["a1"].status != "fallback_source"
 
 
-def test_a_footnote_mark_moved_across_the_break_is_only_a_warning() -> None:
+def test_a_footnote_mark_moved_across_the_break_is_fine() -> None:
+    """中文语序把脚注标记挪到了切点另一边：整段查标记还在，切开以后不再逐块查，不算问题。"""
     group = lambda i: {"id": "cg-m", "index": i, "of": 2}  # noqa: E731
     page = PageInput(
         page_label="1",
@@ -298,8 +300,8 @@ def test_a_footnote_mark_moved_across_the_break_is_only_a_warning() -> None:
     )
     model = Scripted({"cg-m": "她借了《米德尔马契》{{fn:25}}当月开始分册出版的八册中的第一册。"})
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(page)
-    assert len(model.payloads) == 1, "no retry for a mark that is still in the group"
-    assert results["m2"].status == "warn" and "mark_moved" in [i["code"] for i in results["m2"].issues]
+    assert len(model.payloads) == 1
+    assert results["m1"].status == results["m2"].status == "ok", (results["m1"].issues, results["m2"].issues)
 
 
 def test_breaks_the_model_still_writes_are_ignored() -> None:

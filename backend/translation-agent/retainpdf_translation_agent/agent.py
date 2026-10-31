@@ -18,12 +18,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from retainpdf_translation_agent.breaks import move_leading_punctuation
-from retainpdf_translation_agent.breaks import split_by_ratio
 from retainpdf_translation_agent.checks import check_block
-from retainpdf_translation_agent.checks import check_group
 from retainpdf_translation_agent.checks import check_terms
-from retainpdf_translation_agent.checks import prose_length
 from retainpdf_translation_agent.checks import restore_formulas
 from retainpdf_translation_agent.checks import status_of
 from retainpdf_translation_agent.checks import style_signals
@@ -38,6 +34,8 @@ from retainpdf_translation_agent.contract import BlockResult
 from retainpdf_translation_agent.contract import PageInput
 from retainpdf_translation_agent.contract import RevisionRequest
 from retainpdf_translation_agent.memory import find_terms
+from retainpdf_translation_agent.units import merge_groups
+from retainpdf_translation_agent.units import split_units
 
 API_URL = "https://api.anthropic.com/v1/messages"
 # 以前接续组的原文里用它标出原来在哪里断开、要模型在译文里照放；2026-10-30 起模型只翻整段，不再放。
@@ -262,24 +260,34 @@ class TranslationAgent:
         # 编辑部事件（editorial.v1）的出口：调度（`DocumentRun`）接上，补上页号写进 events.jsonl；没接就不产出
         self.on_event: Callable[[str, dict], None] | None = None
         self._restored: dict[str, list[dict]] = {}  # 这一轮被换回原文写法的公式（块 id → 警告）
+        # 这一页合成的接续组（组号 → 原来的各块 id）：编辑部事件里照旧报各块的 id，前端不用知道合过
+        self._members: dict[str, list[str]] = {}
 
     def model_for(self, role: str) -> str:
         return self.models.get(role) or self.model
 
     def _emit(self, event_type: str, **fields) -> None:
-        if self.on_event is not None:
-            self.on_event(event_type, fields)
+        if self.on_event is None:
+            return
+        if "blocks" in fields:
+            fields["blocks"] = [m for b in fields["blocks"] for m in self._members.get(b, [b])]
+        if fields.get("block") in self._members:
+            for member in self._members[fields["block"]]:
+                self.on_event(event_type, dict(fields, block=member))
+            return
+        self.on_event(event_type, fields)
 
     def _emit_check(self, attempt: int, results) -> None:
         """一次质检的结果：这一页每块现在的状态（ok / warn / error 各几块）和问题代码各出现几次。"""
         counts = {STATUS_OK: 0, STATUS_WARN: 0, STATUS_ERROR: 0}
         codes: dict[str, int] = {}
         for result in results:
+            weight = len(self._members.get(result.id, [result.id]))  # 合成的接续组按原来几块算
             if result.status in counts:
-                counts[result.status] += 1
+                counts[result.status] += weight
             for issue in result.issues:
                 code = str(issue.get("code", ""))
-                codes[code] = codes.get(code, 0) + 1
+                codes[code] = codes.get(code, 0) + weight
         self._emit("check_result", attempt=attempt, ok=counts[STATUS_OK], warn=counts[STATUS_WARN], error=counts[STATUS_ERROR], codes=codes)
 
     # ---- 请求 ----
@@ -388,6 +396,15 @@ class TranslationAgent:
 
     # ---- 一页 ----
     def translate_page(self, page: PageInput) -> tuple[dict[str, BlockResult], dict]:
+        """翻一页，结果按原来的各块交回。接续组合成一块翻（`units.merge_groups`），翻完切回各块；
+        要在切开以前审校的（调度 `DocumentRun`），分开调 `merge_groups`、`translate_units`、`split_units`。"""
+        units, groups = merge_groups(page)
+        results, info = self.translate_units(units)
+        return split_units(results, groups), info
+
+    def translate_units(self, page: PageInput) -> tuple[dict[str, BlockResult], dict]:
+        """翻一页合好接续组的块（`merge_groups` 的结果）：合成的那块就是普通的一块，按整段校验、重翻、退回原文。"""
+        self._members = {b.id: b.members for b in page.blocks if b.members}
         wanted = {b.id for b in page.to_translate()}
         if not wanted:
             # 这一页没有要翻的（都不翻，或者都是已定好的译文）：不发请求
@@ -398,18 +415,17 @@ class TranslationAgent:
         parsed = self._parse(response)
         raw, duplicates = parsed["translations"], parsed["duplicates"]
         exceptions = _exceptions_by_block(parsed["term_exceptions"])
-        per_block, split_issues = expand_translations(raw, page.blocks, wanted)
+        per_block = clean_translations(raw)
         self._restore_formulas(page, per_block)
         record_ids = {r["id"] for r in records if r["translate"]}
         extra = sorted(set(raw) - record_ids)
         results: dict[str, BlockResult] = {}
         for block in page.to_translate():
-            issues = self._check(page, block, per_block.get(block.id), exceptions) + split_issues.get(block.id, [])
+            issues = self._check(page, block, per_block.get(block.id), exceptions)
             if block.id in duplicates:
                 issues.append({"code": "duplicate", "severity": "warn", "message": "同一块交了不止一次，取最后一条"})
             meta = self._meta(page, block, role=ROLE_TRANSLATOR, attempt=1)
             results[block.id] = BlockResult(block.id, per_block.get(block.id), issues, 1, status_of(issues), meta=meta)
-        self._apply_group_checks(page.to_translate(), results)
         self._emit_check(1, results.values())
         missing_first = {b.id for b in page.to_translate() if any(i["code"] == "missing" for i in results[b.id].issues)}
         retry_terms, retry_exceptions = self._retry_failed(page, results, page.to_translate(), attempt=2)
@@ -438,25 +454,15 @@ class TranslationAgent:
         return results, info
 
     def _retry_failed(self, page: PageInput, results: dict[str, BlockResult], candidates: list, *, attempt: int) -> tuple[list[dict], list[dict]]:
-        """`candidates` 里不合格的：单块的合成一次请求一起重翻，接续组各自整组重翻。返回重翻时报上的术语和例外。"""
+        """`candidates` 里不合格的合成一次请求一起重翻（接续组已经合成一块，和别的块一样）。返回重翻时报上的术语和例外。"""
         failed = [b for b in candidates if results[b.id].status == STATUS_ERROR]
         if not failed:
             return [], []
         self._emit("retry", blocks=[b.id for b in failed])
-        singles = [b for b in failed if not b.group]
-        groups: dict[str, list] = {}
-        for block in failed:
-            if block.group:
-                groups[block.group["id"]] = self._unit_of(page, block)
-        terms: list[dict] = []
-        exceptions: list[dict] = []
-        for unit in ([singles] if singles else []) + list(groups.values()):
-            fixed, parsed = self._retry_unit(page, unit, results)
-            results.update(fixed)
-            terms += parsed.get("terms", [])
-            exceptions += parsed.get("term_exceptions", [])
+        fixed, parsed = self._retry_unit(page, failed, results)
+        results.update(fixed)
         self._emit_check(attempt, [results[b.id] for b in page.to_translate()])
-        return terms, exceptions
+        return parsed.get("terms", []), parsed.get("term_exceptions", [])
 
     def _restore_formulas(self, page: PageInput, per_block: dict[str, str]) -> None:
         """模型顺手改了一点点的公式换回原文写法，换了的记一条 info（检查时并进 issues，不算警告：公式不判对错）。"""
@@ -475,28 +481,6 @@ class TranslationAgent:
             meta = dict(self._meta(page, block, role=ROLE_READER, attempt=0), model=None)
             results[block.id] = BlockResult(block.id, block.fixed_translation, [], 0, STATUS_OK, meta=meta)
         return results
-
-    @staticmethod
-    def _unit_of(page: PageInput, block) -> list:
-        """重翻的单位：接续组整组一起，其余一块。"""
-        if not block.group:
-            return [block]
-        return [b for b in page.to_translate() if b.group and b.group["id"] == block.group["id"]]
-
-    @staticmethod
-    def _apply_group_checks(blocks: list, results: dict) -> None:
-        groups: dict[str, list] = {}
-        for block in blocks:
-            if block.group and block.id in results:
-                groups.setdefault(block.group["id"], []).append(block)
-        for members in groups.values():
-            members.sort(key=lambda b: b.group["index"])
-            extra = check_group([(b.id, b.text, results[b.id].translation) for b in members])
-            for block_id, issues in extra.items():
-                if issues:
-                    results[block_id].issues = results[block_id].issues + issues
-                    results[block_id].status = status_of(results[block_id].issues)
-            _forgive_moved_marks(members, results)
 
     # ---- 按重排 agent 的要求改稿 ----
     def revise(self, page: PageInput, requests: list[RevisionRequest]) -> dict[str, BlockResult]:
@@ -529,7 +513,7 @@ class TranslationAgent:
                 parsed = self._parse(response)
             except ValueError:
                 parsed = {"translations": {}, "term_exceptions": []}
-            per_block, _ = expand_translations(parsed["translations"], page.blocks, ids)
+            per_block = clean_translations(parsed["translations"])
             self._restore_formulas(page, per_block)
             exceptions = _exceptions_by_block(parsed["term_exceptions"])
             next_round: list[RevisionRequest] = []
@@ -558,26 +542,17 @@ class TranslationAgent:
         return results
 
     def _retry_unit(self, page: PageInput, unit: list, results: dict) -> tuple[dict[str, BlockResult], dict]:
-        """不合格的块（接续组就整组）重翻一次：同一页其它块作为上下文，并告诉模型上次哪里不对。"""
+        """不合格的几块重翻一次：同一页其它块作为上下文，并告诉模型上次哪里不对。"""
         ids = {b.id for b in unit}
         records = request_records(page.blocks, ids)
-
-        def problems(block_ids) -> list[str]:
-            return sorted({i["message"] for b in block_ids for i in results[b].issues if i["severity"] != "info"})
-
-        retry: list[dict] = []
-        if unit[0].group and len(unit) > 1:
-            retry.append(
-                {
-                    "id": unit[0].group["id"],
-                    # 上次整组没交时不填
-                    "previous_translation": "".join(results[b.id].translation or "" for b in unit) if any(results[b.id].translation for b in unit) else None,
-                    "problems": problems([b.id for b in unit]),
-                }
-            )
-        else:
-            for b in unit:
-                retry.append({"id": b.id, "previous_translation": results[b.id].translation, "problems": problems([b.id])})
+        retry = [
+            {
+                "id": b.id,
+                "previous_translation": results[b.id].translation,
+                "problems": sorted({i["message"] for i in results[b.id].issues if i["severity"] != "info"}),
+            }
+            for b in unit
+        ]
         payload = self._payload(page, records, retry=retry, required_ids=[r["id"] for r in retry])
         response = self._call(
             self._body(payload),
@@ -588,53 +563,17 @@ class TranslationAgent:
             parsed = self._parse(response)
         except ValueError:
             parsed = {"translations": {}, "terms": [], "term_exceptions": []}
-        per_block, split_issues = expand_translations(parsed["translations"], page.blocks, ids)
+        per_block = clean_translations(parsed["translations"])
         self._restore_formulas(page, per_block)
         exceptions = _exceptions_by_block(parsed["term_exceptions"])
         fixed: dict[str, BlockResult] = {}
         for block in unit:
             first = results[block.id]
-            issues = self._check(page, block, per_block.get(block.id), exceptions) + split_issues.get(block.id, [])
+            issues = self._check(page, block, per_block.get(block.id), exceptions)
             history = first.history + [{"translation": first.translation, "issues": first.issues}]
             meta = self._meta(page, block, role=ROLE_TRANSLATOR, attempt=first.attempts + 1)
             fixed[block.id] = BlockResult(block.id, per_block.get(block.id), issues, first.attempts + 1, status_of(issues), history, meta)
-        self._apply_group_checks(unit, fixed)
         return fixed, parsed
-
-
-# 中文语序会把引用、脚注标记、行内代码挪过接续组的断点：按块查是"丢了"，按整组查还在，就只记警告
-MOVABLE = {"citation_lost", "footnote_mark_lost", "code_changed"}
-
-
-# 中文语序把内容挪过断点：一块按自己查"太短"，整组合起来不短，是断点位置挪了，不是截断。
-# 2026-10-30 论文第 13 页：跨页那半句只有 8 个词，"差别不大"按中文语序放到了下一页那块的句末，这半只剩"对于低维体系，"；
-# 以前判截断、重翻还一样，这半句退回原文没翻
-SHIFTED = {"too_short": ("group_share", "（整组合起来不短，中文语序把内容挪到了接续组的另一块，断点位置可能挪了）")}
-
-
-def _forgive_moved_marks(members: list, results: dict[str, BlockResult]) -> None:
-    if len(members) < 2 or any(results[b.id].translation is None for b in members):
-        return
-    whole = check_block(" ".join(b.text for b in members), "".join(results[b.id].translation or "" for b in members))
-    still_lost = {i["code"] for i in whole}
-
-    def forgiven(issue: dict) -> dict | None:
-        code = issue["code"]
-        if code in still_lost:
-            return None
-        if code in MOVABLE:
-            return dict(issue, code="mark_moved", severity="warn", message=issue["message"] + "（整组里还在，挪到了接续组的另一块）")
-        if code in SHIFTED:
-            new_code, note = SHIFTED[code]
-            return dict(issue, code=new_code, severity="warn", message=issue["message"] + note)
-        return None
-
-    for block in members:
-        result = results[block.id]
-        if not any(forgiven(i) for i in result.issues):
-            continue
-        result.issues = [forgiven(i) or i for i in result.issues]
-        result.status = status_of(result.issues)
 
 
 def strict_tool(tool: dict) -> dict:
@@ -720,35 +659,10 @@ def _fallback_to_source(result: BlockResult) -> BlockResult:
     return BlockResult(result.id, None, issues, result.attempts, STATUS_FALLBACK_SOURCE, history, result.meta)
 
 
-def _group_members(blocks: list, block, wanted: set[str]) -> list:
-    return sorted(
-        (m for m in blocks if m.group and m.group["id"] == block.group["id"] and m.id in wanted),
-        key=lambda m: m.group["index"],
-    )
-
-
 def request_records(blocks: list, wanted: set[str]) -> list[dict]:
-    """一页的请求记录：要翻的接续组合成一条（原文接成一整段，放在组头的位置），不在 wanted 里的只作上下文。"""
+    """一页的请求记录：不在 wanted 里的只作上下文。接续组在这之前已经合成一块（`units.merge_groups`），这里不用管。"""
     records: list[dict] = []
-    emitted: set[str] = set()
     for block in blocks:
-        if block.group and block.id in wanted:
-            group_id = block.group["id"]
-            if group_id in emitted:
-                continue
-            emitted.add(group_id)
-            members = _group_members(blocks, block, wanted)
-            if len(members) > 1:
-                record = members[0].request_record()
-                record.pop("group", None)
-                record.update(
-                    id=group_id,
-                    where=" → ".join(m.where for m in members),
-                    text=" ".join(m.text for m in members),
-                    members=[m.id for m in members],
-                )
-                records.append(record)
-                continue
         record = block.request_record()
         if block.id not in wanted:
             record["translate"] = False
@@ -756,43 +670,9 @@ def request_records(blocks: list, wanted: set[str]) -> list[dict]:
     return records
 
 
-def expand_translations(raw: dict[str, str], blocks: list, wanted: set[str]) -> tuple[dict[str, str], dict[str, list[dict]]]:
-    """把模型交回的（块 id 或接续组 id → 译文）拆回各块。
-
-    接续组模型只翻整段，不管原来在哪里断开：程序按原文各块的正文长度比例，在附近的中文标点处切回各块
-    （`breaks.split_by_ratio`，不切开公式和标记），后面一块以标点开头的，标点挪回前一块末尾。
-    以前让模型在译文里放 [[BREAK]]：模型常把它放到整句之后（原文断点在句子中间，中文语序断不开），2026-10-30 论文第 1 页
-    右栏一行高的框被塞进 120 多个字；放错个数还要整组重翻。用户定：模型只管翻译，切分和回填归程序。
-
-    第二个返回值是拆的时候发现的问题（现在没有），留着给调用方合并。
-    """
-    per_block: dict[str, str] = {}
-    issues: dict[str, list[dict]] = {}
-    seen: set[str] = set()
-    for block in blocks:
-        if block.id not in wanted:
-            continue
-        if not block.group:
-            if block.id in raw:
-                per_block[block.id] = BREAK_RE.sub("", raw[block.id]).strip()
-            continue
-        group_id = block.group["id"]
-        if group_id in seen:
-            continue
-        seen.add(group_id)
-        members = _group_members(blocks, block, wanted)
-        if len(members) == 1:
-            text = raw.get(group_id, raw.get(block.id))
-            if text is not None:
-                per_block[block.id] = BREAK_RE.sub("", text).strip()
-            continue
-        text = raw.get(group_id)
-        if text is None:
-            continue
-        parts = split_by_ratio(BREAK_RE.sub("", text).strip(), [max(1, prose_length(m.text)) for m in members])
-        for member, part in zip(members, move_leading_punctuation([p.strip() for p in parts])):
-            per_block[member.id] = part
-    return per_block, issues
+def clean_translations(raw: dict[str, str]) -> dict[str, str]:
+    """模型交回的各块译文去掉首尾空白，以及照老习惯写进来的 [[BREAK]]（接续组现在整段翻、程序切，不再要模型放断点）。"""
+    return {block_id: BREAK_RE.sub("", text).strip() for block_id, text in raw.items()}
 
 
 def _revision_record(request: RevisionRequest, previous: BlockResult | None) -> dict:
