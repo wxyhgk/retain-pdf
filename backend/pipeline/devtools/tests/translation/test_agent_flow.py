@@ -227,6 +227,21 @@ def test_agent_engine_skips_translation_preparation(tmp_path: Path, fake_transpo
     assert all(b["tools"][0]["name"].startswith("submit_") if "tools" in b else "@@" in b["system"] for b in model.bodies)
 
 
+def test_only_citation_superscripts_become_footnote_marks() -> None:
+    """引用角标（正整数、列表、范围）换成脚注标记；单位的指数、乘方留作公式。2026-10-31 ACS 论文：
+    "ng mL $ ^{-1} $" 以前被换成 {{fn:-1}}，模型写回 $^{-1}$，校验报脚注标记丢了，Methods 6 段整段退回原文。"""
+    source = (
+        "as described previously. $ ^{34} $ Cells were seeded (100 ng mL $ ^{-1} $) at $ 2 \\times 10 $ $ ^{5} $ per well "
+        "into 100 mm $ ^{3} $ tumors, see refs $ ^{40, 52, 53} $ and $ ^{2-6} $."
+    )
+    text, marks = agent_flow._agent_text({"text": source, "source_text": source}, "paragraph")
+    assert re.findall(r"\{\{fn:([^}]+)\}\}", text) == ["34", "40,52,53", "2-6"]
+    assert "mL $ ^{-1} $" in text and "$ ^{5} $" in text and "mm $ ^{3} $" in text
+    assert agent_flow._restore_marks(text, marks) == source
+    # 表里没有的标记（接续组切开时从另一块挪过来）写成上标公式，不让 {{fn:…}} 露在译文里
+    assert agent_flow._restore_marks("由于高表达，{{fn:13,33}} 降低", {}) == "由于高表达，$ ^{13,33} $ 降低"
+
+
 def test_engine_is_part_of_the_checkpoint_identity(tmp_path: Path) -> None:
     from retainpdf_translation.workflow.checkpoint.identity import _engine_identity
 

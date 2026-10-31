@@ -95,8 +95,12 @@ SUB_TYPE_CLASS = {
     "algorithm": "algorithm",
 }
 HEADING_NUMBER_RE = re.compile(r"^\s*(\d+(?:\.\d+)*)\s+\S")
-# OCR 把参考文献的上标角标写成公式 "$ ^{48-50} $"：交给 agent 前换成脚注标记（受保护、丢了查得出），写回时换回原样
-CITATION_SUPERSCRIPT_RE = re.compile(r"\$\s*\^\s*\{\s*([\d\s,–\-]+?)\s*\}\s*\$")
+# OCR 把参考文献的上标角标写成公式 "$ ^{48-50} $"：交给 agent 前换成脚注标记（受保护、丢了查得出），写回时换回原样。
+# 只认正整数、列表、范围（"34""2-6""40,52,53"）。负数是单位的指数（"mL $ ^{-1} $"），紧跟在数字、单位后面的是乘方
+# （"10 $ ^{5} $""mm $ ^{3} $"），都留着当公式：2026-10-31 一篇 ACS 论文 Methods 里的 "ng mL $ ^{-1} $" 被换成 {{fn:-1}}，
+# 模型写回 $^{-1}$、校验报"脚注标记丢了"，重翻两次一样，6 段整段退回原文
+CITATION_SUPERSCRIPT_RE = re.compile(r"\$\s*\^\s*\{\s*([1-9]\d*(?:\s*[,–-]\s*[1-9]\d*)*)\s*\}\s*\$")
+EXPONENT_BEFORE_RE = re.compile(r"(?:\d|(?<![A-Za-z])(?:[kcmnpµμ]?m|[mµμ]?L|[mµμk]?g|mol|[mµμn]?M|s|min|h|Hz|Pa|cm|nm|K|°C|Å))\s*\$?\s*$")
 FN_TOKEN_RE = re.compile(r"\{\{fn:([^{}]+)\}\}")
 
 
@@ -170,6 +174,8 @@ def _agent_text(item: dict, cls: str) -> tuple[str, dict[str, str]]:
         return text, marks
 
     def to_mark(match: re.Match) -> str:
+        if EXPONENT_BEFORE_RE.search(text[max(0, match.start() - 8) : match.start()]):
+            return match.group(0)
         number = re.sub(r"\s+", "", match.group(1))
         marks.setdefault(number, match.group(0))
         return "{{fn:" + number + "}}"
@@ -178,9 +184,9 @@ def _agent_text(item: dict, cls: str) -> tuple[str, dict[str, str]]:
 
 
 def _restore_marks(text: str, marks: dict[str, str]) -> str:
-    if not marks:
-        return text
-    return FN_TOKEN_RE.sub(lambda m: marks.get(m.group(1), m.group(0)), text)
+    """脚注标记换回原来的写法。这一块的表里没有的（接续组切开时从另一块挪过来、模型把 "13, 33" 写成 "13,33"）
+    写成上标公式：交给 agent 的标记都是从引用角标换来的，原样留着 {{fn:…}} 会露在译文里。"""
+    return FN_TOKEN_RE.sub(lambda m: marks.get(m.group(1)) or f"$ ^{{{m.group(1)}}} $", text)
 
 
 def build_agent_pages(
@@ -304,7 +310,13 @@ def apply_agent_results(
         if result.status == STATUS_FALLBACK_SOURCE or not result.translation:
             _mark_dead_letter(item, "agent_fallback_source", result)
             continue
-        text = _restore_marks(result.translation, marks_by_block.get(block_id, {}))
+        marks = dict(marks_by_block.get(block_id, {}))
+        if is_member:
+            # 中文语序会把角标挪过切点：用整组的角标表（2026-10-31 ACS 论文第 2 页 {{fn:28-32}} 露在了前一块）
+            for member_id in item.get("translation_unit_member_ids") or []:
+                for number, original in marks_by_block.get(member_id, {}).items():
+                    marks.setdefault(number, original)
+        text = _restore_marks(result.translation, marks)
         apply_revised_member_text(item, text, single_unit=not is_member)
         record_translation_diagnostics(
             item,
