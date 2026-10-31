@@ -143,6 +143,11 @@ class TranslationRunDiagnostics:
     _adaptive_success_streak: int = field(default=0, init=False, repr=False)
     _adaptive_recent_failure_count: int = field(default=0, init=False, repr=False)
     _adaptive_slow_success_streak: int = field(default=0, init=False, repr=False)
+    # 第几次降速（每降一次加 1）：请求拿槽位时记下，回来报失败时比一比——降速之前就发出去的请求，
+    # 它的 429 和触发降速的那几个是同一次撞上限，不再降第二次
+    _adaptive_cut_epoch: int = field(default=0, init=False, repr=False)
+    # 撞上限时在跑的路数减 2：回升时先快速升回这里，再往上按老办法慢慢试
+    _adaptive_ceiling: int = field(default=0, init=False, repr=False)
     _warmup_pending: bool = field(default=False, init=False, repr=False)
     _warmup_restore_limit: int = field(default=0, init=False, repr=False)
     _result_stats: dict[str, Any] = field(default_factory=dict, init=False, repr=False)
@@ -418,11 +423,13 @@ class TranslationRunDiagnostics:
                 current["journal_request_token"] = request_token
                 current["journal_request_key"] = request_key
 
-    def acquire_request_slot(self) -> None:
+    def acquire_request_slot(self) -> int:
+        """等到有空槽位再放行；返回当前的降速次数，还槽位时原样带回（`release_request_slot(slot_epoch=…)`）。"""
         with self._adaptive_condition:
             while self._adaptive_inflight >= self._adaptive_limit:
                 self._adaptive_condition.wait(timeout=0.25)
             self._adaptive_inflight += 1
+            return self._adaptive_cut_epoch
 
     def release_request_slot(
         self,
@@ -431,8 +438,10 @@ class TranslationRunDiagnostics:
         elapsed_ms: int,
         status_code: int | None = None,
         error_class: str = "",
+        slot_epoch: int | None = None,
     ) -> None:
         with self._adaptive_condition:
+            inflight_at_end = self._adaptive_inflight
             self._adaptive_inflight = max(0, self._adaptive_inflight - 1)
             if self._warmup_pending:
                 # 无论首条请求成败都恢复全并发:预热是尽力而为,失败时
@@ -444,6 +453,8 @@ class TranslationRunDiagnostics:
                 elapsed_ms=elapsed_ms,
                 status_code=status_code,
                 error_class=error_class,
+                stale=slot_epoch is not None and slot_epoch < self._adaptive_cut_epoch,
+                inflight=inflight_at_end,
             )
             self._adaptive_condition.notify_all()
 
@@ -454,7 +465,20 @@ class TranslationRunDiagnostics:
         elapsed_ms: int,
         status_code: int | None,
         error_class: str,
+        stale: bool = False,
+        inflight: int = 0,
     ) -> None:
+        """按请求结果调并发上限。
+
+        2026-10-31 改：以前每个 429 都把上限砍一半、每连续成功 12 次才加 1。开局 32 路正好顶到 Anthropic 的组织并发上限
+        （"Number of concurrent requests across all models has exceeded your organization's limit"），同一刻 3—5 个请求一起
+        挨 429，32 → 16 → 8 连砍几刀，一本书一百来个请求加不回去：四个 legacy 任务最后都停在 9—16 路，525 秒的请求量
+        跑了 48 秒（32 路本该 17 秒）。现在：
+        - 降速之前就发出去的请求（`stale`）报的 429 / 5xx 算同一次撞上限，不再降；
+        - 429 降到"撞上限时在跑的路数减 2"和"原来的四分之三"里小的那个，记下前者当回升目标（`_adaptive_ceiling`）；
+          5xx、408 照旧砍一半；
+        - 低于回升目标时每连续成功 2 次加 1，到了目标再按老办法（连续成功 12 次加 1）往上试。
+        """
         min_limit = max(1, min(self._adaptive_floor_limit, self.configured_workers))
         max_limit = max(1, self.configured_workers)
         timeout_like = error_class in {"ReadTimeout", "ConnectTimeout", "Timeout", "ConnectionError"}
@@ -462,11 +486,17 @@ class TranslationRunDiagnostics:
         high_capacity_provider = self.provider_family == "deepseek_official"
         if not success and overloaded_status:
             self._adaptive_recent_failure_count += 1
-            ratio = 0.75 if high_capacity_provider else 0.5
-            reduced = max(min_limit, int(math.floor(self._adaptive_limit * ratio)))
-            self._adaptive_limit = reduced
             self._adaptive_success_streak = 0
             self._adaptive_slow_success_streak = 0
+            if stale:
+                return
+            ratio = 0.75 if high_capacity_provider or status_code == 429 else 0.5
+            reduced = int(math.floor(self._adaptive_limit * ratio))
+            if status_code == 429 and inflight > 0:
+                self._adaptive_ceiling = max(min_limit, inflight - 2)
+                reduced = min(reduced, self._adaptive_ceiling)
+            self._adaptive_limit = max(min_limit, reduced)
+            self._adaptive_cut_epoch += 1
             return
         if not success and timeout_like:
             self._adaptive_recent_failure_count += 1
@@ -512,7 +542,8 @@ class TranslationRunDiagnostics:
             self._adaptive_recent_failure_count = 0
             self._adaptive_slow_success_streak = 0
             self._adaptive_success_streak += 1
-            if elapsed_ms <= 15000 and self._adaptive_success_streak >= 12 and self._adaptive_limit < max_limit:
+            needed = 2 if self._adaptive_limit < self._adaptive_ceiling else 12
+            if elapsed_ms <= 15000 and self._adaptive_success_streak >= needed and self._adaptive_limit < max_limit:
                 self._adaptive_limit += 1
                 self._adaptive_peak_limit = max(self._adaptive_peak_limit, self._adaptive_limit)
                 self._adaptive_success_streak = 0
@@ -660,6 +691,8 @@ class TranslationRunDiagnostics:
                     "current_limit": self._adaptive_limit,
                     "peak_limit": self._adaptive_peak_limit,
                     "floor_limit": self._adaptive_floor_limit,
+                    "cut_count": self._adaptive_cut_epoch,
+                    "ceiling_limit": self._adaptive_ceiling,
                 },
                 "result_apply": dict(self._result_stats),
                 "result_flush": dict(self._flush_stats),

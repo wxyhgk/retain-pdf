@@ -826,6 +826,7 @@
         "devtools/tests/rendering/test_rpr_engine_route.py",
         "devtools/tests/rendering/test_rpr_fit_route.py",
         "devtools/tests/test_translation_recovery_boundary.py",
+        "devtools/tests/translation/test_adaptive_concurrency_bursts.py",
         "devtools/tests/translation/test_agent_flow.py",
         "devtools/tests/translation/test_author_line_residue_exemption.py",
         "devtools/tests/translation/test_auto_preserve_terms.py",

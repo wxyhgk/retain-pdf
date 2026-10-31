@@ -14,6 +14,7 @@ from retainpdf_translation.services.memory import JobMemoryStore
 from retainpdf_translation.services.memory import flush_translation_memory
 
 from retainpdf_translation.workflow.batching.executor import _translate_batch_or_keep_origin
+from retainpdf_translation.workflow.batching.plan import batch_cost
 from retainpdf_translation.services.results.flush import TranslationFlushState
 from retainpdf_translation.services.results.applier import TranslationResultApplier
 from retainpdf_translation.workflow.scheduling.failures import _failed_results_for_unhandled_batch_exception
@@ -273,6 +274,7 @@ def run_translation_batches_parallel(
         single_slow_batches=single_slow_batches,
         queue_workers=queue_workers,
         use_shared_queue=use_shared_queue,
+        batch_cost=batch_cost,
     )
     for pool_name, tasks, worker_count in pool_specs:
         if not tasks:

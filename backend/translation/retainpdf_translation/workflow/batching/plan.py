@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from retainpdf_translation.core.execution_policy import execution_enabled
+from retainpdf_translation.core.item_reader import item_source_text
 from retainpdf_translation.llm.shared.control_context import TranslationControlContext
 from retainpdf_translation.workflow.scheduling.page_order import page_ordered_batches
 from retainpdf_translation.workflow.batching.batching import _build_translation_batches as _build_translation_batches_impl
@@ -91,6 +92,11 @@ class BatchDispatchPlan:
         return payload
 
 
+def batch_cost(batch: list[dict]) -> int:
+    """估计一批要跑多久：原文字数（接续组按整组的原文）。调度据此让长的先发（`scheduling/pool_specs.py`）。"""
+    return sum(len(item_source_text(item)) for item in batch)
+
+
 def build_batch_dispatch_plan(
     pending: list[dict],
     *,
@@ -149,6 +155,7 @@ def build_batch_dispatch_plan(
 
 __all__ = [
     "BatchDispatchPlan",
+    "batch_cost",
     "build_batch_dispatch_plan",
     "chunked",
     "TranslationBatchRunStats",
