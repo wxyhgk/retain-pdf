@@ -287,6 +287,9 @@
 .db-peek .db-peek-text-head { display: flex; align-items: center; justify-content: space-between; margin: 16px 0 6px; color: rgb(var(--gray)); font-size: 13px; }
 .db-peek .db-peek-edit { padding: 2px 8px; border-radius: 6px; color: rgb(var(--gray)); font-size: 13px; }
 .db-peek .db-peek-edit:hover { background: var(--studio-fill-2); color: rgb(var(--black)); }
+.db-peek .db-peek-more { display: block; margin: 16px 0 8px; }
+/* A formula not drawn yet (far from the screen): its LaTeX, grey. */
+.db-peek .db-peek-text .is-waiting { color: rgb(var(--gray)); }
 .db-peek .db-peek-text { font-size: 15px; line-height: 1.7; overflow-wrap: anywhere; }
 .db-peek .db-peek-text img { max-width: 100%; height: auto; }
 .db-peek .db-peek-text :is(p, ul, ol, pre, table, blockquote) { margin: 0 0 10px; }

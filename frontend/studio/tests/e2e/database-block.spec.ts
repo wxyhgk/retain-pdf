@@ -548,3 +548,23 @@ test('a row opened beside the table: its title, its values changed as in the tab
 	await block(p).locator('[data-row="db-row-b"] [data-database-open]').click();
 	await expect(p.locator('#article-title-input')).toHaveValue('IM1 优化');
 });
+
+test('a long row beside the table: shown at once, its formulas drawn as they come on the screen; its picture from its own folder, as wide as written', async ({ page: p }) => {
+	const formulas = Array.from({ length: 80 }, (_, at) => `第 ${at + 1} 段：\n\n$$\n\\sum_{i=1}^{${at + 2}} \\frac{1}{i^2} = S_{${at}}\n$$`).join('\n\n');
+	writeArticle('db-row-a', `---\ntitle: 长的\npubDate: 2026-10-01\ndraft: true\nparent: db-table\n---\n\n![图](./img/a.png){width=50%}\n\n${formulas}\n`);
+	database({ columns: [], view: 'table' });
+	await openStudio(p);
+	await block(p).locator('[data-row="db-row-a"]').hover();
+	await block(p).locator('[data-row="db-row-a"] [data-database-open]').click();
+	const text = p.locator('[data-database-peek-text]');
+	await expect(text.locator('.ai-math-display')).toHaveCount(80);
+	// Far below: its LaTeX till scrolled to.
+	await expect(text.locator('.ai-math-display').last()).toHaveClass(/is-waiting/u);
+	await p.locator('.db-peek-scroll').evaluate((scroller) => scroller.scrollTo(0, scroller.scrollHeight));
+	await expect(text.locator('.ai-math-display').last().locator('.katex')).toBeVisible();
+	const picture = text.locator('img');
+	await expect(picture).toHaveAttribute('src', /\/db-row-a\/files\/img\/a\.png$/u);
+	await expect(picture).toHaveAttribute('style', /width: 50%/u);
+	await expect(text).not.toContainText('{width');
+});
+

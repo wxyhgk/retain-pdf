@@ -50,6 +50,15 @@ const ANY_WAITING = `.${WAITING}, .${NEAR_ONLY}`;
 
 /** By element: what draws it. */
 const waiting = new WeakMap<Element, () => void>();
+/**
+ * How near is near, in screens above and below the top of the screen: once something waits within `look`, all that
+ * waits within `draw` is drawn. An article's: a screen, then three up and four down (each drawing lays a book out
+ * again in WebKit); a short text's may be tighter (a row's page beside its table: its formulas, 6 ms each in WebKit,
+ * only those on the screen).
+ */
+export type Reach = { look: [number, number]; draw: [number, number] };
+const ARTICLE_REACH: Reach = { look: [-1, 2], draw: [-3, 4] };
+const reaches = new WeakMap<HTMLElement, Reach>();
 /** The articles (ProseMirror's elements) with something waiting. */
 const roots = new Set<HTMLElement>();
 let frame = 0;
@@ -57,8 +66,9 @@ let listening = false;
 /** An article shown (laid out after it was hidden, as one being opened is) or resized: what is near it looked for again. */
 let sized: ResizeObserver | null = null;
 
-/** Draws `element` with `draw` once it is near the screen, in the article `root`. */
-export function drawWhenNear(root: HTMLElement, element: HTMLElement, draw: () => void): void {
+/** Draws `element` with `draw` once it is near the screen, in the article `root` (near as `reach` says, when given). */
+export function drawWhenNear(root: HTMLElement, element: HTMLElement, draw: () => void, reach?: Reach): void {
+	if (reach) reaches.set(root, reach);
 	if (!listening) {
 		listening = true;
 		// Scrolls of whatever holds the article (scroll events do not bubble; they are caught on the way down).
@@ -132,8 +142,9 @@ function drawNear(): void {
 		}
 		// Not laid out (hidden): where anything is cannot be told, and nothing is fetched for it.
 		const shown = root.getClientRects().length > 0;
-		if (blocksWithin(root, -screen, 2 * screen).some(waits)) {
-			for (const block of blocksWithin(root, -3 * screen, 4 * screen)) {
+		const { look, draw } = reaches.get(root) ?? ARTICLE_REACH;
+		if (blocksWithin(root, look[0] * screen, look[1] * screen).some(waits)) {
+			for (const block of blocksWithin(root, draw[0] * screen, draw[1] * screen)) {
 				for (const element of [block, ...block.querySelectorAll(ANY_WAITING)]) if (shown || !element.classList.contains(NEAR_ONLY)) drawNow(element);
 			}
 		}

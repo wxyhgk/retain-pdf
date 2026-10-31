@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronUp, FileText, Maximize2, X } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
-import { renderAiMarkdown } from '../../ai/ai-markdown';
+import { drawAiMarkdownNear } from '../../ai/ai-markdown';
 import { TYPE_ICONS } from './database-parts';
 import { Cell } from './DatabaseTable';
 import type { Row } from './database-config';
@@ -35,16 +35,15 @@ export function DatabasePeek({ database, rows, slug }: { database: Database; row
 			current = false;
 		};
 	}, [slug]);
-	// Its text drawn as the page shows it, its pictures from its own folder.
+	// Its text drawn as the page shows it, its formulas as they come near (a paper's worth laid out at once held WebKit
+	// for seconds), its pictures from its own folder; a very long one, its beginning (the rest in its page).
+	const cut = useMemo(() => (body === null ? null : beginning(body)), [body]);
 	useEffect(() => {
 		const into = text.current;
-		if (!into || body === null) return;
-		into.replaceChildren(renderAiMarkdown(body));
-		for (const picture of into.querySelectorAll<HTMLImageElement>('img[src]')) {
-			const src = picture.getAttribute('src') ?? '';
-			if (!/^(?:[a-z][\w+.-]*:|\/)/iu.test(src)) picture.src = host.fileUrl(slug, src);
-		}
-	}, [body, slug]);
+		if (!into || cut === null) return;
+		into.replaceChildren();
+		drawAiMarkdownNear(cut.text, into, { picture: (src) => (/^(?:[a-z][\w+.-]*:|\/)/iu.test(src) ? src : host.fileUrl(slug, src)) });
+	}, [cut?.text, slug]);
 	// Esc (not taken by what is typed in it, a picker): closed.
 	useEffect(() => {
 		const away = (event: KeyboardEvent) => event.key === 'Escape' && !event.defaultPrevented && database.closePeek();
@@ -135,8 +134,39 @@ export function DatabasePeek({ database, rows, slug }: { database: Database; row
 					</button>
 				</div>
 				{body === null ? <p className="db-note">{t('正在读…')}</p> : body.trim() ? <div ref={text} className="db-peek-text ai-markdown" data-database-peek-text /> : <p className="db-note">{t('还没有正文')}</p>}
+				{cut?.more && (
+					<button
+						type="button"
+						className="db-peek-edit db-peek-more"
+						data-database-peek-more
+						onClick={() => {
+							database.closePeek();
+							host.open(slug);
+						}}
+					>
+						{t('后面还有，整页打开看全文')}
+					</button>
+				)}
 			</div>
 		</div>,
 		document.body,
 	);
+}
+
+/** How much of a row's text is shown beside its table: a book's worth (an OCR'd one) is read in its page. */
+const PEEK_TEXT = 60_000;
+
+/** A very long text's beginning, cut where a paragraph ends (not inside a code block or a formula), and whether more follows. */
+function beginning(body: string): { text: string; more: boolean } {
+	if (body.length <= PEEK_TEXT) return { text: body, more: false };
+	let end = body.lastIndexOf('\n\n', PEEK_TEXT);
+	// Inside a fence (```, $$: an odd number of them before): cut before the one it is in.
+	while (end > 0) {
+		const before = body.slice(0, end);
+		const fences = (before.match(/^\s{0,3}(?:```|~~~)/gmu) ?? []).length;
+		const formulas = (before.match(/^\s*\$\$\s*$/gmu) ?? []).length;
+		if (fences % 2 === 0 && formulas % 2 === 0) break;
+		end = body.lastIndexOf('\n\n', end - 1);
+	}
+	return { text: end > 0 ? body.slice(0, end) : body.slice(0, PEEK_TEXT), more: true };
 }

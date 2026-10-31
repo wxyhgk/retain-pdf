@@ -6,6 +6,10 @@ import { t } from '@blog/i18n/index.mjs';
 import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { articleParser } from '@blog/markdown/syntax.mjs';
 import { renderMathHtml } from '@blog/science/rendering/math.ts';
+import { drawWhenNear, LONG, type Reach } from '@blog/editor-kit/near-screen.ts';
+
+/** A text's formulas drawn as they come on the screen, and half a screen around it (each 6 ms of WebKit's laying out). */
+const NEAR_TEXT: Reach = { look: [0, 1], draw: [-0.5, 1.5] };
 
 import { codeBlockPreview, drawsLanguage } from '../plugins';
 
@@ -108,6 +112,19 @@ export function renderAiBlocks(markdown: string, { pages = [], drawnBefore, stre
 	return drawn;
 }
 
+/**
+ * Markdown drawn into `into` with its formulas drawn only as they come near the screen (near-screen.ts, as a long
+ * article's in the editor), their LaTeX till then: a paper's worth of formulas laid out at once held WebKit for two
+ * seconds (a row's page opened beside its table). `picture`: where a picture it names (`./img/a.png`) is fetched from.
+ */
+export function drawAiMarkdownNear(markdown: string, into: HTMLElement, { picture = pictureUrl }: { picture?: (src: string) => string } = {}): void {
+	const tree = articleParser.runSync(articleParser.parse(markdown)) as Tree;
+	const definitions = tree.children.filter((node) => node.type === 'definition');
+	// Each block its own child (found by halving as the page scrolls); none drawn far from the screen.
+	into.classList.add(LONG);
+	for (const node of tree.children) if (node.type !== 'definition') into.append(...drawnWithPages({ ...tree, children: [node, ...definitions] }, [], picture, into).children);
+}
+
 /** Whether a fenced code block's Markdown ends with its closing fence. */
 function closedFence(source: string): boolean {
 	const lines = source.split('\n');
@@ -127,8 +144,8 @@ function beingWritten(language: string, meta: string): HTMLElement {
 	return holder;
 }
 
-function drawnWithPages(tree: Tree, pages: PageRef[]): DocumentFragment {
-	const fragment = drawnTree(tree);
+function drawnWithPages(tree: Tree, pages: PageRef[], picture: (src: string) => string = pictureUrl, near: HTMLElement | null = null): DocumentFragment {
+	const fragment = drawnTree(tree, picture, near);
 	if (pages.length) linkPages(fragment, indexOf(pages));
 	return fragment;
 }
@@ -138,7 +155,8 @@ function sourceOf(markdown: string, node: TopNode): string {
 	return start?.offset === undefined || end?.offset === undefined ? '' : markdown.slice(start.offset, end.offset).trim();
 }
 
-function drawnTree(tree: Tree): DocumentFragment {
+/** `near`: the element its formulas are drawn in as they come near the screen (none: at once). */
+function drawnTree(tree: Tree, picture: (src: string) => string, near: HTMLElement | null = null): DocumentFragment {
 	// A fence's options (after its language) kept on its code, for the plugins' blocks.
 	for (const node of tree.children) {
 		if (node.type === 'code' && node.meta) node.data = { ...node.data, hProperties: { ...(node.data?.hProperties as object | undefined), dataMeta: node.meta } };
@@ -162,21 +180,34 @@ function drawnTree(tree: Tree): DocumentFragment {
 		const src = image.getAttribute('src') ?? '';
 		if (/^https?:\/\//iu.test(src)) continue;
 		if (/^[a-z][a-z0-9+.-]*:/iu.test(src) && !src.startsWith('file://')) image.replaceWith(document.createTextNode(image.alt ? `[${image.alt}]` : ''));
-		else image.src = pictureUrl(decoded(src));
+		else image.src = picture(decoded(src));
+		// Its width as the editor writes it after it (`![图](./img/a.png){width=60%}`), not shown as words.
+		const after = image.nextSibling;
+		const size = after?.nodeType === Node.TEXT_NODE ? /^\{width=(\d+(?:\.\d+)?(?:%|px)?)\}/u.exec(after.textContent ?? '') : null;
+		if (size) {
+			image.style.width = /\d$/u.test(size[1]!) ? `${size[1]}px` : size[1]!;
+			after!.textContent = (after!.textContent ?? '').slice(size[0].length);
+		}
 	}
 	for (const code of fragment.querySelectorAll('code.language-math')) {
 		const display = code.classList.contains('math-display');
-		const drawn = renderMathHtml(code.textContent ?? '', display);
 		const holder = document.createElement(display ? 'div' : 'span');
 		holder.className = display ? 'ai-math-display' : 'ai-math';
 		// As written, for what is quoted of it (markdownOfSelection).
 		holder.dataset.tex = code.textContent ?? '';
-		if (drawn.error) {
-			holder.textContent = code.textContent ?? '';
-			holder.title = drawn.error;
-		} else {
-			holder.innerHTML = drawn.html;
-		}
+		const draw = () => {
+			const drawn = renderMathHtml(holder.dataset.tex ?? '', display);
+			if (drawn.error) {
+				holder.textContent = holder.dataset.tex ?? '';
+				holder.title = drawn.error;
+			} else {
+				holder.innerHTML = drawn.html;
+			}
+		};
+		if (near) {
+			holder.textContent = holder.dataset.tex ?? '';
+			drawWhenNear(near, holder, draw, NEAR_TEXT);
+		} else draw();
 		(display && code.parentElement?.tagName === 'PRE' ? code.parentElement : code).replaceWith(holder);
 	}
 	// A plugin's block (```energy, ```smiles, ```widget…) drawn as the editor draws it, with its fence's options
