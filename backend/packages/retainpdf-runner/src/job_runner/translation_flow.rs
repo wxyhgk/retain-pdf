@@ -356,14 +356,10 @@ async fn run_ocr_and_translation_together(
     if !matches!(translated_job.status, JobStatusKind::Succeeded) {
         return Ok(translated_job);
     }
+    // OCR 产物只并进内存里的任务，不在这里写库：翻译是中间阶段，内存里的 status 已经是 Succeeded（给调用方判成没成），
+    // 写下去就是把父任务落成终态，渲染阶段启动时的 CAS 会被拒、渲染不跑（2026-10-31 开发栈实测，任务直接"成功"、没有译文 PDF）。
+    // 渲染阶段启动时会连同这些产物一起写库（和串行时 OCR 产物随翻译阶段启动一起写一样）。
     sync_parent_with_ocr_child(&mut translated_job, &ocr_finished);
-    cas_persist_job_with_resources(
-        deps.db.as_ref(),
-        &deps.persist.data_root,
-        &deps.persist.output_root,
-        &translated_job.snapshot(),
-        &["queued", "running"],
-    )?;
     // 渲染用 OCR 子任务落在任务目录里的那份原文（选页时是切出来的子 PDF），和串行时一样
     let source_pdf_path = translated_job
         .artifacts
@@ -405,6 +401,21 @@ mod ocr_child_persist_contract {
             "子任务收尾必须走 CAS：无条件写会把 save_ocr_job 挡下的复活放回去"
         );
         assert!(!body.contains("persist_runtime_job_with_resources("), "这里不该有无条件覆盖写");
+    }
+
+    /// OCR 和翻译并行时，翻译成功后不能先把父任务写库：翻译是中间阶段，内存里 status 已是 Succeeded，写下去父任务就成了终态，
+    /// 渲染阶段启动时的 CAS 被拒、渲染不跑（2026-10-31 开发栈实测：任务"成功"了，却没有译文 PDF）。
+    #[test]
+    fn parallel_flow_does_not_persist_the_parent_between_translation_and_render() {
+        let source = include_str!("translation_flow.rs");
+        let from = source
+            .find("sync_parent_with_ocr_child(&mut translated_job, &ocr_finished);")
+            .expect("并行流程要把 OCR 产物并回父任务");
+        let to = from + source[from..].find("run_after_translation_stage(").expect("接着走翻译之后的阶段");
+        assert!(
+            !source[from..to].contains("cas_persist_job_with_resources("),
+            "翻译和渲染之间写库会把父任务提前落成终态"
+        );
     }
 }
 
