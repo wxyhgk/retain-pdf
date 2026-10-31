@@ -49,9 +49,10 @@ Reader 样式只改 `frontend/packages/reader/styles/*`。`src/styles/reader/` �
 |------|----------|
 | `layout.css` | 分区根布局；**共享变量**（卡片底色 / 圆角、墨色深浅色阶）与小节标题。必须最先引入 |
 | `processing-card.css` | 「进度」卡片外壳，流水线各站点开后的「重新处理」清单 |
-| `processing-head.css` | 状态行：状态图标、标题、带图标的小字、右边的按钮（含实时译文、详情、取消）、进度条、页码行、提醒和报错 |
+| `processing-head.css` | 状态行：标题、右边的按钮（含实时译文、详情、取消）、页码行、提醒和报错 |
+| `processing-hud.css` | HUD 面板：进度环、耗时分段条、模型、token 比例条 |
 | `processing-details.css` | 细节区：错误 / 编辑部 / 活动的切换 |
-| `pipeline-rail.css` | OCR / 翻译 / 渲染 / 完成 流水线轨道 |
+| `pipeline-rail.css` | 流水线各站徽标的底样（挂在画面上的位置在 `assembly-line-labels.css`） |
 | `editorial-flow.css` | 编辑部精修流程图（第几轮、这一步第几批） |
 | `ocr-range.css` | OCR 指定页码 |
 | `failure-card.css` | 「错误」页里的一块失败 |

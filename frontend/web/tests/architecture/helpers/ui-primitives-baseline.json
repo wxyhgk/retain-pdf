@@ -668,9 +668,6 @@
       "fontSize": 5,
       "borderRadius": 6
     },
-    "src/styles/pages/home/book-detail-processing/assembly-line-labels.css": {
-      "borderRadius": 1
-    },
     "src/styles/pages/home/book-detail-processing/coverage.css": {
       "borderRadius": 2
     },

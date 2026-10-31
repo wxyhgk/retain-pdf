@@ -156,6 +156,7 @@
 @import "../pages/home/book-detail-processing/layout.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-card.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-head.css" layer(pages);
+@import "../pages/home/book-detail-processing/processing-hud.css" layer(pages);
 @import "../pages/home/book-detail-processing/processing-details.css" layer(pages);
 @import "../pages/home/book-detail-processing/pipeline-rail.css" layer(pages);
 @import "../pages/home/book-detail-processing/assembly-line.css" layer(pages);

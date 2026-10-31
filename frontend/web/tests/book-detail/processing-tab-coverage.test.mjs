@@ -83,16 +83,17 @@ const DONE_TRANSLATION = {
   canTranslate: false,
 };
 
-test("完成且有保留原文：标题是状态、摘要有数字、给出提醒；没有满格进度条，流水线五站全勾", async () => {
+test("完成且有保留原文：标题是状态、HUD 进度环写翻了几页、给出提醒；流水线五站全勾", async () => {
   const dom = makeDom();
   const coverage = { ...COVERAGE, jobs: [{ ...COVERAGE.jobs[0], kept_origin_blocks: 16 }, COVERAGE.jobs[1]] };
   const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage });
   assert.equal(host.querySelector("[data-processing-unified-status]")?.textContent, "已完成");
   assert.equal(host.querySelector(".book-detail-processing-head")?.getAttribute("data-tone"), "warn");
-  assert.match(host.querySelector("[data-processing-facts]")?.textContent || "", /已翻译 4 \/ 6 页/);
-  assert.doesNotMatch(host.querySelector("[data-processing-facts]")?.textContent || "", /保留原文/, "提醒条已经说了，摘要行不重复");
+  const gauge = host.querySelector("[data-hud='gauge']");
+  assert.equal(gauge?.getAttribute("title"), "已翻译 4 / 6 页");
+  assert.match(gauge?.textContent || "", /4\/6/);
+  assert.equal(host.querySelector("[data-processing-hud]")?.dataset.tone, "warn");
   assert.match(host.querySelector(".book-detail-processing-warning")?.textContent || "", /16 个内容块没能翻译出来/);
-  assert.equal(host.querySelector(".book-detail-processing-progress"), null, "完成后不画进度条");
   assert.ok(host.querySelector("[data-translation-process='true']"), "完成后流水线照样画，每站写用时");
   assert.equal(host.querySelector("[data-stage-key='done']")?.getAttribute("data-state"), "done");
   assert.equal(host.querySelector("#book-detail-reprocess-toggle"), null, "卡片头不再有「重新处理」，动作挂在各站上");
@@ -173,9 +174,12 @@ test("翻译任务跑在 OCR 阶段：进度只出现一次；OCR 站写实时�
     coverage: { ...COVERAGE, jobs: [{ ...COVERAGE.jobs[0], kept_origin_blocks: 16 }, COVERAGE.jobs[1]] },
   });
   assert.equal(host.querySelector("[data-processing-unified-status]")?.textContent, "翻译中");
-  assert.equal(host.querySelector(".book-detail-processing-head-percent")?.textContent, "67%");
-  assert.match(host.querySelector("[data-processing-facts]")?.textContent || "", /32 \/ 48 页/);
-  assert.equal(host.querySelectorAll(".book-detail-processing-progress").length, 1, "进度条只有顶部一条");
+  // 进度只在 HUD 的进度环上说一次：环跟百分比，下面写第几页。
+  const gauge = host.querySelector("[data-hud='gauge']");
+  assert.match(gauge?.textContent || "", /32 \/ 48 页/);
+  assert.match(gauge?.querySelector(".book-detail-hud-ring-fill")?.getAttribute("style") || "", /stroke-dasharray/);
+  assert.equal(host.querySelectorAll("[data-hud='gauge']").length, 1, "进度只出现一次");
+  assert.equal(host.querySelector("[data-hud='tokens']"), null, "在跑时 token 还在涨，不摆");
   assert.equal(
     host.querySelector("[data-stage-meta='ocr']")?.textContent,
     "OCR provider 已返回 done，bundle 尚未就绪，12s 后重试（第 2/8 次）",
@@ -246,7 +250,7 @@ test("全部翻完时不画覆盖条（100% 一排满格什么也没说）", asy
   history.root.unmount(); history.host.remove();
 });
 
-test("用量并进「进度」页：状态行一个金币图标写合计（精确值在悬停），细节区多一页「用量」；没记录就都不出", async () => {
+test("用量并进「进度」页：HUD 一块 token（合计、输入 / 输出比例，精确值在悬停），细节区多一页「用量」；没记录就都不出", async () => {
   const { usageViewModel } = await import("../../src/features/usage/domain/usage-view-model.ts");
   const bucket = (total) => ({
     input_tokens: total, output_tokens: 0, total_tokens: total, requests: 3, requests_without_usage: 0,
@@ -260,9 +264,9 @@ test("用量并进「进度」页：状态行一个金币图标写合计（精�
   const usage = { model: usageViewModel(view), loading: false, error: "", reload() {} };
   const dom = makeDom();
   const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage: COVERAGE, usage });
-  const fact = host.querySelector("[data-fact='tokens']");
-  assert.match(fact?.textContent || "", /87\.5 万/);
-  assert.match(fact.getAttribute("title"), /875,000 token/);
+  const tile = host.querySelector("[data-hud='tokens']");
+  assert.match(tile?.textContent || "", /87\.5 万/);
+  assert.match(tile.getAttribute("title"), /875,000 token/);
   // 这里只有「用量」一页，细节区不画切换，直接是内容。
   assert.equal(host.querySelector("[data-processing-details]")?.dataset.processingDetails, "usage", "细节区有「用量」");
   assert.ok(host.querySelector("[data-usage-metric='total']"));
@@ -272,7 +276,7 @@ test("用量并进「进度」页：状态行一个金币图标写合计（精�
     loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage: COVERAGE,
     usage: { model: usageViewModel(null), loading: false, error: "", reload() {} },
   });
-  assert.equal(empty.host.querySelector("[data-fact='tokens']"), null);
+  assert.equal(empty.host.querySelector("[data-hud='tokens']"), null);
   assert.equal(empty.host.querySelector("[data-processing-details]"), null, "没记录不占地方");
   empty.root.unmount(); empty.host.remove();
 });

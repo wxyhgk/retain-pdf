@@ -1,4 +1,4 @@
-/* 「进度」页的状态行：状态图标、标题、带图标的小字，右边这一刻能做的事；下面进度条，再下面页码、提醒和报错。
+/* 「进度」页的状态行：标题，右边这一刻能做的事；下面 HUD（processing-hud.css），再下面页码、提醒和报错。
  * （ProcessingHeader / ProcessingHeadTools，任务动作 BookTranslateProgressPanel + StatusCard）
  * 按钮是 @retainpdf/ui 的 Button / IconButton，这里只管排布和颜色。 */
 
@@ -10,47 +10,10 @@
   gap: 10px 12px;
 }
 
-.book-detail-processing-head-icon {
-  display: inline-flex;
-  width: 40px;
-  height: 40px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--ui-radius-lg);
-  color: var(--ink);
-  background: var(--paper);
-  box-shadow: 0 5px 16px color-mix(in srgb, var(--ink) 5%, transparent);
-}
-
-.book-detail-processing-head[data-tone="done"] .book-detail-processing-head-icon {
-  color: var(--ok);
-}
-
-.book-detail-processing-head[data-tone="warn"] .book-detail-processing-head-icon {
-  color: var(--warn);
-}
-
-.book-detail-processing-head[data-tone="failed"] .book-detail-processing-head-icon {
-  color: var(--danger);
-  background: var(--danger-weak);
-}
-
-.book-detail-processing-head-icon svg {
-  width: 20px;
-  height: 20px;
-  stroke-width: 1.8;
-}
-
-.book-detail-processing-head-copy {
-  display: grid;
-  flex: 1 1 200px;
-  min-width: 0;
-  gap: 4px;
-}
-
 .book-detail-processing-head-title {
   display: flex;
+  flex: 1 1 160px;
+  min-width: 0;
   align-items: baseline;
   gap: 8px;
   margin: 0;
@@ -62,38 +25,6 @@
   font-size: var(--ui-text-base);
   font-weight: 650;
   letter-spacing: -0.02em;
-}
-
-.book-detail-processing-head-percent {
-  color: var(--muted);
-  font-size: var(--ui-text-md);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* 每一项内部不折行，放不下整项换行。项之间用间距、不用圆点：折行后圆点会挂在下一行行首。 */
-.book-detail-processing-facts {
-  display: flex;
-  flex-wrap: wrap;
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--ui-text-xs);
-  line-height: 1.5;
-  gap: 0 12px;
-}
-
-.book-detail-processing-fact {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.book-detail-processing-fact svg {
-  width: 12px;
-  height: 12px;
-  flex: 0 0 auto;
 }
 
 /* —— 右边的按钮：主按钮带字，其余图标；窄的时候整组换到下一行，靠右 —— */
@@ -128,30 +59,6 @@
   font-size: var(--ui-text-sm);
   line-height: 1.5;
   text-align: right;
-}
-
-/* —— 进度条：在跑时墨色；失败停在原处变红；停下变灰 —— */
-
-.book-detail-processing-progress {
-  height: 4px;
-  overflow: hidden;
-  border-radius: var(--ui-radius-pill);
-  background: var(--book-detail-shade-0);
-}
-
-.book-detail-processing-progress-fill {
-  height: 100%;
-  border-radius: inherit;
-  background: var(--ink);
-  transition: width 240ms var(--ease-out, ease-out);
-}
-
-.book-detail-processing-progress[data-tone="failed"] .book-detail-processing-progress-fill {
-  background: var(--danger);
-}
-
-.book-detail-processing-progress[data-tone="stopped"] .book-detail-processing-progress-fill {
-  background: color-mix(in srgb, var(--ink) 40%, var(--line));
 }
 
 /* —— 状态行下面：指定页码、停下后的说明、报错、没翻全的提醒 —— */

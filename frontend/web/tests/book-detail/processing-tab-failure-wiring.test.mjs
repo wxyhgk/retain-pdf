@@ -194,7 +194,7 @@ test("取消的翻译任务：说明已取消、停在哪一步，给「从断�
     },
   });
   assert.equal(host.querySelector("[data-processing-unified-status]")?.textContent, "已停止", "取消之后什么都不说");
-  assert.match(host.querySelector("[data-processing-facts]")?.textContent || "", /停在翻译/, "要说停在哪一步");
+  assert.equal(host.querySelector("[data-hud='gauge']")?.getAttribute("title"), "停在翻译", "要说停在哪一步");
   const note = host.querySelector("[data-job-cancelled]");
   assert.match(note?.textContent || "", /已经翻好的部分/, "要说清续跑会沿用已翻好的部分");
   click(dom, host.querySelector("#book-detail-resume-cancelled-btn"));

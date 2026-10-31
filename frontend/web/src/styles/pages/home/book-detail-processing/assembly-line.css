@@ -1,5 +1,5 @@
 /* 「进度」页的流水线画面（AssemblyLineScene + ProcessingPipelineRail）：传送带、五台机器、稿纸走动，
- * 宽的时候各站说明挂在机器上方，窄的时候沿用 pipeline-rail.css 的竖排列表；下面一块「最近活动」。
+ * 每台机器上方挂一个状态徽标（assembly-line-labels.css），宽屏、手机一样。
  * 立体感靠同一底色的三档深浅（顶面亮、正面中、侧面暗），全部由皮肤变量 color-mix 出来。 */
 
 .book-detail-pipeline {
