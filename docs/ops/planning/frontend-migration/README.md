@@ -7,6 +7,8 @@
 - [recent-jobs 与 job-runtime 蓝图](./recent-jobs-blueprint.md)
 - [对话框群施工蓝图](./dialogs-blueprint.md)
 - [按产品功能重组目录的施工蓝图](./feature-layout-blueprint.md)
+- 2026-10-31 [基础组件与刻度](./20261031-基础组件与刻度.md)：现状的数字；十个基础组件只留一份放 `packages/ui`；
+  字号、圆角刻度；按功能分六步迁；手写控件和字面量尺寸的棘轮门禁
 
 这些文件描述迁移过程，不作为当前前端架构的唯一真值。当前入口见
 [前端主线文档](../../../core/frontend/README.md)。
