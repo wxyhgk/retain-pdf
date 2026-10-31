@@ -842,6 +842,7 @@
         "devtools/tests/translation/test_checkpoint_metrics.py",
         "devtools/tests/translation/test_compact_prompts.py",
         "devtools/tests/translation/test_context_borrow_guard.py",
+        "devtools/tests/translation/test_continuation_chain_merge.py",
         "devtools/tests/translation/test_continuation_inline_math.py",
         "devtools/tests/translation/test_continuation_whole_paragraph.py",
         "devtools/tests/translation/test_direct_typst_normalize.py",
