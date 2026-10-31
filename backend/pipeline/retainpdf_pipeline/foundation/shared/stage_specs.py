@@ -201,6 +201,9 @@ class TranslateStageInputs:
     source_json: Path
     source_pdf: Path
     layout_json: Path | None
+    # OCR 流式公布的目录（任务的 ocr/，见 retainpdf_base.ocr_stream）：给了就跟着 OCR 翻，source_json 是 OCR 最后才写的
+    # 整份文档，开始时可以还不存在（2026-10-31，OCR 和翻译并行）。旧 spec 没有这个 key。
+    ocr_stream_dir: Path | None = None
 
 
 @dataclass(frozen=True)
@@ -274,8 +277,9 @@ class TranslateStageSpec:
             source_json=Path(_require_text(inputs_payload, "source_json")).resolve(),
             source_pdf=Path(_require_text(inputs_payload, "source_pdf")).resolve(),
             layout_json=_optional_path(inputs_payload.get("layout_json")),
+            ocr_stream_dir=_optional_path(inputs_payload.get("ocr_stream_dir")),
         )
-        if not inputs.source_json.exists():
+        if inputs.ocr_stream_dir is None and not inputs.source_json.exists():
             raise RuntimeError(f"source json not found: {inputs.source_json}")
         if not inputs.source_pdf.exists():
             raise RuntimeError(f"source pdf not found: {inputs.source_pdf}")

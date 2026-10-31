@@ -89,6 +89,7 @@ def run_translation_batch_stage(
     run_diagnostics: TranslationRunDiagnostics | None,
     flush_callback=None,
     checkpoint_progress: Callable[[], dict[str, Any]] | None = None,
+    deferred_item_ids: frozenset[str] = frozenset(),
 ) -> dict:
     translate_started = time.perf_counter()
     if run_diagnostics is not None:
@@ -139,6 +140,7 @@ def run_translation_batch_stage(
             flush_callback=flush_callback,
             stats_callback=batch_summary.update,
             progress_callback=_on_progress,
+            deferred_item_ids=deferred_item_ids,
         )
     finally:
         if run_diagnostics is not None:

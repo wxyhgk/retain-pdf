@@ -42,6 +42,7 @@ def translate_book_pipeline(
     reviewer_base_url: str = "",
     reviewer_api_key: str = "",
     engine: str = "legacy",
+    ocr_stream_dir: Path | None = None,
 ) -> dict:
     return execute_translation_request(
         TranslationExecutionRequest(
@@ -76,5 +77,6 @@ def translate_book_pipeline(
             reviewer_base_url=reviewer_base_url,
             reviewer_api_key=reviewer_api_key,
             engine=engine,
+            ocr_stream_dir=ocr_stream_dir,
         )
     )

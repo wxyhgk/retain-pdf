@@ -111,6 +111,32 @@ def translate_book_with_global_continuations(
             checkpoint.progress_snapshot if checkpoint is not None else None
         ),
     )
+    return finish_book_translation(
+        page_payloads=page_payloads,
+        translation_paths=translation_paths,
+        api_key=api_key,
+        model=model,
+        base_url=base_url,
+        workers=workers,
+        translation_context=translation_context,
+        run_diagnostics=run_diagnostics,
+        checkpoint=checkpoint,
+    )
+
+
+def finish_book_translation(
+    *,
+    page_payloads: dict[int, list[dict]],
+    translation_paths: dict[int, Path],
+    api_key: str,
+    model: str,
+    base_url: str,
+    workers: int,
+    translation_context: TranslationControlContext | None,
+    run_diagnostics: TranslationRunDiagnostics | None,
+    checkpoint: TranslationCheckpointSession | None,
+) -> tuple[dict[int, list[dict]], list[dict]]:
+    """批量翻译之后的收尾：乱码修复、agent 修复、漏翻补救，各提交一次断点，最后出每页小结。整本一次翻和跟着 OCR 流式翻（`streaming_flow.py`）共用。"""
     if checkpoint is not None:
         checkpoint.update(
             "repairing",

@@ -102,6 +102,7 @@ def translate_pending_units(
     progress_callback: Callable[[int, int, set[int], str], None] | None = None,
     flush_callback: Callable[[set[int], dict[int, set[str]]], None] | None = None,
     stats_callback: Callable[[dict[str, int]], None] | None = None,
+    deferred_item_ids: frozenset[str] = frozenset(),
 ) -> dict[str, int]:
     apply_elapsed_s = 0.0
     max_result_drain_batch = 0
@@ -138,7 +139,7 @@ def translate_pending_units(
             flat_payload.append(item)
             item_to_page[item.get("item_id", "")] = page_idx
 
-    pending = pending_translation_items(flat_payload)
+    pending = pending_translation_items(flat_payload, deferred_item_ids=deferred_item_ids)
     plan = build_batch_dispatch_plan(
         pending,
         batch_size=batch_size,

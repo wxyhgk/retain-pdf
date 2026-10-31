@@ -65,7 +65,10 @@ def review_candidate_continuation_pairs(
     batch_size: int = 24,
     request_chat_content_fn: Callable[..., str],
     progress_callback: Callable[[int, int], None] | None = None,
+    review_memo: dict[tuple[str, str], bool] | None = None,
 ) -> int:
+    """`review_memo`：（前块, 后块）→ 模型判没判连上。OCR 和翻译并行时每来一批页都要在已知的页上重算一遍
+    （规则那一遍会清掉上一轮的拼接），判过的对直接用记下的结论，只把新出现的对交给模型（`workflow/streaming_flow.py`）。"""
     flat_payload = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
     pairs = candidate_continuation_pairs(flat_payload)
     boundary_pairs = _filter_boundary_candidate_pairs(flat_payload, pairs)
@@ -75,6 +78,12 @@ def review_candidate_continuation_pairs(
         finalize_orchestration_metadata_by_page(page_payloads)
         return 0
     auto_join_pairs, review_pairs = _split_high_confidence_continuation_pairs(flat_payload, boundary_pairs)
+    if review_memo is not None:
+        remembered = [pair for pair in review_pairs if _pair_key(pair) in review_memo]
+        auto_join_pairs = [*auto_join_pairs, *(_pair_key(pair) for pair in remembered if review_memo[_pair_key(pair)])]
+        review_pairs = [pair for pair in review_pairs if _pair_key(pair) not in review_memo]
+        if remembered:
+            print(f"book: continuation review reused={len(remembered)} decided pairs", flush=True)
     if auto_join_pairs or len(review_pairs) != len(boundary_pairs):
         print(
             f"book: continuation review short-circuit auto_join={len(auto_join_pairs)} "
@@ -137,6 +146,10 @@ def review_candidate_continuation_pairs(
                 if progress_callback is not None:
                     progress_callback(completed_batches, len(batches))
 
+    if review_memo is not None:
+        joined = set(approved)
+        for pair in review_pairs:
+            review_memo[_pair_key(pair)] = _pair_key(pair) in joined
     applied = apply_candidate_pair_joins(flat_payload, approved)
     annotate_layout_zones_by_page(page_payloads)
     finalize_orchestration_metadata_by_page(page_payloads)
@@ -144,6 +157,10 @@ def review_candidate_continuation_pairs(
         save_pages_fn(page_payloads, translation_paths)
         print(f"book: continuation review approved={applied} items from pairs={len(approved)}", flush=True)
     return applied
+
+
+def _pair_key(pair: dict) -> tuple[str, str]:
+    return (str(pair.get("prev_item_id", "") or ""), str(pair.get("next_item_id", "") or ""))
 
 
 def _split_high_confidence_continuation_pairs(

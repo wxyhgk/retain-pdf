@@ -160,6 +160,18 @@ load document.v1
 - `workflow/batch_runner.py` 执行串行或并行 batch。
 - `results/` 负责回填和刷盘。
 
+### 跟着 OCR 翻（`ocr_stream_dir`，2026-10-31）
+
+翻译阶段的 spec 带了 `inputs.ocr_stream_dir`（任务的 `ocr/`）时，不等 OCR 做完：OCR（现在只有 GLM-OCR）每做完一片就把前面的页
+公布到 `ocr/stream/`（契约 `retainpdf_base/ocr_stream.py`），`workflow/streaming_flow.py` 按轮跟上。每轮：新页读进来 →
+**监控**在已知的所有页上重算跨栏、跨页拼接（模型复核过的对记在 `review_memo` 里不再送）→ 页面策略、上下文窗口 →
+翻这一轮能翻的块：只扣住最新一页最后一个能接到下一页的块（连同它的拼接组），等下一页到了、拼接定了再翻，所以不会先翻半句再重翻。
+OCR 做完的那一轮不扣、全部翻完，再走和整本一次翻一样的收尾（`book_flow.finish_book_translation`）。
+
+- 断点：归一化文档每轮在变，指纹按原文 PDF 的 sha256 认；新到的页不算"已完成的块又变回待翻"。
+- agent 引擎、开了译前准备的：要整本，等 OCR 做完再按整本翻（`execution._wait_for_whole_document_if_needed`）。
+- OCR 失败（清单 `failed=true`）时等的一方抛 `OcrStreamFailed`。阶段耗时在诊断里按轮累加。
+
 ### 翻译引擎 agent（`translation.engine=agent`）
 
 2026-10-30 接进正式流程，任务可以选，默认仍是上面的流程（`legacy`）。分支在 `workflow/execution_runner.py`：

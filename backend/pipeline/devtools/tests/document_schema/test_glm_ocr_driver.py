@@ -181,12 +181,12 @@ def test_rejected_request_explains_why_without_leaking_the_key(monkeypatch) -> N
 
 # ---- 流式公布（OCR 和翻译并行，2026-10-31）----
 
-from retainpdf_pipeline.foundation.shared.ocr_stream import read_ocr_stream
+from retainpdf_base.ocr_stream import read_ocr_stream
 
 
 def _record_publishes(monkeypatch) -> list[list]:
     """记下每次公布时的整份前缀页（公布在主线程里做，下一片的请求同时在跑，不互相等）。"""
-    from retainpdf_pipeline.foundation.shared import ocr_stream
+    from retainpdf_base import ocr_stream
 
     published: list[list] = []
     original = ocr_stream.OcrStreamWriter.publish

@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from retainpdf_base.ocr_stream import OcrStreamState
+from retainpdf_base.ocr_stream import wait_for_ocr_stream
 from retainpdf_translation.artifacts import TranslationRunDiagnostics
 from retainpdf_translation.artifacts import TRANSLATION_REQUEST_JOURNAL_FILE_NAME
 from retainpdf_translation.artifacts import TranslationRequestJournal
@@ -44,6 +46,8 @@ class TranslationExecutionPlan:
     glossary_entries: list[GlossaryEntry]
     # translation.preparation=off 时为 None：不生成产物、不注入、不进输入指纹。
     preparation: TranslationPreparation | None = None
+    # 跟着 OCR 翻时建计划那会儿等到的那一版清单（data 是它的前缀文档）；整本翻时为 None。
+    ocr_stream: OcrStreamState | None = None
 
 
 def build_translation_execution_plan(request: TranslationExecutionRequest) -> TranslationExecutionPlan:
@@ -70,8 +74,16 @@ def _anthropic_prompt_cache_warmup(request) -> bool:
 
 
 def _build_translation_execution_plan(request, journals) -> TranslationExecutionPlan:
-    data = load_ocr_json(request.source_json_path)
-    page_count = get_page_count(data)
+    ocr_stream = None
+    if getattr(request, "ocr_stream_dir", None) is not None:
+        # 跟着 OCR 翻：等 OCR 公布第一批页。页数取清单里的全书页数，领域识别读原文 PDF 前两页（OCR 期间多半已经预热好）。
+        ocr_stream = wait_for_ocr_stream(request.ocr_stream_dir)
+        data = load_ocr_json(ocr_stream.document_path)
+        page_count = ocr_stream.total_pages
+        print(f"book: following OCR stream ready={ocr_stream.ready_pages}/{page_count}", flush=True)
+    else:
+        data = load_ocr_json(request.source_json_path)
+        page_count = get_page_count(data)
     if not page_count:
         raise RuntimeError("No pages found in OCR JSON.")
 
@@ -166,6 +178,7 @@ def _build_translation_execution_plan(request, journals) -> TranslationExecution
         run_diagnostics=run_diagnostics,
         glossary_entries=glossary_entries,
         preparation=preparation,
+        ocr_stream=ocr_stream,
     )
 
 

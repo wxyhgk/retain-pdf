@@ -13,7 +13,7 @@
 - 图片：GLM 不回传图片，按块的框从原文裁（`md/images/page-<N>/imgs/img_in_<标签>_box_….jpg`，和 Paddle 的图片放一处，
   阅读页、AI 工具照原样找得到），裁好的路径填进原始结果的 `_images` 给适配器挂到块上。
 - `md/full.md`：GLM 的整份 markdown，图片占位 `![](page=<片内页>,bbox=[…])` 换成本地裁好的图。
-- 流式公布（`foundation/shared/ocr_stream.py`）：每做完一片（续跑时先把已有的片一起），把前面连着做完的页归一化成文档写到
+- 流式公布（`retainpdf_base/ocr_stream.py`）：每做完一片（续跑时先把已有的片一起），把前面连着做完的页归一化成文档写到
   `ocr/stream/`，后面的跨栏跨页拼接和翻译不用等整个 OCR 阶段（2026-10-31，OCR 和翻译并行）。前缀页和最后整份文档的同一页逐字节一致
   （试过 50 页前缀对 100 页整份）；100 页归一化 0.4 秒，所以每片都把前缀整个重做，不拼接。图片只裁新到的页。
 """
@@ -34,7 +34,7 @@ import fitz
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.io import save_json
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
-from retainpdf_pipeline.foundation.shared.ocr_stream import OcrStreamWriter
+from retainpdf_base.ocr_stream import OcrStreamWriter
 from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_payload_to_document_v1_with_report
 from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document

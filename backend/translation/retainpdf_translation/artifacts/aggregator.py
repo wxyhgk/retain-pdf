@@ -361,7 +361,8 @@ class TranslationRunDiagnostics:
             stats = self._stage_stats.setdefault(phase, _StageStats())
             if stats.started_at is None:
                 return
-            stats.elapsed_ms = int(round((time.perf_counter() - stats.started_at) * 1000))
+            # 累加：跟着 OCR 流式翻译时同一阶段（批量翻译、续接复核）每轮各进出一次，记的是总共花了多久
+            stats.elapsed_ms = int(stats.elapsed_ms or 0) + int(round((time.perf_counter() - stats.started_at) * 1000))
             stats.started_at = None
 
     def record_request_start(

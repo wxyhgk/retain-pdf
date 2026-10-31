@@ -265,7 +265,7 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
    `md/images/page-<N>/imgs/img_in_<标签>_box_….jpg`（和 Paddle 的图片放一处），`md_results` 的图片占位换成本地图写 `md/full.md`。
 6. 走 `document_schema` 的 `glm_ocr` 适配器归一化、缩放到原文 PDF。
 7. 流式公布（2026-10-31）：每做完一片，把前面连着做完的页归一化写到 `ocr/stream/document.v1.json`，就绪清单 `ocr/stream/manifest.json`
-   （`ocr_stream_v1`：`ready_pages`、`total_pages`、`done`、`failed`，契约在 `foundation/shared/ocr_stream.py`），后面的拼接和翻译不用等 OCR 做完。
+   （`ocr_stream_v1`：`ready_pages`、`total_pages`、`done`、`failed`，契约在 `retainpdf_base/ocr_stream.py`），后面的拼接和翻译不用等 OCR 做完。
 
 报错：key 不对、参数不对（4xx，429 除外）直接失败，报服务端的 code 和 message，不带 key；429、5xx、网络错误退避重试
 （`request_with_retry`，5 次，15 秒起，认 `Retry-After`）。`RETAIN_GLM_OCR_API_URL`、`RETAIN_GLM_OCR_TIMEOUT_SECONDS`（默认 900）可改。

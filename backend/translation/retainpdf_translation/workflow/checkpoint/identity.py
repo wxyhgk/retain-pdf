@@ -82,6 +82,13 @@ def build_translation_identity(
         # 只有开了译前准备才加这个键：off 时参数集合与改动前逐字节相同，
         # 旧 checkpoint 照常续跑。冻结产物的哈希进指纹，产物换了就不能拿旧译文续跑。
         parameters["preparation"] = preparation.identity()
+    if getattr(request, "ocr_stream_dir", None) is not None and request.source_pdf_path is not None:
+        # 跟着 OCR 翻：归一化文档每来一批页都在变，按原文 PDF 认（OCR 断点续跑时同一份原文出同样的页，见 glm_ocr_driver）。
+        payload = {
+            "ocr_stream_source_pdf_sha256": _sha256_file(Path(request.source_pdf_path)),
+            "parameters_sha256": _sha256_json(parameters),
+        }
+        return {**payload, "fingerprint": _sha256_json(payload)}
     return build_document_identity(
         normalized_document_path=request.source_json_path,
         parameters_sha256=_sha256_json(parameters),
