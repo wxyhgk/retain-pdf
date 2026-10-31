@@ -671,6 +671,8 @@ class ProviderStageOcrParams:
     poll_interval: int
     poll_timeout: int
     options: dict[str, Any]
+    # OCR 和翻译并行时 Rust 写 true：能按片的服务商按片提交、做完一片公布一片（Paddle，paddle_chunked.py）。旧 spec 没有这个 key。
+    stream_pages: bool = False
 
 
 @dataclass(frozen=True)
@@ -794,6 +796,7 @@ class ProviderStageSpec:
             options=dict(ocr_payload.get("options") or {})
             if isinstance(ocr_payload.get("options"), dict)
             else {},
+            stream_pages=bool(ocr_payload.get("stream_pages", False)),
         )
         glossary_entries = translation_payload.get("glossary_entries") or []
         if not isinstance(glossary_entries, list):

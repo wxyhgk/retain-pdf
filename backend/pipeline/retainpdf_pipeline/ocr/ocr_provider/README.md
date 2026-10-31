@@ -273,6 +273,15 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
 报错：key 不对、参数不对（4xx，429 除外）直接失败，报服务端的 code 和 message，不带 key；429、5xx、网络错误退避重试
 （`request_with_retry`，5 次，15 秒起，认 `Retry-After`）。`RETAIN_GLM_OCR_API_URL`、`RETAIN_GLM_OCR_TIMEOUT_SECONDS`（默认 900）可改。
 
+## Paddle 按片并行提交（`paddle_chunked.py`，2026-11-01）
+
+整本任务和翻译并行时（Rust `execute_ocr_job_streaming`），官方云服务、官方 HTTP、上传的文件不再由 Rust 整份提交，而在 provider worker 里：
+原文切成每份 `RETAIN_PADDLE_CHUNK_PAGES` 页（默认 10，0 是整份一份），同时最多 `RETAIN_PADDLE_CHUNK_WORKERS` 份（默认 4）；
+没有等着提交的份了、某份交上去 `RETAIN_PADDLE_HEDGE_SECONDS` 秒（默认 15）还一页没识别就再交一份，谁先完用谁；失败重交，最多 3 次。
+每份结果存 `ocr/paddle_raw_chunks/`（按原文 sha256 续跑）；拼接时各份的 `global_block_id` / `global_group_id` 加偏移，不让不同份的块撞成一个接续组。
+每做完一份就把前面连着的份归一化公布到 `ocr/stream/`；图片最后整份一次下载。和 Rust 那条路相比少了"派发意向"记录：进程死在提交途中，
+重跑时在途的那几份会再交一次（最多多花在途几份）。自建服务（`paddle_api_url`）、远程地址照旧走 Rust。
+
 ## 对 MinerU 文档的工程化结论
 
 从当前 MinerU API 文档看，最值得吸收的是这些抽象信息：

@@ -29,8 +29,8 @@ use self::translation_flow_stage::{
 use self::translation_flow_support::finalize_parent_after_ocr;
 use super::attach_job_paths;
 use super::domain_prewarm::{start_domain_prewarm, DOMAIN_PREWARM_FINISH_TIMEOUT};
-use super::ocr_flow::{execute_ocr_job, sync_parent_with_ocr_child};
-use super::ocr_stream::mark_ocr_stream_failed;
+use super::ocr_flow::{execute_ocr_job, execute_ocr_job_streaming, sync_parent_with_ocr_child};
+use super::ocr_stream::{ensure_ocr_stream_done, mark_ocr_stream_failed};
 use super::render_prepare::{start_render_prepare, RENDER_PREPARE_FINISH_TIMEOUT};
 use super::pipeline_plan::{PipelinePlan, PipelineStage};
 use super::ProcessRuntimeDeps;
@@ -300,13 +300,19 @@ async fn run_ocr_and_translation_together(
     };
     let render_follows = plan.next_after(PipelineStage::Translate) == Some(PipelineStage::Render);
     let ocr = Box::pin(async {
-        let result = execute_ocr_job(
+        let result = execute_ocr_job_streaming(
             deps.clone(),
             ocr_child,
             Some(parent_job_id.clone()),
             Some(parent_job_id.clone()),
         )
         .await;
+        if matches!(&result, Ok(job) if matches!(job.status, JobStatusKind::Succeeded)) {
+            // OCR 成了但没标完成（没走流式公布）：补标，翻译别再等
+            if let Err(err) = ensure_ocr_stream_done(&parent_job_paths.ocr_dir) {
+                tracing::warn!(job_id = %parent_job_id, error = %format!("{err:#}"), "failed to finish ocr stream");
+            }
+        }
         // OCR 做完、后面还要渲染：马上拉起渲染准备，翻译这时多半只剩最后一轮
         let render_prepare = match &result {
             Ok(job) if render_follows && matches!(job.status, JobStatusKind::Succeeded) => {

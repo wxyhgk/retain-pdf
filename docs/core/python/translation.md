@@ -162,7 +162,7 @@ load document.v1
 
 ### 跟着 OCR 翻（`ocr_stream_dir`，2026-10-31）
 
-翻译阶段的 spec 带了 `inputs.ocr_stream_dir`（任务的 `ocr/`）时，不等 OCR 做完：OCR（现在只有 GLM-OCR）每做完一片就把前面的页
+翻译阶段的 spec 带了 `inputs.ocr_stream_dir`（任务的 `ocr/`）时，不等 OCR 做完：OCR（GLM-OCR；Paddle 官方云服务按片并行提交，2026-11-01）每做完一片就把前面的页
 公布到 `ocr/stream/`（契约 `retainpdf_base/ocr_stream.py`），`workflow/streaming_flow.py` 按轮跟上。每轮：新页读进来 →
 **监控**在已知的所有页上重算跨栏、跨页拼接（模型复核过的对记在 `review_memo` 里不再送）→ 页面策略、上下文窗口 →
 翻这一轮能翻的块：只扣住最新一页最后一个能接到下一页的块（连同它的拼接组），等下一页到了、拼接定了再翻，所以不会先翻半句再重翻。

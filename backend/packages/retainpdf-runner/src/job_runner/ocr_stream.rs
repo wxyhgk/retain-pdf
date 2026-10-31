@@ -38,12 +38,49 @@ pub(super) fn mark_ocr_stream_failed(ocr_dir: &Path, reason: &str) -> Result<()>
         "document": previous.get("document").cloned().unwrap_or_else(|| json!("stream/document.v1.json")),
         "updated_at": chrono_like_now(),
     });
+    // 和 Python 一样原子写：读的一方任何时候读到的都是完整的一版
+    write_manifest(&path, &manifest)
+}
+
+/// OCR 子任务成功了，清单却还没标 `done`（OCR 那边没走流式公布：旧版本、不切片的路……）时补一版 done，
+/// 文档指向最后的整份 `normalized/document.v1.json`。不然跟着 OCR 的翻译会一直等到自己的"多久没有进展"超时。
+pub(super) fn ensure_ocr_stream_done(ocr_dir: &Path) -> Result<()> {
+    let path = ocr_dir.join(MANIFEST_RELATIVE_PATH);
+    let previous: Value = std::fs::read(&path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .unwrap_or(Value::Null);
+    if previous.get("done").and_then(Value::as_bool) == Some(true) {
+        return Ok(());
+    }
+    let document = ocr_dir.join("normalized").join("document.v1.json");
+    let pages = std::fs::read(&document)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<Value>(&bytes).ok())
+        .and_then(|doc| doc.get("pages").and_then(Value::as_array).map(Vec::len))
+        .with_context(|| format!("OCR succeeded but {} is missing or unreadable", document.display()))?;
+    let seq = previous.get("seq").and_then(Value::as_i64).unwrap_or(0) + 1;
+    let manifest = json!({
+        "schema": OCR_STREAM_SCHEMA,
+        "seq": seq,
+        "provider": previous.get("provider").cloned().unwrap_or(Value::Null),
+        "ready_pages": pages,
+        "total_pages": pages,
+        "done": true,
+        "failed": false,
+        "error": "",
+        "document": "normalized/document.v1.json",
+        "updated_at": chrono_like_now(),
+    });
+    write_manifest(&path, &manifest)
+}
+
+fn write_manifest(path: &Path, manifest: &Value) -> Result<()> {
     let parent = path.parent().context("ocr stream manifest has no parent")?;
     std::fs::create_dir_all(parent)?;
-    // 和 Python 一样原子写：读的一方任何时候读到的都是完整的一版
     let tmp = parent.join(".manifest.json.tmp");
-    std::fs::write(&tmp, serde_json::to_vec_pretty(&manifest)?)?;
-    std::fs::rename(&tmp, &path).with_context(|| format!("replace {}", path.display()))?;
+    std::fs::write(&tmp, serde_json::to_vec_pretty(manifest)?)?;
+    std::fs::rename(&tmp, path).with_context(|| format!("replace {}", path.display()))?;
     Ok(())
 }
 
@@ -87,6 +124,25 @@ mod tests {
         assert_eq!(manifest["ready_pages"], 20);
         assert_eq!(manifest["total_pages"], 120);
         assert_eq!(manifest["error"], "OCR child failed: no progress for 1800s");
+    }
+
+    #[test]
+    fn a_successful_ocr_without_a_finished_stream_gets_one_pointing_at_the_final_document() {
+        let dir = temp_dir("ensure-done");
+        std::fs::create_dir_all(dir.join("normalized")).unwrap();
+        std::fs::write(dir.join("normalized/document.v1.json"), r#"{"pages":[{},{},{}]}"#).unwrap();
+        std::fs::write(
+            dir.join(MANIFEST_RELATIVE_PATH),
+            r#"{"schema":"ocr_stream_v1","seq":2,"ready_pages":1,"total_pages":3,"done":false,"failed":false}"#,
+        )
+        .unwrap();
+        ensure_ocr_stream_done(dir.as_path()).unwrap();
+        let manifest = read(dir.as_path());
+        assert_eq!((manifest["seq"].clone(), manifest["done"].clone(), manifest["ready_pages"].clone()), (json!(3), json!(true), json!(3)));
+        assert_eq!(manifest["document"], "normalized/document.v1.json");
+        // 已经 done 的不动
+        ensure_ocr_stream_done(dir.as_path()).unwrap();
+        assert_eq!(read(dir.as_path())["seq"], 3);
     }
 
     #[test]
