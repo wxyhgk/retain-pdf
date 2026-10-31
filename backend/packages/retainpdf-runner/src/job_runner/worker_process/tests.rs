@@ -79,7 +79,7 @@ fn model_worker_uses_capability_without_resolving_translation_key() {
     .unwrap();
     // There is intentionally no translation credential vault. The worker
     // launcher must not need or resolve it to issue a capability.
-    let binding = prepare_model_worker_binding(&db, &job, Some("http://127.0.0.1:41000"))
+    let binding = prepare_model_worker_binding(&db, &job, Some("http://127.0.0.1:41000"), 3600)
         .unwrap()
         .unwrap();
     assert_eq!(binding.capability.len(), 64);
@@ -146,7 +146,7 @@ fn model_worker_rejects_remote_or_mismatched_configuration() {
         Some("http://user:secret@127.0.0.1"),
         Some("http://127.0.0.1/?key=secret"),
     ] {
-        assert!(prepare_model_worker_binding(&db, &job, url).is_err());
+        assert!(prepare_model_worker_binding(&db, &job, url, 3600).is_err());
     }
     let mut changed = job.clone();
     changed
@@ -157,7 +157,7 @@ fn model_worker_rejects_remote_or_mismatched_configuration() {
         .unwrap()
         .thinking = retainpdf_core::model_connection::Thinking::On;
     assert!(
-        prepare_model_worker_binding(&db, &changed, Some("http://127.0.0.1:41000")).is_err()
+        prepare_model_worker_binding(&db, &changed, Some("http://127.0.0.1:41000"), 3600).is_err()
     );
     std::fs::remove_dir_all(root).unwrap();
 }
@@ -272,6 +272,7 @@ async fn spawned_worker_process_receives_vault_credential() {
         ocr_provider_config_path: &provider_config,
         worker_terminate_grace_secs: 1,
         worker_output_drain_secs: 5,
+        worker_max_runtime_secs: 3600,
         worker_terminate_poll_ms: 10,
     };
 

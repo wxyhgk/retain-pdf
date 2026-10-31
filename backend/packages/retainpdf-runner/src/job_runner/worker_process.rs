@@ -9,6 +9,17 @@ use retainpdf_data::credentials::resolve_credential;
 use sha2::{Digest, Sha256};
 use tokio::process::{Child, Command};
 
+/// 阶段进程最多能跑多久(秒,`0` 是不限):配置的绝对上限,请求的 `timeout_seconds` 更大时以请求为准。
+/// `timeout_seconds` 按"多久没有进展"算(见 `process_runner::execution::TimeoutKind`),真正封顶的是这个。
+pub(super) fn max_runtime_secs(job: &JobRuntimeState, worker_max_runtime_secs: u64) -> u64 {
+    let requested = job.request_payload.runtime.timeout_seconds.max(0) as u64;
+    if worker_max_runtime_secs == 0 {
+        0
+    } else {
+        worker_max_runtime_secs.max(requested)
+    }
+}
+
 pub(super) struct ModelWorkerBinding {
     api_url: String,
     job_id: String,
@@ -56,6 +67,7 @@ pub(super) fn prepare_model_worker_binding(
     db: &retainpdf_data::db::Db,
     job: &JobRuntimeState,
     api_url: Option<&str>,
+    worker_max_runtime_secs: u64,
 ) -> Result<Option<ModelWorkerBinding>> {
     let Some(profile) = job
         .request_payload
@@ -112,9 +124,14 @@ pub(super) fn prepare_model_worker_binding(
         .iter()
         .map(|b| format!("{b:02x}"))
         .collect();
-    let ttl = (job.request_payload.runtime.timeout_seconds.max(0) as u64)
-        .saturating_add(600)
-        .clamp(3600, 86400);
+    // 会话要活得比阶段进程长：进程一直有进展就能跑到绝对上限，以前按 timeout_seconds(默认 1800)
+    // 算出来只有 1 小时，翻久了模型请求会先因会话过期失败。
+    let runtime = match max_runtime_secs(job, worker_max_runtime_secs) {
+        0 => DEFAULT_WORKER_MAX_RUNTIME_SECS
+            .max(job.request_payload.runtime.timeout_seconds.max(0) as u64),
+        secs => secs,
+    };
+    let ttl = runtime.saturating_add(600).max(3600);
     db.create_model_session(
         &job.job_id,
         &hash,
@@ -141,7 +158,7 @@ fn chrono_now_seconds() -> i64 {
         .as_secs() as i64
 }
 
-use crate::config::WorkerProcessRuntimeConfig;
+use crate::config::{WorkerProcessRuntimeConfig, DEFAULT_WORKER_MAX_RUNTIME_SECS};
 use crate::models::domain::{JobRuntimeState, WorkflowKind};
 use crate::ocr_provider::{
     configured_provider_credential_env, is_configured_command_provider, provider_token,

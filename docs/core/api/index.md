@@ -276,12 +276,16 @@ Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时�
 }
 ```
 
-`timeout_seconds` 是整段执行的上限，必须按最坏情况给（大部头翻译几小时是正常的），
-必须为正整数。`no_output_timeout_seconds` 是独立的空闲检测：每收到一行 stdout 就
-重新计时，只有 worker 彻底不出声才触发，于是"卡在第一页"不必等满那几小时。
-默认 `0` 表示关闭——各阶段正常静默时长差别很大，没有安全的统一默认值，按工作流
-显式设定。两者都判为 `failed` / `process_timeout`，但 `stage_detail` 不同：总超时是
-`provider timeout`，空闲超时是 `no output for {N}s`。
+`timeout_seconds` 是**多久没有进展**就判卡住（2026-10-31 起；以前是从阶段进程启动算的整段上限，
+前端默认的 1800 秒让一百多页的翻译 agent 任务在半路被杀）。进展指 worker 报出新的阶段或进度
+（完成一页、一批）、提交检查点、发布产物；只换说明文字、反复报同一个进度不算。一直出页就一直跑，
+另有绝对上限防死循环：服务端 `RUST_API_WORKER_MAX_RUNTIME_SECS`（默认 24 小时，`0` 不限），
+`timeout_seconds` 比它大时以 `timeout_seconds` 为准。必须为正整数。
+`no_output_timeout_seconds` 是独立的空闲检测：每收到一行 stdout 就重新计时，只有 worker 彻底
+不出声才触发。默认 `0` 表示关闭——各阶段正常静默时长差别很大，没有安全的统一默认值，按工作流
+显式设定。三种都判为 `failed` / `process_timeout`，`stage_detail` 分别是 `no progress for {N}s`、
+`max runtime {N}s exceeded`、`no output for {N}s`（以前没有进展那一种写 `provider timeout` /
+`normalization timeout`）。
 
 推荐先通过 `POST /api/v1/credentials` 创建 `translation_api_key` 凭据，再把返回的
 `credential_ref` 放进任务。凭据接口和任务详情只返回元数据，任何接口都不回凭据值

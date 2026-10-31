@@ -187,12 +187,12 @@ fn classify_job_failure_inner(job: &JobSnapshot) -> Option<JobFailureInfo> {
             Some("timeout".to_string()),
             "Python worker 执行超时",
             Some(format!(
-                "Python 子进程超过运行时超时阈值后被终止（timeout_seconds={timeout_seconds}）"
+                "Python 子进程超时被终止：超过 timeout_seconds={timeout_seconds} 秒没有进展，或跑满了绝对时长上限"
             )),
             true,
             extract_upstream_host(&haystack),
             provider_name(diagnostics),
-            Some("可从断点恢复或重试；若频繁发生，建议降低并发、增大 timeout_seconds，或检查上游网络耗时".to_string()),
+            Some("可从断点恢复或重试；若频繁发生，检查上游网络耗时，或增大 timeout_seconds（多久没有进展才判卡住）".to_string()),
             select_relevant_log_line(job, error, &["timeout", "timed out", "stderr before timeout"]),
             first_error_excerpt(error, &haystack),
             raw_diagnostic_from_process_result(job)

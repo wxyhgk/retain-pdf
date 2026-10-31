@@ -31,9 +31,7 @@ use self::execution::{collect_process_execution, ProcessExecution};
 use self::failure_ai_diagnosis::maybe_attach_ai_failure_diagnosis;
 use self::startup::spawn_started_process;
 #[cfg(test)]
-use self::timeout_support::apply_timeout_failure;
-#[cfg(test)]
-use self::timeout_support::timeout_detail_for_stage;
+use self::timeout_support::apply_timeout_failure_with_detail;
 
 pub(crate) async fn execute_process_job(
     deps: ProcessRuntimeDeps,
@@ -236,19 +234,6 @@ pub(super) mod tests {
     }
 
     #[test]
-    fn timeout_detail_distinguishes_normalizing_stage() {
-        assert_eq!(
-            timeout_detail_for_stage(Some("normalizing")),
-            "normalization timeout"
-        );
-        assert_eq!(
-            timeout_detail_for_stage(Some("translating")),
-            "provider timeout"
-        );
-        assert_eq!(timeout_detail_for_stage(None), "provider timeout");
-    }
-
-    #[test]
     fn classify_process_completion_prefers_cancel_then_success_then_noise() {
         assert_eq!(
             classify_process_completion(true, true, true),
@@ -276,11 +261,15 @@ pub(super) mod tests {
             vec!["python".to_string()],
         );
         job.stage = Some("normalizing".to_string());
-        apply_timeout_failure(&mut job, "2026-04-04T00:00:00Z".to_string());
+        apply_timeout_failure_with_detail(
+            &mut job,
+            "2026-04-04T00:00:00Z".to_string(),
+            "no progress for 1800s".to_string(),
+        );
         assert_eq!(job.status, JobStatusKind::Failed);
         assert_eq!(job.stage.as_deref(), Some("failed"));
-        assert_eq!(job.stage_detail.as_deref(), Some("normalization timeout"));
-        assert_eq!(job.error.as_deref(), Some("normalization timeout"));
+        assert_eq!(job.stage_detail.as_deref(), Some("no progress for 1800s"));
+        assert_eq!(job.error.as_deref(), Some("no progress for 1800s"));
     }
 
     #[tokio::test]
@@ -316,7 +305,7 @@ pub(super) mod tests {
         .expect("execute process job");
 
         assert_eq!(finished.status, JobStatusKind::Failed);
-        assert_eq!(finished.stage_detail.as_deref(), Some("provider timeout"));
+        assert_eq!(finished.stage_detail.as_deref(), Some("no progress for 1s"));
         let result = finished.result.as_ref().expect("process result");
         assert!(!result.success);
         assert_eq!(result.return_code, -1);
@@ -350,6 +339,117 @@ pub(super) mod tests {
             .log_tail
             .iter()
             .any(|line| line.contains("stderr-before-timeout")));
+    }
+
+    /// 一行进度事件(和真实 worker 打的格式一样)。
+    fn progress_line(job_id: &str, current: i64) -> String {
+        serde_json::json!({
+            "schema": "pipeline_stage_observation_v1", "schema_version": 1, "job_id": job_id,
+            "seq": current, "ts": "2026-10-31T00:00:00Z", "user_stage": "translation",
+            "stage": "translating", "substage": "translation_batches", "event_type": "stage_progress",
+            "message": "page", "progress_current": current, "progress_total": 1000,
+            "progress_unit": "page", "payload": {}
+        })
+        .to_string()
+    }
+
+    /// 让 worker 每隔 `interval` 秒打一行进度,共 `count` 行;`advance` 为假时每行都报同一个进度。
+    fn progress_worker(job_id: &str, count: usize, interval: f64, advance: bool) -> JobRuntimeState {
+        let first = progress_line(job_id, 1);
+        let script = format!(
+            "import json, time\n\
+             line = json.loads({first:?})\n\
+             for i in range({count}):\n\
+             \x20   line['progress_current'] = i + 1 if {advance} else 1\n\
+             \x20   line['seq'] = i + 1\n\
+             \x20   print(json.dumps(line), flush=True)\n\
+             \x20   time.sleep({interval})\n\
+             print('worker-done', flush=True)\n",
+            advance = if advance { "True" } else { "False" },
+        );
+        let mut job = JobSnapshot::new(
+            job_id.to_string(),
+            CreateJobInput::default(),
+            vec!["python3".to_string(), "-c".to_string(), script],
+        )
+        .into_runtime();
+        job.request_payload.runtime.job_id = job.job_id.clone();
+        job
+    }
+
+    fn deps_for(state: &TestState) -> ProcessRuntimeDeps {
+        ProcessRuntimeDeps::new(
+            state.config.clone(),
+            state.db.clone(),
+            state.canceled_jobs.clone(),
+            state.job_slots.clone(),
+            Arc::default(),
+        )
+    }
+
+    /// `timeout_seconds` 从最近一次进展算起:一直出页的 worker 跑得比它长也不被杀。
+    ///
+    /// 2026-10-31 以前它从进程启动算整段时长,前端默认 1800 秒,翻译 agent 按页顺序翻,一百二三十页的书
+    /// 就在半路被杀。这里阈值 2 秒,worker 每 0.5 秒出一页、共跑约 5 秒。
+    #[tokio::test]
+    async fn worker_that_keeps_making_progress_outlives_timeout_seconds() {
+        let state = test_state("progress-outlives-timeout");
+        let mut job = progress_worker("job-progress-ok", 10, 0.5, true);
+        state.db.save_job(&job.snapshot()).unwrap();
+        job.request_payload.runtime.timeout_seconds = 2;
+
+        let finished = execute_process_job(deps_for(&state), job, &[])
+            .await
+            .expect("execute process job");
+
+        let result = finished.result.as_ref().expect("process result");
+        assert_eq!(result.return_code, 0, "有进展就不该被判超时:{:?}", finished.stage_detail);
+        assert!(result.duration_seconds >= 4.0, "要真的跑过了 timeout_seconds 才有证明力");
+        assert!(result.stdout.contains("worker-done"));
+    }
+
+    /// 只打印、不前进的 worker 照样会被判没有进展:反复报同一个进度不算进展。
+    #[tokio::test]
+    async fn repeating_the_same_progress_is_not_progress() {
+        let state = test_state("progress-repeats");
+        let mut job = progress_worker("job-progress-stuck", 100, 0.2, false);
+        state.db.save_job(&job.snapshot()).unwrap();
+        job.request_payload.runtime.timeout_seconds = 2;
+
+        let finished = tokio::time::timeout(
+            Duration::from_secs(15),
+            execute_process_job(deps_for(&state), job, &[]),
+        )
+        .await
+        .expect("原地打转 2 秒就该收掉")
+        .expect("execute process job");
+
+        assert_eq!(finished.status, JobStatusKind::Failed);
+        assert_eq!(finished.stage_detail.as_deref(), Some("no progress for 2s"));
+        assert!(!finished.result.as_ref().unwrap().stdout.contains("worker-done"));
+    }
+
+    /// 一直有进展也有绝对上限(`RUST_API_WORKER_MAX_RUNTIME_SECS`),防死循环一直烧钱。
+    #[tokio::test]
+    async fn progress_cannot_outrun_the_max_runtime() {
+        let mut state = test_state("progress-max-runtime");
+        let mut config = (*state.config).clone();
+        config.job_runner.worker_max_runtime_secs = 2;
+        state.config = Arc::new(config);
+        let mut job = progress_worker("job-progress-max", 100, 0.2, true);
+        state.db.save_job(&job.snapshot()).unwrap();
+        job.request_payload.runtime.timeout_seconds = 1;
+
+        let finished = tokio::time::timeout(
+            Duration::from_secs(15),
+            execute_process_job(deps_for(&state), job, &[]),
+        )
+        .await
+        .expect("跑满 2 秒绝对上限就该收掉")
+        .expect("execute process job");
+
+        assert_eq!(finished.status, JobStatusKind::Failed);
+        assert_eq!(finished.stage_detail.as_deref(), Some("max runtime 2s exceeded"));
     }
 
     /// 卡死的 worker 必须被空闲超时截住,而不是等满 timeout_seconds。
@@ -399,7 +499,7 @@ pub(super) mod tests {
         assert_eq!(
             finished.stage_detail.as_deref(),
             Some("no output for 2s"),
-            "必须说明是卡住不动,而不是笼统的 provider timeout——两者的排查方向不同"
+            "必须说明是没有任何输出,而不是笼统的没有进展——两者的排查方向不同"
         );
         // 已经收到的输出仍要保留,那是排查卡在哪一步的唯一线索。
         let result = finished.result.as_ref().expect("process result");
