@@ -266,7 +266,7 @@
   "total_tokens": 0
  },
  "_images": {
-  "imgs/img_in_image_box_300_1760_1000_2380.jpg": "images/page-001/img_in_image_box_300_1760_1000_2380.jpg"
+  "page-1/imgs/img_in_image_box_300_1760_1000_2380.jpg": "images/page-1/imgs/img_in_image_box_300_1760_1000_2380.jpg"
  },
  "_meta": {
   "chunks": [

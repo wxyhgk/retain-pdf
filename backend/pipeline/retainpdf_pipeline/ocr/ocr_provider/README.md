@@ -250,6 +250,24 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
 
 如果第 4 步之前就让 provider 原始 JSON 进入主流程，后面一定继续耦合。
 
+## 智谱 GLM-OCR（`glm_ocr`，2026-10-31）
+
+`glm_ocr_api.py` 调 `POST https://open.bigmodel.cn/api/paas/v4/layout_parsing`（模型 `glm-ocr`），`glm_ocr_driver.py`
+在 provider worker 里做完整流程（和命令型 OCR、Paddle 官方 CLI 一样，Rust 只拉起进程、注入凭据 `args.ocr_credential`）：
+
+1. 选页（`page_ranges`）先切出子 PDF 当原文；只支持上传的本地文件，不支持 `source.file_url`。
+2. 按 `RETAIN_GLM_OCR_CHUNK_PAGES` 页（默认 10，服务端上限 100）分片，base64 带 `data:application/pdf;base64,` 前缀交上去。
+   同步接口：一次请求等到整片解析完（实测 10 页约 12 秒，分片不多花钱）。`RETAIN_GLM_OCR_WORKERS` 路并发（默认 1，最多 4；
+   实测 2 路不比串行快）。
+3. 每片原始结果存 `ocr/glm_ocr_raw/chunk-<序号>-<起>-<止>.json`，`chunks.json` 记原文 sha256 和分片页数；重跑时对得上的片不再请求。
+4. 每做完一片报一次进度（页），任务"多久没有进展"的超时按它算。
+5. 拼成一份 `ocr/glm_ocr_result.json`（和单次请求同样形状，`_meta.chunks` 记各片页范围、用量），按图片块的框从原文裁图到
+   `md/images/page-<N>/imgs/img_in_<标签>_box_….jpg`（和 Paddle 的图片放一处），`md_results` 的图片占位换成本地图写 `md/full.md`。
+6. 走 `document_schema` 的 `glm_ocr` 适配器归一化、缩放到原文 PDF。
+
+报错：key 不对、参数不对（4xx，429 除外）直接失败，报服务端的 code 和 message，不带 key；429、5xx、网络错误退避重试
+（`request_with_retry`，5 次，15 秒起，认 `Retry-After`）。`RETAIN_GLM_OCR_API_URL`、`RETAIN_GLM_OCR_TIMEOUT_SECONDS`（默认 900）可改。
+
 ## 对 MinerU 文档的工程化结论
 
 从当前 MinerU API 文档看，最值得吸收的是这些抽象信息：

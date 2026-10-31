@@ -11,7 +11,7 @@ GLM-OCR 的版面检测和 PaddleOCR-VL 是同一套（PP-DocLayout）：`native
   我们请求 Paddle 时不要这些，块里是纯文字。这里先洗成和 Paddle 一样（`clean_content`），行间公式 `$$…$$` 两边一样，不动。
 - 图片块（`image`、`chart`……）没有内容，和 Paddle 一样文字留空，图片按框挂进 markdown 的图片表：键是
   `imgs/img_in_<标签>_box_<x1>_<y1>_<x2>_<y2>.jpg`（Paddle 按文件名里的框把图片对回块），值是调用层从原文 PDF 按框裁好、
-  落盘的相对路径（`_images`）；没裁的值为空，块标成图片未就绪。
+  落盘的相对路径（`_images`，键带页前缀 `page-<N>/imgs/…`：不同页同样的框不会串）；没裁的值为空，块标成图片未就绪。
 - 页眉、页脚、页码 GLM-OCR 多半不出，出了照 Paddle 的标签走。
 
 坐标是模型像素（`data_info.pages[i]` 的宽高），缩放到原文 PDF 的点由归一化的收尾一步做（`finalize_normalized_document`）。
@@ -90,12 +90,12 @@ def _parsing_block(block: dict, position: int) -> dict:
     }
 
 
-def paddle_page_payload(page_blocks: list, page_meta: dict, images: dict) -> dict:
+def paddle_page_payload(page_blocks: list, page_meta: dict, images: dict, *, page_index: int = 0) -> dict:
     """一页 GLM 块 → Paddle 的一页（`layoutParsingResults[i]`）。块按 GLM 给的阅读顺序（`index`）排。"""
     blocks = [block for block in page_blocks if isinstance(block, dict)]
     blocks.sort(key=lambda block: (block.get("index") is None, block.get("index") or 0))
     page_images = {
-        key: str(images.get(key) or "")
+        key: str(images.get(f"page-{page_index + 1}/{key}") or "")
         for key in (image_asset_key(_label(block), _bbox(block)) for block in blocks if _label(block) in IMAGE_LABELS)
     }
     return {
@@ -145,7 +145,7 @@ def build_glm_ocr_document(
         page_meta = pages_meta[page_index] if page_index < len(pages_meta) and isinstance(pages_meta[page_index], dict) else {}
         page = build_page_record(
             build_page_spec(
-                page_payload=paddle_page_payload(page_blocks, page_meta, images),
+                page_payload=paddle_page_payload(page_blocks, page_meta, images, page_index=page_index),
                 page_index=page_index,
                 page_meta=page_meta,
                 preprocessed_image="",

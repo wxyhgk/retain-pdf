@@ -289,6 +289,7 @@
       "runtime_files": [
         "retainpdf_pipeline/document_operations/visual_validation.py",
         "retainpdf_pipeline/ocr/document_schema/pdf_geometry.py",
+        "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_runner.py",
         "retainpdf_pipeline/render/analysis/classifier.py",
         "retainpdf_pipeline/render/analysis/document/builder.py",
@@ -433,6 +434,7 @@
         "devtools/tests/agent_lab/test_sample_textbook.py",
         "devtools/tests/document_operations/test_document_operation_cli.py",
         "devtools/tests/document_operations/test_page_program.py",
+        "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_mineru_v2_geometry.py",
         "devtools/tests/document_schema/test_normalize_provider_lines.py",
         "devtools/tests/document_schema/test_rescale_page_mapping.py",
@@ -550,6 +552,7 @@
         "devtools/tests/document_schema/test_canonical_semantics.py",
         "devtools/tests/document_schema/test_document_block_classification.py",
         "devtools/tests/document_schema/test_document_contract_v1.py",
+        "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_mineru_adapter.py",
         "devtools/tests/document_schema/test_mineru_bundle_zip_guard.py",
         "devtools/tests/document_schema/test_mineru_cross_page.py",
@@ -664,6 +667,7 @@
       "package_name": "requests",
       "runtime_files": [
         "retainpdf_pipeline/ocr/mineru_provider/mineru_api.py",
+        "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
         "retainpdf_pipeline/ocr/retry.py"
       ],
@@ -671,6 +675,7 @@
         "devtools/tools/mineru_api_example.py"
       ],
       "test_files": [
+        "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_ocr_retry_error_safety.py",
         "devtools/tests/document_schema/test_paddle_api_retry.py",
         "devtools/tests/translation/test_model_protocol.py",
@@ -701,6 +706,7 @@
         "retainpdf_pipeline/ocr/mineru_provider/normalize_pipeline.py",
         "retainpdf_pipeline/ocr/mineru_provider/ocr_pipeline.py",
         "retainpdf_pipeline/ocr/ocr_provider/drivers.py",
+        "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py",
         "retainpdf_pipeline/ocr/ocr_provider/local_command_driver.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_api.py",
         "retainpdf_pipeline/ocr/ocr_provider/paddle_normalize.py",

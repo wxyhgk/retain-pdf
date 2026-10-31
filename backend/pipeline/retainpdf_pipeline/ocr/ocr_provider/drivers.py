@@ -3,6 +3,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 
 from retainpdf_pipeline.ocr.mineru_provider.job_flow import run_mineru_to_job_dir
+from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import run_glm_ocr_to_job_dir
 from retainpdf_pipeline.ocr.ocr_provider.local_command_driver import run_local_command_ocr_to_job_dir
 from retainpdf_pipeline.ocr.ocr_provider.provider_config import configured_command_providers
 from retainpdf_pipeline.ocr.ocr_provider.provider_config import ocr_provider_options
@@ -41,6 +42,8 @@ def _run_local_provider(args: SimpleNamespace) -> OcrProviderResult:
 _PROVIDER_DRIVERS: dict[str, OcrProviderDriver] = {
     "mineru": _run_mineru_provider,
     "local": _run_local_provider,
+    # 智谱 GLM-OCR（同步接口，分片请求、裁图、归一化都在 worker 里，见 glm_ocr_driver）
+    "glm_ocr": run_glm_ocr_to_job_dir,
 }
 _CONFIG_DISCOVERY_DONE = False
 
