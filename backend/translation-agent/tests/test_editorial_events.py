@@ -81,17 +81,17 @@ def test_a_run_reports_every_page_from_start_to_done(tmp_path: Path) -> None:
 
 
 def test_a_failed_block_is_retried_then_falls_back_to_the_source(tmp_path: Path) -> None:
-    page = _p("7", "", ("b1", "We report $F_1$ on 3 pages."))
-    model = Model(_answer({"b1": "我们报告 F1。"}), _answer({"b1": "我们在 3 页上报告 F1。"}))
+    page = _p("7", "", ("b1", "We report [4] on 3 pages."))
+    model = Model(_answer({"b1": "我们报告。"}), _answer({"b1": "我们在 3 页上报告。"}))
     DocumentRun(TranslationAgent(model="fake", transport=model), tmp_path, memory=False).run([page])
     flow = [(e["type"], e.get("attempt")) for e in _events(tmp_path) if e["type"] in ("translate_call", "check_result", "retry", "fallback", "page_done")]
     assert flow == [("translate_call", 1), ("check_result", 1), ("retry", None), ("translate_call", 2), ("check_result", 2), ("fallback", None), ("page_done", None)]
     events = _events(tmp_path)
     first_check = next(e for e in events if e["type"] == "check_result")
-    assert first_check["error"] == 1 and first_check["codes"].get("formula_changed") == 1
+    assert first_check["error"] == 1 and first_check["codes"].get("citation_lost") == 1
     assert next(e for e in events if e["type"] == "retry")["blocks"] == ["b1"]
     fallback = next(e for e in events if e["type"] == "fallback")
-    assert fallback == dict(fallback, page=1, block="b1", reason="formula_changed")
+    assert fallback == dict(fallback, page=1, block="b1", reason="citation_lost")
     assert events[-2]["statuses"]["fallback_source"] == 1
 
 

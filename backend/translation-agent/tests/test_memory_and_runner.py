@@ -201,12 +201,16 @@ def test_a_term_that_is_not_used_is_a_warning_without_a_retry() -> None:
     assert meta["role"] == "translator" and meta["model"] == "fake" and meta["attempt"] == 1
 
 
-def test_a_block_that_still_breaks_a_formula_falls_back_to_the_source() -> None:
+def test_a_formula_written_as_plain_text_is_kept_but_unpaired_dollars_fall_back() -> None:
+    """公式不判对错（2026-10-31）：写成普通文字照收、不重翻；`$` 不成对的重翻后还不成对才退回原文。"""
     page = _p("1", "", ("b1", "We report $F_1$ on 3 pages."))
-    model = Model(_answer({"b1": "我们报告 F1。"}), _answer({"b1": "我们在 3 页上报告 F1。"}))
+    model = Model(_answer({"b1": "我们在 3 页上报告 F1。"}))
+    result = TranslationAgent(model="fake", transport=model).translate_page(page)[0]["b1"]
+    assert result.status == "ok" and result.translation == "我们在 3 页上报告 F1。" and result.attempts == 1
+    model = Model(_answer({"b1": "我们报告 $F_1。"}), _answer({"b1": "我们在 3 页上报告 $F_1。"}))
     result = TranslationAgent(model="fake", transport=model).translate_page(page)[0]["b1"]
     assert result.status == "fallback_source" and result.translation is None
-    assert result.history[-1]["translation"] == "我们在 3 页上报告 F1。"
+    assert result.history[-1]["translation"] == "我们在 3 页上报告 $F_1。"
 
 
 def test_the_first_use_of_an_abbreviation_must_spell_it_out() -> None:

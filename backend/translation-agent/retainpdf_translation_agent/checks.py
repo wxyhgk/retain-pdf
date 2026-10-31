@@ -36,7 +36,8 @@ SHARE_DRIFT_MIN_CHARS = 12
 # 1：2026-10-30 原文本来就重复的话不算接续组重复；接续组一块"太短"而整组不短只记警告
 # 2：2026-10-30 接续组模型放的断点和原文比例差太远，程序按比例重切
 # 3：2026-10-30 接续组不再让模型放断点，一律由程序按正文比例切开（不落在公式里）；没交的块重翻后还不合格再翻一次
-CHECKS_VERSION = "translation-agent-checks-3"
+# 4：2026-10-31 不再拿公式和原文逐个比（formula_changed、formula_merged 去掉），只查 `$` 成对
+CHECKS_VERSION = "translation-agent-checks-4"
 
 
 def visible_length(text: str) -> int:
@@ -50,29 +51,11 @@ def _formula_key(formula: str) -> str:
     return re.sub(r"\s+", "", formula.strip()[1:-1])
 
 
-SUBSCRIPTS = str.maketrans("0123456789+-", "₀₁₂₃₄₅₆₇₈₉₊₋")
-SUPERSCRIPTS = str.maketrans("0123456789+-", "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻")
-
-
-def _plain_variants(key: str) -> list[str]:
-    """公式写成普通文字时可能的样子：原样、去掉花括号、下标上标换成 Unicode（"H_2" → "H₂"）。"""
-    bare = key.replace("{", "").replace("}", "")
-    unicode = re.sub(r"_(\w)", lambda m: m.group(1).translate(SUBSCRIPTS), bare)
-    unicode = re.sub(r"\^(\w)", lambda m: m.group(1).translate(SUPERSCRIPTS), unicode)
-    # 还带着 LaTeX 记号的不算"写成普通文字"（"^{53-68}" 露在中文里是坏的）
-    return [v for v in {key, bare, unicode} if v and not re.search(r"[\\^_{}]", v)]
-
-
-def _spaced(key: str) -> str:
-    """去掉空格的公式内容，在原文正文里找时允许字符之间有空白（"x,y,z" 对上 "x, y, z"）。"""
-    return r"\s*".join(re.escape(ch) for ch in key)
-
-
 def restore_formulas(source: str, translation: str | None) -> tuple[str | None, list[str]]:
     """模型把原文公式改了一点点（多半是顺手"修"了 OCR 认错的符号，如 "S'_{rs}'" → "S'_{rs}"）：换回原文的写法。
 
     只换"原文有、译文没有"和"译文有、原文没有"里相似度 ≥ 0.85 的一对，一对一。返回（新译文，换回了哪些原文公式）。
-    公式改成别的意思（相似度低）的不动，交给 formula_changed 判错。
+    公式改成别的意思（相似度低）的不动（公式不再判对错，见 check_block）。
     """
     if not translation:
         return translation, []
@@ -115,33 +98,11 @@ def check_block(source: str, translation: str | None) -> list[dict]:
     if not translation.strip():
         return [_issue("empty", "error", "译文是空的")]
     issues: list[dict] = []
-    # 行内代码先拿掉再查公式：`$` 提示符不是公式
-    src_math, out_math = CODE_RE.sub(" ", source), CODE_RE.sub(" ", translation)
-    # 公式按去掉空格后的内容比：真实文档的 OCR 写 "$ \\hat{F} $"，模型常交回 "$\\hat{F}$"，是同一个公式
-    src_formulas = Counter(_formula_key(f) for f in FORMULA_RE.findall(src_math))
-    out_formulas = Counter(_formula_key(f) for f in FORMULA_RE.findall(out_math))
-    if out_math.count("$") % 2:
+    # 公式不和原文逐个比（2026-10-31 用户定）：模型把 "$n_{L}^{max}$" 写成 "n_L^max"、数字挪进公式，以前判错、重翻两次还不合格就退回原文，
+    # 整段英文比公式写得不像糟得多。只查 `$` 成对——不成对的话后面整段都会被当成公式排。模型顺手改了一点点的公式照旧换回原文写法（restore_formulas）
+    src_formulas = Counter(_formula_key(f) for f in FORMULA_RE.findall(CODE_RE.sub(" ", source)))
+    if CODE_RE.sub(" ", translation).count("$") % 2:
         issues.append(_issue("formula_unbalanced", "error", "`$` 不成对"))
-    plain_source = FORMULA_RE.sub(" ", src_math)
-    # 丢了的公式被译文里别的公式包含（"算符 $H'$ 为 $H' = -E\\cdot\\mu$" 合成一个）：意思没丢，只记警告
-    lost_all = sorted((src_formulas - out_formulas).elements())
-    merged = [f for f in lost_all if any(f and f in other and f != other for other in out_formulas)]
-    # 公式被写成了普通文字（"$(14.135)$" → "(14.135)"，"$H_2$" → "H₂"）：内容还在译文里，不算丢
-    plain_out = re.sub(r"\s+", "", FORMULA_RE.sub(" ", out_math))
-    unwrapped = [f for f in lost_all if f not in merged and any(v in plain_out for v in _plain_variants(f))]
-    lost = [f for f in lost_all if f not in merged and f not in unwrapped]
-    merged += unwrapped
-    # 多出来的公式：原文已有的公式多提一次（"当 $b$ 为 0.002 时"），或者原文正文里的普通文字被套上了公式符号（"the z coordinate" →
-    # "$z$ 坐标"、"n/2 occupied" → "$n/2$ 个占据"），都不算改了公式；原文哪里都没有的才算
-    added = sorted(
-        f
-        for f in (out_formulas - src_formulas).elements()
-        if f not in src_formulas and not re.search(rf"(?<![A-Za-z0-9]){_spaced(f)}(?![A-Za-z0-9])", plain_source)
-    )
-    if lost or added:
-        issues.append(_issue("formula_changed", "error", f"公式和原文不一致：丢了 {lost}，多了 {added}"))
-    elif merged:
-        issues.append(_issue("formula_merged", "warn", f"公式 {merged} 和别的公式合在了一起"))
     lost_code = Counter(CODE_RE.findall(source)) - Counter(CODE_RE.findall(translation))
     if lost_code:
         issues.append(_issue("code_changed", "error", f"行内代码要原样保留：{sorted(lost_code.elements())}"))
