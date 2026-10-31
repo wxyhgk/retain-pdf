@@ -1,6 +1,7 @@
 // 设置 → 通知：任务跑完时弹不弹系统通知，网页版顺带要授权、发一条试试。
 
 import { useState } from "react";
+import { Button, Checkbox } from "@retainpdf/ui";
 import { getDesktopHost } from "@/platform/desktop/host.js";
 import { readJobFinishNotifyEnabled, writeJobFinishNotifyEnabled } from "../domain/notify-prefs.js";
 
@@ -59,15 +60,13 @@ export function NotifySettingsPanel() {
 
   return (
     <div className="notify-settings" data-notify-panel>
-      <label className="notify-settings-toggle">
-        <input
-          type="checkbox"
-          checked={enabled}
-          onChange={(event) => toggle(event.target.checked)}
-          data-notify-toggle
-        />
-        <span>任务跑完时弹系统通知</span>
-      </label>
+      <Checkbox
+        className="notify-settings-toggle"
+        label="任务跑完时弹系统通知"
+        checked={enabled}
+        onChange={(event) => toggle(event.target.checked)}
+        data-notify-toggle
+      />
       <p className="notify-settings-hint">
         {"正看着这个页面时只在页面里提示；切到别处时弹系统通知，标签页标题前面也会出现 ✓ / ✗。"}
         {"自己取消的任务不提醒。要开着 RetainPDF 的页面（桌面版缩在托盘里也算）才提醒得到。"}
@@ -82,14 +81,14 @@ export function NotifySettingsPanel() {
           ) : null}
           <div className="notify-settings-actions">
             {permission === "default" && api.requestPermission ? (
-              <button type="button" className="notify-settings-button is-primary" onClick={requestPermission} data-notify-action="allow">
+              <Button variant="primary" onClick={requestPermission} data-notify-action="allow">
                 允许通知
-              </button>
+              </Button>
             ) : null}
             {permission === "granted" ? (
-              <button type="button" className="notify-settings-button" onClick={sendTest} disabled={!enabled} data-notify-action="test">
+              <Button variant="secondary" onClick={sendTest} disabled={!enabled} data-notify-action="test">
                 发一条试试
-              </button>
+              </Button>
             ) : null}
           </div>
         </>

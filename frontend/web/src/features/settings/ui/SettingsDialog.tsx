@@ -262,7 +262,7 @@ export function SettingsDialog({
                       术语表决定翻译时的优先译法。可维护多张术语表并
                       按需启用，翻译任务发起时生效。
                     </p>
-                    <Button id={APP_SETTINGS_DIALOG_IDS.glossaryButton} className="app-settings-action" onClick={openGlossaries}>
+                    <Button variant="primary" id={APP_SETTINGS_DIALOG_IDS.glossaryButton} onClick={openGlossaries}>
                       打开术语表
                     </Button>
                   </div>

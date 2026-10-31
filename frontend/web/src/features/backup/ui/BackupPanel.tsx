@@ -5,6 +5,7 @@
 // 数据全部按恢复后的重新读。桌面版能打开备份所在的文件夹。
 
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@retainpdf/ui";
 import {
   createBackupApi,
   deleteBackupApi,
@@ -105,19 +106,19 @@ export function BackupPanel({ onRestored = reloadPage }: { onRestored?: () => vo
       </p>
 
       <div className="backup-settings-actions">
-        <button
-          type="button"
-          className="backup-settings-button is-primary"
+        <Button
+          variant="primary"
           onClick={createNow}
           disabled={Boolean(busy) || Boolean(status?.running)}
+          pending={busy === "create"}
           data-backup-action="create"
         >
           {busy === "create" ? "正在备份…" : "立即备份"}
-        </button>
+        </Button>
         {desktop ? (
-          <button type="button" className="backup-settings-button" onClick={openFolder} data-backup-action="open-folder">
+          <Button variant="secondary" onClick={openFolder} data-backup-action="open-folder">
             打开备份文件夹
-          </button>
+          </Button>
         ) : null}
       </div>
       {message ? (
@@ -141,46 +142,42 @@ export function BackupPanel({ onRestored = reloadPage }: { onRestored?: () => vo
                 {confirming === item.id ? (
                   <span className="backup-settings-confirm">
                     <span className="backup-settings-confirm-text">书库会回到这个时刻，当前的会先自动备份一份。</span>
-                    <button
-                      type="button"
-                      className="backup-settings-button is-danger"
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={() => restore(item.id)}
                       disabled={Boolean(busy)}
+                      pending={busy === "restore"}
                       data-backup-action="confirm-restore"
                     >
                       {busy === "restore" ? "正在恢复…" : "确定恢复"}
-                    </button>
-                    <button
-                      type="button"
-                      className="backup-settings-button"
-                      onClick={() => setConfirming(null)}
-                      disabled={busy === "restore"}
-                    >
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => setConfirming(null)} disabled={busy === "restore"}>
                       取消
-                    </button>
+                    </Button>
                   </span>
                 ) : (
                   <span className="backup-settings-item-actions">
-                    <button
-                      type="button"
-                      className="backup-settings-button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => { setConfirming(item.id); setMessage(null); }}
                       disabled={Boolean(busy) || blockers.length > 0}
                       title={blockers.length ? `${blockers.join("，")}，结束后再恢复` : undefined}
                       data-backup-action="restore"
                     >
                       恢复
-                    </button>
+                    </Button>
                     {item.kind === "manual" ? (
-                      <button
-                        type="button"
-                        className="backup-settings-button"
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => remove(item.id)}
                         disabled={Boolean(busy)}
                         data-backup-action="delete"
                       >
                         删除
-                      </button>
+                      </Button>
                     ) : null}
                   </span>
                 )}

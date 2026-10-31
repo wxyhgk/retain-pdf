@@ -1,4 +1,4 @@
-/** @retainpdf/ui 的基础组件：Button、IconButton、Field、Select、Badge、Panel、Menu、Sheet。 */
+/** @retainpdf/ui 的基础组件：Button、IconButton、Field、Select、Checkbox、SegmentedControl、Badge、Panel、Menu、Sheet。 */
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createElement as h } from "react";
@@ -11,7 +11,7 @@ import { DOM_GLOBAL_KEYS, makeDom } from "../helpers/dom.mjs";
 // Menu 的定位（radix Popper）还要 Element 和 ResizeObserver；jsdom 没有 ResizeObserver，给个空的。
 makeDom("", { keys: [...DOM_GLOBAL_KEYS, "Element", "HTMLSelectElement", "DOMRect"] });
 globalThis.ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
-const { Badge, Button, Field, IconButton, Input, Menu, Panel, Select, Sheet, Textarea } = await import("@retainpdf/ui");
+const { Badge, Button, Checkbox, Field, IconButton, Input, Menu, Panel, SegmentedControl, Select, Sheet, Textarea } = await import("@retainpdf/ui");
 
 const html = (element) => renderToStaticMarkup(element);
 
@@ -64,6 +64,12 @@ test("Select：原生 <select> 加箭头；className 给外层，其余属性落
   assert.match(out, /^<span class="ui-select engine-picker" data-size="sm"><select id="engine">/);
   assert.match(out, /ui-select-arrow/);
   assert.match(out, /aria-hidden="true"/);
+});
+
+test("Checkbox：给 label 时包成 <label>，不给时只有勾选框；属性落在 <input> 上", () => {
+  const withLabel = html(h(Checkbox, { label: "弹系统通知", checked: true, onChange() {}, className: "notify", "data-notify-toggle": "" }));
+  assert.match(withLabel, /^<label class="ui-checkbox notify"><input type="checkbox" class="ui-checkbox-box" data-notify-toggle="" checked=""\/><span class="ui-checkbox-label">弹系统通知<\/span><\/label>$/);
+  assert.equal(html(h(Checkbox, { "aria-label": "选择全部", className: "pick" })), '<input type="checkbox" class="ui-checkbox-box pick" aria-label="选择全部"/>');
 });
 
 test("Badge 和 Panel", () => {
@@ -128,3 +134,37 @@ test("Sheet：打开后有标题和「关闭」按钮，点关闭调 onOpenChang
     unmount();
   }
 });
+
+test("SegmentedControl：radiogroup，只有选中的能 Tab 到；点选、左右方向键换选项", async () => {
+  const React = await import("react");
+  const seen = [];
+  function Harness() {
+    const [value, setValue] = React.useState("folder");
+    return h(SegmentedControl, {
+      label: "同步方式",
+      value,
+      onChange: (next) => { seen.push(next); setValue(next); },
+      options: [
+        { value: "folder", label: "网盘文件夹", props: { "data-sync-transport": "folder" } },
+        { value: "webdav", label: "WebDAV", props: { "data-sync-transport": "webdav" } },
+        { value: "off", label: "停用", disabled: true },
+      ],
+    });
+  }
+  const { host, unmount } = await mount(h(Harness));
+  try {
+    const group = await waitFor(() => host.querySelector('[role="radiogroup"]'), "出现");
+    assert.equal(group.getAttribute("aria-label"), "同步方式");
+    const radios = () => [...group.querySelectorAll('[role="radio"]')];
+    assert.deepEqual(radios().map((r) => [r.getAttribute("aria-checked"), r.tabIndex]), [["true", 0], ["false", -1], ["false", -1]]);
+    assert.equal(radios()[1].dataset.syncTransport, "webdav");
+    radios()[1].click();
+    await waitFor(() => radios()[1].getAttribute("aria-checked") === "true", "点选 WebDAV");
+    radios()[1].dispatchEvent(new window.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    await waitFor(() => radios()[0].getAttribute("aria-checked") === "true", "右键跳过禁用的，绕回第一个");
+    assert.deepEqual(seen, ["webdav", "folder"]);
+  } finally {
+    unmount();
+  }
+});
+

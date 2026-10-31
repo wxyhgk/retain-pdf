@@ -131,9 +131,6 @@
       "button": 6,
       "input": 6
     },
-    "src/features/backup/ui/BackupPanel.tsx": {
-      "button": 6
-    },
     "src/features/book-detail/ui/panels/ArtifactQuickDownloads.tsx": {
       "button": 3,
       "legacyButton": 3
@@ -343,26 +340,14 @@
     "src/features/library/ui/shell/BookListRow.tsx": {
       "button": 1
     },
-    "src/features/notify/ui/NotifySettingsPanel.tsx": {
-      "button": 2,
-      "input": 1
-    },
     "src/features/reader/ui/board-html.tsx": {
       "button": 1
     },
     "src/features/reader/ui/terminal-chrome.tsx": {
       "button": 8
     },
-    "src/features/settings/ui/CommandLinePanel.tsx": {
-      "button": 1
-    },
     "src/features/settings/ui/ThemeAppearancePanel.tsx": {
-      "button": 1,
-      "select": 1
-    },
-    "src/features/sync/ui/SyncSettingsPanel.tsx": {
-      "button": 6,
-      "input": 5
+      "button": 1
     },
     "src/features/task-center/ui/TaskCenter.tsx": {
       "button": 3
@@ -526,10 +511,6 @@
     "src/features/auth/ui/auth.css": {
       "fontSize": 15,
       "borderRadius": 6
-    },
-    "src/features/backup/ui/BackupPanel.css": {
-      "fontSize": 7,
-      "borderRadius": 1
     },
     "src/features/book-detail/ui/panels/ArtifactQuickDownloads.css": {
       "fontSize": 4,
@@ -734,9 +715,6 @@
     "src/features/library/ui/RecentJobsDialog.css": {
       "borderRadius": 1
     },
-    "src/features/notify/ui/NotifySettingsPanel.css": {
-      "fontSize": 3
-    },
     "src/features/reader/ui/board-html.css": {
       "fontSize": 3,
       "borderRadius": 1
@@ -748,13 +726,6 @@
     "src/features/reader/ui/terminal-chrome.css": {
       "fontSize": 12,
       "borderRadius": 8
-    },
-    "src/features/settings/ui/CommandLinePanel.css": {
-      "fontSize": 4
-    },
-    "src/features/sync/ui/SyncSettingsPanel.css": {
-      "fontSize": 9,
-      "borderRadius": 4
     },
     "src/features/usage/ui/usage.css": {
       "fontSize": 11,
@@ -797,14 +768,6 @@
     "src/styles/pages/home/ai-assistant.css": {
       "fontSize": 8,
       "borderRadius": 7
-    },
-    "src/styles/pages/home/app-settings.css": {
-      "fontSize": 10,
-      "borderRadius": 10
-    },
-    "src/styles/pages/home/app-update.css": {
-      "fontSize": 6,
-      "borderRadius": 4
     },
     "src/styles/pages/home/book-detail-artifacts.css": {
       "fontSize": 9,
@@ -897,7 +860,6 @@
     "app_settings_btn",
     "app_settings_close_btn",
     "app_update_btn",
-    "backup_settings_button",
     "bd_job_status_btn",
     "book_card_action_btn",
     "book_detail_cancel_ocr_btn",
@@ -922,7 +884,6 @@
     "book_detail_translate_btn",
     "categories_back_btn",
     "categories_create_btn",
-    "cli_install_button",
     "collection_delete_btn",
     "collection_manage_close_btn",
     "collection_save_btn",
@@ -952,7 +913,6 @@
     "library_bottom_icon_btn",
     "library_search_clear_btn",
     "load_more_jobs_btn",
-    "notify_settings_button",
     "open_output_btn",
     "open_query_btn",
     "page_range_apply_btn",
@@ -975,7 +935,6 @@
     "status_stage_retry_btn",
     "store_only_btn",
     "submit_btn",
-    "sync_settings_button",
     "task_center_back_btn",
     "task_center_refresh_btn",
     "task_toolbar_btn",

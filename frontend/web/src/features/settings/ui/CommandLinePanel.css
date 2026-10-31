@@ -1,4 +1,4 @@
-/* 设置 → 更新 → 命令行工具。
+/* 设置 → 更新 → 命令行工具。按钮用 @retainpdf/ui 的 Button。
  *
  * @owns cli-install */
 
@@ -13,14 +13,14 @@
 
 .cli-install-title {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--ui-text-base);
   font-weight: 650;
 }
 
 .cli-install-hint {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   line-height: 1.6;
   word-break: break-all;
 }
@@ -32,23 +32,9 @@
 .cli-install-error {
   margin: 0;
   color: var(--danger);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
 }
 
-.cli-install-button {
+.cli-install-action {
   justify-self: start;
-  min-height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--btn-radius);
-  background: transparent;
-  color: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.cli-install-button:disabled {
-  opacity: 0.55;
-  cursor: default;
 }

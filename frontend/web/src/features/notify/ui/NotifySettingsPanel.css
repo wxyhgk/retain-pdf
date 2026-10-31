@@ -1,4 +1,4 @@
-/* 设置 → 通知 分栏：开关、授权状态、试发一条。
+/* 设置 → 通知 分栏：开关、授权状态、试发一条。按钮、勾选框用 @retainpdf/ui 的。
  *
  * @owns notify-settings */
 
@@ -9,22 +9,14 @@
 }
 
 .notify-settings-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
+  font-size: var(--ui-text-base);
   font-weight: 600;
-  cursor: pointer;
-}
-
-.notify-settings-toggle input {
-  accent-color: var(--ink);
 }
 
 .notify-settings-hint {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   line-height: 1.6;
 }
 
@@ -36,33 +28,4 @@
 
 .notify-settings-actions:empty {
   display: none;
-}
-
-.notify-settings-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--btn-radius);
-  background: transparent;
-  color: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.notify-settings-button:disabled {
-  cursor: default;
-  opacity: 0.5;
-}
-
-.notify-settings-button.is-primary {
-  min-height: 34px;
-  padding: 0 14px;
-  border-color: transparent;
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-fg);
 }

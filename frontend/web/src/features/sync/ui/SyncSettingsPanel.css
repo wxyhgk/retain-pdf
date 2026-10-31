@@ -1,6 +1,9 @@
 /* 设置 → 同步 分栏：状态、同步文件夹、设备名、其它设备。
  *
- * @owns sync-settings */
+ * 输入框、按钮、同步方式的二选一用 @retainpdf/ui 的 Input、Button、SegmentedControl。
+ *
+ * @owns sync-settings
+ * @uses ui-input */
 
 .sync-settings {
   display: grid;
@@ -15,13 +18,13 @@
   align-items: baseline;
   padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
 }
 
 .sync-settings-dot {
   width: 8px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--muted);
   transform: translateY(-1px);
 }
@@ -32,7 +35,7 @@
 
 .sync-settings-headline {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--ui-text-base);
   font-weight: 650;
 }
 
@@ -40,7 +43,7 @@
   grid-column: 2;
   margin: 0;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   line-height: 1.6;
   word-break: break-word;
 }
@@ -53,7 +56,7 @@
 }
 
 .sync-settings-label {
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 650;
   color: var(--muted);
 }
@@ -64,56 +67,16 @@
   align-items: center;
 }
 
-.sync-settings-input {
+.sync-settings-row > .ui-input {
   flex: 1;
-  min-width: 0;
-  min-height: 34px;
-  padding: 0 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--btn-radius);
-  background: var(--input, transparent);
-  color: inherit;
-  font-size: 13px;
-}
-
-.sync-settings-input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 .sync-settings-hint {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   line-height: 1.6;
   word-break: break-all;
-}
-
-.sync-settings-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--btn-radius);
-  background: transparent;
-  color: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.sync-settings-button.is-primary {
-  border-color: transparent;
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-fg);
-}
-
-.sync-settings-button:disabled {
-  opacity: 0.55;
-  cursor: default;
 }
 
 .sync-settings-actions {
@@ -128,7 +91,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 13px;
+  font-size: var(--ui-text-md);
 }
 
 .sync-settings-peers li {
@@ -140,33 +103,7 @@
 .sync-settings-error {
   margin: 0;
   color: var(--danger);
-  font-size: 13px;
-}
-
-.sync-settings-switch {
-  display: inline-flex;
-  gap: 2px;
-  justify-self: start;
-  padding: 2px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-}
-
-.sync-settings-switch-option {
-  min-height: 28px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.sync-settings-switch-option.is-current {
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-fg);
+  font-size: var(--ui-text-md);
 }
 
 .sync-settings-grow {
