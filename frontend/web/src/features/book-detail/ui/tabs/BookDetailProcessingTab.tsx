@@ -313,6 +313,7 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
           timeline={jobTimeline.timeline}
           now={jobTimeline.now}
           stationActions={stationActions}
+          stationChips={hud.stationChips}
         />
 
         {/* 契约占位：OCR 段的任务状态（测试和门禁按它找）。 */}

@@ -16,12 +16,13 @@
 // 根节点带 data-loading="true"。曾经首帧一律按 pending 渲染成「未执行 / 尚未翻译」，而那份文档的 OCR 其实正在跑。
 
 import { useState, type CSSProperties, type ReactNode } from "react";
-import { Check, LoaderCircle, RotateCcw, TriangleAlert, X } from "lucide-react";
+import { Clock3, Coins, Cpu, FileText, Flag, Languages, Layers, RotateCcw, ScanText, TriangleAlert, X } from "lucide-react";
 import { IconButton } from "@retainpdf/ui";
 
 import type { LibraryCardItem } from "@/features/library/domain.js";
 import {
   assemblyStations,
+  clockText,
   formatElapsed,
   STATIONS,
   stationTimes,
@@ -55,12 +56,24 @@ function ocrStateOf(ocrStatus: StatusTone): StationState {
   return "pending";
 }
 
-function StepMark({ state }: { state: string }) {
-  if (state === "done") return <Check aria-hidden="true" />;
-  if (state === "active") return <LoaderCircle className="book-detail-pipeline-spin" aria-hidden="true" />;
-  if (state === "failed") return <TriangleAlert aria-hidden="true" />;
-  if (state === "cancelled") return <X aria-hidden="true" />;
-  return null;
+/** 徽标里画这一站自己的图标；状态靠徽标的颜色、在跑时的转圈外环和失败时的红色区分。 */
+const STATION_GLYPH: Record<StationKey, typeof FileText> = {
+  prepare: FileText,
+  ocr: ScanText,
+  translate: Languages,
+  render: Layers,
+  done: Flag,
+};
+
+/** 站下面的一个小标签：图标（或服务商标志）+ 数，整句在悬停里。由调用方给（processingHudModel().stationChips）。 */
+export type StationChipView = { key: string; kind: "pages" | "model" | "tokens"; text: string; title: string; logo?: string };
+
+function ChipIcon({ chip }: { chip: StationChipView }) {
+  if (chip.kind === "model") {
+    return chip.logo ? <img src={chip.logo} alt="" aria-hidden="true" /> : <Cpu aria-hidden="true" />;
+  }
+  if (chip.kind === "tokens") return <Coins aria-hidden="true" />;
+  return <FileText aria-hidden="true" />;
 }
 
 const CAPABILITY: Partial<Record<StationKey, string>> = { ocr: "ocr", translate: "translation" };
@@ -87,6 +100,8 @@ export type ProcessingPipelineRailProps = {
   now?: number;
   /** 各站能做的事（重新 OCR、重新翻译……）；没有任务在跑时才给。 */
   stationActions?: Partial<Record<StationKey, StationAction>>;
+  /** 各站下面除了用时以外的小标签（OCR 站页数、翻译站模型和 token……）。 */
+  stationChips?: Partial<Record<StationKey, StationChipView[]>>;
 };
 
 export function ProcessingPipelineRail({
@@ -101,6 +116,7 @@ export function ProcessingPipelineRail({
   timeline = null,
   now = Date.now(),
   stationActions = {},
+  stationChips = {},
 }: ProcessingPipelineRailProps) {
   const [openKey, setOpenKey] = useState<StationKey | "">("");
   const opened = openKey && stationActions[openKey] ? openKey : "";
@@ -130,15 +146,15 @@ export function ProcessingPipelineRail({
   const jobActive = anyActive;
   const times = loading ? {} : stationTimes(timeline, { now, jobActive });
   const total = loading ? null : totalElapsedMs(timeline, { now, jobActive });
-  // 时间只写数，前面一个钟表图标；「已运行」「用时」「共」放在悬停里。
+  // 时间画成钟表 + 「1:28」；「已运行」「用时」「共」和「1 分 28 秒」的写法放在悬停和读屏里。
   const timeOf = (key: StationKey): { text: string; title: string } | null => {
     if (key === "done") {
-      return states.done === "done" && total !== null ? { text: formatElapsed(total), title: `共用时 ${formatElapsed(total)}` } : null;
+      return states.done === "done" && total !== null ? { text: clockText(total), title: `共用时 ${formatElapsed(total)}` } : null;
     }
     const time = times[key];
     if (!time) return null;
-    const text = formatElapsed(time.ms);
-    return { text, title: time.running ? `已运行 ${text}` : `用时 ${text}` };
+    const full = formatElapsed(time.ms);
+    return { text: clockText(time.ms), title: time.running ? `已运行 ${full}` : `用时 ${full}` };
   };
   const percent = model.progress;
 
@@ -162,7 +178,9 @@ export function ProcessingPipelineRail({
             const time = loading ? null : timeOf(station.key);
             const meta = metaOf(station.key);
             const capability = CAPABILITY[station.key];
-            const hover = [label, status, time?.title, meta].filter(Boolean).join(" · ");
+            const chips = loading ? [] : stationChips[station.key] || [];
+            const hover = [label, status, time?.title, meta, ...chips.map((chip) => chip.title)].filter(Boolean).join(" · ");
+            const Glyph = STATION_GLYPH[station.key];
             return (
               <li
                 key={station.key}
@@ -175,45 +193,54 @@ export function ProcessingPipelineRail({
               >
                 <span className="book-detail-pipeline-rail" aria-hidden="true">
                   <span className="book-detail-pipeline-dot">
-                    <StepMark state={loading ? "pending" : station.state} />
+                    <Glyph aria-hidden="true" />
                   </span>
                 </span>
+                {stationActions[station.key] ? (
+                  <IconButton
+                    size="sm"
+                    variant="secondary"
+                    label={`${stationActions[station.key]?.label}`}
+                    id={`book-detail-station-${station.key}-btn`}
+                    className="book-detail-pipeline-action"
+                    aria-expanded={opened === station.key}
+                    aria-controls="book-detail-station-panel"
+                    data-station-action={station.key}
+                    onClick={() => setOpenKey((key) => (key === station.key ? "" : station.key))}
+                  >
+                    <RotateCcw aria-hidden="true" />
+                  </IconButton>
+                ) : null}
                 <span className="book-detail-pipeline-copy">
-                  <span className="book-detail-pipeline-head">
-                    <span className="book-detail-pipeline-label sr-only">{label}</span>
-                    {status ? (
-                      <span className={`book-detail-status book-detail-pipeline-status is-${toneOf(station.state)} sr-only`}>{status}</span>
-                    ) : null}
-                    {station.state === "active" && station.key !== "prepare" && percent !== null ? (
-                      <span className="book-detail-pipeline-percent" data-stage-percent={station.key}>{`${Math.round(percent)}%`}</span>
-                    ) : null}
-                  </span>
-                  {time ? (
-                    <span className="book-detail-pipeline-time sr-only" data-stage-time={station.key} title={time.title}>{time.title}</span>
+                  <span className="book-detail-pipeline-label sr-only">{label}</span>
+                  {status ? (
+                    <span className={`book-detail-status book-detail-pipeline-status is-${toneOf(station.state)} sr-only`}>{status}</span>
                   ) : null}
                   {meta ? (
                     <span className="book-detail-pipeline-desc sr-only" data-stage-meta={station.key}>{meta}</span>
                   ) : null}
+                  {station.state === "active" && station.key !== "prepare" && percent !== null ? (
+                    <span className="book-detail-pipeline-chip is-percent" data-stage-percent={station.key}>{`${Math.round(percent)}%`}</span>
+                  ) : null}
+                  {time ? (
+                    <span className="book-detail-pipeline-chip book-detail-pipeline-time" data-stage-time={station.key} title={time.title}>
+                      <Clock3 aria-hidden="true" />
+                      <span className="sr-only">{time.title}</span>
+                      <span aria-hidden="true">{time.text}</span>
+                    </span>
+                  ) : null}
+                  {chips.map((chip) => (
+                    <span key={chip.key} className="book-detail-pipeline-chip" data-stage-chip={chip.kind} title={chip.title}>
+                      <ChipIcon chip={chip} />
+                      <span className="sr-only">{chip.title}</span>
+                      {chip.kind === "model" ? null : <span aria-hidden="true">{chip.text}</span>}
+                    </span>
+                  ))}
                   {station.key === "translate" && translateWarning && !loading ? (
-                    <span className="book-detail-pipeline-warning" data-stage-warning="translate" title={translateWarning}>
+                    <span className="book-detail-pipeline-chip is-warning" data-stage-warning="translate" title={translateWarning}>
                       <TriangleAlert aria-hidden="true" />
                       <span className="sr-only">{translateWarning}</span>
                     </span>
-                  ) : null}
-                  {stationActions[station.key] ? (
-                    <IconButton
-                      size="sm"
-                      variant="secondary"
-                      label={`${stationActions[station.key]?.label}`}
-                      id={`book-detail-station-${station.key}-btn`}
-                      className="book-detail-pipeline-action"
-                      aria-expanded={opened === station.key}
-                      aria-controls="book-detail-station-panel"
-                      data-station-action={station.key}
-                      onClick={() => setOpenKey((key) => (key === station.key ? "" : station.key))}
-                    >
-                      <RotateCcw aria-hidden="true" />
-                    </IconButton>
                   ) : null}
                 </span>
               </li>

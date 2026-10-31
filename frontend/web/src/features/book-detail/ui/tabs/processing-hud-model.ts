@@ -1,9 +1,12 @@
-// 「进度」页 HUD 面板要显示的数（纯计算）：进度环（页数）、耗时（按站分段）、模型、token（输入 / 输出）。
-// 只读传入的真实数据（覆盖接口、分段计时、用量），算不出来的块就不出，不编数。
+// 「进度」页 HUD 条和流水线各站小标签要显示的数（纯计算）。
+//   HUD 一条：进度环（页数 / 进度 / 停在哪站）、总耗时、模型、token 合计；
+//   各站小标签（stationChips）：OCR 站页数，翻译站模型标志 + 这一站的 token，版面站精修的 token。各站耗时由流水线自己按分段计时写。
+// 只读传入的真实数据（覆盖接口、分段计时、用量），算不出来的就不出，不编数。
 import type { TranslationCoverageView } from "@/platform/api/index.js";
 import type { UsageViewModel } from "@/features/usage/index.js";
+import { formatTokenCount, formatTokenCountExact } from "@/platform/utils/token-count.js";
 import {
-  stationTimes,
+  clockText,
   totalElapsedMs,
   formatElapsed,
   type JobTimeline,
@@ -11,25 +14,18 @@ import {
 } from "../../domain/assembly-line-model.js";
 import type { ProcessingHeaderTone } from "../panels/processing/ProcessingHeader.jsx";
 
-export type HudSegment = { key: StationKey; share: number; text: string; title: string; running: boolean };
+/** 流水线某站下面的一个小标签：图标 + 数（或标志 + 数），整句在悬停里。 */
+export type StationChip = { key: string; kind: "pages" | "model" | "tokens"; text: string; title: string; logo?: string };
 
 export type ProcessingHudModel = {
   gauge: { value: number; tone: ProcessingHeaderTone; text: string; title: string };
-  time: { text: string; title: string; segments: HudSegment[] } | null;
+  time: { text: string; title: string } | null;
   model: { name: string; logo: string; agent: boolean; title: string } | null;
-  tokens: { text: string; title: string; input: { share: number; text: string }; output: { share: number; text: string } } | null;
+  tokens: { text: string; title: string } | null;
+  stationChips: Partial<Record<StationKey, StationChip[]>>;
 };
 
-const STATION_NAMES: Partial<Record<StationKey, string>> = { prepare: "文档准备", ocr: "OCR 识别", translate: "文本翻译", render: "版面重建" };
-
-/** 1:28、2:51、1:02:03 —— HUD 上的数，比「1 分 28 秒」短。 */
-export function clockText(ms: number): string {
-  const total = Math.round(Math.max(0, ms) / 1000);
-  const h = Math.floor(total / 3600);
-  const m = Math.floor((total % 3600) / 60);
-  const s = String(total % 60).padStart(2, "0");
-  return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
-}
+export { clockText };
 
 /** 按模型名认出是哪家，挑它的标志；认不出就不画标志。 */
 export function modelLogo(model: string): string {
@@ -88,32 +84,9 @@ export function processingHudModel({
     gauge = { value: 0, tone, text: pages ? `${pages} 页` : "—", title: pages ? `共 ${pages} 页` : "还没开始" };
   }
 
-  // 耗时：总时间一个大数，下面按站分段（OCR / 翻译 / 版面各占多长）。
+  // 耗时：总时间；各站分开的用时由流水线自己写在各站下面。
   const total = totalElapsedMs(timeline, { now, jobActive });
-  const times = stationTimes(timeline, { now, jobActive });
-  const keys: StationKey[] = ["prepare", "ocr", "translate", "render"];
-  const sum = keys.reduce((acc, key) => acc + (times[key]?.ms || 0), 0);
-  // 只有「文档准备」一段（刚开始跑）时不画分段：一整条灰什么也没说。
-  const segments: HudSegment[] = sum && keys.some((key) => key !== "prepare" && times[key])
-    ? keys
-      .filter((key) => (times[key]?.ms || 0) > 0 || times[key]?.running)
-      .map((key) => {
-        const time = times[key]!;
-        const text = clockText(time.ms);
-        return {
-          key,
-          share: time.ms / sum,
-          text,
-          title: `${STATION_NAMES[key]} ${time.running ? "已运行" : "用时"} ${formatElapsed(time.ms)}`,
-          running: time.running,
-        };
-      })
-    : [];
-  const time = total === null ? null : {
-    text: clockText(total),
-    title: `${jobActive ? "已运行" : "共用时"} ${formatElapsed(total)}`,
-    segments,
-  };
+  const time = total === null ? null : { text: clockText(total), title: `${jobActive ? "已运行" : "共用时"} ${formatElapsed(total)}` };
 
   // 模型：这次任务用的；覆盖接口里还没有这次的就用最近一次翻完的。
   const job = coverage?.jobs.find((item) => item.job_id === translationJobId && item.model)
@@ -124,15 +97,30 @@ export function processingHudModel({
 
   // token：这本书一共用了多少（含问这本书时助手花的）；在跑时数还在涨，不摆。
   const totalMetric = usage && !usage.empty ? usage.metrics.find((metric) => metric.key === "total") : null;
-  const inputMetric = usage?.metrics.find((metric) => metric.key === "input");
-  const outputMetric = usage?.metrics.find((metric) => metric.key === "output");
-  const splitSum = (usage?.split.input || 0) + (usage?.split.output || 0);
-  const tokens = totalMetric && !jobActive ? {
-    text: totalMetric.value,
-    title: `模型用量合计 ${totalMetric.exact} token · ${totalMetric.note}`,
-    input: { share: splitSum ? (usage?.split.input || 0) / splitSum : 0, text: inputMetric?.value || "" },
-    output: { share: splitSum ? (usage?.split.output || 0) / splitSum : 0, text: outputMetric?.value || "" },
-  } : null;
+  const tokens = totalMetric && !jobActive
+    ? { text: totalMetric.value, title: `模型用量合计 ${totalMetric.exact} token · ${totalMetric.note}` }
+    : null;
 
-  return { gauge, time, model, tokens };
+  // 各站小标签。用量按环节分组：翻译和译前准备归翻译站，精修与编辑部跑在渲染阶段、归版面站；助手不归哪一站。
+  const stationChips: Partial<Record<StationKey, StationChip[]>> = {};
+  const push = (key: StationKey, chip: StationChip) => { (stationChips[key] ||= []).push(chip); };
+  if (pages && !jobActive) push("ocr", { key: "pages", kind: "pages", text: `${pages}`, title: `共 ${pages} 页` });
+  if (model) push("translate", { key: "model", kind: "model", text: model.name, title: model.title, logo: model.logo });
+  const groupTokens = (keys: string[]) => (usage?.stageGroups || []).filter((group) => keys.includes(group.key));
+  if (!jobActive) {
+    const translateGroups = groupTokens(["translation", "preparation"]);
+    if (translateGroups.length) {
+      const sum = translateGroups.reduce((acc, group) => acc + group.total, 0);
+      push("translate", {
+        key: "tokens",
+        kind: "tokens",
+        text: formatTokenCount(sum),
+        title: `翻译这一站 ${formatTokenCountExact(sum)} token（${translateGroups.map((group) => `${group.label} ${group.value}`).join("、")}）`,
+      });
+    }
+    const refine = groupTokens(["refine"]);
+    if (refine.length) push("render", { key: "tokens", kind: "tokens", text: refine[0].value, title: `${refine[0].label} ${refine[0].exact} token` });
+  }
+
+  return { gauge, time, model, tokens, stationChips };
 }

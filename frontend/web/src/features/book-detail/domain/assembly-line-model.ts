@@ -105,6 +105,15 @@ export function formatElapsed(ms: number): string {
   return minutes % 60 ? `${hours} 小时 ${minutes % 60} 分` : `${hours} 小时`;
 }
 
+/** 1:28、2:51、1:02:03 —— 画面上的短写法，比「1 分 28 秒」短（HUD 和流水线各站的小标签用）。 */
+export function clockText(ms: number): string {
+  const total = Math.round(Math.max(0, ms) / 1000);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+}
+
 /** 整个任务跑了多久：第一段进入到最后一段结束（还在跑就到现在）。 */
 export function totalElapsedMs(timeline: JobTimeline | null | undefined, { now, jobActive }: { now: number; jobActive: boolean }) {
   const history = timeline?.history || [];
