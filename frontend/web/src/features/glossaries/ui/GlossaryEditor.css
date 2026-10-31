@@ -18,22 +18,25 @@
     box-shadow: none;
   }
   width: 100%;
-  min-width: 640px;
+  min-width: 820px;
   table-layout: fixed;
   border-collapse: collapse;
   font-size: 10px;
 
   & .glossary-col-source {
-    width: 20%;
+    width: 18%;
   }
 
   & .glossary-col-target {
-    width: 28%;
+    width: 20%;
   }
 
   & .glossary-col-note {
-    width: 17%;
+    width: 15%;
   }
+  & .glossary-col-context { width: 17%; }
+  & .glossary-col-select { width: 28px; }
+  & input[type="checkbox"] { width: 14px; height: 14px; padding: 0; accent-color: var(--ink); }
 
   & .glossary-col-level {
     width: 15%;
@@ -180,6 +183,7 @@
 
 @utility glossary-editor-scroll {
   display: grid;
+  grid-auto-rows: max-content;
   align-content: start;
   gap: 8px;
   min-height: 0;
@@ -207,6 +211,9 @@
 }
 
 @utility glossary-table-wrap {
+  margin: 0;
+  padding: 0;
+  min-width: 0;
   min-height: 0;
   overflow-y: visible;
   overflow-x: auto;

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { MAX_GLOSSARY_ENTRIES } from "../domain/glossary-import.js";
 import { ConfirmDialog } from "@/ui/components/confirm-dialog.js";
 // 生命周期,forceMount 会让它在对话框从未打开时就永久生效,制造新的无障碍
 // 缺陷。术语表列表/编辑器的字段都受控于 glossariesStore(非本组件本地状态),
@@ -50,29 +51,49 @@ export function GlossariesDialog({ feature, view: viewFeature, open, dialogStore
       setName: (name: string) => unknown;
       updateEntryField: (payload: { index: number; field: string; value: unknown }) => unknown;
       removeEntryRow: (index: number) => unknown;
+      removeEntryRows: (indices: number[]) => unknown;
       setCsvText: (value: string) => unknown;
     };
   };
   const { onCloseAutoFocus } = useDialogReturnFocus(open);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [opBusy, setOpBusy] = useState(false);
+  const operationRef = useRef(false);
+  const [fileReading, setFileReading] = useState(false);
+  const [entryQuery, setEntryQuery] = useState("");
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
+  const busy = opBusy || fileReading || view.loading;
   const draftName = `${view.draft?.name || ""}`.trim();
+  useEffect(() => {
+    if (!open || !view.dirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [open, view.dirty]);
 
   // 保存/删除/导出进行中才禁用按钮：状态行文本无 tone 语义（"新术语表尚未保存。"
   // 这类提示语也有文案无 tone），不能拿它反推忙态。
   async function runOp(operation?: () => unknown) {
-    if (opBusy) return;
+    if (operationRef.current || fileReading) return;
+    operationRef.current = true;
     setOpBusy(true);
     try {
       await operation?.();
     } finally {
+      operationRef.current = false;
       setOpBusy(false);
     }
   }
 
+  function leave(action: () => void) {
+    if (busy) return;
+    if (view.dirty) setPendingLeave(() => action);
+    else action();
+  }
+
   function handleOpenChange(nextOpen: boolean) {
     if (!nextOpen) {
-      dialogStore.close();
+      leave(() => { if (handlers?.close) handlers.close(); else dialogStore.close(); });
     }
   }
 
@@ -91,14 +112,15 @@ export function GlossariesDialog({ feature, view: viewFeature, open, dialogStore
                   <h2>术语表</h2>
                 </DialogTitle>
               </div>
-              <DialogCloseButton id={GLOSSARY_DOM_IDS.closeButton} />
+              <DialogCloseButton id={GLOSSARY_DOM_IDS.closeButton} disabled={busy} />
             </DialogHeader>
             <DialogBody className="desktop-body glossary-manager-body">
               <GlossaryList
                 items={view.items}
                 selectedId={view.selectedId}
-                onSelect={(glossaryId) => handlers?.selectGlossary?.(glossaryId)}
-                onCreateNew={() => handlers?.createNew?.()}
+                disabled={busy}
+                onSelect={(glossaryId) => { if (glossaryId !== view.selectedId) leave(() => { setEntryQuery(""); void runOp(() => handlers?.selectGlossary?.(glossaryId)); }); }}
+                onCreateNew={() => leave(() => { setEntryQuery(""); handlers?.createNew?.(); })}
               />
 
               <section className="glossary-editor-panel">
@@ -110,35 +132,53 @@ export function GlossariesDialog({ feature, view: viewFeature, open, dialogStore
                     autoComplete="off"
                     placeholder="例如 量子化学术语"
                     value={view.draft.name}
+                    disabled={busy}
                     onChange={(event) => store.actions.setName(event.target.value)}
                   />
                 </label>
                 <div className="glossary-toolbar">
-                  <Button id={GLOSSARY_DOM_IDS.addRowButton} className="app-button secondary" onClick={() => handlers?.addRow?.()}>添加</Button>
-                  <Button id={GLOSSARY_DOM_IDS.importButton} className="app-button secondary" onClick={() => handlers?.showImport?.()}>CSV</Button>
-                  <Button id={GLOSSARY_DOM_IDS.exportButton} className="app-button secondary" disabled={opBusy} onClick={() => void runOp(() => handlers?.exportCurrent?.())}>导出</Button>
-                  <Button id={GLOSSARY_DOM_IDS.deleteButton} className="app-button secondary danger" disabled={opBusy} onClick={() => setConfirmDeleteOpen(true)}>删除</Button>
+                  <Button id={GLOSSARY_DOM_IDS.addRowButton} className="app-button secondary" disabled={busy || view.draft.entries.length >= MAX_GLOSSARY_ENTRIES} onClick={() => { setEntryQuery(""); handlers?.addRow?.(); }}>添加</Button>
+                  <Button id={GLOSSARY_DOM_IDS.importButton} className="app-button secondary" disabled={busy} onClick={() => handlers?.showImport?.()}>导入文件</Button>
+                  <Button id={GLOSSARY_DOM_IDS.exportButton} className="app-button secondary" disabled={busy} onClick={() => void runOp(() => handlers?.exportCurrent?.())}>导出</Button>
+                  <Button id={GLOSSARY_DOM_IDS.deleteButton} className="app-button secondary danger" disabled={busy} onClick={() => setConfirmDeleteOpen(true)}>删除</Button>
+                </div>
+                <div className="glossary-entry-tools">
+                  <input id="glossary-entry-search" className="glossary-search" type="search" aria-label="搜索词条" placeholder="搜索原词、译文、备注或语境" value={entryQuery} onChange={(event) => setEntryQuery(event.target.value)} />
+                  <span className="glossary-help">{view.draft.entries.filter(entry => entry.source.trim()).length} / {MAX_GLOSSARY_ENTRIES} 条{view.dirty ? " · 未保存" : ""}</span>
                 </div>
                 <div className="glossary-editor-scroll">
-                  <GlossaryEditor
-                    entries={view.draft.entries}
-                    onFieldChange={(index, field, value) => store.actions.updateEntryField({ index, field, value })}
-                    onRemoveRow={(index) => store.actions.removeEntryRow(index)}
-                  />
                   <GlossaryImportPanel
                     visible={view.importVisible}
                     csvText={view.csvText}
                     onCsvTextChange={(value) => store.actions.setCsvText(value)}
-                    onApply={() => handlers?.applyImport?.()}
+                    busy={opBusy || view.loading}
+                    onReadingChange={setFileReading}
+                    onApply={(mode, csv) => { setEntryQuery(""); void runOp(() => handlers?.applyImport?.(mode, csv)); }}
                     onCancel={() => handlers?.hideImport?.()}
+                  />
+                  <GlossaryEditor
+                    entries={view.draft.entries}
+                    structureRevision={view.structureRevision}
+                    query={entryQuery}
+                    disabled={busy}
+                    onFieldChange={(index, field, value) => store.actions.updateEntryField({ index, field, value })}
+                    onRemoveRow={(index) => store.actions.removeEntryRow(index)}
+                    onRemoveRows={(indices) => store.actions.removeEntryRows(indices)}
                   />
                 </div>
                 <DialogFooter className="glossary-footer">
                   <FormStatusLine id={GLOSSARY_DOM_IDS.status} status={view.status} className="upload-status" />
-                  <Button id={GLOSSARY_DOM_IDS.saveButton} className="app-button" disabled={opBusy} onClick={() => void runOp(() => handlers?.save?.())}>保存</Button>
+                  <Button id={GLOSSARY_DOM_IDS.saveButton} className="app-button" disabled={busy} onClick={() => void runOp(() => handlers?.save?.())}>保存</Button>
                 </DialogFooter>
               </section>
             </DialogBody>
+            <ConfirmDialog
+              id="glossary-discard-confirm" title="有未保存的修改"
+              description="继续将放弃当前编辑和待导入的内容。你可以返回编辑区先保存。"
+              confirmLabel="放弃修改并继续" cancelLabel="继续编辑" level="nested"
+              open={Boolean(pendingLeave)} onOpenChange={(next) => { if (!next) setPendingLeave(null); }}
+              onConfirm={() => { const action = pendingLeave; setPendingLeave(null); action?.(); }}
+            />
             <ConfirmDialog
               id="glossary-delete-confirm"
               title="删除术语表"

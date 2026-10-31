@@ -15,6 +15,7 @@ import type {
   GlossaryListItem,
   GlossariesViewPort,
 } from "./glossaries-store.js";
+import { MAX_GLOSSARY_ENTRIES, mergeGlossaryEntries } from "./glossary-import.js";
 
 /** 下载进度回调的载荷（与 platform 下载工具 emitProgress 的形状一致）。 */
 type GlossaryDownloadProgress = {
@@ -92,34 +93,44 @@ export function mountGlossariesFeature({
   };
   // 并发选择守卫：只保留最后一次 selectGlossary 的回包，过期响应直接丢弃。
   let selectRequestSeq = 0;
+  let importBusy = false;
 
   function renderList() {
     viewPort.renderList(state.items, state.selectedId);
   }
 
-  function renderDraft(detail: GlossaryDetail = {}) {
+  function renderDraft(detail: GlossaryDetail = {}, markSaved = true) {
     state.currentDetail = {
       glossary_id: detail.glossary_id || "",
       name: detail.name || "",
       entries: Array.isArray(detail.entries) ? detail.entries : [],
     };
-    viewPort.renderEditor(state.currentDetail);
+    viewPort.renderEditor(state.currentDetail, { markSaved });
   }
 
   async function reloadGlossaries({ keepSelection = true }: { keepSelection?: boolean } = {}) {
-    const payload = (await fetchGlossaries(apiPrefix)) as { items?: GlossaryListItem[] } | undefined;
-    state.items = Array.isArray(payload?.items) ? payload.items : [];
-    if (!keepSelection || !state.items.some((item) => item.glossary_id === state.selectedId)) {
-      state.selectedId = state.items[0]?.glossary_id || "";
+    const requestSeq = ++selectRequestSeq;
+    viewPort.setLoading?.(true);
+    try {
+      const payload = (await fetchGlossaries(apiPrefix)) as { items?: GlossaryListItem[] } | undefined;
+      if (requestSeq !== selectRequestSeq) return state.items;
+      state.items = Array.isArray(payload?.items) ? payload.items : [];
+      const nextId = keepSelection && state.items.some((item) => item.glossary_id === state.selectedId)
+        ? state.selectedId : state.items[0]?.glossary_id || "";
+      renderList();
+      if (nextId) {
+        await selectGlossary(nextId);
+      } else {
+        state.selectedId = "";
+        state.draftOnly = true;
+        renderList();
+        renderDraft({ name: "", entries: [] });
+        viewPort.setStatus("");
+      }
+      return state.items;
+    } finally {
+      if (requestSeq === selectRequestSeq) viewPort.setLoading?.(false);
     }
-    renderList();
-    if (state.selectedId) {
-      await selectGlossary(state.selectedId);
-    } else {
-      state.draftOnly = true;
-      renderDraft({ name: "", entries: [] });
-    }
-    return state.items;
   }
 
   // 形参取 unknown：bindEvents 的 HandlersBag 以 (...args: unknown[]) 的形态传入。
@@ -129,22 +140,27 @@ export function mountGlossariesFeature({
       return;
     }
     const requestSeq = ++selectRequestSeq;
-    state.selectedId = normalizedGlossaryId;
-    state.draftOnly = false;
-    renderList();
+    viewPort.setLoading?.(true);
     viewPort.setStatus("正在读取术语表...");
     try {
       const detail = (await fetchGlossary(normalizedGlossaryId, apiPrefix)) as GlossaryDetail;
       if (requestSeq !== selectRequestSeq) {
         return;
       }
+      state.selectedId = normalizedGlossaryId;
+      state.draftOnly = false;
+      renderList();
       renderDraft(detail);
+      viewPort.clearCsvText();
+      viewPort.setImportVisible(false);
       viewPort.setStatus("");
     } catch (err) {
       if (requestSeq !== selectRequestSeq) {
         return;
       }
       viewPort.setStatus(errorText(err), "error");
+    } finally {
+      if (requestSeq === selectRequestSeq) viewPort.setLoading?.(false);
     }
   }
 
@@ -153,17 +169,24 @@ export function mountGlossariesFeature({
     viewPort.setStatus("正在读取术语表...");
     try {
       await reloadGlossaries();
-      viewPort.setStatus("");
     } catch (err) {
       viewPort.setStatus(errorText(err), "error");
     }
   }
 
   function close() {
+    ++selectRequestSeq;
+    viewPort.setLoading?.(false);
+    viewPort.clearCsvText();
+    viewPort.setImportVisible(false);
     viewPort.closeDialog();
   }
 
   function createNew() {
+    ++selectRequestSeq;
+    viewPort.setLoading?.(false);
+    viewPort.clearCsvText();
+    viewPort.setImportVisible(false);
     state.selectedId = "";
     state.draftOnly = true;
     renderList();
@@ -176,6 +199,11 @@ export function mountGlossariesFeature({
   }
 
   async function save() {
+    if (viewPort.readCsvText?.().trim()) {
+      viewPort.setImportVisible(true);
+      viewPort.setStatus("还有待导入内容，请先解析并导入，或清空导入内容后保存。", "error");
+      return;
+    }
     const payload = viewPort.readEditorPayload();
     const { skippedMissingTarget, ...savePayload } = payload;
     if (!savePayload.name.trim()) {
@@ -184,6 +212,10 @@ export function mountGlossariesFeature({
     }
     if (skippedMissingTarget?.length > 0) {
       viewPort.setStatus("需要填写译文的术语还有空缺。", "error");
+      return;
+    }
+    if (savePayload.entries.length > MAX_GLOSSARY_ENTRIES) {
+      viewPort.setStatus(`最多保存 ${MAX_GLOSSARY_ENTRIES} 条词条，请拆分为多份术语表。`, "error");
       return;
     }
     viewPort.setStatus("正在保存...");
@@ -255,24 +287,39 @@ export function mountGlossariesFeature({
     }
   }
 
-  async function applyImport() {
+  async function applyImport(mode: unknown = "append", preparedCsv?: unknown) {
+    if (importBusy) return;
     const csvText = viewPort.readCsvText();
     if (!csvText.trim()) {
-      viewPort.setStatus("请先粘贴 CSV 内容。", "error");
+      viewPort.setStatus("请先选择文件或粘贴 CSV / TSV 内容。", "error");
       return;
     }
-    viewPort.setStatus("正在解析 CSV...");
+    const requestSeq = selectRequestSeq;
+    const draft = viewPort.readDraft?.() ?? viewPort.readEditorPayload();
+    const originalDraft = JSON.stringify(draft);
+    importBusy = true;
+    viewPort.setStatus("正在解析术语...");
     try {
-      const payload = (await parseGlossaryCsv(apiPrefix, csvText)) as { entries?: Array<Partial<GlossaryEntryRow>>; entry_count?: number } | undefined;
+      const payload = (await parseGlossaryCsv(apiPrefix, typeof preparedCsv === "string" ? preparedCsv : csvText)) as { entries?: Array<Partial<GlossaryEntryRow>>; entry_count?: number; duplicate_count?: number } | undefined;
+      if (requestSeq !== selectRequestSeq) return;
+      if (originalDraft !== JSON.stringify(viewPort.readDraft?.() ?? viewPort.readEditorPayload()) || csvText !== viewPort.readCsvText()) {
+        viewPort.setStatus("解析期间内容已修改，请重新导入；当前草稿未修改。", "error");
+        return;
+      }
+      if (!payload?.entries?.length) throw new Error("没有解析到有效词条，请检查文件内容；当前草稿未修改。");
+      const merged = mergeGlossaryEntries(draft.entries, payload.entries, mode === "replace" ? "replace" : "append");
       renderDraft({
-        ...viewPort.readEditorPayload(),
-        entries: Array.isArray(payload?.entries) ? payload.entries : [],
-      });
+        ...draft,
+        entries: merged.entries,
+      }, false);
       viewPort.clearCsvText();
       viewPort.setImportVisible(false);
-      viewPort.setStatus(`已解析 ${Number(payload?.entry_count) || 0} 条。`, "valid");
+      const duplicates = (Number(payload.duplicate_count) || 0) + merged.duplicateCount;
+      viewPort.setStatus(`已解析 ${payload.entries.length} 条，合并 ${duplicates} 条重复词条，当前共 ${merged.entries.length} 条。请检查后保存。`, "valid");
     } catch (err) {
-      viewPort.setStatus(errorText(err), "error");
+      if (requestSeq === selectRequestSeq) viewPort.setStatus(errorText(err), "error");
+    } finally {
+      importBusy = false;
     }
   }
 

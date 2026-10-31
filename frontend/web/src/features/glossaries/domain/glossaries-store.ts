@@ -47,7 +47,7 @@ export type GlossaryEntryRow = {
   note: string;
   level: string;
   match_mode: string;
-  /** 编辑器不展示，但要原样带回去：PUT 是整表覆盖，丢了它保存一次就把词条的语境清空了。 */
+  /** 语境参与去重，编辑和保存时必须保留。 */
   context: string;
 };
 
@@ -71,6 +71,7 @@ export type GlossaryEditorPayload = {
 };
 
 export type GlossariesViewState = {
+  loading: boolean;
   items: GlossaryListItem[];
   selectedId: string;
   status: { message: string; tone: string };
@@ -78,6 +79,7 @@ export type GlossariesViewState = {
 };
 
 export type GlossariesViewActions = {
+  setLoading(state: GlossariesViewState, loading: boolean): GlossariesViewState;
   setList(
     state: GlossariesViewState,
     payload?: { items?: GlossaryListItem[]; selectedId?: string },
@@ -92,15 +94,20 @@ export type GlossariesViewActions = {
 /** 编辑器态(store 之外,由 editorRef 持有 + editor 订阅分发) */
 export type GlossariesEditorState = {
   draft: GlossaryDraft;
+  savedDraft: GlossaryDraft;
   csvText: string;
+  // 行结构版本：只在整表替换/增删行时 +1，改字段不动。勾选是按行号记的，
+  // 编辑区靠它判断"行号还指不指同一行"（改输入框不该把勾选清掉）。
+  structureRevision: number;
 };
 
 export type GlossariesEditorActions = {
-  setDraft(payload?: { name?: string; entries?: Array<Partial<GlossaryEntryRow> | GlossaryEntryRow> }): void;
+  setDraft(payload?: { name?: string; entries?: Array<Partial<GlossaryEntryRow> | GlossaryEntryRow> }, options?: { markSaved?: boolean }): void;
   setName(name?: string): void;
   addEntryRow(entry?: Partial<GlossaryEntryRow>): void;
   updateEntryField(payload?: { index?: number; field?: keyof GlossaryEntryRow; value?: string }): void;
   removeEntryRow(index: number): void;
+  removeEntryRows(indices: number[]): void;
   setCsvText(csvText?: string): void;
   clearCsvText(): void;
 };
@@ -114,11 +121,13 @@ export type GlossariesEditorPort = {
 export type GlossariesViewStore = Store<GlossariesViewState, GlossariesViewActions>;
 
 export type GlossariesViewPort = {
+  setLoading?: (loading: boolean) => unknown;
   openDialog: () => unknown;
   closeDialog: () => unknown;
   setStatus: (message?: string, tone?: string) => unknown;
   renderList: (items?: GlossaryListItem[], selectedId?: string) => unknown;
-  renderEditor: (detail?: { name?: string; entries?: Array<Partial<GlossaryEntryRow>> }) => unknown;
+  renderEditor: (detail?: { name?: string; entries?: Array<Partial<GlossaryEntryRow>> }, options?: { markSaved?: boolean }) => unknown;
+  readDraft?: () => GlossaryDraft;
   addEntryRow: (entry?: Partial<GlossaryEntryRow>) => unknown;
   readEditorPayload: () => GlossaryEditorPayload;
   setImportVisible: (visible?: boolean) => unknown;
@@ -193,12 +202,14 @@ export function createGlossariesViewFeature({
   const store = createStore<GlossariesViewState, GlossariesViewActions>({
     name: "glossariesView",
     initialState: {
+      loading: false,
       items: [],
       selectedId: "",
       status: { message: "", tone: "" },
       importVisible: false,
     },
     actions: {
+      setLoading(currentState, loading) { return { ...currentState, loading }; },
       setList(currentState, { items = [], selectedId = "" } = {}) {
         return { ...currentState, items, selectedId };
       },
@@ -215,7 +226,9 @@ export function createGlossariesViewFeature({
   // 快照引用稳定(仅变更时替换),可直接作 useSyncExternalStore 的 getSnapshot。
   let editorSnapshot: GlossariesEditorState = {
     draft: { name: "", entries: [] },
+    savedDraft: { name: "", entries: [] },
     csvText: "",
+    structureRevision: 0,
   };
   const editorListeners = new Set<(snapshot: GlossariesEditorState) => void>();
 
@@ -234,10 +247,13 @@ export function createGlossariesViewFeature({
       };
     },
     actions: {
-      setDraft({ name = "", entries = [] } = {}) {
+      setDraft({ name = "", entries = [] } = {}, { markSaved = true } = {}) {
+        const draft = { name, entries: entries.map((entry) => normalizeEntryForRow(entry)) };
         editorSnapshot = {
           ...editorSnapshot,
-          draft: { name, entries: entries.map((entry) => normalizeEntryForRow(entry)) },
+          draft,
+          savedDraft: markSaved ? draft : editorSnapshot.savedDraft,
+          structureRevision: editorSnapshot.structureRevision + 1,
         };
         emitEditor();
       },
@@ -255,6 +271,7 @@ export function createGlossariesViewFeature({
             ...editorSnapshot.draft,
             entries: [...editorSnapshot.draft.entries, normalizeEntryForRow(entry)],
           },
+          structureRevision: editorSnapshot.structureRevision + 1,
         };
         emitEditor();
       },
@@ -276,6 +293,16 @@ export function createGlossariesViewFeature({
         editorSnapshot = {
           ...editorSnapshot,
           draft: { ...editorSnapshot.draft, entries },
+          structureRevision: editorSnapshot.structureRevision + 1,
+        };
+        emitEditor();
+      },
+      removeEntryRows(indices) {
+        const removed = new Set(indices);
+        editorSnapshot = {
+          ...editorSnapshot,
+          draft: { ...editorSnapshot.draft, entries: editorSnapshot.draft.entries.filter((_row, index) => !removed.has(index)) },
+          structureRevision: editorSnapshot.structureRevision + 1,
         };
         emitEditor();
       },
@@ -301,11 +328,13 @@ export function createGlossariesViewFeature({
   const handlersRef: { current: HandlersBag | null } = { current: null };
 
   const viewPort = {
+    setLoading: (loading: boolean) => store.actions.setLoading(loading),
     openDialog: () => dialogStore.open(),
     closeDialog: () => dialogStore.close(),
     setStatus: (message = "", tone = "") => store.actions.setStatus({ message, tone }),
     renderList: (items: GlossaryListItem[] = [], selectedId = "") => store.actions.setList({ items, selectedId }),
-    renderEditor: (detail: { name?: string; entries?: Array<Partial<GlossaryEntryRow>> } = {}) => editor.actions.setDraft(detail),
+    renderEditor: (detail: { name?: string; entries?: Array<Partial<GlossaryEntryRow>> } = {}, options?: { markSaved?: boolean }) => editor.actions.setDraft(detail, options),
+    readDraft: () => editor.getSnapshot().draft,
     addEntryRow: (entry: Partial<GlossaryEntryRow> = {}) => editor.actions.addEntryRow(entry),
     readEditorPayload: () => readEditorPayload(editor.getSnapshot().draft),
     setImportVisible: (visible = false) => store.actions.setImportVisible(visible),

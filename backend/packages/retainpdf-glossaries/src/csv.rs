@@ -25,18 +25,28 @@ pub(crate) fn parse_glossary_csv_text(csv_text: &str) -> Result<Vec<GlossaryEntr
     parse_glossary_csv_counted(csv_text).map(|parsed| parsed.entries)
 }
 
-/// 首行有制表符、没有逗号就按 TSV 读（从 Excel 直接复制出来的是制表符分隔）。
+/// 先按 CSV 引号规则解析候选分隔符，再比较表头和列数一致性，避免把单元格内的逗号误判为分隔符。
 fn detect_delimiter(csv_text: &str) -> u8 {
-    let first_line = csv_text
-        .lines()
-        .map(|line| line.trim_start_matches('\u{feff}'))
-        .find(|line| !line.trim().is_empty())
-        .unwrap_or_default();
-    if first_line.contains('\t') && !first_line.contains(',') {
-        b'\t'
-    } else {
-        b','
+    let mut best = (b',', 0);
+    for delimiter in [b',', b'\t', b';'] {
+        let mut reader = csv::ReaderBuilder::new()
+            .has_headers(false)
+            .flexible(true)
+            .delimiter(delimiter)
+            .from_reader(csv_text.as_bytes());
+        let rows: Vec<_> = reader.records().take(20).filter_map(Result::ok)
+            .filter(|row| row.iter().any(|cell| !cell.trim().is_empty())).collect();
+        if let Some(first) = rows.first() {
+            let width = first.len();
+            let consistent = rows.iter().filter(|row| row.len() == width).count();
+            let score = usize::from(detect_csv_header(first).is_some()) * 10000
+                + usize::from(width > 1) * 100
+                + consistent * 10 / rows.len()
+                + width.min(50);
+            if score > best.1 { best = (delimiter, score); }
+        }
     }
+    best.0
 }
 
 fn parse_glossary_csv_counted(csv_text: &str) -> Result<ParsedGlossaryCsv, AppError> {
