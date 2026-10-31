@@ -8,6 +8,7 @@ from retainpdf_pipeline.ocr.document_schema.page_bounds import clamp_page_overfl
 from retainpdf_pipeline.ocr.document_schema.contract_v1 import enrich_document_contract_v1
 from retainpdf_pipeline.ocr.document_schema.defaults import apply_document_defaults_with_report
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GENERIC_FLAT_OCR
+from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GLM_OCR
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_MINERU
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_MINERU_CONTENT_LIST_V2
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_PADDLE
@@ -73,11 +74,25 @@ def _build_paddle_document(payload: dict, document_id: str, source_json_path: Pa
     )
 
 
+def _build_glm_ocr_document(payload: dict, document_id: str, source_json_path: Path, provider_version: str) -> dict:
+    from retainpdf_pipeline.ocr.document_schema.provider_adapters.glm_ocr import (
+        build_glm_ocr_document,
+    )
+
+    return build_glm_ocr_document(
+        payload=payload,
+        document_id=document_id,
+        source_json_path=source_json_path,
+        provider_version=provider_version,
+    )
+
+
 _ADAPTER_BUILDERS: dict[str, AdapterBuilder] = {
     PROVIDER_GENERIC_FLAT_OCR: _build_generic_flat_ocr_document,
     PROVIDER_MINERU: _build_mineru_document,
     PROVIDER_MINERU_CONTENT_LIST_V2: _build_mineru_content_list_v2_document,
     PROVIDER_PADDLE: _build_paddle_document,
+    PROVIDER_GLM_OCR: _build_glm_ocr_document,
 }
 
 _ADAPTER_DETECTORS: list[tuple[str, Detector]] = []
@@ -274,6 +289,14 @@ def _looks_like_paddle_layout(payload: dict) -> bool:
     return looks_like_paddle_layout(payload)
 
 
+def _looks_like_glm_ocr_layout(payload: dict) -> bool:
+    from retainpdf_pipeline.ocr.document_schema.provider_adapters.glm_ocr import (
+        looks_like_glm_ocr_layout,
+    )
+
+    return looks_like_glm_ocr_layout(payload)
+
+
 register_ocr_adapter(
     provider=PROVIDER_GENERIC_FLAT_OCR,
     detector=_looks_like_generic_flat_ocr,
@@ -296,6 +319,12 @@ register_ocr_adapter(
     provider=PROVIDER_PADDLE,
     detector=_looks_like_paddle_layout,
     builder=_build_paddle_document,
+)
+
+register_ocr_adapter(
+    provider=PROVIDER_GLM_OCR,
+    detector=_looks_like_glm_ocr_layout,
+    builder=_build_glm_ocr_document,
 )
 
 

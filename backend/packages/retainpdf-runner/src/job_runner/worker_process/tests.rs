@@ -187,6 +187,60 @@ fn configured_ocr_credential_ref_is_available_through_generic_env() {
     assert_eq!(runtime_secrets, vec![secret.to_string()]);
 }
 
+fn glm_ocr_job(translation_base_url: &str, own_ocr_key: Option<&str>) -> JobRuntimeState {
+    let mut input = CreateJobInput::default();
+    input.ocr.provider = "glm_ocr".to_string();
+    if let Some(key) = own_ocr_key {
+        input.ocr.options.insert("credential".to_string(), serde_json::json!(key));
+    }
+    input.translation.base_url = translation_base_url.to_string();
+    input.translation.model = "glm-5.3-flash".to_string();
+    input.translation.api_key = "zhipu-translation-key".to_string();
+    JobSnapshot::new("job-glm-ocr".to_string(), input, vec!["true".to_string()]).into_runtime()
+}
+
+/// 用户："只用一个 api key，因为 glm5.3-flash 也可以一起用"：GLM-OCR 自己没有 key、翻译接智谱时用翻译的 key。
+#[test]
+fn glm_ocr_borrows_the_zhipu_translation_key() {
+    let root = credential_test_root("glm-shared-key");
+    let job = glm_ocr_job("https://open.bigmodel.cn/api/paas/v4", None);
+    let mut command = Command::new("true");
+
+    let runtime_secrets = apply_job_credentials(&mut command, &root, &job).expect("apply credentials");
+
+    assert_eq!(command_env(&command, "RETAIN_OCR_CREDENTIAL").as_deref(), Some("zhipu-translation-key"));
+    // stage spec 里 GLM-OCR 的凭据引用是 env:RETAIN_GLM_OCR_API_TOKEN（配置里的 env），Python 从这里读
+    assert_eq!(command_env(&command, "RETAIN_GLM_OCR_API_TOKEN").as_deref(), Some("zhipu-translation-key"));
+    assert!(runtime_secrets.contains(&"zhipu-translation-key".to_string()), "借来的 key 也要进日志脱敏名单");
+}
+
+#[test]
+fn glm_ocr_does_not_send_another_providers_key_to_zhipu() {
+    let root = credential_test_root("glm-other-host");
+    let job = glm_ocr_job("https://dashscope.aliyuncs.com/compatible-mode/v1", None);
+    let mut command = Command::new("true");
+
+    apply_job_credentials(&mut command, &root, &job).expect("apply credentials");
+
+    assert!(command_env(&command, "RETAIN_OCR_CREDENTIAL").is_none());
+    assert!(command_env(&command, "RETAIN_GLM_OCR_API_TOKEN").is_none());
+}
+
+#[test]
+fn glm_ocr_prefers_its_own_key_and_other_providers_never_borrow() {
+    let root = credential_test_root("glm-own-key");
+    let job = glm_ocr_job("https://open.bigmodel.cn/api/paas/v4", Some("glm-ocr-own-key"));
+    let mut command = Command::new("true");
+    apply_job_credentials(&mut command, &root, &job).expect("apply credentials");
+    assert_eq!(command_env(&command, "RETAIN_OCR_CREDENTIAL").as_deref(), Some("glm-ocr-own-key"));
+
+    let mut local = glm_ocr_job("https://open.bigmodel.cn/api/paas/v4", None);
+    local.request_payload.ocr.provider = "local".to_string();
+    let mut command = Command::new("true");
+    apply_job_credentials(&mut command, &root, &local).expect("apply credentials");
+    assert!(command_env(&command, "RETAIN_OCR_CREDENTIAL").is_none(), "只有 GLM-OCR 借智谱的翻译 key");
+}
+
 #[test]
 fn ocr_credential_provider_mismatch_fails_without_leaking_secret() {
     let root = credential_test_root("mismatch");

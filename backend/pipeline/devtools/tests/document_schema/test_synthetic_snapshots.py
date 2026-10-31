@@ -27,6 +27,7 @@ RAW_FILE_NAMES = {
     "mineru_content_list_v2": "content_list_v2.json",
     "paddle": "result.json",
     "generic_flat_ocr": "payload.json",
+    "glm_ocr": "glm_ocr_result.json",
 }
 
 CASES = sorted(path.name for path in SYNTHETIC.iterdir() if (path / "case.json").is_file())

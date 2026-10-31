@@ -101,8 +101,9 @@ fn provider_sort_rank(key: &str) -> u8 {
     match key {
         "mineru" => 0,
         "paddle" => 1,
-        "local" => 2,
-        _ => 3,
+        "glm_ocr" => 2,
+        "local" => 3,
+        _ => 4,
     }
 }
 
@@ -483,7 +484,27 @@ mod tests {
 
     #[test]
     fn supported_provider_keys_lists_all_supported_backends() {
-        assert_eq!(supported_provider_keys(), vec!["mineru", "paddle", "local"]);
+        assert_eq!(
+            supported_provider_keys(),
+            vec!["mineru", "paddle", "glm_ocr", "local"]
+        );
+    }
+
+    /// GLM-OCR 走命令型 provider（Python worker 里调接口、裁图、归一化），只收上传的本地文件，key 走 `RETAIN_GLM_OCR_API_TOKEN`。
+    #[test]
+    fn glm_ocr_is_a_remote_command_provider_for_uploaded_files() {
+        let glm = provider_public_definitions()
+            .into_iter()
+            .find(|definition| definition.key == "glm_ocr")
+            .expect("glm_ocr definition");
+        assert_eq!(glm.display_name, "GLM-OCR");
+        assert_eq!(glm.provider_kind, "remote_command");
+        let credential = glm.credential.expect("glm_ocr credential spec");
+        assert_eq!(credential.field, "credential");
+        assert_eq!(credential.env, "RETAIN_GLM_OCR_API_TOKEN");
+        assert!(!glm.capabilities.supports_remote_url_submit);
+        assert!(glm.capabilities.supports_local_file_upload);
+        assert!(crate::ocr_provider::is_configured_command_provider("glm_ocr"));
     }
 
     #[test]

@@ -20,6 +20,7 @@ from retainpdf_pipeline.ocr.document_schema.canonical_semantics import from_norm
 from retainpdf_pipeline.ocr.document_schema.reporting import build_normalization_summary
 from retainpdf_pipeline.ocr.document_schema.reporting import load_normalization_report
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GENERIC_FLAT_OCR
+from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GLM_OCR
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_MINERU
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_MINERU_CONTENT_LIST_V2
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_PADDLE
@@ -54,6 +55,7 @@ __all__ = [
     "build_normalization_summary",
     "load_normalization_report",
     "PROVIDER_GENERIC_FLAT_OCR",
+    "PROVIDER_GLM_OCR",
     "PROVIDER_MINERU",
     "PROVIDER_MINERU_CONTENT_LIST_V2",
     "PROVIDER_PADDLE",

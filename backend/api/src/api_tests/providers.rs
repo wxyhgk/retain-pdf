@@ -90,7 +90,7 @@ async fn list_ocr_providers_matches_published_schema() {
     assert_definition(&data, &contract, "OcrProviderListView", "providers");
     let providers = data.as_array().expect("providers array");
     let keys: Vec<&str> = providers.iter().map(|item| item["key"].as_str().unwrap()).collect();
-    assert_eq!(keys, vec!["mineru", "paddle", "local"]);
+    assert_eq!(keys, vec!["mineru", "paddle", "glm_ocr", "local"]);
     let mut saw_env = false;
     let mut saw_no_env = false;
     for (index, provider) in providers.iter().enumerate() {

@@ -287,9 +287,9 @@ fn apply_job_credentials(
     if let Ok(provider_kind) = require_supported_provider(&job.request_payload.ocr.provider) {
         let referenced_token = resolve_ocr_provider_token(data_root, job)?;
         if is_configured_command_provider(&job.request_payload.ocr.provider) {
-            if let Some(token) =
-                apply_configured_provider_credential(command, job, referenced_token)?
-            {
+            if let Some(token) = apply_configured_provider_credential(command, job, referenced_token, || {
+                shared_zhipu_translation_key(data_root, job)
+            })? {
                 runtime_secrets.push(token);
             }
             return Ok(runtime_secrets);
@@ -367,8 +367,12 @@ fn apply_configured_provider_credential(
     command: &mut Command,
     job: &JobRuntimeState,
     referenced_token: Option<String>,
+    fallback: impl FnOnce() -> Result<Option<String>>,
 ) -> Result<Option<String>> {
-    let token = referenced_token.unwrap_or_else(|| configured_provider_token(job));
+    let mut token = referenced_token.unwrap_or_else(|| configured_provider_token(job));
+    if token.is_empty() {
+        token = fallback()?.unwrap_or_default();
+    }
     if token.is_empty() {
         return Ok(None);
     }
@@ -378,6 +382,30 @@ fn apply_configured_provider_credential(
     command.env("RETAIN_OCR_CREDENTIAL", &token);
     Ok(Some(token))
 }
+
+/// 智谱的一个 key 同时给 GLM-OCR 和翻译用（2026-10-31，用户："只用一个 api key，因为 glm5.3-flash 也可以一起用"）。
+///
+/// 只在 GLM-OCR 自己没有 key 时才用（凭据库、请求里的 `ocr.options.credential`、服务端的 `RETAIN_GLM_OCR_API_TOKEN`
+/// 都没有），而且翻译接的是智谱（`translation.base_url` 的主机是 `open.bigmodel.cn`），别家的 key 不往智谱发。
+/// 纯 OCR 任务建任务时清掉了翻译凭据，这里拿不到，要单独给 OCR 凭据。
+fn shared_zhipu_translation_key(
+    data_root: &std::path::Path,
+    job: &JobRuntimeState,
+) -> Result<Option<String>> {
+    if !job.request_payload.ocr.provider.trim().eq_ignore_ascii_case(GLM_OCR_PROVIDER) {
+        return Ok(None);
+    }
+    let host = reqwest::Url::parse(job.request_payload.translation.base_url.trim())
+        .ok()
+        .and_then(|url| url.host_str().map(str::to_ascii_lowercase));
+    if host.as_deref() != Some(ZHIPU_API_HOST) {
+        return Ok(None);
+    }
+    resolve_translation_api_key(data_root, job)
+}
+
+const GLM_OCR_PROVIDER: &str = "glm_ocr";
+const ZHIPU_API_HOST: &str = "open.bigmodel.cn";
 
 fn configured_provider_token(job: &JobRuntimeState) -> String {
     for key in ["credential", "token", "api_key"] {
