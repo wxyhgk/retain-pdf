@@ -44,6 +44,7 @@ from retainpdf_translation.core.payload.parts.diagnostics import record_translat
 from retainpdf_translation.core.payload.parts.formula_gaps import formulas_between
 from retainpdf_translation.core.payload.parts.policy_state import mark_translation_failed_policy_state
 from retainpdf_translation.llm.shared.control_context import TranslationControlContext
+from retainpdf_translation.llm.shared import model_wire
 from retainpdf_translation.llm.shared.model_wire import anthropic_usage
 from retainpdf_translation.llm.shared.usage_ledger import record_model_usage
 from retainpdf_translation.services.policy import TranslationPolicyConfig
@@ -413,6 +414,16 @@ class _UsageRecorder:
 # ---- 入口 ----
 
 
+def agent_effort(*, base_url: str, model: str) -> str | None:
+    """初译、重翻、改稿的思考档位：和 legacy 同一套换算（任务的 thinking → ``model_wire.anthropic_thinking_candidates``），
+    off / auto（claude-haiku-5-5）都是 low。2026-10-31 论文 16 页各两遍：low 和 medium 公式外露、`$` 不成对、漏交都是 0，
+    输出 token 少 32%、每页快 30%。None 是不发字段（模型默认）。"""
+    profile = model_wire.resolve_profile(base_url=base_url, model=model)
+    fields = model_wire.anthropic_thinking_candidates(profile.thinking, model=model)[0]
+    effort = (fields.get("output_config") or {}).get("effort")
+    return str(effort) if effort else None
+
+
 def translate_book_with_agent(
     *,
     data: dict,
@@ -461,6 +472,7 @@ def translate_book_with_agent(
         model=model,
         transport=transport or make_http_transport(api_key, url=messages_url(base_url)),
         cache_dir=paths.AGENT_REQUEST_CACHE_DIR,
+        effort=agent_effort(base_url=base_url, model=model),
     )
     usage = _UsageRecorder(agent, base_url=base_url)
     run = DocumentRun(agent, state_dir / RUN_DIR, glossary=glossary_from_entries(glossary_entries or []), read_first=True, review=True)
@@ -529,5 +541,6 @@ __all__ = [
     "apply_agent_results",
     "build_agent_pages",
     "messages_url",
+    "agent_effort",
     "translate_book_with_agent",
 ]

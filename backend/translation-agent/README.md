@@ -25,6 +25,9 @@ outcome.status, outcome.results, outcome.glossary.tickets                  # don
 - `contract.py`：交接格式（`translation_agent.v1`）。只加不改，改了升版本。
 - `agent.py`：一页一次请求，初译、重翻、改稿交回纯文本（每块一节，`@@ 块号` 开头，术语、例外、备注各一节；`parse_answer` / `format_answer`），通读、审校用 strict 工具调用交回；
   附必须交回的编号清单；不合格的块合成一次重翻；`revise` 按改稿要求改写；请求和回答可缓存。
+  请求的系统提示带提示词缓存断点（各角色的系统提示一本书里逐字不变，连同前面的工具定义一起缓存）；`TranslationAgent(effort=…)`
+  给初译、重翻、改稿发 `output_config.effort`（通读、审校强制用工具、本来就不思考，不发）。正式流程按任务的 thinking 换算
+  （`agent_flow.agent_effort`，和 legacy 一样：off、auto 对 claude-haiku-5-5 都是 low）。
 - `checks.py`：逐块校验（漏交、空、`$` 成对（公式内容不和原文比）、引用和脚注标记、数字、没翻、截断）；术语校验（定好的译法、保留原文、缩写）；语气信号（表示保留的词、第一人称，只记 info 算指标）。
   判对判错的规则改了升 `CHECKS_VERSION`，
   正式流程据此不再沿用旧进度（请求缓存照用）。

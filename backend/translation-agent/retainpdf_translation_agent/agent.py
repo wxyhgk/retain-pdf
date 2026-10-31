@@ -250,13 +250,16 @@ class TranslationAgent:
         transport: Transport | None = None,
         cache_dir: Path | None = None,
         use_cache: bool = True,
+        effort: str | None = None,
     ):
-        """`model` 是默认模型（所有角色都用它）；`models` 按角色另指定，例如 {"reviser": "claude-sonnet-5-5"}。"""
+        """`model` 是默认模型（所有角色都用它）；`models` 按角色另指定，例如 {"reviser": "claude-sonnet-5-5"}。
+        `effort`：初译、重翻、改稿的思考档位（`output_config.effort`，如 "low"）；None 不发字段，按模型默认（Haiku 5.5 是 medium）。"""
         self.model = model or os.environ.get("ANTHROPIC_MODEL") or DEFAULT_MODEL
         self.models = dict(models or {})
         self.transport = transport or http_transport
         self.cache_dir = cache_dir
         self.use_cache = use_cache
+        self.effort = effort
         self.usage = Usage()
         self.calls: list[dict] = []
         # 编辑部事件（editorial.v1）的出口：调度（`DocumentRun`）接上，补上页号写进 events.jsonl；没接就不产出
@@ -296,11 +299,16 @@ class TranslationAgent:
     def _body(self, payload: dict, role: str = ROLE_TRANSLATOR, *, system: str = SYSTEM_PROMPT, tool: dict | None = None) -> dict:
         """不给 `tool`（初译、重翻、改稿）：模型按交卷格式交回纯文本；给了（通读、审校）：强制用这个工具交回。
 
-        不传 `thinking`：不强制用工具时 Haiku 5.5 默认会思考，强制用工具时不会。2026-10-31 论文 16 页各两遍实测，公式原样保住
-        纯文本 + 思考 97.1%、纯文本关掉思考 88.1%、JSON 工具 90.4%——帮上忙的是思考，不要传 `{"type": "disabled"}` 关掉。"""
-        body = {"model": self.model_for(role), "max_tokens": 16000, "system": system}
+        不强制用工具时 Haiku 5.5 默认会思考（medium），强制用工具时不会。2026-10-31 论文 16 页各两遍实测，公式原样保住
+        纯文本 + 思考 97.1%、纯文本关掉思考 88.1%、JSON 工具 90.4%——帮上忙的是思考，不要传 `{"type": "disabled"}` 关掉。
+        同一天再测 medium 对 low（`self.effort`）：公式外露、`$` 不成对、漏交都是 0，low 输出少 32%、每页快 30%。"""
+        # 系统提示打提示词缓存断点：各角色的系统提示（连同前面的工具定义）一本书里逐字不变，缓存读按一折计费、不计入
+        # 每分钟输入限额（2026-10-31）。太短的（不到 512 token）服务端不缓存也不报错。
+        body = {"model": self.model_for(role), "max_tokens": 16000, "system": [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}]}
         if tool is not None:
             body.update(tools=[strict_tool(tool)], tool_choice={"type": "tool", "name": tool["name"]})
+        elif self.effort:
+            body.update(thinking={"type": "adaptive"}, output_config={"effort": self.effort})
         body["messages"] = [{"role": "user", "content": json.dumps(payload, ensure_ascii=False, indent=1)}]
         return body
 

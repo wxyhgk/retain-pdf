@@ -224,7 +224,8 @@ def test_agent_engine_skips_translation_preparation(tmp_path: Path, fake_transpo
     assert not (tmp_path / "translated" / "term-base.v1.json").exists()
     assert not (tmp_path / "translated" / "style-guide.v1.json").exists()
     # 都是 agent 的请求：通读、审校用 submit_ 工具，初译按交卷格式交纯文本
-    assert all(b["tools"][0]["name"].startswith("submit_") if "tools" in b else "@@" in b["system"] for b in model.bodies)
+    # 系统提示是带缓存断点的文本块（2026-10-31）
+    assert all(b["tools"][0]["name"].startswith("submit_") if "tools" in b else "@@" in b["system"][0]["text"] for b in model.bodies)
 
 
 def test_only_citation_superscripts_become_footnote_marks() -> None:
@@ -341,3 +342,22 @@ def test_messages_url_follows_the_job_base_url() -> None:
     assert messages_url("https://proxy.example/v1/messages") == "https://proxy.example/v1/messages"
     assert messages_url("") == "https://api.anthropic.com/v1/messages"
     assert re.match(r"^https://", messages_url(""))
+
+
+def test_the_agent_gets_the_same_thinking_effort_as_legacy() -> None:
+    """off、auto（claude-haiku-5-5）都是 low；明确的档位照用；别的模型 auto 不发字段（2026-10-31）。"""
+    from retainpdf_translation.llm.shared import model_wire
+    from retainpdf_translation.workflow.agent_flow import agent_effort
+
+    base = "https://api.anthropic.com/v1"
+    try:
+        for thinking, model, expected in (
+            ("off", "claude-haiku-5-5", "low"),
+            ("auto", "claude-haiku-5-5", "low"),
+            ("high", "claude-haiku-5-5", "high"),
+            ("auto", "claude-sonnet-5", None),
+        ):
+            model_wire.register_connection(base_url=base, model=model, protocol="anthropic", thinking=thinking)
+            assert agent_effort(base_url=base, model=model) == expected, (thinking, model)
+    finally:
+        model_wire.clear_registered_connections()

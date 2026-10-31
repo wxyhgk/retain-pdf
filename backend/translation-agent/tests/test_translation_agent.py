@@ -245,7 +245,7 @@ def test_the_translator_answers_in_plain_text_and_other_roles_use_strict_tools()
         return _response({"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"})
 
     results, _ = TranslationAgent(model="fake", transport=model).translate_page(_page())
-    assert "tools" not in bodies[0] and "tool_choice" not in bodies[0] and "@@" in bodies[0]["system"]
+    assert "tools" not in bodies[0] and "tool_choice" not in bodies[0] and "@@" in bodies[0]["system"][0]["text"]
     assert results["t"].translation == "1 引言" and results["cap"].status == "ok"
 
     def objects(node):
@@ -487,3 +487,23 @@ def test_split_at_formulas_finds_a_respaced_formula_and_leaves_ungapped_members_
     assert split_at_formulas(text, ["", DIPOLE_FORMULA]) == [("甲乙丙。", 0, 1), ("丁戊己，庚辛。", 1, 2)]
     assert split_at_formulas(text, ["", "", DIPOLE_FORMULA]) == [("甲乙丙。", 0, 2), ("丁戊己，庚辛。", 2, 3)]
     assert split_at_formulas(text, ["", ""]) is None
+
+
+def test_system_prompts_carry_a_cache_breakpoint_and_effort_only_applies_to_the_translator() -> None:
+    """系统提示一本书里逐字不变：打缓存断点。effort 只给初译、重翻、改稿（通读、审校强制用工具，本来就不思考）。"""
+    bodies: list[dict] = []
+
+    def model(body: dict) -> dict:
+        bodies.append(body)
+        return _response({"t": "1 引言", "cap": "图 1：召回率 [3]。", "cg-a": "我们用 $F_1$ 和每一页的召回率给框打分。"})
+
+    TranslationAgent(model="fake", transport=model).translate_page(_page())
+    assert bodies[0]["system"][0]["cache_control"] == {"type": "ephemeral"}
+    assert "output_config" not in bodies[0] and "thinking" not in bodies[0], "no effort given: model default"
+
+    bodies.clear()
+    agent = TranslationAgent(model="fake", transport=model, effort="low")
+    agent.translate_page(_page())
+    assert bodies[0]["output_config"] == {"effort": "low"} and bodies[0]["thinking"] == {"type": "adaptive"}
+    tool_body = agent._body({"x": 1}, system="通读", tool=READER_TOOL)
+    assert "output_config" not in tool_body and tool_body["system"][0]["cache_control"] == {"type": "ephemeral"}
