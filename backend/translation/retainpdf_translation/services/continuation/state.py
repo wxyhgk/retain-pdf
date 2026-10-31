@@ -127,7 +127,38 @@ def _provider_cross_page_zone_is_usable(prev_item: dict, next_item: dict) -> boo
     return True
 
 
-def _cross_page_body_transition_is_usable(prev_item: dict, next_item: dict) -> bool:
+def _body_boundary_roles(payload: list[dict]) -> dict[str, str]:
+    """每页每个分区里，只算能接续的正文块（`eligible`）的头尾：页首是图注、图片时，下面第一段正文照样算页首。
+
+    `layout_boundary_role` 把图注也算进分区排序，2026-10-31 ACS 论文第 10 页最上面是图 6 的图注，接着上一页的正文
+    "As macro-" / "phages are …" 被标成 middle，跨页判定不让接。"""
+    zones: dict[tuple[int, str], list[dict]] = {}
+    for item in payload:
+        if _boundary_role(item):
+            zones.setdefault((_item_int(item, "page_idx", -1), _layout_zone(item)), []).append(item)
+    roles: dict[str, str] = {}
+    for items in zones.values():
+        items.sort(key=lambda item: _item_int(item, "layout_zone_rank", -1))
+        complete = [_item_int(item, "layout_zone_rank", -1) for item in items] == list(range(len(items))) and all(
+            _item_int(item, "layout_zone_size", -1) == len(items) for item in items
+        )
+        if not complete:
+            continue  # 分区排序不全（缺块、手写的头尾）：不知道前后还有什么，照旧用 layout_boundary_role
+        body = [item for item in items if eligible(item)]
+        for index, item in enumerate(body):
+            if len(body) == 1:
+                role = "single"
+            elif index == 0:
+                role = "head"
+            elif index == len(body) - 1:
+                role = "tail"
+            else:
+                role = "middle"
+            roles[str(item.get("item_id", ""))] = role
+    return roles
+
+
+def _cross_page_body_transition_is_usable(prev_item: dict, next_item: dict, body_roles: dict[str, str] | None = None) -> bool:
     """Cross-page continuation joins body blocks only: tail -> head.
 
     The previous item must close its page (tail/single) and the next item
@@ -138,8 +169,9 @@ def _cross_page_body_transition_is_usable(prev_item: dict, next_item: dict) -> b
     """
     if _item_int(prev_item, "page_idx", -1) == _item_int(next_item, "page_idx", -1):
         return True
-    prev_role = _boundary_role(prev_item)
-    next_role = _boundary_role(next_item)
+    roles = body_roles or {}
+    prev_role = roles.get(str(prev_item.get("item_id", ""))) or _boundary_role(prev_item)
+    next_role = roles.get(str(next_item.get("item_id", ""))) or _boundary_role(next_item)
     if prev_role and prev_role not in BOUNDARY_TAIL_ROLES:
         return False
     if next_role and next_role not in BOUNDARY_HEAD_ROLES:
@@ -233,11 +265,21 @@ def _next_candidate_index(payload: list[dict], start: int) -> int | None:
     return None
 
 
+def _mark_candidate(prev_item: dict, next_item: dict) -> None:
+    """拿不准的一对：留给模型复核（`pairs.candidate_continuation_pairs` 按这两个字段收集）。已经在组里的块不改它的决定。"""
+    prev_item["continuation_candidate_next_id"] = next_item.get("item_id", "")
+    next_item["continuation_candidate_prev_id"] = prev_item.get("item_id", "")
+    for item in (prev_item, next_item):
+        if not item.get("continuation_group"):
+            item["continuation_decision"] = "candidate_break"
+
+
 def annotate_continuation_context(payload: list[dict]) -> int:
     for item in payload:
         clear_continuation_state(item)
 
     annotated = _annotate_provider_continuation_context(payload)
+    body_roles = _body_boundary_roles(payload)
     group_index = 0
     i = 0
 
@@ -254,17 +296,14 @@ def annotate_continuation_context(payload: list[dict]) -> int:
             continue
         nxt = payload[next_idx]
         decision = pair_decision(current, nxt)
-        if decision == "join" and not _cross_page_body_transition_is_usable(current, nxt):
+        if decision == "join" and not _cross_page_body_transition_is_usable(current, nxt, body_roles):
             # Score says join but the boundary roles disagree (e.g. a page tail
             # paired with a non-head block such as a caption that slipped past
             # tagging). Do not join silently — leave it to LLM review.
             decision = "candidate"
         if decision != "join":
             if decision == "candidate":
-                current["continuation_decision"] = "candidate_break"
-                current["continuation_candidate_next_id"] = nxt.get("item_id", "")
-                nxt["continuation_decision"] = "candidate_break"
-                nxt["continuation_candidate_prev_id"] = current.get("item_id", "")
+                _mark_candidate(current, nxt)
             i += 1
             continue
 
@@ -276,7 +315,9 @@ def annotate_continuation_context(payload: list[dict]) -> int:
             probe_idx = _next_candidate_index(payload, j + 1)
             if probe_idx is None or pair_decision(payload[j], payload[probe_idx]) != "join":
                 break
-            if not _cross_page_body_transition_is_usable(payload[j], payload[probe_idx]):
+            if not _cross_page_body_transition_is_usable(payload[j], payload[probe_idx], body_roles):
+                # 和上面一样不悄悄放过：标成候选交给模型复核（以前链条延伸到这里就断了，这一对谁也不审）
+                _mark_candidate(payload[j], payload[probe_idx])
                 break
             chain.append(payload[probe_idx])
             j = probe_idx
