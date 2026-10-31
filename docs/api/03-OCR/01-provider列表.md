@@ -102,6 +102,8 @@ GET /api/v1/providers/ocr
 - `local_command`: 配置型本地命令 provider。
 - `remote_command`: 配置型远程命令 provider。
 
+内置的 `glm_ocr`（智谱 GLM-OCR，2026-10-31）也是 `remote_command`，在 Python provider worker 里跑，用法和 key 的来源见 [GLM-OCR](./06-GLM-OCR.md)。
+
 ## 前端规则
 
 - 不要硬编码 provider 参数表。

@@ -11,7 +11,7 @@
       "output": "OcrProviderListView",
       "rust_view": "Vec<OcrProviderPublicDefinition>（retainpdf-data ocr_provider::provider_client_definitions）",
       "ts_consumer": "@retainpdf/contracts/ocr-providers :: OcrProviderListView",
-      "note": "多用户模式下登录即可（signed）。顺序：mineru、paddle、local，配置里另加的按键名排在后面。"
+      "note": "多用户模式下登录即可（signed）。顺序：mineru、paddle、glm_ocr、local，配置里另加的按键名排在后面。"
     }
   ],
   "definitions": {
@@ -32,7 +32,7 @@
         "artifact_layout"
       ],
       "properties": {
-        "key": { "type": "string", "description": "建任务时 ocr.provider 填它，例如 mineru、paddle、local。" },
+        "key": { "type": "string", "description": "建任务时 ocr.provider 填它，例如 mineru、paddle、glm_ocr（智谱 GLM-OCR）、local。" },
         "display_name": { "type": "string" },
         "provider_kind": {
           "type": "string",

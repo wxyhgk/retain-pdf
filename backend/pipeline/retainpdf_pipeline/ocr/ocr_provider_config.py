@@ -198,6 +198,16 @@ def _legacy_provider_definitions() -> dict[str, dict[str, Any]]:
                 },
             },
         },
+        "glm_ocr": {
+            "display_name": "GLM-OCR",
+            "kind": "remote_command",
+            "credential": {
+                "field": "credential",
+                "env": "RETAIN_GLM_OCR_API_TOKEN",
+                "required_for": ["local_upload"],
+            },
+            "options": {},
+        },
         "local": {
             "display_name": "Local OCR",
             "kind": "local_command",

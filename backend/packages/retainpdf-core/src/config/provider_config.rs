@@ -185,6 +185,21 @@ fn legacy_provider_definitions() -> serde_json::Map<String, Value> {
             }
         }),
     );
+    // 智谱 GLM-OCR：调接口、裁图、归一化都在 Python provider worker 里（glm_ocr_driver），走命令型 provider 的路。
+    // 没给 OCR 凭据、翻译又接智谱（open.bigmodel.cn）时用翻译的 key（worker_process 注入凭据时）。
+    providers.insert(
+        "glm_ocr".to_string(),
+        serde_json::json!({
+            "display_name": "GLM-OCR",
+            "kind": "remote_command",
+            "credential": {
+                "field": "credential",
+                "env": "RETAIN_GLM_OCR_API_TOKEN",
+                "required_for": ["local_upload"]
+            },
+            "options": {}
+        }),
+    );
     providers.insert(
         "local".to_string(),
         serde_json::json!({

@@ -12,7 +12,7 @@ export type OcrProviderListView = OcrProviderPublicDefinition[];
 
 export interface OcrProviderPublicDefinition {
   /**
-   * 建任务时 ocr.provider 填它，例如 mineru、paddle、local。
+   * 建任务时 ocr.provider 填它，例如 mineru、paddle、glm_ocr（智谱 GLM-OCR）、local。
    */
   key: string;
   display_name: string;
