@@ -42,6 +42,7 @@ from retainpdf_pipeline.ocr.document_schema.provider_adapters.glm_ocr.adapter im
 from retainpdf_pipeline.ocr.document_schema.provider_adapters.glm_ocr.adapter import image_asset_key
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_GLM_OCR
 from retainpdf_pipeline.ocr.ocr_provider import glm_ocr_api
+from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_repair import split_cross_column_blocks
 from retainpdf_pipeline.ocr.ocr_provider.paddle_markdown import job_markdown_dir
 from retainpdf_pipeline.ocr.ocr_provider.paddle_markdown import job_markdown_images_dir
 from retainpdf_pipeline.ocr.ocr_provider.types import OcrProviderResult
@@ -376,6 +377,7 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
     def publish(prefix_chunks: list[dict]) -> None:
         nonlocal cropped_pages
         prefix = merge_chunks(prefix_chunks, chunk_pages=chunk_pages)
+        split_cross_column_blocks(prefix, source_pdf)
         cropped.update(crop_images(prefix, source_pdf, job_dirs.root, first_page=cropped_pages))
         cropped_pages = len(prefix["layout_details"])
         prefix["_images"] = dict(cropped)
@@ -393,6 +395,7 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
             on_prefix=publish,
         )
         payload = merge_chunks(chunks, chunk_pages=chunk_pages)
+        split_cross_column_blocks(payload, source_pdf)
         cropped.update(crop_images(payload, source_pdf, job_dirs.root, first_page=cropped_pages))
         payload["_images"] = dict(cropped)
         markdown_path = write_full_markdown(payload, cropped, job_dirs.root)
