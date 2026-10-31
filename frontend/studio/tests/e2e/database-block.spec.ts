@@ -345,6 +345,32 @@ test('a row’s own page: the database’s columns under its title, a value chan
 	await expect.poll(() => page(DB)).toMatch(/"options": \[\n\s+"B3LYP",\n\s+"PBE0"\n\s+\]/u);
 });
 
+test('the title column and a column made wider by their right edge dragged, kept in the settings', async ({ page: p }) => {
+	row('db-row-a', 'A', '{ "备注": "x" }');
+	database({ columns: [{ name: '备注', type: 'text' }], view: 'table' });
+	await openStudio(p);
+	const drag = async (name: string, by: number) => {
+		const cell = block(p).locator(`[data-row="db-row-a"] [data-column="${name}"]`);
+		const before = (await cell.boundingBox())!.width;
+		const handle = block(p).locator(`[data-database-resize="${name}"]`);
+		await handle.scrollIntoViewIfNeeded();
+		const box = (await handle.boundingBox())!;
+		await p.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+		await p.mouse.down();
+		await p.mouse.move(box.x + box.width / 2 + by / 2, box.y + box.height / 2, { steps: 4 });
+		await p.mouse.move(box.x + box.width / 2 + by, box.y + box.height / 2, { steps: 4 });
+		await p.mouse.up();
+		await expect.poll(async () => Math.round((await cell.boundingBox())!.width)).toBe(Math.round(before + by));
+	};
+	await drag('标题', 120);
+	await expect.poll(() => page(DB)).toContain('"titleWidth": 400');
+	await drag('备注', -60);
+	await expect.poll(() => page(DB)).toMatch(/"name": "备注",\n\s+"type": "text",\n\s+"width": 120/u);
+	// Narrower than the least: the least.
+	await drag('标题', -400 + 80);
+	await expect.poll(() => page(DB)).toContain('"titleWidth": 80');
+});
+
 test('a column on as many lines as its values take, from its menu; the titles too', async ({ page: p }) => {
 	row('db-row-a', '一个很长很长的标题，长到一行放不下，看它是不是换行显示出来', '{ "备注": "也很长的一段备注文字，一行放不下，要换行才能看全" }');
 	database({ columns: [{ name: '备注', type: 'text' }], view: 'table' });

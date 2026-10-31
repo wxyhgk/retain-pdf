@@ -23,7 +23,10 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 	const columns = config.columns.filter((column) => !column.hidden);
 	const [widths, setWidths] = useState<Record<string, number>>({});
 	const widthOf = (column: Column) => widths[column.name] ?? column.width ?? DEFAULT_WIDTH;
-	const width = TITLE_WIDTH + columns.reduce((sum, column) => sum + widthOf(column), 0) + ADD_WIDTH;
+	// 标题's too, dragged as the others' (kept as `titleWidth`).
+	const titleWidth = widths[TITLE] ?? config.titleWidth ?? TITLE_WIDTH;
+	const resizing = (name: string) => (next: number | null) => setWidths((before) => (next === null ? {} : { ...before, [name]: next }));
+	const width = titleWidth + columns.reduce((sum, column) => sum + widthOf(column), 0) + ADD_WIDTH;
 	const [drop, setDrop] = useState<{ slug: string; after: boolean } | null>(null);
 	const [dragged, setDragged] = useState<string | null>(null);
 	// Grouped by a choice or a box (as the board's lists): each group's rows under its head, folded or not.
@@ -62,7 +65,7 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 			onDragLeave={(event) => !event.currentTarget.contains(event.relatedTarget as Node) && setDrop((now) => (now?.slug === row.slug ? null : now))}
 			onDrop={dropped(row)}
 		>
-			<div className={cn('db-td db-td-title', config.titleWrap && 'is-wrap', keys.marks(row.slug, TITLE))} role="cell" data-column={TITLE} style={{ width: TITLE_WIDTH }} onMouseDown={keys.press(row.slug, TITLE)}>
+			<div className={cn('db-td db-td-title', config.titleWrap && 'is-wrap', keys.marks(row.slug, TITLE))} role="cell" data-column={TITLE} style={{ width: titleWidth }} onMouseDown={keys.press(row.slug, TITLE)}>
 				<RowHandle row={row} rows={shownRows} database={database} dragging={(on) => setDragged(on ? row.slug : null)} />
 				<TitleCell row={row} database={database} />
 			</div>
@@ -81,13 +84,13 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 			    own while no cell is typed in (useTableKeys). */}
 			<div className="db-table" role="table" style={{ width }} tabIndex={-1} ref={database.table} onKeyDown={keys.down} onCopy={keys.copy} onPaste={keys.paste}>
 				<div className="db-tr db-head" role="row">
-					<TitleHead database={database} rows={shownRows} />
+					<TitleHead database={database} rows={shownRows} resize={resizing(TITLE)} width={titleWidth} />
 					{columns.map((column) => (
 						<ColumnHead
 							key={column.name}
 							column={column}
 							database={database}
-							resize={(next) => setWidths((before) => (next === null ? {} : { ...before, [column.name]: next }))}
+							resize={resizing(column.name)}
 							width={widthOf(column)}
 						/>
 					))}
@@ -142,7 +145,7 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 				)}
 				{/* What is worked out of each column, under it (as Notion's 计算). */}
 				<div className="db-tr db-calc-row" role="row">
-					<div className="db-td db-td-title db-calc" style={{ width: TITLE_WIDTH }}>
+					<div className="db-td db-td-title db-calc" style={{ width: titleWidth }}>
 						<Calc name={TITLE} column={null} rows={rows} database={database} />
 					</div>
 					{columns.map((column) => (
@@ -157,13 +160,17 @@ export function DatabaseTable({ database, rows }: { database: Database; rows: Ro
 	);
 }
 
-/** 标题's head: its menu (filter, order) only; it is every row's, not renamed nor taken away. At its left, a box for all the rows. */
-function TitleHead({ database, rows }: { database: Database; rows: Row[] }) {
+/**
+ * 标题's head: its menu (filter, order) only; it is every row's, not renamed nor taken away. At its left, a box for all
+ * the rows; its right edge dragged, its width.
+ */
+function TitleHead({ database, rows, resize, width }: { database: Database; rows: Row[]; resize(width: number | null): void; width: number }) {
 	const { config, change } = database;
 	const [open, setOpen] = useState(false);
 	const all = rows.length > 0 && rows.every((row) => database.chosenRows.has(row.slug));
+	const startResize = useResize(width, resize, (next) => change({ ...database.config, titleWidth: Math.round(next) }));
 	return (
-		<div className="db-th" role="columnheader" style={{ width: TITLE_WIDTH }}>
+		<div className="db-th" role="columnheader" style={{ width }}>
 			<div className={cn('db-row-gutter', database.chosenRows.size > 0 && 'is-choosing')}>
 				<button type="button" role="checkbox" aria-checked={all} aria-label={t('选中所有行')} data-database-choose-all className={cn('db-check is-small db-row-box', all && 'is-checked')} onClick={() => database.chooseAll(rows)}>
 					{all && <Check aria-hidden />}
@@ -195,6 +202,7 @@ function TitleHead({ database, rows }: { database: Database; rows: Row[] }) {
 					)}
 				</div>
 			</Pop>
+			<span className="db-resize" aria-hidden onPointerDown={startResize} data-database-resize={TITLE} />
 		</div>
 	);
 }
@@ -238,12 +246,12 @@ function SortAndFilter({ database, name, close }: { database: Database; name: st
 	);
 }
 
-/** A column's head: clicked, its menu; dragged, moved among the others; its right edge dragged, its width. */
-function ColumnHead({ column, database, resize, width }: { column: Column; database: Database; resize(width: number | null): void; width: number }) {
-	const Icon = TYPE_ICONS[column.type];
-	const [over, setOver] = useState<'before' | 'after' | null>(null);
-	const open = database.menuFor === column.name;
-	const startResize = (event: ReactPointerEvent<HTMLSpanElement>) => {
+/**
+ * A column's right edge dragged: as wide as dragged meanwhile (`resize`), kept when let go (`keep`), then the width
+ * dragged let go of (the one kept drawn by then).
+ */
+function useResize(width: number, resize: (width: number | null) => void, keep: (width: number) => void) {
+	return (event: ReactPointerEvent<HTMLSpanElement>) => {
 		event.preventDefault();
 		event.stopPropagation();
 		const handle = event.currentTarget;
@@ -258,14 +266,21 @@ function ColumnHead({ column, database, resize, width }: { column: Column; datab
 			handle.removeEventListener('pointermove', move);
 			handle.removeEventListener('pointerup', up);
 			handle.removeEventListener('pointercancel', up);
-			if (next !== width) database.resizeColumn(column, next);
-			// The width kept in the settings by now (the block's text drawn anew); the one dragged let go next.
+			if (next !== width) keep(next);
 			requestAnimationFrame(() => resize(null));
 		};
 		handle.addEventListener('pointermove', move);
 		handle.addEventListener('pointerup', up);
 		handle.addEventListener('pointercancel', up);
 	};
+}
+
+/** A column's head: clicked, its menu; dragged, moved among the others; its right edge dragged, its width. */
+function ColumnHead({ column, database, resize, width }: { column: Column; database: Database; resize(width: number | null): void; width: number }) {
+	const Icon = TYPE_ICONS[column.type];
+	const [over, setOver] = useState<'before' | 'after' | null>(null);
+	const open = database.menuFor === column.name;
+	const startResize = useResize(width, resize, (next) => database.resizeColumn(column, next));
 	return (
 		<div
 			role="columnheader"

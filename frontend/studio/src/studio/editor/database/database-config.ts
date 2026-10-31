@@ -56,6 +56,8 @@ export type DatabaseConfig = {
 	template: string | null;
 	/** The titles in the table on as many lines as they take. */
 	titleWrap: boolean;
+	/** The title column's width in the table, as dragged (px); none: TITLE_WIDTH. */
+	titleWidth: number | null;
 	/** How a row is opened (its 打开, a card clicked): beside the table, as Notion's side peek, or as its whole page. */
 	openAs: 'peek' | 'page';
 	/** The column the table's rows are grouped by (a single choice, a box), as the board's lists; none: not grouped. */
@@ -154,6 +156,7 @@ export function readConfig(text: string): DatabaseConfig {
 		group: typeof raw.group === 'string' && unique.some((column) => column.name === raw.group && (column.type === 'select' || column.type === 'checkbox')) ? raw.group : null,
 		template: typeof raw.template === 'string' && raw.template ? raw.template : null,
 		titleWrap: raw.titleWrap === true,
+		titleWidth: typeof raw.titleWidth === 'number' && raw.titleWidth >= 80 ? Math.round(Math.min(raw.titleWidth, 1200)) : null,
 		openAs: raw.openAs === 'page' ? 'page' : 'peek',
 		tableGroup: typeof raw.tableGroup === 'string' && unique.some((column) => column.name === raw.tableGroup && (column.type === 'select' || column.type === 'checkbox')) ? raw.tableGroup : null,
 		calcs: Object.fromEntries(
@@ -176,6 +179,7 @@ export function writeConfig(config: DatabaseConfig): string {
 	if (config.group) kept.group = config.group;
 	if (config.template) kept.template = config.template;
 	if (config.titleWrap) kept.titleWrap = true;
+	if (config.titleWidth) kept.titleWidth = config.titleWidth;
 	if (config.tableGroup) kept.tableGroup = config.tableGroup;
 	if (config.openAs === 'page') kept.openAs = 'page';
 	if (Object.keys(config.calcs).length) kept.calcs = config.calcs;
