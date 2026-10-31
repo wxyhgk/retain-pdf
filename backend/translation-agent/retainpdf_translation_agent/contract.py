@@ -7,6 +7,7 @@
 - `RevisionRequest`：重排 agent 发来的改稿要求（例如"这块放不下，缩到 N 字以内"）。
 
 修译文质量时（2026-10-30）加了 `BlockInput.fixed_translation`（已定好的译文，agent 不再翻）。
+接续组当一块翻（2026-10-31）加了 `BlockInput.members`（合成的那块原来是哪几块，agent 内部填）、`BlockResult.meta.unit_id`。
 第 1 版（2026-10-30）只加了字段：`PageInput.chapter`、`PageInput.context`（上下文包，见 `context.py`）、
 `BlockResult.meta`（谁、用哪个版本翻的）、状态 `fallback_source`。
 """
@@ -41,6 +42,8 @@ class BlockInput:
     attributes: dict = field(default_factory=dict)
     # 已经定好的译文（翻译前通读定的标题、照搬标题的目录条目）：agent 不再翻，只作上下文，结果里原样交回
     fixed_translation: str | None = None
+    # 接续组合成的一块（`units.merge_groups` 造）：原来的各块 id，按顺序；调用方不用填
+    members: list[str] = field(default_factory=list)
 
     def request_record(self) -> dict:
         record = {"id": self.id, "class": self.cls, "where": self.where, "text": self.text, "translate": self.translate}
@@ -57,6 +60,8 @@ class BlockInput:
             record["attributes"] = self.attributes
         if self.source_lang != "en":
             record["source_lang"] = self.source_lang
+        if self.members:
+            record["members"] = self.members
         return record
 
 

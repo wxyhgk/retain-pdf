@@ -13,7 +13,6 @@ from retainpdf_translation_agent.agent import http_transport
 from retainpdf_translation_agent.agent import make_http_transport
 from retainpdf_translation_agent.checks import CHECKS_VERSION
 from retainpdf_translation_agent.checks import check_block
-from retainpdf_translation_agent.checks import check_group
 from retainpdf_translation_agent.checks import check_terms
 from retainpdf_translation_agent.checks import style_signals
 from retainpdf_translation_agent.checks import visible_length
@@ -65,7 +64,6 @@ __all__ = [
     "blocks_using",
     "build_context",
     "check_block",
-    "check_group",
     "check_terms",
     "extract_abbreviations",
     "glossary_from_csv",

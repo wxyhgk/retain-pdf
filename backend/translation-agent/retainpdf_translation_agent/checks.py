@@ -25,19 +25,13 @@ FOREIGN_SCRIPT_RE = re.compile(r"[\u0400-\u04ff\u0590-\u05ff\u0600-\u06ff\u0e00-
 # 原文里的小数字，译文写成中文数字也算保留（"level-2 heading" → "二级标题"）
 CN_DIGITS = {"1": "一", "2": "二两", "3": "三", "4": "四", "5": "五", "6": "六", "7": "七", "8": "八", "9": "九", "10": "十"}
 SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太短"：短标题翻成中文本来就短
-OVERLAP_CHARS = 10  # 接续组里相邻两块的译文有这么多个连续相同的汉字，算重复
-# 相邻两块的原文本身就有这么多个连续相同的词：原文就重复了一段话，译文跟着重复是对的，不算重复
-SOURCE_OVERLAP_WORDS = 6
-# 接续组里一块译文占全组的比例和原文占比差这么多（只算正文），而且字数也差这么多，记 group_share 警告。
-# 程序按比例切开以后一般不会；切点附近没有能切的地方（长公式）、只好偏开时才会
-SHARE_TOLERANCE = 0.2
-SHARE_DRIFT_MIN_CHARS = 12
 # 检查规则的版本：判对判错的规则改了就升，正式流程据此不再沿用旧的进度和断点（请求缓存照用）。
 # 1：2026-10-30 原文本来就重复的话不算接续组重复；接续组一块"太短"而整组不短只记警告
 # 2：2026-10-30 接续组模型放的断点和原文比例差太远，程序按比例重切
 # 3：2026-10-30 接续组不再让模型放断点，一律由程序按正文比例切开（不落在公式里）；没交的块重翻后还不合格再翻一次
 # 4：2026-10-31 不再拿公式和原文逐个比（formula_changed、formula_merged 去掉），只查 `$` 成对
-CHECKS_VERSION = "translation-agent-checks-4"
+# 5：2026-10-31 接续组当一块校验、重翻、退回原文（units.py），切开以后不再逐块查：group_overlap、group_share、mark_moved 去掉
+CHECKS_VERSION = "translation-agent-checks-5"
 
 
 def visible_length(text: str) -> int:
@@ -148,47 +142,6 @@ def check_block(source: str, translation: str | None) -> list[dict]:
         issues.append(_issue("too_short", "error", f"译文只有原文的 {ratio:.0%}，可能截断"))
     elif ratio > 1.6:
         issues.append(_issue("too_long", "warn", f"译文是原文的 {ratio:.0%}"))
-    return issues
-
-
-def _longest_common(a, b):
-    """两段文字（或两串词）最长的相同片段（动态规划，段落长度在几百字以内）。"""
-    best, best_end = 0, 0
-    previous = [0] * (len(b) + 1)
-    for i in range(1, len(a) + 1):
-        current = [0] * (len(b) + 1)
-        for j in range(1, len(b) + 1):
-            if a[i - 1] == b[j - 1]:
-                current[j] = previous[j - 1] + 1
-                if current[j] > best:
-                    best, best_end = current[j], i
-        previous = current
-    return a[best_end - best : best_end]
-
-
-def check_group(members: list[tuple[str, str, str | None]]) -> dict[str, list[dict]]:
-    """接续组（按顺序的 [(id, 原文, 译文)]）：相邻两块的译文不能重复，各块译文的占比要和原文占比相当。"""
-    issues: dict[str, list[dict]] = {block_id: [] for block_id, _, _ in members}
-    if len(members) < 2 or any(t is None for _, _, t in members):
-        return issues
-    for (a_id, a_source, a_text), (b_id, b_source, b_text) in zip(members, members[1:]):
-        # 只比汉字：两块里都出现的英文专名、公式不算重复
-        common = _longest_common("".join(CJK_RE.findall(a_text)), "".join(CJK_RE.findall(b_text)))
-        # 2026-10-30 论文第 11 页：两块原文里有同一句十来个词的话，译文跟着重复，以前判成重复、重翻还是"重复"，
-        # 整组退回原文没翻
-        source_common = _longest_common(LATIN_WORD_RE.findall(a_source.lower()), LATIN_WORD_RE.findall(b_source.lower()))
-        if len(common) >= OVERLAP_CHARS and len(source_common) < SOURCE_OVERLAP_WORDS:
-            message = f"和接续组里相邻的块译文重复：“{common[:24]}…”"
-            issues[a_id].append(_issue("group_overlap", "error", message))
-            issues[b_id].append(_issue("group_overlap", "error", message))
-    src_total = sum(prose_length(s) for _, s, _ in members) or 1
-    out_total = sum(prose_length(t) for _, _, t in members) or 1
-    for block_id, source, translation in members:
-        src_share, out_share = prose_length(source) / src_total, prose_length(translation) / out_total
-        if abs(src_share - out_share) > SHARE_TOLERANCE and abs(prose_length(translation) - src_share * out_total) >= SHARE_DRIFT_MIN_CHARS:
-            issues[block_id].append(
-                _issue("group_share", "warn", f"这块原文占全组 {src_share:.0%}，译文却占 {out_share:.0%}，断点可能挪了")
-            )
     return issues
 
 
