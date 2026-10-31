@@ -2,6 +2,7 @@ export { cn } from "./lib/utils.js";
 // 基础组件（docs/ops/planning/frontend-migration/20261031-基础组件与刻度.md）。样子在 styles/*.css。
 export { Button, IconButton } from "./primitives/button.js";
 export { Field, Input, Select, Textarea } from "./primitives/field.js";
+export { Checkbox, SegmentedControl } from "./primitives/choice.js";
 export { Badge } from "./primitives/badge.js";
 export { Menu } from "./primitives/menu.js";
 export { Panel } from "./primitives/panel.js";
