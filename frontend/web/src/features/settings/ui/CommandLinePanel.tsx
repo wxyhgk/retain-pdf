@@ -4,6 +4,7 @@
 // 应用里马上看得到。
 
 import { useEffect, useState } from "react";
+import { Button } from "@retainpdf/ui";
 import { getDesktopHost } from "@/platform/desktop/host.js";
 
 type Status = { available: boolean; installedAt: string; supported: boolean };
@@ -48,9 +49,9 @@ export function CommandLinePanel() {
       </p>
       {status.installedAt ? <p className="cli-install-hint">已安装：{status.installedAt}</p> : null}
       {status.supported ? (
-        <button type="button" className="cli-install-button" onClick={install} disabled={busy} data-cli-action="install">
+        <Button variant="secondary" className="cli-install-action" onClick={install} pending={busy} data-cli-action="install">
           {busy ? "正在安装…" : status.installedAt ? "重新安装" : "安装命令行工具"}
-        </button>
+        </Button>
       ) : (
         <p className="cli-install-hint">Windows 版暂不支持一键安装。</p>
       )}

@@ -5,6 +5,8 @@ export { Button, IconButton } from "./primitives/button.js";
 export type { ButtonProps, ButtonSize, ButtonVariant, IconButtonProps } from "./primitives/button.js";
 export { Field, Input, Select, Textarea } from "./primitives/field.js";
 export type { ControlSize, FieldProps, InputProps, SelectProps, TextareaProps } from "./primitives/field.js";
+export { Checkbox, SegmentedControl } from "./primitives/choice.js";
+export type { CheckboxProps, SegmentedControlProps, SegmentedOption } from "./primitives/choice.js";
 export { Badge } from "./primitives/badge.js";
 export type { BadgeProps, BadgeTone } from "./primitives/badge.js";
 export { Menu } from "./primitives/menu.js";

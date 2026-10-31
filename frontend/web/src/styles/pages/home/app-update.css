@@ -18,7 +18,7 @@
   top: 7px;
   width: 7px;
   height: 7px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--warn);
   box-shadow: 0 0 0 2px var(--paper);
   opacity: 0;
@@ -66,7 +66,7 @@
   & h2 {
     margin: 0;
     color: var(--ink);
-    font-size: 16px;
+    font-size: var(--ui-text-lg);
     font-weight: 700;
     letter-spacing: 0;
   }
@@ -74,7 +74,7 @@
   & p {
     margin: 5px 0 0;
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--ui-text-sm);
     font-weight: 600;
   }
 }
@@ -85,7 +85,7 @@
   min-width: 28px;
   min-height: 28px;
   padding: 0;
-  font-size: 18px;
+  font-size: var(--ui-text-lg);
   line-height: 1;
 }
 
@@ -102,10 +102,10 @@
   min-height: 24px;
   margin-bottom: 10px;
   padding: 0 9px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--bg);
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   font-weight: 700;
 }
 
@@ -116,11 +116,11 @@
   overflow-y: auto;
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--ui-radius-md);
   background: var(--bg);
   white-space: pre-wrap;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   line-height: 1.55;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--ink) 22%, transparent) transparent;
@@ -142,10 +142,10 @@
   min-height: 38px;
   padding: 0 16px;
   border: 1px solid var(--ink);
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--ink);
   color: var(--paper);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 650;
   line-height: 1;
   text-decoration: none;

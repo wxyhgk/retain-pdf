@@ -7,6 +7,7 @@
 @import "./scale.css" layer(tokens);
 @import "./button.css" layer(components);
 @import "./field.css" layer(components);
+@import "./choice.css" layer(components);
 @import "./badge.css" layer(components);
 @import "./menu.css" layer(components);
 @import "./panel.css" layer(components);

@@ -1,4 +1,4 @@
-/* 设置 → 备份 分栏：自动备份说明、立即备份、备份列表（恢复 / 删除）。
+/* 设置 → 备份 分栏：自动备份说明、立即备份、备份列表（恢复 / 删除）。按钮用 @retainpdf/ui 的 Button。
  *
  * @owns backup-settings */
 
@@ -14,7 +14,7 @@
 }
 
 .backup-settings-label {
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 650;
   color: var(--muted);
 }
@@ -22,7 +22,7 @@
 .backup-settings-hint {
   margin: 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   line-height: 1.6;
   word-break: break-all;
 }
@@ -34,7 +34,7 @@
 .backup-settings-error {
   margin: 0;
   color: var(--danger);
-  font-size: 13px;
+  font-size: var(--ui-text-md);
 }
 
 .backup-settings-actions {
@@ -43,48 +43,13 @@
   gap: 8px;
 }
 
-.backup-settings-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  padding: 0 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--btn-radius);
-  background: transparent;
-  color: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  white-space: nowrap;
-  cursor: pointer;
-}
-
-.backup-settings-button.is-primary {
-  min-height: 34px;
-  padding: 0 14px;
-  border-color: transparent;
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-fg);
-}
-
-.backup-settings-button.is-danger {
-  border-color: transparent;
-  background: var(--danger);
-  color: #fff;
-}
-
-.backup-settings-button:disabled {
-  opacity: 0.55;
-  cursor: default;
-}
-
 .backup-settings-list {
   display: grid;
   margin: 0;
   padding: 0;
   list-style: none;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
 }
 
 .backup-settings-item {
@@ -106,13 +71,13 @@
 }
 
 .backup-settings-item-time {
-  font-size: 13px;
+  font-size: var(--ui-text-md);
   font-weight: 600;
 }
 
 .backup-settings-item-meta {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
 }
 
 .backup-settings-item-actions,
@@ -125,5 +90,5 @@
 
 .backup-settings-confirm-text {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
 }

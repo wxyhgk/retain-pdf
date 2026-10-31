@@ -1,5 +1,8 @@
 /* Field、Input、Textarea、Select（src/primitives/field.tsx）。
  *
+ * 框高 36px、圆角 --ui-radius-md：和设置页、凭据里现有的输入框一致（36–38px、9–10px）。比按钮（34px）高一点，
+ * 并排时按钮居中对齐。
+ *
  * @owns ui-field, ui-input, ui-textarea, ui-select
  */
 
@@ -29,35 +32,43 @@
   line-height: 1.5;
 }
 
+/* web 的 components.css 有一组全局元素样式（input[type="password"]、textarea、select：灰底、20px 圆角、
+ * 聚焦光圈、textarea 最小 132px），和这里同在 components 层，input[type=…] 的优先级比单个类高。
+ * 所以这里的选择器带上 [type]、聚焦用 :focus，并把阴影、最小高度写明，压过它们。 */
+
 .ui-input,
+.ui-input[type],
 .ui-textarea,
 .ui-select select {
   width: 100%;
   min-width: 0;
   border: 1px solid var(--line);
-  border-radius: var(--ui-radius-sm);
+  border-radius: var(--ui-radius-md);
   background: var(--paper);
   color: var(--ink);
   font: inherit;
   font-size: var(--ui-text-md);
+  box-shadow: none;
   transition: border-color 120ms ease;
 }
 
 .ui-input,
+.ui-input[type],
 .ui-select select {
-  min-height: 34px;
-  padding: 0 10px;
+  min-height: 36px;
+  padding: 0 12px;
 }
 
 .ui-input[data-size="sm"],
 .ui-select[data-size="sm"] select {
-  min-height: 28px;
-  padding: 0 8px;
+  min-height: 30px;
+  padding: 0 10px;
   font-size: var(--ui-text-sm);
 }
 
 .ui-textarea {
-  padding: 8px 10px;
+  min-height: 72px;
+  padding: 8px 12px;
   line-height: 1.5;
   resize: vertical;
 }
@@ -73,10 +84,13 @@
   border-color: color-mix(in srgb, var(--ink) 24%, var(--line));
 }
 
-.ui-input:focus-visible,
-.ui-textarea:focus-visible,
-.ui-select select:focus-visible {
+.ui-input:focus,
+.ui-input[type]:focus,
+.ui-textarea:focus,
+.ui-select select:focus {
   border-color: var(--accent);
+  background: var(--paper);
+  box-shadow: none;
   outline: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
   outline-offset: 0;
 }

@@ -41,7 +41,7 @@
   & h2 {
     margin: 0 10px 6px;
     color: var(--ink);
-    font-size: 14px;
+    font-size: var(--ui-text-base);
     font-weight: 700;
     letter-spacing: 0.01em;
   }
@@ -59,10 +59,10 @@
     min-height: 32px;
     padding: 0 10px;
     border: 0;
-    border-radius: 9px;
+    border-radius: var(--ui-radius-md);
     background: transparent;
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--ui-text-sm);
     font-weight: 600;
     line-height: 1;
     text-align: left;
@@ -136,14 +136,14 @@
   & h3 {
     margin: 0;
     color: var(--ink);
-    font-size: 16px;
+    font-size: var(--ui-text-lg);
     font-weight: 700;
   }
 
   & p {
     margin: 4px 0 0;
     color: var(--muted);
-    font-size: 10.5px;
+    font-size: var(--ui-text-2xs);
     line-height: 1.45;
   }
 }
@@ -194,42 +194,13 @@
   max-width: 460px;
   padding: 18px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
 
   & p {
     margin: 0;
     color: var(--muted);
-    font-size: 13px;
+    font-size: var(--ui-text-md);
     line-height: 1.7;
-  }
-}
-
-@utility app-settings-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 34px;
-  padding: 0 16px;
-  border: 1px solid transparent;
-  border-radius: var(--btn-radius);
-  background: var(--btn-primary-bg);
-  color: var(--btn-primary-fg);
-  font-size: 13px;
-  font-weight: 650;
-  line-height: 1;
-  box-shadow: none;
-  cursor: pointer;
-  transition:
-    filter 150ms var(--ease-out),
-    transform 160ms var(--ease-out);
-
-  &:hover {
-    filter: brightness(1.06);
-    color: var(--btn-primary-fg);
-  }
-
-  &:active {
-    transform: scale(0.97);
   }
 }
 
@@ -248,7 +219,7 @@
 @utility theme-appearance-group-title {
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: var(--ui-text-xs);
   font-weight: 650;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -266,7 +237,7 @@
   gap: 8px;
   padding: 8px 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--ui-radius-lg);
   background: var(--paper);
   text-align: left;
   cursor: pointer;
@@ -301,7 +272,7 @@
   aspect-ratio: 16 / 9;
   padding: 9px 10px 0;
   border: 1px solid color-mix(in srgb, var(--ink) 6%, transparent);
-  border-radius: 9px;
+  border-radius: var(--ui-radius-md);
   overflow: hidden;
 }
 
@@ -313,7 +284,7 @@
   height: 100%;
   margin-inline: auto;
   padding: 7px 8px;
-  border-radius: 6px 6px 0 0;
+  border-radius: var(--ui-radius-sm) var(--ui-radius-sm) 0 0;
   box-shadow: 0 2px 8px color-mix(in srgb, var(--shadow-color) 7%, transparent);
 }
 
@@ -321,14 +292,14 @@
   display: block;
   width: 42%;
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
 }
 
 @utility theme-option-swatch-line {
   display: block;
   width: 88%;
   height: 3px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   opacity: 0.5;
 }
 
@@ -336,7 +307,7 @@
   display: block;
   width: 62%;
   height: 3px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   opacity: 0.3;
 }
 
@@ -346,7 +317,7 @@
   top: 14px;
   width: 6px;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
 }
 
 @utility theme-option-copy {
@@ -356,13 +327,13 @@
 
   & strong {
     color: var(--ink);
-    font-size: 12.5px;
+    font-size: var(--ui-text-sm);
     font-weight: 650;
   }
 
   & span {
     color: var(--muted);
-    font-size: 11px;
+    font-size: var(--ui-text-xs);
     line-height: 1.45;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -378,10 +349,33 @@
   place-items: center;
   width: 20px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--ui-radius-pill);
   background: var(--accent);
   color: var(--paper);
-  font-size: 12px;
+  font-size: var(--ui-text-sm);
   font-weight: 700;
   box-shadow: 0 2px 6px color-mix(in srgb, var(--shadow-color) 18%, transparent);
+}
+
+/* —— 外观：渲染字体（下拉用 @retainpdf/ui 的 Select）—— */
+
+@utility app-settings-font {
+  display: grid;
+  gap: 6px;
+}
+
+@utility app-settings-font-select {
+  display: flex;
+  width: 100%;
+}
+
+@utility app-settings-font-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--ui-text-sm);
+  line-height: 1.6;
+
+  &.is-warn {
+    color: var(--warn);
+  }
 }

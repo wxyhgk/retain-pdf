@@ -85,8 +85,9 @@ export function AppUpdateBanner({ view, handlersRef }: AppUpdateBannerProps) {
   return (
     <>
       <Button
+        variant="primary"
         id={APP_UPDATE_IDS.button}
-        className={`app-settings-action app-update-btn${hasUpdate ? " has-update" : ""}`}
+        className={`app-update-btn${hasUpdate ? " has-update" : ""}`}
         aria-label="检查更新"
         title={state.buttonTitle}
         data-update-state={state.buttonState}
@@ -118,8 +119,8 @@ export function AppUpdateBanner({ view, handlersRef }: AppUpdateBannerProps) {
               </DialogBody>
               <DialogFooter className="app-update-foot">
                 <Button
+                  variant="secondary"
                   id={APP_UPDATE_IDS.checkButton}
-                  className="home-action-btn secondary"
                   onClick={() => handlersRef.current?.onCheck?.()}
                 >
                   重新检查

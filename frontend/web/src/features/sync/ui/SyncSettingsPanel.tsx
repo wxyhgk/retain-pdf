@@ -7,6 +7,7 @@
 // 后端只告诉有没有保存过，输入框留空表示不改。
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Button, Input, SegmentedControl } from "@retainpdf/ui";
 import {
   fetchSyncStatusApi,
   runSyncNowApi,
@@ -26,6 +27,11 @@ function targetReady(status: SyncStatus | null): boolean {
   if (!status) return false;
   return status.transport === "webdav" ? Boolean(status.webdav_url) : Boolean(status.folder);
 }
+
+const TRANSPORT_OPTIONS = [
+  { value: "folder", label: "网盘文件夹", props: { "data-sync-transport": "folder" } },
+  { value: "webdav", label: "WebDAV", props: { "data-sync-transport": "webdav" } },
+] as const satisfies ReadonlyArray<{ value: Transport; label: string; props: Record<string, string> }>;
 
 const POLL_IDLE_MS = 15_000;
 const POLL_BUSY_MS = 2_000;
@@ -203,21 +209,12 @@ export function SyncSettingsPanel() {
         {maintenance ? <p className="sync-settings-detail">{maintenance}</p> : null}
       </section>
 
-      <div className="sync-settings-switch" role="radiogroup" aria-label="同步方式">
-        {([["folder", "网盘文件夹"], ["webdav", "WebDAV"]] as const).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={view === value}
-            className={view === value ? "sync-settings-switch-option is-current" : "sync-settings-switch-option"}
-            onClick={() => { setTransport(value); setTestResult(null); }}
-            data-sync-transport={value}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl
+        label="同步方式"
+        value={view}
+        onChange={(value) => { setTransport(value); setTestResult(null); }}
+        options={TRANSPORT_OPTIONS}
+      />
       {switching ? (
         <p className="sync-settings-hint">
           现在用的是{savedTransport === "webdav" ? " WebDAV" : "网盘文件夹"}；保存后改用{view === "webdav" ? " WebDAV" : "网盘文件夹"}，书库会重新全部放进新的位置。
@@ -228,8 +225,7 @@ export function SyncSettingsPanel() {
       <label className="sync-settings-field">
         <span className="sync-settings-label">同步文件夹</span>
         <span className="sync-settings-row">
-          <input
-            className="sync-settings-input"
+          <Input
             aria-label="同步文件夹"
             placeholder={desktop ? "点「选择」挑一个网盘里的文件夹" : "后端所在电脑上的文件夹路径"}
             value={folderDraft}
@@ -240,9 +236,9 @@ export function SyncSettingsPanel() {
             disabled={busy === "save"}
           />
           {desktop ? (
-            <button type="button" className="sync-settings-button" onClick={pickFolder} disabled={Boolean(busy)}>
+            <Button variant="secondary" onClick={pickFolder} disabled={Boolean(busy)}>
               选择…
-            </button>
+            </Button>
           ) : null}
         </span>
         <p className="sync-settings-hint">
@@ -256,8 +252,7 @@ export function SyncSettingsPanel() {
         <section className="sync-settings-field" aria-label="WebDAV 设置">
           <label className="sync-settings-field">
             <span className="sync-settings-label">WebDAV 地址</span>
-            <input
-              className="sync-settings-input"
+            <Input
               aria-label="WebDAV 地址"
               placeholder="http://群晖地址:5005/webdav/retainpdf"
               value={dav.url}
@@ -268,8 +263,7 @@ export function SyncSettingsPanel() {
           <div className="sync-settings-row">
             <label className="sync-settings-field sync-settings-grow">
               <span className="sync-settings-label">账号</span>
-              <input
-                className="sync-settings-input"
+              <Input
                 aria-label="WebDAV 账号"
                 autoComplete="username"
                 value={dav.username}
@@ -279,8 +273,7 @@ export function SyncSettingsPanel() {
             </label>
             <label className="sync-settings-field sync-settings-grow">
               <span className="sync-settings-label">密码</span>
-              <input
-                className="sync-settings-input"
+              <Input
                 aria-label="WebDAV 密码"
                 type="password"
                 autoComplete="new-password"
@@ -296,24 +289,23 @@ export function SyncSettingsPanel() {
             密码只存在这台电脑上，不会同步出去。
           </p>
           <div className="sync-settings-actions">
-            <button
-              type="button"
-              className="sync-settings-button"
+            <Button
+              variant="secondary"
               onClick={testDav}
               disabled={Boolean(busy) || !dav.url.trim()}
+              pending={busy === "test"}
               data-sync-action="test"
             >
               {busy === "test" ? "正在测试…" : "测试连接"}
-            </button>
-            <button
-              type="button"
-              className="sync-settings-button is-primary"
+            </Button>
+            <Button
+              variant="primary"
               onClick={saveDav}
               disabled={Boolean(busy) || !dav.url.trim() || (!davDirty && savedTransport === "webdav")}
               data-sync-action="save-webdav"
             >
               保存
-            </button>
+            </Button>
           </div>
           {testResult ? (
             <p className={testResult.ok ? "sync-settings-hint is-ok" : "sync-settings-error"} role="status">{testResult.text}</p>
@@ -323,8 +315,7 @@ export function SyncSettingsPanel() {
 
       <label className="sync-settings-field">
         <span className="sync-settings-label">这台电脑的名字</span>
-        <input
-          className="sync-settings-input"
+        <Input
           aria-label="这台电脑的名字"
           value={nameDraft}
           onFocus={() => { editing.current.name = true; }}
@@ -336,25 +327,24 @@ export function SyncSettingsPanel() {
       </label>
 
       <div className="sync-settings-actions">
-        <button
-          type="button"
-          className={enabled ? "sync-settings-button" : "sync-settings-button is-primary"}
+        <Button
+          variant={enabled ? "secondary" : "primary"}
           onClick={() => save({ enabled: !enabled })}
           disabled={Boolean(busy) || !status || (!enabled && !targetReady(status))}
           data-sync-action="toggle"
         >
           {enabled ? "关闭同步" : "开启同步"}
-        </button>
+        </Button>
         {enabled ? (
-          <button
-            type="button"
-            className="sync-settings-button is-primary"
+          <Button
+            variant="primary"
             onClick={runNow}
             disabled={Boolean(busy) || Boolean(status?.running)}
+            pending={busy === "run" || Boolean(status?.running)}
             data-sync-action="run"
           >
             {busy === "run" || status?.running ? "正在同步…" : "立即同步"}
-          </button>
+          </Button>
         ) : null}
       </div>
       {actionError || refreshError ? <p className="sync-settings-error" role="alert">{actionError || refreshError}</p> : null}
