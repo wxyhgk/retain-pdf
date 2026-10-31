@@ -551,7 +551,7 @@ test('a row opened beside the table: its title, its values changed as in the tab
 
 test('a long row beside the table: shown at once, its formulas drawn as they come on the screen; its picture from its own folder, as wide as written', async ({ page: p }) => {
 	const formulas = Array.from({ length: 80 }, (_, at) => `第 ${at + 1} 段：\n\n$$\n\\sum_{i=1}^{${at + 2}} \\frac{1}{i^2} = S_{${at}}\n$$`).join('\n\n');
-	writeArticle('db-row-a', `---\ntitle: 长的\npubDate: 2026-10-01\ndraft: true\nparent: db-table\n---\n\n![图](./img/a.png){width=50%}\n\n${formulas}\n`);
+	writeArticle('db-row-a', `---\ntitle: 长的\npubDate: 2026-10-01\ndraft: true\nparent: db-table\n---\n\n![图](./img/a.png){width=50%}\n\n\`\`\`bash\necho 代码\n\`\`\`\n\n${formulas}\n`);
 	database({ columns: [], view: 'table' });
 	await openStudio(p);
 	await block(p).locator('[data-row="db-row-a"]').hover();
@@ -566,5 +566,9 @@ test('a long row beside the table: shown at once, its formulas drawn as they com
 	await expect(picture).toHaveAttribute('src', /\/db-row-a\/files\/img\/a\.png$/u);
 	await expect(picture).toHaveAttribute('style', /width: 50%/u);
 	await expect(text).not.toContainText('{width');
+	// Its code readable: dark on its light ground (the blog's light-on-dark colours not left on it).
+	const code = await text.locator('pre').evaluate((pre) => [getComputedStyle(pre).color, getComputedStyle(pre).backgroundColor]);
+	const light = (color: string) => (color.match(/\d+/gu) ?? []).slice(0, 3).reduce((sum, part) => sum + Number(part), 0) / 3 > 180;
+	expect([light(code[0]!), light(code[1]!)]).toEqual([false, true]);
 });
 

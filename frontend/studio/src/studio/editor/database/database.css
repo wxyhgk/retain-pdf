@@ -301,9 +301,10 @@
 .db-peek .db-peek-text h2 { font-size: 19px; }
 .db-peek .db-peek-text :is(h3, h4) { font-size: 16px; }
 .db-peek .db-peek-text blockquote { padding-left: 12px; border-left: 3px solid rgb(var(--gray-light)); color: rgb(var(--gray-dark)); }
-.db-peek .db-peek-text code { padding: 1px 4px; border-radius: 4px; background: var(--studio-fill); font-size: 0.9em; }
-.db-peek .db-peek-text pre { padding: 10px 12px; overflow-x: auto; border-radius: 6px; background: var(--studio-fill); }
-.db-peek .db-peek-text pre code { padding: 0; background: none; }
+.db-peek .db-peek-text code { padding: 1px 4px; border-radius: 4px; background: var(--studio-fill); font-family: var(--font-mono); font-size: 0.9em; }
+/* Code as the AI panel shows it: dark grey on a light ground (the blog's own is light on dark, its colours kept by pre). */
+.db-peek .db-peek-text pre { padding: 10px 12px; overflow-x: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 13px; line-height: 1.55; white-space: pre; }
+.db-peek .db-peek-text pre code { padding: 0; background: none; color: inherit; font: inherit; }
 .db-peek .db-peek-text table { border-collapse: collapse; font-size: 14px; }
 .db-peek .db-peek-text :is(th, td) { padding: 4px 8px; border: 1px solid var(--studio-hairline); }
 /* A number beside its name, not at the far end. */
