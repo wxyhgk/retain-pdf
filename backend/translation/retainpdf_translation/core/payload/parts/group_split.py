@@ -4,11 +4,21 @@ import re
 
 from retainpdf_math.direct_typst import has_balanced_unescaped_dollars
 
+from .formula_gaps import DISPLAY_FORMULA_RE
+
 TOKEN_RE = re.compile(r"(<[futnvc]\d+-[0-9a-z]{3}/>|\[\[FORMULA_\d+]]|\s+|[A-Za-z0-9_\-./]+|[\u4e00-\u9fff]|.)")
 INLINE_MATH_SPAN_RE = re.compile(r"(?<!\\)\$(?:\\.|[^$\\\n])+(?<!\\)\$")
+# 独立公式 `$$ … $$` 整个算一个记号：以前只认不跨行的 `$…$`，模型写出多行的 `$$\n…\n$$` 时切点落进公式里，
+# 两块都渲染坏（2026-10-30 量子化学-14 p029-b019 以 `$$\n\` 结尾）
 MATH_AWARE_TOKEN_RE = re.compile(
-    rf"(<[futnvc]\d+-[0-9a-z]{{3}}/>|\[\[FORMULA_\d+]]|\s+|{INLINE_MATH_SPAN_RE.pattern}|[A-Za-z0-9_\-./]+|[\u4e00-\u9fff]|.)"
+    rf"(<[futnvc]\d+-[0-9a-z]{{3}}/>|\[\[FORMULA_\d+]]|\s+|{DISPLAY_FORMULA_RE.pattern}|{INLINE_MATH_SPAN_RE.pattern}|[A-Za-z0-9_\-./]+|[\u4e00-\u9fff]|.)"
 )
+ANY_MATH_SPAN_RE = re.compile(rf"{DISPLAY_FORMULA_RE.pattern}|{INLINE_MATH_SPAN_RE.pattern}")
+# 引用角标 `$^{12}$`、`$ ^{26-28} $`：句末标点后面紧跟的角标属于前一句，切点放在角标后面
+# （2026-10-30 Jensen 第 12 章 p035-b008：`。$^{55}$` 被切到下一页那块的开头）
+CITATION_SPAN_RE = re.compile(r"\$\s*\^\s*\{[^{}$]*\}\s*\$")
+# 夹着的公式后面那块开头的标点（模型在公式后接 "，其他分量……"）：原文的标点在公式块里，删掉
+_AFTER_FORMULA_PUNCTUATION = "，。、；：,.;:"
 SPLIT_PUNCTUATION = "。！？；，、,.!?;:)]}）】」』"
 # 续段在句中断栏时按比例找切点：切在句末、分句标点之后，比切在两个汉字之间好读；
 # 下一块不能以标点开头。奖励以 token 长度计（一个汉字 1 分），句末最多让切点挪 6 个字。
@@ -70,9 +80,21 @@ def source_starts_with_label(text: str) -> bool:
     return _SOURCE_LABEL_RE.match(str(text or "")) is not None
 
 
+def _is_citation(token: str) -> bool:
+    return bool(token) and CITATION_SPAN_RE.fullmatch(token) is not None
+
+
+def _next_visible(tokens: list[str], probe: int) -> str:
+    return next((token for token in tokens[probe:] if not token.isspace()), "")
+
+
 def _sentence_ends_before(tokens: list[str], probe: int) -> bool:
     """``tokens[:probe]`` 是否恰好在一句话结束处收尾。"""
+    if _is_citation(_next_visible(tokens, probe)):
+        return False
     index = probe - 1
+    while index >= 0 and (_is_citation(tokens[index]) or (tokens[index].isspace() and index < probe - 1 and _is_citation(tokens[index + 1]))):
+        index -= 1
     while index >= 0 and tokens[index] and all(char in _SENTENCE_CLOSERS for char in tokens[index]):
         index -= 1
     if index < 0:
@@ -123,20 +145,98 @@ def _direct_typst(items: list[dict]) -> bool:
 def _break_score_adjustment(tokens: list[str], probe: int) -> float:
     """切在 ``tokens[:probe]`` 之后的加减分：负数更好。"""
     adjustment = 0.0
-    prev = tokens[probe - 1].rstrip() if 0 < probe <= len(tokens) else ""
+    index = probe - 1
+    while 0 <= index < len(tokens) and (_is_citation(tokens[index]) or (tokens[index].isspace() and index > 0 and _is_citation(tokens[index - 1]))):
+        index -= 1  # 句末标点后面的角标跟着前一句：越过角标看前面的标点
+    prev = tokens[index].rstrip() if 0 <= index < len(tokens) else ""
     if prev.endswith(tuple(_SENTENCE_BREAK_PUNCTUATION)):
         adjustment -= _SENTENCE_BREAK_BONUS
     elif prev.endswith(tuple(_CLAUSE_BREAK_PUNCTUATION)):
         adjustment -= _CLAUSE_BREAK_BONUS
     elif prev.endswith(SPLIT_PUNCTUATION):
         adjustment -= _CLOSER_BREAK_BONUS
-    following = next((token for token in tokens[probe:] if not token.isspace()), "")
-    if following[:1] and following[:1] in _LEADING_PUNCTUATION:
+    following = _next_visible(tokens, probe)
+    if (following[:1] and following[:1] in _LEADING_PUNCTUATION) or _is_citation(following):
         adjustment += _LEADING_PUNCTUATION_PENALTY
     return adjustment
 
 
+def _formula_key(text: str) -> str:
+    return re.sub(r"\s+", "", str(text or "").strip().strip("$"))
+
+
+def _gap_formula_spans(text: str, gaps: list[str]) -> list[tuple[int, int]] | None:
+    """译文里夹着的那几处公式的位置（按顺序，一处几个公式的取整段）；对不上返回 None。
+
+    先按内容找（空白不算，`$$` 写成 `$` 也认）；内容被改过但独立公式的个数正好对得上，就按位置认。"""
+    spans: list[tuple[int, int]] = []
+    pos = 0
+    for gap in gaps:
+        found: tuple[int, int] | None = None
+        for key in (_formula_key(f) for f in DISPLAY_FORMULA_RE.findall(gap) or [gap]):
+            match = next((m for m in ANY_MATH_SPAN_RE.finditer(text, pos) if _formula_key(m.group(0)) == key), None)
+            if match is None:
+                found = None
+                break
+            found = (found[0] if found else match.start(), match.end())
+            pos = match.end()
+        if found is None:
+            break
+        spans.append(found)
+    if len(spans) == len(gaps):
+        return spans
+    displays = [m.span() for m in DISPLAY_FORMULA_RE.finditer(text)]
+    if len(displays) == len(gaps):
+        return displays
+    return None
+
+
+def _split_at_gap_formulas(protected_text: str, items: list[dict]) -> list[str] | None:
+    """组里两块之间夹着独立公式（`formula_gaps`，拼组时公式原文放进了整段）：在译文的这个公式处切开、公式删掉，
+    公式之间的那一段再按比例切给其中的几块。没有夹公式返回 None；译文里认不出那几个公式，删掉独立公式后按比例切。"""
+    gaps = [str(item.get("translation_unit_formula_before") or "").strip() for item in items]
+    cut_at = [index for index in range(1, len(items)) if gaps[index]]
+    if not cut_at or not _direct_typst(items):
+        return None
+    text = str(protected_text or "")
+    spans = _gap_formula_spans(text, [gaps[index] for index in cut_at])
+    if spans is None:
+        return _split_by_ratio(re.sub(rf"\s*(?:{DISPLAY_FORMULA_RE.pattern})\s*", " ", text).strip(), items)
+    pieces: list[str] = []
+    start = 0
+    for span_start, span_end in spans:
+        pieces.append(text[start:span_start])
+        start = span_end
+    pieces.append(text[start:])
+    bounds = [0, *cut_at, len(items)]
+    chunks: list[str] = []
+    for index, piece in enumerate(pieces):
+        piece = piece.strip()
+        if index > 0:
+            piece = piece.lstrip(_AFTER_FORMULA_PUNCTUATION + " ").strip()
+        chunks.extend(_split_by_ratio(piece, items[bounds[index] : bounds[index + 1]]))
+    return chunks
+
+
+def _inline_unrequested_display(protected_text: str, items: list[dict]) -> str:
+    """原文各块都没有 `$$`、译文却写成独立公式的，改回行内 `$…$`：正文框里排不下单独一行的公式，
+    多半还是模型把行内公式写成了独立公式。"""
+    text = str(protected_text or "")
+    if not _direct_typst(items) or "$$" not in text or any("$$" in _item_source(item) for item in items):
+        return text
+    return DISPLAY_FORMULA_RE.sub(lambda m: f"${m.group(0)[2:-2].strip()}$", text)
+
+
 def split_group_protected_translation(protected_text: str, items: list[dict]) -> list[str]:
+    if len(items) <= 1:
+        return [str(protected_text or "").strip()]
+    at_formulas = _split_at_gap_formulas(protected_text, items)
+    if at_formulas is not None:
+        return at_formulas
+    return _split_by_ratio(_inline_unrequested_display(protected_text, items), items)
+
+
+def _split_by_ratio(protected_text: str, items: list[dict]) -> list[str]:
     if len(items) <= 1:
         return [str(protected_text or "").strip()]
     if _direct_typst(items) and not has_balanced_unescaped_dollars(str(protected_text or "")):

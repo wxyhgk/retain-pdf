@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from retainpdf_translation_agent.breaks import move_leading_punctuation
+from retainpdf_translation_agent.breaks import split_at_formulas
 from retainpdf_translation_agent.breaks import split_by_ratio
 from retainpdf_translation_agent.checks import prose_length
 from retainpdf_translation_agent.contract import BlockInput
@@ -43,7 +44,7 @@ def _merged(group_id: str, members: list[BlockInput]) -> BlockInput:
     return BlockInput(
         id=group_id,
         cls=head.cls,
-        text=" ".join(m.text for m in members),
+        text=_join_members(members),
         translate=True,
         where=" → ".join(m.where for m in members),
         cls_label=head.cls_label,
@@ -52,6 +53,24 @@ def _merged(group_id: str, members: list[BlockInput]) -> BlockInput:
         attributes=head.attributes,
         members=[m.id for m in members],
     )
+
+
+def _join_members(members: list[BlockInput]) -> str:
+    """各块原文用空格接起来；两块之间夹着独立公式的（`formula_before`），公式原文放在中间、各占一行。"""
+    text = ""
+    for member in members:
+        if not text:
+            text = member.text
+        elif member.formula_before.strip():
+            text = f"{text}\n{member.formula_before.strip()}\n{member.text}"
+        else:
+            text = f"{text} {member.text}"
+    return text
+
+
+def _split_members(translation: str, members: list[BlockInput]) -> list[str]:
+    weights = [max(1, prose_length(m.text)) for m in members]
+    return list(move_leading_punctuation([p.strip() for p in split_by_ratio(translation, weights)]))
 
 
 def split_units(results: dict[str, BlockResult], groups: dict[str, list[BlockInput]]) -> dict[str, BlockResult]:
@@ -67,8 +86,9 @@ def split_units(results: dict[str, BlockResult], groups: dict[str, list[BlockInp
         if result.translation is None:
             parts: list[str | None] = [None] * len(members)
         else:
-            weights = [max(1, prose_length(m.text)) for m in members]
-            parts = list(move_leading_punctuation([p.strip() for p in split_by_ratio(result.translation, weights)]))
+            # 夹着独立公式的先在公式处切开（公式删掉，它在版面上单独一块），每段再按比例切给其中的几块
+            pieces = split_at_formulas(result.translation, [m.formula_before for m in members]) or [(result.translation, 0, len(members))]
+            parts = [part for piece, start, end in pieces for part in _split_members(piece, members[start:end])]
         for member, part in zip(members, parts):
             meta = dict(result.meta or {}, unit_id=result_id)
             out[member.id] = BlockResult(member.id, part, list(result.issues), result.attempts, result.status, list(result.history), meta)

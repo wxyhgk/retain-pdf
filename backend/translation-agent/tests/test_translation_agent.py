@@ -432,3 +432,58 @@ def test_visible_length_counts_marks_and_formulas_as_displayed() -> None:
 
     assert visible_length("阅读顺序{{fn:1}}。") == len("阅读顺序¹。")
     assert visible_length("边界框 $b_i$ 和") == len("边界框 x 和")  # b_i 三个字符按一半估
+
+
+def _dipole_page() -> PageInput:
+    """2026-10-30 量子化学-14 p003-b022 / p004-b004：一段话被独立公式隔开，两半连成接续组。"""
+    group = lambda i: {"id": "cg-d", "index": i, "of": 2}  # noqa: E731
+    return PageInput(
+        page_label="3",
+        blocks=[
+            BlockInput("d1", "paragraph", "The electric dipole moment is a vector whose $ x $ component is", True, group=group(1)),
+            BlockInput("eq", "display_formula", DIPOLE_FORMULA, False),
+            BlockInput(
+                "d2",
+                "paragraph",
+                "with similar expressions for the other components. For a continuous charge distribution the moment is a sum over charge elements.",
+                True,
+                group=group(2),
+                formula_before=DIPOLE_FORMULA,
+            ),
+        ],
+    )
+
+
+DIPOLE_FORMULA = r"$$ \mu_{x,\mathrm{cl}}=\sum_{i}Q_{i}x_{i} $$"
+
+
+def test_a_formula_between_group_halves_is_sent_and_the_split_falls_on_it() -> None:
+    """以前两半只用空格连，模型看不到公式，自己编一个写进正文；现在公式原文放在中间，切回时在公式处切开、公式删掉。"""
+    whole = f"电偶极矩是一个矢量，其 $ x $ 分量为\n{DIPOLE_FORMULA}\n，其他分量的表达式类似。对于连续电荷分布，偶极矩是对各电荷元的求和。"
+    model = Scripted({"cg-d": whole})
+    results, _ = TranslationAgent(model="fake", transport=model).translate_page(_dipole_page())
+    merged = next(b for b in model.payloads[0]["blocks"] if b["id"] == "cg-d")
+    assert merged["text"] == (
+        "The electric dipole moment is a vector whose $ x $ component is\n"
+        f"{DIPOLE_FORMULA}\n"
+        "with similar expressions for the other components. For a continuous charge distribution the moment is a sum over charge elements."
+    )
+    assert results["d1"].translation == "电偶极矩是一个矢量，其 $ x $ 分量为"
+    assert results["d2"].translation == "其他分量的表达式类似。对于连续电荷分布，偶极矩是对各电荷元的求和。"
+    assert results["d1"].status == results["d2"].status == "ok", {k: r.issues for k, r in results.items()}
+
+
+def test_a_dropped_formula_falls_back_to_the_ratio_split() -> None:
+    whole = "电偶极矩是一个矢量，其 $ x $ 分量如上，其他分量的表达式类似。对于连续电荷分布，偶极矩是对各电荷元的求和。"
+    results, _ = TranslationAgent(model="fake", transport=Scripted({"cg-d": whole})).translate_page(_dipole_page())
+    assert results["d1"].translation + results["d2"].translation == whole
+    assert results["d1"].translation and results["d2"].translation
+
+
+def test_split_at_formulas_finds_a_respaced_formula_and_leaves_ungapped_members_to_the_ratio() -> None:
+    from retainpdf_translation_agent.breaks import split_at_formulas
+
+    text = r"甲乙丙。$$\mu_{x,\mathrm{cl}} = \sum_i Q_i x_i$$ 丁戊己，庚辛。"
+    assert split_at_formulas(text, ["", DIPOLE_FORMULA]) == [("甲乙丙。", 0, 1), ("丁戊己，庚辛。", 1, 2)]
+    assert split_at_formulas(text, ["", "", DIPOLE_FORMULA]) == [("甲乙丙。", 0, 2), ("丁戊己，庚辛。", 2, 3)]
+    assert split_at_formulas(text, ["", ""]) is None

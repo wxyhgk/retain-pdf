@@ -183,6 +183,20 @@ def _append_math_delimiter_damage_hint(lines: list[str], item: TranslationItemCo
     if not has_balanced_unescaped_dollars(item.source_for_prompt()):
         lines.append(MATH_DELIMITER_DAMAGE_HINT)
     _append_mitex_rewrite_hint(lines, item)
+    _append_display_formula_hint(lines, item)
+
+
+# 接续组两块之间夹着的独立公式，拼组时原文放进了整段（`core/payload/parts/formula_gaps.py`）。只有原文里有 `$$` 才加这句，
+# 别的块请求不变。
+DISPLAY_FORMULA_IN_TEXT_HINT = (
+    "原文中单独成行的 `$$ … $$` 是这段话中间的独立公式（版面上单独排，不用翻）：译文里在对应位置原样保留，"
+    "不要改写、挪动、删掉，也不要改成行内公式；公式前后的文字照原文顺序译。"
+)
+
+
+def _append_display_formula_hint(lines: list[str], item: TranslationItemContext) -> None:
+    if "$$" in item.source_for_prompt():
+        lines.append(DISPLAY_FORMULA_IN_TEXT_HINT)
 
 
 def _append_mitex_rewrite_hint(lines: list[str], item: TranslationItemContext) -> None:

@@ -7,7 +7,7 @@ from collections import Counter
 
 from retainpdf_translation_agent.memory import find_terms
 
-FORMULA_RE = re.compile(r"\$[^$]+\$")
+FORMULA_RE = re.compile(r"\$\$[^$]+\$\$|\$[^$]+\$")  # 独立公式 `$$ … $$`（接续组夹着的）整个算一个
 CITATION_RE = re.compile(r"\[\d+(?:\s*[,–-]\s*\d+)*\]")
 FN_RE = re.compile(r"\{\{fn:[^}]+\}\}")
 CODE_RE = re.compile(r"`[^`\n]+`")
@@ -35,7 +35,8 @@ SHORT_SOURCE = 40  # 原文不到这么多字符（去掉公式等）不查"太�
 # 4：2026-10-31 不再拿公式和原文逐个比（formula_changed、formula_merged 去掉），只查 `$` 成对
 # 5：2026-10-31 接续组当一块校验、重翻、退回原文（units.py），切开以后不再逐块查：group_overlap、group_share、mark_moved 去掉
 # 6：2026-10-31 原文没有要翻的英文词（样品名、缩写、网址）时原样交回不算 untranslated / no_chinese
-CHECKS_VERSION = "translation-agent-checks-6"
+# 7：2026-10-31 独立公式 `$$ … $$`（接续组夹着的）整个算一个公式
+CHECKS_VERSION = "translation-agent-checks-7"
 
 
 def visible_length(text: str) -> int:

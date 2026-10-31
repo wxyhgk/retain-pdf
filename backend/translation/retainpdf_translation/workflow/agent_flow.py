@@ -5,7 +5,7 @@
 
 - 每页模板记录 → agent 的 `PageInput`：类别按规范化文档的 sub_type 换成 agent 的分类，原文用 `$…$` 直写公式
   （agent 引擎强制 math_mode=direct_typst），参考文献角标 "$ ^{40} $" 换成脚注标记 `{{fn:40}}`、写回时换回去；
-  接续组（`__cg__:` 单元）整组放进组头那一页。
+  接续组（`__cg__:` 单元）整组放进组头那一页；组里两块之间夹着的独立公式填进 `formula_before`。
 - `DocumentRun` 整篇顺序翻：先通读（体裁、术语、人名、标题），每页翻完审校。状态（续跑用）在翻译目录的 `agent/` 下，
   换了文档或引擎版本（提示词、交接格式、检查规则）就清掉重来。请求缓存各任务共用（`paths.AGENT_REQUEST_CACHE_DIR`），
   键是整个请求体的哈希：重试翻译会新建任务，问过的一模一样的请求不再花钱。注意每页的请求带着上一页的译文作上下文，
@@ -41,6 +41,7 @@ from retainpdf_translation.core.payload.parts.apply import apply_revised_unit_te
 from retainpdf_translation.core.payload.parts.apply import join_unit_text
 from retainpdf_translation.core.payload.parts.common import is_group_unit_id
 from retainpdf_translation.core.payload.parts.diagnostics import record_translation_diagnostics
+from retainpdf_translation.core.payload.parts.formula_gaps import formulas_between
 from retainpdf_translation.core.payload.parts.policy_state import mark_translation_failed_policy_state
 from retainpdf_translation.llm.shared.control_context import TranslationControlContext
 from retainpdf_translation.llm.shared.model_wire import anthropic_usage
@@ -217,6 +218,14 @@ def build_agent_pages(
             groups[unit_id] = members
     groups = {unit_id: members for unit_id, members in groups.items() if len(members) >= 2}
     group_of = {member: (unit_id, index, len(members)) for unit_id, members in groups.items() for index, member in enumerate(members, start=1)}
+    # 组里两块之间夹着的独立公式：合组时放进整段，切回各块时在这里切（`formula_gaps`）
+    flat = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
+    formula_before = {
+        member: formula
+        for members in groups.values()
+        for member, formula in zip(members, formulas_between(flat, [items_by_id[m][1] for m in members]))
+        if formula
+    }
     home_page = {member: items_by_id[members[0]][0] for members in groups.values() for member in members}
 
     marks_by_block: dict[str, dict[str, str]] = {}
@@ -241,6 +250,7 @@ def build_agent_pages(
                 where=_where(item, sizes.get(page_idx), labels[page_idx]),
                 group=group,
                 attributes=attributes,
+                formula_before=formula_before.get(item_id, ""),
             )
             blocks_by_page[home_page.get(item_id, page_idx)].append(block)
 
@@ -360,7 +370,7 @@ def _prepare_state_dir(state_dir: Path, pages: list[PageInput], model: str) -> N
     digest = hashlib.sha256()
     for page in pages:
         for block in page.blocks:
-            digest.update(json.dumps([page.page_label, block.id, block.text, block.translate, block.group], ensure_ascii=False, sort_keys=True).encode("utf-8"))
+            digest.update(json.dumps([page.page_label, block.id, block.text, block.translate, block.group, block.formula_before], ensure_ascii=False, sort_keys=True).encode("utf-8"))
     fingerprint = {"pages": digest.hexdigest(), "model": model, **agent_engine_identity()}
     path = state_dir / STATE_FINGERPRINT
     try:

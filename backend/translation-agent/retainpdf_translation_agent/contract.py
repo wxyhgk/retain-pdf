@@ -44,6 +44,8 @@ class BlockInput:
     fixed_translation: str | None = None
     # 接续组合成的一块（`units.merge_groups` 造）：原来的各块 id，按顺序；调用方不用填
     members: list[str] = field(default_factory=list)
+    # 接续组里这块和上一块之间夹着的独立公式（`$$ … $$`，几个就换行连起来）：合组时放进整段，切回各块时在这里切
+    formula_before: str = ""
 
     def request_record(self) -> dict:
         record = {"id": self.id, "class": self.cls, "where": self.where, "text": self.text, "translate": self.translate}
