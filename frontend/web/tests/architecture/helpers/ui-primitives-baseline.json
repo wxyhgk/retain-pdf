@@ -152,18 +152,11 @@
     "src/features/collections/ui/CollectionsGridView.tsx": {
       "button": 4
     },
-    "src/features/credentials/ui/AgentRuntimeConfirmationField.tsx": {
-      "button": 2
-    },
     "src/features/credentials/ui/AgentRuntimeFields.tsx": {
-      "select": 1,
       "input": 4
     },
     "src/features/credentials/ui/AgentRuntimeSettingsCard.tsx": {
       "button": 1
-    },
-    "src/features/credentials/ui/CredentialsWorkbench.tsx": {
-      "select": 1
     },
     "src/features/credentials/ui/HiddenCredentialInputs.tsx": {
       "input": 2
@@ -465,12 +458,12 @@
       "borderRadius": 3
     },
     "src/features/credentials/ui/AgentRuntimeSettingsCard.css": {
-      "fontSize": 11,
-      "borderRadius": 9
+      "fontSize": 10,
+      "borderRadius": 8
     },
     "src/features/credentials/ui/CredentialCard.css": {
-      "fontSize": 13,
-      "borderRadius": 5
+      "fontSize": 12,
+      "borderRadius": 4
     },
     "src/features/credentials/ui/CredentialFormFields.css": {
       "fontSize": 4,
@@ -689,8 +682,7 @@
       "borderRadius": 2
     },
     "src/styles/pages/home/credential-ocr.css": {
-      "fontSize": 2,
-      "borderRadius": 1
+      "fontSize": 1
     },
     "src/styles/pages/home/favorites.css": {
       "fontSize": 8,

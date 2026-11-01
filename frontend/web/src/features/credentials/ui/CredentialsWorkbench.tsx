@@ -13,15 +13,22 @@ import { Button } from "@retainpdf/ui";
 import { AgentRuntimeSettingsCard } from "./AgentRuntimeSettingsCard.jsx";
 import { DialogFooter } from "@retainpdf/ui";
 import { FormStatusLine } from "@retainpdf/ui";
-import { Check, Save, ScanText } from "lucide-react";
+import { Check, Pickaxe, Save, ScanLine, ScanText } from "lucide-react";
 import { OCR_PROVIDER_DEFINITIONS } from "@/platform/config/providers.js";
 import { isMultiUser, useAuthSession } from "@/features/auth/index.js";
+import { ChoiceTiles } from "./ChoiceTiles.jsx";
 
 const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
 
 // 保存成功反馈至少停留这么久。保存本身可能只要几毫秒（浏览器写 localStorage
 // 是同步的），不兜底的话按钮闪一下就回到原样，用户根本看不到自己点成功了。
 const SAVED_FEEDBACK_MS = 1600;
+
+/** OCR 服务商卡片上的图：有官方标志用标志（GLM-OCR 是智谱），没有就用一个线条图标。 */
+function OcrProviderIcon({ providerId, logoUrl }: { providerId: string; logoUrl?: string }) {
+  if (logoUrl) return <img className="credential-choice-tile-logo" src={logoUrl} alt="" />;
+  return providerId === "mineru" ? <Pickaxe /> : <ScanLine />;
+}
 
 export function CredentialsWorkbench() {
   const { credentials, view, handlers } = useCredentialsController();
@@ -89,18 +96,22 @@ export function CredentialsWorkbench() {
                 <div className="credential-card-copy">
                   <h3>OCR 识别</h3>
                 </div>
-                <select
-                  id={BROWSER_IDS.ocrProviderSelect}
-                  className="credential-ocr-provider-select"
-                  aria-label="OCR 提供商"
+              </div>
+              {/* 服务商是一排图标卡片（以前是卡片头右边的下拉框）；id 留在外框上。 */}
+              <div id={BROWSER_IDS.ocrProviderSelect} className="credential-ocr-provider-tiles">
+                <ChoiceTiles
+                  label="OCR 提供商"
                   value={credentials.ocrProvider}
                   disabled={saving}
-                  onChange={(event) => handlers?.changeProvider?.(event)}
-                >
-                  {OCR_PROVIDER_DEFINITIONS.map((provider) => (
-                    <option key={provider.id} value={provider.id}>{provider.label}</option>
-                  ))}
-                </select>
+                  onChange={(value) => handlers?.changeProvider?.({ currentTarget: { value } })}
+                  options={OCR_PROVIDER_DEFINITIONS.map((provider) => ({
+                    value: provider.id,
+                    icon: <OcrProviderIcon providerId={provider.id} logoUrl={provider.logoUrl} />,
+                    label: provider.label,
+                    title: provider.description,
+                    props: { "data-ocr-provider-option": provider.id },
+                  }))}
+                />
               </div>
               <OcrPanels />
             </section>

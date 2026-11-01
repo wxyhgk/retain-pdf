@@ -6,8 +6,9 @@ import {
 import { useCredentialsController } from "./useCredentialsController.js";
 import { OCR_PROVIDER_DEFINITIONS } from "@/platform/config/providers.js";
 import { validationIcon } from "../domain/validation-icon.js";
-import { ExternalLink, PlugZap } from "lucide-react";
+import { ExternalLink, Info, KeyRound, PlugZap } from "lucide-react";
 import { SecretInput } from "./SecretInput.js";
+import { FieldLabel } from "./FieldLabel.jsx";
 import {
   resetHandlerFor,
 } from "./provider-panel-shared.js";
@@ -38,7 +39,7 @@ export function OcrPanels() {
             hidden={!active}
           >
             <label>
-              <span className="developer-label">{provider.tokenLabel}</span>
+              <FieldLabel icon={<KeyRound />}>{provider.tokenLabel}</FieldLabel>
               <SecretInput
                 id={credentialTokenInputId(provider.id)}
                 secretLabel={provider.tokenLabel}
@@ -50,7 +51,7 @@ export function OcrPanels() {
               />
             </label>
             {!provider.supportsValidation ? (
-              <p className="credential-ocr-hint">{provider.validationUnavailableMessage}</p>
+              <p className="credential-ocr-hint"><Info aria-hidden="true" />{provider.validationUnavailableMessage}</p>
             ) : null}
             <div className="credential-card-footer">
               <div className="credential-card-actions">

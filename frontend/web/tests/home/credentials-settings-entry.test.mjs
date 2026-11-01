@@ -56,9 +56,7 @@ test("Agent Key：读取 Python 接口后明文回填，保存和重新挂载后
     root = createRoot(host);
     root.render(React.createElement(AgentRuntimeSettingsCard));
     await waitFor(() => input("模型 API Key")?.value === "edited-agent-key", "重新打开后恢复 Agent Key");
-    const mode = host.querySelector('select[aria-label="AI Agent 运行模式"]');
-    mode.value = "fx";
-    mode.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    host.querySelector('[data-agent-mode="fx"]').click();
     await waitFor(() => input("FX Gateway Key")?.value === "saved-fx-key", "FX Key 回填");
     assert.equal(input("FX Gateway Key").type, "text");
   } finally {
@@ -74,8 +72,12 @@ test("MinerU：Token 本机保存、明文回填，切回 Paddle 保留各自 To
   try {
     dom.window.document.dispatchEvent(new dom.window.CustomEvent(APP_EVENTS.openBrowserCredentials));
     await waitFor(() => byId(dom, "browser-ocr-provider-select"), "OCR 提供商选择器");
-    const select = byId(dom, "browser-ocr-provider-select");
-    assert.deepEqual([...select.options].map((option) => option.value), ["paddle", "mineru", "glm_ocr"]);
+    // 服务商是一排图标卡片（radiogroup），id 留在外框上。
+    const pick = (provider) => byId(dom, "browser-ocr-provider-select").querySelector(`[data-ocr-provider-option="${provider}"]`).click();
+    assert.deepEqual(
+      [...byId(dom, "browser-ocr-provider-select").querySelectorAll("[role=radio]")].map((option) => option.dataset.ocrProviderOption),
+      ["paddle", "mineru", "glm_ocr"],
+    );
     await waitForDialogReady();
     typeInput(dom, byId(dom, "browser-paddle-token"), "paddle-ui-fixture");
     typeInput(dom, byId(dom, "browser-api-key"), "translation-ui-fixture");
@@ -83,8 +85,7 @@ test("MinerU：Token 本机保存、明文回填，切回 Paddle 保留各自 To
     await waitFor(() => byId(dom, "browser-credentials-status").textContent.includes("已保存"), "保存 Paddle");
     const paddleRef = defaultCredentialsStatePort.getCredentials().ocrCredentialRef;
 
-    select.value = "mineru";
-    select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    pick("mineru");
     await waitFor(() => !byId(dom, "browser-mineru-token").closest("section").hidden, "显示 MinerU 面板");
     assert.equal(byId(dom, "browser-paddle-token").closest("section").hidden, true);
     assert.equal(byId(dom, "browser-mineru-token").type, "text");
@@ -102,8 +103,7 @@ test("MinerU：Token 本机保存、明文回填，切回 Paddle 保留各自 To
     assert.equal(JSON.stringify(dom.window.localStorage).includes("mineru-ui-fixture"), true);
     assert.equal(dom.window.document.querySelector('input[type="hidden"][value="mineru-ui-fixture"]'), null);
 
-    select.value = "paddle";
-    select.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+    pick("paddle");
     await waitFor(() => defaultCredentialsStatePort.getCredentials().ocrProvider === "paddle", "切回 Paddle");
     assert.equal(defaultCredentialsStatePort.getCredentials().ocrCredentialRef, paddleRef);
     assert.equal(byId(dom, "browser-paddle-token").value, "paddle-ui-fixture");
@@ -140,9 +140,7 @@ test("MinerU：独立检测接入真实 API transport，显示缺失、过期、
     document.dispatchEvent(new CustomEvent(APP_EVENTS.openBrowserCredentials));
     await waitFor(() => byId(dom, "browser-ocr-provider-select"), "OCR 提供商选择器");
     await waitForDialogReady();
-    const select = byId(dom, "browser-ocr-provider-select");
-    select.value = "mineru";
-    select.dispatchEvent(new Event("change", { bubbles: true }));
+    byId(dom, "browser-ocr-provider-select").querySelector('[data-ocr-provider-option="mineru"]').click();
     await waitFor(() => !byId(dom, "browser-mineru-token").closest("section").hidden, "MinerU 面板");
     const input = byId(dom, "browser-mineru-token");
     const button = byId(dom, "browser-mineru-validate-btn");
@@ -368,21 +366,21 @@ test("凭据入口：设置 API 区内嵌工作台；#credential-gate-action 也
     null,
     "接口页不重复说明保存范围",
   );
-  const agentModeSelect = dom.window.document.querySelector('[aria-label="AI Agent 运行模式"]');
+  const agentModes = dom.window.document.querySelector('[role="radiogroup"][aria-label="AI Agent 运行模式"]');
   assert.ok(
     dom.window.document.querySelector('[aria-label="隐藏模型 API Key"]'),
     "AI Agent 模型 Key 使用相同的双态显示控件",
   );
+  // 运行模式是一排图标卡片：画面上写短名，全名在悬停里。
   assert.deepEqual(
-    [...agentModeSelect.options].map((option) => [option.value, option.textContent]),
+    [...agentModes.querySelectorAll("[role=radio]")].map((option) => [option.dataset.agentMode, option.getAttribute("title")]),
     [
       ["python", "Markdown 检索问答"],
       ["openai", "OpenAI 兼容 Agent"],
       ["fx", "FX Gateway Agent"],
     ],
   );
-  agentModeSelect.value = "fx";
-  agentModeSelect.dispatchEvent(new dom.window.Event("change", { bubbles: true }));
+  agentModes.querySelector('[data-agent-mode="fx"]').click();
   await waitFor(
     () => dom.window.document.querySelector('[aria-label="FX Gateway URL"]'),
     "FX 模式显示自定义 Gateway URL",

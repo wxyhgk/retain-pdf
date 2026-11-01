@@ -4,7 +4,8 @@ export const OCR_PROVIDER_DEFINITIONS = [
   {
     id: "paddle",
     label: "PaddleOCR",
-    description: "在线 OCR。",
+    description: "百度飞桨在线 OCR。",
+    logoUrl: "",
     tokenField: "paddle_token",
     runtimeConfigKey: "paddleToken",
     tokenLabel: "Paddle Access Token",
@@ -21,6 +22,7 @@ export const OCR_PROVIDER_DEFINITIONS = [
     id: "mineru",
     label: "MinerU",
     description: "MinerU 在线文档解析。",
+    logoUrl: "",
     tokenField: "mineru_token",
     runtimeConfigKey: "mineruToken",
     tokenLabel: "MinerU API Token",
@@ -40,6 +42,8 @@ export const OCR_PROVIDER_DEFINITIONS = [
     id: "glm_ocr",
     label: "GLM-OCR",
     description: "智谱版面解析，公式出 LaTeX、表格出 HTML；和智谱翻译共用一个 key。",
+    // 设置里服务商卡片上的标志（和翻译「智谱」同一个）；没有标志的用线条图标。
+    logoUrl: "src/assets/providers/zai.svg",
     tokenField: "",
     inlineOption: "credential",
     runtimeConfigKey: "glmOcrToken",

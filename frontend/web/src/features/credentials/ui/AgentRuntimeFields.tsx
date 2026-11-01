@@ -2,7 +2,18 @@ import type {
   AgentRuntimeConfigView,
   AgentRuntimeMode,
 } from "@/platform/api/index.js";
+import { Bot, Box, FileSearch, KeyRound, Link2, Network } from "lucide-react";
 import { SecretInput } from "./SecretInput.js";
+import { ChoiceTiles } from "./ChoiceTiles.jsx";
+import { FieldLabel } from "./FieldLabel.jsx";
+import { modeLabel } from "./agent-runtime-helpers.js";
+
+// 运行模式的图标卡片：画面上写短名，全名在悬停里。
+const MODE_TILES = [
+  { value: "python", icon: <FileSearch />, label: "Markdown 检索", title: modeLabel("python") },
+  { value: "openai", icon: <Bot />, label: "OpenAI 兼容", title: modeLabel("openai") },
+  { value: "fx", icon: <Network />, label: "FX Gateway", title: modeLabel("fx") },
+] as const;
 
 export interface AgentRuntimeFieldsProps {
   mode: AgentRuntimeMode;
@@ -43,24 +54,20 @@ export function AgentRuntimeFields({
 }: AgentRuntimeFieldsProps) {
   return (
     <div className="credential-agent-grid">
-      <label className="credential-agent-mode-field">
-        <span className="developer-label">运行模式</span>
-        <select
-          aria-label="AI Agent 运行模式"
+      <div className="credential-agent-mode-field">
+        <ChoiceTiles<AgentRuntimeMode>
+          label="AI Agent 运行模式"
           value={mode}
-          onChange={(event) => onModeChange(event.target.value as AgentRuntimeMode)}
+          onChange={onModeChange}
           disabled={busy}
-        >
-          <option value="python">Markdown 检索问答</option>
-          <option value="openai">OpenAI 兼容 Agent</option>
-          <option value="fx">FX Gateway Agent</option>
-        </select>
-      </label>
+          options={MODE_TILES.map((tile) => ({ ...tile, props: { "data-agent-mode": tile.value } }))}
+        />
+      </div>
 
       {mode !== "fx" ? (
         <>
           <label className="credential-agent-url-field">
-            <span className="developer-label">模型 API URL</span>
+            <FieldLabel icon={<Link2 />}>模型 API URL</FieldLabel>
             <input
               aria-label="模型 API URL"
               type="url"
@@ -70,7 +77,7 @@ export function AgentRuntimeFields({
             />
           </label>
           <label className="credential-agent-model-field">
-            <span className="developer-label">模型</span>
+            <FieldLabel icon={<Box />}>模型</FieldLabel>
             <input
               aria-label="AI 模型"
               value={model}
@@ -79,7 +86,7 @@ export function AgentRuntimeFields({
             />
           </label>
           <label className="credential-agent-key-field">
-            <span className="developer-label">模型 API Key</span>
+            <FieldLabel icon={<KeyRound />}>模型 API Key</FieldLabel>
             <SecretInput
               aria-label="模型 API Key"
               secretLabel="模型 API Key"
@@ -94,7 +101,7 @@ export function AgentRuntimeFields({
       ) : (
         <>
           <label className="credential-agent-url-field">
-            <span className="developer-label">FX Gateway URL（可选）</span>
+            <FieldLabel icon={<Link2 />}>FX Gateway URL（可选）</FieldLabel>
             <input
               aria-label="FX Gateway URL"
               type="url"
@@ -108,7 +115,7 @@ export function AgentRuntimeFields({
             仅支持本机 HTTP + 端口；远程地址请使用 OpenAI 模式。留空使用官方 Gateway。
           </p>
           <label className="credential-agent-model-field">
-            <span className="developer-label">FX 模型（可选）</span>
+            <FieldLabel icon={<Box />}>FX 模型（可选）</FieldLabel>
             <input
               aria-label="FX 模型"
               value={fxModel}
@@ -118,7 +125,7 @@ export function AgentRuntimeFields({
             />
           </label>
           <label className="credential-agent-key-field">
-            <span className="developer-label">Gateway Key</span>
+            <FieldLabel icon={<KeyRound />}>Gateway Key</FieldLabel>
             <SecretInput
               aria-label="FX Gateway Key"
               secretLabel="FX Gateway Key"
