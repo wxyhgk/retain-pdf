@@ -3,9 +3,8 @@ import {
   fetchAgentRuntimeConfig,
   updateAgentRuntimeConfig,
   type AgentRuntimeConfigView,
-  type AgentRuntimeMode,
 } from "@/platform/api/index.js";
-import { Bot, FlaskConical, Save } from "lucide-react";
+import { Bot, FlaskConical, Info, Save } from "lucide-react";
 import { DialogFooter } from "@retainpdf/ui";
 import { FormStatusLine } from "@retainpdf/ui";
 import {
@@ -19,18 +18,18 @@ import {
 import { AgentRuntimeConfirmationField } from "./AgentRuntimeConfirmationField.jsx";
 import { AgentRuntimeFields } from "./AgentRuntimeFields.jsx";
 
+// 前端只给 OpenAI 兼容这一种运行方式（2026-11-01 用户：其他的没有用）；保存时总是写成它。
+// 后端还认 Markdown 检索问答、FX Gateway：如果现在配的是那两种，卡片里说一句，保存后改过来。
+const MODE = "openai" as const;
+
 export function AgentRuntimeSettingsCard() {
   const [config, setConfig] = useState<AgentRuntimeConfigView | null>(null);
-  const [mode, setMode] = useState<AgentRuntimeMode>("python");
   const [confirmationMode, setConfirmationMode] = useState<
     AgentRuntimeConfigView["agent_confirmation_mode"]
   >("explicit");
   const [baseUrl, setBaseUrl] = useState("https://api.deepseek.com/v1");
   const [model, setModel] = useState("deepseek-flash");
-  const [fxGatewayBaseUrl, setFxGatewayBaseUrl] = useState("");
-  const [fxModel, setFxModel] = useState("");
   const [modelKey, setModelKey] = useState("");
-  const [gatewayKey, setGatewayKey] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [restarting, setRestarting] = useState(false);
@@ -41,14 +40,10 @@ export function AgentRuntimeSettingsCard() {
     const next = await fetchAgentRuntimeConfig();
     setConfig(next);
     if (syncForm) {
-      setMode(next.configured_runtime || activeMode(next.active_runtime) || "python");
       setConfirmationMode(next.agent_confirmation_mode || "explicit");
       setBaseUrl(next.llm_base_url || "https://api.deepseek.com/v1");
       setModel(next.llm_model || "deepseek-flash");
-      setFxGatewayBaseUrl(next.fx_gateway_base_url || "");
-      setFxModel(next.fx_model || "");
       setModelKey(next.llm_api_key || "");
-      setGatewayKey(next.fx_gateway_api_key || "");
     }
     return next;
   }
@@ -59,14 +54,10 @@ export function AgentRuntimeSettingsCard() {
       .then((next) => {
         if (!active) return;
         setConfig(next);
-        setMode(next.configured_runtime || activeMode(next.active_runtime) || "python");
         setConfirmationMode(next.agent_confirmation_mode || "explicit");
         setBaseUrl(next.llm_base_url || "https://api.deepseek.com/v1");
         setModel(next.llm_model || "deepseek-flash");
-        setFxGatewayBaseUrl(next.fx_gateway_base_url || "");
-        setFxModel(next.fx_model || "");
         setModelKey(next.llm_api_key || "");
-        setGatewayKey(next.fx_gateway_api_key || "");
         if (runtimeRestartPending(next)) {
           setRestarting(true);
           setMessage("正在重启 Agent…");
@@ -86,7 +77,7 @@ export function AgentRuntimeSettingsCard() {
     };
   }, []);
 
-  async function waitForRuntime(expected: AgentRuntimeMode) {
+  async function waitForRuntime(expected: AgentRuntimeConfigView["configured_runtime"]) {
     try {
       for (let attempt = 0; attempt < 12; attempt += 1) {
         await delay(500);
@@ -114,17 +105,8 @@ export function AgentRuntimeSettingsCard() {
   }
 
   async function save() {
-    if (mode !== "fx" && !modelKey.trim() && !config?.llm_api_key_configured) {
-      setMessage(`${modeLabel(mode)}模式需要模型 API Key。`);
-      setTone("error");
-      return;
-    }
-    if (
-      mode === "fx"
-      && !gatewayKey.trim()
-      && !config?.fx_gateway_api_key_configured
-    ) {
-      setMessage("FX Agent 模式需要 Gateway Key。");
+    if (!modelKey.trim() && !config?.llm_api_key_configured) {
+      setMessage("请填写模型 API Key。");
       setTone("error");
       return;
     }
@@ -134,25 +116,19 @@ export function AgentRuntimeSettingsCard() {
     try {
       const next = await updateAgentRuntimeConfig({
         expected_revision: config?.configured_revision,
-        agent_runtime: mode,
+        agent_runtime: MODE,
         agent_confirmation_mode: confirmationMode,
         llm_base_url: baseUrl.trim(),
         llm_model: model.trim(),
-        fx_gateway_base_url: fxGatewayBaseUrl.trim(),
-        fx_model: fxModel.trim(),
         ...(modelKey.trim() ? { llm_api_key: modelKey.trim() } : {}),
-        ...(gatewayKey.trim()
-          ? { fx_gateway_api_key: gatewayKey.trim() }
-          : {}),
       });
       setConfig(next);
       setModelKey(next.llm_api_key ?? modelKey.trim());
-      setGatewayKey(next.fx_gateway_api_key ?? gatewayKey.trim());
       announceRuntimeConfigChanged();
       if (runtimeRestartPending(next)) {
         setRestarting(true);
         setMessage("已保存，正在重启 Agent…");
-        void waitForRuntime(mode);
+        void waitForRuntime(MODE);
       } else {
         setMessage("已保存在本机，可直接查看和修改 Key。");
         setTone("valid");
@@ -176,6 +152,8 @@ export function AgentRuntimeSettingsCard() {
   }
 
   const currentMode = activeMode(config?.active_runtime || "");
+  // 后端现在配的不是 OpenAI 兼容（以前在别处选过另外两种）：保存后才改过来。
+  const otherMode = config && config.configured_runtime !== MODE ? config.configured_runtime : null;
   const busy = loading || saving || restarting;
   const statusState = { message, tone };
 
@@ -202,10 +180,14 @@ export function AgentRuntimeSettingsCard() {
         </span>
       </div>
 
+      {otherMode ? (
+        <p className="credential-agent-mode-note" role="note">
+          <Info aria-hidden="true" />
+          现在用的是「{modeLabel(otherMode)}」，保存后改用 OpenAI 兼容 Agent。
+        </p>
+      ) : null}
+
       <AgentRuntimeFields
-        mode={mode}
-        onModeChange={setMode}
-        config={config}
         busy={busy}
         baseUrl={baseUrl}
         onBaseUrlChange={setBaseUrl}
@@ -213,12 +195,6 @@ export function AgentRuntimeSettingsCard() {
         onModelChange={setModel}
         modelKey={modelKey}
         onModelKeyChange={setModelKey}
-        fxGatewayBaseUrl={fxGatewayBaseUrl}
-        onFxGatewayBaseUrlChange={setFxGatewayBaseUrl}
-        fxModel={fxModel}
-        onFxModelChange={setFxModel}
-        gatewayKey={gatewayKey}
-        onGatewayKeyChange={setGatewayKey}
       />
 
       <AgentRuntimeConfirmationField

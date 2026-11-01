@@ -23,7 +23,7 @@ const { defaultCredentialsStatePort } = await import("../../src/features/credent
 const createServices = (overrides) => createCredentialServices(createHomeComposition, overrides);
 const { waitFor, waitForDialogReady } = credentialsDialogWaits(dom);
 
-test("Agent Key：读取 Python 接口后明文回填，保存和重新挂载后保留", async () => {
+test("Agent Key：读取 Python 接口后明文回填，保存时改成 OpenAI 兼容，重新挂载后保留", async () => {
   const previousFetch = globalThis.fetch;
   let saved = {
     schema: "retainpdf_ai_runtime_config_view_v1",
@@ -34,9 +34,13 @@ test("Agent Key：读取 Python 接口后明文回填，保存和重新挂载后
     llm_api_key: "saved-agent-key", llm_api_key_configured: true,
     fx_gateway_api_key: "saved-fx-key", fx_gateway_api_key_configured: true,
   };
+  let putBody = null;
   globalThis.fetch = async (url, options) => {
     assert.match(`${url}`, /\/ai\/runtime-config$/);
-    if (options.method === "PUT") saved = { ...saved, ...JSON.parse(options.body) };
+    if (options.method === "PUT") {
+      putBody = JSON.parse(options.body);
+      saved = { ...saved, ...putBody, configured_runtime: putBody.agent_runtime };
+    }
     return new Response(JSON.stringify({ data: saved }), { status: 200 });
   };
   const host = document.createElement("div");
@@ -47,18 +51,22 @@ test("Agent Key：读取 Python 接口后明文回填，保存和重新挂载后
     root.render(React.createElement(AgentRuntimeSettingsCard));
     await waitFor(() => input("模型 API Key")?.value === "saved-agent-key", "Agent Key 回填");
     assert.equal(input("模型 API Key").type, "text");
+    // 前端只给 OpenAI 兼容：不再有运行模式可选；后端现在配的是别的时说一句。
+    assert.equal(host.querySelector('[aria-label="AI Agent 运行模式"]'), null);
+    assert.equal(input("FX Gateway Key"), null);
+    assert.match(host.querySelector(".credential-agent-mode-note")?.textContent || "", /「Markdown 检索问答」.*保存后改用 OpenAI 兼容/);
     typeInput(dom, input("模型 API Key"), "edited-agent-key");
     clickWithMouseDown(dom, host.querySelector(".credential-agent-save-button"));
     await waitFor(() => host.textContent.includes("已保存在本机"), "Agent 保存完成");
     assert.equal(saved.llm_api_key, "edited-agent-key");
+    assert.equal(putBody.agent_runtime, "openai");
+    assert.deepEqual(Object.keys(putBody).filter((key) => key.startsWith("fx_")), [], "不再写 FX 的字段");
     assert.equal(input("模型 API Key").value, "edited-agent-key");
     root.unmount();
     root = createRoot(host);
     root.render(React.createElement(AgentRuntimeSettingsCard));
     await waitFor(() => input("模型 API Key")?.value === "edited-agent-key", "重新打开后恢复 Agent Key");
-    host.querySelector('[data-agent-mode="fx"]').click();
-    await waitFor(() => input("FX Gateway Key")?.value === "saved-fx-key", "FX Key 回填");
-    assert.equal(input("FX Gateway Key").type, "text");
+    assert.equal(host.querySelector(".credential-agent-mode-note"), null, "已经是 OpenAI 兼容，不再提示");
   } finally {
     root.unmount();
     host.remove();
@@ -366,37 +374,11 @@ test("凭据入口：设置 API 区内嵌工作台；#credential-gate-action 也
     null,
     "接口页不重复说明保存范围",
   );
-  const agentModes = dom.window.document.querySelector('[role="radiogroup"][aria-label="AI Agent 运行模式"]');
   assert.ok(
     dom.window.document.querySelector('[aria-label="隐藏模型 API Key"]'),
     "AI Agent 模型 Key 使用相同的双态显示控件",
   );
-  // 运行模式是一排图标卡片：画面上写短名，全名在悬停里。
-  assert.deepEqual(
-    [...agentModes.querySelectorAll("[role=radio]")].map((option) => [option.dataset.agentMode, option.getAttribute("title")]),
-    [
-      ["python", "Markdown 检索问答"],
-      ["openai", "OpenAI 兼容 Agent"],
-      ["fx", "FX Gateway Agent"],
-    ],
-  );
-  agentModes.querySelector('[data-agent-mode="fx"]').click();
-  await waitFor(
-    () => dom.window.document.querySelector('[aria-label="FX Gateway URL"]'),
-    "FX 模式显示自定义 Gateway URL",
-  );
-  assert.ok(
-    dom.window.document.querySelector('[aria-label="隐藏 FX Gateway Key"]'),
-    "FX Gateway Key 使用相同的双态显示控件",
-  );
-  assert.match(
-    dom.window.document.querySelector(".credential-agent-fx-url-note").textContent,
-    /仅支持本机 HTTP \+ 端口/,
-  );
-  assert.match(
-    dom.window.document.querySelector(".credential-agent-fx-url-note").textContent,
-    /远程地址请使用 OpenAI 模式/,
-  );
+  assert.equal(dom.window.document.querySelector('[aria-label="AI Agent 运行模式"]'), null, "只有 OpenAI 兼容，不给选运行模式");
   assert.equal(byId(dom, "credentials-btn"), null, "门厅按钮已退役");
   assert.equal(byId(dom, "browser-credentials-dialog"), null, "设置内不再弹二层凭据对话框");
 
