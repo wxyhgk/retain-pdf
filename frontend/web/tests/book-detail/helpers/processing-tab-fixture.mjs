@@ -19,7 +19,7 @@ export const idleTranslation = {
   onTranslate() {}, onRetryStage: async () => {},
 };
 
-/** 把 BookDetailProcessingTab 包在主页的 Provider 里挂进 dom，等进度卡出现。 */
+/** 把 BookDetailProcessingTab 包在主页的 Provider 里挂进 dom，等进度卡出现。render(props) 换一组 props 重画。 */
 export async function mountProcessingTab(dom, props, services) {
   const { createRoot } = await import("react-dom/client");
   const React = await import("react");
@@ -29,7 +29,8 @@ export async function mountProcessingTab(dom, props, services) {
   const host = dom.window.document.createElement("div");
   dom.window.document.body.appendChild(host);
   const root = createRoot(host);
-  root.render(await withHomeProviders(React, services, React.createElement(BookDetailProcessingTab, props)));
+  const render = async (next) => root.render(await withHomeProviders(React, services, React.createElement(BookDetailProcessingTab, next)));
+  await render(props);
   await waitFor(() => host.querySelector(".book-detail-processing-card"), "进度卡渲染");
-  return { root, host };
+  return { root, host, render };
 }

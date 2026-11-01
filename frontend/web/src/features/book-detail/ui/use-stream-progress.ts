@@ -6,8 +6,10 @@ import { useRef } from "react";
 import type { LibraryCardItem } from "@/features/library/domain.js";
 import { streamProgressOf } from "../domain/assembly-line-model.js";
 
+// jobId 给空（任务没在跑）时忘掉记下的：同一个任务原地重跑时不会接着用上一次的数。
 export function useStreamProgress(item: LibraryCardItem | null | undefined, jobId: string): { current: number; total: number } | null {
   const last = useRef<{ jobId: string; value: { current: number; total: number } } | null>(null);
+  if (!jobId) last.current = null;
   const now = streamProgressOf(item);
   if (now && jobId) last.current = { jobId, value: now };
   return last.current && last.current.jobId === jobId ? last.current.value : null;
