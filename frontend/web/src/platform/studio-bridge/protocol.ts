@@ -10,13 +10,24 @@ export const STUDIO_BRIDGE_VERSION = 1;
 export const STUDIO_EMBED = "studio";
 
 export type StudioTheme = "light" | "dark";
-export type StudioFeature = "theme" | "navigate" | "quote";
+/** 我们处理、会发的（回 ready 时报给 Studio）。 */
+export type StudioFeature = "theme" | "navigate" | "quote" | "notes";
+/** Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮。 */
+export type StudioSideFeature = "quote" | "open-notes";
 
-/** Studio 发来、我们认的消息。 */
+/** Studio 发来、我们认的消息。hello 的 features 为 null 是早先的 Studio（没发这个字段），只认 quote。 */
 export type StudioIncoming =
-  | { type: "hello"; theme: StudioTheme }
+  | { type: "hello"; theme: StudioTheme; features: StudioSideFeature[] | null }
   | { type: "theme"; theme: StudioTheme }
-  | { type: "navigate"; jobId: string; pageIdx: number | null; blockId: string };
+  | { type: "navigate"; jobId: string; pageIdx: number | null; blockId: string }
+  | { type: "notes"; open: boolean; title: string | null };
+
+/** 「笔记」按钮打开的是哪本书的笔记：任务、书编号、书名（和 quote 同一套）。 */
+export type StudioBook = {
+  jobId: string;
+  documentId: string | null;
+  title: string | null;
+};
 
 export type StudioQuote = {
   jobId: string;
@@ -48,9 +59,22 @@ export function parseStudioMessage(data: unknown): StudioIncoming | null {
   if (!data || typeof data !== "object" || Array.isArray(data)) return null;
   const message = data as Record<string, unknown>;
   if (message.protocol !== STUDIO_BRIDGE_PROTOCOL || message.v !== STUDIO_BRIDGE_VERSION) return null;
-  if (message.type === "hello" || message.type === "theme") {
+  if (message.type === "hello") {
     const value = theme(message.theme);
-    return value ? { type: message.type, theme: value } : null;
+    if (!value) return null;
+    const features = Array.isArray(message.features)
+      ? message.features.filter((item): item is StudioSideFeature => item === "quote" || item === "open-notes")
+      : null;
+    return { type: "hello", theme: value, features };
+  }
+  if (message.type === "theme") {
+    const value = theme(message.theme);
+    return value ? { type: "theme", theme: value } : null;
+  }
+  if (message.type === "notes") {
+    if (typeof message.open !== "boolean") return null;
+    const title = typeof message.title === "string" && message.title.trim() ? message.title.trim() : null;
+    return { type: "notes", open: message.open, title };
   }
   if (message.type === "navigate") {
     const jobId = typeof message.job_id === "string" ? message.job_id.trim() : "";
@@ -65,6 +89,21 @@ export function parseStudioMessage(data: unknown): StudioIncoming | null {
 
 export function readyMessage(features: readonly StudioFeature[]) {
   return { protocol: STUDIO_BRIDGE_PROTOCOL, v: STUDIO_BRIDGE_VERSION, type: "ready", features: [...features] } as const;
+}
+
+export function openNotesMessage(book: StudioBook) {
+  return {
+    protocol: STUDIO_BRIDGE_PROTOCOL,
+    v: STUDIO_BRIDGE_VERSION,
+    type: "open-notes",
+    job_id: book.jobId,
+    document_id: book.documentId || null,
+    title: book.title || null,
+  } as const;
+}
+
+export function closeNotesMessage() {
+  return { protocol: STUDIO_BRIDGE_PROTOCOL, v: STUDIO_BRIDGE_VERSION, type: "close-notes" } as const;
 }
 
 export function quoteMessage(quote: StudioQuote) {
