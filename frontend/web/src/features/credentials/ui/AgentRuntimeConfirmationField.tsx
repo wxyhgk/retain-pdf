@@ -1,5 +1,6 @@
 import type { AgentRuntimeConfigView } from "@/platform/api/index.js";
-import { Check, ShieldCheck, Zap } from "lucide-react";
+import { ShieldCheck, Zap } from "lucide-react";
+import { ChoiceTiles } from "./ChoiceTiles.jsx";
 
 export interface AgentRuntimeConfirmationFieldProps {
   confirmationMode: AgentRuntimeConfigView["agent_confirmation_mode"];
@@ -20,32 +21,16 @@ export function AgentRuntimeConfirmationField({
         操作确认
         <span>全局设置</span>
       </legend>
-      <div className="credential-agent-confirmation-options" role="radiogroup" aria-label="Agent 操作确认方式">
-        <button
-          type="button"
-          role="radio"
-          aria-checked={confirmationMode === "explicit"}
-          className={confirmationMode === "explicit" ? "is-selected" : ""}
-          onClick={() => onConfirmationModeChange("explicit")}
-          disabled={busy}
-        >
-          <ShieldCheck aria-hidden="true" />
-          <span>需要确认</span>
-          {confirmationMode === "explicit" ? <Check className="credential-agent-confirmation-check" aria-hidden="true" /> : null}
-        </button>
-        <button
-          type="button"
-          role="radio"
-          aria-checked={confirmationMode === "green_light"}
-          className={confirmationMode === "green_light" ? "is-selected" : ""}
-          onClick={() => onConfirmationModeChange("green_light")}
-          disabled={busy}
-        >
-          <Zap aria-hidden="true" />
-          <span>绿灯模式</span>
-          {confirmationMode === "green_light" ? <Check className="credential-agent-confirmation-check" aria-hidden="true" /> : null}
-        </button>
-      </div>
+      <ChoiceTiles<AgentRuntimeConfigView["agent_confirmation_mode"]>
+        label="Agent 操作确认方式"
+        value={confirmationMode}
+        onChange={onConfirmationModeChange}
+        disabled={busy}
+        options={[
+          { value: "explicit", icon: <ShieldCheck />, label: "需要确认", title: "AI 每一步操作都等你确认" },
+          { value: "green_light", icon: <Zap />, label: "绿灯模式", title: "AI 直接执行受支持的 PDF 操作" },
+        ]}
+      />
       {confirmationMode === "green_light" ? (
         <p>
           AI 可直接执行并应用受支持的 PDF 操作，无需逐步确认；不允许执行 shell 或任意系统命令。

@@ -8,9 +8,10 @@ import {
   TRANSLATION_PROVIDER_OPTIONS,
 } from "@/platform/config/providers.js";
 import { validationIcon } from "../domain/validation-icon.js";
-import { Check, ChevronDown, Code2, ExternalLink, Languages, PlugZap, TriangleAlert } from "lucide-react";
+import { Box, Brain, Cable, Check, ChevronDown, Code2, ExternalLink, Gauge, KeyRound, Languages, Link2, PlugZap, Server, TriangleAlert } from "lucide-react";
 import { Select as SelectPrimitive } from "radix-ui";
 import { SecretInput } from "./SecretInput.js";
+import { FieldLabel } from "./FieldLabel.jsx";
 
 const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
 
@@ -59,11 +60,10 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
         <div className="credential-card-copy">
           <h3>{TRANSLATION_PROVIDER_DEFINITION.label}</h3>
         </div>
-        <span className="credential-card-tag">OpenAI 兼容</span>
       </div>
       <div className="credential-translation-grid">
         <label className="credential-translation-provider-field">
-          <span className="developer-label">API 服务</span>
+          <FieldLabel icon={<Server />}>API 服务</FieldLabel>
           <SelectPrimitive.Root
             value={providerDefinition.id}
             onValueChange={(value) => handlers?.changeTranslationProvider?.(value)}
@@ -112,7 +112,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           </SelectPrimitive.Root>
         </label>
         <label className="credential-translation-url-field">
-          <span className="developer-label">API URL</span>
+          <FieldLabel icon={<Link2 />}>API URL</FieldLabel>
           <input
             id={BROWSER_IDS.modelBaseUrl}
             type="url"
@@ -128,7 +128,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           />
         </label>
         <label className="credential-translation-model-field">
-          <span className="developer-label">模型</span>
+          <FieldLabel icon={<Box />}>模型</FieldLabel>
           <input
             id={BROWSER_IDS.modelName}
             type="text"
@@ -140,7 +140,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           />
         </label>
         <label className="credential-translation-key-field">
-          <span className="developer-label">API Key</span>
+          <FieldLabel icon={<KeyRound />}>API Key</FieldLabel>
           <SecretInput
             id={BROWSER_IDS.apiKey}
             secretLabel="翻译 API Key"
@@ -152,7 +152,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           />
         </label>
         <label className="credential-translation-workers-field">
-          <span className="developer-label">并发数</span>
+          <FieldLabel icon={<Gauge />}>并发数</FieldLabel>
           <input
             id={BROWSER_IDS.translationWorkers}
             type="number"
@@ -169,7 +169,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           />
         </label>
         <label className="credential-translation-protocol-field">
-          <span className="developer-label">接口协议</span>
+          <FieldLabel icon={<Cable />}>接口协议</FieldLabel>
           <select
             id={BROWSER_IDS.translationProtocol}
             defaultValue={providerDefinition.protocol}
@@ -183,7 +183,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           </select>
         </label>
         <label className="credential-translation-thinking-field">
-          <span className="developer-label">思考深度</span>
+          <FieldLabel icon={<Brain />}>思考深度</FieldLabel>
           <select
             id={BROWSER_IDS.translationThinking}
             defaultValue="auto"
