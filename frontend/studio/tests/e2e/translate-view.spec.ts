@@ -54,7 +54,7 @@ document.querySelector('#notes').addEventListener('click', () => parent.postMess
 ));
 document.querySelector('#quote').addEventListener('click', () => parent.postMessage({
 	...head, type: 'quote', job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', item_id: 'p012-b0003', page_idx: 11,
-	source_text: 'The variation principle.', translated_text: '变分原理。',
+	source_text: 'The variation principle $x^2$.', translated_text: '变分原理：\\n\\n$$E = mc^2$$',
 }, host));
 </script>`;
 
@@ -150,14 +150,20 @@ test('摘到笔记 in RetainPDF puts the passage in the note; its card opens Ret
 	const card = editor(page).locator('.retainpdf-quote');
 	await expect(card).toHaveCount(1);
 	await expect(card.locator('.retainpdf-quote-where')).toHaveText('Quantum Chemistry · 第 12 页');
-	await expect(card.locator('.retainpdf-quote-source')).toHaveText('The variation principle.');
-	await expect(card.locator('.retainpdf-quote-translated')).toHaveText('变分原理。');
+	// A block of its own: no code block's language or tools; RetainPDF's mark in its corner.
+	await expect(editor(page).locator('.milkdown-code-block:has(.retainpdf-quote) .tools')).toBeHidden();
+	await expect(card.locator('.retainpdf-quote-logo svg')).toBeVisible();
+	// The text as Markdown, its formulas drawn (inline in the original, display in the translation).
+	await expect(card.locator('.retainpdf-quote-source')).toContainText('The variation principle');
+	await expect(card.locator('.retainpdf-quote-source .katex')).toHaveCount(1);
+	await expect(card.locator('.retainpdf-quote-translated .katex-display')).toHaveCount(1);
+	await expect(card).not.toContainText('$');
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
-	expect(savedMarkdown()).toContain('```retainpdf\nbook: Quantum Chemistry\ndocument: doc-1\njob: job-1\nblock: p012-b0003\npage: 12\n---\nThe variation principle.\n---\n变分原理。\n```\n');
+	expect(savedMarkdown()).toContain('```retainpdf\nbook: Quantum Chemistry\ndocument: doc-1\njob: job-1\nblock: p012-b0003\npage: 12\n---\nThe variation principle $x^2$.\n---\n变分原理：\n\n$$E = mc^2$$\n```\n');
 
 	// Its card: 翻译 again, at that passage.
-	await card.locator('.retainpdf-quote-open').click();
+	await card.locator('.retainpdf-quote-logo').click();
 	await expect(page.locator('#translate-view')).toBeVisible();
 	await expect(inFrame(page).locator('#navigated')).toHaveText(JSON.stringify({ job_id: 'job-1', block_id: 'p012-b0003', page_idx: 11 }));
 });

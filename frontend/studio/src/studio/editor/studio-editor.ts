@@ -58,7 +58,7 @@ import type { MarkdownBlockSlice } from '@blog/document/types.ts';
 import { SELECTION_END, SELECTION_START } from '@blog/document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { columnsPlugins } from './columns-block';
-import { quotePreview } from './retainpdf-quote';
+import { quotePreview } from './retainpdf-quote-card';
 import { pluginBlocks, pluginSlashCommands } from '../plugins';
 import { runCommand } from '../plugin-ui';
 import { t } from '@blog/i18n/index.mjs';

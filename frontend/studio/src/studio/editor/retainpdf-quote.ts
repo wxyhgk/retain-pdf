@@ -1,6 +1,7 @@
 // A passage of a book in RetainPDF, quoted in a note (```retainpdf): where it is (the job, the block, the page) and its
 // text as it was when quoted, the original and the translation, so the note reads the same without RetainPDF. The
-// preview is a card; 在 RetainPDF 中打开 asks the Studio (`RETAINPDF_NAVIGATE`, followQuoteOpens) to show the passage in 翻译.
+// preview is a card (retainpdf-quote-card.ts); its RetainPDF mark asks the Studio (`RETAINPDF_NAVIGATE`, followQuoteOpens)
+// to show the passage in 翻译.
 //
 //     ```retainpdf
 //     book: Smart Machine Learning
@@ -12,7 +13,6 @@
 //     ---
 //     译文……
 //     ```
-import { t } from '@blog/i18n/index.mjs';
 
 export const QUOTE_LANGUAGE = 'retainpdf';
 
@@ -86,40 +86,8 @@ export function quoteTarget(quote: Quote): RetainpdfTarget {
 	return { job_id: quote.job, block_id: quote.block, ...(quote.page ? { page_idx: quote.page - 1 } : {}) };
 }
 
-/** The preview of a ```retainpdf block: a card; null for the other languages, and for one that says no job and block. */
-export function quotePreview(language: string, content: string): HTMLElement | null {
-	if (language.toLowerCase() !== QUOTE_LANGUAGE) return null;
-	const quote = parseQuote(content);
-	if (!quote) return null;
-	const card = document.createElement('figure');
-	card.className = 'retainpdf-quote';
-	const caption = document.createElement('figcaption');
-	const where = document.createElement('span');
-	where.className = 'retainpdf-quote-where';
-	where.textContent = [quote.book ?? t('RetainPDF 里的一段'), quote.page ? t('第 {page} 页', { page: quote.page }) : ''].filter(Boolean).join(' · ');
-	const open = document.createElement('button');
-	open.type = 'button';
-	open.className = 'retainpdf-quote-open';
-	open.textContent = t('在 RetainPDF 中打开');
-	// Where it goes is on the button: the editor may show a copy of the preview, without listeners (followQuoteOpens).
-	open.dataset.target = JSON.stringify(quoteTarget(quote));
-	caption.append(where, open);
-	card.append(caption);
-	for (const [text, name] of [
-		[quote.source, 'retainpdf-quote-source'],
-		[quote.translated, 'retainpdf-quote-translated'],
-	] as const) {
-		if (!text) continue;
-		const part = document.createElement('blockquote');
-		part.className = name;
-		part.textContent = text;
-		card.append(part);
-	}
-	return card;
-}
-
 /**
- * A card's 在 RetainPDF 中打开 pressed, anywhere on the page: the Studio asked (`RETAINPDF_NAVIGATE`) to show its
+ * A card's RetainPDF mark or its book and page pressed, anywhere on the page: the Studio asked (`RETAINPDF_NAVIGATE`) to show its
  * passage. Taken before the code block takes the press as one to edit it.
  */
 export function followQuoteOpens(root: Document = document): void {

@@ -53,15 +53,23 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* 重试 as 小程序's 新建; 改地址 beside it, lighter. */
 .translate-unreachable-actions button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: rgb(var(--black)); color: var(--surface); font: inherit; font-size: 13px; cursor: pointer; }
 .translate-unreachable-actions button + button { border: 1px solid rgba(var(--gray), 0.3); background: transparent; color: inherit; }
-/* A passage quoted from RetainPDF (editor/retainpdf-quote.ts): the book and page above, the original, then the translation. */
-.retainpdf-quote { display: grid; gap: 8px; margin: 0; padding: 12px 14px; border: 1px solid rgba(var(--gray), 0.22); border-radius: 10px; background: var(--surface); text-align: left; }
-.retainpdf-quote figcaption { display: flex; align-items: center; gap: 12px; color: rgb(var(--gray)); font-size: 12px; }
-.retainpdf-quote-where { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.retainpdf-quote-open { flex: none; height: 26px; padding: 0 10px; border: 1px solid rgba(var(--gray), 0.3); border-radius: 7px; background: transparent; color: inherit; font: inherit; font-size: 12px; cursor: pointer; }
-.retainpdf-quote-open:hover { color: rgb(var(--black)); background: rgba(var(--gray), 0.1); }
-.retainpdf-quote blockquote { margin: 0; padding: 0 0 0 10px; border-left: 3px solid rgba(var(--gray), 0.3); white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
+/* A passage quoted from RetainPDF (editor/retainpdf-quote-card.ts): a block of its own, not a code block (no language,
+   no tools); the original, then the translation, their formulas drawn; the book and page under them; RetainPDF's mark
+   small in the top right corner. */
+.crepe-host .milkdown-code-block:has(.retainpdf-quote) .tools { display: none; }
+.retainpdf-quote { position: relative; display: grid; gap: 10px; margin: 0; padding: 14px 44px 12px 16px; border: 1px solid rgba(var(--gray), 0.18); border-radius: 10px; background: var(--surface); text-align: left; }
+.retainpdf-quote :is(.retainpdf-quote-source, .retainpdf-quote-translated) { font-size: 15px; line-height: 1.7; }
+.retainpdf-quote :is(.retainpdf-quote-source, .retainpdf-quote-translated) > :first-child { margin-top: 0; }
+.retainpdf-quote :is(.retainpdf-quote-source, .retainpdf-quote-translated) > :last-child { margin-bottom: 0; }
+.retainpdf-quote :is(.retainpdf-quote-source, .retainpdf-quote-translated) .katex-display { margin: 0.4em 0; overflow-x: auto; overflow-y: hidden; }
 .retainpdf-quote-source { color: rgb(var(--gray)); }
-.retainpdf-quote-translated { border-left-color: rgb(var(--black)); }
+.retainpdf-quote-source + .retainpdf-quote-translated { padding-top: 10px; border-top: 1px dashed rgba(var(--gray), 0.22); }
+.retainpdf-quote figcaption { display: flex; }
+.retainpdf-quote-where { padding: 0; border: 0; background: none; color: rgb(var(--gray)); font: inherit; font-size: 12px; cursor: pointer; }
+.retainpdf-quote-where:hover { color: rgb(var(--black)); text-decoration: underline; text-underline-offset: 2px; }
+.retainpdf-quote-logo { position: absolute; top: 12px; right: 12px; display: grid; width: 22px; height: 22px; place-items: center; padding: 3px; border: 0; border-radius: 6px; background: none; color: rgb(var(--gray)); opacity: 0.7; cursor: pointer; transition: opacity 120ms, background 120ms; }
+.retainpdf-quote-logo svg { width: 14px; height: 15px; }
+.retainpdf-quote-logo:hover { background: var(--studio-fill-2); color: rgb(var(--black)); opacity: 1; }
 /*
  * Scrollbars: thin, a rounded gray thumb on no track, darker under the pointer. The system's
  * (WebKit's, in the Mac app) are bars of their own, light on a dark page.
