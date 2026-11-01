@@ -122,6 +122,10 @@ def build_book_rpr_fit_pdf(
     background_mode = mode in RPR_FIT_BACKGROUND_MODES
     total_started = time.perf_counter()
     diagnostics: dict[str, object] = {"mode": mode}
+    # 输出的页：translated_pages 里的每一页（和 Typst 路线一样），没有译文条目的页（整页图、代码、不翻译的参考文献）
+    # 原样留着，不然译文 PDF 比原文少页，对照阅读从那一页起左右错开（2026-11-02，481 页的书少了 12 页）。
+    # 引擎只排有条目的页。
+    output_page_indices = sorted(int(page) for page in translated_pages)
     page_indices = sorted(int(page) for page, items in translated_pages.items() if items)
     if not page_indices:
         raise RprEngineFailed("no_pages", "没有可渲染的页面")
@@ -175,18 +179,19 @@ def build_book_rpr_fit_pdf(
 
     merge_started = time.perf_counter()
     if background_mode:
-        # 只输出要渲染的页（与 Typst 背景路线一致）：先按页序抽出底图，再逐页叠加。
+        # 只输出 translated_pages 里的页（与 Typst 背景路线一致）：先按页序抽出底图，再把引擎排的页叠上去。
         base_subset = engine_dir / "rpr-fit-base.pdf"
         extract_page_indices_with_pikepdf(
             source_pdf_path=source_pdf_path,
             output_pdf_path=base_subset,
-            page_indices=page_indices,
+            page_indices=output_page_indices,
         )
+        position = {page: offset for offset, page in enumerate(output_page_indices)}
         merge = overlay_pdf_pages_with_pikepdf(
             source_pdf_path=base_subset,
             overlay_pdf_path=run.overlay_pdf,
             output_pdf_path=output_pdf_path,
-            source_page_indices=list(range(len(page_indices))),
+            source_page_indices=[position[page] for page in page_indices],
         )
     else:
         # overlay：在渲染源上叠加，其余页原样保留，目录随原件（与 overlay 路线一致）。
@@ -226,6 +231,7 @@ def build_book_rpr_fit_pdf(
             "rpr_fit_body_font": dict(report.get("body_font") or {}),
             "rpr_work_dir": str(engine_dir),
             "rpr_pages": len(page_indices),
+            "rpr_fit_untranslated_pages": len(output_page_indices) - len(page_indices),
             "rpr_fit_summary": {
                 key: value
                 for key, value in fit_payload.get("summary", {}).items()
