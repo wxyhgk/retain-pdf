@@ -104,7 +104,7 @@
     "schema": "pipeline_stage_observation_v1",
     "schema_version": 1,
     "event_types": ["stage_transition", "stage_progress"],
-    "description": "worker 把阶段观察同时写入诊断 JSONL 与 stdout。Rust 在 generation fencing 下先更新 pipeline_stages，再在同一事务派生公开 event；已有 durable attempt 的 JSONL 阶段行不再是公开状态真值。substage 与 progress_unit 是自由字符串，Rust 原样透传 pipeline 声明的 progress_unit。翻译批次（substage=translation_batches）按本轮待翻译块计：progress_unit=block，progress_current/progress_total 为块数，分母是进入批量翻译时的待办块数而非全文块数；payload 带 batch_current/batch_total（批次号）、completed_page_count（没有待办块的页数）与 page_count，文案为「已翻译 x/N 块 · 已完成 p/P 页」。",
+    "description": "worker 把阶段观察同时写入诊断 JSONL 与 stdout。Rust 在 generation fencing 下先更新 pipeline_stages，再在同一事务派生公开 event；已有 durable attempt 的 JSONL 阶段行不再是公开状态真值。substage 与 progress_unit 是自由字符串，Rust 原样透传 pipeline 声明的 progress_unit。翻译批次（substage=translation_batches）按本轮待翻译块计：progress_unit=block，progress_current/progress_total 为块数，分母是进入批量翻译时的待办块数而非全文块数（跟着 OCR 流式翻译分好几轮时，从第一轮开翻算起：前几轮已翻完的块加本轮待翻的块，分母随新到的页变大，分子只增不减、不超过分母）；payload 带 batch_current/batch_total（批次号）、completed_page_count（没有待办块的页数）与 page_count，文案为「已翻译 x/N 块 · 已完成 p/P 页」。",
     "required_fields": [
       "schema",
       "schema_version",

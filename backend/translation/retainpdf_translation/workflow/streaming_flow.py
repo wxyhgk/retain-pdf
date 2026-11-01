@@ -108,6 +108,8 @@ def translate_book_streaming(
     page_payloads: dict[int, list[dict]] = {}
     translation_paths: dict[int, Path] = {}
     review_memo: dict[tuple[str, str], bool] = {}
+    # 翻译进度从第一轮开翻时的已完成块数算起，各轮接着数（见 `_BlockProgress`）
+    progress_baseline: int | None = None
     started = time.perf_counter()
     rounds = 0
     while True:
@@ -153,6 +155,8 @@ def translate_book_streaming(
             progress_total=stream.total_pages,
             payload={"progress_unit": "page", "round": rounds, "held_back_items": len(held)},
         )
+        if checkpoint is not None and progress_baseline is None:
+            progress_baseline = int((checkpoint.progress_snapshot() or {}).get("completed_item_count", 0) or 0)
         run_translation_batch_stage(
             page_payloads=page_payloads,
             translation_paths=translation_paths,
@@ -166,6 +170,7 @@ def translate_book_streaming(
             translation_context=translation_context,
             run_diagnostics=run_diagnostics,
             deferred_item_ids=held,
+            progress_baseline_completed=progress_baseline,
             flush_callback=(
                 lambda _pages, changed_item_ids_by_page: checkpoint.update(
                     "translating", page_payloads, translation_paths, changed_item_ids_by_page

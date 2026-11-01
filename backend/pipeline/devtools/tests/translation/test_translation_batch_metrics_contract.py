@@ -160,6 +160,40 @@ def test_batch_progress_counts_this_rounds_blocks_and_completed_pages(monkeypatc
     assert finished["payload"]["pending_items"] == 408
 
 
+def test_streaming_rounds_count_from_the_first_round_so_progress_never_exceeds_its_total(monkeypatch, tmp_path):
+    """跟着 OCR 流式翻译分几轮进批量翻译：第二轮从第一轮开翻时的已完成块数算起。
+
+    第一轮开翻时已完成 10 块；第二轮进来时已完成 18 块、待翻 40 块，分母是 8 + 40 = 48，
+    不是 40——以前分子钉在上一轮的最大值上，会出现「49/40 块」。
+    """
+    snapshots = iter([
+        {"completed_item_count": 18, "pending_item_count": 40, "completed_page_count": 9},
+        {"completed_item_count": 38, "pending_item_count": 20, "completed_page_count": 15},
+        {"completed_item_count": 58, "pending_item_count": 0, "completed_page_count": 24},
+    ])
+    state = {"latest": None}
+
+    def snapshot():
+        state["latest"] = next(snapshots, state["latest"])
+        return state["latest"]
+
+    def fake_pending(**kwargs):
+        kwargs["progress_callback"](5, 10, {12}, "translation_batches")
+        return {"total_batches": 10, "pending_items": 40, "effective_batch_size": 4}
+
+    events = []
+    monkeypatch.setattr(batch_translation, "translate_pending_units", fake_pending)
+    monkeypatch.setattr(batch_translation, "emit_stage_progress", lambda **event: events.append(event))
+    args = _stage_args(tmp_path, workers=1, diagnostics=None)
+    args["page_payloads"] = {index: [] for index in range(24)}
+    batch_translation.run_translation_batch_stage(**args, checkpoint_progress=snapshot, progress_baseline_completed=10)
+
+    middle, finished = events
+    assert (middle["progress_current"], middle["progress_total"]) == (28, 48)
+    assert middle["stage_detail"] == "已翻译 28/48 块 · 已完成 15/24 页"
+    assert (finished["progress_current"], finished["progress_total"]) == (48, 48)
+
+
 def test_batch_progress_without_checkpoint_keeps_batch_wording(monkeypatch, tmp_path):
     def fake_pending(**kwargs):
         kwargs["progress_callback"](2, 5, {0}, "translation_batches")
