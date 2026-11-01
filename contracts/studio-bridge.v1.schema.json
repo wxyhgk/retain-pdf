@@ -13,22 +13,32 @@
     { "type": "ready", "from": "retainpdf", "definition": "ReadyMessage" },
     { "type": "theme", "from": "studio", "definition": "ThemeMessage" },
     { "type": "navigate", "from": "studio", "definition": "NavigateMessage" },
-    { "type": "quote", "from": "retainpdf", "definition": "QuoteMessage" }
+    { "type": "quote", "from": "retainpdf", "definition": "QuoteMessage" },
+    { "type": "open-notes", "from": "retainpdf", "definition": "OpenNotesMessage" },
+    { "type": "close-notes", "from": "retainpdf", "definition": "CloseNotesMessage" },
+    { "type": "notes", "from": "studio", "definition": "NotesMessage" }
   ],
   "oneOf": [
     { "$ref": "#/definitions/HelloMessage" },
     { "$ref": "#/definitions/ReadyMessage" },
     { "$ref": "#/definitions/ThemeMessage" },
     { "$ref": "#/definitions/NavigateMessage" },
-    { "$ref": "#/definitions/QuoteMessage" }
+    { "$ref": "#/definitions/QuoteMessage" },
+    { "$ref": "#/definitions/OpenNotesMessage" },
+    { "$ref": "#/definitions/CloseNotesMessage" },
+    { "$ref": "#/definitions/NotesMessage" }
   ],
   "definitions": {
     "Protocol": { "const": "retainpdf-studio-bridge" },
     "Version": { "const": 1 },
     "Theme": { "enum": ["light", "dark"] },
     "Feature": {
-      "description": "RetainPDF 这一版会处理的消息：Studio 只发对方列出来的（navigate、theme），只给列了 quote 的显示摘录相关的东西。",
-      "enum": ["theme", "navigate", "quote"]
+      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）。",
+      "enum": ["theme", "navigate", "quote", "notes"]
+    },
+    "StudioFeature": {
+      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes）。hello 没有 features 是早先的 Studio，只认 quote。",
+      "enum": ["quote", "open-notes"]
     },
     "HelloMessage": {
       "type": "object",
@@ -39,7 +49,8 @@
         "protocol": { "$ref": "#/definitions/Protocol" },
         "v": { "$ref": "#/definitions/Version" },
         "type": { "const": "hello" },
-        "theme": { "$ref": "#/definitions/Theme" }
+        "theme": { "$ref": "#/definitions/Theme" },
+        "features": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/definitions/StudioFeature" }, "description": "Studio 会处理哪些 RetainPDF 发来的消息（2026-11-01 加，早先的 Studio 不发）。" }
       }
     },
     "ReadyMessage": {
@@ -96,6 +107,44 @@
         "page_idx": { "type": "integer", "minimum": 0, "description": "原文所在页，从 0 开始（reader/regions 的 source.page 减 1）。" },
         "source_text": { "type": ["string", "null"], "description": "原文（reader/regions 的 source.text）。" },
         "translated_text": { "type": ["string", "null"], "description": "译文（reader/regions 的 translated.text；跨块、跨页接起来的段落是整段）；还没翻译时为 null。" }
+      }
+    },
+    "OpenNotesMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio：用户在阅读页点了「笔记」，要在旁边看这本书的笔记。Studio 在阅读页旁边打开这本书的那一页笔记（一本书一页，按 document_id 找，没有就按 job_id；都没有就新建，标题是书名），回 notes。只在 hello 的 features 有 open-notes 时发。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "job_id", "document_id", "title"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "open-notes" },
+        "job_id": { "type": "string", "minLength": 1 },
+        "document_id": { "type": ["string", "null"], "minLength": 1, "description": "书的编号；同一本书换了任务也找得到同一页笔记。任务不属于哪本书时为 null。" },
+        "title": { "type": ["string", "null"], "description": "书名，新建笔记时用作标题；没有时为 null。" }
+      }
+    },
+    "CloseNotesMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio：用户在阅读页再点「笔记」，收起旁边的笔记（笔记照样存着）。Studio 收起后回 notes。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "close-notes" }
+      }
+    },
+    "NotesMessage": {
+      "type": "object",
+      "description": "Studio → RetainPDF：阅读页旁边的笔记现在开着还是收着（握手后发一次，以后每次变了都发；Studio 自己那边收起、换了别的笔记也发）。RetainPDF 按它显示「笔记」按钮的状态。只在 ready 的 features 有 notes 时发。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "open"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "notes" },
+        "open": { "type": "boolean" },
+        "title": { "type": ["string", "null"], "description": "开着时是哪一页笔记（标题）；收着时为 null 或不写。" }
       }
     }
   }
