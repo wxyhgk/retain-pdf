@@ -317,9 +317,13 @@ def run_translation_batches_parallel(
                     failed_workers = [future for future in worker_futures if future.exception() is not None]
                     if failed_workers:
                         raise failed_workers[0].exception()
-                    raise RuntimeError(
-                        f"translation worker queues stopped early: completed={completed} total={total_batches}"
-                    )
+                    # A worker puts its last result, then finds no task left and stops: that result can land after
+                    # the wait above timed out and before this check. With every worker done nothing more comes,
+                    # so only an empty queue means results are missing.
+                    if result_queue.empty():
+                        raise RuntimeError(
+                            f"translation worker queues stopped early: completed={completed} total={total_batches}"
+                        )
                 continue
             drained = _drain_available_results(
                 (_queue_name, _batch_index, batch, translated, exc),
