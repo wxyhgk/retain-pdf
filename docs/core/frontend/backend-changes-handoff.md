@@ -9,6 +9,23 @@
 
 ---
 
+## 放在笔记（Studio）里时和它说话（feat/studio-bridge-contract）
+
+2026-11-01。新加的契约，后端接口不变。做法和分工见 [书和笔记接在一起](../../ops/planning/studio-workbench/20261101-书和笔记接在一起.md)，
+消息格式见 `contracts/studio-bridge.v1.schema.json`（每种消息一个定义，`description` 写了什么时候发、谁认）。
+
+Studio 左栏「翻译」把 RetainPDF 的网页放进 iframe，地址带 `?embed=studio`。前端要做：
+
+| 地方 | 现在 | 要改成 |
+|---|---|---|
+| 地址参数 `embed=studio`（`web/src/platform/navigation/pages.ts` 的 `parseReaderParams`/`buildReaderParams`，以及首页、详情页的地址） | 没有这个参数 | 认它；带着它时不显示自己的顶栏、品牌、回首页这些和 Studio 重复的东西；页面之间跳转时带着它 |
+| 收消息（新） | — | 只在 `embed=studio`、`window.parent !== window` 时听 `message`；只认 `event.source === window.parent`、`event.origin` 是本机回环地址（`http://localhost`、`http://127.0.0.1`、`http://[::1]`，任意端口）、`protocol`/`v` 对得上的；收到 `hello` 记下 origin、按 `theme` 换颜色、回 `ready`（`features` 列出实现了的：`theme`、`navigate`、`quote`）；收到 `theme` 换颜色（不改自己存的设置）；收到 `navigate` 打开 `reader.html?job_id=&page_idx=&block_id=&embed=studio` |
+| 阅读页悬停框（`packages/reader/src/pdf/ReaderTextHoverLayer.tsx`，「复制」那一组） | 编号 + 复制 | 握手过（收到过 `hello`）才多一个「摘到笔记」，点了发 `quote`：`job_id`、`document_id`、`title`、`item_id`（四位）、`page_idx`（原文页，0 起）、`source_text`、`translated_text`（取 `reader/regions` 那一项的 `source.text`、`translated.text`）；targetOrigin 是握手记下的 origin，不用 `'*'` |
+
+没在 Studio 里（没有 `embed=studio` 或没握手）时一切照旧，悬停框不出现「摘到笔记」。
+
+---
+
 ## 取一个阅读区块（feat/reader-region-item）
 
 2026-11-01。新加的接口，旧的不变。接口说明见 [任务接口分类 · 阅读](../../api/01-任务/04-任务接口分类.md#阅读)。
