@@ -210,12 +210,12 @@ export class ArticleRepository {
 	 * page it is under links to it at its end (as Notion's page block; a
 	 * database's rows not: its table lists them), what that page was kept first.
 	 */
-	async create({ slug, title, parent = '', body = '', files = [], type = '', link = false }) {
+	async create({ slug, title, parent = '', body = '', files = [], type = '', kind = '', blank = false, link = false }) {
 		assertArticleSlug(slug);
 		if (parent) assertArticleSlug(parent);
 		if (typeof body !== 'string' || !Array.isArray(files)) throw new ArticleValidationError(t('新文章的内容无效'));
 		const paths = articleBundlePaths(this.blogRoot, slug);
-		const source = createArticleSource({ title, parent, body, type });
+		const source = createArticleSource({ title, parent, body, type, kind, blank });
 		// Making the folder is taking the name: two made at once, one of them is refused.
 		try {
 			await mkdir(paths.directory);

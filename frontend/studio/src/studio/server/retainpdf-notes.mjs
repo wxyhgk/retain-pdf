@@ -48,9 +48,10 @@ export class RetainpdfNotes {
 		return { slug: made.slug, title, created: true };
 	}
 
+	/** A 维基 page (notes, not a post to publish), starting empty: the quotes and what is written about them go in. */
 	async #make(all, title, parent, retainpdf) {
 		const slug = freeSlug(autoSlug(), all.map((page) => page.slug));
-		await this.articles.create({ slug, title, parent });
+		await this.articles.create({ slug, title, parent, kind: 'wiki', blank: true });
 		await this.#mark(slug, retainpdf);
 		return { slug, title };
 	}

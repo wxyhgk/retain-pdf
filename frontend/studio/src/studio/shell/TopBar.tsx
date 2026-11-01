@@ -34,10 +34,12 @@ function useTicking(ms: number): void {
 
 /** The bar above the middle: the sidebar's toggle, where one is, when the article was edited and saved, its menu, the right column's toggle. */
 export function TopBar({ siteTitle }: { siteTitle: string }) {
-	const { view, sidebarCollapsed, title, icon, status, edited, articleHref, panelOpen, nav, path, favorite } = useShell();
+	const { view, sidebarCollapsed, title, icon, status, edited, articleHref, panelOpen, notesOpen, nav, path, favorite } = useShell();
 	const act = useActions();
 	useTicking(30_000);
-	const article = view === 'editor';
+	// 翻译 with the book's notes open: the note is an article being written, so its title and saving are said too.
+	const notes = view === 'translate' && notesOpen;
+	const article = view === 'editor' || notes;
 	return (
 		<>
 			<div className="flex min-w-0 items-center gap-[5px] text-[13px]">
@@ -56,7 +58,10 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 					<ChevronRight aria-hidden />
 				</IconButton>
 				{/* The pages the open one is under, as Notion's path, each with its icon; the › after each, a menu of the pages under it (as SiYuan's). */}
+				{notes && <strong className="shrink-0 font-semibold">{viewName(view)}</strong>}
+				{notes && <ChevronRight aria-hidden className="size-3.5 shrink-0 text-muted-foreground/70" />}
 				{article &&
+					!notes &&
 					path.map((page) => [
 						<button key={`${page.slug}:link`} type="button" className="page-path-link flex h-7 max-w-[180px] min-w-0 items-center gap-1.5 rounded-md px-1.5 text-muted-foreground hover:bg-[var(--studio-fill)] hover:text-foreground max-[720px]:hidden" onClick={() => act.openPage(page.slug)}>
 							<PageIcon icon={page.icon} />

@@ -59,6 +59,8 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 	);
 
 	const layout = readLayout();
+	/** Folded away for a while (`fold`), whatever the layout says. */
+	const folded = { now: false };
 
 	/** Tabs whose pane is shown elsewhere for now (the AI tab's, whole in the middle: AI 问答): not shown here. */
 	const lent = new Set<string>();
@@ -94,25 +96,28 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 	}
 
 	function applyLayout(): void {
+		const open = layout.open && !folded.now;
 		shell.style.setProperty('--panel-width', `${layout.width}px`);
-		shell.classList.toggle('panel-collapsed', !layout.open);
-		panel.inert = !layout.open;
+		shell.classList.toggle('panel-collapsed', !open);
+		panel.inert = !open;
 		const current = shown();
 		const listed = [...tabs].filter(([name]) => !lent.has(name)).map(([, entry]) => entry.tab);
 		const before = shellState.get().tabs;
 		const same = listed.length === before.length && listed.every((tab, at) => tab === before[at]);
-		shellState.set({ panelOpen: layout.open, tab: current, ...(same ? {} : { tabs: listed }) });
+		shellState.set({ panelOpen: open, tab: current, ...(same ? {} : { tabs: listed }) });
 		for (const [name, entry] of tabs) {
 			if (lent.has(name)) continue;
 			const selected = name === current;
 			entry.pane.hidden = !selected;
-			if (selected && layout.open) draw(entry);
-			if (selected && layout.open && !entry.panel) onShown?.(name);
-			tellScreen(entry, selected && layout.open && entry.drawn === true);
+			if (selected && open) draw(entry);
+			if (selected && open && !entry.panel) onShown?.(name);
+			tellScreen(entry, selected && open && entry.drawn === true);
 		}
 	}
 
 	function update(change: Partial<PanelLayout>, persist = true): void {
+		// Opened (the toggle, a tab shown): no longer folded away.
+		if (change.open) folded.now = false;
 		Object.assign(layout, change);
 		applyLayout();
 		if (persist) writeLayout(layout);
@@ -184,7 +189,15 @@ export function createSidePanel(shell: HTMLElement, { shown: onShown }: { shown?
 		/** The tab chosen (the shell's tabs). */
 		choose: (tab: string): void => update({ tab }),
 		/** The panel opened, or closed (the toggle in the bar). */
-		toggle: (): void => update({ open: !layout.open }),
+		toggle: (): void => update({ open: folded.now || !layout.open }),
+		/**
+		 * Folded away for a while (翻译 with its 笔记 open: the note wants the room), or back as it was; not kept as the
+		 * layout, which stays what was chosen. Opened meanwhile (the toggle, a tab), it is open and no longer folded.
+		 */
+		fold(fold: boolean): void {
+			folded.now = fold;
+			applyLayout();
+		},
 		close: (): void => update({ open: false }),
 		/**
 		 * The tab's pane shown elsewhere (`lent`: moved out of the panel by the caller), its tab away meanwhile, the

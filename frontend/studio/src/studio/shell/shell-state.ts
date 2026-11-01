@@ -37,6 +37,8 @@ export type ShellState = {
 	/** Whether there is a page to go back to, or forward to. */
 	nav: { back: boolean; forward: boolean };
 	panelOpen: boolean;
+	/** 翻译 with the book's notes open beside it (wiring/notes-split.ts): the bar says the note's title and saving as for an article. */
+	notesOpen: boolean;
 	/** The right column's tabs not lent elsewhere, in order, and the one shown. */
 	tabs: SideTab[];
 	tab: string;
@@ -93,6 +95,7 @@ function initialState(): ShellState {
 		count: 0,
 		icon: '',
 		panelOpen: true,
+		notesOpen: false,
 		tabs: [
 			{ key: 'ai', label: 'AI' },
 			{ key: 'files', label: t('文件') },

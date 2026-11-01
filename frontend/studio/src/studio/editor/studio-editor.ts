@@ -133,8 +133,11 @@ export type StudioEditor = {
 	hasSelection(): boolean;
 	/** The article's library (assets/refs.bib), to number its citations by; null when it has none. */
 	setLibrary(library: Map<string, BibEntry> | null): void;
-	/** Puts Markdown in where the caret is, as blocks of their own. */
-	insertMarkdown(markdown: string): void;
+	/**
+	 * Puts Markdown in as blocks of their own: where the caret is, or after the last block (`end`, the caret then in
+	 * an empty paragraph after it); scrolled to. The first block put in (its element), to show it; null when nothing was put in.
+	 */
+	insertMarkdown(markdown: string, where?: 'caret' | 'end'): HTMLElement | null;
 	/** The ProseMirror view of the article shown; null before one is. */
 	view(): EditorView | null;
 	/** The article's files listed anew (their sizes known): the file cards drawn again. */
@@ -786,8 +789,34 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	return {
 		markSelection,
 		hasSelection: () => crepe?.editor.action((ctx) => !ctx.get(editorViewCtx).state.selection.empty) ?? false,
-		insertMarkdown(markdown) {
-			crepe?.editor.action(insert(markdown));
+		insertMarkdown(markdown, where = 'caret') {
+			return (
+				crepe?.editor.action((ctx) => {
+					const view = ctx.get(editorViewCtx);
+					if (where === 'end') {
+						const parsed = ctx.get(parserCtx)(markdown);
+						if (!parsed?.content.size) return null;
+						const at = view.state.doc.content.size;
+						// An empty paragraph after it for the caret: written on below what was put in, not inside it (the
+						// caret at the end of a code block would open it for editing).
+						const tr = view.state.tr.insert(at, parsed.content.append(Fragment.from(view.state.schema.nodes.paragraph.create())));
+						view.dispatch(tr.setSelection(TextSelection.create(tr.doc, tr.doc.content.size - 1)).scrollIntoView());
+						return view.nodeDOM(at) instanceof HTMLElement ? (view.nodeDOM(at) as HTMLElement) : null;
+					}
+					insert(markdown)(ctx);
+					// The block put in: the top-level one the caret is left in (at its end), or the one before when the
+					// caret is between blocks or in the empty paragraph left after it.
+					const { doc, selection } = view.state;
+					const { $from } = selection;
+					let index = $from.depth === 0 ? $from.index(0) - 1 : $from.index(0);
+					if ($from.depth > 0 && index > 0 && doc.child(index).isTextblock && !doc.child(index).content.size) index -= 1;
+					index = Math.max(0, Math.min(index, doc.childCount - 1));
+					let pos = 0;
+					for (let i = 0; i < index; i += 1) pos += doc.child(i).nodeSize;
+					const dom = view.nodeDOM(pos);
+					return dom instanceof HTMLElement ? dom : null;
+				}) ?? null
+			);
 		},
 		redrawCodeFile(path) {
 			redrawCodeFiles(root, path, host.codeFile);

@@ -95,7 +95,7 @@ import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
-import { createRetainpdfView } from './wiring/retainpdf-view';
+import { createRetainpdfView, type RetainpdfBook } from './wiring/retainpdf-view';
 import { createNotesSplit } from './wiring/notes-split';
 import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfTarget } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
@@ -796,34 +796,54 @@ const drive = createDrive(studio);
 // All the articles, as a table or a board (article-table.ts).
 // 翻译: RetainPDF's own pages in the middle, loaded the first time it is shown.
 const translateView = shell.querySelector<HTMLElement>('#translate-view')!;
-// Its 笔记: the book's page of notes beside it (wiring/notes-split.ts), opened and put away from either side.
+// Its 笔记: the book's page of notes beside it (wiring/notes-split.ts), opened and put away from either side. While it is
+// open (and 翻译 shown) the right column is folded away, the note wanting the room, and the bar says the note as for an
+// article (its title, saving).
 const notesSplit = createNotesSplit(shell, translateView, { close: () => closeNotes() });
+/** The book whose page of notes is beside RetainPDF, or was last; `caret`: the author has been writing in it since. */
+let notesBook: (RetainpdfBook & { slug: string; caret: boolean }) | null = null;
+function setNotesOpen(open: boolean): void {
+	notesSplit.open = open;
+	sidePanel.fold(open && shellState.get().view === 'translate');
+	shellState.set({ notesOpen: open });
+}
 function closeNotes(): void {
-	notesSplit.open = false;
+	setNotesOpen(false);
 	retainpdf.notes(false);
 }
+const sameBook = (one: RetainpdfBook, other: RetainpdfBook): boolean =>
+	one.document_id && other.document_id ? one.document_id === other.document_id : one.job_id === other.job_id;
+/** The book's page of notes (found, or made under 读书笔记) open beside RetainPDF; false when it could not be. */
+async function openNotes(book: RetainpdfBook): Promise<boolean> {
+	try {
+		const note = await retainpdfBookNote(book);
+		if (note.created) await articleList.load();
+		if (session.slug !== note.slug) await session.open(note.slug);
+		if (notesBook?.slug !== note.slug) notesBook = { ...book, slug: note.slug, caret: false };
+		setNotesOpen(true);
+		retainpdf.notes(true, note.title);
+		return true;
+	} catch (error) {
+		showToast(t('没能打开这本书的笔记：{error}', { error: error instanceof Error ? error.message : String(error) }), true);
+		retainpdf.notes(false);
+		return false;
+	}
+}
+// Written in (the caret put in the note beside RetainPDF): passages quoted go where the caret is from then on.
+shell.querySelector<HTMLElement>('#crepe-editor')!.addEventListener('focusin', () => {
+	if (notesBook && notesSplit.open && session.slug === notesBook.slug) notesBook.caret = true;
+});
 const retainpdf = createRetainpdfView(translateView, {
 	openSettings: () => openSettings('retainpdf'),
-	async openNotes(book) {
-		try {
-			const note = await retainpdfBookNote(book);
-			if (note.created) await articleList.load();
-			if (session.slug !== note.slug) await session.open(note.slug);
-			notesSplit.open = true;
-			retainpdf.notes(true, note.title);
-		} catch (error) {
-			showToast(t('没能打开这本书的笔记：{error}', { error: error instanceof Error ? error.message : String(error) }), true);
-			retainpdf.notes(false);
-		}
-	},
+	openNotes: (book) => void openNotes(book),
 	closeNotes,
-	// 摘到笔记: the passage put where the caret was in the note open behind 翻译.
-	quote(quote) {
-		if (!session.slug) {
-			showToast(t('先打开一篇笔记，再摘到笔记'), true);
-			return;
-		}
-		editor.insertMarkdown(
+	// 摘到笔记: the passage put in the book's page of notes, opened beside RetainPDF when it is not; where the caret is
+	// when the author has been writing in it, else after the last block. Shown where it went.
+	async quote(quote) {
+		const book: RetainpdfBook = { job_id: quote.job_id, document_id: quote.document_id, title: quote.title };
+		const writing = notesSplit.open && notesBook !== null && sameBook(notesBook, book) && session.slug === notesBook.slug;
+		if (!writing && !(await openNotes(book))) return;
+		const placed = editor.insertMarkdown(
 			quoteMarkdown({
 				book: quote.title,
 				document: quote.document_id,
@@ -833,7 +853,13 @@ const retainpdf = createRetainpdfView(translateView, {
 				source: quote.source_text,
 				translated: quote.translated_text,
 			}),
+			writing && notesBook?.caret ? 'caret' : 'end',
 		);
+		if (placed) {
+			placed.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+			placed.dataset.justQuoted = '';
+			window.setTimeout(() => delete placed.dataset.justQuoted, 1600);
+		}
 		showToast(t('已摘到「{title}」', { title: openTitle || session.slug }));
 	},
 });
@@ -875,9 +901,13 @@ function showView(view: View, folder?: string): void {
 	} else {
 		url.searchParams.delete('pages');
 	}
+	// The right column folded away only while 翻译 shows the book's notes beside it.
+	sidePanel.fold(view === 'translate' && notesSplit.open);
 	if (view === 'translate') {
 		url.searchParams.set('translate', '');
 		void retainpdf.show();
+		// Back to 翻译 with the notes open: the book's page beside it again, not the page opened meanwhile.
+		if (notesSplit.open && notesBook && session.slug !== notesBook.slug) void session.open(notesBook.slug);
 	} else {
 		url.searchParams.delete('translate');
 	}

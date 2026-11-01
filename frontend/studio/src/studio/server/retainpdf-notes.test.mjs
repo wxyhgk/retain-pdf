@@ -26,6 +26,10 @@ test('a book gets one page of notes under 读书笔记, found again by the book 
 	assert.equal(page.parent, books.slug);
 	assert.deepEqual(page.retainpdf, { document: 'doc-1', job: 'job-1' });
 	assert.match((await articles.read(first.slug)).source, /\nretainpdf: \{ "document": "doc-1", "job": "job-1" \}\n/u);
+	// Notes, not a post: a 维基 page, starting empty (no line to write over above the first quote).
+	assert.equal(page.kind, 'wiki');
+	assert.equal(books.kind, 'wiki');
+	assert.doesNotMatch((await articles.read(first.slug)).source, /从这里开始写作/u);
 
 	// The same book read in another job, its page renamed by the author: the same page.
 	const { source, revision } = await articles.read(first.slug);

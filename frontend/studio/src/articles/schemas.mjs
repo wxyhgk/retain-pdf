@@ -173,18 +173,22 @@ export function isPublishedArticle(entry) {
 	return entry?.data?.draft !== true;
 }
 
-/** A new article's file; with no title (empty), a page not named yet. */
-export function createArticleSource({ title = '', parent = '', body = '', type = '', date = new Date() }) {
+/**
+ * A new article's file; with no title (empty), a page not named yet. `kind: 'wiki'` makes it a 维基 page (a post is what
+ * a page is unless it says otherwise); `blank` leaves it empty instead of the line to write over (RetainPDF's 读书笔记).
+ */
+export function createArticleSource({ title = '', parent = '', body = '', type = '', kind = '', blank = false, date = new Date() }) {
 	if (typeof title !== 'string') throw new ArticleValidationError('文章标题应是文字');
 	const escapedTitle = title.trim().replaceAll("'", "''");
 	const publicationDate = date.toISOString().slice(0, 10);
 	// Under another page: its folder name (checked as one by the caller).
 	const under = parent ? `parent: ${parent}\n` : '';
 	// A database (its rows the pages under it).
-	const kind = type === 'database' ? 'type: database\n' : '';
+	const database = type === 'database' ? 'type: database\n' : '';
+	const wiki = kind === 'wiki' ? 'kind: wiki\n' : '';
 	// What it starts with: the text given (a section of its parent, 转成子页面), or a line to write over.
-	const text = body.trim() ? `${body.trim()}\n` : '从这里开始写作。\n';
-	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n${kind}${under}---\n\n${text}`;
+	const text = body.trim() ? `${body.trim()}\n` : blank ? '' : '从这里开始写作。\n';
+	return `---\ntitle: '${escapedTitle}'\ndescription: ''\npubDate: '${publicationDate}'\ntags: []\ndraft: true\n${wiki}${database}${under}---\n\n${text}`;
 }
 
 export class ArticleValidationError extends Error {
