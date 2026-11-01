@@ -2,7 +2,9 @@ use crate::models::domain::{now_iso, JobRuntimeState, JobStatusKind};
 use crate::ocr_provider::{
     is_configured_command_provider, parse_provider_kind, uses_paddle_official_cli, OcrProviderKind,
 };
-use crate::worker_command::{build_ocr_command, build_worker_stage_command, WorkerStageCommand};
+use crate::worker_command::{
+    build_ocr_command, build_streaming_ocr_command, build_worker_stage_command, WorkerStageCommand,
+};
 use anyhow::Result;
 
 use super::{
@@ -51,12 +53,34 @@ fn uses_provider_worker(ocr: &crate::models::request::OcrInput) -> bool {
 
 pub async fn execute_ocr_job(
     deps: ProcessRuntimeDeps,
-    mut job: JobRuntimeState,
+    job: JobRuntimeState,
     output_job_id_override: Option<String>,
     parent_job_id: Option<String>,
 ) -> Result<JobRuntimeState> {
+    // 装箱：多包这一层，future 直接内联会把 job worker 线程的栈撑爆（测试线程先爆）
+    Box::pin(run_ocr_job(deps, job, output_job_id_override, parent_job_id, false)).await
+}
+
+/// OCR 和翻译并行时用：能流式公布页的 OCR（GLM-OCR、Paddle 官方 HTTP）都在 Python worker 里跑，一片片公布到 `ocr/stream/`，
+/// 翻译跟着它（Paddle 平时由 Rust 自己提交、轮询，那样只能整份做完才有结果）。只有 `run_ocr_and_translation_together` 调。
+pub async fn execute_ocr_job_streaming(
+    deps: ProcessRuntimeDeps,
+    job: JobRuntimeState,
+    output_job_id_override: Option<String>,
+    parent_job_id: Option<String>,
+) -> Result<JobRuntimeState> {
+    Box::pin(run_ocr_job(deps, job, output_job_id_override, parent_job_id, true)).await
+}
+
+async fn run_ocr_job(
+    deps: ProcessRuntimeDeps,
+    mut job: JobRuntimeState,
+    output_job_id_override: Option<String>,
+    parent_job_id: Option<String>,
+    stream_pages: bool,
+) -> Result<JobRuntimeState> {
     let is_command_provider = is_configured_command_provider(&job.request_payload.ocr.provider);
-    let run_provider_worker = uses_provider_worker(&job.request_payload.ocr);
+    let run_provider_worker = uses_provider_worker(&job.request_payload.ocr) || stream_pages;
     let provider_kind = if is_command_provider {
         OcrProviderKind::Local
     } else {
@@ -80,7 +104,8 @@ pub async fn execute_ocr_job(
         output_job_id_override,
     )?;
     let upload_path = resolve_local_upload_path(deps.db.as_ref(), &job)?;
-    job.command = build_ocr_command(
+    let build_command = if stream_pages { build_streaming_ocr_command } else { build_ocr_command };
+    job.command = build_command(
         &deps.worker_command_runtime(),
         upload_path.as_deref(),
         &job.request_payload,

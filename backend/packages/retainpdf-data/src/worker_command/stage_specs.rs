@@ -378,6 +378,7 @@ pub(crate) fn write_provider_stage_spec(
     request: &ResolvedJobSpec,
     job_paths: &JobPaths,
     upload_path: Option<&Path>,
+    stream_pages: bool,
 ) -> Result<PathBuf> {
     ensure_specs_dir(job_paths)?;
     let spec_path = provider_stage_spec_path(job_paths);
@@ -406,6 +407,7 @@ pub(crate) fn write_provider_stage_spec(
         },
         "ocr": {
             "provider": request.ocr.provider,
+            "stream_pages": stream_pages,
             "credential_ref": provider_credential_ref,
             "model_version": request.ocr.model_version,
             "paddle_api_url": request.ocr.paddle_api_url,

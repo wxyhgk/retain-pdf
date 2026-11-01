@@ -38,6 +38,9 @@ from retainpdf_pipeline.ocr.ocr_provider.paddle_markdown import materialize_padd
 from retainpdf_pipeline.ocr.ocr_provider.paddle_normalize import save_normalized_document_for_paddle as _save_normalized_document_for_paddle
 from retainpdf_pipeline.ocr.document_schema.pdf_geometry import rescale_document_geometry_to_pdf
 from retainpdf_pipeline.ocr.ocr_provider.paddle_runner import run_paddle_to_job_dir as _run_paddle_to_job_dir
+from retainpdf_pipeline.ocr.ocr_provider.paddle_runner import PADDLE_TRANSPORT_OFFICIAL_HTTP
+from retainpdf_pipeline.ocr.ocr_provider.paddle_runner import resolve_paddle_transport
+from retainpdf_pipeline.ocr.ocr_provider.paddle_chunked import run_paddle_chunked_to_job_dir
 from retainpdf_pipeline.ocr.ocr_provider.types import OcrProviderResult
 from retainpdf_pipeline.ocr.ocr_provider.paddle_api import poll_until_done as poll_paddle_until_done
 from retainpdf_pipeline.ocr.ocr_provider.paddle_api import submit_local_file as submit_local_paddle_file
@@ -112,6 +115,7 @@ def _args_from_spec(spec: ProviderStageSpec) -> SimpleNamespace:
         disable_table=spec.ocr.disable_table,
         language=spec.ocr.language,
         page_ranges=spec.ocr.page_ranges,
+        stream_pages=spec.ocr.stream_pages,
         data_id=spec.ocr.data_id,
         no_cache=spec.ocr.no_cache,
         cache_tolerance=spec.ocr.cache_tolerance,
@@ -231,6 +235,14 @@ def save_normalized_document_for_paddle(
 
 
 def run_paddle_to_job_dir(args: SimpleNamespace) -> tuple[Path, Path, Path, Path]:
+    # OCR 和翻译并行（spec 的 ocr.stream_pages）、官方 HTTP、上传的本地文件：按片并行提交、做完一片公布一片
+    # （paddle_chunked.py，2026-11-01）。RETAIN_PADDLE_CHUNK_PAGES=0 是整份一个任务（照样公布，跟着 OCR 的翻译要等到它）。
+    if (
+        getattr(args, "stream_pages", False)
+        and resolve_paddle_transport(args) == PADDLE_TRANSPORT_OFFICIAL_HTTP
+        and not str(getattr(args, "file_url", "") or "").strip()
+    ):
+        return run_paddle_chunked_to_job_dir(args)
     return _run_paddle_to_job_dir(
         args,
         download_source_pdf=_download_source_pdf,

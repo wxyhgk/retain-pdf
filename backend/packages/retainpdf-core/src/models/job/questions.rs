@@ -60,9 +60,25 @@ impl JobRecord {
     }
 
     /// OCR 会不会一片片公布已做完的页（`ocr/stream/`，契约在 Python 的 `retainpdf_base/ocr_stream.py`）。
-    /// 会的话整本任务的翻译不用等 OCR 做完，跟着它翻（2026-10-31，OCR 和翻译并行）。现在只有 GLM-OCR。
+    /// 会的话整本任务的翻译不用等 OCR 做完，跟着它翻（2026-10-31，OCR 和翻译并行）。
+    /// GLM-OCR；Paddle 官方云服务、官方 HTTP、上传的文件（2026-11-01 起按片并行提交，`paddle_chunked.py`）。
+    /// 自建的 Paddle 服务（填了 `paddle_api_url`）不算：同时跑几个任务、排队怎样都只在官方服务上量过，照旧由 Rust 整份提交
+    /// （那条路还有派发意向记录，进程死在提交途中重启后不会重复提交）。
     pub fn ocr_streams_pages(&self) -> bool {
-        self.request_payload.ocr.provider.trim().eq_ignore_ascii_case("glm_ocr")
+        let ocr = &self.request_payload.ocr;
+        let provider = ocr.provider.trim();
+        if provider.eq_ignore_ascii_case("glm_ocr") {
+            return true;
+        }
+        let official_cli = ocr
+            .options
+            .get("transport")
+            .and_then(serde_json::Value::as_str)
+            .is_some_and(|transport| transport.trim().eq_ignore_ascii_case("official_cli"));
+        provider.eq_ignore_ascii_case("paddle")
+            && !official_cli
+            && ocr.paddle_api_url.trim().is_empty()
+            && self.source_url().trim().is_empty()
     }
 
     // --- 翻译 ---
@@ -262,5 +278,26 @@ mod tests {
         job.request_payload.translation.execution_connection = Some(connection.clone());
         assert_eq!(Some(&connection), job.model_connection());
         assert!(job.uses_model_executor());
+    }
+
+    /// 哪些 OCR 能一片片公布页、让整本任务的翻译跟着它（OCR 和翻译并行）。
+    #[test]
+    fn which_ocr_streams_pages() {
+        let mut job = job();
+        job.request_payload.ocr.provider = "glm_ocr".to_string();
+        assert!(job.ocr_streams_pages());
+        job.request_payload.ocr.provider = "paddle".to_string();
+        assert!(job.ocr_streams_pages(), "官方 Paddle、上传的文件：按片并行提交");
+        job.request_payload.ocr.options.insert("transport".to_string(), serde_json::json!("official_cli"));
+        assert!(!job.ocr_streams_pages(), "官方命令行只给纯 OCR 任务用");
+        job.request_payload.ocr.options.clear();
+        job.request_payload.ocr.paddle_api_url = "http://127.0.0.1:8080".to_string();
+        assert!(!job.ocr_streams_pages(), "自建的 Paddle 服务没量过并发，照旧由 Rust 整份提交");
+        job.request_payload.ocr.paddle_api_url.clear();
+        job.request_payload.source.source_url = "https://example.com/a.pdf".to_string();
+        assert!(!job.ocr_streams_pages(), "远程地址的原文不切片");
+        job.request_payload.source.source_url.clear();
+        job.request_payload.ocr.provider = "mineru".to_string();
+        assert!(!job.ocr_streams_pages());
     }
 }

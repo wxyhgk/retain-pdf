@@ -25,20 +25,19 @@ TightenBBoxFn = Callable[..., list[float]]
 SaveJsonFn = Callable[..., None]
 
 
-def save_normalized_document_for_paddle(
+def build_normalized_document_for_paddle(
     *,
     provider_result_json_path: Path,
     source_pdf_path: Path,
-    normalized_json_path: Path,
-    normalized_report_json_path: Path,
     document_id: str,
     provider_version: str,
     provider_payload: dict | None = None,
     adapt_document: AdaptDocumentFn = adapt_path_to_document_v1_with_report,
     build_lines: BuildLinesFn = build_paddle_lines,
     tighten_text_bbox: TightenBBoxFn = tighten_paddle_text_bbox,
-    save_json_file: SaveJsonFn = save_json,
-) -> None:
+) -> tuple[dict, dict]:
+    """适配 → 缩放到原文 PDF → 补行 → 校验，返回（文档, 报告），不落盘。整份落盘用 `save_normalized_document_for_paddle`；
+    按片流式公布前缀时（`paddle_chunked.py`）直接拿结果写进 `ocr/stream/`。"""
     adapt_kwargs: dict = {}
     if provider_payload is not None:
         # Reuse the payload already held in memory instead of re-reading the
@@ -59,14 +58,42 @@ def save_normalized_document_for_paddle(
     )
     # Validate the final (rescaled/rebuilt) document in memory — no disk
     # read-back — and keep the persisted report in sync with what is saved.
+    report = build_validation_report(normalized_document)
+    report["coordinate_space"] = "pdf_point"
+    normalization_report["validation"] = report
+    return normalized_document, normalization_report
+
+
+def save_normalized_document_for_paddle(
+    *,
+    provider_result_json_path: Path,
+    source_pdf_path: Path,
+    normalized_json_path: Path,
+    normalized_report_json_path: Path,
+    document_id: str,
+    provider_version: str,
+    provider_payload: dict | None = None,
+    adapt_document: AdaptDocumentFn = adapt_path_to_document_v1_with_report,
+    build_lines: BuildLinesFn = build_paddle_lines,
+    tighten_text_bbox: TightenBBoxFn = tighten_paddle_text_bbox,
+    save_json_file: SaveJsonFn = save_json,
+) -> None:
     try:
-        report = build_validation_report(normalized_document)
+        normalized_document, normalization_report = build_normalized_document_for_paddle(
+            provider_result_json_path=provider_result_json_path,
+            source_pdf_path=source_pdf_path,
+            document_id=document_id,
+            provider_version=provider_version,
+            provider_payload=provider_payload,
+            adapt_document=adapt_document,
+            build_lines=build_lines,
+            tighten_text_bbox=tighten_text_bbox,
+        )
     except DocumentSchemaValidationError as exc:
         raise RuntimeError(
             f"normalized document schema validation failed: path={normalized_json_path} error={exc}"
         ) from exc
-    report["coordinate_space"] = "pdf_point"
-    normalization_report["validation"] = report
+    report = normalization_report["validation"]
     save_json_file(normalized_json_path, normalized_document, compact=True)
     save_json_file(normalized_report_json_path, normalization_report)
     normalization_summary = build_normalization_summary(normalization_report)

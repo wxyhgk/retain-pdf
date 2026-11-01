@@ -109,13 +109,14 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _prepare_source_pdf(args: SimpleNamespace, source_dir: Path) -> Path:
+def prepare_source_pdf(args: SimpleNamespace, source_dir: Path) -> Path:
+    """上传的原文；选了页就切出所选页的子 PDF 当原文。Paddle 按片提交（`paddle_chunked.py`）也用。"""
     raw_path = str(getattr(args, "file_path", "") or "").strip()
     if not raw_path:
-        raise RuntimeError("GLM-OCR 只支持上传的本地文件（不支持 source.file_url）")
+        raise RuntimeError("只支持上传的本地文件（不支持 source.file_url）")
     source_pdf = Path(raw_path).resolve()
     if not source_pdf.is_file():
-        raise RuntimeError(f"GLM-OCR 找不到原文 PDF：{source_pdf}")
+        raise RuntimeError(f"找不到原文 PDF：{source_pdf}")
     with fitz.open(source_pdf) as document:
         page_count = document.page_count
         selected = parse_page_ranges(str(getattr(args, "page_ranges", "") or ""), page_count)
@@ -362,7 +363,7 @@ def _normalize(payload: dict, *, document_id: str, source_json_path: Path, sourc
 def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderResult:
     job_dirs = job_dirs_from_explicit_args(args)
     job_dirs.source_dir.mkdir(parents=True, exist_ok=True)
-    source_pdf = _prepare_source_pdf(args, job_dirs.source_dir)
+    source_pdf = prepare_source_pdf(args, job_dirs.source_dir)
     raw_dir = job_dirs.ocr_dir / RAW_DIR_NAME
     chunk_pages = _env_int(CHUNK_PAGES_ENV, DEFAULT_CHUNK_PAGES, low=1, high=glm_ocr_api.GLM_OCR_MAX_PAGES_PER_REQUEST)
     workers = _env_int(WORKERS_ENV, DEFAULT_WORKERS, low=1, high=MAX_WORKERS)
@@ -434,6 +435,7 @@ __all__ = [
     "crop_images",
     "merge_chunks",
     "parse_page_ranges",
+    "prepare_source_pdf",
     "request_chunks",
     "run_glm_ocr_to_job_dir",
 ]
