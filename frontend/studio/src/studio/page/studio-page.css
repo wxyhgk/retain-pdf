@@ -30,7 +30,19 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* The drive in the middle, the article kept open behind it; the bar keeps only the side panel's button. */
 .drive-page { display: flex; flex: 1; min-height: 0; flex-direction: column; padding: 28px clamp(20px, 5vw, 64px) 12px; }
 .drive-page[hidden] { display: none; }
-.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat'], [data-view='apps']) .editor-panel { display: none; }
+.studio-shell:is([data-view='drive'], [data-view='table'], [data-view='chat'], [data-view='apps'], [data-view='translate']) .editor-panel { display: none; }
+/* 翻译: RetainPDF's pages filling the middle, edge to edge; a line saying why when they cannot be reached. */
+.translate-page { display: flex; flex: 1; min-height: 0; flex-direction: column; }
+.translate-page[hidden] { display: none; }
+.translate-page iframe { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
+.translate-page iframe[hidden] { display: none; }
+.translate-unreachable { display: grid; flex: 1; place-content: center; justify-items: center; gap: 12px; padding: 24px; color: rgb(var(--gray)); font-size: 14px; line-height: 1.6; text-align: center; }
+.translate-unreachable[hidden] { display: none; }
+.translate-unreachable code { font-family: var(--font-mono); font-size: 13px; }
+.translate-unreachable-actions { display: flex; gap: 8px; }
+/* 重试 as 小程序's 新建; 改地址 beside it, lighter. */
+.translate-unreachable-actions button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: rgb(var(--black)); color: var(--surface); font: inherit; font-size: 13px; cursor: pointer; }
+.translate-unreachable-actions button + button { border: 1px solid rgba(var(--gray), 0.3); background: transparent; color: inherit; }
 /*
  * Scrollbars: thin, a rounded gray thumb on no track, darker under the pointer. The system's
  * (WebKit's, in the Mac app) are bars of their own, light on a dark page.

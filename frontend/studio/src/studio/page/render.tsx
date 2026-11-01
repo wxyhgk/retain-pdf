@@ -87,6 +87,7 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 		drive: t('资料库'),
 		allArticles: t('全部文章'),
 		apps: t('小程序'),
+		translate: t('翻译'),
 		chats: t('AI 问答'),
 		sidePanel: t('AI、文件与终端'),
 		resize: t('调整面板宽度'),
@@ -142,6 +143,8 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 				<section id="table-view" class="table-page" aria-label="${say.allArticles}" hidden></section>
 				<!-- 小程序: their list, or the one open as the page (mini-apps.ts draws it). -->
 				<section id="apps-view" class="apps-page" aria-label="${say.apps}" hidden></section>
+				<!-- 翻译: RetainPDF's own pages in a frame (wiring/retainpdf-view.ts). -->
+				<section id="translate-view" class="translate-page" aria-label="${say.translate}" hidden></section>
 				<!-- AI 问答: the AI tab's panel, moved here whole (main.ts showChat). -->
 				<section id="chat-view" class="chat-view" aria-label="${say.chats}" hidden></section>
 			</section>

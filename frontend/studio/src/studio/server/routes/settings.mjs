@@ -5,13 +5,13 @@ import { keepLastGood } from '../system/last-good.mjs';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
- * The Studio's own settings (not the AI's, not the plugins'): the language it speaks. And whether it has started: the
+ * The Studio's own settings (not the AI's, not the plugins'): the language it speaks, where RetainPDF is. And whether it has started: the
  * page says so once its article is shown, which Studio.app waits for (a Studio that does not get there was broken by an
  * edit: it offers the last good version), and the code's commit is kept as that version (last-good.mjs).
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function settingRoutes(api, { localeSettings, projectRoot, remote }) {
+export function settingRoutes(api, { localeSettings, retainpdfSettings, projectRoot, remote }) {
 	// 其他设备访问 (remote/remote-access.mjs): seen and changed on this machine only, never from a device let in by it.
 	const here = (request) => {
 		if (request.headers['x-studio-remote']) throw Object.assign(new Error(t('其他设备访问只能在这台 Mac 上设置')), { statusCode: 403 });
@@ -34,6 +34,8 @@ export function settingRoutes(api, { localeSettings, projectRoot, remote }) {
 	});
 	api.get('/settings/locale', () => localeSettings.shown());
 	api.put('/settings/locale', async ({ json }) => localeSettings.set((await json())?.locale));
+	api.get('/settings/retainpdf', () => retainpdfSettings.shown());
+	api.put('/settings/retainpdf', async ({ json }) => retainpdfSettings.set((await json())?.url));
 	let started = null;
 	api.post('/started', async () => {
 		started ??= new Date().toISOString();

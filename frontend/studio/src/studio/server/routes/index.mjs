@@ -40,6 +40,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../apps/app-checkpoints.mjs').AppCheckpoints} appCheckpoints the apps' code as it was before an AI changed it
  * @property {import('../plugin-settings.mjs').PluginSettings} pluginSettings
  * @property {import('../locale-settings.mjs').LocaleSettings} localeSettings the language the Studio speaks
+ * @property {import('../retainpdf-settings.mjs').RetainpdfSettings} retainpdfSettings where RetainPDF's pages are (翻译)
  * @property {import('../ai/ai-settings.mjs').AiSettings} aiSettings
  * @property {import('../ai/agent-settings.mjs').AgentSettings} agentSettings
  * @property {import('../ai/agent-sessions.mjs').AgentSessions} conversations the AI panel's

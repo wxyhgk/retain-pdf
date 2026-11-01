@@ -31,6 +31,7 @@ import { studioBlogRoot } from '../studio/server/articles/page-version.mjs';
 import { atomicWriteText } from '../studio/server/files/atomic-write.mjs';
 import { serverKernel } from '@blog/kernel/node.mjs';
 import { LocaleSettings, studioSettingsFile } from '../studio/server/locale-settings.mjs';
+import { RetainpdfSettings } from '../studio/server/retainpdf-settings.mjs';
 import { notesRoot } from '../studio/server/notes-root.mjs';
 import { PluginSettings } from '../studio/server/plugin-settings.mjs';
 import { AiSettings } from '../studio/server/ai/ai-settings.mjs';
@@ -275,6 +276,7 @@ export default function studioDev({ site, builds } = {}) {
 				appCheckpoints,
 				pluginSettings,
 				localeSettings: new LocaleSettings(settingsFile),
+				retainpdfSettings: new RetainpdfSettings(settingsFile),
 				aiSettings,
 				agentSettings,
 				conversations,

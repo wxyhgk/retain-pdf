@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { FileCode, Languages, Palette, Puzzle, Search, Sparkles, Tablet, type LucideIcon } from 'lucide-react';
+import { BookOpen, FileCode, Languages, Palette, Puzzle, Search, Sparkles, Tablet, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -10,9 +10,10 @@ import { FileOpenSettings } from './FileOpenSettings';
 import { RemoteSettings } from './RemoteSettings';
 import { ThemeSettings } from './ThemeSettings';
 import { LocaleSettings } from './LocaleSettings';
+import { RetainpdfSettings } from './RetainpdfSettings';
 import { PluginSettings, type PluginsHost } from './PluginSettings';
 
-export type SettingsSection = 'locale' | 'theme' | 'files' | 'remote' | 'ai' | 'plugins';
+export type SettingsSection = 'locale' | 'theme' | 'files' | 'remote' | 'retainpdf' | 'ai' | 'plugins';
 
 /**
  * 设置 opened at `section`. For want of an AI setting (识别图片): `why` said above it, and `done` told what was saved
@@ -32,6 +33,7 @@ function groups(): Array<{ name: string; entries: Entry[] }> {
 				{ id: 'theme', label: t('外观'), icon: Palette, title: t('外观'), description: t('亮色、暗色，或者跟着系统变。博客的页面也一样。存在这个浏览器里，马上生效'), words: t('theme dark light 暗色 亮色 深色 浅色 黑 白 夜间 外观 主题') },
 				{ id: 'files', label: t('打开文件'), icon: FileCode, title: t('打开文件'), description: t('点文章里指向文件的链接（脚本、数据、PDF……）时怎么打开：在 Studio 里、用默认程序（比如 VS Code、预览）、在 Finder 中显示。存在这个浏览器里，改了马上生效'), words: t('file open 文件 打开 默认程序 finder vscode 附件 链接 点击') },
 				{ id: 'remote', label: t('其他设备访问'), icon: Tablet, title: t('其他设备访问'), description: t('让配对过的别的电脑（浏览器）或 iPad 经局域网或 Tailscale 用这台 Mac 上的 Studio：文章、AI、终端都在 Mac 上跑。默认关着'), words: t('ipad iphone 远程 remote tailscale 局域网 配对 扫码 二维码 手机 平板 浏览器 电脑 browser 网页') },
+				{ id: 'retainpdf', label: 'RetainPDF', icon: BookOpen, title: 'RetainPDF', description: t('左栏「翻译」打开的 RetainPDF 页面在哪里。存在这台电脑上（.studio-settings.json，不进 git）'), words: t('retainpdf pdf 翻译 书 阅读 地址 端口 translate') },
 			],
 		},
 		{
@@ -123,6 +125,7 @@ export function SettingsDialog({ section, plugins, why = '', done, onClose }: Se
 							{shown === 'theme' && <ThemeSettings />}
 							{shown === 'files' && <FileOpenSettings />}
 							{shown === 'remote' && <RemoteSettings />}
+							{shown === 'retainpdf' && <RetainpdfSettings />}
 							{shown === 'ai' && (
 								<AiSettings
 									why={why}

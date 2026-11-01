@@ -10,7 +10,7 @@ import { shell, useActions, useShell, type View } from './shell-state';
 
 /** What the bar calls a view other than the article's. */
 function viewName(view: Exclude<View, 'editor'>): string {
-	const names: Record<Exclude<View, 'editor'>, string> = { drive: t('资料库'), table: t('全部文章'), chat: t('AI 问答'), apps: t('小程序') };
+	const names: Record<Exclude<View, 'editor'>, string> = { drive: t('资料库'), table: t('全部文章'), chat: t('AI 问答'), apps: t('小程序'), translate: t('翻译') };
 	return names[view];
 }
 

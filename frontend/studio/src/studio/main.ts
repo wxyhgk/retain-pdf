@@ -94,6 +94,7 @@ import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
+import { createRetainpdfView } from './wiring/retainpdf-view';
 import { createAiChat } from './wiring/ai-chat';
 import { createDrive } from './wiring/drive';
 import { createLibrary } from './wiring/library';
@@ -790,6 +791,9 @@ const quickFind = createQuickFind({
 const drive = createDrive(studio);
 
 // All the articles, as a table or a board (article-table.ts).
+// 翻译: RetainPDF's own pages in the middle, loaded the first time it is shown.
+const translateView = shell.querySelector<HTMLElement>('#translate-view')!;
+const retainpdf = createRetainpdfView(translateView, { openSettings: () => openSettings('retainpdf') });
 const tableView = shell.querySelector<HTMLElement>('#table-view')!;
 const articleTable = createArticleTable(tableView, {
 	articles: () => articleList.articles(),
@@ -801,7 +805,7 @@ const articleTable = createArticleTable(tableView, {
 });
 
 /**
- * The article in the middle, the drive, the table of all articles or AI 问答 (the article stays open behind them); the
+ * The article in the middle, the drive, the table of all articles, AI 问答, 小程序 or 翻译 (the article stays open behind them); the
  * left column lists the conversations for AI 问答, the pages for the others.
  */
 function showView(view: View, folder?: string): void {
@@ -811,6 +815,7 @@ function showView(view: View, folder?: string): void {
 	drive.view.hidden = view !== 'drive';
 	tableView.hidden = view !== 'table';
 	appsView.hidden = view !== 'apps';
+	translateView.hidden = view !== 'translate';
 	chat.showChat(view === 'chat');
 	const url = new URL(window.location.href);
 	if (view === 'drive') void drive.page.open(folder);
@@ -820,6 +825,12 @@ function showView(view: View, folder?: string): void {
 		articleTable.show();
 	} else {
 		url.searchParams.delete('pages');
+	}
+	if (view === 'translate') {
+		url.searchParams.set('translate', '');
+		void retainpdf.show();
+	} else {
+		url.searchParams.delete('translate');
 	}
 	if (view === 'apps') url.searchParams.set('apps', '');
 	else {
@@ -838,6 +849,7 @@ function showView(view: View, folder?: string): void {
 	const chatId = address.get('chat');
 	if (folder !== null) showView('drive', folder);
 	else if (address.has('pages')) showView('table');
+	else if (address.has('translate')) showView('translate');
 	else if (address.get('app')) void miniApps.open(address.get('app')!);
 	else if (address.has('apps')) showView('apps');
 	else if (chatId) chat.openChat(chatId);

@@ -4,8 +4,8 @@ import { t } from '@blog/i18n/index.mjs';
 import type { Conversation } from '../api/client';
 import { createStore, useStore } from './store.ts';
 
-/** What the middle shows: the article, the drive, the table of all articles, or AI 问答. */
-export type View = 'editor' | 'drive' | 'table' | 'chat' | 'apps';
+/** What the middle shows: the article, the drive, the table of all articles, AI 问答, the 小程序, or 翻译 (RetainPDF's pages). */
+export type View = 'editor' | 'drive' | 'table' | 'chat' | 'apps' | 'translate';
 
 /** A tab of the right column: the Studio's (`ai`, `files`…) or a plugin's. */
 /** A tab of the right column; `icon`, a plugin's (an SVG or a character): the Studio's own are drawn by key. */

@@ -930,6 +930,9 @@ export function putBelowImage(slug: string, image: string, markdown: string): Pr
 /** The language the Studio speaks: chosen (`system`: the browser's), and the languages there are. */
 export type LocalesShown = { chosen: string; locales: Array<{ id: string; name: string }> };
 
+/** 翻译 (server/retainpdf-settings.mjs): where RetainPDF's pages are, and the address used when none is set. */
+export type RetainpdfShown = { url: string; default: string; isDefault: boolean };
+
 /** 其他设备访问 (server/remote/remote-access.mjs): on or off, where another device may reach this Mac, the devices paired. */
 export type RemoteShown = {
 	enabled: boolean;
@@ -963,4 +966,13 @@ export function localeSettings(): Promise<LocalesShown> {
 
 export function saveLocale(locale: string): Promise<LocalesShown> {
 	return request<LocalesShown>('/api/studio/settings/locale', jsonOptions('PUT', { locale }));
+}
+
+export function retainpdfSettings(): Promise<RetainpdfShown> {
+	return request<RetainpdfShown>('/api/studio/settings/retainpdf');
+}
+
+/** Empty: the default address again. */
+export function saveRetainpdf(url: string): Promise<RetainpdfShown> {
+	return request<RetainpdfShown>('/api/studio/settings/retainpdf', jsonOptions('PUT', { url }));
 }
