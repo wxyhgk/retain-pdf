@@ -13,6 +13,10 @@ export function getReaderMarkdown(apiPrefix, args, options) {
 export function getReaderRegions(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/regions`, options });
 }
+/** GET /api/v1/jobs/:job_id/reader/regions/:item_id */
+export function getReaderRegion(apiPrefix, args, options) {
+    return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/regions/${encodePathParam(args.item_id)}`, options });
+}
 /** GET /api/v1/jobs/:job_id/reader/metadata */
 export function getReaderMetadata(apiPrefix, args, options) {
     return request({ apiPrefix, method: "GET", path: `jobs/${encodePathParam(args.job_id)}/reader/metadata`, options });
