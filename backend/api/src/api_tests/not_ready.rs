@@ -49,6 +49,7 @@ const RAW_OUTPUTS: &[(&str, &str)] = &[
     ("files/internal/normalized-document.json", "normalized-document.json not ready"),
     ("files/internal/typst/render.pdf", "typst/render.pdf not ready"),
     ("reader/markdown", "markdown not ready"),
+    ("reader/regions/p001-b0001", "reader regions not ready"),
     ("reports/translation", "translation report not ready"),
     ("reports/translation-qa", "translation-qa report not ready"),
     ("reports/layout-fit", "layout-fit report not ready"),
@@ -83,6 +84,7 @@ async fn a_job_without_an_output_directory_is_also_not_ready() {
         ("files/output/translated.docx", "translated.docx not ready"),
         ("files/output/all.zip", "all.zip not ready"),
         ("reader/markdown", "markdown not ready"),
+        ("reader/regions/p001-b0001", "reader regions not ready"),
         ("reports/refine", "refine report not ready"),
     ] {
         let uri = format!("/api/v1/jobs/{QUEUED_JOB}/{path}");

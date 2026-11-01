@@ -9,6 +9,20 @@
 
 ---
 
+## 取一个阅读区块（feat/reader-region-item）
+
+2026-11-01。新加的接口，旧的不变。接口说明见 [任务接口分类 · 阅读](../../api/01-任务/04-任务接口分类.md#阅读)。
+
+| 地方 | 加了什么 | 前端用法 |
+|---|---|---|
+| `GET /api/v1/jobs/{job_id}/reader/regions/{item_id}` | 新接口：一个区块，和 `reader/regions` 的 `items[]` 里同一项一样（`ReaderRegionItem`）；`item_id` 三位、四位都认；还没有区块 404 `not_ready`，没有这一块普通 404 | 阅读页不用改。笔记里引用一段时用它，不用取整本 |
+
+契约：`contracts/reader-data.v1.schema.json` 加端点 `getReaderRegion`。要前端做的只有一件：重新生成
+`frontend/packages/api/src/generated`（`api-client-codegen.test.mjs` 的「src/generated 和契约端点表一致」在这之前是红的），
+和后端分支配对合进 `main`。
+
+---
+
 ## 翻译 agent 的编辑部事件、翻译覆盖带引擎（feat/agent-editorial-events）
 
 2026-10-30。都是新加的，旧字段、旧地址不变。做法见 [编辑部事件接口](../../ops/planning/translation-agent/20261030-编辑部事件接口.md)，

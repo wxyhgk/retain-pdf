@@ -35,6 +35,16 @@
     },
     {
       "method": "GET",
+      "path": "/api/v1/jobs/:job_id/reader/regions/:item_id",
+      "client_name": "getReaderRegion",
+      "transport": "json",
+      "output": "ReaderRegionItem",
+      "rust_view": "ReaderRegionItemView",
+      "ts_consumer": "@retainpdf/contracts/reader-data :: ReaderRegionItem",
+      "note": "一个区块，和 reader/regions 的一项一样（引用一段用，不用取整本）。:item_id 写三位（p008-b009）、四位（p008-b0009）都认；没有这一块 404；任务还没有任何区块 404 + reason not_ready。"
+    },
+    {
+      "method": "GET",
       "path": "/api/v1/jobs/:job_id/reader/metadata",
       "client_name": "getReaderMetadata",
       "transport": "json",

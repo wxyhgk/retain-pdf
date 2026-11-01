@@ -154,6 +154,21 @@ async fn reader_regions_route_maps_translated_items_to_source_blocks() {
         json!(["/api/v1/jobs/reader-region-job/files/output/ocr/images/page-8/imgs/chart%20a.png"])
     );
 
+    // One block for quoting a paragraph: the same entry as in the list. The translation's
+    // three-digit spelling (p008-b009) and the reader's four-digit one name the same block.
+    for item_id in ["p008-b0009", "p008-b009"] {
+        let (status, one) = get_region(&app, item_id).await;
+        assert_eq!(status, StatusCode::OK, "{item_id}: {one}");
+        assert_eq!(one["data"], payload["data"]["items"][0], "{item_id}");
+    }
+    let (status, figure) = get_region(&app, "p008-b0010").await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(figure["data"], payload["data"]["items"][1]);
+    let (status, missing) = get_region(&app, "p008-b0099").await;
+    assert_eq!(status, StatusCode::NOT_FOUND);
+    assert_eq!(missing["error"]["details"], json!({}));
+    assert_eq!(missing["message"], "reader region not found: p008-b0099");
+
     let image_response = app
         .oneshot(
             Request::builder()
@@ -264,4 +279,21 @@ async fn reader_regions_route_returns_normalized_source_blocks_without_translati
         payload["data"]["items"][1]["asset_urls"],
         json!(["/api/v1/jobs/reader-region-source-only-job/files/output/ocr/images/page-1/imgs/source-only.png"])
     );
+}
+
+async fn get_region(app: &axum::Router, item_id: &str) -> (StatusCode, Value) {
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(format!("/api/v1/jobs/reader-region-job/reader/regions/{item_id}"))
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("region request"),
+        )
+        .await
+        .expect("region response");
+    let status = response.status();
+    (status, read_json(response).await)
 }

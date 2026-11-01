@@ -43,8 +43,9 @@ const PHASE_1A_CONTRACTS = new Set([
   "token-usage.v1.schema.json",
 ]);
 
-// 第 1a 期以后加进这几份契约的端点，名字由各自的 test 钉（编辑部事件：job-events-v2.test.mjs）。
-const LATER_NAMES = new Set(["listEditorialEvents"]);
+// 第 1a 期以后加进这几份契约的端点，名字由各自的 test 钉（编辑部事件：job-events-v2.test.mjs；
+// 一个阅读区块：reader-data-contract.test.mjs）。
+const LATER_NAMES = new Set(["listEditorialEvents", "getReaderRegion"]);
 
 test("phase-1a endpoints carry the client names from the frontend list over the json transport", () => {
   const named = [];

@@ -6,7 +6,7 @@ use axum::response::Response;
 use axum::Json;
 
 use crate::error::AppError;
-use crate::models::api::{ApiResponse, ReaderMetadataView, ReaderRegionsView};
+use crate::models::api::{ApiResponse, ReaderMetadataView, ReaderRegionItemView, ReaderRegionsView};
 use crate::AppState;
 
 use crate::routes::common::{build_jobs_download_route_deps, ok_json, run_job_query, ApiPath};
@@ -18,6 +18,18 @@ pub async fn get_reader_regions(
 ) -> Result<Json<ApiResponse<ReaderRegionsView>>, AppError> {
     let view = run_job_query(&state, format!("reader-regions:{job_id}"), move |jobs| {
         jobs.reader_regions_view(&job_id)
+    })
+    .await?;
+    Ok(ok_json(view))
+}
+
+/// 一个区块（引用一段用）：和 `reader/regions` 的一项一样。
+pub async fn get_reader_region(
+    State(state): State<AppState>,
+    ApiPath((job_id, item_id)): ApiPath<(String, String)>,
+) -> Result<Json<ApiResponse<ReaderRegionItemView>>, AppError> {
+    let view = run_job_query(&state, format!("reader-region:{job_id}"), move |jobs| {
+        jobs.reader_region_item_view(&job_id, &item_id)
     })
     .await?;
     Ok(ok_json(view))
