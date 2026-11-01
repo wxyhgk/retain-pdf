@@ -9,6 +9,21 @@
 
 ---
 
+## 阅读页唤出笔记（feat/studio-bridge-notes）
+
+2026-11-01。接着下一节，契约 `contracts/studio-bridge.v1.schema.json` 只加不改。做法见
+[阅读页唤出笔记](../../ops/planning/studio-workbench/20261101-阅读页唤出笔记.md)。
+
+| 地方 | 现在 | 要改成 |
+|---|---|---|
+| 收 `hello` | 记 origin、换颜色、回 `ready` | 另外记下 `hello.features`（可选，没有就当只有 `quote`）；`ready` 的 `features` 加上 `notes`（实现了下面两行时） |
+| 阅读页工具栏（新按钮「笔记」） | — | 握手过、而且 `hello.features` 有 `open-notes` 才显示；笔记收着时点了发 `open-notes`（`job_id`、`document_id`、`title`，和 `quote` 里的同一套），开着时发 `close-notes` |
+| 收 `notes`（新） | — | 按 `open` 显示「笔记」按钮按下没有；`title` 可以用作提示（「笔记：书名」） |
+
+Studio 收到 `open-notes` 会在阅读页旁边（右边）开出这本书的笔记，iframe 会变窄，阅读页要能跟着宽度重排。
+
+---
+
 ## 放在笔记（Studio）里时和它说话（feat/studio-bridge-contract）
 
 2026-11-01。新加的契约，后端接口不变。做法和分工见 [书和笔记接在一起](../../ops/planning/studio-workbench/20261101-书和笔记接在一起.md)，

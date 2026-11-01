@@ -69,7 +69,7 @@ const quote = {
 
 test("every message has one definition, a direction and the shared head", () => {
   const types = schema.messages.map((message) => message.type);
-  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote"]);
+  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes"]);
   assert.deepEqual(schema.oneOf.map((entry) => entry.$ref), schema.messages.map((message) => `#/definitions/${message.definition}`));
   for (const { type, from, definition } of schema.messages) {
     assert.ok(["studio", "retainpdf"].includes(from), `${type}: from ${from}`);
@@ -84,16 +84,29 @@ test("every message has one definition, a direction and the shared head", () => 
   assert.equal(schema.embed_query.embed, "studio");
 });
 
-test("the handshake goes Studio → RetainPDF and back; features name the other messages", () => {
+test("the handshake goes Studio → RetainPDF and back; each side's features name the messages it takes", () => {
   const from = Object.fromEntries(schema.messages.map((message) => [message.type, message.from]));
   assert.equal(from.hello, "studio");
   assert.equal(from.ready, "retainpdf");
-  assert.deepEqual(definitions.Feature.enum.sort(), Object.keys(from).filter((type) => type !== "hello" && type !== "ready").sort());
+  // RetainPDF 的 features：它处理的 Studio 消息（握手以外），加上它会发的 quote。
+  const toRetainpdf = Object.keys(from).filter((type) => from[type] === "studio" && type !== "hello");
+  assert.deepEqual([...definitions.Feature.enum].sort(), [...toRetainpdf, "quote"].sort());
+  // Studio 的 features：它处理的 RetainPDF 消息（握手以外），close-notes 跟着 open-notes。
+  const toStudio = Object.keys(from).filter((type) => from[type] === "retainpdf" && type !== "ready" && type !== "close-notes");
+  assert.deepEqual([...definitions.StudioFeature.enum].sort(), toStudio.sort());
+  assert.equal(definitions.HelloMessage.required.includes("features"), false, "hello.features is optional: Studios before it send none");
 });
 
 test("typical messages pass and the near misses do not", () => {
   const good = [
     { ...head, type: "hello", theme: "dark" },
+    { ...head, type: "hello", theme: "light", features: ["quote", "open-notes"] },
+    { ...head, type: "ready", features: ["theme", "navigate", "quote", "notes"] },
+    { ...head, type: "open-notes", job_id: "j", document_id: "doc-1", title: "Quantum Chemistry" },
+    { ...head, type: "open-notes", job_id: "j", document_id: null, title: null },
+    { ...head, type: "close-notes" },
+    { ...head, type: "notes", open: true, title: "Quantum Chemistry" },
+    { ...head, type: "notes", open: false },
     { ...head, type: "ready", features: ["theme", "navigate", "quote"] },
     { ...head, type: "ready", features: [] },
     { ...head, type: "theme", theme: "light" },
@@ -118,6 +131,11 @@ test("typical messages pass and the near misses do not", () => {
     { ...quote, url: "http://127.0.0.1:40001/reader.html" },
     (({ translated_text: _, ...rest }) => rest)(quote),
     { ...head, type: "open-notes", job_id: "j" },
+    { ...head, type: "hello", theme: "dark", features: ["navigate"] },
+    { ...head, type: "open-notes", job_id: "", document_id: null, title: null },
+    { ...head, type: "close-notes", job_id: "j" },
+    { ...head, type: "notes", open: "yes" },
+    { ...head, type: "notes" },
   ];
   for (const each of bad) assert.equal(valid(message, each), false, JSON.stringify(each));
 });
