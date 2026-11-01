@@ -1,5 +1,5 @@
-import { s as d } from "./config-CgaWliJ_.js";
-import { s as t, r as s } from "./answer-enhance-Dxffc8s3.js";
+import { s as t } from "./config-CgaWliJ_.js";
+import { s as d, r as s } from "./answer-enhance-Dxffc8s3.js";
 import { h as w, l as D, n as m } from "./markdown-payload-kK3ewW_I.js";
 const R = [
   "isMockMode",
@@ -26,7 +26,9 @@ const R = [
   "fetchDocumentByJobId",
   "credentialsPort",
   "renderReaderTerminal",
-  "renderReaderBoard"
+  "renderReaderBoard",
+  "notesQuote",
+  "notesPanel"
 ], i = [
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",
@@ -38,12 +40,12 @@ const R = [
 ];
 let o = null;
 function f(e) {
-  o = e, d({ credentialsPort: (e == null ? void 0 : e.credentialsPort) ?? null }), s(), e && t({
+  o = e, t({ credentialsPort: (e == null ? void 0 : e.credentialsPort) ?? null }), s(), e && d({
     fetchProtected: e.fetchProtected,
     resolveResourceUrl: e.resolveResourceUrl
   });
 }
-function l() {
+function n() {
   return o;
 }
 function u(e) {
@@ -51,18 +53,18 @@ function u(e) {
   if (r == null) throw new Error(`Reader adapter missing: ${String(e)} (call setReaderAdapters)`);
   return r;
 }
-function A(e) {
+function P(e) {
   var r, a;
-  return ((a = (r = l()) == null ? void 0 : r.renderReaderBoard) == null ? void 0 : a.call(r, e)) ?? null;
+  return ((a = (r = n()) == null ? void 0 : r.renderReaderBoard) == null ? void 0 : a.call(r, e)) ?? null;
 }
 export {
   R as READER_ADAPTER_KEYS,
   i as READER_REQUIRED_ADAPTER_KEYS,
-  l as getReaderAdapters,
+  n as getReaderAdapters,
   w as hasMarkdownContent,
   D as loadMarkdownPayloadWithFallback,
   m as normalizeMarkdownPayload,
-  A as renderReaderBoardSlot,
+  P as renderReaderBoardSlot,
   u as requireAdapter,
   f as setReaderAdapters
 };

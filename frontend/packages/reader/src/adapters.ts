@@ -135,13 +135,49 @@ export type ReaderTerminalAdapters = {
   renderReaderTerminal?: (props: ReaderTerminalSlotProps) => ReactNode;
 };
 
+/** 悬停框「摘到笔记」送出的一段：哪一块、原文在第几页，和点的时候的原文、译文。
+ *  任务、书、书名由宿主补（宿主知道自己开的是哪个任务）。 */
+export type ReaderNotesQuote = {
+  itemId: string;
+  /** 原文所在页，0 起。 */
+  pageIdx: number;
+  sourceText: string;
+  /** 跨块、跨页接起来的段落是整段；还没翻译时为 null。 */
+  translatedText: string | null;
+};
+
+export type ReaderNotesQuoteAdapters = {
+  /** 「摘到笔记」：阅读页放在笔记（Studio）里、和它握过手时由宿主给。
+   *
+   * 包不认识笔记，也不认识消息怎么发，只问两件事：现在能不能摘（`available`，每次画悬停框时问），
+   * 摘的时候把这一段交出去（`send`，返回有没有送出去）。不提供或 `available()` 为假 = 悬停框里不出这个按钮。 */
+  notesQuote?: {
+    available: () => boolean;
+    send: (quote: ReaderNotesQuote) => boolean;
+  };
+};
+
+/** 「笔记」按钮：阅读页放在笔记（Studio）里、Studio 认 open-notes 时由宿主给。开没开由 Studio 说了算，宿主转告。 */
+export type ReaderNotesPanelState = { available: boolean; open: boolean; title: string | null };
+
+export type ReaderNotesPanelAdapters = {
+  /** 不提供或 `available` 为假 = 顶栏没有「笔记」按钮。`getState` 没变时返回同一个对象（给 useSyncExternalStore）。 */
+  notesPanel?: {
+    getState: () => ReaderNotesPanelState;
+    subscribe: (listener: () => void) => () => void;
+    toggle: () => void;
+  };
+};
+
 export type ReaderAdapters = ReaderSessionAdapters
   & ReaderMarkdownAdapters
   & ReaderDownloadAdapters
   & ReaderDocumentIdentityAdapters
   & ReaderCredentialsAdapters
   & ReaderTerminalAdapters
-  & ReaderBoardAdapters;
+  & ReaderBoardAdapters
+  & ReaderNotesQuoteAdapters
+  & ReaderNotesPanelAdapters;
 
 /**
  * ReaderAdapters 声明键的运行时镜像（TS 类型在运行时被擦除）。
@@ -174,6 +210,8 @@ export const READER_ADAPTER_KEYS = [
   "credentialsPort",
   "renderReaderTerminal",
   "renderReaderBoard",
+  "notesQuote",
+  "notesPanel",
 ] as const satisfies readonly (keyof ReaderAdapters)[];
 
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */

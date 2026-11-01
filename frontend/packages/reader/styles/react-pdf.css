@@ -288,7 +288,9 @@
   padding-bottom: 3px;
 }
 
-.reader-text-hover-copy {
+/* 「摘到笔记」（只在笔记 Studio 里出现）和「复制」一个样子。 */
+.reader-text-hover-copy,
+.reader-text-hover-quote {
   display: inline-flex;
   align-items: center;
   min-height: 20px;
@@ -329,11 +331,13 @@
   font-family: inherit;
 }
 
-.reader-text-hover-copy:hover {
+.reader-text-hover-copy:hover,
+.reader-text-hover-quote:hover {
   background: color-mix(in srgb, var(--danger) 8%, var(--paper));
 }
 
-.reader-text-hover-copy[data-copy-state="copied"] {
+.reader-text-hover-copy[data-copy-state="copied"],
+.reader-text-hover-quote[data-copy-state="copied"] {
   border-color: color-mix(in srgb, var(--ok) 55%, transparent);
   color: var(--ok);
 }

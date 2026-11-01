@@ -71,6 +71,10 @@ export const defaultReaderPageConfigPort: ReaderPageConfigPort = {
 };
 
 export const readerLiveTranslation = () => getReaderAdapters()?.liveTranslation ?? null;
+/** 「摘到笔记」：放在笔记（Studio）里、握过手时宿主才给；没有就是 null。 */
+export const readerNotesQuote = () => getReaderAdapters()?.notesQuote ?? null;
+/** 「笔记」按钮：同上，宿主给了才有。 */
+export const readerNotesPanel = () => getReaderAdapters()?.notesPanel ?? null;
 export const readerPdfPort = (): ReaderPdfPort => {
   const adapters = getReaderAdapters();
   return adapters?.pdf ?? {

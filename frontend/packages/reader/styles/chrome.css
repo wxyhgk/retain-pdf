@@ -323,6 +323,10 @@
     --reader-tray-width: 150px;
   }
 
+  .reader-react-root:has(.reader-notes-toggle) {
+    --reader-tray-width: 194px;
+  }
+
   .reader-download-trigger {
     padding: 0 9px;
   }
@@ -336,7 +340,9 @@
   }
 }
 
-.reader-close-home-btn {
+/* 「笔记」（放在笔记 Studio 里时才有，只有图标）和「关闭」一个样子；按下（笔记开着）时填成墨色。 */
+.reader-close-home-btn,
+.reader-notes-toggle {
   position: static;
   z-index: 36;
   z-index: var(--z-hud, 36);
@@ -361,13 +367,31 @@
   transition: background 0.15s ease, transform 0.12s ease, box-shadow 0.15s ease;
 }
 
-.reader-close-home-btn:hover {
+.reader-close-home-btn:hover,
+.reader-notes-toggle:hover {
   background: var(--paper);
   box-shadow: 0 12px 30px color-mix(in srgb, var(--shadow-color) 14%, transparent);
 }
 
-.reader-close-home-btn:active {
+.reader-close-home-btn:active,
+.reader-notes-toggle:active {
   transform: scale(0.97);
+}
+
+.reader-notes-toggle {
+  padding: 0;
+  width: 36px;
+}
+
+.reader-notes-toggle[aria-pressed="true"],
+.reader-notes-toggle[aria-pressed="true"]:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* 托盘多一个 36px 的「笔记」：给分栏切换让出的宽度跟着加。 */
+.reader-react-root:has(.reader-notes-toggle) {
+  --reader-tray-width: 244px;
 }
 
 .reader-close-home-icon {
@@ -383,6 +407,10 @@
   /* 「关闭」也只剩图标：托盘约 90px。 */
   .reader-react-root {
     --reader-tray-width: 104px;
+  }
+
+  .reader-react-root:has(.reader-notes-toggle) {
+    --reader-tray-width: 148px;
   }
 
   .reader-close-home-btn {

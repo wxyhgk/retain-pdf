@@ -6,6 +6,7 @@ import {
   ReaderAssistantSplitResizeHandle,
   ReaderAssistantDock,
   ReaderCloseHome,
+  ReaderNotesToggle,
   ReaderWorkspaceTabs,
   ReaderReactBoot,
   ReaderCompareGrid,
@@ -397,6 +398,7 @@ export function ReaderAppReactPdf() {
         {/* 三路下载和「关闭回主页」同一组：顶栏常驻，任何面板开着都够得到。
             原来它们在可拖动圆钮的菜单里，而圆钮一开 dock 就被 CSS 整个吃掉。 */}
         <div className="reader-chrome-tray">
+          <ReaderNotesToggle />
           <ReaderDownloadActions />
           <ReaderCloseHome onBeforeClose={session.prepareClose} />
         </div>
