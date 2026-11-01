@@ -137,6 +137,25 @@ pub(crate) fn load_reader_regions_view(
     Ok(ReaderRegionsView { items })
 }
 
+/// One block of the reader regions (`reader/regions/:item_id`), for quoting a paragraph
+/// without fetching the whole book. Same data and id spelling as the list: `p8-b9` and
+/// `p008-b0009` name the same block. No regions at all yet → not ready.
+pub(crate) fn load_reader_region_item(
+    data_root: &Path,
+    job: &JobSnapshot,
+    item_id: &str,
+) -> Result<ReaderRegionItemView, AppError> {
+    let view = load_reader_regions_view(data_root, job)?;
+    if view.items.is_empty() {
+        return Err(AppError::not_ready("reader regions"));
+    }
+    let wanted = canonical_item_id(item_id);
+    view.items
+        .into_iter()
+        .find(|item| item.item_id == wanted || item.item_id == item_id)
+        .ok_or_else(|| AppError::not_found(format!("reader region not found: {item_id}")))
+}
+
 /// Interleaves translated and source-only blocks in document order. The sort
 /// is stable, so blocks without an order keep their position on the page.
 fn sort_in_reading_order(items: &mut [ReaderRegionItemView]) {

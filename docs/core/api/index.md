@@ -752,6 +752,14 @@ ETag: "..."
 
 坐标单位固定为 PDF point，原点为左上角。前端可用 `item_id` 做译文 hover 到原文 bbox 的映射，也可以直接使用 `text` / `markdown` 做复制菜单。
 
+只要一块（比如笔记里引用一段）：
+
+`GET /api/v1/jobs/{job_id}/reader/regions/{item_id}`
+
+返回和上面列表里同一项一样的对象。`item_id` 写三位（`p008-b009`）、四位（`p008-b0009`）都认。
+任务还没有任何区块时 `404` + `reason: "not_ready"`；没有这一块是普通 `404`。
+打开阅读页并跳到这一块：`reader.html?job_id={job_id}&page_idx={source.page - 1}&block_id={item_id}`。
+
 PDF 元数据：
 
 `GET /api/v1/jobs/{job_id}/reader/metadata`
