@@ -106,8 +106,10 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
   const ocrChildOfTranslation = hasTranslationJob && ocrChildId === `${translationJobId}-ocr`;
   const ocrTimeline = useJobTimeline(ocrChildId, { enabled: ocrChildOfTranslation && tabVisible, poll: ocrActive });
   // 并行时翻译站的全书进度（ocr_stream：已能翻的页 / 全书页数）；快照换到别的 substage 时用上一条。
-  const streamProgress = useStreamProgress(translationItem, translationJobId);
-  const parallel = translationActive && ocrActive;
+  const streamProgress = useStreamProgress(translationItem, translationActive ? translationJobId : "");
+  // 跟着 OCR 流式翻：OCR 子任务在跑，或者已经收到过 ocr_stream。OCR 子任务做完就落 succeeded、不等翻译，
+  // 之后翻译任务快照里只剩每轮批次的数（会超过总数，比如 222/101），不能当进度，所以照旧看 ocr_stream。
+  const parallel = translationActive && (ocrActive || streamProgress !== null);
 
   // 「还不知道」不等于「确定没有」：GET /documents/:id/jobs 还在路上的那几百毫秒，一份正在跑 OCR 的文档
   // 不能被画成「OCR 未执行」、「只做 OCR」还可点（点下去就并发出第二个任务）。判据是「有没有已知数据」，

@@ -317,3 +317,32 @@ test("并行：标题「识别和翻译中」；OCR 站跟 OCR 子任务（20/34
   root.unmount(); host.remove();
 });
 
+test("并行：OCR 子任务先做完（succeeded）、翻译还在追，翻译站和整体进度照旧看 ocr_stream，不改看每轮批次的数", async () => {
+  const dom = makeDom();
+  const translating = (snapshot) => ({
+    ...idleTranslation,
+    canTranslate: false,
+    isActive: true,
+    item: { job_id: "job-par", workflow: "book", status: "running", created_at: "2026-10-31T07:34:20Z", stage_snapshot: { stage: "translating", display_stage: "translate", ...snapshot } },
+    status: { label: "处理中", tone: "active" },
+  });
+  const ocrDone = {
+    ...idleOcr,
+    job: { job_id: "job-par-ocr", workflow: "ocr", status: "succeeded", stage_snapshot: { stage: "finished", progress: { current: 34, total: 34, unit: "page" } } },
+  };
+  const props = { loading: false, ocr: ocrDone, coverage: null };
+  const { root, host, render } = await mountTab(dom, {
+    ...props,
+    translation: translating({ substage: "ocr_stream", stage_detail: "跟着 OCR 翻译：已到 24/34 页", progress: { current: 24, total: 34, unit: "page" } }),
+  });
+  const stage = (key) => host.querySelector(`[data-translation-process] [data-stage-key='${key}']`);
+  assert.equal(stage("ocr").getAttribute("data-state"), "done");
+  assert.equal(host.querySelector("[data-stage-percent='translate']")?.textContent, "71%");
+  // 快照换到这一轮的批次：222/101 是累计批次 / 这一轮的总数，不能画成 220%。
+  await render({ ...props, translation: translating({ substage: "translation_batches", stage_detail: "翻译这一轮的批次", progress: { current: 222, total: 101 } }) });
+  await waitFor(() => /这一轮的批次/.test(host.querySelector("[data-stage-meta='translate']")?.textContent || ""), "换成批次快照后重画");
+  assert.equal(host.querySelector("[data-stage-percent='translate']")?.textContent, "71%");
+  assert.match(host.querySelector("[data-hud='gauge']")?.textContent || "", /24 \/ 34 页/);
+  root.unmount(); host.remove();
+});
+
