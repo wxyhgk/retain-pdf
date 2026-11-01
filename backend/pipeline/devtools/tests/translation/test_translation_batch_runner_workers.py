@@ -261,3 +261,65 @@ def test_parallel_batch_runner_keeps_single_fast_workers_separate_from_batched_f
 
     assert "s0" in started[:3]
     assert payload[-1]["translated_text"] == "译s0"
+
+
+def test_parallel_batch_runner_takes_a_result_put_just_before_the_last_worker_stopped(monkeypatch) -> None:
+    # The consumer's wait for a result timed out; while it flushed, the last worker put its result and stopped. Seeing
+    # every worker done, it used to raise "queues stopped early: completed=0 total=1" with the result in the queue
+    # (job 20261101154521-25e53c: completed=133 total=134).
+    release = threading.Event()
+    returned = threading.Event()
+    worker_stopped = threading.Event()
+    payload = [{"item_id": "i0", "page_idx": 0, "source_text": "0", "translated_text": ""}]
+
+    def _translate(batch, **_kwargs):
+        assert release.wait(5), "the consumer never waited in vain"
+        returned.set()
+        return {"i0": {"decision": "translate", "translated_text": "译i0", "final_status": "translated"}}
+
+    original_worker = batch_runner._run_translation_queue_worker
+
+    def _worker(**kwargs):
+        try:
+            original_worker(**kwargs)
+        finally:
+            worker_stopped.set()
+
+    class _SlowWaitFlushState(_FlushState):
+        def flush_if_due(self, completed: int, *, label: str) -> None:
+            super().flush_if_due(completed, label=label)
+            if label.startswith("flushed while waiting") and not release.is_set():
+                # The worker finishes its batch, puts the result and stops while the consumer is still here.
+                release.set()
+                assert returned.wait(5)
+                assert worker_stopped.wait(5)
+
+    monkeypatch.setattr(batch_runner, "translate_batch", _translate)
+    monkeypatch.setattr(batch_runner, "_run_translation_queue_worker", _worker)
+    flush_state = _SlowWaitFlushState()
+    applier = TranslationResultApplier(
+        flat_payload=payload,
+        item_to_page={"i0": 0},
+        duplicate_items_by_rep_id={},
+        flush_state=flush_state,
+        memory_store=None,
+    )
+
+    batch_runner.run_translation_batches_parallel(
+        batched_fast_batches=[],
+        single_fast_batches=[[{"item_id": "i0", "page_idx": 0, "source_text": "0"}]],
+        single_slow_batches=[],
+        queue_workers={"batched_fast": 0, "single_fast": 1, "single_slow": 0},
+        api_key="sk-test",
+        model="deepseek-chat",
+        base_url="https://example.test",
+        domain_guidance="",
+        mode="plain",
+        translation_context=None,
+        memory_store=None,
+        result_applier=applier,
+        flush_state=flush_state,
+    )
+
+    assert flush_state.progress[-1][0] == 1
+    assert payload[0]["translated_text"] == "译i0"
