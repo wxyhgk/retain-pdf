@@ -54,6 +54,14 @@ function linePitch(block) {
 }
 
 
+// First-line indent (pt) retain-pdf measured for this block from the source
+// PDF (text layer, else ink), the same value its Typst route sets. 0 when not
+// given: OCR line boxes (block-level for Paddle / GLM) cannot tell an indent.
+function firstLineIndentOf(item) {
+  const indent = Number(item?.first_line_indent_pt);
+  return Number.isFinite(indent) && indent > 0 ? indent : 0;
+}
+
 function translationOf(item) {
   if (!item || !item.policy_translate) return "";
   return String(item.translated_text || "").trim();
@@ -207,7 +215,7 @@ function buildModel(job, options = {}) {
           styleKind: "body_text",
           debugRole: "body_candidate",
           columnKey: String(block.metadata?.provider_column_index_guess || ""),
-          items: [{ id, text: sourceText, translatedText: translated, originalLineCount: lineCount }]
+          items: [{ id, text: sourceText, translatedText: translated, originalLineCount: lineCount, indent: firstLineIndentOf(item) }]
         };
         if (retain) stream.sourceLinePitch = pitchFromPdf || pitchFromOcr || 0;
         streams.push(stream);
@@ -232,6 +240,7 @@ function buildModel(job, options = {}) {
         mainTitle: subType === "title",
         fontSize: seed.size,
         lineCount,
+        indent: firstLineIndentOf(item),
         ...(retain ? { sourceLinePitch: pitchFromPdf || pitchFromOcr || 0 } : {})
       });
     }

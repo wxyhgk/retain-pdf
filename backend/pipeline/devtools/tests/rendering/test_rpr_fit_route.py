@@ -14,6 +14,7 @@ from retainpdf_pipeline.foundation.shared.stage_specs import normalize_render_en
 from retainpdf_pipeline.render.output.rpr_fit.report import build_rpr_fit_fit_report_payload
 from retainpdf_pipeline.render.prepare.obstacle_scan_pdf import extract_drawings
 from retainpdf_pipeline.render.output.typst.fit_report import fit_report_scope
+from retainpdf_pipeline.render.workflow import engine_dispatch
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
 from retainpdf_pipeline.render.workflow.engine_dispatch import dispatch_with_render_engine
 from retainpdf_pipeline.render.workflow.engine_dispatch import render_engine_summary
@@ -149,6 +150,77 @@ def test_rpr_fit_route_end_to_end_with_fake_engine(tmp_path: Path, monkeypatch, 
     assert summary["effective"] == "rpr_fit" and summary["requested"] == "rpr_fit"
     assert summary["invariants"]["line_overlaps"] == 0
     assert summary["body_font"]["shared"] == 10.0
+
+
+def _indented_job(tmp_path: Path) -> tuple[Path, Path, dict[int, list[dict]]]:
+    """一页三行的正文段，文字层里首行比其余行靠右 20pt（和 Word 排的论文一样）。"""
+    source_pdf = tmp_path / "source.pdf"
+    doc = fitz.open()
+    page = doc.new_page(width=300, height=400)
+    for index, x in enumerate((50, 30, 30)):
+        page.insert_text((x, 60 + index * 16), "source paragraph line with enough words", fontsize=10)
+    doc.save(source_pdf)
+    doc.close()
+    block = {"block_id": "p001-b0001", "type": "text", "sub_type": "body", "bbox": [28, 48, 280, 98], "lines": []}
+    document_path = tmp_path / "document.v1.json"
+    document_path.write_text(
+        json.dumps({"schema": "normalized_document_v1", "pages": [{"page_index": 0, "width": 300, "height": 400, "blocks": [block]}]}),
+        encoding="utf-8",
+    )
+    item = {
+        "item_id": "p001-b001",
+        "page_idx": 0,
+        "block_idx": 1,
+        "block_type": "text",
+        "layout_role": "paragraph",
+        "semantic_role": "body",
+        "bbox": [28, 48, 280, 98],
+        "policy_translate": True,
+        "source_text": "source paragraph line with enough words " * 3,
+        "translated_text": "译文正文段落",
+        "lines": [],
+    }
+    return source_pdf, document_path, {0: [item]}
+
+
+def _engine_items(diagnostics: dict) -> list[dict]:
+    return json.loads((Path(diagnostics["rpr_work_dir"]) / "translations.json").read_text(encoding="utf-8"))
+
+
+def test_rpr_fit_passes_the_first_line_indent_read_from_the_text_layer(tmp_path: Path, monkeypatch) -> None:
+    """引擎只能从 OCR 行框估缩进（Paddle、GLM 只有块级框），以前可编辑 PDF 一个缩进都没有：
+    retain-pdf 读原 PDF 文字层量好，随译文条目交给引擎。"""
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _indented_job(tmp_path)
+    context = _context(tmp_path, end_page=0, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, calls = _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    assert calls == [], diagnostics.get("render_engine_fallback_message")
+    [entry] = _engine_items(diagnostics)
+    assert entry["first_line_indent_pt"] == pytest.approx(20, abs=0.5)
+    assert diagnostics["rpr_fit_indent_source"] == "computed"
+    assert diagnostics["rpr_fit_indented_blocks"] == 1
+
+
+def test_rpr_fit_uses_the_prewarmed_indents_and_survives_a_failed_measurement(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _indented_job(tmp_path)
+    prewarmed = _context(
+        tmp_path, end_page=0, document_path=document_path, indent_detection_pdf_path=source_pdf,
+        first_line_indent_lookup={"p001-b001": 12.5},
+    )
+    _pages, diagnostics, _calls = _dispatch(prewarmed, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    assert _engine_items(diagnostics)[0]["first_line_indent_pt"] == 12.5
+    assert diagnostics["rpr_fit_indent_source"] == "prewarm"
+
+    def broken(**_kwargs):
+        raise ValueError("boom")
+
+    monkeypatch.setattr(engine_dispatch, "build_payload_geometry", broken)
+    context = _context(tmp_path, end_page=0, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, calls = _dispatch(context, mode="overlay", source_pdf_path=source_pdf, translated_pages=translated)
+    assert calls == [], "缩进算失败不回退 Typst"
+    assert "first_line_indent_pt" not in _engine_items(diagnostics)[0]
+    assert diagnostics["rpr_fit_indent_source"] == "failed"
 
 
 def test_rpr_fit_engine_failure_falls_back_to_typst(tmp_path: Path, monkeypatch) -> None:

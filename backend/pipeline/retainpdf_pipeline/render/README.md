@@ -285,5 +285,9 @@ README），引擎直接写出叠加层 PDF（不经过 Typst）：`rpr_fit` 的
   `text.py` 把 cmarker markdown 还原成纯文本，`obstacles.py` 从 document.v1 取障碍物，`engine_cli.py` 调子进程，
   `report.py` 把引擎报告转成 fit_report.v1，`renderer.py` 负责合并到底图）。
 - 准备链与 Typst 背景路线共用 `output/typst/book_renderer.py: prepare_background_render_pages`。
+- 首行缩进：引擎只能从 OCR 行框估（Paddle、GLM 只有块级框，估不出来），所以两条引擎路线都用 retain-pdf
+  量好的值（读原 PDF 文字层，读不到再看墨迹）。`rpr` 走 page_specs 带过去；`rpr_fit` 不算版式 payload，
+  由 `engine_dispatch._first_line_indents` 现算（预热有就直接用），随译文条目的 `first_line_indent_pt` 交给引擎。
+  算失败就不缩进，不回退 Typst；`render_diagnostics` 记 `rpr_fit_indent_source` 和缩进了几块。
 - dual、只抽选中页、非思源宋体、引擎没装 / Node < 22.8 / 引擎失败 → 回退 Typst，原因写进
   `pipeline_summary.render_engine`、`render_diagnostics` 和 `fit_report.v1.json` 的 reason。

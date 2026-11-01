@@ -31,7 +31,8 @@
 //   { schema, font: { family },
 //     document: <document.v1 object>,            // pages[].blocks[] with bbox, type, sub_type, lines
 //     translations: [ { page_idx, block_idx, item_id, policy_translate,
-//                       translated_text, source_text, lines } ],
+//                       translated_text, source_text, lines,
+//                       first_line_indent_pt? } ],   // retain-pdf's measured indent, pt
 //     visual_profile: <visual_profile.v1 object> | null,   // cover / text colours
 //     drawings: { "<page index>": { width, height, drawings, images, words } } | null,
 //     pages: [<page index>, ...] | null }        // pages to render, in order; null = all
@@ -149,10 +150,10 @@ function fitInput(input, { maths, timings = {}, fitOptions = {} } = {}) {
   const defaults = FitModel.defaultContentFor({ renderMathBox });
   const contentFor = (node, mode) => {
     if (node.kind === "stream") {
-      return { paragraphs: (node.source.items || []).map(item => ({ runs: runsForText(item.translatedText || item.text), indent: 0 })) };
+      return { paragraphs: (node.source.items || []).map(item => ({ runs: runsForText(item.translatedText || item.text), indent: item.indent || 0 })) };
     }
     if (node.source.kind === "text" && node.source.translatedText) {
-      return { paragraphs: [{ runs: runsForText(node.source.translatedText), indent: 0 }] };
+      return { paragraphs: [{ runs: runsForText(node.source.translatedText), indent: node.source.indent || 0 }] };
     }
     return defaults(node, mode);
   };
