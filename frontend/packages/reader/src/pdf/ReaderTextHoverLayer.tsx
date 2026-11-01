@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import {
   projectReaderRegion,
   readerRegionCopyText,
@@ -6,6 +6,7 @@ import {
   type ReaderRegionHighlight,
   type ReaderRegionRect,
 } from "../shared/data/reader-regions.js";
+import { readerNotesQuote } from "../external.js";
 
 export type ReaderTextHoverTarget = {
   itemId: string;
@@ -83,8 +84,52 @@ export async function copyReaderText(text: string): Promise<boolean> {
 export const READER_TEXT_HOVER_COPY_CLASS = "reader-text-hover-copy";
 export const READER_TEXT_HOVER_ID_CLASS = "reader-text-hover-id";
 export const READER_TEXT_HOVER_TOOLS_CLASS = "reader-text-hover-tools";
+export const READER_TEXT_HOVER_QUOTE_CLASS = "reader-text-hover-quote";
+
+/** 「摘到笔记」交出去的一段：原文页（0 起）、原文、整段译文（跨块接起来的段落是整段，没译文为 null）。 */
+export function readerNotesQuoteOf(target: ReaderTextHoverTarget) {
+  const { region } = target.highlight;
+  const translated = `${region.translated.text || ""}`.trim();
+  return {
+    itemId: target.itemId,
+    pageIdx: Math.max(0, region.source.page - 1),
+    sourceText: `${region.source.text || ""}`,
+    translatedText: translated ? region.translated.text : null,
+  };
+}
 
 type CopyState = "idle" | "copied" | "failed";
+
+/** 工具条上的小按钮（编号、复制、摘到笔记）：按下不冒到页面上（触屏下会被当成「点了另一块」）。 */
+function HoverToolButton({
+  className,
+  state,
+  label,
+  title,
+  onClick,
+  children,
+}: {
+  className: string;
+  state: CopyState;
+  label: string;
+  title?: string;
+  onClick: (event: ReactMouseEvent<HTMLButtonElement>) => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className={className}
+      data-copy-state={state}
+      aria-label={label}
+      title={title}
+      onPointerDown={(event) => event.stopPropagation()}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
 
 /** 工具条（编号 + 复制）大约占的尺寸：放进框内放不下时才挪到框外上方。 */
 export const HOVER_TOOLS_HEIGHT = 26;
@@ -94,9 +139,12 @@ export const HOVER_TOOLS_WIDTH = 190;
  * 工具条放哪：一般的块放在框内右上角 —— 它就在块的命中范围里，鼠标走过去不会换块，
  * 也不盖住上一块。框太矮或太窄（行间公式常常只有一行高）放不下时才挪到框外上方。
  */
-export function hoverToolsOutside(rect: ReaderRegionRect): boolean {
-  return rect.height < HOVER_TOOLS_HEIGHT * 2 || rect.width < HOVER_TOOLS_WIDTH;
+export function hoverToolsOutside(rect: ReaderRegionRect, toolsWidth = HOVER_TOOLS_WIDTH): boolean {
+  return rect.height < HOVER_TOOLS_HEIGHT * 2 || rect.width < toolsWidth;
 }
+
+/** 多了「摘到笔记」时工具条大约宽出来的部分。 */
+export const HOVER_QUOTE_WIDTH = 72;
 
 /**
  * 悬停内容块：红色虚线框 + 翻译编号 + 「复制」（行间公式是「复制 LaTeX」）。
@@ -104,6 +152,7 @@ export function hoverToolsOutside(rect: ReaderRegionRect): boolean {
  * 对照阅读时左右两栏一起画（悬停的 itemId 由 ReaderCompareGrid 共享），左栏复制原文、
  * 右栏复制译文 —— 这是 4.1.x 旧引擎里最常用的那个交互，React 引擎替换时丢了。
  * 只有这一种块级交互：双击 / 三击留给浏览器选词选段（以前双击会整块复制，把选词弄坏了）。
+ * 放在笔记（Studio）里时多一个「摘到笔记」（宿主给了 notesQuote 才有），见 docs/ops/planning/studio-workbench/。
  */
 export function ReaderTextHoverLayer({
   target,
@@ -117,6 +166,7 @@ export function ReaderTextHoverLayer({
 }) {
   const [state, setState] = useState<CopyState>("idle");
   const [idState, setIdState] = useState<CopyState>("idle");
+  const [quoteState, setQuoteState] = useState<CopyState>("idle");
   const timersRef = useRef<number[]>([]);
   const itemId = target?.itemId || "";
   // 换了块，「已复制」必须跟着消 —— 否则它在说另一段的话；上一块的定时器也一起清掉，
@@ -124,6 +174,7 @@ export function ReaderTextHoverLayer({
   useEffect(() => {
     setState("idle");
     setIdState("idle");
+    setQuoteState("idle");
     const timers = timersRef.current;
     return () => {
       timers.forEach((timer) => window.clearTimeout(timer));
@@ -143,7 +194,17 @@ export function ReaderTextHoverLayer({
       timersRef.current.push(window.setTimeout(() => set("idle"), 1200));
     };
   const idleLabel = kind === "formula" ? "复制 LaTeX" : "复制";
-  const outside = hoverToolsOutside(target.rect);
+  // 放在笔记（Studio）里、握过手才有；每次画悬停框时问一次。
+  const notesQuote = readerNotesQuote();
+  const canQuote = Boolean(notesQuote?.available());
+  const quote = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const ok = Boolean(notesQuote?.send(readerNotesQuoteOf(target)));
+    setQuoteState(ok ? "copied" : "failed");
+    timersRef.current.push(window.setTimeout(() => setQuoteState("idle"), 1200));
+  };
+  const outside = hoverToolsOutside(target.rect, canQuote ? HOVER_TOOLS_WIDTH + HOVER_QUOTE_WIDTH : HOVER_TOOLS_WIDTH);
   return (
     <div className="reader-text-hover-layer">
       <div
@@ -157,33 +218,40 @@ export function ReaderTextHoverLayer({
           className={READER_TEXT_HOVER_TOOLS_CLASS}
           data-placement={outside ? "outside" : "inside"}
         >
-          <button
-            type="button"
+          <HoverToolButton
             className={READER_TEXT_HOVER_ID_CLASS}
-            data-copy-state={idState}
-            aria-label={`复制翻译编号 ${target.itemId}`}
+            state={idState}
+            label={`复制翻译编号 ${target.itemId}`}
             title="翻译编号，点击复制"
-            onPointerDown={(event) => event.stopPropagation()}
             onClick={copyWith(target.itemId, setIdState)}
           >
             {idState === "copied" ? "已复制编号" : target.itemId}
-          </button>
+          </HoverToolButton>
           {pane === "translated" && revisedCount > 0 ? (
             <span className="reader-text-hover-revised" data-reader-revised-count={revisedCount}>
               改过 {revisedCount} 次
             </span>
           ) : null}
           {text ? (
-            <button
-              type="button"
+            <HoverToolButton
               className={READER_TEXT_HOVER_COPY_CLASS}
-              data-copy-state={state}
-              aria-label={pane === "translated" ? "复制这段译文" : "复制这段原文"}
-              onPointerDown={(event) => event.stopPropagation()}
+              state={state}
+              label={pane === "translated" ? "复制这段译文" : "复制这段原文"}
               onClick={copyWith(text, setState)}
             >
               {state === "copied" ? "已复制" : state === "failed" ? "复制失败" : idleLabel}
-            </button>
+            </HoverToolButton>
+          ) : null}
+          {canQuote ? (
+            <HoverToolButton
+              className={READER_TEXT_HOVER_QUOTE_CLASS}
+              state={quoteState}
+              label="把这一段摘到笔记"
+              title="摘到笔记：原文和译文一起放进打开的笔记"
+              onClick={quote}
+            >
+              {quoteState === "copied" ? "已摘" : quoteState === "failed" ? "没摘上" : "摘到笔记"}
+            </HoverToolButton>
           ) : null}
         </div>
       </div>

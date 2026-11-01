@@ -14,6 +14,8 @@
 // dispatch；命令式复用件与 StrictMode 解耦是三页统一约定。
 
 import "@/app/bootstrap/job-domain-adapters.js";
+// 放在笔记（Studio）里时（?embed=studio）：握手、跟着换亮暗、收跳转（见 bootstrap/studio-embed.ts）。
+import "@/app/bootstrap/studio-embed.js";
 import { createRoot } from "react-dom/client";
 import type { ReactNode } from "react";
 import { bootTheme } from "@/ui/theme/theme.js";

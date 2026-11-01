@@ -3,17 +3,22 @@
 // 1) 软打开（主页 SoftReaderHost iframe）→ postMessage 父页 history.back，主页不刷新
 // 2) 独立 reader.html 且从主页 assign 进来 → history.back
 // 3) 深链直达 → location.assign(index.html)
+// 放在别的应用里（?embed=，例如笔记 Studio）时不是软阅读层：跳过 1)，回主页的地址带着 embed。
 
 import { X } from "lucide-react";
-import { SOFT_READER_CLOSE_MESSAGE } from "../../shared/navigation/soft-reader.js";
+import { SOFT_READER_CLOSE_MESSAGE, embeddedIn } from "../../shared/navigation/soft-reader.js";
 
 function homeIndexUrl() {
-  return new URL("./index.html", window.location.href).href;
+  const url = new URL("./index.html", window.location.href);
+  const embed = embeddedIn();
+  if (embed) url.searchParams.set("embed", embed);
+  return url.href;
 }
 
 function requestSoftHostClose(): boolean {
   if (typeof window === "undefined") return false;
   if (window.self === window.top) return false;
+  if (embeddedIn()) return false;
   try {
     window.parent.postMessage(
       { type: SOFT_READER_CLOSE_MESSAGE },

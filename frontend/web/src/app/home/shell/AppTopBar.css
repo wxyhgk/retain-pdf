@@ -253,3 +253,8 @@
     border-radius: 999px;
   }
 }
+
+/* 放在笔记（Studio）里（<html data-embed="studio">，见 app/bootstrap/studio-embed.ts）：Studio 有自己的品牌，这里不再出 logo。 */
+:root[data-embed="studio"] .library-brand-link {
+  display: none;
+}

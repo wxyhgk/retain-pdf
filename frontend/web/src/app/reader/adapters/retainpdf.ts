@@ -2,6 +2,8 @@
 import * as ext from "../external.js";
 import { setReaderAdapters } from "@retainpdf/reader/adapters";
 import type { ReaderAdapters, ReaderDownloadAdapters } from "@retainpdf/reader/adapters";
+import { studioEmbed, studioNotesQuote } from "@/app/bootstrap/studio-embed.js";
+import { parseReaderParams } from "@/platform/navigation/pages.js";
 
 // external.ts 是 MPA 宿主能力的单一出口。这里只显式列出 ReaderAdapters
 // 声明的字段：过去的 `...ext` 会把未声明的导出静默带入运行时对象，
@@ -42,6 +44,10 @@ const adapters: ReaderAdapters = {
   // —— AI（阅读页唯一的一扇门：终端里的 agent）——
   renderReaderTerminal: ext.renderReaderTerminal,
   renderReaderBoard: ext.renderReaderBoard,
+  // —— 「摘到笔记」：只在笔记（Studio）里（?embed=studio）才有，握过手才显示 ——
+  notesQuote: studioEmbed
+    ? studioNotesQuote(studioEmbed, parseReaderParams().jobId, (jobId) => ext.fetchDocumentByJobId(ext.API_PREFIX, jobId))
+    : undefined,
 };
 setReaderAdapters(adapters);
 

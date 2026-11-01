@@ -18,6 +18,19 @@ export type SoftReaderJobHandoff = {
   documentId?: string | null;
 };
 
+/**
+ * 这一页放在别的应用里吗（地址带 `?embed=`，例如笔记 Studio 用 iframe 放 RetainPDF，`embed=studio`）。返回它的值，没有是空串。
+ * 嵌入时不软开阅读层、关闭也不找父页：整页跳转，外层的 iframe 才知道换了页（Studio 每次加载完重新握手）；
+ * 跳到别的页时带着这个参数。
+ */
+export function embeddedIn(search = typeof window === "undefined" ? "" : window.location.search): string {
+  try {
+    return `${new URLSearchParams(search).get("embed") || ""}`.trim();
+  } catch {
+    return "";
+  }
+}
+
 export function isHomeDocumentPath(pathname = ""): boolean {
   const p = `${pathname || ""}`;
   if (/reader\.html/i.test(p)) return false;
@@ -47,6 +60,7 @@ export function trySoftOpenReader(url: string): boolean {
   if (typeof window === "undefined") return false;
   const target = `${url || ""}`.trim();
   if (!target) return false;
+  if (embeddedIn()) return false;
 
   const onHomePath = isHomeDocumentPath(window.location.pathname);
   const alreadySoft = isSoftReaderHistoryState(window.history.state);

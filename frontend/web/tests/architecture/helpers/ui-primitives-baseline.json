@@ -43,7 +43,7 @@
       "input": 1
     },
     "../packages/reader/src/pdf/ReaderTextHoverLayer.tsx": {
-      "button": 2
+      "button": 1
     },
     "../packages/reader/src/ReaderAppReactPdf.tsx": {
       "button": 1

@@ -9,6 +9,9 @@
 //
 // 跳转统一走 navigateTo()；APP_EVENTS.openReaderRequested 事件保留兼容，
 // 新代码优先用 buildReaderUrl() + navigateToReader()/navigateTo()。
+// 放在别的应用里（?embed=studio，笔记 Studio 的 iframe）时 navigateTo 自动带上 embed，见 carryEmbed。
+
+import { embeddedIn } from "./soft-reader.js";
 
 export type HomeTab = "library" | "collections" | "favorites" | "ask";
 /** UI 层历史键：categories == collections（见 LibraryTopTabs COLLECTIONS_TAB_KEY）。 */
@@ -208,9 +211,28 @@ export function canonicalizeReaderSearch(search?: string): string | null {
   return dirty ? params.toString() : null;
 }
 
-/** 全站唯一跳转出口：assign（默认）/ replace（深链、避免返回死循环）。 */
-export function navigateTo(url: string, options: { replace?: boolean } = {}): void {
+/**
+ * 当前页放在别的应用里（地址带 ?embed=）时，本站页面（同源 .html）的地址补上同一个 embed；
+ * 别的地址、已经带了 embed 的、没嵌入时原样返回。
+ */
+export function carryEmbed(url: string, search?: string): string {
   const target = `${url || ""}`.trim();
+  const embed = embeddedIn(search);
+  if (!target || !embed || typeof globalThis.location === "undefined") return target;
+  try {
+    const next = new URL(target, globalThis.location.href);
+    if (next.origin !== globalThis.location.origin || !/\.html$/i.test(next.pathname)) return target;
+    if (next.searchParams.has("embed")) return target;
+    next.searchParams.set("embed", embed);
+    return next.href;
+  } catch {
+    return target;
+  }
+}
+
+/** 全站唯一跳转出口：assign（默认）/ replace（深链、避免返回死循环）。嵌入时带着 embed（carryEmbed）。 */
+export function navigateTo(url: string, options: { replace?: boolean } = {}): void {
+  const target = carryEmbed(url);
   if (!target || typeof window === "undefined") return;
   if (options.replace) window.location.replace(target);
   else window.location.assign(target);
