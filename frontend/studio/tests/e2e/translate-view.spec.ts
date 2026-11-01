@@ -22,8 +22,9 @@ const savedUrl = () => {
 
 const STAND_IN = `<!doctype html><meta charset="utf-8"><title>RetainPDF</title>
 <h1 id="library">图书馆</h1>
-<p>embed <span id="embed"></span> · theme <span id="theme"></span> · navigated <span id="navigated"></span></p>
+<p>embed <span id="embed"></span> · theme <span id="theme"></span> · studio <span id="studio"></span> · navigated <span id="navigated"></span> · notes <span id="notes-state"></span></p>
 <button id="quote" type="button">摘</button>
+<button id="notes" type="button">笔记</button>
 <script>
 const head = { protocol: 'retainpdf-studio-bridge', v: 1 };
 let host = '';
@@ -34,14 +35,23 @@ addEventListener('message', (event) => {
 	if (message.type === 'hello') {
 		host = event.origin;
 		document.querySelector('#theme').textContent = message.theme;
-		parent.postMessage({ ...head, type: 'ready', features: ['theme', 'navigate', 'quote'] }, host);
+		document.querySelector('#studio').textContent = (message.features || []).join(',');
+		parent.postMessage({ ...head, type: 'ready', features: ['theme', 'navigate', 'quote', 'notes'] }, host);
 	} else if (message.type === 'theme') {
 		document.querySelector('#theme').textContent = message.theme;
 	} else if (message.type === 'navigate') {
 		const { protocol, v, type, ...target } = message;
 		document.querySelector('#navigated').textContent = JSON.stringify(target);
+	} else if (message.type === 'notes') {
+		document.querySelector('#notes-state').textContent = message.open ? 'open:' + message.title : 'closed';
 	}
 });
+document.querySelector('#notes').addEventListener('click', () => parent.postMessage(
+	document.querySelector('#notes-state').textContent.startsWith('open')
+		? { ...head, type: 'close-notes' }
+		: { ...head, type: 'open-notes', job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry' },
+	host,
+));
 document.querySelector('#quote').addEventListener('click', () => parent.postMessage({
 	...head, type: 'quote', job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', item_id: 'p012-b0003', page_idx: 11,
 	source_text: 'The variation principle.', translated_text: '变分原理。',
@@ -100,6 +110,8 @@ test('翻译 shows RetainPDF in the middle, kept as it was while another view is
 	await expect(inFrame(page).locator('#library')).toHaveText('图书馆');
 	await expect(inFrame(page).locator('#embed')).toHaveText('studio');
 	await expect(inFrame(page).locator('#theme')).toHaveText(/^(light|dark)$/u);
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes');
+	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
 	expect(new URL(page.url()).searchParams.has('translate')).toBe(true);
 
 	// Pressed again: the article, the frame left loaded behind it.
@@ -148,6 +160,54 @@ test('摘到笔记 in RetainPDF puts the passage in the note; its card opens Ret
 	await card.locator('.retainpdf-quote-open').click();
 	await expect(page.locator('#translate-view')).toBeVisible();
 	await expect(inFrame(page).locator('#navigated')).toHaveText(JSON.stringify({ job_id: 'job-1', block_id: 'p012-b0003', page_idx: 11 }));
+});
+
+test('笔记 in RetainPDF opens the book\'s page of notes beside it, under 读书笔记, the same one each time', async ({ page }) => {
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#open-translate').click();
+	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
+	const notesPanel = page.locator('.editor-panel');
+	await expect(notesPanel).toBeHidden();
+
+	await inFrame(page).locator('#notes').click();
+	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:Quantum Chemistry');
+	await expect(page.locator('#translate-view')).toBeVisible();
+	await expect(notesPanel).toBeVisible();
+	await expect(page.locator('.document-header')).toContainText('Quantum Chemistry');
+	// Side by side: the pages left, the note right.
+	const pages = await page.locator('#translate-view').boundingBox();
+	const note = await notesPanel.boundingBox();
+	expect(pages!.x + pages!.width).toBeLessThanOrEqual(note!.x + 1);
+	// Under 读书笔记 in the tree.
+	await expect(page.locator('#article-list')).toContainText('读书笔记');
+
+	// A passage quoted lands in it, seen at once.
+	await inFrame(page).locator('#quote').click();
+	await expect(notesPanel.locator('.retainpdf-quote')).toHaveCount(1);
+
+	// The line between them dragged: the note wider.
+	const divider = page.locator('.notes-divider');
+	const line = await divider.boundingBox();
+	await page.mouse.move(line!.x + line!.width / 2, line!.y + 200);
+	await page.mouse.down();
+	await page.mouse.move(line!.x - 120, line!.y + 200, { steps: 5 });
+	await page.mouse.up();
+	expect((await notesPanel.boundingBox())!.width).toBeGreaterThan(note!.width + 80);
+
+	// Put away from the Studio's side: RetainPDF told; asked again, the same page (not another one).
+	await page.locator('#notes-close').click();
+	await expect(notesPanel).toBeHidden();
+	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
+	await inFrame(page).locator('#notes').click();
+	await expect(notesPanel).toBeVisible();
+	await expect(notesPanel.locator('.retainpdf-quote')).toHaveCount(1);
+	// And from RetainPDF's.
+	await inFrame(page).locator('#notes').click();
+	await expect(notesPanel).toBeHidden();
+	const books = await page.evaluate(async () => ((await (await fetch('/api/studio/articles')).json()) as { articles: Array<{ title: string; retainpdf?: { books?: boolean; document?: string } }> }).articles);
+	expect(books.filter((entry) => entry.retainpdf?.books).length).toBe(1);
+	expect(books.filter((entry) => entry.retainpdf?.document === 'doc-1').length).toBe(1);
 });
 
 test('a quote not from RetainPDF\'s frame is not taken', async ({ page }) => {

@@ -36,6 +36,7 @@ import {
 	tellStarted,
 	openArticleFileInApp,
 	revealArticleFile,
+	retainpdfBookNote,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { usePictureSizes } from './editor/figure-block';
@@ -95,6 +96,7 @@ import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
 import { createRetainpdfView } from './wiring/retainpdf-view';
+import { createNotesSplit } from './wiring/notes-split';
 import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfTarget } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
 import { createDrive } from './wiring/drive';
@@ -794,8 +796,27 @@ const drive = createDrive(studio);
 // All the articles, as a table or a board (article-table.ts).
 // 翻译: RetainPDF's own pages in the middle, loaded the first time it is shown.
 const translateView = shell.querySelector<HTMLElement>('#translate-view')!;
+// Its 笔记: the book's page of notes beside it (wiring/notes-split.ts), opened and put away from either side.
+const notesSplit = createNotesSplit(shell, translateView, { close: () => closeNotes() });
+function closeNotes(): void {
+	notesSplit.open = false;
+	retainpdf.notes(false);
+}
 const retainpdf = createRetainpdfView(translateView, {
 	openSettings: () => openSettings('retainpdf'),
+	async openNotes(book) {
+		try {
+			const note = await retainpdfBookNote(book);
+			if (note.created) await articleList.load();
+			if (session.slug !== note.slug) await session.open(note.slug);
+			notesSplit.open = true;
+			retainpdf.notes(true, note.title);
+		} catch (error) {
+			showToast(t('没能打开这本书的笔记：{error}', { error: error instanceof Error ? error.message : String(error) }), true);
+			retainpdf.notes(false);
+		}
+	},
+	closeNotes,
 	// 摘到笔记: the passage put where the caret was in the note open behind 翻译.
 	quote(quote) {
 		if (!session.slug) {

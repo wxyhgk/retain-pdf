@@ -976,3 +976,8 @@ export function retainpdfSettings(): Promise<RetainpdfShown> {
 export function saveRetainpdf(url: string): Promise<RetainpdfShown> {
 	return request<RetainpdfShown>('/api/studio/settings/retainpdf', jsonOptions('PUT', { url }));
 }
+
+/** 翻译's 笔记 (server/retainpdf-notes.mjs): the page of notes of a book, found by it or made under 读书笔记. */
+export function retainpdfBookNote(book: { job_id: string; document_id: string | null; title: string | null }): Promise<{ slug: string; title: string; created: boolean }> {
+	return request('/api/studio/retainpdf/notes', jsonOptions('POST', book));
+}

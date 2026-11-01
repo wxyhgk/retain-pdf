@@ -11,7 +11,7 @@ import { t } from '@blog/i18n/index.mjs';
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function settingRoutes(api, { localeSettings, retainpdfSettings, projectRoot, remote }) {
+export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpdfNotes, projectRoot, remote }) {
 	// 其他设备访问 (remote/remote-access.mjs): seen and changed on this machine only, never from a device let in by it.
 	const here = (request) => {
 		if (request.headers['x-studio-remote']) throw Object.assign(new Error(t('其他设备访问只能在这台 Mac 上设置')), { statusCode: 403 });
@@ -36,6 +36,8 @@ export function settingRoutes(api, { localeSettings, retainpdfSettings, projectR
 	api.put('/settings/locale', async ({ json }) => localeSettings.set((await json())?.locale));
 	api.get('/settings/retainpdf', () => retainpdfSettings.shown());
 	api.put('/settings/retainpdf', async ({ json }) => retainpdfSettings.set((await json())?.url));
+	// 翻译's 笔记: the page of notes of the book read (found, or made under 读书笔记).
+	api.post('/retainpdf/notes', async ({ json }) => retainpdfNotes.bookNote(await json()));
 	let started = null;
 	api.post('/started', async () => {
 		started ??= new Date().toISOString();

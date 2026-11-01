@@ -3,9 +3,10 @@
 // first shown; the frame stays when another view is shown, so coming back finds it as it was left.
 //
 // The two talk by postMessage, as RetainPDF's contract studio-bridge.v1 says: its pages are loaded with
-// `embed=studio`; each time the frame loads, the Studio says `hello` (light or dark) and RetainPDF answers `ready`
-// with what it handles. Then `theme` follows the Studio's, `navigate` shows a passage, and RetainPDF's `quote` (摘到笔记)
-// is handed to the Studio. Only messages from this frame, from the address set, are taken.
+// `embed=studio`; each time the frame loads, the Studio says `hello` (light or dark, what it takes) and RetainPDF
+// answers `ready` with what it handles. Then `theme` follows the Studio's, `navigate` shows a passage, `notes` says
+// whether the book's notes are open beside it; RetainPDF's `quote` (摘到笔记), `open-notes` and `close-notes` (笔记) are
+// handed to the Studio. Only messages from this frame, from the address set, are taken.
 import { t } from '@blog/i18n/index.mjs';
 import { retainpdfSettings } from '../api/client';
 import type { RetainpdfTarget } from '../editor/retainpdf-quote';
@@ -23,12 +24,21 @@ export type RetainpdfQuote = {
 	translated_text: string | null;
 };
 
+/** The book whose notes RetainPDF asks for (studio-bridge.v1 `OpenNotesMessage`). */
+export type RetainpdfBook = { job_id: string; document_id: string | null; title: string | null };
+
 export type RetainpdfViewHost = {
 	/** 设置 › RetainPDF, to change the address. */
 	openSettings(): void;
 	/** RetainPDF quoted a passage (摘到笔记). */
 	quote(quote: RetainpdfQuote): void;
+	/** RetainPDF's 笔记: the book's notes beside it, or put away. */
+	openNotes(book: RetainpdfBook): void;
+	closeNotes(): void;
 };
+
+/** What the Studio takes of RetainPDF's messages (`hello`'s `features`). */
+const STUDIO_FEATURES = ['quote', 'open-notes'];
 
 /** Whether anything answers at `url`: RetainPDF's pages are another origin, so only that it answered, not what. */
 async function answers(url: string): Promise<boolean> {
@@ -50,6 +60,9 @@ export function embedded(url: string, search: Record<string, string | number> = 
 
 const theme = (): 'light' | 'dark' => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 
+const orNull = (value: unknown): value is string | null => value === null || (typeof value === 'string' && value.length > 0);
+const isBook = (message: Record<string, unknown>): boolean => typeof message.job_id === 'string' && !!message.job_id && orNull(message.document_id) && (message.title === null || typeof message.title === 'string');
+
 const isQuote = (message: Record<string, unknown>): boolean =>
 	typeof message.job_id === 'string' && !!message.job_id && typeof message.item_id === 'string' && !!message.item_id && Number.isInteger(message.page_idx) && (message.page_idx as number) >= 0;
 
@@ -70,6 +83,8 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 	let features: Set<string> | null = null;
 	/** Being shown: asked again meanwhile, the same. */
 	let showing: Promise<void> | null = null;
+	/** Whether the book's notes are open beside it, and which page: told to RetainPDF (`notes`) once it says it takes it. */
+	let notesState: { open: boolean; title: string | null } = { open: false, title: null };
 
 	function post(message: Record<string, unknown>): void {
 		if (!shown) return;
@@ -78,18 +93,38 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 
 	frame.addEventListener('load', () => {
 		features = null;
-		post({ type: 'hello', theme: theme() });
+		post({ type: 'hello', theme: theme(), features: STUDIO_FEATURES });
 	});
 	window.addEventListener('message', (event) => {
 		if (!shown || event.source !== frame.contentWindow || event.origin !== new URL(shown).origin) return;
 		const message = event.data as Record<string, unknown> | null;
 		if (!message || typeof message !== 'object' || message.protocol !== BRIDGE_PROTOCOL || message.v !== 1) return;
-		if (message.type === 'ready') features = new Set(Array.isArray(message.features) ? message.features.filter((each): each is string => typeof each === 'string') : []);
-		else if (message.type === 'quote' && features && isQuote(message)) host.quote(message as unknown as RetainpdfQuote);
+		if (message.type === 'ready') {
+			features = new Set(Array.isArray(message.features) ? message.features.filter((each): each is string => typeof each === 'string') : []);
+			tellNotes();
+		} else if (!features) {
+			return;
+		} else if (message.type === 'quote' && isQuote(message)) {
+			host.quote(message as unknown as RetainpdfQuote);
+		} else if (message.type === 'open-notes' && isBook(message)) {
+			host.openNotes({ job_id: message.job_id as string, document_id: message.document_id as string | null, title: message.title as string | null });
+		} else if (message.type === 'close-notes') {
+			host.closeNotes();
+		}
 	});
 	window.addEventListener('themechange', () => {
 		if (features?.has('theme')) post({ type: 'theme', theme: theme() });
 	});
+
+	function tellNotes(): void {
+		if (features?.has('notes')) post({ type: 'notes', ...notesState });
+	}
+
+	/** The book's notes opened beside RetainPDF (with the page's title), or put away: RetainPDF told. */
+	function notes(open: boolean, title: string | null = null): void {
+		notesState = { open, title: open ? title : null };
+		tellNotes();
+	}
 
 	function cannot(text: string, url: string): void {
 		shown = '';
@@ -158,5 +193,5 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 		frame.src = embedded(new URL('reader.html', shown).href, search);
 	}
 
-	return { show, navigate };
+	return { show, navigate, notes };
 }

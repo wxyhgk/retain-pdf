@@ -59,7 +59,7 @@ function inlineComment(line: string): string {
 function encodedValue(key: string, value: unknown): string {
 	if (key === 'draft') return value ? 'true' : 'false';
 	// A map (a database row's values): JSON on one line, spaced, which YAML reads as it is.
-	if (key === 'props') return JSON.stringify(value, null, 1).replace(/\n\s*/gu, ' ');
+	if (key === 'props' || key === 'retainpdf') return JSON.stringify(value, null, 1).replace(/\n\s*/gu, ' ');
 	if (key === 'order') return String(value);
 	if (key === 'tags') return `[${(value as string[]).map((tag) => JSON.stringify(tag)).join(', ')}]`;
 	return JSON.stringify(value);
@@ -141,6 +141,18 @@ export function setFrontmatterProps(source: string, props: Record<string, unknow
  */
 export function setFrontmatterDatabase(source: string, id: string | null): string {
 	return setFrontmatterField(source, 'database', id);
+}
+
+/**
+ * What a page is in RetainPDF's 读书笔记 (`retainpdf:`: a book's notes, or the page they are under) set; the rest of
+ * the text byte for byte as it was.
+ */
+export function setFrontmatterRetainpdf(source: string, value: { document?: string; job?: string; books?: boolean }): string {
+	const document = parseStudioDocument(source);
+	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
+	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
+	const yaml = replaceYamlField(document.frontmatter.yamlRaw, 'retainpdf', value, defaultEol);
+	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
 }
 
 /** Updates only supported top-level fields while retaining all other YAML bytes. */

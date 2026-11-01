@@ -39,6 +39,16 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .translate-unreachable { display: grid; flex: 1; place-content: center; justify-items: center; gap: 12px; padding: 24px; color: rgb(var(--gray)); font-size: 14px; line-height: 1.6; text-align: center; }
 .translate-unreachable[hidden] { display: none; }
 .translate-unreachable code { font-family: var(--font-mono); font-size: 13px; }
+/* 翻译 with its 笔记 (wiring/notes-split.ts): RetainPDF's pages left, the note right, a line between to drag. */
+.studio-shell[data-view='translate'][data-notes='open'] .workspace-main { display: grid; grid-template-columns: minmax(320px, 1fr) min(var(--notes-width, 44%), calc(100% - 320px)); grid-template-rows: auto minmax(0, 1fr); }
+.studio-shell[data-view='translate'][data-notes='open'] .studio-bar { grid-column: 1 / -1; }
+.studio-shell[data-view='translate'][data-notes='open'] .translate-page { position: relative; grid-column: 1; grid-row: 2; }
+.studio-shell[data-view='translate'][data-notes='open'] .editor-panel { display: flex; grid-column: 2; grid-row: 2; border-left: 1px solid rgba(var(--gray), 0.2); }
+.studio-shell[data-resizing-notes] .translate-page iframe { pointer-events: none; }
+.notes-divider { display: none; }
+.studio-shell[data-view='translate'][data-notes='open'] .notes-divider { position: absolute; z-index: 5; top: 0; right: -4px; bottom: 0; display: block; width: 8px; cursor: col-resize; touch-action: none; }
+.notes-close { position: absolute; top: 10px; right: 6px; display: grid; width: 22px; height: 22px; place-items: center; padding: 0; border: 1px solid rgba(var(--gray), 0.3); border-radius: 6px; background: var(--surface); color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 1; cursor: pointer; }
+.notes-close:hover { color: rgb(var(--black)); }
 .translate-unreachable-actions { display: flex; gap: 8px; }
 /* 重试 as 小程序's 新建; 改地址 beside it, lighter. */
 .translate-unreachable-actions button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: rgb(var(--black)); color: var(--surface); font: inherit; font-size: 13px; cursor: pointer; }

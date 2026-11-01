@@ -33,6 +33,9 @@ export function createArticleFrontmatterSchema(image = null) {
 		props: z.record(z.string(), z.unknown()).optional(),
 		// From before databases were pages: the id of the ```database block in the page it was under whose row it was.
 		database: z.string().trim().min(1).optional(),
+		// RetainPDF's 读书笔记 (server/retainpdf-notes.mjs): the notes of a book (its id in RetainPDF, the job it was read
+		// in), or the page they are all under (`books: true`).
+		retainpdf: z.object({ document: z.string().optional(), job: z.string().optional(), books: z.boolean().optional() }).optional(),
 	});
 }
 
@@ -73,7 +76,21 @@ export function articleSummary(source, fallbackSlug) {
 		...(frontmatter.type === 'database' ? { type: 'database' } : {}),
 		// From before databases were pages: the block whose row it was (its id), till it is made a row of a database page.
 		...(typeof frontmatter.database === 'string' && frontmatter.database.trim() ? { database: frontmatter.database.trim() } : {}),
+		// A book's notes in RetainPDF's 读书笔记, or the page they are under.
+		...(retainpdfOf(frontmatter) ? { retainpdf: retainpdfOf(frontmatter) } : {}),
 	};
+}
+
+/** `retainpdf:` as far as it says something: `{ document?, job?, books? }`, or null. */
+function retainpdfOf(frontmatter) {
+	const value = frontmatter.retainpdf;
+	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+	const found = {
+		...(typeof value.document === 'string' && value.document ? { document: value.document } : {}),
+		...(typeof value.job === 'string' && value.job ? { job: value.job } : {}),
+		...(value.books === true ? { books: true } : {}),
+	};
+	return Object.keys(found).length ? found : null;
 }
 
 /** The folder name of the page the article is under (`parent:`); empty for none. */

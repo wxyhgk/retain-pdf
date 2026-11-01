@@ -41,6 +41,7 @@ import { taskRoutes } from './tasks.mjs';
  * @property {import('../plugin-settings.mjs').PluginSettings} pluginSettings
  * @property {import('../locale-settings.mjs').LocaleSettings} localeSettings the language the Studio speaks
  * @property {import('../retainpdf-settings.mjs').RetainpdfSettings} retainpdfSettings where RetainPDF's pages are (翻译)
+ * @property {import('../retainpdf-notes.mjs').RetainpdfNotes} retainpdfNotes 读书笔记: a book's page of notes, found or made
  * @property {import('../ai/ai-settings.mjs').AiSettings} aiSettings
  * @property {import('../ai/agent-settings.mjs').AgentSettings} agentSettings
  * @property {import('../ai/agent-sessions.mjs').AgentSessions} conversations the AI panel's

@@ -437,6 +437,11 @@ The variation principle.
 - RetainPDF 还没有「摘到笔记」（旧版本）时，卡片的「在 RetainPDF 中打开」照样能用：直接打开它的阅读页地址。
 - 博客上 ```` ```retainpdf ```` 现在还是普通代码块。
 
+**边读边记（笔记）**：RetainPDF 阅读页上点「笔记」，右边出来这本书的笔记，用的就是 Studio 的编辑器；左边照样读，摘到笔记的段落当场出现在右边。中间的竖线能拖（宽度记在这个浏览器里），线上的 › 或 RetainPDF 上再点「笔记」收起。
+
+- 一本书一页笔记，都放在「读书笔记」下面：第一次唤出时新建（标题是书名），以后按书找回同一页，改了标题、挪了位置也找得到。靠的是页面属性里的 `retainpdf:`：书的那一页写 `{ "document": 书的编号, "job": 任务编号 }`，「读书笔记」写 `{ "books": true }`（`server/retainpdf-notes.mjs`）。
+- Studio 在 `hello` 里说自己认 `open-notes`，RetainPDF 才显示「笔记」；开着收着由 Studio 告诉它（`notes`）。
+
 ## PDF 识别成子页面（PaddleOCR）
 
 把 PDF 拖进正文（它会变成一行指向它的链接），点这一行左边的手柄 →「OCR 成子页面（PaddleOCR）」；或者在文件面板里右键 PDF → 同一项。
