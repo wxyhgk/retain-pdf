@@ -96,3 +96,11 @@ test("各站 token：翻译和译前准备加在一起挂翻译站，精修挂�
   assert.equal(Object.values(running.stationChips).flat().some((chip) => chip.kind === "tokens"), false);
 });
 
+test("OCR 站页数：这次只做了几页时写「2/10」，不是全书页数", () => {
+  const partial = { ...COVERAGE, page_count: 10, translated_pages: 2, jobs: [{ ...COVERAGE.jobs[0], pages: [1, 2] }] };
+  const hud = processingHudModel({ ...base, coverage: partial, pageCount: 10 });
+  assert.deepEqual(hud.stationChips.ocr.map((chip) => [chip.text, chip.title]), [["2/10", "这次识别了 2 / 10 页"]]);
+  const whole = processingHudModel({ ...base, coverage: { ...COVERAGE, jobs: [{ ...COVERAGE.jobs[0], pages: Array.from({ length: 134 }, (_, i) => i + 1) }] } });
+  assert.equal(whole.stationChips.ocr[0].text, "134");
+});
+

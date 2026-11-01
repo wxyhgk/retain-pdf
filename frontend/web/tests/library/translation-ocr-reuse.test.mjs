@@ -183,6 +183,22 @@ test("文档 OCR 状态：整本翻译完成可证明 OCR 已完成", () => {
   assert.equal(selected?.ocr_status_derived, true);
 });
 
+test("文档 OCR 状态：翻译任务有自己的 OCR 子任务时用子任务，不从排在前面的翻译任务推", () => {
+  // 列表按更新时间排：OCR 和翻译并行（GLM-OCR）时翻译任务一直在更新，排在子任务前面，而且已经进了 translating。
+  const running = selectDocumentOcrStatusJob([
+    { job_id: "job-p", workflow: "book", status: "running", stage: "translating", display_stage: "translate" },
+    { job_id: "job-p-ocr", workflow: "ocr", status: "running", stage: "ocr_processing" },
+  ]);
+  assert.equal(running?.job_id, "job-p-ocr");
+  assert.equal(running?.status, "running", "从翻译任务推出来会是「已完成」，OCR 站就不亮了");
+  assert.equal(running?.ocr_status_derived, undefined);
+  const finished = selectDocumentOcrStatusJob([
+    { job_id: "job-p", workflow: "book", status: "succeeded" },
+    { job_id: "job-p-ocr", workflow: "ocr", status: "succeeded" },
+  ]);
+  assert.equal(finished?.job_id, "job-p-ocr", "跑完了也用子任务：它有自己的计时");
+});
+
 test("文档 OCR 状态：复用 OCR 的翻译任务从提交首帧即显示已完成", () => {
   const selected = selectDocumentOcrStatusJob([{
     job_id: "translate-queued",
