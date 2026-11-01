@@ -2,7 +2,7 @@
 // 原来任务记录收在「进度」页底部、概览里还有两行「最近活动」，同一件事说了两遍。
 import type { TranslationCoverageView } from "@/platform/api/index.js";
 import { formatZhDateTime } from "@/platform/utils/datetime.js";
-import { JobHistoryPanel, hasJobHistory } from "../panels/processing/TranslationCoveragePanel.js";
+import { JobHistoryPanel, hasJobHistory } from "../panels/processing/JobHistoryPanel.js";
 
 function addedText(value?: string | null): string {
   const raw = `${value || ""}`.trim();

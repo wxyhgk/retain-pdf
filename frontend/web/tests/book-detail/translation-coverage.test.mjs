@@ -2,8 +2,6 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  coverageCells,
-  coverageHeadline,
   formatDuration,
   formatTime,
   jobRows,
@@ -29,21 +27,6 @@ const VIEW = {
     { job_id: "ocr", workflow: "ocr", status: "succeeded", created_at: "2025-12-31T23:00:00", finished_at: "2026-01-01T00:02:00", model: "", pages: [1, 2, 3, 4, 5, 6], supplied_pages: 0, ocr_reused: false },
   ],
 };
-
-test("标题：已翻译几页、由几次翻译拼成", () => {
-  assert.equal(coverageHeadline(VIEW), "已翻译 4 / 6 页 · 由 2 次翻译拼成");
-  assert.equal(coverageHeadline({ ...VIEW, translated_pages: 6, contributing_jobs: 1 }), "已翻译全部 6 页");
-  assert.equal(coverageHeadline({ ...VIEW, translated_pages: 0, contributing_jobs: 0 }), "共 6 页，尚未翻译");
-  assert.equal(coverageHeadline(null), "");
-});
-
-test("覆盖条：每页一格，未翻译为 0 档，最近的翻译最深", () => {
-  const cells = coverageCells(VIEW);
-  assert.equal(cells.length, 6);
-  assert.deepEqual(cells.map((cell) => cell.shade), [2, 2, 1, 1, 0, 0], "redo 更新，应该是第 1 档（最深）");
-  assert.equal(cells[2].title, "第 3 页 · 10月4日 09:00 的翻译");
-  assert.equal(cells[5].title, "第 6 页 · 未翻译");
-});
 
 test("任务记录：类型、页码、时间、用时、模型、状态、采用了几页", () => {
   const rows = jobRows(VIEW, NOW);

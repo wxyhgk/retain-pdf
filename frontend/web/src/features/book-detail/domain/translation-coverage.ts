@@ -1,4 +1,5 @@
-// 书籍详情「进度」分区：翻译覆盖条和任务记录的展示逻辑。纯函数，不碰网络和 DOM。
+// 书籍详情里读「翻译覆盖」接口的展示逻辑：「历史」页签的任务记录，「进度」页用到的模型、OCR 复用等摘要。
+// 纯函数，不碰网络和 DOM。（「进度」页以前还有一条每页一格的覆盖条，2026-11-01 用户说去掉。）
 //
 // 数据来自 GET /documents/:id/translation-coverage —— 和阅读入口同一套合并规则（每页取最近
 // 翻译了它的任务），所以这里说「第 7 页来自某次翻译」，阅读器打开时第 7 页就是那次翻译。
@@ -9,16 +10,8 @@ import type {
 } from "@/platform/api/index.js";
 import { compactPageSpec } from "@/features/library/domain.js";
 
-/** 覆盖条的深浅档位数：不同次翻译用墨色深浅区分（单色设计，不引入新颜色）。 */
+/** 任务记录色块的深浅档位数：不同次翻译用墨色深浅区分（单色设计，不引入新颜色）。 */
 export const COVERAGE_SHADES = 4;
-
-export type CoverageCell = {
-  page: number;
-  /** 0 = 没翻译；1..COVERAGE_SHADES = 第几档墨色。 */
-  shade: number;
-  jobId: string | null;
-  title: string;
-};
 
 export type JobRow = {
   jobId: string;
@@ -46,41 +39,12 @@ const STATUS: Record<string, [string, JobRow["statusTone"]]> = {
   canceled: ["已取消", "idle"],
 };
 
-/** 顶部一句话：「已翻译 23 / 47 页 · 由 3 次翻译拼成」。 */
-export function coverageHeadline(view: TranslationCoverageView | null | undefined): string {
-  if (!view || !view.page_count) return "";
-  if (!view.translated_pages) return `共 ${view.page_count} 页，尚未翻译`;
-  const base = view.translated_pages >= view.page_count
-    ? `已翻译全部 ${view.page_count} 页`
-    : `已翻译 ${view.translated_pages} / ${view.page_count} 页`;
-  return view.contributing_jobs > 1 ? `${base} · 由 ${view.contributing_jobs} 次翻译拼成` : base;
-}
-
 /** 给参与合并的任务分墨色档位：最近的一次最深，往前依次变浅（超过档位数就循环）。 */
 export function shadeByJob(view: TranslationCoverageView): Map<string, number> {
   const contributing = view.jobs.filter((job) => job.supplied_pages > 0);
   const shades = new Map<string, number>();
   contributing.forEach((job, index) => shades.set(job.job_id, (index % COVERAGE_SHADES) + 1));
   return shades;
-}
-
-export function coverageCells(view: TranslationCoverageView | null | undefined): CoverageCell[] {
-  if (!view || !view.page_count) return [];
-  const shades = shadeByJob(view);
-  const jobs = new Map(view.jobs.map((job) => [job.job_id, job]));
-  const cells: CoverageCell[] = [];
-  for (const segment of view.segments) {
-    for (let page = segment.first; page <= segment.last; page += 1) {
-      const job = segment.job_id ? jobs.get(segment.job_id) : undefined;
-      cells.push({
-        page,
-        shade: segment.job_id ? shades.get(segment.job_id) || 1 : 0,
-        jobId: segment.job_id,
-        title: job ? `第 ${page} 页 · ${formatTime(job.created_at)} 的翻译` : `第 ${page} 页 · 未翻译`,
-      });
-    }
-  }
-  return cells;
 }
 
 /** `2026-10-06T02:32:50Z` → 本地时间的 `10月5日 19:32`（同一年不写年份）。

@@ -25,7 +25,6 @@ import { ProcessingDetails, type ProcessingDetailSection } from "../panels/proce
 import { loadJobFailureDetail } from "../../domain/job-failure-detail.js";
 import type { JobFailureBrief } from "@/platform/contracts/library-payloads.js";
 import { hasEditorialRoom, processingFacts } from "../../domain/translation-coverage.js";
-import { TranslationCoveragePanel } from "../panels/processing/TranslationCoveragePanel.js";
 import { documentJobPresentation, isDocumentJobActive } from "../use-document-jobs.js";
 import { stageDetailWithoutPageCount } from "../../domain/progress-value.js";
 import { assemblyStations, type StationState } from "../../domain/assembly-line-model.js";
@@ -272,9 +271,6 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
       : null,
   ].filter((alert): alert is { key: string; id: string | undefined; text: string } => Boolean(alert));
 
-  // 翻全了就不画覆盖条：100% 的一排满格什么也没说。没翻全时它说明缺哪几页。
-  const coverageIncomplete = Boolean(coverage?.page_count) && (coverage?.translated_pages ?? 0) < (coverage?.page_count ?? 0);
-
   return (
     <div className="book-detail-tab-processing" data-book-detail-tab="processing">
       <section className="book-detail-processing-card" data-processing-capability="processing" aria-label="处理">
@@ -351,9 +347,6 @@ export function BookDetailProcessingTab({ ocr, translation, loading = false, err
             首帧未知时不渲染，避免「还不知道」被画成「已完成，请下载」。 */}
         {bootstrapping ? null : resultActionsSlot}
       </section>
-
-      {/* 整本书翻了哪些页（多次范围翻译时由哪几次拼成）。每次任务的明细在「历史」页签。 */}
-      {coverageIncomplete ? <TranslationCoveragePanel coverage={coverage} /> : null}
     </div>
   );
 }

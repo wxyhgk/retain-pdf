@@ -56,15 +56,14 @@ Reader 样式只改 `frontend/packages/reader/styles/*`。`src/styles/reader/` �
 | `editorial-flow.css` | 编辑部精修流程图（第几轮、这一步第几批） |
 | `ocr-range.css` | OCR 指定页码 |
 | `failure-card.css` | 「错误」页里的一块失败 |
-| `coverage.css` | 翻译覆盖条 |
 | `job-history.css` | 任务记录 |
 
 卡片之间共享的值只在 `layout.css` 里定义成变量，其它文件引用变量，不复制数值、不借用别的组件的类名。响应式规则跟着组件走，放在各自文件末尾。
 
 ## 组件样式放在组件旁边
 
-新写或迁移的组件样式放在组件文件旁边，同名：`TranslationCoveragePanel.tsx` 旁边是
-`TranslationCoveragePanel.css`。类名不改（仍是全局类名 + 组件前缀），`entries/*.css` 逐个
+新写或迁移的组件样式放在组件文件旁边，同名：`JobHistoryPanel.tsx` 旁边是
+`JobHistoryPanel.css`。类名不改（仍是全局类名 + 组件前缀），`entries/*.css` 逐个
 `@import` 这些文件、显式写明顺序 —— Tailwind CLI 能解析任意相对路径，构建不用改。
 
 文件开头声明归属：

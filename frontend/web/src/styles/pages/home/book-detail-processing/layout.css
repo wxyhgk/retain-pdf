@@ -6,7 +6,7 @@
  */
 
 .book-detail-tab-processing {
-  /* 卡片表面：处理卡、翻译覆盖、任务记录同一套底色与圆角。 */
+  /* 卡片表面：处理卡、任务记录同一套底色与圆角。 */
   --book-detail-processing-surface: color-mix(in srgb, var(--bg) 58%, var(--paper));
   --book-detail-processing-radius: 24px;
   /* 墨色深浅：不同次翻译用深浅区分（1 最深、4 最浅），0 是未翻译的浅底。单色设计，不引入新颜色。 */
@@ -20,7 +20,7 @@
   gap: 12px;
 }
 
-/* 卡内小节标题：「翻译覆盖 · 已翻译 28 / 47 页 …… 60%」「任务记录 · 共 6 次」。 */
+/* 卡内小节标题：「任务记录 · 共 6 次」。 */
 .book-detail-processing-section-head {
   display: flex;
   min-width: 0;
