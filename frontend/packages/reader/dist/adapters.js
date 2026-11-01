@@ -27,7 +27,8 @@ const R = [
   "credentialsPort",
   "renderReaderTerminal",
   "renderReaderBoard",
-  "notesQuote"
+  "notesQuote",
+  "notesPanel"
 ], i = [
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",
@@ -44,7 +45,7 @@ function f(e) {
     resolveResourceUrl: e.resolveResourceUrl
   });
 }
-function l() {
+function n() {
   return o;
 }
 function u(e) {
@@ -52,18 +53,18 @@ function u(e) {
   if (r == null) throw new Error(`Reader adapter missing: ${String(e)} (call setReaderAdapters)`);
   return r;
 }
-function A(e) {
+function P(e) {
   var r, a;
-  return ((a = (r = l()) == null ? void 0 : r.renderReaderBoard) == null ? void 0 : a.call(r, e)) ?? null;
+  return ((a = (r = n()) == null ? void 0 : r.renderReaderBoard) == null ? void 0 : a.call(r, e)) ?? null;
 }
 export {
   R as READER_ADAPTER_KEYS,
   i as READER_REQUIRED_ADAPTER_KEYS,
-  l as getReaderAdapters,
+  n as getReaderAdapters,
   w as hasMarkdownContent,
   D as loadMarkdownPayloadWithFallback,
   m as normalizeMarkdownPayload,
-  A as renderReaderBoardSlot,
+  P as renderReaderBoardSlot,
   u as requireAdapter,
   f as setReaderAdapters
 };

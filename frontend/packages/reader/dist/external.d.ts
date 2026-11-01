@@ -22,6 +22,12 @@ export declare const readerNotesQuote: () => {
     available: () => boolean;
     send: (quote: import("./adapters.js").ReaderNotesQuote) => boolean;
 };
+/** 「笔记」按钮：同上，宿主给了才有。 */
+export declare const readerNotesPanel: () => {
+    getState: () => import("./adapters.js").ReaderNotesPanelState;
+    subscribe: (listener: () => void) => () => void;
+    toggle: () => void;
+};
 export declare const readerPdfPort: () => ReaderPdfPort;
 export declare const readerSessionDataPort: () => ReaderSessionDataPort;
 export declare const resolveReaderAnchor: (...a: any[]) => any;
