@@ -1,5 +1,5 @@
-import { s as d } from "./config-CgaWliJ_.js";
-import { s as t, r as s } from "./answer-enhance-Dxffc8s3.js";
+import { s as t } from "./config-CgaWliJ_.js";
+import { s as d, r as s } from "./answer-enhance-Dxffc8s3.js";
 import { h as w, l as D, n as m } from "./markdown-payload-kK3ewW_I.js";
 const R = [
   "isMockMode",
@@ -26,7 +26,8 @@ const R = [
   "fetchDocumentByJobId",
   "credentialsPort",
   "renderReaderTerminal",
-  "renderReaderBoard"
+  "renderReaderBoard",
+  "notesQuote"
 ], i = [
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",
@@ -38,7 +39,7 @@ const R = [
 ];
 let o = null;
 function f(e) {
-  o = e, d({ credentialsPort: (e == null ? void 0 : e.credentialsPort) ?? null }), s(), e && t({
+  o = e, t({ credentialsPort: (e == null ? void 0 : e.credentialsPort) ?? null }), s(), e && d({
     fetchProtected: e.fetchProtected,
     resolveResourceUrl: e.resolveResourceUrl
   });

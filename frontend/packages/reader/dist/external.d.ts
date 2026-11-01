@@ -17,6 +17,11 @@ type ReaderPageConfigPort = ReturnType<typeof createReaderPageConfigPort>;
 export declare const defaultReaderDataPort: ReaderDataPort;
 export declare const defaultReaderPageConfigPort: ReaderPageConfigPort;
 export declare const readerLiveTranslation: () => import("./contracts/live-translation.js").ReaderLiveTranslationPort;
+/** 「摘到笔记」：放在笔记（Studio）里、握过手时宿主才给；没有就是 null。 */
+export declare const readerNotesQuote: () => {
+    available: () => boolean;
+    send: (quote: import("./adapters.js").ReaderNotesQuote) => boolean;
+};
 export declare const readerPdfPort: () => ReaderPdfPort;
 export declare const readerSessionDataPort: () => ReaderSessionDataPort;
 export declare const resolveReaderAnchor: (...a: any[]) => any;
