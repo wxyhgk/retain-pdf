@@ -22,6 +22,7 @@ from retainpdf_base.ocr_stream import OcrStreamWriter
 from retainpdf_base.ocr_stream import read_ocr_stream
 from retainpdf_translation.llm.providers.deepseek import client
 from retainpdf_translation.workflow import streaming_flow
+from retainpdf_translation.workflow.phases import batch_translation
 from retainpdf_translation.workflow.execution import TranslationExecutionRequest
 from retainpdf_translation.workflow.execution import execute_translation_request
 
@@ -208,11 +209,25 @@ def test_pages_arriving_out_of_order_translate_the_same_as_the_one_shot_run(tmp_
         published.append(ready)
         return read_ocr_stream(ocr_dir_arg)
 
+    progress: list[tuple[int, int]] = []
+    original_emit = batch_translation.emit_stage_progress
+
+    def recording_emit(**event):
+        if event.get("substage") == "translation_batches":
+            progress.append((event["progress_current"], event["progress_total"]))
+        return original_emit(**event)
+
     monkeypatch.setattr(paths, "TRANSLATION_UNIT_CACHE_DIR", tmp_path / "cache-stream")
     monkeypatch.setattr(streaming_flow, "run_translation_batch_stage", recording_batch_stage)
     monkeypatch.setattr(streaming_flow, "wait_for_ocr_stream", publish_next)
+    monkeypatch.setattr(batch_translation, "emit_stage_progress", recording_emit)
     streamed = execute_translation_request(_request(tmp_path / "stream", whole_path.with_name("missing.json"), ocr_stream_dir=ocr_dir))
 
+    # 三轮各进一次批量翻译，块数接着数：分子只增不减、不超过分母，最后一条是全部翻完
+    assert progress and all(current <= total for current, total in progress), progress
+    assert [current for current, _ in progress] == sorted(current for current, _ in progress), progress
+    assert [total for _, total in progress] == sorted(total for _, total in progress), progress
+    assert progress[-1][0] == progress[-1][1] > 0, progress
     assert published == order
     assert len(rounds) == 3
     assert all(item_id.startswith("p003-") for item_id in rounds[0]) and rounds[0], "只有第 3 页时扣住它页首能接上一页的那段"

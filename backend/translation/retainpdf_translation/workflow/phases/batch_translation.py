@@ -23,14 +23,27 @@ class _BlockProgress:
     块数:续跑时前几轮早已完成的块不该让进度条一开始就显示 37%。分子是此后
     checkpoint 新增的已完成块数。页数取 checkpoint 的 completed_page_count(没有
     任何待办块的页),旧 checkpoint 没有这个字段时按 0 计。
+
+    跟着 OCR 流式翻译时一次翻译分好几轮,每轮各进一次批量翻译。`baseline_completed`
+    是第一轮开始时的已完成块数:之后各轮的分子、分母都从它算起(前几轮翻完的块 +
+    本轮待翻的块),进度只涨不跳回。以前每轮从 0 重数、分母换成本轮的块数,而事件层
+    把分子钉成只增不减,就出现了「49/40 块」这种分子比分母大的数(2026-11-01)。
     """
 
-    def __init__(self, snapshot: Callable[[], dict[str, Any]], page_count: int) -> None:
+    def __init__(
+        self,
+        snapshot: Callable[[], dict[str, Any]],
+        page_count: int,
+        *,
+        baseline_completed: int | None = None,
+    ) -> None:
         self._snapshot = snapshot
         baseline = snapshot() or {}
         self.page_count = max(0, int(page_count))
-        self.base_completed = int(baseline.get("completed_item_count", 0) or 0)
-        self.total_blocks = max(0, int(baseline.get("pending_item_count", 0) or 0))
+        completed_now = int(baseline.get("completed_item_count", 0) or 0)
+        self.base_completed = completed_now if baseline_completed is None else int(baseline_completed)
+        carried = max(0, completed_now - self.base_completed)
+        self.total_blocks = carried + max(0, int(baseline.get("pending_item_count", 0) or 0))
 
     def current(self) -> tuple[int, int]:
         latest = self._snapshot() or {}
@@ -90,6 +103,7 @@ def run_translation_batch_stage(
     flush_callback=None,
     checkpoint_progress: Callable[[], dict[str, Any]] | None = None,
     deferred_item_ids: frozenset[str] = frozenset(),
+    progress_baseline_completed: int | None = None,
 ) -> dict:
     translate_started = time.perf_counter()
     if run_diagnostics is not None:
@@ -100,7 +114,7 @@ def run_translation_batch_stage(
         message="开始批量翻译",
     )
     block_progress = (
-        _BlockProgress(checkpoint_progress, len(page_payloads))
+        _BlockProgress(checkpoint_progress, len(page_payloads), baseline_completed=progress_baseline_completed)
         if checkpoint_progress is not None
         else None
     )
