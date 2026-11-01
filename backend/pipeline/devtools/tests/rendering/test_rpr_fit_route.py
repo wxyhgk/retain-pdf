@@ -152,6 +152,32 @@ def test_rpr_fit_route_end_to_end_with_fake_engine(tmp_path: Path, monkeypatch, 
     assert summary["body_font"]["shared"] == 10.0
 
 
+@pytest.mark.parametrize("mode", ["overlay", "typst", "typst_visual"])
+def test_rpr_fit_keeps_a_page_with_nothing_to_translate(tmp_path: Path, monkeypatch, mode: str) -> None:
+    # A page in the job with no translation items (a whole-page figure, code, references kept as they are) stays in the
+    # translated PDF as it is: dropped, the translation had fewer pages than the source and the side-by-side reader
+    # went out of step from there (a 481-page book came out with 469, 2026-11-02).
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path)
+    translated = {0: [], 1: translated[1], 2: []}
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf, end_page=2)
+    pages, diagnostics, calls = _dispatch(context, mode=mode, source_pdf_path=source_pdf, translated_pages=translated)
+    assert calls == [], diagnostics.get("render_engine_fallback_message")
+    assert pages == 3
+    payload = json.loads((Path(diagnostics["rpr_work_dir"]) / "rpr-fit-input.json").read_text(encoding="utf-8"))
+    assert payload["pages"] == [1], "the engine lays out only the pages with something to translate"
+    assert diagnostics["rpr_pages"] == 1
+    assert diagnostics["rpr_fit_untranslated_pages"] == 2
+    output = fitz.open(context.output_pdf_path)
+    try:
+        assert len(output) == 3
+        # Each page where it was: the untranslated ones as they are, the engine's layer (the fake engine's FIT) on the second.
+        assert [("source text " + str(index)) in page.get_text() for index, page in enumerate(output)] == [True, True, True]
+        assert ["FIT" in page.get_text() for page in output] == [False, True, False]
+    finally:
+        output.close()
+
+
 def _indented_job(tmp_path: Path) -> tuple[Path, Path, dict[int, list[dict]]]:
     """一页三行的正文段，文字层里首行比其余行靠右 20pt（和 Word 排的论文一样）。"""
     source_pdf = tmp_path / "source.pdf"
