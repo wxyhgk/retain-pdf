@@ -105,9 +105,9 @@ test("translation profiles：hydrate 恢复存储 profile，缺 apiKey 时回落
   assert.equal(manager.getCurrentProfile().baseUrl, "https://task.example/v1");
   assert.equal(manager.getCurrentProfile().model, "task-model");
   assert.equal(manager.getCurrentProfile().workers, 3);
-  // 没存过的服务商：协议用服务商自己的默认，思考深度为自动。
-  assert.equal(manager.getCurrentProfile().apiProtocol, "openai");
-  assert.equal(manager.getCurrentProfile().thinking, "auto");
+  // 没存过的服务商：协议用服务商自己的默认（Responses），思考深度默认关闭。
+  assert.equal(manager.getCurrentProfile().apiProtocol, "openai_responses");
+  assert.equal(manager.getCurrentProfile().thinking, "off");
 });
 
 test("translation profiles：Anthropic 默认 Anthropic 协议，非法值回落默认", () => {
@@ -117,7 +117,17 @@ test("translation profiles：Anthropic 默认 Anthropic 协议，非法值回落
     translationProfiles: { anthropic: { apiProtocol: "gemini", thinking: "deep" } },
   });
   assert.equal(manager.getCurrentProfile().apiProtocol, "anthropic");
-  assert.equal(manager.getCurrentProfile().thinking, "auto");
+  assert.equal(manager.getCurrentProfile().thinking, "off");
+});
+
+test("translation profiles：以前存下的 /chat/completions（openai）落到服务商的默认协议", () => {
+  const manager = createTranslationProfiles({ dialogElementsPort: { elements: () => ({}) } });
+  manager.hydrate({}, {
+    translationProvider: "deepseek",
+    translationProfiles: { deepseek: { apiProtocol: "openai", thinking: "auto" } },
+  });
+  assert.equal(manager.getCurrentProfile().apiProtocol, "openai_responses");
+  assert.equal(manager.getCurrentProfile().thinking, "auto", "存过的档位照旧");
 });
 
 test("translation profiles：存过的 Responses 协议（openai_responses）原样保留", () => {

@@ -1,4 +1,4 @@
-import { normalizeOcrProvider } from "@/platform/config/providers.js";
+import { normalizeOcrProvider, normalizeTranslationApiProtocol, normalizeTranslationThinking } from "@/platform/config/providers.js";
 import type { CredentialsFields } from "./state.js";
 import type { CredentialDialogElementsLike } from "./dialog-values.js";
 
@@ -56,10 +56,10 @@ export function syncCredentialDialogFields({
     translationWorkersInput.value = `${taskOptions.workers || 50}`;
   }
   if (translationProtocolSelect) {
-    translationProtocolSelect.value = `${taskOptions.apiProtocol || "openai"}`;
+    translationProtocolSelect.value = normalizeTranslationApiProtocol(taskOptions.apiProtocol);
   }
   if (translationThinkingSelect) {
-    translationThinkingSelect.value = `${taskOptions.thinking || "auto"}`;
+    translationThinkingSelect.value = normalizeTranslationThinking(taskOptions.thinking);
   }
   if (mathModeSelect) {
     mathModeSelect.value = taskOptions.mathMode === "placeholder" ? "placeholder" : "direct_typst";

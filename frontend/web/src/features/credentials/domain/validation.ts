@@ -171,7 +171,7 @@ export async function runDeepSeekConnectivityCheck({
   apiKey,
   baseUrl,
   model,
-  apiProtocol = "openai",
+  apiProtocol = "openai_responses",
   validateDeepSeekToken,
   setDeepSeekValidationMessage,
   showResult = true,

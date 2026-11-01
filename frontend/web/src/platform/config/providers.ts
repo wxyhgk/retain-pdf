@@ -101,7 +101,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
   {
     id: "qwen",
     label: "Qwen",
-    protocol: "openai",
+    protocol: "openai_responses",
     baseUrl: QWEN_TRANSLATION_BASE_URL,
     defaultModel: "qwen3.8-flash",
     defaultWorkers: 20,
@@ -113,7 +113,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
   {
     id: "deepseek",
     label: "DeepSeek",
-    protocol: "openai",
+    protocol: "openai_responses",
     baseUrl: DEEPSEEK_TRANSLATION_BASE_URL,
     defaultModel: "deepseek-flash",
     defaultWorkers: 50,
@@ -135,7 +135,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
   {
     id: "openai",
     label: "OpenAI",
-    protocol: "openai",
+    protocol: "openai_responses",
     baseUrl: OPENAI_TRANSLATION_BASE_URL,
     defaultModel: "gpt-5.6-luna",
     defaultWorkers: 50,
@@ -145,7 +145,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
   {
     id: "zhipu",
     label: "智谱",
-    protocol: "openai",
+    protocol: "openai_responses",
     baseUrl: ZHIPU_TRANSLATION_BASE_URL,
     defaultModel: "GLM-5.3-Flash",
     defaultWorkers: 5,
@@ -159,7 +159,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
   {
     id: "opencode",
     label: "OpenCode Go",
-    protocol: "openai",
+    protocol: "openai_responses",
     baseUrl: OPENCODE_GO_TRANSLATION_BASE_URL,
     defaultModel: "deepseek-v4.1-flash",
     defaultWorkers: 5,
@@ -171,7 +171,7 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
   {
     id: "custom",
     label: "自定义 API",
-    protocol: "openai",
+    protocol: "openai_responses",
     baseUrl: "",
     defaultModel: "",
     defaultWorkers: 5,
@@ -181,17 +181,19 @@ export const TRANSLATION_PROVIDER_OPTIONS = [
   },
 ];
 
-/** 接口协议（与任务契约 translation.api_protocol 一致）。 */
+/** 接口协议（与任务契约 translation.api_protocol 一致）。
+ *  2026-11-01 用户：去掉 /chat/completions，只留 OpenAI Responses（Anthropic 官方照旧走 /messages）。
+ *  以前存下的 "openai" 由 normalizeTranslationApiProtocol 落到 Responses。 */
 export const TRANSLATION_API_PROTOCOL_OPTIONS = [
-  { id: "openai", label: "OpenAI 格式", hint: "/chat/completions" },
   { id: "openai_responses", label: "OpenAI Responses 格式", hint: "/responses" },
   { id: "anthropic", label: "Anthropic 格式", hint: "/messages" },
 ] as const;
 
-/** 思考深度（与任务契约 translation.thinking 一致）。auto：能关就关，翻译用不着思考。 */
+/** 思考深度（与任务契约 translation.thinking 一致）。默认关闭（2026-11-01 用户：默认不思考，以前默认「自动」）。
+ *  auto：能关就关。 */
 export const TRANSLATION_THINKING_OPTIONS = [
-  { id: "auto", label: "自动" },
   { id: "off", label: "关闭" },
+  { id: "auto", label: "自动" },
   { id: "low", label: "浅" },
   { id: "medium", label: "中" },
   { id: "high", label: "深" },
@@ -201,14 +203,14 @@ export const TRANSLATION_THINKING_OPTIONS = [
 export type TranslationApiProtocol = typeof TRANSLATION_API_PROTOCOL_OPTIONS[number]["id"];
 export type TranslationThinking = typeof TRANSLATION_THINKING_OPTIONS[number]["id"];
 
-export function normalizeTranslationApiProtocol(value: unknown, fallback: TranslationApiProtocol = "openai"): TranslationApiProtocol {
+export function normalizeTranslationApiProtocol(value: unknown, fallback: TranslationApiProtocol = "openai_responses"): TranslationApiProtocol {
   const text = `${value || ""}`.trim().toLowerCase();
   return TRANSLATION_API_PROTOCOL_OPTIONS.some((option) => option.id === text) ? text as TranslationApiProtocol : fallback;
 }
 
 export function normalizeTranslationThinking(value: unknown): TranslationThinking {
   const text = `${value || ""}`.trim().toLowerCase();
-  return TRANSLATION_THINKING_OPTIONS.some((option) => option.id === text) ? text as TranslationThinking : "auto";
+  return TRANSLATION_THINKING_OPTIONS.some((option) => option.id === text) ? text as TranslationThinking : "off";
 }
 
 export function normalizeTranslationProvider(value = "") {

@@ -64,7 +64,7 @@ test("表单：选服务带出默认值、自定义保留；密钥留空不提�
   assert.equal(form.provider, "deepseek", "没配过时默认 DeepSeek");
   const qwen = applyTranslationProvider(form, "qwen");
   assert.equal(qwen.baseUrl, "https://dashscope.aliyuncs.com/compatible-mode/v1");
-  assert.equal(qwen.apiProtocol, "openai");
+  assert.equal(qwen.apiProtocol, "openai_responses", "/chat/completions 去掉了，预设走 Responses");
   assert.ok(qwen.model);
   const custom = applyTranslationProvider({ ...qwen, model: "my-model" }, "custom");
   assert.equal(custom.model, "my-model", "自定义保留当前填的");
