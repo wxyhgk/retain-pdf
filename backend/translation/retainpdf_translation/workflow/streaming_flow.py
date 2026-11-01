@@ -7,10 +7,13 @@
 1. 新到的页读进来（每页的翻译模板，已有译文的保留）。
 2. **监控**：在已知的所有页上重算跨栏、跨页拼接（规则那一遍是瞬时的；它会先清掉上一轮的拼接再重算，所以模型复核的结论
    记在 `review_memo` 里，判过的对直接用，只把新出现的对交给模型），再做页面策略、上下文窗口。
-3. **扣住还没定的那一段**：最新一页里最后一个能接到下一页的块（`continuation.rules.eligible`），连同它所在的拼接组，
-   这一轮先不翻——它接不接下一页要等下一页到了才知道。其余拼好、确认独立的块马上翻（`pending_translation_items` 的
-   `deferred_item_ids`）。跨栏拼接只看本页，不用等。
+3. **扣住还没定的那一段**：已到的页挨着还没到的页时，挨着的那一边能接过去的块（`continuation.rules.eligible`）——
+   下一页没到就扣页末最后一个，上一页没到就扣页首第一个——连同它所在的拼接组，这一轮先不翻：它接不接邻页要等邻页到了才知道。
+   其余拼好、确认独立的块马上翻（`pending_translation_items` 的 `deferred_item_ids`）。跨栏拼接只看本页，不用等。
 4. 等下一版清单。OCR 做完（或页范围内的页都到了）的那一轮不扣，全部翻完，再做和整本一次翻一样的收尾。
+
+到的页不一定连着（Paddle 按片并行，后面的片常先做完，见 `retainpdf_base.ocr_stream`）：跨页拼接只连相邻两页
+（`continuation.rules` 里查着页号差 1），上下文窗口也不跨过没到的页（`services.context.windows`），所以先翻后面的页没问题。
 
 拼接都在翻之前定，所以不会先翻半句、事后重翻。等的那段时间翻译池本来就空着：翻 10 页比 OCR 出 10 页快。
 """
@@ -44,20 +47,27 @@ if TYPE_CHECKING:
     from retainpdf_translation.workflow.checkpoint import TranslationCheckpointSession
 
 
-def held_back_item_ids(page_payloads: dict[int, list[dict]], *, last_page: int) -> frozenset[str]:
-    """最新一页里还没定拼接的块：最后一个能接到下一页的块，连同它已经在的拼接组（组里的块要整组一起翻）。"""
-    candidates = [item for item in page_payloads.get(last_page, []) if eligible(item)]
-    if not candidates:
-        return frozenset()
-    tail = candidates[-1]
-    group = str(tail.get("continuation_group", "") or "")
-    held = {str(tail.get("item_id", "") or "")}
-    if group:
+def held_back_item_ids(page_payloads: dict[int, list[dict]], *, page_indices: range) -> frozenset[str]:
+    """还没定拼接的块：已到的页挨着页范围里还没到的页时，挨着那一边能接过去的块（下一页没到：页末最后一个；
+    上一页没到：页首第一个），连同它已经在的拼接组（组里的块要整组一起翻）。"""
+    window = set(page_indices)
+    edges: list[dict] = []
+    for page_idx, items in page_payloads.items():
+        candidates = [item for item in items if eligible(item)]
+        if not candidates:
+            continue
+        if page_idx + 1 in window and page_idx + 1 not in page_payloads:
+            edges.append(candidates[-1])
+        if page_idx - 1 in window and page_idx - 1 not in page_payloads:
+            edges.append(candidates[0])
+    held = {str(item.get("item_id", "") or "") for item in edges}
+    groups = {str(item.get("continuation_group", "") or "") for item in edges} - {""}
+    if groups:
         held.update(
             str(item.get("item_id", "") or "")
             for items in page_payloads.values()
             for item in items
-            if str(item.get("continuation_group", "") or "") == group
+            if str(item.get("continuation_group", "") or "") in groups
         )
     return frozenset(item_id for item_id in held if item_id)
 
@@ -94,7 +104,6 @@ def translate_book_streaming(
     math_mode = policy_config.math_mode if policy_config is not None else "direct_typst"
     context_mode = str(getattr(translation_context, "context_mode", "needed") if translation_context is not None else "needed")
     review_enabled = policy_config is None or policy_config.enable_candidate_continuation_review
-    last_window_page = page_indices[-1] if len(page_indices) else -1
 
     page_payloads: dict[int, list[dict]] = {}
     translation_paths: dict[int, Path] = {}
@@ -102,12 +111,13 @@ def translate_book_streaming(
     started = time.perf_counter()
     rounds = 0
     while True:
-        new_pages = [page_idx for page_idx in page_indices if page_idx < stream.ready_pages and page_idx not in page_payloads]
+        ready = stream.ready_page_indices
+        new_pages = [page_idx for page_idx in page_indices if page_idx in ready and page_idx not in page_payloads]
         if new_pages:
             paths, payloads = load_page_payloads(data=data, output_dir=output_dir, page_indices=new_pages, math_mode=math_mode)
             translation_paths.update(paths)
             page_payloads.update(payloads)
-        final = stream.done or stream.ready_pages > last_window_page
+        final = stream.done or all(page_idx in ready for page_idx in page_indices)
         rounds += 1
         _monitor_round(
             page_payloads=page_payloads,
@@ -129,7 +139,7 @@ def translate_book_streaming(
             checkpoint=checkpoint,
             first_round=rounds == 1,
         )
-        held = frozenset() if final or not page_payloads else held_back_item_ids(page_payloads, last_page=max(page_payloads))
+        held = frozenset() if final or not page_payloads else held_back_item_ids(page_payloads, page_indices=page_indices)
         print(
             f"book: stream round={rounds} ocr_ready={stream.ready_pages}/{stream.total_pages} "
             f"pages={len(page_payloads)} held_back={len(held)} final={final}",

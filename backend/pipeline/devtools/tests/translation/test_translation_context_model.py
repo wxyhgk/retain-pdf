@@ -76,6 +76,18 @@ def test_build_translation_context_windows_returns_data_without_mutating_payload
     assert "translation_context_after" not in page_payloads[1][1]
 
 
+def test_context_windows_do_not_reach_across_pages_that_have_not_arrived() -> None:
+    """跟着 OCR 翻时到的页可能不连着：第 1 页末尾不是第 4 页的上文；连着的第 4、5 页之间照常取。"""
+    block = lambda item_id, page_idx, text: {"item_id": item_id, "page_idx": page_idx, "block_idx": 1, "block_type": "text", "source_text": text}
+    page_payloads = {0: [block("a", 0, "Page one tail")], 3: [block("d", 3, "Page four")], 4: [block("e", 4, "Page five")]}
+
+    windows = build_translation_context_windows(page_payloads, neighbors=1, text_limit=100)
+
+    assert (windows["a"].before, windows["a"].after) == ("", "")
+    assert (windows["d"].before, windows["d"].after) == ("", "Page five")
+    assert windows["e"].before == "Page four"
+
+
 def test_translation_context_windows_attach_neighbor_text() -> None:
     page_payloads = {
         4: [

@@ -268,7 +268,8 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
    没有词跨过的竖缝时，按右栏开头几个词在 GLM 文字里的位置拆成左右两块，右块排进右栏的阅读顺序。没有文字层（扫描件）、找不到缝或找不到词就不拆。
    适配器另外去掉正文开头和压在它上面的标题重复的那段。
 7. 流式公布（2026-10-31）：每做完一片，把前面连着做完的页归一化写到 `ocr/stream/document.v1.json`，就绪清单 `ocr/stream/manifest.json`
-   （`ocr_stream_v1`：`ready_pages`、`total_pages`、`done`、`failed`，契约在 `retainpdf_base/ocr_stream.py`），后面的拼接和翻译不用等 OCR 做完。
+   （`ocr_stream_v1`：`ready_page_indices`、`ready_pages`、`total_pages`、`done`、`failed`，契约在 `retainpdf_base/ocr_stream.py`），
+   后面的拼接和翻译不用等 OCR 做完。GLM 串行，就绪的总是前几页。
 
 报错：key 不对、参数不对（4xx，429 除外）直接失败，报服务端的 code 和 message，不带 key；429、5xx、网络错误退避重试
 （`request_with_retry`，5 次，15 秒起，认 `Retry-After`）。`RETAIN_GLM_OCR_API_URL`、`RETAIN_GLM_OCR_TIMEOUT_SECONDS`（默认 900）可改。
@@ -278,8 +279,10 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
 整本任务和翻译并行时（Rust `execute_ocr_job_streaming`），官方云服务、官方 HTTP、上传的文件不再由 Rust 整份提交，而在 provider worker 里：
 原文切成每份 `RETAIN_PADDLE_CHUNK_PAGES` 页（默认 10，0 是整份一份），同时最多 `RETAIN_PADDLE_CHUNK_WORKERS` 份（默认 4）；
 没有等着提交的份了、某份交上去 `RETAIN_PADDLE_HEDGE_SECONDS` 秒（默认 15）还一页没识别就再交一份，谁先完用谁；失败重交，最多 3 次。
-每份结果存 `ocr/paddle_raw_chunks/`（按原文 sha256 续跑）；拼接时各份的 `global_block_id` / `global_group_id` 加偏移，不让不同份的块撞成一个接续组。
-每做完一份就把前面连着的份归一化公布到 `ocr/stream/`；图片最后整份一次下载。和 Rust 那条路相比少了"派发意向"记录：进程死在提交途中，
+每份结果存 `ocr/paddle_raw_chunks/`（按原文 sha256 续跑）；拼接时各份的 `global_block_id` / `global_group_id` 加「起始页 × 1000」，
+不让不同份的块撞成一个接续组，偏移只看份从哪页开始，先公布的页和最后整份编号一致。
+做完哪份就公布哪份（2026-11-01 起，以前只公布前面连着做完的）：没做完的份放同样大小的空页占位，清单的 `ready_page_indices` 列出就绪的页；
+图片最后整份一次下载。和 Rust 那条路相比少了"派发意向"记录：进程死在提交途中，
 重跑时在途的那几份会再交一次（最多多花在途几份）。自建服务（`paddle_api_url`）、远程地址照旧走 Rust。
 
 ## 对 MinerU 文档的工程化结论

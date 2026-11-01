@@ -1,15 +1,17 @@
-"""Paddle 按片并行提交（paddle_chunked.py）：切片、拼接（全局编号加偏移）、流式公布、防排队卡住再交一次、失败重交、续跑。
+"""Paddle 按片并行提交（paddle_chunked.py）：切片、拼接（全局编号加偏移）、做完哪片公布哪片、防排队卡住再交一次、失败重交、续跑。
 接口和时钟都是假的，不花钱。"""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import fitz
 import pytest
 
 from retainpdf_base.ocr_stream import read_ocr_stream
+from retainpdf_pipeline.ocr.ocr_provider import paddle_chunked
 from retainpdf_pipeline.ocr.ocr_provider.paddle_chunked import merge_paddle_chunks
 from retainpdf_pipeline.ocr.ocr_provider.paddle_chunked import request_chunks
 
@@ -84,7 +86,7 @@ class FakePaddle:
         }
 
 
-def _run(tmp_path: Path, fake: FakePaddle, pages: int, *, prefixes=None, hedge=20.0, raw="raw"):
+def _run(tmp_path: Path, fake: FakePaddle, pages: int, *, ready=None, hedge=20.0, raw="raw"):
     pdf = tmp_path / f"book-{pages}.pdf"
     if not pdf.exists():
         _pdf(pdf, pages)
@@ -98,7 +100,11 @@ def _run(tmp_path: Path, fake: FakePaddle, pages: int, *, prefixes=None, hedge=2
         pages_per_chunk=10,
         workers=4,
         hedge_seconds=hedge,
-        on_prefix=(lambda payloads: prefixes.append(sum(len(p["layoutParsingResults"]) for p in payloads))) if prefixes is not None else None,
+        on_ready=(
+            (lambda payloads: ready.append(sum(len(p["layoutParsingResults"]) for p in payloads if p is not None)))
+            if ready is not None
+            else None
+        ),
         submit=fake.submit,
         query=fake.query,
         download=fake.download,
@@ -107,22 +113,22 @@ def _run(tmp_path: Path, fake: FakePaddle, pages: int, *, prefixes=None, hedge=2
     )
 
 
-def test_chunks_run_in_parallel_and_publish_the_contiguous_prefix(tmp_path: Path) -> None:
-    # 第 1 片最慢：它做完之前什么都不公布；做完以后前三片一起公布
+def test_chunks_run_in_parallel_and_each_is_published_when_done(tmp_path: Path) -> None:
+    # 第 1 片最慢：不用等它，后面的片做完一片公布一片（以前只公布前面连着做完的，第 1 片排队时翻译干等）
     fake = FakePaddle({0: [(0, 8, "done")], 1: [(0, 2, "done")], 2: [(0, 3, "done")], 3: [(0, 1, "done")]})
-    prefixes: list[int] = []
-    payloads = _run(tmp_path, fake, 34, prefixes=prefixes)
+    ready: list[int] = []
+    payloads = _run(tmp_path, fake, 34, ready=ready)
     assert sorted(fake.submits) == [0, 1, 2, 3], "4 片同时交，各交一次"
-    assert prefixes == [34]
+    assert ready == [4, 14, 24, 34]
     assert fake.now < 12, "并行：总时长是最慢那片，不是相加"
     assert [len(p["layoutParsingResults"]) for p in payloads] == [10, 10, 10, 4]
 
 
-def test_prefix_is_published_as_soon_as_the_first_chunks_are_done(tmp_path: Path) -> None:
+def test_chunks_done_in_order_are_published_one_by_one(tmp_path: Path) -> None:
     fake = FakePaddle({0: [(0, 1, "done")], 1: [(0, 2, "done")], 2: [(0, 9, "done")]})
-    prefixes: list[int] = []
-    _run(tmp_path, fake, 30, prefixes=prefixes)
-    assert prefixes == [10, 20, 30]
+    ready: list[int] = []
+    _run(tmp_path, fake, 30, ready=ready)
+    assert ready == [10, 20, 30]
 
 
 def test_a_chunk_stuck_in_the_queue_is_submitted_again(tmp_path: Path) -> None:
@@ -158,5 +164,50 @@ def test_merge_offsets_global_ids_so_chunks_do_not_share_continuation_groups() -
     }
     merged = merge_paddle_chunks([chunk(0, 3), chunk(1, 2)])
     groups = [p["prunedResult"]["parsing_res_list"][0]["global_group_id"] for p in merged["layoutParsingResults"]]
-    assert groups == [0, 1, 2, 3, 4]
+    # 偏移是「起始页 × 1000」：只看片从哪页开始，前面的片换成占位也不变
+    assert groups == [0, 1, 2, 3000, 3001]
     assert merged["dataInfo"]["numPages"] == 5 and merged["_meta"]["dataInfoComplete"] is True
+    with_placeholder = merge_paddle_chunks([paddle_chunked.placeholder_chunk([(595.0, 842.0)] * 3), chunk(1, 2)])
+    assert [p["prunedResult"]["parsing_res_list"][0]["global_group_id"] for p in with_placeholder["layoutParsingResults"][3:]] == [3000, 3001]
+
+
+def _job(tmp_path: Path, pdf: Path) -> SimpleNamespace:
+    root = tmp_path / "job"
+    names = ("source", "ocr", "translated", "rendered", "artifacts", "logs")
+    for name in names:
+        (root / name).mkdir(parents=True, exist_ok=True)
+    return SimpleNamespace(
+        file_path=str(pdf), page_ranges="", paddle_token="t", paddle_model="", paddle_api_url="", job_root=str(root),
+        **{f"{name}_dir": str(root / name) for name in names},
+    )
+
+
+def test_stream_keeps_pages_in_place_and_lists_the_ready_ones(tmp_path: Path, monkeypatch) -> None:
+    """第 2 片先做完：流里的文档 25 页、第 11–20 页是真结果、其余是空页，清单只列第 11–20 页；
+    先公布的页和最后的整份文档逐页一样（翻译先翻了它们，不能和最后的对不上）。"""
+    fake = FakePaddle({0: [(0, 6, "done")], 1: [(0, 1, "done")], 2: [(0, 3, "done")]})
+    seen: list[tuple[list[int], dict]] = []
+    original = paddle_chunked.OcrStreamWriter.publish
+
+    def recording_publish(self, document, **kwargs):
+        original(self, document, **kwargs)
+        state = read_ocr_stream(self._ocr_dir)
+        seen.append((sorted(state.ready_page_indices), json.loads(state.document_path.read_text(encoding="utf-8"))))
+
+    monkeypatch.setattr(paddle_chunked.OcrStreamWriter, "publish", recording_publish)
+    monkeypatch.setenv(paddle_chunked.HEDGE_SECONDS_ENV, "100")
+    job = _job(tmp_path, _pdf(tmp_path / "book.pdf", 25))
+    api = {"submit": fake.submit, "query": fake.query, "download": fake.download, "sleep": fake.sleep, "clock": fake.clock}
+    _root, _source, _result, normalized = paddle_chunked.run_paddle_chunked_to_job_dir(job, api=api)
+
+    assert [ready for ready, _doc in seen] == [list(range(10, 20)), list(range(10, 25)), list(range(25)), list(range(25))]
+    first = seen[0][1]
+    assert len(first["pages"]) == 25
+    assert all(not first["pages"][i]["blocks"] for i in [*range(10), *range(20, 25)]), "没到的页是空页"
+    assert all(first["pages"][i]["blocks"] for i in range(10, 20))
+    final = json.loads(normalized.read_text(encoding="utf-8"))
+    for ready, document in seen:
+        for index in ready:
+            assert document["pages"][index] == final["pages"][index], f"第 {index + 1} 页先公布的和最后的不一样"
+    state = read_ocr_stream(Path(job.ocr_dir))
+    assert state.done and state.ready_pages == 25
