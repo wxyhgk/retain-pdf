@@ -58,8 +58,9 @@ function overlayExport(base, exported) {
       baseUrl: provider.base_url || "",
       model: provider.model || "",
       workers: Number(provider.workers) || 1,
-      apiProtocol: provider.protocol || "openai",
-      thinking: provider.thinking || "auto",
+      // 没写协议、思考深度的按网页的默认：OpenAI Responses、不思考（2026-11-01 去掉了 /chat/completions，思考默认关闭）。
+      apiProtocol: provider.protocol || "openai_responses",
+      thinking: provider.thinking || "off",
     };
   }
   const tokens = exported?.ocr?.tokens || {};
@@ -80,8 +81,8 @@ function overlayExport(base, exported) {
       model: translation.model || "",
       baseUrl: translation.base_url || "",
       workers: Number(translation.workers) || 1,
-      apiProtocol: translation.protocol || "openai",
-      thinking: translation.thinking || "auto",
+      apiProtocol: translation.protocol || "openai_responses",
+      thinking: translation.thinking || "off",
     },
   };
 }

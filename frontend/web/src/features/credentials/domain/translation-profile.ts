@@ -54,7 +54,7 @@ export function translationProfileDefaults(providerId = "custom"): TranslationPr
     model: definition.defaultModel || "",
     workers: Number(definition.defaultWorkers) || 5,
     apiProtocol: normalizeTranslationApiProtocol(definition.protocol),
-    thinking: "auto",
+    thinking: "off",
   };
 }
 

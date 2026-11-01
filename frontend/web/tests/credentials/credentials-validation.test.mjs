@@ -139,7 +139,7 @@ test("runDeepSeekConnectivityCheck passes injected apiPrefix and model to DeepSe
   });
 
   assert.equal(result.ok, true);
-  // model 必须随探针一起送到后端：后端据此走 /chat/completions 真调一次模型，
+  // model 必须随探针一起送到后端：后端据此按翻译用的协议真调一次模型，
   // 少了它就退化成只验 Key，用户填错模型仍会拿到绿灯。
   assert.deepEqual(calls, [[
     "/custom/api",
@@ -147,7 +147,7 @@ test("runDeepSeekConnectivityCheck passes injected apiPrefix and model to DeepSe
       api_key: "sk-test",
       base_url: "https://example.test/v1",
       model: "deepseek-flash",
-      api_protocol: "openai",
+      api_protocol: "openai_responses",
     },
   ]]);
 });

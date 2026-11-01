@@ -145,8 +145,8 @@ export function buildTranslationPayload({
     math_mode: developerConfig.mathMode,
     model: developerConfig.model,
     base_url: developerConfig.baseUrl,
-    api_protocol: developerConfig.apiProtocol || "openai",
-    thinking: developerConfig.thinking || "auto",
+    api_protocol: developerConfig.apiProtocol || "openai_responses",
+    thinking: developerConfig.thinking || "off",
     ...(modelApiKey?.trim()
       ? { api_key: modelApiKey.trim() }
       : { credential_ref: `${translationCredentialRef || ""}`.trim() }),

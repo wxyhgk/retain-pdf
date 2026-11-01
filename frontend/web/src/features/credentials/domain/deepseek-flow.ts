@@ -86,7 +86,7 @@ export async function handleBrowserDeepSeekValidate({
     || defaultModelApiKey?.()
     || "";
   const baseUrl = modelBaseUrlInput?.value?.trim() || "";
-  // 模型名必须一起送去检测：探针走 /chat/completions，没有模型名就只能验 Key，
+  // 模型名必须一起送去检测：探针按翻译用的协议真调一次模型，没有模型名就只能验 Key，
   // 用户填错模型时会拿到一个假绿灯，真正翻译才失败。
   //
   // 模型名的真值只有这个输入框：它不在 credentials 里（那里只有 modelApiKey /
@@ -118,7 +118,7 @@ export async function handleBrowserDeepSeekValidate({
     baseUrl,
     model: modelName,
     // 探针按翻译实际用的协议发请求（Anthropic 格式走 /messages）。
-    apiProtocol: translationProtocolSelect?.value || "openai",
+    apiProtocol: translationProtocolSelect?.value || "openai_responses",
     validateDeepSeekToken,
     setDeepSeekValidationMessage: viewPort.setValidationMessage,
     showResult: false,

@@ -178,8 +178,8 @@ test("settings from ~/.retainpdf fill the fields the settings page reads", () =>
     apiProtocol: "openai",
     thinking: "off",
   });
-  assert.equal(merged.developerConfig.translationProfiles.custom.apiProtocol, "openai", "missing protocol → openai");
-  assert.equal(merged.developerConfig.translationProfiles.custom.thinking, "auto");
+  assert.equal(merged.developerConfig.translationProfiles.custom.apiProtocol, "openai_responses", "missing protocol → openai_responses");
+  assert.equal(merged.developerConfig.translationProfiles.custom.thinking, "off", "missing thinking → off");
 });
 
 test("saving from the settings page becomes ~/.retainpdf changes; legacy top-level keys fill the current profile", () => {

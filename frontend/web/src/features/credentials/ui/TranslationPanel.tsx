@@ -173,7 +173,7 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           <select
             id={BROWSER_IDS.translationProtocol}
             defaultValue={providerDefinition.protocol}
-            title="翻译请求用哪种接口格式。Anthropic 官方默认 Anthropic 格式，其余默认 OpenAI 格式；中转站按它支持的格式选。"
+            title="翻译请求用哪种接口格式。Anthropic 官方用 Anthropic 格式，其余用 OpenAI Responses 格式（/chat/completions 已去掉）。"
             ref={(node) => { elementsRef.translationProtocolSelect = node || null; }}
             onChange={() => handlers?.resetDeepSeekValidation?.()}
           >
@@ -186,8 +186,8 @@ export function TranslationPanel({ footerAction = null }: { footerAction?: React
           <FieldLabel icon={<Brain />}>思考深度</FieldLabel>
           <select
             id={BROWSER_IDS.translationThinking}
-            defaultValue="auto"
-            title="自动：能关就关，翻译一般用不着思考。调深会更慢、更贵；服务商不支持的档位会自动退回。"
+            defaultValue="off"
+            title="默认关闭，翻译一般用不着思考。自动：能关就关。调深会更慢、更贵；服务商不支持的档位会自动退回。"
             ref={(node) => { elementsRef.translationThinkingSelect = node || null; }}
           >
             {TRANSLATION_THINKING_OPTIONS.map((option) => (
