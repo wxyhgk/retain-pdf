@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import os
 
+import fitz
 import requests
 
 from retainpdf_pipeline.ocr.retry import RetainNetworkError
@@ -23,6 +24,10 @@ GLM_OCR_MODEL = "glm-ocr"
 GLM_OCR_API_URL_ENV = "RETAIN_GLM_OCR_API_URL"
 GLM_OCR_TIMEOUT_ENV = "RETAIN_GLM_OCR_TIMEOUT_SECONDS"
 GLM_OCR_MAX_PAGES_PER_REQUEST = 100
+# 单片请求等多久：按这片的页数算（10 页一片约 12 秒，2026-10-31 实测），10 页最多等 3 分钟。以前一律 900 秒，
+# 加上 5 次重试，服务端不回时要一个多小时才报错，界面上一直停在 0 页（2026-11-02，620 页的书）。
+TIMEOUT_BASE_SECONDS = 60
+TIMEOUT_PER_PAGE_SECONDS = 12
 DEFAULT_TIMEOUT_SECONDS = 900
 # 429 时等得久一点：服务端限流按分钟算，0.5 秒起步的默认退避会把几次重试在几秒内用完。
 RETRY_ATTEMPTS = 5
@@ -39,13 +44,26 @@ def api_url() -> str:
     return str(os.environ.get(GLM_OCR_API_URL_ENV, "") or "").strip() or GLM_OCR_API_URL
 
 
-def timeout_seconds() -> int:
+def timeout_seconds(pages: int | None = None) -> int:
+    """一次请求最多等多久：`RETAIN_GLM_OCR_TIMEOUT_SECONDS` 写了就用它，否则按页数算；不知道页数时 900 秒。"""
     raw = str(os.environ.get(GLM_OCR_TIMEOUT_ENV, "") or "").strip()
     try:
-        value = int(raw) if raw else DEFAULT_TIMEOUT_SECONDS
+        value = int(raw) if raw else 0
     except ValueError:
-        value = DEFAULT_TIMEOUT_SECONDS
-    return value if value > 0 else DEFAULT_TIMEOUT_SECONDS
+        value = 0
+    if value > 0:
+        return value
+    if pages and pages > 0:
+        return TIMEOUT_BASE_SECONDS + TIMEOUT_PER_PAGE_SECONDS * pages
+    return DEFAULT_TIMEOUT_SECONDS
+
+
+def pdf_page_count(pdf_bytes: bytes) -> int | None:
+    try:
+        with fitz.open(stream=pdf_bytes, filetype="pdf") as document:
+            return document.page_count
+    except Exception:  # noqa: BLE001 - 读不出页数就按默认超时，交给服务端去判这份 PDF
+        return None
 
 
 def pdf_data_uri(pdf_bytes: bytes) -> str:
@@ -75,7 +93,7 @@ def parse_pdf(pdf_bytes: bytes, *, api_key: str, session: requests.Session | Non
             session or _SESSION,
             "post",
             api_url(),
-            timeout=timeout_seconds(),
+            timeout=timeout_seconds(pdf_page_count(pdf_bytes)),
             attempts=RETRY_ATTEMPTS,
             backoff_seconds=RETRY_BACKOFF_SECONDS,
             label="GLM-OCR",

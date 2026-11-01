@@ -272,7 +272,7 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
    后面的拼接和翻译不用等 OCR 做完。GLM 串行，就绪的总是前几页。
 
 报错：key 不对、参数不对（4xx，429 除外）直接失败，报服务端的 code 和 message，不带 key；429、5xx、网络错误退避重试
-（`request_with_retry`，5 次，15 秒起，认 `Retry-After`）。`RETAIN_GLM_OCR_API_URL`、`RETAIN_GLM_OCR_TIMEOUT_SECONDS`（默认 900）可改。
+（`request_with_retry`，5 次，15 秒起，认 `Retry-After`）。`RETAIN_GLM_OCR_API_URL`、`RETAIN_GLM_OCR_TIMEOUT_SECONDS` 可改；不写时单片超时按页数算：60 秒加每页 12 秒（10 页一片 180 秒）。
 
 ## Paddle 按片并行提交（`paddle_chunked.py`，2026-11-01）
 

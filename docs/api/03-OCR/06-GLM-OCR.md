@@ -47,7 +47,7 @@
 |---|---|---|
 | `RETAIN_GLM_OCR_CHUNK_PAGES` | `10` | 每片页数，1–100 |
 | `RETAIN_GLM_OCR_WORKERS` | `1` | 并发片数，1–4 |
-| `RETAIN_GLM_OCR_TIMEOUT_SECONDS` | `900` | 单片请求超时 |
+| `RETAIN_GLM_OCR_TIMEOUT_SECONDS` | 按页数算：60 秒加每页 12 秒（10 页一片 180 秒） | 单片请求超时；写了就一律用它 |
 | `RETAIN_GLM_OCR_API_URL` | 智谱官方地址 | 换接口地址（代理、测试） |
 
 ## 和翻译并行（2026-10-31）

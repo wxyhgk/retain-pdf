@@ -298,3 +298,27 @@ def test_a_heading_repeated_at_the_start_of_the_body_below_it_is_dropped() -> No
     body = parsing[2]  # 标题下面那块正文（index 2）
     assert body["block_content"].startswith("left column sentence number 1"), "标题单独一块，正文开头不该再有它"
     assert parsing[1]["block_content"] == "I. Introduction"
+
+
+def test_a_request_waits_by_the_pages_it_carries_unless_the_timeout_is_set(tmp_path: Path, monkeypatch) -> None:
+    # 10 页一片最多等 3 分钟（以前一律 15 分钟，加 5 次重试，服务端不回时一个多小时才报错）；写了环境变量就一律用它。
+    monkeypatch.delenv(glm_ocr_api.GLM_OCR_TIMEOUT_ENV, raising=False)
+    assert glm_ocr_api.timeout_seconds(10) == 180
+    assert glm_ocr_api.timeout_seconds(100) == 1260
+    assert glm_ocr_api.timeout_seconds(None) == glm_ocr_api.DEFAULT_TIMEOUT_SECONDS
+    seen: list[float] = []
+
+    def fake_request(_session, _method, _url, *, timeout, **_kwargs):
+        seen.append(timeout)
+        raise glm_ocr_api.RetainNetworkError("stop here")
+
+    monkeypatch.setattr(glm_ocr_api, "request_with_retry", fake_request)
+    chunk = _pdf(tmp_path / "chunk.pdf", 10).read_bytes()
+    with pytest.raises(RuntimeError):
+        glm_ocr_api.parse_pdf(chunk, api_key="test")
+    monkeypatch.setenv(glm_ocr_api.GLM_OCR_TIMEOUT_ENV, "45")
+    with pytest.raises(RuntimeError):
+        glm_ocr_api.parse_pdf(chunk, api_key="test")
+    assert seen == [180, 45]
+    # 不是 PDF：读不出页数，按默认的等。
+    assert glm_ocr_api.pdf_page_count(b"not a pdf") is None
