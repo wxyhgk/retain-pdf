@@ -95,6 +95,7 @@ import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
 import { createRetainpdfView } from './wiring/retainpdf-view';
+import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfTarget } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
 import { createDrive } from './wiring/drive';
 import { createLibrary } from './wiring/library';
@@ -793,7 +794,34 @@ const drive = createDrive(studio);
 // All the articles, as a table or a board (article-table.ts).
 // 翻译: RetainPDF's own pages in the middle, loaded the first time it is shown.
 const translateView = shell.querySelector<HTMLElement>('#translate-view')!;
-const retainpdf = createRetainpdfView(translateView, { openSettings: () => openSettings('retainpdf') });
+const retainpdf = createRetainpdfView(translateView, {
+	openSettings: () => openSettings('retainpdf'),
+	// 摘到笔记: the passage put where the caret was in the note open behind 翻译.
+	quote(quote) {
+		if (!session.slug) {
+			showToast(t('先打开一篇笔记，再摘到笔记'), true);
+			return;
+		}
+		editor.insertMarkdown(
+			quoteMarkdown({
+				book: quote.title,
+				document: quote.document_id,
+				job: quote.job_id,
+				block: quote.item_id,
+				page: quote.page_idx + 1,
+				source: quote.source_text,
+				translated: quote.translated_text,
+			}),
+		);
+		showToast(t('已摘到「{title}」', { title: openTitle || session.slug }));
+	},
+});
+// A quote's 在 RetainPDF 中打开 (editor/retainpdf-quote.ts): 翻译, at that passage.
+followQuoteOpens();
+window.addEventListener(RETAINPDF_NAVIGATE, (event) => {
+	showView('translate');
+	void retainpdf.navigate((event as CustomEvent<RetainpdfTarget>).detail);
+});
 const tableView = shell.querySelector<HTMLElement>('#table-view')!;
 const articleTable = createArticleTable(tableView, {
 	articles: () => articleList.articles(),
