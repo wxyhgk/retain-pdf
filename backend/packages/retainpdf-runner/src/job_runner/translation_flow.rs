@@ -313,6 +313,14 @@ async fn run_ocr_and_translation_together(
                 tracing::warn!(job_id = %parent_job_id, error = %format!("{err:#}"), "failed to finish ocr stream");
             }
         }
+        // OCR 一做完就给子任务落终态，不等翻译：以前放在 join 之后，子任务要一直"标准化中"到翻译做完
+        // （2026-11-01 开发栈 Paddle 实测，OCR 46 秒做完、子任务 69 秒才成功，「进度」页 OCR 站多亮 23 秒）。
+        let result = result.and_then(|job| {
+            let job = persist_ocr_child_result(&deps, job)?;
+            translation_flow_child::finish_ocr_child_attempt(&deps, &ocr_child_id);
+            record_ocr_child_finished(&deps, &parent_job, &job);
+            Ok(job)
+        });
         // OCR 做完、后面还要渲染：马上拉起渲染准备，翻译这时多半只剩最后一轮
         let render_prepare = match &result {
             Ok(job) if render_follows && matches!(job.status, JobStatusKind::Succeeded) => {
@@ -358,9 +366,6 @@ async fn run_ocr_and_translation_together(
             return Err(err);
         }
     };
-    let ocr_finished = persist_ocr_child_result(&deps, ocr_finished)?;
-    translation_flow_child::finish_ocr_child_attempt(&deps, &ocr_child_id);
-    record_ocr_child_finished(&deps, &parent_job, &ocr_finished);
     if let Some(prewarm) = domain_prewarm {
         prewarm.finish(DOMAIN_PREWARM_FINISH_TIMEOUT).await;
     }
@@ -407,17 +412,18 @@ mod ocr_child_persist_contract {
     #[test]
     fn ocr_child_result_is_persisted_with_cas() {
         let source = include_str!("translation_flow.rs");
-        // 串行和并行（OCR 和翻译同时跑）两条路都在拿到 OCR 结果后、并回父任务前走这一个函数
-        for (start, end) in [
-            ("let ocr_finished = match execute_ocr_job(", "sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);"),
-            ("tokio::join!(ocr, translation)", "sync_parent_with_ocr_child(&mut translated_job, &ocr_finished);"),
+        // 串行：拿到 OCR 结果后、并回父任务前；并行（OCR 和翻译同时跑）：OCR 那一路一做完就收尾，在 join 之前。都走这一个函数
+        for (start, end, call) in [
+            (
+                "let ocr_finished = match execute_ocr_job(",
+                "sync_parent_with_ocr_child(&mut parent_job, &ocr_finished);",
+                "persist_ocr_child_result(&deps, ocr_finished)",
+            ),
+            ("execute_ocr_job_streaming(", "tokio::join!(ocr, translation)", "persist_ocr_child_result(&deps, job)"),
         ] {
             let from = source.find(start).expect("找不到 OCR 收尾那一段");
-            let to = from + source[from..].find(end).expect("OCR 收尾必须调用 sync_parent_with_ocr_child");
-            assert!(
-                source[from..to].contains("persist_ocr_child_result(&deps, ocr_finished)"),
-                "子任务收尾必须走 persist_ocr_child_result：{start}"
-            );
+            let to = from + source[from..].find(end).expect("找不到那一段的结尾");
+            assert!(source[from..to].contains(call), "子任务收尾必须走 persist_ocr_child_result：{start}");
         }
         let body_start = source.find("fn persist_ocr_child_result(").expect("persist_ocr_child_result");
         let body = &source[body_start..body_start + source[body_start..].find("\n}\n").expect("函数结尾")];
