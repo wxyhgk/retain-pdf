@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "retainpdf/contracts/studio-bridge/v1",
+  "title": "RetainPDF 网页 ↔ 笔记（Studio）之间的 postMessage 协议",
+  "description": "笔记（Studio）左栏「翻译」把 RetainPDF 的网页放进 iframe，地址带 embed=studio。两边只用 window.postMessage 说话，消息是本文件的 StudioBridgeMessage：每条都有 protocol、v、type。握手：iframe 加载完，Studio 发 hello；RetainPDF 只在 embed=studio、有父窗口、消息来自 window.parent、父窗口的 origin 是本机回环地址（http://localhost、http://127.0.0.1、http://[::1]，任意端口）时才认，记下这个 origin，回 ready；之后 RetainPDF 发的每条消息都以这个 origin 为 targetOrigin，不用 '*'。Studio 只认 event.source 是这个 iframe、event.origin 是设置里 RetainPDF 地址的 origin 的消息，发给 iframe 时 targetOrigin 也是它。protocol 不对、v 不认识、type 不认识的消息两边都不理（不报错），所以以后只加新 type、新的可选字段，不改旧的；要改旧的就出 v2。",
+  "protocol": "retainpdf-studio-bridge",
+  "embed_query": {
+    "embed": "studio",
+    "note": "RetainPDF 的页面地址带 ?embed=studio（和别的参数并存）时是放在 Studio 里：不显示自己的顶栏、品牌和返回首页之类重复的东西，颜色先按 hello 的 theme。跳到别的页面时带着这个参数。"
+  },
+  "messages": [
+    { "type": "hello", "from": "studio", "definition": "HelloMessage" },
+    { "type": "ready", "from": "retainpdf", "definition": "ReadyMessage" },
+    { "type": "theme", "from": "studio", "definition": "ThemeMessage" },
+    { "type": "navigate", "from": "studio", "definition": "NavigateMessage" },
+    { "type": "quote", "from": "retainpdf", "definition": "QuoteMessage" }
+  ],
+  "oneOf": [
+    { "$ref": "#/definitions/HelloMessage" },
+    { "$ref": "#/definitions/ReadyMessage" },
+    { "$ref": "#/definitions/ThemeMessage" },
+    { "$ref": "#/definitions/NavigateMessage" },
+    { "$ref": "#/definitions/QuoteMessage" }
+  ],
+  "definitions": {
+    "Protocol": { "const": "retainpdf-studio-bridge" },
+    "Version": { "const": 1 },
+    "Theme": { "enum": ["light", "dark"] },
+    "Feature": {
+      "description": "RetainPDF 这一版会处理的消息：Studio 只发对方列出来的（navigate、theme），只给列了 quote 的显示摘录相关的东西。",
+      "enum": ["theme", "navigate", "quote"]
+    },
+    "HelloMessage": {
+      "type": "object",
+      "description": "Studio → RetainPDF。iframe 每次加载完（包括 RetainPDF 自己跳页之后）都发一次；RetainPDF 每次都回 ready。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "theme"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "hello" },
+        "theme": { "$ref": "#/definitions/Theme" }
+      }
+    },
+    "ReadyMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio，回 hello。收到之前 Studio 不发别的。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "features"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "ready" },
+        "features": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/definitions/Feature" } }
+      }
+    },
+    "ThemeMessage": {
+      "type": "object",
+      "description": "Studio → RetainPDF：Studio 换了亮色、暗色，RetainPDF 跟着换（只在嵌入时，不改它自己存的设置）。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "theme"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "theme" },
+        "theme": { "$ref": "#/definitions/Theme" }
+      }
+    },
+    "NavigateMessage": {
+      "type": "object",
+      "description": "Studio → RetainPDF：打开这个任务的阅读页，有 page_idx 就翻到那一页，有 block_id 就滚到那一块并高亮。和 reader.html?job_id=&page_idx=&block_id= 是同一件事（RetainPDF 可以直接换成这个地址，带上 embed=studio）。任务不存在、块不存在时照阅读页平常的样子处理，不回消息。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "job_id"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "navigate" },
+        "job_id": { "type": "string", "minLength": 1 },
+        "page_idx": { "type": "integer", "minimum": 0, "description": "从 0 开始的页序号，和阅读页地址的 page_idx 一样。" },
+        "block_id": { "type": "string", "minLength": 1, "description": "阅读区块编号，四位写法（p008-b0009），和 GET /api/v1/jobs/:job_id/reader/regions 的 item_id 一样。" }
+      }
+    },
+    "QuoteMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio：用户在阅读页点了「摘到笔记」。Studio 把它放进打开的笔记（引用块）。原文、译文是点的时候的样子，笔记里存一份，RetainPDF 没开也能看；要最新的再用 GET /api/v1/jobs/:job_id/reader/regions/:item_id 取。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "job_id", "item_id", "page_idx", "source_text", "translated_text"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "quote" },
+        "job_id": { "type": "string", "minLength": 1 },
+        "document_id": { "type": ["string", "null"], "minLength": 1, "description": "书的编号（同一本书重新翻译，任务换了，书不变）；任务不属于哪本书时为 null。" },
+        "title": { "type": ["string", "null"], "description": "书名，没有时为 null。" },
+        "item_id": { "type": "string", "minLength": 1, "description": "阅读区块编号，四位写法，和 reader/regions 的 item_id 一样。" },
+        "page_idx": { "type": "integer", "minimum": 0, "description": "原文所在页，从 0 开始（reader/regions 的 source.page 减 1）。" },
+        "source_text": { "type": ["string", "null"], "description": "原文（reader/regions 的 source.text）。" },
+        "translated_text": { "type": ["string", "null"], "description": "译文（reader/regions 的 translated.text；跨块、跨页接起来的段落是整段）；还没翻译时为 null。" }
+      }
+    }
+  }
+}
