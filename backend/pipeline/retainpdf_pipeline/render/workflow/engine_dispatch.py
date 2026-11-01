@@ -34,6 +34,7 @@ from retainpdf_pipeline.render.output.typst.fit_report import note_fit_report_re
 from retainpdf_pipeline.render.prepare.obstacle_scan import load_obstacle_scan
 from retainpdf_pipeline.render.prepare.obstacle_scan import run_obstacle_scan
 from retainpdf_pipeline.render.prepare.store import PrepareStore
+from retainpdf_pipeline.render.source.prewarm_payload import build_payload_geometry
 from retainpdf_pipeline.render.workflow.context import RenderExecutionContext
 
 RPR_SUPPORTED_FONT_FAMILIES = frozenset({"source han serif sc", "noto serif cjk sc"})
@@ -72,6 +73,33 @@ def _obstacle_scan(context: RenderExecutionContext, *, fallback_dir: Path):
     )
 
 
+def _first_line_indents(
+    context: RenderExecutionContext, translated_pages: dict[int, list[dict]]
+) -> tuple[dict[str, float], dict[str, object]]:
+    """每块的首行缩进（pt），和 Typst 路线同一套规则：预热算好的就用，没有（rpr_fit 走精简准备，
+    不算版式 payload）就现算——读原 PDF 的文字层，读不到再看墨迹（小文档才开）。
+
+    引擎自己只能从 OCR 行框估缩进，Paddle、GLM 只给块级框，估不出来，以前可编辑 PDF 一个缩进都没有。
+    缩进只是排版细节：算失败就不缩进，不连累整条 rpr_fit 路线回退 Typst。"""
+    if context.first_line_indent_lookup is not None:
+        return dict(context.first_line_indent_lookup), {"rpr_fit_indent_source": "prewarm"}
+    if context.indent_detection_pdf_path is None:
+        return {}, {"rpr_fit_indent_source": "none"}
+    started = time.perf_counter()
+    try:
+        _pages, indents, _inner_bboxes, stats = build_payload_geometry(
+            source_pdf_path=Path(context.indent_detection_pdf_path), translated_pages=translated_pages
+        )
+    except Exception as exc:  # noqa: BLE001 - 缩进可有可无
+        print(f"rpr_fit first-line indent failed: {type(exc).__name__}: {exc}", flush=True)
+        return {}, {"rpr_fit_indent_source": "failed", "rpr_fit_indent_error": f"{type(exc).__name__}: {exc}"}
+    return indents, {
+        "rpr_fit_indent_source": "computed",
+        "rpr_fit_indent_elapsed_seconds": round(time.perf_counter() - started, 3),
+        "rpr_fit_indent_stats": stats,
+    }
+
+
 def dispatch_with_render_engine(
     *,
     mode: str,
@@ -94,6 +122,7 @@ def dispatch_with_render_engine(
         try:
             runtime = resolve_engine_runtime("rpr-fit.js")
             scan_record = _obstacle_scan(context, fallback_dir=Path(context.output_pdf_path).parent)
+            indents, indent_diagnostics = _first_line_indents(context, translated_pages)
             diagnostics = build_book_rpr_fit_pdf(
                 mode=mode,
                 runtime=runtime,
@@ -104,7 +133,9 @@ def dispatch_with_render_engine(
                 document_path=context.document_path,
                 visual_profile_path=context.visual_profile_path,
                 obstacle_scan=load_obstacle_scan(scan_record),
+                first_line_indents=indents,
             )
+            diagnostics.update(indent_diagnostics)
             diagnostics["rpr_fit_scan_elapsed_seconds"] = round(scan_record.elapsed_seconds, 3)
             diagnostics["rpr_fit_scan_cache_hit"] = scan_record.hit
             diagnostics["final_image_compressed"] = compress_final(context, f"rpr_fit_{mode}")

@@ -5,6 +5,8 @@
 
 - 输入：document.v1（OCR 框、行盒、块类型）、译文条目、visual_profile（底色 / 文字色）、
   原 PDF 的障碍物扫描（准备步骤 obstacle_scan 的产物，由 workflow 层传进来），以及要渲染的页；
+  译文条目带 retain-pdf 量好的首行缩进 ``first_line_indent_pt``（和 Typst 路线同一个值，
+  OCR 行框量不出缩进，引擎不再自己估）；
 - 引擎：按 retain-pdf 的种子估算与正文 / 标题 / 注释规则，用精确测量定字号（全书共享正文
   字号，排不下的段落单独封顶），带碰撞兜底：文字不压文字、不压保留元素（公式、图、表、
   未翻译文字）和矢量图形；
@@ -79,7 +81,10 @@ def _engine_text(item: dict) -> str:
     )
 
 
-def _translation_items(translated_pages: dict[int, list[dict]]) -> list[dict]:
+def _translation_items(
+    translated_pages: dict[int, list[dict]], first_line_indents: dict[str, float] | None = None
+) -> list[dict]:
+    indents = first_line_indents or {}
     items: list[dict] = []
     for page_idx in sorted(translated_pages):
         for item in translated_pages[page_idx] or []:
@@ -90,6 +95,9 @@ def _translation_items(translated_pages: dict[int, list[dict]]) -> list[dict]:
                 entry["page_idx"] = int(page_idx)
             entry["translated_text"] = _engine_text(item)
             entry["source_text"] = str(entry.get("source_text") or "")
+            indent = float(indents.get(str(entry.get("item_id") or ""), 0.0) or 0.0)
+            if indent > 0:
+                entry["first_line_indent_pt"] = round(indent, 2)
             items.append(entry)
     return items
 
@@ -105,6 +113,7 @@ def build_book_rpr_fit_pdf(
     document_path: Path | None,
     visual_profile_path: Path | None = None,
     obstacle_scan: dict[str, dict] | None = None,
+    first_line_indents: dict[str, float] | None = None,
 ) -> dict[str, object]:
     if mode not in RPR_FIT_SUPPORTED_MODES:
         raise RprEngineFailed("mode_unsupported", f"rpr_fit 引擎不支持渲染模式 {mode!r}")
@@ -119,7 +128,8 @@ def build_book_rpr_fit_pdf(
 
     work_dir = prepare_background_work_dir(output_pdf_path, None)
     engine_dir = _reset_dir(work_dir.parent / "rpr-fit-engine")
-    items = _translation_items(translated_pages)
+    items = _translation_items(translated_pages, first_line_indents)
+    diagnostics["rpr_fit_indented_blocks"] = sum(1 for item in items if item.get("first_line_indent_pt"))
     # 障碍物扫描（准备步骤 obstacle_scan 的产物，{"<页号>": {...}}）：只取要渲染的页；没有就当
     # 没有障碍物信息（引擎照常排，只是看不到框外的线条）。
     drawings = {str(index): (obstacle_scan or {})[str(index)] for index in page_indices if str(index) in (obstacle_scan or {})}
