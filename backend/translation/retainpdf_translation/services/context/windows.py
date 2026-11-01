@@ -103,30 +103,34 @@ def build_translation_context_windows(
     neighbors: int = DEFAULT_CONTEXT_WINDOW_NEIGHBORS,
     text_limit: int = DEFAULT_CONTEXT_TEXT_LIMIT,
 ) -> dict[str, TranslationContextWindow]:
-    flat_items = [
-        item
-        for page_idx in sorted(page_payloads)
-        for item in sorted(page_payloads[page_idx], key=_item_order)
-    ]
-    context_items = [item for item in flat_items if _is_context_candidate(item)]
-    index_by_identity = {id(item): index for index, item in enumerate(context_items)}
     windows: dict[str, TranslationContextWindow] = {}
     window_size = max(0, int(neighbors))
-    for item in flat_items:
-        item_id = str(item.get("item_id", "") or "")
-        if not item_id or not _is_context_candidate(item):
-            continue
-        index = index_by_identity.get(id(item))
-        if index is None:
-            continue
-        before_items = context_items[max(0, index - window_size) : index]
-        after_items = context_items[index + 1 : index + 1 + window_size]
-        windows[item_id] = TranslationContextWindow(
-            item_id=item_id,
-            before=_join_context_items(before_items, limit=text_limit),
-            after=_join_context_items(after_items, limit=text_limit),
-        )
+    # 只在连着的页里取上下文：跟着 OCR 翻时到的页可能不连着（Paddle 后面的片先做完），第 10 页的末尾不是第 21 页的上文
+    for run in _consecutive_page_runs(sorted(page_payloads)):
+        flat_items = [item for page_idx in run for item in sorted(page_payloads[page_idx], key=_item_order)]
+        context_items = [item for item in flat_items if _is_context_candidate(item)]
+        for index, item in enumerate(context_items):
+            item_id = str(item.get("item_id", "") or "")
+            if not item_id:
+                continue
+            before_items = context_items[max(0, index - window_size) : index]
+            after_items = context_items[index + 1 : index + 1 + window_size]
+            windows[item_id] = TranslationContextWindow(
+                item_id=item_id,
+                before=_join_context_items(before_items, limit=text_limit),
+                after=_join_context_items(after_items, limit=text_limit),
+            )
     return windows
+
+
+def _consecutive_page_runs(page_indices: list[int]) -> list[list[int]]:
+    runs: list[list[int]] = []
+    for page_idx in page_indices:
+        if runs and page_idx == runs[-1][-1] + 1:
+            runs[-1].append(page_idx)
+        else:
+            runs.append([page_idx])
+    return runs
 
 
 def annotate_translation_context_windows(

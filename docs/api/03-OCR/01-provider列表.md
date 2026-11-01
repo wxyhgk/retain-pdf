@@ -112,6 +112,7 @@ GET /api/v1/providers/ocr
 - `glm_ocr`：每 10 页一片串行提交（智谱按 key 排队，并发不加速）。OCR 子任务的进度 `substage` 是 `glm_ocr`。
 - `paddle`（2026-11-01）：官方云服务（没填 `paddle_api_url`）、官方 HTTP、上传的文件时，原文切成每份 10 页同时提交最多 4 份
   （同一个 token 的几个任务是真并行的，实测 34 页从整份 46–94 秒降到 11–24 秒），一份迟迟不开始就再交一份。
+  做完哪份就公布哪份，不等前面的份：翻译先翻已经到的页，所以 `ocr_stream` 的页数可能一下跳到 14/34（后两份先好了）。
   OCR 子任务的进度 `substage` 是 `paddle_chunks`（`progress_current/total` = 已识别页 / 总页）。
   自建 Paddle 服务、远程地址的原文、官方命令行照旧整份提交、做完再翻。
 - 其余服务商照旧先 OCR、再翻译。

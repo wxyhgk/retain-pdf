@@ -1,4 +1,4 @@
-"""Paddle 按片并行提交，做完一片就公布前面连着做完的页（OCR 和翻译并行用）。
+"""Paddle 按片并行提交，做完哪片就公布哪片（OCR 和翻译并行用）。
 
 Paddle 官方接口是"提交任务 → 轮询 → 全部做完才给结果"，没法边识别边拿已做完的页。所以原文由我们切成小份，各自提交成一个任务。
 2026-11-01 实测（34 页论文，每次文件内容不同、避开服务端缓存）：整份一个任务 46 秒、94 秒；切 4 份同时提交 10.9 秒、23.8 秒
@@ -10,8 +10,11 @@ Paddle 官方接口是"提交任务 → 轮询 → 全部做完才给结果"，�
 - 失败的片重交，最多 3 次。
 - 每片的结果存在 `ocr/paddle_raw_chunks/`，按原文 sha256 和分片页数续跑（和 GLM 一样），重跑不再花钱。
 - 拼接：各片的 `global_block_id` / `global_group_id` 都从 0 编，原样拼起来不同片的块会被当成同一个接续组
-  （Paddle 适配器按 `global_group_id` 分组），所以每片加上前面各片的最大编号。跨片的接续 Paddle 不知道，交给翻译那边自己判断。
-- 每做完一片（前面连着的都做完了）就归一化前缀，公布到 `ocr/stream/`；图片（Paddle 给的是带签名的链接）最后整份一次下载。
+  （Paddle 适配器按 `global_group_id` 分组），所以每片加上「起始页 × 1000」（`ID_STRIDE_PER_PAGE`）。偏移只看片从哪页开始，
+  前面的片到没到都一样，先公布的页和最后的整份文档编号一致。跨片的接续 Paddle 不知道，交给翻译那边自己判断。
+- 每做完一片就归一化一次、公布到 `ocr/stream/`：做完的片放真结果，没做完的片放同样大小的空页占位，清单写明哪些页就绪
+  （`retainpdf_base.ocr_stream`）。以前只公布前面连着做完的页，2026-11-01 开发栈实测第 21–34 页 7 秒做完、第 1–10 页排队到 46 秒，
+  翻译干等 46 秒；现在翻译先翻已经到的页。图片（Paddle 给的是带签名的链接）最后整份一次下载。
 """
 
 from __future__ import annotations
@@ -49,6 +52,8 @@ MAX_SUBMITS_PER_CHUNK = 3
 POLL_SECONDS = 1.0
 RAW_DIR_NAME = "paddle_raw_chunks"
 MANIFEST_FILE_NAME = "chunks.json"
+# 每片的全局编号加「起始页 × 这个数」：一页远到不了 1000 个块
+ID_STRIDE_PER_PAGE = 1000
 
 
 def chunk_pages() -> int:
@@ -101,32 +106,19 @@ def _complete(payload: object, pages: int) -> bool:
     return isinstance(payload, dict) and len(payload.get("layoutParsingResults") or []) == pages
 
 
-def _max_id(payload: dict, key: str) -> int:
-    values = [
-        block.get(key)
-        for page in payload.get("layoutParsingResults") or []
-        for block in ((page or {}).get("prunedResult") or {}).get("parsing_res_list") or []
-        if isinstance(block.get(key), int)
-    ]
-    return max(values, default=-1)
-
-
 def merge_paddle_chunks(payloads: list[dict]) -> dict:
-    """各片的结果拼成一份（和整份一个任务的结果同样形状）；全局编号按片加偏移，不让不同片的块撞号。"""
+    """各片的结果拼成一份（和整份一个任务的结果同样形状）；全局编号加「起始页 × ID_STRIDE_PER_PAGE」，不让不同片的块撞号。"""
     layout: list = []
     pages_meta: list = []
-    block_offset = group_offset = 0
     chunks_meta = []
     for payload in payloads:
         payload = json.loads(json.dumps(payload))  # 不改调用方手里的原始结果
+        offset = len(layout) * ID_STRIDE_PER_PAGE
         for page in payload.get("layoutParsingResults") or []:
             for block in ((page or {}).get("prunedResult") or {}).get("parsing_res_list") or []:
-                if isinstance(block.get("global_block_id"), int):
-                    block["global_block_id"] += block_offset
-                if isinstance(block.get("global_group_id"), int):
-                    block["global_group_id"] += group_offset
-        block_offset = _max_id(payload, "global_block_id") + 1 if _max_id(payload, "global_block_id") >= 0 else block_offset
-        group_offset = _max_id(payload, "global_group_id") + 1 if _max_id(payload, "global_group_id") >= 0 else group_offset
+                for key in ("global_block_id", "global_group_id"):
+                    if isinstance(block.get(key), int):
+                        block[key] += offset
         layout.extend(payload.get("layoutParsingResults") or [])
         pages_meta.extend((payload.get("dataInfo") or {}).get("pages") or [])
         chunks_meta.append(dict(payload.get("_meta") or {}))
@@ -140,6 +132,18 @@ def merge_paddle_chunks(payloads: list[dict]) -> dict:
             "dataInfoComplete": len(pages_meta) == len(layout) and all(m.get("dataInfoComplete", True) for m in chunks_meta),
             "chunks": chunks_meta,
         },
+    }
+
+
+def placeholder_chunk(page_sizes: list[tuple[float, float]]) -> dict:
+    """还没做完的片的占位：同样页数的空页，尺寸用原文 PDF 的（点），归一化时缩放比例是 1。"""
+    return {
+        "layoutParsingResults": [
+            {"prunedResult": {"width": w, "height": h, "parsing_res_list": []}, "markdown": {"text": "", "images": {}}}
+            for w, h in page_sizes
+        ],
+        "dataInfo": {"type": "pdf", "numPages": len(page_sizes), "pages": [{"width": w, "height": h} for w, h in page_sizes]},
+        "_meta": {"source": "placeholder", "dataInfoComplete": True},
     }
 
 
@@ -168,14 +172,16 @@ def request_chunks(
     pages_per_chunk: int,
     workers: int,
     hedge_seconds: float,
-    on_prefix: Callable[[list[dict]], None] | None = None,
+    on_ready: Callable[[list[dict | None]], None] | None = None,
     submit=paddle_api.submit_local_file,
     query=paddle_api.query_job,
     download=paddle_api.download_jsonl_result,
     sleep: Callable[[float], None] = time.sleep,
     clock: Callable[[], float] = time.monotonic,
 ) -> list[dict]:
-    """按片提交、轮询、下载；返回按页序排好的各片结果。后面几个参数只给测试注入假接口。"""
+    """按片提交、轮询、下载；返回按页序排好的各片结果。
+
+    每多做完一片调一次 `on_ready(各片结果)`，没做完的片是 None。后面几个参数只给测试注入假接口。"""
     raw_dir.mkdir(parents=True, exist_ok=True)
     source_hash = _sha256(source_pdf)
     manifest_path = raw_dir / MANIFEST_FILE_NAME
@@ -209,14 +215,12 @@ def request_chunks(
     )
     published = 0
 
-    def publish_prefix() -> None:
+    def publish_ready() -> None:
         nonlocal published
-        prefix = 0
-        while prefix < len(chunks) and chunks[prefix].payload is not None:
-            prefix += 1
-        if on_prefix is not None and prefix > published:
-            published = prefix
-            on_prefix([chunk.payload for chunk in chunks[:prefix]])
+        ready = sum(chunk.payload is not None for chunk in chunks)
+        if on_ready is not None and ready > published:
+            published = ready
+            on_ready([chunk.payload for chunk in chunks])
 
     def submit_chunk(chunk: _Chunk) -> None:
         job_id, _trace = submit(token=token, file_path=chunk.path, model=model, optional_payload=optional_payload, base_url=base_url)
@@ -226,7 +230,7 @@ def request_chunks(
 
     done_pages = sum(c.pages for c in chunks if c.payload is not None)
     _emit_progress(done_pages, total)
-    publish_prefix()
+    publish_ready()
     waiting = [c for c in chunks if c.payload is None]
     while any(c.payload is None for c in chunks):
         active = [c for c in chunks if c.payload is None and c.jobs]
@@ -254,7 +258,7 @@ def request_chunks(
                     done_pages += chunk.pages
                     print(f"paddle-chunks: chunk {chunk.start + 1}-{chunk.end} done job={job_id}", flush=True)
                     _emit_progress(done_pages, total)
-                    publish_prefix()
+                    publish_ready()
                 elif state == "failed":
                     chunk.jobs.remove((job_id, _submitted))
                     print(f"paddle-chunks: chunk {chunk.start + 1}-{chunk.end} job={job_id} failed: {data.get('errorMsg', '')}", flush=True)
@@ -293,17 +297,30 @@ def run_paddle_chunked_to_job_dir(args: SimpleNamespace, *, api=None) -> tuple[P
     normalized_report_json_path = normalized_json_path.with_name(DOCUMENT_SCHEMA_REPORT_FILE_NAME)
     with fitz.open(source_pdf) as source:
         total_pages = source.page_count
+        page_sizes = [(float(page.rect.width), float(page.rect.height)) for page in source]
     stream = OcrStreamWriter(job_dirs.ocr_dir, provider="paddle", total_pages=total_pages)
+    pages_per_chunk = chunk_pages() or total_pages
+    ranges = chunk_ranges(total_pages, pages_per_chunk)
 
-    def publish(prefix_payloads: list[dict]) -> None:
+    def publish(chunk_payloads: list[dict | None]) -> None:
+        filled = [
+            payload if payload is not None else placeholder_chunk(page_sizes[start:end])
+            for payload, (start, end) in zip(chunk_payloads, ranges)
+        ]
+        ready = [
+            index
+            for payload, (start, end) in zip(chunk_payloads, ranges)
+            if payload is not None
+            for index in range(start, end)
+        ]
         document, _report = build_normalized_document_for_paddle(
             provider_result_json_path=provider_result_json_path,
             source_pdf_path=source_pdf,
             document_id=job_dirs.root.name,
             provider_version=model,
-            provider_payload=merge_paddle_chunks(prefix_payloads),
+            provider_payload=merge_paddle_chunks(filled),
         )
-        stream.publish(document)
+        stream.publish(document, ready_page_indices=ready)
 
     api_kwargs = dict(api or {})
     try:
@@ -314,10 +331,10 @@ def run_paddle_chunked_to_job_dir(args: SimpleNamespace, *, api=None) -> tuple[P
             model=model,
             optional_payload=optional_payload,
             base_url=base_url,
-            pages_per_chunk=chunk_pages() or total_pages,
+            pages_per_chunk=pages_per_chunk,
             workers=max(1, int(_env_number(WORKERS_ENV, DEFAULT_WORKERS))),
             hedge_seconds=_env_number(HEDGE_SECONDS_ENV, DEFAULT_HEDGE_SECONDS),
-            on_prefix=publish,
+            on_ready=publish,
             **api_kwargs,
         )
         payload = merge_paddle_chunks(payloads)
@@ -347,6 +364,7 @@ def run_paddle_chunked_to_job_dir(args: SimpleNamespace, *, api=None) -> tuple[P
 __all__ = [
     "chunk_pages",
     "merge_paddle_chunks",
+    "placeholder_chunk",
     "request_chunks",
     "run_paddle_chunked_to_job_dir",
 ]

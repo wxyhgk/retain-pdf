@@ -1,6 +1,6 @@
 //! OCR 流式公布的清单（`ocr/stream/manifest.json`），Rust 这边只做一件事：OCR 没做成时标失败。
 //!
-//! 契约在 Python 的 `retainpdf_base/ocr_stream.py`：OCR provider（GLM-OCR）每做完一片写一版清单，跟着 OCR 翻的翻译
+//! 契约在 Python 的 `retainpdf_base/ocr_stream.py`：OCR provider（GLM-OCR、Paddle）每做完一片写一版清单，跟着 OCR 翻的翻译
 //! worker 读它；OCR 在 Python 里失败时自己会标 `failed`。但 OCR 进程被杀（超时、空闲超时、崩了）就来不及写，翻译会一直等
 //! 下一版清单，直到它自己的"多久没有进展"超时（默认半小时）。所以 OCR 子任务一结束、又不是成功，driver 就补标一次失败，
 //! 翻译 worker 读到就退出。
@@ -31,6 +31,8 @@ pub(super) fn mark_ocr_stream_failed(ocr_dir: &Path, reason: &str) -> Result<()>
         "seq": seq,
         "provider": previous.get("provider").cloned().unwrap_or(Value::Null),
         "ready_pages": previous.get("ready_pages").and_then(Value::as_i64).unwrap_or(0),
+        // 就绪的页不一定连着（Paddle 按片并行），原样留着；旧清单没有这个键，读的一方按前 ready_pages 页算
+        "ready_page_indices": previous.get("ready_page_indices").cloned().unwrap_or(Value::Null),
         "total_pages": previous.get("total_pages").and_then(Value::as_i64).unwrap_or(0),
         "done": false,
         "failed": true,
@@ -65,6 +67,7 @@ pub(super) fn ensure_ocr_stream_done(ocr_dir: &Path) -> Result<()> {
         "seq": seq,
         "provider": previous.get("provider").cloned().unwrap_or(Value::Null),
         "ready_pages": pages,
+        "ready_page_indices": (0..pages).collect::<Vec<_>>(),
         "total_pages": pages,
         "done": true,
         "failed": false,
@@ -124,6 +127,16 @@ mod tests {
         assert_eq!(manifest["ready_pages"], 20);
         assert_eq!(manifest["total_pages"], 120);
         assert_eq!(manifest["error"], "OCR child failed: no progress for 1800s");
+
+        // 就绪的页不连着（Paddle 后面的片先做完）：标失败时原样留着
+        let gappy = temp_dir("killed-gappy");
+        std::fs::write(
+            gappy.as_path().join(MANIFEST_RELATIVE_PATH),
+            r#"{"schema":"ocr_stream_v1","seq":2,"provider":"paddle","ready_pages":2,"ready_page_indices":[20,21],"total_pages":34,"done":false,"failed":false}"#,
+        )
+        .unwrap();
+        mark_ocr_stream_failed(gappy.as_path(), "killed").unwrap();
+        assert_eq!(read(gappy.as_path())["ready_page_indices"], json!([20, 21]));
     }
 
     #[test]
@@ -140,6 +153,7 @@ mod tests {
         let manifest = read(dir.as_path());
         assert_eq!((manifest["seq"].clone(), manifest["done"].clone(), manifest["ready_pages"].clone()), (json!(3), json!(true), json!(3)));
         assert_eq!(manifest["document"], "normalized/document.v1.json");
+        assert_eq!(manifest["ready_page_indices"], json!([0, 1, 2]));
         // 已经 done 的不动
         ensure_ocr_stream_done(dir.as_path()).unwrap();
         assert_eq!(read(dir.as_path())["seq"], 3);

@@ -127,10 +127,7 @@ def _translations(result: dict) -> dict[str, tuple[str, str]]:
     }
 
 
-def test_streaming_translation_matches_the_one_shot_run_without_retranslating(tmp_path: Path, fake_model, monkeypatch) -> None:
-    document = json.loads(FIXTURE.read_text(encoding="utf-8"))
-    pages = document["pages"]
-
+def _one_shot(tmp_path: Path, fake_model, monkeypatch, document: dict) -> tuple[dict, Counter, Path]:
     whole_path = tmp_path / "whole" / "document.v1.json"
     whole_path.parent.mkdir(parents=True)
     whole_path.write_text(json.dumps(document, ensure_ascii=False), encoding="utf-8")
@@ -140,6 +137,13 @@ def test_streaming_translation_matches_the_one_shot_run_without_retranslating(tm
     one_shot_counts = Counter(fake_model.translated)
     fake_model.translated.clear()
     fake_model.reviewed_pairs.clear()
+    return one_shot, one_shot_counts, whole_path
+
+
+def test_streaming_translation_matches_the_one_shot_run_without_retranslating(tmp_path: Path, fake_model, monkeypatch) -> None:
+    document = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    pages = document["pages"]
+    one_shot, one_shot_counts, whole_path = _one_shot(tmp_path, fake_model, monkeypatch, document)
 
     # OCR 一页一页公布：建计划时只有第 1 页；每次翻译等下一版时公布下一页，最后一页标 done
     ocr_dir = tmp_path / "stream" / "ocr"
@@ -175,6 +179,50 @@ def test_streaming_translation_matches_the_one_shot_run_without_retranslating(tm
     assert all(count == 1 for count in fake_model.reviewed_pairs.values()), "判过的拼接对不再送模型"
 
 
+def test_pages_arriving_out_of_order_translate_the_same_as_the_one_shot_run(tmp_path: Path, fake_model, monkeypatch) -> None:
+    """Paddle 按片并行时后面的片常先做完：第 3 页先到，再到第 1 页，最后第 2 页。翻出来要和整本一次翻的一样、不重翻：
+    挨着没到的页的那一段扣住，跨页拼接只连相邻两页，上下文不跨过没到的页。"""
+    document = json.loads(FIXTURE.read_text(encoding="utf-8"))
+    pages = document["pages"]
+    one_shot, one_shot_counts, whole_path = _one_shot(tmp_path, fake_model, monkeypatch, document)
+
+    def stream_document(ready: list[int]) -> dict:
+        return {**document, "pages": [page if index in ready else {**page, "blocks": []} for index, page in enumerate(pages)]}
+
+    order = [[2], [0, 2], [0, 1, 2]]
+    ocr_dir = tmp_path / "stream" / "ocr"
+    writer = OcrStreamWriter(ocr_dir, provider="paddle", total_pages=len(pages))
+    writer.publish(stream_document(order[0]), ready_page_indices=order[0])
+    published = [order[0]]
+    rounds: list[frozenset[str]] = []
+    original_batch_stage = streaming_flow.run_translation_batch_stage
+
+    def recording_batch_stage(**kwargs):
+        rounds.append(kwargs["deferred_item_ids"])
+        return original_batch_stage(**kwargs)
+
+    def publish_next(ocr_dir_arg: Path, *, after_seq: int):
+        ready = order[len(published)]
+        done = len(ready) == len(pages)
+        writer.publish(document if done else stream_document(ready), done=done, ready_page_indices=ready)
+        published.append(ready)
+        return read_ocr_stream(ocr_dir_arg)
+
+    monkeypatch.setattr(paths, "TRANSLATION_UNIT_CACHE_DIR", tmp_path / "cache-stream")
+    monkeypatch.setattr(streaming_flow, "run_translation_batch_stage", recording_batch_stage)
+    monkeypatch.setattr(streaming_flow, "wait_for_ocr_stream", publish_next)
+    streamed = execute_translation_request(_request(tmp_path / "stream", whole_path.with_name("missing.json"), ocr_stream_dir=ocr_dir))
+
+    assert published == order
+    assert len(rounds) == 3
+    assert all(item_id.startswith("p003-") for item_id in rounds[0]) and rounds[0], "只有第 3 页时扣住它页首能接上一页的那段"
+    assert rounds[-1] == frozenset()
+    assert _translations(streamed) == _translations(one_shot), "乱序到的页翻出来的译文、拼接要和整本一次翻的一样"
+    assert all(count == 1 for count in fake_model.translated.values()), f"有块翻了不止一次：{fake_model.translated}"
+    assert sum(fake_model.translated.values()) == sum(one_shot_counts.values())
+    assert all(count == 1 for count in fake_model.reviewed_pairs.values()), "判过的拼接对不再送模型"
+
+
 def test_held_back_items_are_the_last_joinable_block_and_its_group() -> None:
     page_payloads = {
         0: [{"item_id": "a", "block_type": "text", "protected_source_text": "first", "continuation_group": "cg-1"}],
@@ -183,9 +231,16 @@ def test_held_back_items_are_the_last_joinable_block_and_its_group() -> None:
             {"item_id": "c", "block_type": "text", "protected_source_text": "Figure 3. A caption"},
         ],
     }
-    held = streaming_flow.held_back_item_ids(page_payloads, last_page=1)
+    held = streaming_flow.held_back_item_ids(page_payloads, page_indices=range(3))
     # c 像图注，不会接下一页；b 是最后一个能接的，它的组连着第 1 页的 a
     assert held == frozenset({"a", "b"})
+
+
+def test_held_back_items_at_a_gap_are_the_tail_before_it_and_the_head_after_it() -> None:
+    text = lambda item_id: {"item_id": item_id, "block_type": "text", "protected_source_text": f"body {item_id}"}
+    page_payloads = {0: [text("a0"), text("a1")], 3: [text("d0"), text("d1")], 4: [text("e0"), text("e1")]}
+    # 第 2、3 页（下标 1、2）没到：第 1 页的页末、第 4 页的页首扣住；第 4、5 页连着，中间不扣；页范围外的不管
+    assert streaming_flow.held_back_item_ids(page_payloads, page_indices=range(5)) == frozenset({"a1", "d0"})
 
 
 def test_ocr_failure_stops_the_waiting_translation(tmp_path: Path) -> None:
