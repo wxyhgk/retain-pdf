@@ -204,6 +204,11 @@ fn stage_state(
     ) {
         return JobStageStateView::InProgress;
     }
+    if stage_name == "ocr" {
+        if let Some(state) = ocr_child_state(job) {
+            return state;
+        }
+    }
     if matches!(job.status, JobStatusKind::Failed) {
         let failed_stage = failed_public_stage(job).unwrap_or(stage_name);
         if failed_stage == stage_name {
@@ -237,6 +242,28 @@ fn stage_state(
     } else {
         JobStageStateView::Pending
     }
+}
+
+/// OCR 交给子任务（`<任务>-ocr`）跑的任务：OCR 这一站照子任务的状态（父任务 artifacts 里的 `ocr_status` 是它的镜像），
+/// 不按阶段先后推。OCR 和翻译并行时（GLM-OCR）翻译早早开始，按先后推出来的「OCR 已完成」是假的：子任务还在跑，
+/// 或者已经失败、被取消。前端拿它挑可复用的 OCR，挑中了再被复用校验拒掉（OCR_JOB_NOT_SUCCEEDED，2026-11-02）。
+/// 没有镜像（没有子任务，或者早年丢了镜像的任务）时返回 None，照旧按先后推。
+fn ocr_child_state(job: &JobSnapshot) -> Option<JobStageStateView> {
+    let artifacts = job.artifacts.as_ref()?;
+    artifacts.ocr_job_id.as_ref()?;
+    let child = artifacts.ocr_status.as_ref()?;
+    if matches!(job.status, JobStatusKind::Succeeded) {
+        return Some(JobStageStateView::Completed);
+    }
+    let parent_ended = is_terminal_status(&job.status);
+    Some(match child {
+        JobStatusKind::Succeeded => JobStageStateView::Completed,
+        JobStatusKind::Failed | JobStatusKind::Canceled => JobStageStateView::Failed,
+        // 父任务已经结束，子任务的镜像还停在没跑完：OCR 没有做完（重启、取消时子任务跟着停了）。
+        _ if parent_ended => JobStageStateView::Failed,
+        JobStatusKind::Queued => JobStageStateView::Queued,
+        _ => JobStageStateView::InProgress,
+    })
 }
 
 fn stage_progress(
@@ -345,7 +372,7 @@ fn is_terminal_status(status: &JobStatusKind) -> bool {
 mod tests {
     use super::build_job_stage_view;
     use crate::views::JobStageStateView;
-    use retainpdf_core::models::domain::{CreateJobInput, JobFailureInfo, JobSnapshot, JobStatusKind};
+    use retainpdf_core::models::domain::{CreateJobInput, JobArtifacts, JobFailureInfo, JobSnapshot, JobStatusKind};
 
     #[test]
     fn canonical_translation_failure_keeps_completed_ocr_and_pending_render() {
@@ -367,5 +394,43 @@ mod tests {
         assert_eq!(stages.ocr.state, JobStageStateView::Completed);
         assert_eq!(stages.translation.state, JobStageStateView::Failed);
         assert_eq!(stages.render.state, JobStageStateView::Pending);
+    }
+
+    fn book_with_ocr_child(status: JobStatusKind, child: JobStatusKind) -> JobSnapshot {
+        let mut job = JobSnapshot::new("book-1".to_string(), CreateJobInput::default(), vec!["translate".to_string()]);
+        let failed = matches!(status, JobStatusKind::Failed);
+        job.status = status;
+        job.artifacts = Some(JobArtifacts {
+            ocr_job_id: Some("book-1-ocr".to_string()),
+            ocr_status: Some(child),
+            ..JobArtifacts::default()
+        });
+        if failed {
+            job.stage = Some("failed".to_string());
+            job.failure = Some(JobFailureInfo {
+                stage: "translation".to_string(),
+                failed_stage: Some("translation".to_string()),
+                ..JobFailureInfo::default()
+            });
+        } else {
+            job.stage = Some("translating".to_string());
+        }
+        job
+    }
+
+    /// OCR 和翻译并行：翻译阶段失败、OCR 子任务也没做完，OCR 这一站不能显示「已完成」（任务 20261101163329-a6d49e）。
+    #[test]
+    fn ocr_with_a_child_job_follows_the_child_not_the_stage_order() {
+        let state = |status, child| build_job_stage_view(&book_with_ocr_child(status, child), None).stages.ocr.state;
+        assert_eq!(state(JobStatusKind::Failed, JobStatusKind::Failed), JobStageStateView::Failed);
+        assert_eq!(state(JobStatusKind::Failed, JobStatusKind::Canceled), JobStageStateView::Failed);
+        // 镜像还停在「运行中」，父任务已经失败：OCR 没有做完。
+        assert_eq!(state(JobStatusKind::Failed, JobStatusKind::Running), JobStageStateView::Failed);
+        // OCR 子任务做完以后翻译才失败：OCR 照旧算完成，可以复用。
+        assert_eq!(state(JobStatusKind::Failed, JobStatusKind::Succeeded), JobStageStateView::Completed);
+        // 翻译跟着 OCR 跑，OCR 还没做完。
+        assert_eq!(state(JobStatusKind::Running, JobStatusKind::Running), JobStageStateView::InProgress);
+        assert_eq!(state(JobStatusKind::Running, JobStatusKind::Succeeded), JobStageStateView::Completed);
+        assert_eq!(state(JobStatusKind::Succeeded, JobStatusKind::Running), JobStageStateView::Completed);
     }
 }

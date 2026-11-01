@@ -78,6 +78,15 @@ The detail projection always includes `ocr_reused` and
 `source_artifact_job_id`. When OCR was reused, `stages.ocr.state` is `reused`;
 clients must not infer reuse from event absence or from the current stage.
 
+When the job runs its OCR in a child job (`<job_id>-ocr`, for example GLM-OCR
+streaming pages to translation while it still recognizes), `stages.ocr.state`
+follows that child: `in_progress` while it runs (even if translation already
+started), `completed` once it succeeded, `failed` when it failed, was canceled,
+or stopped with the parent. Only `completed` (or `reused`) means the job's OCR
+can seed another translation; a parent that failed in translation after its OCR
+child succeeded still shows `completed`. Before 2026-11-02 this was inferred
+from stage order and showed `completed` as soon as translation started.
+
 Abbreviated response (the complete DTO also contains the request, artifact,
 contract, diagnostics, runtime, failure, and log projections described below):
 
