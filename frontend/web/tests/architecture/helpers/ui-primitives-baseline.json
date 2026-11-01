@@ -661,9 +661,6 @@
       "fontSize": 5,
       "borderRadius": 6
     },
-    "src/styles/pages/home/book-detail-processing/coverage.css": {
-      "borderRadius": 2
-    },
     "src/styles/pages/home/book-detail-processing/editorial-flow.css": {
       "borderRadius": 1
     },

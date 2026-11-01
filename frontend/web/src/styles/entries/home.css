@@ -171,7 +171,6 @@
 @import "../../features/editorial-room/ui/EditorialLivePanel.css" layer(pages);
 @import "../pages/home/book-detail-processing/ocr-range.css" layer(pages);
 @import "../pages/home/book-detail-processing/failure-card.css" layer(pages);
-@import "../pages/home/book-detail-processing/coverage.css" layer(pages);
 @import "../pages/home/book-detail-processing/job-history.css" layer(pages);
 @import "../pages/home/book-detail-artifacts.css" layer(pages);
 @import "../pages/home/mojia-ornaments.css" layer(pages);

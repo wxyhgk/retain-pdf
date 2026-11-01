@@ -1,39 +1,8 @@
-// 「进度」分区：翻译覆盖条（只在没翻全时出现）+ 任务记录（默认收起）。纯展示，数据由 BookDetailDialog 取好传进来。
+// 任务记录（「历史」页签）。纯展示，数据由 BookDetailDialog 取好传进来。
+// 以前这个文件还有「进度」页的翻译覆盖条（TranslationCoveragePanel），2026-11-01 用户说去掉。
 
 import type { TranslationCoverageView } from "@/platform/api/index.js";
-import { coverageCells, coverageHeadline, jobRows } from "../../../domain/translation-coverage.js";
-
-export function TranslationCoveragePanel({ coverage }: { coverage: TranslationCoverageView | null }) {
-  if (!coverage || !coverage.page_count) return null;
-  const cells = coverageCells(coverage);
-  const translatedPercent = Math.round((coverage.translated_pages / coverage.page_count) * 100);
-  return (
-    <section className="book-detail-coverage" data-processing-region="coverage" aria-label="翻译覆盖">
-      <div className="book-detail-processing-section-head">
-        <span className="book-detail-processing-section-title">翻译覆盖</span>
-        <span className="book-detail-processing-section-summary" data-coverage-headline="true">{coverageHeadline(coverage)}</span>
-        {coverage.translated_pages > 0 ? (
-          <span className="book-detail-coverage-percent">{translatedPercent}%</span>
-        ) : null}
-      </div>
-      <div
-        className="book-detail-coverage-strip"
-        role="img"
-        aria-label={`${coverageHeadline(coverage)}。每格一页，填色的页已翻译。`}
-        data-dense={cells.length > 120 ? "true" : undefined}
-      >
-        {cells.map((cell) => (
-          <span
-            key={cell.page}
-            className="book-detail-coverage-cell"
-            data-shade={cell.shade}
-            title={cell.title}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
+import { jobRows } from "../../../domain/translation-coverage.js";
 
 export function hasJobHistory(coverage: TranslationCoverageView | null): boolean {
   return jobRows(coverage).length > 0;

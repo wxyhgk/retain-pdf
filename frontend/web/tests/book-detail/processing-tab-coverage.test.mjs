@@ -1,4 +1,5 @@
-/** 「进度」分区的翻译覆盖条、「历史」页签的任务记录：页签真的把 coverage 交给了面板。 */
+/** 「进度」分区、「历史」页签的任务记录：页签真的把 coverage 交给了面板。
+ *  「进度」页以前有一条翻译覆盖条，2026-11-01 用户说去掉，这里钉住它不再出现。 */
 
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -45,14 +46,11 @@ const COVERAGE = {
   ],
 };
 
-test("有覆盖数据：显示覆盖条（每页一格）和任务记录", async () => {
+test("有覆盖数据、没翻全：「进度」页不画翻译覆盖条；任务记录在「历史」页签", async () => {
   const dom = makeDom();
   const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: idleTranslation, coverage: COVERAGE });
-  const headline = host.querySelector("[data-coverage-headline]");
-  assert.equal(headline?.textContent, "已翻译 4 / 6 页 · 由 2 次翻译拼成");
-  const cells = [...host.querySelectorAll(".book-detail-coverage-cell")];
-  assert.deepEqual(cells.map((cell) => cell.getAttribute("data-shade")), ["2", "2", "1", "1", "0", "0"]);
-  assert.equal(cells[4].getAttribute("title"), "第 5 页 · 未翻译");
+  assert.equal(host.querySelector("[data-processing-region='coverage']"), null, "翻译覆盖条去掉了");
+  assert.doesNotMatch(host.textContent, /翻译覆盖/);
   assert.equal(host.querySelector(".book-detail-job-history"), null, "任务记录不在「进度」页");
   root.unmount(); host.remove();
 
@@ -70,7 +68,6 @@ test("有覆盖数据：显示覆盖条（每页一格）和任务记录", async
 test("没有覆盖数据（接口失败 / mock）：两块都不出现，其余照常", async () => {
   const dom = makeDom();
   const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: idleTranslation, coverage: null });
-  assert.equal(host.querySelector(".book-detail-coverage"), null);
   assert.equal(host.querySelector(".book-detail-job-history"), null);
   assert.ok(host.querySelector(".book-detail-processing-card"), "处理卡不该受影响");
   root.unmount(); host.remove();
@@ -237,17 +234,6 @@ test("翻译完成：重做的动作挂在流水线各站上，点哪站列哪�
 
   assert.equal(host.querySelector(".book-detail-job-history"), null, "任务记录在「历史」页签，不占「进度」页");
   root.unmount(); host.remove();
-});
-
-test("全部翻完时不画覆盖条（100% 一排满格什么也没说）", async () => {
-  const dom = makeDom();
-  const full = { ...COVERAGE, translated_pages: 6, segments: [{ first: 1, last: 6, job_id: "whole" }] };
-  const { root, host } = await mountTab(dom, { loading: false, ocr: idleOcr, translation: DONE_TRANSLATION, coverage: full });
-  assert.equal(host.querySelector(".book-detail-coverage"), null);
-  root.unmount(); host.remove();
-  const history = await mountHistory(dom, full);
-  assert.ok(history.host.querySelector(".book-detail-job-history"), "任务记录照常（在「历史」页签）");
-  history.root.unmount(); history.host.remove();
 });
 
 test("用量并进「进度」页：HUD 一块 token（合计、输入 / 输出比例，精确值在悬停），细节区多一页「用量」；没记录就都不出", async () => {
