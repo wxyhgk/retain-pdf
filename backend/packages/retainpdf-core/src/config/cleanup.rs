@@ -2,6 +2,10 @@ use std::time::Duration;
 
 use super::env_vars::{env_u64, env_u64_allow_zero};
 
+/// 派生缓存默认保留天数。2026-10-24 定的默认关（只删能重建的、要清就自己设），2026-11-02 用户改成默认 14 天：
+/// 50 个任务的 data/jobs 里渲染准备、预热、线性化 PDF 就有约 270MB，全都能重建（docs/ops/planning/backend-review/）。
+pub const DEFAULT_DERIVED_CACHE_RETENTION_DAYS: u64 = 14;
+
 #[derive(Clone, Debug)]
 pub struct CleanupConfig {
     pub interval: Duration,
@@ -9,8 +13,8 @@ pub struct CleanupConfig {
     pub events_retention_days: u64,
     /// 没被任务引用的上传保留几小时（`RUST_API_ORPHAN_UPLOAD_RETENTION_HOURS`，默认 48，`0` 不清）。
     pub orphan_upload_retention_hours: u64,
-    /// 终态任务、书的派生缓存（Word、对照 PDF、线性化 PDF、页预览）生成后保留几天
-    /// （`RUST_API_DERIVED_CACHE_RETENTION_DAYS`，默认 `0` 不清）。删了下次请求会重新生成。
+    /// 终态任务、书的派生缓存（Word、对照 PDF、线性化 PDF、页预览、渲染准备和预热缓存）生成后保留几天
+    /// （`RUST_API_DERIVED_CACHE_RETENTION_DAYS`，默认 14，`0` 不清；2026-11-02 以前默认 `0`）。删了下次请求会重新生成。
     pub derived_cache_retention_days: u64,
 }
 
@@ -25,7 +29,7 @@ impl CleanupConfig {
             ),
             derived_cache_retention_days: env_u64_allow_zero(
                 "RUST_API_DERIVED_CACHE_RETENTION_DAYS",
-                0,
+                DEFAULT_DERIVED_CACHE_RETENTION_DAYS,
             ),
         }
     }
