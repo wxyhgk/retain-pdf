@@ -118,23 +118,9 @@ def scan_all_rs_files() -> list:
     return out
 
 
-ALLOWED_APPSTATE_FILES = {
-    Path("src/app/mod.rs"),
-    Path("src/app/jobs.rs"),
-    Path("src/app/router.rs"),
-    Path("src/app/state.rs"),
-    Path("src/auth.rs"),
-    Path("src/lib.rs"),
-    Path("src/routes/glossaries.rs"),
-    Path("src/routes/health.rs"),
-    Path("src/routes/common.rs"),
-    Path("src/routes/providers.rs"),
-    Path("src/routes/sync.rs"),
-    Path("src/routes/backups.rs"),
-    Path("src/routes/uploads.rs"),
-    # 建任务的测试要搭整个 AppState，任务拆成包以后挪到了 api_tests/jobs_creation（不在 APPSTATE_GUARDED_DIRS 里）。
-    Path("src/services/jobs/support.rs"),
-}
+# 2026-11-02 清空：以前登记的 14 个文件 13 个在 APPSTATE_GUARDED_DIRS 外面（这项检查根本不扫），剩下那个
+# （src/services/jobs/support.rs）早就不碰 AppState 了。名单只许缩不许扩，条目过期会报错（report_stale_allowlist）。
+ALLOWED_APPSTATE_FILES: set[Path] = set()
 
 # ADR-002 Phase 2：壳只能经接缝碰任务运行时。job_runner 是 jobsd 的地盘，
 # 壳里唯二可以引用它的地方是 InProcess 落点的装配处与接缝本身——多一个
@@ -151,18 +137,14 @@ APPSTATE_GUARDED_DIRS = [
     Path("src/ocr_provider"),
 ]
 
-ROUTE_RUNNER_IMPORT_ALLOWLIST = {
-    Path("src/routes/health.rs"),
-    Path("src/routes/providers.rs"),
-    Path("src/routes/common.rs"),
-}
+# 2026-11-02 清空：登记的三个文件都早就不引用 crate::job_runner:: 了。
+ROUTE_RUNNER_IMPORT_ALLOWLIST: set[Path] = set()
 
 ROUTE_RAW_EXTRACTOR_ALLOWLIST = {
     Path("src/routes/common/extractors.rs"),
 }
 
 ROUTE_STATE_RESOURCE_ALLOWLIST = {
-    Path("src/routes/common/accounts.rs"),
     Path("src/routes/common/agent_calculations.rs"),
     Path("src/routes/common/agent_capabilities.rs"),
     Path("src/routes/common/agent_runtime_sessions.rs"),
@@ -179,8 +161,6 @@ ROUTE_STATE_RESOURCE_ALLOWLIST = {
     Path("src/routes/common/jobs.rs"),
     Path("src/routes/common/library.rs"),
     Path("src/routes/common/providers.rs"),
-    Path("src/routes/common/sync.rs"),
-    Path("src/routes/common/backups.rs"),
     Path("src/routes/common/uploads.rs"),
 }
 
@@ -391,10 +371,33 @@ def scan_rs_files(root: Path) -> list[Path]:
     )
 
 
+def report_stale_allowlist(
+    errors: list[str],
+    name: str,
+    entries,
+    scanned: dict[Path, Path],
+    still_needs,
+    what: str,
+) -> None:
+    """名单里的条目过期了就报：这项检查扫不到它（文件删了、挪了，或者根本不在扫的范围里），或者它已经不再做被豁免的事。
+
+    以前只有 KNOWN_REQUEST_PAYLOAD_WRITERS 会报过期，别的名单只增不减：2026-11-02 查出 ALLOWED_APPSTATE_FILES
+    14 条全部不起作用、ROUTE_RUNNER_IMPORT_ALLOWLIST 3 条全部过期。`scanned`：这项检查扫过的 {逻辑路径: 实际文件}。
+    """
+    for rel_path in sorted(entries):
+        path = scanned.get(rel_path)
+        if path is None:
+            errors.append(f"{rel_path}: listed in {name} but this check does not scan it (moved, deleted or out of scope); remove it")
+        elif not still_needs(path):
+            errors.append(f"{rel_path}: no longer {what}; remove it from {name}")
+
+
 def check_appstate_boundaries(errors: list[str]) -> None:
+    scanned: dict[Path, Path] = {}
     for guarded_dir in APPSTATE_GUARDED_DIRS:
         for path in scan_logical(guarded_dir):
             rel_path = rel(path)
+            scanned[rel_path] = path
             if rel_path in ALLOWED_APPSTATE_FILES:
                 continue
             text = rust_boundary_source(path)
@@ -402,16 +405,26 @@ def check_appstate_boundaries(errors: list[str]) -> None:
                 errors.append(
                     f"{rel_path}: forbidden AppState usage outside route/app assembly or test whitelist"
                 )
+    report_stale_allowlist(
+        errors, "ALLOWED_APPSTATE_FILES", ALLOWED_APPSTATE_FILES, scanned,
+        lambda path: "AppState" in rust_boundary_source(path), "uses AppState",
+    )
 
 
 def check_route_runner_dependency(errors: list[str]) -> None:
+    scanned: dict[Path, Path] = {}
     for path in scan_rs_files(SRC_ROOT / "routes"):
         rel_path = rel(path)
+        scanned[rel_path] = path
         if rel_path in ROUTE_RUNNER_IMPORT_ALLOWLIST:
             continue
         text = path.read_text(encoding="utf-8")
         if "crate::job_runner::" in text:
             errors.append(f"{rel_path}: routes must not depend directly on crate::job_runner")
+    report_stale_allowlist(
+        errors, "ROUTE_RUNNER_IMPORT_ALLOWLIST", ROUTE_RUNNER_IMPORT_ALLOWLIST, scanned,
+        lambda path: "crate::job_runner::" in path.read_text(encoding="utf-8"), "imports crate::job_runner::",
+    )
 
 
 def check_route_input_extractors(errors: list[str]) -> None:
@@ -591,20 +604,30 @@ def rust_function_bodies(code: str):
         yield match.group(1), code[match.end():end - 1]
 
 
+def _touches_state_resources(text: str) -> bool:
+    return bool(
+        "state.db" in text
+        or "state.config" in text
+        or re.search(r"\bdeps\.[A-Za-z_][A-Za-z0-9_]*\.db\b", text)
+    )
+
+
 def check_route_state_resource_access(errors: list[str]) -> None:
+    scanned: dict[Path, Path] = {}
     for path in scan_rs_files(SRC_ROOT / "routes"):
         rel_path = rel(path)
+        scanned[rel_path] = path
         if rel_path in ROUTE_STATE_RESOURCE_ALLOWLIST:
             continue
         text = route_source_without_tests(path)
-        if (
-            "state.db" in text
-            or "state.config" in text
-            or re.search(r"\bdeps\.[A-Za-z_][A-Za-z0-9_]*\.db\b", text)
-        ):
+        if _touches_state_resources(text):
             errors.append(
                 f"{rel_path}: routes must not access database/config resources directly; use route deps builders and application facades"
             )
+    report_stale_allowlist(
+        errors, "ROUTE_STATE_RESOURCE_ALLOWLIST", ROUTE_STATE_RESOURCE_ALLOWLIST, scanned,
+        lambda path: _touches_state_resources(route_source_without_tests(path)), "touches state.db / state.config",
+    )
 
 
 def check_route_service_imports(errors: list[str]) -> None:
@@ -1360,6 +1383,7 @@ def check_job_runner_boundary(errors: list[str]) -> None:
                 f"services/jobs/runtime_gateway.rs (ADR-002); use crate::process:: for "
                 f"generic process utilities"
             )
+
 
 def check_worker_command_boundary(errors: list[str]) -> None:
     text = route_source_without_tests(WORKER_COMMAND_FACADE)
