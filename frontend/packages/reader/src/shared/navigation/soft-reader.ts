@@ -31,6 +31,18 @@ export function embeddedIn(search = typeof window === "undefined" ? "" : window.
   }
 }
 
+/**
+ * 嵌在宿主的哪一块（地址带 `?embed_pane=`）：Studio 把书开在笔记旁边的标签里时是 `beside`，这时阅读页不该自己走开
+ * （没有「关闭」回主页）。没有是空串。
+ */
+export function embeddedPane(search = typeof window === "undefined" ? "" : window.location.search): string {
+  try {
+    return `${new URLSearchParams(search).get("embed_pane") || ""}`.trim();
+  } catch {
+    return "";
+  }
+}
+
 export function isHomeDocumentPath(pathname = ""): boolean {
   const p = `${pathname || ""}`;
   if (/reader\.html/i.test(p)) return false;

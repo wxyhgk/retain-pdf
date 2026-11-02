@@ -84,8 +84,10 @@ const isQuote = (message: Record<string, unknown>): boolean =>
 export function createRetainpdfView(
 	view: HTMLElement,
 	host: RetainpdfViewHost,
-	{ features: studioFeatures = STUDIO_FEATURES, id = 'retainpdf-frame' }: { features?: string[]; id?: string | null } = {},
+	{ features: studioFeatures = STUDIO_FEATURES, id = 'retainpdf-frame', pane = '' }: { features?: string[]; id?: string | null; pane?: string } = {},
 ) {
+	/** Its pages told where in the Studio they are (`embed_pane`: a book beside a note has no 关闭 of its own). */
+	const atPane: Record<string, string> = pane ? { embed_pane: pane } : {};
 	const frame = document.createElement('iframe');
 	if (id) frame.id = id;
 	frame.title = 'RetainPDF';
@@ -201,7 +203,7 @@ export function createRetainpdfView(
 			frame.hidden = false;
 			shown = url;
 			features = null;
-			frame.src = first ? embedded(new URL(first.page, url).href, first.search) : embedded(url);
+			frame.src = first ? embedded(new URL(first.page, url).href, { ...first.search, ...atPane }) : embedded(url, atPane);
 		})().finally(() => {
 			showing = null;
 		});
@@ -227,7 +229,7 @@ export function createRetainpdfView(
 			post({ type: 'navigate', ...target });
 			return;
 		}
-		frame.src = embedded(new URL('reader.html', shown).href, search);
+		frame.src = embedded(new URL('reader.html', shown).href, { ...search, ...atPane });
 	}
 
 	return { show, navigate, notes };

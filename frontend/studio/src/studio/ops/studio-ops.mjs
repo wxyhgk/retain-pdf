@@ -512,7 +512,7 @@ export function createStudioOps({ root, site } = {}) {
 			const answer = await fetch(new URL('/api/studio/retainpdf/reading', url)).catch(() => null);
 			if (!answer?.ok) throw new StudioOpsError(t('连不上 Studio（{url}）', { url }));
 			const { reading } = await answer.json();
-			if (!reading) return { reading: null, said: t('作者现在没有在「翻译」里读书') };
+			if (!reading) return { reading: null, said: t('作者现在没有在读书') };
 			const { at: _, ...told } = reading;
 			return { reading: told };
 		},

@@ -1175,7 +1175,7 @@ function bookLines({ job_id: job, document_id: document, title, page, pages, not
 	const name = title ? `《${title}》` : '一本书'; // i18n-ignore: for the AI
 	const at = page ? `，看到第 ${page} 页${pages ? `（共 ${pages} 页）` : ''}` : ''; // i18n-ignore: for the AI
 	const ids = [document ? `document_id: ${document}` : '', `job_id: ${job}`].filter(Boolean).join('，'); // i18n-ignore: for the AI
-	const lines = [`作者正在「翻译」里读 RetainPDF 的${name}（${ids}）${at}。`]; // i18n-ignore: for the AI
+	const lines = [`作者正在读 RetainPDF 的${name}（${ids}）${at}。`]; // i18n-ignore: for the AI
 	if (!standing) return lines;
 	if (notes) lines.push(`这本书的笔记是《${notes.title}》（文件夹名 ${notes.slug}），作者让你记到笔记里时写进这一页。`); // i18n-ignore: for the AI
 	lines.push(

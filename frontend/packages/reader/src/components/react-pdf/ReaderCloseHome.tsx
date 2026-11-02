@@ -8,7 +8,7 @@
 
 import { useSyncExternalStore, type ReactNode } from "react";
 import { NotebookPen, X } from "lucide-react";
-import { SOFT_READER_CLOSE_MESSAGE, embeddedIn } from "../../shared/navigation/soft-reader.js";
+import { SOFT_READER_CLOSE_MESSAGE, embeddedIn, embeddedPane } from "../../shared/navigation/soft-reader.js";
 import { readerNotesPanel } from "../../external.js";
 import type { ReaderNotesPanelState } from "../../adapters.js";
 
@@ -100,6 +100,8 @@ function ReaderTrayButton({
 }
 
 export function ReaderCloseHome({ onBeforeClose }: { onBeforeClose?: () => void } = {}) {
+  // 开在 Studio 笔记旁边的标签里：标签自己能关，阅读页不回主页。
+  if (embeddedPane() === "beside") return null;
   const close = () => {
     onBeforeClose?.();
     navigateReaderToHome();

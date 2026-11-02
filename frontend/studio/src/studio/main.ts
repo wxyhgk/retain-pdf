@@ -1007,6 +1007,8 @@ function setBooksOpen(open: boolean, first?: { book: RetainpdfBook; target: Reta
 	}
 	const beside = open && shellState.get().view === 'editor';
 	booksView.hidden = !beside;
+	// The right column folded away meanwhile (as for 书库's notes): the books and the note want the room.
+	sidePanel.fold(beside);
 	if (open) showNoteBooks();
 	if (first) bookTabs.open(first.book, first.target);
 	bookTabs.setVisible(beside);
@@ -1086,8 +1088,8 @@ function showView(view: View, folder?: string): void {
 	} else {
 		url.searchParams.delete('pages');
 	}
-	// The right column folded away only while 翻译 shows the book's notes beside it.
-	sidePanel.fold(view === 'translate' && notesSplit.open);
+	// The right column folded away while 书库 shows the book's notes beside it, or a note its books: the two want the room.
+	sidePanel.fold((view === 'translate' && notesSplit.open) || (view === 'editor' && booksSplit.open));
 	if (view === 'translate') {
 		url.searchParams.set('translate', '');
 		void retainpdf.show();

@@ -487,7 +487,7 @@ test('the passages quoted from the page read are picked out in the notes; 书 on
 	await expect(page.locator('#translate-view')).toBeHidden();
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Quantum Chemistry');
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Quantum Chemistry');
-	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=11');
+	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=11&embed_pane=beside');
 });
 
 const bookFrame = (page: Page, job: string) => page.frameLocator(`.book-frame[data-job="${job}"] iframe`);
@@ -505,9 +505,14 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	// Out beside the note: a tab for each book it quotes, the first shown, opened straight at its reader (no 笔记 of its own).
 	await page.locator('#books-toggle').click();
 	await expect(page.locator('#books-toggle')).toHaveAttribute('aria-pressed', 'true');
+	// The books and the note want the room: the right column folded away meanwhile; side by side, the books left.
+	await expect(page.locator('.studio-shell')).toHaveClass(/panel-collapsed/u);
+	const books = await page.locator('#books-view').boundingBox();
+	const note = await page.locator('.editor-panel').boundingBox();
+	expect(books!.x + books!.width).toBeLessThanOrEqual(note!.x + 1);
 	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry', 'Statistical Mechanics']);
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Quantum Chemistry');
-	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=0');
+	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=0&embed_pane=beside');
 	await expect(bookFrame(page, 'job-1').locator('#studio')).toHaveText('quote,ask-ai');
 	await expect(page.locator('.book-frame')).toHaveCount(1);
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
@@ -515,7 +520,7 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	// Another tab, and back: the first one's page was kept, not loaded again.
 	await page.frames().find((frame) => frame.url().includes('job_id=job-1'))!.evaluate(() => ((window as unknown as { kept: boolean }).kept = true));
 	await page.locator('.book-tab-name', { hasText: 'Statistical Mechanics' }).click();
-	await expect(bookFrame(page, 'job-2').locator('#opened')).toHaveText('job_id=job-2&page_idx=0');
+	await expect(bookFrame(page, 'job-2').locator('#opened')).toHaveText('job_id=job-2&page_idx=0&embed_pane=beside');
 	await page.locator('.book-tab-name', { hasText: 'Quantum Chemistry' }).click();
 	await expect(page.locator('.book-frame[data-job="job-1"]')).toHaveAttribute('data-shown', '');
 	expect(await page.frames().find((frame) => frame.url().includes('job_id=job-1'))!.evaluate(() => (window as unknown as { kept?: boolean }).kept)).toBe(true);
@@ -542,7 +547,7 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await page.locator('#book-tabs-add').click();
 	await page.getByRole('menuitem', { name: /Organic Chemistry/u }).click();
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Organic Chemistry');
-	await expect(bookFrame(page, 'job-3').locator('#opened')).toHaveText('job_id=job-3&page_idx=0');
+	await expect(bookFrame(page, 'job-3').locator('#opened')).toHaveText('job_id=job-3&page_idx=0&embed_pane=beside');
 
 	// A tab closed stays closed for this note, the pane out again when the Studio is opened again.
 	await page.locator('.book-tab', { hasText: 'Statistical Mechanics' }).locator('.book-tab-close').click();
@@ -551,10 +556,11 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await expect(page.locator('#books-view')).toBeVisible();
 	await expect(page.locator('.book-tab-name')).toHaveText(['Quantum Chemistry', 'Organic Chemistry']);
 
-	// Put away: the note alone.
+	// Put away: the note alone, the right column back.
 	await page.locator('#books-toggle').click();
 	await expect(page.locator('#books-view')).toBeHidden();
 	await expect(page.locator('#books-toggle')).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.locator('.studio-shell')).not.toHaveClass(/panel-collapsed/u);
 });
 
 test('a passage quoted before (a ```retainpdf block) opens as one quoted now: its translation, the mark in its corner; saved so', async ({ page }) => {

@@ -88,7 +88,7 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 							if (shown === job) host.reading(reading);
 						},
 					},
-					{ features: BESIDE_NOTE_FEATURES, id: null },
+					{ features: BESIDE_NOTE_FEATURES, id: null, pane: 'beside' },
 				),
 			};
 			frame = made;

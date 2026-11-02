@@ -57,7 +57,7 @@ export function RetainpdfSettings() {
 			className="grid gap-4"
 			onSubmit={(event) => {
 				event.preventDefault();
-				save({ apiUrl, ...(key.trim() ? { apiKey: key } : {}) }, t('已保存，下次打开「翻译」时用这个地址'));
+				save({ apiUrl, ...(key.trim() ? { apiKey: key } : {}) }, t('已保存，下次打开「书库」时用这个地址'));
 			}}
 		>
 			<Field label={t('地址')}>
@@ -79,7 +79,7 @@ export function RetainpdfSettings() {
 			</Field>
 			<small id="retainpdf-found" className="-mt-2 text-xs leading-normal text-muted-foreground">
 				{shown.found.api || shown.found.key
-					? t('不用填：接口地址和密钥是从 RetainPDF 自己的页面找到的（{api}），和「翻译」里的阅读页用的一样。填了就用填的。', { api: shown.found.api ?? shown.url })
+					? t('不用填：接口地址和密钥是从 RetainPDF 自己的页面找到的（{api}），和「书库」里的阅读页用的一样。填了就用填的。', { api: shown.found.api ?? shown.url })
 					: t('不用填：RetainPDF 开着时，接口地址和密钥从它自己的页面找到。现在没找到（它开着吗？上面的地址对吗？）；也可以自己填。')}
 			</small>
 			<Status id="retainpdf-status" {...status} />
