@@ -90,7 +90,8 @@ Docker 中 `ops/deployment/docker/delivery/docker/auth.local.json` 的 `api_keys
   - `RUST_API_EVENTS_RETENTION_DAYS`：已结束任务的事件保留几天（默认 `30`）。
   - `RUST_API_ORPHAN_UPLOAD_RETENTION_HOURS`：没被任务、书用上的上传保留几小时（默认 `48`）。
   - `RUST_API_DERIVED_CACHE_RETENTION_DAYS`：已结束任务和书的派生缓存（Word、对照 PDF、线性化 PDF、页预览，2026-10-28 起
-    还有渲染的准备缓存 `artifacts/render_prepare/` 和预热 `artifacts/render_prewarm/`）生成后保留几天（默认 `0` 不清）。
+    还有渲染的准备缓存 `artifacts/render_prepare/` 和预热 `artifacts/render_prewarm/`）生成后保留几天（默认 `14`，
+    `0` 不清；2026-11-02 以前默认 `0`）。
     删了下次下载、翻页、原地重渲染时重新生成，整本书的 Word 要几分钟；译文 PDF、原文、翻译结果、封面和缩略图不删。
   - 不用设置、每轮都做的（2026-10-28 起）：成功任务目录里的纯重复文件（OCR 原始压缩包、MinerU 解包目录里布局以外的东西、
     译文旁边的打包副本、重渲染成功后的上一份译文）删掉，`downloads/` 里一小时以前的打包 zip 删掉。排队、在跑的任务引用着的

@@ -39,7 +39,7 @@ jobs/{job_id}/
   2026-10-28 以前打包下载还会在这里复制一份 `<任务>.zip`（没有地方读），现在不写了，留下的由清理删掉。
 - `artifacts/`：对外发布的稳定产物、诊断文件和索引。下载时按需生成的派生缓存（`<任务>-side-by-side.pdf`、
   `<任务>-layout-*.docx`、`*.linearized.pdf`、`preview-*.jpg` 和它们的记录文件 `.<名字>.inputs.json`）也放在这里，
-  书的页预览在 `documents/<文档>/pages/`；设了 `RUST_API_DERIVED_CACHE_RETENTION_DAYS` 时，任务结束后生成超过这么多天的
+  书的页预览在 `documents/<文档>/pages/`；任务结束后生成超过 `RUST_API_DERIVED_CACHE_RETENTION_DAYS` 天（默认 14，`0` 不清）的
   按名字删掉（只删这几种）；渲染的准备缓存 `artifacts/render_prepare/` 和预热 `artifacts/render_prewarm/` 也按这个天数删
   （预热清单 `render_source_prewarm_manifest.json` 留着，阅读器排版接口读它），管线写进 `artifacts/` 的别的东西不碰。
   排队、在跑的任务引用着的任务目录（复用的 OCR、译文所在的）这一轮不清。
