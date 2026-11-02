@@ -9,6 +9,22 @@
 
 ---
 
+## OCR 这一站照 OCR 子任务的状态（fix/ocr-stage-from-child）
+
+2026-11-02。字段不变，取值的含义变准了：任务的 OCR 交给子任务（`<任务>-ocr`）跑时，`stages.ocr.state` 照子任务，不再按阶段先后推。
+
+| 情况 | 以前 | 现在 |
+|---|---|---|
+| OCR 和翻译并行（GLM-OCR），翻译已经开始、OCR 还在跑 | `completed` | `in_progress` |
+| 翻译失败，OCR 子任务也失败了或被取消了（比如重启时一起停了） | `completed` | `failed` |
+| 翻译失败，OCR 子任务之前已经成功 | `completed` | `completed`（不变） |
+
+前端 `features/library/domain/translation-ocr-reuse.ts` 的 `translationOcrStatus` 先看 `stages.ocr.state`，所以不用改就不会再挑没做完的 OCR
+去复用（以前挑中了，后端回 `OCR_JOB_NOT_SUCCEEDED`，界面说「现有 OCR 产物暂时无法复用」）。要看一眼的是「进度」页：并行时 OCR 站以前
+靠 `ocr_stream` 显示全书页数，现在 `stages.ocr.state` 本身也是 `in_progress` 了，确认显示没有打架。
+
+---
+
 ## 阅读页唤出笔记（feat/studio-bridge-notes）
 
 2026-11-01。接着下一节，契约 `contracts/studio-bridge.v1.schema.json` 只加不改。做法见
