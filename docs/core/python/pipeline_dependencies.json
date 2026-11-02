@@ -589,6 +589,7 @@
         "devtools/tests/rendering/test_merge_translated_artifacts.py",
         "devtools/tests/rendering/test_merge_translated_pdf.py",
         "devtools/tests/rendering/test_overlay_source_font_cache.py",
+        "devtools/tests/rendering/test_prewarm_first_line_indent.py",
         "devtools/tests/rendering/test_render_failure_integration.py",
         "devtools/tests/rendering/test_render_mode_dispatch.py",
         "devtools/tests/rendering/test_render_prepare_stage.py",
