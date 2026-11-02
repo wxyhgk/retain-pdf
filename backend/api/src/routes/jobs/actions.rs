@@ -43,19 +43,6 @@ pub async fn resume_job(
     .await
 }
 
-pub async fn rerun_job(
-    State(state): State<AppState>,
-    ApiPath(job_id): ApiPath<String>,
-    headers: HeaderMap,
-    body: Bytes,
-) -> Result<Json<ApiResponse<JobSubmissionView>>, AppError> {
-    let overrides = parse_rerun_overrides(&body)?;
-    run_state_blocking(&state, "job rerun", move |state| {
-        rerun_job_response(build_jobs_route_deps(state), &headers, &job_id, &overrides)
-    })
-    .await
-}
-
 #[derive(Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct RerunRequest {
@@ -168,7 +155,7 @@ async fn cancel_job_response(
     ))
 }
 
-fn rerun_job_response(
+fn resume_job_response(
     deps: JobsRouteDeps<'_>,
     headers: &HeaderMap,
     job_id: &str,
@@ -178,15 +165,6 @@ fn rerun_job_response(
     Ok(ok_json(
         jobs_facade(deps).rerun_submission(&base_url, job_id, overrides)?,
     ))
-}
-
-fn resume_job_response(
-    deps: JobsRouteDeps<'_>,
-    headers: &HeaderMap,
-    job_id: &str,
-    overrides: &serde_json::Value,
-) -> Result<Json<ApiResponse<JobSubmissionView>>, AppError> {
-    rerun_job_response(deps, headers, job_id, overrides)
 }
 
 fn retry_stage_response(

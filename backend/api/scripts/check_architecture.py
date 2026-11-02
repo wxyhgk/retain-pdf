@@ -486,8 +486,6 @@ def check_jobs_route_deps_dedup(errors: list[str]) -> None:
             "cancel_job",
             "cancel_ocr_job",
             "cancel_job_response",
-            "rerun_job",
-            "rerun_job_response",
             "resume_job",
             "resume_job_response",
             "retry_stage",
