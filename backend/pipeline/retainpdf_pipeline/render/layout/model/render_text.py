@@ -55,6 +55,16 @@ def _should_use_unit_translation(item: dict) -> bool:
     return unit_kind == "group" or bool(item.get("continuation_group") or item.get("continuation_group_id"))
 
 
+def _uses_member_translation(item: dict) -> bool:
+    """组里各块排自己那一段：接续组，以及同页摘要组（aggregate_geometry，几块一起翻、译文按块分开）。
+
+    摘要组以前每块都拿整组的译文，同一段话排两遍，下面那块挤成小字压住页码（2026-11-02 481 页的书第 395 页，
+    一章开头的两段）。块自己没有那一段时照旧用整组的。"""
+    return bool(item.get("continuation_group") or item.get("continuation_group_id")) or (
+        str(item.get("translation_group_strategy", "") or "").strip() == "aggregate_geometry"
+    )
+
+
 def _member_translation_text(item: dict) -> str:
     return str(item.get("protected_translated_text") or item.get("translated_text") or "").strip()
 
@@ -86,7 +96,7 @@ def get_render_protected_text(item: dict) -> str:
             translated,
             item,
         )
-    if (item.get("continuation_group") or item.get("continuation_group_id")) and _member_translation_text(item):
+    if _uses_member_translation(item) and _member_translation_text(item):
         return restore_render_protected_text(_member_translation_text(item), item)
     return restore_render_protected_text(
         str(
@@ -118,7 +128,7 @@ def get_render_translation_overlay_text(item: dict) -> str:
             ).strip(),
             item,
         )
-    if (item.get("continuation_group") or item.get("continuation_group_id")) and _member_translation_text(item):
+    if _uses_member_translation(item) and _member_translation_text(item):
         return restore_render_protected_text(_member_translation_text(item), item)
     return restore_render_protected_text(
         str(
@@ -181,6 +191,11 @@ def should_skip_display_math_render(item: dict) -> bool:
 
 def _should_render_source_block(item: dict) -> bool:
     if should_skip_display_math_render(item):
+        return False
+    # 翻译失败的块留原文：底图本来就没去掉它（清理计划把 failed 当没翻译），拿 OCR 原文重排一遍盖上去
+    # 只会更差——481 页的书第 379 页一张带 Goldstone 图的表被 OCR 当成正文，翻译失败后整块按 OCR 文字重排，
+    # 图没了、最后一个公式原样印成源码（2026-11-02）。
+    if str(item.get("final_status", "") or "").strip() == "failed":
         return False
     if not item.get("should_translate", True) and _skip_reason(item) in MODEL_KEEP_ORIGIN_REASONS:
         return False

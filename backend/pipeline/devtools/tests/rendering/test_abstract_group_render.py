@@ -105,3 +105,41 @@ def test_abstract_wrapping_a_figure_is_not_merged() -> None:
     assert [item["bbox"] for item in prepared] == [[48.0, 270.0, 310.0, 415.0], [48.5, 415.0, 557.0, 526.0]]
     assert all(item["render_protected_text"] for item in prepared), "两个框都该有自己那一截"
     assert "".join(item["render_protected_text"] for item in prepared).count("背景：血管源性") == 1
+
+
+def test_rpr_fit_lays_out_each_member_once() -> None:
+    # rpr_fit 不走 prepare_render_payloads_by_page，每块直接 seed_render_fields：以前每块都拿整组译文，
+    # 同一段话排两遍（2026-11-02 481 页的书第 395 页，一章开头的两段）。
+    from retainpdf_pipeline.render.output.rpr_fit.renderer import _engine_text
+
+    texts = [_engine_text(item) for item in _abstract_items()]
+    assert all(texts), texts
+    assert "".join(texts).count("背景：血管源性") == 1, texts
+
+
+def test_a_failed_block_keeps_the_original_instead_of_the_ocr_text() -> None:
+    # 一张带 Goldstone 图的表被 OCR 当成正文，翻译失败。以前按 OCR 文字（含公式）重排一遍盖上去，图没了；
+    # 底图本来就没去掉它的原文，交给引擎空的（保留元素）原文就在。
+    from retainpdf_pipeline.render.layout.payload.render_item import seed_render_fields
+    from retainpdf_pipeline.render.output.rpr_fit.renderer import _engine_text
+
+    item = {
+        "item_id": "p379-b001",
+        "page_idx": 378,
+        "block_type": "text",
+        "bbox": [36.0, 73.5, 330.9, 548.5],
+        "source_text": r"1 $r$ $a$ $(-)^{2+2} \left(\frac{1}{2}\right) \sum_{abrs} x$",
+        "protected_source_text": r"1 $r$ $a$ $(-)^{2+2} \left(\frac{1}{2}\right) \sum_{abrs} x$",
+        "translated_text": "",
+        "should_translate": True,
+        "final_status": "failed",
+        "formula_map": [],
+    }
+    assert _engine_text(dict(item)) == ""
+    seeded = dict(item)
+    seed_render_fields(seeded)
+    assert seeded["render_protected_text"] == ""
+    # 没失败、只是不翻译的公式块照旧按原文重排
+    formula = dict(item, final_status="kept_origin", should_translate=False, skip_reason="skip_inline_formula")
+    seed_render_fields(formula)
+    assert formula["render_protected_text"]

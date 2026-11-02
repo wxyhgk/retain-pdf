@@ -317,6 +317,7 @@
         "retainpdf_pipeline/render/layout/payload/first_line_indent.py",
         "retainpdf_pipeline/render/layout/payload/prepare.py",
         "retainpdf_pipeline/render/output/rpr/renderer.py",
+        "retainpdf_pipeline/render/output/rpr_fit/formula_check.py",
         "retainpdf_pipeline/render/output/typst/book_renderer.py",
         "retainpdf_pipeline/render/output/typst/book_support.py",
         "retainpdf_pipeline/render/output/typst/color_adapt.py",
