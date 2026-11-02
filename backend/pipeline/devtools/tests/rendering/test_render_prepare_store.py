@@ -157,6 +157,42 @@ def test_visual_profile_step_is_exact_and_ignores_wording(tmp_path: Path) -> Non
     assert record.hit is False
 
 
+def test_visual_profile_page_cache_resamples_only_the_changed_page(tmp_path: Path, monkeypatch) -> None:
+    # 按页缓存（2026-11-02）：整本指纹变了也只重采指纹变了的那一页，拼起来和整本现算逐位相同。
+    from retainpdf_pipeline.render.prepare import visual_profile as visual_profile_step
+    from retainpdf_pipeline.render.visual_profile import build_document_visual_profile
+
+    pdf = tmp_path / "three.pdf"
+    doc = fitz.open()
+    for index in range(3):
+        page = doc.new_page(width=300, height=400)
+        page.insert_text((20, 50), f"Title {index}", fontsize=14, color=(0.2 * index, 0.3, 1 / 3))
+    doc.save(pdf)
+    doc.close()
+
+    def item(page: int, width: float = 200) -> dict:
+        return {"item_id": f"p{page + 1:03d}-b000", "bbox": [15, 35, width, 60], "block_type": "title", "_render_use_cover_fill": True}
+
+    pages = {index: [item(index)] for index in range(3)}
+    store = PrepareStore(tmp_path / "render_prepare")
+    first = visual_profile_step.build_with_page_cache(store, source_pdf_path=pdf, pages=pages)
+    assert first == build_document_visual_profile(pdf, pages, max_workers=1)
+
+    sampled: list[list[int]] = []
+    real = visual_profile_step.build_document_visual_profile
+
+    def counting(source_pdf_path, missing, **kwargs):
+        sampled.append(sorted(missing))
+        return real(source_pdf_path, missing, max_workers=1)
+
+    monkeypatch.setattr(visual_profile_step, "build_document_visual_profile", counting)
+    changed = {**pages, 1: [item(1, width=210)]}
+    second = visual_profile_step.build_with_page_cache(store, source_pdf_path=pdf, pages=changed)
+    assert sampled == [[1]]
+    assert second == build_document_visual_profile(pdf, changed, max_workers=1)
+    assert list(second.pages) == [0, 1, 2]
+
+
 def _hidden_text_pdf(path: Path) -> Path:
     doc = fitz.open()
     page = doc.new_page(width=300, height=400)
