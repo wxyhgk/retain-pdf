@@ -16,3 +16,6 @@ tokio = { version = "1.53.3", features = ["rt-multi-thread", "macros", "net", "i
 
 [profile.release]
 strip = true
+
+# 自成一个工作区：不并进仓库根目录的 Cargo 工作区（那是后端的）。
+[workspace]

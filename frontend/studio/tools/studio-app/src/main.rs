@@ -397,14 +397,16 @@ fn last_good(repo: &Path) -> Option<String> {
 /// What a rescue links to the real ones: the author's things, and what the code needs that git does not hold.
 const LINKED: &[&str] = &["blog", "apps", "chats", ".studio-settings.json", ".studio-trash", ".studio-local.json", "node_modules", "third_party/milkdown"];
 
-/// The last good version made ready in `.studio-cache/rescue` (checked out, the author's things linked in): its folder.
+/// The last good version made ready in `.studio-cache/rescue` (the Studio's folder as it was in that commit, the
+/// author's things linked in): its folder.
 fn prepare_rescue(repo: &Path, commit: &str, git: &Path) -> Result<PathBuf, String> {
     let place = repo.join(".studio-cache").join("rescue");
-    let run = |dir: &Path, args: &[&str]| -> Result<(), String> {
+    let run_in = |dir: &Path, args: &[&str]| -> Result<Vec<u8>, String> {
         let done = Command::new(git).arg("-C").arg(dir).args(args).output().map_err(|error| error.to_string())?;
-        if done.status.success() { Ok(()) } else { Err(String::from_utf8_lossy(&done.stderr).trim().to_owned()) }
+        if done.status.success() { Ok(done.stdout) } else { Err(String::from_utf8_lossy(&done.stderr).trim().to_owned()) }
     };
-    // Links first let go (never followed): git puts back what it holds there, then they are linked again.
+    let run = |args: &[&str]| run_in(repo, args);
+    // Links first let go (never followed), then what the version before left there.
     for name in LINKED {
         let at = place.join(name);
         if fs::symlink_metadata(&at).map(|meta| meta.file_type().is_symlink()).unwrap_or(false) {
@@ -412,11 +414,30 @@ fn prepare_rescue(repo: &Path, commit: &str, git: &Path) -> Result<PathBuf, Stri
         }
     }
     if place.join(".git").exists() {
-        run(&place, &["checkout", "--detach", "--force", commit])?;
-    } else {
-        let _ = run(repo, &["worktree", "prune"]);
-        let _ = fs::create_dir_all(place.parent().unwrap());
-        run(repo, &["worktree", "add", "--detach", "--force", &place.to_string_lossy(), commit])?;
+        // A rescue from when it was a git worktree of the Studio's own repository.
+        let _ = run(&["worktree", "remove", "--force", &place.to_string_lossy()]);
+    }
+    if place.exists() {
+        fs::remove_dir_all(&place).map_err(|error| error.to_string())?;
+    }
+    fs::create_dir_all(&place).map_err(|error| error.to_string())?;
+    // Only the Studio's folder, as it was: the whole repository at its top ("" ), RetainPDF's frontend/studio in it.
+    // (Asked from the top: in a folder, git archive keeps only what is under that folder of the tree it is given.)
+    let prefix = String::from_utf8_lossy(&run(&["rev-parse", "--show-prefix"])?).trim().to_owned();
+    let top = PathBuf::from(String::from_utf8_lossy(&run(&["rev-parse", "--show-toplevel"])?).trim());
+    let archive = run_in(&top, &["archive", "--format=tar", &format!("{commit}:{prefix}")])?;
+    let mut tar = Command::new("tar")
+        .arg("-x")
+        .arg("-C")
+        .arg(&place)
+        .stdin(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| error.to_string())?;
+    std::io::Write::write_all(&mut tar.stdin.take().unwrap(), &archive).map_err(|error| error.to_string())?;
+    let untarred = tar.wait_with_output().map_err(|error| error.to_string())?;
+    if !untarred.status.success() {
+        return Err(String::from_utf8_lossy(&untarred.stderr).trim().to_owned());
     }
     for name in LINKED {
         let real = repo.join(name);
@@ -990,6 +1011,37 @@ mod tests {
         assert_eq!(fs::read_to_string(repo.join("blog/note/index.md")).unwrap(), "# 安全启动里写的");
         assert_eq!(fs::read_to_string(repo.join("src/main.ts")).unwrap(), "broken");
         let _ = fs::remove_dir_all(&repo);
+    }
+
+    /// The Studio in a folder of a bigger repository (RetainPDF's frontend/studio): only that folder, as it was.
+    #[test]
+    fn rescue_of_a_studio_in_a_folder_of_its_repository() {
+        let top = env::temp_dir().join(format!("studio-rescue-folder-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&top);
+        let repo = top.join("frontend/studio");
+        fs::create_dir_all(repo.join("src")).unwrap();
+        fs::create_dir_all(repo.join("blog/note")).unwrap();
+        fs::create_dir_all(top.join("backend")).unwrap();
+        fs::write(repo.join("src/main.ts"), "good").unwrap();
+        fs::write(repo.join("blog/note/index.md"), "# 旧的").unwrap();
+        fs::write(top.join("backend/lib.rs"), "").unwrap();
+        git(&top, &["init", "-q"]);
+        git(&top, &["config", "user.email", "test@example.com"]);
+        git(&top, &["config", "user.name", "test"]);
+        git(&top, &["add", "."]);
+        git(&top, &["commit", "-qm", "good"]);
+        let good = git(&top, &["rev-parse", "HEAD"]);
+        fs::write(repo.join("src/main.ts"), "broken").unwrap();
+        git(&top, &["commit", "-qam", "broken"]);
+        fs::write(repo.join("blog/note/index.md"), "# 新写的").unwrap();
+
+        let place = prepare_rescue(&repo, &good, Path::new("git")).unwrap();
+        assert_eq!(place, repo.join(".studio-cache/rescue"));
+        assert_eq!(fs::read_to_string(place.join("src/main.ts")).unwrap(), "good");
+        assert!(!place.join("frontend").exists() && !place.join("backend").exists(), "only the Studio's folder");
+        assert_eq!(fs::read_to_string(place.join("blog/note/index.md")).unwrap(), "# 新写的");
+        assert!(git(&top, &["worktree", "list"]).lines().count() == 1, "no worktree of the repository");
+        let _ = fs::remove_dir_all(&top);
     }
 
     /// The lifeline: a worker thread started (as pi's for a picture) leaves the server and its lock file be; the app's

@@ -25,3 +25,6 @@ custom-protocol = ["tauri/custom-protocol"]
 
 [profile.release]
 strip = true
+
+# 自成一个工作区：不并进仓库根目录的 Cargo 工作区（那是后端的）。
+[workspace]
