@@ -11,6 +11,7 @@ mod revision;
 #[cfg(test)]
 mod tests;
 
+pub(crate) use artifacts::load_manifest_pages;
 pub(crate) use index::load_translation_debug_list_view;
 pub(crate) use item::load_translation_debug_item_view;
 pub(crate) use replay::replay_translation_item;

@@ -38,53 +38,10 @@ pub(super) fn load_translation_manifest_pages(
     // 调用方先看过 `has_translation_manifest`；万一走到这里也按「还没产出」报。
     let manifest_path = stored_path(job, data_root, StoredFile::TranslationManifest)
         .ok_or_else(|| AppError::not_ready("translation manifest"))?;
-    load_manifest_pages(&manifest_path)
-}
-
-fn load_manifest_pages(manifest_path: &Path) -> Result<Vec<(i64, Vec<Value>)>, AppError> {
-    let text = std::fs::read_to_string(manifest_path)?;
-    let manifest: Value = serde_json::from_str(&text).map_err(|err| {
-        AppError::internal(format!(
-            "parse translation manifest {}: {err}",
-            manifest_path.display()
-        ))
-    })?;
-    let pages = manifest
-        .get("pages")
-        .and_then(Value::as_array)
-        .ok_or_else(|| {
-            AppError::internal(format!(
-                "invalid translation manifest: {}",
-                manifest_path.display()
-            ))
-        })?;
-    let base_dir = manifest_path.parent().unwrap_or(manifest_path);
-    let mut result = Vec::new();
-    for page in pages {
-        let page_idx = page
-            .get("page_index")
-            .and_then(Value::as_i64)
-            .unwrap_or_default();
-        let rel_path = value_string(page.get("path"));
-        if rel_path.is_empty() {
-            continue;
-        }
-        let payload_path = if Path::new(&rel_path).is_absolute() {
-            PathBuf::from(&rel_path)
-        } else {
-            base_dir.join(&rel_path)
-        };
-        let text = std::fs::read_to_string(&payload_path)?;
-        let page_payload: Value = serde_json::from_str(&text).map_err(|err| {
-            AppError::internal(format!(
-                "parse translation page {}: {err}",
-                payload_path.display()
-            ))
-        })?;
-        let items = page_payload.as_array().cloned().unwrap_or_default();
-        result.push((page_idx, items));
-    }
-    Ok(result)
+    Ok(crate::translations::load_manifest_pages(&manifest_path)?
+        .into_iter()
+        .map(|(page_idx, _path, items)| (page_idx, items))
+        .collect())
 }
 
 pub(super) fn load_source_region_map(
