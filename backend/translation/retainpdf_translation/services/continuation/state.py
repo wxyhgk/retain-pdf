@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from retainpdf_translation.core.item_reader import item_is_caption_like
+from retainpdf_translation.core.item_reader import item_is_footnote_like
+from retainpdf_translation.core.item_reader import item_is_plain_text_block
+from retainpdf_translation.core.item_reader import item_source_text
 from retainpdf_translation.services.continuation.rules import eligible
 from retainpdf_translation.services.continuation.rules import normalize_text
 from retainpdf_translation.services.continuation.rules import pair_decision
+from retainpdf_translation.services.continuation.rules import starts_like_caption_title
 
 PROVIDER_JOIN_DECISION = "provider_joined"
 RULE_JOIN_DECISION = "joined"
@@ -265,6 +270,45 @@ def _next_candidate_index(payload: list[dict], start: int) -> int | None:
     return None
 
 
+# 两段之间最多隔几页只有图、表、图注的页
+MAX_FLOAT_PAGES_BETWEEN = 2
+
+
+def _is_float_item(item: dict) -> bool:
+    """图注、脚注、表、图这类不在正文里流动的块。正文样的块（哪怕不能接续，比如摘要组）、标题都不算。"""
+    if item_is_caption_like(item) or item_is_footnote_like(item):
+        return True
+    if starts_like_caption_title(item_source_text(item)):
+        return True
+    return not item_is_plain_text_block(item)
+
+
+def _float_only_pages(payload: list[dict]) -> set[int]:
+    """有块、但块全是图注、脚注、表、图的页：段落可以隔着它接到下一页。
+
+    有正文样的块或者标题的页不算：一章的开篇页（标题加两段摘要组）夹在中间时，上一章最后一段不能接到这一章第二页上。"""
+    pages: dict[int, bool] = {}
+    for item in payload:
+        page_idx = _item_int(item, "page_idx", -1)
+        pages[page_idx] = pages.get(page_idx, True) and _is_float_item(item)
+    return {page_idx for page_idx, only_floats in pages.items() if only_floats}
+
+
+def _as_reading_neighbor(prev_item: dict, next_item: dict, float_pages: set[int]) -> dict:
+    """规则打分时下一块看起来在哪一页：中间隔的页只有图、表、图注时，当它就在紧挨着的下一页。
+
+    一段正文写到页底，翻过一整页的表和图接着写（2026-11-02 481 页的书第 212 → 214 页，中间第 213 页只有表 3.17、
+    图 3.11 和它们的图注）。规则只认相邻页，这一对直接判断开；模型翻第 212 页那块时又看见了下一块的原文，
+    把它也翻了进去，两页重复、字挤得很小。中间的页整页不在（没选、没识别出东西）的照旧算断开。
+    """
+    prev_page = _item_int(prev_item, "page_idx", -1)
+    next_page = _item_int(next_item, "page_idx", -1)
+    between = range(prev_page + 1, next_page)
+    if not 0 < len(between) <= MAX_FLOAT_PAGES_BETWEEN or not all(page in float_pages for page in between):
+        return next_item
+    return {**next_item, "page_idx": prev_page + 1}
+
+
 def _mark_candidate(prev_item: dict, next_item: dict) -> None:
     """拿不准的一对：留给模型复核（`pairs.candidate_continuation_pairs` 按这两个字段收集）。已经在组里的块不改它的决定。"""
     prev_item["continuation_candidate_next_id"] = next_item.get("item_id", "")
@@ -280,6 +324,7 @@ def annotate_continuation_context(payload: list[dict]) -> int:
 
     annotated = _annotate_provider_continuation_context(payload)
     body_roles = _body_boundary_roles(payload)
+    float_pages = _float_only_pages(payload)
     group_index = 0
     i = 0
 
@@ -295,7 +340,7 @@ def annotate_continuation_context(payload: list[dict]) -> int:
             i += 1
             continue
         nxt = payload[next_idx]
-        decision = pair_decision(current, nxt)
+        decision = pair_decision(current, _as_reading_neighbor(current, nxt, float_pages))
         if decision == "join" and not _cross_page_body_transition_is_usable(current, nxt, body_roles):
             # Score says join but the boundary roles disagree (e.g. a page tail
             # paired with a non-head block such as a caption that slipped past
@@ -313,7 +358,7 @@ def annotate_continuation_context(payload: list[dict]) -> int:
         j = next_idx
         while j < len(payload) - 1:
             probe_idx = _next_candidate_index(payload, j + 1)
-            if probe_idx is None or pair_decision(payload[j], payload[probe_idx]) != "join":
+            if probe_idx is None or pair_decision(payload[j], _as_reading_neighbor(payload[j], payload[probe_idx], float_pages)) != "join":
                 break
             if not _cross_page_body_transition_is_usable(payload[j], payload[probe_idx], body_roles):
                 # 和上面一样不悄悄放过：标成候选交给模型复核（以前链条延伸到这里就断了，这一对谁也不审）

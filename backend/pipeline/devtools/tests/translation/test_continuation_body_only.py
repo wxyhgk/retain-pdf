@@ -182,3 +182,59 @@ def test_unannotated_roles_keep_historical_join() -> None:
     state.annotate_continuation_context(payload)
     assert payload[0].get("continuation_group", "") != ""
     assert payload[0]["continuation_group"] == payload[1]["continuation_group"]
+
+
+def test_a_sentence_that_starts_with_a_table_or_figure_label_is_body() -> None:
+    # 2026-11-02 481 页的书第 212 页 "Table 3.17 shows …" 被当成图注，跨页接不上。
+    rules, _ = _load_state_module()
+    for text in [
+        "Table 3.17 shows the calculated and experimental results for the first ionization potential.",
+        "Figure 3.12 shows all the orbital energies of water.",
+        "Fig. 2 compares the two methods.",
+        "Table II lists the parameters.",
+    ]:
+        assert not rules.starts_like_caption_title(text), text
+    for text in [
+        "Table 3.17 The lowest ionization potentials (a.u.) of the ten-electron series",
+        "Figure 3.11 6-31G** orbital energies of the ten-electron series.",
+        "Figure 3.10 Orbital energies of N2",
+    ]:
+        assert rules.starts_like_caption_title(text), text
+
+
+def _three_pages(middle: list[dict]) -> list[dict]:
+    return [
+        _payload_item(item_id="p212-b004", page_idx=211, text="Figure 3.11 shows all the occupied orbitals for this series. The lowest"),
+        *middle,
+        _payload_item(item_id="p214-b000", page_idx=213, text="molecular orbital is essentially the 1s inner-shell atomic orbital."),
+    ]
+
+
+def test_a_paragraph_continues_over_a_page_of_tables_and_figures() -> None:
+    # 第 212 页最后一段翻过一整页的表 3.17、图 3.11（只有图注、脚注）到第 214 页接着写。
+    _, state = _load_state_module()
+    payload = _three_pages([
+        _payload_item(item_id="p213-b000", page_idx=212, text="Table 3.17 The lowest ionization potentials (a.u.) of the ten-electron series"),
+        _payload_item(item_id="p213-b004", page_idx=212, text="Figure 3.11 6-31G** orbital energies of the ten-electron series."),
+    ])
+    state.annotate_continuation_context(payload)
+    by_id = {item["item_id"]: item for item in payload}
+    assert by_id["p212-b004"]["continuation_group"]
+    assert by_id["p212-b004"]["continuation_group"] == by_id["p214-b000"]["continuation_group"]
+    assert not by_id["p213-b000"]["continuation_group"]
+
+
+def test_a_page_with_a_heading_or_body_in_between_breaks_the_paragraph() -> None:
+    # 中间是一章的开篇页（标题 + 正文），或者整页不在（没选、没识别出东西）：不接。
+    _, state = _load_state_module()
+    title = _payload_item(item_id="p213-b000", page_idx=212, text="THE ONE-PARTICLE MANY-BODY GREEN'S FUNCTION")
+    title["layout_role"] = "title"
+    title["structure_role"] = "document_title"
+    title["semantic_role"] = "unknown"
+    body = _payload_item(item_id="p213-b001", page_idx=212, text="Green's function techniques are one of the most powerful tools.")
+    body["translation_group_strategy"] = "aggregate_geometry"  # 摘要组：不能接续，但它是正文
+    for middle in ([title, body], []):
+        payload = _three_pages([dict(item) for item in middle])
+        state.annotate_continuation_context(payload)
+        by_id = {item["item_id"]: item for item in payload}
+        assert not by_id["p212-b004"]["continuation_group"], middle
