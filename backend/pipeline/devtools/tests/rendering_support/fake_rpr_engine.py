@@ -2,7 +2,8 @@
 
 - ``<root>/engine/bin/rpr-fit.js``：同样是 Python 脚本，读 rpr_fit_input_v1（*_path 相对输入
   文件），每个要渲染的页一张透明页，报告 rpr_fit_report_v1（译文含 SHRINK 的缩到 9.5、含
-  OVERFLOW 的报溢出）；
+  OVERFLOW 的报溢出；含 RAWTEX 的把译文原样印出来，像 `$` 不成对的公式；含 MJFAIL 的另把 `$…$` 里的
+  tex 报成 MathJax 失败，也原样印出来）；
 - ``<root>/engine/bin/rpr-retain.js``：其实是 Python 脚本，读 rpr_retain_input_v1，写出
   overlay.pdf（每页一张透明页，按 cover_box 画底色、在 content_box 左上角写一个标记）和
   rpr_retain_report_v1；
@@ -178,6 +179,7 @@ def main(argv):
     items = {(int(item["page_idx"]), int(item["block_idx"])): item for item in translations}
     doc = fitz.open()
     blocks = []
+    math_failed = []
     for page in rendered:
         index = int(page["page_index"])
         assert str(index) in drawings, f"drawings missing page {index}"
@@ -190,6 +192,10 @@ def main(argv):
                 continue
             x0, y0, x1, y1 = block["bbox"]
             pdf_page.insert_text((x0 + 1, y0 + 8), "FIT", fontsize=6)
+            if "RAWTEX" in text or "MJFAIL" in text:
+                pdf_page.insert_text((x0 + 1, y0 + 20), text, fontsize=6)
+            if "MJFAIL" in text and text.count("$") >= 2:
+                math_failed.append({"tex": text.split("$")[1], "error": "Misplaced &"})
             final = 9.5 if "SHRINK" in text else 10.0
             overflow = "OVERFLOW" in text
             blocks.append({"id": block["block_id"], "item_id": item["item_id"], "page": index, "kind": "body",
@@ -209,7 +215,7 @@ def main(argv):
         "invariants": {"line_overlaps": 0, "outside": 0, "order": 0, "obstacle_hits": 0, "vector_hits": 0,
                        "overflow_blocks": sum(1 for block in blocks if block["overflow"])},
         "collisions": [],
-        "math": {"formulas": 0, "failed": []},
+        "math": {"formulas": len(math_failed), "failed": math_failed},
         "timings": {"fitMs": 1, "compileMs": 1, "totalMs": 2},
     }
     (out_dir / "report.json").write_text(json.dumps(report), encoding="utf-8")

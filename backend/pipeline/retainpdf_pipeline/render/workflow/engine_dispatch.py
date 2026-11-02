@@ -134,6 +134,8 @@ def dispatch_with_render_engine(
                 visual_profile_path=context.visual_profile_path,
                 obstacle_scan=load_obstacle_scan(scan_record),
                 first_line_indents=indents,
+                # 上传的原文件（带文字层）：公式没排成的块盖回原件的那一块
+                original_pdf_path=context.indent_detection_pdf_path,
             )
             diagnostics.update(indent_diagnostics)
             diagnostics["rpr_fit_scan_elapsed_seconds"] = round(scan_record.elapsed_seconds, 3)

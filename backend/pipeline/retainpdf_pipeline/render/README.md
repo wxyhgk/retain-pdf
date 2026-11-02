@@ -289,5 +289,11 @@ README），引擎直接写出叠加层 PDF（不经过 Typst）：`rpr_fit` 的
   量好的值（读原 PDF 文字层，读不到再看墨迹）。`rpr` 走 page_specs 带过去；`rpr_fit` 不算版式 payload，
   由 `engine_dispatch._first_line_indents` 现算（预热有就直接用），随译文条目的 `first_line_indent_pt` 交给引擎。
   算失败就不缩进，不回退 Typst；`render_diagnostics` 记 `rpr_fit_indent_source` 和缩进了几块。
+- 查公式（`rpr_fit`，`output/rpr_fit/formula_check.py`，2026-11-02）：合并完看译文 PDF 上**看得见**的文字里有没有
+  LaTeX 命令（`\frac`、`^{`……；引擎给公式配的隐形复制层、单独的 `$` 不算），加上引擎报的 MathJax 失败，对到译文条目。
+  `$` 不成对、根本没被认成公式的引擎看不见也不报，只能这样查。查出来的条目改成保留原文、引擎整本重排一次
+  （481 页 5 秒，别的块会让开它），再把上传原文件（带文字层）的那一块盖回去。结果在 `render_diagnostics.rpr_fit_formula_check`
+  和 `fit_report.v1.json`：`math.failed` 照第一遍、`math.kept_origin`（哪些块改成了原文、为什么）、
+  `math.visible_latex`（重排后还剩的），`summary` 里 `math_failed`、`math_kept_origin`、`math_visible_latex` 是条数。
 - dual、只抽选中页、非思源宋体、引擎没装 / Node < 22.8 / 引擎失败 → 回退 Typst，原因写进
   `pipeline_summary.render_engine`、`render_diagnostics` 和 `fit_report.v1.json` 的 reason。
