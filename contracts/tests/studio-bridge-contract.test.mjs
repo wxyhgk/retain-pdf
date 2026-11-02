@@ -73,7 +73,7 @@ const left = { ...head, type: "reading", job_id: null, document_id: null, title:
 
 test("every message has one definition, a direction and the shared head", () => {
   const types = schema.messages.map((message) => message.type);
-  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading"]);
+  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading", "ask-ai"]);
   assert.deepEqual(schema.oneOf.map((entry) => entry.$ref), schema.messages.map((message) => `#/definitions/${message.definition}`));
   for (const { type, from, definition } of schema.messages) {
     assert.ok(["studio", "retainpdf"].includes(from), `${type}: from ${from}`);
@@ -123,6 +123,8 @@ test("typical messages pass and the near misses do not", () => {
     { ...reading, document_id: null, title: null, page_idx: null, page_count: null },
     left,
     { ...head, type: "ready", features: ["theme", "navigate", "quote", "notes", "reading"] },
+    { ...head, type: "ask-ai" },
+    { ...head, type: "hello", theme: "dark", features: ["quote", "open-notes", "ask-ai"] },
   ];
   for (const each of good) assert.ok(valid(message, each), JSON.stringify(each));
 
@@ -153,6 +155,9 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "reading", job_id: null },
     { ...reading, block_id: "p004-b0002" },
     { ...head, type: "hello", theme: "dark", features: ["reading"] },
+    { ...head, type: "ask-ai", job_id: "j" },
+    { ...head, type: "ask-ai", question: "解释这一页" },
+    { ...head, type: "ready", features: ["ask-ai"] },
   ];
   for (const each of bad) assert.equal(valid(message, each), false, JSON.stringify(each));
 });

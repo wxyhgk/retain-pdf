@@ -25,6 +25,17 @@
 
 ---
 
+## 阅读页的「AI」打开 Studio 的 AI（feat/studio-bridge-ask-ai）
+
+2026-11-02。契约 `contracts/studio-bridge.v1.schema.json` 只加不改：Studio 的能力 `StudioFeature` 加 `"ask-ai"`，新消息 `ask-ai`
+（RetainPDF → Studio，只有 `protocol`、`v`、`type` 三个字段，不许别的字段）。放在 Studio 里时只留 Studio 的 AI。
+
+| 地方 | 现在 | 要改成 |
+|---|---|---|
+| 阅读页的「AI」 | 打开 RetainPDF 自己的 agent 终端 | 握手过、`hello.features` 有 `ask-ai` 时：先把眼下的 `reading` 立刻发出去（不等防抖），再发 `ask-ai`，不打开自己的终端；Studio 没列 `ask-ai` 时照旧 |
+
+---
+
 ## 告诉 Studio 眼下读到哪（feat/studio-bridge-reading）
 
 2026-11-02。契约 `contracts/studio-bridge.v1.schema.json` 只加不改：新消息 `reading`（RetainPDF → Studio）。Studio 里只用 Studio 自己的 AI，
