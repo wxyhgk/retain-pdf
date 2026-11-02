@@ -60,6 +60,10 @@ def _has_repeated_aggregate_member_text(items: list[dict]) -> bool:
     return all(member_text == compact_aggregate for member_text in member_texts)
 
 
+def _is_aggregate_geometry_member(item: dict) -> bool:
+    return str(item.get("translation_group_strategy", "") or "").strip() == "aggregate_geometry"
+
+
 def render_protected_translation_text(item: dict) -> str:
     if not _render_should_use_unit_translation(item):
         text = (
@@ -69,7 +73,10 @@ def render_protected_translation_text(item: dict) -> str:
             or item.get("translation_unit_translated_text")
             or ""
         )
-    elif render_continuation_group_id(item) and _member_translation_text(item):
+    elif (render_continuation_group_id(item) or _is_aggregate_geometry_member(item)) and _member_translation_text(item):
+        # 接续组、同页摘要组（几块一起翻、译文按块分开）各排自己那一段。摘要组以前每块都拿整组译文：
+        # rpr_fit 把同一段话排了两遍，下面那块挤成小字压住页码（2026-11-02 481 页的书第 395 页）。
+        # Typst 路线在 prepare_render_payloads_by_page 里自己按框重新切，不经过这里。
         text = _member_translation_text(item)
     else:
         text = (
@@ -94,6 +101,11 @@ def should_render_source_when_untranslated(item: dict) -> bool:
 
 def should_render_source_block(item: dict) -> bool:
     if should_skip_display_math_render(item):
+        return False
+    # 翻译失败的块留原文：底图本来就没去掉它（清理计划把 failed 当没翻译），拿 OCR 原文重排一遍盖上去
+    # 只会更差——481 页的书第 379 页一张带 Goldstone 图的表被 OCR 当成正文，翻译失败后整块按 OCR 文字重排，
+    # 图没了、最后一个公式原样印成源码（2026-11-02）。
+    if str(item.get("final_status", "") or "").strip() == "failed":
         return False
     if not item.get("should_translate", True) and _skip_reason(item) in MODEL_KEEP_ORIGIN_REASONS:
         return False
