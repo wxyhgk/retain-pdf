@@ -75,6 +75,8 @@ export const readerLiveTranslation = () => getReaderAdapters()?.liveTranslation 
 export const readerNotesQuote = () => getReaderAdapters()?.notesQuote ?? null;
 /** 「笔记」按钮：同上，宿主给了才有。 */
 export const readerNotesPanel = () => getReaderAdapters()?.notesPanel ?? null;
+/** 告诉宿主眼下读到哪：同上，宿主给了才有。 */
+export const readerReadingPosition = () => getReaderAdapters()?.readingPosition ?? null;
 export const readerPdfPort = (): ReaderPdfPort => {
   const adapters = getReaderAdapters();
   return adapters?.pdf ?? {
