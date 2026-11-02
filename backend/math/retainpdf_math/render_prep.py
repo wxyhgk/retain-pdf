@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 
 from retainpdf_math.normalize import normalize_formula_for_latex_math
+from retainpdf_math.source_repair import balance_left_right
 from retainpdf_math.source_repair import collapse_doubled_command_backslashes
 from retainpdf_math.source_repair import separate_double_scripts
 
@@ -96,6 +97,7 @@ def prepare_formula_for_render(expr: str, *, display: bool) -> tuple[str, bool]:
     # `unknown command: \b`——约束和缘由都在 source_repair 里。
     expr = collapse_doubled_command_backslashes(expr)
     expr = separate_double_scripts(expr)
+    expr = balance_left_right(expr)
     expr = re.sub(r"\\langlen\b", r"\\langle n", expr)
     expr = re.sub(r"\\angle(?=[A-Za-z])", r"\\angle ", expr)
     # Do not rewrite prefix scripts (e.g. ⟨^{N} → ⟨{}^{N}).

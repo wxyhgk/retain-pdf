@@ -67,6 +67,39 @@ def has_balanced_unescaped_dollars(text: str) -> bool:
     return count % 2 == 0
 
 
+_LATEX_MARKER_RE = re.compile(r"\\[A-Za-z]{2,}|\^\{|_\{")
+
+
+def close_trailing_inline_math(text: str) -> str:
+    """最后一个行内公式没收尾（单个 `$` 的个数是奇数、最后那个 `$` 后面到结尾一看就是 LaTeX）：结尾补一个 `$`。
+
+    OCR 的输出有时在最后一个公式中间截断，收尾的 `$` 就丢了（2026-11-02 GLM 给一页 Goldstone 图表的那一块，
+    67 个 `$`）。不补的话这一段从那个 `$` 起全当正文，整段 LaTeX 原样印在页面上。后面有中文、换行、太长，
+    或者看不出是 LaTeX（价格 `$5`）都不动。
+    """
+    source = str(text or "")
+    singles = [
+        index
+        for index, char in enumerate(source)
+        if char == "$"
+        and not _is_escaped(source, index)
+        and source[index - 1 : index] != "$"
+        and source[index + 1 : index + 2] != "$"
+    ]
+    if len(singles) % 2 == 0:
+        return source
+    tail = source[singles[-1] + 1 :]
+    if (
+        not tail.strip()
+        or len(tail) > MAX_INLINE_MATH_CHARS
+        or "\n" in tail
+        or any(_is_cjk_char(char) for char in tail)
+        or not _LATEX_MARKER_RE.search(tail)
+    ):
+        return source
+    return source.rstrip() + "$"
+
+
 def _match_display_math(text: str, index: int) -> int:
     if not text.startswith("$$", index) or _is_escaped(text, index):
         return index
@@ -228,6 +261,7 @@ def find_mitex_rewrites(text: str) -> list[tuple[str, str]]:
 
 __all__ = [
     "MITEX_REWRITE_DATABASE",
+    "close_trailing_inline_math",
     "find_mitex_rewrites",
     "has_balanced_unescaped_dollars",
     "is_fullwidth_punctuation",

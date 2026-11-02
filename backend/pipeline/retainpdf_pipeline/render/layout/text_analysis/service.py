@@ -4,6 +4,7 @@ from collections.abc import Callable
 from functools import lru_cache
 import re
 
+from retainpdf_math.direct_typst import close_trailing_inline_math
 from retainpdf_pipeline.render.layout.text_analysis.models import AnalyzedText
 from retainpdf_pipeline.render.layout.text_analysis.models import FormulaSegment
 from retainpdf_pipeline.render.layout.text_analysis.models import TextAnalysisStats
@@ -118,7 +119,7 @@ def normalize_direct_typst_math_boundaries(text: str) -> str:
     source = str(text or "")
     if not source:
         return ""
-    return _wrap_parenthesized_inline_math(source)
+    return _wrap_parenthesized_inline_math(close_trailing_inline_math(source))
 
 
 def formula_texts_for_render(text: str, formula_map: list[dict] | None) -> list[str]:

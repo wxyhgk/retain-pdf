@@ -128,4 +128,31 @@ def separate_double_scripts(expr: str) -> str:
     return "".join(out)
 
 
-__all__ = ["collapse_doubled_command_backslashes", "separate_double_scripts"]
+_LEFT_RIGHT_RE = re.compile(r"\\(left|right)(?![A-Za-z])")
+
+
+def balance_left_right(expr: str) -> str:
+    """`\\left` 和 `\\right` 不成对：多出来的 `\\left` 在末尾补 `\\right.`，多出来的 `\\right` 在开头补 `\\left.`。
+
+    OCR 常把中间的竖线写成 `\\left|`：`\\left\\langle \\Phi_i \\left| \\Phi_j \\right\\rangle`，MathJax 整个公式报错
+    （"Extra \\left or missing \\right"），渲染时原样印出源码。`\\right.`、`\\left.` 是不画出来的空定界符，
+    补上以后排成 ⟨Φi|Φj⟩，和原文一样。`\\middle|` 不算。
+    """
+    text = str(expr or "")
+    if "\\left" not in text and "\\right" not in text:
+        return text
+    open_count = 0
+    missing_left = 0
+    for match in _LEFT_RIGHT_RE.finditer(text):
+        if match.group(1) == "left":
+            open_count += 1
+        elif open_count:
+            open_count -= 1
+        else:
+            missing_left += 1
+    if not open_count and not missing_left:
+        return text
+    return "\\left. " * missing_left + text + " \\right." * open_count
+
+
+__all__ = ["balance_left_right", "collapse_doubled_command_backslashes", "separate_double_scripts"]
