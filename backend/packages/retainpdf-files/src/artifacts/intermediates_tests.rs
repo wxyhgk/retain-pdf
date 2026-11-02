@@ -256,3 +256,46 @@ fn referenced_job_directories_include_sources_children_and_paths_into_other_jobs
         ]
     );
 }
+
+#[test]
+fn the_engine_work_dir_goes_and_the_ocr_stream_copy_becomes_a_link() {
+    // 2026-11-02：rpr_fit 引擎的工作目录只有渲染器自己读；OCR 一片片公布时写的整份文档和规范化文档逐字节相同。
+    let root = Root::new("engine-stream");
+    let job = succeeded_mineru_job(&root);
+    let document = br#"{"pages": [1, 2, 3]}"#;
+    root.write(&job_path("ocr/normalized/document.v1.json"), document);
+    root.write(&job_path("ocr/stream/document.v1.json"), document);
+    root.write(&job_path("ocr/stream/manifest.json"), b"{\"done\": true}");
+    root.write(&job_path("rendered/typst/rpr-fit-engine/translations.json"), b"[]");
+    root.write(&job_path("rendered/typst/rpr-fit-engine/out/overlay.pdf"), b"overlay");
+    root.write(&job_path("rendered/typst/book-overlays/book-overlay.pdf"), b"served");
+
+    prune_succeeded_job_intermediates(&root.0, &job);
+
+    assert!(!root.exists(&job_path("rendered/typst/rpr-fit-engine")));
+    assert!(root.exists(&job_path("rendered/typst/book-overlays/book-overlay.pdf")), "what the API serves stays");
+    assert!(root.exists(&job_path("ocr/stream/manifest.json")));
+    let stream = root.0.join(job_path("ocr/stream/document.v1.json"));
+    assert_eq!(std::fs::read(&stream).unwrap(), document, "readers of the stream still get the whole document");
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        let normalized = root.0.join(job_path("ocr/normalized/document.v1.json"));
+        assert_eq!(stream.metadata().unwrap().ino(), normalized.metadata().unwrap().ino());
+        // 链过的不再算
+        let again = prune_succeeded_job_intermediates(&root.0, &job);
+        assert_eq!(again, IntermediatesPruned::default());
+    }
+}
+
+#[test]
+fn a_stream_copy_that_differs_is_left_alone() {
+    let root = Root::new("stream-differs");
+    let job = succeeded_mineru_job(&root);
+    root.write(&job_path("ocr/normalized/document.v1.json"), br#"{"pages": [1]}"#);
+    root.write(&job_path("ocr/stream/document.v1.json"), br#"{"pages": [2]}"#);
+
+    prune_succeeded_job_intermediates(&root.0, &job);
+
+    assert_eq!(std::fs::read(root.0.join(job_path("ocr/stream/document.v1.json"))).unwrap(), br#"{"pages": [2]}"#);
+}
