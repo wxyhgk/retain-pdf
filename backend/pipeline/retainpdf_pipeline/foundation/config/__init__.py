@@ -14,7 +14,6 @@ from retainpdf_base.paths import OUTPUT_DIR
 from retainpdf_base.paths import ROOT_DIR
 from retainpdf_base.paths import SOURCE_JSON
 from retainpdf_base.paths import SOURCE_PDF
-from retainpdf_base.paths import RENDER_TYPOGRAPHY_MEMORY_DIR
 from retainpdf_base.paths import TRANSLATION_UNIT_CACHE_DIR
 from retainpdf_base.paths import TRANSLATIONS_DIR
 from retainpdf_pipeline.foundation.config.runtime import DEFAULT_OUTPUT_NAME

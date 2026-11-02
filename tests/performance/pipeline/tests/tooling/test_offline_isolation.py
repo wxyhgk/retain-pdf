@@ -33,13 +33,13 @@ def test_child_drops_parent_settings_and_isolates_all_cache_roots(tmp_path, monk
     script.write_text(
         "import json\nfrom retainpdf_base import paths\n"
         "print(json.dumps([str(paths.TRANSLATION_UNIT_CACHE_DIR), "
-        "str(paths.DOMAIN_CONTEXT_CACHE_DIR), str(paths.RENDER_TYPOGRAPHY_MEMORY_DIR)]))\n"
+        "str(paths.DOMAIN_CONTEXT_CACHE_DIR)]))\n"
     )
     process = subprocess.run(child_command(script), env=env, capture_output=True, text=True, timeout=20)
     assert process.returncode == 0, process.stderr
     roots = json.loads(process.stdout.splitlines()[-1])
     assert roots == [str(tmp_path / "cache" / name) for name in
-                     ("_translation_unit_cache", "_domain_context_cache", "_render_typography_memory")]
+                     ("_translation_unit_cache", "_domain_context_cache")]
 
 
 @pytest.mark.parametrize("operation", [

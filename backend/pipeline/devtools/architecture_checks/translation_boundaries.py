@@ -73,7 +73,7 @@ def check_translation_internal_boundaries(errors: list[str]) -> None:
             )
         if path.is_file() and path.name not in TRANSLATION_WORKFLOW_ALLOWED_FILES:
             errors.append(
-                f"{rel(path)}: unexpected workflow root file; place implementation in phases/scheduling/batching/legacy"
+                f"{rel(path)}: unexpected workflow root file; place implementation in phases/scheduling/batching"
             )
 
     for path in scan_py_files(workflow_root):

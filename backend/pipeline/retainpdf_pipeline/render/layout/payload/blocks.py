@@ -11,7 +11,6 @@ from retainpdf_pipeline.render.layout.payload.emit import emit_render_blocks
 from retainpdf_pipeline.render.layout.model.models import RenderBlock
 from retainpdf_pipeline.render.layout.payload.render_item import seed_render_fields
 from retainpdf_pipeline.render.layout.payload.reading_sort import sort_payloads_by_reading_order
-from retainpdf_pipeline.render.layout.typography_memory.learning import observe_payload_typography
 
 
 def build_render_blocks(
@@ -45,7 +44,6 @@ def build_render_blocks(
         unify_annotation_fonts(ordered_payloads)
     recover_underfilled_annotation_density(ordered_payloads)
     mark_adjacent_collision_risk(ordered_payloads)
-    observe_payload_typography(ordered_payloads)
     return emit_render_blocks(block_payloads)
 
 

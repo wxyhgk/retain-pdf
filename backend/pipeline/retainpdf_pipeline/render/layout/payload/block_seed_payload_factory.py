@@ -31,8 +31,6 @@ from retainpdf_pipeline.render.layout.payload.shared import layout_density_ratio
 from retainpdf_pipeline.render.layout.payload.shared import translation_density_ratio
 from retainpdf_pipeline.render.layout.payload.render_item import get_render_first_line_indent_pt
 from retainpdf_pipeline.render.layout.payload.render_item import set_render_inner_bbox
-from retainpdf_pipeline.render.layout.typography_memory.features import build_typography_feature
-from retainpdf_pipeline.render.layout.typography_memory.store import typography_memory
 from retainpdf_pipeline.render.layout.title_binary_fit import solve_title_fit
 from retainpdf_pipeline.render.layout.typography.geometry import inner_bbox
 from retainpdf_pipeline.render.layout.typography.measurement import bbox_height
@@ -87,40 +85,15 @@ def build_seed_payload_for_item(
         block_width=block_width,
         block_height=block_height,
     )
-    memory_feature = build_typography_feature(
-        item=item,
-        translated_text=translated_text,
+    title_like = is_title_like_block(item)
+    font_size_pt = adjust_body_seed_font_size(
         font_size_pt=font_size_pt,
-        leading_em=leading_em,
-        page_width=page_width,
-        page_height=page_height,
-        page_text_width_med=metrics.page_text_width_med,
+        page_body_font_size_pt=metrics.page_body_font_size_pt,
         is_body=body_like_single_line,
         dense_small_box=dense_small_box,
         heavy_dense_small_box=heavy_dense_small_box,
         wide_aspect_body_text=wide_aspect_body_text,
-        preserve_line_breaks=preserve_line_breaks,
     )
-    title_like = is_title_like_block(item)
-    memory_decision = (
-        typography_memory.lookup(memory_feature.key)
-        if memory_feature is not None and not title_like and not preserve_line_breaks
-        else None
-    )
-    memory_hit = memory_decision is not None
-    if memory_hit:
-        font_size_pt = memory_decision.font_size_pt
-        leading_em = memory_decision.leading_em
-
-    if not memory_hit:
-        font_size_pt = adjust_body_seed_font_size(
-            font_size_pt=font_size_pt,
-            page_body_font_size_pt=metrics.page_body_font_size_pt,
-            is_body=body_like_single_line,
-            dense_small_box=dense_small_box,
-            heavy_dense_small_box=heavy_dense_small_box,
-            wide_aspect_body_text=wide_aspect_body_text,
-        )
 
     if title_like:
         title_item = dict(item)
@@ -137,7 +110,7 @@ def build_seed_payload_for_item(
             font_size_pt = title_fit.font_size_pt
             leading_em = title_fit.leading_em
 
-    if dense_small_box and not metrics.body_flags.get(index) and not title_like and not memory_hit:
+    if dense_small_box and not metrics.body_flags.get(index) and not title_like:
         font_size_pt = round(font_size_pt * COMPACT_SCALE, 2)
         leading_em = round(leading_em * COMPACT_SCALE, 2)
 
@@ -224,10 +197,4 @@ def build_seed_payload_for_item(
         "text_color": item.get("_render_text_color", (0, 0, 0)),
         "cover_fill": item.get("_render_cover_fill", (1, 1, 1)),
     }
-    if memory_feature is not None:
-        payload["_typography_memory_key"] = memory_feature.key
-        if memory_hit:
-            payload["_typography_memory_hit"] = True
-            payload["_typography_memory_observations"] = memory_decision.observations
-            payload["_typography_memory_confidence"] = memory_decision.confidence
     return payload

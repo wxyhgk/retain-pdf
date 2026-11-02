@@ -82,7 +82,6 @@ _EXPORTS = {
         "retainpdf_translation.services.finalization",
         "recover_blocking_untranslated_items",
     ),
-    "translate_items_to_path": ("retainpdf_translation.workflow", "translate_items_to_path"),
     "prepare_relocated_translation_copy": (
         "retainpdf_translation.workflow.recovery",
         "prepare_relocated_translation_copy",

@@ -30,7 +30,6 @@ RENDERING_ALLOWED_ROOT_DIRS = {
     "contracts",
     "document",
     "layout",
-    "legacy",
     "output",
     "pdf_structure_profile",
     "policy",
@@ -67,7 +66,6 @@ RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.render.source_cleanup",
         "retainpdf_pipeline.render.layout",
         "retainpdf_pipeline.render.output",
-        "retainpdf_pipeline.render.legacy",
         "retainpdf_pipeline.render.visual_profile",
         "retainpdf_pipeline.render.semantics",
         # Render preparation steps (cached, independently scheduled) are composed here.
@@ -117,8 +115,7 @@ RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.render.policy",
         "retainpdf_pipeline.render.layout",
         "retainpdf_pipeline.render.layout.inline_content",
-        # Existing source preparation still reuses the PDF compressor facade and Typst temp-root helper.
-        "retainpdf_pipeline.render.legacy.pdf_compress",
+        # Existing source preparation still reuses the Typst temp-root helper.
         "retainpdf_pipeline.render.output.typst.shared",
         # Source prewarm owns cached render-source preparation and may build
         # precomputed Typst page/color profiles for the render stage.
@@ -175,16 +172,6 @@ RENDERING_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_pipeline.render.layout.typography.geometry",
         "retainpdf_pipeline.render.policy",
         "retainpdf_pipeline.render.source.background.fill",
-        "retainpdf_pipeline.render.semantics",
-    ),
-    "legacy": (
-        "retainpdf_pipeline.render.workflow",
-        "retainpdf_pipeline.render.analysis",
-        "retainpdf_pipeline.render.document",
-        "retainpdf_pipeline.render.source",
-        "retainpdf_pipeline.render.layout",
-        "retainpdf_pipeline.render.output",
-        "retainpdf_pipeline.render.legacy",
         "retainpdf_pipeline.render.semantics",
     ),
     "semantics": (
@@ -259,10 +246,6 @@ def check_render_pipeline_facade_boundary(errors: list[str]) -> None:
         "from retainpdf_pipeline.render.output.typst",
         "from retainpdf_pipeline.render.source.cleanup",
         "from retainpdf_pipeline.render.layout",
-        "from retainpdf_pipeline.render.legacy.typst_page_renderer import",
-        "from retainpdf_pipeline.render.legacy.pdf_overlay import",
-        "from retainpdf_pipeline.render.legacy.pdf_compress import build_image_compressed_pdf_copy",
-        "from retainpdf_pipeline.render.legacy.pdf_compress import compress_pdf_images_only",
     )
     for item in forbidden:
         if item in stage_text or item in execution_text:

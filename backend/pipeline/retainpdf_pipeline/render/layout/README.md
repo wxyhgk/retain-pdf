@@ -13,8 +13,6 @@
 - `title_fit.py`
 - `payload/`
 - `typography/`
-- `typography_memory/`
-  跨书字体/行距经验库。只缓存量化几何特征对应的 `font_size_pt`、`leading_em` 统计值，用作渲染 seed 的快速先验。
 
 ## 不该做什么
 
@@ -23,19 +21,3 @@
 - 不调用 OCR provider 或翻译模型。
 - 不决定整页 redaction/background 路线。
 
-## typography memory
-
-`typography_memory/` 是全局、增量学习的排版标量库，默认存放在 `data/_render_typography_memory/typography_memory.sqlite3`。
-
-边界：
-
-- 只允许记录字体大小、行间距这类标量决策。
-- key 只能由量化后的 bbox、页面尺寸、角色、行数、公式比例、译文密度等结构特征生成。
-- 不缓存原文、译文、公式内容、颜色、删除策略、page spec 或 PDF 对象。
-- 命中条件必须保守；样本数不足或方差过大时回退原算法。
-
-开关：
-
-- 默认关闭；`RETAIN_RENDER_TYPOGRAPHY_MEMORY=1` 才开启读写。它记录的是后处理压缩后的最终字号，开启后同一份输入会越渲越小（反馈环），且不同文档会互相影响，只用于实验。
-- 改动统计口径时升级 `TYPOGRAPHY_MEMORY_ALGORITHM_VERSION`，旧版本的行不会再被读到。
-- `RETAIN_RENDER_TYPOGRAPHY_MEMORY_MIN_OBS` 可调命中所需最小样本数。
