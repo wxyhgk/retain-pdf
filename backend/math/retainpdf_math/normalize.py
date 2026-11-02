@@ -187,8 +187,8 @@ def normalize_formula_for_latex_math(formula_text: str) -> str:
     if expr in {"^®", "^{®}", r"^\circled{R}", r"^\textcircled{R}"}:
         return r"\text{®}"
 
-    expr = re.sub(r"\\begin\{array\}\s*\{[^{}]*\}\s*", "", expr)
-    expr = re.sub(r"\s*\\end\{array\}", "", expr)
+    # 以前这里把 `\begin{array}{..}…\end{array}` 删掉、只留里面的 `&` 和 `\\`：MathJax 报 `Misplaced &`、
+    # mitex 排成一行，矩阵、行列式原样印成源码（2026-11-02 一份电子版的第 24 页）。两边都认 array，不删了。
     expr = re.sub(r"\\cal\s+([A-Za-z])", r"\\mathcal{\1}", expr)
     expr = re.sub(r"\\mathscr\b", r"\\mathcal", expr)
     expr = re.sub(r"\\rrangle\b", r"\\rangle", expr)

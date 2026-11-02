@@ -53,3 +53,55 @@ def test_angstrom_in_prose_only_touches_the_command():
 )
 def test_single_scripts_are_left_alone(tex):
     assert prepare_formula_for_render(tex, display=False) == (tex, True)
+
+
+# ---- 2026-11-02：渲染后查出来、原样印成源码的几种公式 ----
+
+from retainpdf_math.direct_typst import close_trailing_inline_math
+from retainpdf_math.normalize import normalize_formula_for_latex_math
+from retainpdf_math.source_repair import balance_left_right
+
+
+def test_array_is_kept_for_matrices():
+    # 删了 array 只剩 `&`、`\\`：MathJax 报 Misplaced &，mitex 排成一行（一份电子版第 24 页的矩阵）
+    tex = r"\mathbf {A} = \left( \begin{array}{c c} 3 & 2 i \\ - 2 i & 0 \end{array} \right)"
+    assert r"\begin{array}{c c}" in normalize_formula_for_latex_math(tex)
+    rendered, still_math = prepare_formula_for_render(tex, display=True)
+    assert still_math and r"\begin{array}{c c}" in rendered and r"\end{array}" in rendered
+
+
+@pytest.mark.parametrize(
+    ("tex", "expected"),
+    [
+        # OCR 把中间的竖线写成 \left|：多一个 \left
+        (r"S_{ij}\equiv \left\langle \Phi_{i}\left| \Phi_{j}\right\rangle.", r"S_{ij}\equiv \left\langle \Phi_{i}\left| \Phi_{j}\right\rangle. \right."),
+        (r"x \right) + 1", r"\left. x \right) + 1"),
+        (r"\left( a \right) \leftarrow \rightarrow", r"\left( a \right) \leftarrow \rightarrow"),  # 箭头不是定界符
+        (r"\left\langle a \middle| b \right\rangle", r"\left\langle a \middle| b \right\rangle"),
+    ],
+)
+def test_unpaired_left_right_get_an_invisible_partner(tex, expected):
+    assert balance_left_right(tex) == expected
+
+
+def test_render_prep_balances_left_right():
+    rendered, _ = prepare_formula_for_render(r"\left\langle a \left| b \right\rangle", display=False)
+    assert rendered.count(r"\left") == rendered.count(r"\right")
+
+
+@pytest.mark.parametrize(
+    ("text", "expected"),
+    [
+        # GLM 截断了最后一个公式的收尾 `$`（一页 Goldstone 图表）
+        (r"4 $s$ $(-)^{3+2} \sum_{abc}$ 5 $r$ $(-)^{3+3} \sum_{abcrst} \frac{a}{b}", r"4 $s$ $(-)^{3+2} \sum_{abc}$ 5 $r$ $(-)^{3+3} \sum_{abcrst} \frac{a}{b}$"),
+        (r"价格是 $5 美元", r"价格是 $5 美元"),  # 看不出是 LaTeX
+        (r"price $5 each", r"price $5 each"),
+        (r"$a$ 和 $\frac{1}{2} 之后", r"$a$ 和 $\frac{1}{2} 之后"),  # 后面有中文：不知道公式到哪结束
+        ("$x$ and $\\frac{1}{2}\nnext line", "$x$ and $\\frac{1}{2}\nnext line"),
+        (r"$x$ and $y$", r"$x$ and $y$"),
+        (r"$$\frac{a}{b}$$ then $\alpha_{1}", r"$$\frac{a}{b}$$ then $\alpha_{1}$"),
+        (r"cost \$5 and $x^{2}", r"cost \$5 and $x^{2}$"),
+    ],
+)
+def test_a_trailing_formula_missing_its_closing_dollar_is_closed(text, expected):
+    assert close_trailing_inline_math(text) == expected
