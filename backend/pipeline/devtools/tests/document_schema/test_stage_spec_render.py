@@ -157,9 +157,12 @@ def test_render_stage_spec_engine_defaults_to_rpr_fit(tmp_path: Path) -> None:
     assert spec.params.engine == "rpr_fit"
 
 
-def test_render_stage_spec_reads_rpr_engine_and_tolerates_case(tmp_path: Path) -> None:
+def test_render_stage_spec_reads_the_old_rpr_engine_as_rpr_fit(tmp_path: Path) -> None:
+    # rpr 路线 2026-11-02 删了；老任务的 spec 里还有这个值（大小写、空格照旧容忍），按 rpr_fit 走
     spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": " RPR"}))
-    assert spec.params.engine == "rpr"
+    assert spec.params.engine == "rpr_fit"
+    spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": " Typst "}))
+    assert spec.params.engine == "typst"
 
 
 def test_render_stage_spec_unknown_engine_falls_back_to_the_default(tmp_path: Path) -> None:
@@ -170,5 +173,5 @@ def test_render_stage_spec_unknown_engine_falls_back_to_the_default(tmp_path: Pa
 def test_render_only_passes_engine_to_render_stage(tmp_path: Path) -> None:
     from retainpdf_pipeline.render.workflow.render_only import _args_from_spec
 
-    spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": "rpr"}))
-    assert _args_from_spec(spec).render_engine == "rpr"
+    spec = RenderStageSpec.load(_write_minimal_render_spec(tmp_path, {"engine": "typst"}))
+    assert _args_from_spec(spec).render_engine == "typst"

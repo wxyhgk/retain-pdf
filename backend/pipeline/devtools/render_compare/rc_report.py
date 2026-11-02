@@ -237,8 +237,8 @@ def build_report(resolved, *, runs_dir: Path, report_dir: Path, options, env_inf
             fits[name] = _fit_blocks(case_dir, name)
             row = _variant_row(case_dir, name, measures[name], overlaps[name])
             all_ok = all_ok and row["ok"]
-            if row["engine_requested"] == "rpr" and row["engine_effective"] != "rpr":
-                row["error"] = (row["error"] + f" rpr 回退了 Typst：{row['fallback_reason']}").strip()
+            if row["engine_requested"] == "rpr_fit" and row["engine_effective"] != "rpr_fit":
+                row["error"] = (row["error"] + f" rpr_fit 回退了 Typst：{row['fallback_reason']}").strip()
                 all_ok = False
             row["geom_text_overlap_examples"] = overlaps[name][:20]
             entry["variants"].append(row)

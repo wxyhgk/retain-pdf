@@ -1,7 +1,7 @@
-"""按 render.engine 分流：typst（现有路线，默认）、rpr（自研排版引擎，字号用 retain-pdf 的规则）
-或 rpr_fit（字号也由引擎按测量决定）。
+"""按 render.engine 分流：rpr_fit（自研排版引擎，字号由引擎按测量决定，默认）或 typst（原 Typst 路线）。
+旧取值 rpr（字号用 retain-pdf 的规则，只用来对比）2026-11-02 删了，按 rpr_fit 处理（stage_specs.normalize_render_engine）。
 
-rpr 只是可选路线，任何一种用不了 / 跑失败都回退 Typst，任务不失败：
+引擎用不了 / 跑失败都回退 Typst，任务不失败：
 
 - 渲染模式不支持：dual（双栏对照）、只抽选中页的 overlay；
 - 字体不是思源宋体（引擎的字宽表只有 Source Han Serif 常规 / 粗体；Noto Serif CJK SC 字形
@@ -19,15 +19,12 @@ import time
 from pathlib import Path
 from typing import Callable
 
-from retainpdf_pipeline.foundation.shared.stage_specs import RENDER_ENGINE_RPR
 from retainpdf_pipeline.foundation.shared.stage_specs import RENDER_ENGINE_RPR_FIT
 from retainpdf_pipeline.foundation.shared.stage_specs import RENDER_ENGINE_TYPST
 from retainpdf_pipeline.foundation.shared.stage_specs import normalize_render_engine
 from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineFailed
 from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineUnavailable
 from retainpdf_pipeline.render.output.rpr.engine_cli import resolve_engine_runtime
-from retainpdf_pipeline.render.output.rpr.renderer import RPR_SUPPORTED_MODES
-from retainpdf_pipeline.render.output.rpr.renderer import build_book_rpr_pdf
 from retainpdf_pipeline.render.output.rpr_fit.renderer import RPR_FIT_SUPPORTED_MODES
 from retainpdf_pipeline.render.output.rpr_fit.renderer import build_book_rpr_fit_pdf
 from retainpdf_pipeline.render.output.typst.fit_report import note_fit_report_reason
@@ -46,14 +43,12 @@ TypstDispatch = Callable[[], tuple[int, dict[str, object]]]
 CompressFinal = Callable[[RenderExecutionContext, str], bool]
 
 
-def _precheck(
-    *, mode: str, context: RenderExecutionContext, extract_selected_pages: bool, engine: str = RENDER_ENGINE_RPR
-) -> tuple[str, str]:
+def _precheck(*, mode: str, context: RenderExecutionContext, extract_selected_pages: bool) -> tuple[str, str]:
     if extract_selected_pages:
         return "selected_pages_unsupported", "只抽选中页的渲染暂不支持 rpr 引擎"
     if mode == "dual":
         return "dual_unsupported", "双栏对照（dual）暂不支持 rpr 引擎"
-    if mode not in (RPR_FIT_SUPPORTED_MODES if engine == RENDER_ENGINE_RPR_FIT else RPR_SUPPORTED_MODES):
+    if mode not in RPR_FIT_SUPPORTED_MODES:
         return "mode_unsupported", f"渲染模式 {mode!r} 暂不支持 rpr 引擎"
     family = str(context.typst_font_family or "").strip()
     if family.lower() not in RPR_SUPPORTED_FONT_FAMILIES:
@@ -112,13 +107,11 @@ def dispatch_with_render_engine(
     fast_save: bool,
 ) -> tuple[int, dict[str, object]]:
     requested = normalize_render_engine(context.render_engine)
-    if requested not in (RENDER_ENGINE_RPR, RENDER_ENGINE_RPR_FIT):
+    if requested != RENDER_ENGINE_RPR_FIT:
         return typst_dispatch()
     started = time.perf_counter()
-    code, message = _precheck(
-        mode=mode, context=context, extract_selected_pages=extract_selected_pages, engine=requested
-    )
-    if not code and requested == RENDER_ENGINE_RPR_FIT:
+    code, message = _precheck(mode=mode, context=context, extract_selected_pages=extract_selected_pages)
+    if not code:
         try:
             runtime = resolve_engine_runtime("rpr-fit.js")
             scan_record = _obstacle_scan(context, fallback_dir=Path(context.output_pdf_path).parent)
@@ -159,47 +152,6 @@ def dispatch_with_render_engine(
             code, message = exc.code, str(exc)
         except Exception as exc:  # noqa: BLE001 - rpr_fit 是可选路线，任何失败都回退 Typst
             code, message = "rpr_render_error", f"{type(exc).__name__}: {exc}"
-    elif not code:
-        try:
-            runtime = resolve_engine_runtime()
-            diagnostics = build_book_rpr_pdf(
-                mode=mode,
-                runtime=runtime,
-                source_pdf_path=source_pdf_path,
-                output_pdf_path=context.output_pdf_path,
-                translated_pages=translated_pages,
-                font_family=RPR_ENGINE_FONT_FAMILY,
-                document_path=context.document_path,
-                indent_detection_pdf_path=context.indent_detection_pdf_path or source_pdf_path,
-                first_line_indent_lookup=context.first_line_indent_lookup,
-                effective_inner_bbox_lookup=context.effective_inner_bbox_lookup,
-                source_text_precleaned_page_indices=context.source_text_precleaned_page_indices,
-                prebuilt_page_specs=context.background_render_page_specs,
-                precomputed_colors_by_item_id=context.render_colors_by_item_id,
-                visual_profile_path=context.visual_profile_path,
-                prepared_overlay_pages=context.prepared_overlay_pages,
-                visual_cover_page_indices=context.visual_cover_page_indices,
-                fast_save=fast_save,
-            )
-            diagnostics["final_image_compressed"] = compress_final(context, f"rpr_{mode}")
-            diagnostics.update(
-                {
-                    "render_engine_requested": RENDER_ENGINE_RPR,
-                    "render_engine": RENDER_ENGINE_RPR,
-                    "render_engine_elapsed_seconds": round(time.perf_counter() - started, 3),
-                }
-            )
-            print(
-                f"rpr engine render done: mode={mode} pages={diagnostics.get('rpr_pages')} "
-                f"version={diagnostics.get('rpr_engine_version')} "
-                f"elapsed={time.perf_counter() - started:.2f}s",
-                flush=True,
-            )
-            return len(translated_pages), diagnostics
-        except (RprEngineUnavailable, RprEngineFailed) as exc:
-            code, message = exc.code, str(exc)
-        except Exception as exc:  # noqa: BLE001 - rpr 是可选路线，任何失败都回退 Typst
-            code, message = "rpr_render_error", f"{type(exc).__name__}: {exc}"
     warning = f"{requested} 引擎未使用，已回退 Typst（{code}）：{message}"
     print(warning, flush=True)
     note_fit_report_reason(f"rpr_fallback:{code}")
@@ -227,7 +179,7 @@ def render_engine_summary(*, requested: str, diagnostics: dict) -> dict[str, obj
         "requested": requested_engine,
         "effective": effective,
     }
-    if effective in (RENDER_ENGINE_RPR, RENDER_ENGINE_RPR_FIT):
+    if effective == RENDER_ENGINE_RPR_FIT:
         summary.update(
             {
                 "version": diagnostics.get("rpr_engine_version", ""),

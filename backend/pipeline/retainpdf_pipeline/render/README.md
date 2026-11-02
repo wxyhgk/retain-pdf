@@ -277,17 +277,15 @@ python3 backend/pipeline/devtools/run_golden_flow.py \
 
 ## 排版引擎开关 render.engine
 
-`render.engine = "rpr_fit"`（默认）与 `"rpr"` 走自研排版引擎（`backend/rendering-engine`，见那里的
-README），引擎直接写出叠加层 PDF（不经过 Typst）：`rpr_fit` 的字号由引擎按测量决定（`output/rpr_fit/`），
-`rpr` 用 retain-pdf 的字号规则（`output/rpr/`）。`"typst"` 走上面的 Typst 路线，也是引擎用不了时的回退：
+`render.engine = "rpr_fit"`（默认）走自研排版引擎（`backend/rendering-engine`，见那里的 README），引擎按测量定字号、
+直接写出叠加层 PDF（不经过 Typst），实现在 `output/rpr_fit/`。`"typst"` 走上面的 Typst 路线，也是引擎用不了时的回退。
+旧取值 `"rpr"`（同一引擎、字号用 retain-pdf 的规则，只用来对比）2026-11-02 删了，接口照旧收，按 `rpr_fit` 处理：
 
-- 分流在 `workflow/engine_dispatch.py`；实现在 `output/rpr/`（`input_builder.py` 把 page_specs 映射成引擎输入，
-  `text.py` 把 cmarker markdown 还原成纯文本，`obstacles.py` 从 document.v1 取障碍物，`engine_cli.py` 调子进程，
-  `report.py` 把引擎报告转成 fit_report.v1，`renderer.py` 负责合并到底图）。
-- 准备链与 Typst 背景路线共用 `output/typst/book_renderer.py: prepare_background_render_pages`。
+- 分流在 `workflow/engine_dispatch.py`；`output/rpr/` 只剩公用部分：`engine_cli.py` 调子进程，`text.py` 把 cmarker
+  markdown 还原成引擎文本。
 - 首行缩进：引擎只能从 OCR 行框估（Paddle、GLM 只有块级框，估不出来），所以两条引擎路线都用 retain-pdf
   量好的值（读原 PDF 文字层，读不到再看墨迹：扫描件每块渲染一小块灰度图找各行左缘，2026-11-02 起默认打开，
-  时间上限每页 0.1 秒、至少 8 秒，481 页的扫描书全书 16.5 秒；`RETAIN_RENDER_PIXMAP_INDENT=0` 关掉）。`rpr` 走 page_specs 带过去；`rpr_fit` 不算版式 payload，
+  时间上限每页 0.1 秒、至少 8 秒，481 页的扫描书全书 16.5 秒；`RETAIN_RENDER_PIXMAP_INDENT=0` 关掉）。`rpr_fit` 不算版式 payload，
   由 `engine_dispatch._first_line_indents` 现算（预热有就直接用），随译文条目的 `first_line_indent_pt` 交给引擎。
   算失败就不缩进，不回退 Typst；`render_diagnostics` 记 `rpr_fit_indent_source` 和缩进了几块。
 - 查公式（`rpr_fit`，`output/rpr_fit/formula_check.py`，2026-11-02）：合并完看译文 PDF 上**看得见**的文字里有没有

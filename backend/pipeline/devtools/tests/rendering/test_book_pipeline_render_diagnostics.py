@@ -80,7 +80,7 @@ def test_run_book_pipeline_returns_render_diagnostics(monkeypatch, tmp_path: Pat
     assert summary["render_diagnostics"]["typst_cover_fallback_pages"]["count"] == 1
 
 
-@pytest.mark.parametrize(("engine", "prewarm_expected"), [("typst", True), ("rpr", True), ("rpr_fit", False)])
+@pytest.mark.parametrize(("engine", "prewarm_expected"), [("typst", True), ("rpr", False), ("rpr_fit", False)])
 def test_post_translation_prewarm_follows_the_route_declaration(
     monkeypatch, tmp_path: Path, engine: str, prewarm_expected: bool
 ) -> None:

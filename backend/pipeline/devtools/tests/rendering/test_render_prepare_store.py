@@ -351,7 +351,8 @@ def test_route_declarations() -> None:
     from retainpdf_pipeline.render.prepare.routes import route_prepare_needs
 
     assert route_prepare_needs("typst") == FULL_PREPARE
-    assert route_prepare_needs("rpr") == FULL_PREPARE
     assert route_prepare_needs("") == FULL_PREPARE and route_prepare_needs(None) == FULL_PREPARE
     lean = route_prepare_needs("rpr_fit")
     assert not lean.payload_layout and lean.visual_profile and lean.obstacle_scan
+    # 旧取值 rpr（路线 2026-11-02 删了）按 rpr_fit 渲染，准备也一样
+    assert route_prepare_needs("rpr") == lean
