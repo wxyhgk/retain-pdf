@@ -109,3 +109,26 @@ test('what goes wrong is said with what to do: RetainPDF not running, the key wr
 	await assert.rejects(library({ api: 'http://127.0.0.1:40001/', fetch: pages }).check(), /40001 上没有 RetainPDF 的接口/u);
 	assert.deepEqual(await library(fakeRetainpdf()).check(), { ok: true, books: 1 });
 });
+
+test('RetainPDF saying no to the key found before (it started since, or its key changed): found again, asked once more', async () => {
+	const { fetch, asked } = fakeRetainpdf();
+	let found = 'old-key';
+	let forgotten = 0;
+	const library = new RetainpdfLibrary({
+		fetch,
+		settings: {
+			connection: async () => ({ api: 'http://127.0.0.1:41000/', key: found }),
+			forgetFound() {
+				forgotten += 1;
+				found = 'the-key';
+			},
+		},
+	});
+	assert.equal((await library.listBooks()).books[0].title, 'Quantum Chemistry');
+	assert.equal(forgotten, 1);
+	assert.equal(asked.length, 2);
+	// Still no: said, not asked again and again.
+	found = 'wrong';
+	const stubborn = new RetainpdfLibrary({ fetch, settings: { connection: async () => ({ api: 'http://127.0.0.1:41000/', key: 'wrong' }), forgetFound() {} } });
+	await assert.rejects(stubborn.listBooks(), /不认这个 API 密钥/u);
+});
