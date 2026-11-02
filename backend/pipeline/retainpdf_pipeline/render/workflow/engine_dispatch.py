@@ -77,7 +77,7 @@ def _first_line_indents(
     context: RenderExecutionContext, translated_pages: dict[int, list[dict]]
 ) -> tuple[dict[str, float], dict[str, object]]:
     """每块的首行缩进（pt），和 Typst 路线同一套规则：预热算好的就用，没有（rpr_fit 走精简准备，
-    不算版式 payload）就现算——读原 PDF 的文字层，读不到再看墨迹（小文档才开）。
+    不算版式 payload）就现算——读原 PDF 的文字层，读不到再看墨迹（扫描件；2026-11-02 起默认打开）。
 
     引擎自己只能从 OCR 行框估缩进，Paddle、GLM 只给块级框，估不出来，以前可编辑 PDF 一个缩进都没有。
     缩进只是排版细节：算失败就不缩进，不连累整条 rpr_fit 路线回退 Typst。"""

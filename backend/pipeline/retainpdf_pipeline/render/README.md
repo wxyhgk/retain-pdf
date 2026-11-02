@@ -286,7 +286,8 @@ README），引擎直接写出叠加层 PDF（不经过 Typst）：`rpr_fit` 的
   `report.py` 把引擎报告转成 fit_report.v1，`renderer.py` 负责合并到底图）。
 - 准备链与 Typst 背景路线共用 `output/typst/book_renderer.py: prepare_background_render_pages`。
 - 首行缩进：引擎只能从 OCR 行框估（Paddle、GLM 只有块级框，估不出来），所以两条引擎路线都用 retain-pdf
-  量好的值（读原 PDF 文字层，读不到再看墨迹）。`rpr` 走 page_specs 带过去；`rpr_fit` 不算版式 payload，
+  量好的值（读原 PDF 文字层，读不到再看墨迹：扫描件每块渲染一小块灰度图找各行左缘，2026-11-02 起默认打开，
+  时间上限每页 0.1 秒、至少 8 秒，481 页的扫描书全书 16.5 秒；`RETAIN_RENDER_PIXMAP_INDENT=0` 关掉）。`rpr` 走 page_specs 带过去；`rpr_fit` 不算版式 payload，
   由 `engine_dispatch._first_line_indents` 现算（预热有就直接用），随译文条目的 `first_line_indent_pt` 交给引擎。
   算失败就不缩进，不回退 Typst；`render_diagnostics` 记 `rpr_fit_indent_source` 和缩进了几块。
 - 查公式（`rpr_fit`，`output/rpr_fit/formula_check.py`，2026-11-02）：合并完看译文 PDF 上**看得见**的文字里有没有

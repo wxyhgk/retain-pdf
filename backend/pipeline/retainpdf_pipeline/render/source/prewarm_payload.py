@@ -39,9 +39,13 @@ from retainpdf_pipeline.render.visual_profile import build_document_visual_profi
 from retainpdf_pipeline.render.visual_profile import visual_profile_path_from_prewarm_manifest
 from retainpdf_pipeline.render.visual_profile import write_document_visual_profile
 
-PIXMAP_INDENT_DEFAULT_MAX_CANDIDATES_PER_PAGE = 10
-PIXMAP_INDENT_DEFAULT_MAX_SECONDS = 8.0
-PIXMAP_INDENT_AUTO_ENABLE_MAX_PAGES = 2
+# 看墨迹量首行缩进（扫描件、文字层没盖住的块才走这条路）：默认打开（2026-11-02）。以前只给 2 页以内的文档开，
+# 每页最多 10 块、总共 8 秒，481 页的扫描书一块缩进都没有、译文全部顶格；实测全书 1972 块都看一遍 16.6 秒
+# （每块约 8 毫秒），测出 603 块缩进，和原书逐段对得上。时间上限按页数给（每页 0.1 秒，至少 8 秒），
+# RETAIN_RENDER_PIXMAP_INDENT=0 关掉，*_MAX_SECONDS / *_MAX_CANDIDATES_PER_PAGE 覆盖上限。
+PIXMAP_INDENT_DEFAULT_MAX_CANDIDATES_PER_PAGE = 40
+PIXMAP_INDENT_MIN_SECONDS = 8.0
+PIXMAP_INDENT_SECONDS_PER_PAGE = 0.1
 
 
 def build_payload_prewarm(
@@ -230,13 +234,14 @@ def build_payload_geometry(
         "pixmap_disabled_candidates": 0,
     }
     geometry_started = time.perf_counter()
-    pixmap_indent_deadline = geometry_started + _pixmap_first_line_indent_max_seconds()
     page_widths = page_widths_by_index(source_pdf_path)
     with fitz.open(source_pdf_path) as source_doc:
         pixmap_policy = _pixmap_first_line_indent_policy(page_count=len(source_doc))
+        pixmap_max_seconds = _pixmap_first_line_indent_max_seconds(page_count=len(translated_pages))
+        pixmap_indent_deadline = geometry_started + pixmap_max_seconds
         indent_stats["pixmap_enabled"] = pixmap_policy["enabled"]
         indent_stats["pixmap_reason"] = pixmap_policy["reason"]
-        indent_stats["pixmap_auto_max_pages"] = PIXMAP_INDENT_AUTO_ENABLE_MAX_PAGES
+        indent_stats["pixmap_max_seconds"] = round(pixmap_max_seconds, 1)
         for page_idx, items in prepared_pages.items():
             page_width = page_widths.get(page_idx)
             try:
@@ -456,9 +461,7 @@ def _pixmap_first_line_indent_policy(*, page_count: int) -> dict[str, Any]:
         return {"enabled": True, "reason": "env_enabled"}
     if value in {"0", "false", "no", "off"}:
         return {"enabled": False, "reason": "env_disabled"}
-    if 0 <= int(page_count) <= PIXMAP_INDENT_AUTO_ENABLE_MAX_PAGES:
-        return {"enabled": True, "reason": "small_document_auto_enabled"}
-    return {"enabled": False, "reason": "default_disabled"}
+    return {"enabled": True, "reason": "default_enabled"}
 
 
 def _pixmap_first_line_indent_max_candidates_per_page() -> int:
@@ -469,12 +472,13 @@ def _pixmap_first_line_indent_max_candidates_per_page() -> int:
         return PIXMAP_INDENT_DEFAULT_MAX_CANDIDATES_PER_PAGE
 
 
-def _pixmap_first_line_indent_max_seconds() -> float:
+def _pixmap_first_line_indent_max_seconds(*, page_count: int = 0) -> float:
+    default = max(PIXMAP_INDENT_MIN_SECONDS, PIXMAP_INDENT_SECONDS_PER_PAGE * max(0, int(page_count)))
     raw = str(os.environ.get("RETAIN_RENDER_PIXMAP_INDENT_MAX_SECONDS", "") or "").strip()
     try:
-        return max(0.0, float(raw)) if raw else PIXMAP_INDENT_DEFAULT_MAX_SECONDS
+        return max(0.0, float(raw)) if raw else default
     except ValueError:
-        return PIXMAP_INDENT_DEFAULT_MAX_SECONDS
+        return default
 
 
 __all__ = [

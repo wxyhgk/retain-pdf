@@ -9,6 +9,7 @@ from types import SimpleNamespace
 from unittest import mock
 
 import fitz
+import pytest
 
 from retainpdf_pipeline.foundation.config import layout
 from retainpdf_pipeline.render.source.prewarm_payload import collect_first_line_indent_lookup
@@ -58,8 +59,8 @@ def _pixmap_indent_metrics() -> SimpleNamespace:
     return SimpleNamespace(base_metrics={0: (10.0, 1.2)}, page_text_width_med=160.0)
 
 
-def test_pixmap_first_line_indent_defaults_disabled_for_larger_prewarm(monkeypatch) -> None:
-    monkeypatch.delenv("RETAIN_RENDER_PIXMAP_INDENT", raising=False)
+def test_pixmap_first_line_indent_can_be_switched_off(monkeypatch) -> None:
+    monkeypatch.setenv("RETAIN_RENDER_PIXMAP_INDENT", "0")
     doc = fitz.open()
     for _ in range(3):
         doc.new_page(width=240, height=180)
@@ -73,7 +74,7 @@ def test_pixmap_first_line_indent_defaults_disabled_for_larger_prewarm(monkeypat
 
     with mock.patch(
         "retainpdf_pipeline.render.source.prewarm_payload.detect_first_line_indent_pt_with_displaylist",
-        side_effect=AssertionError("pixmap indent should be opt-in for larger documents"),
+        side_effect=AssertionError("RETAIN_RENDER_PIXMAP_INDENT=0 turns the pixmap path off"),
     ):
         collect_first_line_indent_lookup(
             source_doc=doc,
@@ -90,7 +91,7 @@ def test_pixmap_first_line_indent_defaults_disabled_for_larger_prewarm(monkeypat
     assert stats["pixmap_disabled_candidates"] == 1
     assert stats["pixmap_checked"] == 0
     assert stats["pixmap_enabled"] is False
-    assert stats["pixmap_reason"] == "default_disabled"
+    assert stats["pixmap_reason"] == "env_disabled"
 
 
 def test_pixmap_first_line_indent_env_opt_in_runs_detector(monkeypatch) -> None:
@@ -130,10 +131,12 @@ def test_pixmap_first_line_indent_env_opt_in_runs_detector(monkeypatch) -> None:
     assert stats["pixmap_reason"] == "env_enabled"
 
 
-def test_pixmap_first_line_indent_auto_enabled_for_tiny_documents(monkeypatch) -> None:
+def test_pixmap_first_line_indent_is_on_by_default_for_books(monkeypatch) -> None:
+    # 2026-11-02 起默认打开：以前只给 2 页以内的文档开，481 页的扫描书一块缩进都没有。
     monkeypatch.delenv("RETAIN_RENDER_PIXMAP_INDENT", raising=False)
     doc = fitz.open()
-    doc.new_page(width=240, height=180)
+    for _ in range(481):
+        doc.new_page(width=240, height=180)
     stats: dict[str, object] = {
         "pixmap_candidates": 0,
         "pixmap_checked": 0,
@@ -158,7 +161,17 @@ def test_pixmap_first_line_indent_auto_enabled_for_tiny_documents(monkeypatch) -
 
     assert sink == {"p001-b001": 9.25}
     assert stats["pixmap_enabled"] is True
-    assert stats["pixmap_reason"] == "small_document_auto_enabled"
+    assert stats["pixmap_reason"] == "default_enabled"
+
+
+def test_pixmap_first_line_indent_time_limit_grows_with_the_pages(monkeypatch) -> None:
+    from retainpdf_pipeline.render.source import prewarm_payload
+
+    monkeypatch.delenv("RETAIN_RENDER_PIXMAP_INDENT_MAX_SECONDS", raising=False)
+    assert prewarm_payload._pixmap_first_line_indent_max_seconds(page_count=10) == 8.0
+    assert prewarm_payload._pixmap_first_line_indent_max_seconds(page_count=481) == pytest.approx(48.1)
+    monkeypatch.setenv("RETAIN_RENDER_PIXMAP_INDENT_MAX_SECONDS", "3")
+    assert prewarm_payload._pixmap_first_line_indent_max_seconds(page_count=481) == 3.0
 
 
 def test_payload_prewarm_records_default_pixmap_indent_diagnostics(monkeypatch) -> None:
@@ -183,8 +196,9 @@ def test_payload_prewarm_records_default_pixmap_indent_diagnostics(monkeypatch) 
         )
 
     diagnostics = payload["first_line_indent_diagnostics"]
-    assert diagnostics["pixmap_enabled"] is False
-    assert diagnostics["pixmap_reason"] == "default_disabled"
+    assert diagnostics["pixmap_enabled"] is True
+    assert diagnostics["pixmap_reason"] == "default_enabled"
     assert diagnostics["pixmap_candidates"] == 1
-    assert diagnostics["pixmap_disabled_candidates"] == 1
-    assert diagnostics["pixmap_checked"] == 0
+    assert diagnostics["pixmap_disabled_candidates"] == 0
+    assert diagnostics["pixmap_checked"] == 1
+    assert diagnostics["pixmap_max_seconds"] == 8.0
