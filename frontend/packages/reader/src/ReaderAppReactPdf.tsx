@@ -15,6 +15,7 @@ import {
 } from "./components/react-pdf/index.js";
 import type { ReaderAssistantPanel, ReaderWorkspaceMode } from "./components/react-pdf/index.js";
 import { useReaderAssistantPanel } from "./hooks/use-reader-assistant-panel.js";
+import { useReaderHostAi } from "./hooks/use-reader-host-ai.js";
 import { DownloadToastHost } from "./shared/react/DownloadToastHost.jsx";
 import { READER_ROOT_CLASS } from "./pdf/reader-dom-contract.js";
 import { readerViewportWidth } from "./pdf/reader-zoom.js";
@@ -146,6 +147,9 @@ export function resolveLiveTranslationVisibleOnWorkspaceChange(
   }
   return false;
 }
+
+/** dock 里的「AI」（id 仍是 terminal，见 reader-host-panels.ts）。 */
+const AI_PANEL: ReaderAssistantPanel = "terminal";
 
 export function ReaderAppReactPdf() {
   const c = useReaderReactController();
@@ -297,7 +301,15 @@ export function ReaderAppReactPdf() {
     );
   }, [liveToggles.sourcePaneToggle, liveTranslationVisible]);
 
+  // 放在笔记（Studio）里、Studio 有自己的 AI：「AI」交给它，不开 dock 的终端（只留一个 AI）；
+  // 上次存着开着的终端也收起来。
+  const hostAi = useReaderHostAi();
+  useEffect(() => {
+    if (hostAi.available && assistantPanel === AI_PANEL) setAssistantPanel(null);
+  }, [hostAi.available, assistantPanel]);
+
   const selectAssistant = useCallback((next: ReaderAssistantPanel) => {
+    if (next === AI_PANEL && hostAi.ask()) return;
     setAssistantPanel(next);
     // 栏锁的语义是「这一次从某栏的选区问 AI」，生命周期跟着那次提问。
     //
@@ -305,7 +317,7 @@ export function ReaderAppReactPdf() {
     // —— 而换面板是 dock 上最常用的动作。漏掉的表现：在译文栏问过 AI 之后点
     // Markdown，面板换了，PDF 那半边却还只剩译文栏，顶栏还挂着「对照被面板挤掉」。
     setAssistantPdfPane(null);
-  }, []);
+  }, [hostAi.ask]);
 
   const hostPanelContext = useMemo(() => ({
     // **只认 jobId**，不拿 documentId 兜底（契约见 adapters.ts：「用 jobId，换文档

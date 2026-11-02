@@ -24,7 +24,7 @@ export function normalizeTranslationQuality(value: unknown): TranslationQuality 
 /**
  * 排版引擎（render.engine）。auto 一个字段都不发，由后端按当前默认挑；
  * rpr_fit = 自研引擎、字号由引擎量着定；typst = 原来的 Typst 路线。
- * 后端还有一档 rpr（引擎排版、字号沿用旧规则），只用于对比，界面不放。
+ * 旧取值 rpr 后端按 rpr_fit 处理，界面不放。
  */
 export type RenderEngine = "auto" | "rpr_fit" | "typst";
 

@@ -53,6 +53,8 @@ const adapters: ReaderAdapters = {
   notesQuote: studio?.notesQuote,
   notesPanel: studio?.notesPanel,
   readingPosition: studio?.readingPosition,
+  // —— 放在 Studio 里、它有自己的 AI：阅读页的「AI」打开它的，不开上面的终端 ——
+  hostAi: studio?.hostAi,
 };
 setReaderAdapters(adapters);
 
