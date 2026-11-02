@@ -5,7 +5,7 @@
 当前约定：
 
 - `mineru.env`
-  文件中写入 `MINERU_API_TOKEN=...`
+  文件中写入 `RETAIN_MINERU_API_TOKEN=...`（旧名 `MINERU_API_TOKEN` 照旧认）
 
 说明：
 

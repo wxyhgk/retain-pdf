@@ -37,7 +37,7 @@ def get_api_key(explicit_api_key: str = "", env_var: str = DEFAULT_API_KEY_ENV, 
         env_file_name=DEFAULT_API_KEY_FILE,
     )
     if required and not api_key:
-        raise RuntimeError(f"Missing API key. Set {env_var}, scripts/.env/{DEFAULT_API_KEY_FILE}, or pass --api-key.")
+        raise RuntimeError(f"Missing API key. Set {env_var}, backend/pipeline/.env/{DEFAULT_API_KEY_FILE}, or pass --api-key.")
     return api_key
 
 

@@ -5,7 +5,6 @@ from pathlib import Path
 
 from retainpdf_pipeline.foundation.shared.job_dirs import JobDirs
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
-from retainpdf_base.local_env import get_secret
 from retainpdf_pipeline.ocr.document_schema.adapters import adapt_path_to_document_v1_with_report
 from retainpdf_pipeline.ocr.document_schema.finalize import finalize_normalized_document
 from retainpdf_pipeline.ocr.document_schema.providers import PROVIDER_MINERU
@@ -15,21 +14,17 @@ from retainpdf_pipeline.ocr.mineru_provider.artifacts import download_and_unpack
 from retainpdf_pipeline.ocr.mineru_provider.artifacts import ensure_source_pdf_from_bundle
 from retainpdf_pipeline.ocr.mineru_provider.artifacts import resolve_layout_json_path
 from retainpdf_pipeline.ocr.mineru_provider.artifacts import save_json
-from retainpdf_pipeline.ocr.mineru_provider.mineru_api import MINERU_ENV_FILE
-from retainpdf_pipeline.ocr.mineru_provider.mineru_api import MINERU_TOKEN_ENV
+from retainpdf_pipeline.ocr.mineru_provider.mineru_api import missing_mineru_token_message
+from retainpdf_pipeline.ocr.mineru_provider.mineru_api import resolve_mineru_token
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import parse_extra_formats
 from retainpdf_pipeline.ocr.mineru_provider.submission import run_local_extract_task
 from retainpdf_pipeline.ocr.mineru_provider.submission import run_remote_extract_task
 
 
 def _resolve_mineru_token(args: Namespace) -> str:
-    mineru_token = get_secret(
-        explicit_value=args.mineru_token,
-        env_var=MINERU_TOKEN_ENV,
-        env_file_name=MINERU_ENV_FILE,
-    )
+    mineru_token = resolve_mineru_token(args.mineru_token)
     if not mineru_token:
-        raise RuntimeError(f"Missing MinerU token. Set --mineru-token, scripts/.env/{MINERU_ENV_FILE}, or env {MINERU_TOKEN_ENV}.")
+        raise RuntimeError(missing_mineru_token_message("--mineru-token"))
     return mineru_token
 
 

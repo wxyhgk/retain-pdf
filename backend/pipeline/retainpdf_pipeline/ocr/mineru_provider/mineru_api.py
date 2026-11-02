@@ -17,12 +17,31 @@ from retainpdf_pipeline.ocr.retry import sanitize_url_for_log
 
 
 MINERU_BASE_URL = "https://mineru.net"
-MINERU_TOKEN_ENV = "MINERU_API_TOKEN"
+# 和服务商清单（ocr_provider_config.py、backend/config/ocr_providers.json、Rust 的 catalog）同一个名字；
+# 以前这里读的是 MINERU_API_TOKEN，清单上写的却是 RETAIN_MINERU_API_TOKEN（2026-11-02 整理时查出）。旧名照旧认。
+MINERU_TOKEN_ENV = "RETAIN_MINERU_API_TOKEN"
+MINERU_LEGACY_TOKEN_ENV = "MINERU_API_TOKEN"
 MINERU_ENV_FILE = "mineru.env"
 MINERU_RETRY_ATTEMPTS_ENV = "RETAIN_MINERU_RETRY_ATTEMPTS"
 MINERU_RETRY_BACKOFF_ENV = "RETAIN_MINERU_RETRY_BACKOFF_SECONDS"
 
 _SESSION: requests.Session | None = None
+
+
+def resolve_mineru_token(explicit_value: str = "") -> str:
+    """命令行 > 本机密钥文件 > 环境变量（retainpdf_base.local_env.get_secret 的先后）；新名找不到再找旧名。"""
+    for env_var in (MINERU_TOKEN_ENV, MINERU_LEGACY_TOKEN_ENV):
+        token = get_secret(explicit_value=explicit_value, env_var=env_var, env_file_name=MINERU_ENV_FILE)
+        if token:
+            return token
+    return ""
+
+
+def missing_mineru_token_message(flag: str) -> str:
+    return (
+        f"Missing MinerU token. Set {flag}, {MINERU_TOKEN_ENV} in backend/pipeline/.env/{MINERU_ENV_FILE} "
+        f"(or the directory in RETAIN_PDF_ENV_DIR), or env {MINERU_TOKEN_ENV}."
+    )
 
 
 class MinerUNetworkError(RetainNetworkError):
@@ -228,7 +247,7 @@ def parse_args() -> argparse.Namespace:
     source_group.add_argument("--file-url", type=str, default="", help="Remote file URL for /api/v4/extract/task.")
     source_group.add_argument("--file-path", type=str, default="", help="Local file path for upload flow via /api/v4/file-urls/batch.")
 
-    parser.add_argument("--token", type=str, default="", help=f"MinerU API token. Prefer scripts/.env/{MINERU_ENV_FILE} or env {MINERU_TOKEN_ENV}.")
+    parser.add_argument("--token", type=str, default="", help=f"MinerU API token. Prefer backend/pipeline/.env/{MINERU_ENV_FILE} or env {MINERU_TOKEN_ENV}.")
     parser.add_argument("--model-version", type=str, default="vlm", help="pipeline | vlm | MinerU-HTML")
     parser.add_argument("--is-ocr", action="store_true", help="Enable OCR.")
     parser.add_argument("--disable-formula", action="store_true", help="Disable formula recognition.")
@@ -248,13 +267,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    token = get_secret(
-        explicit_value=args.token,
-        env_var=MINERU_TOKEN_ENV,
-        env_file_name=MINERU_ENV_FILE,
-    )
+    token = resolve_mineru_token(args.token)
     if not token:
-        raise RuntimeError(f"Missing MinerU token. Set --token, scripts/.env/{MINERU_ENV_FILE}, or env {MINERU_TOKEN_ENV}.")
+        raise RuntimeError(missing_mineru_token_message("--token"))
     extra_formats = parse_extra_formats(args.extra_formats)
     enable_formula = not args.disable_formula
     enable_table = not args.disable_table
