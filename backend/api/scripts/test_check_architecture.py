@@ -1045,5 +1045,38 @@ for _case in (
 del _case
 
 
+
+class StaleAllowlistTests(unittest.TestCase):
+    """名单条目过期就报（2026-11-02：ALLOWED_APPSTATE_FILES 14 条全部不起作用，一直没人发现）。"""
+
+    def test_entries_the_check_no_longer_needs_or_reaches_are_reported(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            still = Path(tmp) / "still.rs"
+            still.write_text("use crate::job_runner::x;", encoding="utf-8")
+            clean = Path(tmp) / "clean.rs"
+            clean.write_text("fn main() {}", encoding="utf-8")
+            scanned = {Path("src/still.rs"): still, Path("src/clean.rs"): clean}
+            errors: list[str] = []
+            checks.report_stale_allowlist(
+                errors,
+                "SOME_ALLOWLIST",
+                {Path("src/still.rs"), Path("src/clean.rs"), Path("src/gone.rs")},
+                scanned,
+                lambda path: "job_runner::" in path.read_text(encoding="utf-8"),
+                "references job_runner::",
+            )
+        self.assertEqual(
+            errors,
+            [
+                "src/clean.rs: no longer references job_runner::; remove it from SOME_ALLOWLIST",
+                "src/gone.rs: listed in SOME_ALLOWLIST but this check does not scan it (moved, deleted or out of scope); remove it",
+            ],
+        )
+
+    def test_the_cleared_lists_stay_empty(self):
+        self.assertEqual(checks.ALLOWED_APPSTATE_FILES, set())
+        self.assertEqual(checks.ROUTE_RUNNER_IMPORT_ALLOWLIST, set())
+
+
 if __name__ == "__main__":
     unittest.main()
