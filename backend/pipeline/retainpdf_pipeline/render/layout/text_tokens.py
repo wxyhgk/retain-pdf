@@ -66,7 +66,13 @@ def _is_escaped(text: str, index: int) -> bool:
     return backslashes % 2 == 1
 
 
+# 四种占位符的头一个字符：不是这几个就不用挨个试（每个位置都要过一遍这条规则，708 页的书一次渲染调 110 万次）
+_FORMULA_PLACEHOLDER_FIRST_CHARS = frozenset("[_\u27e6<")
+
+
 def _match_formula_placeholder(text: str, index: int) -> int:
+    if text[index] not in _FORMULA_PLACEHOLDER_FIRST_CHARS:
+        return index
     for prefix, suffix in (
         ("[[FORMULA_", "]]"),
         ("__FORMULA_", "__"),

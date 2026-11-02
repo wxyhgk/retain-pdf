@@ -77,6 +77,12 @@ def _first_line_indents(
     引擎自己只能从 OCR 行框估缩进，Paddle、GLM 只给块级框，估不出来，以前可编辑 PDF 一个缩进都没有。
     缩进只是排版细节：算失败就不缩进，不连累整条 rpr_fit 路线回退 Typst。"""
     if context.first_line_indent_lookup is not None:
+        if context.first_line_indent_stats is not None:
+            # 渲染准备算底色时顺带量好的（route_visual_profile），不再整个重量一遍
+            return dict(context.first_line_indent_lookup), {
+                "rpr_fit_indent_source": "visual_profile",
+                "rpr_fit_indent_stats": context.first_line_indent_stats,
+            }
         return dict(context.first_line_indent_lookup), {"rpr_fit_indent_source": "prewarm"}
     if context.indent_detection_pdf_path is None:
         return {}, {"rpr_fit_indent_source": "none"}

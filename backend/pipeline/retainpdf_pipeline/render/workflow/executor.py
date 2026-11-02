@@ -132,6 +132,8 @@ def execute_render_plan(
     needs = route_prepare_needs(render_engine)
     lean = not needs.payload_layout and not no_cache and render_prewarm_manifest_path is not None
     lean_visual_profile_path: Path | None = None
+    lean_indents: dict[str, float] | None = None
+    lean_indent_stats: dict | None = None
     render_source_pdf = (
         try_load_prewarmed_render_source_pdf(
             manifest_path=render_prewarm_manifest_path,
@@ -229,7 +231,9 @@ def execute_render_plan(
         if not no_cache:
             prepare_progress.step(3)
         if lean:
-            lean_visual_profile_path = _route_visual_profile(render_plan, prepare_dir, render_prewarm_manifest_path)
+            lean_visual_profile_path, lean_indents, lean_indent_stats = _route_visual_profile(
+                render_plan, prepare_dir, render_prewarm_manifest_path
+            )
         sync_payload_prewarm = (
             {}
             if no_cache or lean
@@ -277,7 +281,9 @@ def execute_render_plan(
             )
     elif payload_prewarm is None and lean:
         prepare_progress.step(3)
-        lean_visual_profile_path = _route_visual_profile(render_plan, prepare_dir, render_prewarm_manifest_path)
+        lean_visual_profile_path, lean_indents, lean_indent_stats = _route_visual_profile(
+            render_plan, prepare_dir, render_prewarm_manifest_path
+        )
     elif payload_prewarm is None and not no_cache and render_prewarm_manifest_path is not None:
         prepare_progress.step(3)
         sync_prepare_started = time.perf_counter()
@@ -345,8 +351,9 @@ def execute_render_plan(
         first_line_indent_lookup=(
             payload_prewarm.first_line_indent_lookup
             if payload_prewarm is not None
-            else None
+            else lean_indents
         ),
+        first_line_indent_stats=lean_indent_stats if payload_prewarm is None else None,
         effective_inner_bbox_lookup=(
             payload_prewarm.effective_inner_bbox_lookup
             if payload_prewarm is not None
@@ -434,13 +441,17 @@ def execute_render_plan(
             temp_source_path.unlink(missing_ok=True)
 
 
-def _route_visual_profile(render_plan: RenderPlan, prepare_dir: Path, manifest_path: Path) -> Path | None:
-    return build_route_visual_profile(
+def _route_visual_profile(
+    render_plan: RenderPlan, prepare_dir: Path, manifest_path: Path
+) -> tuple[Path | None, dict[str, float] | None, dict | None]:
+    """(底色 / 字色文件, 首行缩进, 量缩进的统计)：缩进交给引擎那一步，不再整个重量一遍。"""
+    result = build_route_visual_profile(
         prepare_dir=prepare_dir,
         source_pdf_path=render_plan.render_inputs.source_pdf_path,
         translated_pages=render_plan.selected_pages,
         target_path=visual_profile_path_from_prewarm_manifest(manifest_path),
     )
+    return result.path, result.first_line_indents, result.first_line_indent_stats
 
 
 def _dispatch_render_mode(
