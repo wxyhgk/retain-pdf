@@ -30,7 +30,8 @@ const i = [
   "notesQuote",
   "notesPanel",
   "readingPosition",
-  "hostAi"
+  "hostAi",
+  "hostNavigation"
 ], R = [
   "resolveMarkdownAssetUrl",
   "resolveReaderDownloadUrls",

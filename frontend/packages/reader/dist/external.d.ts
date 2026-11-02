@@ -38,6 +38,14 @@ export declare const readerHostAi: () => {
     subscribe: (listener: () => void) => () => void;
     ask: () => boolean;
 };
+/** 宿主让阅读页原地翻到某一段：同上，宿主给了才有。 */
+export declare const readerHostNavigation: () => {
+    subscribe: (listener: (target: {
+        jobId: string;
+        pageIdx: number | null;
+        blockId: string;
+    }) => boolean) => () => void;
+};
 export declare const readerPdfPort: () => ReaderPdfPort;
 export declare const readerSessionDataPort: () => ReaderSessionDataPort;
 export declare const resolveReaderAnchor: (...a: any[]) => any;
