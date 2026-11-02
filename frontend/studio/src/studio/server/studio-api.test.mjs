@@ -1,0 +1,374 @@
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { EventEmitter } from 'node:events';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { Readable, Writable } from 'node:stream';
+import test from 'node:test';
+import studioDev from '../../plugins/studio-dev.mjs';
+import { ArticleRepository } from './articles/article-repository.mjs';
+import { articleBundlePaths } from '../../articles/bundle-paths.mjs';
+
+/** The Studio's API on an article of its own; with `plugins`, this project's plugins too (plugins/). */
+async function apiFixture(t, { plugins = false } = {}) {
+	const projectRoot = await mkdtemp(join(tmpdir(), 'studio-api-'));
+	t.after(() => rm(projectRoot, { recursive: true, force: true }));
+	if (plugins) await symlink(fileURLToPath(new URL('../../../plugins', import.meta.url)), join(projectRoot, 'plugins'));
+	const blogRoot = join(projectRoot, 'blog');
+	await mkdir(blogRoot);
+	await new ArticleRepository(blogRoot).create({ slug: 'api-note', title: 'API note' });
+	const paths = articleBundlePaths(blogRoot, 'api-note');
+	await mkdir(join(paths.assets, 'nested'), { recursive: true });
+	await writeFile(join(paths.assets, 'nested', 'water.xyz'), '3\nwater\n');
+	await writeFile(join(paths.ai, 'private.md'), 'private');
+
+	let middleware;
+	process.env.STUDIO_BLOG_DIR = blogRoot;
+	t.after(() => { delete process.env.STUDIO_BLOG_DIR; });
+	studioDev().configureServer({
+		config: { root: projectRoot },
+		middlewares: { use(handler) { middleware = handler; } },
+	});
+	return Object.assign(middleware, { paths });
+}
+
+/** A response the server can write or stream to; `body` is all it sent. */
+function fakeResponse(headers = new Map()) {
+	const chunks = [];
+	const response = Object.assign(new Writable({
+		write(chunk, _encoding, done) {
+			chunks.push(Buffer.from(chunk));
+			done();
+		},
+	}), {
+		statusCode: 0,
+		setHeader(name, value) { headers.set(name.toLowerCase(), value); },
+	});
+	return Object.defineProperty(response, 'body', { get: () => Buffer.concat(chunks) });
+}
+
+async function get(middleware, url) {
+	const headers = new Map();
+	const response = fakeResponse(headers);
+	await middleware({
+		url,
+		method: 'GET',
+		headers: {},
+		socket: { remoteAddress: '127.0.0.1' },
+	}, response, () => assert.fail('Studio route unexpectedly called next()'));
+	return { response, headers };
+}
+
+test('GET resource API returns a small file with defensive headers', async (t) => {
+	const middleware = await apiFixture(t);
+	const { response, headers } = await get(middleware, '/api/studio/articles/api-note/files/assets/nested/water.xyz');
+	assert.equal(response.statusCode, 200);
+	assert.equal(response.body.toString('utf8'), '3\nwater\n');
+	assert.equal(headers.get('content-type'), 'text/plain; charset=utf-8');
+	assert.equal(headers.get('x-content-type-options'), 'nosniff');
+	assert.equal(headers.get('content-security-policy'), 'sandbox');
+});
+
+test('an SVG is a picture, and a script in it never runs', async (t) => {
+	const middleware = await apiFixture(t);
+	await writeFile(join(middleware.paths.img, 'scheme.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>');
+	const { response, headers } = await get(middleware, '/api/studio/articles/api-note/files/img/scheme.svg');
+	assert.equal(response.statusCode, 200);
+	assert.equal(headers.get('content-type'), 'image/svg+xml');
+	assert.equal(headers.get('content-security-policy'), 'sandbox');
+});
+
+test('GET resource API streams a file of any size', async (t) => {
+	const middleware = await apiFixture(t);
+	const log = Buffer.alloc(9 * 1024 * 1024, 'x');
+	await writeFile(join(middleware.paths.assets, 'big.log'), log);
+	const { response, headers } = await get(middleware, '/api/studio/articles/api-note/files/assets/big.log');
+	assert.equal(response.statusCode, 200);
+	assert.equal(headers.get('content-length'), log.length);
+	assert.equal(response.body.length, log.length);
+});
+
+test('a code block\'s @file comes drawn as the blog draws it, only the lines shown', async (t) => {
+	const middleware = await apiFixture(t);
+	const lines = Array.from({ length: 1000 }, (_, index) => `line ${index + 1}`);
+	await writeFile(join(middleware.paths.assets, 'opt.log'), `${lines.join('\n')}\n`);
+	const base = '/api/studio/articles/api-note/code-file';
+	const ask = (meta) => call(middleware, { url: `${base}?${new URLSearchParams({ path: './assets/opt.log', language: 'output', meta })}`, method: 'GET' });
+	const shown = (figure) => [...JSON.stringify(figure).matchAll(/"dataLine":"(\d+)"/gu)].map((match) => Number(match[1]));
+
+	const long = await ask('');
+	assert.equal(long.status, 200);
+	assert.equal(shown(long.data.figure).length, 300, 'the head and the tail');
+	assert.match(JSON.stringify(long.data.figure), /省略第 201–900 行/u);
+	assert.match(JSON.stringify(long.data.figure), /\/api\/studio\/articles\/api-note\/files\/assets\/opt\.log/u);
+
+	const named = await ask('title="water.log" lines=500-502');
+	assert.deepEqual(shown(named.data.figure), [500, 501, 502]);
+	assert.match(JSON.stringify(named.data.figure), /water\.log/u);
+
+	await writeFile(join(middleware.paths.assets, 'opt.log'), 'changed\n');
+	const changed = await ask('');
+	assert.deepEqual(shown(changed.data.figure), [1], 'a changed file is drawn anew');
+
+	assert.equal((await call(middleware, { url: `${base}?path=./assets/none.log&language=output`, method: 'GET' })).status, 404);
+	assert.equal((await call(middleware, { url: `${base}?path=./ai/private.md&language=output`, method: 'GET' })).status, 403);
+	assert.equal((await call(middleware, { url: `${base}?path=../other/index.md&language=output`, method: 'GET' })).status, 400);
+});
+
+test('GET resource API rejects AI files and traversal before URL normalization', async (t) => {
+	const middleware = await apiFixture(t);
+	const ai = await get(middleware, '/api/studio/articles/api-note/files/ai/private.md');
+	assert.equal(ai.response.statusCode, 403);
+
+	const traversal = await get(middleware, '/api/studio/articles/api-note/files/assets/%2e%2e/ai/private.md');
+	assert.equal(traversal.response.statusCode, 400);
+	assert.match(JSON.parse(traversal.response.body).error, /\.\.|相对路径/u);
+
+	const absolute = await get(middleware, '/api/studio/articles/api-note/files/assets/%2Fetc%2Fpasswd');
+	assert.equal(absolute.response.statusCode, 400);
+});
+
+/** A request with a body, as the browser sends it from the Studio page. */
+async function call(middleware, { url, method = 'POST', headers = {}, body }) {
+	const request = Object.assign(Readable.from(body === undefined ? [] : [Buffer.from(body)]), {
+		url,
+		method,
+		headers: { host: 'localhost:4321', origin: 'http://localhost:4321', ...headers },
+		socket: { remoteAddress: '127.0.0.1' },
+	});
+	const response = fakeResponse();
+	await middleware(request, response, () => assert.fail('Studio route unexpectedly called next()'));
+	return { status: response.statusCode, data: JSON.parse(response.body) };
+}
+
+const asJson = (data) => ({ headers: { 'content-type': 'application/json' }, body: JSON.stringify(data) });
+
+test('file API lists, uploads, makes folders, moves and trashes', async (t) => {
+	const middleware = await apiFixture(t);
+	const base = '/api/studio/articles/api-note';
+
+	const tree = await call(middleware, { url: `${base}/tree`, method: 'GET' });
+	assert.equal(tree.status, 200);
+	assert.ok(tree.data.entries.some((entry) => entry.path === 'assets/nested/water.xyz' && entry.size === 8));
+
+	const upload = await call(middleware, {
+		url: `${base}/files?folder=img&name=${encodeURIComponent('My Plot.png')}`,
+		headers: { 'content-type': 'application/octet-stream' },
+		body: 'png',
+	});
+	assert.deepEqual(upload, { status: 201, data: { path: 'img/My-Plot.png', size: 3 } });
+	assert.equal(await readFile(join(middleware.paths.img, 'My-Plot.png'), 'utf8'), 'png');
+	const nested = await call(middleware, {
+		url: `${base}/files?folder=assets&subfolder=${encodeURIComponent('My Run/frames')}&name=1.xyz`,
+		headers: { 'content-type': 'application/octet-stream' },
+		body: 'xyz',
+	});
+	assert.deepEqual(nested, { status: 201, data: { path: 'assets/My-Run/frames/1.xyz', size: 3 } });
+
+	assert.deepEqual(await call(middleware, { url: `${base}/folders`, ...asJson({ path: 'img/plots' }) }), { status: 201, data: { path: 'img/plots' } });
+	const move = await call(middleware, { url: `${base}/move`, ...asJson({ from: 'img/My-Plot.png', to: 'img/plots/plot.png' }) });
+	assert.equal(move.status, 200);
+	assert.equal(move.data.path, 'img/plots/plot.png');
+	assert.equal(move.data.references, 0);
+	const trashed = await call(middleware, { url: `${base}/trash`, ...asJson({ path: 'img/plots/plot.png' }) });
+	assert.equal(trashed.status, 200);
+	assert.deepEqual(await readdir(join(middleware.paths.img, 'plots')), []);
+	assert.equal(await readFile(trashed.data.trashedTo, 'utf8'), 'png');
+});
+
+test('file API reports refusals with their status', async (t) => {
+	const middleware = await apiFixture(t);
+	const base = '/api/studio/articles/api-note';
+	const locked = await call(middleware, { url: `${base}/trash`, ...asJson({ path: 'index.md' }) });
+	assert.equal(locked.status, 403);
+	const taken = await call(middleware, { url: `${base}/move`, ...asJson({ from: 'assets/nested', to: 'assets/nested' }) });
+	assert.equal(taken.status, 409);
+	const missing = await call(middleware, { url: `${base}/move`, ...asJson({ from: 'img/none.png', to: 'img/b.png' }) });
+	assert.equal(missing.status, 404);
+	const outside = await call(middleware, { url: `${base}/folders`, ...asJson({ path: '../escape' }) });
+	assert.equal(outside.status, 400);
+	assert.deepEqual(await call(middleware, { url: `${base}/reveal`, ...asJson({ path: 'index.md' }) }), { status: 200, data: { path: 'index.md' } });
+	assert.equal((await call(middleware, { url: `${base}/reveal`, ...asJson({ path: '../api-note' }) })).status, 400);
+	assert.equal((await call(middleware, { url: `${base}/reveal`, ...asJson({ path: 'img/none.png' }) })).status, 404);
+});
+
+test('file API changes need the types a cross-site form cannot send', async (t) => {
+	const middleware = await apiFixture(t);
+	const base = '/api/studio/articles/api-note';
+	const form = await call(middleware, {
+		url: `${base}/trash`,
+		headers: { 'content-type': 'application/x-www-form-urlencoded' },
+		body: 'path=assets/nested/water.xyz',
+	});
+	assert.equal(form.status, 415);
+	const plainUpload = await call(middleware, { url: `${base}/files?folder=img&name=a.png`, headers: { 'content-type': 'text/plain' }, body: 'x' });
+	assert.equal(plainUpload.status, 415);
+	const foreign = await call(middleware, { url: `${base}/trash`, headers: { origin: 'https://evil.example', 'content-type': 'application/json' }, body: '{"path":"assets/nested/water.xyz"}' });
+	assert.equal(foreign.status, 403);
+	assert.equal(await readFile(join(middleware.paths.assets, 'nested', 'water.xyz'), 'utf8'), '3\nwater\n');
+	const tooLarge = await call(middleware, {
+		url: `${base}/files?folder=img&name=a.png`,
+		headers: { 'content-type': 'application/octet-stream', 'content-length': String(65 * 1024 * 1024) },
+	});
+	assert.equal(tooLarge.status, 413);
+});
+
+test('file API moves a referenced file only for the article as saved', async (t) => {
+	const middleware = await apiFixture(t);
+	const base = '/api/studio/articles/api-note';
+	const markdown = join(middleware.paths.directory, 'index.md');
+	await writeFile(markdown, `${await readFile(markdown, 'utf8')}\n\`\`\`xyz\n@file ./assets/nested/water.xyz\n\`\`\`\n`);
+
+	const stale = await call(middleware, { url: `${base}/move`, ...asJson({ from: 'assets/nested/water.xyz', to: 'assets/water.xyz', expectedRevision: 'old' }) });
+	assert.equal(stale.status, 409);
+
+	const article = await call(middleware, { url: '/api/studio/articles/api-note', method: 'GET' });
+	const moved = await call(middleware, {
+		url: `${base}/move`,
+		...asJson({ from: 'assets/nested/water.xyz', to: 'assets/water.xyz', expectedRevision: article.data.revision }),
+	});
+	assert.equal(moved.status, 200);
+	assert.equal(moved.data.references, 1);
+	assert.match(await readFile(markdown, 'utf8'), /@file \.\/assets\/water\.xyz\n/u);
+});
+
+test('the events stream reports changes on disk until the page goes away', { timeout: 5000 }, async (t) => {
+	const middleware = await apiFixture(t);
+	const request = Object.assign(new EventEmitter(), {
+		url: '/api/studio/events',
+		method: 'GET',
+		headers: {},
+		socket: { remoteAddress: '127.0.0.1' },
+	});
+	const written = [];
+	let notify = () => {};
+	const response = {
+		writeHead(status, headers) { this.status = status; this.headers = headers; },
+		write(chunk) { written.push(chunk); notify(); },
+	};
+	await middleware(request, response, () => assert.fail('Studio route unexpectedly called next()'));
+	assert.equal(response.status, 200);
+	assert.match(response.headers['Content-Type'], /^text\/event-stream/u);
+
+	const reported = new Promise((resolve) => {
+		notify = () => {
+			if (written.some((chunk) => chunk.includes('"assets/new.xyz"'))) resolve();
+		};
+	});
+	await new Promise((resolve) => setTimeout(resolve, 100));
+	await writeFile(join(middleware.paths.assets, 'new.xyz'), '1\n');
+	await reported;
+	const event = written.find((chunk) => chunk.includes('"assets/new.xyz"'));
+	assert.ok(JSON.parse(event.replace(/^data: /u, '')).some((change) => change.slug === 'api-note'));
+
+	request.emit('close');
+	const count = written.length;
+	await writeFile(join(middleware.paths.assets, 'later.xyz'), '1\n');
+	await new Promise((resolve) => setTimeout(resolve, 300));
+	assert.equal(written.length, count, 'nothing is sent after the page has gone');
+});
+
+test('a terminal is only for this repository or an existing article', async (t) => {
+	const middleware = await apiFixture(t);
+	const form = await call(middleware, { url: '/api/studio/terminal', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'cwd=root' });
+	assert.equal(form.status, 415);
+	const foreign = await call(middleware, { url: '/api/studio/terminal', headers: { origin: 'https://evil.example', 'content-type': 'application/json' }, body: '{"cwd":"root"}' });
+	assert.equal(foreign.status, 403);
+	assert.equal((await call(middleware, { url: '/api/studio/terminal', ...asJson({ cwd: 'article', slug: '../etc' }) })).status, 400);
+	assert.equal((await call(middleware, { url: '/api/studio/terminal', ...asJson({ cwd: 'article', slug: 'missing' }) })).status, 404);
+});
+
+test('an article is renamed, copied, deleted and put back', async (t) => {
+	const middleware = await apiFixture(t);
+	const renamed = await call(middleware, { url: '/api/studio/articles/api-note/rename', ...asJson({ to: 'renamed-note' }) });
+	assert.deepEqual(renamed, { status: 200, data: { slug: 'renamed-note', relinked: 0 } });
+	const copied = await call(middleware, { url: '/api/studio/articles/renamed-note/duplicate', ...asJson({ to: 'renamed-note-copy' }) });
+	assert.deepEqual(copied, { status: 201, data: { slug: 'renamed-note-copy' } });
+	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note/rename', ...asJson({ to: 'renamed-note-copy' }) })).status, 409);
+	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note/rename', ...asJson({ to: '../escape' }) })).status, 400);
+
+	const deleted = await call(middleware, { url: '/api/studio/articles/renamed-note', method: 'DELETE' });
+	assert.equal(deleted.status, 200);
+	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note', method: 'GET' })).status, 404);
+	const restored = await call(middleware, { url: '/api/studio/restored-articles', ...asJson({ trashed: deleted.data.trashed }) });
+	assert.deepEqual(restored, { status: 200, data: { slug: 'renamed-note' } });
+	assert.equal((await call(middleware, { url: '/api/studio/articles/renamed-note', method: 'GET' })).status, 200);
+});
+
+test('search and the trash are served', async (t) => {
+	const middleware = await apiFixture(t);
+	const found = await call(middleware, { url: `/api/studio/search?q=${encodeURIComponent('API')}`, method: 'GET' });
+	assert.equal(found.status, 200);
+	assert.equal(found.data.results[0].slug, 'api-note');
+
+	const deleted = await call(middleware, { url: '/api/studio/articles/api-note', method: 'DELETE' });
+	const trash = await call(middleware, { url: '/api/studio/trash', method: 'GET' });
+	assert.deepEqual(trash.data.entries.map((entry) => entry.trashed), [deleted.data.trashed]);
+	assert.equal((await call(middleware, { url: '/api/studio/trash/purge', headers: { 'content-type': 'text/plain' }, body: '{}' })).status, 415);
+	const purged = await call(middleware, { url: '/api/studio/trash/purge', ...asJson({ trashed: deleted.data.trashed }) });
+	assert.equal(purged.status, 200);
+	assert.deepEqual((await call(middleware, { url: '/api/studio/trash', method: 'GET' })).data.entries, []);
+});
+
+test('every change must say what it sends, checked once for all routes: a form posted from elsewhere changes nothing', async (t) => {
+	const middleware = await apiFixture(t);
+	const form = { headers: { 'content-type': 'application/x-www-form-urlencoded' }, body: 'source=x' };
+	// Those that once read their body without asking (a new page, a save, a molecule's view), and those with none to read.
+	for (const [method, url] of [
+		['POST', '/api/studio/articles'],
+		['PUT', '/api/studio/articles/api-note'],
+		['PUT', '/api/studio/articles/api-note/chemistry-views/a'],
+		['POST', '/api/studio/articles/api-note/merge'],
+		['POST', '/api/studio/tasks/1/cancel'],
+		['POST', '/api/studio/drive/choose'],
+	]) assert.equal((await call(middleware, { url, method, ...form })).status, 415, `${method} ${url}`);
+	assert.equal((await call(middleware, { url: '/api/studio/articles/api-note', method: 'GET' })).data.source.includes('source=x'), false);
+	// The path as sent: a `..` is not resolved into another route.
+	assert.equal((await call(middleware, { url: '/api/studio/articles/other/../api-note', method: 'GET' })).status, 404);
+	assert.equal((await call(middleware, { url: '/api/studio/nothing', method: 'GET' })).status, 404);
+});
+
+test('a plugin answers under /api/studio/plugins/, after the same checks as the rest', async (t) => {
+	const middleware = await apiFixture(t, { plugins: true });
+	const base = '/api/studio/plugins/job/articles/api-note/jobs/opt/runs';
+	assert.deepEqual(await call(middleware, { url: base, method: 'GET' }), { status: 200, data: { runs: [] } });
+	const hosts = await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET' });
+	assert.equal(hosts.status, 200);
+	assert.ok(hosts.data.hosts.some((host) => host.name === 'local'));
+	// A change must say it is JSON (a page elsewhere cannot send one without asking first).
+	assert.equal((await call(middleware, { url: base, body: '{}' })).status, 415);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/articles/%E0/jobs/opt/runs', method: 'GET' })).status, 400);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/articles/missing/jobs/opt/runs', method: 'GET' })).status, 404);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/nothing', method: 'GET' })).status, 404);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET', headers: { origin: 'https://example.com' } })).status, 403);
+	// Another server on this machine (another port) is another site; so is a request the browser says came from one.
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET', headers: { origin: 'http://localhost:3000' } })).status, 403);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins/job/hosts', method: 'GET', headers: { origin: undefined, 'sec-fetch-site': 'cross-site' } })).status, 403);
+});
+
+test('plugins are listed, and one turned off in the Studio leaves the server until it is turned on', async (t) => {
+	const middleware = await apiFixture(t, { plugins: true });
+	const runs = '/api/studio/plugins/job/articles/api-note/jobs/opt/runs';
+	const list = await call(middleware, { url: '/api/studio/plugins', method: 'GET' });
+	assert.equal(list.status, 200);
+	assert.deepEqual(list.data.plugins.find((plugin) => plugin.id === 'job'), {
+		id: 'job',
+		entries: ['build.mjs', 'page.ts', 'studio.ts', 'server.mjs'],
+		enabled: true,
+		server: { state: 'active' },
+	});
+
+	const off = await call(middleware, { url: '/api/studio/plugins', method: 'PUT', ...asJson({ id: 'job', enabled: false }) });
+	assert.deepEqual(off.data.plugins.find((plugin) => plugin.id === 'job'), { id: 'job', entries: ['build.mjs', 'page.ts', 'studio.ts', 'server.mjs'], enabled: false, server: { state: 'off' } });
+	assert.equal((await call(middleware, { url: runs, method: 'GET' })).status, 404);
+	const settings = JSON.parse(await readFile(join(middleware.paths.directory, '..', '.studio-settings.json'), 'utf8'));
+	assert.deepEqual(settings.plugins, { disabled: ['job'] });
+
+	await call(middleware, { url: '/api/studio/plugins', method: 'PUT', ...asJson({ id: 'job', enabled: true }) });
+	assert.deepEqual(await call(middleware, { url: runs, method: 'GET' }), { status: 200, data: { runs: [] } });
+
+	assert.equal((await call(middleware, { url: '/api/studio/plugins', method: 'PUT', ...asJson({ id: 'nothing', enabled: false }) })).status, 404);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins', method: 'PUT', ...asJson({ id: 'job', enabled: 'no' }) })).status, 400);
+	assert.equal((await call(middleware, { url: '/api/studio/plugins', method: 'PUT', body: '{}' })).status, 415);
+});

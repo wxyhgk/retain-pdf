@@ -1,0 +1,11 @@
+%nprocshared=8
+%mem=4GB
+#p UB3LYP/def2SVP Opt Freq
+
+CO2 anion doublet
+
+-1 2
+C   0.000000  0.000000  0.000000
+O   1.141000  0.484000  0.000000
+O  -1.141000  0.484000  0.000000
+

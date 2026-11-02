@@ -1,0 +1,67 @@
+/* A web bookmark's card (bookmark.mjs), on the blog and in the Studio. */
+.note-bookmark {
+	margin: 1.2em 0;
+}
+.note-bookmark .note-bookmark-link {
+	display: flex;
+	height: 108px;
+	overflow: hidden;
+	border: 1px solid rgb(var(--gray-light));
+	border-radius: 6px;
+	background: var(--surface);
+	color: inherit;
+	text-decoration: none;
+}
+.note-bookmark a.note-bookmark-link:hover {
+	background: var(--surface-hover);
+}
+.note-bookmark .note-bookmark-text {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	padding: 12px 14px;
+	line-height: 1.45;
+}
+.note-bookmark .note-bookmark-title {
+	overflow: hidden;
+	color: rgb(var(--gray-dark));
+	font-size: 14px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.note-bookmark .note-bookmark-description {
+	display: -webkit-box;
+	overflow: hidden;
+	color: rgb(var(--gray));
+	font-size: 12px;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+}
+.note-bookmark .note-bookmark-site {
+	margin-top: auto;
+	overflow: hidden;
+	color: rgb(var(--gray-dark));
+	font-size: 12px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+/* Specific enough to beat the page's and the editor's rules for pictures. */
+figure.note-bookmark img.note-bookmark-image {
+	display: block;
+	flex: 0 0 33%;
+	width: 33%;
+	max-width: 220px;
+	height: 100%;
+	margin: 0;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	object-fit: cover;
+}
+@media (max-width: 560px) {
+	figure.note-bookmark img.note-bookmark-image {
+		display: none;
+	}
+}

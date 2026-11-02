@@ -1,0 +1,42 @@
+# dependencies
+node_modules/
+# vendored editor experiments
+vendor/
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# environment variables
+.env
+.env.production
+
+# macOS-specific files
+.DS_Store
+
+# jetbrains setting folder
+.idea/
+
+# browser test output
+test-results/
+playwright-report/
+
+# this machine's own: where the notes are (notes-root.mjs)
+.studio-local.json
+# what the Studio builds for itself (the server's address, RetainMol's page, checkpoints of apps)
+.studio-cache/
+# where a project app is on this machine (apps/<名字>/app.local.json)
+apps/*/app.local.json
+
+# notes kept in this folder (when .studio-local.json names none, the Studio's notes are here): the author's, never
+# this repository's
+/blog/
+/chats/
+/repos/
+/templates/
+.studio-trash/
+.studio-settings.json
+.studio-jobs.json
+.agents/memory/

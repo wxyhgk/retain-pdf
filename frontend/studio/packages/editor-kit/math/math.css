@@ -1,0 +1,73 @@
+/*
+ * Formulas as they are edited (math/): typed in place with their drawing over them, completions, a display formula
+ * opened in its popup. `.math-editor` is on the element around a Milkdown editor that uses them; the colours are the
+ * site's (--gray, --surface, --accent, --danger…) and the Studio's pop-up shadow.
+ */
+.math-editor .milkdown .ProseMirror .pm-math-source { color: #9a9a9a; background: none; }
+.math-editor .milkdown .ProseMirror .pm-math-cmd { color: rgb(var(--gray-dark)); font-weight: 600; }
+.math-editor .milkdown .ProseMirror .pm-math-preview { position: relative; display: inline-block; width: 0; height: 0; vertical-align: baseline; pointer-events: none; user-select: none; z-index: 40; }
+.math-editor .milkdown .ProseMirror .pm-math-preview-body { position: absolute; top: 14px; left: 0; padding: 7px 12px 8px; border-radius: 7px; background: #1c1c1c; color: #fff; white-space: nowrap; box-shadow: var(--studio-shadow-pop); }
+.math-editor .milkdown .ProseMirror .pm-math-preview-body::before { content: ''; position: absolute; top: -6px; left: var(--arrow, 16px); transform: translateX(-50%); border-width: 0 6px 6px; border-style: solid; border-color: transparent transparent #1c1c1c; }
+.math-editor .milkdown .ProseMirror .pm-math-preview-body .katex { color: inherit; font-size: 1.12em; }
+html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-source { color: #b5b5b5; }
+/* While a formula is typed (formula-typing.ts): the last good drawing faded, and what is wrong only once the typing stops. */
+.math-editor .milkdown .ProseMirror .pm-math-preview-body.is-empty { display: none; }
+.math-editor .milkdown .ProseMirror .pm-math-preview-body.is-stale > :not(.pm-math-preview-error) { opacity: 0.45; }
+.math-editor .milkdown .ProseMirror .pm-math-preview-error { display: block; max-width: 360px; margin-top: 4px; color: #ffb4ab; font-family: var(--font-mono); font-size: var(--studio-fs-caption, 12px); line-height: 1.4; white-space: normal; animation: pm-error-after-typing 0s 1s both; }
+html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-preview-error { color: var(--danger); }
+.math-editor .pm-display-math-formula.is-stale { opacity: 0.45; }
+.pm-source-popup-error.is-late { animation: pm-error-after-typing 0s 1s both; }
+@keyframes pm-error-after-typing { from { margin: 0; font-size: 0; line-height: 0; } to { font-size: var(--studio-fs-caption, 12px); } }
+html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-cmd { color: rgb(var(--gray-dark)); }
+html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-preview-body { background: #f3f3f3; color: #191919; }
+html[data-theme='dark'] .math-editor .milkdown .ProseMirror .pm-math-preview-body::before { border-color: transparent transparent #f3f3f3; }
+.math-editor .milkdown .ProseMirror .pm-inline-math { display: inline-block; vertical-align: middle; margin: 0 1px; padding-inline: 0.2em; line-height: 1; color: inherit; cursor: text; user-select: none; }
+.math-editor .milkdown .ProseMirror .pm-inline-math .katex-mathml { display: none; }
+.math-editor .milkdown .ProseMirror .pm-inline-math:hover,
+.math-editor .milkdown .ProseMirror .pm-inline-math.is-error { text-decoration: underline wavy var(--danger); }
+/* A long article's formula not drawn yet (near-screen.ts): its LaTeX, quietly. */
+.math-editor .milkdown .ProseMirror :is(.pm-inline-math, .pm-display-math).is-waiting { color: rgb(var(--gray)); }
+.math-editor .milkdown .ProseMirror .pm-inline-math-placeholder { padding: 0 4px; color: rgb(var(--gray)); font-size: 0.85em; }
+.math-editor .milkdown .milkdown-latex-inline-edit { display: none; }
+.math-editor .pm-display-math { margin: 0.65em 0 0.85em; }
+.math-editor .pm-display-math-formula { padding: 8px 12px; border-radius: 8px; overflow-x: auto; text-align: center; cursor: pointer; }
+.math-editor .pm-display-math-formula:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); }
+/* Being edited: drawn in place, marked, the popup under it. */
+.math-editor .pm-display-math.is-open .pm-display-math-formula { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent); }
+/* Come to with the arrow keys: a stop, marked as blocks selected are; ↩ or typing opens it. */
+.math-editor .pm-display-math.is-selected:not(.is-open) .pm-display-math-formula { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+.math-editor .pm-display-math-formula.is-empty { color: rgb(var(--gray)); font-size: 0.92em; }
+.math-editor .pm-display-math-formula.is-error { text-decoration: underline wavy var(--danger); }
+.math-editor .pm-display-math-formula .katex-display { margin: 0; }
+.math-editor .pm-display-math-formula .katex-mathml { display: none; }
+.pm-source-popup { position: fixed; z-index: 50; box-sizing: border-box; padding: 10px; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
+.pm-source-popup-bar { display: flex; align-items: center; gap: 4px; margin: -4px 0 6px 2px; }
+.pm-source-popup-caption { flex: 1; min-width: 0; color: rgb(var(--gray)); font-size: 12px; line-height: 18px; user-select: none; }
+.pm-source-popup-action { height: 24px; padding: 0 8px; border: 0; border-radius: 6px; background: transparent; color: var(--accent); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.pm-source-popup-action:hover { background: var(--surface-soft); }
+.pm-source-popup-action:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.pm-source-popup-preview { max-height: 180px; margin-bottom: 8px; padding: 10px 8px; overflow: auto; border-radius: 8px; background: var(--surface-soft); text-align: center; }
+.pm-source-popup-preview.is-empty { color: rgb(var(--gray)); font-size: 13px; line-height: 28px; }
+.pm-source-popup-preview .katex-display { margin: 0; }
+.pm-source-popup-preview .katex-mathml { display: none; }
+.latex-completion { position: fixed; z-index: 60; box-sizing: border-box; min-width: 240px; max-width: 380px; max-height: 288px; overflow-y: auto; padding: 4px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-pop); }
+.latex-completion[hidden] { display: none; }
+.latex-completion-item { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 34px; padding: 2px 8px; border-radius: 6px; color: rgb(var(--gray-dark)); cursor: pointer; }
+.latex-completion-item.is-selected { background: var(--surface-soft); color: rgb(var(--black)); }
+.latex-completion-name { font-family: var(--font-mono); font-size: 12px; white-space: nowrap; }
+.latex-completion-preview { overflow: hidden; color: rgb(var(--black)); font-size: 13px; white-space: nowrap; }
+.latex-completion-preview .katex { font-size: 1.25em; }
+/* While commands are offered, the formula's own preview would sit under the list. */
+.math-editor .milkdown .ProseMirror.is-completing-latex .pm-math-preview { visibility: hidden; }
+.pm-source-popup.is-formula .pm-source-popup-preview { margin: 0 0 6px; padding: 0; background: none; text-align: left; }
+.pm-source-popup.is-formula .pm-source-popup-error { margin: 0; }
+.pm-source-popup-error { margin: 6px 0 0; color: var(--danger); font-family: var(--font-mono); font-size: var(--studio-fs-caption, 12px); line-height: 1.4; text-align: left; }
+.pm-source-popup-input { display: block; width: 100%; box-sizing: border-box; min-height: 44px; margin: 0; padding: 8px 10px; border: 0; border-radius: 8px; background: var(--surface); color: rgb(var(--gray-dark)); font-family: var(--font-mono); font-size: 13px; line-height: 1.5; resize: none; outline: none; }
+
+/* A formula being typed, drawn as MathLive shows one (formula-marks.ts): the caret in the drawing, blinking; the part
+   it is in (a numerator, an exponent) shaded; empty places (\frac{}{}) as dashed boxes. In the ink's colour, so that
+   they show on the article and in the dark preview over an inline formula. */
+.math-editor .pm-math-caret { display: inline-block; width: 0; height: 1.1em; margin-right: -1.5px; vertical-align: -0.22em; border-left: 1.5px solid currentColor; animation: pm-math-caret-blink 1.06s steps(1) infinite; }
+@keyframes pm-math-caret-blink { 50% { border-left-color: transparent; } }
+.math-editor .pm-math-here { border-radius: 2px; background: color-mix(in srgb, currentColor 10%, transparent); box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 10%, transparent); }
+.math-editor .pm-math-slot { display: inline-block; min-width: 0.8em; border-radius: 2px; outline: 1px dashed color-mix(in srgb, currentColor 55%, transparent); outline-offset: -1px; }

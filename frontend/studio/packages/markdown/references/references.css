@@ -1,0 +1,13 @@
+/* Citations ([1]) above the line, and the list of works cited at the end: black on white, as the rest. */
+sup.citation { font-size: 0.72em; line-height: 0; }
+sup.citation a { color: inherit; text-decoration: none; }
+sup.citation a:hover { text-decoration: underline; }
+sup.citation .citation-missing { color: rgb(var(--gray, 120, 119, 116)); }
+ol.references { padding-left: 2em; font-size: 0.9em; line-height: 1.6; }
+ol.references li { margin: 0.35em 0; overflow-wrap: anywhere; }
+ol.references li:target { background: rgba(var(--gray, 120, 119, 116), 0.12); }
+
+/* In the Studio: a citation is one piece of the text, its number in a light box; the work it cites on hover. */
+.citation-chip { display: inline-block; margin: 0 1px; padding: 0 4px; border-radius: 4px; background: rgba(var(--gray, 120, 119, 116), 0.14); color: rgb(var(--gray-dark, 55, 53, 47)); font-size: 0.78em; line-height: 1.5; vertical-align: 0.35em; cursor: default; user-select: none; }
+.citation-chip.is-selected { outline: 2px solid rgb(var(--gray-dark, 55, 53, 47)); outline-offset: 1px; }
+.citation-chip.is-missing { border: 1px dashed rgb(var(--gray, 120, 119, 116)); background: transparent; }

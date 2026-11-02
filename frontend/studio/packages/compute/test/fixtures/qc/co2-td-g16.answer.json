@@ -1,0 +1,37 @@
+{
+	"program": "gaussian",
+	"version": "16 Rev. C.01",
+	"route": "#p B3LYP/def2SVP TD(NStates=6)",
+	"method": "B3LYP",
+	"reference": "R",
+	"basis": "def2SVP",
+	"jobs": ["td"],
+	"charge": 0,
+	"multiplicity": 1,
+	"terminated": true,
+	"errors": [],
+	"energy": -188.44303669,
+	"steps": [],
+	"optimization": null,
+	"atoms": [
+		{"symbol":"C","x":0,"y":0,"z":0},
+		{"symbol":"O","x":0,"y":0,"z":1.163086},
+		{"symbol":"O","x":0,"y":0,"z":-1.163086}
+	],
+	"vibrations": [],
+	"imaginary": null,
+	"thermo": null,
+	"homo": -0.37371,
+	"lumo": 0.03019,
+	"s2": null,
+	"excited": [
+		{"state":1,"symmetry":"Singlet-?Sym","energy":8.7271,"wavelength":142.07,"strength":0},
+		{"state":2,"symmetry":"Singlet-?Sym","energy":9.0525,"wavelength":136.96,"strength":0},
+		{"state":3,"symmetry":"Singlet-?Sym","energy":9.0525,"wavelength":136.96,"strength":0},
+		{"state":4,"symmetry":"Singlet-?Sym","energy":10.0243,"wavelength":123.68,"strength":0},
+		{"state":5,"symmetry":"Singlet-?Sym","energy":10.0243,"wavelength":123.68,"strength":0},
+		{"state":6,"symmetry":"Singlet-?Sym","energy":12.6131,"wavelength":98.3,"strength":0}
+	],
+	"dipole": 0,
+	"wallTime": 1.7
+}

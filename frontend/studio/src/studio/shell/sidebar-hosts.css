@@ -1,0 +1,58 @@
+/* What the rest of the Studio draws in the left column (React draws the column itself: shell/Sidebar.tsx): the page
+ * tree (article-list.ts) and the plugins' commands (plugin-ui.ts). */
+.plugin-commands { display: grid; gap: 1px; }
+.plugin-commands[hidden] { display: none; }
+.plugin-commands button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--studio-h-md); padding: 0 8px; border: 0; border-radius: var(--studio-radius-sm); background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: var(--studio-fs-body); text-align: left; cursor: pointer; }
+.plugin-commands button:hover { background: var(--studio-fill); }
+.plugin-commands button > span { display: grid; flex: none; width: 16px; place-items: center; color: rgb(var(--gray)); }
+.plugin-commands button > span svg { width: 16px; height: 16px; }
+#article-list { flex: 1; padding: 1px 7px 32px; overflow-y: auto; }
+#article-list .page-list { display: grid; gap: 1px; }
+#article-list .page-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto auto; align-items: center; gap: 8px; width: 100%; min-height: var(--studio-h-md); padding: 0 8px; border: 0; border-radius: var(--studio-radius-sm); background: transparent; color: rgb(var(--gray-dark)); font: inherit; text-align: left; cursor: pointer; }
+#article-list .page-row:hover { background: var(--studio-fill); }
+#article-list .page-row.active { background: var(--studio-fill-2); }
+/* Folded, the page open under it (a database's row opened from its table). */
+#article-list .page-item.holds-open > .page-row { background: var(--studio-fill); }
+#article-list .page-item.holds-open > .page-row .page-title { color: rgb(var(--black)); font-weight: 500; }
+#article-list .page-item.is-chosen .page-row { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+#article-list .page-item { position: relative; --indent: calc(var(--depth, 0) * 14px); }
+#article-list .page-item .page-row { padding-left: calc(8px + var(--indent)); }
+/* As in Notion: a page with pages under it shows its chevron in place of its icon, on hover. */
+#article-list .page-toggle { position: absolute; top: 50%; left: calc(6px + var(--indent)); z-index: 1; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); cursor: pointer; opacity: 0; transform: translateY(-50%); }
+#article-list .page-toggle svg { width: 14px; height: 14px; transition: transform 0.12s; }
+#article-list .page-toggle[aria-expanded='true'] svg { transform: rotate(90deg); }
+#article-list .page-toggle:disabled { display: none; }
+#article-list .page-item.has-children:hover .page-toggle, #article-list .page-toggle:focus-visible { opacity: 1; }
+#article-list .page-item.has-children:hover .page-icon { visibility: hidden; }
+#article-list .page-toggle:hover { background: rgba(var(--black), 0.12); color: rgb(var(--gray-dark)); }
+#article-list .page-item.is-drop-before::before, #article-list .page-item.is-drop-after::after { content: ''; position: absolute; right: 4px; left: calc(8px + var(--indent)); z-index: 2; height: 2px; border-radius: 1px; background: rgb(var(--gray-dark)); pointer-events: none; }
+#article-list .page-item.is-drop-before::before { top: -1px; }
+#article-list .page-item.is-drop-after::after { bottom: -1px; }
+#article-list .page-item.is-drop-into .page-row { background: rgb(var(--gray-light)); box-shadow: inset 0 0 0 1.5px rgb(var(--gray-dark)); }
+#article-list.is-drop-top .page-list { box-shadow: 0 2px 0 rgb(var(--gray-dark)); }
+#article-list.is-dragging-page { min-height: 120px; }
+#article-list .page-more, #article-list .page-add { position: absolute; top: 50%; display: grid; place-items: center; width: 22px; height: 22px; padding: 0; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); cursor: pointer; opacity: 0; transform: translateY(-50%); }
+#article-list .page-more svg, #article-list .page-add svg { width: 15px; height: 15px; }
+#article-list .page-more { right: 4px; }
+#article-list .page-add { right: 27px; }
+#article-list .page-item:hover .page-more, #article-list .page-more:focus-visible { opacity: 1; }
+#article-list .page-item:hover .page-add, #article-list .page-add:focus-visible { opacity: 1; }
+#article-list .page-add:hover, #article-list .page-toggle:hover { background: rgba(var(--black), 0.08); color: rgb(var(--gray-dark)); }
+#article-list .page-more:hover { background: rgba(var(--black), 0.08); color: rgb(var(--gray-dark)); }
+#article-list .page-icon { display: grid; place-items: center; color: rgb(var(--gray)); }
+#article-list .page-icon svg { width: 16px; height: 16px; stroke-width: 1.75; }
+/* What git has not got yet: shown on hover and for the page open, not on every line. */
+#article-list .page-git { font-size: 8px; line-height: 1; opacity: 0; }
+#article-list .page-item:hover .page-git, #article-list .page-item.active .page-git { opacity: 1; }
+/* The buttons on hover sit where the end of the line is. */
+#article-list .page-item:hover .page-row { padding-right: 56px; }
+#article-list .page-git.is-modified { color: rgb(var(--gray)); }
+#article-list .page-git.is-new { color: rgb(var(--gray)); }
+#article-list .page-icon.is-emoji { font-size: 15px; line-height: 1; text-align: center; }
+#article-list .page-count { color: rgb(var(--gray)); font-size: var(--studio-fs-caption); font-variant-numeric: tabular-nums; }
+#article-list .page-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--studio-fs-body); font-weight: 400; color: rgb(var(--gray-dark)); }
+#article-list .page-row.active .page-title { font-weight: 500; }
+#article-list .page-row.active .page-title { color: rgb(var(--black)); font-weight: 600; }
+#article-list .article-list-empty { margin: 28px 12px; color: rgb(var(--gray)); font-size: 12px; line-height: 1.6; text-align: center; }
+/* Until the editor has the article (page-snapshot.ts), as the editor's: no empty list. */
+.studio-shell:not([data-ready]) #article-list { visibility: hidden; }

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Where git goes when an AI in the Studio pushes (src/studio/server/ai/risky-commands.mjs `noPushEnv`): nowhere.
+echo "不能推送：Studio 里的 AI 可以提交，不推送；推送由作者自己做。" >&2
+exit 1
