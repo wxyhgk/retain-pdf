@@ -146,13 +146,19 @@ export type ReaderNotesPanelAdapters = {
         toggle: () => void;
     };
 };
-export type ReaderAdapters = ReaderSessionAdapters & ReaderMarkdownAdapters & ReaderDownloadAdapters & ReaderDocumentIdentityAdapters & ReaderCredentialsAdapters & ReaderTerminalAdapters & ReaderBoardAdapters & ReaderNotesQuoteAdapters & ReaderNotesPanelAdapters;
+/** 眼下读到哪：阅读页放在笔记（Studio）里时由宿主给，翻页就报（防抖、发不发由宿主管）。页从 0 起；页数还不知道时为 null。 */
+export type ReaderReadingPositionAdapters = {
+    readingPosition?: {
+        report: (pageIdx: number | null, pageCount: number | null) => void;
+    };
+};
+export type ReaderAdapters = ReaderSessionAdapters & ReaderMarkdownAdapters & ReaderDownloadAdapters & ReaderDocumentIdentityAdapters & ReaderCredentialsAdapters & ReaderTerminalAdapters & ReaderBoardAdapters & ReaderNotesQuoteAdapters & ReaderNotesPanelAdapters & ReaderReadingPositionAdapters;
 /**
  * ReaderAdapters 声明键的运行时镜像（TS 类型在运行时被擦除）。
  * 注册层与门禁测试共用，避免手工复制字段集漂移；`satisfies` 保证不引入拼错键。
  * 完整性由紧随其后的编译期断言守护。
  */
-export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId", "credentialsPort", "renderReaderTerminal", "renderReaderBoard", "notesQuote", "notesPanel"];
+export declare const READER_ADAPTER_KEYS: readonly ["isMockMode", "resolveResourceUrl", "fetchProtected", "resolvePdfjsVendorUrl", "defaultReaderDataPort", "defaultReaderPageConfigPort", "resolveReaderAnchor", "resolveReaderDocumentId", "resolveReaderJobId", "resolveReaderArtifactUrl", "resolveReaderSourcePdf", "resolveReaderTranslatedPdfUrl", "liveTranslation", "pdf", "sessionData", "resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "apiPrefix", "fetchDocumentByJobId", "credentialsPort", "renderReaderTerminal", "renderReaderBoard", "notesQuote", "notesPanel", "readingPosition"];
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */
 export declare const READER_REQUIRED_ADAPTER_KEYS: readonly ["resolveMarkdownAssetUrl", "resolveReaderDownloadUrls", "resolveReaderDownloadName", "downloadProtectedResource", "failDownloadToast", "fetchDocumentByJobId", "credentialsPort"];
 export declare function setReaderAdapters(a: ReaderAdapters | null): void;
