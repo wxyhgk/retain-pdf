@@ -43,7 +43,21 @@ def pick_primary_background_image(
     page_area = max(rect_area(page.rect), 1.0)
     best: tuple[float, int, fitz.Rect] | None = None
 
-    for info in _page_image_infos(page, xrefs=True):
+    # 先用不带编号的图片位置看有没有够大的图（不解码，扫描件一页零点几毫秒）。要编号的 get_image_info(xrefs=True)
+    # 会把每张图解码再算哈希，扫描件一页 0.34 秒，481 页的书页面分析 35 秒全耗在这（2026-11-02）。
+    # 没有够大的图：带编号查出来的位置也一样，直接走后面按编号找的兜底。
+    # 有，而且这一页只有一张图：位置就是它的，编号用 get_images 的（扫描件都是这样）。
+    # 一页几张图时才真去要编号。
+    large = [
+        rect
+        for rect in (_info_rect(info) for info in _page_image_infos(page))
+        if rect is not None and rect_area(rect & page.rect) / page_area >= coverage_ratio_threshold
+    ]
+    single_xref = _single_image_xref(page) if large else 0
+    if large and single_xref > 0:
+        rect = max(large, key=lambda item: rect_area(item & page.rect))
+        return single_xref, rect
+    for info in (_page_image_infos(page, xrefs=True) if large else []):
         try:
             xref = int(info.get("xref") or 0)
             rect = fitz.Rect(info.get("bbox"))
@@ -65,6 +79,24 @@ def pick_primary_background_image(
     if best is None:
         return None
     return best[1], best[2]
+
+
+def _info_rect(info: dict) -> fitz.Rect | None:
+    try:
+        rect = fitz.Rect(info.get("bbox"))
+    except Exception:
+        return None
+    return None if rect.is_empty else rect
+
+
+def _single_image_xref(page: fitz.Page) -> int:
+    """这一页（连同它的表单 XObject）只有一张图时它的编号，否则 0。"""
+    try:
+        entries = list(page.get_images(full=True))
+    except Exception:
+        return 0
+    xrefs = {int(entry[0]) for entry in entries if int(entry[0] or 0) > 0}
+    return next(iter(xrefs)) if len(xrefs) == 1 else 0
 
 
 def _pick_primary_background_image_from_xref_rects(

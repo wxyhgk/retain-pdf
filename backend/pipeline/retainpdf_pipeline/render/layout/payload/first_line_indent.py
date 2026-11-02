@@ -193,6 +193,7 @@ def _accepted_indent_pt(indent_pt: float, *, font_size_pt: float, precise: bool 
 # 同一行被 PDF 拆成几段（换字体、上下标）时 y0 差不了这么多。
 TEXT_LINE_SAME_ROW_PT = 2.0
 TEXT_LINE_BBOX_TOLERANCE_PT = 2.0
+TEXT_LINE_FLAGS = fitz.TEXTFLAGS_DICT & ~fitz.TEXT_PRESERVE_IMAGES
 
 
 def page_text_line_boxes(page: fitz.Page) -> list[tuple[float, float, float, float]]:
@@ -202,7 +203,9 @@ def page_text_line_boxes(page: fitz.Page) -> list[tuple[float, float, float, flo
     灰度图再数墨迹（detect_first_line_indent_pt_with_displaylist，给扫描件用的）省得多。
     """
     boxes: list[tuple[float, float, float, float]] = []
-    for block in page.get_text("dict").get("blocks", []):
+    # 不要图片：默认的 "dict" 会把每张图解码进结果，扫描件一页 0.13 秒，481 页光这一步 60 秒（2026-11-02），
+    # 而这里只看文字行（图片块本来就跳过）。
+    for block in page.get_text("dict", flags=TEXT_LINE_FLAGS).get("blocks", []):
         if block.get("type") != 0:
             continue
         for line in block.get("lines", []):
