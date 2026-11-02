@@ -33,6 +33,8 @@ import { serverKernel } from '@blog/kernel/node.mjs';
 import { LocaleSettings, studioSettingsFile } from '../studio/server/locale-settings.mjs';
 import { RetainpdfSettings } from '../studio/server/retainpdf-settings.mjs';
 import { RetainpdfNotes } from '../studio/server/retainpdf-notes.mjs';
+import { RetainpdfLibrary } from '../studio/server/retainpdf-library.mjs';
+import { RetainpdfReading } from '../studio/server/retainpdf-reading.mjs';
 import { notesRoot } from '../studio/server/notes-root.mjs';
 import { PluginSettings } from '../studio/server/plugin-settings.mjs';
 import { AiSettings } from '../studio/server/ai/ai-settings.mjs';
@@ -157,6 +159,9 @@ export default function studioDev({ site, builds } = {}) {
 			// The AI panel's conversations, with the agents' ACP adapters of the project's dependencies.
 			// Kept in chats/ beside blog/ (out of git), each a page; the browser tests' beside their copy of blog/.
 			const chats = new ChatStore(chatsRootOf(blogRoot));
+			const retainpdfSettings = new RetainpdfSettings(settingsFile);
+			// What is read in 翻译: told the AIs with what the author says (routes/conversations.mjs).
+			const retainpdfReading = new RetainpdfReading();
 			const conversations = new AgentSessions({ binFolder: resolve(server.config.root, 'node_modules', '.bin'), store: chats });
 			/**
 			 * The environment of a program the Studio runs for an AI (a terminal's shell, an agent run by Alt+Enter):
@@ -277,8 +282,10 @@ export default function studioDev({ site, builds } = {}) {
 				appCheckpoints,
 				pluginSettings,
 				localeSettings: new LocaleSettings(settingsFile),
-				retainpdfSettings: new RetainpdfSettings(settingsFile),
+				retainpdfSettings,
 				retainpdfNotes: new RetainpdfNotes(articles),
+				retainpdfLibrary: new RetainpdfLibrary({ settings: retainpdfSettings }),
+				retainpdfReading,
 				aiSettings,
 				agentSettings,
 				conversations,

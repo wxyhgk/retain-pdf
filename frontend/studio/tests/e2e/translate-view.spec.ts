@@ -9,7 +9,8 @@ import { editor, openSettings, openStudio, removeArticle, resetFixture, savedMar
 
 // 翻译 (the left column): RetainPDF's own pages in the middle, at the address in 设置 › RetainPDF. Here a stand-in for
 // RetainPDF answers on a port of its own: every page of it is 图书馆, speaking studio-bridge.v1 as RetainPDF's does
-// (hello → ready; theme, navigate shown on the page; 摘 sends a quote).
+// (hello → ready; theme, navigate shown on the page; 摘 sends a quote; 读 and 离开 say what is read, or that nothing is).
+// Its API answers too, as far as the settings' 测试连接 asks it, with the key STAND_IN_KEY.
 
 const settingsFile = () => join(process.env.STUDIO_BLOG_DIR!, '.studio-settings.json');
 const savedUrl = () => {
@@ -25,6 +26,8 @@ const STAND_IN = `<!doctype html><meta charset="utf-8"><title>RetainPDF</title>
 <p>embed <span id="embed"></span> · theme <span id="theme"></span> · studio <span id="studio"></span> · navigated <span id="navigated"></span> · notes <span id="notes-state"></span></p>
 <button id="quote" type="button">摘</button>
 <button id="notes" type="button">笔记</button>
+<button id="read" type="button">读</button>
+<button id="leave" type="button">离开</button>
 <script>
 const head = { protocol: 'retainpdf-studio-bridge', v: 1 };
 let host = '';
@@ -36,7 +39,7 @@ addEventListener('message', (event) => {
 		host = event.origin;
 		document.querySelector('#theme').textContent = message.theme;
 		document.querySelector('#studio').textContent = (message.features || []).join(',');
-		parent.postMessage({ ...head, type: 'ready', features: ['theme', 'navigate', 'quote', 'notes'] }, host);
+		parent.postMessage({ ...head, type: 'ready', features: ['theme', 'navigate', 'quote', 'notes', 'reading'] }, host);
 	} else if (message.type === 'theme') {
 		document.querySelector('#theme').textContent = message.theme;
 	} else if (message.type === 'navigate') {
@@ -52,17 +55,32 @@ document.querySelector('#notes').addEventListener('click', () => parent.postMess
 		: { ...head, type: 'open-notes', job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry' },
 	host,
 ));
+document.querySelector('#read').addEventListener('click', () => parent.postMessage(
+	{ ...head, type: 'reading', job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', page_idx: 11, page_count: 300 },
+	host,
+));
+document.querySelector('#leave').addEventListener('click', () => parent.postMessage(
+	{ ...head, type: 'reading', job_id: null, document_id: null, title: null, page_idx: null, page_count: null },
+	host,
+));
 document.querySelector('#quote').addEventListener('click', () => parent.postMessage({
 	...head, type: 'quote', job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', item_id: 'p012-b0003', page_idx: 11,
 	source_text: 'The variation principle $x^2$.', translated_text: '变分原理：\\n\\n$$E = mc^2$$',
 }, host));
 </script>`;
 
+const STAND_IN_KEY = 'stand-in-key';
 let retainpdf: Server;
 let retainpdfUrl = '';
 
 test.beforeAll(async () => {
-	retainpdf = createServer((_request, response) => {
+	retainpdf = createServer((request, response) => {
+		if (request.url?.startsWith('/api/v1/')) {
+			const known = request.headers['x-api-key'] === STAND_IN_KEY;
+			response.writeHead(known ? 200 : 401, { 'Content-Type': 'application/json' });
+			response.end(JSON.stringify(known ? { code: 0, message: 'ok', data: { documents: [], total: 1, has_more: false } } : { code: 40100, message: 'unauthorized', error: { code: 'UNAUTHORIZED', http_status: 401, details: {} } }));
+			return;
+		}
 		response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
 		response.end(STAND_IN);
 	});
@@ -86,6 +104,8 @@ test.beforeEach(() => {
 		return;
 	}
 	delete settings.retainpdfUrl;
+	delete settings.retainpdfApiUrl;
+	delete settings.retainpdfApiKey;
 	writeFileSync(settingsFile(), JSON.stringify(settings, null, 2));
 });
 
@@ -317,4 +337,60 @@ test('设置 › RetainPDF: empty is the default address, and nothing other than
 	await section.getByRole('button', { name: '保存' }).click();
 	await expect(section.locator('#retainpdf-status')).toContainText('http:// 或 https://');
 	expect(savedUrl()).toBeUndefined();
+});
+
+/** What the Studio's server holds of what is read in 翻译 (told the AIs). */
+const reading = (page: Page) => page.evaluate(async () => ((await (await fetch('/api/studio/retainpdf/reading')).json()) as { reading: Record<string, unknown> | null }).reading);
+
+test('what RetainPDF says is read (the book, the page) is kept for the AIs while 翻译 shows it, with the book\'s notes; nothing elsewhere', async ({ page }) => {
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#open-translate').click();
+	await expect(inFrame(page).locator('#library')).toHaveText('图书馆');
+	await expect.poll(() => reading(page)).toBeNull();
+
+	await inFrame(page).locator('#read').click();
+	await expect.poll(() => reading(page)).toMatchObject({ job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', page: 12, pages: 300, notes: null });
+
+	// Its notes opened beside it: which page they are, too.
+	await inFrame(page).locator('#notes').click();
+	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:Quantum Chemistry');
+	await expect.poll(async () => (await reading(page))?.notes).toMatchObject({ title: 'Quantum Chemistry' });
+
+	// Another view: nothing read; back: the book again.
+	await page.locator('#open-translate').click();
+	await expect.poll(() => reading(page)).toBeNull();
+	await page.locator('#open-translate').click();
+	await expect.poll(async () => (await reading(page))?.page).toBe(12);
+
+	// The reader left (RetainPDF's 主页): nothing, though its notes are open (a book's notes, not a page of it, then).
+	await inFrame(page).locator('#leave').click();
+	await expect.poll(async () => (await reading(page))?.page ?? null).toBeNull();
+});
+
+test('设置 › RetainPDF: its API\'s address and key, tried at once; the key kept by the server and never shown back', async ({ page }) => {
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	const section = await openSettings(page, 'retainpdf');
+	await expect(section.locator('#retainpdf-api-url')).toHaveAttribute('placeholder', retainpdfUrl);
+	// No key yet: RetainPDF says no, and the settings say what to do.
+	await section.locator('#retainpdf-check').click();
+	await expect(section.locator('#retainpdf-status')).toContainText('不认这个 API 密钥');
+
+	await section.locator('#retainpdf-api-key').fill(STAND_IN_KEY);
+	await section.locator('#retainpdf-check').click();
+	await expect(section.locator('#retainpdf-status')).toHaveText('连上了：书库里有 1 本书，AI 能读到');
+	await expect(section.locator('#retainpdf-api-key')).toHaveValue('');
+	await expect(section.locator('#retainpdf-api-key')).toHaveAttribute('placeholder', '已保存（不改就空着）');
+	expect(JSON.parse(readFileSync(settingsFile(), 'utf8')).retainpdfApiKey).toBe(STAND_IN_KEY);
+	const shown = await page.evaluate(async () => (await fetch('/api/studio/settings/retainpdf')).text());
+	expect(shown).not.toContain(STAND_IN_KEY);
+
+	// Saved again with the key left empty: kept. Taken away: gone.
+	await section.getByRole('button', { name: '保存' }).click();
+	await expect(section.locator('#retainpdf-status')).toContainText('已保存');
+	expect(JSON.parse(readFileSync(settingsFile(), 'utf8')).retainpdfApiKey).toBe(STAND_IN_KEY);
+	await section.locator('#retainpdf-forget-key').click();
+	await expect(section.locator('#retainpdf-status')).toHaveText('已删掉密钥');
+	expect(JSON.parse(readFileSync(settingsFile(), 'utf8')).retainpdfApiKey).toBeUndefined();
 });

@@ -333,3 +333,35 @@ test('a page made under another is linked from it (where asked); a database’s 
 	assert.doesNotMatch(page(project), /用 B3LYP/u);
 });
 
+
+test("RetainPDF's books read through the operations and the command line, at the API and with the key of the Studio's settings", async (t) => {
+	const blog = temporaryBlog(t);
+	const { createServer } = await import('node:http');
+	const { execFile } = await import('node:child_process');
+	const { writeFileSync } = await import('node:fs');
+	const asked: string[] = [];
+	const book = { document_id: 'doc-1', title: 'Quantum Chemistry', authors_json: '[]', page_count: 1, active_job_id: 'job-1', reading_status: 'reading' };
+	const region = { item_id: 'p001-b0001', source: { page: 1, text: 'The Schrödinger equation.' }, translated: { page: 1, text: '薛定谔方程。' }, region_type: 'text', sub_type: 'body' };
+	const server = createServer((request, response) => {
+		asked.push(`${request.url} ${request.headers['x-api-key']}`);
+		const path = new URL(request.url ?? '/', 'http://x').pathname;
+		const data = path === '/api/v1/documents' ? { documents: [book], total: 1, has_more: false } : path.endsWith('/reader/regions/p001-b0001') ? region : null;
+		response.writeHead(data ? 200 : 404, { 'Content-Type': 'application/json' });
+		response.end(JSON.stringify(data ? { code: 0, message: 'ok', data } : { code: 40400, message: 'not found', error: { code: 'NOT_FOUND', http_status: 404, details: {} } }));
+	});
+	await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+	t.after(() => server.close());
+	const { port } = server.address() as { port: number };
+	writeFileSync(join(blog, '.studio-settings.json'), JSON.stringify({ retainpdfApiUrl: `http://127.0.0.1:${port}/`, retainpdfApiKey: 'the-key' }));
+
+	const ops = createStudioOps({ root });
+	const listed = (await ops.listBooks({ query: 'quantum' })) as { books: Array<{ document_id: string; title: string }> };
+	assert.deepEqual(listed.books.map((entry) => [entry.document_id, entry.title]), [['doc-1', 'Quantum Chemistry']]);
+	assert.equal(asked[0], '/api/v1/documents?q=quantum&limit=30 the-key');
+
+	const studio = (...args: string[]) => new Promise<string>((resolve, reject) => execFile(process.execPath, [join(root, 'bin/studio.mjs'), ...args], { env: process.env, encoding: 'utf8' }, (error, stdout, stderr) => (error ? reject(Object.assign(error, { stderr })) : resolve(stdout))));
+	const passage = JSON.parse(await studio('read-passage', '--job_id', 'job-1', '--block', 'p001-b0001'));
+	assert.equal(passage.translated, '薛定谔方程。');
+	assert.match(passage.quote, /^```retainpdf\nbook: Quantum Chemistry\ndocument: doc-1\njob: job-1\nblock: p001-b0001\npage: 1\n---\nThe Schrödinger equation\.\n---\n薛定谔方程。\n```\n$/u);
+	await assert.rejects(studio('read-passage', '--job_id', 'job-1', '--block', 'p009-b0000'), (error: { stderr: string }) => /RetainPDF 里没有这个/u.test(error.stderr));
+});

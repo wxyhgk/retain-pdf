@@ -930,8 +930,11 @@ export function putBelowImage(slug: string, image: string, markdown: string): Pr
 /** The language the Studio speaks: chosen (`system`: the browser's), and the languages there are. */
 export type LocalesShown = { chosen: string; locales: Array<{ id: string; name: string }> };
 
-/** 翻译 (server/retainpdf-settings.mjs): where RetainPDF's pages are, and the address used when none is set. */
-export type RetainpdfShown = { url: string; default: string; isDefault: boolean };
+/**
+ * 翻译 (server/retainpdf-settings.mjs): where RetainPDF's pages are, and the address used when none is set; where its
+ * API is (`apiUrl` set, or empty: `api` is the pages'), and whether its key is set (never the key itself).
+ */
+export type RetainpdfShown = { url: string; default: string; isDefault: boolean; apiUrl: string; api: string; keySet: boolean };
 
 /** 其他设备访问 (server/remote/remote-access.mjs): on or off, where another device may reach this Mac, the devices paired. */
 export type RemoteShown = {
@@ -972,9 +975,19 @@ export function retainpdfSettings(): Promise<RetainpdfShown> {
 	return request<RetainpdfShown>('/api/studio/settings/retainpdf');
 }
 
-/** Empty: the default address again. */
-export function saveRetainpdf(url: string): Promise<RetainpdfShown> {
-	return request<RetainpdfShown>('/api/studio/settings/retainpdf', jsonOptions('PUT', { url }));
+/** Empty `url`: the default address again; empty `apiUrl`: the pages'; `apiKey` not given: kept, empty: taken away. */
+export function saveRetainpdf(url: string, api: { apiUrl?: string; apiKey?: string } = {}): Promise<RetainpdfShown> {
+	return request<RetainpdfShown>('/api/studio/settings/retainpdf', jsonOptions('PUT', { url, ...api }));
+}
+
+/** Whether RetainPDF's API answers with the key set (the books the AIs read), and how many books it has. */
+export function checkRetainpdf(): Promise<{ ok: true; books: number }> {
+	return request('/api/studio/settings/retainpdf/check');
+}
+
+/** What is read in 翻译 (server/retainpdf-reading.mjs), told the AIs; null: nothing. */
+export function tellRetainpdfReading(reading: { job_id: string; document_id: string | null; title: string | null; page: number | null; pages: number | null; notes: { slug: string; title: string } | null } | null): Promise<unknown> {
+	return request('/api/studio/retainpdf/reading', jsonOptions('PUT', reading));
 }
 
 /** 翻译's 笔记 (server/retainpdf-notes.mjs): the page of notes of a book, found by it or made under 读书笔记. */

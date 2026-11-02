@@ -272,6 +272,52 @@ export const OPERATIONS = [
 		input: { type: 'object', properties: { id: text('list_repos 给出的 id') }, required: ['id'] }, // i18n-ignore: for the AI
 		run: (ops, args) => ops.removeRepo(args),
 	},
+	{
+		name: 'list_books',
+		description: '列出 RetainPDF 书库里的书（作者用 RetainPDF 识别、翻译的 PDF）：document_id、书名、作者、年份、页数、读到哪（reading_status）、最近读的任务（job_id）。query 只要书名或文件名里有这些字的。最近读的在前。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { query: text('书名或文件名里的字'), limit: { type: 'number', description: '最多几本，默认 30，最多 100' } } }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.listBooks(args),
+	},
+	{
+		name: 'search_books',
+		description: '在 RetainPDF 的书里找字（原文和译文都找）：每处给出书（document_id、书名）、job_id、第几页（从 1 起）、块（block）和前后的原文、译文。给了 document_id 只找这本书。要看整段或前后文，用 read_passage 或 read_book。', // i18n-ignore: for the AI
+		input: {
+			type: 'object',
+			properties: {
+				query: text('要找的字'), // i18n-ignore: for the AI
+				document_id: text('只在这本书里找（list_books 给的 document_id）'), // i18n-ignore: for the AI
+				limit: { type: 'number', description: '最多几处，默认 20，最多 100' }, // i18n-ignore: for the AI
+			},
+			required: ['query'],
+		},
+		run: (ops, args) => ops.searchBooks(args),
+	},
+	{
+		name: 'read_book',
+		description: '读 RetainPDF 里一本书的几页：每页的块按阅读顺序，每块有 block（p001-b0000 这样）、类型（标题、正文……）、原文和译文。from、to 是页码（从 1 起），一次最多 10 页（字太多会更少），next 是下一次从第几页读。给 document_id（读它最近读的那次翻译）或 job_id（读那一次）。', // i18n-ignore: for the AI
+		input: {
+			type: 'object',
+			properties: {
+				document_id: text('书（list_books 给的 document_id）'), // i18n-ignore: for the AI
+				job_id: text('读这一次识别、翻译的结果（search_books、reading_now 给的 job_id）'), // i18n-ignore: for the AI
+				from: { type: 'number', description: '从第几页（从 1 起），默认 1' }, // i18n-ignore: for the AI
+				to: { type: 'number', description: '到第几页，默认和 from 一样；最多读 10 页' }, // i18n-ignore: for the AI
+			},
+		},
+		run: (ops, args) => ops.readBook(args),
+	},
+	{
+		name: 'read_passage',
+		description: '取 RetainPDF 书里的一段（一个块）：原文、译文、第几页，和把它放进笔记用的 quote——一个 ```retainpdf 块，原样写进页面，就显示成「摘到笔记」那种卡片，作者点它回到原文。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: { job_id: text('job_id（search_books、read_book 给的）'), block: text('块，比如 p012-b0003') }, required: ['job_id', 'block'] }, // i18n-ignore: for the AI
+		run: (ops, args) => ops.readPassage(args),
+	},
+	{
+		name: 'reading_now',
+		description: '作者现在在 Studio 的「翻译」里读哪本书：document_id、书名、job_id、第几页（从 1 起）、共几页，和这本书的笔记页（文件夹名）。没在读是 null。要 Studio 开着。', // i18n-ignore: for the AI
+		input: { type: 'object', properties: {} },
+		run: (ops) => ops.readingNow(),
+	},
 ];
 
 /** The command-line name of an operation: `list_pages` → `list-pages`. */

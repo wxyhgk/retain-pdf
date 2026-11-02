@@ -23,7 +23,7 @@ const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jp
  * @param {import('../api.mjs').StudioApi} api
  * @param {import('./index.mjs').Studio} studio
  */
-export function conversationRoutes(api, { blogRoot, conversations, agentSettings, panelModels, articles, drive, programEnv, articleFolder }) {
+export function conversationRoutes(api, { blogRoot, conversations, agentSettings, panelModels, articles, drive, programEnv, articleFolder, retainpdfReading }) {
 	const agents = async () => (await agentSettings.config()).list.filter((agent) => agent.acp);
 	/** Claude Code and pi talk to the services chosen in the panel (panel-models.mjs); Codex to its own. */
 	const isClaude = (agent) => /(^|\/)claude-agent-acp(\s|$)/u.test(agent.acp);
@@ -108,7 +108,9 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 			.slice(-8)
 			.map((widget) => ({ title: typeof widget?.title === 'string' ? widget.title.slice(0, 100) : '', state: JSON.stringify(widget?.state ?? null) ?? 'null' }))
 			.filter((widget) => widget.state.length <= 8000);
-		return { ...(open ? { article: open } : {}), ...(selection ? { selection } : {}), ...(mentions.length ? { mentions } : {}), ...(widgets.length ? { widgets } : {}) };
+		// The book read in 翻译 (retainpdf-reading.mjs), for 「这一页」 to be of it.
+		const book = retainpdfReading?.get() ?? null;
+		return { ...(open ? { article: open } : {}), ...(selection ? { selection } : {}), ...(mentions.length ? { mentions } : {}), ...(widgets.length ? { widgets } : {}), ...(book ? { book } : {}) };
 	};
 	api.get('/conversations/:id/events', async ({ params, request, response }) => {
 		// One kept in chats/ is read back, shown as it was left.

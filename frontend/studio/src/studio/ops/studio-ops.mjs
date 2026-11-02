@@ -28,6 +28,8 @@ import { DriveText } from '../server/drive/drive-text.mjs';
 import { ArticleFileManager, TRASH_FOLDER } from '../server/files/file-manager.mjs';
 import { studioBlogRoot } from '../server/articles/page-version.mjs';
 import { notesRoot } from '../server/notes-root.mjs';
+import { RetainpdfLibrary } from '../server/retainpdf-library.mjs';
+import { RetainpdfSettings } from '../server/retainpdf-settings.mjs';
 import { autoSlug, freeSlug, isAutoSlug, readableSlug } from '../pages/page-names.ts';
 import { filesNamed } from '../editor/split-section.ts';
 import { markdownOutline, markdownSection } from './markdown-section.mjs';
@@ -90,7 +92,15 @@ export function createStudioOps({ root, site } = {}) {
 	const settingsFile = testBlog ? resolve(testBlog, '.studio-settings.json') : resolve(notes, '.studio-settings.json');
 	// 代码仓库: as the Studio has them (its own beside blog/; those added, in its settings); the tests' with no home of the author's looked through.
 	const repositories = new Repositories({ ownRoot: reposRootOf(blogRoot), settingsFile, home: testBlog ? `${blogRoot}-home` : undefined });
+	// RetainPDF's books (its API, where the Studio's settings say), read only.
+	const library = new RetainpdfLibrary({ settings: new RetainpdfSettings(settingsFile) });
 	const drive = new Drive({ settingsFile, fixedRoot: process.env.STUDIO_DRIVE_DIR ? resolve(process.env.STUDIO_DRIVE_DIR) : null, forbidden: [projectRoot, notes, blogRoot] });
+
+	/** Where the Studio running says it is: its own server's file, or (one run by astro dev, as before) Astro's. */
+	const studioUrl = async () => {
+		const said = (file) => readFile(resolve(projectRoot, file), 'utf8').then((text) => JSON.parse(text).url, () => null);
+		return process.env.STUDIO_URL || (await said('.studio-cache/server.json')) || (await said('.astro/dev.json'));
+	};
 
 	const databases = new Databases({ articles, history, site });
 	const pages = () => articles.list();
@@ -483,11 +493,33 @@ export function createStudioOps({ root, site } = {}) {
 			return { removed: await repositories.remove(id) };
 		},
 
+		/** RetainPDF's books (those whose title or file name has `query`), the last read first. */
+		listBooks: (args = {}) => library.listBooks(args),
+
+		/** Blocks of RetainPDF's books with these words (all, or one book's). */
+		searchBooks: (args) => library.searchBooks(args),
+
+		/** Pages of a book: each page's blocks, the original and the translation. */
+		readBook: (args) => library.readBook(args),
+
+		/** One passage of a book, and the ```retainpdf block that quotes it in a note. */
+		readPassage: (args) => library.readPassage(args),
+
+		/** What the author is reading in 翻译 now (the book, the page, its notes), asked of the Studio running. */
+		async readingNow() {
+			const url = await studioUrl();
+			if (!url) throw new StudioOpsError(t('Studio 没有开着：要 Studio 开着才知道作者在读什么'));
+			const answer = await fetch(new URL('/api/studio/retainpdf/reading', url)).catch(() => null);
+			if (!answer?.ok) throw new StudioOpsError(t('连不上 Studio（{url}）', { url }));
+			const { reading } = await answer.json();
+			if (!reading) return { reading: null, said: t('作者现在没有在「翻译」里读书') };
+			const { at: _, ...told } = reading;
+			return { reading: told };
+		},
+
 		/** How an app is now, asked of the Studio running (its server's state and output, its pages' errors). */
 		async appStatus({ id }) {
-			// Where the Studio says it runs: its own server's file, or (one run by astro dev, as before) Astro's.
-			const said = (file) => readFile(resolve(projectRoot, file), 'utf8').then((text) => JSON.parse(text).url, () => null);
-			const url = process.env.STUDIO_URL || (await said('.studio-cache/server.json')) || (await said('.astro/dev.json'));
+			const url = await studioUrl();
 			if (!url) throw new StudioOpsError(t('Studio 没有开着：小程序的状态要在 Studio 开着时才看得到'));
 			const answer = await fetch(new URL(`/api/studio/apps/${encodeURIComponent(String(id ?? ''))}/status`, url)).catch(() => null);
 			if (!answer) throw new StudioOpsError(t('连不上 Studio（{url}）', { url }));

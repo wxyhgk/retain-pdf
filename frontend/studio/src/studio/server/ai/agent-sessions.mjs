@@ -1077,6 +1077,8 @@ function modelChoices(option) {
  * @property {string} [history] where what was said before is kept (chats/…/index.md), for an agent that cannot remember it
  * @property {Array<{ title: string, state: string }>} [widgets] what the widgets in the answers told of themselves since
  *   (note.tell): each its title, and its value as JSON
+ * @property {{ job_id: string, document_id: string | null, title: string | null, page: number | null, pages: number | null, notes: { slug: string, title: string } | null }} [book]
+ *   the book read in 翻译 (retainpdf-reading.mjs): its page from 1, its page of notes
  */
 
 const lineRange = ({ start, end }) => (start === end ? t('第 {start} 行', { start }) : t('第 {start}–{end} 行', { start, end }));
@@ -1138,7 +1140,7 @@ export function withContext(text, context = {}, part = 'all') {
  * Where the author is, as the Studio tells the agent (withContext puts it after what was said; pi in this process
  * takes it into its system prompt instead): empty when there is nothing to tell.
  */
-export function contextBlock({ article, selection, mentions = [], files = [], history, widgets = [] } = {}, part = 'all') {
+export function contextBlock({ article, selection, mentions = [], files = [], history, widgets = [], book } = {}, part = 'all') {
 	// `standing`: where the author is (for a system prompt); `message`: what goes with this one thing said.
 	const standing = part !== 'message';
 	const message = part !== 'standing';
@@ -1148,6 +1150,7 @@ export function contextBlock({ article, selection, mentions = [], files = [], hi
 	// pi has the article in its system prompt too, but told there once: after a long run a model lost it (10-30), so a
 	// line of it goes with each thing said.
 	if (message && !standing && article) lines.push(`当前打开的文章：《${article.title}》，文件 ${article.path}`); // i18n-ignore: for the AI
+	if (book) lines.push(...bookLines(book, standing));
 	if (message && article && selection) {
 		const fence = '`'.repeat(Math.max(3, ...[...selection.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
 		lines.push(`这句话选中的是《${article.title}》（${article.path}）的${promptLineRange(selection)}：`, `${fence}markdown`, selection.text, fence); // i18n-ignore: for the AI
@@ -1162,6 +1165,24 @@ export function contextBlock({ article, selection, mentions = [], files = [], hi
 	if ((standing && article) || (message && mentions.length)) lines.push('回答里说到这些或别的文章时，写出标题并用《》括起来：Studio 会把它变成能点开的链接'); // i18n-ignore: for the AI
 	if (!lines.length) return '';
 	return `<studio-context>\n（Studio 自动附上的，说明用户现在在看什么；不是用户写的话）\n${lines.join('\n')}\n</studio-context>`; // i18n-ignore: for the AI
+}
+
+/**
+ * The book read in 翻译, as told: which it is and the page; where it stands (`standing`), how to read it (the operations
+ * of retainpdf-library.mjs, as tools or `studio` commands) and to quote it as 摘到笔记 does.
+ */
+function bookLines({ job_id: job, document_id: document, title, page, pages, notes }, standing) {
+	const name = title ? `《${title}》` : '一本书'; // i18n-ignore: for the AI
+	const at = page ? `，看到第 ${page} 页${pages ? `（共 ${pages} 页）` : ''}` : ''; // i18n-ignore: for the AI
+	const ids = [document ? `document_id: ${document}` : '', `job_id: ${job}`].filter(Boolean).join('，'); // i18n-ignore: for the AI
+	const lines = [`作者正在「翻译」里读 RetainPDF 的${name}（${ids}）${at}。`]; // i18n-ignore: for the AI
+	if (!standing) return lines;
+	if (notes) lines.push(`这本书的笔记是《${notes.title}》（文件夹名 ${notes.slug}），作者让你记到笔记里时写进这一页。`); // i18n-ignore: for the AI
+	lines.push(
+		'问到这本书、「这一页」「这一段」时，先读原文再答，不要凭记忆：read_book 读某几页的原文和译文（from、to 是页码，从 1 起），search_books 在书里找字，read_passage 取一段（block，p001-b0000 这样）。在终端里是 studio read-book、studio search-books、studio read-passage。', // i18n-ignore: for the AI
+		'答案里说到书里的内容时写出第几页；要把书里的一段放进笔记，用 read_passage 给的 quote（一个 ```retainpdf 块）原样放进去，作者点它就回到原文。', // i18n-ignore: for the AI
+	);
+	return lines;
 }
 
 /**

@@ -108,6 +108,13 @@ MCP 工具名和命令一一对应（下划线换成连字符）。参数后面�
 | `list_history` | `studio list-history` | `slug` | 一个页面存下的历史版本（写作时每 10 分钟自动存的，每次被外部改动前、恢复前存的），新的在前。 |
 | `read_history` | `studio read-history` | `slug`、`name` | 读一个历史版本的完整 Markdown。 |
 | `search_drive` | `studio search-drive` | `query`、`limit`? | 在资料库（作者选的本地文件夹，放论文、数据等）里按文件名和文字找文件；给出资料库的路径和每个文件在里面的路径。 |
+| `list_books` | `studio list-books` | `query`?、`limit`? | RetainPDF 书库里的书：document_id、书名、作者、年份、页数、读到哪、最近读的任务（job_id）。最近读的在前。 |
+| `search_books` | `studio search-books` | `query`、`document_id`?、`limit`? | 在 RetainPDF 的书里找字（原文和译文都找）：每处的书、job_id、第几页（从 1 起）、块（block）和前后的原文、译文。 |
+| `read_book` | `studio read-book` | `document_id` 或 `job_id`、`from`?、`to`? | 读一本书的几页（页码从 1 起，一次最多 10 页，`next` 是下一次从哪页读）：每页的块按阅读顺序，每块有 block、类型、原文、译文。 |
+| `read_passage` | `studio read-passage` | `job_id`、`block` | 取书里的一段：原文、译文、第几页，和放进笔记用的 `quote`（一个 ```` ```retainpdf ```` 块，显示成「摘到笔记」那种卡片，点它回到原文）。 |
+| `reading_now` | `studio reading-now` | — | 作者现在在「翻译」里读哪本书、第几页，这本书的笔记页（要 Studio 开着）。 |
+
+书的那几个操作读的是 RetainPDF（它要开着），走它的只读接口，地址和密钥在 Studio 的设置 › RetainPDF 里（见 [studio.md](studio.md) 的「AI 读书」）。
 
 ## 规矩
 

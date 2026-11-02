@@ -237,6 +237,22 @@ test('what the widgets in the answers told of themselves (note.tell) goes with w
 	assert.equal(contextBlock({ widgets }, 'standing'), '');
 });
 
+test('the book read in 翻译: which and the page, its notes, how to read and quote it; for pi a line of it with each thing said', () => {
+	const book = { job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', page: 12, pages: 300, notes: { slug: 'note-1', title: '量子化学笔记' } };
+	const all = contextBlock({ book });
+	assert.match(all, /作者正在「翻译」里读 RetainPDF 的《Quantum Chemistry》（document_id: doc-1，job_id: job-1），看到第 12 页（共 300 页）。/u);
+	assert.match(all, /这本书的笔记是《量子化学笔记》（文件夹名 note-1）/u);
+	assert.match(all, /read_book 读某几页的原文和译文/u);
+	assert.match(all, /用 read_passage 给的 quote（一个 ```retainpdf 块）原样放进去/u);
+	// pi: the whole in its system prompt, the book and page with each thing said.
+	assert.match(contextBlock({ book }, 'standing'), /read_book/u);
+	const message = withContext('这一页讲了什么', { book }, 'message');
+	assert.match(message, /作者正在「翻译」里读 RetainPDF 的《Quantum Chemistry》（document_id: doc-1，job_id: job-1），看到第 12 页（共 300 页）。/u);
+	assert.doesNotMatch(message, /read_book|笔记是/u);
+	// A book RetainPDF said little of: the job, no page.
+	assert.match(contextBlock({ book: { job_id: 'job-2', document_id: null, title: null, page: null, pages: null, notes: null } }), /读 RetainPDF 的一本书（job_id: job-2）。/u);
+});
+
 test('one made ready is taken by the next begun with the same (no adapter started then); the idle beyond the latest few are put to sleep, woken when spoken to', async (t) => {
 	const cwd = await realpath(await mkdtemp(join(tmpdir(), 'agent-sessions-')));
 	t.after(() => rm(cwd, { recursive: true, force: true }));

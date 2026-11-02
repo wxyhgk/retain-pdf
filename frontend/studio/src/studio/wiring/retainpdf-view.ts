@@ -6,7 +6,8 @@
 // `embed=studio`; each time the frame loads, the Studio says `hello` (light or dark, what it takes) and RetainPDF
 // answers `ready` with what it handles. Then `theme` follows the Studio's, `navigate` shows a passage, `notes` says
 // whether the book's notes are open beside it; RetainPDF's `quote` (摘到笔记), `open-notes` and `close-notes` (笔记) are
-// handed to the Studio. Only messages from this frame, from the address set, are taken.
+// handed to the Studio, and `reading` (the book and page read, all null when the reader is left), for the AIs to be
+// told. Only messages from this frame, from the address set, are taken.
 import { t } from '@blog/i18n/index.mjs';
 import { retainpdfSettings } from '../api/client';
 import type { RetainpdfTarget } from '../editor/retainpdf-quote';
@@ -27,6 +28,9 @@ export type RetainpdfQuote = {
 /** The book whose notes RetainPDF asks for (studio-bridge.v1 `OpenNotesMessage`). */
 export type RetainpdfBook = { job_id: string; document_id: string | null; title: string | null };
 
+/** What RetainPDF's reader shows (studio-bridge.v1 `ReadingMessage`): the book, the page (from 0) and how many. */
+export type RetainpdfReading = RetainpdfBook & { page_idx: number | null; page_count: number | null };
+
 export type RetainpdfViewHost = {
 	/** 设置 › RetainPDF, to change the address. */
 	openSettings(): void;
@@ -35,6 +39,8 @@ export type RetainpdfViewHost = {
 	/** RetainPDF's 笔记: the book's notes beside it, or put away. */
 	openNotes(book: RetainpdfBook): void;
 	closeNotes(): void;
+	/** What its reader shows now; null: no book (the reader left, or the frame loaded again). */
+	reading(reading: RetainpdfReading | null): void;
 };
 
 /** What the Studio takes of RetainPDF's messages (`hello`'s `features`). */
@@ -62,6 +68,11 @@ const theme = (): 'light' | 'dark' => (document.documentElement.dataset.theme ==
 
 const orNull = (value: unknown): value is string | null => value === null || (typeof value === 'string' && value.length > 0);
 const isBook = (message: Record<string, unknown>): boolean => typeof message.job_id === 'string' && !!message.job_id && orNull(message.document_id) && (message.title === null || typeof message.title === 'string');
+
+const whole = (value: unknown, least: number): value is number | null => value === null || (Number.isInteger(value) && (value as number) >= least);
+/** A `reading` as the contract has it: a book, its page and pages, or all of them null. */
+const isReading = (message: Record<string, unknown>): boolean =>
+	(message.job_id === null || (isBook(message) && whole(message.page_idx, 0) && whole(message.page_count, 1))) && ['document_id', 'title', 'page_idx', 'page_count'].every((key) => key in message);
 
 const isQuote = (message: Record<string, unknown>): boolean =>
 	typeof message.job_id === 'string' && !!message.job_id && typeof message.item_id === 'string' && !!message.item_id && Number.isInteger(message.page_idx) && (message.page_idx as number) >= 0;
@@ -93,6 +104,7 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 
 	frame.addEventListener('load', () => {
 		features = null;
+		host.reading(null);
 		post({ type: 'hello', theme: theme(), features: STUDIO_FEATURES });
 	});
 	window.addEventListener('message', (event) => {
@@ -110,6 +122,12 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 			host.openNotes({ job_id: message.job_id as string, document_id: message.document_id as string | null, title: message.title as string | null });
 		} else if (message.type === 'close-notes') {
 			host.closeNotes();
+		} else if (message.type === 'reading' && isReading(message)) {
+			host.reading(
+				message.job_id === null
+					? null
+					: { job_id: message.job_id as string, document_id: message.document_id as string | null, title: message.title as string | null, page_idx: message.page_idx as number | null, page_count: message.page_count as number | null },
+			);
 		}
 	});
 	window.addEventListener('themechange', () => {
@@ -129,6 +147,7 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 	function cannot(text: string, url: string): void {
 		shown = '';
 		features = null;
+		host.reading(null);
 		frame.hidden = true;
 		frame.removeAttribute('src');
 		const line = document.createElement('p');

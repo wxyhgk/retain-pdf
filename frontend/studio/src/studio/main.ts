@@ -37,6 +37,7 @@ import {
 	openArticleFileInApp,
 	revealArticleFile,
 	retainpdfBookNote,
+	tellRetainpdfReading,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
 import { usePictureSizes } from './editor/figure-block';
@@ -95,7 +96,7 @@ import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
-import { createRetainpdfView, type RetainpdfBook } from './wiring/retainpdf-view';
+import { createRetainpdfView, type RetainpdfBook, type RetainpdfReading } from './wiring/retainpdf-view';
 import { createNotesSplit } from './wiring/notes-split';
 import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfTarget } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
@@ -801,11 +802,34 @@ const translateView = shell.querySelector<HTMLElement>('#translate-view')!;
 // article (its title, saving).
 const notesSplit = createNotesSplit(shell, translateView, { close: () => closeNotes() });
 /** The book whose page of notes is beside RetainPDF, or was last; `caret`: the author has been writing in it since. */
-let notesBook: (RetainpdfBook & { slug: string; caret: boolean }) | null = null;
+let notesBook: (RetainpdfBook & { slug: string; noteTitle: string; caret: boolean }) | null = null;
 function setNotesOpen(open: boolean): void {
 	notesSplit.open = open;
 	sidePanel.fold(open && shellState.get().view === 'translate');
 	shellState.set({ notesOpen: open });
+	tellReading();
+}
+/** What RetainPDF's reader said it shows (`reading`); null: nothing, or a RetainPDF that does not say. */
+let readerShows: RetainpdfReading | null = null;
+/** The last told the server, not told again. */
+let toldReading = 'null';
+/**
+ * What the author reads, told the server for the AIs (server/retainpdf-reading.mjs): while 翻译 is shown, the book its
+ * reader shows (else the book whose notes are open), its page, its page of notes; nothing elsewhere.
+ */
+function tellReading(): void {
+	const book: (RetainpdfBook & { page_idx?: number | null; page_count?: number | null }) | null =
+		shellState.get().view !== 'translate' ? null : (readerShows ?? (notesSplit.open ? notesBook : null));
+	const notes = book && notesBook && notesSplit.open && sameBook(notesBook, book) ? { slug: notesBook.slug, title: notesBook.noteTitle } : null;
+	const told = book
+		? { job_id: book.job_id, document_id: book.document_id, title: book.title, page: typeof book.page_idx === 'number' ? book.page_idx + 1 : null, pages: book.page_count ?? null, notes }
+		: null;
+	const said = JSON.stringify(told);
+	if (said === toldReading) return;
+	toldReading = said;
+	tellRetainpdfReading(told).catch(() => {
+		toldReading = '';
+	});
 }
 function closeNotes(): void {
 	setNotesOpen(false);
@@ -819,7 +843,7 @@ async function openNotes(book: RetainpdfBook): Promise<boolean> {
 		const note = await retainpdfBookNote(book);
 		if (note.created) await articleList.load();
 		if (session.slug !== note.slug) await session.open(note.slug);
-		if (notesBook?.slug !== note.slug) notesBook = { ...book, slug: note.slug, caret: false };
+		if (notesBook?.slug !== note.slug) notesBook = { ...book, slug: note.slug, noteTitle: note.title, caret: false };
 		setNotesOpen(true);
 		retainpdf.notes(true, note.title);
 		return true;
@@ -837,6 +861,10 @@ const retainpdf = createRetainpdfView(translateView, {
 	openSettings: () => openSettings('retainpdf'),
 	openNotes: (book) => void openNotes(book),
 	closeNotes,
+	reading(reading) {
+		readerShows = reading;
+		tellReading();
+	},
 	// 摘到笔记: the passage put in the book's page of notes, opened beside RetainPDF when it is not; where the caret is
 	// when the author has been writing in it, else after the last block. Shown where it went.
 	async quote(quote) {
@@ -911,6 +939,7 @@ function showView(view: View, folder?: string): void {
 	} else {
 		url.searchParams.delete('translate');
 	}
+	tellReading();
 	if (view === 'apps') url.searchParams.set('apps', '');
 	else {
 		url.searchParams.delete('apps');
