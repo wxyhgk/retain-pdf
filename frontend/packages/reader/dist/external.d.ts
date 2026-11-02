@@ -32,6 +32,12 @@ export declare const readerNotesPanel: () => {
 export declare const readerReadingPosition: () => {
     report: (pageIdx: number | null, pageCount: number | null) => void;
 };
+/** 阅读页的「AI」交给宿主（Studio 自己的 AI）：同上，宿主给了才有。 */
+export declare const readerHostAi: () => {
+    available: () => boolean;
+    subscribe: (listener: () => void) => () => void;
+    ask: () => boolean;
+};
 export declare const readerPdfPort: () => ReaderPdfPort;
 export declare const readerSessionDataPort: () => ReaderSessionDataPort;
 export declare const resolveReaderAnchor: (...a: any[]) => any;
