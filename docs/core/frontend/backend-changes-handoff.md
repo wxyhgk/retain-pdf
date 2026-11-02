@@ -25,6 +25,25 @@
 
 ---
 
+## 告诉 Studio 眼下读到哪（feat/studio-bridge-reading）
+
+2026-11-02。契约 `contracts/studio-bridge.v1.schema.json` 只加不改：新消息 `reading`（RetainPDF → Studio）。Studio 里只用 Studio 自己的 AI，
+它用只读接口读书（`/api/v1/documents`、`/search`、`/documents/:id/reading`、`/jobs/:id/reader/regions(/:item_id)`），缺的只是作者眼下在读哪本、哪一页。
+
+消息：`{protocol, v: 1, type: "reading", job_id, document_id, title, page_idx, page_count}`，五个字段都要写，没有的写 `null`：
+
+- `job_id`：字符串（非空）或 `null`；`document_id`、`title`：和 `quote`、`open-notes` 里的同一套；
+- `page_idx`：0 起的整数（和 `navigate`、阅读页地址的 `page_idx` 一样）或 `null`；`page_count`：≥1 的整数或 `null`；
+- 离开阅读页（回主页、详情页）：同一种消息，五个字段全是 `null`，不另起类型。
+
+| 地方 | 现在 | 要改成 |
+|---|---|---|
+| 收 `hello` 回 `ready` | `features` 有 `theme`、`navigate`、`quote`、`notes` | 实现了下面两行时加上 `reading`（Studio 不用在 `hello.features` 登记，照发） |
+| 阅读页（握手后） | — | 进阅读页发一次 `reading`；翻页后防抖、停下来再发 |
+| 离开阅读页 | — | 发一条五个字段都是 `null` 的 `reading` |
+
+---
+
 ## 阅读页唤出笔记（feat/studio-bridge-notes）
 
 2026-11-01。接着下一节，契约 `contracts/studio-bridge.v1.schema.json` 只加不改。做法见

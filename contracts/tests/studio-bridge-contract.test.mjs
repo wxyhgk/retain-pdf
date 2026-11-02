@@ -67,9 +67,13 @@ const quote = {
   translated_text: "基于量子化学启发波函数拟设的智能机器学习",
 };
 
+// 作者在读第 5 页；离开阅读页时五个字段都是 null。
+const reading = { ...head, type: "reading", job_id: "20261101112937-ad912a", document_id: "doc-1", title: "Quantum Chemistry", page_idx: 4, page_count: 620 };
+const left = { ...head, type: "reading", job_id: null, document_id: null, title: null, page_idx: null, page_count: null };
+
 test("every message has one definition, a direction and the shared head", () => {
   const types = schema.messages.map((message) => message.type);
-  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes"]);
+  assert.deepEqual(types, ["hello", "ready", "theme", "navigate", "quote", "open-notes", "close-notes", "notes", "reading"]);
   assert.deepEqual(schema.oneOf.map((entry) => entry.$ref), schema.messages.map((message) => `#/definitions/${message.definition}`));
   for (const { type, from, definition } of schema.messages) {
     assert.ok(["studio", "retainpdf"].includes(from), `${type}: from ${from}`);
@@ -88,11 +92,12 @@ test("the handshake goes Studio → RetainPDF and back; each side's features nam
   const from = Object.fromEntries(schema.messages.map((message) => [message.type, message.from]));
   assert.equal(from.hello, "studio");
   assert.equal(from.ready, "retainpdf");
-  // RetainPDF 的 features：它处理的 Studio 消息（握手以外），加上它会发的 quote。
+  // RetainPDF 的 features：它处理的 Studio 消息（握手以外），加上它会发的 quote、reading。
   const toRetainpdf = Object.keys(from).filter((type) => from[type] === "studio" && type !== "hello");
-  assert.deepEqual([...definitions.Feature.enum].sort(), [...toRetainpdf, "quote"].sort());
-  // Studio 的 features：它处理的 RetainPDF 消息（握手以外），close-notes 跟着 open-notes。
-  const toStudio = Object.keys(from).filter((type) => from[type] === "retainpdf" && type !== "ready" && type !== "close-notes");
+  assert.deepEqual([...definitions.Feature.enum].sort(), [...toRetainpdf, "quote", "reading"].sort());
+  // Studio 的 features：它处理的 RetainPDF 消息（握手以外），close-notes 跟着 open-notes；
+  // reading 不用 Studio 登记，RetainPDF 照发，不认识的 Studio 不理。
+  const toStudio = Object.keys(from).filter((type) => from[type] === "retainpdf" && !["ready", "close-notes", "reading"].includes(type));
   assert.deepEqual([...definitions.StudioFeature.enum].sort(), toStudio.sort());
   assert.equal(definitions.HelloMessage.required.includes("features"), false, "hello.features is optional: Studios before it send none");
 });
@@ -114,6 +119,10 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "navigate", job_id: "j", page_idx: 3, block_id: "p004-b0002" },
     quote,
     { ...quote, document_id: null, title: null, translated_text: null },
+    reading,
+    { ...reading, document_id: null, title: null, page_idx: null, page_count: null },
+    left,
+    { ...head, type: "ready", features: ["theme", "navigate", "quote", "notes", "reading"] },
   ];
   for (const each of good) assert.ok(valid(message, each), JSON.stringify(each));
 
@@ -136,6 +145,14 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "close-notes", job_id: "j" },
     { ...head, type: "notes", open: "yes" },
     { ...head, type: "notes" },
+    { ...reading, page_idx: -1 },
+    { ...reading, page_count: 0 },
+    { ...reading, page_idx: 2.5 },
+    { ...reading, job_id: "" },
+    (({ page_count: _, ...rest }) => rest)(reading),
+    { ...head, type: "reading", job_id: null },
+    { ...reading, block_id: "p004-b0002" },
+    { ...head, type: "hello", theme: "dark", features: ["reading"] },
   ];
   for (const each of bad) assert.equal(valid(message, each), false, JSON.stringify(each));
 });
