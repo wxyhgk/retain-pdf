@@ -3,14 +3,15 @@ from __future__ import annotations
 import re
 from collections.abc import Iterable
 
-from retainpdf_pipeline.render.semantics.item_view import block_class
-from retainpdf_pipeline.render.layout.text_analysis import analyze_text
 from retainpdf_pipeline.render.layout.payload.text_common import get_render_formula_map
 from retainpdf_pipeline.render.layout.payload.line_structure import maybe_preserve_structured_line_breaks
 from retainpdf_pipeline.render.layout.payload.text_common import same_meaningful_render_text
+from retainpdf_pipeline.render.layout.model.render_text import member_translation_text as _member_translation_text
+from retainpdf_pipeline.render.layout.model.render_text import render_protected_source_text
+from retainpdf_pipeline.render.layout.model.render_text import render_protected_translation_text
+from retainpdf_pipeline.render.layout.model.render_text import should_render_source_block
 from retainpdf_pipeline.render.layout.model.render_text import should_skip_display_math_render
 
-MODEL_KEEP_ORIGIN_REASONS = {"skip_model_keep_origin"}
 RENDER_FIRST_LINE_INDENT_KEY = "_render_first_line_indent_pt"
 RENDER_INNER_BBOX_KEY = "_render_inner_bbox"
 
@@ -29,10 +30,6 @@ def render_continuation_group_id(item: dict) -> str:
 
 def _render_should_use_unit_translation(item: dict) -> bool:
     return render_unit_kind(item) == "group" or bool(render_continuation_group_id(item))
-
-
-def _member_translation_text(item: dict) -> str:
-    return str(item.get("protected_translated_text") or item.get("translated_text") or "").strip()
 
 
 def _unit_protected_translation_text(item: dict) -> str:
@@ -58,90 +55,6 @@ def _has_repeated_aggregate_member_text(items: list[dict]) -> bool:
         return False
     member_texts = [_compact_boundary_text(_member_translation_text(item)) for item in items]
     return all(member_text == compact_aggregate for member_text in member_texts)
-
-
-def _is_aggregate_geometry_member(item: dict) -> bool:
-    return str(item.get("translation_group_strategy", "") or "").strip() == "aggregate_geometry"
-
-
-def render_protected_translation_text(item: dict) -> str:
-    if not _render_should_use_unit_translation(item):
-        text = (
-            item.get("protected_translated_text")
-            or item.get("translated_text")
-            or item.get("translation_unit_protected_translated_text")
-            or item.get("translation_unit_translated_text")
-            or ""
-        )
-    elif (render_continuation_group_id(item) or _is_aggregate_geometry_member(item)) and _member_translation_text(item):
-        # 接续组、同页摘要组（几块一起翻、译文按块分开）各排自己那一段。摘要组以前每块都拿整组译文：
-        # rpr_fit 把同一段话排了两遍，下面那块挤成小字压住页码（2026-11-02 481 页的书第 395 页）。
-        # Typst 路线在 prepare_render_payloads_by_page 里自己按框重新切，不经过这里。
-        text = _member_translation_text(item)
-    else:
-        text = (
-            item.get("translation_unit_protected_translated_text")
-            or item.get("group_protected_translated_text")
-            or item.get("protected_translated_text")
-            or item.get("translation_unit_translated_text")
-            or item.get("group_translated_text")
-            or item.get("translated_text")
-            or ""
-        )
-    return str(text or "").strip()
-
-
-def should_render_source_when_untranslated(item: dict) -> bool:
-    if item.get("should_translate", True):
-        return False
-    if _skip_reason(item) in MODEL_KEEP_ORIGIN_REASONS:
-        return False
-    return should_render_source_block(item)
-
-
-def should_render_source_block(item: dict) -> bool:
-    if should_skip_display_math_render(item):
-        return False
-    # 翻译失败的块留原文：底图本来就没去掉它（清理计划把 failed 当没翻译），拿 OCR 原文重排一遍盖上去
-    # 只会更差——481 页的书第 379 页一张带 Goldstone 图的表被 OCR 当成正文，翻译失败后整块按 OCR 文字重排，
-    # 图没了、最后一个公式原样印成源码（2026-11-02）。
-    if str(item.get("final_status", "") or "").strip() == "failed":
-        return False
-    if not item.get("should_translate", True) and _skip_reason(item) in MODEL_KEEP_ORIGIN_REASONS:
-        return False
-    source_text = render_protected_source_text(item)
-    if not source_text:
-        return False
-    if block_class(item) == "formula":
-        return True
-    analysis = analyze_text(source_text)
-    return analysis.raw_math_count > 0 or analysis.latex_command_count > 0
-
-
-def _skip_reason(item: dict) -> str:
-    return str(item.get("skip_reason", "") or item.get("classification_label", "") or "").strip().lower()
-
-
-def render_protected_source_text(item: dict) -> str:
-    if render_unit_kind(item) != "group":
-        text = (
-            item.get("protected_source_text")
-            or item.get("source_text")
-            or item.get("translation_unit_protected_source_text")
-            or item.get("translation_unit_source_text")
-            or ""
-        )
-    else:
-        text = (
-            item.get("translation_unit_protected_source_text")
-            or item.get("group_protected_source_text")
-            or item.get("protected_source_text")
-            or item.get("translation_unit_source_text")
-            or item.get("group_source_text")
-            or item.get("source_text")
-            or ""
-        )
-    return str(text or "").strip()
 
 
 def seed_render_fields(item: dict) -> None:
