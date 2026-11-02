@@ -29,8 +29,11 @@
 - 历史：在单独的克隆里用 `git filter-branch --index-filter` 把每个提交挪到 `frontend/studio/` 下，再
   `git merge --allow-unrelated-histories` 合进来。提交号变了，Studio 文档和提交说明里写的旧提交号对不上新的；原仓库留在本机不动。
 - 搬之前查过全部历史：没有密钥（常见密钥格式、`api_key = "…"` 这类赋值），没有本机路径和邮箱；作者都是同一个人。
-- 子模块：编辑器 `third_party/milkdown`（公开的 fork `wxyhgk/milkdown`，用到的提交在它的 `studio` 分支上）登记到仓库根目录的
+- 子模块：编辑器 `third_party/milkdown`（公开的 fork `wxyhgk/milkdown`）登记到仓库根目录的
   `.gitmodules`，路径 `frontend/studio/third_party/milkdown`；Studio 里的 `.gitmodules` 删掉。
+  合并后才发现用到的提交 f4925260 只在本机：fork 的 `studio` 分支在 GitHub 上落后 23 个提交（搬之前看的是本机过期的
+  远程分支记录）。用户同意后推了 fork（`fc3a1378..f4925260`），之后才推送 RetainPDF。以后核对提交公开没有用 `git ls-remote`；
+  改了编辑器先推 fork，再推 RetainPDF。
 - npm：Studio 自己一套依赖（`frontend/studio/package-lock.json`），不进仓库根目录的 npm workspaces；在 `frontend/studio` 里
   `npm ci`，npm 认它是独立的项目。第 3 步要用 `@retainpdf/reader` 时再定怎么接。
 - Cargo：Studio 的两个 Rust 小工具（`tools/studio-app`、`tools/studio-terminal`）各自加 `[workspace]`，不并进根目录的 Cargo 工作区（那是后端的）。
