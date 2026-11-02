@@ -39,8 +39,10 @@ export type ShellState = {
 	panelOpen: boolean;
 	/** 翻译 with the book's notes open beside it (wiring/notes-split.ts): the bar says the note's title and saving as for an article. */
 	notesOpen: boolean;
-	/** The open page is a book's notes (读书笔记): the book, read beside them from the bar (读原书). */
+	/** The open page is a book's notes (读书笔记): the book, opened beside them first (书). */
 	book: { job_id: string; document_id: string | null; title: string } | null;
+	/** 书: the note's books open beside it (wiring/book-tabs.ts). */
+	booksOpen: boolean;
 	/** The right column's tabs not lent elsewhere, in order, and the one shown. */
 	tabs: SideTab[];
 	tab: string;
@@ -75,8 +77,8 @@ export type ShellActions = {
 	pagesUnder(slug: string): Array<{ slug: string; title: string }>;
 	/** ☆: the page (the open one, unless named) starred in 常用, or no longer. */
 	toggleFavorite(slug?: string): void;
-	/** 读原书: the book of the notes open, in 翻译 where it was last read, the notes beside it. */
-	readBook(): void;
+	/** 书: the note's books beside it, or put away. */
+	toggleBooks(): void;
 	forward(): void;
 	chooseTab(key: string): void;
 	togglePanel(): void;
@@ -101,6 +103,7 @@ function initialState(): ShellState {
 		panelOpen: true,
 		notesOpen: false,
 		book: null,
+		booksOpen: false,
 		tabs: [
 			{ key: 'ai', label: 'AI' },
 			{ key: 'files', label: t('文件') },
@@ -140,7 +143,7 @@ export const ActionsContext = createContext<ShellActions>({
 	back: nothing,
 	openPage: nothing,
 	toggleFavorite: nothing,
-	readBook: nothing,
+	toggleBooks: nothing,
 	pagesUnder: () => [],
 	forward: nothing,
 	chooseTab: nothing,

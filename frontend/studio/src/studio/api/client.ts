@@ -985,6 +985,11 @@ export function checkRetainpdf(): Promise<{ ok: true; books: number }> {
 	return request('/api/studio/settings/retainpdf/check');
 }
 
+/** RetainPDF's books, the latest read first (server/retainpdf-library.mjs): `job_id` the translation last read. */
+export function retainpdfBooks(): Promise<{ books: Array<{ document_id: string; title: string | null; pages: number | null; job_id: string | null }> }> {
+	return request('/api/studio/retainpdf/books');
+}
+
 /** What is read in 翻译 (server/retainpdf-reading.mjs), told the AIs; null: nothing. */
 export function tellRetainpdfReading(reading: { job_id: string; document_id: string | null; title: string | null; page: number | null; pages: number | null; notes: { slug: string; title: string } | null } | null): Promise<unknown> {
 	return request('/api/studio/retainpdf/reading', jsonOptions('PUT', reading));

@@ -47,6 +47,8 @@ export type RetainpdfViewHost = {
 
 /** What the Studio takes of RetainPDF's messages (`hello`'s `features`). */
 const STUDIO_FEATURES = ['quote', 'open-notes', 'ask-ai'];
+/** A book beside a note (book-tabs.ts): its notes are the note beside it, so no 笔记 button of its own. */
+export const BESIDE_NOTE_FEATURES = ['quote', 'ask-ai'];
 
 /** Whether anything answers at `url`: RetainPDF's pages are another origin, so only that it answered, not what. */
 async function answers(url: string): Promise<boolean> {
@@ -79,13 +81,17 @@ const isReading = (message: Record<string, unknown>): boolean =>
 const isQuote = (message: Record<string, unknown>): boolean =>
 	typeof message.job_id === 'string' && !!message.job_id && typeof message.item_id === 'string' && !!message.item_id && Number.isInteger(message.page_idx) && (message.page_idx as number) >= 0;
 
-export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) {
+export function createRetainpdfView(
+	view: HTMLElement,
+	host: RetainpdfViewHost,
+	{ features: studioFeatures = STUDIO_FEATURES, id = 'retainpdf-frame' }: { features?: string[]; id?: string | null } = {},
+) {
 	const frame = document.createElement('iframe');
-	frame.id = 'retainpdf-frame';
+	if (id) frame.id = id;
 	frame.title = 'RetainPDF';
 	frame.hidden = true;
 	const unreachable = document.createElement('div');
-	unreachable.id = 'retainpdf-unreachable';
+	if (id) unreachable.id = 'retainpdf-unreachable';
 	unreachable.className = 'translate-unreachable';
 	unreachable.setAttribute('role', 'status');
 	unreachable.hidden = true;
@@ -107,7 +113,7 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 	frame.addEventListener('load', () => {
 		features = null;
 		host.reading(null);
-		post({ type: 'hello', theme: theme(), features: STUDIO_FEATURES });
+		post({ type: 'hello', theme: theme(), features: studioFeatures });
 	});
 	window.addEventListener('message', (event) => {
 		if (!shown || event.source !== frame.contentWindow || event.origin !== new URL(shown).origin) return;
@@ -173,8 +179,11 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 		unreachable.hidden = false;
 	}
 
-	/** Shown (again): the pages at the address set, loaded when it changed or nothing is shown yet. */
-	function show(): Promise<void> {
+	/**
+	 * Shown (again): the pages at the address set, loaded when it changed or nothing is shown yet; `first`, the page of
+	 * them to load then (a book's reader, rather than the books).
+	 */
+	function show(first?: { page: string; search: Record<string, string | number> }): Promise<void> {
 		showing ??= (async () => {
 			let url: string;
 			try {
@@ -192,7 +201,7 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 			frame.hidden = false;
 			shown = url;
 			features = null;
-			frame.src = embedded(url);
+			frame.src = first ? embedded(new URL(first.page, url).href, first.search) : embedded(url);
 		})().finally(() => {
 			showing = null;
 		});
@@ -204,15 +213,20 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 	 * always taken, so a RetainPDF without the bridge goes there too).
 	 */
 	async function navigate(target: RetainpdfTarget): Promise<void> {
+		const search: Record<string, string | number> = { job_id: target.job_id };
+		if (target.page_idx !== undefined) search.page_idx = target.page_idx;
+		if (target.block_id) search.block_id = target.block_id;
+		// Nothing shown yet: the reader there straight away, not the books first.
+		if (!shown && !showing) {
+			await show({ page: 'reader.html', search });
+			return;
+		}
 		await show();
 		if (!shown) return;
 		if (features?.has('navigate')) {
 			post({ type: 'navigate', ...target });
 			return;
 		}
-		const search: Record<string, string | number> = { job_id: target.job_id };
-		if (target.page_idx !== undefined) search.page_idx = target.page_idx;
-		if (target.block_id) search.block_id = target.block_id;
 		frame.src = embedded(new URL('reader.html', shown).href, search);
 	}
 

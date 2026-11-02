@@ -88,6 +88,7 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 		allArticles: t('全部文章'),
 		apps: t('小程序'),
 		translate: t('翻译'),
+		books: t('这篇笔记的书'),
 		chats: t('AI 问答'),
 		sidePanel: t('AI、文件与终端'),
 		resize: t('调整面板宽度'),
@@ -139,6 +140,8 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 						<div class="outline-marks" aria-hidden="true"></div>
 					</nav>
 				</section>
+				<!-- 书: the note's books beside it, a tab each over RetainPDF's reader (wiring/book-tabs.ts). -->
+				<section id="books-view" class="books-page" aria-label="${say.books}" hidden></section>
 				<section id="drive-view" class="drive-page" aria-label="${say.drive}" hidden></section>
 				<section id="table-view" class="table-page" aria-label="${say.allArticles}" hidden></section>
 				<!-- 小程序: their list, or the one open as the page (mini-apps.ts draws it). -->
