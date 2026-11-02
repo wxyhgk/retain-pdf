@@ -42,6 +42,8 @@ export function settingRoutes(api, { localeSettings, retainpdfSettings, retainpd
 	});
 	// Whether its API answers with that key (the books the AIs read: retainpdf-library.mjs).
 	api.get('/settings/retainpdf/check', () => retainpdfLibrary.check());
+	// RetainPDF's books, the latest read first: 书's ＋, a book to open beside a note (book-tabs.ts).
+	api.get('/retainpdf/books', ({ query }) => retainpdfLibrary.listBooks({ query: query.get('q') || undefined, limit: 30 }));
 	// What is read in 翻译 (retainpdf-reading.mjs): said by the page, told the AIs.
 	api.get('/retainpdf/reading', () => ({ reading: retainpdfReading.get() }));
 	api.put('/retainpdf/reading', async ({ json }) => ({ reading: retainpdfReading.set(await json()) }));

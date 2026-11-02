@@ -58,6 +58,32 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 /* A passage just quoted (摘到笔记): its paragraph lit, fading, to see where it went. */
 @keyframes retainpdf-quote-arrive { from { background: rgba(var(--black), 0.08); } to { background: rgba(var(--black), 0); } }
 .crepe-host [data-just-quoted] { border-radius: 4px; animation: retainpdf-quote-arrive 1.6s ease-out; }
+/* 书 beside a note (wiring/book-tabs.ts): the books on the left, a tab each, the note on the right as with 翻译's 笔记. */
+.books-page { display: flex; min-height: 0; flex-direction: column; }
+.books-page[hidden] { display: none; }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .workspace-main { display: grid; grid-template-columns: minmax(320px, 1fr) min(var(--notes-width, 44%), calc(100% - 320px)); grid-template-rows: auto minmax(0, 1fr); }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .studio-bar { grid-column: 1 / -1; }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .books-page { position: relative; grid-column: 1; grid-row: 2; }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .editor-panel { grid-column: 2; grid-row: 2; border-left: 1px solid rgba(var(--gray), 0.2); --studio-editor-padding: 28px; --studio-title-size: 26px; }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .editor-panel .page-head { padding-top: 22px; }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .notes-divider { position: absolute; z-index: 5; top: 0; right: -4px; bottom: 0; display: block; width: 8px; cursor: col-resize; touch-action: none; }
+.studio-shell[data-resizing-notes] .books-page iframe { pointer-events: none; }
+.book-tabs { display: flex; min-height: 38px; flex: none; align-items: center; gap: 2px; padding: 4px 8px; overflow-x: auto; border-bottom: 1px solid rgba(var(--gray), 0.2); }
+.book-tab { display: flex; min-width: 0; max-width: 220px; flex: none; align-items: center; border-radius: 6px; }
+.book-tab:hover, .book-tab:has([aria-selected='true']) { background: rgba(var(--gray), 0.12); }
+.book-tab-name { min-width: 0; overflow: hidden; padding: 4px 4px 4px 9px; border: 0; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.book-tab-name[aria-selected='true'] { color: rgb(var(--black)); font-weight: 600; }
+.book-tab-close, .book-tabs-add { display: grid; width: 22px; height: 22px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 5px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; }
+.book-tab-close { margin-right: 3px; opacity: 0; }
+.book-tab:hover .book-tab-close, .book-tab:has([aria-selected='true']) .book-tab-close, .book-tab-close:focus-visible { opacity: 1; }
+.book-tab-close:hover, .book-tabs-add:hover { background: rgba(var(--gray), 0.18); color: rgb(var(--black)); }
+.book-frames { position: relative; flex: 1; min-height: 0; }
+.book-frame { position: absolute; inset: 0; display: flex; flex-direction: column; visibility: hidden; pointer-events: none; }
+.book-frame[data-shown] { visibility: visible; pointer-events: auto; }
+.book-frame iframe { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
+.book-frame iframe[hidden] { display: none; }
+.book-tabs-empty { max-width: 360px; margin: 64px auto 0; padding: 0 24px; color: rgb(var(--gray)); font-size: 14px; line-height: 1.7; text-align: center; }
+.book-tabs-empty[hidden] { display: none; }
 .translate-unreachable-actions { display: flex; gap: 8px; }
 /* 重试 as 小程序's 新建; 改地址 beside it, lighter. */
 .translate-unreachable-actions button { height: 32px; padding: 0 14px; border: 0; border-radius: 8px; background: rgb(var(--black)); color: var(--surface); font: inherit; font-size: 13px; cursor: pointer; }

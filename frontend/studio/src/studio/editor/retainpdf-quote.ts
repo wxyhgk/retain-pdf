@@ -15,6 +15,8 @@ export const RETAINPDF_NAVIGATE = 'retainpdf-navigate';
 
 /** A passage in RetainPDF: the job, the block (p001-b0000) and the page, from 0 (as its reader's address has it). */
 export type RetainpdfTarget = { job_id: string; block_id?: string; page_idx?: number };
+/** A passage asked to be shown (`RETAINPDF_NAVIGATE`), with its book's title and id when the mark or link says them. */
+export type RetainpdfOpen = RetainpdfTarget & { title?: string | null; document_id?: string | null };
 
 export type Quote = {
 	/** The book's title; its id (the same across translations of it). */
@@ -64,6 +66,12 @@ export function parseSourceHref(href: string): QuoteSource | null {
 export function sourceLabel(book: string | null, page: number | null): string {
 	const title = book ? oneLine(book) : 'RetainPDF';
 	return page ? `${title} · 第 ${page} 页` : title; // i18n-ignore: written into the note
+}
+
+/** The book's title in a link's words (`书 · 第 12 页`); null when they name none. */
+export function labelBook(label: string): string | null {
+	const title = oneLine(label).replace(/ · 第 \d+ 页$/u, ''); // i18n-ignore: as written into the note
+	return title && title !== 'RetainPDF' ? title : null;
 }
 
 /** The link as Markdown: its words escaped where Markdown would read them otherwise. */
@@ -122,19 +130,19 @@ export function quoteTarget(source: Pick<QuoteSource, 'job' | 'block' | 'page'>)
  * (`RETAINPDF_NAVIGATE`) to show its passage. Taken before the editor takes the press.
  */
 export function followQuoteOpens(root: Document = document): void {
-	const target = (event: Event): RetainpdfTarget | null => {
+	const target = (event: Event): RetainpdfOpen | null => {
 		if (!(event.target instanceof Element)) return null;
 		const mark = event.target.closest<HTMLElement>('.retainpdf-quote-open');
 		if (mark?.dataset.target) {
 			try {
-				return JSON.parse(mark.dataset.target) as RetainpdfTarget;
+				return { ...(JSON.parse(mark.dataset.target) as RetainpdfTarget), title: mark.dataset.book || null, document_id: mark.dataset.document || null };
 			} catch {
 				return null;
 			}
 		}
 		const link = event.target.closest<HTMLAnchorElement>(`a[href^="${SOURCE_SCHEME}"]`);
 		const source = link ? parseSourceHref(link.getAttribute('href') ?? '') : null;
-		return source ? quoteTarget(source) : null;
+		return source ? { ...quoteTarget(source), title: labelBook(link!.textContent ?? ''), document_id: source.document } : null;
 	};
 	root.addEventListener('mousedown', (event) => {
 		if (target(event)) event.stopPropagation();
@@ -144,6 +152,6 @@ export function followQuoteOpens(root: Document = document): void {
 		if (!shown) return;
 		event.preventDefault();
 		event.stopPropagation();
-		window.dispatchEvent(new CustomEvent<RetainpdfTarget>(RETAINPDF_NAVIGATE, { detail: shown }));
+		window.dispatchEvent(new CustomEvent<RetainpdfOpen>(RETAINPDF_NAVIGATE, { detail: shown }));
 	}, true);
 }

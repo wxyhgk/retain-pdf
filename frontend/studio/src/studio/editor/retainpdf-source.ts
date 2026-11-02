@@ -6,7 +6,7 @@ import { $nodeSchema, $remark } from '@milkdown/utils';
 
 import { t } from '@blog/i18n/index.mjs';
 import logo from './retainpdf-logo.svg?raw';
-import { parseQuote, parseSourceHref, QUOTE_LANGUAGE, quoteMarkdown, quoteTarget, SOURCE_SCHEME, sourceMarkdown } from './retainpdf-quote';
+import { labelBook, parseQuote, parseSourceHref, QUOTE_LANGUAGE, quoteMarkdown, quoteTarget, SOURCE_SCHEME, sourceMarkdown } from './retainpdf-quote';
 
 /**
  * Where a passage quoted from RetainPDF is (retainpdf-quote.ts): the `[书 · 第 12 页](retainpdf:…)` link before it is
@@ -115,6 +115,9 @@ class SourceView implements NodeView {
 		else delete this.dom.dataset.document;
 		if (source?.page) this.dom.dataset.page = String(source.page);
 		else delete this.dom.dataset.page;
+		const book = labelBook(label);
+		if (book) this.dom.dataset.book = book;
+		else delete this.dom.dataset.book;
 	}
 }
 
@@ -127,6 +130,18 @@ function sourceView(): MilkdownPlugin {
 			ctx.update(nodeViewCtx, (all) => all.filter(([id]) => id !== SOURCE_TYPE));
 		};
 	};
+}
+
+/** The books a note quotes, each once, in the order first quoted: its job, its id and title as the marks say them. */
+export function citedBooks(doc: ProseNode): Array<{ job_id: string; document_id: string | null; title: string | null }> {
+	const books = new Map<string, { job_id: string; document_id: string | null; title: string | null }>();
+	doc.descendants((node) => {
+		if (node.type.name !== SOURCE_TYPE) return true;
+		const source = parseSourceHref(String(node.attrs.href));
+		if (source && !books.has(source.job)) books.set(source.job, { job_id: source.job, document_id: source.document, title: labelBook(String(node.attrs.label)) });
+		return false;
+	});
+	return [...books.values()];
 }
 
 export function sourcePlugins(): MilkdownPlugin[] {

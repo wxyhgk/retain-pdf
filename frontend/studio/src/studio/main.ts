@@ -37,6 +37,7 @@ import {
 	openArticleFileInApp,
 	revealArticleFile,
 	retainpdfBookNote,
+	retainpdfBooks,
 	tellRetainpdfReading,
 } from './api/client';
 import { bindTitleFocus } from './editor/block-menu';
@@ -96,10 +97,12 @@ import { fileOpenWayFor, type FileClick } from './files/file-open';
 import type { Studio } from './wiring/studio';
 import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
-import { createRetainpdfView, type RetainpdfBook, type RetainpdfReading } from './wiring/retainpdf-view';
+import { createRetainpdfView, type RetainpdfBook, type RetainpdfQuote, type RetainpdfReading } from './wiring/retainpdf-view';
+import { createBookTabs } from './wiring/book-tabs';
+import { citedBooks } from './editor/retainpdf-source';
 import { createNotesSplit } from './wiring/notes-split';
-import { lastPage, markReadingPage, rememberPage } from './wiring/book-places';
-import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfTarget } from './editor/retainpdf-quote';
+import { markReadingPage, rememberPage } from './wiring/book-places';
+import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfOpen } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
 import { createDrive } from './wiring/drive';
 import { createLibrary } from './wiring/library';
@@ -141,7 +144,7 @@ mountShell(shell, {
 	},
 	pagesUnder: (slug) => articleList.childrenOf(slug),
 	toggleFavorite: (slug) => pages.starPage(slug ?? session.slug),
-	readBook: () => void readBook(),
+	toggleBooks: () => setBooksOpen(!booksSplit.open),
 	forward: () => pages.visited.step(1),
 	chooseTab: (tab) => sidePanel.choose(tab),
 	togglePanel: () => sidePanel.toggle(),
@@ -656,6 +659,8 @@ const session = new ArticleSession(
 			// The files it names, once it is shown (a book's take a while to read).
 			filePanel.sourceChanged();
 			chat.aiPanel.articleShown();
+			// 书 out: this note's books beside it (found once it is shown: the ones it quotes).
+			if (!again && booksSplit.open) showNoteBooks();
 			return markdown;
 		},
 		review(article, body, from) {
@@ -820,10 +825,14 @@ let toldReading = 'null';
  * reader shows (else the book whose notes are open), its page, its page of notes; nothing elsewhere.
  */
 function tellReading(): void {
+	const view = shellState.get().view;
+	const beside = view === 'editor' && booksSplit.open ? bookTabs.reading() : null;
 	const book: (RetainpdfBook & { page_idx?: number | null; page_count?: number | null }) | null =
-		shellState.get().view !== 'translate' ? null : (readerShows ?? (notesSplit.open ? notesBook : null));
-	const notes = book && notesBook && notesSplit.open && sameBook(notesBook, book) ? { slug: notesBook.slug, title: notesBook.noteTitle } : null;
-	markReadingPage(shellState.get().view === 'translate' ? readerShows : null);
+		view === 'editor' ? beside : view !== 'translate' ? null : (readerShows ?? (notesSplit.open ? notesBook : null));
+	const notes = beside && session.slug
+		? { slug: session.slug, title: openTitle }
+		: book && notesBook && notesSplit.open && sameBook(notesBook, book) ? { slug: notesBook.slug, title: notesBook.noteTitle } : null;
+	markReadingPage(view === 'translate' ? readerShows : beside);
 	chat.aiPanel.showBook(book ? { title: book.title, page: typeof book.page_idx === 'number' ? book.page_idx + 1 : null } : null);
 	const told = book
 		? { job_id: book.job_id, document_id: book.document_id, title: book.title, page: typeof book.page_idx === 'number' ? book.page_idx + 1 : null, pages: book.page_count ?? null, notes }
@@ -857,17 +866,14 @@ async function openNotes(book: RetainpdfBook): Promise<boolean> {
 		return false;
 	}
 }
-/** 读原书 (the bar, on a book's notes): the book in 翻译, at the page last read, its notes beside it. */
-async function readBook(): Promise<void> {
-	const book = shellState.get().book;
-	if (!book) return;
-	showView('translate');
-	await retainpdf.navigate({ job_id: book.job_id, page_idx: lastPage(book.job_id) ?? 0 });
-	await openNotes(book);
-}
-// Written in (the caret put in the note beside RetainPDF): passages quoted go where the caret is from then on.
-shell.querySelector<HTMLElement>('#crepe-editor')!.addEventListener('focusin', () => {
+// Written in (the caret put in the note beside RetainPDF): passages quoted go where the caret is from then on. Beside its
+// books, once typed in (a quote's mark pressed puts the caret there too, but is not writing).
+const noteEditor = shell.querySelector<HTMLElement>('#crepe-editor')!;
+noteEditor.addEventListener('focusin', () => {
 	if (notesBook && notesSplit.open && session.slug === notesBook.slug) notesBook.caret = true;
+});
+noteEditor.addEventListener('beforeinput', () => {
+	if (booksOf === session.slug) caretInNote = true;
 });
 const retainpdf = createRetainpdfView(translateView, {
 	openSettings: () => openSettings('retainpdf'),
@@ -889,6 +895,12 @@ const retainpdf = createRetainpdfView(translateView, {
 		const book: RetainpdfBook = { job_id: quote.job_id, document_id: quote.document_id, title: quote.title };
 		const writing = notesSplit.open && notesBook !== null && sameBook(notesBook, book) && session.slug === notesBook.slug;
 		if (!writing && !(await openNotes(book))) return;
+		putQuote(quote, writing && notesBook?.caret ? 'caret' : 'end');
+	},
+});
+/** A passage quoted (摘到笔记) into the note shown: where the caret is, or after the last block; shown where it went. */
+function putQuote(quote: RetainpdfQuote, where: 'caret' | 'end'): void {
+	{
 		const placed = editor.insertMarkdown(
 			quoteMarkdown({
 				book: quote.title,
@@ -899,7 +911,7 @@ const retainpdf = createRetainpdfView(translateView, {
 				source: quote.source_text,
 				translated: quote.translated_text,
 			}),
-			writing && notesBook?.caret ? 'caret' : 'end',
+			where,
 		);
 		if (placed) {
 			placed.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -907,13 +919,138 @@ const retainpdf = createRetainpdfView(translateView, {
 			window.setTimeout(() => delete placed.dataset.justQuoted, 1600);
 		}
 		showToast(t('已摘到「{title}」', { title: openTitle || session.slug }));
+	}
+}
+
+// 书 beside a note (以笔记为根): the books it quotes, and any opened beside it, a tab each over RetainPDF's reader
+// (wiring/book-tabs.ts); which, the one shown, and the ones closed kept for each note in this browser. The note stays
+// the page: a quote's mark shows its passage beside it, and what is quoted from them goes into it.
+const booksView = shell.querySelector<HTMLElement>('#books-view')!;
+const booksSplit = createNotesSplit(shell, booksView, { close: () => setBooksOpen(false) }, { flag: 'books', closeLabel: t('收起旁边的书') });
+const NOTE_BOOKS_KEY = 'retainpdf-note-books';
+const BOOKS_OPEN_KEY = 'retainpdf-books-open';
+type NoteBooks = { books: RetainpdfBook[]; shown: string | null; closed: string[] };
+function keptNoteBooks(slug: string): NoteBooks | null {
+	try {
+		const all = JSON.parse(localStorage.getItem(NOTE_BOOKS_KEY) || '{}') as Record<string, NoteBooks>;
+		const kept = all[slug];
+		return kept && Array.isArray(kept.books) ? { books: kept.books, shown: kept.shown ?? null, closed: Array.isArray(kept.closed) ? kept.closed : [] } : null;
+	} catch {
+		return null;
+	}
+}
+function keepNoteBooks(slug: string, kept: NoteBooks): void {
+	try {
+		const all = JSON.parse(localStorage.getItem(NOTE_BOOKS_KEY) || '{}') as Record<string, NoteBooks>;
+		all[slug] = kept;
+		localStorage.setItem(NOTE_BOOKS_KEY, JSON.stringify(all));
+	} catch {
+		// Not kept: the note's books are found again from what it quotes.
+	}
+}
+/** The note whose books the tabs are; the books they were (to tell which the author closed); the caret put in it since. */
+let booksOf: string | null = null;
+let tabJobs: string[] = [];
+let caretInNote = false;
+/** The note's books: those kept for it, then (not closed) the book whose notes it is (读书笔记) and the ones it quotes. */
+function noteBooks(slug: string): { books: RetainpdfBook[]; shown: string | null } {
+	const kept = keptNoteBooks(slug);
+	const books = [...(kept?.books ?? [])];
+	const own = shellState.get().book;
+	const view = editor.view();
+	for (const book of [...(own ? [own] : []), ...(view ? citedBooks(view.state.doc) : [])]) {
+		if (!books.some((each) => each.job_id === book.job_id) && !kept?.closed.includes(book.job_id)) books.push({ ...book });
+	}
+	return { books, shown: kept?.shown ?? own?.job_id ?? null };
+}
+const bookTabs = createBookTabs(booksView, {
+	openSettings: () => openSettings('retainpdf'),
+	quote(quote) {
+		if (!session.slug || booksOf !== session.slug) return;
+		putQuote(quote, caretInNote ? 'caret' : 'end');
 	},
+	askAi() {
+		chat.showAi();
+		chat.aiPanel.focus();
+	},
+	reading(reading) {
+		if (reading && reading.page_idx !== null) rememberPage(reading.job_id, reading.page_idx);
+		tellReading();
+	},
+	changed(books, shown) {
+		if (!booksOf) return;
+		const jobs = books.map((book) => book.job_id);
+		const before = keptNoteBooks(booksOf);
+		const closed = [...new Set([...(before?.closed ?? []), ...tabJobs])].filter((job) => !jobs.includes(job));
+		tabJobs = jobs;
+		keepNoteBooks(booksOf, { books, shown, closed });
+	},
+	pick: (anchor) => pickBook(anchor),
 });
+/** The note shown's books as the tabs (once for each time it is shown). */
+function showNoteBooks(): void {
+	if (!session.slug || booksOf === session.slug) return;
+	booksOf = session.slug;
+	caretInNote = false;
+	const { books, shown } = noteBooks(session.slug);
+	tabJobs = books.map((book) => book.job_id);
+	bookTabs.setBooks(books, shown);
+}
+/** 书 out beside the note, or put away; `first`, a book to show at a passage as it comes out. */
+function setBooksOpen(open: boolean, first?: { book: RetainpdfBook; target: RetainpdfOpen }): void {
+	booksSplit.open = open;
+	shellState.set({ booksOpen: open });
+	try {
+		localStorage.setItem(BOOKS_OPEN_KEY, open ? '1' : '');
+	} catch {
+		// This time only.
+	}
+	const beside = open && shellState.get().view === 'editor';
+	booksView.hidden = !beside;
+	if (open) showNoteBooks();
+	if (first) bookTabs.open(first.book, first.target);
+	bookTabs.setVisible(beside);
+	tellReading();
+}
+/** ＋: a book of RetainPDF's to open beside the note, from a menu of those not open (the latest read first). */
+async function pickBook(anchor: HTMLElement): Promise<RetainpdfBook | null> {
+	let listed: Awaited<ReturnType<typeof retainpdfBooks>>['books'];
+	try {
+		listed = (await retainpdfBooks()).books;
+	} catch (error) {
+		showToast(t('读不到 RetainPDF 的书：{error}', { error: error instanceof Error ? error.message : String(error) }), true);
+		return null;
+	}
+	const open = new Set(bookTabs.books().map((book) => book.job_id));
+	const choices = listed.filter((book) => book.job_id && !open.has(book.job_id));
+	if (!choices.length) {
+		showToast(listed.length ? t('书库里的书都开着了') : t('RetainPDF 的书库里还没有书'));
+		return null;
+	}
+	return new Promise((resolve) => {
+		showContextMenu(
+			choices.map((book) => ({
+				label: book.title || book.document_id,
+				...(book.pages ? { hint: t('{pages} 页', { pages: book.pages }) } : {}),
+				action: () => resolve({ job_id: book.job_id!, document_id: book.document_id || null, title: book.title }),
+			})),
+			anchor,
+		);
+	});
+}
 // A quote's RetainPDF mark, or a retainpdf: link (editor/retainpdf-quote.ts): 翻译, at that passage.
 followQuoteOpens();
 window.addEventListener(RETAINPDF_NAVIGATE, (event) => {
+	const { title, document_id: documentId, ...target } = (event as CustomEvent<RetainpdfOpen>).detail;
+	// On a note: the book beside it, at the passage, the note staying (以笔记为根). Elsewhere (翻译's own notes, AI 问答): 翻译.
+	if (shellState.get().view === 'editor' && session.slug) {
+		const book: RetainpdfBook = { job_id: target.job_id, document_id: documentId ?? null, title: title ?? null };
+		if (booksSplit.open) bookTabs.open(book, target);
+		else setBooksOpen(true, { book, target });
+		return;
+	}
 	showView('translate');
-	void retainpdf.navigate((event as CustomEvent<RetainpdfTarget>).detail);
+	void retainpdf.navigate(target);
 });
 const tableView = shell.querySelector<HTMLElement>('#table-view')!;
 const articleTable = createArticleTable(tableView, {
@@ -937,6 +1074,8 @@ function showView(view: View, folder?: string): void {
 	tableView.hidden = view !== 'table';
 	appsView.hidden = view !== 'apps';
 	translateView.hidden = view !== 'translate';
+	booksView.hidden = !(view === 'editor' && booksSplit.open);
+	bookTabs.setVisible(view === 'editor' && booksSplit.open);
 	chat.showChat(view === 'chat');
 	const url = new URL(window.location.href);
 	if (view === 'drive') void drive.page.open(folder);
@@ -1013,6 +1152,12 @@ void opening.finally(() => studioPlugins.emit('studio/ready'));
 // Started: not counted against the next start (safe-mode.ts); Studio.app, waiting for it, told (and the code that
 // started kept as the last good version).
 void opening.then(() => {
+	// 书 was out when the Studio was last left: out again, beside the note opened.
+	try {
+		if (localStorage.getItem(BOOKS_OPEN_KEY) && shellState.get().view === 'editor') setBooksOpen(true);
+	} catch {
+		// Put away.
+	}
 	startFinished();
 	void tellStarted().catch(() => {});
 }, () => {});
