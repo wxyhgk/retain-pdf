@@ -16,7 +16,8 @@
     { "type": "quote", "from": "retainpdf", "definition": "QuoteMessage" },
     { "type": "open-notes", "from": "retainpdf", "definition": "OpenNotesMessage" },
     { "type": "close-notes", "from": "retainpdf", "definition": "CloseNotesMessage" },
-    { "type": "notes", "from": "studio", "definition": "NotesMessage" }
+    { "type": "notes", "from": "studio", "definition": "NotesMessage" },
+    { "type": "reading", "from": "retainpdf", "definition": "ReadingMessage" }
   ],
   "oneOf": [
     { "$ref": "#/definitions/HelloMessage" },
@@ -26,15 +27,16 @@
     { "$ref": "#/definitions/QuoteMessage" },
     { "$ref": "#/definitions/OpenNotesMessage" },
     { "$ref": "#/definitions/CloseNotesMessage" },
-    { "$ref": "#/definitions/NotesMessage" }
+    { "$ref": "#/definitions/NotesMessage" },
+    { "$ref": "#/definitions/ReadingMessage" }
   ],
   "definitions": {
     "Protocol": { "const": "retainpdf-studio-bridge" },
     "Version": { "const": 1 },
     "Theme": { "enum": ["light", "dark"] },
     "Feature": {
-      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）。",
-      "enum": ["theme", "navigate", "quote", "notes"]
+      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）；quote、reading 是 RetainPDF 会发的（reading 2026-11-02 加：列了它，Studio 就知道会收到作者在读哪本书、哪一页）。",
+      "enum": ["theme", "navigate", "quote", "notes", "reading"]
     },
     "StudioFeature": {
       "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes）。hello 没有 features 是早先的 Studio，只认 quote。",
@@ -145,6 +147,22 @@
         "type": { "const": "notes" },
         "open": { "type": "boolean" },
         "title": { "type": ["string", "null"], "description": "开着时是哪一页笔记（标题）；收着时为 null 或不写。" }
+      }
+    },
+    "ReadingMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio：作者眼下在读哪本书、哪一页（2026-11-02 加，给 Studio 的 AI 回答「解释这一页」用；书的内容 Studio 自己用只读接口取：GET /api/v1/documents/:document_id/reading、/api/v1/jobs/:job_id/reader/regions）。握手后进了阅读页发一次，翻到别的页再发（RetainPDF 防抖，停下来才发）；离开阅读页（回主页、详情页）发一条 job_id 为 null 的，其余字段也都是 null。五个字段都要写，没有的写 null。Studio 只记最后一条。不需要 Studio 在 hello.features 里登记：不认识的 Studio 照契约不理。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "job_id", "document_id", "title", "page_idx", "page_count"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "reading" },
+        "job_id": { "type": ["string", "null"], "minLength": 1, "description": "阅读页打开的任务；不在阅读页时为 null。" },
+        "document_id": { "type": ["string", "null"], "minLength": 1, "description": "书的编号，和 quote、open-notes 里的同一个；任务不属于哪本书、不在阅读页时为 null。" },
+        "title": { "type": ["string", "null"], "description": "书名；没有、不在阅读页时为 null。" },
+        "page_idx": { "type": ["integer", "null"], "minimum": 0, "description": "眼下这一页，从 0 开始，和 navigate、阅读页地址的 page_idx 一样（小于 page_count）；页数还没读出来、不在阅读页时为 null。" },
+        "page_count": { "type": ["integer", "null"], "minimum": 1, "description": "原文一共几页；还没读出来、不在阅读页时为 null。" }
       }
     }
   }
