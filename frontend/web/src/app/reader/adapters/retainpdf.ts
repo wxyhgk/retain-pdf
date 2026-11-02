@@ -55,6 +55,8 @@ const adapters: ReaderAdapters = {
   readingPosition: studio?.readingPosition,
   // —— 放在 Studio 里、它有自己的 AI：阅读页的「AI」打开它的，不开上面的终端 ——
   hostAi: studio?.hostAi,
+  // —— Studio 让翻到某一段：同一本书原地翻过去，不整页重开 ——
+  hostNavigation: studio?.hostNavigation,
 };
 setReaderAdapters(adapters);
 

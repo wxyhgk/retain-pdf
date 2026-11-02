@@ -3,7 +3,8 @@
 // - <html data-embed="studio">：样式据此藏起品牌这些和 Studio 重复的东西；
 // - 握手：只认 window.parent 发来、origin 是本机回环地址的消息。收到 hello 记下 origin 和 Studio 认哪些消息（hello.features）、
 //   按亮暗换颜色、回 ready；之后发的消息都以这个 origin 为 targetOrigin，不用 '*'；
-// - theme：跟着 Studio 换亮暗（不写本机存的设置）；navigate：整页打开阅读页（带着 embed）；
+// - theme：跟着 Studio 换亮暗（不写本机存的设置）；navigate：阅读页开着的就是这本书，原地翻过去（PDF 不重新加载），
+//   否则（别的书、不在阅读页、还在加载）整页打开阅读页（带着 embed）；
 // - quote：阅读页悬停框「摘到笔记」经这里发出去；
 // - open-notes / close-notes / notes：阅读页「笔记」按钮让 Studio 在旁边开、收这本书的笔记，Studio 回 notes 说现在开着没有；
 // - reading：眼下读到哪（哪本书、第几页），给 Studio 的 AI 回答「这一页」用。握手后发一次（不在阅读页就是全 null 的那条），
@@ -57,6 +58,7 @@ export function themeForStudio(theme: StudioTheme, stored: ThemeId = getStoredTh
 }
 
 export type StudioNotesState = { open: boolean; title: string | null };
+export type StudioNavigateTarget = { jobId: string; pageIdx: number | null; blockId: string };
 
 export type StudioEmbed = {
   /** 握过手（收到过 hello）没有。 */
@@ -75,6 +77,8 @@ export type StudioEmbed = {
   askAi: () => boolean;
   /** 握手、notes 变了时通知。 */
   subscribe: (listener: () => void) => () => void;
+  /** navigate 先问这里登记的（开着的阅读页）：有一个返回 true 就是原地翻过去了，都不接才整页打开。 */
+  onNavigate: (handler: (target: StudioNavigateTarget) => boolean) => () => void;
   stop: () => void;
 };
 
@@ -91,11 +95,12 @@ export function startStudioEmbed(
     theme: ThemeId | null;
     notes: StudioNotesState;
     listeners: Array<() => void>;
+    navigators: Array<(target: StudioNavigateTarget) => boolean>;
     reading: StudioReading;
     /** 上一次发出去的 reading（JSON），一样的不再发。 */
     toldReading: string;
     readingTimer: ReturnType<typeof setTimeout> | null;
-  } = { origin: "", features: null, theme: null, notes: { open: false, title: null }, listeners: [], reading: null, toldReading: "", readingTimer: null };
+  } = { origin: "", features: null, theme: null, notes: { open: false, title: null }, listeners: [], navigators: [], reading: null, toldReading: "", readingTimer: null };
 
   const emit = () => state.listeners.forEach((listener) => listener());
   const applyTheme = (theme: StudioTheme) => {
@@ -147,6 +152,8 @@ export function startStudioEmbed(
       emit();
       return;
     }
+    const target = { jobId: message.jobId, pageIdx: message.pageIdx, blockId: message.blockId };
+    if (state.navigators.some((handler) => handler(target))) return;
     const url = buildReaderUrl(message.jobId, { pageIdx: message.pageIdx, blockId: message.blockId });
     if (url) navigate(url);
   }
@@ -182,11 +189,18 @@ export function startStudioEmbed(
         state.listeners = state.listeners.filter((item) => item !== listener);
       };
     },
+    onNavigate(handler) {
+      state.navigators.push(handler);
+      return () => {
+        state.navigators = state.navigators.filter((item) => item !== handler);
+      };
+    },
     stop() {
       if (state.readingTimer) clearTimeout(state.readingTimer);
       win.removeEventListener("message", onMessage);
       win.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
       state.listeners = [];
+      state.navigators = [];
     },
   };
 }
@@ -194,8 +208,9 @@ export function startStudioEmbed(
 type ReaderNotesQuoteInput = { itemId: string; pageIdx: number; sourceText: string; translatedText: string | null };
 export type StudioNotesPanelState = { available: boolean; open: boolean; title: string | null };
 
-/** 交给阅读器包的四样（ReaderAdapters 的 notesQuote、notesPanel、hostAi、readingPosition）：前两样握过手、Studio 认、知道是哪个任务才有；
- *  hostAi 握过手、Studio 认 ask-ai 才能用（阅读页的「AI」打开 Studio 的 AI）；readingPosition 一直在（阅读器翻页就报，没握手先记着）。
+/** 交给阅读器包的五样（ReaderAdapters 的 notesQuote、notesPanel、hostAi、readingPosition、hostNavigation）：前两样握过手、Studio 认、知道是哪个任务才有；
+ *  hostAi 握过手、Studio 认 ask-ai 才能用（阅读页的「AI」打开 Studio 的 AI）；readingPosition 一直在（阅读器翻页就报，没握手先记着）；
+ *  hostNavigation 让 Studio 的 navigate 先给阅读器，同一本书原地翻过去。
  *  任务从阅读页地址来；书的编号和书名按任务查一次（查不到就写 null，Studio 照样能用）。 */
 export function studioReaderAdapters(
   embed: StudioEmbed,
@@ -241,6 +256,9 @@ export function studioReaderAdapters(
       available: () => embed.supports("ask-ai"),
       subscribe: (listener: () => void) => embed.subscribe(listener),
       ask: () => embed.askAi(),
+    },
+    hostNavigation: {
+      subscribe: (listener: (target: StudioNavigateTarget) => boolean) => embed.onNavigate(listener),
     },
     readingPosition: {
       report: (pageIdx: number | null, pageCount: number | null) => {

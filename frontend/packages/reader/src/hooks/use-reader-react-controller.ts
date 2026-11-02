@@ -10,7 +10,7 @@ import { useCurrentPage } from "../pdf/useCurrentPage.js";
 import { usePageRowSync } from "../pdf/usePageRowSync.js";
 import { useReadingAnchor } from "../pdf/useReadingAnchor.js";
 import { useReaderUrlAnchorSync } from "./use-url-anchor-jump.js";
-import { readerReadingPosition } from "../external.js";
+import { readerHostNavigation, readerReadingPosition } from "../external.js";
 import type { PageRowHeights } from "../pdf/usePageRowSync.js";
 import type { ReaderMode, ReaderSessionState } from "./use-reader-session.js";
 import type { ProtectedPdfFile } from "../pdf/useProtectedPdfFile.js";
@@ -301,6 +301,17 @@ export function useReaderReactController(): ReaderReactController {
     if (!readingKnown) return;
     readerReadingPosition()?.report(currentPage >= 1 ? currentPage - 1 : null, readingPages >= 1 ? readingPages : null);
   }, [readingKnown, currentPage, readingPages]);
+
+  // 宿主（Studio）让翻到某一段：这本书已经打开好就原地翻过去，PDF 不重新加载；别的书、还没打开好交回宿主整页打开。
+  useEffect(() => {
+    const hostNavigation = readerHostNavigation();
+    if (!hostNavigation || !readingKnown || !session.jobId) return;
+    return hostNavigation.subscribe(({ jobId, pageIdx, blockId }) => {
+      if (jobId !== session.jobId) return false;
+      jumpToAnchor({ ...(pageIdx != null ? { page_idx: pageIdx } : {}), ...(blockId ? { block_id: blockId } : {}) });
+      return true;
+    });
+  }, [readingKnown, session.jobId, jumpToAnchor]);
 
   const { setModeKeepingPage } = useReaderModeNavigation({
     mode: session.mode,
