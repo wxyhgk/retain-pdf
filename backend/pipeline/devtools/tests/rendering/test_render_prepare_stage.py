@@ -96,7 +96,8 @@ def test_prepared_steps_are_what_the_render_stage_asks_for(tmp_path: Path) -> No
         render_mode="typst",
         render_engine="rpr_fit",
     )
-    assert set(report["steps"]) == {"obstacle_scan", "page_analysis", "source_base"}
+    # rpr_fit：底色 / 字色也在翻译时先按页算好（2026-11-02）
+    assert set(report["steps"]) == {"obstacle_scan", "page_analysis", "source_base", "visual_profile_pages"}
     assert all("error" not in step for step in report["steps"].values())
     # 渲染阶段：同样的条目（翻译只往里加译文）经 build_render_plan 的推导与 executor 的页码范围。
     translated = {
@@ -121,6 +122,36 @@ def test_prepared_steps_are_what_the_render_stage_asks_for(tmp_path: Path) -> No
         end_page=max(selected),
     )
     assert record.hit and base.hidden_text_stripped
+
+
+def test_render_reads_the_colors_prepared_during_translation(tmp_path: Path, monkeypatch) -> None:
+    # 翻译完渲染时，准备进程按「每块都翻成」先算好的每页底色 / 字色直接命中，一页都不用重采。
+    from retainpdf_pipeline.render.prepare import visual_profile as visual_profile_step
+    from retainpdf_pipeline.render.workflow.prepare_stage import _render_ready_pages
+
+    job, pdf = _job(tmp_path)
+    translations_dir = job / "translated"
+    run_render_prepare(
+        source_pdf_path=pdf, translations_dir=translations_dir, start_page=0, end_page=-1,
+        render_mode="typst", render_engine="rpr_fit",
+    )
+    translated = {
+        page: [{**item, "translated_text": "真正的译文", "protected_translated_text": "真正的译文", "final_status": "translated"} for item in items]
+        for page, items in build_source_render_preprocess_pages(
+            source_json_path=document_path_for_render(translations_dir), start_page=0, end_page=-1
+        ).items()
+    }
+    selected, _mode = plan_pages(
+        source_pdf_path=pdf, pages=translated, mode_probe_pages=None, start_page=0, end_page=-1, render_mode="typst"
+    )
+
+    def must_not_sample(*_args, **_kwargs):
+        raise AssertionError("every page should come from the prepared page cache")
+
+    monkeypatch.setattr(visual_profile_step, "build_document_visual_profile", must_not_sample)
+    store = PrepareStore(job / "artifacts" / "render_prepare")
+    profile = visual_profile_step.build_with_page_cache(store, source_pdf_path=pdf, pages=_render_ready_pages(pdf, selected))
+    assert sorted(profile.pages) == sorted(selected)
 
 
 def test_prepare_stage_spec_loads(tmp_path: Path) -> None:
