@@ -98,6 +98,7 @@ import { createPages } from './wiring/pages';
 import { createEditorAi } from './wiring/editor-ai';
 import { createRetainpdfView, type RetainpdfBook, type RetainpdfReading } from './wiring/retainpdf-view';
 import { createNotesSplit } from './wiring/notes-split';
+import { lastPage, markReadingPage, rememberPage } from './wiring/book-places';
 import { followQuoteOpens, quoteMarkdown, RETAINPDF_NAVIGATE, type RetainpdfTarget } from './editor/retainpdf-quote';
 import { createAiChat } from './wiring/ai-chat';
 import { createDrive } from './wiring/drive';
@@ -140,6 +141,7 @@ mountShell(shell, {
 	},
 	pagesUnder: (slug) => articleList.childrenOf(slug),
 	toggleFavorite: (slug) => pages.starPage(slug ?? session.slug),
+	readBook: () => void readBook(),
 	forward: () => pages.visited.step(1),
 	chooseTab: (tab) => sidePanel.choose(tab),
 	togglePanel: () => sidePanel.toggle(),
@@ -821,6 +823,8 @@ function tellReading(): void {
 	const book: (RetainpdfBook & { page_idx?: number | null; page_count?: number | null }) | null =
 		shellState.get().view !== 'translate' ? null : (readerShows ?? (notesSplit.open ? notesBook : null));
 	const notes = book && notesBook && notesSplit.open && sameBook(notesBook, book) ? { slug: notesBook.slug, title: notesBook.noteTitle } : null;
+	markReadingPage(shellState.get().view === 'translate' ? readerShows : null);
+	chat.aiPanel.showBook(book ? { title: book.title, page: typeof book.page_idx === 'number' ? book.page_idx + 1 : null } : null);
 	const told = book
 		? { job_id: book.job_id, document_id: book.document_id, title: book.title, page: typeof book.page_idx === 'number' ? book.page_idx + 1 : null, pages: book.page_count ?? null, notes }
 		: null;
@@ -853,6 +857,14 @@ async function openNotes(book: RetainpdfBook): Promise<boolean> {
 		return false;
 	}
 }
+/** 读原书 (the bar, on a book's notes): the book in 翻译, at the page last read, its notes beside it. */
+async function readBook(): Promise<void> {
+	const book = shellState.get().book;
+	if (!book) return;
+	showView('translate');
+	await retainpdf.navigate({ job_id: book.job_id, page_idx: lastPage(book.job_id) ?? 0 });
+	await openNotes(book);
+}
 // Written in (the caret put in the note beside RetainPDF): passages quoted go where the caret is from then on.
 shell.querySelector<HTMLElement>('#crepe-editor')!.addEventListener('focusin', () => {
 	if (notesBook && notesSplit.open && session.slug === notesBook.slug) notesBook.caret = true;
@@ -863,7 +875,13 @@ const retainpdf = createRetainpdfView(translateView, {
 	closeNotes,
 	reading(reading) {
 		readerShows = reading;
+		if (reading && reading.page_idx !== null) rememberPage(reading.job_id, reading.page_idx);
 		tellReading();
+	},
+	// Its reader's AI: the Studio's own, which reads RetainPDF's books (told the book and page read, tellReading).
+	askAi() {
+		chat.showAi();
+		chat.aiPanel.focus();
 	},
 	// 摘到笔记: the passage put in the book's page of notes, opened beside RetainPDF when it is not; where the caret is
 	// when the author has been writing in it, else after the last block. Shown where it went.

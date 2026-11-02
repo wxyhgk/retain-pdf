@@ -16,6 +16,10 @@ export function quotePreview(language: string, content: string): HTMLElement | n
 	const label = t('在 RetainPDF 中打开');
 	const card = document.createElement('figure');
 	card.className = 'retainpdf-quote';
+	// Which book and page: picked out while the reader shows that page (wiring/book-places.ts).
+	card.dataset.job = quote.job;
+	if (quote.document) card.dataset.document = quote.document;
+	if (quote.page) card.dataset.page = String(quote.page);
 
 	const mark = document.createElement('button');
 	mark.type = 'button';

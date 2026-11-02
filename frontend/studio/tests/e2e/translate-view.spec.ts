@@ -9,7 +9,8 @@ import { editor, openSettings, openStudio, removeArticle, resetFixture, savedMar
 
 // 翻译 (the left column): RetainPDF's own pages in the middle, at the address in 设置 › RetainPDF. Here a stand-in for
 // RetainPDF answers on a port of its own: every page of it is 图书馆, speaking studio-bridge.v1 as RetainPDF's does
-// (hello → ready; theme, navigate shown on the page; 摘 sends a quote; 读 and 离开 say what is read, or that nothing is).
+// (hello → ready; theme, navigate shown on the page; 摘 sends a quote; 读 and 离开 say what is read, or that nothing is;
+// AI asks the Studio's AI, as its reader's AI does in the Studio).
 // Its API answers too, as far as the settings' 测试连接 asks it, with the key STAND_IN_KEY.
 
 const settingsFile = () => join(process.env.STUDIO_BLOG_DIR!, '.studio-settings.json');
@@ -28,6 +29,7 @@ const STAND_IN = `<!doctype html><meta charset="utf-8"><title>RetainPDF</title>
 <button id="notes" type="button">笔记</button>
 <button id="read" type="button">读</button>
 <button id="leave" type="button">离开</button>
+<button id="ask" type="button">AI</button>
 <script>
 const head = { protocol: 'retainpdf-studio-bridge', v: 1 };
 let host = '';
@@ -63,6 +65,7 @@ document.querySelector('#leave').addEventListener('click', () => parent.postMess
 	{ ...head, type: 'reading', job_id: null, document_id: null, title: null, page_idx: null, page_count: null },
 	host,
 ));
+document.querySelector('#ask').addEventListener('click', () => parent.postMessage({ ...head, type: 'ask-ai' }, host));
 document.querySelector('#quote').addEventListener('click', () => parent.postMessage({
 	...head, type: 'quote', job_id: 'job-1', document_id: 'doc-1', title: 'Quantum Chemistry', item_id: 'p012-b0003', page_idx: 11,
 	source_text: 'The variation principle $x^2$.', translated_text: '变分原理：\\n\\n$$E = mc^2$$',
@@ -143,7 +146,7 @@ test('翻译 shows RetainPDF in the middle, kept as it was while another view is
 	await expect(inFrame(page).locator('#library')).toHaveText('图书馆');
 	await expect(inFrame(page).locator('#embed')).toHaveText('studio');
 	await expect(inFrame(page).locator('#theme')).toHaveText(/^(light|dark)$/u);
-	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes');
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai');
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
 	expect(new URL(page.url()).searchParams.has('translate')).toBe(true);
 
@@ -393,4 +396,63 @@ test('设置 › RetainPDF: its API\'s address and key, tried at once; the key k
 	await section.locator('#retainpdf-forget-key').click();
 	await expect(section.locator('#retainpdf-status')).toHaveText('已删掉密钥');
 	expect(JSON.parse(readFileSync(settingsFile(), 'utf8')).retainpdfApiKey).toBeUndefined();
+});
+
+test('RetainPDF\'s AI asks the Studio\'s own: the AI opens beside, offering to ask about the page read', async ({ page }) => {
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#open-translate').click();
+	await expect(inFrame(page).locator('#studio')).toHaveText('quote,open-notes,ask-ai');
+	// The notes open, the right column folded away for them: asked, it is there again, on the AI.
+	await inFrame(page).locator('#notes').click();
+	await expect(page.locator('.studio-shell')).toHaveClass(/panel-collapsed/u);
+	await inFrame(page).locator('#read').click();
+	await inFrame(page).locator('#ask').click();
+	await expect(page.locator('.studio-shell')).not.toHaveClass(/panel-collapsed/u);
+	await expect(page.locator('#side-tab-ai')).toHaveAttribute('aria-selected', 'true');
+	const ai = page.locator('#side-ai');
+	await expect(ai.locator('.ai-empty-hint')).toContainText('《Quantum Chemistry》（第 12 页）');
+	await expect(ai.locator('.ai-suggestion').first()).toHaveText('讲讲这一页在说什么');
+	// Its notes still beside the pages.
+	await expect(page.locator('.editor-panel')).toBeVisible();
+
+	// The reader left: no page to ask about (the book still, its notes open), what it offers is the article's again.
+	await inFrame(page).locator('#leave').click();
+	await expect(ai.locator('.ai-suggestion').first()).toHaveText('总结这篇文章');
+	await expect(ai.locator('.ai-empty-hint')).toContainText('《Quantum Chemistry》，');
+	// Another view: nothing of the book.
+	await page.locator('#article-list .page-row', { hasText: 'Studio 测试夹具' }).click();
+	await expect(ai.locator('.ai-empty-hint')).not.toContainText('Quantum Chemistry');
+});
+
+test('the passages quoted from the page read are picked out in the notes; 读原书 on the notes opens the book where it was left, the notes beside it', async ({ page }) => {
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#open-translate').click();
+	await inFrame(page).locator('#quote').click();
+	const card = page.locator('.editor-panel .retainpdf-quote');
+	await expect(card).toHaveCount(1);
+	const marked = () => card.evaluate((element) => getComputedStyle(element).boxShadow);
+	await expect.poll(marked).toBe('none');
+	// The reader at its page (12): picked out; left, no longer.
+	await inFrame(page).locator('#read').click();
+	await expect.poll(marked).not.toBe('none');
+	await inFrame(page).locator('#leave').click();
+	await expect.poll(marked).toBe('none');
+	await inFrame(page).locator('#read').click();
+	await expect.poll(marked).not.toBe('none');
+
+	// The notes opened on their own (from the tree): 读原书 in the bar; none on another page.
+	await page.locator('#article-list .page-row', { hasText: 'Studio 测试夹具' }).click();
+	await expect(page.locator('#read-book')).toHaveCount(0);
+	await page.locator('#article-list .page-row', { hasText: 'Quantum Chemistry' }).click();
+	await expect(page.locator('#read-book')).toBeVisible();
+	await expect.poll(marked).toBe('none');
+	await inFrame(page).locator('#navigated').evaluate((element) => (element.textContent = ''));
+	await page.locator('#read-book').click();
+	await expect(page.locator('#translate-view')).toBeVisible();
+	await expect(inFrame(page).locator('#navigated')).toHaveText(JSON.stringify({ job_id: 'job-1', page_idx: 11 }));
+	await expect(page.locator('.editor-panel')).toBeVisible();
+	await expect(page.locator('#breadcrumb-title')).toHaveText('Quantum Chemistry');
+	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:Quantum Chemistry');
 });

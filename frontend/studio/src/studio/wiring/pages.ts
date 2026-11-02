@@ -327,8 +327,10 @@ export function createPages(studio: Studio) {
 			pages.unshift({ slug: at, title: bySlug.get(at)!.title, icon: bySlug.get(at)!.icon });
 		}
 		const starred = favoriteSlugs();
+		const open = session.slug ? bySlug.get(session.slug) : undefined;
 		shellState.set({
 			path: pages,
+			book: open?.retainpdf?.job ? { job_id: open.retainpdf.job, document_id: open.retainpdf.document ?? null, title: open.title } : null,
 			icon: (session.slug && bySlug.get(session.slug)?.icon) || '',
 			count: articles.length,
 			favorite: Boolean(session.slug && starred.includes(session.slug)),

@@ -7,7 +7,7 @@
 // answers `ready` with what it handles. Then `theme` follows the Studio's, `navigate` shows a passage, `notes` says
 // whether the book's notes are open beside it; RetainPDF's `quote` (摘到笔记), `open-notes` and `close-notes` (笔记) are
 // handed to the Studio, and `reading` (the book and page read, all null when the reader is left), for the AIs to be
-// told. Only messages from this frame, from the address set, are taken.
+// told; `ask-ai` (its reader's AI clicked) opens the Studio's AI instead of RetainPDF's own. Only messages from this frame, from the address set, are taken.
 import { t } from '@blog/i18n/index.mjs';
 import { retainpdfSettings } from '../api/client';
 import type { RetainpdfTarget } from '../editor/retainpdf-quote';
@@ -41,10 +41,12 @@ export type RetainpdfViewHost = {
 	closeNotes(): void;
 	/** What its reader shows now; null: no book (the reader left, or the frame loaded again). */
 	reading(reading: RetainpdfReading | null): void;
+	/** Its reader's AI clicked (`ask-ai`): the Studio's AI asked instead, the book and page read told it (`reading`, just before). */
+	askAi(): void;
 };
 
 /** What the Studio takes of RetainPDF's messages (`hello`'s `features`). */
-const STUDIO_FEATURES = ['quote', 'open-notes'];
+const STUDIO_FEATURES = ['quote', 'open-notes', 'ask-ai'];
 
 /** Whether anything answers at `url`: RetainPDF's pages are another origin, so only that it answered, not what. */
 async function answers(url: string): Promise<boolean> {
@@ -122,6 +124,8 @@ export function createRetainpdfView(view: HTMLElement, host: RetainpdfViewHost) 
 			host.openNotes({ job_id: message.job_id as string, document_id: message.document_id as string | null, title: message.title as string | null });
 		} else if (message.type === 'close-notes') {
 			host.closeNotes();
+		} else if (message.type === 'ask-ai') {
+			host.askAi();
 		} else if (message.type === 'reading' && isReading(message)) {
 			host.reading(
 				message.job_id === null

@@ -84,6 +84,8 @@ export type PanelState = {
 	floating: boolean;
 	/** What is told with what is said: the article open (unless left out), whether something is selected in it (and not left out); the articles named with @ are links in what is written. */
 	article: ArticleRef | null;
+	/** The book read in 翻译 (RetainPDF's reader), the page from 1; null elsewhere. What it is asked first is about it. */
+	book: { title: string | null; page: number | null } | null;
 	leftOut: string | null;
 	selected: boolean;
 	selectionLeftOut: boolean;
@@ -222,6 +224,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		full: false,
 		floating: false,
 		article: null,
+		book: null,
 		leftOut: null,
 		selected: false,
 		selectionLeftOut: false,
@@ -814,6 +817,11 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		/** The tab is on screen: the AIs read, and a conversation begun if none goes on (once). */
 		shown(): void {
 			void load();
+		},
+		/** The book read in 翻译 now (null: none), for what is offered to ask. */
+		showBook(book: { title: string | null; page: number | null } | null): void {
+			const now = get().book;
+			if (now?.title !== book?.title || now?.page !== book?.page) set({ book });
 		},
 		/** The article open changed (null: none); a conversation begun later goes on in it. */
 		showArticle(next: ArticleRef | null): void {

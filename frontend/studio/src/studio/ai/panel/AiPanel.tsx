@@ -1,7 +1,7 @@
 import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
-import { ArrowDown, BookOpenCheck, Calculator, ClipboardList, Paperclip, History, Maximize2, PanelRight, PictureInPicture2, ScanSearch, Settings2, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
+import { ArrowDown, BookOpen, BookOpenCheck, Calculator, ClipboardList, Paperclip, History, Maximize2, PanelRight, PictureInPicture2, NotebookPen, ScanSearch, Search, Settings2, Sigma, SquarePen, TextQuote, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { WIDGET_ASK, WIDGET_START, WIDGET_STATE, type WidgetAsk, type WidgetStart, type WidgetTold } from '@blog/kernel/widget-events.ts';
@@ -45,6 +45,13 @@ const SUGGESTIONS: Array<{ icon: LucideIcon; text: string }> = [
 	{ icon: ScanSearch, text: t('检查这篇的公式和单位有没有错') },
 	{ icon: Calculator, text: t('把文章里的计算重新跑一遍，核对结果') },
 	{ icon: BookOpenCheck, text: t('找出正文里引用了却没在 refs.bib 里的文献') },
+];
+/** Reading a book in 翻译, at a page: about it (the AI is told the book and page, and reads it first). */
+const BOOK_SUGGESTIONS: Array<{ icon: LucideIcon; text: string }> = [
+	{ icon: BookOpen, text: t('讲讲这一页在说什么') },
+	{ icon: Sigma, text: t('这一页的公式是怎么推出来的') },
+	{ icon: Search, text: t('这一页用到的概念，书里前面哪里讲过') },
+	{ icon: NotebookPen, text: t('把这一页的要点记进这本书的笔记') },
 ];
 
 /** What the conversation shows: what is said as it is, each stretch of work (the items between what is said) one row. */
@@ -340,9 +347,15 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 		>
 			<div className="ai-empty" hidden={items.length > 0}>
 				<p className="ai-empty-title">{t('要做点什么？')}</p>
-				<p className="ai-empty-hint">{t('它会自己读文件、运行命令、改文章；改了文章会像别的改动一样让你过目。')}</p>
+				<p className="ai-empty-hint">
+					{state.book
+						? state.book.page
+							? t('它读得到你在读的《{title}》（第 {page} 页），答之前先翻原文；引用的段落能直接放进笔记。', { title: state.book.title ?? t('这本书'), page: state.book.page })
+							: t('它读得到你在读的《{title}》，答之前先翻原文；引用的段落能直接放进笔记。', { title: state.book.title ?? t('这本书') })
+						: t('它会自己读文件、运行命令、改文章；改了文章会像别的改动一样让你过目。')}
+				</p>
 				<div className="ai-suggestions">
-					{SUGGESTIONS.map(({ icon: Icon, text }) => (
+					{(state.book?.page ? BOOK_SUGGESTIONS : SUGGESTIONS).map(({ icon: Icon, text }) => (
 						<button key={text} type="button" className="ai-suggestion" onClick={() => actions.ask(text)}>
 							<Icon aria-hidden />
 							{text}

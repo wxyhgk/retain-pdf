@@ -1,5 +1,5 @@
 import { useEffect, useState, type ComponentProps } from 'react';
-import { ChevronLeft, ChevronRight, Ellipsis, ExternalLink, FileText, PanelLeft, PanelRight, Star } from 'lucide-react';
+import { BookOpen, ChevronLeft, ChevronRight, Ellipsis, ExternalLink, FileText, PanelLeft, PanelRight, Star } from 'lucide-react';
 
 import { locale, t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -34,7 +34,7 @@ function useTicking(ms: number): void {
 
 /** The bar above the middle: the sidebar's toggle, where one is, when the article was edited and saved, its menu, the right column's toggle. */
 export function TopBar({ siteTitle }: { siteTitle: string }) {
-	const { view, sidebarCollapsed, title, icon, status, edited, articleHref, panelOpen, notesOpen, nav, path, favorite } = useShell();
+	const { view, sidebarCollapsed, title, icon, status, edited, articleHref, panelOpen, notesOpen, nav, path, favorite, book } = useShell();
 	const act = useActions();
 	useTicking(30_000);
 	// 翻译 with the book's notes open: the note is an article being written, so its title and saving are said too.
@@ -88,6 +88,13 @@ export function TopBar({ siteTitle }: { siteTitle: string }) {
 				{!article && <strong className="truncate font-semibold">{viewName(view)}</strong>}
 			</div>
 			<div className="flex min-w-0 items-center gap-[7px]">
+				{/* A book's notes (读书笔记): the book itself, in 翻译 where it was last read, the notes beside it. */}
+				{view === 'editor' && book && (
+					<Button id="read-book" type="button" variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-[13px] text-muted-foreground hover:text-foreground [&_svg]:size-4" title={t('在「翻译」里读《{title}》，笔记在旁边', { title: book.title })} onClick={act.readBook}>
+						<BookOpen aria-hidden />
+						{t('读原书')}
+					</Button>
+				)}
 				<span id="edited-at" className="text-xs whitespace-nowrap text-muted-foreground opacity-85" title={edited === null ? '' : new Date(edited).toLocaleString(locale())} hidden={!article}>
 					{edited === null ? '' : t('编辑于{time}', { time: timeAgo(edited) })}
 				</span>

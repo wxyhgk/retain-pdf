@@ -443,6 +443,8 @@ The variation principle.
 - 笔记窄，页头也跟着收紧：标题小一些，发布日期、类型、草稿/发布这些属性和「添加图标」「添加封面」不显示（单独打开这页时都在）。
 - 顶栏写「翻译 › 这本书的笔记」，和打开一篇文章一样显示编辑时间、保存状态、页面菜单。
 - 笔记开着时从页面树打开了别的页，再回到「翻译」，右边还是这本书的笔记。
+- 阅读页翻到哪一页，笔记里从这一页摘的段落就加深边框、左边一道竖线，一眼看到这页记过什么；离开阅读页就不标了。
+- 从页面树单独打开一本书的笔记，顶栏多一个「读原书」：中间切到「翻译」，书翻到上次读到的那一页（记在这个浏览器里），笔记在右边。
 
 - 一本书一页笔记，都放在「读书笔记」下面：第一次唤出时新建（标题是书名，类型是「维基」，开头是空的，不是「从这里开始写作。」），以后按书找回同一页，改了标题、挪了位置也找得到。靠的是页面属性里的 `retainpdf:`：书的那一页写 `{ "document": 书的编号, "job": 任务编号 }`，「读书笔记」写 `{ "books": true }`（`server/retainpdf-notes.mjs`）。
 - Studio 在 `hello` 里说自己认 `open-notes`，RetainPDF 才显示「笔记」；开着收着由 Studio 告诉它（`notes`）。
@@ -450,6 +452,8 @@ The variation principle.
 **AI 读书**：Studio 的 AI（AI 面板里的、Claude Code 通过 MCP、终端里的 `studio` 命令）能读 RetainPDF 书库里的书：列书、在书里找字、读某几页的原文和译文、取一段（操作见 [给大模型用的接口](ai-tools.md) 里的 `list_books`、`search_books`、`read_book`、`read_passage`、`reading_now`）。
 
 - 在「翻译」里读书时问 AI，它知道你在读哪本书、第几页、这本书的笔记是哪一页：「这一页讲了什么」「把这段的推导记到笔记里」都是对着眼前这一页。RetainPDF 阅读页翻页停下来会告诉 Studio（契约里的 `reading`），Studio 的服务器记着最后一条（`server/retainpdf-reading.mjs`），每次问 AI 时附上；离开「翻译」或离开阅读页就不附了。旧版本的 RetainPDF 不说读到哪，那时只在打开这本书的笔记以后知道是哪本书。
+- 只有一个 AI：放在 Studio 里时，RetainPDF 阅读页右边的「AI」不再打开 RetainPDF 自己的终端，而是打开 Studio 的 AI 面板（笔记开着也一样，右侧面板回来、停在 AI 上）。RetainPDF 先说读到哪一页、再说要问 AI（契约里的 `ask-ai`；Studio 在 `hello` 里说认它，旧版本的 Studio 不说，阅读页照旧打开自己的终端）。
+- 读到某一页时，AI 面板空着的时候给的几个问法是对着这一页的（「讲讲这一页在说什么」「这一页的公式是怎么推出来的」……），上面写着它读得到哪本书、第几页；不在阅读页时照旧是对着文章的。
 - AI 把书里的一段写进笔记时，用的是和「摘到笔记」一样的 ```` ```retainpdf ```` 块，点它回到原文。
 - AI 走 RetainPDF 的只读接口（`GET /api/v1/documents`、`/api/v1/search`、`/api/v1/documents/:id/reading`、`/api/v1/jobs/:id/reader/regions`），由 Studio 的服务器去问（`server/retainpdf-library.mjs`），不改 RetainPDF 里的任何东西。
 - 要在设置 › RetainPDF 里填**接口地址**和 **API 密钥**：桌面版的接口和页面是同一个地址，接口地址空着就行；开发环境的接口在另一个端口（一般是 `http://127.0.0.1:41000/`）。密钥是 RetainPDF 的 `X-API-Key`，存在 `.studio-settings.json`（`retainpdfApiKey`），只有 Studio 的服务器用，设置页上不再显示出来。填好点「测试连接」看连不连得上。
