@@ -502,7 +502,7 @@ export function createStudioOps({ root, site } = {}) {
 		/** Pages of a book: each page's blocks, the original and the translation. */
 		readBook: (args) => library.readBook(args),
 
-		/** One passage of a book, and the ```retainpdf block that quotes it in a note. */
+		/** One passage of a book, and the Markdown that quotes it in a note. */
 		readPassage: (args) => library.readPassage(args),
 
 		/** What the author is reading in 翻译 now (the book, the page, its notes), asked of the Studio running. */

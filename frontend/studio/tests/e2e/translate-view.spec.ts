@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 import { expect, test, type Page } from '@playwright/test';
 
-import { editor, openSettings, openStudio, removeArticle, resetFixture, savedMarkdown, saveStatus } from './studio.ts';
+import { appendToFixture, editor, openSettings, openStudio, removeArticle, resetFixture, savedMarkdown, saveStatus } from './studio.ts';
 
 // 翻译 (the left column): RetainPDF's own pages in the middle, at the address in 设置 › RetainPDF. Here a stand-in for
 // RetainPDF answers on a port of its own: every page of it is 图书馆, speaking studio-bridge.v1 as RetainPDF's does
@@ -163,7 +163,7 @@ test('翻译 shows RetainPDF in the middle, kept as it was while another view is
 	await expect(inFrame(page).locator('#library')).toHaveText('图书馆');
 });
 
-test('摘到笔记 in RetainPDF puts the passage in the book\'s page of notes, opened beside it; its card opens RetainPDF there again', async ({ page }) => {
+test('摘到笔记 in RetainPDF puts the passage in the book\'s page of notes, opened beside it as its own text; its mark opens RetainPDF there again', async ({ page }) => {
 	await openStudio(page);
 	await setAddress(page, retainpdfUrl);
 	// Another note open, the caret in it: not where a passage of the book goes.
@@ -185,36 +185,53 @@ test('摘到笔记 in RetainPDF puts the passage in the book\'s page of notes, o
 	const notesPanel = page.locator('.editor-panel');
 	await expect(notesPanel).toBeVisible();
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:Quantum Chemistry');
-	const card = notesPanel.locator('.retainpdf-quote');
-	await expect(card).toHaveCount(1);
-	await expect(card).toBeInViewport();
-	await expect(card.locator('.retainpdf-quote-where')).toHaveText('Quantum Chemistry · 第 12 页');
-	// A block of its own: no code block's language or tools; RetainPDF's mark in its corner.
-	await expect(editor(page).locator('.milkdown-code-block:has(.retainpdf-quote) .tools')).toBeHidden();
-	await expect(card.locator('.retainpdf-quote-logo svg')).toBeVisible();
-	// The text as Markdown, its formulas drawn (inline in the original, display in the translation).
-	await expect(card.locator('.retainpdf-quote-source')).toContainText('The variation principle');
-	await expect(card.locator('.retainpdf-quote-source .katex')).toHaveCount(1);
-	await expect(card.locator('.retainpdf-quote-translated .katex-display')).toHaveCount(1);
-	await expect(card).not.toContainText('$');
+	// The note's own text (the translation, its formula drawn), RetainPDF's mark in the corner of its first paragraph.
+	const mark = notesPanel.locator('.retainpdf-source');
+	await expect(mark).toHaveCount(1);
+	const quotedText = notesPanel.locator('.ProseMirror p:has(> .retainpdf-source)');
+	await expect(quotedText).toBeInViewport();
+	await expect(quotedText).toHaveText('变分原理：');
+	await expect(mark.locator('svg')).toBeVisible();
+	await expect(mark).toHaveAttribute('title', 'Quantum Chemistry · 第 12 页 · 在 RetainPDF 中打开');
+	// In the top right corner of its paragraph (once the right column has folded away).
+	const corner = () =>
+		quotedText.evaluate((element) => {
+			const text = element.getBoundingClientRect();
+			const shown = element.querySelector('.retainpdf-source')!.getBoundingClientRect();
+			return Math.abs(text.right - shown.right) < 4 && shown.top - text.top < 12;
+		});
+	await expect.poll(corner).toBe(true);
+	// Room kept for it: the text does not run under it.
+	expect(await quotedText.evaluate((element) => getComputedStyle(element).paddingRight)).toBe('30px');
+	await expect(editor(page).locator('.katex-display')).toHaveCount(1);
+	await expect(notesPanel).not.toContainText('The variation principle');
+	await expect(editor(page).locator('.milkdown-code-block')).toHaveCount(0);
 
 	// Another: after it (the caret was not put in the note), not above.
 	await inFrame(page).locator('#quote').click();
-	await expect(card).toHaveCount(2);
+	await expect(mark).toHaveCount(2);
+	// Written in as any text is.
+	await quotedText.first().click();
+	await page.keyboard.press('End');
+	await page.keyboard.type('（要记住）');
+	await expect(quotedText.first()).toHaveText('变分原理：（要记住）');
 	// Saved as an article is (the bar says it): the keys to the Studio, not to RetainPDF's frame clicked last.
 	await page.locator('#breadcrumb-title').click();
 	await page.keyboard.press('ControlOrMeta+s');
 	await expect(saveStatus(page)).toHaveText('已保存');
-	const quoted = '```retainpdf\nbook: Quantum Chemistry\ndocument: doc-1\njob: job-1\nblock: p012-b0003\npage: 12\n---\nThe variation principle $x^2$.\n---\n变分原理：\n\n$$E = mc^2$$\n```\n';
+	const link = '[Quantum Chemistry · 第 12 页](retainpdf:job-1/p012-b0003?page=12&document=doc-1) 变分原理：';
 	const saved = await bookNoteSaved(page);
-	expect(saved.split(quoted).length - 1).toBe(2);
+	expect(saved.split(link).length - 1).toBe(2);
+	expect(saved).toContain(`${link}（要记住）`);
+	expect(saved).toContain('E = mc^2');
+	expect(saved).not.toContain('```retainpdf');
 	// Notes, not a post: a 维基 page, no line to write over above the quotes.
 	expect(saved).toContain('\nkind: wiki\n');
 	expect(saved).not.toContain('从这里开始写作');
-	expect(savedMarkdown()).not.toContain('```retainpdf');
+	expect(savedMarkdown()).not.toContain('retainpdf:');
 
-	// Its card: 翻译 again, at that passage.
-	await card.first().locator('.retainpdf-quote-logo').click();
+	// Its mark: 翻译 again, at that passage.
+	await mark.first().click();
 	await expect(page.locator('#translate-view')).toBeVisible();
 	await expect(inFrame(page).locator('#navigated')).toHaveText(JSON.stringify({ job_id: 'job-1', block_id: 'p012-b0003', page_idx: 11 }));
 });
@@ -248,7 +265,7 @@ test('笔记 in RetainPDF opens the book\'s page of notes beside it, under 读�
 
 	// A passage quoted lands in it, seen at once.
 	await inFrame(page).locator('#quote').click();
-	await expect(notesPanel.locator('.retainpdf-quote')).toHaveCount(1);
+	await expect(notesPanel.locator('.retainpdf-source')).toHaveCount(1);
 
 	// The line between them dragged: the note wider.
 	const divider = page.locator('.notes-divider');
@@ -276,7 +293,7 @@ test('笔记 in RetainPDF opens the book\'s page of notes beside it, under 读�
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('closed');
 	await inFrame(page).locator('#notes').click();
 	await expect(notesPanel).toBeVisible();
-	await expect(notesPanel.locator('.retainpdf-quote')).toHaveCount(1);
+	await expect(notesPanel.locator('.retainpdf-source')).toHaveCount(1);
 	// And from RetainPDF's.
 	await inFrame(page).locator('#notes').click();
 	await expect(notesPanel).toBeHidden();
@@ -297,7 +314,7 @@ test('a quote not from RetainPDF\'s frame is not taken', async ({ page }) => {
 	await page.waitForTimeout(300);
 	await expect(page.locator('.studio-toast')).toHaveCount(0);
 	await page.locator('#open-translate').click();
-	await expect(editor(page).locator('.retainpdf-quote')).toHaveCount(0);
+	await expect(editor(page).locator('.retainpdf-source')).toHaveCount(0);
 });
 
 test('RetainPDF not answering: why, a way to try again, and to its address in the settings', async ({ page }) => {
@@ -430,9 +447,9 @@ test('the passages quoted from the page read are picked out in the notes; 读原
 	await setAddress(page, retainpdfUrl);
 	await page.locator('#open-translate').click();
 	await inFrame(page).locator('#quote').click();
-	const card = page.locator('.editor-panel .retainpdf-quote');
-	await expect(card).toHaveCount(1);
-	const marked = () => card.evaluate((element) => getComputedStyle(element).boxShadow);
+	const quoted = page.locator('.editor-panel .ProseMirror p:has(> .retainpdf-source)');
+	await expect(quoted).toHaveCount(1);
+	const marked = () => quoted.evaluate((element) => getComputedStyle(element).boxShadow);
 	await expect.poll(marked).toBe('none');
 	// The reader at its page (12): picked out; left, no longer.
 	await inFrame(page).locator('#read').click();
@@ -455,4 +472,19 @@ test('the passages quoted from the page read are picked out in the notes; 读原
 	await expect(page.locator('.editor-panel')).toBeVisible();
 	await expect(page.locator('#breadcrumb-title')).toHaveText('Quantum Chemistry');
 	await expect(inFrame(page).locator('#notes-state')).toHaveText('open:Quantum Chemistry');
+});
+
+test('a passage quoted before (a ```retainpdf block) opens as one quoted now: its translation, the mark in its corner; saved so', async ({ page }) => {
+	appendToFixture('\n```retainpdf\nbook: Quantum Chemistry\ndocument: doc-1\njob: job-1\nblock: p004-b0002\npage: 4\n---\nThe old way.\n---\n旧的摘录。\n```\n');
+	await openStudio(page, { settled: false });
+	const quoted = editor(page).locator('p:has(> .retainpdf-source)');
+	await expect(quoted).toHaveText('旧的摘录。');
+	await expect(editor(page).locator('.milkdown-code-block')).toHaveCount(0);
+	await quoted.click();
+	await page.keyboard.press('End');
+	await page.keyboard.type('！');
+	await page.keyboard.press('ControlOrMeta+s');
+	await expect(saveStatus(page)).toHaveText('已保存');
+	expect(savedMarkdown()).toContain('[Quantum Chemistry · 第 4 页](retainpdf:job-1/p004-b0002?page=4&document=doc-1) 旧的摘录。！');
+	expect(savedMarkdown()).not.toContain('```retainpdf');
 });

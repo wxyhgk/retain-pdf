@@ -1,20 +1,14 @@
-// A passage of a book in RetainPDF, quoted in a note (```retainpdf): where it is (the job, the block, the page) and its
-// text as it was when quoted, the original and the translation, so the note reads the same without RetainPDF. The
-// preview is a card (retainpdf-quote-card.ts); its RetainPDF mark asks the Studio (`RETAINPDF_NAVIGATE`, followQuoteOpens)
-// to show the passage in 翻译.
+// A passage of a book in RetainPDF, quoted in a note: its translation (the original when it has none) as the note's own
+// paragraphs, written and edited as any others, and before them where it is, as a Markdown link to a `retainpdf:`
+// address. The editor draws that link as RetainPDF's mark in the corner of the paragraph (retainpdf-source.ts), which
+// asks the Studio (`RETAINPDF_NAVIGATE`, followQuoteOpens) to show the passage in 翻译; the blog, as the book and page.
 //
-//     ```retainpdf
-//     book: Smart Machine Learning
-//     job: 20261101112937-ad912a
-//     block: p001-b0000
-//     page: 1
-//     ---
-//     The original…
-//     ---
-//     译文……
-//     ```
+//     [Smart Machine Learning · 第 1 页](retainpdf:20261101112937-ad912a/p001-b0000?page=1&document=…) 译文……
+//
+// Notes quoted before were a fenced block (```retainpdf, `parseQuote`): the editor reads them as the above.
 
 export const QUOTE_LANGUAGE = 'retainpdf';
+export const SOURCE_SCHEME = 'retainpdf:';
 
 /** Asked of the Studio when a quote's passage is to be shown (main.ts): `RetainpdfTarget` its detail. */
 export const RETAINPDF_NAVIGATE = 'retainpdf-navigate';
@@ -34,26 +28,63 @@ export type Quote = {
 	translated: string | null;
 };
 
-const SEPARATOR = '---';
-
-/** The block for `quote`: fenced with more backticks than its text has in a row. */
-export function quoteMarkdown(quote: Quote): string {
-	const head = [
-		quote.book ? `book: ${oneLine(quote.book)}` : '',
-		quote.document ? `document: ${quote.document}` : '',
-		`job: ${quote.job}`,
-		`block: ${quote.block}`,
-		quote.page ? `page: ${quote.page}` : '',
-	].filter(Boolean);
-	const body = [...head, SEPARATOR, quote.source ?? '', SEPARATOR, quote.translated ?? ''].join('\n').replace(/\n+$/u, '');
-	const longest = Math.max(0, ...[...body.matchAll(/`+/gu)].map((run) => run[0].length));
-	const fence = '`'.repeat(Math.max(3, longest + 1));
-	return `${fence}${QUOTE_LANGUAGE}\n${body}\n${fence}\n`;
-}
+/** Where a quote's passage is (the link before it): the job, the block, the page from 1, the book's id. */
+export type QuoteSource = { job: string; block: string; page: number | null; document: string | null };
 
 const oneLine = (text: string) => text.replace(/\s+/gu, ' ').trim();
 
-/** What a block says, or null when it does not say which job and block. */
+/** The link's address: `retainpdf:<job>/<block>?page=12&document=<id>`. */
+export function sourceHref(source: QuoteSource): string {
+	const query = new URLSearchParams();
+	if (source.page) query.set('page', String(source.page));
+	if (source.document) query.set('document', source.document);
+	const asked = query.toString();
+	return `${SOURCE_SCHEME}${encodeURIComponent(source.job)}/${encodeURIComponent(source.block)}${asked ? `?${asked}` : ''}`;
+}
+
+/** What a `retainpdf:` address says; null for any other, and one that does not say which job and block. */
+export function parseSourceHref(href: string): QuoteSource | null {
+	const match = /^retainpdf:([^/?#]+)\/([^/?#]+)(?:\?([^#]*))?$/u.exec(href.trim());
+	if (!match) return null;
+	try {
+		const query = new URLSearchParams(match[3] ?? '');
+		const page = Number(query.get('page'));
+		return {
+			job: decodeURIComponent(match[1]!),
+			block: decodeURIComponent(match[2]!),
+			page: Number.isInteger(page) && page > 0 ? page : null,
+			document: query.get('document') || null,
+		};
+	} catch {
+		return null;
+	}
+}
+
+/** The link's words: the book and the page, as the blog shows them. */
+export function sourceLabel(book: string | null, page: number | null): string {
+	const title = book ? oneLine(book) : 'RetainPDF';
+	return page ? `${title} · 第 ${page} 页` : title; // i18n-ignore: written into the note
+}
+
+/** The link as Markdown: its words escaped where Markdown would read them otherwise. */
+export function sourceMarkdown(label: string, href: string): string {
+	return `[${oneLine(label).replace(/[\\[\]]/gu, (character) => `\\${character}`)}](${href})`;
+}
+
+/** Text whose first line starts a block of its own (a formula, a heading, a list…): the link cannot share its line. */
+const BLOCK_START = /^(?:\$\$|#{1,6}\s|>|[-*+]\s|\d+[.)]\s|\||```|~~~|<)/u;
+
+/** The Markdown for `quote`: its translation (the original when it has none) after the link to where it is. */
+export function quoteMarkdown(quote: Quote): string {
+	const link = sourceMarkdown(sourceLabel(quote.book, quote.page), sourceHref(quote));
+	const text = (quote.translated || quote.source || '').replace(/\r\n?/gu, '\n').trim();
+	if (!text) return `${link}\n`;
+	return BLOCK_START.test(text) ? `${link}\n\n${text}\n` : `${link} ${text}\n`;
+}
+
+const SEPARATOR = '---';
+
+/** What a block quoted before says (```retainpdf: its head, the original, the translation), or null when it does not say which job and block. */
 export function parseQuote(content: string): Quote | null {
 	const lines = content.replace(/\r\n?/gu, '\n').split('\n');
 	const first = lines.indexOf(SEPARATOR);
@@ -82,30 +113,37 @@ export function parseQuote(content: string): Quote | null {
 }
 
 /** Where to show a quote's passage. */
-export function quoteTarget(quote: Quote): RetainpdfTarget {
-	return { job_id: quote.job, block_id: quote.block, ...(quote.page ? { page_idx: quote.page - 1 } : {}) };
+export function quoteTarget(source: Pick<QuoteSource, 'job' | 'block' | 'page'>): RetainpdfTarget {
+	return { job_id: source.job, block_id: source.block, ...(source.page ? { page_idx: source.page - 1 } : {}) };
 }
 
 /**
- * A card's RetainPDF mark or its book and page pressed, anywhere on the page: the Studio asked (`RETAINPDF_NAVIGATE`) to show its
- * passage. Taken before the code block takes the press as one to edit it.
+ * A quote's RetainPDF mark pressed, or a `retainpdf:` link (an AI's answer), anywhere on the page: the Studio asked
+ * (`RETAINPDF_NAVIGATE`) to show its passage. Taken before the editor takes the press.
  */
 export function followQuoteOpens(root: Document = document): void {
-	const opener = (event: Event) => (event.target instanceof Element ? event.target.closest<HTMLElement>('.retainpdf-quote-open') : null);
+	const target = (event: Event): RetainpdfTarget | null => {
+		if (!(event.target instanceof Element)) return null;
+		const mark = event.target.closest<HTMLElement>('.retainpdf-quote-open');
+		if (mark?.dataset.target) {
+			try {
+				return JSON.parse(mark.dataset.target) as RetainpdfTarget;
+			} catch {
+				return null;
+			}
+		}
+		const link = event.target.closest<HTMLAnchorElement>(`a[href^="${SOURCE_SCHEME}"]`);
+		const source = link ? parseSourceHref(link.getAttribute('href') ?? '') : null;
+		return source ? quoteTarget(source) : null;
+	};
 	root.addEventListener('mousedown', (event) => {
-		if (opener(event)) event.stopPropagation();
+		if (target(event)) event.stopPropagation();
 	}, true);
 	root.addEventListener('click', (event) => {
-		const button = opener(event);
-		if (!button?.dataset.target) return;
+		const shown = target(event);
+		if (!shown) return;
 		event.preventDefault();
 		event.stopPropagation();
-		let target: RetainpdfTarget;
-		try {
-			target = JSON.parse(button.dataset.target) as RetainpdfTarget;
-		} catch {
-			return;
-		}
-		window.dispatchEvent(new CustomEvent<RetainpdfTarget>(RETAINPDF_NAVIGATE, { detail: target }));
+		window.dispatchEvent(new CustomEvent<RetainpdfTarget>(RETAINPDF_NAVIGATE, { detail: shown }));
 	}, true);
 }

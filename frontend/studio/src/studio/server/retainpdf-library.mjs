@@ -5,8 +5,9 @@ import { quoteMarkdown } from '../editor/retainpdf-quote.ts';
  * RetainPDF's books, read by the AIs (the operations list_books, search_books, read_book, read_passage): its public
  * API, read only (GET), at the address and with the key of the Studio's settings (retainpdf-settings.mjs). What comes
  * back is cut to what an AI needs: a book's id and title, a page's blocks in order, each its id, original and
- * translation; a passage with the ```retainpdf block that quotes it in a note (editor/retainpdf-quote.ts), so a
- * passage written into a note by an AI is the card the reader's 摘到笔记 makes, opened back in 翻译 the same way.
+ * translation; a passage with the Markdown that quotes it in a note (editor/retainpdf-quote.ts: its translation after
+ * a link to where it is), so a passage written into a note by an AI is what the reader's 摘到笔记 puts there, opened
+ * back in 翻译 the same way.
  *
  * RetainPDF's routes (its docs/api, backend/api/docs/api-spec/reader-read-model.md):
  * - GET /api/v1/documents?q&limit, /api/v1/documents?job_id, /api/v1/documents/:id: the books;
@@ -189,8 +190,8 @@ export class RetainpdfLibrary {
 	}
 
 	/**
-	 * One block (a passage): its original and translation, where it is, and the ```retainpdf block that quotes it in a
-	 * note (the card 摘到笔记 makes).
+	 * One block (a passage): its original and translation, where it is, and the Markdown that quotes it in a note (as
+	 * 摘到笔记 does).
 	 * @param {{ job_id: string, block: string }} asked
 	 */
 	async readPassage({ job_id: jobId, block }) {

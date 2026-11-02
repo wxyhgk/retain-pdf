@@ -362,6 +362,6 @@ test("RetainPDF's books read through the operations and the command line, at the
 	const studio = (...args: string[]) => new Promise<string>((resolve, reject) => execFile(process.execPath, [join(root, 'bin/studio.mjs'), ...args], { env: process.env, encoding: 'utf8' }, (error, stdout, stderr) => (error ? reject(Object.assign(error, { stderr })) : resolve(stdout))));
 	const passage = JSON.parse(await studio('read-passage', '--job_id', 'job-1', '--block', 'p001-b0001'));
 	assert.equal(passage.translated, '薛定谔方程。');
-	assert.match(passage.quote, /^```retainpdf\nbook: Quantum Chemistry\ndocument: doc-1\njob: job-1\nblock: p001-b0001\npage: 1\n---\nThe Schrödinger equation\.\n---\n薛定谔方程。\n```\n$/u);
+	assert.equal(passage.quote, '[Quantum Chemistry · 第 1 页](retainpdf:job-1/p001-b0001?page=1&document=doc-1) 薛定谔方程。\n');
 	await assert.rejects(studio('read-passage', '--job_id', 'job-1', '--block', 'p009-b0000'), (error: { stderr: string }) => /RetainPDF 里没有这个/u.test(error.stderr));
 });

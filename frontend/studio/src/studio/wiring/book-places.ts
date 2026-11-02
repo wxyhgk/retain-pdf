@@ -1,5 +1,5 @@
 // Where the author is in each book RetainPDF shows in 翻译: the page last read (读原书 opens the book there again), and
-// the passages quoted from the page read now picked out in its notes (the cards of editor/retainpdf-quote-card.ts).
+// the passages quoted from the page read now picked out in its notes (their marks: editor/retainpdf-source.ts).
 import type { RetainpdfReading } from './retainpdf-view';
 
 /** The page (from 0) last read of each job, the latest last; kept in the browser, as the notes' width is. */
@@ -34,8 +34,8 @@ export function lastPage(job: string): number | undefined {
 let marking: HTMLStyleElement | null = null;
 
 /**
- * The passages quoted from the page the reader shows, picked out wherever their cards are (a rule of its own, so the
- * cards the editor draws again later are picked out too); none when it shows no page.
+ * The passages quoted from the page the reader shows, picked out wherever their marks are (a rule of its own, so the
+ * marks the editor draws again later are picked out too); none when it shows no page.
  */
 export function markReadingPage(reading: RetainpdfReading | null): void {
 	marking ??= document.head.appendChild(Object.assign(document.createElement('style'), { id: 'retainpdf-reading-page' }));
@@ -44,7 +44,12 @@ export function markReadingPage(reading: RetainpdfReading | null): void {
 		return;
 	}
 	const page = `[data-page="${reading.page_idx + 1}"]`;
-	const books = [`.retainpdf-quote[data-job="${CSS.escape(reading.job_id)}"]${page}`];
-	if (reading.document_id) books.push(`.retainpdf-quote[data-document="${CSS.escape(reading.document_id)}"]${page}`);
-	marking.textContent = `:is(${books.join(', ')}) { border-color: rgba(var(--black), 0.42); box-shadow: inset 3px 0 0 rgba(var(--black), 0.55); }`;
+	const marks = [`.retainpdf-source[data-job="${CSS.escape(reading.job_id)}"]${page}`];
+	if (reading.document_id) marks.push(`.retainpdf-source[data-document="${CSS.escape(reading.document_id)}"]${page}`);
+	const quoted = `:is(${marks.join(', ')})`;
+	// The paragraph tinted (a little beyond its text, as a selection), its mark full.
+	marking.textContent = [
+		`.crepe-host p:has(> ${quoted}) { border-radius: 4px; background: rgba(var(--black), 0.05); box-shadow: -6px 0 0 rgba(var(--black), 0.05), 6px 0 0 rgba(var(--black), 0.05); }`,
+		`${quoted} { color: rgb(var(--black)); opacity: 1; }`,
+	].join('\n');
 }

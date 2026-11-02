@@ -909,7 +909,7 @@ const retainpdf = createRetainpdfView(translateView, {
 		showToast(t('已摘到「{title}」', { title: openTitle || session.slug }));
 	},
 });
-// A quote's 在 RetainPDF 中打开 (editor/retainpdf-quote.ts): 翻译, at that passage.
+// A quote's RetainPDF mark, or a retainpdf: link (editor/retainpdf-quote.ts): 翻译, at that passage.
 followQuoteOpens();
 window.addEventListener(RETAINPDF_NAVIGATE, (event) => {
 	showView('translate');

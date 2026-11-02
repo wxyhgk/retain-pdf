@@ -308,7 +308,7 @@ export const OPERATIONS = [
 	},
 	{
 		name: 'read_passage',
-		description: '取 RetainPDF 书里的一段（一个块）：原文、译文、第几页，和把它放进笔记用的 quote——一个 ```retainpdf 块，原样写进页面，就显示成「摘到笔记」那种卡片，作者点它回到原文。', // i18n-ignore: for the AI
+		description: '取 RetainPDF 书里的一段（一个块）：原文、译文、第几页，和把它放进笔记用的 quote——译文的 Markdown，前面一个 [书名 · 第几页](retainpdf:…) 链接写着出处；原样写进页面，就和「摘到笔记」放进去的一样：普通段落，右上角 RetainPDF 的标志，作者点它回到原文。', // i18n-ignore: for the AI
 		input: { type: 'object', properties: { job_id: text('job_id（search_books、read_book 给的）'), block: text('块，比如 p012-b0003') }, required: ['job_id', 'block'] }, // i18n-ignore: for the AI
 		run: (ops, args) => ops.readPassage(args),
 	},

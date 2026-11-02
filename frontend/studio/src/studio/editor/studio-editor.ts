@@ -58,7 +58,7 @@ import type { MarkdownBlockSlice } from '@blog/document/types.ts';
 import { SELECTION_END, SELECTION_START } from '@blog/document/source-lines.ts';
 import { togglePlugins } from './toggle-block';
 import { columnsPlugins } from './columns-block';
-import { quotePreview } from './retainpdf-quote-card';
+import { sourcePlugins } from './retainpdf-source';
 import { pluginBlocks, pluginSlashCommands } from '../plugins';
 import { runCommand } from '../plugin-ui';
 import { t } from '@blog/i18n/index.mjs';
@@ -451,9 +451,6 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 						// A plugin's code block (a widget's frame) previews as its plugin says; one changed by what its
 						// preview shows keeps it (undefined: what is shown stays), not drawn again (a frame would load again).
 						if (codeBlocks.some((code) => code.keep?.(language, content, meta))) return undefined;
-						// A passage quoted from RetainPDF (```retainpdf): the Studio's own, not a plugin's.
-						const quoted = quotePreview(language, content);
-						if (quoted) return quoted;
 						for (const code of codeBlocks) {
 							const shown = code.preview?.(language, content, meta);
 							if (shown) return shown;
@@ -510,6 +507,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 		crepe.editor.use(figurePlugins(host.fileUrl));
 		crepe.editor.use(calloutPlugins());
 		crepe.editor.use(citationPlugins(host));
+		// Where a passage quoted from RetainPDF is: its mark (retainpdf-source.ts).
+		crepe.editor.use(sourcePlugins());
 		crepe.editor.use(officeCardPlugins(host.fileUrl));
 		crepe.editor.use(togglePlugins());
 		crepe.editor.use(columnsPlugins());

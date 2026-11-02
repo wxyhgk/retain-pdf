@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { parseQuote } from '../editor/retainpdf-quote.ts';
+import { parseSourceHref } from '../editor/retainpdf-quote.ts';
 import { RetainpdfLibrary } from './retainpdf-library.mjs';
 
 const BOOK = {
@@ -94,13 +94,12 @@ test('pages of a book, read in the job its reading says: blocks in order, page n
 	await assert.rejects(books.readBook({ job_id: 'job-2' }), /还没识别完/u);
 });
 
-test('a passage comes with the ```retainpdf block that quotes it, as 摘到笔记 makes it', async () => {
+test('a passage comes with the Markdown that quotes it, as 摘到笔记 makes it: its translation after a link to where it is', async () => {
 	const passage = await library(fakeRetainpdf()).readPassage({ job_id: 'job-1', block: 'p001-b0001' });
 	assert.equal(passage.page, 1);
 	assert.equal(passage.source, 'The Schrödinger equation.');
-	const fence = /^```retainpdf\n([\s\S]*)\n```\n$/u.exec(passage.quote);
-	assert.ok(fence, passage.quote);
-	assert.deepEqual(parseQuote(fence[1]), { book: 'Quantum Chemistry', document: 'doc-1', job: 'job-1', block: 'p001-b0001', page: 1, source: 'The Schrödinger equation.', translated: '薛定谔方程。' });
+	assert.equal(passage.quote, '[Quantum Chemistry · 第 1 页](retainpdf:job-1/p001-b0001?page=1&document=doc-1) 薛定谔方程。\n');
+	assert.deepEqual(parseSourceHref('retainpdf:job-1/p001-b0001?page=1&document=doc-1'), { job: 'job-1', block: 'p001-b0001', page: 1, document: 'doc-1' });
 });
 
 test('what goes wrong is said with what to do: RetainPDF not running, the key wrong, the pages served without the API', async () => {
