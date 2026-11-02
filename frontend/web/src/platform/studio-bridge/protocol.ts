@@ -10,8 +10,8 @@ export const STUDIO_BRIDGE_VERSION = 1;
 export const STUDIO_EMBED = "studio";
 
 export type StudioTheme = "light" | "dark";
-/** 我们处理、会发的（回 ready 时报给 Studio）。 */
-export type StudioFeature = "theme" | "navigate" | "quote" | "notes";
+/** 我们处理、会发的（回 ready 时报给 Studio）。reading：会告诉 Studio 眼下读到哪。 */
+export type StudioFeature = "theme" | "navigate" | "quote" | "notes" | "reading";
 /** Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮。 */
 export type StudioSideFeature = "quote" | "open-notes";
 
@@ -104,6 +104,28 @@ export function openNotesMessage(book: StudioBook) {
 
 export function closeNotesMessage() {
   return { protocol: STUDIO_BRIDGE_PROTOCOL, v: STUDIO_BRIDGE_VERSION, type: "close-notes" } as const;
+}
+
+/** 眼下读到哪：阅读页里是哪本书、第几页（0 起）、一共几页；不在阅读页（book 为 null）五项都是 null。 */
+export type StudioReading = { book: StudioBook; pageIdx: number | null; pageCount: number | null } | null;
+
+export function readingMessage(given: StudioReading) {
+  // 没有任务就当不在阅读页：契约要五项一起是 null。
+  const reading = given && given.book.jobId ? given : null;
+  const whole = (value: number | null | undefined, least: number) =>
+    typeof value === "number" && Number.isInteger(value) && value >= least ? value : null;
+  const pageCount = reading ? whole(reading.pageCount, 1) : null;
+  const pageIdx = reading ? whole(reading.pageIdx, 0) : null;
+  return {
+    protocol: STUDIO_BRIDGE_PROTOCOL,
+    v: STUDIO_BRIDGE_VERSION,
+    type: "reading",
+    job_id: reading ? reading.book.jobId : null,
+    document_id: reading ? reading.book.documentId || null : null,
+    title: reading ? reading.book.title || null : null,
+    page_idx: pageIdx !== null && pageCount !== null && pageIdx >= pageCount ? null : pageIdx,
+    page_count: pageCount,
+  } as const;
 }
 
 export function quoteMessage(quote: StudioQuote) {

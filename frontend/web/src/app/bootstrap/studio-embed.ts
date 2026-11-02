@@ -5,8 +5,10 @@
 //   按亮暗换颜色、回 ready；之后发的消息都以这个 origin 为 targetOrigin，不用 '*'；
 // - theme：跟着 Studio 换亮暗（不写本机存的设置）；navigate：整页打开阅读页（带着 embed）；
 // - quote：阅读页悬停框「摘到笔记」经这里发出去；
-// - open-notes / close-notes / notes：阅读页「笔记」按钮让 Studio 在旁边开、收这本书的笔记，Studio 回 notes 说现在开着没有。
-//   阅读器包的这两样由 studioReaderAdapters 交过去（app/reader/adapters/retainpdf.ts）。
+// - open-notes / close-notes / notes：阅读页「笔记」按钮让 Studio 在旁边开、收这本书的笔记，Studio 回 notes 说现在开着没有；
+// - reading：眼下读到哪（哪本书、第几页），给 Studio 的 AI 回答「这一页」用。握手后发一次（不在阅读页就是全 null 的那条），
+//   阅读页翻页停下来再发（防抖 READING_DEBOUNCE_MS）。
+//   阅读器包的这几样由 studioReaderAdapters 交过去（app/reader/adapters/retainpdf.ts）。
 //
 // 方案和安全要求：docs/ops/planning/studio-workbench/ 的「书和笔记接在一起」「阅读页唤出笔记」；格式：platform/studio-bridge/protocol.ts。
 
@@ -17,10 +19,12 @@ import {
   openNotesMessage,
   parseStudioMessage,
   quoteMessage,
+  readingMessage,
   readyMessage,
   type StudioBook,
   type StudioFeature,
   type StudioQuote,
+  type StudioReading,
   type StudioSideFeature,
   type StudioTheme,
 } from "@/platform/studio-bridge/protocol.js";
@@ -36,7 +40,10 @@ import {
 } from "@/ui/theme/theme.js";
 
 /** 这一版处理的消息，回 ready 时报给 Studio。 */
-export const STUDIO_FEATURES: readonly StudioFeature[] = ["theme", "navigate", "quote", "notes"];
+export const STUDIO_FEATURES: readonly StudioFeature[] = ["theme", "navigate", "quote", "notes", "reading"];
+
+/** 翻页停下来多久才告诉 Studio 读到哪：滚过去的那些页不发。 */
+export const READING_DEBOUNCE_MS = 600;
 
 const DARK_THEME_ID: ThemeId = "night";
 
@@ -60,6 +67,8 @@ export type StudioEmbed = {
   notes: () => StudioNotesState;
   /** 笔记收着就发 open-notes，开着就发 close-notes；开没开等 Studio 回 notes 再变。 */
   toggleNotes: (book: StudioBook) => boolean;
+  /** 眼下读到哪（null：不在阅读页）。握过手就（防抖后）发 reading，没握手先记着，握手时发。 */
+  setReading: (reading: StudioReading) => void;
   /** 握手、notes 变了时通知。 */
   subscribe: (listener: () => void) => () => void;
   stop: () => void;
@@ -68,7 +77,7 @@ export type StudioEmbed = {
 /** 不在 Studio 里（没有 ?embed=studio，或者没有父窗口）返回 null，什么都不做。 */
 export function startStudioEmbed(
   win: Window,
-  { navigate = navigateTo }: { navigate?: (url: string) => void } = {},
+  { navigate = navigateTo, debounceMs = READING_DEBOUNCE_MS }: { navigate?: (url: string) => void; debounceMs?: number } = {},
 ): StudioEmbed | null {
   if (embeddedIn(win.location.search) !== STUDIO_EMBED || win.parent === win) return null;
   win.document.documentElement.dataset.embed = STUDIO_EMBED;
@@ -78,7 +87,11 @@ export function startStudioEmbed(
     theme: ThemeId | null;
     notes: StudioNotesState;
     listeners: Array<() => void>;
-  } = { origin: "", features: null, theme: null, notes: { open: false, title: null }, listeners: [] };
+    reading: StudioReading;
+    /** 上一次发出去的 reading（JSON），一样的不再发。 */
+    toldReading: string;
+    readingTimer: ReturnType<typeof setTimeout> | null;
+  } = { origin: "", features: null, theme: null, notes: { open: false, title: null }, listeners: [], reading: null, toldReading: "", readingTimer: null };
 
   const emit = () => state.listeners.forEach((listener) => listener());
   const applyTheme = (theme: StudioTheme) => {
@@ -94,6 +107,13 @@ export function startStudioEmbed(
       return false;
     }
   };
+  const tellReading = () => {
+    if (state.readingTimer) clearTimeout(state.readingTimer);
+    state.readingTimer = null;
+    const message = readingMessage(state.reading);
+    const said = JSON.stringify(message);
+    if (said !== state.toldReading && post(message)) state.toldReading = said;
+  };
   const supports = (feature: StudioSideFeature) =>
     Boolean(state.origin) && (state.features ? state.features.includes(feature) : feature === "quote");
 
@@ -106,6 +126,9 @@ export function startStudioEmbed(
       state.features = message.features;
       applyTheme(message.theme);
       post(readyMessage(STUDIO_FEATURES));
+      // 每次握手（Studio 重新加载过这一页也算）都说一遍读到哪。
+      state.toldReading = "";
+      tellReading();
       emit();
       return;
     }
@@ -137,6 +160,12 @@ export function startStudioEmbed(
     supports,
     sendQuote: (quote) => supports("quote") && post(quoteMessage(quote)),
     notes: () => state.notes,
+    setReading(reading) {
+      state.reading = reading;
+      if (!state.origin) return;
+      if (state.readingTimer) clearTimeout(state.readingTimer);
+      state.readingTimer = setTimeout(tellReading, debounceMs);
+    },
     toggleNotes: (book) => supports("open-notes") && post(state.notes.open ? closeNotesMessage() : openNotesMessage(book)),
     subscribe(listener) {
       state.listeners.push(listener);
@@ -145,6 +174,7 @@ export function startStudioEmbed(
       };
     },
     stop() {
+      if (state.readingTimer) clearTimeout(state.readingTimer);
       win.removeEventListener("message", onMessage);
       win.removeEventListener(THEME_CHANGE_EVENT, onThemeChange);
       state.listeners = [];
@@ -155,7 +185,8 @@ export function startStudioEmbed(
 type ReaderNotesQuoteInput = { itemId: string; pageIdx: number; sourceText: string; translatedText: string | null };
 export type StudioNotesPanelState = { available: boolean; open: boolean; title: string | null };
 
-/** 交给阅读器包的两样（ReaderAdapters 的 notesQuote、notesPanel）：握过手、Studio 认、知道是哪个任务才有。
+/** 交给阅读器包的三样（ReaderAdapters 的 notesQuote、notesPanel、readingPosition）：前两样握过手、Studio 认、知道是哪个任务才有；
+ *  readingPosition 一直在（阅读器翻页就报，没握手先记着）。
  *  任务从阅读页地址来；书的编号和书名按任务查一次（查不到就写 null，Studio 照样能用）。 */
 export function studioReaderAdapters(
   embed: StudioEmbed,
@@ -163,14 +194,19 @@ export function studioReaderAdapters(
   lookupDocument: (jobId: string) => Promise<{ document_id?: string | null; title?: string | null } | null>,
 ) {
   const book: StudioBook = { jobId, documentId: null, title: null };
+  // 阅读器报来的页（0 起）和页数；书名、书的编号查回来以后用新的再报一次。
+  const position: { pageIdx: number | null; pageCount: number | null } = { pageIdx: null, pageCount: null };
+  const report = () => embed.setReading(jobId ? { book: { ...book }, ...position } : null);
   if (jobId) {
     lookupDocument(jobId)
       .then((record) => {
         book.documentId = `${record?.document_id || ""}`.trim() || null;
         book.title = `${record?.title || ""}`.trim() || null;
+        report();
       })
       .catch(() => {});
   }
+  report();
   // useSyncExternalStore 要同一个对象（没变就不换）。
   const panel: { snapshot: StudioNotesPanelState } = { snapshot: { available: false, open: false, title: null } };
   const refresh = () => {
@@ -191,6 +227,13 @@ export function studioReaderAdapters(
       getState: refresh,
       subscribe: (listener: () => void) => embed.subscribe(listener),
       toggle: () => embed.toggleNotes({ ...book }),
+    },
+    readingPosition: {
+      report: (pageIdx: number | null, pageCount: number | null) => {
+        position.pageIdx = pageIdx;
+        position.pageCount = pageCount;
+        report();
+      },
     },
   };
 }

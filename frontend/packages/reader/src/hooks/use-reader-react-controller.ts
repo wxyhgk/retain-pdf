@@ -10,6 +10,7 @@ import { useCurrentPage } from "../pdf/useCurrentPage.js";
 import { usePageRowSync } from "../pdf/usePageRowSync.js";
 import { useReadingAnchor } from "../pdf/useReadingAnchor.js";
 import { useReaderUrlAnchorSync } from "./use-url-anchor-jump.js";
+import { readerReadingPosition } from "../external.js";
 import type { PageRowHeights } from "../pdf/usePageRowSync.js";
 import type { ReaderMode, ReaderSessionState } from "./use-reader-session.js";
 import type { ProtectedPdfFile } from "../pdf/useProtectedPdfFile.js";
@@ -292,6 +293,14 @@ export function useReaderReactController(): ReaderReactController {
       activateRegion(findReaderRegion(session.regions, anchor.blockId));
     },
   });
+
+  // 放在笔记（Studio）里时告诉宿主眼下读到哪（页 0 起；宿主防抖后发 studio-bridge 的 reading）。
+  const readingKnown = !session.boot.loading && !session.boot.failed && session.assetsReady;
+  const readingPages = Number(panes.hudNumPages) || 0;
+  useEffect(() => {
+    if (!readingKnown) return;
+    readerReadingPosition()?.report(currentPage >= 1 ? currentPage - 1 : null, readingPages >= 1 ? readingPages : null);
+  }, [readingKnown, currentPage, readingPages]);
 
   const { setModeKeepingPage } = useReaderModeNavigation({
     mode: session.mode,

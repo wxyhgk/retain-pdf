@@ -1,5 +1,6 @@
 // 放在笔记（Studio）里：消息格式对得上契约、只认 window.parent 和本机回环地址、握手后才认别的、
-// 跟着换亮暗不写本机设置、跳页带着 embed、悬停框握手后才有「摘到笔记」、Studio 认 open-notes 才有「笔记」按钮。
+// 跟着换亮暗不写本机设置、跳页带着 embed、悬停框握手后才有「摘到笔记」、Studio 认 open-notes 才有「笔记」按钮、
+// 告诉 Studio 读到哪（reading）。
 // 契约 contracts/studio-bridge.v1.schema.json；方案 docs/ops/planning/studio-workbench/20261101-书和笔记接在一起.md。
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -14,6 +15,7 @@ import {
   closeNotesMessage,
   openNotesMessage,
   quoteMessage,
+  readingMessage,
   readyMessage,
 } from "../../src/platform/studio-bridge/protocol.ts";
 import { startStudioEmbed, studioReaderAdapters, themeForStudio } from "../../src/app/bootstrap/studio-embed.ts";
@@ -84,6 +86,19 @@ test("发出去的 ready、quote 对得上契约", () => {
   assert.equal(quote.document_id, null, "空的书编号写 null（契约 minLength 1）");
 });
 
+test("发出去的 reading 对得上契约：阅读页里是书和页，不在阅读页五项都是 null，页不在页数里写 null", () => {
+  const reading = readingMessage({ book: { jobId: "j1", documentId: "d1", title: "量子化学" }, pageIdx: 11, pageCount: 300 });
+  assertMatchesContract(reading, "ReadingMessage");
+  assert.deepEqual(reading, { protocol: "retainpdf-studio-bridge", v: 1, type: "reading", job_id: "j1", document_id: "d1", title: "量子化学", page_idx: 11, page_count: 300 });
+  const left = readingMessage(null);
+  assertMatchesContract(left, "ReadingMessage");
+  assert.deepEqual([left.job_id, left.document_id, left.title, left.page_idx, left.page_count], [null, null, null, null, null]);
+  assert.deepEqual(readingMessage({ book: { jobId: "", documentId: "d1", title: "书" }, pageIdx: 0, pageCount: 3 }), left, "没有任务当不在阅读页");
+  const unknown = readingMessage({ book: { jobId: "j1", documentId: "", title: "" }, pageIdx: 5, pageCount: 3 });
+  assert.deepEqual([unknown.document_id, unknown.title, unknown.page_idx, unknown.page_count], [null, null, null, 3]);
+  assert.equal(readingMessage({ book: { jobId: "j1", documentId: null, title: null }, pageIdx: 2, pageCount: null }).page_idx, 2, "页数还不知道时照样报页");
+});
+
 test("Studio 的亮暗落到我们的主题：本机主题亮暗对得上就用它", () => {
   assert.equal(themeForStudio("dark", "classic"), "night");
   assert.equal(themeForStudio("dark", "night"), "night");
@@ -134,7 +149,10 @@ test("握手：只认父窗口、本机回环地址；回 ready 指定那个 ori
 
   fake.receive(hello("dark"));
   assert.equal(embed.ready(), true);
-  assert.deepEqual(fake.sent, [{ data: readyMessage(["theme", "navigate", "quote", "notes"]), origin: STUDIO }]);
+  assert.deepEqual(fake.sent, [
+    { data: readyMessage(["theme", "navigate", "quote", "notes", "reading"]), origin: STUDIO },
+    { data: readingMessage(null), origin: STUDIO },
+  ], "回 ready，再说一声不在阅读页");
   assert.equal(dom.window.document.documentElement.dataset.theme, "night", "按 hello 的 theme 换颜色");
 
   fake.receive({ protocol: "retainpdf-studio-bridge", v: 1, type: "navigate", job_id: "j1" }, { origin: "http://localhost:9999" });
@@ -283,4 +301,39 @@ test("阅读页顶栏「笔记」：宿主给了且 available 才画；按下跟
   } finally {
     setReaderAdapters(null);
   }
+});
+
+test("读到哪：阅读器翻页报给宿主，握过手才发，防抖停下来再发，一样的不重发；书名查回来再报一次；Studio 重新握手再说一遍", async () => {
+  const dom = makeDom();
+  const fake = fakeWindow(dom);
+  const embed = startStudioEmbed(fake.win, { debounceMs: 5 });
+  let found;
+  const lookup = new Promise((resolve) => { found = resolve; });
+  const { readingPosition } = studioReaderAdapters(embed, "j1", () => lookup);
+  readingPosition.report(0, 300);
+  const readings = () => fake.sent.filter((entry) => entry.data.type === "reading").map((entry) => entry.data);
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(readings().length, 0, "没握手不发");
+
+  fake.receive(hello("light", ["quote", "open-notes"]));
+  assert.deepEqual(readings().map((message) => [message.job_id, message.page_idx, message.page_count]), [["j1", 0, 300]], "握手时把记着的发出去");
+
+  readingPosition.report(1, 300);
+  readingPosition.report(2, 300);
+  readingPosition.report(3, 300);
+  assert.equal(readings().length, 1, "翻页时先不发");
+  await settle();
+  assert.deepEqual(readings().map((message) => message.page_idx), [0, 3], "停下来只发最后那页");
+  readingPosition.report(3, 300);
+  await settle();
+  assert.equal(readings().length, 2, "一样的不重发");
+
+  found({ document_id: "d1", title: "量子化学" });
+  await settle();
+  assert.deepEqual(readings().at(-1), readingMessage({ book: { jobId: "j1", documentId: "d1", title: "量子化学" }, pageIdx: 3, pageCount: 300 }));
+  assert.equal(fake.sent.at(-1).origin, STUDIO, "不用 '*'");
+
+  fake.receive(hello("light", ["quote", "open-notes"]));
+  assert.deepEqual(readings().at(-1), readings().at(-2), "Studio 重新加载过：再说一遍");
+  embed.stop();
 });

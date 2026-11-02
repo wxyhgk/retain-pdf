@@ -169,6 +169,13 @@ export type ReaderNotesPanelAdapters = {
   };
 };
 
+/** 眼下读到哪：阅读页放在笔记（Studio）里时由宿主给，翻页就报（防抖、发不发由宿主管）。页从 0 起；页数还不知道时为 null。 */
+export type ReaderReadingPositionAdapters = {
+  readingPosition?: {
+    report: (pageIdx: number | null, pageCount: number | null) => void;
+  };
+};
+
 export type ReaderAdapters = ReaderSessionAdapters
   & ReaderMarkdownAdapters
   & ReaderDownloadAdapters
@@ -177,7 +184,8 @@ export type ReaderAdapters = ReaderSessionAdapters
   & ReaderTerminalAdapters
   & ReaderBoardAdapters
   & ReaderNotesQuoteAdapters
-  & ReaderNotesPanelAdapters;
+  & ReaderNotesPanelAdapters
+  & ReaderReadingPositionAdapters;
 
 /**
  * ReaderAdapters 声明键的运行时镜像（TS 类型在运行时被擦除）。
@@ -212,6 +220,7 @@ export const READER_ADAPTER_KEYS = [
   "renderReaderBoard",
   "notesQuote",
   "notesPanel",
+  "readingPosition",
 ] as const satisfies readonly (keyof ReaderAdapters)[];
 
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */

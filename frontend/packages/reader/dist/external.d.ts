@@ -28,6 +28,10 @@ export declare const readerNotesPanel: () => {
     subscribe: (listener: () => void) => () => void;
     toggle: () => void;
 };
+/** 告诉宿主眼下读到哪：同上，宿主给了才有。 */
+export declare const readerReadingPosition: () => {
+    report: (pageIdx: number | null, pageCount: number | null) => void;
+};
 export declare const readerPdfPort: () => ReaderPdfPort;
 export declare const readerSessionDataPort: () => ReaderSessionDataPort;
 export declare const resolveReaderAnchor: (...a: any[]) => any;
