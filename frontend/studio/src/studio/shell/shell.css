@@ -1,0 +1,157 @@
+/*
+ * The Studio's shell (shell/, with the shadcn/ui components of ui/): Tailwind 4, in what React draws only.
+ *
+ * Its reset and utilities apply inside [data-ui] (the left column, the bar above the middle, the right column's
+ * tabs, mount.tsx) and not inside [data-host] (what the rest of the Studio draws in them: the page tree…), nor
+ * anywhere else: the editor, the articles and the other parts keep their own CSS. Its colours are global.css's
+ * (black, white and grays; dark with html[data-theme='dark']).
+ */
+@layer theme;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tw-animate-css';
+
+@source './';
+@source '../ui';
+/* The database's view, drawn in the editor (a [data-ui] of its own). */
+@source '../editor/database';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+	--color-*: initial;
+	--color-white: #fff;
+	--color-black: #000;
+	--color-transparent: transparent;
+	--color-background: var(--surface);
+	--color-foreground: rgb(var(--gray-dark));
+	--color-card: var(--surface);
+	--color-card-foreground: rgb(var(--gray-dark));
+	--color-popover: var(--surface);
+	--color-popover-foreground: rgb(var(--gray-dark));
+	--color-primary: var(--accent);
+	--color-primary-foreground: var(--on-accent);
+	--color-secondary: var(--surface-hover);
+	--color-secondary-foreground: rgb(var(--gray-dark));
+	--color-muted: var(--surface-soft);
+	--color-muted-foreground: rgb(var(--gray));
+	--color-accent: rgb(var(--gray-light));
+	--color-accent-foreground: rgb(var(--black));
+	--color-destructive: var(--danger);
+	--color-border: rgb(var(--gray-light));
+	--color-input: rgb(var(--gray-light));
+	--color-ring: rgb(var(--gray));
+	--font-sans: var(--font-text);
+	/* design.css's corners and shadows: a control's, a pop-up's (a menu holds rows 4px in, so 12 round 8), a dialog's. */
+	--radius-sm: 6px;
+	--radius-md: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 16px;
+	--shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+	--shadow-sm: var(--studio-shadow-sm);
+	--shadow-md: var(--studio-shadow-pop);
+	--shadow-lg: var(--studio-shadow-pop);
+}
+
+@scope ([data-ui]) to ([data-host]) {
+	/* Tailwind's preflight, here only. */
+	*,
+	::before,
+	::after,
+	::backdrop {
+		box-sizing: border-box;
+		margin: 0;
+		padding: 0;
+		border: 0 solid var(--color-border);
+	}
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		font-size: inherit;
+		font-weight: inherit;
+		color: inherit;
+		line-height: inherit;
+	}
+	p {
+		margin: 0;
+	}
+	a {
+		color: inherit;
+		text-decoration: inherit;
+	}
+	ol,
+	ul,
+	menu {
+		list-style: none;
+	}
+	img,
+	svg,
+	video,
+	canvas {
+		display: block;
+		vertical-align: middle;
+	}
+	img,
+	video {
+		max-width: 100%;
+		height: auto;
+		border-radius: 0;
+	}
+	button,
+	input,
+	select,
+	optgroup,
+	textarea {
+		font: inherit;
+		letter-spacing: inherit;
+		color: inherit;
+		border-radius: 0;
+		background-color: transparent;
+		opacity: 1;
+	}
+	button:not(:disabled),
+	[role='button']:not(:disabled) {
+		cursor: pointer;
+	}
+	::placeholder {
+		color: color-mix(in oklab, currentcolor 50%, transparent);
+	}
+	[hidden]:where(:not([hidden='until-found'])) {
+		display: none !important;
+	}
+
+	@tailwind utilities source(none);
+
+	/* Pop-ups round as design.css has them, their edge the hairline in their shadow; dialogs lifted further. */
+	[data-slot='dropdown-menu-content'],
+	[data-slot='dropdown-menu-sub-content'],
+	[data-slot='popover-content'],
+	[data-slot='context-menu-content'] {
+		border-color: transparent;
+		border-radius: var(--studio-radius-lg);
+		animation-duration: var(--studio-dur);
+		animation-timing-function: var(--studio-ease-out);
+	}
+	[data-slot='dropdown-menu-item'],
+	[data-slot='dropdown-menu-radio-item'],
+	[data-slot='dropdown-menu-checkbox-item'],
+	[data-slot='dropdown-menu-sub-trigger'],
+	[data-slot='context-menu-item'] {
+		min-height: var(--studio-h-md);
+		border-radius: var(--studio-radius-sm);
+		font-size: var(--studio-fs-ui);
+	}
+	[data-slot='dialog-content'] {
+		border-color: transparent;
+		border-radius: var(--studio-radius-xl);
+		box-shadow: var(--studio-shadow-modal);
+	}
+}
+
+/* A conversation dragged in the left column: a line where it would go (before a row, or after the last). */
+.chat-row.is-drop-before::before,
+.chat-row.is-drop-after::after { content: ''; position: absolute; right: 6px; left: 6px; height: 2px; border-radius: 1px; background: var(--studio-select-edge); pointer-events: none; }
+.chat-row.is-drop-before::before { top: -1px; }
+.chat-row.is-drop-after::after { bottom: -1px; }

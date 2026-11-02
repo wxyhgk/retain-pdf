@@ -1,0 +1,94 @@
+/* The top of the page (pages/header/PageHeader.tsx): the cover, the icon, the title, the properties as rows; the icon's and the cover's pickers. */
+.editor-panel.is-wide .page-head { width: min(100%, 1180px); }
+.document-header { box-sizing: border-box; width: 100%; background: transparent; }
+.page-head { box-sizing: border-box; position: relative; width: min(100%, var(--studio-editor-width)); margin: 0 auto; padding: 52px var(--studio-editor-padding) 0; }
+.document-header.has-cover .page-head { padding-top: 22px; }
+.document-header.has-cover.has-icon .page-head { padding-top: 0; }
+/* The cover spans the page, as on the blog. */
+.page-cover { position: relative; height: 30vh; max-height: 280px; min-height: 160px; overflow: hidden; background: var(--surface-soft); }
+.page-cover[hidden] { display: none; }
+.page-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.page-cover-actions { position: absolute; right: max(24px, calc(50% - 400px)); bottom: 12px; display: flex; gap: 0; border-radius: 6px; background: rgba(255, 255, 255, 0.92); box-shadow: var(--studio-shadow-sm); opacity: 0; transition: opacity 120ms ease; }
+.page-cover:hover .page-cover-actions, .page-cover:focus-within .page-cover-actions { opacity: 1; }
+.page-cover-actions button { padding: 5px 10px; border: 0; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+.page-cover-actions button + button { border-left: 1px solid rgb(var(--gray-light)); }
+.page-cover-actions button:hover { background: rgba(var(--black), 0.08); }
+.page-emoji { display: block; width: 78px; height: 78px; margin: 0 0 4px -4px; padding: 0; border: 0; border-radius: 6px; background: transparent; font-size: 64px; line-height: 78px; text-align: center; cursor: pointer; }
+.page-emoji[hidden] { display: none; }
+.page-emoji:hover { background: var(--studio-fill); }
+.document-header.has-cover .page-emoji { margin-top: -40px; position: relative; }
+.page-head-actions { display: flex; gap: 4px; min-height: 28px; margin-bottom: 4px; opacity: 0; transition: opacity 120ms ease; }
+.page-head:hover .page-head-actions, .page-head-actions:focus-within { opacity: 1; }
+.page-head-actions button { padding: 4px 7px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 13px; cursor: pointer; }
+.page-head-actions button:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+.page-head-actions button[hidden] { display: none; }
+/* Icon and cover both there: nothing to add, no row for it. */
+.page-head-actions:not(:has(button:not([hidden]))) { display: none; }
+.article-title-input { display: block; box-sizing: border-box; width: 100%; margin: 0; padding: 0; overflow: hidden; overflow-wrap: anywhere; resize: none; border: 0; background: transparent; color: rgb(var(--black)); font-family: var(--font-text); font-size: var(--studio-title-size); font-weight: 700; line-height: 1.25; outline: none; }
+.article-title-input::placeholder { color: rgb(var(--gray)); opacity: 0.48; }
+.article-title-input:disabled { opacity: 0.55; }
+/* Properties as rows: a name, and its value changed where it is. */
+.page-properties { display: grid; grid-template-columns: 140px minmax(0, 1fr); align-items: start; gap: 1px 6px; margin-top: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--studio-hairline); font-size: 14px; }
+.property-name { display: flex; align-items: center; gap: 7px; padding: 5px 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-ui); line-height: 20px; white-space: nowrap; }
+.property-name svg, .property-add svg { flex: none; width: 15px; height: 15px; stroke-width: 1.75; }
+.property-value { box-sizing: border-box; min-height: 30px; width: 100%; margin: 0; padding: 6px 8px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 14px; line-height: 20px; outline: none; }
+.property-value:hover, .property-value:focus, .property-value:focus-within { background: var(--studio-fill); }
+textarea.property-value { display: block; resize: none; overflow: hidden; }
+.property-value::placeholder, .tag-field input::placeholder { color: rgb(var(--gray)); opacity: 0.6; }
+select.property-value { appearance: none; cursor: pointer; }
+input[type='date'].property-value { cursor: text; }
+input[type='date'].property-value::-webkit-calendar-picker-indicator { opacity: 0; cursor: pointer; }
+input[type='date'].property-value:hover::-webkit-calendar-picker-indicator, input[type='date'].property-value:focus::-webkit-calendar-picker-indicator { opacity: 0.6; }
+.tag-field { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; padding-block: 4px; cursor: text; }
+.tag-field input { flex: 1; min-width: 80px; padding: 2px 0; border: 0; background: transparent; color: inherit; font: inherit; outline: none; }
+.tag-field .tag-chip { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 7px; border-radius: 4px; background: rgba(var(--gray), 0.16); color: rgb(var(--gray-dark)); font-size: 13px; line-height: 22px; }
+.tag-field .tag-chip-remove { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 3px; background: transparent; color: rgb(var(--gray)); font: inherit; line-height: 18px; cursor: pointer; opacity: 0; }
+.tag-field:hover .tag-chip-remove, .tag-field:focus-within .tag-chip-remove { opacity: 1; }
+.tag-field .tag-chip-remove:hover { background: rgba(var(--black), 0.12); color: rgb(var(--gray-dark)); }
+.status-field { display: flex; align-items: center; gap: 6px; padding-block: 5px; }
+.status-pill { padding: 0 8px; border-radius: 4px; background: rgba(var(--gray), 0.16); color: rgb(var(--gray)); font-size: 13px; line-height: 22px; }
+.status-pill.is-published { color: rgb(var(--gray-dark)); }
+/* 发布 and 撤回: a quiet button beside the status, as the rest of the properties. */
+.status-action { padding: 0 7px; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 13px; line-height: 22px; cursor: pointer; }
+.status-action:hover { background: rgba(var(--black), 0.06); color: rgb(var(--gray-dark)); }
+.status-action:disabled { opacity: 0.5; cursor: default; }
+/* The properties left empty: added from here. */
+.property-add { grid-column: 1 / -1; display: flex; align-items: center; gap: 7px; justify-self: start; padding: 6px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 14px; line-height: 20px; cursor: pointer; opacity: 0.75; }
+.property-add:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); opacity: 1; }
+#property-error { margin: 8px 0 0; color: var(--danger); font-size: 12px; line-height: 1.5; }
+/* Under the properties: the articles that link here (backlinks.ts). */
+.page-backlinks { grid-column: 1 / -1; margin-top: 4px; }
+.page-backlinks[hidden] { display: none; }
+.page-backlinks .backlinks-toggle { padding: 6px; border: 0; border-radius: 5px; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 13px; cursor: pointer; }
+.page-backlinks .backlinks-toggle:hover { background: var(--surface-soft); color: rgb(var(--gray-dark)); }
+.page-backlinks .backlinks-list { display: grid; gap: 6px; margin: 2px 0 6px; padding: 0 0 0 6px; list-style: none; }
+.page-backlinks .backlinks-list[hidden] { display: none; }
+.page-backlinks .backlinks-list li { display: grid; justify-items: start; gap: 1px; }
+.page-backlinks .backlinks-title, .page-backlinks .backlinks-context { max-width: 100%; padding: 3px 6px; border: 0; border-radius: 5px; background: transparent; font: inherit; text-align: left; cursor: pointer; }
+.page-backlinks .backlinks-title { display: flex; align-items: center; gap: 6px; color: rgb(var(--gray-dark)); font-size: 14px; font-weight: 500; }
+.page-backlinks .backlinks-context { margin-left: 22px; color: rgb(var(--gray)); font-size: 13px; line-height: 1.5; }
+.page-backlinks .backlinks-title:hover, .page-backlinks .backlinks-context:hover { background: var(--surface-soft); }
+.page-backlinks .backlinks-icon { width: 16px; text-align: center; }
+.page-backlinks .backlinks-draft { padding: 0 5px; border-radius: 4px; background: rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: var(--studio-fs-caption); font-weight: 400; }
+#property-error[hidden] { display: none; }
+/* The pickers float over the page (a popover: shell/ui). */
+.icon-picker { width: 336px; }
+.icon-picker-top { display: flex; gap: 6px; margin-bottom: 8px; }
+.icon-picker-top input { flex: 1; min-width: 0; padding: 5px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; outline: none; }
+.icon-picker-top button, .cover-picker-upload { padding: 4px 9px; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; cursor: pointer; }
+.icon-picker-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 2px; }
+.icon-picker-grid button { width: 30px; height: 30px; padding: 0; border: 0; border-radius: 5px; background: transparent; font-size: 20px; cursor: pointer; }
+.icon-picker-grid button:hover, .icon-picker-top button:hover, .cover-picker-upload:hover { background: var(--surface-soft); }
+.cover-picker { width: 360px; }
+.cover-picker-note { margin: 10px 0 6px; color: rgb(var(--gray)); font-size: 12px; }
+.cover-picker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; max-height: 240px; overflow-y: auto; }
+.cover-picker-grid button { height: 64px; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 5px; background: var(--surface-soft); cursor: pointer; }
+.cover-picker-grid button:hover { outline: 2px solid var(--accent); }
+.cover-picker-grid img { width: 100%; height: 100%; object-fit: cover; display: block; }
+@media (max-width: 1100px) {
+	.page-head { padding-inline: 36px; }
+}
+@media (max-width: 720px) {
+	.page-head { padding: 28px 24px 0; }
+	.page-properties { grid-template-columns: 96px minmax(0, 1fr); }
+}

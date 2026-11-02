@@ -1,0 +1,497 @@
+import { t } from '@blog/i18n/index.mjs';
+import { createMoleculeViewer, type FastMolViewer } from '@blog/science/browser/fast-mol.ts';
+import { RUN_STATE_NAMES } from '../job-fence.mjs';
+import { HARTREE_IN_KCAL, type ensembleTable } from '../parsers/crest.ts';
+import type { NormalModes, parseG98Modes, VibrationalMode } from '../parsers/xtb.ts';
+import { formulaOf, frameToXyz, parseXyzFrames, type XyzFrame } from '../parsers/xyz-frames.ts';
+import './job-view.css';
+
+/**
+ * A run of a job drawn as its results, on the blog and in the Studio alike:
+ * what it is doing or how it ended, and what its program's view draws of
+ * it (`ProgramView`, from the pieces here: numbers, the structure it ends
+ * at, an optimization's energy step by step, an IR spectrum with each mode
+ * to watch vibrate, conformers), then the end of its output. Everything is
+ * read from the run's files, through `read` (a name in the run's folder).
+ */
+
+export type RunRecord = {
+	format: number;
+	id: string;
+	run: string;
+	program: string;
+	args: string;
+	command: string;
+	host: string;
+	hostLabel?: string;
+	scheduler?: 'direct' | 'slurm';
+	threads?: number;
+	input: string;
+	output: string;
+	state: 'preparing' | 'queued' | 'running' | 'done' | 'failed' | 'cancelled' | 'lost';
+	created: string;
+	started: string | null;
+	finished: string | null;
+	exitCode: number | null;
+	error: string | null;
+	problem?: string | null;
+	files: string[];
+};
+
+export type ReadRunFile = (name: string) => Promise<string | null>;
+
+const FINISHED = new Set(['done', 'failed', 'cancelled', 'lost']);
+
+export function isFinished(record: RunRecord): boolean {
+	return FINISHED.has(record.state);
+}
+
+/** `1 分 05 秒`, `2 时 03 分`, `0.4 秒`. */
+export function formatDuration(seconds: number): string {
+	if (seconds < 10) return t('{seconds} 秒', { seconds: Number(seconds.toFixed(1)) });
+	if (seconds < 60) return t('{seconds} 秒', { seconds: Math.round(seconds) });
+	const minutes = Math.floor(seconds / 60);
+	if (minutes < 60) return t('{minutes} 分 {seconds} 秒', { minutes, seconds: String(Math.round(seconds % 60)).padStart(2, '0') });
+	return t('{hours} 时 {minutes} 分', { hours: Math.floor(minutes / 60), minutes: String(minutes % 60).padStart(2, '0') });
+}
+
+/** How long it has run or ran, from run.json's times. */
+export function runDuration(record: RunRecord, now = Date.now()): number | null {
+	if (!record.started) return null;
+	const end = record.finished ? Date.parse(record.finished) : now;
+	return Math.max(0, (end - Date.parse(record.started)) / 1000);
+}
+
+function element<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text?: string): HTMLElementTagNameMap[K] {
+	const node = document.createElement(tag);
+	if (className) node.className = className;
+	if (text !== undefined) node.textContent = text;
+	return node;
+}
+
+const SVG = 'http://www.w3.org/2000/svg';
+function svg<K extends keyof SVGElementTagNameMap>(tag: K, attributes: Record<string, string | number> = {}): SVGElementTagNameMap[K] {
+	const node = document.createElementNS(SVG, tag);
+	for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+	return node;
+}
+
+/** The line under the block's head: state, machine, time, version. */
+export function runFacts(record: RunRecord, version: string | null): HTMLElement {
+	const facts = element('div', 'job-facts');
+	const state = element('span', 'job-state', RUN_STATE_NAMES[record.state] ?? record.state);
+	state.dataset.state = record.state;
+	facts.append(state);
+	const parts = [record.hostLabel || record.host];
+	if (record.scheduler === 'slurm') parts[0] += '（Slurm）';
+	const duration = runDuration(record);
+	if (duration !== null) parts.push(isFinished(record) ? t('用时 {duration}', { duration: formatDuration(duration) }) : t('已运行 {duration}', { duration: formatDuration(duration) }));
+	if (record.threads) parts.push(t('{threads} 线程', { threads: record.threads }));
+	if (version) parts.push(`${record.program} ${version}`);
+	parts.push(record.run.replace(/^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})(\d{2}).*$/u, '$1/$2/$3 $4:$5'));
+	facts.append(element('span', 'job-fact', parts.join(' · ')));
+	return facts;
+}
+
+export function numbers(rows: Array<[string, string | null]>): HTMLElement | null {
+	const shown = rows.filter((row): row is [string, string] => row[1] !== null);
+	if (!shown.length) return null;
+	const list = element('dl', 'job-numbers');
+	for (const [name, value] of shown) {
+		const item = element('div', 'job-number');
+		item.append(element('dt', '', name), element('dd', '', value));
+		list.append(item);
+	}
+	return list;
+}
+
+export const fixed = (value: number | null, digits: number, unit: string) => (value === null ? null : `${value.toFixed(digits)} ${unit}`);
+
+export function notes(kind: 'error' | 'warning', lines: string[]): HTMLElement | null {
+	if (!lines.length) return null;
+	const box = element('div', `job-note is-${kind}`);
+	box.setAttribute('role', kind === 'error' ? 'alert' : 'note');
+	for (const line of lines) box.append(element('p', '', line));
+	return box;
+}
+
+export type MoleculeStage = {
+	root: HTMLElement;
+	/** A structure (XYZ): the view kept when it has as many atoms as the one shown. */
+	show(xyz: string): Promise<void>;
+	/** Mode `index` of `normal` vibrating, with its displacement arrows; -1: the structure still. */
+	showModes(normal: NormalModes, index: number): Promise<void>;
+};
+
+/** A 3D view (fast-mol) of a structure, which changes: another frame, or a mode vibrating. */
+export function moleculeStage(label: string): MoleculeStage {
+	const root = element('div', 'job-stage');
+	root.setAttribute('role', 'img');
+	root.setAttribute('aria-label', label);
+	let viewer: Promise<FastMolViewer> | null = null;
+	let loadedModes: NormalModes | null = null;
+	const ready = async () => {
+		viewer ??= (async () => {
+			root.textContent = '';
+			return createMoleculeViewer(root);
+		})();
+		return viewer;
+	};
+	/** Loads a structure (`load`), turned as before when the atoms are as many. */
+	const keepingView = (shown: FastMolViewer, load: () => void) => {
+		const before = shown.atomCount ? shown.view : null;
+		const count = shown.atomCount;
+		load();
+		if (before && shown.atomCount === count) shown.view = before;
+	};
+	return {
+		root,
+		async show(xyz) {
+			const shown = await ready();
+			if (!root.isConnected) return;
+			loadedModes = null;
+			keepingView(shown, () => shown.loadText(xyz, 'xyz'));
+		},
+		async showModes(normal, index) {
+			const shown = await ready();
+			if (!root.isConnected) return;
+			if (loadedModes !== normal) {
+				// The modes as our readers read them (fast-mol plays any program's displacements alike).
+				const frame = Float32Array.from(normal.atoms.flatMap((atom) => [atom.x, atom.y, atom.z]));
+				const modes = normal.modes.map((mode) => ({ frequency: mode.frequency, intensity: mode.intensity, raman: null, displacements: Float32Array.from(mode.displacements.flat()) }));
+				keepingView(shown, () => shown.load({ symbols: normal.atoms.map((atom) => atom.symbol), frames: [frame], modes }));
+				loadedModes = normal;
+			}
+			shown.modes.show(index >= 0 && index < normal.modes.length ? index : null);
+		},
+	};
+}
+
+/** Energies step by step, kcal/mol above the last, with the gradient's norm under them. */
+export function energyChart(points: Array<{ energy: number; gradientNorm: number | null }>, { live = false } = {}): HTMLElement {
+	const figure = element('figure', 'job-chart');
+	const width = 560;
+	const height = 200;
+	const pad = { left: 52, right: 12, top: 12, bottom: 30 };
+	const last = points.at(-1)?.energy ?? 0;
+	const values = points.map((point) => (point.energy - last) * HARTREE_IN_KCAL);
+	const top = Math.max(...values, 1e-6);
+	const bottom = Math.min(...values, 0);
+	const x = (index: number) => pad.left + (points.length > 1 ? (index / (points.length - 1)) * (width - pad.left - pad.right) : 0);
+	const y = (value: number) => pad.top + ((top - value) / (top - bottom || 1)) * (height - pad.top - pad.bottom);
+	const chart = svg('svg', { viewBox: `0 0 ${width} ${height}`, class: 'job-chart-svg', role: 'img', 'aria-label': t('优化过程：{count} 步的能量', { count: points.length }) });
+	for (const tick of [top, (top + bottom) / 2, bottom]) {
+		chart.append(svg('line', { x1: pad.left, x2: width - pad.right, y1: y(tick), y2: y(tick), class: 'job-grid' }));
+		const label = svg('text', { x: pad.left - 6, y: y(tick) + 4, class: 'job-axis', 'text-anchor': 'end' });
+		label.textContent = tick.toFixed(tick >= 10 ? 1 : 2);
+		chart.append(label);
+	}
+	chart.append(svg('polyline', { points: values.map((value, index) => `${x(index)},${y(value)}`).join(' '), class: 'job-line' }));
+	values.forEach((value, index) => chart.append(svg('circle', { cx: x(index), cy: y(value), r: 2.4, class: 'job-dot' })));
+	const axis = svg('text', { x: (width + pad.left) / 2, y: height - 6, class: 'job-axis', 'text-anchor': 'middle' });
+	axis.textContent = live ? t('步数（共 {count} 步，还在算）', { count: points.length }) : t('步数（共 {count} 步）', { count: points.length });
+	chart.append(axis);
+	const unit = svg('text', { x: 12, y: (height - pad.bottom) / 2, class: 'job-axis', 'text-anchor': 'middle', transform: `rotate(-90 12 ${(height - pad.bottom) / 2})` });
+	unit.textContent = 'ΔE / kcal·mol⁻¹';
+	chart.append(unit);
+	const caption = element('figcaption', '', t('结构优化：每一步的能量（相对最后一步）'));
+	figure.append(chart, caption);
+	return figure;
+}
+
+/** An IR spectrum: each mode a stick, under the curve they make broadened (Lorentzian, 20 cm⁻¹ wide). */
+export function irSpectrum(modes: VibrationalMode[], { selected = -1, pick }: { selected?: number; pick?: (index: number) => void } = {}): SVGSVGElement {
+	const width = 560;
+	const height = 190;
+	const pad = { left: 14, right: 14, top: 10, bottom: 30 };
+	const from = 4000;
+	const to = 400;
+	const strongest = Math.max(...modes.map((mode) => mode.intensity), 1e-9);
+	const x = (wavenumber: number) => pad.left + ((from - wavenumber) / (from - to)) * (width - pad.left - pad.right);
+	const base = height - pad.bottom;
+	const chart = svg('svg', { viewBox: `0 0 ${width} ${height}`, class: 'job-chart-svg', role: 'img', 'aria-label': t('红外光谱：{count} 个振动', { count: modes.length }) });
+	const half = 10;
+	const curve: number[] = [];
+	for (let wavenumber = from; wavenumber >= to; wavenumber -= 4) {
+		curve.push(modes.reduce((sum, mode) => sum + (mode.intensity * half * half) / ((wavenumber - mode.frequency) ** 2 + half * half), 0));
+	}
+	const peak = Math.max(...curve, 1e-9);
+	chart.append(svg('polyline', { points: curve.map((value, index) => `${x(from - index * 4)},${base - (value / peak) * (base - pad.top)}`).join(' '), class: 'job-line is-soft' }));
+	modes.forEach((mode, index) => {
+		if (mode.frequency < to || mode.frequency > from) return;
+		const stick = svg('line', { x1: x(mode.frequency), x2: x(mode.frequency), y1: base, y2: base - (mode.intensity / strongest) * (base - pad.top), class: `job-stick${index === selected ? ' is-selected' : ''}` });
+		if (pick) {
+			stick.addEventListener('click', () => pick(index));
+			const hit = svg('rect', { x: x(mode.frequency) - 4, y: pad.top, width: 8, height: base - pad.top, class: 'job-hit' });
+			const title = svg('title');
+			title.textContent = `${mode.frequency.toFixed(1)} cm⁻¹ · ${mode.intensity.toFixed(1)} km/mol`;
+			hit.append(title);
+			hit.addEventListener('click', () => pick(index));
+			chart.append(hit);
+		}
+		chart.append(stick);
+	});
+	chart.append(svg('line', { x1: pad.left, x2: width - pad.right, y1: base, y2: base, class: 'job-grid' }));
+	for (const tick of [4000, 3000, 2000, 1500, 1000, 500]) {
+		const label = svg('text', { x: x(tick), y: height - 10, class: 'job-axis', 'text-anchor': 'middle' });
+		label.textContent = String(tick);
+		chart.append(label);
+	}
+	return chart;
+}
+
+export function section(title: string, ...children: Array<Node | null>): HTMLElement {
+	const part = element('section', 'job-section');
+	part.append(element('p', 'job-section-title', title), ...children.filter((child): child is Node => child !== null));
+	return part;
+}
+
+function outputTail(record: RunRecord, text: string | null, url: string | null, open: boolean): HTMLElement | null {
+	if (text === null) return null;
+	const details = element('details', 'job-log');
+	details.open = open;
+	const summary = element('summary', '', t('输出 {file}', { file: record.output }));
+	details.append(summary);
+	const lines = text.split(/\r?\n/u);
+	const tail = lines.slice(-200).join('\n');
+	const pre = element('pre', 'job-log-text', tail);
+	details.append(pre);
+	if (url) {
+		const link = element('a', 'job-log-link', lines.length > 200 ? t('完整文件（{count} 行）', { count: lines.length }) : t('打开文件'));
+		link.href = url;
+		link.target = '_blank';
+		link.rel = 'noopener';
+		details.append(link);
+	}
+	// Following a run: the newest lines in view.
+	if (open) queueMicrotask(() => (pre.scrollTop = pre.scrollHeight));
+	return details;
+}
+
+export type DrawOptions = {
+	/** The URL a file of the run is at, for links to open it. */
+	url?: (name: string) => string | null;
+	/** Show the output open (the Studio does while a run goes). */
+	followOutput?: boolean;
+	/** The end of the output under the results; off where the output has a tab of its own. */
+	output?: boolean;
+};
+
+/** A run as a program's view reads it: its files, whether it ended, its output and its input. */
+export type RunContext = {
+	record: RunRecord;
+	read: ReadRunFile;
+	/** A file of the run, null if it has none (one still running may not have it yet). */
+	optional(name: string): Promise<string | null>;
+	finished: boolean;
+	output: string | null;
+	input: string | null;
+};
+
+/**
+ * What a program draws of its runs (in the browser, beside its definition,
+ * @blog/compute/programs.mjs): its results, and a card's line.
+ */
+export type ProgramView = {
+	/** The results, from the line of facts (`runFacts`) on; the output's end is added after them. */
+	draw(context: RunContext): Promise<Array<HTMLElement | null>>;
+	/** Fills in a card's numbers, progress, problem and structure (`summary` has what any run has). */
+	summarize(context: RunContext, summary: RunSummary): Promise<void>;
+};
+
+async function runContext(record: RunRecord, read: ReadRunFile): Promise<RunContext> {
+	const finished = isFinished(record);
+	const optional = (name: string) => (record.files.includes(name) || !finished ? read(name).catch(() => null) : Promise.resolve(null));
+	const [output, input] = await Promise.all([optional(record.output), read(record.input).catch(() => null)]);
+	return { record, read, optional, finished, output, input };
+}
+
+/** The errors a run ended with: its own, and those its program's output says when it did not end well. */
+export function runErrors(context: RunContext, fromOutput: string[] = []): HTMLElement | null {
+	const { record, finished } = context;
+	return notes('error', [record.error, record.problem, ...(finished && record.state !== 'done' ? fromOutput : [])].filter((line): line is string => Boolean(line)));
+}
+
+/**
+ * Draws a run into `root`, replacing what was there, as its program's
+ * `view` does (without one, a program no plugin knows: its facts, errors
+ * and output). Resolves when the files it needs are read; 3D views fill in after.
+ */
+export async function drawRun(root: HTMLElement, record: RunRecord, read: ReadRunFile, options: DrawOptions = {}, view: ProgramView | null = null): Promise<void> {
+	const context = await runContext(record, read);
+	const parts = view ? await view.draw(context) : [runFacts(record, null), runErrors(context), notes('warning', [t('没有插件认识程序 {program}：这里只有它的输出', { program: record.program })])];
+	if (options.output !== false) parts.push(outputTail(record, context.output, options.url?.(record.output) ?? null, Boolean(options.followOutput) && !context.finished));
+	root.replaceChildren(...parts.filter((part): part is HTMLElement => part !== null));
+}
+
+/** The run's output, its last lines, the newest in view; a link to the whole file. */
+export async function drawOutput(root: HTMLElement, record: RunRecord, read: ReadRunFile, url: string | null): Promise<void> {
+	const text = record.files.includes(record.output) || !isFinished(record) ? await read(record.output).catch(() => null) : null;
+	if (text === null) {
+		root.replaceChildren(element('p', 'job-empty', isFinished(record) ? t('这次运行没有留下输出。') : t('还没有输出。')));
+		return;
+	}
+	const lines = text.split(/\r?\n/u);
+	const pre = element('pre', 'job-log-text is-whole', lines.slice(-2000).join('\n'));
+	const parts: HTMLElement[] = [];
+	const head = element('p', 'job-section-note', lines.length > 2000 ? t('{file} · {count} 行，这里是最后 2000 行', { file: record.output, count: lines.length }) : t('{file} · {count} 行', { file: record.output, count: lines.length }));
+	if (url) {
+		const link = element('a', 'job-log-link', t('打开完整文件'));
+		link.href = url;
+		link.target = '_blank';
+		link.rel = 'noopener';
+		head.append(' · ', link);
+	}
+	parts.push(head, pre);
+	root.replaceChildren(...parts);
+	pre.scrollTop = pre.scrollHeight;
+}
+
+/** What a card shows of a run: a few numbers, how it is going, the structure it ends at. */
+export type RunSummary = {
+	/** `E −11.4009 Eh`, `15 个构象`… */
+	facts: string[];
+	/** A running run: where it is (`第 5 步 · ΔE −0.12 kcal/mol`). */
+	progress: string | null;
+	/** Why it failed, in a line. */
+	problem: string | null;
+	/** The structure to draw small: where it ended, or where it started. */
+	structure: string | null;
+	/** The structure it started from, as it was given. */
+	input: string | null;
+};
+
+export const signed = (value: number, digits: number) => value.toFixed(digits).replace(/^-/u, '−');
+
+/** Reads what a card needs of a run, as its program's `view` reads it (without one: how it ended, the structure it started from). */
+export async function summarizeRun(record: RunRecord, read: ReadRunFile, view: ProgramView | null = null): Promise<RunSummary> {
+	const context = await runContext(record, read);
+	const failure = record.state === 'failed' || record.state === 'lost' ? record.error : null;
+	const summary: RunSummary = { facts: [], progress: null, problem: record.problem ?? failure ?? null, structure: record.input.endsWith('.xyz') ? context.input : null, input: context.input };
+	if (view) await view.summarize(context, summary);
+	if (context.finished && record.state === 'failed' && !summary.problem) summary.problem = t('{program} 退出码 {exitCode}', { program: record.program, exitCode: record.exitCode });
+	return summary;
+}
+
+/** Shades of gray by element: carbon and the heavy ones dark, hydrogen light. */
+const SHADES: Record<string, [string, number]> = { H: ['#ffffff', 0.55], C: ['#555555', 0.75], N: ['#8a8a8a', 0.72], O: ['#b5b5b5', 0.7], S: ['#d0d0d0', 0.95], P: ['#c2c2c2', 0.95] };
+
+/**
+ * A structure drawn small, flat, without WebGL: atoms as circles, bonds
+ * where atoms are close, seen along its smallest extent. A page of cards
+ * stays light; the 3D views are in the sheet.
+ */
+export function structureThumbnail(xyz: string, size = { width: 96, height: 72 }): SVGSVGElement | null {
+	const atoms = parseXyzFrames(xyz)[0]?.atoms ?? [];
+	if (!atoms.length || atoms.length > 400) return null;
+	// Looked at along the axis the molecule is thinnest in.
+	const spans = (['x', 'y', 'z'] as const).map((axis) => Math.max(...atoms.map((atom) => atom[axis])) - Math.min(...atoms.map((atom) => atom[axis])));
+	const depth = (['x', 'y', 'z'] as const)[spans.indexOf(Math.min(...spans))];
+	const [u, v] = (['x', 'y', 'z'] as const).filter((axis) => axis !== depth);
+	const across = (atom: (typeof atoms)[number]) => [atom[u], atom[v]] as const;
+	const xs = atoms.map((atom) => across(atom)[0]);
+	const ys = atoms.map((atom) => across(atom)[1]);
+	const pad = 0.9;
+	const width = Math.max(...xs) - Math.min(...xs) + pad * 2;
+	const height = Math.max(...ys) - Math.min(...ys) + pad * 2;
+	const scale = Math.min(size.width / width, size.height / height);
+	const ox = (size.width - width * scale) / 2 - (Math.min(...xs) - pad) * scale;
+	const oy = (size.height - height * scale) / 2 + (Math.max(...ys) + pad) * scale;
+	const at = (atom: (typeof atoms)[number]) => [ox + across(atom)[0] * scale, oy - across(atom)[1] * scale] as const;
+	const picture = svg('svg', { viewBox: `0 0 ${size.width} ${size.height}`, class: 'job-thumbnail', 'aria-hidden': 'true' });
+	const order = atoms.map((atom, index) => ({ atom, index })).sort((left, right) => left.atom[depth] - right.atom[depth]);
+	for (let a = 0; a < atoms.length; a += 1) {
+		for (let b = a + 1; b < atoms.length; b += 1) {
+			const limit = atoms[a].symbol === 'H' || atoms[b].symbol === 'H' ? 1.25 : 1.9;
+			if (Math.hypot(atoms[a].x - atoms[b].x, atoms[a].y - atoms[b].y, atoms[a].z - atoms[b].z) > limit) continue;
+			const [x1, y1] = at(atoms[a]);
+			const [x2, y2] = at(atoms[b]);
+			picture.append(svg('line', { x1, y1, x2, y2, class: 'job-thumbnail-bond', 'stroke-width': Math.max(1, scale * 0.16) }));
+		}
+	}
+	for (const { atom } of order) {
+		const [fill, radius] = SHADES[atom.symbol.charAt(0).toUpperCase() + atom.symbol.slice(1).toLowerCase()] ?? ['#9a9a9a', 0.85];
+		const [cx, cy] = at(atom);
+		picture.append(svg('circle', { cx, cy, r: Math.max(1.4, radius * scale * 0.42), fill, class: 'job-thumbnail-atom' }));
+	}
+	return picture;
+}
+
+export function structureSection(title: string, xyz: string): HTMLElement {
+	const frames = parseXyzFrames(xyz);
+	const stage = moleculeStage(t('{title}，可拖动旋转', { title }));
+	const part = section(title, stage.root);
+	if (frames[0]) part.querySelector('.job-section-title')?.append(element('span', 'job-section-note', t(' {formula} · {count} 个原子', { formula: formulaOf(frames[0].atoms), count: frames[0].atoms.length })));
+	queueMicrotask(() => void stage.show(frames[0] ? frameToXyz(frames[0]) : xyz).catch(() => (stage.root.textContent = t('三维结构画不出来'))));
+	return part;
+}
+
+export function vibrationSection(modes: VibrationalMode[], normal: ReturnType<typeof parseG98Modes>): HTMLElement {
+	const stage = moleculeStage(t('振动，可拖动旋转'));
+	const spectrum = element('div', 'job-spectrum');
+	const list = element('ol', 'job-modes');
+	const label = element('p', 'job-mode-label');
+	const pick = (index: number) => {
+		spectrum.replaceChildren(irSpectrum(modes, { selected: index, pick }));
+		for (const [position, row] of [...list.children].entries()) row.classList.toggle('is-selected', position === index);
+		const mode = modes[index];
+		const words = mode && { mode: mode.mode, frequency: mode.frequency.toFixed(1), intensity: mode.intensity.toFixed(1) };
+		if (index < 0) label.textContent = t('最终结构');
+		else if (mode.frequency < 0) label.textContent = t('第 {mode} 个振动：{frequency} cm⁻¹（虚频），强度 {intensity} km/mol', words);
+		else label.textContent = t('第 {mode} 个振动：{frequency} cm⁻¹，强度 {intensity} km/mol', words);
+		// g98.out lists the same modes as vibspectrum, without translations and rotations.
+		if (normal) void stage.showModes(normal, index).catch(() => (stage.root.textContent = t('三维结构画不出来')));
+	};
+	modes.forEach((mode, index) => {
+		const row = element('li', `job-mode${mode.frequency < 0 ? ' is-imaginary' : ''}`);
+		const button = element('button', '', `${mode.frequency.toFixed(1)}`);
+		button.type = 'button';
+		button.title = `${mode.intensity.toFixed(1)} km/mol`;
+		button.addEventListener('click', () => pick(index));
+		row.append(button);
+		list.append(row);
+	});
+	const body = element('div', 'job-vibrations');
+	const view = element('div', 'job-vibration-view');
+	view.append(stage.root, label);
+	body.append(view, list);
+	const part = section(t('振动与红外光谱'), spectrum, body);
+	part.querySelector('.job-section-title')?.append(element('span', 'job-section-note', t(' 点谱线或频率看它怎么振动 · cm⁻¹')));
+	queueMicrotask(() => pick(-1));
+	return part;
+}
+
+export function conformerSection(frames: XyzFrame[], table: ReturnType<typeof ensembleTable>): HTMLElement {
+	const stage = moleculeStage(t('构象，可拖动旋转'));
+	const grid = element('table', 'job-conformers');
+	const head = element('thead');
+	const headRow = element('tr');
+	for (const [name, title] of [['#', ''], ['ΔE', t('比最低的高多少，kcal/mol')], [t('占比'), t('298.15 K 下的玻尔兹曼分布')]]) {
+		const cell = element('th', '', name);
+		if (title) cell.title = title;
+		headRow.append(cell);
+	}
+	head.append(headRow);
+	const rows = element('tbody');
+	const show = (index: number) => {
+		for (const [position, row] of [...rows.children].entries()) row.classList.toggle('is-selected', position === index);
+		void stage.show(frameToXyz(frames[index])).catch(() => (stage.root.textContent = t('三维结构画不出来')));
+	};
+	table.slice(0, 50).forEach((conformer, index) => {
+		const row = element('tr', 'job-conformer');
+		row.tabIndex = 0;
+		row.append(element('td', '', String(conformer.index)), element('td', '', conformer.relative.toFixed(2)), element('td', '', `${(conformer.population * 100).toFixed(1)} %`));
+		row.addEventListener('click', () => show(index));
+		row.addEventListener('keydown', (event) => event.key === 'Enter' && show(index));
+		rows.append(row);
+	});
+	grid.append(head, rows);
+	const body = element('div', 'job-vibrations');
+	const list = element('div', 'job-conformer-list');
+	list.append(grid);
+	list.append(element('p', 'job-section-note', table.length > 50 ? t('ΔE 单位 kcal/mol，占比按 298 K 玻尔兹曼分布；只列出前 50 个，共 {count} 个', { count: table.length }) : t('ΔE 单位 kcal/mol，占比按 298 K 玻尔兹曼分布')));
+	body.append(stage.root, list);
+	const part = section(t('构象'), body);
+	queueMicrotask(() => show(0));
+	return part;
+}

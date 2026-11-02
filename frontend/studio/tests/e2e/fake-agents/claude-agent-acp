@@ -1,0 +1,3 @@
+#!/bin/sh
+# A stand-in for Claude Code's ACP adapter (the AI panel): fake-acp.mjs.
+exec node "$(dirname "$0")/fake-acp.mjs" "$@"

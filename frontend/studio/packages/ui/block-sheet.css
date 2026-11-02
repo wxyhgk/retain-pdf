@@ -1,0 +1,43 @@
+/* The window a block's details open in (block-sheet.ts). Black, white and gray; red only for stop and delete. */
+.block-sheet { box-sizing: border-box; width: min(94vw, 960px); height: min(86vh, 900px); max-width: none; max-height: none; padding: 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 12px; background: var(--surface); color: rgb(var(--gray-dark)); box-shadow: 0 18px 65px rgba(0, 0, 0, 0.22); font-size: 14px; line-height: 1.5; outline: none; }
+.block-sheet[open] { display: flex; flex-direction: column; position: fixed; }
+/* Kept from one opening to the next (sheetOverlay): over the sheet, taking no clicks itself. */
+.block-sheet-overlay { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.block-sheet::backdrop { background: rgba(15, 15, 15, 0.32); }
+
+.block-sheet-head { display: flex; flex: none; align-items: center; gap: 10px; padding: 12px 14px 10px 18px; }
+.block-sheet-kind { flex: none; padding: 1px 7px; border-radius: 4px; background: var(--surface-soft); color: rgb(var(--gray)); font-size: 12px; }
+.block-sheet-title { flex: 1; min-width: 0; overflow: hidden; color: rgb(var(--gray-dark)); font-size: 16px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.block-sheet-actions { display: flex; flex: none; gap: 6px; }
+.block-sheet-action { height: 30px; padding: 0 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 6px; background: var(--surface); color: rgb(var(--gray-dark)); font: inherit; font-size: 13px; cursor: pointer; }
+.block-sheet-action:hover { background: var(--surface-hover); }
+.block-sheet-action.is-primary { border-color: var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; }
+.block-sheet-action.is-primary:hover { opacity: 0.88; }
+.block-sheet-action.is-danger { border-color: var(--danger); background: transparent; color: var(--danger); }
+.block-sheet-action:disabled { opacity: 0.5; cursor: default; }
+.block-sheet-close { flex: none; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: rgb(var(--gray)); font-size: 21px; line-height: 1; cursor: pointer; }
+.block-sheet-close:hover { background: var(--surface-hover); }
+
+.block-sheet-tabs { display: flex; flex: none; gap: 2px; padding: 0 14px; overflow-x: auto; border-bottom: 1px solid rgb(var(--gray-light)); }
+.block-sheet-tabs[hidden] { display: none; }
+.block-sheet-tab { position: relative; padding: 7px 10px 9px; border: 0; background: transparent; color: rgb(var(--gray)); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.block-sheet-tab:hover { color: rgb(var(--gray-dark)); }
+.block-sheet-tab[aria-selected='true'] { color: rgb(var(--gray-dark)); font-weight: 600; }
+.block-sheet-tab[aria-selected='true']::after { content: ''; position: absolute; right: 8px; bottom: -1px; left: 8px; height: 2px; border-radius: 1px; background: rgb(var(--gray-dark)); }
+
+.block-sheet-body { flex: 1; min-height: 0; overflow: auto; }
+.block-sheet-panel { padding: 16px 18px 22px; }
+.block-sheet-panel[hidden] { display: none; }
+/* A workspace tab (an editor): the sheet as large as the window, the tab edge to edge. */
+.block-sheet.is-wide { width: min(98vw, 1680px); height: 94vh; }
+.block-sheet-panel.is-fill { display: flex; flex-direction: column; height: 100%; box-sizing: border-box; padding: 10px 12px 12px; }
+.block-sheet-panel.is-fill[hidden] { display: none; }
+.block-sheet-panel.is-fill > * { flex: 1; min-height: 0; }
+.block-sheet-panel.is-fill > .block-sheet-note { flex: none; margin: 6px 2px 0; }
+.block-sheet-note { color: rgb(var(--gray)); font-size: 12px; }
+
+@media (max-width: 640px) {
+	.block-sheet { width: 100vw; height: 100dvh; border: 0; border-radius: 0; }
+	.block-sheet-head { padding: 10px 10px 8px 14px; }
+	.block-sheet-panel { padding: 14px; }
+}

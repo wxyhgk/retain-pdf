@@ -1,0 +1,30 @@
+{
+	"program": "gaussian",
+	"version": "16 Rev. C.01",
+	"route": "#p B3LYP/def2SVP Opt(MaxCycles=2)",
+	"method": "B3LYP",
+	"reference": "R",
+	"basis": "def2SVP",
+	"jobs": ["opt"],
+	"charge": 0,
+	"multiplicity": 1,
+	"terminated": false,
+	"errors": ["Optimization stopped. Number of steps exceeded, NStep= 2","Error termination in l9999"],
+	"energy": -188.407893476,
+	"steps": [-188.332943868,-188.407893476],
+	"optimization": {"converged":false,"cycles":2},
+	"atoms": [
+		{"symbol":"C","x":0,"y":0,"z":0.190893},
+		{"symbol":"O","x":0,"y":1.215754,"z":-0.071585},
+		{"symbol":"O","x":0,"y":-1.215754,"z":-0.071585}
+	],
+	"vibrations": [],
+	"imaginary": null,
+	"thermo": null,
+	"homo": -0.36582,
+	"lumo": -0.09107,
+	"s2": null,
+	"excited": [],
+	"dipole": 0.6028,
+	"wallTime": 2.4
+}

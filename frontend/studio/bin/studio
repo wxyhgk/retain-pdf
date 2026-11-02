@@ -1,0 +1,3 @@
+#!/bin/sh
+# `studio …` in a terminal (the Studio's own puts this folder on its PATH): bin/studio.mjs.
+exec node "$(dirname "$0")/studio.mjs" "$@"

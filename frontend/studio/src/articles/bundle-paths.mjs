@@ -1,0 +1,56 @@
+import { basename, dirname, relative, resolve, sep } from 'node:path';
+
+import { SLUG_PATTERN } from '@blog/markdown/articles/rules.mjs';
+
+export function assertArticleSlug(slug) {
+	if (typeof slug !== 'string' || !SLUG_PATTERN.test(slug)) {
+		throw new StudioPathError('slug 只能包含小写字母、数字和连字符');
+	}
+	return slug;
+}
+
+export function resolveInside(root, ...segments) {
+	const resolvedRoot = resolve(root);
+	const target = resolve(resolvedRoot, ...segments);
+	const pathFromRoot = relative(resolvedRoot, target);
+	if (pathFromRoot === '..' || pathFromRoot.startsWith(`..${sep}`) || pathFromRoot.includes('\0')) {
+		throw new StudioPathError('路径超出允许的文章目录');
+	}
+	return target;
+}
+
+/**
+ * Where the AI panel's conversations are kept (chat-store.mjs): `chats/` beside `blog/` (or, for another folder of articles, as the browser
+ * tests' copy, the folder of that name with `-chats`).
+ */
+export function chatsRootOf(blogRoot) {
+	const root = resolve(blogRoot);
+	return basename(root) === 'blog' ? resolve(dirname(root), 'chats') : `${root}-chats`;
+}
+
+/** The Studio's own code repositories (代码仓库): `repos/` beside blog/, out of its git as chats/ is. */
+export function reposRootOf(blogRoot) {
+	const root = resolve(blogRoot);
+	return basename(root) === 'blog' ? resolve(dirname(root), 'repos') : `${root}-repos`;
+}
+
+export function articleBundlePaths(blogRoot, slug) {
+	const safeSlug = assertArticleSlug(slug);
+	const directory = resolveInside(blogRoot, safeSlug);
+	return Object.freeze({
+		directory,
+		markdown: resolveInside(directory, 'index.md'),
+		views: resolveInside(directory, 'article.views.json'),
+		img: resolveInside(directory, 'img'),
+		assets: resolveInside(directory, 'assets'),
+		ai: resolveInside(directory, 'ai'),
+	});
+}
+
+export class StudioPathError extends Error {
+	constructor(message) {
+		super(message);
+		this.name = 'StudioPathError';
+		this.statusCode = 400;
+	}
+}

@@ -21,6 +21,8 @@
 - `frontend/web/src/styles/`
 - `frontend/packages/reader/`
 - `frontend/packages/ui/`
+- `frontend/studio/`：笔记软件 Studio（2026-11-02 搬进来，自己一套 npm 依赖；见它的 README 和
+  [搬进 RetainPDF](../../ops/planning/studio-workbench/20261102-搬进RetainPDF.md)）
 
 桌面端同步：
 

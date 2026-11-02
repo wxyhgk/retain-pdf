@@ -1,0 +1,22 @@
+/* The energy profiles (energy.mjs): black, white and gray, the page's own. */
+.note-energy { margin: 1.5em 0; text-align: center; }
+.note-energy-plot { display: block; width: 100%; height: auto; margin: 0 auto; overflow: visible; color: rgb(var(--gray-dark)); font-family: var(--font-text, inherit); }
+.note-energy-plot text { fill: currentColor; font-size: 12px; text-anchor: middle; }
+/* The page's color round the letters: a line passing under a name leaves it readable. */
+.note-energy-plot .energy-value, .note-energy-plot .energy-name { paint-order: stroke; stroke: var(--surface); stroke-width: 4px; stroke-linejoin: round; }
+.note-energy-plot .energy-name { fill: rgb(var(--gray)); }
+.note-energy-plot .energy-legend { text-anchor: start; }
+.note-energy-plot .energy-axis { stroke: currentColor; stroke-width: 1.2; }
+.note-energy-plot .energy-arrow { fill: currentColor; }
+.note-energy-plot .energy-level { stroke-width: 3; stroke-linecap: round; }
+.note-energy-plot .energy-link { stroke-width: 1.2; fill: none; }
+.note-energy-plot .energy-path-0 { stroke: rgb(var(--gray-dark)); }
+.note-energy-plot .energy-link.energy-path-0 { stroke-dasharray: 5 4; }
+.note-energy-plot .energy-path-1 { stroke: rgb(var(--gray)); }
+.note-energy-plot .energy-link.energy-path-1 { stroke-dasharray: 1.5 3.5; }
+.note-energy-plot .energy-path-2 { stroke: rgb(var(--gray-dark)); }
+.note-energy-plot .energy-link.energy-path-2 { stroke-dasharray: 8 3 2 3; }
+.note-energy-plot .energy-path-3 { stroke: rgb(var(--gray)); }
+.note-energy-plot .energy-link.energy-path-3 { stroke-dasharray: 5 4; }
+.note-energy figcaption { margin-top: 0.5em; color: rgb(var(--gray)); font-size: 0.9em; }
+.note-energy-empty { margin: 0; padding: 10px 12px; border: 1px dashed rgb(var(--gray-light)); border-radius: 6px; color: rgb(var(--gray)); font-size: 14px; }

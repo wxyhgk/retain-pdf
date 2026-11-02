@@ -1,0 +1,30 @@
+[package]
+name = "studio-app"
+version = "0.1.0"
+edition = "2021"
+description = "The Studio as a Mac app: starts the blog's dev server (or uses the one running) and shows /studio in a window"
+publish = false
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["devtools"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+libc = "0.2"
+block2 = "0.6"
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSString", "NSGeometry"] }
+objc2-app-kit = { version = "0.3", features = ["NSAlert", "NSApplication", "NSButton", "NSControl", "NSTextField", "NSView", "NSResponder", "NSWindow", "block2"] }
+
+[features]
+default = ["custom-protocol"]
+# The window's own pages (ui/) are built into the program, not fetched from a dev server.
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+strip = true
+
+# 自成一个工作区：不并进仓库根目录的 Cargo 工作区（那是后端的）。
+[workspace]

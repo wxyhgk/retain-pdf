@@ -1,0 +1,372 @@
+<style>
+	html, body { height: 100%; }
+	body { display: grid; grid-template-rows: auto auto minmax(0, 1fr); font-size: 13px; }
+	button { font-size: 12px; }
+	.top { display: flex; align-items: center; gap: 10px; padding: 12px 14px 8px; }
+	.search { position: relative; flex: 1; min-width: 0; }
+	.search input { width: 100%; box-sizing: border-box; height: 32px; padding: 4px 10px 4px 30px; border-radius: 8px; background: var(--soft); border-color: transparent; }
+	.search input:focus { outline: none; border-color: var(--line); background: var(--surface); }
+	.search svg { position: absolute; left: 10px; top: 9px; width: 14px; height: 14px; color: var(--muted); }
+	.count { flex: none; color: var(--muted); font-size: 12px; }
+	.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 0 14px 10px; border-bottom: 1px solid var(--line); }
+	.chip { padding: 2px 10px; border-radius: 999px; color: var(--muted); }
+	.chip[aria-pressed='true'] { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+	.chip small { margin-left: 4px; opacity: 0.7; font-size: 11px; }
+	.gap { flex: 1; }
+	.filters select { max-width: 220px; padding: 2px 6px; font-size: 12px; }
+	.filters input[type='range'] { width: 90px; }
+
+	.wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile, 180px), 1fr)); align-content: start; gap: 12px; padding: 14px; overflow-y: auto; }
+	.tile { display: grid; grid-template-rows: auto auto; gap: 6px; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); text-align: left; cursor: zoom-in; }
+	.tile:hover { border-color: var(--muted); }
+	.tile:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+	.thumb { display: grid; place-items: center; aspect-ratio: 4 / 3; background: var(--soft); }
+	.thumb img { width: 100%; height: 100%; object-fit: contain; }
+	.info { display: grid; gap: 1px; padding: 0 9px 8px; min-width: 0; }
+	.info strong { overflow: hidden; font-size: 12px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+	.info span { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+	.badges { display: flex; gap: 4px; }
+	.badge { padding: 0 5px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font-size: 10.5px; line-height: 16px; }
+	.badge.unused { border-style: dashed; }
+	.empty { grid-column: 1 / -1; padding: 60px 20px; color: var(--muted); text-align: center; }
+
+	.viewer { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px; background: var(--surface); }
+	.viewer[hidden] { display: none; }
+	.stage { position: relative; display: grid; place-items: center; min-height: 0; padding: 20px; background: var(--soft); }
+	.stage img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 1px 4px rgb(0 0 0 / 0.08); background: #fff; }
+	.stage .step { position: absolute; top: 50%; padding: 6px 10px; border-radius: 999px; font-size: 16px; transform: translateY(-50%); }
+	.stage .prev { left: 12px; }
+	.stage .next { right: 12px; }
+	.side { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 12px; padding: 14px; overflow: hidden; border-left: 1px solid var(--line); }
+	.side-head { display: flex; align-items: start; gap: 8px; }
+	.side-head strong { flex: 1; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+	.facts { display: grid; grid-template-columns: auto 1fr; align-content: start; gap: 4px 12px; margin: 0; font-size: 12px; }
+	.facts dt { color: var(--muted); }
+	.facts dd { margin: 0; overflow-wrap: anywhere; }
+	.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+	.actions .primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+	.places { display: grid; align-content: start; gap: 2px; overflow-y: auto; }
+	.places > span { color: var(--muted); font-size: 11.5px; }
+	.place { display: grid; gap: 1px; width: 100%; padding: 6px 8px; border: 0; border-radius: 6px; background: none; text-align: left; }
+	.place:hover { background: var(--soft); }
+	.place small { color: var(--muted); overflow-wrap: anywhere; }
+
+	@media (max-width: 720px) {
+		.viewer { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; }
+		.side { max-height: 45vh; border-left: 0; border-top: 1px solid var(--line); }
+	}
+</style>
+
+<div class="top">
+	<label class="search">
+		<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+		<input id="query" type="search" placeholder="搜文件名、图片说明、笔记标题（/ 键）" autocomplete="off" spellcheck="false" />
+	</label>
+	<span class="count" id="count"></span>
+</div>
+<div class="filters">
+	<span id="uses" style="display: contents"></span>
+	<span class="gap"></span>
+	<select id="note" aria-label="笔记"></select>
+	<select id="order" aria-label="排序">
+		<option value="recent">最近的在前</option>
+		<option value="note">按笔记</option>
+		<option value="large">大的在前</option>
+	</select>
+	<input id="tile" type="range" min="120" max="320" step="20" aria-label="缩略图大小" title="缩略图大小" />
+</div>
+<div class="wall" id="wall"></div>
+
+<div class="viewer" id="viewer" hidden>
+	<div class="stage">
+		<img id="big" alt="" />
+		<button class="step prev" id="prev" aria-label="上一张">‹</button>
+		<button class="step next" id="next" aria-label="下一张">›</button>
+	</div>
+	<aside class="side">
+		<div class="side-head">
+			<strong id="big-name"></strong>
+			<button id="close" aria-label="关闭">✕</button>
+		</div>
+		<div class="actions" id="actions"></div>
+		<div style="display: grid; align-content: start; gap: 14px; min-height: 0; overflow-y: auto">
+			<dl class="facts" id="facts"></dl>
+			<div class="places" id="places"></div>
+		</div>
+	</aside>
+</div>
+
+<script>
+	const USES = [
+		{ id: '', label: '全部', test: () => true },
+		{ id: 'used', label: '用在文章里的', test: (item) => item.referenced && !item.remote },
+		{ id: 'unused', label: '没用上的', test: (item) => !item.referenced },
+		{ id: 'web', label: '网上的', test: (item) => item.remote },
+	];
+	const $ = (id) => document.getElementById(id);
+	const state = { items: [], query: '', use: '', note: '', order: 'recent', tile: 180, open: null };
+	try {
+		Object.assign(state, JSON.parse(localStorage.getItem('image-library.view') ?? '{}'));
+	} catch {}
+	const keep = () => localStorage.setItem('image-library.view', JSON.stringify({ order: state.order, tile: state.tile }));
+
+	const words = () => state.query.toLowerCase().split(/\s+/u).filter(Boolean);
+	const haystack = (item) => (item.hay ??= [item.name, item.alt, ...item.places.flatMap((place) => [place.title, place.heading, place.path ?? ''])].join('\n').toLowerCase());
+	const notesOf = (item) => [...new Set(item.places.map((place) => place.slug))];
+	const size = (bytes) => (bytes == null ? '' : bytes < 1024 ? `${bytes} B` : bytes < 1048576 ? `${(bytes / 1024).toFixed(0)} KB` : `${(bytes / 1048576).toFixed(1)} MB`);
+	function when(time) {
+		const days = Math.floor((Date.now() - time) / 86400000);
+		if (days <= 0) return '今天';
+		if (days === 1) return '昨天';
+		if (days < 30) return `${days} 天前`;
+		return new Date(time).toISOString().slice(0, 10);
+	}
+	const whereOf = (place) => `《${place.title}》${place.heading ? ` › ${place.heading}` : ''}`;
+
+	function shown() {
+		const wanted = words();
+		const use = USES.find((each) => each.id === state.use) ?? USES[0];
+		const list = state.items.filter((item) => use.test(item) && (!state.note || notesOf(item).includes(state.note)) && wanted.every((word) => haystack(item).includes(word)));
+		const by = {
+			recent: (a, b) => b.modified - a.modified,
+			note: (a, b) => a.places[0].title.localeCompare(b.places[0].title, 'zh-CN') || a.name.localeCompare(b.name),
+			large: (a, b) => (b.size ?? 0) - (a.size ?? 0),
+		}[state.order];
+		return list.sort(by);
+	}
+
+	function drawFilters() {
+		$('uses').replaceChildren(
+			...USES.map((use) => {
+				const button = document.createElement('button');
+				button.className = 'chip';
+				button.dataset.use = use.id;
+				button.setAttribute('aria-pressed', String(state.use === use.id));
+				button.append(use.label);
+				const small = document.createElement('small');
+				small.textContent = state.items.filter(use.test).length;
+				button.append(small);
+				button.addEventListener('click', () => {
+					state.use = use.id;
+					draw();
+				});
+				return button;
+			}),
+		);
+		const notes = new Map();
+		for (const item of state.items) for (const place of item.places) notes.set(place.slug, place.title);
+		const select = $('note');
+		select.replaceChildren(new Option(`所有笔记（${notes.size}）`, ''), ...[...notes].sort((a, b) => a[1].localeCompare(b[1], 'zh-CN')).map(([slug, title]) => new Option(title, slug)));
+		if (!notes.has(state.note)) state.note = '';
+		select.value = state.note;
+	}
+
+	function drawWall(list) {
+		const wall = $('wall');
+		wall.style.setProperty('--tile', `${state.tile}px`);
+		wall.replaceChildren();
+		if (!list.length) {
+			const empty = document.createElement('div');
+			empty.className = 'empty';
+			empty.textContent = state.items.length ? '没有符合的图片' : '笔记里还没有图片';
+			wall.append(empty);
+			return;
+		}
+		for (const item of list) {
+			const tile = document.createElement('button');
+			tile.className = 'tile';
+			tile.dataset.id = item.id;
+			tile.title = item.alt || item.name;
+			const thumb = document.createElement('div');
+			thumb.className = 'thumb';
+			const img = document.createElement('img');
+			img.loading = 'lazy';
+			img.decoding = 'async';
+			img.src = item.url;
+			img.alt = item.alt;
+			thumb.append(img);
+			const info = document.createElement('div');
+			info.className = 'info';
+			const name = document.createElement('strong');
+			name.textContent = item.alt || item.name;
+			const where = document.createElement('span');
+			where.textContent = whereOf(item.places[0]);
+			const badges = document.createElement('div');
+			badges.className = 'badges';
+			const badge = (text, extra = '') => {
+				const span = document.createElement('span');
+				span.className = `badge ${extra}`;
+				span.textContent = text;
+				badges.append(span);
+			};
+			if (!item.referenced) badge('没用上', 'unused');
+			if (item.remote) badge('网上');
+			if (item.places.length > 1) badge(`${item.places.length} 处`);
+			if (item.size != null) badge(size(item.size));
+			info.append(name, where, badges);
+			tile.append(thumb, info);
+			tile.addEventListener('click', () => view(item.id));
+			wall.append(tile);
+		}
+	}
+
+	function draw() {
+		drawFilters();
+		const list = shown();
+		drawWall(list);
+		const unused = state.items.filter((item) => !item.referenced).length;
+		const notes = new Set(state.items.flatMap(notesOf)).size;
+		$('count').textContent = list.length === state.items.length ? `${state.items.length} 张，来自 ${notes} 篇笔记${unused ? `，${unused} 张没用上` : ''}` : `找到 ${list.length} 张`;
+		if (state.open) view(state.open);
+	}
+
+	/** One picture large, with what it is and where; ← → through those shown. */
+	function view(id) {
+		const list = shown();
+		const at = list.findIndex((item) => item.id === id);
+		const item = list[at];
+		if (!item) return close();
+		state.open = id;
+		$('viewer').hidden = false;
+		const big = $('big');
+		big.src = item.url;
+		big.alt = item.alt;
+		$('big-name').textContent = item.alt || item.name;
+		$('prev').disabled = at <= 0;
+		$('next').disabled = at >= list.length - 1;
+		$('prev').onclick = () => view(list[at - 1]?.id);
+		$('next').onclick = () => view(list[at + 1]?.id);
+
+		const facts = $('facts');
+		facts.replaceChildren();
+		const fact = (term, value) => {
+			if (!value) return;
+			const dt = document.createElement('dt');
+			dt.textContent = term;
+			const dd = document.createElement('dd');
+			dd.textContent = value;
+			facts.append(dt, dd);
+		};
+		fact('文件名', item.name);
+		fact('说明', item.alt);
+		fact('大小', size(item.size));
+		fact('尺寸', '…');
+		const dimensions = facts.lastElementChild;
+		big.onload = () => (dimensions.textContent = `${big.naturalWidth} × ${big.naturalHeight}`);
+		if (big.complete && big.naturalWidth) big.onload();
+		fact('状态', item.remote ? '网上的图片' : item.referenced ? '用在文章里' : '只放在文件夹里，没有文章用它');
+		fact('改动', when(item.modified));
+
+		const actions = $('actions');
+		actions.replaceChildren();
+		const button = (label, run, primary = false) => {
+			const element = document.createElement('button');
+			element.textContent = label;
+			if (primary) element.className = 'primary';
+			element.addEventListener('click', run);
+			actions.append(element);
+		};
+		button('跳到笔记', () => jump(item.places[0]), true);
+		button('复制图片', () => copyPicture(item));
+		button('打开原图', () => window.open(item.url, '_blank'));
+
+		const places = $('places');
+		places.replaceChildren();
+		const caption = document.createElement('span');
+		caption.textContent = `在 ${item.places.length} 处（点一处跳过去）`;
+		places.append(caption);
+		for (const place of item.places) {
+			const row = document.createElement('button');
+			row.className = 'place';
+			row.append(whereOf(place));
+			const small = document.createElement('small');
+			small.textContent = `${place.path ?? item.url}${place.referenced ? '' : ' · 没用上'}`;
+			row.append(small);
+			row.addEventListener('click', () => jump(place));
+			places.append(row);
+		}
+	}
+
+	function close() {
+		state.open = null;
+		$('viewer').hidden = true;
+		$('big').removeAttribute('src');
+	}
+
+	/** To the note: at the picture when the note shows it, else the note itself. */
+	function jump(place) {
+		studio.openPage(place.slug, place.referenced && place.path ? { find: place.path } : {}).catch((error) => studio.toast(error.message));
+	}
+
+	async function copyPicture(item) {
+		try {
+			const blob = await (await fetch(item.url)).blob();
+			const type = blob.type === 'image/png' ? blob.type : 'image/png';
+			// Only PNG goes to the clipboard everywhere: others drawn into one first.
+			const png = blob.type === 'image/png' ? blob : await toPng(blob);
+			await navigator.clipboard.write([new ClipboardItem({ [type]: png })]);
+			studio.toast('已复制图片');
+		} catch (error) {
+			studio.toast(`没能复制：${error.message}`);
+		}
+	}
+
+	async function toPng(blob) {
+		const bitmap = await createImageBitmap(blob);
+		const canvas = document.createElement('canvas');
+		canvas.width = bitmap.width;
+		canvas.height = bitmap.height;
+		canvas.getContext('2d').drawImage(bitmap, 0, 0);
+		return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+	}
+
+	async function load() {
+		try {
+			state.items = await studio.notes.images();
+		} catch (error) {
+			$('wall').textContent = `读不到笔记里的图片：${error.message}`;
+			return;
+		}
+		draw();
+	}
+
+	$('query').addEventListener('input', (event) => {
+		state.query = event.target.value;
+		draw();
+	});
+	$('note').addEventListener('change', (event) => {
+		state.note = event.target.value;
+		draw();
+	});
+	$('order').value = state.order;
+	$('order').addEventListener('change', (event) => {
+		state.order = event.target.value;
+		keep();
+		draw();
+	});
+	$('tile').value = String(state.tile);
+	$('tile').addEventListener('input', (event) => {
+		state.tile = Number(event.target.value);
+		$('wall').style.setProperty('--tile', `${state.tile}px`);
+		keep();
+	});
+	$('close').addEventListener('click', close);
+	addEventListener('keydown', (event) => {
+		const typing = event.target instanceof HTMLInputElement && event.target.type !== 'range';
+		if (!$('viewer').hidden) {
+			if (event.key === 'Escape') close();
+			else if (event.key === 'ArrowLeft') $('prev').click();
+			else if (event.key === 'ArrowRight') $('next').click();
+			return;
+		}
+		if (event.key === '/' && !typing) {
+			event.preventDefault();
+			$('query').focus();
+		} else if (event.key === 'Escape' && typing && state.query) {
+			$('query').value = state.query = '';
+			draw();
+		}
+	});
+	studio.notes.onChange(load);
+	load();
+</script>

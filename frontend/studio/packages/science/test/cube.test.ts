@@ -1,0 +1,70 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { MAX_INLINE_CUBE_LENGTH, parseCubeBlock } from '../parsers/index.ts';
+import {
+	resolveScienceResourceUrl,
+	setScienceResourceBaseUrl,
+} from '../browser/resource-context.ts';
+import {
+	CUBE_DISPLAY_DEFAULTS,
+	isCubeDisplaySettings,
+	normalizeCubeDisplaySettings,
+} from '../cube-display.mjs';
+import { cubeVolumeStyle } from '../browser/cube-renderer.ts';
+
+const minimalCube = [
+	'water orbital',
+	'generated fixture',
+	' 1 0.0 0.0 0.0',
+	' 1 0.2 0.0 0.0',
+	' 1 0.0 0.2 0.0',
+	' 1 0.0 0.0 0.2',
+	' 8 8.0 0.0 0.0 0.0',
+	' 0.01',
+].join('\n');
+
+test('Cube plugin parser claims cube fences and preserves safe @file references', () => {
+	assert.equal(parseCubeBlock('xyz', minimalCube), null);
+	assert.deepEqual(parseCubeBlock('CUBE', '@file ./assets/orbitals/homo.cube'), {
+		type: 'cube-volume',
+		language: 'cube',
+		resource: { kind: 'file', path: './assets/orbitals/homo.cube' },
+	});
+});
+
+test('Cube parser validates inline headers and keeps large volumes out of placeholders', () => {
+	assert.equal(parseCubeBlock('cube-3d', minimalCube)?.resource.kind, 'inline');
+	assert.throws(() => parseCubeBlock('cube', 'not a cube'), /文件头不完整/u);
+	assert.throws(
+		() => parseCubeBlock('cube', `${minimalCube}\n${'0 '.repeat(MAX_INLINE_CUBE_LENGTH)}`),
+		/@file/u,
+	);
+});
+
+test('article resource URLs encode validated bundle-relative segments only', () => {
+	setScienceResourceBaseUrl('/article-assets/chemistry-rendering/');
+	assert.equal(
+		resolveScienceResourceUrl('./assets/orbitals/HOMO orbital.cube'),
+		'/article-assets/chemistry-rendering/assets/orbitals/HOMO%20orbital.cube',
+	);
+	assert.throws(() => resolveScienceResourceUrl('../private.cube'), /assets.*img/u);
+	assert.throws(() => resolveScienceResourceUrl('./assets/../ai/private.md'), /无效/u);
+});
+
+test('Cube display settings normalize safely and generate enabled phase surfaces', () => {
+	assert.equal(isCubeDisplaySettings(CUBE_DISPLAY_DEFAULTS), true);
+	assert.equal(isCubeDisplaySettings({ ...CUBE_DISPLAY_DEFAULTS, isovalue: 0 }), false);
+	assert.equal(isCubeDisplaySettings({ ...CUBE_DISPLAY_DEFAULTS, opacity: 1.5 }), false);
+	assert.equal(isCubeDisplaySettings({ ...CUBE_DISPLAY_DEFAULTS, moleculeStyle: 'cartoon' }), false);
+	assert.deepEqual(normalizeCubeDisplaySettings({ broken: true }), CUBE_DISPLAY_DEFAULTS);
+
+	// As fast-mol draws them: the level, how solid, which phases, blue + and red −.
+	assert.deepEqual(cubeVolumeStyle({ ...CUBE_DISPLAY_DEFAULTS, isovalue: 0.035, opacity: 0.6, negative: false }), {
+		iso: 0.035,
+		opacity: 0.6,
+		showPositive: true,
+		showNegative: false,
+		positive: [37, 99, 235],
+		negative: [220, 38, 38],
+	});
+});

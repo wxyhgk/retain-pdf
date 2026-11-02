@@ -1,0 +1,14 @@
+{
+  "name": "@blog/office",
+  "private": true,
+  "description": "Word, PowerPoint and Excel files shown in the page: a viewer window, and cards with a file's first page.",
+  "type": "module",
+  "exports": {
+    "./*": "./*"
+  },
+  "dependencies": {
+    "docx-preview": "0.4.1",
+    "pptx-preview": "1.0.7",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
+  }
+}

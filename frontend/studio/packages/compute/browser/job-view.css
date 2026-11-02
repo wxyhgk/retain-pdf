@@ -1,0 +1,114 @@
+/* A run's results (job-view.ts), on the blog and in the Studio. Black, white and gray; red only for what failed. */
+.job-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: rgb(var(--gray)); font-size: 13px; }
+.job-state { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border: 1px solid rgb(var(--gray-light)); border-radius: 999px; color: rgb(var(--gray-dark)); font-size: 12px; line-height: 18px; white-space: nowrap; }
+.job-state::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.job-state[data-state='preparing']::before, .job-state[data-state='queued']::before { background: transparent; box-shadow: inset 0 0 0 1.5px currentColor; }
+.job-state[data-state='running']::before { animation: job-pulse 1.2s ease-in-out infinite; }
+.job-state[data-state='failed'], .job-state[data-state='lost'] { border-color: var(--danger); color: var(--danger); }
+.job-state[data-state='cancelled'] { border-style: dashed; color: rgb(var(--gray)); }
+@keyframes job-pulse { 50% { opacity: 0.25; } }
+@media (prefers-reduced-motion: reduce) { .job-state[data-state='running']::before { animation: none; } }
+
+.job-note { margin: 10px 0 0; padding: 8px 12px; border-radius: 6px; background: var(--surface-soft); font-size: 13px; line-height: 1.55; }
+.job-note p { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.job-note.is-error { color: var(--danger); background: rgba(224, 62, 62, 0.07); }
+
+/* Lines between the cells, none after the last: each cell draws its right and bottom edge, the frame hides the outer ones. */
+.job-numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin: 12px 0 0; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); }
+.job-number { margin: 0 -1px -1px 0; padding: 8px 12px; border-right: 1px solid rgb(var(--gray-light)); border-bottom: 1px solid rgb(var(--gray-light)); }
+.job-number dt { color: rgb(var(--gray)); font-size: 12px; }
+.job-number dd { margin: 2px 0 0; color: rgb(var(--gray-dark)); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+.job-section { margin: 16px 0 0; }
+.job-section-title { margin: 0 0 8px; color: rgb(var(--gray-dark)); font-size: 13px; font-weight: 600; }
+.job-section-note { color: rgb(var(--gray)); font-size: 12px; font-weight: 400; }
+
+/* fast-mol draws into a canvas of its own that fills the stage. */
+.job-stage > canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.job-stage { position: relative; height: 300px; overflow: hidden; border: 1px solid rgb(var(--gray-light)); border-radius: 8px; background: var(--surface); color: rgb(var(--gray)); font-size: 13px; display: grid; place-items: center; }
+
+.job-chart { margin: 0; }
+.job-chart figcaption { margin-top: 4px; color: rgb(var(--gray)); font-size: 12px; }
+.job-chart-svg { display: block; width: 100%; height: auto; max-height: 240px; overflow: visible; }
+.job-grid { stroke: rgb(var(--gray-light)); stroke-width: 1; }
+.job-axis { fill: rgb(var(--gray)); font-size: 11px; font-variant-numeric: tabular-nums; }
+.job-line { fill: none; stroke: rgb(var(--gray-dark)); stroke-width: 1.6; stroke-linejoin: round; }
+.job-line.is-soft { stroke: rgb(var(--gray)); stroke-width: 1.2; }
+.job-dot { fill: rgb(var(--gray-dark)); }
+.job-stick { stroke: rgb(var(--gray-dark)); stroke-width: 1.4; cursor: pointer; }
+.job-stick.is-selected { stroke-width: 3; }
+.job-hit { fill: transparent; cursor: pointer; }
+.job-hit:hover + .job-stick { stroke-width: 3; }
+
+.job-vibrations { display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 12px; margin-top: 10px; }
+.job-vibration-view { min-width: 0; }
+.job-mode-label { margin: 6px 0 0; color: rgb(var(--gray)); font-size: 12px; }
+.job-modes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; align-content: start; max-height: 330px; margin: 0; padding: 0; overflow: auto; list-style: none; }
+.job-mode button { width: 100%; padding: 3px 6px; border: 0; border-radius: 4px; background: transparent; color: rgb(var(--gray-dark)); font: inherit; font-size: 12px; font-variant-numeric: tabular-nums; text-align: right; cursor: pointer; }
+.job-mode button:hover { background: var(--surface-hover); }
+.job-mode.is-selected button { background: var(--surface-hover); font-weight: 600; }
+.job-mode.is-imaginary button { color: var(--danger); }
+.job-conformer-list { max-height: 330px; overflow: auto; }
+.job-conformers { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+.job-conformers th { position: sticky; top: 0; padding: 4px 6px; background: var(--surface); color: rgb(var(--gray)); font-weight: 500; text-align: right; white-space: nowrap; }
+.job-conformers td { padding: 3px 6px; border-top: 1px solid rgb(var(--gray-light)); text-align: right; }
+.job-conformer { cursor: pointer; outline: none; }
+.job-conformer:hover, .job-conformer:focus-visible, .job-conformer.is-selected { background: var(--surface-hover); }
+.job-conformer.is-selected td { font-weight: 600; }
+@media (max-width: 640px) {
+	.job-vibrations { grid-template-columns: 1fr; }
+	.job-modes { grid-template-columns: repeat(4, 1fr); max-height: 140px; }
+}
+
+.job-log { margin: 14px 0 0; border-top: 1px solid rgb(var(--gray-light)); padding-top: 8px; }
+.job-log summary { color: rgb(var(--gray)); font-size: 12px; cursor: pointer; }
+.job-log-text { max-height: 280px; margin: 8px 0 0; padding: 10px 12px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-size: 11.5px; line-height: 1.45; white-space: pre; }
+.job-log-link { display: inline-block; margin-top: 6px; color: rgb(var(--gray)); font-size: 12px; }
+
+/* The figure plugins/job/build.mjs makes on the blog: without scripts its head and its input; with them a card (job-card.ts) that opens its sheet. */
+.note-job { margin: 1.4em 0; padding: 10px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 14px; line-height: 1.5; }
+.note-job-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.note-job-title { font-size: 15px; }
+.note-job-summary { flex-basis: 100%; color: rgb(var(--gray)); font-size: 12.5px; }
+.note-job-empty { margin: 0; color: rgb(var(--gray)); font-size: 13px; }
+.note-job-input { margin-top: 8px; }
+.note-job-input summary { color: rgb(var(--gray)); font-family: var(--font-mono); font-size: 12px; cursor: pointer; }
+.note-job-input pre { max-height: 260px; margin: 8px 0 0; padding: 10px 12px; overflow: auto; border-radius: 6px; background: var(--surface-soft); color: rgb(var(--gray-dark)); font-size: 12px; }
+.note-job.is-openable { cursor: pointer; transition: border-color 0.12s; }
+.note-job.is-openable:hover, .note-job.is-openable:focus-visible { border-color: rgb(var(--gray)); outline: none; }
+
+.job-log-text.is-whole { max-height: none; height: calc(min(86vh, 900px) - 190px); min-height: 240px; }
+.job-thumbnail { display: block; width: 96px; height: 72px; }
+.job-thumbnail-bond { stroke: rgb(var(--gray)); stroke-linecap: round; }
+.job-thumbnail-atom { stroke: rgb(var(--gray-dark)); stroke-width: 0.8; }
+
+/* The card a job is in the page (job-card.ts): two lines, its details in the sheet. */
+.job-card { position: relative; padding: 10px 12px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); color: rgb(var(--gray-dark)); font-size: 14px; line-height: 1.5; }
+.job-card-head { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.job-kind { flex: none; padding: 1px 7px; border-radius: 4px; background: var(--surface-soft); color: rgb(var(--gray)); font-size: 12px; }
+.job-card-title { min-width: 0; overflow: hidden; font-size: 15px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.job-card-title.is-untitled { color: rgb(var(--gray)); font-weight: 500; }
+.job-card-head .job-state[hidden] { display: none; }
+.job-card-when { flex: none; color: rgb(var(--gray)); font-size: 12px; font-variant-numeric: tabular-nums; }
+.job-card-actions { display: flex; flex: none; align-items: center; gap: 4px; margin-left: auto; }
+.job-card-body { display: flex; align-items: center; gap: 12px; margin-top: 6px; }
+.job-card-picture { flex: none; }
+.job-card-picture[hidden] { display: none; }
+.job-card-text { min-width: 0; }
+.job-card-line { margin: 0; color: rgb(var(--gray-dark)); font-size: 13.5px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.job-card-line.is-problem { color: var(--danger); }
+.job-card-describe { margin: 2px 0 0; color: rgb(var(--gray)); font-size: 12px; }
+.job-card-progress { position: absolute; right: 12px; bottom: 0; left: 12px; height: 2px; overflow: hidden; border-radius: 1px; }
+.job-card-progress[hidden] { display: none; }
+.job-card-progress::after { content: ''; position: absolute; top: 0; bottom: 0; width: 30%; border-radius: 1px; background: rgb(var(--gray-dark)); animation: job-progress 1.4s ease-in-out infinite; }
+@keyframes job-progress { from { left: -30%; } to { left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .job-card-progress::after { left: 0; width: 100%; opacity: 0.4; animation: none; } }
+
+/* In a sheet: the history of runs. */
+.job-runs { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+.job-runs th { padding: 6px 8px; border-bottom: 1px solid rgb(var(--gray-light)); color: rgb(var(--gray)); font-size: 12px; font-weight: 500; text-align: left; }
+.job-runs td { padding: 7px 8px; border-bottom: 1px solid rgb(var(--gray-light)); }
+.job-run-row { cursor: pointer; }
+.job-run-row:hover { background: var(--surface-hover); }
+.job-run-row.is-shown td:first-child { font-weight: 600; }
+.job-run-shown { color: rgb(var(--gray)); font-size: 12px; }

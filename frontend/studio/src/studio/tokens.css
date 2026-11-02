@@ -1,0 +1,18 @@
+/*
+ * The Studio's design tokens (with the colors and fonts of global.css): the
+ * values a plugin changes with `ctx.theme.set` (@blog/kernel/theme.ts, which
+ * lists them all; its test checks these defaults against that list).
+ */
+:root {
+	/* The page: how wide the text is, and the space either side of it. */
+	--studio-editor-width: 926px;
+	/* Room in the margin left of a block's handle, to drag there and select blocks (as Notion's 96px). */
+	--studio-editor-padding: 96px;
+	/* The text: its size and line height; the title's size. */
+	--studio-editor-font-size: 16px;
+	--studio-editor-line-height: 1.72;
+	--studio-title-size: clamp(32px, 3.2vw, 44px);
+	/* The columns: the article list on the left, the panel on the right (until it is dragged). */
+	--studio-sidebar-width: 250px;
+	--studio-panel-width: 340px;
+}

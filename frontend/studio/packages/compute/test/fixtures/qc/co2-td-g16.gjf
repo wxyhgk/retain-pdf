@@ -1,0 +1,11 @@
+%nprocshared=8
+%mem=4GB
+#p B3LYP/def2SVP TD(NStates=6)
+
+CO2 TD-DFT 6 states
+
+0 1
+C   0.000000  0.000000  0.000000
+O   0.000000  0.000000  1.163086
+O   0.000000  0.000000 -1.163086
+
