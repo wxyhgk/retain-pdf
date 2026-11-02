@@ -17,7 +17,8 @@
     { "type": "open-notes", "from": "retainpdf", "definition": "OpenNotesMessage" },
     { "type": "close-notes", "from": "retainpdf", "definition": "CloseNotesMessage" },
     { "type": "notes", "from": "studio", "definition": "NotesMessage" },
-    { "type": "reading", "from": "retainpdf", "definition": "ReadingMessage" }
+    { "type": "reading", "from": "retainpdf", "definition": "ReadingMessage" },
+    { "type": "ask-ai", "from": "retainpdf", "definition": "AskAiMessage" }
   ],
   "oneOf": [
     { "$ref": "#/definitions/HelloMessage" },
@@ -28,7 +29,8 @@
     { "$ref": "#/definitions/OpenNotesMessage" },
     { "$ref": "#/definitions/CloseNotesMessage" },
     { "$ref": "#/definitions/NotesMessage" },
-    { "$ref": "#/definitions/ReadingMessage" }
+    { "$ref": "#/definitions/ReadingMessage" },
+    { "$ref": "#/definitions/AskAiMessage" }
   ],
   "definitions": {
     "Protocol": { "const": "retainpdf-studio-bridge" },
@@ -39,8 +41,8 @@
       "enum": ["theme", "navigate", "quote", "notes", "reading"]
     },
     "StudioFeature": {
-      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes）。hello 没有 features 是早先的 Studio，只认 quote。",
-      "enum": ["quote", "open-notes"]
+      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端）。hello 没有 features 是早先的 Studio，只认 quote。",
+      "enum": ["quote", "open-notes", "ask-ai"]
     },
     "HelloMessage": {
       "type": "object",
@@ -147,6 +149,17 @@
         "type": { "const": "notes" },
         "open": { "type": "boolean" },
         "title": { "type": ["string", "null"], "description": "开着时是哪一页笔记（标题）；收着时为 null 或不写。" }
+      }
+    },
+    "AskAiMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio：用户在阅读页点了「AI」（2026-11-02 加）。Studio 打开它自己的 AI，RetainPDF 不再打开自己的 agent 终端——放在 Studio 里时只有一个 AI。读的是哪本书、第几页看最近一条 reading：RetainPDF 发 ask-ai 之前先把眼下的 reading 立刻发出去（不等防抖），Studio 收到 ask-ai 时手上的 reading 就是当前的。只在 hello 的 features 有 ask-ai 时发；早先的 Studio 没列它，阅读页照旧打开自己的终端。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "ask-ai" }
       }
     },
     "ReadingMessage": {
