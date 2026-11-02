@@ -11,6 +11,7 @@ import pytest
 import requests
 
 from retainpdf_pipeline.ocr.ocr_provider import glm_ocr_api
+from retainpdf_pipeline.ocr.ocr_provider import glm_ocr_driver
 from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import merge_chunks
 from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import parse_page_ranges
 from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import run_glm_ocr_to_job_dir
@@ -28,8 +29,8 @@ def _pdf(path: Path, pages: int) -> Path:
     return path
 
 
-def _job(tmp_path: Path, pdf: Path, page_ranges: str = "") -> SimpleNamespace:
-    root = tmp_path / "job"
+def _job(tmp_path: Path, pdf: Path, page_ranges: str = "", name: str = "job") -> SimpleNamespace:
+    root = tmp_path / name
     names = ("source", "ocr", "translated", "rendered", "artifacts", "logs")
     for name in names:
         (root / name).mkdir(parents=True, exist_ok=True)
@@ -101,13 +102,22 @@ def test_every_image_is_cropped_from_the_source_and_linked(tmp_path: Path, monke
     assert "images/page-3/imgs/img_in_image_box_208_625_833_1042.jpg" in full_md
 
 
+def _forget_chunk(job: SimpleNamespace, name: str, *, chunk_pages: int) -> None:
+    """这一片没做完：任务目录和各任务共用的缓存里都没有它。"""
+    from retainpdf_base import paths
+    from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import shared_chunk_dir
+
+    (Path(job.ocr_dir) / "glm_ocr_raw" / name).unlink()
+    source_hash = glm_ocr_driver._sha256(Path(job.file_path))
+    (shared_chunk_dir(paths.GLM_OCR_CHUNK_CACHE_DIR, source_hash, chunk_pages) / name).unlink()
+
+
 def test_rerunning_the_job_does_not_pay_for_chunks_already_done(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
     job = _job(tmp_path, _pdf(tmp_path / "book.pdf", 5))
     run_glm_ocr_to_job_dir(job, parse=FakeGlm())
     # 中断过：最后一片的结果没了
-    raw_dir = Path(job.ocr_dir) / "glm_ocr_raw"
-    (raw_dir / "chunk-002-5-5.json").unlink()
+    _forget_chunk(job, "chunk-002-5-5.json", chunk_pages=2)
     again = FakeGlm()
     run_glm_ocr_to_job_dir(job, parse=again)
     assert again.calls == [1]
@@ -116,6 +126,71 @@ def test_rerunning_the_job_does_not_pay_for_chunks_already_done(tmp_path: Path, 
     resized = FakeGlm()
     run_glm_ocr_to_job_dir(job, parse=resized)
     assert resized.calls == [3, 2]
+
+
+class Interrupted(RuntimeError):
+    pass
+
+
+def _fails_after(chunks: int, fake: FakeGlm):
+    def parse(pdf_bytes: bytes, *, api_key: str) -> dict:
+        if len(fake.calls) >= chunks:
+            raise Interrupted("GLM-OCR 请求超时")
+        return fake(pdf_bytes, api_key=api_key)
+
+    return parse
+
+
+def test_a_new_job_on_the_same_file_reuses_chunks_another_job_paid_for(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
+    pdf = _pdf(tmp_path / "book.pdf", 5)
+    # 第一个任务做了两片就断了（超时、重启）
+    first = FakeGlm()
+    with pytest.raises(Interrupted):
+        run_glm_ocr_to_job_dir(_job(tmp_path, pdf, name="first"), parse=_fails_after(2, first))
+    assert first.calls == [2, 2]
+    # 重试新建的任务目录是空的，也只付剩下的一片
+    retry = FakeGlm()
+    result = run_glm_ocr_to_job_dir(_job(tmp_path, pdf, name="retry"), parse=retry)
+    assert retry.calls == [1]
+    assert [page["blocks"][0]["text"] for page in _document(result)["pages"]] == [f"Page {n}" for n in range(1, 6)]
+    # 任务目录照旧有全部原始片
+    assert sorted(path.name for path in (Path(result.job_dirs.root) / "ocr" / "glm_ocr_raw").glob("chunk-*.json")) == [
+        "chunk-000-1-2.json", "chunk-001-3-4.json", "chunk-002-5-5.json",
+    ]
+    # 再来一个任务：一分钱不花
+    again = FakeGlm()
+    run_glm_ocr_to_job_dir(_job(tmp_path, pdf, name="again"), parse=again)
+    assert again.calls == []
+
+
+def test_the_shared_cache_misses_for_another_file_or_chunk_size(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
+    run_glm_ocr_to_job_dir(_job(tmp_path, _pdf(tmp_path / "book.pdf", 4), name="a"), parse=FakeGlm())
+    other_file = FakeGlm()
+    run_glm_ocr_to_job_dir(_job(tmp_path, _pdf(tmp_path / "other.pdf", 3), name="b"), parse=other_file)
+    assert other_file.calls == [2, 1]
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "3")
+    resized = FakeGlm()
+    run_glm_ocr_to_job_dir(_job(tmp_path, tmp_path / "book.pdf", name="c"), parse=resized)
+    assert resized.calls == [3, 1]
+
+
+def test_a_broken_shared_chunk_is_requested_again(tmp_path: Path, monkeypatch) -> None:
+    from retainpdf_base import paths
+    from retainpdf_pipeline.ocr.ocr_provider.glm_ocr_driver import shared_chunk_dir
+
+    monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
+    pdf = _pdf(tmp_path / "book.pdf", 4)
+    run_glm_ocr_to_job_dir(_job(tmp_path, pdf, name="a"), parse=FakeGlm())
+    shared = shared_chunk_dir(paths.GLM_OCR_CHUNK_CACHE_DIR, glm_ocr_driver._sha256(pdf), 2)
+    (shared / "chunk-000-1-2.json").write_text("{", encoding="utf-8")
+    payload = json.loads((shared / "chunk-001-3-4.json").read_text(encoding="utf-8"))
+    payload["layout_details"] = payload["layout_details"][:1]
+    (shared / "chunk-001-3-4.json").write_text(json.dumps(payload), encoding="utf-8")
+    again = FakeGlm()
+    run_glm_ocr_to_job_dir(_job(tmp_path, pdf, name="b"), parse=again)
+    assert again.calls == [2, 2]
 
 
 def test_selected_pages_become_the_source(tmp_path: Path, monkeypatch) -> None:
@@ -221,7 +296,7 @@ def test_resumed_chunks_are_published_at_once_and_failure_is_announced(tmp_path:
     monkeypatch.setenv("RETAIN_GLM_OCR_CHUNK_PAGES", "2")
     job = _job(tmp_path, _pdf(tmp_path / "book.pdf", 5))
     run_glm_ocr_to_job_dir(job, parse=FakeGlm())
-    (Path(job.ocr_dir) / "glm_ocr_raw" / "chunk-002-5-5.json").unlink()
+    _forget_chunk(job, "chunk-002-5-5.json", chunk_pages=2)
 
     def broken(pdf_bytes: bytes, *, api_key: str) -> dict:
         # 续跑时断点里的前 4 页在请求之前就公布了

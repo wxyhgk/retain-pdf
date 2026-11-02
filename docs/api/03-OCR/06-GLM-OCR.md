@@ -74,4 +74,10 @@ OCR 做完时翻译也基本翻完，接着渲染。
 | `ocr/normalized/document.v1.json` | 归一化后的文档（`source.provider` 是 `glm_ocr`） |
 | `md/full.md`、`md/images/` | 整份 markdown 和裁好的图片 |
 
+各任务共用的分片缓存（2026-11-02）：每片的原始结果另存一份到输出目录（`OUTPUT_ROOT`，开发栈是 `data/jobs/`）下的
+`_glm_ocr_chunk_cache/<原文 sha256>/glm-ocr-p<分片页数>/`，文件名和任务目录里的一样。OCR 中途失败、超时、被重启打断以后，
+重试新建的任务、同一份文件再建的任务都先从这里取，已经识别过的片不再请求、不再计费（日志 `glm-ocr: … shared=<命中片数>`），
+任务目录里照旧有全部原始片。原文、模型、分片页数任何一个不同就对不上；页数不对、读不出来的缓存片会重新请求。
+每页约 9 KB，不自动清理；要清就删整个目录。
+
 实现见 `backend/pipeline/retainpdf_pipeline/ocr/ocr_provider/README.md` 的「智谱 GLM-OCR」一节。
