@@ -889,6 +889,7 @@
         "devtools/tests/translation/test_glossary_usage.py",
         "devtools/tests/translation/test_group_completion_parasite.py",
         "devtools/tests/translation/test_group_neighbor_leak_trimming.py",
+        "devtools/tests/translation/test_group_precedence.py",
         "devtools/tests/translation/test_group_split_formula_gaps.py",
         "devtools/tests/translation/test_group_split_formulas.py",
         "devtools/tests/translation/test_group_split_sentence_boundaries.py",

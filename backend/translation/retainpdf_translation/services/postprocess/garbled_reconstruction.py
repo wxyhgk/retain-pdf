@@ -1,4 +1,5 @@
 from __future__ import annotations
+from retainpdf_translation.core.payload.parts.common import is_aggregate_geometry_group_unit
 from retainpdf_translation.llm.shared.executor_context import scoped_request
 
 import json
@@ -14,7 +15,6 @@ from retainpdf_translation.core.payload.formula_protection import restore_protec
 from retainpdf_translation.core.payload.parts.apply import apply_group_translated_entry
 from retainpdf_translation.core.payload.parts.apply import apply_reconstructed_unit_text
 from retainpdf_translation.core.payload.parts.common import effective_translation_unit_id
-from retainpdf_translation.core.payload.parts.common import item_has_multi_member_group_unit
 from retainpdf_translation.core.payload.parts.diagnostics import record_translation_diagnostics
 from retainpdf_translation.core.payload.parts.final_status import TRANSLATED_STATUS
 from retainpdf_translation.core.payload.parts.final_status import set_final_status
@@ -313,10 +313,7 @@ def _candidate_key(item: dict) -> str:
 
 
 def _is_aggregate_geometry_group(item: dict) -> bool:
-    return (
-        str(item.get("translation_group_strategy", "") or "").strip() == "aggregate_geometry"
-        and item_has_multi_member_group_unit(item)
-    )
+    return is_aggregate_geometry_group_unit(item)
 
 
 def _validate_reconstruction(item: dict, translated_text: str) -> list:

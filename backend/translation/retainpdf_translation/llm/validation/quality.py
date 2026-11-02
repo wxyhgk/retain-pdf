@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from retainpdf_translation.core.payload.parts.common import is_group_unit_id
 from collections import Counter
 from dataclasses import dataclass
 import re
@@ -375,9 +376,9 @@ def _source_looks_incomplete(text: str) -> bool:
 
 
 def _is_continuation_item(item: dict) -> bool:
-    return bool(str(item.get("continuation_group", "") or "").strip()) or str(
-        item.get("translation_unit_id", "") or ""
-    ).startswith("__cg__:")
+    return bool(str(item.get("continuation_group", "") or "").strip()) or is_group_unit_id(
+        str(item.get("translation_unit_id", "") or "")
+    )
 
 
 def _context_bleed_leaked_math(item: dict, source_text: str, translated_text: str) -> list[str]:

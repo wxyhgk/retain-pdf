@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from .common import effective_group_id
 from .common import existing_group_unit_id
 from .common import group_key
 from .common import group_unit_id
@@ -19,12 +20,9 @@ def _effective_group_unit_id(members: list[dict]) -> str:
     if len(existing_ids) == 1:
         return existing_ids[0]
     for member in members:
-        group_id = str(member.get("continuation_group", "") or "").strip()
+        _source, group_id = effective_group_id(member)
         if group_id:
             return group_unit_id(group_id)
-        translation_group_id = str(member.get("translation_group_id", "") or "").strip()
-        if translation_group_id:
-            return group_unit_id(translation_group_id)
     return existing_ids[0] if existing_ids else ""
 
 

@@ -1,3 +1,4 @@
+from retainpdf_translation.core.payload.parts.common import is_group_unit_id
 """Transport selection and local policy only; no clients, runtime or scheduling imports."""
 import os
 import re
@@ -29,7 +30,7 @@ def is_isolated_single_unit(item):
     续段组成员只是整段的一截，不能单独给译文或单独保留原文。
     """
     return not (item.get("continuation_group") or item.get("translation_group_id") or item.get("translation_unit_kind") == "group"
-                or str(item.get("translation_unit_id", "")).startswith("__cg__:")
+                or is_group_unit_id(str(item.get("translation_unit_id", "")))
                 or len(item.get("translation_unit_member_ids") or []) > 1
                 or any(item.get(key) for key in ("formula_map", "protected_map", "translation_unit_formula_map",
                                                  "translation_unit_protected_map", "group_formula_map", "group_protected_map")))

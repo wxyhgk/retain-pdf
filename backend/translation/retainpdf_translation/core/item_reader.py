@@ -181,12 +181,22 @@ def item_is_plain_text_block(item: dict | None) -> bool:
     return is_plain_text(from_flat_item(item))
 
 
+# 同页摘要组（core/orchestration/abstract_groups.py）：几块一起翻、译文按块分开，不参与接续
+AGGREGATE_GEOMETRY_GROUP_STRATEGY = "aggregate_geometry"
+
+
+def item_is_aggregate_geometry_member(item: dict | None) -> bool:
+    return str((item or {}).get("translation_group_strategy", "") or "").strip() == AGGREGATE_GEOMETRY_GROUP_STRATEGY
+
+
 def item_is_bodylike(item: dict | None) -> bool:
     profile = from_flat_item(item)
     return is_plain_text(profile) and is_bodylike(profile)
 
 
 __all__ = [
+    "AGGREGATE_GEOMETRY_GROUP_STRATEGY",
+    "item_is_aggregate_geometry_member",
     "item_asset_id",
     "item_bbox",
     "item_block_class",

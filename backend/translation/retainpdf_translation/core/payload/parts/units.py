@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from retainpdf_translation.core.item_reader import item_is_aggregate_geometry_member
 from retainpdf_translation.core.item_reader import item_block_class
 from retainpdf_translation.core.item_reader import item_block_kind
 from retainpdf_translation.core.item_reader import item_source_text
@@ -171,11 +172,7 @@ def _formula_segment_count(source_text: str) -> int:
 def _is_heavy_group(combined_source: str, items: list[dict]) -> tuple[bool, str]:
     segment_count = _formula_segment_count(combined_source)
     continuation_group = str(items[0].get("continuation_group", "") or "").strip() if items else ""
-    aggregate_geometry_group = (
-        str(items[0].get("translation_group_strategy", "") or "").strip() == "aggregate_geometry"
-        if items
-        else False
-    )
+    aggregate_geometry_group = item_is_aggregate_geometry_member(items[0]) if items else False
     if segment_count > HEAVY_GROUP_MAX_FORMULA_SEGMENTS:
         return True, "formula_heavy_group"
     if segment_count > FORMULA_SEGMENT_WINDOW_TARGET_COUNT:

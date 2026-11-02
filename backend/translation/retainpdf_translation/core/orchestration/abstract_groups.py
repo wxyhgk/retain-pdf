@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from retainpdf_translation.core.item_reader import AGGREGATE_GEOMETRY_GROUP_STRATEGY
 from retainpdf_translation.core.item_reader import item_layout_role
 from retainpdf_translation.core.item_reader import item_semantic_role
 from retainpdf_translation.core.item_reader import item_structure_role
 
 
 ABSTRACT_TRANSLATION_GROUP_KIND = "abstract"
-AGGREGATE_GEOMETRY_GROUP_STRATEGY = "aggregate_geometry"
 ABSTRACT_GROUP_ID_PREFIX = "abstract:"
 
 _TRANSLATION_RESULT_FIELDS = (
