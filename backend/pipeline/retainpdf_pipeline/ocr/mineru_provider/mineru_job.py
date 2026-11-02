@@ -5,11 +5,11 @@ import shutil
 from pathlib import Path
 
 from retainpdf_pipeline.foundation.shared.job_dirs import create_job_dirs
-from retainpdf_base.local_env import get_secret
 from retainpdf_pipeline.ocr.mineru_provider.artifacts import download_file
 from retainpdf_pipeline.ocr.mineru_provider.artifacts import unpack_zip
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import MINERU_ENV_FILE
-from retainpdf_pipeline.ocr.mineru_provider.mineru_api import MINERU_TOKEN_ENV
+from retainpdf_pipeline.ocr.mineru_provider.mineru_api import missing_mineru_token_message
+from retainpdf_pipeline.ocr.mineru_provider.mineru_api import resolve_mineru_token
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import apply_upload_url
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import create_extract_task
 from retainpdf_pipeline.ocr.mineru_provider.mineru_api import find_extract_result_in_batch
@@ -30,7 +30,7 @@ def parse_args() -> argparse.Namespace:
     source_group.add_argument("--file-url", type=str, default="", help="Remote PDF URL for MinerU parsing.")
     source_group.add_argument("--file-path", type=str, default="", help="Local PDF path for MinerU parsing.")
 
-    parser.add_argument("--token", type=str, default="", help=f"MinerU API token. Prefer scripts/.env/{MINERU_ENV_FILE}.")
+    parser.add_argument("--token", type=str, default="", help=f"MinerU API token. Prefer backend/pipeline/.env/{MINERU_ENV_FILE}.")
     parser.add_argument("--model-version", type=str, default="vlm", help="pipeline | vlm | MinerU-HTML")
     parser.add_argument("--is-ocr", action="store_true", help="Enable OCR.")
     parser.add_argument("--disable-formula", action="store_true", help="Disable formula recognition.")
@@ -61,13 +61,9 @@ def copy_local_source_pdf(file_path: Path, origin_dir: Path) -> Path:
 
 def main() -> None:
     args = parse_args()
-    token = get_secret(
-        explicit_value=args.token,
-        env_var=MINERU_TOKEN_ENV,
-        env_file_name=MINERU_ENV_FILE,
-    )
+    token = resolve_mineru_token(args.token)
     if not token:
-        raise RuntimeError(f"Missing MinerU token. Set --token, scripts/.env/{MINERU_ENV_FILE}, or env {MINERU_TOKEN_ENV}.")
+        raise RuntimeError(missing_mineru_token_message("--token"))
 
     job_dirs = create_job_dirs(Path(args.output_root), args.job_id.strip() or None)
     extra_formats = parse_extra_formats(args.extra_formats)
