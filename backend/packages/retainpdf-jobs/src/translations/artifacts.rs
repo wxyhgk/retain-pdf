@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use serde_json::Value;
 
@@ -32,7 +32,12 @@ pub(super) fn translation_manifest_path(
         .ok_or_else(|| AppError::not_ready("translation manifest"))
 }
 
-pub(super) fn load_manifest_pages(
+/// 翻译清单里的每一页：(页号, 清单里写的相对路径, 这一页的条目)。阅读区块和译文列表、单条译文都读它
+/// （2026-11-02 以前阅读区块另有一份，报错说法和返回形状已经走样）。
+///
+/// 清单里的路径必须在清单所在的目录里面：Python 写的时候只写相对路径、读的时候拒绝绝对路径和跳出去的路径
+/// （`core/payload/manifest.py`），这边以前都放行。
+pub(crate) fn load_manifest_pages(
     manifest_path: &Path,
 ) -> Result<Vec<(i64, String, Vec<Value>)>, AppError> {
     let manifest = read_json_value(manifest_path)?;
@@ -56,14 +61,57 @@ pub(super) fn load_manifest_pages(
         if rel_path.is_empty() {
             continue;
         }
-        let payload_path = if Path::new(&rel_path).is_absolute() {
-            PathBuf::from(&rel_path)
-        } else {
-            base_dir.join(&rel_path)
-        };
+        let relative = Path::new(&rel_path);
+        if relative
+            .components()
+            .any(|part| !matches!(part, Component::Normal(_) | Component::CurDir))
+        {
+            return Err(AppError::internal(format!(
+                "translation manifest page {page_idx} points outside the translation directory: {rel_path}"
+            )));
+        }
+        let payload_path: PathBuf = base_dir.join(relative);
         let page_payload = read_json_value(&payload_path)?;
         let items = page_payload.as_array().cloned().unwrap_or_default();
         result.push((page_idx, rel_path, items));
     }
     Ok(result)
+}
+
+#[cfg(test)]
+mod manifest_path_tests {
+    use super::load_manifest_pages;
+
+    fn manifest_with(dir: &std::path::Path, path: &str) -> std::path::PathBuf {
+        std::fs::create_dir_all(dir).unwrap();
+        std::fs::write(dir.join("page-001.json"), r#"[{"item_id": "p001-b000"}]"#).unwrap();
+        let manifest = dir.join("translation-manifest.json");
+        std::fs::write(
+            &manifest,
+            format!(r#"{{"pages": [{{"page_index": 0, "path": "{path}"}}]}}"#),
+        )
+        .unwrap();
+        manifest
+    }
+
+    #[test]
+    fn pages_are_read_relative_to_the_manifest() {
+        let dir = std::env::temp_dir().join(format!("retainpdf-manifest-ok-{}", fastrand::u64(..)));
+        let pages = load_manifest_pages(&manifest_with(&dir, "./page-001.json")).unwrap();
+        assert_eq!(pages.len(), 1);
+        assert_eq!(pages[0].0, 0);
+        assert_eq!(pages[0].2.len(), 1);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_page_path_outside_the_translation_directory_is_refused() {
+        // Python 写清单只写相对路径、读的时候拒绝跳出去的（core/payload/manifest.py），这边以前照读。
+        let dir = std::env::temp_dir().join(format!("retainpdf-manifest-escape-{}", fastrand::u64(..)));
+        for path in ["../outside.json", "/etc/hosts"] {
+            let error = load_manifest_pages(&manifest_with(&dir, path)).unwrap_err();
+            assert!(error.to_string().contains("outside the translation directory"), "{path}: {error}");
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }
