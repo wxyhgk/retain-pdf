@@ -792,6 +792,7 @@
         "retainpdf_pipeline/render/layout/inline_content/fallback/placeholder_markdown.py",
         "retainpdf_pipeline/render/layout/inline_content/fallback/png_renderer.py",
         "retainpdf_pipeline/render/layout/payload/formula_cost.py",
+        "retainpdf_pipeline/render/layout/text_analysis/service.py",
         "retainpdf_pipeline/render/output/typst/shared.py"
       ],
       "devtool_files": [],
