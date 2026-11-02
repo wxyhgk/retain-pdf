@@ -35,9 +35,9 @@ class RenderExecutionContext:
     overlay_source_path: Path | None = None
     no_cache: bool = False
     visual_cover_page_indices: frozenset[int] = frozenset()
-    # render.engine：typst（现有路线）| rpr（自研排版引擎，失败自动回退 typst）
+    # render.engine：rpr_fit（自研排版引擎，默认，失败自动回退 typst）| typst
     render_engine: str = "typst"
-    # OCR 规范化文档（obstacles 的来源）；只有 rpr 路线读它
+    # OCR 规范化文档；只有 rpr_fit 路线读它
     document_path: Path | None = None
     # 渲染准备步骤的缓存目录（<job>/artifacts/render_prepare，见 render/prepare/store.py）；
     # None = 不跨次缓存（各路线在自己的工作目录里临时做）。

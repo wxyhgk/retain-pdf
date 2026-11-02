@@ -1,6 +1,6 @@
 """rpr_fit 引擎渲染路线：字号由引擎按测量决定，不走 retain-pdf 的 page_specs / Typst 缩字。
 
-和 rpr 路线（retain-pdf 定字号与缩字许可，引擎只按它排）不同，这里把任务自己的数据交给
+字号不走 retain-pdf 的规则（以前的 rpr 路线是 retain-pdf 定字号、引擎只按它排，2026-11-02 删了），这里把任务自己的数据交给
 引擎（``bin/rpr-fit.js``，fit-model 的 retain 规则）：
 
 - 输入：document.v1（OCR 框、行盒、块类型）、译文条目、visual_profile（底色 / 文字色）、
@@ -67,7 +67,7 @@ def _engine_text(item: dict) -> str:
     """一条译文在 retain-pdf 里真正要排出来的文字，转成引擎的格式。
 
     与其它路线同一步：seed_render_fields（占位符还原、与原文相同则不排、行间公式跳过……）
-    → build_item_render_markdown（HTML 上下标等标记、公式修复）→ 引擎文本（rpr 路线的
+    → build_item_render_markdown（HTML 上下标等标记、公式修复）→ 引擎文本（output/rpr/text.py 的
     markdown_to_engine_text）。直接用译文条目的 translated_text 会把 <sup>…</sup> 之类的
     标记原样印出来。没有可排的文字时返回空串：引擎把这一块当保留元素。
     """

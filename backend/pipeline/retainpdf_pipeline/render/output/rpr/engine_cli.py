@@ -2,7 +2,7 @@
 
 引擎以子进程 CLI 运行，输入输出走 JSON 文件（契约见 backend/rendering-engine/README.md）：
 
-    node <engine>/bin/rpr-retain.js --input <in.json> --out-dir <DIR> --output pdf [--font-path <dir>]...
+    node <engine>/bin/rpr-fit.js --input <in.json> --out-dir <DIR> --output pdf [--font-path <dir>]...
 
 引擎自己写 PDF（不经过 Typst）；``RETAIN_RPR_ENGINE_OUTPUT=typst`` 时改用引擎的 Typst 输出
 （对照用，需要 typst）。
@@ -43,7 +43,7 @@ ENGINE_OUTPUT_ENV_VAR = "RETAIN_RPR_ENGINE_OUTPUT"
 ENGINE_OUTPUTS = ("pdf", "typst")
 MIN_NODE_VERSION = (22, 8, 0)
 DEFAULT_TIMEOUT_SECONDS = 1800
-ENGINE_ENTRY_RELATIVE = Path("engine") / "bin" / "rpr-retain.js"
+ENGINE_ENTRY_RELATIVE = Path("engine") / "bin" / "rpr-fit.js"
 ENGINE_PACKAGE_RELATIVE = Path("engine") / "package.json"
 # 运行时 npm 依赖（backend/rendering-engine/package.json）：公式与写 PDF 时的字体。
 RUNTIME_PACKAGES = ("mathjax-full", "fontkit")
@@ -160,8 +160,9 @@ def _engine_version(engine_dir: Path) -> str:
     return f"{version}+{commit}" if version and commit else version
 
 
-def resolve_engine_runtime(entry_script: str = "rpr-retain.js") -> RprEngineRuntime:
-    """entry_script：rpr-retain.js（rpr：retain-pdf 定字号）或 rpr-fit.js（rpr_fit：引擎测量定字号）。"""
+def resolve_engine_runtime(entry_script: str = "rpr-fit.js") -> RprEngineRuntime:
+    """entry_script：引擎的入口脚本，rpr_fit 用 rpr-fit.js（引擎测量定字号）。以前还有 rpr 路线用的
+    rpr-retain.js（retain-pdf 定字号），2026-11-02 删了；引擎包里那个入口还在，这边不再调用。"""
     engine_dir = resolve_engine_dir()
     entry = engine_dir / ENGINE_ENTRY_RELATIVE.parent / entry_script
     if not entry.is_file():

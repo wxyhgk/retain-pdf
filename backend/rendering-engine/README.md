@@ -1,4 +1,4 @@
-# rpr 排版引擎（render.engine = "rpr"）
+# rpr 排版引擎（render.engine = "rpr_fit"）
 
 `engine/` 是 [retain-pdf-rendering](https://github.com/wxyhgk/retain-pdf-rendering)（MIT）运行时文件的**复制品**，
 固定在 `UPSTREAM` 记录的提交上。不用 npm git 依赖或子模块：Docker 镜像和桌面包构建时不能依赖联网拉 GitHub。
@@ -21,7 +21,7 @@ cd backend/rendering-engine
 npm ci --omit=dev --ignore-scripts   # 装 mathjax-full、fontkit 到 ./node_modules（已被 gitignore）
 ```
 
-没装的话 rpr 路线会回退 Typst（`pipeline_summary.render_engine.fallback_reason = engine_dependencies_missing`），任务不失败。
+没装的话引擎路线会回退 Typst（`pipeline_summary.render_engine.fallback_reason = engine_dependencies_missing`），任务不失败。
 
 同步新版本引擎：
 
@@ -46,10 +46,11 @@ backend/rendering-engine/sync.sh <ref> <引擎仓库路径>
 ## CLI 契约
 
 ```
-node engine/bin/rpr-retain.js --input in.json --out-dir DIR [--output pdf|typst] [--typst BIN] [--font-path DIR]...
+node engine/bin/rpr-fit.js --input in.json --out-dir DIR [--output pdf|typst] [--typst BIN] [--font-path DIR]...
 ```
 
-输入 `rpr_retain_input_v1`、输出 `DIR/overlay.pdf` + `DIR/report.json`（`rpr_retain_report_v1`），
+输入 `rpr_fit_input_v1`、输出 `DIR/overlay.pdf` + `DIR/report.json`（`rpr_fit_report_v1`）。`bin/rpr-retain.js`
+（`rpr_retain_input_v1`，retain-pdf 定字号）还在引擎包里，retain-pdf 2026-11-02 起不再调用。
 细节见引擎仓库 README 的「retain-pdf 接入（CLI）」一节。退出码 0 成功；2 输入错误；1 其他，stderr 一行 `{"error": "..."}`。
 
 ## 调试：layout.json

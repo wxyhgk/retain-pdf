@@ -12,19 +12,11 @@
           "engine": "typst"
         },
         {
-          "name": "rpr",
-          "engine": "rpr"
-        },
-        {
           "name": "rpr-fit",
           "engine": "rpr_fit"
         }
       ],
       "pairs": [
-        [
-          "typst",
-          "rpr"
-        ],
         [
           "typst",
           "rpr-fit"
@@ -45,19 +37,11 @@
           "engine": "typst"
         },
         {
-          "name": "rpr",
-          "engine": "rpr"
-        },
-        {
           "name": "rpr-fit",
           "engine": "rpr_fit"
         }
       ],
       "pairs": [
-        [
-          "typst",
-          "rpr"
-        ],
         [
           "typst",
           "rpr-fit"
@@ -82,23 +66,11 @@
           "render_mode": "typst"
         },
         {
-          "name": "rpr-overlay",
-          "engine": "rpr"
-        },
-        {
           "name": "rpr-fit-overlay",
           "engine": "rpr_fit"
         }
       ],
       "pairs": [
-        [
-          "typst-overlay",
-          "rpr-overlay"
-        ],
-        [
-          "typst-typstmode",
-          "rpr-overlay"
-        ],
         [
           "typst-overlay",
           "rpr-fit-overlay"

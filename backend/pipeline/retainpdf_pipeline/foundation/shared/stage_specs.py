@@ -15,12 +15,14 @@ NORMALIZE_STAGE_SCHEMA_VERSION = "normalize.stage.v1"
 TRANSLATE_STAGE_SCHEMA_VERSION = "translate.stage.v1"
 RENDER_STAGE_SCHEMA_VERSION = "render.stage.v1"
 RENDER_PREPARE_STAGE_SCHEMA_VERSION = "render_prepare.stage.v1"
-# render.engine：rpr_fit / rpr = 自研排版引擎（retain-pdf-rendering），typst = 原 Typst 路线。缺省 / 未知值用 DEFAULT_RENDER_ENGINE。
+# render.engine：rpr_fit = 自研排版引擎（retain-pdf-rendering），typst = 原 Typst 路线。缺省 / 未知值用 DEFAULT_RENDER_ENGINE。
 RENDER_ENGINE_TYPST = "typst"
-RENDER_ENGINE_RPR = "rpr"
-# rpr_fit：字号也由 rpr 引擎按测量决定（fit-model 的 retain 规则），不走 retain-pdf 的缩字规则。
+# rpr_fit：字号由 rpr 引擎按测量决定（fit-model 的 retain 规则），不走 retain-pdf 的缩字规则。
 RENDER_ENGINE_RPR_FIT = "rpr_fit"
-RENDER_ENGINES = (RENDER_ENGINE_TYPST, RENDER_ENGINE_RPR, RENDER_ENGINE_RPR_FIT)
+RENDER_ENGINES = (RENDER_ENGINE_TYPST, RENDER_ENGINE_RPR_FIT)
+# 旧取值 rpr（同一引擎、字号用 retain-pdf 的规则，只用来对比，界面从没放出来）2026-11-02 删了；
+# 接口照旧收（Rust 的 RENDER_ENGINES 里还有它，老任务的请求里也有），这里按 rpr_fit 处理。
+LEGACY_RENDER_ENGINE_ALIASES = {"rpr": RENDER_ENGINE_RPR_FIT}
 # 默认排版路线：自研引擎测量定字号、直接写 PDF（与 Rust retainpdf-core DEFAULT_RENDER_ENGINE 一致）。
 # 引擎不可用或失败时照旧回退 Typst 路线。
 DEFAULT_RENDER_ENGINE = RENDER_ENGINE_RPR_FIT
@@ -58,6 +60,7 @@ def build_stage_invocation_metadata(
 
 def normalize_render_engine(value: Any) -> str:
     engine = str(value or "").strip().lower()
+    engine = LEGACY_RENDER_ENGINE_ALIASES.get(engine, engine)
     return engine if engine in RENDER_ENGINES else DEFAULT_RENDER_ENGINE
 
 

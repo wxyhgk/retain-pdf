@@ -424,7 +424,7 @@ Render options:
 - `bbox_text_strip` and `legacy` are compatibility aliases for the pikepdf text-strip path
 - `redact_restore_formulas` is a compatibility alias for the current `pikepdf_text_strip` behavior; keep the name only for old configs/spec replay and do not treat it as a separate formula restore strategy
 - `render.inner_bbox_shrink_x`, `render.inner_bbox_shrink_y`, `render.inner_bbox_dense_shrink_x`, and `render.inner_bbox_dense_shrink_y` default to `0.0`
-- `render.engine` defaults to `typst`; `rpr` selects the experimental in-house typesetting engine (retain-pdf-rendering). `dual` mode, a non-Source-Han-Serif font, an unavailable Node (>= 22.8 required) or an engine failure fall back to `typst` with a warning in `pipeline_summary` and `fit_report.reason`; the job does not fail
+- `render.engine` defaults to `rpr_fit`, the in-house typesetting engine (retain-pdf-rendering) that measures and picks font sizes itself; `typst` selects the original Typst route. The old value `rpr` is still accepted and rendered as `rpr_fit` (its own route was removed on 2026-11-02). `dual` mode, a non-Source-Han-Serif font, an unavailable Node (>= 22.8 required) or an engine failure fall back to `typst` with a warning in `pipeline_summary` and `fit_report.reason`; the job does not fail
 
 Validation:
 
