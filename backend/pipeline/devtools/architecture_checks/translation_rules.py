@@ -47,7 +47,6 @@ TRANSLATION_WORKFLOW_ALLOWED_DIRS = {
     ".ipynb_checkpoints",
     "batching",
     "checkpoint",
-    "legacy",
     "phases",
     "scheduling",
 }
@@ -125,14 +124,6 @@ TRANSLATION_WORKFLOW_SUBPACKAGE_RULES: dict[str, tuple[str, ...]] = {
         "retainpdf_translation.services.memory",
         "retainpdf_translation.services.results",
     ),
-    "legacy": (
-        "retainpdf_translation.workflow.legacy",
-        "retainpdf_translation.core.payload",
-        "retainpdf_translation.llm.shared.orchestration",
-        "retainpdf_translation.llm.shared.provider_runtime",
-        "retainpdf_translation.services.continuation",
-        "retainpdf_translation.services.policy",
-    ),
 }
 TRANSLATION_WORKFLOW_PRIVATE_IMPORT_EXCEPTIONS: dict[Path, tuple[str, ...]] = {
     # Compatibility facades intentionally re-export old private names while callers migrate.
@@ -188,7 +179,6 @@ TRANSLATION_LAYER_IMPORT_RULES: dict[str, tuple[str, ...]] = {
     "workflow": (
         "retainpdf_translation.workflow",
         "retainpdf_translation.workflow.batching",
-        "retainpdf_translation.workflow.legacy",
         "retainpdf_translation.workflow.phases",
         "retainpdf_translation.workflow.scheduling",
         "retainpdf_translation.services.classification",

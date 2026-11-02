@@ -20,7 +20,6 @@ from retainpdf_pipeline.render.layout.model.models import RenderLayoutBlock
 from retainpdf_pipeline.render.layout.model.models import RenderPageSpec
 from retainpdf_pipeline.render.layout.title_fit import apply_title_fit_budget_to_render_blocks
 from retainpdf_pipeline.render.policy import apply_render_pages_policy_fields
-from retainpdf_pipeline.render.layout.typography_memory.learning import observe_payload_typography
 from retainpdf_pipeline.foundation.config import layout
 
 RenderPageSpecProgressCallback = Callable[[int, int, int], None]
@@ -120,7 +119,6 @@ def _layout_single_page_spec_job(
         page_text_width_med=med,
         book_body_font_target=font_target,
         background_pdf_path=Path(background_pdf) if background_pdf is not None else None,
-        observe_typography=False,
     )
     return page_index, spec, ordered_payloads
 
@@ -143,7 +141,6 @@ def _layout_page_spec(
         page_text_width_med=page_text_width_med,
         book_body_font_target=book_body_font_target,
         background_pdf_path=background_pdf_path,
-        observe_typography=True,
     )
     return spec
 
@@ -157,7 +154,6 @@ def _layout_page_spec_with_payloads(
     page_text_width_med: float,
     book_body_font_target: float | None,
     background_pdf_path: Path | None,
-    observe_typography: bool,
 ) -> tuple[RenderPageSpec, list[dict]]:
     # Reading-order-first (double-column): global sorted((y, x)) interleaves
     # the right-column top into the left column. Bbox is in-column fallback.
@@ -170,8 +166,6 @@ def _layout_page_spec_with_payloads(
     if layout.FONT_UNIFY_MODE != "off":
         unify_annotation_fonts(ordered_payloads)
     mark_adjacent_collision_risk(ordered_payloads)
-    if observe_typography:
-        observe_payload_typography(ordered_payloads)
     blocks = [
         _layout_block_from_render_block(block, page_index=page_index)
         for block in emit_render_blocks(block_payloads)
@@ -287,21 +281,17 @@ def build_render_page_specs_from_page_sizes(
             for page_index, _items, _w, _h in ordered_inputs
         }
         spec_by_page: dict[int, RenderPageSpec] = {}
-        payloads_by_page: dict[int, list[dict]] = {}
         completed = 0
         total_pages = len(ordered_inputs)
         for future in as_completed(phase_b):
-            page_index, spec, ordered_payloads = future.result()
+            page_index, spec, _ordered_payloads = future.result()
             spec_by_page[page_index] = spec
-            payloads_by_page[page_index] = ordered_payloads
             completed += 1
             if on_page_spec_built is not None:
                 # Arrival order, not page order: `completed` stays monotonic,
                 # `page_index` follows finish order. No production caller
                 # consumes this callback today.
                 on_page_spec_built(completed, total_pages, page_index)
-    for page_index in sorted(payloads_by_page):
-        observe_payload_typography(payloads_by_page[page_index])
     return [spec_by_page[page_index] for page_index, _items, _w, _h in ordered_inputs]
 
 

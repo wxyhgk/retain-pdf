@@ -10,7 +10,7 @@ import sys
 sys.path.append(str(Path(__file__).resolve().parents[3]))
 
 from retainpdf_pipeline.ocr.mineru_provider.contracts import MINERU_LAYOUT_JSON_FILE_NAME
-from retainpdf_pipeline.render.legacy.typst_page_renderer import build_book_typst_pdf
+from retainpdf_pipeline.render.output.typst import build_book_typst_pdf
 
 
 def parse_args() -> argparse.Namespace:

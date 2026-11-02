@@ -26,7 +26,7 @@ if str(PIPELINE_ROOT) not in sys.path:
 #
 # `foundation/config/paths.py` 在 import 时就把 OUTPUT_DIR 定下来，再由它派生出
 # TRANSLATIONS_DIR / TRANSLATION_UNIT_CACHE_DIR / ... 一串模块级常量，`foundation
-# /config/__init__.py`、`foundation/shared/config.py`、`typography_memory/store.py`
+# /config/__init__.py`、`foundation/shared/config.py`
 # 又把这些常量按值再导出一遍。也就是说，等测试跑起来再 monkeypatch
 # `paths.OUTPUT_DIR`，那些副本一个都跟不上——产物照旧落进仓库的 `data/`。
 #
@@ -51,7 +51,6 @@ _OUTPUT_DIR_DERIVED = {
     "TRANSLATION_UNIT_CACHE_DIR": "_translation_unit_cache",
     "DOMAIN_CONTEXT_CACHE_DIR": "_domain_context_cache",
     "AGENT_REQUEST_CACHE_DIR": "_agent_request_cache",
-    "RENDER_TYPOGRAPHY_MEMORY_DIR": "_render_typography_memory",
     "GLM_OCR_CHUNK_CACHE_DIR": "_glm_ocr_chunk_cache",
 }
 
@@ -72,9 +71,6 @@ def pytest_unconfigure(config: pytest.Config) -> None:
 
 @pytest.fixture(autouse=True)
 def _isolate_render_state(monkeypatch: pytest.MonkeyPatch):
-    # Offline tests must neither learn from nor write to real job history.
-    # Memory-specific tests explicitly enable their own temporary store.
-    monkeypatch.setenv("RETAIN_RENDER_TYPOGRAPHY_MEMORY", "0")
     # render_only applies tuning in-process. Restore it after each test so a
     # workflow test cannot change the baseline of subsequent layout tests.
     for name, value in vars(layout).items():

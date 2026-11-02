@@ -41,7 +41,6 @@ TRANSLATION_UNIT_CACHE_DIR = OUTPUT_DIR / "_translation_unit_cache"
 DOMAIN_CONTEXT_CACHE_DIR = OUTPUT_DIR / "_domain_context_cache"
 # 翻译 agent 的请求缓存（键是整个请求体的哈希）：各任务共用，重试翻译新建的任务也用得上
 AGENT_REQUEST_CACHE_DIR = OUTPUT_DIR / "_agent_request_cache"
-RENDER_TYPOGRAPHY_MEMORY_DIR = OUTPUT_DIR / "_render_typography_memory"
 # GLM-OCR 各片的原始结果（键是原文 sha256、模型、分片页数）：各任务共用，OCR 中断后新建、重试的任务不再为做过的页付钱
 GLM_OCR_CHUNK_CACHE_DIR = OUTPUT_DIR / "_glm_ocr_chunk_cache"
 
