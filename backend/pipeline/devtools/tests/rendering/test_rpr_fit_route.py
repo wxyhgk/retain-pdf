@@ -178,6 +178,89 @@ def test_rpr_fit_keeps_a_page_with_nothing_to_translate(tmp_path: Path, monkeypa
         output.close()
 
 
+@pytest.mark.parametrize("mode", ["overlay", "typst"])
+def test_a_block_whose_formula_did_not_render_keeps_the_original(tmp_path: Path, monkeypatch, mode: str) -> None:
+    # 481 页的书第 379 页（2026-11-02）：`$` 不成对，引擎没把它当公式，也不报，整段 LaTeX 印在页面上，
+    # 原来的图被盖掉。另一种是 MathJax 报错（`Misplaced &`），引擎同样原样印出 tex。
+    # 这两种块改成保留原文、引擎重排一次，原件的那一块盖回去。
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path, texts=("RAWTEX \\frac{a}{b} end", "MJFAIL $x^{2} & y$"))
+    for page_items in translated.values():
+        page_items[0]["bbox"] = [10, 30, 280, 80]
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    report_path = tmp_path / "artifacts" / "fit_report.v1.json"
+    with fit_report_scope(report_path):
+        pages, diagnostics, calls = _dispatch(context, mode=mode, source_pdf_path=source_pdf, translated_pages=translated)
+    assert calls == [], diagnostics.get("render_engine_fallback_message")
+    check = diagnostics["rpr_fit_formula_check"]
+    assert [(entry["item_id"], entry["reasons"]) for entry in check["kept_origin"]] == [
+        ("p001-b001", ["visible_latex"]),
+        ("p002-b001", ["mathjax_failed", "visible_latex"]),
+    ]
+    assert check["remaining"] == [] and check["mathjax_failed"] == 1
+    # 重排时这两块交给引擎的是空的（保留元素）
+    work = Path(diagnostics["rpr_work_dir"])
+    items = json.loads((work / "translations.json").read_text(encoding="utf-8"))
+    assert [item["translated_text"] for item in items] == ["", ""]
+    output = fitz.open(context.output_pdf_path)
+    try:
+        for index in (0, 1):
+            text = output[index].get_text()
+            assert "\\frac" not in text and "x^{2}" not in text, text
+            assert f"source text {index}" in text, "the original block is back"
+    finally:
+        output.close()
+    fit_report = json.loads(report_path.read_text(encoding="utf-8"))
+    assert fit_report["summary"]["math_failed"] == 1
+    assert fit_report["summary"]["math_kept_origin"] == 2
+    assert fit_report["summary"]["math_visible_latex"] == 0
+    assert [entry["item_id"] for entry in fit_report["math"]["kept_origin"]] == ["p001-b001", "p002-b001"]
+
+
+def test_formulas_that_rendered_need_no_second_pass(tmp_path: Path, monkeypatch) -> None:
+    install_fake_rpr_engine(tmp_path / "engine", monkeypatch)
+    source_pdf, document_path, translated = _job(tmp_path)
+    context = _context(tmp_path, document_path=document_path, indent_detection_pdf_path=source_pdf)
+    _pages, diagnostics, _calls = _dispatch(context, mode="typst", source_pdf_path=source_pdf, translated_pages=translated)
+    check = diagnostics["rpr_fit_formula_check"]
+    assert check["kept_origin"] == [] and check["remaining"] == []
+    assert not (Path(diagnostics["rpr_work_dir"]) / "out-formula-kept").exists()
+
+
+def test_visible_latex_ignores_the_invisible_copy_layer_and_plain_dollars(tmp_path: Path) -> None:
+    from retainpdf_pipeline.render.output.rpr_fit.formula_check import visible_latex_spans
+
+    path = tmp_path / "page.pdf"
+    with fitz.open() as document:
+        page = document.new_page(width=300, height=200)
+        page.insert_text((20, 40), "price $22.00 and FORTRAN $ E(1,1)=F(1,1)", fontsize=8)
+        page.insert_text((20, 80), "\\frac{a}{b}", fontsize=8, render_mode=3)  # 公式旁边的复制层
+        page.insert_text((20, 120), "x_{i} printed raw", fontsize=8)
+        document.save(path)
+    with fitz.open(path) as document:
+        assert [text for _rect, text in visible_latex_spans(document[0])] == ["x_{i} printed raw"]
+
+
+def test_visible_latex_the_engine_reshaped_is_matched_by_the_box(tmp_path: Path) -> None:
+    # 引擎印出来的字和交给它的不完全一样（2026-11-02 一份电子版的矩阵：`\\begin{array}` 被预处理删了），
+    # 按文字对不上，按框对：落在哪个条目的框里就是哪个。
+    from retainpdf_pipeline.render.output.rpr_fit.formula_check import failed_formula_items
+
+    path = tmp_path / "out.pdf"
+    with fitz.open() as document:
+        page = document.new_page(width=300, height=400)
+        page.insert_text((20, 150), "\\left( 3 & 2 i \\right)", fontsize=8)
+        document.save(path)
+    items = [
+        {"item_id": "p001-b000", "page_idx": 0, "translated_text": "上面一段"},
+        {"item_id": "p001-b001", "page_idx": 0, "translated_text": "矩阵 $\\left(\\begin{array}{cc} 3 & 2i \\end{array}\\right)$"},
+        {"item_id": "p001-b002", "page_idx": 0, "translated_text": ""},
+    ]
+    bboxes = {"p001-b000": [10, 20, 290, 100], "p001-b001": [10, 120, 290, 200], "p001-b002": [10, 120, 290, 200]}
+    found = failed_formula_items(path, output_pages={0: 0}, items=items, bboxes=bboxes, mathjax_failed=[])
+    assert found == {"p001-b001": ["visible_latex"]}, "an item with nothing to lay out is not a candidate"
+
+
 def _indented_job(tmp_path: Path) -> tuple[Path, Path, dict[int, list[dict]]]:
     """一页三行的正文段，文字层里首行比其余行靠右 20pt（和 Word 排的论文一样）。"""
     source_pdf = tmp_path / "source.pdf"

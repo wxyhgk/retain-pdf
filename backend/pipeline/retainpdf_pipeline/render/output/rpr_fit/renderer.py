@@ -12,7 +12,10 @@
   未翻译文字）和矢量图形；
 - 叠加层合并到底图：底图就是渲染源（去文字层 PDF；扫描件是原件，由引擎画的底色盖住原文）。
   overlay 模式在原件上叠加、其余页原样保留（与 overlay 路线一致）；typst / typst_visual 模式
-  只输出要渲染的页（与 Typst 背景路线一致）。
+  只输出要渲染的页（与 Typst 背景路线一致）；
+- 查公式（``formula_check.py``，2026-11-02）：合并完看译文 PDF 上有没有看得见的 LaTeX、引擎报没报
+  MathJax 失败，有的话这些块改成保留原文、引擎重排一次，再把原件的那一块盖回去（要 ``original_pdf_path``，
+  上传的原文件；没给就只记下来不改）。
 
 任何失败都向上抛，由 workflow 层回退 Typst 路线。
 """
@@ -32,6 +35,7 @@ from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineFailed
 from retainpdf_pipeline.render.output.rpr.engine_cli import RprEngineRuntime
 from retainpdf_pipeline.render.output.rpr.engine_cli import run_engine
 from retainpdf_pipeline.render.output.rpr.text import markdown_to_engine_text
+from retainpdf_pipeline.render.output.rpr_fit import formula_check
 from retainpdf_pipeline.render.output.rpr_fit.report import build_rpr_fit_fit_report_payload
 from retainpdf_pipeline.render.output.typst.block_renderer import sanitize_typst_markdown_for_compile
 from retainpdf_pipeline.render.output.typst.book_support import prepare_background_work_dir
@@ -114,6 +118,7 @@ def build_book_rpr_fit_pdf(
     visual_profile_path: Path | None = None,
     obstacle_scan: dict[str, dict] | None = None,
     first_line_indents: dict[str, float] | None = None,
+    original_pdf_path: Path | None = None,
 ) -> dict[str, object]:
     if mode not in RPR_FIT_SUPPORTED_MODES:
         raise RprEngineFailed("mode_unsupported", f"rpr_fit 引擎不支持渲染模式 {mode!r}")
@@ -138,7 +143,6 @@ def build_book_rpr_fit_pdf(
     # 没有障碍物信息（引擎照常排，只是看不到框外的线条）。
     drawings = {str(index): (obstacle_scan or {})[str(index)] for index in page_indices if str(index) in (obstacle_scan or {})}
     diagnostics["rpr_fit_raster_pages"] = sorted(int(page) for page, data in drawings.items() if data.get("raster"))
-    (engine_dir / "translations.json").write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
     (engine_dir / "drawings.json").write_text(json.dumps(drawings), encoding="utf-8")
     payload = {
         "schema": RPR_FIT_INPUT_SCHEMA,
@@ -157,53 +161,103 @@ def build_book_rpr_fit_pdf(
     input_path = engine_dir / "rpr-fit-input.json"
     input_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
-    emit_render_compile_progress(
-        current=1,
-        total=3,
-        message=f"正在用 rpr 引擎测量排版（字号由引擎决定），共 {len(page_indices)} 页",
-        payload={"render_stage": "rpr_fit_engine_start", "render_engine": "rpr_fit"},
-    )
-    run = run_engine(runtime, input_path=input_path, out_dir=engine_dir / "out")
-    overlay_pages = _pdf_page_count(run.overlay_pdf)
-    if overlay_pages != len(page_indices):
-        raise RprEngineFailed(
-            "engine_output_invalid",
-            f"rpr_fit 叠加层页数 {overlay_pages} 与输入页数 {len(page_indices)} 不一致",
+    def render_pass(out_name: str):
+        emit_render_compile_progress(
+            current=1,
+            total=3,
+            message=f"正在用 rpr 引擎测量排版（字号由引擎决定），共 {len(page_indices)} 页",
+            payload={"render_stage": "rpr_fit_engine_start", "render_engine": "rpr_fit"},
         )
-    emit_render_compile_progress(
-        current=2,
-        total=3,
-        message="rpr 引擎测量排版完成，正在合并到底图",
-        payload={"render_stage": "rpr_fit_engine_done", "render_engine": "rpr_fit"},
-    )
+        (engine_dir / "translations.json").write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+        run = run_engine(runtime, input_path=input_path, out_dir=engine_dir / out_name)
+        overlay_pages = _pdf_page_count(run.overlay_pdf)
+        if overlay_pages != len(page_indices):
+            raise RprEngineFailed(
+                "engine_output_invalid",
+                f"rpr_fit 叠加层页数 {overlay_pages} 与输入页数 {len(page_indices)} 不一致",
+            )
+        emit_render_compile_progress(
+            current=2,
+            total=3,
+            message="rpr 引擎测量排版完成，正在合并到底图",
+            payload={"render_stage": "rpr_fit_engine_done", "render_engine": "rpr_fit"},
+        )
 
-    merge_started = time.perf_counter()
-    if background_mode:
-        # 只输出 translated_pages 里的页（与 Typst 背景路线一致）：先按页序抽出底图，再把引擎排的页叠上去。
-        base_subset = engine_dir / "rpr-fit-base.pdf"
-        extract_page_indices_with_pikepdf(
-            source_pdf_path=source_pdf_path,
-            output_pdf_path=base_subset,
-            page_indices=output_page_indices,
-        )
-        position = {page: offset for offset, page in enumerate(output_page_indices)}
-        merge = overlay_pdf_pages_with_pikepdf(
-            source_pdf_path=base_subset,
-            overlay_pdf_path=run.overlay_pdf,
-            output_pdf_path=output_pdf_path,
-            source_page_indices=[position[page] for page in page_indices],
+        merge_started = time.perf_counter()
+        if background_mode:
+            # 只输出 translated_pages 里的页（与 Typst 背景路线一致）：先按页序抽出底图，再把引擎排的页叠上去。
+            base_subset = engine_dir / "rpr-fit-base.pdf"
+            extract_page_indices_with_pikepdf(
+                source_pdf_path=source_pdf_path,
+                output_pdf_path=base_subset,
+                page_indices=output_page_indices,
+            )
+            position = {page: offset for offset, page in enumerate(output_page_indices)}
+            merge = overlay_pdf_pages_with_pikepdf(
+                source_pdf_path=base_subset,
+                overlay_pdf_path=run.overlay_pdf,
+                output_pdf_path=output_pdf_path,
+                source_page_indices=[position[page] for page in page_indices],
+            )
+        else:
+            # overlay：在渲染源上叠加，其余页原样保留，目录随原件（与 overlay 路线一致）。
+            merge = overlay_pdf_pages_with_pikepdf(
+                source_pdf_path=source_pdf_path,
+                overlay_pdf_path=run.overlay_pdf,
+                output_pdf_path=output_pdf_path,
+                source_page_indices=page_indices,
+            )
+        if merge.pages_merged != len(page_indices):
+            raise RprEngineFailed("merge_incomplete", f"只合并了 {merge.pages_merged}/{len(page_indices)} 页")
+        diagnostics["rpr_merge_elapsed_seconds"] = round(time.perf_counter() - merge_started, 3)
+        return run
+
+    run = render_pass("out")
+    # 查公式：没排成公式的块改成保留原文、重排一次、盖回原件的那一块
+    output_pages = (
+        {offset: page for offset, page in enumerate(output_page_indices)} if background_mode else {page: page for page in page_indices}
+    )
+    bboxes = {
+        str(item.get("item_id") or ""): list(item.get("bbox") or [])
+        for page_items in translated_pages.values()
+        for item in page_items or []
+        if isinstance(item, dict)
+    }
+    first_failed = list((run.report.get("math") or {}).get("failed") or [])
+    check_started = time.perf_counter()
+    failed = formula_check.failed_formula_items(
+        output_pdf_path, output_pages=output_pages, items=items, bboxes=bboxes, mathjax_failed=first_failed
+    )
+    kept: list[dict] = []
+    if failed and original_pdf_path is not None and Path(original_pdf_path).is_file():
+        for entry in items:
+            if str(entry.get("item_id") or "") in failed:
+                entry["translated_text"] = ""
+        run = render_pass("out-formula-kept")
+        position_of = {page: offset for offset, page in output_pages.items()}
+        regions = []
+        for entry in items:
+            item_id = str(entry.get("item_id") or "")
+            if item_id in failed and len(bboxes.get(item_id) or []) == 4:
+                page = int(entry.get("page_idx") or 0)
+                regions.append((position_of[page], page, bboxes[item_id]))
+                kept.append({"item_id": item_id, "page": page + 1, "reasons": failed[item_id]})
+        formula_check.restore_original_regions(output_pdf_path, Path(original_pdf_path), regions)
+        remaining = formula_check.failed_formula_items(
+            output_pdf_path,
+            output_pages=output_pages,
+            items=items,
+            bboxes=bboxes,
+            mathjax_failed=list((run.report.get("math") or {}).get("failed") or []),
         )
     else:
-        # overlay：在渲染源上叠加，其余页原样保留，目录随原件（与 overlay 路线一致）。
-        merge = overlay_pdf_pages_with_pikepdf(
-            source_pdf_path=source_pdf_path,
-            overlay_pdf_path=run.overlay_pdf,
-            output_pdf_path=output_pdf_path,
-            source_page_indices=page_indices,
-        )
-    if merge.pages_merged != len(page_indices):
-        raise RprEngineFailed("merge_incomplete", f"只合并了 {merge.pages_merged}/{len(page_indices)} 页")
-    diagnostics["rpr_merge_elapsed_seconds"] = round(time.perf_counter() - merge_started, 3)
+        remaining = failed
+    diagnostics["rpr_fit_formula_check"] = {
+        "elapsed_seconds": round(time.perf_counter() - check_started, 3),
+        "mathjax_failed": len(first_failed),
+        "kept_origin": kept,
+        "remaining": [{"item_id": item_id, "reasons": reasons} for item_id, reasons in sorted(remaining.items())],
+    }
     emit_render_compile_progress(
         current=3,
         total=3,
@@ -218,6 +272,13 @@ def build_book_rpr_fit_pdf(
         render_path=f"rpr_fit_{mode}",
         engine_elapsed_seconds=run.elapsed_seconds,
     )
+    # 公式：失败数照第一遍算（重排时那些块已经是原文，引擎不会再报），另记哪些块改成了原文、还剩哪些没排成
+    fit_payload["math"]["failed"] = first_failed
+    fit_payload["math"]["kept_origin"] = kept
+    fit_payload["math"]["visible_latex"] = diagnostics["rpr_fit_formula_check"]["remaining"]
+    fit_payload["summary"]["math_failed"] = len(first_failed)
+    fit_payload["summary"]["math_kept_origin"] = len(kept)
+    fit_payload["summary"]["math_visible_latex"] = len(remaining)
     diagnostics.update(record_fit_report_payload(fit_payload, elapsed=run.elapsed_seconds))
     diagnostics.update(
         {
