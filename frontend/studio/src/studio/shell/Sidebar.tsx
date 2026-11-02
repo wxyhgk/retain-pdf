@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from 'react';
-import { Blocks, CalendarDays, ChevronDown, FolderUp, Upload, FileText, Globe, House, Languages, Library, MessageCircle, Plus, Search, Settings, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
+import { Blocks, BookMarked, CalendarDays, ChevronDown, FolderUp, Upload, FileText, Globe, House, Library, MessageCircle, Plus, Search, Settings, SquarePen, StarOff, Table2, Trash2, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
@@ -177,9 +177,9 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				<Item id="open-drive" icon={Library} aria-pressed={view === 'drive'} onClick={toggle('drive')}>
 					{t('资料库')}
 				</Item>
-				{/* RetainPDF's own pages (the books, translating, reading) in the middle: wiring/retainpdf-view.ts. */}
-				<Item id="open-translate" icon={Languages} aria-pressed={view === 'translate'} onClick={toggle('translate')}>
-					{t('翻译')}
+				{/* 书库: RetainPDF's own pages (the books, translating, reading) in the middle: wiring/retainpdf-view.ts. */}
+				<Item id="open-translate" icon={BookMarked} aria-pressed={view === 'translate'} onClick={toggle('translate')}>
+					{t('书库')}
 				</Item>
 				{/* Today's page under 日志 (as SiYuan's daily note), made from templates/journal.md the first time today. */}
 				<Item id="open-today" icon={CalendarDays} onClick={act.todayJournal}>

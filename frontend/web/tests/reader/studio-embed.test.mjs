@@ -21,7 +21,7 @@ import {
 } from "../../src/platform/studio-bridge/protocol.ts";
 import { startStudioEmbed, studioReaderAdapters, themeForStudio } from "../../src/app/bootstrap/studio-embed.ts";
 import { carryEmbed } from "../../src/platform/navigation/pages.ts";
-import { embeddedIn, trySoftOpenReader } from "../../../../frontend/packages/reader/src/shared/navigation/soft-reader.ts";
+import { embeddedIn, embeddedPane, trySoftOpenReader } from "../../../../frontend/packages/reader/src/shared/navigation/soft-reader.ts";
 import {
   projectReaderTextHoverTargets,
   readerNotesQuoteOf,
@@ -434,4 +434,13 @@ test("navigate：开着的阅读页接了（同一本书）就原地翻过去，
   assert.equal(jumps.length, 1);
   assert.equal(navigations.length, 2, "阅读页没登记（还在加载、不在阅读页）整页打开");
   embed.stop();
+});
+
+test("开在 Studio 笔记旁边（embed_pane=beside）：阅读页没有「关闭」；在书库里照旧有", () => {
+  assert.equal(embeddedPane("?job_id=j1&embed=studio&embed_pane=beside"), "beside");
+  assert.equal(embeddedPane("?job_id=j1&embed=studio"), "");
+  const source = readFileSync(new URL("../../../../frontend/packages/reader/src/components/react-pdf/ReaderCloseHome.tsx", import.meta.url), "utf8");
+  assert.match(source, /if \(embeddedPane\(\) === "beside"\) return null;/);
+  const css = readFileSync(new URL("../../src/app/home/shell/AppTopBar.css", import.meta.url), "utf8");
+  assert.match(css, /:root\[data-embed="studio"\] #library-top-tab-ask \{\s*display: none;/, "放在 Studio 里图书馆不出自己的「AI 问答」");
 });

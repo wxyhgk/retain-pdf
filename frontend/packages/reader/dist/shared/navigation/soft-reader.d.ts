@@ -17,6 +17,11 @@ export type SoftReaderJobHandoff = {
  * 跳到别的页时带着这个参数。
  */
 export declare function embeddedIn(search?: string): string;
+/**
+ * 嵌在宿主的哪一块（地址带 `?embed_pane=`）：Studio 把书开在笔记旁边的标签里时是 `beside`，这时阅读页不该自己走开
+ * （没有「关闭」回主页）。没有是空串。
+ */
+export declare function embeddedPane(search?: string): string;
 export declare function isHomeDocumentPath(pathname?: string): boolean;
 export declare function isSoftReaderHistoryState(state: unknown): state is SoftReaderHistoryState;
 export declare function isHomeSpaAlive(doc?: Document): boolean;

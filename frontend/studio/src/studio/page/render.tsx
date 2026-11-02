@@ -87,7 +87,7 @@ export async function renderStudioPage({ root, acceptLanguage }: { root: string;
 		drive: t('资料库'),
 		allArticles: t('全部文章'),
 		apps: t('小程序'),
-		translate: t('翻译'),
+		translate: t('书库'),
 		books: t('这篇笔记的书'),
 		chats: t('AI 问答'),
 		sidePanel: t('AI、文件与终端'),

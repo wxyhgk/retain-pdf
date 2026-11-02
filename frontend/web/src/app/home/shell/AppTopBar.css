@@ -258,3 +258,8 @@
 :root[data-embed="studio"] .library-brand-link {
   display: none;
 }
+
+/* 同上：Studio 有自己的 AI（阅读页的「AI」也打开它），图书馆不再出自己的「AI 问答」。 */
+:root[data-embed="studio"] #library-top-tab-ask {
+  display: none;
+}
