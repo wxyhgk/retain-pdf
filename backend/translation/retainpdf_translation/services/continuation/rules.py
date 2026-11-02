@@ -1,3 +1,4 @@
+from retainpdf_translation.core.item_reader import item_is_aggregate_geometry_member
 import re
 
 from retainpdf_translation.core.item_reader import item_is_bodylike
@@ -231,7 +232,7 @@ def same_page(a: dict, b: dict) -> bool:
 
 def eligible(item: dict) -> bool:
     if (
-        str(item.get("translation_group_strategy", "") or "").strip() == "aggregate_geometry"
+        item_is_aggregate_geometry_member(item)
         or not item_is_bodylike(item)
         or not has_balanced_inline_math_delimiters(item.get("protected_source_text", ""))
         or not normalize_text(item.get("protected_source_text", ""))

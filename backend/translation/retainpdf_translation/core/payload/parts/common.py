@@ -1,3 +1,5 @@
+from retainpdf_translation.core.item_reader import item_is_aggregate_geometry_member
+
 GROUP_ITEM_PREFIX = "__cg__:"
 RESETTABLE_LABEL_PREFIXES = (
     "skip_",
@@ -40,13 +42,29 @@ def existing_group_unit_id(item: dict) -> str:
     return ""
 
 
-def group_key(item: dict) -> str:
+def effective_group_id(item: dict) -> tuple[str, str]:
+    """这一块和谁一起翻：(来源, 组号)。摘要组（translation_group_id）优先，其次接续组（continuation_group）；都没有是 ("", "")。
+
+    分桶（group_key）、起单元号（seed_orchestration_metadata、translation_units._effective_group_unit_id）都只认这一个先后：
+    以前后者先看接续组、前两个先看摘要组，一块要是两个都有，会分进摘要组的桶、单元号却按接续组起（2026-11-02 整理时查出）。"""
     translation_group_id = str(item.get("translation_group_id", "") or "").strip()
     if translation_group_id:
-        return f"translation:{translation_group_id}"
+        return "translation", translation_group_id
     continuation_group = str(item.get("continuation_group", "") or "").strip()
     if continuation_group:
-        return f"continuation:{continuation_group}"
+        return "continuation", continuation_group
+    return "", ""
+
+
+def is_aggregate_geometry_group_unit(item: dict) -> bool:
+    """摘要组里、而且这一组真有两块以上。"""
+    return item_is_aggregate_geometry_member(item) and item_has_multi_member_group_unit(item)
+
+
+def group_key(item: dict) -> str:
+    source, group_id = effective_group_id(item)
+    if group_id:
+        return f"{source}:{group_id}"
     unit_id = existing_group_unit_id(item)
     if unit_id:
         return f"unit:{unit_id}"
@@ -71,11 +89,9 @@ def clear_singleton_continuation_group(item: dict, *, group_counts: dict[str, in
 def seed_orchestration_metadata(item: dict) -> None:
     label = str(item.get("classification_label", "") or "")
     should_translate = bool(item.get("should_translate", True))
-    group_id = str(item.get("continuation_group", "") or "").strip()
-    translation_group_id = str(item.get("translation_group_id", "") or "").strip()
     item_id = str(item.get("item_id", "") or "")
-    effective_group_id = translation_group_id or group_id
-    unit_id = group_unit_id(effective_group_id) if effective_group_id else item_id
+    _source, group_id = effective_group_id(item)
+    unit_id = group_unit_id(group_id) if group_id else item_id
     # skip_reason 归 policy 阶段所有;编排阶段只补缺，不覆盖已有的详细原因。
     if not should_translate:
         if not str(item.get("skip_reason", "") or "").strip():

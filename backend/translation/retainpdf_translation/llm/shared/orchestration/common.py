@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from retainpdf_translation.core.payload.parts.common import is_group_unit_id
 from retainpdf_translation.core.item_reader import item_content_kind
 from retainpdf_translation.core.item_reader import item_is_bodylike
 from retainpdf_translation.core.item_reader import item_is_caption_like
@@ -53,8 +54,8 @@ def is_continuation_or_group_unit(item: dict) -> bool:
     item_id = str(item.get("item_id", "") or "")
     unit_id = str(item.get("translation_unit_id", "") or "")
     return bool(
-        item_id.startswith("__cg__:")
-        or unit_id.startswith("__cg__:")
+        is_group_unit_id(item_id)
+        or is_group_unit_id(unit_id)
         or str(item.get("continuation_group", "") or "").strip()
     )
 

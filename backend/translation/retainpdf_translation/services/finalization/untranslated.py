@@ -1,4 +1,5 @@
 from __future__ import annotations
+from retainpdf_translation.core.payload.parts.common import is_aggregate_geometry_group_unit
 from retainpdf_translation.llm.shared.executor_context import translation_unit
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -9,7 +10,6 @@ from retainpdf_translation.artifacts import blocking_untranslated_items
 from retainpdf_translation.core.payload.parts.apply import apply_group_translated_entry
 from retainpdf_translation.core.payload.parts.apply import apply_single_translated_entry
 from retainpdf_translation.core.payload.parts.common import effective_translation_unit_id
-from retainpdf_translation.core.payload.parts.common import item_has_multi_member_group_unit
 from retainpdf_translation.core.payload.parts.diagnostics import record_translation_diagnostics
 from retainpdf_translation.core.payload.parts.policy_state import mark_keep_origin
 from retainpdf_translation.core.payload.parts.policy_state import mark_translation_failed_policy_state
@@ -181,10 +181,7 @@ def _item_index(page_payloads: dict[int, list[dict]]) -> dict[str, dict]:
 
 
 def _is_aggregate_geometry_group(item: dict) -> bool:
-    return (
-        str(item.get("translation_group_strategy", "") or "").strip() == "aggregate_geometry"
-        and item_has_multi_member_group_unit(item)
-    )
+    return is_aggregate_geometry_group_unit(item)
 
 
 def _recovery_key(item: dict) -> str:
