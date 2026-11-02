@@ -12,7 +12,8 @@ import { appendToFixture, editor, openSettings, openStudio, removeArticle, reset
 // (hello → ready; theme, navigate shown on the page; 摘 sends a quote; 读 and 离开 say what is read, or that nothing is;
 // AI asks the Studio's AI, as its reader's AI does in the Studio). It says which book and page its address opened it at
 // (a book beside a note is opened straight at its reader).
-// Its API answers too, as far as the settings' 测试连接 and 书's ＋ ask it, with the key STAND_IN_KEY: one book.
+// Its API answers too, as far as the settings' 测试连接 and 书's ＋ ask it, with the key STAND_IN_KEY: one book. Its pages
+// tell that key (runtime-config.local.js, as RetainPDF's development stack does) only when `tellsKey`.
 
 const settingsFile = () => join(process.env.STUDIO_BLOG_DIR!, '.studio-settings.json');
 const savedUrl = () => {
@@ -78,6 +79,7 @@ document.querySelector('#quote').addEventListener('click', () => parent.postMess
 </script>`;
 
 const STAND_IN_KEY = 'stand-in-key';
+let tellsKey = false;
 let retainpdf: Server;
 let retainpdfUrl = '';
 
@@ -90,6 +92,17 @@ test.beforeAll(async () => {
 			response.end(JSON.stringify(known ? { code: 0, message: 'ok', data: { documents, total: 1, has_more: false } } : { code: 40100, message: 'unauthorized', error: { code: 'UNAUTHORIZED', http_status: 401, details: {} } }));
 			return;
 		}
+		// Its API on the same port as its pages, as its desktop app has it, said in its runtime config.
+		if (request.url === '/runtime-config.js') {
+			response.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
+			response.end(`window.__FRONT_RUNTIME_CONFIG__ = { apiBase: ${JSON.stringify(retainpdfUrl)}, xApiKey: "" };\n`);
+			return;
+		}
+		if (request.url === '/runtime-config.local.js') {
+			response.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8' });
+			response.end(tellsKey ? `(function () {\n  var c = window.__FRONT_RUNTIME_CONFIG__ = window.__FRONT_RUNTIME_CONFIG__ || {};\n  if (!c.xApiKey) c.xApiKey = ${JSON.stringify(STAND_IN_KEY)};\n})();\n` : '');
+			return;
+		}
 		response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
 		response.end(STAND_IN);
 	});
@@ -99,6 +112,7 @@ test.beforeAll(async () => {
 test.afterAll(() => new Promise<void>((resolve) => retainpdf.close(() => resolve())));
 // The settings outlive a test: each starts at the default address.
 test.beforeEach(() => {
+	tellsKey = false;
 	resetFixture();
 	// The 读书笔记 pages a test made (they say `retainpdf:`): each test starts without them.
 	const blog = process.env.STUDIO_BLOG_DIR!;
@@ -483,10 +497,10 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 		'\n[Quantum Chemistry · 第 3 页](retainpdf:job-1/p003-b0001?page=3&document=doc-1) 第一本书。\n\n' +
 			'[Statistical Mechanics · 第 8 页](retainpdf:job-2/p008-b0004?page=8&document=doc-2) 第二本书。\n',
 	);
+	// Nothing but RetainPDF's address set: its API's and key found from its pages.
+	tellsKey = true;
 	await openStudio(page);
-	await page.evaluate(async (url) => {
-		await fetch('/api/studio/settings/retainpdf', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, apiKey: 'stand-in-key' }) });
-	}, retainpdfUrl);
+	await setAddress(page, retainpdfUrl);
 
 	// Out beside the note: a tab for each book it quotes, the first shown, opened straight at its reader (no 笔记 of its own).
 	await page.locator('#books-toggle').click();
@@ -524,7 +538,7 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 		.poll(async () => page.evaluate(async () => (await (await fetch('/api/studio/retainpdf/reading')).json()).reading?.notes?.title))
 		.toBe('Studio 测试夹具');
 
-	// ＋: a book of RetainPDF's not open, from its library.
+	// ＋: a book of RetainPDF's not open, from its library (its key found, not filled in).
 	await page.locator('#book-tabs-add').click();
 	await page.getByRole('menuitem', { name: /Organic Chemistry/u }).click();
 	await expect(page.locator('.book-tab-name[aria-selected="true"]')).toHaveText('Organic Chemistry');

@@ -3,7 +3,7 @@ import { quoteMarkdown } from '../editor/retainpdf-quote.ts';
 
 /**
  * RetainPDF's books, read by the AIs (the operations list_books, search_books, read_book, read_passage): its public
- * API, read only (GET), at the address and with the key of the Studio's settings (retainpdf-settings.mjs). What comes
+ * API, read only (GET), at the address and with the key found from its pages, or set (retainpdf-settings.mjs). What comes
  * back is cut to what an AI needs: a book's id and title, a page's blocks in order, each its id, original and
  * translation; a passage with the Markdown that quotes it in a note (editor/retainpdf-quote.ts: its translation after
  * a link to where it is), so a passage written into a note by an AI is what the reader's 摘到笔记 puts there, opened
@@ -41,7 +41,7 @@ const count = (value, fallback, most) => {
 
 export class RetainpdfLibrary {
 	/**
-	 * @param {{ settings: { connection(): Promise<{ api: string, key: string }> }, fetch?: typeof fetch, now?: () => number }} options
+	 * @param {{ settings: { connection(): Promise<{ api: string, key: string }>, forgetFound?(): void }, fetch?: typeof fetch, now?: () => number }} options
 	 */
 	constructor({ settings, fetch: fetching = globalThis.fetch, now = Date.now }) {
 		this.settings = settings;
@@ -51,8 +51,21 @@ export class RetainpdfLibrary {
 		this.regions = new Map();
 	}
 
-	/** GET `path` of RetainPDF's API: its `data`, or an error that says what to do. */
+	/**
+	 * GET `path` of RetainPDF's API: its `data`, or an error that says what to do. Its address and key were found from its
+	 * pages (retainpdf-settings.mjs): when it said no, or did not answer, they are found again and it is asked once more.
+	 */
 	async #get(path, query = {}) {
+		try {
+			return await this.#getOnce(path, query);
+		} catch (error) {
+			if (!(error instanceof RetainpdfLibraryError) || error.statusCode !== 502 || !this.settings.forgetFound) throw error;
+			this.settings.forgetFound();
+			return this.#getOnce(path, query);
+		}
+	}
+
+	async #getOnce(path, query) {
 		const { api, key } = await this.settings.connection();
 		const url = new URL(path, api);
 		for (const [name, value] of Object.entries(query)) if (value !== undefined && value !== null && value !== '') url.searchParams.set(name, String(value));

@@ -8,9 +8,10 @@ import { Field } from './AiSettings';
 import { Actions, errorText, Status } from './Frame';
 
 /**
- * 设置 › RetainPDF: where its pages are, for 翻译 in the left column; empty is the default (its desktop app's). And its
- * API, for the AIs to read the books (server/retainpdf-library.mjs): its address (empty: the pages', as its desktop app
- * serves both) and its key, kept by the Studio's server and never shown back.
+ * 设置 › RetainPDF: where its pages are, for 翻译 in the left column; empty is the default (its desktop app's). Its API,
+ * for the AIs and 书 to read the books (server/retainpdf-library.mjs): nothing to fill in, its address and key are
+ * found from its pages (server/retainpdf-settings.mjs); written here, these are used instead. A key is kept by the
+ * Studio's server and never shown back.
  */
 export function RetainpdfSettings() {
 	const [shown, setShown] = useState<RetainpdfShown | null>(null);
@@ -64,12 +65,23 @@ export function RetainpdfSettings() {
 			</Field>
 			<small className="-mt-2 text-xs leading-normal text-muted-foreground">{t('空着就是 RetainPDF 桌面版和开发环境的默认地址。')}</small>
 			<Field label={t('接口地址')}>
-				<Input id="retainpdf-api-url" autoComplete="off" spellCheck={false} value={apiUrl} placeholder={shown.url} onChange={(event) => setApiUrl(event.target.value)} />
+				<Input id="retainpdf-api-url" autoComplete="off" spellCheck={false} value={apiUrl} placeholder={shown.found.api ?? shown.url} onChange={(event) => setApiUrl(event.target.value)} />
 			</Field>
-			<small className="-mt-2 text-xs leading-normal text-muted-foreground">{t('AI 从这里读书库里的书。空着就和上面的地址一样（桌面版是这样）；开发环境的接口在另一个端口，比如 http://127.0.0.1:41000/。')}</small>
 			<Field label={t('API 密钥')}>
-				<Input id="retainpdf-api-key" type="password" autoComplete="off" value={key} placeholder={shown.keySet ? t('已保存（不改就空着）') : t('RetainPDF 的 X-API-Key')} onChange={(event) => setKey(event.target.value)} />
+				<Input
+					id="retainpdf-api-key"
+					type="password"
+					autoComplete="off"
+					value={key}
+					placeholder={shown.keySet ? t('已保存（不改就空着）') : shown.found.key ? t('用 RetainPDF 自己的（不用填）') : t('RetainPDF 的 X-API-Key')}
+					onChange={(event) => setKey(event.target.value)}
+				/>
 			</Field>
+			<small id="retainpdf-found" className="-mt-2 text-xs leading-normal text-muted-foreground">
+				{shown.found.api || shown.found.key
+					? t('不用填：接口地址和密钥是从 RetainPDF 自己的页面找到的（{api}），和「翻译」里的阅读页用的一样。填了就用填的。', { api: shown.found.api ?? shown.url })
+					: t('不用填：RetainPDF 开着时，接口地址和密钥从它自己的页面找到。现在没找到（它开着吗？上面的地址对吗？）；也可以自己填。')}
+			</small>
 			<Status id="retainpdf-status" {...status} />
 			<Actions>
 				{shown.keySet ? (

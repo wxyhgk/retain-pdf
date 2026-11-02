@@ -934,7 +934,8 @@ export type LocalesShown = { chosen: string; locales: Array<{ id: string; name: 
  * 翻译 (server/retainpdf-settings.mjs): where RetainPDF's pages are, and the address used when none is set; where its
  * API is (`apiUrl` set, or empty: `api` is the pages'), and whether its key is set (never the key itself).
  */
-export type RetainpdfShown = { url: string; default: string; isDefault: boolean; apiUrl: string; api: string; keySet: boolean };
+/** 设置 › RetainPDF: the addresses used, whether a key is set; what was found from RetainPDF's pages (its API, whether it has a key). */
+export type RetainpdfShown = { url: string; default: string; isDefault: boolean; apiUrl: string; api: string; keySet: boolean; found: { api: string | null; key: boolean } };
 
 /** 其他设备访问 (server/remote/remote-access.mjs): on or off, where another device may reach this Mac, the devices paired. */
 export type RemoteShown = {
