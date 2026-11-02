@@ -9,6 +9,11 @@
 //! - 译文 PDF 旁边的打包副本 `<任务>.zip`：没有任何地方读，现在也不写了，删掉以前留下的。
 //! - 重渲染成功以后的上一份译文（`*.previous.pdf`）：只在排队期间和这次失败时用，成功了就不再读。调用方清掉
 //!   `previous_output_pdf`、`previous_finished_at`。
+//! - rpr_fit 引擎的工作目录（`rendered/typst/rpr-fit-engine/`：引擎输入、版面 JSON、底图子集、叠加层）：只有渲染器自己读，
+//!   每次渲染前清空重建（2026-11-02 加，481 页的书一份 49MB）。
+//! - OCR 一片片公布时写的整份文档（`ocr/stream/document.v1.json`）：OCR 收尾时和规范化文档（`ocr/normalized/document.v1.json`）
+//!   逐字节相同，是第二份完整拷贝（620 页的书 61MB）。翻译重跑可能还按 `ocr/stream/` 的清单读它，所以不删，内容相同时换成
+//!   指向规范化文档的硬链接（只在 Unix 上：要靠 inode 认出已经链过，不然每轮都要把两份整个比一遍）。
 //!
 //! 调用方负责只给成功的任务，而且这个任务目录没被排队、在跑的任务引用（[`job_dirs_referenced_by`]：OCR 子任务、
 //! 复用 OCR 或译文的任务都会指进别人的目录）。这里只删任务自己目录（`jobs/<任务>/`）里的东西，路径指到外面的不碰；
@@ -26,6 +31,10 @@ use retainpdf_data::ocr_provider::provider_artifact_layout;
 use walkdir::WalkDir;
 
 const JOBS_DIR: &str = "jobs";
+/// 相对译文 PDF 所在目录（`rendered/`）。
+const RPR_FIT_ENGINE_DIR: &str = "typst/rpr-fit-engine";
+/// 相对 OCR 目录（规范化文档上两级）。
+const OCR_STREAM_DOCUMENT: &str = "stream/document.v1.json";
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct IntermediatesPruned {
@@ -83,6 +92,26 @@ pub fn prune_succeeded_job_intermediates(data_root: &Path, job: &JobSnapshot) ->
         .filter(|path| path.starts_with(&job_root))
     {
         remove_file(&bundle_copy, &mut pruned);
+    }
+
+    if let Some(engine_dir) = output_pdf
+        .as_deref()
+        .and_then(Path::parent)
+        .map(|dir| dir.join(RPR_FIT_ENGINE_DIR))
+        .filter(|path| path.starts_with(&job_root))
+    {
+        remove_dir(&engine_dir, &mut pruned);
+    }
+
+    if let Some(normalized) = inside(artifacts.normalized_document_json.as_deref()) {
+        if let Some(stream_copy) = normalized
+            .parent()
+            .and_then(Path::parent)
+            .map(|ocr_dir| ocr_dir.join(OCR_STREAM_DOCUMENT))
+            .filter(|path| path.starts_with(&job_root))
+        {
+            link_identical_copy(&stream_copy, &normalized, &mut pruned);
+        }
     }
 
     if let (Some(output_pdf), Some(previous)) =
@@ -239,6 +268,76 @@ fn remove_file(path: &Path, pruned: &mut IntermediatesPruned) {
         }
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(_) => pruned.failed += 1,
+    }
+}
+
+/// 整个目录删掉（不跟符号链接；`dir` 本身是符号链接就不碰）。
+fn remove_dir(dir: &Path, pruned: &mut IntermediatesPruned) {
+    if !dir.symlink_metadata().is_ok_and(|meta| meta.is_dir()) {
+        return;
+    }
+    prune_dir_except(dir, &[], pruned);
+    if std::fs::remove_dir(dir).is_err() && dir.exists() {
+        pruned.failed += 1;
+    }
+}
+
+/// `copy` 和 `original` 内容一字不差、还不是同一个文件时，把 `copy` 换成指向 `original` 的硬链接（先链到旁边再改名，
+/// 读的一方任何时候都看得到完整文件）。省下的算进 `bytes`。
+#[cfg(unix)]
+fn link_identical_copy(copy: &Path, original: &Path, pruned: &mut IntermediatesPruned) {
+    use std::os::unix::fs::MetadataExt;
+
+    let (Ok(copy_meta), Ok(original_meta)) = (copy.symlink_metadata(), original.symlink_metadata()) else {
+        return;
+    };
+    if !copy_meta.is_file() || !original_meta.is_file() || copy_meta.len() != original_meta.len() {
+        return;
+    }
+    if (copy_meta.dev(), copy_meta.ino()) == (original_meta.dev(), original_meta.ino()) {
+        return; // 已经链过
+    }
+    match same_contents(copy, original) {
+        Ok(true) => {}
+        Ok(false) => return,
+        Err(_) => {
+            pruned.failed += 1;
+            return;
+        }
+    }
+    let staged = copy.with_extension("json.link-tmp");
+    let _ = std::fs::remove_file(&staged);
+    let linked = std::fs::hard_link(original, &staged).and_then(|()| std::fs::rename(&staged, copy));
+    match linked {
+        Ok(()) => {
+            pruned.files += 1;
+            pruned.bytes += copy_meta.len();
+        }
+        Err(_) => {
+            let _ = std::fs::remove_file(&staged);
+            pruned.failed += 1;
+        }
+    }
+}
+
+#[cfg(not(unix))]
+fn link_identical_copy(_copy: &Path, _original: &Path, _pruned: &mut IntermediatesPruned) {}
+
+#[cfg(unix)]
+fn same_contents(left: &Path, right: &Path) -> std::io::Result<bool> {
+    use std::io::Read;
+
+    let (mut left, mut right) = (std::fs::File::open(left)?, std::fs::File::open(right)?);
+    let (mut left_buf, mut right_buf) = (vec![0u8; 1 << 16], vec![0u8; 1 << 16]);
+    loop {
+        let read = left.read(&mut left_buf)?;
+        if read == 0 {
+            return Ok(right.read(&mut right_buf[..1])? == 0);
+        }
+        right.read_exact(&mut right_buf[..read])?;
+        if left_buf[..read] != right_buf[..read] {
+            return Ok(false);
+        }
     }
 }
 

@@ -93,7 +93,8 @@ Docker 中 `ops/deployment/docker/delivery/docker/auth.local.json` 的 `api_keys
     还有渲染的准备缓存 `artifacts/render_prepare/` 和预热 `artifacts/render_prewarm/`）生成后保留几天（默认 `0` 不清）。
     删了下次下载、翻页、原地重渲染时重新生成，整本书的 Word 要几分钟；译文 PDF、原文、翻译结果、封面和缩略图不删。
   - 不用设置、每轮都做的（2026-10-28 起）：成功任务目录里的纯重复文件（OCR 原始压缩包、MinerU 解包目录里布局以外的东西、
-    译文旁边的打包副本、重渲染成功后的上一份译文）删掉，`downloads/` 里一小时以前的打包 zip 删掉。排队、在跑的任务引用着的
+    译文旁边的打包副本、重渲染成功后的上一份译文；2026-11-02 起还有 rpr_fit 引擎的工作目录 `rendered/typst/rpr-fit-engine/`）
+    删掉，OCR 一片片公布时写的整份文档 `ocr/stream/document.v1.json` 和规范化文档相同时换成硬链接（只在 Unix 上），`downloads/` 里一小时以前的打包 zip 删掉。排队、在跑的任务引用着的
     任务目录不碰。清理间隔 `RUST_API_CLEANUP_INTERVAL_SECS`（默认 21600 秒），启动时也跑一轮。
 - `RUST_API_DB_REQUIRE_UPGRADE_BACKUP`：数据库结构升级前的备份存不成时不升级、不启动（默认关：记 `error` 照常升级）。
 - `RUST_API_MAX_RUNNING_JOBS`：最大并发任务数。排队的任务按交上来的先后开跑（2026-10-24 起）。

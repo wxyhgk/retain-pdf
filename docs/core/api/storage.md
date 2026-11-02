@@ -34,9 +34,13 @@ jobs/{job_id}/
 - `ocr/`：Provider 原始结果、解包结果、标准化输入。任务成功以后（下一轮定期清理，启动时和每 6 小时），原始压缩包
   `<厂商>_bundle.zip` 删掉、记录里的 `provider_zip` 清空；MinerU 解包目录 `ocr/unpacked/` 只留记录里指着的文件（布局
   `layout.json`），原 PDF 副本、Markdown 和图片（`md/` 里有）、中间 JSON 删掉（要 `md/full.md` 在才删）。
+  OCR 一片片公布时写的 `ocr/stream/document.v1.json` 收尾时和 `ocr/normalized/document.v1.json` 逐字节相同，成功以后换成指向后者的硬链接
+  （只在 Unix 上；`ocr/stream/` 的清单照留，翻译重跑照样能读，2026-11-02）。
 - `translated/`：翻译中间产物和 `translation-manifest.json`；每页译文 `page-001.json`（2026-10-30 以前的任务叫 `page-001-deepseek.json`，照旧能读，读的一侧按清单里的路径找文件）。
 - `rendered/`：渲染输出。原地重跑（原地重渲染、精修）开跑时把上一份译文 PDF 改名成同目录的 `<名>.previous.pdf`（`artifacts.previous_output_pdf` 指向它），这一次没跑成就把 `output_pdf` 指回它；跑成了，下一轮定期清理删掉它、清空这两个字段。
   2026-10-28 以前打包下载还会在这里复制一份 `<任务>.zip`（没有地方读），现在不写了，留下的由清理删掉。
+  rpr_fit 引擎的工作目录 `rendered/typst/rpr-fit-engine/`（引擎输入、版面 JSON、底图子集、叠加层）只有渲染器自己读、每次渲染前清空重建，
+  任务成功以后由清理删掉（2026-11-02）。
 - `artifacts/`：对外发布的稳定产物、诊断文件和索引。下载时按需生成的派生缓存（`<任务>-side-by-side.pdf`、
   `<任务>-layout-*.docx`、`*.linearized.pdf`、`preview-*.jpg` 和它们的记录文件 `.<名字>.inputs.json`）也放在这里，
   书的页预览在 `documents/<文档>/pages/`；设了 `RUST_API_DERIVED_CACHE_RETENTION_DAYS` 时，任务结束后生成超过这么多天的
