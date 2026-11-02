@@ -22,6 +22,8 @@ class RenderExecutionContext:
     source_image_compressed: bool = False
     indent_detection_pdf_path: Path | None = None
     first_line_indent_lookup: dict[str, float] | None = None
+    # first_line_indent_lookup 是渲染准备里现量的（不是预热缓存）时，那次量的统计（rpr_fit 的诊断照旧有）
+    first_line_indent_stats: dict | None = None
     effective_inner_bbox_lookup: dict[str, list[float]] | None = None
     bbox_text_stripped_page_indices: frozenset[int] = frozenset()
     bbox_text_strip_skipped_page_indices: frozenset[int] = frozenset()
