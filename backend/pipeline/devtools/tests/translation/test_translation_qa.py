@@ -972,3 +972,22 @@ def test_render_only_wrapper_tolerates_unreadable_spec(tmp_path: Path) -> None:
     from retainpdf_pipeline.runtime.pipeline.render_only_pipeline import refresh_translation_qa_for_render_spec
 
     assert refresh_translation_qa_for_render_spec(tmp_path / "missing.spec.json") is None
+
+
+def test_the_derived_term_prefilter_never_drops_a_real_match() -> None:
+    # 2026-11-02：派生术语一致性先用子串筛、筛过的才跑正则（708 页的书这一步 15 秒 → 5 秒）。筛子只许比正则宽。
+    from retainpdf_translation.services.quality.qa import terms
+
+    cases = [
+        ("Hermite polynomials appear here", "Hermite"),
+        ("the CSF basis", "CSFs"),
+        ("Hartree and Fock wrote", "Hartree and Fock"),
+        ("Hartree 和 Fock 写道", "Hartree and Fock"),
+        ("Koopmans’ theorem says", "Koopmans' theorem"),
+        ("MORSE potential", "Morse"),
+        ("no match at all", "Hermite"),
+    ]
+    for text, chunk in cases:
+        key = terms._needle_key(text)
+        if terms._derived_present(text, chunk):
+            assert all(needle in key for needle in terms._derived_needles(chunk)), (text, chunk)

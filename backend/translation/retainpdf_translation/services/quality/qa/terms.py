@@ -252,6 +252,21 @@ def _source_has_word(source: str, needle: str, *, case_sensitive: bool = False) 
     return re.search(pattern, source.replace("’", "'"), flags) is not None
 
 
+def _derived_needles(chunk: str) -> tuple[str, ...]:
+    """`_derived_present(text, chunk)` 为真时，这几个（已归一）片段一定都以子串出现在归一后的 text 里：先拿它们筛，
+    筛掉的就不用跑正则（候选词 × 全书段落两层循环，708 页的书这一步 23 秒，2026-11-02）。只许放宽不许收紧。"""
+    words = chunk.split()
+    if len(words) == 1:
+        stem = chunk[:-1] if chunk.endswith("s") and len(chunk) > 3 else chunk
+        return (_needle_key(stem),)
+    content = [word for word in words if word.casefold() not in _STOPWORDS] or words
+    return tuple(_needle_key(word) for word in content)
+
+
+def _needle_key(text: str) -> str:
+    return text.replace("’", "'").casefold()
+
+
 def _derived_present(text: str, chunk: str) -> bool:
     """派生术语在一段文字里出没出现。单个专名式单词区分大小写（Hermite ≠ hermite、
     Layout ≠ page_layout）；复数缩写认单数（CSFs ↔ CSF）；人名串里的 and 可能被译成「和」，
@@ -495,16 +510,23 @@ class TermChecker:
         rows: list[dict[str, Any]] = []
         violations: list[QaViolation] = []
         consumed: set[str] = set()
+        # 每段只归一一次（以前每个候选词都对全书每段重新去公式、重新跑正则）
+        scanned = [
+            (unit, _needle_key(unit.source), strip_math(unit.translated))
+            for unit in self._units
+            if not unit.is_reference
+        ]
         for key in sorted(candidates, key=len, reverse=True):
             chunk = candidates[key]
             if any(key in longer for longer in consumed):
                 continue
+            needles = _derived_needles(chunk)
             kept: list[QaUnit] = []
             translated: list[QaUnit] = []
-            for unit in self._units:
-                if unit.is_reference or not _derived_present(unit.source, chunk):
+            for unit, source_key, stripped_translation in scanned:
+                if not all(needle in source_key for needle in needles) or not _derived_present(unit.source, chunk):
                     continue
-                if _derived_present(strip_math(unit.translated), chunk):
+                if _derived_present(stripped_translation, chunk):
                     kept.append(unit)
                 else:
                     translated.append(unit)
