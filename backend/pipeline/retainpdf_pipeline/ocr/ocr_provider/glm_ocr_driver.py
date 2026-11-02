@@ -8,6 +8,9 @@
   外部 CLI 3 路 × 100 页必吃 429。
 - 断点：每片的原始结果存在 `ocr/glm_ocr_raw/chunk-<序号>-<起>-<止>.json`，`chunks.json` 记原文的 sha256 和分片页数；
   重跑同一个任务时两者都对得上的片不再请求（不再花钱）。
+- 共用缓存（2026-11-02）：每片结果另存一份到输出目录下的 `_glm_ocr_chunk_cache/<原文 sha256>/<模型>-p<分片页数>/`，
+  各任务共用。OCR 中断、失败以后新建或重试的任务（任务目录是新的）也不再为做过的片付钱。键里有原文的 sha256，
+  换了文件、模型或分片页数都对不上，不会用错；片的页数不对的结果不存也不用。
 - 每做完一片报一次进度（页），任务的"多久没有进展"超时按它算。
 - 选页（`page_ranges`）：先从原文切出所选页的子 PDF 当原文，和 Rust 那边 Paddle 的做法一致，下游的页号都对得上。
 - 图片：GLM 不回传图片，按块的框从原文裁（`md/images/page-<N>/imgs/img_in_<标签>_box_….jpg`，和 Paddle 的图片放一处，
@@ -31,8 +34,10 @@ from typing import Callable
 
 import fitz
 
+from retainpdf_base import paths
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.io import save_json
+from retainpdf_base.io import save_json_atomic
 from retainpdf_pipeline.foundation.shared.job_dirs import job_dirs_from_explicit_args
 from retainpdf_base.ocr_stream import OcrStreamWriter
 from retainpdf_pipeline.ocr.document_schema import DOCUMENT_SCHEMA_REPORT_FILE_NAME
@@ -141,6 +146,11 @@ def _load_manifest(raw_dir: Path) -> dict:
         return {}
 
 
+def shared_chunk_dir(cache_root: Path, source_hash: str, chunk_pages: int) -> Path:
+    """各任务共用的分片缓存目录：同一份原文、同一个模型、同样的分片页数才是同一个目录。"""
+    return cache_root / source_hash / f"{glm_ocr_api.GLM_OCR_MODEL}-p{chunk_pages}"
+
+
 def _cached_chunk(path: Path, expected_pages: int) -> dict | None:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -170,13 +180,16 @@ def request_chunks(
     workers: int,
     parse=None,
     on_prefix: Callable[[list[dict]], None] | None = None,
+    cache_root: Path | None = None,
 ) -> list[dict]:
-    """逐片请求（命中断点的片不请求），返回按页序排好的各片原始结果。`parse` 只给测试注入假接口。
+    """逐片请求（命中断点或共用缓存的片不请求），返回按页序排好的各片原始结果。`parse` 只给测试注入假接口。
 
-    `on_prefix`：前面连着做完的片变多了就调一次，传这些片（续跑时先传断点里连着的那些）。"""
+    `on_prefix`：前面连着做完的片变多了就调一次，传这些片（续跑时先传断点里连着的那些）。
+    `cache_root`：各任务共用的分片缓存（`paths.GLM_OCR_CHUNK_CACHE_DIR`）；None 不用。"""
     parse = parse or glm_ocr_api.parse_pdf
     raw_dir.mkdir(parents=True, exist_ok=True)
     source_hash = _sha256(source_pdf)
+    shared_dir = shared_chunk_dir(cache_root, source_hash, chunk_pages) if cache_root is not None else None
     manifest = _load_manifest(raw_dir)
     reuse = manifest.get("source_sha256") == source_hash and manifest.get("chunk_pages") == chunk_pages
     save_json(raw_dir / MANIFEST_FILE_NAME, {"source_sha256": source_hash, "chunk_pages": chunk_pages})
@@ -185,14 +198,24 @@ def request_chunks(
         ranges = chunk_ranges(page_count, chunk_pages)
         results: dict[int, dict] = {}
         todo: list[tuple[int, int, int, bytes]] = []
+        shared_hits = 0
         for index, (start, end) in enumerate(ranges):
-            cached = _cached_chunk(_chunk_path(raw_dir, index, start, end), end - start) if reuse else None
+            local_path = _chunk_path(raw_dir, index, start, end)
+            cached = _cached_chunk(local_path, end - start) if reuse else None
+            if cached is None and shared_dir is not None:
+                cached = _cached_chunk(_chunk_path(shared_dir, index, start, end), end - start)
+                if cached is not None:
+                    shared_hits += 1
+                    save_json(local_path, cached)  # 任务目录照旧有全部原始片
             if cached is not None:
                 results[index] = cached
             else:
                 todo.append((index, start, end, _chunk_bytes(source, start, end)))
     done_pages = sum(ranges[index][1] - ranges[index][0] for index in results)
-    print(f"glm-ocr: pages={page_count} chunks={len(ranges)} cached={len(results)} todo={len(todo)} workers={workers}", flush=True)
+    print(
+        f"glm-ocr: pages={page_count} chunks={len(ranges)} cached={len(results)} shared={shared_hits} todo={len(todo)} workers={workers}",
+        flush=True,
+    )
     _emit_progress(done_pages, page_count, f"GLM-OCR 识别中：{done_pages}/{page_count} 页")
     published = 0
 
@@ -213,6 +236,9 @@ def request_chunks(
         if not _chunk_is_complete(payload, end - start):
             raise RuntimeError(f"GLM-OCR 第 {start + 1}-{end} 页的结果页数不对（应为 {end - start} 页）")
         save_json(_chunk_path(raw_dir, index, start, end), payload)
+        if shared_dir is not None:
+            # 几个任务可能同时做同一份原文：整份写好再换上，读的一方看不到写了一半的文件
+            save_json_atomic(_chunk_path(shared_dir, index, start, end), payload)
         return index, payload
 
     with ThreadPoolExecutor(max_workers=max(1, workers)) as pool:
@@ -394,6 +420,7 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
             workers=workers,
             parse=parse,
             on_prefix=publish,
+            cache_root=paths.GLM_OCR_CHUNK_CACHE_DIR,
         )
         payload = merge_chunks(chunks, chunk_pages=chunk_pages)
         split_cross_column_blocks(payload, source_pdf)
@@ -438,4 +465,5 @@ __all__ = [
     "prepare_source_pdf",
     "request_chunks",
     "run_glm_ocr_to_job_dir",
+    "shared_chunk_dir",
 ]

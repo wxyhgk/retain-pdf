@@ -260,6 +260,8 @@ CLI 原始 JSON、stdout/stderr 与 `--save_resources` 下载内容保存在
    同步接口：一次请求等到整片解析完（实测 10 页约 12 秒，分片不多花钱）。`RETAIN_GLM_OCR_WORKERS` 路并发（默认 1，最多 4；
    实测 2 路不比串行快）。
 3. 每片原始结果存 `ocr/glm_ocr_raw/chunk-<序号>-<起>-<止>.json`，`chunks.json` 记原文 sha256 和分片页数；重跑时对得上的片不再请求。
+   另存一份到各任务共用的 `paths.GLM_OCR_CHUNK_CACHE_DIR`（输出目录下 `_glm_ocr_chunk_cache/<原文 sha256>/<模型>-p<分片页数>/`，
+   2026-11-02）：OCR 失败后重试新建的任务（任务目录是空的）也先从这里取，做过的片不再付钱，取到的片照样抄进任务目录。
 4. 每做完一片报一次进度（页），任务"多久没有进展"的超时按它算。
 5. 拼成一份 `ocr/glm_ocr_result.json`（和单次请求同样形状，`_meta.chunks` 记各片页范围、用量），按图片块的框从原文裁图到
    `md/images/page-<N>/imgs/img_in_<标签>_box_….jpg`（和 Paddle 的图片放一处），`md_results` 的图片占位换成本地图写 `md/full.md`。

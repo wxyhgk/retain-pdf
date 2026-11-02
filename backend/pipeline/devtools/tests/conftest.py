@@ -52,6 +52,7 @@ _OUTPUT_DIR_DERIVED = {
     "DOMAIN_CONTEXT_CACHE_DIR": "_domain_context_cache",
     "AGENT_REQUEST_CACHE_DIR": "_agent_request_cache",
     "RENDER_TYPOGRAPHY_MEMORY_DIR": "_render_typography_memory",
+    "GLM_OCR_CHUNK_CACHE_DIR": "_glm_ocr_chunk_cache",
 }
 
 
