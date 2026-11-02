@@ -35,6 +35,8 @@ from typing import Callable
 import fitz
 
 from retainpdf_base import paths
+from retainpdf_base.cache_ttl import prune_expired_once
+from retainpdf_base.cache_ttl import ttl_seconds
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.io import save_json
 from retainpdf_base.io import save_json_atomic
@@ -386,6 +388,13 @@ def _normalize(payload: dict, *, document_id: str, source_json_path: Path, sourc
     return finalize_normalized_document(document, report, source_pdf)
 
 
+def _pruned_chunk_cache() -> Path:
+    """共用分片缓存，先清掉一年以前写的（省的是 OCR 的钱，期限给长；RETAIN_GLM_OCR_CHUNK_CACHE_TTL_DAYS=0 不清）。"""
+    root = paths.GLM_OCR_CHUNK_CACHE_DIR
+    prune_expired_once(root, ttl=ttl_seconds("RETAIN_GLM_OCR_CHUNK_CACHE_TTL_DAYS", 365), label="glm-ocr chunk cache")
+    return root
+
+
 def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderResult:
     job_dirs = job_dirs_from_explicit_args(args)
     job_dirs.source_dir.mkdir(parents=True, exist_ok=True)
@@ -420,7 +429,7 @@ def run_glm_ocr_to_job_dir(args: SimpleNamespace, *, parse=None) -> OcrProviderR
             workers=workers,
             parse=parse,
             on_prefix=publish,
-            cache_root=paths.GLM_OCR_CHUNK_CACHE_DIR,
+            cache_root=_pruned_chunk_cache(),
         )
         payload = merge_chunks(chunks, chunk_pages=chunk_pages)
         split_cross_column_blocks(payload, source_pdf)

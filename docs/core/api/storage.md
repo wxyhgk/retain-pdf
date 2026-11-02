@@ -29,6 +29,15 @@ jobs/{job_id}/
 └── logs/
 ```
 
+输出目录下还有几个各任务共用的缓存（`_` 开头，和任务目录并列），按写进去的时间过期，在用到它的进程里清一次：
+
+| 目录 | 内容 | 过期（环境变量，`0` 不清） |
+|---|---|---|
+| `_translation_unit_cache/` | 翻译单元的译文 | 90 天（`RETAIN_TRANSLATION_UNIT_CACHE_TTL_DAYS`） |
+| `_agent_request_cache/` | 翻译引擎 agent 的请求 | 90 天（`RETAIN_AGENT_REQUEST_CACHE_TTL_DAYS`，2026-11-02 起） |
+| `_domain_context_cache/` | 文档领域上下文 | 90 天（`RETAIN_DOMAIN_CONTEXT_CACHE_TTL_DAYS`，2026-11-02 起） |
+| `_glm_ocr_chunk_cache/` | GLM-OCR 各片原始结果（重试不再付钱） | 365 天（`RETAIN_GLM_OCR_CHUNK_CACHE_TTL_DAYS`，2026-11-02 起） |
+
 常见产物：
 
 - `ocr/`：Provider 原始结果、解包结果、标准化输入。任务成功以后（下一轮定期清理，启动时和每 6 小时），原始压缩包
