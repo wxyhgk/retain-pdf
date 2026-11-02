@@ -20,6 +20,14 @@ CAPTION_TITLE_START_RE = re.compile(
     r"(?:S\d+|\d+[A-Za-z]?|[IVXLCDM]+\b)",
     re.IGNORECASE,
 )
+# 编号后面没有标点、直接是小写的词：正文拿表、图开头的句子（"Table 3.17 shows the calculated …"、
+# "Figure 3.12 shows all …"），不是图注。图注的标题是大写开头或者先有标点（"Table 3.17 The lowest …"、
+# "Fig. 2 Substrate scope."、"Figure 3.11 6-31G** orbital …"）。2026-11-02 481 页的书第 212 页这样一段被当成图注，
+# 跨页接不上，翻译时把下一页那段也翻了进去。
+CAPTION_LABEL_IN_PROSE_RE = re.compile(
+    r"^(?i:schemes?|figures?|fig\.?|tables?|algorithms?|equations?|charts?|panels?|plates?|boxes?)\.?\s+"
+    r"(?:S\d+|\d+(?:\.\d+)*[A-Za-z]?|[IVXLCDM]+\b)\s+[a-z]"
+)
 CJK_CAPTION_TITLE_START_RE = re.compile(
     r"^(?:附?[图插表]|方案)\s*[SＳ\d\d０-９一二三四五六七八九十百千〇零]+\s*[.．、:：]?"
 )
@@ -177,6 +185,8 @@ def starts_like_caption_title(text: str) -> bool:
     """
     stripped = normalize_text(text)
     if not stripped:
+        return False
+    if CAPTION_LABEL_IN_PROSE_RE.match(stripped):
         return False
     return bool(CAPTION_TITLE_START_RE.match(stripped) or CJK_CAPTION_TITLE_START_RE.match(stripped))
 
