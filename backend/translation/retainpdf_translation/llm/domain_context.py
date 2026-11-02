@@ -140,8 +140,16 @@ def load_cached_domain_context(output_dir: Path | None) -> dict[str, str] | None
 def _shared_domain_context_path(preview_text: str, *, model: str) -> Path:
     import hashlib
 
+    from retainpdf_base.cache_ttl import prune_expired_once
+    from retainpdf_base.cache_ttl import ttl_seconds
     from retainpdf_base.paths import DOMAIN_CONTEXT_CACHE_DIR
 
+    # 以前只增不减（2026-11-02 起默认 90 天过期，RETAIN_DOMAIN_CONTEXT_CACHE_TTL_DAYS=0 关掉）
+    prune_expired_once(
+        DOMAIN_CONTEXT_CACHE_DIR,
+        ttl=ttl_seconds("RETAIN_DOMAIN_CONTEXT_CACHE_TTL_DAYS", 90),
+        label="domain context cache",
+    )
     key = hashlib.sha256(f"{model}\n{preview_text.strip()}".encode("utf-8")).hexdigest()
     return DOMAIN_CONTEXT_CACHE_DIR / f"{key}.json"
 

@@ -29,6 +29,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from typing import Callable
 
+from retainpdf_base.cache_ttl import prune_expired_once
+from retainpdf_base.cache_ttl import ttl_seconds
 from retainpdf_base import paths
 from retainpdf_base.events import emit_stage_progress
 from retainpdf_base.events import emit_stage_transition
@@ -468,6 +470,12 @@ def translate_book_with_agent(
     model = (model or "").strip() or DEFAULT_MODEL
     state_dir = Path(output_dir) / AGENT_STATE_DIR
     _prepare_state_dir(state_dir, pages, model)
+    # 请求缓存以前只增不减（2026-11-02 起默认 90 天过期，RETAIN_AGENT_REQUEST_CACHE_TTL_DAYS=0 关掉）
+    prune_expired_once(
+        paths.AGENT_REQUEST_CACHE_DIR,
+        ttl=ttl_seconds("RETAIN_AGENT_REQUEST_CACHE_TTL_DAYS", 90),
+        label="agent request cache",
+    )
     agent = TranslationAgent(
         model=model,
         transport=transport or make_http_transport(api_key, url=messages_url(base_url)),
