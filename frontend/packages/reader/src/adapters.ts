@@ -176,6 +176,18 @@ export type ReaderReadingPositionAdapters = {
   };
 };
 
+/** 阅读页的「AI」交给宿主：阅读页放在笔记（Studio）里、Studio 有自己的 AI（认 ask-ai）时由宿主给。
+ *
+ * `available()` 为真时点「AI」不再打开 dock 的终端面板，改调 `ask()`（宿主去打开它的 AI）；存着的终端面板也不再恢复。
+ * 能不能用要等握手，所以有 `subscribe`。不提供 = 照旧打开终端。 */
+export type ReaderHostAiAdapters = {
+  hostAi?: {
+    available: () => boolean;
+    subscribe: (listener: () => void) => () => void;
+    ask: () => boolean;
+  };
+};
+
 export type ReaderAdapters = ReaderSessionAdapters
   & ReaderMarkdownAdapters
   & ReaderDownloadAdapters
@@ -185,7 +197,8 @@ export type ReaderAdapters = ReaderSessionAdapters
   & ReaderBoardAdapters
   & ReaderNotesQuoteAdapters
   & ReaderNotesPanelAdapters
-  & ReaderReadingPositionAdapters;
+  & ReaderReadingPositionAdapters
+  & ReaderHostAiAdapters;
 
 /**
  * ReaderAdapters 声明键的运行时镜像（TS 类型在运行时被擦除）。
@@ -221,6 +234,7 @@ export const READER_ADAPTER_KEYS = [
   "notesQuote",
   "notesPanel",
   "readingPosition",
+  "hostAi",
 ] as const satisfies readonly (keyof ReaderAdapters)[];
 
 /** 必填（非 `?`）适配键子集，供门禁断言最小注入面。 */

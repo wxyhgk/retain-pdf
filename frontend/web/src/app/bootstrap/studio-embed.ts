@@ -7,13 +7,15 @@
 // - quote：阅读页悬停框「摘到笔记」经这里发出去；
 // - open-notes / close-notes / notes：阅读页「笔记」按钮让 Studio 在旁边开、收这本书的笔记，Studio 回 notes 说现在开着没有；
 // - reading：眼下读到哪（哪本书、第几页），给 Studio 的 AI 回答「这一页」用。握手后发一次（不在阅读页就是全 null 的那条），
-//   阅读页翻页停下来再发（防抖 READING_DEBOUNCE_MS）。
+//   阅读页翻页停下来再发（防抖 READING_DEBOUNCE_MS）；
+// - ask-ai：Studio 认它（它有自己的 AI）时，阅读页的「AI」不开自己的终端，先把读到哪立刻发出去，再发 ask-ai 让 Studio 打开它的 AI。
 //   阅读器包的这几样由 studioReaderAdapters 交过去（app/reader/adapters/retainpdf.ts）。
 //
 // 方案和安全要求：docs/ops/planning/studio-workbench/ 的「书和笔记接在一起」「阅读页唤出笔记」；格式：platform/studio-bridge/protocol.ts。
 
 import {
   STUDIO_EMBED,
+  askAiMessage,
   closeNotesMessage,
   isLoopbackOrigin,
   openNotesMessage,
@@ -69,6 +71,8 @@ export type StudioEmbed = {
   toggleNotes: (book: StudioBook) => boolean;
   /** 眼下读到哪（null：不在阅读页）。握过手就（防抖后）发 reading，没握手先记着，握手时发。 */
   setReading: (reading: StudioReading) => void;
+  /** 阅读页的「AI」：Studio 认 ask-ai 就先把眼下读到哪立刻发出去（不等防抖），再发 ask-ai；不认返回 false。 */
+  askAi: () => boolean;
   /** 握手、notes 变了时通知。 */
   subscribe: (listener: () => void) => () => void;
   stop: () => void;
@@ -166,6 +170,11 @@ export function startStudioEmbed(
       if (state.readingTimer) clearTimeout(state.readingTimer);
       state.readingTimer = setTimeout(tellReading, debounceMs);
     },
+    askAi() {
+      if (!supports("ask-ai")) return false;
+      tellReading();
+      return post(askAiMessage());
+    },
     toggleNotes: (book) => supports("open-notes") && post(state.notes.open ? closeNotesMessage() : openNotesMessage(book)),
     subscribe(listener) {
       state.listeners.push(listener);
@@ -185,8 +194,8 @@ export function startStudioEmbed(
 type ReaderNotesQuoteInput = { itemId: string; pageIdx: number; sourceText: string; translatedText: string | null };
 export type StudioNotesPanelState = { available: boolean; open: boolean; title: string | null };
 
-/** 交给阅读器包的三样（ReaderAdapters 的 notesQuote、notesPanel、readingPosition）：前两样握过手、Studio 认、知道是哪个任务才有；
- *  readingPosition 一直在（阅读器翻页就报，没握手先记着）。
+/** 交给阅读器包的四样（ReaderAdapters 的 notesQuote、notesPanel、hostAi、readingPosition）：前两样握过手、Studio 认、知道是哪个任务才有；
+ *  hostAi 握过手、Studio 认 ask-ai 才能用（阅读页的「AI」打开 Studio 的 AI）；readingPosition 一直在（阅读器翻页就报，没握手先记着）。
  *  任务从阅读页地址来；书的编号和书名按任务查一次（查不到就写 null，Studio 照样能用）。 */
 export function studioReaderAdapters(
   embed: StudioEmbed,
@@ -227,6 +236,11 @@ export function studioReaderAdapters(
       getState: refresh,
       subscribe: (listener: () => void) => embed.subscribe(listener),
       toggle: () => embed.toggleNotes({ ...book }),
+    },
+    hostAi: {
+      available: () => embed.supports("ask-ai"),
+      subscribe: (listener: () => void) => embed.subscribe(listener),
+      ask: () => embed.askAi(),
     },
     readingPosition: {
       report: (pageIdx: number | null, pageCount: number | null) => {

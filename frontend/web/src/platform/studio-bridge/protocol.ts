@@ -12,8 +12,9 @@ export const STUDIO_EMBED = "studio";
 export type StudioTheme = "light" | "dark";
 /** 我们处理、会发的（回 ready 时报给 Studio）。reading：会告诉 Studio 眼下读到哪。 */
 export type StudioFeature = "theme" | "navigate" | "quote" | "notes" | "reading";
-/** Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮。 */
-export type StudioSideFeature = "quote" | "open-notes";
+/** Studio 处理的、我们发过去的（hello.features）：quote →「摘到笔记」，open-notes →「笔记」按钮，ask-ai → 阅读页的「AI」打开 Studio 的 AI。 */
+export type StudioSideFeature = "quote" | "open-notes" | "ask-ai";
+const STUDIO_SIDE_FEATURES: readonly StudioSideFeature[] = ["quote", "open-notes", "ask-ai"];
 
 /** Studio 发来、我们认的消息。hello 的 features 为 null 是早先的 Studio（没发这个字段），只认 quote。 */
 export type StudioIncoming =
@@ -63,7 +64,7 @@ export function parseStudioMessage(data: unknown): StudioIncoming | null {
     const value = theme(message.theme);
     if (!value) return null;
     const features = Array.isArray(message.features)
-      ? message.features.filter((item): item is StudioSideFeature => item === "quote" || item === "open-notes")
+      ? message.features.filter((item): item is StudioSideFeature => STUDIO_SIDE_FEATURES.includes(item as StudioSideFeature))
       : null;
     return { type: "hello", theme: value, features };
   }
@@ -104,6 +105,11 @@ export function openNotesMessage(book: StudioBook) {
 
 export function closeNotesMessage() {
   return { protocol: STUDIO_BRIDGE_PROTOCOL, v: STUDIO_BRIDGE_VERSION, type: "close-notes" } as const;
+}
+
+/** 阅读页的「AI」点了：Studio 打开它自己的 AI。读的哪本、第几页，发之前先把 reading 发出去。 */
+export function askAiMessage() {
+  return { protocol: STUDIO_BRIDGE_PROTOCOL, v: STUDIO_BRIDGE_VERSION, type: "ask-ai" } as const;
 }
 
 /** 眼下读到哪：阅读页里是哪本书、第几页（0 起）、一共几页；不在阅读页（book 为 null）五项都是 null。 */

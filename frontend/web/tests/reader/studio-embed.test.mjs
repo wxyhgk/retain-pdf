@@ -1,6 +1,6 @@
 // 放在笔记（Studio）里：消息格式对得上契约、只认 window.parent 和本机回环地址、握手后才认别的、
 // 跟着换亮暗不写本机设置、跳页带着 embed、悬停框握手后才有「摘到笔记」、Studio 认 open-notes 才有「笔记」按钮、
-// 告诉 Studio 读到哪（reading）。
+// 告诉 Studio 读到哪（reading）、Studio 认 ask-ai 时阅读页的「AI」打开 Studio 的 AI。
 // 契约 contracts/studio-bridge.v1.schema.json；方案 docs/ops/planning/studio-workbench/20261101-书和笔记接在一起.md。
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -10,6 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 
 import { makeDom } from "../helpers/dom.mjs";
 import {
+  askAiMessage,
   isLoopbackOrigin,
   parseStudioMessage,
   closeNotesMessage,
@@ -29,6 +30,7 @@ import {
 import { normalizeReaderRegions } from "../../../../frontend/packages/reader/src/shared/data/reader-regions.ts";
 import { setReaderAdapters } from "../../../../frontend/packages/reader/src/adapters.ts";
 import { ReaderNotesToggle } from "../../../../frontend/packages/reader/src/components/react-pdf/ReaderCloseHome.tsx";
+import { useReaderHostAi } from "../../../../frontend/packages/reader/src/hooks/use-reader-host-ai.ts";
 
 const CONTRACT = JSON.parse(readFileSync(new URL("../../../../contracts/studio-bridge.v1.schema.json", import.meta.url), "utf8"));
 const STUDIO = "http://127.0.0.1:5173";
@@ -336,4 +338,70 @@ test("读到哪：阅读器翻页报给宿主，握过手才发，防抖停下�
   fake.receive(hello("light", ["quote", "open-notes"]));
   assert.deepEqual(readings().at(-1), readings().at(-2), "Studio 重新加载过：再说一遍");
   embed.stop();
+});
+
+test("ask-ai 对得上契约；hello 带 ask-ai 记下来，契约外的能力不认", () => {
+  assertMatchesContract(askAiMessage(), "AskAiMessage");
+  assert.deepEqual(askAiMessage(), { protocol: "retainpdf-studio-bridge", v: 1, type: "ask-ai" });
+  assert.deepEqual(CONTRACT.definitions.StudioFeature.enum, ["quote", "open-notes", "ask-ai"], "Studio 的能力就这三样");
+  assert.deepEqual(parseStudioMessage(hello("light", ["quote", "ask-ai", "fly"])).features, ["quote", "ask-ai"]);
+});
+
+test("阅读页的「AI」：Studio 认 ask-ai 才交给它；交之前先把读到哪立刻发出去（不等防抖），再发 ask-ai", async () => {
+  const dom = makeDom();
+  const fake = fakeWindow(dom);
+  const embed = startStudioEmbed(fake.win, { debounceMs: 1000 });
+  const { hostAi, readingPosition } = studioReaderAdapters(embed, "j1", async () => ({ document_id: "d1", title: "量子化学" }));
+  let told = 0;
+  const unsubscribe = hostAi.subscribe(() => { told += 1; });
+  assert.equal(hostAi.available(), false, "没握手");
+  assert.equal(hostAi.ask(), false);
+  fake.receive(hello("light", ["quote", "open-notes"]));
+  assert.equal(hostAi.available(), false, "Studio 没列 ask-ai：照旧开自己的终端");
+  assert.equal(hostAi.ask(), false);
+  assert.ok(!fake.sent.some((entry) => entry.data.type === "ask-ai"));
+
+  fake.receive(hello("light", ["quote", "open-notes", "ask-ai"]));
+  assert.equal(hostAi.available(), true);
+  assert.ok(told >= 2, "握手时通知，阅读器跟着换");
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  readingPosition.report(41, 300);
+  assert.equal(hostAi.ask(), true);
+  const [reading, ask] = fake.sent.slice(-2).map((entry) => entry.data);
+  assert.deepEqual(reading, readingMessage({ book: { jobId: "j1", documentId: "d1", title: "量子化学" }, pageIdx: 41, pageCount: 300 }), "先发眼下这一页");
+  assert.deepEqual(ask, askAiMessage());
+  assert.equal(fake.sent.at(-1).origin, STUDIO, "不用 '*'");
+  hostAi.ask();
+  assert.deepEqual(fake.sent.slice(-1).map((entry) => entry.data.type), ["ask-ai"], "读到哪没变不重发");
+  unsubscribe();
+  embed.stop();
+});
+
+test("阅读器包：宿主给了 hostAi 且能用时「AI」交给宿主，不能用时照旧（ask 不交出去）", () => {
+  const seen = [];
+  function Probe() {
+    const hostAi = useReaderHostAi();
+    seen.push(hostAi);
+    return null;
+  }
+  try {
+    setReaderAdapters(null);
+    renderToStaticMarkup(createElement(Probe));
+    assert.equal(seen.at(-1).available, false, "不在 Studio 里");
+    assert.equal(seen.at(-1).ask(), false);
+    const host = { ready: false, asked: 0 };
+    setReaderAdapters({
+      hostAi: { available: () => host.ready, subscribe: () => () => {}, ask: () => { host.asked += 1; return true; } },
+    });
+    renderToStaticMarkup(createElement(Probe));
+    assert.equal(seen.at(-1).available, false, "没握手");
+    assert.equal(seen.at(-1).ask(), false, "没握手不交");
+    host.ready = true;
+    renderToStaticMarkup(createElement(Probe));
+    assert.equal(seen.at(-1).available, true);
+    assert.equal(seen.at(-1).ask(), true);
+    assert.equal(host.asked, 1);
+  } finally {
+    setReaderAdapters(null);
+  }
 });
