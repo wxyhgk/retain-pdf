@@ -1,6 +1,6 @@
 // 放在笔记（Studio）里：消息格式对得上契约、只认 window.parent 和本机回环地址、握手后才认别的、
 // 跟着换亮暗不写本机设置、跳页带着 embed、悬停框握手后才有「摘到笔记」、Studio 认 open-notes 才有「笔记」按钮、
-// 告诉 Studio 读到哪（reading）、Studio 认 ask-ai 时阅读页的「AI」打开 Studio 的 AI。
+// 告诉 Studio 读到哪（reading）、Studio 认 ask-ai 时阅读页的「AI」打开 Studio 的 AI、同一本书的 navigate 原地翻过去。
 // 契约 contracts/studio-bridge.v1.schema.json；方案 docs/ops/planning/studio-workbench/20261101-书和笔记接在一起.md。
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -404,4 +404,34 @@ test("阅读器包：宿主给了 hostAi 且能用时「AI」交给宿主，不�
   } finally {
     setReaderAdapters(null);
   }
+});
+
+test("navigate：开着的阅读页接了（同一本书）就原地翻过去，不整页重开；别的书、不接、退订了照旧整页打开", () => {
+  const dom = makeDom();
+  const navigations = [];
+  const fake = fakeWindow(dom);
+  const embed = startStudioEmbed(fake.win, { navigate: (url) => navigations.push(url) });
+  const { hostNavigation } = studioReaderAdapters(embed, "j1", async () => null);
+  const jumps = [];
+  const unsubscribe = hostNavigation.subscribe((target) => {
+    if (target.jobId !== "j1") return false;
+    jumps.push(target);
+    return true;
+  });
+  fake.receive(hello("light", ["quote"]));
+  const navigate = (fields) => fake.receive({ protocol: "retainpdf-studio-bridge", v: 1, type: "navigate", ...fields });
+
+  navigate({ job_id: "j1", page_idx: 7, block_id: "p008-b0009" });
+  assert.deepEqual(jumps, [{ jobId: "j1", pageIdx: 7, blockId: "p008-b0009" }]);
+  assert.deepEqual(navigations, [], "同一本书不整页重开");
+
+  navigate({ job_id: "j2", page_idx: 3 });
+  assert.equal(navigations.length, 1, "别的书整页打开");
+  assert.match(navigations[0], /reader\.html\?job_id=j2&page_idx=3/);
+
+  unsubscribe();
+  navigate({ job_id: "j1", page_idx: 1 });
+  assert.equal(jumps.length, 1);
+  assert.equal(navigations.length, 2, "阅读页没登记（还在加载、不在阅读页）整页打开");
+  embed.stop();
 });
