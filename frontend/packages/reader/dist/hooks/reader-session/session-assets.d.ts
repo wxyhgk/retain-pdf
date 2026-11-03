@@ -10,6 +10,7 @@ export type SessionAssets = {
     assetsReady: boolean;
     title: string;
     regions: ReaderRegion[];
+    regionsSettled: boolean;
     readerMetadata: ReaderMetadata;
     readerErrors: ReaderOptionalArtifactErrors;
     boot: ReaderSessionState["boot"];

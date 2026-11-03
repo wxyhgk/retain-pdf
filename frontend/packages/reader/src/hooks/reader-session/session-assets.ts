@@ -62,6 +62,7 @@ export type SessionAssets = {
   assetsReady: boolean;
   title: string;
   regions: ReaderRegion[];
+  regionsSettled: boolean;
   readerMetadata: ReaderMetadata;
   readerErrors: ReaderOptionalArtifactErrors;
   boot: ReaderSessionState["boot"];
@@ -129,6 +130,7 @@ export function useSessionAssets(options: {
   const [assetsReady, setAssetsReady] = useState(false);
   const [title, setTitle] = useState("");
   const [regions, setRegions] = useState<ReaderRegion[]>([]);
+  const [regionsSettled, setRegionsSettled] = useState(false);
   const [readerMetadata, setReaderMetadata] = useState<ReaderMetadata>(() => ({
     source: null,
     translated: null,
@@ -165,8 +167,12 @@ export function useSessionAssets(options: {
       };
     }
 
+    /** 块和页尺寸还在路上（拆开加载时，露页面之后才到）：到之前 regionsSettled 不置上。 */
+    let optionalPending = false;
+
     function failBoot(text: string, progressText: string): void {
       fence.markFailed();
+      setRegionsSettled(true);
       setBoot({
         loading: false,
         percent: 100,
@@ -179,6 +185,8 @@ export function useSessionAssets(options: {
 
     function readyBoot(): void {
       setAssetsReady(true);
+      // 没有在路上的块（只读原文、一并加载过了）：这次就是没有，不用等。
+      if (!optionalPending) setRegionsSettled(true);
       setBoot({
         loading: false,
         percent: 100,
@@ -392,17 +400,27 @@ export function useSessionAssets(options: {
       const hasPdf = Boolean(sourceFinal || translatedFinal);
       const earlyDownload = optionalPromise && hasPdf ? startDownloads() : null;
       earlyDownload?.catch(() => {});
-      const optional = optionalPromise ? await optionalPromise : payload;
-      // 被关闭 / 换会话：已发出的下载会被同一个 abort 掐掉，它的 rejection 已被上面吞掉。
-      if (fence.isInactive()) return;
-
-      setRegions(committedSource ? [] : normalizeReaderRegions(optional.regionsPayload));
-      setReaderMetadata(committedSource
-        ? { source: null, translated: null }
-        : normalizeReaderMetadata(optional.readerMetadata));
-      setReaderErrors(committedSource
-        ? NO_OPTIONAL_ARTIFACT_ERRORS
-        : optional.readerErrors ?? NO_OPTIONAL_ARTIFACT_ERRORS);
+      const applyOptional = (optional: Pick<typeof payload, "regionsPayload" | "readerMetadata" | "readerErrors">) => {
+        // 被关闭 / 换会话：不往新会话里写。
+        if (fence.isInactive()) return;
+        setRegions(committedSource ? [] : normalizeReaderRegions(optional.regionsPayload));
+        setReaderMetadata(committedSource
+          ? { source: null, translated: null }
+          : normalizeReaderMetadata(optional.readerMetadata));
+        setReaderErrors(committedSource
+          ? NO_OPTIONAL_ARTIFACT_ERRORS
+          : optional.readerErrors ?? NO_OPTIONAL_ARTIFACT_ERRORS);
+        setRegionsSettled(true);
+      };
+      // 块和页尺寸不挡着露页面：它们只给悬停、高亮、目录、搜索、引用用，排版靠 PDF 自己。大书的块要好几秒、
+      // 好几 MB（726 页 3 秒、8.4 MB），PDF 早下完了；以前要等它们到了才拿掉启动遮罩。到了再补上
+      // （永不 reject，失败记进 readerErrors）。
+      if (optionalPromise) {
+        optionalPending = true;
+        void optionalPromise.then(applyOptional);
+      } else {
+        applyOptional(payload);
+      }
 
       if (!hasPdf) {
         failBoot(READER_PROGRESS_COPY.failed, READER_PROGRESS_COPY.failed);
@@ -428,6 +446,7 @@ export function useSessionAssets(options: {
       setSourceFile(null);
       setTranslatedFile(null);
       setRegions([]);
+      setRegionsSettled(false);
       setReaderMetadata({ source: null, translated: null });
       setReaderErrors(NO_OPTIONAL_ARTIFACT_ERRORS);
       setBootProgress(setBoot, 8, READER_PROGRESS_COPY.metadata, "metadata");
@@ -503,6 +522,7 @@ export function useSessionAssets(options: {
     assetsReady,
     title,
     regions,
+    regionsSettled,
     readerMetadata,
     readerErrors,
     boot,

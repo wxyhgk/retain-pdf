@@ -15,7 +15,9 @@
  *
  * 1. snapshot 带回 linkedDocument 时，session 不再自己查一遍；
  * 2. 宿主能单独给可选产物（regions / metadata）时，PDF 下载在 regions 返回之前就开始；
- * 3. 行为不变：同一个 PDF 只下一次、regions 照样进 session、regions 失败照旧降级。
+ * 3. 2026-11-03 起页面也不等 regions：PDF 下完就就绪（大书的 regions 要 3 秒、8 MB，PDF 早下完了），
+ *    regions 到了再进 session（regionsSettled 置上）；PDF 下载失败也不等 regions 就报；
+ * 4. 行为不变：同一个 PDF 只下一次、regions 照样进 session、regions 失败照旧降级。
  *
  * 用 deferred 精确控制「regions 何时返回」，不靠计时。
  */
@@ -169,7 +171,7 @@ test("snapshot 带回 linkedDocument 时，session 不再自己查 documents", a
   }
 });
 
-test("PDF 下载在 regions 返回之前就开始；regions 回来后照样进 session；每个 PDF 只下一次", async () => {
+test("PDF 下载在 regions 返回之前就开始，下完就就绪不等 regions；regions 回来后照样进 session；每个 PDF 只下一次", async () => {
   const regionsGate = deferred();
   const host = makeHost({ regionsGate });
   const { sessions, cleanup } = await mountSession();
@@ -182,11 +184,15 @@ test("PDF 下载在 regions 返回之前就开始；regions 回来后照样进 s
       host.pdfs,
       `regions 还没返回时 PDF 没开始下：${host.events.join(" → ")}`,
     );
-    assert.equal(sessions.some((s) => s.assetsReady), false, "regions 没回来就宣布就绪了");
-    regionsGate.resolve();
-    const ready = await waitFor(() => sessions.find((s) => s.assetsReady), "session 就绪");
-    assert.equal(ready.regions.length, 1, "regions 没进 session");
+    // regions 一直不回，页面照样就绪：块还没到。
+    const ready = await waitFor(() => sessions.find((s) => s.assetsReady), () => `regions 没回来就不就绪：${host.events.join(" → ")}`);
     assert.ok(ready.sourceFile && ready.translatedFile);
+    assert.equal(ready.regions.length, 0);
+    assert.equal(ready.regionsSettled, false, "块还没到就说到了");
+    regionsGate.resolve();
+    const settled = await waitFor(() => sessions.find((s) => s.regionsSettled), "regions 进 session");
+    assert.equal(settled.regions.length, 1, "regions 没进 session");
+    assert.equal(settled.assetsReady, true);
     assert.deepEqual([...host.pdfFetches].sort(), host.pdfs, "PDF 被下了不止一次");
   } finally {
     cleanup();
@@ -209,7 +215,7 @@ test("regions 失败照旧降级：PDF 照常就绪，错误记进 readerErrors"
   }
 });
 
-test("PDF 在等 regions 期间就下载失败：照旧以下载错误收尾，不残留未处理的 rejection", async () => {
+test("PDF 在等 regions 期间就下载失败：不等 regions 就以下载错误收尾，不残留未处理的 rejection", async () => {
   const unhandled = [];
   const onUnhandled = (reason) => unhandled.push(reason);
   process.on("unhandledRejection", onUnhandled);
@@ -218,13 +224,13 @@ test("PDF 在等 regions 期间就下载失败：照旧以下载错误收尾，�
   const { sessions, cleanup } = await mountSession();
   try {
     await waitFor(() => host.pdfFetches.length === 2, () => `PDF 没发出：${host.events.join(" → ")}`);
-    await wait(20);
-    assert.equal(sessions.some((s) => s.boot.failed), false, "regions 还没回来就发布了失败（发布顺序变了）");
-    regionsGate.resolve();
-    const failed = await waitFor(() => sessions.find((s) => s.boot.failed), "session 失败终态");
+    const failed = await waitFor(() => sessions.find((s) => s.boot.failed), "regions 还没回来，PDF 失败就该报了");
     assert.match(failed.boot.text, /读取 PDF 失败 \(500\)/);
     assert.equal(failed.assetsReady, false);
+    // regions 晚到：不把失败的会话改回去，也不留未处理的 rejection。
+    regionsGate.resolve();
     await wait(20);
+    assert.equal(sessions.at(-1).boot.failed, true);
     assert.deepEqual(unhandled, []);
   } finally {
     process.off("unhandledRejection", onUnhandled);

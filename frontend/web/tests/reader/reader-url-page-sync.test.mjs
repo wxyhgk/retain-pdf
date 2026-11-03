@@ -180,3 +180,55 @@ test("hook：防抖写回 page_idx、值不变不写、只用 replaceState、写
     setReaderAdapters(null);
   }
 });
+
+test("hook：只给了 block_id 的锚点，块还没到先不处理（不写回 URL），块到了跳到它所在的页", async () => {
+  const dom = setupDom("?job_id=job-B&block_id=p007-b0003");
+  const React = await import("react");
+  const { createRoot } = await import("react-dom/client");
+  const { setReaderAdapters } = await import("../../../../frontend/packages/reader/src/adapters.ts");
+  const { useReaderUrlAnchorSync } = await import("../../../../frontend/packages/reader/src/hooks/use-url-anchor-jump.ts");
+  setReaderAdapters({
+    resolveReaderAnchor: () => {
+      const params = new URLSearchParams(dom.window.location.search);
+      const blockId = `${params.get("block_id") || ""}`.trim();
+      const raw = params.get("page_idx");
+      return raw === null && !blockId ? null : { pageIdx: raw === null ? null : Number(raw), blockId };
+    },
+  });
+  const replaces = [];
+  const origReplace = dom.window.history.replaceState.bind(dom.window.history);
+  dom.window.history.replaceState = function (...args) {
+    replaces.push(args[2]);
+    return origReplace(...args);
+  };
+  const jumps = [];
+  function Harness({ regionsSettled }) {
+    useReaderUrlAnchorSync({
+      enabled: true,
+      syncEnabled: true,
+      numPages: 20,
+      currentPage: 1,
+      goToPage: (target) => jumps.push(target),
+      // 块到了才知道 p007-b0003 在第 7 页。
+      resolveBlockPage: (blockId) => (regionsSettled && blockId === "p007-b0003" ? 7 : null),
+      jobId: "job-B",
+      documentId: "",
+      regionsSettled,
+      syncDebounceMs: 50,
+    });
+    return null;
+  }
+  try {
+    const root = createRoot(dom.window.document.getElementById("root"));
+    root.render(React.createElement(Harness, { regionsSettled: false }));
+    await wait(1100);
+    assert.deepEqual(jumps, [], "块没到：不跳");
+    assert.deepEqual(replaces, [], "块没到：不把第 1 页写回 URL、冲掉 block_id");
+    root.render(React.createElement(Harness, { regionsSettled: true }));
+    await wait(1100);
+    assert.ok(jumps.length > 0 && jumps.every((page) => page === 7), `块到了跳到第 7 页：${jumps}`);
+    root.unmount();
+  } finally {
+    dom.window.close();
+  }
+});

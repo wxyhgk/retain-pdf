@@ -51,6 +51,8 @@ export type ReaderSessionState = {
   // display title; react chrome currently does not render it
   title: string;
   regions: ReaderRegion[];
+  /** 块和页尺寸到了（或者失败、这次不要）：它们不挡着露页面，晚一点才有。 */
+  regionsSettled: boolean;
   readerMetadata: ReaderMetadata;
   /** 可选产物失败的真实错误；非致命提示的唯一真源。 */
   readerErrors: ReaderOptionalArtifactErrors;

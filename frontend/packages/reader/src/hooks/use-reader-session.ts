@@ -156,6 +156,7 @@ export function useReaderSession(): ReaderSessionState {
     boot: assets.boot,
     title: assets.title,
     regions: assets.regions,
+    regionsSettled: assets.regionsSettled,
     readerMetadata: assets.readerMetadata,
     readerErrors: assets.readerErrors,
     download,
