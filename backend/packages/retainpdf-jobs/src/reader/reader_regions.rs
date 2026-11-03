@@ -8,6 +8,7 @@ use crate::views::{ReaderRegionBoxView, ReaderRegionItemView, ReaderRegionsView}
 use retainpdf_core::models::domain::JobSnapshot;
 
 mod artifacts;
+mod cache;
 mod metadata;
 mod value_extract;
 
@@ -22,7 +23,35 @@ use value_extract::{
     translation_status_from_item, value_string,
 };
 
+/// 区块数据的指纹（当 ETag 用）：输入文件没变就不变，见 `cache.rs`。
+pub(crate) fn reader_regions_fingerprint(data_root: &Path, job: &JobSnapshot) -> String {
+    cache::regions_fingerprint(data_root, job)
+}
+
+/// 区块数据：输入文件没变就用内存里算好的，变了才重新解析。
 pub(crate) fn load_reader_regions_view(
+    data_root: &Path,
+    job: &JobSnapshot,
+) -> Result<ReaderRegionsView, AppError> {
+    let fingerprint = cache::regions_fingerprint(data_root, job);
+    load_reader_regions_view_for(data_root, job, &fingerprint)
+}
+
+/// 同上，指纹调用方已经算好了。
+pub(crate) fn load_reader_regions_view_for(
+    data_root: &Path,
+    job: &JobSnapshot,
+    fingerprint: &str,
+) -> Result<ReaderRegionsView, AppError> {
+    if let Some(view) = cache::cached_view(data_root, job, fingerprint) {
+        return Ok(view);
+    }
+    let view = build_reader_regions_view(data_root, job)?;
+    cache::store_view(data_root, job, fingerprint, &view);
+    Ok(view)
+}
+
+fn build_reader_regions_view(
     data_root: &Path,
     job: &JobSnapshot,
 ) -> Result<ReaderRegionsView, AppError> {
