@@ -1036,7 +1036,6 @@ jobs:
           required_bins=(
             "$backend_root/bin/rust_api"
             "$backend_root/bin/retain-jobsd"
-            "$backend_root/bin/retainpdf-agent"
             "$backend_root/bin/retainpdf"
             "$backend_root/typst/bin/typst"
             "$backend_root/python/bin/python3"

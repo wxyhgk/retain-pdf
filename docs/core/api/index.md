@@ -717,7 +717,6 @@ ETag: "..."
 
 登记表是契约 `contracts/job-data.v1.schema.json` 的 `datasets`：新的读需求在那里加一条（文件位置、
 记录位置、字段），后端、前端类型、契约测试都照它走。只开放登记过的数据集，路径限定在任务目录里。
-命令行也能用：`retainpdf-agent translation data [--dataset 名字 [--query "字段=值&…"]]`（只读，限这本书）。
 
 例：
 

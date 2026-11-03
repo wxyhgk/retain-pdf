@@ -237,7 +237,6 @@ RUN pip install --no-cache-dir --require-hashes -r /tmp/requirements-backend.txt
 
 COPY --from=builder /build/target/release/rust_api /usr/local/bin/rust_api
 COPY --from=builder /build/target/release/retain-jobsd /usr/local/bin/retain-jobsd
-COPY --from=builder /build/target/release/retainpdf-agent /usr/local/bin/retainpdf-agent
 COPY backend/config /app/services/config
 COPY backend/pipeline /app/services/pipeline
 # Node 运行时:直接从官方 node 镜像取二进制（两边都是 bookworm，ABI 一致），

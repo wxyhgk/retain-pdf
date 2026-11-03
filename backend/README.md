@@ -94,8 +94,8 @@ Build the backend image from the repository root as Docker context:
 docker build -f ops/deployment/docker/backend/Dockerfile.app -t retainpdf-app:local .
 ```
 
-The image contains `rust_api`, `retain-jobsd`, `retainpdf-agent`, and the Python
-pipeline.（镜像里的 Python AI 服务 2026-11-03 删了，`/api/v1/ai/*` 也一起删了。）
+The image contains `rust_api`, `retain-jobsd`, and the Python
+pipeline.（镜像里的 Python AI 服务和给它的 agent 用的命令行 `retainpdf-agent` 2026-11-03 删了，`/api/v1/ai/*` 也一起删了。）
 The current container leaves the jobs runtime in its default in-process mode;
 the included `retain-jobsd` binary is used only when deployment configuration
 explicitly selects remote jobs mode and supervision.

@@ -217,13 +217,6 @@ def main() -> None:
         name_field="jobsdBinaryName",
         label="jobsd binary",
     )
-    validate_backend_binary(
-        backend_root,
-        payload,
-        bundled_field="agentBinaryBundled",
-        name_field="agentBinaryName",
-        label="agent binary",
-    )
     require(payload.get("providerConfigBundled") is True, "bundle manifest missing provider config")
     require(
         bool(str(payload.get("servicesSourceRevision") or "").strip()),
