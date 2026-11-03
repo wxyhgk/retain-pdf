@@ -712,6 +712,55 @@ async fn search_returns_anchored_hits() {
     assert_eq!(hit["job_id"], "job-1");
     assert_eq!(hit["page_idx"], 7);
     assert_eq!(hit["block_id"], "p008-b0002");
+    // 没有这个任务的记录：不知道整本书的页号
+    assert!(hit["document_page"].is_null(), "{hit}");
+}
+
+/// 分段翻译的书：命中里的 page_idx 是建索引那个任务自己的本地页号，document_page 是整本书的页号，
+/// 和按书阅读（合并任务按整本书编页）对得上（Studio 的「搜到第 N 页 → 按书读第 N 页」）。
+#[tokio::test]
+async fn search_hits_carry_the_whole_book_page() {
+    let state = test_state("library-search-document-page");
+    let app = build_app(state.clone());
+    let document_id = seed_document(&state, b"doc search pages");
+    let mut input = crate::models::CreateJobInput::default();
+    input.runtime.job_id = "job-pages-11-13".to_string();
+    let mut job = crate::models::JobSnapshot::new("job-pages-11-13".to_string(), input, vec!["python".to_string()]);
+    job.artifacts = Some(crate::models::JobArtifacts {
+        ocr_page_numbers: vec![11, 12, 13],
+        ..crate::models::JobArtifacts::default()
+    });
+    state.db.save_job(&job).expect("save job");
+    state
+        .db
+        .replace_document_fts(
+            &document_id,
+            "job-pages-11-13",
+            &[FtsBlockRow {
+                page_idx: 1,
+                block_id: "p002-b0003".to_string(),
+                source_text: "grignard reagent formation".to_string(),
+                translated_text: "格氏试剂的生成".to_string(),
+            }],
+        )
+        .expect("seed fts");
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/search?q=grignard")
+                .header("X-API-Key", "test-key")
+                .body(Body::empty())
+                .expect("request"),
+        )
+        .await
+        .expect("search response");
+    assert_eq!(response.status(), StatusCode::OK);
+    let payload = json_response(response).await;
+    let hit = &payload["data"]["hits"][0];
+    assert_eq!(hit["job_id"], "job-pages-11-13");
+    assert_eq!(hit["page_idx"], 1);
+    assert_eq!(hit["document_page"], 12);
 }
 
 #[tokio::test]

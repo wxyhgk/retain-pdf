@@ -1212,3 +1212,12 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
   手写的 `fetchGlossaries`、`fetchGlossary` 在契约里叫 `listGlossaries`、`getGlossary`，其余 5 个同名。`deleteGlossary` 回的是删掉的那张表
   （`GlossaryDetailView`），`parseGlossaryCsv` 的回包有 `duplicate_count`（去重丢掉的行数）。
 - 前端可以做：重新生成 `src/generated`，换掉 `glossaries.ts` 里手写的 7 个请求（`glossaries-store.ts` 里拼地址的几处一起收）。
+
+## 全文检索命中加整本书页号 document_page
+
+2026-11-03。Studio 会话检查时发现：分段翻译的书，`GET /api/v1/search` 命中里的 `page_idx` 是建索引那个任务自己的本地页号，
+`GET /documents/{id}/reading` 给的合并任务却按整本书编页，「搜到第 N 页 → 按书读第 N 页」会落到别的页。
+
+- 新字段 `document_page`（1 起，整本书的页号；任务记录读不到时 `null`），旧字段都不变。契约 `library-documents.v1` 的
+  `BlockSearchHit` 加了这个键（必有，可为 `null`），生成的 DTO 已更新。
+- 前端可以做（可选）：从搜索结果跳到按书阅读的任务时用 `document_page - 1`；直接打开命中的 `job_id` 那个任务时照旧用 `page_idx`。

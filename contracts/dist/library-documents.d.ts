@@ -917,7 +917,7 @@ export interface SearchResultView {
     has_more: boolean;
 }
 /**
- * retainpdf-core models/library.rs :: BlockSearchHit —— 一个块级命中，带完整锚点，前端可以跳到阅读器原位。
+ * views.rs :: SearchHitView（retainpdf-core models/library.rs :: BlockSearchHit 展开，加上 document_page）—— 一个块级命中，带完整锚点，前端可以跳到阅读器原位。
  */
 export interface BlockSearchHit {
     document_id: string;
@@ -926,9 +926,13 @@ export interface BlockSearchHit {
      */
     job_id: string;
     /**
-     * 0 起的页号。
+     * 0 起的页号：建索引那个任务（job_id）自己的本地页号。分段翻译的书和整本书的页号不同，跳到 GET /documents/{id}/reading 给的阅读任务时用 document_page。
      */
     page_idx: number;
+    /**
+     * 这一块在整本书里是第几页（1 起），和 GET /documents/{id}/reading 给的阅读任务的页序一致（合并任务按整本书编页：本地页 = document_page - 1）。2026-11-03 加。任务记录读不到时是 null。
+     */
+    document_page: number | null;
     block_id: string;
     /**
      * 原文片段。检索词 3 个字及以上走全文索引：命中的词用 [ ] 括起来，截断处是 …；更短的检索词走包含匹配：取原文前 120 个字，不加标记。
