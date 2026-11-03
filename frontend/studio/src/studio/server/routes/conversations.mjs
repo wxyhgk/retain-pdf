@@ -13,6 +13,7 @@ const PICTURE_LIMIT = 20 * 1024 * 1024;
 const FILE_LIMIT = 200 * 1024 * 1024;
 /** How much of the lines selected goes with what is said (a whole book selected: its start, said to be cut). */
 const SELECTION_MAX = 20_000;
+const WORDS_MAX = 2000;
 /** The pictures an AI's answer may show from this machine, by extension. */
 const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 
@@ -100,7 +101,14 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		};
 		const open = await article(asked.article);
 		const selection = open && asked.selection && Number.isInteger(asked.selection.start) && Number.isInteger(asked.selection.end) && typeof asked.selection.text === 'string'
-			? { start: asked.selection.start, end: asked.selection.end, text: asked.selection.text.slice(0, SELECTION_MAX), ...(asked.selection.text.length > SELECTION_MAX ? { cut: true } : {}) }
+			? {
+					start: asked.selection.start,
+					end: asked.selection.end,
+					text: asked.selection.text.slice(0, SELECTION_MAX),
+					...(asked.selection.text.length > SELECTION_MAX ? { cut: true } : {}),
+					// The words selected, when they are a part of those lines (a phrase of a paragraph).
+					...(typeof asked.selection.words === 'string' && asked.selection.words.trim() ? { words: asked.selection.words.slice(0, WORDS_MAX) } : {}),
+				}
 			: null;
 		const mentions = (await Promise.all((Array.isArray(asked.mentions) ? asked.mentions : []).map(article))).filter(Boolean).filter((entry) => entry.path !== open?.path);
 		// What the widgets in the answers told of themselves (note.tell): a few, each its title and its value as JSON, not long.

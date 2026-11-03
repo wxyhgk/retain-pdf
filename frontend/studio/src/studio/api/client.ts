@@ -525,7 +525,7 @@ export function followConversation(id: string, listener: (event: ConversationEve
 
 /** Where the author is, told with what they say: the article open, the lines selected in it, the articles named with @. */
 /** `widgets`: what the widgets in the conversation told of themselves since it was last spoken to (note.tell). */
-export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string }; mentions?: string[]; widgets?: Array<{ title: string; state: unknown }> };
+export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string; words?: string }; mentions?: string[]; widgets?: Array<{ title: string; state: unknown }> };
 
 /** The fields of a question an AI asks: a JSON Schema's, each a choice of one (`oneOf`), of several (`items.anyOf`) or words. */
 export type FormField = { type: string; title?: string; description?: string; oneOf?: Array<{ const: string; title?: string; description?: string }>; items?: { anyOf?: Array<{ const: string; title?: string; description?: string }> } };

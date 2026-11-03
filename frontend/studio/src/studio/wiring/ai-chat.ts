@@ -29,8 +29,12 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 	const hasSelection = () => Boolean(studio.session.slug) && studio.editor.hasSelection();
 	async function selection() {
 		const marked = studio.session.slug && studio.editor.hasSelection() ? studio.editor.markSelection() : null;
-		if (!marked || !(await studio.session.flush())) return null;
-		return sourceLinesOf(studio.session.current.source, marked);
+		if (!marked) return null;
+		// The words, before saving (which may draw the article again).
+		const words = studio.editor.selectedWords();
+		if (!(await studio.session.flush())) return null;
+		const lines = sourceLinesOf(studio.session.current.source, marked);
+		return lines && words ? { ...lines, words } : lines;
 	}
 	function insert(markdown: string): boolean {
 		if (!studio.session.slug) return false;

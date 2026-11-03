@@ -15,6 +15,7 @@ import { shell as shellState } from '../shell/shell-state';
 import { trackWrite } from '../state/writes';
 import type { ArticleSummary } from '../types';
 import type { Studio } from './studio';
+import { rememberRecent } from '../state/recent-pages';
 
 /** 今天的日志: the template its pages are made from (templates/journal.md), and the page they go under. */
 const JOURNAL_TEMPLATE = 'journal';
@@ -38,6 +39,7 @@ function lastOpened(): string | null {
 }
 
 function rememberOpened(slug: string): void {
+	rememberRecent(slug);
 	try {
 		localStorage.setItem(LAST_OPENED, slug);
 	} catch {

@@ -36,8 +36,8 @@ export type AiPanelHost = {
 	openArticle(slug: string): void;
 	/** Whether something is selected in the article open. */
 	hasSelection(): boolean;
-	/** The lines of the article selected (the article saved first, so they are the file's); null when none. */
-	selection(): Promise<{ start: number; end: number; text: string } | null>;
+	/** The lines of the article selected (the article saved first, so they are the file's), and the words selected of them; null when none. */
+	selection(): Promise<{ start: number; end: number; text: string; words?: string } | null>;
 	toast(message: string): void;
 	/** Runs a command in the 终端 tab (an account's login). */
 	runInTerminal(command: string): void;
@@ -63,7 +63,7 @@ export type AiPanelHost = {
 
 export type ArticleRef = { slug: string; title: string };
 /** An article as the panel shows one it names: its link, and what its card says of it as the pointer rests on it. */
-export type PageInfo = ArticleRef & Pick<ArticleSummary, 'icon' | 'parent' | 'description' | 'pubDate' | 'tags' | 'draft' | 'kind'>;
+export type PageInfo = ArticleRef & Pick<ArticleSummary, 'icon' | 'parent' | 'description' | 'pubDate' | 'tags' | 'draft' | 'kind' | 'modified'>;
 
 /** What the panel shows (AiPanel.tsx draws it). */
 export type PanelState = {
@@ -471,7 +471,10 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		if (shown?.state === 'running') {
 			// While it works: to one that can take it, words it reads as soon as it can (插话); else said once it is done (with
 			// what it takes: the pictures, the files, the articles named, whose files words in between do not tell).
-			if (shown.canSteer && !pictures.length && !files.length && !quotes.length && !pastes.length && !said.mentions.length) await steer(shown.id, text);
+			// Words in between go alone: with something selected in the article (its chip shown), said once it is done, with it.
+			const { article, leftOut, selectionLeftOut } = get();
+			const selecting = Boolean(article && leftOut !== article.slug && !selectionLeftOut && host.hasSelection());
+			if (shown.canSteer && !pictures.length && !files.length && !quotes.length && !pastes.length && !said.mentions.length && !selecting) await steer(shown.id, text);
 			else set({ queued: [...get().queued, said], draft: '', pictures: [], files: [], quotes: [], pastes: [] });
 			return;
 		}

@@ -364,6 +364,8 @@ test('what is said is told where the author is: the article open (followed as an
 		await expect(answer).toContainText('当前打开的文章：《Studio 测试夹具》，文件 studio-fixture/index.md；它的写作要求在 studio-fixture/ai/brief.md，先读');
 		await expect(answer).toContainText('这句话选中的是《Studio 测试夹具》（studio-fixture/index.md）的第');
 		await expect(answer).toContainText('结尾段落。');
+		// The whole paragraph selected: no words of it said apart.
+		await expect(answer).not.toContainText('其中用户选中的');
 		await expect(answer).toContainText('用 @ 提到的文章：《另一篇笔记》，文件 other-note/index.md（没有 ai/brief.md，不用找）');
 		await expect(answer).toContainText('上下文 看看 [另一篇笔记](/blog/other-note/) 和');
 		// What was said is shown as said, what it named a link to it (not again under it).
@@ -382,6 +384,59 @@ test('what is said is told where the author is: the article open (followed as an
 		await expect(pane(page).locator('.ai-message').last()).not.toContainText('当前打开的文章');
 	} finally {
 		removeArticle('other-note');
+	}
+});
+
+test('some words of a paragraph selected: the AI told which, and they stay marked while the input has the keys', async ({ page }) => {
+	await openAi(page);
+	const ending = editor(page).locator('p', { hasText: '结尾段落' });
+	await ending.click();
+	await page.keyboard.press('End');
+	// The last two characters (段落 of 结尾段落。, the full stop left).
+	await page.keyboard.press('ArrowLeft');
+	for (let index = 0; index < 2; index += 1) await page.keyboard.press('Shift+ArrowLeft');
+	await expect(pane(page).locator('.ai-context .ai-chip-label')).toHaveText(['Studio 测试夹具', '选中的内容']);
+	await input(page).click();
+	await expect(editor(page).locator('.is-kept-selection')).toHaveText('段落');
+	await input(page).fill('上下文 这个词');
+	await input(page).press('Enter');
+	const answer = pane(page).locator('.ai-message').last();
+	await expect(answer).toContainText('结尾段落。');
+	await expect(answer).toContainText('其中用户选中的只是这几个字：「段落」');
+	// Back in the article: the browser's own selection again, the mark gone.
+	await ending.click();
+	await expect(editor(page).locator('.is-kept-selection')).toHaveCount(0);
+});
+
+test('the article open, retitled, is named anew in its chip; @ offers the pages opened last first (最近)', async ({ page }) => {
+	writeArticle('other-note', '---\ntitle: 另一篇笔记\npubDate: 2026-10-01\ndraft: true\n---\n\n另一篇的一段。\n');
+	writeArticle('third-note', '---\ntitle: 第三篇笔记\npubDate: 2026-10-01\ndraft: true\n---\n\n第三篇的一段。\n');
+	try {
+		await openAi(page);
+		const chips = pane(page).locator('.ai-context .ai-chip-label');
+		await expect(chips).toHaveText(['Studio 测试夹具']);
+		// Retitled: the chip follows, not left as it was till taken off and put back.
+		await page.locator('#article-title-input').fill('改过名的夹具');
+		await expect(chips).toHaveText(['改过名的夹具']);
+
+		// Opened one after the other: the one opened last first, the one open itself after them.
+		const list = page.locator('#article-list');
+		await list.getByText('第三篇笔记', { exact: true }).click();
+		await expect(chips).toHaveText(['第三篇笔记']);
+		await list.getByText('另一篇笔记', { exact: true }).click();
+		await expect(chips).toHaveText(['另一篇笔记']);
+		await input(page).fill('@');
+		const menu = pane(page).locator('.ai-mention-menu');
+		await expect(menu.locator('.ai-mention-heading')).toHaveText('最近');
+		await expect(menu.locator('.ai-mention > span:first-child').nth(0)).toHaveText('第三篇笔记');
+		await expect(menu.locator('.ai-mention > span:first-child').nth(1)).toHaveText('改过名的夹具');
+		// Words typed: those that have them, the heading gone.
+		await input(page).pressSequentially('笔记');
+		await expect(menu.locator('.ai-mention-heading')).toHaveCount(0);
+		await expect(menu.locator('.ai-mention > span:first-child')).toHaveText(['第三篇笔记', '另一篇笔记']);
+	} finally {
+		removeArticle('other-note');
+		removeArticle('third-note');
 	}
 });
 
@@ -599,6 +654,20 @@ test('said while it works: Claude Code takes it in between; pi, once its turn is
 	await expect(pane(page).locator('.ai-stop').last()).toHaveText('已停止');
 	await expect(pane(page).locator('.ai-message').last()).toContainText('pi 模型');
 	await expect(queued).toHaveCount(0);
+});
+
+test('said while Claude Code works, with something selected in the article: not in between (that goes alone), but once it is done, with what is selected', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '慢慢来');
+	await expect(placeholder(page)).toHaveText('插话：它会尽快看到（Enter）');
+	await editor(page).locator('p', { hasText: '结尾段落' }).click({ clickCount: 3 });
+	await expect(placeholder(page)).toHaveText('排队：它做完这一轮就发（Enter）');
+	await tell(page, '上下文 这段');
+	const queued = pane(page).locator('.ai-queued');
+	await expect(queued.locator('.ai-queued-text')).toHaveText('上下文 这段');
+	await queued.getByRole('button', { name: '立刻发' }).click();
+	await expect(pane(page).locator('.ai-message').last()).toContainText('这句话选中的是');
+	await expect(pane(page).locator('.ai-message').last()).toContainText('结尾段落。');
 });
 
 test('a picture pasted into the input goes with what is said, shown small over it', async ({ page }) => {

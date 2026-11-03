@@ -131,6 +131,8 @@ export type StudioEditor = {
 	markSelection(): string | null;
 	/** Whether something is selected in the article (not a caret alone). */
 	hasSelection(): boolean;
+	/** The words selected (as text, a line for each block); empty for none, or for a block selected whole (a picture, a formula). */
+	selectedWords(): string;
 	/** The article's library (assets/refs.bib), to number its citations by; null when it has none. */
 	setLibrary(library: Map<string, BibEntry> | null): void;
 	/**
@@ -220,6 +222,39 @@ const instructing = $prose(
 				},
 			},
 			props: { decorations: (state) => instructingKey.getState(state) },
+		}),
+);
+
+/**
+ * What is selected, still shown when the article is left for something else (the AI panel's input, a menu): the
+ * browser shows no selection where it has no focus, and what the AI is told of (选中的内容) would not be seen.
+ */
+const keptSelectionKey = new PluginKey<boolean>('studio-kept-selection');
+const keptSelection = $prose(
+	() =>
+		new Plugin<boolean>({
+			key: keptSelectionKey,
+			state: {
+				init: () => false,
+				apply: (tr, away) => (tr.getMeta(keptSelectionKey) as boolean | undefined) ?? away,
+			},
+			props: {
+				decorations(state) {
+					const { selection } = state;
+					if (!keptSelectionKey.getState(state) || selection.empty || !(selection instanceof TextSelection)) return null;
+					return DecorationSet.create(state.doc, [Decoration.inline(selection.from, selection.to, { class: 'is-kept-selection' })]);
+				},
+				handleDOMEvents: {
+					blur(view) {
+						if (!view.state.selection.empty) view.dispatch(view.state.tr.setMeta(keptSelectionKey, true).setMeta('addToHistory', false));
+						return false;
+					},
+					focus(view) {
+						if (keptSelectionKey.getState(view.state)) view.dispatch(view.state.tr.setMeta(keptSelectionKey, false).setMeta('addToHistory', false));
+						return false;
+					},
+				},
+			},
 		}),
 );
 
@@ -552,7 +587,8 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			.use(reviewWatch)
 			.use(longArticle)
 			.use(nextPart)
-			.use(instructing);
+			.use(instructing)
+			.use(keptSelection);
 		crepe.on((listener) => {
 			// Opening the body is not an edit, nor is deciding a change under review.
 			listener.updated(() => report());
@@ -788,6 +824,11 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	return {
 		markSelection,
 		hasSelection: () => crepe?.editor.action((ctx) => !ctx.get(editorViewCtx).state.selection.empty) ?? false,
+		selectedWords: () =>
+			crepe?.editor.action((ctx) => {
+				const { selection, doc } = ctx.get(editorViewCtx).state;
+				return selection instanceof TextSelection ? doc.textBetween(selection.from, selection.to, '\n', ' ') : '';
+			}) ?? '',
 		insertMarkdown(markdown, where = 'caret') {
 			return (
 				crepe?.editor.action((ctx) => {

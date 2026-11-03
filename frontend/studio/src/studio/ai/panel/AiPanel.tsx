@@ -14,6 +14,7 @@ import { useStore, type Store } from '../../shell/store';
 import { markdownOfSelection, pictureUrl } from '../ai-markdown';
 import { EffortMenu, ModelMenu } from './ModelMenu';
 import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
+import { recentPages } from '../../state/recent-pages';
 import { createPromptEditor, type PromptCaret, type PromptEditor, type PromptEditorHost } from './prompt-editor';
 import { commandOf, Item, itemProps, ItemsContext, Markdown, PageChip, PanelContext, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { PagePeek } from './PagePeek';
@@ -561,11 +562,18 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	// Those named already (links in what is written): not offered again.
 	const named = asked ? mentionsIn(draft, pages) : [];
 	const needle = asked?.query.toLocaleLowerCase('zh-CN') ?? '';
+	// The pages opened last first (the one open is told already, as its chip), then those changed last, as Notion's 最近.
+	const recent = asked ? recentPages().filter((slug) => slug !== article?.slug) : [];
+	const recency = (entry: PageInfo) => {
+		const at = recent.indexOf(entry.slug);
+		return at < 0 ? recent.length : at;
+	};
 	const choices = asked
 		? actions
 				.articles()
 				.filter((entry) => !named.some((other) => other.slug === entry.slug))
 				.filter((entry) => !needle || entry.title.toLocaleLowerCase('zh-CN').includes(needle) || entry.slug.includes(needle))
+				.sort((one, other) => recency(one) - recency(other) || (other.modified ?? 0) - (one.modified ?? 0))
 				.slice(0, 8)
 		: [];
 	// A slash command its agent offers (/compact), typed at the start: chosen from a list as an article is with @.
@@ -750,7 +758,8 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				</div>
 			)}
 			{choices.length > 0 && (
-				<div className="ai-mention-menu" role="listbox">
+				<div className="ai-mention-menu" role="listbox" aria-label={needle ? t('页面') : t('最近')}>
+					{!needle && <div className="ai-mention-heading">{t('最近')}</div>}
 					{choices.map((entry, index) => (
 						<button
 							key={entry.slug}
@@ -774,8 +783,9 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				draft={draft}
 				editor={editor}
 				handlers={handlers}
-				// While it works: to one that can take it, a word in between (Enter); else said once it is done.
-				placeholder={running ? (conversation?.canSteer ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到文章，/ 命令，$ 写公式，可以粘贴图片）')}
+				// While it works: to one that can take it, a word in between (Enter); else, or with something selected in the
+				// article (a word in between goes alone), said once it is done.
+				placeholder={running ? (conversation?.canSteer && !(open && !selectionLeftOut && selected) ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到文章，/ 命令，$ 写公式，可以粘贴图片）')}
 			/>
 			<div className="ai-composer-bar">
 				<span className="ai-usage">{used && used.size > 0 && <Usage used={used} canCompact={Boolean(conversation?.commands.some((entry) => entry.name === 'compact'))} onCompact={() => actions.ask('/compact')} />}</span>

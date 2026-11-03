@@ -704,7 +704,11 @@ const session = new ArticleSession(
 		retitled(title) {
 			openTitle = title || t('无标题');
 			topBar.showTitle(openTitle);
-			if (session.slug) articleList.retitled(session.slug, title);
+			if (session.slug) {
+				articleList.retitled(session.slug, title);
+				// The AI panel's chip of the article open, named anew too (not left as it was till it is taken off and on).
+				chat.aiPanel.showArticle({ slug: session.slug, title: openTitle });
+			}
 		},
 		saved(slug, saved, problems) {
 			articleList.saved(slug, saved);

@@ -131,9 +131,16 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 	const find = (title: string, slug?: string | null) => (slug ? pages.find((page) => page.slug === slug) : undefined) ?? pages.find((page) => page.title === title);
 	// The articles named with @ are links in what was said (said before that, they were named under it).
 	const inText = new Set(mentionsIn(item.text, pages).map((page) => page.slug));
+	// Named as they are now (an article renamed since: its new title), as it was said when gone.
+	const article = told?.article ? find(told.article, told.articleSlug) : undefined;
 	const named = [
-		...(told?.article ? [{ label: `${told.article}${told.selection ? ` · ${told.selection}` : ''}`, page: find(told.article, told.articleSlug) }] : []),
-		...(told?.mentions ?? []).map((title, at) => ({ label: title, page: find(title, told?.mentionSlugs?.[at]) })).filter(({ page }) => !page || !inText.has(page.slug)),
+		...(told?.article ? [{ label: `${article?.title ?? told.article}${told.selection ? ` · ${told.selection}` : ''}`, page: article }] : []),
+		...(told?.mentions ?? [])
+			.map((title, at) => {
+				const page = find(title, told?.mentionSlugs?.[at]);
+				return { label: page?.title ?? title, page };
+			})
+			.filter(({ page }) => !page || !inText.has(page.slug)),
 		// What the widgets in the conversation told of themselves (note.tell), told with it.
 		...(told?.widgets ?? []).map((title) => ({ label: t('交互模块：{title}', { title: title || t('交互模块') }), page: undefined })),
 	];

@@ -231,6 +231,7 @@ pre.ai-subagent-error { max-height: 160px; overflow: auto; white-space: pre-wrap
 .ai-mention span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ai-mention.is-current, .ai-mention:hover { background: var(--surface-soft); }
 .ai-mention-slug { flex: none; color: rgb(var(--gray)); font-family: var(--font-mono); font-size: var(--studio-fs-caption); }
+.ai-mention-heading { padding: 4px 8px 2px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); font-weight: 500; }
 
 /* The AI in the editor (inline-ai.ts): a box under what is asked about, like a menu. */
 .inline-ai { position: fixed; z-index: 60; box-sizing: border-box; padding: 6px; border: 1px solid rgb(var(--gray-light)); border-radius: 10px; background: var(--surface); box-shadow: var(--studio-shadow-pop); color: rgb(var(--gray-dark)); font-size: 13px; }

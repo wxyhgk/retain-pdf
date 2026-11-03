@@ -426,6 +426,8 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .task-tray .task-log { max-height: 220px; margin: 8px 0 0; padding: 7px 8px; overflow: auto; border-radius: 6px; background: var(--surface-soft); font-family: var(--font-mono); font-size: var(--studio-fs-caption); line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
 @keyframes task-pulse { 50% { opacity: 0.25; } }
 /* Blocks an AI is working on (Alt+Enter). */
+/* What is selected, shown while the article has no focus (the AI panel's input taken): what the AI is told of. */
+.crepe-host .milkdown .ProseMirror .is-kept-selection { background: rgba(var(--black), 0.1); }
 .crepe-host .milkdown .ProseMirror .is-instructing { position: relative; border-radius: 6px; background: color-mix(in srgb, var(--accent) 6%, var(--surface)); box-shadow: inset 2px 0 0 rgb(var(--gray)); }
 .crepe-host .milkdown .ProseMirror .is-instructing::after { content: var(--word-instructing); position: absolute; top: 2px; right: 6px; color: rgb(var(--gray)); font-size: var(--studio-fs-caption); pointer-events: none; animation: task-pulse 1.2s ease-in-out infinite; }
 /* 小程序: floating windows (mini-apps.ts). */
