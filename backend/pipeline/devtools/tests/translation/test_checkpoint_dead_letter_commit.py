@@ -177,3 +177,24 @@ def test_completed_page_count_counts_pages_without_pending_items(tmp_path: Path)
     )
     assert progress["completed_page_count"] == 2
     assert progress["pending_item_count"] == 1
+
+
+def test_a_group_left_with_one_dead_lettered_member_does_not_block_commit(tmp_path: Path) -> None:
+    """接续组里一块按策略保留原文了、另一块转成死信：待办单元只剩一个成员，单元编号 `__cg__:…` 不是任何一块的编号。
+
+    以前只有一个成员时去看单元自己的状态（单元从来不会被打上最终状态），永远算阻断：导出门禁放行了，提交却报
+    pending（2026-11-03，6574 页的书卡在 p917-b021 一行 `---`，同组另一块是命令行、按策略保留原文）。
+    """
+    from retainpdf_translation.workflow.checkpoint.contract import _is_settled_non_blocking
+
+    dead = _item("p917-b021", state="dead_letter")
+    unit = {
+        "item_id": "__cg__:cg-917-130",
+        "translation_unit_id": "__cg__:cg-917-130",
+        "translation_unit_kind": "group",
+        "translation_unit_member_ids": ["p917-b021"],
+        "should_translate": True,
+    }
+    assert _is_settled_non_blocking(unit, [dead])
+    # 成员还没处理（没有最终状态）时照样算待办
+    assert not _is_settled_non_blocking(unit, [_item("p917-b021", state="untouched")])

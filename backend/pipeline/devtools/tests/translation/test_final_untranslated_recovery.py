@@ -134,6 +134,38 @@ def test_final_untranslated_recovery_stage_saves_pages(monkeypatch, tmp_path: Pa
     assert saved[0]["translated_text"] == "该矩阵在基组中被对角化。"
 
 
+def test_final_recovery_reports_progress_and_saves_only_the_touched_pages(monkeypatch, tmp_path: Path) -> None:
+    # 以前收口完整本每一页都重写（6574 页的书半小时），进度只有开始和结束。
+    blocked = _failed_item("p001-b003", "The matrix is diagonalized in the basis.")
+    done = {**_failed_item("p002-b001", "Already translated text."), "page_idx": 1}
+    done.update({"final_status": "translated", "translated_text": "已经翻好的文字。", "protected_translated_text": "已经翻好的文字。"})
+    done["translation_diagnostics"] = {"final_status": "translated"}
+    pages = {0: [blocked], 1: [done]}
+    paths = {0: tmp_path / "page-001.json", 1: tmp_path / "page-002.json"}
+    paths[0].write_text(json.dumps([blocked]), encoding="utf-8")
+    paths[1].write_text("SENTINEL", encoding="utf-8")  # 这一页没改，不该被重写
+    monkeypatch.setattr(repair_phase, "request_chat_content", lambda *_args, **_kwargs: "该矩阵在基组中被对角化。")
+    messages: list[str] = []
+    monkeypatch.setattr(repair_phase, "emit_stage_progress", lambda **kwargs: messages.append(kwargs["message"]))
+
+    summary = stages.run_final_untranslated_recovery_stage(
+        page_payloads=pages,
+        translation_paths=paths,
+        api_key="sk-test",
+        model="demo-model",
+        base_url="https://example.com/v1",
+        translation_context=None,
+        workers=1,
+    )
+
+    assert summary["recovered_items"] == 1
+    assert "正在补翻第 1/1 块（p001-b003）" in messages
+    assert "正在保存改动过的 1 页" in messages
+    assert messages[-1] == "最终未翻译收口完成：补成 1 块，保留原文 0 块，还有 0 块没处理"
+    assert json.loads(paths[0].read_text(encoding="utf-8"))[0]["translated_text"] == "该矩阵在基组中被对角化。"
+    assert paths[1].read_text(encoding="utf-8") == "SENTINEL"
+
+
 def test_final_untranslated_recovery_respects_item_budget(monkeypatch) -> None:
     payload = [
         _failed_item("p001-b001", "The density functional is evaluated."),

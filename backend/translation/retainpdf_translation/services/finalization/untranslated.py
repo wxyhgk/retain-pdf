@@ -34,6 +34,8 @@ class FinalUntranslatedRecoverySummary:
     dead_letter_items: int = 0
     blocking_after: int = 0
     skipped_by_budget: int = 0
+    # 这一轮改过的条目（补成的、转成死信的、按策略保留原文的）：只有它们的页要重新保存。不进 as_dict。
+    touched_item_ids: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, int]:
         return {
@@ -56,7 +58,9 @@ def recover_blocking_untranslated_items(
     max_items: int = DEFAULT_MAX_ITEMS,
     workers: int = DEFAULT_MAX_WORKERS,
     request_chat_content_fn=request_chat_content,
+    on_progress=None,
 ) -> FinalUntranslatedRecoverySummary:
+    """on_progress(已补完数, 总数, item_id)：每补完一块调一次，给进度事件用。"""
     max_items = _max_items_from_env(max_items)
     flat_payload = [item for page_idx in sorted(page_payloads) for item in page_payloads[page_idx]]
     pending_translation_items(flat_payload)
@@ -65,17 +69,20 @@ def recover_blocking_untranslated_items(
         return FinalUntranslatedRecoverySummary()
     item_by_id = _item_index(page_payloads)
     blocking_before = len(blocking)
+    touched: list[str] = []
     for item in (
         item_by_id[item["item_id"]]
         for item in blocking
         if item.get("item_id") in item_by_id and should_skip_model_by_policy(item_by_id[item["item_id"]])
     ):
         _mark_final_policy_keep_origin(item)
+        touched.append(str(item.get("item_id", "") or ""))
     blocking = blocking_untranslated_items(page_payloads)
     if not blocking:
         return FinalUntranslatedRecoverySummary(
             blocking_before=blocking_before,
             blocking_after=0,
+            touched_item_ids=tuple(touched),
         )
     recovery_members = _recovery_members_by_key(page_payloads)
     recoverable: list[dict] = []
@@ -102,23 +109,30 @@ def recover_blocking_untranslated_items(
             blocking_before=blocking_before,
             blocking_after=len(blocking),
             skipped_by_budget=skipped_by_budget,
+            touched_item_ids=tuple(touched),
         )
 
     recovered = 0
     dead_letter = 0
     max_workers = max(1, min(int(workers or 1), len(candidates)))
+    def _report(done: int, item: dict) -> None:
+        if on_progress is not None:
+            on_progress(done, len(candidates), str(item.get("item_id", "") or ""))
+
     if max_workers <= 1:
-        results = [
-            _recover_one(
-                item,
-                api_key=api_key,
-                model=model,
-                base_url=base_url,
-                target_language_name=target_language_name,
-                request_chat_content_fn=request_chat_content_fn,
+        results = []
+        for item in candidates:
+            results.append(
+                _recover_one(
+                    item,
+                    api_key=api_key,
+                    model=model,
+                    base_url=base_url,
+                    target_language_name=target_language_name,
+                    request_chat_content_fn=request_chat_content_fn,
+                )
             )
-            for item in candidates
-        ]
+            _report(len(results), item)
     else:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
@@ -133,12 +147,16 @@ def recover_blocking_untranslated_items(
                 )
                 for item in candidates
             ]
-            results = [future.result() for future in as_completed(futures)]
+            results = []
+            for future in as_completed(futures):
+                results.append(future.result())
+                _report(len(results), results[-1][0])
 
     for item, payload, exc in results:
         representative_id = str(item.get("item_id", "") or "")
         recovery_key = recovery_key_by_representative_id.get(representative_id, _recovery_key(item))
         members = recovery_members.get(recovery_key) or [item]
+        touched.extend(str(member.get("item_id", "") or "") for member in members)
         if payload is not None:
             if _is_aggregate_geometry_group(item):
                 apply_group_translated_entry(members, payload)
@@ -158,6 +176,7 @@ def recover_blocking_untranslated_items(
         dead_letter_items=dead_letter,
         blocking_after=len(after),
         skipped_by_budget=skipped_by_budget,
+        touched_item_ids=tuple(touched),
     )
 
 

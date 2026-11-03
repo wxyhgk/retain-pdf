@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import as_completed
 from dataclasses import dataclass
@@ -38,6 +39,17 @@ DEFAULT_AGENT_REPAIR_WORKERS = 8
 MAX_AGENT_REPAIR_WORKERS = 16
 
 
+# 修复的问题类型，进度事件里给人看的说法
+ISSUE_KIND_LABELS = {
+    "empty_translation": "空译",
+    "english_residue": "英文残留",
+    "english_residue_warning": "英文残留",
+    "mixed_english_residue": "中英夹杂",
+    "glossary_term_missing": "术语没用上",
+    "protocol_shell_output": "输出成了协议格式",
+}
+
+
 @dataclass(frozen=True)
 class AgentRepairPipelineResult:
     reviewed_items: int = 0
@@ -45,6 +57,8 @@ class AgentRepairPipelineResult:
     repaired_items: int = 0
     skipped_items: int = 0
     failed_items: int = 0
+    # 送去修的条目（修好、被拒、失败的都算）：只有它们的页要重新保存。不进 as_dict（汇总只放计数）。
+    touched_item_ids: tuple[str, ...] = ()
 
     def as_dict(self) -> dict[str, int]:
         return {
@@ -66,7 +80,11 @@ def run_agent_repair_pipeline(
     max_items: int | None = None,
     model: str = "",
     base_url: str = "",
+    on_candidates: Callable[[list[dict[str, object]]], None] | None = None,
+    on_progress: Callable[[int, int, str], None] | None = None,
 ) -> AgentRepairPipelineResult:
+    """on_candidates：选好要修的条目时调一次（每条的 item_id、page_idx、问题类型）；on_progress：每修完一条调一次
+    （已完成数、总数、这条的 item_id）。给进度事件用，以前只报开始和结束，界面上一直是 0/N、看不出在修什么。"""
     candidates: list[tuple[dict, dict[str, str], list[TranslationQualityIssue]]] = []
     reviewed = 0
     skipped = 0
@@ -109,25 +127,42 @@ def run_agent_repair_pipeline(
     if max_items is not None:
         skipped += max(0, len(candidates) - max(0, max_items))
         candidates = candidates[: max(0, max_items)]
+    if on_candidates is not None:
+        on_candidates(
+            [
+                {
+                    "item_id": str(item.get("item_id", "") or ""),
+                    "page_idx": item.get("page_idx"),
+                    "issue_kinds": sorted({issue.kind for issue in issues}),
+                }
+                for item, _translated_result, issues in candidates
+            ]
+        )
 
     repaired = 0
     failed = 0
     repaired_results: dict[str, dict[str, object]] = {}
     repair_workers = _agent_repair_worker_count(len(candidates))
+    def _report(done: int, item: dict) -> None:
+        if on_progress is not None:
+            on_progress(done, len(candidates), str(item.get("item_id", "") or ""))
+
     if repair_workers <= 1:
-        repair_outputs = [
-            _run_single_agent_repair(
-                item=item,
-                translated_result=translated_result,
-                issues=issues,
-                coordinator=coordinator,
-                runtime=runtime,
-                glossary_entries=glossary_entries,
-                model=model,
-                base_url=base_url,
+        repair_outputs = []
+        for item, translated_result, issues in candidates:
+            repair_outputs.append(
+                _run_single_agent_repair(
+                    item=item,
+                    translated_result=translated_result,
+                    issues=issues,
+                    coordinator=coordinator,
+                    runtime=runtime,
+                    glossary_entries=glossary_entries,
+                    model=model,
+                    base_url=base_url,
+                )
             )
-            for item, translated_result, issues in candidates
-        ]
+            _report(len(repair_outputs), item)
     else:
         repair_outputs = []
         with ThreadPoolExecutor(max_workers=repair_workers) as executor:
@@ -147,6 +182,7 @@ def run_agent_repair_pipeline(
             ]
             for future in as_completed(futures):
                 repair_outputs.append(future.result())
+                _report(len(repair_outputs), repair_outputs[-1][0])
 
     for item, repair_result, exc in repair_outputs:
         item_id = str(item.get("item_id", "") or "")
@@ -182,6 +218,7 @@ def run_agent_repair_pipeline(
         repaired_items=repaired,
         skipped_items=skipped,
         failed_items=failed,
+        touched_item_ids=tuple(str(item.get("item_id", "") or "") for item, _result, _issues in candidates),
     )
 
 
