@@ -14,9 +14,6 @@
 
 @layer tokens, base, pages;
 
-/* AI 回答统一由 Markstream + KaTeX 渲染；放在 Reader 样式真值中，确保
- * package CSS、MPA reader.css 与 SPA 注入的 CSS 三个消费者完全一致。 */
-@import "./ai.css" layer(pages);
 
 @import "./tokens.css" layer(tokens);
 @import "./shadcn-theme.css" layer(tokens);
@@ -40,8 +37,6 @@
 @import "./selection-pop.css" layer(pages);
 @import "./panel-shell.css" layer(pages);
 @import "./float-markdown.css" layer(pages);
-@import "./float-ai-md.css" layer(pages);
-@import "./float-ai-citations.css" layer(pages);
 @import "./hud.css" layer(pages);
 /* Markdown 悬浮预览（含 MathJax） */
 @import "./markdown.css" layer(pages);

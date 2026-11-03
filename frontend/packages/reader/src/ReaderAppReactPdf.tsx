@@ -15,7 +15,6 @@ import {
 } from "./components/react-pdf/index.js";
 import type { ReaderAssistantPanel, ReaderWorkspaceMode } from "./components/react-pdf/index.js";
 import { useReaderAssistantPanel } from "./hooks/use-reader-assistant-panel.js";
-import { useReaderHostAi } from "./hooks/use-reader-host-ai.js";
 import { DownloadToastHost } from "./shared/react/DownloadToastHost.jsx";
 import { READER_ROOT_CLASS } from "./pdf/reader-dom-contract.js";
 import { readerViewportWidth } from "./pdf/reader-zoom.js";
@@ -34,12 +33,9 @@ import {
 const ReaderMarkdownPanel = lazy(() => import("./components/react-pdf/ReaderMarkdownPanel.js").then((m) => ({ default: m.ReaderMarkdownPanel })));
 
 import { useReaderPanelSlot } from "./components/react-pdf/use-reader-panel-slot.js";
-import { ReaderHostPanelShell } from "./components/react-pdf/ReaderHostPanelShell.js";
 
 /** 稳定的空数组：每次渲染新建一个会让每页的标记层白白重算。 */
-import { READER_HOST_PANELS } from "./components/react-pdf/reader-host-panels.js";
 import { resolveLiveTranslationToggles } from "./shared/data/live-translation-state.js";
-import { renderReaderBoardSlot } from "./adapters.js";
 import { createRegionHoverStore } from "./shared/state/region-hover-store.js";
 import { ReaderFinder, ReaderFinderToggles, type ReaderFinderTab } from "./components/react-pdf/ReaderFinder.js";
 
@@ -149,9 +145,6 @@ export function resolveLiveTranslationVisibleOnWorkspaceChange(
   return false;
 }
 
-/** dock 里的「AI」（id 仍是 terminal，见 reader-host-panels.ts）。 */
-const AI_PANEL: ReaderAssistantPanel = "terminal";
-
 export function ReaderAppReactPdf() {
   const c = useReaderReactController();
   const { boot, panes, sessionFiles, session } = c;
@@ -161,13 +154,6 @@ export function ReaderAppReactPdf() {
   const assistantPanel = assistant.panel;
   const setAssistantPanel = assistant.setPanel;
   const [assistantPdfPane, setAssistantPdfPane] = useState<"source" | "translated" | null>(null);
-  // agent 产物在左边打开时，看的是哪个文件。null = 看 PDF。
-  //
-  // **不进 ReaderWorkspaceMode。** 那三个（原文/对照/译文）是
-  // resolveReaderPaneComposition 的输入，连着持久化、键盘、HUD 和一堆 PDF 专属
-  // 的不变式；往里加第四个成员会让「对照降级」「叠加层」那些判断全部要重想。
-  // 这里是文档区的**接管**，和 PDF 栏二选一，所以是独立状态。
-  const [boardFile, setBoardFile] = useState<string | null>(null);
   const [liveTranslationVisible, setLiveTranslationVisible] = useState(false);
   const modeScopeRef = useRef<string | null>(null);
   const autoModeRef = useRef<ReaderMode | null>(null);
@@ -189,10 +175,6 @@ export function ReaderAppReactPdf() {
   });
   // 叠层的两个开关分别摆在哪 —— 判断在 live-translation-state.ts 里，因为
   // 「收掉顶栏 pill 之后叠层还够得着吗」这个不变式要能单测（见那里的注释）。
-  const closeBoard = useCallback(() => setBoardFile(null), []);
-  const boardContent = boardFile
-    ? renderReaderBoardSlot({ jobId: session.jobId, name: boardFile, onClose: closeBoard })
-    : null;
   const liveToggles = resolveLiveTranslationToggles({
     hasOverlayContent,
     connection: c.liveTranslation.connection,
@@ -211,7 +193,6 @@ export function ReaderAppReactPdf() {
   // 的自动叠加 bug」直接矛盾，删掉才是那段注释说的行为。
   // 需要自动打开的那一处走 resolveLiveTranslationVisibleOnWorkspaceChange。
   useEffect(() => {
-    setBoardFile(null);
     setLiveTranslationVisible(false);
   }, [c.viewStateKey]);
 
@@ -254,8 +235,6 @@ export function ReaderAppReactPdf() {
   // 原来是「闸一遍、open 一遍」，两处各自合法，抄改时把闸上那个写成别的面板
   // 整套测试全绿而摘录永远打不开。见 use-reader-panel-slot.ts。
   const markdownSlot = useReaderPanelSlot(assistantPanel, "markdown");
-  // 槽位面板（阅读路径 / 画布 / 终端）的挂载、适配器查找和壳都在
-  // ReaderHostPanelShell 里，按 READER_HOST_PANELS 逐个渲染 —— 见下面那段 map。
   // 键盘与 UI 共用同一「可见模式」真源：paneComposition.visibleMode。
   // 「0」重置缩放据此取模式默认，避免与 HUD/网格显示的模式脱节。
   useReaderKeyboard({
@@ -302,15 +281,7 @@ export function ReaderAppReactPdf() {
     );
   }, [liveToggles.sourcePaneToggle, liveTranslationVisible]);
 
-  // 放在笔记（Studio）里、Studio 有自己的 AI：「AI」交给它，不开 dock 的终端（只留一个 AI）；
-  // 上次存着开着的终端也收起来。
-  const hostAi = useReaderHostAi();
-  useEffect(() => {
-    if (hostAi.available && assistantPanel === AI_PANEL) setAssistantPanel(null);
-  }, [hostAi.available, assistantPanel]);
-
   const selectAssistant = useCallback((next: ReaderAssistantPanel) => {
-    if (next === AI_PANEL && hostAi.ask()) return;
     setAssistantPanel(next);
     // 栏锁的语义是「这一次从某栏的选区问 AI」，生命周期跟着那次提问。
     //
@@ -318,28 +289,7 @@ export function ReaderAppReactPdf() {
     // —— 而换面板是 dock 上最常用的动作。漏掉的表现：在译文栏问过 AI 之后点
     // Markdown，面板换了，PDF 那半边却还只剩译文栏，顶栏还挂着「对照被面板挤掉」。
     setAssistantPdfPane(null);
-  }, [hostAi.ask]);
-
-  const hostPanelContext = useMemo(() => ({
-    // **只认 jobId**，不拿 documentId 兜底（契约见 adapters.ts：「用 jobId，换文档
-    // 就换终端」）。原来是 `session.jobId || session.documentId || "reader"`，于是
-    // 没有任务的阅读页（书架卡片在没有 job_id 时跳 `reader.html?document_id=…`）会
-    // 拿一个 document id 当 job id 用，四处同时静默失败：
-    //
-    //   - fx 侧 resolve_job_workspace 找不到 data/jobs/<documentId> → 退回私有目录，
-    //     终端开起来了但 books/ 是空的，无报错
-    //   - 产物条每 4 秒打 /api/v1/jobs/<documentId>/board → 404 → 静默跳过
-    //   - 左边那块 renderReaderBoard 看 !jobId → 静默返回 null
-    //
-    // 空字符串在这里是有意义的信号：renderReaderTerminal 会改画一段说明，
-    // 而不是一个开得起来却什么都做不了的空壳。
-    sessionKey: session.jobId,
-    // 以前「点块 → 浮条 → 问 AI」会把选区预填进终端；浮条整个删了（只留悬停复制），
-    // 阅读器这边没有要预填的了。宿主的注入能力保留，接口不动。
-    pendingInput: null,
-    onOpenBoard: setBoardFile,
-    onClose: closeAssistant,
-  }), [closeAssistant, session.documentId, session.jobId]);
+  }, []);
 
   // 外壳 Context：只装频繁下钻、且此前纯透传的值；currentPage/numPages 走 HUD
   // context，避免滚动带动整棵外壳重渲染。
@@ -447,14 +397,6 @@ export function ReaderAppReactPdf() {
         <ReaderAssistantDock active={assistantPanel} />
         {assistantOpen ? <ReaderAssistantSplitResizeHandle /> : null}
         <ReaderCompareGrid paneComposition={paneComposition} markdownSplit={markdownSlot.open} assistantSplit={assistantOpen} liveTranslation={c.liveTranslation} sourcePaneAction={sourcePaneAction} />
-        {/* agent 产物盖在文档区上，**不替换** ReaderCompareGrid。
-          *
-          * 换成二选一的话，开一张图再关掉，PDF 栅格整个重建 —— 阅读位置、已渲染
-          * 的页、缩放全丢。和终端面板用 hidden 而不是卸载是同一个理由。
-          *
-          * 宿主没注册渲染器时 boardContent 是 null，这里什么都不画，下面还是 PDF：
-          * 「功能没实现」要表现为「没有这个东西」，不是一块白屏。 */}
-        {boardContent}
         {c.showHud ? (
           <ReaderZoomHud
             mode={visiblePdfMode}
@@ -463,14 +405,6 @@ export function ReaderAppReactPdf() {
           />
         ) : null}
         <Suspense fallback={null}>
-          {READER_HOST_PANELS.map((panel) => (
-            <ReaderHostPanelShell
-              key={panel.id}
-              panel={panel}
-              active={assistantPanel}
-              context={hostPanelContext}
-            />
-          ))}
           {markdownSlot.mounted ? <ReaderMarkdownPanel open={markdownSlot.open} jobId={session.jobId} sourceOnly={c.sourceOnly} side="right" onClose={closeAssistant} /> : null}
         </Suspense>
         <DownloadToastHost />

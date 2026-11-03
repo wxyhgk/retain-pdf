@@ -1,4 +1,4 @@
-// CredentialsWorkbench：凭据表单主体（OCR / 翻译 / Agent + 保存行），
+// CredentialsWorkbench：凭据表单主体（OCR / 翻译 + 保存行），
 // 从 CredentialsDialog 抽出的双宿主组件：
 //   1. SettingsDialog 的接口区内嵌（常规入口，无二层弹窗）
 //   2. CredentialsDialog（仅剩首次配置门 setupMode 一个场景）
@@ -10,12 +10,10 @@ import { CREDENTIAL_DOM_IDS } from "./credentials-dom-ids.js";
 import { useCredentialsController } from "./useCredentialsController.js";
 import { OcrPanels, TranslationPanel } from "./ProviderPanels.jsx";
 import { Button } from "@retainpdf/ui";
-import { AgentRuntimeSettingsCard } from "./AgentRuntimeSettingsCard.jsx";
 import { DialogFooter } from "@retainpdf/ui";
 import { FormStatusLine } from "@retainpdf/ui";
 import { Check, Pickaxe, Save, ScanLine, ScanText } from "lucide-react";
 import { OCR_PROVIDER_DEFINITIONS } from "@/platform/config/providers.js";
-import { isMultiUser, useAuthSession } from "@/features/auth/index.js";
 import { ChoiceTiles } from "./ChoiceTiles.jsx";
 
 const { browser: BROWSER_IDS } = CREDENTIAL_DOM_IDS;
@@ -34,9 +32,6 @@ export function CredentialsWorkbench() {
   const { credentials, view, handlers } = useCredentialsController();
 
   const setupMode = Boolean(view.setupMode);
-  // 多用户模式下 AI 助手对网站账号关闭（/ai/* 不给网站会话用，首页「AI 问答」也藏了），
-  // 这张卡一打开就读 /ai/runtime-config，会被拒。
-  const multiUser = isMultiUser(useAuthSession());
   const status = view.dialogStatus || { message: "", tone: "" };
   const saving = status.tone === "pending";
 
@@ -119,15 +114,6 @@ export function CredentialsWorkbench() {
           </div>
         </div>
       </div>
-      {multiUser ? null : setupMode ? (
-        <p className="credential-agent-setup-note">
-          AI Agent 可稍后在设置中配置。
-        </p>
-      ) : (
-        <div className="credential-agent-section">
-          <AgentRuntimeSettingsCard />
-        </div>
-      )}
     </div>
   );
 }

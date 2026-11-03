@@ -41,7 +41,6 @@ export const APP_DIALOG_IDS = {
   glossaryManager: "glossary-manager-dialog",
   browserCredentials: "browser-credentials-dialog",
   professionalTranslation: "page-range-dialog",
-  aiAssistant: "ai-assistant-dialog",
   appSettings: "app-settings-dialog",
   statusDetail: "status-detail-dialog",
   reader: "reader-dialog",
@@ -61,7 +60,6 @@ export const APP_SHELL_IDS = {
   openOutputButton: "open-output-btn",
   errorBox: "error-box",
   libraryAddPdfButton: "library-add-pdf-btn",
-  aiAssistantButton: "ai-assistant-btn",
   appSettingsButton: "app-settings-btn",
 };
 
@@ -72,7 +70,6 @@ export const APP_DIALOG_BACKDROP_IDS = [
   APP_DIALOG_IDS.glossaryManager,
   APP_DIALOG_IDS.browserCredentials,
   APP_DIALOG_IDS.professionalTranslation,
-  APP_DIALOG_IDS.aiAssistant,
   APP_DIALOG_IDS.appSettings,
   APP_DIALOG_IDS.statusDetail,
   APP_DIALOG_IDS.reader,

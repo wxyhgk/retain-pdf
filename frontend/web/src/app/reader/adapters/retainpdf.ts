@@ -45,10 +45,6 @@ const adapters: ReaderAdapters = {
   apiPrefix: ext.API_PREFIX,
   fetchDocumentByJobId: ext.fetchDocumentByJobId,
   // —— credentials ——
-  credentialsPort: ext.defaultCredentialsStatePort,
-  // —— AI（阅读页唯一的一扇门：终端里的 agent）——
-  renderReaderTerminal: ext.renderReaderTerminal,
-  renderReaderBoard: ext.renderReaderBoard,
   // —— 笔记（Studio）：「摘到笔记」、「笔记」按钮 ——
   notesQuote: studio?.notesQuote,
   notesPanel: studio?.notesPanel,
@@ -60,9 +56,5 @@ const adapters: ReaderAdapters = {
 };
 setReaderAdapters(adapters);
 
-/** 多用户模式下关掉助手终端和它的画板（后端也不开 /ai/terminal）。没有渲染器时阅读器连入口都不显示。 */
-export function setReaderMultiUser(multi: boolean): void {
-  setReaderAdapters(multi ? { ...adapters, renderReaderTerminal: undefined, renderReaderBoard: undefined } : adapters);
-}
 export { adapters as retainPdfReaderAdapters };
 export { ext as retainPdfExternal };

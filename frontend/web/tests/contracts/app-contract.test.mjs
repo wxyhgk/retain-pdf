@@ -33,15 +33,12 @@ test("app contract centralizes global retainpdf events and dialog roots", () => 
     APP_DIALOG_IDS.glossaryManager,
     APP_DIALOG_IDS.browserCredentials,
     APP_DIALOG_IDS.professionalTranslation,
-    APP_DIALOG_IDS.aiAssistant,
     APP_DIALOG_IDS.appSettings,
     APP_DIALOG_IDS.statusDetail,
     APP_DIALOG_IDS.reader,
   ]);
-  assert.equal(APP_DIALOG_IDS.aiAssistant, "ai-assistant-dialog");
   assert.equal(APP_DIALOG_IDS.appSettings, "app-settings-dialog");
   assert.equal(APP_DIALOG_IDS.translationWorkflow, "translation-workflow-dialog");
-  assert.equal(APP_SHELL_IDS.aiAssistantButton, "ai-assistant-btn");
   assert.equal(APP_SHELL_IDS.appSettingsButton, "app-settings-btn");
   assert.equal(APP_SHELL_IDS.libraryAddPdfButton, "library-add-pdf-btn");
 });

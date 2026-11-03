@@ -68,10 +68,8 @@ test("每个面板都在唯一那个启动器的清单里", () => {
   assert.deepEqual([...ids].sort(), [...READER_ASSISTANT_PANEL_IDS].sort());
   // 顺序也来自真源：dock 里 tab 的先后就是这份清单的先后。
   assert.deepEqual(ids, [...READER_ASSISTANT_PANEL_IDS]);
-  // 下限而不是等号：加面板不该让这条红。3 = markdown / 批注 / AI(终端)，
-  // 是「阅读页只留一扇 AI 的门」之后的数目。
-  // 下限：Markdown + AI(终端)。批注也删了之后就是这两个。
-  assert.ok(ids.length >= 2, `只有 ${ids.length} 个面板，八成漏登记了`);
+  // 下限而不是等号：加面板不该让这条红。2026-11-03 RetainPDF 自己的 AI（终端）删了，只剩 Markdown。
+  assert.ok(ids.length >= 1, `只有 ${ids.length} 个面板，八成漏登记了`);
 });
 
 test("每个面板都有标签和图标 —— 少一样那个 tab 要么空白要么崩", () => {

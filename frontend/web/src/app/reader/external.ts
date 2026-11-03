@@ -1,5 +1,5 @@
 // RetainPDF Web 宿主能力出口（host capability exit）：方向是 Web → 包。
-// 这里汇总宿主提供给 @retainpdf/reader 的 API、配置、下载、收藏与 AI 能力，
+// 这里汇总宿主提供给 @retainpdf/reader 的 API、配置、下载能力，
 // 由 src/app/reader/adapters/retainpdf.ts 显式注册进包的 ReaderAdapters。
 //
 // 不要与包内 frontend/packages/reader/src/external.ts 混淆：那个是包内
@@ -10,9 +10,6 @@
 export { isMockMode } from "@/platform/config/runtime.js";
 export { MOCK_DOCUMENT_SOURCE_PDF_URL } from "@/platform/mock/documents.js";
 export { READER_DIALOG_MESSAGES } from "@/features/reader/domain.js";
-// 终端面板是 React，所以走 ui/ 而不是 domain/ —— domain 层有「不得 import React」的门禁。
-export { renderReaderTerminal } from "@/features/reader/ui/terminal.jsx";
-export { renderReaderBoard } from "@/features/reader/ui/board-html.jsx";
 
 // —— job / http / vendor ——
 export { resolveResourceUrl } from "@retainpdf/domain/job";
@@ -52,77 +49,6 @@ export { failDownloadToast } from "@/platform/utils/download-feedback.js";
 export { resolveMarkdownAssetUrl } from "@retainpdf/domain/job";
 export { parseMarkdownWithMath } from "@/features/reader/domain.js";
 
-// —— AI 追问（react-pdf assistant）——
-export { askLibraryAi } from "@/platform/api/index.js";
-export { createReaderAskAnswerer } from "@/features/reader/domain.js";
-export { createReaderMarkdownAnswerer } from "@/features/reader/domain.js";
-export {
-  hydrateProtectedImages,
-  injectCitationMarkers,
-  isAgenticCitation,
-  neutralizeMarkdownAnchors,
-  renderCitationFooter,
-  revokeHydratedImageUrls,
-} from "@/features/reader/domain.js";
-export type { AiCitationLike } from "@/features/reader/domain.js";
-export {
-  armReaderAiClickShield,
-  clearReaderAiNavigationLock,
-  installReaderWindowOpenGuard,
-  isReaderAiNavigationLocked,
-  lockReaderAiNavigation,
-  shouldIgnoreReaderAiNavEvent,
-} from "@/features/reader/domain.js";
-export {
-  peekFinalAnswerHtmlCache,
-  renderFinalAnswerHtml,
-  renderStreamingPreviewHtml,
-} from "@/features/reader/domain.js";
-export { sanitizeAssistantAnswer } from "@/features/reader/domain.js";
-export {
-  clearThreadBranchSnapshot,
-  loadThreadBranchSnapshot,
-  saveThreadBranchSnapshot,
-  threadBranchStorageKey,
-  visiblePathFromSnapshot,
-} from "@/features/reader/domain.js";
-export type {
-  ThreadBranchCitation,
-  ThreadBranchItem,
-  ThreadBranchMessage,
-  ThreadBranchSnapshot,
-} from "@/features/reader/domain.js";
-export {
-  appendConversationMessage,
-  baseConversationTitle,
-  createConversation,
-  deleteConversation,
-  forkConversationFromPath,
-  getConversation,
-  listConversations,
-  messagesToBranchItems,
-  nextForkConversationTitle,
-  patchConversation,
-} from "@/platform/api/index.js";
-export type {
-  ConversationDetail,
-  ConversationRecord,
-  MessageRecord,
-} from "@/platform/api/index.js";
-export {
-  loadStoredConversationId,
-  saveStoredConversationId,
-  clearStoredConversationId,
-} from "@/features/reader/domain.js";
-
 // —— 文档身份（按 jobId 反查）——
 export { API_PREFIX } from "@/platform/config/api-constants.js";
 export { fetchDocumentByJobId } from "@/platform/api/index.js";
-
-// —— 阅读器 AI 面板：模型 Key 门禁 ——
-export { defaultCredentialsStatePort } from "@/features/credentials/domain.js";
-export {
-  CREDENTIALS_CHANGED_EVENT,
-  hasModelApiKey,
-  MISSING_MODEL_API_KEY_MESSAGE,
-} from "@/features/reader/domain.js";

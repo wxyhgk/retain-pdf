@@ -4,7 +4,7 @@ export const HOME_RETURN_STORAGE_KEY = "retainpdf.home.return.v1";
 
 export type HomeReturnState = {
   allowBack: boolean;
-  activeTab: "library" | "categories" | "favorites" | "ask" | string;
+  activeTab: "library" | "categories" | "favorites" | string;
   libraryScrollTop: number;
   panelScrollTop: number;
   windowScrollY: number;
@@ -39,7 +39,6 @@ function readActiveLibraryTab(): string {
   const id = `${active?.id || ""}`;
   if (id.endsWith("-categories")) return "categories";
   if (id.endsWith("-favorites")) return "favorites";
-  if (id.endsWith("-ask")) return "ask";
   return "library";
 }
 
@@ -50,7 +49,7 @@ export function captureHomeReturnState(options: { allowBack?: boolean } = {}) {
   try {
     const library = document.getElementById("recent-jobs-scroll-body");
     const panel = document.querySelector(
-      ".categories-view, .collections-view, .favorites-view, #categories-view, #favorites-view, #home-ask-view, .home-ask-scroll",
+      ".categories-view, .collections-view, .favorites-view, #categories-view, #favorites-view",
     ) as HTMLElement | null;
     const state: HomeReturnState = {
       allowBack: options.allowBack !== false,

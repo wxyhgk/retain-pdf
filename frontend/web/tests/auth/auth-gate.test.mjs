@@ -96,14 +96,14 @@ test("错误说成人话", () => {
   assert.equal(passwordProblem("longenough1", "longenough1"), "");
 });
 
-test("多用户下首页「AI 问答」藏起来，?tab=ask 落回图书馆", async () => {
+test("「AI 问答」删了（2026-11-03）：?tab=ask 的旧深链落回图书馆，单机多用户都一样", async () => {
   const React = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
   const { AuthSessionProvider, useVisibleHomeTab } = await import("../../src/features/auth/ui/auth-session-context.jsx");
   let seen = "";
   function Probe() { seen = useVisibleHomeTab("ask"); return null; }
   renderToStaticMarkup(React.createElement(AuthSessionProvider, { session: { mode: "multi", authenticated: true, user: { role: "admin" } } }, React.createElement(Probe)));
-  assert.equal(seen, "library");
-  renderToStaticMarkup(React.createElement(AuthSessionProvider, { session: { mode: "single", authenticated: true, user: null } }, React.createElement(Probe)));
-  assert.equal(seen, "ask");
+  assert.equal(seen, "ask", "多用户下藏起来的页签现在一个都没有");
+  const { parseHomeTab } = await import("../../src/platform/navigation/pages.ts");
+  assert.equal(parseHomeTab("?tab=ask"), "", "?tab=ask 不认，主页按图书馆开");
 });

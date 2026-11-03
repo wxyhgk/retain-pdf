@@ -18,14 +18,11 @@ const REQUIRED_EXPORTS = [
   ".",
   "./adapters",
   "./boot",
-  "./ai",
   "./contracts",
-  "./runtime/ai",
   "./runtime/config",
   "./runtime/content",
   "./runtime/data",
   "./runtime/state",
-  "./ai.css",
   "./styles.css",
 ];
 const SOURCE_EXTENSIONS = new Set([".js", ".jsx", ".mjs", ".ts", ".tsx"]);
@@ -130,10 +127,10 @@ test("reader package exports only built, packed public entrypoints", () => {
     }
   }
 
-  const styleTargets = ["./ai.css", "./styles.css"]
+  const styleTargets = ["./styles.css"]
     .flatMap((exportName) => exportTargets(readerPackage.exports[exportName]))
     .filter((target) => target.endsWith(".css"));
-  assert.equal(styleTargets.length, 2, "reader must publish full and AI-only compiled CSS");
+  assert.equal(styleTargets.length, 1, "reader must publish its compiled CSS");
   for (const target of styleTargets) {
     const css = readFileSync(join(READER_ROOT, target), "utf8");
     assert.doesNotMatch(
@@ -184,7 +181,6 @@ test("reader exports align with vite build entries and resolve into dist", () =>
 test("importing Reader root and runtime exports does not require or mutate the DOM", async () => {
   const importUrls = [
     ".",
-    "./runtime/ai",
     "./runtime/config",
     "./runtime/content",
     "./runtime/data",
@@ -273,8 +269,8 @@ test("production consumers do not deep-link into frontend/packages/reader/src", 
   const hostRoot = join(WEB_ROOT, "src/features/reader/domain/host");
   assert.deepEqual(
     sourceFilesUnder(hostRoot).map((file) => relative(hostRoot, file)),
-    ["ai.ts", "config.ts", "content.ts", "data.ts", "state.ts"],
-    "frontend/web must keep exactly five Reader host adapter entries",
+    ["config.ts", "content.ts", "data.ts", "state.ts"],
+    "frontend/web must keep exactly four Reader host adapter entries",
   );
 
   for (const configFile of [

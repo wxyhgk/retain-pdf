@@ -1,14 +1,5 @@
 {
   "controls": {
-    "../packages/reader/src/components/ai/AnswerCodeBlock.tsx": {
-      "button": 1
-    },
-    "../packages/reader/src/components/ai/CitationRef.tsx": {
-      "button": 1
-    },
-    "../packages/reader/src/components/ai/RetainMarkstream.tsx": {
-      "button": 1
-    },
     "../packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx": {
       "button": 3
     },
@@ -82,44 +73,6 @@
       "select": 3,
       "input": 6
     },
-    "src/features/ask/ui/HomeAskComposerBanner.tsx": {
-      "button": 1
-    },
-    "src/features/ask/ui/HomeAskComposerChips.tsx": {
-      "button": 1
-    },
-    "src/features/ask/ui/HomeAskComposerInput.tsx": {
-      "textarea": 1
-    },
-    "src/features/ask/ui/HomeAskComposerPicker.tsx": {
-      "button": 1
-    },
-    "src/features/ask/ui/HomeAskComposerToolbar.tsx": {
-      "button": 2
-    },
-    "src/features/ask/ui/HomeAskMessageControls.tsx": {
-      "button": 7,
-      "textarea": 1
-    },
-    "src/features/ask/ui/HomeAskSidebar.tsx": {
-      "button": 9,
-      "input": 1
-    },
-    "src/features/ask/ui/HomeAskThread.tsx": {
-      "button": 1
-    },
-    "src/features/ask/ui/HomeAskView.tsx": {
-      "button": 2
-    },
-    "src/features/ask/ui/operations/AgentCandidatePreview.tsx": {
-      "button": 2
-    },
-    "src/features/ask/ui/operations/AgentOperationActions.tsx": {
-      "button": 1
-    },
-    "src/features/ask/ui/operations/AgentOperationCard.tsx": {
-      "button": 1
-    },
     "src/features/auth/ui/AccountPanel.tsx": {
       "button": 1
     },
@@ -151,12 +104,6 @@
     },
     "src/features/collections/ui/CollectionsGridView.tsx": {
       "button": 4
-    },
-    "src/features/credentials/ui/AgentRuntimeFields.tsx": {
-      "input": 2
-    },
-    "src/features/credentials/ui/AgentRuntimeSettingsCard.tsx": {
-      "button": 1
     },
     "src/features/credentials/ui/HiddenCredentialInputs.tsx": {
       "input": 2
@@ -260,12 +207,6 @@
     "src/features/library/ui/island/library-search-app.tsx": {
       "button": 3
     },
-    "src/features/reader/ui/board-html.tsx": {
-      "button": 1
-    },
-    "src/features/reader/ui/terminal-chrome.tsx": {
-      "button": 8
-    },
     "src/features/settings/ui/ThemeAppearancePanel.tsx": {
       "button": 1
     },
@@ -283,22 +224,6 @@
     }
   },
   "cssLiterals": {
-    "../packages/reader/styles/ai-citation-hover.css": {
-      "fontSize": 3,
-      "borderRadius": 2
-    },
-    "../packages/reader/styles/ai-citations.css": {
-      "fontSize": 3,
-      "borderRadius": 2
-    },
-    "../packages/reader/styles/ai-selection-toolbar.css": {
-      "fontSize": 1,
-      "borderRadius": 2
-    },
-    "../packages/reader/styles/answer-chart.css": {
-      "fontSize": 5,
-      "borderRadius": 2
-    },
     "../packages/reader/styles/assistant-dock.css": {
       "fontSize": 3,
       "borderRadius": 5
@@ -316,14 +241,6 @@
     },
     "../packages/reader/styles/dialog-shell.css": {
       "borderRadius": 2
-    },
-    "../packages/reader/styles/float-ai-citations.css": {
-      "fontSize": 5,
-      "borderRadius": 5
-    },
-    "../packages/reader/styles/float-ai-md.css": {
-      "fontSize": 13,
-      "borderRadius": 7
     },
     "../packages/reader/styles/float-markdown.css": {
       "fontSize": 2,
@@ -394,37 +311,6 @@
       "fontSize": 5,
       "borderRadius": 2
     },
-    "src/features/ask/ui/HomeAskComposer.css": {
-      "fontSize": 9,
-      "borderRadius": 7
-    },
-    "src/features/ask/ui/HomeAskMain.css": {
-      "fontSize": 3,
-      "borderRadius": 2
-    },
-    "src/features/ask/ui/HomeAskMarkdown.css": {
-      "fontSize": 8,
-      "borderRadius": 2
-    },
-    "src/features/ask/ui/HomeAskMessageControls.css": {
-      "fontSize": 3,
-      "borderRadius": 4
-    },
-    "src/features/ask/ui/HomeAskResponsive.css": {
-      "fontSize": 1
-    },
-    "src/features/ask/ui/HomeAskSidebar.css": {
-      "fontSize": 6,
-      "borderRadius": 8
-    },
-    "src/features/ask/ui/HomeAskThread.css": {
-      "fontSize": 4,
-      "borderRadius": 3
-    },
-    "src/features/ask/ui/operations/AgentOperationCard.css": {
-      "fontSize": 9,
-      "borderRadius": 6
-    },
     "src/features/auth/ui/auth.css": {
       "fontSize": 15,
       "borderRadius": 6
@@ -456,10 +342,6 @@
     "src/features/collections/ui/CollectionsView.css": {
       "fontSize": 5,
       "borderRadius": 3
-    },
-    "src/features/credentials/ui/AgentRuntimeSettingsCard.css": {
-      "fontSize": 9,
-      "borderRadius": 8
     },
     "src/features/credentials/ui/CredentialCard.css": {
       "fontSize": 12,
@@ -603,18 +485,6 @@
     "src/features/jobs/ui/StatusCardAnimation.css": {
       "fontSize": 1
     },
-    "src/features/reader/ui/board-html.css": {
-      "fontSize": 3,
-      "borderRadius": 1
-    },
-    "src/features/reader/ui/terminal-board-list.css": {
-      "fontSize": 1,
-      "borderRadius": 1
-    },
-    "src/features/reader/ui/terminal-chrome.css": {
-      "fontSize": 12,
-      "borderRadius": 8
-    },
     "src/features/usage/ui/usage.css": {
       "fontSize": 11,
       "borderRadius": 2
@@ -652,10 +522,6 @@
     "src/styles/pages/detail/modal.css": {
       "fontSize": 5,
       "borderRadius": 2
-    },
-    "src/styles/pages/home/ai-assistant.css": {
-      "fontSize": 8,
-      "borderRadius": 7
     },
     "src/styles/pages/home/book-detail-artifacts.css": {
       "fontSize": 5,
@@ -736,7 +602,6 @@
     "collection_delete_btn",
     "collection_manage_close_btn",
     "collection_save_btn",
-    "credential_agent_save_button",
     "credentials_btn",
     "detail_close_events_btn",
     "detail_close_stage_history_btn",
@@ -752,8 +617,6 @@
     "file_selector_button",
     "glossary_btn",
     "home_action_btn",
-    "home_ask_key_banner_btn",
-    "home_ask_sidebar_icon_btn",
     "home_task_center_btn",
     "icon_button",
     "inline_error_copy_btn",

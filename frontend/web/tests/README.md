@@ -13,8 +13,7 @@
 | `contracts/` | JSON Schema、API DTO、事件名及跨包数据契约 |
 | `credentials/` | 凭据域逻辑：校验流程、state port、翻译配置、桌面首启门禁 |
 | `editorial-room/` | 翻译编辑部：editorial.v1 事件解析、叠成状态、回放和画面 |
-| `fx-terminal/` | 终端主题与 WebSocket 会话 |
-| `home/` | 首页外壳、首页问答、设置中心与凭据对话框、术语表、任务中心、更新提示 |
+| `home/` | 首页外壳、设置中心与凭据对话框、术语表、任务中心、更新提示 |
 | `ingest/` | 上传与翻译工作流：上传对话框、工作流 payload、提交就绪与提交流程 |
 | `jobs/` | 任务标准化、运行时、下载、错误和产物处理 |
 | `layout/` | 用真浏览器（playwright）跑的布局与 iframe 沙箱门禁 |

@@ -12,12 +12,6 @@ export const RENDER_FONT_STORAGE_KEY = "retainpdf.render.typst_font_family";
 /** app-update：更新检查结果缓存（localStorage）。 */
 export const UPDATE_CHECK_CACHE_STORAGE_KEY = "retainpdf:update-check:v1";
 
-/** ask：主页粘性会话 id（localStorage）。 */
-export const HOME_ASK_CONVERSATION_STORAGE_KEY = "retainpdf.home.ai.conversation.v1";
-
-/** ask：agent operation 幂等键前缀（sessionStorage）。 */
-export const AGENT_OPERATION_ACTION_KEY_PREFIX = "retainpdf.agent-operation.action-key.v1:";
-
 /** navigation：主页 ↔ 阅读器回程状态（sessionStorage）。 */
 export const HOME_RETURN_STORAGE_KEY = "retainpdf.home.return.v1";
 

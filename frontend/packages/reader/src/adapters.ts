@@ -1,14 +1,7 @@
-import { setReaderAiConfigAdapters } from "./shared/ai/config.js";
-import {
-  resetAnswerEnhanceAdapters,
-  setAnswerEnhanceAdapters,
-} from "./shared/ai/answer-enhance.js";
 import type { createReaderDataPort } from "./runtime/data.js";
 import type { createReaderPageConfigPort } from "./runtime/config.js";
 import type {
 } from "./shared/types/types.js";
-import type { askLibraryAi } from "@retainpdf/api/ai";
-import type { ReactNode } from "react";
 import type { ReaderLiveTranslationPort } from "./contracts/live-translation.js";
 import type { ReaderPdfPort } from "./contracts/pdf.js";
 import type { ReaderSessionDataPort } from "./contracts/session.js";
@@ -78,63 +71,6 @@ export type ReaderDocumentIdentityAdapters = {
     active_version_id?: string | null;
   } | null>;
 };
-export type ReaderCredentialsPort = {
-  getCredentials?: () => { modelApiKey?: string } | null;
-};
-export type ReaderCredentialsAdapters = {
-  credentialsPort: ReaderCredentialsPort;
-};
-/** 宿主往辅助面板里塞一块自己的 UI 时拿到的东西。 */
-/** 宿主渲染 agent 产物（board/ 里的 HTML）时拿到的东西。
- *
- * 这块**接管文档区**（PDF 那半边），不是又开一个 dock 面板 —— 用户要的是
- * 「左边直接打开」。所以它和 ReaderCompareGrid 是二选一，由 App 决定。
- *
- * 包不认识 board 端点，也不认识 HTML 怎么安全渲染（那一整套隔离在宿主的
- * domain/board-html.ts 里）。这里只约定「给你 jobId 和文件名，还我一块内容」。
- */
-export type ReaderBoardSlotProps = {
-  jobId: string;
-  /** board/ 里的文件名。 */
-  name: string;
-  onClose: () => void;
-};
-
-export type ReaderBoardAdapters = {
-  /** 不提供 = 打不开 agent 产物，AI 面板里也不会出现那一条。 */
-  renderReaderBoard?: (props: ReaderBoardSlotProps) => ReactNode;
-};
-
-export type ReaderTerminalSlotProps = {
-  open: boolean;
-  /** 同一个 key 接回同一份终端会话。用 jobId，换文档就换终端。 */
-  sessionKey: string;
-  /** 「从选区问 AI」要送进终端的那段文字。
-   *
-   * 宿主只在 token 变了时注入一次，且**不替用户回车** —— 由页面选区拼出来的
-   * 一条命令直接开跑太意外了，得让人先看见自己要问什么。
-   * token 而不是文本判重：连着两次选同一段，两次都该送。 */
-  pendingInput: { text: string; token: number } | null;
-  /** agent 在 board/ 里写了个能看的东西，请求把它在左边打开。
-   *
-   * 由包来开：文档区归包管，宿主自己去改左半边会和分栏/模式状态打架。 */
-  onOpenBoard: (name: string) => void;
-  onClose: () => void;
-};
-
-export type ReaderTerminalAdapters = {
-  /** 终端面板由**宿主**渲染。
-   *
-   * 本包不认识终端用什么渲染，也不认识它连到哪 —— 那是 RetainPDF 应用的东西，
-   * 而这个包要能被别的宿主用。所以这里只留一个槽：包决定它在 dock 里的位置和
-   * 生命周期，内容宿主给。
-   *
-   * 不提供 = 这个 tab 在 dock 里根本不出现。留一个点了没反应的 tab 比没有
-   * 这个功能更糟。
-   */
-  renderReaderTerminal?: (props: ReaderTerminalSlotProps) => ReactNode;
-};
-
 /** 悬停框「摘到笔记」送出的一段：哪一块、原文在第几页，和点的时候的原文、译文。
  *  任务、书、书名由宿主补（宿主知道自己开的是哪个任务）。 */
 export type ReaderNotesQuote = {
@@ -202,9 +138,6 @@ export type ReaderAdapters = ReaderSessionAdapters
   & ReaderMarkdownAdapters
   & ReaderDownloadAdapters
   & ReaderDocumentIdentityAdapters
-  & ReaderCredentialsAdapters
-  & ReaderTerminalAdapters
-  & ReaderBoardAdapters
   & ReaderNotesQuoteAdapters
   & ReaderNotesPanelAdapters
   & ReaderReadingPositionAdapters
@@ -239,9 +172,6 @@ export const READER_ADAPTER_KEYS = [
   "failDownloadToast",
   "apiPrefix",
   "fetchDocumentByJobId",
-  "credentialsPort",
-  "renderReaderTerminal",
-  "renderReaderBoard",
   "notesQuote",
   "notesPanel",
   "readingPosition",
@@ -257,7 +187,6 @@ export const READER_REQUIRED_ADAPTER_KEYS = [
   "downloadProtectedResource",
   "failDownloadToast",
   "fetchDocumentByJobId",
-  "credentialsPort",
 ] as const satisfies readonly (keyof ReaderAdapters)[];
 
 type RequiredAdapterKey = {
@@ -280,27 +209,10 @@ void _requiredKeysCovered;
 let _adapters: ReaderAdapters | null = null;
 export function setReaderAdapters(a: ReaderAdapters | null) {
   _adapters = a;
-  setReaderAiConfigAdapters({ credentialsPort: a?.credentialsPort ?? null });
-  resetAnswerEnhanceAdapters();
-  if (a) {
-    setAnswerEnhanceAdapters({
-      fetchProtected: a.fetchProtected,
-      resolveResourceUrl: a.resolveResourceUrl,
-    });
-  }
 }
 export function getReaderAdapters(): ReaderAdapters | null { return _adapters; }
 export function requireAdapter<T extends keyof ReaderAdapters>(key: T): NonNullable<ReaderAdapters[T]> {
   const v = _adapters?.[key];
   if (v == null) throw new Error(`Reader adapter missing: ${String(key)} (call setReaderAdapters)`);
   return v as NonNullable<ReaderAdapters[T]>;
-}
-
-/** 渲染 agent 产物那一块。
- *
- * 宿主没注册渲染器时返回 null —— 调用方据此回落到 PDF，而不是留一块空白。
- * 和槽位面板同一条规矩：没有实现就当这个功能不存在，不给一个点了没反应的入口。
- */
-export function renderReaderBoardSlot(props: ReaderBoardSlotProps): ReactNode {
-  return getReaderAdapters()?.renderReaderBoard?.(props) ?? null;
 }

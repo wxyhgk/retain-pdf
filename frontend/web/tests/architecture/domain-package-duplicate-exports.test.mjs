@@ -28,7 +28,6 @@ const PACKAGE_ENTRIES = [
   "@retainpdf/domain",
   "@retainpdf/domain/job",
   "@retainpdf/domain/job-status",
-  "@retainpdf/domain/ai",
   "@retainpdf/domain/session",
 ];
 
