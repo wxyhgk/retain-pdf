@@ -98,8 +98,8 @@ export async function openStudio(page: Page, { autosaveDelay = 600_000, settled 
 	await page.goto(`/studio?article=${slug}`);
 	await expect(page.locator('#crepe-editor .milkdown .ProseMirror')).toBeVisible();
 	if (settled) await expect(page.locator('#save-status')).toHaveText('已载入');
-	await expect(scienceBlock(page, 'SMILES').locator('.science-block-preview svg')).toBeVisible();
-	await expect(scienceBlock(page, 'SDF').locator('.science-block-preview svg')).toBeVisible();
+	await expect(scienceBlock(page, 'SMILES').locator('.science-block-preview svg').first()).toBeVisible();
+	await expect(scienceBlock(page, 'SDF').locator('.science-block-preview svg').first()).toBeVisible();
 	await expect(scienceBlock(page, 'XYZ').locator('.science-block-preview canvas')).toBeVisible();
 }
 
