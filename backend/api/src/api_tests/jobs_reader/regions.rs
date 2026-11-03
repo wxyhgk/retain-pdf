@@ -297,3 +297,129 @@ async fn get_region(app: &axum::Router, item_id: &str) -> (StatusCode, Value) {
     let status = response.status();
     (status, read_json(response).await)
 }
+
+/// 一本 `blocks` 块的书（够大，响应过 8KB 会压缩）；返回改译文用的那页文件。
+fn write_big_job(state: &crate::AppState, job_id: &str, blocks: usize, text: &str) -> std::path::PathBuf {
+    let job_root = state.config.output_root.join(job_id);
+    let normalized_path = job_root.join("ocr/normalized/document.v1.json");
+    let translated_dir = job_root.join("translated");
+    fs::create_dir_all(normalized_path.parent().unwrap()).expect("normalized dir");
+    fs::create_dir_all(&translated_dir).expect("translated dir");
+    let source_blocks: Vec<Value> = (0..blocks)
+        .map(|index| json!({
+            "block_id": format!("p001-b{index:04}"),
+            "bbox": [10.0, 10.0 + index as f64, 300.0, 20.0 + index as f64],
+            "source_text": format!("Source paragraph number {index} with some words"),
+            "block_kind": "text"
+        }))
+        .collect();
+    fs::write(
+        &normalized_path,
+        serde_json::to_vec(&json!({"pages": [{"page_index": 0, "blocks": source_blocks}]})).unwrap(),
+    )
+    .expect("write normalized");
+    let page_path = translated_dir.join("page-001.json");
+    write_translated_page(&page_path, blocks, text);
+    fs::write(
+        translated_dir.join("translation-manifest.json"),
+        serde_json::to_vec(&json!({"pages": [{"page_index": 0, "path": "page-001.json"}]})).unwrap(),
+    )
+    .expect("write manifest");
+    let mut input = CreateJobInput::default();
+    input.runtime.job_id = job_id.to_string();
+    let mut job = JobSnapshot::new(job_id.to_string(), input, vec!["python".to_string()]);
+    job.artifacts = Some(JobArtifacts {
+        job_root: Some(format!("jobs/{job_id}")),
+        normalized_document_json: Some(format!("jobs/{job_id}/ocr/normalized/document.v1.json")),
+        translations_dir: Some(format!("jobs/{job_id}/translated")),
+        ..JobArtifacts::default()
+    });
+    state.db.save_job(&job).expect("save job");
+    page_path
+}
+
+fn write_translated_page(path: &std::path::Path, blocks: usize, text: &str) {
+    let items: Vec<Value> = (0..blocks)
+        .map(|index| json!({
+            "item_id": format!("p001-b{index:03}"),
+            "page_idx": 0,
+            "bbox": [10.0, 10.0 + index as f64, 300.0, 20.0 + index as f64],
+            "translated_text": format!("{text} {index}")
+        }))
+        .collect();
+    fs::write(path, serde_json::to_vec(&items).unwrap()).expect("write translation page");
+}
+
+async fn get_regions(app: &axum::Router, job_id: &str, extra: &[(&str, &str)]) -> axum::response::Response {
+    let mut request = Request::builder()
+        .method("GET")
+        .uri(format!("/api/v1/jobs/{job_id}/reader/regions"))
+        .header("X-API-Key", "test-key");
+    for (name, value) in extra {
+        request = request.header(*name, *value);
+    }
+    app.clone().oneshot(request.body(Body::empty()).unwrap()).await.expect("regions response")
+}
+
+#[tokio::test]
+async fn reader_regions_answer_not_modified_until_a_translation_changes() {
+    let state = test_state("reader-regions-etag");
+    let page_path = write_big_job(&state, "regions-etag-job", 3, "第一版");
+    let app = build_app(state);
+
+    let first = get_regions(&app, "regions-etag-job", &[]).await;
+    assert_eq!(first.status(), StatusCode::OK);
+    assert_eq!(first.headers()["cache-control"], "private, no-cache");
+    let etag = first.headers()["etag"].to_str().unwrap().to_string();
+    assert!(etag.starts_with("W/\""), "{etag}");
+    assert_eq!(read_json(first).await["data"]["items"][0]["translated"]["text"], "第一版 0");
+
+    // 浏览器带着上次的 ETag 来、文件没变：304、不带数据
+    let again = get_regions(&app, "regions-etag-job", &[("If-None-Match", &etag)]).await;
+    assert_eq!(again.status(), StatusCode::NOT_MODIFIED);
+    assert_eq!(again.headers()["etag"], etag.as_str());
+    let body = axum::body::to_bytes(again.into_body(), usize::MAX).await.unwrap();
+    assert!(body.is_empty());
+
+    // 重译了一页：新 ETag、新数据（内存里算好的那份不能再用）
+    std::thread::sleep(std::time::Duration::from_millis(20));
+    write_translated_page(&page_path, 3, "第二版");
+    let changed = get_regions(&app, "regions-etag-job", &[("If-None-Match", &etag)]).await;
+    assert_eq!(changed.status(), StatusCode::OK);
+    assert_ne!(changed.headers()["etag"], etag.as_str());
+    assert_eq!(read_json(changed).await["data"]["items"][0]["translated"]["text"], "第二版 0");
+}
+
+#[tokio::test]
+async fn large_json_responses_are_gzipped_only_when_the_client_accepts_it() {
+    let state = test_state("reader-regions-gzip");
+    write_big_job(&state, "regions-gzip-job", 200, "译文");
+    let app = build_app(state);
+
+    let plain = get_regions(&app, "regions-gzip-job", &[]).await;
+    assert!(plain.headers().get("content-encoding").is_none());
+    let plain_size = axum::body::to_bytes(plain.into_body(), usize::MAX).await.unwrap().len();
+    assert!(plain_size > 8 * 1024, "{plain_size}");
+
+    let gzipped = get_regions(&app, "regions-gzip-job", &[("Accept-Encoding", "gzip")]).await;
+    assert_eq!(gzipped.status(), StatusCode::OK);
+    assert_eq!(gzipped.headers()["content-encoding"], "gzip");
+    let gzipped_size = axum::body::to_bytes(gzipped.into_body(), usize::MAX).await.unwrap().len();
+    assert!(gzipped_size * 4 < plain_size, "{gzipped_size} vs {plain_size}");
+
+    // 小响应不压
+    let small = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/v1/jobs/regions-gzip-job/reader/regions/p001-b0001")
+                .header("X-API-Key", "test-key")
+                .header("Accept-Encoding", "gzip")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(small.status(), StatusCode::OK);
+    assert!(small.headers().get("content-encoding").is_none());
+}

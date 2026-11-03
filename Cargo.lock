@@ -107,6 +107,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-compression"
+version = "0.4.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59a194f9d963d8099596278594b3107448656ba73831c9d8c783e613ce86da64"
+dependencies = [
+ "flate2",
+ "futures-core",
+ "memchr",
+ "pin-project-lite",
+ "tokio",
+]
+
+[[package]]
 name = "async-trait"
 version = "0.1.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2477,12 +2490,16 @@ version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e9cd434a998747dd2c4276bc96ee2e0c7a2eadf3cae88e52be55a05fa9053f5"
 dependencies = [
+ "async-compression",
  "bitflags",
  "bytes",
+ "futures-core",
  "http",
  "http-body",
  "http-body-util",
  "pin-project-lite",
+ "tokio",
+ "tokio-util",
  "tower-layer",
  "tower-service",
  "tracing",
