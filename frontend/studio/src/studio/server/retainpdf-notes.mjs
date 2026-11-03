@@ -8,8 +8,8 @@ const BOOKS_TITLE = '读书笔记'; // i18n-ignore: a page's title, written into
 /**
  * RetainPDF's 读书笔记: one page of notes per book, all under one page (made the first time). A book's page says which
  * book it is (`retainpdf: { document, job }`), so it is found again however it is named or moved; the page they are
- * under says so too (`retainpdf: { books: true }`). Asked from 翻译 when the reader asks for its notes (studio-bridge.v1
- * `open-notes`).
+ * under says so too (`retainpdf: { books: true }`). No longer asked from 翻译 (2026-11-03): the reader's 笔记 and
+ * 摘到笔记 go to the note being written, a note quoting several books; the pages made so are kept, and found as before.
  */
 export class RetainpdfNotes {
 	/** @param {import('./articles/article-repository.mjs').ArticleRepository} articles */
@@ -51,7 +51,7 @@ export class RetainpdfNotes {
 	/** A 维基 page (notes, not a post to publish), starting empty: the quotes and what is written about them go in. */
 	async #make(all, title, parent, retainpdf) {
 		const slug = freeSlug(autoSlug(), all.map((page) => page.slug));
-		await this.articles.create({ slug, title, parent, kind: 'wiki', blank: true });
+		await this.articles.create({ slug, title, parent, kind: 'wiki' });
 		await this.#mark(slug, retainpdf);
 		return { slug, title };
 	}

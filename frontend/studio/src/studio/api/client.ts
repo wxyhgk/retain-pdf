@@ -990,8 +990,3 @@ export function retainpdfBooks(): Promise<{ books: Array<{ document_id: string; 
 export function tellRetainpdfReading(reading: { job_id: string; document_id: string | null; title: string | null; page: number | null; pages: number | null; notes: { slug: string; title: string } | null } | null): Promise<unknown> {
 	return request('/api/studio/retainpdf/reading', jsonOptions('PUT', reading));
 }
-
-/** 翻译's 笔记 (server/retainpdf-notes.mjs): the page of notes of a book, found by it or made under 读书笔记. */
-export function retainpdfBookNote(book: { job_id: string; document_id: string | null; title: string | null }): Promise<{ slug: string; title: string; created: boolean }> {
-	return request('/api/studio/retainpdf/notes', jsonOptions('POST', book));
-}
