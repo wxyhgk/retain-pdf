@@ -43,6 +43,25 @@ def build_document_identity(
     return {**payload, "fingerprint": _sha256_json(payload)}
 
 
+def resumes_streamed_attempt(previous: dict, identity: dict, source_pdf_path: str | Path | None) -> bool:
+    """跟着 OCR 翻的那次留下的检查点，能不能让这次不跟着 OCR 的接着用。
+
+    跟着 OCR 翻时指纹按原文 PDF 算（归一化文档每来一批页都在变），OCR 做完以后再翻（重试翻译）指纹按规范化文档算，
+    两种指纹永远对不上：以前跟着 OCR 翻了 6.86 万条的书一重试就从头翻（2026-11-03，任务 20261103044311-4bdc13）。
+    翻译参数一样、原文 PDF 是同一份就接得上；页里每一条照旧按条目指纹核对（`_replay_durable_checkpoint`），
+    原文变了的页不会沿用。
+    """
+    streamed_pdf_sha256 = str(previous.get("ocr_stream_source_pdf_sha256") or "")
+    if not streamed_pdf_sha256 or "ocr_stream_source_pdf_sha256" in identity:
+        return False
+    if not previous.get("parameters_sha256") or previous.get("parameters_sha256") != identity.get("parameters_sha256"):
+        return False
+    if source_pdf_path is None:
+        return False
+    path = Path(source_pdf_path)
+    return path.is_file() and _sha256_file(path) == streamed_pdf_sha256
+
+
 def build_translation_identity(
     request: TranslationExecutionRequest,
     plan: TranslationExecutionPlan,

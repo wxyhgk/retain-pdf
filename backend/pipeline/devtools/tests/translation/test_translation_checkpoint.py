@@ -5,6 +5,7 @@ import json
 import multiprocessing
 import os
 import shutil
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -706,3 +707,63 @@ def test_mismatched_copied_checkpoint_is_explicitly_discarded(tmp_path: Path) ->
         assert fresh.payload is not None
         assert fresh.payload["attempt_id"] == "job-new"
         assert "resumed_from_attempt_id" not in fresh.payload
+
+
+def _copy_attempt(old_output: Path, new_output: Path, page_name: str) -> Path:
+    new_output.mkdir(parents=True)
+    new_page = new_output / page_name
+    shutil.copy2(old_output / page_name, new_page)
+    shutil.copy2(old_output / TRANSLATION_CHECKPOINT_FILE_NAME, new_output / TRANSLATION_CHECKPOINT_FILE_NAME)
+    return new_page
+
+
+def _streamed_attempt(tmp_path: Path, source_pdf: Path) -> tuple[Path, Path, str]:
+    """跟着 OCR 翻的一次：指纹按原文 PDF 算。"""
+    source_json = tmp_path / "document.v1.json"
+    source_json.write_text('{"schema":"document.v1"}', encoding="utf-8")
+    old_output = tmp_path / "job-old" / "translated"
+    old_page = old_output / "page-001-deepseek.json"
+    payload = [_item("done", "已完成"), _item("pending")]
+    request = replace(_request(source_json, old_output), ocr_stream_dir=tmp_path / "job-old" / "ocr", source_pdf_path=source_pdf)
+    with TranslationCheckpointSession.acquire(request, _plan()) as checkpoint:
+        save_translations(old_page, payload)
+        checkpoint.update("translating", {0: payload}, {0: old_page})
+    stored = json.loads((old_output / TRANSLATION_CHECKPOINT_FILE_NAME).read_text(encoding="utf-8"))
+    assert stored.get("ocr_stream_source_pdf_sha256")
+    return source_json, old_output, old_page.name
+
+
+def test_a_streamed_attempt_resumes_after_ocr_finished(tmp_path: Path) -> None:
+    # 跟着 OCR 翻了一部分失败了，OCR 做完以后重试翻译（指纹按规范化文档算）：参数一样、原文 PDF 是同一份就接着翻，
+    # 以前两种指纹对不上，6.86 万条从头翻（2026-11-03，任务 20261103044311-4bdc13）。
+    source_pdf = tmp_path / "book.pdf"
+    source_pdf.write_bytes(b"%PDF-1.4 the same book")
+    source_json, old_output, page_name = _streamed_attempt(tmp_path, source_pdf)
+    new_output = tmp_path / "job-new" / "translated"
+    new_page = _copy_attempt(old_output, new_output, page_name)
+
+    retry = replace(_request(source_json, new_output), source_pdf_path=source_pdf)
+    with TranslationCheckpointSession.acquire(retry, _plan()) as checkpoint:
+        pending = pending_translation_items(load_translations(new_page))
+        assert [item["item_id"] for item in pending] == ["pending"]
+        assert checkpoint.payload is not None
+        assert checkpoint.payload["resumed_from_attempt_id"] == "job-old"
+
+
+@pytest.mark.parametrize("change", ["other_pdf", "other_model", "no_pdf"])
+def test_a_streamed_attempt_is_not_resumed_when_the_book_or_the_parameters_changed(tmp_path: Path, change: str) -> None:
+    source_pdf = tmp_path / "book.pdf"
+    source_pdf.write_bytes(b"%PDF-1.4 the same book")
+    source_json, old_output, page_name = _streamed_attempt(tmp_path, source_pdf)
+    new_output = tmp_path / "job-new" / "translated"
+    _copy_attempt(old_output, new_output, page_name)
+
+    retry = _request(source_json, new_output, model="new-model" if change == "other_model" else "test-model")
+    if change == "other_pdf":
+        other = tmp_path / "other.pdf"
+        other.write_bytes(b"%PDF-1.4 another book")
+        retry = replace(retry, source_pdf_path=other)
+    elif change == "other_model":
+        retry = replace(retry, source_pdf_path=source_pdf)
+    with pytest.raises(ResumeCandidateFingerprintMismatch):
+        TranslationCheckpointSession.acquire(retry, _plan())
