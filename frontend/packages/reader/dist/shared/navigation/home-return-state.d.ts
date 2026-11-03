@@ -1,7 +1,7 @@
 export declare const HOME_RETURN_STORAGE_KEY = "retainpdf.home.return.v1";
 export type HomeReturnState = {
     allowBack: boolean;
-    activeTab: "library" | "categories" | "favorites" | "ask" | string;
+    activeTab: "library" | "categories" | "favorites" | string;
     libraryScrollTop: number;
     panelScrollTop: number;
     windowScrollY: number;

@@ -64,22 +64,10 @@ type ReaderAdaptersDownloadResource = NonNullable<ReturnType<typeof getReaderAda
 type ReaderAdaptersFailToast = NonNullable<ReturnType<typeof getReaderAdapters>>["failDownloadToast"];
 export declare const resolveMarkdownAssetUrl: (imagesBaseUrl: unknown, relativePath: unknown) => string;
 export { parseMarkdownWithMath } from "./shared/content/markdown-math.js";
-export { createReaderMarkdownAnswerer } from "./shared/ai/markdown-answerer.js";
-export { hydrateProtectedImages, injectCitationMarkers, isAgenticCitation, mountAnswerHtml, normalizeAiCitations, neutralizeMarkdownAnchors, renderCitationFooter, revokeHydratedImageUrls, } from "./shared/ai/answer-enhance.js";
-export type { AiCitationLike } from "./shared/ai/answer-enhance.js";
-export { armReaderAiClickShield, clearReaderAiNavigationLock, installReaderWindowOpenGuard, isReaderAiNavigationLocked, lockReaderAiNavigation, shouldIgnoreReaderAiNavEvent, } from "./shared/ai/ui-interaction-lock.js";
-export { peekFinalAnswerHtmlCache, renderFinalAnswerHtml, renderStreamingPreviewHtml, } from "./shared/ai/render-answer-html.js";
-export { sanitizeAssistantAnswer } from "./shared/ai/sanitize-answer.js";
-export { clearThreadBranchSnapshot, loadThreadBranchSnapshot, saveThreadBranchSnapshot, threadBranchStorageKey, visiblePathFromSnapshot, } from "./shared/ai/thread-branch-store.js";
-export type { ThreadBranchCitation, ThreadBranchItem, ThreadBranchMessage, ThreadBranchSnapshot, } from "./shared/ai/thread-branch-store.js";
-export { appendConversationMessage, baseConversationTitle, createConversation, deleteConversation, forkConversationFromPath, getConversation, listConversations, messagesToBranchItems, nextForkConversationTitle, patchConversation, } from "@retainpdf/api/conversations";
-export type { ConversationDetail, ConversationRecord, MessageRecord, } from "@retainpdf/api/conversations";
-export { clearStoredConversationId, loadStoredConversationId, saveStoredConversationId, } from "./shared/ai/conversation-store.js";
 export declare const API_PREFIX = "/api/v1";
 export declare const fetchDocumentByJobId: (...args: [string, string]) => Promise<{
     document_id?: string;
     active_job_id?: string | null;
     active_version_id?: string | null;
 }>;
-export { CREDENTIALS_CHANGED_EVENT, hasModelApiKey, MISSING_MODEL_API_KEY_MESSAGE, } from "./shared/ai/config.js";
 //# sourceMappingURL=external.d.ts.map
