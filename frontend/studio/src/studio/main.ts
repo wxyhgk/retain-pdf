@@ -887,6 +887,9 @@ const retainpdf = createRetainpdfView(translateView, {
 		chat.showAi();
 		chat.aiPanel.focus();
 	},
+	// A book clicked to read in 书库 (open-book): beside the note being written, a tab of it (以笔记为根); ⤢ on the tabs reads
+	// it over the whole middle.
+	openBook: (book, page) => void openBookBesideNote(book, page),
 	// 摘到笔记: the passage put in the note being written, opened beside RetainPDF when it is not; where the caret is when
 	// the author has been writing in it, else after the last block. Shown where it went. The book comes out beside the note
 	// then (it is quoted there).
@@ -895,6 +898,21 @@ const retainpdf = createRetainpdfView(translateView, {
 		putQuote(quote, caretBeside === session.slug ? 'caret' : 'end');
 	},
 });
+/** A book of 书库's to read: the note being written shown (a new one when none is open), the book beside it at `page`. */
+async function openBookBesideNote(book: RetainpdfBook, page: number | null): Promise<void> {
+	showView('editor');
+	if (!session.slug) await pages.newPage();
+	if (!session.slug) return;
+	const target = page === null ? undefined : { job_id: book.job_id, page_idx: page };
+	if (booksSplit.open) {
+		bookTabs.open(book, target);
+	} else if (target) {
+		setBooksOpen(true, { book, target });
+	} else {
+		setBooksOpen(true);
+		bookTabs.open(book);
+	}
+}
 /** A passage quoted (摘到笔记) into the note shown: where the caret is, or after the last block; shown where it went. */
 function putQuote(quote: RetainpdfQuote, where: 'caret' | 'end'): void {
 	{

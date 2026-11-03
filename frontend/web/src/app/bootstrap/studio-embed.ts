@@ -10,6 +10,8 @@
 // - reading：眼下读到哪（哪本书、第几页），给 Studio 的 AI 回答「这一页」用。握手后发一次（不在阅读页就是全 null 的那条），
 //   阅读页翻页停下来再发（防抖 READING_DEBOUNCE_MS）；
 // - ask-ai：Studio 认它（它有自己的 AI）时，阅读页的「AI」不开自己的终端，先把读到哪立刻发出去，再发 ask-ai 让 Studio 打开它的 AI。
+// - open-book：Studio 认它（书库那一页）时，书库里点书要读（卡片的阅读、详情里的对照阅读……都走 ReaderNavigation）不自己开
+//   阅读页，交给 Studio 在正在写的笔记旁边打开（以笔记为根）；只读原文、还没有任务的书照旧自己开。
 //   阅读器包的这几样由 studioReaderAdapters 交过去（app/reader/adapters/retainpdf.ts）。
 //
 // 方案和安全要求：docs/ops/planning/studio-workbench/ 的「书和笔记接在一起」「阅读页唤出笔记」；格式：platform/studio-bridge/protocol.ts。
@@ -19,6 +21,7 @@ import {
   askAiMessage,
   closeNotesMessage,
   isLoopbackOrigin,
+  openBookMessage,
   openNotesMessage,
   parseStudioMessage,
   quoteMessage,
@@ -67,6 +70,8 @@ export type StudioEmbed = {
   supports: (feature: StudioSideFeature) => boolean;
   /** 发一条 quote；没握手或 Studio 不认返回 false。 */
   sendQuote: (quote: StudioQuote) => boolean;
+  /** 书库里点书要读：Studio 认 open-book 就交给它（返回 true，我们不开阅读页）；不认返回 false。 */
+  openBook: (book: StudioBook, pageIdx?: number | null) => boolean;
   /** Studio 说的旁边笔记开着没有（notes 消息）。 */
   notes: () => StudioNotesState;
   /** 笔记收着就发 open-notes，开着就发 close-notes；开没开等 Studio 回 notes 再变。 */
@@ -170,6 +175,7 @@ export function startStudioEmbed(
     ready: () => Boolean(state.origin),
     supports,
     sendQuote: (quote) => supports("quote") && post(quoteMessage(quote)),
+    openBook: (book, pageIdx = null) => Boolean(book.jobId) && supports("open-book") && post(openBookMessage(book, pageIdx)),
     notes: () => state.notes,
     setReading(reading) {
       state.reading = reading;
