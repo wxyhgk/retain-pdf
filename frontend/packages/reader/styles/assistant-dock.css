@@ -240,6 +240,18 @@
   transition: none;
 }
 
+/* 竖条和底栏不压在书上：不是手机宽度时，阅读区右边给竖条、底下给页码缩放那一条各留出位置，页面排在留出来之外
+ *（缩放按阅读区的宽算，对照照样两页铺满）。以前竖条压着译文页右边的字，底栏压着最后几行。手机上留不起，照旧浮在上面。 */
+@media (min-width: 600px) {
+  .reader-react-root:not(.is-assistant-open) .reader-react-scroll-shell {
+    right: var(--reader-rail-room, 62px);
+  }
+
+  .reader-react-root .reader-react-scroll-shell {
+    bottom: var(--reader-hud-room, 66px);
+  }
+}
+
 /* dock 打开时，视口右半边是面板，所以「居中」得按 PDF 栏算，不是按视口。
  *
  * 只有 HUD 一直是这么做的；两条错误提示原来留在 left: 50%，中心正好落在分栏线

@@ -32,6 +32,7 @@
 @import "./reader.utilities.css";
 @import "./layout.css" layer(pages);
 @import "./chrome.css" layer(pages);
+@import "./finder.css" layer(pages);
 @import "./assistant-dock.css" layer(pages);
 @import "./content.css" layer(pages);
 @import "./react-pdf.css" layer(pages);

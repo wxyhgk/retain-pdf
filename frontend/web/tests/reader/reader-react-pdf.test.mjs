@@ -114,9 +114,9 @@ test("reader workspace bar keeps only three icon-only reading modes", () => {
     onModeChange() {},
   }));
   assert.match(markup, /aria-label="阅读工作区"/);
-  assert.match(markup, />源文件</);
+  assert.match(markup, />原文</);
   assert.match(markup, />对照</);
-  assert.match(markup, />翻译文件</);
+  assert.match(markup, />译文</);
   assert.doesNotMatch(markup, />Markdown</);
   assert.doesNotMatch(markup, />AI</);
   assert.match(markup, /reader-workspace-tab-label/);

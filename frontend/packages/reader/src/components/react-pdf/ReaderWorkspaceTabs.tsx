@@ -6,10 +6,11 @@ import { useReaderContext } from "./reader-context.js";
 export type ReaderWorkspaceView = "reading" | "compare" | "markdown" | "ai";
 export type ReaderWorkspaceMode = "source" | "compare" | "translated";
 
+// 页签上写着字（窄屏只剩图标，见 chrome.css）：只有图标时看不出哪颗是哪颗。
 const WORKSPACES = [
-  { id: "source", label: "源文件", Icon: FileText },
+  { id: "source", label: "原文", Icon: FileText },
   { id: "compare", label: "对照", Icon: Columns2 },
-  { id: "translated", label: "翻译文件", Icon: Languages },
+  { id: "translated", label: "译文", Icon: Languages },
 ] as const;
 
 export type ReaderWorkspaceTabsProps = {
