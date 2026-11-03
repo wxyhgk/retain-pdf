@@ -25,7 +25,7 @@ import { scienceSlashEntries } from './science-slash-menu.ts';
  * from the Studio.
  */
 export const name = 'block-chemistry';
-export const description = t('化学块（```smiles、```sdf、```xyz、```cube…）：画出分子结构，平面的用结构编辑器改，三维的用 RetainMol 改；转到的三维视角存在文章里。');
+export const description = t('化学块（```smiles、```sdf、```xyz、```cube…）：画出分子结构，平面的用结构编辑器改，三维的用 RetainMol 改；转到的三维视角存在页面里。');
 export const inject = ['studio', 'blocks', 'styles', 'molecules'];
 
 /** A chemistry block's own menu: what its kind can become, its source, deleting it; and 复制 from the Studio's. */

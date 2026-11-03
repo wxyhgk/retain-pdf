@@ -112,7 +112,7 @@ export class ArticleHistory {
 	 * @returns {Promise<{ name: string | null }>} the version kept, or null when it was there already
 	 */
 	async keep(slug, source, reason, now = new Date()) {
-		if (typeof source !== 'string') throw new HistoryError(t('文章内容必须是文本'));
+		if (typeof source !== 'string') throw new HistoryError(t('页面内容必须是文本'));
 		if (!HISTORY_REASONS.includes(reason)) throw new HistoryError(t('历史版本的原因无效'));
 		const folder = await this.#folder(slug);
 		const kept = await this.list(slug);

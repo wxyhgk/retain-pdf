@@ -48,7 +48,7 @@ export function createArticleTable(root: HTMLElement, host: ArticleTableHost) {
 	let query = '';
 
 	const heading = element('header', 'table-heading');
-	const title = element('h1', '', t('全部文章'));
+	const title = element('h1', '', t('全部页面'));
 	const count = element('span', 'table-count');
 	heading.append(title, count);
 
@@ -67,7 +67,7 @@ export function createArticleTable(root: HTMLElement, host: ArticleTableHost) {
 	const search = element('input', 'table-search');
 	search.type = 'search';
 	search.placeholder = t('筛选标题、简介、标签…');
-	search.setAttribute('aria-label', t('筛选文章'));
+	search.setAttribute('aria-label', t('筛选页面'));
 	search.addEventListener('input', () => {
 		query = search.value;
 		draw();
@@ -101,8 +101,8 @@ export function createArticleTable(root: HTMLElement, host: ArticleTableHost) {
 		tagFilter.value = settings.tag;
 		groupChoice.value = settings.group;
 		groupChoice.hidden = settings.layout !== 'board';
-		if (!all.length) body.replaceChildren(element('p', 'table-empty', t('还没有文章。')));
-		else if (!shown.length) body.replaceChildren(element('p', 'table-empty', t('没有符合筛选的文章。')));
+		if (!all.length) body.replaceChildren(element('p', 'table-empty', t('还没有页面。')));
+		else if (!shown.length) body.replaceChildren(element('p', 'table-empty', t('没有符合筛选的页面。')));
 		else body.replaceChildren(settings.layout === 'table' ? table(shown) : board(shown));
 	}
 

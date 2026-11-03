@@ -1,5 +1,5 @@
 // The pages: made, opened, moved, published, starred; where the open one is (the bar's path, ‹ ›); its ⋯ menu.
-import { Copy, Download, FolderSearch, Upload, History, LayoutTemplate, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
+import { Copy, Download, FolderSearch, Globe, Upload, History, LayoutTemplate, Link, MoveHorizontal, Star, Trash2 } from 'lucide-react';
 import { t } from '@blog/i18n/index.mjs';
 import { articleAddress } from '@blog/markdown/articles/rules.mjs';
 import { createArticle, createDatabase, importMarkdown as importPages, renderTemplate, revealArticleFile, saveAsTemplate, setArticleParent, type PagePlace } from '../api/client';
@@ -15,6 +15,7 @@ import { shell as shellState } from '../shell/shell-state';
 import { trackWrite } from '../state/writes';
 import type { ArticleSummary } from '../types';
 import type { Studio } from './studio';
+import { rememberRecent } from '../state/recent-pages';
 
 /** 今天的日志: the template its pages are made from (templates/journal.md), and the page they go under. */
 const JOURNAL_TEMPLATE = 'journal';
@@ -38,6 +39,7 @@ function lastOpened(): string | null {
 }
 
 function rememberOpened(slug: string): void {
+	rememberRecent(slug);
 	try {
 		localStorage.setItem(LAST_OPENED, slug);
 	} catch {
@@ -434,6 +436,8 @@ export function createPages(studio: Studio) {
 					if (properties.setWide(!properties.isWide())) editorPanel.classList.toggle('is-wide', properties.isWide());
 				},
 			},
+			// The blog's, out of the page's head: published from here (its date, kind and 撤回 then shown in its head).
+			{ label: properties.isDraft() ? t('发布到博客…') : t('撤回发布'), icon: Globe, action: () => void properties.togglePublished() },
 			{
 				label: t('复制博客链接'),
 				icon: Link,

@@ -70,7 +70,7 @@ export function jobFigure(node, file, programs) {
 				file.message(t('./{folder}/run.json 读不出来', { folder }), { ...place, ruleId: 'job-run' });
 			}
 		} else if (article && folder) {
-			file.message(t('计算块「{title}」显示的运行 ./{folder}/ 不在文章里', { title: fence.title || fence.id, folder }), { ...place, ruleId: 'job-run' });
+			file.message(t('计算块「{title}」显示的运行 ./{folder}/ 不在页面里', { title: fence.title || fence.id, folder }), { ...place, ruleId: 'job-run' });
 		}
 		if (record && !FINISHED_STATES.includes(record.state)) {
 			file.message(unfinishedRun(fence.title || fence.id, record.state), { ...place, ruleId: 'job-running' });

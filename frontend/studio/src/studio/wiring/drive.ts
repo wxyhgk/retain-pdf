@@ -35,7 +35,7 @@ export function createDrive(studio: Studio) {
 	/** A file of the drive copied into the open article (`img/` for a picture, else `assets/`): its path there. */
 	async function copyFromDrive(path: string): Promise<string> {
 		const slug = session.slug;
-		if (!slug) throw new Error(t('先打开一篇文章'));
+		if (!slug) throw new Error(t('先打开一个页面'));
 		try {
 			return (await importDriveFile(slug, path, isImage(path) ? 'img' : 'assets')).path;
 		} finally {

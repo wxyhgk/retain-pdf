@@ -13,7 +13,7 @@ export type CubeBlock = {
 
 function validateInlineCube(source: string): void {
 	if (source.length > MAX_INLINE_CUBE_LENGTH) {
-		throw new Error(t('Cube 内容过大，请保存到文章 assets 并使用 @file 引用'));
+		throw new Error(t('Cube 内容过大，请保存到页面 assets 并使用 @file 引用'));
 	}
 	const lines = source.split(/\r?\n/u);
 	if (lines.length < 7) throw new Error(t('Cube 文件头不完整'));

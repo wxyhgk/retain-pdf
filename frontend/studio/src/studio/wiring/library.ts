@@ -36,7 +36,7 @@ export function createLibrary(studio: Studio) {
 		library: () => library,
 		async addDoi(doi) {
 			const slug = session.slug;
-			if (!slug) throw new Error(t('还没有打开文章'));
+			if (!slug) throw new Error(t('还没有打开页面'));
 			const { key } = await addReference(slug, doi);
 			await load(slug);
 			return key;

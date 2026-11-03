@@ -164,7 +164,7 @@ export default function studioDev({ site, builds } = {}) {
 			const retainpdfReading = new RetainpdfReading();
 			const conversations = new AgentSessions({ binFolder: resolve(server.config.root, 'node_modules', '.bin'), store: chats });
 			/**
-			 * The environment of a program the Studio runs for an AI (a terminal's shell, an agent run by Alt+Enter):
+			 * The environment of a program the Studio runs for an AI (a terminal's shell, an agent of the AI panel):
 			 * `studio …` on its PATH (the pages' operations), which article and where it is, the drive and its text
 			 * (blog/AGENTS.md names these).
 			 */
@@ -333,7 +333,7 @@ export default function studioDev({ site, builds } = {}) {
 						const resourcePath = decodePathComponent(publicFileMatch[3]);
 						return await sendFile(response, await files.stream(slug, root, resourcePath, { range: request.headers.range }));
 					} catch (error) {
-						const message = error instanceof Error ? error.message : t('文章资源读取失败');
+						const message = error instanceof Error ? error.message : t('页面资源读取失败');
 						const status = Number.isInteger(error?.statusCode) ? error.statusCode : 500;
 						return sendJson(response, status, { error: message });
 					}

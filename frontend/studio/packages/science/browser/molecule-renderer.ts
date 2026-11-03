@@ -203,7 +203,7 @@ export function mountViewControls<View>(
 	const controls = document.createElement('div');
 	controls.className = 'chem-view-controls';
 	const persistence = document.createElement('span');
-	persistence.textContent = storedView ? t('已载入文章视角') : t('使用自动视角');
+	persistence.textContent = storedView ? t('已载入页面视角') : t('使用自动视角');
 	const resetView = document.createElement('button');
 	resetView.type = 'button';
 	resetView.textContent = t('重置视角');
@@ -211,7 +211,7 @@ export function mountViewControls<View>(
 		clearMoleculeView(viewKey);
 		control.reset();
 		settled = JSON.stringify(control.get());
-		persistence.textContent = moleculeViewContext.save ? t('已重置 · 尚未写入文章') : t('已重置');
+		persistence.textContent = moleculeViewContext.save ? t('已重置 · 尚未写入页面') : t('已重置');
 	});
 	const buttons = document.createElement('div');
 	buttons.className = 'chem-view-buttons';
@@ -220,7 +220,7 @@ export function mountViewControls<View>(
 		const saveView = document.createElement('button');
 		saveView.type = 'button';
 		saveView.className = 'primary';
-		saveView.textContent = options.getDisplay ? t('保存显示与视角') : t('保存视角到文章');
+		saveView.textContent = options.getDisplay ? t('保存显示与视角') : t('保存视角到页面');
 		saveView.addEventListener('click', async () => {
 			saveView.disabled = true;
 			persistence.textContent = t('正在写入 article.views.json…');
@@ -231,7 +231,7 @@ export function mountViewControls<View>(
 				moleculeViewContext.views[viewKey] = { format, view: structuredClone(view), display };
 				rememberMoleculeView(viewKey, view);
 				settled = JSON.stringify(view);
-				persistence.textContent = options.getDisplay ? t('显示与视角已写入文章配置') : t('视角已写入文章配置');
+				persistence.textContent = options.getDisplay ? t('显示与视角已写入页面配置') : t('视角已写入页面配置');
 			} catch (error) {
 				persistence.textContent = error instanceof Error ? error.message : t('视角保存失败');
 			} finally {
@@ -251,11 +251,11 @@ export function mountViewControls<View>(
 		const view = control.get();
 		if (JSON.stringify(view) === settled) return;
 		rememberMoleculeView(viewKey, view);
-		persistence.textContent = moleculeViewContext.save ? t('视角有改动 · 尚未写入文章') : t('临时视角');
+		persistence.textContent = moleculeViewContext.save ? t('视角有改动 · 尚未写入页面') : t('临时视角');
 	});
 	return {
 		markDisplayDirty: () => {
-			persistence.textContent = moleculeViewContext.save ? t('显示有改动 · 尚未写入文章') : t('临时显示参数');
+			persistence.textContent = moleculeViewContext.save ? t('显示有改动 · 尚未写入页面') : t('临时显示参数');
 		},
 	};
 }
@@ -285,7 +285,7 @@ export function createMoleculePreview(language: string, source: string): HTMLEle
 		if (!block) return null;
 		const renderInput = prepareMoleculeRenderInput(block);
 		if (renderInput.status === 'needs-resource') {
-			return createFigure('chem-resource', renderInput.resource.path, t('文章资源将在文件解析器接入后显示'));
+			return createFigure('chem-resource', renderInput.resource.path, t('页面资源将在文件解析器接入后显示'));
 		}
 
 		const figure = createFigure(

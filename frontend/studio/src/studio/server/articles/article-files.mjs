@@ -39,7 +39,7 @@ export class ArticleFiles {
 			return { ...moved, revision: snapshot.revision, references: 0, views: 0 };
 		}
 		if (expectedRevision !== snapshot.revision) {
-			throw new ArticleConflictError(t('文章已被修改，请先保存或重新载入，再移动它引用的文件'));
+			throw new ArticleConflictError(t('页面已被修改，请先保存或重新载入，再移动它引用的文件'));
 		}
 		const fileMoves = rewritten.moves.filter((move) => move.kind === 'file').map((move) => [move.from, move.to]);
 		const views = moveMoleculeViews(snapshot.viewsSource, fileMoves);

@@ -26,7 +26,7 @@ test('the articles that link here, and the words around each link; new ones as t
 	writeArticle('linker-one', article('先读这篇', `开始前先看 [夹具](/blog/${slug}/) 的写法。`, 'draft: true\n'));
 	await openStudio(page);
 	const backlinks = page.locator('#page-backlinks');
-	await expect(backlinks.locator('.backlinks-toggle')).toHaveText('↗ 1 篇文章链接到这里');
+	await expect(backlinks.locator('.backlinks-toggle')).toHaveText('↗ 1 个页面链接到这里');
 	await expect(backlinks.locator('.backlinks-list')).toBeHidden();
 	await backlinks.locator('.backlinks-toggle').click();
 	await expect(backlinks.locator('.backlinks-title')).toHaveText('▤先读这篇草稿');
@@ -34,7 +34,7 @@ test('the articles that link here, and the words around each link; new ones as t
 
 	// Written by something else (an AI in the terminal): the list follows.
 	writeArticle('linker-two', article('也提到了', `- 列表里的 [链接](https://wxyhgk.github.io/blog/${slug}/#top)`));
-	await expect(backlinks.locator('.backlinks-toggle')).toHaveText('↗ 2 篇文章链接到这里');
+	await expect(backlinks.locator('.backlinks-toggle')).toHaveText('↗ 2 个页面链接到这里');
 
 	// Opened at the paragraph that links.
 	await backlinks.locator('.backlinks-context', { hasText: '开始前先看' }).click();
@@ -50,7 +50,7 @@ test('all the articles as a table: sorted by a column, filtered, and opened', as
 	await page.locator('#open-table').click();
 	await expect(page).toHaveURL(/[?&]pages/u);
 	const view = page.locator('#table-view');
-	await expect(view.locator('.table-heading')).toContainText('全部文章');
+	await expect(view.locator('.table-heading')).toContainText('全部页面');
 	const names = view.locator('.table-row .table-name');
 	await expect(names).toHaveCount(3);
 

@@ -1,11 +1,13 @@
 import { useRef, useState } from 'react';
-import { BookOpen, FileCode, Languages, Palette, Puzzle, Search, Sparkles, Tablet, type LucideIcon } from 'lucide-react';
+import { BookOpen, FileCode, KeyRound, Languages, Palette, Puzzle, ScanText, Search, SlidersHorizontal, Tablet, type LucideIcon } from 'lucide-react';
 
 import { t } from '@blog/i18n/index.mjs';
 import { cn } from '@studio/lib/utils';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@studio/ui/dialog';
 import type { AiSettingsShown } from '../../api/client';
+import { AgentsSettings } from './AgentsSettings';
 import { AiSettings } from './AiSettings';
+import { ModelsSettings, type ModelsHost } from './ModelsSettings';
 import { FileOpenSettings } from './FileOpenSettings';
 import { RemoteSettings } from './RemoteSettings';
 import { ThemeSettings } from './ThemeSettings';
@@ -13,13 +15,14 @@ import { LocaleSettings } from './LocaleSettings';
 import { RetainpdfSettings } from './RetainpdfSettings';
 import { PluginSettings, type PluginsHost } from './PluginSettings';
 
-export type SettingsSection = 'locale' | 'theme' | 'files' | 'remote' | 'retainpdf' | 'ai' | 'plugins';
+export type SettingsSection = 'locale' | 'theme' | 'files' | 'remote' | 'retainpdf' | 'ai-models' | 'ai-vision' | 'ai-advanced' | 'plugins';
 
 /**
  * 设置 opened at `section`. For want of an AI setting (识别图片): `why` said above it, and `done` told what was saved
- * once it closes (null when nothing was); saved then, it closes by itself, the work asked for going on.
+ * once it closes (null when nothing was); saved then, it closes by itself, the work asked for going on. `models`: the AI
+ * panel, told of a service saved in 模型和账号 (and asked to run a login in the terminal).
  */
-export type SettingsAsk = { section: SettingsSection; plugins: PluginsHost | null; why?: string; done?(settings: AiSettingsShown | null): void };
+export type SettingsAsk = { section: SettingsSection; plugins: PluginsHost | null; models?: ModelsHost | null; why?: string; done?(settings: AiSettingsShown | null): void };
 
 type Entry = { id: SettingsSection; label: string; icon: LucideIcon; title: string; description: string; words: string };
 
@@ -31,14 +34,19 @@ function groups(): Array<{ name: string; entries: Entry[] }> {
 			entries: [
 				{ id: 'locale', label: t('语言'), icon: Languages, title: t('语言'), description: t('Studio 界面和提示用的语言。存在这台电脑上（.studio-settings.json，不进 git）'), words: t('language locale 界面 中文 english') },
 				{ id: 'theme', label: t('外观'), icon: Palette, title: t('外观'), description: t('亮色、暗色，或者跟着系统变。博客的页面也一样。存在这个浏览器里，马上生效'), words: t('theme dark light 暗色 亮色 深色 浅色 黑 白 夜间 外观 主题') },
-				{ id: 'files', label: t('打开文件'), icon: FileCode, title: t('打开文件'), description: t('点文章里指向文件的链接（脚本、数据、PDF……）时怎么打开：在 Studio 里、用默认程序（比如 VS Code、预览）、在 Finder 中显示。存在这个浏览器里，改了马上生效'), words: t('file open 文件 打开 默认程序 finder vscode 附件 链接 点击') },
-				{ id: 'remote', label: t('其他设备访问'), icon: Tablet, title: t('其他设备访问'), description: t('让配对过的别的电脑（浏览器）或 iPad 经局域网或 Tailscale 用这台 Mac 上的 Studio：文章、AI、终端都在 Mac 上跑。默认关着'), words: t('ipad iphone 远程 remote tailscale 局域网 配对 扫码 二维码 手机 平板 浏览器 电脑 browser 网页') },
+				{ id: 'files', label: t('打开文件'), icon: FileCode, title: t('打开文件'), description: t('点页面里指向文件的链接（脚本、数据、PDF……）时怎么打开：在 Studio 里、用默认程序（比如 VS Code、预览）、在 Finder 中显示。存在这个浏览器里，改了马上生效'), words: t('file open 文件 打开 默认程序 finder vscode 附件 链接 点击') },
+				{ id: 'remote', label: t('其他设备访问'), icon: Tablet, title: t('其他设备访问'), description: t('让配对过的别的电脑（浏览器）或 iPad 经局域网或 Tailscale 用这台 Mac 上的 Studio：页面、AI、终端都在 Mac 上跑。默认关着'), words: t('ipad iphone 远程 remote tailscale 局域网 配对 扫码 二维码 手机 平板 浏览器 电脑 browser 网页') },
 				{ id: 'retainpdf', label: 'RetainPDF', icon: BookOpen, title: 'RetainPDF', description: t('左栏「书库」打开的 RetainPDF 页面在哪里。存在这台电脑上（.studio-settings.json，不进 git）'), words: t('retainpdf pdf 翻译 书 阅读 地址 端口 translate') },
 			],
 		},
 		{
 			name: 'AI',
-			entries: [{ id: 'ai', label: t('AI 模型'), icon: Sparkles, title: t('AI 模型'), description: t('识别图片时用的大模型。key 只存在这台电脑上（.studio-settings.json，不进 git）'), words: t('ai key claude openai deepseek 识别 图片 公式 ocr 模型 接口') }],
+			// The AI's settings, all here: what the panel talks to, what reads pictures, and the AIs other than pi.
+			entries: [
+				{ id: 'ai-models', label: t('模型和账号'), icon: KeyRound, title: t('模型和账号'), description: t('AI 面板（pi，和「高级」里打开的 Claude Code、Codex）用哪家的模型、key 和账号。key 只存在这台电脑上（.studio-settings.json，不进 git）'), words: t('ai pi claude codex key 模型 账号 登录 deepseek kimi api 面板') },
+				{ id: 'ai-vision', label: t('识别图片'), icon: ScanText, title: t('识别图片'), description: t('识别图片时用的大模型。key 只存在这台电脑上（.studio-settings.json，不进 git）'), words: t('ai key claude openai deepseek 识别 图片 公式 ocr 模型 接口') },
+				{ id: 'ai-advanced', label: t('高级'), icon: SlidersHorizontal, title: t('高级'), description: t('pi 以外的 AI：在 AI 面板里也用 Claude Code、Codex'), words: t('ai claude codex 高级 程序 agent acp') },
+			],
 		},
 		{
 			name: t('扩展'),
@@ -48,10 +56,10 @@ function groups(): Array<{ name: string; entries: Entry[] }> {
 }
 
 /**
- * 设置, as Notion's: the parts in a column on the left (a search above them), the one chosen on the right — 语言, AI 模型
- * (识别图片), 插件, 打开文件. Opened from the workspace's menu at the foot of the left column, or by what wants an AI setting.
+ * 设置, as Notion's: the parts in a column on the left (a search above them), the one chosen on the right — 语言, 外观,
+ * 打开文件, …, AI (模型和账号, 识别图片, 高级), 插件. Opened from the workspace's menu at the foot of the left column, or by what wants an AI setting.
  */
-export function SettingsDialog({ section, plugins, why = '', done, onClose }: SettingsAsk & { onClose(): void }) {
+export function SettingsDialog({ section, plugins, models = null, why = '', done, onClose }: SettingsAsk & { onClose(): void }) {
 	const [shown, setShown] = useState(section);
 	const [query, setQuery] = useState('');
 	const saved = useRef<AiSettingsShown | null>(null);
@@ -126,7 +134,9 @@ export function SettingsDialog({ section, plugins, why = '', done, onClose }: Se
 							{shown === 'files' && <FileOpenSettings />}
 							{shown === 'remote' && <RemoteSettings />}
 							{shown === 'retainpdf' && <RetainpdfSettings />}
-							{shown === 'ai' && (
+							{shown === 'ai-models' && <ModelsSettings host={models} />}
+							{shown === 'ai-advanced' && <AgentsSettings />}
+							{shown === 'ai-vision' && (
 								<AiSettings
 									why={why}
 									onSaved={(settings) => {

@@ -55,7 +55,7 @@ test('a job is its head, the run it shows (read at build time), and its input fo
 
 test('what the check before publishing says: a run not in the article, one still going, one that failed; none run yet is fine', async (t) => {
 	const missing = await render(t, fence('id=opt run=20261019-153012'));
-	assert.deepEqual(missing.messages, [['job-run', '计算块「opt」显示的运行 ./assets/jobs/opt/20261019-153012/ 不在文章里']]);
+	assert.deepEqual(missing.messages, [['job-run', '计算块「opt」显示的运行 ./assets/jobs/opt/20261019-153012/ 不在页面里']]);
 	assert.match(missing.html, /<figure class="note-job">[\s\S]*还没有运行/u);
 
 	const going = await render(t, fence('id=opt title=水 run=20261019-153012'), { 'assets/jobs/opt/20261019-153012/run.json': run('running') });

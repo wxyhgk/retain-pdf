@@ -170,7 +170,7 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 	const problem = () => {
 		if (!fence.file) return null;
 		const path = qcFilePath(fence.file);
-		if (!path) return t('{file} 不在文章的 img/ 或 assets/ 里', { file: fence.file });
+		if (!path) return t('{file} 不在页面的 img/ 或 assets/ 里', { file: fence.file });
 		if (!read || read.path !== path) return null;
 		if (read.text === null) return t('找不到 ./{path}', { path });
 		if (!read.result) return t('./{path} 认不出是 Gaussian 或 ORCA 的输出', { path });
@@ -185,7 +185,7 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 			else {
 				empty.append(
 					Object.assign(document.createElement('span'), { textContent: t('Gaussian 的 .log 或 ORCA 的 .out，也可以直接拖进正文') }),
-					button(t('选择输出文件…'), chooseFile, t('放进文章的 assets/')),
+					button(t('选择输出文件…'), chooseFile, t('放进页面的 assets/')),
 				);
 			}
 			dom.replaceChildren(empty);
@@ -218,7 +218,7 @@ export const qcView = $view(qcSchema.schema.node, () => (initial: ProseNode, vie
 		file.textContent = fence.file ? t('输出文件：{file}', { file: fence.file }) : t('输出文件：还没有');
 		const label = document.createElement('label');
 		label.append(`${t('标题')} `, title);
-		form.append(label, file, button(t('换文件…'), chooseFile, t('另一个 Gaussian 或 ORCA 的输出，放进文章的 assets/')));
+		form.append(label, file, button(t('换文件…'), chooseFile, t('另一个 Gaussian 或 ORCA 的输出，放进页面的 assets/')));
 		panel.append(form);
 	};
 

@@ -84,7 +84,7 @@ import { createTopBar } from './shell/top-bar';
 import { mountShell } from './shell/mount';
 import { shell as shellState, type View } from './shell/shell-state';
 import { openDialog } from './shell/dialogs/Dialogs';
-import { confirmPublish, createQuickFind, openAgents, openSettings, providePlugins } from './shell/dialogs/ask';
+import { confirmPublish, createQuickFind, openSettings, providePlugins } from './shell/dialogs/ask';
 import { answerWindows } from './windows/studio-line';
 import { openFileEditor } from './files/file-editor';
 import { openFileHistory } from './files/file-history-view';
@@ -303,7 +303,7 @@ const properties = createPageHeader(shell.querySelector<HTMLElement>('.document-
 	},
 	async upload(file) {
 		const slug = session.slug;
-		if (!slug) throw new Error(t('文章尚未载入'));
+		if (!slug) throw new Error(t('页面尚未载入'));
 		const { path } = await uploadArticleFile(slug, 'img', file);
 		void filePanel.refresh();
 		return `./${path}`;
@@ -314,7 +314,7 @@ const chat = createAiChat(studio, { withArticlePictures: (markdown) => drive.wit
 
 const sidePanel = createSidePanel(shell, { shown: (tab) => tab === 'ai' && chat.aiPanel.shown() });
 chat.restoreLayout();
-const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!, { editAgents: () => void openAgents(() => terminal.refreshAgents()) });
+const terminal = createTerminalPane(shell.querySelector<HTMLElement>('#side-terminal')!);
 // A widget in the article asking the AI (note.ask, a button in it clicked): put in the AI's input, for the author to
 // send (one in an answer is said in its conversation: the panel takes it first).
 document.addEventListener(WIDGET_START, (event) => {
@@ -534,7 +534,7 @@ setDatabaseSpace({
 	},
 	async detach(text) {
 		const page = session.slug;
-		if (!page) throw new Error(t('没有打开文章'));
+		if (!page) throw new Error(t('没有打开页面'));
 		const made = await trackWrite(() => detachDatabase(page, text));
 		void articleList.load();
 		return made.slug;
@@ -559,7 +559,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	files: {
 		async upload(files) {
 			const slug = session.slug;
-			if (!slug) throw new Error(t('文章尚未载入'));
+			if (!slug) throw new Error(t('页面尚未载入'));
 			const paths: string[] = [];
 			try {
 				for (const file of files) paths.push((await uploadArticleFile(slug, uploadFolderFor(null, file), file)).path);
@@ -574,7 +574,7 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 		report: showToast,
 	},
 	fileUrl: (src) => (session.slug ? articleFileUrl(session.slug, src) : src),
-	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error(t('文章尚未载入')))),
+	codeFile: (reference, language, meta) => (session.slug ? codeFileFigure(session.slug, reference, language, meta) : Promise.reject(new Error(t('页面尚未载入')))),
 	editFile: (path) => editArticleFile(path),
 	openFile: (path, click) => openArticleFile(path, click),
 	fileMenu: (path, anchor) => fileMenu(path, anchor),
@@ -607,7 +607,6 @@ const editor = createStudioEditor(shell.querySelector<HTMLElement>('#crepe-edito
 	enterPage: (slug) => void pages.enterNewPage(slug),
 	askAI: () => void editorAi.askAI(),
 	writeWithAI: () => void editorAi.askAI(),
-	instruct: (fresh) => void editorAi.instructHere(fresh),
 	ocrPdf: (view, pos, path) => void editorAi.ocrPdf(path, view, pos),
 	recognize: (view, pos) => editorAi.recognizePicture(view, pos),
 	pickCitation: () => library.pick(),
@@ -704,7 +703,11 @@ const session = new ArticleSession(
 		retitled(title) {
 			openTitle = title || t('无标题');
 			topBar.showTitle(openTitle);
-			if (session.slug) articleList.retitled(session.slug, title);
+			if (session.slug) {
+				articleList.retitled(session.slug, title);
+				// The AI panel's chip of the article open, named anew too (not left as it was till it is taken off and on).
+				chat.aiPanel.showArticle({ slug: session.slug, title: openTitle });
+			}
 		},
 		saved(slug, saved, problems) {
 			articleList.saved(slug, saved);
@@ -794,7 +797,7 @@ const quickFind = createQuickFind({
 			{ key: 'studio:import-folder', label: t('导入 Markdown 文件夹…'), icon: '⇪', run: () => void pages.importMarkdown('folder') },
 		];
 		const theme = { key: 'studio:theme', label: t('切换亮色 / 暗色'), icon: '◐', run: toggleTheme };
-		const finding = { key: 'studio:replace', label: t('在全部文章里查找替换…'), icon: '⌕', hint: '⌘⇧F', run: () => findEverywhere() };
+		const finding = { key: 'studio:replace', label: t('在全部页面里查找替换…'), icon: '⌕', hint: '⌘⇧F', run: () => findEverywhere() };
 		return [...fromTemplates, finding, theme, ...imports, ...plugin, ...fromApps, { key: 'studio:new-app', label: t('新建小程序…'), icon: '＋', run: () => miniApps.create() }];
 	},
 });

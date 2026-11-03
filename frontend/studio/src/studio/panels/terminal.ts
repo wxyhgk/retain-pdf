@@ -2,7 +2,7 @@ import { FitAddon } from '@xterm/addon-fit';
 import { Terminal } from '@xterm/xterm';
 import '@xterm/xterm/css/xterm.css';
 
-import { listAgents, openTerminal, type AgentsShown } from '../api/client';
+import { openTerminal } from '../api/client';
 import type { SourceLines } from '@blog/document/source-lines.ts';
 import { t } from '@blog/i18n/index.mjs';
 
@@ -69,12 +69,11 @@ function writeCwd(cwd: Cwd): void {
  * the open article's folder. It starts the first time the tab is shown; after
  * the shell exits, any key opens a new one. Closing the page hangs the shell up.
  */
-export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void }) {
+export function createTerminalPane(pane: HTMLElement) {
 	const screen = pane.querySelector<HTMLElement>('#terminal-screen')!;
 	const where = pane.querySelector<HTMLElement>('#terminal-cwd')!;
 	const restartButton = pane.querySelector<HTMLButtonElement>('#restart-terminal')!;
 	const cwdOptions = [...pane.querySelectorAll<HTMLButtonElement>('[data-cwd]')];
-	const agentBar = pane.querySelector<HTMLElement>('#terminal-agents')!;
 
 	let cwd = readCwd();
 	let article: string | null = null;
@@ -212,7 +211,7 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 	/** Types the question waiting into the shell: nothing in it runs until Enter. */
 	function putPending(): void {
 		if (!pending || !ready || socket?.readyState !== WebSocket.OPEN) return;
-		// An AI to start: its command, run.
+		// A command to run (an account's login): run.
 		if ('command' in pending) {
 			socket.send(encoder.encode(`${pending.command}\r`));
 			pending = null;
@@ -224,56 +223,6 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 		// Typed as keys, one line without Enter: it waits for the author.
 		socket.send(encoder.encode(question));
 		terminal.focus();
-	}
-
-	/**
-	 * Starts an AI in a new shell: in the open article's folder (none open: the repository), where it finds the
-	 * notes' rules and skills by itself (blog/AGENTS.md), the drive still named in the shell's environment. What runs
-	 * in the terminal now ends, the author asked first.
-	 */
-	function launch(agent: AgentsShown['agents'][number]): void {
-		const target: Cwd = article ? 'article' : 'root';
-		const question = target === 'article'
-			? t('在当前文章打开 {name}？终端里正在运行的程序会被结束。', { name: agent.name })
-			: t('在仓库根目录打开 {name}？终端里正在运行的程序会被结束。', { name: agent.name });
-		if (state === 'running' && !confirm(question)) return;
-		cwd = target;
-		writeCwd(cwd);
-		renderCwd();
-		pending = { command: agent.launch };
-		void start();
-	}
-
-	/** The buttons of the AIs (AI 助手, set by the author); those this machine has not, greyed, saying how to get them. */
-	async function showAgents(): Promise<void> {
-		let agents: AgentsShown['agents'];
-		try {
-			({ agents } = await listAgents());
-		} catch {
-			return;
-		}
-		const label = document.createElement('span');
-		label.textContent = t('启动 AI：');
-		agentBar.replaceChildren(label, ...agents.map((agent) => {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.dataset.agent = agent.id;
-			button.textContent = agent.name;
-			button.disabled = !agent.installed;
-			const program = agent.launch.split(/\s+/u)[0];
-			button.title = agent.installed ? t('在终端里启动 {launch}', { launch: agent.launch }) : agent.install ? t('没有找到 {program} 命令。安装：{install}', { program, install: agent.install }) : t('没有找到 {program} 命令', { program });
-			button.addEventListener('click', () => launch(agent));
-			return button;
-		}));
-		const settings = document.createElement('button');
-		settings.type = 'button';
-		settings.className = 'terminal-agents-settings';
-		settings.textContent = '⚙';
-		settings.title = t('AI 助手：有哪些、怎么启动、Alt+Enter 用哪个');
-		settings.setAttribute('aria-label', t('AI 助手设置'));
-		settings.addEventListener('click', () => host.editAgents());
-		agentBar.append(settings);
-		agentBar.hidden = false;
 	}
 
 	/** Starts over in the chosen folder, asking first if a shell is running there now. */
@@ -322,7 +271,6 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 	}
 	restartButton.addEventListener('click', restart);
 	renderCwd();
-	void showAgents();
 
 	return {
 		/**
@@ -355,10 +303,6 @@ export function createTerminalPane(pane: HTMLElement, host: { editAgents(): void
 			renderCwd();
 			pending = { command };
 			void start();
-		},
-		/** The AIs changed (AI 助手): the buttons again. */
-		refreshAgents(): void {
-			void showAgents();
 		},
 		/** The drive's folder (null: none chosen), for 资料库. */
 		showDrive(root: string | null): void {

@@ -29,8 +29,12 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 	const hasSelection = () => Boolean(studio.session.slug) && studio.editor.hasSelection();
 	async function selection() {
 		const marked = studio.session.slug && studio.editor.hasSelection() ? studio.editor.markSelection() : null;
-		if (!marked || !(await studio.session.flush())) return null;
-		return sourceLinesOf(studio.session.current.source, marked);
+		if (!marked) return null;
+		// The words, before saving (which may draw the article again).
+		const words = studio.editor.selectedWords();
+		if (!(await studio.session.flush())) return null;
+		const lines = sourceLinesOf(studio.session.current.source, marked);
+		return lines && words ? { ...lines, words } : lines;
 	}
 	function insert(markdown: string): boolean {
 		if (!studio.session.slug) return false;
@@ -320,7 +324,7 @@ export function createAiChat(studio: Studio, { withArticlePictures }: { withArti
 		if (wroteJustNow()) return false;
 		if (!heldChanges || heldChanges.slug !== studio.session.slug) {
 			heldChanges = { slug: studio.session.slug, paths: new Set() };
-			showToast(t('AI 在改这篇文章，做完后一起给你过目'));
+			showToast(t('AI 在改这一页，做完后一起给你过目'));
 		}
 		for (const path of change.paths) heldChanges.paths.add(path);
 		return true;

@@ -14,7 +14,7 @@ import { RESULT_FENCE, RESULT_TITLE, isResult, runnerOf } from './run-blocks.mjs
  * under it as an ```output block, which a run again replaces.
  */
 export const name = 'run-blocks';
-export const description = t('能运行的代码块：python、sh、js、R、julia 的代码块可以直接运行（块菜单里的「运行」或 ⌘⇧↵），在文章的文件夹里跑，输出写在它下面的「运行结果」里，像 Emacs 的 org-babel。');
+export const description = t('能运行的代码块：python、sh、js、R、julia 的代码块可以直接运行（块菜单里的「运行」或 ⌘⇧↵），在页面的文件夹里跑，输出写在它下面的「运行结果」里，像 Emacs 的 org-babel。');
 export const inject = ['studio', 'blocks', 'commands'];
 
 type Ran = { output: string; exitCode: number | null; signal: string | null; seconds: number };

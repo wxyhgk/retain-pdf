@@ -1,9 +1,9 @@
 import { t } from '@blog/i18n/index.mjs';
-import { listAgents, type AiSettingsShown } from '../../api/client';
-import { showToast } from '../../common/toast';
+import type { AiSettingsShown } from '../../api/client';
 import type { ArticleIssue } from '../../types';
 import type { CiteHost } from './CiteDialog';
 import { openDialog } from './Dialogs';
+import type { ModelsHost } from './ModelsSettings';
 import type { PluginsHost } from './PluginSettings';
 import type { SettingsSection } from './SettingsDialog';
 import type { Mentioned, Picked, QuickFindHost } from './QuickFindDialog';
@@ -21,26 +21,23 @@ export function providePlugins(host: PluginsHost): void {
 	plugins = host;
 }
 
+/** What 设置 › AI › 模型和账号 asks of the AI panel (ai/panel/panel-state.ts gives it once it is made). */
+let models: ModelsHost | null = null;
+export function provideModels(host: ModelsHost): void {
+	models = host;
+}
+
 /** 设置 (shell/dialogs/SettingsDialog.tsx) opened at `section`: 语言 first by default. */
 export function openSettings(section: SettingsSection = 'locale'): void {
-	openDialog('settings', { section, plugins });
+	openDialog('settings', { section, plugins, models });
 }
 
 /**
- * 设置 › AI 模型 opened for want of a setting, saying `why` above; resolves with the settings saved (it closes then, the
+ * 设置 › AI › 识别图片 opened for want of a setting, saying `why` above; resolves with the settings saved (it closes then, the
  * work asked for going on), or null when it is closed without.
  */
 export function openAiSettings(why = ''): Promise<AiSettingsShown | null> {
-	return new Promise((done) => openDialog('settings', { section: 'ai', plugins, why, done }));
-}
-
-/** 「AI 助手」 (shell/dialogs/AgentsDialog.tsx) opened with the AIs as they are; `saved` once the list is saved. */
-export async function openAgents(saved: () => void): Promise<void> {
-	try {
-		openDialog('agents', { shown: await listAgents(), saved });
-	} catch (error) {
-		showToast(error instanceof Error ? error.message : t('读不到 AI 助手的设置'), true);
-	}
+	return new Promise((done) => openDialog('settings', { section: 'ai-vision', plugins, models, why, done }));
 }
 
 /**

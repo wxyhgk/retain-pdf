@@ -45,7 +45,7 @@ export function widgetPreview(language: string, content: string, meta: string): 
 	const widget = file
 		? { file }
 		: named
-			? { source: `<p style="color: var(--muted)">${t('./{path} 不在文章的 img/ 或 assets/ 里，发布后读不到', { path: named.replace(/[<&]/gu, '') })}</p>` }
+			? { source: `<p style="color: var(--muted)">${t('./{path} 不在页面的 img/ 或 assets/ 里，发布后读不到', { path: named.replace(/[<&]/gu, '') })}</p>` }
 			: { source: content };
 	waiting.delete(key);
 	waiting.set(key, { widget, meta });

@@ -192,14 +192,14 @@ export function QuickFindDialog({ ask, onClose }: { ask: QuickFindAsk; onClose()
 			id="quick-find-dialog"
 			inputId="quick-find-input"
 			icon="⌕"
-			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪篇文章…') : ask.mode === 'mention' ? t('插入页面或文件…（这篇的文件、页面、资料库）') : t('搜索文章和资料库…（输入 > 找命令）')}
+			placeholder={ask.mode === 'place' ? ask.placeholder : ask.mode === 'pick' ? t('链接到哪个页面…') : ask.mode === 'mention' ? t('插入页面或文件…（这篇的文件、页面、资料库）') : t('搜索页面和资料库…（输入 > 找命令）')}
 			query={query}
 			onQuery={typed}
 			rows={rows}
 			selected={selected}
 			onSelected={setSelected}
 			onChoose={choose}
-			empty={query.trim() ? t('没有找到') : t('还没有文章')}
+			empty={query.trim() ? t('没有找到') : t('还没有页面')}
 			title={ask.mode === 'mention' ? t('插入') : t('搜索')}
 			hint={
 				<>

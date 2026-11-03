@@ -58,7 +58,7 @@ test('[[ links another article by its title, at its address; it shows as a page 
 	await page.keyboard.press('End');
 	await page.keyboard.type(' 参见 [[');
 	const finder = page.locator('#quick-find-dialog');
-	await expect(page.locator('#quick-find-input')).toHaveAttribute('placeholder', '链接到哪篇文章…');
+	await expect(page.locator('#quick-find-input')).toHaveAttribute('placeholder', '链接到哪个页面…');
 	await page.locator('#quick-find-input').fill('第二');
 	await expect(finder.locator('.quick-find-item').first()).toContainText('第二篇笔记');
 	await page.keyboard.press('Enter');

@@ -94,8 +94,8 @@ export function Markdown({ text, blocks = false, className, streaming = false }:
 			handle.className = 'ai-block-handle';
 			handle.type = 'button';
 			handle.draggable = true;
-			handle.title = t('拖到文章里；点一下插入到光标处');
-			handle.setAttribute('aria-label', t('插入这一块到文章'));
+			handle.title = t('拖到页面里；点一下插入到光标处');
+			handle.setAttribute('aria-label', t('插入这一块到页面'));
 			handle.addEventListener('dragstart', (event) => {
 				if (!event.dataTransfer) return;
 				event.dataTransfer.setData(STUDIO_MARKDOWN_DRAG_TYPE, markdown);
@@ -131,9 +131,16 @@ function User({ item }: { item: Extract<ConversationItem, { kind: 'user' }> }) {
 	const find = (title: string, slug?: string | null) => (slug ? pages.find((page) => page.slug === slug) : undefined) ?? pages.find((page) => page.title === title);
 	// The articles named with @ are links in what was said (said before that, they were named under it).
 	const inText = new Set(mentionsIn(item.text, pages).map((page) => page.slug));
+	// Named as they are now (an article renamed since: its new title), as it was said when gone.
+	const article = told?.article ? find(told.article, told.articleSlug) : undefined;
 	const named = [
-		...(told?.article ? [{ label: `${told.article}${told.selection ? ` · ${told.selection}` : ''}`, page: find(told.article, told.articleSlug) }] : []),
-		...(told?.mentions ?? []).map((title, at) => ({ label: title, page: find(title, told?.mentionSlugs?.[at]) })).filter(({ page }) => !page || !inText.has(page.slug)),
+		...(told?.article ? [{ label: `${article?.title ?? told.article}${told.selection ? ` · ${told.selection}` : ''}`, page: article }] : []),
+		...(told?.mentions ?? [])
+			.map((title, at) => {
+				const page = find(title, told?.mentionSlugs?.[at]);
+				return { label: page?.title ?? title, page };
+			})
+			.filter(({ page }) => !page || !inText.has(page.slug)),
 		// What the widgets in the conversation told of themselves (note.tell), told with it.
 		...(told?.widgets ?? []).map((title) => ({ label: t('交互模块：{title}', { title: title || t('交互模块') }), page: undefined })),
 	];
@@ -195,7 +202,7 @@ function Message({ item, last }: { item: Extract<ConversationItem, { kind: 'mess
 			<Markdown className="ai-message" text={item.text} blocks streaming={last && conversation?.state === 'running'} />
 			{whole && (
 				<div className="ai-message-actions">
-					<Act icon={FilePlus2} label={t('插入到文章')} onClick={() => actions.insert(whole)} />
+					<Act icon={FilePlus2} label={t('插入到页面')} onClick={() => actions.insert(whole)} />
 					<Act icon={Copy} label={t('复制')} onClick={() => actions.copy(whole)} />
 				</div>
 			)}
@@ -561,7 +568,7 @@ function Compaction({ item }: { item: Extract<ConversationItem, { kind: 'compact
 export function SettingsFix() {
 	const { actions } = useItems();
 	return (
-		<button type="button" className="ai-status-fix" onClick={() => actions.showSheet(true)}>
+		<button type="button" className="ai-status-fix" onClick={actions.openModels}>
 			{t('模型和账号')}
 		</button>
 	);

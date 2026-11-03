@@ -41,7 +41,7 @@ export function createReviewBar(root: HTMLElement, host: { acceptAll(): void; re
 			const some = pending < first;
 			count.textContent = some
 				? t('已决定 {decided} 处，还剩 {pending} 处', { decided: first - pending, pending })
-				: { disk: t('磁盘上的文章有 {pending} 处改动', { pending }), history: t('这个历史版本和现在有 {pending} 处不同', { pending }), ai: t('AI 写的有 {pending} 处改动', { pending }) }[from];
+				: { disk: t('磁盘上的页面有 {pending} 处改动', { pending }), history: t('这个历史版本和现在有 {pending} 处不同', { pending }), ai: t('AI 写的有 {pending} 处改动', { pending }) }[from];
 			acceptAll.textContent = some ? t('其余接受') : t('全部接受');
 			rejectAll.textContent = some ? t('其余拒绝') : t('全部拒绝');
 		},

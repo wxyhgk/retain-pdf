@@ -13,7 +13,7 @@ import { observePluginBlocks } from '../../plugins';
 import { useStore, type Store } from '../../shell/store';
 import { markdownOfSelection, pictureUrl } from '../ai-markdown';
 import { EffortMenu, ModelMenu } from './ModelMenu';
-import { ModelsSheet, type ModelsSheetHost } from './ModelsSheet';
+import { recentPages } from '../../state/recent-pages';
 import { createPromptEditor, type PromptCaret, type PromptEditor, type PromptEditorHost } from './prompt-editor';
 import { commandOf, Item, itemProps, ItemsContext, Markdown, PageChip, PanelContext, picturesOf, relativeTo, SettingsFix, type ToolItem } from './Items';
 import { PagePeek } from './PagePeek';
@@ -41,9 +41,9 @@ const TOOL_DOING: Record<string, (what: string) => string> = {
 /** Items that are work toward an answer (thinking, tools, the plan): a stretch of them is one row, opened in a dialog. */
 const WORK_KINDS = new Set(['thought', 'tool', 'plan']);
 const SUGGESTIONS: Array<{ icon: LucideIcon; text: string }> = [
-	{ icon: TextQuote, text: t('总结这篇文章') },
+	{ icon: TextQuote, text: t('总结这一页') },
 	{ icon: ScanSearch, text: t('检查这篇的公式和单位有没有错') },
-	{ icon: Calculator, text: t('把文章里的计算重新跑一遍，核对结果') },
+	{ icon: Calculator, text: t('把页面里的计算重新跑一遍，核对结果') },
 	{ icon: BookOpenCheck, text: t('找出正文里引用了却没在 refs.bib 里的文献') },
 ];
 /** Reading a book in 翻译, at a page: about it (the AI is told the book and page, and reads it first). */
@@ -175,7 +175,7 @@ function Toolbar({ state, actions }: { state: PanelState; actions: PanelActions 
 			<span className="ai-where">{state.conversation?.service ?? ''}</span>
 			<div className="pane-actions">
 				{button(t('显示方式'), state.full ? Maximize2 : state.floating ? PictureInPicture2 : PanelRight, (event) => actions.layout(event.currentTarget), t('显示方式：侧栏、悬浮、全屏'))}
-				{button(t('模型和账号'), Settings2, () => actions.showSheet(!state.settings), t('模型和账号：Claude 账号、DeepSeek 等 API key'))}
+				{button(t('模型和账号'), Settings2, actions.openModels, t('模型和账号：设置 › AI'))}
 				{button(t('对话记录'), History, (event) => actions.history(event.currentTarget))}
 				{button(t('新对话'), SquarePen, actions.newConversation)}
 			</div>
@@ -352,7 +352,7 @@ function Transcript({ state, actions }: { state: PanelState; actions: PanelActio
 						? state.book.page
 							? t('它读得到你在读的《{title}》（第 {page} 页），答之前先翻原文；引用的段落能直接放进笔记。', { title: state.book.title ?? t('这本书'), page: state.book.page })
 							: t('它读得到你在读的《{title}》，答之前先翻原文；引用的段落能直接放进笔记。', { title: state.book.title ?? t('这本书') })
-						: t('它会自己读文件、运行命令、改文章；改了文章会像别的改动一样让你过目。')}
+						: t('它会自己读文件、运行命令、改页面；改了页面会像别的改动一样让你过目。')}
 				</p>
 				<div className="ai-suggestions">
 					{(state.book?.page ? BOOK_SUGGESTIONS : SUGGESTIONS).map(({ icon: Icon, text }) => (
@@ -519,8 +519,8 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	const pages = actions.articles();
 	const pageOf = (slug: string) => pages.find((page) => page.slug === slug);
 	const chips: ReactNode[] = [];
-	if (open) chips.push(<Chip key="article" label={open.title} page={pageOf(open.slug)} title={t('当前文章：说话时会告诉 AI 你在看这篇')} onRemove={actions.leaveOutArticle} />);
-	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label={t('选中的内容')} title={t('文章里选中的那几行会一起告诉 AI')} onRemove={actions.leaveOutSelection} />);
+	if (open) chips.push(<Chip key="article" label={open.title} page={pageOf(open.slug)} title={t('当前页面：说话时会告诉 AI 你在看这一页')} onRemove={actions.leaveOutArticle} />);
+	if (open && !selectionLeftOut && selected) chips.push(<Chip key="selection" label={t('选中的内容')} title={t('页面里选中的那几行会一起告诉 AI')} onRemove={actions.leaveOutSelection} />);
 	for (const picture of pictures) {
 		chips.push(
 			<span key={picture.id} className="ai-chip ai-picture-chip">
@@ -561,11 +561,18 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 	// Those named already (links in what is written): not offered again.
 	const named = asked ? mentionsIn(draft, pages) : [];
 	const needle = asked?.query.toLocaleLowerCase('zh-CN') ?? '';
+	// The pages opened last first (the one open is told already, as its chip), then those changed last, as Notion's 最近.
+	const recent = asked ? recentPages().filter((slug) => slug !== article?.slug) : [];
+	const recency = (entry: PageInfo) => {
+		const at = recent.indexOf(entry.slug);
+		return at < 0 ? recent.length : at;
+	};
 	const choices = asked
 		? actions
 				.articles()
 				.filter((entry) => !named.some((other) => other.slug === entry.slug))
 				.filter((entry) => !needle || entry.title.toLocaleLowerCase('zh-CN').includes(needle) || entry.slug.includes(needle))
+				.sort((one, other) => recency(one) - recency(other) || (other.modified ?? 0) - (one.modified ?? 0))
 				.slice(0, 8)
 		: [];
 	// A slash command its agent offers (/compact), typed at the start: chosen from a list as an article is with @.
@@ -750,7 +757,8 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				</div>
 			)}
 			{choices.length > 0 && (
-				<div className="ai-mention-menu" role="listbox">
+				<div className="ai-mention-menu" role="listbox" aria-label={needle ? t('页面') : t('最近')}>
+					{!needle && <div className="ai-mention-heading">{t('最近')}</div>}
 					{choices.map((entry, index) => (
 						<button
 							key={entry.slug}
@@ -774,8 +782,9 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
 				draft={draft}
 				editor={editor}
 				handlers={handlers}
-				// While it works: to one that can take it, a word in between (Enter); else said once it is done.
-				placeholder={running ? (conversation?.canSteer ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到文章，/ 命令，$ 写公式，可以粘贴图片）')}
+				// While it works: to one that can take it, a word in between (Enter); else, or with something selected in the
+				// article (a word in between goes alone), said once it is done.
+				placeholder={running ? (conversation?.canSteer && !(open && !selectionLeftOut && selected) ? t('插话：它会尽快看到（Enter）') : t('排队：它做完这一轮就发（Enter）')) : t('让 AI 做点什么…（@ 提到页面，/ 命令，$ 写公式，可以粘贴图片）')}
 			/>
 			<div className="ai-composer-bar">
 				<span className="ai-usage">{used && used.size > 0 && <Usage used={used} canCompact={Boolean(conversation?.commands.some((entry) => entry.name === 'compact'))} onCompact={() => actions.ask('/compact')} />}</span>
@@ -795,7 +804,7 @@ function Composer({ state, actions }: { state: PanelState; actions: PanelActions
  * it goes; its work (thinking, tools, the plan) one row a stretch, its detail in a dialog. Under the input: which AI,
  * and its options (who decides, model, effort).
  */
-export function AiPanel({ store, actions, sheetHost, pane }: { store: Store<PanelState>; actions: PanelActions; sheetHost: ModelsSheetHost; pane: HTMLElement }) {
+export function AiPanel({ store, actions, pane }: { store: Store<PanelState>; actions: PanelActions; pane: HTMLElement }) {
 	const state = useStore(store);
 	const context = useMemo(() => ({ conversation: state.conversation, items: state.items, actions }), [state.conversation, state.items]);
 	const panel = useMemo(() => ({ conversation: state.conversation, actions }), [state.conversation]);
@@ -804,7 +813,6 @@ export function AiPanel({ store, actions, sheetHost, pane }: { store: Store<Pane
 			<PanelContext value={panel}>
 				<PagePeek root={pane} pages={actions.articles} open={actions.openArticle} />
 				<Toolbar state={state} actions={actions} />
-				<ModelsSheet open={state.settings} host={sheetHost} onClose={() => actions.showSheet(false)} />
 				<Transcript state={state} actions={actions} />
 				<Composer state={state} actions={actions} />
 			</PanelContext>

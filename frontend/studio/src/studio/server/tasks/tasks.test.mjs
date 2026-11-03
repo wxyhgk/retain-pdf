@@ -58,69 +58,6 @@ test('a command line is split as a shell would, nothing in it run', () => {
 	assert.throws(() => commandWords('pi "open'), /引号/u);
 });
 
-test('Alt+Enter: the AI is told where the line is and what it says, not the article; it runs in the article’s folder', async (t) => {
-	const { instructionPrompt, startInstruction } = await import('../ai/instructions.mjs');
-	const { AgentSettings } = await import('../ai/agent-settings.mjs');
-	const prompt = instructionPrompt({ text: '画一个 sin x 的图', start: 12, end: 12, heading: '3.2 势能面' });
-	assert.match(prompt, /index\.md 第 12 行（「3\.2 势能面」这一节）/u);
-	assert.match(prompt, /画一个 sin x 的图/u);
-	assert.match(prompt, /ai\/work\/log\.md/u);
-
-	const root = await mkdtemp(join(tmpdir(), 'studio-instruct-'));
-	t.after(() => rm(root, { recursive: true, force: true }));
-	const { writeFile, chmod } = await import('node:fs/promises');
-	// A stand-in that says where it ran, whether it goes on from before, and what it was told.
-	await writeFile(join(root, 'agent'), '#!/bin/sh\necho "in $(basename "$PWD") for $STUDIO_ARTICLE"\nfor a in "$@"; do echo "arg:$a"; done\n');
-	await chmod(join(root, 'agent'), 0o755);
-	const folder = join(root, 'note');
-	await (await import('node:fs/promises')).mkdir(folder);
-	const settings = new AgentSettings(join(root, 'settings.json'), { env: { PATH: '/usr/bin:/bin' }, shell: '/bin/sh' });
-	await settings.set({ list: [{ id: 'stand-in', name: '替身', launch: `${root}/agent`, run: `${root}/agent {prompt}`, resume: `${root}/agent --continue {prompt}` }], default: 'stand-in' });
-	const tasks = new Tasks();
-	const line = { text: '画一个 sin x 的图', start: 3, end: 3, heading: '' };
-	// The first in the folder: nothing to go on from.
-	const first = await over(tasks, (await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: { STUDIO_ARTICLE: 'note' }, line })).id);
-	assert.equal(first.state, 'done', first.error ?? '');
-	assert.equal(first.title, '替身：画一个 sin x 的图');
-	assert.match(first.log, /^in note for note\narg:作者在这篇文章的 index\.md 第 3 行/u);
-	// Work done here before (its log): it goes on from there, unless told to start anew.
-	await (await import('node:fs/promises')).mkdir(join(folder, 'ai', 'work'), { recursive: true });
-	await writeFile(join(folder, 'ai', 'work', 'log.md'), '- 2026-10-25 画图\n');
-	const done = await over(tasks, (await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line })).id);
-	assert.match(done.log, /^in note for \narg:--continue\narg:作者在这篇文章的 index\.md 第 3 行/u);
-	const fresh = await over(tasks, (await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line, fresh: true })).id);
-	assert.doesNotMatch(fresh.log, /--continue/u);
-	await assert.rejects(startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line: { ...line, text: '  ' } }), /空/u);
-	await assert.rejects(startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line: { ...line, text: '长'.repeat(30_001) } }), /太长/u);
-});
-
-test('Alt+Enter twice in one article: the second waits for the first, and can be cancelled while it waits', async (t) => {
-	const { startInstruction } = await import('../ai/instructions.mjs');
-	const { AgentSettings } = await import('../ai/agent-settings.mjs');
-	const { writeFile, chmod, mkdir } = await import('node:fs/promises');
-	const root = await mkdtemp(join(tmpdir(), 'studio-instruct-'));
-	t.after(() => rm(root, { recursive: true, force: true }));
-	// Says so when another is running beside it.
-	await writeFile(join(root, 'agent'), `#!/bin/sh\n[ -e '${root}/running' ] && echo overlap\ntouch '${root}/running'; sleep 0.3; rm '${root}/running'; echo ran\n`);
-	await chmod(join(root, 'agent'), 0o755);
-	const folder = join(root, 'note');
-	await mkdir(folder);
-	const settings = new AgentSettings(join(root, 'settings.json'), { env: { PATH: '/usr/bin:/bin' }, shell: '/bin/sh' });
-	await settings.set({ list: [{ id: 'stand-in', name: '替身', launch: `${root}/agent`, run: `${root}/agent {prompt}`, resume: `${root}/agent {prompt}` }], default: 'stand-in' });
-	const tasks = new Tasks();
-	const line = { text: '算一下', start: 1, end: 1, heading: '' };
-	const one = await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line });
-	const two = await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line });
-	const three = await startInstruction({ tasks, agents: settings, slug: 'note', folder, env: {}, line });
-	tasks.cancel(three.id);
-	const [first, second, third] = await Promise.all([over(tasks, one.id), over(tasks, two.id), over(tasks, three.id)]);
-	assert.equal(third.state, 'cancelled');
-	assert.match(second.log, /^这篇文章里还有一件事在做/u);
-	assert.equal(first.log, 'ran\n');
-	assert.match(second.log, /\nran\n$/u);
-	assert.doesNotMatch(second.log, /overlap/u);
-});
-
 test('a program that will not stop is killed after a while; all of them end with the server', async () => {
 	const tasks = new Tasks();
 	const stubborn = tasks.start({ kind: 'test', title: '不肯停' }, ({ log, signal }) =>

@@ -38,11 +38,11 @@ export async function apply(ctx: Context): Promise<void> {
 			},
 			start: (id, job) => {
 				const slug = ctx.studio.slug();
-				return slug ? api.start(slug, id, job) : Promise.reject(new Error(t('文章尚未载入')));
+				return slug ? api.start(slug, id, job) : Promise.reject(new Error(t('页面尚未载入')));
 			},
 			cancel: (id, run) => {
 				const slug = ctx.studio.slug();
-				return slug ? api.cancel(slug, id, run) : Promise.reject(new Error(t('文章尚未载入')));
+				return slug ? api.cancel(slug, id, run) : Promise.reject(new Error(t('页面尚未载入')));
 			},
 			manageHosts: () => dialog.open(),
 			programs: () => programs.list() as JobPrograms[],

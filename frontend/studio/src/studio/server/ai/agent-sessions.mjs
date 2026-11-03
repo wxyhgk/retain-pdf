@@ -1072,7 +1072,7 @@ function modelChoices(option) {
 /**
  * @typedef {object} PromptContext where the author is, as the Studio tells the agent (paths from its folder)
  * @property {{ slug?: string, title: string, path: string, brief?: string | null }} [article] the article open (its ai/brief.md, or null for none)
- * @property {{ start: number, end: number, text: string }} [selection] the lines of it selected
+ * @property {{ start: number, end: number, text: string, words?: string }} [selection] the lines of it selected, and the words selected of them
  * @property {Array<{ slug?: string, title: string, path: string, brief?: string | null }>} [mentions] the articles named with @
  * @property {string} [history] where what was said before is kept (chats/…/index.md), for an agent that cannot remember it
  * @property {Array<{ title: string, state: string }>} [widgets] what the widgets in the answers told of themselves since
@@ -1155,6 +1155,9 @@ export function contextBlock({ article, selection, mentions = [], files = [], hi
 		const fence = '`'.repeat(Math.max(3, ...[...selection.text.matchAll(/`+/gu)].map((run) => run[0].length + 1)));
 		lines.push(`这句话选中的是《${article.title}》（${article.path}）的${promptLineRange(selection)}：`, `${fence}markdown`, selection.text, fence); // i18n-ignore: for the AI
 		if (selection.cut) lines.push(`选中的太长，上面只有开头 ${selection.text.length} 个字；其余的在文件的这几行里，要用就去读`); // i18n-ignore: for the AI
+		// Only some words of those lines selected: which, for 「这句」「这个词」 to be them, not the whole paragraph.
+		const words = selection.words?.trim();
+		if (words && words !== selection.text.trim()) lines.push(`其中用户选中的只是这几个字：「${words}」；「这句」「这里」「这个」说的是它们，上面几行是它们所在的段落`); // i18n-ignore: for the AI
 	}
 	if (message) for (const mention of mentions) lines.push(`用 @ 提到的文章：《${mention.title}》，文件 ${mention.path}${briefOf(mention)}`); // i18n-ignore: for the AI
 	if (message && files.length) lines.push('随这句话附上的文件（在本机，用读文件的工具或命令去读）：', ...files.map((file) => `- ${file}`)); // i18n-ignore: for the AI

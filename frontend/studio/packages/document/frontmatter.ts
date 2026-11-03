@@ -115,7 +115,7 @@ function validateProperties(properties: ArticleProperties): void {
  */
 export function setFrontmatterField(source: string, key: 'parent' | 'order' | 'database' | 'type', value: string | number | null): string {
 	const document = parseStudioDocument(source);
-	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
+	if (!document.frontmatter) throw new Error(t('页面缺少 frontmatter，无法修改属性'));
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
 	const yaml = value === null || value === ''
 		? removeYamlField(document.frontmatter.yamlRaw, key)
@@ -129,7 +129,7 @@ export function setFrontmatterField(source: string, key: 'parent' | 'order' | 'd
  */
 export function setFrontmatterProps(source: string, props: Record<string, unknown> | null): string {
 	const document = parseStudioDocument(source);
-	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
+	if (!document.frontmatter) throw new Error(t('页面缺少 frontmatter，无法修改属性'));
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
 	const yaml = !props || Object.keys(props).length === 0 ? removeYamlField(document.frontmatter.yamlRaw, 'props') : replaceYamlField(document.frontmatter.yamlRaw, 'props', props, defaultEol);
 	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
@@ -149,7 +149,7 @@ export function setFrontmatterDatabase(source: string, id: string | null): strin
  */
 export function setFrontmatterRetainpdf(source: string, value: { document?: string; job?: string; books?: boolean }): string {
 	const document = parseStudioDocument(source);
-	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
+	if (!document.frontmatter) throw new Error(t('页面缺少 frontmatter，无法修改属性'));
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
 	const yaml = replaceYamlField(document.frontmatter.yamlRaw, 'retainpdf', value, defaultEol);
 	return `${document.preambleRaw}${document.frontmatter.openingRaw}${yaml}${document.frontmatter.closingRaw}${document.body.raw}`;
@@ -159,7 +159,7 @@ export function setFrontmatterRetainpdf(source: string, value: { document?: stri
 export function updateStudioFrontmatter(source: string, properties: ArticleProperties): string {
 	validateProperties(properties);
 	const document = parseStudioDocument(source);
-	if (!document.frontmatter) throw new Error(t('文章缺少 frontmatter，无法修改属性'));
+	if (!document.frontmatter) throw new Error(t('页面缺少 frontmatter，无法修改属性'));
 	const defaultEol = document.frontmatter.openingRaw.endsWith('\r\n') ? '\r\n' : '\n';
 	let yaml = document.frontmatter.yamlRaw;
 	for (const key of EDITABLE_KEYS) yaml = replaceYamlField(yaml, key, properties[key], defaultEol);

@@ -90,7 +90,7 @@ test('a file of the drive goes into the article as a copy: from the menu, and dr
 	await row(page_(page), '计算输出').dblclick();
 	await row(page_(page), '计算输出/water opt.log').click({ button: 'right' });
 	await page.getByRole('menuitem', { name: '插入到《Studio 测试夹具》' }).click();
-	await expect(status(page_(page))).toHaveText('已复制到文章并插入：water opt.log');
+	await expect(status(page_(page))).toHaveText('已复制到页面并插入：water opt.log');
 	expect(fixtureHas('assets/water-opt.log')).toBe(true);
 
 	await page.locator('#article-list').getByText('Studio 测试夹具').click();

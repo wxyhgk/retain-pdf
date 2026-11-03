@@ -63,7 +63,7 @@ export function widgetFigure(node, file) {
 	for (const wanted of widgetReads(source)) {
 		const published = publicArticlePath(wanted);
 		if (!published) {
-			file.message(t('交互模块读的 {path} 不在文章的 img/ 或 assets/ 里，发布后读不到', { path: wanted }), { ...place, ruleId: 'widget-file' });
+			file.message(t('交互模块读的 {path} 不在页面的 img/ 或 assets/ 里，发布后读不到', { path: wanted }), { ...place, ruleId: 'widget-file' });
 		} else if (article && !locate(published)) {
 			file.message(t('交互模块读的 ./{path} 不存在', { path: published }), { ...place, ruleId: 'widget-file' });
 		}

@@ -34,7 +34,7 @@ export function articleFileRoutes(api, { files, manager, articleFiles, drive, te
 		const source = await drive.stream(String(from ?? ''));
 		try {
 			const limit = manager.uploadLimitFor(source.name);
-			if (source.size > limit) throw refuse(413, t('{name} 有 {size} MB，超过文章文件 {limit} MB 的上限', { name: source.name, size: Math.round(source.size / 1024 / 1024), limit: limit / 1024 / 1024 }));
+			if (source.size > limit) throw refuse(413, t('{name} 有 {size} MB，超过页面文件 {limit} MB 的上限', { name: source.name, size: Math.round(source.size / 1024 / 1024), limit: limit / 1024 / 1024 }));
 			return reply(201, await manager.upload(params.slug, folder ?? 'assets', source.name, source.body));
 		} finally {
 			source.body.destroy();

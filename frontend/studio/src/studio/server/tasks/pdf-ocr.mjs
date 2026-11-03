@@ -39,7 +39,7 @@ export async function startPdfOcr({ tasks, articles, blogRoot, slug, path, env, 
 	if (typeof path !== 'string' || !/\.pdf$/iu.test(path)) throw fail(t('只能识别 PDF'));
 	const parent = articleBundlePaths(blogRoot, slug).directory;
 	const pdf = resolveInside(parent, path);
-	if (!(await stat(pdf).catch(() => null))?.isFile()) throw fail(t('文章里没有这个 PDF'));
+	if (!(await stat(pdf).catch(() => null))?.isFile()) throw fail(t('页面里没有这个 PDF'));
 	const title = basename(path).replace(/\.pdf$/iu, '');
 	const named = `\`${basename(path).replaceAll('`', '')}\``;
 	const placeholder = `正在用 PaddleOCR 识别上级页面里的 ${named}…\n`; // i18n-ignore: written into the page

@@ -27,7 +27,7 @@ test('an article changed on disk is reviewed where it is; accepting keeps the ch
 	// Nothing in common with what it replaces: one change.
 	editOnDisk('结尾段落。', 'The end.');
 	await expect(reviewBar(page)).toBeVisible();
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 1 处改动');
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的页面有 1 处改动');
 	await expect(saveStatus(page)).toHaveText('改动待审阅');
 	await expect(editor(page).locator('.milkdown-diff-added')).toContainText('The end.');
 	await expect(editor(page).locator('.milkdown-diff-removed')).toContainText('结尾段落。');
@@ -59,7 +59,7 @@ test('rejecting a change on disk writes the article back as it was', async ({ pa
 test('a changed chemistry block is one change, shown as its old structure and its new source', async ({ page }) => {
 	await openStudio(page);
 	editOnDisk('CC(=O)Oc1ccccc1C(=O)O', 'c1ccccc1O');
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 1 处改动');
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的页面有 1 处改动');
 	await expect(editor(page).locator('.milkdown-diff-added')).toContainText('c1ccccc1O');
 	await reviewBar(page).getByRole('button', { name: '全部接受' }).click();
 	await expect(reviewBar(page)).toBeHidden();
@@ -73,7 +73,7 @@ test('each change is accepted or rejected on its own, and nothing is typed meanw
 		articleFile(),
 		readFileSync(articleFile(), 'utf8').replace('开头段落', '开头段落（终端补的）').replace('结尾段落。', '结尾段落。终端补的结尾。'),
 	);
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的页面有 2 处改动');
 
 	// Typing waits for the review.
 	await editor(page).locator('p').first().click();
@@ -183,7 +183,7 @@ test('changes on disk made one after another (an AI writing on) are all in the r
 	await expect(page.locator('#review-bar')).toBeVisible();
 	editFixture((markdown) => markdown.replace('开头段落', '开头段落（第二处）'));
 	editFixture((markdown) => markdown.replace('结尾段落，第一处。', '结尾段落，第三处。'));
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的页面有 2 处改动');
 	await expect(editor(page)).toContainText('第二处');
 	await expect(editor(page)).toContainText('第三处');
 	await page.locator('#review-accept-all').click();
@@ -197,7 +197,7 @@ test('changes on disk made one after another (an AI writing on) are all in the r
 test('some changes kept one by one, the rest rejected at once: what was kept stays', async ({ page }) => {
 	await openStudio(page);
 	editFixture((markdown) => markdown.replace('开头段落', '开头段落（留下）').replace('结尾段落。', '结尾段落，不要。'));
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的页面有 2 处改动');
 	await editor(page).locator('.milkdown-diff-accept').first().click();
 	await expect(page.locator('#review-count')).toHaveText('已决定 1 处，还剩 1 处');
 	await expect(page.locator('#review-reject-all')).toHaveText('其余拒绝');

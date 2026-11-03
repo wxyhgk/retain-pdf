@@ -162,7 +162,7 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 					<span className="flex-1 truncate text-left">{t('搜索')}</span>
 					<Kbd className="h-[18px] rounded-[5px] bg-[var(--surface)] px-1.5 text-xs text-muted-foreground shadow-xs">⌘K</Kbd>
 				</button>
-				<Button id="new-article-secondary" type="button" variant="ghost" size="icon-sm" className="size-7 text-muted-foreground hover:text-foreground" title={t('新建文章')} aria-label={t('新建文章')} onClick={act.newPage}>
+				<Button id="new-article-secondary" type="button" variant="ghost" size="icon-sm" className="size-7 text-muted-foreground hover:text-foreground" title={t('新建页面')} aria-label={t('新建页面')} onClick={act.newPage}>
 					<SquarePen aria-hidden className="size-4" />
 				</Button>
 			</div>
@@ -172,7 +172,7 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 			</div>
 			<div className="grid gap-px px-[7px] pb-2">
 				<Item id="open-table" icon={Table2} count={count} aria-pressed={view === 'table'} onClick={toggle('table')}>
-					{t('全部文章')}
+					{t('全部页面')}
 				</Item>
 				<Item id="open-drive" icon={Library} aria-pressed={view === 'drive'} onClick={toggle('drive')}>
 					{t('资料库')}
@@ -194,7 +194,7 @@ export function Sidebar({ siteTitle }: { siteTitle: string }) {
 				<div id="plugin-commands" className="plugin-commands" data-host hidden />
 			</div>
 			<Favorites hidden={chatting} />
-			<Heading title={t('页面')} add="new-article" label={t('新建文章')} onAdd={act.newPage} hidden={chatting} />
+			<Heading title={t('页面')} add="new-article" label={t('新建页面')} onAdd={act.newPage} hidden={chatting} />
 			{/* The pages, as a tree: article-list.ts draws it. */}
 			<nav id="article-list" aria-label={t('页面列表')} data-host hidden={chatting} />
 			<Heading title={t('对话')} add="new-chat" label={t('新建对话')} onAdd={act.newChat} hidden={!chatting} />

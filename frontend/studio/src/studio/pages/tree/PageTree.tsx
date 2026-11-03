@@ -210,7 +210,7 @@ function Row({ article, depth, state, actions, drag, setDrag, drop, setDrop, ove
 						</span>
 					)}
 					{uncommitted && (
-						<span className={`page-git is-${uncommitted}`} title={uncommitted === 'new' ? t('新文章，还没提交到 git') : t('有改动还没提交到 git')}>
+						<span className={`page-git is-${uncommitted}`} title={uncommitted === 'new' ? t('新页面，还没提交到 git') : t('有改动还没提交到 git')}>
 							●
 						</span>
 					)}
@@ -288,7 +288,7 @@ export function PageTree({ store, actions, root }: { store: Store<TreeState>; ac
 		};
 	}, [drag, state.articles]);
 
-	if (!state.articles.length) return state.read ? <p className="article-list-empty">{t('还没有文章。点击 ＋ 创建第一篇笔记。')}</p> : null;
+	if (!state.articles.length) return state.read ? <p className="article-list-empty">{t('还没有页面。点击 ＋ 创建第一篇笔记。')}</p> : null;
 	return (
 		<div className="page-list">
 			{state.tree.roots.map((article) => (

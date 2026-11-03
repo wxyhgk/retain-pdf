@@ -94,7 +94,8 @@ test('published, a page made so gets its address from its title', async ({ page:
 	await tab.keyboard.press('Enter');
 	const made = readdirSync(process.env.STUDIO_BLOG_DIR!).filter((folder) => !before.has(folder))[0]!;
 	PAGES.push(made, 'ji-zu-de-xuan-ze');
-	await tab.locator('#publish-article').click();
+	await tab.locator('#page-menu').click();
+	await tab.getByText('发布到博客…').click();
 	await expect(tab).toHaveURL(/article=ji-zu-de-xuan-ze/u);
 	expect(readdirSync(process.env.STUDIO_BLOG_DIR!)).not.toContain(made);
 	expect(source('ji-zu-de-xuan-ze')).toMatch(/draft: false/u);

@@ -202,7 +202,7 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 		head.append(title, count, search, make);
 		const hint = document.createElement('p');
 		hint.className = 'apps-hint';
-		hint.textContent = t('点开一个，整页使用；⧉ 在浮动窗口里打开，边写文章边用。');
+		hint.textContent = t('点开一个，整页使用；⧉ 在浮动窗口里打开，边写边用。');
 		const grid = document.createElement('div');
 		grid.className = 'apps-grid';
 		const fill = () => {
@@ -869,7 +869,7 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 	async function answer(app: MiniApp, method: string, args: unknown[], link: AppBlockLink | null = null): Promise<unknown> {
 		const article = () => {
 			const shown = host.article();
-			if (!shown) throw new Error(t('还没有打开文章'));
+			if (!shown) throw new Error(t('还没有打开页面'));
 			return shown;
 		};
 		switch (method) {
@@ -957,11 +957,11 @@ export function createMiniApps(page: HTMLElement, layer: HTMLElement, host: Mini
 			case 'block.get':
 				return link ? { state: link.state(), meta: link.meta() } : null;
 			case 'block.set':
-				if (!link) throw new Error(t('它不在文章的块里'));
+				if (!link) throw new Error(t('它不在页面的块里'));
 				link.set(String(args[0] ?? ''));
 				return true;
 			case 'block.picture':
-				if (!link) throw new Error(t('它不在文章的块里'));
+				if (!link) throw new Error(t('它不在页面的块里'));
 				return link.picture(String(args[0] ?? ''), String(args[1] ?? 'image/svg+xml'));
 			default:
 				throw new Error(t('没有 studio.{method}', { method }));

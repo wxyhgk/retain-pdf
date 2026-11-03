@@ -69,7 +69,7 @@ $$
 		{ severity: 'error', message: "缺少简介（description）；没有简介也要写 description: ''" },
 		{ severity: 'error', message: '找不到图片 ./img/missing.png，博客构建会失败', line: 6 },
 		{ severity: 'warning', message: '找不到文件 ./assets/data.csv，页面上的链接会失效', line: 8 },
-		{ severity: 'warning', message: './ai/notes.md 不在 img/ 或 assets/ 里，不会随文章发布', line: 8 },
+		{ severity: 'warning', message: './ai/notes.md 不在 img/ 或 assets/ 里，不会随页面发布', line: 8 },
 		{ severity: 'warning', message: '公式标签 \\label{eq:a} 用了不止一次，引用的是第一个', line: 14 },
 		{ severity: 'warning', message: '找不到公式标签 eq:none：没有公式写 \\label{eq:none}，这里显示为 (??)', line: 18 },
 		{ severity: 'warning', message: issues[6].message, line: 18 },
@@ -90,8 +90,8 @@ test('links to the blog’s own articles must lead somewhere published', async (
 `;
 	const issues = await checkArticle(blogRoot, 'note', source);
 	assert.deepEqual(issues.map((issue) => issue.message), [
-		'链接的文章 /blog/gone/ 不存在',
-		'链接的文章「draft-one」还是草稿，发布前这个链接打不开',
+		'链接的页面 /blog/gone/ 不存在',
+		'链接的页面「draft-one」还是草稿，发布前这个链接打不开',
 		'「wiki-page」的网址是 /wiki/wiki-page/，不是 /blog/wiki-page/',
 	]);
 	assert.ok(issues.every((issue) => issue.severity === 'warning' && issue.line === 7));
@@ -129,6 +129,6 @@ test('a file block that looks for lines its file does not have is a warning', as
 test('a citation of a work the library has not, or without a library, is a warning', async (t) => {
 	const check = await article(t);
 	assert.deepEqual(await check(`${PROPERTIES}\n见 [@becke1993]。\n`), [
-		{ severity: 'warning', message: '文章引用了文献，但没有 assets/refs.bib' },
+		{ severity: 'warning', message: '页面引用了文献，但没有 assets/refs.bib' },
 	]);
 });

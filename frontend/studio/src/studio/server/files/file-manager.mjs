@@ -156,7 +156,7 @@ export class ArticleFileManager {
 		const { directory } = await this.#article(slug);
 		const [folder, ...segments] = trashedSegments(trashed);
 		const stamp = TRASH_STAMP.exec(folder)?.[0];
-		if (!stamp || folder !== `${stamp}-${slug}`) throw new StudioPathError(t('不是这篇文章删除的文件'));
+		if (!stamp || folder !== `${stamp}-${slug}`) throw new StudioPathError(t('不是这一页删除的文件'));
 		managedSegments(segments.join('/'));
 		const source = await existingEntry(this.trashRoot, [folder, ...segments]).catch((error) => {
 			if (error instanceof FileNotFoundError) throw new FileNotFoundError(t('回收站里已经没有这个文件了'));
@@ -190,14 +190,14 @@ export class ArticleFileManager {
 	async restoreArticle(trashed) {
 		const [folder, name, ...rest] = trashedSegments(trashed);
 		const match = TRASH_STAMP.exec(name ?? '');
-		if (folder !== ARTICLE_TRASH || !match || rest.length) throw new StudioPathError(t('不是删除的文章'));
+		if (folder !== ARTICLE_TRASH || !match || rest.length) throw new StudioPathError(t('不是删除的页面'));
 		const slug = name.slice(match[0].length + 1);
 		const target = articleBundlePaths(this.blogRoot, slug).directory;
 		const source = await existingEntry(this.trashRoot, [folder, name]).catch((error) => {
-			if (error instanceof FileNotFoundError) throw new FileNotFoundError(t('回收站里已经没有这篇文章了'));
+			if (error instanceof FileNotFoundError) throw new FileNotFoundError(t('回收站里已经没有这一页了'));
 			throw error;
 		});
-		if (await exists(target)) throw new FileConflictError(t('已经有一篇叫 {slug} 的文章了', { slug }));
+		if (await exists(target)) throw new FileConflictError(t('已经有一个叫 {slug} 的页面了', { slug }));
 		await rename(source, target);
 		return { slug };
 	}
@@ -284,10 +284,10 @@ export class ArticleFileManager {
 	async #article(slug) {
 		const paths = articleBundlePaths(this.blogRoot, slug);
 		const info = await lstat(paths.directory).catch((error) => {
-			if (error?.code === 'ENOENT') throw new FileNotFoundError(t('文章不存在'));
+			if (error?.code === 'ENOENT') throw new FileNotFoundError(t('页面不存在'));
 			throw error;
 		});
-		if (!info.isDirectory() || info.isSymbolicLink()) throw new FileNotFoundError(t('文章不存在'));
+		if (!info.isDirectory() || info.isSymbolicLink()) throw new FileNotFoundError(t('页面不存在'));
 		return paths;
 	}
 }
@@ -410,7 +410,7 @@ export function managedSegments(path, { allowFolderRoot = false } = {}) {
 		if (LOCKED_FILES.includes(segments[0])) throw new FileLockedError(t('{name} 只能在编辑器里修改', { name: segments[0] }));
 		throw new StudioPathError(t('只能管理 img/、assets/ 和 ai/ 里的文件'));
 	}
-	if (segments.length === 1 && !allowFolderRoot) throw new FileLockedError(t('{folder}/ 是文章的固定文件夹', { folder: segments[0] }));
+	if (segments.length === 1 && !allowFolderRoot) throw new FileLockedError(t('{folder}/ 是页面的固定文件夹', { folder: segments[0] }));
 	return segments;
 }
 

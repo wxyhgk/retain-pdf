@@ -30,13 +30,24 @@ test('an article whose YAML is broken still opens, and says so', async ({ page }
 	await expect(page.locator('#crepe-editor .milkdown .ProseMirror')).toContainText('开头段落');
 });
 
+/** 撤回 in the page's head: there only once it is published (the blog's date, kind and state with it). */
 const publishButton = (page: import('@playwright/test').Page) => page.locator('#publish-article');
 const checkDialog = (page: import('@playwright/test').Page) => page.locator('#publish-check-dialog');
+/** 发布到博客… from the page's ⋯ menu: a draft's head has nothing of the blog. */
+async function publish(page: import('@playwright/test').Page): Promise<void> {
+	await page.locator('#page-menu').click();
+	await page.getByText('发布到博客…').click();
+}
 
-test('an article with nothing wrong publishes at once', async ({ page }) => {
+test('an article with nothing wrong publishes at once, from the page menu; its head then says so', async ({ page }) => {
 	await openStudio(page);
-	await publishButton(page).click();
+	// A draft: nothing of the blog in its head.
+	await expect(page.locator('#article-pub-date')).toHaveCount(0);
+	await expect(publishButton(page)).toHaveCount(0);
+	await publish(page);
 	await expect(publishButton(page)).toHaveText('撤回');
+	await expect(page.locator('#article-status')).toHaveText('已发布');
+	await expect(page.locator('#article-pub-date')).toBeVisible();
 	await expect(saveStatus(page)).toHaveText('已保存');
 	expect(savedMarkdown()).toContain('draft: false');
 	await expect(checkDialog(page)).toBeHidden();
@@ -45,13 +56,14 @@ test('an article with nothing wrong publishes at once', async ({ page }) => {
 test('what would stop the build keeps the article a draft', async ({ page }) => {
 	appendToFixture('\n![缺图](./img/missing.png)\n');
 	await openStudio(page);
-	await publishButton(page).click();
+	await publish(page);
 	await expect(checkDialog(page)).toBeVisible();
 	await expect(checkDialog(page).locator('.publish-check-item.is-error')).toContainText('找不到图片 ./img/missing.png');
 	await expect(page.locator('#publish-anyway')).toBeHidden();
 	await page.locator('#publish-check-cancel').click();
 	await expect(checkDialog(page)).toBeHidden();
-	await expect(publishButton(page)).toHaveText('发布');
+	await expect(publishButton(page)).toHaveCount(0);
+	expect(savedMarkdown()).toContain('draft: true');
 });
 
 test('what would only show broken may be published all the same, unsaved edits checked too', async ({ page }) => {
@@ -60,7 +72,7 @@ test('what would only show broken may be published all the same, unsaved edits c
 	await editor.locator('p').first().click();
 	await page.keyboard.press('End');
 	await page.keyboard.type(' 见 $\\eqref{eq:none}$ ');
-	await publishButton(page).click();
+	await publish(page);
 	await expect(checkDialog(page).locator('.publish-check-item.is-warning')).toContainText('找不到公式标签 eq:none');
 	await page.locator('#publish-anyway').click();
 	await expect(publishButton(page)).toHaveText('撤回');

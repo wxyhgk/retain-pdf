@@ -57,7 +57,7 @@ function tellTheme(frame: HTMLIFrameElement): void {
 
 /** The text of a published file of the article. */
 async function fetchText(path: string): Promise<string> {
-	if (!fileUrl) throw new Error(t('还没有打开文章'));
+	if (!fileUrl) throw new Error(t('还没有打开页面'));
 	const response = await fetch(fileUrl(path), { cache: 'no-store' });
 	if (!response.ok) throw new Error(t('找不到 ./{path}', { path }));
 	return response.text();
@@ -66,7 +66,7 @@ async function fetchText(path: string): Promise<string> {
 async function answerFile(frame: HTMLIFrameElement, id: unknown, written: unknown): Promise<void> {
 	const path = publicArticlePath(String(written ?? ''));
 	if (!path) {
-		post(frame, { type: 'file', id, error: t('{path} 不在文章的 img/ 或 assets/ 里', { path: String(written) }) });
+		post(frame, { type: 'file', id, error: t('{path} 不在页面的 img/ 或 assets/ 里', { path: String(written) }) });
 		return;
 	}
 	const read = reads.get(frame) ?? new Set<string>();

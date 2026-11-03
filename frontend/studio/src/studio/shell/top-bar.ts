@@ -12,7 +12,7 @@ export function saveStateText(state: SaveState): { text: string; tone: 'saved' |
 		case 'saving': return { text: t('正在保存…'), tone: 'saving' };
 		case 'saved': return { text: t('已保存'), tone: 'saved' };
 		case 'reviewing': return { text: t('改动待审阅'), tone: 'dirty' };
-		case 'conflict': return { text: t('文章在磁盘上被修改，暂停自动保存'), tone: 'error' };
+		case 'conflict': return { text: t('页面在磁盘上被修改，暂停自动保存'), tone: 'error' };
 		case 'failed': return { text: t('{message}，稍后自动重试', { message: state.message }), tone: 'error' };
 		case 'unshown': return { text: state.message, tone: 'error' };
 	}
@@ -41,8 +41,8 @@ export function createTopBar(shellElement: HTMLElement) {
 		},
 		/** No article to open yet. */
 		showEmpty(): void {
-			shell.set({ status: { text: t('还没有文章'), tone: '' }, title: t('空工作区') });
-			path.textContent = t('创建第一篇文章后即可开始写作');
+			shell.set({ status: { text: t('还没有页面'), tone: '' }, title: t('空工作区') });
+			path.textContent = t('创建第一个页面后即可开始写作');
 		},
 		saveState(state: SaveState): void {
 			shell.set({ status: saveStateText(state) });

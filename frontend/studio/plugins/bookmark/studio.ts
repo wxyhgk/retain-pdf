@@ -28,7 +28,7 @@ const EDITOR_CSS = `
  * 网页书签; what they show of the page is read by the dev server (server.mjs).
  */
 export const name = 'block-bookmark';
-export const description = t('网页书签（```bookmark）：贴一个网址或 DOI，显示成带标题、简介和图片的卡片；网页只在 Studio 里读一次，写进文章。');
+export const description = t('网页书签（```bookmark）：贴一个网址或 DOI，显示成带标题、简介和图片的卡片；网页只在 Studio 里读一次，写进页面。');
 export const inject = ['studio', 'blocks', 'styles'];
 
 export function apply(ctx: Context): void {

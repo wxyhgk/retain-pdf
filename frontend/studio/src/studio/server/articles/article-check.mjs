@@ -76,7 +76,7 @@ async function referenceIssues(directory, source) {
 			else if (reference.kind === 'frontmatter') issues.push({ severity: 'error', message: t('找不到封面图 {path}，博客构建会失败', { path: shown }), line });
 			else issues.push({ severity: 'warning', message: t('找不到文件 {path}，页面上的链接会失效', { path: shown }), line });
 		} else if (!PUBLISHED_FOLDERS.includes(reference.path.split('/', 1)[0])) {
-			issues.push({ severity: 'warning', message: t('{path} 不在 img/ 或 assets/ 里，不会随文章发布', { path: shown }), line });
+			issues.push({ severity: 'warning', message: t('{path} 不在 img/ 或 assets/ 里，不会随页面发布', { path: shown }), line });
 		}
 	}
 	return issues;
@@ -91,8 +91,8 @@ async function articleLinkIssues(blogRoot, slug, source) {
 	for (const { url, line, section, slug: target } of wanted) {
 		const article = articles.get(target);
 		const at = line ? { line } : {};
-		if (!article) issues.push({ severity: 'warning', message: t('链接的文章 {url} 不存在', { url }), ...at });
-		else if (article.draft) issues.push({ severity: 'warning', message: t('链接的文章「{title}」还是草稿，发布前这个链接打不开', { title: article.title }), ...at });
+		if (!article) issues.push({ severity: 'warning', message: t('链接的页面 {url} 不存在', { url }), ...at });
+		else if (article.draft) issues.push({ severity: 'warning', message: t('链接的页面「{title}」还是草稿，发布前这个链接打不开', { title: article.title }), ...at });
 		else if ((article.kind === 'wiki') !== (section === 'wiki')) {
 			issues.push({ severity: 'warning', message: t('「{title}」的网址是 {address}，不是 {url}', { title: article.title, address: articleAddress(article.kind, target), url }), ...at });
 		}

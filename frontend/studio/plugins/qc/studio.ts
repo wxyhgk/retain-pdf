@@ -42,7 +42,7 @@ export function apply(ctx: Context): void {
 			},
 			upload: async (folder, file) => {
 				const slug = ctx.studio.shown();
-				if (!slug) throw new Error(t('没有打开文章'));
+				if (!slug) throw new Error(t('没有打开页面'));
 				return (await ctx.studio.upload(slug, folder, file)).path;
 			},
 			toast: (message, error) => ctx.studio.toast(message, error),

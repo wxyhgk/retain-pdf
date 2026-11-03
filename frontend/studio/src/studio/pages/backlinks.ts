@@ -27,7 +27,7 @@ export function createBacklinks(root: HTMLElement, host: BacklinksHost) {
 		toggle.type = 'button';
 		toggle.className = 'backlinks-toggle';
 		toggle.setAttribute('aria-expanded', String(open));
-		toggle.textContent = links > found.length ? t('↗ {count} 篇文章链接到这里（{links} 处）', { count: found.length, links }) : t('↗ {count} 篇文章链接到这里', { count: found.length });
+		toggle.textContent = links > found.length ? t('↗ {count} 个页面链接到这里（{links} 处）', { count: found.length, links }) : t('↗ {count} 个页面链接到这里', { count: found.length });
 		toggle.addEventListener('click', () => {
 			open = !open;
 			writeOpen(open);

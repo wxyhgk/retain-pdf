@@ -87,7 +87,7 @@ export default function remarkCitations() {
 		});
 
 		if (withoutLibrary) {
-			file.message(t('文章引用了文献，但没有 {file}', { file: BIBLIOGRAPHY_PATH }), { ruleId: 'citation', source: 'remark-citations' });
+			file.message(t('页面引用了文献，但没有 {file}', { file: BIBLIOGRAPHY_PATH }), { ruleId: 'citation', source: 'remark-citations' });
 		}
 		if (!cited.length) return;
 		tree.children.push(

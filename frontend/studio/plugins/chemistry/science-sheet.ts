@@ -47,7 +47,7 @@ function editableIn3D(info: string, source: string): 'xyz' | 'mol' | null {
 /** Why a block's structure is shown, not edited, in 结构. */
 function readOnlyReason(info: string, source: string): string {
 	const descriptor = parseScienceFence(info, source);
-	if (descriptor?.block?.resource.kind === 'file') return t('结构来自文章里的文件：这里只显示；改文件，或在「源码」里换成直接写的结构。');
+	if (descriptor?.block?.resource.kind === 'file') return t('结构来自页面里的文件：这里只显示；改文件，或在「源码」里换成直接写的结构。');
 	if (!source.trim()) return t('还没有结构：在「源码」里写上。');
 	return t('{kind} 只能在「源码」里改；这里显示它画出来的样子。', { kind: scienceBlockKindLabel(info) });
 }

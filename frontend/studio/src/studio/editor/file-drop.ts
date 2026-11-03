@@ -40,10 +40,10 @@ const UPLOADED: Brought = {
 };
 
 const COPIED: Brought = {
-	lost: (paths) => t('已复制到文章 {paths}，但插入的位置已被删除', { paths }),
-	one: (path) => t('已复制到文章 {path}', { path }),
-	many: (count) => t('已复制到文章 {count} 个文件', { count }),
-	failed: () => t('复制到文章失败'),
+	lost: (paths) => t('已复制到页面 {paths}，但插入的位置已被删除', { paths }),
+	one: (path) => t('已复制到页面 {path}', { path }),
+	many: (count) => t('已复制到页面 {count} 个文件', { count }),
+	failed: () => t('复制到页面失败'),
 };
 
 const placeholderKey = new PluginKey<DecorationSet>('article-file-placeholders');
@@ -202,7 +202,7 @@ export function articleFileDrop(host: ArticleFileDropHost) {
 						void readMarkdownReference(path, host.head).then((reference) => {
 							if (view.isDestroyed) return;
 							if (reference) insertAt(view, Math.min(pos, view.state.doc.content.size), [reference]);
-							else host.report(t('ai/ 里的文件不随文章发布，不能插入正文'), true);
+							else host.report(t('ai/ 里的文件不随页面发布，不能插入正文'), true);
 						});
 						return true;
 					},

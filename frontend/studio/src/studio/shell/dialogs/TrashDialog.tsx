@@ -33,7 +33,7 @@ export function Row({ icon, name, where, children }: { icon: string; name: strin
 /** Where a deleted thing was, and when it was deleted. */
 function whereOf(entry: TrashEntry): string {
 	const time = timeAgo(entry.deletedAt);
-	if (entry.kind === 'article') return t('文章 · blog/{slug}/ · {time}删除', { slug: entry.slug, time });
+	if (entry.kind === 'article') return t('页面 · blog/{slug}/ · {time}删除', { slug: entry.slug, time });
 	if (entry.kind === 'directory') return t('{slug} 的文件夹 · {time}删除', { slug: entry.slug, time });
 	return t('{slug} 的文件 · {time}删除', { slug: entry.slug, time });
 }
@@ -77,10 +77,10 @@ export function TrashDialog({ host, onClose }: { host: TrashHost; onClose(): voi
 		const title = entry.title ?? entry.slug;
 		const path = `${entry.slug}/${entry.path}`;
 		const article = entry.kind === 'article';
-		if (!window.confirm(article ? t('彻底删除文章「{title}」？\n删除后不能再恢复。', { title }) : t('彻底删除{path}？\n删除后不能再恢复。', { path }))) return;
+		if (!window.confirm(article ? t('彻底删除页面「{title}」？\n删除后不能再恢复。', { title }) : t('彻底删除{path}？\n删除后不能再恢复。', { path }))) return;
 		try {
 			await purgeTrash(entry.trashed);
-			say(article ? t('已彻底删除文章「{title}」', { title }) : t('已彻底删除{path}', { path }));
+			say(article ? t('已彻底删除页面「{title}」', { title }) : t('已彻底删除{path}', { path }));
 		} catch (error) {
 			say(errorText(error, t('删除失败')), true);
 		}
@@ -88,7 +88,7 @@ export function TrashDialog({ host, onClose }: { host: TrashHost; onClose(): voi
 	}
 
 	return (
-		<Frame id="trash-dialog" title={t('回收站')} description={t('删除的文章和文件保留 30 天')} className="sm:max-w-[600px]" onClose={onClose}>
+		<Frame id="trash-dialog" title={t('回收站')} description={t('删除的页面和文件保留 30 天')} className="sm:max-w-[600px]" onClose={onClose}>
 			<ul id="trash-list" className={listLook}>
 				{entries?.map((entry) => (
 					<Row
@@ -105,7 +105,7 @@ export function TrashDialog({ host, onClose }: { host: TrashHost; onClose(): voi
 						</Button>
 					</Row>
 				))}
-				{entries?.length === 0 && <li className={emptyLook}>{t('回收站是空的。删除的文章和文件会在这里保留 30 天。')}</li>}
+				{entries?.length === 0 && <li className={emptyLook}>{t('回收站是空的。删除的页面和文件会在这里保留 30 天。')}</li>}
 			</ul>
 			<Status id="trash-status" {...status} />
 		</Frame>

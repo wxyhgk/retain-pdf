@@ -118,7 +118,7 @@ export function createFindBar(host: { panel: HTMLElement; scroller: HTMLElement;
 		caseButton,
 		button('↑', t('上一处（⇧↩）'), () => go(-1)),
 		button('↓', t('下一处（↩）'), () => go(1)),
-		button('⋯', t('在全部文章里查找替换（⌘⇧F）'), () => host.findEverywhere(query.value)),
+		button('⋯', t('在全部页面里查找替换（⌘⇧F）'), () => host.findEverywhere(query.value)),
 		button('×', t('关闭（Esc）'), () => close()),
 	);
 	bar.append(findRow, replaceRow);

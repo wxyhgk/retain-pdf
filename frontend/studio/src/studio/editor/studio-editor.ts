@@ -90,8 +90,6 @@ export type StudioEditorHost = {
 	askAI(): void;
 	/** Space on an empty line: the AI in the editor, to write there. */
 	writeWithAI(): void;
-	/** Alt+Enter: an AI does what the blocks the caret is in say, by itself (⇧ as well: in a new talk). */
-	instruct(fresh: boolean): void;
 	/** OCR 成子页面: the PDF the line at `pos` links to (`path` in the article) read into a page under it, linked under that line. */
 	ocrPdf(view: EditorView, pos: number, path: string): void;
 	/** 识别…: the picture at `pos` read by the large model of AI 设置. */
@@ -131,6 +129,8 @@ export type StudioEditor = {
 	markSelection(): string | null;
 	/** Whether something is selected in the article (not a caret alone). */
 	hasSelection(): boolean;
+	/** The words selected (as text, a line for each block); empty for none, or for a block selected whole (a picture, a formula). */
+	selectedWords(): string;
 	/** The article's library (assets/refs.bib), to number its citations by; null when it has none. */
 	setLibrary(library: Map<string, BibEntry> | null): void;
 	/**
@@ -144,9 +144,6 @@ export type StudioEditor = {
 	filesListed(): void;
 	/** The previews of the article's file `path` drawn again: it was changed (edited, saved). */
 	redrawCodeFile(path: string): void;
-	/** The blocks the selection is in shown as being worked on by an AI (Alt+Enter), as `id`, till `unmarkInstructing`. */
-	markInstructing(id: string): void;
-	unmarkInstructing(id: string): void;
 };
 
 /** Each editor's writer: its blocks' Markdown, remembered (a long article is not written whole at every edit). */
@@ -195,31 +192,36 @@ const nextPart = $prose(
 		}),
 );
 
-/** The blocks an AI is working on (Alt+Enter), each marked till its task is over: `add` or `remove` (a task's id) as meta. */
-const instructingKey = new PluginKey<DecorationSet>('studio-instructing');
-const instructing = $prose(
+/**
+ * What is selected, still shown when the article is left for something else (the AI panel's input, a menu): the
+ * browser shows no selection where it has no focus, and what the AI is told of (选中的内容) would not be seen.
+ */
+const keptSelectionKey = new PluginKey<boolean>('studio-kept-selection');
+const keptSelection = $prose(
 	() =>
-		new Plugin<DecorationSet>({
-			key: instructingKey,
+		new Plugin<boolean>({
+			key: keptSelectionKey,
 			state: {
-				init: () => DecorationSet.empty,
-				apply(tr, marks) {
-					const meta = tr.getMeta(instructingKey) as { add?: { id: string; from: number; to: number }; remove?: string } | undefined;
-					let next = marks.map(tr.mapping, tr.doc);
-					if (meta?.remove) next = next.remove(next.find(undefined, undefined, (spec) => spec.instructing === meta.remove));
-					if (meta?.add) {
-						const { id, from, to } = meta.add;
-						const blocks: Decoration[] = [];
-						tr.doc.nodesBetween(from, to, (node, pos) => {
-							blocks.push(Decoration.node(pos, pos + node.nodeSize, { class: 'is-instructing' }, { instructing: id }));
-							return false;
-						});
-						next = next.add(tr.doc, blocks);
-					}
-					return next;
+				init: () => false,
+				apply: (tr, away) => (tr.getMeta(keptSelectionKey) as boolean | undefined) ?? away,
+			},
+			props: {
+				decorations(state) {
+					const { selection } = state;
+					if (!keptSelectionKey.getState(state) || selection.empty || !(selection instanceof TextSelection)) return null;
+					return DecorationSet.create(state.doc, [Decoration.inline(selection.from, selection.to, { class: 'is-kept-selection' })]);
+				},
+				handleDOMEvents: {
+					blur(view) {
+						if (!view.state.selection.empty) view.dispatch(view.state.tr.setMeta(keptSelectionKey, true).setMeta('addToHistory', false));
+						return false;
+					},
+					focus(view) {
+						if (keptSelectionKey.getState(view.state)) view.dispatch(view.state.tr.setMeta(keptSelectionKey, false).setMeta('addToHistory', false));
+						return false;
+					},
 				},
 			},
-			props: { decorations: (state) => instructingKey.getState(state) },
 		}),
 );
 
@@ -552,7 +554,7 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			.use(reviewWatch)
 			.use(longArticle)
 			.use(nextPart)
-			.use(instructing);
+			.use(keptSelection);
 		crepe.on((listener) => {
 			// Opening the body is not an edit, nor is deciding a change under review.
 			listener.updated(() => report());
@@ -788,6 +790,11 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 	return {
 		markSelection,
 		hasSelection: () => crepe?.editor.action((ctx) => !ctx.get(editorViewCtx).state.selection.empty) ?? false,
+		selectedWords: () =>
+			crepe?.editor.action((ctx) => {
+				const { selection, doc } = ctx.get(editorViewCtx).state;
+				return selection instanceof TextSelection ? doc.textBetween(selection.from, selection.to, '\n', ' ') : '';
+			}) ?? '',
 		insertMarkdown(markdown, where = 'caret') {
 			return (
 				crepe?.editor.action((ctx) => {
@@ -845,22 +852,6 @@ export function createStudioEditor(root: HTMLElement, host: StudioEditorHost): S
 			applyLibrary();
 		},
 		mount,
-		markInstructing(id) {
-			crepe?.editor.action((ctx) => {
-				const view = ctx.get(editorViewCtx);
-				const { $from, $to } = view.state.selection;
-				// The whole top-level blocks the selection is in, as markSelection takes them.
-				const from = $from.depth ? $from.before(1) : $from.pos;
-				const to = $to.depth ? $to.after(1) : $to.pos;
-				view.dispatch(view.state.tr.setMeta(instructingKey, { add: { id, from, to } }).setMeta('addToHistory', false));
-			});
-		},
-		unmarkInstructing(id) {
-			crepe?.editor.action((ctx) => {
-				const view = ctx.get(editorViewCtx);
-				view.dispatch(view.state.tr.setMeta(instructingKey, { remove: id }).setMeta('addToHistory', false));
-			});
-		},
 		focusStart,
 		startNewBlock,
 		settle: report,

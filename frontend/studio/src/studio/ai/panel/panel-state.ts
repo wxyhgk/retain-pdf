@@ -24,7 +24,8 @@ import { ARTICLE_ADDRESS } from '@blog/markdown/articles/rules.mjs';
 import { showContextMenu, type MenuItem } from '../../common/context-menu';
 import type { ArticleSummary } from '../../types';
 import { createStore, type Store } from '../../shell/store';
-import type { ModelsSheetHost } from './ModelsSheet';
+import { openSettings, provideModels } from '../../shell/dialogs/ask';
+import type { ModelsHost } from '../../shell/dialogs/ModelsSettings';
 
 /** What the AI panel needs of the Studio around it. */
 export type AiPanelHost = {
@@ -36,8 +37,8 @@ export type AiPanelHost = {
 	openArticle(slug: string): void;
 	/** Whether something is selected in the article open. */
 	hasSelection(): boolean;
-	/** The lines of the article selected (the article saved first, so they are the file's); null when none. */
-	selection(): Promise<{ start: number; end: number; text: string } | null>;
+	/** The lines of the article selected (the article saved first, so they are the file's), and the words selected of them; null when none. */
+	selection(): Promise<{ start: number; end: number; text: string; words?: string } | null>;
 	toast(message: string): void;
 	/** Runs a command in the 终端 tab (an account's login). */
 	runInTerminal(command: string): void;
@@ -63,7 +64,7 @@ export type AiPanelHost = {
 
 export type ArticleRef = { slug: string; title: string };
 /** An article as the panel shows one it names: its link, and what its card says of it as the pointer rests on it. */
-export type PageInfo = ArticleRef & Pick<ArticleSummary, 'icon' | 'parent' | 'description' | 'pubDate' | 'tags' | 'draft' | 'kind'>;
+export type PageInfo = ArticleRef & Pick<ArticleSummary, 'icon' | 'parent' | 'description' | 'pubDate' | 'tags' | 'draft' | 'kind' | 'modified'>;
 
 /** What the panel shows (AiPanel.tsx draws it). */
 export type PanelState = {
@@ -76,8 +77,6 @@ export type PanelState = {
 	starting: boolean;
 	/** `retry`: what 重试 does after it (said again what failed, the last thing said, the AI started again). */
 	status: { text: string; error: boolean; retry?: 'send' | 'last' | 'start' };
-	/** 模型和账号 in place of the conversation. */
-	settings: boolean;
 	/** Whole in the middle (AI 问答). */
 	full: boolean;
 	/** Floating over the Studio (显示方式 › 悬浮). */
@@ -220,7 +219,6 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		items: [],
 		starting: false,
 		status: { text: '', error: false },
-		settings: false,
 		full: false,
 		floating: false,
 		article: null,
@@ -250,11 +248,10 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	/** A conversation was asked for (open, newChat): none is begun or taken up by itself once the list is read. */
 	let asked = false;
 
-	/** What 模型和账号 tells: a service saved for `agent`, for conversations begun with it from now on. */
-	const sheetHost: ModelsSheetHost = {
+	/** What 设置 › AI › 模型和账号 tells: a service saved for `agent`, for conversations begun with it from now on. */
+	const modelsHost: ModelsHost = {
 		runInTerminal: (command) => host.runInTerminal(command),
 		saved(agent, name) {
-			showSheet(false);
 			// What was saved is for conversations begun from now on: one begun with that AI, with it.
 			if (get().agent === agent) beginAfresh();
 			host.toast(name ? t('AI 面板的 {agent} 改用「{name}」', { agent: agent === 'pi' ? 'pi' : 'Claude Code', name }) : t('已保存'));
@@ -268,11 +265,6 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 	/** Its connection to the server gone (followConversation follows it again): said until it is back. */
 	let lost = false;
 
-	/** 模型和账号 in place of the conversation, or the conversation again. */
-	function showSheet(open: boolean): void {
-		pane.classList.toggle('is-settings', open);
-		set({ settings: open });
-	}
 
 	function load(): Promise<void> {
 		loading ??= read();
@@ -286,7 +278,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			const agents = known.agents;
 			set({ agents, agent: agents.some((agent) => agent.id === chosen) ? chosen! : agents.some((agent) => agent.id === known.default) ? known.default : (agents[0]?.id ?? '') });
 			if (!agents.length) {
-				say(t('没有能在面板里用的 AI：在「AI 助手」设置里给 Claude 或 Codex 配上 ACP 命令'));
+				say(t('没有能在面板里用的 AI'));
 				return;
 			}
 			// The one left open, kept in chats/ across restarts.
@@ -471,7 +463,10 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		if (shown?.state === 'running') {
 			// While it works: to one that can take it, words it reads as soon as it can (插话); else said once it is done (with
 			// what it takes: the pictures, the files, the articles named, whose files words in between do not tell).
-			if (shown.canSteer && !pictures.length && !files.length && !quotes.length && !pastes.length && !said.mentions.length) await steer(shown.id, text);
+			// Words in between go alone: with something selected in the article (its chip shown), said once it is done, with it.
+			const { article, leftOut, selectionLeftOut } = get();
+			const selecting = Boolean(article && leftOut !== article.slug && !selectionLeftOut && host.hasSelection());
+			if (shown.canSteer && !pictures.length && !files.length && !quotes.length && !pastes.length && !said.mentions.length && !selecting) await steer(shown.id, text);
 			else set({ queued: [...get().queued, said], draft: '', pictures: [], files: [], quotes: [], pastes: [] });
 			return;
 		}
@@ -499,7 +494,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		const selecting = Boolean(open && !selectionLeftOut && host.hasSelection());
 		const selection = selecting ? await host.selection() : null;
 		// The lines not found (the article not saved, the selection not in its text): said, not sent as if they were.
-		if (selecting && !selection) host.toast(t('选中的内容没能附上（文章没保存好），这句话只带了文章'));
+		if (selecting && !selection) host.toast(t('选中的内容没能附上（页面没保存好），这句话只带了页面'));
 		const widgets = toldSince(target.id);
 		try {
 			const pictures = [...(said.kept ?? []), ...(await Promise.all(said.pictures.map((picture) => keepConversationPicture(target.id, picture.blob))))];
@@ -592,7 +587,8 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 
 	const actions = {
 		say,
-		showSheet,
+		/** ⚙: 设置 › AI › 模型和账号. */
+		openModels: () => openSettings('ai-models'),
 		submit: () => void submit(),
 		/** Stopped while it works, else what is typed said. */
 		sendOrStop(): void {
@@ -739,7 +735,7 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 			void submit();
 		},
 		insert(markdown: string): void {
-			host.toast(host.insert(markdown) ? t('已插入到文章') : t('先打开一篇文章'));
+			host.toast(host.insert(markdown) ? t('已插入到页面') : t('先打开一个页面'));
 		},
 		/** `text` copied; `said`, what is said once it is. */
 		copy(text: string, said = t('已复制 Markdown')): void {
@@ -882,12 +878,13 @@ export function createPanelState(pane: HTMLElement, host: AiPanelHost) {
 		},
 	};
 
-	return { store, actions, panel, sheetHost };
+	provideModels(modelsHost);
+	return { store, actions, panel };
 }
 
 /** The AI chosen in the panel (the one asked by the AI in the editor too), and the options chosen for it. */
 export function chosenAI(): { agent: string; options: Record<string, string> } {
-	const agent = remembered(AGENT_KEY) || 'claude';
+	const agent = remembered(AGENT_KEY) || 'pi';
 	try {
 		return { agent, options: JSON.parse(remembered(OPTIONS_KEY(agent)) ?? '{}') as Record<string, string> };
 	} catch {

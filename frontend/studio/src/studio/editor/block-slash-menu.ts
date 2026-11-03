@@ -91,7 +91,7 @@ export function buildBlockSlashMenu(builder: SlashMenuBuilder, links: ArticleLin
 	// The others (a widget, a calculation…) are among these.
 	for (const block of blocks) if (!block.menuGroup) add(group, block);
 	group.addItem('article-link', {
-		label: t('链接到文章'),
+		label: t('链接到页面'),
 		description: t('在光标处链接另一篇'),
 		hint: '[[',
 		icon: ICONS.link,

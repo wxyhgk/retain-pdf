@@ -126,7 +126,7 @@ test('a key the library has not, or citations without one, are reported', async 
 	assert.deepEqual(missing.messages, [['citation', '找不到文献 @nowhere：assets/refs.bib 里没有这个 key']]);
 	assert.match(missing.html, /<sup class="citation"><span class="citation-missing" title="@nowhere">\[\?\]<\/span><\/sup>/u);
 	const none = await render(t, '见 [@becke1993]。\n', {});
-	assert.deepEqual(none.messages, [['citation', '文章引用了文献，但没有 assets/refs.bib']]);
+	assert.deepEqual(none.messages, [['citation', '页面引用了文献，但没有 assets/refs.bib']]);
 	assert.doesNotMatch(none.html, /参考文献/u);
 	// No citations, nothing added.
 	assert.doesNotMatch((await render(t, '没有引用 [这个] 和 [@ 不是]。\n', {})).html, /citation|参考文献/u);

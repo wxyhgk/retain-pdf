@@ -108,8 +108,11 @@ export default defineConfig({
 				E2E_ROOT_PARENT: process.env[`E2E_ROOT_PARENT_${slot}`] ?? '',
 				// RetainMol is its stand-in, below (it keeps nothing: one serves them all).
 				STUDIO_RETAINMOL_URL: `http://127.0.0.1:${retainmolPort}`,
-				// The AIs the terminal starts with a click: stand-ins that say where they were started (fake-agents/).
+				// The AI panel's adapters: stand-ins (fake-agents/: Claude Code's, pi's).
 				STUDIO_TERMINAL_AGENT_DIR: fileURLToPath(new URL('./fake-agents', import.meta.url)),
+				// Claude Code and Codex on (设置 › AI › 高级) while the settings say nothing, Claude's stand-in the one talked to
+				// first: the tests were written so.
+				STUDIO_AGENTS_ON: 'claude,codex',
 				// OCR 成子页面: a stand-in for `paddleocr api` (fake-agents/paddleocr).
 				STUDIO_OCR_COMMAND: fileURLToPath(new URL('./fake-agents/paddleocr', import.meta.url)),
 			},

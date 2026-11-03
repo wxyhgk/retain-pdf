@@ -227,6 +227,10 @@ test('for pi (its system prompt changed only where it differs): where the author
 	// Selected lines cut short: said so, and where the rest is.
 	const cut = withContext('总结', { ...where, selection: { start: 1, end: 900, text: '很长', cut: true } }, 'message');
 	assert.match(cut, /选中的太长，上面只有开头 2 个字；其余的在文件的这几行里/u);
+	// Some words of a paragraph selected: which, after the paragraph; the whole of it selected, nothing more.
+	const words = withContext('这个词什么意思', { ...where, selection: { start: 35, end: 35, text: 'H₂O₂ 的步数', words: '步数' } }, 'message');
+	assert.match(words, /```\n其中用户选中的只是这几个字：「步数」；/u);
+	assert.doesNotMatch(withContext('总结', { ...where, selection: { ...where.selection, words: 'H₂O₂ 的步数' } }, 'message'), /其中用户选中的/u);
 });
 
 test('what the widgets in the answers told of themselves (note.tell) goes with what is said next, each by its title', () => {

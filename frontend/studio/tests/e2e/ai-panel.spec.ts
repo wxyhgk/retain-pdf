@@ -46,6 +46,21 @@ async function openAi(page: Page): Promise<void> {
 	await expect(modelButton(page)).toHaveAttribute('title', /（Claude 运行）$/u);
 }
 
+/**
+ * ⚙ 模型和账号: 设置 › AI › 模型和账号 opened, pi's form first, then Claude Code's (on in the tests: STUDIO_AGENTS_ON), then
+ * Codex's account.
+ */
+async function openModels(page: Page) {
+	await pane(page).getByRole('button', { name: '模型和账号' }).click();
+	const sheet = page.locator('#settings-ai-models .ai-sheet');
+	await expect(sheet).toBeVisible();
+	return {
+		sheet,
+		pi: { key: sheet.getByLabel('API key').first(), actions: sheet.locator('.ai-sheet-actions').nth(0), result: sheet.locator('.ai-sheet-result').nth(0) },
+		claude: { key: sheet.getByLabel('API key').nth(1), actions: sheet.locator('.ai-sheet-actions').nth(1), result: sheet.locator('.ai-sheet-result').nth(1) },
+	};
+}
+
 async function tell(page: Page, text: string): Promise<void> {
 	await input(page).fill(text);
 	await input(page).press('Enter');
@@ -219,51 +234,52 @@ test('⚙ 模型和账号: another service, tried with a word and saved, is the 
 	const address = `http://127.0.0.1:${(service.address() as import('node:net').AddressInfo).port}`;
 	try {
 		await openAi(page);
-		await pane(page).getByRole('button', { name: '模型和账号' }).click();
-		const sheet = pane(page).locator('.ai-sheet');
-		await expect(sheet).toBeVisible();
-		await expect(pane(page).locator('.ai-input')).toBeHidden();
+		const { sheet, claude } = await openModels(page);
 		await sheet.getByLabel('模型来源', { exact: true }).selectOption('custom');
 		await sheet.getByLabel('接口地址').fill(address);
-		await sheet.getByLabel('API key').first().fill('sk-test');
+		await claude.key.fill('sk-test');
 		await sheet.getByLabel('主模型').fill('fake-main');
-		await sheet.getByRole('button', { name: '检查' }).first().click();
-		await expect(sheet.locator('.ai-sheet-result').first()).toHaveText('能用：fake-main 回答了「好」');
+		await claude.actions.getByRole('button', { name: '检查' }).click();
+		await expect(claude.result).toHaveText('能用：fake-main 回答了「好」');
 		expect(asked).toEqual(['/v1/messages Bearer sk-test']);
-		await sheet.getByRole('button', { name: '保存' }).first().click();
+		await claude.actions.getByRole('button', { name: '保存' }).click();
+		await expect(claude.result).toHaveText('已保存；新开的对话会用它。');
 		// Back to the conversation, a new one, on that service: its models by their names.
+		await page.keyboard.press('Escape');
 		await expect(sheet).toBeHidden();
 		await expect(pane(page).locator('.ai-where')).toHaveText('其他（兼容 Anthropic 接口）');
 		await expect(modelButton(page)).toHaveAttribute('aria-label', '模型：Fake Main');
 		await tell(page, '环境');
 		await expect(pane(page).locator('.ai-message')).toHaveText(`地址 ${address} 模型 fake-main key 有`);
 		// The key stays on the server.
-		await pane(page).getByRole('button', { name: '模型和账号' }).click();
-		await expect(sheet.getByLabel('API key').first()).toHaveValue('');
-		await expect(sheet.getByLabel('API key').first()).toHaveAttribute('placeholder', '已保存（不改就留空）');
+		const again = await openModels(page);
+		await expect(again.claude.key).toHaveValue('');
+		await expect(again.claude.key).toHaveAttribute('placeholder', '已保存（不改就留空）');
 		expect(await page.content()).not.toContain('sk-test');
 	} finally {
 		service.close();
 	}
 });
 
-test('⚙ 模型和账号 closed by its ×: the conversation is back', async ({ page }) => {
+test('⚙ 模型和账号 is 设置 › AI › 模型和账号, pi first; closed, the conversation is where it was', async ({ page }) => {
 	await openAi(page);
-	await pane(page).getByRole('button', { name: '模型和账号' }).click();
-	await expect(pane(page).locator('.ai-sheet')).toBeVisible();
-	await pane(page).getByRole('button', { name: '关闭模型和账号' }).click();
-	await expect(pane(page).locator('.ai-sheet')).toBeHidden();
+	const { sheet } = await openModels(page);
+	await expect(page.locator('#settings-dialog [data-section="ai-models"]')).toHaveAttribute('aria-current', 'page');
+	await expect(sheet.locator('h4')).toHaveText(['pi 用哪家的模型', 'Claude Code 用哪家的模型', 'Codex']);
 	await expect(pane(page).locator('.ai-input')).toBeVisible();
+	await page.keyboard.press('Escape');
+	await expect(sheet).toBeHidden();
 });
 
 test('pi: a service of its catalog and a key, saved; the next pi conversation has that key and only that service’s models', async ({ page }) => {
 	await openAi(page);
-	await pane(page).getByRole('button', { name: '模型和账号' }).click();
-	const sheet = pane(page).locator('.ai-sheet');
+	const { sheet, pi } = await openModels(page);
 	await sheet.getByLabel('pi 的模型来源').selectOption('deepseek');
-	await expect(sheet.getByLabel('API key').nth(1)).toHaveAttribute('placeholder', '粘贴 API key（pi 从 DEEPSEEK_API_KEY 读）');
-	await sheet.getByLabel('API key').nth(1).fill('sk-deepseek');
-	await sheet.locator('.ai-sheet-actions').nth(1).getByRole('button', { name: '保存' }).click();
+	await expect(pi.key).toHaveAttribute('placeholder', '粘贴 API key（pi 从 DEEPSEEK_API_KEY 读）');
+	await pi.key.fill('sk-deepseek');
+	await pi.actions.getByRole('button', { name: '保存' }).click();
+	await expect(pi.result).toHaveText('已保存；新开的 pi 对话会用它。');
+	await page.keyboard.press('Escape');
 	await expect(sheet).toBeHidden();
 	await chooseAtFoot(page, '程序', 'pi');
 	await expect(pane(page).locator('.ai-where')).toHaveText('DeepSeek');
@@ -292,13 +308,14 @@ test('pi: a service of its catalog and a key, saved; the next pi conversation ha
 test('the model menu: another service or AI goes on with the same conversation; a starred model is first in it; how hard it thinks, from the bars', async ({ page }) => {
 	await openAi(page);
 	// A service of Claude Code's with a key (its address never asked here): the conversation begun on it.
-	await pane(page).getByRole('button', { name: '模型和账号' }).click();
-	const sheet = pane(page).locator('.ai-sheet');
+	const { sheet, claude } = await openModels(page);
 	await sheet.getByLabel('模型来源', { exact: true }).selectOption('custom');
 	await sheet.getByLabel('接口地址').fill('http://127.0.0.1:9');
-	await sheet.getByLabel('API key').first().fill('sk-test');
+	await claude.key.fill('sk-test');
 	await sheet.getByLabel('主模型').fill('fake-main');
-	await sheet.getByRole('button', { name: '保存' }).first().click();
+	await claude.actions.getByRole('button', { name: '保存' }).click();
+	await expect(claude.result).toHaveText('已保存；新开的对话会用它。');
+	await page.keyboard.press('Escape');
 	await expect(modelButton(page)).toHaveAttribute('aria-label', '模型：Fake Main');
 	await tell(page, '环境');
 	await expect(pane(page).locator('.ai-message').last()).toHaveText('地址 http://127.0.0.1:9 模型 fake-main key 有');
@@ -364,6 +381,8 @@ test('what is said is told where the author is: the article open (followed as an
 		await expect(answer).toContainText('当前打开的文章：《Studio 测试夹具》，文件 studio-fixture/index.md；它的写作要求在 studio-fixture/ai/brief.md，先读');
 		await expect(answer).toContainText('这句话选中的是《Studio 测试夹具》（studio-fixture/index.md）的第');
 		await expect(answer).toContainText('结尾段落。');
+		// The whole paragraph selected: no words of it said apart.
+		await expect(answer).not.toContainText('其中用户选中的');
 		await expect(answer).toContainText('用 @ 提到的文章：《另一篇笔记》，文件 other-note/index.md（没有 ai/brief.md，不用找）');
 		await expect(answer).toContainText('上下文 看看 [另一篇笔记](/blog/other-note/) 和');
 		// What was said is shown as said, what it named a link to it (not again under it).
@@ -382,6 +401,59 @@ test('what is said is told where the author is: the article open (followed as an
 		await expect(pane(page).locator('.ai-message').last()).not.toContainText('当前打开的文章');
 	} finally {
 		removeArticle('other-note');
+	}
+});
+
+test('some words of a paragraph selected: the AI told which, and they stay marked while the input has the keys', async ({ page }) => {
+	await openAi(page);
+	const ending = editor(page).locator('p', { hasText: '结尾段落' });
+	await ending.click();
+	await page.keyboard.press('End');
+	// The last two characters (段落 of 结尾段落。, the full stop left).
+	await page.keyboard.press('ArrowLeft');
+	for (let index = 0; index < 2; index += 1) await page.keyboard.press('Shift+ArrowLeft');
+	await expect(pane(page).locator('.ai-context .ai-chip-label')).toHaveText(['Studio 测试夹具', '选中的内容']);
+	await input(page).click();
+	await expect(editor(page).locator('.is-kept-selection')).toHaveText('段落');
+	await input(page).fill('上下文 这个词');
+	await input(page).press('Enter');
+	const answer = pane(page).locator('.ai-message').last();
+	await expect(answer).toContainText('结尾段落。');
+	await expect(answer).toContainText('其中用户选中的只是这几个字：「段落」');
+	// Back in the article: the browser's own selection again, the mark gone.
+	await ending.click();
+	await expect(editor(page).locator('.is-kept-selection')).toHaveCount(0);
+});
+
+test('the article open, retitled, is named anew in its chip; @ offers the pages opened last first (最近)', async ({ page }) => {
+	writeArticle('other-note', '---\ntitle: 另一篇笔记\npubDate: 2026-10-01\ndraft: true\n---\n\n另一篇的一段。\n');
+	writeArticle('third-note', '---\ntitle: 第三篇笔记\npubDate: 2026-10-01\ndraft: true\n---\n\n第三篇的一段。\n');
+	try {
+		await openAi(page);
+		const chips = pane(page).locator('.ai-context .ai-chip-label');
+		await expect(chips).toHaveText(['Studio 测试夹具']);
+		// Retitled: the chip follows, not left as it was till taken off and put back.
+		await page.locator('#article-title-input').fill('改过名的夹具');
+		await expect(chips).toHaveText(['改过名的夹具']);
+
+		// Opened one after the other: the one opened last first, the one open itself after them.
+		const list = page.locator('#article-list');
+		await list.getByText('第三篇笔记', { exact: true }).click();
+		await expect(chips).toHaveText(['第三篇笔记']);
+		await list.getByText('另一篇笔记', { exact: true }).click();
+		await expect(chips).toHaveText(['另一篇笔记']);
+		await input(page).fill('@');
+		const menu = pane(page).locator('.ai-mention-menu');
+		await expect(menu.locator('.ai-mention-heading')).toHaveText('最近');
+		await expect(menu.locator('.ai-mention > span:first-child').nth(0)).toHaveText('第三篇笔记');
+		await expect(menu.locator('.ai-mention > span:first-child').nth(1)).toHaveText('改过名的夹具');
+		// Words typed: those that have them, the heading gone.
+		await input(page).pressSequentially('笔记');
+		await expect(menu.locator('.ai-mention-heading')).toHaveCount(0);
+		await expect(menu.locator('.ai-mention > span:first-child')).toHaveText(['第三篇笔记', '另一篇笔记']);
+	} finally {
+		removeArticle('other-note');
+		removeArticle('third-note');
 	}
 });
 
@@ -454,7 +526,7 @@ test('what the AI says is blocks: each dragged into the article, or clicked in w
 
 	// All of it, from under the answer.
 	await pane(page).locator('.ai-message').hover();
-	await pane(page).getByRole('button', { name: '插入到文章' }).click();
+	await pane(page).getByRole('button', { name: '插入到页面' }).click();
 	await expect(editor(page)).toContainText('能量和质量的关系：');
 });
 
@@ -516,13 +588,13 @@ test('what the AI changes in the article open while it works is looked over once
 	await tell(page, '慢慢来');
 	await expect(pane(page).locator('.ai-work.is-going')).toBeVisible();
 	editFixture((markdown) => markdown.replace('结尾段落。', '结尾段落，AI 改的。'));
-	await expect(page.locator('.studio-toast')).toContainText('AI 在改这篇文章，做完后一起给你过目');
+	await expect(page.locator('.studio-toast')).toContainText('AI 在改这一页，做完后一起给你过目');
 	editFixture((markdown) => markdown.replace('开头段落', '开头段落（AI 又改了）'));
 	await page.waitForTimeout(1500);
 	await expect(page.locator('#review-bar')).toBeHidden();
 	// Its turn over (stopped here): the changes, together.
 	await pane(page).locator('.ai-send').click();
-	await expect(page.locator('#review-count')).toHaveText('磁盘上的文章有 2 处改动');
+	await expect(page.locator('#review-count')).toHaveText('磁盘上的页面有 2 处改动');
 	await expect(editor(page)).toContainText('AI 又改了');
 });
 
@@ -552,7 +624,7 @@ test('the plugins’ blocks in an answer are drawn as in the editor, and put in 
 	await expect(blocks.nth(1).locator('.ai-preview svg').first()).toBeVisible();
 	await blocks.nth(2).scrollIntoViewIfNeeded();
 	await expect(blocks.nth(2).locator('.ai-preview canvas')).toHaveCount(1);
-	await expect(blocks.nth(2).getByRole('button', { name: '保存视角到文章' })).toBeHidden();
+	await expect(blocks.nth(2).getByRole('button', { name: '保存视角到页面' })).toBeHidden();
 	await expect(blocks.nth(3).locator('.note-energy')).toHaveCount(1);
 	await expect(blocks.nth(4).locator('iframe')).toHaveCount(1);
 	await expect(blocks.nth(5).locator('.note-bookmark')).toContainText('例子网页');
@@ -599,6 +671,20 @@ test('said while it works: Claude Code takes it in between; pi, once its turn is
 	await expect(pane(page).locator('.ai-stop').last()).toHaveText('已停止');
 	await expect(pane(page).locator('.ai-message').last()).toContainText('pi 模型');
 	await expect(queued).toHaveCount(0);
+});
+
+test('said while Claude Code works, with something selected in the article: not in between (that goes alone), but once it is done, with what is selected', async ({ page }) => {
+	await openAi(page);
+	await tell(page, '慢慢来');
+	await expect(placeholder(page)).toHaveText('插话：它会尽快看到（Enter）');
+	await editor(page).locator('p', { hasText: '结尾段落' }).click({ clickCount: 3 });
+	await expect(placeholder(page)).toHaveText('排队：它做完这一轮就发（Enter）');
+	await tell(page, '上下文 这段');
+	const queued = pane(page).locator('.ai-queued');
+	await expect(queued.locator('.ai-queued-text')).toHaveText('上下文 这段');
+	await queued.getByRole('button', { name: '立刻发' }).click();
+	await expect(pane(page).locator('.ai-message').last()).toContainText('这句话选中的是');
+	await expect(pane(page).locator('.ai-message').last()).toContainText('结尾段落。');
 });
 
 test('a picture pasted into the input goes with what is said, shown small over it', async ({ page }) => {
@@ -699,7 +785,7 @@ test('what was said: copied, or put back to be changed; what failed, said again;
 	await openAi(page);
 	await tell(page, '用量');
 	// Under the answer, its actions there without a pointer on it.
-	await expect(pane(page).locator('.ai-answer').last().getByRole('button', { name: '插入到文章' })).toBeVisible();
+	await expect(pane(page).locator('.ai-answer').last().getByRole('button', { name: '插入到页面' })).toBeVisible();
 	await pane(page).locator('.ai-user').last().getByRole('button', { name: '改一改再问' }).click();
 	await expect(input(page)).toHaveText('用量');
 	await input(page).fill('');

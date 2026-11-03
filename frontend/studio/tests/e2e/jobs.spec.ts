@@ -100,7 +100,7 @@ test('a calculation is a card; its sheet sets it up, runs it, shows what it foun
 	await tab(page, '历史').click();
 	const rows = sheet(page).locator('.job-run-row');
 	await expect(rows).toHaveCount(2);
-	await expect(rows.first()).toContainText('文章显示这次');
+	await expect(rows.first()).toContainText('页面显示这次');
 	await rows.nth(1).click();
 	await expect(tab(page, '结果')).toHaveAttribute('aria-selected', 'true');
 	await expect(sheet(page).locator('.job-mode')).toHaveCount(21);

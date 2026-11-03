@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { chmod, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
-import { AGENT_PRESETS, AgentSettings } from './agent-settings.mjs';
+import { AgentSettings } from './agent-settings.mjs';
 
 async function folder(t) {
 	const root = await mkdtemp(join(tmpdir(), 'studio-agents-'));
@@ -12,41 +12,39 @@ async function folder(t) {
 	return root;
 }
 
-test('Claude, Codex and pi to start with; installed as a login shell finds them', async (t) => {
-	const root = await folder(t);
-	await writeFile(join(root, 'codex'), '#!/bin/sh\n');
-	await chmod(join(root, 'codex'), 0o755);
-	const settings = new AgentSettings(join(root, 'settings.json'), { env: { PATH: `${root}:/usr/bin:/bin`, HOME: root }, shell: '/bin/sh' });
-	const shown = await settings.shown();
-	assert.deepEqual(shown.agents.map((agent) => agent.id), ['claude', 'codex', 'pi']);
-	assert.deepEqual(shown.agents.filter((agent) => agent.installed).map((agent) => agent.id), ['codex']);
-	assert.equal(shown.default, 'claude');
+test('pi first and the default; Claude Code and Codex in the panel only once on, or when conversations were had with them', async (t) => {
+	const file = join(await folder(t), 'settings.json');
+	const settings = new AgentSettings(file, { env: {} });
+	const fresh = await settings.config();
+	assert.deepEqual(fresh.list.map((agent) => agent.id), ['pi', 'claude', 'codex']);
+	assert.deepEqual(fresh.listed.map((agent) => agent.id), ['pi']);
+	assert.equal(fresh.default, 'pi');
+	// Nothing said yet: those the author has talked to are on.
+	assert.deepEqual((await settings.config(async () => ['pi', 'codex', 'codex'])).listed.map((agent) => agent.id), ['pi', 'codex']);
+	// Said: as said, whatever was talked to.
+	const shown = await settings.set({ on: ['claude'] });
+	assert.deepEqual(shown.agents.map(({ id, on }) => [id, on]), [['claude', true], ['codex', false]]);
+	assert.deepEqual((await settings.config(() => ['codex'])).listed.map((agent) => agent.id), ['pi', 'claude']);
+	assert.deepEqual(JSON.parse(await readFile(file, 'utf8')).agents, { on: ['claude'] });
+	await assert.rejects(settings.set({ on: ['pi'] }), /只能/u);
 });
 
-test('the words an agent runs by: what it is told is one of them, as it is', () => {
-	const [claude, codex] = AGENT_PRESETS;
-	const prompt = '画一个 sin x 的图; rm -rf "$HOME"';
-	const words = AgentSettings.words(claude, prompt, false);
-	assert.equal(words[0], 'claude');
-	assert.equal(words.at(-1), prompt);
-	assert.ok(words.includes('{"sandbox":{"enabled":true,"failIfUnavailable":true,"allowUnsandboxedCommands":false}}'));
-	assert.ok(!words.includes('--continue'));
-	assert.ok(AgentSettings.words(claude, prompt, true).includes('--continue'));
-	assert.deepEqual(AgentSettings.words(codex, prompt, true).slice(0, 4), ['codex', 'exec', 'resume', '--last']);
+test('saved before (the terminal’s and Alt+Enter’s command lines): an AI added with an adapter kept, the rest let be', async (t) => {
+	const file = join(await folder(t), 'settings.json');
+	await writeFile(file, JSON.stringify({ agents: { default: 'claude', list: [
+		{ id: 'claude', name: 'Claude', launch: 'claude', run: 'claude -p {prompt}', resume: 'claude -p --continue {prompt}' },
+		{ id: 'omp', name: 'omp', launch: 'omp', run: 'omp -p {prompt}', resume: 'omp -p -c {prompt}', acp: 'omp-acp --stdio' },
+		{ id: 'old', name: 'old', launch: 'old', run: 'old {prompt}', resume: 'old {prompt}' },
+	] } }));
+	const known = await new AgentSettings(file, { env: {} }).config();
+	assert.deepEqual(known.listed.map((agent) => [agent.id, agent.acp]), [['pi', 'pi-acp'], ['omp', 'omp-acp --stdio']]);
+	// The old default was Alt+Enter's: pi's now.
+	assert.equal(known.default, 'pi');
 });
 
-test('another agent added (omp) and made the default; a half-written one refused', async (t) => {
-	const root = await folder(t);
-	const file = join(root, 'settings.json');
-	await writeFile(file, JSON.stringify({ ai: { provider: 'anthropic' } }));
-	const settings = new AgentSettings(file, { env: { PATH: '/usr/bin:/bin' }, shell: '/bin/sh' });
-	const omp = { id: 'omp', name: 'omp', launch: 'omp', run: 'omp -p {prompt}', resume: 'omp -p --continue {prompt}' };
-	const shown = await settings.set({ list: [...AGENT_PRESETS, omp], default: 'omp' });
-	assert.equal(shown.default, 'omp');
-	assert.deepEqual(shown.agents.map((agent) => agent.id), ['claude', 'codex', 'pi', 'omp']);
-	// The other settings stay.
-	assert.deepEqual(JSON.parse(await readFile(file, 'utf8')).ai, { provider: 'anthropic' });
-	await assert.rejects(settings.set({ list: [{ ...omp, run: 'omp -p' }], default: 'omp' }), /\{prompt\}/u);
-	await assert.rejects(settings.set({ list: [omp, omp], default: 'omp' }), /重复/u);
-	await assert.rejects(settings.set({ list: [omp], default: 'claude' }), /默认/u);
+test('the browser tests: the stand-in adapters by their path, Claude on and talked to first', async (t) => {
+	const file = join(await folder(t), 'settings.json');
+	const known = await new AgentSettings(file, { env: { STUDIO_TERMINAL_AGENT_DIR: '/fakes', STUDIO_AGENTS_ON: 'claude,codex' } }).config();
+	assert.equal(known.default, 'claude');
+	assert.deepEqual(known.listed.map((agent) => agent.acp), ['/fakes/pi-acp', '/fakes/claude-agent-acp', '/fakes/codex-acp']);
 });

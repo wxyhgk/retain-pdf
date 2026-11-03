@@ -1,3 +1,0 @@
-#!/bin/sh
-# A stand-in for Claude Code (the 终端 tab's buttons, Alt+Enter): fake-agent.mjs.
-exec node "$(dirname "$0")/fake-agent.mjs" "$@"

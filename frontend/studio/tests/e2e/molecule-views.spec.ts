@@ -31,9 +31,9 @@ test('a turned molecule’s view is saved in the article and shown so when it op
 	await expect(controls.locator('span')).toHaveText('使用自动视角');
 
 	await turn(page);
-	await expect(controls.locator('span')).toHaveText('视角有改动 · 尚未写入文章');
-	await controls.getByRole('button', { name: '保存视角到文章' }).click();
-	await expect(controls.locator('span')).toHaveText('视角已写入文章配置');
+	await expect(controls.locator('span')).toHaveText('视角有改动 · 尚未写入页面');
+	await controls.getByRole('button', { name: '保存视角到页面' }).click();
+	await expect(controls.locator('span')).toHaveText('视角已写入页面配置');
 	const [entry] = Object.values(savedViews());
 	expect(entry.format).toBe('xyz');
 	expect(entry.view).toMatchObject({ rotation: expect.any(Array), zoom: expect.any(Number), pan: { x: expect.any(Number), y: expect.any(Number) } });
@@ -41,19 +41,19 @@ test('a turned molecule’s view is saved in the article and shown so when it op
 	expect((entry.view as { rotation: number[] }).rotation).not.toEqual([1, 0, 0, 0, 1, 0, 0, 0, 1]);
 
 	await page.reload();
-	await expect(water(page).locator('.chem-view-controls span')).toHaveText('已载入文章视角');
+	await expect(water(page).locator('.chem-view-controls span')).toHaveText('已载入页面视角');
 
 	// 重置视角: the view it chose itself, the saved one left in the file until saved again.
 	await water(page).getByRole('button', { name: '重置视角' }).click();
-	await expect(water(page).locator('.chem-view-controls span')).toHaveText('已重置 · 尚未写入文章');
+	await expect(water(page).locator('.chem-view-controls span')).toHaveText('已重置 · 尚未写入页面');
 	expect(Object.values(savedViews())[0].view).toEqual(entry.view);
 });
 
 test('a view 3Dmol saved before is kept in the file, the molecule drawn from its own view', async ({ page }) => {
 	await openStudio(page);
 	await turn(page);
-	await water(page).getByRole('button', { name: '保存视角到文章' }).click();
-	await expect(water(page).locator('.chem-view-controls span')).toHaveText('视角已写入文章配置');
+	await water(page).getByRole('button', { name: '保存视角到页面' }).click();
+	await expect(water(page).locator('.chem-view-controls span')).toHaveText('视角已写入页面配置');
 	// As 3Dmol saved it, under the same molecule's key.
 	const views = JSON.parse(readFileSync(VIEWS(), 'utf8'));
 	const key = Object.keys(views.molecules)[0];
@@ -105,9 +105,9 @@ test('a cube’s surfaces follow its display (a phase hidden, the molecule drawn
 	await cube.getByLabel('显示正相位').uncheck();
 	await expect.poll(() => bluePixels(page)).toBeLessThan(20);
 	await cube.getByLabel('分子骨架显示方式').selectOption('sphere');
-	await expect(cube.locator('.chem-view-controls span')).toHaveText('显示有改动 · 尚未写入文章');
+	await expect(cube.locator('.chem-view-controls span')).toHaveText('显示有改动 · 尚未写入页面');
 	await cube.getByRole('button', { name: '保存显示与视角' }).click();
-	await expect(cube.locator('.chem-view-controls span')).toHaveText('显示与视角已写入文章配置');
+	await expect(cube.locator('.chem-view-controls span')).toHaveText('显示与视角已写入页面配置');
 	const saved = Object.values(savedViews()).find((entry) => entry.format === 'cube')!;
 	expect(saved.view).toMatchObject({ zoom: expect.any(Number) });
 	expect(saved.display).toMatchObject({ positive: false, negative: true, moleculeStyle: 'sphere' });
@@ -115,7 +115,7 @@ test('a cube’s surfaces follow its display (a phase hidden, the molecule drawn
 	await page.reload();
 	const again = scienceBlock(page, 'Cube');
 	await again.locator('.chem-stage canvas').scrollIntoViewIfNeeded();
-	await expect(again.locator('.chem-view-controls span')).toHaveText('已载入文章视角');
+	await expect(again.locator('.chem-view-controls span')).toHaveText('已载入页面视角');
 	await expect(again.getByLabel('显示正相位')).not.toBeChecked();
 	await expect(again.getByLabel('分子骨架显示方式')).toHaveValue('sphere');
 	await expect.poll(() => bluePixels(page)).toBeLessThan(20);

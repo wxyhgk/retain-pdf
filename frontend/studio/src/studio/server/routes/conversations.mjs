@@ -13,6 +13,7 @@ const PICTURE_LIMIT = 20 * 1024 * 1024;
 const FILE_LIMIT = 200 * 1024 * 1024;
 /** How much of the lines selected goes with what is said (a whole book selected: its start, said to be cut). */
 const SELECTION_MAX = 20_000;
+const WORDS_MAX = 2000;
 /** The pictures an AI's answer may show from this machine, by extension. */
 const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' };
 
@@ -24,7 +25,10 @@ const PICTURES = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jp
  * @param {import('./index.mjs').Studio} studio
  */
 export function conversationRoutes(api, { blogRoot, conversations, agentSettings, panelModels, articles, drive, programEnv, articleFolder, retainpdfReading }) {
-	const agents = async () => (await agentSettings.config()).list.filter((agent) => agent.acp);
+	/** The AIs of the conversations kept: those of 设置 › AI › 高级 on for an author who has not said (agent-settings.mjs). */
+	const used = async () => (await conversations.list()).map((entry) => entry.agent?.id).filter(Boolean);
+	/** All the AIs, to go on with a conversation had with one off the panel now; the panel lists those `listed`. */
+	const agents = async () => (await agentSettings.config(used)).list;
 	/** Claude Code and pi talk to the services chosen in the panel (panel-models.mjs); Codex to its own. */
 	const isClaude = (agent) => /(^|\/)claude-agent-acp(\s|$)/u.test(agent.acp);
 	const isPi = (agent) => /(^|\/)pi-acp(\s|$)/u.test(agent.acp);
@@ -35,12 +39,19 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		return { env: {}, models: null };
 	};
 
-	api.get('/conversations', async () => ({
-		// Which ones talk to the services of the panel's ⚙ (their models listed by service in the model menu).
-		agents: (await agents()).map((agent) => ({ id: agent.id, name: agent.name, kind: isClaude(agent) ? 'claude' : isPi(agent) ? 'pi' : 'other' })),
-		default: (await agentSettings.config()).default,
-		conversations: await conversations.list(),
-	}));
+	api.get('/conversations', async () => {
+		const known = await agentSettings.config(used);
+		return {
+			// pi first, those of 高级 turned on after it; which ones talk to the services of 设置 › AI › 模型和账号 (their
+			// models listed by service in the model menu).
+			agents: known.listed.map((agent) => ({ id: agent.id, name: agent.name, kind: isClaude(agent) ? 'claude' : isPi(agent) ? 'pi' : 'other' })),
+			default: known.default,
+			conversations: await conversations.list(),
+		};
+	});
+	// 设置 › AI › 高级: Claude Code and Codex, on or off.
+	api.get('/agents', () => agentSettings.shown(used));
+	api.put('/agents', async ({ json }) => agentSettings.set(await json(), used));
 	// A conversation goes on in blog/ whatever article is open (blog/AGENTS.md read there): each thing said is told
 	// which one is, with the lines selected and the articles named with @ (contextOf).
 	api.post('/conversations', async ({ json }) => {
@@ -100,7 +111,14 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		};
 		const open = await article(asked.article);
 		const selection = open && asked.selection && Number.isInteger(asked.selection.start) && Number.isInteger(asked.selection.end) && typeof asked.selection.text === 'string'
-			? { start: asked.selection.start, end: asked.selection.end, text: asked.selection.text.slice(0, SELECTION_MAX), ...(asked.selection.text.length > SELECTION_MAX ? { cut: true } : {}) }
+			? {
+					start: asked.selection.start,
+					end: asked.selection.end,
+					text: asked.selection.text.slice(0, SELECTION_MAX),
+					...(asked.selection.text.length > SELECTION_MAX ? { cut: true } : {}),
+					// The words selected, when they are a part of those lines (a phrase of a paragraph).
+					...(typeof asked.selection.words === 'string' && asked.selection.words.trim() ? { words: asked.selection.words.slice(0, WORDS_MAX) } : {}),
+				}
 			: null;
 		const mentions = (await Promise.all((Array.isArray(asked.mentions) ? asked.mentions : []).map(article))).filter(Boolean).filter((entry) => entry.path !== open?.path);
 		// What the widgets in the answers told of themselves (note.tell): a few, each its title and its value as JSON, not long.
@@ -232,7 +250,7 @@ export function conversationRoutes(api, { blogRoot, conversations, agentSettings
 		if (asked.mode !== 'rewrite' && asked.mode !== 'write') throw refuse(400, t('mode 只能是 rewrite 或 write'));
 		if (!text(asked.instruction).trim()) throw refuse(400, t('要说明让 AI 做什么'));
 		const { article } = await contextOf({ article: asked.slug });
-		if (!article) throw refuse(404, t('没有这篇文章'));
+		if (!article) throw refuse(404, t('没有这一页'));
 		const options = asked.options && typeof asked.options === 'object' ? Object.fromEntries(Object.entries(asked.options).filter(([, value]) => typeof value === 'string')) : {};
 		return inline.ask({ id: text(asked.id), agent: text(asked.agent), options, mode: asked.mode, instruction: text(asked.instruction), article, selected: text(asked.selected), before: text(asked.before), after: text(asked.after) });
 	});

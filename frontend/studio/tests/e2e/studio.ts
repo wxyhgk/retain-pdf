@@ -98,8 +98,8 @@ export async function openStudio(page: Page, { autosaveDelay = 600_000, settled 
 	await page.goto(`/studio?article=${slug}`);
 	await expect(page.locator('#crepe-editor .milkdown .ProseMirror')).toBeVisible();
 	if (settled) await expect(page.locator('#save-status')).toHaveText('已载入');
-	await expect(scienceBlock(page, 'SMILES').locator('.science-block-preview svg')).toBeVisible();
-	await expect(scienceBlock(page, 'SDF').locator('.science-block-preview svg')).toBeVisible();
+	await expect(scienceBlock(page, 'SMILES').locator('.science-block-preview svg').first()).toBeVisible();
+	await expect(scienceBlock(page, 'SDF').locator('.science-block-preview svg').first()).toBeVisible();
 	await expect(scienceBlock(page, 'XYZ').locator('.science-block-preview canvas')).toBeVisible();
 }
 
@@ -109,8 +109,8 @@ export async function workspaceMenu(page: Page, id: string): Promise<void> {
 	await page.locator(`#${id}`).click();
 }
 
-/** 设置 opened from the workspace's menu, at a part of it (语言 `locale`, 打开文件 `files`, AI 模型 `ai`, 插件 `plugins`): what it shows. */
-export async function openSettings(page: Page, section: 'locale' | 'theme' | 'files' | 'remote' | 'retainpdf' | 'ai' | 'plugins'): Promise<Locator> {
+/** 设置 opened from the workspace's menu, at a part of it (语言 `locale`, 打开文件 `files`, 识别图片 `ai-vision`, 插件 `plugins`…): what it shows. */
+export async function openSettings(page: Page, section: 'locale' | 'theme' | 'files' | 'remote' | 'retainpdf' | 'ai-models' | 'ai-vision' | 'ai-advanced' | 'plugins'): Promise<Locator> {
 	await workspaceMenu(page, 'open-settings');
 	await page.locator(`#settings-dialog nav [data-section="${section}"]`).click();
 	const shown = page.locator(`#settings-${section}`);

@@ -157,7 +157,7 @@ export class JobRuns {
 	async #article(slug) {
 		const directory = this.files.articleFolder(slug);
 		const info = await lstat(directory).catch(() => null);
-		if (!info?.isDirectory() || info.isSymbolicLink()) throw new JobRunError(t('找不到文章 {slug}', { slug }), 404);
+		if (!info?.isDirectory() || info.isSymbolicLink()) throw new JobRunError(t('找不到页面 {slug}', { slug }), 404);
 		return directory;
 	}
 
@@ -173,7 +173,7 @@ export class JobRuns {
 		}
 		const [root, ...rest] = structure.path?.split('/') ?? [];
 		const extension = posix.extname(structure.path ?? '').slice(1).toLowerCase() || posix.basename(structure.path ?? '');
-		if (!['img', 'assets'].includes(root) || !rest.length) throw new JobRunError(t('{path} 不是文章 img/ 或 assets/ 里的文件', { path: structure.written }));
+		if (!['img', 'assets'].includes(root) || !rest.length) throw new JobRunError(t('{path} 不是页面 img/ 或 assets/ 里的文件', { path: structure.written }));
 		if (!STRUCTURE_EXTENSIONS.includes(extension)) throw new JobRunError(t('{path}：结构文件只能是 {extensions}', { path: structure.written, extensions: STRUCTURE_EXTENSIONS.join('、') }));
 		const directory = await this.#article(slug);
 		const path = this.files.inside(directory, root, ...rest);

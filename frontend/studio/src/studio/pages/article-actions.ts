@@ -245,7 +245,7 @@ export function createArticleActions(host: ArticleActionsHost) {
 				return;
 			}
 			const asked = vanished.length
-				? t('把「{title}」提交到 git，提交说明：\n会一起提交改名或删除后不在了的文章文件夹：{folders}', { title: article.title, folders: vanished.map((name) => `blog/${name}/`).join('、') })
+				? t('把「{title}」提交到 git，提交说明：\n会一起提交改名或删除后不在了的页面文件夹：{folders}', { title: article.title, folders: vanished.map((name) => `blog/${name}/`).join('、') })
 				: t('把「{title}」提交到 git，提交说明：', { title: article.title });
 			const message = window.prompt(asked, `content: ${article.title}`);
 			if (message === null || !message.trim()) return;

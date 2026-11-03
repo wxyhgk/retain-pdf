@@ -399,16 +399,16 @@ export function openTerminal(target: { cwd: 'root' } | { cwd: 'drive' } | { cwd:
 	return request('/api/studio/terminal', jsonOptions('POST', target));
 }
 
-/** An AI the Studio starts (server/ai/agent-settings.mjs): in the terminal (`launch`), by itself for Alt+Enter (`run`, `resume`), in the AI panel (`acp`). */
-export type Agent = { id: string; name: string; launch: string; run: string; resume: string; acp?: string; install?: string };
-export type AgentsShown = { agents: Array<Agent & { installed: boolean }>; default: string; presets: Agent[] };
+/** 设置 › AI › 高级 (server/ai/agent-settings.mjs): Claude Code and Codex, each whether it is in the AI panel beside pi. */
+export type AgentsShown = { agents: Array<{ id: string; name: string; install: string; on: boolean }> };
 
 export function listAgents(): Promise<AgentsShown> {
 	return request<AgentsShown>('/api/studio/agents');
 }
 
-export function saveAgents(list: Agent[], chosen: string): Promise<AgentsShown> {
-	return request<AgentsShown>('/api/studio/agents', jsonOptions('PUT', { list, default: chosen }));
+/** Those of 高级 turned on (`on`, their ids), the others off. */
+export function saveAgents(on: string[]): Promise<AgentsShown> {
+	return request<AgentsShown>('/api/studio/agents', jsonOptions('PUT', { on }));
 }
 
 /** One of a conversation's options (model, mode, effort…), as its agent offers them (ACP's session config options). */
@@ -525,7 +525,7 @@ export function followConversation(id: string, listener: (event: ConversationEve
 
 /** Where the author is, told with what they say: the article open, the lines selected in it, the articles named with @. */
 /** `widgets`: what the widgets in the conversation told of themselves since it was last spoken to (note.tell). */
-export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string }; mentions?: string[]; widgets?: Array<{ title: string; state: unknown }> };
+export type ConversationContext = { article?: string; selection?: { start: number; end: number; text: string; words?: string }; mentions?: string[]; widgets?: Array<{ title: string; state: unknown }> };
 
 /** The fields of a question an AI asks: a JSON Schema's, each a choice of one (`oneOf`), of several (`items.anyOf`) or words. */
 export type FormField = { type: string; title?: string; description?: string; oneOf?: Array<{ const: string; title?: string; description?: string }>; items?: { anyOf?: Array<{ const: string; title?: string; description?: string }> } };
@@ -771,11 +771,6 @@ export function getTask(id: string): Promise<TaskSummary & { log: string }> {
 /** A PDF of the article read by PaddleOCR into a page under it (made at once): the task, and the page. */
 export function startOcr(slug: string, path: string): Promise<{ task: string; page: { slug: string; title: string; href: string } }> {
 	return request(`/api/studio/articles/${encodeURIComponent(slug)}/ocr`, jsonOptions('POST', { path }));
-}
-
-/** Alt+Enter: an AI does what these lines of the article ask, by itself; the task it is. */
-export async function instruct(slug: string, line: { text: string; start: number; end: number; heading: string }, fresh: boolean): Promise<string> {
-	return (await request<{ id: string }>(`/api/studio/articles/${encodeURIComponent(slug)}/instruct`, jsonOptions('POST', { line, fresh }))).id;
 }
 
 /** Keeps a version of the article in its ai/history (nothing when the newest kept one is the same). */

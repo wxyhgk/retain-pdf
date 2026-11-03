@@ -48,10 +48,10 @@ export function showSafeModeBar(mode: SafeMode): void {
 	bar.setAttribute('role', 'status');
 	const words = document.createElement('span');
 	words.textContent = mode.why === 'rescue'
-		? t('安全启动：Studio 自己的代码改坏了，现在用的是上次能正常启动的版本，插件也没载入。文章照常写、照常保存；代码修好后关掉 Studio 再打开。')
+		? t('安全启动：Studio 自己的代码改坏了，现在用的是上次能正常启动的版本，插件也没载入。页面照常写、照常保存；代码修好后关掉 Studio 再打开。')
 		: mode.why === 'unfinished'
-			? t('安全模式：前两次都没能启动完，这次没有载入插件。可以照常写文章；插件哪里坏了，在「插件」里看。')
-			: t('安全模式：这次没有载入插件，可以照常写文章。');
+			? t('安全模式：前两次都没能启动完，这次没有载入插件。可以照常写；插件哪里坏了，在「插件」里看。')
+			: t('安全模式：这次没有载入插件，可以照常写。');
 	const usual = document.createElement('button');
 	usual.type = 'button';
 	usual.textContent = t('正常启动');

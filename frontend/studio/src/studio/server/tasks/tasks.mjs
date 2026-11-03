@@ -3,9 +3,8 @@ import { basename } from 'node:path';
 import { t } from '@blog/i18n/index.mjs';
 
 /**
- * Work the Studio does in the background, the page told how it goes: an AI
- * doing what a line of an article asks (Alt+Enter), a PDF read by an OCR
- * service. Each is a task: what it is, which article it is for, its state
+ * Work the Studio does in the background, the page told how it goes: a PDF
+ * read by an OCR service. Each is a task: what it is, which article it is for, its state
  * (running, done, failed, cancelled), what it has written (its log, the last
  * `LOG_KEPT` characters of it), and, once it is over, what came of it. A
  * task can be cancelled; what it runs is stopped with it.

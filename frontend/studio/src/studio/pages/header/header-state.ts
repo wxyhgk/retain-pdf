@@ -37,12 +37,11 @@ export type HeaderState = {
 	knownTags: string[];
 	/** Counted each time an article is shown: what was added for the one before (an empty property) is let go. */
 	shownAt: number;
-	publishing: boolean;
 	/** The database the article is a row of (the page it is under has one): its columns shown among its properties. */
 	database: { slug: string; config: DatabaseConfig } | null;
 };
 
-const initial: HeaderState = { properties: null, problems: [], typedError: null, knownTags: [], shownAt: 0, publishing: false, database: null };
+const initial: HeaderState = { properties: null, problems: [], typedError: null, knownTags: [], shownAt: 0, database: null };
 
 /** The page header's state, and what changes it: each change handed to the Studio (`host.changed`) as it is made. */
 export function createHeaderState(host: PageHeaderHost) {
@@ -80,14 +79,7 @@ export function createHeaderState(host: PageHeaderHost) {
 		async togglePublished(): Promise<void> {
 			const now = get().properties;
 			if (!now) return;
-			if (now.draft) {
-				store.set({ publishing: true });
-				try {
-					if (!(await host.mayPublish())) return;
-				} finally {
-					store.set({ publishing: false });
-				}
-			}
+			if (now.draft && !(await host.mayPublish())) return;
 			if (edit({ draft: !now.draft }, false)) host.publish();
 		},
 	};
@@ -119,6 +111,10 @@ export function createHeaderState(host: PageHeaderHost) {
 		},
 		/** Whether the page uses the full width. */
 		isWide: (): boolean => get().properties?.wide ?? false,
+		/** Whether the page is a draft (not on the blog): 发布到博客 in its ⋯ menu, else 撤回发布. */
+		isDraft: (): boolean => get().properties?.draft ?? true,
+		/** 发布到博客 (the check before it first) or 撤回发布, from the page's ⋯ menu. */
+		togglePublished: (): Promise<void> => actions.togglePublished(),
 		/** The page to use the full width, or not; false when the properties cannot be saved now. */
 		setWide: (value: boolean): boolean => edit({ wide: value }, false),
 		/** The caret at the end of the title, from the start of the body. */
