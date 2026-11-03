@@ -18,7 +18,8 @@
     { "type": "close-notes", "from": "retainpdf", "definition": "CloseNotesMessage" },
     { "type": "notes", "from": "studio", "definition": "NotesMessage" },
     { "type": "reading", "from": "retainpdf", "definition": "ReadingMessage" },
-    { "type": "ask-ai", "from": "retainpdf", "definition": "AskAiMessage" }
+    { "type": "ask-ai", "from": "retainpdf", "definition": "AskAiMessage" },
+    { "type": "open-book", "from": "retainpdf", "definition": "OpenBookMessage" }
   ],
   "oneOf": [
     { "$ref": "#/definitions/HelloMessage" },
@@ -30,7 +31,8 @@
     { "$ref": "#/definitions/CloseNotesMessage" },
     { "$ref": "#/definitions/NotesMessage" },
     { "$ref": "#/definitions/ReadingMessage" },
-    { "$ref": "#/definitions/AskAiMessage" }
+    { "$ref": "#/definitions/AskAiMessage" },
+    { "$ref": "#/definitions/OpenBookMessage" }
   ],
   "definitions": {
     "Protocol": { "const": "retainpdf-studio-bridge" },
@@ -41,8 +43,8 @@
       "enum": ["theme", "navigate", "quote", "notes", "reading", "navigate-document"]
     },
     "StudioFeature": {
-      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端）。hello 没有 features 是早先的 Studio，只认 quote。",
-      "enum": ["quote", "open-notes", "ask-ai"]
+      "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端；open-book（2026-11-03 加）：书库里点一本书交给 Studio，开在正在写的笔记旁边，RetainPDF 不自己打开阅读页）。hello 没有 features 是早先的 Studio，只认 quote。",
+      "enum": ["quote", "open-notes", "ask-ai", "open-book"]
     },
     "HelloMessage": {
       "type": "object",
@@ -116,7 +118,7 @@
     },
     "OpenNotesMessage": {
       "type": "object",
-      "description": "RetainPDF → Studio：用户在阅读页点了「笔记」，要在旁边看这本书的笔记。Studio 在阅读页旁边打开这本书的那一页笔记（一本书一页，按 document_id 找，没有就按 job_id；都没有就新建，标题是书名），回 notes。只在 hello 的 features 有 open-notes 时发。",
+      "description": "RetainPDF → Studio：用户在阅读页点了「笔记」，要在旁边写笔记。Studio 在阅读页旁边打开正在写的那篇笔记（Studio 里打开着的页面，一篇都没开着时新建一篇；不是一本书一页，一篇笔记可以摘几本书；2026-11-03 起，以前是按书找或建「读书笔记/书名」），回 notes（title 是这篇笔记的标题）。只在 hello 的 features 有 open-notes 时发。",
       "additionalProperties": false,
       "required": ["protocol", "v", "type", "job_id", "document_id", "title"],
       "properties": {
@@ -124,8 +126,8 @@
         "v": { "$ref": "#/definitions/Version" },
         "type": { "const": "open-notes" },
         "job_id": { "type": "string", "minLength": 1 },
-        "document_id": { "type": ["string", "null"], "minLength": 1, "description": "书的编号；同一本书换了任务也找得到同一页笔记。任务不属于哪本书时为 null。" },
-        "title": { "type": ["string", "null"], "description": "书名，新建笔记时用作标题；没有时为 null。" }
+        "document_id": { "type": ["string", "null"], "minLength": 1, "description": "书的编号（同一本书换了任务也不变）。任务不属于哪本书时为 null。" },
+        "title": { "type": ["string", "null"], "description": "书名；没有时为 null。2026-11-03 以前 Studio 新建「读书笔记/书名」时用它当标题，现在打开的是正在写的那篇笔记。" }
       }
     },
     "CloseNotesMessage": {
@@ -161,6 +163,21 @@
         "protocol": { "$ref": "#/definitions/Protocol" },
         "v": { "$ref": "#/definitions/Version" },
         "type": { "const": "ask-ai" }
+      }
+    },
+    "OpenBookMessage": {
+      "type": "object",
+      "description": "RetainPDF → Studio：用户在书库里点了一本书要读（2026-11-03 加）。Studio 回到正在写的笔记，把这本书作为标签开在笔记旁边（以笔记为根），RetainPDF 自己不打开阅读页。只在 hello 的 features 有 open-book 时发；没有就照旧自己打开阅读页。",
+      "additionalProperties": false,
+      "required": ["protocol", "v", "type", "job_id", "document_id", "title"],
+      "properties": {
+        "protocol": { "$ref": "#/definitions/Protocol" },
+        "v": { "$ref": "#/definitions/Version" },
+        "type": { "const": "open-book" },
+        "job_id": { "type": "string", "minLength": 1, "description": "书库给这本书的阅读任务（GET /api/v1/documents/:document_id/reading 的 job_id），和 navigate 的 job_id 一样用。" },
+        "document_id": { "type": ["string", "null"], "minLength": 1, "description": "书的编号；任务不属于哪本书时为 null。" },
+        "title": { "type": ["string", "null"], "description": "书名，标签上显示；没有时为 null。" },
+        "page_idx": { "type": ["integer", "null"], "minimum": 0, "description": "从哪一页开始读，从 0 开始，和 navigate 的 page_idx 一样；不写或 null 是从这本书上次读到的地方开。" }
       }
     },
     "ReadingMessage": {
