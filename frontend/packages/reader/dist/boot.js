@@ -1,7 +1,6 @@
 import { jsx as f } from "react/jsx-runtime";
 import { createRoot as s } from "react-dom/client";
-import { R as p } from "./ReaderApp-B-a35nad.js";
-import { i as m, c as u } from "./answer-enhance-Dxffc8s3.js";
+import { R as p } from "./ReaderApp-DvI7-lhm.js";
 const a = "retainpdf.theme", o = "classic", n = [
   {
     id: "classic",
@@ -80,7 +79,7 @@ const a = "retainpdf.theme", o = "classic", n = [
 function i() {
   return [...n].sort((e, r) => e.order - r.order || e.id.localeCompare(r.id));
 }
-function l(e) {
+function m(e) {
   return n.find((r) => r.id === e);
 }
 function c(e) {
@@ -90,8 +89,8 @@ i().map((e) => e.id);
 Object.fromEntries(
   i().map((e) => [e.id, { id: e.id, label: e.label, description: e.description }])
 );
-const g = "retainpdf:theme-change";
-function b() {
+const u = "retainpdf:theme-change";
+function l() {
   if (typeof localStorage > "u") return o;
   try {
     const e = `${localStorage.getItem(a) || ""}`.trim();
@@ -100,7 +99,7 @@ function b() {
   }
   return o;
 }
-function h(e) {
+function g(e) {
   const r = c(e) ? e : o;
   try {
     localStorage.setItem(a, r);
@@ -108,43 +107,43 @@ function h(e) {
   }
   if (typeof document < "u") {
     document.documentElement.dataset.theme = r;
-    const t = l(r);
+    const t = m(r);
     document.documentElement.dataset.themeGroup = (t == null ? void 0 : t.group) || "light", document.documentElement.classList.toggle("theme-dark", (t == null ? void 0 : t.group) === "dark");
   }
   if (typeof window < "u")
     try {
       window.dispatchEvent(
-        new CustomEvent(g, { detail: { theme: r } })
+        new CustomEvent(u, { detail: { theme: r } })
       );
     } catch {
     }
   return r;
 }
-function E() {
-  return h(b());
+function b() {
+  return g(l());
 }
-function y(e = document.body) {
+function h(e = document.body) {
   e.classList.add("reader-body", "reader-mode-compare"), globalThis.window && window.self !== window.top && e.classList.add("reader-embedded");
 }
-function w(e = document.body, r) {
+function E(e = document.body, r) {
   Array.from(e.children).forEach((t) => {
     t.tagName !== "SCRIPT" && t.id !== "reader-root" && t !== r && t.remove();
   });
 }
-function T(e = document.body) {
+function y(e = document.body) {
   let r = document.getElementById("reader-root");
   return r || (r = document.createElement("div"), r.id = "reader-root", e.appendChild(r)), r;
 }
-function I(e = {}) {
-  const r = e.body ?? document.body, t = e.root ?? T(r);
-  E(), u(), m(), y(r), e.purgeLegacyMarkup !== !1 && w(r, t);
+function R(e = {}) {
+  const r = e.body ?? document.body, t = e.root ?? y(r);
+  b(), h(r), e.purgeLegacyMarkup !== !1 && E(r, t);
   const d = s(t);
   return d.render(/* @__PURE__ */ f(p, {})), d;
 }
 export {
-  I as bootReader,
-  w as purgeLegacyMarkup,
-  T as resolveReaderRoot,
-  y as syncReaderBodyClasses
+  R as bootReader,
+  E as purgeLegacyMarkup,
+  y as resolveReaderRoot,
+  h as syncReaderBodyClasses
 };
 //# sourceMappingURL=boot.js.map

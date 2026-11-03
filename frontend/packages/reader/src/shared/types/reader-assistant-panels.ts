@@ -23,7 +23,10 @@
  *
  * 这个文件**没有任何依赖**（不碰 React、不碰 lucide、不碰适配器），因为
  * shared/state 的 view-state 也要用它 —— 带图标的完整规格在
- * components/react-pdf/reader-base-panels.ts 和 reader-host-panels.ts。
+ * components/react-pdf/reader-base-panels.ts。
+ *
+ * 2026-11-03 起只剩 Markdown：RetainPDF 自己的 AI（宿主槽位面板「AI」= agent 终端、画板）删了，产品里只留
+ * Studio 的 AI。存着的旧面板 id（"terminal"）读回来不认，当没开（isReaderAssistantPanel）。
  */
 
 /** 包自己渲染的面板。内容在包里，不需要宿主注入。 */
@@ -31,30 +34,11 @@ export const READER_BASE_PANEL_IDS = [
   "markdown",
 ] as const;
 
-/** 宿主槽位面板：包决定它在 dock 里的位置和生命周期，**内容由宿主注入**。
- *
- * 宿主没注册对应的渲染器时，这个 tab 根本不出现 —— 留一个点了没反应的 tab 比
- * 没有这个功能更糟。
- *
- * 顺序就是 dock 里 tab 的顺序。
- */
-export const READER_HOST_PANEL_IDS = [
-  "terminal",
-] as const;
-
-export const READER_ASSISTANT_PANEL_IDS = [
-  ...READER_BASE_PANEL_IDS,
-  ...READER_HOST_PANEL_IDS,
-] as const;
+export const READER_ASSISTANT_PANEL_IDS = READER_BASE_PANEL_IDS;
 
 export type ReaderBasePanelId = (typeof READER_BASE_PANEL_IDS)[number];
-export type ReaderHostPanelId = (typeof READER_HOST_PANEL_IDS)[number];
-export type ReaderAssistantPanel = ReaderBasePanelId | ReaderHostPanelId;
+export type ReaderAssistantPanel = ReaderBasePanelId;
 
 export function isReaderAssistantPanel(value: unknown): value is ReaderAssistantPanel {
   return (READER_ASSISTANT_PANEL_IDS as readonly unknown[]).includes(value);
-}
-
-export function isReaderHostPanel(value: unknown): value is ReaderHostPanelId {
-  return (READER_HOST_PANEL_IDS as readonly unknown[]).includes(value);
 }

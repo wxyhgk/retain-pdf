@@ -69,16 +69,14 @@ import "@/features/library/ui/island/index.js";
 // ---- 按需加载 ----
 //
 // 这几块只在用户点过去时才出现，代码不该跟着首屏一起下载：
-// - AI 问答：自带一整套 Markdown 流式渲染（markstream-react + stream-markdown-parser，
-//   约 600KB），以前占主页首屏的三分之一，不点 AI 问答一行都用不到；
 // - 任务中心：底部栏点开才显示；
 // - 书籍详情：点开一本书才显示（见 BookDetailDialogSlot）。
-// 三者都只被本文件引用，走各自 index 的动态 import，不破坏「index 是唯一出口」。
-const HomeAskView = lazy(() => import("@/features/ask/index.js").then((m) => ({ default: m.HomeAskView })));
+// 两者都只被本文件引用，走各自 index 的动态 import，不破坏「index 是唯一出口」。
+// （以前还有「AI 问答」：2026-11-03 RetainPDF 自己的 AI 删了，只留 Studio 的。）
 const TaskCenter = lazy(() => import("@/features/task-center/index.js").then((m) => ({ default: m.TaskCenter })));
 const BookDetailDialog = lazy(() => import("@/features/book-detail/index.js").then((m) => ({ default: m.BookDetailDialog })));
 
-const HOME_TABS = ["library", "categories", "ask"] as const;
+const HOME_TABS = ["library", "categories"] as const;
 type HomeTab = (typeof HOME_TABS)[number];
 
 function isHomeTab(tab: string): tab is HomeTab {
@@ -213,7 +211,6 @@ function HomeShell() {
   // 历史契约 key "categories" == 领域 collections（见 LibraryTopTabs/COLLECTIONS_TAB_KEY 映射）
   const isCategoriesTab = activeTab === "categories";
   const isCollectionsTab = isCategoriesTab; // 统一别名，领域语义用 collections
-  const isAskTab = activeTab === "ask";
   // #31 批量选择工具栏和底部栏都固定在底部居中,批量模式期间底部栏用 CSS
   // 隐藏(不卸载——搜索 input 卸载会让 library-search-island 的引用失效)让位
   // 给批量工具栏,两者不同时可见。
@@ -229,8 +226,8 @@ function HomeShell() {
   // 任务中心开着时切顶栏 tab：URL 和顶栏都换了，舞台也要跟着换，不能还停在任务中心。
   useEffect(() => setTasksOpen(false), [activeTab]);
 
-  // 合集/AI tab：视图挂载即可尝试恢复 panel 滚动（图书馆由 RecentJobsLibrary 在有列表后恢复）
-  useHomeReturnRestore(isCategoriesTab || isAskTab);
+  // 合集 tab：视图挂载即可尝试恢复 panel 滚动（图书馆由 RecentJobsLibrary 在有列表后恢复）
+  useHomeReturnRestore(isCategoriesTab);
 
   // 主页的页面级状态卡 #job-status-card 已下线：进度看书籍详情的「进度」Tab、图书馆卡片和任务中心。
   // statusArea 状态机保留（工作流弹窗靠 statusAreaPort.isVisible() 算 upload/status 模式）。
@@ -271,11 +268,6 @@ function HomeShell() {
               <CollectionsViewSlot />
               <AppBottomBar showSearch={false} />
             </>
-          ) : isAskTab ? (
-            // AI 对话不挂底部「上传 / 设置」浮栏，避免压住输入区
-            <Suspense fallback={null}>
-              <HomeAskView />
-            </Suspense>
           ) : null}
         </div>
         <button id="open-query-btn" type="button" className="secondary hidden" aria-hidden="true">最近任务</button>

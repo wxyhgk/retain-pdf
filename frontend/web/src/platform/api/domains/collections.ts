@@ -6,7 +6,6 @@ import {
   deleteCollection as _canonDeleteCollection,
   addDocumentsToCollection as _canonAddDocumentsToCollection,
   removeDocumentFromCollection as _canonRemoveDocumentFromCollection,
-  materializeCollectionWorkspace as _canonMaterializeCollectionWorkspace,
 } from "@retainpdf/api/collections";
 import { mockable } from "./_mockable.js";
 
@@ -17,4 +16,3 @@ export const deleteCollection = mockable(_canonDeleteCollection, MockCollections
 export const addDocumentsToCollection = mockable(_canonAddDocumentsToCollection, MockCollections.addDocumentsToCollection);
 export const removeDocumentFromCollection = mockable(_canonRemoveDocumentFromCollection, MockCollections.removeDocumentFromCollection);
 // mock 里没有终端，也没有翻译好的书可以物化。
-export const materializeCollectionWorkspace = mockable(_canonMaterializeCollectionWorkspace, async () => ({ books: [] }));

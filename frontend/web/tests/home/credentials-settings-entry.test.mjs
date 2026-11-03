@@ -16,63 +16,11 @@ globalThis.localStorage = dom.window.localStorage;
 const { createRoot } = await import("react-dom/client");
 const React = await import("react");
 const { createHomeComposition } = await import("../../src/app/home/create-home-composition.js");
-const { AgentRuntimeSettingsCard } = await import("../../src/features/credentials/ui/AgentRuntimeSettingsCard.jsx");
 const { APP_EVENTS } = await import("@/platform/contracts/app-contract.js");
 const { defaultCredentialsStatePort } = await import("../../src/features/credentials/domain/default-state-port.js");
 
 const createServices = (overrides) => createCredentialServices(createHomeComposition, overrides);
 const { waitFor, waitForDialogReady } = credentialsDialogWaits(dom);
-
-test("Agent Key：读取 Python 接口后明文回填，保存时改成 OpenAI 兼容，重新挂载后保留", async () => {
-  const previousFetch = globalThis.fetch;
-  let saved = {
-    schema: "retainpdf_ai_runtime_config_view_v1",
-    active_runtime: "python-retrieval-v1", configured_runtime: "python",
-    configured_revision: 1, active_revision: 1, restart_state: "active",
-    agent_confirmation_mode: "explicit", restart_required: false,
-    llm_base_url: "https://model.example/v1", llm_model: "fixture-model",
-    llm_api_key: "saved-agent-key", llm_api_key_configured: true,
-    fx_gateway_api_key: "saved-fx-key", fx_gateway_api_key_configured: true,
-  };
-  let putBody = null;
-  globalThis.fetch = async (url, options) => {
-    assert.match(`${url}`, /\/ai\/runtime-config$/);
-    if (options.method === "PUT") {
-      putBody = JSON.parse(options.body);
-      saved = { ...saved, ...putBody, configured_runtime: putBody.agent_runtime };
-    }
-    return new Response(JSON.stringify({ data: saved }), { status: 200 });
-  };
-  const host = document.createElement("div");
-  document.body.appendChild(host);
-  let root = createRoot(host);
-  const input = (label) => host.querySelector(`input[aria-label="${label}"]`);
-  try {
-    root.render(React.createElement(AgentRuntimeSettingsCard));
-    await waitFor(() => input("模型 API Key")?.value === "saved-agent-key", "Agent Key 回填");
-    assert.equal(input("模型 API Key").type, "text");
-    // 前端只给 OpenAI 兼容：不再有运行模式可选；后端现在配的是别的时说一句。
-    assert.equal(host.querySelector('[aria-label="AI Agent 运行模式"]'), null);
-    assert.equal(input("FX Gateway Key"), null);
-    assert.match(host.querySelector(".credential-agent-mode-note")?.textContent || "", /「Markdown 检索问答」.*保存后改用 OpenAI 兼容/);
-    typeInput(dom, input("模型 API Key"), "edited-agent-key");
-    clickWithMouseDown(dom, host.querySelector(".credential-agent-save-button"));
-    await waitFor(() => host.textContent.includes("已保存在本机"), "Agent 保存完成");
-    assert.equal(saved.llm_api_key, "edited-agent-key");
-    assert.equal(putBody.agent_runtime, "openai");
-    assert.deepEqual(Object.keys(putBody).filter((key) => key.startsWith("fx_")), [], "不再写 FX 的字段");
-    assert.equal(input("模型 API Key").value, "edited-agent-key");
-    root.unmount();
-    root = createRoot(host);
-    root.render(React.createElement(AgentRuntimeSettingsCard));
-    await waitFor(() => input("模型 API Key")?.value === "edited-agent-key", "重新打开后恢复 Agent Key");
-    assert.equal(host.querySelector(".credential-agent-mode-note"), null, "已经是 OpenAI 兼容，不再提示");
-  } finally {
-    root.unmount();
-    host.remove();
-    globalThis.fetch = previousFetch;
-  }
-});
 
 test("MinerU：Token 本机保存、明文回填，切回 Paddle 保留各自 Token", async () => {
   const services = createServices();
@@ -269,10 +217,7 @@ test("接口设置只有一个弹窗：常规与首次配置共用设置中心 A
   assert.equal(byId(dom, "browser-credentials-dialog"), null, "常规不再弹独立接口设置窗");
   assert.equal(byId(dom, "browser-credentials-save-btn").textContent, "保存接口");
   assert.equal(byId(dom, "browser-credentials-subtitle"), null, "常规入口不该出现首配引导语");
-  assert.ok(
-    dom.window.document.querySelector(".credential-agent-section > .credential-agent-card"),
-    "常规入口展示 AI Agent 表单",
-  );
+  assert.equal(dom.window.document.querySelector(".credential-agent-card"), null, "RetainPDF 自己的 AI 删了（2026-11-03），设置里没有 AI Agent 表单");
 
   services.settingsHub.dialogStore.close();
   await waitFor(() => byId(dom, "app-settings-dialog") === null, "关闭设置");
@@ -302,15 +247,7 @@ test("接口设置只有一个弹窗：常规与首次配置共用设置中心 A
   }
 
   assert.equal(byId(dom, "browser-credentials-tabs"), null, "首次配置也不显示多余的二级 Tab");
-  assert.equal(
-    dom.window.document.querySelector(".credential-agent-card"),
-    null,
-    "首次配置不展示另行保存的 Agent 表单",
-  );
-  assert.match(
-    dom.window.document.querySelector(".credential-agent-setup-note").textContent,
-    /稍后在设置中配置/,
-  );
+  assert.equal(dom.window.document.querySelector(".credential-agent-card"), null, "首次配置也没有 Agent 表单");
 
   root.unmount();
   services.dispose();
@@ -358,27 +295,12 @@ test("凭据入口：设置 API 区内嵌工作台；#credential-gate-action 也
     [[true, false], [false, true]],
     "接口页按 OCR、翻译的纵向顺序排列",
   );
-  assert.ok(dom.window.document.querySelector(".credential-agent-section > .credential-agent-card"));
-  assert.match(
-    dom.window.document.querySelector(".credential-agent-beta")?.textContent || "",
-    /Beta/i,
-    "AI Agent 标题显示测试阶段徽标",
-  );
-  assert.equal(
-    dom.window.document.querySelector(".credential-agent-save-button").classList.contains("secondary"),
-    true,
-    "Agent 保存使用次级按钮，避免与文档接口保存混淆",
-  );
+  assert.equal(dom.window.document.querySelector(".credential-agent-card"), null, "没有 AI Agent 表单（2026-11-03 删了）");
   assert.equal(
     dom.window.document.querySelector(".credential-save-note"),
     null,
     "接口页不重复说明保存范围",
   );
-  assert.ok(
-    dom.window.document.querySelector('[aria-label="隐藏模型 API Key"]'),
-    "AI Agent 模型 Key 使用相同的双态显示控件",
-  );
-  assert.equal(dom.window.document.querySelector('[aria-label="AI Agent 运行模式"]'), null, "只有 OpenAI 兼容，不给选运行模式");
   assert.equal(byId(dom, "credentials-btn"), null, "门厅按钮已退役");
   assert.equal(byId(dom, "browser-credentials-dialog"), null, "设置内不再弹二层凭据对话框");
 

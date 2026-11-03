@@ -1,7 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { READER_HOST_PANEL_IDS } from "../../../../frontend/packages/reader/src/shared/types/reader-assistant-panels.ts";
 import { readerDockTabs } from "../../../../frontend/packages/reader/src/components/react-pdf/reader-dock-tabs.ts";
 import {
   loadReaderViewState,
@@ -69,11 +68,6 @@ test("原来 FAB 菜单里的东西一个都没丢", () => {
   // 把已经删掉的功能写进「没丢」的清单，守的是一个不存在的东西。
   const ids = readerDockTabs(() => true).map((tab) => tab.id);
   assert.ok(ids.includes("markdown"), `markdown 不在启动器清单里: ${ids}`);
-  // 宿主槽位面板也在同一份清单里 —— 这正是「两个启动器各管一半」消失的证据。
-  assert.ok(READER_HOST_PANEL_IDS.length >= 1, `宿主槽位面板没找全: ${READER_HOST_PANEL_IDS}`);
-  for (const id of READER_HOST_PANEL_IDS) {
-    assert.ok(ids.includes(id), `${id} 不在启动器清单里: ${ids}`);
-  }
 });
 
 test("ReaderAppReactPdf restores and persists reading mode with a sourceViewOnly guard", () => {

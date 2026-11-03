@@ -32,7 +32,7 @@ app  ──►  features  ──►  platform
 
 `library`（书架）、`book-detail`（书详情弹窗）、`ingest`（添加 PDF）、`jobs`（任务状态）、
 `job-detail`（状态详情：弹窗 + 整页双实现，见该目录注释）、`reader`（阅读器导航）、
-`ask`（AI 问答）、`credentials`（凭据）、`glossaries`（术语表）、`collections`（合集）、
+`credentials`（凭据）、`glossaries`（术语表）、`collections`（合集）、
 `artifacts`（产物下载）、`task-center`（任务中心）、
 `settings`（设置：接口/术语表/外观/更新）、`app-update`（应用更新）。
 

@@ -109,55 +109,11 @@ GET /api/v1/search?q=光学光谱&limit=20[&document_id=xxx]
 - `limit` 默认 20、范围 1..=100,越界 400(2026-10-22 前静默夹);`has_more` 表示命中不止这些(没有 `offset`,要更多就加大 `limit`);
 - 只认 `q`、`limit`、`document_id`,不认识的参数 400。
 
-### 4. AI 问答与 PDF Agent
+### 4. AI 问答与 PDF Agent（已删）
 
-> 前端只访问 Rust API：`/api/v1/ai/ask` 反向代理到 `retainpdf-ai`，认证仍使用
-> `X-API-Key`。不要直连 Python 服务，也不要解析模型文案来推断操作状态。
-
-```text
-POST /api/v1/ai/ask
-```
-
-请求除 `question`、`document_id` / `job_id` 和 `conversation_id` 外，还支持：
-
-- `parent_id`、`regenerate`：在消息树上续写或重新生成分支；
-- `user_message_id`、`assistant_message_id`：客户端稳定 ID，网络重试时保持不变；
-- `assistant_mode`：`reading | operations | auto`；
-- `confirm_document_operation`：本次请求是否包含用户对 run/commit 的明确授权；
-- `stream`：是否返回 SSE；
-- `llm_api_key`、`llm_base_url`、`llm_model`：兼容的单请求模型覆盖。
-
-运行模式和长期凭据通过 `GET|PUT /api/v1/ai/runtime-config` 管理。密钥只允许写入，
-查询和错误响应都不会返回明文。
-
-非流式 `data` 除 `answer/citations/tool_trace/rounds` 外，还包含
-`persisted`、`conversation_id`、`agent_runtime`、`operation_refs` 和
-`confirmation_requests`。`persisted=false` 时必须提示用户本轮历史可能没有保存。
-
-流式事件包括：
-
-| `type` | 说明 |
-| --- | --- |
-| `agent_session` | 会话 ID、实际 runtime 和确认模式 |
-| `tool` / `agent_tool` | 阅读工具或 Agent 工具的安全过程投影 |
-| `agent_operation` | operation 身份和状态刷新提示 |
-| `agent_confirmation_required` | 后端生成的结构化待确认动作 |
-| `answer_delta` | 增量文本片段，不是累积全文 |
-| `compress` | 对话历史发生压缩 |
-| `done` | 最终载荷，包含 `persisted` |
-| `error` | 本轮失败 |
-
-前端渲染要点：
-
-- `[n]` 对应 `citations[].ref`，使用 `job_id + page_idx + block_id` 跳转；
-- 默认确认模式下只渲染后端的 `confirmation_requests`，不要把“确认”自然语言
-  再发给模型猜测；
-- SSE 断线后重新查询 conversation 和 operation。SSE 本身不是可重放状态真源；
-- AI 服务未启动时反代返回 502，可提示“AI 服务未运行”。
-
-完整契约见 [`ai-ask.v1.schema.json`](../../../backend/contracts/ai-ask.v1.schema.json)，
-接入与恢复说明见 [AI 问答与文档操作 API](../api/reader-ai-chat.md)。
-
+> 2026-11-03 起前端不再调 `/api/v1/ai/*`：RetainPDF 自己的 AI（阅读页的 agent 终端和画板、主页「AI 问答」、设置里的
+> AI Agent）删了，产品里只留笔记软件 Studio 的 AI（`frontend/studio`）。后端接口由后端会话随后删除，见
+> [RetainPDF 不要自己的 AI](../../ops/planning/frontend-migration/20261103-RetainPDF不要自己的AI.md)。
 
 ### 5. 资产
 
@@ -165,25 +121,9 @@ POST /api/v1/ai/ask
 > 它们原本给收藏截图用，收藏 2026-09 删掉以后没有调用方。标签同样已删（2026-09-26），
 > 书的列表不认 `tag`，PATCH 不认 `tags`。
 
-### 6. AI 问答会话（消息树 + durable operation）
+### 6. AI 问答会话（已删）
 
-```
-POST   /api/v1/ai/conversations                      body: { title?, document_id? }
-GET    /api/v1/ai/conversations?document_id=&limit=50&offset=0
-POST   /api/v1/ai/conversations/fork
-GET    /api/v1/ai/conversations/:id                  → 会话字段 + `messages[]`（seq 正序）
-PATCH  /api/v1/ai/conversations/:id                  body: { title?, head_id? }
-DELETE /api/v1/ai/conversations/:id                  级联删消息
-POST   /api/v1/ai/conversations/:id/messages
-GET    /api/v1/ai/conversations/:id/operations
-```
-
-- 消息通过 `parent_id` 组成树，conversation 的 `head_id` 决定当前可见分支；
-- `/ai/ask` 自动写入本轮 user/assistant 消息，前端不要再调用 messages 重复写入；
-- `citations_json` 是软锚点快照：job 删除后保留 snippet，但跳转应降级；
-- PDF 操作必须从 operation 查询接口恢复。`agent_operation` SSE 只是刷新提示；
-- run/retry/cancel/commit 请求必须带稳定幂等键和最新的状态、attempt、program hash，
-  过期提交返回 409 后应立即刷新。
+> 同上，2026-11-03 起前端不再用。
 
 ### 7. 分类(合集):建文件夹给 PDF 分组
 

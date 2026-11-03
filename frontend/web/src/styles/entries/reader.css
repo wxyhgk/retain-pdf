@@ -7,25 +7,3 @@
 @import "tailwindcss";
 @import "../../../../../frontend/packages/reader/styles/entry.css";
 
-/* —— 宿主专有：fx 终端面板 ——
- *
- * 不进 @retainpdf/reader 的 styles/：那个包不认识 xterm，也不该认识。
- * 包只在 dock 里留了个槽，内容和样式都由宿主给（见
- * features/reader/domain/host/terminal.tsx）。
- *
- * xterm 自带的那份只提供结构（光标、选区、滚动条几何），**不含配色** ——
- * 配色由 features/fx-terminal 从皮肤令牌读出来喂给 xterm 的 ITheme，
- * 所以换肤不需要动这里。
- */
-@import "@xterm/xterm/css/xterm.css" layer(pages);
-
-/* 这里曾经特意**不放** tldraw 的样式：它 98 KB，画布是多数会话不会打开的面板，
- * 所以 JS 和 CSS 都做了懒加载（domain/lazy-stylesheet.ts + entries/reader-canvas.css）。
- * 画布随「阅读页只留一扇 AI 的门」整个删了，那套懒加载机制也跟着没了。
- *
- * xterm.css 留在上面没拆：只有 6 KB，不值得再建一套机制。 */
-
-/* 宿主专有样式放在组件旁边（顺序与拆分前一致）。 */
-@import "../../features/reader/ui/terminal-chrome.css";
-@import "../../features/reader/ui/board-html.css";
-@import "../../features/reader/ui/terminal-board-list.css";

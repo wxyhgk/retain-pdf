@@ -24,8 +24,8 @@ for React hosts, while browser mounting remains an explicit host decision.
 Do not add package implementation proxies back under this directory. Production
 code must use the public package specifiers `@retainpdf/reader`,
 `@retainpdf/reader/adapters`, `@retainpdf/reader/boot`, and
-`@retainpdf/reader/styles.css`. Shared AI-answer consumers use the dedicated
-`@retainpdf/reader/ai` and `@retainpdf/reader/ai.css` exports.
+`@retainpdf/reader/styles.css`. (The AI-answer exports `@retainpdf/reader/ai` and
+`@retainpdf/reader/ai.css` were removed on 2026-11-03 with RetainPDF's own AI.)
 Host adapter shims may consume the domain-scoped `@retainpdf/reader/runtime/*`
 exports; they must never resolve files below `frontend/packages/reader/src` directly.
 The one exception is shared soft-navigation: `src/platform/navigation/soft-reader.ts`

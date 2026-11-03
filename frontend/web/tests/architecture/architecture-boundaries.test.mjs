@@ -202,17 +202,6 @@ test("book detail tab and artifact components stay independent from APIs and hom
   assert.equal(existsSync(join(detailRoot, "tabs/BookDetailMoreTab.tsx")), false);
 });
 
-test("agent operation presentation components stay independent from APIs and home services", () => {
-  // ask 已随按功能重组迁至 src/features/ask，展示组件在 ui/operations。
-  const presentationRoot = join(PROJECT_ROOT, "src/features/ask/ui/operations");
-  const presentationFiles = scanRoot(presentationRoot, (file) => /Agent[^/]*\.tsx$/.test(file));
-  const offenders = presentationFiles
-    .filter((file) => /useHomeServices|home-services-context|composition\/|@retainpdf\/api/.test(readFileSync(file, "utf8")))
-    .map((file) => relativeToProject(file));
-
-  assert.deepEqual(offenders, []);
-});
-
 test("shared dialog shell styles stay in dialog-shell css", () => {
   const styleSources = allPathsUnder(join(PROJECT_ROOT, "src/styles"))
     .filter((filePath) => filePath.endsWith(".css"))

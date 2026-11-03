@@ -1,4 +1,4 @@
-// 主页顶部"图书馆 / 合集 / 收藏 / AI 问答"分栏(裸 Tabs 原语,不经 src/components/ui/tabs.jsx
+// 主页顶部"图书馆 / 合集"分栏(裸 Tabs 原语,不经 src/components/ui/tabs.jsx
 // 默认皮肤——同 StatusDetailDialog/SettingsDialog 的既有选择,用项目自有
 // class,不接 shadcn 默认视觉)。
 //
@@ -37,28 +37,16 @@ function IconBookmark() {
     </svg>
   );
 }
-// AI 问答:星芒
-function IconSparkles() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 3l1.5 5.5L19 10l-5.5 1.5L12 17l-1.5-5.5L5 10l5.5-1.5L12 3z" />
-      <path d="M19 15l.6 2.2L22 18l-2.4.6L19 21l-.6-2.4L16 18l2.4-.8L19 15z" />
-    </svg>
-  );
-}
-
 // 命名统一：UI tab key "categories" == Domain "collections" == 视图 "CategoriesView/CollectionsView" 三名一物。
 // 契约：DOM id `library-top-tab-categories` 与 activeTab === "categories" 为历史契约（tests/home-app-component.test.mjs
 // 断言该 id），不可改为 "collections" —— 功能等同于 collections。详见 `features/collections` 与
 // `features/library/categories/CategoriesView.tsx`（已导出 CollectionsView 别名，逐步向 collections 收口）。
 // 若后续全量重命名，需同步改：LibraryTopTabs key / HomeApp activeTab / home-return-state activeTab /
 // categories-view DOM id / CSS .categories-*。
-// "ask" 为后续入口。
 export const COLLECTIONS_TAB_KEY = "categories"; // 领域名 collections，UI 契约名 categories
 const TABS = [
   { key: "library", label: "图书馆", Icon: IconLibrary },
   { key: COLLECTIONS_TAB_KEY, label: "合集", Icon: IconLayers },
-  { key: "ask", label: "AI 问答", Icon: IconSparkles },
 ];
 
 export function LibraryTopTabs({ active, onChange }: { active: string; onChange: (key: string) => void }) {

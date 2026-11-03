@@ -9,7 +9,7 @@ export type HomeReturnState = {
   /** 本标签页是从主页 navigate 进阅读器的，关闭时应优先 history.back */
   // activeTab "categories" 为历史契约，对应领域 collections（LibraryTopTabs COLLECTIONS_TAB_KEY）
   allowBack: boolean;
-  activeTab: "library" | "categories" | "favorites" | "ask" | string; // "categories" == collections
+  activeTab: "library" | "categories" | "favorites" | string; // "categories" == collections
   libraryScrollTop: number;
   panelScrollTop: number;
   windowScrollY: number;
@@ -44,7 +44,6 @@ function readActiveLibraryTab(): string {
   const id = `${active?.id || ""}`;
   if (id.endsWith("-categories")) return "categories"; // == collections 领域
   if (id.endsWith("-favorites")) return "favorites";
-  if (id.endsWith("-ask")) return "ask";
   return "library";
 }
 
@@ -56,7 +55,7 @@ export function captureHomeReturnState(options: { allowBack?: boolean } = {}) {
   try {
     const library = document.getElementById("recent-jobs-scroll-body");
     const panel = document.querySelector(
-      ".categories-view, .collections-view, .favorites-view, #categories-view, #favorites-view, #home-ask-view, .home-ask-scroll",
+      ".categories-view, .collections-view, .favorites-view, #categories-view, #favorites-view",
     ) as HTMLElement | null;
     const state: HomeReturnState = {
       allowBack: options.allowBack !== false,

@@ -28,8 +28,7 @@ const REPO_ROOT = dirname(dirname(WEB_ROOT));
 
 /** reader.css 的源：入口自己、入口用相对路径引入的宿主分片，加上它 @import 的那棵 reader 样式树。
  *
- * 入口里另外两个 @import 是 `tailwindcss` 和 `@xterm/xterm/css/xterm.css` ——
- * 它们随 node_modules 走，由 lockfile 管，不在这里追。 */
+ * 入口里另外一个 @import 是 `tailwindcss` —— 它随 node_modules 走，由 lockfile 管，不在这里追。 */
 export const CSS_SOURCES = [
   { kind: "file", path: join(WEB_ROOT, "src/styles/entries/reader.css") },
   { kind: "dir", path: join(REPO_ROOT, "frontend/packages/reader/styles") },

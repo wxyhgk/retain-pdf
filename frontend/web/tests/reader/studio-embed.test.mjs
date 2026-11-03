@@ -441,6 +441,19 @@ test("开在 Studio 笔记旁边（embed_pane=beside）：阅读页没有「关�
   assert.equal(embeddedPane("?job_id=j1&embed=studio"), "");
   const source = readFileSync(new URL("../../../../frontend/packages/reader/src/components/react-pdf/ReaderCloseHome.tsx", import.meta.url), "utf8");
   assert.match(source, /if \(embeddedPane\(\) === "beside"\) return null;/);
-  const css = readFileSync(new URL("../../src/app/home/shell/AppTopBar.css", import.meta.url), "utf8");
-  assert.match(css, /:root\[data-embed="studio"\] #library-top-tab-ask \{\s*display: none;/, "放在 Studio 里图书馆不出自己的「AI 问答」");
+});
+
+test("阅读页没有自己的 AI 了（2026-11-03）：竖条上的「AI」只在 Studio 给了 hostAi 时出现，点了交给 Studio", async () => {
+  const { ReaderAssistantDock } = await import("../../../../frontend/packages/reader/src/components/react-pdf/ReaderAssistantDock.tsx");
+  const render = () => renderToStaticMarkup(createElement(ReaderAssistantDock, { active: null, sourceOnly: false }));
+  setReaderAdapters(null);
+  assert.doesNotMatch(render(), /aria-label="打开AI"/, "单独打开 RetainPDF：没有 AI");
+  assert.match(render(), /aria-label="打开Markdown"|打开 Markdown|Markdown/, "Markdown 照旧在");
+  let asked = 0;
+  setReaderAdapters({ hostAi: { available: () => true, subscribe: () => () => {}, ask: () => { asked += 1; return true; } } });
+  assert.match(render(), /aria-label="打开AI"/, "在 Studio 里：有「AI」");
+  setReaderAdapters({ hostAi: { available: () => false, subscribe: () => () => {}, ask: () => false } });
+  assert.doesNotMatch(render(), /aria-label="打开AI"/, "Studio 不认 ask-ai：没有");
+  setReaderAdapters(null);
+  assert.equal(asked, 0);
 });

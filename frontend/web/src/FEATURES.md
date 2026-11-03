@@ -57,7 +57,6 @@ app  ──►  features  ──►  platform
 | `jobs` | 任务运行中的状态卡、阶段流、进度动画、取消/重试 |
 | `job-detail` | 状态详情弹窗 + `detail.html` 整页 |
 | `reader` | 阅读器宿主接线（实现在 `@retainpdf/reader` 包，不在此） |
-| `ask` | 主页 AI 问答 |
 | `credentials` | 凭据配置与校验 |
 | `glossaries` | 术语表 |
 | `collections` | 合集 |

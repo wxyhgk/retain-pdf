@@ -12,7 +12,6 @@ import { join } from "node:path";
 import { SRC_DIR, buildGraph, toRepoPath } from "../../scripts/import-cycles.mjs";
 
 const LAZY_ENTRIES = [
-  "features/ask/index.ts",
   "features/task-center/index.ts",
   "features/book-detail/index.ts",
 ];
