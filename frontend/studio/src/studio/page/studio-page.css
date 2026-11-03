@@ -67,21 +67,27 @@ body.studio-body { height: 100vh; overflow: hidden; font-size: 16px; }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .editor-panel { grid-column: 2; grid-row: 2; border-left: 1px solid rgba(var(--gray), 0.2); --studio-editor-padding: 28px; --studio-title-size: 26px; }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .editor-panel .page-head { padding-top: 22px; }
 .studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'] .notes-divider { position: absolute; z-index: 5; top: 0; right: -4px; bottom: 0; display: block; width: 8px; cursor: col-resize; touch-action: none; }
+/* ⤢ 整页读: the book over the whole middle, the note put away meanwhile (kept as it was, quotes still going into it). */
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] .workspace-main { grid-template-columns: minmax(0, 1fr); }
+.studio-shell:is([data-view='editor'], :not([data-view]))[data-books='open'][data-books-wide] :is(.editor-panel, .notes-divider) { display: none; }
 .studio-shell[data-resizing-notes] .books-page iframe { pointer-events: none; }
 .book-tabs { display: flex; min-height: 38px; flex: none; align-items: center; gap: 2px; padding: 4px 8px; overflow-x: auto; border-bottom: 1px solid rgba(var(--gray), 0.2); }
 .book-tab { display: flex; min-width: 0; max-width: 220px; flex: none; align-items: center; border-radius: 6px; }
 .book-tab:hover, .book-tab:has([aria-selected='true']) { background: rgba(var(--gray), 0.12); }
 .book-tab-name { min-width: 0; overflow: hidden; padding: 4px 4px 4px 9px; border: 0; background: none; color: rgb(var(--gray)); font: inherit; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
 .book-tab-name[aria-selected='true'] { color: rgb(var(--black)); font-weight: 600; }
-.book-tab-close, .book-tabs-add { display: grid; width: 22px; height: 22px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 5px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; }
+.book-tab-close, .book-tabs-add, .book-tabs-wide { display: grid; width: 22px; height: 22px; flex: none; place-items: center; padding: 0; border: 0; border-radius: 5px; background: none; color: rgb(var(--gray)); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; }
 .book-tab-close { margin-right: 3px; opacity: 0; }
 .book-tab:hover .book-tab-close, .book-tab:has([aria-selected='true']) .book-tab-close, .book-tab-close:focus-visible { opacity: 1; }
-.book-tab-close:hover, .book-tabs-add:hover { background: rgba(var(--gray), 0.18); color: rgb(var(--black)); }
+.book-tab-close:hover, .book-tabs-add:hover, .book-tabs-wide:hover { background: rgba(var(--gray), 0.18); color: rgb(var(--black)); }
 .book-frames { position: relative; flex: 1; min-height: 0; }
 .book-frame { position: absolute; inset: 0; display: flex; flex-direction: column; visibility: hidden; pointer-events: none; }
 .book-frame[data-shown] { visibility: visible; pointer-events: auto; }
 .book-frame iframe { flex: 1; width: 100%; min-height: 0; border: 0; background: var(--surface); }
 .book-frame iframe[hidden] { display: none; }
+.book-tabs-wide { margin-left: auto; }
+.book-tabs-wide[hidden] { display: none; }
+.book-tabs-wide[aria-pressed='true'] { background: rgba(var(--gray), 0.14); color: rgb(var(--black)); }
 .book-tabs-empty { max-width: 360px; margin: 64px auto 0; padding: 0 24px; color: rgb(var(--gray)); font-size: 14px; line-height: 1.7; text-align: center; }
 .book-tabs-empty[hidden] { display: none; }
 .translate-unreachable-actions { display: flex; gap: 8px; }

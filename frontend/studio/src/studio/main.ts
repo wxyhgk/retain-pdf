@@ -962,6 +962,7 @@ function noteBooks(slug: string): { books: RetainpdfBook[]; shown: string | null
 }
 const bookTabs = createBookTabs(booksView, {
 	openSettings: () => openSettings('retainpdf'),
+	wide: (wide) => setBooksWide(wide),
 	quote(quote) {
 		if (!session.slug || booksOf !== session.slug) return;
 		putQuote(quote, caretInNote ? 'caret' : 'end');
@@ -993,9 +994,19 @@ function showNoteBooks(): void {
 	tabJobs = books.map((book) => book.job_id);
 	bookTabs.setBooks(books, shown);
 }
+/**
+ * ⤢ 整页读: the book shown over the whole middle, the note put away meanwhile (what is quoted still goes into it); ⤡, or
+ * the books put away, back beside the note.
+ */
+function setBooksWide(wide: boolean): void {
+	if (wide) shell.dataset.booksWide = '';
+	else delete shell.dataset.booksWide;
+	bookTabs.setWide(wide);
+}
 /** 书 out beside the note, or put away; `first`, a book to show at a passage as it comes out. */
 function setBooksOpen(open: boolean, first?: { book: RetainpdfBook; target: RetainpdfOpen }): void {
 	booksSplit.open = open;
+	if (!open) setBooksWide(false);
 	shellState.set({ booksOpen: open });
 	try {
 		localStorage.setItem(BOOKS_OPEN_KEY, open ? '1' : '');

@@ -569,6 +569,42 @@ test('书 beside a note: the books it quotes, a tab each, kept loaded; a mark sh
 	await expect(page.locator('.studio-shell')).not.toHaveClass(/panel-collapsed/u);
 });
 
+test('⤢ 整页读: the book over the whole middle, the note put away meanwhile and still quoted into; ⤡ back beside it', async ({ page }) => {
+	appendToFixture('\n[Quantum Chemistry · 第 3 页](retainpdf:job-1/p003-b0001?page=3&document=doc-1) 第一本书。\n');
+	tellsKey = true;
+	await openStudio(page);
+	await setAddress(page, retainpdfUrl);
+	await page.locator('#books-toggle').click();
+	await expect(bookFrame(page, 'job-1').locator('#opened')).toHaveText('job_id=job-1&page_idx=0&embed_pane=beside');
+	const wide = page.locator('#book-tabs-wide');
+	await expect(wide).toHaveAttribute('aria-pressed', 'false');
+	const beside = (await page.locator('#books-view').boundingBox())!.width;
+
+	await wide.click();
+	await expect(wide).toHaveAttribute('aria-pressed', 'true');
+	await expect(page.locator('.editor-panel')).toBeHidden();
+	const middle = (await page.locator('.workspace-main').boundingBox())!.width;
+	await expect.poll(async () => (await page.locator('#books-view').boundingBox())!.width).toBeGreaterThan(Math.max(beside + 200, middle - 4));
+	// The note is still the one quoted into, and the bar says it.
+	await expect(page.locator('#breadcrumb-title')).toHaveText('Studio 测试夹具');
+	await bookFrame(page, 'job-1').locator('#quote').click();
+	await expect(page.locator('.studio-toast')).toContainText('已摘到「Studio 测试夹具」');
+
+	// ⤡: beside the note again, the passage in it.
+	await wide.click();
+	await expect(wide).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.locator('.editor-panel')).toBeVisible();
+	await expect(editor(page).locator('p:has(> .retainpdf-source)', { hasText: '变分原理' })).toHaveCount(1);
+
+	// The books put away while over the whole middle: out again, beside the note.
+	await wide.click();
+	await page.locator('#books-toggle').click();
+	await expect(page.locator('.editor-panel')).toBeVisible();
+	await page.locator('#books-toggle').click();
+	await expect(wide).toHaveAttribute('aria-pressed', 'false');
+	await expect(page.locator('.editor-panel')).toBeVisible();
+});
+
 test('a passage quoted before (a ```retainpdf block) opens as one quoted now: its translation, the mark in its corner; saved so', async ({ page }) => {
 	appendToFixture('\n```retainpdf\nbook: Quantum Chemistry\ndocument: doc-1\njob: job-1\nblock: p004-b0002\npage: 4\n---\nThe old way.\n---\n旧的摘录。\n```\n');
 	await openStudio(page, { settled: false });

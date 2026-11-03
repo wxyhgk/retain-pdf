@@ -23,6 +23,8 @@ export type BookTabsHost = {
 	changed(books: RetainpdfBook[], shown: string | null): void;
 	/** ＋: a book to open beside the note, chosen; null when none was. */
 	pick(anchor: HTMLElement): Promise<RetainpdfBook | null>;
+	/** ⤢ 整页读: the book over the whole middle (the note put away meanwhile), or back beside the note. */
+	wide(wide: boolean): void;
 };
 
 type Frame = { place: HTMLElement; view: ReturnType<typeof createRetainpdfView>; reading: RetainpdfReading | null; used: number };
@@ -39,7 +41,13 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 	add.textContent = '+';
 	add.title = t('在旁边打开一本书');
 	add.setAttribute('aria-label', add.title);
-	bar.append(add);
+	// ⤢: the book shown over the whole middle, to read a dense page; ⤡ back beside the note. At the end of the bar.
+	const wide = document.createElement('button');
+	wide.type = 'button';
+	wide.id = 'book-tabs-wide';
+	wide.className = 'book-tabs-wide';
+	wide.addEventListener('click', () => host.wide(wide.getAttribute('aria-pressed') !== 'true'));
+	bar.append(add, wide);
 	const frames = document.createElement('div');
 	frames.className = 'book-frames';
 	const empty = document.createElement('p');
@@ -145,6 +153,7 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 			bar.insertBefore(tab, add);
 		}
 		empty.hidden = books.length > 0;
+		wide.hidden = books.length === 0;
 		for (const [job, frame] of kept) frame.place.toggleAttribute('data-shown', visible && job === shown);
 	}
 
@@ -196,10 +205,18 @@ export function createBookTabs(pane: HTMLElement, host: BookTabsHost) {
 			visible = out;
 			showTab(shown);
 		},
+		/** ⤢ pressed or not: the book over the whole middle, or beside the note. */
+		setWide(on: boolean): void {
+			wide.setAttribute('aria-pressed', String(on));
+			wide.textContent = on ? '⤡' : '⤢';
+			wide.title = on ? t('回到并排（书和笔记各一边）') : t('整页读（笔记先收起来）');
+			wide.setAttribute('aria-label', wide.title);
+		},
 		books: (): RetainpdfBook[] => books.map((book) => ({ ...book })),
 		shown: (): string | null => shown,
 		/** What the book shown reads (null: none, or not said yet). */
 		reading: (): RetainpdfReading | null => (shown && visible ? (kept.get(shown)?.reading ?? null) : null),
 	};
+	api.setWide(false);
 	return api;
 }
