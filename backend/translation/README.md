@@ -278,6 +278,10 @@ policy 相关 mutation/check/default 已迁到 `services/policy/payload_rules/`�
 - `core/payload/parts/policy_state.py` 负责统一写入 `classification_label`、`should_translate`、
   `skip_reason`、`final_status`。
 - `services/policy/verdict.py` 负责统一回答是否调用模型、是否允许保留原文、是否阻塞导出。
+- `llm/result_canonicalizer.py` 的 `strip_injected_reminders`：模型照抄接口注入的 `<ip_reminder>…</ip_reminder>` 当译文时去掉，
+  只剩它的当空译、照常重试（2026-11-03）。
+- `services/policy/command_listing.py`：整块是命令行或代码（工具手册里的 Tcl、shell 命令和命令语法，OCR 常标成普通文字）时
+  不送模型、保留原文（`command_listing`，2026-11-03）。只看原始原文：去掉成对的 `$…$` 公式后，代码记号占大头、英文虚词几乎没有。
 
 禁止方向：
 
@@ -412,6 +416,8 @@ repair profile：
   `RETAIN_TRANSLATION_AGENT_REPAIR=0|1`
   `RETAIN_TRANSLATION_AGENT_REPAIR_LIMIT=N`
   `RETAIN_TRANSLATION_FINAL_RECOVERY_MAX_ITEMS=N`
+- 最终空译收口（final untranslated recovery）默认最多补 64 块加全书条目的 1%（2026-11-03 起；以前固定 64），快档、质量档
+  一样；补不回来的块转成死信、保留原文、不阻断导出，超出名额的块照样卡导出门禁。
 
 后续推进顺序：
 
