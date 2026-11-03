@@ -116,7 +116,7 @@
     },
     "OpenNotesMessage": {
       "type": "object",
-      "description": "RetainPDF → Studio：用户在阅读页点了「笔记」，要在旁边看这本书的笔记。Studio 在阅读页旁边打开这本书的那一页笔记（一本书一页，按 document_id 找，没有就按 job_id；都没有就新建，标题是书名），回 notes。只在 hello 的 features 有 open-notes 时发。",
+      "description": "RetainPDF → Studio：用户在阅读页点了「笔记」，要在旁边写笔记。Studio 在阅读页旁边打开正在写的那篇笔记（Studio 里打开着的页面，一篇都没开着时新建一篇；不是一本书一页，一篇笔记可以摘几本书；2026-11-03 起，以前是按书找或建「读书笔记/书名」），回 notes（title 是这篇笔记的标题）。只在 hello 的 features 有 open-notes 时发。",
       "additionalProperties": false,
       "required": ["protocol", "v", "type", "job_id", "document_id", "title"],
       "properties": {
