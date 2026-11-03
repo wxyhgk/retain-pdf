@@ -123,13 +123,9 @@ pub(crate) fn test_app_config(root: &Path) -> crate::config::AppConfig {
             worker_output_drain_secs: 2,
             ..crate::config::JobRunnerConfig::default()
         },
-        ai_service: crate::config::AiServiceConfig::default(),
         jobs_service: crate::config::JobsServiceConfig::default(),
         cleanup: crate::config::CleanupConfig::default(),
         db: crate::config::DbConfig::default(),
-        ai_proxy: crate::config::AiProxyConfig::default(),
-        reader_llm: crate::config::ReaderLlmConfig::default(),
-        rag: crate::config::RagConfig::default(),
         accounts: Default::default(),
         origin_policy: Default::default(),
     }

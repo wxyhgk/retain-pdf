@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Prepare and run the authoritative RetainPDF backend development stack.
 
-The launcher owns one process only: ``rust_api``.  Rust then supervises jobsd
-and the AI service, matching the packaged backend topology.
+The launcher owns one process only: ``rust_api``.  Rust then supervises jobsd,
+matching the packaged backend topology.  (It used to start RetainPDF's own AI
+service as well; that service was removed on 2026-11-03.)
 """
 
 from __future__ import annotations
@@ -10,7 +11,6 @@ from __future__ import annotations
 import argparse
 import ipaddress
 import os
-import shutil
 import signal
 import subprocess
 import sys
@@ -23,7 +23,6 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-FX_VERSION = "0.0.5"
 DEFAULT_API_KEY = "dev-local-key"
 
 
@@ -36,14 +35,12 @@ class RepoPaths:
     product: Path
     services: Path
     api: Path
-    ai: Path
     pipeline: Path
     venv_python: Path
     pipeline_command: Path
     target_debug: Path
     rust_api: Path
     jobsd: Path
-    agent: Path
 
     @classmethod
     def from_script(
@@ -85,27 +82,23 @@ class RepoPaths:
             product=product,
             services=services,
             api=services / "api",
-            ai=services / "ai",
             pipeline=services / "pipeline",
             venv_python=venv_bin / ("python.exe" if os.name == "nt" else "python"),
             pipeline_command=venv_bin / f"retainpdf-pipeline{executable_suffix}",
             target_debug=target_debug,
             rust_api=target_debug / f"rust_api{executable_suffix}",
             jobsd=target_debug / f"retain-jobsd{executable_suffix}",
-            agent=target_debug / f"retainpdf-agent{executable_suffix}",
         )
 
 
 @dataclass(frozen=True)
 class Options:
-    runtime: str
     sync: bool
     build: bool
     prepare_only: bool
     host: str
     port: int
     jobs_port: int
-    ai_port: int
     simple_port: int
     data_root: Path
     readiness_timeout: float
@@ -134,11 +127,6 @@ def parse_args(
     parser = argparse.ArgumentParser(
         description="Prepare and run the RetainPDF backend development stack."
     )
-    parser.add_argument(
-        "--runtime",
-        choices=("python", "openai", "fx"),
-        default="python",
-    )
     parser.add_argument("--no-sync", action="store_true", help="skip uv sync")
     parser.add_argument("--no-build", action="store_true", help="skip cargo build")
     parser.add_argument(
@@ -156,11 +144,6 @@ def parse_args(
         default=_env_int(source_env, "RUST_API_JOBS_PORT", 41002),
     )
     parser.add_argument(
-        "--ai-port",
-        type=int,
-        default=_env_int(source_env, "RUST_API_AI_PORT", 41100),
-    )
-    parser.add_argument(
         "--simple-port",
         type=int,
         default=_env_int(source_env, "RUST_API_SIMPLE_PORT", 42000),
@@ -175,7 +158,7 @@ def parse_args(
     parser.add_argument("--shutdown-timeout", type=float, default=10.0)
     args = parser.parse_args(argv)
 
-    ports = (args.port, args.jobs_port, args.ai_port, args.simple_port)
+    ports = (args.port, args.jobs_port, args.simple_port)
     if any(port < 1 or port > 65535 for port in ports):
         parser.error("ports must be between 1 and 65535")
     if args.readiness_timeout <= 0 or args.readiness_interval <= 0:
@@ -189,14 +172,12 @@ def parse_args(
     else:
         data_root = data_root.resolve()
     return Options(
-        runtime=args.runtime,
         sync=not args.no_sync,
         build=not args.no_build,
         prepare_only=args.prepare_only,
         host=args.host,
         port=args.port,
         jobs_port=args.jobs_port,
-        ai_port=args.ai_port,
         simple_port=args.simple_port,
         data_root=data_root,
         readiness_timeout=args.readiness_timeout,
@@ -257,7 +238,6 @@ def validate_artifacts(paths: RepoPaths) -> None:
         paths.pipeline_command,
         paths.rust_api,
         paths.jobsd,
-        paths.agent,
     )
     missing = [path for path in required if not path.is_file()]
     if missing:
@@ -267,62 +247,6 @@ def validate_artifacts(paths: RepoPaths) -> None:
     if not_executable:
         joined = ", ".join(str(path) for path in not_executable)
         raise StackError(f"backend artifacts are not executable: {joined}")
-
-
-def preflight_fx(environ: Mapping[str, str]) -> str:
-    errors: list[str] = []
-    fx_name = environ.get("RETAIN_AI_FX_COMMAND", "fx").strip() or "fx"
-    fx_command = shutil.which(fx_name)
-    if fx_command is None:
-        errors.append("fx executable is missing")
-    else:
-        try:
-            result = subprocess.run(
-                [fx_command, "--version"],
-                check=False,
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-        except (OSError, subprocess.SubprocessError):
-            errors.append("fx version check failed")
-        else:
-            output = (result.stdout or result.stderr).strip().splitlines()
-            version = output[-1].strip() if output else ""
-            if result.returncode != 0 or version != FX_VERSION:
-                errors.append(f"fx {FX_VERSION} is required")
-    if not (
-        environ.get("RETAIN_AI_FX_GATEWAY_API_KEY", "").strip()
-        or environ.get("RETAIN_AI_FX_OPENAI_BASE_URL", "").strip()
-    ):
-        errors.append(
-            "RETAIN_AI_FX_GATEWAY_API_KEY or RETAIN_AI_FX_OPENAI_BASE_URL is missing"
-        )
-    raw_base_url = environ.get("RETAIN_AI_FX_GATEWAY_BASE_URL", "").strip().rstrip("/")
-    if raw_base_url:
-        try:
-            parsed = urllib.parse.urlsplit(raw_base_url)
-            port = parsed.port
-        except ValueError:
-            parsed = None
-            port = None
-        if parsed is None or (
-            parsed.scheme.lower() != "http"
-            or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}
-            or port is None
-            or parsed.username
-            or parsed.password
-            or parsed.query
-            or parsed.fragment
-        ):
-            errors.append(
-                "RETAIN_AI_FX_GATEWAY_BASE_URL must be explicit loopback HTTP "
-                "with a port for fx 0.0.5"
-            )
-    if errors:
-        raise StackError("fx preflight failed: " + "; ".join(errors))
-    assert fx_command is not None
-    return str(Path(fx_command).resolve())
 
 
 LOCAL_ENV_FILE_NAME = ".env.local"
@@ -387,7 +311,6 @@ def build_runtime_env(
     options: Options,
     environ: Mapping[str, str],
     *,
-    fx_command: str | None = None,
     local_env: Mapping[str, str] | None = None,
 ) -> dict[str, str]:
     env = dict(environ)
@@ -420,11 +343,6 @@ def build_runtime_env(
             "PYTHON_BIN": str(paths.venv_python),
             "PYTHONUNBUFFERED": "1",
             "RETAIN_API_KEYS": api_keys,
-            "RETAIN_AI_RUNTIME": options.runtime,
-            "RETAIN_AI_DATA_ROOT": str(options.data_root),
-            "RETAIN_AI_AGENT_CLI_COMMAND": str(paths.agent),
-            "RETAIN_AI_FX_AGENT_CLI_COMMAND": str(paths.agent),
-            "RETAIN_AI_FX_STATE_ROOT": str(options.data_root / "agent-runtime" / "fx"),
             "RETAIN_PDF_PROJECT_ROOT": str(paths.product),
             "RETAIN_PDF_SERVICES_ROOT": str(paths.services),
             "RUST_API_KEYS": api_keys,
@@ -444,17 +362,8 @@ def build_runtime_env(
             "RUST_API_JOBS_SUPERVISE": "1",
             "RUST_API_JOBSD_COMMAND": str(paths.jobsd),
             "RUST_API_JOBSD_CWD": str(paths.api),
-            "RUST_API_AI_HOST": "127.0.0.1",
-            "RUST_API_AI_PORT": str(options.ai_port),
-            "RUST_API_AI_SERVICE_BASE": f"http://127.0.0.1:{options.ai_port}",
-            "RUST_API_AI_SUPERVISE": "1",
-            "RUST_API_AI_COMMAND": str(paths.venv_python),
-            "RUST_API_AI_ARGS": "-m retainpdf_ai",
-            "RUST_API_AI_CWD": str(paths.ai),
         }
     )
-    if fx_command is not None:
-        env["RETAIN_AI_FX_COMMAND"] = fx_command
     return env
 
 
@@ -607,8 +516,7 @@ def launch(paths: RepoPaths, options: Options, env: Mapping[str, str]) -> int:
         )
         url = readiness_url(options)
         print(
-            f"[dev-stack] starting backend runtime={options.runtime} "
-            f"api=http://{options.host}:{options.port}"
+            f"[dev-stack] starting backend api=http://{options.host}:{options.port}"
         )
         print("[dev-stack] API authentication configured (value hidden)")
         wait_until_ready(
@@ -648,12 +556,9 @@ def run(
     runtime_env = build_runtime_env(repo, options, source_env, local_env=local_env)
     prepare(repo, options, source_env)
     validate_artifacts(repo)
-    fx_command = preflight_fx(source_env) if options.runtime == "fx" else None
     if options.prepare_only:
         print("[dev-stack] backend preparation complete")
         return 0
-    if fx_command is not None:
-        runtime_env["RETAIN_AI_FX_COMMAND"] = fx_command
     return launch(repo, options, runtime_env)
 
 

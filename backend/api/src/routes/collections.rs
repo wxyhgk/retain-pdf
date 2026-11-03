@@ -12,11 +12,10 @@ use crate::models::api::{
     AddCollectionDocumentsInput, ApiResponse, CollectionListView, CollectionMutationResult,
     CollectionRecord, CreateCollectionInput, PatchCollectionInput,
 };
-use crate::routes::common::{build_library_route_deps, ok_json, run_library_blocking, ApiJson, ApiPath};
+use crate::routes::common::{ok_json, run_library_blocking, ApiJson, ApiPath};
 use crate::services::library::{
-    add_collection_documents_view, collection_agent_workspace, create_collection_view,
-    delete_collection_view, list_collections_view, patch_collection_view,
-    remove_collection_document_view, CollectionWorkspace,
+    add_collection_documents_view, create_collection_view, delete_collection_view,
+    list_collections_view, patch_collection_view, remove_collection_document_view,
 };
 use crate::AppState;
 
@@ -86,16 +85,4 @@ pub async fn remove_collection_document_route(
         })
         .await?,
     ))
-}
-
-/// 物化这个文件夹的 agent 工作区，返回清单。`POST`，旧地址是同一路径的 `GET`。
-///
-/// 每次调用都重建 `books/` —— 成员和各书的译文都会变，而那个目录是纯派生物。
-/// 所以前端在开终端**之前**打一次就行，不需要额外的失效逻辑。编号不合格 400，合集不存在 404。
-pub async fn collection_agent_workspace_route(
-    State(state): State<AppState>,
-    ApiPath(collection_id): ApiPath<String>,
-) -> Result<Json<ApiResponse<CollectionWorkspace>>, AppError> {
-    let deps = build_library_route_deps(&state);
-    Ok(ok_json(collection_agent_workspace(&deps.library, &collection_id).await?))
 }

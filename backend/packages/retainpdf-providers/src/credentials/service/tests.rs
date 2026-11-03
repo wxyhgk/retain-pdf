@@ -1,7 +1,7 @@
 use std::sync::mpsc;
 use std::time::Duration;
 
-use serde_json::json;
+use serde_json::{json, Value};
 
 use retainpdf_core::models::domain::JobSnapshot;
 use retainpdf_core::models::request::CreateJobInput;
@@ -351,47 +351,6 @@ fn record_revision_allows_unrelated_vault_changes_and_rejects_stale_target_updat
         }
         other => panic!("unexpected error: {other}"),
     }
-    let _ = fs::remove_dir_all(data_root);
-}
-
-#[test]
-fn managed_gc_preserves_ai_runtime_references() {
-    let data_root = test_root("managed-ai-runtime-gc");
-    let db = Db::new(data_root.join("db/jobs.db"), data_root.clone());
-    db.init().expect("initialize jobs db");
-    let imported = get_or_create_managed_credential(
-        &data_root,
-        "agent_llm_api_key",
-        "deepseek",
-        "Imported legacy AI runtime credential",
-        "managed-runtime-secret",
-    )
-    .expect("import managed runtime credential");
-    let runtime_path = data_root.join("secrets/ai-runtime.json");
-    fs::write(
-        &runtime_path,
-        json!({
-            "schema": AI_RUNTIME_SCHEMA,
-            "revision": 1,
-            "llm_credential_ref": imported.credential.credential_ref
-        })
-        .to_string(),
-    )
-    .expect("write AI runtime config");
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(&runtime_path, fs::Permissions::from_mode(0o600))
-            .expect("secure AI runtime config");
-    }
-
-    assert!(!delete_unreferenced_managed_credential(
-        &db,
-        &data_root,
-        &imported.credential.credential_ref
-    )
-    .expect("retain AI runtime credential"));
-    assert!(get_credential_metadata(&data_root, &imported.credential.credential_ref).is_ok());
     let _ = fs::remove_dir_all(data_root);
 }
 

@@ -1,4 +1,4 @@
-//! `/jobs` 的处理函数，按 9 类分文件，和 app/router/jobs/ 一一对应
+//! `/jobs` 的处理函数，按 8 类分文件，和 app/router/jobs/ 一一对应
 //! （分类见 docs/ops/planning/api-reorg/20261015-任务与文件接口整理.md）：
 //!
 //! | 文件 | 前缀 | 回答什么 |
@@ -11,12 +11,10 @@
 //! | `reader` | `/jobs/:id/reader/…` | 阅读页要的东西 |
 //! | `translations` | `/jobs/:id/translations/…` | 逐条看、人工改、重翻一条 |
 //! | `data` | `/jobs/:id/data/…` | 通用查询 |
-//! | `ai` | `/jobs/:id/ai/…` | AI 助手写在这本书里的东西 |
 //!
 //! 旧地址 2026-10-18 全删了；以后再改地址，旧地址在 app/router/jobs/ 各类的登记表里紧跟新地址，行尾写 `old "<新地址>"`。
 
 pub mod actions;
-pub mod ai;
 pub mod data;
 pub mod files;
 pub mod lifecycle;

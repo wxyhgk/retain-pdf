@@ -5,35 +5,27 @@
 //! directly; a public entrypoint does not need an extra forwarding function.
 
 pub use super::documents::{get_document, list_documents, patch_document};
-pub use super::reading::{collection_agent_workspace, document_reading, document_translation_coverage};
-pub use super::collection_workspace::CollectionWorkspace;
+pub use super::reading::{document_reading, document_translation_coverage};
 pub use crate::merge::coverage::TranslationCoverageView;
 pub use crate::merge::reading::DocumentReadingView;
 
 use retainpdf_api_base::error::AppError;
-use retainpdf_core::models::api::{
-    CollectionRecord, ConversationRecord, MessageRecord,
-};
+use retainpdf_core::models::api::CollectionRecord;
 use retainpdf_jobs::JobSubmissionView;
 use crate::views::{
-    AddCollectionDocumentsInput, AppendMessageInput, ApplyDocumentMetadataSuggestionInput,
-    CollectionListView, CollectionMutationResult, ConversationDetailView, ConversationListView,
-    ConversationMutationResult, CreateCollectionInput, CreateConversationInput,
-    CreateDocumentMetadataSuggestionInput, DocumentDeleteResultView, DocumentJobRequest,
-    DocumentMetadataSuggestionApplyView, DocumentMetadataSuggestionListView,
-    DocumentMetadataSuggestionView, ListConversationsQuery, ListDocumentMetadataSuggestionsQuery,
-    PatchCollectionInput, PatchConversationInput, SearchQuery, SearchResultView,
+    AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, CollectionListView,
+    CollectionMutationResult, CreateCollectionInput, CreateDocumentMetadataSuggestionInput,
+    DocumentDeleteResultView, DocumentJobRequest, DocumentMetadataSuggestionApplyView,
+    DocumentMetadataSuggestionListView, DocumentMetadataSuggestionView,
+    ListDocumentMetadataSuggestionsQuery, PatchCollectionInput, SearchQuery, SearchResultView,
 };
 use retainpdf_jobs::JobsFacade;
 
 use super::{
-    add_collection_documents, append_message, apply_metadata_suggestion,
-    create_collection, create_conversation,
-    create_metadata_suggestion, delete_collection, delete_conversation,
-    delete_document, document_delete_job_ids,
-    document_files_view, get_conversation, list_collections,
-    list_conversations, list_metadata_suggestions,
-    ocr_document, patch_collection, patch_conversation, remove_collection_document,
+    add_collection_documents, apply_metadata_suggestion, create_collection,
+    create_metadata_suggestion, delete_collection, delete_document, document_delete_job_ids,
+    document_files_view, list_collections, list_metadata_suggestions, ocr_document,
+    patch_collection, remove_collection_document,
     search_blocks, translate_document, LibraryDeps,
 };
 
@@ -126,59 +118,6 @@ pub fn search_blocks_view(
     owner: Option<&str>,
 ) -> Result<SearchResultView, AppError> {
     search_blocks(deps, query, owner)
-}
-
-// --- conversations ---
-
-pub fn create_conversation_view(
-    deps: &LibraryDeps<'_>,
-    payload: &CreateConversationInput,
-) -> Result<ConversationRecord, AppError> {
-    create_conversation(deps, payload)
-}
-
-pub fn list_conversations_view(
-    deps: &LibraryDeps<'_>,
-    query: &ListConversationsQuery,
-) -> Result<ConversationListView, AppError> {
-    list_conversations(deps, query)
-}
-
-pub fn get_conversation_view(
-    deps: &LibraryDeps<'_>,
-    conversation_id: &str,
-) -> Result<ConversationDetailView, AppError> {
-    get_conversation(deps, conversation_id)
-}
-
-pub fn delete_conversation_view(
-    deps: &LibraryDeps<'_>,
-    conversation_id: &str,
-) -> Result<ConversationMutationResult, AppError> {
-    delete_conversation(deps, conversation_id)
-}
-
-pub fn append_message_view(
-    deps: &LibraryDeps<'_>,
-    conversation_id: &str,
-    payload: AppendMessageInput,
-) -> Result<MessageRecord, AppError> {
-    append_message(deps, conversation_id, payload)
-}
-
-pub fn patch_conversation_view(
-    deps: &LibraryDeps<'_>,
-    conversation_id: &str,
-    payload: &PatchConversationInput,
-) -> Result<ConversationRecord, AppError> {
-    patch_conversation(deps, conversation_id, payload)
-}
-
-pub fn fork_conversation_view(
-    deps: &LibraryDeps<'_>,
-    payload: &crate::views::ForkConversationInput,
-) -> Result<ConversationDetailView, AppError> {
-    super::fork_conversation(deps, payload)
 }
 
 // --- collections ---

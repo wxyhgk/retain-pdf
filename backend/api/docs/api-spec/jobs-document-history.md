@@ -2,7 +2,7 @@
 
 [Jobs API index](jobs.md) · [API spec index](../../API_SPEC.md)
 
-> Address note: `/jobs/{job_id}/…` is grouped into nine categories (`actions`, `progress`, `files`, `reports`, `reader`, `translations`, `data`, `ai`). The old addresses were removed on 2026-10-18 and now return 404; use the new ones (a book's cover and thumbnail are `GET /documents/{document_id}/files/cover.jpg` and `/files/thumbnail.jpg`). Old-to-new table: [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md); every endpoint: [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
+> Address note: `/jobs/{job_id}/…` is grouped into eight categories (`actions`, `progress`, `files`, `reports`, `reader`, `translations`, `data`; `ai` was removed on 2026-11-03). The old addresses were removed on 2026-10-18 and now return 404; use the new ones (a book's cover and thumbnail are `GET /documents/{document_id}/files/cover.jpg` and `/files/thumbnail.jpg`). Old-to-new table: [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md); every endpoint: [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
 
 ## Frontend Library Contract
 
@@ -137,21 +137,5 @@ Every `JobListItemView` exposes durable retry metadata from `runtime_json`:
 items expose the same one-based `attempt`; clients must not infer it from event
 counts or timestamps.
 
-`GET /api/v1/documents/:document_id/agent-versions?limit=50&offset=0` returns
-the safe document-level Agent candidate/commit history. Each item includes the
-version and operation identity, status, active flag, content hash, timestamps,
-and an authenticated `download_path` / `download_url`. Internal `artifact_key`
-and filesystem paths are never returned.
-
-For Agent versions, omitted `limit` defaults to `50` and is clamped to
-`1..100`; `offset` defaults to zero. Ordering is
-`created_at DESC, version_id DESC`. The response contains `versions`,
-`active_version_id`, `total`, the effective `limit`, `offset`, and `has_more`.
-The path is usable only while the owning operation is `result_ready` or
-`committed`; callers should use the public operation projection's
-`candidate_available` / `allowed_actions` before offering a download.
-
-This endpoint is version history, not live operation state. To render and act
-on the current draft/run/validation lifecycle, clients use the conversation
-operation list and public CAS actions described in the
-[AI control-plane contract](ai-control-plane.md#public-operation-projection-and-actions).
+`GET /api/v1/documents/:document_id/agent-versions` (Agent candidate/commit history) was removed on 2026-11-03
+together with RetainPDF's own AI service.

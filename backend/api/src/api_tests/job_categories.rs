@@ -1,4 +1,4 @@
-//! `/jobs/:job_id` 下按 9 类分前缀的地址：每一类都要能走到处理函数。
+//! `/jobs/:job_id` 下按 8 类分前缀的地址：每一类都要能走到处理函数。
 //!
 //! 只发不改状态的请求（GET，和一定被拒的 POST），对同一个任务各发一次，看状态码。
 //! 地址要是注册错了（漏了、挂错处理函数、参数名没归类被多用户中间件拦下），这里会红。
@@ -34,8 +34,6 @@ const PATHS: &[(&str, &str)] = &[
     ("GET", "/translations"),
     ("GET", "/translations/p001-b001"),
     ("GET", "/translations/p001-b001/revisions"),
-    ("GET", "/ai/board"),
-    ("GET", "/ai/board/missing.html"),
     // 请求体不合法，一定在动任务之前被拒。
     ("POST", "/actions/retry-stage"),
     ("POST", "/actions/resolve-ocr-ambiguity"),
@@ -92,7 +90,7 @@ async fn every_category_path_is_registered_and_answers() {
     assert!(statuses.iter().filter(|status| **status == 200).count() >= 5, "{statuses:?}");
 
     // 已经删掉的地址：没有路由，不是"任务没找到"也不是"还没生成"。
-    for path in ["/ai/reading-path", "/ai/canvas"] {
+    for path in ["/ai/reading-path", "/ai/canvas", "/ai/board", "/ai/board/missing.html"] {
         let (status, _, body) = send(app.clone(), "GET", &format!("/api/v1/jobs/{JOB}{path}")).await;
         assert_eq!(status, 404, "{path} 应该已经没有路由");
         assert!(!String::from_utf8_lossy(&body).contains("not generated yet"), "{path}: 还有处理函数在答");

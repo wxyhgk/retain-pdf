@@ -198,7 +198,7 @@ async fn non_loopback_listening_without_a_host_list_skips_the_host_check() {
 // ---------------------------------------------------------------- 配置的名单
 
 #[tokio::test]
-async fn configured_origins_get_cors_headers_and_open_the_terminal() {
+async fn configured_origins_get_cors_headers() {
     // RUST_API_ALLOWED_ORIGINS：页面和 API 不同主机时（例如页面挂在别的域名）要配。
     let state = state_with("origin-configured", |config| {
         config.origin_policy =
@@ -217,17 +217,6 @@ async fn configured_origins_get_cors_headers_and_open_the_terminal() {
     let response = call(&state, preflight("https://other.example.com", Some("127.0.0.1:41000"))).await;
     assert_eq!(allow_origin(&response), None);
 
-    let terminal = |origin: &str| {
-        Request::builder()
-            .uri("/api/v1/ai/terminal?api_key=test-key")
-            .header(header::HOST, "127.0.0.1:41000")
-            .header(header::ORIGIN, origin)
-            .body(Body::empty())
-            .unwrap()
-    };
-    // 400 = 来源和 key 都过了，只是没有 upgrade 头。
-    assert_eq!(call(&state, terminal("https://pdf.example.com")).await.status(), StatusCode::BAD_REQUEST);
-    assert_eq!(call(&state, terminal("https://other.example.com")).await.status(), StatusCode::FORBIDDEN);
 }
 
 #[tokio::test]

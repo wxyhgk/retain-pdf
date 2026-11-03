@@ -60,12 +60,6 @@ def run_render_only() -> int:
     return _run_structured(main, default_stage="rendering", provider="rendering")
 
 
-def run_document_operation() -> int:
-    from retainpdf_pipeline.entrypoints.run_document_operation import main
-
-    return main()
-
-
 def run_revise_translation_item() -> int:
     from retainpdf_pipeline.entrypoints.revise_translation_item import main
 
@@ -117,10 +111,6 @@ COMMANDS: dict[str, tuple[Callable[[], int], str]] = {
     ),
     "translate-only": (run_translate_only, "translate normalized OCR artifacts"),
     "render-only": (run_render_only, "render existing translation artifacts"),
-    "document-operation": (
-        run_document_operation,
-        "execute a restricted backend-prepared page program",
-    ),
     "translation-revise": (
         run_revise_translation_item,
         "validate and write back one translated item (stdin JSON request)",

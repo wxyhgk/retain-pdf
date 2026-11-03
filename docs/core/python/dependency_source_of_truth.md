@@ -3,7 +3,6 @@
 Python 后端按可部署单元维护依赖：
 
 - Pipeline：[`backend/pipeline/pyproject.toml`](../../../backend/pipeline/pyproject.toml)
-- AI 服务：[`backend/ai/pyproject.toml`](../../../backend/ai/pyproject.toml)
 - 后端工作区 [`backend/pyproject.toml`](../../../backend/pyproject.toml) 只组合 uv
   workspace，不再重复声明成员的第三方依赖
 
@@ -21,7 +20,6 @@ Python 后端按可部署单元维护依赖：
 - `ops/deployment/docker/requirements-app.txt`
 - `ops/deployment/docker/requirements-test.txt`
 - `frontend/desktop/requirements-desktop-*.txt`
-- `frontend/desktop/requirements-ai-service.txt`
 
 ## 更新方式
 

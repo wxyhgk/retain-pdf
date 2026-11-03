@@ -1,6 +1,6 @@
 # 阶段操作列表（actions）
 
-> 地址已按 9 类整理（新地址如 `/jobs/{job_id}/actions`）。对应的旧地址已于 2026-10-18 删除（返回 404）。新旧对照见 [任务接口分类](../01-任务/04-任务接口分类.md)。
+> 地址已按 8 类整理（新地址如 `/jobs/{job_id}/actions`）。对应的旧地址已于 2026-10-18 删除（返回 404）。新旧对照见 [任务接口分类](../01-任务/04-任务接口分类.md)。
 
 契约：[`job-actions.v1`](../../../contracts/job-actions.v1.schema.json)（前端类型从 `@retainpdf/contracts/job-actions` 导入，返回 `StageActionsView`；
 续跑计划、续跑、取消、OCR 歧义处理也在这份契约里）。409 的 `error.details.reason` 取值见契约的 `ActionBlockReason`。

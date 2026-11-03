@@ -49,13 +49,9 @@ fn test_config() -> Arc<AppConfig> {
         provider_limits: crate::config::ProviderLimitsConfig::default(),
         provider_runtime: crate::config::ProviderRuntimeConfig::default(),
         job_runner: crate::config::JobRunnerConfig::default(),
-        ai_service: crate::config::AiServiceConfig::default(),
         jobs_service: crate::config::JobsServiceConfig::default(),
         cleanup: crate::config::CleanupConfig::default(),
         db: crate::config::DbConfig::default(),
-        ai_proxy: crate::config::AiProxyConfig::default(),
-        reader_llm: crate::config::ReaderLlmConfig::default(),
-        rag: crate::config::RagConfig::default(),
         accounts: Default::default(),
         origin_policy: Default::default(),
     })

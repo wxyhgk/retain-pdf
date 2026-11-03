@@ -238,14 +238,9 @@ fn route_policies_come_from_the_registry() {
     assert_eq!(route_policy("GET", "/api/v1/fonts"), RoutePolicy::Signed);
     assert_eq!(route_policy("POST", "/api/v1/providers/deepseek/balance"), RoutePolicy::AdminOnly);
     assert_eq!(route_policy("POST", "/api/v1/fonts/upload"), RoutePolicy::AdminOnly);
-    // 这一期 AI 助手整体对网站账号关闭，运行设置也一样（管理员也不例外）。
-    assert_eq!(route_policy("GET", "/api/v1/ai/runtime-config"), RoutePolicy::Closed);
     assert_eq!(route_policy("GET", "/api/v1/credentials/:credential_ref"), RoutePolicy::AdminOnly);
     assert_eq!(route_policy("POST", "/api/v1/backups"), RoutePolicy::AdminOnly);
     assert_eq!(route_policy("POST", "/api/v1/sync/run"), RoutePolicy::AdminOnly);
-    assert_eq!(route_policy("POST", "/api/v1/ai/ask"), RoutePolicy::Closed);
-    assert_eq!(route_policy("GET", "/api/v1/ai/conversations"), RoutePolicy::Closed);
-    assert_eq!(route_policy("GET", "/api/v1/documents/:document_id/agent-versions"), RoutePolicy::Closed);
     assert_eq!(route_policy("POST", "/api/v1/internal/model/jobs/:job_id/requests"), RoutePolicy::Closed);
     // 地址前缀像也不算。
     assert_eq!(route_policy("GET", "/api/v1/jobsx"), RoutePolicy::Closed);

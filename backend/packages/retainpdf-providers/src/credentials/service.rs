@@ -9,7 +9,6 @@ use std::sync::{RwLock, RwLockReadGuard};
 use axum::http::StatusCode;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use retainpdf_data::db::Db;
 use retainpdf_api_base::error::AppError;
@@ -23,8 +22,6 @@ use retainpdf_data::credentials::{
 
 const VAULT_LOCK_NAME: &str = ".credentials.lock";
 const MANAGED_BY_LEGACY_JOB_IMPORT: &str = "legacy_job_import";
-const AI_RUNTIME_SCHEMA: &str = "retainpdf_ai_runtime_credentials_v1";
-const MAX_AI_RUNTIME_BYTES: u64 = 64 * 1024;
 static VAULT_ACCESS_LOCK: Lazy<RwLock<()>> = Lazy::new(|| RwLock::new(()));
 
 struct VaultFileLock {
@@ -353,7 +350,7 @@ pub fn get_or_create_managed_credential(
 }
 
 /// Removes one automatically imported credential when it is no longer
-/// replayable from any persisted job and is not selected by the AI runtime.
+/// replayable from any persisted job.
 /// Manual credentials and managed credentials still in use are left intact.
 /// The check and removal share the same cross-process vault write lock used by
 /// job credential usage guards.
@@ -378,7 +375,7 @@ pub fn delete_unreferenced_managed_credential(
         .count_jobs_referencing_credential(credential_ref)
         .map_err(|_| AppError::internal("credential reference usage cannot be determined"))?
         > 0;
-    if referenced_by_job || ai_runtime_references_credential(data_root, credential_ref)? {
+    if referenced_by_job {
         return Ok(false);
     }
 
@@ -412,7 +409,7 @@ pub fn delete_credential(
             .count_jobs_referencing_credential(credential_ref)
             .map_err(|_| AppError::internal("credential reference usage cannot be determined"))?
             > 0;
-        referenced_by_job || ai_runtime_references_credential(data_root, credential_ref)?
+        referenced_by_job
     };
     if is_referenced {
         return Err(AppError::credential_reference(
@@ -485,60 +482,6 @@ fn metadata(credential_ref: &str, credential: &StoredCredential) -> CredentialMe
         created_at: credential.created_at.clone(),
         updated_at: credential.updated_at.clone(),
     }
-}
-
-fn ai_runtime_references_credential(
-    data_root: &Path,
-    credential_ref: &str,
-) -> Result<bool, AppError> {
-    if [
-        "RETAIN_AI_LLM_CREDENTIAL_REF",
-        "RETAIN_AI_FX_GATEWAY_CREDENTIAL_REF",
-    ]
-    .iter()
-    .any(|name| std::env::var(name).is_ok_and(|value| value.trim() == credential_ref))
-    {
-        return Ok(true);
-    }
-    let path = data_root.join("secrets").join("ai-runtime.json");
-    let metadata = match fs::symlink_metadata(&path) {
-        Ok(metadata) => metadata,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(false),
-        Err(_) => {
-            return Err(AppError::internal(
-                "AI runtime credential references cannot be read",
-            ))
-        }
-    };
-    if metadata.file_type().is_symlink()
-        || !metadata.is_file()
-        || metadata.len() > MAX_AI_RUNTIME_BYTES
-    {
-        return Err(AppError::internal(
-            "AI runtime credential reference path is unsafe",
-        ));
-    }
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        if metadata.permissions().mode() & 0o077 != 0 {
-            return Err(AppError::internal(
-                "AI runtime credential reference permissions must be 0600",
-            ));
-        }
-    }
-    let bytes = fs::read(path)
-        .map_err(|_| AppError::internal("AI runtime credential references cannot be read"))?;
-    let value: Value = serde_json::from_slice(&bytes)
-        .map_err(|_| AppError::internal("AI runtime credential references are invalid"))?;
-    if value.get("schema").and_then(Value::as_str) != Some(AI_RUNTIME_SCHEMA) {
-        return Err(AppError::internal(
-            "AI runtime credential references use an unsupported schema",
-        ));
-    }
-    Ok(["llm_credential_ref", "fx_gateway_credential_ref"]
-        .iter()
-        .any(|field| value.get(field).and_then(Value::as_str) == Some(credential_ref)))
 }
 
 fn load_vault(data_root: &Path) -> Result<CredentialVault, AppError> {

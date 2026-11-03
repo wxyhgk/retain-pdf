@@ -8,7 +8,7 @@
 | 组件 | 入口 | 说明 |
 | --- | --- | --- |
 | 起停 | `ops/development/dev.sh` | 收口下面两个进程、注入七个环境变量、nohup 托管 |
-| 后端 | `ops/development/dev_stack.py` | `uv sync` + `cargo build` 后拉起 `rust_api`，再由 `rust_api` 托管 `jobsd` 与 AI 服务 |
+| 后端 | `ops/development/dev_stack.py` | `uv sync` + `cargo build` 后拉起 `rust_api`，再由 `rust_api` 托管 `jobsd` |
 | 前端 | `frontend/web/scripts/serve_static.py` | 静态托管 `frontend/web`（`dist/` 与 `vendor/` 已提交） |
 | 前端（同源） | `frontend/web/scripts/serve_same_origin.py` | `up --same-origin` 时换用它：静态托管之外，把 `/api` 也转发到后端 |
 
@@ -21,7 +21,7 @@
 | --- | --- | --- |
 | Rust | 1.70+ | 编译根 Cargo workspace |
 | uv | 最新 | 创建 `backend/.venv`，由 `dev_stack.py` 调用 |
-| Python | 3.11（`backend/pyproject.toml` 要求 `>=3.11,<3.12`） | 运行 `retainpdf-pipeline` 与 AI 服务 |
+| Python | 3.11（`backend/pyproject.toml` 要求 `>=3.11,<3.12`） | 运行 `retainpdf-pipeline` |
 | Typst | 0.15.1（与 CI 的 `.github/actions/setup-test-typst` 一致） | PDF 重排渲染 |
 | Node.js | 22（与 CI 各 workflow 一致） | 仅当需要重新构建前端时才用到 |
 | lsof | — | `dev.sh down` / `status` 靠它按端口找进程 |
@@ -115,6 +115,6 @@ ops/development/dev.sh up --same-origin
 | `lsof: command not found` | `down` / `status` 依赖它；`apt install lsof` |
 | `required backend artifacts are missing` | 先让 `dev_stack.py` 跑完一次完整构建（不要用 `--fast`） |
 | 渲染阶段报找不到 typst | 把 typst 放进 `PATH`，或设 `TYPST_BIN` 指向可执行文件 |
-| 端口被占用 | `dev.sh` 的端口是固定的（40001 / 41000 / 41002 / 41100 / 42000）；先 `down` |
+| 端口被占用 | `dev.sh` 的端口是固定的（40001 / 41000 / 41002 / 42000）；先 `down` |
 | 前端改动没生效 | `dist/` 是提交产物，改源码后要重建 bundle（`npm run verify` 会带上） |
 | 后端起来了但页面报错 | `dev.sh status` 看 `/health`；同源模式下再确认 `serve_same_origin.py` 在跑 |

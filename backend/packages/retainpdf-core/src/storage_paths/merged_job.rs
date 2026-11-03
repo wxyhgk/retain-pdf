@@ -2,8 +2,7 @@
 //!
 //! 同一本书的多次范围翻译合成一个整本长度、任务形状的目录
 //! `data/documents/<文档>/merged/<指纹>/`，读接口把它当成一个任务读。格式定义放在这里，
-//! 是因为 Rust 的 API、AI 工作区，以及 Python 的 AI 服务（`retainpdf_ai/merged_jobs.py`
-//! 照抄这一份）都要从 id 认出目录。
+//! 是因为 Rust 的各个读接口都要从 id 认出目录（以前 Python 的 AI 服务也照抄了一份，2026-11-03 跟 AI 服务一起删了）。
 //!
 //! 格式卡得很死：id 会被拼进文件路径，任何不是定长小写十六进制的东西都不放行。
 
@@ -43,14 +42,6 @@ impl MergedJobId {
             .join("merged")
             .join(&self.fingerprint)
     }
-
-    /// AI 工作区：`data/documents/<文档>/ai`。
-    ///
-    /// **按文档、不按指纹**：合并目录随内容变化（新翻了几页就是一个新指纹），agent 的对话、
-    /// 画板、阅读路径不能跟着换一次合并就丢。
-    pub fn ai_dir(&self, data_root: &Path) -> PathBuf {
-        data_root.join("documents").join(&self.document_id).join("ai")
-    }
 }
 
 pub fn is_merged_job_id(job_id: &str) -> bool {
@@ -69,7 +60,6 @@ mod tests {
         assert_eq!(MergedJobId::parse(&id.format()), Some(id.clone()));
         let data_root = Path::new("/data");
         assert_eq!(id.root(data_root), Path::new("/data/documents").join(DOC).join("merged/0123456789abcdef"));
-        assert_eq!(id.ai_dir(data_root), Path::new("/data/documents").join(DOC).join("ai"));
     }
 
     #[test]

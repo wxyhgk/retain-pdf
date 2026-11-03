@@ -16,7 +16,7 @@ fn route_templates() -> Vec<(String, String)> {
     }
     templates.sort_by(|a, b| a.1.cmp(&b.1));
     templates.dedup_by(|a, b| a.1 == b.1);
-    assert!(templates.len() > 100, "route scan found too few routes ({}); did the router move?", templates.len());
+    assert!(templates.len() > 80, "route scan found too few routes ({}); did the router move?", templates.len());
     templates
 }
 

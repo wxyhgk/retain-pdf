@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
 /// 漏了的话它的 info 日志就看不到（2026-10-17 才补上拆出去的这些）。
 const DEFAULT_LOG_FILTER: &str = "rust_api=info,tower_http=info,\
 retainpdf_api=info,retainpdf_api_base=info,\
-retainpdf_accounts=info,retainpdf_ai=info,retainpdf_files=info,retainpdf_glossaries=info,\
+retainpdf_accounts=info,retainpdf_files=info,retainpdf_glossaries=info,\
 retainpdf_ingest=info,retainpdf_jobs=info,retainpdf_library=info,retainpdf_platform=info,\
 retainpdf_providers=info,\
 retainpdf_config=info,retainpdf_core=info,retainpdf_data=info,retainpdf_db=info,retainpdf_runner=info,retainpdf_proc=info";

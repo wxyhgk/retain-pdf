@@ -20,7 +20,6 @@ def test_daily_gate_uses_full_offline_entry_and_keeps_stage_tests():
     typst_setup = workflow.index("uses: ./.github/actions/setup-test-typst")
     integration = workflow.index(pipeline_tests + " -m needs_typst\n")
     assert hermetic < typst_setup < integration
-    assert 'python -m pytest "$RETAIN_PDF_SERVICES_ROOT/ai/tests" -q' in workflow
     assert "uses: ./.github/actions/setup-test-typst" in workflow
 
 

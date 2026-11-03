@@ -5,7 +5,6 @@
 - [后端架构总览](./ARCHITECTURE.md)
 - [Rust API 架构](../rust_api/README.md)
 - [Python Pipeline](../python/README.md)
-- [AI Runtime](../ai-runtime/README.md)
 - [OCR Provider 与规范化](../paddle_ocr_api/README.md)
 
 历史目录迁移记录位于

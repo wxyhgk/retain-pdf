@@ -116,7 +116,7 @@ GET /api/v1/search?q=光学光谱&limit=20[&document_id=xxx]
 ### 4. AI 问答与 PDF Agent（已删）
 
 > 2026-11-03 起前端不再调 `/api/v1/ai/*`：RetainPDF 自己的 AI（阅读页的 agent 终端和画板、主页「AI 问答」、设置里的
-> AI Agent）删了，产品里只留笔记软件 Studio 的 AI（`frontend/studio`）。后端接口由后端会话随后删除，见
+> AI Agent）删了，产品里只留笔记软件 Studio 的 AI（`frontend/studio`）。后端接口 2026-11-03 也删了，见
 > [RetainPDF 不要自己的 AI](../../ops/planning/frontend-migration/20261103-RetainPDF不要自己的AI.md)。
 
 ### 5. 资产
@@ -144,12 +144,10 @@ DELETE /api/v1/collections/:id             ← 只删文件夹本身,文档不�
 
 POST   /api/v1/collections/:id/documents              body: { document_ids: [...] }
 DELETE /api/v1/collections/:id/documents/:document_id
-POST   /api/v1/collections/:id/agent-workspace        ← 物化文件夹的 Agent 工作区（单机版；旧写法 GET 2026-10-22 删了，现在 405）
 ```
 
-- `agent-workspace`：终端切到「文件夹」范围前调一次，返回 `{ schema, collection_id, books[], skipped[] }`。
-  编号不是建合集时生成的形状 400；合集不存在 404（2026-10-19 前是 200 + 空清单）；没有可读译文、超过 200 本上限的书在 `skipped[]` 里带 `reason`。
-  删文件夹时后端顺手清掉它的工作区目录。
+- `POST /api/v1/collections/:id/agent-workspace`（物化文件夹的 Agent 工作区）2026-11-03 跟 RetainPDF 自己的 AI 一起删了。
+  删文件夹时后端照旧顺手清掉它在磁盘上的目录（以前建过的工作区在里面）。
 
 - 加入不存在的 `document_id` 返回 404(书的记录在、库里读不出来是 500,不说成不存在);重复加入同一文档幂等(不报错、不重复计数);
 - 查看某个文件夹里有哪些文档:`GET /api/v1/documents?collection_id=xxx`(见第 1 节),

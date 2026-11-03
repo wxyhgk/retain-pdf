@@ -26,11 +26,10 @@
     "build:doc": "npm run build --workspace retainpdf2doc",
     "test:doc": "npm test --workspace retainpdf2doc",
     "verify:web": "npm run verify --workspace=front-tailwind-ui",
-    "verify:ai": "cd backend/ai && uv run pytest -q",
     "check:rust": "cargo check --workspace",
     "verify:rust": "cargo test --no-run --workspace",
     "test:rust": "PATH=\"${UV_PROJECT_ENVIRONMENT:-$PWD/backend/.venv}/bin:$PATH\" cargo test --workspace",
-    "verify": "npm run verify:rust && npm run test:rust && npm run verify:ai && npm run verify:web"
+    "verify": "npm run verify:rust && npm run test:rust && npm run verify:web"
   },
   "engines": {
     "node": ">=20"

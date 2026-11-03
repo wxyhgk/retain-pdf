@@ -45,10 +45,8 @@ the in-process mutation lock and atomic replacement behavior.
 `DELETE /api/v1/credentials/:credential_ref` accepts `expected_revision` and
 an optional `force` query flag. By default, deletion is rejected while any
 persisted job request references the credential, including terminal jobs: retry
-and rerun can still need that reference. Agent runtime configuration references
-(`llm_credential_ref` and `fx_gateway_credential_ref`) are protected as well.
-The matching AI startup environment references are also checked when the Rust
-API and AI sidecar share their normal launch environment.
+and rerun can still need that reference.（以前还查 AI 运行时配置 `secrets/ai-runtime.json` 和 AI 启动环境变量里的引用，
+2026-11-03 跟 AI 服务一起删了。）
 After explicitly accepting that recovery impact, a caller may repeat the request
 with `force=true`. The conflict response never discloses referencing job IDs,
 counts, runtime fields, or credential values.
@@ -69,7 +67,7 @@ imports each one into this vault as a *managed* credential
 (`managed_by: legacy_job_import`, not shown in responses) and stores only the
 reference. Identical managed secrets of the same kind and provider are reused
 rather than duplicated. A managed copy is removed automatically — only when no
-persisted job references it any more and the AI runtime does not select it —
+persisted job references it any more —
 after:
 
 - the job is deleted (`DELETE /api/v1/jobs/{job_id}`);

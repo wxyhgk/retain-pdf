@@ -8,7 +8,6 @@ use tracing::info;
 use super::jobs::{adopt_unlinked_job_documents, install_restore_recovery, reconcile_owned_runtime};
 use crate::config::AppConfig;
 use crate::db::Db;
-use crate::services::ai::AgentCapabilityAuthority;
 use crate::services::jobs::{JobDriverRegistry, JobRuntime};
 use crate::services::ingest::{UploadService, UploadServiceConfig};
 
@@ -16,7 +15,6 @@ use crate::services::ingest::{UploadService, UploadServiceConfig};
 pub struct AppState {
     pub config: Arc<AppConfig>,
     pub db: Arc<Db>,
-    pub(crate) ai_gateway: Arc<crate::services::ai::AiGateway>,
     pub(crate) uploads: Arc<UploadService>,
     pub download_generation: Arc<crate::services::files::DownloadGeneration>,
     pub(crate) query_execution: Arc<crate::services::jobs::QueryExecution>,
@@ -25,8 +23,6 @@ pub struct AppState {
     pub job_drivers: Arc<JobDriverRegistry>,
     /// 任务运行时落点（ADR-002）：进程内或远端 jobsd，装配一次此后只读。
     pub job_runtime: Arc<JobRuntime>,
-    /// Per-process signing authority for short-lived, least-privilege agent capabilities.
-    pub agent_capabilities: Arc<AgentCapabilityAuthority>,
     /// Staged rollout: disabled until worker pause/resume integration is enabled.
     pub model_executor: Option<Arc<crate::services::providers::ModelExecutor>>,
     /// 多设备同步(设置、后台定时同步、状态)。
@@ -50,7 +46,7 @@ pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
 
     let canceled_jobs = Arc::new(RwLock::new(HashSet::new()));
     let job_runtime = Arc::new(if config.jobs_service.is_remote() {
-        // 钥匙单源：下发壳自己的 key 集合首项，与 ai_supervisor 同规则
+        // 钥匙单源：下发壳自己的 key 集合首项
         let api_key = {
             let mut sorted: Vec<_> = config.api_keys.iter().cloned().collect();
             sorted.sort();
@@ -84,11 +80,6 @@ pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
     }
     let state = AppState {
         accounts,
-        ai_gateway: Arc::new(crate::services::ai::AiGateway::new(
-            &config.ai_proxy,
-            config.ai_service.base_url(),
-            crate::runtime::ai_supervisor::ai_service_status,
-        )?),
         uploads: Arc::new(UploadService::new(
             db.clone(),
             UploadServiceConfig {
@@ -111,7 +102,6 @@ pub fn build_state(config: Arc<AppConfig>) -> Result<AppState> {
         job_slots: Arc::new(Semaphore::new(config.max_running_jobs)),
         job_drivers: Arc::default(),
         job_runtime,
-        agent_capabilities: Arc::new(AgentCapabilityAuthority::new_random()?),
     };
     install_restore_recovery(&state);
     Ok(state)

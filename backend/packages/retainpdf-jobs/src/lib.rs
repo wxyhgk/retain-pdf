@@ -11,14 +11,12 @@
 //! | `reader/` | 阅读：区块位置、元信息、Markdown |
 //! | `translations/` | 译文：逐条看、人工改、重翻一条 |
 //! | `data/` | 数据：按登记表通用取数 |
-//! | `ai/` | AI：阅读路径、概念图、画板 |
 //!
 //! 根目录只放各类共用的：门面 `facade`、依赖 `deps`、返回视图 `presentation`、只读查询的入口
 //! `query`、运行时 `runtime_gateway`、产物摘要 `summary_loaders`，以及接口的请求和返回类型 `views`
 //!（2026-10-18 从核心包挪过来）。
 
 mod actions;
-mod ai;
 mod data;
 mod deps;
 mod facade;

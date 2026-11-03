@@ -20,7 +20,7 @@ def test_macos_python_bundle_uses_prebuilt_wheels_without_homebrew_qpdf():
     assert "brew install" not in mac
     assert "brew update" not in mac
     assert "qpdf_prefix" not in mac
-    for requirements in ("requirements-desktop-posix.txt", "requirements-ai-service.txt"):
+    for requirements in ("requirements-desktop-posix.txt",):
         line = next(line for line in mac.splitlines() if f"-r frontend/desktop/{requirements}" in line)
         assert "--only-binary=:all:" in line
     # retainpdf-pipeline 是本仓库源码，必须照常从源码装，不能被 --only-binary 拦掉。

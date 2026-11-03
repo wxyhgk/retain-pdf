@@ -190,11 +190,11 @@ Rust API layer stores:
     [jobs-retry-and-control.md](jobs-retry-and-control.md))
   - `documents`, `favorites`, `collections`, `collection_documents`,
     `document_tags`, and `blocks_fts` for the library projection
-  - `ai_conversations` / `ai_messages` for the durable message tree
-  - `document_operations`, immutable attempts/events, and `document_versions`
-    for Agent operation execution and compare-and-swap publication
+  - `ai_conversations` / `ai_messages`, `document_operations` (with attempts/events),
+    `document_versions`：以前 AI 对话和 Agent 文档操作用的表，2026-11-03 AI 服务删了以后表还留着，
+    不再有接口读写
 - job workspaces in `DATA_ROOT/jobs/<job_id>/`
-- document-operation workspaces in `DATA_ROOT/operations/<operation_id>/`
+- `DATA_ROOT/operations/<operation_id>/`：以前 Agent 文档操作的工作区，2026-11-03 起不再新建
 - the credential vault in the protected `DATA_ROOT/secrets/` subtree
 - database backups in `DATA_ROOT/backups/db/` (`<kind>-<UTC stamp>-v<schema>.db.gz`,
   created `0600`; since 2026-10-22 the WebDAV password is deleted from the

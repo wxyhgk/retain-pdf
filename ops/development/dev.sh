@@ -2,9 +2,9 @@
 #
 # 本地开发栈的启停。
 #
-# 为什么需要它：`dev_stack.py` 只起后端（rust api + jobsd + ai），静态服务要另起
-# 一条命令，而且两边一共要七个环境变量（API key 还得从 runtime-config.local.js
-# 里抠出来）。每次重来都手敲一遍，敲错一个 agent 终端就连不上。
+# 为什么需要它：`dev_stack.py` 只起后端（rust api + jobsd），静态服务要另起
+# 一条命令，而且两边要好几个环境变量（API key 还得从 runtime-config.local.js
+# 里抠出来）。每次重来都手敲一遍，敲错一个就连不上。
 #
 # 更要紧的是 **nohup**：直接在终端里跑的进程活不过会话，关掉窗口或者会话结束就
 # 全没了，再开一次要等一分钟 cargo。这里全部 nohup + disown。
@@ -55,15 +55,10 @@ load_env() {
     return 1
   fi
   export RUST_API_KEYS
-  export RETAIN_AI_API_KEYS="$RUST_API_KEYS"
   export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
   # 默认 SDK 链接不了 C 程序（arm64e.x1），得指到这个。
   export SDKROOT="${SDKROOT:-/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk}"
-  export PYTHONPATH="$REPO/backend/ai:$REPO/backend/base:$REPO/backend/math:$REPO/backend/pipeline:$REPO/backend/translation:$REPO/backend/translation-agent"
-  # agent 终端：走真 shell，并把思考档位和 provider 参数透给 fx。
-  export RETAIN_AI_FX_SHELL_MODE=1
-  export RETAIN_AI_FX_REASONING_EFFORTS="${RETAIN_AI_FX_REASONING_EFFORTS:-low,high,max}"
-  export RETAIN_AI_FX_UPSTREAM_EXTRA="${RETAIN_AI_FX_UPSTREAM_EXTRA:-{\"thinking\":{\"type\":\"enabled\"}}}"
+  export PYTHONPATH="$REPO/backend/base:$REPO/backend/math:$REPO/backend/pipeline:$REPO/backend/translation:$REPO/backend/translation-agent"
 }
 
 port_pids() {
@@ -107,7 +102,7 @@ stack_argv() {
 
 cmd_down() {
   local killed=0
-  for port in "$STATIC_PORT" "$API_PORT" 41002 41100 42000; do
+  for port in "$STATIC_PORT" "$API_PORT" 41002 42000; do
     for pid in $(port_pids "$port"); do
       kill "$pid" 2>/dev/null && killed=1
     done
@@ -193,7 +188,7 @@ cmd_status() {
     python3 -c "
 import json,sys
 d=json.loads(sys.argv[1])['data']
-print(f\"  后端    rust={d['status']} ai={d['ai_service']} jobsd={d['jobsd']} db={d['db']}\")
+print(f\"  后端    rust={d['status']} jobsd={d['jobsd']} db={d['db']}\")
 " "$health" 2>/dev/null || echo "  后端    在跑（/health 解析不了）"
   else
     echo "  后端    没在跑"

@@ -27,12 +27,10 @@ def make_paths(tmp_path: Path) -> object:
         paths.pipeline_command,
         paths.rust_api,
         paths.jobsd,
-        paths.agent,
     ):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("stub")
         path.chmod(0o755)
-    paths.ai.mkdir(parents=True, exist_ok=True)
     paths.pipeline.mkdir(parents=True, exist_ok=True)
     return paths
 
@@ -64,7 +62,6 @@ def test_make_paths_never_escapes_tmp_path(tmp_path: Path) -> None:
         paths.pipeline_command,
         paths.rust_api,
         paths.jobsd,
-        paths.agent,
     )
     escaped = [str(path) for path in written if tmp_path not in path.parents]
     assert escaped == [], (
@@ -115,30 +112,15 @@ def test_no_sync_no_build_skips_preparation_commands(tmp_path: Path) -> None:
     run.assert_not_called()
 
 
-def test_openai_runtime_is_a_supported_launcher_mode(tmp_path: Path) -> None:
-    paths = make_paths(tmp_path)
-    opts = options(paths, "--runtime", "openai", "--no-sync", "--no-build")
-    env = dev_stack.build_runtime_env(paths, opts, {"PATH": "/usr/bin"})
-
-    assert opts.runtime == "openai"
-    assert env["RETAIN_AI_RUNTIME"] == "openai"
-    assert env["RETAIN_AI_AGENT_CLI_COMMAND"] == str(paths.agent)
-    assert env["RETAIN_AI_FX_AGENT_CLI_COMMAND"] == str(paths.agent)
-
-
 def test_runtime_env_uses_absolute_commands_and_rust_supervision(tmp_path: Path) -> None:
     paths = make_paths(tmp_path)
     secret = "top-secret-development-key"
     opts = options(
         paths,
-        "--runtime",
-        "fx",
         "--port",
         "43000",
         "--jobs-port",
         "43002",
-        "--ai-port",
-        "43100",
         "--data-root",
         str(tmp_path / "state"),
     )
@@ -146,24 +128,17 @@ def test_runtime_env_uses_absolute_commands_and_rust_supervision(tmp_path: Path)
         paths,
         opts,
         {"RUST_API_KEYS": secret, "PATH": "/usr/bin"},
-        fx_command="/fixed/fx",
     )
 
     assert env["RUST_API_KEYS"] == secret
     assert env["RUST_API_JOBS_MODE"] == "remote"
     assert env["RUST_API_JOBS_SUPERVISE"] == "1"
     assert env["RUST_API_JOBSD_COMMAND"] == str(paths.jobsd)
-    assert env["RUST_API_AI_SUPERVISE"] == "1"
-    assert env["RUST_API_AI_COMMAND"] == str(paths.venv_python)
-    assert env["RUST_API_AI_CWD"] == str(paths.ai)
-    assert env["RUST_API_AI_SERVICE_BASE"] == "http://127.0.0.1:43100"
+    # RetainPDF 自己的 AI 服务 2026-11-03 删了：开发栈不再起它
+    assert not any(key.startswith(("RUST_API_AI_", "RETAIN_AI_")) for key in env)
     assert env["PYTHON_BIN"] == str(paths.venv_python)
     assert env["RUST_API_PIPELINE_COMMAND"] == str(paths.pipeline_command)
     assert "RUST_API_PYTHON_ENTRYPOINT_MODE" not in env
-    assert env["RETAIN_AI_AGENT_CLI_COMMAND"] == str(paths.agent)
-    assert env["RETAIN_AI_FX_AGENT_CLI_COMMAND"] == str(paths.agent)
-    assert env["RETAIN_AI_FX_COMMAND"] == "/fixed/fx"
-    assert env["RETAIN_AI_RUNTIME"] == "fx"
     assert env["RUST_API_PROJECT_ROOT"] == str(paths.product)
     assert env["RUST_API_SCRIPTS_DIR"] == str(paths.pipeline)
     assert env["RUST_API_DATA_ROOT"] == str((tmp_path / "state").resolve())
@@ -287,62 +262,6 @@ def test_wait_until_ready_fails_when_child_exits() -> None:
             timeout=1,
             interval=0.01,
         )
-
-
-def test_fx_preflight_requires_exact_version_and_provider_configuration() -> None:
-    completed = subprocess.CompletedProcess(["/bin/fx", "--version"], 0, "0.0.5\n", "")
-    with (
-        mock.patch.object(dev_stack.shutil, "which", return_value="/bin/fx"),
-        mock.patch.object(dev_stack.subprocess, "run", return_value=completed),
-    ):
-        assert dev_stack.preflight_fx(
-            {"RETAIN_AI_FX_GATEWAY_API_KEY": "secret"}
-        ) == str(Path("/bin/fx").resolve())
-        assert dev_stack.preflight_fx(
-            {"RETAIN_AI_FX_OPENAI_BASE_URL": "http://127.0.0.1:8000/v1"}
-        ) == str(Path("/bin/fx").resolve())
-
-    with (
-        mock.patch.object(dev_stack.shutil, "which", return_value=None),
-        pytest.raises(dev_stack.StackError) as error,
-    ):
-        dev_stack.preflight_fx({})
-    assert "fx executable is missing" in str(error.value)
-    assert "RETAIN_AI_FX_GATEWAY_API_KEY or RETAIN_AI_FX_OPENAI_BASE_URL" in str(
-        error.value
-    )
-
-
-def test_fx_preflight_error_never_includes_key() -> None:
-    secret = "gateway-secret-never-log"
-    completed = subprocess.CompletedProcess(["/bin/fx", "--version"], 0, "9.9.9\n", "")
-    with (
-        mock.patch.object(dev_stack.shutil, "which", return_value="/bin/fx"),
-        mock.patch.object(dev_stack.subprocess, "run", return_value=completed),
-        pytest.raises(dev_stack.StackError) as error,
-    ):
-        dev_stack.preflight_fx({"RETAIN_AI_FX_GATEWAY_API_KEY": secret})
-    assert secret not in str(error.value)
-
-
-def test_fx_preflight_accepts_only_the_endpoint_policy_supported_by_fx_005() -> None:
-    completed = subprocess.CompletedProcess(["/bin/fx", "--version"], 0, "0.0.5\n", "")
-    base = {
-        "RETAIN_AI_FX_GATEWAY_API_KEY": "secret",
-        "RETAIN_AI_FX_GATEWAY_BASE_URL": "http://localhost:43231/gateway",
-    }
-    with (
-        mock.patch.object(dev_stack.shutil, "which", return_value="/bin/fx"),
-        mock.patch.object(dev_stack.subprocess, "run", return_value=completed),
-    ):
-        assert dev_stack.preflight_fx(base) == str(Path("/bin/fx").resolve())
-        with pytest.raises(dev_stack.StackError, match="explicit loopback HTTP"):
-            dev_stack.preflight_fx(
-                {
-                    **base,
-                    "RETAIN_AI_FX_GATEWAY_BASE_URL": "https://gateway.example",
-                }
-            )
 
 
 def test_prepare_only_does_not_launch(tmp_path: Path) -> None:

@@ -35,12 +35,12 @@
 后端：
 
 ```bash
-python3 ops/development/dev_stack.py --runtime python
+python3 ops/development/dev_stack.py
 ```
 
 该入口准备 `backend/.venv` 与 Rust binaries，并以
-`remote + supervised` 模式启动 `rust_api`、`retain-jobsd` 和
-`retainpdf-ai`。已经准备好的 checkout 可追加 `--no-sync --no-build`。
+`remote + supervised` 模式启动 `rust_api` 和 `retain-jobsd`
+（RetainPDF 自己的 AI 服务 `retainpdf-ai` 2026-11-03 删了）。已经准备好的 checkout 可追加 `--no-sync --no-build`。
 
 前端：
 
@@ -60,8 +60,8 @@ python3 -m http.server 40001 --bind 0.0.0.0 --directory frontend/web
 - 第二个端口（只有 `/health`、`/ready`）：`42000`
 - Web 前端：`40001`
 
-本地 launcher 还使用两个仅供后端内部通信的回环端口：
-`retain-jobsd` 为 `41002`，`retainpdf-ai` 为 `41100`。
+本地 launcher 还使用一个仅供后端内部通信的回环端口：
+`retain-jobsd` 为 `41002`（以前 AI 服务用的 `41100` 2026-11-03 跟着删了）。
 
 Docker 交付也默认使用同一组端口。如果本机已经启动 Docker Web，本地静态前端可以临时换成其他未占用端口；换端口只影响浏览器访问入口，不改变 Rust API 默认端口。
 

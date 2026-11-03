@@ -207,14 +207,6 @@ async fn multi_mode_cors_allows_only_listed_origins_with_credentials() {
 }
 
 #[tokio::test]
-async fn multi_mode_has_no_assistant_terminal() {
-    let state = multi_state("terminal");
-    let cookie = login(&state, "root", ADMIN_PASSWORD).await;
-    let response = send(&state, Method::GET, "/api/v1/ai/terminal", Some(&cookie), None).await;
-    assert_eq!(response.status(), StatusCode::NOT_FOUND);
-}
-
-#[tokio::test]
 async fn wrong_current_password_is_400_not_401_so_the_session_survives() {
     let state = multi_state("wrong-current");
     let cookie = login(&state, "root", ADMIN_PASSWORD).await;

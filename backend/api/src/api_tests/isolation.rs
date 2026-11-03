@@ -258,9 +258,6 @@ async fn admin_only_and_closed_routes() {
     for uri in ["/api/v1/credentials", "/api/v1/sync", "/api/v1/backups"] {
         assert_eq!(fx.get(&fx.alice, uri).await.status(), StatusCode::FORBIDDEN, "{uri}");
     }
-    for uri in ["/api/v1/ai/conversations", "/api/v1/ai/runtime-config"] {
-        assert_eq!(fx.get(&fx.alice, uri).await.status(), StatusCode::NOT_FOUND, "{uri}");
-    }
     assert_eq!(fx.get(&fx.alice, "/api/v1/providers/ocr").await.status(), StatusCode::OK);
     let usage = read_json(fx.get(&fx.alice, "/api/v1/usage").await).await;
     assert_eq!(usage["code"], 0);
@@ -311,36 +308,6 @@ async fn ocr_only_jobs_go_through_the_jobs_endpoint() {
     let body = read_json(response).await;
     assert_eq!(status, StatusCode::SERVICE_UNAVAILABLE, "{body}");
     assert!(body["message"].as_str().unwrap().contains("平台还没配置 OCR"), "{body}");
-}
-
-/// 回归：管理员点设置时 GET /api/v1/ai/runtime-config 被转给 AI 服务、回了 401，前端当成掉线整页刷新。
-/// 这一期 AI 助手整体对网站账号关闭：管理员、普通账号都在 Rust 这层拿到 404，绝不能是 401。
-#[tokio::test]
-async fn ai_routes_are_closed_to_website_accounts_and_never_answer_401() {
-    let fx = Fixture::new("ai-closed").await;
-    let admin = login(&fx.state, "root", ADMIN_PASSWORD).await;
-    let routes = [
-        (Method::POST, "/api/v1/ai/ask"),
-        (Method::GET, "/api/v1/ai/runtime-config"),
-        (Method::PUT, "/api/v1/ai/runtime-config"),
-        (Method::GET, "/api/v1/ai/conversations"),
-        (Method::POST, "/api/v1/ai/conversations"),
-        (Method::POST, "/api/v1/ai/conversations/fork"),
-        (Method::GET, "/api/v1/ai/conversations/c1"),
-        (Method::POST, "/api/v1/ai/conversations/c1/messages"),
-        (Method::GET, "/api/v1/ai/conversations/c1/calculations"),
-        (Method::GET, "/api/v1/ai/conversations/c1/operations"),
-        (Method::GET, "/api/v1/ai/calculations/k1"),
-        (Method::GET, "/api/v1/ai/operations/o1"),
-        (Method::POST, "/api/v1/ai/operations/o1/run"),
-    ];
-    for cookie in [&admin, &fx.alice] {
-        for (method, uri) in &routes {
-            let body = matches!(*method, Method::POST | Method::PUT).then(|| json!({}));
-            let response = send(&fx.state, method.clone(), uri, Some(cookie), body).await;
-            assert_eq!(response.status(), StatusCode::NOT_FOUND, "{method} {uri}");
-        }
-    }
 }
 
 /// 任务的中间产物（翻译请求日志里是完整的提示词和模型返回）只给管理员：网站账号的文件清单里

@@ -128,7 +128,6 @@ def test_multi_user_env_template_ships_no_admin_password() -> None:
 @pytest.mark.parametrize(
     "declaration",
     [
-        "location = /api/v1/ai/ask {",
         "location ~ ^/api/v1/jobs/[^/]+/progress/stream$ {",
     ],
 )
@@ -146,8 +145,8 @@ def test_internal_nginx_preserves_forwarded_client_and_streams_large_requests() 
     nginx = _text("ops/deployment/docker/nginx.conf.template")
     api_location = _nginx_location(nginx, "location /api/ {")
 
-    assert nginx.count("proxy_set_header X-Real-IP $remote_addr;") == 3
-    assert nginx.count("proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;") == 3
+    assert nginx.count("proxy_set_header X-Real-IP $remote_addr;") == 2
+    assert nginx.count("proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;") == 2
     assert "proxy_request_buffering off;" in api_location
     assert "proxy_read_timeout 1h;" in api_location
     assert "proxy_send_timeout 1h;" in api_location
@@ -164,11 +163,10 @@ def test_host_nginx_example_keeps_backend_private_and_sse_streaming() -> None:
     assert "http2 on;" in nginx
     assert 'auth_basic "RetainPDF";' in nginx
     assert "client_max_body_size 256m;" in nginx
-    assert "location = /api/v1/ai/ask {" in nginx
     assert "location ~ ^/api/v1/jobs/[^/]+/progress/stream$ {" in nginx
     assert "live-events" not in nginx
-    assert nginx.count("proxy_buffering off;") == 2
-    assert nginx.count("add_header X-Accel-Buffering no always;") == 2
+    assert nginx.count("proxy_buffering off;") == 1
+    assert nginx.count("add_header X-Accel-Buffering no always;") == 1
     assert "proxy_request_buffering off;" in nginx
 
 

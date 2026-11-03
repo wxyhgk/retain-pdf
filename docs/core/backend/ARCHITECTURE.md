@@ -15,23 +15,24 @@ frontend/web 或 frontend/desktop
        ├─ :42000  仅 /health、/ready
        ├─ retain-jobsd :41002（remote 模式、仅回环、可选监督）
        │    └─ Python pipeline workers
-       └─ retainpdf-ai :41100（仅回环、可选监督）
 ```
 
-Rust 的原始配置默认使用进程内 jobs runtime，并关闭两个子服务监督。仓库的权威
-开发入口 `python3 ops/development/dev_stack.py` 会显式选择
-`remote + supervised`，由 `rust_api` 监督 jobsd 与 AI 服务。当前 Docker 镜像
-监督 AI 服务，但 jobs runtime 保持默认进程内模式，除非部署者明确开启 remote。
+（RetainPDF 自己的 AI 服务 `retainpdf-ai :41100` 2026-11-03 删了，产品里只留 Studio 的 AI。）
 
-| 启动形态 | jobs runtime | AI 服务 | 说明 |
-| --- | --- | --- | --- |
-| 直接运行 `rust_api` | 默认 in-process | 默认不监督 | 由环境变量显式改变 |
-| `ops/development/dev_stack.py` | remote，Rust 监督 jobsd | Rust 监督 | 当前权威开发入口 |
-| 打包 Electron | remote，Rust 监督 jobsd | Rust 监督 | desktop main 为 packaged 模式注入配置 |
-| `ops/deployment/docker/backend/Dockerfile.app` | 默认 in-process | Rust 监督 | jobsd 二进制已打包，但默认不启动 |
+Rust 的原始配置默认使用进程内 jobs runtime，并关闭 jobsd 监督。仓库的权威
+开发入口 `python3 ops/development/dev_stack.py` 会显式选择
+`remote + supervised`，由 `rust_api` 监督 jobsd。当前 Docker 镜像
+的 jobs runtime 保持默认进程内模式，除非部署者明确开启 remote。
+
+| 启动形态 | jobs runtime | 说明 |
+| --- | --- | --- |
+| 直接运行 `rust_api` | 默认 in-process | 由环境变量显式改变 |
+| `ops/development/dev_stack.py` | remote，Rust 监督 jobsd | 当前权威开发入口 |
+| 打包 Electron | remote，Rust 监督 jobsd | desktop main 为 packaged 模式注入配置 |
+| `ops/deployment/docker/backend/Dockerfile.app` | 默认 in-process | jobsd 二进制已打包，但默认不启动 |
 
 `/health` 始终提供诊断视图；`/ready` 只把数据库和当前配置为“受监督”的子服务
-列为必需组件。41002、41100 必须保持回环地址。任何非回环 API 部署都必须显式
+列为必需组件。41002 必须保持回环地址。任何非回环 API 部署都必须显式
 配置强随机 `RUST_API_KEYS`，不能使用开发启动器的默认 key。
 
 ## 目录与职责
@@ -42,11 +43,10 @@ Rust 的原始配置默认使用进程内 jobs runtime，并关闭两个子服�
 | `backend/packages/retainpdf-core/` | 配置、公共模型、路径和失败契约 |
 | `database/retainpdf-db/` | SQLite 持久化（`retainpdf-data` 重导出成 `db`） |
 | `backend/packages/retainpdf-data/` | OCR provider、worker command、凭据与产物读取等持久化适配 |
-| `backend/packages/retainpdf-<领域>/` | 9 个领域包（accounts、ai、files、glossaries、ingest、jobs、library、platform、providers）和共用底座 `retainpdf-api-base`；`backend/api` 的 `src/services/mod.rs` 只负责把它们接上 |
+| `backend/packages/retainpdf-<领域>/` | 8 个领域包（accounts、files、glossaries、ingest、jobs、library、platform、providers）和共用底座 `retainpdf-api-base`；`backend/api` 的 `src/services/mod.rs` 只负责把它们接上 |
 | `backend/packages/retainpdf-runner/` | worker 生命周期和 pipeline 执行状态机 |
 | `backend/jobs/` | 可选的独立 jobs runtime 进程 |
 | `backend/packages/retainpdf-proc/` | 进程组与 OS 进程工具 |
-| `backend/ai/` | AI turn 编排、检索与 Agent runtime；不拥有业务持久状态 |
 | `backend/pipeline/` | OCR 归一化、翻译、修复、渲染与 PDF 处理 |
 | `backend/config/` | Rust/Python 共享 provider 配置 |
 | `backend/contracts/` | 独立后端包使用的 schema 镜像 |
@@ -66,16 +66,14 @@ API 内部继续保持模块化单体：读模型 `JobQueries` 仅依赖数据�
 delivery seq 不等于原始事件 seq，也不等于翻译 SSE seq。协议、保留策略及
 协同发布要求见 [事件 v2](../api/event-feed-v2.md)。
 
-- Rust 后端是 document、conversation、credential、job、pipeline attempt/unit、
-  document operation、candidate 与 commit 状态的权威来源。
+- Rust 后端是 document、credential、job、pipeline attempt/unit 状态的权威来源
+  （以前 AI 用的 conversation、document operation 表还在库里，不再有服务读写）。
 - remote 模式下 API 壳与 jobsd 通过同一 `retainpdf-data` 数据层访问 SQLite；
-  AI 服务和浏览器不能直接写数据库。
-- `ConversationState` 负责 turn 内的会话协调、摘要和消息提交，但持久化读写经
-  Rust API 完成；`app.py` 只做 FastAPI 装配、鉴权和兼容导出。
+  浏览器不能直接写数据库。
 - pipeline worker 生产 artifact 与 checkpoint 文件并发射受约束事件；Rust
   保存生命周期、attempt、generation、unit 和事件投影。
-- SSE、AI `agent_operation` 和类似通知都是刷新提示。断线重连后，消费者必须
-  重新读取 Rust 的任务、operation 或 committed translation 快照。
+- SSE 和类似通知都是刷新提示。断线重连后，消费者必须
+  重新读取 Rust 的任务或 committed translation 快照。
 - 页面翻译只在 checkpoint 文件 hash 与 durable committed unit 一致时可见；
   worker 内存、尚未提交文件和模型 token 流都不是可恢复状态。
 
@@ -90,8 +88,6 @@ Docker 使用 `/data`，桌面端传入应用数据目录；仓库里的 `backen
 | `jobs/<job_id>/` | stage spec、provider 快照、checkpoint 与发布产物 |
 | `uploads/`、`downloads/` | 受管理的输入和派生下载 |
 | `secrets/credentials.json` | Rust 管理的凭据 vault；位于 SQLite 外，要求受限权限且不回显明文。文件格式（版本号、大小上限、编号规则、读前安全检查）只在 `retainpdf-data::credentials` 定义，任务运行时读密钥和 API 凭据服务写入都用它 |
-| `secrets/ai-runtime.json` | AI runtime/模型配置及 provider 凭据；监督模式与 Rust 共用 data root，文件权限受限 |
-| `agent-runtime/fx/` | 仅在 `RETAIN_AI_FX_STATE_ROOT` 指向此处时保存 FX 子进程状态；开发启动器会显式设置，不替代 Rust conversation/operation 真值 |
 
 恢复需要数据库状态和匹配的 job/checkpoint 文件，因此备份或迁移必须覆盖整个数据根，
 不能只复制 `jobs.db`。
@@ -133,23 +129,14 @@ sync_cycle -- <数据目录> <同步文件夹>`。
 | Rust ↔ pipeline stage input | versioned stage spec 与对应 Rust/Python模型 | stage-spec checks 与 worker tests |
 | Paddle raw ↔ `document.v1` | [PaddleOCR 官方布局标签与归一化基线](../paddle_ocr_api/layout-labels.md) | adapter 映射、归一化报告与全量标签契约测试 |
 | MinerU raw ↔ `document.v1` | [MinerU 官方输出类型与归一化基线](../../reference/mineru_api/output-types.md) | block/span 目录、层级去重、bbox 与 adapter 契约测试 |
-| AI ↔ Rust operations | Rust capability、public operation API 与 broker grammar | Rust operation tests、AI broker/runtime tests |
-| 浏览器安全 PDF operation | `public-document-operation.v1.schema.json` | schema test、Rust public operation contract test |
-| AI ↔ Rust calculations | `agent-calculation.v1.schema.json` | AI client contract、Rust lifecycle/scope/artifact tests |
-| AI runtime 配置 | `runtime-config.v1.schema.json` | schema test、Python runtime config contract test |
 
 修改 schema 时先更新 `contracts`，同步 `backend/contracts` 镜像，再让
 生产者、消费者和 parity 门禁全部通过。API 细节不能只靠 schema 推断；路径、
 认证、错误、恢复和下载行为以 Rust API spec 与实现契约测试为准。
 
-## AI 模块化边界
+## AI 模块化边界（已删）
 
-`backend/ai/retainpdf_ai/app.py` 装配 `AskOrchestrator`、`ConversationState` 和
-选定 runtime。`runtimes/` 分别实现 Python retrieval、OpenAI-compatible Agent
-和 FX ACP；`agent_command_broker.py` 与 `agent_broker_*` 只允许受限的宿主命令。
-模型拿不到 Rust API key、capability 或任意 shell。Rust 验证 operation scope、
-幂等键、状态前置条件、candidate 和 commit；显式确认/绿灯模式只改变授权策略，
-不改变这些安全与持久化边界。
+2026-11-03 跟 RetainPDF 自己的 AI 服务一起删了，产品里只留 Studio 的 AI。
 
 ## 当前验证命令
 
@@ -159,7 +146,7 @@ sync_cycle -- <数据目录> <同步文件夹>`。
 python3 backend/api/scripts/check_architecture.py
 uv run --project backend --locked --all-extras cargo test --locked --workspace
 PYTHONPATH=backend/pipeline uv run --project backend python backend/pipeline/devtools/check_pipeline_architecture.py
-uv run --project backend python -m pytest backend/ai/tests backend/pipeline/devtools/tests -q
+uv run --project backend python -m pytest backend/pipeline/devtools/tests -q
 python3 backend/contracts/check_parity.py --require-upstream
 npm --prefix contracts test
 ```

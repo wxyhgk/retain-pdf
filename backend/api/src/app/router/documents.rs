@@ -1,7 +1,7 @@
 //! 书（文档）：一本 PDF 是一本书，同一本书的多个任务挂在它下面；书本身的文件；全文检索。
 
 use crate::app::AppState;
-use crate::routes::{library_data, public_document_operations};
+use crate::routes::library_data;
 
 crate::endpoints! {
     state: AppState;
@@ -35,8 +35,6 @@ crate::endpoints! {
     POST "/api/v1/documents/:document_id/metadata-suggestions/:suggestion_id/apply" => library_data::apply_document_metadata_suggestion_route, signed;
     /// 这本书的任务历史
     GET "/api/v1/documents/:document_id/jobs" => library_data::list_document_jobs_route, signed;
-    /// Agent 改过的版本（多用户下关闭）
-    GET "/api/v1/documents/:document_id/agent-versions" => public_document_operations::list_document_agent_versions_route, closed;
     /// 全文检索
     GET "/api/v1/search" => library_data::search_blocks_route, signed;
 }

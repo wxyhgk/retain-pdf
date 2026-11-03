@@ -208,7 +208,7 @@ http://127.0.0.1:40001
   - `127.0.0.1:42000`：第二个端口，只提供 `/health` 和 `/ready`（旧的一步提交接口 `POST /api/v1/translate/bundle` 已于 2026-10-19 删除）
 - `HOST_BIND_ADDRESS` 默认是 `127.0.0.1`。只有在另外配置了可靠的网络边界鉴权时，
   才应显式改为 `0.0.0.0`。**`40001` 端口能被谁访问，谁就有全部权限**：NGINX 会给没带 key 的请求
-  补上后端 key，后端 key 换得再长也拦不住经过 `40001` 的请求（包括能在服务器上执行命令的助手终端、
+  补上后端 key，后端 key 换得再长也拦不住经过 `40001` 的请求（包括
   读出已保存的模型和 OCR 凭据）。要让别的机器访问，在前面加一层带登录的反向代理（例如
   [宿主机 NGINX 示例](../../nginx/retainpdf.example.conf) 的 `auth_basic`），不要直接改成 `0.0.0.0`。
   后端 key 只保护直连的 `41000`。
@@ -252,7 +252,7 @@ sudo systemctl reload nginx
 宿主机代理必须同时保留：
 
 - `client_max_body_size 256m`；
-- `/api/v1/ai/ask` 和 `/api/v1/jobs/:job_id/progress/stream` 的 SSE 禁止缓冲（后者 Rust API 自己也带
+- `/api/v1/jobs/:job_id/progress/stream` 的 SSE 禁止缓冲（Rust API 自己也带
   `X-Accel-Buffering: no`，代理没配也不会被缓冲）；
 - 长请求超时；
 - `Host` / `X-Forwarded-*` 头；
@@ -304,7 +304,7 @@ docker compose up -d
 在 `ops/deployment/docker/delivery` 目录下操作。
 
 1. **改后端 key（只给内部服务用）。** `docker/auth.local.json` 的 `api_keys` 换成一个随机的长字符串，
-   例如 `openssl rand -hex 32` 的输出。多用户模式下浏览器不再用这个 key；AI 服务、任务服务等内部
+   例如 `openssl rand -hex 32` 的输出。多用户模式下浏览器不再用这个 key；任务服务等内部
    组件之间还要用它。**拿到这个 key 就等于拥有全部数据的权限**，不要外泄。
 
 2. **填多用户配置** `docker/multi-user.env`（每一项的说明写在文件里）：
@@ -368,7 +368,7 @@ docker compose up -d
   `secrets/credentials.json`。备份要包含整个卷。
 - **端口**：app 映射到宿主机的 `41000` / `42000` 只用于本机调试，用后端 key 访问等于内部服务。
   不需要时可以把 `docker-compose.yml` 里 app 的 `ports` 删掉，web 容器走 Docker 内部网络，不受影响。
-- **暂不开放给网站账号的功能**：AI 问答、附件，。
+- **暂不开放给网站账号的功能**：附件。（AI 问答 2026-11-03 删了。）
 
 ## 从单机部署切换过来
 

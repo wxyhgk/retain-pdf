@@ -26,8 +26,8 @@
 
 ### `src/runtime`
 
-- `ai_supervisor.rs`、`jobsd_supervisor.rs`：子进程启动、探活、退避重启和退出回收。
-- `app/server.rs` 持有 shutdown 通道并等待监督任务结束；`app/state.rs` 给 AI 网关注入状态读取函数。
+- `jobsd_supervisor.rs`：子进程启动、探活、退避重启和退出回收（AI 服务的监督器 `ai_supervisor.rs` 2026-11-03 跟 AI 服务一起删了）。
+- `app/server.rs` 持有 shutdown 通道并等待监督任务结束。
 - 平台包 `retainpdf-platform` 的 `health_api.rs` 保留 HTTP 健康状态投影（监督器状态由 `routes/common/health.rs` 读好传进去）；任务控制接口（任务包 `retainpdf-jobs` 的 `runtime_gateway.rs`）不属于进程监督器，不随目录名搬迁。
 - 当前状态仍由进程级原子量持有；本批不改变默认启动方式和 in-process/remote 语义。
 
@@ -36,7 +36,7 @@
 jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps/`（逻辑路径 `services/jobs/deps/`）：
 `command.rs` 管提交、快照与控制，`query.rs` 管查询/下载及 owned 快照，
 `replay.rs` 管重放所需路径和命令。查询模块不依赖 `creation` 的内部上下文。
-稳定 facade 位于 `services/jobs/facade.rs`（只放结构体），各个用例按 9 类写在
+稳定 facade 位于 `services/jobs/facade.rs`（只放结构体），各个用例按 8 类写在
 `services/jobs/<类>/` 里，和 `routes/jobs/<类>.rs` 同名。
 
 - 作用：
@@ -93,8 +93,8 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
 #### `src/routes/jobs`
 
 - `lifecycle.rs` / `actions.rs` / `progress.rs` / `files.rs` / `reports.rs` / `reader.rs` /
-  `translations.rs` / `data.rs` / `ai.rs`
-  真正的 axum route 入口，按 `/jobs` 的 9 类分文件，只调用 `JobsFacade` / `JobQueries`
+  `translations.rs` / `data.rs`
+  真正的 axum route 入口，按 `/jobs` 的 8 类分文件，只调用 `JobsFacade` / `JobQueries`
   并封装 `ApiResponse`（`routes/common/response.rs` 的 `ok_json`）。
 
 #### `src/routes` library 面
@@ -103,22 +103,13 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
   books 投影 API；只调书库包的 `api.rs`；cover/thumbnail 走 `download_response`。
 - `library_data.rs`
   documents / media / translate-from-library / favorites / search；只调书库包的 `api.rs`。
-- `library_extras.rs`
-  conversations；只调书库包的 `api.rs`。
 - `collections.rs`
   合集 CRUD 与成员关系；只调书库包的 `api.rs`。
 - deps：`routes/common.rs::build_library_route_deps`（`LibraryDeps` + `JobsFacade`）。
 
-#### `src/routes` AI / Agent 面
+#### `src/routes` AI / Agent 面（已删）
 
-- `ai_proxy.rs`
-  `/api/v1/ai/ask` 与 runtime-config 代理；只调 `services::ai::api`。
-- `public_document_operations.rs`
-  面向浏览器的 operation 查询、CAS 动作与 candidate 下载；只调
-  `public_document_operations_api`。
-- `document_operations.rs` / `agent_capabilities.rs` /
-  `agent_runtime_sessions.rs`
-  backend-only CLI/host 路由；不允许被前端当作公开操作接口。
+2026-11-03 跟 RetainPDF 自己的 AI 服务一起删了，产品里只留 Studio 的 AI。
 
 #### `src/routes/download_response`
 
@@ -130,21 +121,19 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
 ### `src/services`
 
 - 作用：
-  application service 入口和内部业务实现，按 9 个领域分成 9 个独立的包（`accounts`、`providers`、`ingest`、
-  `files`、`jobs`、`library`、`glossaries`、`ai`、`platform`，包在 `../packages/retainpdf-<领域>`）。
+  application service 入口和内部业务实现，按 8 个领域分成 8 个独立的包（`accounts`、`providers`、`ingest`、
+  `files`、`jobs`、`library`、`glossaries`、`platform`，包在 `../packages/retainpdf-<领域>`）。
   `src/services/` 下只剩 `mod.rs`，把包接成 `crate::services::<领域>`；本节以及下文的 `services/<领域>/...`
   都是逻辑路径，真实代码在对应包的 `src/` 下。
 - 每个领域包的 `lib.rs` 是它唯一的门面：子模块私有，路由、装配和别的领域只用门面导出的东西
   （见 `BOUNDARIES.md` 的 "Domain Facades"）。
 
-#### 入口包的 `uploads` 与 AI 包（`retainpdf-ai`）
+#### 入口包的 `uploads`
 
-- 路由通过 `services::ingest`、`services::ai` 的门面调用（实现分别在 `uploads/api.rs`、`ai/api.rs`）；
+- 路由通过 `services::ingest` 的门面调用（实现在 `uploads/api.rs`）；
   装配和跨业务调用也只用门面导出的能力，不访问私有实现文件。
 - `uploads` 的 `service/capacity/staging/pdf/error` 分别负责流程、处理容量、
   文件发布与清理、PDF 处理和业务错误；独立上传、OCR、Bundle 共享服务实例。
-- `ai` 的 `gateway` 持有 HTTP 客户端和启动配置；`api` 处理 HTTP/SSE 适配。
-  `AppState` 装配共享网关，健康状态来源仍由现有监督器提供，本轮没有迁移监督器。
 - 迁移状态及后续批次见
   [业务目录与边界统一迁移计划](../../docs/ops/planning/api-boundary-migration.md)。
 
@@ -155,11 +144,11 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
 > 要搭整个 `AppState` 的建任务、查询测试在 `src/api_tests/jobs_creation`、`src/api_tests/jobs_query_service`。
 
 - 作用：
-  jobs 的业务逻辑，按 9 类分目录，和 `routes/jobs/<类>.rs` 同名：
+  jobs 的业务逻辑，按 8 类分目录，和 `routes/jobs/<类>.rs` 同名：
   `lifecycle`（建任务、校验、发射、列表和详情、删任务 `deletion.rs`）、`actions`（取消、重跑、重试阶段、续跑计划）、
   `progress`（事件流、当前阶段、边翻边看）、`files`（列出、下载、是否就绪）、
   `reports`（失败原因、翻译诊断、排版、精修）、`reader`（区块、元信息、Markdown）、
-  `translations`（逐条看、人工改、重翻）、`data`（通用取数）、`ai`（画板）。
+  `translations`（逐条看、人工改、重翻）、`data`（通用取数）。
 - 根目录只放各类共用的：`facade.rs`（`JobsFacade` 结构体）、`query.rs`（`JobQueries` 结构体和取任务）、
   `deps/`、`presentation/`、`runtime_gateway.rs`、`summary_loaders/`。
 - 规则：
@@ -174,15 +163,15 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
 - 作用：
   给 route 提供统一 **Library** 入口（与 `JobsFacade` / `glossaries::api` 同级）。
 - 进入条件：
-  改文档、馆藏翻译入口、收藏、全文检索、资产、会话、合集业务时进这里；
+  改文档、馆藏翻译入口、收藏、全文检索、资产、合集业务时进这里；
   **不要** 把逻辑写回 `routes/library_*`。
 - 子模块：
   - （书架 `books.rs`、书架列表投影 `book_projection/` 2026-10-22 跟 `/library/books` 一起删了；删任务走任务包的 `JobDeletion`）
-  - `collection_workspace.rs` — 文件夹级 agent 工作区（把一个合集的书物化成目录，给 AI 服务读）
+  - `collection_workspace.rs` — 合集在磁盘上的目录，只剩删合集时清目录（以前给 AI 服务物化的 agent 工作区 2026-11-03 删了）
   - `documents.rs` / `media.rs` — 文档 CRUD 与 source.pdf/cover/thumbnail
   - `translate.rs` — 绑定文档 upload 后调 `JobsFacade::create_submission`
   - `search.rs` — blocks FTS 全文检索
-  - `conversations.rs` / `collections.rs` — 会话、合集
+  - `collections.rs` — 合集
 - 规则：
   route 只用 `api.rs` 导出的 view 函数（经 `services::library` 门面）；`derived_artifacts` 只允许在 service 内部使用。
 
@@ -213,8 +202,6 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
   字体查询入口，具体发现逻辑位于私有 `service.rs`。
 - [`../packages/retainpdf-providers/src/credentials/api.rs`](../packages/retainpdf-providers/src/credentials/api.rs)（服务商已拆成独立的包）
   HTTP 凭据入口；jobs 所需凭据使用锁等能力由模块根部明确导出，不经 HTTP 入口。
-- [`../packages/retainpdf-ai/src/agent_calculations/api.rs`](../packages/retainpdf-ai/src/agent_calculations/api.rs)
-  Agent 计算记录与产物接口，内部只依赖数据库和目录，不接收完整配置。
 - [`packages/retainpdf-library/src/api.rs`](../packages/retainpdf-library/src/api.rs)
   图书馆接口入口（见上）。
 - [`packages/retainpdf-jobs/src/lifecycle/snapshot_factory.rs`](../packages/retainpdf-jobs/src/lifecycle/snapshot_factory.rs)
@@ -223,14 +210,6 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
   job 持久化与启动边界。
 - [`packages/retainpdf-jobs/src/runtime_gateway.rs`](../packages/retainpdf-jobs/src/runtime_gateway.rs)
   services 访问 runtime 能力的收口层。
-- [`../packages/retainpdf-ai/src/api.rs`](../packages/retainpdf-ai/src/api.rs)
-  Rust 到受监督 AI sidecar 的 HTTP 代理入口。
-- [`../packages/retainpdf-ai/src/public_document_operations_api.rs`](../packages/retainpdf-ai/src/public_document_operations_api.rs)
-  浏览器安全 operation 投影、显式动作 CAS 与 candidate 读取入口。
-- [`../packages/retainpdf-ai/src/document_operation_api.rs`](../packages/retainpdf-ai/src/document_operation_api.rs)
-  internal CLI operation lifecycle 入口。
-- [`../packages/retainpdf-ai/src/agent_runtime_session_api.rs`](../packages/retainpdf-ai/src/agent_runtime_session_api.rs)
-  opaque runtime cursor revision CAS 入口。
 
 ### `../packages/retainpdf-data/src/worker_command.rs` + `worker_command/*`
 
@@ -319,10 +298,6 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
   先看 `src/services/jobs/<类>/`（建任务看 `src/services/jobs/lifecycle/creation`）
 - “这是 worker / Python 执行变化吗？”
   先看 `../packages/retainpdf-runner/src/job_runner`
-- “这是 AI 对话、runtime 或 PDF operation 变化吗？”
-  先分清 `../packages/retainpdf-ai/src/api.rs`、
-  `public_document_operations_api.rs` 和 backend-only
-  `document_operation_api.rs` 三个边界
 
 ## 一张更直观的目录地图
 
@@ -331,7 +306,7 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
 1. `src/routes`
    HTTP 适配层，只做参数提取和响应封装。
 2. `src/services/jobs`
-   jobs 用例入口（`JobsFacade` / `JobQueries`），按 9 类分目录，route 只和它们说话。
+   jobs 用例入口（`JobsFacade` / `JobQueries`），按 8 类分目录，route 只和它们说话。
 3. `src/services/jobs/lifecycle/creation` / `src/services/jobs/presentation`
    前者负责创建与提交，后者负责 detail/list/events 对外投影。
 4. `../packages/retainpdf-runner/src/job_runner`
@@ -360,7 +335,7 @@ jobs 的依赖装配由 `app/jobs.rs` 完成；依赖定义在任务包的 `deps
 3. [`src/routes/jobs`](src/routes/jobs)
    看 route 只是怎么转发。
 4. [`packages/retainpdf-jobs/src`](../packages/retainpdf-jobs/src)
-   看 9 类用例入口（分类表在 `mod.rs`）。
+   看 8 类用例入口（分类表在 `mod.rs`）。
 5. [`packages/retainpdf-jobs/src/lifecycle/creation`](../packages/retainpdf-jobs/src/lifecycle/creation)
    看创建链路的准备、快照、提交。
 6. [`../packages/retainpdf-runner/src/job_runner`](../packages/retainpdf-runner/src/job_runner)

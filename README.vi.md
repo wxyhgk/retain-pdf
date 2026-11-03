@@ -53,12 +53,12 @@ Hiển thị PDF gốc và bản dịch cạnh nhau để kiểm tra công thứ
   <img src="resources/brand/readme-gallery/product/markdown-reader.png" alt="Trình đọc Markdown của RetainPDF" width="1000" />
 </p>
 
-### Hỏi đáp AI theo tài liệu
+### Ghi chú đọc sách và AI
 
-Đặt câu hỏi trực tiếp về tài liệu hiện tại và nhận câu trả lời kèm trích dẫn theo trang. Chuyển rõ ràng sang PDF Agent khi cần chỉnh sửa PDF.
+Đọc trong Studio: ghi chú của cuốn sách ở giữa, bản gốc và bản dịch nằm ngay bên cạnh, AI ở bên phải. Vừa đọc, vừa ghi, vừa hỏi cùng lúc; gửi một đoạn vào ghi chú chỉ với một cú nhấp, và nhấp vào trích dẫn trong ghi chú để quay lại đúng trang đó.
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/product/ai-assistant.png" alt="Hỏi đáp AI theo tài liệu với trích dẫn trong RetainPDF" width="1000" />
+  <img src="resources/brand/readme-gallery/product/ai-assistant.png" alt="Ghi chú đọc sách và AI trong RetainPDF" width="1000" />
 </p>
 
 ## Ví dụ bản dịch

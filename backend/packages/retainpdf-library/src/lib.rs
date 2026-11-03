@@ -6,10 +6,7 @@
 mod api;
 
 mod collection_workspace;
-#[cfg(all(test, unix))]
-mod collection_workspace_tests;
 mod collections;
-mod conversations;
 mod documents;
 #[cfg(all(test, unix))]
 mod jobs_view_parity_tests;
@@ -25,31 +22,23 @@ mod views;
 
 // 门面：领域外只能用这里导出的东西，子模块都是私有的（见 BOUNDARIES.md「Domain Facades」）。
 pub use api::{
-    add_collection_documents_view, append_message_view, apply_document_metadata_suggestion_view,
-    collection_agent_workspace, create_collection_view, create_conversation_view,
-    create_document_metadata_suggestion_view, delete_collection_view, delete_conversation_view,
-    delete_document_view, document_delete_job_ids_view, document_files,
-    document_reading,
-    document_translation_coverage, fork_conversation_view, get_conversation_view, get_document,
-    list_collections_view, list_conversations_view,
-    list_document_metadata_suggestions_view, list_documents,
-    ocr_document_view, patch_collection_view, patch_conversation_view,
-    patch_document, remove_collection_document_view, search_blocks_view,
-    translate_document_view, CollectionWorkspace, Disposition, DocumentReadingView,
+    add_collection_documents_view, apply_document_metadata_suggestion_view, create_collection_view,
+    create_document_metadata_suggestion_view, delete_collection_view, delete_document_view,
+    document_delete_job_ids_view, document_files, document_reading, document_translation_coverage,
+    get_document, list_collections_view, list_document_metadata_suggestions_view, list_documents,
+    ocr_document_view, patch_collection_view, patch_document, remove_collection_document_view,
+    search_blocks_view, translate_document_view, Disposition, DocumentReadingView,
     TranslationCoverageView,
 };
 pub use media::{open_document_file, DocumentFile};
 pub use views::{
-    AddCollectionDocumentsInput, AppendMessageInput, ApplyDocumentMetadataSuggestionInput,
-    CollectionListView, CollectionMutationResult, ConversationDetailView, ConversationListView,
-    ConversationMutationResult, CreateCollectionInput, CreateConversationInput,
-    CreateDocumentMetadataSuggestionInput, DeleteDocumentQuery, DocumentDeleteResultView,
-    DocumentJobRequest, DocumentListView,
+    AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, CollectionListView,
+    CollectionMutationResult, CreateCollectionInput, CreateDocumentMetadataSuggestionInput,
+    DeleteDocumentQuery, DocumentDeleteResultView, DocumentJobRequest, DocumentListView,
     DocumentMetadataEvidenceView, DocumentMetadataSuggestionApplyView,
     DocumentMetadataSuggestionListView, DocumentMetadataSuggestionView, DocumentTitleCandidateView,
-    ForkConversationInput, ForkMessageInput, ListConversationsQuery,
     ListDocumentMetadataSuggestionsQuery, ListDocumentsQuery, PatchCollectionInput,
-    PatchConversationInput, PatchDocumentInput, SearchQuery, SearchResultView,
+    PatchDocumentInput, SearchQuery, SearchResultView,
 };
 
 use std::path::Path;
@@ -59,10 +48,6 @@ use retainpdf_data::db::Db;
 use collections::{
     add_collection_documents, create_collection, delete_collection, list_collections,
     patch_collection, remove_collection_document,
-};
-use conversations::{
-    append_message, create_conversation, delete_conversation, fork_conversation, get_conversation,
-    list_conversations, patch_conversation,
 };
 use documents::{delete_document, document_delete_job_ids};
 use media::document_files_view;

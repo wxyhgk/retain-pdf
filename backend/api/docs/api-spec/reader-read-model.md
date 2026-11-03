@@ -2,7 +2,7 @@
 
 [API spec index](../../API_SPEC.md) · [public API index](../../../../docs/core/api/index.md)
 
-> Address note: `/jobs/{job_id}/…` is grouped into nine categories (`actions`, `progress`, `files`, `reports`, `reader`, `translations`, `data`, `ai`). The old addresses were removed on 2026-10-18 and now return 404; use the new ones (`GET /jobs/{job_id}/reader/markdown`, `/progress/layout`, `/progress/pages/{page}`, `/progress/stream`, `/files`). Old-to-new table: [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md); every endpoint: [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
+> Address note: `/jobs/{job_id}/…` is grouped into eight categories (`actions`, `progress`, `files`, `reports`, `reader`, `translations`, `data`; `ai` was removed on 2026-11-03). The old addresses were removed on 2026-10-18 and now return 404; use the new ones (`GET /jobs/{job_id}/reader/markdown`, `/progress/layout`, `/progress/pages/{page}`, `/progress/stream`, `/files`). Old-to-new table: [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md); every endpoint: [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
 
 This document defines the read surfaces a Reader host consumes before it maps
 backend responses into its own PDF, content, AI, and shell ports. It is the
@@ -34,16 +34,13 @@ All listed endpoints require `X-API-Key`. New consumers branch on
 | In-progress layout | `GET /api/v1/jobs/{job_id}/progress/layout` | `LiveTranslationLayout` | Layout can be ready before any page translation. |
 | Committed page translation | `GET /api/v1/jobs/{job_id}/progress/pages/{page}` | `LiveTranslationPageSnapshot` | Reads only a hash-matched durable checkpoint. |
 | Commit refresh stream | `GET /api/v1/jobs/{job_id}/progress/stream?after_seq={seq}` | SSE `translation_units_committed` | An event is a refresh hint, not translation text. |
-| Reading AI / operations | `POST /api/v1/ai/ask` and conversation/operation routes | existing AI schemas | See [Reader AI chat](../../../../docs/core/api/reader-ai-chat.md). |
 
-`POST /api/v1/jobs/{job_id}/reader/ai/chat` remains a legacy, completed-job,
-one-shot compatibility endpoint. New Reader integrations must use `/api/v1/ai/ask`,
-conversation APIs, and public document-operation APIs instead.
+阅读问答（`/api/v1/ai/ask`、会话、公开文档操作）2026-11-03 跟 RetainPDF 自己的 AI 服务一起删了，
+产品里只留 Studio 的 AI；Studio 读书用上面这些只读接口。
 
 ## Identity and coordinates
 
-- `document_id` is the stable library and AI identity. Document-level history,
-  AI conversations, and committed agent versions belong to it.
+- `document_id` is the stable library identity. Document-level history belongs to it.
 - An explicit `job_id` selects an immutable job/read snapshot. A host must not
   substitute the document's newer active job for a historical job link.
 - `item_id` is canonicalized by backend Reader projections. Matching IDs in a

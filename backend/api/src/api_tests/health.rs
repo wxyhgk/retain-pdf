@@ -6,7 +6,7 @@ use crate::api_tests::jobs_common::{read_json, test_state};
 use crate::app::{build_app, build_simple_app};
 use crate::config::JobsRuntimeMode;
 use crate::routes::common::build_health_route_deps;
-use crate::runtime::{ai_supervisor, jobsd_supervisor};
+use crate::runtime::jobsd_supervisor;
 use crate::services::platform::build_readiness_view;
 
 #[tokio::test]
@@ -61,47 +61,31 @@ async fn simple_router_serves_only_health_and_ready() {
 #[test]
 fn readiness_requires_only_components_selected_by_config() {
     let state = test_state("readiness-config-boundary");
-    let view = build_readiness_view(
-        &build_health_route_deps(&state),
-        ai_supervisor::AI_STATUS_UNHEALTHY,
-        jobsd_supervisor::JOBSD_STATUS_UNHEALTHY,
-    );
+    let view = build_readiness_view(&build_health_route_deps(&state), jobsd_supervisor::JOBSD_STATUS_UNHEALTHY);
     assert_eq!(view.status, "ready");
     assert!(view.reasons.is_empty());
+    // AI 服务 2026-11-03 删了：键留着，永远不需要
     assert!(!view.components.ai_service.required);
     assert_eq!(view.components.ai_service.status, "not_required");
     assert!(!view.components.jobsd.required);
     assert_eq!(view.components.jobsd.status, "not_required");
 
     let mut config = (*state.config).clone();
-    config.ai_service.supervise = true;
     config.jobs_service.mode = JobsRuntimeMode::Remote;
     config.jobs_service.supervise = true;
     let required_state = crate::AppState {
         config: std::sync::Arc::new(config),
         ..state
     };
-    let view = build_readiness_view(
-        &build_health_route_deps(&required_state),
-        ai_supervisor::AI_STATUS_STARTING,
-        jobsd_supervisor::JOBSD_STATUS_UNHEALTHY,
-    );
+    let view = build_readiness_view(&build_health_route_deps(&required_state), jobsd_supervisor::JOBSD_STATUS_UNHEALTHY);
     assert_eq!(view.status, "not_ready");
     assert!(!view.is_ready());
-    assert_eq!(
-        view.reasons,
-        ["ai_service_not_healthy", "jobsd_not_healthy"]
-    );
-    assert!(view.components.ai_service.required);
-    assert_eq!(view.components.ai_service.status, "starting");
+    assert_eq!(view.reasons, ["jobsd_not_healthy"]);
+    assert!(!view.components.ai_service.required);
     assert!(view.components.jobsd.required);
     assert_eq!(view.components.jobsd.status, "unhealthy");
 
-    let view = build_readiness_view(
-        &build_health_route_deps(&required_state),
-        ai_supervisor::AI_STATUS_HEALTHY,
-        jobsd_supervisor::JOBSD_STATUS_HEALTHY,
-    );
+    let view = build_readiness_view(&build_health_route_deps(&required_state), jobsd_supervisor::JOBSD_STATUS_HEALTHY);
     assert_eq!(view.status, "ready");
     assert!(view.is_ready());
     assert!(view.reasons.is_empty());
@@ -111,16 +95,13 @@ fn readiness_requires_only_components_selected_by_config() {
 async fn not_ready_is_a_503_with_an_error_envelope_and_the_readiness_view() {
     let state = test_state("readiness-not-ready-envelope");
     let mut config = (*state.config).clone();
-    config.ai_service.supervise = true;
+    config.jobs_service.mode = JobsRuntimeMode::Remote;
+    config.jobs_service.supervise = true;
     let required_state = crate::AppState {
         config: std::sync::Arc::new(config),
         ..state
     };
-    let view = build_readiness_view(
-        &build_health_route_deps(&required_state),
-        ai_supervisor::AI_STATUS_STARTING,
-        jobsd_supervisor::JOBSD_STATUS_UNHEALTHY,
-    );
+    let view = build_readiness_view(&build_health_route_deps(&required_state), jobsd_supervisor::JOBSD_STATUS_STARTING);
     let response = crate::routes::health::readiness_response(view);
     assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
     let body = read_json(response).await;
@@ -129,14 +110,12 @@ async fn not_ready_is_a_503_with_an_error_envelope_and_the_readiness_view() {
     assert_eq!(body["message"], "not ready");
     assert_eq!(body["error"]["code"], "SERVICE_UNAVAILABLE");
     assert_eq!(body["error"]["http_status"], 503);
-    assert_eq!(
-        body["error"]["details"]["reasons"],
-        serde_json::json!(["ai_service_not_healthy"])
-    );
+    assert_eq!(body["error"]["details"]["reasons"], serde_json::json!(["jobsd_not_healthy"]));
     // `data` 照旧是整份就绪视图（命令行 `retainpdf status` 读它）。
     assert_eq!(body["data"]["status"], "not_ready");
     assert_eq!(body["data"]["reasons"], body["error"]["details"]["reasons"]);
-    assert_eq!(body["data"]["components"]["ai_service"]["status"], "starting");
+    assert_eq!(body["data"]["components"]["jobsd"]["status"], "starting");
+    assert_eq!(body["data"]["components"]["ai_service"]["status"], "not_required");
 }
 
 #[tokio::test]

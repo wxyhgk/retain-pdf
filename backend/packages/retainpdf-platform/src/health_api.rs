@@ -10,30 +10,24 @@ use retainpdf_api_base::disk_space::free_space_bytes;
 use retainpdf_api_base::supervisor::{supervisor_status_label, SUPERVISOR_HEALTHY};
 use retainpdf_data::ocr_provider::supported_provider_keys;
 
+/// 健康检查里 `ai_service` 的值。RetainPDF 自己的 AI 服务 2026-11-03 删了（产品里只留 Studio 的 AI），
+/// 键照旧留着（旧字段不删），值固定。
+const AI_SERVICE_REMOVED: &str = "disabled";
+
 pub struct HealthApiDeps<'a> {
     db: &'a Db,
-    ai_supervised: bool,
     jobsd_supervised: bool,
-    /// 建依赖那一刻两个监督器的状态（`retainpdf_api_base::supervisor`），由调用方从 runtime 读来传进来。
-    ai_status: u8,
+    /// 建依赖那一刻 jobsd 监督器的状态（`retainpdf_api_base::supervisor`），由调用方从 runtime 读来传进来。
     jobsd_status: u8,
     data_root: Option<&'a Path>,
     min_free_disk_bytes: u64,
 }
 
 impl<'a> HealthApiDeps<'a> {
-    pub fn new(
-        db: &'a Db,
-        ai_supervised: bool,
-        jobsd_supervised: bool,
-        ai_status: u8,
-        jobsd_status: u8,
-    ) -> Self {
+    pub fn new(db: &'a Db, jobsd_supervised: bool, jobsd_status: u8) -> Self {
         Self {
             db,
-            ai_supervised,
             jobsd_supervised,
-            ai_status,
             jobsd_status,
             data_root: None,
             min_free_disk_bytes: 0,
@@ -78,6 +72,7 @@ pub struct HealthView {
     /// 在跑的任务数。库读不出来时是 `null`。
     pub running_jobs: Option<i64>,
     pub provider_backends: Vec<String>,
+    /// 固定 `disabled`（AI 服务 2026-11-03 删了，键留着）。
     pub ai_service: &'static str,
     pub jobsd: &'static str,
     pub disk: DiskSpaceView,
@@ -93,6 +88,7 @@ pub struct ReadinessComponentView {
 #[derive(Debug, Serialize)]
 pub struct ReadinessComponentsView {
     pub db: ReadinessComponentView,
+    /// 固定不需要（AI 服务 2026-11-03 删了，键留着）。
     pub ai_service: ReadinessComponentView,
     pub jobsd: ReadinessComponentView,
 }
@@ -121,7 +117,7 @@ pub fn build_health_view(deps: &HealthApiDeps<'_>) -> HealthView {
         queue_depth: queued,
         running_jobs: running,
         provider_backends: supported_provider_keys(),
-        ai_service: supervisor_status_label(deps.ai_status),
+        ai_service: AI_SERVICE_REMOVED,
         jobsd: supervisor_status_label(deps.jobsd_status),
         disk: disk_space_view(deps),
         time: now_iso(),
@@ -129,26 +125,17 @@ pub fn build_health_view(deps: &HealthApiDeps<'_>) -> HealthView {
 }
 
 pub fn build_current_readiness_view(deps: &HealthApiDeps<'_>) -> ReadinessView {
-    build_readiness_view(deps, deps.ai_status, deps.jobsd_status)
+    build_readiness_view(deps, deps.jobsd_status)
 }
 
-pub fn build_readiness_view(
-    deps: &HealthApiDeps<'_>,
-    ai_status: u8,
-    jobsd_status: u8,
-) -> ReadinessView {
+pub fn build_readiness_view(deps: &HealthApiDeps<'_>, jobsd_status: u8) -> ReadinessView {
     let db_ok = deps.db.ping().is_ok();
-    let ai_required = deps.ai_supervised;
     let jobsd_required = deps.jobsd_supervised;
-    let ai_ok = !ai_required || ai_status == SUPERVISOR_HEALTHY;
     let jobsd_ok = !jobsd_required || jobsd_status == SUPERVISOR_HEALTHY;
 
     let mut reasons = Vec::new();
     if !db_ok {
         reasons.push("db_unavailable");
-    }
-    if !ai_ok {
-        reasons.push("ai_service_not_healthy");
     }
     if !jobsd_ok {
         reasons.push("jobsd_not_healthy");
@@ -166,12 +153,8 @@ pub fn build_readiness_view(
                 status: if db_ok { "healthy" } else { "unhealthy" },
             },
             ai_service: ReadinessComponentView {
-                required: ai_required,
-                status: if ai_required {
-                    supervisor_status_label(ai_status)
-                } else {
-                    "not_required"
-                },
+                required: false,
+                status: "not_required",
             },
             jobsd: ReadinessComponentView {
                 required: jobsd_required,

@@ -14,7 +14,7 @@
 
 维护原则：
 
-- 依赖真相源按服务拆分到 `backend/pipeline/pyproject.toml` 与 `backend/ai/pyproject.toml`。
+- 依赖真相源按服务拆分到各包自己的 `pyproject.toml`（`backend/pipeline/pyproject.toml` 等；AI 服务的 `backend/ai/pyproject.toml` 2026-11-03 跟 AI 服务一起删了）。
 - requirements 文件应由脚本生成，不直接手改。
 - Docker、桌面端和 CI 应共享同一套依赖口径。
 - 模块边界以 [architecture.md](./architecture.md) 和

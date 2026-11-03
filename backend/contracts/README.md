@@ -1,16 +1,13 @@
 # RetainPDF backend contracts
 
 This directory is the backend-local mirror of the JSON contracts consumed by
-the Rust API, `retain-jobsd`, the Python AI service, and the Python pipeline.
+the Rust API, `retain-jobsd`, and the Python pipeline.（Python AI 服务 2026-11-03 删了。）
 Backend code and tests must resolve contracts from `<backend-root>/contracts`
 where the current backend root is `backend/`, so an extracted backend package
 remains testable without the parent monorepo.
 
 The mirrored files are:
 
-- `ai-ask.v1.schema.json`
-- `agent-calculation.v1.schema.json`
-- `ai-conversations.v1.schema.json`
 - `create-job.v1.schema.json`
 - `glossaries.v1.schema.json`
 - `job-actions.v1.schema.json`
@@ -23,10 +20,8 @@ The mirrored files are:
 - `library-documents.v1.schema.json`
 - `ocr-providers.v1.schema.json`
 - `pipeline-stdout.v1.schema.json`
-- `public-document-operation.v1.schema.json`
 - `reader-data.v1.schema.json`
 - `refine-report.v1.schema.json`
-- `runtime-config.v1.schema.json`
 - `token-usage.v1.schema.json`
 - `translation-revisions.v1.schema.json`
 
