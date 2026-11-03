@@ -19,11 +19,11 @@ from retainpdf_translation.services.agents import AgentRunContext
 from retainpdf_translation.services.agents import TranslationAgentCoordinator
 from retainpdf_translation.services.agents import TranslationAgentRuntime
 from retainpdf_translation.services.agents import run_agent_repair_pipeline
+from retainpdf_translation.services.agents.repair_pipeline import ISSUE_KIND_LABELS
 from retainpdf_translation.services.finalization import recover_blocking_untranslated_items
 from retainpdf_translation.services.postprocess import GarbledReconstructionRuntime
 from retainpdf_translation.services.postprocess import reconstruct_garbled_page_payloads
 from retainpdf_translation.workflow.pages import save_pages
-from retainpdf_translation.workflow.pages import refresh_translation_units_by_page
 from retainpdf_translation.workflow.pages import refresh_translation_units_and_collect_changed_pages
 
 
@@ -253,7 +253,7 @@ def run_agent_repair_stage(
         for item in flat_payload
         if str(item.get("item_id", "") or "")
     }
-    summary = run_agent_repair_pipeline(
+    result = run_agent_repair_pipeline(
         payload=flat_payload,
         translated_results=translated_results,
         coordinator=coordinator,
@@ -262,16 +262,35 @@ def run_agent_repair_stage(
         max_items=repair_limit,
         model=model,
         base_url=base_url,
-    ).as_dict()
-    if summary["repaired_items"] or summary["skipped_items"] or summary["failed_items"]:
-        refresh_translation_units_by_page(page_payloads)
-        save_pages(page_payloads, translation_paths)
+        on_candidates=lambda candidates: emit_stage_progress(
+            stage="agent_repair",
+            substage="agent_repair",
+            message=f"要修 {len(candidates)} 块：{_describe_issue_kinds(candidates)}",
+            progress_current=0,
+            progress_total=len(candidates),
+            payload={"candidates": candidates[:50]},
+        ),
+        on_progress=lambda done, total, item_id: emit_stage_progress(
+            stage="agent_repair",
+            substage="agent_repair",
+            message=f"正在修复第 {done}/{total} 块（{item_id}）",
+            progress_current=done,
+            progress_total=total,
+            payload={"item_id": item_id},
+        ),
+    )
+    summary = result.as_dict()
+    # 只保存修过的块所在的页（以前整本重写：6574 页的书改 8 块要写半小时）
+    _save_touched_pages(page_payloads, translation_paths, result.touched_item_ids, stage="agent_repair")
     if run_diagnostics is not None:
         run_diagnostics.mark_phase_end("agent_repair")
     emit_stage_progress(
         stage="agent_repair",
         substage="agent_repair",
-        message="翻译结果修复完成",
+        message=(
+            f"翻译结果修复完成：修好 {summary['repaired_items']} 块，"
+            f"没采纳或失败 {summary['failed_items']} 块"
+        ),
         progress_current=summary["repaired_items"],
         progress_total=summary["candidate_items"],
         elapsed_ms=int((time.perf_counter() - repair_started) * 1000),
@@ -324,7 +343,7 @@ def run_final_untranslated_recovery_stage(
             "max_items": max_items,
         },
     )
-    summary = recover_blocking_untranslated_items(
+    result = recover_blocking_untranslated_items(
         page_payloads,
         api_key=api_key,
         model=model,
@@ -333,13 +352,24 @@ def run_final_untranslated_recovery_stage(
         max_items=max_items,
         workers=max(1, min(32, int(workers or 1))),
         request_chat_content_fn=request_chat_content,
-    ).as_dict()
-    refresh_translation_units_by_page(page_payloads)
-    save_pages(page_payloads, translation_paths)
+        on_progress=lambda done, total, item_id: emit_stage_progress(
+            stage="final_untranslated_recovery",
+            substage="final_untranslated_recovery",
+            message=f"正在补翻第 {done}/{total} 块（{item_id}）",
+            progress_current=done,
+            progress_total=total,
+            payload={"item_id": item_id},
+        ),
+    )
+    summary = result.as_dict()
+    _save_touched_pages(page_payloads, translation_paths, result.touched_item_ids, stage="final_untranslated_recovery")
     emit_stage_progress(
         stage="final_untranslated_recovery",
         substage="final_untranslated_recovery",
-        message="最终未翻译收口完成",
+        message=(
+            f"最终未翻译收口完成：补成 {summary['recovered_items']} 块，"
+            f"保留原文 {summary['dead_letter_items']} 块，还有 {summary['blocking_after']} 块没处理"
+        ),
         progress_current=summary["attempted_items"],
         progress_total=blocking_before,
         elapsed_ms=int((time.perf_counter() - started) * 1000),
@@ -354,6 +384,44 @@ def run_final_untranslated_recovery_stage(
         flush=True,
     )
     return summary
+
+
+def _describe_issue_kinds(candidates: list[dict]) -> str:
+    """「英文残留 5 块、术语没用上 2 块」。"""
+    counts: dict[str, int] = {}
+    for candidate in candidates:
+        for kind in candidate.get("issue_kinds") or []:
+            label = ISSUE_KIND_LABELS.get(str(kind), str(kind))
+            counts[label] = counts.get(label, 0) + 1
+    return "、".join(f"{label} {count} 块" for label, count in sorted(counts.items(), key=lambda pair: -pair[1])) or "无"
+
+
+def _save_touched_pages(
+    page_payloads: dict[int, list[dict]],
+    translation_paths: dict[int, Path],
+    touched_item_ids: tuple[str, ...],
+    *,
+    stage: str,
+) -> None:
+    """只保存这一轮改过的块所在的页，加上刷新翻译单元时跟着变了的页。"""
+    wanted = {item_id for item_id in touched_item_ids if item_id}
+    dirty_pages = {
+        int(page_idx)
+        for page_idx, items in page_payloads.items()
+        if any(str(item.get("item_id", "") or "") in wanted for item in items)
+    }
+    if not dirty_pages:
+        return
+    dirty_pages.update(refresh_translation_units_and_collect_changed_pages(page_payloads))
+    emit_stage_progress(
+        stage=stage,
+        substage=stage,
+        message=f"正在保存改动过的 {len(dirty_pages)} 页",
+        progress_current=None,
+        progress_total=None,
+        payload={"dirty_pages": len(dirty_pages)},
+    )
+    save_pages(page_payloads, translation_paths, dirty_pages)
 
 
 def _final_recovery_limit_from_env(*, payload_size: int = 0) -> int:

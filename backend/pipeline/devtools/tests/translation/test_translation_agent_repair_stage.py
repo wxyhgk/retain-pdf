@@ -117,3 +117,54 @@ def test_agent_repair_limit_env_override_still_wins(monkeypatch) -> None:
         payload_size=3331,
         blocking_untranslated_count=26,
     ) == 3
+
+
+def test_agent_repair_reports_what_it_repairs_and_saves_only_the_touched_pages(monkeypatch, tmp_path: Path) -> None:
+    # 以前只报开始（0/N）和结束，界面上看不出在修什么；修完把整本每一页都重写（6574 页的书改 8 块写半小时）。
+    candidate = _item(
+        "p001-b001",
+        "The self-consistent field procedure computes the molecular orbitals before the final energy is evaluated.",
+    )
+    untouched = {**_item("p002-b001", "已经是中文的译文。"), "page_idx": 1, "translated_text": "已经是中文的译文。"}
+    untouched["protected_translated_text"] = untouched["translated_text"]
+    pages = {0: [candidate], 1: [untouched]}
+    paths = {0: tmp_path / "page-001.json", 1: tmp_path / "page-002.json"}
+    for page_idx, path in paths.items():
+        path.write_text(json.dumps(pages[page_idx]), encoding="utf-8")
+    paths[1].write_text("SENTINEL", encoding="utf-8")  # 这一页没改，不该被重写
+    monkeypatch.setenv("RETAIN_TRANSLATION_REPAIR_PROFILE", "quality")
+    monkeypatch.setenv("RETAIN_TRANSLATION_AGENT_REPAIR_LIMIT", "1")
+    monkeypatch.setattr(
+        repair_phase,
+        "request_chat_content",
+        lambda *_args, **_kwargs: json.dumps(
+            {
+                "repaired_text": "自洽场过程先计算分子轨道，再评估最终能量。",
+                "applied_issue_kinds": ["english_residue"],
+                "confidence": 0.9,
+                "needs_manual_review": False,
+                "notes": "",
+            },
+            ensure_ascii=False,
+        ),
+    )
+    messages: list[str] = []
+    monkeypatch.setattr(repair_phase, "emit_stage_progress", lambda **kwargs: messages.append(kwargs["message"]))
+
+    summary = stages.run_agent_repair_stage(
+        page_payloads=pages,
+        translation_paths=paths,
+        api_key="sk-test",
+        model="demo-model",
+        base_url="https://example.com/v1",
+        translation_context=None,
+        run_diagnostics=None,
+    )
+
+    assert summary["repaired_items"] == 1
+    assert any(message.startswith("要修 1 块：") and "英文残留" in message for message in messages), messages
+    assert "正在修复第 1/1 块（p001-b001）" in messages
+    assert "正在保存改动过的 1 页" in messages
+    assert messages[-1].startswith("翻译结果修复完成：修好 1 块")
+    assert json.loads(paths[0].read_text(encoding="utf-8"))[0]["translated_text"] == "自洽场过程先计算分子轨道，再评估最终能量。"
+    assert paths[1].read_text(encoding="utf-8") == "SENTINEL"

@@ -87,13 +87,15 @@ def _is_settled_non_blocking(unit: dict[str, Any], flat_payload: list[dict]) -> 
     """这个待办单元是不是「已经尘埃落定、且不阻断导出」。
 
     分组单元按成员判定:只要还有**任何一个**成员是阻断性未翻译,整组仍算待办。
+    只有一个成员的接续组也按成员判:单元自己（`__cg__:…`）从来不会被打上最终状态，以前看它就永远算阻断——
+    成员已经转成死信、导出门禁放行了，提交时却报 pending（2026-11-03，6574 页的书卡在 p917-b021 一行 `---`）。
     """
     member_ids = {
         str(item_id or "")
         for item_id in unit.get("translation_unit_member_ids", [])
         if str(item_id or "")
     }
-    if len(member_ids) > 1:
+    if member_ids:
         members = [
             item for item in flat_payload
             if str(item.get("item_id", "") or "") in member_ids
@@ -151,9 +153,10 @@ def project_progress(
             for item_id in unit.get("translation_unit_member_ids", [])
             if str(item_id or "")
         ]
+        # 有成员就按成员记（只有一个成员的接续组，单元编号 `__cg__:…` 不是任何一块的编号）
         unit_ids = (
             set(member_ids)
-            if len(member_ids) > 1
+            if member_ids
             else {str(unit.get("item_id", "") or "")} - {""}
         )
         pending_ids.update(unit_ids)
