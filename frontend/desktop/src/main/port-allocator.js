@@ -1,6 +1,6 @@
 // Dynamic port allocation for the bundled backend.
 //
-// If a default port (41000/42000/41002/41100) is occupied, the desktop used
+// If a default port (41000/42000/41002) is occupied, the desktop used
 // to fail outright. Now it reclaims own residuals first and otherwise falls
 // back to the next free port, so any occupant (old installs, Docker, other
 // software) no longer blocks startup. The chosen ports flow into the backend
@@ -12,7 +12,6 @@ const PORT_ROLES = [
   { key: "apiPort", label: "API", fallback: 41000 },
   { key: "simplePort", label: "multipart 提交", fallback: 42000 },
   { key: "jobsPort", label: "任务服务", fallback: 41002 },
-  { key: "aiServicePort", label: "AI 服务", fallback: 41100 },
 ];
 
 function createPortAllocator(options = {}) {
@@ -69,8 +68,8 @@ function createPortAllocator(options = {}) {
     );
   }
 
-  // Allocate all four backend ports. Returns
-  // { ports: { apiPort, simplePort, jobsPort, aiServicePort },
+  // Allocate all three backend ports. Returns
+  // { ports: { apiPort, simplePort, jobsPort },
   //   relocations: [{ role, from, to }], occupantLines: { key: string } }.
   async function allocateBackendPorts(host, defaults = {}) {
     const ports = {};

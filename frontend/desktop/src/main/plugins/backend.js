@@ -1,7 +1,7 @@
-// 后端插件：校验运行文件、分配端口、拉起 rust_api 和 retainpdf-ai、等就绪，然后提供
+// 后端插件：校验运行文件、分配端口、拉起 rust_api、等就绪，然后提供
 // `backend` 服务 { apiPort, external }。网关插件依赖它，所以就绪之前网关和窗口都不会启动。
 //
-// 原来 main.js 里的 backendChild / aiServiceChild / backendStopping / usingExternalBackend /
+// 原来 main.js 里的 backendChild / backendStopping / usingExternalBackend /
 // suppressBackendCrashDialog 都收成这里的局部状态。子进程登记在一个 effect 里：插件树 dispose
 // （退出）时照原来 before-quit 的规矩收尾——Windows 同步 taskkill，POSIX 先 SIGTERM 等收尾。
 //
@@ -11,14 +11,13 @@
 const fs = require("fs");
 const path = require("path");
 
-const AI_SERVICE_PORT = 41100;
 const DEFAULT_API_PORT = 41000;
 const DEFAULT_SIMPLE_PORT = 42000;
 // Must match RUST_API_JOBS_PORT default in retainpdf-core config/jobs_service.rs
 // (buildBackendEnv falls back to the same default when jobsPort is unset).
 const DEFAULT_JOBS_PORT = 41002;
-// 退出时按这个顺序发 SIGTERM（和原来 before-quit 一样先 AI 后 rust_api）。
-const CHILD_STOP_ORDER = ["retainpdf-ai", "rust_api"];
+// 退出时按这个顺序发 SIGTERM。（以前先停 retainpdf-ai：RetainPDF 自己的 AI 2026-11-03 删了，只剩 rust_api。）
+const CHILD_STOP_ORDER = ["rust_api"];
 
 class StartupAborted extends Error {
   constructor() {
@@ -140,65 +139,6 @@ function createBackendPlugin(deps) {
       });
     }
 
-    async function startRetainpdfAiService({ aiServicePort, aiServiceRoot, env, pythonCommand }) {
-      if (!fileSystem.existsSync(path.join(aiServiceRoot, "retainpdf_ai", "__main__.py"))) {
-        logDesktopError(`[desktop] retainpdf-ai package missing under ${aiServiceRoot}; AI ask will return 502`);
-        return;
-      }
-
-      const aiBusy = await untilQuit(canConnectToPort("127.0.0.1", aiServicePort), quitSignal);
-      if (aiBusy) {
-        let occupantLabel = "<none>";
-        try {
-          const occupant = await portOccupant.getPortOccupant("127.0.0.1", aiServicePort);
-          if (occupant) {
-            occupantLabel = `${occupant.image || "<unknown>"}:${occupant.pid}`;
-          }
-        } catch {
-          occupantLabel = "<lookup-failed>";
-        }
-        logDesktop(
-          `[desktop] AI service port ${aiServicePort} already in use; reusing (occupant=${occupantLabel})`,
-        );
-        return;
-      }
-
-      logDesktop(`[desktop] spawning retainpdf-ai: ${pythonCommand} -m retainpdf_ai (port ${aiServicePort})`);
-      const aiServiceChild = spawn(pythonCommand, ["-m", "retainpdf_ai"], {
-        cwd: aiServiceRoot,
-        env,
-        windowsHide: platform === "win32",
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-      children.set("retainpdf-ai", aiServiceChild);
-      pipeChildOutput(aiServiceChild, "retainpdf_ai");
-      aiServiceChild.once("exit", (code, signal) => {
-        if (children.get("retainpdf-ai") === aiServiceChild) {
-          children.delete("retainpdf-ai");
-        }
-        if (isStopping() || isQuitting()) {
-          return;
-        }
-        logDesktopError(
-          `[desktop] retainpdf-ai exited unexpectedly: code=${code ?? "null"} signal=${signal ?? "null"}`,
-        );
-      });
-
-      const aiReadyTimeoutMs = app.isPackaged ? 60000 : 20000;
-      try {
-        await untilQuit(waitForPort("127.0.0.1", aiServicePort, aiReadyTimeoutMs), quitSignal);
-        logDesktop(`[desktop] retainpdf-ai ready on port ${aiServicePort}`);
-      } catch (error) {
-        if (error instanceof StartupAborted) {
-          throw error;
-        }
-        // 不阻断主程序：翻译流水线仍可用，仅 AI 问答会 502
-        logDesktopError(
-          `[desktop] retainpdf-ai failed to become ready: ${error && error.message ? error.message : error}`,
-        );
-      }
-    }
-
     async function startBundledBackend() {
       updateSplashProgress(18, "正在检查运行文件", "正在校验后端、Python 和脚本资源");
       const backendRoot = resolveBackendRoot();
@@ -220,15 +160,6 @@ function createBackendPlugin(deps) {
       let apiPort = DEFAULT_API_PORT;
       let simplePort = DEFAULT_SIMPLE_PORT;
       let jobsServicePort = DEFAULT_JOBS_PORT;
-      let aiServicePort = AI_SERVICE_PORT;
-      // Packaged builds use backend/ai_service; development may use backend/ai.
-      let aiServiceRoot = path.join(backendRoot, "ai_service");
-      if (!fileSystem.existsSync(path.join(aiServiceRoot, "retainpdf_ai", "__main__.py"))) {
-        const repoAiServices = path.join(appRoot, "..", "..", "backend", "ai");
-        if (fileSystem.existsSync(path.join(repoAiServices, "retainpdf_ai", "__main__.py"))) {
-          aiServiceRoot = repoAiServices;
-        }
-      }
 
       logDesktop(
         [
@@ -242,7 +173,6 @@ function createBackendPlugin(deps) {
           `scriptsDir=${scriptsDir}`,
           `pipelineCommand=${pipelineCommand || "<missing-script-fallback>"}`,
           `entrypointMode=${pipelineEntrypointMode}`,
-          `aiServiceRoot=${aiServiceRoot}`,
           `typst=${typstBin || "<missing>"}`,
           `log=${getDesktopLogPath() || "<unavailable>"}`,
         ].join(" "),
@@ -281,8 +211,6 @@ function createBackendPlugin(deps) {
       const envInput = (extra) => ({
         retainpdfSettings: readRetainpdfSettings(),
         apiPort,
-        aiServicePort,
-        aiServiceRoot,
         backendRoot,
         bundledFontPath,
         bundledPythonHome: resolveBundledPythonHome(pythonRuntime.bundledHome),
@@ -326,13 +254,6 @@ function createBackendPlugin(deps) {
           logDesktop(`[desktop] reusing existing backend on port ${apiPort}`);
           updateSplashProgress(52, "检测到已有本地服务", "桌面端将直接复用当前后端");
           await untilQuit(waitForPort("127.0.0.1", apiPort, 5000), quitSignal);
-          // 仍尝试拉起 AI（若 41100 空闲）；复用的 Rust 会反代到本机 AI
-          await startRetainpdfAiService({
-            aiServicePort,
-            aiServiceRoot,
-            env: buildBackendEnv(envInput({})),
-            pythonCommand: pythonRuntime.command,
-          });
           return { apiPort, external: true };
         }
         // Not reusable and not ours to reclaim: fall through to fresh allocation
@@ -340,7 +261,7 @@ function createBackendPlugin(deps) {
         // connect to the foreign backend, they just move to a free port.
       }
 
-      // Allocate fresh ports for all four backend roles: reclaim own residuals,
+      // Allocate fresh ports for all three backend roles: reclaim own residuals,
       // otherwise take the next free port. Retried on bind races (see below).
       const excludedPorts = new Set();
       // Startup retry rounds spawn short-lived backends; their crash dialogs would
@@ -359,12 +280,10 @@ function createBackendPlugin(deps) {
           apiPort: DEFAULT_API_PORT,
           simplePort: DEFAULT_SIMPLE_PORT,
           jobsPort: DEFAULT_JOBS_PORT,
-          aiServicePort: AI_SERVICE_PORT,
         }), quitSignal);
         apiPort = allocated.ports.apiPort;
         simplePort = allocated.ports.simplePort;
         jobsServicePort = allocated.ports.jobsPort;
-        aiServicePort = allocated.ports.aiServicePort;
         setBackendApiPort(apiPort);
         if (allocated.relocations.length > 0) {
           const summary = allocated.relocations.map((item) => `${item.from}→${item.to}`).join("、");
@@ -375,14 +294,12 @@ function createBackendPlugin(deps) {
         // ADR-002 Phase3: 打包版默认 remote + 监督（改壳不杀任务），开发版保持 InProcess 除非显式设 env
         const jobsModeForEnv = process.env.RUST_API_JOBS_MODE || (app.isPackaged ? "remote" : "");
         const jobsSuperviseForEnv = process.env.RUST_API_JOBS_SUPERVISE || (app.isPackaged ? "1" : "");
-        const aiSuperviseForEnv = process.env.RUST_API_AI_SUPERVISE || (app.isPackaged ? "1" : "");
         const env = buildBackendEnv(envInput({
           jobsMode: jobsModeForEnv,
           jobsSupervise: jobsSuperviseForEnv,
         }));
-        if (aiSuperviseForEnv) env.RUST_API_AI_SUPERVISE = aiSuperviseForEnv;
 
-        updateSplashProgress(52, "正在启动本地服务", "Rust API 与 AI 服务正在启动");
+        updateSplashProgress(52, "正在启动本地服务", "Rust API 正在启动");
         logDesktop(`[desktop] spawning backend: ${backendBin}`);
         backendStartupDiagnostics.reset(backendBin, backendRoot);
         const backendChild = spawn(backendBin, [], {
@@ -406,19 +323,7 @@ function createBackendPlugin(deps) {
           showErrorBox("Rust API worker crashed", detail);
         });
 
-        // retainpdf-ai：由壳监督（RUST_API_AI_SUPERVISE=1）时桌面端不再自拉，避免双进程
-        const aiSupervisedByShell = env.RUST_API_AI_SUPERVISE === "1";
         const jobsdSupervisedByShell = env.RUST_API_JOBS_SUPERVISE === "1" && env.RUST_API_JOBS_MODE === "remote";
-        if (aiSupervisedByShell) {
-          logDesktop("[desktop] ai_service supervised by shell (RUST_API_AI_SUPERVISE=1); skipping desktop spawn");
-        } else {
-          await startRetainpdfAiService({
-            aiServicePort,
-            aiServiceRoot,
-            env,
-            pythonCommand: pythonRuntime.command,
-          });
-        }
         if (jobsdSupervisedByShell) {
           logDesktop("[desktop] jobsd supervised by shell (RUST_API_JOBS_SUPERVISE=1); shell will spawn retain-jobsd");
         }
@@ -445,18 +350,12 @@ function createBackendPlugin(deps) {
             throw error;
           }
           const conflict = backendStartupDiagnostics.hasExited() && backendStartupDiagnostics.hasBindConflict();
-          const aiServiceChild = children.get("retainpdf-ai");
-          if (aiServiceChild && !aiServiceChild.killed && aiServiceChild.pid) {
-            portOccupant.forceKillProcessSync(aiServiceChild.pid);
-            children.delete("retainpdf-ai");
-          }
           if (conflict && attempt < 3) {
             // Bind race: someone grabbed our ports between probe and bind.
             // Re-allocate excluding them and respawn.
             excludedPorts.add(apiPort);
             excludedPorts.add(simplePort);
             excludedPorts.add(jobsServicePort);
-            excludedPorts.add(aiServicePort);
             logDesktop(`[desktop] backend bind conflict on attempt ${attempt}, reallocating ports and retrying`);
             updateSplashProgress(36, "端口冲突重试", "检测到端口竞争，正在换端口重试");
             continue;
@@ -488,7 +387,6 @@ function createBackendPlugin(deps) {
 }
 
 module.exports = {
-  AI_SERVICE_PORT,
   StartupAborted,
   createBackendPlugin,
   untilQuit,

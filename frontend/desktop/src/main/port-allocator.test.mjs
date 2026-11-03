@@ -28,13 +28,11 @@ test("free ports resolve to defaults", async () => {
     apiPort: 41000,
     simplePort: 42000,
     jobsPort: 41002,
-    aiServicePort: 41100,
   });
   assert.deepEqual(result.ports, {
     apiPort: 41000,
     simplePort: 42000,
     jobsPort: 41002,
-    aiServicePort: 41100,
   });
   assert.deepEqual(result.relocations, []);
 });
@@ -45,7 +43,6 @@ test("foreign occupant on api port falls back to next free", async () => {
     apiPort: 41000,
     simplePort: 42000,
     jobsPort: 41002,
-    aiServicePort: 41100,
   });
   assert.equal(result.ports.apiPort, 41001);
   assert.equal(result.ports.simplePort, 42000);
@@ -64,7 +61,6 @@ test("own residual is reclaimed, defaults kept", async () => {
     apiPort: 41000,
     simplePort: 42000,
     jobsPort: 41002,
-    aiServicePort: 41100,
   });
   assert.equal(result.ports.apiPort, 41000);
   assert.equal(result.ports.jobsPort, 41002);
@@ -98,7 +94,6 @@ test("exclude set skips ports", async () => {
     apiPort: 41000,
     simplePort: 42000,
     jobsPort: 41002,
-    aiServicePort: 41100,
   });
   assert.equal(result.ports.apiPort, 41002);
 });

@@ -5,10 +5,9 @@ import test from "node:test";
 const require = createRequire(import.meta.url);
 const { buildBackendEnv } = require("./backend-env.js");
 
-test("passes a relocated AI port to both Rust proxy and supervised Python child", () => {
+test("没有 RetainPDF 自己的 AI 了（2026-11-03）：不给 Rust 的 AI 代理和 Python AI 服务任何环境变量", () => {
   const env = buildBackendEnv({
     apiPort: 41001,
-    aiServicePort: 41101,
     backendRoot: "C:\\RetainPDF\\backend",
     bundledFontPath: "C:\\RetainPDF\\font.otf",
     bundledPythonImportPaths: [],
@@ -25,9 +24,8 @@ test("passes a relocated AI port to both Rust proxy and supervised Python child"
     typstPackagePath: "C:\\RetainPDF\\typst-packages",
   });
 
-  assert.equal(env.RUST_API_AI_SERVICE_BASE, "http://127.0.0.1:41101");
-  assert.equal(env.RUST_API_AI_HOST, "127.0.0.1");
-  assert.equal(env.RUST_API_AI_PORT, "41101");
-  assert.equal(env.RETAIN_AI_HOST, "127.0.0.1");
-  assert.equal(env.RETAIN_AI_PORT, "41101");
+  const leftovers = Object.keys(env).filter((key) => /^(RUST_API_AI_|RETAIN_AI_)/.test(key) && !(key in process.env));
+  assert.deepEqual(leftovers, []);
+  assert.equal(env.RUST_API_PORT, "41001");
+  assert.doesNotMatch(env.PYTHONPATH, /ai_service/);
 });

@@ -18,7 +18,6 @@ const servicesRoot = path.resolve(
   process.env.RETAIN_PDF_SERVICES_ROOT || path.join(repoRoot, "backend"),
 );
 const servicesPipelineRoot = path.join(servicesRoot, "pipeline");
-const servicesAiRoot = path.join(servicesRoot, "ai");
 const servicesConfigRoot = path.join(servicesRoot, "config");
 const servicesFontsRoot = path.join(repoRoot, "resources", "fonts");
 const desktopSrcRoot = path.join(desktopRoot, "src");
@@ -821,25 +820,6 @@ if (!frontendOnly) {
     recursive: true,
     force: true,
   });
-  const aiServiceSrc = servicesAiRoot;
-  const aiServiceDst = path.join(outputBackendRoot, "ai_service");
-  if (!fs.existsSync(aiServiceSrc)) {
-    throw new Error(`missing ai_service at ${aiServiceSrc}`);
-  }
-  fs.cpSync(aiServiceSrc, aiServiceDst, {
-    recursive: true,
-    force: true,
-    filter: (sourcePath) => {
-      const base = path.basename(sourcePath);
-      if (base === "__pycache__" || base === ".pytest_cache" || base === "tests") {
-        return false;
-      }
-      return true;
-    },
-  });
-  if (!fs.existsSync(path.join(aiServiceDst, "retainpdf_ai", "__main__.py"))) {
-    throw new Error(`bundled ai_service missing retainpdf_ai/__main__.py under ${aiServiceDst}`);
-  }
 }
 
 if (!frontendOnly && fs.existsSync(rustApiBinary.path)) {

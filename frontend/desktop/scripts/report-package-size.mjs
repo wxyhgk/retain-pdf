@@ -54,7 +54,6 @@ for (const relativePath of [
   "app/backend/fonts",
   "app/backend/typst",
   "app/backend/pipeline",
-  "app/backend/ai_service",
   "app/backend/bin",
 ]) {
   const target = path.join(desktopRoot, relativePath);
