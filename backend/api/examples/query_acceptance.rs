@@ -162,10 +162,7 @@ async fn main() -> Result<()> {
         0,
         "local-acceptance-only".into(),
     )?;
-    config.ai_service = Default::default();
     config.jobs_service = Default::default();
-    config.ai_service.port = 0;
-    config.ai_proxy.service_base = Some("http://127.0.0.1:0".into());
     let state = build_state(Arc::new(config))?;
     for (id, count) in [
         ("acceptance-ui", 1200),

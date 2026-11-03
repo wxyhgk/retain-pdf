@@ -23,7 +23,6 @@ COPY backend/packages/retainpdf-core ./backend/packages/retainpdf-core
 COPY backend/packages/retainpdf-data ./backend/packages/retainpdf-data
 COPY backend/packages/retainpdf-runner ./backend/packages/retainpdf-runner
 COPY backend/packages/retainpdf-accounts ./backend/packages/retainpdf-accounts
-COPY backend/packages/retainpdf-ai ./backend/packages/retainpdf-ai
 COPY backend/packages/retainpdf-api-base ./backend/packages/retainpdf-api-base
 COPY backend/packages/retainpdf-glossaries ./backend/packages/retainpdf-glossaries
 COPY backend/packages/retainpdf-ingest ./backend/packages/retainpdf-ingest
@@ -55,7 +54,6 @@ COPY backend/packages/retainpdf-core ./backend/packages/retainpdf-core
 COPY backend/packages/retainpdf-data ./backend/packages/retainpdf-data
 COPY backend/packages/retainpdf-runner ./backend/packages/retainpdf-runner
 COPY backend/packages/retainpdf-accounts ./backend/packages/retainpdf-accounts
-COPY backend/packages/retainpdf-ai ./backend/packages/retainpdf-ai
 COPY backend/packages/retainpdf-api-base ./backend/packages/retainpdf-api-base
 COPY backend/packages/retainpdf-glossaries ./backend/packages/retainpdf-glossaries
 COPY backend/packages/retainpdf-ingest ./backend/packages/retainpdf-ingest
@@ -79,7 +77,6 @@ COPY --from=ghcr.io/astral-sh/uv:0.11.19 /uv /uvx /bin/
 WORKDIR /workspace
 
 COPY backend/pyproject.toml backend/uv.lock ./
-COPY backend/ai/pyproject.toml ai/pyproject.toml
 COPY backend/base/pyproject.toml base/pyproject.toml
 COPY backend/math/pyproject.toml math/pyproject.toml
 COPY backend/pipeline/pyproject.toml pipeline/pyproject.toml
@@ -103,7 +100,6 @@ FROM --platform=$BUILDPLATFORM python:3.11-slim-bookworm AS typstsrc
 ARG TYPST_VERSION=0.15.1
 ARG CMARKER_VERSION=0.1.10
 ARG MITEX_VERSION=0.2.7
-ARG FX_VERSION=0.0.5
 ARG TARGETARCH
 ARG BUILDARCH
 
@@ -137,37 +133,6 @@ RUN set -eux; \
       tar -xzf "/tmp/typst/${name}.tar.gz" -C "/tmp/typst/${name}"; \
       cp -R "/tmp/typst/${name}/." "/opt/typst-packages/preview/${name}/${version}/"; \
     done
-
-# fx publishes versioned, statically linked Linux binaries for both image
-# architectures.  The upstream installer is version-aware but does not verify
-# an artifact checksum, so the image downloads the immutable release artifact
-# directly and pins the hashes verified for v0.0.5.
-# `fx --version` 只有目标架构与构建机相同时才能直接执行；跨架构时由 sha256
-# 保证拿到的是钉死的那份目标架构二进制。
-RUN set -eux; \
-    case "${TARGETARCH:?TARGETARCH is required}" in \
-      amd64) \
-        FX_ARCH="x86_64"; \
-        FX_SHA256="d5639d173267774aa8228a474baf619a7076ac41a91023915007c865143429b1" \
-        ;; \
-      arm64) \
-        FX_ARCH="aarch64"; \
-        FX_SHA256="8bbcde6a41256c4fac4e0a022291cf02740419e27afabde3b8f45e7a4e393edb" \
-        ;; \
-      *) echo "Unsupported architecture for fx: $TARGETARCH"; exit 1 ;; \
-    esac; \
-    mkdir -p /tmp/fx /opt/fx/bin /opt/fx/licenses; \
-    curl -fsSL --retry 5 --retry-all-errors --proto '=https' \
-      "https://releases.fx.sh/v${FX_VERSION}/fx-linux-${FX_ARCH}.tar.gz" \
-      -o /tmp/fx/fx.tar.gz; \
-    echo "${FX_SHA256}  /tmp/fx/fx.tar.gz" | sha256sum -c -; \
-    tar -xzf /tmp/fx/fx.tar.gz -C /tmp/fx; \
-    install -m 0755 /tmp/fx/fx /opt/fx/bin/fx; \
-    install -m 0644 /tmp/fx/LICENSE /opt/fx/licenses/LICENSE; \
-    install -m 0644 /tmp/fx/THIRD_PARTY_NOTICES.md /opt/fx/licenses/THIRD_PARTY_NOTICES.md; \
-    if [ "$TARGETARCH" = "$BUILDARCH" ]; then \
-      test "$(/opt/fx/bin/fx --version)" = "$FX_VERSION"; \
-    fi
 
 # 保留排版的 Word 导出由 retainpdf2doc（Node 包）生成，Python 流水线会起它。
 # 它的 dist/ 不进版本库，所以镜像里得自己构建一次。
@@ -214,7 +179,6 @@ FROM python:3.11-slim-bookworm AS runtime
 
 ARG CMARKER_VERSION=0.1.10
 ARG MITEX_VERSION=0.2.7
-ARG FX_VERSION=0.0.5
 ARG RETAINPDF_UID=10001
 ARG RETAINPDF_GID=10001
 
@@ -239,15 +203,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     RETAIN_PDF_TITLE_BOLD_FONT_PATH=/usr/local/share/fonts/source-han-serif/SourceHanSerifSC-Bold.otf \
     RETAIN_PDF_TYPST_FONT_DIRS=/usr/local/share/fonts/source-han-serif \
     RETAIN_PDF_TYPST_FONT_FAMILY="Source Han Serif SC" \
-    RUST_API_AI_SUPERVISE=1 \
-    RUST_API_AI_COMMAND=python3 \
-    RUST_API_AI_ARGS="-m retainpdf_ai" \
-    RUST_API_AI_CWD=/app/services/ai \
-    RETAIN_AI_FX_COMMAND=/usr/local/bin/fx \
-    RETAIN_AI_FX_EXPECTED_VERSION=${FX_VERSION} \
-    RETAIN_AI_FX_AGENT_CLI_COMMAND=/usr/local/bin/retainpdf-agent \
-    RETAIN_AI_FX_STATE_ROOT=/data/agent-runtime/fx \
-    FX_AUTO_UPGRADE=0 \
     CMARKER_VERSION=${CMARKER_VERSION} \
     MITEX_VERSION=${MITEX_VERSION} \
     RUST_API_BIND_HOST=0.0.0.0 \
@@ -267,8 +222,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY --from=typstsrc /opt/typst/bin/typst /usr/local/bin/typst
 COPY --from=typstsrc /opt/typst-packages /app/backend/typst-packages
-COPY --from=typstsrc /opt/fx/bin/fx /usr/local/bin/fx
-COPY --from=typstsrc /opt/fx/licenses /usr/share/licenses/fx
 
 RUN mkdir -p /usr/local/share/fonts/source-han-serif
 
@@ -294,7 +247,6 @@ COPY --from=noderuntime /usr/local/bin/node /usr/local/bin/node
 COPY --from=docbuilder /build/backend/packages/retainpdf2doc/dist /app/services/retainpdf2doc/dist
 COPY --from=docbuilder /build/backend/packages/retainpdf2doc/assets /app/services/retainpdf2doc/assets
 COPY --from=rprengine /build/rendering-engine /app/services/rendering-engine
-COPY backend/ai /app/services/ai
 # 底座包（阶段事件、JSON 落盘、路径、本地密钥）：pipeline 依赖它。
 COPY backend/base /app/services/base
 # 公式包（LaTeX 登记表、公式检查）：pipeline 依赖它；登记表 json 随包数据装进去。
@@ -303,7 +255,7 @@ COPY backend/math /app/services/math
 COPY backend/translation /app/services/translation
 # 翻译 agent 包：翻译包的 agent 引擎（workflow/agent_flow.py）调它，只用标准库。
 COPY backend/translation-agent /app/services/translation-agent
-RUN pip install --no-cache-dir --no-deps /app/services/base /app/services/math /app/services/translation-agent /app/services/translation /app/services/pipeline /app/services/ai
+RUN pip install --no-cache-dir --no-deps /app/services/base /app/services/math /app/services/translation-agent /app/services/translation /app/services/pipeline
 COPY backend/api/auth.local.example.json /app/services/api/auth.local.example.json
 COPY ops/deployment/docker/backend/entrypoint-app.sh /entrypoint.sh
 COPY ops/deployment/docker/backend/api-key.sh /usr/local/lib/retainpdf/api-key.sh
@@ -324,7 +276,6 @@ RUN groupadd --gid "${RETAINPDF_GID}" retainpdf \
       /data/db \
       /data/jobs \
       /data/typst-package-cache \
-      /data/agent-runtime/fx \
       /data/runtime-home/.cache \
       /data/runtime-home/.config \
       /tmp/retainpdf \

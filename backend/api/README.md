@@ -26,13 +26,9 @@
    [`../docs/core/rust_api/12-job_runner 边界.md`](../../docs/core/rust_api/12-job_runner%20%E8%BE%B9%E7%95%8C.md)
 9. OCR provider 边界：
    [`OCR_PROVIDER_CONTRACT.md`](OCR_PROVIDER_CONTRACT.md)
-10. AI 问答、会话与公开 operation 控制面：
-   [`docs/api-spec/ai-control-plane.md`](docs/api-spec/ai-control-plane.md)
-11. Backend-only Agent capability / broker / executor：
-   [`docs/api-spec/agent-document-operations.md`](docs/api-spec/agent-document-operations.md)
-12. Paddle OCR 异步 API 摘要：
+10. Paddle OCR 异步 API 摘要：
    [`../packages/retainpdf-data/src/ocr_provider/paddle/API_SUMMARY.md`](../packages/retainpdf-data/src/ocr_provider/paddle/API_SUMMARY.md)
-13. Paddle Markdown / artifact 边界：
+11. Paddle Markdown / artifact 边界：
    [`../docs/core/paddle_ocr_api/06_job_artifact_boundary.md`](../../docs/core/paddle_ocr_api/06_job_artifact_boundary.md)
 
 ## 每篇文档解决什么问题

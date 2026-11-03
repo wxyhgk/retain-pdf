@@ -118,7 +118,7 @@ pub struct Endpoint {
 ///
 /// - 说明写在 `///` 里；旧地址在行尾写 `old "<新地址>"`，说明可以省。
 /// - 同一地址只换方法（例如 GET 换成 POST）：新方法登记成新的一行，旧方法那行行尾写 `old "<同一地址>"`，
-///   接口目录里旧地址那一栏带上方法显示（合集工作区 2026-10-19 这样换过，旧的 GET 10-22 删了）：
+///   接口目录里旧地址那一栏带上方法显示（合集工作区 2026-10-19 这样换过，旧的 GET 10-22 删了；整个接口 2026-11-03 跟 AI 服务一起删了，这里只当例子）：
 ///
 ///   ```ignore
 ///   POST "/api/v1/collections/:collection_id/agent-workspace" => collections::collection_agent_workspace_route, closed;

@@ -53,12 +53,12 @@ Read PDF and Markdown side by side while preserving formulas and images.
   <img src="resources/brand/readme-gallery/product/markdown-reader.png" alt="RetainPDF Markdown reader" width="1000" />
 </p>
 
-### Document AI
+### Reading notes and AI
 
-Ask questions about the current document and receive answers with page-level citations. Switch explicitly to PDF Agent when you need to modify the PDF.
+Read in Studio: your notes for the book sit in the middle, the original and the translation dock beside them, and the AI is on the right. Read, write and ask at the same time; send a passage to your notes in one click, and click a quote in your notes to jump back to that page.
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/product/ai-assistant.png" alt="RetainPDF document AI with citations" width="1000" />
+  <img src="resources/brand/readme-gallery/product/ai-assistant.png" alt="RetainPDF reading notes and AI" width="1000" />
 </p>
 
 ## Translation examples

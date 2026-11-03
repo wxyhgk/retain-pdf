@@ -10,7 +10,6 @@
 | `backend/api` | `retainpdf-api` | `retainpdf_api` | `rust_api`、`retainpdf-agent` |
 | `backend/packages/retainpdf-api-base` | `retainpdf-api-base` | `retainpdf_api_base` | |
 | `backend/packages/retainpdf-accounts` | `retainpdf-accounts` | `retainpdf_accounts` | |
-| `backend/packages/retainpdf-ai` | `retainpdf-ai` | `retainpdf_ai` | |
 | `backend/packages/retainpdf-files` | `retainpdf-files` | `retainpdf_files` | |
 | `backend/packages/retainpdf-glossaries` | `retainpdf-glossaries` | `retainpdf_glossaries` | |
 | `backend/packages/retainpdf-ingest` | `retainpdf-ingest` | `retainpdf_ingest` | |
@@ -27,7 +26,6 @@
 | `backend/jobs` | `retainpdf-runnerd` | | `retain-jobsd` |
 | `backend/cli` | `retainpdf-cli` | | `retainpdf` |
 
-Rust 的 AI 包 `retainpdf_ai` 和 Python AI 服务的模块同名（用户 2026-10-17 定的），看报错、搜代码时看清是哪边的。
 Python 的翻译 agent 包 `retainpdf-translation-agent`（`backend/translation-agent`，2026-10-29 新建）：一次翻一整页、逐块校验、
 按重排 agent 的要求改稿，只用标准库；测试系统在 `backend/pipeline/devtools/agent_lab/`。以后的重排 agent 另建 `retainpdf-layout-agent`。
 2026-10-30 起翻译包依赖它：任务选 `translation.engine=agent` 时由 `retainpdf_translation/workflow/agent_flow.py` 调（见 [翻译层说明](../python/translation.md)），运行时镜像也装它。
@@ -39,7 +37,7 @@ Rust 的底座包 `retainpdf-api-base` 和 Python 的底座包 `retainpdf-base`�
 默认依赖方向：
 
 ```text
-rust_api app/router -> routes -> services（9 个领域包的门面）
+rust_api app/router -> routes -> services（8 个领域包的门面）
 领域包（retainpdf-jobs 等） -> retainpdf-api-base + retainpdf-core + retainpdf-data（任务包另用 retainpdf-runner、retainpdf-proc）
 retainpdf-runner -> retainpdf-core + retainpdf-data + retainpdf-proc
 retain-jobsd -> retainpdf-runner + retainpdf-data
@@ -48,7 +46,7 @@ retain-jobsd -> retainpdf-runner + retainpdf-data
 基本规则：
 
 - `src/app/router/*` 只装配路由；`src/routes/*` 只做 HTTP adapter、提取器和响应包装。
-- 应用用例、facade 和安全 projection 放在 9 个领域包里（`backend/packages/retainpdf-<领域>`；`src/services/mod.rs` 只把它们接成 `crate::services::<领域>`），不直接拥有 worker 生命周期。
+- 应用用例、facade 和安全 projection 放在 8 个领域包里（`backend/packages/retainpdf-<领域>`；`src/services/mod.rs` 只把它们接成 `crate::services::<领域>`），不直接拥有 worker 生命周期。
 - `backend/packages/retainpdf-core` 只放跨 crate 的领域类型、配置和稳定 DTO，不反向依赖 HTTP、SQLite 或 runner。
 - `database/retainpdf-db` 拥有 SQLite（`retainpdf-data` 重导出成 `db`）；`backend/packages/retainpdf-data` 拥有 artifact/credential 读取、worker 命令以及 provider 数据边界。
 - `backend/packages/retainpdf-runner` 拥有队列、stage 编排、进程拉起、取消、OCR dispatch 和恢复。

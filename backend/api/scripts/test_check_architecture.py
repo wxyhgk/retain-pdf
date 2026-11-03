@@ -91,8 +91,8 @@ mod tests { fn fixture() { let runtime: ProcessRuntimeDeps; } }
 
     def test_runtime_ownership_allows_assembly_and_health(self):
         self.assertEqual([], self.check_sources({
-            "runtime/ai_supervisor.rs": "use crate::config::AppConfig;",
-            "app/server.rs": "crate::runtime::ai_supervisor::spawn_ai_supervisor();",
+            "runtime/jobsd_supervisor.rs": "use crate::config::AppConfig;",
+            "app/server.rs": "crate::runtime::jobsd_supervisor::spawn_jobsd_supervisor();",
             "routes/common/health.rs": "crate::runtime::jobsd_supervisor::jobsd_status();",
         }, checks.check_runtime_ownership))
 
@@ -130,7 +130,6 @@ mod tests { fn fixture() { let runtime: ProcessRuntimeDeps; } }
             "services/jobs/reader/queries.rs", "services/jobs/reports/queries.rs",
             "services/jobs/translations/queries.rs", "services/jobs/reports/failure.rs",
             "services/jobs/actions/resume_plan.rs", "services/jobs/reader/markdown.rs",
-            "services/jobs/ai/ai_board.rs",
         ):
             for capability in ("AppState", "AppConfig", "JobsFacade", "JobRuntimeLauncher", "UploadService"):
                 with self.subTest(path=path, capability=capability):
@@ -148,7 +147,7 @@ mod tests { fn fixture() { let runtime: ProcessRuntimeDeps; } }
         for path in (
             "routes/jobs/files.rs", "routes/jobs/files/legacy.rs", "routes/jobs/reports.rs",
             "routes/jobs/reports/quality.rs", "routes/jobs/reader.rs", "routes/jobs/data.rs",
-            "routes/jobs/ai.rs", "routes/download_response/files.rs",
+            "routes/download_response/files.rs",
             "routes/download_response/markdown/cache.rs",
         ):
             with self.subTest(path=path):
@@ -222,38 +221,13 @@ mod tests { fn fixture() { let runtime: ProcessRuntimeDeps; } }
     def test_runtime_ownership_rejects_reverse_dependencies_and_old_locations(self):
         for path, source in (
             ("runtime/jobsd_supervisor.rs", "use crate::services::jobs;"),
-            ("runtime/ai_supervisor.rs", "use crate::AppState;"),
-            ("routes/health.rs", "crate::runtime::ai_supervisor::ai_service_status();"),
+            ("runtime/jobsd_supervisor.rs", "use crate::AppState;"),
+            ("routes/health.rs", "crate::runtime::jobsd_supervisor::jobsd_status();"),
             ("services/jobs/facade.rs", "crate::runtime::jobsd_supervisor::jobsd_status();"),
-            ("services/ai_supervisor.rs", ""),
+            ("services/jobsd_supervisor.rs", ""),
         ):
             with self.subTest(path=path):
                 self.assertTrue(self.check_sources({path: source}, checks.check_runtime_ownership))
-
-    def test_ai_gateway_has_no_hidden_configuration_or_health_reads(self):
-        for source in ("AiProxyConfig::from_env()", "std::env::var(\"BASE\")", "ai_service_status()", "Lazy<Client>"):
-            with self.subTest(source=source):
-                self.assertTrue(self.check_sources(
-                    {"packages/retainpdf-ai/src/gateway.rs": source}, checks.check_ai_gateway_dependencies,
-                ))
-        self.assertEqual([], self.check_sources(
-            {"packages/retainpdf-ai/src/gateway.rs": "fn new(config: &AiProxyConfig, status: fn() -> u8) {}"},
-            checks.check_ai_gateway_dependencies,
-        ))
-
-    def test_agent_calculations_use_narrow_dependencies(self):
-        for name in ("agent_calculations/service.rs", "agent_calculations/api.rs", "agent_calculations/tests.rs"):
-            for dependency in ("AppConfig", "AppState", "api_tests"):
-                with self.subTest(name=name, dependency=dependency):
-                    errors = self.check_sources(
-                        {f"packages/retainpdf-ai/src/{name}": f"use retainpdf_core::config::{dependency};"},
-                        checks.check_agent_calculation_dependencies,
-                    )
-                    self.assertTrue(any("narrow Db/data_root" in error for error in errors))
-        self.assertEqual([], self.check_sources(
-            {"packages/retainpdf-ai/src/agent_calculations/service.rs": "use retainpdf_data::db::Db; fn f(data_root: &Path) {}"},
-            checks.check_agent_calculation_dependencies,
-        ))
 
     def test_route_raw_extractors_are_caught_in_nested_axum_imports(self):
         for source in (
@@ -375,24 +349,10 @@ mod tests { fn fixture() { let runtime: ProcessRuntimeDeps; } }
                     {"routes/common/library.rs": source}, checks.check_route_service_imports,
                 ))
 
-    def test_ai_route_only_imports_its_domain_facade(self):
-        for source in ("use crate::services::ai;", "use crate::services::ai::{ask, get_runtime_config};"):
-            with self.subTest(source=source):
-                self.assertEqual([], self.check_sources(
-                    {"routes/ai_proxy.rs": source}, checks.check_route_service_imports,
-                ))
-        for source in (
-            "use crate::services::jobs::JobsFacade;",
-            "use crate::services::ai_proxy_api;",
-        ):
-            self.assertTrue(self.check_sources(
-                {"routes/ai_proxy.rs": source}, checks.check_route_service_imports,
-            ))
-
     def test_small_module_routes_import_only_their_domain_facade(self):
         for domain, route in (
             ("platform", "fonts"), ("providers", "credentials"),
-            ("ai", "agent_calculations"), ("glossaries", "glossaries"),
+            ("glossaries", "glossaries"),
         ):
             with self.subTest(domain=domain):
                 self.assertEqual([], self.check_sources(

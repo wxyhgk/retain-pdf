@@ -63,9 +63,8 @@ curl -H "X-API-Key: your-key" \
 
 ## 机器上设了 HTTP_PROXY / ALL_PROXY
 
-后端连本机的几个服务都不走系统代理：rust_api 转给 retain-jobsd 的发射、取消、终止，探测 jobsd 和 AI 服务是否活着，
+后端连本机的几个服务都不走系统代理：rust_api 转给 retain-jobsd 的发射、取消、终止，探测 jobsd 是否活着，
 `retainpdf` 命令行连后端。所以设了代理、`NO_PROXY` 里没写 `127.0.0.1` 也不影响它们。
-rust_api 转给 AI 服务的请求（`/ai/…`）暂时还会按环境变量走代理；AI 那边连不上时，先在 `NO_PROXY` 里加上 `127.0.0.1,localhost`。
 
 连 jobsd 的请求连接最多等 2 秒、整个请求最多 10 秒（终止进程树再加 `RUST_API_WORKER_TERMINATE_GRACE_SECS`）。
 jobsd 卡住时取消、强删会在这之后报错或打警告，不会一直挂着；任务最后的状态照旧以库里的为准。

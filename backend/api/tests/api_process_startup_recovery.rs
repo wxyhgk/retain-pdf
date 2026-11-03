@@ -123,7 +123,6 @@ fn spawn_api(root: &Path, port: u16, simple_port: u16) -> KillOnDrop {
         .env("RUST_API_PORT", port.to_string())
         .env("RUST_API_SIMPLE_PORT", simple_port.to_string())
         .env("RUST_API_JOBS_MODE", "in_process")
-        .env("RUST_API_AI_SUPERVISE", "0")
         .env("RUST_API_JOBS_SUPERVISE", "0")
         .env("RUST_API_WORKER_TERMINATE_GRACE_SECS", "1")
         .env("RUST_API_WORKER_TERMINATE_POLL_MS", "10")

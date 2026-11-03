@@ -180,9 +180,8 @@ def main() -> int:
                 "-c",
                 (
                     "from pathlib import Path; "
-                    "import retainpdf_ai, retainpdf_base, retainpdf_math, retainpdf_pipeline, retainpdf_translation; "
+                    "import retainpdf_base, retainpdf_math, retainpdf_pipeline, retainpdf_translation; "
                     "root = Path.cwd().resolve(); "
-                    "assert Path(retainpdf_ai.__file__).resolve().is_relative_to(root); "
                     "assert Path(retainpdf_base.__file__).resolve().is_relative_to(root); "
                     "assert Path(retainpdf_math.__file__).resolve().is_relative_to(root); "
                     "from retainpdf_math.registry import latex_commands; "

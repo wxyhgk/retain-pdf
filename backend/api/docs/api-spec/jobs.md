@@ -31,7 +31,7 @@ and document-history rules are maintained in the pages below.
 
 ## Common Endpoint Map
 
-The `/jobs/{job_id}/…` addresses below are the new ones (nine categories). The old addresses
+The `/jobs/{job_id}/…` addresses below are the new ones (eight categories). The old addresses
 (`/events`, `/diagnostics`, `/stage-actions`, `/resume-plan`, `/resume`, `/rerun`, `/retry-stage`,
 `/ocr/resolve-ambiguity`, `/cancel`, and the whole `/ocr/jobs` family) were removed on 2026-10-18 and return 404; see
 [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md) and [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
@@ -54,7 +54,6 @@ POST /api/v1/documents/:document_id/translate
 POST /api/v1/documents/:document_id/ocr
 GET  /api/v1/documents
 GET  /api/v1/documents/:document_id/jobs
-GET  /api/v1/documents/:document_id/agent-versions
 POST /api/v1/documents/:document_id/metadata-suggestions
 GET  /api/v1/documents/:document_id/metadata-suggestions
 POST /api/v1/documents/:document_id/metadata-suggestions/:suggestion_id/apply

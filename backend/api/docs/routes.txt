@@ -1,7 +1,7 @@
 # 全部 HTTP 路由：方法 路径 多用户下网站账号的访问策略（signed 登录可用 / admin 只给管理员 /
 # closed 关闭 / public 不需要登录）。由 src/api_tests/route_manifest.rs 从接口登记表生成，不要手改：
 #   UPDATE_ROUTES=1 cargo test -p retainpdf-api --lib route_manifest
-# 130 条路径，158 个接口
+# 99 条路径，121 个接口
 GET    /api/v1/account/pages  signed
 GET    /api/v1/admin/invites  admin
 POST   /api/v1/admin/invites  admin
@@ -22,27 +22,6 @@ POST   /api/v1/admin/users/:user_id/pages  admin
 POST   /api/v1/admin/users/:user_id/reset-password  admin
 POST   /api/v1/admin/users/:user_id/restore  admin
 POST   /api/v1/admin/users/:user_id/role  admin
-POST   /api/v1/ai/ask  closed
-GET    /api/v1/ai/calculations/:calculation_id  closed
-GET    /api/v1/ai/calculations/:calculation_id/artifacts/:artifact_id  closed
-GET    /api/v1/ai/conversations  closed
-POST   /api/v1/ai/conversations  closed
-DELETE /api/v1/ai/conversations/:conversation_id  closed
-GET    /api/v1/ai/conversations/:conversation_id  closed
-PATCH  /api/v1/ai/conversations/:conversation_id  closed
-GET    /api/v1/ai/conversations/:conversation_id/calculations  closed
-POST   /api/v1/ai/conversations/:conversation_id/messages  closed
-GET    /api/v1/ai/conversations/:conversation_id/operations  closed
-POST   /api/v1/ai/conversations/fork  closed
-GET    /api/v1/ai/operations/:operation_id  closed
-POST   /api/v1/ai/operations/:operation_id/cancel  closed
-GET    /api/v1/ai/operations/:operation_id/candidate.pdf  closed
-POST   /api/v1/ai/operations/:operation_id/commit  closed
-POST   /api/v1/ai/operations/:operation_id/retry  closed
-POST   /api/v1/ai/operations/:operation_id/run  closed
-GET    /api/v1/ai/runtime-config  closed
-PUT    /api/v1/ai/runtime-config  closed
-GET    /api/v1/ai/terminal  closed
 POST   /api/v1/auth/login  public
 POST   /api/v1/auth/logout  signed
 POST   /api/v1/auth/password  signed
@@ -56,7 +35,6 @@ GET    /api/v1/collections  signed
 POST   /api/v1/collections  signed
 DELETE /api/v1/collections/:collection_id  signed
 PATCH  /api/v1/collections/:collection_id  signed
-POST   /api/v1/collections/:collection_id/agent-workspace  closed
 POST   /api/v1/collections/:collection_id/documents  signed
 DELETE /api/v1/collections/:collection_id/documents/:document_id  signed
 GET    /api/v1/credentials  admin
@@ -68,7 +46,6 @@ GET    /api/v1/documents  signed
 DELETE /api/v1/documents/:document_id  signed
 GET    /api/v1/documents/:document_id  signed
 PATCH  /api/v1/documents/:document_id  signed
-GET    /api/v1/documents/:document_id/agent-versions  closed
 GET    /api/v1/documents/:document_id/files  signed
 GET    /api/v1/documents/:document_id/files/:name  signed
 GET    /api/v1/documents/:document_id/files/pages/:page  signed
@@ -90,18 +67,6 @@ GET    /api/v1/glossaries/:glossary_id  signed
 PUT    /api/v1/glossaries/:glossary_id  signed
 GET    /api/v1/glossaries/:glossary_id/export.csv  signed
 POST   /api/v1/glossaries/parse-csv  signed
-POST   /api/v1/internal/agent/calculations  closed
-POST   /api/v1/internal/agent/calculations/:calculation_id/complete  closed
-POST   /api/v1/internal/agent/calculations/:calculation_id/fail  closed
-POST   /api/v1/internal/agent/capabilities  closed
-POST   /api/v1/internal/agent/operations  closed
-GET    /api/v1/internal/agent/operations/:operation_id  closed
-POST   /api/v1/internal/agent/operations/:operation_id/cancel  closed
-POST   /api/v1/internal/agent/operations/:operation_id/commit  closed
-POST   /api/v1/internal/agent/operations/:operation_id/run  closed
-DELETE /api/v1/internal/agent/runtime-sessions/:conversation_id  closed
-GET    /api/v1/internal/agent/runtime-sessions/:conversation_id  closed
-PUT    /api/v1/internal/agent/runtime-sessions/:conversation_id  closed
 POST   /api/v1/internal/model/jobs/:job_id/requests  closed
 GET    /api/v1/internal/model/jobs/:job_id/requests/:operation_id  closed
 POST   /api/v1/internal/model/jobs/:job_id/requests/:operation_id/cancel  closed
@@ -116,8 +81,6 @@ POST   /api/v1/jobs/:job_id/actions/resolve-ocr-ambiguity  signed
 GET    /api/v1/jobs/:job_id/actions/resume  signed
 POST   /api/v1/jobs/:job_id/actions/resume  signed
 POST   /api/v1/jobs/:job_id/actions/retry-stage  signed
-GET    /api/v1/jobs/:job_id/ai/board  signed
-GET    /api/v1/jobs/:job_id/ai/board/:name  signed
 GET    /api/v1/jobs/:job_id/data  signed
 GET    /api/v1/jobs/:job_id/data/:dataset  signed
 GET    /api/v1/jobs/:job_id/files  signed

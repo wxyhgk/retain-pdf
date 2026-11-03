@@ -53,12 +53,12 @@ PDF 与 Markdown 同屏阅读，保留公式和图片。
   <img src="resources/brand/readme-gallery/product/markdown-reader.png" alt="RetainPDF Markdown 阅读" width="1000" />
 </p>
 
-### 文档 AI 问答
+### 读书笔记与 AI
 
-直接围绕当前文档提问，回答附带页码和原文引用；需要修改 PDF 时可显式切换到 PDF Agent。
+在 Studio 里读书：中间是这本书的笔记，原文与译文停靠在旁边，右侧是 AI。边看、边记、边问，三样同时在眼前；读到的段落可以一键摘到笔记，笔记里的摘录点一下就回到原文那一页。
 
 <p align="center">
-  <img src="resources/brand/readme-gallery/product/ai-assistant.png" alt="RetainPDF 文档 AI 问答与引用" width="1000" />
+  <img src="resources/brand/readme-gallery/product/ai-assistant.png" alt="RetainPDF 读书笔记与 AI" width="1000" />
 </p>
 
 ## 翻译效果

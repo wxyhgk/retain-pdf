@@ -48,15 +48,13 @@ pub mod api {
         summarize_list_invocation,
     };
     pub use retainpdf_library::{
-        AddCollectionDocumentsInput, AppendMessageInput, ApplyDocumentMetadataSuggestionInput,
-        CollectionListView, CollectionMutationResult, ConversationDetailView, ConversationListView,
-        ConversationMutationResult, CreateCollectionInput, CreateConversationInput,
-        CreateDocumentMetadataSuggestionInput, DeleteDocumentQuery, DocumentDeleteResultView,
-        DocumentJobRequest, DocumentListView, DocumentMetadataEvidenceView, DocumentMetadataSuggestionApplyView,
+        AddCollectionDocumentsInput, ApplyDocumentMetadataSuggestionInput, CollectionListView,
+        CollectionMutationResult, CreateCollectionInput, CreateDocumentMetadataSuggestionInput,
+        DeleteDocumentQuery, DocumentDeleteResultView, DocumentJobRequest, DocumentListView,
+        DocumentMetadataEvidenceView, DocumentMetadataSuggestionApplyView,
         DocumentMetadataSuggestionListView, DocumentMetadataSuggestionView, DocumentTitleCandidateView,
-        ForkConversationInput, ForkMessageInput, ListConversationsQuery,
         ListDocumentMetadataSuggestionsQuery, ListDocumentsQuery, PatchCollectionInput,
-        PatchConversationInput, PatchDocumentInput, SearchQuery, SearchResultView,
+        PatchDocumentInput, SearchQuery, SearchResultView,
     };
     pub use retainpdf_platform::{BackupItemView, BackupRestoreView, BackupStatusView};
 }

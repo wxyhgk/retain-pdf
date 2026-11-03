@@ -10,7 +10,6 @@ use crate::config::{AccountsConfig, OriginPolicyConfig};
 use crate::routes::common::{method_not_allowed, request_origin_is_allowed, unknown_route};
 
 mod accounts;
-mod ai;
 mod collections;
 mod credentials;
 mod documents;
@@ -19,12 +18,10 @@ mod glossaries;
 mod backups;
 mod sync;
 mod ingestion;
-mod internal_agent;
 mod jobs;
 mod model_requests;
 mod providers;
 mod public;
-mod terminal;
 
 /// 登记表里的全部接口（`app/endpoints.rs`）：访问控制按它查谁能用，接口目录和接口清单快照也从这里汇总。
 pub(crate) fn registered_endpoints() -> Vec<crate::app::endpoints::Endpoint> {
@@ -43,25 +40,15 @@ pub(crate) fn registered_endpoints() -> Vec<crate::app::endpoints::Endpoint> {
         fonts::ENDPOINTS,
         sync::ENDPOINTS,
         backups::ENDPOINTS,
-        ai::ENDPOINTS,
-        internal_agent::ENDPOINTS,
         model_requests::worker::ENDPOINTS,
-        terminal::ENDPOINTS,
     ]);
     tables.into_iter().flatten().copied().collect()
 }
 
 pub fn build_app(state: AppState) -> Router {
-    // 多用户模式下没有终端：助手终端能在服务器上执行命令，只给单机版。
-    let websocket_routes = if state.config.accounts.mode.is_multi() {
-        Router::new()
-    } else {
-        terminal::routes()
-    };
     public::routes()
         .method_not_allowed_fallback(method_not_allowed)
         .merge(authenticated_api_routes(&state))
-        .merge(websocket_routes)
         .merge(model_requests::worker::routes())
         .fallback(unknown_route)
         // 大的 JSON 响应压缩（见 `response_compression.rs`）；文件出口、事件流不压。
@@ -131,9 +118,7 @@ fn authenticated_api_routes(state: &AppState) -> Router<AppState> {
         .merge(sync::routes())
         .merge(backups::routes())
         .merge(documents::routes())
-        .merge(ai::routes())
         .merge(collections::routes())
-        .merge(internal_agent::routes())
         .merge(jobs::routes())
         .merge(providers::routes())
         .merge(fonts::routes())

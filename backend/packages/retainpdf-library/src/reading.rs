@@ -1,18 +1,14 @@
-//! 一本书「该读哪里」相关的三个读接口：阅读入口、翻译覆盖、合集 agent 工作区。
+//! 一本书「该读哪里」相关的两个读接口：阅读入口、翻译覆盖（合集的 agent 工作区 2026-11-03 跟 AI 服务一起删了）。
 //!
-//! 以前这三段直接写在路由里（自己拿 state.db / state.config、全路径调 services::library::merge），
+//! 以前这几段直接写在路由里（自己拿 state.db / state.config、全路径调 services::library::merge），
 //! 违反了路由只经 application facade 的边界（check_architecture.py）。挪到这里，路由只传
 //! LibraryDeps。都要跑子进程或读 PDF 页数，放进阻塞线程。
 
-use std::path::Path;
-
 use retainpdf_api_base::error::AppError;
-use retainpdf_core::models::api::DocumentRecord;
-use super::collection_workspace::{ensure_collection_workspace, CollectionWorkspace, ReadingBook};
 use retainpdf_files::DerivedArtifactDeps;
 use crate::merge::coverage::{translation_coverage, TranslationCoverageView};
 use crate::merge::page_count::book_page_count;
-use crate::merge::reading::{resolve_reading_target, DocumentReadingView, ReadingTarget};
+use crate::merge::reading::{resolve_reading_target, DocumentReadingView};
 
 use super::media::document_source;
 use super::LibraryDeps;
@@ -83,54 +79,4 @@ pub async fn document_translation_coverage(
     })
         .await
         .map_err(|_| AppError::internal("translation coverage task failed"))?
-}
-
-/// POST /collections/:id/agent-workspace（旧的 GET 2026-10-22 删了）：物化合集的 agent 工作区。多次范围翻译的书
-/// 链到阅读入口指的合并目录。编号不合格 400，合集不存在 404。
-pub async fn collection_agent_workspace(
-    deps: &LibraryDeps<'_>,
-    collection_id: &str,
-) -> Result<CollectionWorkspace, AppError> {
-    let owned = OwnedReadingDeps::from(deps);
-    let collection_id = collection_id.to_string();
-    tokio::task::spawn_blocking(move || {
-        let artifact_deps = DerivedArtifactDeps::with_pipeline_command(&owned.python_bin, &owned.pipeline_command);
-        let reading_book = |document: &DocumentRecord| {
-            workspace_reading_book(&owned.db, &owned.data_root, artifact_deps, document)
-        };
-        ensure_collection_workspace(&owned.db, &owned.data_root, &collection_id, &reading_book)
-    })
-    .await
-    .map_err(|_| AppError::internal("collection workspace task failed"))?
-}
-
-/// 合集工作区里一本书该链到哪里:阅读入口说的那个任务 —— 一个任务覆盖整本就是它(不看书卡的
-/// `active_job_id`:书卡可能指着刚提交、还在跑的任务,链过去是半成品目录),多次范围翻译是合并目录。
-/// 没有任何可读的译文返回 `None`,调用方把这本书写进 `skipped`。
-pub(crate) fn workspace_reading_book(
-    db: &retainpdf_data::db::Db,
-    data_root: &Path,
-    deps: DerivedArtifactDeps<'_>,
-    document: &DocumentRecord,
-) -> Option<ReadingBook> {
-    let upload = db.find_upload_for_document(&document.document_id).ok()??;
-    let target = resolve_reading_target(
-        db,
-        data_root,
-        deps,
-        &document.document_id,
-        Path::new(&upload.stored_path),
-        document.page_count,
-    )
-    .ok()?;
-    match target {
-        ReadingTarget::Merged { job_id, merged } => Some(ReadingBook { job_id, root: merged.root }),
-        ReadingTarget::Job(job_id) => {
-            let job = db.get_job(&job_id).ok()?;
-            let root = retainpdf_core::storage_paths::resolve_job_root(&job, data_root)?;
-            Some(ReadingBook { job_id, root })
-        }
-        // 没有可读的译文:调用方写进 skipped,不退回书卡的 active_job(可能是在跑的半成品)。
-        ReadingTarget::None => None,
-    }
 }

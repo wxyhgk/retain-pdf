@@ -3,7 +3,6 @@ use std::path::{Path, PathBuf};
 use crate::models::domain::{JobArtifactRecord, JobSnapshot};
 
 use super::constants::{
-    AI_BOARD_DIR_NAME, OUTPUT_AI_DIR_NAME,
     OUTPUT_ARTIFACTS_DIR_NAME, OUTPUT_LOGS_DIR_NAME, OUTPUT_MARKDOWN_DIR_NAME,
     OUTPUT_RENDERED_DIR_NAME, OUTPUT_TRANSLATED_DIR_NAME, OUTPUT_TYPST_BOOK_OVERLAYS_DIR_NAME,
     OUTPUT_TYPST_DIR_NAME, TRANSLATION_MANIFEST_FILE_NAME, TRANSLATION_REQUEST_JOURNAL_FILE_NAME,
@@ -72,35 +71,6 @@ pub fn resolve_normalized_document(job: &JobSnapshot, data_root: &Path) -> Optio
 pub fn resolve_normalization_report(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
     let path = job.artifacts.as_ref()?.normalization_report_json.as_ref()?;
     resolve_data_path(data_root, path).ok()
-}
-
-/// `<job>/ai/` —— agent 工作区本身。
-///
-/// 返回目录是为了让调用方能**整体**处理这个工作区（重译时把上一次的产物接力
-/// 过来）：接力要连 `board/` 里的任意文件一起搬，而那些文件名是 agent 定的，
-/// 这里列不出来。
-///
-/// 不接受文件名参数 —— 拼文件名的职责留在任务包的 `ai/ai_board.rs` 里。
-pub fn resolve_ai_dir(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
-    // 合并结果的 AI 工作区按文档放，不跟着指纹变（见 `MergedJobId::ai_dir`）。
-    if let Some(merged) = super::merged_job::MergedJobId::parse(&job.job_id) {
-        return Some(merged.ai_dir(data_root));
-    }
-    let job_root = job.artifacts.as_ref()?.job_root.as_ref()?;
-    Some(
-        resolve_data_path(data_root, job_root)
-            .ok()?
-            .join(OUTPUT_AI_DIR_NAME),
-    )
-}
-
-/// `<job>/ai/board/` —— agent 的画板目录。
-///
-/// 返回的是**目录**，不是文件。里面具体读哪个文件由调用方决定，所以文件名的
-/// 校验必须在调用方做 —— 见 api 侧 `services/jobs/ai/ai_board.rs`，
-/// 那里挡了路径穿越、符号链接和类型。
-pub fn resolve_ai_board_dir(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {
-    Some(resolve_ai_dir(job, data_root)?.join(AI_BOARD_DIR_NAME))
 }
 
 pub fn resolve_typst_source(job: &JobSnapshot, data_root: &Path) -> Option<PathBuf> {

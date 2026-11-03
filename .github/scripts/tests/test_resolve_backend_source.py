@@ -214,7 +214,7 @@ def test_backend_workflow_commands_do_not_bypass_the_package_resolver(
         if stripped.startswith('- "backend/'):
             # Embedded package path filters intentionally trigger relevant jobs.
             continue
-        if any(path in line for path in ("backend/api", "backend/ai", "backend/pipeline")):
+        if any(path in line for path in ("backend/api", "backend/pipeline")):
             hardcoded_backend_lines.append(stripped)
 
     assert hardcoded_backend_lines == []

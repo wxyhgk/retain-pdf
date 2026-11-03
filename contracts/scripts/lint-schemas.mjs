@@ -6,9 +6,6 @@ import { fileURLToPath } from "node:url";
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const EXPECTED_DIALECT = "https://json-schema.org/draft/2020-12/schema";
 const EXPECTED_SCHEMAS = [
-  "agent-calculation.v1.schema.json",
-  "ai-ask.v1.schema.json",
-  "ai-conversations.v1.schema.json",
   "create-job.v1.schema.json",
   "glossaries.v1.schema.json",
   "job-actions.v1.schema.json",
@@ -21,10 +18,8 @@ const EXPECTED_SCHEMAS = [
   "library-documents.v1.schema.json",
   "ocr-providers.v1.schema.json",
   "pipeline-stdout.v1.schema.json",
-  "public-document-operation.v1.schema.json",
   "reader-data.v1.schema.json",
   "refine-report.v1.schema.json",
-  "runtime-config.v1.schema.json",
   "studio-bridge.v1.schema.json",
   "token-usage.v1.schema.json",
   "translation-revisions.v1.schema.json",

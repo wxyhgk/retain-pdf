@@ -1233,3 +1233,41 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
      `job_id` 是 `null` 或请求失败，就照旧打开消息里的 `job_id`。`page_idx`、`block_id` 照旧用：按书打开的任务都按整本书编页，
      不用换算。
 - 不加 `navigate-document` 的话什么都不变：Studio 照旧只发 `job_id`。
+
+## 删掉 RetainPDF 自己的 AI（2026-11-03）
+
+2026-11-03。决定见 [RetainPDF 不要自己的 AI](../../ops/planning/frontend-migration/20261103-RetainPDF不要自己的AI.md)：产品里只留
+Studio（`frontend/studio`）自己的 AI，后端把 RetainPDF 自己的 AI 服务和它的接口全删了。网页那边 2026-11-03 已经不调这些接口。
+这次是删接口，不是只增不改；下面列的地址现在都是 `404`。
+
+- **删了的接口**：
+  - `/api/v1/ai/*`：`POST /ai/ask`、`GET|PUT /ai/runtime-config`、`/ai/conversations…`（列表、新建、读、改、删、`fork`、
+    `messages`、`operations`、`calculations`）、`/ai/operations/:operation_id…`（读、`run`、`retry`、`cancel`、`commit`、
+    `candidate.pdf`）、`/ai/calculations/:calculation_id…`（读、`artifacts/:artifact_id`）、助手终端 WebSocket `GET /ai/terminal`；
+  - `/api/v1/internal/agent/*`（能力令牌、文档操作、计算、运行时会话）；
+  - 画板 `GET /api/v1/jobs/:job_id/ai/board`、`GET /api/v1/jobs/:job_id/ai/board/:name`（任务接口从 9 类变成 8 类，没有 `ai` 了）；
+  - 合集的 Agent 工作区 `POST /api/v1/collections/:id/agent-workspace`（删合集照旧清 `<data_root>/collections/<id>/`）；
+  - 书的 Agent 版本 `GET /api/v1/documents/:id/agent-versions`。
+- **删了的契约**（`contracts/` 和 `backend/contracts/` 两份，`@retainpdf/contracts` 的子路径一起去掉）：`ai-ask.v1`、
+  `ai-conversations.v1`、`agent-calculation.v1`、`public-document-operation.v1`、`runtime-config.v1`。
+  `frontend/web/tests/contracts/library-books-contract.test.mjs`、`job-status-contract.test.mjs` 注释里还提到 `ai-ask`、`ai-conversations`，只是注释。
+- **健康检查的旧字段留着**：`GET /health` 的 `ai_service` 键还在，值固定 `"disabled"`；`GET /ready` 的 `components.ai_service`
+  固定 `{ "required": false, "status": "not_required" }`，`reasons` 不会再出现 `ai_service_not_healthy`。前端读到这两个键不用改。
+- **没删的**：翻译用的大模型、凭据、模型执行器（`/api/v1/internal/model/jobs/...`）、翻译 agent、`retainpdf-agent` 可执行文件、
+  `retainpdf-pipeline diagnose-failure`；库里的对话、文档操作、计算记录表也留着（不再有接口读写）。删凭据时不再查
+  `secrets/ai-runtime.json` 里的引用。
+- **桌面壳要跟着改**（归前端会话，后端没动 `frontend/`）：
+  1. `frontend/desktop/src/main/plugins/backend.js`：去掉 `startRetainpdfAiService` 和调它的两处（复用外部后端时、`RUST_API_AI_SUPERVISE`
+     不是 `1` 时）、`AI_SERVICE_PORT = 41100`、`aiServicePort` / `aiServiceRoot`、退出时先停 AI 的那段顺序；启动进度里的
+     「Rust API 与 AI 服务正在启动」换掉。rust_api 不再认 `RUST_API_AI_SUPERVISE`，也不会去拉 AI 服务。
+  2. `frontend/desktop/src/main/backend-env.js`：去掉 `RUST_API_AI_*`（`RUST_API_AI_SERVICE_BASE`、`RUST_API_AI_HOST`、`RUST_API_AI_PORT`、
+     `RUST_API_AI_SUPERVISE`）和 `RETAIN_AI_*`（`RETAIN_AI_HOST`、`RETAIN_AI_PORT`、`RETAIN_AI_API_KEYS`、`RETAIN_AI_RUST_API_KEY`、
+     `RETAIN_AI_RUST_API_BASE`、`RETAIN_AI_DATA_ROOT`、`RETAIN_AI_FX_AGENT_CLI_COMMAND`，以及从设置 `assistant` 段写的
+     `RETAIN_AI_LLM_MODEL`、`RETAIN_AI_LLM_BASE_URL`、`RETAIN_AI_LLM_API_KEY`、`RETAIN_AI_MAX_TOOL_ROUNDS`）；`backend-env.test.mjs` 跟着改。
+     后端已经不读这些变量，留着不报错，只是没用。
+  3. `frontend/desktop/scripts/prepare-app.mjs`：删掉把 `backend/ai` 复制成 `app/backend/ai_service` 的那段（`servicesAiRoot`、
+     `aiServiceSrc`/`aiServiceDst`、`retainpdf_ai/__main__.py` 检查）。现在 `backend/ai` 没了，这段会直接报
+     `missing ai_service at …`，桌面打包过不去。
+  4. `frontend/desktop/scripts/report-package-size.mjs`：去掉 `app/backend/ai_service` 这一项。
+  5. `frontend/desktop/requirements-ai-service.txt`：`.github/scripts/sync_backend_python_requirements.py` 不再生成它，CI 的桌面打包
+     （`build-desktop-packages.yml`）也不再 `pip install -r` 它；文件可以删掉。

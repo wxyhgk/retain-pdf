@@ -1,6 +1,6 @@
 # retry-stage
 
-> 地址已按 9 类整理（新地址如 `/jobs/{job_id}/actions/retry-stage`）。对应的旧地址已于 2026-10-18 删除（返回 404）。新旧对照见 [任务接口分类](../01-任务/04-任务接口分类.md)。
+> 地址已按 8 类整理（新地址如 `/jobs/{job_id}/actions/retry-stage`）。对应的旧地址已于 2026-10-18 删除（返回 404）。新旧对照见 [任务接口分类](../01-任务/04-任务接口分类.md)。
 
 契约：[`job-actions.v1`](../../../contracts/job-actions.v1.schema.json)（请求体 `RetryStageRequest`，返回 `RetryStageSubmissionView`，前端类型从 `@retainpdf/contracts/job-actions` 导入）。
 

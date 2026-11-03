@@ -4,8 +4,6 @@ use std::path::{Path, PathBuf};
 use anyhow::Result;
 
 mod accounts;
-mod ai_proxy;
-mod ai_service;
 mod auth;
 mod cleanup;
 mod db;
@@ -17,14 +15,10 @@ mod origin_policy;
 mod paths;
 mod provider;
 pub mod provider_config;
-mod rag;
-mod reader_llm;
 mod server;
 mod upload;
 
 pub use accounts::{AccountsConfig, DeploymentMode, PlatformModels, LOCAL_USERNAME, LOCAL_USER_ID};
-pub use ai_proxy::AiProxyConfig;
-pub use ai_service::AiServiceConfig;
 use auth::AuthRuntimeConfig;
 pub use auth::api_key_matches;
 pub use cleanup::CleanupConfig;
@@ -37,8 +31,6 @@ pub use provider::{
     DeepSeekRuntimeConfig, MineruRuntimeConfig, PaddleRuntimeConfig, ProviderLimitsConfig,
     ProviderRuntimeConfig,
 };
-pub use rag::RagConfig;
-pub use reader_llm::ReaderLlmConfig;
 use server::ServerRuntimeConfig;
 pub use upload::{
     effective_upload_max_bytes, UploadProcessingConfig, UploadRuntimeConfig,
@@ -133,13 +125,9 @@ pub struct AppConfig {
     pub provider_limits: ProviderLimitsConfig,
     pub provider_runtime: ProviderRuntimeConfig,
     pub job_runner: JobRunnerConfig,
-    pub ai_service: AiServiceConfig,
     pub jobs_service: JobsServiceConfig,
     pub cleanup: CleanupConfig,
     pub db: DbConfig,
-    pub ai_proxy: AiProxyConfig,
-    pub reader_llm: ReaderLlmConfig,
-    pub rag: RagConfig,
     pub accounts: AccountsConfig,
     /// 单机模式放行哪些网页来源、哪些 `Host`（`RUST_API_ALLOWED_ORIGINS`、`RUST_API_ALLOWED_HOSTS`）。
     pub origin_policy: OriginPolicyConfig,
@@ -306,7 +294,6 @@ impl AppConfig {
         if let Some(warning) = auth.placeholder_key_warning(&server.bind_host) {
             eprintln!("{warning}");
         }
-        let ai_service = AiServiceConfig::from_env(&paths.project_root, &server.python_bin);
         let jobs_service = JobsServiceConfig::from_env();
         let pipeline_command = env_vars::env_optional_string("RUST_API_PIPELINE_COMMAND")
             .unwrap_or_else(|| "retainpdf-pipeline".to_string());
@@ -336,13 +323,9 @@ impl AppConfig {
             provider_limits,
             provider_runtime,
             job_runner,
-            ai_service,
             jobs_service,
             cleanup: CleanupConfig::from_env(),
             db: DbConfig::from_env(),
-            ai_proxy: AiProxyConfig::from_env(),
-            reader_llm: ReaderLlmConfig::from_env(),
-            rag: RagConfig::from_env(),
             accounts: AccountsConfig::from_env()?,
             origin_policy: OriginPolicyConfig::from_env(),
         })

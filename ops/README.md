@@ -49,8 +49,8 @@ WSL2 的 localhost 转发会按端口失效（40001 通、41000 不通），这�
 - 只跑 `npm test`（不重建 bundle），改完在浏览器里验证，看到的还是旧产物，
   差点得出「已修复」的结论。
 
-根目录的 `npm run verify` 还会带上 `cargo check --workspace` 和 `backend/ai` 的
-pytest —— 一个功能平均要改 12 个文件、跨 2.6 种语言，分开跑必然漏。
+根目录的 `npm run verify` 还会带上 `cargo check --workspace`（以前还有 `backend/ai` 的
+pytest，AI 服务 2026-11-03 删了）—— 一个功能平均要改 12 个文件、跨 2.6 种语言，分开跑必然漏。
 
 **不含 `cargo test`**：本机有 5 条 PDF 相关的用例是红的（HEAD 上就红，缺外部工具
 链），放进来会让这条命令永远失败，那还不如没有。要跑完整 Rust 测试用

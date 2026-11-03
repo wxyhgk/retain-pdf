@@ -1,12 +1,12 @@
 //! 被监督的子进程随监督者一起退出。
 //!
-//! rust_api 把 jobsd / AI 服务各自放进独立进程组（见 `configure_child_process`），
+//! rust_api 把 jobsd 放进独立进程组（见 `configure_child_process`），
 //! 好让组杀能收走整棵树；代价是 rust_api 自己被 SIGKILL（桌面端退出、OOM、
 //! `kill -9`）时，信号到不了这些进程组，它们成了孤儿，继续占着端口——下次
 //! 启动就是端口冲突。Linux 有 `PR_SET_PDEATHSIG`，macOS 没有，所以统一用轮询：
 //! 监督者在环境变量里写下自己的 pid，子进程定期确认它还在，不在就退出。
 //!
-//! Python 侧（`retainpdf_ai/supervisor_watch.py`）实现同一约定，两边改动需同步。
+//! 以前 Python AI 服务（`retainpdf_ai/supervisor_watch.py`）也实现同一约定，AI 服务 2026-11-03 删了。
 
 use tokio::process::Command;
 use tokio::time::{sleep, Duration};

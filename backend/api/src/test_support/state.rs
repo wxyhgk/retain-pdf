@@ -30,14 +30,6 @@ pub(crate) fn assemble_app_state(config: Arc<AppConfig>) -> AppState {
             db.clone(),
             config.accounts.clone(),
         )),
-        ai_gateway: Arc::new(
-            crate::services::ai::AiGateway::new(
-                &config.ai_proxy,
-                config.ai_service.base_url(),
-                || 0,
-            )
-            .unwrap(),
-        ),
         uploads: Arc::new(crate::services::ingest::UploadService::new(
             db.clone(),
             crate::services::ingest::UploadServiceConfig {
@@ -62,9 +54,5 @@ pub(crate) fn assemble_app_state(config: Arc<AppConfig>) -> AppState {
         job_runtime: Arc::new(crate::services::jobs::JobRuntime::in_process(
             Arc::new(RwLock::new(HashSet::new())),
         )),
-        agent_capabilities: Arc::new(
-            crate::services::ai::AgentCapabilityAuthority::new_random()
-                .expect("agent capability authority"),
-        ),
     }
 }

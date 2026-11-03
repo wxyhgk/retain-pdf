@@ -120,29 +120,12 @@ pub async fn require_api_key(
         }
     }
 
-    let capability = request
-        .headers()
-        .get("x-retainpdf-agent-capability")
-        .and_then(|value| value.to_str().ok())
-        .map(str::trim)
-        .filter(|value| !value.is_empty())
-        .ok_or_else(|| {
-            if multi {
-                AppError::unauthorized("not signed in")
-            } else {
-                AppError::unauthorized("missing or invalid X-API-Key")
-            }
-        })?;
-    let claims = state.agent_capabilities.authenticate_request(
-        capability,
-        request.method().as_str(),
-        request.uri().path(),
-    )?;
-    request.extensions_mut().insert(claims);
-    let mut principal = if multi { Principal::service() } else { Principal::local() };
-    principal.via = crate::services::accounts::AuthVia::Capability;
-    request.extensions_mut().insert(principal);
-    Ok(next.run(request).await)
+    // 以前还认 AI 服务里 Agent 的能力令牌（X-RetainPDF-Agent-Capability），AI 服务 2026-11-03 删了。
+    Err(if multi {
+        AppError::unauthorized("not signed in")
+    } else {
+        AppError::unauthorized("missing or invalid X-API-Key")
+    })
 }
 
 /// 认证之后的第二道：多用户模式下网站账号能不能走这条路由；路径、查询串、JSON 请求体里出现的

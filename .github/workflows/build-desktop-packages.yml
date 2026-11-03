@@ -161,7 +161,6 @@ jobs:
           New-Item -ItemType Directory -Path $sitePackages -Force | Out-Null
           python -m pip install --upgrade pip
           python -m pip install --target $sitePackages -r frontend/desktop/requirements-desktop-windows.txt
-          python -m pip install --target $sitePackages -r frontend/desktop/requirements-ai-service.txt
           $pythonBundleExe = Join-Path $bundleRoot "python.exe"
           # 打包 retainpdf-pipeline console 入口：--no-deps 避免重复拉原生轮子；
           # 用捆绑 python.exe 直接安装（产出 Lib/site-packages + Scripts/retainpdf-pipeline.exe），
@@ -397,7 +396,6 @@ jobs:
           site_packages="$bundle_root/lib/python${py_minor}/site-packages"
           mkdir -p "$site_packages"
           "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r frontend/desktop/requirements-desktop-posix.txt
-          "$bundle_root/bin/python3" -m pip install --target "$site_packages" -r frontend/desktop/requirements-ai-service.txt
           "$bundle_root/bin/python3" - <<'PY'
           import requests, fitz, pikepdf, PIL, urllib3
           print("python_bundle_import_check=ok")
@@ -870,7 +868,6 @@ jobs:
           # 只装现成 wheel（pikepdf 有 macosx arm64 wheel，自带 qpdf）：没有 wheel 时
           # 直接失败，而不是悄悄源码编译出一个依赖构建机 Homebrew 的扩展。
           "$bundle_python3" -m pip install --only-binary=:all: -r frontend/desktop/requirements-desktop-posix.txt
-          "$bundle_python3" -m pip install --only-binary=:all: -r frontend/desktop/requirements-ai-service.txt
           # 打包 retainpdf-pipeline console 入口：--no-deps 避免重复拉原生轮子触发门禁
           # 先装 wheel：venv 精简后缺 bdist_wheel，否则 metadata 生成失败
           "$bundle_python3" -m pip install wheel

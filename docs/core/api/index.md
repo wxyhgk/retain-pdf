@@ -2,7 +2,7 @@
 
 这份文档是前端接入和第三方调用的公共入口。字段级 JSON Schema 以
 [`contracts`](../../../contracts/README.md) 为准；Rust 编排、恢复和
-内部 Agent 契约以 [`backend/api/API_SPEC.md`](../../../backend/api/API_SPEC.md)
+内部契约以 [`backend/api/API_SPEC.md`](../../../backend/api/API_SPEC.md)
 及其分领域页面为准。其它 API 文档只作为专题页或历史兼容入口。
 
 ## 1. 基础约定
@@ -63,13 +63,14 @@
 | `db` | `ok` / `error`，同一个检查 |
 | `queue_depth`、`running_jobs` | 排队、在跑的任务数。读不出来时是 `null`（2026-10-22 以前当 `0`，看着像空闲） |
 | `provider_backends` | 这个版本支持的 OCR 服务商 |
-| `ai_service`、`jobsd` | 监督器的状态：`starting`、`healthy`、`unhealthy`、`unsupervised` |
+| `jobsd` | 监督器的状态：`starting`、`healthy`、`unhealthy`、`unsupervised` |
+| `ai_service` | 固定 `disabled`：RetainPDF 自己的 AI 服务 2026-11-03 删了，键留着不删（以前和 `jobsd` 一样是监督器状态） |
 | `disk` | 数据目录所在磁盘（2026-10-24 起）：`free_bytes` 剩余可用字节（拿不到是 `null`）、`min_free_bytes` 下限（`RUST_API_MIN_FREE_DISK_MB`，`0` 不查）、`low` 低于下限。低于下限时新上传、新任务 503 `insufficient_storage`；`status` 和 `/ready` 不跟着变（磁盘满了更要能打开页面删任务） |
 | `time` | 服务器时间 |
 
 `GET /ready`（能接请求了）就绪 `200`，不就绪 `503`。**看 HTTP 状态码**（Docker 用 `curl -f`，开发栈等 2xx）。
-`data` 是 `status`（`ready` / `not_ready`）、`components`（`db` 总是必需；AI 服务、jobsd 只在本进程监督它们时必需，
-否则 `status` 是 `not_required`）、`reasons`（`db_unavailable`、`ai_service_not_healthy`、`jobsd_not_healthy`）、`time`。
+`data` 是 `status`（`ready` / `not_ready`）、`components`（`db` 总是必需；jobsd 只在本进程监督它时必需，
+否则 `status` 是 `not_required`；`ai_service` 2026-11-03 起固定 `required: false`、`status: "not_required"`）、`reasons`（`db_unavailable`、`jobsd_not_healthy`；`ai_service_not_healthy` 不会再出现）、`time`。
 不就绪时信封是 `code: 50300`、`message: "not ready"`，带 `error`（`SERVICE_UNAVAILABLE`，`details.reasons` 和 `data.reasons`
 一样），`data` 照旧给全；2026-10-22 以前 503 时信封仍是 `code: 0`、`message: "ok"`。
 
@@ -84,10 +85,6 @@
   来源不在名单里只是**不回 CORS 头**，请求照常处理（同源代理会把页面的 `Origin` 原样转发过来）。
   方法、请求头照预检回显（`X-API-Key`、`Content-Type`、`Range`……），响应头全部暴露
   （`Access-Control-Expose-Headers: *`），不回 `Access-Control-Allow-Credentials`。
-- **助手终端 WebSocket**（`/api/v1/ai/terminal`）：浏览器不对 WebSocket 做 CORS，所以握手时带了
-  `Origin` 且不在上面同一份名单里就 `403`（`error.code = "FORBIDDEN"`，`message` 为
-  `request origin is not allowed`）；不带 `Origin` 的命令行客户端照旧只看 key。AI 服务自己的
-  `/v1/fx/terminal` 带 `Origin` 一律拒（浏览器从不直连它）。
 - **`Host` 校验（防 DNS rebinding）**：后端监听回环地址时，`Host` 必须是 `localhost`、IP 字面量或
   `RUST_API_ALLOWED_HOSTS` 里的主机名，否则所有地址（含 `/health`、第二个端口）都回 `403`
   （`message` 为 `request host is not allowed`）。监听非回环地址时只有配了 `RUST_API_ALLOWED_HOSTS`
@@ -119,8 +116,6 @@
 3. `GET /api/v1/jobs/{job_id}`
 4. `GET /api/v1/jobs/{job_id}/progress/events`
 5. 根据 `actions` / `artifacts` / `artifacts_display` 下载产物
-6. 阅读问答和受限 PDF 操作统一使用 `POST /api/v1/ai/ask`；旧的
-   `/api/v1/jobs/{job_id}/reader/ai/chat` 只保留兼容
 
 Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时译文时，使用
 [Reader read model](../../../backend/api/docs/api-spec/reader-read-model.md)；它锁定
@@ -165,7 +160,7 @@ Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时�
 
 ### 文档身份与文档级任务历史
 
-图书馆的兼容 `book/job` 视图之外，AI 会话、版本和继续处理统一使用稳定的
+图书馆的兼容 `book/job` 视图之外，书和继续处理统一使用稳定的
 `document_id`：
 
 - `GET /api/v1/documents`
@@ -176,7 +171,6 @@ Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时�
 - `POST /api/v1/documents/{document_id}/ocr`
 - `POST /api/v1/documents/{document_id}/translate`
 - `GET /api/v1/documents/{document_id}/jobs`
-- `GET /api/v1/documents/{document_id}/agent-versions`
 - `DELETE /api/v1/documents/{document_id}/favorites`
 - `POST|GET /api/v1/documents/{document_id}/metadata-suggestions`
 - `POST /api/v1/documents/{document_id}/metadata-suggestions/{suggestion_id}/apply`
@@ -208,8 +202,7 @@ Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时�
 没有功能，留着不删。Rust 侧 `backend/api/src/api_tests/library_documents_contract.rs` 钉住真实返回的键集合。
 
 文档级任务列表是刷新页面后恢复当前 OCR、翻译和渲染状态的权威入口；不要只保留
-浏览器内存中的最后一个 `job_id`。Agent 版本列表投影 candidate/committed 版本元数据
-和当前 active version，不暴露内部 workspace 或 artifact 路径。
+浏览器内存中的最后一个 `job_id`。
 
 元数据建议接口从 PDF Info 和规范化 OCR 的
 `structure_role=document_title` 生成可审查、可恢复的标题候选。请求可使用
@@ -384,8 +377,8 @@ Reader 宿主接入 job/artifact、Markdown、区域、页面元数据和实时�
 
 ## 6. 任务查询与事件
 
-> `/jobs/{job_id}` 下的接口已按 9 类分前缀（`actions`、`progress`、`files`、`reports`、`reader`、
-> `translations`、`data`、`ai`），旧地址已于 2026-10-18 删除，本节已改成新地址。新旧对照见
+> `/jobs/{job_id}` 下的接口已按 8 类分前缀（`actions`、`progress`、`files`、`reports`、`reader`、
+> `translations`、`data`；`ai` 类 2026-11-03 删了），旧地址已于 2026-10-18 删除，本节已改成新地址。新旧对照见
 > [任务接口分类](../../api/01-任务/04-任务接口分类.md)。
 
 任务查询：
@@ -699,7 +692,7 @@ ETag: "..."
 
 - 译文页：`translated.pdf` 和生成缓存图时记下的不一样了（重渲染、原地重跑以后）就重新渲染，同一个地址的内容会变，所以不用强缓存，
   浏览器每次带 `ETag` / `Last-Modified` 校验，没变回 304。
-- 原文页：书的原文会变（Agent 文档操作提交新版本，书的编号不变），原文和生成缓存图时记下的不一样了就重新渲染，
+- 原文页：书的原文会变（书的编号不变；以前是 Agent 文档操作提交新版本，那条路 2026-11-03 删了，缓存规则照旧），原文和生成缓存图时记下的不一样了就重新渲染，
   所以和译文页一样不用强缓存（2026-10-19 以前是 `immutable` 一年）；书的封面、缩略图同样按原文判断新鲜、同样的缓存头。
 - `page` 超过总页数（任务的 `files` 清单 `pages.page_count`、书的 `pages.page_count`）：返回 404
   `no such file: pages/{page}.jpg`，和 `pages/0.jpg` 一样，不会起渲染进程。
@@ -724,7 +717,7 @@ ETag: "..."
 
 登记表是契约 `contracts/job-data.v1.schema.json` 的 `datasets`：新的读需求在那里加一条（文件位置、
 记录位置、字段），后端、前端类型、契约测试都照它走。只开放登记过的数据集，路径限定在任务目录里。
-助手也能用：`retainpdf-agent translation data [--dataset 名字 [--query "字段=值&…"]]`（只读，限这本书）。
+命令行也能用：`retainpdf-agent translation data [--dataset 名字 [--query "字段=值&…"]]`（只读，限这本书）。
 
 例：
 
@@ -794,22 +787,14 @@ PDF 元数据：
 - `PATCH|DELETE /api/v1/collections/{collection_id}`
 - `POST /api/v1/collections/{collection_id}/documents`
 - `DELETE /api/v1/collections/{collection_id}/documents/{document_id}`
-- `POST /api/v1/collections/{collection_id}/agent-workspace`（物化合集的 Agent 工作区，见下）
 - `GET /api/v1/fonts`
 - `POST /api/v1/fonts/upload`
 
 查询和关系接口只返回持久化 ID 与安全投影；客户端不得把本地文件路径作为资源 ID。
 
-合集的 Agent 工作区 `POST /api/v1/collections/{collection_id}/agent-workspace`（多用户下关闭）：在
-`<data_root>/collections/<id>/ai/` 下重建 `books/`（每本书一个指向它可读译文目录的链接）并写 `collection.v1.json`，
-返回同一份清单 `{ schema, collection_id, books[], skipped[] }`。
-
-- `collection_id` 必须是建合集时生成的形状（`col-` + 14 位数字 + `-` + 6 位小写十六进制），否则 `400 invalid collection_id`，不碰磁盘；
-  合集不存在 `404 collection not found`，不建目录。
-- `books[]` 只放有可读译文的书（阅读入口 `/documents/{id}/reading` 指的那个任务或合并目录）；还没有可读译文的书、
-  超过一次 200 本上限的书都在 `skipped[]`，`reason` 分别是 `还没有可读的译文`、`超过一次最多纳入 200 本的上限`。
-- 删合集（`DELETE /api/v1/collections/{collection_id}`）成功后清掉 `<data_root>/collections/<id>/`；清不掉只记日志，删除照样成功。
-- 同一路径的 `GET` 是 2026-10-19 前的写法（GET 会改磁盘，换成了 POST），前端改用 POST 以后 2026-10-22 删了，现在 `405`，不碰磁盘。
+合集的 Agent 工作区（`POST /api/v1/collections/{collection_id}/agent-workspace`）（已删）：2026-11-03 跟 RetainPDF 自己的
+AI 服务一起删了，产品里只留 Studio 的 AI。删合集（`DELETE /api/v1/collections/{collection_id}`）成功后照旧清掉
+`<data_root>/collections/<id>/`（以前建过的工作区在里面）；清不掉只记日志，删除照样成功。
 
 ## 9. OCR-only 接口
 
@@ -955,44 +940,12 @@ CSV 表头支持英文和中文别名：
 - 单机模式能校验本机和内网的模型服务，多用户照旧拦；
 - `provider_message`、`operator_hint` 最多 500 字。
 
-## 12. AI 问答、会话与文档操作
+## 12. AI 问答、会话与文档操作（已删）
 
-推荐入口：
-
-```text
-POST /api/v1/ai/ask
-```
-
-该接口同时承载带引用的阅读问答和受限 PDF Agent 操作。`assistant_mode` 可取
-`reading | operations | auto`。流式响应使用 SSE，`answer_delta.text` 是增量片段；
-客户端必须同时看到非空 `conversation_id` 和 `done.persisted=true`，才能把本轮视为
-可在刷新后恢复的持久历史。
-
-相关公共接口：
-
-- `GET|PUT /api/v1/ai/runtime-config`
-- `POST|GET /api/v1/ai/conversations`
-- `POST /api/v1/ai/conversations/fork`
-- `GET|PATCH|DELETE /api/v1/ai/conversations/{conversation_id}`
-- `POST /api/v1/ai/conversations/{conversation_id}/messages`
-- `GET /api/v1/ai/conversations/{conversation_id}/operations?limit=50&offset=0`
-- `GET /api/v1/ai/operations/{operation_id}`
-- `POST /api/v1/ai/operations/{operation_id}/{run|retry|cancel|commit}`
-- `GET /api/v1/ai/operations/{operation_id}/candidate.pdf`
-
-SSE 只负责通知；会话、消息树和 operation 查询结果才是断线重连后的权威状态。
-默认 `explicit` 模式下，客户端应渲染后端返回的
-`agent_confirmation_required` / `confirmation_requests`，不得根据模型文字猜测确认。
-operation 列表响应包含 `operations`、`total`、`limit`、`offset` 和 `has_more`；同一
-页按 `updated_at DESC, operation_id DESC` 稳定排序。
-
-完整请求、事件、会话分支、operation 并发保护和旧接口迁移说明见
-[AI 问答与文档操作 API](./reader-ai-chat.md)。公开 operation 与 runtime 配置字段
-分别以
-[`public-document-operation.v1.schema.json`](../../../contracts/public-document-operation.v1.schema.json)
-和
-[`runtime-config.v1.schema.json`](../../../contracts/runtime-config.v1.schema.json)
-为准。
+RetainPDF 自己的 AI（`/api/v1/ai/*`、`/api/v1/internal/agent/*`、`/jobs/{id}/ai/board`、合集的 agent 工作区、
+书的 agent-versions）2026-11-03 删了，产品里只留 Studio 的 AI。契约 `ai-ask.v1`、`ai-conversations.v1`、
+`agent-calculation.v1`、`public-document-operation.v1`、`runtime-config.v1` 一起删了。库里的对话、操作、计算记录
+表留着没删。健康检查的 `ai_service` 键留着，值固定（`/health` 是 `disabled`，`/ready` 是不需要）。
 
 ## 13. Simple App 入口
 
@@ -1012,8 +965,7 @@ simple app 通常监听 `42000`，现在只有 `GET /health` 和 `GET /ready`，
   不在这里面的接口对网站账号**一律关闭**（回 404，看起来就是没有这个接口），新加的接口也默认关闭。
 - **只给管理员**（普通账号 403）：`credentials`、`sync`、`backups`、`admin`、其余 `providers`、
   `POST /api/v1/fonts/upload`。
-- **这一期对网站账号关闭**（管理员也一样）：`ai`、`internal`、
-  `.../agent-versions`、`.../agent-workspace`。
+- **这一期对网站账号关闭**（管理员也一样）：`internal`。
 - **数据只看自己的**：路径、查询串、JSON 请求体里出现的任务 / 书 / 术语表 / 文件夹 / 上传编号必须是自己的，
   别人的一律当不存在（404）；列表和搜索只返回自己的。管理员的网站会话也一样（见 13.6）。
 
@@ -1230,7 +1182,6 @@ SQLite 主要表：
 - [本地启动与配置](./local-dev.md)
 - [存储结构](./storage.md)
 - [错误排查](./troubleshooting.md)
-- [AI 问答与文档操作](./reader-ai-chat.md)
 - [Rust API 架构边界](../rust_api/README.md)
 - [当前运行主链](../../../backend/api/CURRENT_API_MAP.md)
 - [Stage 执行契约](../../../backend/api/STAGE_EXECUTION_CONTRACT.md)

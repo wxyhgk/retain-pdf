@@ -10,6 +10,5 @@
 
 - [本地启动与配置](./local-dev.md)
 - [存储结构](./storage.md)
-- [AI 问答与文档操作](./reader-ai-chat.md)
 - [错误排查](./troubleshooting.md)
 - [Rust API 架构边界](../rust_api/README.md)

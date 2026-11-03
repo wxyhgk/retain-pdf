@@ -20,7 +20,7 @@
 - [创建任务](01-任务/01-创建任务.md)
 - [查询任务详情](01-任务/02-查询任务详情.md)
 - [任务列表](01-任务/03-任务列表.md)
-- [任务接口分类](01-任务/04-任务接口分类.md)：`/jobs/{job_id}` 下 9 类接口的新地址，以及已删除的旧地址对照
+- [任务接口分类](01-任务/04-任务接口分类.md)：`/jobs/{job_id}` 下 8 类接口的新地址，以及已删除的旧地址对照
 - [删除任务](01-任务/05-删除任务.md)：`DELETE /jobs/{job_id}`，删一个任务和它的 OCR 子任务，书留着
 - [事件总览](02-进度事件/01-事件总览.md)
 - [display_stage 与 lane](02-进度事件/02-display-stage与lane.md)
@@ -51,7 +51,7 @@
 
 ### 任务
 
-按 9 类分前缀，完整的新旧对照见 [任务接口分类](01-任务/04-任务接口分类.md)：
+按 8 类分前缀，完整的新旧对照见 [任务接口分类](01-任务/04-任务接口分类.md)：
 
 - `POST /api/v1/jobs`、`GET /api/v1/jobs`、`GET /api/v1/jobs/{job_id}`、`DELETE /api/v1/jobs/{job_id}`
 - 操作 `/api/v1/jobs/{job_id}/actions/…`（取消、重跑、续跑、重试阶段）
@@ -61,7 +61,6 @@
 - 阅读 `/api/v1/jobs/{job_id}/reader/…`
 - 译文 `/api/v1/jobs/{job_id}/translations/…`
 - 数据 `/api/v1/jobs/{job_id}/data/…`
-- AI `/api/v1/jobs/{job_id}/ai/…`
 
 ### 文档与版本
 
@@ -70,7 +69,6 @@
 - `POST /api/v1/documents/{document_id}/ocr`
 - `POST /api/v1/documents/{document_id}/translate`
 - `GET /api/v1/documents/{document_id}/jobs`
-- `GET /api/v1/documents/{document_id}/agent-versions`
 
 ### 安全凭据引用
 
@@ -80,19 +78,10 @@
 新翻译客户端应提交 `translation.credential_ref`，不要长期保存或重复发送内联
 `translation.api_key`。凭据查询只返回元数据，不返回原始值。
 
-### AI 问答与 PDF operation
+### AI 问答与 PDF operation（已删）
 
-- `POST /api/v1/ai/ask`
-- `GET|PUT /api/v1/ai/runtime-config`
-- `POST|GET /api/v1/ai/conversations`
-- `GET|PATCH|DELETE /api/v1/ai/conversations/{conversation_id}`
-- `GET /api/v1/ai/conversations/{conversation_id}/operations?limit=&offset=`
-- `GET /api/v1/ai/operations/{operation_id}`
-- `POST /api/v1/ai/operations/{operation_id}/{run|retry|cancel|commit}`
-- `GET /api/v1/ai/operations/{operation_id}/candidate.pdf`
-
-SSE 只负责通知；会话、operation 和文档版本查询才是刷新或断线恢复后的状态真源。
-完整契约见[AI 问答与文档操作](../core/api/reader-ai-chat.md)。
+RetainPDF 自己的 AI（`/api/v1/ai/*`：问答、会话、文档操作、终端、运行配置）2026-11-03 删了，产品里只留
+Studio 的 AI。Studio 的 AI 读书用的是普通的只读接口（`/documents/{id}/reading`、`/search`、`/jobs/{id}/reader/*`）。
 
 ### OCR
 

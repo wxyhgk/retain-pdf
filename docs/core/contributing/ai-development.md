@@ -37,7 +37,7 @@ AI 可以提高效率，但不能替代边界判断、测试验证和最终责�
 应提醒 AI：
 
 - `src/app/router/*` 只装配路由，`src/routes/*` 只做 HTTP adapter。
-- 应用用例、facade 和安全 view/projection 在 9 个领域包里（`backend/packages/retainpdf-<领域>`，`src/services/mod.rs` 只负责接上）。
+- 应用用例、facade 和安全 view/projection 在 8 个领域包里（`backend/packages/retainpdf-<领域>`，`src/services/mod.rs` 只负责接上）。
 - `backend/packages/retainpdf-runner/src/job_runner/*` 做运行态执行；通用进程控制留在 `retainpdf-proc`。
 - 数据库访问通过 `retainpdf-data::Db` facade 和领域子模块，不在 route/service 里直接写 SQL。
 - 新 API 字段要同步分领域 API 文档、双镜像 JSON Schema 和 producer/consumer 契约测试。

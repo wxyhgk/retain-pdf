@@ -8,8 +8,6 @@
 
 | 文件 | 作用 | 消费者 | 生产者 |
 |------|------|--------|--------|
-| `ai-ask.v1.schema.json` | `/v1/ask` SSE 协议 | `frontend/web/tests/contracts/ai-ask-contract.test.mjs` | `backend/ai/tests/test_contract_schema.py` |
-| `ai-conversations.v1.schema.json` | 会话 CRUD | `frontend/web` 与 `backend/ai` | `backend/api/src/api_tests/conversations_contract.rs` |
 | `create-job.v1.schema.json` | POST /api/v1/jobs 的**请求**体（CreateJobInput 六个顶层字段 + 五个段），每段 additionalProperties:false 对应后端 deny_unknown_fields | `frontend/web` 的 payload 构造器（`features/ingest/domain/workflow/payload.ts`，用生成的 TS 类型）与 mock 层（`platform/api/mocks/job-payload-contract.ts`，用生成的运行期字段名清单） | `backend/packages/retainpdf-core/src/models/input/request.rs` 的 `contract_tests` |
 | `glossaries.v1.schema.json` | 术语表 `/api/v1/glossaries`：列表（带筛选）、新建、读一张、整份保存（`expected_updated_at` 防覆盖，409 `glossary_changed`）、删除、导出 CSV（`binary`，直接是文件）、解析 CSV；词条 `GlossaryEntryInput` 从 `create-job.v1` 抄（`tests/glossaries-shared-definitions.test.mjs` 锁成一致）；请求体和查询参数 `additionalProperties: false` 对应 `deny_unknown_fields`。设置类第 2 批第 1 组（2026-10-29），7 条都有 `client_name` | `@retainpdf/contracts/glossaries`（前端换掉 `frontend/packages/api/src/glossaries.ts` 里手写的请求） | `backend/packages/retainpdf-glossaries/src/views.rs`、`api.rs`，`backend/api/src/routes/glossaries.rs`；`backend/api/src/api_tests/glossaries_contract.rs` 钉键集合 |
 | `library-books.v1.schema.json` | 删任务 `DELETE /api/v1/jobs/:job_id` 的返回；任务列表 `GET /api/v1/jobs` 和它的定义只在 `job-status.v1`（这里重复的端点和抄过来的 14 个定义 2026-10-23 删了）；名字沿用书架时期，书架 `/api/v1/library/books` 和它的类型 2026-10-22 删了 | `@retainpdf/api`（`LibraryDeleteResultView`） | `backend/packages/retainpdf-jobs/src/views/common.rs`（删任务的返回 `JobDeleteResultView`） |
@@ -21,8 +19,6 @@
 | `job-reports.v1.schema.json` | 任务报告 `reports/failure`（失败原因、OCR 歧义）、`reports/quality`（质量体检卡）、`reports/quality/items`（逐条清单）、`reports/translation`（翻译诊断） | `@retainpdf/contracts/job-reports`（前端以后换掉 `quality.ts`、`jobs-actions.ts` 里手写的类型） | `backend/packages/retainpdf-jobs/src/views/job_types.rs`、`reports/quality/mod.rs`、`views/translation.rs`；同上测试钉键集合 |
 | `jobs-control.v1.schema.json` | shell↔jobsd 控制面 | `backend/api/src/api_tests/jobs_control_contract.rs` | `backend/jobs/src/contract_lock.rs` |
 | `pipeline-stdout.v1.schema.json` | Python stdout 协议 | `backend/packages/retainpdf-runner/src/job_runner/stdout_parser/contract_lock.rs` | `backend/pipeline` worker 与对应 contract test |
-| `public-document-operation.v1.schema.json` | 浏览器安全的 PDF operation 查询、分页与 CAS action | `frontend/packages/api`、Reader/网页宿主 | `backend/packages/retainpdf-ai/src/public_document_operations.rs` |
-| `runtime-config.v1.schema.json` | AI runtime 配置更新与受鉴权的本机可见 Key 视图 | `backend/api` 透明代理、设置客户端 | `backend/ai/retainpdf_ai/runtime_config_api.py` |
 | `translation-revisions.v1.schema.json` | 译文条目列表 `GET /api/v1/jobs/:job_id/translations`、单条 `GET .../translations/:item_id`、重放一条 `POST .../replay`（不带请求体，第 1b 期）；单块译文修订写回 `PATCH /api/v1/jobs/:job_id/translations/:item_id`、修订历史 `GET .../revisions`、`translated/revisions.v1.jsonl` 行格式与 409/422 结构化错误 | 前端任务详情的翻译调试、阅读页编辑、终端 agent | `backend/api/src/api_tests/translation_debug/revisions.rs`、`translation_debug/items_contract.rs`、`backend/translation/retainpdf_translation/workflow/revision.py` |
 | `refine-report.v1.schema.json` | 译后精修报告 `artifacts/refine_report.v1.json` 与 `GET /api/v1/jobs/:job_id/reports/refine`（挑错发现、定点修改的采纳/拒绝及原因、token 用量、精修前后 QA 对比） | 终端 agent（`retainpdf-agent translation issues`） | `backend/translation/retainpdf_translation/workflow/refine.py` |
 | `reader-data.v1.schema.json` | Reader 宿主读模型：产物、Markdown、区域、页面元数据、实时译文布局/快照/SSE | Reader host adapter、后续 `@retainpdf/reader` ports | `backend/api` Reader 查询视图 |
@@ -48,8 +44,8 @@ endpoint 和它自己的 definition。全部接口见 `docs/api/00-接口目录.
 | `client_name` | 前端生成的函数名，小驼峰（`listDocuments`），显式写、不从地址推；**全部契约里不许重名**。不复用 `op`（那是 jobs-control.v1 里 jobsd 的内部操作名） |
 | `transport` | 返回方式：`json`（不写等于它，`{code, data}` 信封）、`sse`、`binary`、`websocket`、`raw_json`（JSON 但不带信封）。不叫 `response`（jobs-control.v1 的 `response` 是返回类型） |
 
-现在 `library-documents.v1` 的 17 条都有 `client_name`；第 1a 期（2026-10-22）给 `job-status`、`create-job`、`library-books`、`job-data`、`job-events`、`reader-data`、`token-usage` 的 16 条补上了（`GET /api/v1/jobs` 只在 `job-status.v1`；`library-books.v1` 以前重复登记的一条 2026-10-23 删了）；第 1b 期给 `translation-revisions.v1` 加了译文条目的 3 条（`listTranslationItems`、`getTranslationItem`、`replayTranslationItem`；同一份契约里的写回、修订历史前端没要名字，没起），给 `library-documents.v1` 在原来 17 条后面加了 `listDocumentJobs`、`translateDocument`、`ocrDocument`；`agent-calculation.v1` 的计算产物下载是 `binary`
-（2026-10-22 以前写的是 `response_body: "binary"`，已并进 `transport`），`reader-data.v1` 的 `progress/stream` 是 `sse`。
+现在 `library-documents.v1` 的 17 条都有 `client_name`；第 1a 期（2026-10-22）给 `job-status`、`create-job`、`library-books`、`job-data`、`job-events`、`reader-data`、`token-usage` 的 16 条补上了（`GET /api/v1/jobs` 只在 `job-status.v1`；`library-books.v1` 以前重复登记的一条 2026-10-23 删了）；第 1b 期给 `translation-revisions.v1` 加了译文条目的 3 条（`listTranslationItems`、`getTranslationItem`、`replayTranslationItem`；同一份契约里的写回、修订历史前端没要名字，没起），给 `library-documents.v1` 在原来 17 条后面加了 `listDocumentJobs`、`translateDocument`、`ocrDocument`；`reader-data.v1` 的 `progress/stream` 是 `sse`
+（2026-10-22 以前下载写的是 `response_body: "binary"`，已并进 `transport`；当时用它的 `agent-calculation.v1` 2026-11-03 跟 AI 服务一起删了）。
 第 1b 期（2026-10-22）新建 `job-actions.v1`（6 条）、`job-reports.v1`（4 条），每条都有 `client_name`。
 设置类第 2 批（2026-10-29 起，按前端排的顺序一组一组补）：第 1 组新建 `glossaries.v1`（7 条，导出 CSV 是 `binary`）。
 `scripts/lint-schemas.mjs` 查端点的键（有白名单，拼错的键直接红）、`method`、`transport` 的取值、`client_name` 的格式和重名；带 `client_name` 的端点，`query`/`input`/`output` 必须是本契约 definitions 里的名字（生成器按名字取类型，写说明文字会让它报错）。
@@ -61,7 +57,7 @@ endpoint 和它自己的 definition。全部接口见 `docs/api/00-接口目录.
 反过来不要求。删了接口、改了地址却忘了改契约，这条测试红。规则：
 
 - `jobs-control.v1` 排除：jobsd 自己的接口，由 `backend/jobs/src/contract_lock.rs` 对 jobsd 的路由双向比；
-- 有 `proxy_path` 的比 `proxy_path`（`runtime-config.v1` 的 `path` 是 Python AI 服务的地址）；
+- 有 `proxy_path` 的比 `proxy_path`（以前只有 `runtime-config.v1` 用，它 2026-11-03 跟 AI 服务一起删了，现在没有契约带这个键）；
 - 地址先归一：`{job_id}` 换成 `:job_id`，`?` 后面的查询串去掉。
 
 ## npm 包

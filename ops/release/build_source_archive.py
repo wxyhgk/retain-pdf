@@ -23,7 +23,7 @@ ARCHIVE_PATHS = (
 REQUIRED_FILES = (
     "Cargo.toml", "Cargo.lock", ".dockerignore",
     "backend/pyproject.toml", "backend/uv.lock",
-    "backend/api/Cargo.toml", "backend/ai/pyproject.toml", "backend/base/pyproject.toml",
+    "backend/api/Cargo.toml", "backend/base/pyproject.toml",
     "backend/math/pyproject.toml",
     "backend/pipeline/pyproject.toml", "backend/translation/pyproject.toml",
     "backend/translation-agent/pyproject.toml",

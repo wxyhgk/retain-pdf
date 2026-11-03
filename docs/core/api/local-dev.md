@@ -5,10 +5,10 @@
 从仓库根目录启动：
 
 ```bash
-python3 ops/development/dev_stack.py --runtime python
+python3 ops/development/dev_stack.py
 ```
 
-该入口准备锁定的 Python 环境及 Rust 二进制，再由 Rust 监督 jobsd 和 AI。
+该入口准备锁定的 Python 环境及 Rust 二进制，再由 Rust 监督 jobsd（AI 服务 2026-11-03 删了）。
 默认只监听回环。需要局域网访问时，先设置强随机的 `RUST_API_KEYS`，再传
 `--host 0.0.0.0`；启动器和 Rust 都拒绝非回环监听使用默认开发 key。
 
@@ -69,7 +69,7 @@ Docker 中 `ops/deployment/docker/delivery/docker/auth.local.json` 的 `api_keys
 - `RUST_API_ALLOWED_ORIGINS`：单机模式额外放行的网页来源，逗号分隔，写全 `scheme://host[:port]`，
   例如 `https://pdf.example.com,http://10.0.0.2:8080`；不支持通配，`null`、`file://` 会被丢掉。
   回环页面、和 API 同主机只是端口不同的页面不用写。只在页面和 API 不同主机时要配；
-  它管 CORS 和助手终端 WebSocket 的握手。多用户模式用的是 `RETAIN_ALLOWED_ORIGINS`，两个互不影响。
+  它管 CORS。多用户模式用的是 `RETAIN_ALLOWED_ORIGINS`，两个互不影响。
 - `RUST_API_ALLOWED_HOSTS`：单机模式额外放行的 `Host` 主机名（不带端口也行，带了会忽略），逗号分隔。
   `localhost` 和 IP 字面量总是放行。后端监听回环地址、前面又有反向代理把域名放进 `Host`
   （例如 nginx `proxy_set_header Host $host` 转发到 `127.0.0.1:41000`）时必须配；监听非回环地址时配了才校验。
@@ -80,7 +80,7 @@ Docker 中 `ops/deployment/docker/delivery/docker/auth.local.json` 的 `api_keys
 - `RUST_API_DATA_DIR`：旧别名，仅在 `RUST_API_DATA_ROOT` 未设置时使用。
 - `RUST_API_SCRIPTS_DIR`：pipeline 包根目录，保留给运行路径和辅助工具配置。
 - `RUST_API_PYTHON_ENTRYPOINT_MODE`：已废弃，不再选择 worker 模式；开发启动器不再传递该变量。
-- `RUST_API_PIPELINE_COMMAND`：辅助任务（如 document-operation）使用的 `retainpdf-pipeline` 命令路径。OCR、翻译、渲染主阶段固定使用 `PYTHON_BIN -m retainpdf_pipeline.ocr|translate|render --spec ...`，不再回退到旧脚本。
+- `RUST_API_PIPELINE_COMMAND`：辅助任务（如失败诊断 diagnose-failure、Word / 对照 PDF 这类派生产物）使用的 `retainpdf-pipeline` 命令路径。OCR、翻译、渲染主阶段固定使用 `PYTHON_BIN -m retainpdf_pipeline.ocr|translate|render --spec ...`，不再回退到旧脚本。
 - `PYTHON_BIN`：Python 可执行文件。
 - `RUST_API_UPLOAD_MAX_BYTES`：普通上传大小限制（字节，只写数字），不设或 `0` 用默认的 512 MiB。
 - `RUST_API_UPLOAD_MAX_PAGES`：普通上传页数限制，`0` 表示不限制。

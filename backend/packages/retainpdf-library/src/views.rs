@@ -1,10 +1,10 @@
-//! 书库接口的请求和返回类型：文档、元数据建议、全文检索、对话、文件夹（`/api/v1/documents`、`/search`、
-//! `/conversations`、`/collections`）。2026-10-18 从核心包挪过来；书架（`/api/v1/library/books`）的类型
-//! 2026-10-22 跟接口一起删了。
+//! 书库接口的请求和返回类型：文档、元数据建议、全文检索、文件夹（`/api/v1/documents`、`/search`、
+//! `/collections`）。2026-10-18 从核心包挪过来；书架（`/api/v1/library/books`）的类型 2026-10-22 跟接口一起删了，
+//! AI 对话（`/ai/conversations`）的 2026-11-03 跟 AI 服务一起删了。
 //! 库里存的记录（`DocumentRecord` 这些）还在核心包，数据库层要用。
 
 use retainpdf_core::models::api::{
-    BlockSearchHit, CollectionRecord, ConversationRecord, DocumentRecord, MessageRecord,
+    BlockSearchHit, CollectionRecord, DocumentRecord,
 };
 use retainpdf_api_base::error::AppError;
 use retainpdf_core::models::request::CreateJobInput;
@@ -24,14 +24,6 @@ fn default_metadata_suggestion_limit() -> u32 {
 
 fn default_search_limit() -> u32 {
     retainpdf_core::config::limits::DEFAULT_LIST_LIMIT
-}
-
-fn default_conversations_limit() -> u32 {
-    50
-}
-
-fn default_true() -> bool {
-    true
 }
 
 /// GET /api/v1/documents 查询参数。不认识的参数 400（2026-10-22 起；标签 `tag` 早已删掉）。
@@ -215,106 +207,6 @@ pub struct SearchResultView {
     pub limit: u32,
     /// 命中不止这么多（多取一条判断）。没有 `offset`，要更多就加大 `limit`。
     pub has_more: bool,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreateConversationInput {
-    #[serde(default)]
-    pub title: String,
-    #[serde(default)]
-    pub document_id: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ListConversationsQuery {
-    #[serde(default = "default_conversations_limit")]
-    pub limit: u32,
-    #[serde(default)]
-    pub offset: u32,
-    /// 按文档过滤;空 = 全部。
-    #[serde(default)]
-    pub document_id: String,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ConversationListView {
-    pub conversations: Vec<ConversationRecord>,
-    pub total: u64,
-    pub limit: u32,
-    pub offset: u32,
-    pub has_more: bool,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ConversationDetailView {
-    #[serde(flatten)]
-    pub conversation: ConversationRecord,
-    pub messages: Vec<MessageRecord>,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct AppendMessageInput {
-    pub role: String,
-    pub content: String,
-    #[serde(default)]
-    pub citations_json: String,
-    #[serde(default)]
-    pub tool_trace_json: String,
-    #[serde(default)]
-    pub model: String,
-    /// 父消息 id;省略/空 = 挂到当前 head(线性续写)。
-    #[serde(default)]
-    pub parent_id: String,
-    /// 客户端稳定 id(与 assistant-ui store id 对齐);空则服务端生成。
-    #[serde(default)]
-    pub message_id: String,
-    /// 这条消息是怎么结束的。空/省略 = 正常答完;"cancelled" = 用户中途停止;
-    /// "rounds_exhausted" = 工具轮次用尽、被强制收尾。
-    #[serde(default)]
-    pub finish_reason: String,
-    /// 追加后是否把 head 指到本条;默认 true。
-    #[serde(default = "default_true")]
-    pub set_head: bool,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PatchConversationInput {
-    /// 切换可见分支叶节点。
-    #[serde(default)]
-    pub head_id: String,
-    #[serde(default)]
-    pub title: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ForkMessageInput {
-    pub role: String,
-    pub content: String,
-    #[serde(default)]
-    pub parent_id: String,
-    #[serde(default)]
-    pub message_id: String,
-    #[serde(default)]
-    pub citations_json: String,
-    #[serde(default)]
-    pub tool_trace_json: String,
-    #[serde(default)]
-    pub model: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct ForkConversationInput {
-    #[serde(default)]
-    pub title: String,
-    #[serde(default)]
-    pub document_id: String,
-    #[serde(default)]
-    pub messages: Vec<ForkMessageInput>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ConversationMutationResult {
-    pub deleted: bool,
 }
 
 /// POST /api/v1/collections。不认识的字段 400。

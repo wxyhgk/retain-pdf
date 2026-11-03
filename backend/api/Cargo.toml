@@ -14,7 +14,6 @@ path = "src/main.rs"
 [dependencies]
 retainpdf-api-base = { path = "../packages/retainpdf-api-base" }
 retainpdf-accounts = { path = "../packages/retainpdf-accounts" }
-retainpdf-ai = { path = "../packages/retainpdf-ai" }
 retainpdf-core = { path = "../packages/retainpdf-core" }
 retainpdf-files = { path = "../packages/retainpdf-files" }
 retainpdf-glossaries = { path = "../packages/retainpdf-glossaries" }
@@ -56,7 +55,6 @@ futures-util = "0.3"
 
 [dev-dependencies]
 retainpdf-api-base = { path = "../packages/retainpdf-api-base", features = ["test-fixtures"] }
-retainpdf-ai = { path = "../packages/retainpdf-ai", features = ["test-fixtures"] }
 retainpdf-ingest = { path = "../packages/retainpdf-ingest", features = ["test-fixtures"] }
 retainpdf-jobs = { path = "../packages/retainpdf-jobs", features = ["test-fixtures"] }
 tower = { version = "0.5", features = ["util"] }

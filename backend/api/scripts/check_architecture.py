@@ -145,12 +145,8 @@ ROUTE_RAW_EXTRACTOR_ALLOWLIST = {
 }
 
 ROUTE_STATE_RESOURCE_ALLOWLIST = {
-    Path("src/routes/common/agent_calculations.rs"),
-    Path("src/routes/common/agent_capabilities.rs"),
-    Path("src/routes/common/agent_runtime_sessions.rs"),
     Path("src/routes/common/auth.rs"),
     Path("src/routes/common/credentials.rs"),
-    Path("src/routes/common/document_operations.rs"),
     Path("src/routes/common/fonts.rs"),
     Path("src/routes/common/platform_settings.rs"),
     Path("src/routes/common/glossaries.rs"),
@@ -168,9 +164,6 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/model_requests.rs"): (
         "crate::services::providers",
     ),
-    Path("src/routes/agent_calculations.rs"): (
-        "crate::services::ai",
-    ),
     Path("src/routes/glossaries.rs"): (
         "crate::services::glossaries",
     ),
@@ -186,24 +179,9 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     Path("src/routes/credentials.rs"): (
         "crate::services::providers",
     ),
-    Path("src/routes/document_operations.rs"): (
-        "crate::services::ai",
-    ),
-    Path("src/routes/agent_runtime_sessions.rs"): (
-        "crate::services::ai",
-    ),
-    Path("src/routes/agent_capabilities.rs"): (
-        "crate::services::ai",
-    ),
-    Path("src/routes/public_document_operations.rs"): (
-        "crate::services::ai",
-    ),
     # Library thick routes migrate to library_api in PR2–PR5; allowlist is
     # ready so partial moves do not require revisiting this file each PR.
     Path("src/routes/library_data.rs"): (
-        "crate::services::library",
-    ),
-    Path("src/routes/library_extras.rs"): (
         "crate::services::library",
     ),
     Path("src/routes/collections.rs"): (
@@ -214,15 +192,6 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     ),
     Path("src/routes/common/uploads.rs"): (
         "crate::services::ingest::UploadApiDeps",
-    ),
-    Path("src/routes/common/agent_capabilities.rs"): (
-        "crate::services::ai::AgentCapabilityAuthority",
-    ),
-    Path("src/routes/common/agent_runtime_sessions.rs"): (
-        "crate::services::ai::AgentRuntimeSessionApiDeps",
-    ),
-    Path("src/routes/common/agent_calculations.rs"): (
-        "crate::services::ai::AgentCalculationApiDeps",
     ),
     Path("src/routes/common/glossaries.rs"): (
         "crate::services::glossaries::GlossaryApiDeps",
@@ -253,9 +222,6 @@ ROUTE_SERVICE_IMPORT_ALLOWLIST = {
     ),
     Path("src/routes/providers.rs"): (
         "crate::services::providers",
-    ),
-    Path("src/routes/ai_proxy.rs"): (
-        "crate::services::ai",
     ),
     Path("src/routes/fonts.rs"): (
         "crate::services::platform",
@@ -474,7 +440,6 @@ def check_jobs_route_deps_dedup(errors: list[str]) -> None:
         Path("src/routes/jobs/reports"),
         Path("src/routes/jobs/reader"),
         Path("src/routes/jobs/data"),
-        Path("src/routes/jobs/ai"),
         Path("src/routes/download_response"),
     )
     mixed_modules = {
@@ -758,7 +723,6 @@ def check_service_model_facade_boundaries(errors: list[str]) -> None:
         abs_src(Path("src/services/jobs/facade.rs")),
         abs_src(Path("src/services/jobs/deps")),
         abs_src(Path("src/services/jobs/progress/live_translation_queries.rs")),
-        abs_src(Path("src/services/jobs/ai")),
         abs_src(Path("src/services/jobs/reader/markdown.rs")),
                 abs_src(Path("src/services/jobs/actions/cancel_submission.rs")),
         abs_src(Path("src/services/jobs/actions/rerun.rs")),
@@ -822,7 +786,6 @@ def check_jobs_dependency_boundaries(errors: list[str]) -> None:
         abs_src(Path("src/services/jobs/reports/failure")),
         abs_src(Path("src/services/jobs/actions/resume_plan")),
         abs_src(Path("src/services/jobs/reader/markdown")),
-        abs_src(Path("src/services/jobs/ai")),
     )
     for module in narrow_modules:
         paths.extend(scan_rs_files(module))
@@ -856,46 +819,11 @@ def check_runtime_ownership(errors: list[str]) -> None:
             if re.search(r"\b(?:services|routes|AppState)\b", text):
                 errors.append(f"{relative}: runtime must not depend on business services or HTTP assembly state")
         elif relative not in allowed and not path.is_relative_to(SRC_ROOT / "api_tests"):
-            if re.search(r"\b(?:ai_supervisor|jobsd_supervisor)\b", text):
+            if re.search(r"\bjobsd_supervisor\b", text):
                 errors.append(f"{relative}: supervisor access belongs to app assembly and explicit health consumers")
-    for name in ("ai_supervisor", "jobsd_supervisor"):
+    for name in ("jobsd_supervisor",):
         if (SRC_ROOT / "services" / f"{name}.rs").exists():
             errors.append(f"services/{name}.rs: supervisor implementation belongs in runtime")
-
-
-def check_ai_gateway_dependencies(errors: list[str]) -> None:
-    """AI 网关的配置和健康状态由装配传进来，不自己读环境变量、不自己读监督器。
-
-    网关在 AI 包 retainpdf-ai 里：碰 `crate::runtime` 的监督器、越过门面用 `gateway` 子模块，编译器已经挡住了。
-    只管网关本身（`lib.rs`、`api.rs`、`gateway.rs`）；同一个包里的 agent_*、document_operations 是别的模块。
-    """
-    crate_root = extracted_domain_root("ai")
-    for name in ("lib.rs", "api.rs", "gateway.rs"):
-        path = crate_root / "src" / name
-        if not path.exists():
-            continue
-        text = route_source_without_tests(path)
-        text = re.sub(r"/\*.*?\*/|//[^\n]*", "", text, flags=re.DOTALL)
-        if re.search(r"\b(?:from_env|ai_service_status)\s*\(|\benv\s*::\s*var\s*\(|\bLazy\b", text):
-            errors.append(
-                f"{Path(EXTRACTED_DOMAINS['ai']) / 'src' / name}: AI gateway must receive configuration and health source from app assembly"
-            )
-
-
-def check_agent_calculation_dependencies(errors: list[str]) -> None:
-    """Calculation storage needs Db and data_root, not application configuration.
-
-    在 AI 包 retainpdf-ai 的 `agent_calculations/` 里。`AppState`、rust_api 的 `api_tests` 包里本来就引用不到，
-    `AppConfig` 在 retainpdf-core 里、引用得到，所以这条还要查。
-    """
-    crate_root = extracted_domain_root("ai")
-    for path in scan_rs_files(crate_root / "src" / "agent_calculations"):
-        text = path.read_text(encoding="utf-8")
-        text = re.sub(r"/\*.*?\*/|//[^\n]*", "", text, flags=re.DOTALL)
-        if re.search(r"\b(?:AppConfig|AppState|api_tests)\b", text):
-            errors.append(
-                f"{Path(EXTRACTED_DOMAINS['ai']) / path.relative_to(crate_root)}: agent calculations must use narrow Db/data_root dependencies, including test fixtures"
-            )
 
 
 def check_upload_boundaries(errors: list[str]) -> None:
@@ -1462,10 +1390,10 @@ def check_protocol_docs(errors: list[str]) -> None:
 KNOWN_SERVICE_CYCLE_EDGES: set[tuple[str, str]] = set()
 
 
-# services 按拆包规划分成 9 个领域，一个领域以后拆成一个包（docs/ops/planning/api-reorg/
+# services 按拆包规划分成 8 个领域（AI 2026-11-03 跟 AI 服务一起删了），一个领域以后拆成一个包（docs/ops/planning/api-reorg/
 # 20261015-模块化单体拆包规划.md 第 3 节）。新模块放进某个领域，不另开顶层目录。
 SERVICE_DOMAINS = {
-    "accounts", "ai", "files", "glossaries", "ingest", "jobs", "library", "platform", "providers",
+    "accounts", "files", "glossaries", "ingest", "jobs", "library", "platform", "providers",
 }
 
 # 领域之间允许的依赖，(谁, 用谁)。照规划第 3 节的分层图，只能往下用；要加一条先看它会不会把
@@ -1486,7 +1414,6 @@ ALLOWED_DOMAIN_DEPENDENCIES = {
 # 这些领域的代码不在 services/ 下，services/mod.rs 里 `pub(crate) use <包> as <领域>;` 接上。
 EXTRACTED_DOMAINS = {
     "accounts": "retainpdf-accounts",
-    "ai": "retainpdf-ai",
     "files": "retainpdf-files",
     "glossaries": "retainpdf-glossaries",
     "ingest": "retainpdf-ingest",
@@ -1906,8 +1833,6 @@ def main() -> int:
     check_route_model_boundary(errors)
     check_service_model_facade_boundaries(errors)
     check_upload_boundaries(errors)
-    check_agent_calculation_dependencies(errors)
-    check_ai_gateway_dependencies(errors)
     check_runtime_ownership(errors)
     check_jobs_dependency_boundaries(errors)
     check_process_runtime_deps_usage(errors)

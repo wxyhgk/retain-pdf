@@ -3,8 +3,8 @@
 [API spec index](../../API_SPEC.md)
 
 
-`retainpdf-api` is the external service layer for the PDF translation pipeline
-and AI control plane.
+`retainpdf-api` is the external service layer for the PDF translation pipeline.
+（以前还是 AI 控制面，2026-11-03 跟 RetainPDF 自己的 AI 服务一起删了，产品里只留 Studio 的 AI。）
 
 Doc index:
 [`README.md`](../../README.md)
@@ -100,10 +100,6 @@ Current internal boundary conventions:
 - `services/jobs/lifecycle/snapshot_factory` owns job snapshot assembly; `worker_command` owns Python worker command/spec construction
 - `../packages/retainpdf-runner/src/job_runner/*` owns runtime execution, process lifecycle,
   OCR-child chaining, and cancellation
-- `retainpdf-ai/src/api.rs` owns the Rust-to-AI HTTP proxy boundary;
-  the `retainpdf-library` package's `src/api.rs` owns conversation persistence;
-  `retainpdf-ai/src/public_document_operations_api.rs` owns the browser-safe operation
-  projection and CAS actions
 - `AppState` should stay at route entrypoints and runtime coordination layers; pure assembly helpers should prefer `&Db`, narrow config projections, and explicit arguments
 
 Current scope:
@@ -122,9 +118,6 @@ Current scope:
 - Download combined bundle
 - Fetch artifact manifest
 - Fetch normalized OCR artifacts
-- Proxy AI ask/SSE and runtime configuration
-- Persist conversation/message trees and FX runtime cursors
-- Query and confirm safe public document-operation actions
 
 Planned but not fully implemented in this first pass:
 
@@ -132,8 +125,8 @@ Planned but not fully implemented in this first pass:
 - RBAC / tenant quota
 - public/private artifact signing
 - general job-status SSE push updates (`/api/v1/jobs/{job_id}/progress/events` remains a
-  paginated JSON history endpoint; AI ask SSE and live-translation SSE already
-  exist)
+  paginated JSON history endpoint; live-translation SSE already
+  exists)
 - stronger cancel semantics
 
 ## Reading Guide
@@ -194,9 +187,7 @@ Notes:
   request `Host` / `X-Forwarded-Host` (port may differ), and
   `RUST_API_ALLOWED_ORIGINS`; other origins get no CORS headers but are not
   rejected. Methods and request headers are mirrored, all response headers are
-  exposed, no credentials. The assistant terminal WebSocket
-  (`/api/v1/ai/terminal`) returns `403` when an `Origin` header is present and
-  not on that list. When listening on a loopback address, a `Host` that is not
+  exposed, no credentials. When listening on a loopback address, a `Host` that is not
   `localhost`, an IP literal or listed in `RUST_API_ALLOWED_HOSTS` gets `403
   request host is not allowed` (DNS rebinding); on a non-loopback address the
   `Host` check only applies when `RUST_API_ALLOWED_HOSTS` is set. See
@@ -225,8 +216,6 @@ Config source map:
 - `../packages/retainpdf-core/src/config/server.rs`: bind host, API port, Python binary
 - `../packages/retainpdf-core/src/config/upload.rs`: global upload size/page gates
 - `../packages/retainpdf-core/src/config/provider.rs`: MinerU / Paddle / DeepSeek runtime and provider limits
-- `../packages/retainpdf-core/src/config/ai_service.rs` and `ai_proxy.rs`: supervised
-  AI sidecar address, startup command, and proxy timeouts
 - `../packages/retainpdf-core/src/config/job_runner.rs`: queue polling, worker termination, failure diagnosis, sync wait knobs
 - `../packages/retainpdf-core/src/config.rs`: config facade exposing the current `AppConfig` fields
 
@@ -328,8 +317,8 @@ Neither route needs `X-API-Key`; both are also served on the simple port.
 | `queue_depth` | integer \| `null` | queued jobs; `null` when the count cannot be read (before 2026-10-22 this was `0`, which looked idle) |
 | `running_jobs` | integer \| `null` | running jobs; `null` when the count cannot be read |
 | `provider_backends` | string[] | OCR provider keys this build supports |
-| `ai_service` | string | supervisor state of the AI service: `starting`, `healthy`, `unhealthy`, or `unsupervised` |
-| `jobsd` | string | supervisor state of jobsd, same values |
+| `ai_service` | string | 固定 `"disabled"`：AI 服务 2026-11-03 删了，键留着不删（以前是 AI 服务的监督器状态） |
+| `jobsd` | string | supervisor state of jobsd: `starting`, `healthy`, `unhealthy`, or `unsupervised` |
 | `disk` | object | since 2026-10-24: the disk holding the data directory — `free_bytes` (integer \| `null` when unknown, e.g. on Windows), `min_free_bytes` (`RUST_API_MIN_FREE_DISK_MB`; `0` disables the check), `low` (below the floor). Below the floor, new uploads and new jobs answer `503` with `error.details.reason = "insufficient_storage"`; `status` and `/ready` do not change |
 | `time` | string | server time, ISO 8601 |
 
@@ -339,8 +328,8 @@ the HTTP status (Docker uses `curl -f`, the dev stack waits for a 2xx):
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `status` | `"ready"` \| `"not_ready"` | |
-| `components.db` / `.ai_service` / `.jobsd` | `{required, status}` | `db` is always required; AI service and jobsd only when this process supervises them, otherwise `status = "not_required"` |
-| `reasons` | string[] | `db_unavailable`, `ai_service_not_healthy`, `jobsd_not_healthy`; empty when ready |
+| `components.db` / `.ai_service` / `.jobsd` | `{required, status}` | `db` is always required; jobsd only when this process supervises it, otherwise `status = "not_required"`；`ai_service` 2026-11-03 起固定 `{required: false, status: "not_required"}` |
+| `reasons` | string[] | `db_unavailable`, `jobsd_not_healthy`; empty when ready（`ai_service_not_healthy` 不会再出现） |
 | `time` | string | server time, ISO 8601 |
 
 Not ready:
@@ -352,9 +341,9 @@ Not ready:
   "error": {
     "code": "SERVICE_UNAVAILABLE",
     "http_status": 503,
-    "details": { "reasons": ["ai_service_not_healthy"] }
+    "details": { "reasons": ["jobsd_not_healthy"] }
   },
-  "data": { "status": "not_ready", "components": { "...": "..." }, "reasons": ["ai_service_not_healthy"], "time": "..." }
+  "data": { "status": "not_ready", "components": { "...": "..." }, "reasons": ["jobsd_not_healthy"], "time": "..." }
 }
 ```
 

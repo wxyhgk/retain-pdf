@@ -2,7 +2,7 @@
 
 [API spec index](../../API_SPEC.md) · [Reader read model](reader-read-model.md)
 
-> Address note: `/jobs/{job_id}/…` is grouped into nine categories (`actions`, `progress`, `files`, `reports`, `reader`, `translations`, `data`, `ai`). The old addresses were removed on 2026-10-18 and now return 404; use the new ones (`GET /jobs/{job_id}/files`, `/files/output/{name}`, `/files/pages/{page}`, `/reader/markdown`; a book's cover and thumbnail live under `GET /documents/{document_id}/files/…`). Old-to-new table: [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md); every endpoint: [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
+> Address note: `/jobs/{job_id}/…` is grouped into eight categories (`actions`, `progress`, `files`, `reports`, `reader`, `translations`, `data`; `ai` was removed on 2026-11-03). The old addresses were removed on 2026-10-18 and now return 404; use the new ones (`GET /jobs/{job_id}/files`, `/files/output/{name}`, `/files/pages/{page}`, `/reader/markdown`; a book's cover and thumbnail live under `GET /documents/{document_id}/files/…`). Old-to-new table: [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md); every endpoint: [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
 
 ## Reader Regions
 

@@ -99,7 +99,7 @@ async fn serve_with_shutdown(
 
     let shutdown_signal = Arc::new(tokio::sync::Notify::new());
     let shutdown_waiter = shutdown_signal.clone();
-    // watch 通道给长生命周期后台任务（ai_supervisor）：Notify 的一次性
+    // watch 通道给长生命周期后台任务（同步、备份、jobsd 监督）：Notify 的一次性
     // notify_waiters 可能在任务未处于 await 时错过，watch 不会。
     let (shutdown_tx_watch, shutdown_rx_watch) = tokio::sync::watch::channel(false);
     tokio::spawn(async move {
@@ -107,15 +107,6 @@ async fn serve_with_shutdown(
         let _ = shutdown_tx_watch.send(true);
         shutdown_waiter.notify_waiters();
     });
-
-    // Phase 2（ADR-001）：RUST_API_AI_SUPERVISE=1 时 rust 监督 ai_service 生命周期
-    let ai_supervisor_handle = crate::runtime::ai_supervisor::spawn_ai_supervisor(
-        config.clone(),
-        shutdown_rx_watch.clone(),
-    );
-    if ai_supervisor_handle.is_some() {
-        tracing::info!("ai_supervisor enabled: managing retainpdf-ai lifecycle");
-    }
 
     // Phase 3（ADR-002）：RUST_API_JOBS_SUPERVISE=1 且 RUST_API_JOBS_MODE=remote 时壳监督 jobsd
     // 多设备同步:关着时每轮直接跳过,开着时定时与对端交换书库。
@@ -162,9 +153,6 @@ async fn serve_with_shutdown(
         let _ = home.clear_backend_runtime(std::process::id());
     }
     served?;
-    if let Some(handle) = ai_supervisor_handle {
-        let _ = handle.await;
-    }
     if let Some(handle) = jobsd_supervisor_handle {
         let _ = handle.await;
     }

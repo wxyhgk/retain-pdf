@@ -5,18 +5,6 @@ use crate::error::AppError;
 use crate::routes::job_helpers::stream_file;
 use crate::services::jobs::FileDownload;
 
-use crate::routes::common::JobsDownloadRouteDeps;
-
-/// 画板里的一个文件。文件名的防护在 services 侧（单层名、拒符号链接、
-/// 解析后仍在目录内），这里只负责把结果变成 HTTP 响应。
-pub async fn ai_board_file_response(
-    deps: &JobsDownloadRouteDeps<'_>,
-    headers: &HeaderMap,
-    job_id: &str,
-    name: &str,
-) -> Result<Response, AppError> {
-    file_download_response(deps.downloads.ai_board_file_download(job_id, name).await?, headers).await
-}
 
 pub async fn file_download_response(
     download: FileDownload,

@@ -30,7 +30,7 @@ CI 的 Tests、Rust API Architecture、Publish Current Web Image 都卡在这些
 
 ```bash
 python3 backend/api/scripts/check_architecture.py
-backend/.venv/bin/python -m pytest -q backend/api/scripts tests/e2e/agent/tests   # 架构检查等脚本和 agent 端到端工具自己的单测
+backend/.venv/bin/python -m pytest -q backend/api/scripts   # 架构检查等脚本自己的单测
 python3 backend/pipeline/devtools/check_pipeline_architecture.py
 backend/.venv/bin/python backend/pipeline/devtools/extract_pipeline_requirements.py --services-root backend --check
 python3 .github/scripts/sync_backend_python_requirements.py --repo-root . --services-root backend --check
@@ -44,7 +44,6 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
   不用倒着再跑（2026-10-30 定，以前整套倒序再跑一遍）。
   翻译的测试在 `backend/pipeline/devtools/tests/translation`，翻译包自己的冒烟测试在 `backend/translation/tests`。
   它会连带跑 `tests/performance/pipeline/tests`；提示词快照有 sha256 守卫，改提示词只重录受影响的用例。
-- 改了 `backend/ai/`：跑 AI 服务的 pytest。
 - 改了翻译 agent 包 `backend/translation-agent/`：跑 `python -m pytest backend/translation-agent/tests`，以及测试系统的
   `backend/pipeline/devtools/tests/agent_lab`（它调这个包）。包只许用标准库，测试里钉着。
 - 跑不了的检查，在回复和合并说明里写明没跑、为什么。
@@ -54,7 +53,6 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
 - Rust 包名统一是 `retainpdf-*`（`cargo -p` 用这个，代码里写 `retainpdf_*`），和 Python 的 `retainpdf-math`、`retainpdf-pipeline` 一样；
   `backend/packages/`、`database/` 下的目录名就是包名。应用目录 `backend/api`、`backend/cli`、`backend/jobs` 和可执行文件名
   （`rust_api`、`retain-jobsd`、`retainpdf`）没改，对照表在 `docs/core/contributing/backend.md`。
-  注意 Rust 的 AI 包 `retainpdf_ai` 和 Python AI 服务的模块同名，看报错、搜代码时看清是哪边的。
 - worktree 里没有 `backend/.venv`，跑 Python 和 rust_api 测试前指向主检出的环境：
   `UV_PROJECT_ENVIRONMENT=<主检出>/backend/.venv`，`PATH=<主检出>/backend/.venv/bin:$PATH`
   （rust_api 的部分测试要用 PATH 上的 `retainpdf-pipeline`）。
@@ -79,17 +77,17 @@ cargo test --workspace   # 和 CI 一样跑全部 Rust 包；以前列的 16 个
 - 改 `check_architecture.py`：任务、书库的规则写逻辑路径 `src/services/<领域>/...`，取文件用 `abs_src`，扫目录用 `scan_logical`，
   不要直接写 `SRC_ROOT / ...`；实际目录只登记在 `DOMAIN_MOUNTS`。规则里写的路径必须存在（`check_rule_paths` 会查），
   规则要求"不许存在"的路径登记在 `RULE_PATHS_MUST_NOT_EXIST`。
-- `/jobs` 按 9 类分：路由 `app/router/jobs/<类>.rs`、处理函数 `routes/jobs/<类>.rs`、业务逻辑
+- `/jobs` 按 8 类分：路由 `app/router/jobs/<类>.rs`、处理函数 `routes/jobs/<类>.rs`、业务逻辑
   `services/jobs/<类>/`，三处同名。新接口放进对应的类，不要再加 `/jobs/:job_id/<名字>` 这种顶层地址；
   旧地址紧跟在新地址下面、行尾写 `old "<新地址>"`。`services/jobs/` 根目录只放各类共用的（门面、依赖、返回视图）。
   任务、书库已经拆成包，`services/jobs/...`、`services/library/...` 是逻辑路径（架构检查报错也这么写），实际在
   `backend/packages/retainpdf-jobs/src/...`、`backend/packages/retainpdf-library/src/...`。
 - 建新任务只走 `services/jobs/lifecycle/creation/submit.rs` 的 `submit_job`，原地重跑已有任务走 `relaunch_in_place`；
   别处直接落库或发射任务，`check_job_entry_ownership` 会报错。
-- 业务逻辑只在 9 个领域里（`accounts`、`providers`、`ingest`、`files`、`jobs`、`library`、`glossaries`、
-  `ai`、`platform`），新模块放进其中一个。9 个都已拆成包（2026-10-17 拆完），`services/` 下不再有目录，只有接上它们的 `mod.rs`。
+- 业务逻辑只在 8 个领域里（`accounts`、`providers`、`ingest`、`files`、`jobs`、`library`、`glossaries`、
+  `platform`），新模块放进其中一个。8 个都已拆成包（2026-10-17 拆完），`services/` 下不再有目录，只有接上它们的 `mod.rs`。
   每个领域包的 `lib.rs` 是唯一的门面：子模块私有，领域外要用的东西在 `// 门面` 那一块 `pub use` 出来。
-- 拆成独立包的领域（`EXTRACTED_DOMAINS`，现在有账号 `retainpdf-accounts`、AI `retainpdf-ai`、文件 `retainpdf-files`、术语表 `retainpdf-glossaries`、入口 `retainpdf-ingest`、任务 `retainpdf-jobs`、书库 `retainpdf-library`、平台 `retainpdf-platform`、服务商 `retainpdf-providers`）：代码在 `backend/packages/<包>`，`lib.rs` 是门面；
+- 拆成独立包的领域（`EXTRACTED_DOMAINS`，现在有账号 `retainpdf-accounts`、文件 `retainpdf-files`、术语表 `retainpdf-glossaries`、入口 `retainpdf-ingest`、任务 `retainpdf-jobs`、书库 `retainpdf-library`、平台 `retainpdf-platform`、服务商 `retainpdf-providers`）：代码在 `backend/packages/<包>`，`lib.rs` 是门面；
   `services/mod.rs` 里 `pub(crate) use <包> as <领域>;` 接上，`services/` 下不再留它的目录。
   只给 rust_api 测试用的导出，在包里挂在 `test-fixtures` 特性下（`#[cfg(any(test, feature = "test-fixtures"))]`），
   rust_api 的 `[dev-dependencies]` 打开它；`#[cfg(test)]` 跨包看不到。

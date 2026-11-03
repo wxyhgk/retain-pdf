@@ -8,7 +8,6 @@ members = [
   "backend/packages/retainpdf-config",
   "backend/packages/retainpdf-api-base",
   "backend/packages/retainpdf-accounts",
-  "backend/packages/retainpdf-ai",
   "backend/packages/retainpdf-ingest",
   "backend/packages/retainpdf-jobs",
   "backend/packages/retainpdf-library",

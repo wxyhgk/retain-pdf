@@ -2,7 +2,7 @@
 
 [Jobs API index](jobs.md) · [API spec index](../../API_SPEC.md)
 
-> Address note: `/jobs/{job_id}/…` is grouped into nine categories (`actions`, `progress`, `files`, `reports`, `reader`, `translations`, `data`, `ai`). The old addresses were removed on 2026-10-18 and now return 404; use the new ones (for example `GET /jobs/{job_id}/actions`, `POST /jobs/{job_id}/actions/retry-stage`, `/actions/resume`, `/actions/rerun`, `/actions/cancel`, `/actions/resolve-ocr-ambiguity`, `GET /jobs/{job_id}/reports/failure`, `/reports/refine`). Old-to-new table: [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md); every endpoint: [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
+> Address note: `/jobs/{job_id}/…` is grouped into eight categories (`actions`, `progress`, `files`, `reports`, `reader`, `translations`, `data`; `ai` was removed on 2026-11-03). The old addresses were removed on 2026-10-18 and now return 404; use the new ones (for example `GET /jobs/{job_id}/actions`, `POST /jobs/{job_id}/actions/retry-stage`, `/actions/resume`, `/actions/rerun`, `/actions/cancel`, `/actions/resolve-ocr-ambiguity`, `GET /jobs/{job_id}/reports/failure`, `/reports/refine`). Old-to-new table: [`docs/api/01-任务/04-任务接口分类.md`](../../../../docs/api/01-任务/04-任务接口分类.md); every endpoint: [`docs/api/00-接口目录.md`](../../../../docs/api/00-接口目录.md).
 
 > Contract: [`job-actions.v1`](../../../../contracts/job-actions.v1.schema.json) covers `actions`, `actions/cancel`, `actions/resume` (GET plan, POST resume), `actions/retry-stage` and `actions/resolve-ocr-ambiguity`; [`job-reports.v1`](../../../../contracts/job-reports.v1.schema.json) covers `reports/failure`. The 409 `error.details.reason` values are the contract's `ActionBlockReason` enum.
 

@@ -1,36 +1,16 @@
-//! 子服务健康探测用的 HTTP 客户端。
-//!
-//! 两个监督器（ai / jobsd）的探测需求完全一样，配置也必须一样——尤其是
-//! 连接池那条，见 [`build_probe_client`]。
+//! 子服务健康探测用的 HTTP 客户端（jobsd 监督器用）。
 
 use std::time::Duration;
 
 /// 构造健康探测客户端：**不保留空闲连接**。
 ///
-/// 探测循环每 `health_interval`（默认 5 秒）打一次 `/readyz`。若客户端把连接
-/// 留在池里复用，就会撞上服务端的 keep-alive 空闲回收：
-/// `backend/ai/retainpdf_ai/__main__.py` 的 `uvicorn.run(...)` 没传
-/// `timeout_keep_alive`，用的是 uvicorn 默认的 **5 秒**——与探测间隔的默认值
-/// 一模一样。于是服务端到点关连接、客户端正好复用那一条，请求在途中被 RST，
-/// 探测失败打一条 warn；下一轮（再 5 秒）新建连接又成功，日志上就是
-/// "health probe failed → health recovered" 反复横跳。实测失败与恢复恰好相隔
-/// 一个探测间隔，而 `/readyz` 本身只要 1ms，AI 服务侧日志干净——问题不在
-/// 服务端，在这条被复用的陈旧连接上。
-///
-/// 修的是客户端而不是给 uvicorn 调大 `timeout_keep_alive`：后者把正确性寄托
-/// 在"服务端 keep-alive > 客户端探测间隔"这条隐式约定上，而这两个值在不同
-/// 语言、不同文件里，探测间隔还是用户可以用 `RUST_API_AI_HEALTH_INTERVAL_SECS`
-/// 调大的——调到 60 秒，keep-alive 设成 30 也照样撞。调大只降低碰撞概率，
-/// 不消除竞态。
+/// 探测循环每 `health_interval`（默认 5 秒）打一次健康接口。客户端把连接留在池里复用，就可能撞上
+/// 服务端的 keep-alive 空闲回收：到点关连接、客户端正好复用那一条，请求在途中被 RST，日志上就是
+/// "health probe failed → health recovered" 反复横跳（以前监督 Python AI 服务时撞过：uvicorn 默认
+/// keep-alive 正好也是 5 秒；AI 服务 2026-11-03 删了）。jobsd 是 axum/hyper，默认不主动回收空闲连接，
+/// 眼下没有这个竞态，照旧每次新建连接，免得将来给 jobsd 加上空闲超时时再踩一遍。
 ///
 /// 代价是每次探测都要对 localhost 做一次 TCP 握手，每 5 秒一次，可忽略。
-///
-/// jobsd 那边的服务端是 axum/hyper，默认不主动回收空闲连接，眼下没有这个
-/// 竞态；共用这个构造是为了两处配置不再各写各的，也免得将来给 jobsd 加上
-/// 空闲超时时再踩一遍。
-///
-/// 两个子服务都只听回环，所以也**不走系统代理**：用户设了 HTTP_PROXY/ALL_PROXY 而 NO_PROXY
-/// 没写 127.0.0.1 时，默认客户端会把探测发给代理，子服务明明好好的也被判成挂了、反复重启。
 pub(crate) fn build_probe_client(
     connect_timeout: Duration,
     request_timeout: Duration,

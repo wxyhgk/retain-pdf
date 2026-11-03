@@ -2,10 +2,9 @@
 
 Regression for the Windows desktop crash:
 ``ModuleNotFoundError: No module named 'fcntl'`` raised from
-``translation/workflow/checkpoint/store.py`` at import time, plus the same
-class of bug from ``import resource`` in ``run_document_operation.py``.
+``translation/workflow/checkpoint/store.py`` at import time.
 
-macOS/Linux never catch these because both modules exist there; the tests
+macOS/Linux never catch this because the module exists there; the tests
 below simulate Windows by making the imports fail.
 """
 
@@ -112,25 +111,3 @@ def _probe_store_with_msvcrt(directory: str) -> None:
     finally:
         keeper.close()
     assert calls[-1][1] == 0  # LK_UNLCK released
-
-
-def test_document_operation_imports_without_resource() -> None:
-    run_cold_import_probe(__file__, "_probe_document_operation_without_resource")
-
-
-def _probe_document_operation_without_resource() -> None:
-    with blocked_imports("resource"):
-        module = importlib.import_module(
-            "retainpdf_pipeline.entrypoints.run_document_operation"
-        )
-    assert module.resource is None
-    # rlimits are skipped on Windows; must not raise.
-    module._apply_limits(
-        {
-            "cpu_time_seconds": 10,
-            "output_bytes": 1024,
-            "file_descriptor_count": 16,
-            "memory_bytes": 1024,
-            "process_count": 4,
-        }
-    )

@@ -6,12 +6,6 @@ pub(crate) const OUTPUT_RENDERED_DIR_NAME: &str = "rendered";
 pub(crate) const OUTPUT_ARTIFACTS_DIR_NAME: &str = "artifacts";
 pub(crate) const OUTPUT_LOGS_DIR_NAME: &str = "logs";
 pub(crate) const OUTPUT_SPECS_DIR_NAME: &str = "specs";
-/// Agent 终端的工作区。fx 在这里写笔记和产出（见 backend/ai 的 fx_workspace）。
-/// 和流水线产物平级但互不相干：流水线不读它，它也不该被流水线覆盖。
-pub(crate) const OUTPUT_AI_DIR_NAME: &str = "ai";
-/// Agent 的画板目录。往里丢文件就能在阅读页的画布上看到，
-/// **没有 schema**，agent 用它已有的工具产出什么就显示什么。
-pub(crate) const AI_BOARD_DIR_NAME: &str = "board";
 pub(crate) const OUTPUT_TYPST_DIR_NAME: &str = "typst";
 pub(crate) const OUTPUT_TYPST_BOOK_OVERLAYS_DIR_NAME: &str = "book-overlays";
 pub(crate) const LEGACY_LAYOUT_DIR_NAMES: [&str; 4] =

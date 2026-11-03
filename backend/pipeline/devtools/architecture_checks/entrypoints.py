@@ -16,7 +16,6 @@ ENTRYPOINT_IMPORT_ALLOWLIST: dict[Path, tuple[str, ...]] = {
     Path("__init__.py"): (),
     Path("console.py"): (
         "from collections.abc import",
-        "from retainpdf_pipeline.entrypoints.run_document_operation import",
         "from retainpdf_pipeline.foundation.shared.structured_errors import",
         "from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import",
         "from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import",
@@ -30,9 +29,6 @@ ENTRYPOINT_IMPORT_ALLOWLIST: dict[Path, tuple[str, ...]] = {
     ),
     Path("revise_translation_item.py"): (
         "from retainpdf_translation.public import",
-    ),
-    Path("run_document_operation.py"): (
-        "from retainpdf_pipeline.document_operations import",
     ),
     Path("run_normalize_ocr.py"): ("from retainpdf_pipeline.ocr.document_schema.normalize_pipeline import main",),
     Path("run_provider_case.py"): ("from retainpdf_pipeline.ocr.ocr_provider.provider_pipeline import main",),

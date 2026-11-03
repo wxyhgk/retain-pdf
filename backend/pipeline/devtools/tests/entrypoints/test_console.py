@@ -13,7 +13,6 @@ def test_help_lists_stable_commands(capsys) -> None:
     output = capsys.readouterr().out
     assert "retainpdf-pipeline <command>" in output
     assert "translate-only" in output
-    assert "document-operation" in output
     assert "side-by-side-pdf" in output
     assert "diagnose-failure" in output
 

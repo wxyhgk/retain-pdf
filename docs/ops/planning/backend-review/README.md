@@ -40,3 +40,4 @@
 | 2026-10-29 | [OCR 归一化拆分第 1 步：几何搬出 Paddle 模块](./20261029-OCR归一化拆分第1步几何搬出Paddle模块.md) | 纯重构：缩放、补行挪到 `document_schema/pdf_geometry.py`，估行、拆行内公式挪到 `estimated_lines.py`，旧位置留原名字；核心包不再导入 `ocr_provider`，经过它的导入环全部消失；新架构规则钉住这几个共用模块不许导入适配器和调用服务的层；9 份快照不变 |
 | 2026-10-31 | [阶段超时按进展计时](./20261031-阶段超时按进展计时.md) | `timeout_seconds` 从"整段时长"改成"多久没有进展"（新的阶段/进度、检查点、产物才算），一直出页就一直跑；另加绝对上限 `RUST_API_WORKER_MAX_RUNTIME_SECS`（默认 24 小时）；模型会话有效期跟着绝对上限走；以前前端默认 1800 秒让一百多页的翻译 agent 任务在半路被杀 |
 | 2026-11-02 | [派生缓存默认保留 14 天](./20261102-派生缓存默认保留14天.md) | 改 10-24 那条的默认：`RUST_API_DERIVED_CACHE_RETENTION_DAYS` 默认 `0` 不清 → 默认 `14`（`0` 照旧关）；删什么不变；data/jobs 里能重建的渲染准备、预热、线性化 PDF 约 270MB |
+| 2026-11-03 | [删掉 RetainPDF 自己的 AI](./20261103-删掉RetainPDF自己的AI.md) | 用户定只留 Studio 的 AI：删 `backend/ai`、`retainpdf-ai`、37 个接口（`/ai/*`、`/internal/agent/*`、画板、合集工作区、agent-versions）、5 份契约、pipeline 文档操作、开发栈和镜像里的 AI 服务；库表留着；健康检查 `ai_service` 键留着值固定；桌面壳归前端一起改 |

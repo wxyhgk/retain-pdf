@@ -91,12 +91,6 @@ app -> routes -> application services -> internal services -> job_runner / ocr_p
 - 平台包 `retainpdf-platform` 的 `fonts/api.rs` / `fonts/service.rs`
   分别负责字体 application facade 与内部扫描/持久化；`routes/fonts.rs`
   只保留有界 multipart 消费和 HTTP envelope，不执行 fontconfig 或文件业务
-- `retainpdf-ai/src/api.rs` / `retainpdf-ai/src/gateway.rs`
-  分别负责 AI 代理的 HTTP application facade 与内部 sidecar gateway；
-  `routes/ai_proxy.rs` 不读取环境变量、不管理 HTTP client、也不查询 supervisor
-- `retainpdf-ai/src/agent_runtime_session_api.rs`
-  是 Agent session cursor 的 application facade；它拥有独立窄依赖，不能再
-  借用 document-operation route deps 或让 route 直接持有数据库引用
 - 平台包 `retainpdf-platform` 的 `health_api.rs`
   负责 liveness/readiness 投影和 supervisor 状态聚合；公共 health route
   只做 HTTP 状态码映射，不直接读取数据库或 supervisor 全局状态
@@ -343,8 +337,6 @@ Rust 侧关键落点：
 - [src/app/router.rs](src/app/router.rs)
 - [src/app/endpoints.rs](src/app/endpoints.rs)（接口登记表的定义；路由都登记在 `app/router/**` 的表里）
 - [src/app/server.rs](src/app/server.rs)
-- [src/app/router/ai.rs](src/app/router/ai.rs)
-- [src/app/router/internal_agent.rs](src/app/router/internal_agent.rs)
 
 职责：
 
@@ -385,18 +377,13 @@ Rust 侧关键落点：
 - glossaries → [../packages/retainpdf-glossaries/src/api.rs](../packages/retainpdf-glossaries/src/api.rs)
   → `retainpdf-glossaries` 包里的 `{records,entries,csv}.rs`
 - uploads → [../packages/retainpdf-ingest/src/uploads/api.rs](../packages/retainpdf-ingest/src/uploads/api.rs)（入口已拆成独立的包 `retainpdf-ingest`）
-- AI proxy → [../packages/retainpdf-ai/src/api.rs](../packages/retainpdf-ai/src/api.rs)
-- public Agent operation actions →
-  [../packages/retainpdf-ai/src/public_document_operations_api.rs](../packages/retainpdf-ai/src/public_document_operations_api.rs)
-- internal Agent operation lifecycle →
-  [../packages/retainpdf-ai/src/document_operation_api.rs](../packages/retainpdf-ai/src/document_operation_api.rs)
-- runtime cursor CAS →
-  [../packages/retainpdf-ai/src/agent_runtime_session_api.rs](../packages/retainpdf-ai/src/agent_runtime_session_api.rs)
+
+（AI 代理、Agent 文档操作、运行时会话这些入口 2026-11-03 跟 RetainPDF 自己的 AI 服务一起删了，产品里只留 Studio 的 AI。）
 
 也就是：
 
 - `routes/jobs/*` 只通过 response boundary 调 `JobsFacade`
-- `routes/library.rs` / `library_data.rs` / `library_extras.rs` / `collections.rs`
+- `routes/library.rs` / `library_data.rs` / `collections.rs`
   只调书库包 `retainpdf-library` 的 `src/api.rs`（经 `build_library_route_deps`）
 - `routes/common.rs`
   作为稳定导出入口；`routes/common/**` 按领域保留 deps builder、
@@ -409,14 +396,6 @@ Rust 侧关键落点：
   只调术语表包（`retainpdf-glossaries`）的门面
 - `routes/uploads.rs`
   只调入口包（`retainpdf-ingest`）的门面
-- `routes/ai_proxy.rs`
-  只调 `retainpdf-ai/src/api.rs`，问答保持流式字节代理，runtime config 禁止缓存
-- `routes/public_document_operations.rs`
-  只调 `retainpdf-ai/src/public_document_operations_api.rs`，输出浏览器安全投影并要求
-  status / attempt / program hash CAS
-- `routes/document_operations.rs` / `agent_runtime_sessions.rs` /
-  `agent_capabilities.rs`
-  是 backend-only Agent HTTP 边界；分别只调对应 application API
 
 **Library route 文件分工（HTTP 边界，业务不进 route）：**
 
@@ -424,12 +403,7 @@ Rust 侧关键落点：
 |------------|---------|
 | `library.rs` | books 列表/详情/删除、book cover/thumbnail |
 | `library_data.rs` | documents CRUD/media/translate、favorites、search |
-| `library_extras.rs` | conversations |
 | `collections.rs` | 合集 CRUD 与文档成员 |
-| `ai_proxy.rs` | `/api/v1/ai/ask` 与 runtime-config 反向代理 |
-| `public_document_operations.rs` | conversation operation 查询、确认动作、candidate 下载 |
-| `document_operations.rs` | internal CLI operation lifecycle |
-| `agent_runtime_sessions.rs` | internal runtime cursor revision CAS |
 
 快速判断：
 
@@ -441,7 +415,7 @@ Rust 侧关键落点：
 
 目录：
 
-- [src/services](src/services)（只剩 `mod.rs`，把 9 个领域包接成 `crate::services::<领域>`；代码在 `../packages/retainpdf-<领域>/src`）
+- [src/services](src/services)（只剩 `mod.rs`，把 8 个领域包接成 `crate::services::<领域>`；代码在 `../packages/retainpdf-<领域>/src`）
 
 职责：
 
@@ -455,10 +429,6 @@ Rust 侧关键落点：
 - [packages/retainpdf-library/src/api.rs](../packages/retainpdf-library/src/api.rs)
 - [../packages/retainpdf-glossaries/src/api.rs](../packages/retainpdf-glossaries/src/api.rs)
 - [../packages/retainpdf-ingest/src/uploads/api.rs](../packages/retainpdf-ingest/src/uploads/api.rs)
-- [../packages/retainpdf-ai/src/api.rs](../packages/retainpdf-ai/src/api.rs)
-- [../packages/retainpdf-ai/src/public_document_operations_api.rs](../packages/retainpdf-ai/src/public_document_operations_api.rs)
-- [../packages/retainpdf-ai/src/document_operation_api.rs](../packages/retainpdf-ai/src/document_operation_api.rs)
-- [../packages/retainpdf-ai/src/agent_runtime_session_api.rs](../packages/retainpdf-ai/src/agent_runtime_session_api.rs)
 
 词汇表应用入口使用 `GlossaryApiDeps` 隐藏 `Db`，HTTP route 只能持有该窄依赖；
 内部实现按职责拆为 `records.rs`（持久化 CRUD）、`entries.rs`（任务合并与规范化）
@@ -469,7 +439,7 @@ Rust 侧关键落点：
 - route 优先只依赖这些入口
 - 不要让 route 直接再去拼 `db + config + helper + artifact service`
 - application service 内部如果继续长大，优先拆 facade 子模块或 deps 子结构，不要再回退成一个总入口文件加一个总 deps
-- library 域的请求、返回类型（文档列表、检索、对话、文件夹、书架）在书库包 `src/views.rs`；
+- library 域的请求、返回类型（文档列表、检索、文件夹、书架）在书库包 `src/views.rs`；
   库里存的记录（`DocumentRecord` 等）留在核心包，`db/*` 要用。route 照旧经 rust_api 的
   `models::api`（`src/models.rs`）导入，不用知道类型在哪个包
 
@@ -482,7 +452,7 @@ routes/library*.rs, collections.rs
   → library/api.rs (view 级 API)
       → library 包内部模块
            books | documents | media | translate
-           favorites | search | assets | conversations | collections
+           favorites | search | assets | collections
       → JobsFacade   (仅 translate-from-library 创建 job)
       → derived_artifacts (仅 media 内部使用 cover/thumbnail)
 ```
@@ -505,9 +475,6 @@ routes/library*.rs, collections.rs
   不能直接把 worker 可变文件当权威译文；多页 flush 通过
   `pipeline_checkpoint_v1.committed_pages` 在一个 SQLite transaction 和
   authority generation 内整批提交，任一页无效时不得部分可见
-- public operation 列表/详情只返回 `public_document_operations.rs`
-  的脱敏投影；动作必须校验 status / attempt / program hash，internal
-  manifest、workspace 路径和 capability 不得透到浏览器
 - 统一错误形状由 `AppError` 与安全 extractor 边界生成；route 不得
   回显 Serde/Axum 解析细节、secret、签名 URL 或绝对文件路径
 
@@ -532,10 +499,10 @@ routes/library*.rs, collections.rs
 - [../packages/retainpdf-files/src/derived_artifacts](../packages/retainpdf-files/src/derived_artifacts)
   负责 cover/thumbnail/page preview 等派生产物（由 library media / jobs downloads 调用，**不**被 route 直连）
 
-下面凡是 `services/<领域>/...` 都是**逻辑路径**：9 个领域都是独立的包，真实代码在
+下面凡是 `services/<领域>/...` 都是**逻辑路径**：8 个领域都是独立的包，真实代码在
 `backend/packages/retainpdf-<领域>/src/...`（`services/mod.rs` 只负责把包接成 `crate::services::<领域>`）。
 
-其中 `services/jobs` 和 `routes/jobs/`、`app/router/jobs/` 一样按 9 类分目录（2026-10-16，
+其中 `services/jobs` 和 `routes/jobs/`、`app/router/jobs/` 一样按 8 类分目录（2026-10-16 定的 9 类，2026-11-03 删了 `ai/`；
 见 `docs/ops/planning/api-reorg/20261016-任务接口分类实现记录.md`）：
 
 | 目录 | 类 | 主要内容 |
@@ -548,7 +515,6 @@ routes/library*.rs, collections.rs
 | `reader/` | 阅读 | `reader_regions/`、原文 Markdown |
 | `translations/` | 译文 | 逐条看、人工改、修改历史、重翻一条 |
 | `data/` | 数据 | 按登记表通用取数 |
-| `ai/` | AI | 画板 |
 
 根目录只放各类共用的：`facade.rs`、`deps/`、`presentation/`、`query.rs`、`runtime_gateway.rs`、
 `summary_loaders/`、`support.rs`。
@@ -570,7 +536,7 @@ routes/library*.rs, collections.rs
 
 规则：
 
-- 新增 job 路由能力，先判断属于 9 类中的哪一类，加到那一类的目录里，再由 route 调用
+- 新增 job 路由能力，先判断属于 8 类中的哪一类，加到那一类的目录里，再由 route 调用
 - 需要创建 / 取消类资源，优先放进 `CommandJobsDeps`
 - 需要查询 / 下载 / debug 类资源，优先放进 `QueryJobsDeps`
 
@@ -915,7 +881,7 @@ routes/library*.rs, collections.rs
 
 改动顺序：
 
-1. 先定属于 9 类中的哪一类，`app/router/jobs/<类>.rs` 和 `routes/jobs/<类>.rs`
+1. 先定属于 8 类中的哪一类，`app/router/jobs/<类>.rs` 和 `routes/jobs/<类>.rs`
 2. `services/jobs/<类>/queries.rs`（`JobQueries` 的方法）
 3. 需要组装返回视图时改 `services/jobs/presentation/*`
 

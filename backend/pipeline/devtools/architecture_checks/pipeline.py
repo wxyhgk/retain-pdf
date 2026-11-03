@@ -5,7 +5,6 @@ import sys
 
 from devtools.architecture_checks.common import ArchitectureCheckSyntaxError
 from devtools.architecture_checks.document_semantics import check_document_semantic_boundaries
-from devtools.architecture_checks.document_operations import check_document_operation_boundaries
 from devtools.architecture_checks.entrypoints import check_entrypoint_stable_imports
 from devtools.architecture_checks.entrypoints import check_stage_spec_contract_checker
 from devtools.architecture_checks.entrypoints import check_top_level_shim_freeze
@@ -34,7 +33,6 @@ def main() -> int:
         check_pipeline_provider_leaks(errors)
         check_service_provider_raw_leaks(errors)
         check_document_semantic_boundaries(errors)
-        check_document_operation_boundaries(errors)
         check_entrypoint_stable_imports(errors)
         check_top_level_shim_freeze(errors)
         check_ocr_provider_boundaries(errors)

@@ -270,7 +270,6 @@ jobs:
           else
             docker run -d \
               --name "$container" \
-              -e RUST_API_AI_SUPERVISE=0 \
               -e RUST_API_KEYS=retainpdf-ci-smoke-key \
               -p 14100:41000 \
               "$IMAGE_REF"

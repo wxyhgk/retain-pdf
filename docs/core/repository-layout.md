@@ -8,12 +8,12 @@
 | `frontend/web`、`frontend/desktop` | 网页与桌面入口 |
 | `frontend/packages` | 前端共享 UI、Reader、客户端及展示模型 |
 | `backend/api`、`backend/jobs` | HTTP 边界与任务进程调度 |
-| `backend/ai`、`backend/pipeline` | AI 服务与独立可执行的文档流水线 |
+| `backend/pipeline` | 独立可执行的文档流水线（AI 服务 `backend/ai` 2026-11-03 删了） |
 | `backend/packages` | 后端内部共享 Rust 库 |
 | `database/retainpdf-db` | 数据访问实现、迁移及其测试，不包含真实数据库文件 |
 | `contracts` | 跨端 JSON Schema 与生成 DTO 的唯一上游 |
 | `backend/contracts` | 支持后端源码包的字节级协议镜像，不独立演化 |
-| `tests` | 项目级集成、端到端、性能测试与固定样本 |
+| `tests` | 项目级性能测试与固定样本 |
 | `ops/development`、`ops/release`、`ops/deployment` | 本地环境、交付工具与部署配置 |
 | `security` | 安全规范、检查与测试导航 |
 | `resources` | 跨模块共享的字体等静态资源 |

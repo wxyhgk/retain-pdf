@@ -101,5 +101,5 @@ retainpdf sync set --folder <文件夹> | --webdav <地址> --user <账号> [--p
   - 同名的普通文件不覆盖；
   - Windows 暂不支持。
 
-AI 助手服务自己的设置（运行方式、模型、密钥，「AI 设置」页管理，存在数据目录里）还没有并进来；
-`[assistant]` 目前只作为它没设置过时的默认值。
+阅读页的 AI 助手服务 2026-11-03 跟 RetainPDF 自己的 AI 一起删了（产品里只留 Studio 的 AI）；
+`[assistant]` 这一段配置还能读写、导出，但后端已经没有用它的服务。

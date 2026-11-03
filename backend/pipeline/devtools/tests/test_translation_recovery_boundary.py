@@ -46,7 +46,6 @@ def test_repair_cannot_reach_translation_internals_or_widen_its_api(tmp_path, mo
     "retainpdf_pipeline.ocr.mineru_provider.artifacts",
     "retainpdf_pipeline.ocr.document_schema.adapters",
     "devtools.repair_mineru_cross_page",
-    "retainpdf_ai.document_operations",
 ])
 def test_translation_recovery_cannot_import_provider_or_caller_implementations(tmp_path, monkeypatch, module):
     errors = _check_sources(tmp_path, monkeypatch, recovery=f"import {module} as implementation\n")

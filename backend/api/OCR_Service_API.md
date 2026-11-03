@@ -29,7 +29,7 @@ OCR-only 任务和其他任务走同一组 `/jobs` 接口，用 `workflow: "ocr"
 | `GET /api/v1/ocr/jobs/{job_id}/normalization-report` | `GET /api/v1/jobs/{job_id}/files/internal/normalization-report.json` |
 | `POST /api/v1/ocr/jobs/{job_id}/cancel` | `POST /api/v1/jobs/{job_id}/actions/cancel` |
 
-`/jobs/{job_id}` 下 9 类地址见 [任务接口分类](../../docs/api/01-任务/04-任务接口分类.md)，全部接口见 [接口目录](../../docs/api/00-接口目录.md)。
+`/jobs/{job_id}` 下 8 类地址见 [任务接口分类](../../docs/api/01-任务/04-任务接口分类.md)，全部接口见 [接口目录](../../docs/api/00-接口目录.md)。
 
 当前示例仍以 `mineru` 为主，但这只是 provider 示例，不代表 OCR-only 协议默认绑定 MinerU。
 

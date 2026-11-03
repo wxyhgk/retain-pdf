@@ -115,8 +115,6 @@ test("the old response_body key is merged into transport", () => {
       assert.equal(Object.hasOwn(endpoint, "response_body"), false, `${fileName} ${endpoint.path} still has response_body`);
     }
   }
-  const artifact = read("agent-calculation.v1.schema.json").endpoints.find((endpoint) => endpoint.path.endsWith("/artifacts/:artifact_id"));
-  assert.equal(artifact.transport, "binary");
 });
 
 // 第 1b 期：任务操作（job-actions.v1）和任务报告（job-reports.v1）两份新契约，每条端点都有名字。

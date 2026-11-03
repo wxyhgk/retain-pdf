@@ -282,7 +282,6 @@
       "import_name": "fitz",
       "package_name": "PyMuPDF",
       "runtime_files": [
-        "retainpdf_pipeline/document_operations/visual_validation.py",
         "retainpdf_pipeline/ocr/document_schema/pdf_geometry.py",
         "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_api.py",
         "retainpdf_pipeline/ocr/ocr_provider/glm_ocr_driver.py",
@@ -429,8 +428,6 @@
       "test_files": [
         "devtools/tests/agent_lab/test_sample_essay.py",
         "devtools/tests/agent_lab/test_sample_textbook.py",
-        "devtools/tests/document_operations/test_document_operation_cli.py",
-        "devtools/tests/document_operations/test_page_program.py",
         "devtools/tests/document_schema/test_glm_ocr_driver.py",
         "devtools/tests/document_schema/test_mineru_v2_geometry.py",
         "devtools/tests/document_schema/test_normalize_provider_lines.py",
@@ -498,7 +495,6 @@
       "import_name": "pikepdf",
       "package_name": "pikepdf",
       "runtime_files": [
-        "retainpdf_pipeline/document_operations/page_program.py",
         "retainpdf_pipeline/render/document/pikepdf_overlay.py",
         "retainpdf_pipeline/render/document/pikepdf_pages.py",
         "retainpdf_pipeline/render/output/rpr_fit/renderer.py",
@@ -515,8 +511,6 @@
       ],
       "devtool_files": [],
       "test_files": [
-        "devtools/tests/document_operations/test_document_operation_cli.py",
-        "devtools/tests/document_operations/test_page_program.py",
         "devtools/tests/rendering/test_bbox_text_strip_document.py",
         "devtools/tests/rendering/test_bbox_text_strip_executor.py",
         "devtools/tests/rendering/test_bbox_text_strip_form_xobject.py",
@@ -540,8 +534,6 @@
         "devtools/tests/agent_lab/test_sample_essay.py",
         "devtools/tests/agent_lab/test_sample_textbook.py",
         "devtools/tests/conftest.py",
-        "devtools/tests/document_operations/test_document_operation_cli.py",
-        "devtools/tests/document_operations/test_page_program.py",
         "devtools/tests/document_schema/test_adapters_detection.py",
         "devtools/tests/document_schema/test_backfill_normalized_documents.py",
         "devtools/tests/document_schema/test_block_class_decision_diff.py",
@@ -594,7 +586,6 @@
         "devtools/tests/rendering/test_word_export.py",
         "devtools/tests/rendering/test_word_fit_verification.py",
         "devtools/tests/rendering/test_word_html_fit.py",
-        "devtools/tests/test_document_operation_boundaries.py",
         "devtools/tests/test_external_tools.py",
         "devtools/tests/test_extract_pipeline_requirements.py",
         "devtools/tests/test_output_root_isolation.py",

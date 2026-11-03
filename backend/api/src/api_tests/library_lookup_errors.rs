@@ -69,14 +69,12 @@ async fn an_unreadable_document_row_is_a_server_error_not_a_missing_book() {
         ("GET", format!("/api/v1/documents/{bad}/metadata-suggestions"), None),
         ("POST", format!("/api/v1/documents/{bad}/metadata-suggestions"), Some(serde_json::json!({}))),
         ("GET", format!("/api/v1/documents/{bad}/usage"), None),
-        ("GET", format!("/api/v1/documents/{bad}/agent-versions"), None),
         ("GET", format!("/api/v1/documents?job_id=merged-{bad}-0123456789abcdef"), None),
         (
             "POST",
             format!("/api/v1/collections/{collection_id}/documents"),
             Some(serde_json::json!({ "document_ids": [bad] })),
         ),
-        ("POST", "/api/v1/ai/conversations".to_string(), Some(serde_json::json!({ "document_id": bad, "title": "t" }))),
     ];
     for (method, uri, body) in cases {
         assert_server_error(call(&state, method, &uri, body).await, &format!("{method} {uri}")).await;
@@ -106,7 +104,6 @@ async fn a_missing_book_is_still_a_plain_404() {
         ("GET", format!("/api/v1/documents/{missing}/reading"), None),
         ("GET", format!("/api/v1/documents/{missing}/translation-coverage"), None),
         ("GET", format!("/api/v1/documents/{missing}/metadata-suggestions"), None),
-        ("GET", format!("/api/v1/documents/{missing}/agent-versions"), None),
     ] {
         let response = call(&state, method, &uri, body).await;
         assert_eq!(response.status(), StatusCode::NOT_FOUND, "{method} {uri}");

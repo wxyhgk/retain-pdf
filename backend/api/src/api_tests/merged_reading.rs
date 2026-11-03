@@ -188,12 +188,6 @@ async fn two_range_translations_open_as_one_full_length_book() {
     // 第 1 页一次，第 3-4 页一次 —— 两个任务各自的「第 1 页」都叫 p001。
     seed_range_job(&state, &document_id, "job-a", "2026-10-01T00:00:00", &[1], &["ZH 1"]);
     seed_range_job(&state, &document_id, "job-mid", "2026-10-02T00:00:00", &[3, 4], &["ZH 3", "ZH 4"]);
-    // agent 在 job-a 上干过活：往画板里放了一张图。
-    let job_a_board = data_root.join("jobs/job-a/ai/board");
-    fs::create_dir_all(&job_a_board).unwrap();
-    fs::write(job_a_board.join("from-job-a.png"), b"fake png").unwrap();
-    let collection = state.db.create_collection("col-20261001000000-00e7ed", "合集", None).unwrap();
-    state.db.add_documents_to_collection(&collection.collection_id, &[document_id.clone()]).unwrap();
     let app = build_app(state);
 
     let view = reading(&app, &document_id).await;
@@ -248,23 +242,6 @@ async fn two_range_translations_open_as_one_full_length_book() {
     // 阅读器：元数据（页数、页面尺寸）
     let metadata = request(&app, "GET", &format!("/api/v1/jobs/{job_id}/reader/metadata")).await;
     assert_eq!(metadata.status(), StatusCode::OK);
-
-    // AI 工作区：合并书接到这本书上次 agent 的产出，落在文档级的 ai/（不跟着指纹走）
-    let board = request(&app, "GET", &format!("/api/v1/jobs/{job_id}/ai/board")).await;
-    assert_eq!(board.status(), StatusCode::OK);
-    let body = to_bytes(board.into_body(), usize::MAX).await.unwrap();
-    assert!(String::from_utf8_lossy(&body).contains("from-job-a.png"), "{}", String::from_utf8_lossy(&body));
-    assert!(data_root.join("documents").join(&document_id).join("ai/board/from-job-a.png").is_file());
-
-    // 合集工作区：这本书链到合并目录，agent 看到的是整本
-    let workspace = request(&app, "POST", &format!("/api/v1/collections/{}/agent-workspace", collection.collection_id)).await;
-    assert_eq!(workspace.status(), StatusCode::OK);
-    let workspace = read_json(workspace).await;
-    let book = &workspace["data"]["books"][0];
-    assert_eq!(book["job_id"], job_id);
-    assert!(book["job_root"].as_str().unwrap().starts_with("../../../documents/"), "{book}");
-    let link = data_root.join("collections").join(&collection.collection_id).join("ai/books").join(book["dir"].as_str().unwrap());
-    assert!(link.join("translated/page-003.json").is_file(), "合集里看不到合并后的第 3 页");
 
     // 写操作一律拒绝：虚拟 id 不在数据库里
     for action in ["cancel", "rerun"] {
