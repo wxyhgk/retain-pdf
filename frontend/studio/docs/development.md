@@ -116,7 +116,7 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 测试服务器和你自己的有两处不同：编辑器（Milkdown 的 fork）预先打成包（`STUDIO_MILKDOWN_BUNDLED=1`，见 `src/plugins/milkdown-source.mjs`），一页从一千多个请求降到四百个；终端的 zsh 不读你的 `~/.zshrc` 这些（`ZDOTDIR` 指向空文件夹），启动快，各台机器一样。
 - 同一组端口上同时只能跑一轮：第二轮会直接报错，不会去清空第一轮正在用的文件夹。要同时跑，用 `E2E_PORT` 换一组端口。
 
-测试服务器和 Studio.app 用的是同一个服务器（`startStudio`）。
+测试服务器和 RetainPDF.app 用的是同一个服务器（`startStudio`）。
 
 **博客的 `astro dev` 同一个根目录上只开一个**：两个会同时写 `.astro/data-store.json`，互相弄坏。Studio 的服务器不碰 `.astro/`，和一个 `astro dev` 可以同时开（Studio 要看博客时自己就会开一个，见下面）。
 
@@ -127,7 +127,7 @@ E2E_ISOLATED=1 npx playwright test -c tests/e2e/playwright.config.ts
 - 页面：`/studio` 和 `/studio/window` 由 `src/studio/page/render.tsx` 在服务器上画（外壳先画一遍，页面的脚本接着画）；样式按它列的顺序放进页面，每个都是 `<style data-vite-dev-id>` 加它的模块（和 Astro 开发时一样）：脚本里再引入同一个样式表（编辑器引入 Crepe 的）时改的是原来那个，顺序不乱，改了样式马上生效。
 - 后端：`src/plugins/studio-dev.mjs`（组装各个模块、接口、小程序和文章的文件）。
 - 依赖：启动时从 `src/studio/**/*.tsx` 找出来预先打包（和 Astro 一样），样式表不算依赖。
-- 它在跑时把进程号和地址写进 `.studio-cache/server.json`；Studio.app 和 `studio` 命令从这里找到它。Studio.app 起的服务器，输出在 `.studio-cache/server.log`（上一次的在 `server.previous.log`），每次意外退出记进 `.studio-cache/server-exits.log`。
+- 它在跑时把进程号和地址写进 `.studio-cache/server.json`；RetainPDF.app 和 `studio` 命令从这里找到它。RetainPDF.app 起的服务器，输出在 `.studio-cache/server.log`（上一次的在 `server.previous.log`），每次意外退出记进 `.studio-cache/server-exits.log`。
 - 默认端口 4321，被占着就用下一个空着的。只听本机。
 - 其他设备访问（`src/studio/server/remote/remote-access.mjs`）：一个单独的 HTTPS 入口（默认 4343，默认关着），在 `0.0.0.0` 上听；只放配对过的设备（cookie 里的钥匙，设置里存哈希），把请求原样转给只听本机的 Studio（`Host`、`Origin` 改成 Studio 自己的，WebSocket 也转），并加上 `x-studio-remote: 1`：`/api/studio/remote*` 见到它就拒绝。没配对的浏览器要页面时给它输配对码的页面（`pairing-page.mjs`，脚本只按 nonce 跑、不许别的网站嵌），别的请求一律 401。证书用系统的 `/usr/bin/openssl` 生成一次，App 按二维码里的指纹认它，浏览器靠作者核对设置里显示的指纹。测试服务器上它只听本机、端口由系统给。它把 Studio 发出去的脚本、样式、页面压缩了再传（`compressionFor`：有长度的才压，一边来一边发的照旧）。
 - 给别的设备的 Studio 是打包好的（`src/studio/client-build.mjs`）：这台 Mac 上照旧是 Vite 按源码发的（几百个模块、React 的调试版、整个图标库，四十多 MB），别的设备第一次要页面时在后台另起一个进程 `vite build` 进 `.studio-cache/client/`（两秒左右），每个页面（`page/page-styles.mjs` 的 `PAGES`）单独打包：先是页面的样式表、按原来的顺序，再是它的脚本；脚本里又 import 了页面已有的样式表，当作已经有了（和这台 Mac 上一样，不挪到后面去）。打包好、和现在的代码对得上（`sourceStamp`：src/、packages/、plugins/、编辑器源码的文件数、大小、最后修改时间）时，页面（`x-studio-remote` 的请求）换成打包好的文件（`/studio-client/…`，按内容起名，浏览器一直缓存）；对不上就照旧给源码版，同时重新打包，代码一改（Vite 的 watcher）三秒后再打包。没有 Vite 的热更新：小程序文件改了靠 `/api/studio/events` 的 `app-changed` 事件让它的窗口重新载入。
@@ -151,23 +151,23 @@ Studio 的前端通过 `/api/studio/*` 和后端说话，这些接口只接受�
 
 - **插件**：每个插件的 `studio.ts` 单独载入（`src/studio/plugins.ts`）：有语法错误、一载入就出错、8 秒没载入完的，只算它自己没启动，说明原因，Studio 和别的插件照常。服务器和构建这边（`packages/kernel`）同样：`server.mjs`、`build.mjs` 载入或 `apply` 超过 10 秒算失败；某个块在构建时出错，只把那个块留成代码，并在发布前检查里说出来。
 - **安全模式**：地址加 `?safe`，一个插件都不载入，顶上一条说明，按「正常启动」回去。前两次都没启动完（5 分钟内），下次自动进安全模式（`src/studio/safe-mode.ts`）。
-- **Studio 自己的代码改坏了**：Studio 每次启动完（文章显示出来）告诉服务器（`POST /api/studio/started`），服务器在代码都已提交时把当前提交记成「上次能正常启动的版本」（`.studio-cache/last-good.json`，`src/studio/server/system/last-good.mjs`）。Studio.app 打开 Studio 后等它说启动完，两分半没等到、或者服务器起不来，就在起始页给出「用上次能正常启动的版本打开」：把那个提交里的 Studio 文件夹取出到 `.studio-cache/rescue`（`git archive`，只取 Studio 这一个文件夹），`blog`、`apps`、`chats`、设置、回收站、`node_modules` 链到真的，在那里以安全模式启动（`STUDIO_RESCUE=1`，`?safe=rescue`）。在里面写的文章就是真的文章；改坏的代码原样留着，修好后关掉 Studio 再打开。
+- **Studio 自己的代码改坏了**：Studio 每次启动完（文章显示出来）告诉服务器（`POST /api/studio/started`），服务器在代码都已提交时把当前提交记成「上次能正常启动的版本」（`.studio-cache/last-good.json`，`src/studio/server/system/last-good.mjs`）。RetainPDF.app 打开 Studio 后等它说启动完，两分半没等到、或者服务器起不来，就在起始页给出「用上次能正常启动的版本打开」：把那个提交里的 Studio 文件夹取出到 `.studio-cache/rescue`（`git archive`，只取 Studio 这一个文件夹），`blog`、`apps`、`chats`、设置、回收站、`node_modules` 链到真的，在那里以安全模式启动（`STUDIO_RESCUE=1`，`?safe=rescue`）。在里面写的文章就是真的文章；改坏的代码原样留着，修好后关掉 Studio 再打开。
 - 所以改 Studio 的代码时：改完跑测试再提交；没提交的改动不会被记成能用的版本。
 
-## Studio.app 里才有的问题
+## RetainPDF.app 里才有的问题
 
-浏览器测试（Chrome、Playwright 的 WebKit）里好好的，到 Studio.app（Tauri 外壳，WebKit 的 WKWebView）里不行的事，下面三件都是真碰到过的。
+浏览器测试（Chrome、Playwright 的 WebKit）里好好的，到 RetainPDF.app（Tauri 外壳，WebKit 的 WKWebView）里不行的事，下面三件都是真碰到过的。
 
 **先查记录，不要猜。** 真机上的窗口看不到，猜了改、改了再猜，往返好几轮也找不到原因；有记录就一次找到：
 
-- 服务器为什么停：Studio.app 把每次退出写进 `.studio-cache/server-exits.log`（时间、退出码或信号、服务器最后几行输出、当时在跑的程序），上一次的完整输出在 `.studio-cache/server.previous.log`。（旧版本用 `astro dev` 时记在 `.astro/dev-exits.log`、`.astro/dev.previous.log`。）
+- 服务器为什么停：RetainPDF.app 把每次退出写进 `.studio-cache/server-exits.log`（时间、退出码或信号、服务器最后几行输出、当时在跑的程序），上一次的完整输出在 `.studio-cache/server.previous.log`。（旧版本用 `astro dev` 时记在 `.astro/dev-exits.log`、`.astro/dev.previous.log`。）
 - 页面里发生了什么：页面可以把要查的每一步用 `keepNote`（`src/studio/api/client.ts`）记进 `.studio-cache/studio-notes.log`。文章区被撑宽（底部出横向滚动条）时，`src/studio/pages/overflow-watch.ts` 会自己记下是谁伸出去了。
 - 再拿时间去对 AI 的会话记录（`~/.pi/agent/sessions/`、`~/.claude/projects/`），常常能精确到秒。
 
 **1. 服务器隔一会儿就断（2026-10-28，`467ed4a`）**
 
 - 现象：用着用着服务器停了，退出记录（当时是 `.astro/dev-exits.log`）记的是被 SIGTERM 停掉。
-- 原因：Studio.app 用 `node --import <看守>` 启动服务器，看守在 Studio.app 退出（标准输入关上）时停掉服务器。`--import` 在**每个 worker 线程**里也会跑一遍；worker 线程没有标准输入，一开始就关着，看守就以为 Studio.app 走了。pi 跑在服务器进程里，看图片时开 worker 线程缩放图片，所以每次看图就断（两次断开都和 pi 读图片在同一秒）。
+- 原因：RetainPDF.app 用 `node --import <看守>` 启动服务器，看守在 RetainPDF.app 退出（标准输入关上）时停掉服务器。`--import` 在**每个 worker 线程**里也会跑一遍；worker 线程没有标准输入，一开始就关着，看守就以为 RetainPDF.app 走了。pi 跑在服务器进程里，看图片时开 worker 线程缩放图片，所以每次看图就断（两次断开都和 pi 读图片在同一秒）。
 - 修法：看守只在主线程里做事（`isMainThread`）。**用 `--import`、`--require` 注入的代码都要先判断是不是主线程。** Rust 测试 `a_worker_thread_does_not_stop_the_server` 管着。
 
 **2. 拖右栏宽度非常卡（2026-10-28，`00f3691`）**
@@ -180,8 +180,8 @@ Studio 的前端通过 `/api/studio/*` 和后端说话，这些接口只接受�
 **3. 独立窗口放回 Studio 后关不掉（2026-10-28，`c89b279`）**
 
 - 现象：AI 或小程序用「显示方式 › 新窗口」拿出去后，在那个窗口里选侧栏、悬浮、全屏，主窗口里已经放回去了，那个窗口却还在。
-- 原因：网页只能关掉它自己用脚本打开的窗口，独立窗口是 Studio.app 开的。更坑的是，在 Tauri 开的窗口里调 `window.close()`，WebKit 当作已经关了（`window.closed` 变成 true），窗口其实还在（wry 没处理 WebKit 的关窗回调）；代码看到「已关」，后面的办法就都没走。记录里一眼看出：「Studio 已经放回 side」之后只有「先 window.close()」，再没有下文。
-- 修法：在 Studio.app 的窗口里（`'__TAURI_INTERNALS__' in window`）不调 `window.close()`，把标题改成 `studio:close`，Studio.app 的 `on_document_title_changed` 看到就关（`tools/studio-app/src/main.rs`）；跳到 `studio-action://close` 作后备。浏览器里的弹出窗口照常 `window.close()`。**在 Studio.app 里别信 `window.close()` 和 `window.closed`。**
+- 原因：网页只能关掉它自己用脚本打开的窗口，独立窗口是 RetainPDF.app 开的。更坑的是，在 Tauri 开的窗口里调 `window.close()`，WebKit 当作已经关了（`window.closed` 变成 true），窗口其实还在（wry 没处理 WebKit 的关窗回调）；代码看到「已关」，后面的办法就都没走。记录里一眼看出：「Studio 已经放回 side」之后只有「先 window.close()」，再没有下文。
+- 修法：在 RetainPDF.app 的窗口里（`'__TAURI_INTERNALS__' in window`）不调 `window.close()`，把标题改成 `studio:close`，RetainPDF.app 的 `on_document_title_changed` 看到就关（`tools/studio-app/src/main.rs`）；跳到 `studio-action://close` 作后备。浏览器里的弹出窗口照常 `window.close()`。**在 RetainPDF.app 里别信 `window.close()` 和 `window.closed`。**
 
 ## 插件
 
