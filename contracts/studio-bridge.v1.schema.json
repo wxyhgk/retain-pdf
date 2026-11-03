@@ -37,8 +37,8 @@
     "Version": { "const": 1 },
     "Theme": { "enum": ["light", "dark"] },
     "Feature": {
-      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）；quote、reading 是 RetainPDF 会发的（reading 2026-11-02 加：列了它，Studio 就知道会收到作者在读哪本书、哪一页）。",
-      "enum": ["theme", "navigate", "quote", "notes", "reading"]
+      "description": "RetainPDF 这一版会处理、会发的消息（ready 的 features）：Studio 只发对方列出来的（navigate、theme、notes）；quote、reading 是 RetainPDF 会发的（reading 2026-11-02 加：列了它，Studio 就知道会收到作者在读哪本书、哪一页）。navigate-document（2026-11-03 加）不是一种消息，是 navigate 的一种用法：列了它，RetainPDF 认 navigate 里的 document_id，Studio 可以按书跳转（合并任务的编号多翻几页就会变，按书记不会指向旧任务）。",
+      "enum": ["theme", "navigate", "quote", "notes", "reading", "navigate-document"]
     },
     "StudioFeature": {
       "description": "Studio 这一版会处理的、RetainPDF 发来的消息（hello 的 features）：RetainPDF 只给列了的显示对应的按钮（quote：「摘到笔记」；open-notes：「笔记」，它也处理 close-notes；ask-ai（2026-11-02 加）：阅读页的「AI」改成发 ask-ai、打开 Studio 自己的 AI，不再打开 RetainPDF 自己的终端）。hello 没有 features 是早先的 Studio，只认 quote。",
@@ -83,7 +83,7 @@
     },
     "NavigateMessage": {
       "type": "object",
-      "description": "Studio → RetainPDF：打开这个任务的阅读页，有 page_idx 就翻到那一页，有 block_id 就滚到那一块并高亮。和 reader.html?job_id=&page_idx=&block_id= 是同一件事（RetainPDF 可以直接换成这个地址，带上 embed=studio）。任务不存在、块不存在时照阅读页平常的样子处理，不回消息。",
+      "description": "Studio → RetainPDF：打开这个任务的阅读页，有 page_idx 就翻到那一页，有 block_id 就滚到那一块并高亮。和 reader.html?job_id=&page_idx=&block_id= 是同一件事（RetainPDF 可以直接换成这个地址，带上 embed=studio）。任务不存在、块不存在时照阅读页平常的样子处理，不回消息。按书跳转（2026-11-03 加，ready 的 features 有 navigate-document 时才发）：带上 document_id，RetainPDF 用 GET /api/v1/documents/:document_id/reading 找到这本书现在该打开的任务，打开它；找不到（书没了、还没有可读的译文、请求失败）才打开 job_id。按书打开的任务都按整本书编页（从第 1 页起覆盖整本的任务，或者合并任务），这时 page_idx 是整本书的页序号（0 起；全文检索命中的 document_page 减 1，或者 Studio 在这个任务上收到的 reading、quote 的 page_idx），block_id 在打开的任务里找。",
       "additionalProperties": false,
       "required": ["protocol", "v", "type", "job_id"],
       "properties": {
@@ -91,7 +91,8 @@
         "v": { "$ref": "#/definitions/Version" },
         "type": { "const": "navigate" },
         "job_id": { "type": "string", "minLength": 1 },
-        "page_idx": { "type": "integer", "minimum": 0, "description": "从 0 开始的页序号，和阅读页地址的 page_idx 一样。" },
+        "document_id": { "type": "string", "minLength": 1, "description": "书的编号（和 quote、reading 里的同一个）。2026-11-03 加，只在 ready 的 features 有 navigate-document 时发；有它就按书打开，job_id 只在按书找不到时用。" },
+        "page_idx": { "type": "integer", "minimum": 0, "description": "从 0 开始的页序号，和阅读页地址的 page_idx 一样（按书跳转时是整本书的页序号，见上）。" },
         "block_id": { "type": "string", "minLength": 1, "description": "阅读区块编号，四位写法（p008-b0009），和 GET /api/v1/jobs/:job_id/reader/regions 的 item_id 一样。" }
       }
     },

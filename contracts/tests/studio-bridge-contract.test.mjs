@@ -92,9 +92,10 @@ test("the handshake goes Studio → RetainPDF and back; each side's features nam
   const from = Object.fromEntries(schema.messages.map((message) => [message.type, message.from]));
   assert.equal(from.hello, "studio");
   assert.equal(from.ready, "retainpdf");
-  // RetainPDF 的 features：它处理的 Studio 消息（握手以外），加上它会发的 quote、reading。
+  // RetainPDF 的 features：它处理的 Studio 消息（握手以外），加上它会发的 quote、reading，
+  // 以及 navigate 的按书跳转（navigate-document，不是单独的消息）。
   const toRetainpdf = Object.keys(from).filter((type) => from[type] === "studio" && type !== "hello");
-  assert.deepEqual([...definitions.Feature.enum].sort(), [...toRetainpdf, "quote", "reading"].sort());
+  assert.deepEqual([...definitions.Feature.enum].sort(), [...toRetainpdf, "quote", "reading", "navigate-document"].sort());
   // Studio 的 features：它处理的 RetainPDF 消息（握手以外），close-notes 跟着 open-notes；
   // reading 不用 Studio 登记，RetainPDF 照发，不认识的 Studio 不理。
   const toStudio = Object.keys(from).filter((type) => from[type] === "retainpdf" && !["ready", "close-notes", "reading"].includes(type));
@@ -117,6 +118,8 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "theme", theme: "light" },
     { ...head, type: "navigate", job_id: "j" },
     { ...head, type: "navigate", job_id: "j", page_idx: 3, block_id: "p004-b0002" },
+    { ...head, type: "navigate", job_id: "j", document_id: "doc-1", page_idx: 120 },
+    { ...head, type: "ready", features: ["theme", "navigate", "navigate-document", "quote", "notes", "reading"] },
     quote,
     { ...quote, document_id: null, title: null, translated_text: null },
     reading,
@@ -138,6 +141,10 @@ test("typical messages pass and the near misses do not", () => {
     { ...head, type: "navigate", job_id: "" },
     { ...head, type: "navigate", job_id: "j", page_idx: -1 },
     { ...head, type: "navigate", job_id: "j", page: 1 },
+    // 按书跳转也要带 job_id（按书找不到时用），document_id 不能是空串
+    { ...head, type: "navigate", document_id: "doc-1", page_idx: 3 },
+    { ...head, type: "navigate", job_id: "j", document_id: "" },
+    { ...head, type: "hello", theme: "dark", features: ["navigate-document"] },
     { ...quote, page_idx: 1.5 },
     { ...quote, url: "http://127.0.0.1:40001/reader.html" },
     (({ translated_text: _, ...rest }) => rest)(quote),

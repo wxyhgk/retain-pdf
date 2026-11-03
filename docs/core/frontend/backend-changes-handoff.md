@@ -1221,3 +1221,15 @@ API / jobsd 重启时，翻译阶段运行中的任务以前一律自动续跑�
 - 新字段 `document_page`（1 起，整本书的页号；任务记录读不到时 `null`），旧字段都不变。契约 `library-documents.v1` 的
   `BlockSearchHit` 加了这个键（必有，可为 `null`），生成的 DTO 已更新。
 - 前端可以做（可选）：从搜索结果跳到按书阅读的任务时用 `document_page - 1`；直接打开命中的 `job_id` 那个任务时照旧用 `page_idx`。
+
+## Studio 按书跳转：studio-bridge.v1 的 navigate 加 document_id
+
+2026-11-03。方案见 [按书跳转](../../ops/planning/studio-workbench/20261103-按书跳转.md)。契约只加不改。
+
+- `NavigateMessage` 加可选的 `document_id`；`Feature` 加 `navigate-document`。`job_id` 照旧必填（按书找不到时用）。
+- 前端要做（阅读页，`frontend/web/src/platform/studio-bridge/`）：
+  1. `ready` 的 features 里加 `navigate-document`（做完下面一条再加，Studio 看到它才会发 `document_id`）。
+  2. 收到带 `document_id` 的 navigate：调 `GET /api/v1/documents/:document_id/reading`，拿到 `job_id` 就打开它；
+     `job_id` 是 `null` 或请求失败，就照旧打开消息里的 `job_id`。`page_idx`、`block_id` 照旧用：按书打开的任务都按整本书编页，
+     不用换算。
+- 不加 `navigate-document` 的话什么都不变：Studio 照旧只发 `job_id`。
